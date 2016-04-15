@@ -1,0 +1,198 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of gapReport</title>
+  <meta name="keywords" content="gapReport">
+  <meta name="description" content="gapReport">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">RAVEN</a> &gt; gapReport.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for RAVEN&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>gapReport
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>gapReport</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnect,neededForProductionMat, canProduceWithoutInput, canConsumeWithoutOutput,connectedFromTemplates, addedFromTemplates]=gapReport(model, templateModels) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> gapReport
+   Performs a gap analysis and summarizes the results 
+
+   model                       a model structure
+   templateModels              a cell array of template models to use for
+                               gap filling (opt)
+
+   noFluxRxns                  cell array with reactions that cannot carry
+                               flux
+   noFluxRxnsRelaxed           cell array with reactions that cannot carry
+                               flux even if the mass balance constraint is 
+                               relaxed so that it is allowed to have 
+                               net production of all metabolites
+   subGraphs                   structure with the metabolites in each of
+                               the isolated sub networks
+   notProducedMets             cell array with the metabolites that
+                               couldn't have net production
+   minToConnect                structure with the minimal number of
+                               metabolites that need to be connected in 
+                               order to be able to produce all other 
+                               metabolites and which metabolites each of
+                               them connects
+   neededForProductionMat      matrix where n x m is true if metabolite n
+                               allows for production of metabolite m
+   canProduceWithoutInput      cell array with metabolites that could be
+                               produced even when there is no input to the
+                               model
+   canConsumeWithoutOutput     cell array with metabolites that could be
+                               consumed even when there is no output from
+                               the model
+   connectedFromTemplates      cell array with the reactions that could be
+                               connected using the template models
+   addedFromTemplates          structure with the reactions that were
+                               added from the template models and which 
+                               model they were added from
+
+   Usage: [noFluxRxns noFluxRxnsRelaxed subGraphs notProducedMets minToConnect...
+    neededForProductionMat connectedFromTemplates addedFromTemplates]=...
+    gapReport(model, templateModels)
+
+   Rasmus Agren, 2013-11-22</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="canConsume.html" class="code" title="function consumed=canConsume(model,mets)">canConsume</a>	canConsume</li><li><a href="canProduce.html" class="code" title="function produced=canProduce(model,mets)">canProduce</a>	canProduce</li><li><a href="checkProduction.html" class="code" title="function [notProduced, notProducedNames, neededForProductionMat,minToConnect,model]=checkProduction(model,checkNeededForProduction,excretionFromCompartments,printDetails)">checkProduction</a>	checkProduction</li><li><a href="fillGaps.html" class="code" title="function [newConnected cannotConnect addedRxns newModel exitFlag]=fillGaps(model,models,allowNetProduction,useModelConstraints,supressWarnings,rxnScores,params)">fillGaps</a>	fillGaps</li><li><a href="getAllSubGraphs.html" class="code" title="function subGraphs=getAllSubGraphs(model)">getAllSubGraphs</a>	getAllSubGraphs</li><li><a href="haveFlux.html" class="code" title="function I=haveFlux(model,cutOff,rxns)">haveFlux</a>	haveFlux</li><li><a href="removeRxns.html" class="code" title="function reducedModel=removeRxns(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeRxns</a>	removeRxns</li><li><a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, reservedRxns, suppressWarnings)">simplifyModel</a>	simplifyModel</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnect,</a><span class="keyword">...</span>
+0002     neededForProductionMat, canProduceWithoutInput, canConsumeWithoutOutput, <span class="keyword">...</span>
+0003     connectedFromTemplates, addedFromTemplates]=gapReport(model, templateModels)
+0004 <span class="comment">% gapReport</span>
+0005 <span class="comment">%   Performs a gap analysis and summarizes the results</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">%   model                       a model structure</span>
+0008 <span class="comment">%   templateModels              a cell array of template models to use for</span>
+0009 <span class="comment">%                               gap filling (opt)</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">%   noFluxRxns                  cell array with reactions that cannot carry</span>
+0012 <span class="comment">%                               flux</span>
+0013 <span class="comment">%   noFluxRxnsRelaxed           cell array with reactions that cannot carry</span>
+0014 <span class="comment">%                               flux even if the mass balance constraint is</span>
+0015 <span class="comment">%                               relaxed so that it is allowed to have</span>
+0016 <span class="comment">%                               net production of all metabolites</span>
+0017 <span class="comment">%   subGraphs                   structure with the metabolites in each of</span>
+0018 <span class="comment">%                               the isolated sub networks</span>
+0019 <span class="comment">%   notProducedMets             cell array with the metabolites that</span>
+0020 <span class="comment">%                               couldn't have net production</span>
+0021 <span class="comment">%   minToConnect                structure with the minimal number of</span>
+0022 <span class="comment">%                               metabolites that need to be connected in</span>
+0023 <span class="comment">%                               order to be able to produce all other</span>
+0024 <span class="comment">%                               metabolites and which metabolites each of</span>
+0025 <span class="comment">%                               them connects</span>
+0026 <span class="comment">%   neededForProductionMat      matrix where n x m is true if metabolite n</span>
+0027 <span class="comment">%                               allows for production of metabolite m</span>
+0028 <span class="comment">%   canProduceWithoutInput      cell array with metabolites that could be</span>
+0029 <span class="comment">%                               produced even when there is no input to the</span>
+0030 <span class="comment">%                               model</span>
+0031 <span class="comment">%   canConsumeWithoutOutput     cell array with metabolites that could be</span>
+0032 <span class="comment">%                               consumed even when there is no output from</span>
+0033 <span class="comment">%                               the model</span>
+0034 <span class="comment">%   connectedFromTemplates      cell array with the reactions that could be</span>
+0035 <span class="comment">%                               connected using the template models</span>
+0036 <span class="comment">%   addedFromTemplates          structure with the reactions that were</span>
+0037 <span class="comment">%                               added from the template models and which</span>
+0038 <span class="comment">%                               model they were added from</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">%   Usage: [noFluxRxns noFluxRxnsRelaxed subGraphs notProducedMets minToConnect...</span>
+0041 <span class="comment">%    neededForProductionMat connectedFromTemplates addedFromTemplates]=...</span>
+0042 <span class="comment">%    gapReport(model, templateModels)</span>
+0043 <span class="comment">%</span>
+0044 <span class="comment">%   Rasmus Agren, 2013-11-22</span>
+0045 <span class="comment">%</span>
+0046 
+0047 <span class="keyword">if</span> nargin&lt;2
+0048     templateModels=[];
+0049     connectedFromTemplates=[];
+0050     addedFromTemplates=[];
+0051 <span class="keyword">end</span>
+0052 
+0053 fprintf([<span class="string">'Gap analysis for '</span> model.id <span class="string">' - '</span> model.description <span class="string">'\n\n'</span>]);
+0054 <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
+0055     calculateINOUT=true;
+0056     closedModel=model;
+0057     model=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, reservedRxns, suppressWarnings)">simplifyModel</a>(model);
+0058 <span class="keyword">else</span>
+0059     canConsumeWithoutOutput={};
+0060     canProduceWithoutInput={};
+0061     calculateINOUT=false;
+0062 <span class="keyword">end</span>
+0063 
+0064 model2=model;
+0065 model2.b=[model2.b inf(numel(model2.mets),1)];
+0066 I=<a href="haveFlux.html" class="code" title="function I=haveFlux(model,cutOff,rxns)">haveFlux</a>(model);
+0067 noFluxRxns=model.rxns(~I);
+0068 J=<a href="haveFlux.html" class="code" title="function I=haveFlux(model,cutOff,rxns)">haveFlux</a>(model2);
+0069 noFluxRxnsRelaxed=model2.rxns(~J);
+0070 bModel=<a href="removeRxns.html" class="code" title="function reducedModel=removeRxns(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeRxns</a>(model,~I,true,true);
+0071 cModel=<a href="removeRxns.html" class="code" title="function reducedModel=removeRxns(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeRxns</a>(model2,~J,true,true);
+0072 fprintf(<span class="string">'***Overview\n'</span>);
+0073 fprintf([num2str(numel(model.rxns)-sum(I)) <span class="string">' out of '</span> num2str(numel(model.rxns))<span class="keyword">...</span>
+0074     <span class="string">' reactions cannot carry flux ('</span> num2str(numel(model.rxns)-sum(J)) <span class="string">' if net production of all metabolites is allowed)\n'</span>]);
+0075 fprintf([num2str(numel(model.mets)-numel(bModel.mets)) <span class="string">' out of '</span> num2str(numel(model.mets))<span class="keyword">...</span>
+0076     <span class="string">' metabolites are unreachable ('</span> num2str(numel(model.mets)-numel(cModel.mets)) <span class="string">' if net production of all metabolites is allowed)\n'</span>]);
+0077 
+0078 fprintf(<span class="string">'\n***Isolated subnetworks\n'</span>);
+0079 subGraphs=<a href="getAllSubGraphs.html" class="code" title="function subGraphs=getAllSubGraphs(model)">getAllSubGraphs</a>(model);
+0080 fprintf([<span class="string">'A total of '</span> num2str(size(subGraphs,2)) <span class="string">' isolated sub-networks are present in the model\n'</span>]);
+0081 <span class="keyword">for</span> i=1:size(subGraphs,2)
+0082    fprintf([<span class="string">'\t'</span> num2str(i) <span class="string">'. '</span> num2str(sum(subGraphs(:,i))) <span class="string">' metabolites\n'</span>]); 
+0083 <span class="keyword">end</span>
+0084 
+0085 fprintf(<span class="string">'\n***Metabolite connectivity\n'</span>);
+0086 [notProducedMets, crap, neededForProductionMat,minToConnect]=<a href="checkProduction.html" class="code" title="function [notProduced, notProducedNames, neededForProductionMat,minToConnect,model]=checkProduction(model,checkNeededForProduction,excretionFromCompartments,printDetails)">checkProduction</a>(model,true,model.comps,false);
+0087 fprintf([<span class="string">'To enable net production of all metabolites, a total of '</span> num2str(numel(minToConnect)) <span class="string">' metabolites must be connected\n'</span>]);
+0088 fprintf(<span class="string">'Top 10 metabolites to connect:\n'</span>);
+0089 <span class="keyword">for</span> i=1:min(10,numel(minToConnect))
+0090    fprintf([<span class="string">'\t'</span> num2str(i) <span class="string">'. '</span> minToConnect{i} <span class="string">'\n'</span>]); 
+0091 <span class="keyword">end</span>
+0092 
+0093 <span class="keyword">if</span> calculateINOUT==true
+0094     fprintf(<span class="string">'\n***Mass balancing\n'</span>);
+0095     produced=<a href="canProduce.html" class="code" title="function produced=canProduce(model,mets)">canProduce</a>(closedModel);
+0096     canProduceWithoutInput=closedModel.mets(produced);
+0097     consumed=<a href="canConsume.html" class="code" title="function consumed=canConsume(model,mets)">canConsume</a>(closedModel);
+0098     canConsumeWithoutOutput=closedModel.mets(consumed);
+0099     fprintf([num2str(numel(canConsumeWithoutOutput)) <span class="string">' metabolites could be consumed without any outputs\n'</span> num2str(numel(canProduceWithoutInput)) <span class="string">' metabolites could be produced without any inputs\n'</span>]);
+0100 <span class="keyword">end</span>
+0101 
+0102 <span class="keyword">if</span> ~isempty(templateModels)
+0103     fprintf(<span class="string">'\n***Automated gap-filling\n'</span>);
+0104     [connectedFromTemplates crap addedFromTemplates]=<a href="fillGaps.html" class="code" title="function [newConnected cannotConnect addedRxns newModel exitFlag]=fillGaps(model,models,allowNetProduction,useModelConstraints,supressWarnings,rxnScores,params)">fillGaps</a>(model,templateModels);
+0105     t=templateModels{1}.id;
+0106     <span class="keyword">for</span> i=2:numel(templateModels)
+0107         t=[t <span class="string">', '</span> templateModels{i}.id];
+0108     <span class="keyword">end</span>
+0109     fprintf([num2str(numel(connectedFromTemplates)) <span class="string">' unconnected reactions can be connected by including '</span> num2str(numel(addedFromTemplates)) <span class="string">' reactions from\n'</span> t <span class="string">'\n'</span>]);
+0110 <span class="keyword">end</span>
+0111 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 06-Jan-2014 14:58:12 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

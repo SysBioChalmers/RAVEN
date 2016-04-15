@@ -1,0 +1,97 @@
+function blastStructure=getBlastFromExcel(models,blastFile,organismId)
+% getBlastFromExcel
+%   Retrieves gene homology information from Excel files. Used as
+%   input to getModelFromHomology.
+%
+%   models          a cell array of model structures
+%   blastFile       Excel file with homology information
+%   organismId      the id of the organism of interest (as described in the
+%                   Excel file)
+%
+%   blastStructure  structure containing the information in the Excel
+%                   sheets.
+%
+%   The Excel file should contain a number of spreadsheets which in turn 
+%   contain the bidirectional homology measurements between the genes in the 
+%   organisms. The first and second column headers in each sheet is the 
+%   "to" and "from" model ids (as defined in models or for the new organism).
+%   The entries should correspond to the gene names in those models. The third, 
+%   fourth, and fifth columns represent the E-value, alignment length, and 
+%   identity for each measurement (captions should be "E-value", "Alignment length",
+%   and "Identity").
+%
+%   Usage: blastStructure=getBlastFromExcel(models,blastFile,organismId)
+%
+%   Rasmus Agren, 2013-08-01
+%
+
+blastStructure=[];
+
+%Get a list of model IDs
+organisms=cell(numel(models)+1,1);
+organisms{1}=organismId;
+for i=1:numel(models)
+    organisms{i+1}=models{i}.id;
+end
+
+%Get all the spreadsheets in the file
+[type, sheets]=xlsfinfo(blastFile);
+
+%Check if the file is a Microsoft Excel Spreadsheet
+if ~strcmp(type,'Microsoft Excel Spreadsheet')
+    dispEM('The file is not a Microsoft Excel Spreadsheet');
+end
+
+for i=1:numel(sheets)
+    %Check if the sheet has the right header and deal with organisms that
+    %are in "models"
+    [values,dataSheet]=xlsread(blastFile,i);
+    labels=dataSheet(1,:);
+    if strcmpi(labels{3},'E-value') && strcmpi(labels{4},'Alignment length') && strcmpi(labels{5},'Identity')
+        %At least one of the organisms must have a model
+        fromID=find(strcmpi(labels{1},organisms));
+        toID=find(strcmpi(labels{2},organisms));
+        %Check that the organism ids exist and that one of them is the
+        %organism of interest
+        if any(fromID) && any(toID) && (toID==1 || fromID==1)
+            %Check that no gene ids are empty. This could for example be 
+            %the case if the gene names are wrongly formatted as numbers
+            %instead of strings
+            emptyNames=cellfun(@isempty,dataSheet(2:end,1)) | cellfun(@isempty,dataSheet(2:end,2));
+            if any(emptyNames)
+                if all(emptyNames)
+                    dispEM(['Only empty gene names in sheet from ' organisms{fromID} ' to ' organisms{toID}]);
+                else    
+                    dispEM(['Empty gene names in sheet from ' organisms{fromID} ' to ' organisms{toID} '. Ignoring genes with empty names'],false);
+                end
+            end
+            blastStructure(numel(blastStructure)+1).toId=organisms{toID};
+            blastStructure(numel(blastStructure)).fromId=organisms{fromID};
+            blastStructure(numel(blastStructure)).fromGenes=dataSheet(2:end,1);
+            blastStructure(numel(blastStructure)).toGenes=dataSheet(2:end,2);
+            blastStructure(numel(blastStructure)).evalue=values(:,1);
+            blastStructure(numel(blastStructure)).aligLen=values(:,2);
+            blastStructure(numel(blastStructure)).identity=values(:,3);
+            
+            %Remove matches where any of the values is NaN. This would have
+            %been done anyways in getModelFromHomology, but it's neater to
+            %do it here
+            I=isnan(blastStructure(end).evalue) | isnan(blastStructure(end).aligLen) | isnan(blastStructure(end).identity);
+            blastStructure(end).fromGenes(I)=[];
+            blastStructure(end).toGenes(I)=[];
+            blastStructure(end).evalue(I)=[];
+            blastStructure(end).aligLen(I)=[];
+            blastStructure(end).identity(I)=[];
+        else
+            if isempty(toID) || isempty(fromID)
+                dispEM(['The data in sheet ' sheets{i} ' has no corresponding model. Ignoring sheet'],false);
+            else
+                dispEM(['The data in sheet ' sheets{i} ' does not involve the organism of interest. Ignoring sheet'],false);
+            end
+        end
+    else
+        dispEM(['The data in sheet ' sheets{i} ' is not correctly formatted. Ignoring sheet'],false);
+    end
+end
+
+end

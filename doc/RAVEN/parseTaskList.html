@@ -1,0 +1,477 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of parseTaskList</title>
+  <meta name="keywords" content="parseTaskList">
+  <meta name="description" content="parseTaskList">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">RAVEN</a> &gt; parseTaskList.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for RAVEN&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>parseTaskList
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>parseTaskList</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function taskStruct=parseTaskList(inputFile) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> parseTaskList
+   Parses a task list file.
+
+   inputFile       a task list in Excel format. The file must contain a
+                   sheet named TASKS, which in turn may contain the
+                   following column headers (note, all rows starting with
+                   a non-empty cell are removed. The first row after that
+                   is considered the headers):
+                   ID 
+                       the only required header. Each task must have a
+                       unique id (string or numeric). Tasks can span multiple
+                       rows, only the first row in each task should have
+                       an id
+                   DESCRIPTION
+                       description of the task
+                   IN
+                       allowed input(s) for the task. Metabolite names
+                       should be on the form
+                       &quot;model.metName[model.comps]&quot;. Several inputs
+                       can be delimited by &quot;;&quot;. If so, then the same
+                       bounds are used for all inputs. If that is not
+                       wanted, then use several rows for the task
+                   IN LB
+                       lower bound for the uptake of the metabolites in
+                       the row (opt, default 0 which corresponds to a
+                       minimal uptake of 0 units)
+                   IN UB
+                       upper bound for the uptake of the metabolites in
+                       the row (opt, default 1000 which corresponds to a
+                       maximal uptake of 1000 units)
+                   OUT
+                       allowed output(s) for the task (see IN)
+                   OUT LB
+                       lower bound for the production of the metabolites in
+                       the row (opt, default 0 which corresponds to a
+                       minimal production of 0 units)
+                   OUT UB
+                       upper bound for the production of the metabolites in
+                       the row (opt, default 1000 which corresponds to a
+                       maximal production of 1000 units)
+                   EQU
+                       equation to add. The equation should be on the form
+                       &quot;0.4 A + 2 B &lt;=&gt; (or =&gt;) C&quot; and the metabolites
+                       should be on the form
+                       &quot;model.metName[model.comps]&quot; (opt)
+                   EQU LB
+                       lower bound for the equation (opt, default -1000
+                       for reversible and 0 for irreversible)
+                   EQU UB
+                       upper bound for the equation (opt, default 1000)
+                   CHANGED RXN
+                       reaction ID for which to change the bounds for.
+                       Several IDs can be delimited by &quot;;&quot;. If so, 
+                       then the same bounds are used for all reactions. If
+                       that is not wanted, then use several rows for the task
+                   CHANGED LB
+                       lower bound for the reaction
+                   CHANGED UB
+                       upper bound for the reaction
+                   SHOULD FAIL
+                       true if the correct behavior of the model is to
+                       not have a feasible solution given the constraints
+                       (opt, default false)
+                   PRINT FLUX
+                       true if the function should print the corresponding
+                       flux distribution for a task. Can be useful for
+                       testing (opt, default false)
+
+   taskStruct      array of structures with the following fields
+       id          the id of the task
+       description the description of the task
+       shouldFail  true if the task should fail
+       printFluxes true if the fluxes should be printed
+       comments    string with comments
+       inputs      cell array with input metabolites (in the form metName[comps]) 
+       LBin        array with lower bounds on inputs (default, 0)
+       UBin        array with upper bounds on inputs (default, 1000)
+       outputs     cell array with output metabolites (in the form metName[comps])
+       LBout       array with lower bounds on outputs (default, 0)
+       UBout       array with upper bounds on outputs (default, 1000)
+       equations   cell array with equations (with mets in the form metName[comps])
+       LBequ       array with lower bounds on equations (default, -1000 for
+                   reversible and 0 for irreversible)
+       UBequ       array with upper bounds on equations (default, 1000)
+       changed     cell array with reactions to change bounds for
+       LBrxn       array with lower bounds on changed reactions
+       UBrxn       array with upper bounds on changed reactions
+
+   This function is used for defining a set of tasks for a model to
+   perform. The tasks are defined by defining constraints on the model,
+   and if the problem is feasible, then the task is considered successful.
+   In general, each row can contain one constraint on uptakes, one 
+   constraint on outputs, one new equation, and one change of reaction
+   bounds. If more bounds are needed to define the task, then several rows
+   can be used for each task. To perform the task use checkTasks or
+   fitTasks.
+
+   NOTE: The general metabolites &quot;ALLMETS&quot; and &quot;ALLMETSIN[comps]&quot;
+   can be used as inputs or outputs in the similar manner to normal
+   metabolites. This is a convenient way to, for example, allow excretion of
+   all metabolites to check whether it's the synthesis of some metabolite
+   that is limiting or whether it's the degradation of some byproduct. One
+   important difference is that only the upper bounds are used for these general
+   metabolites. That is, you can only say that uptake or excretion is
+   allowed, not that it is required. This is to avoid conflicts where the
+   constraints for the general metabolites overwrite those of the real
+   ones.
+
+   Usage: taskStruct=parseTaskList(inputFile)
+
+   Rasmus Agren, 2013-08-01</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="checkTasks.html" class="code" title="function [taskReport essentialRxns taskStructure]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure)">checkTasks</a>	checkTasks</li><li><a href="fitTasks.html" class="code" title="function [outModel addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params)">fitTasks</a>	fitTasks</li><li><a href="getINITModel.html" class="code" title="function [model metProduction essentialRxnsForTasks addedRxnsForTasks deletedDeadEndRxns deletedRxnsInINIT taskReport]=getINITModel(refModel, tissue, celltype, hpaData, arrayData, metabolomicsData, taskFile, useScoresForTasks, printReport, taskStructure, params, paramsFT)">getINITModel</a>	getINITModel</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function I=isBad(x)</a></li><li><a href="#_sub2" class="code">function raw=cleanImported(raw)</a></li><li><a href="#_sub3" class="code">function I=wrapperNAN(A)</a></li><li><a href="#_sub4" class="code">function I=wrapperWS(A)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function taskStruct=parseTaskList(inputFile)</a>
+0002 <span class="comment">% parseTaskList</span>
+0003 <span class="comment">%   Parses a task list file.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%   inputFile       a task list in Excel format. The file must contain a</span>
+0006 <span class="comment">%                   sheet named TASKS, which in turn may contain the</span>
+0007 <span class="comment">%                   following column headers (note, all rows starting with</span>
+0008 <span class="comment">%                   a non-empty cell are removed. The first row after that</span>
+0009 <span class="comment">%                   is considered the headers):</span>
+0010 <span class="comment">%                   ID</span>
+0011 <span class="comment">%                       the only required header. Each task must have a</span>
+0012 <span class="comment">%                       unique id (string or numeric). Tasks can span multiple</span>
+0013 <span class="comment">%                       rows, only the first row in each task should have</span>
+0014 <span class="comment">%                       an id</span>
+0015 <span class="comment">%                   DESCRIPTION</span>
+0016 <span class="comment">%                       description of the task</span>
+0017 <span class="comment">%                   IN</span>
+0018 <span class="comment">%                       allowed input(s) for the task. Metabolite names</span>
+0019 <span class="comment">%                       should be on the form</span>
+0020 <span class="comment">%                       &quot;model.metName[model.comps]&quot;. Several inputs</span>
+0021 <span class="comment">%                       can be delimited by &quot;;&quot;. If so, then the same</span>
+0022 <span class="comment">%                       bounds are used for all inputs. If that is not</span>
+0023 <span class="comment">%                       wanted, then use several rows for the task</span>
+0024 <span class="comment">%                   IN LB</span>
+0025 <span class="comment">%                       lower bound for the uptake of the metabolites in</span>
+0026 <span class="comment">%                       the row (opt, default 0 which corresponds to a</span>
+0027 <span class="comment">%                       minimal uptake of 0 units)</span>
+0028 <span class="comment">%                   IN UB</span>
+0029 <span class="comment">%                       upper bound for the uptake of the metabolites in</span>
+0030 <span class="comment">%                       the row (opt, default 1000 which corresponds to a</span>
+0031 <span class="comment">%                       maximal uptake of 1000 units)</span>
+0032 <span class="comment">%                   OUT</span>
+0033 <span class="comment">%                       allowed output(s) for the task (see IN)</span>
+0034 <span class="comment">%                   OUT LB</span>
+0035 <span class="comment">%                       lower bound for the production of the metabolites in</span>
+0036 <span class="comment">%                       the row (opt, default 0 which corresponds to a</span>
+0037 <span class="comment">%                       minimal production of 0 units)</span>
+0038 <span class="comment">%                   OUT UB</span>
+0039 <span class="comment">%                       upper bound for the production of the metabolites in</span>
+0040 <span class="comment">%                       the row (opt, default 1000 which corresponds to a</span>
+0041 <span class="comment">%                       maximal production of 1000 units)</span>
+0042 <span class="comment">%                   EQU</span>
+0043 <span class="comment">%                       equation to add. The equation should be on the form</span>
+0044 <span class="comment">%                       &quot;0.4 A + 2 B &lt;=&gt; (or =&gt;) C&quot; and the metabolites</span>
+0045 <span class="comment">%                       should be on the form</span>
+0046 <span class="comment">%                       &quot;model.metName[model.comps]&quot; (opt)</span>
+0047 <span class="comment">%                   EQU LB</span>
+0048 <span class="comment">%                       lower bound for the equation (opt, default -1000</span>
+0049 <span class="comment">%                       for reversible and 0 for irreversible)</span>
+0050 <span class="comment">%                   EQU UB</span>
+0051 <span class="comment">%                       upper bound for the equation (opt, default 1000)</span>
+0052 <span class="comment">%                   CHANGED RXN</span>
+0053 <span class="comment">%                       reaction ID for which to change the bounds for.</span>
+0054 <span class="comment">%                       Several IDs can be delimited by &quot;;&quot;. If so,</span>
+0055 <span class="comment">%                       then the same bounds are used for all reactions. If</span>
+0056 <span class="comment">%                       that is not wanted, then use several rows for the task</span>
+0057 <span class="comment">%                   CHANGED LB</span>
+0058 <span class="comment">%                       lower bound for the reaction</span>
+0059 <span class="comment">%                   CHANGED UB</span>
+0060 <span class="comment">%                       upper bound for the reaction</span>
+0061 <span class="comment">%                   SHOULD FAIL</span>
+0062 <span class="comment">%                       true if the correct behavior of the model is to</span>
+0063 <span class="comment">%                       not have a feasible solution given the constraints</span>
+0064 <span class="comment">%                       (opt, default false)</span>
+0065 <span class="comment">%                   PRINT FLUX</span>
+0066 <span class="comment">%                       true if the function should print the corresponding</span>
+0067 <span class="comment">%                       flux distribution for a task. Can be useful for</span>
+0068 <span class="comment">%                       testing (opt, default false)</span>
+0069 <span class="comment">%</span>
+0070 <span class="comment">%   taskStruct      array of structures with the following fields</span>
+0071 <span class="comment">%       id          the id of the task</span>
+0072 <span class="comment">%       description the description of the task</span>
+0073 <span class="comment">%       shouldFail  true if the task should fail</span>
+0074 <span class="comment">%       printFluxes true if the fluxes should be printed</span>
+0075 <span class="comment">%       comments    string with comments</span>
+0076 <span class="comment">%       inputs      cell array with input metabolites (in the form metName[comps])</span>
+0077 <span class="comment">%       LBin        array with lower bounds on inputs (default, 0)</span>
+0078 <span class="comment">%       UBin        array with upper bounds on inputs (default, 1000)</span>
+0079 <span class="comment">%       outputs     cell array with output metabolites (in the form metName[comps])</span>
+0080 <span class="comment">%       LBout       array with lower bounds on outputs (default, 0)</span>
+0081 <span class="comment">%       UBout       array with upper bounds on outputs (default, 1000)</span>
+0082 <span class="comment">%       equations   cell array with equations (with mets in the form metName[comps])</span>
+0083 <span class="comment">%       LBequ       array with lower bounds on equations (default, -1000 for</span>
+0084 <span class="comment">%                   reversible and 0 for irreversible)</span>
+0085 <span class="comment">%       UBequ       array with upper bounds on equations (default, 1000)</span>
+0086 <span class="comment">%       changed     cell array with reactions to change bounds for</span>
+0087 <span class="comment">%       LBrxn       array with lower bounds on changed reactions</span>
+0088 <span class="comment">%       UBrxn       array with upper bounds on changed reactions</span>
+0089 <span class="comment">%</span>
+0090 <span class="comment">%   This function is used for defining a set of tasks for a model to</span>
+0091 <span class="comment">%   perform. The tasks are defined by defining constraints on the model,</span>
+0092 <span class="comment">%   and if the problem is feasible, then the task is considered successful.</span>
+0093 <span class="comment">%   In general, each row can contain one constraint on uptakes, one</span>
+0094 <span class="comment">%   constraint on outputs, one new equation, and one change of reaction</span>
+0095 <span class="comment">%   bounds. If more bounds are needed to define the task, then several rows</span>
+0096 <span class="comment">%   can be used for each task. To perform the task use checkTasks or</span>
+0097 <span class="comment">%   fitTasks.</span>
+0098 <span class="comment">%</span>
+0099 <span class="comment">%   NOTE: The general metabolites &quot;ALLMETS&quot; and &quot;ALLMETSIN[comps]&quot;</span>
+0100 <span class="comment">%   can be used as inputs or outputs in the similar manner to normal</span>
+0101 <span class="comment">%   metabolites. This is a convenient way to, for example, allow excretion of</span>
+0102 <span class="comment">%   all metabolites to check whether it's the synthesis of some metabolite</span>
+0103 <span class="comment">%   that is limiting or whether it's the degradation of some byproduct. One</span>
+0104 <span class="comment">%   important difference is that only the upper bounds are used for these general</span>
+0105 <span class="comment">%   metabolites. That is, you can only say that uptake or excretion is</span>
+0106 <span class="comment">%   allowed, not that it is required. This is to avoid conflicts where the</span>
+0107 <span class="comment">%   constraints for the general metabolites overwrite those of the real</span>
+0108 <span class="comment">%   ones.</span>
+0109 <span class="comment">%</span>
+0110 <span class="comment">%   Usage: taskStruct=parseTaskList(inputFile)</span>
+0111 <span class="comment">%</span>
+0112 <span class="comment">%   Rasmus Agren, 2013-08-01</span>
+0113 <span class="comment">%</span>
+0114 
+0115 <span class="comment">%Load the tasks file</span>
+0116 [crap,crap,raw]=xlsread(inputFile,<span class="string">'TASKS'</span>);
+0117 
+0118 <span class="comment">%Remove all lines starting with &quot;#&quot; (or actually any character)</span>
+0119 raw=<a href="#_sub2" class="code" title="subfunction raw=cleanImported(raw)">cleanImported</a>(raw);
+0120 
+0121 <span class="comment">%Captions</span>
+0122 columns={<span class="string">'ID'</span>;<span class="string">'DESCRIPTION'</span>;<span class="string">'IN'</span>;<span class="string">'IN LB'</span>;<span class="string">'IN UB'</span>;<span class="string">'OUT'</span>;<span class="string">'OUT LB'</span>;<span class="string">'OUT UB'</span>;<span class="string">'EQU'</span>;<span class="string">'EQU LB'</span>;<span class="string">'EQU UB'</span>;<span class="string">'CHANGED RXN'</span>;<span class="string">'CHANGED LB'</span>;<span class="string">'CHANGED UB'</span>;<span class="string">'SHOULD FAIL'</span>;<span class="string">'PRINT FLUX'</span>;<span class="string">'COMMENTS'</span>};
+0123 
+0124 <span class="comment">%Match the columns, but ignore the first one (since it can be NaN)</span>
+0125 [I colI]=ismember(columns,raw(1,2:end));
+0126 colI=colI+1;
+0127 
+0128 <span class="comment">%Check that the ID field is present</span>
+0129 <span class="keyword">if</span> I(1)==0
+0130     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The TASKS sheet must have a column named ID'</span>);
+0131 <span class="keyword">end</span>
+0132 
+0133 <span class="comment">%Prepare the input file a little. Put NaN for missing strings and default</span>
+0134 <span class="comment">%bounds where needed</span>
+0135 <span class="keyword">for</span> i=1:numel(colI)
+0136     I=cellfun(@<a href="#_sub1" class="code" title="subfunction I=isBad(x)">isBad</a>,raw(:,colI(i)));
+0137     <span class="keyword">if</span> ~ismember(i,[4 5 7 8])
+0138         raw(I,colI(i))={NaN};
+0139     <span class="keyword">else</span>
+0140         <span class="keyword">if</span> i==5 || i==8
+0141             raw(I,colI(i))={1000};
+0142         <span class="keyword">else</span>
+0143             raw(I,colI(i))={0};
+0144         <span class="keyword">end</span>
+0145     <span class="keyword">end</span>    
+0146 <span class="keyword">end</span>
+0147 
+0148 <span class="comment">%Create an empty task structure</span>
+0149 eTask.id=<span class="string">''</span>;
+0150 eTask.description=<span class="string">''</span>;
+0151 eTask.shouldFail=false;
+0152 eTask.printFluxes=false;
+0153 eTask.comments=<span class="string">''</span>;
+0154 eTask.inputs={};
+0155 eTask.LBin=[];
+0156 eTask.UBin=[];
+0157 eTask.outputs={};
+0158 eTask.LBout=[];
+0159 eTask.UBout=[];
+0160 eTask.equations={};
+0161 eTask.LBequ=[];
+0162 eTask.UBequ=[];
+0163 eTask.changed={};
+0164 eTask.LBrxn=[];
+0165 eTask.UBrxn=[];
+0166 
+0167 <span class="comment">%Main loop</span>
+0168 taskStruct=[];
+0169 task=eTask;
+0170 <span class="keyword">if</span> isnumeric(raw{2,colI(1)})
+0171     task.id=num2str(raw{2,colI(1)});
+0172 <span class="keyword">else</span>
+0173     task.id=raw{2,colI(1)};
+0174 <span class="keyword">end</span>
+0175 task.description=raw{2,colI(2)};
+0176 <span class="keyword">if</span> ~isnan(raw{2,colI(15)})
+0177     task.shouldFail=true;
+0178 <span class="keyword">end</span>
+0179 <span class="keyword">if</span> ~isnan(raw{2,colI(16)})
+0180     task.printFluxes=true;
+0181 <span class="keyword">end</span>
+0182 <span class="keyword">if</span> ~isnan(raw{2,colI(17)})
+0183     task.comments=raw{2,colI(17)};
+0184 <span class="keyword">end</span>
+0185 
+0186 <span class="keyword">for</span> i=2:size(raw,1)
+0187     <span class="comment">%Set the inputs</span>
+0188     <span class="keyword">if</span> ischar(raw{i,colI(3)})
+0189         inputs=regexp(raw{i,colI(3)},<span class="string">';'</span>,<span class="string">'split'</span>);
+0190         task.inputs=[task.inputs;inputs(:)];
+0191         task.LBin=[task.LBin;ones(numel(inputs),1)*raw{i,colI(4)}];
+0192         task.UBin=[task.UBin;ones(numel(inputs),1)*raw{i,colI(5)}];
+0193     <span class="keyword">end</span>
+0194     <span class="comment">%Set the outputs</span>
+0195     <span class="keyword">if</span> ischar(raw{i,colI(6)})
+0196         outputs=regexp(raw{i,colI(6)},<span class="string">';'</span>,<span class="string">'split'</span>);
+0197         task.outputs=[task.outputs;outputs(:)];
+0198         task.LBout=[task.LBout;ones(numel(outputs),1)*raw{i,colI(7)}];
+0199         task.UBout=[task.UBout;ones(numel(outputs),1)*raw{i,colI(8)}];
+0200     <span class="keyword">end</span>
+0201     <span class="comment">%Add new rxns</span>
+0202     <span class="keyword">if</span> ischar(raw{i,colI(9)})
+0203         task.equations=[task.equations;raw{i,colI(9)}];
+0204         <span class="keyword">if</span> ~isnan(raw{i,colI(10)})
+0205             task.LBequ=[task.LBequ;raw{i,colI(10)}];
+0206         <span class="keyword">else</span>
+0207             <span class="keyword">if</span> any(strfind(raw{i,colI(9)},<span class="string">'&lt;=&gt;'</span>))
+0208                 task.LBequ=[task.LBequ;-1000];
+0209             <span class="keyword">else</span>
+0210                 task.LBequ=[task.LBequ;0];
+0211             <span class="keyword">end</span>
+0212         <span class="keyword">end</span>
+0213         <span class="keyword">if</span> ~isnan(raw{i,colI(11)})
+0214             task.UBequ=[task.UBequ;raw{i,colI(11)}];
+0215         <span class="keyword">else</span>
+0216             task.UBequ=[task.UBequ;1000];
+0217         <span class="keyword">end</span>
+0218     <span class="keyword">end</span>
+0219     <span class="comment">%Add changed bounds</span>
+0220     <span class="keyword">if</span> ischar(raw{i,colI(12)})
+0221         changed=regexp(raw{i,colI(12)},<span class="string">';'</span>,<span class="string">'split'</span>);
+0222         task.changed=[task.changed;changed(:)];
+0223         task.LBrxn=[task.LBrxn;ones(numel(changed),1)*raw{i,colI(13)}];
+0224         task.UBrxn=[task.UBrxn;ones(numel(changed),1)*raw{i,colI(14)}];
+0225     <span class="keyword">end</span>
+0226 
+0227     <span class="comment">%Check if it should add more constraints</span>
+0228     <span class="keyword">if</span> i&lt;size(raw,1)
+0229         <span class="keyword">if</span> isnan(raw{i+1,colI(1)})   
+0230             <span class="keyword">continue</span>;
+0231         <span class="keyword">end</span>
+0232     <span class="keyword">end</span>
+0233     
+0234     taskStruct=[taskStruct;task];
+0235     task=eTask;
+0236     <span class="keyword">if</span> i&lt;size(raw,1)
+0237         <span class="keyword">if</span> isnumeric(raw{i+1,colI(1)})
+0238             task.id=num2str(raw{i+1,colI(1)});
+0239         <span class="keyword">else</span>
+0240             task.id=raw{i+1,colI(1)};
+0241         <span class="keyword">end</span>
+0242         task.description=raw{i+1,colI(2)};
+0243         <span class="keyword">if</span> ~isnan(raw{i+1,colI(15)})
+0244             task.shouldFail=true;
+0245         <span class="keyword">end</span>
+0246         <span class="keyword">if</span> ~isnan(raw{i+1,colI(16)})
+0247             task.printFluxes=true;
+0248         <span class="keyword">end</span>
+0249         <span class="keyword">if</span> ~isnan(raw{i+1,colI(17)})
+0250             task.comments=raw{i+1,colI(17)};
+0251         <span class="keyword">end</span>
+0252     <span class="keyword">end</span>
+0253 <span class="keyword">end</span>
+0254 
+0255 <span class="comment">%Should add more checks, such as unique IDs and missing headers</span>
+0256 
+0257 <span class="keyword">end</span>
+0258 <a name="_sub1" href="#_subfunctions" class="code">function I=isBad(x)</a>
+0259     I=false;
+0260     <span class="keyword">if</span> ischar(x)
+0261         <span class="keyword">if</span> numel(x)==0 || all(isstrprop(x, <span class="string">'wspace'</span>))
+0262            I=true; 
+0263         <span class="keyword">end</span>
+0264     <span class="keyword">else</span>
+0265        <span class="keyword">if</span> isnan(x)
+0266           I=true; 
+0267        <span class="keyword">end</span>
+0268     <span class="keyword">end</span>
+0269     <span class="keyword">if</span> isempty(x)
+0270         I=true;
+0271     <span class="keyword">end</span>
+0272 <span class="keyword">end</span>
+0273 
+0274 <span class="comment">%Cleans up the structure that is imported from using xlsread</span>
+0275 <a name="_sub2" href="#_subfunctions" class="code">function raw=cleanImported(raw)</a>
+0276     <span class="comment">%Find the lines that are not commented</span>
+0277     keepers=strcmp(<span class="string">''</span>,raw(:,1)) | cellfun(@<a href="#_sub3" class="code" title="subfunction I=wrapperNAN(A)">wrapperNAN</a>,raw(:,1));
+0278     raw=raw(keepers~=0,:);
+0279     
+0280     <span class="comment">%Remove columns that aren't strings. If you cut and paste a lot in the sheet</span>
+0281     <span class="comment">%there tends to be columns that are NaN</span>
+0282     I=cellfun(@isstr,raw(1,:));
+0283     I(1)=true; <span class="comment">%This is because the &quot;#&quot; column might be empty</span>
+0284     raw=raw(:,I);
+0285 
+0286     <span class="comment">%Check if there are any rows that are all NaN. This could happen if</span>
+0287     <span class="comment">%xlsread reads too far. Remove any such rows.</span>
+0288     nans=cellfun(@<a href="#_sub3" class="code" title="subfunction I=wrapperNAN(A)">wrapperNAN</a>,raw);
+0289     I=all(nans,2);
+0290     raw(I,:)=[];
+0291    
+0292     <span class="comment">%Also check if there are any lines that contain only NaNs or white</span>
+0293     <span class="comment">%spaces. This could happen if you accidentaly inserted a space</span>
+0294     <span class="comment">%somewhere</span>
+0295     whites=cellfun(@<a href="#_sub4" class="code" title="subfunction I=wrapperWS(A)">wrapperWS</a>,raw);
+0296     I=all(whites,2);
+0297     raw(I,:)=[];
+0298     
+0299     <span class="comment">%Checks if something is NaN. Can't use isnan with cellfun as it does it</span>
+0300     <span class="comment">%character by character for strings</span>
+0301     <a name="_sub3" href="#_subfunctions" class="code">function I=wrapperNAN(A)</a>
+0302        I=any(isnan(A)); 
+0303     <span class="keyword">end</span>
+0304     
+0305     <span class="comment">%Checks if something is all white spaces or NaN</span>
+0306     <a name="_sub4" href="#_subfunctions" class="code">function I=wrapperWS(A)</a>
+0307         <span class="keyword">if</span> isnan(A)
+0308             I=true;
+0309         <span class="keyword">else</span>
+0310             <span class="comment">%isstrprob gives an error if boolean</span>
+0311             <span class="keyword">if</span> islogical(A)
+0312                 I=false;
+0313             <span class="keyword">else</span>
+0314                 I=all(isstrprop(A,<span class="string">'wspace'</span>));
+0315             <span class="keyword">end</span>
+0316         <span class="keyword">end</span>
+0317     <span class="keyword">end</span>
+0318 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 06-Jan-2014 14:58:12 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

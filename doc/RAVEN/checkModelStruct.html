@@ -1,0 +1,393 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of checkModelStruct</title>
+  <meta name="keywords" content="checkModelStruct">
+  <meta name="description" content="checkModelStruct">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">RAVEN</a> &gt; checkModelStruct.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for RAVEN&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>checkModelStruct
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>checkModelStruct</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function checkModelStruct(model,throwErrors,trimWarnings) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> checkModelStruct
+   Performs a number of checks to ensure that a model structure is ok
+
+   model           a model structure
+   throwErrors     true if the function should throw errors if
+                   inconsistencies are found. The alternative is to
+                   print warnings for all types of issues (opt, default true)
+   trimWarnings    true if only a maximal of 10 items should be displayed in
+                   a given error/warning (opt, default true)
+
+   NOTE: This is performed after importing a model from Excel or before
+   attempting to export a model to SBML format.
+
+   Usage: checkModelStruct(model,throwErrors,trimWarnings)
+
+   Rasmus Agren, 2013-11-03</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="parseFormulas.html" class="code" title="function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, noPolymers,isInchi,ignoreRX)">parseFormulas</a>	parseFormulas</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="exportModel.html" class="code" title="function exportModel(model,fileName,toCOBRA,supressWarnings)">exportModel</a>	exportModel</li><li><a href="importExcelModel.html" class="code" title="function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)">importExcelModel</a>	importExcelModel</li><li><a href="importModel.html" class="code" title="function model=importModel(fileName,removeExcMets,isCOBRA,supressWarnings)">importModel</a>	importModel</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function I=duplicates(strings)</a></li><li><a href="#_sub2" class="code">function I=illegal(strings,type)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function checkModelStruct(model,throwErrors,trimWarnings)</a>
+0002 <span class="comment">% checkModelStruct</span>
+0003 <span class="comment">%   Performs a number of checks to ensure that a model structure is ok</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%   model           a model structure</span>
+0006 <span class="comment">%   throwErrors     true if the function should throw errors if</span>
+0007 <span class="comment">%                   inconsistencies are found. The alternative is to</span>
+0008 <span class="comment">%                   print warnings for all types of issues (opt, default true)</span>
+0009 <span class="comment">%   trimWarnings    true if only a maximal of 10 items should be displayed in</span>
+0010 <span class="comment">%                   a given error/warning (opt, default true)</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">%   NOTE: This is performed after importing a model from Excel or before</span>
+0013 <span class="comment">%   attempting to export a model to SBML format.</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">%   Usage: checkModelStruct(model,throwErrors,trimWarnings)</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">%   Rasmus Agren, 2013-11-03</span>
+0018 <span class="comment">%</span>
+0019 
+0020 <span class="keyword">if</span> nargin&lt;2
+0021     throwErrors=true;
+0022 <span class="keyword">end</span>
+0023 <span class="keyword">if</span> nargin&lt;3
+0024     trimWarnings=true;
+0025 <span class="keyword">end</span>
+0026 
+0027 <span class="comment">%Missing elements</span>
+0028 <span class="keyword">if</span> ~isfield(model,<span class="string">'id'</span>)
+0029     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model is missing the &quot;id&quot; field'</span>,throwErrors);
+0030 <span class="keyword">end</span>
+0031 <span class="keyword">if</span> ~isfield(model,<span class="string">'description'</span>)
+0032     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model is missing the &quot;description&quot; field'</span>,throwErrors);
+0033 <span class="keyword">end</span>
+0034 <span class="keyword">if</span> ~isfield(model,<span class="string">'rxns'</span>)
+0035     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model is missing the &quot;rxns&quot; field'</span>,throwErrors);
+0036 <span class="keyword">end</span>
+0037 <span class="keyword">if</span> ~isfield(model,<span class="string">'mets'</span>)
+0038     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model is missing the &quot;mets&quot; field'</span>,throwErrors);
+0039 <span class="keyword">end</span>
+0040 <span class="keyword">if</span> ~isfield(model,<span class="string">'S'</span>)
+0041     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model is missing the &quot;S&quot; field'</span>,throwErrors);
+0042 <span class="keyword">end</span>
+0043 <span class="keyword">if</span> ~isfield(model,<span class="string">'lb'</span>)
+0044     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model is missing the &quot;lb&quot; field'</span>,throwErrors);
+0045 <span class="keyword">end</span>
+0046 <span class="keyword">if</span> ~isfield(model,<span class="string">'ub'</span>)
+0047     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model is missing the &quot;ub&quot; field'</span>,throwErrors);
+0048 <span class="keyword">end</span>
+0049 <span class="keyword">if</span> ~isfield(model,<span class="string">'rev'</span>)
+0050     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model is missing the &quot;rev&quot; field'</span>,throwErrors);
+0051 <span class="keyword">end</span>
+0052 <span class="keyword">if</span> ~isfield(model,<span class="string">'c'</span>)
+0053     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model is missing the &quot;c&quot; field'</span>,throwErrors);
+0054 <span class="keyword">end</span>
+0055 <span class="keyword">if</span> ~isfield(model,<span class="string">'b'</span>)
+0056     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model is missing the &quot;b&quot; field'</span>,throwErrors);
+0057 <span class="keyword">end</span>
+0058 <span class="keyword">if</span> ~isfield(model,<span class="string">'comps'</span>)
+0059     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model is missing the &quot;comps&quot; field'</span>,throwErrors);
+0060 <span class="keyword">end</span>
+0061 <span class="keyword">if</span> ~isfield(model,<span class="string">'metComps'</span>)
+0062     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model is missing the &quot;metComps&quot; field'</span>,throwErrors);
+0063 <span class="keyword">end</span>
+0064 
+0065 <span class="comment">%Type check</span>
+0066 <span class="keyword">if</span> ~ischar(model.id)
+0067     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;id&quot; field must be a string'</span>,throwErrors);
+0068 <span class="keyword">end</span>
+0069 <span class="keyword">if</span> ~ischar(model.description)
+0070     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;description&quot; field must be a string'</span>,throwErrors);
+0071 <span class="keyword">end</span>
+0072 <span class="keyword">if</span> ~iscellstr(model.rxns)
+0073     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;rxns&quot; field must be a cell array of strings'</span>,throwErrors);
+0074 <span class="keyword">end</span>
+0075 <span class="keyword">if</span> ~iscellstr(model.mets)
+0076     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;mets&quot; field must be a cell array of strings'</span>,throwErrors);
+0077 <span class="keyword">end</span>
+0078 <span class="keyword">if</span> ~isnumeric(model.S)
+0079     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;S&quot; field must be of type &quot;double&quot;'</span>,throwErrors);
+0080 <span class="keyword">end</span>
+0081 <span class="keyword">if</span> ~isnumeric(model.lb)
+0082     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;lb&quot; field must be of type &quot;double&quot;'</span>,throwErrors);
+0083 <span class="keyword">end</span>
+0084 <span class="keyword">if</span> ~isnumeric(model.ub)
+0085     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;ub&quot; field must be of type &quot;double&quot;'</span>,throwErrors);
+0086 <span class="keyword">end</span>
+0087 <span class="keyword">if</span> ~isnumeric(model.rev)
+0088     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;rev&quot; field must be of type &quot;double&quot;'</span>,throwErrors);
+0089 <span class="keyword">end</span>
+0090 <span class="keyword">if</span> ~isnumeric(model.c)
+0091     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;c&quot; field must be of type &quot;double&quot;'</span>,throwErrors);
+0092 <span class="keyword">end</span>
+0093 <span class="keyword">if</span> ~isnumeric(model.b)
+0094     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;b&quot; field must be of type &quot;double&quot;'</span>,throwErrors);
+0095 <span class="keyword">end</span>
+0096 <span class="keyword">if</span> ~iscellstr(model.comps)
+0097     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;comps&quot; field must be a cell array of strings'</span>,throwErrors);
+0098 <span class="keyword">end</span>
+0099 <span class="keyword">if</span> ~isnumeric(model.metComps)
+0100     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;metComps&quot; field must be of type &quot;double&quot;'</span>,throwErrors);
+0101 <span class="keyword">end</span>
+0102 <span class="keyword">if</span> isfield(model,<span class="string">'compNames'</span>)
+0103     <span class="keyword">if</span> ~iscellstr(model.compNames)
+0104         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;compNames&quot; field must be a cell array of strings'</span>,throwErrors);
+0105     <span class="keyword">end</span>
+0106 <span class="keyword">end</span>
+0107 <span class="keyword">if</span> isfield(model,<span class="string">'compOutside'</span>)
+0108     <span class="keyword">if</span> ~iscellstr(model.compOutside)
+0109         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;compOutside&quot; field must be a cell array of strings'</span>,throwErrors);
+0110     <span class="keyword">end</span>
+0111 <span class="keyword">end</span>
+0112 <span class="keyword">if</span> isfield(model,<span class="string">'rxnNames'</span>)
+0113     <span class="keyword">if</span> ~iscellstr(model.rxnNames)
+0114         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;rxnNames&quot; field must be a cell array of strings'</span>,throwErrors);
+0115     <span class="keyword">end</span>
+0116 <span class="keyword">end</span>
+0117 <span class="keyword">if</span> isfield(model,<span class="string">'metNames'</span>)
+0118     <span class="keyword">if</span> ~iscellstr(model.metNames)
+0119         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;metNames&quot; field must be a cell array of strings'</span>,throwErrors);
+0120     <span class="keyword">end</span>
+0121 <span class="keyword">end</span>
+0122 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
+0123     <span class="keyword">if</span> ~iscellstr(model.genes)
+0124         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;genes&quot; field must be a cell array of strings'</span>,throwErrors);
+0125     <span class="keyword">end</span>
+0126 <span class="keyword">end</span>
+0127 <span class="keyword">if</span> isfield(model,<span class="string">'rxnGeneMat'</span>)
+0128     <span class="keyword">if</span> ~isnumeric(model.rxnGeneMat)
+0129         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;rxnGeneMat&quot; field must be of type &quot;double&quot;'</span>,throwErrors);
+0130     <span class="keyword">end</span>
+0131 <span class="keyword">end</span>
+0132 <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
+0133     <span class="keyword">if</span> ~iscellstr(model.grRules)
+0134         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;grRules&quot; field must be a cell array of strings'</span>,throwErrors);
+0135     <span class="keyword">end</span>
+0136 <span class="keyword">end</span>
+0137 <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
+0138     <span class="keyword">if</span> ~isnumeric(model.rxnComps)
+0139         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;rxnComps&quot; field must be of type &quot;double&quot;'</span>,throwErrors);
+0140     <span class="keyword">end</span>
+0141 <span class="keyword">end</span>
+0142 <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
+0143     <span class="keyword">if</span> ~iscellstr(model.inchis)
+0144         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;inchis&quot; field must be a cell array of strings'</span>,throwErrors);
+0145     <span class="keyword">end</span>
+0146 <span class="keyword">end</span>
+0147 <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
+0148     <span class="keyword">if</span> ~iscellstr(model.metFormulas)
+0149         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;metFormulas&quot; field must be a cell array of strings'</span>,throwErrors);
+0150     <span class="keyword">end</span>
+0151 <span class="keyword">end</span>
+0152 <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
+0153     <span class="keyword">if</span> ~iscellstr(model.subSystems)
+0154         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;subSystems&quot; field must be a cell array of strings'</span>,throwErrors);
+0155     <span class="keyword">end</span>
+0156 <span class="keyword">end</span>
+0157 <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
+0158     <span class="keyword">if</span> ~iscellstr(model.eccodes)
+0159         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;eccodes&quot; field must be a cell array of strings'</span>,throwErrors);
+0160     <span class="keyword">end</span>
+0161 <span class="keyword">end</span>
+0162 <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
+0163     <span class="keyword">if</span> ~isnumeric(model.unconstrained)
+0164         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;unconstrained&quot; field must be of type &quot;double&quot;'</span>,throwErrors);
+0165     <span class="keyword">end</span>
+0166 <span class="keyword">end</span>
+0167 
+0168 <span class="comment">%Empty strings</span>
+0169 <span class="keyword">if</span> isempty(model.id)
+0170     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The &quot;id&quot; field cannot be empty'</span>,throwErrors);
+0171 <span class="keyword">end</span>
+0172 <span class="keyword">if</span> any(cellfun(@isempty,model.rxns))
+0173     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model contains empty reaction IDs'</span>,throwErrors);
+0174 <span class="keyword">end</span>
+0175 <span class="keyword">if</span> any(cellfun(@isempty,model.mets))
+0176     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model contains empty metabolite IDs'</span>,throwErrors);
+0177 <span class="keyword">end</span>
+0178 <span class="keyword">if</span> any(cellfun(@isempty,model.comps))
+0179     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model contains empty compartment IDs'</span>,throwErrors);
+0180 <span class="keyword">end</span>
+0181 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The following metabolites have empty names:'</span>,throwErrors,model.mets(cellfun(@isempty,model.metNames)),trimWarnings);
+0182 
+0183 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
+0184     <span class="keyword">if</span> any(cellfun(@isempty,model.genes))
+0185         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model contains empty gene IDs'</span>,throwErrors);
+0186     <span class="keyword">end</span>
+0187 <span class="keyword">end</span>
+0188 
+0189 <span class="comment">%Illegal characters in IDs</span>
+0190 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'Illegal characters in reaction IDs:'</span>,throwErrors,model.rxns(<a href="#_sub2" class="code" title="subfunction I=illegal(strings,type)">illegal</a>(model.rxns,<span class="string">'id'</span>)),trimWarnings);
+0191 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'Illegal characters in metabolite IDs:'</span>,throwErrors,model.mets(<a href="#_sub2" class="code" title="subfunction I=illegal(strings,type)">illegal</a>(model.mets,<span class="string">'id'</span>)),trimWarnings);
+0192 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'Illegal characters in compartment IDs:'</span>,throwErrors,model.comps(<a href="#_sub2" class="code" title="subfunction I=illegal(strings,type)">illegal</a>(model.comps,<span class="string">'id'</span>)),trimWarnings);
+0193 
+0194 <span class="comment">%Duplicates</span>
+0195 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The following reaction IDs are duplicates:'</span>,throwErrors,model.rxns(<a href="#_sub1" class="code" title="subfunction I=duplicates(strings)">duplicates</a>(model.rxns)),trimWarnings);
+0196 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The following metabolite IDs are duplicates:'</span>,throwErrors,model.mets(<a href="#_sub1" class="code" title="subfunction I=duplicates(strings)">duplicates</a>(model.mets)),trimWarnings);
+0197 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The following compartment IDs are duplicates:'</span>,throwErrors,model.comps(<a href="#_sub1" class="code" title="subfunction I=duplicates(strings)">duplicates</a>(model.comps)),trimWarnings);
+0198 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
+0199     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The following genes are duplicates:'</span>,throwErrors,model.genes(<a href="#_sub1" class="code" title="subfunction I=duplicates(strings)">duplicates</a>(model.genes)),trimWarnings);
+0200 <span class="keyword">end</span>
+0201 metInComp=strcat(model.metNames,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>);
+0202 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The following metabolites already exist in the same compartment:'</span>,throwErrors,metInComp(<a href="#_sub1" class="code" title="subfunction I=duplicates(strings)">duplicates</a>(metInComp)),trimWarnings);
+0203     
+0204 <span class="comment">%Elements never used (print only as warnings</span>
+0205 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The following reactions are empty (no involved metabolites):'</span>,false,model.rxns(~any(model.S,1)),trimWarnings);
+0206 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The following metabolites are never used in a reaction:'</span>,false,model.mets(~any(model.S,2)),trimWarnings);
+0207 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
+0208     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The following genes are not associated to a reaction:'</span>,false,model.genes(~any(model.rxnGeneMat,1)),trimWarnings);
+0209 <span class="keyword">end</span>
+0210 I=true(numel(model.comps),1);
+0211 I(model.metComps)=false;
+0212 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The following compartments contain no metabolites:'</span>,false,model.comps(I),trimWarnings);
+0213 
+0214 <span class="comment">%Contradicting bounds</span>
+0215 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The following reactions have contradicting bounds:'</span>,throwErrors,model.rxns(model.lb&gt;model.ub),trimWarnings);
+0216 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The following reactions have bounds contradicting their reversibility:'</span>,throwErrors,model.rxns(model.lb&lt;0 &amp; model.rev==0),trimWarnings);
+0217 
+0218 <span class="comment">%Mapping of compartments</span>
+0219 <span class="keyword">if</span> isfield(model,<span class="string">'compOutside'</span>)
+0220     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The following compartments are in &quot;compOutside&quot; but not in &quot;comps&quot;:'</span>,throwErrors,setdiff(model.compOutside,[{<span class="string">''</span>};model.comps]),trimWarnings);
+0221 <span class="keyword">end</span>
+0222 
+0223 <span class="comment">%Met names which start with number</span>
+0224 I=false(numel(model.metNames),1);
+0225 <span class="keyword">for</span> i=1:numel(model.metNames)
+0226    index=strfind(model.metNames{i},<span class="string">' '</span>);
+0227    <span class="keyword">if</span> any(index)
+0228        <span class="keyword">if</span> any(str2double(model.metNames{i}(1:index(1)-1)))
+0229            I(i)=true;
+0230        <span class="keyword">end</span>
+0231    <span class="keyword">end</span>
+0232 <span class="keyword">end</span>
+0233 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The following metabolite names begin with a number directly followed by space:'</span>,throwErrors,model.mets(I),trimWarnings);
+0234 
+0235 <span class="comment">%Non-parseable composition</span>
+0236 <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
+0237     [crap, crap, exitFlag]=<a href="parseFormulas.html" class="code" title="function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, noPolymers,isInchi,ignoreRX)">parseFormulas</a>(model.metFormulas,true,false);
+0238      <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The composition for the following metabolites could not be parsed:'</span>,false,model.mets(exitFlag==-1),trimWarnings);
+0239 <span class="keyword">end</span>
+0240 
+0241 <span class="comment">%Check if there are metabolites with different names but the same MIRIAM</span>
+0242 <span class="comment">%codes</span>
+0243 <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
+0244     miriams=containers.Map();
+0245     <span class="keyword">for</span> i=1:numel(model.mets)
+0246        <span class="keyword">if</span> ~isempty(model.metMiriams{i})
+0247           <span class="comment">%Loop through and add for each miriam</span>
+0248           <span class="keyword">for</span> j=1:numel(model.metMiriams{i}.name)
+0249              <span class="comment">%Get existing metabolite indexes</span>
+0250              current=strcat(model.metMiriams{i}.name{j},<span class="string">':'</span>,model.metMiriams{i}.value{j});
+0251              <span class="keyword">if</span> isKey(miriams,current)
+0252                  existing=miriams(current);
+0253              <span class="keyword">else</span>
+0254                  existing=[];
+0255              <span class="keyword">end</span>
+0256              miriams(current)=[existing;i];
+0257           <span class="keyword">end</span>
+0258        <span class="keyword">end</span>
+0259     <span class="keyword">end</span>
+0260     
+0261     <span class="comment">%Get all keys</span>
+0262     allMiriams=keys(miriams);
+0263     
+0264     hasMultiple=false(numel(allMiriams),1);
+0265     <span class="keyword">for</span> i=1:numel(allMiriams)
+0266         <span class="keyword">if</span> numel(miriams(allMiriams{i}))&gt;1
+0267            <span class="comment">%Check if they all have the same name</span>
+0268            <span class="keyword">if</span> numel(unique(model.metNames(miriams(allMiriams{i}))))&gt;1
+0269                hasMultiple(i)=true;
+0270            <span class="keyword">end</span>
+0271         <span class="keyword">end</span>
+0272     <span class="keyword">end</span>
+0273     
+0274     <span class="comment">%Print output</span>
+0275     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The following MIRIAM strings are associated to more than one unique metabolite name:'</span>,false,allMiriams(hasMultiple));
+0276 <span class="keyword">end</span>
+0277 
+0278 <span class="comment">%Check if there are metabolites with different names but the same InChI</span>
+0279 <span class="comment">%codes</span>
+0280 <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
+0281     inchis=containers.Map();
+0282     <span class="keyword">for</span> i=1:numel(model.mets)
+0283        <span class="keyword">if</span> ~isempty(model.inchis{i})
+0284          <span class="comment">%Get existing metabolite indexes</span>
+0285          <span class="keyword">if</span> isKey(inchis,model.inchis{i})
+0286              existing=inchis(model.inchis{i});
+0287          <span class="keyword">else</span>
+0288              existing=[];
+0289          <span class="keyword">end</span>
+0290          inchis(model.inchis{i})=[existing;i];
+0291        <span class="keyword">end</span>
+0292     <span class="keyword">end</span>
+0293     
+0294     <span class="comment">%Get all keys</span>
+0295     allInchis=keys(inchis);
+0296     
+0297     hasMultiple=false(numel(allInchis),1);
+0298     <span class="keyword">for</span> i=1:numel(allInchis)
+0299         <span class="keyword">if</span> numel(inchis(allInchis{i}))&gt;1
+0300            <span class="comment">%Check if they all have the same name</span>
+0301            <span class="keyword">if</span> numel(unique(model.metNames(inchis(allInchis{i}))))&gt;1
+0302                hasMultiple(i)=true;
+0303            <span class="keyword">end</span>
+0304         <span class="keyword">end</span>
+0305     <span class="keyword">end</span>
+0306     
+0307     <span class="comment">%Print output</span>
+0308     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The following InChI strings are associated to more than one unique metabolite name:'</span>,false,allInchis(hasMultiple));
+0309 <span class="keyword">end</span>
+0310 <span class="keyword">end</span>
+0311 
+0312 <a name="_sub1" href="#_subfunctions" class="code">function I=duplicates(strings)</a>
+0313     I=false(numel(strings),1);
+0314     [J K]=unique(strings);
+0315     <span class="keyword">if</span> numel(J)~=numel(strings)
+0316         L=1:numel(strings);
+0317         L(K)=[];
+0318         I(L)=true;
+0319     <span class="keyword">end</span>
+0320 <span class="keyword">end</span>
+0321 <a name="_sub2" href="#_subfunctions" class="code">function I=illegal(strings,type)</a>
+0322     <span class="comment">%Just to save some space</span>
+0323     <span class="keyword">if</span> strcmpi(type,<span class="string">'id'</span>)
+0324         <span class="comment">%Checks which strings in a cell array contains illegal characters</span>
+0325         I=cellfun(@any,regexp(strings,<span class="string">'[^a-z_A-Z0-9-]'</span>, <span class="string">'once'</span>));
+0326     <span class="keyword">else</span>
+0327 
+0328     <span class="keyword">end</span>
+0329 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 06-Jan-2014 14:58:12 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,625 @@
+#!/usr/bin/perl -w
+# Date of last CVS update: $Date: 2006/08/28 05:45:25 $
+# load FindBin in BEGIN block to enable relative path module import.
+BEGIN{  
+    use FindBin;
+    push @INC, "$FindBin::Bin/psortModules";
+}
+use PsortRegexMotifs;
+use PsortAminoAcidIndex;
+use PsortSeq;
+use File::Basename;
+use strict;
+our ( $OPT_V, $endl );
+#
+# psortModifiedForWoLF, version of PSORT II which has been
+# extended by Paul Horton for use with WoLF PSORT
+#
+###############################################################
+## PSORT II:  main routine
+##                      beta version (971107)
+##            copyright: Kenta Nakai & Paul Horton, 1997
+###############################################################
+
+#  ----------- contact and license ---------------------------
+# Please send comments, bug reports, or bug fixes to:
+#     knakai@ims.u-tokyo.ac.jp (or horton-p AT aist.go.jp)
+
+#     You may use and redistribute this under the Free Software
+#     Foundation GPL license. Other licenses may be possible,
+#     If interested please contact the authors.
+
+# --------------------------------------------------------------------
+# Usages:
+#     psort -t training_file_name    for creating DBM files
+#     psort (-v) testing_file_name   for prediction (-v: verbose mode)
+#     psort -t training_file (-v) testing_file    is also possible
+
+my $usage  = "Usage: $0 -t training_file\n";
+$usage .=    "       $0 [-v] testing_file\n";
+$usage .=    "       $0 -t training_file [-v] testing_file\n";
+$usage .=    "       $0 --outputForWoLF --noNormalization [--labeledInput] [--append-sequence-fasta-head] fasta_file\n";
+$usage .=    "\n\nIf you are using this in conjunction with WoLF PSORT it is better to run it through the 2 wrapper programs: runWolfPsortSummary and runWolfPsortHtmlTables\n";
+
+# --------------------------------------------------------------------
+# Program files: psort, sub1.pl, sub2.pl, psortMotifFeatures.pl
+#
+# DBM files created by the '-t' option:
+#   attribute.(dir/pag), range.(dir/pag), locat.(dir/pag)
+
+#   N.B.: In its original distribution, these files were created
+#         by the sequence information from the SWISS-PROT database
+#         and the localization information from the YPD database
+
+# --------------------------------------------------------------------
+# Input File format:
+#    The format of both the training sequence file and the
+#    testing sequence file should be the FASTA (Pearson) format.
+#    In the training file, a one-word label for the localization
+#    information of each sequence should be written as the
+#    second word of its title line, e.g.:
+#    >P00001  nuc  this is a sample sequence
+
+# --------------------------------------------------------------------
+# Global variables, also used in other files
+#    $OPT_V      flag for the verbose option
+#
+# Variables global within this file
+
+my $trainSeqsFilename; # filename of training sequences, used for % PSORTII -t all.seq
+# DBM variables:
+my %ATTRIB; #     { seq_id }{ var_name } = var_value
+my %RANGE;  #     { var_name }{ min/max } = min/max_value
+my %LOCAT;  #     { seq_id } = loc_label
+
+my $minSeqLen = 30;
+
+require "$FindBin::Bin/sub1.pl";
+require "$FindBin::Bin/sub2.pl";
+
+#########################################
+my $K_VALUE = 25;   ## parameter for kNN
+#########################################
+
+my $big_num = 99999;
+
+my $testSeqsPathname;
+my %training_class_freq;
+my @training_names;
+my %vars;
+
+## user options #################################################
+$OPT_V = 0;  ## default is not the verbose mode. Global used in 
+my $OPT_HTML = 0; ## default is to not output html
+my $OPT_T = 0;  ## default is not the training mode
+my $OPT_NORMALIZE = 0; ## default is to normalize
+my $OPT_OUTPUT_FOR_WOLF = 0; # can be set to true (1) to produce output suitable for the wolf classifier to read
+my $OPT_PSORTII_PREDICTION = 1; # can be set to false (0) to produce avoid PSORTII prediction (and the need for the dbm files)
+my $OPT_APPEND_SEQUENCE_FASTA_HEAD = 0; # print input sequence fasta head line
+                                        # to output stream before each prediction result.
+# $expectLabeledInput = 0; # expect localization field in the fasta label line of input sequences. Added for WoLF.
+
+my $testFileGivenOnCommandLine = 0;
+
+( @ARGV > 0 ) || die $usage;
+
+while ($_ = shift) {
+    if( /^-v$/) {
+	$OPT_V = 1; # true
+    } elsif(/^-t$/) {
+	$OPT_T = 1; # true
+	$trainSeqsFilename = shift;
+	$PsortSeq::expectLabeledInput = 1;
+    } elsif(/^--noNormalization/i) {
+	$OPT_NORMALIZE = 0; # false
+    } elsif(/^--outputForWolf/i){
+	$OPT_OUTPUT_FOR_WOLF = 1;
+	$OPT_PSORTII_PREDICTION = 0;
+    } elsif(/^--labeledInput/ ){
+	$PsortSeq::expectLabeledInput = 1;
+    } elsif(/^--append-sequence-fasta-head/ ){
+	$OPT_APPEND_SEQUENCE_FASTA_HEAD = 1;
+    } elsif(/^--noPSORTIIprediction/i){
+	$OPT_PSORTII_PREDICTION = 0;
+    } elsif(/^--html/i){
+	$OPT_HTML = 1;
+    } else {
+	if( $testFileGivenOnCommandLine ){
+	    die "\"$testSeqsPathname\" and \"$_\" both appear to be filenames. Check Usage.";
+	}
+	$testFileGivenOnCommandLine = 1;
+	if( /^-/ ){
+	    warn "attempting to use filename $_, which starts with a \'-\', might be a mistyped option?\n";
+	}
+	$testSeqsPathname = $_;
+    }
+}
+
+if( $OPT_HTML ){ $endl = "<br>\n";}
+else{            $endl = "\n"; }
+
+# for wolf
+my @amino_acid_chars = qw( A R N D C Q E G H I L K M F P S T W Y V );
+
+my @variable_names = 
+    sort { $a cmp $b } qw( act alm bac caa dna erl erm gpi gvh leu
+			   m1a m1b m2 m3a m3b mNt m_ mip mit myr nuc
+			   pox psg px2 rib rnp tms top tyr vac yqr
+			   maxHydropathy5_29_11 maxHydropathy0_29_12
+			   averageNegativeCharge0_24 maxNegativeCharge0_19_12 );
+
+my @psortII_variable_names = 
+    sort { $a cmp $b } qw( act alm bac caa dna erl erm gpi gvh leu
+			   m1a m1b m2 m3a m3b mNt m_ mip mit myr nuc
+			   pox psg px2 rib rnp tms top tyr vac yqr );
+
+my %loc_info = (
+ 'csk' =>  'cytoskeletal',
+ 'cyt' =>  'cytoplasmic',
+ 'nuc' =>  'nuclear',
+ 'mit' =>  'mitochondrial',
+ 'ves' =>  'vesicles of secretory system',
+ 'end' =>  'endoplasmic reticulum',
+ 'gol' =>  'Golgi',
+ 'vac' =>  'vacuolar',
+ 'pla' =>  'plasma membrane',
+ 'pox' =>  'peroxisomal',
+ 'exc' =>  'extracellular, including cell wall'
+## in the original YPD classification, 'mem' and 'lip' were not used
+);
+
+## processing the training data ###########################################
+
+if($OPT_T) {
+    my $trainSeqsFile;
+    open($trainSeqsFile, $trainSeqsFilename) || 
+	die "can't open $trainSeqsFilename; Usage: psort -t training_seq_file\n";
+
+    warn "Creating new data files..\n";
+    unlink "attribute.dir" if -e "attribute.dir";
+    unlink "attribute.pag" if -e "attribute.pag";
+    unlink "range.dir" if -e "range.dir";
+    unlink "range.pag" if -e "range.pag";
+    unlink "locat.dir" if -e "locat.dir";
+    unlink "locat.pag" if -e "locat.pag";
+
+    dbmopen(%ATTRIB, "./attribute", 0666) || 
+	die "can't create \"attribute\" DBM file\n";
+    dbmopen(%RANGE, "./range", 0666) || 
+	die "can't create \"range\" DBM file\n";
+    dbmopen(%LOCAT, "./locat", 0666) || 
+	die "can't create \"locat\" DBM file\n";
+
+## initailize
+    foreach (@variable_names) {
+	$RANGE{$_, 'max'} = -$big_num;
+	$RANGE{$_, 'min'} =  $big_num;
+    }
+
+
+## read and calculate
+
+    my $seq_count = 0;
+
+    while( PsortSeq::readOneSequence($trainSeqsFile) ){
+
+	if($PsortSeq::len < $minSeqLen) {
+	    warn "$PsortSeq::id: too short length ($PsortSeq::len), skipped\n";
+	    next;
+	} elsif( $PsortSeq::badAminoAcidCharsFoundList ){
+	    warn "$PsortSeq::id includes bad amino acid characters: $PsortSeq::badAminoAcidCharsFoundList, skipped\n";
+	    next;
+	} elsif(defined $LOCAT{$PsortSeq::id}) {
+	    warn "$PsortSeq::id entry name found twice in training file, skipped\n";
+	    next;
+	} elsif(defined $loc_info{$PsortSeq::loc}) {
+	    $LOCAT{$PsortSeq::id} = $PsortSeq::loc;  # define
+	    $seq_count++;
+	} else {
+	    warn "$PsortSeq::id skipped because its location, $PsortSeq::loc, was ambiguous\n";
+	    next;
+	}
+	printf "%s %s %4d\n", $PsortSeq::id, $PsortSeq::loc, $PsortSeq::len;
+
+	%vars = &seqana;
+
+	foreach (@variable_names) {
+	    $ATTRIB{$PsortSeq::id, $_} = $vars{$_};
+	    $RANGE{$_, 'min'} = $vars{$_} if $RANGE{$_, 'min'} > $vars{$_};
+	    $RANGE{$_, 'max'} = $vars{$_} if $RANGE{$_, 'max'} < $vars{$_};
+	}
+    }
+
+## normalization
+
+    if( $OPT_NORMALIZE ){
+	warn "Normalizing the variables...\n";
+	
+	my $name;
+	foreach $name (@variable_names) {
+	    die "big_num error for $name\n" if $RANGE{$name, 'min'} == $big_num;
+	    die "big_num error for $name\n" if $RANGE{$name, 'max'} == -$big_num;
+	    my $range = $RANGE{$name, 'max'} - $RANGE{$name, 'min'};
+	    warn "Warning: variable $name has a range of zero\n" if $range == 0;
+
+	    while( my $seqid = (each %LOCAT)[0] ) {
+		if($range > 0) {
+#		print "$seqid $name ",$ATTRIB{$seqid, $name}, "\n";
+		    $ATTRIB{$seqid, $name} = 
+			($ATTRIB{$seqid, $name} - $RANGE{$name, 'min'}) / $range;
+		} else {
+		    $ATTRIB{$seqid, $name} = 0;
+		}
+	    }
+	}
+    }
+
+    print "training processes done.  $seq_count sequences in total\n";
+
+    close $trainSeqsFile;
+    dbmclose %ATTRIB unless defined $testSeqsPathname;
+    dbmclose %RANGE unless defined $testSeqsPathname;
+    dbmclose %LOCAT unless defined $testSeqsPathname;
+
+} # end if( $OPT_T ).
+
+## processing the test file ###############################################
+
+my $testSeqsFile;
+
+if(defined($testSeqsPathname)) {
+    open($testSeqsFile, $testSeqsPathname) || die "*** Can't open $testSeqsPathname\n";
+} else {
+    $testSeqsFile = *STDIN;
+    warn "Reading sequences in from STDIN\n"  if( $OPT_V );
+}
+
+if( $OPT_PSORTII_PREDICTION ){
+    unless( defined($trainSeqsFilename) ) {
+	unless(dbmopen(%ATTRIB, "$FindBin::Bin/attribute", 0666)) {
+	    warn "** No attribute file. You must use the -t option, first\n";
+	    die "Usage: psort -t training_seq_file (-v) test_seq_file\n";
+	}
+	unless(dbmopen(%RANGE, "$FindBin::Bin/range", 0666)) {
+	    warn "** No range file. You must use the -t option, first\n";
+	    die "Usage: psort -t training_seq_file (-v) test_seq_file\n";
+	}
+	unless(dbmopen(%LOCAT, "$FindBin::Bin/locat", 0666)) {
+	    warn "** No range file. You must use the -t option, first\n";
+	    die "Usage: psort -t training_seq_file (-v) test_seq_file\n";
+	}
+    }
+
+    @training_names = ();
+
+    while(($PsortSeq::id, $PsortSeq::loc) = each %LOCAT) {
+
+	push(@training_names, $PsortSeq::id);
+	if(defined( $training_class_freq{ $PsortSeq::loc } ) ) {
+	    ++$training_class_freq{ $PsortSeq::loc };
+	} else {
+	    $training_class_freq{ $PsortSeq::loc } = 1;
+	}
+
+    }
+} # end if( $OPT_PSORTII_PREDICTION )
+
+# print out id class and feature names 
+# WoLF to needs that information on the first line of its input
+if( $OPT_OUTPUT_FOR_WOLF ){
+    print "id class ";
+    for( @amino_acid_chars ){
+	print " $_", "cont";
+    }
+    print " length ";
+    for( @variable_names ){ print "$_ "; }
+	
+    print "\n";
+}
+			    
+## sequence input
+
+while( PsortSeq::readOneSequence($testSeqsFile) ){
+    
+    if( $PsortSeq::len < $minSeqLen ){
+	warn "$PsortSeq::id: too short length ($PsortSeq::len), skipped\n";
+	next;
+    } elsif( $PsortSeq::badAminoAcidCharsFoundList ){
+	warn "$PsortSeq::id includes bad amino acid characters:\n\"$PsortSeq::badAminoAcidCharsFoundList\", skipped\n";
+	next;
+    } elsif(defined $LOCAT{$PsortSeq::id}) {
+	warn "$PsortSeq::id entry name is found in training file, skipped\n";
+	next;
+    }
+
+    unless( $OPT_OUTPUT_FOR_WOLF ){
+	if( $OPT_HTML ){
+	    my $test_filename = basename( $testSeqsPathname ); # 2006/01/07 added by P.H.
+	    print "<html><title>$test_filename PSORT verbose output</title>\n<body>\n";
+	    print "<hr><br>\n";
+	}else{
+	    print '-' x75, "\n";
+	}
+    }
+    if($OPT_V) {
+	if( $OPT_HTML ){
+	    printf("<a name=\"%s\">%s</a> (%d aa)\n%s<br>\n", $PsortSeq::id, $PsortSeq::id, $PsortSeq::len, $PsortSeq::description);
+	}else{
+	    printf("%s (%d aa)\n%s\n\n", $PsortSeq::id, $PsortSeq::len, $PsortSeq::description);
+	    PsortSeq::prettyPrint();
+	    print "\n";
+	}
+    }else {
+	unless( $OPT_OUTPUT_FOR_WOLF ){ print "$PsortSeq::id\t$PsortSeq::description\n\n"; }
+    }
+
+    my %vars = &seqana;
+
+    if( $OPT_OUTPUT_FOR_WOLF ){
+	if( $PsortSeq::expectLabeledInput ){ print "$PsortSeq::id $PsortSeq::loc"; }
+	else{                     print "$PsortSeq::id unknown"; }
+	my $checkSum = 0;
+	my $numStandardAminoAcidChars = $PsortSeq::seq =~ tr/ARNDCQEGHILKMFPSTWYV/ARNDCQEGHILKMFPSTWYV/; # literals bad...
+	for my $amino_acid_char ( @amino_acid_chars ){
+	    my $frequencyCurrentAminoAcid = 0;
+	    for( my $i = 0; $i < $PsortSeq::len; ++$i ){
+		++$frequencyCurrentAminoAcid if( $amino_acid_char eq substr( $PsortSeq::seq, $i, 1 ) );
+	    }
+	    $checkSum += $frequencyCurrentAminoAcid;
+	    my $fractionCurrentAminoAcid = $frequencyCurrentAminoAcid / $numStandardAminoAcidChars;
+	    print " $fractionCurrentAminoAcid"; 
+	}
+	$checkSum == $numStandardAminoAcidChars || die "error in amino acid composition calculation\n, number of standard amino acid chars: $numStandardAminoAcidChars != checkSum: $checkSum";
+	print " $PsortSeq::len";
+	for my $varName (@variable_names){
+	    unless( defined( $vars{$varName} ) ){
+		warn "variable: $_, not defined\n";
+		next;
+	    }
+	    print " $vars{$varName}";
+	}
+	print "#$PsortSeq::fastaHead"  if( $OPT_APPEND_SEQUENCE_FASTA_HEAD );
+	print "\n";
+	next;
+    }
+
+## normalization
+    if( $OPT_PSORTII_PREDICTION ){
+	foreach (@psortII_variable_names) {
+	    if( !defined( $RANGE{$_, 'max'} ) ){
+		warn "max for variable $_ not defined\n";
+	    }
+	    if( !defined( $RANGE{$_, 'min'} ) ){
+		warn "min for variable $_ not defined\n";
+	    }
+	    my $range = $RANGE{$_, 'max'} - $RANGE{$_, 'min'};
+	    die "$PsortSeq::id: var $_ undefined\n" unless defined $vars{$_};
+	    if($range > 0) {
+		$vars{$_} = ($vars{$_} - $RANGE{$_, 'min'}) / $range;
+	    } else {
+		$vars{$_} = 0;
+	    }
+	}
+
+
+	unless($OPT_V) {
+	    my $i = 0;
+	    foreach (@variable_names) {
+		printf " %-3s: %4.2f", $_, $vars{$_};
+		print ((++$i % 7 == 0) ? "\n" : " ");
+	    }
+	    print "\n\n";
+	}
+    }
+
+## kNN
+   &knn ($K_VALUE, %vars) if $OPT_PSORTII_PREDICTION;
+}
+
+close $testSeqsFile;
+dbmclose %ATTRIB;
+dbmclose %RANGE;
+dbmclose %LOCAT;
+
+#######################################################################
+# main subroutines
+#######################################################################
+
+sub seqana {
+
+    my($gvhpos, $npos, $middle, $sig, $mtype, $start, $end, $gmotif);
+    my(%varsLocal);
+
+    if($OPT_V &&
+       defined($PsortSeq::seq[0]) &&
+       $PsortSeq::seq[0] ne 'M') {
+	print "*** Warning: 1st aa is not methyonine\n\n";
+    } 
+
+## signal peptide
+    $varsLocal{psg} = sub1::psg();
+
+    ($varsLocal{gvh}, $gvhpos) = &sub1::gvh("eukaryote");
+
+    if($varsLocal{psg} > 0 && $varsLocal{gvh} > -2.1) {
+	$sig = 'cleavable';
+	print ">>> Seems to have a cleavable signal peptide (1 to $gvhpos)\n\n"
+			if $OPT_V;
+    	($varsLocal{tms}, $varsLocal{alm}, $npos) = &sub1::alom2($gvhpos+1, 0.5, -2.0);
+	$middle = int($gvhpos / 2);
+    } else {
+	$sig = 'nosignal';
+	print 
+	    ">>> Seems to have no N-terminal signal peptide\n\n" if $OPT_V;
+    	($varsLocal{tms}, $varsLocal{alm}, $npos) = &sub1::alom2(1, 0.5, -2.0);
+	$middle = $npos + 7;
+    }
+
+    if($varsLocal{psg} <= 0 && $varsLocal{tms} == 0) {
+	$varsLocal{top} = 0;
+    } else {
+   	$varsLocal{top} = &sub1::mtop($middle);
+	if($varsLocal{psg} > 0 && $varsLocal{top} > 0 && $OPT_V) {
+	    print 
+		">>>Caution: Inconsistent mtop result with signal peptide\n";
+	}
+    }
+
+    ($mtype, $start, $end) = &sub1::mtype_assign($varsLocal{tms}, $sig, $varsLocal{top});
+    die "$PsortSeq::id: inconsistent ($mtype) $start : $end\n" unless $start <= $end;
+
+    $varsLocal{gpi} = 0;
+    if($varsLocal{tms} > 0) {
+	print ">>> membrane topology: type $mtype" if $OPT_V;
+	if($mtype eq '3a' || $mtype eq '3b') {
+	    print "\n\n" if $OPT_V;
+	} else {
+	    print "  (cytoplasmic tail $start to $end)\n\n" if $OPT_V; 
+	    if($mtype eq '1a' && ($end-$start < 10)) {
+		print ">>> Seems to be GPI anchored\n\n" if $OPT_V;
+		$varsLocal{gpi} = 1;
+	    }
+	}
+    }
+
+################################
+    $varsLocal{mit} = &sub2::mitdisc;
+    ($varsLocal{mip}, $gmotif) = &sub2::gavel;
+    $varsLocal{nuc} = &sub2::nucdisc;
+    $varsLocal{erl} = &sub2::hdel;
+    $varsLocal{erm} = &sub2::erm($mtype);
+    $varsLocal{pox} = &sub2::pts1;
+    $varsLocal{px2} = &sub2::pts2;
+    $varsLocal{vac} = &sub2::vaccalc;
+    $varsLocal{rnp} = &sub2::rnp1;
+    $varsLocal{act} = &sub2::actin;
+    $varsLocal{myr} = &sub2::nmyr;
+    $varsLocal{caa} = &sub2::isoprenyl;
+    $varsLocal{yqr} = &sub2::yqrl($varsLocal{tms}, $start);
+    $varsLocal{tyr} = &sub2::tyros($varsLocal{tms}, $start, $end);
+    $varsLocal{leu} = &sub2::dileu($varsLocal{tms}, $start, $end);
+################################
+
+    $varsLocal{dna} = computeRegexMotifFeature( "dnaBinding" );
+    computeRegexMotifFeature( "dnaBindingLessSpecific" ); # not currently used for prediction.
+    $varsLocal{rib} = computeRegexMotifFeature( "ribosomal" );
+    $varsLocal{bac} = computeRegexMotifFeature( "bacterialDnaBinding" );
+
+
+##########
+   
+    ($varsLocal{m1a}, $varsLocal{m1b}, $varsLocal{m2}, $varsLocal{mNt}, 
+	 $varsLocal{m3a}, $varsLocal{m3b}, $varsLocal{m_})  = (0,0,0,0,0,0,0);
+
+    if($mtype eq '1a') {$varsLocal{m1a} = 1;}
+    elsif($mtype eq '1b') {$varsLocal{m1b} = 1;}
+    elsif($mtype eq '2 ') {$varsLocal{m2} = 1;}
+    elsif($mtype eq 'Nt') {$varsLocal{mNt} = 1;} 
+    elsif($mtype eq '3a') {$varsLocal{m3a}= 1;} 
+    elsif($mtype eq '3b') {$varsLocal{m3b}= 1;} 
+    elsif($mtype eq '__') {$varsLocal{m_}= 1;} 
+    else {die "*** undefined mtype value: $mtype\n";}
+
+### variables from iPSORT
+    my $KyteDoolittle =  PsortAminoAcidIndex->new( "KYTJ820101" );
+    my $KleinNetCharge = PsortAminoAcidIndex->new( "KLEP840101" );
+    
+    $varsLocal{maxHydropathy5_29_11} =
+	$KyteDoolittle->maxWindowAverage( \@PsortSeq::seq, 11, 5, 24 );
+
+    $varsLocal{maxHydropathy0_29_12} =
+	$KyteDoolittle->maxWindowAverage( \@PsortSeq::seq, 12, 0, 29 );
+
+    $varsLocal{averageNegativeCharge0_24} =
+	$KleinNetCharge->seqAverage( \@PsortSeq::seq, 0, 24 );
+
+    $varsLocal{averageNegativeCharge0_24} =
+	$KleinNetCharge->seqAverage( \@PsortSeq::seq, 0, 24 );
+
+    $varsLocal{maxNegativeCharge0_19_12} =
+	$KleinNetCharge->maxWindowAverage( \@PsortSeq::seq, 7, 0, 19 );
+
+    %varsLocal;
+}
+
+
+sub computeRegexMotifFeature{
+    my $libraryName = shift;
+
+    my $regexFile;
+    open $regexFile, "$FindBin::Bin/motifLibraries/$libraryName.regexMotifs";
+    my $regexMotifs = PsortRegexMotifs->new( $regexFile );
+    my $numMatches = $OPT_V ? $regexMotifs->reportMatches( $PsortSeq::seq, $endl )
+	: $regexMotifs->numMatches( $PsortSeq::seq );
+    close $regexFile;
+    return $numMatches;
+}
+
+
+
+# subroutines for kNN ###################################################
+
+my %distance_pair;
+sub by_distance {
+    ($distance_pair{ $a } <=> $distance_pair{ $b }) || 
+	($training_class_freq{$LOCAT{ $a }} <=> 
+	 $training_class_freq{$LOCAT{ $b }});  ## more common
+}
+
+sub knn {
+    my($k, %vars) = @_;
+    my(%freq, $neighbor_class, @sorted_freq_key, @sorted_names);
+
+# calculate distances
+    for my $training_seq_id (@training_names) {
+	my($distance) = 0;
+	foreach my $var (@psortII_variable_names) {
+	    $distance += ($ATTRIB{ $training_seq_id, $var } - $vars{$var}) ** 2;
+	}
+	$distance_pair {$training_seq_id} = $distance;
+    }
+
+    @sorted_names = sort by_distance (@training_names);
+
+# check neighbor classes
+    foreach my $i (0..$k-1) {
+	$neighbor_class = $LOCAT{ $sorted_names[$i] };
+	
+	if(defined( $freq{ $neighbor_class } ) ) {
+	    ++$freq{ $neighbor_class };
+	} else {
+	    $freq{ $neighbor_class } = 1;
+	}
+    }
+
+#       2006/01/07 Modified by PH to break ties in displaying results
+#       using the overall class frequences in the traning data.
+#       This constrains the sort order and eases testing by making it
+#       more likely to get identical output on different platforms.
+# 	@sorted_freq_key = sort {$freq{$b}<=>$freq{$a}} (keys %freq);
+    @sorted_freq_key = 
+	sort {($freq{$b}<=>$freq{$a})  ||
+		  ($training_class_freq{$b} <=> 
+		   $training_class_freq{$a}) } (keys %freq);
+
+
+# print resuts
+    if( $OPT_V ){
+	if($OPT_HTML){ 
+	    print "<h4>Final Results: </h4>\n";
+	}
+	else{ 
+	    print '-'x75;
+	    print "Final Results\n\n";
+	  }
+    }
+
+    foreach (@sorted_freq_key) {
+	if( $OPT_HTML ){
+	    printf( "%5.1f %%: %s\n", $freq{$_}/$k*100, $loc_info{$_} );
+	}else{
+	    printf( "\t%5.1f %%: %s\n", $freq{$_}/$k*100, $loc_info{$_} );
+	}
+    }
+    print "\n>> prediction for $PsortSeq::id is $sorted_freq_key[0]\n\n";
+}

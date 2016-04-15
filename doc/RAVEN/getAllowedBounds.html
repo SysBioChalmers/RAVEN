@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of getAllowedBounds</title>
+  <meta name="keywords" content="getAllowedBounds">
+  <meta name="description" content="getAllowedBounds">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">RAVEN</a> &gt; getAllowedBounds.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for RAVEN&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>getAllowedBounds
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>getAllowedBounds</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> getAllowedBounds
+   Returns the minimal and maximal fluxes through each reaction.
+
+   model         a model structure
+   rxns          either a cell array of reaction IDs, a logical vector with the 
+                 same number of elements as reactions in the model, or a vector 
+                 of reaction indexes (opt, default model.rxns)
+
+   minFluxes     minimal allowed fluxes
+   maxFluxes     maximal allowed fluxes
+   exitFlags     exit flags for min/max for each of the reactions. True if
+                 it was possible to calculate a flux
+
+   NOTE: In cases where no solution can be calculated, NaN is returned.
+
+   Usage: [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns)
+
+   Rasmus Agren, 2013-04-21</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model,objects, type, returnLogical)">getIndexes</a>	getIndexes</li><li><a href="solveLP.html" class="code" title="function [solution hsSolOut]=solveLP(model,minFlux,params,hsSol)">solveLP</a>	solveLP</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns)</a>
+0002 <span class="comment">% getAllowedBounds</span>
+0003 <span class="comment">%   Returns the minimal and maximal fluxes through each reaction.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%   model         a model structure</span>
+0006 <span class="comment">%   rxns          either a cell array of reaction IDs, a logical vector with the</span>
+0007 <span class="comment">%                 same number of elements as reactions in the model, or a vector</span>
+0008 <span class="comment">%                 of reaction indexes (opt, default model.rxns)</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">%   minFluxes     minimal allowed fluxes</span>
+0011 <span class="comment">%   maxFluxes     maximal allowed fluxes</span>
+0012 <span class="comment">%   exitFlags     exit flags for min/max for each of the reactions. True if</span>
+0013 <span class="comment">%                 it was possible to calculate a flux</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">%   NOTE: In cases where no solution can be calculated, NaN is returned.</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">%   Usage: [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns)</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">%   Rasmus Agren, 2013-04-21</span>
+0020 <span class="comment">%</span>
+0021 
+0022 <span class="keyword">if</span> nargin&lt;2
+0023     rxns=1:numel(model.rxns);
+0024 <span class="keyword">else</span>
+0025     rxns=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model,objects, type, returnLogical)">getIndexes</a>(model,rxns, <span class="string">'rxns'</span>);
+0026 <span class="keyword">end</span>
+0027 
+0028 minFluxes=zeros(numel(rxns),1);
+0029 maxFluxes=zeros(numel(rxns),1);
+0030 exitFlags=zeros(numel(rxns),2);
+0031 
+0032 c=zeros(numel(model.rxns),1);
+0033 hsSolMin=[];
+0034 hsSolMax=[];
+0035 <span class="keyword">for</span> i=1:numel(rxns)
+0036     model.c=c;
+0037     
+0038     <span class="comment">%Get minimal flux</span>
+0039     model.c(rxns(i))=-1;
+0040     [solution hsSolMin]=<a href="solveLP.html" class="code" title="function [solution hsSolOut]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(model,0,[],hsSolMin);
+0041     exitFlags(i,1)=solution.stat;
+0042     <span class="keyword">if</span> ~isempty(solution.f)
+0043         minFluxes(i)=solution.x(rxns(i));
+0044     <span class="keyword">else</span>
+0045         minFluxes(i)=NaN;
+0046     <span class="keyword">end</span> 
+0047     
+0048     <span class="comment">%Get maximal flux</span>
+0049     model.c(rxns(i))=1;
+0050     [solution hsSolMax]=<a href="solveLP.html" class="code" title="function [solution hsSolOut]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(model,0,[],hsSolMax);
+0051     exitFlags(i,2)=solution.stat;
+0052     <span class="keyword">if</span> ~isempty(solution.f)
+0053         maxFluxes(i)=solution.x(rxns(i));
+0054     <span class="keyword">else</span>
+0055         maxFluxes(i)=NaN;
+0056     <span class="keyword">end</span> 
+0057 <span class="keyword">end</span>
+0058 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 06-Jan-2014 14:58:12 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

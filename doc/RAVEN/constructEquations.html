@@ -1,0 +1,178 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of constructEquations</title>
+  <meta name="keywords" content="constructEquations">
+  <meta name="description" content="constructEquations">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">RAVEN</a> &gt; constructEquations.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for RAVEN&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>constructEquations
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>constructEquations</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> constructEquations
+   Construct equation strings for reactions
+
+   model             a model structure
+   rxns              either a cell array of reaction IDs, a logical vector with the 
+                     same number of elements as reactions in the model, or a vector 
+                     of reaction indexes (opt, default model.rxns)
+    useComps          include the compartment of each metabolite (opt, default true)
+    sortRevRxns       sort reversible reactions so that the metabolite that is first in
+                     the lexiographic order is a reactant (opt, default
+                     false)
+    sortMetNames      sort the metabolite names in the equation. Uses
+                     compartment even if useComps is false (opt, default
+                     false)
+
+   equationStrings     a cell array with equations
+
+     Usage: equationStrings=constructEquations(model,rxns,useComps,...
+           sortRevRxns,sortMetNames)
+
+   Rasmus Agren, 2013-05-16</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model,objects, type, returnLogical)">getIndexes</a>	getIndexes</li><li><a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>	sortModel</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="compareModels.html" class="code" title="function compStruct=compareModels(models,printResults)">compareModels</a>	compareModels</li><li><a href="exportToExcelFormat.html" class="code" title="function exportToExcelFormat(model,filename)">exportToExcelFormat</a>	exportToExcelFormat</li><li><a href="exportToTabDelimited.html" class="code" title="function exportToTabDelimited(model,path)">exportToTabDelimited</a>	exportToTabDelimited</li><li><a href="followChanged.html" class="code" title="function followChanged(model,fluxesA,fluxesB, cutOffChange, cutOffFlux, cutOffDiff, metaboliteList)">followChanged</a>	followChanged</li><li><a href="followFluxes.html" class="code" title="function [errorFlag]=followFluxes(model, fluxesA, lowerFlux, upperFlux, fluxesB)">followFluxes</a>	followFluxes</li><li><a href="printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>	printFluxes</li><li><a href="printModelStats.html" class="code" title="function printModelStats(model, printModelIssues, printDetails)">printModelStats</a>	printModelStats</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames)</a>
+0002 <span class="comment">% constructEquations</span>
+0003 <span class="comment">%   Construct equation strings for reactions</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%   model             a model structure</span>
+0006 <span class="comment">%   rxns              either a cell array of reaction IDs, a logical vector with the</span>
+0007 <span class="comment">%                     same number of elements as reactions in the model, or a vector</span>
+0008 <span class="comment">%                     of reaction indexes (opt, default model.rxns)</span>
+0009 <span class="comment">%    useComps          include the compartment of each metabolite (opt, default true)</span>
+0010 <span class="comment">%    sortRevRxns       sort reversible reactions so that the metabolite that is first in</span>
+0011 <span class="comment">%                     the lexiographic order is a reactant (opt, default</span>
+0012 <span class="comment">%                     false)</span>
+0013 <span class="comment">%    sortMetNames      sort the metabolite names in the equation. Uses</span>
+0014 <span class="comment">%                     compartment even if useComps is false (opt, default</span>
+0015 <span class="comment">%                     false)</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">%   equationStrings     a cell array with equations</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">%     Usage: equationStrings=constructEquations(model,rxns,useComps,...</span>
+0020 <span class="comment">%           sortRevRxns,sortMetNames)</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">%   Rasmus Agren, 2013-05-16</span>
+0023 <span class="comment">%</span>
+0024 
+0025 <span class="keyword">if</span> nargin&lt;2
+0026     rxns=model.rxns;
+0027 <span class="keyword">end</span>
+0028 <span class="keyword">if</span> nargin&lt;3
+0029     useComps=true;
+0030 <span class="keyword">end</span>
+0031 <span class="keyword">if</span> nargin&lt;4
+0032     sortRevRxns=false;
+0033 <span class="keyword">end</span>
+0034 <span class="keyword">if</span> nargin&lt;5
+0035     sortMetNames=false;
+0036 <span class="keyword">end</span>
+0037 <span class="keyword">if</span> isempty(rxns)
+0038     rxns=model.rxns;
+0039 <span class="keyword">end</span>
+0040 
+0041 <span class="comment">%Sort reversible equations</span>
+0042 <span class="keyword">if</span> sortRevRxns==true
+0043     model=<a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>(model);
+0044 <span class="keyword">end</span>
+0045 
+0046 <span class="comment">%Sort metabolite names, including compartment</span>
+0047 <span class="keyword">if</span> sortMetNames==true
+0048     model=<a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>(model,false,true);
+0049 <span class="keyword">end</span>
+0050 
+0051 indexes=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model,objects, type, returnLogical)">getIndexes</a>(model,rxns,<span class="string">'rxns'</span>);
+0052 
+0053 equationStrings=cell(numel(indexes),1);
+0054 
+0055 <span class="keyword">for</span> i=1:numel(indexes)
+0056     reactants=find(model.S(:,indexes(i))&lt;0);
+0057     products=find(model.S(:,indexes(i))&gt;0);
+0058     eqn=<span class="string">''</span>;
+0059 
+0060     <span class="keyword">for</span> j=1:numel(reactants)
+0061         <span class="keyword">if</span> j==1
+0062             plusString=<span class="string">''</span>;
+0063         <span class="keyword">else</span>
+0064             plusString=<span class="string">' + '</span>;
+0065         <span class="keyword">end</span>
+0066 
+0067         stoich=num2str(model.S(reactants(j),indexes(i))*-1);
+0068         
+0069         <span class="keyword">if</span> str2double(stoich)==1
+0070             stoich=<span class="string">''</span>;
+0071         <span class="keyword">else</span>
+0072             stoich=[stoich <span class="string">' '</span>];
+0073         <span class="keyword">end</span>
+0074         
+0075         <span class="keyword">if</span> useComps==true
+0076             eqn=[eqn plusString stoich model.metNames{reactants(j)} <span class="string">'['</span> model.comps{model.metComps(reactants(j))} <span class="string">']'</span>];
+0077         <span class="keyword">else</span>
+0078             eqn=[eqn plusString stoich model.metNames{reactants(j)}];
+0079         <span class="keyword">end</span>
+0080     <span class="keyword">end</span>
+0081        
+0082     <span class="keyword">if</span> model.rev(indexes(i))==0
+0083         eqn=[eqn <span class="string">' =&gt; '</span>];
+0084     <span class="keyword">else</span>
+0085         eqn=[eqn <span class="string">' &lt;=&gt; '</span>];
+0086     <span class="keyword">end</span>
+0087        
+0088     <span class="keyword">for</span> j=1:numel(products)
+0089         <span class="keyword">if</span> j==1
+0090             plusString=<span class="string">''</span>;
+0091         <span class="keyword">else</span>
+0092             plusString=<span class="string">' + '</span>;
+0093         <span class="keyword">end</span>
+0094 
+0095         stoich=num2str(model.S(products(j),indexes(i)));
+0096         
+0097         <span class="keyword">if</span> str2double(stoich)==1
+0098             stoich=<span class="string">''</span>;
+0099         <span class="keyword">else</span>
+0100             stoich=[stoich <span class="string">' '</span>];
+0101         <span class="keyword">end</span>
+0102         
+0103         <span class="keyword">if</span> useComps==true
+0104             eqn=[eqn plusString stoich model.metNames{products(j)} <span class="string">'['</span> model.comps{model.metComps(products(j))} <span class="string">']'</span>];
+0105         <span class="keyword">else</span>
+0106             eqn=[eqn plusString stoich model.metNames{products(j)}];
+0107         <span class="keyword">end</span>
+0108     <span class="keyword">end</span>
+0109     equationStrings{i}=eqn;
+0110 <span class="keyword">end</span>
+0111 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 06-Jan-2014 14:58:12 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

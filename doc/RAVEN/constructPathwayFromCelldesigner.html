@@ -1,0 +1,597 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of constructPathwayFromCelldesigner</title>
+  <meta name="keywords" content="constructPathwayFromCelldesigner">
+  <meta name="description" content="constructPathwayFromCelldesigner">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">RAVEN</a> &gt; constructPathwayFromCelldesigner.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for RAVEN&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>constructPathwayFromCelldesigner
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>constructPathwayFromCelldesigner</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function pathway = constructPathwayFromCelldesigner(inputFile) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> constructPathwayFromCelldesigner
+    Constructs a pathway structure from a CellDesigner XML file.
+
+    inputFile   string representing the pathway of the Celldesigner XML 
+               file
+
+    pathway
+       listOfCompartments      structure with information on the compartments
+                               in the Celldesigner file
+           x                   the x position
+           y                   the y position
+           h                   the height
+           w                   the width
+           compartment         string representing the compartment
+           id                  alias of the compartment. Used if there are
+                               several instances of the same compartment
+           name                the name of the compartment
+       listOfSpecies           structure with information on each species in
+                               the Celldesigner file. Both metabolites and
+                               enzymes are species
+           x                   the x position
+           y                   the y position
+           h                   the height
+           w                   the width
+           species             string representing the species
+           alias               alias of the species. Used if the species is
+                               present in several places in the map
+           name                the name of the species
+           type                the type of the species. At the moment only
+                               'SIMPLE_MOLECULE' (for metabolites) and
+                               'PROTEIN' (for enzymes) are supported
+           note                string that can be used on enzymes to link them
+                               to the corresponding reaction in a model
+       listOfReactions         structure with information on each of the
+                               reactions in the Celldesigner file
+           reversible          true if the reaction is reversible
+           middlePoint         vector with the x and y points of the middle
+                               point of the reaction. All reactions are
+                               defines as having one reactant and one product.
+                               They may also have a number of modifiers (such
+                               as cofactors or enzymes). Each of these
+                               modifiers are drawn as being connected to the
+                               middle point. The middle point is calculated
+                               from the positions of the reactant and the
+                               product
+           componentList       structure with information on the reactant,
+                               product, and modifiers of the reaction
+               alias           string representing the alias of the
+                               species. Corresponds to the alias in
+                               listOfSpecies
+               species         string representing the species.
+                               Corresponds to the species in listOfSpecies
+               anchor          vector with the x and y points of the
+                               connecting point of the species
+               baseReaction    true if the species is the base reactant
+               baseProduct     true if the species is the base product
+               toArrow         true if the line connecting the species
+                               to the middle point should start with an
+                               arrow
+               fromArrow       true if the line connecting the species
+                               to the middle point should end with an
+                               arrow
+               type            'METABOLITE' or 'ENZYME'
+
+    Usage: pathway = constructPathwayFromCelldesigner(inputFile)
+
+   Rasmus Agren, 2010-12-16</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function pathway = constructPathwayFromCelldesigner(inputFile)</a>
+0002 <span class="comment">% constructPathwayFromCelldesigner</span>
+0003 <span class="comment">%    Constructs a pathway structure from a CellDesigner XML file.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%    inputFile   string representing the pathway of the Celldesigner XML</span>
+0006 <span class="comment">%               file</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">%    pathway</span>
+0009 <span class="comment">%       listOfCompartments      structure with information on the compartments</span>
+0010 <span class="comment">%                               in the Celldesigner file</span>
+0011 <span class="comment">%           x                   the x position</span>
+0012 <span class="comment">%           y                   the y position</span>
+0013 <span class="comment">%           h                   the height</span>
+0014 <span class="comment">%           w                   the width</span>
+0015 <span class="comment">%           compartment         string representing the compartment</span>
+0016 <span class="comment">%           id                  alias of the compartment. Used if there are</span>
+0017 <span class="comment">%                               several instances of the same compartment</span>
+0018 <span class="comment">%           name                the name of the compartment</span>
+0019 <span class="comment">%       listOfSpecies           structure with information on each species in</span>
+0020 <span class="comment">%                               the Celldesigner file. Both metabolites and</span>
+0021 <span class="comment">%                               enzymes are species</span>
+0022 <span class="comment">%           x                   the x position</span>
+0023 <span class="comment">%           y                   the y position</span>
+0024 <span class="comment">%           h                   the height</span>
+0025 <span class="comment">%           w                   the width</span>
+0026 <span class="comment">%           species             string representing the species</span>
+0027 <span class="comment">%           alias               alias of the species. Used if the species is</span>
+0028 <span class="comment">%                               present in several places in the map</span>
+0029 <span class="comment">%           name                the name of the species</span>
+0030 <span class="comment">%           type                the type of the species. At the moment only</span>
+0031 <span class="comment">%                               'SIMPLE_MOLECULE' (for metabolites) and</span>
+0032 <span class="comment">%                               'PROTEIN' (for enzymes) are supported</span>
+0033 <span class="comment">%           note                string that can be used on enzymes to link them</span>
+0034 <span class="comment">%                               to the corresponding reaction in a model</span>
+0035 <span class="comment">%       listOfReactions         structure with information on each of the</span>
+0036 <span class="comment">%                               reactions in the Celldesigner file</span>
+0037 <span class="comment">%           reversible          true if the reaction is reversible</span>
+0038 <span class="comment">%           middlePoint         vector with the x and y points of the middle</span>
+0039 <span class="comment">%                               point of the reaction. All reactions are</span>
+0040 <span class="comment">%                               defines as having one reactant and one product.</span>
+0041 <span class="comment">%                               They may also have a number of modifiers (such</span>
+0042 <span class="comment">%                               as cofactors or enzymes). Each of these</span>
+0043 <span class="comment">%                               modifiers are drawn as being connected to the</span>
+0044 <span class="comment">%                               middle point. The middle point is calculated</span>
+0045 <span class="comment">%                               from the positions of the reactant and the</span>
+0046 <span class="comment">%                               product</span>
+0047 <span class="comment">%           componentList       structure with information on the reactant,</span>
+0048 <span class="comment">%                               product, and modifiers of the reaction</span>
+0049 <span class="comment">%               alias           string representing the alias of the</span>
+0050 <span class="comment">%                               species. Corresponds to the alias in</span>
+0051 <span class="comment">%                               listOfSpecies</span>
+0052 <span class="comment">%               species         string representing the species.</span>
+0053 <span class="comment">%                               Corresponds to the species in listOfSpecies</span>
+0054 <span class="comment">%               anchor          vector with the x and y points of the</span>
+0055 <span class="comment">%                               connecting point of the species</span>
+0056 <span class="comment">%               baseReaction    true if the species is the base reactant</span>
+0057 <span class="comment">%               baseProduct     true if the species is the base product</span>
+0058 <span class="comment">%               toArrow         true if the line connecting the species</span>
+0059 <span class="comment">%                               to the middle point should start with an</span>
+0060 <span class="comment">%                               arrow</span>
+0061 <span class="comment">%               fromArrow       true if the line connecting the species</span>
+0062 <span class="comment">%                               to the middle point should end with an</span>
+0063 <span class="comment">%                               arrow</span>
+0064 <span class="comment">%               type            'METABOLITE' or 'ENZYME'</span>
+0065 <span class="comment">%</span>
+0066 <span class="comment">%    Usage: pathway = constructPathwayFromCelldesigner(inputFile)</span>
+0067 <span class="comment">%</span>
+0068 <span class="comment">%   Rasmus Agren, 2010-12-16</span>
+0069 <span class="comment">%</span>
+0070 
+0071 <span class="comment">%Loads the specified xml file using XML Toolbox</span>
+0072 [ST I]=dbstack(<span class="string">'-completenames'</span>);
+0073 ravenPath=fileparts(ST(I).file);
+0074 
+0075 <span class="comment">%Current path and xml toolbox path</span>
+0076 cp=pwd;
+0077 xt=fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'xml_toolbox'</span>);
+0078 
+0079 <span class="comment">%Change path, run the script and change back</span>
+0080 cd(xt);
+0081 v = xml_parseany(fileread(inputFile));
+0082 cd(cp);
+0083 
+0084 <span class="comment">%Saves information on each compartment</span>
+0085 <span class="keyword">for</span> i=1:length(v.model{1,1}.annotation{1,1}.listOfCompartmentAliases{1,1}.compartmentAlias)
+0086    pathway.listOfCompartments(i).x=str2double(v.model{1,1}.annotation{1,1}.listOfCompartmentAliases{1,1}<span class="keyword">...</span>
+0087        .compartmentAlias{1,i}.bounds{1,1}.ATTRIBUTE.x);
+0088    pathway.listOfCompartments(i).y=str2double(v.model{1,1}.annotation{1,1}.listOfCompartmentAliases{1,1}<span class="keyword">...</span>
+0089        .compartmentAlias{1,i}.bounds{1,1}.ATTRIBUTE.y);
+0090    pathway.listOfCompartments(i).h=str2double(v.model{1,1}.annotation{1,1}.listOfCompartmentAliases{1,1}<span class="keyword">...</span>
+0091        .compartmentAlias{1,i}.bounds{1,1}.ATTRIBUTE.h);
+0092    pathway.listOfCompartments(i).w=str2double(v.model{1,1}.annotation{1,1}.listOfCompartmentAliases{1,1}<span class="keyword">...</span>
+0093        .compartmentAlias{1,i}.bounds{1,1}.ATTRIBUTE.w);
+0094    pathway.listOfCompartments(i).compartment=v.model{1,1}.annotation{1,1}.listOfCompartmentAliases{1,1}<span class="keyword">...</span>
+0095        .compartmentAlias{1,i}.ATTRIBUTE.compartment;
+0096    pathway.listOfCompartments(i).id=v.model{1,1}.annotation{1,1}.listOfCompartmentAliases{1,1}<span class="keyword">...</span>
+0097        .compartmentAlias{1,i}.ATTRIBUTE.id;
+0098    
+0099   <span class="comment">%Finds the name of the compartment</span>
+0100   <span class="keyword">for</span> j=1:length(v.model{1,1}.listOfCompartments{1,1}.compartment)
+0101      <span class="keyword">if</span> strcmpi(v.model{1,1}.listOfCompartments{1,1}.compartment{1,j}.ATTRIBUTE.id,<span class="keyword">...</span>
+0102              pathway.listOfCompartments(i).compartment)
+0103         pathway.listOfCompartments(i).name=v.model{1,1}.listOfCompartments{1,1}.compartment{1,j}.ATTRIBUTE.name;
+0104         <span class="keyword">break</span>;
+0105      <span class="keyword">end</span>
+0106   <span class="keyword">end</span>
+0107 <span class="keyword">end</span>
+0108 
+0109 <span class="comment">%Saves information on each species and enzyme</span>
+0110 <span class="keyword">for</span> i=1:length(v.model{1,1}.annotation{1,1}.listOfSpeciesAliases{1,1}.speciesAlias)
+0111    pathway.listOfSpecies(i).x=str2double(v.model{1,1}.annotation{1,1}.listOfSpeciesAliases{1,1}<span class="keyword">...</span>
+0112        .speciesAlias{1,i}.bounds{1,1}.ATTRIBUTE.x);
+0113    pathway.listOfSpecies(i).y=str2double(v.model{1,1}.annotation{1,1}.listOfSpeciesAliases{1,1}<span class="keyword">...</span>
+0114        .speciesAlias{1,i}.bounds{1,1}.ATTRIBUTE.y);
+0115    pathway.listOfSpecies(i).h=str2double(v.model{1,1}.annotation{1,1}.listOfSpeciesAliases{1,1}<span class="keyword">...</span>
+0116        .speciesAlias{1,i}.bounds{1,1}.ATTRIBUTE.h);
+0117    pathway.listOfSpecies(i).w=str2double(v.model{1,1}.annotation{1,1}.listOfSpeciesAliases{1,1}<span class="keyword">...</span>
+0118        .speciesAlias{1,i}.bounds{1,1}.ATTRIBUTE.w);
+0119    pathway.listOfSpecies(i).alias=v.model{1,1}.annotation{1,1}.listOfSpeciesAliases{1,1}<span class="keyword">...</span>
+0120        .speciesAlias{1,i}.ATTRIBUTE.id;  
+0121    pathway.listOfSpecies(i).species=v.model{1,1}.annotation{1,1}.listOfSpeciesAliases{1,1}<span class="keyword">...</span>
+0122        .speciesAlias{1,i}.ATTRIBUTE.species;
+0123   <span class="comment">%Find the name and type of the species/enzyme</span>
+0124   <span class="keyword">for</span> j=1:length(v.model{1,1}.listOfSpecies{1,1}.species)
+0125      <span class="keyword">if</span> strcmpi(v.model{1,1}.listOfSpecies{1,1}.species{1,j}.ATTRIBUTE.id,<span class="keyword">...</span>
+0126              pathway.listOfSpecies(i).species)
+0127         pathway.listOfSpecies(i).name=v.model{1,1}.listOfSpecies{1,1}.species{1,j}.ATTRIBUTE.name;
+0128         pathway.listOfSpecies(i).type=v.model{1,1}.listOfSpecies{1,1}.species{1,j}.annotation{1,1}<span class="keyword">...</span>
+0129             .speciesIdentity{1,1}.class{1,1}.CONTENT;
+0130         
+0131         <span class="comment">%The Celldesigner chart can be linked to a model (e.g. for</span>
+0132         <span class="comment">%visualization of fluxes) by making a note in Celldesigner for the</span>
+0133         <span class="comment">%protein in interest (this can only be done for proteins at the</span>
+0134         <span class="comment">%moment). The note (not protein note!) should only contain the</span>
+0135         <span class="comment">%reaction id in the model which corresponds to the protein</span>
+0136         <span class="comment">%in Celldesigner.</span>
+0137         <span class="keyword">if</span> strcmpi(pathway.listOfSpecies(i).type,<span class="string">'PROTEIN'</span>)
+0138            <span class="keyword">if</span> isfield(v.model{1,1}.listOfSpecies{1,1}.species{1,j},<span class="string">'notes'</span>)
+0139                pathway.listOfSpecies(i).note=cellstr(strtrim(v.model{1,1}.listOfSpecies{1,1}.species{1,j}<span class="keyword">...</span>
+0140                    .notes{1,1}.html{1,1}.body{1,1}.CONTENT));
+0141            <span class="keyword">end</span>
+0142         <span class="keyword">end</span>
+0143         <span class="keyword">break</span>;
+0144      <span class="keyword">end</span>
+0145   <span class="keyword">end</span>
+0146 <span class="keyword">end</span>
+0147 
+0148 <span class="comment">%Saves information on each reaction</span>
+0149 <span class="keyword">for</span> i=1:length(v.model{1,1}.listOfReactions{1,1}.reaction)
+0150     <span class="comment">%This is because it is standard for a reaction to be defined as</span>
+0151     <span class="comment">%reversible</span>
+0152     <span class="keyword">if</span> isfield(v.model{1,1}.listOfReactions{1,1}.reaction{1,i}.ATTRIBUTE,<span class="string">'reversible'</span>)
+0153         pathway.listOfReactions(i).reversible=v.model{1,1}.listOfReactions{1,1}<span class="keyword">...</span>
+0154             .reaction{1,i}.ATTRIBUTE.reversible;
+0155     <span class="keyword">else</span>
+0156         pathway.listOfReactions(i).reversible=<span class="string">'true'</span>;
+0157     <span class="keyword">end</span>
+0158     
+0159     <span class="comment">%NOTE: As far as I know there can only be one base reactant/product per</span>
+0160     <span class="comment">%reaction. This method is written with that assumption.</span>
+0161     
+0162     <span class="comment">%Finds the alias of the base reactant</span>
+0163     baseReactant=v.model{1,1}.listOfReactions{1,1}<span class="keyword">...</span>
+0164         .reaction{1,i}.annotation{1,1}.baseReactants{1,1}.baseReactant{1,1}<span class="keyword">...</span>
+0165         .ATTRIBUTE.alias;
+0166     
+0167     <span class="comment">%Finds the alias of the base product</span>
+0168     baseProduct=v.model{1,1}.listOfReactions{1,1}<span class="keyword">...</span>
+0169         .reaction{1,i}.annotation{1,1}.baseProducts{1,1}.baseProduct{1,1}<span class="keyword">...</span>
+0170         .ATTRIBUTE.alias;
+0171     
+0172     <span class="comment">%Saves the middle point</span>
+0173     [x1,y1]=<a href="#_sub1" class="code" title="subfunction [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)">getBindingPos</a>(pathway,baseReactant,<span class="keyword">...</span>
+0174         v.model{1,1}.listOfReactions{1,1}.reaction{1,i}.annotation{1,1}<span class="keyword">...</span>
+0175         .baseReactants{1,1}.baseReactant{1,1}.linkAnchor{1,1}.ATTRIBUTE.position);
+0176     [x2,y2]=<a href="#_sub1" class="code" title="subfunction [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)">getBindingPos</a>(pathway,baseProduct,<span class="keyword">...</span>
+0177         v.model{1,1}.listOfReactions{1,1}.reaction{1,i}.annotation{1,1}<span class="keyword">...</span>
+0178         .baseProducts{1,1}.baseProduct{1,1}.linkAnchor{1,1}.ATTRIBUTE.position);
+0179     pathway.listOfReactions(i).middlePoint(1)=x1+(x2-x1)/2;
+0180     pathway.listOfReactions(i).middlePoint(2)=y1+(y2-y1)/2;
+0181     
+0182     <span class="comment">%Saves information on each of the components</span>
+0183     counter=1; <span class="comment">%Keeps track of where in componentList to add a component</span>
+0184     
+0185     <span class="comment">%Adds the base reactant</span>
+0186     pathway.listOfReactions(i).componentList(counter).alias=v.model{1,1}<span class="keyword">...</span>
+0187         .listOfReactions{1,1}.reaction{1,i}.annotation{1,1}.baseReactants{1,1}<span class="keyword">...</span>
+0188         .baseReactant{1,1}.ATTRIBUTE.alias;
+0189     pathway.listOfReactions(i).componentList(counter).species=v.model{1,1}<span class="keyword">...</span>
+0190         .listOfReactions{1,1}.reaction{1,i}.annotation{1,1}.baseReactants{1,1}<span class="keyword">...</span>
+0191         .baseReactant{1,1}.ATTRIBUTE.species;
+0192     [x,y]=<a href="#_sub1" class="code" title="subfunction [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)">getBindingPos</a>(pathway,baseReactant,v.model{1,1}.listOfReactions{1,1}<span class="keyword">...</span>
+0193         .reaction{1,i}.annotation{1,1}.baseReactants{1,1}.baseReactant{1,1}<span class="keyword">...</span>
+0194         .linkAnchor{1,1}.ATTRIBUTE.position);
+0195     pathway.listOfReactions(i).componentList(counter).anchor(1)=x;
+0196     pathway.listOfReactions(i).componentList(counter).anchor(2)=y;
+0197     pathway.listOfReactions(i).componentList(counter).baseReactant=<span class="string">'true'</span>;
+0198     pathway.listOfReactions(i).componentList(counter).baseProduct=<span class="string">'false'</span>;
+0199     
+0200     <span class="comment">%toArrow should be true if the reaction is reversible</span>
+0201     pathway.listOfReactions(i).componentList(counter).toArrow=<span class="keyword">...</span>
+0202         pathway.listOfReactions(i).reversible;
+0203     pathway.listOfReactions(i).componentList(counter).fromArrow=<span class="string">'false'</span>;
+0204     pathway.listOfReactions(i).componentList(counter).type=<span class="string">'METABOLITE'</span>;
+0205     counter=counter+1;
+0206     
+0207     <span class="comment">%Adds the base product</span>
+0208     pathway.listOfReactions(i).componentList(counter).alias=v.model{1,1}<span class="keyword">...</span>
+0209         .listOfReactions{1,1}.reaction{1,i}.annotation{1,1}.baseProducts{1,1}<span class="keyword">...</span>
+0210         .baseProduct{1,1}.ATTRIBUTE.alias;
+0211     pathway.listOfReactions(i).componentList(counter).species=v.model{1,1}<span class="keyword">...</span>
+0212         .listOfReactions{1,1}.reaction{1,i}.annotation{1,1}.baseProducts{1,1}<span class="keyword">...</span>
+0213         .baseProduct{1,1}.ATTRIBUTE.species;
+0214     [x,y]=<a href="#_sub1" class="code" title="subfunction [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)">getBindingPos</a>(pathway,baseProduct,v.model{1,1}.listOfReactions{1,1}<span class="keyword">...</span>
+0215         .reaction{1,i}.annotation{1,1}.baseProducts{1,1}.baseProduct{1,1}<span class="keyword">...</span>
+0216         .linkAnchor{1,1}.ATTRIBUTE.position);
+0217     pathway.listOfReactions(i).componentList(counter).anchor(1)=x;
+0218     pathway.listOfReactions(i).componentList(counter).anchor(2)=y;    
+0219     pathway.listOfReactions(i).componentList(counter).baseReactant=<span class="string">'false'</span>;
+0220     pathway.listOfReactions(i).componentList(counter).baseProduct=<span class="string">'true'</span>;
+0221     pathway.listOfReactions(i).componentList(counter).toArrow=<span class="string">'true'</span>;
+0222     pathway.listOfReactions(i).componentList(counter).fromArrow=<span class="string">'false'</span>;
+0223     pathway.listOfReactions(i).componentList(counter).type=<span class="string">'METABOLITE'</span>;
+0224     counter=counter+1;
+0225         
+0226     <span class="comment">%Adds the non-base reactants</span>
+0227     <span class="comment">%Not all reactions have any non-base reactants</span>
+0228     <span class="keyword">if</span> isfield(v.model{1,1}.listOfReactions{1,1}.reaction{1,i}.annotation{1,1}<span class="keyword">...</span>
+0229             ,<span class="string">'listOfReactantLinks'</span>)
+0230         <span class="keyword">for</span> j=1:length(v.model{1,1}.listOfReactions{1,1}.reaction{1,i}.annotation{1,1}<span class="keyword">...</span>
+0231                 .listOfReactantLinks{1,1}.reactantLink)
+0232             pathway.listOfReactions(i).componentList(counter).alias=v.model{1,1}<span class="keyword">...</span>
+0233                 .listOfReactions{1,1}.reaction{1,i}.annotation{1,1}<span class="keyword">...</span>
+0234                 .listOfReactantLinks{1,1}.reactantLink{1,j}.ATTRIBUTE.alias;
+0235             pathway.listOfReactions(i).componentList(counter).species=v.model{1,1}<span class="keyword">...</span>
+0236                 .listOfReactions{1,1}.reaction{1,i}.annotation{1,1}<span class="keyword">...</span>
+0237                 .listOfReactantLinks{1,1}.reactantLink{1,j}.ATTRIBUTE.reactant;
+0238             [x,y]=<a href="#_sub1" class="code" title="subfunction [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)">getBindingPos</a>(pathway,pathway.listOfReactions(i).componentList(counter).alias<span class="keyword">...</span>
+0239                 ,v.model{1,1}.listOfReactions{1,1}.reaction{1,i}.annotation{1,1}<span class="keyword">...</span>
+0240                 .listOfReactantLinks{1,1}.reactantLink{1,j}.linkAnchor{1,1}<span class="keyword">...</span>
+0241                 .ATTRIBUTE.position);
+0242             pathway.listOfReactions(i).componentList(counter).anchor(1)=x;
+0243             pathway.listOfReactions(i).componentList(counter).anchor(2)=y;
+0244             pathway.listOfReactions(i).componentList(counter).baseReactant=<span class="string">'false'</span>;
+0245             pathway.listOfReactions(i).componentList(counter).baseProduct=<span class="string">'false'</span>;
+0246             pathway.listOfReactions(i).componentList(counter).toArrow=<span class="string">'false'</span>;
+0247             pathway.listOfReactions(i).componentList(counter).fromArrow=<span class="string">'false'</span>;
+0248             pathway.listOfReactions(i).componentList(counter).type=<span class="string">'METABOLITE'</span>;
+0249             counter=counter+1;
+0250         <span class="keyword">end</span>
+0251     <span class="keyword">end</span>
+0252     
+0253     <span class="comment">%Adds the non-base products</span>
+0254     <span class="comment">%Not all reactions have any non-base products</span>
+0255     <span class="keyword">if</span> isfield(v.model{1,1}.listOfReactions{1,1}.reaction{1,i}.annotation{1,1}<span class="keyword">...</span>
+0256             ,<span class="string">'listOfProductLinks'</span>)
+0257         <span class="keyword">for</span> j=1:length(v.model{1,1}.listOfReactions{1,1}.reaction{1,i}.annotation{1,1}<span class="keyword">...</span>
+0258                 .listOfProductLinks{1,1}.productLink)
+0259             pathway.listOfReactions(i).componentList(counter).alias=v.model{1,1}<span class="keyword">...</span>
+0260                 .listOfReactions{1,1}.reaction{1,i}.annotation{1,1}<span class="keyword">...</span>
+0261                 .listOfProductLinks{1,1}.productLink{1,j}.ATTRIBUTE.alias;
+0262             pathway.listOfReactions(i).componentList(counter).species=v.model{1,1}<span class="keyword">...</span>
+0263                 .listOfReactions{1,1}.reaction{1,i}.annotation{1,1}<span class="keyword">...</span>
+0264                 .listOfProductLinks{1,1}.productLink{1,j}.ATTRIBUTE.product;
+0265             [x,y]=<a href="#_sub1" class="code" title="subfunction [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)">getBindingPos</a>(pathway,pathway.listOfReactions(i).componentList(counter).alias<span class="keyword">...</span>
+0266                 ,v.model{1,1}.listOfReactions{1,1}.reaction{1,i}.annotation{1,1}<span class="keyword">...</span>
+0267                 .listOfProductLinks{1,1}.productLink{1,j}.linkAnchor{1,1}<span class="keyword">...</span>
+0268                 .ATTRIBUTE.position);
+0269             pathway.listOfReactions(i).componentList(counter).anchor(1)=x;
+0270             pathway.listOfReactions(i).componentList(counter).anchor(2)=y;
+0271             pathway.listOfReactions(i).componentList(counter).baseReactant=<span class="string">'false'</span>;
+0272             pathway.listOfReactions(i).componentList(counter).baseProduct=<span class="string">'false'</span>;
+0273             pathway.listOfReactions(i).componentList(counter).toArrow=<span class="string">'true'</span>;
+0274             pathway.listOfReactions(i).componentList(counter).fromArrow=<span class="string">'false'</span>;
+0275             pathway.listOfReactions(i).componentList(counter).type=<span class="string">'METABOLITE'</span>;
+0276             counter=counter+1;
+0277         <span class="keyword">end</span>
+0278     <span class="keyword">end</span>
+0279     
+0280     <span class="comment">%Adds the modifiers (enzymes)</span>
+0281     <span class="comment">%Not all reactions have any modifiers</span>
+0282     <span class="keyword">if</span> isfield(v.model{1,1}.listOfReactions{1,1}.reaction{1,i}.annotation{1,1}<span class="keyword">...</span>
+0283             ,<span class="string">'listOfModification'</span>)
+0284         <span class="keyword">for</span> j=1:length(v.model{1,1}.listOfReactions{1,1}.reaction{1,i}.annotation{1,1}<span class="keyword">...</span>
+0285                 .listOfModification{1,1}.modification)
+0286             pathway.listOfReactions(i).componentList(counter).alias=v.model{1,1}<span class="keyword">...</span>
+0287                 .listOfReactions{1,1}.reaction{1,i}.annotation{1,1}.listOfModification{1,1}<span class="keyword">...</span>
+0288                 .modification{1,j}.linkTarget{1,1}.ATTRIBUTE.alias;
+0289             pathway.listOfReactions(i).componentList(counter).species=v.model{1,1}<span class="keyword">...</span>
+0290                 .listOfReactions{1,1}.reaction{1,i}.annotation{1,1}.listOfModification{1,1}<span class="keyword">...</span>
+0291                 .modification{1,j}.linkTarget{1,1}.ATTRIBUTE.species;
+0292             [x,y]=<a href="#_sub1" class="code" title="subfunction [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)">getBindingPos</a>(pathway,pathway.listOfReactions(i).componentList(counter).alias<span class="keyword">...</span>
+0293                 ,v.model{1,1}.listOfReactions{1,1}.reaction{1,i}.annotation{1,1}<span class="keyword">...</span>
+0294                 .listOfModification{1,1}.modification{1,j}.linkTarget{1,1}<span class="keyword">...</span>
+0295                 .linkAnchor{1,1}.ATTRIBUTE.position);
+0296             pathway.listOfReactions(i).componentList(counter).anchor(1)=x;
+0297             pathway.listOfReactions(i).componentList(counter).anchor(2)=y;
+0298             pathway.listOfReactions(i).componentList(counter).baseReactant=<span class="string">'false'</span>;
+0299             pathway.listOfReactions(i).componentList(counter).baseProduct=<span class="string">'false'</span>;
+0300             pathway.listOfReactions(i).componentList(counter).toArrow=<span class="string">'false'</span>;
+0301             pathway.listOfReactions(i).componentList(counter).fromArrow=<span class="string">'false'</span>;
+0302             pathway.listOfReactions(i).componentList(counter).type=<span class="string">'ENZYME'</span>;
+0303             counter=counter+1;
+0304         <span class="keyword">end</span>
+0305     <span class="keyword">end</span>
+0306 <span class="keyword">end</span>
+0307 
+0308 <a name="_sub1" href="#_subfunctions" class="code">function [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)</a>
+0309 <span class="comment">% getBindingPos</span>
+0310 <span class="comment">%   Calculates the position of a given binding site for a specified species</span>
+0311 <span class="comment">%</span>
+0312 <span class="comment">%   pathway         the pathway structure which should be modified</span>
+0313 <span class="comment">%   speciesAlias    the alias of the species</span>
+0314 <span class="comment">%   bindingSite     The binding site in Celldesigner is a string of up to</span>
+0315 <span class="comment">%                   three letters that defines which of the 16 bindings</span>
+0316 <span class="comment">%                   sites on each species to use. They are written as</span>
+0317 <span class="comment">%                   N (north), NNW (north north west) and so on</span>
+0318 <span class="comment">%</span>
+0319 <span class="comment">%   [x, y]          The position of the binding site for the species</span>
+0320 <span class="comment">%</span>
+0321 <span class="comment">%   Usage: [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)</span>
+0322 <span class="comment">%</span>
+0323 <span class="comment">%   Rasmus Ågren, 2010-12-16</span>
+0324 <span class="comment">%</span>
+0325 
+0326 <span class="comment">%Find the species</span>
+0327 <span class="keyword">for</span> i=1:length(pathway.listOfSpecies)
+0328    <span class="keyword">if</span> strcmpi(pathway.listOfSpecies(i).alias,speciesAlias)
+0329        xpos=pathway.listOfSpecies(i).x;
+0330        ypos=pathway.listOfSpecies(i).y;
+0331        h=pathway.listOfSpecies(i).h;
+0332        w=pathway.listOfSpecies(i).w;
+0333        
+0334        <span class="comment">%Species marked as &quot;PROTEIN&quot; should be drawn as rectangles. There is</span>
+0335        <span class="comment">%one binding site in each corner and three in between on each side.</span>
+0336        <span class="keyword">if</span> strcmpi(pathway.listOfSpecies(i).type,<span class="string">'PROTEIN'</span>)
+0337            <span class="comment">%The binding sites clockwise from the top position</span>
+0338            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'N'</span>)
+0339               x=xpos+0.5*w;
+0340               y=ypos;
+0341               <span class="keyword">break</span>;
+0342            <span class="keyword">end</span>
+0343            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'NNE'</span>)
+0344               x=xpos+0.75*w;
+0345               y=ypos;
+0346               <span class="keyword">break</span>;
+0347            <span class="keyword">end</span>
+0348            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'NE'</span>)
+0349               x=xpos+w;
+0350               y=ypos;
+0351               <span class="keyword">break</span>;
+0352            <span class="keyword">end</span>
+0353            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'ENE'</span>)
+0354               x=xpos+w;
+0355               y=ypos+0.25*h;
+0356               <span class="keyword">break</span>;
+0357            <span class="keyword">end</span>
+0358            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'E'</span>)
+0359               x=xpos+w;
+0360               y=ypos+0.5*h;
+0361               <span class="keyword">break</span>;
+0362            <span class="keyword">end</span>
+0363            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'ESE'</span>)
+0364               x=xpos+w;
+0365               y=ypos+0.75*h;
+0366               <span class="keyword">break</span>;
+0367            <span class="keyword">end</span>
+0368            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'SE'</span>)
+0369               x=xpos+w;
+0370               y=ypos+h;
+0371               <span class="keyword">break</span>;
+0372            <span class="keyword">end</span>
+0373            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'SSE'</span>)
+0374               x=xpos+0.75*w;
+0375               y=ypos+h;
+0376               <span class="keyword">break</span>;
+0377            <span class="keyword">end</span>
+0378            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'S'</span>)
+0379               x=xpos+0.5*w;
+0380               y=ypos+h;
+0381               <span class="keyword">break</span>;
+0382            <span class="keyword">end</span>
+0383            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'SSW'</span>)
+0384               x=xpos+0.25*w;
+0385               y=ypos+h;
+0386               <span class="keyword">break</span>;
+0387            <span class="keyword">end</span>
+0388            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'SW'</span>)
+0389               x=xpos;
+0390               y=ypos+h;
+0391               <span class="keyword">break</span>;
+0392            <span class="keyword">end</span>
+0393            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'WSW'</span>)
+0394               x=xpos;
+0395               y=ypos+0.75*h;
+0396               <span class="keyword">break</span>;
+0397            <span class="keyword">end</span>
+0398            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'W'</span>)
+0399               x=xpos;
+0400               y=ypos+0.5*h;
+0401               <span class="keyword">break</span>;
+0402            <span class="keyword">end</span>
+0403            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'WNW'</span>)
+0404               x=xpos;
+0405               y=ypos+0.25*h;
+0406               <span class="keyword">break</span>;
+0407            <span class="keyword">end</span>
+0408            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'NW'</span>)
+0409               x=xpos;
+0410               y=ypos;
+0411               <span class="keyword">break</span>;
+0412            <span class="keyword">end</span>
+0413            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'NNW'</span>)
+0414               x=xpos+0.25*w;
+0415               y=ypos;
+0416               <span class="keyword">break</span>;
+0417            <span class="keyword">end</span>
+0418        <span class="keyword">end</span>
+0419        
+0420        <span class="comment">%Species marked as &quot;SIMPLE_MOLECULE&quot; should be drawn as ellipses.</span>
+0421        <span class="comment">%There is one binding site in each extreme point and three in</span>
+0422        <span class="comment">%between on each side</span>
+0423        <span class="keyword">if</span> strcmpi(pathway.listOfSpecies(i).type,<span class="string">'SIMPLE_MOLECULE'</span>)
+0424            <span class="comment">%Find the center of the ellipse</span>
+0425            centerX=xpos+0.5*w;
+0426            centerY=ypos+0.5*h;
+0427            
+0428            <span class="comment">%The binding sites clockwise from the top position</span>
+0429            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'N'</span>)
+0430               angle=(4/8)*pi;
+0431            <span class="keyword">end</span>
+0432            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'NNE'</span>)
+0433               angle=(5/8)*pi;
+0434            <span class="keyword">end</span>
+0435            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'NE'</span>)
+0436               angle=(6/8)*pi;
+0437            <span class="keyword">end</span>
+0438            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'ENE'</span>)
+0439               angle=(7/8)*pi;
+0440            <span class="keyword">end</span>
+0441            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'E'</span>)
+0442               angle=(8/8)*pi;
+0443            <span class="keyword">end</span>
+0444            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'ESE'</span>)
+0445               angle=(9/8)*pi;
+0446            <span class="keyword">end</span>
+0447            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'SE'</span>)
+0448               angle=(10/8)*pi;
+0449            <span class="keyword">end</span>
+0450            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'SSE'</span>)
+0451               angle=(11/8)*pi;
+0452            <span class="keyword">end</span>
+0453            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'S'</span>)
+0454               angle=(12/8)*pi;
+0455            <span class="keyword">end</span>
+0456            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'SSW'</span>)
+0457               angle=(13/8)*pi;
+0458            <span class="keyword">end</span>
+0459            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'SW'</span>)
+0460               angle=(14/8)*pi;
+0461            <span class="keyword">end</span>
+0462            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'WSW'</span>)
+0463               angle=(15/8)*pi;
+0464            <span class="keyword">end</span>
+0465            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'W'</span>)
+0466               angle=(16/8)*pi;
+0467            <span class="keyword">end</span>
+0468            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'WNW'</span>)
+0469               angle=(1/8)*pi;
+0470            <span class="keyword">end</span>
+0471            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'NW'</span>)
+0472               angle=(2/8)*pi;
+0473            <span class="keyword">end</span>
+0474            <span class="keyword">if</span> strcmpi(bindingSite,<span class="string">'NNW'</span>)
+0475               angle=(3/8)*pi;
+0476            <span class="keyword">end</span>
+0477            x=centerX-(0.5*w)*cos(angle);
+0478            y=centerY-(0.5*h)*sin(angle);
+0479            <span class="keyword">break</span>;
+0480        <span class="keyword">end</span>
+0481    <span class="keyword">end</span>
+0482 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 06-Jan-2014 14:58:12 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

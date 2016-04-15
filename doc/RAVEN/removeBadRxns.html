@@ -1,0 +1,345 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of removeBadRxns</title>
+  <meta name="keywords" content="removeBadRxns">
+  <meta name="description" content="removeBadRxns">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">RAVEN</a> &gt; removeBadRxns.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for RAVEN&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>removeBadRxns
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>removeBadRxns</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [newModel removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames,balanceElements,refModel,ignoreIntBounds,printReport) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> removeBadRxns
+   Iteratively removes reactions which enable production/consumption of some
+   metabolite without any uptake/excretion
+
+   model                   a model structure. For the intented function,
+                           the model shouldn't allow for any uptake/excretion.
+                           The easiest way to achieve this is to import the
+                           model using importModel('filename',false)
+   rxnRules                1: only remove reactions which are unbalanced
+                           2: also remove reactions which couldn't be checked for
+                           mass balancing
+                           3: all reactions can be removed 
+                           (opt, default 1)
+   ignoreMets              either a cell array of metabolite IDs, a logical vector 
+                           with the same number of elements as metabolites in the model,
+                           of a vector of indexes for metabolites to exclude from
+                           this analysis (opt, default [])
+   isNames                 true if the supplied mets represent metabolite names
+                           (as opposed to IDs). This is a way to delete
+                           metabolites in several compartments at once without
+                           knowing the exact IDs. This only works if ignoreMets
+                           is a cell array (opt, default false)
+   balanceElements         a cell array with the elements for which to
+                           balance the reactions. May contain any
+                           combination of the elements defined in parseFormulas
+                           (opt, default {'C';'P';'S';'N';'O'})
+   refModel                a reference model which can be used to ensure
+                           that the resulting model is still functional.
+                           The intended use is that the reference model is
+                           a copy of model, but with uptake/excretion allowed and
+                           some objectives (such as production of biomass)
+                           constrained to a non-zero flux. Before a
+                           reaction is removed from &quot;model&quot; the function first
+                           checks that the same deletion in &quot;refModel&quot;
+                           doesn't render the problem unfeasible (opt)
+   ignoreIntBounds         true if internal bounds (including reversibility)
+                           should be ignored. Exchange reactions are not affected.
+                           This can be used to find unbalanced solutions which are
+                           not possible using the default constraints (opt,
+                           default false)
+   printReport             true if a report should be printed (opt,
+                           default false)
+
+   newModel                   a model structure after the problematic
+                           reactions have been deleted
+   removedRxns             a cell array with the reactions that were
+                           removed
+
+   The purpose of this function is to remove reactions which enable
+   production/consumption of metabolites even when exchange reactions aren't used.
+   Many models, especially if they are automatically inferred from
+   databases, will have unbalanced reactions which allow for
+   net-production/consumption of metabolites without any consumption/excretion.
+   A common reason for this is when general compounds have different meaning
+   in different reactions (as DNA has in these two reactions).
+       dATP + dGTP + dCTP + dTTP &lt;=&gt; DNA + 4 PPi
+       0.25 dATP + 0.25 dGTP + 0.25 dCTP + 0.25 dTTP &lt;=&gt; DNA + PPi
+   Reactions that are problematic like this are always elementally
+   unbalanced, but it is not always that you would like to exclude all
+   unbalanced reactions from your model.
+   This function tries to remove as few problematic reactions as possible
+   so that the model cannot produce/consume anything from nothing. This is done by
+   repeatedly calling makeSomething/consumeSomething, checking if any of
+   the involved reactions are elementally unbalanced, remove one of them,
+   and then iterating until no metabolites can be produced/consumed.
+   makeSomething is called before consumeSomething.
+
+   Usage: [newModel removedRxns]=removeBadRxns(model,rxnRules,...
+       ignoreMets,isNames,refModel,ignoreIntBounds,printReport)
+
+   Rasmus Agren, 2013-08-01</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="consumeSomething.html" class="code" title="function [solution metabolite]=consumeSomething(model,ignoreMets,isNames,minNrFluxes,params,ignoreIntBounds)">consumeSomething</a>	consumeSomething</li><li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="getElementalBalance.html" class="code" title="function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)">getElementalBalance</a>	getElementalBalance</li><li><a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)">getExchangeRxns</a>	getExchangeRxns</li><li><a href="makeSomething.html" class="code" title="function [solution metabolite]=makeSomething(model,ignoreMets,isNames,minNrFluxes,allowExcretion,params,ignoreIntBounds)">makeSomething</a>	makeSomething</li><li><a href="removeRxns.html" class="code" title="function reducedModel=removeRxns(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeRxns</a>	removeRxns</li><li><a href="solveLP.html" class="code" title="function [solution hsSolOut]=solveLP(model,minFlux,params,hsSol)">solveLP</a>	solveLP</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [newModel removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames,balanceElements,refModel,ignoreIntBounds,printReport)</a>
+0002 <span class="comment">% removeBadRxns</span>
+0003 <span class="comment">%   Iteratively removes reactions which enable production/consumption of some</span>
+0004 <span class="comment">%   metabolite without any uptake/excretion</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">%   model                   a model structure. For the intented function,</span>
+0007 <span class="comment">%                           the model shouldn't allow for any uptake/excretion.</span>
+0008 <span class="comment">%                           The easiest way to achieve this is to import the</span>
+0009 <span class="comment">%                           model using importModel('filename',false)</span>
+0010 <span class="comment">%   rxnRules                1: only remove reactions which are unbalanced</span>
+0011 <span class="comment">%                           2: also remove reactions which couldn't be checked for</span>
+0012 <span class="comment">%                           mass balancing</span>
+0013 <span class="comment">%                           3: all reactions can be removed</span>
+0014 <span class="comment">%                           (opt, default 1)</span>
+0015 <span class="comment">%   ignoreMets              either a cell array of metabolite IDs, a logical vector</span>
+0016 <span class="comment">%                           with the same number of elements as metabolites in the model,</span>
+0017 <span class="comment">%                           of a vector of indexes for metabolites to exclude from</span>
+0018 <span class="comment">%                           this analysis (opt, default [])</span>
+0019 <span class="comment">%   isNames                 true if the supplied mets represent metabolite names</span>
+0020 <span class="comment">%                           (as opposed to IDs). This is a way to delete</span>
+0021 <span class="comment">%                           metabolites in several compartments at once without</span>
+0022 <span class="comment">%                           knowing the exact IDs. This only works if ignoreMets</span>
+0023 <span class="comment">%                           is a cell array (opt, default false)</span>
+0024 <span class="comment">%   balanceElements         a cell array with the elements for which to</span>
+0025 <span class="comment">%                           balance the reactions. May contain any</span>
+0026 <span class="comment">%                           combination of the elements defined in parseFormulas</span>
+0027 <span class="comment">%                           (opt, default {'C';'P';'S';'N';'O'})</span>
+0028 <span class="comment">%   refModel                a reference model which can be used to ensure</span>
+0029 <span class="comment">%                           that the resulting model is still functional.</span>
+0030 <span class="comment">%                           The intended use is that the reference model is</span>
+0031 <span class="comment">%                           a copy of model, but with uptake/excretion allowed and</span>
+0032 <span class="comment">%                           some objectives (such as production of biomass)</span>
+0033 <span class="comment">%                           constrained to a non-zero flux. Before a</span>
+0034 <span class="comment">%                           reaction is removed from &quot;model&quot; the function first</span>
+0035 <span class="comment">%                           checks that the same deletion in &quot;refModel&quot;</span>
+0036 <span class="comment">%                           doesn't render the problem unfeasible (opt)</span>
+0037 <span class="comment">%   ignoreIntBounds         true if internal bounds (including reversibility)</span>
+0038 <span class="comment">%                           should be ignored. Exchange reactions are not affected.</span>
+0039 <span class="comment">%                           This can be used to find unbalanced solutions which are</span>
+0040 <span class="comment">%                           not possible using the default constraints (opt,</span>
+0041 <span class="comment">%                           default false)</span>
+0042 <span class="comment">%   printReport             true if a report should be printed (opt,</span>
+0043 <span class="comment">%                           default false)</span>
+0044 <span class="comment">%</span>
+0045 <span class="comment">%   newModel                   a model structure after the problematic</span>
+0046 <span class="comment">%                           reactions have been deleted</span>
+0047 <span class="comment">%   removedRxns             a cell array with the reactions that were</span>
+0048 <span class="comment">%                           removed</span>
+0049 <span class="comment">%</span>
+0050 <span class="comment">%   The purpose of this function is to remove reactions which enable</span>
+0051 <span class="comment">%   production/consumption of metabolites even when exchange reactions aren't used.</span>
+0052 <span class="comment">%   Many models, especially if they are automatically inferred from</span>
+0053 <span class="comment">%   databases, will have unbalanced reactions which allow for</span>
+0054 <span class="comment">%   net-production/consumption of metabolites without any consumption/excretion.</span>
+0055 <span class="comment">%   A common reason for this is when general compounds have different meaning</span>
+0056 <span class="comment">%   in different reactions (as DNA has in these two reactions).</span>
+0057 <span class="comment">%       dATP + dGTP + dCTP + dTTP &lt;=&gt; DNA + 4 PPi</span>
+0058 <span class="comment">%       0.25 dATP + 0.25 dGTP + 0.25 dCTP + 0.25 dTTP &lt;=&gt; DNA + PPi</span>
+0059 <span class="comment">%   Reactions that are problematic like this are always elementally</span>
+0060 <span class="comment">%   unbalanced, but it is not always that you would like to exclude all</span>
+0061 <span class="comment">%   unbalanced reactions from your model.</span>
+0062 <span class="comment">%   This function tries to remove as few problematic reactions as possible</span>
+0063 <span class="comment">%   so that the model cannot produce/consume anything from nothing. This is done by</span>
+0064 <span class="comment">%   repeatedly calling makeSomething/consumeSomething, checking if any of</span>
+0065 <span class="comment">%   the involved reactions are elementally unbalanced, remove one of them,</span>
+0066 <span class="comment">%   and then iterating until no metabolites can be produced/consumed.</span>
+0067 <span class="comment">%   makeSomething is called before consumeSomething.</span>
+0068 <span class="comment">%</span>
+0069 <span class="comment">%   Usage: [newModel removedRxns]=removeBadRxns(model,rxnRules,...</span>
+0070 <span class="comment">%       ignoreMets,isNames,refModel,ignoreIntBounds,printReport)</span>
+0071 <span class="comment">%</span>
+0072 <span class="comment">%   Rasmus Agren, 2013-08-01</span>
+0073 <span class="comment">%</span>
+0074 
+0075 <span class="keyword">if</span> nargin&lt;2
+0076     rxnRules=1;
+0077 <span class="keyword">end</span>
+0078 <span class="keyword">if</span> nargin&lt;3
+0079     ignoreMets=[];
+0080 <span class="keyword">end</span>
+0081 <span class="keyword">if</span> nargin&lt;4
+0082     isNames=false;
+0083 <span class="keyword">end</span>
+0084 <span class="keyword">if</span> nargin&lt;5
+0085     balanceElements={<span class="string">'C'</span>;<span class="string">'P'</span>;<span class="string">'S'</span>;<span class="string">'N'</span>;<span class="string">'O'</span>};
+0086 <span class="keyword">end</span>
+0087 <span class="keyword">if</span> nargin&lt;6
+0088     refModel=[];
+0089 <span class="keyword">else</span>
+0090     <span class="keyword">if</span> ~isempty(refModel)
+0091         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The feature to supply a reference model is currently not supported'</span>,false);
+0092     <span class="keyword">end</span>
+0093 <span class="keyword">end</span>
+0094 <span class="keyword">if</span> nargin&lt;7
+0095     ignoreIntBounds=false;
+0096 <span class="keyword">end</span>
+0097 <span class="keyword">if</span> nargin&lt;8
+0098     printReport=false;
+0099 <span class="keyword">end</span>
+0100 
+0101 <span class="comment">%Check if the model has open exchange reactions and print a warning in that case</span>
+0102 <span class="keyword">if</span> ~isfield(model,<span class="string">'unconstrained'</span>)
+0103     [crap I]=<a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)">getExchangeRxns</a>(model);
+0104     <span class="keyword">if</span> any(I)
+0105         <span class="keyword">if</span> any(model.lb(I)~=0) || any(model.ub(I)~=0)
+0106             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model contains open exchange reactions. This is not the intended use of this function. Consider importing your model using importModel(filename,false)'</span>,false);
+0107         <span class="keyword">end</span>
+0108     <span class="keyword">end</span>
+0109 <span class="keyword">end</span>
+0110 
+0111 <span class="comment">%Check that the model is feasible</span>
+0112 sol=<a href="solveLP.html" class="code" title="function [solution hsSolOut]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(model);
+0113 <span class="keyword">if</span> isempty(sol.f)
+0114     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model is not feasible. Consider removing lower bounds (such as ATP maintenance)'</span>); 
+0115 <span class="keyword">end</span>
+0116 
+0117 <span class="comment">%Check that the reference model is feasible</span>
+0118 <span class="keyword">if</span> any(refModel)
+0119     sol=<a href="solveLP.html" class="code" title="function [solution hsSolOut]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(refModel);
+0120     <span class="keyword">if</span> isempty(sol.f)
+0121         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The reference model is not feasible'</span>); 
+0122     <span class="keyword">end</span>
+0123 <span class="keyword">end</span>
+0124 
+0125 <span class="comment">%Initialize some stuff</span>
+0126 removedRxns={};
+0127 balanceStructure=<a href="getElementalBalance.html" class="code" title="function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)">getElementalBalance</a>(model);
+0128 
+0129 <span class="comment">%Check which elements to balance for</span>
+0130 <span class="keyword">if</span> ~isempty(setdiff(balanceElements,balanceStructure.elements.abbrevs))
+0131     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'Could not recognize all elements to balance for'</span>); 
+0132 <span class="keyword">end</span>
+0133 bal=ismember(balanceStructure.elements.abbrevs,balanceElements);
+0134 
+0135 <span class="comment">%Main loop. First run for makeSomething, second for consumeSomething</span>
+0136 warned=false(2,1); <span class="comment">%This is to prevent the same warning being printed multiple times if rxnRules==3</span>
+0137 <span class="keyword">for</span> i=1:2
+0138     <span class="keyword">while</span> 1
+0139         <span class="comment">%Make some metabolite using as few reactions as possible</span>
+0140         <span class="keyword">if</span> i==1
+0141             [solution metabolite]=<a href="makeSomething.html" class="code" title="function [solution metabolite]=makeSomething(model,ignoreMets,isNames,minNrFluxes,allowExcretion,params,ignoreIntBounds)">makeSomething</a>(model,ignoreMets,isNames,false,true,[],ignoreIntBounds);
+0142             <span class="keyword">if</span> ~isempty(solution)
+0143                 <span class="keyword">if</span> printReport
+0144                    fprintf([<span class="string">'Can make: '</span> model.metNames{metabolite(1)} <span class="string">'\n'</span>]);
+0145                 <span class="keyword">end</span>
+0146             <span class="keyword">else</span>
+0147                 <span class="comment">%If no solution could be found, then finish</span>
+0148                 <span class="keyword">break</span>;
+0149             <span class="keyword">end</span>
+0150         <span class="keyword">else</span>
+0151             [solution metabolite]=<a href="consumeSomething.html" class="code" title="function [solution metabolite]=consumeSomething(model,ignoreMets,isNames,minNrFluxes,params,ignoreIntBounds)">consumeSomething</a>(model,ignoreMets,isNames,false,[],ignoreIntBounds);
+0152             <span class="keyword">if</span> ~isempty(solution)
+0153                 <span class="keyword">if</span> printReport
+0154                    fprintf([<span class="string">'Can consume: '</span> model.metNames{metabolite(1)} <span class="string">'\n'</span>]);
+0155                 <span class="keyword">end</span>
+0156             <span class="keyword">else</span>
+0157                 <span class="comment">%If no solution could be found, then finish</span>
+0158                 <span class="keyword">break</span>;
+0159             <span class="keyword">end</span>
+0160         <span class="keyword">end</span>
+0161         
+0162         <span class="comment">%Find all reactions that are unbalanced and still carry flux</span>
+0163         I=find(abs(solution)&gt;10^-8 &amp; balanceStructure.balanceStatus&gt;=0 &amp; ~all(balanceStructure.leftComp(:,bal)==balanceStructure.rightComp(:,bal),2));
+0164 
+0165         <span class="comment">%If there are unbalanced rxns then delete one of them and iterate</span>
+0166         <span class="keyword">if</span> any(I)
+0167             rxnToRemove=I(randsample(numel(I),1));
+0168         <span class="keyword">else</span>
+0169             <span class="comment">%If there are no unbalanced rxns in the solution</span>
+0170             <span class="keyword">if</span> rxnRules==1
+0171                 <span class="keyword">if</span> i==1
+0172                     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'No unbalanced reactions were found in the solution, but the model can still make &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'</span>],false);
+0173                 <span class="keyword">else</span>
+0174                     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'No unbalanced reactions were found in the solution, but the model can still consume &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'</span>],false);
+0175                 <span class="keyword">end</span>
+0176                 <span class="keyword">break</span>;
+0177             <span class="keyword">else</span>
+0178                 <span class="comment">%Find reactions which are not checked for mass balancing, but</span>
+0179                 <span class="comment">%that still carry flux</span>
+0180                 I=find(abs(solution)&gt;10^-8 &amp; balanceStructure.balanceStatus&lt;0);
+0181 
+0182                 <span class="comment">%If there are any such reactions, remove one of them and</span>
+0183                 <span class="comment">%iterate</span>
+0184                 <span class="keyword">if</span> any(I)
+0185                     rxnToRemove=I(randsample(numel(I),1));
+0186                 <span class="keyword">else</span>
+0187                     <span class="keyword">if</span> rxnRules==2
+0188                         <span class="comment">%This happens when all reactions used are balanced</span>
+0189                         <span class="comment">%according to the metabolite formulas. This cannot be, and</span>
+0190                         <span class="comment">%indicates that one or more of the formulas are wrong.</span>
+0191                         <span class="comment">%Print a warning and delete any reaction with flux</span>
+0192                         <span class="keyword">if</span> i==1
+0193                             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still make &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'</span>],false);
+0194                         <span class="keyword">else</span>
+0195                             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still consume &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'</span>],false);
+0196                         <span class="keyword">end</span>
+0197                         <span class="keyword">break</span>;
+0198                     <span class="keyword">else</span>
+0199                         <span class="keyword">if</span> i==1
+0200                             <span class="keyword">if</span> warned(1)==false
+0201                                 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still make &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. This indicates some error in the metabolite formulas. Removing random reactions in the solution'</span>],false);
+0202                                 warned(1)=true;
+0203                             <span class="keyword">end</span>
+0204                         <span class="keyword">else</span>
+0205                             <span class="keyword">if</span> warned(2)==false
+0206                                 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still consume &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. This indicates some error in the metabolite formulas. Removing random reactions in the solution'</span>],false);
+0207                                 warned(2)=true;
+0208                             <span class="keyword">end</span>
+0209                         <span class="keyword">end</span>
+0210                         I=find(abs(solution)&gt;10^-8);
+0211                         rxnToRemove=I(randsample(numel(I),1));
+0212                     <span class="keyword">end</span>
+0213                 <span class="keyword">end</span>
+0214             <span class="keyword">end</span>
+0215         <span class="keyword">end</span>
+0216         removedRxns=[removedRxns;model.rxns(rxnToRemove)];
+0217         <span class="keyword">if</span> printReport
+0218            fprintf([<span class="string">'\tRemoved: '</span>  model.rxns{rxnToRemove} <span class="string">'\n'</span>]);
+0219         <span class="keyword">end</span>
+0220         model=<a href="removeRxns.html" class="code" title="function reducedModel=removeRxns(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeRxns</a>(model,rxnToRemove);
+0221         balanceStructure.balanceStatus(rxnToRemove)=[];
+0222         balanceStructure.leftComp(rxnToRemove,:)=[];
+0223         balanceStructure.rightComp(rxnToRemove,:)=[];
+0224     <span class="keyword">end</span>
+0225 <span class="keyword">end</span>
+0226 
+0227 newModel=model;
+0228 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 06-Jan-2014 14:58:12 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

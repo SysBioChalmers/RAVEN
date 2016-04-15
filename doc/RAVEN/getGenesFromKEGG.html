@@ -1,0 +1,383 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of getGenesFromKEGG</title>
+  <meta name="keywords" content="getGenesFromKEGG">
+  <meta name="description" content="getGenesFromKEGG">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">RAVEN</a> &gt; getGenesFromKEGG.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for RAVEN&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>getGenesFromKEGG
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>getGenesFromKEGG</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function model=getGenesFromKEGG(keggPath,koList) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> getGenesFromKEGG
+   Retrieves information on all genes stored in KEGG database
+
+   keggPath    this function reads data from a local FTP dump of the KEGG
+               database. keggPath is the pathway to the root of the database
+
+   koList      the number of genes in KEGG is very large. koList can be a
+               cell array with KO identifiers, in which case only genes
+               belonging to one of those KEGG orthologies are retrieved (opt,
+               default all KOs with associated reactions)
+
+   model       a model structure generated from the database. The following
+               fields are filled
+               id:             'KEGG'
+               description:    'Automatically generated from KEGG database'
+               rxns:           KO ids
+               rxnNames:       Name for each entry
+               genes:          IDs for all the genes. Genes are saved as
+                               organism abbreviation:id (same as in KEGG).
+                               'HSA:124' for example is alcohol dehydrogenase
+                               in Homo sapiens
+               rxnGeneMat      A binary matrix that indicates whether a
+                               specific gene is present in a KO id
+  
+   If the file keggGenes.mat is in the RAVEN directory it will be loaded
+   instead of parsing of the KEGG files. If it does not exist it will be
+   saved after parsing of the KEGG files. In general, you should remove
+   the keggGenes.mat file if you want to rebuild the model structure from
+   a newer version of KEGG.
+
+   Usage: model=getGenesFromKEGG(keggPath,koList)
+
+   Rasmus Agren, 2013-08-01</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="downloadKEGG.html" class="code" title="function exitFlag=downloadKEGG(keggPath)">downloadKEGG</a>	downloadKEGG</li><li><a href="removeRxns.html" class="code" title="function reducedModel=removeRxns(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeRxns</a>	removeRxns</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="getModelFromKEGG.html" class="code" title="function [model KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)">getModelFromKEGG</a>	getModelFromKEGG</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function allKOs=getAllKOs(keggPath)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function model=getGenesFromKEGG(keggPath,koList)</a>
+0002 <span class="comment">% getGenesFromKEGG</span>
+0003 <span class="comment">%   Retrieves information on all genes stored in KEGG database</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%   keggPath    this function reads data from a local FTP dump of the KEGG</span>
+0006 <span class="comment">%               database. keggPath is the pathway to the root of the database</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">%   koList      the number of genes in KEGG is very large. koList can be a</span>
+0009 <span class="comment">%               cell array with KO identifiers, in which case only genes</span>
+0010 <span class="comment">%               belonging to one of those KEGG orthologies are retrieved (opt,</span>
+0011 <span class="comment">%               default all KOs with associated reactions)</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">%   model       a model structure generated from the database. The following</span>
+0014 <span class="comment">%               fields are filled</span>
+0015 <span class="comment">%               id:             'KEGG'</span>
+0016 <span class="comment">%               description:    'Automatically generated from KEGG database'</span>
+0017 <span class="comment">%               rxns:           KO ids</span>
+0018 <span class="comment">%               rxnNames:       Name for each entry</span>
+0019 <span class="comment">%               genes:          IDs for all the genes. Genes are saved as</span>
+0020 <span class="comment">%                               organism abbreviation:id (same as in KEGG).</span>
+0021 <span class="comment">%                               'HSA:124' for example is alcohol dehydrogenase</span>
+0022 <span class="comment">%                               in Homo sapiens</span>
+0023 <span class="comment">%               rxnGeneMat      A binary matrix that indicates whether a</span>
+0024 <span class="comment">%                               specific gene is present in a KO id</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">%   If the file keggGenes.mat is in the RAVEN directory it will be loaded</span>
+0027 <span class="comment">%   instead of parsing of the KEGG files. If it does not exist it will be</span>
+0028 <span class="comment">%   saved after parsing of the KEGG files. In general, you should remove</span>
+0029 <span class="comment">%   the keggGenes.mat file if you want to rebuild the model structure from</span>
+0030 <span class="comment">%   a newer version of KEGG.</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">%   Usage: model=getGenesFromKEGG(keggPath,koList)</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">%   Rasmus Agren, 2013-08-01</span>
+0035 <span class="comment">%</span>
+0036 
+0037 <span class="comment">%NOTE: This is how one entry looks in the file</span>
+0038 
+0039 <span class="comment">% ENTRY       K11440                      KO</span>
+0040 <span class="comment">% NAME        gbsB</span>
+0041 <span class="comment">% DEFINITION  choline dehydrogenase [EC:1.1.1.1]</span>
+0042 <span class="comment">% CLASS       Metabolism; Amino Acid Metabolism; Glycine, serine and threonine</span>
+0043 <span class="comment">%             metabolism [PATH:ko00260]</span>
+0044 <span class="comment">% DBLINKS     RN: R08557 R08558</span>
+0045 <span class="comment">%             COG: COG1454</span>
+0046 <span class="comment">% GENES       BSU: BSU31050(gbsB)</span>
+0047 <span class="comment">%             BCY: Bcer98_1477</span>
+0048 <span class="comment">%             BLI: BL02563(gbsB)</span>
+0049 <span class="comment">%             BLD: BLi03269(gbsB)</span>
+0050 <span class="comment">%             BCL: ABC0979(gbsB)</span>
+0051 <span class="comment">%             BAY: RBAM_028150(gbsB)</span>
+0052 <span class="comment">%             BPU: BPUM_2734(gbsB)</span>
+0053 <span class="comment">% ADDITIONAL  INFO...</span>
+0054 <span class="comment">% ///</span>
+0055 
+0056 <span class="comment">%The file is not tab-delimited. Instead each label is 12 characters</span>
+0057 <span class="comment">%(except for '///')</span>
+0058 
+0059 <span class="comment">%Check if the genes have been parsed before and saved. If so, load the</span>
+0060 <span class="comment">%model.</span>
+0061 [ST I]=dbstack(<span class="string">'-completenames'</span>);
+0062 ravenPath=fileparts(ST(I).file);
+0063 genesFile=fullfile(ravenPath,<span class="string">'kegg'</span>,<span class="string">'keggGenes.mat'</span>);
+0064 <span class="keyword">if</span> exist(genesFile, <span class="string">'file'</span>)
+0065     fprintf([<span class="string">'NOTE: Importing KEGG genes from '</span> strrep(genesFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'.\n'</span>]);
+0066     load(genesFile);
+0067 <span class="keyword">else</span>
+0068     <span class="comment">%Download required files from KEGG if it doesn't exist in the directory</span>
+0069     <a href="downloadKEGG.html" class="code" title="function exitFlag=downloadKEGG(keggPath)">downloadKEGG</a>(keggPath);
+0070     
+0071     <span class="comment">%Get all KOs that are associated to reactions</span>
+0072     allKOs=<a href="#_sub1" class="code" title="subfunction allKOs=getAllKOs(keggPath)">getAllKOs</a>(keggPath);
+0073     
+0074     <span class="comment">%Since the list of genes will be accessed many times I use a hash table</span>
+0075     geneMap=containers.Map(<span class="string">'KeyType'</span>,<span class="string">'char'</span>,<span class="string">'ValueType'</span>,<span class="string">'int32'</span>);
+0076     
+0077     <span class="comment">%Add new functionality in the order specified in models</span>
+0078     model.id=<span class="string">'KEGG'</span>;
+0079     model.description=<span class="string">'Automatically generated from KEGG database'</span>;
+0080 
+0081     <span class="comment">%Preallocate memory</span>
+0082     model.rxns=cell(numel(allKOs),1);
+0083     model.rxnNames=cell(numel(allKOs),1);
+0084 
+0085     <span class="comment">%Reserve space for 500000 genes</span>
+0086     model.genes=cell(500000,1);
+0087 
+0088     <span class="comment">%Load information on KO ID, name, and associated genes</span>
+0089     fid = fopen(fullfile(keggPath,<span class="string">'ko'</span>), <span class="string">'r'</span>);
+0090 
+0091     <span class="comment">%Keeps track of how many KOs that have been added</span>
+0092     koCounter=0;
+0093     nGenes=0;
+0094     addingGenes=false;
+0095     
+0096     <span class="comment">%These contain the mapping between KOs and genes and are used to</span>
+0097     <span class="comment">%generate the model.rxnGeneMat in the end</span>
+0098     koIndex=zeros(5000000,1);
+0099     geneIndex=koIndex;
+0100     nMappings=0;
+0101 
+0102     skipRead=false;
+0103 
+0104     <span class="comment">%Loop through the file</span>
+0105     <span class="keyword">while</span> 1
+0106       <span class="comment">%Get the next line</span>
+0107       <span class="keyword">if</span> skipRead==false
+0108         tline = fgetl(fid);
+0109       <span class="keyword">else</span>
+0110         skipRead=false;
+0111       <span class="keyword">end</span>
+0112 
+0113       <span class="comment">%Abort at end of file</span>
+0114       <span class="keyword">if</span> ~ischar(tline)
+0115           <span class="keyword">break</span>;
+0116       <span class="keyword">end</span>
+0117 
+0118       <span class="comment">%Skip '///'</span>
+0119       <span class="keyword">if</span> numel(tline)&lt;12
+0120           addingGenes=false;
+0121           <span class="keyword">continue</span>;
+0122       <span class="keyword">end</span>
+0123 
+0124       <span class="comment">%Check if it's a new reaction</span>
+0125       <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'ENTRY       '</span>)
+0126           <span class="comment">%Check if it should be added</span>
+0127           koID=tline(13:18);
+0128 
+0129           <span class="keyword">if</span> ismember(koID,allKOs)
+0130              addMe=true;
+0131              koCounter=koCounter+1
+0132           <span class="keyword">else</span>
+0133              addMe=false;
+0134              <span class="keyword">continue</span>;
+0135           <span class="keyword">end</span>      
+0136 
+0137           <span class="comment">%Add reaction ID (always 6 characters)</span>
+0138           model.rxns{koCounter}=koID;
+0139           model.rxnNames{koCounter}=<span class="string">''</span>; <span class="comment">%Will be overwritten if it exists</span>
+0140       <span class="keyword">end</span>
+0141 
+0142       <span class="comment">%To get here we must be in a KO that should be added</span>
+0143       <span class="keyword">if</span> addMe==true
+0144           <span class="comment">%Add name</span>
+0145           <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'DEFINITION  '</span>)
+0146               model.rxnNames{koCounter}=tline(13:end);
+0147           <span class="keyword">end</span>
+0148 
+0149           <span class="comment">%Check if it's time to start adding genes</span>
+0150           <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'GENES       '</span>)
+0151               addingGenes=true;
+0152           <span class="keyword">end</span>
+0153 
+0154           <span class="comment">%Add genes</span>
+0155           <span class="keyword">if</span> addingGenes==true
+0156              <span class="comment">%We are now adding genes for the current KO. All gene rows start</span>
+0157              <span class="comment">%with 12 spaces. If this is not true it means that there is</span>
+0158              <span class="comment">%additional annotation such as AUTHORS. This is not common but it</span>
+0159              <span class="comment">%exists.</span>
+0160              <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'            '</span>) || strcmp(tline(1:12),<span class="string">'GENES       '</span>)
+0161                  geneLine=tline(13:end);
+0162 
+0163                  <span class="comment">%Check if the line is from a new organism of from the same as</span>
+0164                  <span class="comment">%before</span>
+0165                  <span class="keyword">if</span> strcmp(geneLine(4),<span class="string">':'</span>)
+0166                      currentOrganism=geneLine(1:3);
+0167                  <span class="keyword">end</span>
+0168 
+0169                  <span class="comment">%Parse the string</span>
+0170                  genes=regexp(geneLine(6:end),<span class="string">' '</span>,<span class="string">'split'</span>);
+0171                  genes=strcat(currentOrganism,<span class="string">':'</span>,genes(:));
+0172                  
+0173                  <span class="comment">%Add the genes to the gene list</span>
+0174                  <span class="keyword">for</span> i=1:numel(genes)
+0175                      geneString=genes{i};
+0176                      <span class="keyword">if</span> geneMap.isKey(geneString);
+0177                         index=geneMap(geneString);
+0178                      <span class="keyword">else</span>
+0179                         nGenes=nGenes+1;
+0180                         model.genes{nGenes}=geneString;
+0181                         index=nGenes;
+0182                         geneMap(geneString)=index;
+0183                      <span class="keyword">end</span>
+0184                      
+0185                      <span class="comment">%Add the connection to the KO</span>
+0186                      nMappings=nMappings+1;
+0187                      koIndex(nMappings)=koCounter;
+0188                      geneIndex(nMappings)=index;
+0189                  <span class="keyword">end</span>
+0190              <span class="keyword">else</span>
+0191                  <span class="comment">%Now we want to throw away everything until the next</span>
+0192                  <span class="comment">%entry</span>
+0193                  <span class="keyword">while</span> 1
+0194                     tline = fgetl(fid);
+0195                     <span class="keyword">if</span> strcmp(tline,<span class="string">'///'</span>)
+0196                         <span class="comment">%When the new entry is found, skip reading one line to</span>
+0197                         <span class="comment">%fit with the rest of the code</span>
+0198                         skipRead=true;
+0199                         <span class="keyword">break</span>;
+0200                     <span class="keyword">end</span>
+0201                  <span class="keyword">end</span>
+0202              <span class="keyword">end</span>
+0203           <span class="keyword">end</span>
+0204       <span class="keyword">end</span>
+0205     <span class="keyword">end</span>
+0206     <span class="comment">%Close the file</span>
+0207     fclose(fid);
+0208 
+0209     <span class="comment">%If too much space was allocated, shrink the model</span>
+0210     model.rxns=model.rxns(1:koCounter);
+0211     model.rxnNames=model.rxnNames(1:koCounter);
+0212     model.genes=model.genes(1:nGenes);
+0213     
+0214     <span class="comment">%Retrieve and add the gene associations</span>
+0215     model.rxnGeneMat=sparse(koIndex(1:nMappings),geneIndex(1:nMappings),ones(nMappings,1));
+0216     
+0217     <span class="comment">%To make sure the size is correct if the last KOs don't have genes</span>
+0218     <span class="keyword">if</span> size(model.rxnGeneMat,1)~=koCounter
+0219         model.rxnGeneMat(koCounter,1)=0;
+0220     <span class="keyword">end</span>
+0221     
+0222     <span class="comment">%Save the model structure</span>
+0223     save(genesFile,<span class="string">'model'</span>);
+0224 <span class="keyword">end</span>
+0225 
+0226 <span class="comment">%Only get the KOs in koList</span>
+0227 I=~ismember(model.rxns,koList);
+0228 model=<a href="removeRxns.html" class="code" title="function reducedModel=removeRxns(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeRxns</a>(model,I,true,true);
+0229 <span class="keyword">end</span>
+0230 
+0231 <a name="_sub1" href="#_subfunctions" class="code">function allKOs=getAllKOs(keggPath)</a>
+0232     <span class="comment">%Retrieves all KOs that are associated to reactions. This is because</span>
+0233     <span class="comment">%the number of genes in KEGG is very large so without this parsing it</span>
+0234     <span class="comment">%would take many hours</span>
+0235     
+0236     allKOs={};
+0237     
+0238     <span class="comment">%First check if the reactions have already been parsed</span>
+0239     [ST I]=dbstack(<span class="string">'-completenames'</span>);
+0240     ravenPath=fileparts(ST(I).file);
+0241     rxnsFile=fullfile(ravenPath,<span class="string">'kegg'</span>,<span class="string">'keggRxns.mat'</span>);
+0242     <span class="keyword">if</span> exist(rxnsFile, <span class="string">'file'</span>)
+0243         fprintf([<span class="string">'NOTE: Importing KEGG ORTHOLOGY list from '</span> strrep(rxnsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'.\n'</span>]);
+0244         load(rxnsFile,<span class="string">'model'</span>);
+0245         
+0246         <span class="comment">%Loop through the reactions and add the corresponding genes</span>
+0247         <span class="keyword">for</span> i=1:numel(model.rxns)
+0248             <span class="keyword">if</span> isstruct(model.rxnMiriams{i})
+0249                 <span class="comment">%Get all KOs</span>
+0250                 allKOs=[allKOs;model.rxnMiriams{i}.value(strcmpi(model.rxnMiriams{i}.name,<span class="string">'urn:miriam:kegg.ko'</span>))];
+0251             <span class="keyword">end</span>
+0252         <span class="keyword">end</span>
+0253     <span class="keyword">else</span>
+0254         <span class="comment">%Parse the reaction file instead</span>
+0255         <span class="comment">%First load information on reaction ID, reaction name, KO, pathway, and ec-number</span>
+0256         fid = fopen(fullfile(keggPath,<span class="string">'reaction'</span>), <span class="string">'r'</span>);
+0257         orthology=false;
+0258         <span class="keyword">while</span> 1
+0259           <span class="comment">%Get the next line</span>
+0260           tline = fgetl(fid);
+0261 
+0262           <span class="comment">%Abort at end of file</span>
+0263           <span class="keyword">if</span> ~ischar(tline)
+0264               <span class="keyword">break</span>;
+0265           <span class="keyword">end</span>
+0266 
+0267           <span class="comment">%Skip '///'</span>
+0268           <span class="keyword">if</span> numel(tline)&lt;12
+0269               <span class="keyword">continue</span>;
+0270           <span class="keyword">end</span>
+0271           
+0272           <span class="comment">%Check if it's a new reaction</span>
+0273           <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'ENTRY       '</span>)
+0274               orthology=false;
+0275           <span class="keyword">end</span>
+0276           
+0277           <span class="keyword">if</span> strcmp(tline(1:9),<span class="string">'REFERENCE'</span>)
+0278               orthology=false;
+0279           <span class="keyword">end</span>
+0280 
+0281           <span class="comment">%Add KO-ids</span>
+0282           <span class="keyword">if</span> numel(tline)&gt;16
+0283               <span class="keyword">if</span> strcmp(tline(1:16),<span class="string">'ORTHOLOGY   KO: '</span>) || strcmp(tline(1:16),<span class="string">'            KO: '</span>) || strcmp(tline(1:12),<span class="string">'ORTHOLOGY   '</span>) || orthology==true
+0284                   <span class="keyword">if</span> strcmp(tline(13:16),<span class="string">'KO:'</span>) <span class="comment">%This is in the old version</span>
+0285                     allKOs=[allKOs;tline(17:22)];
+0286                   <span class="keyword">else</span>
+0287                       <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'ORTHOLOGY   '</span>)
+0288                         <span class="comment">%This means that it found one KO in the new format and that</span>
+0289                         <span class="comment">%subsequent lines might be other KOs</span>
+0290                         orthology=true;
+0291                       <span class="keyword">end</span>
+0292                       allKOs=[allKOs;tline(13:18)];
+0293                   <span class="keyword">end</span>
+0294               <span class="keyword">end</span>
+0295           <span class="keyword">end</span>
+0296         <span class="keyword">end</span>
+0297 
+0298         <span class="comment">%Close the file</span>
+0299         fclose(fid);
+0300     <span class="keyword">end</span>
+0301     allKOs=unique(allKOs);
+0302 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 06-Jan-2014 14:58:12 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
