@@ -1,5 +1,5 @@
-function reducedModel=removeRxns(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)
-% removeRxns
+function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)
+% removeReactions
 %   Deletes a set of reactions from a model
 %
 %   model             a model structure
@@ -15,7 +15,7 @@ function reducedModel=removeRxns(model,rxnsToRemove,removeUnusedMets,removeUnuse
 %
 %   reducedModel      an updated model structure
 %
-%   Usage: reducedModel=removeRxns(model,rxnsToRemove,removeUnusedMets,...
+%   Usage: reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,...
 %           removeUnusedGenes,removeUnusedComps)
 %
 %   Rasmus Agren, 2013-08-01

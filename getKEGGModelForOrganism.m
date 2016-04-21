@@ -245,7 +245,7 @@ end
 %First remove all reactions without genes
 hasGenes=any(model.rxnGeneMat,2);
 
-model=removeRxns(model,~hasGenes,true);
+model=removeReactions(model,~hasGenes,true);
 
 %If no FASTA file is supplied, then we're done here
 if isempty(fastaFile)
@@ -298,7 +298,7 @@ if ~isempty(missingFASTA)
         downloadKEGG(fullfile(dataDir,'keggdb'));
     end
     %Only construct models for KOs which don't have files already
-    fastaModel=removeRxns(KOModel,setdiff(KOModel.rxns,missingFASTA),true,true);
+    fastaModel=removeReactions(KOModel,setdiff(KOModel.rxns,missingFASTA),true,true);
     %Permute the order of the KOs in the model so that constructMultiFasta
     %can be run on several processors at once
     fastaModel=permuteModel(fastaModel,randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(fastaModel.rxns)),'rxns');
@@ -636,7 +636,7 @@ end
 %that are not used (which could happen because minScoreRatioG and
 %minScoreRatioKO)
 I=sum(model.rxnGeneMat,2)==0;
-model=removeRxns(model,I,true,true);
+model=removeReactions(model,I,true,true);
 
 %Add the gene associations as 'or'
 for i=1:numel(model.rxns)

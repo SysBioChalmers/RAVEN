@@ -76,7 +76,7 @@ details=zeros(numel(model.genes),1);
 
 %First simplify the model to reduce the size
 model=simplifyModel(model,true,false,true,true);
-model=removeRxns(model,{},true,true); %Removes unused genes
+model=removeReactions(model,{},true,true); %Removes unused genes
 details(~ismember(originalGenes,model.genes))=4;
 
 [crap geneMapping]=ismember(model.genes,originalGenes);

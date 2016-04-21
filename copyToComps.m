@@ -64,7 +64,7 @@ for i=1:numel(toComps)
    %Copy the reactions by making a model structure with only them, then
    %change the localization, and finally merge with the original model
    modelToAdd=model;
-   modelToAdd=removeRxns(modelToAdd,setdiff(1:numel(model.rxns),rxns),true,true);
+   modelToAdd=removeReactions(modelToAdd,setdiff(1:numel(model.rxns),rxns),true,true);
    modelToAdd.rxns=strcat(modelToAdd.rxns,'_',toComps(i));
    modelToAdd.mets=strcat(modelToAdd.mets,'_',toComps(i));
    modelToAdd.comps=modelToAdd.comps(J);
@@ -82,7 +82,7 @@ for i=1:numel(toComps)
 end
 
 if deleteOriginal==true
-   model=removeRxns(model,rxns,true,true,true); %Also delete unused compartments
+   model=removeReactions(model,rxns,true,true,true); %Also delete unused compartments
 end
 
 model.id=originalID;

@@ -88,7 +88,7 @@ for i=1:numel(uNames)
 end
 
 %Remove all metabolites that are no longer used (with a bit of a trick)
-model=removeRxns(model,{},true);
+model=removeReactions(model,{},true);
 
 %Update all mets so that they are in compartment "s" with id "1"
 model.compNames={'System'};
@@ -114,7 +114,7 @@ if deleteRxnsWithOneMet==true
     %Delete the reactions that contain only one metabolite after the
     %merging but not before
     deletedRxns=setdiff(I,reservedRxns);
-    model=removeRxns(model,deletedRxns,true,true);
+    model=removeReactions(model,deletedRxns,true,true);
 else
     deletedRxns={};
 end

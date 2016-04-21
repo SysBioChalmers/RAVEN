@@ -81,8 +81,13 @@ end
 %Use MSK_OPTIMIZER_FREE_SIMPLEX. This should not be necessary, but I've
 %noticed that the interior point solver is not as good at finding feasible
 %solutions.
+
+%%%%%%
 params.MSK_IPAR_OPTIMIZER='MSK_OPTIMIZER_FREE_SIMPLEX';
-[crap,res] = mosekopt('minimize echo(0)',prob,getMILPParams(params));
+%[crap,res] = mosekopt('minimize echo(0)',prob,getMILPParams(params));
+res = optimizeProb(prob,params);
+%isFeasible=res.isFeasible; isOptimal=res.isOptimal;
+%%%%%%
 
 %Check if the problem was feasible and that the solution was optimal
 [isFeasible isOptimal]=checkSolution(res);
@@ -91,7 +96,8 @@ params.MSK_IPAR_OPTIMIZER='MSK_OPTIMIZER_FREE_SIMPLEX';
 %re-solve it without hot-start and get a feasible solution
 if ~isFeasible && ~isempty(hsSol)
     prob.sol=rmfield(prob.sol,'bas');
-    [crap,res] = mosekopt('minimize echo(0)',prob,getMILPParams(params));
+    %[crap,res] = mosekopt('minimize echo(0)',prob,getMILPParams(params));
+    res=optimizeProb(prob,params);
     [isFeasible isOptimal]=checkSolution(res);
 end
 
@@ -114,6 +120,10 @@ if isfield(res.sol,'bas')
     solution.x=res.sol.bas.xx;
     if minFlux<=1;
         hsSolOut=res.sol.bas;
+        if(isfield(res,'vbasis')) % gurobi uses vbasis and cbasis as hotstart
+            hsSolOut.vbasis=res.vbasis;
+            hsSolOut.cbasis=res.cbasis;
+        end
     end
     solution.f=res.sol.bas.pobjval;
 else

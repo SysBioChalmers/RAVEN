@@ -101,7 +101,7 @@ for i=1:numel(models)
     hasNoGenes=1:numel(models{i}.rxns);
     hasNoGenes(hasGenes)=[];
     
-    models{i}=removeRxns(models{i},hasNoGenes,true,true);
+    models{i}=removeReactions(models{i},hasNoGenes,true,true);
 end
 
 %Create a structure that contains all genes used in the blasts in any

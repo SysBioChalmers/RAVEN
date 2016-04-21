@@ -90,6 +90,6 @@ for i=1:numel(duplicateRxns)
 end
 
 %Delete the duplicate reactions
-reducedModel=removeRxns(model,duplicateRxns);
+reducedModel=removeReactions(model,duplicateRxns);
 removedRxns=model.rxns(duplicateRxns);
 end

@@ -104,7 +104,7 @@ if removeUnusedRxns==true
     [crap a crap]=find(reducedModel.S);
     rxnsToRemove=1:numel(reducedModel.rxns);
     rxnsToRemove(a)=[];
-	reducedModel=removeRxns(reducedModel,rxnsToRemove,false,removeUnusedGenes);
+	reducedModel=removeReactions(reducedModel,rxnsToRemove,false,removeUnusedGenes);
 end
 
 %Remove unused compartments

@@ -43,7 +43,7 @@ end
 
 if ~isempty(rxns)
    indexes=~getIndexes(model,rxns,'rxns',true);
-   model=removeRxns(model,indexes,true);
+   model=removeReactions(model,indexes,true);
 end
 
 balanceStructure.balanceStatus=nan(numel(model.rxns),1);

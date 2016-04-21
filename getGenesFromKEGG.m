@@ -225,7 +225,7 @@ end
 
 %Only get the KOs in koList
 I=~ismember(model.rxns,koList);
-model=removeRxns(model,I,true,true);
+model=removeReactions(model,I,true,true);
 end
 
 function allKOs=getAllKOs(keggPath)

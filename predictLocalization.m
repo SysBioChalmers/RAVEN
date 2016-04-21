@@ -157,7 +157,7 @@ while 1
         %Delete any reactions involving any of the metsToDelete
         [crap I]=find(model.S(metsToDelete,:));
         removedRxns=[removedRxns;model.rxns(I)];
-        model=removeRxns(model,I,true,true);
+        model=removeReactions(model,I,true,true);
     else
         %All bad reactions deleted
         break;
@@ -256,7 +256,7 @@ GSS.scores=[GSS.scores;cScores];
 
 %After merging the complexes it could happen that there are genes that are
 %no longer in use. Delete such genes
-model=removeRxns(model,{},false,true);
+model=removeReactions(model,{},false,true);
 
 %Exchange reactions, defined as involving an unconstrained metabolite, are
 %special in that they have to stay in the defaultCompartment. This means
@@ -293,7 +293,7 @@ model.rxnGeneMat(1:nER,:)=0;
 model.grRules(1:nER)={''};
 
 %Remove unused genes
-model=removeRxns(model,{},false,true);
+model=removeReactions(model,{},false,true);
 
 %Remove genes with no match to the model and reorder so that the genes are 
 %in the same order as model.genes. Since we have already added fake genes
@@ -693,7 +693,7 @@ end
 K=true(numel(outModel.rxns),1);
 K(J)=false;
 K(end-nTransRxns+1:end)=false;
-outModel=removeRxns(outModel,K,true);
+outModel=removeReactions(outModel,K,true);
 
 %Remove all fake genes
 I=strmatch('&&FAKE&&',outModel.genes);

@@ -127,7 +127,7 @@ end
 
 %This is a rather ugly solution to the issue that it's a bit tricky to keep
 %track of which scores belong to which reactions. This requires that
-%removeRxns and mergeModels are modified to check for the new field.
+%removeReactions and mergeModels are modified to check for the new field.
 model.rxnScores=zeros(numel(model.rxns),1); 
 
 %First merge all models into one big one
@@ -209,7 +209,7 @@ templateRxns=find(~strcmp(allModels.rxnFrom,model.id));
 %Remove everything except for the added ones
 I=true(numel(allModels.rxns),1);
 I(templateRxns(J))=false;
-addedModel=removeRxns(allModels,I,true);
+addedModel=removeReactions(allModels,I,true);
 
 newModel=mergeModels({model;addedModel},true);
 addedRxns=setdiff(newModel.rxns,model.rxns);

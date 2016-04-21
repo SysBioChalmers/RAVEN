@@ -217,7 +217,7 @@ for i=1:2
         if printReport
            fprintf(['\tRemoved: '  model.rxns{rxnToRemove} '\n']);
         end
-        model=removeRxns(model,rxnToRemove);
+        model=removeReactions(model,rxnToRemove);
         balanceStructure.balanceStatus(rxnToRemove)=[];
         balanceStructure.leftComp(rxnToRemove,:)=[];
         balanceStructure.rightComp(rxnToRemove,:)=[];

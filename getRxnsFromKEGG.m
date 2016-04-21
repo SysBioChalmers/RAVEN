@@ -367,7 +367,7 @@ else
     model.lb=model.rev*-1000;
     model.c=zeros(rxnCounter,1);
     model.b=zeros(numel(model.mets),1);
-    model=removeRxns(model,badRxns,true,true);
+    model=removeReactions(model,badRxns,true,true);
     
     %Save the model structure
     save(rxnsFile,'model','isGeneral','isIncomplete');
@@ -376,10 +376,10 @@ end
 %Delete reaction which are labeled as "incomplete", "erroneous", "unclear"
 %or "general reaction" (depending on settings.
 if keepGeneral==false
-    model=removeRxns(model,intersect(isGeneral,model.rxns),true,true);
+    model=removeReactions(model,intersect(isGeneral,model.rxns),true,true);
 end
 if keepIncomplete==false
-    model=removeRxns(model,intersect(isIncomplete,model.rxns),true,true);
+    model=removeReactions(model,intersect(isIncomplete,model.rxns),true,true);
 end
 
 %Delete reactions involving undefined stoichiometry. These metabolites have
@@ -387,6 +387,6 @@ end
 if keepUndefinedStoich==false
     I=cellfun(@any,strfind(model.mets,'n')) | cellfun(@any,strfind(model.mets,'m'));
     [crap J]=find(model.S(I,:));
-    model=removeRxns(model,J,true,true);
+    model=removeReactions(model,J,true,true);
 end
 end

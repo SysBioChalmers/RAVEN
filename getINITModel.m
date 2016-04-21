@@ -163,7 +163,7 @@ end
 %differentiate between reactions removed by INIT and those that are
 %dead-end
 [crap, deletedDeadEndRxns]=simplifyModel(refModel,true,false,true,true,true);
-cModel=removeRxns(refModel,deletedDeadEndRxns,false,true);
+cModel=removeReactions(refModel,deletedDeadEndRxns,false,true);
 
 %Store the connected model like this to keep track of stuff
 if printReport==true
@@ -180,7 +180,7 @@ if ~isempty(taskStructure)
     %Remove tasks that cannot be performed
     taskStructure(taskReport.ok==false)=[];
     if printReport==true
-        printScores(removeRxns(cModel,setdiff(cModel.rxns,essentialRxnsForTasks),true,true),'Reactions essential for tasks',hpaData,arrayData,tissue,celltype);
+        printScores(removeReactions(cModel,setdiff(cModel.rxns,essentialRxnsForTasks),true,true),'Reactions essential for tasks',hpaData,arrayData,tissue,celltype);
     end
 else
     essentialRxnsForTasks={};
@@ -197,10 +197,10 @@ end
 %Runs without the constraints on reversibility and with all output allowed.
 %This is to reduce the complexity of the problem.
 [crap deletedRxnsInINIT metProduction]=runINIT(simplifyModel(cModel),rxnScores,metabolomicsData,essentialRxnsForTasks,0,true,false,params);
-initModel=removeRxns(cModel,deletedRxnsInINIT,true,true);
+initModel=removeReactions(cModel,deletedRxnsInINIT,true,true);
 if printReport==true
     printScores(initModel,'INIT model statistics',hpaData,arrayData,tissue,celltype);
-    printScores(removeRxns(cModel,setdiff(cModel.rxns,deletedRxnsInINIT),true,true),'Reactions deleted by INIT',hpaData,arrayData,tissue,celltype);
+    printScores(removeReactions(cModel,setdiff(cModel.rxns,deletedRxnsInINIT),true,true),'Reactions deleted by INIT',hpaData,arrayData,tissue,celltype);
 end
 
 %The full model has exchange reactions in it. fitTasks calls on fillGaps,
@@ -215,7 +215,7 @@ initModel.id='INITModel';
 if ~isempty(taskStructure)
     %Remove exchange reactions and reactions already included in the INIT
     %model
-    refModelNoExc=removeRxns(refModel,union(initModel.rxns,getExchangeRxns(refModel)),true,true);
+    refModelNoExc=removeReactions(refModel,union(initModel.rxns,getExchangeRxns(refModel)),true,true);
     
     %At this stage the model is fully connected and most of the genes with
     %good scores should have been included. The final gap-filling should
@@ -232,7 +232,7 @@ if ~isempty(taskStructure)
     end
     if printReport==true
         printScores(outModel,'Functional model statistics',hpaData,arrayData,tissue,celltype);
-        printScores(removeRxns(outModel,intersect(outModel.rxns,initModel.rxns),true,true),'Reactions added to perform the tasks',hpaData,arrayData,tissue,celltype);
+        printScores(removeReactions(outModel,intersect(outModel.rxns,initModel.rxns),true,true),'Reactions added to perform the tasks',hpaData,arrayData,tissue,celltype);
     end
     
     addedRxnsForTasks=refModelNoExc.rxns(any(addedRxnMat,2));
@@ -297,10 +297,10 @@ end
 
 %First delete and included exchange reactions in order to prevent the order
 %from changing
-model=removeRxns(model,getExchangeRxns(model));
+model=removeReactions(model,getExchangeRxns(model));
 
 %Create a model with only the exchange reactions in refModel
-excModel=removeRxns(refModel,setdiff(refModel.rxns,getExchangeRxns(refModel)),true,true);
+excModel=removeReactions(refModel,setdiff(refModel.rxns,getExchangeRxns(refModel)),true,true);
 
 %Find the metabolites there which are not exchange metabolites and which do
 %not exist in the output model
@@ -308,7 +308,7 @@ I=~ismember(excModel.mets,model.mets) & excModel.unconstrained==0;
 
 %Then find those reactions and delete them
 [crap J]=find(excModel.S(I,:));
-excModel=removeRxns(excModel,J,true,true);
+excModel=removeReactions(excModel,J,true,true);
 
 %Merge with the output model
 model=mergeModels({model;excModel});

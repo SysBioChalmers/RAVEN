@@ -121,7 +121,7 @@ order=cumsum(order);
 order(J)=order(end)+1:order(end)+numel(rxns);
 
 %Remove the original reactions
-model=removeRxns(model,rxns);
+model=removeReactions(model,rxns);
 
 model=addRxns(model,rxnsToChange,eqnType,compartment,allowNewMets);
 model=permuteModel(model,order,'rxns');

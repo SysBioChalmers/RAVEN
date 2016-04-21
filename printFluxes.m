@@ -76,7 +76,7 @@ if ~isempty(metaboliteList)
     %Delete all other reactions
     toDelete=true(numel(model.rxns),1);
     toDelete(K)=false;
-    model=removeRxns(model,toDelete);
+    model=removeReactions(model,toDelete);
     fluxes(toDelete)=[];
 end
 
@@ -88,7 +88,7 @@ end
 
 %Remove reactions which are below the cut off
 toDelete=abs(fluxes)<cutOffFlux;
-model=removeRxns(model,toDelete,true,true);
+model=removeReactions(model,toDelete,true,true);
 fluxes(toDelete)=[];
 
 if any(strfind(outputString,'%eqn'))

@@ -67,8 +67,8 @@ I=haveFlux(model);
 noFluxRxns=model.rxns(~I);
 J=haveFlux(model2);
 noFluxRxnsRelaxed=model2.rxns(~J);
-bModel=removeRxns(model,~I,true,true);
-cModel=removeRxns(model2,~J,true,true);
+bModel=removeReactions(model,~I,true,true);
+cModel=removeReactions(model2,~J,true,true);
 fprintf('***Overview\n');
 fprintf([num2str(numel(model.rxns)-sum(I)) ' out of ' num2str(numel(model.rxns))...
     ' reactions cannot carry flux (' num2str(numel(model.rxns)-sum(J)) ' if net production of all metabolites is allowed)\n']);

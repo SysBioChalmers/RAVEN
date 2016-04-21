@@ -44,7 +44,7 @@ if ~isempty(genesToRemove)
         a=unique(a);
         if removeRxnsWithComplexes==true
             %Delete those reactions even if they use complexes
-            reducedModel=removeRxns(reducedModel,a,removeUnusedMets,true);
+            reducedModel=removeReactions(reducedModel,a,removeUnusedMets,true);
         else
             %First check that all part of the complex should be removed
             rxnsToRemove=false(numel(a),1);
@@ -74,7 +74,7 @@ if ~isempty(genesToRemove)
             end
             
             %Delete the reactions
-            reducedModel=removeRxns(reducedModel,a(rxnsToRemove),removeUnusedMets,true);
+            reducedModel=removeReactions(reducedModel,a(rxnsToRemove),removeUnusedMets,true);
         end
     end
 else

@@ -61,7 +61,7 @@ function [outModel deletedRxns metProduction fValue]=runINIT(model,rxnScores,pre
 %           rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,...
 %           noRevLoops,params)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2013-07-16
 %
 
 if nargin<2
@@ -107,7 +107,7 @@ if isfield(params,'printReport')
 end
 
 if numel(presentMets)~=numel(unique(presentMets))
-	dispEM('Duplicate metabolite names in presentMets');
+	throw(MException('','Duplicate metabolite names in presentMets'));
 end
 
 %Default is that the metabolites cannot be produced
@@ -124,7 +124,7 @@ end
 %The model should be in the reversible format and all relevant exchange
 %reactions should be open
 if isfield(model,'unconstrained')
-    dispEM('Exchange metabolites are still present in the model. Use simplifyModel if this is not intended',false); 
+    fprintf('WARNING: Exchange metabolites are still present in the model. Use simplifyModel if this is not intended.\n'); 
 end
 
 %The irreversible reactions that are essential must have a flux and are therefore not
@@ -299,7 +299,8 @@ prob.a=S;
 params.MSK_IPAR_OPTIMIZER='MSK_OPTIMIZER_FREE_SIMPLEX';
 for i=1:numel(pmIndexes)
     prob.blc(numel(irrevModel.mets)-numel(pmIndexes)+i)=1;
-    [crap,res] = mosekopt('minimize echo(0)', prob,getMILPParams(params));
+    %[crap,res] = mosekopt('minimize echo(0)', prob,getMILPParams(params));
+    res=optimizeProb(prob,params);
     isFeasible=checkSolution(res);
     if ~isFeasible
         %Reset the constraint again
@@ -313,18 +314,21 @@ end
 %Add that the binary reactions may only take integer values.
 allInt=[(nRxns+1):(nRxns+nNonEssential) size(S,2)-nRevBounds*2+1:size(S,2)];
 prob.ints.sub=allInt;
-[crap,res] = mosekopt(['minimize echo(' num2str(echo) ')'], prob,getMILPParams(params));
+
+%[crap,res] = mosekopt(['minimize echo(' num2str(echo) ')'], prob,getMILPParams(params));
+
+res=optimizeProb(prob,params);
 
 %I don't think that this problem can be infeasible, so this is mainly a way
 %of checking the licence stuff
-if ~checkSolution(res)
-    dispEM('The problem is infeasible');
-end
+%if ~checkSolution(res)
+%    throw(MException('','The problem is infeasible'));
+%end
 
-fValue=res.sol.int.pobjval;
+%fValue=res.sol.int.pobjval;
 
 %Get all reactions used in the irreversible model
-usedRxns=(nonEssentialIndex(res.sol.int.xx(nRxns+1:nRxns+nNonEssential)<0.1))';
+usedRxns=(nonEssentialIndex(res.x(nRxns+1:nRxns+nNonEssential)<0.1))';
 
 %Map to reversible model IDs
 usedRxns=[usedRxns(usedRxns<=numel(model.rxns));revRxns(usedRxns(usedRxns>numel(model.rxns))-numel(model.rxns))];
@@ -334,5 +338,5 @@ I=true(numel(model.rxns),1);
 I(usedRxns)=false;
 I(essentialIndex)=false;
 deletedRxns=model.rxns(I);
-outModel=removeRxns(model,I,true,true);
+outModel=removeReactions(model,I,true,true);
 end

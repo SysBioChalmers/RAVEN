@@ -88,7 +88,7 @@ if deleteZeroInterval==true
     deletedReactions=[deletedReactions; rxnsToDelete];   
     
     %Remove reactions
-    reducedModel=removeRxns(reducedModel,rxnsToDelete);
+    reducedModel=removeReactions(reducedModel,rxnsToDelete);
     
     %Find metabolites that no longer are used and delete them
     notInUse=sum(reducedModel.S~=0,2)==0;
@@ -136,7 +136,7 @@ if deleteInaccessible==true
             deletedReactions=[deletedReactions; rxnsToDelete];
             
             %Remove reactions
-            reducedModel=removeRxns(reducedModel,rxnsToDelete);
+            reducedModel=removeReactions(reducedModel,rxnsToDelete);
 
             %Remove metabolites. Recalculate since it could be that some
             %cannot be deleted due to reserved rxns
@@ -166,7 +166,7 @@ if deleteMinMax==true
     %Remove reactions
     rxnsToDelete=setdiff(reducedModel.rxns(I),reservedRxns);
     deletedReactions=[deletedReactions; rxnsToDelete];
-    reducedModel=removeRxns(reducedModel,rxnsToDelete);
+    reducedModel=removeReactions(reducedModel,rxnsToDelete);
             
     %Remove metabolites
     notInUse=sum(reducedModel.S~=0,2)==0;
@@ -229,7 +229,7 @@ if groupLinear==true
         
         %Remove reactions
         deletedReactions=[deletedReactions; reducedModel.rxns(I)];
-        reducedModel=removeRxns(reducedModel,find(I));
+        reducedModel=removeReactions(reducedModel,find(I));
             
         %Remove metabolites
         notInUse=sum(reducedModel.S~=0,2)==0;
