@@ -1,4 +1,4 @@
-function [solution hsSolOut]=solveLP(model,minFlux,params,hsSol)
+function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)
 % solveLP
 %   Solves a linear programming problem
 %

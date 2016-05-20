@@ -52,7 +52,6 @@ end
 %Simplify the model to speed stuff up a little. Keep original mapping
 originalRxns=model.rxns;
 model=simplifyModel(model,false,false,true,true);
-
 %Then change the bounds to +/- Inf. This is needed in order to not have
 %loops in the solutions
 if replaceBoundsWithInf==true

@@ -1,12 +1,12 @@
 function res = gurobiToMosekRes(res,keep,milp)
-		res.rcode=1000;
+	res.rcode=1000;
 
-		if(res.runtime>=1e9)
-			res.rcodestr='MSK_RES_TRM_MAX_TIME';
-		else
-			res.rcodestr='crap';
-		end
-
+	if(res.runtime>=1e9)
+		res.rcodestr='MSK_RES_TRM_MAX_TIME';
+	else
+		res.rcodestr='crap';
+	end
+	try
 		if(milp)
 			res.sol.int.solsta=res.status;
 			res.sol.int.prosta=res.status;
@@ -25,5 +25,11 @@ function res = gurobiToMosekRes(res,keep,milp)
 			end
 		end
 
-		res.x=res.x(1:keep)
+		res.x=res.x(1:keep);
+	catch
+		res.rcode=0;
+		res.rmsg='';
+		res.rcodestr='MSK_RES_OK';
+		res.sol.bas.prosta='PRIMAL_INFEASIBLE';
+	end
 end
