@@ -1,9 +1,9 @@
-function outStruct=runTest(funCell,parCell,logs)
+function out=runTest(funCell,parCell,logs)
 % runTest
 %  Run unit tests specified as functions.
 %
 %   funCell	cell containing the names of tests to be run
-%   parCell	test specific parameters, one cell per function.
+%   parCell	test specific parameters.
 %   		Use an empty cell for no parameters. 
 %   logs	a boolean to specify if output should be logged
 %			(default true). Logs are saved to './log/'.
@@ -15,7 +15,7 @@ function outStruct=runTest(funCell,parCell,logs)
 %
 %   Usage:
 %   fun={'fun1' 'fun2'};
-%   param={{struct('someParam',13)},{'someParamForFun2'}};
+%   param={struct('someParam',13),'someParamForFun2'};
 %   out=runTest(fun,param,true)
 %
 %   Daniel Hermansson, 2016-04-19
@@ -33,24 +33,39 @@ function outStruct=runTest(funCell,parCell,logs)
 	pass={};
 	time=[];
 
-	for i=1:numel(funCell)
-		try
+	for i=1:numel(parCell)
+		if i<=length(funCell)
 			fun=str2func(funCell{i});
-			if(logs) diary(['./log/',fileID,'_',funCell{i},'_',num2str(i),'.log']); end
+			funstr=funCell{i};
+		end
+
+		if(logs)
+			diary(['./log/',fileID,'_',funstr,'_',num2str(i),'.log']);
+		end
+
+		disp(['########## NEW TEST: ' funstr ' ##########'])
+		fprintf(['Params:\n'])
+		if (~isempty(parCell{i})) disp(parCell{i}); end
+
+		try
 			tic;
 			out{i}=fun(parCell{i})
 			time(i)=toc;
 			pass{i}='PASS';
 		catch EM
 			time(i)=toc;
-			fprintf([funCell{i},' failed execution. Params:\n'])
+			fprintf([funstr,' failed execution. Params:\n'])
 			disp(parCell{i})
 			disp(EM)
 			pass{i}='FAIL';
 		end
 
-		if(logs) diary(['./log/',fileID,'_Summary.log']); end
-		fprintf([funCell{i} '_' num2str(i) ':	' pass{i} '\n'])
+		if(logs)
+			diary off
+			diary(['./log/',fileID,'_Summary.log']);
+		end
+		disp(['####################'])
+		fprintf([funstr '_' num2str(i) ':	' pass{i} '\n'])
 		fprintf(['Params:\n'])
 		if (~isempty(parCell{i})) disp(parCell{i}); end
 		fprintf(['Runtime:	' num2str(time(i)) ' s\n\n'])

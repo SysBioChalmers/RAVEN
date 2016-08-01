@@ -132,7 +132,9 @@ prob.sol.int.xx=zeros(numel(prob.c),1);
 prob.sol.int.xx(prob.ints.sub(sol.x(indexes)>10^-7))=1;
 
 % Optimize the problem
-[crap,res] = mosekopt(['minimize echo(' num2str(echo) ')'], prob,getMILPParams(params));
+%[crap,res] = mosekopt(['minimize echo(' num2str(echo) ')'], prob,getMILPParams(params));
+res = optimizeProb(prob,params);
+
 isFeasible=checkSolution(res);
 
 if ~isFeasible

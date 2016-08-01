@@ -10,6 +10,6 @@ function out=testLP(param)
 	setRavenSolver('mosek');
 	mosekRes=solveLP(model,1);
 
-	out=[abs(mosekRes.x-gurobiRes.x<0.01),mosekRes.x,gurobiRes.x];
+	out=[abs(mosekRes.x-gurobiRes.x)<0.01,mosekRes.x,gurobiRes.x];
 	array2table(out,'VariableNames',{'model' 'mosekRes' 'gurobiRes'})
 end

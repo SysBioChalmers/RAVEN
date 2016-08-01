@@ -25,7 +25,8 @@ if(isfield(prob,'ints')), disp('MILP detected.'); milp=true; end
 
 switch RAVENSOLVER
 	case 'gurobi' 
-		gparams=struct('Presolve',2,'TimeLimit',1e9,'OutputFlag',0,'MIPGap',.01);
+		gparams=struct('Presolve',2,'TimeLimit',1000,'OutputFlag',1,'MIPGap',1e-9);
+		if (~milp) gparams.OutputFlag=0; end
 		%gparams=structUpdate(gparams,params);
 		res = gurobi(mosekToGurobiProb(prob), gparams);
 
@@ -33,18 +34,23 @@ switch RAVENSOLVER
 
 	case 'cobra'
 		if (milp)
-			cparams=struct('timeLimit',1e9,'printLevel',0,'intTol',1e-4,'relMipGapTol',.01);
-			%cparams=structUpdate(cparams,params);
+			cparams=struct('timeLimit',1e9,'printLevel',0,'intTol',1e-6,'relMipGapTol',1e-9);
+			cparams=structUpdate(cparams,params);
 			res=solveCobraMILP(mosekToCobraProb(prob),cparams);
 		else
 			% no hot start =/
-			%cparams=struct('PrintLevel',0);
+			cparams=struct('PrintLevel',1);
 			res=solveCobraLP(mosekToCobraProb(prob));
 		end
 		res=cobraToMosekRes(res,length(prob.c),milp);
 
 	case 'mosek'
-		[crap,res] = mosekopt(['minimize echo(0)'],prob,getMILPParams(params));
+		if (milp) 
+			params.printReport=true; 
+			[crap,res] = mosekopt(['minimize echo(0)'],prob,getMILPParams(params));
+		else
+			[crap,res] = mosekopt(['minimize echo(0)'],prob);
+		end
 	otherwise
 		dispEM('Raven solver not defined or unknown. Try using setRavenSolver("solver").')
 end

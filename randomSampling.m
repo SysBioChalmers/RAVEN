@@ -96,12 +96,13 @@ while counter<=nSamples
    model.c(goodRxns(rxns))=rand(nRxns,1).*multipliers;
    sol=solveLP(model);
    if any(sol.x)
+      %disp('any')
        if abs(sol.f)>10^-8
             sols(:,counter)=sol.x;
             counter=counter+1;
             badSolutions=0;
        else
-            badSolutions=badSolutions+1;
+            badSolutions=badSolutions+1
             %If it only finds bad solutions then throw an error.
             if badSolutions==50 && supressErrors==false
                 dispEM('The program is having problems finding non-zero solutions that are not involved in loops. Review the constraints on your model. Set supressErrors to true to ignore this error'); 

@@ -32,8 +32,6 @@ function out=testStructTiming(param)
 
 	out=[tSolver tConv tOverHead];
 
-
-
 	setRavenSolver('mosek');
 	params.relGap=0.4;
 	params.MSK_IPAR_OPTIMIZER='MSK_OPTIMIZER_FREE_SIMPLEX';
