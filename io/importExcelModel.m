@@ -66,7 +66,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %Adds the required classes to the Java path
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(ST(I).file);
-poiPATH=fullfile(ravenPath,'software','apache-poi');
+poiPATH=fullfile(ravenPath(1:end-3),'software','apache-poi');
 javaaddpath(fullfile(poiPATH,'dom4j-1.6.1.jar'));
 javaaddpath(fullfile(poiPATH,'poi-3.8-20120326.jar'));
 javaaddpath(fullfile(poiPATH,'poi-ooxml-3.8-20120326.jar'));
