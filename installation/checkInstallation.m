@@ -8,7 +8,7 @@ function checkInstallation()
 %   Rasmus Agren, 2014-01-06
 %
 
-fprintf('*** RAVEN TOOLBOX v. 1.08\n');
+fprintf('*** RAVEN TOOLBOX v. 1.8\n');
 
 %Check if RAVEN is in the path list
 paths=textscan(path,'%s','delimiter', pathsep);
@@ -16,7 +16,7 @@ paths=paths{1};
 
 %Get the RAVEN path
 [ST I]=dbstack('-completenames');
-ravenDir=fileparts(ST(I).file);
+[ravenDir,crap1,crap2]=fileparts(fileparts(ST(I).file));
 
 if ismember(ravenDir,paths)
     fprintf('Checking if RAVEN is in the Matlab path... PASSED\n');
@@ -53,9 +53,18 @@ end
 
 %Check if it is possible to solve a LP problem using Mosek
 try
+    setRavenSolver('mosek')
     solveLP(smallModel);
     fprintf('Checking if it is possible to solve a LP problem using Mosek... PASSED\n');
 catch
     fprintf('Checking if it is possible to solve a LP problem using Mosek... FAILED\n');
+end
+
+try
+    setRavenSolver('gurobi')
+    solveLP(smallModel);
+    fprintf('Checking if it is possible to solve a LP problem using Gurobi... PASSED\n');
+catch
+    fprintf('Checking if it is possible to solve a LP problem using Gurobi... FAILED\n');
 end
 end

@@ -59,8 +59,8 @@ function model=getGenesFromKEGG(keggPath,koList)
 %Check if the genes have been parsed before and saved. If so, load the
 %model.
 [ST I]=dbstack('-completenames');
-ravenPath=fileparts(ST(I).file);
-genesFile=fullfile(ravenPath,'kegg','keggGenes.mat');
+ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+genesFile=fullfile(ravenPath,'external','kegg','keggGenes.mat');
 if exist(genesFile, 'file')
     fprintf(['NOTE: Importing KEGG genes from ' strrep(genesFile,'\','/') '.\n']);
     load(genesFile);
@@ -237,8 +237,8 @@ function allKOs=getAllKOs(keggPath)
     
     %First check if the reactions have already been parsed
     [ST I]=dbstack('-completenames');
-    ravenPath=fileparts(ST(I).file);
-    rxnsFile=fullfile(ravenPath,'kegg','keggRxns.mat');
+    ravenPath=fileparts(fileparts(fileparts(ST(I).file))));
+    rxnsFile=fullfile(ravenPath,'external','kegg','keggRxns.mat');
     if exist(rxnsFile, 'file')
         fprintf(['NOTE: Importing KEGG ORTHOLOGY list from ' strrep(rxnsFile,'\','/') '.\n']);
         load(rxnsFile,'model');

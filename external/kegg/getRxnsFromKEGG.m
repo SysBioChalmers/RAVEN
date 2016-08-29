@@ -77,8 +77,8 @@ end
 %Check if the reactions have been parsed before and saved. If so, load the
 %model.
 [ST I]=dbstack('-completenames');
-ravenPath=fileparts(ST(I).file);
-rxnsFile=fullfile(ravenPath,'kegg','keggRxns.mat');
+ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+rxnsFile=fullfile(ravenPath,'external','kegg','keggRxns.mat');
 if exist(rxnsFile, 'file')
     fprintf(['NOTE: Importing KEGG reactions from ' strrep(rxnsFile,'\','/') '.\n']);
     load(rxnsFile);

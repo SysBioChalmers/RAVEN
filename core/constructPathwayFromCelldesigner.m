@@ -70,7 +70,7 @@ function pathway = constructPathwayFromCelldesigner(inputFile)
 
 %Loads the specified xml file using XML Toolbox
 [ST I]=dbstack('-completenames');
-ravenPath=fileparts(ST(I).file);
+ravenPath=fileparts(fileparts(ST(I).file));
 
 %Current path and xml toolbox path
 cp=pwd;
