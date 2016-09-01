@@ -1,9 +1,14 @@
 function out=testGapFill(param)
-	if nargin<1
-		param.solver='gurobi';
-		param.biomassReactionExcludeRatio=.4;
-		param.useConstraints=true;
-	end
+	%if (nargin<1 || isempty(param))
+	%	param.solver='gurobi';
+	%	param.biomassReactionExcludeRatio=.4;
+	%	param.useConstraints=true;
+	%end
+	def.solver='gurobi';
+	def.biomassReactionExcludeRatio=.4;
+	def.useConstraints=true;
+
+	param=structUpdate(def,param)
 
 	modLoad('~all RAVENgit',[]);
 	modelPath='/Users/hedani/Documents/GitRepos/yeast-metabolic-network-7.6/';
@@ -13,7 +18,7 @@ function out=testGapFill(param)
 	
 	%model.lb(end)=.1;
 	
-	refModel=model
+	refModel=model;
 
 	SF=full(model.S);
 	biomassMetaboliteInd=find(abs(SF(:,end))>0);
@@ -24,11 +29,10 @@ function out=testGapFill(param)
 
 	sel=randsample([1:length(biomassReactionNames)],floor(param.biomassReactionExcludeRatio*length(biomassReactionNames)));
 
-	%biomassReactionSubsetInd=biomassReactionInd(sel);
-	%biomassReactionSubsetNames=biomassReactionNames(sel);
-	biomassReactionSubsetInd=[2064];
-	biomassReactionSubsetNames=biomassReactionNames([2064]);
-
+	biomassReactionSubsetInd=biomassReactionInd(sel);
+	biomassReactionSubsetNames=biomassReactionNames(sel);
+	%biomassReactionSubsetInd=[2064];
+	%biomassReactionSubsetNames=biomassReactionNames([2064]);
 
 	%model=removeReactions(model,randi([1,length(model.rxns)],1,200));
 
@@ -63,7 +67,7 @@ function out=testGapFill(param)
 	%disp(sort(biomassReactionSubsetNames)')
 	%cellfun(@(x, y) disp([x '      ' y]),biomassReactionSubsetNames{foundI},'UniformOutput',false,'ErrorHandler',@(S,varargin) disp(varargin))
 	%cellfun(@(x) disp(x),biomassReactionSubsetNames{nonfoundI},'UniformOutput',false)
-
+	solveLP(newModel)
 	out={gurobiRes,moreRes,model};
 
 	% check if all biomass stuff added

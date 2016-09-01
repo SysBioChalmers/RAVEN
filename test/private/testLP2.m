@@ -1,5 +1,8 @@
 function out=testLP2(param)
-	modLoad('~all COBRA RAVENgit')
+	modLoad('~all COBRA RAVENgit',[])
+	
+	initCobraToolbox
+
 	modelPath='/Users/hedani/Documents/Models/HMR/';
 
 	model=importModel([modelPath 'SCO_revised.xml'],false);

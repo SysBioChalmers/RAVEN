@@ -1,4 +1,4 @@
-function out=funTest(funCell,parCell,logs)
+function out=runTest(funCell,parCell,logs)
 % runTest
 %  Run unit tests specified as functions.
 %
