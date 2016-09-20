@@ -1,6 +1,6 @@
 function gprob = mosekToGurobiProb(prob)
 	gprob.obj=[prob.c;zeros(size(prob.a,1),1)];
-	gprob.A = [prob.a -eye(size(prob.a,1))];
+	gprob.A = sparse([prob.a -eye(size(prob.a,1))]);
 	gprob.rhs = zeros(size(prob.a,1), 1);
 	gprob.lb = [prob.blx; prob.blc];
 	gprob.ub = [prob.bux; prob.buc];
@@ -9,7 +9,7 @@ function gprob = mosekToGurobiProb(prob)
 	gprob.vtype = repmat('C', 1, size(gprob.A, 2)); 
 
 	% the binary type variables must be defined for milp 
-	if(isfield(prob,'ints')) gprob.vtype(prob.ints.sub) = 'B'; end
+	if(isfield(prob,'ints')) gprob.vtype(prob.ints.sub) = 'I'; end
 
 	% hotstart
 	if(isfield(prob,'sol'))

@@ -25,11 +25,11 @@ if(isfield(prob,'ints')), disp('MILP detected.'); milp=true; end
 
 switch RAVENSOLVER
 	case 'gurobi' 
-		gparams=struct('Presolve',2,'TimeLimit',1000,'OutputFlag',1,'MIPGap',1e-9);
+		gparams=struct('Presolve',2,'TimeLimit',1000,'OutputFlag',1,'MIPGap',1e-9,'Seed',0,'FeasibilityTol',1e-8,'OptimalityTol',1e-8);
 		if (~milp) gparams.OutputFlag=0; end
 		%gparams=structUpdate(gparams,params);
 		res = gurobi(mosekToGurobiProb(prob), gparams);
-
+		
 		res=gurobiToMosekRes(res,length(prob.c),milp);
 
 	case 'cobra'

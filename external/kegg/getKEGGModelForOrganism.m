@@ -311,6 +311,20 @@ fprintf('Completed generation of multi-FASTA files\n');
 [ST I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file))));
 
+if isunix
+    if ismac
+        binEnd='.mac';
+    else
+        binEnd='';
+    end
+elseif ispc
+    binEnd='';
+else 
+    dispEM('Unknown OS, exiting.')
+    return
+end
+
+
 %Check if alignment of FASTA files should be performed
 missingAligned=setdiff(KOModel.rxns,[alignedFiles;hmmFiles;alignedWorking;outFiles]);
 if ~isempty(missingAligned)
@@ -381,7 +395,7 @@ if ~isempty(missingAligned)
                 fastawrite(tmpFile,fastaStruct);
 
                 %Do the alignment for this file
-                [status output]=system([fullfile(ravenPath,'external','software','clustalw2','clustalw2') ' -infile="' tmpFile '" -align -outfile="' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '" -output=FASTA -type=PROTEIN -OUTORDER=INPUT']);
+                [status output]=system([fullfile(ravenPath,'external','software','clustalw2',['clustalw2' binEnd]) ' -infile="' tmpFile '" -align -outfile="' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '" -output=FASTA -type=PROTEIN -OUTORDER=INPUT']);
                 if status~=0
                 	dispEM(['Error when performing alignment of ' missingAligned{i} ':\n' output]); 
                 end
@@ -447,14 +461,14 @@ if ~isempty(missingHMMs)
             %it hasn't been calibrated yet. This is because I want to be
             %able to see which models are uncalibrated if something goes
             %wrong
-            [status output]=system([fullfile(ravenPath,'external','software','hmmer-2.3','hmmbuild') ' "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
+            [status output]=system([fullfile(ravenPath,'external','software','hmmer-3.1',['hmmbuild' binEnd]) ' "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
             if status~=0
             	dispEM(['Error when training HMM for ' missingHMMs{i} ':\n' output]);
             end
             
             %This is only available for linux
             if ~ispc
-                [status output]=system([fullfile(ravenPath,'external','software','hmmer-2.3','hmmcalibrate') ' "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hm']) '"']);
+                [status output]=system([fullfile(ravenPath,'external','software','hmmer-3.1','hmmcalibrate') ' "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hm']) '"']);
                 if status~=0
                     %This check is because some HMMs gives an error saying
                     %that the number of iterations might be too low.
