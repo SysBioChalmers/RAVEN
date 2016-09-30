@@ -237,7 +237,7 @@ function allKOs=getAllKOs(keggPath)
     
     %First check if the reactions have already been parsed
     [ST I]=dbstack('-completenames');
-    ravenPath=fileparts(fileparts(fileparts(ST(I).file))));
+    ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
     rxnsFile=fullfile(ravenPath,'external','kegg','keggRxns.mat');
     if exist(rxnsFile, 'file')
         fprintf(['NOTE: Importing KEGG ORTHOLOGY list from ' strrep(rxnsFile,'\','/') '.\n']);

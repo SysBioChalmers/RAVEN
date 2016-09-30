@@ -52,7 +52,7 @@ function model=getMetsFromKEGG(keggPath)
 %Check if the reactions have been parsed before and saved. If so, load the
 %model.
 [ST I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file))));
+ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 metsFile=fullfile(ravenPath,'external','kegg','keggMets.mat');
 if exist(metsFile, 'file')
     fprintf(['NOTE: Importing KEGG metabolites from ' strrep(metsFile,'\','/') '.\n']);
