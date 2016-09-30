@@ -8,7 +8,7 @@ function checkInstallation()
 %   Rasmus Agren, 2014-01-06
 %
 
-fprintf('*** RAVEN TOOLBOX v. 1.8\n');
+fprintf('*** RAVEN TOOLBOX v. 1.9\n');
 
 %Check if RAVEN is in the path list
 paths=textscan(path,'%s','delimiter', pathsep);

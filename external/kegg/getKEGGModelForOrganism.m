@@ -309,7 +309,7 @@ fprintf('Completed generation of multi-FASTA files\n');
 %Get the directory for RAVEN Toolbox. This is to get the path to the third
 %party software used
 [ST I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file))));
+ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 
 if isunix
     if ismac

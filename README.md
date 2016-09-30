@@ -17,7 +17,7 @@ addpath(genpath('path/to/raven'))
 ```
 
 ### Dependencies:
-Required dependencies are currently [libSBML and SBMLToolbox](http://science.sciencemag.org/content/349/6252/1101) used for importing and exporting GEM models in SBML format. Install them and add to the matlab path:
+Required dependencies are currently [libSBML and SBMLToolbox](http://sbml.org/Downloads) used for importing and exporting GEM models in SBML format. Install them and add to the matlab path:
 
 ```matlab
 addpath(genpath('path/to/libSBML'))
