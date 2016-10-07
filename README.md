@@ -39,6 +39,15 @@ To have matlab remember the above installations please save the current path to 
 savepath '~/Documents/MATLAB/pathdef.m'
 ```
 
+### Setting the solver
+Please note that you must now select the solver that you would like to use after you have loaded RAVEN. This can be done like so:
+
+```matlab
+setRavenSolver('gurobi')
+```
+
+Gurobi is currently the recommended solver (the other available choices are 'mosek' and in the future 'glpk').
+
 ## Tutorials
 Some tutorials highlighting basic RAVEN functionality can be found in the 'tutorial' folder in the installation directory.
 
