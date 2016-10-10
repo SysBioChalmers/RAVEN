@@ -34,7 +34,7 @@ end
 
 %Adds the required classes to the Java path
 [ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file)));
+ravenPath=fileparts(fileparts(ST(I).file));
 poiPATH=fullfile(ravenPath,'software','apache-poi');
 javaaddpath(fullfile(poiPATH,'dom4j-1.6.1.jar'));
 javaaddpath(fullfile(poiPATH,'poi-3.8-20120326.jar'));
