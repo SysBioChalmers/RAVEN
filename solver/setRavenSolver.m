@@ -44,18 +44,18 @@ function out = setRavenSolver(solver,saveSolver)
 	end
 
 	if (~ravenSet && ~saveSolver)
-		m=input('You have no default RAVEN solver defined. Should I append this choice to MATLAB startup? y/n [y]: ','s');
+		m=input('You have no default RAVEN solver defined. Should we append this choice to MATLAB startup? y/n [y]: ','s');
 		if (m=='n') return; end
 	end
 	
 	try
 		if (ravenSet)
 			fid = fopen(fullfile(up,'startup.m'),'w');
-			lines{startupInd} = sprintf('\nsetRavenSolver(''%s'');\n', solver);
+			lines{startupInd} = sprintf('setRavenSolver(''%s'');', solver);
 
 			% Write cell into txt
 			for i = 1:numel(lines)
-		        fprintf(fid,'%s', lines{i});
+		        if (~strcmp(lines{i},'')) fprintf(fid,'%s\n', lines{i}); end
 			end
 		else
 			fid = fopen(fullfile(up,'startup.m'),'a+');
