@@ -1,0 +1,146 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of colorPathway</title>
+  <meta name="keywords" content="colorPathway">
+  <meta name="description" content="colorPathway">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">pathway</a> &gt; colorPathway.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for pathway&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>colorPathway
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>colorPathway</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function returnPathway = colorPathway(pathway, reactionIDs, fluxes, referenceFluxes,cutOff, defaultColor, upColor, downColor) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> colorPathway
+    Calculates the color for those reactions that should be marked in the
+    map and returns an updated pathway structure.
+
+   pathway         pathway structure of the metabolic network
+   reactionsIDs    cell array with the names of the reactions in the model
+   fluxes          vector with flux values from the simulation
+   referenceFluxes vector with fluxes for the reference simulation
+   cutOff          a reaction is only colored if the absolute value of 
+                   at least one of the fluxes is above the cutoff value
+                   (opt, default 0)
+   defaultColor    a color in Matlab format to be used if there are no
+                   changes between the fluxes. This color is also used to 
+                   calculate the transition between the colors for up and
+                   down regulated fluxes (opt, default [1 1 1])
+   upColor         a color in Matlab format to be used if the flux is 
+                   larger than the reference flux (opt, default [0 1 0])
+   downColor       a color in Matlab format to be used if the flux is 
+                   smaller than the reference flux (opt, default [1 0 0])
+
+   returnPathway   updated pathway structure which contains coloring data
+       color       array indicating the coloring of the enzyme
+       signChange  true if the reaction has changed direction
+
+    Usage: returnPathway = colorPathway(pathway, reactionIDs, fluxes, referenceFluxes, ...
+           cutOff, defaultColor, upColor, downColor)
+
+   Rasmus Agren, 2010-12-16</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="../core/getColorCodes.html" class="code" title="function [colorCodes signChange errorFlag]= getColorCodes(referenceFluxes, fluxes, maxChange, defaultColor, upColor, downColor)">getColorCodes</a>	getColorCodes</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="../plotting/drawMap.html" class="code" title="function notMapped=drawMap(title,pathway,modelA,conditionA,conditionB,modelB,filename,cutOff)">drawMap</a>	drawMap</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function returnPathway = colorPathway(pathway, reactionIDs, fluxes, referenceFluxes, </a><span class="keyword">...</span>
+0002     cutOff, defaultColor, upColor, downColor)
+0003 <span class="comment">% colorPathway</span>
+0004 <span class="comment">%    Calculates the color for those reactions that should be marked in the</span>
+0005 <span class="comment">%    map and returns an updated pathway structure.</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">%   pathway         pathway structure of the metabolic network</span>
+0008 <span class="comment">%   reactionsIDs    cell array with the names of the reactions in the model</span>
+0009 <span class="comment">%   fluxes          vector with flux values from the simulation</span>
+0010 <span class="comment">%   referenceFluxes vector with fluxes for the reference simulation</span>
+0011 <span class="comment">%   cutOff          a reaction is only colored if the absolute value of</span>
+0012 <span class="comment">%                   at least one of the fluxes is above the cutoff value</span>
+0013 <span class="comment">%                   (opt, default 0)</span>
+0014 <span class="comment">%   defaultColor    a color in Matlab format to be used if there are no</span>
+0015 <span class="comment">%                   changes between the fluxes. This color is also used to</span>
+0016 <span class="comment">%                   calculate the transition between the colors for up and</span>
+0017 <span class="comment">%                   down regulated fluxes (opt, default [1 1 1])</span>
+0018 <span class="comment">%   upColor         a color in Matlab format to be used if the flux is</span>
+0019 <span class="comment">%                   larger than the reference flux (opt, default [0 1 0])</span>
+0020 <span class="comment">%   downColor       a color in Matlab format to be used if the flux is</span>
+0021 <span class="comment">%                   smaller than the reference flux (opt, default [1 0 0])</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">%   returnPathway   updated pathway structure which contains coloring data</span>
+0024 <span class="comment">%       color       array indicating the coloring of the enzyme</span>
+0025 <span class="comment">%       signChange  true if the reaction has changed direction</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">%    Usage: returnPathway = colorPathway(pathway, reactionIDs, fluxes, referenceFluxes, ...</span>
+0028 <span class="comment">%           cutOff, defaultColor, upColor, downColor)</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">%   Rasmus Agren, 2010-12-16</span>
+0031 <span class="comment">%</span>
+0032 
+0033 <span class="keyword">if</span> nargin&lt;8
+0034     downColor=[1 0 0];
+0035 <span class="keyword">end</span>
+0036 <span class="keyword">if</span> nargin&lt;7
+0037     upColor=[0 1 0];
+0038 <span class="keyword">end</span>
+0039 <span class="keyword">if</span> nargin&lt;6
+0040    defaultColor=[1 1 1]; 
+0041 <span class="keyword">end</span>
+0042 <span class="keyword">if</span> nargin&lt;5
+0043    cutOff=0; 
+0044 <span class="keyword">end</span>
+0045 
+0046 <span class="comment">%Loop through the components in the pathway. Check if any component has a</span>
+0047 <span class="comment">%note and then check for the corresponding reaction id</span>
+0048 returnPathway=pathway;
+0049 
+0050 <span class="keyword">for</span> i=1:length(pathway.listOfSpecies)
+0051    <span class="keyword">if</span> strcmpi(pathway.listOfSpecies(i).type,<span class="string">'PROTEIN'</span>)
+0052       <span class="keyword">if</span> isfield(pathway.listOfSpecies(i),<span class="string">'note'</span>)
+0053           <span class="keyword">if</span> ~isempty(pathway.listOfSpecies(i).note)
+0054              <span class="comment">%If there is a note check if there is a corresponding reaction id</span>
+0055              correspondingReaction=find(strcmpi(reactionIDs,pathway.listOfSpecies(i).note));
+0056              <span class="keyword">if</span> correspondingReaction&gt;0
+0057                  <span class="comment">%Check if either flux is above the cutoff value</span>
+0058                  <span class="keyword">if</span> abs(referenceFluxes(correspondingReaction))&gt;=cutOff ||<span class="keyword">...</span>
+0059                          abs(fluxes(correspondingReaction))&gt;=cutOff
+0060                      <span class="comment">%Calculate the corresponding color</span>
+0061                      [color, signChange]=<a href="../core/getColorCodes.html" class="code" title="function [colorCodes signChange errorFlag]= getColorCodes(referenceFluxes, fluxes, maxChange, defaultColor, upColor, downColor)">getColorCodes</a>(referenceFluxes(correspondingReaction)<span class="keyword">...</span>
+0062                          ,fluxes(correspondingReaction),1 , defaultColor, upColor, downColor);
+0063                      <span class="keyword">if</span> ~isempty(color)
+0064                         returnPathway.listOfSpecies(i).color=color{1,1};
+0065                         returnPathway.listOfSpecies(i).signChange=signChange{1,1};
+0066                      <span class="keyword">end</span>
+0067                  <span class="keyword">end</span>
+0068              <span class="keyword">end</span>
+0069           <span class="keyword">end</span>
+0070       <span class="keyword">end</span>
+0071    <span class="keyword">end</span>
+0072 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Fri 14-Oct-2016 12:02:10 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

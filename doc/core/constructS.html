@@ -1,0 +1,221 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of constructS</title>
+  <meta name="keywords" content="constructS">
+  <meta name="description" content="constructS">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">core</a> &gt; constructS.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for core&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>constructS
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>constructS</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [S mets badRxns reversible]=constructS(equations,mets,rxns) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> constructS
+   Constructs a stoichiometric matrix from a cell array of equations
+
+   equations   cell array of equations on the form 'A + 2 B &lt;=&gt; or =&gt; 3 C'
+   mets        cell array of metabolites. All metabolites in the equations
+               must be present in the list (opt, default generated from the equations)
+   rxns        cell array of reaction ids. This is only used for printing
+               reaction ids instead of equations in warnings/errors (opt,
+               default [])
+   
+
+   S           the resulting stoichiometric matrix
+   mets        cell array with metabolites that corresponds to the order in 
+               the S matrix
+   badRxns     boolean vector with the reactions that have one or more
+               metabolites as both substrate and product. An example would be
+               the phosphotransferase ATP + ADP &lt;=&gt; ADP + ATP. In the
+               stoichiometric matrix this equals to an empty reaction which
+               can be problematic
+   reversible  boolean vector with true if the equation is reversible
+
+   Usage: [S mets badRxns reversible]=constructS(equations,mets)
+
+   Rasmus Agren, 2013-08-01</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="parseRxnEqu.html" class="code" title="function metabolites=parseRxnEqu(equations)">parseRxnEqu</a>	parseRxnEqu</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="addRxns.html" class="code" title="function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)">addRxns</a>	addRxns</li><li><a href="../external/kegg/getRxnsFromKEGG.html" class="code" title="function model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete, keepGeneral)">getRxnsFromKEGG</a>	getRxnsFromKEGG</li><li><a href="../io/importExcelModel.html" class="code" title="function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)">importExcelModel</a>	importExcelModel</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function equ=fixEquations(equ)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [S mets badRxns reversible]=constructS(equations,mets,rxns)</a>
+0002 <span class="comment">% constructS</span>
+0003 <span class="comment">%   Constructs a stoichiometric matrix from a cell array of equations</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%   equations   cell array of equations on the form 'A + 2 B &lt;=&gt; or =&gt; 3 C'</span>
+0006 <span class="comment">%   mets        cell array of metabolites. All metabolites in the equations</span>
+0007 <span class="comment">%               must be present in the list (opt, default generated from the equations)</span>
+0008 <span class="comment">%   rxns        cell array of reaction ids. This is only used for printing</span>
+0009 <span class="comment">%               reaction ids instead of equations in warnings/errors (opt,</span>
+0010 <span class="comment">%               default [])</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">%   S           the resulting stoichiometric matrix</span>
+0014 <span class="comment">%   mets        cell array with metabolites that corresponds to the order in</span>
+0015 <span class="comment">%               the S matrix</span>
+0016 <span class="comment">%   badRxns     boolean vector with the reactions that have one or more</span>
+0017 <span class="comment">%               metabolites as both substrate and product. An example would be</span>
+0018 <span class="comment">%               the phosphotransferase ATP + ADP &lt;=&gt; ADP + ATP. In the</span>
+0019 <span class="comment">%               stoichiometric matrix this equals to an empty reaction which</span>
+0020 <span class="comment">%               can be problematic</span>
+0021 <span class="comment">%   reversible  boolean vector with true if the equation is reversible</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">%   Usage: [S mets badRxns reversible]=constructS(equations,mets)</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">%   Rasmus Agren, 2013-08-01</span>
+0026 <span class="comment">%</span>
+0027 
+0028 badRxns=false(numel(equations),1);
+0029 
+0030 <span class="comment">%Check that no equations are too short to have reversibility data</span>
+0031 I=cellfun(@numel,equations);
+0032 I=find(I&lt;4,1);
+0033 <span class="keyword">if</span> any(I)
+0034     <span class="keyword">if</span> isempty(rxns)
+0035         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'The following equation does not have reversibility data: '</span> equations{I} ]);
+0036     <span class="keyword">else</span>
+0037         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'The reaction '</span> rxns{I} <span class="string">' does not have reversibility data'</span>]);
+0038     <span class="keyword">end</span>
+0039 <span class="keyword">end</span>
+0040 
+0041 <span class="comment">%Makes life a little easier</span>
+0042 equations=strtrim(equations);
+0043 equations=<a href="#_sub1" class="code" title="subfunction equ=fixEquations(equ)">fixEquations</a>(equations);
+0044 
+0045 <span class="keyword">if</span> nargin&lt;2
+0046     mets=<a href="parseRxnEqu.html" class="code" title="function metabolites=parseRxnEqu(equations)">parseRxnEqu</a>(equations);
+0047 <span class="keyword">end</span>
+0048 <span class="keyword">if</span> nargin&lt;3
+0049     rxns=[];
+0050 <span class="keyword">end</span>
+0051 
+0052 <span class="comment">%Get which reactions are reversible</span>
+0053 reversible=cellfun(@any,strfind(equations,<span class="string">' &lt;=&gt; '</span>));
+0054 
+0055 <span class="comment">%Make them all reversible. This is not all that neat, but nevermind</span>
+0056 equations=strrep(equations,<span class="string">' =&gt; '</span>,<span class="string">' &lt;=&gt; '</span>);
+0057 
+0058 <span class="comment">%Replace the the plus signs with a weird character that will be used for</span>
+0059 <span class="comment">%parsing</span>
+0060 equations=strrep(equations,<span class="string">' + '</span>, <span class="string">''</span>);
+0061 
+0062 <span class="comment">%Generate the stoichiometric matrix</span>
+0063 S=zeros(numel(mets),numel(equations));
+0064 
+0065 <span class="comment">%Loop through the equations and add the info to the S matrix</span>
+0066 <span class="keyword">for</span> i=1:numel(equations)
+0067     <span class="comment">%Start by finding the position of the (=&gt; or &lt;=&gt;)</span>
+0068     arrowIndex=strfind(equations{i},<span class="string">' &lt;=&gt; '</span>);
+0069     
+0070     <span class="keyword">if</span> numel(arrowIndex)~=1
+0071         <span class="keyword">if</span> isempty(rxns)
+0072             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'The following equation does not have reversibility data: '</span> equations{i} ]);
+0073         <span class="keyword">else</span>
+0074             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'The reaction '</span> rxns{i} <span class="string">' does not have reversibility data'</span>]);
+0075         <span class="keyword">end</span>
+0076     <span class="keyword">end</span>
+0077     
+0078     reactants=regexp(equations{i}(1:arrowIndex-1),<span class="string">''</span>,<span class="string">'split'</span>);
+0079     products=regexp(equations{i}(arrowIndex+5:end),<span class="string">''</span>,<span class="string">'split'</span>);
+0080     
+0081     <span class="comment">%If the splitting character is at the end (if exchange rxns), then an</span>
+0082     <span class="comment">%empty string will exist together with the real ones. Remove it</span>
+0083     reactants(cellfun(@isempty,reactants))=[];
+0084     products(cellfun(@isempty,products))=[];
+0085     
+0086     <span class="comment">%A vector where an element is -1 is the corresponding metabolite is a</span>
+0087     <span class="comment">%reactant and 1 if it's a product</span>
+0088     multiplyWith=[ones(numel(reactants),1)*-1; ones(numel(products),1)];
+0089     
+0090     metabolites=[reactants products];
+0091     
+0092     <span class="comment">%Now loop through the reactants and see if the metabolite has a coefficient</span>
+0093     <span class="comment">%(it will look as 'number name')</span>
+0094     <span class="keyword">for</span> j=1:numel(metabolites)
+0095         space=strfind(metabolites{j},<span class="string">' '</span>);
+0096         
+0097         <span class="keyword">if</span> isempty(space)
+0098             <span class="comment">%No coefficient</span>
+0099             coeff=1;
+0100             name=metabolites{j};
+0101         <span class="keyword">else</span>
+0102             coeff=str2double(metabolites{j}(1:space(1)));
+0103             
+0104             <span class="comment">%If it was not a coefficiant</span>
+0105             <span class="keyword">if</span> isnan(coeff)
+0106                coeff=1;
+0107                name=metabolites{j};
+0108             <span class="keyword">else</span>
+0109                name=metabolites{j}(space+1:end);
+0110             <span class="keyword">end</span>
+0111         <span class="keyword">end</span>
+0112         
+0113         <span class="comment">%Find the name in the mets list</span>
+0114         <span class="comment">%[a b]=ismember(name,mets);</span>
+0115         b=find(strcmp(name,mets),1);
+0116         
+0117         <span class="keyword">if</span> any(b)
+0118             <span class="comment">%Check if the metabolite already participates in this reaction</span>
+0119             <span class="keyword">if</span> S(b,i)~=0
+0120                badRxns(i)=true; 
+0121             <span class="keyword">end</span>
+0122             S(b,i)=S(b,i)+coeff*multiplyWith(j);
+0123         <span class="keyword">else</span>
+0124             <span class="keyword">if</span> isempty(rxns)
+0125                 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'Could not find metabolite '</span> name <span class="string">' in metabolite list'</span>]);
+0126             <span class="keyword">else</span>
+0127                 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'The metabolite &quot;'</span> name <span class="string">'&quot; in reaction '</span> rxns{i} <span class="string">' was not found in the metabolite list'</span>]);
+0128             <span class="keyword">end</span>
+0129         <span class="keyword">end</span>
+0130     <span class="keyword">end</span>
+0131 <span class="keyword">end</span>
+0132 S=sparse(S);
+0133 <span class="keyword">end</span>
+0134 
+0135 <a name="_sub1" href="#_subfunctions" class="code">function equ=fixEquations(equ)</a>
+0136 <span class="comment">%If the equation starts with &quot;=&gt;&quot; or &quot;&lt;=&gt;&quot; then add a space again. This is</span>
+0137 <span class="comment">%an alternative way to represent uptake reactions. The opposite way for</span>
+0138 <span class="comment">%producing reactions</span>
+0139 equ=equ(:);
+0140 <span class="keyword">for</span> i=1:numel(equ)
+0141    <span class="keyword">if</span> strcmp(equ{i}(1:2),<span class="string">'=&gt;'</span>) || strcmp(equ{i}(1:3),<span class="string">'&lt;=&gt;'</span>)
+0142        equ{i}=[<span class="string">' '</span> equ{i}];
+0143    <span class="keyword">else</span>
+0144        <span class="keyword">if</span> strcmp(equ{i}(end-1:end),<span class="string">'=&gt;'</span>) || strcmp(equ{i}(end-2:end),<span class="string">'&lt;=&gt;'</span>)
+0145             equ{i}=[equ{i} <span class="string">' '</span>];
+0146        <span class="keyword">end</span>
+0147    <span class="keyword">end</span>
+0148 <span class="keyword">end</span>
+0149 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Fri 14-Oct-2016 12:02:10 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

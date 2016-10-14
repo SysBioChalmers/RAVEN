@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of testMod</title>
+  <meta name="keywords" content="testMod">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="../index.html">test</a> &gt; <a href="index.html">private</a> &gt; testMod.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for test/private&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>testMod
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function out=testGapFill2(param) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="../../core/fillGaps.html" class="code" title="function [newConnected cannotConnect addedRxns newModel exitFlag]=fillGaps(model,models,allowNetProduction,useModelConstraints,supressWarnings,rxnScores,params)">fillGaps</a>	fillGaps</li><li><a href="../../core/printModel.html" class="code" title="function printModel(model,rxnList,outputString,outputFile,metaboliteList)">printModel</a>	printModel</li><li><a href="../../core/removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>	removeReactions</li><li><a href="../../core/setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>	setParam</li><li><a href="../../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>	solveLP</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function out=testGapFill2(param)</a>
+0002     <span class="keyword">if</span> nargin&lt;1
+0003         param.solver=<span class="string">'gurobi'</span>;
+0004         param.useConstraints=true;
+0005     <span class="keyword">end</span>
+0006 
+0007 diary on
+0008 
+0009 nonEssential={};
+0010 essential={};
+0011 models={};
+0012 
+0013 <span class="keyword">for</span> i=1:length(Index)
+0014     model2=<a href="../../core/removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,Index(i),true);
+0015     model2=<a href="../../core/setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model2,<span class="string">'obj'</span>,{<span class="string">'r_4041'</span>},1); <span class="comment">% biomass</span>
+0016     model2=<a href="../../core/setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model2,<span class="string">'lb'</span>,{<span class="string">'r_4041'</span>},.1);
+0017     model2.id=<span class="string">'yeast_reduced'</span>;
+0018     [newConnected cannotConnect addedRxns newModel exitFlag]=<a href="../../core/fillGaps.html" class="code" title="function [newConnected cannotConnect addedRxns newModel exitFlag]=fillGaps(model,models,allowNetProduction,useModelConstraints,supressWarnings,rxnScores,params)">fillGaps</a>(model2,model,false,true)
+0019     <span class="keyword">if</span> (length(addedRxns)==0)
+0020         nonEssential{end+1}=model.rxns{Index(i)};
+0021     <span class="keyword">else</span>
+0022         essential{end+1}=model.rxns{Index(i)};
+0023     <span class="keyword">end</span>
+0024     models{end+1}=newModel;
+0025     <a href="../../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(newModel)
+0026 <span class="keyword">end</span>
+0027 
+0028 model2=<a href="../../core/removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,Index,true);
+0029 model2=<a href="../../core/setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model2,<span class="string">'obj'</span>,{<span class="string">'r_4041'</span>},1); <span class="comment">% biomass</span>
+0030 model2=<a href="../../core/setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model2,<span class="string">'lb'</span>,{<span class="string">'r_4041'</span>},.1);
+0031 model2.id=<span class="string">'yeast_reduced'</span>;
+0032 [newConnected cannotConnect addedRxns newModel exitFlag]=<a href="../../core/fillGaps.html" class="code" title="function [newConnected cannotConnect addedRxns newModel exitFlag]=fillGaps(model,models,allowNetProduction,useModelConstraints,supressWarnings,rxnScores,params)">fillGaps</a>(model2,model,false,true)
+0033 
+0034 cellfun(@(rxn) <a href="../../core/printModel.html" class="code" title="function printModel(model,rxnList,outputString,outputFile,metaboliteList)">printModel</a>(model,rxn),essential)
+0035 disp(<span class="string">''</span>)
+0036 cellfun(@(rxn) <a href="../../core/printModel.html" class="code" title="function printModel(model,rxnList,outputString,outputFile,metaboliteList)">printModel</a>(model,rxn),nonEssential)
+0037 
+0038 diary off
+0039 
+0040 <span class="comment">% &gt;&gt; model.rxns(Index)</span>
+0041 
+0042 <span class="comment">% ans =</span>
+0043 
+0044 <span class="comment">%     'r_0466'</span>
+0045 <span class="comment">%     'r_0467'</span>
+0046 <span class="comment">%     'r_0534'</span>
+0047 <span class="comment">%     'r_1068'</span>
+0048 <span class="comment">%     'r_1070'</span>
+0049 <span class="comment">%     'r_1071'</span>
+0050 <span class="comment">%     'r_1084'</span>
+0051 <span class="comment">%     'r_1166'</span>
+0052 <span class="comment">%     'r_1714'</span>
+0053 <span class="comment">%     'r_1805'</span></pre></div>
+<hr><address>Generated on Fri 14-Oct-2016 12:02:10 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
