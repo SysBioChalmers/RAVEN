@@ -17,7 +17,7 @@ end
 global RAVENSOLVER;
 
 if(isempty('RAVENSOLVER'))
-	dispEM('Raven solver not defined. Try using setRavenSolver("solver").');
+	dispEM(['Raven solver not defined or unknown. Try using setRavenSolver(',char(39),'solver',char(39),').']);
 end
 
 milp=false;
@@ -52,7 +52,7 @@ switch RAVENSOLVER
 			[crap,res] = mosekopt(['minimize echo(0)'],prob);
 		end
 	otherwise
-		dispEM('Raven solver not defined or unknown. Try using setRavenSolver("solver").')
+		dispEM(['Raven solver not defined or unknown. Try using setRavenSolver(',char(39),'solver',char(39),').']);
 end
 
 function s_merged=structUpdate(s_old,s_new)
