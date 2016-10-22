@@ -68,7 +68,7 @@ function out = setRavenSolver(solver,saveSolver)
 			end
 		else
 			fid = fopen(fullfile(up,'startup.m'),'a+');
-			fprintf(fid,['\nsetRavenSolver(',char(39),'%s',char(39),');\n'], solver);
+			fprintf(fid,'\nsetRavenSolver(''%s'');\n', solver);
 		end
 	catch Ex
 		if (fid~=-1) fclose(fid); end
