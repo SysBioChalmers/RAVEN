@@ -11,14 +11,24 @@ function out = setRavenSolver(solver,saveSolver)
 %   Daniel Hermansson, 2016-10-10
 
 	if nargin<2
-		saveSolver=false;
+		saveSolver='none';
 	end
 
 	if (~ischar(solver)) dispEM('Input should be a string.'); end
 	
+	if (isempty(userpath))
+		userpath('reset')
+	end
+	
 	up=pathdef;
 	up=regexp(up,':','split');
 	up=up{1};
+
+	% copy setRavenSolver to userpath	
+	if (exist(fullfile(up,'setRavenSolver.m'), 'file') ~= 2)
+		p = mfilename('fullpath');
+		copyfile([p,'.m'],up);
+	end
 
 	global RAVENSOLVER;
 	RAVENSOLVER=solver;
@@ -35,16 +45,15 @@ function out = setRavenSolver(solver,saveSolver)
 				startupInd=i;
 			end
 		end
-		
-		if (ravenSet && ~saveSolver)
-			return;
-		end
 	catch Ex
 		%
 	end
 
-	if (~ravenSet && ~saveSolver)
-		m=input('You have no default RAVEN solver defined. Should we append this choice to MATLAB startup? y/n [y]: ','s');
+	if (~saveSolver) return; end
+
+	% if we reached this far we are interested in saving the choice to startup
+	if (~ravenSet && strcmp(saveSolver,'none'))
+		m=input(['You have no default RAVEN solver defined. Should we append ', solver ,' to MATLAB startup? y/n [y]: '],'s');
 		if (m=='n') return; end
 	end
 	
@@ -59,9 +68,10 @@ function out = setRavenSolver(solver,saveSolver)
 			end
 		else
 			fid = fopen(fullfile(up,'startup.m'),'a+');
-			fprintf(fid,'\nsetRavenSolver(''%s'');\n', solver);
+			fprintf(fid,['\nsetRavenSolver(',char(39),'%s',char(39),');\n'], solver);
 		end
 	catch Ex
+		if (fid~=-1) fclose(fid); end
 		dispEM('Could not save to startup.m');
 	end
 

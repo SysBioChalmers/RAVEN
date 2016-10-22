@@ -10,6 +10,8 @@ function checkInstallation()
 
 fprintf('*** RAVEN TOOLBOX v. 1.9\n');
 
+lastWorking='';
+
 %Check if RAVEN is in the path list
 paths=textscan(path,'%s','delimiter', pathsep);
 paths=paths{1};
@@ -17,6 +19,9 @@ paths=paths{1};
 %Get the RAVEN path
 [ST I]=dbstack('-completenames');
 [ravenDir,crap1,crap2]=fileparts(fileparts(ST(I).file));
+
+% get current solver
+global RAVENSOLVER;
 
 if ismember(ravenDir,paths)
     fprintf('Checking if RAVEN is in the Matlab path... PASSED\n');
@@ -51,20 +56,24 @@ catch
     fprintf('Checking if it is possible to import an SBML model using libSBML... FAILED\n');
 end
 
-%Check if it is possible to solve a LP problem using Mosek
-try
-    setRavenSolver('mosek')
-    solveLP(smallModel);
-    fprintf('Checking if it is possible to solve a LP problem using Mosek... PASSED\n');
-catch
-    fprintf('Checking if it is possible to solve a LP problem using Mosek... FAILED\n');
+%Check if it is possible to solve an LP problem using different solvers
+solver={'mosek','gurobi'};
+
+for i=[1:numel(solver)]
+    try
+        setRavenSolver(solver{i},false);
+        solveLP(smallModel);
+        lastWorking=solver{i};
+        fprintf(['Checking if it is possible to solve an LP problem using ',solver{i},'... PASSED\n']);
+    catch
+        fprintf(['Checking if it is possible to solve an LP problem using ',solver{i},'... FAILED\n']);
+    end
 end
 
-try
-    setRavenSolver('gurobi')
-    solveLP(smallModel);
-    fprintf('Checking if it is possible to solve a LP problem using Gurobi... PASSED\n');
-catch
-    fprintf('Checking if it is possible to solve a LP problem using Gurobi... FAILED\n');
+if (~isempty(lastWorking))
+    setRavenSolver(lastWorking);
 end
-end
+
+%function lastWorking=checkSolver(solver)
+
+

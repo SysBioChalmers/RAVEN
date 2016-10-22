@@ -3,14 +3,17 @@ RAVEN (Reconstruction, Analysis and Visualization of Metabolic Networks) Toolbox
 
 If you are using RAVEN in any scientific work, please cite: [R. Agren, et. al, “The RAVEN Toolbox and Its Use for Generating a Genome-scale Metabolic Model for Penicillium chrysogenum,” PLoS Comput. Biol., vol. 9, no. 3, p. e1002980, Mar. 2013.](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002980).
 
-## Installation
+## Releases
 RAVEN can be installed via cloning the Github repository as per below or by downloading and extracting one of the a zipped [release](https://github.com/SysBioChalmers/RAVEN/releases). Please note that the releases do not always represent the most up to date version.
+
+## Installation
+If using git please execute the below command in an appropriate directory.
 
 ```bash
 git clone git@github.com:SysBioChalmers/RAVEN.git
 ```
 
-Don't forget to add raven to you matlab path. In matlab:
+Don't forget to add RAVEN (the directory extracted from the a release zip file OR the cloned git repository) to you matlab path. In matlab:
 
 ```matlab
 addpath(genpath('path/to/raven'))
@@ -38,6 +41,8 @@ To have matlab remember the above installations please save the current path to 
 ```matlab
 savepath '~/Documents/MATLAB/pathdef.m'
 ```
+
+*It is highly recommended to set set startup directory of matlab to a directory where you have write access (Preferences->General->start up directory).*
 
 ### Setting the solver
 Please note that you must now select the solver that you would like to use after you have loaded RAVEN. This can be done like so:
