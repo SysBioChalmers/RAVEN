@@ -6,7 +6,7 @@ function checkInstallation()
 %   Usage: checkInstallation()
 %
 %   Rasmus Agren, 2014-01-06
-%
+%	Eduard Kerkhoven, 2016-10-23 - Use Matlab preferences for solver selection
 
 fprintf('*** RAVEN TOOLBOX v. 1.9\n');
 
@@ -21,7 +21,12 @@ paths=paths{1};
 [ravenDir,crap1,crap2]=fileparts(fileparts(ST(I).file));
 
 % get current solver
-global RAVENSOLVER;
+if ~ispref('RAVEN','solver')
+	fprintf('Solver found in preferences... NONE\n');
+else
+	curSolv=getpref('RAVEN','solver');
+	fprintf(['Solver found in preferences... ',curSolv,'\n']);
+end
 
 if ismember(ravenDir,paths)
     fprintf('Checking if RAVEN is in the Matlab path... PASSED\n');
@@ -61,7 +66,7 @@ solver={'mosek','gurobi'};
 
 for i=[1:numel(solver)]
     try
-        setRavenSolver(solver{i},false);
+        setRavenSolver(solver{i});
         solveLP(smallModel);
         lastWorking=solver{i};
         fprintf(['Checking if it is possible to solve an LP problem using ',solver{i},'... PASSED\n']);
@@ -74,6 +79,12 @@ if (~isempty(lastWorking))
     setRavenSolver(lastWorking);
 end
 
+if isempty(curSolv)
+	fprintf(['Prefered solver... NEW\nSolver saved as preference... ',lastWorking,'\n']);
+elseif strcmp(curSolv,lastWorking)
+	fprintf(['Prefered solver... KEPT\nSolver saved as preference... ',lastWorking,'\n']);
+else
+	fprintf(['Prefered solver... CHANGED\nSolver saved as preference... ',lastWorking,'\n']);
+end
+
 %function lastWorking=checkSolver(solver)
-
-

@@ -9,30 +9,29 @@ function res = optimizeProb(prob,params)
 %   		(mosek style)
 %
 %   Daniel Hermansson, 2016-04-01
+%	Eduard Kerkhoven, 2016-10-22 - Use Matlab preferences for solver selection
 
 if nargin<2
     params=[];
 end
 
-global RAVENSOLVER;
 
-if(isempty('RAVENSOLVER'))
+if(~ispref('RAVEN','solver'))
 	dispEM(['Raven solver not defined or unknown. Try using setRavenSolver(',char(39),'solver',char(39),').']);
 end
 
 milp=false;
 if(isfield(prob,'ints')), disp('MILP detected.'); milp=true; end
 
-switch RAVENSOLVER
-	case 'gurobi' 
+solver=getpref('RAVEN','solver');
+if solver=='gurobi'
 		gparams=struct('Presolve',2,'TimeLimit',1000,'OutputFlag',1,'MIPGap',1e-9,'Seed',0,'FeasibilityTol',1e-8,'OptimalityTol',1e-8);
 		if (~milp) gparams.OutputFlag=0; end
 		%gparams=structUpdate(gparams,params);
 		res = gurobi(mosekToGurobiProb(prob), gparams);
 		
 		res=gurobiToMosekRes(res,length(prob.c),milp);
-
-	case 'cobra'
+elseif solver=='cobra'
 		if (milp)
 			cparams=struct('timeLimit',1e9,'printLevel',0,'intTol',1e-6,'relMipGapTol',1e-9);
 			cparams=structUpdate(cparams,params);
@@ -43,15 +42,15 @@ switch RAVENSOLVER
 			res=solveCobraLP(mosekToCobraProb(prob));
 		end
 		res=cobraToMosekRes(res,length(prob.c),milp);
-
-	case 'mosek'
+		
+elseif solver=='mosek'
 		if (milp) 
 			params.printReport=true; 
 			[crap,res] = mosekopt(['minimize echo(0)'],prob,getMILPParams(params));
 		else
 			[crap,res] = mosekopt(['minimize echo(0)'],prob);
 		end
-	otherwise
+else
 		dispEM(['Raven solver not defined or unknown. Try using setRavenSolver(',char(39),'solver',char(39),').']);
 end
 
