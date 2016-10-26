@@ -1,0 +1,433 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of getFullPath</title>
+  <meta name="keywords" content="getFullPath">
+  <meta name="description" content="getFullPath - Get absolute canonical path of a file or folder">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">io</a> &gt; getFullPath.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for io&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>getFullPath
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>getFullPath - Get absolute canonical path of a file or folder</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function File = getFullPath(File, Style) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> getFullPath - Get absolute canonical path of a file or folder
+ Absolute path names are safer than relative paths, when e.g. a GUI or TIMER
+ callback changes the current directory. Only canonical paths without &quot;.&quot; and
+ &quot;..&quot; can be recognized uniquely.
+ Long path names (&gt;259 characters) require a magic initial key &quot;\\?\&quot; to be
+ handled by Windows API functions, e.g. for Matlab's FOPEN, DIR and EXIST.
+
+ FullName = getFullPath(Name, Style)
+ INPUT:
+   Name:  String or cell string, absolute or relative name of a file or
+          folder. The path need not exist. Unicode strings, UNC paths and long
+          names are supported.
+   Style: Style of the output as string, optional, default: 'auto'.
+          'auto': Add '\\?\' or '\\?\UNC\' for long names on demand.
+          'lean': Magic string is not added.
+          'fat':  Magic string is added for short names also.
+          The Style is ignored when not running under Windows.
+
+ OUTPUT:
+   FullName: Absolute canonical path name as string or cell string.
+          For empty strings the current directory is replied.
+          '\\?\' or '\\?\UNC' is added on demand.
+
+ NOTE: The M- and the MEX-version create the same results, the faster MEX
+   function works under Windows only.
+   Some functions of the Windows-API still do not support long file names.
+   E.g. the Recycler and the Windows Explorer fail even with the magic '\\?\'
+   prefix. Some functions of Matlab accept 260 characters (value of MAX_PATH),
+   some at 259 already. Don't blame me.
+   The 'fat' style is useful e.g. when Matlab's DIR command is called for a
+   folder with les than 260 characters, but together with the file name this
+   limit is exceeded. Then &quot;dir(getFullPath([folder, '\*.*], 'fat'))&quot; helps.
+
+ EXAMPLES:
+   cd(tempdir);                    % Assumed as 'C:\Temp' here
+   getFullPath('File.Ext')         % 'C:\Temp\File.Ext'
+   getFullPath('..\File.Ext')      % 'C:\File.Ext'
+   getFullPath('..\..\File.Ext')   % 'C:\File.Ext'
+   getFullPath('.\File.Ext')       % 'C:\Temp\File.Ext'
+   getFullPath('*.txt')            % 'C:\Temp\*.txt'
+   getFullPath('..')               % 'C:\'
+   getFullPath('..\..\..')         % 'C:\'
+   getFullPath('Folder\')          % 'C:\Temp\Folder\'
+   getFullPath('D:\A\..\B')        % 'D:\B'
+   getFullPath('\\Server\Folder\Sub\..\File.ext')
+                                   % '\\Server\Folder\File.ext'
+   getFullPath({'..', 'new'})      % {'C:\', 'C:\Temp\new'}
+   getFullPath('.', 'fat')         % '\\?\C:\Temp\File.Ext'
+
+ COMPILE:
+   Automatic: InstallMex getFullPath.c uTest_getFullPath
+   Manual:    mex -O getFullPath.c
+   Download:  http://www.n-simon.de/mex
+ Run the unit-test uTest_getFullPath after compiling.
+
+ Tested: Matlab 6.5, 7.7, 7.8, 7.13, WinXP/32, Win7/64
+         Compiler: LCC2.4/3.8, BCC5.5, OWC1.8, MSVC2008/2010
+ Assumed Compatibility: higher Matlab versions
+ Author: Jan Simon, Heidelberg, (C) 2009-2013 matlab.THISYEAR(a)nMINUSsimon.de
+
+ See also: CD, FULLFILE, FILEPARTS.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="getFullPath.html" class="code" title="function File = getFullPath(File, Style)">getFullPath</a>	getFullPath - Get absolute canonical path of a file or folder</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="getFullPath.html" class="code" title="function File = getFullPath(File, Style)">getFullPath</a>	getFullPath - Get absolute canonical path of a file or folder</li><li><a href="importExcelModel.html" class="code" title="function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)">importExcelModel</a>	importExcelModel</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function File = getFullPath(File, Style)</a>
+0002 <span class="comment">% getFullPath - Get absolute canonical path of a file or folder</span>
+0003 <span class="comment">% Absolute path names are safer than relative paths, when e.g. a GUI or TIMER</span>
+0004 <span class="comment">% callback changes the current directory. Only canonical paths without &quot;.&quot; and</span>
+0005 <span class="comment">% &quot;..&quot; can be recognized uniquely.</span>
+0006 <span class="comment">% Long path names (&gt;259 characters) require a magic initial key &quot;\\?\&quot; to be</span>
+0007 <span class="comment">% handled by Windows API functions, e.g. for Matlab's FOPEN, DIR and EXIST.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% FullName = getFullPath(Name, Style)</span>
+0010 <span class="comment">% INPUT:</span>
+0011 <span class="comment">%   Name:  String or cell string, absolute or relative name of a file or</span>
+0012 <span class="comment">%          folder. The path need not exist. Unicode strings, UNC paths and long</span>
+0013 <span class="comment">%          names are supported.</span>
+0014 <span class="comment">%   Style: Style of the output as string, optional, default: 'auto'.</span>
+0015 <span class="comment">%          'auto': Add '\\?\' or '\\?\UNC\' for long names on demand.</span>
+0016 <span class="comment">%          'lean': Magic string is not added.</span>
+0017 <span class="comment">%          'fat':  Magic string is added for short names also.</span>
+0018 <span class="comment">%          The Style is ignored when not running under Windows.</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% OUTPUT:</span>
+0021 <span class="comment">%   FullName: Absolute canonical path name as string or cell string.</span>
+0022 <span class="comment">%          For empty strings the current directory is replied.</span>
+0023 <span class="comment">%          '\\?\' or '\\?\UNC' is added on demand.</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% NOTE: The M- and the MEX-version create the same results, the faster MEX</span>
+0026 <span class="comment">%   function works under Windows only.</span>
+0027 <span class="comment">%   Some functions of the Windows-API still do not support long file names.</span>
+0028 <span class="comment">%   E.g. the Recycler and the Windows Explorer fail even with the magic '\\?\'</span>
+0029 <span class="comment">%   prefix. Some functions of Matlab accept 260 characters (value of MAX_PATH),</span>
+0030 <span class="comment">%   some at 259 already. Don't blame me.</span>
+0031 <span class="comment">%   The 'fat' style is useful e.g. when Matlab's DIR command is called for a</span>
+0032 <span class="comment">%   folder with les than 260 characters, but together with the file name this</span>
+0033 <span class="comment">%   limit is exceeded. Then &quot;dir(getFullPath([folder, '\*.*], 'fat'))&quot; helps.</span>
+0034 <span class="comment">%</span>
+0035 <span class="comment">% EXAMPLES:</span>
+0036 <span class="comment">%   cd(tempdir);                    % Assumed as 'C:\Temp' here</span>
+0037 <span class="comment">%   getFullPath('File.Ext')         % 'C:\Temp\File.Ext'</span>
+0038 <span class="comment">%   getFullPath('..\File.Ext')      % 'C:\File.Ext'</span>
+0039 <span class="comment">%   getFullPath('..\..\File.Ext')   % 'C:\File.Ext'</span>
+0040 <span class="comment">%   getFullPath('.\File.Ext')       % 'C:\Temp\File.Ext'</span>
+0041 <span class="comment">%   getFullPath('*.txt')            % 'C:\Temp\*.txt'</span>
+0042 <span class="comment">%   getFullPath('..')               % 'C:\'</span>
+0043 <span class="comment">%   getFullPath('..\..\..')         % 'C:\'</span>
+0044 <span class="comment">%   getFullPath('Folder\')          % 'C:\Temp\Folder\'</span>
+0045 <span class="comment">%   getFullPath('D:\A\..\B')        % 'D:\B'</span>
+0046 <span class="comment">%   getFullPath('\\Server\Folder\Sub\..\File.ext')</span>
+0047 <span class="comment">%                                   % '\\Server\Folder\File.ext'</span>
+0048 <span class="comment">%   getFullPath({'..', 'new'})      % {'C:\', 'C:\Temp\new'}</span>
+0049 <span class="comment">%   getFullPath('.', 'fat')         % '\\?\C:\Temp\File.Ext'</span>
+0050 <span class="comment">%</span>
+0051 <span class="comment">% COMPILE:</span>
+0052 <span class="comment">%   Automatic: InstallMex getFullPath.c uTest_getFullPath</span>
+0053 <span class="comment">%   Manual:    mex -O getFullPath.c</span>
+0054 <span class="comment">%   Download:  http://www.n-simon.de/mex</span>
+0055 <span class="comment">% Run the unit-test uTest_getFullPath after compiling.</span>
+0056 <span class="comment">%</span>
+0057 <span class="comment">% Tested: Matlab 6.5, 7.7, 7.8, 7.13, WinXP/32, Win7/64</span>
+0058 <span class="comment">%         Compiler: LCC2.4/3.8, BCC5.5, OWC1.8, MSVC2008/2010</span>
+0059 <span class="comment">% Assumed Compatibility: higher Matlab versions</span>
+0060 <span class="comment">% Author: Jan Simon, Heidelberg, (C) 2009-2013 matlab.THISYEAR(a)nMINUSsimon.de</span>
+0061 <span class="comment">%</span>
+0062 <span class="comment">% See also: CD, FULLFILE, FILEPARTS.</span>
+0063 
+0064 <span class="comment">% $JRev: R-G V:032 Sum:7Xd/JS0+yfax Date:15-Jan-2013 01:06:12 $</span>
+0065 <span class="comment">% $License: BSD (use/copy/change/redistribute on own risk, mention the author) $</span>
+0066 <span class="comment">% $UnitTest: uTest_getFullPath $</span>
+0067 <span class="comment">% $File: Tools\GLFile\getFullPath.m $</span>
+0068 <span class="comment">% History:</span>
+0069 <span class="comment">% 001: 20-Apr-2010 22:28, Successor of Rel2AbsPath.</span>
+0070 <span class="comment">% 010: 27-Jul-2008 21:59, Consider leading separator in M-version also.</span>
+0071 <span class="comment">% 011: 24-Jan-2011 12:11, Cell strings, '~File' under linux.</span>
+0072 <span class="comment">%      Check of input types in the M-version.</span>
+0073 <span class="comment">% 015: 31-Mar-2011 10:48, BUGFIX: Accept [] as input as in the Mex version.</span>
+0074 <span class="comment">%      Thanks to Jiro Doke, who found this bug by running the test function for</span>
+0075 <span class="comment">%      the M-version.</span>
+0076 <span class="comment">% 020: 18-Oct-2011 00:57, BUGFIX: Linux version created bad results.</span>
+0077 <span class="comment">%      Thanks to Daniel.</span>
+0078 <span class="comment">% 024: 10-Dec-2011 14:00, Care for long names under Windows in M-version.</span>
+0079 <span class="comment">%      Improved the unittest function for Linux. Thanks to Paul Sexton.</span>
+0080 <span class="comment">% 025: 09-Aug-2012 14:00, In MEX: Paths starting with &quot;\\&quot; can be non-UNC.</span>
+0081 <span class="comment">%      The former version treated &quot;\\?\C:\&lt;longpath&gt;\file&quot; as UNC path and</span>
+0082 <span class="comment">%      replied &quot;\\?\UNC\?\C:\&lt;longpath&gt;\file&quot;.</span>
+0083 <span class="comment">% 032: 12-Jan-2013 21:16, 'auto', 'lean' and 'fat' style.</span>
+0084 
+0085 <span class="comment">% Initialize: ==================================================================</span>
+0086 <span class="comment">% Do the work: =================================================================</span>
+0087 
+0088 <span class="comment">% #############################################</span>
+0089 <span class="comment">% ### USE THE MUCH FASTER MEX ON WINDOWS!!! ###</span>
+0090 <span class="comment">% #############################################</span>
+0091 
+0092 <span class="comment">% Difference between M- and Mex-version:</span>
+0093 <span class="comment">% - Mex does not work under MacOS/Unix.</span>
+0094 <span class="comment">% - Mex calls Windows API function getFullPath.</span>
+0095 <span class="comment">% - Mex is much faster.</span>
+0096 
+0097 <span class="comment">% Magix prefix for long Windows names:</span>
+0098 <span class="keyword">if</span> nargin &lt; 2
+0099    Style = <span class="string">'auto'</span>;
+0100 <span class="keyword">end</span>
+0101 
+0102 <span class="comment">% Handle cell strings:</span>
+0103 <span class="comment">% NOTE: It is faster to create a function @cell\getFullPath.m under Linux, but</span>
+0104 <span class="comment">% under Windows this would shadow the fast C-Mex.</span>
+0105 <span class="keyword">if</span> isa(File, <span class="string">'cell'</span>)
+0106    <span class="keyword">for</span> iC = 1:numel(File)
+0107       File{iC} = <a href="getFullPath.html" class="code" title="function File = getFullPath(File, Style)">getFullPath</a>(File{iC}, Style);
+0108    <span class="keyword">end</span>
+0109    <span class="keyword">return</span>;
+0110 <span class="keyword">end</span>
+0111 
+0112 <span class="comment">% Check this once only:</span>
+0113 isWIN    = strncmpi(computer, <span class="string">'PC'</span>, 2);
+0114 MAX_PATH = 260;
+0115 
+0116 <span class="comment">% Warn once per session (disable this under Linux/MacOS):</span>
+0117 <span class="keyword">persistent</span> hasDataRead
+0118 <span class="keyword">if</span> isempty(hasDataRead)
+0119    <span class="comment">% Test this once only - there is no relation to the existence of DATAREAD!</span>
+0120    <span class="comment">%if isWIN</span>
+0121    <span class="comment">%   Show a warning, if the slower Matlab version is used - commented, because</span>
+0122    <span class="comment">%   this is not a problem and it might be even useful when the MEX-folder is</span>
+0123    <span class="comment">%   not inlcuded in the path yet.</span>
+0124    <span class="comment">%   warning('JSimon:getFullPath:NoMex', ...</span>
+0125    <span class="comment">%      ['getFullPath: Using slow Matlab-version instead of fast Mex.', ...</span>
+0126    <span class="comment">%       char(10), 'Compile: InstallMex getFullPath.c']);</span>
+0127    <span class="comment">%end</span>
+0128    
+0129    <span class="comment">% DATAREAD is deprecated in 2011b, but still available. In Matlab 6.5, REGEXP</span>
+0130    <span class="comment">% does not know the 'split' command, therefore DATAREAD is preferred:</span>
+0131    hasDataRead = ~isempty(which(<span class="string">'dataread'</span>));
+0132 <span class="keyword">end</span>
+0133 
+0134 <span class="keyword">if</span> isempty(File)  <span class="comment">% Accept empty matrix as input:</span>
+0135    <span class="keyword">if</span> ischar(File) || isnumeric(File)
+0136       File = cd;
+0137       <span class="keyword">return</span>;
+0138    <span class="keyword">else</span>
+0139       error([<span class="string">'JSimon:'</span>, mfilename, <span class="string">':BadTypeInput1'</span>], <span class="keyword">...</span>
+0140          [<span class="string">'*** '</span>, mfilename, <span class="string">': Input must be a string or cell string'</span>]);
+0141    <span class="keyword">end</span>
+0142 <span class="keyword">end</span>
+0143 
+0144 <span class="keyword">if</span> ischar(File) == 0  <span class="comment">% Non-empty inputs must be strings</span>
+0145    error([<span class="string">'JSimon:'</span>, mfilename, <span class="string">':BadTypeInput1'</span>], <span class="keyword">...</span>
+0146       [<span class="string">'*** '</span>, mfilename, <span class="string">': Input must be a string or cell string'</span>]);
+0147 <span class="keyword">end</span>
+0148 
+0149 <span class="keyword">if</span> isWIN  <span class="comment">% Windows: --------------------------------------------------------</span>
+0150    FSep = <span class="string">'\'</span>;
+0151    File = strrep(File, <span class="string">'/'</span>, FSep);
+0152    
+0153    <span class="comment">% Remove the magic key on demand, it is appended finally again:</span>
+0154    <span class="keyword">if</span> strncmp(File, <span class="string">'\\?\'</span>, 4)
+0155       <span class="keyword">if</span> strncmpi(File, <span class="string">'\\?\UNC\'</span>, 8)
+0156          File = [<span class="string">'\'</span>, File(7:length(File))];  <span class="comment">% Two leading backslashes!</span>
+0157       <span class="keyword">else</span>
+0158          File = File(5:length(File));
+0159       <span class="keyword">end</span>
+0160    <span class="keyword">end</span>
+0161    
+0162    isUNC   = strncmp(File, <span class="string">'\\'</span>, 2);
+0163    FileLen = length(File);
+0164    <span class="keyword">if</span> isUNC == 0                        <span class="comment">% File is not a UNC path</span>
+0165       <span class="comment">% Leading file separator means relative to current drive or base folder:</span>
+0166       ThePath = cd;
+0167       <span class="keyword">if</span> File(1) == FSep
+0168          <span class="keyword">if</span> strncmp(ThePath, <span class="string">'\\'</span>, 2)   <span class="comment">% Current directory is a UNC path</span>
+0169             sepInd  = strfind(ThePath, <span class="string">'\'</span>);
+0170             ThePath = ThePath(1:sepInd(4));
+0171          <span class="keyword">else</span>
+0172             ThePath = ThePath(1:3);     <span class="comment">% Drive letter only</span>
+0173          <span class="keyword">end</span>
+0174       <span class="keyword">end</span>
+0175       
+0176       <span class="keyword">if</span> FileLen &lt; 2 || File(2) ~= <span class="string">':'</span>  <span class="comment">% Does not start with drive letter</span>
+0177          <span class="keyword">if</span> ThePath(length(ThePath)) ~= FSep
+0178             <span class="keyword">if</span> File(1) ~= FSep
+0179                File = [ThePath, FSep, File];
+0180             <span class="keyword">else</span>                        <span class="comment">% File starts with separator:</span>
+0181                File = [ThePath, File];
+0182             <span class="keyword">end</span>
+0183          <span class="keyword">else</span>                           <span class="comment">% Current path ends with separator:</span>
+0184             <span class="keyword">if</span> File(1) ~= FSep
+0185                File = [ThePath, File];
+0186             <span class="keyword">else</span>                        <span class="comment">% File starts with separator:</span>
+0187                ThePath(length(ThePath)) = [];
+0188                File = [ThePath, File];
+0189             <span class="keyword">end</span>
+0190          <span class="keyword">end</span>
+0191          
+0192       <span class="keyword">elseif</span> FileLen == 2 &amp;&amp; File(2) == <span class="string">':'</span>   <span class="comment">% &quot;C:&quot; current directory on C!</span>
+0193          <span class="comment">% &quot;C:&quot; is the current directory on the C-disk, even if the current</span>
+0194          <span class="comment">% directory is on another disk! This was ignored in Matlab 6.5, but</span>
+0195          <span class="comment">% modern versions considers this strange behaviour.</span>
+0196          <span class="keyword">if</span> strncmpi(ThePath, File, 2)
+0197             File = ThePath;
+0198          <span class="keyword">else</span>
+0199             <span class="keyword">try</span>
+0200                File = cd(cd(File));
+0201             <span class="keyword">catch</span>    <span class="comment">% No MException to support Matlab6.5...</span>
+0202                <span class="keyword">if</span> exist(File, <span class="string">'dir'</span>)  <span class="comment">% No idea what could cause an error then!</span>
+0203                   rethrow(lasterror);
+0204                <span class="keyword">else</span>  <span class="comment">% Reply &quot;K:\&quot; for not existing disk:</span>
+0205                   File = [File, FSep];
+0206                <span class="keyword">end</span>
+0207             <span class="keyword">end</span>
+0208          <span class="keyword">end</span>
+0209       <span class="keyword">end</span>
+0210    <span class="keyword">end</span>
+0211    
+0212 <span class="keyword">else</span>         <span class="comment">% Linux, MacOS: ---------------------------------------------------</span>
+0213    FSep = <span class="string">'/'</span>;
+0214    File = strrep(File, <span class="string">'\'</span>, FSep);
+0215    
+0216    <span class="keyword">if</span> strcmp(File, <span class="string">'~'</span>) || strncmp(File, <span class="string">'~/'</span>, 2)  <span class="comment">% Home directory:</span>
+0217       HomeDir = getenv(<span class="string">'HOME'</span>);
+0218       <span class="keyword">if</span> ~isempty(HomeDir)
+0219          File(1) = [];
+0220          File    = [HomeDir, File];
+0221       <span class="keyword">end</span>
+0222       
+0223    <span class="keyword">elseif</span> strncmpi(File, FSep, 1) == 0
+0224       <span class="comment">% Append relative path to current folder:</span>
+0225       ThePath = cd;
+0226       <span class="keyword">if</span> ThePath(length(ThePath)) == FSep
+0227          File = [ThePath, File];
+0228       <span class="keyword">else</span>
+0229          File = [ThePath, FSep, File];
+0230       <span class="keyword">end</span>
+0231    <span class="keyword">end</span>
+0232 <span class="keyword">end</span>
+0233 
+0234 <span class="comment">% Care for &quot;\.&quot; and &quot;\..&quot; - no efficient algorithm, but the fast Mex is</span>
+0235 <span class="comment">% recommended at all!</span>
+0236 <span class="keyword">if</span> ~isempty(strfind(File, [FSep, <span class="string">'.'</span>]))
+0237    <span class="keyword">if</span> isWIN
+0238       <span class="keyword">if</span> strncmp(File, <span class="string">'\\'</span>, 2)  <span class="comment">% UNC path</span>
+0239          index = strfind(File, <span class="string">'\'</span>);
+0240          <span class="keyword">if</span> length(index) &lt; 4    <span class="comment">% UNC path without separator after the folder:</span>
+0241             <span class="keyword">return</span>;
+0242          <span class="keyword">end</span>
+0243          Drive            = File(1:index(4));
+0244          File(1:index(4)) = [];
+0245       <span class="keyword">else</span>
+0246          Drive     = File(1:3);
+0247          File(1:3) = [];
+0248       <span class="keyword">end</span>
+0249    <span class="keyword">else</span>  <span class="comment">% Unix, MacOS:</span>
+0250       isUNC   = false;
+0251       Drive   = FSep;
+0252       File(1) = [];
+0253    <span class="keyword">end</span>
+0254    
+0255    hasTrailFSep = (File(length(File)) == FSep);
+0256    <span class="keyword">if</span> hasTrailFSep
+0257       File(length(File)) = [];
+0258    <span class="keyword">end</span>
+0259    
+0260    <span class="keyword">if</span> hasDataRead
+0261       <span class="keyword">if</span> isWIN  <span class="comment">% Need &quot;\\&quot; as separator:</span>
+0262          C = dataread(<span class="string">'string'</span>, File, <span class="string">'%s'</span>, <span class="string">'delimiter'</span>, <span class="string">'\\'</span>);  <span class="comment">%#ok&lt;REMFF1&gt;</span>
+0263       <span class="keyword">else</span>
+0264          C = dataread(<span class="string">'string'</span>, File, <span class="string">'%s'</span>, <span class="string">'delimiter'</span>, FSep);  <span class="comment">%#ok&lt;REMFF1&gt;</span>
+0265       <span class="keyword">end</span>
+0266    <span class="keyword">else</span>  <span class="comment">% Use the slower REGEXP, when DATAREAD is not available anymore:</span>
+0267       C = regexp(File, FSep, <span class="string">'split'</span>);
+0268    <span class="keyword">end</span>
+0269    
+0270    <span class="comment">% Remove '\.\' directly without side effects:</span>
+0271    C(strcmp(C, <span class="string">'.'</span>)) = [];
+0272    
+0273    <span class="comment">% Remove '\..' with the parent recursively:</span>
+0274    R = 1:length(C);
+0275    <span class="keyword">for</span> dd = reshape(find(strcmp(C, <span class="string">'..'</span>)), 1, [])
+0276       index    = find(R == dd);
+0277       R(index) = [];
+0278       <span class="keyword">if</span> index &gt; 1
+0279          R(index - 1) = [];
+0280       <span class="keyword">end</span>
+0281    <span class="keyword">end</span>
+0282    
+0283    <span class="keyword">if</span> isempty(R)
+0284       File = Drive;
+0285       <span class="keyword">if</span> isUNC &amp;&amp; ~hasTrailFSep
+0286          File(length(File)) = [];
+0287       <span class="keyword">end</span>
+0288       
+0289    <span class="keyword">elseif</span> isWIN
+0290       <span class="comment">% If you have CStr2String, use the faster:</span>
+0291       <span class="comment">%   File = CStr2String(C(R), FSep, hasTrailFSep);</span>
+0292       File = sprintf(<span class="string">'%s\\'</span>, C{R});
+0293       <span class="keyword">if</span> hasTrailFSep
+0294          File = [Drive, File];
+0295       <span class="keyword">else</span>
+0296          File = [Drive, File(1:length(File) - 1)];
+0297       <span class="keyword">end</span>
+0298       
+0299    <span class="keyword">else</span>  <span class="comment">% Unix:</span>
+0300       File = [Drive, sprintf(<span class="string">'%s/'</span>, C{R})];
+0301       <span class="keyword">if</span> ~hasTrailFSep
+0302          File(length(File)) = [];
+0303       <span class="keyword">end</span>
+0304    <span class="keyword">end</span>
+0305 <span class="keyword">end</span>
+0306 
+0307 <span class="comment">% &quot;Very&quot; long names under Windows:</span>
+0308 <span class="keyword">if</span> isWIN
+0309    <span class="keyword">if</span> ~ischar(Style)
+0310       error([<span class="string">'JSimon:'</span>, mfilename, <span class="string">':BadTypeInput2'</span>], <span class="keyword">...</span>
+0311          [<span class="string">'*** '</span>, mfilename, <span class="string">': Input must be a string or cell string'</span>]);
+0312    <span class="keyword">end</span>
+0313    
+0314    <span class="keyword">if</span> (strncmpi(Style, <span class="string">'a'</span>, 1) &amp;&amp; length(File) &gt;= MAX_PATH) || <span class="keyword">...</span>
+0315          strncmpi(Style, <span class="string">'f'</span>, 1)
+0316       <span class="comment">% Do not use [isUNC] here, because this concerns the input, which can</span>
+0317       <span class="comment">% '.\File', while the current directory is an UNC path.</span>
+0318       <span class="keyword">if</span> strncmp(File, <span class="string">'\\'</span>, 2)  <span class="comment">% UNC path</span>
+0319          File = [<span class="string">'\\?\UNC'</span>, File(2:end)];
+0320       <span class="keyword">else</span>
+0321          File = [<span class="string">'\\?\'</span>, File];
+0322       <span class="keyword">end</span>
+0323    <span class="keyword">end</span>
+0324 <span class="keyword">end</span>
+0325 
+0326 <span class="comment">% return;</span></pre></div>
+<hr><address>Generated on Fri 14-Oct-2016 12:02:10 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

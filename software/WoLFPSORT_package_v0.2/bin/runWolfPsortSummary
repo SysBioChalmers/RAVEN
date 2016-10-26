@@ -1,0 +1,280 @@
+#!/usr/bin/perl -w
+#
+#  Author: Paul Horton (remnants of code from CJ Collier may remain).
+#  Maintainer: Paul Horton.
+#  Organization: Computational Biology Research Center, AIST, Japan
+#  Creation Date: Summer 2004
+#  Last Modification $Date: 2006/08/31 07:21:44 $
+#  Copyright: Paul Horton
+#  Licensing: Anyone may distribute this under the GNU public license. For other
+#             license information contact: horton-p AT aist.go.jp
+#
+#  Description: runWolfPsortSummary runs the programs required for
+#  predicting localization sites of fasta queries. Only a
+#  simple summary of the predictions is output. Other scripts are available
+#  for more elaborate html output.
+#
+#  Input: (multi)fasta query
+#
+#  Output: Localization site predictions
+#
+#  Args: organism type from {fungi, plant, animal}
+#
+#  Dependencies: This program depends on some files included in the
+#                installation in its directory or in ../data. This
+#                program uses the FindBin module to find itself so
+#                you should be able to install it anywhere if you 
+#                maintain the relative paths of the files it depends on.
+#
+BEGIN{  
+    use FindBin;
+    push @INC, $FindBin::Bin;
+}
+use Getopt::Long qw(:config posix_default bundling permute);
+use Pod::Usage;
+use FileHandle;
+use File::Basename;
+use fastafmt::GetOptWarnHandler;
+use strict;
+
+# options with default values
+my $justPrint = 0;
+my $justComputeFeatures = 0;
+my $printSequenceDescription = 0;
+my $wolfPredictFlags = "";
+my $featureComputerFlag = "";
+my $man = 0;
+my $help = 0;
+my $usage = 0;
+
+
+my $cwd = $FindBin::Bin;
+
+# use this file for English documentation. Files under pod directory
+# for other languages.
+my $podSourcePathname = $0;
+if( ($ENV{LANG} =~ /^ja_JP/) &&
+    (-e "$cwd/pod/ja_JP/runWolfPsortSummary.ja_JP.eucjp.pod") ){
+    $podSourcePathname = "$cwd/pod/ja_JP/runWolfPsortSummary.ja_JP.eucjp.pod";
+}
+
+fastafmt::GetOptWarnHandler->before( @ARGV );
+my $getOptionsRetval =
+    GetOptions( "n|just-print" => \$justPrint,
+		"f|just-compute-features" => \$justComputeFeatures,
+		"d|print-sequence-descriptions"
+		=> sub { 
+		    $featureComputerFlag = "--append-sequence-fasta-head";
+		    $wolfPredictFlags .= " --print-instance-comment" },
+
+		"print-neighbors"     => sub { $wolfPredictFlags .= " --print-neighbors" },
+
+		"man"          => \$man,
+		"help"         => \$help,
+		"usage"        => \$usage,
+		);
+fastafmt::GetOptWarnHandler->after( @ARGV );
+
+$getOptionsRetval || pod2usage( -verbose => 0, -input => $podSourcePathname );
+
+####################################################
+# Process flags related to usage or documentation
+####################################################
+$man     && pod2usage( -verbose => 2, -input => $podSourcePathname );
+$help    && pod2usage( -verbose => 1, -input => $podSourcePathname );
+$usage   && pod2usage( -verbose => 0, -input => $podSourcePathname );
+
+
+my $organismType = shift;
+
+unless( $organismType && ($organismType =~ /^(fungi|plant|animal)$/) ){
+    print "OrganismType should be one of {\"fungi\", \"plant\", \"animal\"}\n  pipe fasta query sequences in from standard in\n\n";
+    pod2usage( -verbose => 0, -input => $podSourcePathname );
+}
+
+if( @ARGV ){
+    print "\nCommand Line Parsing Error; Do not know what to do with argument \"$ARGV[0]\"\n\n";
+    pod2usage( -verbose => 0, -input => $podSourcePathname );
+}
+
+# dirs
+my $dataDir = "$cwd/../data/";
+
+# programs
+my $sequenceCleaner = "$cwd/checkFastaInput.pl";
+my $featureComputer = "$cwd/psortModifiedForWolfFiles/psortModifiedForWoLF";
+my $wolfPredict      = "$cwd/wolfPredict";
+
+(-e $wolfPredict) || die( "Error: Binary file: $wolfPredict not found.\nPerhaps you need to copy the appropriate binary from the archeticture specific ones under $cwd/binByPlatform/?\n" );
+
+# The commands that will be executed
+my $featureComputerCommand = "$featureComputer $featureComputerFlag --outputForWoLF --noNormalization";
+my $wolfPredictCommand = "$wolfPredict $wolfPredictFlags $dataDir/$organismType.wolfw $dataDir/$organismType.wolff $dataDir/$organismType.wolfu";
+
+my $command = "$sequenceCleaner | $featureComputerCommand";
+$justComputeFeatures || ($command .="| $wolfPredictCommand");
+
+$justPrint ? print "$command\n" : system( $command );
+
+=pod
+
+=head1 NAME
+
+runWolfPsortSummary - Run WoLF PSORT subcellular localization prediction on input sequences and print in summary mode.
+
+=head1 SYNOPSIS
+
+B<runWolfPsortSummary> [I<OPTIONS>] I<organismType>
+
+B<runWolfPsortSummary> (B<--usage>|B<--help>|B<--man>)
+
+Pipe sequences in from standard in.
+
+=head1 DESCRIPTION
+
+Run WoLF PSORT subcellular localization prediction on input sequences and print in summary mode.
+Input in fasta form is expected from standard in.
+
+The output looks roughly like
+
+  seq1 extr_plas: 11.5, plas: 11, extr: 10, E.R.: 4, lyso: 4, pero: 1.5, cyto_pero: 1.5, vacu: 1
+  seq2 extr: 25, lyso: 3, plas: 2, nucl: 1, E.R.: 1
+  seq3 extr: 31, lyso: 1
+
+Each line contains several localization classes with their scores. The localization classes are:
+
+        abbrev.  site                GO number
+        extr extracellular           0005576, 0005618
+        cysk cytoskeleton            0005856
+        E.R. endoplasmic reticulum   0005783
+        golg Golgi apparatus         0005794
+        mito mitochondria            0005739
+        nucl nucleus                 0005634
+        plas plasma membrane         0005886
+        pero peroxisome              0005777
+        vacu vacuolar membrane       0005774
+        chlo chloroplast             0009507, 0009543
+        lyso lysozyme                0005764
+
+The GO cellular component number is given for here, but most entries
+in our current dataset are actually based on the Uniprot and depend on
+that annotation.  Localization classes including underscores indicate
+the possibility of localizing to two sites, for example "cyto_nucl"
+indicates proteins which can localize to both the cytosol and/or the
+nucleus. No distinction is made between conditional and constitutive
+dual localization.
+
+In the output lines, the numbers after the sites roughly correspond to
+the number of nearest neighbors which the corresponding localization
+site. In this example, 25 of the nearest neighbors of seq2 are labeled
+as extracellular proteins in the dataset. More exactly, the number
+after "extr_plas" is a function of the number or related sites and in
+this case is
+
+  #extra_plas + 0.5 * #extra + 0.5 * #plas
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-n>, B<--just-print>
+
+Print the commands that should be executed without actually executing them. Mainly useful for debugging. Mnemonic: like make -n
+
+=item B<-f>, B<--just-compute-features>
+
+Just do the conversion from sequence to localization feature step without predicting localization. Mainly useful for degugging.
+
+=item B<--print-neighbors>
+
+Output nearest neighbors used to make the prediction.
+
+=item B<-d>, B<--print-sequence-description>
+
+Output sequence descriptions taken from fasta sequence input along with predictions.
+
+=back
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<organismType>
+
+Type of the organism. Currently supported organism types are: "animal", "plant", and "fungi". This
+determines which dataset is used for the prediction. Note that although the results may not be
+interesting, the software does not care if the organism type matches the actual organism of
+the protein.
+
+=back
+
+=head1 EXAMPLES
+
+=over 8
+
+cat human.fasta mouse.fasta | runWolfPsortSummary
+
+runWolfPsortSummary < orfs.fasta
+
+=back
+
+=head1 FILES
+
+=over 8
+
+=item ../data/animal.psort
+
+=item ../data/fungi.psort
+
+=item ../data/plant.psort
+
+Dataset sequence data with localization site labels
+
+=item ../data/animal.wolff
+
+=item ../data/fungi.wolff
+
+=item ../data/plant.wolff
+
+Dataset localization feature values
+
+=item ../data/animal.wolfw
+
+=item ../data/fungi.wolfw
+
+=item ../data/plant.wolfw
+
+Feature weights
+
+=item ../data/animal.wolfu
+
+=item ../data/fungi.wolfu
+
+=item ../data/plant.wolfu
+
+Utility matrix. Stipulates the value of predicting a protein of localization class A to
+to be of class B.
+
+=back
+
+=head1 AUTHOR
+
+Paul Horton <horton-p@aist.go.jp>
+
+=head1 COPYRIGHT
+
+This Script: Copyright (C) 2004-2006, Paul B. Horton & C.J. Collier, All Rights Reserved.
+
+PSORT: Copyright (C) 1997, 2004-2006, Kenta Nakai & Paul B. Horton, All Rights Reserved.
+
+=head1 REFERENCE
+
+Paul Horton, Keun-Joon Park, Takeshi Obayashi & Kenta Nakai, "Protein Subcellular Localization Prediction with WoLF PSORT", Proceedings of I<the 4th Annual Asia Pacific Bioinformatics Conference APBC06>, Taipei, Taiwan. pp. 39-48, 2006.
+
+=head1 SEE ALSO
+
+L<http://wolfpsort.org/>
+
+B<runWolfPsortHtmlTables>
+
+=cut

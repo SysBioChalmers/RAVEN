@@ -1,0 +1,204 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of tutorial0</title>
+  <meta name="keywords" content="tutorial0">
+  <meta name="description" content="****RAVEN TOOLBOX MINI TUTORIAL***">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">tutorial</a> &gt; tutorial0.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for tutorial&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>tutorial0
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>****RAVEN TOOLBOX MINI TUTORIAL***</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">****RAVEN TOOLBOX MINI TUTORIAL***
+
+ This small tutorial will use the Penicillium chrysogenum model to
+ show some of the functionality of RAVEN Toolbox, with a focus on the 
+ import/export functions and how to interpret the simulation data. 
+ For a more detailed description of the individual functions, 
+ see /doc/index.html.
+
+ We'll be using a genome-scale model (GEM) of the filamentous fungi Penicillium
+ chrysogenum. The model can be found in a Microsoft Excel file in raven.zip
+ under the name iAL1006 v1.00.xlsx
+
+ It is assumed that all files are in the current directory or in the Matlab
+ path list.
+
+ Rasmus Agren, 2013-08-06</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="../core/followChanged.html" class="code" title="function followChanged(model,fluxesA,fluxesB, cutOffChange, cutOffFlux, cutOffDiff, metaboliteList)">followChanged</a>	followChanged</li><li><a href="../core/printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>	printFluxes</li><li><a href="../core/printModelStats.html" class="code" title="function printModelStats(model, printModelIssues, printDetails)">printModelStats</a>	printModelStats</li><li><a href="../core/setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>	setParam</li><li><a href="../core/simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, reservedRxns, suppressWarnings)">simplifyModel</a>	simplifyModel</li><li><a href="../io/importExcelModel.html" class="code" title="function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)">importExcelModel</a>	importExcelModel</li><li><a href="../plotting/drawMap.html" class="code" title="function notMapped=drawMap(title,pathway,modelA,conditionA,conditionB,modelB,filename,cutOff)">drawMap</a>	drawMap</li><li><a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>	solveLP</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">%****RAVEN TOOLBOX MINI TUTORIAL***</span>
+0002 <span class="comment">%</span>
+0003 <span class="comment">% This small tutorial will use the Penicillium chrysogenum model to</span>
+0004 <span class="comment">% show some of the functionality of RAVEN Toolbox, with a focus on the</span>
+0005 <span class="comment">% import/export functions and how to interpret the simulation data.</span>
+0006 <span class="comment">% For a more detailed description of the individual functions,</span>
+0007 <span class="comment">% see /doc/index.html.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% We'll be using a genome-scale model (GEM) of the filamentous fungi Penicillium</span>
+0010 <span class="comment">% chrysogenum. The model can be found in a Microsoft Excel file in raven.zip</span>
+0011 <span class="comment">% under the name iAL1006 v1.00.xlsx</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% It is assumed that all files are in the current directory or in the Matlab</span>
+0014 <span class="comment">% path list.</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% Rasmus Agren, 2013-08-06</span>
+0017 
+0018 <span class="comment">%Import the model from Excel. This function performs a number of checks</span>
+0019 <span class="comment">%regarding the model structure (such as for incorrectly written equations or</span>
+0020 <span class="comment">%illegal characters). In this structure there is only one</span>
+0021 <span class="comment">%warning; that the formula for the metabolite LPE couldn't be parsed. The</span>
+0022 <span class="comment">%&quot;false&quot; flag imports a model with exchange reactions in their &quot;closed&quot;</span>
+0023 <span class="comment">%form. This makes the model unsuited for modelling, but it is useful for</span>
+0024 <span class="comment">%some quality control steps</span>
+0025 model=<a href="../io/importExcelModel.html" class="code" title="function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)">importExcelModel</a>(<span class="string">'iAL1006 v1.00.xlsx'</span>,false)
+0026 
+0027 <span class="comment">%The Excel interface only works on Windows. On other systems you would need</span>
+0028 <span class="comment">%to import the model from SBML instead</span>
+0029 <span class="comment">%model=importModel('iAL1006 v1.00.xml',false)</span>
+0030 
+0031 <span class="comment">%This function prints some properties of the model. The two &quot;true&quot; flags</span>
+0032 <span class="comment">%say that it should also list potential problems such as dead-end reactions</span>
+0033 <span class="comment">%or unconnected metabolites</span>
+0034 <a href="../core/printModelStats.html" class="code" title="function printModelStats(model, printModelIssues, printDetails)">printModelStats</a>(model,true,true)
+0035 
+0036 <span class="comment">%As can be seen the model contains 1632 reactions, 1395 metabolites, and</span>
+0037 <span class="comment">%1006 genes</span>
+0038 
+0039 <span class="comment">%Most modelling approaches using GEMs are based on mass balancing around</span>
+0040 <span class="comment">%the internal metabolites in the system. However, in order for the system</span>
+0041 <span class="comment">%to take up or excrete metabolites, some metabolites have been defined as</span>
+0042 <span class="comment">%unconstrained. In order to simulate something those metabolites have to be</span>
+0043 <span class="comment">%removed from the model. The function simplifyModel is a general-purpose</span>
+0044 <span class="comment">%function for making models smaller. This includes options such as</span>
+0045 <span class="comment">%grouping linear reactions and deleting reactions which cannot carry flux.</span>
+0046 <span class="comment">%Here we choose to delete the exchange metabolites, all reactions that are</span>
+0047 <span class="comment">%constrained to zero (mainly uptake of non-standard carbon sources), and</span>
+0048 <span class="comment">%all reactions that cannot carry flux (mainly reactions that were dependent</span>
+0049 <span class="comment">%on any of those non-standard carbons sources).</span>
+0050 model=<a href="../core/simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, reservedRxns, suppressWarnings)">simplifyModel</a>(model,true,false,true,true)
+0051 
+0052 <span class="comment">%As can be seen the model now contains only 1305 reactions, 1037</span>
+0053 <span class="comment">%metabolites, and 1006 genes.</span>
+0054 
+0055 <span class="comment">%Let's say that we want to calculate the theoretical yield of carbon</span>
+0056 <span class="comment">%dioxide from glucose as a first way of validating the model. The supplied</span>
+0057 <span class="comment">%model already allows for uptake of phosphate, sulfate, NH3, O2 and the co-factor</span>
+0058 <span class="comment">%precursors thiamin and pimelate.</span>
+0059 <span class="comment">%The setParam function is used for setting constraints, reversibility</span>
+0060 <span class="comment">%and objective function coefficients.</span>
+0061 
+0062 <span class="comment">%Set the uptake of glucose to be no more than 1 mmol/gDW/h and no uptake of</span>
+0063 <span class="comment">%ethanol</span>
+0064 model=<a href="../core/setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'ub'</span>,{<span class="string">'glcIN'</span> <span class="string">'etohIN'</span>},[1 0]);
+0065 
+0066 <span class="comment">%Set the objective for the simulation to maximize CO2 production</span>
+0067 model=<a href="../core/setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'obj'</span>,{<span class="string">'co2OUT'</span>},1);
+0068 
+0069 <span class="comment">%We can then solve the problem using linear programming. The solveLP</span>
+0070 <span class="comment">%function takes a model and solves the linear programming problem defined</span>
+0071 <span class="comment">%by the constraints and the objective value coefficients.</span>
+0072 sol=<a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(model)
+0073 
+0074 <span class="comment">%If everything worked fine you should see a structure that contains the</span>
+0075 <span class="comment">%fields .f which is the negative of the objective value, .stat which is 1</span>
+0076 <span class="comment">%if the optimization terminated successfully and .x which contains the</span>
+0077 <span class="comment">%fluxes through each of the reactions in this particular solution of the</span>
+0078 <span class="comment">%problem. sol.x contains 1305 values which makes it rather difficult to</span>
+0079 <span class="comment">%interpret. A first approach is to look at only the reactions that</span>
+0080 <span class="comment">%transports metabolites in to or out from the system. The printFluxes</span>
+0081 <span class="comment">%function prints (parts of) the flux distribution to the console.</span>
+0082 
+0083 <a href="../core/printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>(model, sol.x, true, 10^-7); <span class="comment">%true means only print exchange fluxes</span>
+0084 
+0085 <span class="comment">%We can see that the system took up one unit of glucose and 6 units of O2 while</span>
+0086 <span class="comment">%producing 6 units of CO2 and 6 units of H2O. Let's say that we want to</span>
+0087 <span class="comment">%understand more in detail how this happens. We can use the same function</span>
+0088 <span class="comment">%to plot all fluxes (above 10^-7)</span>
+0089 <a href="../core/printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>(model, sol.x, false, 10^-7);
+0090 
+0091 <span class="comment">%You will see that there are many reactions that have -1000 or 1000 flux.</span>
+0092 <span class="comment">%This is because there are loops in the solution. In order to clean up the</span>
+0093 <span class="comment">%solution we can minimize the sum of all the fluxes. This is done by setting</span>
+0094 <span class="comment">%the third flag to solveLP to true (take a look at solveLP, there are other</span>
+0095 <span class="comment">%options as well)</span>
+0096 sol=<a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(model,1);
+0097 <a href="../core/printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>(model, sol.x, false, 10^-7);
+0098 
+0099 <span class="comment">%You will see that there are now much fewer reactions that are active. Some</span>
+0100 <span class="comment">%of them will probably appear to be a little &quot;weird&quot; but that is because</span>
+0101 <span class="comment">%the ATP and NAD(P)H produced has to go somewhere in order to be mass balanced.</span>
+0102 
+0103 <span class="comment">%If we want to study growth instead we simply change the objective to be</span>
+0104 <span class="comment">%production of biomass instead of CO2</span>
+0105 model=<a href="../core/setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'obj'</span>,{<span class="string">'bmOUT'</span>},1);
+0106 sol=<a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(model,1);
+0107 <a href="../core/printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>(model, sol.x, true, 10^-7);
+0108 
+0109 <span class="comment">%We can see that the growth rate is 0.084/h and that the system now also</span>
+0110 <span class="comment">%requires sulfate,phosphate, NH3, thiamin and pimelate. Let's compare</span>
+0111 <span class="comment">%this to the growth on ethanol instead of glucose. We use three times the</span>
+0112 <span class="comment">%molar flux of ethanol since it contains 2 carbons rather than 6. 'eq'</span>
+0113 <span class="comment">%means 'equal to' and sets the lower and upper bound to the same value.</span>
+0114 modelETH=<a href="../core/setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'eq'</span>,{<span class="string">'glcIN'</span> <span class="string">'etohIN'</span>},[0 3]);
+0115 solETH=<a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(modelETH,1);
+0116 <a href="../core/printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>(modelETH, solETH.x, true, 10^-7);
+0117 
+0118 <span class="comment">%Say that we are interested in how metabolism changes between the two</span>
+0119 <span class="comment">%carbon sources. followChanged takes two flux distributions and lets you</span>
+0120 <span class="comment">%select which reactions to print. Here we show reactions that differ with</span>
+0121 <span class="comment">%more than 50%, has a flux higher than 0.5 mmol/gDW/h and an absolute</span>
+0122 <span class="comment">%difference higher than 0.5 mmol/gDW/h.</span>
+0123 <a href="../core/followChanged.html" class="code" title="function followChanged(model,fluxesA,fluxesB, cutOffChange, cutOffFlux, cutOffDiff, metaboliteList)">followChanged</a>(modelETH,sol.x,solETH.x, 50, 0.5, 0.5);
+0124 
+0125 <span class="comment">%There are 65 such reactions. By studying them you can start to get an idea</span>
+0126 <span class="comment">%about where the key changes occur. Visualization can help a lot in this</span>
+0127 <span class="comment">%regard. Say that we are particularly interested in how ATP metabolism</span>
+0128 <span class="comment">%changes. Then we can show only such reaction by writing,</span>
+0129 <a href="../core/followChanged.html" class="code" title="function followChanged(model,fluxesA,fluxesB, cutOffChange, cutOffFlux, cutOffDiff, metaboliteList)">followChanged</a>(modelETH,sol.x,solETH.x, 30, 0.4, 0.4,{<span class="string">'ATP'</span>});
+0130 
+0131 <span class="comment">%We can then see that on glucose ATP is generated in glycolysis but on</span>
+0132 <span class="comment">%ethanol it seems to have to do with acetate and so on. This allows you</span>
+0133 <span class="comment">%to look further and further down until you can understand the underlying</span>
+0134 <span class="comment">%flux redistributions that give rise to different phenotypes.</span>
+0135 
+0136 <span class="comment">%The fluxes can also be visualized on a metabolic map. Green corresponds to</span>
+0137 <span class="comment">%reactions which are more used for growth on glucose, and red are reactions</span>
+0138 <span class="comment">%which are more used for growth on ethanol. Open the GLCvsETH.pdf PDF to be</span>
+0139 <span class="comment">%able to zoom in on individual reactions.</span>
+0140 load <span class="string">'pcPathway.mat'</span> pathway;
+0141 <a href="../plotting/drawMap.html" class="code" title="function notMapped=drawMap(title,pathway,modelA,conditionA,conditionB,modelB,filename,cutOff)">drawMap</a>(<span class="string">'Glucose vs ethanol'</span>,pathway,model,sol.x,solETH.x,modelETH,<span class="string">'GLCvsETH.pdf'</span>,10^-5);
+0142</pre></div>
+<hr><address>Generated on Fri 14-Oct-2016 12:02:10 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

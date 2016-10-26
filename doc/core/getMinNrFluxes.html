@@ -1,0 +1,237 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of getMinNrFluxes</title>
+  <meta name="keywords" content="getMinNrFluxes">
+  <meta name="description" content="getMinNrFluxes">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">core</a> &gt; getMinNrFluxes.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for core&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>getMinNrFluxes
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>getMinNrFluxes</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> getMinNrFluxes
+   Returns the minimal set of fluxes that satisfy the model using 
+   mixed integer linear programming.
+
+    model         a model structure
+   toMinimize    either a cell array of reaction IDs, a logical vector 
+                 with the same number of elements as reactions in the model,
+                 of a vector of indexes for the reactions that should be 
+                 minimized (opt, default model.rxns)
+   params        parameter structure as used by getMILPParams (opt)
+   scores        vector of weights for the reactions. Negative scores
+                 should not have flux. Positive scores are not possible in this
+                 implementation, and they are changed to max(scores(scores&lt;0)).
+                 Must have the same dimension as toMinimize (find(toMinimize)
+                 if it is a logical vector) (opt, default -1 for all reactions)
+
+   x             the corresponding fluxes for the full model
+   I             the indexes of the reactions in toMinimize that were used
+                 in the solution
+   exitFlag      1: optimal solution found
+                -1: no feasible solution found
+                -2: optimization time out
+
+   NOTE: Uses 1000 mmol/gDW/h as an arbitary large flux. Could possibly
+   cause problems if the fluxes in the model are larger than that.
+
+   Usage: [x,I]=getMinNrFluxes(model, toMinimize, params, scores)
+
+   Rasmus Agren, 2013-08-01</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="checkSolution.html" class="code" title="function [isFeasible isOptimal]=checkSolution(res)">checkSolution</a>	Checks if a solution from Mosek is feasible and optimal</li><li><a href="convertToIrrev.html" class="code" title="function irrevModel=convertToIrrev(model,rxns)">convertToIrrev</a>	convertToIrrev</li><li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="../solver/optimizeProb.html" class="code" title="function res = optimizeProb(prob,params)">optimizeProb</a>	optimizeProb</li><li><a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>	solveLP</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="fillGaps.html" class="code" title="function [newConnected cannotConnect addedRxns newModel exitFlag]=fillGaps(model,models,allowNetProduction,useModelConstraints,supressWarnings,rxnScores,params)">fillGaps</a>	fillGaps</li><li><a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>	solveLP</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)</a>
+0002 <span class="comment">% getMinNrFluxes</span>
+0003 <span class="comment">%   Returns the minimal set of fluxes that satisfy the model using</span>
+0004 <span class="comment">%   mixed integer linear programming.</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">%    model         a model structure</span>
+0007 <span class="comment">%   toMinimize    either a cell array of reaction IDs, a logical vector</span>
+0008 <span class="comment">%                 with the same number of elements as reactions in the model,</span>
+0009 <span class="comment">%                 of a vector of indexes for the reactions that should be</span>
+0010 <span class="comment">%                 minimized (opt, default model.rxns)</span>
+0011 <span class="comment">%   params        parameter structure as used by getMILPParams (opt)</span>
+0012 <span class="comment">%   scores        vector of weights for the reactions. Negative scores</span>
+0013 <span class="comment">%                 should not have flux. Positive scores are not possible in this</span>
+0014 <span class="comment">%                 implementation, and they are changed to max(scores(scores&lt;0)).</span>
+0015 <span class="comment">%                 Must have the same dimension as toMinimize (find(toMinimize)</span>
+0016 <span class="comment">%                 if it is a logical vector) (opt, default -1 for all reactions)</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">%   x             the corresponding fluxes for the full model</span>
+0019 <span class="comment">%   I             the indexes of the reactions in toMinimize that were used</span>
+0020 <span class="comment">%                 in the solution</span>
+0021 <span class="comment">%   exitFlag      1: optimal solution found</span>
+0022 <span class="comment">%                -1: no feasible solution found</span>
+0023 <span class="comment">%                -2: optimization time out</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">%   NOTE: Uses 1000 mmol/gDW/h as an arbitary large flux. Could possibly</span>
+0026 <span class="comment">%   cause problems if the fluxes in the model are larger than that.</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">%   Usage: [x,I]=getMinNrFluxes(model, toMinimize, params, scores)</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">%   Rasmus Agren, 2013-08-01</span>
+0031 <span class="comment">%</span>
+0032 
+0033 exitFlag=1;
+0034 
+0035 <span class="keyword">if</span> nargin&lt;2
+0036     toMinimize=model.rxns;
+0037 <span class="keyword">else</span>
+0038     <span class="keyword">if</span> ~iscell(toMinimize)
+0039        toMinimize=model.rxns(toMinimize); 
+0040     <span class="keyword">end</span>
+0041 <span class="keyword">end</span>
+0042 
+0043 <span class="comment">%For passing parameters to the solver</span>
+0044 <span class="keyword">if</span> nargin&lt;3
+0045     params=[];
+0046 <span class="keyword">end</span>
+0047 echo=0;
+0048 <span class="keyword">if</span> isfield(params,<span class="string">'printReport'</span>)
+0049     <span class="keyword">if</span> params.printReport==true
+0050         echo=3;
+0051     <span class="keyword">end</span>
+0052 <span class="keyword">end</span>
+0053 
+0054 <span class="keyword">if</span> nargin&lt;4
+0055     <span class="comment">%It says that the default is -1, but that is to fit with other code</span>
+0056     scores=ones(numel(toMinimize),1)*1;
+0057 <span class="keyword">else</span>
+0058     <span class="keyword">if</span> numel(scores)~=numel(toMinimize)
+0059         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The number of scores must be the same as the number of reactions to minimize'</span>);
+0060     <span class="keyword">end</span>
+0061     
+0062     <span class="comment">%Change positive scores to have a small negative weight. This is a</span>
+0063     <span class="comment">%temporary solution.</span>
+0064     scores(scores&gt;=0)=max(scores(scores&lt;0));
+0065 
+0066     <span class="comment">%It says that the default is -1, but that is to fit with other code</span>
+0067     scores=scores*-1;
+0068 <span class="keyword">end</span>
+0069 
+0070 <span class="comment">%Check if the model is in irreversible format</span>
+0071 <span class="keyword">if</span> any(model.rev)
+0072     <span class="comment">%Convert the model to irreversible format</span>
+0073     irrevModel=<a href="convertToIrrev.html" class="code" title="function irrevModel=convertToIrrev(model,rxns)">convertToIrrev</a>(model);
+0074     
+0075     <span class="comment">%Find the indexes for the reactions in toMinimize</span>
+0076     [indexes I]=ismember(strrep(irrevModel.rxns,<span class="string">'_REV'</span>,<span class="string">''</span>),toMinimize);
+0077 <span class="keyword">else</span>
+0078     irrevModel=model;
+0079     
+0080     <span class="comment">%Find the indexes for the reactions in toMinimize</span>
+0081     [indexes I]=ismember(irrevModel.rxns,toMinimize);
+0082 <span class="keyword">end</span>
+0083 
+0084 indexes=find(indexes);
+0085 <span class="comment">%Adjust scores to fit with reversible</span>
+0086 scores=scores(I(indexes));
+0087 
+0088 <span class="comment">%Add binary constraints in the following manner:</span>
+0089 <span class="comment">%-  Add one unique &quot;metabolite&quot; for each integer reaction as a substrate.</span>
+0090 <span class="comment">%   These metabolites can have net production</span>
+0091 <span class="comment">%-  Add reactions for the production of each of those metabolites. The</span>
+0092 <span class="comment">%   amount produced in one reaction unit must be larger than the largest</span>
+0093 <span class="comment">%   possible flux in the model (but not too large to avoid bad scaling)</span>
+0094 
+0095 <span class="comment">%Calculate a solution to the problem without any constraints. This is to</span>
+0096 <span class="comment">%get an estimate about the magnitude of fluxes in the model and to get a</span>
+0097 <span class="comment">%feasible start solution.</span>
+0098 sol=<a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(irrevModel,1);
+0099 
+0100 <span class="comment">%Return an empty solution if the non-constrained problem couldn't be solved</span>
+0101 <span class="keyword">if</span> isempty(sol.x)
+0102     x=[];
+0103     I=[];
+0104     exitFlag=-1;
+0105     <span class="keyword">return</span>;
+0106 <span class="keyword">end</span>
+0107 
+0108 <span class="comment">%Take the maximal times 5 to have a safe margin. If it's smaller than 1000,</span>
+0109 <span class="comment">%then use 1000 instead.</span>
+0110 maxFlux=max(max(sol.x)*5,1000);
+0111 
+0112 prob.c=[zeros(numel(irrevModel.rxns),1);scores(:)]; <span class="comment">%Minimize the number of fluxes</span>
+0113 prob.blc=[irrevModel.b(:,1);zeros(numel(indexes),1)];
+0114 <span class="keyword">if</span> size(irrevModel.b,2)==2
+0115     prob.buc=[irrevModel.b(:,2);inf(numel(indexes),1)];
+0116 <span class="keyword">else</span>
+0117     prob.buc=[irrevModel.b(:,1);inf(numel(indexes),1)];
+0118 <span class="keyword">end</span>
+0119 prob.blx=[irrevModel.lb;zeros(numel(indexes),1)];
+0120 prob.bux=[irrevModel.ub;ones(numel(indexes),1)];
+0121 
+0122 intArray=speye(numel(irrevModel.rxns))*-1;
+0123 intArray=intArray(indexes,:);
+0124 prob.a=[irrevModel.S;intArray];
+0125 a=[sparse(numel(irrevModel.mets),numel(indexes));speye(numel(indexes))*maxFlux];
+0126 prob.a=[prob.a a];
+0127 prob.ints.sub=numel(irrevModel.rxns)+1:numel(irrevModel.rxns)+numel(indexes);
+0128 
+0129 <span class="comment">%Use the output from the linear solution as starting point. Only the values</span>
+0130 <span class="comment">%for the integer variables will be used, but all are supplied.</span>
+0131 prob.sol.int.xx=zeros(numel(prob.c),1);
+0132 prob.sol.int.xx(prob.ints.sub(sol.x(indexes)&gt;10^-7))=1;
+0133 
+0134 <span class="comment">% Optimize the problem</span>
+0135 <span class="comment">%[crap,res] = mosekopt(['minimize echo(' num2str(echo) ')'], prob,getMILPParams(params));</span>
+0136 res = <a href="../solver/optimizeProb.html" class="code" title="function res = optimizeProb(prob,params)">optimizeProb</a>(prob,params);
+0137 
+0138 isFeasible=<a href="checkSolution.html" class="code" title="function [isFeasible isOptimal]=checkSolution(res)">checkSolution</a>(res);
+0139 
+0140 <span class="keyword">if</span> ~isFeasible
+0141     x=[];
+0142     I=[];
+0143     exitFlag=-1;
+0144     <span class="keyword">return</span>;
+0145 <span class="keyword">end</span>
+0146 
+0147 xx=res.sol.int.xx(1:numel(irrevModel.rxns));
+0148 I=res.sol.int.xx(numel(xx)+1:end);
+0149 
+0150 <span class="comment">%Check if Mosek aborted because it reached the time limit</span>
+0151 <span class="keyword">if</span> strcmp(<span class="string">'MSK_RES_TRM_MAX_TIME'</span>,res.rcodestr)
+0152     exitFlag=-2;
+0153 <span class="keyword">end</span>
+0154 
+0155 <span class="comment">%Map back to original model from irrevModel</span>
+0156 x=xx(1:numel(model.rxns));
+0157 <span class="keyword">if</span> numel(irrevModel.rxns)&gt;numel(model.rxns)
+0158     x(model.rev~=0)=x(model.rev~=0)-xx(numel(model.rxns)+1:end);
+0159 <span class="keyword">end</span>
+0160 
+0161 I=ismember(toMinimize,strrep(irrevModel.rxns(indexes(I&gt;10^-7)),<span class="string">'_REV'</span>,<span class="string">''</span>));
+0162 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Fri 14-Oct-2016 12:02:10 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
