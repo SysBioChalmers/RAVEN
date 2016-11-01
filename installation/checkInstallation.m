@@ -79,7 +79,7 @@ if (~isempty(lastWorking))
     setRavenSolver(lastWorking);
 end
 
-if isempty(curSolv)
+if ~exist(curSolv,'var')
 	fprintf(['Prefered solver... NEW\nSolver saved as preference... ',lastWorking,'\n']);
 elseif strcmp(curSolv,lastWorking)
 	fprintf(['Prefered solver... KEPT\nSolver saved as preference... ',lastWorking,'\n']);
