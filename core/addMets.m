@@ -29,6 +29,7 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 %                               the metabolites (opt, default '')
 %                metMiriams     cell array with MIRIAM structures (opt,
 %                               default [])
+%                metCharge      metabolite charge (opt, default 0)
 %   copyInfo     when adding metabolites to a compartment where it previously
 %                doesn't exist, the function will copy any available annotation 
 %                from the metabolite in another compartment (opt, default true)
@@ -41,6 +42,7 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 %   Usage: newModel=addMets(model,metsToAdd,copyInfo)
 %
 %   Rasmus Agren, 2013-08-01
+%   Simonas Marcisauskas, 2016-11-01 - added support for metCharge
 %
 
 if nargin<3
@@ -207,6 +209,21 @@ else
     end
 end
 
+if isfield(metsToAdd,'metCharge')
+   if numel(metsToAdd.metCharge)~=nMets
+       dispEM('metsToAdd.metCharge must have the same number of elements as metsToAdd.mets');
+   end
+   if ~isnumeric(metsToAdd.metCharge)
+        dispEM('metsToAdd.metCharge must be of type "double"');
+   end
+   newModel.metCharge=[newModel.metCharge;metsToAdd.metCharge(:)];
+else
+    %Add default
+    if isfield(newModel,'metCharge')
+       newModel.metCharge=[newModel.metCharge;zeros(numel(filler),1)]; 
+    end
+end
+
 %Don't check the type of metMiriams
 if isfield(metsToAdd,'metMiriams')
    if numel(metsToAdd.metMiriams)~=nMets
@@ -252,6 +269,9 @@ if copyInfo==true
            if isempty(newModel.metMiriams{I(i)})
                newModel.metMiriams(I(i))=newModel.metMiriams(J(i));
            end
+       end
+       if isfield(newModel,'metCharge')
+           newModel.metCharge(I(i))=newModel.metCharge(J(i));
        end
    end
 end

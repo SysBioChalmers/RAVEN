@@ -12,6 +12,8 @@ function newModel=permuteModel(model, indexes, type)
 % 	Usage: newModel=permuteModel(model, indexes, type)
 %
 %   Rasmus Agren, 2013-08-01
+%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
+%   rxnReferences, confidenceScores and metCharge
 %
 
 newModel=model;
@@ -66,6 +68,15 @@ if strcmp(type,'rxns')
     if isfield(newModel,'rxnScores')
         newModel.rxnScores=newModel.rxnScores(indexes);
     end
+    if isfield(newModel,'rxnNotes')
+        newModel.rxnNotes=newModel.rxnNotes(indexes);
+    end
+    if isfield(newModel,'rxnReferences')
+        newModel.rxnReferences=newModel.rxnReferences(indexes);
+    end
+    if isfield(newModel,'confidenceScores')
+        newModel.confidenceScores=newModel.confidenceScores(indexes);
+    end
 end
 
 if strcmp(type,'mets')
@@ -98,6 +109,9 @@ if strcmp(type,'mets')
     end
     if isfield(newModel,'metFrom')
         newModel.metFrom=newModel.metFrom(indexes);
+    end
+    if isfield(newModel,'metCharge')
+        newModel.metCharge=newModel.metCharge(indexes);
     end
 end
 end

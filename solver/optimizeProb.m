@@ -24,14 +24,14 @@ milp=false;
 if(isfield(prob,'ints')), disp('MILP detected.'); milp=true; end
 
 solver=getpref('RAVEN','solver');
-if solver=='gurobi'
+if strcmp(solver,'gurobi')
 		gparams=struct('Presolve',2,'TimeLimit',1000,'OutputFlag',1,'MIPGap',1e-9,'Seed',0,'FeasibilityTol',1e-8,'OptimalityTol',1e-8);
 		if (~milp) gparams.OutputFlag=0; end
 		%gparams=structUpdate(gparams,params);
 		res = gurobi(mosekToGurobiProb(prob), gparams);
 		
 		res=gurobiToMosekRes(res,length(prob.c),milp);
-elseif solver=='cobra'
+elseif strcmp(solver,'cobra')
 		if (milp)
 			cparams=struct('timeLimit',1e9,'printLevel',0,'intTol',1e-6,'relMipGapTol',1e-9);
 			cparams=structUpdate(cparams,params);
@@ -43,7 +43,7 @@ elseif solver=='cobra'
 		end
 		res=cobraToMosekRes(res,length(prob.c),milp);
 		
-elseif solver=='mosek'
+elseif strcmp(solver,'mosek')
 		if (milp) 
 			params.printReport=true; 
 			[crap,res] = mosekopt(['minimize echo(0)'],prob,getMILPParams(params));

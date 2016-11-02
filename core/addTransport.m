@@ -22,6 +22,8 @@ function [model addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,on
 %           isRev,onlyToExisting)
 %
 %   Rasmus Agren, 2013-08-01
+%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
+%   rxnReferences, confidenceScores and metCharge
 %
 
 if iscell(fromComp)
@@ -145,6 +147,15 @@ for i=1:numel(toComps)
     end
     if isfield(model,'rxnGeneMat')
         model.rxnGeneMat=[model.rxnGeneMat;sparse(nRxns,numel(model.genes))];
+    end
+    if isfield(model,'rxnNotes')
+        model.rxnNotes=[model.rxnNotes;filler];
+    end
+    if isfield(model,'rxnReferences')
+        model.rxnReferences=[model.rxnReferences;filler];
+    end
+    if isfield(model,'confidenceScores')
+        model.confidenceScores=[model.confidenceScores;filler];
     end
 end
 end

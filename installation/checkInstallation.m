@@ -10,6 +10,7 @@ function checkInstallation()
 
 fprintf('*** RAVEN TOOLBOX v. 1.9\n');
 
+keepSolver=false;
 lastWorking='';
 
 %Check if RAVEN is in the path list
@@ -70,19 +71,24 @@ for i=[1:numel(solver)]
         solveLP(smallModel);
         lastWorking=solver{i};
         fprintf(['Checking if it is possible to solve an LP problem using ',solver{i},'... PASSED\n']);
+        if and(exist('curSolv','var'),strcmp(curSolv,solver{i}))
+            keepSolver=true;
+        end
     catch
         fprintf(['Checking if it is possible to solve an LP problem using ',solver{i},'... FAILED\n']);
     end
 end
 
-if (~isempty(lastWorking))
+if keepSolver
+    setRavenSolver(curSolv);
+elseif ~isempty(lastWorking)
     setRavenSolver(lastWorking);
 end
 
-if ~exist(curSolv,'var')
+if ~exist('curSolv','var')
 	fprintf(['Prefered solver... NEW\nSolver saved as preference... ',lastWorking,'\n']);
-elseif strcmp(curSolv,lastWorking)
-	fprintf(['Prefered solver... KEPT\nSolver saved as preference... ',lastWorking,'\n']);
+elseif keepSolver
+	fprintf(['Prefered solver... KEPT\nSolver saved as preference... ',curSolv,'\n']);
 else
 	fprintf(['Prefered solver... CHANGED\nSolver saved as preference... ',lastWorking,'\n']);
 end

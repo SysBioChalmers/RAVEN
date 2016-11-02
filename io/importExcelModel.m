@@ -35,6 +35,9 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %       subSystems       subsystem name for each reaction
 %       eccodes          EC-codes for the reactions
 %       rxnMiriams       structure with MIRIAM information about the reactions
+%       rxnNotes         reaction notes
+%       rxnReferences	 reaction references
+%       confidenceScores reaction confidence scores
 %       genes            list of all genes
 %       geneComps        compartments for reactions
 %       geneMiriams      structure with MIRIAM information about the genes
@@ -43,6 +46,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %       inchis           InChI-codes for metabolites
 %       metFormulas      metabolite chemical formula
 %       metMiriams       structure with MIRIAM information about the metabolites
+%       metCharge        metabolite charge
 %       unconstrained    true if the metabolite is an exchange metabolite
 %
 %   Loads models in the RAVEN Toolbox Excel format. A number of consistency
@@ -61,6 +65,8 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
 %   Rasmus Agren, 2014-01-06
+%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
+%   rxnReferences, confidenceScores and metCharge
 %
 
 %Adds the required classes to the Java path
@@ -119,6 +125,9 @@ model.rxnGeneMat=[];
 model.subSystems={};
 model.eccodes={};
 model.rxnMiriams={};
+model.rxnNotes={};
+model.rxnReferences={};
+model.confidenceScores={};
 model.genes={};
 model.geneComps={}; %Will be double later
 model.geneMiriams={};
@@ -127,6 +136,7 @@ model.metComps=[];
 model.inchis={};
 model.metFormulas={};
 model.metMiriams={};
+model.metCharge={}; %Will be double later
 model.unconstrained=[];
     
 %Check if the file exists
@@ -359,7 +369,7 @@ raw=cleanImported(raw);
 raw(1,:)=upper(raw(1,:));
 raw(1,:)=strrep(raw(1,:),'RXNID','ID');
 
-allLabels={'ID';'NAME';'EQUATION';'EC-NUMBER';'GENE ASSOCIATION';'LOWER BOUND';'UPPER BOUND';'OBJECTIVE';'COMPARTMENT';'SUBSYSTEM';'REPLACEMENT ID';'MIRIAM'};
+allLabels={'ID';'NAME';'EQUATION';'EC-NUMBER';'GENE ASSOCIATION';'LOWER BOUND';'UPPER BOUND';'OBJECTIVE';'COMPARTMENT';'SUBSYSTEM';'REPLACEMENT ID';'MIRIAM';'NOTE';'REFERENCE';'CONFIDENCE SCORE'};
 equations={};
 reactionReplacement={};
 
@@ -404,6 +414,12 @@ for i=1:numel(I)
         	reactionReplacement=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);    
         case 12
             model.rxnMiriams=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+        case 13
+            model.rxnNotes=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+        case 14
+            model.rxnReferences=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+        case 15
+            model.confidenceScores=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
     end
 end
 
@@ -565,7 +581,7 @@ else
     raw(1,:)=strrep(raw(1,:),'METID','ID');
     raw(1,:)=strrep(raw(1,:),'METNAME','NAME');
 
-    allLabels={'ID';'NAME';'UNCONSTRAINED';'MIRIAM';'COMPOSITION';'INCHI';'COMPARTMENT';'REPLACEMENT ID'};
+    allLabels={'ID';'NAME';'UNCONSTRAINED';'MIRIAM';'COMPOSITION';'INCHI';'COMPARTMENT';'REPLACEMENT ID';'CHARGE'};
 
     %Load the metabolite information
     metReplacement={};
@@ -576,29 +592,30 @@ else
     for i=1:numel(I)
         switch J(I(i))
             case 1
-               model.mets=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+            	model.mets=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
             case 2
-               model.metNames=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+            	model.metNames=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
             case 3
-               model.unconstrained=cellfun(@boolToDouble,raw(2:end,I(i)));
+            	model.unconstrained=cellfun(@boolToDouble,raw(2:end,I(i)));
                
-               %NaN is returned if the values couldn't be parsed
-               dispEM('The UNCONSTRAINED property for the following metabolites must be "true"/"false", 1/0, TRUE/FALSE or not set:',true,model.mets(isnan(model.unconstrained)));
+            	%NaN is returned if the values couldn't be parsed
+            	dispEM('The UNCONSTRAINED property for the following metabolites must be "true"/"false", 1/0, TRUE/FALSE or not set:',true,model.mets(isnan(model.unconstrained)));
             case 4
-               model.metMiriams=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+            	model.metMiriams=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
             case 5
-               model.metFormulas=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+            	model.metFormulas=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
             case 6
-               model.inchis=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+            	model.inchis=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
             case 7
                 model.metComps=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-
                 %Check that all metabolites have compartments defined
                 if any(strcmp('',model.metComps))
                     dispEM('All metabolites must have an associated compartment string'); 
                 end
             case 8
-               metReplacement=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+            	metReplacement=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+            case 9
+            	model.metCharge=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         end
     end
 
@@ -677,6 +694,22 @@ else
 
     %Construct the metMiriams structure
     model.metMiriams=parseMiriam(model.metMiriams);
+    
+    %Either all metabolites have charge or none of them.
+    %Check if it's only empty and if so return it to []
+    if ~isempty(model.metCharge)
+        if all(cellfun(@isempty,model.metCharge))
+            model.metCharge=[];
+        end
+    end
+    if ~isempty(model.metCharge)
+        if any(strcmp('',model.metCharge))
+            dispEM('Either all metabolites have charge information or none of them'); 
+        end
+    end
+    if ~isempty(model.metCharge)
+        model.metCharge=str2double(model.metCharge);
+    end
 end
 
 %Everything seems fine with the metabolite IDs, compartments, genes, and
@@ -724,7 +757,16 @@ if isempty(model.eccodes)
     model=rmfield(model,'eccodes');
 end
 if isempty(model.rxnMiriams)
-    model=rmfield(model,'rxnMiriams');
+	model=rmfield(model,'rxnMiriams');
+end
+if isempty(model.rxnNotes)
+	model=rmfield(model,'rxnNotes');
+end
+if isempty(model.rxnReferences)
+	model=rmfield(model,'rxnReferences');
+end
+if isempty(model.confidenceScores)
+	model=rmfield(model,'confidenceScores');
 end
 if isempty(model.genes)
     model=rmfield(model,'genes');
@@ -743,6 +785,9 @@ if isempty(model.metFormulas)
 end
 if isempty(model.metMiriams)
     model=rmfield(model,'metMiriams');
+end
+if isempty(model.metCharge)
+    model=rmfield(model,'metCharge');
 end
 
 %The model structure has now been reconstructed but it can still contain

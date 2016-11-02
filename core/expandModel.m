@@ -16,6 +16,8 @@ function newModel=expandModel(model)
 %   Usage: newModel=expandModel(model)
 %
 %   Rasmus Agren, 2013-08-01
+%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
+%   rxnReferences and confidenceScores
 %
 
 %Start by checking which reactions could be expanded
@@ -89,6 +91,15 @@ if any(rxnsToExpand)
             end
             if isfield(model,'rxnFrom')
                 model.rxnFrom=[model.rxnFrom;model.rxnFrom(rxnsToExpand(i))];
+            end
+            if isfield(model,'rxnNotes')
+                model.rxnNotes=[model.rxnNotes;model.rxnNotes(rxnsToExpand(i))];
+            end
+            if isfield(model,'rxnReferences')
+                model.rxnReferences=[model.rxnReferences;model.rxnReferences(rxnsToExpand(i))];
+            end
+            if isfield(model,'confidenceScores')
+                model.confidenceScores=[model.confidenceScores;model.confidenceScores(rxnsToExpand(i))];
             end
         end
     end
