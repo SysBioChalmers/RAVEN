@@ -18,6 +18,8 @@ function exportToExcelFormat(model,filename)
 %   Usage: exportToExcelFormat(model,filename)
 %
 %   Rasmus Agren, 2014-01-07
+%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
+%   rxnReferences, confidenceScores and metCharge
 %
 
 [filePath, A, B]=fileparts(filename);
@@ -107,7 +109,7 @@ s=wb.createSheet();
 wb.setSheetName(0, 'RXNS');
 
 %Create the header row
-headers={'#';'ID';'NAME';'EQUATION';'EC-NUMBER';'GENE ASSOCIATION';'LOWER BOUND';'UPPER BOUND';'OBJECTIVE';'COMPARTMENT';'MIRIAM';'SUBSYSTEM';'REPLACEMENT ID'};
+headers={'#';'ID';'NAME';'EQUATION';'EC-NUMBER';'GENE ASSOCIATION';'LOWER BOUND';'UPPER BOUND';'OBJECTIVE';'COMPARTMENT';'MIRIAM';'SUBSYSTEM';'REPLACEMENT ID';'NOTE';'REFERENCE';'CONFIDENCE SCORE'};
 r=s.createRow(0);
 for i=0:numel(headers)-1
     c=r.createCell(i);
@@ -194,6 +196,18 @@ for i=1:numel(model.rxns)
         c=r.createCell(11);
         c.setCellValue(model.subSystems{i});
     end
+    if isfield(model,'rxnNotes')
+        c=r.createCell(13);
+        c.setCellValue(model.rxnNotes{i});
+    end
+    if isfield(model,'rxnReferences')
+        c=r.createCell(14);
+        c.setCellValue(model.rxnReferences{i});
+    end
+    if isfield(model,'confidenceScores')
+        c=r.createCell(15);
+        c.setCellValue(model.confidenceScores{i});
+    end
 end
 
 %Add the METS sheet
@@ -201,7 +215,7 @@ s=wb.createSheet();
 wb.setSheetName(1, 'METS');
 
 %Create the header row
-headers={'#';'ID';'NAME';'UNCONSTRAINED';'MIRIAM';'COMPOSITION';'InChI';'COMPARTMENT';'REPLACEMENT ID'};
+headers={'#';'ID';'NAME';'UNCONSTRAINED';'MIRIAM';'COMPOSITION';'InChI';'COMPARTMENT';'REPLACEMENT ID';'CHARGE'};
 r=s.createRow(0);
 for i=0:numel(headers)-1
     c=r.createCell(i);
@@ -254,6 +268,11 @@ for i=1:numel(model.mets)
     
     c=r.createCell(8);
     c.setCellValue(model.mets{i});
+    
+    if isfield(model,'metCharge')
+        c=r.createCell(9);
+        c.setCellValue(model.metCharge(i));
+    end
 end
 
 %Add the COMPS sheet

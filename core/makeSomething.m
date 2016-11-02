@@ -43,6 +43,7 @@ function [solution metabolite]=makeSomething(model,ignoreMets,isNames,minNrFluxe
 %           minNrFluxes,allowExcretion,params,ignoreIntBounds)
 %
 %   Rasmus Agren, 2013-08-01
+%   Simonas Marcisauskas, 2016-11-01 - added support for metCharge
 %
 
 if nargin<2
@@ -133,6 +134,10 @@ end
 model.subSystems=padding;
 model.rxnFrom=padding;
 model.rxnComps=ones(numel(model.rev),1);
+model.rxnNotes=padding;
+model.rxnReferences=padding;
+model.confidenceScores=padding;
+
 
 sol=solveLP(model,1);   
 if any(sol.x)

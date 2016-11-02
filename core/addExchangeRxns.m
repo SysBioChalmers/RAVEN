@@ -21,6 +21,8 @@ function [model addedRxns]=addExchangeRxns(model,reactionType,mets)
 %   Usage: [model addedRxns]=addExchangeRxns(model,reactionType,mets)
 %
 %   Rasmus Agren, 2013-08-01
+%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
+%   rxnReferences and confidenceScores
 %
 
 if nargin<3
@@ -77,5 +79,14 @@ end
 if isfield(model,'rxnComps')
    model.rxnComps=[model.rxnComps;ones(numel(J),1)];
    fprintf('NOTE: The exchange reactions are assigned to the first compartment\n');
+end
+if isfield(model,'rxnNotes')
+    model.rxnNotes=[model.rxnNotes;cell(numel(J),1)];
+end
+if isfield(model,'rxnReferences')
+    model.rxnReferences=[model.rxnReferences;cell(numel(J),1)];
+end
+if isfield(model,'confidenceScores')
+    model.confidenceScores=[model.confidenceScores;cell(numel(J),1)];
 end
 end

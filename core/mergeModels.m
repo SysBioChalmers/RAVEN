@@ -14,6 +14,8 @@ function model=mergeModels(models,supressWarnings)
 %   Usage: model=mergeModels(models)
 %
 %   Rasmus Agren, 2013-08-01
+%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
+%   rxnReferences, confidenceScores and metCharge
 %
 
 %Just return the model
@@ -156,6 +158,54 @@ for i=2:numel(models)
        end 
     end
     
+    if isfield(models{i},'rxnNotes')
+       if isfield(model,'rxnNotes')
+           model.rxnNotes=[model.rxnNotes;models{i}.rxnNotes];
+       else
+           emptyNotes=cell(numel(model.rxns)-numel(models{i}.rxns),1);
+           emptyNotes(:)={''};
+           model.rxnNotes=[emptyNotes;models{i}.rxnNotes];
+       end
+    else
+       if isfield(model,'rxnNotes')
+           emptyNotes=cell(numel(models{i}.rxns),1);
+           emptyNotes(:)={''};
+           model.rxnNotes=[model.rxnNotes;emptyNotes];
+       end 
+    end
+    
+    if isfield(models{i},'rxnReferences')
+       if isfield(model,'rxnReferences')
+           model.rxnReferences=[model.rxnReferences;models{i}.rxnReferences];
+       else
+           emptyReferences=cell(numel(model.rxns)-numel(models{i}.rxns),1);
+           emptyReferences(:)={''};
+           model.rxnReferences=[emptyReferences;models{i}.rxnReferences];
+       end
+    else
+       if isfield(model,'rxnReferences')
+           emptyReferences=cell(numel(models{i}.rxns),1);
+           emptyReferences(:)={''};
+           model.rxnReferences=[model.rxnReferences;emptyReferences];
+       end 
+    end
+    
+    if isfield(models{i},'confidenceScores')
+       if isfield(model,'confidenceScores')
+           model.confidenceScores=[model.confidenceScores;models{i}.confidenceScores];
+       else
+           emptyConfidenceScores=cell(numel(model.rxns)-numel(models{i}.rxns),1);
+           emptyConfidenceScores(:)={''};
+           model.confidenceScores=[emptyConfidenceScores;models{i}.confidenceScores];
+       end
+    else
+       if isfield(model,'confidenceScores')
+           emptyConfidenceScores=cell(numel(models{i}.rxns),1);
+           emptyConfidenceScores(:)={''};
+           model.confidenceScores=[model.confidenceScores;emptyConfidenceScores];
+       end 
+    end
+    
     %Get the new metabolites from matching the models.
     %Metabolites are said to be the same if they share name and
     %compartment id. This means that metabolite IDs are not taken into
@@ -256,6 +306,20 @@ for i=2:numel(models)
            if isfield(model,'metMiriams')
                emptyMetMiriam=cell(numel(metsToAdd),1);
                model.metMiriams=[model.metMiriams;emptyMetMiriam];
+           end 
+        end
+        
+        if isfield(models{i},'metCharge')
+           if isfield(model,'metCharge')
+               model.metCharge=[model.metCharge;models{i}.metCharge(metsToAdd)];
+           else
+               emptyCharge=zeros(numel(model.mets)-numel(metsToAdd),1);
+               model.metCharge=[emptyCharge;models{i}.metCharge(metsToAdd)];
+           end
+        else
+           if isfield(model,'metCharge')
+               emptyCharge=zeros(numel(metsToAdd),1);
+               model.metCharge=[model.metCharge;emptyCharge];
            end 
         end
     end

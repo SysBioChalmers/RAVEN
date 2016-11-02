@@ -4,26 +4,26 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
 %   model            a model structure
 %   rxnsToAdd        the reaction structure can have the following fields:
-%                    rxns       cell array with unique strings that 
+%            rxns               cell array with unique strings that 
 %                               identifies each reaction
-%                    equations  cell array with equation strings. Decimal 
+%            equations          cell array with equation strings. Decimal 
 %                               coefficients are expressed as “1.2”. 
 %                               Reversibility is indicated by “<=>” or “=>”
-%                    rxnNames   cell array with the names of each reaction
+%            rxnNames           cell array with the names of each reaction
 %                               (opt, default '')
-%                    lb         vector with the lower bounds (opt, default
+%            lb                 vector with the lower bounds (opt, default
 %                               -inf for reversible reactions and 0 for
 %                               irreversible)
-%                    ub         vector with the upper bounds (opt, default
+%            ub                 vector with the upper bounds (opt, default
 %                               inf)
-%                    c          vector with the objective function
+%            c                  vector with the objective function
 %                               coefficients (opt, default 0)
-%                    eccodes    cell array with the EC-numbers for each
+%            eccodes            cell array with the EC-numbers for each
 %                               reactions. Delimit several EC-numbers with
 %                               ";" (opt, default '')
-%                    subSystems cell array with the subsystems for each
+%            subSystems         cell array with the subsystems for each
 %                               reaction (opt, default '')
-%                    grRules    cell array with the gene-reaction
+%            grRules            cell array with the gene-reaction
 %                               relationship for each reaction. For example
 %                               "(A and B) or (C)" means that the reaction 
 %                               could be catalyzed by a complex between 
@@ -31,10 +31,16 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %                               have to be present in model.genes. Add 
 %                               genes with addGenes before calling this
 %                               function if needed (opt, default '')
-%                    rxnMiriams cell array with Miriam structures (opt,
+%            rxnMiriams         cell array with Miriam structures (opt,
 %                               default [])
-%                    rxnComps   cell array with compartments (as in
+%            rxnComps           cell array with compartments (as in
 %                               model.comps) (opt, default {})
+%            rxnNotes           cell array with reaction notes (opt,
+%                               default '')
+%            rxnReferences      cell array with reaction references (opt,
+%                               default '')
+%            confidenceScores   cell array with reaction confidence scores
+%                               (opt, default '')
 %   eqnType          double describing how the equation string should be
 %                    interpreted
 %                    1 - The metabolites are matched to model.mets. New
@@ -76,6 +82,8 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
 %   Rasmus Agren, 2014-01-06
+%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
+%   rxnReferences and confidenceScores
 %
 
 if nargin<4
@@ -325,6 +333,54 @@ else
     %Fill with standard if it doesn't exist
    if isfield(newModel,'rxnFrom')
        newModel.rxnFrom=[newModel.rxnFrom;filler];
+   end
+end
+
+if isfield(rxnsToAdd,'rxnNotes')
+   if numel(rxnsToAdd.rxnNotes)~=nRxns
+       dispEM('rxnsToAdd.rxnNotes must have the same number of elements as rxnsToAdd.rxns');
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'rxnNotes')
+       newModel.rxnNotes=largeFiller;
+   end
+   newModel.rxnNotes=[newModel.rxnNotes;rxnsToAdd.rxnNotes(:)];
+else
+    %Fill with standard if it doesn't exist
+   if isfield(newModel,'rxnNotes')
+       newModel.rxnNotes=[newModel.rxnNotes;filler];
+   end
+end
+
+if isfield(rxnsToAdd,'rxnReferences')
+   if numel(rxnsToAdd.rxnReferences)~=nRxns
+       dispEM('rxnsToAdd.rxnReferences must have the same number of elements as rxnsToAdd.rxns');
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'rxnReferences')
+       newModel.rxnReferences=largeFiller;
+   end
+   newModel.rxnReferences=[newModel.rxnReferences;rxnsToAdd.rxnReferences(:)];
+else
+    %Fill with standard if it doesn't exist
+   if isfield(newModel,'rxnReferences')
+       newModel.rxnReferences=[newModel.rxnReferences;filler];
+   end
+end
+
+if isfield(rxnsToAdd,'confidenceScores')
+   if numel(rxnsToAdd.confidenceScores)~=nRxns
+       dispEM('rxnsToAdd.confidenceScores must have the same number of elements as rxnsToAdd.rxns');
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'confidenceScores')
+       newModel.confidenceScores=largeFiller;
+   end
+   newModel.confidenceScores=[newModel.confidenceScores;rxnsToAdd.confidenceScores(:)];
+else
+    %Fill with standard if it doesn't exist
+   if isfield(newModel,'confidenceScores')
+       newModel.confidenceScores=[newModel.confidenceScores;filler];
    end
 end
 

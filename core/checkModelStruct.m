@@ -15,6 +15,8 @@ function checkModelStruct(model,throwErrors,trimWarnings)
 %   Usage: checkModelStruct(model,throwErrors,trimWarnings)
 %
 %   Rasmus Agren, 2013-11-03
+%   Simonas Marcisauskas, 2016-11-01 - added checks for rxnNotes,
+%   rxnReferences, confidenceScores and metCharge
 %
 
 if nargin<2
@@ -149,6 +151,11 @@ if isfield(model,'metFormulas')
         dispEM('The "metFormulas" field must be a cell array of strings',throwErrors);
     end
 end
+if isfield(model,'metCharge')
+    if ~isnumeric(model.metCharge)
+        dispEM('The "metCharge" field must be of type "double"',throwErrors);
+    end
+end
 if isfield(model,'subSystems')
     if ~iscellstr(model.subSystems)
         dispEM('The "subSystems" field must be a cell array of strings',throwErrors);
@@ -162,6 +169,21 @@ end
 if isfield(model,'unconstrained')
     if ~isnumeric(model.unconstrained)
         dispEM('The "unconstrained" field must be of type "double"',throwErrors);
+    end
+end
+if isfield(model,'rxnNotes')
+    if ~iscellstr(model.rxnNotes)
+        dispEM('The "rxnNotes" field must be a cell array of strings',throwErrors);
+    end
+end
+if isfield(model,'rxnReferences')
+    if ~iscellstr(model.rxnReferences)
+        dispEM('The "rxnReferences" field must be a cell array of strings',throwErrors);
+    end
+end
+if isfield(model,'confidenceScores')
+    if ~iscellstr(model.confidenceScores)
+        dispEM('The "confidenceScores" field must be a cell array of strings',throwErrors);
     end
 end
 

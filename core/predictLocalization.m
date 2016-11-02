@@ -52,6 +52,8 @@ function [outModel geneLocalization transportStruct scores removedRxns]=predictL
 %       predictLocalization(model,GSS,defaultCompartment,transportCost,maxTime)
 %
 %   Rasmus Agren, 2013-09-12
+%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
+%   rxnReferences, confidenceScores and metCharge
 %
 
 if nargin<4
@@ -627,6 +629,15 @@ for i=1:nComps-1
     if isfield(outModel,'rxnMiriams')
         outModel.rxnMiriams=[outModel.rxnMiriams;outModel.rxnMiriams(nER+1:nER+nRxns)];
     end
+    if isfield(outModel,'rxnNotes')
+        outModel.rxnNotes=[outModel.rxnNotes;outModel.rxnNotes(nER+1:nER+nRxns)];
+    end
+    if isfield(outModel,'rxnReferences')
+        outModel.rxnReferences=[outModel.rxnReferences;outModel.rxnReferences(nER+1:nER+nRxns)];
+    end
+    if isfield(outModel,'confidenceScores')
+        outModel.confidenceScores=[outModel.confidenceScores;outModel.confidenceScores(nER+1:nER+nRxns)];
+    end
     outModel.mets=[outModel.mets;strcat(outModel.mets(nEM+1:nEM+nMets),'_',GSS.compartments{i+1})];
     outModel.metNames=[outModel.metNames;outModel.metNames(nEM+1:nEM+nMets)];
     outModel.b=[outModel.b;outModel.b(nEM+1:nEM+nMets,:)];
@@ -646,6 +657,9 @@ for i=1:nComps-1
     end
     if isfield(outModel,'metFrom')
         outModel.metFrom=[outModel.metFrom;outModel.metFrom(nEM+1:nEM+nMets)];
+    end
+    if isfield(outModel,'metCharge')
+        outModel.metCharge=[outModel.metCharge;outModel.metCharge(nEM+1:nEM+nMets)];
     end
 end
 
@@ -684,6 +698,15 @@ for i=1:numel(I)
     end
     if isfield(outModel,'rxnFrom')
         outModel.rxnFrom=[outModel.rxnFrom;{''}];
+    end
+    if isfield(outModel,'rxnNotes')
+        outModel.rxnNotes=[outModel.rxnNotes;{''}];
+    end
+    if isfield(outModel,'rxnReferences')
+        outModel.rxnReferences=[outModel.rxnReferences;{''}];
+    end
+    if isfield(outModel,'confidenceScores')
+        outModel.confidenceScores=[outModel.confidenceScores;{''}];
     end
 end
 

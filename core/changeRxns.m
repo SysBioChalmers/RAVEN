@@ -50,6 +50,8 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %   Usage: model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %
 %   Rasmus Agren, 2012-08-01
+%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
+%   rxnReferences and confidenceScores
 %
 
 if nargin<5
@@ -112,6 +114,15 @@ if isfield(model,'rxnScores')
 end
 if isfield(model,'rxnMiriams')
     rxnsToChange.rxnMiriams=model.rxnMiriams(J);
+end
+if isfield(model,'rxnNotes')
+    rxnsToChange.rxnNotes=model.rxnNotes(J);
+end
+if isfield(model,'rxnReferences')
+    rxnsToChange.rxnReferences=model.rxnReferences(J);
+end
+if isfield(model,'confidenceScores')
+    rxnsToChange.confidenceScores=model.confidenceScores(J);
 end
 
 %Calculate the new order of reactions
