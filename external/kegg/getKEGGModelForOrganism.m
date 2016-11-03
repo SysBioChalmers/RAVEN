@@ -155,6 +155,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %    minScoreRatioKO,maxPhylDist,nSequences)
 %
 %   Rasmus Agren, 2013-11-22
+%   Simonas Marcisauskas, 2016-11-03 - fixed compatibility with HMMER-3.1b
 %
 
 if nargin<2
@@ -395,7 +396,7 @@ if ~isempty(missingAligned)
                 fastawrite(tmpFile,fastaStruct);
 
                 %Do the alignment for this file
-                [status output]=system([fullfile(ravenPath,'external','software','clustalw2',['clustalw2' binEnd]) ' -infile="' tmpFile '" -align -outfile="' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '" -output=FASTA -type=PROTEIN -OUTORDER=INPUT']);
+                [status output]=system([fullfile(ravenPath,'software','clustalw2',['clustalw2' binEnd]) ' -infile="' tmpFile '" -align -outfile="' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '" -output=FASTA -type=PROTEIN -OUTORDER=INPUT']);
                 if status~=0
                 	dispEM(['Error when performing alignment of ' missingAligned{i} ':\n' output]); 
                 end
@@ -457,34 +458,12 @@ if ~isempty(missingHMMs)
             fid=fopen(fullfile(dataDir,'hmms',[missingHMMs{i} '.hmw']),'w');
             fclose(fid);
                 
-            %Create HMM. This is saved with a "hm" ending to indicate that
-            %it hasn't been calibrated yet. This is because I want to be
-            %able to see which models are uncalibrated if something goes
-            %wrong
-            [status output]=system([fullfile(ravenPath,'external','software','hmmer-3.1',['hmmbuild' binEnd]) ' "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
+            %Create HMM
+            [status output]=system([fullfile(ravenPath,'software','hmmer-3.1',['hmmbuild' binEnd]) ' "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
             if status~=0
             	dispEM(['Error when training HMM for ' missingHMMs{i} ':\n' output]);
             end
             
-            %This is only available for linux
-            if ~ispc
-                [status output]=system([fullfile(ravenPath,'external','software','hmmer-3.1','hmmcalibrate') ' "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hm']) '"']);
-                if status~=0
-                    %This check is because some HMMs gives an error saying
-                    %that the number of iterations might be too low.
-                    %However, raising it doesn't have any effect. The error
-                    %is therefore ignored and the uncalibrated model is
-                    %used
-                    if isempty(strfind(output,'--num may be set too small?'))
-                        delete(fullfile(dataDir,'hmms',[missingHMMs{i} '.hm']));
-                        dispEM(['Error when calibrating HMM for ' missingHMMs{i} ':\n' output]);
-                    else
-                        dispEM(['Cannot calibrate the HMM for ' missingHMMs{i} '. Using uncalibrated version'],false);
-                    end
-                end
-            end
-            %Move the temporary file to the real one
-            movefile(fullfile(dataDir,'hmms',[missingHMMs{i} '.hm']),fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']),'f');
             %Delete the temporary file
             delete(fullfile(dataDir,'hmms',[missingHMMs{i} '.hmw']));
         end
@@ -521,7 +500,7 @@ if ~isempty(missingOUT)
             end
             
             %Check each gene in the input file against this model
-            [status output]=system([fullfile(ravenPath,'external','software','hmmer-2.3','hmmsearch') ' "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
+            [status output]=system([fullfile(ravenPath,'software','hmmer-3.1',['hmmsearch' binEnd]) ' "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
             if status~=0
             	dispEM(['Error when querying HMM for ' missingOUT{i} ':\n' output]); 
             end
@@ -556,6 +535,10 @@ for i=1:numel(KOModel.rxns)
             %Abort at end of file
             if ~ischar(tline)
                 break;
+            end   
+            
+            if and(beginMatches,strcmp(tline,'  ------ inclusion threshold ------'))
+                break;
             end
             
             if beginMatches==false
@@ -567,13 +550,13 @@ for i=1:numel(KOModel.rxns)
                 end
             else
                 %If matches should be read
-                if ~strcmp(tline,'	[no hits above thresholds]') && ~isempty(tline)
+                if ~strcmp(tline,'   [No hits detected that satisfy reporting thresholds]') && ~isempty(tline)
                     elements=regexp(tline,' ','split');
                     elements=elements(cellfun(@any,elements));
                     
                     %Check if the match is below the treshhold
-                    score=str2num(elements{end-1});
-                    gene=elements{1};
+                    score=str2num(elements{1});
+                    gene=elements{9};
                     if score<=cutOff
                         %If the score is exactly 0, change it to a very
                         %small value to avoid NaN
