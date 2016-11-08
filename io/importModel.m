@@ -131,14 +131,22 @@ compartmentMiriams=cell(numel(modelSBML.compartment),1);
 for i=1:numel(modelSBML.compartment)
     compartmentNames{i}=modelSBML.compartment(i).name;
     if isCOBRA==true
-        compartmentIDs{i}=modelSBML.compartment(i).id;
+		if strcmpi(modelSBML.compartment(i).id(1:2),'C_')
+			compartmentIDs{i}=modelSBML.compartment(i).id(3:end);
+        else
+			compartmentIDs{i}=modelSBML.compartment(i).id;
+		end
     else
         compartmentIDs{i}=modelSBML.compartment(i).id(3:end);
     end
     if isfield(modelSBML.compartment(i),'outside')
         if ~isempty(modelSBML.compartment(i).outside)
             if isCOBRA==true
-                compartmentOutside{i}=modelSBML.compartment(i).outside;
+				if strcmpi(modelSBML.compartment(i).outside(1:2),'C_')
+					compartmentOutside{i}=modelSBML.compartment(i).outside(3:end);
+				else
+					compartmentOutside{i}=modelSBML.compartment(i).outside;
+				end
             else
                 compartmentOutside{i}=modelSBML.compartment(i).outside(3:end);
             end
@@ -332,8 +340,12 @@ else
         end
         
         metaboliteIDs{numel(metaboliteIDs)+1,1}=modelSBML.species(i).id(3:numel(modelSBML.species(i).id));
-        metaboliteCompartments{numel(metaboliteCompartments)+1,1}=modelSBML.species(i).compartment;
-        
+		if strcmpi(modelSBML.species(i).compartment(1:2),'C_')
+			metaboliteCompartments{numel(metaboliteCompartments)+1,1}=modelSBML.species(i).compartment(3:end);
+		else
+			metaboliteCompartments{numel(metaboliteCompartments)+1,1}=modelSBML.species(i).compartment;
+		end
+		
         %I think that COBRA doesn't set the boundary condition, but rather
         %uses name_b. Check for either
         metaboliteUnconstrained(numel(metaboliteUnconstrained)+1,1)=modelSBML.species(i).boundaryCondition;
