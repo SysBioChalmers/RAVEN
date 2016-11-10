@@ -145,9 +145,12 @@ for i=1:numel(modelSBML.compartment)
     if isfield(modelSBML.compartment(i),'outside')
         if ~isempty(modelSBML.compartment(i).outside)
             if isCOBRA==true
-				if strcmpi(modelSBML.compartment(i).outside(1:2),'C_')
-					compartmentOutside{i}=modelSBML.compartment(i).outside(3:end);
-				else
+				try if strcmpi(modelSBML.compartment(i).outside(1:2),'C_')
+						compartmentOutside{i}=modelSBML.compartment(i).outside(3:end);
+					else
+						compartmentOutside{i}=modelSBML.compartment(i).outside;
+					end
+				catch
 					compartmentOutside{i}=modelSBML.compartment(i).outside;
 				end
             else
