@@ -131,9 +131,12 @@ compartmentMiriams=cell(numel(modelSBML.compartment),1);
 for i=1:numel(modelSBML.compartment)
     compartmentNames{i}=modelSBML.compartment(i).name;
     if isCOBRA==true
-		try strcmpi(modelSBML.compartment(i).id(1:2),'C_')
-			compartmentIDs{i}=modelSBML.compartment(i).id(3:end);
-        catch
+		try if strcmpi(modelSBML.compartment(i).id(1:2),'C_')
+				compartmentIDs{i}=modelSBML.compartment(i).id(3:end);
+			else
+				compartmentIDs{i}=modelSBML.compartment(i).id;
+			end
+		catch
 			compartmentIDs{i}=modelSBML.compartment(i).id;
 		end
     else
@@ -340,9 +343,12 @@ else
         end
         
         metaboliteIDs{numel(metaboliteIDs)+1,1}=modelSBML.species(i).id(3:numel(modelSBML.species(i).id));
-		try strcmpi(modelSBML.species(i).compartment(1:2),'C_')
-			metaboliteCompartments{numel(metaboliteCompartments)+1,1}=modelSBML.species(i).compartment(3:end);
-        catch
+		try if strcmpi(modelSBML.species(i).compartment(1:2),'C_')
+				metaboliteCompartments{numel(metaboliteCompartments)+1,1}=modelSBML.species(i).compartment(3:end);
+			else
+				metaboliteCompartments{numel(metaboliteCompartments)+1,1}=modelSBML.species(i).compartment;
+			end
+		catch
 			metaboliteCompartments{numel(metaboliteCompartments)+1,1}=modelSBML.species(i).compartment;
 		end
 		
