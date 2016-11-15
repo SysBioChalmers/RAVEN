@@ -80,7 +80,7 @@ else if strcmpi(predictor,'cello')
         if ~ischar(tline)
             break;
         end
-        tline=regexprep(tline,'^.+#:\t','');
+        tline=regexprep(tline,'^.+:\t','');
         tline=regexprep(tline,' .+','');
         tline=regexp(tline,'\t','split');
         geneScoreStructure.scores(row,:)=str2double(tline(1:numel(geneScoreStructure.compartments)));
