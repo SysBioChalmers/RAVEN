@@ -53,6 +53,24 @@ function model=getMetsFromKEGG(keggPath)
 %model.
 [ST I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+% Adding escape characters, if some parent folders contain spaces or
+% exclamation marks (for Unix systems). For Windows, all the parent folders
+% are just put between the double quotation brackets
+if isunix
+    ravenPath = regexprep(ravenPath,'\ ','\\ ');
+    ravenPath = regexprep(ravenPath,'\!','\\!');
+elseif ispc
+    for i=1:(length(strfind(ravenPath,'\')))
+        if i==1
+            ravenPath = regexprep(ravenPath,'\\','\\"',i);
+        elseif i==length(strfind(ravenPath,'\'))
+            ravenPath = regexprep(ravenPath,'\\','"\\',i);    
+        else
+            ravenPath = regexprep(ravenPath,'\\','"\\"',i);
+        end
+    end
+end
+
 metsFile=fullfile(ravenPath,'external','kegg','keggMets.mat');
 if exist(metsFile, 'file')
     fprintf(['NOTE: Importing KEGG metabolites from ' strrep(metsFile,'\','/') '.\n']);
