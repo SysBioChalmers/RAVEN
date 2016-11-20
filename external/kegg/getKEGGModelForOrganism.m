@@ -236,7 +236,7 @@ model.c=zeros(numel(model.rxns),1);
 %the given organism ID
 if isempty(fastaFile)
     %All IDs are three letters
-    I=cellfun(@(x) strcmpi(x(1:3),organismID),model.genes);
+    I=cellfun(@(x) strcmpi(x(1:4),organismID),model.genes);
     
     %Remove those genes
     model.genes=model.genes(I);
