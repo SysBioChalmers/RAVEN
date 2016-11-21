@@ -434,7 +434,7 @@ end
 draftModel.description=description;
 draftModel.rxnNotes=cell(length(draftModel.rxns),1);
 draftModel.rxnNotes(:)={'Reaction included by getModelFromHomology'};
-draftModel.confidenceScores=cell(length(draftModel.rxns),1);
+draftModel.confidenceScores=zeros(length(draftModel.rxns),1);
 draftModel.confidenceScores(:)=2;
 
 end
