@@ -235,8 +235,13 @@ model.c=zeros(numel(model.rxns),1);
 %If no FASTA file is supplied, then just remove all genes which are not for
 %the given organism ID
 if isempty(fastaFile)
-    %All IDs are three letters
-    I=cellfun(@(x) strcmpi(x(1:4),organismID),model.genes);
+    % KEGG organism IDs may have three or four letters
+    if length(organismID)==3
+        I=cellfun(@(x) strcmpi(x(1:3),organismID),model.genes);
+    else if length(organismID)==4
+        I=cellfun(@(x) strcmpi(x(1:4),organismID),model.genes);
+        end
+    end
     
     %Remove those genes
     model.genes=model.genes(I);
