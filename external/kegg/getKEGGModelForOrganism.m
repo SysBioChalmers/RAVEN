@@ -179,7 +179,7 @@ if nargin<6
     keepIncomplete=true;
 end
 if nargin<7
-    keepGeneral=true;
+    keepGeneral=false;
 end
 if nargin<8
     cutOff=10^-50;

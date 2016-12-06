@@ -71,7 +71,7 @@ if nargin<3
     keepIncomplete=true;
 end
 if nargin<4
-    keepGeneral=true;
+    keepGeneral=false;
 end
 
 %Check if the reactions have been parsed before and saved. If so, load the
@@ -90,15 +90,15 @@ else
     model.id='KEGG';
     model.description='Automatically generated from KEGG database';
 
-    %Preallocate memory for 10000 reactions
-    model.rxns=cell(10000,1);
-    model.rxnNames=cell(10000,1);
-    model.eccodes=cell(10000,1);
-    model.subSystems=cell(10000,1);
-    model.rxnMiriams=cell(10000,1);
-    equations=cell(10000,1); %Temporarily stores the equations
-    isIncomplete=false(10000,1);
-    isGeneral=false(10000,1);
+    %Preallocate memory for 11000 reactions
+    model.rxns=cell(11000,1);
+    model.rxnNames=cell(11000,1);
+    model.eccodes=cell(11000,1);
+    model.subSystems=cell(11000,1);
+    model.rxnMiriams=cell(11000,1);
+    equations=cell(11000,1); %Temporarily stores the equations
+    isIncomplete=false(11000,1);
+    isGeneral=false(11000,1);
 
     %First load information on reaction ID, reaction name, KO, pathway, and ec-number
     fid = fopen(fullfile(keggPath,'reaction'), 'r');
@@ -355,6 +355,14 @@ else
     irrevIDs=find(reversibility.rev==0);
     [crap I]=ismember(reversibility.rxns(irrevIDs),model.rxns);
     [crap prodMetIDs]=ismember(reversibility.product(irrevIDs),model.mets);
+    
+    % There may be KEGG rxns and corresponding mets, which are no longer in
+    % KEGG. Remove these
+    indxToDelete=or(~prodMetIDs,~I);
+    prodMetIDs = prodMetIDs(indxToDelete==0);    
+    I = I(indxToDelete==0);
+    
+    % Now changing reversibility
     model.rev(I)=0;
 
     %See if the reactions are written in the same order in model.S
