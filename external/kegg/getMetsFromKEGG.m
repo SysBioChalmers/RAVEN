@@ -203,6 +203,16 @@ else
     %Remove composition if InChI was found
     model.metFormulas(b)={''};
     
+    % Ensuring that all model.metMiriams.value consist only of strings, no
+    % double
+    for i=1:(numel(model.mets))
+        for j=1:(numel(model.metMiriams{i}))
+            if isa(model.metMiriams{i}.value{j},'double')
+                model.metMiriams{i}.value{j}=num2str(model.metMiriams{i}.value{j});
+            end
+        end
+    end
+    
     %Saves the model
     save(metsFile,'model');
 end
