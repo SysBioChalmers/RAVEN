@@ -501,7 +501,11 @@ if ~isempty(missingAligned)
                 	fastawrite(tmpFile,fastaStruct);
                 end
                 %Do the alignment for this file
-                [status output]=system([fullfile(ravenPath,'software','mafft-7.221',['mafft' binEnd]) ' --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                if ~ispc
+                    [status output]=system([fullfile(ravenPath,'software','mafft-7.221',['mafft' binEnd]) ' --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                else
+                    [status output]=system([fullfile(ravenPath,'software','mafft-7.221',['mafft.bat']) ' --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                end
                 if status~=0
                 	dispEM(['Error when performing alignment of ' missingAligned{i} ':\n' output]); 
                 end
