@@ -163,12 +163,19 @@ else
                  %Check if the line is from a new organism of from the same as
                  %before
                  if strcmp(geneLine(4),':')
+                     % if organism id contains 3 letters;
                      currentOrganism=geneLine(1:3);
+                     %Parse the string
+                     genes=regexp(geneLine(6:end),' ','split');
+                     genes=strcat(currentOrganism,':',genes(:));
+                 else if strcmp(geneLine(5),':')
+                     % if organism id contains 4 letters;
+                     currentOrganism=geneLine(1:4);
+                     %Parse the string
+                     genes=regexp(geneLine(7:end),' ','split');
+                     genes=strcat(currentOrganism,':',genes(:));
+                     end
                  end
-
-                 %Parse the string
-                 genes=regexp(geneLine(6:end),' ','split');
-                 genes=strcat(currentOrganism,':',genes(:));
                  
                  %Add the genes to the gene list
                  for i=1:numel(genes)

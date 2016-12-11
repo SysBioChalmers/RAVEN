@@ -38,7 +38,7 @@ if nargin<3
     keepIncomplete=true;
 end
 if nargin<4
-    keepGeneral=true;
+    keepGeneral=false;
 end
 
 %First get all reactions

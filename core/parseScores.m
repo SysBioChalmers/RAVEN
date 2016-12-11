@@ -3,10 +3,8 @@ function geneScoreStructure=parseScores(inputFile,predictor)
 %   Parses the output from a predictor to generate the geneScoreStructure.
 %
 %   inputFile	a file with the output from the predictor
-%   predictor   the predictor that was used. 'tsv' for tab-separated values
-%               where the name of the compartments in the first row and each
-%               row after that correspond to a gene. 'wolf' for 
-%               WoLFPSORT. (opt, default 'tsv')
+%   predictor   the predictor that was used. 'wolf' for WoLF PSORT, 'cello'
+%               for CELLO. (opt, default 'wolf')
 %
 %   The function normalizes the scores so that the best score for each gene
 %   is 1.0.
@@ -16,9 +14,11 @@ function geneScoreStructure=parseScores(inputFile,predictor)
 %   Usage: geneScoreStructure=parseScores(inputFile,predictor,normalize)
 %
 %   Rasmus Agren, 2013-08-01
+%   Simonas Marcisauskas, 2016-11-15 - added compatibility for CELLO v2.5
+%
 
 if nargin<2
-    predictor='tsv';
+    predictor='wolf';
 end
 
 fid=fopen(inputFile,'r');
@@ -62,6 +62,31 @@ if strcmpi(predictor,'wolf')
             geneScoreStructure.scores(i,J)=str2double(b(j+1));
         end
    end
+else if strcmpi(predictor,'cello')
+    fid=fopen(inputFile,'r');
+    % Reading the title line and fetching the list of compartments;
+    tline = fgetl(fid);
+    tline=regexprep(tline,'^.+#Combined:\t','');
+    tline=regexprep(tline,'\t#Most-likely-Location.+','');
+    geneScoreStructure.compartments=transpose(regexp(tline,'\t','split'));
+    
+    % Now iterating through the following lines in the file. Each row
+    % corresponds to one gene and it consists of the scores for
+    % compartments. Gene name is in the end of each line;
+    row=0;
+    while 1
+        row=row+1;
+        tline = fgetl(fid);
+        if ~ischar(tline)
+            break;
+        end
+        tline=regexprep(tline,'^.+:\t','');
+        tline=regexprep(tline,' .+','');
+        tline=regexp(tline,'\t','split');
+        geneScoreStructure.scores(row,:)=str2double(tline(1:numel(geneScoreStructure.compartments)));
+        geneScoreStructure.genes{row,1}=tline{1,end};
+        end
+    end
 end
 
 %Check if there are duplicate genes
