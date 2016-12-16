@@ -123,7 +123,8 @@ model.c=zeros(size(model.S,2),1);
 %Add padding to the reaction annotation to prevent an error in solveLP
 padding=cell(numel(model.rev),1);
 padding(:)={''};
-model.rxns=padding;
+%model.rxns=padding;
+model.rxns=[model.rxns;strcat('exch_',model.mets(1:nMets));'exch_fake'];
 model.rxnNames=padding;
 model.eccodes=padding;
 model.rxnMiriams=padding;
