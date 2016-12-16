@@ -175,7 +175,8 @@ if any(sol.x)
             %Has to add names for the rxns to prevent an error in
             %minNrFluxes
             model.rxns=cell(numel(model.lb),1);
-            model.rxns(:)={'TEMP'};
+            model.rxns(:)=sprintfc('tmp_%d',1:numel(model.lb));
+            %model.rxns(:)={'TEMP'};
             model.mets=cell(size(model.b,1),1);
             model.mets(:)={'TEMP'};
             sol=solveLP(model,3,params);
