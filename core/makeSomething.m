@@ -123,7 +123,6 @@ model.c=zeros(size(model.S,2),1);
 %Add padding to the reaction annotation to prevent an error in solveLP
 padding=cell(numel(model.rev),1);
 padding(:)={''};
-%model.rxns=padding;
 model.rxns=[model.rxns;strcat('exch_',model.mets(1:nMets));'exch_fake'];
 model.rxnNames=padding;
 model.eccodes=padding;
@@ -176,7 +175,6 @@ if any(sol.x)
             %minNrFluxes
             model.rxns=cell(numel(model.lb),1);
             model.rxns(:)=sprintfc('tmp_%d',1:numel(model.lb));
-            %model.rxns(:)={'TEMP'};
             model.mets=cell(size(model.b,1),1);
             model.mets(:)={'TEMP'};
             sol=solveLP(model,3,params);

@@ -47,7 +47,9 @@ javaaddpath(fullfile(poiPATH,'xmlbeans-2.3.0.jar'));
 %Import required classes from Apache POI
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.hssf.usermodel.*;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.xssf.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.*;
 import java.io.File;
