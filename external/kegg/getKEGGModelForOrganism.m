@@ -162,7 +162,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %
 %   Rasmus Agren, 2013-11-22
 %   Simonas Marcisauskas, 2016-11-03 - fixed compatibility with HMMER-3.1b
-%   Simonas Marcisauskas, 2016-12-08 - implemented CH-HIT and MAFFT
+%   Simonas Marcisauskas, 2016-12-08 - implemented CD-HIT and MAFFT
 %
 
 if nargin<2
@@ -326,23 +326,6 @@ fprintf('Completed generation of multi-FASTA files\n');
 %party software used
 [ST I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-% Adding escape characters, if some parent folders contain spaces or
-% exclamation marks (for Unix systems). For Windows, all the parent folders
-% are just put between the double quotation brackets
-if isunix
-    ravenPath = regexprep(ravenPath,'\ ','\\ ');
-    ravenPath = regexprep(ravenPath,'\!','\\!');
-elseif ispc
-    for i=1:(length(strfind(ravenPath,'\')))
-        if i==1
-            ravenPath = regexprep(ravenPath,'\\','\\"',i);
-        elseif i==length(strfind(ravenPath,'\'))
-            ravenPath = regexprep(ravenPath,'\\','"\\',i);    
-        else
-            ravenPath = regexprep(ravenPath,'\\','"\\"',i);
-        end
-    end
-end
 
 if isunix
     if ismac
@@ -362,7 +345,7 @@ end
 missingAligned=setdiff(KOModel.rxns,[alignedFiles;hmmFiles;alignedWorking;outFiles]);
 if ~isempty(missingAligned)
     missingAligned=missingAligned(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingAligned)));
-    %Align all sequences using CLUSTALW
+    %Align all sequences using MAFFT
     for i=1:numel(missingAligned)
         %This is checked here because it could be that it is created by a
         %parallell process. The faw-files are saved as temporary files to
@@ -430,7 +413,7 @@ if ~isempty(missingAligned)
                             cdhitInp100=tempname;
                             fastawrite(cdhitInp100,fastaStruct);
                             tmpFile=tempname;
-                            [status output]=unix([fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) ' -i "' cdhitInp100 '" -o "' tmpFile '" -c 1.0 -s 0.8 -n 5 -M 2000 -T 8']);
+                            [status output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' tmpFile '" -c 1.0 -s 0.8 -n 5 -M 2000 -T 8']);
                             if status~=0
                                 dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
                             end
@@ -442,7 +425,7 @@ if ~isempty(missingAligned)
                             cdhitInp100=tempname;
                             fastawrite(cdhitInp100,fastaStruct);
                             cdhitInp90=tempname;
-                            [status output]=unix([fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) ' -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -s 0.8 -n 5 -M 2000']);
+                            [status output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -s 0.8 -n 5 -M 2000']);
                             if status~=0
                                 dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
                             end
@@ -451,7 +434,7 @@ if ~isempty(missingAligned)
                                 delete([cdhitInp100 '*']);
                             end
                             tmpFile=tempname;
-                            [status output]=unix([fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) ' -i "' cdhitInp90 '" -o "' tmpFile '" -c 0.9 -s 0.8 -n 5 -M 2000']);
+                            [status output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp90 '" -o "' tmpFile '" -c 0.9 -s 0.8 -n 5 -M 2000']);
                             if status~=0
                                 dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
                             end
@@ -463,7 +446,7 @@ if ~isempty(missingAligned)
                             cdhitInp100=tempname;
                             fastawrite(cdhitInp100,fastaStruct);
                             cdhitInp90=tempname;
-                            [status output]=unix([fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) ' -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -s 0.8 -n 5 -M 2000']);
+                            [status output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -s 0.8 -n 5 -M 2000']);
                             if status~=0
                                 dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
                             end
@@ -472,7 +455,7 @@ if ~isempty(missingAligned)
                                 delete([cdhitInp100 '*']);
                             end
                             cdhitInp50=tempname;
-                            [status output]=unix([fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) ' -i "' cdhitInp90 '" -o "' cdhitInp50 '" -c 0.9 -s 0.8 -n 5 -M 2000']);
+                            [status output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp90 '" -o "' cdhitInp50 '" -c 0.9 -s 0.8 -n 5 -M 2000']);
                             if status~=0
                                 dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
                             end
@@ -481,7 +464,7 @@ if ~isempty(missingAligned)
                                 delete([cdhitInp90 '*']);
                             end
                             tmpFile=tempname;
-                            [status output]=unix([fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) ' -i "' cdhitInp50 '" -o "' tmpFile '" -c 0.5 -s 0.8 -n 3 -M 2000']);
+                            [status output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp50 '" -o "' tmpFile '" -c 0.5 -s 0.8 -n 3 -M 2000']);
                             if status~=0
                                 dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
                             end
@@ -502,9 +485,9 @@ if ~isempty(missingAligned)
                 end
                 %Do the alignment for this file
                 if ~ispc
-                    [status output]=system([fullfile(ravenPath,'software','mafft-7.221',['mafft' binEnd]) ' --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                    [status output]=system(['"' fullfile(ravenPath,'software','mafft-7.221',['mafft' binEnd]) '" --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 else
-                    [status output]=system([fullfile(ravenPath,'software','mafft-7.221',['mafft.bat']) ' --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                    [status output]=system(['"' fullfile(ravenPath,'software','mafft-7.221','mafft.bat') '" --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 end
                 if status~=0
                 	dispEM(['Error when performing alignment of ' missingAligned{i} ':\n' output]); 
@@ -575,7 +558,7 @@ if ~isempty(missingHMMs)
             fclose(fid);
                 
             %Create HMM
-            [status output]=system([fullfile(ravenPath,'software','hmmer-3.1',['hmmbuild' binEnd]) ' "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
+            [status output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1',['hmmbuild' binEnd]) '" "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
             if status~=0
             	dispEM(['Error when training HMM for ' missingHMMs{i} ':\n' output]);
             end
@@ -616,7 +599,7 @@ if ~isempty(missingOUT)
             end
             
             %Check each gene in the input file against this model
-            [status output]=system([fullfile(ravenPath,'software','hmmer-3.1',['hmmsearch' binEnd]) ' "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
+            [status output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1',['hmmsearch' binEnd]) '" "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
             if status~=0
             	dispEM(['Error when querying HMM for ' missingOUT{i} ':\n' output]); 
             end
