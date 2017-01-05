@@ -29,30 +29,13 @@ end
 %way to do this
 [ST I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(ST(I).file));
-% Adding escape characters, if some parent folders contain spaces or
-% exclamation marks (for Unix systems). For Windows, all the parent folders
-% are just put between the double quotation brackets
-if isunix
-    ravenPath = regexprep(ravenPath,'\ ','\\ ');
-    ravenPath = regexprep(ravenPath,'\!','\\!');
-elseif ispc
-    for i=1:(length(strfind(ravenPath,'\')))
-        if i==1
-            ravenPath = regexprep(ravenPath,'\\','\\"',i);
-        elseif i==length(strfind(ravenPath,'\'))
-            ravenPath = regexprep(ravenPath,'\\','"\\',i);    
-        else
-            ravenPath = regexprep(ravenPath,'\\','"\\"',i);
-        end
-    end
-end
 
 %Temporary output name
 outFile=tempname;
 fid=fopen(outFile,'w');
 
 %Do the prediction
-[crap output]=unix(['perl ' ravenPath '/software/WoLFPSORT_package_v0.2/bin/runWolfPsortSummary ' kingdom ' < ' inputFile]);
+[crap output]=unix(['perl "' ravenPath '"/software/WoLFPSORT_package_v0.2/bin/runWolfPsortSummary ' kingdom ' < ' inputFile '']);
 
 %Save output and call the general parser
 fprintf(fid,output);
