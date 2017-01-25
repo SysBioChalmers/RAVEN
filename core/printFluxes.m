@@ -10,7 +10,7 @@ function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputS
 %   outputFile      a file to save the print-out to (opt, default is output to
 %                   the command window)
 %   outputString    a string that specifies the output of each reaction (opt,
-%                   default '%rxnID (%rxnName):%flux\n')
+%                   default '%rxnID\t(%rxnName):\t%flux\n')
 %   metaboliteList  cell array of metabolite names. Only reactions
 %                   involving any of these metabolites will be
 %                   printed (opt)
@@ -56,10 +56,10 @@ else
     end
 end
 if nargin<6
-    outputString='%rxnID (%rxnName):%flux\n';
+    outputString='%rxnID\t(%rxnName):\t%flux\n';
 end
 if isempty(outputString)
-    outputString='%rxnID (%rxnName):%flux\n';
+    outputString='%rxnID\t(%rxnName):\t%flux\n';
 end
 if nargin<7
     metaboliteList={};
@@ -82,9 +82,9 @@ if ~isempty(metaboliteList)
 end
 
 if onlyExchange==true
-    fprintf(fid,'\nEXCHANGE FLUXES:\n\n');
+    fprintf(fid,'EXCHANGE FLUXES:\n');
 else
-    fprintf(fid,'\nFLUXES:\n\n');
+    fprintf(fid,'FLUXES:\n');
 end
 
 %Remove reactions which are below the cut off
