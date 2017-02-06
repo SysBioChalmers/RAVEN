@@ -8,7 +8,10 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %   organismID      	three letter abbreviation of the organism (as used in
 %                       KEGG). If not available, use a closely related
 %                       species. This is used for determing the
-%                       phylogenetic distance.
+%                       phylogenetic distance. Use 'eukaryotes' or
+%                       'prokaryotes' to get a model for the whole domain.
+%                       Only applicable if fastaFile is empty, i.e. no
+%                       homology search should be performed
 %   fastaFile           a FASTA file that contains the protein sequences of
 %                       the organism for which to reconstruct a model (opt,
 %                       if no FASTA file is supplied then a model is
@@ -160,7 +163,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...
 %    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 %
-%   Rasmus Agren, 2013-11-22
+%   Rasmus Agren, 2017-02-06
 %   Simonas Marcisauskas, 2016-11-03 - fixed compatibility with HMMER-3.1b
 %   Simonas Marcisauskas, 2016-12-08 - implemented CD-HIT and MAFFT
 %
@@ -245,13 +248,27 @@ model.c=zeros(numel(model.rxns),1);
 %If no FASTA file is supplied, then just remove all genes which are not for
 %the given organism ID
 if isempty(fastaFile)
-    % KEGG organism IDs may have three or four letters
-    if length(organismID)==3
-        I=cellfun(@(x) strcmpi(x(1:3),organismID),model.genes);
-    else if length(organismID)==4
-        I=cellfun(@(x) strcmpi(x(1:4),organismID),model.genes);
+	if ismember(organismID,{'eukaryotes','prokaryotes'})
+        phylDists=getPhylDist(fullfile(dataDir,'keggdb'),maxPhylDist==-1);
+        if strcmp(organismID,'eukaryotes')
+            proxyid='hsa'; %Use H. sapiens here
+        else
+            proxyid='eco'; %Use E. coli here
         end
-    end
+        [~,phylDistId]=ismember(proxyid,phylDists.ids);
+        idsToKeep=phylDists.ids(~isinf(phylDists.distMat(phylDistId,:)));
+        I=false(numel(model.genes),1);
+        for i=1:numel(idsToKeep)
+            I=I | cellfun(@(x) strcmpi(x(1:length(idsToKeep{i})),idsToKeep(i)),model.genes);
+        end
+    else
+        % KEGG organism IDs may have three or four letters
+        if length(organismID)==3
+            I=cellfun(@(x) strcmpi(x(1:3),organismID),model.genes);
+        else if length(organismID)==4
+            I=cellfun(@(x) strcmpi(x(1:4),organismID),model.genes);
+            end
+        end
     
     %Remove those genes
     model.genes=model.genes(I);
@@ -743,6 +760,7 @@ for i=1:numel(model.rxns)
         model.grRules{i}=[model.grRules{i} ' or ' model.genes{I(j)}];
     end
     model.grRules{i}=[model.grRules{i} ')'];
+end
 end
 end
 
