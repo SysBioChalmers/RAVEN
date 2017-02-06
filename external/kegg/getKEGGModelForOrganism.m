@@ -248,7 +248,7 @@ model.c=zeros(numel(model.rxns),1);
 %If no FASTA file is supplied, then just remove all genes which are not for
 %the given organism ID
 if isempty(fastaFile)
-	if ismember(organismID,{'eukaryotes','prokaryotes'})
+    if ismember(organismID,{'eukaryotes','prokaryotes'})
         phylDists=getPhylDist(fullfile(dataDir,'keggdb'),maxPhylDist==-1);
         if strcmp(organismID,'eukaryotes')
             proxyid='hsa'; %Use H. sapiens here
@@ -257,10 +257,8 @@ if isempty(fastaFile)
         end
         [~,phylDistId]=ismember(proxyid,phylDists.ids);
         idsToKeep=phylDists.ids(~isinf(phylDists.distMat(phylDistId,:)));
-        I=false(numel(model.genes),1);
-        for i=1:numel(idsToKeep)
-            I=I | cellfun(@(x) strcmpi(x(1:length(idsToKeep{i})),idsToKeep(i)),model.genes);
-        end
+        taxIDs=cellfun(@(x) x{1},cellfun(@(x) strsplit(x,':'),model.genes,'UniformOutput',false),'UniformOutput',false);
+        I=ismember(taxIDs,idsToKeep);
     else
         % KEGG organism IDs may have three or four letters
         if length(organismID)==3
@@ -269,6 +267,7 @@ if isempty(fastaFile)
             I=cellfun(@(x) strcmpi(x(1:4),organismID),model.genes);
             end
         end
+    end
     
     %Remove those genes
     model.genes=model.genes(I);
@@ -302,7 +301,7 @@ end
 
 %Create a phylogenetic distance structure
 phylDistStruct=getPhylDist(fullfile(dataDir,'keggdb'),maxPhylDist==-1);
-[crap phylDistId]=ismember(model.id,phylDistStruct.ids);
+[~, phylDistId]=ismember(model.id,phylDistStruct.ids);
 fprintf('Completed creation of phylogenetic distance matrix\n');
 
 %Calculate the real maximal distance now. An abitary large number of 1000 is
@@ -341,7 +340,7 @@ fprintf('Completed generation of multi-FASTA files\n');
 
 %Get the directory for RAVEN Toolbox. This is to get the path to the third
 %party software used
-[ST I]=dbstack('-completenames');
+[ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 
 if isunix
@@ -401,7 +400,7 @@ if ~isempty(missingAligned)
                index=strfind(fastaStruct(j).Header,':');
                if any(index)
                     abbrev=fastaStruct(j).Header(1:index(1)-1);
-                    [crap index]=ismember(abbrev,phylDistStruct.ids);
+                    [~, index]=ismember(abbrev,phylDistStruct.ids);
                     if any(index)
                         phylDist(j)=phylDistStruct.distMat(index(1),phylDistId);
                     end
@@ -412,7 +411,7 @@ if ~isempty(missingAligned)
             phylDist(phylDist>maxPhylDist)=[];
 
             %Sort based on phylDist
-            [crap order]=sort(phylDist);
+            [~, order]=sort(phylDist);
 
             %Save the first nSequences hits to a temporary FASTA file
             if nSequences<=numel(fastaStruct)
@@ -430,7 +429,7 @@ if ~isempty(missingAligned)
                             cdhitInp100=tempname;
                             fastawrite(cdhitInp100,fastaStruct);
                             tmpFile=tempname;
-                            [status output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' tmpFile '" -c 1.0 -s 0.8 -n 5 -M 2000 -T 8']);
+                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' tmpFile '" -c 1.0 -s 0.8 -n 5 -M 2000 -T 8']);
                             if status~=0
                                 dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
                             end
@@ -442,7 +441,7 @@ if ~isempty(missingAligned)
                             cdhitInp100=tempname;
                             fastawrite(cdhitInp100,fastaStruct);
                             cdhitInp90=tempname;
-                            [status output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -s 0.8 -n 5 -M 2000']);
+                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -s 0.8 -n 5 -M 2000']);
                             if status~=0
                                 dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
                             end
@@ -451,7 +450,7 @@ if ~isempty(missingAligned)
                                 delete([cdhitInp100 '*']);
                             end
                             tmpFile=tempname;
-                            [status output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp90 '" -o "' tmpFile '" -c 0.9 -s 0.8 -n 5 -M 2000']);
+                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp90 '" -o "' tmpFile '" -c 0.9 -s 0.8 -n 5 -M 2000']);
                             if status~=0
                                 dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
                             end
@@ -463,7 +462,7 @@ if ~isempty(missingAligned)
                             cdhitInp100=tempname;
                             fastawrite(cdhitInp100,fastaStruct);
                             cdhitInp90=tempname;
-                            [status output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -s 0.8 -n 5 -M 2000']);
+                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -s 0.8 -n 5 -M 2000']);
                             if status~=0
                                 dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
                             end
@@ -472,7 +471,7 @@ if ~isempty(missingAligned)
                                 delete([cdhitInp100 '*']);
                             end
                             cdhitInp50=tempname;
-                            [status output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp90 '" -o "' cdhitInp50 '" -c 0.9 -s 0.8 -n 5 -M 2000']);
+                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp90 '" -o "' cdhitInp50 '" -c 0.9 -s 0.8 -n 5 -M 2000']);
                             if status~=0
                                 dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
                             end
@@ -481,7 +480,7 @@ if ~isempty(missingAligned)
                                 delete([cdhitInp90 '*']);
                             end
                             tmpFile=tempname;
-                            [status output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp50 '" -o "' tmpFile '" -c 0.5 -s 0.8 -n 3 -M 2000']);
+                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp50 '" -o "' tmpFile '" -c 0.5 -s 0.8 -n 3 -M 2000']);
                             if status~=0
                                 dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
                             end
@@ -502,9 +501,9 @@ if ~isempty(missingAligned)
                 end
                 %Do the alignment for this file
                 if ~ispc
-                    [status output]=system(['"' fullfile(ravenPath,'software','mafft-7.221',['mafft' binEnd]) '" --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.221',['mafft' binEnd]) '" --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 else
-                    [status output]=system(['"' fullfile(ravenPath,'software','mafft-7.221','mafft.bat') '" --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.221','mafft.bat') '" --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 end
                 if status~=0
                 	dispEM(['Error when performing alignment of ' missingAligned{i} ':\n' output]); 
@@ -575,7 +574,7 @@ if ~isempty(missingHMMs)
             fclose(fid);
                 
             %Create HMM
-            [status output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1',['hmmbuild' binEnd]) '" "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
+            [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1',['hmmbuild' binEnd]) '" "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
             if status~=0
             	dispEM(['Error when training HMM for ' missingHMMs{i} ':\n' output]);
             end
@@ -616,7 +615,7 @@ if ~isempty(missingOUT)
             end
             
             %Check each gene in the input file against this model
-            [status output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1',['hmmsearch' binEnd]) '" "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
+            [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1',['hmmsearch' binEnd]) '" "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
             if status~=0
             	dispEM(['Error when querying HMM for ' missingOUT{i} ':\n' output]); 
             end
@@ -732,7 +731,7 @@ for i=1:numel(model.rxns)
         KOs=model.rxnMiriams{i}.value(I);
         %Find the KOs and the corresponding genes
         J=ismember(KOModel.rxns,KOs);
-        [crap K]=find(koGeneMat(J,:));
+        [~, K]=find(koGeneMat(J,:));
         
         if any(K)
             model.rxnGeneMat(i,K)=1;
@@ -762,7 +761,7 @@ for i=1:numel(model.rxns)
     model.grRules{i}=[model.grRules{i} ')'];
 end
 end
-end
+
 
 %Supporter function to list the files in a directory and return them as a
 %cell array

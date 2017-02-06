@@ -24,7 +24,7 @@ end
 
 %Check if the reactions have been parsed before and saved. If so, load the
 %model.
-[ST I]=dbstack('-completenames');
+[ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 distFile=fullfile(ravenPath,'external','kegg','keggPhylDist.mat');
 if exist(distFile, 'file')
