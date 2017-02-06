@@ -258,7 +258,7 @@ if isempty(fastaFile)
         [~,phylDistId]=ismember(proxyid,phylDists.ids);
         idsToKeep=phylDists.ids(~isinf(phylDists.distMat(phylDistId,:)));
         taxIDs=cellfun(@(x) x{1},cellfun(@(x) strsplit(x,':'),model.genes,'UniformOutput',false),'UniformOutput',false);
-        I=ismember(taxIDs,idsToKeep);
+        I=ismember(upper(taxIDs),upper(idsToKeep));
     else
         % KEGG organism IDs may have three or four letters
         if length(organismID)==3
