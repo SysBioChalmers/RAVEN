@@ -98,19 +98,23 @@ if (isfield(rModel,'inchis')) cModel=setfield(cModel,f.optionalOtherName('inchis
 % Now obtaining the annotation for metabolites,
 % which is stored in rModel.metMiriams field. From this field
 % cModel.metCHEBIID and cModel.metKEGGID are be generated.
-cModel.metKEGGID=getMiriamVector(rModel,'metKegg');
-cModel.metCHEBIID=getMiriamVector(rModel,'metChebi');
+if isfield(rModel,'metMiriams')
+    cModel.metKEGGID=getMiriamVector(rModel,'metKegg');
+    cModel.metCHEBIID=getMiriamVector(rModel,'metChebi');
+end
 
 % The final step is to get annotation for reaction references. Several
 % pubmed referenced could be in rModel.rxnReferences already, so if there
 % are any references in rModel.rxnMiriams, these must be concatenated with
 % cModel.rxnReferences, which was obtain during group III fields
 % processing;
-if isfield(cModel,'rxnReferences')
-    cModel.rxnReferences=strcat(cModel.rxnReferences,';',getMiriamVector(rModel,'rxnPubmed',false,'pubmed:'));
-    cModel.rxnReferences=regexprep(cModel.rxnReferences,'^;','');
-else
-    cModel.rxnReferences=getMiriamVector(rModel,'rxnPubmed',false,'pubmed:');
+if isfield(rModel,'rxnReferences')
+    if isfield(cModel,'rxnReferences')
+        cModel.rxnReferences=strcat(cModel.rxnReferences,';',getMiriamVector(rModel,'rxnPubmed',false,'pubmed:'));
+        cModel.rxnReferences=regexprep(cModel.rxnReferences,'^;','');
+    else
+        cModel.rxnReferences=getMiriamVector(rModel,'rxnPubmed',false,'pubmed:');
+    end
 end
 end
 
