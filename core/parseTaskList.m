@@ -7,7 +7,7 @@ function taskStruct=parseTaskList(inputFile)
 %                   following column headers (note, all rows starting with
 %                   a non-empty cell are removed. The first row after that
 %                   is considered the headers):
-%                   ID 
+%                   ID
 %                       the only required header. Each task must have a
 %                       unique id (string or numeric). Tasks can span multiple
 %                       rows, only the first row in each task should have
@@ -51,7 +51,7 @@ function taskStruct=parseTaskList(inputFile)
 %                       upper bound for the equation (opt, default 1000)
 %                   CHANGED RXN
 %                       reaction ID for which to change the bounds for.
-%                       Several IDs can be delimited by ";". If so, 
+%                       Several IDs can be delimited by ";". If so,
 %                       then the same bounds are used for all reactions. If
 %                       that is not wanted, then use several rows for the task
 %                   CHANGED LB
@@ -73,7 +73,7 @@ function taskStruct=parseTaskList(inputFile)
 %       shouldFail  true if the task should fail
 %       printFluxes true if the fluxes should be printed
 %       comments    string with comments
-%       inputs      cell array with input metabolites (in the form metName[comps]) 
+%       inputs      cell array with input metabolites (in the form metName[comps])
 %       LBin        array with lower bounds on inputs (default, 0)
 %       UBin        array with upper bounds on inputs (default, 1000)
 %       outputs     cell array with output metabolites (in the form metName[comps])
@@ -90,7 +90,7 @@ function taskStruct=parseTaskList(inputFile)
 %   This function is used for defining a set of tasks for a model to
 %   perform. The tasks are defined by defining constraints on the model,
 %   and if the problem is feasible, then the task is considered successful.
-%   In general, each row can contain one constraint on uptakes, one 
+%   In general, each row can contain one constraint on uptakes, one
 %   constraint on outputs, one new equation, and one change of reaction
 %   bounds. If more bounds are needed to define the task, then several rows
 %   can be used for each task. To perform the task use checkTasks or
@@ -109,11 +109,11 @@ function taskStruct=parseTaskList(inputFile)
 %
 %   Usage: taskStruct=parseTaskList(inputFile)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 %Load the tasks file
-[crap,crap,raw]=xlsread(inputFile,'TASKS');
+[~,~,raw]=xlsread(inputFile,'TASKS');
 
 %Remove all lines starting with "#" (or actually any character)
 raw=cleanImported(raw);
@@ -122,12 +122,13 @@ raw=cleanImported(raw);
 columns={'ID';'DESCRIPTION';'IN';'IN LB';'IN UB';'OUT';'OUT LB';'OUT UB';'EQU';'EQU LB';'EQU UB';'CHANGED RXN';'CHANGED LB';'CHANGED UB';'SHOULD FAIL';'PRINT FLUX';'COMMENTS'};
 
 %Match the columns, but ignore the first one (since it can be NaN)
-[I colI]=ismember(columns,raw(1,2:end));
+[I, colI]=ismember(columns,raw(1,2:end));
 colI=colI+1;
 
 %Check that the ID field is present
 if I(1)==0
-    dispEM('The TASKS sheet must have a column named ID');
+    EM='The TASKS sheet must have a column named ID';
+    dispEM(EM);
 end
 
 %Prepare the input file a little. Put NaN for missing strings and default
@@ -142,7 +143,7 @@ for i=1:numel(colI)
         else
             raw(I,colI(i))={0};
         end
-    end    
+    end
 end
 
 %Create an empty task structure
@@ -226,11 +227,11 @@ for i=2:size(raw,1)
 
     %Check if it should add more constraints
     if i<size(raw,1)
-        if isnan(raw{i+1,colI(1)})   
+        if isnan(raw{i+1,colI(1)})
             continue;
         end
     end
-    
+
     taskStruct=[taskStruct;task];
     task=eTask;
     if i<size(raw,1)
@@ -259,11 +260,11 @@ function I=isBad(x)
     I=false;
     if ischar(x)
         if numel(x)==0 || all(isstrprop(x, 'wspace'))
-           I=true; 
+           I=true;
         end
     else
        if isnan(x)
-          I=true; 
+          I=true;
        end
     end
     if isempty(x)
@@ -276,8 +277,8 @@ function raw=cleanImported(raw)
     %Find the lines that are not commented
     keepers=strcmp('',raw(:,1)) | cellfun(@wrapperNAN,raw(:,1));
     raw=raw(keepers~=0,:);
-    
-    %Remove columns that aren't strings. If you cut and paste a lot in the sheet 
+
+    %Remove columns that aren't strings. If you cut and paste a lot in the sheet
     %there tends to be columns that are NaN
     I=cellfun(@isstr,raw(1,:));
     I(1)=true; %This is because the "#" column might be empty
@@ -288,20 +289,20 @@ function raw=cleanImported(raw)
     nans=cellfun(@wrapperNAN,raw);
     I=all(nans,2);
     raw(I,:)=[];
-   
+
     %Also check if there are any lines that contain only NaNs or white
     %spaces. This could happen if you accidentaly inserted a space
     %somewhere
     whites=cellfun(@wrapperWS,raw);
     I=all(whites,2);
     raw(I,:)=[];
-    
+
     %Checks if something is NaN. Can't use isnan with cellfun as it does it
     %character by character for strings
     function I=wrapperNAN(A)
-       I=any(isnan(A)); 
+       I=any(isnan(A));
     end
-    
+
     %Checks if something is all white spaces or NaN
     function I=wrapperWS(A)
         if isnan(A)

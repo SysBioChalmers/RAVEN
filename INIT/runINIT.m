@@ -1,4 +1,4 @@
-function [outModel deletedRxns metProduction fValue]=runINIT(model,rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,noRevLoops,params)
+function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,noRevLoops,params)
 % runINIT
 %	Generates a model using the INIT algorithm, based on proteomics and/or
 %   transcriptomics and/or metabolomics and/or metabolic tasks
@@ -33,7 +33,7 @@ function [outModel deletedRxns metProduction fValue]=runINIT(model,rxnScores,pre
 %                   only carry flux in one direction. This prevents
 %                   reversible reactions from being wrongly assigned as
 %                   connected (the forward and backward reactions can form a
-%                   loop and therefore appear connected), but it makes the 
+%                   loop and therefore appear connected), but it makes the
 %                   problem significantly more computationally intensive to
 %                   solve (two more integer constraints per reversible reaction)
 %                   (opt, default false)
@@ -44,16 +44,16 @@ function [outModel deletedRxns metProduction fValue]=runINIT(model,rxnScores,pre
 %   deletedRxns     reactions which were deleted by the algorithm
 %   metProduction   array that indicates which of the
 %                   metabolites in presentMets that could be
-%                   produced 
+%                   produced
 %                   -2: metabolite name not found in model
 %                   -1: metabolite found, but it could not be produced
 %                   1: metabolite could be produced
-%   fValue          objective value (sum of (the negative of) 
+%   fValue          objective value (sum of (the negative of)
 %                   reaction scores for the included reactions and
 %                   prodWeight*number of produced metabolites)
 %
 %   This function is the actual implementation of the algorithm. See
-%   getINITModel for a higher-level function for model reconstruction. See 
+%   getINITModel for a higher-level function for model reconstruction. See
 %   PLoS Comput Biol. 2012;8(5):e1002518 for details regarding the
 %   implementation.
 %
@@ -61,7 +61,7 @@ function [outModel deletedRxns metProduction fValue]=runINIT(model,rxnScores,pre
 %           rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,...
 %           noRevLoops,params)
 %
-%   Rasmus Agren, 2013-07-16
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<2
@@ -107,7 +107,8 @@ if isfield(params,'printReport')
 end
 
 if numel(presentMets)~=numel(unique(presentMets))
-	throw(MException('','Duplicate metabolite names in presentMets'));
+	EM='Duplicate metabolite names in presentMets';
+    dispEM(EM);
 end
 
 %Default is that the metabolites cannot be produced
@@ -124,7 +125,8 @@ end
 %The model should be in the reversible format and all relevant exchange
 %reactions should be open
 if isfield(model,'unconstrained')
-    fprintf('WARNING: Exchange metabolites are still present in the model. Use simplifyModel if this is not intended.\n'); 
+    EM='Exchange metabolites are still present in the model. Use simplifyModel if this is not intended';
+    dispEM(EM,false);
 end
 
 %The irreversible reactions that are essential must have a flux and are therefore not
@@ -168,7 +170,7 @@ if any(pmIndexes)
     metsToAdd.mets=strcat({'FAKEFORPM'},num2str(pmIndexes));
     metsToAdd.metNames=metsToAdd.mets;
     metsToAdd.compartments=irrevModel.comps{1};
-    
+
     %There is no constraints on the metabolites yet, since maybe not all of
     %them could be produced
     irrevModel=addMets(irrevModel,metsToAdd);
@@ -178,10 +180,10 @@ end
 for i=1:numel(pmIndexes)
     %Get the matching mets
     I=ismember(irrevModel.metNames,presentMets(pmIndexes(i)));
-    
+
     %Find the reactions where any of them are used.
-    [crap K L]=find(irrevModel.S(I,:));
-    
+    [~, K, L]=find(irrevModel.S(I,:));
+
     %This ugly loop is to avoid problems if a metabolite occurs several
     %times in one reaction
     KK=unique(K);
@@ -234,21 +236,21 @@ end
 % int1 and int2 are binary
 if any(forwardIndexes)
     nRevBounds=numel(forwardIndexes);
-    
+
     %Add the A metabolites for the forward reactions and the B
     %metabolites for the reverse reactions
     I=speye(numel(irrevModel.rxns))*-1;
     temp=[I(forwardIndexes,:);I(backwardIndexes,:)];
-   
+
     %Padding
     temp=[temp sparse(size(temp,1),size(S,2)-numel(irrevModel.rxns))];
-    
+
     %Add the int1 & int2 reactions that produce A and B
     temp=[temp speye(nRevBounds*2)*1000];
-    
+
     %And add that they also consume C
     temp=[temp;[sparse(nRevBounds,size(S,2)) speye(nRevBounds)*-1 speye(nRevBounds)*-1]];
-    
+
     %Add the new reactions and metabolites
     S=[S sparse(size(S,1),nRevBounds*2)];
     S=[S;temp];
@@ -299,8 +301,7 @@ prob.a=S;
 params.MSK_IPAR_OPTIMIZER='MSK_OPTIMIZER_FREE_SIMPLEX';
 for i=1:numel(pmIndexes)
     prob.blc(numel(irrevModel.mets)-numel(pmIndexes)+i)=1;
-    %[crap,res] = mosekopt('minimize echo(0)', prob,getMILPParams(params));
-    res=optimizeProb(prob,params);
+    [~,res] = mosekopt('minimize echo(0)', prob,getMILPParams(params));
     isFeasible=checkSolution(res);
     if ~isFeasible
         %Reset the constraint again
@@ -314,21 +315,19 @@ end
 %Add that the binary reactions may only take integer values.
 allInt=[(nRxns+1):(nRxns+nNonEssential) size(S,2)-nRevBounds*2+1:size(S,2)];
 prob.ints.sub=allInt;
-
-%[crap,res] = mosekopt(['minimize echo(' num2str(echo) ')'], prob,getMILPParams(params));
-
-res=optimizeProb(prob,params);
+[~,res] = mosekopt(['minimize echo(' num2str(echo) ')'], prob,getMILPParams(params));
 
 %I don't think that this problem can be infeasible, so this is mainly a way
 %of checking the licence stuff
-%if ~checkSolution(res)
-%    throw(MException('','The problem is infeasible'));
-%end
+if ~checkSolution(res)
+    EM='The problem is infeasible';
+    dispEM(EM);
+end
 
-%fValue=res.sol.int.pobjval;
+fValue=res.sol.int.pobjval;
 
 %Get all reactions used in the irreversible model
-usedRxns=(nonEssentialIndex(res.x(nRxns+1:nRxns+nNonEssential)<0.1))';
+usedRxns=(nonEssentialIndex(res.sol.int.xx(nRxns+1:nRxns+nNonEssential)<0.1))';
 
 %Map to reversible model IDs
 usedRxns=[usedRxns(usedRxns<=numel(model.rxns));revRxns(usedRxns(usedRxns>numel(model.rxns))-numel(model.rxns))];

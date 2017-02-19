@@ -18,17 +18,23 @@ function model=setParam(model, paramType, rxnList, params)
 %
 %   Usage: model=setParam(model, paramType, rxnList, params)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-09-01
 %
+
+if ~isempty(setdiff(paramType,{'lb';'ub';'eq';'obj';'rev'}))
+    EM=['Incorrect parameter type: "' paramType '"'];
+    dispEM(EM);
+end
 
 %Allow to set several parameters to the same value
 if numel(rxnList)~=numel(params) && numel(params)~=1
-    dispEM('The number of parameter values and the number of reactions must be the same');
+    EM='The number of parameter values and the number of reactions must be the same';
+    dispEM(EM);
 end
 
 if isnumeric(rxnList) || islogical(rxnList)
     rxnList=model.rxns(rxnList);
-end 
+end
 
 %If it's a char array
 rxnList=cellstr(rxnList);
@@ -44,7 +50,8 @@ for i=1:numel(rxnList)
         indexes(i)=index;
     else
         indexes(i)=-1;
-        dispEM(['Reaction ' rxnList{i} ' is not present in the reaction list'],false);
+        EM=['Reaction ' rxnList{i} ' is not present in the reaction list'];
+        dispEM(EM,false);
     end
 end
 

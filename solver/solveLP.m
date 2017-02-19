@@ -1,4 +1,4 @@
-function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)
+function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
 % solveLP
 %   Solves a linear programming problem
 %
@@ -15,8 +15,7 @@ function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)
 %                 in the flux distributions that are the easiest to
 %                 interpret. Note that this optimization can be very slow
 %                 (opt, default 0)
-%   params        parameter structure as used by getMILPParams. Only used when
-%                 minFlux==3 (opt)
+%   params        parameter structure as used by getMILPParams (opt)
 %   hsSol         hot-start solution for the LP solver. This can
 %                 significantly speed up the process if many similar
 %                 optimization problems are solved iteratively. Only used if
@@ -25,7 +24,7 @@ function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)
 %   solution
 %         f       objective value
 %         x       primal (flux distribution)
-%         stat    exit flag 
+%         stat    exit flag
 %                 1: the optimization terminated successfully
 %                 0: the solution is feasible, but not necessarily optimal
 %                -1: no feasible solution found
@@ -36,7 +35,7 @@ function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)
 %
 %   Usage: [solution hsSolOut]=solveLP(model,minFlux,params,hsSol)
 %
-%   Rasmus Agren, 2013-07-16
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<2
@@ -61,7 +60,7 @@ if isfield(hsSol,'prosta')
         hsSol=[];
    end
 end
-    
+
 % Setup the problem to feed to MOSEK.
 prob=[];
 prob.c=model.c*-1;
@@ -81,24 +80,18 @@ end
 %Use MSK_OPTIMIZER_FREE_SIMPLEX. This should not be necessary, but I've
 %noticed that the interior point solver is not as good at finding feasible
 %solutions.
-
-%%%%%%
 params.MSK_IPAR_OPTIMIZER='MSK_OPTIMIZER_FREE_SIMPLEX';
-%[crap,res] = mosekopt('minimize echo(0)',prob,getMILPParams(params));
-res = optimizeProb(prob,params);
-%isFeasible=res.isFeasible; isOptimal=res.isOptimal;
-%%%%%%
+[~,res] = mosekopt('minimize echo(0)',prob,getMILPParams(params));
 
 %Check if the problem was feasible and that the solution was optimal
-[isFeasible isOptimal]=checkSolution(res);
+[isFeasible, isOptimal]=checkSolution(res);
 
 %If the problem was infeasible using hot-start it is often possible to
 %re-solve it without hot-start and get a feasible solution
 if ~isFeasible && ~isempty(hsSol)
     prob.sol=rmfield(prob.sol,'bas');
-    %[crap,res] = mosekopt('minimize echo(0)',prob,getMILPParams(params));
-    res=optimizeProb(prob,params);
-    [isFeasible isOptimal]=checkSolution(res);
+    [~,res] = mosekopt('minimize echo(0)',prob,getMILPParams(params));
+    [isFeasible, isOptimal]=checkSolution(res);
 end
 
 %Return without solution if the problem was infeasible
@@ -145,7 +138,7 @@ end
 if minFlux~=0
     model.S=[model.S;prob.c'];
     model.mets=[model.mets;'TEMP'];
-    
+
     %If the constraint on the objective function value is exact there is a
     %larger risk of numerical errors. However for the quadratic fitting
     %intervals are not allowed
@@ -161,7 +154,7 @@ if minFlux~=0
     else
         model.b=[model.b;ones(1,size(model.b,2))*solution.f];
     end
-    
+
     switch minFlux
         %The sum of fluxes should be minimized
         case 1
@@ -172,17 +165,18 @@ if minFlux~=0
             else
                 iModel=model;
             end
-            
+
             %Minimize all fluxes
             iModel.c(:)=-1;
             sol=solveLP(iModel);
-            
+
             %Map back to reversible fluxes
             if sol.stat>=0
                 solution.x=sol.x(1:numel(model.c));
                 solution.x(revRxns)=solution.x(revRxns)-sol.x(numel(model.c)+1:end);
             else
-                fprintf('WARNING: Could not solve the problem of minimizing the sum of fluxes. Uses output from original problem\n');
+                EM='Could not solve the problem of minimizing the sum of fluxes. Uses output from original problem';
+                dispEM(EM,false);
                 solution.stat=-2;
             end
         %The square of fluxes should be minimized. This only works when
@@ -204,7 +198,8 @@ if minFlux~=0
 %         else
 %         	fprintf('WARNING: Cannot minimize square of fluxes when size(model.b,2)==2. Uses output from linear program\n');
 %         end
-        fprintf('WARNING: Quadratic solver currently not working. Uses output from original problem\n');
+        EM='Quadratic solver currently not working. Uses output from original problem';
+        dispEM(EM,false);
         solution.stat=-2;
         %The number of fluxes should be minimized
         case 3
@@ -213,7 +208,8 @@ if minFlux~=0
             if any(I)
                 solution.x=qx;
             else
-                fprintf('WARNING: Could not solve the problem of minimizing the number of fluxes. Uses output from linear program\n');
+                EM='Could not solve the problem of minimizing the number of fluxes. Uses output from linear program';
+                dispEM(EM,false);
                 solution.stat=-2;
             end
     end

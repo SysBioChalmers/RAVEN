@@ -8,19 +8,19 @@ function followChanged(model,fluxesA,fluxesB, cutOffChange, cutOffFlux, cutOffDi
 %   fluxesB         flux vector for the reference test
 %   cutOffChange	reactions where the fluxes differ by less than
 %                   this many percent won't be printed (opt, default 10^-8)
-%   cutOffFlux      reactions where the absolute value of both fluxes 
-%                   are below this value won't be printed (opt, 
+%   cutOffFlux      reactions where the absolute value of both fluxes
+%                   are below this value won't be printed (opt,
 %                   default 10^-8)
 %   cutOffDiff      reactions where the fluxes differ by less than
 %                   cutOffDiff won't be printed (opt, default 10^-8)
 %   metaboliteList  cell array of metabolite names. Only reactions
-%                   involving any of these metabolites will be 
+%                   involving any of these metabolites will be
 %                   printed (opt)
 %
 %   Usage: followChanged(model,fluxesA,fluxesB, cutOffChange, cutOffFlux,
 %           cutOffDiff, metaboliteList)
 %
-%   Rasmus Agren, 2013-08-07
+%   Rasmus Agren, 2014-01-08
 %
 
 %Checks if a cut off flux has been set
@@ -44,16 +44,16 @@ if nargin>6
     reactionIndexes=[];
     for i=1:length(metaboliteList)
         metaboliteIndex=find(strcmpi(metaboliteList(i),model.metNames)); %Should use id maybe, setting
-        if length(metaboliteIndex)>0
-            [crap b]=find(model.S(metaboliteIndex,:));
-            reactionIndexes=[reactionIndexes; b(:)];   
+        if ~isempty(metaboliteIndex)
+            [~, b]=find(model.S(metaboliteIndex,:));
+            reactionIndexes=[reactionIndexes; b(:)];
         else
             fprintf('Could not find any reactions with the metabolite %s\n\n',char(metaboliteList(i)))
         end
     end
     reactionIndexes=unique(reactionIndexes);
 else
-    reactionIndexes=[1:length(fluxesA)]';
+    reactionIndexes=(1:length(fluxesA))';
 end
 
 %Finds the reactions where either flux is at or above the cutOffFlux value
@@ -91,10 +91,10 @@ end
 
 metaboliteNames=[];
 for i=1:length(metaboliteList)
-   metaboliteNames=[metaboliteNames char(metaboliteList(i)) ' ']; 
+   metaboliteNames=[metaboliteNames char(metaboliteList(i)) ' '];
 end
 
-if length(metaboliteNames)>0
+if ~isempty(metaboliteNames)
     fprintf('Only prints reactions involving one or more of the following metabolites:\n%s\n\n',metaboliteNames)
 end
 

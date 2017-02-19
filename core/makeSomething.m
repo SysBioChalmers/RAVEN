@@ -1,4 +1,4 @@
-function [solution metabolite]=makeSomething(model,ignoreMets,isNames,minNrFluxes,allowExcretion,params,ignoreIntBounds)
+function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFluxes,allowExcretion,params,ignoreIntBounds)
 % makeSomething
 %   Tries to excrete any metabolite using as few reactions as possible.
 %   The intended use is when you want to make sure that you model cannot
@@ -6,7 +6,7 @@ function [solution metabolite]=makeSomething(model,ignoreMets,isNames,minNrFluxe
 %   checkProduction or canProduce
 %
 %   model           a model structure
-%   ignoreMets      either a cell array of metabolite IDs, a logical vector 
+%   ignoreMets      either a cell array of metabolite IDs, a logical vector
 %                   with the same number of elements as metabolites in the model,
 %                   of a vector of indexes for metabolites to exclude from
 %                   this analysis (opt, default [])
@@ -36,13 +36,13 @@ function [solution metabolite]=makeSomething(model,ignoreMets,isNames,minNrFluxe
 %
 %   NOTE: This works by forcing at least 1 unit of "any metabolites" to be
 %   produced and then minimize for the sum of fluxes. If more than one
-%   metabolite is produced, it picks one of them to be produced and then 
+%   metabolite is produced, it picks one of them to be produced and then
 %   minimizes for the sum of fluxes.
 %
 %   Usage: [solution metabolite]=makeSomething(model,ignoreMets,isNames,...
 %           minNrFluxes,allowExcretion,params,ignoreIntBounds)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2017-02-19
 %   Simonas Marcisauskas, 2016-11-01 - added support for metCharge
 %
 
@@ -68,8 +68,9 @@ end
 if isNames==true && ~isempty(ignoreMets)
    %Check that metsToRemove is a cell array
    if iscellstr(ignoreMets)==false
-        dispEM('Must supply a cell array of strings if isNames=true');
-   end 
+       EM='Must supply a cell array of strings if isNames=true';
+       dispEM(EM);
+   end
 end
 
 if isNames==false
@@ -77,7 +78,7 @@ if isNames==false
 else
     indexesToIgnore=[];
     for i=1:numel(ignoreMets)
-       indexesToIgnore=[indexesToIgnore;find(strcmp(ignoreMets(i),model.metNames))]; 
+       indexesToIgnore=[indexesToIgnore;find(strcmp(ignoreMets(i),model.metNames))];
     end
 end
 
@@ -88,7 +89,7 @@ end
 
 %Change all internal reactions to be unbounded in both directions
 if ignoreIntBounds==true
-    [crap I]=getExchangeRxns(model);
+    [~, I]=getExchangeRxns(model);
     nonExc=true(numel(model.rxns),1);
     nonExc(I)=false;
     model=setParam(model,'lb',nonExc,-1000);
@@ -121,9 +122,10 @@ model.rev=[model.rev;zeros(nMets+1,1)];
 model.c=zeros(size(model.S,2),1);
 
 %Add padding to the reaction annotation to prevent an error in solveLP
-padding=cell(numel(model.rev),1);
-padding(:)={''};
-model.rxns=[model.rxns;strcat('exch_',model.mets(1:nMets));'exch_fake'];
+padding=1:numel(model.rev);
+padding=num2cell(padding)';
+padding=cellfun(@num2str,padding,'uniformoutput',false);
+model.rxns=padding;
 model.rxnNames=padding;
 model.eccodes=padding;
 model.rxnMiriams=padding;
@@ -138,19 +140,18 @@ model.rxnNotes=padding;
 model.rxnReferences=padding;
 model.confidenceScores=padding;
 
-
-sol=solveLP(model,1);   
+sol=solveLP(model,1);
 if any(sol.x)
    %It could be that several metabolites were produced in order to get the
    %best solution.
    %The setdiff is to avoid including the last fake metabolite
    I=setdiff(find(sol.x(nRxns+1:end)>0.1),size(model.S,1));
-    
+
    if any(I) %This should always be true
         %Change the coefficients so that only the first is
         %produced. This is not always possible, but it is tested for since it it
         %results in more easily interpretable results
-        
+
         oldS=model.S;
         foundSingle=false;
         %Test if any of the metabolites could be produced on their own

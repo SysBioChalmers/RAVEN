@@ -1,4 +1,4 @@
-function [taskReport essentialRxns taskStructure]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure)
+function [taskReport, essentialRxns, taskStructure]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure)
 % checkTasks
 %   Performs a set of simulations as defined in a task file.
 %
@@ -32,7 +32,7 @@ function [taskReport essentialRxns taskStructure]=checkTasks(model,inputFile,pri
 %   This function is used for defining a set of tasks for a model to
 %   perform. The tasks are defined by defining constraints on the model,
 %   and if the problem is feasible, then the task is considered successful.
-%   In general, each row can contain one constraint on uptakes, one 
+%   In general, each row can contain one constraint on uptakes, one
 %   constraint on outputs, one new equation, and one change of reaction
 %   bounds. If more bounds are needed to define the task, then several rows
 %   can be used for each task.
@@ -40,7 +40,7 @@ function [taskReport essentialRxns taskStructure]=checkTasks(model,inputFile,pri
 %   Usage: [taskReport essentialReactions taskStructure]=checkTasks(model,inputFile,...
 %           printOutput,printOnlyFailed,getEssential,taskStructure)
 %
-%   Rasmus Agren, 2013-11-17
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<3
@@ -58,12 +58,13 @@ model.b=zeros(numel(model.mets),2);
 
 modelMets=upper(strcat(model.metNames,'[',model.comps(model.metComps),']'));
 if ~isfield(model,'unconstrained')
-    dispEM('Exchange metabolites should normally not be removed from the model when using checkTasks. Inputs and outputs are defined in the task file instead. Use importModel(file,false) to import a model with exchange metabolites remaining',false); 
+    EM='Exchange metabolites should normally not be removed from the model when using checkTasks. Inputs and outputs are defined in the task file instead. Use importModel(file,false) to import a model with exchange metabolites remaining';
+    dispEM(EM,false);
 end
 
 %Parse the task file
 if nargin<6
-   taskStructure=parseTaskList(inputFile); 
+   taskStructure=parseTaskList(inputFile);
 end
 
 essentialRxns=false(numel(model.rxns),numel(taskStructure));
@@ -75,7 +76,7 @@ for i=1:numel(taskStructure)
     taskReport.description{i,1}=taskStructure(i).description;
     %Set the inputs
     if ~isempty(taskStructure(i).inputs)
-        [I J]=ismember(upper(taskStructure(i).inputs),modelMets);
+        [I, J]=ismember(upper(taskStructure(i).inputs),modelMets);
         J=J(I); %Only keep the ones with matches
         K=ismember(upper(taskStructure(i).inputs),'ALLMETS');
         L=~cellfun('isempty',strfind(upper(taskStructure(i).inputs),'ALLMETSIN'));
@@ -88,7 +89,8 @@ for i=1:numel(taskStructure)
             continue;
         end
         if numel(J)~=numel(unique(J))
-        	dispEM(['The constraints on some input(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time']);  
+        	EM=['The constraints on some input(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time'];
+          dispEM(EM);
         end
         %If all metabolites should be added
         if any(K)
@@ -96,7 +98,8 @@ for i=1:numel(taskStructure)
             %warning since it will write over any other constraints that
             %are set
             if K(1)==0
-                dispEM(['ALLMETS is used as an input in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'],false);
+                EM=['ALLMETS is used as an input in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'];
+                dispEM(EM,false);
             end
             %Use the first match of ALLMETS. There should only be one, but
             %still..
@@ -114,7 +117,8 @@ for i=1:numel(taskStructure)
                     %Match to metabolites
                     tModel.b(model.metComps==C,1)=taskStructure(i).UBin(L(j))*-1;
                 else
-                    dispEM(['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist']);  
+                    EM=['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist'];
+                    dispEM(EM);
                 end
             end
         end
@@ -126,7 +130,7 @@ for i=1:numel(taskStructure)
     end
     %Set the outputs
     if ~isempty(taskStructure(i).outputs)
-        [I J]=ismember(upper(taskStructure(i).outputs),modelMets);
+        [I, J]=ismember(upper(taskStructure(i).outputs),modelMets);
         J=J(I); %Only keep the ones with matches
         K=ismember(upper(taskStructure(i).outputs),'ALLMETS');
         L=~cellfun('isempty',strfind(upper(taskStructure(i).outputs),'ALLMETSIN'));
@@ -139,7 +143,8 @@ for i=1:numel(taskStructure)
             continue;
         end
         if numel(J)~=numel(unique(J))
-        	dispEM(['The constraints on some output(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time']);  
+        	EM=['The constraints on some output(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time'];
+          dispEM(EM);
         end
         %If all metabolites should be added
         if any(K)
@@ -147,7 +152,8 @@ for i=1:numel(taskStructure)
             %warning since it will write over any other constraints that
             %are set
             if K(1)==0
-                dispEM(['ALLMETS is used as an output in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'],false);
+                EM=['ALLMETS is used as an output in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'];
+                dispEM(EM,false);
             end
             %Use the first match of ALLMETS. There should only be one, but
             %still..
@@ -165,7 +171,8 @@ for i=1:numel(taskStructure)
                     %Match to metabolites
                     tModel.b(model.metComps==C,2)=taskStructure(i).UBout(L(j));
                 else
-                    dispEM(['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist']);  
+                    EM=['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist'];
+                    dispEM(EM);
                 end
             end
         end
@@ -190,7 +197,7 @@ for i=1:numel(taskStructure)
        tModel=setParam(tModel,'lb',taskStructure(i).changed,taskStructure(i).LBrxn);
        tModel=setParam(tModel,'ub',taskStructure(i).changed,taskStructure(i).UBrxn);
     end
-    
+
     %Solve and print
     sol=solveLP(tModel);
     if ~isempty(sol.x)
@@ -201,7 +208,7 @@ for i=1:numel(taskStructure)
             end
             %Calculate the essential reactions
             if getEssential==true
-                [crap taskEssential]=getEssentialRxns(tModel);
+                [~, taskEssential]=getEssentialRxns(tModel);
                 %This is because there could be more reactions in tModel than
                 %in model
                 essentialRxns(taskEssential(taskEssential<=numel(model.rxns)),i)=true;

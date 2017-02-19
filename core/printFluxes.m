@@ -5,14 +5,14 @@ function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputS
 %   model           a model structure
 %   fluxes          a vector with fluxes
 %   onlyExchange    only print exchange fluxes (opt, default true)
-%   cutOffFlux      only print fluxes with absolute values above or equal to this 
+%   cutOffFlux      only print fluxes with absolute values above or equal to this
 %                   value (opt, default 10^-8)
 %   outputFile      a file to save the print-out to (opt, default is output to
 %                   the command window)
 %   outputString    a string that specifies the output of each reaction (opt,
 %                   default '%rxnID (%rxnName):%flux\n')
 %   metaboliteList  cell array of metabolite names. Only reactions
-%                   involving any of these metabolites will be 
+%                   involving any of these metabolites will be
 %                   printed (opt)
 %
 %   The following codes are available for user-defined output strings:
@@ -34,7 +34,7 @@ function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputS
 %   Usage: printFluxes(model, fluxes, onlyExchange, cutOffFlux,
 %           outputFile,outputString)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<3
@@ -44,7 +44,7 @@ if nargin<4
     cutOffFlux=10^-8;
 end
 if isempty(cutOffFlux)
-    cutOffFlux=10^-8;    
+    cutOffFlux=10^-8;
 end
 if nargin<5
     fid=1;
@@ -65,14 +65,15 @@ if nargin<7
     metaboliteList={};
 end
 if numel(fluxes)~=numel(model.rxns)
-   dispEM('The number of fluxes and the number of reactions must be the same'); 
+    EM='The number of fluxes and the number of reactions must be the same';
+    dispEM(EM);
 end
 
 %Only keep reactions involving the defined metabolites
 if ~isempty(metaboliteList)
     I=ismember(upper(model.metNames),upper(metaboliteList));
-    [crap K]=find(model.S(I,:));
-    
+    [~, K]=find(model.S(I,:));
+
     %Delete all other reactions
     toDelete=true(numel(model.rxns),1);
     toDelete(K)=false;
@@ -147,7 +148,7 @@ if any(strfind(outputString,'%lumped'))
         if model.rev(i)
         	lumped{i}=[leftGroup ' <=> ' rightGroup];
         else
-            lumped{i}=[leftGroup ' => ' rightGroup]; 
+            lumped{i}=[leftGroup ' => ' rightGroup];
         end
     end
 end
@@ -157,11 +158,11 @@ for i=1:numel(model.rxns)
    %printed. Exchange reactions only have reactants or only products.
    reactants=model.S(:,i)<0;
    products=model.S(:,i)>0;
-   
+
    %Only print if the absolute value is >= cutOffFlux
    if (onlyExchange==false || (~any(reactants) || ~any(products)))
        printString=outputString;
-        
+
        %Produce the final string
        printString=strrep(printString,'%rxnID',model.rxns{i});
        printString=strrep(printString,'%eqn',eqn{i});

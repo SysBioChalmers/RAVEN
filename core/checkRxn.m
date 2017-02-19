@@ -7,7 +7,7 @@ function report=checkRxn(model,rxn,cutoff,revDir,printReport)
 %   model       a model structure
 %   rxn         the id of the reaction to check
 %   cutoff      minimal flux for successful production/consumption (opt,
-%               default 10^-7) 
+%               default 10^-7)
 %   revDir      true if the reaction should be reversed (opt, default
 %               false)
 %   printReport print a report (opt, default true)
@@ -22,11 +22,11 @@ function report=checkRxn(model,rxn,cutoff,revDir,printReport)
 %
 %   Usage: report=checkRxn(model,rxn,cutoff,revDir,printReport)
 %
-%   Rasmus Agren, 2013-09-17
+%   Rasmus Agren, 2014-01-08
 %
 
 %Convert to cell string
-if isstr(rxn)
+if ischar(rxn)
     rxn={rxn};
 end
 if nargin<3
@@ -42,10 +42,11 @@ if nargin<5
     printReport=true;
 end
 
-[I rxnID]=ismember(rxn,model.rxns);
+[I, rxnID]=ismember(rxn,model.rxns);
 
 if ~I
-    dispEM('Reaction ID not found');
+    EM='Reaction ID not found';
+    dispEM(EM);
 end
 
 if revDir==false
@@ -66,11 +67,11 @@ end
 %There are several ways to do this. Here I choose to add the reactions one
 %by one and checking their bounds. This might not be optimal
 for i=1:numel(report.reactants)
-    [tempModel testRxn]=addExchangeRxns(model,'out',report.reactants(i));
+    [tempModel, testRxn]=addExchangeRxns(model,'out',report.reactants(i));
     tempModel=setParam(tempModel,'obj',testRxn,1);
     sol=solveLP(tempModel);
     if sol.f*-1>cutoff
-       report.canMake(i)=true; 
+       report.canMake(i)=true;
     else
         if printReport==true
            fprintf(['Failed to make ' model.metNames{report.reactants(i)} '[' model.comps{model.metComps(report.reactants(i))} ']\n']);
@@ -79,11 +80,11 @@ for i=1:numel(report.reactants)
 end
 
 for i=1:numel(report.products)
-    [tempModel testRxn]=addExchangeRxns(model,'in',report.products(i));
+    [tempModel, testRxn]=addExchangeRxns(model,'in',report.products(i));
     tempModel=setParam(tempModel,'obj',testRxn,1);
     sol=solveLP(tempModel);
     if sol.f*-1>cutoff
-       report.canConsume(i)=true; 
+       report.canConsume(i)=true;
     else
         if printReport==true
             fprintf(['Failed to consume ' model.metNames{report.products(i)} '[' model.comps{model.metComps(report.products(i))} ']\n']);

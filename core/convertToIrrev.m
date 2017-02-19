@@ -9,7 +9,7 @@ function irrevModel=convertToIrrev(model,rxns)
 %   irrevModel    a model structure where reversible reactions have
 %                 been split into one forward and one reverse reaction
 %
-%   The reverse reactions are saved as 'REV_rxnID'.
+%   The reverse reactions are saved as 'rxnID_REV'.
 %
 %   Usage: irrevModel=convertToIrrev(model,rxns)
 %
@@ -30,7 +30,7 @@ if any(revIndexesBool)
     irrevModel.S=[model.S,model.S(:,revIndexes)*-1];
     irrevModel.rev(revIndexes)=0;
     irrevModel.rev=[irrevModel.rev;zeros(numel(revIndexes),1)];
-    
+
     %Get the limits for all normal and reversible rxns
     ubNormal=irrevModel.ub;
     ubNormal(revIndexes(ubNormal(revIndexes)<0))=0;
@@ -48,7 +48,7 @@ if any(revIndexesBool)
     %should be positive for the backwards reversible and deleted from the
     %original
     irrevC=zeros(numel(revIndexes),1);
-    
+
     if any(irrevModel.c(revIndexes)<0)
         originalC=irrevModel.c(revIndexes);
         irrevC(irrevModel.c(revIndexes)<0)=originalC(originalC<0)*-1;

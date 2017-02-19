@@ -21,7 +21,7 @@ function [model addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,on
 %   Usage: [model addedRxns]=addTransport(model,fromComp,toComps,metNames,...
 %           isRev,onlyToExisting)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-02-19
 %   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
 %   rxnReferences, confidenceScores and metCharge
 %
@@ -32,14 +32,16 @@ end
 [I fromID]=ismember(model.comps,fromComp);
 fromID=find(fromID);
 if sum(I)~=1
-    dispEM('fromComps must have exactly one match in model.comps');
+    EM='fromComps must have exactly one match in model.comps';
+    dispEM(EM);
 end
 if ischar(toComps)
     toComps={toComps};
 end
 [I toIDs]=ismember(toComps,model.comps);
 if ~all(I)
-    dispEM('All compartments in toComps must have a match in model.comps');
+    EM='All compartments in toComps must have a match in model.comps';
+    dispEM(EM);
 end
 if nargin<4
     %Find all metabolites in fromComp
@@ -66,9 +68,10 @@ end
 
 %Get the indexes of the mets in fromComp
 I=find(model.metComps==fromID);
-[J K]=ismember(metNames,model.metNames(I));
+[J, K]=ismember(metNames,model.metNames(I));
 if ~all(J)
-    dispEM('Not all metabolites in metNames exist in fromComp');
+    EM='Not all metabolites in metNames exist in fromComp';
+    dispEM(EM);
 end
 fromMets=I(K); %These are the ids of the metabolites to transport. The order corresponds to metNames
 
@@ -77,7 +80,7 @@ for i=1:numel(toComps)
     fromMetsInComp=fromMets; %If onlyToExisting==true then not all mets are transported to each compartment
     %Get the indexes of the mets in the compartment
     I=find(model.metComps==toIDs(i));
-    [J K]=ismember(metNames,model.metNames(I));
+    [J, K]=ismember(metNames,model.metNames(I));
     if onlyToExisting==true || all(J)
         toMets=I(K(J)); %Only look at the existing ones
         fromMetsInComp=fromMetsInComp(J);
@@ -87,20 +90,20 @@ for i=1:numel(toComps)
         metsToAdd.metNames=metNames(J==0);
         metsToAdd.compartments=toComps{i};
         model=addMets(model,metsToAdd);
-        
+
         %Redo the mapping when all mets are there. A bit lazy, but it's
         %fast anyways
         I=find(model.metComps==toIDs(i));
-        [crap K]=ismember(metNames,model.metNames(I));
+        [~, K]=ismember(metNames,model.metNames(I));
         toMets=I(K); %All are guaranteed to be found now
     end
-    
+
     %Construct the S matrix
     nRxns=numel(fromMetsInComp);
     newS=zeros(numel(model.mets),nRxns);
     newS(sub2ind(size(newS),fromMetsInComp(:),(1:nRxns)'))=-1;
     newS(sub2ind(size(newS),toMets(:),(1:nRxns)'))=1;
-    
+
     %Add the reactions
     model.S=[model.S sparse(newS)];
     if isRev==true
@@ -112,7 +115,7 @@ for i=1:numel(toComps)
     end
     model.ub=[model.ub;ones(nRxns,1)*inf];
     model.c=[model.c;zeros(nRxns,1)];
-    
+
     %Add annotation
     filler=cell(nRxns,1);
     filler(:)={''};

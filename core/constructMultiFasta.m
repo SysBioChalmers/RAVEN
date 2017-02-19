@@ -1,5 +1,5 @@
 function constructMultiFasta(model,sourceFile,outputDir)
-% constructMultiFasta 
+% constructMultiFasta
 %   Saves one file in FASTA format for each reaction in the model that has genes
 %
 %   model         a model structure
@@ -13,7 +13,7 @@ function constructMultiFasta(model,sourceFile,outputDir)
 %
 %   Usage: constructMultiFasta(model,sourceFile,outputDir)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 %Open the source file
@@ -34,24 +34,22 @@ whereAmI=0; %Keeps track of where in the file we are
 while 1
     %Read 10 mb at a time
     str=fread(fid,10000000,'int8');
-    
+
     %Find any '>' which indicates a new label in FASTA format
     newPosts=find(str==62); %62 is '>'
-    
+
     elementPositions(totalElements+1:totalElements+numel(newPosts))=whereAmI+newPosts;
-    
+
     totalElements=totalElements+numel(newPosts);
-    
+
     whereAmI=whereAmI+10000000;
-    
+
     if feof(fid)
         break;
     end
 end
 elementPositions=elementPositions(1:totalElements);
 fprintf('Completed scanning of source file\n');
-
-fprintf('NOTICE: If Matlab is freezing and does not provide any output in 30 minutes, consider increasing Java Heap Memory in MATLAB settings and start over with the new session\n');
 
 %Now loop through the file to see which genes are present in the gene list
 %and save their position IN elementPositions! This is to enable a easy way
@@ -61,24 +59,25 @@ for i=1:numel(elementPositions)
 	fseek(fid,elementPositions(i),-1);
     str=fread(fid,[1 30],'*char'); %Assumes that no ID is longer than 20 characters
     delim=find(str==32 | str==10,1,'first'); %Space or line feed
-   
+
     geneIdentifier=str(1:delim-1);
-    
+
     %This should never happen, but just to prevent errors. Could be that
     %'>' is a part of some gene information. An alternative would be to
     %check that the indexes follows a line feed
 	if isempty(geneIdentifier)
-        continue; 
+        continue;
 	end
-   
+
     %If not found it means that the id was too long
     if isempty(delim)
-        dispEM('Too long gene identifier, increase read length'); 
+        EM='Too long gene identifier, increase read length';
+        dispEM(EM);
     end
-   
+
     %See if the gene was found
     id=hTable.get(geneIdentifier);
-   
+
 	if any(id)
         if genePositions(id)==0
             genePositions(id)=i;
@@ -92,14 +91,14 @@ fprintf('Completed mapping of genes to source file\n');
 for i=1:numel(model.rxns)
     %Don't overwrite existing files
     if ~exist(fullfile(outputDir,[model.rxns{i} '.fa']), 'file')
-        
+
         %Get the positions in elementPositions for the involved genes
         genesUsed=model.rxnGeneMat(i,:);
-        
+
         %Open a file for this reaction. This saves empty files for KOs
         %without genes
         rxnfid=fopen(fullfile(outputDir,[model.rxns{i} '.fa']),'w');
-            
+
         if any(genesUsed)
             positions=genePositions(genesUsed~=0);
 

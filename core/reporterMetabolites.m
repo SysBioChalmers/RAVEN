@@ -15,7 +15,7 @@ function repMets=reporterMetabolites(model,genes,genePValues,printResults,output
 %                   regulated genes in addition to the full test (opt)
 %
 %   repMets         an array of structures with the following fields.
-%       test            a string the describes the genes that were used to 
+%       test            a string the describes the genes that were used to
 %                       calculate the Reporter Metabolites ('all', 'only up',
 %                       or 'only down'). The two latter structures are
 %                       only calculated if geneFoldChanges are supplied.
@@ -39,7 +39,7 @@ function repMets=reporterMetabolites(model,genes,genePValues,printResults,output
 %   Usage: repMets=reporterMetabolites(model,genes,genePValues,printResults,...
 %           outputFile,geneFoldChanges)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<4
@@ -54,10 +54,12 @@ end
 
 %Check some stuff
 if numel(genes)~=numel(genePValues)
-    dispEM('The number of genes and the number of Z-scores must be the same'); 
+    EM='The number of genes and the number of Z-scores must be the same';
+    dispEM(EM);
 end
 if ~isfield(model,'rxnGeneMat')
-    dispEM('The model structure must have a rxnGeneMat field'); 
+    EM='The model structure must have a rxnGeneMat field';
+    dispEM(EM);
 end
 
 %Remove the genes which are not in the model
@@ -80,13 +82,13 @@ stdZ=nan(numel(model.mets),1);
 for i=1:numel(model.mets)
     %Get the involved rxns
     I=model.S(i,:);
-    
+
     %Get the involved genes
-    [crap J]=find(model.rxnGeneMat(I~=0,:));
-    
+    [~, J]=find(model.rxnGeneMat(I~=0,:));
+
     %Find the genes in the gene list
     K=find(ismember(genes,model.genes(J)));
-    
+
     %Calculate the aggregated Z-score for the metabolite
     if any(K)
         metZScores(i)=sum(geneZScores(K))/sqrt(numel(K));
@@ -126,7 +128,7 @@ end
 metPValues=1-normcdf(metZScores);
 
 %Sort the results
-[metZScores I]=sort(metZScores,'descend');
+[metZScores, I]=sort(metZScores,'descend');
 mets=mets(I);
 metNames=metNames(I);
 metPValues=metPValues(I);

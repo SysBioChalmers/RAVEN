@@ -5,10 +5,10 @@ function exitFlag=downloadKEGG(keggPath)
 %   keggPath    the directory to store the files in
 %
 %   exitFlag    1 if everything worked, -1 if something went wrong
-%               
+%
 %   Usage: exitFlag=downloadKEGG(keggPath)
 %
-%   Rasmus Agren, 2012-12-16
+%   Rasmus Agren, 2014-01-09
 %
 
 exitFlag=-1;
@@ -26,14 +26,14 @@ end
 %Download missing files
 if any(~fileExists)
     retrieveFiles=input('One or more files are missing from the local database. Do you want to connect to KEGG and retrieve them? (Y/N)','s');
-    if strmatch(lower(retrieveFiles),'y')
+    if strcmpi(retrieveFiles,'y')
         fprintf('\nWARNING: This might take a very long time. The database is about 2 GB.\n');
         getFiles=find(~fileExists);
         fprintf('Attempting to connect to the KEGG database and retrieve the files. The FTP client in Matlab has some known issues. If you do not see that it is sucessfully downloading the files you could get them manually from KEGG. Files to get and place in keggPath:\n');
         for i=1:numel(getFiles)
             fprintf(['ftp.genome.jp' filePathways{getFiles(i)} necessaryFiles{getFiles(i)} '\n']);
         end
-        
+
         f = ftp('ftp.genome.jp');
         pasv(f);
         for i=numel(getFiles)

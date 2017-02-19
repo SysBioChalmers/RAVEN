@@ -1,4 +1,4 @@
-function [reducedModel removedRxns]=contractModel(model)
+function [reducedModel, removedRxns]=contractModel(model)
 % contractModel
 %   Contracts a model by grouping all identical reactions. Similar to the
 %   deleteDuplicates part in simplifyModel but more care is taken here
@@ -14,7 +14,7 @@ function [reducedModel removedRxns]=contractModel(model)
 %
 %   Usage: [reducedModel removedRxns]=contractModel(model)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 %First sort the model so that reversible reactions are in the same
@@ -23,7 +23,7 @@ modelS=sortModel(model);
 
 %Get a list of duplicate reactions
 x=[modelS.S; model.rev']';
-[B,I,J] = unique(x,'rows','first');
+[~,I,J] = unique(x,'rows','first');
 
 duplicateRxns=setdiff(1:numel(model.rxns),I);
 mergeTo=I(J(duplicateRxns));
@@ -33,18 +33,21 @@ mergeTo=I(J(duplicateRxns));
 %magnitude of objective coefficient
 for i=1:numel(duplicateRxns)
     if model.lb(duplicateRxns(i))<model.lb(mergeTo(i))
-       dispEM(['Duplicate reaction ' model.rxns{duplicateRxns(i)} ' has wider lower bound. Uses the most negative/smallest lower bound'],false); 
+       EM=['Duplicate reaction ' model.rxns{duplicateRxns(i)} ' has wider lower bound. Uses the most negative/smallest lower bound'];
+       dispEM(EM,false);
        model.lb(mergeTo(i))=model.lb(duplicateRxns(i));
     end
     if model.ub(duplicateRxns(i))>model.ub(mergeTo(i))
-       dispEM(['Duplicate reaction ' model.rxns{duplicateRxns(i)} ' has wider upper bound. Uses the most positive/largest upper bound'],false); 
+       EM=['Duplicate reaction ' model.rxns{duplicateRxns(i)} ' has wider upper bound. Uses the most positive/largest upper bound'];
+       dispEM(EM,false);
        model.ub(mergeTo(i))=model.ub(duplicateRxns(i));
     end
     if abs(model.c(duplicateRxns(i)))>abs(model.c(mergeTo(i)))
-       dispEM(['Duplicate reaction ' model.rxns{duplicateRxns(i)} ' has a larger objective function coefficient. Uses the largest coefficient'],false); 
+       EM=['Duplicate reaction ' model.rxns{duplicateRxns(i)} ' has a larger objective function coefficient. Uses the largest coefficient'];
+       dispEM(EM,false);
        model.c(mergeTo(i))=model.c(duplicateRxns(i));
     end
-    
+
     %Genes are added as 'or'
     if isfield(model,'rxnGeneMat')
         commonGenes=find(model.rxnGeneMat(duplicateRxns(i),:) & model.rxnGeneMat(mergeTo(i),:));
@@ -60,7 +63,7 @@ for i=1:numel(duplicateRxns)
                rules1=regexp(model.grRules{mergeTo(i)},' or ','split');
                rules2=regexp(model.grRules{duplicateRxns(i)},' or ','split');
                allRules=union(rules1,rules2);
-               
+
                %Probably not the nicest way to do this
                model.grRules{mergeTo(i)}=allRules{1};
                for j=2:numel(allRules)
@@ -80,7 +83,7 @@ for i=1:numel(duplicateRxns)
                codes=union(codes1,codes2);
                model.eccodes{mergeTo(i)}=codes{1};
                for j=2:numel(codes)
-                  model.eccodes{mergeTo(i)}=[model.eccodes{mergeTo(i)} ';' codes{j}]; 
+                  model.eccodes{mergeTo(i)}=[model.eccodes{mergeTo(i)} ';' codes{j}];
                end
            else
                model.eccodes{mergeTo(i)}=model.eccodes{duplicateRxns(i)};

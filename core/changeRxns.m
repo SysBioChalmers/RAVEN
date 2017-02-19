@@ -13,19 +13,19 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %                    2 - The metabolites are matched to model.metNames and
 %                        all metabolites are assigned to "compartment". Any
 %                        new metabolites that are added will be assigned
-%                        IDs "m1", "m2"... If IDs on the same form are 
+%                        IDs "m1", "m2"... If IDs on the same form are
 %                        already used in the model then the numbering will
 %                        start from the highest used integer+1
-%                    3 - The metabolites are written as 
+%                    3 - The metabolites are written as
 %                        "metNames[compNames]". Only compartments in
 %                        model.compNames are allowed. Any
 %                        new metabolites that are added will be assigned
-%                        IDs "m1", "m2"... If IDs on the same form are 
+%                        IDs "m1", "m2"... If IDs on the same form are
 %                        already used in the model then the numbering will
-%                        start from the highest used integer+1  
+%                        start from the highest used integer+1
 %   compartment      a string with the compartment the metabolites should
-%                    be placed in when using eqnType=2. Must match 
-%                    model.compNames (opt when eqnType=1 or eqnType=3) 
+%                    be placed in when using eqnType=2. Must match
+%                    model.compNames (opt when eqnType=1 or eqnType=3)
 %   allowNewMets     true if the function is allowed to add new
 %                    metabolites. It is highly recommended to first add
 %                    any new metabolites with addMets rather than
@@ -33,12 +33,12 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %                    more annotation of metabolites, allows for the use of
 %                    exchange metabolites, and using it reduces the risk
 %                    of parsing errors (opt, default false)
-%                     
+%
 %   model            an updated model structure
 %
 %   NOTE: This function should be used with some care, since it doesn't
 %   care about bounds on the reactions. Changing a irreversible reaction to
-%   a reversible one (or the other way around) will only change the 
+%   a reversible one (or the other way around) will only change the
 %   model.rev field and not the model.lb/model.ub fields. The reaction will
 %   therefore still be having the same reversibility because of the
 %   bounds. Use setParams to change the bounds.
@@ -49,7 +49,7 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %
 %   Usage: model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %
-%   Rasmus Agren, 2012-08-01
+%   Rasmus Agren, 2017-02-19
 %   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
 %   rxnReferences and confidenceScores
 %
@@ -72,7 +72,8 @@ end
 %found
 [I J]=ismember(rxns,model.rxns);
 if ~all(I)
-    distEM('All reaction ids must exist in the model');    
+    EM='All reaction ids must exist in the model';
+    distEM(EM);
 end
 
 %The reactions are changed in the following manner. First create a

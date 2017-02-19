@@ -3,7 +3,7 @@ function reducedModel=removeMets(model,metsToRemove,isNames,removeUnusedRxns,rem
 %   Deletes a set of metabolites from a model
 %
 %   model             a model structure
-%   metsToRemove      either a cell array of metabolite IDs, a logical vector 
+%   metsToRemove      either a cell array of metabolite IDs, a logical vector
 %                     with the same number of elements as metabolites in the model,
 %                     of a vector of indexes to remove
 %   isNames           true if the supplied mets represent metabolite names
@@ -23,9 +23,10 @@ function reducedModel=removeMets(model,metsToRemove,isNames,removeUnusedRxns,rem
 %   Usage: reducedModel=removeMets(model,metsToRemove,isNames,...
 %           removeUnusedRxns,removeUnusedGenes,removeUnusedComps)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2017-02-19
 %   Simonas Marcisauskas, 2016-11-01 - added support for metCharge
 %
+
 if ischar(metsToRemove)
     metsToRemove={metsToRemove};
 end
@@ -52,9 +53,10 @@ if isNames==true
        if ischar(metsToRemove)
             metsToRemove={metsToRemove};
        else
-            dispEM('Must supply a cell array of strings if isNames=true');
+           EM='Must supply a cell array of strings if isNames=true';
+           dispEM(EM);
        end
-   end 
+   end
 end
 
 reducedModel=model;
@@ -64,12 +66,12 @@ if isNames==false
 else
     indexesToDelete=[];
     for i=1:numel(metsToRemove)
-       indexesToDelete=[indexesToDelete;find(strcmp(metsToRemove(i),model.metNames))]; 
+       indexesToDelete=[indexesToDelete;find(strcmp(metsToRemove(i),model.metNames))];
     end
 end
 
 %Remove metabolites
-if ~isempty(indexesToDelete)    
+if ~isempty(indexesToDelete)
     reducedModel.mets(indexesToDelete)=[];
     reducedModel.S(indexesToDelete,:)=[];
     if isfield(reducedModel,'b')
@@ -104,7 +106,7 @@ end
 %Remove unused reactions
 if removeUnusedRxns==true
     %Get unused reactions
-    [crap a crap]=find(reducedModel.S);
+    [~, a]=find(reducedModel.S);
     rxnsToRemove=1:numel(reducedModel.rxns);
     rxnsToRemove(a)=[];
 	reducedModel=removeReactions(reducedModel,rxnsToRemove,false,removeUnusedGenes);
@@ -123,7 +125,7 @@ if removeUnusedComps==true
         if isfield(reducedModel,'compMiriams')
             reducedModel.compMiriams(~I)=[];
         end
-        [crap J]=ismember(oldComps(reducedModel.metComps),reducedModel.comps);
+        [~, J]=ismember(oldComps(reducedModel.metComps),reducedModel.comps);
         reducedModel.metComps=J;
     end
 end

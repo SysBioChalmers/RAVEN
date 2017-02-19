@@ -30,7 +30,7 @@ rxnComps=sparse(numel(model.rxns),numel(model.comps));
 %For each compartment, find the metabolites that are present in that
 %compartment and then the reactions they are involved in
 for i=1:numel(model.comps)
-    [crap I]=find(model.S(model.metComps==i,:));
+    [~, I]=find(model.S(model.metComps==i,:));
     rxnComps(I,i)=1;
 end
 
@@ -43,7 +43,7 @@ if isfield(model,'genes')
     fprintf(['Genes*\t\t\t\t' num2str(numel(model.genes)) '\n']);
     %Find the genes in each compartment
     for i=1:numel(model.comps)
-        [crap I]=find(model.rxnGeneMat(rxnComps(:,i)==1,:));
+        [~, I]=find(model.rxnGeneMat(rxnComps(:,i)==1,:));
         fprintf(['\t' model.compNames{i} '\t' num2str(numel(unique(I))) '\n']);
     end
 end
@@ -75,7 +75,7 @@ fprintf('** Unique reactions are defined as being biochemically unique (no compa
 %Also print some potential problems if there are any
 if printModelIssues==true
     fprintf(['\nShort model quality summary for ' model.id ': ' model.description '\n']);
-    
+
     %Check that all the metabolites are being used
     involvedMat=model.S;
     involvedMat(involvedMat~=0)=1;
@@ -91,7 +91,7 @@ if printModelIssues==true
         end
         fprintf(errorText);
     end
-    
+
     %Check if there are empty reactions
     usedRxns=sum(involvedMat,1);
     notUsed=find(usedRxns==0);
@@ -105,10 +105,10 @@ if printModelIssues==true
         end
         fprintf(errorText);
     end
-    
+
     %Check if there are dead-end reactions/metabolites
-    [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,true,false,false,true);
-    
+    [~, deletedReactions, deletedMetabolites]=simplifyModel(model,true,false,false,true);
+
     if ~isempty(deletedReactions)
         errorText=['Dead-end reactions\t' num2str(numel(deletedReactions)) '\n'];
         if printDetails==true
@@ -119,7 +119,7 @@ if printModelIssues==true
         end
         fprintf(errorText);
     end
-    
+
     %Ignore non-used metabolites
     deletedMetabolites=setdiff(deletedMetabolites,model.mets(notPresent));
     %Must map to indexes in order to print names
@@ -134,12 +134,12 @@ if printModelIssues==true
         end
         fprintf(errorText);
     end
-    
+
     balanceStructure=getElementalBalance(model);
-    
+
     notParsed=find(balanceStructure.balanceStatus<0);
     notBalanced=find(balanceStructure.balanceStatus==0);
-    
+
     if ~isempty(notParsed)
         errorText=['Reactions which could not be elementally balanced\t' num2str(numel(notParsed)) '\n'];
         if printDetails==true
@@ -161,6 +161,6 @@ if printModelIssues==true
             errorText=[errorText '\n'];
         end
         fprintf(errorText);
-    end   
+    end
 end
 end

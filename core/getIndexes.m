@@ -3,7 +3,7 @@ function indexes=getIndexes(model,objects, type, returnLogical)
 %   Retrieves the indexes for a list of reactions or metabolites
 %
 %   model           a model structure
-%   objects         either a cell array of IDs, a logical vector with the 
+%   objects         either a cell array of IDs, a logical vector with the
 %                   same number of elements as metabolites in the model,
 %                   of a vector of indexes
 %   type            'rxns', 'mets', or 'genes' depending on what to retrieve
@@ -15,7 +15,7 @@ function indexes=getIndexes(model,objects, type, returnLogical)
 %
 % 	Usage: indexes=getIndexes(model,objects, type, returnLogical)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<4
@@ -39,7 +39,8 @@ else
         if strcmpi(type,'genes')
             searchIn=model.genes;
         else
-            dispEM('Incorrect value of the "type" parameter. Allowed values are "rxns", "mets" or "genes"'); 
+            EM='Incorrect value of the "type" parameter. Allowed values are "rxns", "mets" or "genes"';
+            dispEM(EM);
         end
     end
 end
@@ -50,7 +51,8 @@ if iscell(objects)
         if ~isempty(index)
             indexes(i)=index;
         else
-            dispEM(['Could not find object ' objects{i} ' in the model']);
+            EM=['Could not find object ' objects{i} ' in the model'];
+            dispEM(EM);
         end
     end
 else

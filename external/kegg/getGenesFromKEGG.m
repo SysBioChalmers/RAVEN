@@ -22,7 +22,7 @@ function model=getGenesFromKEGG(keggPath,koList)
 %                               in Homo sapiens
 %               rxnGeneMat      A binary matrix that indicates whether a
 %                               specific gene is present in a KO id
-%  
+%
 %   If the file keggGenes.mat is in the RAVEN directory it will be loaded
 %   instead of parsing of the KEGG files. If it does not exist it will be
 %   saved after parsing of the KEGG files. In general, you should remove
@@ -67,13 +67,13 @@ if exist(genesFile, 'file')
 else
     %Download required files from KEGG if it doesn't exist in the directory
     downloadKEGG(keggPath);
-    
+
     %Get all KOs that are associated to reactions
     allKOs=getAllKOs(keggPath);
-    
+
     %Since the list of genes will be accessed many times I use a hash table
     geneMap=containers.Map('KeyType','char','ValueType','int32');
-    
+
     %Add new functionality in the order specified in models
     model.id='KEGG';
     model.description='Automatically generated from KEGG database';
@@ -92,7 +92,7 @@ else
     koCounter=0;
     nGenes=0;
     addingGenes=false;
-    
+
     %These contain the mapping between KOs and genes and are used to
     %generate the model.rxnGeneMat in the end
     koIndex=zeros(5000000,1);
@@ -132,7 +132,7 @@ else
           else
              addMe=false;
              continue;
-          end      
+          end
 
           %Add reaction ID (always 6 characters)
           model.rxns{koCounter}=koID;
@@ -176,7 +176,7 @@ else
                      genes=strcat(currentOrganism,':',genes(:));
                      end
                  end
-                 
+
                  %Add the genes to the gene list
                  for i=1:numel(genes)
                      geneString=genes{i};
@@ -188,7 +188,7 @@ else
                         index=nGenes;
                         geneMap(geneString)=index;
                      end
-                     
+
                      %Add the connection to the KO
                      nMappings=nMappings+1;
                      koIndex(nMappings)=koCounter;
@@ -217,15 +217,15 @@ else
     model.rxns=model.rxns(1:koCounter);
     model.rxnNames=model.rxnNames(1:koCounter);
     model.genes=model.genes(1:nGenes);
-    
+
     %Retrieve and add the gene associations
     model.rxnGeneMat=sparse(koIndex(1:nMappings),geneIndex(1:nMappings),ones(nMappings,1));
-    
+
     %To make sure the size is correct if the last KOs don't have genes
     if size(model.rxnGeneMat,1)~=koCounter
         model.rxnGeneMat(koCounter,1)=0;
     end
-    
+
     %Save the model structure
     save(genesFile,'model');
 end
@@ -239,9 +239,9 @@ function allKOs=getAllKOs(keggPath)
     %Retrieves all KOs that are associated to reactions. This is because
     %the number of genes in KEGG is very large so without this parsing it
     %would take many hours
-    
+
     allKOs={};
-    
+
     %First check if the reactions have already been parsed
     [ST I]=dbstack('-completenames');
     ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
@@ -249,7 +249,7 @@ function allKOs=getAllKOs(keggPath)
     if exist(rxnsFile, 'file')
         fprintf(['NOTE: Importing KEGG ORTHOLOGY list from ' strrep(rxnsFile,'\','/') '.\n']);
         load(rxnsFile,'model');
-        
+
         %Loop through the reactions and add the corresponding genes
         for i=1:numel(model.rxns)
             if isstruct(model.rxnMiriams{i})
@@ -275,12 +275,12 @@ function allKOs=getAllKOs(keggPath)
           if numel(tline)<12
               continue;
           end
-          
+
           %Check if it's a new reaction
           if strcmp(tline(1:12),'ENTRY       ')
               orthology=false;
           end
-          
+
           if strcmp(tline(1:9),'REFERENCE')
               orthology=false;
           end

@@ -14,7 +14,7 @@ function checkModelStruct(model,throwErrors,trimWarnings)
 %
 %   Usage: checkModelStruct(model,throwErrors,trimWarnings)
 %
-%   Rasmus Agren, 2013-11-03
+%   Rasmus Agren, 2015-02-19
 %   Simonas Marcisauskas, 2016-11-01 - added checks for rxnNotes,
 %   rxnReferences, confidenceScores and metCharge
 %
@@ -27,219 +27,240 @@ if nargin<3
 end
 
 %Missing elements
-if ~isfield(model,'id')
-    dispEM('The model is missing the "id" field',throwErrors);
-end
-if ~isfield(model,'description')
-    dispEM('The model is missing the "description" field',throwErrors);
-end
-if ~isfield(model,'rxns')
-    dispEM('The model is missing the "rxns" field',throwErrors);
-end
-if ~isfield(model,'mets')
-    dispEM('The model is missing the "mets" field',throwErrors);
-end
-if ~isfield(model,'S')
-    dispEM('The model is missing the "S" field',throwErrors);
-end
-if ~isfield(model,'lb')
-    dispEM('The model is missing the "lb" field',throwErrors);
-end
-if ~isfield(model,'ub')
-    dispEM('The model is missing the "ub" field',throwErrors);
-end
-if ~isfield(model,'rev')
-    dispEM('The model is missing the "rev" field',throwErrors);
-end
-if ~isfield(model,'c')
-    dispEM('The model is missing the "c" field',throwErrors);
-end
-if ~isfield(model,'b')
-    dispEM('The model is missing the "b" field',throwErrors);
-end
-if ~isfield(model,'comps')
-    dispEM('The model is missing the "comps" field',throwErrors);
-end
-if ~isfield(model,'metComps')
-    dispEM('The model is missing the "metComps" field',throwErrors);
+fields={'id';'description';'rxns';'mets';'S';'lb';'ub';'rev';'c';'b';'comps';'metComps'};
+for i=1:numel(fields)
+    if ~isfield(model,fields{i})
+        EM=['The model is missing the "' fields{i} '" field'];
+        dispEM(EM,throwErrors);
+    end
 end
 
 %Type check
 if ~ischar(model.id)
-    dispEM('The "id" field must be a string',throwErrors);
+    EM='The "id" field must be a string';
+    dispEM(EM,throwErrors);
 end
 if ~ischar(model.description)
-    dispEM('The "description" field must be a string',throwErrors);
+    EM='The "description" field must be a string';
+    dispEM(EM,throwErrors);
 end
 if ~iscellstr(model.rxns)
-    dispEM('The "rxns" field must be a cell array of strings',throwErrors);
+    EM='The "rxns" field must be a cell array of strings';
+    dispEM(EM,throwErrors);
 end
 if ~iscellstr(model.mets)
-    dispEM('The "mets" field must be a cell array of strings',throwErrors);
+    EM='The "mets" field must be a cell array of strings';
+    dispEM(EM,throwErrors);
 end
 if ~isnumeric(model.S)
-    dispEM('The "S" field must be of type "double"',throwErrors);
+    EM='The "S" field must be of type "double"';
+    dispEM(EM,throwErrors);
 end
 if ~isnumeric(model.lb)
-    dispEM('The "lb" field must be of type "double"',throwErrors);
+    EM='The "lb" field must be of type "double"';
+    dispEM(EM,throwErrors);
 end
 if ~isnumeric(model.ub)
-    dispEM('The "ub" field must be of type "double"',throwErrors);
+    EM='The "ub" field must be of type "double"';
+    dispEM(EM,throwErrors);
 end
 if ~isnumeric(model.rev)
-    dispEM('The "rev" field must be of type "double"',throwErrors);
+    EM='The "rev" field must be of type "double"';
+    dispEM(EM,throwErrors);
 end
 if ~isnumeric(model.c)
-    dispEM('The "c" field must be of type "double"',throwErrors);
+    EM='The "c" field must be of type "double"';
+    dispEM(EM,throwErrors);
 end
 if ~isnumeric(model.b)
-    dispEM('The "b" field must be of type "double"',throwErrors);
+    EM='The "b" field must be of type "double"';
+    dispEM(EM,throwErrors);
 end
 if ~iscellstr(model.comps)
-    dispEM('The "comps" field must be a cell array of strings',throwErrors);
+    EM='The "comps" field must be a cell array of strings';
+    dispEM(EM,throwErrors);
 end
 if ~isnumeric(model.metComps)
-    dispEM('The "metComps" field must be of type "double"',throwErrors);
+    EM='The "metComps" field must be of type "double"';
+    dispEM(EM,throwErrors);
 end
 if isfield(model,'compNames')
     if ~iscellstr(model.compNames)
-        dispEM('The "compNames" field must be a cell array of strings',throwErrors);
+        EM='The "compNames" field must be a cell array of strings';
+        dispEM(EM,throwErrors);
     end
 end
 if isfield(model,'compOutside')
     if ~iscellstr(model.compOutside)
-        dispEM('The "compOutside" field must be a cell array of strings',throwErrors);
+        EM='The "compOutside" field must be a cell array of strings';
+        dispEM(EM,throwErrors);
     end
 end
 if isfield(model,'rxnNames')
     if ~iscellstr(model.rxnNames)
-        dispEM('The "rxnNames" field must be a cell array of strings',throwErrors);
+        EM='The "rxnNames" field must be a cell array of strings';
+        dispEM(EM,throwErrors);
     end
 end
 if isfield(model,'metNames')
     if ~iscellstr(model.metNames)
-        dispEM('The "metNames" field must be a cell array of strings',throwErrors);
+        EM='The "metNames" field must be a cell array of strings';
+        dispEM(EM,throwErrors);
     end
 end
 if isfield(model,'genes')
     if ~iscellstr(model.genes)
-        dispEM('The "genes" field must be a cell array of strings',throwErrors);
+        EM='The "genes" field must be a cell array of strings';
+        dispEM(EM,throwErrors);
     end
 end
 if isfield(model,'rxnGeneMat')
     if ~isnumeric(model.rxnGeneMat)
-        dispEM('The "rxnGeneMat" field must be of type "double"',throwErrors);
+        EM='The "rxnGeneMat" field must be of type "double"';
+        dispEM(EM,throwErrors);
     end
 end
 if isfield(model,'grRules')
     if ~iscellstr(model.grRules)
-        dispEM('The "grRules" field must be a cell array of strings',throwErrors);
+        EM='The "grRules" field must be a cell array of strings';
+        dispEM(EM,throwErrors);
     end
 end
 if isfield(model,'rxnComps')
     if ~isnumeric(model.rxnComps)
-        dispEM('The "rxnComps" field must be of type "double"',throwErrors);
+        EM='The "rxnComps" field must be of type "double"';
+        dispEM(EM,throwErrors);
     end
 end
 if isfield(model,'inchis')
     if ~iscellstr(model.inchis)
-        dispEM('The "inchis" field must be a cell array of strings',throwErrors);
+        EM='The "inchis" field must be a cell array of strings';
+        dispEM(EM,throwErrors);
     end
 end
 if isfield(model,'metFormulas')
     if ~iscellstr(model.metFormulas)
-        dispEM('The "metFormulas" field must be a cell array of strings',throwErrors);
+        EM='The "metFormulas" field must be a cell array of strings';
+        dispEM(EM,throwErrors);
     end
 end
 if isfield(model,'metCharge')
     if ~isnumeric(model.metCharge)
-        dispEM('The "metCharge" field must be of type "double"',throwErrors);
+        EM='The "metCharge" field must be a double';
+        dispEM(EM,throwErrors);
     end
 end
 if isfield(model,'subSystems')
     if ~iscellstr(model.subSystems)
-        dispEM('The "subSystems" field must be a cell array of strings',throwErrors);
+        EM='The "subSystems" field must be a cell array of strings';
+        dispEM(EM,throwErrors);
     end
 end
 if isfield(model,'eccodes')
     if ~iscellstr(model.eccodes)
-        dispEM('The "eccodes" field must be a cell array of strings',throwErrors);
+        EM='The "eccodes" field must be a cell array of strings';
+        dispEM(EM,throwErrors);
     end
 end
 if isfield(model,'unconstrained')
     if ~isnumeric(model.unconstrained)
-        dispEM('The "unconstrained" field must be of type "double"',throwErrors);
+        EM='The "unconstrained" field must be of type "double"';
+        dispEM(EM,throwErrors);
     end
 end
 if isfield(model,'rxnNotes')
     if ~iscellstr(model.rxnNotes)
-        dispEM('The "rxnNotes" field must be a cell array of strings',throwErrors);
+        EM='The "rxnNotes" field must be a cell array of strings';
+        dispEM(EM,throwErrors);
     end
 end
 if isfield(model,'rxnReferences')
     if ~iscellstr(model.rxnReferences)
-        dispEM('The "rxnReferences" field must be a cell array of strings',throwErrors);
+        EM='The "rxnReferences" field must be a cell array of strings';
+        dispEM(EM,throwErrors);
     end
 end
 if isfield(model,'confidenceScores')
     if ~iscellstr(model.confidenceScores)
-        dispEM('The "confidenceScores" field must be a cell array of strings',throwErrors);
+        EM='The "confidenceScores" field must be a cell array of strings';
+        dispEM(EM,throwErrors);
     end
 end
 
 %Empty strings
 if isempty(model.id)
-    dispEM('The "id" field cannot be empty',throwErrors);
+    EM='The "id" field cannot be empty';
+    dispEM(EM,throwErrors);
 end
 if any(cellfun(@isempty,model.rxns))
-    dispEM('The model contains empty reaction IDs',throwErrors);
+    EM='The model contains empty reaction IDs';
+    dispEM(EM,throwErrors);
 end
 if any(cellfun(@isempty,model.mets))
-    dispEM('The model contains empty metabolite IDs',throwErrors);
+    EM='The model contains empty metabolite IDs';
+    dispEM(EM,throwErrors);
 end
 if any(cellfun(@isempty,model.comps))
-    dispEM('The model contains empty compartment IDs',throwErrors);
+    EM='The model contains empty compartment IDs';
+    dispEM(EM,throwErrors);
 end
-dispEM('The following metabolites have empty names:',throwErrors,model.mets(cellfun(@isempty,model.metNames)),trimWarnings);
+EM='The following metabolites have empty names:';
+dispEM(EM,throwErrors,model.mets(cellfun(@isempty,model.metNames)),trimWarnings);
 
 if isfield(model,'genes')
     if any(cellfun(@isempty,model.genes))
-        dispEM('The model contains empty gene IDs',throwErrors);
+        EM='The model contains empty gene IDs';
+        dispEM(EM,throwErrors);
     end
 end
 
 %Illegal characters in IDs
-dispEM('Illegal characters in reaction IDs:',throwErrors,model.rxns(illegal(model.rxns,'id')),trimWarnings);
-dispEM('Illegal characters in metabolite IDs:',throwErrors,model.mets(illegal(model.mets,'id')),trimWarnings);
-dispEM('Illegal characters in compartment IDs:',throwErrors,model.comps(illegal(model.comps,'id')),trimWarnings);
+EM='Illegal characters in reaction IDs:';
+dispEM(EM,throwErrors,model.rxns(illegal(model.rxns,'id')),trimWarnings);
+EM='Illegal characters in metabolite IDs:';
+dispEM(EM,throwErrors,model.mets(illegal(model.mets,'id')),trimWarnings);
+EM='Illegal characters in compartment IDs:';
+dispEM(EM,throwErrors,model.comps(illegal(model.comps,'id')),trimWarnings);
 
 %Duplicates
-dispEM('The following reaction IDs are duplicates:',throwErrors,model.rxns(duplicates(model.rxns)),trimWarnings);
-dispEM('The following metabolite IDs are duplicates:',throwErrors,model.mets(duplicates(model.mets)),trimWarnings);
-dispEM('The following compartment IDs are duplicates:',throwErrors,model.comps(duplicates(model.comps)),trimWarnings);
+EM='The following reaction IDs are duplicates:';
+dispEM(EM,throwErrors,model.rxns(duplicates(model.rxns)),trimWarnings);
+EM='The following metabolite IDs are duplicates:';
+dispEM(EM,throwErrors,model.mets(duplicates(model.mets)),trimWarnings);
+EM='The following compartment IDs are duplicates:';
+dispEM(EM,throwErrors,model.comps(duplicates(model.comps)),trimWarnings);
 if isfield(model,'genes')
-    dispEM('The following genes are duplicates:',throwErrors,model.genes(duplicates(model.genes)),trimWarnings);
+    EM='The following genes are duplicates:';
+    dispEM(EM,throwErrors,model.genes(duplicates(model.genes)),trimWarnings);
 end
 metInComp=strcat(model.metNames,'[',model.comps(model.metComps),']');
-dispEM('The following metabolites already exist in the same compartment:',throwErrors,metInComp(duplicates(metInComp)),trimWarnings);
-    
+EM='The following metabolites already exist in the same compartment:';
+dispEM(EM,throwErrors,metInComp(duplicates(metInComp)),trimWarnings);
+
 %Elements never used (print only as warnings
-dispEM('The following reactions are empty (no involved metabolites):',false,model.rxns(~any(model.S,1)),trimWarnings);
-dispEM('The following metabolites are never used in a reaction:',false,model.mets(~any(model.S,2)),trimWarnings);
+EM='The following reactions are empty (no involved metabolites):';
+dispEM(EM,false,model.rxns(~any(model.S,1)),trimWarnings);
+'The following metabolites are never used in a reaction:';
+dispEM(EM,false,model.mets(~any(model.S,2)),trimWarnings);
 if isfield(model,'genes')
-    dispEM('The following genes are not associated to a reaction:',false,model.genes(~any(model.rxnGeneMat,1)),trimWarnings);
+    EM='The following genes are not associated to a reaction:';
+    dispEM(EM,false,model.genes(~any(model.rxnGeneMat,1)),trimWarnings);
 end
 I=true(numel(model.comps),1);
 I(model.metComps)=false;
-dispEM('The following compartments contain no metabolites:',false,model.comps(I),trimWarnings);
+EM='The following compartments contain no metabolites:';
+dispEM(EM,false,model.comps(I),trimWarnings);
 
 %Contradicting bounds
-dispEM('The following reactions have contradicting bounds:',throwErrors,model.rxns(model.lb>model.ub),trimWarnings);
-dispEM('The following reactions have bounds contradicting their reversibility:',throwErrors,model.rxns(model.lb<0 & model.rev==0),trimWarnings);
+EM='The following reactions have contradicting bounds:';
+dispEM(EM,throwErrors,model.rxns(model.lb>model.ub),trimWarnings);
+EM='The following reactions have bounds contradicting their reversibility:';
+dispEM(EM,throwErrors,model.rxns(model.lb<0 & model.rev==0),trimWarnings);
 
 %Mapping of compartments
 if isfield(model,'compOutside')
-    dispEM('The following compartments are in "compOutside" but not in "comps":',throwErrors,setdiff(model.compOutside,[{''};model.comps]),trimWarnings);
+    EM='The following compartments are in "compOutside" but not in "comps":';
+    dispEM(EM,throwErrors,setdiff(model.compOutside,[{''};model.comps]),trimWarnings);
 end
 
 %Met names which start with number
@@ -252,12 +273,14 @@ for i=1:numel(model.metNames)
        end
    end
 end
-dispEM('The following metabolite names begin with a number directly followed by space:',throwErrors,model.mets(I),trimWarnings);
+EM='The following metabolite names begin with a number directly followed by space:';
+dispEM(EM,throwErrors,model.mets(I),trimWarnings);
 
 %Non-parseable composition
 if isfield(model,'metFormulas')
-    [crap, crap, exitFlag]=parseFormulas(model.metFormulas,true,false);
-     dispEM('The composition for the following metabolites could not be parsed:',false,model.mets(exitFlag==-1),trimWarnings);
+    [~, ~, exitFlag]=parseFormulas(model.metFormulas,true,false);
+    EM='The composition for the following metabolites could not be parsed:';
+     dispEM(EM,false,model.mets(exitFlag==-1),trimWarnings);
 end
 
 %Check if there are metabolites with different names but the same MIRIAM
@@ -279,10 +302,10 @@ if isfield(model,'metMiriams')
           end
        end
     end
-    
+
     %Get all keys
     allMiriams=keys(miriams);
-    
+
     hasMultiple=false(numel(allMiriams),1);
     for i=1:numel(allMiriams)
         if numel(miriams(allMiriams{i}))>1
@@ -292,9 +315,10 @@ if isfield(model,'metMiriams')
            end
         end
     end
-    
+
     %Print output
-    dispEM('The following MIRIAM strings are associated to more than one unique metabolite name:',false,allMiriams(hasMultiple));
+    EM='The following MIRIAM strings are associated to more than one unique metabolite name:';
+    dispEM(EM,false,allMiriams(hasMultiple));
 end
 
 %Check if there are metabolites with different names but the same InChI
@@ -312,10 +336,10 @@ if isfield(model,'inchis')
          inchis(model.inchis{i})=[existing;i];
        end
     end
-    
+
     %Get all keys
     allInchis=keys(inchis);
-    
+
     hasMultiple=false(numel(allInchis),1);
     for i=1:numel(allInchis)
         if numel(inchis(allInchis{i}))>1
@@ -325,15 +349,16 @@ if isfield(model,'inchis')
            end
         end
     end
-    
+
     %Print output
-    dispEM('The following InChI strings are associated to more than one unique metabolite name:',false,allInchis(hasMultiple));
+    EM='The following InChI strings are associated to more than one unique metabolite name:';
+    dispEM(EM,false,allInchis(hasMultiple));
 end
 end
 
 function I=duplicates(strings)
     I=false(numel(strings),1);
-    [J K]=unique(strings);
+    [J, K]=unique(strings);
     if numel(J)~=numel(strings)
         L=1:numel(strings);
         L(K)=[];

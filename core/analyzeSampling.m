@@ -4,7 +4,7 @@ function scores=analyzeSampling(Tex, df, solutionsA, solutionsB, printResults)
 %   the significance of change in gene expression
 %
 %   Tex             a vector of t-scores for the change in gene expression
-%                   for each reaction. This score could be the Student t 
+%                   for each reaction. This score could be the Student t
 %                   between the two conditions, or you can calculate it from
 %                   a p-value (by computing the inverse of the so called error
 %                   function). If you choose the second alternative you should
@@ -29,7 +29,7 @@ function scores=analyzeSampling(Tex, df, solutionsA, solutionsB, printResults)
 %
 %   Usage: scores=analyzeSampling(Tex, df, solutionsA, solutionsB, printResults)
 %
-%   Rasmus Agren, 2012-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<5
@@ -43,7 +43,8 @@ pR=zeros(nRxns,1);
 
 %Check that the number of reactions is the same in both expression and flux
 if nRxns~=size(solutionsA,1)
-    dispEM('The number of reactions must be the same in Tex as in solutionsA'); 
+    EM='The number of reactions must be the same in Tex as in solutionsA';
+    dispEM(EM);
 end
 
 %Get the Z-score and mean for the solutions
@@ -54,7 +55,8 @@ Zf=getFluxZ(solutionsA, solutionsB);
 %Clear up the tex if there are elements that are NaN or +/- Inf.
 I=isnan(Tex) | isinf(Tex);
 if any(I)
-    dispEM('There are t-scores that are NaN or +/- Inf. These values are changed to 0.0',false);  
+    EM='There are t-scores that are NaN or +/- Inf. These values are changed to 0.0';
+    dispEM(EM,false);
 end
 Tex(I)=0;
 
@@ -73,7 +75,7 @@ for i=1:nRxns
             Zf(i)=Zf(i)*-1;
         end
     end
-    
+
     I=Zf(i)/Tex(i);
     if I<0
         pM(i)=erf(abs(Zf(i)));
@@ -86,26 +88,26 @@ for i=1:nRxns
     end
 end
 
-scores=[pR pH pM];        
+scores=[pR pH pM];
 
 if printResults==true
    fprintf('TOP SCORING REACTIONS\n\n');
    %The top 10 hits in the first category
-   [I J]=sort(pR,'descend');
+   [I, J]=sort(pR,'descend');
    fprintf('Reactions which change both in flux and expression in the same direction\nReaction\tProbability\n');
    for i=1:10
       fprintf([num2str(J(i)) '\t' num2str(I(i)) '\n']);
    end
-   
+
    %The top 10 hits in the first category
-   [I J]=sort(pH,'descend');
+   [I, J]=sort(pH,'descend');
    fprintf('\nReactions which change in expression but not in flux\nReaction\tProbability\n');
    for i=1:10
       fprintf([num2str(J(i)) '\t' num2str(I(i)) '\n']);
    end
-   
+
    %The top 10 hits in the first category
-   [I J]=sort(pM,'descend');
+   [I, J]=sort(pM,'descend');
    fprintf('\nReactions which change in flux but not in expression, or in opposed directions in flux and expression\nReaction\tProbability\n');
    for i=1:10
       fprintf([num2str(J(i)) '\t' num2str(I(i)) '\n']);

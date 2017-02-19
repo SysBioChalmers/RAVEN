@@ -4,7 +4,7 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 %
 %   model        a model structure
 %   metsToAdd    the metabolite structure can have the following fields:
-%                mets           cell array with unique strings that 
+%                mets           cell array with unique strings that
 %                               identifies each metabolite (opt, default is
 %                               that new metabolites that are added will be
 %                               assigned IDs "m1", "m2"... If IDs on the same
@@ -31,7 +31,7 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 %                               default [])
 %                metCharge      metabolite charge (opt, default 0)
 %   copyInfo     when adding metabolites to a compartment where it previously
-%                doesn't exist, the function will copy any available annotation 
+%                doesn't exist, the function will copy any available annotation
 %                from the metabolite in another compartment (opt, default true)
 %
 %   newModel     an updated model structure
@@ -41,12 +41,12 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 %
 %   Usage: newModel=addMets(model,metsToAdd,copyInfo)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2017-02-19
 %   Simonas Marcisauskas, 2016-11-01 - added support for metCharge
 %
 
 if nargin<3
-   copyInfo=true; 
+   copyInfo=true;
 end
 
 newModel=model;
@@ -64,17 +64,21 @@ if ~isfield(metsToAdd,'mets')
     metsToAdd.mets=strcat({'m'},num2str(m(:)));
 end
 if ~isfield(metsToAdd,'metNames')
-    dispEM('metNames is a required field in metsToAdd');
+    EM='metNames is a required field in metsToAdd';
+    dispEM(EM);
 end
 if ~isfield(metsToAdd,'compartments')
-    dispEM('compartments is a required field in metsToAdd');
+    EM='compartments is a required field in metsToAdd';
+    dispEM(EM);
 end
 
 if ~iscellstr(metsToAdd.mets)
-    dispEM('metsToAdd.mets must be a cell array of strings');
+    EM='metsToAdd.mets must be a cell array of strings';
+    dispEM(EM);
 end
 if ~iscellstr(metsToAdd.metNames)
-    dispEM('metsToAdd.metNames must be a cell array of strings');
+    EM='metsToAdd.metNames must be a cell array of strings';
+    dispEM(EM);
 end
 if ~iscellstr(metsToAdd.compartments)
     if ischar(metsToAdd.compartments)
@@ -82,7 +86,8 @@ if ~iscellstr(metsToAdd.compartments)
         temp(:)={metsToAdd.compartments};
         metsToAdd.compartments=temp;
     else
-        dispEM('metsToAdd.compartments must be a cell array of strings');
+        EM='metsToAdd.compartments must be a cell array of strings';
+        dispEM(EM);
     end
 end
 
@@ -105,39 +110,44 @@ end
 %Check that all the compartments could be found
 [I compMap]=ismember(metsToAdd.compartments,model.comps);
 if ~all(I)
-    dispEM('metsToAdd.compartments must match model.comps');
+    EM='metsToAdd.compartments must match model.comps';
+    dispEM(EM);
 end
 
 %Check that the metabolite names aren't present in the same compartment.
 %Not the neatest way maybe..
-t1=strcat(metsToAdd.metNames(:),'¤¤¤',metsToAdd.compartments(:));
-t2=strcat(model.metNames,'¤¤¤',model.comps(model.metComps));
+t1=strcat(metsToAdd.metNames(:),'***',metsToAdd.compartments(:));
+t2=strcat(model.metNames,'***',model.comps(model.metComps));
 if any(ismember(t1,t2))
-    dispEM('One or more elements in metsToAdd.metNames already exist in the same compartments as the one it is being added to');
+    EM='One or more elements in metsToAdd.metNames already exist in the same compartments as the one it is being added to';
+    dispEM(EM);
 end
 
 %Some more checks and if they pass then add each field to the structure
 if numel(metsToAdd.metNames)~=nMets
-   dispEM('metsToAdd.metNames must have the same number of elements as metsToAdd.mets');
+    EM='metsToAdd.metNames must have the same number of elements as metsToAdd.mets';
+    dispEM(EM);
 else
     newModel.metNames=[newModel.metNames;metsToAdd.metNames(:)];
 end
 
 if numel(compMap)~=nMets
-   dispEM('metsToAdd.compartments must have the same number of elements as metsToAdd.mets');
+    EM='metsToAdd.compartments must have the same number of elements as metsToAdd.mets';
+    dispEM(EM);
 else
     newModel.metComps=[newModel.metComps;compMap];
 end
 
 if isfield(metsToAdd,'b')
    if size(metsToAdd.b,1)~=nMets
-       dispEM('metsToAdd.b must have the same number of elements as metsToAdd.mets');
+       EM='metsToAdd.b must have the same number of elements as metsToAdd.mets';
+       dispEM(EM);
    else
        %Add empty field if it doesn't exist
        if ~isfield(newModel,'b')
             newModel.b=zeros(nOldMets,1);
        end
-       
+
        %If the original is only one vector
        if size(metsToAdd.b,2)>size(newModel.b,2)
            newModel.b=[newModel.b newModel.b];
@@ -154,13 +164,14 @@ end
 
 if isfield(metsToAdd,'unconstrained')
    if numel(metsToAdd.unconstrained)~=nMets
-       dispEM('metsToAdd.unconstrained must have the same number of elements as metsToAdd.mets');
+       EM='metsToAdd.unconstrained must have the same number of elements as metsToAdd.mets';
+       dispEM(EM);
    else
        %Add empty field if it doesn't exist
        if ~isfield(newModel,'unconstrained')
             newModel.unconstrained=zeros(nOldMets,1);
        end
-       
+
        %Add the new ones
        newModel.unconstrained=[newModel.unconstrained;metsToAdd.unconstrained(:)];
    end
@@ -173,10 +184,12 @@ end
 
 if isfield(metsToAdd,'inchis')
    if numel(metsToAdd.inchis)~=nMets
-       dispEM('metsToAdd.inchis must have the same number of elements as metsToAdd.mets');
+       EM='metsToAdd.inchis must have the same number of elements as metsToAdd.mets';
+       dispEM(EM);
    end
    if ~iscellstr(metsToAdd.inchis)
-        dispEM('metsToAdd.inchis must be a cell array of strings');
+        EM='metsToAdd.inchis must be a cell array of strings';
+        dispEM(EM);
    end
    %Add empty field if it doesn't exist
    if ~isfield(newModel,'inchis')
@@ -192,10 +205,12 @@ end
 
 if isfield(metsToAdd,'metFormulas')
    if numel(metsToAdd.metFormulas)~=nMets
-       dispEM('metsToAdd.metFormulas must have the same number of elements as metsToAdd.mets');
+       EM='metsToAdd.metFormulas must have the same number of elements as metsToAdd.mets';
+       dispEM(EM);
    end
    if ~iscellstr(metsToAdd.metFormulas)
-        dispEM('metsToAdd.metFormulas must be a cell array of strings');
+        EM='metsToAdd.metFormulas must be a cell array of strings';
+        dispEM(EM);
    end
    %Add empty field if it doesn't exist
    if ~isfield(newModel,'metFormulas')
@@ -205,38 +220,41 @@ if isfield(metsToAdd,'metFormulas')
 else
     %Add default
     if isfield(newModel,'metFormulas')
-       newModel.metFormulas=[newModel.metFormulas;filler]; 
+       newModel.metFormulas=[newModel.metFormulas;filler];
     end
 end
 
 if isfield(metsToAdd,'metCharge')
    if numel(metsToAdd.metCharge)~=nMets
-       dispEM('metsToAdd.metCharge must have the same number of elements as metsToAdd.mets');
+       EM='metsToAdd.metCharge must have the same number of elements as metsToAdd.mets';
+       dispEM(EM);
    end
    if ~isnumeric(metsToAdd.metCharge)
-        dispEM('metsToAdd.metCharge must be of type "double"');
+        EM='metsToAdd.metCharge must be of type "double"';
+        dispEM(EM);
    end
    newModel.metCharge=[newModel.metCharge;metsToAdd.metCharge(:)];
 else
     %Add default
     if isfield(newModel,'metCharge')
-       newModel.metCharge=[newModel.metCharge;zeros(numel(filler),1)]; 
+       newModel.metCharge=[newModel.metCharge;zeros(numel(filler),1)];
     end
 end
 
 %Don't check the type of metMiriams
 if isfield(metsToAdd,'metMiriams')
    if numel(metsToAdd.metMiriams)~=nMets
-       dispEM('metsToAdd.metMiriams must have the same number of elements as metsToAdd.mets');
+       EM='metsToAdd.metMiriams must have the same number of elements as metsToAdd.mets';
+       dispEM(EM);
    end
    %Add empty field if it doesn't exist
    if ~isfield(newModel,'metMiriams')
         newModel.metMiriams=cell(nOldMets,1);
    end
-   newModel.metMiriams=[newModel.metMiriams;metsToAdd.metMiriams(:)]; 
+   newModel.metMiriams=[newModel.metMiriams;metsToAdd.metMiriams(:)];
 else
     if isfield(newModel,'metMiriams')
-       newModel.metMiriams=[newModel.metMiriams;cell(nMets,1)]; 
+       newModel.metMiriams=[newModel.metMiriams;cell(nMets,1)];
     end
 end
 

@@ -12,7 +12,7 @@ function blastStructure=getBlast(organismID,fastaFile,modelIDs,refFastaFiles)
 %                   is to be used with getModelFromHomology
 %   refFastaFiles   a cell array with the paths to the corresponding FASTA
 %                   files
-%   
+%
 %   blastStructure  structure containing the bidirectional homology
 %                   measurements which are used by getModelFromHomology
 %
@@ -24,7 +24,7 @@ function blastStructure=getBlast(organismID,fastaFile,modelIDs,refFastaFiles)
 %   Usage: blastStructure=getBlast(organismID,fastaFile,modelIDs,...
 %           refFastaFiles)
 %
-%   Rasmus Agren, 2013-07-29
+%   Rasmus Agren, 2014-01-08
 %
 
 %Everything should be cell arrays
@@ -37,7 +37,7 @@ blastStructure=[];
 
 %Get the directory for RAVEN Toolbox. This may not be the easiest or best
 %way to do this
-[ST I]=dbstack('-completenames');
+[ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(ST(I).file));
 
 %Construct databases and output file
@@ -46,25 +46,11 @@ outFile=tempname;
 
 %Create a database for the new organism and blast each of the
 %refFastaFiles against it
-
-if isunix
-    if ismac
-        binEnd='.mac';
-    else
-        binEnd='';
-    end
-elseif ispc
-    binEnd='';
-else 
-    dispEM('Unknown OS, exiting.')
-    return
-end
-
-[status output]=system(['"' fullfile(ravenPath,'software','blast-2.4.0+',['makeblastdb' binEnd]) '" -in "' fastaFile{1} '" -out "' tmpDB '" -dbtype "prot"']);
+system([fullfile(ravenPath,'software','blast-2.2.26+','makeblastdb') ' -in "' fastaFile{1} '" -out "' tmpDB '" -dbtype "prot"']);
 
 for i=1:numel(refFastaFiles)
     fprintf(['BLASTing "' modelIDs{i} '" against "' organismID{1} '"..\n']);
-    [status output]=system(['"' fullfile(ravenPath,'software','blast-2.4.0+',['blastp' binEnd]) '" -query "' refFastaFiles{i} '" -out "' outFile '_' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length"']);
+    system([fullfile(ravenPath,'software','blast-2.2.26+','blastp') ' -query "' refFastaFiles{i} '" -out "' outFile '_' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length"']);
 end
 delete([tmpDB '*']);
 
@@ -72,11 +58,11 @@ delete([tmpDB '*']);
 %the new organism against them
 for i=1:numel(refFastaFiles)
     fprintf(['BLASTing "' organismID{1} '" against "' modelIDs{i} '"..\n']);
-    [status output]=system(['"' fullfile(ravenPath,'software','blast-2.4.0+',['makeblastdb' binEnd]) '" -in "' refFastaFiles{i} '" -out "' tmpDB '" -dbtype "prot"']);
-    [status output]=system(['"' fullfile(ravenPath,'software','blast-2.4.0+',['blastp' binEnd]) '" -query "' fastaFile{1} '" -out "' outFile '_r' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length"']);
+    system([fullfile(ravenPath,'software','blast-2.2.26+','makeblastdb') ' -in "' refFastaFiles{i} '" -out "' tmpDB '" -dbtype "prot"']);
+    system([fullfile(ravenPath,'software','blast-2.2.26+','blastp') ' -query "' fastaFile{1} '" -out "' outFile '_r' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length"']);
     delete([tmpDB '*']);
 end
-    
+
 %Done with the BLAST, do the parsing of the text files
 for i=1:numel(refFastaFiles)*2
     tempStruct=[];

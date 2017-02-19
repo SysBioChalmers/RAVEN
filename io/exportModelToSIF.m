@@ -15,7 +15,7 @@ function exportModelToSIF(model,fileName,graphType,rxnLabels,metLabels)
 %
 %   Usage: exportModelToSIF(model,fileName,graphType,rxnLabels,metLabels)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<3
@@ -36,14 +36,17 @@ if isempty(metLabels)
 end
 
 if ~strcmpi(graphType,'rc') && ~strcmpi(graphType,'rr') && ~strcmpi(graphType,'cc')
-   dispEM('The graph type is incorrect'); 
+    EM='The graph type is incorrect';
+   dispEM(EM);
 end
 
 if numel(rxnLabels)~=numel(unique(rxnLabels))
-    dispEM('Not all reaction labels are unique',false); 
+    EM='Not all reaction labels are unique';
+    dispEM(EM,false);
 end
 if numel(metLabels)~=numel(unique(metLabels))
-    dispEM('Not all metabolite labels are unique',false); 
+    EM='Not all metabolite labels are unique';
+    dispEM(EM,false);
 end
 
 if strcmpi(graphType,'rc')
@@ -64,7 +67,7 @@ if strcmpi(graphType,'cc')
    G=sparse(numel(model.mets),numel(model.mets));
    for i=1:numel(model.mets)
       I=irrevModel.S(i,:)<0; %Get the reactions in which it is a substrate
-      [J crap]=find(irrevModel.S(:,I)>0);
+      [J, ~]=find(irrevModel.S(:,I)>0);
       G(J,i)=1;
    end
    A=metLabels;

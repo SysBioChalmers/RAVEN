@@ -1,12 +1,12 @@
 function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)
 % getMinNrFluxes
-%   Returns the minimal set of fluxes that satisfy the model using 
+%   Returns the minimal set of fluxes that satisfy the model using
 %   mixed integer linear programming.
 %
 %	model         a model structure
-%   toMinimize    either a cell array of reaction IDs, a logical vector 
+%   toMinimize    either a cell array of reaction IDs, a logical vector
 %                 with the same number of elements as reactions in the model,
-%                 of a vector of indexes for the reactions that should be 
+%                 of a vector of indexes for the reactions that should be
 %                 minimized (opt, default model.rxns)
 %   params        parameter structure as used by getMILPParams (opt)
 %   scores        vector of weights for the reactions. Negative scores
@@ -27,7 +27,7 @@ function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)
 %
 %   Usage: [x,I]=getMinNrFluxes(model, toMinimize, params, scores)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 exitFlag=1;
@@ -36,7 +36,7 @@ if nargin<2
     toMinimize=model.rxns;
 else
     if ~iscell(toMinimize)
-       toMinimize=model.rxns(toMinimize); 
+       toMinimize=model.rxns(toMinimize);
     end
 end
 
@@ -56,9 +56,10 @@ if nargin<4
     scores=ones(numel(toMinimize),1)*1;
 else
     if numel(scores)~=numel(toMinimize)
-        dispEM('The number of scores must be the same as the number of reactions to minimize');
+        EM='The number of scores must be the same as the number of reactions to minimize';
+        dispEM(EM);
     end
-    
+
     %Change positive scores to have a small negative weight. This is a
     %temporary solution.
     scores(scores>=0)=max(scores(scores<0));
@@ -71,14 +72,14 @@ end
 if any(model.rev)
     %Convert the model to irreversible format
     irrevModel=convertToIrrev(model);
-    
+
     %Find the indexes for the reactions in toMinimize
-    [indexes I]=ismember(strrep(irrevModel.rxns,'_REV',''),toMinimize);
+    [indexes, I]=ismember(strrep(irrevModel.rxns,'_REV',''),toMinimize);
 else
     irrevModel=model;
-    
+
     %Find the indexes for the reactions in toMinimize
-    [indexes I]=ismember(irrevModel.rxns,toMinimize);
+    [indexes, I]=ismember(irrevModel.rxns,toMinimize);
 end
 
 indexes=find(indexes);
@@ -132,9 +133,7 @@ prob.sol.int.xx=zeros(numel(prob.c),1);
 prob.sol.int.xx(prob.ints.sub(sol.x(indexes)>10^-7))=1;
 
 % Optimize the problem
-%[crap,res] = mosekopt(['minimize echo(' num2str(echo) ')'], prob,getMILPParams(params));
-res = optimizeProb(prob,params);
-
+[~,res] = mosekopt(['minimize echo(' num2str(echo) ')'], prob,getMILPParams(params));
 isFeasible=checkSolution(res);
 
 if ~isFeasible

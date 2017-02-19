@@ -1,4 +1,4 @@
-function [model deletedRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet)
+function [model, deletedRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet)
 % mergeCompartments
 %   Merge all compartments in a model
 %
@@ -15,7 +15,7 @@ function [model deletedRxns]=mergeCompartments(model,keepUnconstrained,deleteRxn
 %
 %   model                 a model with all reactions located to one compartment
 %   deletedRxns           reactions that were deleted because of only
-%                         having one metabolite after merging 
+%                         having one metabolite after merging
 %
 %   Merges all compartments into one 's' compartment (for 'System'). This can
 %   be useful for example to ensure that there are metabolic capabilities to
@@ -26,7 +26,7 @@ function [model deletedRxns]=mergeCompartments(model,keepUnconstrained,deleteRxn
 %
 %   Usage: model=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<2
@@ -47,7 +47,8 @@ if deleteRxnsWithOneMet==true
     if ~isempty(reservedRxns) && isfield(model,'unconstrained')
         %If there is no unconstrained field these reactions are probably
         %exchange reactions and shall be kept. If not then print a warning
-        fprintf('WARNING: There are reactions with only one metabolite. Cannot determine whether they are exchange reactions since there is no unconstrained field.\n');
+        EM='There are reactions with only one metabolite. Cannot determine whether they are exchange reactions since there is no unconstrained field';
+        dispEM(EM,false);
     end
 end
 
@@ -58,12 +59,12 @@ uNames=unique(model.metNames);
 for i=1:numel(uNames)
 	%Find all metabolites with this name..
     I=ismember(model.metNames,uNames(i));
-    
+
     %Find the first of those that is not unconstrained. This is the one
     %that the other "un-unconstrained" should be changed to.
     if keepUnconstrained==true
         mergeTo=find(I & model.unconstrained==false,1);
-        
+
         %This could happen if there is only one metabolite and it's
         %unconstrained
         if isempty(mergeTo)
@@ -74,7 +75,7 @@ for i=1:numel(uNames)
     end
     I(mergeTo)=false; %Don't do anything for itself
     I=find(I);
-    
+
     %Go through each of the metabolites with this name and update them to
     %mergeTo
     for j=1:numel(I)
@@ -110,7 +111,7 @@ model=removeMets(model,{},false,true,true);
 
 if deleteRxnsWithOneMet==true
     I=model.rxns(sum(model.S~=0)==1);
-    
+
     %Delete the reactions that contain only one metabolite after the
     %merging but not before
     deletedRxns=setdiff(I,reservedRxns);

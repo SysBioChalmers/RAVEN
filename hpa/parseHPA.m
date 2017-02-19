@@ -4,8 +4,8 @@ function hpaData=parseHPA(fileName)
 %
 %   fileName            comma-separated database dump of HPA. For details
 %                       regarding the format, see
-%                       http://www.proteinatlas.org/about/download.                          
-%   
+%                       http://www.proteinatlas.org/about/download.
+%
 %   hpaData
 %       genes               cell array with the unique gene names
 %       tissues             cell array with the tissue names. The list may not be
@@ -14,7 +14,7 @@ function hpaData=parseHPA(fileName)
 %       levels              cell array with the unique expression levels
 %       types               cell array with the unique evidence types
 %       reliabilities       cell array with the unique reliability levels
-%       
+%
 %       gene2Level          gene-to-expression level mapping in sparse matrix form.
 %                           The value for element i,j is the index in
 %                           hpaData.levels of gene i in cell type j
@@ -25,35 +25,35 @@ function hpaData=parseHPA(fileName)
 %                           The value for element i,j is the index in
 %                           hpaData.reliabilities of gene i in cell type j
 %
-%       
+%
 %   Usage: hpaData=parseHPA(fileName)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 fid=fopen(fileName,'r');
-hpa=textscan(fid,'%q %q %q %q %q %q %q','Delimiter',',');
+hpa=textscan(fid,'%q %q %q %q %q %q','Delimiter',',');
 fclose(fid);
 
 %Go through and see if the headers match what was expected
-headers={'Gene' 'Gene Name' 'Tissue' 'Cell type' 'Level' 'Expression type' 'Reliability'};
+headers={'Gene' 'Tissue' 'Cell type' 'Level' 'Expression type' 'Reliability'};
 for i=1:numel(headers)
     if ~strcmpi(headers(i),hpa{i}(1))
-    	dispEM(['Could not find the header "' headers{i} '". Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download']);
+    	EM=['Could not find the header "' headers{i} '". Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'];
+      dispEM(EM);
     end
     %Remove the header line here
     hpa{i}(1)=[];
 end
 
 %Get the unique values of each data type
-[hpaData.genes crap I]=unique(hpa{1});
-hpaData.genenames=unique(hpa{2})
-[crap J K]=unique(strcat(hpa{3},'¤¤',hpa{4}));
-hpaData.tissues=hpa{3}(J);
-hpaData.celltypes=hpa{4}(J);
-[hpaData.levels crap L]=unique(hpa{5});
-[hpaData.types crap M]=unique(hpa{6});
-[hpaData.reliabilities crap N]=unique(hpa{7});
+[hpaData.genes, ~, I]=unique(hpa{1});
+[~, J, K]=unique(strcat(hpa{2},'$$$',hpa{3}));
+hpaData.tissues=hpa{2}(J);
+hpaData.celltypes=hpa{3}(J);
+[hpaData.levels, ~, L]=unique(hpa{4});
+[hpaData.types, ~, M]=unique(hpa{5});
+[hpaData.reliabilities, ~, N]=unique(hpa{6});
 
 %Map the data to be sparse matrises instead
 hpaData.gene2Level=sparse(I,K,L,numel(hpaData.genes),numel(hpaData.tissues));

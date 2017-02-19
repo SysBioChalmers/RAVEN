@@ -8,7 +8,7 @@ function solutions=randomSampling(model, nSamples, replaceBoundsWithInf,supressE
 %   replaceBoundsWithInf    replace the largest upper bounds with Inf and
 %                           the smallest lower bounds with -Inf. This is
 %                           needed in order to get solutions without loops
-%                           if your model has for example 1000/-1000 as 
+%                           if your model has for example 1000/-1000 as
 %                           arbitary large bounds. If your model only has
 %                           "biologically relevant" bounds, then set this
 %                           to false (opt, default true)
@@ -28,7 +28,7 @@ function solutions=randomSampling(model, nSamples, replaceBoundsWithInf,supressE
 %
 %   Usage: solutions=randomSampling(model, nSamples, replaceBoundsWithInf)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<2
@@ -46,12 +46,14 @@ nRxns=2; %Number of reactions in the objective function in each iteration
 %First check that the model is feasible given the constraints
 sol=solveLP(model);
 if isempty(sol.x)
-   dispEM('The model has no feasible solution'); 
-end 
+    EM='The model has no feasible solution';
+    dispEM(EM);
+end
 
 %Simplify the model to speed stuff up a little. Keep original mapping
 originalRxns=model.rxns;
 model=simplifyModel(model,false,false,true,true);
+
 %Then change the bounds to +/- Inf. This is needed in order to not have
 %loops in the solutions
 if replaceBoundsWithInf==true
@@ -96,23 +98,23 @@ while counter<=nSamples
    model.c(goodRxns(rxns))=rand(nRxns,1).*multipliers;
    sol=solveLP(model);
    if any(sol.x)
-      %disp('any')
        if abs(sol.f)>10^-8
             sols(:,counter)=sol.x;
             counter=counter+1;
             badSolutions=0;
        else
-            badSolutions=badSolutions+1
+            badSolutions=badSolutions+1;
             %If it only finds bad solutions then throw an error.
             if badSolutions==50 && supressErrors==false
-                dispEM('The program is having problems finding non-zero solutions that are not involved in loops. Review the constraints on your model. Set supressErrors to true to ignore this error'); 
+                EM='The program is having problems finding non-zero solutions that are not involved in loops. Review the constraints on your model. Set supressErrors to true to ignore this error';
+                dispEM(EM);
             end
        end
    end
 end
 
 %Map to original model
-[crap I]=ismember(model.rxns,originalRxns);
+[~, I]=ismember(model.rxns,originalRxns);
 solutions=zeros(numel(originalRxns),nSamples);
 solutions(I,:)=sols;
 solutions=sparse(solutions);

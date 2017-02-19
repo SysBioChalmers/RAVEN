@@ -17,7 +17,7 @@ function exportToExcelFormat(model,filename)
 %
 %   Usage: exportToExcelFormat(model,filename)
 %
-%   Rasmus Agren, 2014-01-07
+%   Rasmus Agren, 2017-02-19
 %   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
 %   rxnReferences, confidenceScores and metCharge
 %
@@ -25,7 +25,7 @@ function exportToExcelFormat(model,filename)
 [filePath, A, B]=fileparts(filename);
 
 if ~any(filePath)
-   filePath=pwd; 
+   filePath=pwd;
 end
 
 %If a path was used call on exportToTabDelimited instead
@@ -47,9 +47,7 @@ javaaddpath(fullfile(poiPATH,'xmlbeans-2.3.0.jar'));
 %Import required classes from Apache POI
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.hssf.usermodel.*;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.xssf.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.*;
 import java.io.File;
@@ -68,14 +66,15 @@ end
 
 %Check that the file endings are correct
 if ~strcmpi(B,'.XLS') && ~strcmpi(B,'.XLSX')
-   dispEM('The file name must end in .xls or .xlsx'); 
+    EM='The file name must end in .xls or .xlsx';
+    dispEM(EM);
 end
 
 %Construct equations
 model.equations=constructEquations(model,model.rxns,true);
 
 %Check if it should print genes
-if isfield(model,'grRules');    
+if isfield(model,'grRules');
     %Also do some parsing here
     rules=model.grRules;
     rules=strrep(rules,'(','');
@@ -92,10 +91,10 @@ hasDefaultLB=false;
 hasDefaultUB=false;
 if isfield(model,'annotation')
     if isfield(model.annotation,'defaultLB')
-       hasDefaultLB=true; 
+       hasDefaultLB=true;
     end
     if isfield(model.annotation,'defaultUB')
-       hasDefaultUB=true; 
+       hasDefaultUB=true;
     end
 end
 
@@ -115,16 +114,16 @@ headers={'#';'ID';'NAME';'EQUATION';'EC-NUMBER';'GENE ASSOCIATION';'LOWER BOUND'
 r=s.createRow(0);
 for i=0:numel(headers)-1
     c=r.createCell(i);
-    c.setCellValue(headers{i+1});    
+    c.setCellValue(headers{i+1});
 end
 
 %Then fill in the sheet
 for i=1:numel(model.rxns)
     r=s.createRow(i);
-    
+
     c=r.createCell(1);
     c.setCellValue(model.rxns{i});
-    
+
     if isfield(model,'rxnNames')
         c=r.createCell(2);
         c.setCellValue(model.rxnNames{i});
@@ -132,17 +131,17 @@ for i=1:numel(model.rxns)
 
     c=r.createCell(3);
     c.setCellValue(model.equations{i});
-    
+
     if isfield(model,'eccodes')
         c=r.createCell(4);
         c.setCellValue(model.eccodes{i});
     end
-    
+
     if ~isempty(rules)
         c=r.createCell(5);
         c.setCellValue(rules{i});
     end
-    
+
     if isfield(model,'lb')
         if hasDefaultLB==true
             if model.rev(i)==1
@@ -188,11 +187,11 @@ for i=1:numel(model.rxns)
        if ~isempty(model.rxnMiriams{i})
            toPrint=[];
            for j=1:numel(model.rxnMiriams{i}.name)
-               toPrint=[toPrint strtrim(model.rxnMiriams{i}.name{j}) ':' strtrim(model.rxnMiriams{i}.value{j}) ';']; 
+               toPrint=[toPrint strtrim(model.rxnMiriams{i}.name{j}) ':' strtrim(model.rxnMiriams{i}.value{j}) ';'];
            end
            c=r.createCell(10);
            c.setCellValue(toPrint(1:end-1));
-       end 
+       end
     end
     if isfield(model,'subSystems')
         c=r.createCell(11);
@@ -221,56 +220,56 @@ headers={'#';'ID';'NAME';'UNCONSTRAINED';'MIRIAM';'COMPOSITION';'InChI';'COMPART
 r=s.createRow(0);
 for i=0:numel(headers)-1
     c=r.createCell(i);
-    c.setCellValue(headers{i+1});    
+    c.setCellValue(headers{i+1});
 end
 
 for i=1:numel(model.mets)
     r=s.createRow(i);
-    
+
     c=r.createCell(1);
     c.setCellValue([model.metNames{i} '[' model.comps{model.metComps(i)} ']']);
-    
+
     if isfield(model,'metNames')
         c=r.createCell(2);
         c.setCellValue(model.metNames{i});
     end
-    
+
     if isfield(model,'unconstrained')
         if model.unconstrained(i)~=0
             c=r.createCell(3);
             c.setCellValue(true);
         end
     end
-    
+
     if isfield(model,'metMiriams')
        if ~isempty(model.metMiriams{i})
            toPrint=[];
            for j=1:numel(model.metMiriams{i}.name)
-               toPrint=[toPrint strtrim(model.metMiriams{i}.name{j}) ':' strtrim(model.metMiriams{i}.value{j}) ';']; 
+               toPrint=[toPrint strtrim(model.metMiriams{i}.name{j}) ':' strtrim(model.metMiriams{i}.value{j}) ';'];
            end
            c=r.createCell(4);
            c.setCellValue(toPrint(1:end-1));
-       end 
+       end
     end
-    
+
     if isfield(model,'metFormulas')
         c=r.createCell(5);
         c.setCellValue(model.metFormulas{i});
     end
-    
+
     if isfield(model,'inchis')
         c=r.createCell(6);
         c.setCellValue(model.inchis{i});
     end
-    
+
     if isfield(model,'metComps')
         c=r.createCell(7);
         c.setCellValue(model.comps{model.metComps(i)});
     end
-    
+
     c=r.createCell(8);
     c.setCellValue(model.mets{i});
-    
+
     if isfield(model,'metCharge')
         c=r.createCell(9);
         c.setCellValue(model.metCharge(i));
@@ -286,34 +285,34 @@ headers={'#';'ABBREVIATION';'NAME';'INSIDE';'MIRIAM'};
 r=s.createRow(0);
 for i=0:numel(headers)-1
     c=r.createCell(i);
-    c.setCellValue(headers{i+1});    
+    c.setCellValue(headers{i+1});
 end
 
 for i=1:numel(model.comps)
     r=s.createRow(i);
-    
+
     c=r.createCell(1);
     c.setCellValue(model.comps{i});
-    
+
     if isfield(model,'compNames')
         c=r.createCell(2);
         c.setCellValue(model.compNames{i});
     end
-    
+
     if isfield(model,'compOutside')
         c=r.createCell(3);
         c.setCellValue(model.compOutside{i});
     end
-    
+
     if isfield(model,'compMiriams')
        if ~isempty(model.compMiriams{i})
            toPrint=[];
            for j=1:numel(model.compMiriams{i}.name)
-               toPrint=[toPrint strtrim(model.compMiriams{i}.name{j}) ':' strtrim(model.compMiriams{i}.value{j}) ';']; 
+               toPrint=[toPrint strtrim(model.compMiriams{i}.name{j}) ':' strtrim(model.compMiriams{i}.value{j}) ';'];
            end
            c=r.createCell(4);
            c.setCellValue(toPrint(1:end-1));
-       end 
+       end
     end
 end
 
@@ -329,7 +328,7 @@ if isfield(model,'genes')
     r=s.createRow(0);
     for i=0:numel(headers)-1
         c=r.createCell(i);
-        c.setCellValue(headers{i+1});    
+        c.setCellValue(headers{i+1});
     end
 
     for i=1:numel(model.genes)
@@ -337,18 +336,18 @@ if isfield(model,'genes')
 
         c=r.createCell(1);
         c.setCellValue(model.genes{i});
-        
+
        if isfield(model,'geneMiriams')
            if ~isempty(model.geneMiriams{i})
                toPrint=[];
                for j=1:numel(model.geneMiriams{i}.name)
-                   toPrint=[toPrint strtrim(model.geneMiriams{i}.name{j}) ':' strtrim(model.geneMiriams{i}.value{j}) ';']; 
+                   toPrint=[toPrint strtrim(model.geneMiriams{i}.name{j}) ':' strtrim(model.geneMiriams{i}.value{j}) ';'];
                end
                c=r.createCell(2);
                c.setCellValue(toPrint(1:end-1));
-           end 
+           end
        end
-       
+
        if isfield(model,'geneComps')
            c=r.createCell(4);
            c.setCellValue(model.comps{model.geneComps(i)});
@@ -365,7 +364,7 @@ headers={'#';'ID';'DESCRIPTION';'DEFAULT LOWER';'DEFAULT UPPER';'CONTACT GIVEN N
 r=s.createRow(0);
 for i=0:numel(headers)-1
     c=r.createCell(i);
-    c.setCellValue(headers{i+1});    
+    c.setCellValue(headers{i+1});
 end
 
 %Add some default stuff if needed
@@ -419,7 +418,7 @@ if isfield(a,'note')
     c=r.createCell(10);
     c.setCellValue(a.note);
 end
-        
+
 %Open the output stream
 out = FileOutputStream(filename);
 wb.write(out);

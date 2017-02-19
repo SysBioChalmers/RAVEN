@@ -2,11 +2,11 @@ function model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete, keep
 % getRxnsFromKEGG
 %   Retrieves information on all reactions stored in KEGG database
 %
-%   keggPath            this function reads data from a local FTP dump of 
+%   keggPath            this function reads data from a local FTP dump of
 %                       the KEGG database. keggPath is the pathway to the
 %                       root of the database
 %   keepUndefinedStoich include reactions in the form n A <=> n+1 A. These
-%                       will be dealt with as two separate metabolites 
+%                       will be dealt with as two separate metabolites
 %                       (opt, default true)
 %   keepIncomplete      include reactions which have been labelled as
 %                       "incomplete", "erroneous" or "unclear" (opt,
@@ -26,17 +26,17 @@ function model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete, keep
 %             rxns:           KEGG reaction ids
 %             rxnNames:       Name for each reaction entry
 %             mets:           KEGG compound ids. If the equations use
-%                             stoichiometry such as ID(n+1) then the whole 
+%                             stoichiometry such as ID(n+1) then the whole
 %                             expression is saved as the id
 %             eccodes:        Corresponding ec-number if available
 %             rxnMiriams:     Contains reaction specific information such as
-%                             KO id and pathways that the reaction is 
+%                             KO id and pathways that the reaction is
 %                             associated to
 %             S:              Stoichiometric matrix
 %             lb:             -1000 for all reactions
 %             ub:             1000 for all reactions
 %             rev:            1 for reversible and 0 for irreversible. For
-%                             reactions present in pathway maps the reversibility 
+%                             reactions present in pathway maps the reversibility
 %                             is taken from there
 %             b:              0 for all metabolites
 %
@@ -71,12 +71,12 @@ if nargin<3
     keepIncomplete=true;
 end
 if nargin<4
-    keepGeneral=false;
+    keepGeneral=true;
 end
 
 %Check if the reactions have been parsed before and saved. If so, load the
 %model.
-[ST I]=dbstack('-completenames');
+[ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 rxnsFile=fullfile(ravenPath,'external','kegg','keggRxns.mat');
 if exist(rxnsFile, 'file')
@@ -85,20 +85,20 @@ if exist(rxnsFile, 'file')
 else
     %Download required files from KEGG if it doesn't exist in the directory
     downloadKEGG(keggPath);
-    
+
     %Add new functionality in the order specified in models
     model.id='KEGG';
     model.description='Automatically generated from KEGG database';
 
-    %Preallocate memory for 11000 reactions
-    model.rxns=cell(11000,1);
-    model.rxnNames=cell(11000,1);
-    model.eccodes=cell(11000,1);
-    model.subSystems=cell(11000,1);
-    model.rxnMiriams=cell(11000,1);
-    equations=cell(11000,1); %Temporarily stores the equations
-    isIncomplete=false(11000,1);
-    isGeneral=false(11000,1);
+    %Preallocate memory for 10000 reactions
+    model.rxns=cell(10000,1);
+    model.rxnNames=cell(10000,1);
+    model.eccodes=cell(10000,1);
+    model.subSystems=cell(10000,1);
+    model.rxnMiriams=cell(10000,1);
+    equations=cell(10000,1); %Temporarily stores the equations
+    isIncomplete=false(10000,1);
+    isGeneral=false(10000,1);
 
     %First load information on reaction ID, reaction name, KO, pathway, and ec-number
     fid = fopen(fullfile(keggPath,'reaction'), 'r');
@@ -143,7 +143,7 @@ else
       if strcmp(tline(1:12),'NAME        ')
           model.rxnNames{rxnCounter}=tline(13:end);
       end
-      
+
       %Add whether the comment includes "incomplete", "erroneous" or "unclear"
       if strcmp(tline(1:12),'COMMENT     ')
           %Read all text until '///' or 'RPAIR'
@@ -163,13 +163,13 @@ else
           if any(strfind(upperLine,'GENERAL REACTION')==1) %It should start this way
             isGeneral(rxnCounter)=true;
           end
-              
+
           %Go to next iteration if it is '///'
           if numel(tline)<12
               continue;
           end
       end
-      
+
       %Add ec-number
       if strcmp(tline(1:12),'ENZYME      ')
           model.eccodes{rxnCounter}=tline(13:end);
@@ -203,7 +203,7 @@ else
                     %subsequent lines might be other KOs
                     orthology=true;
                   end
-                  tempStruct.value{addToIndex,1}=tline(13:18);  
+                  tempStruct.value{addToIndex,1}=tline(13:18);
               end
               model.rxnMiriams{rxnCounter}=tempStruct;
           end
@@ -282,7 +282,7 @@ else
     fclose(fid);
 
     %Construct the S matrix and list of metabolites
-    [S mets badRxns]=constructS(equations);
+    [S, mets, badRxns]=constructS(equations);
     model.S=S;
     model.mets=mets;
 
@@ -353,17 +353,15 @@ else
     model.rev=ones(rxnCounter,1);
     %Match the reaction ids
     irrevIDs=find(reversibility.rev==0);
-    [crap I]=ismember(reversibility.rxns(irrevIDs),model.rxns);
-    [crap prodMetIDs]=ismember(reversibility.product(irrevIDs),model.mets);
-    
+    [~, I]=ismember(reversibility.rxns(irrevIDs),model.rxns);
+    [~, prodMetIDs]=ismember(reversibility.product(irrevIDs),model.mets);
+    model.rev(I)=0;
+
     % There may be KEGG rxns and corresponding mets, which are no longer in
     % KEGG. Remove these
     indxToDelete=or(~prodMetIDs,~I);
-    prodMetIDs = prodMetIDs(indxToDelete==0);    
+    prodMetIDs = prodMetIDs(indxToDelete==0);
     I = I(indxToDelete==0);
-    
-    % Now changing reversibility
-    model.rev(I)=0;
 
     %See if the reactions are written in the same order in model.S
     linearInd=sub2ind(size(model.S), prodMetIDs, I);
@@ -376,7 +374,7 @@ else
     model.c=zeros(rxnCounter,1);
     model.b=zeros(numel(model.mets),1);
     model=removeReactions(model,badRxns,true,true);
-    
+
     %Save the model structure
     save(rxnsFile,'model','isGeneral','isIncomplete');
 end
@@ -394,7 +392,7 @@ end
 %an ID containing the letter "n" or "m"
 if keepUndefinedStoich==false
     I=cellfun(@any,strfind(model.mets,'n')) | cellfun(@any,strfind(model.mets,'m'));
-    [crap J]=find(model.S(I,:));
+    [~, J]=find(model.S(I,:));
     model=removeReactions(model,J,true,true);
 end
 end

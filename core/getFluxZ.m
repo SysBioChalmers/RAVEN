@@ -8,20 +8,21 @@ function Z=getFluxZ(solutionsA, solutionsB)
 %                   by randomSampling)
 %
 %   Z               a vector with Z-scores that tells you for each reaction
-%                   how likely it is for its flux to have increased (positive sign) 
+%                   how likely it is for its flux to have increased (positive sign)
 %                   or decreased (negative sign) in the second condition with
 %                   respect to the first.
 %
 %   Usage: Z=getFluxZ(solutionsA, solutionsB)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 nRxns=size(solutionsA,1);
 
 %Check that the number of reactions is the same in both cases
 if nRxns~=size(solutionsB,1)
-    dispEM('The number of reactions must be the same in solutionsA as in solutionsB'); 
+    EM='The number of reactions must be the same in solutionsA as in solutionsB';
+    dispEM(EM);
 end
 
 Z=zeros(nRxns,1);
@@ -42,7 +43,7 @@ end
 
 %If the mean of both solutions are the same then the Z-score is zero
 toCheck=mA~=mB;
-    
+
 %If the variance is zero in both cases, then put a very large or very small
 %Z-score for the corresponding reactions
 I=find(varA==0 & varB==0 & toCheck==true);

@@ -1,4 +1,4 @@
-function [pathway notMapped]=mapPathwayRxnNames(pathway,originalLabels,newLabels)
+function [pathway, notMapped]=mapPathwayRxnNames(pathway,originalLabels,newLabels)
 % mapPathwayRxnNames
 %   For mapping labels in the pathway object. Useful if you want to change
 %   what is shown in the reaction boxes.
@@ -13,24 +13,26 @@ function [pathway notMapped]=mapPathwayRxnNames(pathway,originalLabels,newLabels
 %
 %   Usage: [pathway notMapped]=mapPathwayRxnNames(pathway,originalLabels,newLabels)
 %
-%   Rasmus Agren, 2010-12-16
+%   Rasmus Agren, 2014-01-09
 %
 
 if numel(originalLabels)~=numel(newLabels)
-	throw(MException('','The new label cell array must have the same length as the old label cell array'));
+    EM='The new label cell array must have the same length as the old label cell array';
+	dispEM(EM);
 end
 
 mapped=false(numel(originalLabels),1);
 
 for i=1:numel(pathway.listOfSpecies)
     if strcmpi(pathway.listOfSpecies(i).type,'PROTEIN')
-        I=strmatch(pathway.listOfSpecies(i).name,originalLabels,'exact');
+        I=find(ismember(originalLabels,pathway.listOfSpecies(i).name));
         if any(I)
             if numel(I)==1
                 pathway.listOfSpecies(i).name=newLabels{I};
                 mapped(I)=true;
             else
-            	throw(MException('',['The label "' pathway.listOfSpecies(i).name '" was found in several positions in oldLabels']));
+                EM=['The label "' pathway.listOfSpecies(i).name '" was found in several positions in oldLabels'];
+								dispEM(EM);
             end
         end
     end

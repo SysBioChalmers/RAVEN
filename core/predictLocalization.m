@@ -1,4 +1,4 @@
-function [outModel geneLocalization transportStruct scores removedRxns]=predictLocalization(model,GSS,defaultCompartment,transportCost,maxTime,plotResults)
+function [outModel, geneLocalization, transportStruct, scores, removedRxns]=predictLocalization(model,GSS,defaultCompartment,transportCost,maxTime,plotResults)
 % predictLocalization
 %   Tries to assign reactions to compartments in a manner that is in
 %   agreement with localization predictors while at the same time
@@ -27,7 +27,7 @@ function [outModel geneLocalization transportStruct scores removedRxns]=predictL
 %                         localization
 %   transportStruct       structure with the transport reactions that had
 %                         to be inferred and between which compartments
-%   scores                structure that contains the total score history 
+%   scores                structure that contains the total score history
 %                         together with the score based on gene localization
 %                         and the score based on included transport reactions
 %   removedRxns           cell array with the reaction ids that had to be
@@ -43,15 +43,15 @@ function [outModel geneLocalization transportStruct scores removedRxns]=predictL
 %   loops. Transport reactions are only included as passive diffusion (A <=> B).
 %
 %   The score of a model is the sum of scores for all genes in their
-%   assigned compartment minus the cost of all transport reactions that 
+%   assigned compartment minus the cost of all transport reactions that
 %   had to be included. A gene can only be assigned to one compartment.
-%   This is a simplification to keep the problem size down. The problem is 
+%   This is a simplification to keep the problem size down. The problem is
 %   solved using simulated annealing.
 %
 %   Usage: [outModel geneLocalization transportStruct score removedRxns]=...
 %       predictLocalization(model,GSS,defaultCompartment,transportCost,maxTime)
 %
-%   Rasmus Agren, 2013-09-12
+%   Rasmus Agren, 2017-02-19
 %   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
 %   rxnReferences, confidenceScores and metCharge
 %
@@ -65,7 +65,8 @@ end
 transportCost=transportCost(:);
 
 if numel(transportCost)~=numel(model.mets)
-    dispEM('The vector of transport costs must have the same dimension as model.mets',true);
+    EM='The vector of transport costs must have the same dimension as model.mets';
+    dispEM(EM,true);
 end
 if nargin<5
     maxTime=15;
@@ -76,21 +77,25 @@ end
 
 if isfield(model,'rxnComps')
    model=rmfield(model,'rxnComps');
-   dispEM('The model structure contains information about reaction compartmentalization. This is not supported by this function. The rxnComps field has been deleted',false);
+   EM='The model structure contains information about reaction compartmentalization. This is not supported by this function. The rxnComps field has been deleted';
+   dispEM(EM,false);
 end
 if isfield(model,'geneComps')
    model=rmfield(model,'geneComps');
-   dispEM('The model structure contains information about gene compartmentalization. This is not supported by this function. The geneComps field has been deleted',false);
+   EM='The model structure contains information about gene compartmentalization. This is not supported by this function. The geneComps field has been deleted';
+   dispEM(EM,false);
 end
 
 I=ismember(defaultCompartment,GSS.compartments);
 if I==false
-    dispEM('defaultCompartment not found in GSS'); 
+    EM='defaultCompartment not found in GSS';
+    dispEM(EM);
 end
 
 if numel(model.comps)>1
-   dispEM('The model has several compartments. All compartments will be merged',false);
-   model=mergeCompartments(model,true,true);
+    EM='The model has several compartments. All compartments will be merged';
+    dispEM(EM,false);
+    model=mergeCompartments(model,true,true);
 end
 
 %***Begin formating the data structures
@@ -107,7 +112,7 @@ originalModelMets=model.mets;
 while 1
     irrevModel=convertToIrrev(model);
 
-    I=sum(irrevModel.S>0,2); 
+    I=sum(irrevModel.S>0,2);
 
     %Pretend that the unconstrained metabolites are made enough
     if isfield(irrevModel,'unconstrained')
@@ -124,7 +129,7 @@ while 1
         if I(i)<2
             if I(i)==1
                 %Find the reaction where this metabolite is produced
-                [crap J]=find(irrevModel.S(i,:)>0);
+                [~, J]=find(irrevModel.S(i,:)>0);
 
                 %Check the metabolites that are consumed in this reaction. The
                 %problem is if any of them is only produced in the opposite
@@ -134,7 +139,7 @@ while 1
 
                 for j=1:numel(check)
                     %Find the reactions where it participates
-                    [crap L]=find(irrevModel.S(check(j),:)>0);
+                    [~, L]=find(irrevModel.S(check(j),:)>0);
 
                     if ~isempty(L)
                         rxn=irrevModel.rxns(J);
@@ -157,7 +162,7 @@ while 1
 
     if any(metsToDelete)
         %Delete any reactions involving any of the metsToDelete
-        [crap I]=find(model.S(metsToDelete,:));
+        [~, I]=find(model.S(metsToDelete,:));
         removedRxns=[removedRxns;model.rxns(I)];
         model=removeReactions(model,I,true,true);
     else
@@ -184,7 +189,7 @@ for i=1:numel(I)
         model.geneFrom=[model.geneFrom;{{'FAKE'}}];
     end
     model.rxnGeneMat(I(i),numel(model.genes))=1;
-    model.grRules{I(i)}=''; 
+    model.grRules{I(i)}='';
 end
 
 %Update the GSS. All genes, fake or real, for which
@@ -215,7 +220,7 @@ for i=1:numel(complexes)
     genesInComplex=regexp(complexes{i},' and ','split');
 
     %Find these genes in GSS
-    [I J]=ismember(genesInComplex,GSS.genes);
+    [I, J]=ismember(genesInComplex,GSS.genes);
 
     if any(I)
         %Get the average of the genes that were found.
@@ -225,7 +230,8 @@ for i=1:numel(complexes)
         %consistent with non-complexes
         mScores=(mScores.*sum(I)+(numel(genesInComplex)-sum(I))*0.5)/numel(genesInComplex);
     else
-        dispEM(['Could not parse grRule "' complexes{i} '". Assigning score 0.0 in all compartments'],false);
+        EM=['Could not parse grRule "' complexes{i} '". Assigning score 0.0 in all compartments'];
+        dispEM(EM,false);
         mScores=ones(1,numel(genesInComplex))*0.5;
     end
     cScores(i,:)=mScores;
@@ -265,7 +271,7 @@ model=removeReactions(model,{},false,true);
 %that uptake/excretion of metabolites is always via the default
 %compartment. This is a small simplification, but should be valid in most
 %cases
-[crap I]=getExchangeRxns(model);
+[~, I]=getExchangeRxns(model);
 
 %It will be easier later on if the same place. Put them in the beginning
 J=1:numel(model.rxns);
@@ -297,17 +303,17 @@ model.grRules(1:nER)={''};
 %Remove unused genes
 model=removeReactions(model,{},false,true);
 
-%Remove genes with no match to the model and reorder so that the genes are 
+%Remove genes with no match to the model and reorder so that the genes are
 %in the same order as model.genes. Since we have already added fake genes
 %so that all genes in model exist in GSS it's fine to do
 %like this.
-[crap J]=ismember(model.genes,GSS.genes);
+[~, J]=ismember(model.genes,GSS.genes);
 GSS.genes=model.genes;
 GSS.scores=GSS.scores(J,:);
 
 %Reorder the GSS so that the first index corresponds to the
 %default compartment
-[crap J]=ismember(defaultCompartment,GSS.compartments);
+[~, J]=ismember(defaultCompartment,GSS.compartments);
 reorder=1:numel(GSS.compartments);
 reorder(J)=[];
 reorder=[J reorder];
@@ -378,22 +384,22 @@ while toc<maxTime*60
    %Genes with bad fits are more likely to be moved. This formulation never
    %moves a gene from its best compartment. Therefore a small uniform
    %weight is added.
-   [I J]=find(g2c);
+   [I, J]=find(g2c);
    geneToMove=randsample(nGenes,1,true,max(GSS.scores(I,:),[],2)-GSS.scores(sub2ind(size(g2c),I,J))+0.1);
 
    %Sample among possible compartments to move to. Add a larger weight to
    %even out the odds a little. Also a way of getting rid of loops where
    %the same set of genes are moved back and forth several times.
    toComp=randsample(nComps,1,true,GSS.scores(geneToMove,:)+0.2);
-   
+
    %Check that it moves to a new compartment
    if toComp==find(g2c(geneToMove,:))
        continue;
    end
-   
+
    %Moves the gene
-   [newS newg2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets);
-   
+   [newS, newg2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets);
+
    %Tries to connect the network. If this was not possible in 10
    %iterations, then abort. If more than 20 modifications were needed then
    %it's unlikely that it will be a lower score
@@ -401,20 +407,20 @@ while toc<maxTime*60
    for j=1:10
        %Find the metabolites that are now unconnected
        unconnected=findUnconnected(newS,nEM);
-       
+
        %Continue if there are still unconnected
        if any(unconnected)
            %For each gene find out how many of these could be connected if
            %the gene was moved and how many would be disconnected by moving
            %that gene
-           [geneIndex moveTo deltaConnected deltaScore]=selectGenes(newS,nEM,nMets,nER,nRxns,model,unconnected,g2c,GSS);
+           [geneIndex, moveTo, deltaConnected, deltaScore]=selectGenes(newS,nEM,nMets,nER,nRxns,model,unconnected,g2c,GSS);
 
            %Score which gene would be the best to move. The highest
            %deltaScore is 1.0. I want it to be possible to move a gene from
            %worst to best compartment even if it disconnects, say, 1.5 more
            %metabolites.
-           [score I]=max(1.5*deltaScore+deltaConnected);
-           
+           [score, I]=max(1.5*deltaScore+deltaConnected);
+
            %Checks if it has to add a transport or if there is a gene that
            %could be moved order to have a more connected network
            hasToAddTransport=true;
@@ -423,45 +429,45 @@ while toc<maxTime*60
                   hasToAddTransport=false;
               end
            end
-           
+
            %If it is possible to move any gene in order to have a more
            %connected network, then move the best one
            if hasToAddTransport==false;
-                [newS newg2c]=moveGene(newS,model,g2c,geneIndex(I),moveTo(I),nRxns,nMets);
+                [newS, newg2c]=moveGene(newS,model,g2c,geneIndex(I),moveTo(I),nRxns,nMets);
            else
                 %Choose a random unconnected metabolite that should be
                 %connected
                 transMet=unconnected(randsample(numel(unconnected),1));
-                
+
                 %First get where the metabolite is now
                 comps=ceil((transMet-nEM)/((size(S,1)-nEM)/nComps));
 
                 %Find the corresponding metabolite index if it were in the
                 %default compartment
                 dcIndex=transMet-(comps-1)*nMets;
-                
+
                 %Then get the indexes of that metabolite in all
                 %compartments
                 allIndexes=dcIndex;
                 for k=1:nComps-1
                    allIndexes=[allIndexes;dcIndex+nMets*k];
                 end
-                
+
                 %It could be that some of these aren't used in any
                 %reaction. Get only the ones which are
                 I=sum(newS(allIndexes,:)~=0,2)>0;
-                
+
                 %Then get the ones that are used but not in unconnected.
                 %These are metabolites that could potentially be
                 %transported to connect transMet
                 connectedUsed=setdiff(allIndexes(I),unconnected);
-                
+
                 %I think this is an error but I leave it for now. It seems
                 %to happen if nothing can be connected in one step
                 if isempty(connectedUsed)
                    break;
                 end
-                
+
                 %If transMet is in the default compartment then everything
                 %is fine, just connect it to a random one
                 if transMet==dcIndex
@@ -485,25 +491,25 @@ while toc<maxTime*60
            break;
        end
    end
-   
+
    %If the network was connected in a new way, it is possible that some
    %transport reactions are no longer needed. They should be removed
-   if wasConnected==true        
+   if wasConnected==true
         %These are the metabolites that are being transported
         activeTransport=find(sum(newS(:,nER+nRxns*nComps+1:end),2));
-        
+
         %Get the metabolites that are unconnected if transport wasn't used
         unconnected=findUnconnected(newS(:,1:nER+nRxns*nComps),nEM);
-        
+
         %Find the transport reactions that are not needed and delete them
         I=setdiff(activeTransport,unconnected);
-        
-        %Since both metabolites in a transport rxns must be connected for 
+
+        %Since both metabolites in a transport rxns must be connected for
         %the reaction to be deleted, the sum over the colums should be 4.
         newS(:,find(sum(newS(I,nER+nRxns*nComps+1:end))==4)+nER+nRxns*nComps)=0;
-       
+
         %Score the solution and determine whether to keep it as a new solution
-        [score geneScore trCost]=scoreModel(newS,newg2c,GSS,transportCost);
+        [score, geneScore, trCost]=scoreModel(newS,newg2c,GSS,transportCost);
 
         %If it was the best solution so far, keep it
         if score>bestScore
@@ -511,7 +517,7 @@ while toc<maxTime*60
             bestS=newS;
             bestg2c=newg2c;
         end
-        
+
         %This should not be steepest descent later
         if score>=bestScore% || exp((score-bestScore)*7)>rand()
             plotScore=[plotScore;geneScore];
@@ -519,7 +525,7 @@ while toc<maxTime*60
             totScore=[totScore;score];
             S=newS;
             g2c=newg2c;
-            
+
             if plotResults==true
                 subplot(3,2,1);
                 spy(S);
@@ -546,22 +552,22 @@ scores.geneScore=geneScore;
 scores.transCost=trCost;
 
 %Find which metabolites are transported and to where
-[I J]=find(bestS(nEM+1:nEM+nMets,end-nMets*(nComps-1)+1:end));
+[I, J]=find(bestS(nEM+1:nEM+nMets,end-nMets*(nComps-1)+1:end));
 J=ceil(J/nMets+1);
 transportStruct.mets=model.metNames(I+nEM);
 transportStruct.toComp=GSS.compartments(J);
 
-[I J]=find(bestg2c);
+[I, J]=find(bestg2c);
 geneLocalization.genes=GSS.genes(I);
 geneLocalization.comps=GSS.compartments(J);
 
 %Resort the gene names
-[crap I]=sort(geneLocalization.genes);
+[~, I]=sort(geneLocalization.genes);
 geneLocalization.genes=geneLocalization.genes(I);
 geneLocalization.comps=geneLocalization.comps(I);
 
 %Remove the fake genes
-I=strmatch('&&FAKE&&',geneLocalization.genes);
+I=strncmp('&&FAKE&&',geneLocalization.genes,8);
 geneLocalization.genes(I)=[];
 geneLocalization.comps(I)=[];
 
@@ -712,14 +718,14 @@ end
 
 %Then remove all reactions and metabolites that aren't used in the final
 %solution from the optimization
-[I J]=find(bestS(:,1:nER+nComps*nRxns));
+[~, J]=find(bestS(:,1:nER+nComps*nRxns));
 K=true(numel(outModel.rxns),1);
 K(J)=false;
 K(end-nTransRxns+1:end)=false;
 outModel=removeReactions(outModel,K,true);
 
 %Remove all fake genes
-I=strmatch('&&FAKE&&',outModel.genes);
+I=strncmp('&&FAKE&&',outModel.genes,8);
 outModel.genes(I)=[];
 if isfield(outModel,'geneMiriams')
     outModel.geneMiriams(I)=[];
@@ -731,27 +737,27 @@ outModel.rxnGeneMat(:,I)=[];
 end
 
 %Moves a gene and all associated reactions from one compartment to another
-function [S g2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets)
+function [S, g2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets)
     %Find the current compartment and update to the new one
     currentComp=find(g2c(geneToMove,:));
     g2c(geneToMove,:)=false;
     g2c(geneToMove,toComp)=true;
-    
+
     %Find the reactions in the original model that the gene controls
-    [I crap]=find(model.rxnGeneMat(:,geneToMove));
-    
+    [I, ~]=find(model.rxnGeneMat(:,geneToMove));
+
     %Calculate their current positions in the S matrix
     oldRxns=I+(currentComp-1)*nRxns;
 
     %And their new positions
     newRxns=I+(toComp-1)*nRxns;
-    
+
     %The metabolite ids also have to be changed in order to match the new
     %compartment
     metChange=nMets*(toComp-currentComp);
-    
+
     %Update the reactions
-    [I J K]=find(S(:,oldRxns));
+    [I, J, K]=find(S(:,oldRxns));
     I=I+metChange;
 
     %Move the reactions
@@ -774,42 +780,42 @@ function unconnected=findUnconnected(S,nEM,metsToCheck)
         I(metsToCheck)=true;
         S=S(I,:);
     end
-    
+
     em=false(size(S,1),1);
     em(1:nEM)=true;
-    
+
     %Construct a matrix in which the reversible reactions are inverted
     I=sum(S>2,1) | sum(S>2,1);
     revS=S;
     revS(:,I)=revS(:,I)*-1;
-    
+
     %First calculate the ones that are ok
     %Produced in 2 rxns, is exchange, is not used at all, is produced in
     %non-reversible, involved in more than 1 reversible reactions
     connected=sum(S>0,2)>1 | em | sum(S~=0,2)==0 | sum(S(:,~I)>0,2)>0 | sum(S(:,I)~=0,2)>1;
-    
+
     %Then get the ones that are unconnected because they are never produced
     unconnected=sum(S>0 | revS>0,2)==0 & connected==false;
-    
+
     %Then get the ones that are potentially unconnected
     maybeUnconnected=~connected & ~unconnected;
     %maybeUnconnected=find(maybeUnconnectedS);
 
     %The metabolites in maybeUnconnected are involved in one reversible reaction and
-    %not produced in any other reaction. 
+    %not produced in any other reaction.
     %This means that the reactions which have at least one met in
     %maybeUnconnected as reactant and one as product are unconnected. The
     %metabolites in maybeUnconnected that are present in those reactions
     %are then dead ends
     deadRxns=any(S(maybeUnconnected,:)>0) & any(S(maybeUnconnected,:)<0);
-    
+
     %Get the mets involved in any of those reactions
     problematic=any(S(:,deadRxns)~=0,2);
 
     %If any of these are in the maybeUnconnected list then the
     %metabolite is unconnected
     unconnected(problematic & maybeUnconnected)=true;
-    
+
     %Map back to metsToCheck
     if nargin>2
         unconnected=metsToCheck(unconnected(nEM+1:end));
@@ -821,9 +827,9 @@ end
 %Given a set of unconnected metabolites, this function tries to move each
 %gene that could connect any of them, calculates the number of newly connected
 %metabolites minus the number of newly disconnected metabolites. As some metabolites
-%are very connected, only 25 genes are checked. Genes that have a low score 
+%are very connected, only 25 genes are checked. Genes that have a low score
 %in their current compartment are more likely to be moved.
-function [geneIndex moveTo deltaConnected deltaScore]=selectGenes(S,nEM,nMets,nER,nRxns,model,unconnected,g2c,GSS)
+function [geneIndex, moveTo, deltaConnected, deltaScore]=selectGenes(S,nEM,nMets,nER,nRxns,model,unconnected,g2c,GSS)
     %If moveTo is 0 then the gene can't connect any of the metabolites
     moveTo=zeros(numel(model.genes),1);
     deltaConnected=zeros(numel(model.genes),1);
@@ -831,47 +837,46 @@ function [geneIndex moveTo deltaConnected deltaScore]=selectGenes(S,nEM,nMets,nE
     %First get where the metabolites are now
     nComps=size(g2c,2);
     comps=ceil((unconnected-nEM)/((size(S,1)-nEM)/nComps));
-    
+
 	%Find the corresponding metabolite indexes if they all were in the
 	%default compartment
     dcIndexes=unique(unconnected-(comps-1)*nMets);
-    
+
     %Then find them if they were in any other compartment
     allIndexes=dcIndexes;
     for i=1:nComps-1
        allIndexes=[allIndexes;dcIndexes+nMets*i];
     end
-    
+
     %Also check which reversible reactions that could be used
     I=sum(S>2,1) | sum(S>2,1);
     revS=S;
     revS(:,I)=revS(:,I)*-1;
-    
+
     %Find all reactions that could make any of the unconnected metabolites
     %in some other compartment
     newMets=setdiff(allIndexes,unconnected);
-    [crap potential]=find(S(newMets,:)>0 | revS(newMets,:)>0);
-    %[crap potential]=find(sum(S(newMets,:)>0,1) | sum(revS(newMets,:)>0,1));
+    [~, potential]=find(S(newMets,:)>0 | revS(newMets,:)>0);
     potential(potential<=nER | potential>nER+nRxns*nComps)=[]; %No exchange rxns or transport rxns
-    
+
     %Map J to the real metabolic reactions in model
     rxnComps=ceil((potential-nER)/(nRxns));
-    
+
 	%Find the corresponding reaction indexes if they all were in the
 	%default compartment
     dcRxnIndexes=potential-(rxnComps-1)*nRxns;
-    
+
     %Get the genes for those reactions
     genes=find(sum(model.rxnGeneMat(dcRxnIndexes,:)>0,1));
-    
+
     %For some cases there can be very many reactions to connect something.
     %This is in particular true in the beginning of the optimization if,
     %say, ATP is unconnected. Therefore limit the number of genes to be
     %checked to 25. Weigh so that genes with bad scores in their current
     %compartment are more likely to be moved
-    
+
     %Get scores for these genes
-    [crap J]=find(g2c(genes,:));
+    [~, J]=find(g2c(genes,:));
 
     %Add a small weight so that genes in their best compartment could be
     %moved as well
@@ -879,12 +884,12 @@ function [geneIndex moveTo deltaConnected deltaScore]=selectGenes(S,nEM,nMets,nE
     modGeneScores=1.1-geneScores;
     if numel(genes)>25
         rGenes=genes(randsample(numel(genes),min(numel(genes),25),true,modGeneScores));
-        
+
         %The sampling with weights could give duplicates
         rGenes=unique(rGenes);
-        
+
         %Reorder the geneScores to match
-        [crap I]=ismember(rGenes,genes);
+        [~, I]=ismember(rGenes,genes);
         geneScores=geneScores(I);
         genes=rGenes;
     end
@@ -894,7 +899,7 @@ function [geneIndex moveTo deltaConnected deltaScore]=selectGenes(S,nEM,nMets,nE
         %get them so speed up the algorithm.
         %First get all involved reactions in the default compartment
         rxns=find(model.rxnGeneMat(:,genes(i)));
-        
+
         %Then get their mets
         mets=find(sum(model.S(:,rxns)~=0,2)>0);
 
@@ -903,15 +908,15 @@ function [geneIndex moveTo deltaConnected deltaScore]=selectGenes(S,nEM,nMets,nE
         for j=1:nComps-1
            allIndexes=[allIndexes;mets+nMets*j];
         end
-        
+
         %Check which of the unconnected metabolites that these
         %reactions correspond to. This could have been done earlier,
         %but it's fast. I skip the reversibility check because it's
         %unlikely to be an issue here. Worst case is that the gene is
         %tested once to much
-        [I crap]=find(model.S(:,rxns));
+        [I, ~]=find(model.S(:,rxns));
         moveToComps=unique(comps(ismember(dcIndexes,I)));
-        
+
         %Try to move the gene to each of the compartments
         bestMove=-inf;
         bestComp=[];
@@ -932,7 +937,7 @@ function [geneIndex moveTo deltaConnected deltaScore]=selectGenes(S,nEM,nMets,nE
         moveTo(genes(i))=bestComp;
         deltaConnected(genes(i))=bestMove;
     end
-    
+
     %Finish up
     geneIndex=genes(:);
     moveTo=moveTo(geneIndex);
@@ -948,23 +953,24 @@ function S=addTransport(S,nRxns,nER,nMets,nEM,nComps,metA,metB)
     mets=[metA;metB];
     %Find the current compartments for the metabolites
     comps=ceil((mets-nEM)/((size(S,1)-nEM)/nComps));
-    
+
     if sum(comps==1)~=1
-    	dispEM('Tried to create a transport reaction from a non-default compartment'); 
+    	EM='Tried to create a transport reaction from a non-default compartment';
+      dispEM(EM);
     end
-    
+
     %Calculate the reaction index
     rIndex=(nER+nRxns*nComps)+mets(comps~=1)-nEM-nMets;
-    
+
     S(mets,rIndex)=2;
 end
 
 %Scores a network based on the localization of the genes and the number of
 %transporter reactions used.
-function [score geneScore transportCost]=scoreModel(S,g2c,GSS,transportCost)
-    [I J]=find(g2c);
+function [score, geneScore, transportCost]=scoreModel(S,g2c,GSS,transportCost)
+    [I, J]=find(g2c);
     geneScore=sum(GSS.scores(sub2ind(size(g2c),I,J)));
-    [I crap]=find(S==2);
+    [I, ~]=find(S==2);
     I=unique(I);
     transportCost=sum(transportCost(I));
     score=geneScore-transportCost;
