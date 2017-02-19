@@ -43,7 +43,9 @@ else
     if any(strfind(evalc('mosekopt info'),'MOSEK Version 7'))
         mosekParams.MSK_IPAR_PRESOLVE_USE=1;
     else
-        mosekParams.MSK_DPAR_PRESOLVE_TOL_LIN_DEP=10^-9;
+        % NOTE: This options were removed or renamed in Mosek 8. Should be investigated.
+        % mosekParams.MSK_DPAR_PRESOLVE_TOL_LIN_DEP=10^-9;
+        
         %Turn off the presolve. This is because Mosek sometimes returns non-feasible
         %solutions because of problems with the presolver. Should check if version
         %is <6.0.0.147

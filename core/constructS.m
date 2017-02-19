@@ -59,7 +59,7 @@ equations=strrep(equations,' => ',' <=> ');
 
 %Replace the the plus signs with some weird character that will be used for
 %parsing
-equations=strrep(equations,' + ', '$$$');
+equations=strrep(equations,' + ', '?');
 
 %Generate the stoichiometric matrix
 S=zeros(numel(mets),numel(equations));
@@ -79,8 +79,8 @@ for i=1:numel(equations)
         end
     end
 
-    reactants=regexp(equations{i}(1:arrowIndex-1),'$$$','split');
-    products=regexp(equations{i}(arrowIndex+5:end),'$$$','split');
+    reactants=regexp(equations{i}(1:arrowIndex-1),'?','split');
+    products=regexp(equations{i}(arrowIndex+5:end),'?','split');
 
     %If the splitting character is at the end (if exchange rxns), then an
     %empty string will exist together with the real ones. Remove it

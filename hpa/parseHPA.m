@@ -48,7 +48,7 @@ end
 
 %Get the unique values of each data type
 [hpaData.genes, ~, I]=unique(hpa{1});
-[~, J, K]=unique(strcat(hpa{2},'$$$',hpa{3}));
+[~, J, K]=unique(strcat(hpa{2},'€',hpa{3}));
 hpaData.tissues=hpa{2}(J);
 hpaData.celltypes=hpa{3}(J);
 [hpaData.levels, ~, L]=unique(hpa{4});

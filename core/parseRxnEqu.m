@@ -27,14 +27,14 @@ metabolites={};
 
 %Replace the the direction arrows and plus signs with a weird character
 %that will be used for parsing
-equations=strrep(equations,' <=> ', '$$$');
-equations=strrep(equations,' => ', '$$$');
-equations=strrep(equations,' + ', '$$$');
+equations=strrep(equations,' <=> ', '€');
+equations=strrep(equations,' => ', '€');
+equations=strrep(equations,' + ', '€');
 equations=strtrim(equations);
 
 for i=1:numel(equations)
     %Split each equation in possible metabolites
-    candidates=regexp(equations{i},'$$$','split');
+    candidates=regexp(equations{i},'€','split');
 
     %If the splitting character is at the end (if exchange rxns), then an
     %empty string will exist together with the real ones. Remove it
