@@ -416,6 +416,13 @@ for i=1:numel(models)
     else
         models{useOrderIndexes(i)}.genes=allGenes{1}(unique(newGenes));
     end
+    if isfield(models{useOrderIndexes(i)},'geneComps')
+        geneComps=models{useOrderIndexes(i)}.geneComps(1);
+        models{useOrderIndexes(i)}.geneComps=zeros(numel(models{useOrderIndexes(i)}.genes),1);
+        % Assume that all genes are in the same compartment, and this
+        % compartment is specified for the first gene
+        models{useOrderIndexes(i)}.geneComps(:)=geneComps;
+    end
 end
 
 %Now merge the models. All information should be correct except for 'or'
