@@ -114,6 +114,7 @@ model.inchis={};
 model.metFormulas={};
 model.metMiriams={};
 model.unconstrained=[];
+model.metCharge=[];
 
 %Load the model using libSBML
 modelSBML = TranslateSBML(fileName);
@@ -133,9 +134,9 @@ for i=1:numel(modelSBML.compartment)
     compartmentNames{i}=modelSBML.compartment(i).name;
     if isCOBRA==true
         try if strcmpi(modelSBML.compartment(i).id(1:2),'C_')
-              compartmentIDs{i}=modelSBML.compartment(i).id(3:end);
+                compartmentIDs{i}=modelSBML.compartment(i).id(3:end);
             else
-              compartmentIDs{i}=modelSBML.compartment(i).id;
+                compartmentIDs{i}=modelSBML.compartment(i).id;
             end
         catch
             compartmentIDs{i}=modelSBML.compartment(i).id;
@@ -146,14 +147,14 @@ for i=1:numel(modelSBML.compartment)
     if isfield(modelSBML.compartment(i),'outside')
         if ~isempty(modelSBML.compartment(i).outside)
             if isCOBRA==true
-              try if strcmpi(modelSBML.compartment(i).outside(1:2),'C_')
-                    compartmentOutside{i}=modelSBML.compartment(i).outside(3:end);
-                  else
+                try if strcmpi(modelSBML.compartment(i).outside(1:2),'C_')
+                        compartmentOutside{i}=modelSBML.compartment(i).outside(3:end);
+                    else
+                        compartmentOutside{i}=modelSBML.compartment(i).outside;
+                    end
+                catch
                     compartmentOutside{i}=modelSBML.compartment(i).outside;
-                  end
-              catch
-                  compartmentOutside{i}=modelSBML.compartment(i).outside;
-              end
+                end
             else
                 compartmentOutside{i}=modelSBML.compartment(i).outside(3:end);
             end
@@ -184,6 +185,7 @@ metaboliteUnconstrained=[];
 metaboliteFormula={};
 metaboliteInChI={};
 metaboliteMiriams={};
+metaboliteCharge=[];
 
 geneNames={};
 geneIDs={};
@@ -342,15 +344,31 @@ else
                 end
             end
         else
-            %Use the full name
-            metaboliteNames{numel(metaboliteNames)+1,1}=modelSBML.species(i).name;
+            % Metabolite names could be of format NAME [compartment]. First
+            % check whether metabolite name ends with square brackets, and
+            % then check if the text within these brackets is a compartment
+            % name. If so, then remove this section from the metabolite
+            % name.
+            comp.match=regexp(modelSBML.species(i).name,'.* \[(.*)\]$','match');
+            if ~isempty(comp.match)
+                comp.split=strsplit(comp.match{1},{'[',']'});
+                comp.true=any(strcmp({modelSBML.compartment.name},comp.split{2}));
+                if comp.true==1
+                    metaboliteNames{numel(metaboliteNames)+1,1}=strtrim(comp.split{1});
+                else
+                    metaboliteNames{numel(metaboliteNames)+1,1}=modelSBML.species(i).name;
+                end
+            else
+                %Use the full name
+                metaboliteNames{numel(metaboliteNames)+1,1}=modelSBML.species(i).name;
+            end  
         end
 
         metaboliteIDs{numel(metaboliteIDs)+1,1}=modelSBML.species(i).id(3:numel(modelSBML.species(i).id));
         try if strcmpi(modelSBML.species(i).compartment(1:2),'C_')
-              metaboliteCompartments{numel(metaboliteCompartments)+1,1}=modelSBML.species(i).compartment(3:end);
+                metaboliteCompartments{numel(metaboliteCompartments)+1,1}=modelSBML.species(i).compartment(3:end);
             else
-              metaboliteCompartments{numel(metaboliteCompartments)+1,1}=modelSBML.species(i).compartment;
+                metaboliteCompartments{numel(metaboliteCompartments)+1,1}=modelSBML.species(i).compartment;
             end
         catch
             metaboliteCompartments{numel(metaboliteCompartments)+1,1}=modelSBML.species(i).compartment;
@@ -384,6 +402,17 @@ else
                 metaboliteFormula{numel(metaboliteFormula),1}=formula;
             end
         end
+
+        %Additional information from FBC format
+        %Chemical formula
+        if isfield(modelSBML.species(i),'fbc_chemicalFormula')
+            metaboliteFormula{numel(metaboliteFormula),1}=modelSBML.species(i).fbc_chemicalFormula;
+        end
+        %Charge
+        if isfield(modelSBML.species(i),'fbc_charge')
+            metaboliteCharge(numel(metaboliteCharge)+1,1)=modelSBML.species(i).fbc_charge;
+        end
+        %% ADD ANNOTATION (KEGG/CHEBI) TO MIRIAM, LOCATED IN SPECIES.ANNOTATION
     end
 end
 
@@ -406,7 +435,18 @@ reactionObjective=zeros(numel(modelSBML.reaction),1);
 %Construct the stoichiometric matrix while the reaction info is read
 S=zeros(numel(metaboliteIDs),numel(modelSBML.reaction));
 
+%This is for collecting all genes before getting a unique list (only used
+%in the COBRA format). The reason is to avoid too many calls to strmatch
+tempGeneList={};
+
 counter=0;
+%If FBC, then bounds have parameter ids defined for the whole model
+if isfield(modelSBML,'parameter')
+    parameter.name=cell(numel(modelSBML.parameter),1);
+    parameter.name={modelSBML.parameter(:).id}';
+    parameter.value={modelSBML.parameter(:).value}';
+end
+
 for i=1:numel(modelSBML.reaction)
 
     %Check that the reaction doesn't produce a complex and nothing else.
@@ -415,7 +455,7 @@ for i=1:numel(modelSBML.reaction)
     %create them. This only applies to the non-COBRA format.
     if numel(modelSBML.reaction(i).product)==1
         if strcmp(modelSBML.reaction(i).product(1).species(1:3),'Cx_')==true
-        	continue;
+            continue;
         end
     end
 
@@ -438,8 +478,20 @@ for i=1:numel(modelSBML.reaction)
     reactionIDs{counter}=modelSBML.reaction(i).id(3:end);
     reactionReversibility(counter)=modelSBML.reaction(i).reversible;
 
+    %If model is FBC, first get parameter of bound and then replace it
+    %with the correct value. Probably faster with replace(), but this was
+    %only introduced in Matlab R2016b
+    if isfield(modelSBML.reaction(i),'fbc_lowerFluxBound')
+        lb=modelSBML.reaction(i).fbc_lowerFluxBound;
+        ub=modelSBML.reaction(i).fbc_upperFluxBound;
+        for n=1:numel(parameter.value)
+            lb=regexprep(lb,parameter.name(n),num2str(parameter.value{n}));
+            ub=regexprep(ub,parameter.name(n),num2str(parameter.value{n}));
+        end
+        reactionLB(counter)=str2num(lb);
+        reactionUB(counter)=str2num(ub);
     %The order of these parameters should not be hard coded
-    if isfield(modelSBML.reaction(i).kineticLaw,'parameter')
+    elseif isfield(modelSBML.reaction(i).kineticLaw,'parameter')
         reactionLB(counter)=modelSBML.reaction(i).kineticLaw.parameter(1).value;
         reactionUB(counter)=modelSBML.reaction(i).kineticLaw.parameter(2).value;
         reactionObjective(counter)=modelSBML.reaction(i).kineticLaw.parameter(3).value;
@@ -502,7 +554,9 @@ for i=1:numel(modelSBML.reaction)
         %Get gene association for COBRA Toolbox models. The genes are added
         %here as well as the associations. Gene complexes are ok, but only
         %if they are on the form (A and B and...)
-        if ~isempty(modelSBML.reaction(i).notes)
+        if isfield(modelSBML.reaction(i),'fbc_geneProductAssociation') & ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation)
+            grRules{counter}=modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association.fbc_association;
+        elseif ~isempty(modelSBML.reaction(i).notes)
             startString='GENE_ASSOCIATION:';
             endString='</';
             geneStart=strfind(modelSBML.reaction(i).notes,startString);
@@ -559,12 +613,22 @@ for i=1:numel(modelSBML.reaction)
             flagEmpty=true;
         end
     else
-        if ~isempty(modelSBML.reaction(i).notes)
-            searchString=modelSBML.reaction(i).notes;
-            startString='PROTEIN_CLASS:';
-            endString='</';
+        if isfield(modelSBML,'fbc_version')
+            if ~isempty(modelSBML.reaction(i).notes)
+                searchString=modelSBML.reaction(i).notes;
+                startString='EC Number:';
+                endString='</';
+            else
+                flagempty=true;
+            end
         else
-            flagEmpty=true;
+            if ~isempty(modelSBML.reaction(i).notes)
+                searchString=modelSBML.reaction(i).notes;
+                startString='PROTEIN_CLASS:';
+                endString='</';
+            else
+                flagEmpty=true;
+            end
         end
     end
 
@@ -740,6 +804,11 @@ if any(~cellfun(@isempty,metaboliteFormula))
     model.metFormulas=metaboliteFormula;
 end
 
+%If any charges have been loaded
+if ~isempty(metaboliteCharge)
+    model.metCharge=metaboliteCharge;
+end
+
 %If any gene short names have been loaded
 if any(~cellfun(@isempty,geneShortNames))
     model.geneShortNames=geneShortNames;
@@ -833,6 +902,9 @@ end
 if isempty(model.metMiriams)
     model=rmfield(model,'metMiriams');
 end
+if isempty(model.metCharge)
+    model=rmfield(model,'metCharge');
+end
 
 %This just removes the grRules if no genes have been loaded
 if ~isfield(model,'genes') && isfield(model,'grRules')
@@ -906,8 +978,8 @@ function miriamStruct=parseMiriam(searchString)
 
 if ~isempty(searchString)
     startString='urn:miriam:';
-	midString=':';
-	endString='"';
+    midString=':';
+    endString='"';
     startIndexes=strfind(searchString,startString);
     midIndexes=strfind(searchString,midString);
     endIndexes=strfind(searchString,endString);
