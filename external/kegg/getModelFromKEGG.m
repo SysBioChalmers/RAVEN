@@ -38,10 +38,11 @@ if nargin<3
     keepIncomplete=true;
 end
 if nargin<4
-    keepGeneral=true;
+    keepGeneral=false;
 end
 
 %First get all reactions
+
 model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral);
 fprintf('KEGG reactions loaded\n');
 

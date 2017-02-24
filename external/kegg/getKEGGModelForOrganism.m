@@ -5,7 +5,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %   Reconstructs a genome-scale metabolic model based on protein homology to the
 %   orthologies in KEGG
 %
-%   organismID      	three letter abbreviation of the organism (as used in
+%   organismID          three letter abbreviation of the organism (as used in
 %                       KEGG). If not available, use a closely related
 %                       species. This is used for determing the
 %                       phylogenetic distance. Use 'eukaryotes' or
@@ -325,10 +325,6 @@ outFiles=listFiles(fullfile(outDir,'*.out'));
 missingFASTA=setdiff(KOModel.rxns,[fastaFiles;alignedFiles;hmmFiles;outFiles]);
 
 if ~isempty(missingFASTA)
-    if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file')
-        %If no sequence file exists then download from KEGG
-        downloadKEGG(fullfile(dataDir,'keggdb'));
-    end
     %Only construct models for KOs which don't have files already
     fastaModel=removeReactions(KOModel,setdiff(KOModel.rxns,missingFASTA),true,true);
     %Permute the order of the KOs in the model so that constructMultiFasta
