@@ -37,7 +37,7 @@ outFile=tempname;
 fid=fopen(outFile,'w');
 
 %Do the prediction
-[~, output]=unix(['perl ' ravenPath '/software/WoLFPSORT_package_v0.2/bin/runWolfPsortSummary ' kingdom ' < ' inputFile]);
+[~, output]=unix(['perl "' ravenPath '/software/WoLFPSORT_package_v0.2/bin/runWolfPsortSummary" ' kingdom ' < ' inputFile]);
 
 %Save output and call the general parser
 fprintf(fid,output);

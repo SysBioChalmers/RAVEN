@@ -435,10 +435,6 @@ reactionObjective=zeros(numel(modelSBML.reaction),1);
 %Construct the stoichiometric matrix while the reaction info is read
 S=zeros(numel(metaboliteIDs),numel(modelSBML.reaction));
 
-%This is for collecting all genes before getting a unique list (only used
-%in the COBRA format). The reason is to avoid too many calls to strmatch
-tempGeneList={};
-
 counter=0;
 %If FBC, then bounds have parameter ids defined for the whole model
 if isfield(modelSBML,'parameter')

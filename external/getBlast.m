@@ -46,21 +46,32 @@ outFile=tempname;
 
 %Create a database for the new organism and blast each of the
 %refFastaFiles against it
-system([fullfile(ravenPath,'software','blast-2.2.26+','makeblastdb') ' -in "' fastaFile{1} '" -out "' tmpDB '" -dbtype "prot"']);
+if isunix
+    if ismac
+        binEnd='.mac';
+    else
+        binEnd='';
+    end
+elseif ispc
+    binEnd='';
+else    dispEM('Unknown OS, exiting.')
+    return
+end
+[status output]=system(['"' fullfile(ravenPath,'software','blast-2.4.0+',['makeblastdb' binEnd]) '" -in "' fastaFile{1} '" -out "' tmpDB '" -dbtype "prot"']);
 
 for i=1:numel(refFastaFiles)
     fprintf(['BLASTing "' modelIDs{i} '" against "' organismID{1} '"..\n']);
-    system([fullfile(ravenPath,'software','blast-2.2.26+','blastp') ' -query "' refFastaFiles{i} '" -out "' outFile '_' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length"']);
-end
+    [status output]=system(['"' fullfile(ravenPath,'software','blast-2.4.0+',['blastp' binEnd]) '" -query "' refFastaFiles{i} '" -out "' outFile '_' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length"']);
+ end
 delete([tmpDB '*']);
 
 %Then create a database for each of the reference organisms and blast
 %the new organism against them
 for i=1:numel(refFastaFiles)
     fprintf(['BLASTing "' organismID{1} '" against "' modelIDs{i} '"..\n']);
-    system([fullfile(ravenPath,'software','blast-2.2.26+','makeblastdb') ' -in "' refFastaFiles{i} '" -out "' tmpDB '" -dbtype "prot"']);
-    system([fullfile(ravenPath,'software','blast-2.2.26+','blastp') ' -query "' fastaFile{1} '" -out "' outFile '_r' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length"']);
-    delete([tmpDB '*']);
+    [status output]=system(['"' fullfile(ravenPath,'software','blast-2.4.0+',['makeblastdb' binEnd]) '" -in "' refFastaFiles{i} '" -out "' tmpDB '" -dbtype "prot"']);
+    [status output]=system(['"' fullfile(ravenPath,'software','blast-2.4.0+',['blastp' binEnd]) '" -query "' fastaFile{1} '" -out "' outFile '_r' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length"']);
+     delete([tmpDB '*']);
 end
 
 %Done with the BLAST, do the parsing of the text files
