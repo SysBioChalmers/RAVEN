@@ -35,7 +35,10 @@ else
     fprintf('Checking if RAVEN is in the Matlab path... FAILED\n');
     addMe=input('\tWould you like to add the RAVEN directory to the path list? Y/N\n','s');
     if strcmpi(addMe,'y')
-        addpath(ravenDir);
+        subpath=genpath(ravenDir); % Lists all subdirectories
+        subpath=regexprep(subpath,['[\\\/].git[a-zA-Z_0-9\\\/]*;'],';'); % Remove \.git and subfolders
+        subpath=[strrep(subpath,[ravenDir ';'],'') ravenDir]; % Remove remnants of .git subfolders and add ravenDir
+        addpath(subpath);
         savepath
     end
 end
