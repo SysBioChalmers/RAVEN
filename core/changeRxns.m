@@ -49,7 +49,6 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %
 %   Usage: model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %
-%   Rasmus Agren, 2017-02-19
 %   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
 %   rxnReferences and confidenceScores
 %

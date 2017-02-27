@@ -16,8 +16,6 @@ function newModel=expandModel(model)
 %   Usage: newModel=expandModel(model)
 %
 %   Rasmus Agren, 2017-02-19
-%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
-%   rxnReferences and confidenceScores
 %
 
 %Start by checking which reactions could be expanded

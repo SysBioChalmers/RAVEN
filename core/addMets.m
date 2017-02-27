@@ -41,7 +41,6 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 %
 %   Usage: newModel=addMets(model,metsToAdd,copyInfo)
 %
-%   Rasmus Agren, 2017-02-19
 %   Simonas Marcisauskas, 2016-11-01 - added support for metCharge
 %
 

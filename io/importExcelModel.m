@@ -64,7 +64,6 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Rasmus Agren, 2014-01-23
 %   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
 %   rxnReferences, confidenceScores and metCharge
 %

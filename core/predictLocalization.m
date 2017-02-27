@@ -52,8 +52,6 @@ function [outModel, geneLocalization, transportStruct, scores, removedRxns]=pred
 %       predictLocalization(model,GSS,defaultCompartment,transportCost,maxTime)
 %
 %   Rasmus Agren, 2017-02-19
-%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
-%   rxnReferences, confidenceScores and metCharge
 %
 
 if nargin<4

@@ -18,8 +18,6 @@ function exportToExcelFormat(model,filename)
 %   Usage: exportToExcelFormat(model,filename)
 %
 %   Rasmus Agren, 2017-02-19
-%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
-%   rxnReferences, confidenceScores and metCharge
 %
 
 [filePath, A, B]=fileparts(filename);

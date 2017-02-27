@@ -21,7 +21,6 @@ function [model addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,on
 %   Usage: [model addedRxns]=addTransport(model,fromComp,toComps,metNames,...
 %           isRev,onlyToExisting)
 %
-%   Rasmus Agren, 2014-02-19
 %   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
 %   rxnReferences, confidenceScores and metCharge
 %

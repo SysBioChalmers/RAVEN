@@ -43,7 +43,6 @@ function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFlux
 %           minNrFluxes,allowExcretion,params,ignoreIntBounds)
 %
 %   Rasmus Agren, 2017-02-19
-%   Simonas Marcisauskas, 2016-11-01 - added support for metCharge
 %
 
 if nargin<2

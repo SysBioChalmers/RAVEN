@@ -13,7 +13,6 @@ function geneScoreStructure=parseScores(inputFile,predictor)
 %
 %   Usage: geneScoreStructure=parseScores(inputFile,predictor,normalize)
 %
-%   Rasmus Agren, 2013-08-01
 %   Simonas Marcisauskas, 2016-11-15 - added compatibility for CELLO v2.5
 %
 
@@ -97,7 +96,7 @@ if numel(J)~=numel(K)
    EM='There are duplicate genes in the input file';
    dispEM(EM,false);
    geneScoreStructure.genes=geneScoreStructure.genes(J);
-   geneScoreStructure.scores=geneScoreStructure.scores(J,:);   
+   geneScoreStructure.scores=geneScoreStructure.scores(J,:);
 end
 
 %Normalize

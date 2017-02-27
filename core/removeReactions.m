@@ -18,7 +18,6 @@ function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,remove
 %   Usage: reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,...
 %           removeUnusedGenes,removeUnusedComps)
 %
-%   Rasmus Agren, 2013-08-01
 %   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
 %   rxnReferences and confidenceScores
 %

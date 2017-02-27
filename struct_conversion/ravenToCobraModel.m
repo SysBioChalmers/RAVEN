@@ -44,7 +44,6 @@ function cModel=ravenToCobraModel(rModel)
 %
 %   Usage: cModel = ravenToCobraModel(rModel)
 %
-%   Daniel Hermansson, 2016-08-29
 %   Simonas Marcisauskas, 2017-01-31:
 %       -fixed inconsistency with cModel.rules, when AND
 %       relationships were ignored (function convertRules was completely
@@ -75,13 +74,13 @@ cModel = rmfield(rModel,fieldnames(fieldOther));
 cModel=setfield(cModel,'mets',convertMets(rModel.mets,rModel.comps(rModel.metComps)));
 
 % Now preparing group II fields;
-if (isfield(rModel,'metCharge')) 
+if (isfield(rModel,'metCharge'))
 	cModel=setfield(cModel,'metCharge',rModel.metCharge);
 else
 	cModel=setfield(cModel,'metCharge',zeros(numel(rModel.mets),1));
 end
 cModel=setfield(cModel,'rules',convertRules(rModel));
-if (isfield(rModel,'subSystems')) 
+if (isfield(rModel,'subSystems'))
 	cModel=setfield(cModel,'subSystems',rModel.subSystems);
 else
 	cModel=setfield(cModel,'subSystems',repmat({''},size(rModel.rxns,1)));

@@ -5,8 +5,8 @@ function checkInstallation()
 
 %   Usage: checkInstallation()
 %
-%   Rasmus Agren, 2014-01-06
 %	Eduard Kerkhoven, 2016-10-23 - Use Matlab preferences for solver selection
+%
 
 fprintf('*** RAVEN TOOLBOX v. 1.9\n');
 

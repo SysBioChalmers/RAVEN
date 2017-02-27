@@ -164,8 +164,6 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 %
 %   Rasmus Agren, 2017-02-06
-%   Simonas Marcisauskas, 2016-11-03 - fixed compatibility with HMMER-3.1b
-%   Simonas Marcisauskas, 2016-12-08 - implemented CD-HIT and MAFFT
 %
 
 if nargin<2

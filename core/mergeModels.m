@@ -13,7 +13,6 @@ function model=mergeModels(models,supressWarnings)
 %
 %   Usage: model=mergeModels(models)
 %
-%   Rasmus Agren, 2014-01-08
 %   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
 %   rxnReferences, confidenceScores and metCharge
 %

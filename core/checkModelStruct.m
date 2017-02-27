@@ -14,7 +14,6 @@ function checkModelStruct(model,throwErrors,trimWarnings)
 %
 %   Usage: checkModelStruct(model,throwErrors,trimWarnings)
 %
-%   Rasmus Agren, 2015-02-19
 %   Simonas Marcisauskas, 2016-11-01 - added checks for rxnNotes,
 %   rxnReferences, confidenceScores and metCharge
 %

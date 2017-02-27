@@ -81,7 +81,6 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
 %   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
-%   Rasmus Agren, 2017-02-19
 %   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
 %   rxnReferences and confidenceScores
 %
