@@ -2,9 +2,11 @@ function [model, KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepInco
 % getModelFromKEGG
 %   Retrieves information stored in KEGG database and generates a model
 %
-%   keggPath            this function reads data from a local FTP dump of
-%                       the KEGG database. keggPath is the pathway to the
-%                       root of the database
+%   keggPath            if keggGenes.mat, keggMets.mat, keggPhylDist.mat
+%                       or keggRxns.mat is not in the RAVEN\external\kegg
+%                       directory, this function will attempt to read data
+%                       from a local FTP dump of the KEGG database.
+%                       keggPath is the path to the root of this database
 %   keepUndefinedStoich include reactions in the form n A <=> n+1 A. These
 %                       will be dealt with as two separate metabolites
 %                       (opt, default true)
@@ -28,7 +30,7 @@ function [model, KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepInco
 %
 %   Usage: getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Rasmus Agren, 2014-01-08
+%   Eduard Kerkhoven, 2017-02-27
 %
 
 if nargin<2
@@ -38,11 +40,10 @@ if nargin<3
     keepIncomplete=true;
 end
 if nargin<4
-    keepGeneral=false;
+    keepGeneral=true;
 end
 
 %First get all reactions
-
 model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral);
 fprintf('KEGG reactions loaded\n');
 
