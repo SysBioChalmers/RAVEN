@@ -9,7 +9,7 @@
 %
 %   Usage: [raw, flag]=loadSheet(workbook, sheet)
 %
-%   Rasmus Agren, 2015-08-19
+%   Rasmus Agren, 2017-02-28
 %
 function [raw, flag]=loadSheet(workbook, sheet)
     if nargin<2
@@ -23,7 +23,7 @@ function [raw, flag]=loadSheet(workbook, sheet)
     else
         sh=workbook.getSheetAt(0);
     end
-    if isempty(sh)
+    if isempty(sh) 
         flag=-1;
         return;
     end

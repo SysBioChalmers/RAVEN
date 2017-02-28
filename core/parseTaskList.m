@@ -109,21 +109,25 @@ function taskStruct=parseTaskList(inputFile)
 %
 %   Usage: taskStruct=parseTaskList(inputFile)
 %
-%   Rasmus Agren, 2014-01-08
+%   Rasmus Agren, 2017-02-28
 %
 
 %Load the tasks file
-[~,~,raw]=xlsread(inputFile,'TASKS');
+[raw,flag]=loadSheet(loadWorkbook(inputFile), 'TASKS');
+if flag~=0
+    EM=['Could not load sheet "TASKS" from ' inputFile];
+    dispEM(EM);
+end
 
-%Remove all lines starting with "#" (or actually any character)
-raw=cleanImported(raw);
+%Remove all lines starting with "#" (or actually any character) and all
+%empty columns
+raw=cleanSheet(raw);
 
 %Captions
 columns={'ID';'DESCRIPTION';'IN';'IN LB';'IN UB';'OUT';'OUT LB';'OUT UB';'EQU';'EQU LB';'EQU UB';'CHANGED RXN';'CHANGED LB';'CHANGED UB';'SHOULD FAIL';'PRINT FLUX';'COMMENTS'};
 
-%Match the columns, but ignore the first one (since it can be NaN)
-[I, colI]=ismember(columns,raw(1,2:end));
-colI=colI+1;
+%Match the columns
+[I, colI]=ismember(columns,raw(1,:));
 
 %Check that the ID field is present
 if I(1)==0
@@ -131,18 +135,13 @@ if I(1)==0
     dispEM(EM);
 end
 
-%Prepare the input file a little. Put NaN for missing strings and default
-%bounds where needed
-for i=1:numel(colI)
-    I=cellfun(@isBad,raw(:,colI(i)));
-    if ~ismember(i,[4 5 7 8])
-        raw(I,colI(i))={NaN};
+%Add default bounds where needed
+for i=[4 5 7 8]
+    I=cellfun(@isempty,raw(:,colI(i)));
+    if i==5 || i==8
+        raw(I,colI(i))={1000};
     else
-        if i==5 || i==8
-            raw(I,colI(i))={1000};
-        else
-            raw(I,colI(i))={0};
-        end
+        raw(I,colI(i))={0};
     end
 end
 
@@ -174,13 +173,13 @@ else
     task.id=raw{2,colI(1)};
 end
 task.description=raw{2,colI(2)};
-if ~isnan(raw{2,colI(15)})
+if ~isempty(raw{2,colI(15)})
     task.shouldFail=true;
 end
-if ~isnan(raw{2,colI(16)})
+if ~isempty(raw{2,colI(16)})
     task.printFluxes=true;
 end
-if ~isnan(raw{2,colI(17)})
+if ~isempty(raw{2,colI(17)})
     task.comments=raw{2,colI(17)};
 end
 
@@ -202,7 +201,7 @@ for i=2:size(raw,1)
     %Add new rxns
     if ischar(raw{i,colI(9)})
         task.equations=[task.equations;raw{i,colI(9)}];
-        if ~isnan(raw{i,colI(10)})
+        if ~isempty(raw{i,colI(10)})
             task.LBequ=[task.LBequ;raw{i,colI(10)}];
         else
             if any(strfind(raw{i,colI(9)},'<=>'))
@@ -211,7 +210,7 @@ for i=2:size(raw,1)
                 task.LBequ=[task.LBequ;0];
             end
         end
-        if ~isnan(raw{i,colI(11)})
+        if ~isempty(raw{i,colI(11)})
             task.UBequ=[task.UBequ;raw{i,colI(11)}];
         else
             task.UBequ=[task.UBequ;1000];
@@ -227,7 +226,7 @@ for i=2:size(raw,1)
 
     %Check if it should add more constraints
     if i<size(raw,1)
-        if isnan(raw{i+1,colI(1)})
+        if isempty(raw{i+1,colI(1)})
             continue;
         end
     end
@@ -241,13 +240,13 @@ for i=2:size(raw,1)
             task.id=raw{i+1,colI(1)};
         end
         task.description=raw{i+1,colI(2)};
-        if ~isnan(raw{i+1,colI(15)})
+        if ~isempty(raw{i+1,colI(15)})
             task.shouldFail=true;
         end
-        if ~isnan(raw{i+1,colI(16)})
+        if ~isempty(raw{i+1,colI(16)})
             task.printFluxes=true;
         end
-        if ~isnan(raw{i+1,colI(17)})
+        if ~isempty(raw{i+1,colI(17)})
             task.comments=raw{i+1,colI(17)};
         end
     end
@@ -255,65 +254,4 @@ end
 
 %Should add more checks, such as unique IDs and missing headers
 
-end
-function I=isBad(x)
-    I=false;
-    if ischar(x)
-        if numel(x)==0 || all(isstrprop(x, 'wspace'))
-           I=true;
-        end
-    else
-       if isnan(x)
-          I=true;
-       end
-    end
-    if isempty(x)
-        I=true;
-    end
-end
-
-%Cleans up the structure that is imported from using xlsread
-function raw=cleanImported(raw)
-    %Find the lines that are not commented
-    keepers=strcmp('',raw(:,1)) | cellfun(@wrapperNAN,raw(:,1));
-    raw=raw(keepers~=0,:);
-
-    %Remove columns that aren't strings. If you cut and paste a lot in the sheet
-    %there tends to be columns that are NaN
-    I=cellfun(@isstr,raw(1,:));
-    I(1)=true; %This is because the "#" column might be empty
-    raw=raw(:,I);
-
-    %Check if there are any rows that are all NaN. This could happen if
-    %xlsread reads too far. Remove any such rows.
-    nans=cellfun(@wrapperNAN,raw);
-    I=all(nans,2);
-    raw(I,:)=[];
-
-    %Also check if there are any lines that contain only NaNs or white
-    %spaces. This could happen if you accidentaly inserted a space
-    %somewhere
-    whites=cellfun(@wrapperWS,raw);
-    I=all(whites,2);
-    raw(I,:)=[];
-
-    %Checks if something is NaN. Can't use isnan with cellfun as it does it
-    %character by character for strings
-    function I=wrapperNAN(A)
-       I=any(isnan(A));
-    end
-
-    %Checks if something is all white spaces or NaN
-    function I=wrapperWS(A)
-        if isnan(A)
-            I=true;
-        else
-            %isstrprob gives an error if boolean
-            if islogical(A)
-                I=false;
-            else
-                I=all(isstrprop(A,'wspace'));
-            end
-        end
-    end
 end

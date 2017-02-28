@@ -17,7 +17,7 @@
 %   Usage: [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,...
 %               removeNoCap,removeEmptyRows)
 %
-%   Rasmus Agren, 2015-04-17
+%   Rasmus Agren, 2017-02-28
 %
 
 function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,removeNoCap,removeEmptyRows)
@@ -49,14 +49,6 @@ function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,rem
         whites=cellfun(@wrapperWS,raw);
         raw(whites)={[]};
         
-        %Remove columns that don't have string headers. If you cut and paste
-        %a lot in the sheet there tends to be columns that are empty
-        if removeNoCap==true
-            I=cellfun(@isstr,raw(1,:));
-            raw=raw(:,I);
-            keptCols=keptCols(I);
-        end
-        
         %Find the rows that are not commented. This corresponds to the
         %first row and the ones which are empty in the first column
         if removeComments==true
@@ -64,6 +56,14 @@ function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,rem
             keepers(1)=true;
             raw=raw(keepers,:);
             keptRows=keptRows(keepers);
+        end
+        
+        %Remove columns that don't have string headers. If you cut and paste
+        %a lot in the sheet there tends to be columns that are empty
+        if removeNoCap==true
+            I=cellfun(@isstr,raw(1,:));
+            raw=raw(:,I);
+            keptCols=keptCols(I);
         end
         
         %Remove columns which are empty except for header
