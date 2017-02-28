@@ -30,7 +30,7 @@ function [model, KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepInco
 %
 %   Usage: getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Eduard Kerkhoven, 2017-02-27
+%   Eduard Kerkhoven, 2017-02-28
 %
 
 if nargin<2
@@ -110,7 +110,7 @@ r=zeros(10000000,1); %Store the positions since it's slow to write to a sparse a
 c=zeros(10000000,1);
 counter=1;
 for i=1:numel(model.rxns)
-	if isstruct(model.rxnMiriams{i})
+    if isstruct(model.rxnMiriams{i})
         I=strncmp('urn:miriam:kegg.ko',model.rxnMiriams{i}.name,18);
         [J, K]=ismember(model.rxnMiriams{i}.value(I),KOModel.rxns);
         %Find all gene indexes that correspond to any of these KOs
@@ -125,7 +125,7 @@ for i=1:numel(model.rxns)
             c(counter:counter+numel(L)-1)=L(:);
             counter=counter+numel(L);
         end
-	end
+    end
 end
 
 model.rxnGeneMat=sparse(r(1:counter-1),c(1:counter-1),ones(counter-1,1));

@@ -97,15 +97,14 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %   however, comes with the disadvantage of somewhat trickier handling.
 %   This is what this function does:
 %
-%   1a. Downloads relevant parts from the KEGG FTP and constructs a general
+%   1a. Loads files from a local KEGG FTP dump and constructs a general
 %       RAVEN model representing the metabolic network. KEGG FTP access
 %       requires a <a href="matlab: web('http://www.bioinformatics.jp/en/keggftp.html')">license</a>.
-%   1b. Generates FASTA files from the downloaded KEGG files. One
-%       multi-FASTA file for each KO in KEGG is generated. This function
-%       also requires KEGG FTP access (see 1a). Make sure you actually need
-%       these first, as the parsing is time-consuming (see below).
+%   1b. Generates FASTA files from the KEGG FTP dump (see 1a). One
+%       multi-FASTA file for each KO in KEGG is generated. Make sure you
+%       actually need these first, as the parsing is time-consuming (see below).
 %
-%   These steps only have to be redone every time KEGG updates their
+%   These steps only have to be re-done every time KEGG updates their
 %   database (or rather when the updates are large enough to warrant
 %   rerunning this part). Many user would probably never use this feature.
 %
@@ -141,8 +140,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %   OR multi-FASTA files exist in the defined dataDir. This means that this
 %   step is skipped if the HMMs are downloaded from BioMet Toolbox instead
 %   (see above). If not all files exist it will try to find
-%   the KEGG database files in dataDir. If it cannot find them it will try
-%   to download them via the KEGG FTP.
+%   the KEGG database files in dataDir.
 %   -2a is only performed if not all required HMMs OR aligned FASTA files
 %   files exist in the defined dataDir. This means that this step is skipped
 %   if the HMMs are downloaded from BioMet Toolbox instead (see above).
@@ -158,7 +156,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...
 %    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 %
-%   Eduard Kerkhoven, 2017-02-27
+%   Eduard Kerkhoven, 2017-02-28
 %
 
 if nargin<2
@@ -319,8 +317,8 @@ missingFASTA=setdiff(KOModel.rxns,[fastaFiles;alignedFiles;hmmFiles;outFiles]);
 
 if ~isempty(missingFASTA)
     if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file')
-        %If no sequence file exists then download from KEGG
-        downloadKEGG(fullfile(dataDir,'keggdb'));
+        EM=fprintf(['The file ''genes.pep'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
+        dispEM(EM);
     end
     %Only construct models for KOs which don't have files already
     fastaModel=removeReactions(KOModel,setdiff(KOModel.rxns,missingFASTA),true,true);
@@ -345,7 +343,8 @@ if isunix
 elseif ispc
     binEnd='';
 else
-    dispEM('Unknown OS, exiting.')
+    EM='Unknown OS, exiting.';
+    disp(EM);
     return
 end
 
@@ -364,7 +363,8 @@ if ~isempty(missingAligned)
             %we are saving empty files as well. Print a warning and
             %continue if not.
             if ~exist(fullfile(dataDir,'fasta',[missingAligned{i} '.fa']),'file')
-                dispEM(['WARNING: The multi-FASTA file for ' missingAligned{i} ' does not exist'],false);
+                EM=['WARNING: The multi-FASTA file for ' missingAligned{i} ' does not exist'];
+                dispEM(EM,false);
                 continue;
             end
 
@@ -424,7 +424,8 @@ if ~isempty(missingAligned)
                             tmpFile=tempname;
                             [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' tmpFile '" -c 1.0 -s 0.8 -n 5 -M 2000 -T 8']);
                             if status~=0
-                                dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]);
+                                EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                                dispEM(EM);
                             end
                             %Remove the old tempfile
                             if exist(cdhitInp100, 'file')
@@ -436,7 +437,8 @@ if ~isempty(missingAligned)
                             cdhitInp90=tempname;
                             [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -s 0.8 -n 5 -M 2000']);
                             if status~=0
-                                dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]);
+                                EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                                dispEM(EM);
                             end
                             %Remove the old tempfile
                             if exist(cdhitInp100, 'file')
@@ -445,7 +447,8 @@ if ~isempty(missingAligned)
                             tmpFile=tempname;
                             [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp90 '" -o "' tmpFile '" -c 0.9 -s 0.8 -n 5 -M 2000']);
                             if status~=0
-                                dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]);
+                                EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                                dispEM(EM);
                             end
                             %Remove the old tempfile
                             if exist(cdhitInp90, 'file')
@@ -457,7 +460,8 @@ if ~isempty(missingAligned)
                             cdhitInp90=tempname;
                             [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -s 0.8 -n 5 -M 2000']);
                             if status~=0
-                                dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]);
+                                EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                                dispEM(EM);
                             end
                             %Remove the old tempfile
                             if exist(cdhitInp100, 'file')
@@ -466,7 +470,8 @@ if ~isempty(missingAligned)
                             cdhitInp50=tempname;
                             [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp90 '" -o "' cdhitInp50 '" -c 0.9 -s 0.8 -n 5 -M 2000']);
                             if status~=0
-                                dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]);
+                                EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                                dispEM(EM);
                             end
                             %Remove the old tempfile
                             if exist(cdhitInp90, 'file')
@@ -475,7 +480,8 @@ if ~isempty(missingAligned)
                             tmpFile=tempname;
                             [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp50 '" -o "' tmpFile '" -c 0.5 -s 0.8 -n 3 -M 2000']);
                             if status~=0
-                                dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]);
+                                EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                                dispEM(EM);
                             end
                             %Remove the old tempfile
                             if exist(cdhitInp50, 'file')
@@ -489,8 +495,8 @@ if ~isempty(missingAligned)
                         fastawrite(tmpFile,fastaStruct);
                     end
                 else
-                	tmpFile=tempname;
-                	fastawrite(tmpFile,fastaStruct);
+                    tmpFile=tempname;
+                    fastawrite(tmpFile,fastaStruct);
                 end
                 %Do the alignment for this file
                 if ~ispc
@@ -499,7 +505,8 @@ if ~isempty(missingAligned)
                     [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.221','mafft.bat') '" --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 end
                 if status~=0
-                	dispEM(['Error when performing alignment of ' missingAligned{i} ':\n' output]);
+                    EM=['Error when performing alignment of ' missingAligned{i} ':\n' output];
+                    dispEM(EM);
                 end
                 %Remove the old tempfile
                 if exist(tmpFile, 'file')
@@ -549,7 +556,8 @@ if ~isempty(missingHMMs)
             %happen on a single computer. I don't throw an error, because
             %it should finalize the ones it can.
             if ~exist(fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']),'file')
-            	dispEM(['The aligned FASTA file for ' missingHMMs{i} ' does not exist'],false);
+                EM=['The aligned FASTA file for ' missingHMMs{i} ' does not exist'];
+                dispEM(EM,false);
                 continue;
             end
 
@@ -569,7 +577,8 @@ if ~isempty(missingHMMs)
             %Create HMM
             [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1',['hmmbuild' binEnd]) '" "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
             if status~=0
-            	dispEM(['Error when training HMM for ' missingHMMs{i} ':\n' output]);
+                EM=['Error when training HMM for ' missingHMMs{i} ':\n' output];
+                dispEM(EM);
             end
 
             %Delete the temporary file
@@ -592,7 +601,8 @@ if ~isempty(missingOUT)
             %we are saving empty files as well. Print a warning and
             %continue if not.
             if ~exist(fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']),'file')
-            	dispEM(['The HMM file for ' missingOUT{i} ' does not exist'],false);
+                EM=['The HMM file for ' missingOUT{i} ' does not exist'];
+                dispEM(EM,false);
                 continue;
             end
 
@@ -610,7 +620,8 @@ if ~isempty(missingOUT)
             %Check each gene in the input file against this model
             [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1',['hmmsearch' binEnd]) '" "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
             if status~=0
-            	dispEM(['Error when querying HMM for ' missingOUT{i} ':\n' output]);
+                EM=['Error when querying HMM for ' missingOUT{i} ':\n' output];
+                dispEM(EM);
             end
 
             %Save the output to a file
