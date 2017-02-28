@@ -5,8 +5,8 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %   Reconstructs a genome-scale metabolic model based on protein homology to the
 %   orthologies in KEGG
 %
-%   organismID          three letter abbreviation of the organism (as used in
-%                       KEGG). If not available, use a closely related
+%   organismID          three or four letter abbreviation of the organism (as
+%                       used in KEGG). If not available, use a closely related
 %                       species. This is used for determing the
 %                       phylogenetic distance. Use 'eukaryotes' or
 %                       'prokaryotes' to get a model for the whole domain.
@@ -23,26 +23,23 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %                       -dataDir\keggdb
 %                           The KEGG database files used in 1a (see below).
 %                       -dataDir\fasta
-%                           The multi-FASTA files generated in 1b or
-%                           downloaded from the RAVEN Toolbox homepage (see
-%                           below)
+%                           The multi-FASTA files generated in 1b (see below)
 %                       -dataDir\aligned
 %                           The aligned FASTA files as generated in 2a (see
 %                           below)
 %                       -dataDir\hmms
-%                           The Hidden Markov Models as generated in 2b or
-%                           downloaded from the RAVEN Toolbox homepage (see
-%                           below)
+%                           The hidden Markov models as generated in 2b or
+%                           downloaded from BioMet Toolbox (see below)
 %                       (opt, see note about fastaFile. Note that in order to
 %                       rebuild the KEGG model from a database dump, as opposed to
 %                       using the version supplied with RAVEN, you would still need
 %                       to supply this)
 %   outDir              directory to save the results from the quering of
-%                       the Hidden Markov models. The output is specific
+%                       the hidden Markov models. The output is specific
 %                       for the input sequences and the settings used. It
 %                       is stored in this manner so that the function can
 %                       continue if interrupted or if it should run in
-%                       parallell. Be careful not to leave output files
+%                       parallel. Be careful not to leave output files
 %                       from different organisms or runs with different
 %                       settings in the same folder. They will not be
 %                       overwritten (opt, default is a temporary dir where
@@ -94,22 +91,19 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %   model               the reconstructed model
 %
 %   PLEASE READ THIS: The input to this function can be confusing, because
-%   it is intended to be run in parallell on a cluster or in multiple sessions.
-%   It therefore saves a lot of intermediate results to disc. This also
-%   serves the purpose of not having to do reduntant calculations. This,
+%   it is intended to be run in parallel on a cluster or in multiple sessions.
+%   It therefore saves a lot of intermediate results to storage. This also
+%   serves the purpose of not having to do redundant calculations. This,
 %   however, comes with the disadvantage of somewhat trickier handling.
 %   This is what this function does:
 %
 %   1a. Downloads relevant parts from the KEGG FTP and constructs a general
-%       RAVEN model representing the metabolic network. This output is
-%       distributed with RAVEN (it's in the raven\kegg directory). Delete
-%       those files to rerun this parsing.
+%       RAVEN model representing the metabolic network. KEGG FTP access
+%       requires a <a href="matlab: web('http://www.bioinformatics.jp/en/keggftp.html')">license</a>.
 %   1b. Generates FASTA files from the downloaded KEGG files. One
-%       multi-FASTA file for each KO in KEGG is generated. These
-%       multi-fasta files can be downloaded from the RAVEN Toolbox
-%       homepage if you do not have access to the KEGG FTP or don't want to
-%       do this time-consuming parsing. Just be sure that you actually need
-%       them first (see below)
+%       multi-FASTA file for each KO in KEGG is generated. This function
+%       also requires KEGG FTP access (see 1a). Make sure you actually need
+%       these first, as the parsing is time-consuming (see below).
 %
 %   These steps only have to be redone every time KEGG updates their
 %   database (or rather when the updates are large enough to warrant
@@ -119,15 +113,16 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %       settings "useEvDist" and "nSequences" to control which sequences
 %       should be used for constructing Hidden Markov models (HMMs), and
 %       later for matching your sequences to.
-%   2b. Trains Hidden Markov models using HMMer for each of the aligned
+%   2b. Trains hidden Markov models using HMMer for each of the aligned
 %       FASTA files.
 %
-%	The most common alternatives here would be to use sequences from only
-%   eukaryotes, only prokaryotes or all sequences in KEGG. The Hidden Markov
-%   models for those options can be downloaded from the RAVEN Toolbox
-%   homepage. This is normally the most convenient way, but if you would
-%   like to use, for example, only fungal sequences for training the HMMs
-%   then you need to run this part.
+%   The most common alternatives here would be to use sequences from only
+%   eukaryotes, only prokaryotes or all sequences in KEGG. As explained in
+%   the README.md file, various sets of pre-trained hidden Markov models are
+%   available at <a href="matlab: web('http://biomet-toolbox.org/index.php?page=downtools-raven')">BioMet Toolbox</a>.
+%   This is normally the most convenient way, but if you would like to use,
+%   for example, only fungal sequences for training the HMMs then you need
+%   to run this part.
 %
 %   3a. Queries the HMMs with sequences for the organism you are making a
 %       model for. This step uses both the output from step 1a and from 2b.
@@ -138,32 +133,32 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %   the model.
 %
 %   In principle the function looks at which output that is already available
-%   and runs runs only the parts that are required for step 3. This means
+%   and runs only the parts that are required for step 3. This means
 %   that (see the definition of the parameters for details):
-%   -1a is only performed if there are no KEGG model files in the raven\kegg
-%   directory
+%   -1a is only performed if there are no KEGG model files in the
+%   RAVEN\external\kegg directory
 %   -1b is only performed if not all required HMMs OR aligned FASTA files
 %   OR multi-FASTA files exist in the defined dataDir. This means that this
-%   step is skipped if the FASTA files or HMMs are downloaded from the RAVEN
-%   Toolbox homepage instead. If not all files exist it will try to find
+%   step is skipped if the HMMs are downloaded from BioMet Toolbox instead
+%   (see above). If not all files exist it will try to find
 %   the KEGG database files in dataDir. If it cannot find them it will try
 %   to download them via the KEGG FTP.
 %   -2a is only performed if not all required HMMs OR aligned FASTA files
 %   files exist in the defined dataDir. This means that this step is skipped
-%   if the HMMs are downloaded from the RAVEN Toolbox homepage instead.
+%   if the HMMs are downloaded from BioMet Toolbox instead (see above).
 %   -2b is only performed if not all required HMMs exist in the defined
 %   dataDir. This means that this step is skipped if the FASTA files or
-%   HMMs are downloaded from the RAVEN Toolbox homepage instead.
+%   HMMs are downloaded from BioMet Toolbox instead (see above).
 %   -3a is performed for the required HMMs for which no corresponding .out
 %   file exists in outDir. This is just a way to enable the function to be
-%   run in parallell or to resume if interrupeted.
+%   run in parallel or to resume if interrupted.
 %   -3b is always performed.
 %
 %   Usage: model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...
 %    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 %
-%   Rasmus Agren, 2017-02-06
+%   Eduard Kerkhoven, 2017-02-27
 %
 
 if nargin<2
@@ -323,6 +318,10 @@ outFiles=listFiles(fullfile(outDir,'*.out'));
 missingFASTA=setdiff(KOModel.rxns,[fastaFiles;alignedFiles;hmmFiles;outFiles]);
 
 if ~isempty(missingFASTA)
+    if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file')
+        %If no sequence file exists then download from KEGG
+        downloadKEGG(fullfile(dataDir,'keggdb'));
+    end
     %Only construct models for KOs which don't have files already
     fastaModel=removeReactions(KOModel,setdiff(KOModel.rxns,missingFASTA),true,true);
     %Permute the order of the KOs in the model so that constructMultiFasta

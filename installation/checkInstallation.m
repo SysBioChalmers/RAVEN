@@ -33,7 +33,7 @@ if ismember(ravenDir,paths)
     fprintf('Checking if RAVEN is on the Matlab path... PASSED\n');
 else
     fprintf('Checking if RAVEN is on the Matlab path... FAILED\n');
-    addMe=input('\tWould you like to add the RAVEN directory to the path list? Y/N\n','s');
+    addMe=input('Would you like to add the RAVEN directory to the path list? Y/N\n','s');
     if strcmpi(addMe,'y')
         subpath=regexp(genpath(ravenDir),pathsep,'split'); % Lists all subdirectories
         pathsToKeep=cellfun(@(x) isempty(strfind(x,'.git')),subpath) & cellfun(@(x) isempty(strfind(x,'doc')),subpath);
