@@ -90,7 +90,7 @@ res = optimizeProb(prob,params);
 %re-solve it without hot-start and get a feasible solution
 if ~isFeasible && ~isempty(hsSol)
     prob.sol=rmfield(prob.sol,'bas');
-    [res = optimizeProb(prob,params);
+    res=optimizeProb(prob,params);
     [isFeasible, isOptimal]=checkSolution(res);
 end
 
