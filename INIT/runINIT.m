@@ -61,7 +61,7 @@ function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,
 %           rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,...
 %           noRevLoops,params)
 %
-%   Rasmus Agren, 2014-01-08
+%   Rasmus Agren, 2017-02-28
 %
 
 if nargin<2
@@ -98,12 +98,6 @@ if nargin<7
 end
 if nargin<8
     params=[];
-end
-echo=0;
-if isfield(params,'printReport')
-    if params.printReport==true
-        echo=3;
-    end
 end
 
 if numel(presentMets)~=numel(unique(presentMets))
@@ -301,7 +295,7 @@ prob.a=S;
 params.MSK_IPAR_OPTIMIZER='MSK_OPTIMIZER_FREE_SIMPLEX';
 for i=1:numel(pmIndexes)
     prob.blc(numel(irrevModel.mets)-numel(pmIndexes)+i)=1;
-    [~,res] = mosekopt('minimize echo(0)', prob,getMILPParams(params));
+    res=optimizeProb(prob,params);
     isFeasible=checkSolution(res);
     if ~isFeasible
         %Reset the constraint again
@@ -315,7 +309,7 @@ end
 %Add that the binary reactions may only take integer values.
 allInt=[(nRxns+1):(nRxns+nNonEssential) size(S,2)-nRevBounds*2+1:size(S,2)];
 prob.ints.sub=allInt;
-[~,res] = mosekopt(['minimize echo(' num2str(echo) ')'], prob,getMILPParams(params));
+res=optimizeProb(prob,params);
 
 %I don't think that this problem can be infeasible, so this is mainly a way
 %of checking the licence stuff

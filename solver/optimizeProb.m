@@ -45,10 +45,13 @@ elseif strcmp(solver,'cobra')
 
 elseif strcmp(solver,'mosek')
 		if (milp)
-			params.printReport=true;
-			[crap,res] = mosekopt(['minimize echo(0)'],prob,getMILPParams(params));
+            echo=0;
+            if isfield(params,'printReport') && params.printReport==true
+                echo='3';
+            end
+			[~,res] = mosekopt(['minimize echo(' echo ')'],prob,getMILPParams(params));
 		else
-			[crap,res] = mosekopt(['minimize echo(0)'],prob);
+			[~,res] = mosekopt('minimize echo(0)',prob);
 		end
 else
 		dispEM(['Raven solver not defined or unknown. Try using setRavenSolver(',char(39),'solver',char(39),').']);

@@ -27,7 +27,7 @@ function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)
 %
 %   Usage: [x,I]=getMinNrFluxes(model, toMinimize, params, scores)
 %
-%   Rasmus Agren, 2014-01-08
+%   Rasmus Agren, 2017-02-28
 %
 
 exitFlag=1;
@@ -43,12 +43,6 @@ end
 %For passing parameters to the solver
 if nargin<3
     params=[];
-end
-echo=0;
-if isfield(params,'printReport')
-    if params.printReport==true
-        echo=3;
-    end
 end
 
 if nargin<4
@@ -133,7 +127,7 @@ prob.sol.int.xx=zeros(numel(prob.c),1);
 prob.sol.int.xx(prob.ints.sub(sol.x(indexes)>10^-7))=1;
 
 % Optimize the problem
-[~,res] = mosekopt(['minimize echo(' num2str(echo) ')'], prob,getMILPParams(params));
+res = optimizeProb(prob,params);
 isFeasible=checkSolution(res);
 
 if ~isFeasible

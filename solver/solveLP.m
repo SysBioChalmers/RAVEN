@@ -35,7 +35,7 @@ function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
 %
 %   Usage: [solution hsSolOut]=solveLP(model,minFlux,params,hsSol)
 %
-%   Rasmus Agren, 2014-01-08
+%   Rasmus Agren, 2017-02-28
 %
 
 if nargin<2
@@ -81,7 +81,7 @@ end
 %noticed that the interior point solver is not as good at finding feasible
 %solutions.
 params.MSK_IPAR_OPTIMIZER='MSK_OPTIMIZER_FREE_SIMPLEX';
-[~,res] = mosekopt('minimize echo(0)',prob,getMILPParams(params));
+res = optimizeProb(prob,params);
 
 %Check if the problem was feasible and that the solution was optimal
 [isFeasible, isOptimal]=checkSolution(res);
@@ -90,7 +90,7 @@ params.MSK_IPAR_OPTIMIZER='MSK_OPTIMIZER_FREE_SIMPLEX';
 %re-solve it without hot-start and get a feasible solution
 if ~isFeasible && ~isempty(hsSol)
     prob.sol=rmfield(prob.sol,'bas');
-    [~,res] = mosekopt('minimize echo(0)',prob,getMILPParams(params));
+    [res = optimizeProb(prob,params);
     [isFeasible, isOptimal]=checkSolution(res);
 end
 
