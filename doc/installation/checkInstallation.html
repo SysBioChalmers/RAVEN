@@ -35,7 +35,7 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="../io/importExcelModel.html" class="code" title="function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)">importExcelModel</a>	importExcelModel</li><li><a href="../io/importModel.html" class="code" title="function model=importModel(fileName,removeExcMets,isCOBRA,supressWarnings)">importModel</a>	importModel</li><li><a href="../solver/setRavenSolver.html" class="code" title="function out = setRavenSolver(solver,saveSolver)">setRavenSolver</a>	setRavenSolver</li><li><a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>	solveLP</li></ul>
+</ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -51,69 +51,96 @@ This function is called by:
 0005 
 0006 <span class="comment">%   Usage: checkInstallation()</span>
 0007 <span class="comment">%</span>
-0008 <span class="comment">%   Rasmus Agren, 2014-01-06</span>
+0008 <span class="comment">%    Rasmus Agren, 2017-02-27</span>
 0009 <span class="comment">%</span>
 0010 
 0011 fprintf(<span class="string">'*** RAVEN TOOLBOX v. 1.9\n'</span>);
 0012 
-0013 <span class="comment">%Check if RAVEN is in the path list</span>
-0014 paths=textscan(path,<span class="string">'%s'</span>,<span class="string">'delimiter'</span>, pathsep);
-0015 paths=paths{1};
-0016 
-0017 <span class="comment">%Get the RAVEN path</span>
-0018 [ST I]=dbstack(<span class="string">'-completenames'</span>);
-0019 [ravenDir,crap1,crap2]=fileparts(fileparts(ST(I).file));
-0020 
-0021 <span class="keyword">if</span> ismember(ravenDir,paths)
-0022     fprintf(<span class="string">'Checking if RAVEN is in the Matlab path... PASSED\n'</span>);
-0023 <span class="keyword">else</span>
-0024     fprintf(<span class="string">'Checking if RAVEN is in the Matlab path... FAILED\n'</span>);
-0025     addMe=input(<span class="string">'\tWould you like to add the RAVEN directory to the path list? Y/N\n'</span>,<span class="string">'s'</span>);
-0026     <span class="keyword">if</span> strcmpi(addMe,<span class="string">'y'</span>)
-0027         addpath(ravenDir);
-0028         savepath
-0029     <span class="keyword">end</span>
+0013 keepSolver=false;
+0014 lastWorking=<span class="string">''</span>;
+0015 
+0016 <span class="comment">%Check if RAVEN is in the path list</span>
+0017 paths=textscan(path,<span class="string">'%s'</span>,<span class="string">'delimiter'</span>, pathsep);
+0018 paths=paths{1};
+0019 
+0020 <span class="comment">%Get the RAVEN path</span>
+0021 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
+0022 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
+0023 
+0024 <span class="comment">% get current solver</span>
+0025 <span class="keyword">if</span> ~ispref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>)
+0026     fprintf(<span class="string">'Solver found in preferences... NONE\n'</span>);
+0027 <span class="keyword">else</span>
+0028     curSolv=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0029     fprintf([<span class="string">'Solver found in preferences... '</span>,curSolv,<span class="string">'\n'</span>]);
 0030 <span class="keyword">end</span>
 0031 
-0032 excelFile=fullfile(ravenDir,<span class="string">'tutorial'</span>,<span class="string">'empty.xlsx'</span>);
-0033 xmlFile=fullfile(ravenDir,<span class="string">'tutorial'</span>,<span class="string">'empty.xml'</span>);
-0034 
-0035 <span class="comment">%Check if it is possible to parse an Excel file</span>
-0036 <span class="keyword">try</span>
-0037     <a href="../io/importExcelModel.html" class="code" title="function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)">importExcelModel</a>(excelFile,false,false,true);
-0038     fprintf(<span class="string">'Checking if it is possible to parse a model in Microsoft Excel format... PASSED\n'</span>);
-0039 <span class="keyword">catch</span>
-0040     fprintf(<span class="string">'Checking if it is possible to parse a model in Microsoft Excel format... FAILED\n'</span>);
-0041     <span class="keyword">if</span> ispc==false <span class="comment">%Print info for UNIX/MacOS</span>
-0042         fprintf(<span class="string">'\tThis functionality uses Microsoft Excel COM server, which works best for the Windows version of Matlab\n'</span>);
-0043     <span class="keyword">end</span>
-0044 <span class="keyword">end</span>
-0045 
-0046 <span class="comment">%Check if it is possible to import an SBML model using libSBML</span>
-0047 <span class="keyword">try</span>
-0048     smallModel=<a href="../io/importModel.html" class="code" title="function model=importModel(fileName,removeExcMets,isCOBRA,supressWarnings)">importModel</a>(xmlFile);
-0049     fprintf(<span class="string">'Checking if it is possible to import an SBML model using libSBML... PASSED\n'</span>);
-0050 <span class="keyword">catch</span>
-0051     fprintf(<span class="string">'Checking if it is possible to import an SBML model using libSBML... FAILED\n'</span>);
-0052 <span class="keyword">end</span>
-0053 
-0054 <span class="comment">%Check if it is possible to solve a LP problem using Mosek</span>
-0055 <span class="keyword">try</span>
-0056     <a href="../solver/setRavenSolver.html" class="code" title="function out = setRavenSolver(solver,saveSolver)">setRavenSolver</a>(<span class="string">'mosek'</span>)
-0057     <a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(smallModel);
-0058     fprintf(<span class="string">'Checking if it is possible to solve a LP problem using Mosek... PASSED\n'</span>);
-0059 <span class="keyword">catch</span>
-0060     fprintf(<span class="string">'Checking if it is possible to solve a LP problem using Mosek... FAILED\n'</span>);
-0061 <span class="keyword">end</span>
-0062 
-0063 <span class="keyword">try</span>
-0064     <a href="../solver/setRavenSolver.html" class="code" title="function out = setRavenSolver(solver,saveSolver)">setRavenSolver</a>(<span class="string">'gurobi'</span>)
-0065     <a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(smallModel);
-0066     fprintf(<span class="string">'Checking if it is possible to solve a LP problem using Gurobi... PASSED\n'</span>);
-0067 <span class="keyword">catch</span>
-0068     fprintf(<span class="string">'Checking if it is possible to solve a LP problem using Gurobi... FAILED\n'</span>);
-0069 <span class="keyword">end</span>
-0070 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Fri 14-Oct-2016 12:02:10 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0032 <span class="keyword">if</span> ismember(ravenDir,paths)
+0033     fprintf(<span class="string">'Checking if RAVEN is on the Matlab path... PASSED\n'</span>);
+0034 <span class="keyword">else</span>
+0035     fprintf(<span class="string">'Checking if RAVEN is on the Matlab path... FAILED\n'</span>);
+0036     addMe=input(<span class="string">'Would you like to add the RAVEN directory to the path list? Y/N\n'</span>,<span class="string">'s'</span>);
+0037     <span class="keyword">if</span> strcmpi(addMe,<span class="string">'y'</span>)
+0038         subpath=regexp(genpath(ravenDir),pathsep,<span class="string">'split'</span>); <span class="comment">% Lists all subdirectories</span>
+0039         pathsToKeep=cellfun(@(x) isempty(strfind(x,<span class="string">'.git'</span>)),subpath) &amp; cellfun(@(x) isempty(strfind(x,<span class="string">'doc'</span>)),subpath);
+0040         addpath(strjoin(subpath(pathsToKeep),pathsep));
+0041         savepath
+0042     <span class="keyword">end</span>
+0043 <span class="keyword">end</span>
+0044 
+0045 <span class="comment">%Adds the required classes to the static Java path if not already added</span>
+0046 addJavaPaths();
+0047     
+0048 excelFile=fullfile(ravenDir,<span class="string">'tutorial'</span>,<span class="string">'empty.xlsx'</span>);
+0049 xmlFile=fullfile(ravenDir,<span class="string">'tutorial'</span>,<span class="string">'empty.xml'</span>);
+0050 
+0051 <span class="comment">%Check if it is possible to parse an Excel file</span>
+0052 <span class="keyword">try</span>
+0053     importExcelModel(excelFile,false,false,true);
+0054     fprintf(<span class="string">'Checking if it is possible to parse a model in Microsoft Excel format... PASSED\n'</span>);
+0055 <span class="keyword">catch</span>
+0056     fprintf(<span class="string">'Checking if it is possible to parse a model in Microsoft Excel format... FAILED\n'</span>);
+0057 <span class="keyword">end</span>
+0058 
+0059 <span class="comment">%Check if it is possible to import an SBML model using libSBML</span>
+0060 <span class="keyword">try</span>
+0061     smallModel=importModel(xmlFile);
+0062     fprintf(<span class="string">'Checking if it is possible to import an SBML model using libSBML... PASSED\n'</span>);
+0063 <span class="keyword">catch</span>
+0064     fprintf(<span class="string">'Checking if it is possible to import an SBML model using libSBML... FAILED\n'</span>);
+0065 <span class="keyword">end</span>
+0066 
+0067 <span class="comment">%Check if it is possible to solve an LP problem using different solvers</span>
+0068 solver={<span class="string">'mosek'</span>,<span class="string">'gurobi'</span>};
+0069 
+0070 <span class="keyword">for</span> i=1:numel(solver)
+0071     <span class="keyword">try</span>
+0072         setRavenSolver(solver{i});
+0073         solveLP(smallModel);
+0074         lastWorking=solver{i};
+0075         fprintf([<span class="string">'Checking if it is possible to solve an LP problem using '</span>,solver{i},<span class="string">'... PASSED\n'</span>]);
+0076         <span class="keyword">if</span> and(exist(<span class="string">'curSolv'</span>,<span class="string">'var'</span>),strcmp(curSolv,solver{i}))
+0077             keepSolver=true;
+0078         <span class="keyword">end</span>
+0079     <span class="keyword">catch</span>
+0080         fprintf([<span class="string">'Checking if it is possible to solve an LP problem using '</span>,solver{i},<span class="string">'... FAILED\n'</span>]);
+0081     <span class="keyword">end</span>
+0082 <span class="keyword">end</span>
+0083 
+0084 <span class="keyword">if</span> keepSolver
+0085     setRavenSolver(curSolv);
+0086 <span class="keyword">elseif</span> ~isempty(lastWorking)
+0087     setRavenSolver(lastWorking);
+0088 <span class="keyword">end</span>
+0089 
+0090 <span class="keyword">if</span> ~exist(<span class="string">'curSolv'</span>,<span class="string">'var'</span>)
+0091     fprintf([<span class="string">'Preferred solver... NEW\nSolver saved as preference... '</span>,lastWorking,<span class="string">'\n'</span>]);
+0092 <span class="keyword">elseif</span> keepSolver
+0093     fprintf([<span class="string">'Preferred solver... KEPT\nSolver saved as preference... '</span>,curSolv,<span class="string">'\n'</span>]);
+0094 <span class="keyword">else</span>
+0095     fprintf([<span class="string">'Preferred solver... CHANGED\nSolver saved as preference... '</span>,lastWorking,<span class="string">'\n'</span>]);
+0096 <span class="keyword">end</span>
+0097</pre></div>
+<hr><address>Generated on Tue 28-Feb-2017 23:41:43 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

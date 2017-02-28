@@ -31,7 +31,7 @@
    Deletes a set of metabolites from a model
 
    model             a model structure
-   metsToRemove      either a cell array of metabolite IDs, a logical vector 
+   metsToRemove      either a cell array of metabolite IDs, a logical vector
                      with the same number of elements as metabolites in the model,
                      of a vector of indexes to remove
    isNames           true if the supplied mets represent metabolite names
@@ -51,7 +51,7 @@
    Usage: reducedModel=removeMets(model,metsToRemove,isNames,...
            removeUnusedRxns,removeUnusedGenes,removeUnusedComps)
 
-   Rasmus Agren, 2013-08-01</pre></div>
+   Simonas Marcisauskas, 2016-11-01 - added support for metCharge</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -60,7 +60,7 @@ This function calls:
 <li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model,objects, type, returnLogical)">getIndexes</a>	getIndexes</li><li><a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>	removeReactions</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="mergeCompartments.html" class="code" title="function [model deletedRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet)">mergeCompartments</a>	mergeCompartments</li><li><a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>	removeReactions</li><li><a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, reservedRxns, suppressWarnings)">simplifyModel</a>	simplifyModel</li><li><a href="../tutorial/tutorial3_solutions.html" class="code" title="">tutorial3_solutions</a>	This contains the code necessary for running Exercises 3. It is assumed</li></ul>
+<li><a href="mergeCompartments.html" class="code" title="function [model, deletedRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet)">mergeCompartments</a>	mergeCompartments</li><li><a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>	removeReactions</li><li><a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>	simplifyModel</li></ul>
 <!-- crossreference -->
 
 
@@ -91,7 +91,7 @@ This function is called by:
 0023 <span class="comment">%   Usage: reducedModel=removeMets(model,metsToRemove,isNames,...</span>
 0024 <span class="comment">%           removeUnusedRxns,removeUnusedGenes,removeUnusedComps)</span>
 0025 <span class="comment">%</span>
-0026 <span class="comment">%   Rasmus Agren, 2013-08-01</span>
+0026 <span class="comment">%   Simonas Marcisauskas, 2016-11-01 - added support for metCharge</span>
 0027 <span class="comment">%</span>
 0028 
 0029 <span class="keyword">if</span> ischar(metsToRemove)
@@ -120,79 +120,83 @@ This function is called by:
 0052        <span class="keyword">if</span> ischar(metsToRemove)
 0053             metsToRemove={metsToRemove};
 0054        <span class="keyword">else</span>
-0055             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'Must supply a cell array of strings if isNames=true'</span>);
-0056        <span class="keyword">end</span>
-0057    <span class="keyword">end</span> 
-0058 <span class="keyword">end</span>
-0059 
-0060 reducedModel=model;
-0061 
-0062 <span class="keyword">if</span> isNames==false
-0063     indexesToDelete=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model,objects, type, returnLogical)">getIndexes</a>(model,metsToRemove,<span class="string">'mets'</span>);
-0064 <span class="keyword">else</span>
-0065     indexesToDelete=[];
-0066     <span class="keyword">for</span> i=1:numel(metsToRemove)
-0067        indexesToDelete=[indexesToDelete;find(strcmp(metsToRemove(i),model.metNames))]; 
-0068     <span class="keyword">end</span>
-0069 <span class="keyword">end</span>
-0070 
-0071 <span class="comment">%Remove metabolites</span>
-0072 <span class="keyword">if</span> ~isempty(indexesToDelete)    
-0073     reducedModel.mets(indexesToDelete)=[];
-0074     reducedModel.S(indexesToDelete,:)=[];
-0075     <span class="keyword">if</span> isfield(reducedModel,<span class="string">'b'</span>)
-0076         reducedModel.b(indexesToDelete,:)=[];
-0077     <span class="keyword">end</span>
-0078     <span class="keyword">if</span> isfield(reducedModel,<span class="string">'metNames'</span>)
-0079         reducedModel.metNames(indexesToDelete)=[];
-0080     <span class="keyword">end</span>
-0081     <span class="keyword">if</span> isfield(reducedModel,<span class="string">'metComps'</span>)
-0082         reducedModel.metComps(indexesToDelete)=[];
-0083     <span class="keyword">end</span>
-0084     <span class="keyword">if</span> isfield(reducedModel,<span class="string">'inchis'</span>)
-0085         reducedModel.inchis(indexesToDelete)=[];
-0086     <span class="keyword">end</span>
-0087     <span class="keyword">if</span> isfield(reducedModel,<span class="string">'metFormulas'</span>)
-0088         reducedModel.metFormulas(indexesToDelete)=[];
-0089     <span class="keyword">end</span>
-0090     <span class="keyword">if</span> isfield(reducedModel,<span class="string">'metMiriams'</span>)
-0091         reducedModel.metMiriams(indexesToDelete)=[];
-0092     <span class="keyword">end</span>
-0093     <span class="keyword">if</span> isfield(reducedModel,<span class="string">'unconstrained'</span>)
-0094         reducedModel.unconstrained(indexesToDelete)=[];
-0095     <span class="keyword">end</span>
-0096     <span class="keyword">if</span> isfield(reducedModel,<span class="string">'metFrom'</span>)
-0097         reducedModel.metFrom(indexesToDelete)=[];
-0098     <span class="keyword">end</span>
-0099 <span class="keyword">end</span>
-0100 
-0101 <span class="comment">%Remove unused reactions</span>
-0102 <span class="keyword">if</span> removeUnusedRxns==true
-0103     <span class="comment">%Get unused reactions</span>
-0104     [crap a crap]=find(reducedModel.S);
-0105     rxnsToRemove=1:numel(reducedModel.rxns);
-0106     rxnsToRemove(a)=[];
-0107     reducedModel=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(reducedModel,rxnsToRemove,false,removeUnusedGenes);
-0108 <span class="keyword">end</span>
-0109 
-0110 <span class="comment">%Remove unused compartments</span>
-0111 <span class="keyword">if</span> removeUnusedComps==true
-0112     oldComps=reducedModel.comps;
-0113     I=ismember(1:numel(oldComps),reducedModel.metComps);
-0114     <span class="keyword">if</span> ~all(I)
-0115         reducedModel.comps(~I)=[];
-0116         reducedModel.compNames(~I)=[];
-0117         <span class="keyword">if</span> isfield(reducedModel,<span class="string">'compOutside'</span>)
-0118             reducedModel.compOutside(~I)=[];
-0119         <span class="keyword">end</span>
-0120         <span class="keyword">if</span> isfield(reducedModel,<span class="string">'compMiriams'</span>)
-0121             reducedModel.compMiriams(~I)=[];
-0122         <span class="keyword">end</span>
-0123         [crap J]=ismember(oldComps(reducedModel.metComps),reducedModel.comps);
-0124         reducedModel.metComps=J;
-0125     <span class="keyword">end</span>
-0126 <span class="keyword">end</span>
-0127 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Fri 14-Oct-2016 12:02:10 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0055            EM=<span class="string">'Must supply a cell array of strings if isNames=true'</span>;
+0056            <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0057        <span class="keyword">end</span>
+0058    <span class="keyword">end</span>
+0059 <span class="keyword">end</span>
+0060 
+0061 reducedModel=model;
+0062 
+0063 <span class="keyword">if</span> isNames==false
+0064     indexesToDelete=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model,objects, type, returnLogical)">getIndexes</a>(model,metsToRemove,<span class="string">'mets'</span>);
+0065 <span class="keyword">else</span>
+0066     indexesToDelete=[];
+0067     <span class="keyword">for</span> i=1:numel(metsToRemove)
+0068        indexesToDelete=[indexesToDelete;find(strcmp(metsToRemove(i),model.metNames))];
+0069     <span class="keyword">end</span>
+0070 <span class="keyword">end</span>
+0071 
+0072 <span class="comment">%Remove metabolites</span>
+0073 <span class="keyword">if</span> ~isempty(indexesToDelete)
+0074     reducedModel.mets(indexesToDelete)=[];
+0075     reducedModel.S(indexesToDelete,:)=[];
+0076     <span class="keyword">if</span> isfield(reducedModel,<span class="string">'b'</span>)
+0077         reducedModel.b(indexesToDelete,:)=[];
+0078     <span class="keyword">end</span>
+0079     <span class="keyword">if</span> isfield(reducedModel,<span class="string">'metNames'</span>)
+0080         reducedModel.metNames(indexesToDelete)=[];
+0081     <span class="keyword">end</span>
+0082     <span class="keyword">if</span> isfield(reducedModel,<span class="string">'metComps'</span>)
+0083         reducedModel.metComps(indexesToDelete)=[];
+0084     <span class="keyword">end</span>
+0085     <span class="keyword">if</span> isfield(reducedModel,<span class="string">'inchis'</span>)
+0086         reducedModel.inchis(indexesToDelete)=[];
+0087     <span class="keyword">end</span>
+0088     <span class="keyword">if</span> isfield(reducedModel,<span class="string">'metFormulas'</span>)
+0089         reducedModel.metFormulas(indexesToDelete)=[];
+0090     <span class="keyword">end</span>
+0091     <span class="keyword">if</span> isfield(reducedModel,<span class="string">'metMiriams'</span>)
+0092         reducedModel.metMiriams(indexesToDelete)=[];
+0093     <span class="keyword">end</span>
+0094     <span class="keyword">if</span> isfield(reducedModel,<span class="string">'unconstrained'</span>)
+0095         reducedModel.unconstrained(indexesToDelete)=[];
+0096     <span class="keyword">end</span>
+0097     <span class="keyword">if</span> isfield(reducedModel,<span class="string">'metFrom'</span>)
+0098         reducedModel.metFrom(indexesToDelete)=[];
+0099     <span class="keyword">end</span>
+0100     <span class="keyword">if</span> isfield(reducedModel,<span class="string">'metCharge'</span>)
+0101         reducedModel.metCharge(indexesToDelete)=[];
+0102     <span class="keyword">end</span>
+0103 <span class="keyword">end</span>
+0104 
+0105 <span class="comment">%Remove unused reactions</span>
+0106 <span class="keyword">if</span> removeUnusedRxns==true
+0107     <span class="comment">%Get unused reactions</span>
+0108     [~, a]=find(reducedModel.S);
+0109     rxnsToRemove=1:numel(reducedModel.rxns);
+0110     rxnsToRemove(a)=[];
+0111     reducedModel=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(reducedModel,rxnsToRemove,false,removeUnusedGenes);
+0112 <span class="keyword">end</span>
+0113 
+0114 <span class="comment">%Remove unused compartments</span>
+0115 <span class="keyword">if</span> removeUnusedComps==true
+0116     oldComps=reducedModel.comps;
+0117     I=ismember(1:numel(oldComps),reducedModel.metComps);
+0118     <span class="keyword">if</span> ~all(I)
+0119         reducedModel.comps(~I)=[];
+0120         reducedModel.compNames(~I)=[];
+0121         <span class="keyword">if</span> isfield(reducedModel,<span class="string">'compOutside'</span>)
+0122             reducedModel.compOutside(~I)=[];
+0123         <span class="keyword">end</span>
+0124         <span class="keyword">if</span> isfield(reducedModel,<span class="string">'compMiriams'</span>)
+0125             reducedModel.compMiriams(~I)=[];
+0126         <span class="keyword">end</span>
+0127         [~, J]=ismember(oldComps(reducedModel.metComps),reducedModel.comps);
+0128         reducedModel.metComps=J;
+0129     <span class="keyword">end</span>
+0130 <span class="keyword">end</span>
+0131 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 28-Feb-2017 23:41:43 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

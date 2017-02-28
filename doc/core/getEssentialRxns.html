@@ -42,16 +42,16 @@
 
    Usage: [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns)
 
-   Rasmus Agren, 2013-08-01</pre></div>
+   Rasmus Agren, 2014-01-08</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>	setParam</li><li><a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>	solveLP</li></ul>
+<li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>	setParam</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="checkTasks.html" class="code" title="function [taskReport essentialRxns taskStructure]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure)">checkTasks</a>	checkTasks</li></ul>
+<li><a href="checkTasks.html" class="code" title="function [taskReport, essentialRxns, taskStructure]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure)">checkTasks</a>	checkTasks</li></ul>
 <!-- crossreference -->
 
 
@@ -73,7 +73,7 @@ This function is called by:
 0014 <span class="comment">%</span>
 0015 <span class="comment">%   Usage: [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns)</span>
 0016 <span class="comment">%</span>
-0017 <span class="comment">%   Rasmus Agren, 2013-08-01</span>
+0017 <span class="comment">%   Rasmus Agren, 2014-01-08</span>
 0018 <span class="comment">%</span>
 0019 
 0020 <span class="keyword">if</span> nargin&lt;2
@@ -84,44 +84,45 @@ This function is called by:
 0025 model.c=zeros(numel(model.rxns),1);
 0026 
 0027 <span class="comment">%First check that the problem is solvable</span>
-0028 [sol hsSolOut]=<a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(model,1);
+0028 [sol, hsSolOut]=solveLP(model,1);
 0029 
 0030 <span class="keyword">if</span> sol.stat==-1 || isempty(sol.x)
-0031     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'No feasible solution to the full model'</span>);
-0032 <span class="keyword">end</span>
-0033 
-0034 <span class="comment">%Check which reactions have flux. Only those can be essential. This</span>
-0035 <span class="comment">%is not the smallest list of reactions, but it's a fast way</span>
-0036 rxnsToCheck=setdiff(model.rxns(abs(sol.x)&gt;10^-8),ignoreRxns);
-0037 nToCheck=numel(rxnsToCheck);
-0038 minimize=true;
-0039 <span class="keyword">while</span> 1
-0040     <span class="keyword">if</span> minimize==true
-0041         sol=<a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'obj'</span>,rxnsToCheck,-1));
-0042     <span class="keyword">else</span>
-0043         sol=<a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'obj'</span>,rxnsToCheck,1));
-0044     <span class="keyword">end</span>
-0045     rxnsToCheck=intersect(rxnsToCheck,model.rxns(abs(sol.x)&gt;10^-8));
-0046     <span class="keyword">if</span> numel(rxnsToCheck)&gt;=nToCheck
-0047         <span class="keyword">if</span> minimize==true
-0048             minimize=false;
-0049         <span class="keyword">else</span>
-0050             <span class="keyword">break</span>;
-0051         <span class="keyword">end</span>
-0052     <span class="keyword">else</span>
-0053         nToCheck=numel(rxnsToCheck);
-0054     <span class="keyword">end</span>
-0055 <span class="keyword">end</span>
-0056 
-0057 essentialRxns={};
-0058 <span class="keyword">for</span> i=1:numel(rxnsToCheck)
-0059    sol=<a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'eq'</span>,rxnsToCheck(i),0),0,[],hsSolOut);
-0060    <span class="keyword">if</span> sol.stat==-1 || isempty(sol.x)
-0061        essentialRxns=[essentialRxns;rxnsToCheck(i)];
-0062    <span class="keyword">end</span>
-0063 <span class="keyword">end</span>
-0064 
-0065 [crap essentialRxnsIndexes]=ismember(essentialRxns,model.rxns);</pre></div>
-<hr><address>Generated on Fri 14-Oct-2016 12:02:10 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0031     EM=<span class="string">'No feasible solution to the full model'</span>;
+0032     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0033 <span class="keyword">end</span>
+0034 
+0035 <span class="comment">%Check which reactions have flux. Only those can be essential. This</span>
+0036 <span class="comment">%is not the smallest list of reactions, but it's a fast way</span>
+0037 rxnsToCheck=setdiff(model.rxns(abs(sol.x)&gt;10^-8),ignoreRxns);
+0038 nToCheck=numel(rxnsToCheck);
+0039 minimize=true;
+0040 <span class="keyword">while</span> 1
+0041     <span class="keyword">if</span> minimize==true
+0042         sol=solveLP(<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'obj'</span>,rxnsToCheck,-1));
+0043     <span class="keyword">else</span>
+0044         sol=solveLP(<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'obj'</span>,rxnsToCheck,1));
+0045     <span class="keyword">end</span>
+0046     rxnsToCheck=intersect(rxnsToCheck,model.rxns(abs(sol.x)&gt;10^-8));
+0047     <span class="keyword">if</span> numel(rxnsToCheck)&gt;=nToCheck
+0048         <span class="keyword">if</span> minimize==true
+0049             minimize=false;
+0050         <span class="keyword">else</span>
+0051             <span class="keyword">break</span>;
+0052         <span class="keyword">end</span>
+0053     <span class="keyword">else</span>
+0054         nToCheck=numel(rxnsToCheck);
+0055     <span class="keyword">end</span>
+0056 <span class="keyword">end</span>
+0057 
+0058 essentialRxns={};
+0059 <span class="keyword">for</span> i=1:numel(rxnsToCheck)
+0060    sol=solveLP(<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'eq'</span>,rxnsToCheck(i),0),0,[],hsSolOut);
+0061    <span class="keyword">if</span> sol.stat==-1 || isempty(sol.x)
+0062        essentialRxns=[essentialRxns;rxnsToCheck(i)];
+0063    <span class="keyword">end</span>
+0064 <span class="keyword">end</span>
+0065 
+0066 [~, essentialRxnsIndexes]=ismember(essentialRxns,model.rxns);</pre></div>
+<hr><address>Generated on Tue 28-Feb-2017 23:41:43 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

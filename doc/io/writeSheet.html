@@ -1,0 +1,192 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of writeSheet</title>
+  <meta name="keywords" content="writeSheet">
+  <meta name="description" content="writeSheet">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">io</a> &gt; writeSheet.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for io&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>writeSheet
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>writeSheet</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> writeSheet
+   Writes a cell matrix to an Excel sheet into using the Java library Apache POI
+
+   workbook        Workbook object representing the Excel file
+   sheetName       name of the sheet
+   sheetPosition   0-based position of the sheet
+   captions        cell array of captions (opt)
+   units            WRITE INFO
+   raw             cell array with the data in the sheet
+
+   Usage: wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw)
+
+   Rasmus Agren, 2017-02-27</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="addJavaPaths.html" class="code" title="function addJavaPaths()">addJavaPaths</a>	addJavaPaths</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="exportToExcelFormat.html" class="code" title="function exportToExcelFormat(model,filename)">exportToExcelFormat</a>	exportToExcelFormat</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function I=toValid(J)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw)</a>
+0002 <span class="comment">% writeSheet</span>
+0003 <span class="comment">%   Writes a cell matrix to an Excel sheet into using the Java library Apache POI</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%   workbook        Workbook object representing the Excel file</span>
+0006 <span class="comment">%   sheetName       name of the sheet</span>
+0007 <span class="comment">%   sheetPosition   0-based position of the sheet</span>
+0008 <span class="comment">%   captions        cell array of captions (opt)</span>
+0009 <span class="comment">%   units            WRITE INFO</span>
+0010 <span class="comment">%   raw             cell array with the data in the sheet</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">%   Usage: wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw)</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">%   Rasmus Agren, 2017-02-27</span>
+0015 <span class="comment">%</span>
+0016 
+0017 <span class="comment">%Adds the required classes to the static Java path if not already added</span>
+0018 <a href="addJavaPaths.html" class="code" title="function addJavaPaths()">addJavaPaths</a>();
+0019 
+0020 <span class="comment">%Import required classes from Apache POI.</span>
+0021 import org.apache.poi.ss.usermodel.*;
+0022 import org.apache.poi.ss.util.*;
+0023 import org.apache.poi.hssf.usermodel.*;
+0024 import org.apache.poi.xssf.usermodel.*;
+0025     
+0026 <span class="comment">%Set default style object and bold style object</span>
+0027 defaultStyle = wb.createCellStyle();
+0028 idx = wb.getCreationHelper().createDataFormat().getFormat(<span class="string">'##0.00'</span>);
+0029 defaultStyle.setDataFormat(idx);
+0030 
+0031 boldFont=wb.createFont();
+0032 boldFont.setBoldweight(boldFont.BOLDWEIGHT_BOLD);
+0033 boldStyle=defaultStyle.clone();
+0034 boldStyle.setFont(boldFont);
+0035 
+0036 s=wb.createSheet();
+0037 wb.setSheetName(sheetPosition, sheetName);
+0038 
+0039 <span class="comment">%Create the header row and units</span>
+0040 counter=0;
+0041 <span class="keyword">if</span> ~isempty(captions)
+0042     r=s.createRow(counter);
+0043     <span class="keyword">for</span> i=0:numel(captions)-1
+0044         c=r.createCell(i);
+0045         c.setCellValue(captions{i+1});
+0046         c.setCellStyle(boldStyle);
+0047     <span class="keyword">end</span>
+0048     counter=counter+1;
+0049 <span class="keyword">end</span>
+0050 <span class="keyword">if</span> ~isempty(units)
+0051     r=s.createRow(counter);
+0052     <span class="keyword">for</span> i=0:numel(units)-1
+0053         c=r.createCell(i);
+0054         content=units{i+1};
+0055         <span class="keyword">if</span> iscell(content) &amp;&amp; numel(content)==2
+0056             c.setCellValue(content{1});
+0057 
+0058             <span class="comment">%This means that the cell should have a list of allowed</span>
+0059             <span class="comment">%values</span>
+0060             dvHelper=XSSFDataValidationHelper(s);
+0061 
+0062             cellRange=CellRangeAddressList(1,1,i,i); <span class="comment">%Units are on the second line</span>
+0063             dvConstraint=dvHelper.createExplicitListConstraint(<a href="#_sub1" class="code" title="subfunction I=toValid(J)">toValid</a>(content{2}));
+0064             validation=dvHelper.createValidation(dvConstraint, cellRange);
+0065             validation.setShowErrorBox(true);
+0066             s.addValidationData(validation);
+0067         <span class="keyword">else</span>
+0068             c.setCellValue(content{1});
+0069         <span class="keyword">end</span>
+0070         c.setCellStyle(boldStyle);
+0071     <span class="keyword">end</span>
+0072     counter=counter+1;
+0073 <span class="keyword">end</span>
+0074 
+0075 <span class="comment">%Loop through and fill in the values</span>
+0076 <span class="keyword">for</span> i=0:size(raw,1)-1
+0077     r=s.createRow(i+counter);
+0078     
+0079     <span class="keyword">for</span> j=0:size(raw,2)-1
+0080         <span class="keyword">if</span> ~isempty(raw{i+1,j+1})
+0081             c=r.createCell(j);
+0082             content=raw{i+1,j+1};
+0083             <span class="keyword">if</span> iscell(content) &amp;&amp; numel(content)==2
+0084                 c.setCellValue(content{1});
+0085                 
+0086                 <span class="comment">%This means that the cell should have a list of allowed</span>
+0087                 <span class="comment">%values</span>
+0088                 dvHelper=XSSFDataValidationHelper(s);
+0089                 cellRange=CellRangeAddressList(i+1,i+1,j,j);
+0090                 dvConstraint=dvHelper.createExplicitListConstraint(<a href="#_sub1" class="code" title="subfunction I=toValid(J)">toValid</a>(content{2}));
+0091                 validation=dvHelper.createValidation(dvConstraint, cellRange);
+0092                 validation.setShowErrorBox(true);
+0093                 s.addValidationData(validation);
+0094             <span class="keyword">else</span>
+0095                 c.setCellValue(content);
+0096             <span class="keyword">end</span>
+0097             c.setCellStyle(defaultStyle);
+0098         <span class="keyword">end</span>
+0099     <span class="keyword">end</span>
+0100 <span class="keyword">end</span>
+0101 
+0102 <span class="comment">%Resize columns</span>
+0103 <span class="keyword">for</span> i=0:size(raw,2)-1
+0104     s.autoSizeColumn(i);
+0105 <span class="keyword">end</span>
+0106 
+0107 <span class="comment">%Add freeze panes</span>
+0108 <span class="keyword">if</span> counter&gt;0
+0109     s.createFreezePane(0,counter,0,counter);
+0110 <span class="keyword">end</span>
+0111 <span class="keyword">end</span>
+0112 
+0113 <a name="_sub1" href="#_subfunctions" class="code">function I=toValid(J)</a>
+0114     I=cell(numel(J),1);
+0115     <span class="keyword">for</span> i=1:numel(J)
+0116         <span class="keyword">if</span> ischar(J{i})
+0117             I(i)=J(i);
+0118         <span class="keyword">else</span>
+0119             <span class="keyword">if</span> islogical(J{i})
+0120                <span class="keyword">if</span> J{i}==true
+0121                     I{i}=<span class="string">'TRUE'</span>;
+0122                <span class="keyword">else</span>
+0123                     I{i}=<span class="string">'FALSE'</span>;
+0124                <span class="keyword">end</span>
+0125             <span class="keyword">else</span>
+0126                 <span class="comment">%Other, most likely numbers</span>
+0127                 I{i}=num2str(J{i});
+0128             <span class="keyword">end</span>
+0129         <span class="keyword">end</span>
+0130     <span class="keyword">end</span>
+0131 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 28-Feb-2017 23:41:43 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

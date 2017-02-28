@@ -15,7 +15,7 @@
 <div><a href="../../index.html">Home</a> &gt;  <a href="../index.html">external</a> &gt; <a href="index.html">kegg</a> &gt; getKEGGModelForOrganism.m</div>
 
 <!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
-<td align="right"><a href="index.html">Index for external/kegg&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+<td align="right"><a href="index.html">Index for external\kegg&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
 
 <h1>getKEGGModelForOrganism
 </h1>
@@ -24,17 +24,20 @@
 <div class="box"><strong>getKEGGModelForOrganism</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
-<div class="box"><strong>function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,minScoreRatioKO,maxPhylDist,nSequences) </strong></div>
+<div class="box"><strong>function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,minScoreRatioKO,maxPhylDist,nSequences,seqIdentity) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> getKEGGModelForOrganism
    Reconstructs a genome-scale metabolic model based on protein homology to the
    orthologies in KEGG
 
-   organismID          three letter abbreviation of the organism (as used in
-                       KEGG). If not available, use a closely related
+   organismID          three or four letter abbreviation of the organism (as
+                       used in KEGG). If not available, use a closely related
                        species. This is used for determing the
-                       phylogenetic distance.
+                       phylogenetic distance. Use 'eukaryotes' or
+                       'prokaryotes' to get a model for the whole domain.
+                       Only applicable if fastaFile is empty, i.e. no
+                       homology search should be performed
    fastaFile           a FASTA file that contains the protein sequences of
                        the organism for which to reconstruct a model (opt,
                        if no FASTA file is supplied then a model is
@@ -46,33 +49,30 @@
                        -dataDir\keggdb
                            The KEGG database files used in 1a (see below).
                        -dataDir\fasta
-                           The multi-FASTA files generated in 1b or
-                           downloaded from the RAVEN Toolbox homepage (see
-                           below)
+                           The multi-FASTA files generated in 1b (see below)
                        -dataDir\aligned
                            The aligned FASTA files as generated in 2a (see
                            below)
                        -dataDir\hmms
-                           The Hidden Markov Models as generated in 2b or
-                           downloaded from the RAVEN Toolbox homepage (see
-                           below)
+                           The hidden Markov models as generated in 2b or
+                           downloaded from BioMet Toolbox (see below)
                        (opt, see note about fastaFile. Note that in order to
                        rebuild the KEGG model from a database dump, as opposed to
                        using the version supplied with RAVEN, you would still need
                        to supply this)
    outDir              directory to save the results from the quering of
-                       the Hidden Markov models. The output is specific
+                       the hidden Markov models. The output is specific
                        for the input sequences and the settings used. It
                        is stored in this manner so that the function can
                        continue if interrupted or if it should run in
-                       parallell. Be careful not to leave output files
+                       parallel. Be careful not to leave output files
                        from different organisms or runs with different
                        settings in the same folder. They will not be
                        overwritten (opt, default is a temporary dir where
                        all *.out files are deleted before and after doing
                        the reconstruction)
    keepUndefinedStoich include reactions in the form n A &lt;=&gt; n+1 A. These
-                       will be dealt with as two separate metabolites 
+                       will be dealt with as two separate metabolites
                        (opt, default true)
    keepIncomplete      include reactions which have been labelled as
                        &quot;incomplete&quot;, &quot;erroneous&quot; or &quot;unclear&quot; (opt,
@@ -87,9 +87,9 @@
    cutOff              significans score from HMMer needed to assign genes
                        to a KO (opt, default 10^-50)
    minScoreRatioG      a gene is only assigned to KOs for which the score
-                       is &gt;=log(score)/log(best score) for that gene. 
-                       This is to prevent that a gene which clearly belongs 
-                       to one KO is assigned also to KOs with much lower 
+                       is &gt;=log(score)/log(best score) for that gene.
+                       This is to prevent that a gene which clearly belongs
+                       to one KO is assigned also to KOs with much lower
                        scores (opt, default 0.8 (lower is less strict))
    minScoreRatioKO     ignore genes in a KO if their score is
                        &lt;log(score)/log(best score in KO). This is to
@@ -103,48 +103,51 @@
                        the most this large (as calculated in getPhylDist)
                        (opt, default Inf, which means that all sequences will
                        be used)
-   nSequences          for each KO, use up to this many sequences from 
+   nSequences          for each KO, use up to this many sequences from
                        the most closely related species. This is mainly to
                        speed up the alignment process for KOs with very
-                       many genes (opt, default inf)
+                       many genes. This subsampling is performed before
+                       running CD-HIT (opt, default inf)
+   seqIdentity         sequence identity threshold in CD-HIT, referred as
+                       &quot;global sequence identity&quot; in CD-HIT User's Guide.
+                       The only possible options are 1 (100 %), 0.9 (90 %)
+                       and 0.5 (50 %). If other values are provided, CD-HIT
+                       is skipped (opt, default -1, i.e. CD-HIT is skipped)
 
    model               the reconstructed model
 
    PLEASE READ THIS: The input to this function can be confusing, because
-   it is intended to be run in parallell on a cluster or in multiple sessions.
-   It therefore saves a lot of intermediate results to disc. This also
-   serves the purpose of not having to do reduntant calculations. This,
+   it is intended to be run in parallel on a cluster or in multiple sessions.
+   It therefore saves a lot of intermediate results to storage. This also
+   serves the purpose of not having to do redundant calculations. This,
    however, comes with the disadvantage of somewhat trickier handling.
    This is what this function does:
 
-   1a. Downloads relevant parts from the KEGG FTP and constructs a general
-       RAVEN model representing the metabolic network. This output is 
-       distributed with RAVEN (it's in the raven\kegg directory). Delete
-       those files to rerun this parsing.
-   1b. Generates FASTA files from the downloaded KEGG files. One
-       multi-FASTA file for each KO in KEGG is generated. These
-       multi-fasta files can be downloaded from the RAVEN Toolbox
-       homepage if you do not have access to the KEGG FTP or don't want to
-       do this time-consuming parsing. Just be sure that you actually need
-       them first (see below)
+   1a. Loads files from a local KEGG FTP dump and constructs a general
+       RAVEN model representing the metabolic network. KEGG FTP access
+       requires a &lt;a href=&quot;matlab: web('http://www.bioinformatics.jp/en/keggftp.html')&quot;&gt;license&lt;/a&gt;.
+   1b. Generates FASTA files from the KEGG FTP dump (see 1a). One
+       multi-FASTA file for each KO in KEGG is generated. Make sure you
+       actually need these first, as the parsing is time-consuming (see below).
 
-   These steps only have to be redone every time KEGG updates their
+   These steps only have to be re-done every time KEGG updates their
    database (or rather when the updates are large enough to warrant
    rerunning this part). Many user would probably never use this feature.
 
    2a. Does alignment of the multi-FASTA files for future use. This uses the
        settings &quot;useEvDist&quot; and &quot;nSequences&quot; to control which sequences
        should be used for constructing Hidden Markov models (HMMs), and
-       later for matching your sequences to. 
-   2b. Trains Hidden Markov models using HMMer for each of the aligned
+       later for matching your sequences to.
+   2b. Trains hidden Markov models using HMMer for each of the aligned
        FASTA files.
 
-    The most common alternatives here would be to use sequences from only
-   eukaryotes, only prokaryotes or all sequences in KEGG. The Hidden Markov
-   models for those options can be downloaded from the RAVEN Toolbox
-   homepage. This is normally the most convenient way, but if you would
-   like to use, for example, only fungal sequences for training the HMMs
-   then you need to run this part.
+   The most common alternatives here would be to use sequences from only
+   eukaryotes, only prokaryotes or all sequences in KEGG. As explained in
+   the README.md file, various sets of pre-trained hidden Markov models are
+   available at &lt;a href=&quot;matlab: web('http://biomet-toolbox.org/index.php?page=downtools-raven')&quot;&gt;BioMet Toolbox&lt;/a&gt;.
+   This is normally the most convenient way, but if you would like to use,
+   for example, only fungal sequences for training the HMMs then you need
+   to run this part.
 
    3a. Queries the HMMs with sequences for the organism you are making a
        model for. This step uses both the output from step 1a and from 2b.
@@ -155,41 +158,40 @@
    the model.
 
    In principle the function looks at which output that is already available
-   and runs runs only the parts that are required for step 3. This means
+   and runs only the parts that are required for step 3. This means
    that (see the definition of the parameters for details):
-   -1a is only performed if there are no KEGG model files in the raven\kegg
-   directory
+   -1a is only performed if there are no KEGG model files in the
+   RAVEN\external\kegg directory
    -1b is only performed if not all required HMMs OR aligned FASTA files
    OR multi-FASTA files exist in the defined dataDir. This means that this
-   step is skipped if the FASTA files or HMMs are downloaded from the RAVEN
-   Toolbox homepage instead. If not all files exist it will try to find
-   the KEGG database files in dataDir. If it cannot find them it will try
-   to download them via the KEGG FTP.
+   step is skipped if the HMMs are downloaded from BioMet Toolbox instead
+   (see above). If not all files exist it will try to find
+   the KEGG database files in dataDir.
    -2a is only performed if not all required HMMs OR aligned FASTA files
    files exist in the defined dataDir. This means that this step is skipped
-   if the HMMs are downloaded from the RAVEN Toolbox homepage instead.
+   if the HMMs are downloaded from BioMet Toolbox instead (see above).
    -2b is only performed if not all required HMMs exist in the defined
    dataDir. This means that this step is skipped if the FASTA files or
-   HMMs are downloaded from the RAVEN Toolbox homepage instead.
+   HMMs are downloaded from BioMet Toolbox instead (see above).
    -3a is performed for the required HMMs for which no corresponding .out
    file exists in outDir. This is just a way to enable the function to be
-   run in parallell or to resume if interrupeted.
+   run in parallel or to resume if interrupted.
    -3b is always performed.
 
    Usage: model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
     keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...
-    minScoreRatioKO,maxPhylDist,nSequences)
+    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 
-   Rasmus Agren, 2013-11-22</pre></div>
+   Eduard Kerkhoven, 2017-02-28</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="../../core/constructMultiFasta.html" class="code" title="function constructMultiFasta(model,sourceFile,outputDir)">constructMultiFasta</a>	constructMultiFasta</li><li><a href="../../core/dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="../../core/getPhylDist.html" class="code" title="function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)">getPhylDist</a>	getPhylDist</li><li><a href="../../core/permuteModel.html" class="code" title="function newModel=permuteModel(model, indexes, type)">permuteModel</a>	permuteModel</li><li><a href="../../core/removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>	removeReactions</li><li><a href="downloadKEGG.html" class="code" title="function exitFlag=downloadKEGG(keggPath)">downloadKEGG</a>	downloadKEGG</li><li><a href="getModelFromKEGG.html" class="code" title="function [model KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)">getModelFromKEGG</a>	getModelFromKEGG</li></ul>
+<li><a href="getModelFromKEGG.html" class="code" title="function [model, KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)">getModelFromKEGG</a>	getModelFromKEGG</li><li><a href="getPhylDist.html" class="code" title="function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)">getPhylDist</a>	getPhylDist</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="../../tutorial/tutorial4.html" class="code" title="">tutorial4</a>	This exercise is about creating a model from KEGG, based on protein sequences</li></ul>
+</ul>
 <!-- crossreference -->
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
@@ -199,46 +201,46 @@ This function is called by:
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,</a><span class="keyword">...</span>
 0002     keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,<span class="keyword">...</span>
-0003     minScoreRatioKO,maxPhylDist,nSequences)
+0003     minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 0004 <span class="comment">% getKEGGModelForOrganism</span>
 0005 <span class="comment">%   Reconstructs a genome-scale metabolic model based on protein homology to the</span>
 0006 <span class="comment">%   orthologies in KEGG</span>
 0007 <span class="comment">%</span>
-0008 <span class="comment">%   organismID          three letter abbreviation of the organism (as used in</span>
-0009 <span class="comment">%                       KEGG). If not available, use a closely related</span>
+0008 <span class="comment">%   organismID          three or four letter abbreviation of the organism (as</span>
+0009 <span class="comment">%                       used in KEGG). If not available, use a closely related</span>
 0010 <span class="comment">%                       species. This is used for determing the</span>
-0011 <span class="comment">%                       phylogenetic distance.</span>
-0012 <span class="comment">%   fastaFile           a FASTA file that contains the protein sequences of</span>
-0013 <span class="comment">%                       the organism for which to reconstruct a model (opt,</span>
-0014 <span class="comment">%                       if no FASTA file is supplied then a model is</span>
-0015 <span class="comment">%                       reconstructed based only on the organism</span>
-0016 <span class="comment">%                       abbreviation. This option ignores all settings except for</span>
-0017 <span class="comment">%                       keepUndefinedStoich, keepIncomplete and keepGeneral)</span>
-0018 <span class="comment">%   dataDir             directory for which to retrieve the input data.</span>
-0019 <span class="comment">%                       Should contain a combination of these sub-folders:</span>
-0020 <span class="comment">%                       -dataDir\keggdb</span>
-0021 <span class="comment">%                           The KEGG database files used in 1a (see below).</span>
-0022 <span class="comment">%                       -dataDir\fasta</span>
-0023 <span class="comment">%                           The multi-FASTA files generated in 1b or</span>
-0024 <span class="comment">%                           downloaded from the RAVEN Toolbox homepage (see</span>
-0025 <span class="comment">%                           below)</span>
-0026 <span class="comment">%                       -dataDir\aligned</span>
-0027 <span class="comment">%                           The aligned FASTA files as generated in 2a (see</span>
-0028 <span class="comment">%                           below)</span>
-0029 <span class="comment">%                       -dataDir\hmms</span>
-0030 <span class="comment">%                           The Hidden Markov Models as generated in 2b or</span>
-0031 <span class="comment">%                           downloaded from the RAVEN Toolbox homepage (see</span>
-0032 <span class="comment">%                           below)</span>
+0011 <span class="comment">%                       phylogenetic distance. Use 'eukaryotes' or</span>
+0012 <span class="comment">%                       'prokaryotes' to get a model for the whole domain.</span>
+0013 <span class="comment">%                       Only applicable if fastaFile is empty, i.e. no</span>
+0014 <span class="comment">%                       homology search should be performed</span>
+0015 <span class="comment">%   fastaFile           a FASTA file that contains the protein sequences of</span>
+0016 <span class="comment">%                       the organism for which to reconstruct a model (opt,</span>
+0017 <span class="comment">%                       if no FASTA file is supplied then a model is</span>
+0018 <span class="comment">%                       reconstructed based only on the organism</span>
+0019 <span class="comment">%                       abbreviation. This option ignores all settings except for</span>
+0020 <span class="comment">%                       keepUndefinedStoich, keepIncomplete and keepGeneral)</span>
+0021 <span class="comment">%   dataDir             directory for which to retrieve the input data.</span>
+0022 <span class="comment">%                       Should contain a combination of these sub-folders:</span>
+0023 <span class="comment">%                       -dataDir\keggdb</span>
+0024 <span class="comment">%                           The KEGG database files used in 1a (see below).</span>
+0025 <span class="comment">%                       -dataDir\fasta</span>
+0026 <span class="comment">%                           The multi-FASTA files generated in 1b (see below)</span>
+0027 <span class="comment">%                       -dataDir\aligned</span>
+0028 <span class="comment">%                           The aligned FASTA files as generated in 2a (see</span>
+0029 <span class="comment">%                           below)</span>
+0030 <span class="comment">%                       -dataDir\hmms</span>
+0031 <span class="comment">%                           The hidden Markov models as generated in 2b or</span>
+0032 <span class="comment">%                           downloaded from BioMet Toolbox (see below)</span>
 0033 <span class="comment">%                       (opt, see note about fastaFile. Note that in order to</span>
 0034 <span class="comment">%                       rebuild the KEGG model from a database dump, as opposed to</span>
 0035 <span class="comment">%                       using the version supplied with RAVEN, you would still need</span>
 0036 <span class="comment">%                       to supply this)</span>
 0037 <span class="comment">%   outDir              directory to save the results from the quering of</span>
-0038 <span class="comment">%                       the Hidden Markov models. The output is specific</span>
+0038 <span class="comment">%                       the hidden Markov models. The output is specific</span>
 0039 <span class="comment">%                       for the input sequences and the settings used. It</span>
 0040 <span class="comment">%                       is stored in this manner so that the function can</span>
 0041 <span class="comment">%                       continue if interrupted or if it should run in</span>
-0042 <span class="comment">%                       parallell. Be careful not to leave output files</span>
+0042 <span class="comment">%                       parallel. Be careful not to leave output files</span>
 0043 <span class="comment">%                       from different organisms or runs with different</span>
 0044 <span class="comment">%                       settings in the same folder. They will not be</span>
 0045 <span class="comment">%                       overwritten (opt, default is a temporary dir where</span>
@@ -279,603 +281,706 @@ This function is called by:
 0080 <span class="comment">%   nSequences          for each KO, use up to this many sequences from</span>
 0081 <span class="comment">%                       the most closely related species. This is mainly to</span>
 0082 <span class="comment">%                       speed up the alignment process for KOs with very</span>
-0083 <span class="comment">%                       many genes (opt, default inf)</span>
-0084 <span class="comment">%</span>
-0085 <span class="comment">%   model               the reconstructed model</span>
-0086 <span class="comment">%</span>
-0087 <span class="comment">%   PLEASE READ THIS: The input to this function can be confusing, because</span>
-0088 <span class="comment">%   it is intended to be run in parallell on a cluster or in multiple sessions.</span>
-0089 <span class="comment">%   It therefore saves a lot of intermediate results to disc. This also</span>
-0090 <span class="comment">%   serves the purpose of not having to do reduntant calculations. This,</span>
-0091 <span class="comment">%   however, comes with the disadvantage of somewhat trickier handling.</span>
-0092 <span class="comment">%   This is what this function does:</span>
-0093 <span class="comment">%</span>
-0094 <span class="comment">%   1a. Downloads relevant parts from the KEGG FTP and constructs a general</span>
-0095 <span class="comment">%       RAVEN model representing the metabolic network. This output is</span>
-0096 <span class="comment">%       distributed with RAVEN (it's in the raven\kegg directory). Delete</span>
-0097 <span class="comment">%       those files to rerun this parsing.</span>
-0098 <span class="comment">%   1b. Generates FASTA files from the downloaded KEGG files. One</span>
-0099 <span class="comment">%       multi-FASTA file for each KO in KEGG is generated. These</span>
-0100 <span class="comment">%       multi-fasta files can be downloaded from the RAVEN Toolbox</span>
-0101 <span class="comment">%       homepage if you do not have access to the KEGG FTP or don't want to</span>
-0102 <span class="comment">%       do this time-consuming parsing. Just be sure that you actually need</span>
-0103 <span class="comment">%       them first (see below)</span>
-0104 <span class="comment">%</span>
-0105 <span class="comment">%   These steps only have to be redone every time KEGG updates their</span>
-0106 <span class="comment">%   database (or rather when the updates are large enough to warrant</span>
-0107 <span class="comment">%   rerunning this part). Many user would probably never use this feature.</span>
-0108 <span class="comment">%</span>
-0109 <span class="comment">%   2a. Does alignment of the multi-FASTA files for future use. This uses the</span>
-0110 <span class="comment">%       settings &quot;useEvDist&quot; and &quot;nSequences&quot; to control which sequences</span>
-0111 <span class="comment">%       should be used for constructing Hidden Markov models (HMMs), and</span>
-0112 <span class="comment">%       later for matching your sequences to.</span>
-0113 <span class="comment">%   2b. Trains Hidden Markov models using HMMer for each of the aligned</span>
-0114 <span class="comment">%       FASTA files.</span>
-0115 <span class="comment">%</span>
-0116 <span class="comment">%    The most common alternatives here would be to use sequences from only</span>
-0117 <span class="comment">%   eukaryotes, only prokaryotes or all sequences in KEGG. The Hidden Markov</span>
-0118 <span class="comment">%   models for those options can be downloaded from the RAVEN Toolbox</span>
-0119 <span class="comment">%   homepage. This is normally the most convenient way, but if you would</span>
-0120 <span class="comment">%   like to use, for example, only fungal sequences for training the HMMs</span>
-0121 <span class="comment">%   then you need to run this part.</span>
-0122 <span class="comment">%</span>
-0123 <span class="comment">%   3a. Queries the HMMs with sequences for the organism you are making a</span>
-0124 <span class="comment">%       model for. This step uses both the output from step 1a and from 2b.</span>
-0125 <span class="comment">%   3b. Constructs a model based on the fit to the HMMs and the chosen</span>
-0126 <span class="comment">%       parameters.</span>
-0127 <span class="comment">%</span>
-0128 <span class="comment">%   These steps are specific to the organism for which you are reconstructing</span>
-0129 <span class="comment">%   the model.</span>
+0083 <span class="comment">%                       many genes. This subsampling is performed before</span>
+0084 <span class="comment">%                       running CD-HIT (opt, default inf)</span>
+0085 <span class="comment">%   seqIdentity         sequence identity threshold in CD-HIT, referred as</span>
+0086 <span class="comment">%                       &quot;global sequence identity&quot; in CD-HIT User's Guide.</span>
+0087 <span class="comment">%                       The only possible options are 1 (100 %), 0.9 (90 %)</span>
+0088 <span class="comment">%                       and 0.5 (50 %). If other values are provided, CD-HIT</span>
+0089 <span class="comment">%                       is skipped (opt, default -1, i.e. CD-HIT is skipped)</span>
+0090 <span class="comment">%</span>
+0091 <span class="comment">%   model               the reconstructed model</span>
+0092 <span class="comment">%</span>
+0093 <span class="comment">%   PLEASE READ THIS: The input to this function can be confusing, because</span>
+0094 <span class="comment">%   it is intended to be run in parallel on a cluster or in multiple sessions.</span>
+0095 <span class="comment">%   It therefore saves a lot of intermediate results to storage. This also</span>
+0096 <span class="comment">%   serves the purpose of not having to do redundant calculations. This,</span>
+0097 <span class="comment">%   however, comes with the disadvantage of somewhat trickier handling.</span>
+0098 <span class="comment">%   This is what this function does:</span>
+0099 <span class="comment">%</span>
+0100 <span class="comment">%   1a. Loads files from a local KEGG FTP dump and constructs a general</span>
+0101 <span class="comment">%       RAVEN model representing the metabolic network. KEGG FTP access</span>
+0102 <span class="comment">%       requires a &lt;a href=&quot;matlab: web('http://www.bioinformatics.jp/en/keggftp.html')&quot;&gt;license&lt;/a&gt;.</span>
+0103 <span class="comment">%   1b. Generates FASTA files from the KEGG FTP dump (see 1a). One</span>
+0104 <span class="comment">%       multi-FASTA file for each KO in KEGG is generated. Make sure you</span>
+0105 <span class="comment">%       actually need these first, as the parsing is time-consuming (see below).</span>
+0106 <span class="comment">%</span>
+0107 <span class="comment">%   These steps only have to be re-done every time KEGG updates their</span>
+0108 <span class="comment">%   database (or rather when the updates are large enough to warrant</span>
+0109 <span class="comment">%   rerunning this part). Many user would probably never use this feature.</span>
+0110 <span class="comment">%</span>
+0111 <span class="comment">%   2a. Does alignment of the multi-FASTA files for future use. This uses the</span>
+0112 <span class="comment">%       settings &quot;useEvDist&quot; and &quot;nSequences&quot; to control which sequences</span>
+0113 <span class="comment">%       should be used for constructing Hidden Markov models (HMMs), and</span>
+0114 <span class="comment">%       later for matching your sequences to.</span>
+0115 <span class="comment">%   2b. Trains hidden Markov models using HMMer for each of the aligned</span>
+0116 <span class="comment">%       FASTA files.</span>
+0117 <span class="comment">%</span>
+0118 <span class="comment">%   The most common alternatives here would be to use sequences from only</span>
+0119 <span class="comment">%   eukaryotes, only prokaryotes or all sequences in KEGG. As explained in</span>
+0120 <span class="comment">%   the README.md file, various sets of pre-trained hidden Markov models are</span>
+0121 <span class="comment">%   available at &lt;a href=&quot;matlab: web('http://biomet-toolbox.org/index.php?page=downtools-raven')&quot;&gt;BioMet Toolbox&lt;/a&gt;.</span>
+0122 <span class="comment">%   This is normally the most convenient way, but if you would like to use,</span>
+0123 <span class="comment">%   for example, only fungal sequences for training the HMMs then you need</span>
+0124 <span class="comment">%   to run this part.</span>
+0125 <span class="comment">%</span>
+0126 <span class="comment">%   3a. Queries the HMMs with sequences for the organism you are making a</span>
+0127 <span class="comment">%       model for. This step uses both the output from step 1a and from 2b.</span>
+0128 <span class="comment">%   3b. Constructs a model based on the fit to the HMMs and the chosen</span>
+0129 <span class="comment">%       parameters.</span>
 0130 <span class="comment">%</span>
-0131 <span class="comment">%   In principle the function looks at which output that is already available</span>
-0132 <span class="comment">%   and runs runs only the parts that are required for step 3. This means</span>
-0133 <span class="comment">%   that (see the definition of the parameters for details):</span>
-0134 <span class="comment">%   -1a is only performed if there are no KEGG model files in the raven\kegg</span>
-0135 <span class="comment">%   directory</span>
-0136 <span class="comment">%   -1b is only performed if not all required HMMs OR aligned FASTA files</span>
-0137 <span class="comment">%   OR multi-FASTA files exist in the defined dataDir. This means that this</span>
-0138 <span class="comment">%   step is skipped if the FASTA files or HMMs are downloaded from the RAVEN</span>
-0139 <span class="comment">%   Toolbox homepage instead. If not all files exist it will try to find</span>
-0140 <span class="comment">%   the KEGG database files in dataDir. If it cannot find them it will try</span>
-0141 <span class="comment">%   to download them via the KEGG FTP.</span>
-0142 <span class="comment">%   -2a is only performed if not all required HMMs OR aligned FASTA files</span>
-0143 <span class="comment">%   files exist in the defined dataDir. This means that this step is skipped</span>
-0144 <span class="comment">%   if the HMMs are downloaded from the RAVEN Toolbox homepage instead.</span>
-0145 <span class="comment">%   -2b is only performed if not all required HMMs exist in the defined</span>
-0146 <span class="comment">%   dataDir. This means that this step is skipped if the FASTA files or</span>
-0147 <span class="comment">%   HMMs are downloaded from the RAVEN Toolbox homepage instead.</span>
-0148 <span class="comment">%   -3a is performed for the required HMMs for which no corresponding .out</span>
-0149 <span class="comment">%   file exists in outDir. This is just a way to enable the function to be</span>
-0150 <span class="comment">%   run in parallell or to resume if interrupeted.</span>
-0151 <span class="comment">%   -3b is always performed.</span>
-0152 <span class="comment">%</span>
-0153 <span class="comment">%   Usage: model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...</span>
-0154 <span class="comment">%    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...</span>
-0155 <span class="comment">%    minScoreRatioKO,maxPhylDist,nSequences)</span>
-0156 <span class="comment">%</span>
-0157 <span class="comment">%   Rasmus Agren, 2013-11-22</span>
+0131 <span class="comment">%   These steps are specific to the organism for which you are reconstructing</span>
+0132 <span class="comment">%   the model.</span>
+0133 <span class="comment">%</span>
+0134 <span class="comment">%   In principle the function looks at which output that is already available</span>
+0135 <span class="comment">%   and runs only the parts that are required for step 3. This means</span>
+0136 <span class="comment">%   that (see the definition of the parameters for details):</span>
+0137 <span class="comment">%   -1a is only performed if there are no KEGG model files in the</span>
+0138 <span class="comment">%   RAVEN\external\kegg directory</span>
+0139 <span class="comment">%   -1b is only performed if not all required HMMs OR aligned FASTA files</span>
+0140 <span class="comment">%   OR multi-FASTA files exist in the defined dataDir. This means that this</span>
+0141 <span class="comment">%   step is skipped if the HMMs are downloaded from BioMet Toolbox instead</span>
+0142 <span class="comment">%   (see above). If not all files exist it will try to find</span>
+0143 <span class="comment">%   the KEGG database files in dataDir.</span>
+0144 <span class="comment">%   -2a is only performed if not all required HMMs OR aligned FASTA files</span>
+0145 <span class="comment">%   files exist in the defined dataDir. This means that this step is skipped</span>
+0146 <span class="comment">%   if the HMMs are downloaded from BioMet Toolbox instead (see above).</span>
+0147 <span class="comment">%   -2b is only performed if not all required HMMs exist in the defined</span>
+0148 <span class="comment">%   dataDir. This means that this step is skipped if the FASTA files or</span>
+0149 <span class="comment">%   HMMs are downloaded from BioMet Toolbox instead (see above).</span>
+0150 <span class="comment">%   -3a is performed for the required HMMs for which no corresponding .out</span>
+0151 <span class="comment">%   file exists in outDir. This is just a way to enable the function to be</span>
+0152 <span class="comment">%   run in parallel or to resume if interrupted.</span>
+0153 <span class="comment">%   -3b is always performed.</span>
+0154 <span class="comment">%</span>
+0155 <span class="comment">%   Usage: model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...</span>
+0156 <span class="comment">%    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...</span>
+0157 <span class="comment">%    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)</span>
 0158 <span class="comment">%</span>
-0159 
-0160 <span class="keyword">if</span> nargin&lt;2
-0161     fastaFile=[];
-0162 <span class="keyword">end</span>
-0163 <span class="keyword">if</span> nargin&lt;3
-0164     dataDir=[];
-0165 <span class="keyword">end</span>
-0166 <span class="keyword">if</span> nargin&lt;4
-0167     outDir=[];
-0168 <span class="keyword">end</span>
-0169 <span class="keyword">if</span> isempty(outDir)
-0170     outDir=tempdir;
-0171     <span class="comment">%Delete all *.out files if any exist</span>
-0172     delete(fullfile(outDir,<span class="string">'*.out'</span>));
-0173 <span class="keyword">end</span>
-0174 <span class="keyword">if</span> nargin&lt;5
-0175     keepUndefinedStoich=true;
-0176 <span class="keyword">end</span>
-0177 <span class="keyword">if</span> nargin&lt;6
-0178     keepIncomplete=true;
-0179 <span class="keyword">end</span>
-0180 <span class="keyword">if</span> nargin&lt;7
-0181     keepGeneral=true;
-0182 <span class="keyword">end</span>
-0183 <span class="keyword">if</span> nargin&lt;8
-0184     cutOff=10^-50;
-0185 <span class="keyword">end</span>
-0186 <span class="keyword">if</span> nargin&lt;9
-0187     minScoreRatioG=0.8;
-0188 <span class="keyword">end</span>
-0189 <span class="keyword">if</span> nargin&lt;10
-0190     minScoreRatioKO=0.3;
-0191 <span class="keyword">end</span>    
-0192 <span class="keyword">if</span> nargin&lt;11
-0193     maxPhylDist=inf; <span class="comment">%Include all sequences for each reaction</span>
-0194 <span class="keyword">end</span>
-0195 <span class="keyword">if</span> nargin&lt;12
-0196     nSequences=inf; <span class="comment">%Include all sequences for each reaction</span>
-0197 <span class="keyword">end</span>
-0198 
-0199 <span class="comment">%Check if the fasta-file contains '/' or'\'. If not then it's probably just</span>
-0200 <span class="comment">%a file name. It is then merged with the current folder</span>
-0201 <span class="keyword">if</span> any(fastaFile)
-0202     <span class="keyword">if</span> ~any(strfind(fastaFile,<span class="string">'\'</span>)) &amp;&amp; ~any(strfind(fastaFile,<span class="string">'/'</span>))
-0203         fastaFile=fullfile(pwd,fastaFile);
-0204     <span class="keyword">end</span>
-0205     <span class="comment">%Create the required sub-folders in dataDir if they dont exist</span>
-0206     <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'keggdb'</span>),<span class="string">'dir'</span>)
-0207         mkdir(dataDir,<span class="string">'keggdb'</span>);
-0208     <span class="keyword">end</span>
-0209     <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'fasta'</span>),<span class="string">'dir'</span>)
-0210         mkdir(dataDir,<span class="string">'fasta'</span>);
-0211     <span class="keyword">end</span>
-0212     <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'aligned'</span>),<span class="string">'dir'</span>)
-0213         mkdir(dataDir,<span class="string">'aligned'</span>);
-0214     <span class="keyword">end</span>
-0215     <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'hmms'</span>),<span class="string">'dir'</span>)
-0216         mkdir(dataDir,<span class="string">'hmms'</span>);
-0217     <span class="keyword">end</span>
-0218     <span class="keyword">if</span> ~exist(outDir,<span class="string">'dir'</span>)
-0219         mkdir(outDir);
-0220     <span class="keyword">end</span>
-0221 <span class="keyword">end</span>
-0222 
-0223 <span class="comment">%First generate the full KEGG model. The dataDir mustn't be supplied as</span>
-0224 <span class="comment">%there is also an internal RAVEN version available</span>
-0225 <span class="keyword">if</span> any(dataDir)
-0226     [model, KOModel]=<a href="getModelFromKEGG.html" class="code" title="function [model KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)">getModelFromKEGG</a>(fullfile(dataDir,<span class="string">'keggdb'</span>),keepUndefinedStoich,keepIncomplete,keepGeneral);
-0227 <span class="keyword">else</span>
-0228     [model, KOModel]=<a href="getModelFromKEGG.html" class="code" title="function [model KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)">getModelFromKEGG</a>([],keepUndefinedStoich,keepIncomplete,keepGeneral);
-0229 <span class="keyword">end</span>
-0230 fprintf(<span class="string">'Completed generation of KEGG model\n'</span>);
-0231 model.id=organismID;
-0232 model.c=zeros(numel(model.rxns),1);
-0233 
-0234 <span class="comment">%If no FASTA file is supplied, then just remove all genes which are not for</span>
-0235 <span class="comment">%the given organism ID</span>
-0236 <span class="keyword">if</span> isempty(fastaFile)
-0237     <span class="comment">%All IDs are three letters</span>
-0238     I=cellfun(@(x) strcmpi(x(1:3),organismID),model.genes);
-0239     
-0240     <span class="comment">%Remove those genes</span>
-0241     model.genes=model.genes(I);
-0242     model.rxnGeneMat=model.rxnGeneMat(:,I);
-0243 <span class="keyword">end</span>
-0244 
-0245 <span class="comment">%First remove all reactions without genes</span>
-0246 hasGenes=any(model.rxnGeneMat,2);
-0247 
-0248 model=<a href="../../core/removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,~hasGenes,true);
-0249 
-0250 <span class="comment">%If no FASTA file is supplied, then we're done here</span>
-0251 <span class="keyword">if</span> isempty(fastaFile)
-0252     <span class="keyword">return</span>;
-0253 <span class="keyword">end</span>
-0254 
-0255 <span class="comment">%Trim the genes so that they only contain information that can be matched</span>
-0256 <span class="comment">%to the KEGG file of protein sequences (remove all information after first</span>
-0257 <span class="comment">%parenthesis)</span>
-0258 
-0259 <span class="comment">%NOTE: For some reason the organism abbreviation should be in lower case in</span>
-0260 <span class="comment">%this database. Fix this here</span>
-0261 <span class="keyword">for</span> i=1:numel(KOModel.genes)    
-0262     parIndex=strfind(KOModel.genes{i},<span class="string">'('</span>);
-0263     <span class="keyword">if</span> any(parIndex)
-0264        KOModel.genes{i}=KOModel.genes{i}(1:parIndex-1); 
-0265     <span class="keyword">end</span>
-0266     colIndex=strfind(KOModel.genes{i},<span class="string">':'</span>);
-0267     KOModel.genes{i}=[lower(KOModel.genes{i}(1:colIndex-1)) KOModel.genes{i}(colIndex:end)];
-0268 <span class="keyword">end</span>
-0269 
-0270 <span class="comment">%Create a phylogenetic distance structure</span>
-0271 phylDistStruct=<a href="../../core/getPhylDist.html" class="code" title="function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)">getPhylDist</a>(fullfile(dataDir,<span class="string">'keggdb'</span>),maxPhylDist==-1);
-0272 [crap phylDistId]=ismember(model.id,phylDistStruct.ids);
-0273 fprintf(<span class="string">'Completed creation of phylogenetic distance matrix\n'</span>);
-0274 
-0275 <span class="comment">%Calculate the real maximal distance now. An abitary large number of 1000 is</span>
-0276 <span class="comment">%used for the &quot;all in kingdom&quot; or &quot;all sequences&quot; options. This is a bit</span>
-0277 <span class="comment">%inconvenient way to do it, but it's to make it fit with some older code</span>
-0278 <span class="keyword">if</span> isinf(maxPhylDist) || maxPhylDist==-1
-0279     maxPhylDist=1000;
-0280 <span class="keyword">end</span>
+0159 <span class="comment">%   Eduard Kerkhoven, 2017-02-28</span>
+0160 <span class="comment">%</span>
+0161 
+0162 <span class="keyword">if</span> nargin&lt;2
+0163     fastaFile=[];
+0164 <span class="keyword">end</span>
+0165 <span class="keyword">if</span> nargin&lt;3
+0166     dataDir=[];
+0167 <span class="keyword">end</span>
+0168 <span class="keyword">if</span> nargin&lt;4
+0169     outDir=[];
+0170 <span class="keyword">end</span>
+0171 <span class="keyword">if</span> isempty(outDir)
+0172     outDir=tempdir;
+0173     <span class="comment">%Delete all *.out files if any exist</span>
+0174     delete(fullfile(outDir,<span class="string">'*.out'</span>));
+0175 <span class="keyword">end</span>
+0176 <span class="keyword">if</span> nargin&lt;5
+0177     keepUndefinedStoich=true;
+0178 <span class="keyword">end</span>
+0179 <span class="keyword">if</span> nargin&lt;6
+0180     keepIncomplete=true;
+0181 <span class="keyword">end</span>
+0182 <span class="keyword">if</span> nargin&lt;7
+0183     keepGeneral=false;
+0184 <span class="keyword">end</span>
+0185 <span class="keyword">if</span> nargin&lt;8
+0186     cutOff=10^-50;
+0187 <span class="keyword">end</span>
+0188 <span class="keyword">if</span> nargin&lt;9
+0189     minScoreRatioG=0.8;
+0190 <span class="keyword">end</span>
+0191 <span class="keyword">if</span> nargin&lt;10
+0192     minScoreRatioKO=0.3;
+0193 <span class="keyword">end</span>
+0194 <span class="keyword">if</span> nargin&lt;11
+0195     maxPhylDist=inf; <span class="comment">%Include all sequences for each reaction</span>
+0196 <span class="keyword">end</span>
+0197 <span class="keyword">if</span> nargin&lt;12
+0198     nSequences=inf; <span class="comment">%Include all sequences for each reaction</span>
+0199 <span class="keyword">end</span>
+0200 <span class="keyword">if</span> nargin&lt;13
+0201     seqIdentity=-1; <span class="comment">%CD-HIT is not used in the pipeline</span>
+0202 <span class="keyword">end</span>
+0203 
+0204 <span class="comment">%Check if the fasta-file contains '/' or'\'. If not then it's probably just</span>
+0205 <span class="comment">%a file name. It is then merged with the current folder</span>
+0206 <span class="keyword">if</span> any(fastaFile)
+0207     <span class="keyword">if</span> ~any(strfind(fastaFile,<span class="string">'\'</span>)) &amp;&amp; ~any(strfind(fastaFile,<span class="string">'/'</span>))
+0208         fastaFile=fullfile(pwd,fastaFile);
+0209     <span class="keyword">end</span>
+0210     <span class="comment">%Create the required sub-folders in dataDir if they dont exist</span>
+0211     <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'keggdb'</span>),<span class="string">'dir'</span>)
+0212         mkdir(dataDir,<span class="string">'keggdb'</span>);
+0213     <span class="keyword">end</span>
+0214     <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'fasta'</span>),<span class="string">'dir'</span>)
+0215         mkdir(dataDir,<span class="string">'fasta'</span>);
+0216     <span class="keyword">end</span>
+0217     <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'aligned'</span>),<span class="string">'dir'</span>)
+0218         mkdir(dataDir,<span class="string">'aligned'</span>);
+0219     <span class="keyword">end</span>
+0220     <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'hmms'</span>),<span class="string">'dir'</span>)
+0221         mkdir(dataDir,<span class="string">'hmms'</span>);
+0222     <span class="keyword">end</span>
+0223     <span class="keyword">if</span> ~exist(outDir,<span class="string">'dir'</span>)
+0224         mkdir(outDir);
+0225     <span class="keyword">end</span>
+0226 <span class="keyword">end</span>
+0227 
+0228 <span class="comment">%First generate the full KEGG model. The dataDir mustn't be supplied as</span>
+0229 <span class="comment">%there is also an internal RAVEN version available</span>
+0230 <span class="keyword">if</span> any(dataDir)
+0231     [model, KOModel]=<a href="getModelFromKEGG.html" class="code" title="function [model, KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)">getModelFromKEGG</a>(fullfile(dataDir,<span class="string">'keggdb'</span>),keepUndefinedStoich,keepIncomplete,keepGeneral);
+0232 <span class="keyword">else</span>
+0233     [model, KOModel]=<a href="getModelFromKEGG.html" class="code" title="function [model, KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)">getModelFromKEGG</a>([],keepUndefinedStoich,keepIncomplete,keepGeneral);
+0234 <span class="keyword">end</span>
+0235 fprintf(<span class="string">'Completed generation of KEGG model\n'</span>);
+0236 model.id=organismID;
+0237 model.c=zeros(numel(model.rxns),1);
+0238 
+0239 <span class="comment">%If no FASTA file is supplied, then just remove all genes which are not for</span>
+0240 <span class="comment">%the given organism ID</span>
+0241 <span class="keyword">if</span> isempty(fastaFile)
+0242     <span class="keyword">if</span> ismember(organismID,{<span class="string">'eukaryotes'</span>,<span class="string">'prokaryotes'</span>})
+0243         phylDists=<a href="getPhylDist.html" class="code" title="function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)">getPhylDist</a>(fullfile(dataDir,<span class="string">'keggdb'</span>),maxPhylDist==-1);
+0244         <span class="keyword">if</span> strcmp(organismID,<span class="string">'eukaryotes'</span>)
+0245             proxyid=<span class="string">'hsa'</span>; <span class="comment">%Use H. sapiens here</span>
+0246         <span class="keyword">else</span>
+0247             proxyid=<span class="string">'eco'</span>; <span class="comment">%Use E. coli here</span>
+0248         <span class="keyword">end</span>
+0249         [~,phylDistId]=ismember(proxyid,phylDists.ids);
+0250         idsToKeep=phylDists.ids(~isinf(phylDists.distMat(phylDistId,:)));
+0251         taxIDs=cellfun(@(x) x{1},cellfun(@(x) strsplit(x,<span class="string">':'</span>),model.genes,<span class="string">'UniformOutput'</span>,false),<span class="string">'UniformOutput'</span>,false);
+0252         I=ismember(upper(taxIDs),upper(idsToKeep));
+0253     <span class="keyword">else</span>
+0254         <span class="comment">% KEGG organism IDs may have three or four letters</span>
+0255         <span class="keyword">if</span> length(organismID)==3
+0256             I=cellfun(@(x) strcmpi(x(1:3),organismID),model.genes);
+0257         <span class="keyword">else</span> <span class="keyword">if</span> length(organismID)==4
+0258             I=cellfun(@(x) strcmpi(x(1:4),organismID),model.genes);
+0259             <span class="keyword">end</span>
+0260         <span class="keyword">end</span>
+0261     <span class="keyword">end</span>
+0262 
+0263     <span class="comment">%Remove those genes</span>
+0264     model.genes=model.genes(I);
+0265     model.rxnGeneMat=model.rxnGeneMat(:,I);
+0266 <span class="keyword">end</span>
+0267 
+0268 <span class="comment">%First remove all reactions without genes</span>
+0269 hasGenes=any(model.rxnGeneMat,2);
+0270 
+0271 model=removeReactions(model,~hasGenes,true);
+0272 
+0273 <span class="comment">%If no FASTA file is supplied, then we're done here</span>
+0274 <span class="keyword">if</span> isempty(fastaFile)
+0275     <span class="keyword">return</span>;
+0276 <span class="keyword">end</span>
+0277 
+0278 <span class="comment">%Trim the genes so that they only contain information that can be matched</span>
+0279 <span class="comment">%to the KEGG file of protein sequences (remove all information after first</span>
+0280 <span class="comment">%parenthesis)</span>
 0281 
-0282 <span class="comment">%Get the KO ids for which files have been generated. Maybe not the neatest</span>
-0283 <span class="comment">%way..</span>
-0284 fastaFiles=<a href="#_sub1" class="code" title="subfunction files=listFiles(directory)">listFiles</a>(fullfile(dataDir,<span class="string">'fasta'</span>,<span class="string">'*.fa'</span>));
-0285 alignedFiles=<a href="#_sub1" class="code" title="subfunction files=listFiles(directory)">listFiles</a>(fullfile(dataDir,<span class="string">'aligned'</span>,<span class="string">'*.fa'</span>));
-0286 alignedWorking=<a href="#_sub1" class="code" title="subfunction files=listFiles(directory)">listFiles</a>(fullfile(dataDir,<span class="string">'aligned'</span>,<span class="string">'*.faw'</span>));
-0287 hmmFiles=<a href="#_sub1" class="code" title="subfunction files=listFiles(directory)">listFiles</a>(fullfile(dataDir,<span class="string">'hmms'</span>,<span class="string">'*.hmm'</span>));
-0288 outFiles=<a href="#_sub1" class="code" title="subfunction files=listFiles(directory)">listFiles</a>(fullfile(outDir,<span class="string">'*.out'</span>));
-0289 
-0290 <span class="comment">%Check if multi-FASTA files should be generated. This should only be</span>
-0291 <span class="comment">%performed if there are IDs in the KOModel structure that haven't been</span>
-0292 <span class="comment">%parsed yet</span>
-0293 missingFASTA=setdiff(KOModel.rxns,[fastaFiles;alignedFiles;hmmFiles;outFiles]);
-0294 
-0295 <span class="keyword">if</span> ~isempty(missingFASTA)
-0296     <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'keggdb'</span>,<span class="string">'genes.pep'</span>),<span class="string">'file'</span>)
-0297         <span class="comment">%If no sequence file exists then download from KEGG</span>
-0298         <a href="downloadKEGG.html" class="code" title="function exitFlag=downloadKEGG(keggPath)">downloadKEGG</a>(fullfile(dataDir,<span class="string">'keggdb'</span>));
-0299     <span class="keyword">end</span>
-0300     <span class="comment">%Only construct models for KOs which don't have files already</span>
-0301     fastaModel=<a href="../../core/removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(KOModel,setdiff(KOModel.rxns,missingFASTA),true,true);
-0302     <span class="comment">%Permute the order of the KOs in the model so that constructMultiFasta</span>
-0303     <span class="comment">%can be run on several processors at once</span>
-0304     fastaModel=<a href="../../core/permuteModel.html" class="code" title="function newModel=permuteModel(model, indexes, type)">permuteModel</a>(fastaModel,randperm(RandStream.create(<span class="string">'mrg32k3a'</span>,<span class="string">'Seed'</span>,cputime()),numel(fastaModel.rxns)),<span class="string">'rxns'</span>);
-0305     <a href="../../core/constructMultiFasta.html" class="code" title="function constructMultiFasta(model,sourceFile,outputDir)">constructMultiFasta</a>(fastaModel,fullfile(dataDir,<span class="string">'keggdb'</span>,<span class="string">'genes.pep'</span>),fullfile(dataDir,<span class="string">'fasta'</span>));
-0306 <span class="keyword">end</span>
-0307 fprintf(<span class="string">'Completed generation of multi-FASTA files\n'</span>);
-0308 
-0309 <span class="comment">%Get the directory for RAVEN Toolbox. This is to get the path to the third</span>
-0310 <span class="comment">%party software used</span>
-0311 [ST I]=dbstack(<span class="string">'-completenames'</span>);
-0312 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-0313 
-0314 <span class="keyword">if</span> isunix
-0315     <span class="keyword">if</span> ismac
-0316         binEnd=<span class="string">'.mac'</span>;
-0317     <span class="keyword">else</span>
-0318         binEnd=<span class="string">''</span>;
-0319     <span class="keyword">end</span>
-0320 <span class="keyword">elseif</span> ispc
-0321     binEnd=<span class="string">''</span>;
-0322 <span class="keyword">else</span> 
-0323     <a href="../../core/dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'Unknown OS, exiting.'</span>)
-0324     <span class="keyword">return</span>
-0325 <span class="keyword">end</span>
-0326 
-0327 
-0328 <span class="comment">%Check if alignment of FASTA files should be performed</span>
-0329 missingAligned=setdiff(KOModel.rxns,[alignedFiles;hmmFiles;alignedWorking;outFiles]);
-0330 <span class="keyword">if</span> ~isempty(missingAligned)
-0331     missingAligned=missingAligned(randperm(RandStream.create(<span class="string">'mrg32k3a'</span>,<span class="string">'Seed'</span>,cputime()),numel(missingAligned)));
-0332     <span class="comment">%Align all sequences using CLUSTALW</span>
-0333     <span class="keyword">for</span> i=1:numel(missingAligned)
-0334         <span class="comment">%This is checked here because it could be that it is created by a</span>
-0335         <span class="comment">%parallell process. The faw-files are saved as temporary files to</span>
-0336         <span class="comment">%keppt track of which files are being worked on</span>
-0337         <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'aligned'</span>,[missingAligned{i} <span class="string">'.faw'</span>]),<span class="string">'file'</span>) &amp;&amp; ~exist(fullfile(dataDir,<span class="string">'aligned'</span>,[missingAligned{i} <span class="string">'.fa'</span>]),<span class="string">'file'</span>)
-0338             <span class="comment">%Check that the multi-FASTA file exists. It should do so since</span>
-0339             <span class="comment">%we are saving empty files as well. Print a warning and</span>
-0340             <span class="comment">%continue if not.</span>
-0341             <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'fasta'</span>,[missingAligned{i} <span class="string">'.fa'</span>]),<span class="string">'file'</span>)
-0342                 <a href="../../core/dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'WARNING: The multi-FASTA file for '</span> missingAligned{i} <span class="string">' does not exist'</span>],false);
-0343                 <span class="keyword">continue</span>;
-0344             <span class="keyword">end</span>
-0345             
-0346             <span class="comment">%If the multi-FASTA file is empty then save an empty aligned</span>
-0347             <span class="comment">%file and continue</span>
-0348             s=dir(fullfile(dataDir,<span class="string">'fasta'</span>,[missingAligned{i} <span class="string">'.fa'</span>]));
-0349             <span class="keyword">if</span> s.bytes&lt;=0
-0350                 fid=fopen(fullfile(dataDir,<span class="string">'aligned'</span>,[missingAligned{i} <span class="string">'.fa'</span>]),<span class="string">'w'</span>);
-0351                 fclose(fid);
-0352                 <span class="keyword">continue</span>;
-0353             <span class="keyword">end</span>
-0354             
-0355             <span class="comment">%Create an empty file to prevent other threads to start to work on the same alignment</span>
-0356             fid=fopen(fullfile(dataDir,<span class="string">'aligned'</span>,[missingAligned{i} <span class="string">'.faw'</span>]),<span class="string">'w'</span>);
-0357             fclose(fid);
-0358             
-0359             <span class="comment">%First load the FASTA file, then select up to nSequences sequences</span>
-0360             <span class="comment">%of the most closely related species, apply any constraints from</span>
-0361             <span class="comment">%maxPhylDist, and save it as a temporary file, and create the</span>
-0362             <span class="comment">%model from that</span>
-0363 
-0364             fastaStruct=fastaread(fullfile(dataDir,<span class="string">'fasta'</span>,[missingAligned{i} <span class="string">'.fa'</span>]));
-0365             phylDist=inf(numel(fastaStruct),1);
-0366             <span class="keyword">for</span> j=1:numel(fastaStruct)
-0367                <span class="comment">%Get the organism abbreviation</span>
-0368                index=strfind(fastaStruct(j).Header,<span class="string">':'</span>);
-0369                <span class="keyword">if</span> any(index)
-0370                     abbrev=fastaStruct(j).Header(1:index(1)-1);
-0371                     [crap index]=ismember(abbrev,phylDistStruct.ids);
-0372                     <span class="keyword">if</span> any(index)
-0373                         phylDist(j)=phylDistStruct.distMat(index(1),phylDistId);
-0374                     <span class="keyword">end</span>
-0375                <span class="keyword">end</span>
-0376             <span class="keyword">end</span>
-0377 
-0378             <span class="comment">%Inf means that it should not be included</span>
-0379             phylDist(phylDist&gt;maxPhylDist)=[];
-0380 
-0381             <span class="comment">%Sort based on phylDist</span>
-0382             [crap order]=sort(phylDist);
+0282 <span class="comment">%NOTE: For some reason the organism abbreviation should be in lower case in</span>
+0283 <span class="comment">%this database. Fix this here</span>
+0284 <span class="keyword">for</span> i=1:numel(KOModel.genes)
+0285     parIndex=strfind(KOModel.genes{i},<span class="string">'('</span>);
+0286     <span class="keyword">if</span> any(parIndex)
+0287        KOModel.genes{i}=KOModel.genes{i}(1:parIndex-1);
+0288     <span class="keyword">end</span>
+0289     colIndex=strfind(KOModel.genes{i},<span class="string">':'</span>);
+0290     KOModel.genes{i}=[lower(KOModel.genes{i}(1:colIndex-1)) KOModel.genes{i}(colIndex:end)];
+0291 <span class="keyword">end</span>
+0292 
+0293 <span class="comment">%Create a phylogenetic distance structure</span>
+0294 phylDistStruct=<a href="getPhylDist.html" class="code" title="function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)">getPhylDist</a>(fullfile(dataDir,<span class="string">'keggdb'</span>),maxPhylDist==-1);
+0295 [~, phylDistId]=ismember(model.id,phylDistStruct.ids);
+0296 fprintf(<span class="string">'Completed creation of phylogenetic distance matrix\n'</span>);
+0297 
+0298 <span class="comment">%Calculate the real maximal distance now. An abitary large number of 1000 is</span>
+0299 <span class="comment">%used for the &quot;all in kingdom&quot; or &quot;all sequences&quot; options. This is a bit</span>
+0300 <span class="comment">%inconvenient way to do it, but it's to make it fit with some older code</span>
+0301 <span class="keyword">if</span> isinf(maxPhylDist) || maxPhylDist==-1
+0302     maxPhylDist=1000;
+0303 <span class="keyword">end</span>
+0304 
+0305 <span class="comment">%Get the KO ids for which files have been generated. Maybe not the neatest</span>
+0306 <span class="comment">%way..</span>
+0307 fastaFiles=<a href="#_sub1" class="code" title="subfunction files=listFiles(directory)">listFiles</a>(fullfile(dataDir,<span class="string">'fasta'</span>,<span class="string">'*.fa'</span>));
+0308 alignedFiles=<a href="#_sub1" class="code" title="subfunction files=listFiles(directory)">listFiles</a>(fullfile(dataDir,<span class="string">'aligned'</span>,<span class="string">'*.fa'</span>));
+0309 alignedWorking=<a href="#_sub1" class="code" title="subfunction files=listFiles(directory)">listFiles</a>(fullfile(dataDir,<span class="string">'aligned'</span>,<span class="string">'*.faw'</span>));
+0310 hmmFiles=<a href="#_sub1" class="code" title="subfunction files=listFiles(directory)">listFiles</a>(fullfile(dataDir,<span class="string">'hmms'</span>,<span class="string">'*.hmm'</span>));
+0311 outFiles=<a href="#_sub1" class="code" title="subfunction files=listFiles(directory)">listFiles</a>(fullfile(outDir,<span class="string">'*.out'</span>));
+0312 
+0313 <span class="comment">%Check if multi-FASTA files should be generated. This should only be</span>
+0314 <span class="comment">%performed if there are IDs in the KOModel structure that haven't been</span>
+0315 <span class="comment">%parsed yet</span>
+0316 missingFASTA=setdiff(KOModel.rxns,[fastaFiles;alignedFiles;hmmFiles;outFiles]);
+0317 
+0318 <span class="keyword">if</span> ~isempty(missingFASTA)
+0319     <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'keggdb'</span>,<span class="string">'genes.pep'</span>),<span class="string">'file'</span>)
+0320         EM=fprintf([<span class="string">'The file ''genes.pep'' cannot be located at '</span> strrep(keggPath,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'/ and should be downloaded from the KEGG FTP.\n'</span>]);
+0321         dispEM(EM);
+0322     <span class="keyword">end</span>
+0323     <span class="comment">%Only construct models for KOs which don't have files already</span>
+0324     fastaModel=removeReactions(KOModel,setdiff(KOModel.rxns,missingFASTA),true,true);
+0325     <span class="comment">%Permute the order of the KOs in the model so that constructMultiFasta</span>
+0326     <span class="comment">%can be run on several processors at once</span>
+0327     fastaModel=permuteModel(fastaModel,randperm(RandStream.create(<span class="string">'mrg32k3a'</span>,<span class="string">'Seed'</span>,cputime()),numel(fastaModel.rxns)),<span class="string">'rxns'</span>);
+0328     constructMultiFasta(fastaModel,fullfile(dataDir,<span class="string">'keggdb'</span>,<span class="string">'genes.pep'</span>),fullfile(dataDir,<span class="string">'fasta'</span>));
+0329 <span class="keyword">end</span>
+0330 fprintf(<span class="string">'Completed generation of multi-FASTA files\n'</span>);
+0331 
+0332 <span class="comment">%Get the directory for RAVEN Toolbox. This is to get the path to the third</span>
+0333 <span class="comment">%party software used</span>
+0334 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
+0335 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+0336 
+0337 <span class="keyword">if</span> isunix
+0338     <span class="keyword">if</span> ismac
+0339         binEnd=<span class="string">'.mac'</span>;
+0340     <span class="keyword">else</span>
+0341         binEnd=<span class="string">''</span>;
+0342     <span class="keyword">end</span>
+0343 <span class="keyword">elseif</span> ispc
+0344     binEnd=<span class="string">''</span>;
+0345 <span class="keyword">else</span>
+0346     EM=<span class="string">'Unknown OS, exiting.'</span>;
+0347     disp(EM);
+0348     <span class="keyword">return</span>
+0349 <span class="keyword">end</span>
+0350 
+0351 
+0352 <span class="comment">%Check if alignment of FASTA files should be performed</span>
+0353 missingAligned=setdiff(KOModel.rxns,[alignedFiles;hmmFiles;alignedWorking;outFiles]);
+0354 <span class="keyword">if</span> ~isempty(missingAligned)
+0355     missingAligned=missingAligned(randperm(RandStream.create(<span class="string">'mrg32k3a'</span>,<span class="string">'Seed'</span>,cputime()),numel(missingAligned)));
+0356     <span class="comment">%Align all sequences using MAFFT</span>
+0357     <span class="keyword">for</span> i=1:numel(missingAligned)
+0358         <span class="comment">%This is checked here because it could be that it is created by a</span>
+0359         <span class="comment">%parallell process. The faw-files are saved as temporary files to</span>
+0360         <span class="comment">%keppt track of which files are being worked on</span>
+0361         <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'aligned'</span>,[missingAligned{i} <span class="string">'.faw'</span>]),<span class="string">'file'</span>) &amp;&amp; ~exist(fullfile(dataDir,<span class="string">'aligned'</span>,[missingAligned{i} <span class="string">'.fa'</span>]),<span class="string">'file'</span>)
+0362             <span class="comment">%Check that the multi-FASTA file exists. It should do so since</span>
+0363             <span class="comment">%we are saving empty files as well. Print a warning and</span>
+0364             <span class="comment">%continue if not.</span>
+0365             <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'fasta'</span>,[missingAligned{i} <span class="string">'.fa'</span>]),<span class="string">'file'</span>)
+0366                 EM=[<span class="string">'WARNING: The multi-FASTA file for '</span> missingAligned{i} <span class="string">' does not exist'</span>];
+0367                 dispEM(EM,false);
+0368                 <span class="keyword">continue</span>;
+0369             <span class="keyword">end</span>
+0370 
+0371             <span class="comment">%If the multi-FASTA file is empty then save an empty aligned</span>
+0372             <span class="comment">%file and continue</span>
+0373             s=dir(fullfile(dataDir,<span class="string">'fasta'</span>,[missingAligned{i} <span class="string">'.fa'</span>]));
+0374             <span class="keyword">if</span> s.bytes&lt;=0
+0375                 fid=fopen(fullfile(dataDir,<span class="string">'aligned'</span>,[missingAligned{i} <span class="string">'.fa'</span>]),<span class="string">'w'</span>);
+0376                 fclose(fid);
+0377                 <span class="keyword">continue</span>;
+0378             <span class="keyword">end</span>
+0379 
+0380             <span class="comment">%Create an empty file to prevent other threads to start to work on the same alignment</span>
+0381             fid=fopen(fullfile(dataDir,<span class="string">'aligned'</span>,[missingAligned{i} <span class="string">'.faw'</span>]),<span class="string">'w'</span>);
+0382             fclose(fid);
 0383 
-0384             <span class="comment">%Save the first nSequences hits to a temporary FASTA file</span>
-0385             <span class="keyword">if</span> nSequences&lt;=numel(fastaStruct)
-0386                 fastaStruct=fastaStruct(order(1:nSequences));
-0387             <span class="keyword">else</span>
-0388                 fastaStruct=fastaStruct(order);
-0389             <span class="keyword">end</span>
-0390             
-0391             <span class="comment">%Do the alignment if there are more than one sequences,</span>
-0392             <span class="comment">%otherwise just save the sequence (or an empty file)</span>
-0393             <span class="keyword">if</span> numel(fastaStruct)&gt;1
-0394                 tmpFile=tempname;
-0395                 fastawrite(tmpFile,fastaStruct);
-0396 
-0397                 <span class="comment">%Do the alignment for this file</span>
-0398                 [status output]=system([fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'software'</span>,<span class="string">'clustalw2'</span>,[<span class="string">'clustalw2'</span> binEnd]) <span class="string">' -infile=&quot;'</span> tmpFile <span class="string">'&quot; -align -outfile=&quot;'</span> fullfile(dataDir,<span class="string">'aligned'</span>,[missingAligned{i} <span class="string">'.faw'</span>]) <span class="string">'&quot; -output=FASTA -type=PROTEIN -OUTORDER=INPUT'</span>]);
-0399                 <span class="keyword">if</span> status~=0
-0400                     <a href="../../core/dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'Error when performing alignment of '</span> missingAligned{i} <span class="string">':\n'</span> output]); 
-0401                 <span class="keyword">end</span>
-0402                 <span class="comment">%Remove the old tempfile</span>
-0403                 <span class="keyword">if</span> exist(tmpFile, <span class="string">'file'</span>)
-0404                    delete([tmpFile <span class="string">'*'</span>]);
-0405                 <span class="keyword">end</span>
-0406             <span class="keyword">else</span>
-0407                 <span class="comment">%If there is only one sequence then it's not possible to do a</span>
-0408                 <span class="comment">%multiple alignment. Just print the sequence instead. An</span>
-0409                 <span class="comment">%empty file was written previously so that doesn't have to</span>
-0410                 <span class="comment">%be dealt with</span>
-0411                 <span class="keyword">if</span> numel(fastaStruct)==1
-0412                     <span class="comment">%CLUSTALW only uses the first word as gene name. This</span>
-0413                     <span class="comment">%doesn't really have an effect, but might as well be</span>
-0414                     <span class="comment">%consistent</span>
-0415                     I=regexp(fastaStruct.Header,<span class="string">' '</span>,<span class="string">'split'</span>);
-0416                     fastaStruct.Header=strrep(I{1},<span class="string">':'</span>,<span class="string">'_'</span>);
-0417                     fastawrite(fullfile(dataDir,<span class="string">'aligned'</span>,[missingAligned{i} <span class="string">'.faw'</span>]),fastaStruct);
-0418                 <span class="keyword">end</span>
-0419             <span class="keyword">end</span>
-0420             <span class="comment">%Move the temporary file to the real one</span>
-0421             movefile(fullfile(dataDir,<span class="string">'aligned'</span>,[missingAligned{i} <span class="string">'.faw'</span>]),fullfile(dataDir,<span class="string">'aligned'</span>,[missingAligned{i} <span class="string">'.fa'</span>]),<span class="string">'f'</span>);
-0422         <span class="keyword">end</span>
-0423     <span class="keyword">end</span>
-0424 <span class="keyword">end</span>
-0425 fprintf(<span class="string">'Completed multiple alignment of sequences\n'</span>);
-0426 
-0427 <span class="comment">%Check if training of Hidden Markov models should be performed</span>
-0428 missingHMMs=setdiff(KOModel.rxns,[hmmFiles;outFiles]);
-0429 <span class="keyword">if</span> ~isempty(missingHMMs)
-0430     missingHMMs=missingHMMs(randperm(RandStream.create(<span class="string">'mrg32k3a'</span>,<span class="string">'Seed'</span>,cputime()),numel(missingHMMs)));
-0431     
-0432     <span class="comment">%Train models for all missing KOs</span>
-0433     <span class="keyword">for</span> i=1:numel(missingHMMs)
-0434         <span class="comment">%This is checked here because it could be that it is created by a</span>
-0435         <span class="comment">%parallell process</span>
-0436         <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'hmms'</span>,[missingHMMs{i} <span class="string">'.hmm'</span>]),<span class="string">'file'</span>) &amp;&amp; ~exist(fullfile(dataDir,<span class="string">'hmms'</span>,[missingHMMs{i} <span class="string">'.hmw'</span>]),<span class="string">'file'</span>)
-0437             <span class="comment">%Check that the aligned FASTA file exists. It could be that it</span>
-0438             <span class="comment">%is still being worked on by some other instance of the</span>
-0439             <span class="comment">%program (the .faw file should then exist). This should not</span>
-0440             <span class="comment">%happen on a single computer. I don't throw an error, because</span>
-0441             <span class="comment">%it should finalize the ones it can.</span>
-0442             <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'aligned'</span>,[missingHMMs{i} <span class="string">'.fa'</span>]),<span class="string">'file'</span>)
-0443                 <a href="../../core/dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'The aligned FASTA file for '</span> missingHMMs{i} <span class="string">' does not exist'</span>],false);
-0444                 <span class="keyword">continue</span>;
-0445             <span class="keyword">end</span>
-0446             
-0447             <span class="comment">%If the multi-FASTA file is empty then save an empty aligned</span>
-0448             <span class="comment">%file and continue</span>
-0449             s=dir(fullfile(dataDir,<span class="string">'aligned'</span>,[missingHMMs{i} <span class="string">'.fa'</span>]));
-0450             <span class="keyword">if</span> s.bytes&lt;=0
-0451                 fid=fopen(fullfile(dataDir,<span class="string">'hmms'</span>,[missingHMMs{i} <span class="string">'.hmm'</span>]),<span class="string">'w'</span>);
-0452                 fclose(fid);
-0453                 <span class="keyword">continue</span>;
-0454             <span class="keyword">end</span>
-0455             <span class="comment">%Create a temporary file to indicate that it is working on the</span>
-0456             <span class="comment">%KO. This is because hmmbuild cannot overwrite existing files.</span>
-0457             fid=fopen(fullfile(dataDir,<span class="string">'hmms'</span>,[missingHMMs{i} <span class="string">'.hmw'</span>]),<span class="string">'w'</span>);
-0458             fclose(fid);
-0459                 
-0460             <span class="comment">%Create HMM. This is saved with a &quot;hm&quot; ending to indicate that</span>
-0461             <span class="comment">%it hasn't been calibrated yet. This is because I want to be</span>
-0462             <span class="comment">%able to see which models are uncalibrated if something goes</span>
-0463             <span class="comment">%wrong</span>
-0464             [status output]=system([fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'software'</span>,<span class="string">'hmmer-3.1'</span>,[<span class="string">'hmmbuild'</span> binEnd]) <span class="string">' &quot;'</span> fullfile(dataDir,<span class="string">'hmms'</span>,[missingHMMs{i} <span class="string">'.hm'</span>]) <span class="string">'&quot; &quot;'</span> fullfile(dataDir,<span class="string">'aligned'</span>,[missingHMMs{i} <span class="string">'.fa'</span>]) <span class="string">'&quot;'</span>]);
-0465             <span class="keyword">if</span> status~=0
-0466                 <a href="../../core/dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'Error when training HMM for '</span> missingHMMs{i} <span class="string">':\n'</span> output]);
-0467             <span class="keyword">end</span>
-0468             
-0469             <span class="comment">%This is only available for linux</span>
-0470             <span class="keyword">if</span> ~ispc
-0471                 [status output]=system([fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'software'</span>,<span class="string">'hmmer-3.1'</span>,<span class="string">'hmmcalibrate'</span>) <span class="string">' &quot;'</span> fullfile(dataDir,<span class="string">'hmms'</span>,[missingHMMs{i} <span class="string">'.hm'</span>]) <span class="string">'&quot;'</span>]);
-0472                 <span class="keyword">if</span> status~=0
-0473                     <span class="comment">%This check is because some HMMs gives an error saying</span>
-0474                     <span class="comment">%that the number of iterations might be too low.</span>
-0475                     <span class="comment">%However, raising it doesn't have any effect. The error</span>
-0476                     <span class="comment">%is therefore ignored and the uncalibrated model is</span>
-0477                     <span class="comment">%used</span>
-0478                     <span class="keyword">if</span> isempty(strfind(output,<span class="string">'--num may be set too small?'</span>))
-0479                         delete(fullfile(dataDir,<span class="string">'hmms'</span>,[missingHMMs{i} <span class="string">'.hm'</span>]));
-0480                         <a href="../../core/dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'Error when calibrating HMM for '</span> missingHMMs{i} <span class="string">':\n'</span> output]);
-0481                     <span class="keyword">else</span>
-0482                         <a href="../../core/dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'Cannot calibrate the HMM for '</span> missingHMMs{i} <span class="string">'. Using uncalibrated version'</span>],false);
-0483                     <span class="keyword">end</span>
-0484                 <span class="keyword">end</span>
-0485             <span class="keyword">end</span>
-0486             <span class="comment">%Move the temporary file to the real one</span>
-0487             movefile(fullfile(dataDir,<span class="string">'hmms'</span>,[missingHMMs{i} <span class="string">'.hm'</span>]),fullfile(dataDir,<span class="string">'hmms'</span>,[missingHMMs{i} <span class="string">'.hmm'</span>]),<span class="string">'f'</span>);
-0488             <span class="comment">%Delete the temporary file</span>
-0489             delete(fullfile(dataDir,<span class="string">'hmms'</span>,[missingHMMs{i} <span class="string">'.hmw'</span>]));
-0490         <span class="keyword">end</span>
-0491     <span class="keyword">end</span>
-0492 <span class="keyword">end</span>
-0493 fprintf(<span class="string">'Completed generation of HMMs\n'</span>);
-0494 
-0495 <span class="comment">%Check which new .out files that should be generated</span>
-0496 <span class="comment">%Check if training of Hidden Markov models should be performed</span>
-0497 missingOUT=setdiff(KOModel.rxns,outFiles);
-0498 <span class="keyword">if</span> ~isempty(missingOUT)
-0499     missingOUT=missingOUT(randperm(RandStream.create(<span class="string">'mrg32k3a'</span>,<span class="string">'Seed'</span>,cputime()),numel(missingOUT)));
-0500     <span class="keyword">for</span> i=1:numel(missingOUT)
-0501         <span class="comment">%This is checked here because it could be that it is created by a</span>
-0502         <span class="comment">%parallell process</span>
-0503         <span class="keyword">if</span> ~exist(fullfile(outDir,[missingOUT{i} <span class="string">'.out'</span>]),<span class="string">'file'</span>)
-0504             <span class="comment">%Check that the HMM file exists. It should do so since</span>
-0505             <span class="comment">%we are saving empty files as well. Print a warning and</span>
-0506             <span class="comment">%continue if not.</span>
-0507             <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'hmms'</span>,[missingOUT{i} <span class="string">'.hmm'</span>]),<span class="string">'file'</span>)
-0508                 <a href="../../core/dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'The HMM file for '</span> missingOUT{i} <span class="string">' does not exist'</span>],false);
-0509                 <span class="keyword">continue</span>;
-0510             <span class="keyword">end</span>
-0511             
-0512             <span class="comment">%Save an empty file to prevent several threads working on the</span>
-0513             <span class="comment">%same file</span>
-0514             fid=fopen(fullfile(outDir,[missingOUT{i} <span class="string">'.out'</span>]),<span class="string">'w'</span>);
-0515             fclose(fid);
-0516             
-0517             <span class="comment">%If the HMM file is empty then save an out file and continue</span>
-0518             s=dir(fullfile(dataDir,<span class="string">'hmms'</span>,[missingOUT{i} <span class="string">'.hmm'</span>]));
-0519             <span class="keyword">if</span> s.bytes&lt;=0
-0520                 <span class="keyword">continue</span>;
-0521             <span class="keyword">end</span>
-0522             
-0523             <span class="comment">%Check each gene in the input file against this model</span>
-0524             [status output]=system([fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'software'</span>,<span class="string">'hmmer-2.3'</span>,<span class="string">'hmmsearch'</span>) <span class="string">' &quot;'</span> fullfile(dataDir,<span class="string">'hmms'</span>,[missingOUT{i} <span class="string">'.hmm'</span>]) <span class="string">'&quot; &quot;'</span> fastaFile <span class="string">'&quot;'</span>]);
-0525             <span class="keyword">if</span> status~=0
-0526                 <a href="../../core/dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'Error when querying HMM for '</span> missingOUT{i} <span class="string">':\n'</span> output]); 
-0527             <span class="keyword">end</span>
-0528 
-0529             <span class="comment">%Save the output to a file</span>
-0530             fid=fopen(fullfile(outDir,[missingOUT{i} <span class="string">'.out'</span>]),<span class="string">'w'</span>);
-0531             fwrite(fid,output);
-0532             fclose(fid);
-0533         <span class="keyword">end</span> 
-0534     <span class="keyword">end</span>
-0535 <span class="keyword">end</span>
-0536 fprintf(<span class="string">'Completed matching to HMMs\n'</span>);
-0537             
-0538 <span class="comment">%***Begin retrieving the output and putting together the resulting model</span>
-0539 
-0540 <span class="comment">%Retrieve matched genes from the HMMs</span>
-0541 koGeneMat=zeros(numel(KOModel.rxns),3000); <span class="comment">%Make room for 3000 genes</span>
-0542 genes=cell(3000,1);
-0543 <span class="comment">%Store the best score for a gene in a hash list (since I will be searching</span>
-0544 <span class="comment">%many times)</span>
-0545 hTable = java.util.Hashtable;
-0546 
-0547 geneCounter=0;
-0548 <span class="keyword">for</span> i=1:numel(KOModel.rxns)
-0549     <span class="keyword">if</span> exist(fullfile(outDir,[KOModel.rxns{i} <span class="string">'.out'</span>]), <span class="string">'file'</span>)
-0550         fid=fopen(fullfile(outDir,[KOModel.rxns{i} <span class="string">'.out'</span>]),<span class="string">'r'</span>);
-0551         beginMatches=false;
-0552         <span class="keyword">while</span> 1
-0553             <span class="comment">%Get the next line</span>
-0554             tline = fgetl(fid);
-0555 
-0556             <span class="comment">%Abort at end of file</span>
-0557             <span class="keyword">if</span> ~ischar(tline)
-0558                 <span class="keyword">break</span>;
-0559             <span class="keyword">end</span>
-0560             
-0561             <span class="keyword">if</span> beginMatches==false
-0562                 <span class="comment">%This is how the listing of matches begins</span>
-0563                 <span class="keyword">if</span> any(strfind(tline,<span class="string">'E-value '</span>))
-0564                     <span class="comment">%Read one more line that is only padding</span>
-0565                     tline = fgetl(fid);
-0566                     beginMatches=true;
-0567                 <span class="keyword">end</span>
-0568             <span class="keyword">else</span>
-0569                 <span class="comment">%If matches should be read</span>
-0570                 <span class="keyword">if</span> ~strcmp(tline,<span class="string">'    [no hits above thresholds]'</span>) &amp;&amp; ~isempty(tline)
-0571                     elements=regexp(tline,<span class="string">' '</span>,<span class="string">'split'</span>);
-0572                     elements=elements(cellfun(@any,elements));
-0573                     
-0574                     <span class="comment">%Check if the match is below the treshhold</span>
-0575                     score=str2num(elements{end-1});
-0576                     gene=elements{1};
-0577                     <span class="keyword">if</span> score&lt;=cutOff
-0578                         <span class="comment">%If the score is exactly 0, change it to a very</span>
-0579                         <span class="comment">%small value to avoid NaN</span>
-0580                         <span class="keyword">if</span> score==0
-0581                            score=10^-250; 
-0582                         <span class="keyword">end</span>
-0583                         <span class="comment">%Check if the gene is added already and, is so, get</span>
-0584                         <span class="comment">%the best score for it</span>
-0585                         I=hTable.get(gene);
-0586                         <span class="keyword">if</span> any(I)
-0587                             koGeneMat(i,I)=score;    
-0588                         <span class="keyword">else</span>
-0589                             geneCounter=geneCounter+1;
-0590                             <span class="comment">%The gene was not present yet so add it</span>
-0591                             hTable.put(gene,geneCounter);
-0592                             genes{geneCounter}=gene;
-0593                             koGeneMat(i,geneCounter)=score;
-0594                         <span class="keyword">end</span>
-0595                     <span class="keyword">end</span>
-0596                 <span class="keyword">else</span>
-0597                     <span class="keyword">break</span>;
-0598                 <span class="keyword">end</span>
-0599             <span class="keyword">end</span>
-0600         <span class="keyword">end</span>
-0601         fclose(fid);
-0602     <span class="keyword">end</span>
-0603 <span class="keyword">end</span>
-0604 koGeneMat=koGeneMat(:,1:geneCounter);
-0605 
-0606 <span class="comment">%Remove the genes for each KO that are below minScoreRatioKO.</span>
-0607 <span class="keyword">for</span> i=1:size(koGeneMat,1)
-0608     J=find(koGeneMat(i,:));
-0609     <span class="keyword">if</span> any(J)
-0610         koGeneMat(i,J(log(koGeneMat(i,J))/log(min(koGeneMat(i,J)))&lt;minScoreRatioKO))=0;
-0611     <span class="keyword">end</span>
-0612 <span class="keyword">end</span>
+0384             <span class="comment">%First load the FASTA file, then select up to nSequences sequences</span>
+0385             <span class="comment">%of the most closely related species, apply any constraints from</span>
+0386             <span class="comment">%maxPhylDist, and save it as a temporary file, and create the</span>
+0387             <span class="comment">%model from that</span>
+0388 
+0389             fastaStruct=fastaread(fullfile(dataDir,<span class="string">'fasta'</span>,[missingAligned{i} <span class="string">'.fa'</span>]));
+0390             phylDist=inf(numel(fastaStruct),1);
+0391             <span class="keyword">for</span> j=1:numel(fastaStruct)
+0392                <span class="comment">%Get the organism abbreviation</span>
+0393                index=strfind(fastaStruct(j).Header,<span class="string">':'</span>);
+0394                <span class="keyword">if</span> any(index)
+0395                     abbrev=fastaStruct(j).Header(1:index(1)-1);
+0396                     [~, index]=ismember(abbrev,phylDistStruct.ids);
+0397                     <span class="keyword">if</span> any(index)
+0398                         phylDist(j)=phylDistStruct.distMat(index(1),phylDistId);
+0399                     <span class="keyword">end</span>
+0400                <span class="keyword">end</span>
+0401             <span class="keyword">end</span>
+0402 
+0403             <span class="comment">%Inf means that it should not be included</span>
+0404             phylDist(phylDist&gt;maxPhylDist)=[];
+0405 
+0406             <span class="comment">%Sort based on phylDist</span>
+0407             [~, order]=sort(phylDist);
+0408 
+0409             <span class="comment">%Save the first nSequences hits to a temporary FASTA file</span>
+0410             <span class="keyword">if</span> nSequences&lt;=numel(fastaStruct)
+0411                 fastaStruct=fastaStruct(order(1:nSequences));
+0412             <span class="keyword">else</span>
+0413                 fastaStruct=fastaStruct(order);
+0414             <span class="keyword">end</span>
+0415 
+0416             <span class="comment">%Do the alignment if there are more than one sequences,</span>
+0417             <span class="comment">%otherwise just save the sequence (or an empty file)</span>
+0418             <span class="keyword">if</span> numel(fastaStruct)&gt;1
+0419                 <span class="keyword">if</span> (seqIdentity==1 || seqIdentity==0.9 || seqIdentity==0.5)
+0420                     <span class="keyword">if</span> ~ispc
+0421                         <span class="keyword">if</span> seqIdentity==1
+0422                             cdhitInp100=tempname;
+0423                             fastawrite(cdhitInp100,fastaStruct);
+0424                             tmpFile=tempname;
+0425                             [status, output]=unix([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'cd-hit-v4.6.6'</span>,[<span class="string">'cd-hit'</span> binEnd]) <span class="string">'&quot; -i &quot;'</span> cdhitInp100 <span class="string">'&quot; -o &quot;'</span> tmpFile <span class="string">'&quot; -c 1.0 -s 0.8 -n 5 -M 2000 -T 8'</span>]);
+0426                             <span class="keyword">if</span> status~=0
+0427                                 EM=[<span class="string">'Error when performing clustering of '</span> missingAligned{i} <span class="string">':\n'</span> output];
+0428                                 dispEM(EM);
+0429                             <span class="keyword">end</span>
+0430                             <span class="comment">%Remove the old tempfile</span>
+0431                             <span class="keyword">if</span> exist(cdhitInp100, <span class="string">'file'</span>)
+0432                                 delete([cdhitInp100 <span class="string">'*'</span>]);
+0433                             <span class="keyword">end</span>
+0434                         <span class="keyword">elseif</span> seqIdentity==0.9
+0435                             cdhitInp100=tempname;
+0436                             fastawrite(cdhitInp100,fastaStruct);
+0437                             cdhitInp90=tempname;
+0438                             [status, output]=unix([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'cd-hit-v4.6.6'</span>,[<span class="string">'cd-hit'</span> binEnd]) <span class="string">'&quot; -i &quot;'</span> cdhitInp100 <span class="string">'&quot; -o &quot;'</span> cdhitInp90 <span class="string">'&quot; -c 1.0 -s 0.8 -n 5 -M 2000'</span>]);
+0439                             <span class="keyword">if</span> status~=0
+0440                                 EM=[<span class="string">'Error when performing clustering of '</span> missingAligned{i} <span class="string">':\n'</span> output];
+0441                                 dispEM(EM);
+0442                             <span class="keyword">end</span>
+0443                             <span class="comment">%Remove the old tempfile</span>
+0444                             <span class="keyword">if</span> exist(cdhitInp100, <span class="string">'file'</span>)
+0445                                 delete([cdhitInp100 <span class="string">'*'</span>]);
+0446                             <span class="keyword">end</span>
+0447                             tmpFile=tempname;
+0448                             [status, output]=unix([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'cd-hit-v4.6.6'</span>,[<span class="string">'cd-hit'</span> binEnd]) <span class="string">'&quot; -i &quot;'</span> cdhitInp90 <span class="string">'&quot; -o &quot;'</span> tmpFile <span class="string">'&quot; -c 0.9 -s 0.8 -n 5 -M 2000'</span>]);
+0449                             <span class="keyword">if</span> status~=0
+0450                                 EM=[<span class="string">'Error when performing clustering of '</span> missingAligned{i} <span class="string">':\n'</span> output];
+0451                                 dispEM(EM);
+0452                             <span class="keyword">end</span>
+0453                             <span class="comment">%Remove the old tempfile</span>
+0454                             <span class="keyword">if</span> exist(cdhitInp90, <span class="string">'file'</span>)
+0455                                 delete([cdhitInp90 <span class="string">'*'</span>]);
+0456                             <span class="keyword">end</span>
+0457                         <span class="keyword">elseif</span> seqIdentity==0.5
+0458                             cdhitInp100=tempname;
+0459                             fastawrite(cdhitInp100,fastaStruct);
+0460                             cdhitInp90=tempname;
+0461                             [status, output]=unix([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'cd-hit-v4.6.6'</span>,[<span class="string">'cd-hit'</span> binEnd]) <span class="string">'&quot; -i &quot;'</span> cdhitInp100 <span class="string">'&quot; -o &quot;'</span> cdhitInp90 <span class="string">'&quot; -c 1.0 -s 0.8 -n 5 -M 2000'</span>]);
+0462                             <span class="keyword">if</span> status~=0
+0463                                 EM=[<span class="string">'Error when performing clustering of '</span> missingAligned{i} <span class="string">':\n'</span> output];
+0464                                 dispEM(EM);
+0465                             <span class="keyword">end</span>
+0466                             <span class="comment">%Remove the old tempfile</span>
+0467                             <span class="keyword">if</span> exist(cdhitInp100, <span class="string">'file'</span>)
+0468                                 delete([cdhitInp100 <span class="string">'*'</span>]);
+0469                             <span class="keyword">end</span>
+0470                             cdhitInp50=tempname;
+0471                             [status, output]=unix([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'cd-hit-v4.6.6'</span>,[<span class="string">'cd-hit'</span> binEnd]) <span class="string">'&quot; -i &quot;'</span> cdhitInp90 <span class="string">'&quot; -o &quot;'</span> cdhitInp50 <span class="string">'&quot; -c 0.9 -s 0.8 -n 5 -M 2000'</span>]);
+0472                             <span class="keyword">if</span> status~=0
+0473                                 EM=[<span class="string">'Error when performing clustering of '</span> missingAligned{i} <span class="string">':\n'</span> output];
+0474                                 dispEM(EM);
+0475                             <span class="keyword">end</span>
+0476                             <span class="comment">%Remove the old tempfile</span>
+0477                             <span class="keyword">if</span> exist(cdhitInp90, <span class="string">'file'</span>)
+0478                                 delete([cdhitInp90 <span class="string">'*'</span>]);
+0479                             <span class="keyword">end</span>
+0480                             tmpFile=tempname;
+0481                             [status, output]=unix([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'cd-hit-v4.6.6'</span>,[<span class="string">'cd-hit'</span> binEnd]) <span class="string">'&quot; -i &quot;'</span> cdhitInp50 <span class="string">'&quot; -o &quot;'</span> tmpFile <span class="string">'&quot; -c 0.5 -s 0.8 -n 3 -M 2000'</span>]);
+0482                             <span class="keyword">if</span> status~=0
+0483                                 EM=[<span class="string">'Error when performing clustering of '</span> missingAligned{i} <span class="string">':\n'</span> output];
+0484                                 dispEM(EM);
+0485                             <span class="keyword">end</span>
+0486                             <span class="comment">%Remove the old tempfile</span>
+0487                             <span class="keyword">if</span> exist(cdhitInp50, <span class="string">'file'</span>)
+0488                                 delete([cdhitInp50 <span class="string">'*'</span>]);
+0489                             <span class="keyword">end</span>
+0490                         <span class="keyword">end</span>
+0491                     <span class="keyword">else</span>
+0492                         <span class="comment">% CD-HIT is not available in Windows so we just</span>
+0493                         <span class="comment">% export multifasta file into temporary file;</span>
+0494                         tmpFile=tempname;
+0495                         fastawrite(tmpFile,fastaStruct);
+0496                     <span class="keyword">end</span>
+0497                 <span class="keyword">else</span>
+0498                     tmpFile=tempname;
+0499                     fastawrite(tmpFile,fastaStruct);
+0500                 <span class="keyword">end</span>
+0501                 <span class="comment">%Do the alignment for this file</span>
+0502                 <span class="keyword">if</span> ~ispc
+0503                     [status, output]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'mafft-7.221'</span>,[<span class="string">'mafft'</span> binEnd]) <span class="string">'&quot; --auto &quot;'</span> tmpFile <span class="string">'&quot; &gt; &quot;'</span> fullfile(dataDir,<span class="string">'aligned'</span>,[missingAligned{i} <span class="string">'.faw'</span>]) <span class="string">'&quot;'</span>]);
+0504                 <span class="keyword">else</span>
+0505                     [status, output]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'mafft-7.221'</span>,<span class="string">'mafft.bat'</span>) <span class="string">'&quot; --auto &quot;'</span> tmpFile <span class="string">'&quot; &gt; &quot;'</span> fullfile(dataDir,<span class="string">'aligned'</span>,[missingAligned{i} <span class="string">'.faw'</span>]) <span class="string">'&quot;'</span>]);
+0506                 <span class="keyword">end</span>
+0507                 <span class="keyword">if</span> status~=0
+0508                     EM=[<span class="string">'Error when performing alignment of '</span> missingAligned{i} <span class="string">':\n'</span> output];
+0509                     dispEM(EM);
+0510                 <span class="keyword">end</span>
+0511                 <span class="comment">%Remove the old tempfile</span>
+0512                 <span class="keyword">if</span> exist(tmpFile, <span class="string">'file'</span>)
+0513                    delete([tmpFile <span class="string">'*'</span>]);
+0514                 <span class="keyword">end</span>
+0515             <span class="keyword">else</span>
+0516                 <span class="comment">%If there is only one sequence then it's not possible to do a</span>
+0517                 <span class="comment">%multiple alignment. Just print the sequence instead. An</span>
+0518                 <span class="comment">%empty file was written previously so that doesn't have to</span>
+0519                 <span class="comment">%be dealt with</span>
+0520                 <span class="keyword">if</span> numel(fastaStruct)==1
+0521                     fastawrite(fullfile(dataDir,<span class="string">'aligned'</span>,[missingAligned{i} <span class="string">'.faw'</span>]),fastaStruct);
+0522                 <span class="keyword">end</span>
+0523             <span class="keyword">end</span>
+0524             <span class="comment">%Move the temporary file to the real one</span>
+0525             movefile(fullfile(dataDir,<span class="string">'aligned'</span>,[missingAligned{i} <span class="string">'.faw'</span>]),fullfile(dataDir,<span class="string">'aligned'</span>,[missingAligned{i} <span class="string">'.fa'</span>]),<span class="string">'f'</span>);
+0526         <span class="keyword">end</span>
+0527     <span class="keyword">end</span>
+0528 <span class="keyword">end</span>
+0529 
+0530 <span class="keyword">if</span> ~ispc
+0531     <span class="keyword">if</span> (seqIdentity==1 || seqIdentity==0.9 || seqIdentity==0.5)
+0532         fprintf(<span class="string">'Completed clustering and multiple alignment of sequences\n'</span>);
+0533     <span class="keyword">else</span>
+0534         fprintf(<span class="string">'Completed multiple alignment of sequences. Protein clustering was not requested or incorrect seqIdentity value was used\n'</span>);
+0535     <span class="keyword">end</span>
+0536 <span class="keyword">else</span>
+0537     <span class="keyword">if</span> (seqIdentity==1 || seqIdentity==0.9 || seqIdentity==0.5)
+0538         fprintf(<span class="string">'Protein clustering was skipped, since CD-HIT is not compatible with Windows'</span>);
+0539     <span class="keyword">end</span>
+0540     fprintf(<span class="string">'Completed multiple alignment of sequences\n'</span>);
+0541 <span class="keyword">end</span>
+0542 
+0543 <span class="comment">%Check if training of Hidden Markov models should be performed</span>
+0544 missingHMMs=setdiff(KOModel.rxns,[hmmFiles;outFiles]);
+0545 <span class="keyword">if</span> ~isempty(missingHMMs)
+0546     missingHMMs=missingHMMs(randperm(RandStream.create(<span class="string">'mrg32k3a'</span>,<span class="string">'Seed'</span>,cputime()),numel(missingHMMs)));
+0547 
+0548     <span class="comment">%Train models for all missing KOs</span>
+0549     <span class="keyword">for</span> i=1:numel(missingHMMs)
+0550         <span class="comment">%This is checked here because it could be that it is created by a</span>
+0551         <span class="comment">%parallell process</span>
+0552         <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'hmms'</span>,[missingHMMs{i} <span class="string">'.hmm'</span>]),<span class="string">'file'</span>) &amp;&amp; ~exist(fullfile(dataDir,<span class="string">'hmms'</span>,[missingHMMs{i} <span class="string">'.hmw'</span>]),<span class="string">'file'</span>)
+0553             <span class="comment">%Check that the aligned FASTA file exists. It could be that it</span>
+0554             <span class="comment">%is still being worked on by some other instance of the</span>
+0555             <span class="comment">%program (the .faw file should then exist). This should not</span>
+0556             <span class="comment">%happen on a single computer. I don't throw an error, because</span>
+0557             <span class="comment">%it should finalize the ones it can.</span>
+0558             <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'aligned'</span>,[missingHMMs{i} <span class="string">'.fa'</span>]),<span class="string">'file'</span>)
+0559                 EM=[<span class="string">'The aligned FASTA file for '</span> missingHMMs{i} <span class="string">' does not exist'</span>];
+0560                 dispEM(EM,false);
+0561                 <span class="keyword">continue</span>;
+0562             <span class="keyword">end</span>
+0563 
+0564             <span class="comment">%If the multi-FASTA file is empty then save an empty aligned</span>
+0565             <span class="comment">%file and continue</span>
+0566             s=dir(fullfile(dataDir,<span class="string">'aligned'</span>,[missingHMMs{i} <span class="string">'.fa'</span>]));
+0567             <span class="keyword">if</span> s.bytes&lt;=0
+0568                 fid=fopen(fullfile(dataDir,<span class="string">'hmms'</span>,[missingHMMs{i} <span class="string">'.hmm'</span>]),<span class="string">'w'</span>);
+0569                 fclose(fid);
+0570                 <span class="keyword">continue</span>;
+0571             <span class="keyword">end</span>
+0572             <span class="comment">%Create a temporary file to indicate that it is working on the</span>
+0573             <span class="comment">%KO. This is because hmmbuild cannot overwrite existing files.</span>
+0574             fid=fopen(fullfile(dataDir,<span class="string">'hmms'</span>,[missingHMMs{i} <span class="string">'.hmw'</span>]),<span class="string">'w'</span>);
+0575             fclose(fid);
+0576 
+0577             <span class="comment">%Create HMM</span>
+0578             [status, output]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'hmmer-3.1'</span>,[<span class="string">'hmmbuild'</span> binEnd]) <span class="string">'&quot; &quot;'</span> fullfile(dataDir,<span class="string">'hmms'</span>,[missingHMMs{i} <span class="string">'.hmm'</span>]) <span class="string">'&quot; &quot;'</span> fullfile(dataDir,<span class="string">'aligned'</span>,[missingHMMs{i} <span class="string">'.fa'</span>]) <span class="string">'&quot;'</span>]);
+0579             <span class="keyword">if</span> status~=0
+0580                 EM=[<span class="string">'Error when training HMM for '</span> missingHMMs{i} <span class="string">':\n'</span> output];
+0581                 dispEM(EM);
+0582             <span class="keyword">end</span>
+0583 
+0584             <span class="comment">%Delete the temporary file</span>
+0585             delete(fullfile(dataDir,<span class="string">'hmms'</span>,[missingHMMs{i} <span class="string">'.hmw'</span>]));
+0586         <span class="keyword">end</span>
+0587     <span class="keyword">end</span>
+0588 <span class="keyword">end</span>
+0589 fprintf(<span class="string">'Completed generation of HMMs\n'</span>);
+0590 
+0591 <span class="comment">%Check which new .out files that should be generated</span>
+0592 <span class="comment">%Check if training of Hidden Markov models should be performed</span>
+0593 missingOUT=setdiff(KOModel.rxns,outFiles);
+0594 <span class="keyword">if</span> ~isempty(missingOUT)
+0595     missingOUT=missingOUT(randperm(RandStream.create(<span class="string">'mrg32k3a'</span>,<span class="string">'Seed'</span>,cputime()),numel(missingOUT)));
+0596     <span class="keyword">for</span> i=1:numel(missingOUT)
+0597         <span class="comment">%This is checked here because it could be that it is created by a</span>
+0598         <span class="comment">%parallell process</span>
+0599         <span class="keyword">if</span> ~exist(fullfile(outDir,[missingOUT{i} <span class="string">'.out'</span>]),<span class="string">'file'</span>)
+0600             <span class="comment">%Check that the HMM file exists. It should do so since</span>
+0601             <span class="comment">%we are saving empty files as well. Print a warning and</span>
+0602             <span class="comment">%continue if not.</span>
+0603             <span class="keyword">if</span> ~exist(fullfile(dataDir,<span class="string">'hmms'</span>,[missingOUT{i} <span class="string">'.hmm'</span>]),<span class="string">'file'</span>)
+0604                 EM=[<span class="string">'The HMM file for '</span> missingOUT{i} <span class="string">' does not exist'</span>];
+0605                 dispEM(EM,false);
+0606                 <span class="keyword">continue</span>;
+0607             <span class="keyword">end</span>
+0608 
+0609             <span class="comment">%Save an empty file to prevent several threads working on the</span>
+0610             <span class="comment">%same file</span>
+0611             fid=fopen(fullfile(outDir,[missingOUT{i} <span class="string">'.out'</span>]),<span class="string">'w'</span>);
+0612             fclose(fid);
 0613 
-0614 <span class="comment">%Remove the KOs for each gene that are below minScoreRatioG</span>
-0615 <span class="keyword">for</span> i=1:size(koGeneMat,2)
-0616     J=find(koGeneMat(:,i));
-0617     <span class="keyword">if</span> any(J)
-0618         koGeneMat(J(log(koGeneMat(J,i))/log(min(koGeneMat(J,i)))&lt;minScoreRatioG),i)=0;
-0619     <span class="keyword">end</span>
-0620 <span class="keyword">end</span>
-0621 
-0622 <span class="comment">%Create the new model</span>
-0623 model.genes=genes(1:geneCounter);
-0624 model.grRules=cell(numel(model.rxns),1);
-0625 model.grRules(:)={<span class="string">''</span>};
-0626 model.rxnGeneMat=sparse(numel(model.rxns),numel(model.genes));
-0627 
-0628 <span class="comment">%Loop through the reactions and add the corresponding genes</span>
-0629 <span class="keyword">for</span> i=1:numel(model.rxns)
-0630     <span class="keyword">if</span> isstruct(model.rxnMiriams{i})
-0631         <span class="comment">%Get all KOs</span>
-0632         I=find(strcmpi(model.rxnMiriams{i}.name,<span class="string">'urn:miriam:kegg.ko'</span>));
-0633         KOs=model.rxnMiriams{i}.value(I);
-0634         <span class="comment">%Find the KOs and the corresponding genes</span>
-0635         J=ismember(KOModel.rxns,KOs);
-0636         [crap K]=find(koGeneMat(J,:));
-0637         
-0638         <span class="keyword">if</span> any(K)
-0639             model.rxnGeneMat(i,K)=1;
-0640             <span class="comment">%Also delete KOs for which no genes were found. If no genes at all</span>
-0641             <span class="comment">%were matched to the reaction it will be deleted later</span>
-0642             L=sum(koGeneMat(J,:),2)==0;
-0643             model.rxnMiriams{i}.value(I(L))=[];
-0644             model.rxnMiriams{i}.name(I(L))=[];
-0645         <span class="keyword">end</span>
-0646     <span class="keyword">end</span>
-0647 <span class="keyword">end</span>
-0648 
-0649 <span class="comment">%Find and delete all reactions without any genes. This also removes genes</span>
-0650 <span class="comment">%that are not used (which could happen because minScoreRatioG and</span>
-0651 <span class="comment">%minScoreRatioKO)</span>
-0652 I=sum(model.rxnGeneMat,2)==0;
-0653 model=<a href="../../core/removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,I,true,true);
-0654 
-0655 <span class="comment">%Add the gene associations as 'or'</span>
-0656 <span class="keyword">for</span> i=1:numel(model.rxns)
-0657     <span class="comment">%Find the involved genes</span>
-0658     I=find(model.rxnGeneMat(i,:));
-0659     model.grRules{i}=[<span class="string">'('</span> model.genes{I(1)}];
-0660     <span class="keyword">for</span> j=2:numel(I)
-0661         model.grRules{i}=[model.grRules{i} <span class="string">' or '</span> model.genes{I(j)}];
-0662     <span class="keyword">end</span>
-0663     model.grRules{i}=[model.grRules{i} <span class="string">')'</span>];
-0664 <span class="keyword">end</span>
-0665 <span class="keyword">end</span>
-0666 
-0667 <span class="comment">%Supporter function to list the files in a directory and return them as a</span>
-0668 <span class="comment">%cell array</span>
-0669 <a name="_sub1" href="#_subfunctions" class="code">function files=listFiles(directory)</a>
-0670     temp=dir(directory);
-0671     files=cell(numel(temp),1);
-0672     <span class="keyword">for</span> i=1:numel(temp)
-0673         files{i}=temp(i,1).name;
-0674     <span class="keyword">end</span>
-0675     files=strrep(files,<span class="string">'.fa'</span>,<span class="string">''</span>);
-0676     files=strrep(files,<span class="string">'.hmm'</span>,<span class="string">''</span>);
-0677     files=strrep(files,<span class="string">'.out'</span>,<span class="string">''</span>);
-0678     files=strrep(files,<span class="string">'.faw'</span>,<span class="string">''</span>);
-0679 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Fri 14-Oct-2016 12:02:10 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0614             <span class="comment">%If the HMM file is empty then save an out file and continue</span>
+0615             s=dir(fullfile(dataDir,<span class="string">'hmms'</span>,[missingOUT{i} <span class="string">'.hmm'</span>]));
+0616             <span class="keyword">if</span> s.bytes&lt;=0
+0617                 <span class="keyword">continue</span>;
+0618             <span class="keyword">end</span>
+0619 
+0620             <span class="comment">%Check each gene in the input file against this model</span>
+0621             [status, output]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'hmmer-3.1'</span>,[<span class="string">'hmmsearch'</span> binEnd]) <span class="string">'&quot; &quot;'</span> fullfile(dataDir,<span class="string">'hmms'</span>,[missingOUT{i} <span class="string">'.hmm'</span>]) <span class="string">'&quot; &quot;'</span> fastaFile <span class="string">'&quot;'</span>]);
+0622             <span class="keyword">if</span> status~=0
+0623                 EM=[<span class="string">'Error when querying HMM for '</span> missingOUT{i} <span class="string">':\n'</span> output];
+0624                 dispEM(EM);
+0625             <span class="keyword">end</span>
+0626 
+0627             <span class="comment">%Save the output to a file</span>
+0628             fid=fopen(fullfile(outDir,[missingOUT{i} <span class="string">'.out'</span>]),<span class="string">'w'</span>);
+0629             fwrite(fid,output);
+0630             fclose(fid);
+0631         <span class="keyword">end</span>
+0632     <span class="keyword">end</span>
+0633 <span class="keyword">end</span>
+0634 fprintf(<span class="string">'Completed matching to HMMs\n'</span>);
+0635 
+0636 <span class="comment">%***Begin retrieving the output and putting together the resulting model</span>
+0637 
+0638 <span class="comment">%Retrieve matched genes from the HMMs</span>
+0639 koGeneMat=zeros(numel(KOModel.rxns),3000); <span class="comment">%Make room for 3000 genes</span>
+0640 genes=cell(3000,1);
+0641 <span class="comment">%Store the best score for a gene in a hash list (since I will be searching</span>
+0642 <span class="comment">%many times)</span>
+0643 hTable = java.util.Hashtable;
+0644 
+0645 geneCounter=0;
+0646 <span class="keyword">for</span> i=1:numel(KOModel.rxns)
+0647     <span class="keyword">if</span> exist(fullfile(outDir,[KOModel.rxns{i} <span class="string">'.out'</span>]), <span class="string">'file'</span>)
+0648         fid=fopen(fullfile(outDir,[KOModel.rxns{i} <span class="string">'.out'</span>]),<span class="string">'r'</span>);
+0649         beginMatches=false;
+0650         <span class="keyword">while</span> 1
+0651             <span class="comment">%Get the next line</span>
+0652             tline = fgetl(fid);
+0653 
+0654             <span class="comment">%Abort at end of file</span>
+0655             <span class="keyword">if</span> ~ischar(tline)
+0656                 <span class="keyword">break</span>;
+0657             <span class="keyword">end</span>
+0658 
+0659             <span class="keyword">if</span> and(beginMatches,strcmp(tline,<span class="string">'  ------ inclusion threshold ------'</span>))
+0660                 <span class="keyword">break</span>;
+0661             <span class="keyword">end</span>
+0662 
+0663             <span class="keyword">if</span> beginMatches==false
+0664                 <span class="comment">%This is how the listing of matches begins</span>
+0665                 <span class="keyword">if</span> any(strfind(tline,<span class="string">'E-value '</span>))
+0666                     <span class="comment">%Read one more line that is only padding</span>
+0667                     tline = fgetl(fid);
+0668                     beginMatches=true;
+0669                 <span class="keyword">end</span>
+0670             <span class="keyword">else</span>
+0671                 <span class="comment">%If matches should be read</span>
+0672                 <span class="keyword">if</span> ~strcmp(tline,<span class="string">'   [No hits detected that satisfy reporting thresholds]'</span>) &amp;&amp; ~isempty(tline)
+0673                     elements=regexp(tline,<span class="string">' '</span>,<span class="string">'split'</span>);
+0674                     elements=elements(cellfun(@any,elements));
+0675 
+0676                     <span class="comment">%Check if the match is below the treshhold</span>
+0677                     score=str2num(elements{1});
+0678                     gene=elements{9};
+0679                     <span class="keyword">if</span> score&lt;=cutOff
+0680                         <span class="comment">%If the score is exactly 0, change it to a very</span>
+0681                         <span class="comment">%small value to avoid NaN</span>
+0682                         <span class="keyword">if</span> score==0
+0683                            score=10^-250;
+0684                         <span class="keyword">end</span>
+0685                         <span class="comment">%Check if the gene is added already and, is so, get</span>
+0686                         <span class="comment">%the best score for it</span>
+0687                         I=hTable.get(gene);
+0688                         <span class="keyword">if</span> any(I)
+0689                             koGeneMat(i,I)=score;
+0690                         <span class="keyword">else</span>
+0691                             geneCounter=geneCounter+1;
+0692                             <span class="comment">%The gene was not present yet so add it</span>
+0693                             hTable.put(gene,geneCounter);
+0694                             genes{geneCounter}=gene;
+0695                             koGeneMat(i,geneCounter)=score;
+0696                         <span class="keyword">end</span>
+0697                     <span class="keyword">end</span>
+0698                 <span class="keyword">else</span>
+0699                     <span class="keyword">break</span>;
+0700                 <span class="keyword">end</span>
+0701             <span class="keyword">end</span>
+0702         <span class="keyword">end</span>
+0703         fclose(fid);
+0704     <span class="keyword">end</span>
+0705 <span class="keyword">end</span>
+0706 koGeneMat=koGeneMat(:,1:geneCounter);
+0707 
+0708 <span class="comment">%Remove the genes for each KO that are below minScoreRatioKO.</span>
+0709 <span class="keyword">for</span> i=1:size(koGeneMat,1)
+0710     J=find(koGeneMat(i,:));
+0711     <span class="keyword">if</span> any(J)
+0712         koGeneMat(i,J(log(koGeneMat(i,J))/log(min(koGeneMat(i,J)))&lt;minScoreRatioKO))=0;
+0713     <span class="keyword">end</span>
+0714 <span class="keyword">end</span>
+0715 
+0716 <span class="comment">%Remove the KOs for each gene that are below minScoreRatioG</span>
+0717 <span class="keyword">for</span> i=1:size(koGeneMat,2)
+0718     J=find(koGeneMat(:,i));
+0719     <span class="keyword">if</span> any(J)
+0720         koGeneMat(J(log(koGeneMat(J,i))/log(min(koGeneMat(J,i)))&lt;minScoreRatioG),i)=0;
+0721     <span class="keyword">end</span>
+0722 <span class="keyword">end</span>
+0723 
+0724 <span class="comment">%Create the new model</span>
+0725 model.genes=genes(1:geneCounter);
+0726 model.grRules=cell(numel(model.rxns),1);
+0727 model.grRules(:)={<span class="string">''</span>};
+0728 model.rxnGeneMat=sparse(numel(model.rxns),numel(model.genes));
+0729 
+0730 <span class="comment">%Loop through the reactions and add the corresponding genes</span>
+0731 <span class="keyword">for</span> i=1:numel(model.rxns)
+0732     <span class="keyword">if</span> isstruct(model.rxnMiriams{i})
+0733         <span class="comment">%Get all KOs</span>
+0734         I=find(strcmpi(model.rxnMiriams{i}.name,<span class="string">'urn:miriam:kegg.ko'</span>));
+0735         KOs=model.rxnMiriams{i}.value(I);
+0736         <span class="comment">%Find the KOs and the corresponding genes</span>
+0737         J=ismember(KOModel.rxns,KOs);
+0738         [~, K]=find(koGeneMat(J,:));
+0739 
+0740         <span class="keyword">if</span> any(K)
+0741             model.rxnGeneMat(i,K)=1;
+0742             <span class="comment">%Also delete KOs for which no genes were found. If no genes at all</span>
+0743             <span class="comment">%were matched to the reaction it will be deleted later</span>
+0744             L=sum(koGeneMat(J,:),2)==0;
+0745             model.rxnMiriams{i}.value(I(L))=[];
+0746             model.rxnMiriams{i}.name(I(L))=[];
+0747         <span class="keyword">end</span>
+0748     <span class="keyword">end</span>
+0749 <span class="keyword">end</span>
+0750 
+0751 <span class="comment">%Find and delete all reactions without any genes. This also removes genes</span>
+0752 <span class="comment">%that are not used (which could happen because minScoreRatioG and</span>
+0753 <span class="comment">%minScoreRatioKO)</span>
+0754 I=sum(model.rxnGeneMat,2)==0;
+0755 model=removeReactions(model,I,true,true);
+0756 
+0757 <span class="comment">%Add the gene associations as 'or'</span>
+0758 <span class="keyword">for</span> i=1:numel(model.rxns)
+0759     <span class="comment">%Find the involved genes</span>
+0760     I=find(model.rxnGeneMat(i,:));
+0761     model.grRules{i}=[<span class="string">'('</span> model.genes{I(1)}];
+0762     <span class="keyword">for</span> j=2:numel(I)
+0763         model.grRules{i}=[model.grRules{i} <span class="string">' or '</span> model.genes{I(j)}];
+0764     <span class="keyword">end</span>
+0765     model.grRules{i}=[model.grRules{i} <span class="string">')'</span>];
+0766 <span class="keyword">end</span>
+0767 <span class="keyword">end</span>
+0768 
+0769 
+0770 <span class="comment">%Supporter function to list the files in a directory and return them as a</span>
+0771 <span class="comment">%cell array</span>
+0772 <a name="_sub1" href="#_subfunctions" class="code">function files=listFiles(directory)</a>
+0773     temp=dir(directory);
+0774     files=cell(numel(temp),1);
+0775     <span class="keyword">for</span> i=1:numel(temp)
+0776         files{i}=temp(i,1).name;
+0777     <span class="keyword">end</span>
+0778     files=strrep(files,<span class="string">'.fa'</span>,<span class="string">''</span>);
+0779     files=strrep(files,<span class="string">'.hmm'</span>,<span class="string">''</span>);
+0780     files=strrep(files,<span class="string">'.out'</span>,<span class="string">''</span>);
+0781     files=strrep(files,<span class="string">'.faw'</span>,<span class="string">''</span>);
+0782 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 28-Feb-2017 23:41:43 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

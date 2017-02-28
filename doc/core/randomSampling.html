@@ -36,7 +36,7 @@
    replaceBoundsWithInf    replace the largest upper bounds with Inf and
                            the smallest lower bounds with -Inf. This is
                            needed in order to get solutions without loops
-                           if your model has for example 1000/-1000 as 
+                           if your model has for example 1000/-1000 as
                            arbitary large bounds. If your model only has
                            &quot;biologically relevant&quot; bounds, then set this
                            to false (opt, default true)
@@ -56,13 +56,13 @@
 
    Usage: solutions=randomSampling(model, nSamples, replaceBoundsWithInf)
 
-   Rasmus Agren, 2013-08-01</pre></div>
+   Rasmus Agren, 2014-01-08</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>	setParam</li><li><a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, reservedRxns, suppressWarnings)">simplifyModel</a>	simplifyModel</li><li><a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>	solveLP</li></ul>
+<li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>	setParam</li><li><a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>	simplifyModel</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -103,7 +103,7 @@ This function is called by:
 0028 <span class="comment">%</span>
 0029 <span class="comment">%   Usage: solutions=randomSampling(model, nSamples, replaceBoundsWithInf)</span>
 0030 <span class="comment">%</span>
-0031 <span class="comment">%   Rasmus Agren, 2013-08-01</span>
+0031 <span class="comment">%   Rasmus Agren, 2014-01-08</span>
 0032 <span class="comment">%</span>
 0033 
 0034 <span class="keyword">if</span> nargin&lt;2
@@ -119,106 +119,108 @@ This function is called by:
 0044 nRxns=2; <span class="comment">%Number of reactions in the objective function in each iteration</span>
 0045 
 0046 <span class="comment">%First check that the model is feasible given the constraints</span>
-0047 sol=<a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(model);
+0047 sol=solveLP(model);
 0048 <span class="keyword">if</span> isempty(sol.x)
-0049    <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The model has no feasible solution'</span>); 
-0050 <span class="keyword">end</span> 
-0051 
-0052 <span class="comment">%Simplify the model to speed stuff up a little. Keep original mapping</span>
-0053 originalRxns=model.rxns;
-0054 model=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, reservedRxns, suppressWarnings)">simplifyModel</a>(model,false,false,true,true);
-0055 <span class="comment">%Then change the bounds to +/- Inf. This is needed in order to not have</span>
-0056 <span class="comment">%loops in the solutions</span>
-0057 <span class="keyword">if</span> replaceBoundsWithInf==true
-0058    model.ub(model.ub==max(model.ub))=Inf;
-0059    model.lb(model.lb==min(model.lb))=-Inf;
-0060 <span class="keyword">end</span>
-0061 
-0062 <span class="comment">%Reactions which can be involved in loops should not be optimized</span>
-0063 <span class="comment">%for. Check which reactions reach an arbitary high upper bound</span>
-0064 goodRxns=true(numel(model.rxns),1);
-0065 <span class="keyword">for</span> i=1:numel(model.rxns)
-0066     <span class="keyword">if</span> goodRxns(i)==true
-0067         testModel=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'eq'</span>,model.rxns(i),1000);
-0068         sol=<a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(testModel);
-0069         <span class="keyword">if</span> ~isempty(sol.f)
-0070             goodRxns(abs(sol.x)&gt;999)=false;
-0071         <span class="keyword">else</span>
-0072             <span class="comment">%If the reaction is reversible, also check in that direction</span>
-0073             <span class="keyword">if</span> model.rev(i)
-0074                 testModel=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'eq'</span>,model.rxns(i),-1000);
-0075                 sol=<a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(testModel);
-0076                 <span class="keyword">if</span> ~isempty(sol.f)
-0077                     goodRxns(abs(sol.x)&gt;999)=false;
-0078                 <span class="keyword">end</span>
-0079             <span class="keyword">end</span>
-0080         <span class="keyword">end</span>
-0081     <span class="keyword">end</span>
-0082 <span class="keyword">end</span>
-0083 
-0084 <span class="comment">%Reserve space for a solution matrix</span>
-0085 sols=zeros(numel(model.rxns),nSamples);
-0086 
-0087 <span class="comment">%Main loop</span>
-0088 counter=1;
-0089 badSolutions=0;
-0090 goodRxns=find(goodRxns);
-0091 <span class="keyword">while</span> counter&lt;=nSamples
-0092    rxns=<a href="#_sub1" class="code" title="subfunction I=randsample(n,k,replacement)">randsample</a>(numel(goodRxns),nRxns);
-0093    model.c=zeros(numel(model.rxns),1);
-0094    multipliers=<a href="#_sub1" class="code" title="subfunction I=randsample(n,k,replacement)">randsample</a>([-1 1],nRxns,true);
-0095    multipliers(model.rev(goodRxns(rxns))==0)=1;
-0096    model.c(goodRxns(rxns))=rand(nRxns,1).*multipliers;
-0097    sol=<a href="../solver/solveLP.html" class="code" title="function [solution hsSolOut prob]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(model);
-0098    <span class="keyword">if</span> any(sol.x)
-0099       <span class="comment">%disp('any')</span>
-0100        <span class="keyword">if</span> abs(sol.f)&gt;10^-8
-0101             sols(:,counter)=sol.x;
-0102             counter=counter+1;
-0103             badSolutions=0;
-0104        <span class="keyword">else</span>
-0105             badSolutions=badSolutions+1
-0106             <span class="comment">%If it only finds bad solutions then throw an error.</span>
-0107             <span class="keyword">if</span> badSolutions==50 &amp;&amp; supressErrors==false
-0108                 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'The program is having problems finding non-zero solutions that are not involved in loops. Review the constraints on your model. Set supressErrors to true to ignore this error'</span>); 
-0109             <span class="keyword">end</span>
-0110        <span class="keyword">end</span>
-0111    <span class="keyword">end</span>
-0112 <span class="keyword">end</span>
-0113 
-0114 <span class="comment">%Map to original model</span>
-0115 [crap I]=ismember(model.rxns,originalRxns);
-0116 solutions=zeros(numel(originalRxns),nSamples);
-0117 solutions(I,:)=sols;
-0118 solutions=sparse(solutions);
-0119 <span class="keyword">end</span>
-0120 
-0121 <span class="comment">%To use instead of the normal Matlab randsample function. This is in order</span>
-0122 <span class="comment">%to not depend on the Matlab statistical toolbox.</span>
-0123 <a name="_sub1" href="#_subfunctions" class="code">function I=randsample(n,k,replacement)</a>
-0124     <span class="keyword">if</span> nargin&lt;3
-0125         replacement=false;
-0126     <span class="keyword">end</span>
-0127     <span class="comment">%n can be a integer, which leads to I being sampled from 1:n, or it can</span>
-0128     <span class="comment">%be a population to sample from.</span>
-0129     <span class="keyword">if</span> numel(n)==1 &amp;&amp; isnumeric(n)
-0130        n=1:n;
-0131     <span class="keyword">end</span>
-0132     <span class="comment">%Loop and get random numbers until the list is unique. This is only a</span>
-0133     <span class="comment">%good option is the number of samples is small compared to the</span>
-0134     <span class="comment">%population. There are several checks that should be made here, for</span>
-0135     <span class="comment">%example regarding size and that the number of samples is &lt;=population</span>
-0136     <span class="comment">%size if replacement==false. This is not the case in randomSampling, so</span>
-0137     <span class="comment">%such checks are ignored</span>
-0138     <span class="keyword">while</span> true
-0139         J=randi(numel(n),[k,1]);
-0140         <span class="keyword">if</span> replacement==true || numel(J)==numel(unique(J))
-0141             I=n(J);
-0142             <span class="keyword">break</span>;
-0143         <span class="keyword">end</span>
-0144     <span class="keyword">end</span>
-0145     I=I(:);
-0146 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Fri 14-Oct-2016 12:02:10 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0049     EM=<span class="string">'The model has no feasible solution'</span>;
+0050     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0051 <span class="keyword">end</span>
+0052 
+0053 <span class="comment">%Simplify the model to speed stuff up a little. Keep original mapping</span>
+0054 originalRxns=model.rxns;
+0055 model=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>(model,false,false,true,true);
+0056 
+0057 <span class="comment">%Then change the bounds to +/- Inf. This is needed in order to not have</span>
+0058 <span class="comment">%loops in the solutions</span>
+0059 <span class="keyword">if</span> replaceBoundsWithInf==true
+0060    model.ub(model.ub==max(model.ub))=Inf;
+0061    model.lb(model.lb==min(model.lb))=-Inf;
+0062 <span class="keyword">end</span>
+0063 
+0064 <span class="comment">%Reactions which can be involved in loops should not be optimized</span>
+0065 <span class="comment">%for. Check which reactions reach an arbitary high upper bound</span>
+0066 goodRxns=true(numel(model.rxns),1);
+0067 <span class="keyword">for</span> i=1:numel(model.rxns)
+0068     <span class="keyword">if</span> goodRxns(i)==true
+0069         testModel=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'eq'</span>,model.rxns(i),1000);
+0070         sol=solveLP(testModel);
+0071         <span class="keyword">if</span> ~isempty(sol.f)
+0072             goodRxns(abs(sol.x)&gt;999)=false;
+0073         <span class="keyword">else</span>
+0074             <span class="comment">%If the reaction is reversible, also check in that direction</span>
+0075             <span class="keyword">if</span> model.rev(i)
+0076                 testModel=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'eq'</span>,model.rxns(i),-1000);
+0077                 sol=solveLP(testModel);
+0078                 <span class="keyword">if</span> ~isempty(sol.f)
+0079                     goodRxns(abs(sol.x)&gt;999)=false;
+0080                 <span class="keyword">end</span>
+0081             <span class="keyword">end</span>
+0082         <span class="keyword">end</span>
+0083     <span class="keyword">end</span>
+0084 <span class="keyword">end</span>
+0085 
+0086 <span class="comment">%Reserve space for a solution matrix</span>
+0087 sols=zeros(numel(model.rxns),nSamples);
+0088 
+0089 <span class="comment">%Main loop</span>
+0090 counter=1;
+0091 badSolutions=0;
+0092 goodRxns=find(goodRxns);
+0093 <span class="keyword">while</span> counter&lt;=nSamples
+0094    rxns=<a href="#_sub1" class="code" title="subfunction I=randsample(n,k,replacement)">randsample</a>(numel(goodRxns),nRxns);
+0095    model.c=zeros(numel(model.rxns),1);
+0096    multipliers=<a href="#_sub1" class="code" title="subfunction I=randsample(n,k,replacement)">randsample</a>([-1 1],nRxns,true);
+0097    multipliers(model.rev(goodRxns(rxns))==0)=1;
+0098    model.c(goodRxns(rxns))=rand(nRxns,1).*multipliers;
+0099    sol=solveLP(model);
+0100    <span class="keyword">if</span> any(sol.x)
+0101        <span class="keyword">if</span> abs(sol.f)&gt;10^-8
+0102             sols(:,counter)=sol.x;
+0103             counter=counter+1;
+0104             badSolutions=0;
+0105        <span class="keyword">else</span>
+0106             badSolutions=badSolutions+1;
+0107             <span class="comment">%If it only finds bad solutions then throw an error.</span>
+0108             <span class="keyword">if</span> badSolutions==50 &amp;&amp; supressErrors==false
+0109                 EM=<span class="string">'The program is having problems finding non-zero solutions that are not involved in loops. Review the constraints on your model. Set supressErrors to true to ignore this error'</span>;
+0110                 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0111             <span class="keyword">end</span>
+0112        <span class="keyword">end</span>
+0113    <span class="keyword">end</span>
+0114 <span class="keyword">end</span>
+0115 
+0116 <span class="comment">%Map to original model</span>
+0117 [~, I]=ismember(model.rxns,originalRxns);
+0118 solutions=zeros(numel(originalRxns),nSamples);
+0119 solutions(I,:)=sols;
+0120 solutions=sparse(solutions);
+0121 <span class="keyword">end</span>
+0122 
+0123 <span class="comment">%To use instead of the normal Matlab randsample function. This is in order</span>
+0124 <span class="comment">%to not depend on the Matlab statistical toolbox.</span>
+0125 <a name="_sub1" href="#_subfunctions" class="code">function I=randsample(n,k,replacement)</a>
+0126     <span class="keyword">if</span> nargin&lt;3
+0127         replacement=false;
+0128     <span class="keyword">end</span>
+0129     <span class="comment">%n can be a integer, which leads to I being sampled from 1:n, or it can</span>
+0130     <span class="comment">%be a population to sample from.</span>
+0131     <span class="keyword">if</span> numel(n)==1 &amp;&amp; isnumeric(n)
+0132        n=1:n;
+0133     <span class="keyword">end</span>
+0134     <span class="comment">%Loop and get random numbers until the list is unique. This is only a</span>
+0135     <span class="comment">%good option is the number of samples is small compared to the</span>
+0136     <span class="comment">%population. There are several checks that should be made here, for</span>
+0137     <span class="comment">%example regarding size and that the number of samples is &lt;=population</span>
+0138     <span class="comment">%size if replacement==false. This is not the case in randomSampling, so</span>
+0139     <span class="comment">%such checks are ignored</span>
+0140     <span class="keyword">while</span> true
+0141         J=randi(numel(n),[k,1]);
+0142         <span class="keyword">if</span> replacement==true || numel(J)==numel(unique(J))
+0143             I=n(J);
+0144             <span class="keyword">break</span>;
+0145         <span class="keyword">end</span>
+0146     <span class="keyword">end</span>
+0147     I=I(:);
+0148 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 28-Feb-2017 23:41:43 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
