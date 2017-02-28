@@ -16,8 +16,8 @@ function workbook=loadWorkbook(fileName,createEmpty)
     if nargin<2
         createEmpty=false;
     end
-    
-    %Adds the required classes to the static Java path
+
+    %Adds the required classes to the static Java path if not already added
     addJavaPaths();
 
     %Import required classes from Apache POI
@@ -26,7 +26,7 @@ function workbook=loadWorkbook(fileName,createEmpty)
     import java.io.FileInputStream;
     import org.apache.poi.hssf.usermodel.*;
     import org.apache.poi.xssf.usermodel.*;
-    
+
     %Check if the file exists
     if ~exist(fileName,'file')
         if createEmpty==false
@@ -42,7 +42,7 @@ function workbook=loadWorkbook(fileName,createEmpty)
                     workbook=XSSFWorkbook();
                 else
                     EM='The file name must end in .xls or .xlsx';
-                    dispEM(EM); 
+                    dispEM(EM);
                 end
             end
         end
