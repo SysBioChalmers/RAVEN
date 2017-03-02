@@ -3,7 +3,7 @@ function exportToExcelFormat(model,filename)
 %   Exports a model structure to the Microsoft Excel model format
 %
 %   model       a model structure
-%   filename    file name of the Excel file. Both xls and xlsx are supported.
+%   filename    file name of the Excel file. Only xlsx format is supported.
 %               In order to preserve backward compatibility this could also
 %               be only a path, in which case the model is exported to a set
 %               of tab-delimited text files instead. See exportToTabDelimited
@@ -17,16 +17,10 @@ function exportToExcelFormat(model,filename)
 %
 %   Usage: exportToExcelFormat(model,filename)
 %
-%   Rasmus Agren, 2014-01-07
-%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
-%   rxnReferences, confidenceScores and metCharge
+%   Rasmus Agren, 2017-02-27
 %
 
-[filePath, A, B]=fileparts(filename);
-
-if ~any(filePath)
-   filePath=pwd; 
-end
+[~, A, B]=fileparts(filename);
 
 %If a path was used call on exportToTabDelimited instead
 if ~any(A) || ~any(B)
@@ -34,48 +28,28 @@ if ~any(A) || ~any(B)
     return;
 end
 
-%Adds the required classes to the Java path
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
-poiPATH=fullfile(ravenPath,'software','apache-poi');
-javaaddpath(fullfile(poiPATH,'dom4j-1.6.1.jar'));
-javaaddpath(fullfile(poiPATH,'poi-3.8-20120326.jar'));
-javaaddpath(fullfile(poiPATH,'poi-ooxml-3.8-20120326.jar'));
-javaaddpath(fullfile(poiPATH,'poi-ooxml-schemas-3.8-20120326.jar'));
-javaaddpath(fullfile(poiPATH,'xmlbeans-2.3.0.jar'));
+if ~strcmpi(B,'.xlsx')
+    EM='As of RAVEN version 1.9, only export to xlsx format is supported';
+    dispEM(EM);
+end
 
-%Import required classes from Apache POI
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.hssf.usermodel.*;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.xssf.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.ss.util.*;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-%If the folder doesn't exist then create it
-if ~exist(filePath,'dir')
-    mkdir(filePath);
-end
-
-%Remove the file if it already exist
+%Remove the output file if it already exists
 if exist(filename,'file')
     delete(filename);
 end
 
-%Check that the file endings are correct
-if ~strcmpi(B,'.XLS') && ~strcmpi(B,'.XLSX')
-   dispEM('The file name must end in .xls or .xlsx'); 
-end
+%Load an empty workbook
+wb=loadWorkbook(filename,true);
 
 %Construct equations
 model.equations=constructEquations(model,model.rxns,true);
 
 %Check if it should print genes
-if isfield(model,'grRules');    
+if isfield(model,'grRules');
     %Also do some parsing here
     rules=model.grRules;
     rules=strrep(rules,'(','');
@@ -92,334 +66,296 @@ hasDefaultLB=false;
 hasDefaultUB=false;
 if isfield(model,'annotation')
     if isfield(model.annotation,'defaultLB')
-       hasDefaultLB=true; 
+       hasDefaultLB=true;
     end
     if isfield(model.annotation,'defaultUB')
-       hasDefaultUB=true; 
+       hasDefaultUB=true;
     end
-end
-
-%Create the workbook
-if strcmpi(B,'.XLS')
-    wb=HSSFWorkbook();
-else
-    wb=XSSFWorkbook();
 end
 
 %Add the RXNS sheet
-s=wb.createSheet();
-wb.setSheetName(0, 'RXNS');
 
 %Create the header row
 headers={'#';'ID';'NAME';'EQUATION';'EC-NUMBER';'GENE ASSOCIATION';'LOWER BOUND';'UPPER BOUND';'OBJECTIVE';'COMPARTMENT';'MIRIAM';'SUBSYSTEM';'REPLACEMENT ID';'NOTE';'REFERENCE';'CONFIDENCE SCORE'};
-r=s.createRow(0);
-for i=0:numel(headers)-1
-    c=r.createCell(i);
-    c.setCellValue(headers{i+1});    
+
+%Add empty comments
+emptyColumn=cell(numel(model.rxns),1);
+rxnSheet=emptyColumn;
+
+%Add the model fields
+rxnSheet=[rxnSheet model.rxns];
+
+if isfield(model,'rxnNames')
+    rxnSheet=[rxnSheet model.rxnNames];
+else
+    rxnSheet=[rxnSheet emptyColumn];
 end
 
-%Then fill in the sheet
-for i=1:numel(model.rxns)
-    r=s.createRow(i);
-    
-    c=r.createCell(1);
-    c.setCellValue(model.rxns{i});
-    
-    if isfield(model,'rxnNames')
-        c=r.createCell(2);
-        c.setCellValue(model.rxnNames{i});
-    end
+rxnSheet=[rxnSheet model.equations];
 
-    c=r.createCell(3);
-    c.setCellValue(model.equations{i});
-    
-    if isfield(model,'eccodes')
-        c=r.createCell(4);
-        c.setCellValue(model.eccodes{i});
-    end
-    
-    if ~isempty(rules)
-        c=r.createCell(5);
-        c.setCellValue(rules{i});
-    end
-    
+if isfield(model,'eccodes')
+    rxnSheet=[rxnSheet model.eccodes];
+else
+    rxnSheet=[rxnSheet emptyColumn];
+end
+
+if ~isempty(rules)
+    rxnSheet=[rxnSheet rules];
+else
+    rxnSheet=[rxnSheet emptyColumn];
+end
+
+lb=emptyColumn;
+ub=emptyColumn;
+objective=emptyColumn;
+rxnMiriams=emptyColumn;
+
+for i=1:numel(model.rxns)
     if isfield(model,'lb')
         if hasDefaultLB==true
             if model.rev(i)==1
                 %If reversible, print only if different than defaultLB
                 if model.lb(i) ~= model.annotation.defaultLB
-                    c=r.createCell(6);
-                    c.setCellValue(model.lb(i));
+                    lb{i}=model.lb(i);
                 end
             else
                 %If irreversible, print only for non-zero values
-            	if model.lb(i)~=0
-                    c=r.createCell(6);
-                    c.setCellValue(model.lb(i));
-            	end
+                if model.lb(i)~=0
+                    lb{i}=model.lb(i);
+                end
             end
         else
-            c=r.createCell(6);
-            c.setCellValue(model.lb(i));
+            lb{i}=model.lb(i);
         end
     end
+    
     if isfield(model,'ub')
         if hasDefaultUB==true
             if model.ub(i) ~= model.annotation.defaultUB
-                c=r.createCell(7);
-                c.setCellValue(model.ub(i));
+                ub{i}=model.ub(i);
             end
         else
-            c=r.createCell(7);
-            c.setCellValue(model.ub(i));
+            ub{i}=model.ub(i);
         end
     end
+    
     if isfield(model,'c')
         if model.c(i)~=0
-            c=r.createCell(8);
-            c.setCellValue(model.c(i));
+            objective{i}=model.c(i);
         end
     end
-    if isfield(model,'rxnComps')
-        c=r.createCell(9);
-        c.setCellValue(model.comps{model.rxnComps(i)});
-    end
+    
     if isfield(model,'rxnMiriams')
        if ~isempty(model.rxnMiriams{i})
            toPrint=[];
            for j=1:numel(model.rxnMiriams{i}.name)
-               toPrint=[toPrint strtrim(model.rxnMiriams{i}.name{j}) ':' strtrim(model.rxnMiriams{i}.value{j}) ';']; 
+               toPrint=[toPrint strtrim(model.rxnMiriams{i}.name{j}) ':' strtrim(model.rxnMiriams{i}.value{j}) ';'];
            end
-           c=r.createCell(10);
-           c.setCellValue(toPrint(1:end-1));
-       end 
-    end
-    if isfield(model,'subSystems')
-        c=r.createCell(11);
-        c.setCellValue(model.subSystems{i});
-    end
-    if isfield(model,'rxnNotes')
-        c=r.createCell(13);
-        c.setCellValue(model.rxnNotes{i});
-    end
-    if isfield(model,'rxnReferences')
-        c=r.createCell(14);
-        c.setCellValue(model.rxnReferences{i});
-    end
-    if isfield(model,'confidenceScores')
-        c=r.createCell(15);
-        c.setCellValue(model.confidenceScores{i});
+           rxnMiriams{i}=toPrint(1:end-1);
+       end
     end
 end
 
-%Add the METS sheet
-s=wb.createSheet();
-wb.setSheetName(1, 'METS');
+rxnSheet=[rxnSheet lb];
+rxnSheet=[rxnSheet ub];
+rxnSheet=[rxnSheet objective];
 
-%Create the header row
+if isfield(model,'rxnComps')
+    rxnSheet=[rxnSheet model.comps(model.rxnComps)];
+else
+    rxnSheet=[rxnSheet emptyColumn];
+end
+
+rxnSheet=[rxnSheet rxnMiriams];
+
+if isfield(model,'subSystems')
+    rxnSheet=[rxnSheet model.subSystems];
+else
+    rxnSheet=[rxnSheet emptyColumn];
+end
+
+%For REPLACEMENT ID which isn't in the model
+rxnSheet=[rxnSheet emptyColumn];
+
+if isfield(model,'rxnNotes')
+    rxnSheet=[rxnSheet model.rxnNotes];
+else
+    rxnSheet=[rxnSheet emptyColumn];
+end
+
+if isfield(model,'rxnReferences')
+    rxnSheet=[rxnSheet model.rxnReferences];
+else
+    rxnSheet=[rxnSheet emptyColumn];
+end
+
+if isfield(model,'confidenceScores')
+    rxnSheet=[rxnSheet model.confidenceScores];
+else
+    rxnSheet=[rxnSheet emptyColumn];
+end
+
+wb=writeSheet(wb,'RXNS',0,headers,[],rxnSheet);
+
 headers={'#';'ID';'NAME';'UNCONSTRAINED';'MIRIAM';'COMPOSITION';'InChI';'COMPARTMENT';'REPLACEMENT ID';'CHARGE'};
-r=s.createRow(0);
-for i=0:numel(headers)-1
-    c=r.createCell(i);
-    c.setCellValue(headers{i+1});    
-end
+
+metSheet=cell(numel(model.mets),numel(headers));
 
 for i=1:numel(model.mets)
-    r=s.createRow(i);
-    
-    c=r.createCell(1);
-    c.setCellValue([model.metNames{i} '[' model.comps{model.metComps(i)} ']']);
-    
+    metSheet{i,2}=[model.metNames{i} '[' model.comps{model.metComps(i)} ']'];
+
     if isfield(model,'metNames')
-        c=r.createCell(2);
-        c.setCellValue(model.metNames{i});
+        metSheet(i,3)=model.metNames(i);
     end
-    
+
     if isfield(model,'unconstrained')
         if model.unconstrained(i)~=0
-            c=r.createCell(3);
-            c.setCellValue(true);
+            metSheet{i,4}=true;
         end
     end
-    
+
     if isfield(model,'metMiriams')
        if ~isempty(model.metMiriams{i})
            toPrint=[];
            for j=1:numel(model.metMiriams{i}.name)
-               toPrint=[toPrint strtrim(model.metMiriams{i}.name{j}) ':' strtrim(model.metMiriams{i}.value{j}) ';']; 
+               toPrint=[toPrint strtrim(model.metMiriams{i}.name{j}) ':' strtrim(model.metMiriams{i}.value{j}) ';'];
            end
-           c=r.createCell(4);
-           c.setCellValue(toPrint(1:end-1));
-       end 
+           metSheet{i,5}=toPrint(1:end-1);
+       end
     end
-    
+
     if isfield(model,'metFormulas')
-        c=r.createCell(5);
-        c.setCellValue(model.metFormulas{i});
+        metSheet(i,6)=model.metFormulas(i);
     end
-    
+
     if isfield(model,'inchis')
-        c=r.createCell(6);
-        c.setCellValue(model.inchis{i});
+        metSheet(i,7)=model.inchis(i);
     end
-    
+
     if isfield(model,'metComps')
-        c=r.createCell(7);
-        c.setCellValue(model.comps{model.metComps(i)});
+        metSheet(i,8)=model.comps(model.metComps(i));
     end
-    
-    c=r.createCell(8);
-    c.setCellValue(model.mets{i});
-    
+
+    metSheet(i,9)=model.mets(i);
+
     if isfield(model,'metCharge')
-        c=r.createCell(9);
-        c.setCellValue(model.metCharge(i));
+        metSheet{i,19}=model.metCharge(i);
     end
 end
 
+wb=writeSheet(wb,'METS',1,headers,[],metSheet);
+
 %Add the COMPS sheet
-s=wb.createSheet();
-wb.setSheetName(2, 'COMPS');
 
 %Create the header row
 headers={'#';'ABBREVIATION';'NAME';'INSIDE';'MIRIAM'};
-r=s.createRow(0);
-for i=0:numel(headers)-1
-    c=r.createCell(i);
-    c.setCellValue(headers{i+1});    
-end
+
+compSheet=cell(numel(model.comps),numel(headers));
 
 for i=1:numel(model.comps)
-    r=s.createRow(i);
-    
-    c=r.createCell(1);
-    c.setCellValue(model.comps{i});
-    
+    compSheet(i,2)=model.comps(i);
+
     if isfield(model,'compNames')
-        c=r.createCell(2);
-        c.setCellValue(model.compNames{i});
+        compSheet(i,3)=model.compNames(i);
     end
-    
+
     if isfield(model,'compOutside')
-        c=r.createCell(3);
-        c.setCellValue(model.compOutside{i});
+        compSheet(i,4)=model.compOutside(i);
     end
-    
+
     if isfield(model,'compMiriams')
        if ~isempty(model.compMiriams{i})
            toPrint=[];
            for j=1:numel(model.compMiriams{i}.name)
-               toPrint=[toPrint strtrim(model.compMiriams{i}.name{j}) ':' strtrim(model.compMiriams{i}.value{j}) ';']; 
+               toPrint=[toPrint strtrim(model.compMiriams{i}.name{j}) ':' strtrim(model.compMiriams{i}.value{j}) ';'];
            end
-           c=r.createCell(4);
-           c.setCellValue(toPrint(1:end-1));
-       end 
+           compSheet{i,5}=toPrint(1:end-1);
+       end
     end
 end
 
-%Add the GENES sheet
-addedGeneSheet=-1; %This is to get the sheet numbering right if no genes are added
-if isfield(model,'genes')
-    s=wb.createSheet();
-    wb.setSheetName(3, 'GENES');
-    addedGeneSheet=0;
+wb=writeSheet(wb,'COMPS',2,headers,[],compSheet);
 
+%Add the GENES sheet
+if isfield(model,'genes')
     %Create the header row
     headers={'#';'NAME';'MIRIAM';'SHORT NAME';'COMPARTMENT'};
-    r=s.createRow(0);
-    for i=0:numel(headers)-1
-        c=r.createCell(i);
-        c.setCellValue(headers{i+1});    
-    end
+    
+    geneSheet=cell(numel(model.genes),numel(headers));
 
     for i=1:numel(model.genes)
-        r=s.createRow(i);
+       geneSheet(i,2)=model.genes(i);
 
-        c=r.createCell(1);
-        c.setCellValue(model.genes{i});
-        
        if isfield(model,'geneMiriams')
            if ~isempty(model.geneMiriams{i})
                toPrint=[];
                for j=1:numel(model.geneMiriams{i}.name)
-                   toPrint=[toPrint strtrim(model.geneMiriams{i}.name{j}) ':' strtrim(model.geneMiriams{i}.value{j}) ';']; 
+                   toPrint=[toPrint strtrim(model.geneMiriams{i}.name{j}) ':' strtrim(model.geneMiriams{i}.value{j}) ';'];
                end
-               c=r.createCell(2);
-               c.setCellValue(toPrint(1:end-1));
-           end 
+               geneSheet{i,3}=toPrint(1:end-1);
+           end
        end
-       
+
        if isfield(model,'geneComps')
-           c=r.createCell(4);
-           c.setCellValue(model.comps{model.geneComps(i)});
+           geneSheet(i,5)=model.comps(model.geneComps(i));
        end
     end
+    
+    wb=writeSheet(wb,'GENES',3,headers,[],geneSheet);
 end
 
 %Add the MODEL sheet
-s=wb.createSheet();
-wb.setSheetName(4-addedGeneSheet, 'MODEL');
 
 %Create the header row
 headers={'#';'ID';'DESCRIPTION';'DEFAULT LOWER';'DEFAULT UPPER';'CONTACT GIVEN NAME';'CONTACT FAMILY NAME';'CONTACT EMAIL';'ORGANIZATION';'TAXONOMY';'NOTES'};
-r=s.createRow(0);
-for i=0:numel(headers)-1
-    c=r.createCell(i);
-    c.setCellValue(headers{i+1});    
-end
+
+modelSheet=cell(1,numel(headers));
 
 %Add some default stuff if needed
 if ~isfield(model,'annotation')
    model.annotation.familyName='Agren';
    model.annotation.givenName='Rasmus';
-   model.annotation.email='rasmus.j.agren@gmail.com';
+   model.annotation.email='rasmus.agren@scilifelab.se';
    model.annotation.organization='Chalmers University of Technology';
 end
 
-r=s.createRow(1);
-a=model.annotation;
-
 if isfield(model,'id')
-    c=r.createCell(1);
-    c.setCellValue(model.id);
+    modelSheet{1,2}=model.id;
 end
 if isfield(model,'description')
-    c=r.createCell(2);
-    c.setCellValue(model.description);
+    modelSheet{1,3}=model.description;
 end
-if isfield(a,'defaultLB')
-    c=r.createCell(3);
-    c.setCellValue(a.defaultLB);
+if isfield(model.annotation,'defaultLB')
+    modelSheet{1,4}=model.annotation.defaultLB;
 end
-if isfield(a,'defaultUB')
-    c=r.createCell(4);
-    c.setCellValue(a.defaultUB);
+if isfield(model.annotation,'defaultUB')
+    modelSheet{1,5}=model.annotation.defaultUB;
 end
-if isfield(a,'givenName')
-    c=r.createCell(5);
-    c.setCellValue(a.givenName);
+if isfield(model.annotation,'givenName')
+    modelSheet{1,6}=model.annotation.givenName;
 end
-if isfield(a,'familyName')
-    c=r.createCell(6);
-    c.setCellValue(a.familyName);
+if isfield(model.annotation,'familyName')
+    modelSheet{1,7}=model.annotation.familyName;
 end
-if isfield(a,'email')
-    c=r.createCell(7);
-    c.setCellValue(a.email);
+if isfield(model.annotation,'email')
+    modelSheet{1,8}=model.annotation.email;
 end
-if isfield(a,'organization')
-    c=r.createCell(8);
-    c.setCellValue(a.organization);
+if isfield(model.annotation,'organization')
+    modelSheet{1,9}=model.annotation.organization;
 end
-if isfield(a,'taxonomy')
-    c=r.createCell(9);
-    c.setCellValue(a.taxonomy);
+if isfield(model.annotation,'taxonomy')
+    modelSheet{1,10}=model.annotation.taxonomy;
 end
-if isfield(a,'note')
-    c=r.createCell(10);
-    c.setCellValue(a.note);
+if isfield(model.annotation,'note')
+    modelSheet{1,11}=model.annotation.note;
 end
-        
+
+if isfield(model,'genes')
+    wb=writeSheet(wb,'MODEL',4,headers,[],modelSheet);
+else
+    wb=writeSheet(wb,'MODEL',3,headers,[],modelSheet);
+end
+
 %Open the output stream
 out = FileOutputStream(filename);
 wb.write(out);

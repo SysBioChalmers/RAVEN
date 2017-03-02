@@ -1,4 +1,4 @@
-function [model metProduction essentialRxnsForTasks addedRxnsForTasks deletedDeadEndRxns deletedRxnsInINIT taskReport]=getINITModel(refModel, tissue, celltype, hpaData, arrayData, metabolomicsData, taskFile, useScoresForTasks, printReport, taskStructure, params, paramsFT)
+function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=getINITModel(refModel, tissue, celltype, hpaData, arrayData, metabolomicsData, taskFile, useScoresForTasks, printReport, taskStructure, params, paramsFT)
 % getINITModel
 %   Generates a model using the INIT algorithm, based on proteomics and/or
 %   transcriptomics and/or metabolomics and/or metabolic tasks.
@@ -13,11 +13,11 @@ function [model metProduction essentialRxnsForTasks addedRxnsForTasks deletedDea
 %   tissue              tissue to score for. Should exist in either
 %                       hpaData.tissues or arrayData.tissues
 %   celltype            cell type to score for. Should exist in either
-%                       hpaData.celltypes or arrayData.celltypes for this 
+%                       hpaData.celltypes or arrayData.celltypes for this
 %                       tissue (opt, default is to use the best values
 %                       among all the cell types for the tissue. Use [] if
 %                       you want to supply more arguments)
-%   hpaData             HPA data structure from parseHPA (opt if arrayData is 
+%   hpaData             HPA data structure from parseHPA (opt if arrayData is
 %                       supplied, default [])
 %   arrayData           gene expression data structure (opt if hpaData is
 %                       supplied, default [])
@@ -53,7 +53,7 @@ function [model metProduction essentialRxnsForTasks addedRxnsForTasks deletedDea
 %                           produced. Note that this is before the
 %                           gap-filling process to enable defined tasks. To
 %                           see which metabolites that can be produced in
-%                           the final model, use canProduce. 
+%                           the final model, use canProduce.
 %                           -2: metabolite name not found in model
 %                           -1: metabolite found, but it could not be produced
 %                           1: metabolite could be produced
@@ -64,7 +64,7 @@ function [model metProduction essentialRxnsForTasks addedRxnsForTasks deletedDea
 %   deletedDeadEndRxns      cell array of reactions deleted because they
 %                           could not carry flux (INIT requires a
 %                           functional input model)
-%   deletedRxnsInINIT       cell array of the reactions which were deleted by 
+%   deletedRxnsInINIT       cell array of the reactions which were deleted by
 %                           the INIT algorithm
 %   taskReport              structure with the results for each task
 %   	id                  cell array with the id of the task
@@ -92,7 +92,7 @@ function [model metProduction essentialRxnsForTasks addedRxnsForTasks deletedDea
 %               metabolomicsData, taskFile, useScoresForTasks, printReport,...
 %               taskStructure, params, paramsFT)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<3
@@ -128,7 +128,8 @@ end
 
 %Check that the model is in the closed form
 if ~isfield(refModel,'unconstrained')
-   dispEM('Exchange metabolites should normally not be removed from the model when using getINITModel. Use importModel(file,false) to import a model with exchange metabolites remaining (see the documentation for details)'); 
+    EM='Exchange metabolites should normally not be removed from the model when using getINITModel. Use importModel(file,false) to import a model with exchange metabolites remaining (see the documentation for details)';
+    dispEM(EM);
 end
 
 %Create the task structure if not supplied
@@ -155,14 +156,14 @@ if printReport==true
         fprintf('-Using metabolic tasks\n');
     end
     fprintf('\n');
-    
+
     printScores(refModel,'Reference model statistics',hpaData,arrayData,tissue,celltype);
 end
 
 %Remove dead-end reactions to speed up the optimization and to
 %differentiate between reactions removed by INIT and those that are
 %dead-end
-[crap, deletedDeadEndRxns]=simplifyModel(refModel,true,false,true,true,true);
+[~, deletedDeadEndRxns]=simplifyModel(refModel,true,false,true,true,true);
 cModel=removeReactions(refModel,deletedDeadEndRxns,false,true);
 
 %Store the connected model like this to keep track of stuff
@@ -173,10 +174,10 @@ end
 %If tasks have been defined, then go through them and get essential
 %reactions
 if ~isempty(taskStructure)
-    [taskReport essentialRxnMat]=checkTasks(cModel,[],printReport,true,true,taskStructure);
-    
+    [taskReport, essentialRxnMat]=checkTasks(cModel,[],printReport,true,true,taskStructure);
+
     essentialRxnsForTasks=cModel.rxns(any(essentialRxnMat,2));
-    
+
     %Remove tasks that cannot be performed
     taskStructure(taskReport.ok==false)=[];
     if printReport==true
@@ -187,7 +188,7 @@ else
 end
 
 %Score the connected model
-[rxnScores geneScores]=scoreModel(cModel,hpaData,arrayData,tissue,celltype);
+[rxnScores, geneScores]=scoreModel(cModel,hpaData,arrayData,tissue,celltype);
 
 %Run the INIT algorithm. The exchange reactions that are used in the final
 %reactions will be open, which doesn't fit with the last step. Therefore
@@ -196,7 +197,7 @@ end
 %carry flux in one direction.
 %Runs without the constraints on reversibility and with all output allowed.
 %This is to reduce the complexity of the problem.
-[crap deletedRxnsInINIT metProduction]=runINIT(simplifyModel(cModel),rxnScores,metabolomicsData,essentialRxnsForTasks,0,true,false,params);
+[~, deletedRxnsInINIT, metProduction]=runINIT(simplifyModel(cModel),rxnScores,metabolomicsData,essentialRxnsForTasks,0,true,false,params);
 initModel=removeReactions(cModel,deletedRxnsInINIT,true,true);
 if printReport==true
     printScores(initModel,'INIT model statistics',hpaData,arrayData,tissue,celltype);
@@ -216,7 +217,7 @@ if ~isempty(taskStructure)
     %Remove exchange reactions and reactions already included in the INIT
     %model
     refModelNoExc=removeReactions(refModel,union(initModel.rxns,getExchangeRxns(refModel)),true,true);
-    
+
     %At this stage the model is fully connected and most of the genes with
     %good scores should have been included. The final gap-filling should
     %take the scores of the genes into account, so that "rather bad"
@@ -226,15 +227,15 @@ if ~isempty(taskStructure)
     %assigned a small negative score instead.
     if useScoresForTasks==true
         refRxnScores=scoreModel(refModelNoExc,hpaData,arrayData,tissue,celltype);
-        [outModel addedRxnMat]=fitTasks(initModel,refModelNoExc,[],true,min(refRxnScores,-0.1),taskStructure,paramsFT);
+        [outModel, addedRxnMat]=fitTasks(initModel,refModelNoExc,[],true,min(refRxnScores,-0.1),taskStructure,paramsFT);
     else
-        [outModel addedRxnMat]=fitTasks(initModel,refModelNoExc,[],true,[],taskStructure,paramsFT);
+        [outModel, addedRxnMat]=fitTasks(initModel,refModelNoExc,[],true,[],taskStructure,paramsFT);
     end
     if printReport==true
         printScores(outModel,'Functional model statistics',hpaData,arrayData,tissue,celltype);
         printScores(removeReactions(outModel,intersect(outModel.rxns,initModel.rxns),true,true),'Reactions added to perform the tasks',hpaData,arrayData,tissue,celltype);
     end
-    
+
     addedRxnsForTasks=refModelNoExc.rxns(any(addedRxnMat,2));
 else
     outModel=initModel;
@@ -248,7 +249,7 @@ end
 %kept)
 model=outModel;
 
-[crap I]=ismember(model.genes,cModel.genes); %All should be found
+[~, I]=ismember(model.genes,cModel.genes); %All should be found
 %This is a little weird way to make sure that only one bad gene is included
 %if there are no good ones (since all -Inf==max(-Inf))
 geneScores(isinf(geneScores))=-1000+rand(sum(isinf(geneScores)),1);
@@ -291,7 +292,7 @@ if isfield(model,'geneComps')
 end
 
 %At this stage the model will contain some exchange reactions but probably not all
-%(and maybe zero). This can be inconvenient, so all exchange reactions from the 
+%(and maybe zero). This can be inconvenient, so all exchange reactions from the
 %reference model are added, except for those which involve metabolites that
 %are not in the model.
 
@@ -307,7 +308,7 @@ excModel=removeReactions(refModel,setdiff(refModel.rxns,getExchangeRxns(refModel
 I=~ismember(excModel.mets,model.mets) & excModel.unconstrained==0;
 
 %Then find those reactions and delete them
-[crap J]=find(excModel.S(I,:));
+[~, J]=find(excModel.S(I,:));
 excModel=removeReactions(excModel,J,true,true);
 
 %Merge with the output model
@@ -319,7 +320,7 @@ if any(celltype)
 end
 
 if printReport==true
-    printScores(model,'Final model statistics',hpaData,arrayData,tissue,celltype); 
+    printScores(model,'Final model statistics',hpaData,arrayData,tissue,celltype);
 end
 
 %Add information about essential reactions and reactions included for
@@ -336,8 +337,8 @@ end
 end
 
 %This is for printing a summary of a model
-function [rxnS geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)
-    [a b]=scoreModel(model,hpaData,arrayData,tissue,celltype);
+function [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)
+    [a, b]=scoreModel(model,hpaData,arrayData,tissue,celltype);
     rxnS=mean(a);
     geneS=mean(b(~isinf(b)));
     fprintf([name ':\n']);

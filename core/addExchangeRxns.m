@@ -8,7 +8,7 @@ function [model addedRxns]=addExchangeRxns(model,reactionType,mets)
 %                   'out'   output reactions
 %                   'both'  reversible input/output reactions. Positive
 %                   direction corresponds to output
-%   mets            either a cell array of metabolite IDs, a logical vector 
+%   mets            either a cell array of metabolite IDs, a logical vector
 %                   with the same number of elements as metabolites in the model,
 %                   or a vector of indexes to add for (opt, default model.mets)
 %
@@ -20,7 +20,6 @@ function [model addedRxns]=addExchangeRxns(model,reactionType,mets)
 %
 %   Usage: [model addedRxns]=addExchangeRxns(model,reactionType,mets)
 %
-%   Rasmus Agren, 2013-08-01
 %   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
 %   rxnReferences and confidenceScores
 %

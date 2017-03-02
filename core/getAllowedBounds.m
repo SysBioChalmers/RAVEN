@@ -3,8 +3,8 @@ function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns)
 %   Returns the minimal and maximal fluxes through each reaction.
 %
 %   model         a model structure
-%   rxns          either a cell array of reaction IDs, a logical vector with the 
-%                 same number of elements as reactions in the model, or a vector 
+%   rxns          either a cell array of reaction IDs, a logical vector with the
+%                 same number of elements as reactions in the model, or a vector
 %                 of reaction indexes (opt, default model.rxns)
 %
 %   minFluxes     minimal allowed fluxes
@@ -34,25 +34,25 @@ hsSolMin=[];
 hsSolMax=[];
 for i=1:numel(rxns)
     model.c=c;
-    
+
     %Get minimal flux
     model.c(rxns(i))=-1;
-    [solution hsSolMin]=solveLP(model,0,[],hsSolMin);
+    [solution, hsSolMin]=solveLP(model,0,[],hsSolMin);
     exitFlags(i,1)=solution.stat;
     if ~isempty(solution.f)
         minFluxes(i)=solution.x(rxns(i));
     else
         minFluxes(i)=NaN;
-    end 
-    
+    end
+
     %Get maximal flux
     model.c(rxns(i))=1;
-    [solution hsSolMax]=solveLP(model,0,[],hsSolMax);
+    [solution, hsSolMax]=solveLP(model,0,[],hsSolMax);
     exitFlags(i,2)=solution.stat;
     if ~isempty(solution.f)
     	maxFluxes(i)=solution.x(rxns(i));
     else
         maxFluxes(i)=NaN;
-    end 
+    end
 end
 end

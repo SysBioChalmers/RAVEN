@@ -14,7 +14,7 @@ function [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns
 %
 %   Usage: [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<2
@@ -25,10 +25,11 @@ end
 model.c=zeros(numel(model.rxns),1);
 
 %First check that the problem is solvable
-[sol hsSolOut]=solveLP(model,1);
+[sol, hsSolOut]=solveLP(model,1);
 
 if sol.stat==-1 || isempty(sol.x)
-    dispEM('No feasible solution to the full model');
+    EM='No feasible solution to the full model';
+    dispEM(EM);
 end
 
 %Check which reactions have flux. Only those can be essential. This
@@ -62,4 +63,4 @@ for i=1:numel(rxnsToCheck)
    end
 end
 
-[crap essentialRxnsIndexes]=ismember(essentialRxns,model.rxns);
+[~, essentialRxnsIndexes]=ismember(essentialRxns,model.rxns);

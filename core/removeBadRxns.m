@@ -1,4 +1,4 @@
-function [newModel removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames,balanceElements,refModel,ignoreIntBounds,printReport)
+function [newModel, removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames,balanceElements,refModel,ignoreIntBounds,printReport)
 % removeBadRxns
 %   Iteratively removes reactions which enable production/consumption of some
 %   metabolite without any uptake/excretion
@@ -10,9 +10,9 @@ function [newModel removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames,
 %   rxnRules                1: only remove reactions which are unbalanced
 %                           2: also remove reactions which couldn't be checked for
 %                           mass balancing
-%                           3: all reactions can be removed 
+%                           3: all reactions can be removed
 %                           (opt, default 1)
-%   ignoreMets              either a cell array of metabolite IDs, a logical vector 
+%   ignoreMets              either a cell array of metabolite IDs, a logical vector
 %                           with the same number of elements as metabolites in the model,
 %                           of a vector of indexes for metabolites to exclude from
 %                           this analysis (opt, default [])
@@ -69,7 +69,7 @@ function [newModel removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames,
 %   Usage: [newModel removedRxns]=removeBadRxns(model,rxnRules,...
 %       ignoreMets,isNames,refModel,ignoreIntBounds,printReport)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<2
@@ -88,7 +88,8 @@ if nargin<6
     refModel=[];
 else
     if ~isempty(refModel)
-        dispEM('The feature to supply a reference model is currently not supported',false);
+        EM='The feature to supply a reference model is currently not supported';
+        dispEM(EM,false);
     end
 end
 if nargin<7
@@ -100,10 +101,11 @@ end
 
 %Check if the model has open exchange reactions and print a warning in that case
 if ~isfield(model,'unconstrained')
-    [crap I]=getExchangeRxns(model);
+    [~, I]=getExchangeRxns(model);
     if any(I)
         if any(model.lb(I)~=0) || any(model.ub(I)~=0)
-            dispEM('The model contains open exchange reactions. This is not the intended use of this function. Consider importing your model using importModel(filename,false)',false);
+            EM='The model contains open exchange reactions. This is not the intended use of this function. Consider importing your model using importModel(filename,false)';
+            dispEM(EM,false);
         end
     end
 end
@@ -111,14 +113,16 @@ end
 %Check that the model is feasible
 sol=solveLP(model);
 if isempty(sol.f)
-    dispEM('The model is not feasible. Consider removing lower bounds (such as ATP maintenance)'); 
+    EM='The model is not feasible. Consider removing lower bounds (such as ATP maintenance)';
+    dispEM(EM);
 end
 
 %Check that the reference model is feasible
 if any(refModel)
     sol=solveLP(refModel);
     if isempty(sol.f)
-        dispEM('The reference model is not feasible'); 
+        EM='The reference model is not feasible';
+        dispEM(EM);
     end
 end
 
@@ -128,7 +132,8 @@ balanceStructure=getElementalBalance(model);
 
 %Check which elements to balance for
 if ~isempty(setdiff(balanceElements,balanceStructure.elements.abbrevs))
-    dispEM('Could not recognize all elements to balance for'); 
+    EM='Could not recognize all elements to balance for';
+    dispEM(EM);
 end
 bal=ismember(balanceStructure.elements.abbrevs,balanceElements);
 
@@ -138,7 +143,7 @@ for i=1:2
     while 1
         %Make some metabolite using as few reactions as possible
         if i==1
-            [solution metabolite]=makeSomething(model,ignoreMets,isNames,false,true,[],ignoreIntBounds);
+            [solution, metabolite]=makeSomething(model,ignoreMets,isNames,false,true,[],ignoreIntBounds);
             if ~isempty(solution)
                 if printReport
                    fprintf(['Can make: ' model.metNames{metabolite(1)} '\n']);
@@ -148,7 +153,7 @@ for i=1:2
                 break;
             end
         else
-            [solution metabolite]=consumeSomething(model,ignoreMets,isNames,false,[],ignoreIntBounds);
+            [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,false,[],ignoreIntBounds);
             if ~isempty(solution)
                 if printReport
                    fprintf(['Can consume: ' model.metNames{metabolite(1)} '\n']);
@@ -158,7 +163,7 @@ for i=1:2
                 break;
             end
         end
-        
+
         %Find all reactions that are unbalanced and still carry flux
         I=find(abs(solution)>10^-8 & balanceStructure.balanceStatus>=0 & ~all(balanceStructure.leftComp(:,bal)==balanceStructure.rightComp(:,bal),2));
 
@@ -169,9 +174,11 @@ for i=1:2
             %If there are no unbalanced rxns in the solution
             if rxnRules==1
                 if i==1
-                    dispEM(['No unbalanced reactions were found in the solution, but the model can still make "' model.metNames{metabolite} '". Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'],false);
+                    EM=['No unbalanced reactions were found in the solution, but the model can still make "' model.metNames{metabolite} '". Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'];
+                    dispEM(EM,false);
                 else
-                    dispEM(['No unbalanced reactions were found in the solution, but the model can still consume "' model.metNames{metabolite} '". Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'],false);
+                    EM=['No unbalanced reactions were found in the solution, but the model can still consume "' model.metNames{metabolite} '". Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'];
+                    dispEM(EM,false);
                 end
                 break;
             else
@@ -190,20 +197,24 @@ for i=1:2
                         %indicates that one or more of the formulas are wrong.
                         %Print a warning and delete any reaction with flux
                         if i==1
-                            dispEM(['No unbalanced or unparsable reactions were found in the solution, but the model can still make "' model.metNames{metabolite} '". Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'],false);
+                            EM=['No unbalanced or unparsable reactions were found in the solution, but the model can still make "' model.metNames{metabolite} '". Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'];
+                            dispEM(EM,false);
                         else
-                            dispEM(['No unbalanced or unparsable reactions were found in the solution, but the model can still consume "' model.metNames{metabolite} '". Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'],false);
+                            EM=['No unbalanced or unparsable reactions were found in the solution, but the model can still consume "' model.metNames{metabolite} '". Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'];
+                            dispEM(EM,false);
                         end
                         break;
                     else
                         if i==1
                             if warned(1)==false
-                                dispEM(['No unbalanced or unparsable reactions were found in the solution, but the model can still make "' model.metNames{metabolite} '". This indicates some error in the metabolite formulas. Removing random reactions in the solution'],false);
+                                EM=['No unbalanced or unparsable reactions were found in the solution, but the model can still make "' model.metNames{metabolite} '". This indicates some error in the metabolite formulas. Removing random reactions in the solution'];
+                                dispEM(EM,false);
                                 warned(1)=true;
                             end
                         else
                             if warned(2)==false
-                                dispEM(['No unbalanced or unparsable reactions were found in the solution, but the model can still consume "' model.metNames{metabolite} '". This indicates some error in the metabolite formulas. Removing random reactions in the solution'],false);
+                                EM=['No unbalanced or unparsable reactions were found in the solution, but the model can still consume "' model.metNames{metabolite} '". This indicates some error in the metabolite formulas. Removing random reactions in the solution'];
+                                dispEM(EM,false);
                                 warned(2)=true;
                             end
                         end

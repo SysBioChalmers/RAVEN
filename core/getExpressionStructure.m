@@ -16,7 +16,7 @@ function experiment=getExpressionStructure(fileName)
 %
 %   A very common data set when working with genome-scale metabolic models
 %   is that you have measured fermentation data, gene expression data,
-%   and some different 'bounds' (for example different carbon sources 
+%   and some different 'bounds' (for example different carbon sources
 %   or genes that are knocked out) in a number of conditions. This function
 %   reads an Excel representation of such an experiment.
 %   The Excel file must contain three sheets, 'EXPRESSION', 'BOUNDS',
@@ -46,14 +46,15 @@ function experiment=getExpressionStructure(fileName)
 %
 %   Usage: experiment=getExpressionStructure(fileName)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 [type, sheets]=xlsfinfo(fileName);
 
 %Check if the file is a Microsoft Excel Spreadsheet
 if ~strcmp(type,'Microsoft Excel Spreadsheet')
-    dispEM('The file is not a Microsoft Excel Spreadsheet');
+    EM='The file is not a Microsoft Excel Spreadsheet';
+    dispEM(EM);
 end
 
 %Check that all sheets are present and saves the index of each
@@ -62,7 +63,8 @@ boundSheet=find(strcmp('BOUNDS', sheets));
 fitSheet=find(strcmp('FITTING', sheets));
 
 if length(exprSheet)~=1 || length(boundSheet)~=1 || length(fitSheet)~=1
-    dispEM('Not all required spreadsheets are present in the file');
+    EM='Not all required spreadsheets are present in the file';
+    dispEM(EM);
 end
 
 %Load the expression data
@@ -83,6 +85,7 @@ experiment.fitTo=discard;
 
 %Check to see that the dimensions are correct
 if length(experiment.orfs)~=size(experiment.data,1) || (length(experiment.experiments)~=size(experiment.data,2) && ~isempty(experiment.data))
-    dispEM('The expression data does not seem to be formated in the expected manner');
+    EM='The expression data does not seem to be formated in the expected manner';
+    dispEM(EM);
 end
 end

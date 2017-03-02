@@ -15,19 +15,21 @@ function geneScoreStruct=getWoLFScores(inputFile,kingdom)
 %
 %   Usage: geneScoreStruct=getWoLFScores(inputFile,kingdom)
 %
-%   Rasmus Agren, 2012-03-27
+%   Rasmus Agren, 2014-01-08
 
 if ~strcmp(kingdom,'animal') && ~strcmp(kingdom,'fungi') && ~strcmp(kingdom,'plant')
-    dispEM('Allowed kingdoms are "animal", "fungi", and "plant"'); 
+    EM='Allowed kingdoms are "animal", "fungi", and "plant"';
+    dispEM(EM);
 end
 
 if ispc==true
-    dispEM('This function currently runs only on Linux. Use parseScores if you want to use another predictor'); 
+    EM='This function currently runs only on Linux. Use parseScores if you want to use another predictor';
+    dispEM(EM);
 end
 
 %Get the directory for RAVEN Toolbox. This may not be the easiest or best
 %way to do this
-[ST I]=dbstack('-completenames');
+[ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(ST(I).file));
 
 %Temporary output name
@@ -35,7 +37,7 @@ outFile=tempname;
 fid=fopen(outFile,'w');
 
 %Do the prediction
-[crap output]=unix(['perl "' ravenPath '"/software/WoLFPSORT_package_v0.2/bin/runWolfPsortSummary ' kingdom ' < ' inputFile '']);
+[~, output]=unix(['perl "' ravenPath '/software/WoLFPSORT_package_v0.2/bin/runWolfPsortSummary" ' kingdom ' < ' inputFile]);
 
 %Save output and call the general parser
 fprintf(fid,output);

@@ -1,10 +1,10 @@
-function [outModel addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params)
+function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params)
 % fitTasks
 %   Fills gaps in a model by including reactions from a reference model,
 %   so that the resulting model can perform all the tasks in a task list
 %
 %   model           model structure
-%   refModel        reference model from which to include reactions 
+%   refModel        reference model from which to include reactions
 %   inputFile       a task list in Excel format. See the function
 %                   parseTaskList for details (opt if taskStructure is
 %                   supplied)
@@ -20,7 +20,7 @@ function [outModel addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxnS
 %
 %   outModel        model structure with reactions added to perform the
 %                   tasks
-%   addedRxns       MxN matrix with the added reactions (M) from refModel 
+%   addedRxns       MxN matrix with the added reactions (M) from refModel
 %                   for each task (N). An element is true if the corresponding
 %                   reaction is added in the corresponding task.
 %                   Failed tasks and SHOULD FAIL tasks are ignored
@@ -34,7 +34,7 @@ function [outModel addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxnS
 %   Usage: [outModel addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...
 %           rxnScores,taskStructure,params)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<4
@@ -54,12 +54,13 @@ if nargin<7
 end
 
 if strcmpi(model.id,refModel.id)
-	fprintf('NOTE: The model and reference model have the same IDs. The ID for the reference model was set to "refModel" in order to keep track of the origin of reactions.\n'); 
+	fprintf('NOTE: The model and reference model have the same IDs. The ID for the reference model was set to "refModel" in order to keep track of the origin of reactions.\n');
     refModel.id='refModel';
 end
 
 if any(rxnScores>=0)
-	dispEM('Only negative values are allowed in rxnScores');
+	EM='Only negative values are allowed in rxnScores';
+    dispEM(EM);
 end
 
 %Prepare the input models a little
@@ -70,11 +71,12 @@ modelMets=upper(strcat(model.metNames,'[',model.comps(model.metComps),']'));
 largeModelMets=upper(strcat(refModel.metNames,'[',refModel.comps(refModel.metComps),']'));
 
 if ~isfield(model,'unconstrained')
-    dispEM('Exchange metabolites should normally not be removed from the model when using checkTasks. Inputs and outputs are defined in the task file instead. Use importModel(file,false) to import a model with exchange metabolites remaining',false); 
+    EM='Exchange metabolites should normally not be removed from the model when using checkTasks. Inputs and outputs are defined in the task file instead. Use importModel(file,false) to import a model with exchange metabolites remaining';
+    dispEM(EM,false);
 end
 
 if isempty(taskStructure)
-   taskStructure=parseTaskList(inputFile); 
+   taskStructure=parseTaskList(inputFile);
 end
 
 tModel=model;
@@ -85,7 +87,7 @@ for i=1:numel(taskStructure)
     if ~taskStructure(i).shouldFail
         %Set the inputs
         if ~isempty(taskStructure(i).inputs)
-            [I J]=ismember(upper(taskStructure(i).inputs),modelMets);
+            [I, J]=ismember(upper(taskStructure(i).inputs),modelMets);
             K=ismember(upper(taskStructure(i).inputs),'ALLMETS');
             L=~cellfun('isempty',strfind(upper(taskStructure(i).inputs),'ALLMETSIN'));
             %Check that all metabolites are either real metabolites or
@@ -94,21 +96,22 @@ for i=1:numel(taskStructure)
             if ~all(goodMets)
                 %Not all of the inputs could be found in the small model. Check
                 %if they exist in the large model
-                [found metMatch]=ismember(upper(taskStructure(i).inputs(~goodMets)),largeModelMets);
+                [found, metMatch]=ismember(upper(taskStructure(i).inputs(~goodMets)),largeModelMets);
                 if ~all(found)
-                    disp(['Could not find all inputs in "[' taskStructure(i).id '] ' taskStructure(i).description '" in either model']);
+                    EM=['Could not find all inputs in "[' taskStructure(i).id '] ' taskStructure(i).description '" in either model'];
+                    disp(EM);
                 else
                    %Otherwise add them to the model
                    met.metNames=refModel.metNames(metMatch);
                    met.compartments=refModel.comps(refModel.metComps(metMatch));
-                   
+
                    %Add the metabolite both to the base model and the model
                    %used in the current task
                    model=addMets(model,met);
                    tModel=addMets(tModel,met);
                    modelMets=[modelMets;upper(taskStructure(i).inputs(~goodMets))];
                 end
-                
+
                 %By now the indexes might be getting a bit confusing, but
                 %this is to update the indexes of the "real" metabolites to
                 %point to the newly added ones
@@ -116,7 +119,8 @@ for i=1:numel(taskStructure)
                 J(~goodMets)=numel(modelMets)-numel(metMatch)+1:numel(modelMets);
             end
             if numel(J(I))~=numel(unique(J(I)))
-                dispEM(['The constraints on some input(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time']);  
+                EM=['The constraints on some input(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time'];
+                dispEM(EM);
             end
             %If all metabolites should be added
             if any(K)
@@ -124,7 +128,8 @@ for i=1:numel(taskStructure)
                 %warning since it will write over any other constraints that
                 %are set
                 if K(1)==0
-                    dispEM(['ALLMETS is used as an input in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'],false);
+                    EM=['ALLMETS is used as an input in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'];
+                    dispEM(EM,false);
                 end
                 %Use the first match of ALLMETS. There should only be one, but
                 %still..
@@ -142,7 +147,8 @@ for i=1:numel(taskStructure)
                         %Match to metabolites
                         tModel.b(model.metComps==C,1)=taskStructure(i).UBin(L(j))*-1;
                     else
-                        dispEM(['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist']);  
+                        EM=['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist'];
+                        dispEM(EM);
                     end
                 end
             end
@@ -154,7 +160,7 @@ for i=1:numel(taskStructure)
         end
         %Set the outputs
         if ~isempty(taskStructure(i).outputs)
-            [I J]=ismember(upper(taskStructure(i).outputs),modelMets);
+            [I, J]=ismember(upper(taskStructure(i).outputs),modelMets);
             K=ismember(upper(taskStructure(i).outputs),'ALLMETS');
             L=~cellfun('isempty',strfind(upper(taskStructure(i).outputs),'ALLMETSIN'));
             %Check that all metabolites are either real metabolites or
@@ -163,21 +169,22 @@ for i=1:numel(taskStructure)
             if ~all(goodMets)
                 %Not all of the outputs could be found in the small model. Check
                 %if they exist in the large model
-                [found metMatch]=ismember(upper(taskStructure(i).outputs(~goodMets)),largeModelMets);
+                [found, metMatch]=ismember(upper(taskStructure(i).outputs(~goodMets)),largeModelMets);
                 if ~all(found)
-                    dispEM(['Could not find all outputs in "[' taskStructure(i).id '] ' taskStructure(i).description '" in either model']);
+                    EM=['Could not find all outputs in "[' taskStructure(i).id '] ' taskStructure(i).description '" in either model'];
+                    dispEM(EM);
                 else
                    %Otherwise add them to the model
                    met.metNames=refModel.metNames(metMatch);
                    met.compartments=refModel.comps(refModel.metComps(metMatch));
-                   
+
                    %Add the metabolite both to the base model and the model
                    %used in the current task
                    model=addMets(model,met);
                    tModel=addMets(tModel,met);
                    modelMets=[modelMets;upper(taskStructure(i).outputs(~goodMets))];
                 end
-                
+
                 %By now the indexes might be getting a bit confusing, but
                 %this is to update the indexes of the "real" metabolites to
                 %point to the newly added ones
@@ -185,7 +192,8 @@ for i=1:numel(taskStructure)
                 J(~goodMets)=numel(modelMets)-numel(metMatch)+1:numel(modelMets);
             end
             if numel(J(I))~=numel(unique(J(I)))
-                dispEM(['The constraints on some output(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time']);  
+                EM=['The constraints on some output(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time'];
+                dispEM(EM);
             end
             %If all metabolites should be added
             if any(K)
@@ -193,7 +201,8 @@ for i=1:numel(taskStructure)
                 %warning since it will write over any other constraints that
                 %are set
                 if K(1)==0
-                    dispEM(['ALLMETS is used as an output in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'],false);
+                    EM=['ALLMETS is used as an output in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'];
+                    dispEM(EM,false);
                 end
                 %Use the first match of ALLMETS. There should only be one, but
                 %still..
@@ -211,7 +220,8 @@ for i=1:numel(taskStructure)
                         %Match to metabolites
                         tModel.b(model.metComps==C,2)=taskStructure(i).UBout(L(j));
                     else
-                        dispEM(['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist']);  
+                        EM=['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist'];
+                        dispEM(EM);
                     end
                 end
             end
@@ -220,8 +230,8 @@ for i=1:numel(taskStructure)
                 tModel.b(J(I),1)=taskStructure(i).LBout(I);
                 tModel.b(J(I),2)=taskStructure(i).UBout(I);
             end
-        end 
-        
+        end
+
         %Add new rxns
         if ~isempty(taskStructure(i).equations)
             rxn.equations=taskStructure(i).equations;
@@ -242,23 +252,25 @@ for i=1:numel(taskStructure)
             %Only do gap-filling if it cannot be solved
             failed=false;
             try
-                [crap crap newRxns newModel exitFlag]=fillGaps(tModel,refModel,false,true,supressWarnings,rxnScores,params);
+                [~, ~, newRxns, newModel, exitFlag]=fillGaps(tModel,refModel,false,true,supressWarnings,rxnScores,params);
                 if exitFlag==-2
-                    dispEM(['"[' taskStructure(i).id '] ' taskStructure(i).description '" was aborted before reaching optimality. Consider increasing params.maxTime\n'],false);
+                    EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" was aborted before reaching optimality. Consider increasing params.maxTime\n'];
+                    dispEM(EM,false);
                 end
             catch
-                dispEM(['"[' taskStructure(i).id '] ' taskStructure(i).description '" could not be performed for any set of reactions\n',false]);
+                EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" could not be performed for any set of reactions\n'];
+                dispEM(EM,false);
                 failed=true;
             end
             if failed==false
                 if ~isempty(newRxns)
                     nAdded=nAdded+numel(newRxns);
-                    
+
                     %Add the reactions to the base model. It is not correct to use newModel
                     %directly, as it may contain reactions/constraints that are specific to
                     %this task
                     model=mergeModels({model,removeReactions(newModel,setdiff(newModel.rxns,newRxns),true,true)},true);
-                    
+
                     %Keep track of the added reactions
                     addedRxns(ismember(refModel.rxns,newRxns),i)=true;
                 end
@@ -272,7 +284,7 @@ for i=1:numel(taskStructure)
             end
         end
         supressWarnings=true;
-        
+
         %Print the output if chosen
         if taskStructure(i).printFluxes && printOutput
             if ~isempty(sol.x)
@@ -289,13 +301,14 @@ for i=1:numel(taskStructure)
                 end
             end
         end
-        
+
         tModel=model;
         %Since new mets are added by merging the new reactions and not only
         %from the task sheet
         modelMets=upper(strcat(model.metNames,'[',model.comps(model.metComps),']'));
     else
-        dispEM(['"[' taskStructure(i).id '] ' taskStructure(i).description '" is set as SHOULD FAIL. Such tasks cannot be modelled using this approach and the task is therefore ignored\n'],false);
+        EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" is set as SHOULD FAIL. Such tasks cannot be modelled using this approach and the task is therefore ignored\n'];
+        dispEM(EM,false);
     end
 end
 outModel=model;

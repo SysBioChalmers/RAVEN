@@ -36,7 +36,7 @@
                    'out'   output reactions
                    'both'  reversible input/output reactions. Positive
                    direction corresponds to output
-   mets            either a cell array of metabolite IDs, a logical vector 
+   mets            either a cell array of metabolite IDs, a logical vector
                    with the same number of elements as metabolites in the model,
                    or a vector of indexes to add for (opt, default model.mets)
 
@@ -48,7 +48,8 @@
 
    Usage: [model addedRxns]=addExchangeRxns(model,reactionType,mets)
 
-   Rasmus Agren, 2013-08-01</pre></div>
+   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
+   rxnReferences and confidenceScores</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -57,7 +58,7 @@ This function calls:
 <li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model,objects, type, returnLogical)">getIndexes</a>	getIndexes</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="canConsume.html" class="code" title="function consumed=canConsume(model,mets)">canConsume</a>	canConsume</li><li><a href="canProduce.html" class="code" title="function produced=canProduce(model,mets)">canProduce</a>	canProduce</li><li><a href="checkProduction.html" class="code" title="function [notProduced, notProducedNames, neededForProductionMat,minToConnect,model]=checkProduction(model,checkNeededForProduction,excretionFromCompartments,printDetails)">checkProduction</a>	checkProduction</li><li><a href="checkRxn.html" class="code" title="function report=checkRxn(model,rxn,cutoff,revDir,printReport)">checkRxn</a>	checkRxn</li><li><a href="../tutorial/tutorial4.html" class="code" title="">tutorial4</a>	This exercise is about creating a model from KEGG, based on protein sequences</li></ul>
+<li><a href="canConsume.html" class="code" title="function consumed=canConsume(model,mets)">canConsume</a>	canConsume</li><li><a href="canProduce.html" class="code" title="function produced=canProduce(model,mets)">canProduce</a>	canProduce</li><li><a href="checkProduction.html" class="code" title="function [notProduced, notProducedNames, neededForProductionMat,minToConnect,model]=checkProduction(model,checkNeededForProduction,excretionFromCompartments,printDetails)">checkProduction</a>	checkProduction</li><li><a href="checkRxn.html" class="code" title="function report=checkRxn(model,rxn,cutoff,revDir,printReport)">checkRxn</a>	checkRxn</li></ul>
 <!-- crossreference -->
 
 
@@ -85,65 +86,75 @@ This function is called by:
 0020 <span class="comment">%</span>
 0021 <span class="comment">%   Usage: [model addedRxns]=addExchangeRxns(model,reactionType,mets)</span>
 0022 <span class="comment">%</span>
-0023 <span class="comment">%   Rasmus Agren, 2013-08-01</span>
-0024 <span class="comment">%</span>
-0025 
-0026 <span class="keyword">if</span> nargin&lt;3
-0027     mets=model.mets;
-0028 <span class="keyword">end</span>
-0029 reactionType=upper(reactionType);
-0030 J=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model,objects, type, returnLogical)">getIndexes</a>(model,mets,<span class="string">'mets'</span>,false);
-0031 mets=model.mets(J);
-0032 
-0033 <span class="comment">%Production is positive for OUT and BOTH</span>
-0034 <span class="keyword">if</span> strcmp(reactionType,<span class="string">'IN'</span>)
-0035     I=speye(numel(model.mets));
-0036 <span class="keyword">else</span>
-0037     I=speye(numel(model.mets))*-1;
-0038 <span class="keyword">end</span>
-0039 I=I(:,J);
-0040 
-0041 <span class="comment">%Add an I matrix which corresponds to production of all metabolites</span>
-0042 model.S=[model.S I];
-0043 <span class="keyword">if</span> strcmp(reactionType,<span class="string">'BOTH'</span>)
-0044     model.lb=[model.lb;ones(numel(J),1)*-1000];
-0045     model.rev=[model.rev;ones(numel(J),1)];
-0046 <span class="keyword">else</span>
-0047     model.lb=[model.lb;zeros(numel(J),1)];
-0048     model.rev=[model.rev;zeros(numel(J),1)];
-0049 <span class="keyword">end</span>
-0050 model.ub=[model.ub;ones(numel(J),1)*1000];
-0051 model.c=[model.c;zeros(numel(J),1)];
-0052 
-0053 filler=cell(numel(J),1);
-0054 filler(:)={<span class="string">''</span>};
-0055 addedRxns=strcat({[<span class="string">'EXC_'</span> reactionType <span class="string">'_'</span>]},mets);
-0056 model.rxns=[model.rxns;addedRxns];
-0057 model.rxnNames=[model.rxnNames;addedRxns];
-0058 
-0059 <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
-0060     model.eccodes=[model.eccodes;filler];
-0061 <span class="keyword">end</span>
-0062 <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
-0063     model.subSystems=[model.subSystems;filler];
-0064 <span class="keyword">end</span>
-0065 <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
-0066     model.grRules=[model.grRules;filler];
-0067 <span class="keyword">end</span>
-0068 <span class="keyword">if</span> isfield(model,<span class="string">'rxnFrom'</span>)
-0069     model.rxnFrom=[model.rxnFrom;filler];
-0070 <span class="keyword">end</span>
-0071 <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
-0072     model.rxnMiriams=[model.rxnMiriams;cell(numel(J),1)];
-0073 <span class="keyword">end</span>
-0074 <span class="keyword">if</span> isfield(model,<span class="string">'rxnGeneMat'</span>)
-0075     model.rxnGeneMat=[model.rxnGeneMat;sparse(numel(J),numel(model.genes))];
-0076 <span class="keyword">end</span>
-0077 <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
-0078    model.rxnComps=[model.rxnComps;ones(numel(J),1)];
-0079    fprintf(<span class="string">'NOTE: The exchange reactions are assigned to the first compartment\n'</span>);
-0080 <span class="keyword">end</span>
-0081 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Fri 14-Oct-2016 12:02:10 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0023 <span class="comment">%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,</span>
+0024 <span class="comment">%   rxnReferences and confidenceScores</span>
+0025 <span class="comment">%</span>
+0026 
+0027 <span class="keyword">if</span> nargin&lt;3
+0028     mets=model.mets;
+0029 <span class="keyword">end</span>
+0030 reactionType=upper(reactionType);
+0031 J=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model,objects, type, returnLogical)">getIndexes</a>(model,mets,<span class="string">'mets'</span>,false);
+0032 mets=model.mets(J);
+0033 
+0034 <span class="comment">%Production is positive for OUT and BOTH</span>
+0035 <span class="keyword">if</span> strcmp(reactionType,<span class="string">'IN'</span>)
+0036     I=speye(numel(model.mets));
+0037 <span class="keyword">else</span>
+0038     I=speye(numel(model.mets))*-1;
+0039 <span class="keyword">end</span>
+0040 I=I(:,J);
+0041 
+0042 <span class="comment">%Add an I matrix which corresponds to production of all metabolites</span>
+0043 model.S=[model.S I];
+0044 <span class="keyword">if</span> strcmp(reactionType,<span class="string">'BOTH'</span>)
+0045     model.lb=[model.lb;ones(numel(J),1)*-1000];
+0046     model.rev=[model.rev;ones(numel(J),1)];
+0047 <span class="keyword">else</span>
+0048     model.lb=[model.lb;zeros(numel(J),1)];
+0049     model.rev=[model.rev;zeros(numel(J),1)];
+0050 <span class="keyword">end</span>
+0051 model.ub=[model.ub;ones(numel(J),1)*1000];
+0052 model.c=[model.c;zeros(numel(J),1)];
+0053 
+0054 filler=cell(numel(J),1);
+0055 filler(:)={<span class="string">''</span>};
+0056 addedRxns=strcat({[<span class="string">'EXC_'</span> reactionType <span class="string">'_'</span>]},mets);
+0057 model.rxns=[model.rxns;addedRxns];
+0058 model.rxnNames=[model.rxnNames;addedRxns];
+0059 
+0060 <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
+0061     model.eccodes=[model.eccodes;filler];
+0062 <span class="keyword">end</span>
+0063 <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
+0064     model.subSystems=[model.subSystems;filler];
+0065 <span class="keyword">end</span>
+0066 <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
+0067     model.grRules=[model.grRules;filler];
+0068 <span class="keyword">end</span>
+0069 <span class="keyword">if</span> isfield(model,<span class="string">'rxnFrom'</span>)
+0070     model.rxnFrom=[model.rxnFrom;filler];
+0071 <span class="keyword">end</span>
+0072 <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
+0073     model.rxnMiriams=[model.rxnMiriams;cell(numel(J),1)];
+0074 <span class="keyword">end</span>
+0075 <span class="keyword">if</span> isfield(model,<span class="string">'rxnGeneMat'</span>)
+0076     model.rxnGeneMat=[model.rxnGeneMat;sparse(numel(J),numel(model.genes))];
+0077 <span class="keyword">end</span>
+0078 <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
+0079    model.rxnComps=[model.rxnComps;ones(numel(J),1)];
+0080    fprintf(<span class="string">'NOTE: The exchange reactions are assigned to the first compartment\n'</span>);
+0081 <span class="keyword">end</span>
+0082 <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
+0083     model.rxnNotes=[model.rxnNotes;cell(numel(J),1)];
+0084 <span class="keyword">end</span>
+0085 <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
+0086     model.rxnReferences=[model.rxnReferences;cell(numel(J),1)];
+0087 <span class="keyword">end</span>
+0088 <span class="keyword">if</span> isfield(model,<span class="string">'confidenceScores'</span>)
+0089     model.confidenceScores=[model.confidenceScores;cell(numel(J),1)];
+0090 <span class="keyword">end</span>
+0091 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 28-Feb-2017 23:41:43 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

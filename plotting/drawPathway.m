@@ -1,10 +1,10 @@
-function drawPathway(pathway, handle, cutOff, defaultColor)
+function drawPathway(pathway, h, cutOff, defaultColor)
 % drawPathway
 %	Draws a metabolic network to a figure.
 %
 %   pathway         pathway structure representing the pathway to be drawn
 %   handle          handle to a figure (opt)
-%   cutOff          the fluxes are only printed if the absolute value of 
+%   cutOff          the fluxes are only printed if the absolute value of
 %                   at least one of the fluxes is above the cutoff value
 %                   (opt, default 0)
 %   defaultColor    color in Matlab format to be used as the background
@@ -16,7 +16,7 @@ function drawPathway(pathway, handle, cutOff, defaultColor)
 %
 %   Usage: drawPathway(pathway, handle, cutOff, defaultColor)
 %
-%   Rasmus Agren, 2012-03-26
+%   Rasmus Agren, 2015-08-01
 %
 
 if nargin<4
@@ -26,9 +26,11 @@ if nargin<3
     cutOff=0;
 end
 if nargin<2
-    handle=figure();
-else
-    figure(handle);
+    if ishandle(gcf)
+        h=gcf;
+    else
+        h=figure();
+    end
 end
 
 %Will contain all metabolite info and where to print them
@@ -74,13 +76,13 @@ end
 dimension=getPathwayDimensions(pathway);
 
 %Specify the properties of the figure
-set(gcf, 'PaperOrientation', 'landscape');
-set(gcf, 'Color', [1 1 1]);
+set(h, 'PaperOrientation', 'landscape');
+set(h, 'Color', [1 1 1]);
 xmargin=0.83;
 ymargin=1.32;
-set(gcf, 'PaperPosition', [xmargin ymargin 29.67743169791-2*xmargin 20.98404194812-2*ymargin]);
-set(gcf, 'Renderer', 'painters');
-set(gcf, 'Position', [10 10 1000 700]);
+set(h, 'PaperPosition', [xmargin ymargin 29.67743169791-2*xmargin 20.98404194812-2*ymargin]);
+set(h, 'Renderer', 'painters');
+set(h, 'Position', [10 10 1000 700]);
 
 %The height has to be at least the height of the information panel
 %(approximately 3000)
@@ -111,11 +113,11 @@ for i=1:length(pathway.listOfReactions)
         y(1)=middle(2);
         x(2)=pathway.listOfReactions(i).componentList(j).anchor(1);
         y(2)=pathway.listOfReactions(i).componentList(j).anchor(2);
-        
+
         %Check to see if a line or an arrow should be drawn
         if strcmpi(pathway.listOfReactions(i).componentList(j).toArrow,'true')
             rxnArrows=[rxnArrows;x(1) y(1) x(2) y(2)];
-            
+
             %Draw a red arrow if it's a base product
             if strcmpi(pathway.listOfReactions(i).componentList(j).baseProduct,'true')
                 rxnArrowsColor=[rxnArrowsColor;1 0 0];
@@ -155,17 +157,17 @@ for i=1:length(pathway.listOfSpecies)
         %default color
         faceColor=defaultColor;
         if isfield(pathway.listOfSpecies(i),'color')
-            if any(pathway.listOfSpecies(i).color)      
+            if any(pathway.listOfSpecies(i).color)
                 %Check that the fluxes are specified
                 if isfield(pathway.listOfSpecies(i),'flux') && isfield(pathway.listOfSpecies(i),'referenceFlux')
                     %Check that the value of one of the fluxes is above the cutoff value
-                    if abs(pathway.listOfSpecies(i).referenceFlux)>=cutOff || abs(pathway.listOfSpecies(i).flux)>=cutOff 
+                    if abs(pathway.listOfSpecies(i).referenceFlux)>=cutOff || abs(pathway.listOfSpecies(i).flux)>=cutOff
                         faceColor=pathway.listOfSpecies(i).color;
                     end
                 end
             end
         end
-        
+
         %If the reaction is associated with a sign change and either of the
         %fluxes are larger than the cutoff value, then use a different frame
         edgeColor=[0 0 0];
@@ -176,14 +178,14 @@ for i=1:length(pathway.listOfSpecies)
                 end
             end
         end
-        
+
         rxnFace=[rxnFace;faceColor];
         rxnEdge=[rxnEdge;edgeColor];
-        
+
         %Draw smaller boxes if expression data should also be printed
         if drawExpression==true
             rxnRec=[rxnRec;position-[0 0 40 0]];
-            
+
             %Draw rectangles representing each gene. Max 8 circles are used.
             %Their width is hardcoded and so is the width of the area where
             %they are printed (40)
@@ -191,9 +193,9 @@ for i=1:length(pathway.listOfSpecies)
                 %Calculate the position of the dots. 4 in each column.
                 firstFourX=pathway.listOfSpecies(i).x+pathway.listOfSpecies(i).w-34;
                 fourY=pathway.listOfSpecies(i).y:pathway.listOfSpecies(i).h/4:pathway.listOfSpecies(i).y+pathway.listOfSpecies(i).h;
-                
+
                 nExp=numel(pathway.listOfSpecies(i).expA);
-                
+
                 %One log10-fold change is total up or down
                 colorCodes=getColorCodes(pathway.listOfSpecies(i).expA, pathway.listOfSpecies(i).expB);
 
@@ -202,7 +204,7 @@ for i=1:length(pathway.listOfSpecies)
                     expRec=[expRec;firstFourX fourY(j) 16 pathway.listOfSpecies(i).h/4];
                     expFace=[expFace;colorCodes{j}];
                 end
-                
+
                 %If a second row is needed
                 if nExp>4
                     secondFourX=pathway.listOfSpecies(i).x+pathway.listOfSpecies(i).w-16;
@@ -215,26 +217,26 @@ for i=1:length(pathway.listOfSpecies)
         else
             rxnRec=[rxnRec;position];
         end
-        
+
         %If no fluxes are specified then should only the name be printed.
-        %Flux values should only be printed if at least one of the fluxes 
+        %Flux values should only be printed if at least one of the fluxes
         %is above the cutoff value
         textToPrint={};
-        
+
         %NOTE:  This is done since I know that I have names including '_' which is a reserved
         %       character in LaTeX. This should be done more systematically
-        
+
         %NOTE:  The notation used means that only flux values with with less than
         %       nine characters can be used
-        
+
         textToPrint{1,1}=strrep(pathway.listOfSpecies(i).name,'_','\_');
-        
+
         %Check that the fluxes are specified
         %NOTE: Should you only print if there are two fluxes?
         if isfield(pathway.listOfSpecies(i),'flux') && isfield(pathway.listOfSpecies(i),'referenceFlux')
             %Check that the value of one of the fluxes is above the cutoff value
             if ~isempty(pathway.listOfSpecies(i).flux) && ~isempty(pathway.listOfSpecies(i).referenceFlux)
-                if abs(pathway.listOfSpecies(i).referenceFlux)>=cutOff || abs(pathway.listOfSpecies(i).flux)>=cutOff 
+                if abs(pathway.listOfSpecies(i).referenceFlux)>=cutOff || abs(pathway.listOfSpecies(i).flux)>=cutOff
                     textToPrint{2,1}=num2str(pathway.listOfSpecies(i).flux,'%0.4g');
                     textToPrint{3,1}=num2str(pathway.listOfSpecies(i).referenceFlux,'%0.4g');
                 end
@@ -244,7 +246,7 @@ for i=1:length(pathway.listOfSpecies)
         xPos=ones(numel(textToPrint),1)*(position(1)+3);
         distance=position(4)/(numel(textToPrint)+1);
         yPos=position(2)+distance:distance:(position(2)+position(4)-distance);
-        
+
         rxnText=[rxnText;textToPrint];
         rxnX=[rxnX;xPos];
         rxnY=[rxnY;yPos'];
@@ -284,7 +286,7 @@ end
 %Reaction rectangles
 for i=1:size(rxnRec,1)
     rectangle('edgecolor', rxnEdge(i,:), 'facecolor', rxnFace(i,:), 'linewidth',0.1,...
-        'curvature', [0.1 0.1], 'position',rxnRec(i,:));  
+        'curvature', [0.1 0.1], 'position',rxnRec(i,:));
 end
 
 %Expression rectangles
@@ -311,7 +313,7 @@ text(rxnX,rxnY,rxnText,'fontname','Small Fonts','fontsize',textSize,'interpreter
 
 %Compartment text. The text is centered and at the bottom of the compartment
 text(compX, compY,compText,'fontname','Small Fonts','fontsize',7,'interpreter','none',...
-    'HorizontalAlignment','center','verticalalignment','middle');      
+    'HorizontalAlignment','center','verticalalignment','middle');
 end
 
 function handles = plotArrow( x1,y1,x2,y2,varargin )
@@ -325,7 +327,7 @@ function handles = plotArrow( x1,y1,x2,y2,varargin )
 %           options - come as pairs of "property","value" as defined for "line" and "patch"
 %                     controls, see matlab help for listing of these properties.
 %                     note that not all properties where added, one might add them at the end of this file.
-%                     
+%
 %                     additional options are:
 %                     'headwidth':  relative to complete arrow size, default value is 0.07
 %                     'headheight': relative to complete arrow size, default value is 0.15
@@ -344,7 +346,7 @@ function handles = plotArrow( x1,y1,x2,y2,varargin )
 alpha       = 15;   % head length
 beta        = 7;   % head width
 max_length  = 11;
-max_width   = 7;
+%max_width   = 7;
 
 % =============================================
 % check if head properties are given
@@ -380,37 +382,37 @@ coords      = R*[x0 x0+head_width/2 x0-head_width/2; y0 y0-head_length y0-head_l
 % =============================================
 h1          = plot( [x1,x2],[y1,y2],'k' );
 h2          = patch( coords(1,:),coords(2,:),[0 0 0] );
-    
+
 % =============================================
 % return handles
 % =============================================
 handles = [h1 h2];
 
 % =============================================
-% check if styling is required 
+% check if styling is required
 % =============================================
 % if no styling, this section can be removed!
 if ~isempty( varargin )
     for c = 1:floor(length(varargin)/2)
         switch lower(varargin{c*2-1})
 
-         % only patch properties    
+         % only patch properties
         case 'edgecolor',   set( h2,'EdgeColor',varargin{c*2} );
         case 'facecolor',   set( h2,'FaceColor',varargin{c*2} );
         case 'facelighting',set( h2,'FaceLighting',varargin{c*2} );
         case 'edgelighting',set( h2,'EdgeLighting',varargin{c*2} );
 
-        % only line properties    
+        % only line properties
         case 'color'    , set( h1,'Color',varargin{c*2} );
 
-        % shared properties    
+        % shared properties
         case 'linestyle', set( handles,'LineStyle',varargin{c*2} );
         case 'linewidth', set( handles,'LineWidth',varargin{c*2} );
         case 'parent',    set( handles,'parent',varargin{c*2} );
 
         % head properties - do nothing, since handled above already
-        case 'headwidth',;
-        case 'headheight',;
+        case 'headwidth',
+        case 'headheight',
 
         end
     end

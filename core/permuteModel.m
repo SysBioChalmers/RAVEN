@@ -11,7 +11,6 @@ function newModel=permuteModel(model, indexes, type)
 %
 % 	Usage: newModel=permuteModel(model, indexes, type)
 %
-%   Rasmus Agren, 2013-08-01
 %   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
 %   rxnReferences, confidenceScores and metCharge
 %

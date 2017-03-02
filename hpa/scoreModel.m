@@ -1,10 +1,10 @@
-function [rxnScores geneScores hpaScores arrayScores]=scoreModel(model,hpaData,arrayData,tissue,celltype,noGeneScore,multipleGeneScoring,multipleCellScoring,hpaLevelScores)
+function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaData,arrayData,tissue,celltype,noGeneScore,multipleGeneScoring,multipleCellScoring,hpaLevelScores)
 % scoreRxns
 %   Scores the reactions and genes in a model based on expression data
 %   from HPA and/or gene arrays
 %
 %   model               a model structure
-%   hpaData             HPA data structure from parseHPA (opt if arrayData is 
+%   hpaData             HPA data structure from parseHPA (opt if arrayData is
 %                       supplied, default [])
 %   arrayData           gene expression data structure (opt if hpaData is
 %                       supplied, default [])
@@ -18,7 +18,7 @@ function [rxnScores geneScores hpaScores arrayScores]=scoreModel(model,hpaData,a
 %   tissue              tissue to score for. Should exist in either
 %                       hpaData.tissues or arrayData.tissues
 %   celltype            cell type to score for. Should exist in either
-%                       hpaData.celltypes or arrayData.celltypes for this 
+%                       hpaData.celltypes or arrayData.celltypes for this
 %                       tissue (opt, default is to use the best values
 %                       among all the cell types for the tissue. Use [] if
 %                       you want to supply more arguments)
@@ -38,17 +38,17 @@ function [rxnScores geneScores hpaScores arrayScores]=scoreModel(model,hpaData,a
 %   geneScores      scores for each of the genes in model. Genes which are
 %                   not in the dataset(s) have -Inf as scores
 %   hpaScores       scores for each of the genes in model if only taking hpaData
-%                   into account. Genes which are not in the dataset(s) 
+%                   into account. Genes which are not in the dataset(s)
 %                   have -Inf as scores
 %   arrayScores     scores for each of the genes in model if only taking arrayData
-%                   into account. Genes which are not in the dataset(s) 
+%                   into account. Genes which are not in the dataset(s)
 %                   have -Inf as scores
-%       
+%
 %   Usage: [rxnScores geneScores hpaScores arrayScores]=scoreModel(model,...
 %               hpaData,arrayData,tissue,celltype,noGeneScore,multipleGeneScoring,...
 %               multipleCellScoring,hpaLevelScores)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<3
@@ -68,25 +68,29 @@ if nargin<8
 end
 if nargin<9
     %The first four are for APE, the other ones for staining
-    hpaLevelScores.names={'High' 'Medium' 'Low' 'Not detected' 'Strong' 'Moderate' 'Weak' 'Negative'};
+    hpaLevelScores.names={'High' 'Medium' 'Low' 'None' 'Strong' 'Moderate' 'Weak' 'Negative'};
     hpaLevelScores.scores=[20 15 10 -8 20 15 10 -8];
 end
 
 if isempty(hpaData) && isempty(arrayData)
-    dispEM('Must supply hpaData, arrayData or both');    
+    EM='Must supply hpaData, arrayData or both';
+    dispEM(EM);
 end
 if ~strcmpi(multipleGeneScoring,'best') && ~strcmpi(multipleGeneScoring,'average')
-    dispEM('Valid options for multipleGeneScoring are "best" or "average"');    
+    EM='Valid options for multipleGeneScoring are "best" or "average"';
+    dispEM(EM);
 end
 if ~strcmpi(multipleCellScoring,'best') && ~strcmpi(multipleCellScoring,'average')
-    dispEM('Valid options for multipleCellScoring are "best" or "average"');    
+    EM='Valid options for multipleCellScoring are "best" or "average"';
+    dispEM(EM);
 end
 
 
 %Throw an error if array data for only one tissue is supplied
 if any(arrayData)
     if numel(arrayData.tissues)<2
-        dispEM('arrayData must contain measurements for at least two celltypes/tissues since the score is calculated based on the expression level compared to the overall average'); 
+        EM='arrayData must contain measurements for at least two celltypes/tissues since the score is calculated based on the expression level compared to the overall average';
+        dispEM(EM);
     end
 end
 
@@ -112,15 +116,18 @@ end
 
 %Check that the tissue exists
 if ~ismember(upper(tissue),upper(hpaData.tissues)) && ~ismember(upper(tissue),upper(arrayData.tissues))
-    dispEM('The tissue name does not match');   
+    EM='The tissue name does not match';
+    dispEM(EM);
 end
 if any(celltype)
     %Check that both data types has cell type defined if that is to be used
     if ~isfield(hpaData,'celltypes') || ~isfield(arrayData,'celltypes')
-        dispEM('Both hpaData and arrayData must contain cell type information if cell type is to be used');   
+        EM='Both hpaData and arrayData must contain cell type information if cell type is to be used';
+        dispEM(EM);
     end
     if ~ismember(upper(celltype),upper(hpaData.celltypes)) && ~ismember(upper(celltype),upper(arrayData.celltypes))
-        dispEM('The cell type name does not match');   
+        EM='The cell type name does not match';
+        dispEM(EM);
     end
 end
 
@@ -203,11 +210,12 @@ aScores(aScores>0)=min(aScores(aScores>0),10);
 aScores(aScores<0)=max(aScores(aScores<0),-5);
 
 %Map the HPA levels to scores
-[I J]=ismember(upper(hpaData.levels),upper(hpaLevelScores.names));
+[I, J]=ismember(upper(hpaData.levels),upper(hpaLevelScores.names));
 if ~all(I)
-    dispEM('There are expression level categories that do not match to hpaLevelScores');  
+    EM='There are expression level categories that do not match to hpaLevelScores';
+    dispEM(EM);
 end
-[K L M]=find(hpaData.gene2Level);
+[K, L, M]=find(hpaData.gene2Level);
 scores=hpaLevelScores.scores(J);
 if strcmpi(multipleCellScoring,'best')
     hScores=max(sparse(K,L,scores(M),numel(hpaData.genes),numel(hpaData.tissues)),[],2);
@@ -220,10 +228,10 @@ geneScores=inf(numel(model.genes),1)*-1;
 hpaScores=geneScores;
 arrayScores=geneScores;
 
-[I J]=ismember(model.genes,hpaData.genes);
+[I, J]=ismember(model.genes,hpaData.genes);
 hpaScores(I)=hScores(J(I));
 geneScores(I)=hScores(J(I));
-[I J]=ismember(model.genes,arrayData.genes);
+[I, J]=ismember(model.genes,arrayData.genes);
 arrayScores(I)=aScores(J(I));
 geneScores(I & myIsInf(geneScores))=aScores(J(I & myIsInf(geneScores)));
 
@@ -233,8 +241,8 @@ model.genes(~I)=[];
 model.rxnGeneMat(:,~I)=[];
 
 %Map the genes to the HPA/array genes
-[hpaExist hpaMap]=ismember(model.genes,hpaData.genes);
-[arrayExist arrayMap]=ismember(model.genes,arrayData.genes);
+[hpaExist, hpaMap]=ismember(model.genes,hpaData.genes);
+[arrayExist, arrayMap]=ismember(model.genes,arrayData.genes);
 
 %Set the default scores for reactions without genes
 rxnScores=ones(numel(model.rxns),1)*noGeneScore;

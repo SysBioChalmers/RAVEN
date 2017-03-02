@@ -60,7 +60,7 @@ balanceStructure=getElementalBalance(model);
 %We know that hydrogen balancing is a bit tricky, so let's only look at the
 %ones unbalanced for oxygen (since water was produced)
 goodOnes=balanceStructure.leftComp(:,6)==balanceStructure.rightComp(:,6);
-printFluxes(removeRxns(model,goodOnes), fluxes(~goodOnes), false, [], [],'%rxnID (%rxnName):\n\t%eqn: %flux\n')
+printFluxes(removeReactions(model,goodOnes), fluxes(~goodOnes), false, [], [],'%rxnID (%rxnName):\n\t%eqn: %flux\n')
 
 %That didn't really help, the only unbalanced reaction was the one that was
 %identified before. Let's print all fluxes involving amylose or starch
@@ -72,7 +72,7 @@ printFluxes(model, fluxes, false, [], [],'%rxnID (%rxnName):\n\t%eqn: %flux\n',{
 %cleave of a glucose unit from starch to form amylose. This type of general
 %reactions are problematic and should be fixed manually. We therefore
 %choose to trust removeBadRxns and delete R02110.
-model=removeRxns(model,'R02110');
+model=removeReactions(model,'R02110');
 
 %The model can no longer make something from nothing. Can it consume
 %something without any output?
@@ -108,7 +108,7 @@ keggModel=rmfield(keggModel,'rxnGeneMat');
 %We've already seen that there are some unbalanced reactions in KEGG. Let's
 %only use the balanced ones for the gap filling
 balanceStructure=getElementalBalance(keggModel);
-keggModel=removeRxns(keggModel,balanceStructure.balanceStatus~=1,true,true);
+keggModel=removeReactions(keggModel,balanceStructure.balanceStatus~=1,true,true);
 
 %fillGaps with these settings will try to include reactions in order to
 %have flux through all reactions in the model. There are other settings as well.

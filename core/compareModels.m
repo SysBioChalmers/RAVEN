@@ -11,7 +11,7 @@ function compStruct=compareModels(models,printResults)
 %       modelIDs        cell array of model ids
 %       rxns            These contain the comparison for each field. 'equ' are
 %                       the equations after sorting and 'uEqu' are the
-%                       equations when not taking compartmentalization into acount 
+%                       equations when not taking compartmentalization into acount
 %       mets
 %       genes
 %       eccodes
@@ -25,7 +25,7 @@ function compStruct=compareModels(models,printResults)
 %
 %   Usage: compStruct=compareModels(models,printResults)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-02-07
 %
 
 if nargin<2
@@ -33,7 +33,8 @@ if nargin<2
 end
 
 if numel(models)<=1
-   dispEM('Cannot compare only one model. Use printModelStats if you want a summary of a model'); 
+    EM='Cannot compare only one model. Use printModelStats if you want a summary of a model';
+    dispEM(EM);
 end
 
 compStruct.modelIDs={};
@@ -109,8 +110,8 @@ end
 function A=getElements(models,field)
     A={};
     for i=1:numel(models)
-       if isfield(models{i},field) 
-        A=[A;{getfield(models{i},field)}]; 
+       if isfield(models{i},field)
+           A=[A;{models{i}.(field)}];
        end
     end
 end
@@ -124,15 +125,15 @@ function toCheck=getToCheck(models,field)
         combs=combnk(1:nI,i);
         toAdd=false(size(combs,1),nI);
         for j=1:size(combs,1)
-           toAdd(j,combs(j,:))=true; 
+           toAdd(j,combs(j,:))=true;
         end
         toCheckA=[toCheckA;toAdd];
     end
-    
-    %If not all of the models have the required field 
+
+    %If not all of the models have the required field
     toCheck=false(size(toCheckA,1),numel(models));
     toCheck(:,I)=toCheckA;
-    
+
     %Ugly thing to get around parameters
     function I=checkField(A)
         I=isfield(A,field);
@@ -164,7 +165,7 @@ function nElements=checkStuff(A,toCheck)
         I=find(toCheck(i,:));
         inCommon=setdiff(A{I(1)},alreadyChecked);
         for j=2:numel(I)
-           inCommon=intersect(inCommon,A{I(j)}); 
+           inCommon=intersect(inCommon,A{I(j)});
         end
         alreadyChecked=union(alreadyChecked,inCommon);
         nElements(i)=numel(inCommon);
