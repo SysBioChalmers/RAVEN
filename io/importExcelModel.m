@@ -4,7 +4,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   fileName      a Microsoft Excel file to import
 %   removeExcMets true if exchange metabolites should be removed. This is
-%                 needed to be able to run simulations, but it could also 
+%                 needed to be able to run simulations, but it could also
 %                 be done using simplifyModel at a later stage (opt,
 %                 default true)
 %   printWarnings true if warnings should be printed (opt, default true)
@@ -36,7 +36,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %       eccodes          EC-codes for the reactions
 %       rxnMiriams       structure with MIRIAM information about the reactions
 %       rxnNotes         reaction notes
-%       rxnReferences	 reaction references
+%       rxnReferences   reaction references
 %       confidenceScores reaction confidence scores
 %       genes            list of all genes
 %       geneComps        compartments for reactions
@@ -64,28 +64,9 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Rasmus Agren, 2014-01-06
 %   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
 %   rxnReferences, confidenceScores and metCharge
 %
-
-%Adds the required classes to the Java path
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
-poiPATH=fullfile(ravenPath,'software','apache-poi');
-javaaddpath(fullfile(poiPATH,'dom4j-1.6.1.jar'));
-javaaddpath(fullfile(poiPATH,'poi-3.8-20120326.jar'));
-javaaddpath(fullfile(poiPATH,'poi-ooxml-3.8-20120326.jar'));
-javaaddpath(fullfile(poiPATH,'poi-ooxml-schemas-3.8-20120326.jar'));
-javaaddpath(fullfile(poiPATH,'xmlbeans-2.3.0.jar'));
-
-%Import required classes from Apache POI
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.hssf.usermodel.*;
-import org.apache.poi.xssf.usermodel.*;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.ss.util.*;
-import java.io.FileInputStream;
 
 if nargin<2
     removeExcMets=true;
@@ -138,28 +119,20 @@ model.metFormulas={};
 model.metMiriams={};
 model.metCharge={}; %Will be double later
 model.unconstrained=[];
-    
-%Check if the file exists
-if ~exist(fileName,'file')
-    dispEM('The Excel file could not be found');
-end
 
-%Opens the workbook. The input stream is needed since it will otherwise
-%keep the file open
-is=FileInputStream(getFullPath(fileName));
-workbook=WorkbookFactory.create(is);
-is.close();
+workbook=loadWorkbook(fileName);
 
 [raw, flag]=loadSheet(workbook,'MODEL');
 
 if flag<0
     if printWarnings==true
-        dispEM('Could not load the MODEL sheet',false);
+        EM='Could not load the MODEL sheet';
+        dispEM(EM,false);
     end
     model.id='UNKNOWN';
     model.description='No model details available';
 else
-    raw=cleanImported(raw);
+    raw=cleanSheet(raw);
 
     %It is assumed that the first line is labels and that the second one is
     %info
@@ -179,20 +152,23 @@ else
                 if any(raw{I(i),2})
                     model.id=toStr(raw{2,I(i)}); %Should be string already
                 else
-                    dispEM('No model ID supplied');
+                    EM='No model ID supplied';
+                    dispEM(EM);
                 end
             case 2
                 if any(raw{2,I(i)})
                     model.description=toStr(raw{2,I(i)}); %Should be string already
                 else
-                    dispEM('No model name supplied');
+                    EM='No model name supplied';
+                    dispEM(EM);
                 end
             case 3
                 if ~isempty(raw{2,I(i)})
                     try
                         model.annotation.defaultLB=toDouble(raw{2,I(i)},NaN);
                     catch
-                        dispEM('DEFAULT LOWER must be numeric');
+                        EM='DEFAULT LOWER must be numeric';
+                        dispEM(EM);
                     end
                 else
                     if printWarnings==true
@@ -205,7 +181,8 @@ else
                     try
                         model.annotation.defaultUB=toDouble(raw{2,I(i)},NaN);
                     catch
-                        dispEM('DEFAULT UPPER must be numeric');
+                        EM='DEFAULT UPPER must be numeric';
+                        dispEM(EM);
                     end
                 else
                     if printWarnings==true
@@ -215,29 +192,29 @@ else
                 end
             case 5
                 if any(raw{2,I(i)})
-                    model.annotation.givenName=toStr(raw{2,I(i)}); %Should be string already 
+                    model.annotation.givenName=toStr(raw{2,I(i)}); %Should be string already
                 end
             case 6
                 if any(raw{2,I(i)})
-                    model.annotation.familyName=toStr(raw{2,I(i)}); %Should be string already 
+                    model.annotation.familyName=toStr(raw{2,I(i)}); %Should be string already
                 end
             case 7
                 if any(raw{2,I(i)})
-                    model.annotation.email=toStr(raw{2,I(i)}); %Should be string already 
+                    model.annotation.email=toStr(raw{2,I(i)}); %Should be string already
                 end
             case 8
                 if any(raw{2,I(i)})
-                    model.annotation.organization=toStr(raw{2,I(i)}); %Should be string already 
-                end    
+                    model.annotation.organization=toStr(raw{2,I(i)}); %Should be string already
+                end
             case 9
                 if any(raw{2,I(i)})
-                    model.annotation.taxonomy=toStr(raw{2,I(i)}); %Should be string already 
-                end 
+                    model.annotation.taxonomy=toStr(raw{2,I(i)}); %Should be string already
+                end
             case 10
                 if any(raw{2,I(i)})
-                    model.annotation.note=toStr(raw{2,I(i)}); %Should be string already 
-                end     
-        end  
+                    model.annotation.note=toStr(raw{2,I(i)}); %Should be string already
+                end
+        end
     end
 end
 
@@ -246,12 +223,13 @@ end
 
 if flag<0
     if printWarnings==true
-        dispEM('Could not load the COMPS sheet. All elements will be assigned to a compartment "s" for "System"',false);
+        EM='Could not load the COMPS sheet. All elements will be assigned to a compartment "s" for "System"';
+        dispEM(EM,false);
     end
     model.comps={'s'};
     model.compNames={'System'};
 else
-    raw=cleanImported(raw);
+    raw=cleanSheet(raw);
 
     %Map to new captions
     raw(1,:)=upper(raw(1,:));
@@ -278,12 +256,14 @@ else
 
     %Check that necessary fields are loaded
     if isempty(model.comps)
-        dispEM('There must be a column named ABBREVIATION in the COMPS sheet');   
+        EM='There must be a column named ABBREVIATION in the COMPS sheet';
+        dispEM(EM);
     end
     if isempty(model.compNames)
-        model.compNames=model.comps; 
+        model.compNames=model.comps;
         if printWarnings==true
-            dispEM('There is no column named NAME in the COMPS sheet. ABBREVIATION will be used as name',false);
+            EM='There is no column named NAME in the COMPS sheet. ABBREVIATION will be used as name';
+            dispEM(EM,false);
         end
     end
 
@@ -295,17 +275,18 @@ end
 
 if flag<0
     if printWarnings==true
-        dispEM('There is no spreadsheet named GENES',false)
+        EM='There is no spreadsheet named GENES';
+        dispEM(EM,false)
     end
 else
-    raw=cleanImported(raw);
+    raw=cleanSheet(raw);
 
     %Map to new captions
     raw(1,:)=upper(raw(1,:));
     raw(1,:)=strrep(raw(1,:),'GENE NAME','NAME');
 
     allLabels={'NAME';'MIRIAM';'COMPARTMENT'};
-    
+
     %Loop through the labels
     [I, J]=ismember(upper(raw(1,:)),allLabels);
     I=find(I);
@@ -323,9 +304,10 @@ else
     end
 
     if foundGenes==false
-        dispEM('There must be a column named NAME in the GENES sheet');
+        EM='There must be a column named NAME in the GENES sheet';
+        dispEM(EM);
     end
-        
+
     %Its ok if all of them are empty
     if all(cellfun(@isempty,model.geneComps))
         model.geneComps=[];
@@ -333,24 +315,29 @@ else
 
     %Check that geneName contain only strings and no empty strings
     if ~iscellstr(model.genes)
-        dispEM('All gene names have to be strings');
+        EM='All gene names have to be strings';
+        dispEM(EM);
     else
         if any(strcmp('',model.genes))
-            dispEM('There can be no empty strings in gene names');
+            EM='There can be no empty strings in gene names';
+            dispEM(EM);
         end
     end
 
-    %Check that geneComp contains only strings and no empty string    
+    %Check that geneComp contains only strings and no empty string
     if ~isempty(model.geneComps)
         if ~iscellstr(model.geneComps)
-            dispEM('All gene compartments have to be strings');
+            EM='All gene compartments have to be strings';
+            dispEM(EM);
         else
             if any(strcmp('',model.geneComps))
-                dispEM('There can be no empty strings in gene compartments');
+                EM='There can be no empty strings in gene compartments';
+                dispEM(EM);
             end
         end
         [I, model.geneComps]=ismember(model.geneComps,model.comps);
-        dispEM('The following genes have compartment abbreviations which could not be found:',true,model.genes(~I));
+        EM='The following genes have compartment abbreviations which could not be found:';
+        dispEM(EM,true,model.genes(~I));
     end
 end
 
@@ -360,10 +347,11 @@ model.geneMiriams=parseMiriam(model.geneMiriams);
 [raw, flag]=loadSheet(workbook,'RXNS');
 
 if flag<0
-    dispEM('Could not load the RXNS sheet');
+    EM='Could not load the RXNS sheet';
+    dispEM(EM);
 end
 
-raw=cleanImported(raw);
+raw=cleanSheet(raw);
 
 %Map to new captions
 raw(1,:)=upper(raw(1,:));
@@ -392,26 +380,29 @@ for i=1:numel(I)
            try
                model.lb=cellfun(@(x) toDouble(x,NaN),raw(2:end,I(i)));
            catch
-               dispEM('The lower bounds must be numerical values'); 
+               EM='The lower bounds must be numerical values';
+               dispEM(EM);
            end
         case 7
            try
                model.ub=cellfun(@(x) toDouble(x,NaN),raw(2:end,I(i)));
            catch
-               dispEM('The upper bounds must be numerical values'); 
+               EM='The upper bounds must be numerical values';
+               dispEM(EM);
            end
         case 8
            try
                model.c=cellfun(@(x) toDouble(x,0),raw(2:end,I(i)));
            catch
-               dispEM('The objective coefficients must be numerical values'); 
+               EM='The objective coefficients must be numerical values';
+               dispEM(EM);
            end
         case 9
         	model.rxnComps=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         case 10
         	model.subSystems=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         case 11
-        	reactionReplacement=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);    
+        	reactionReplacement=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         case 12
             model.rxnMiriams=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         case 13
@@ -425,11 +416,13 @@ end
 
 %Check that all necessary reaction info has been loaded
 if isempty(equations)
-     dispEM('There must be a column named EQUATION in the RXNS sheet');   
+    EM='There must be a column named EQUATION in the RXNS sheet';
+    dispEM(EM);
 end
 if isempty(model.rxns)
      if printWarnings==true
-        dispEM('There is no column named ID in the RXNS sheet. The reactions will be named as "r1", "r2"...',false);
+         EM='There is no column named ID in the RXNS sheet. The reactions will be named as "r1", "r2"...';
+         dispEM(EM,false);
      end
      I=num2cell((1:numel(equations))');
      model.rxns=strcat('r',cellfun(@num2str,I,'UniformOutput',false));
@@ -441,26 +434,30 @@ if isempty(model.rxnNames)
    model.rxnNames=cell(numel(model.rxns),1);
    model.rxnNames(:)={''};
    if printWarnings==true
-       dispEM('There is no column named NAME in the RXNS sheet. Empty strings will be used as reaction names',false);
+       EM='There is no column named NAME in the RXNS sheet. Empty strings will be used as reaction names';
+       dispEM(EM,false);
    end
 end
 if isempty(model.lb)
-   %This is not set here since the reversibility isn't known yet 
+   %This is not set here since the reversibility isn't known yet
    model.lb=nan(numel(model.rxns),1);
    if printWarnings==true
-        dispEM('There is no column named LOWER BOUND in the RXNS sheet. Default bounds will be used',false);
+       EM='There is no column named LOWER BOUND in the RXNS sheet. Default bounds will be used';
+       dispEM(EM,false);
    end
 end
 if isempty(model.ub)
    model.ub=nan(numel(model.rxns),1);
    if printWarnings==true
-        dispEM('There is no column named UPPER BOUND in the RXNS sheet. Default bounds will be used',false);
+       EM='There is no column named UPPER BOUND in the RXNS sheet. Default bounds will be used';
+       dispEM(EM,false);
    end
 end
 if isempty(model.c)
    model.c=zeros(numel(model.rxns),1);
    if printWarnings==true
-        dispEM('There is no column named OBJECTIVE in the RXNS sheet',false);
+       EM='There is no column named OBJECTIVE in the RXNS sheet';
+       dispEM(EM,false);
    end
 end
 
@@ -475,32 +472,35 @@ end
 %Construct the rxnMiriams structure
 model.rxnMiriams=parseMiriam(model.rxnMiriams);
 
-%Replace the reaction IDs for those IDs that have a corresponding 
+%Replace the reaction IDs for those IDs that have a corresponding
 %replacement name.
 I=cellfun(@any,reactionReplacement);
 model.rxns(I)=reactionReplacement(I);
 
 %Check that there are no empty strings in reactionIDs or equations
 if any(strcmp('',model.rxns))
-    dispEM('There are empty reaction IDs'); 
+    EM='There are empty reaction IDs';
+    dispEM(EM);
 end
 
 if any(strcmp('',equations))
-    dispEM('There are empty equations'); 
+    EM='There are empty equations';
+    dispEM(EM);
 end
 
 if ~isempty(model.rxnComps)
     if any(strcmp('',model.rxnComps))
-        dispEM('Either all reactions must have an associated compartment string or none of them'); 
+        EM='Either all reactions must have an associated compartment string or none of them';
+        dispEM(EM);
     end
 end
-    
+
 %Check gene association for each reaction and populate rxnGeneMat
 if ~isempty(model.genes)
     model.rxnGeneMat=zeros(numel(model.rxns),numel(model.genes));
 end
 if ~isempty(model.grRules)
-    for i=1:length(model.rxns)    
+    for i=1:length(model.rxns)
        %Check that all gene associations have a match in the gene list
        if ~isempty(model.grRules{i})
            indexes=strfind(model.grRules{i},':'); %Genes are separated by ":" for AND and ";" for OR
@@ -509,7 +509,8 @@ if ~isempty(model.grRules)
                %See if you have a match
                I=find(strcmp(model.grRules{i},model.genes));
                if isempty(I)
-                   dispEM(['The gene association in reaction ' model.rxns{i} ' (' model.grRules{i} ') is not present in the gene list']);
+                   EM=['The gene association in reaction ' model.rxns{i} ' (' model.grRules{i} ') is not present in the gene list'];
+                   dispEM(EM);
                end
                model.rxnGeneMat(i,I)=1;
            else
@@ -519,7 +520,8 @@ if ~isempty(model.grRules)
                    geneName=model.grRules{i}(temp(j)+1:temp(j+1)-1);
                    I=find(strcmp(geneName,model.genes));
                    if isempty(I)
-                       dispEM(['The gene association in reaction ' model.rxns{i} ' (' geneName ') is not present in the gene list']);
+                       EM=['The gene association in reaction ' model.rxns{i} ' (' geneName ') is not present in the gene list'];
+                       dispEM(EM);
                    end
                    model.rxnGeneMat(i,I)=1;
                end
@@ -556,7 +558,8 @@ model.rxnGeneMat=sparse(model.rxnGeneMat);
 %Check that the compartment for each reaction can be found
 if ~isempty(model.rxnComps)
     [I, model.rxnComps]=ismember(model.rxnComps,model.comps);
-    dispEM('The following reactions have compartment abbreviations which could not be found:',true,model.rxns(~I));
+    EM='The following reactions have compartment abbreviations which could not be found:';
+    dispEM(EM,true,model.rxns(~I));
 end
 
 %Get all the metabolites and info about them
@@ -564,7 +567,8 @@ end
 
 if flag<0
     if printWarnings==true
-        dispEM('There is no spreadsheet named METS. The metabolites will be named "m1", "m2"... and assigned to the first compartment',false);
+        EM='There is no spreadsheet named METS. The metabolites will be named "m1", "m2"... and assigned to the first compartment';
+        dispEM(EM,false);
     end
     %Parse the equations to find out how many metabolites there are
     metsForParsing=parseRxnEqu(equations);
@@ -574,7 +578,7 @@ if flag<0
     model.unconstrained=zeros(numel(model.mets),1);
     model.metNames=metsForParsing;
 else
-    raw=cleanImported(raw);			
+    raw=cleanSheet(raw);
 
     %Map to new captions
     raw(1,:)=upper(raw(1,:));
@@ -592,49 +596,55 @@ else
     for i=1:numel(I)
         switch J(I(i))
             case 1
-            	model.mets=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+               model.mets=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
             case 2
-            	model.metNames=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+               model.metNames=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
             case 3
-            	model.unconstrained=cellfun(@boolToDouble,raw(2:end,I(i)));
-               
-            	%NaN is returned if the values couldn't be parsed
-            	dispEM('The UNCONSTRAINED property for the following metabolites must be "true"/"false", 1/0, TRUE/FALSE or not set:',true,model.mets(isnan(model.unconstrained)));
+               model.unconstrained=cellfun(@boolToDouble,raw(2:end,I(i)));
+
+               %NaN is returned if the values couldn't be parsed
+               EM='The UNCONSTRAINED property for the following metabolites must be "true"/"false", 1/0, TRUE/FALSE or not set:';
+               dispEM(EM,true,model.mets(isnan(model.unconstrained)));
             case 4
-            	model.metMiriams=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+               model.metMiriams=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
             case 5
-            	model.metFormulas=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+               model.metFormulas=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
             case 6
-            	model.inchis=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+               model.inchis=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
             case 7
                 model.metComps=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+
                 %Check that all metabolites have compartments defined
                 if any(strcmp('',model.metComps))
-                    dispEM('All metabolites must have an associated compartment string'); 
+                    EM='All metabolites must have an associated compartment string';
+                    dispEM(EM);
                 end
             case 8
-            	metReplacement=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+               metReplacement=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
             case 9
-            	model.metCharge=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+               model.metCharge=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         end
     end
 
     %Check that necessary fields are loaded (METID)
     if isempty(model.mets)
-         dispEM('There must be a column named ID in the METS sheet');   
+        EM='There must be a column named ID in the METS sheet';
+        dispEM(EM);
     end
 
     %Check that some other stuff is loaded and use default values otherwise
     if isempty(model.metNames)
        model.metNames=cell(numel(model.mets),1);
        if printWarnings==true
-            dispEM('There is no column named NAME in the METS sheet. ID will be used as name',false);
+           EM='There is no column named NAME in the METS sheet. ID will be used as name';
+           dispEM(EM,false);
        end
     end
     if isempty(model.unconstrained)
        model.unconstrained=zeros(numel(model.mets),1);
        if printWarnings==true
-            dispEM('There is no column named UNCONSTRAINED in the METS sheet. All metabolites will be constrained',false);
+           EM='There is no column named UNCONSTRAINED in the METS sheet. All metabolites will be constrained';
+           dispEM(EM,false);
        end
     end
 
@@ -642,7 +652,8 @@ else
        model.metComps=cell(numel(model.mets),1);
        model.metComps(:)=model.comps(1);
        if printWarnings==true
-            dispEM('There is no column named COMPARTMENT in the METS sheet. All metabolites will be assigned to the first compartment in COMPS. Note that RAVEN makes extensive use of metabolite names and compartments. Some features will therefore not function correctly if metabolite compartments are not correctly assigned',false);
+           EM='There is no column named COMPARTMENT in the METS sheet. All metabolites will be assigned to the first compartment in COMPS. Note that RAVEN makes extensive use of metabolite names and compartments. Some features will therefore not function correctly if metabolite compartments are not correctly assigned';
+           dispEM(EM,false);
        end
     end
 
@@ -660,8 +671,9 @@ else
     %Check that the compartment for each metabolite can be found. Also convert
     %from id to index
     [I, model.metComps]=ismember(model.metComps,model.comps);
-    dispEM('The following metabolites have compartment abbreviations which could not be found:',true,model.mets(~I));
-    
+    EM='The following metabolites have compartment abbreviations which could not be found:';
+    dispEM(EM,true,model.mets(~I));
+
     %Check that the model.mets vector is unique. The problem is that
     %the checkModelStruct cannot check for that since only the metReplacements
     %(if used) end up in the model structure
@@ -672,29 +684,32 @@ else
         L(K)=[];
         I(L)=true;
     end
-    dispEM('The following metabolites are duplicates:',~ignoreErrors,model.mets(I));
+    EM='The following metabolites are duplicates:';
+    dispEM(EM,~ignoreErrors,model.mets(I));
 
     %Check that there are no metabolite IDs which are numbers. This would
     %give errors when parsing the equations
     I=cellfun(@str2double,model.mets);
-    dispEM('The following metabolites have names which cannot be distinguished from numbers:',~ignoreErrors,model.mets(~isnan(I)));
+    EM='The following metabolites have names which cannot be distinguished from numbers:';
+    dispEM(EM,~ignoreErrors,model.mets(~isnan(I)));
     I=cellfun(@str2double,metReplacement);
-    dispEM('The following metabolites have names which cannot be distinguished from numbers:',~ignoreErrors,metReplacement(~isnan(I)));
-    
-    %Replace the metabolite IDs for those IDs that have a corresponding 
+    EM='The following metabolites have names which cannot be distinguished from numbers:';
+    dispEM(EM,~ignoreErrors,metReplacement(~isnan(I)));
+
+    %Replace the metabolite IDs for those IDs that have a corresponding
     %replacement metabolite. This is not used for matching, but will be checked
     %for consistency with SBML naming conventions
-    metsForParsing=model.mets; %This is because the equations are written with this 
+    metsForParsing=model.mets; %This is because the equations are written with this
     I=cellfun(@any,metReplacement);
     model.mets(I)=metReplacement(I);
-    
+
     %If the metabolite name isn't set, replace it with the metabolite id
     I=~cellfun(@any,model.metNames);
     model.metNames(I)=model.mets(I);
 
     %Construct the metMiriams structure
     model.metMiriams=parseMiriam(model.metMiriams);
-    
+
     %Either all metabolites have charge or none of them.
     %Check if it's only empty and if so return it to []
     if ~isempty(model.metCharge)
@@ -704,7 +719,8 @@ else
     end
     if ~isempty(model.metCharge)
         if any(strcmp('',model.metCharge))
-            dispEM('Either all metabolites have charge information or none of them'); 
+            EM='Either all metabolites have charge information or none of them';
+            dispEM(EM);
         end
     end
     if ~isempty(model.metCharge)
@@ -725,12 +741,13 @@ model.ub(isnan(model.ub))=model.annotation.defaultUB;
 
 %Reorder the S matrix so that it fits with the metabolite list in the
 %structure
-[crap, I]=ismember(mets,metsForParsing);
+[~, I]=ismember(mets,metsForParsing);
 model.S=model.S(I,:);
 
 %Print warnings about the reactions which contain the same metabolite as
 %both reactants and products
-dispEM('The following reactions have metabolites which are present more than once. Only the net reactions will be exported:',false,model.rxns(badRxns));
+EM='The following reactions have metabolites which are present more than once. Only the net reactions will be exported:';
+dispEM(EM,false,model.rxns(badRxns));
 
 model.b=zeros(numel(model.mets),1);
 
@@ -757,16 +774,16 @@ if isempty(model.eccodes)
     model=rmfield(model,'eccodes');
 end
 if isempty(model.rxnMiriams)
-	model=rmfield(model,'rxnMiriams');
+    model=rmfield(model,'rxnMiriams');
 end
 if isempty(model.rxnNotes)
-	model=rmfield(model,'rxnNotes');
+       model=rmfield(model,'rxnNotes');
 end
 if isempty(model.rxnReferences)
-	model=rmfield(model,'rxnReferences');
+       model=rmfield(model,'rxnReferences');
 end
 if isempty(model.confidenceScores)
-	model=rmfield(model,'confidenceScores');
+       model=rmfield(model,'confidenceScores');
 end
 if isempty(model.genes)
     model=rmfield(model,'genes');
@@ -800,60 +817,6 @@ if removeExcMets==true
 end
 end
 
-%Cleans up the structure that is imported from using xlsread
-function raw=cleanImported(raw)
-    %First check that it's a cell array. If a sheet is completely empty,
-    %then raw=NaN
-    if iscell(raw)
-        %Clear cells which contain only white spaces or NaN. This could
-        %happen if you accidentally inserted a space for example. I don't
-        %know how NaN could occur after switching to Apache POI, but I
-        %clear it to be sure
-        whites=cellfun(@wrapperWS,raw);
-        raw(whites)={[]};
-        
-        %Remove columns that don't have string headers. If you cut and paste
-        %a lot in the sheet there tends to be columns that are empty
-        I=cellfun(@isstr,raw(1,:));
-        raw=raw(:,I);
-        
-        %Find the rows that are not commented. This corresponds to the
-        %first row and the ones which are empty in the first column
-        
-        keepers=cellfun(@isempty,raw(:,1));
-        keepers(1)=true;
-        raw=raw(keepers,:);
-
-        %Check if there are any rows that are all empty. This could happen if
-        %it reads too far or if the user has inserted them for layout reasons.
-        %Remove any such rows.
-        I=~all(cellfun(@isempty,raw),2);
-        raw=raw(I,:);
-    else
-        raw={[]};
-    end
-    
-    %Checks if something is all white spaces or NaN
-    function I=wrapperWS(A)
-        if isnan(A)
-            I=true;
-        else
-            %isstrprop gives an error if boolean
-            if islogical(A)
-                I=false;
-            else
-                %I have to make this check, since otherwise it will pick up
-                %on doubles for which the ASCII representation is a white
-                %space character
-                if isnumeric(A)
-                    I=false;
-                else
-                    I=all(isstrprop(A,'wspace'));
-                end
-            end
-        end
-    end
-end
 function miriamStruct=parseMiriam(strings,miriamStruct)
 %Gets the names and values of Miriam-string. Nothing fancy at all, just to
 %prevent using the same code for metabolites, genes, and reactions. The
@@ -877,72 +840,19 @@ for i=1:numel(strings)
             miriamStruct{i}.name=cell(numel(I),1);
             miriamStruct{i}.value=cell(numel(I),1);
         end
-        
+
         for j=1:numel(I)
             index=max(strfind(I{j},':'));
             if any(index)
                 miriamStruct{i}.name{startIndex+j}=I{j}(1:index-1);
                 miriamStruct{i}.value{startIndex+j}=I{j}(index+1:end);
             else
-                dispEM(['"' I{j} '" is not a valid MIRIAM string. The format must be "identifier:value"']);
+                EM=['"' I{j} '" is not a valid MIRIAM string. The format must be "identifier:value"'];
+                dispEM(EM);
             end
         end
     end
 end
-end
-
-%Loads a sheet into a cell matrix using the Java library Apache POI.
-
-%flag       -1 if the sheet couldn't be found
-%           0 if everything worked well
-function [raw, flag]=loadSheet(workbook, sheet)      
-    flag=0;
-    raw={};
-    
-    sh=workbook.getSheet(sheet);
-    if isempty(sh)
-        flag=-1;
-        return;
-    end
-    
-    lastRow=sh.getLastRowNum();
-    wasEmpty=false(lastRow+1,1);
-    raw=cell(lastRow+1,0); %Allocate space for the cell array. The number of columns isn't know yet, as it's saved row-by-row
-    for i=0:lastRow
-        row=sh.getRow(i);
-        %Sometimes the last rows only contain formatting (or some other
-        %weird Excel thing). Ignore such empty rows. Note the +1 to deal with that Matlab indexing
-        %starts at 1
-        if isempty(row)
-            wasEmpty(i+1)=true;
-            continue;
-        end
-        lastCol=row.getLastCellNum();
-   
-        %Adjust the size of the cell array if needed
-        if (lastCol+1)>size(raw,2)
-            raw=[raw cell(lastRow+1,lastCol+1-size(raw,2))];
-        end
-        
-        %Loop over the columns
-        for j=0:lastCol
-           c=row.getCell(j,row.RETURN_BLANK_AS_NULL);
-           if ~isempty(c)
-               %Then decide how to save it depending on the type
-               switch c.getCellType()
-                   case c.CELL_TYPE_STRING
-                        raw{i+1,j+1}=char(c.getRichStringCellValue().getString());
-                   case c.CELL_TYPE_NUMERIC
-                        raw{i+1,j+1}=c.getNumericCellValue();
-                   case c.CELL_TYPE_BOOLEAN
-                        raw{i+1,j+1}=c.getBooleanCellValue();
-               end
-           end
-        end
-    end
-    
-    %Remove empty rows
-    raw(wasEmpty,:)=[];
 end
 
 %For converting a value to string. This is used instead of num2str because
@@ -969,12 +879,13 @@ function y=toDouble(x,default)
             y=x;
         else
             y=str2double(x);
-            
+
             %This happens if the input couldn't be converted.
             %Note that the input itself cannot be NaN since it was fixed in
             %clean imported
             if isnan(y)
-                dispEM(['Cannot convert the string "' x '" to double']);
+                EM=['Cannot convert the string "' x '" to double'];
+                dispEM(EM);
             end
         end
     end

@@ -1,0 +1,135 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of loadSheet</title>
+  <meta name="keywords" content="loadSheet">
+  <meta name="description" content="loadSheet">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">io</a> &gt; loadSheet.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for io&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>loadSheet
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>loadSheet</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [raw, flag]=loadSheet(workbook, sheet) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> loadSheet
+   Loads an Excel sheet into a cell matrix using the Java library Apache POI
+
+   workbook    Workbook object representing the Excel file
+   sheet       name of the sheet (opt, default first sheet)
+
+   raw         cell array with the data in the sheet
+   flag        0 if everything worked, -1 if it didn't
+
+   Usage: [raw, flag]=loadSheet(workbook, sheet)
+
+   Rasmus Agren, 2017-02-28</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="importExcelModel.html" class="code" title="function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)">importExcelModel</a>	importExcelModel</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">% loadSheet</span>
+0002 <span class="comment">%   Loads an Excel sheet into a cell matrix using the Java library Apache POI</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">%   workbook    Workbook object representing the Excel file</span>
+0005 <span class="comment">%   sheet       name of the sheet (opt, default first sheet)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">%   raw         cell array with the data in the sheet</span>
+0008 <span class="comment">%   flag        0 if everything worked, -1 if it didn't</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">%   Usage: [raw, flag]=loadSheet(workbook, sheet)</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">%   Rasmus Agren, 2017-02-28</span>
+0013 <span class="comment">%</span>
+0014 <a name="_sub0" href="#_subfunctions" class="code">function [raw, flag]=loadSheet(workbook, sheet)</a>
+0015     <span class="keyword">if</span> nargin&lt;2
+0016         sheet=[];
+0017     <span class="keyword">end</span>
+0018     flag=0;
+0019     raw={};
+0020     
+0021     <span class="keyword">if</span> any(sheet)
+0022         sh=workbook.getSheet(sheet);
+0023     <span class="keyword">else</span>
+0024         sh=workbook.getSheetAt(0);
+0025     <span class="keyword">end</span>
+0026     <span class="keyword">if</span> isempty(sh) 
+0027         flag=-1;
+0028         <span class="keyword">return</span>;
+0029     <span class="keyword">end</span>
+0030     
+0031     lastRow=sh.getLastRowNum();
+0032     wasEmpty=false(lastRow+1,1);
+0033     raw=cell(lastRow+1,0); <span class="comment">%Allocate space for the cell array. The number of columns isn't know yet, as it's saved row-by-row</span>
+0034     <span class="keyword">for</span> i=0:lastRow
+0035         row=sh.getRow(i);
+0036         <span class="comment">%Sometimes the last rows only contain formatting (or some other</span>
+0037         <span class="comment">%weird Excel thing). Ignore such empty rows. Note the +1 to deal with that Matlab indexing</span>
+0038         <span class="comment">%starts at 1</span>
+0039         <span class="keyword">if</span> isempty(row)
+0040             wasEmpty(i+1)=true;
+0041             <span class="keyword">continue</span>;
+0042         <span class="keyword">end</span>
+0043         lastCol=row.getLastCellNum();
+0044    
+0045         <span class="comment">%Adjust the size of the cell array if needed</span>
+0046         <span class="keyword">if</span> (lastCol+1)&gt;size(raw,2)
+0047             raw=[raw cell(lastRow+1,lastCol+1-size(raw,2))];
+0048         <span class="keyword">end</span>
+0049         
+0050         <span class="comment">%Loop over the columns</span>
+0051         <span class="keyword">for</span> j=0:lastCol
+0052            c=row.getCell(j,row.RETURN_BLANK_AS_NULL);
+0053            <span class="keyword">if</span> ~isempty(c)
+0054                <span class="comment">%Then decide how to save it depending on the type. First</span>
+0055                <span class="comment">%check if it's a formula. If so the cached value should be</span>
+0056                <span class="comment">%used</span>
+0057                <span class="keyword">if</span> c.getCellType()==c.CELL_TYPE_FORMULA
+0058                     type=c.getCachedFormulaResultType();
+0059                <span class="keyword">else</span>
+0060                     type=c.getCellType();
+0061                <span class="keyword">end</span>
+0062                
+0063                <span class="keyword">switch</span> type
+0064                    <span class="keyword">case</span> c.CELL_TYPE_STRING
+0065                         raw{i+1,j+1}=char(c.getRichStringCellValue().getString());
+0066                    <span class="keyword">case</span> c.CELL_TYPE_NUMERIC
+0067                         raw{i+1,j+1}=c.getNumericCellValue();
+0068                    <span class="keyword">case</span> c.CELL_TYPE_BOOLEAN
+0069                         raw{i+1,j+1}=c.getBooleanCellValue();
+0070                <span class="keyword">end</span>
+0071            <span class="keyword">end</span>
+0072         <span class="keyword">end</span>
+0073     <span class="keyword">end</span>
+0074     
+0075     <span class="comment">%Remove empty rows</span>
+0076     raw(wasEmpty,:)=[];
+0077 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 28-Feb-2017 23:41:43 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

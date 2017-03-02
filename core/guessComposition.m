@@ -33,7 +33,7 @@ function [model, guessedFor, couldNotGuess]=guessComposition(model, printResults
 %
 %   Usage: [newModel, guessedFor, couldNotGuess]=guessComposition(model, printResults)
 %
-%   Rasmus Agren, 2013-11-06
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<2
@@ -60,7 +60,7 @@ while predicted==true
         %Get the metabolites with this name. Not so neat, but this is a
         %fast function anyways
         mets=find(ismember(model.metNames,metNames(i)));
-        
+
         currentComp=[];
 
         %Loop through the metabolites
@@ -69,7 +69,7 @@ while predicted==true
         metStatus=-1;
         for j=1:numel(mets)
             %Get the reactions that the metabolite participates in
-            [crap, I]=find(model.S(mets(j),:));
+            [~, I]=find(model.S(mets(j),:));
             if any(I)
                 for k=1:numel(I)
                     %Loop through the reactions and check if all other mets in them
@@ -80,7 +80,7 @@ while predicted==true
                         %This means that all other mets had composition. Calculate
                         %the resulting composition for the unknown one
                         comp=useMat'*eqn;
-                        
+
                         %This can result in round off errors if there are
                         %stoichiometries with many decimals. Ignore values
                         %below 10^-12
@@ -129,7 +129,8 @@ while predicted==true
         %Check status of the metabolite
         switch metStatus
             case -2
-                dispEM(['Could not predict composition for "' metNames{i} '" due to inconsistencies'],false);
+                EM=['Could not predict composition for "' metNames{i} '" due to inconsistencies'];
+                dispEM(EM,false);
             case 1
                 %Calculate and add the composition
                 str=getCompString(elements,comp);
@@ -137,12 +138,12 @@ while predicted==true
                 if printResults==true
                     fprintf(['Predicted composition for "' metNames{i} '" to be ' str '\n']);
                 end
-                
+
                 %Keep track
                 guessedFor=[guessedFor;metNames(i)];
-                
+
                 predicted=true; %To loop again
-        end        
+        end
     end
 end
 
@@ -152,13 +153,13 @@ end
 %Helper function for getting the composition string
 function str=getCompString(elements,comp)
     str='';
-    
+
     for i=1:numel(comp)
        if comp(i)~=0
           if comp(i)==1
              str=[str  elements.abbrevs{i}];
           else
-             str=[str  elements.abbrevs{i} num2str(comp(i))]; 
+             str=[str  elements.abbrevs{i} num2str(comp(i))];
           end
        end
     end

@@ -32,8 +32,8 @@
 
    fileName            comma-separated database dump of HPA. For details
                        regarding the format, see
-                       http://www.proteinatlas.org/about/download.                          
-   
+                       http://www.proteinatlas.org/about/download.
+
    hpaData
        genes               cell array with the unique gene names
        tissues             cell array with the tissue names. The list may not be
@@ -42,7 +42,7 @@
        levels              cell array with the unique expression levels
        types               cell array with the unique evidence types
        reliabilities       cell array with the unique reliability levels
-       
+
        gene2Level          gene-to-expression level mapping in sparse matrix form.
                            The value for element i,j is the index in
                            hpaData.levels of gene i in cell type j
@@ -53,19 +53,19 @@
                            The value for element i,j is the index in
                            hpaData.reliabilities of gene i in cell type j
 
-       
+
    Usage: hpaData=parseHPA(fileName)
 
-   Rasmus Agren, 2013-08-01</pre></div>
+   Rasmus Agren, 2014-01-08</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="../core/dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li></ul>
+</ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="../test/private/testINIT.html" class="code" title="function out=testINIT(param)">testINIT</a>	</li><li><a href="../test/private/testTasks.html" class="code" title="function out=testTasks(param)">testTasks</a>	</li></ul>
+</ul>
 <!-- crossreference -->
 
 
@@ -101,37 +101,37 @@ This function is called by:
 0028 <span class="comment">%</span>
 0029 <span class="comment">%   Usage: hpaData=parseHPA(fileName)</span>
 0030 <span class="comment">%</span>
-0031 <span class="comment">%   Rasmus Agren, 2013-08-01</span>
+0031 <span class="comment">%   Rasmus Agren, 2014-01-08</span>
 0032 <span class="comment">%</span>
 0033 
 0034 fid=fopen(fileName,<span class="string">'r'</span>);
-0035 hpa=textscan(fid,<span class="string">'%q %q %q %q %q %q %q'</span>,<span class="string">'Delimiter'</span>,<span class="string">','</span>);
+0035 hpa=textscan(fid,<span class="string">'%q %q %q %q %q %q'</span>,<span class="string">'Delimiter'</span>,<span class="string">','</span>);
 0036 fclose(fid);
 0037 
 0038 <span class="comment">%Go through and see if the headers match what was expected</span>
-0039 headers={<span class="string">'Gene'</span> <span class="string">'Gene Name'</span> <span class="string">'Tissue'</span> <span class="string">'Cell type'</span> <span class="string">'Level'</span> <span class="string">'Expression type'</span> <span class="string">'Reliability'</span>};
+0039 headers={<span class="string">'Gene'</span> <span class="string">'Tissue'</span> <span class="string">'Cell type'</span> <span class="string">'Level'</span> <span class="string">'Expression type'</span> <span class="string">'Reliability'</span>};
 0040 <span class="keyword">for</span> i=1:numel(headers)
 0041     <span class="keyword">if</span> ~strcmpi(headers(i),hpa{i}(1))
-0042         <a href="../core/dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'Could not find the header &quot;'</span> headers{i} <span class="string">'&quot;. Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'</span>]);
-0043     <span class="keyword">end</span>
-0044     <span class="comment">%Remove the header line here</span>
-0045     hpa{i}(1)=[];
-0046 <span class="keyword">end</span>
-0047 
-0048 <span class="comment">%Get the unique values of each data type</span>
-0049 [hpaData.genes crap I]=unique(hpa{1});
-0050 hpaData.genenames=unique(hpa{2})
-0051 [crap J K]=unique(strcat(hpa{3},<span class="string">''</span>,hpa{4}));
-0052 hpaData.tissues=hpa{3}(J);
-0053 hpaData.celltypes=hpa{4}(J);
-0054 [hpaData.levels crap L]=unique(hpa{5});
-0055 [hpaData.types crap M]=unique(hpa{6});
-0056 [hpaData.reliabilities crap N]=unique(hpa{7});
+0042         EM=[<span class="string">'Could not find the header &quot;'</span> headers{i} <span class="string">'&quot;. Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'</span>];
+0043       dispEM(EM);
+0044     <span class="keyword">end</span>
+0045     <span class="comment">%Remove the header line here</span>
+0046     hpa{i}(1)=[];
+0047 <span class="keyword">end</span>
+0048 
+0049 <span class="comment">%Get the unique values of each data type</span>
+0050 [hpaData.genes, ~, I]=unique(hpa{1});
+0051 [~, J, K]=unique(strcat(hpa{2},<span class="string">'€'</span>,hpa{3}));
+0052 hpaData.tissues=hpa{2}(J);
+0053 hpaData.celltypes=hpa{3}(J);
+0054 [hpaData.levels, ~, L]=unique(hpa{4});
+0055 [hpaData.types, ~, M]=unique(hpa{5});
+0056 [hpaData.reliabilities, ~, N]=unique(hpa{6});
 0057 
 0058 <span class="comment">%Map the data to be sparse matrises instead</span>
 0059 hpaData.gene2Level=sparse(I,K,L,numel(hpaData.genes),numel(hpaData.tissues));
 0060 hpaData.gene2Type=sparse(I,K,M,numel(hpaData.genes),numel(hpaData.tissues));
 0061 hpaData.gene2Reliability=sparse(I,K,N,numel(hpaData.genes),numel(hpaData.tissues));</pre></div>
-<hr><address>Generated on Fri 14-Oct-2016 12:02:10 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Tue 28-Feb-2017 23:41:43 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

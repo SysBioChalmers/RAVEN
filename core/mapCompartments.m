@@ -37,12 +37,12 @@ function geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
 %
 %   GSS=mapCompartments(GSS,'Extracellular','Mitochondria','Peroxisome=Lyso
 %   some','Cytosol=other');
-%   
+%
 %   geneScoreStructure  a structure to be used in predictLocalization
 %
 %   Usage: geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 
 varargin=upper(varargin);
 
@@ -64,7 +64,8 @@ end
 
 %Check that there are no compartment that should both be merged and kept
 if ~isempty(intersect(toKeep,toMerge))
-    dispEM('There are inconsistencies where one or more compartment(s) should be both kept and merged to another');  
+    EM='There are inconsistencies where one or more compartment(s) should be both kept and merged to another';
+    dispEM(EM);
 end
 
 %Check that there are no compartments in the rules that are not in the
@@ -73,11 +74,12 @@ uComps=upper(geneScoreStructure.compartments);
 J=[uComps;{'OTHER'}];
 
 if ~isempty(setdiff([toKeep;toMerge],J))
-    dispEM('There are compartment in the rules that are not in geneScoreStructure.compartments');
+    EM='There are compartment in the rules that are not in geneScoreStructure.compartments';
+    dispEM(EM);
 end
 
 %Loop through it again and do the mapping
-otherIndex=[]; %This stores the rule which maps 'other'. 
+otherIndex=[]; %This stores the rule which maps 'other'.
 
 for i=1:numel(I)
    if numel(I{i})>1
@@ -87,21 +89,23 @@ for i=1:numel(I)
            otherIndex=i;
            continue;
        end
-       [k K]=ismember(J{1},uComps);
-       
+       [k, K]=ismember(J{1},uComps);
+
        %And to where they should be mapped
        J=regexp(I{i}(1),' ','split');
-       [l L]=ismember(J{1},uComps);
-       
+       [l, L]=ismember(J{1},uComps);
+
        %It's not allowed to have rules like A B=C D
        if numel(K)>1 && numel(L)>1
-           dispEM('It is not allowed to have rules like "A B=C D" (map more than one compartment to more than one compartment)');
+           EM='It is not allowed to have rules like "A B=C D" (map more than one compartment to more than one compartment)';
+           dispEM(EM);
        end
-       
+
        if ~all(k) || ~all(l)
-            dispEM('Error in mapping. This most likely means that some compartment(s) are mapped to different compartments in different rules. Use A B=C if you want to map C to several compartments');
+           EM='Error in mapping. This most likely means that some compartment(s) are mapped to different compartments in different rules. Use A B=C if you want to map C to several compartments';
+           dispEM(EM);
        end
-       
+
        %Get the sum of the scores for the compartments that should be
        %merged to something else
        S=max(geneScoreStructure.scores(:,K),[],2);
@@ -110,7 +114,7 @@ for i=1:numel(I)
            %split the scores between them
            geneScoreStructure.scores(:,L(j))=max(geneScoreStructure.scores(:,L(j)),S./numel(L));
        end
-       
+
        %Remove the comparement that were merged
        geneScoreStructure.compartments(K)=[];
        geneScoreStructure.scores(:,K)=[];
@@ -124,17 +128,19 @@ J=find(~ismember(uComps,toKeep));
 if any(J)
     if any(otherIndex)
         K=regexp(I{otherIndex}(1),' ','split');
-        [l L]=ismember(K{1},uComps);
+        [l, L]=ismember(K{1},uComps);
         if l==1 && numel(l)==1
             S=max(geneScoreStructure.scores(:,J),[],2);
             geneScoreStructure.scores(:,L)=max(geneScoreStructure.scores(:,L),S);
         else
-            dispEM('Could not map "other" to more than one compartment');
+            EM='Could not map "other" to more than one compartment';
+            dispEM(EM);
         end
     else
-       dispEM('There are compartments that are not defined if they should be kept or removed. Use "A=other" or define more rules if you do not want them to be deleted',false); 
+        EM='There are compartments that are not defined if they should be kept or removed. Use "A=other" or define more rules if you do not want them to be deleted';
+        dispEM(EM,false);
     end
-    
+
     %Remove the comparement that were merged
     geneScoreStructure.compartments(J)=[];
     geneScoreStructure.scores(:,J)=[];
@@ -148,7 +154,8 @@ geneScoreStructure.scores=bsxfun(@times, geneScoreStructure.scores, 1./I);
 %print a warning.
 I=find(isnan(geneScoreStructure.scores(:,1))); %Only looks a the first colum as it will be the same for the other ones
 if any(I)
-    dispEM('The following genes had score 0.0 in all compartments. They have been removed from the structure. Consider using more rules or "A=other" in order to prevent this:',false,geneScoreStructure.genes(I));
+    EM='The following genes had score 0.0 in all compartments. They have been removed from the structure. Consider using more rules or "A=other" in order to prevent this:';
+    dispEM(EM,false,geneScoreStructure.genes(I));
     geneScoreStructure.scores(I,:)=[];
     geneScoreStructure.genes(I)=[];
 end

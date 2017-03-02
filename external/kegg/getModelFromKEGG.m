@@ -1,12 +1,14 @@
-function [model KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
+function [model, KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
 % getModelFromKEGG
 %   Retrieves information stored in KEGG database and generates a model
 %
-%   keggPath            this function reads data from a local FTP dump of 
-%                       the KEGG database. keggPath is the pathway to the 
-%                       root of the database
+%   keggPath            if keggGenes.mat, keggMets.mat, keggPhylDist.mat
+%                       or keggRxns.mat is not in the RAVEN\external\kegg
+%                       directory, this function will attempt to read data
+%                       from a local FTP dump of the KEGG database.
+%                       keggPath is the path to the root of this database
 %   keepUndefinedStoich include reactions in the form n A <=> n+1 A. These
-%                       will be dealt with as two separate metabolites 
+%                       will be dealt with as two separate metabolites
 %                       (opt, default true)
 %   keepIncomplete      include reactions which have been labelled as
 %                       "incomplete", "erroneous" or "unclear" (opt,
@@ -19,16 +21,16 @@ function [model KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncom
 %                       script will therefore not be able to remove all
 %                       such reactions (opt, default false)
 %
-%   model               a model structure generated from the database. 
-%                       All reactions and the metabolites used in them 
+%   model               a model structure generated from the database.
+%                       All reactions and the metabolites used in them
 %                       will be added
-%   KOModel             a model structure representing the KEGG Orthology 
-%                       ids and their associated genes. The KO ids are 
+%   KOModel             a model structure representing the KEGG Orthology
+%                       ids and their associated genes. The KO ids are
 %                       saved as reactions
-%               
+%
 %   Usage: getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Rasmus Agren, 2013-02-06
+%   Eduard Kerkhoven, 2017-02-28
 %
 
 if nargin<2
@@ -38,7 +40,7 @@ if nargin<3
     keepIncomplete=true;
 end
 if nargin<4
-    keepGeneral=false;
+    keepGeneral=true;
 end
 
 %First get all reactions
@@ -108,11 +110,11 @@ r=zeros(10000000,1); %Store the positions since it's slow to write to a sparse a
 c=zeros(10000000,1);
 counter=1;
 for i=1:numel(model.rxns)
-	if isstruct(model.rxnMiriams{i})
+    if isstruct(model.rxnMiriams{i})
         I=strncmp('urn:miriam:kegg.ko',model.rxnMiriams{i}.name,18);
-        [J K]=ismember(model.rxnMiriams{i}.value(I),KOModel.rxns);
+        [J, K]=ismember(model.rxnMiriams{i}.value(I),KOModel.rxns);
         %Find all gene indexes that correspond to any of these KOs
-        [crap L]=find(KOModel.rxnGeneMat(K(J),:));
+        [~, L]=find(KOModel.rxnGeneMat(K(J),:));
         if any(L)
             %Allocate room for more elements if needed
             if counter+numel(L)-1>=numel(r)
@@ -123,7 +125,7 @@ for i=1:numel(model.rxns)
             c(counter:counter+numel(L)-1)=L(:);
             counter=counter+numel(L);
         end
-	end
+    end
 end
 
 model.rxnGeneMat=sparse(r(1:counter-1),c(1:counter-1),ones(counter-1,1));
@@ -136,7 +138,7 @@ metModel=getMetsFromKEGG(keggPath);
 fprintf('KEGG metabolites loaded\n');
 
 %Add information about all metabolites to the model
-[a b]=ismember(model.mets,metModel.mets);
+[a, b]=ismember(model.mets,metModel.mets);
 a=find(a);
 b=b(a);
 

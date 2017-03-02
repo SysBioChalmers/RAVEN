@@ -3,18 +3,18 @@ function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUn
 %   Checks a model to see if the reactions are elementally balanced
 %
 %   model             a model structure
-%   rxns              either a cell array of reaction IDs, a logical vector 
+%   rxns              either a cell array of reaction IDs, a logical vector
 %                     with the same number of elements as reactions in the model,
 %                     of a vector of indexes. Only these reactions will be
 %                     checked (opt, default model.rxns)
-%   printUnbalanced   print warnings about the reactions that were 
+%   printUnbalanced   print warnings about the reactions that were
 %                     unbalanced (opt, default false)
 %   printUnparsable   print warnings about the reactions that cannot be
 %                     parsed (opt, default false)
 %
 %   balanceStructure
-%       balanceStatus	1 if the reaction is balanced, 0 if it's unbalanced, 
-%                      -1 if it couldn't be balanced due to missing information, 
+%       balanceStatus	1 if the reaction is balanced, 0 if it's unbalanced,
+%                      -1 if it couldn't be balanced due to missing information,
 %                      -2 if it couldn't be balanced due to an error
 %       elements
 %           abbrevs     cell array with abbreviations for all used elements
@@ -26,7 +26,7 @@ function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUn
 %
 %   Usage: balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<2
@@ -55,7 +55,8 @@ else
     if isfield(model,'inchis')
         [balanceStructure.elements, useMat, exitFlag]=parseFormulas(model.inchis, true,true);
     else
-        dispEM('The model must contain either the "metFormulas" or the "inchis" field in order to test for elemental balancing');
+        EM='The model must contain either the "metFormulas" or the "inchis" field in order to test for elemental balancing';
+        dispEM(EM);
     end
 end
 
@@ -116,15 +117,18 @@ toPrint=sort(toPrint);
 for i=1:numel(toPrint)
     if balanceStructure.balanceStatus(toPrint(i))<0
         if balanceStructure.balanceStatus(toPrint(i))==-1
-            dispEM(['The reaction ' model.rxns{toPrint(i)} ' could not be balanced due to missing information'],false);
+            EM=['The reaction ' model.rxns{toPrint(i)} ' could not be balanced due to missing information'];
+            dispEM(EM,false);
         else
-            dispEM(['The reaction ' model.rxns{toPrint(i)} ' could not be balanced due to a parsing error'],false);
+            EM=['The reaction ' model.rxns{toPrint(i)} ' could not be balanced due to a parsing error'];
+            dispEM(EM,false);
         end
     else
        %Find the compounds that it's not balanced for
        notBalanced=find(total(toPrint(i),:));
        for j=1:numel(notBalanced)
-            dispEM(['The reaction ' model.rxns{toPrint(i)} ' is not balanced with respect to ' balanceStructure.elements.names{notBalanced(j)}],false);
+           EM=['The reaction ' model.rxns{toPrint(i)} ' is not balanced with respect to ' balanceStructure.elements.names{notBalanced(j)}];
+           dispEM(EM,false);
        end
     end
 end

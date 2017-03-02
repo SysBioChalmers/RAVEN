@@ -1,0 +1,183 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of FSEOF</title>
+  <meta name="keywords" content="FSEOF">
+  <meta name="description" content="FSEOF: implements the algorithm of Flux Scanning based on Enforced Objective Flux.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">core</a> &gt; FSEOF.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for core&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>FSEOF
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>FSEOF: implements the algorithm of Flux Scanning based on Enforced Objective Flux.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> FSEOF: implements the algorithm of Flux Scanning based on Enforced Objective Flux.
+
+INPTUS
+   model           a model structure
+   biomassRxn      the biomass formation or growth reaction id
+   targetRxn          target reaction id
+
+OPTIONAL INPUT
+   iterations      number of iterations, default is 10
+   coefficient     percentage of optimal targe reaction flux, must be less than
+                   1 and default value is 0.9 
+   outputFile      filename of output file, default is standard output
+
+OUTPUTS
+   This function output a excel fomrat file or in standard output
+
+   Usage: FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile)
+
+   Hao Wang, 2017-2-2</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>	setParam</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile)</a>
+0002 <span class="comment">% FSEOF: implements the algorithm of Flux Scanning based on Enforced Objective Flux.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">%INPTUS</span>
+0005 <span class="comment">%   model           a model structure</span>
+0006 <span class="comment">%   biomassRxn      the biomass formation or growth reaction id</span>
+0007 <span class="comment">%   targetRxn          target reaction id</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">%OPTIONAL INPUT</span>
+0010 <span class="comment">%   iterations      number of iterations, default is 10</span>
+0011 <span class="comment">%   coefficient     percentage of optimal targe reaction flux, must be less than</span>
+0012 <span class="comment">%                   1 and default value is 0.9</span>
+0013 <span class="comment">%   outputFile      filename of output file, default is standard output</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">%OUTPUTS</span>
+0016 <span class="comment">%   This function output a excel fomrat file or in standard output</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">%   Usage: FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile)</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">%   Hao Wang, 2017-2-2</span>
+0021 
+0022 output = 0;
+0023 <span class="keyword">if</span> nargin&lt;4
+0024   iterations = 10;
+0025   coefficient = 0.9;
+0026 <span class="keyword">end</span>
+0027 
+0028 <span class="keyword">if</span> nargin &lt;5
+0029     coefficient = 0.9;
+0030 <span class="keyword">end</span>
+0031 
+0032 <span class="keyword">if</span> nargin == 6
+0033     output = 1;
+0034 <span class="keyword">end</span>
+0035 
+0036 <span class="comment">%Find out the maximum theoretical yield of target reaction</span>
+0037 model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'obj'</span>,targetRxn,1);
+0038 sol=solveLP(model,1);
+0039 targetMax = abs(sol.f*coefficient);   <span class="comment">% 90 percent of the theoretical yield</span>
+0040 
+0041 model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'obj'</span>,biomassRxn,1);
+0042 
+0043 fseof.results=zeros(length(model.rxns),iterations);
+0044 fseof.target=zeros(length(model.rxns),1);
+0045 rxnDirection=zeros(length(model.rxns),1);
+0046 
+0047 <span class="comment">%Enforce objective flux iteratively</span>
+0048 <span class="keyword">for</span> i=1:iterations
+0049     n = i*targetMax/iterations;
+0050     model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'lb'</span>,targetRxn,n);
+0051   
+0052   sol=solveLP(model,1);
+0053   
+0054     fseof.results(:,i)=sol.x;
+0055 
+0056     <span class="comment">%Loop through all fluxes and identify the ones that increased upon the enforced objective flux</span>
+0057     <span class="keyword">for</span> j=1:length(fseof.results)
+0058       <span class="keyword">if</span> fseof.results(j,1) &gt; 0   <span class="comment">%Check the positive fluxes</span>
+0059       
+0060           <span class="keyword">if</span> i == 1   <span class="comment">%The initial round</span>
+0061               rxnDirection(j,1) = 1;
+0062               fseof.target(j,1) = 1;
+0063             <span class="keyword">else</span>
+0064                 
+0065                 <span class="keyword">if</span> (fseof.results(j,i) &gt; fseof.results(j,i-1)) &amp; fseof.target(j,1)
+0066                   fseof.target(j,1) = 1;
+0067               <span class="keyword">else</span>
+0068                   fseof.target(j,1) = 0;
+0069               <span class="keyword">end</span>
+0070           <span class="keyword">end</span>
+0071 
+0072       <span class="keyword">elseif</span> fseof.results(j,1) &lt; 0 <span class="comment">%Check the negative fluxes</span>
+0073       
+0074           <span class="keyword">if</span> i == 1   <span class="comment">%The initial round</span>
+0075               rxnDirection(j,1) = -1;
+0076               fseof.target(j,1) = 1;
+0077             <span class="keyword">else</span>
+0078                 <span class="keyword">if</span> (fseof.results(j,i) &lt; fseof.results(j,i-1)) &amp; fseof.target(j,1)
+0079                   fseof.target(j,1) = 1;
+0080               <span class="keyword">else</span>
+0081                   fseof.target(j,1) = 0;
+0082               <span class="keyword">end</span>
+0083           <span class="keyword">end</span>
+0084       
+0085         <span class="keyword">end</span>
+0086 
+0087     <span class="keyword">end</span>
+0088 <span class="keyword">end</span>
+0089 
+0090 <span class="comment">%Generating output</span>
+0091 formatSpec = <span class="string">'%s\t%s\t%s\t%s\t%s\t%s\t%s\n'</span>;
+0092 <span class="keyword">if</span> output == 1    <span class="comment">%Output to a file</span>
+0093     fid = fopen(outputFile,<span class="string">'w'</span>);
+0094     fprintf(fid,formatSpec,<span class="string">'Slope'</span>,<span class="string">'rowID'</span>,<span class="string">'Enzyme ID'</span>,<span class="string">'Enzyme Name'</span>,<span class="string">'Subsystem'</span>,<span class="string">'Direction'</span>,<span class="string">'Gr Rule'</span>);
+0095 <span class="keyword">else</span>              <span class="comment">%Output to screen</span>
+0096     fprintf(formatSpec,<span class="string">'Slope'</span>,<span class="string">'rowID'</span>,<span class="string">'Enzyme ID'</span>,<span class="string">'Enzyme Name'</span>,<span class="string">'Subsystem'</span>,<span class="string">'Direction'</span>,<span class="string">'Gr Rule'</span>);
+0097 <span class="keyword">end</span>
+0098 
+0099 <span class="keyword">for</span> num=1:length(fseof.target)
+0100     <span class="keyword">if</span> fseof.target(num,1) == 1
+0101         A0 = num2str(abs(fseof.results(num,iterations)-fseof.results(num,1))/abs(targetMax-targetMax/iterations)); <span class="comment">%Slope calculation</span>
+0102         A1 = num2str(num);                                  <span class="comment">%row ID</span>
+0103         A2 = char(model.rxns(num));                         <span class="comment">%enzyme ID</span>
+0104         A3 = char(model.rxnNames(num));                     <span class="comment">%enzyme Name</span>
+0105         A4 = char(model.subSystems(num));                   <span class="comment">%Subsystem</span>
+0106         A5 = num2str(model.rev(num)*rxnDirection(num,1));   <span class="comment">%reaction Dirction</span>
+0107         A6 = char(model.grRules(num));                      <span class="comment">%Gr Rule</span>
+0108         <span class="keyword">if</span> output == 1    <span class="comment">%Output to a file</span>
+0109             fprintf(fid,formatSpec,A0,A1,A2,A3,A4,A5,A6);
+0110         <span class="keyword">else</span>              <span class="comment">%Output screen</span>
+0111             fprintf(formatSpec,A0,A1,A2,A3,A4,A5,A6);
+0112         <span class="keyword">end</span>
+0113     <span class="keyword">end</span>
+0114 <span class="keyword">end</span>
+0115 
+0116 <span class="keyword">if</span> output == 1    <span class="comment">%Output to a file</span>
+0117     fclose(fid);
+0118 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 28-Feb-2017 23:41:43 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

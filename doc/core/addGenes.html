@@ -32,7 +32,7 @@
 
    model        a model structure
    genesToAdd   the genes genesToAdd can have the following fields:
-                genes          cell array with unique strings that 
+                genes          cell array with unique strings that
                                identifies each gene. Only character which are
                                allowed in SBML ids are allowed (mainly a-z,
                                0-9 and '_'). However, there is no check
@@ -50,7 +50,7 @@
 
    Usage: newModel=addGenes(model,genesToAdd)
 
-   Rasmus Agren, 2013-08-01</pre></div>
+   Rasmus Agren, 2014-01-08</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -89,7 +89,7 @@ This function is called by:
 0022 <span class="comment">%</span>
 0023 <span class="comment">%   Usage: newModel=addGenes(model,genesToAdd)</span>
 0024 <span class="comment">%</span>
-0025 <span class="comment">%   Rasmus Agren, 2013-08-01</span>
+0025 <span class="comment">%   Rasmus Agren, 2014-01-08</span>
 0026 <span class="comment">%</span>
 0027 
 0028 newModel=model;
@@ -100,93 +100,102 @@ This function is called by:
 0033 
 0034 <span class="comment">%Check some stuff regarding the required fields</span>
 0035 <span class="keyword">if</span> ~isfield(genesToAdd,<span class="string">'genes'</span>)
-0036     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'genes is a required field in genesToAdd'</span>);
-0037 <span class="keyword">end</span>
-0038 
-0039 <span class="keyword">if</span> ~iscellstr(genesToAdd.genes)
-0040     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'genesToAdd.genes must be a cell array of strings'</span>);
-0041 <span class="keyword">end</span>
-0042 
-0043 illegalCells=regexp(genesToAdd.genes,<span class="string">'[();:]'</span>, <span class="string">'once'</span>);
-0044 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'Illegal character(s) in gene names:'</span>,true,genesToAdd.genes(~cellfun(@isempty,illegalCells)));
-0045 
-0046 <span class="comment">%Number of genes</span>
-0047 nGenes=numel(genesToAdd.genes);
-0048 nOldGenes=numel(model.genes);
-0049 filler=cell(nGenes,1);
-0050 filler(:)={<span class="string">''</span>};
-0051 largeFiller=cell(nOldGenes,1);
-0052 largeFiller(:)={<span class="string">''</span>};
-0053 
-0054 <span class="comment">%Check that no gene ids are already present in the model</span>
-0055 I=ismember(genesToAdd.genes,model.genes);
-0056 <span class="keyword">if</span> any(I)
-0057     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'One or more elements in genesToAdd.genes are already present in model.genes'</span>);
-0058 <span class="keyword">else</span>
-0059     newModel.genes=[newModel.genes;genesToAdd.genes(:)];
-0060 <span class="keyword">end</span>
-0061 
-0062 <span class="comment">%Some more checks and if they pass then add each field to the structure</span>
-0063 <span class="keyword">if</span> isfield(genesToAdd,<span class="string">'geneShortNames'</span>)
-0064    <span class="keyword">if</span> numel(genesToAdd.geneShortNames)~=nGenes
-0065        <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'genesToAdd.geneShortNames must have the same number of elements as genesToAdd.genes'</span>);
-0066    <span class="keyword">end</span>
-0067    <span class="keyword">if</span> ~iscellstr(genesToAdd.geneShortNames)
-0068         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'genesToAdd.geneShortNames must be a cell array of strings'</span>);
-0069    <span class="keyword">end</span>
-0070    <span class="comment">%Add empty field if it doesn't exist</span>
-0071    <span class="keyword">if</span> ~isfield(newModel,<span class="string">'geneShortNames'</span>)
-0072         newModel.geneShortNames=largeFiller;
-0073    <span class="keyword">end</span>
-0074    newModel.geneShortNames=[newModel.geneShortNames;genesToAdd.geneShortNames(:)];
-0075 <span class="keyword">else</span>
-0076     <span class="comment">%Add empty strings if structure is in model</span>
-0077     <span class="keyword">if</span> isfield(newModel,<span class="string">'geneShortNames'</span>)
-0078        newModel.geneShortNames=[newModel.geneShortNames;filler];
-0079     <span class="keyword">end</span>
-0080 <span class="keyword">end</span>
-0081 
-0082 <span class="comment">%Don't check the type of geneMiriams</span>
-0083 <span class="keyword">if</span> isfield(genesToAdd,<span class="string">'geneMiriams'</span>)
-0084    <span class="keyword">if</span> numel(genesToAdd.geneMiriams)~=nGenes
-0085        <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'genesToAdd.geneMiriams must have the same number of elements as genesToAdd.genes'</span>);
-0086    <span class="keyword">end</span>
-0087    <span class="comment">%Add empty field if it doesn't exist</span>
-0088    <span class="keyword">if</span> ~isfield(newModel,<span class="string">'geneMiriams'</span>)
-0089         newModel.geneMiriams=cell(nOldGenes,1);
-0090    <span class="keyword">end</span>
-0091    newModel.geneMiriams=[newModel.geneMiriams;genesToAdd.geneMiriams(:)]; 
-0092 <span class="keyword">else</span>
-0093     <span class="keyword">if</span> isfield(newModel,<span class="string">'geneMiriams'</span>)
-0094        newModel.geneMiriams=[newModel.geneMiriams;cell(nGenes,1)]; 
-0095     <span class="keyword">end</span>
-0096 <span class="keyword">end</span>
-0097 
-0098 <span class="keyword">if</span> isfield(genesToAdd,<span class="string">'geneComps'</span>)
-0099    <span class="keyword">if</span> numel(genesToAdd.geneComps)~=nGenes
-0100        <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'genesToAdd.geneComps must have the same number of elements as genesToAdd.genes'</span>);
-0101    <span class="keyword">end</span>
-0102    <span class="comment">%Add empty field if it doesn't exist</span>
-0103    <span class="keyword">if</span> ~isfield(newModel,<span class="string">'geneComps'</span>)
-0104         newModel.geneComps=ones(nOldGenes,1);
-0105         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(<span class="string">'Adding genes with compartment information to a model without such information. All existing genes will be assigned to the first compartment'</span>,false);
-0106    <span class="keyword">end</span>
-0107    newModel.geneComps=[newModel.geneComps;genesToAdd.geneComps(:)]; 
-0108 <span class="keyword">else</span>
-0109     <span class="keyword">if</span> isfield(newModel,<span class="string">'geneComps'</span>)
-0110        newModel.geneComps=[newModel.geneComps;ones(nGenes,1)]; 
-0111        fprintf(<span class="string">'NOTE: The added genes will be assigned to the first compartment\n'</span>);
-0112     <span class="keyword">end</span>
-0113 <span class="keyword">end</span>
-0114 
-0115 <span class="keyword">if</span> isfield(newModel,<span class="string">'geneFrom'</span>)
-0116     newModel.geneFrom=[newModel.geneFrom;filler];
-0117 <span class="keyword">end</span>
-0118 
-0119 <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnGeneMat'</span>)
-0120     newModel.rxnGeneMat=[newModel.rxnGeneMat sparse(numel(model.rxns),nGenes)];
-0121 <span class="keyword">end</span>
-0122 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Fri 14-Oct-2016 12:02:10 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0036     EM=<span class="string">'genes is a required field in genesToAdd'</span>;
+0037     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0038 <span class="keyword">end</span>
+0039 
+0040 <span class="keyword">if</span> ~iscellstr(genesToAdd.genes)
+0041     EM=<span class="string">'genesToAdd.genes must be a cell array of strings'</span>;
+0042     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0043 <span class="keyword">end</span>
+0044 
+0045 illegalCells=regexp(genesToAdd.genes,<span class="string">'[();:]'</span>, <span class="string">'once'</span>);
+0046 EM=<span class="string">'Illegal character(s) in gene names:'</span>;
+0047 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,true,genesToAdd.genes(~cellfun(@isempty,illegalCells)));
+0048 
+0049 <span class="comment">%Number of genes</span>
+0050 nGenes=numel(genesToAdd.genes);
+0051 nOldGenes=numel(model.genes);
+0052 filler=cell(nGenes,1);
+0053 filler(:)={<span class="string">''</span>};
+0054 largeFiller=cell(nOldGenes,1);
+0055 largeFiller(:)={<span class="string">''</span>};
+0056 
+0057 <span class="comment">%Check that no gene ids are already present in the model</span>
+0058 I=ismember(genesToAdd.genes,model.genes);
+0059 <span class="keyword">if</span> any(I)
+0060     EM=<span class="string">'One or more elements in genesToAdd.genes are already present in model.genes'</span>;
+0061     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0062 <span class="keyword">else</span>
+0063     newModel.genes=[newModel.genes;genesToAdd.genes(:)];
+0064 <span class="keyword">end</span>
+0065 
+0066 <span class="comment">%Some more checks and if they pass then add each field to the structure</span>
+0067 <span class="keyword">if</span> isfield(genesToAdd,<span class="string">'geneShortNames'</span>)
+0068    <span class="keyword">if</span> numel(genesToAdd.geneShortNames)~=nGenes
+0069        EM=<span class="string">'genesToAdd.geneShortNames must have the same number of elements as genesToAdd.genes'</span>;
+0070        <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0071    <span class="keyword">end</span>
+0072    <span class="keyword">if</span> ~iscellstr(genesToAdd.geneShortNames)
+0073        EM=<span class="string">'genesToAdd.geneShortNames must be a cell array of strings'</span>;
+0074        <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0075    <span class="keyword">end</span>
+0076    <span class="comment">%Add empty field if it doesn't exist</span>
+0077    <span class="keyword">if</span> ~isfield(newModel,<span class="string">'geneShortNames'</span>)
+0078         newModel.geneShortNames=largeFiller;
+0079    <span class="keyword">end</span>
+0080    newModel.geneShortNames=[newModel.geneShortNames;genesToAdd.geneShortNames(:)];
+0081 <span class="keyword">else</span>
+0082     <span class="comment">%Add empty strings if structure is in model</span>
+0083     <span class="keyword">if</span> isfield(newModel,<span class="string">'geneShortNames'</span>)
+0084        newModel.geneShortNames=[newModel.geneShortNames;filler];
+0085     <span class="keyword">end</span>
+0086 <span class="keyword">end</span>
+0087 
+0088 <span class="comment">%Don't check the type of geneMiriams</span>
+0089 <span class="keyword">if</span> isfield(genesToAdd,<span class="string">'geneMiriams'</span>)
+0090    <span class="keyword">if</span> numel(genesToAdd.geneMiriams)~=nGenes
+0091        EM=<span class="string">'genesToAdd.geneMiriams must have the same number of elements as genesToAdd.genes'</span>;
+0092        <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0093    <span class="keyword">end</span>
+0094    <span class="comment">%Add empty field if it doesn't exist</span>
+0095    <span class="keyword">if</span> ~isfield(newModel,<span class="string">'geneMiriams'</span>)
+0096         newModel.geneMiriams=cell(nOldGenes,1);
+0097    <span class="keyword">end</span>
+0098    newModel.geneMiriams=[newModel.geneMiriams;genesToAdd.geneMiriams(:)];
+0099 <span class="keyword">else</span>
+0100     <span class="keyword">if</span> isfield(newModel,<span class="string">'geneMiriams'</span>)
+0101        newModel.geneMiriams=[newModel.geneMiriams;cell(nGenes,1)];
+0102     <span class="keyword">end</span>
+0103 <span class="keyword">end</span>
+0104 
+0105 <span class="keyword">if</span> isfield(genesToAdd,<span class="string">'geneComps'</span>)
+0106    <span class="keyword">if</span> numel(genesToAdd.geneComps)~=nGenes
+0107        EM=<span class="string">'genesToAdd.geneComps must have the same number of elements as genesToAdd.genes'</span>;
+0108        <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0109    <span class="keyword">end</span>
+0110    <span class="comment">%Add empty field if it doesn't exist</span>
+0111    <span class="keyword">if</span> ~isfield(newModel,<span class="string">'geneComps'</span>)
+0112         newModel.geneComps=ones(nOldGenes,1);
+0113         EM=<span class="string">'Adding genes with compartment information to a model without such information. All existing genes will be assigned to the first compartment'</span>;
+0114         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0115    <span class="keyword">end</span>
+0116    newModel.geneComps=[newModel.geneComps;genesToAdd.geneComps(:)];
+0117 <span class="keyword">else</span>
+0118     <span class="keyword">if</span> isfield(newModel,<span class="string">'geneComps'</span>)
+0119        newModel.geneComps=[newModel.geneComps;ones(nGenes,1)];
+0120        fprintf(<span class="string">'NOTE: The added genes will be assigned to the first compartment\n'</span>);
+0121     <span class="keyword">end</span>
+0122 <span class="keyword">end</span>
+0123 
+0124 <span class="keyword">if</span> isfield(newModel,<span class="string">'geneFrom'</span>)
+0125     newModel.geneFrom=[newModel.geneFrom;filler];
+0126 <span class="keyword">end</span>
+0127 
+0128 <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnGeneMat'</span>)
+0129     newModel.rxnGeneMat=[newModel.rxnGeneMat sparse(numel(model.rxns),nGenes)];
+0130 <span class="keyword">end</span>
+0131 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 28-Feb-2017 23:41:43 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

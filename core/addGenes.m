@@ -4,7 +4,7 @@ function newModel=addGenes(model,genesToAdd)
 %
 %   model        a model structure
 %   genesToAdd   the genes genesToAdd can have the following fields:
-%                genes          cell array with unique strings that 
+%                genes          cell array with unique strings that
 %                               identifies each gene. Only character which are
 %                               allowed in SBML ids are allowed (mainly a-z,
 %                               0-9 and '_'). However, there is no check
@@ -22,7 +22,7 @@ function newModel=addGenes(model,genesToAdd)
 %
 %   Usage: newModel=addGenes(model,genesToAdd)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 newModel=model;
@@ -33,15 +33,18 @@ end
 
 %Check some stuff regarding the required fields
 if ~isfield(genesToAdd,'genes')
-    dispEM('genes is a required field in genesToAdd');
+    EM='genes is a required field in genesToAdd';
+    dispEM(EM);
 end
 
 if ~iscellstr(genesToAdd.genes)
-    dispEM('genesToAdd.genes must be a cell array of strings');
+    EM='genesToAdd.genes must be a cell array of strings';
+    dispEM(EM);
 end
 
 illegalCells=regexp(genesToAdd.genes,'[();:]', 'once');
-dispEM('Illegal character(s) in gene names:',true,genesToAdd.genes(~cellfun(@isempty,illegalCells)));
+EM='Illegal character(s) in gene names:';
+dispEM(EM,true,genesToAdd.genes(~cellfun(@isempty,illegalCells)));
 
 %Number of genes
 nGenes=numel(genesToAdd.genes);
@@ -54,7 +57,8 @@ largeFiller(:)={''};
 %Check that no gene ids are already present in the model
 I=ismember(genesToAdd.genes,model.genes);
 if any(I)
-	dispEM('One or more elements in genesToAdd.genes are already present in model.genes');
+    EM='One or more elements in genesToAdd.genes are already present in model.genes';
+	dispEM(EM);
 else
     newModel.genes=[newModel.genes;genesToAdd.genes(:)];
 end
@@ -62,10 +66,12 @@ end
 %Some more checks and if they pass then add each field to the structure
 if isfield(genesToAdd,'geneShortNames')
    if numel(genesToAdd.geneShortNames)~=nGenes
-       dispEM('genesToAdd.geneShortNames must have the same number of elements as genesToAdd.genes');
+       EM='genesToAdd.geneShortNames must have the same number of elements as genesToAdd.genes';
+       dispEM(EM);
    end
    if ~iscellstr(genesToAdd.geneShortNames)
-        dispEM('genesToAdd.geneShortNames must be a cell array of strings');
+       EM='genesToAdd.geneShortNames must be a cell array of strings';
+       dispEM(EM);
    end
    %Add empty field if it doesn't exist
    if ~isfield(newModel,'geneShortNames')
@@ -82,32 +88,35 @@ end
 %Don't check the type of geneMiriams
 if isfield(genesToAdd,'geneMiriams')
    if numel(genesToAdd.geneMiriams)~=nGenes
-       dispEM('genesToAdd.geneMiriams must have the same number of elements as genesToAdd.genes');
+       EM='genesToAdd.geneMiriams must have the same number of elements as genesToAdd.genes';
+       dispEM(EM);
    end
    %Add empty field if it doesn't exist
    if ~isfield(newModel,'geneMiriams')
         newModel.geneMiriams=cell(nOldGenes,1);
    end
-   newModel.geneMiriams=[newModel.geneMiriams;genesToAdd.geneMiriams(:)]; 
+   newModel.geneMiriams=[newModel.geneMiriams;genesToAdd.geneMiriams(:)];
 else
     if isfield(newModel,'geneMiriams')
-       newModel.geneMiriams=[newModel.geneMiriams;cell(nGenes,1)]; 
+       newModel.geneMiriams=[newModel.geneMiriams;cell(nGenes,1)];
     end
 end
 
 if isfield(genesToAdd,'geneComps')
    if numel(genesToAdd.geneComps)~=nGenes
-       dispEM('genesToAdd.geneComps must have the same number of elements as genesToAdd.genes');
+       EM='genesToAdd.geneComps must have the same number of elements as genesToAdd.genes';
+       dispEM(EM);
    end
    %Add empty field if it doesn't exist
    if ~isfield(newModel,'geneComps')
         newModel.geneComps=ones(nOldGenes,1);
-        dispEM('Adding genes with compartment information to a model without such information. All existing genes will be assigned to the first compartment',false);
+        EM='Adding genes with compartment information to a model without such information. All existing genes will be assigned to the first compartment';
+        dispEM(EM,false);
    end
-   newModel.geneComps=[newModel.geneComps;genesToAdd.geneComps(:)]; 
+   newModel.geneComps=[newModel.geneComps;genesToAdd.geneComps(:)];
 else
     if isfield(newModel,'geneComps')
-       newModel.geneComps=[newModel.geneComps;ones(nGenes,1)]; 
+       newModel.geneComps=[newModel.geneComps;ones(nGenes,1)];
        fprintf('NOTE: The added genes will be assigned to the first compartment\n');
     end
 end

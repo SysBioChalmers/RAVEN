@@ -5,8 +5,8 @@ function checkInstallation()
 
 %   Usage: checkInstallation()
 %
-%   Rasmus Agren, 2014-01-06
-%	Eduard Kerkhoven, 2016-10-23 - Use Matlab preferences for solver selection
+%	Rasmus Agren, 2017-02-27
+%
 
 fprintf('*** RAVEN TOOLBOX v. 1.9\n');
 
@@ -18,8 +18,8 @@ paths=textscan(path,'%s','delimiter', pathsep);
 paths=paths{1};
 
 %Get the RAVEN path
-[ST I]=dbstack('-completenames');
-[ravenDir,crap1,crap2]=fileparts(fileparts(ST(I).file));
+[ST, I]=dbstack('-completenames');
+[ravenDir,~,~]=fileparts(fileparts(ST(I).file));
 
 % get current solver
 if ~ispref('RAVEN','solver')
@@ -30,16 +30,21 @@ else
 end
 
 if ismember(ravenDir,paths)
-    fprintf('Checking if RAVEN is in the Matlab path... PASSED\n');
+    fprintf('Checking if RAVEN is on the Matlab path... PASSED\n');
 else
-    fprintf('Checking if RAVEN is in the Matlab path... FAILED\n');
-    addMe=input('\tWould you like to add the RAVEN directory to the path list? Y/N\n','s');
+    fprintf('Checking if RAVEN is on the Matlab path... FAILED\n');
+    addMe=input('Would you like to add the RAVEN directory to the path list? Y/N\n','s');
     if strcmpi(addMe,'y')
-        addpath(ravenDir);
+        subpath=regexp(genpath(ravenDir),pathsep,'split'); % Lists all subdirectories
+        pathsToKeep=cellfun(@(x) isempty(strfind(x,'.git')),subpath) & cellfun(@(x) isempty(strfind(x,'doc')),subpath);
+        addpath(strjoin(subpath(pathsToKeep),pathsep));
         savepath
     end
 end
 
+%Adds the required classes to the static Java path if not already added
+addJavaPaths();
+    
 excelFile=fullfile(ravenDir,'tutorial','empty.xlsx');
 xmlFile=fullfile(ravenDir,'tutorial','empty.xml');
 
@@ -49,9 +54,6 @@ try
     fprintf('Checking if it is possible to parse a model in Microsoft Excel format... PASSED\n');
 catch
     fprintf('Checking if it is possible to parse a model in Microsoft Excel format... FAILED\n');
-    if ispc==false %Print info for UNIX/MacOS
-        fprintf('\tThis functionality uses Microsoft Excel COM server, which works best for the Windows version of Matlab\n');
-    end
 end
 
 %Check if it is possible to import an SBML model using libSBML
@@ -65,7 +67,7 @@ end
 %Check if it is possible to solve an LP problem using different solvers
 solver={'mosek','gurobi'};
 
-for i=[1:numel(solver)]
+for i=1:numel(solver)
     try
         setRavenSolver(solver{i});
         solveLP(smallModel);
@@ -86,11 +88,10 @@ elseif ~isempty(lastWorking)
 end
 
 if ~exist('curSolv','var')
-	fprintf(['Prefered solver... NEW\nSolver saved as preference... ',lastWorking,'\n']);
+	fprintf(['Preferred solver... NEW\nSolver saved as preference... ',lastWorking,'\n']);
 elseif keepSolver
-	fprintf(['Prefered solver... KEPT\nSolver saved as preference... ',curSolv,'\n']);
+	fprintf(['Preferred solver... KEPT\nSolver saved as preference... ',curSolv,'\n']);
 else
-	fprintf(['Prefered solver... CHANGED\nSolver saved as preference... ',lastWorking,'\n']);
+	fprintf(['Preferred solver... CHANGED\nSolver saved as preference... ',lastWorking,'\n']);
 end
 
-%function lastWorking=checkSolver(solver)

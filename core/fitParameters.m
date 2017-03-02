@@ -1,4 +1,4 @@
-function [parameters fitnessScore exitFlag newModel]=fitParameters(model,xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,fitToRatio,initialGuess,plotFitting)
+function [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,fitToRatio,initialGuess,plotFitting)
 % fitParameters
 %   Fits parameters such as maintenance ATP by quadratic programming
 %
@@ -7,7 +7,7 @@ function [parameters fitnessScore exitFlag newModel]=fitParameters(model,xRxns,x
 %   xValues               matrix with the corresponding values for each
 %                         xRxns (columns are reactions)
 %   rxnsToFit             cell array with the IDs of reactions that will be fitted to
-%   valuesToFit           matrix with the corresponding values for each 
+%   valuesToFit           matrix with the corresponding values for each
 %                         rxnsToFit (columns are reactions)
 %   parameterPositions    stucture that determines where the parameters are in the
 %                         stoichiometric matrix. Contains the fields:
@@ -18,7 +18,7 @@ function [parameters fitnessScore exitFlag newModel]=fitParameters(model,xRxns,x
 %                         fitted value (to differentiate between
 %                         production/consumption)
 %	fitToRatio            if the ratio of simulated to measured values should
-%                         be fitted instead of the absolute value. Used to prevent 
+%                         be fitted instead of the absolute value. Used to prevent
 %                         large fluxes from having too large impact (opt,
 %                         default true)
 %   initialGuess          initial guess of the parameters (opt)
@@ -34,7 +34,7 @@ function [parameters fitnessScore exitFlag newModel]=fitParameters(model,xRxns,x
 %           xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,fitToRatio,...
 %           initialGuess,plotFitting)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<7
@@ -50,64 +50,66 @@ if nargin<9
     plotFitting=false;
 end
 
-%Find the indexes of reactions that will be fitted 
-[I rxnsToFitIndexes]=ismember(rxnsToFit,model.rxns);
+%Find the indexes of reactions that will be fitted
+[I, rxnsToFitIndexes]=ismember(rxnsToFit,model.rxns);
 
 if ~all(I)
-	dispEM('Could not find all reactions in rxnsToFit');
+    EM='Could not find all reactions in rxnsToFit';
+    dispEM(EM);
 end
 
-%Find the indexes of reactions that will be used for constraints. 
-[I xRxnsIndexes]=ismember(xRxns,model.rxns);
+%Find the indexes of reactions that will be used for constraints.
+[I, xRxnsIndexes]=ismember(xRxns,model.rxns);
 
 if ~all(I)
-	dispEM('Could not find all reactions in xRxns');
+    EM='Could not find all reactions in xRxns';
+	dispEM(EM);
 end
 
-[parameters fitnessScore exitFlag]=fminsearch(@(parameters) getRSS(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,fitToRatio),initialGuess);
+[parameters, fitnessScore, exitFlag]=fminsearch(@(parameters) getRSS(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,fitToRatio),initialGuess);
 
 parameters=abs(parameters);
 
 if plotFitting==true
     %Set the resulting parameters
-    [rss resultingFluxes newModel]=getRSS(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,true);
+    [~, resultingFluxes, newModel]=getRSS(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,true);
     plot(xValues,valuesToFit,'o',xValues,resultingFluxes,'-*');
 end
 end
 
-function [rss resultingFluxes newModel]=getRSS(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,fitToRatio)
-parameters=abs(parameters);
+function [rss, resultingFluxes, newModel]=getRSS(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,fitToRatio)
+    parameters=abs(parameters);
 
-%Set the parameters at the positions specified in parameterPositions
-for i=1:numel(parameterPositions.position)
-    %Set positive
-    model.S(parameterPositions.position{i}(parameterPositions.isNegative{i}==false))=parameters(i);
-    
-    %Set negative
-    model.S(parameterPositions.position{i}(parameterPositions.isNegative{i}==true))=parameters(i)*-1;
-end
+    %Set the parameters at the positions specified in parameterPositions
+    for i=1:numel(parameterPositions.position)
+        %Set positive
+        model.S(parameterPositions.position{i}(parameterPositions.isNegative{i}==false))=parameters(i);
 
-%Also return an updated model
-newModel=model;
-
-%Loop through each data point, set xRxns to xValues and calculate the sum
-%of squares for the rxnsToFit
-rss=0;
-resultingFluxes=[];
-for i=1:size(xValues,1)
-    %Fix for more xRxns!
-    model.lb(xRxnsIndexes)=xValues(i,:);
-    model.ub(xRxnsIndexes)=xValues(i);
-    
-    sol=solveLP(model);
-    
-    %Calculate the rss
-    if fitToRatio==false
-        rs=sol.x(rxnsToFitIndexes)'-valuesToFit(i,:);
-    else
-        rs=sol.x(rxnsToFitIndexes)'./valuesToFit(i,:)-ones(1,size(valuesToFit,2));
+        %Set negative
+        model.S(parameterPositions.position{i}(parameterPositions.isNegative{i}==true))=parameters(i)*-1;
     end
-    rss=rss+rs*rs';
-    resultingFluxes=[resultingFluxes sol.x(rxnsToFitIndexes)];
-end
+
+    %Also return an updated model
+    newModel=model;
+
+    %Loop through each data point, set xRxns to xValues and calculate the sum
+    %of squares for the rxnsToFit
+    rss=0;
+    resultingFluxes=[];
+    for i=1:size(xValues,1)
+        %Fix for more xRxns!
+        model.lb(xRxnsIndexes)=xValues(i,:);
+        model.ub(xRxnsIndexes)=xValues(i);
+
+        sol=solveLP(model);
+
+        %Calculate the rss
+        if fitToRatio==false
+            rs=sol.x(rxnsToFitIndexes)'-valuesToFit(i,:);
+        else
+            rs=sol.x(rxnsToFitIndexes)'./valuesToFit(i,:)-ones(1,size(valuesToFit,2));
+        end
+        rss=rss+rs*rs';
+        resultingFluxes=[resultingFluxes sol.x(rxnsToFitIndexes)];
+    end
 end

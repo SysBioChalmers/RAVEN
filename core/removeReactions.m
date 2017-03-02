@@ -3,7 +3,7 @@ function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,remove
 %   Deletes a set of reactions from a model
 %
 %   model             a model structure
-%   rxnsToRemove      either a cell array of reaction IDs, a logical vector 
+%   rxnsToRemove      either a cell array of reaction IDs, a logical vector
 %                     with the same number of elements as reactions in the model,
 %                     or a vector of indexes to remove
 %   removeUnusedMets  remove metabolites that are no longer in use (opt,
@@ -18,7 +18,6 @@ function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,remove
 %   Usage: reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,...
 %           removeUnusedGenes,removeUnusedComps)
 %
-%   Rasmus Agren, 2013-08-01
 %   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
 %   rxnReferences and confidenceScores
 %
@@ -100,11 +99,11 @@ if ~isempty(rxnsToRemove) || removeUnusedMets || removeUnusedGenes
             reducedModel.confidenceScores(indexesToDelete,:)=[];
         end
     end
-    
+
     %Remove unused metabolites
     if removeUnusedMets==true
         if isfield(reducedModel,'S')
-            [usedMets crap crap]=find(reducedModel.S);
+            [usedMets, ~]=find(reducedModel.S);
             unUsedMets=true(numel(reducedModel.mets),1);
             unUsedMets(usedMets)=false;
             reducedModel=removeMets(reducedModel,unUsedMets,false,false,false,removeUnusedComps);
@@ -114,7 +113,7 @@ if ~isempty(rxnsToRemove) || removeUnusedMets || removeUnusedGenes
     %Remove unused genes
     if removeUnusedGenes==true && isfield(reducedModel,'rxnGeneMat')
         %Find all genes that are not used
-        [a b crap]=find(reducedModel.rxnGeneMat);
+        [~, b]=find(reducedModel.rxnGeneMat);
         toKeep=false(numel(reducedModel.genes),1);
         toKeep(b)=true;
 
@@ -122,19 +121,19 @@ if ~isempty(rxnsToRemove) || removeUnusedMets || removeUnusedGenes
         reducedModel.rxnGeneMat=reducedModel.rxnGeneMat(:,toKeep);
 
         if isfield(reducedModel,'geneShortNames')
-           reducedModel.geneShortNames=reducedModel.geneShortNames(toKeep); 
+           reducedModel.geneShortNames=reducedModel.geneShortNames(toKeep);
         end
 
         if isfield(reducedModel,'geneMiriams')
-           reducedModel.geneMiriams=reducedModel.geneMiriams(toKeep); 
+           reducedModel.geneMiriams=reducedModel.geneMiriams(toKeep);
         end
-        
+
         if isfield(reducedModel,'geneFrom')
-           reducedModel.geneFrom=reducedModel.geneFrom(toKeep); 
+           reducedModel.geneFrom=reducedModel.geneFrom(toKeep);
         end
-        
+
         if isfield(reducedModel,'geneComps')
-           reducedModel.geneComps=reducedModel.geneComps(toKeep); 
+           reducedModel.geneComps=reducedModel.geneComps(toKeep);
         end
     end
 else

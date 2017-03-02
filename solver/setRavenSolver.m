@@ -7,11 +7,11 @@ function out = setRavenSolver(solver)
 %
 %   Usage: setRavenSolver('gurobi')
 %
-%   Daniel Hermansson, 2016-10-10
 %   Eduard Kerkhoven, 2016-10-22 - Use Matlab preferences for solver selection
+%
 
 if (~ischar(solver)) dispEM('Input should be a string.'); end
-	
+
 setpref('RAVEN','solver',solver)
 
 end

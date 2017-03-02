@@ -7,7 +7,7 @@ function [fluxA,fluxB, flag]=qMOMA(modelA,modelB,fluxMinWeight)
 %   modelB        a model structure for the reference case
 %   fluxMinWeight a double >=1 that determines whether minimization of the
 %                 sum of fluxes should also be taken into account in the
-%                 optimization. A value of 2.0 means that sum(fluxAi)^2 + 
+%                 optimization. A value of 2.0 means that sum(fluxAi)^2 +
 %                 sum(fluxBi)^2 has equal weight as sum((fluxAi - fluxBi)^2).
 %                 Values of around 1.01 should be enough to get rid of loops
 %                 (opt, default 1)
@@ -18,7 +18,7 @@ function [fluxA,fluxB, flag]=qMOMA(modelA,modelB,fluxMinWeight)
 %
 %   Usage: [fluxA,fluxB, flag]=qMOMA(modelA,modelB,fluxMinWeight)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<3
@@ -74,7 +74,7 @@ fullB=zeros(size(modelA.S,1)+size(modelB.S,1),1);
 
 H=[eye(size(fullS,2)/2)*fluxMinWeight eye(size(fullS,2)/2)*-1;eye(size(fullS,2)/2)*-1 eye(size(fullS,2)/2)*fluxMinWeight];
 
-[x,fval,flag,output]=quadprog(H,zeros(size(H,1),1),[],[],fullS,fullB,fullLB,fullUB);
+[x,~,~,~]=quadprog(H,zeros(size(H,1),1),[],[],fullS,fullB,fullLB,fullUB);
 
 if any(x)
     fluxA=x(1:numel(modelB.rxns));

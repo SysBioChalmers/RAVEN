@@ -8,8 +8,8 @@ function res = optimizeProb(prob,params)
 %   res		the output structure from the selected solver RAVENSOLVER
 %   		(mosek style)
 %
-%   Daniel Hermansson, 2016-04-01
 %	Eduard Kerkhoven, 2016-10-22 - Use Matlab preferences for solver selection
+%
 
 if nargin<2
     params=[];
@@ -29,7 +29,7 @@ if strcmp(solver,'gurobi')
 		if (~milp) gparams.OutputFlag=0; end
 		%gparams=structUpdate(gparams,params);
 		res = gurobi(mosekToGurobiProb(prob), gparams);
-		
+
 		res=gurobiToMosekRes(res,length(prob.c),milp);
 elseif strcmp(solver,'cobra')
 		if (milp)
@@ -42,13 +42,16 @@ elseif strcmp(solver,'cobra')
 			res=solveCobraLP(mosekToCobraProb(prob));
 		end
 		res=cobraToMosekRes(res,length(prob.c),milp);
-		
+
 elseif strcmp(solver,'mosek')
-		if (milp) 
-			params.printReport=true; 
-			[crap,res] = mosekopt(['minimize echo(0)'],prob,getMILPParams(params));
+		if (milp)
+            echo=0;
+            if isfield(params,'printReport') && params.printReport==true
+                echo='3';
+            end
+			[~,res] = mosekopt(['minimize echo(' echo ')'],prob,getMILPParams(params));
 		else
-			[crap,res] = mosekopt(['minimize echo(0)'],prob);
+			[~,res] = mosekopt('minimize echo(0)',prob);
 		end
 else
 		dispEM(['Raven solver not defined or unknown. Try using setRavenSolver(',char(39),'solver',char(39),').']);

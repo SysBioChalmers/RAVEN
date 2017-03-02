@@ -1,5 +1,5 @@
 function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,...
-    deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, reservedRxns, suppressWarnings)
+    deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)
 % simplifyModel
 %   Simplifies a model by deleting reactions/metabolites
 %
@@ -11,7 +11,12 @@ function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(mode
 %   deleteMinMax          delete reactions that cannot carry a flux by trying
 %                         to minimize/maximize the flux through that
 %                         reaction. May be time consuming (opt, default false)
-%   groupLinear           group linear pathways (opt, default false)
+%   groupLinear           group linearly dependent pathways (opt, default false)
+%   constrainReversible   check if there are reversible reactions which can
+%                         only carry flux in one direction, and if so
+%                         constrain them to be irreversible. This tends to
+%                         allow for more reactions grouped when using
+%                         groupLinear (opt, default false)
 %   reservedRxns          cell array with reaction IDs that are not allowed to be
 %                         removed (opt)
 %   suppressWarnings      true if warnings should be suppressed (opt,
@@ -28,10 +33,10 @@ function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(mode
 %
 %   Usage: [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,...
 %           deleteUnconstrained, deleteDuplicates, deleteZeroInterval,...
-%           deleteInaccessible, deleteMinMax, groupLinear, reservedRxns,...
-%           suppressWarnings)
+%           deleteInaccessible, deleteMinMax, groupLinear,...
+%           constrainReversible, reservedRxns, suppressWarnings)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-05-07
 %
 
 if nargin<2
@@ -53,9 +58,12 @@ if nargin<7
     groupLinear=false;
 end
 if nargin<8
-    reservedRxns=[];
+    constrainReversible=false;
 end
 if nargin<9
+    reservedRxns=[];
+end
+if nargin<10
     suppressWarnings=false;
 end
 
@@ -76,7 +84,7 @@ if deleteDuplicates==true
     %Delete all but the last occurrence of duplicate reactions. The
     %reactions must have the same bounds, reversibility, and objective
     %coefficient to be regarded as duplicate
-    [reducedModel rxnsToDelete]=contractModel(reducedModel);
+    [reducedModel, rxnsToDelete]=contractModel(reducedModel);
     deletedReactions=[deletedReactions; rxnsToDelete];
 end
 
@@ -103,7 +111,8 @@ if deleteInaccessible==true
     %often means that the only allowed products are the metabolites that
     %are taken up be the system
     if isfield(reducedModel,'unconstrained') && suppressWarnings==false
-       dispEM('Removing dead-end reactions before removing exchange metabolites',false); 
+        EM='Removing dead-end reactions before removing exchange metabolites';
+        dispEM(EM,false); 
     end
     
     while true
@@ -174,84 +183,139 @@ if deleteMinMax==true
     reducedModel=removeMets(reducedModel,notInUse);
 end
 
-%Checks that all reactions are irreversible. Might be fixed in the future.
+if constrainReversible==true
+	revs=find(reducedModel.rev);
+    [I,J]=getAllowedBounds(reducedModel,revs);
+    
+    I=abs(I);
+    J=abs(J);
+    
+    %Get the "small" values
+    K=I<10^-10;
+    L=J<10^-10;
+    
+    %Keep the values where only one direction is zero (small)
+    I(K==L)=[];
+    J(K==L)=[];
+    revs(K==L)=[];
+    
+    %Change the reversibility of the remaining reactions
+    reducedModel.rev(revs(J>10^-10))=0; %Ignore reverse direction
+    reducedModel.lb(revs(J>10^-10))=0;
+    
+    toSwitch=revs(I>10^-10);
+    reducedModel.rev(toSwitch)=0; %Change directionality
+    reducedModel.ub(toSwitch)=reducedModel.lb(toSwitch)*-1;
+    reducedModel.lb(toSwitch)=0;
+    reducedModel.S(:,toSwitch)=reducedModel.S(:,toSwitch).*-1;
+    reducedModel.c(toSwitch)=reducedModel.c(toSwitch)*-1;
+end
 if groupLinear==true
-    if ~any(reducedModel.rev)
-        if  suppressWarnings==false
-            fprintf('NOTE: You have chosen to group linear reactions. This option does not keep track of gene/reaction associations when reactions are merged. Deleting all gene information\n');
-        end
-        bannedIndexes=getIndexes(reducedModel,reservedRxns,'rxns');
-        while 1
-        	%Select all metabolites that are only present as reactants/products
-        	%in one reaction
-            singleNegative=find(sum(reducedModel.S'<0)==1);
-            singlePositive=find(sum(reducedModel.S'>0)==1);
-   
-            %Retrieve the common metabolites
-            common=intersect(singleNegative,singlePositive);
+    if  suppressWarnings==false
+        fprintf('NOTE: You have chosen to group linear reactions. This option does not keep track of gene/reaction associations when reactions are merged. Deleting all gene information\n');
+    end
+    
+    reducedModel.genes={};
+    reducedModel.rxnGeneMat=sparse(numel(reducedModel.rxns),0);
+    reducedModel.grRules(:)={''};
+
+    if isfield(reducedModel,'geneShortNames')
+        reducedModel.geneShortNames={};
+    end
+    if isfield(reducedModel,'geneMiriams')
+        reducedModel.geneMiriams={};
+    end
+    if isfield(reducedModel,'geneComps')
+        reducedModel.geneComps=[];
+    end
+    
+    %Convert the model to irreversible
+    irrevModel=convertToIrrev(reducedModel);
+    
+    %Loop through and iteratively group linear reactions
+    while 1
+        %Get the banned reaction indexes. Note that the indexes will change
+        %in each iteration, but the names will not as they won't be merged
+        %with any other reaction
+        bannedIndexes=getIndexes(irrevModel,reservedRxns,'rxns');
+        
+        %Select all metabolites that are only present as reactants/products
+        %in one reaction
+        singleNegative=find(sum(irrevModel.S'<0)==1);
+        singlePositive=find(sum(irrevModel.S'>0)==1);
+        
+        %Retrieve the common metabolites
+        common=intersect(singleNegative,singlePositive);
+        
+        mergedSome=false;
+        
+        %Loop through each of them and see if the reactions should be
+        %merged
+        for i=1:numel(common)
+            involvedRxns=find(irrevModel.S(common(i),:));
             
-            %Merge the reactions for each of these metabolites
-            mergedSomeRxn=false;
-            for i=1:numel(common)
-            	involvedRxns=find(reducedModel.S(common(i),:));
+            %Check so that one or both of the reactions haven't been merged
+            %already
+            if numel(involvedRxns)==2 && isempty(intersect(bannedIndexes,involvedRxns))
+                %Calculate how many times the second reaction has to be
+                %multiplied before being merged with the first
+                stoichRatio=abs(irrevModel.S(common(i),involvedRxns(1))/irrevModel.S(common(i),involvedRxns(2)));
+
+                %Add the second to the first
+                irrevModel.S(:,involvedRxns(1))=irrevModel.S(:,involvedRxns(1))+irrevModel.S(:,involvedRxns(2))*stoichRatio;
+
+                %Clear the second reaction
+                irrevModel.S(:,involvedRxns(2))=0;
+
+                %This is to prevent numerical issues. It should be 0
+                %already
+                irrevModel.S(common(i),involvedRxns(1))=0;
+
+                %At this point the second reaction is certain to be deleted
+                %in a later step and can therefore be ignored
+
+                %Recalculate the bounds for the new reaction. This can be
+                %problematic since the scale of the bounds may change
+                %dramatically. Let the most constraining reaction determine
+                %the new bound
+                lb1=irrevModel.lb(involvedRxns(1));
+                lb2=irrevModel.lb(involvedRxns(2));
+                ub1=irrevModel.ub(involvedRxns(1));
+                ub2=irrevModel.ub(involvedRxns(2));
                 
-                %Check so that it doesn't try to merge reactions that are
-                %restricted. The second check is needed because it could be
-                %that some of the metabolites have already been merged in
-                %this iteration so that the reactions no longer exist
-                if isempty(intersect(bannedIndexes,involvedRxns)) && any(involvedRxns)
-                	%This is the ratio that described how many times the second
-                    %reaction should be multiplied before being merged with
-                    %the first
-                    stoichRatio=abs(reducedModel.S(common(i),involvedRxns(1))/reducedModel.S(common(i),involvedRxns(2)));
-                    reducedModel.S(:,involvedRxns(1))=reducedModel.S(:,involvedRxns(1))+reducedModel.S(:,involvedRxns(2))*stoichRatio;
-                    reducedModel.S(common(i),involvedRxns(1))=0;
-                    
-                    %Change the name and id to reflect the merging
-                    reducedModel.rxns{involvedRxns(1)}=[reducedModel.rxns{involvedRxns(1)} '_' reducedModel.rxns{involvedRxns(2)}];
-                    reducedModel.rxnNames{involvedRxns(1)}=reducedModel.rxns{involvedRxns(1)};
-                    
-                    %Remove the second reaction by setting all coefficients
-                    %to 0
-                    reducedModel.S(:,involvedRxns(2))=0;
-                    mergedSomeRxn=true;
+                if lb2~=-inf
+                    irrevModel.lb(involvedRxns(1))=max(lb1,lb2/stoichRatio);
                 end
+                if ub2~=inf
+                    irrevModel.ub(involvedRxns(1))=min(ub1,ub2/stoichRatio);
+                end
+
+                %Then recalculate the objective coefficient. The resulting
+                %coefficient is the weighted sum of the previous
+                irrevModel.c(involvedRxns(1))=irrevModel.c(involvedRxns(1))+irrevModel.c(involvedRxns(2))*stoichRatio;
+                
+                %Iterate again
+                mergedSome=true;
             end
-            
-            %If it couldn't merge anything then exit the loop
-            if mergedSomeRxn==false
-                break;
-            end
+        end
+        
+        %All possible reactions merged
+        if mergedSome==false
+            break;
         end
         
         %Now delete all reactions that involve no metabolites
-        I=sum(reducedModel.S~=0)==0;
-        
+        I=find(sum(irrevModel.S~=0)==0);
+
         %Remove reactions
-        deletedReactions=[deletedReactions; reducedModel.rxns(I)];
-        reducedModel=removeReactions(reducedModel,find(I));
-            
+        irrevModel=removeReactions(irrevModel,I);
+
         %Remove metabolites
-        notInUse=sum(reducedModel.S~=0,2)==0;
-        deletedMetabolites=[deletedMetabolites; reducedModel.mets(notInUse)];
-        reducedModel=removeMets(reducedModel,notInUse);
-        
-        reducedModel.genes={};
-        reducedModel.rxnGeneMat=sparse(numel(reducedModel.rxns),0);
-        reducedModel.grRules(:)={''};
-        
-        if isfield(reducedModel,'geneShortNames')
-            reducedModel.geneShortNames={};
-        end
-        if isfield(reducedModel,'geneMiriams')
-            reducedModel.geneMiriams={};
-        end
-        if isfield(reducedModel,'geneComps')
-            reducedModel.geneComps=[];
-        end
-    else
-    	dispEM('Cannot group reactions for a model that has reversible reactions');
+        notInUse=sum(irrevModel.S~=0,2)==0;
+        irrevModel=removeMets(irrevModel,notInUse);
     end
+    
+    reducedModel=irrevModel;
 end
 
 end

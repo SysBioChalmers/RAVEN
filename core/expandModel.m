@@ -15,16 +15,14 @@ function newModel=expandModel(model)
 %
 %   Usage: newModel=expandModel(model)
 %
-%   Rasmus Agren, 2013-08-01
-%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
-%   rxnReferences and confidenceScores
+%   Rasmus Agren, 2017-02-19
 %
 
 %Start by checking which reactions could be expanded
-rxnsToExpand=false(numel(model.rxns),1);        
+rxnsToExpand=false(numel(model.rxns),1);
 
 for i=1:numel(model.rxns)
-    if findstr(model.grRules{i},' or ');
+    if ~isempty(strfind(model.grRules{i},' or '));
         rxnsToExpand(i)=true;
     end
 end
@@ -36,27 +34,28 @@ if any(rxnsToExpand)
     for i=1:numel(rxnsToExpand)
         %Check that it doesn't contain nested 'and' and 'or' relations and
         %print a warning if it does
-        if findstr(model.grRules{rxnsToExpand(i)},' and ')
-            fprintf(['WARNING: Reaction ' model.rxns{rxnsToExpand(i)} ' contains nested and/or-relations. Large risk of errors\n']);
+        if ~isempty(strfind(model.grRules{rxnsToExpand(i)},' and '))
+            EM=['Reaction ' model.rxns{rxnsToExpand(i)} ' contains nested and/or-relations. Large risk of errors'];
+            dispEM(EM,false);
         end
-        
+
         %Get rid of all '(' and ')' since I'm not looking at complex stuff
         %anyways
         geneString=model.grRules{rxnsToExpand(i)};
         geneString=strrep(geneString,'(','');
         geneString=strrep(geneString,')','');
         geneString=strrep(geneString,' or ',';');
-        
+
         %Split the string into gene names
-        [crap crap crap crap crap crap geneNames]=regexp(geneString,';');
-        
+        geneNames=regexp(geneString,';','split');
+
         %Update the reaction to only use the first gene
         model.grRules{rxnsToExpand(i)}=['(' geneNames{1} ')'];
         %Find the gene in the gene list
-        index=strmatch(geneNames(1),model.genes,'exact');
+        [~, index]=ismember(geneNames(1),model.genes);
         model.rxnGeneMat(rxnsToExpand(i),:)=0;
         model.rxnGeneMat(rxnsToExpand(i),index)=1;
-        
+
         %Insert the reactions at the end of the model and without
         %allocating space. This is not nice, but ok for now
         for j=2:numel(geneNames)
@@ -68,12 +67,12 @@ if any(rxnsToExpand)
             model.c=[model.c;model.c(rxnsToExpand(i))];
             model.S=[model.S model.S(:,rxnsToExpand(i))];
             model.grRules=[model.grRules;['(' geneNames{j} ')']];
-            
-            index=strmatch(geneNames(j),model.genes,'exact');
-            pad=sparse(1,numel(model.genes));
+
+            [~, index]=ismember(geneNames(j),model.genes);
+            pad=zeros(1,numel(model.genes));
             pad(index)=1;
             model.rxnGeneMat=[model.rxnGeneMat;pad];
-            
+
             if isfield(model,'subSystems')
                 model.subSystems=[model.subSystems;model.subSystems(rxnsToExpand(i))];
             end

@@ -5,8 +5,8 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %   Reconstructs a genome-scale metabolic model based on protein homology to the
 %   orthologies in KEGG
 %
-%   organismID      	three letter abbreviation of the organism (as used in
-%                       KEGG). If not available, use a closely related
+%   organismID          three or four letter abbreviation of the organism (as
+%                       used in KEGG). If not available, use a closely related
 %                       species. This is used for determing the
 %                       phylogenetic distance. Use 'eukaryotes' or
 %                       'prokaryotes' to get a model for the whole domain.
@@ -23,33 +23,30 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %                       -dataDir\keggdb
 %                           The KEGG database files used in 1a (see below).
 %                       -dataDir\fasta
-%                           The multi-FASTA files generated in 1b or
-%                           downloaded from the RAVEN Toolbox homepage (see
-%                           below)
+%                           The multi-FASTA files generated in 1b (see below)
 %                       -dataDir\aligned
 %                           The aligned FASTA files as generated in 2a (see
 %                           below)
 %                       -dataDir\hmms
-%                           The Hidden Markov Models as generated in 2b or
-%                           downloaded from the RAVEN Toolbox homepage (see
-%                           below)
+%                           The hidden Markov models as generated in 2b or
+%                           downloaded from BioMet Toolbox (see below)
 %                       (opt, see note about fastaFile. Note that in order to
 %                       rebuild the KEGG model from a database dump, as opposed to
 %                       using the version supplied with RAVEN, you would still need
 %                       to supply this)
 %   outDir              directory to save the results from the quering of
-%                       the Hidden Markov models. The output is specific
+%                       the hidden Markov models. The output is specific
 %                       for the input sequences and the settings used. It
 %                       is stored in this manner so that the function can
 %                       continue if interrupted or if it should run in
-%                       parallell. Be careful not to leave output files
+%                       parallel. Be careful not to leave output files
 %                       from different organisms or runs with different
 %                       settings in the same folder. They will not be
 %                       overwritten (opt, default is a temporary dir where
 %                       all *.out files are deleted before and after doing
 %                       the reconstruction)
 %   keepUndefinedStoich include reactions in the form n A <=> n+1 A. These
-%                       will be dealt with as two separate metabolites 
+%                       will be dealt with as two separate metabolites
 %                       (opt, default true)
 %   keepIncomplete      include reactions which have been labelled as
 %                       "incomplete", "erroneous" or "unclear" (opt,
@@ -64,9 +61,9 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %   cutOff              significans score from HMMer needed to assign genes
 %                       to a KO (opt, default 10^-50)
 %   minScoreRatioG      a gene is only assigned to KOs for which the score
-%                       is >=log(score)/log(best score) for that gene. 
-%                       This is to prevent that a gene which clearly belongs 
-%                       to one KO is assigned also to KOs with much lower 
+%                       is >=log(score)/log(best score) for that gene.
+%                       This is to prevent that a gene which clearly belongs
+%                       to one KO is assigned also to KOs with much lower
 %                       scores (opt, default 0.8 (lower is less strict))
 %   minScoreRatioKO     ignore genes in a KO if their score is
 %                       <log(score)/log(best score in KO). This is to
@@ -80,7 +77,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %                       the most this large (as calculated in getPhylDist)
 %                       (opt, default Inf, which means that all sequences will
 %                       be used)
-%   nSequences          for each KO, use up to this many sequences from 
+%   nSequences          for each KO, use up to this many sequences from
 %                       the most closely related species. This is mainly to
 %                       speed up the alignment process for KOs with very
 %                       many genes. This subsampling is performed before
@@ -94,40 +91,37 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %   model               the reconstructed model
 %
 %   PLEASE READ THIS: The input to this function can be confusing, because
-%   it is intended to be run in parallell on a cluster or in multiple sessions.
-%   It therefore saves a lot of intermediate results to disc. This also
-%   serves the purpose of not having to do reduntant calculations. This,
+%   it is intended to be run in parallel on a cluster or in multiple sessions.
+%   It therefore saves a lot of intermediate results to storage. This also
+%   serves the purpose of not having to do redundant calculations. This,
 %   however, comes with the disadvantage of somewhat trickier handling.
 %   This is what this function does:
 %
-%   1a. Downloads relevant parts from the KEGG FTP and constructs a general
-%       RAVEN model representing the metabolic network. This output is 
-%       distributed with RAVEN (it's in the raven\kegg directory). Delete
-%       those files to rerun this parsing.
-%   1b. Generates FASTA files from the downloaded KEGG files. One
-%       multi-FASTA file for each KO in KEGG is generated. These
-%       multi-fasta files can be downloaded from the RAVEN Toolbox
-%       homepage if you do not have access to the KEGG FTP or don't want to
-%       do this time-consuming parsing. Just be sure that you actually need
-%       them first (see below)
+%   1a. Loads files from a local KEGG FTP dump and constructs a general
+%       RAVEN model representing the metabolic network. KEGG FTP access
+%       requires a <a href="matlab: web('http://www.bioinformatics.jp/en/keggftp.html')">license</a>.
+%   1b. Generates FASTA files from the KEGG FTP dump (see 1a). One
+%       multi-FASTA file for each KO in KEGG is generated. Make sure you
+%       actually need these first, as the parsing is time-consuming (see below).
 %
-%   These steps only have to be redone every time KEGG updates their
+%   These steps only have to be re-done every time KEGG updates their
 %   database (or rather when the updates are large enough to warrant
 %   rerunning this part). Many user would probably never use this feature.
 %
 %   2a. Does alignment of the multi-FASTA files for future use. This uses the
 %       settings "useEvDist" and "nSequences" to control which sequences
 %       should be used for constructing Hidden Markov models (HMMs), and
-%       later for matching your sequences to. 
-%   2b. Trains Hidden Markov models using HMMer for each of the aligned
+%       later for matching your sequences to.
+%   2b. Trains hidden Markov models using HMMer for each of the aligned
 %       FASTA files.
 %
-%	The most common alternatives here would be to use sequences from only
-%   eukaryotes, only prokaryotes or all sequences in KEGG. The Hidden Markov
-%   models for those options can be downloaded from the RAVEN Toolbox
-%   homepage. This is normally the most convenient way, but if you would
-%   like to use, for example, only fungal sequences for training the HMMs
-%   then you need to run this part.
+%   The most common alternatives here would be to use sequences from only
+%   eukaryotes, only prokaryotes or all sequences in KEGG. As explained in
+%   the README.md file, various sets of pre-trained hidden Markov models are
+%   available at <a href="matlab: web('http://biomet-toolbox.org/index.php?page=downtools-raven')">BioMet Toolbox</a>.
+%   This is normally the most convenient way, but if you would like to use,
+%   for example, only fungal sequences for training the HMMs then you need
+%   to run this part.
 %
 %   3a. Queries the HMMs with sequences for the organism you are making a
 %       model for. This step uses both the output from step 1a and from 2b.
@@ -138,34 +132,31 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %   the model.
 %
 %   In principle the function looks at which output that is already available
-%   and runs runs only the parts that are required for step 3. This means
+%   and runs only the parts that are required for step 3. This means
 %   that (see the definition of the parameters for details):
-%   -1a is only performed if there are no KEGG model files in the raven\kegg
-%   directory
+%   -1a is only performed if there are no KEGG model files in the
+%   RAVEN\external\kegg directory
 %   -1b is only performed if not all required HMMs OR aligned FASTA files
 %   OR multi-FASTA files exist in the defined dataDir. This means that this
-%   step is skipped if the FASTA files or HMMs are downloaded from the RAVEN
-%   Toolbox homepage instead. If not all files exist it will try to find
-%   the KEGG database files in dataDir. If it cannot find them it will try
-%   to download them via the KEGG FTP.
+%   step is skipped if the HMMs are downloaded from BioMet Toolbox instead
+%   (see above). If not all files exist it will try to find
+%   the KEGG database files in dataDir.
 %   -2a is only performed if not all required HMMs OR aligned FASTA files
 %   files exist in the defined dataDir. This means that this step is skipped
-%   if the HMMs are downloaded from the RAVEN Toolbox homepage instead.
+%   if the HMMs are downloaded from BioMet Toolbox instead (see above).
 %   -2b is only performed if not all required HMMs exist in the defined
 %   dataDir. This means that this step is skipped if the FASTA files or
-%   HMMs are downloaded from the RAVEN Toolbox homepage instead.
+%   HMMs are downloaded from BioMet Toolbox instead (see above).
 %   -3a is performed for the required HMMs for which no corresponding .out
 %   file exists in outDir. This is just a way to enable the function to be
-%   run in parallell or to resume if interrupeted.
+%   run in parallel or to resume if interrupted.
 %   -3b is always performed.
 %
 %   Usage: model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...
 %    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 %
-%   Rasmus Agren, 2017-02-06
-%   Simonas Marcisauskas, 2016-11-03 - fixed compatibility with HMMER-3.1b
-%   Simonas Marcisauskas, 2016-12-08 - implemented CD-HIT and MAFFT
+%   Eduard Kerkhoven, 2017-02-28
 %
 
 if nargin<2
@@ -199,7 +190,7 @@ if nargin<9
 end
 if nargin<10
     minScoreRatioKO=0.3;
-end    
+end
 if nargin<11
     maxPhylDist=inf; %Include all sequences for each reaction
 end
@@ -268,7 +259,7 @@ if isempty(fastaFile)
             end
         end
     end
-    
+
     %Remove those genes
     model.genes=model.genes(I);
     model.rxnGeneMat=model.rxnGeneMat(:,I);
@@ -290,10 +281,10 @@ end
 
 %NOTE: For some reason the organism abbreviation should be in lower case in
 %this database. Fix this here
-for i=1:numel(KOModel.genes)    
+for i=1:numel(KOModel.genes)
     parIndex=strfind(KOModel.genes{i},'(');
     if any(parIndex)
-       KOModel.genes{i}=KOModel.genes{i}(1:parIndex-1); 
+       KOModel.genes{i}=KOModel.genes{i}(1:parIndex-1);
     end
     colIndex=strfind(KOModel.genes{i},':');
     KOModel.genes{i}=[lower(KOModel.genes{i}(1:colIndex-1)) KOModel.genes{i}(colIndex:end)];
@@ -326,8 +317,8 @@ missingFASTA=setdiff(KOModel.rxns,[fastaFiles;alignedFiles;hmmFiles;outFiles]);
 
 if ~isempty(missingFASTA)
     if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file')
-        %If no sequence file exists then download from KEGG
-        downloadKEGG(fullfile(dataDir,'keggdb'));
+        EM=fprintf(['The file ''genes.pep'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
+        dispEM(EM);
     end
     %Only construct models for KOs which don't have files already
     fastaModel=removeReactions(KOModel,setdiff(KOModel.rxns,missingFASTA),true,true);
@@ -351,8 +342,9 @@ if isunix
     end
 elseif ispc
     binEnd='';
-else 
-    dispEM('Unknown OS, exiting.')
+else
+    EM='Unknown OS, exiting.';
+    disp(EM);
     return
 end
 
@@ -371,10 +363,11 @@ if ~isempty(missingAligned)
             %we are saving empty files as well. Print a warning and
             %continue if not.
             if ~exist(fullfile(dataDir,'fasta',[missingAligned{i} '.fa']),'file')
-                dispEM(['WARNING: The multi-FASTA file for ' missingAligned{i} ' does not exist'],false);
+                EM=['WARNING: The multi-FASTA file for ' missingAligned{i} ' does not exist'];
+                dispEM(EM,false);
                 continue;
             end
-            
+
             %If the multi-FASTA file is empty then save an empty aligned
             %file and continue
             s=dir(fullfile(dataDir,'fasta',[missingAligned{i} '.fa']));
@@ -383,11 +376,11 @@ if ~isempty(missingAligned)
                 fclose(fid);
                 continue;
             end
-            
+
             %Create an empty file to prevent other threads to start to work on the same alignment
             fid=fopen(fullfile(dataDir,'aligned',[missingAligned{i} '.faw']),'w');
             fclose(fid);
-            
+
             %First load the FASTA file, then select up to nSequences sequences
             %of the most closely related species, apply any constraints from
             %maxPhylDist, and save it as a temporary file, and create the
@@ -419,7 +412,7 @@ if ~isempty(missingAligned)
             else
                 fastaStruct=fastaStruct(order);
             end
-            
+
             %Do the alignment if there are more than one sequences,
             %otherwise just save the sequence (or an empty file)
             if numel(fastaStruct)>1
@@ -431,7 +424,8 @@ if ~isempty(missingAligned)
                             tmpFile=tempname;
                             [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' tmpFile '" -c 1.0 -s 0.8 -n 5 -M 2000 -T 8']);
                             if status~=0
-                                dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
+                                EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                                dispEM(EM);
                             end
                             %Remove the old tempfile
                             if exist(cdhitInp100, 'file')
@@ -443,7 +437,8 @@ if ~isempty(missingAligned)
                             cdhitInp90=tempname;
                             [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -s 0.8 -n 5 -M 2000']);
                             if status~=0
-                                dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
+                                EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                                dispEM(EM);
                             end
                             %Remove the old tempfile
                             if exist(cdhitInp100, 'file')
@@ -452,7 +447,8 @@ if ~isempty(missingAligned)
                             tmpFile=tempname;
                             [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp90 '" -o "' tmpFile '" -c 0.9 -s 0.8 -n 5 -M 2000']);
                             if status~=0
-                                dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
+                                EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                                dispEM(EM);
                             end
                             %Remove the old tempfile
                             if exist(cdhitInp90, 'file')
@@ -464,7 +460,8 @@ if ~isempty(missingAligned)
                             cdhitInp90=tempname;
                             [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -s 0.8 -n 5 -M 2000']);
                             if status~=0
-                                dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
+                                EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                                dispEM(EM);
                             end
                             %Remove the old tempfile
                             if exist(cdhitInp100, 'file')
@@ -473,7 +470,8 @@ if ~isempty(missingAligned)
                             cdhitInp50=tempname;
                             [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp90 '" -o "' cdhitInp50 '" -c 0.9 -s 0.8 -n 5 -M 2000']);
                             if status~=0
-                                dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
+                                EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                                dispEM(EM);
                             end
                             %Remove the old tempfile
                             if exist(cdhitInp90, 'file')
@@ -482,7 +480,8 @@ if ~isempty(missingAligned)
                             tmpFile=tempname;
                             [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp50 '" -o "' tmpFile '" -c 0.5 -s 0.8 -n 3 -M 2000']);
                             if status~=0
-                                dispEM(['Error when performing clustering of ' missingAligned{i} ':\n' output]); 
+                                EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                                dispEM(EM);
                             end
                             %Remove the old tempfile
                             if exist(cdhitInp50, 'file')
@@ -496,8 +495,8 @@ if ~isempty(missingAligned)
                         fastawrite(tmpFile,fastaStruct);
                     end
                 else
-                	tmpFile=tempname;
-                	fastawrite(tmpFile,fastaStruct);
+                    tmpFile=tempname;
+                    fastawrite(tmpFile,fastaStruct);
                 end
                 %Do the alignment for this file
                 if ~ispc
@@ -506,7 +505,8 @@ if ~isempty(missingAligned)
                     [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.221','mafft.bat') '" --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 end
                 if status~=0
-                	dispEM(['Error when performing alignment of ' missingAligned{i} ':\n' output]); 
+                    EM=['Error when performing alignment of ' missingAligned{i} ':\n' output];
+                    dispEM(EM);
                 end
                 %Remove the old tempfile
                 if exist(tmpFile, 'file')
@@ -544,7 +544,7 @@ end
 missingHMMs=setdiff(KOModel.rxns,[hmmFiles;outFiles]);
 if ~isempty(missingHMMs)
     missingHMMs=missingHMMs(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingHMMs)));
-    
+
     %Train models for all missing KOs
     for i=1:numel(missingHMMs)
         %This is checked here because it could be that it is created by a
@@ -556,10 +556,11 @@ if ~isempty(missingHMMs)
             %happen on a single computer. I don't throw an error, because
             %it should finalize the ones it can.
             if ~exist(fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']),'file')
-            	dispEM(['The aligned FASTA file for ' missingHMMs{i} ' does not exist'],false);
+                EM=['The aligned FASTA file for ' missingHMMs{i} ' does not exist'];
+                dispEM(EM,false);
                 continue;
             end
-            
+
             %If the multi-FASTA file is empty then save an empty aligned
             %file and continue
             s=dir(fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']));
@@ -572,13 +573,14 @@ if ~isempty(missingHMMs)
             %KO. This is because hmmbuild cannot overwrite existing files.
             fid=fopen(fullfile(dataDir,'hmms',[missingHMMs{i} '.hmw']),'w');
             fclose(fid);
-                
+
             %Create HMM
             [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1',['hmmbuild' binEnd]) '" "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
             if status~=0
-            	dispEM(['Error when training HMM for ' missingHMMs{i} ':\n' output]);
+                EM=['Error when training HMM for ' missingHMMs{i} ':\n' output];
+                dispEM(EM);
             end
-            
+
             %Delete the temporary file
             delete(fullfile(dataDir,'hmms',[missingHMMs{i} '.hmw']));
         end
@@ -599,36 +601,38 @@ if ~isempty(missingOUT)
             %we are saving empty files as well. Print a warning and
             %continue if not.
             if ~exist(fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']),'file')
-            	dispEM(['The HMM file for ' missingOUT{i} ' does not exist'],false);
+                EM=['The HMM file for ' missingOUT{i} ' does not exist'];
+                dispEM(EM,false);
                 continue;
             end
-            
+
             %Save an empty file to prevent several threads working on the
             %same file
             fid=fopen(fullfile(outDir,[missingOUT{i} '.out']),'w');
             fclose(fid);
-            
+
             %If the HMM file is empty then save an out file and continue
             s=dir(fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']));
             if s.bytes<=0
                 continue;
             end
-            
+
             %Check each gene in the input file against this model
             [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1',['hmmsearch' binEnd]) '" "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
             if status~=0
-            	dispEM(['Error when querying HMM for ' missingOUT{i} ':\n' output]); 
+                EM=['Error when querying HMM for ' missingOUT{i} ':\n' output];
+                dispEM(EM);
             end
 
             %Save the output to a file
             fid=fopen(fullfile(outDir,[missingOUT{i} '.out']),'w');
             fwrite(fid,output);
             fclose(fid);
-        end 
+        end
     end
 end
 fprintf('Completed matching to HMMs\n');
-            
+
 %***Begin retrieving the output and putting together the resulting model
 
 %Retrieve matched genes from the HMMs
@@ -650,12 +654,12 @@ for i=1:numel(KOModel.rxns)
             %Abort at end of file
             if ~ischar(tline)
                 break;
-            end   
-            
+            end
+
             if and(beginMatches,strcmp(tline,'  ------ inclusion threshold ------'))
                 break;
             end
-            
+
             if beginMatches==false
                 %This is how the listing of matches begins
                 if any(strfind(tline,'E-value '))
@@ -668,7 +672,7 @@ for i=1:numel(KOModel.rxns)
                 if ~strcmp(tline,'   [No hits detected that satisfy reporting thresholds]') && ~isempty(tline)
                     elements=regexp(tline,' ','split');
                     elements=elements(cellfun(@any,elements));
-                    
+
                     %Check if the match is below the treshhold
                     score=str2num(elements{1});
                     gene=elements{9};
@@ -676,13 +680,13 @@ for i=1:numel(KOModel.rxns)
                         %If the score is exactly 0, change it to a very
                         %small value to avoid NaN
                         if score==0
-                           score=10^-250; 
+                           score=10^-250;
                         end
                         %Check if the gene is added already and, is so, get
                         %the best score for it
                         I=hTable.get(gene);
                         if any(I)
-                            koGeneMat(i,I)=score;    
+                            koGeneMat(i,I)=score;
                         else
                             geneCounter=geneCounter+1;
                             %The gene was not present yet so add it
@@ -732,7 +736,7 @@ for i=1:numel(model.rxns)
         %Find the KOs and the corresponding genes
         J=ismember(KOModel.rxns,KOs);
         [~, K]=find(koGeneMat(J,:));
-        
+
         if any(K)
             model.rxnGeneMat(i,K)=1;
             %Also delete KOs for which no genes were found. If no genes at all

@@ -12,18 +12,20 @@ function pathway=markPathwayWithExpression(pathway,model,experiment,experimentOr
 %
 %   Usage: pathway=markPathwayWithExpression(pathway,model,experiment,experimentOrder)
 %
-%   Rasmus Agren, 2013-08-01
+%   Rasmus Agren, 2014-01-08
 %
 
 if numel(experimentOrder)~=2
-    dispEM('This can only be done for two cases at the moment (experimentOrder must be two elements)');
+    EM='This can only be done for two cases at the moment (experimentOrder must be two elements)';
+    dispEM(EM);
 end
 
 %Check that experiment fit with experimentOrder
-[present expIds]=ismember(experimentOrder,experiment.experiments);
+[present, expIds]=ismember(experimentOrder,experiment.experiments);
 
 if ~all(present)
-   dispEM('Not all experiments could be found in the experiment structure');
+    EM='Not all experiments could be found in the experiment structure';
+    dispEM(EM);
 end
 
 experiment.data=experiment.data(:,expIds);
@@ -36,15 +38,15 @@ for i=1:numel(pathway.listOfSpecies)
         if isfield(pathway.listOfSpecies(i),'note')
             if ~isempty(pathway.listOfSpecies(i).note)
                 %Get the reaction if present in model
-                [present index]=ismember(pathway.listOfSpecies(i).note,model.rxns);
+                [present, index]=ismember(pathway.listOfSpecies(i).note,model.rxns);
 
                 %If present, then get the genes
                 if any(present)
-                    [crap genes]=find(model.rxnGeneMat(index,:));
+                    [~, genes]=find(model.rxnGeneMat(index,:));
 
                     %If it was associated with genes match them to the ORFs
                     if any(genes)
-                        [present experimentIndexes]=ismember(model.genes(genes),experiment.orfs);
+                        [present, experimentIndexes]=ismember(model.genes(genes),experiment.orfs);
 
                         %Add annotation to pathway structure
                         if any(present)
