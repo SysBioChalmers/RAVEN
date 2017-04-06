@@ -35,7 +35,7 @@ if any(rxnsToExpand)
         %Check that it doesn't contain nested 'and' and 'or' relations and
         %print a warning if it does
         if ~isempty(strfind(model.grRules{rxnsToExpand(i)},' and '))
-            EM=['Reaction ' model.rxns{rxnsToExpand(i)} ' contains nested and/or-relations. Large risk of errors\n'];
+            EM=['Reaction ' model.rxns{rxnsToExpand(i)} ' contains nested and/or-relations. Large risk of errors'];
             dispEM(EM,false);
         end
 
