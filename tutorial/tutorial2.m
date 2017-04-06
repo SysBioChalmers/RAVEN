@@ -59,7 +59,7 @@ drawMap('Aerobic vs Anaerobic MOMA',pathway,model,fluxA,fluxB,[],'mapMOMA.pdf',1
 %Read microarray results and calculate reporter metabolites (metabolites
 %around which there are significant transcriptional changes)
 [orfs,pvalues]=textread('expression.txt','%s%f');
-repMets=reporterMets(model,orfs,pvalues);
+repMets=reporterMetabolites(model,orfs,pvalues);
 [I J]=sort(repMets.metPValues);
  
 fprintf('TOP 10 REPORTER METABOLITES:\n');
