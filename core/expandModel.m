@@ -15,7 +15,7 @@ function newModel=expandModel(model)
 %
 %   Usage: newModel=expandModel(model)
 %
-%   Rasmus Agren, 2017-02-19
+%   Eduard Kerkhoven, 2017-04-06
 %
 
 %Start by checking which reactions could be expanded
@@ -35,7 +35,7 @@ if any(rxnsToExpand)
         %Check that it doesn't contain nested 'and' and 'or' relations and
         %print a warning if it does
         if ~isempty(strfind(model.grRules{rxnsToExpand(i)},' and '))
-            EM=['Reaction ' model.rxns{rxnsToExpand(i)} ' contains nested and/or-relations. Large risk of errors'];
+            EM=['Reaction ' model.rxns{rxnsToExpand(i)} ' contains nested and/or-relations. Large risk of errors\n'];
             dispEM(EM,false);
         end
 
@@ -52,9 +52,18 @@ if any(rxnsToExpand)
         %Update the reaction to only use the first gene
         model.grRules{rxnsToExpand(i)}=['(' geneNames{1} ')'];
         %Find the gene in the gene list
-        [~, index]=ismember(geneNames(1),model.genes);
+        %If ' and ' relationship, first split the genes
         model.rxnGeneMat(rxnsToExpand(i),:)=0;
-        model.rxnGeneMat(rxnsToExpand(i),index)=1;
+        if ~isempty(strfind(geneNames(1),' and '))
+            andGenes=regexp(geneNames{1},' and ','split');
+            for h=1:numel(andGenes)
+                [~, index]=ismember(andGenes(h),model.genes);
+                model.rxnGeneMat(rxnsToExpand(i),index)=1;
+            end
+        else
+            [~, index]=ismember(geneNames(1),model.genes);
+            model.rxnGeneMat(rxnsToExpand(i),index)=1;
+        end
 
         %Insert the reactions at the end of the model and without
         %allocating space. This is not nice, but ok for now
@@ -68,9 +77,17 @@ if any(rxnsToExpand)
             model.S=[model.S model.S(:,rxnsToExpand(i))];
             model.grRules=[model.grRules;['(' geneNames{j} ')']];
 
-            [~, index]=ismember(geneNames(j),model.genes);
             pad=zeros(1,numel(model.genes));
-            pad(index)=1;
+            if ~isempty(strfind(geneNames(j),' and '))
+                andGenes=regexp(geneNames{j},' and ','split');
+                for h=1:numel(andGenes)
+                    [~, index]=ismember(andGenes(h),model.genes);
+                    pad(index)=1;
+                end
+            else
+                [~, index]=ismember(geneNames(j),model.genes);
+                pad(index)=1;
+            end
             model.rxnGeneMat=[model.rxnGeneMat;pad];
 
             if isfield(model,'subSystems')
