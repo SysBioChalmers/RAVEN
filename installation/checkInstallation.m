@@ -61,7 +61,7 @@ try
     smallModel=importModel(xmlFile);
     fprintf('Checking if it is possible to import an SBML model using libSBML... PASSED\n');
 catch
-    fprintf('Checking if it is possible to import an SBML model using libSBML... FAILED\n');
+    fprintf('Checking if it is possible to import an SBML model using libSBML... FAILED\nTo import SBML models, download libSBML from http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n');
 end
 
 %Check if it is possible to solve an LP problem using different solvers
