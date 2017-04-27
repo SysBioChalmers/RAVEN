@@ -7,7 +7,8 @@ function outProb = mosekToCobraProb(inProb)
 	outProb.lb = [inProb.blx; inProb.blc]; 
 	outProb.ub = [inProb.bux; inProb.buc];
 	outProb.osense = 1;
-	outProb.csense = 'E';
+	outProb.csense = char(zeros(size(inProb.a,1),1));
+	outProb.csense(:) = 'E';
 
 	% milp 
 	if(isfield(inProb,'ints'))
