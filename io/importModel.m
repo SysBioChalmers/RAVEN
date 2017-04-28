@@ -352,7 +352,7 @@ else
             comp.match=regexp(modelSBML.species(i).name,'.* \[(.*)\]$','match');
             if ~isempty(comp.match)
                 comp.split=strsplit(comp.match{1},{'[',']'});
-                comp.true=any(strcmp({modelSBML.compartment.name},comp.split{2}));
+                comp.true=any(strcmpi({modelSBML.compartment.name},comp.split{2}));
                 if comp.true==1
                     metaboliteNames{numel(metaboliteNames)+1,1}=strtrim(comp.split{1});
                 else
