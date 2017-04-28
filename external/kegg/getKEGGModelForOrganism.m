@@ -283,12 +283,12 @@ for i=1:numel(model.genes)
     end
 end
 
-%Create grRules
-model.grRules=cell(numel(model.rxns),1);
-model.grRules(:)={''};
-
 %If no FASTA file is supplied, then we're done here
 if isempty(fastaFile)
+    %Create grRules
+    model.grRules=cell(numel(model.rxns),1);
+    model.grRules(:)={''};
+    
     %Add the gene associations as 'or'
     for i=1:numel(model.rxns)
         %Find the involved genes
