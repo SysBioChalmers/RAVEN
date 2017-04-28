@@ -272,6 +272,16 @@ model=removeReactions(model,~hasGenes,true);
 
 %If no FASTA file is supplied, then we're done here
 if isempty(fastaFile)
+    %Add the gene associations as 'or'
+    for i=1:numel(model.rxns)
+        %Find the involved genes
+        I=find(model.rxnGeneMat(i,:));
+        model.grRules{i}=['(' model.genes{I(1)}];
+        for j=2:numel(I)
+        	model.grRules{i}=[model.grRules{i} ' or ' model.genes{I(j)}];
+        end
+    model.grRules{i}=[model.grRules{i} ')'];
+    end
     return;
 end
 
