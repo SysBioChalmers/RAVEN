@@ -270,6 +270,10 @@ hasGenes=any(model.rxnGeneMat,2);
 
 model=removeReactions(model,~hasGenes,true);
 
+%Create grRules
+model.grRules=cell(numel(model.rxns),1);
+model.grRules(:)={''};
+
 %If no FASTA file is supplied, then we're done here
 if isempty(fastaFile)
     %Add the gene associations as 'or'
@@ -280,7 +284,7 @@ if isempty(fastaFile)
         for j=2:numel(I)
         	model.grRules{i}=[model.grRules{i} ' or ' model.genes{I(j)}];
         end
-    model.grRules{i}=[model.grRules{i} ')'];
+        model.grRules{i}=[model.grRules{i} ')'];
     end
     return;
 end
