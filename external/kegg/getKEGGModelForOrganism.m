@@ -252,10 +252,11 @@ if isempty(fastaFile)
         I=ismember(upper(taxIDs),upper(idsToKeep));
     else
         % KEGG organism IDs may have three or four letters
-        if length(organismID)==3
-            I=cellfun(@(x) strcmpi(x(1:3),organismID),model.genes);
-        else if length(organismID)==4
+        organismID=strcat(organismID,':');   %Add colon for accurate matching
+        if length(organismID)==4
             I=cellfun(@(x) strcmpi(x(1:4),organismID),model.genes);
+        else if length(organismID)==5
+            I=cellfun(@(x) strcmpi(x(1:5),organismID),model.genes);
             end
         end
     end
@@ -269,6 +270,18 @@ end
 hasGenes=any(model.rxnGeneMat,2);
 
 model=removeReactions(model,~hasGenes,true);
+
+%Clean gene names
+for i=1:numel(model.genes)
+    %First get rid of the prefix organism id
+    model.genes{i}=model.genes{i}(strfind(model.genes{i},':')+1:end);
+    
+    %Find and remove the description in parentheses if any
+    s=strfind(model.genes{i},'(');
+    if any(s)
+        model.genes{i}=model.genes{i}(1:s-1);
+    end
+end
 
 %Create grRules
 model.grRules=cell(numel(model.rxns),1);
