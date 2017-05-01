@@ -842,7 +842,7 @@ for i=1:numel(strings)
         end
 
         for j=1:numel(I)
-            index=max(strfind(I{j},':'));
+            index=max(strfind(I{j},'/'));
             if any(index)
                 miriamStruct{i}.name{startIndex+j}=I{j}(1:index-1);
                 miriamStruct{i}.value{startIndex+j}=I{j}(index+1:end);

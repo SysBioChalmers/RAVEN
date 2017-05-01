@@ -17,7 +17,7 @@ function exportToExcelFormat(model,filename)
 %
 %   Usage: exportToExcelFormat(model,filename)
 %
-%   Rasmus Agren, 2017-02-27
+%   Rasmus Agren, 2017-05-01
 %
 
 [~, A, B]=fileparts(filename);
@@ -149,7 +149,7 @@ for i=1:numel(model.rxns)
        if ~isempty(model.rxnMiriams{i})
            toPrint=[];
            for j=1:numel(model.rxnMiriams{i}.name)
-               toPrint=[toPrint strtrim(model.rxnMiriams{i}.name{j}) ':' strtrim(model.rxnMiriams{i}.value{j}) ';'];
+               toPrint=[toPrint strtrim(model.rxnMiriams{i}.name{j}) '/' strtrim(model.rxnMiriams{i}.value{j}) ';'];
            end
            rxnMiriams{i}=toPrint(1:end-1);
        end
@@ -218,7 +218,7 @@ for i=1:numel(model.mets)
        if ~isempty(model.metMiriams{i})
            toPrint=[];
            for j=1:numel(model.metMiriams{i}.name)
-               toPrint=[toPrint strtrim(model.metMiriams{i}.name{j}) ':' strtrim(model.metMiriams{i}.value{j}) ';'];
+               toPrint=[toPrint strtrim(model.metMiriams{i}.name{j}) '/' strtrim(model.metMiriams{i}.value{j}) ';'];
            end
            metSheet{i,5}=toPrint(1:end-1);
        end
@@ -267,7 +267,7 @@ for i=1:numel(model.comps)
        if ~isempty(model.compMiriams{i})
            toPrint=[];
            for j=1:numel(model.compMiriams{i}.name)
-               toPrint=[toPrint strtrim(model.compMiriams{i}.name{j}) ':' strtrim(model.compMiriams{i}.value{j}) ';'];
+               toPrint=[toPrint strtrim(model.compMiriams{i}.name{j}) '/' strtrim(model.compMiriams{i}.value{j}) ';'];
            end
            compSheet{i,5}=toPrint(1:end-1);
        end
@@ -290,7 +290,7 @@ if isfield(model,'genes')
            if ~isempty(model.geneMiriams{i})
                toPrint=[];
                for j=1:numel(model.geneMiriams{i}.name)
-                   toPrint=[toPrint strtrim(model.geneMiriams{i}.name{j}) ':' strtrim(model.geneMiriams{i}.value{j}) ';'];
+                   toPrint=[toPrint strtrim(model.geneMiriams{i}.name{j}) '/' strtrim(model.geneMiriams{i}.value{j}) ';'];
                end
                geneSheet{i,3}=toPrint(1:end-1);
            end

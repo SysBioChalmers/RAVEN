@@ -28,7 +28,7 @@ function model=getMetsFromKEGG(keggPath)
 %               
 %   Usage: model=getMetsFromKEGG(keggPath)
 %
-%   Eduard Kerkhoven, 2017-02-28
+%   Simonas Marcisauskas, 2017-05-02
 %
 
 %NOTE: This is how one entry looks in the file
@@ -69,11 +69,11 @@ else
         model.id='KEGG';
         model.description='Automatically generated from KEGG database';
     
-        %Preallocate memory for 20000 metabolites
-        model.mets=cell(20000,1);
-        model.metNames=cell(20000,1);
-        model.metFormulas=cell(20000,1);
-        model.metMiriams=cell(20000,1);
+        %Preallocate memory for 30000 metabolites
+        model.mets=cell(30000,1);
+        model.metNames=cell(30000,1);
+        model.metFormulas=cell(30000,1);
+        model.metMiriams=cell(30000,1);
     
         %First load information on metabolite ID, metabolite name, composition, and
         %CHEBI
@@ -113,9 +113,15 @@ else
           if strcmp(tline(1:12),'NAME        ')
               %If there are synonyms, then the last character is ';'
               if strcmp(tline(end),';')
-                    model.metNames{metCounter}=tline(13:end-1);
+              	model.metNames{metCounter}=tline(13:end-1);
+                %Semicolon can also occur in the middle, separating several
+                %synonims in the same line;
+                model.metNames{metCounter} = regexprep(model.metNames{metCounter},';.+','');
+              elseif regexp(tline,';')
+                model.metNames{metCounter}=tline(13:end);
+                model.metNames{metCounter} = regexprep(model.metNames{metCounter},';.+','');
               else
-                    model.metNames{metCounter}=tline(13:end);
+              	model.metNames{metCounter}=tline(13:end);
               end
           end
     
@@ -134,8 +140,8 @@ else
                   if any(s)
                      chebiID=chebiID(1:s-1);
                   end
-                  miriamStruct.name{1}='obo.chebi:CHEBI';
-                  miriamStruct.value{1}=chebiID;
+                  miriamStruct.name{1}='chebi';
+                  miriamStruct.value{1}=strcat('CHEBI:', chebiID);
                   model.metMiriams{metCounter}=miriamStruct;
               end
           end
@@ -153,7 +159,11 @@ else
         %If there was no CHEBI found, add the KEGG id as a metMiriams
         for i=1:numel(model.mets)
             if ~isstruct(model.metMiriams{i})
-                miriamStruct.name{1}='kegg.compound';
+                if strcmp('G',model.mets{i}(1))
+                    miriamStruct.name{1}='kegg.glycan';
+                else
+                    miriamStruct.name{1}='kegg.compound';
+                end;
                 miriamStruct.value{1}=model.mets{i};
                 model.metMiriams{i}=miriamStruct;
             end
@@ -218,6 +228,20 @@ else
             end
         end
         
+        % Removing fronting and trailing whitespace from metNames
+        model.metNames = deblank(model.metNames);
+        
+        % Fixing redundant metNames. The first occurence of particular
+        % metabolite name is not changed, but starting from the second
+        % occurence, original metabolite name is concatenated with KEGG
+        % COMPOUND id between the brackets;
+        for i=1:(numel(model.metNames))
+            if ~isempty(model.metNames{i})
+                if sum(ismember(model.metNames(1:i-1),model.metNames(i)))>=1
+                    model.metNames(i) = strcat(model.metNames(i), ' (', model.mets(i),')');
+                end;
+            end;
+        end;
         %Saves the model
         save(metsFile,'model');
     end

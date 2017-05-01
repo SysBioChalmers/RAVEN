@@ -33,7 +33,7 @@ function model=getGenesFromKEGG(keggPath,koList)
 %
 %   Usage: model=getGenesFromKEGG(keggPath,koList)
 %
-%   Eduard Kerkhoven, 2017-02-28
+%   Simonas Marcisauskas, 2017-05-02
 %
 
 %NOTE: This is how one entry looks in the file
@@ -259,7 +259,7 @@ function allKOs=getAllKOs(keggPath)
         for i=1:numel(model.rxns)
             if isstruct(model.rxnMiriams{i})
                 %Get all KOs
-                allKOs=[allKOs;model.rxnMiriams{i}.value(strcmpi(model.rxnMiriams{i}.name,'urn:miriam:kegg.ko'))];
+                allKOs=[allKOs;model.rxnMiriams{i}.value(strcmpi(model.rxnMiriams{i}.name,'kegg.orthology'))];
             end
         end
     else

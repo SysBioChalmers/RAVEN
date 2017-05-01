@@ -156,7 +156,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...
 %    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 %
-%   Eduard Kerkhoven, 2017-02-28
+%   Hao Wang, 2017-04-28
 %
 
 if nargin<2

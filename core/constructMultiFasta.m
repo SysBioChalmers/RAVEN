@@ -13,7 +13,7 @@ function constructMultiFasta(model,sourceFile,outputDir)
 %
 %   Usage: constructMultiFasta(model,sourceFile,outputDir)
 %
-%   Rasmus Agren, 2014-01-08
+%   Simonas Marcisauskas, 2017-05-02
 %
 
 %Open the source file
@@ -50,6 +50,8 @@ while 1
 end
 elementPositions=elementPositions(1:totalElements);
 fprintf('Completed scanning of source file\n');
+
+fprintf('NOTICE: If Matlab is freezing and does not provide any output in 30 minutes, consider increasing Java Heap Memory in MATLAB settings and start over with the new session\n');
 
 %Now loop through the file to see which genes are present in the gene list
 %and save their position IN elementPositions! This is to enable a easy way
