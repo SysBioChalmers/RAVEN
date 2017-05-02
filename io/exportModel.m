@@ -502,7 +502,7 @@ fclose(fid);
 
 %Replace the target file with the temporary file
 delete(fileName);
-movefile(tempF,fileName);
+movefile(tempF,fileName,'f');
 end
 
 function miriamString=getMiriam(miriamStruct)
