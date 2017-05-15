@@ -1,4 +1,4 @@
-function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames)
+function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID)
 % constructEquations
 %   Construct equation strings for reactions
 %
@@ -6,20 +6,22 @@ function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sort
 %   rxns              either a cell array of reaction IDs, a logical vector with the
 %                     same number of elements as reactions in the model, or a vector
 %                     of reaction indexes (opt, default model.rxns)
-%	useComps          include the compartment of each metabolite (opt, default true)
-%	sortRevRxns       sort reversible reactions so that the metabolite that is first in
+%	  useComps          include the compartment of each metabolite (opt, default true)
+%	  sortRevRxns       sort reversible reactions so that the metabolite that is first in
 %                     the lexiographic order is a reactant (opt, default
 %                     false)
-%	sortMetNames      sort the metabolite names in the equation. Uses
+%	  sortMetNames      sort the metabolite names in the equation. Uses
 %                     compartment even if useComps is false (opt, default
 %                     false)
+%   useMetID          use metabolite ID in generated equations, otherwise metNames are
+%                     used (opt, default false)
 %
 %   equationStrings     a cell array with equations
 %
 % 	Usage: equationStrings=constructEquations(model,rxns,useComps,...
-%           sortRevRxns,sortMetNames)
+%           sortRevRxns,sortMetNames,useMetID)
 %
-%   Rasmus Agren, 2014-07-03
+%   Hao Wang, 2017-05-15
 %
 
 if nargin<2
@@ -33,6 +35,9 @@ if nargin<4
 end
 if nargin<5
     sortMetNames=false;
+end
+if nargin<6
+    useMetID=false;
 end
 if isempty(rxns) && nargin>2
     rxns=model.rxns;
@@ -73,9 +78,17 @@ for i=1:numel(indexes)
         end
 
         if useComps==true
-            eqn=[eqn plusString stoich model.metNames{reactants(j)} '[' model.comps{model.metComps(reactants(j))} ']'];
+        		if useMetID==true
+	            eqn=[eqn plusString stoich model.mets{reactants(j)} '[' model.comps{model.metComps(reactants(j))} ']'];
+	          else
+	            eqn=[eqn plusString stoich model.metNames{reactants(j)} '[' model.comps{model.metComps(reactants(j))} ']'];
+	          end
         else
-            eqn=[eqn plusString stoich model.metNames{reactants(j)}];
+        		if useMetID==true
+        			eqn=[eqn plusString stoich model.mets{reactants(j)}];
+        		else
+        			eqn=[eqn plusString stoich model.metNames{reactants(j)}];
+        		end
         end
     end
 
@@ -101,9 +114,17 @@ for i=1:numel(indexes)
         end
 
         if useComps==true
-            eqn=[eqn plusString stoich model.metNames{products(j)} '[' model.comps{model.metComps(products(j))} ']'];
+        		if useMetID==true
+        			eqn=[eqn plusString stoich model.mets{products(j)} '[' model.comps{model.metComps(products(j))} ']'];
+        		else
+        			eqn=[eqn plusString stoich model.metNames{products(j)} '[' model.comps{model.metComps(products(j))} ']'];	
+        		end
         else
-            eqn=[eqn plusString stoich model.metNames{products(j)}];
+        		if useMetID==true
+        			eqn=[eqn plusString stoich model.mets{products(j)}];
+        		else
+        			eqn=[eqn plusString stoich model.metNames{products(j)}];
+        		end
         end
     end
     equationStrings{i}=eqn;
