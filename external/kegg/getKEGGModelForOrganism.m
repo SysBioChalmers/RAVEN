@@ -156,7 +156,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...
 %    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2017-05-08
+%   Simonas Marcisauskas, 2017-05-16
 %
 
 if nargin<2
@@ -200,6 +200,36 @@ end
 if nargin<13
     seqIdentity=-1; %CD-HIT is not used in the pipeline
 end
+
+% Checking if dataDir is consistent. It must point to pre-trained HMMs set,
+% compatible with the the current RAVEN version.
+% The user may have the required zip file already in working directory or
+% have it extracted. If the zip file and directory is not here, it is
+% downloaded from BioMet ToolBox 2.0 server.
+
+if ~isempty(dataDir)
+    hmmOptions={'euk100_kegg82'; ...
+        'euk90_kegg82'; ...
+        'euk50_kegg82'; ...
+        'prok100_kegg82'; ...
+        'prok90_kegg82'; ...
+        'prok50_kegg82'};
+    if ~ismember(dataDir,hmmOptions)
+        EM='Pre-trained HMMs set is not recognised. The following sets are available to download:';
+        disp(EM);
+        disp(hmmOptions);
+        return;
+    end;
+    if ~exist(dataDir,'dir') && exist([dataDir,'.zip'],'file')
+        fprintf('Extracting HMMs archive file...\n');
+        unzip([dataDir,'.zip']);
+    else
+        fprintf('Downloading HMMs archive file...\n');
+        websave([dataDir,'.zip'],['http://biomet-toolbox.org/tools/downloadable/files/',dataDir,'.zip']);
+        fprintf('Extracting HMMs archive file...\n');
+        unzip([dataDir,'.zip']);
+    end;
+end;
 
 %Check if the fasta-file contains '/' or'\'. If not then it's probably just
 %a file name. It is then merged with the current folder
