@@ -64,8 +64,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
-%   rxnReferences, confidenceScores and metCharge
+%   Simonas Marcisauskas, 2017-05-17
 %
 
 if nargin<2
@@ -500,24 +499,29 @@ if ~isempty(model.genes)
     model.rxnGeneMat=zeros(numel(model.rxns),numel(model.genes));
 end
 if ~isempty(model.grRules)
+    tempRules=model.grRules;
     for i=1:length(model.rxns)
        %Check that all gene associations have a match in the gene list
-       if ~isempty(model.grRules{i})
-           indexes=strfind(model.grRules{i},':'); %Genes are separated by ":" for AND and ";" for OR
-           indexes=unique([indexes strfind(model.grRules{i},';')]);
+       if ~isempty(model.grRules{i})          
+           tempRules{i}=regexprep(tempRules{i},' and | or ','>'); %New format: Genes are separated 'and' and 'or' strings with parentheses
+           tempRules{i}=regexprep(tempRules{i},'(',''); %New format: Genes are separated 'and' and 'or' strings with parentheses
+           tempRules{i}=regexprep(tempRules{i},')',''); %New format: Genes are separated 'and' and 'or' strings with parentheses
+           indexesNew=strfind(tempRules{i},'>'); %Old format: Genes are separated by ":" for AND and ";" for OR
+           indexes=strfind(tempRules{i},':'); %Old format: Genes are separated by ":" for AND and ";" for OR
+           indexes=unique([indexesNew indexes strfind(tempRules{i},';')]);
            if isempty(indexes)
                %See if you have a match
-               I=find(strcmp(model.grRules{i},model.genes));
+               I=find(strcmp(tempRules{i},model.genes));
                if isempty(I)
-                   EM=['The gene association in reaction ' model.rxns{i} ' (' model.grRules{i} ') is not present in the gene list'];
+                   EM=['The gene association in reaction ' model.rxns{i} ' (' tempRules{i} ') is not present in the gene list'];
                    dispEM(EM);
                end
                model.rxnGeneMat(i,I)=1;
            else
-               temp=[0 indexes numel(model.grRules{i})+1];
+               temp=[0 indexes numel(tempRules{i})+1];
                for j=1:numel(indexes)+1;
                    %The reaction has several associated genes
-                   geneName=model.grRules{i}(temp(j)+1:temp(j+1)-1);
+                   geneName=tempRules{i}(temp(j)+1:temp(j+1)-1);
                    I=find(strcmp(geneName,model.genes));
                    if isempty(I)
                        EM=['The gene association in reaction ' model.rxns{i} ' (' geneName ') is not present in the gene list'];
@@ -829,7 +833,7 @@ end
 for i=1:numel(strings)
     if any(strings{i})
         %A Miriam string can be several ids separated by ";". Each id is
-        %"name(..:..):value"
+        %"name(../..):value"
         I=regexp(strings{i},';','split');
         if isfield(miriamStruct{i},'name')
             startIndex=numel(miriamStruct{i}.name);
@@ -847,7 +851,7 @@ for i=1:numel(strings)
                 miriamStruct{i}.name{startIndex+j}=I{j}(1:index-1);
                 miriamStruct{i}.value{startIndex+j}=I{j}(index+1:end);
             else
-                EM=['"' I{j} '" is not a valid MIRIAM string. The format must be "identifier:value"'];
+                EM=['"' I{j} '" is not a valid MIRIAM string. The format must be "identifier/value"'];
                 dispEM(EM);
             end
         end

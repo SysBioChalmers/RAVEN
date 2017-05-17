@@ -17,7 +17,7 @@ function exportToExcelFormat(model,filename)
 %
 %   Usage: exportToExcelFormat(model,filename)
 %
-%   Rasmus Agren, 2017-05-01
+%   Simonas Marcisauskas, 2017-05-17
 %
 
 [~, A, B]=fileparts(filename);
@@ -50,12 +50,7 @@ model.equations=constructEquations(model,model.rxns,true);
 
 %Check if it should print genes
 if isfield(model,'grRules');
-    %Also do some parsing here
     rules=model.grRules;
-    rules=strrep(rules,'(','');
-    rules=strrep(rules,')','');
-    rules=strrep(rules,' and ',':');
-    rules=strrep(rules,' or ',';');
 else
     rules=[];
 end
