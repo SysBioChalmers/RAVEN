@@ -64,7 +64,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Simonas Marcisauskas, 2017-05-17
+%   Simonas Marcisauskas, 2017-05-22
 %
 
 if nargin<2
@@ -756,38 +756,41 @@ dispEM(EM,false,model.rxns(badRxns));
 model.b=zeros(numel(model.mets),1);
 
 %Remove unused fields
-if isempty(model.compOutside)
+if cellfun(@isempty,model.compOutside)
     model=rmfield(model,'compOutside');
 end
-if isempty(model.compMiriams)
+if cellfun(@isempty,model.compMiriams)
     model=rmfield(model,'compMiriams');
+end
+if cellfun(@isempty,model.rxnNames)
+	model=rmfield(model,'rxnNames');
 end
 if isempty(model.rxnComps)
     model=rmfield(model,'rxnComps');
 end
-if isempty(model.grRules)
+if cellfun(@isempty,model.grRules)
     model=rmfield(model,'grRules');
 end
-if isempty(model.rxnGeneMat)
+if isfield(model,'rxnGeneMat') && isempty(model.rxnGeneMat)
     model=rmfield(model,'rxnGeneMat');
 end
-if isempty(model.subSystems)
+if cellfun(@isempty,model.subSystems)
     model=rmfield(model,'subSystems');
 end
-if isempty(model.eccodes)
+if cellfun(@isempty,model.eccodes)
     model=rmfield(model,'eccodes');
 end
-if isempty(model.rxnMiriams)
+if cellfun(@isempty,model.rxnMiriams)
     model=rmfield(model,'rxnMiriams');
 end
-if isempty(model.rxnNotes)
-       model=rmfield(model,'rxnNotes');
+if cellfun(@isempty,model.rxnNotes)
+	model=rmfield(model,'rxnNotes');
 end
-if isempty(model.rxnReferences)
-       model=rmfield(model,'rxnReferences');
+if cellfun(@isempty,model.rxnReferences)
+	model=rmfield(model,'rxnReferences');
 end
-if isempty(model.confidenceScores)
-       model=rmfield(model,'confidenceScores');
+if cellfun(@isempty,model.confidenceScores)
+	model=rmfield(model,'confidenceScores');
 end
 if isempty(model.genes)
     model=rmfield(model,'genes');
@@ -798,13 +801,13 @@ end
 if isempty(model.geneMiriams)
     model=rmfield(model,'geneMiriams');
 end
-if isempty(model.inchis)
+if cellfun(@isempty,model.inchis)
     model=rmfield(model,'inchis');
 end
-if isempty(model.metFormulas)
+if cellfun(@isempty,model.metFormulas)
     model=rmfield(model,'metFormulas');
 end
-if isempty(model.metMiriams)
+if cellfun(@isempty,model.metMiriams)
     model=rmfield(model,'metMiriams');
 end
 if isempty(model.metCharge)
