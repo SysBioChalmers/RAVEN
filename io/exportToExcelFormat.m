@@ -234,7 +234,7 @@ for i=1:numel(model.mets)
     metSheet(i,9)=model.mets(i);
 
     if isfield(model,'metCharge')
-        metSheet{i,19}=model.metCharge(i);
+        metSheet{i,9}=model.metCharge(i);
     end
 end
 
