@@ -20,9 +20,6 @@ function miriams=extractMiriam(modelMiriams,miriamName,addNull)
 if nargin<3
 	addNull=false;
 end;
-if nargin<4
-	header='';
-end;
 
 % Creating an empty cell array for rxn ids vector;
 tempMiriams = cell([size(modelMiriams,1) 1]);
