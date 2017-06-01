@@ -44,16 +44,7 @@ function cModel=ravenToCobraModel(rModel)
 %
 %   Usage: cModel = ravenToCobraModel(rModel)
 %
-%   Simonas Marcisauskas, 2017-01-31:
-%       -fixed inconsistency with cModel.rules, when AND
-%       relationships were ignored (function convertRules was completely
-%       re-written);
-%       -metabolites annotation information is now inherited in cModel;
-%       -modified the whole function to make it compliant with additional
-%       fields in RAVEN structure (accordingly to the newly added fields
-%       rxnNotes, rxnReferences, confidenceScores and metCharge);
-%       -removed the dependence from convFieldsCobra.m/confFieldsCobra.mat;
-%       -made the function more comprehensive.
+%   Simonas Marcisauskas, 2017-06-01
 %
 
 % Initializing f variable, which categorizes all the fields;
@@ -91,26 +82,33 @@ fields = rmfield(rModel,setdiff(fieldnames(rModel), f.optionalEquiv));
 cModel=structUpdate(cModel,fields);
 
 % Now preparing group IV fields;
-if (isfield(rModel,'inchis')) cModel=setfield(cModel,f.optionalOtherName('inchis'),rModel.inchis); end
-	if (isfield(rModel,'eccodes')) cModel=setfield(cModel,f.optionalOtherName('eccodes'),rModel.eccodes); end
+if (isfield(rModel,'inchis'))
+    cModel=setfield(cModel,f.optionalOtherName('inchis'),rModel.inchis);
+end
+if (isfield(rModel,'eccodes'))
+    cModel=setfield(cModel,f.optionalOtherName('eccodes'),rModel.eccodes);
+end
 
 % Now obtaining the annotation for metabolites,
 % which is stored in rModel.metMiriams field. From this field
 % cModel.metCHEBIID and cModel.metKEGGID are be generated.
 if isfield(rModel,'metMiriams')
-    cModel.metKEGGID=getMiriamVector(rModel,'metKegg');
-    cModel.metCHEBIID=getMiriamVector(rModel,'metChebi');
+    cModel.metKEGGID=strcat(extractMiriam(rModel.metMiriams,'kegg.compound'),';',extractMiriam(rModel.metMiriams,'kegg.glycan'))
+    cModel.metKEGGID=regexprep(cModel.metKEGGID,'^;|;$','');
+    cModel.metCHEBIID=strcat(extractMiriam(rModel.metMiriams,'chebi'),';',extractMiriam(rModel.metMiriams,'obo.chebi'))
+    cModel.metCHEBIID=regexprep(cModel.metCHEBIID,'^;|;$','');
+    cModel.metCHEBIID=regexprep(cModel.metCHEBIID,'obo.','');
 end
 
 % The final step is to get annotation for reaction references. Several
-% pubmed referenced could be in rModel.rxnReferences already, so if there
+% pubmed references could be in rModel.rxnReferences already, so if there
 % are any references in rModel.rxnMiriams, these must be concatenated with
 % cModel.rxnReferences, which was obtain during group III fields
 % processing;
 if isfield(rModel,'rxnReferences')
     if isfield(cModel,'rxnReferences')
-        cModel.rxnReferences=strcat(cModel.rxnReferences,';',getMiriamVector(rModel,'rxnPubmed',false,'pubmed:'));
-        cModel.rxnReferences=regexprep(cModel.rxnReferences,'^;','');
+        cModel.rxnReferences=strcat(cModel.rxnReferences,';',getMiriamVector(rModel.rxnMiriams,'pubmed'));
+        cModel.rxnReferences=regexprep(cModel.rxnReferences,'^;|;$','');
     else
         cModel.rxnReferences=getMiriamVector(rModel,'rxnPubmed',false,'pubmed:');
     end
@@ -124,7 +122,7 @@ function mets=convertMets(mets,metComps)
     mets=regexprep(mets,'_.{1,3}$','');
     % Now concatenating metabolite ids with compartmentalization
     % information, available in model.metComps;
-	mets=arrayfun(@(x) [mets{x} '[' metComps{x} ']'],[1:numel(mets)],'UniformOutput',false);
+	mets=arrayfun(@(x) [mets{x} '[' metComps{x} ']'],1:numel(mets),'UniformOutput',false);
 	mets=transpose(mets);
 end
 
