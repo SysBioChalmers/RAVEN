@@ -44,7 +44,7 @@ function cModel=ravenToCobraModel(rModel)
 %
 %   Usage: cModel = ravenToCobraModel(rModel)
 %
-%   Simonas Marcisauskas, 2017-06-01
+%   Simonas Marcisauskas, 2017-06-02
 %
 
 % Initializing f variable, which categorizes all the fields;
@@ -107,10 +107,10 @@ end
 % processing;
 if isfield(rModel,'rxnReferences')
     if isfield(cModel,'rxnReferences')
-        cModel.rxnReferences=strcat(cModel.rxnReferences,';',getMiriamVector(rModel.rxnMiriams,'pubmed'));
+        cModel.rxnReferences=strcat(cModel.rxnReferences,';',extractMiriam(rModel.rxnMiriams,'pubmed'));
         cModel.rxnReferences=regexprep(cModel.rxnReferences,'^;|;$','');
     else
-        cModel.rxnReferences=getMiriamVector(rModel,'rxnPubmed',false,'pubmed:');
+        cModel.rxnReferences=extractMiriam(rModel.rxnMiriams,'pubmed');
     end
 end
 end
