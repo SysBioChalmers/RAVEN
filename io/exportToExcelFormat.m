@@ -17,7 +17,7 @@ function exportToExcelFormat(model,filename)
 %
 %   Usage: exportToExcelFormat(model,filename)
 %
-%   Simonas Marcisauskas, 2017-05-17
+%   Simonas Marcisauskas, 2017-06-02
 %
 
 [~, A, B]=fileparts(filename);
@@ -234,7 +234,7 @@ for i=1:numel(model.mets)
     metSheet(i,9)=model.mets(i);
 
     if isfield(model,'metCharge')
-        metSheet{i,9}=model.metCharge(i);
+        metSheet{i,10}=model.metCharge(i);
     end
 end
 
@@ -274,7 +274,7 @@ wb=writeSheet(wb,'COMPS',2,headers,[],compSheet);
 %Add the GENES sheet
 if isfield(model,'genes')
     %Create the header row
-    headers={'#';'NAME';'MIRIAM';'SHORT NAME';'COMPARTMENT'};
+    headers={'#';'NAME';'MIRIAM';'COMPARTMENT'};
     
     geneSheet=cell(numel(model.genes),numel(headers));
 
@@ -290,9 +290,8 @@ if isfield(model,'genes')
                geneSheet{i,3}=toPrint(1:end-1);
            end
        end
-
        if isfield(model,'geneComps')
-           geneSheet(i,5)=model.comps(model.geneComps(i));
+           geneSheet(i,4)=model.comps(model.geneComps(i));
        end
     end
     
