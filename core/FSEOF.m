@@ -1,23 +1,22 @@
 function FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile)
 % FSEOF: implements the algorithm of Flux Scanning based on Enforced Objective Flux.
 %
-%INPTUS
 %   model           a model structure
-%   biomassRxn      the biomass formation or growth reaction id
-%   targetRxn      	target reaction id
-%
-%OPTIONAL INPUT
-%   iterations      number of iterations, default is 10
-%   coefficient     percentage of optimal targe reaction flux, must be less than
-%                   1 and default value is 0.9 
-%   outputFile      filename of output file, default is standard output
+%   biomassRxn      string with reaction ID of the biomass formation or
+%                   growth reaction
+%   targetRxn      	string with reaction ID of target reaction
+%   iterations      number of iterations (opt, default 10)
+%   coefficient     percentage of optimal targe reaction flux, must be
+%                   less than 1 (opt, default 0.9)
+%   outputFile      filename of output file (opt, default prints to command
+%                   window)
 %
 %OUTPUTS
-%   This function output a excel fomrat file or in standard output
+%   This function output an tab-delimited file or prints to command window.
 %
 %   Usage: FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile)
 %
-%   Hao Wang, 2017-2-2
+%   Eduard Kerkhoven, 2017-06-02
 
 output = 0;
 if nargin<4
