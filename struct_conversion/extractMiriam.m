@@ -54,6 +54,7 @@ for i=1:size(tempMiriams,1)
     % Make sure that cell positions without miriams are blank;
     miriams{i,1}=regexprep(miriams{i,1},strcat(miriamName,'/;'),'');
     miriams{i,1}=regexprep(miriams{i,1},strcat('^',miriamName,'/$'),'');
+    miriams{i,1}=regexprep(miriams{i,1},strcat(';',miriamName,'/$'),'');
 end;
 
 end
