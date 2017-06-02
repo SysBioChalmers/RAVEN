@@ -4,12 +4,12 @@ function FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile)
 %   model           a model structure
 %   biomassRxn      string with reaction ID of the biomass formation or
 %                   growth reaction
-%   targetRxn      	string with reaction ID of target reaction
-%   iterations      number of iterations (opt, default 10)
-%   coefficient     percentage of optimal targe reaction flux, must be
-%                   less than 1 (opt, default 0.9)
-%   outputFile      filename of output file (opt, default prints to command
-%                   window)
+%   targetRxn       string with reaction ID of target reaction
+%   iterations      double indicating number of iterations (opt, default 10)
+%   coefficient     double indicating ratio of optimal target reaction
+%                   flux, must be less than 1 (opt, default 0.9)
+%   outputFile      string with output filename (opt, default prints to
+%                   command window)
 %
 %OUTPUTS
 %   This function output an tab-delimited file or prints to command window.
