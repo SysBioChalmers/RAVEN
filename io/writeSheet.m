@@ -117,7 +117,7 @@ elseif strcmp(sheetName,'METS')
 elseif strcmp(sheetName,'COMPS')
     widths=[786;3144;7860;3144;7860];
 elseif strcmp(sheetName,'GENES')
-    widths=[786;3144;7860;3406];
+    widths=[786;3144;7860;3144;3406];
 elseif strcmp(sheetName,'MODEL')
     widths=[786;3144;7860;3668;3668;5240;5240;7860;7860;2620;7860];
 end;

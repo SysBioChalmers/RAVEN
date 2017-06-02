@@ -274,7 +274,7 @@ wb=writeSheet(wb,'COMPS',2,headers,[],compSheet);
 %Add the GENES sheet
 if isfield(model,'genes')
     %Create the header row
-    headers={'#';'NAME';'MIRIAM';'COMPARTMENT'};
+    headers={'#';'NAME';'MIRIAM';'SHORT NAME';'COMPARTMENT'};
     
     geneSheet=cell(numel(model.genes),numel(headers));
 
@@ -290,8 +290,11 @@ if isfield(model,'genes')
                geneSheet{i,3}=toPrint(1:end-1);
            end
        end
+       if isfield(model,'geneShortNames')
+           geneSheet(i,4)=model.geneShortNames(i);
+       end
        if isfield(model,'geneComps')
-           geneSheet(i,4)=model.comps(model.geneComps(i));
+           geneSheet(i,5)=model.comps(model.geneComps(i));
        end
     end
     

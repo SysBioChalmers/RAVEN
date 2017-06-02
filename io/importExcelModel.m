@@ -36,11 +36,12 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %       eccodes          EC-codes for the reactions
 %       rxnMiriams       structure with MIRIAM information about the reactions
 %       rxnNotes         reaction notes
-%       rxnReferences   reaction references
+%       rxnReferences    reaction references
 %       confidenceScores reaction confidence scores
 %       genes            list of all genes
 %       geneComps        compartments for reactions
 %       geneMiriams      structure with MIRIAM information about the genes
+%       geneShortNames   gene alternative names (e.g. ERG10)
 %       metNames         metabolite description
 %       metComps         compartments for metabolites
 %       inchis           InChI-codes for metabolites
@@ -64,7 +65,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Simonas Marcisauskas, 2017-05-22
+%   Simonas Marcisauskas, 2017-06-02
 %
 
 if nargin<2
@@ -284,7 +285,7 @@ else
     raw(1,:)=upper(raw(1,:));
     raw(1,:)=strrep(raw(1,:),'GENE NAME','NAME');
 
-    allLabels={'NAME';'MIRIAM';'COMPARTMENT'};
+    allLabels={'NAME';'MIRIAM';'SHORT NAME''COMPARTMENT'};
 
     %Loop through the labels
     [I, J]=ismember(upper(raw(1,:)),allLabels);
@@ -298,6 +299,8 @@ else
             case 2
                 model.geneMiriams=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
             case 3
+                model.geneShortNames=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);    
+            case 4
                 model.geneComps=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         end
     end
@@ -800,6 +803,9 @@ if isempty(model.geneComps)
 end
 if isempty(model.geneMiriams)
     model=rmfield(model,'geneMiriams');
+end
+if cellfun(@isempty,model.geneShortNames)
+    model=rmfield(model,'geneShortNames');
 end
 if cellfun(@isempty,model.inchis)
     model=rmfield(model,'inchis');
