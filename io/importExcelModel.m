@@ -65,7 +65,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Simonas Marcisauskas, 2017-06-02
+%   Simonas Marcisauskas, 2017-06-05
 %
 
 if nargin<2
@@ -759,40 +759,40 @@ dispEM(EM,false,model.rxns(badRxns));
 model.b=zeros(numel(model.mets),1);
 
 %Remove unused fields
-if cellfun(@isempty,model.compOutside)
+if all(cellfun(@isempty,model.compOutside))
     model=rmfield(model,'compOutside');
 end
-if cellfun(@isempty,model.compMiriams)
+if all(cellfun(@isempty,model.compMiriams))
     model=rmfield(model,'compMiriams');
 end
-if cellfun(@isempty,model.rxnNames)
+if all(cellfun(@isempty,model.rxnNames))
 	model=rmfield(model,'rxnNames');
 end
 if isempty(model.rxnComps)
     model=rmfield(model,'rxnComps');
 end
-if cellfun(@isempty,model.grRules)
+if all(cellfun(@isempty,model.grRules))
     model=rmfield(model,'grRules');
 end
 if isfield(model,'rxnGeneMat') && isempty(model.rxnGeneMat)
     model=rmfield(model,'rxnGeneMat');
 end
-if cellfun(@isempty,model.subSystems)
+if all(cellfun(@isempty,model.subSystems))
     model=rmfield(model,'subSystems');
 end
-if cellfun(@isempty,model.eccodes)
+if all(cellfun(@isempty,model.eccodes))
     model=rmfield(model,'eccodes');
 end
-if cellfun(@isempty,model.rxnMiriams)
+if all(cellfun(@isempty,model.rxnMiriams))
     model=rmfield(model,'rxnMiriams');
 end
-if cellfun(@isempty,model.rxnNotes)
+if all(cellfun(@isempty,model.rxnNotes))
 	model=rmfield(model,'rxnNotes');
 end
-if cellfun(@isempty,model.rxnReferences)
+if all(cellfun(@isempty,model.rxnReferences))
 	model=rmfield(model,'rxnReferences');
 end
-if cellfun(@isempty,model.confidenceScores)
+if all(cellfun(@isempty,model.confidenceScores))
 	model=rmfield(model,'confidenceScores');
 end
 if isempty(model.genes)
@@ -804,16 +804,16 @@ end
 if isempty(model.geneMiriams)
     model=rmfield(model,'geneMiriams');
 end
-if cellfun(@isempty,model.geneShortNames)
+if isfield(model,'geneShortNames') && cellfun(@isempty,model.geneShortNames)
     model=rmfield(model,'geneShortNames');
 end
-if cellfun(@isempty,model.inchis)
+if all(cellfun(@isempty,model.inchis))
     model=rmfield(model,'inchis');
 end
-if cellfun(@isempty,model.metFormulas)
+if all(cellfun(@isempty,model.metFormulas))
     model=rmfield(model,'metFormulas');
 end
-if cellfun(@isempty,model.metMiriams)
+if all(cellfun(@isempty,model.metMiriams))
     model=rmfield(model,'metMiriams');
 end
 if isempty(model.metCharge)
@@ -842,7 +842,8 @@ end
 for i=1:numel(strings)
     if any(strings{i})
         %A Miriam string can be several ids separated by ";". Each id is
-        %"name(../..):value"
+        %"name(..:..)/value"; an old format when value is separated by
+        %colon is also supported
         I=regexp(strings{i},';','split');
         if isfield(miriamStruct{i},'name')
             startIndex=numel(miriamStruct{i}.name);
@@ -855,14 +856,25 @@ for i=1:numel(strings)
         end
 
         for j=1:numel(I)
-            index=max(strfind(I{j},'/'));
+            if contains(I{j},'/')
+                index=max(strfind(I{j},'/'));
+            elseif contains(I{j},':')                
+                index=max(strfind(I{j},':'));
+            end
             if any(index)
-                miriamStruct{i}.name{startIndex+j}=I{j}(1:index-1);
+                miriamStruct{i}.name{startIndex+j}=I{j}(1:index-1);               
                 miriamStruct{i}.value{startIndex+j}=I{j}(index+1:end);
             else
-                EM=['"' I{j} '" is not a valid MIRIAM string. The format must be "identifier/value"'];
+                EM=['"' I{j} '" is not a valid MIRIAM string. The format must be "identifier/value" or identifier:value'];
                 dispEM(EM);
             end
+        end
+        if contains(miriamStruct{i}.name,'chebi')
+            miriamStruct{i}.name=regexprep(miriamStruct{i}.name,'obo.chebi:CHEBI|chebi:CHEBI','chebi');
+            miriamStruct{i}.value=strcat('CHEBI:',miriamStruct{i}.value);
+        elseif contains(miriamStruct{i}.name,'go:GO')
+            miriamStruct{i}.name=regexprep(miriamStruct{i}.name,'obi.go:GO|obo.go:GO|go:GO','go');
+            miriamStruct{i}.value=strcat('GO:',miriamStruct{i}.value);            
         end
     end
 end
