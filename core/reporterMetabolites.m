@@ -64,7 +64,17 @@ end
 
 %Remove the genes which are not in the model
 genePValues(~ismember(genes,model.genes))=[];
+if any(geneFoldChanges)
+    geneFoldChanges(~ismember(genes,model.genes))=[];
+end
 genes(~ismember(genes,model.genes))=[];
+
+%Remove the genes that has NA P-value
+genes(isnan(genePValues))=[];
+if any(geneFoldChanges)
+    geneFoldChanges(isnan(genePValues))=[];
+end
+genePValues(isnan(genePValues))=[];
 
 %Convert p-values to Z-scores
 geneZScores=norminv(genePValues)*-1;
