@@ -1,6 +1,9 @@
 %This contains the code necessary for running Exercises 3. It is assumed
 %that you are somewhat familiar with linear programming.
-
+%
+% Rasmus Agren, 2013-08-06
+% Simonas Marcisauskas, 2017-06-06 - revision
+%
 %NOTE: Many of these changes are easier to do in the Excel sheet. They are
 %done here in code just to avoid having several model files.
 
@@ -74,7 +77,7 @@ constructEquations(model,Irxn)
 
 %The solution is now not feasible, meaning that it's no longer possible to
 %force uptake of CO2 without any output
-sol=solveLP(model)
+sol=solveLP(model);
 
 %***Second part of tutorial
 model=importExcelModel('smallYeastBad2.xlsx',true,false,true); %This has to be loaded with the setting to ignore error or it would find the error for you :)
@@ -102,7 +105,7 @@ deletedMetabolites
 %The only difference was that we had 20 deleted metabolites instead of 21.
 %Nothing too spectacular. Check production can tell us what we need to
 %connect.
-[notProducedMets, crap, neededForProductionMat,minToConnect]=checkProduction(model,true,model.comps,false);
+[notProducedMets, ~, neededForProductionMat, minToConnect]=checkProduction(model,true,model.comps,false);
 
 %In order to have production of all 54 metabolites we need to enable
 %production of these 12. This small model does not include net synthesis of
@@ -125,14 +128,14 @@ model=removeMets(model,'GLYP_c');
 [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,false,false,false,true);
 deletedReactions
 deletedMetabolites
-[notProducedMets, crap, neededForProductionMat,minToConnect]=checkProduction(model,true,model.comps,false);
+[notProducedMets, ~, neededForProductionMat, minToConnect]=checkProduction(model,true,model.comps,false);
 minToConnect
 
 %Still quite a lot of gaps and no immediate way to fix it. We could try
 %including reactions from a reference network and see if that helps. Let's
 %use the small yeast model from tutorial 2
 refModel=importExcelModel('smallYeast.xlsx');
-[newConnected cannotConnect addedRxns newModel]=fillGaps(model,{refModel},false);
+[newConnected, cannotConnect, addedRxns, newModel]=fillGaps(model,{refModel},false);
 addedRxns
 newConnected
 

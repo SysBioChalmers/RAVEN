@@ -1,5 +1,9 @@
 %This is the solution to tutorial 2. All parameters are set in this file,
 %rather than changing the Excel sheet
+%
+% Rasmus Agren, 2014-01-06
+% Simonas Marcisauskas, 2017-06-06 - revision
+%
 
 %Loads the model
 model=importExcelModel('smallYeast.xlsx',true);
@@ -83,7 +87,7 @@ model2.ub(I)=1000;
 model2=setParam(model2,'eq',{'ZWF'},0);
 
 %Then run MOMA
-[fluxA,fluxB, flag]=qMOMA(model,model2);
+[fluxA, fluxB, flag]=qMOMA(model,model2);
 drawMap('ZWF deletion vs wild type',pathway,model,fluxB,fluxA,[],'mapMOMA.pdf',10^-5);
 
 %As you can see, the glycerol production is higher in the deletion strain.
@@ -92,7 +96,7 @@ drawMap('ZWF deletion vs wild type',pathway,model,fluxB,fluxA,[],'mapMOMA.pdf',1
 
 %Read microarray results and calculate reporter metabolites (metabolites
 %around which there are significant transcriptional changes)
-[orfs,pvalues]=textread('expression.txt','%s%f');
+[orfs, pvalues]=textread('expression.txt','%s%f');
 repMets=reporterMetabolites(model,orfs,pvalues);
 [I, J]=sort(repMets.metPValues);
 
@@ -103,6 +107,6 @@ end
 
 %Get all reactions involving those metabolites and display them on a map
 mets=ismember(model.mets,repMets.mets(J(1:10)));
-[crap, I]=find(model.S(mets,:));
+[~, I]=find(model.S(mets,:));
 pathway=trimPathway(pathway, model.rxns(I), true);
 drawMap('Reactions involving the top 10 Reporter Metabolites',pathway,model,ones(numel(model.rxns),1),zeros(numel(model.rxns),1),[],'mapRM.pdf',10^-5);
