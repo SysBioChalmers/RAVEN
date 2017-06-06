@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Simonas Marcisauskas, 2017-06-02
+%   Simonas Marcisauskas, 2017-06-06
 %
 
 if nargin<2
@@ -467,8 +467,10 @@ for i=1:numel(modelSBML.reaction)
     %genes for complexes from the names and not from the reactions that
     %create them. This only applies to the non-COBRA format.
     if numel(modelSBML.reaction(i).product)==1
-        if strcmp(modelSBML.reaction(i).product(1).species(1:3),'Cx_')==true
-            continue;
+        if length(modelSBML.reaction(i).product(1).species)>=3
+            if strcmp(modelSBML.reaction(i).product(1).species(1:3),'Cx_')==true
+                continue;
+            end
         end
     end
 
