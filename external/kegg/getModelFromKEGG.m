@@ -30,7 +30,7 @@ function [model, KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepInco
 %
 %   Usage: getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Simonas Marcisauskas, 2017-05-02
+%   Simonas Marcisauskas, 2017-06-06
 %
 
 if nargin<2
@@ -164,6 +164,17 @@ if ~isfield(model,'metMiriams')
    model.metMiriams=cell(numel(model.mets),1);
 end
 model.metMiriams(a)=metModel.metMiriams(b);
+
+%The composition should be loaded from InChIs when available
+I=find(~cellfun(@isempty,model.inchis));
+for i=1:numel(I)
+    S=regexp(model.inchis(I(i)),'/','split');
+    S=S{1};
+    if numel(S)>=2
+        %Don't copy if it doesn't look good
+        model.metFormulas(I(i))=S(2);
+    end
+end
 
 %Put all metabolites in one compartment called 's' (for system). This is
 %done just to be more compatible with the rest of the code
