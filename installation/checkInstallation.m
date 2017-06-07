@@ -5,10 +5,10 @@ function checkInstallation()
 
 %   Usage: checkInstallation()
 %
-%	Rasmus Agren, 2017-02-27
+%	Eduard Kerkhoven, 2017-06-07
 %
 
-fprintf('*** RAVEN TOOLBOX v. 1.9\n');
+fprintf('*** RAVEN TOOLBOX v. 2.0.0-alpha\n');
 
 keepSolver=false;
 lastWorking='';
