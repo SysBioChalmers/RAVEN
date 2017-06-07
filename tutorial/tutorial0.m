@@ -7,13 +7,17 @@
 % see /doc/index.html.
 %
 % We'll be using a genome-scale model (GEM) of the filamentous fungi Penicillium
-% chrysogenum. The model can be found in a Microsoft Excel file in raven.zip
-% under the name iAL1006 v1.00.xlsx
+% chrysogenum. The model can be found in a Microsoft Excel file
+% under the name iAL1006 v1.00.xlsx and in SBML file iAL1006 v1.00.xml.
+
 %
 % It is assumed that all files are in the current directory or in the Matlab
 % path list.
 %
+%
 % Rasmus Agren, 2013-08-06
+% Simonas Marcisauskas, 2017-06-06 - revision
+%
 
 %Import the model from Excel. This function performs a number of checks
 %regarding the model structure (such as for incorrectly written equations or
@@ -22,16 +26,18 @@
 %"false" flag imports a model with exchange reactions in their "closed"
 %form. This makes the model unsuited for modelling, but it is useful for
 %some quality control steps
-model=importExcelModel('iAL1006 v1.00.xlsx',false)
+model=importExcelModel('iAL1006 v1.00.xlsx',false);
 
-%The Excel interface only works on Windows. On other systems you would need
-%to import the model from SBML instead
-%model=importModel('iAL1006 v1.00.xml',false)
+%The Excel interface is supposed to work in all the systems (Windows, Unix,
+%Mac OS), but if there are persistent problems, the model can be opened
+%from SBML format instead. Just be warned that Exercise 1-3 are not
+%possible to accomplish, since they consider editing of Excel files;
+%model=importModel('iAL1006 v1.00.xml',false);
 
 %This function prints some properties of the model. The two "true" flags
 %say that it should also list potential problems such as dead-end reactions
 %or unconnected metabolites
-printModelStats(model,true,true)
+printModelStats(model,true,true);
 
 %As can be seen the model contains 1632 reactions, 1395 metabolites, and
 %1006 genes
@@ -47,7 +53,7 @@ printModelStats(model,true,true)
 %constrained to zero (mainly uptake of non-standard carbon sources), and
 %all reactions that cannot carry flux (mainly reactions that were dependent
 %on any of those non-standard carbons sources).
-model=simplifyModel(model,true,false,true,true)
+model=simplifyModel(model,true,false,true,true);
 
 %As can be seen the model now contains only 1305 reactions, 1037 
 %metabolites, and 1006 genes.
@@ -69,7 +75,7 @@ model=setParam(model,'obj',{'co2OUT'},1);
 %We can then solve the problem using linear programming. The solveLP
 %function takes a model and solves the linear programming problem defined
 %by the constraints and the objective value coefficients.
-sol=solveLP(model)
+sol=solveLP(model);
 
 %If everything worked fine you should see a structure that contains the
 %fields .f which is the negative of the objective value, .stat which is 1
@@ -139,4 +145,3 @@ followChanged(modelETH,sol.x,solETH.x, 30, 0.4, 0.4,{'ATP'});
 %able to zoom in on individual reactions.
 load 'pcPathway.mat' pathway;
 drawMap('Glucose vs ethanol',pathway,model,sol.x,solETH.x,modelETH,'GLCvsETH.pdf',10^-5);
-

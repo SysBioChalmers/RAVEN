@@ -50,7 +50,7 @@ function model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete, keep
 %
 %   Usage: model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Eduard Kerkhoven, 2017-02-28
+%   Simonas Marcisauskas, 2017-05-02
 %
 
 %NOTE: This is how one entry looks in the file
@@ -176,6 +176,9 @@ else
           %Add ec-number
           if strcmp(tline(1:12),'ENZYME      ')
               model.eccodes{rxnCounter}=tline(13:end);
+              model.eccodes{rxnCounter}=deblank(model.eccodes{rxnCounter});
+              model.eccodes{rxnCounter}=strcat('ec-code/',model.eccodes{rxnCounter});
+              model.eccodes{rxnCounter}=regexprep(model.eccodes{rxnCounter},'\s+',';ec-code/');
           end
           if numel(tline)>8
             if strcmp(tline(1:9),'REFERENCE')
@@ -197,7 +200,7 @@ else
                   end
     
                   tempStruct=model.rxnMiriams{rxnCounter};
-                  tempStruct.name{addToIndex,1}='urn:miriam:kegg.ko'; %WARNING: This is not a real MIRIAM identifier
+                  tempStruct.name{addToIndex,1}='kegg.orthology';
                   if strcmp(tline(13:16),'KO:') %This is in the old version
                     tempStruct.value{addToIndex,1}=tline(17:22);
                   else
@@ -223,7 +226,7 @@ else
                   end
     
                   tempStruct=model.rxnMiriams{rxnCounter};
-                  tempStruct.name{addToIndex,1}='urn:miriam:kegg.pathway';
+                  tempStruct.name{addToIndex,1}='kegg.pathway';
                   %If it's the old version
                   if strcmp(tline(14:17),'PATH:')
                     tempStruct.value{addToIndex,1}=tline(19:25);
@@ -283,7 +286,12 @@ else
     
         %Close the file
         fclose(fid);
-    
+        
+        %Several equations may have two whitespaces between the last
+        %reactant and the reversible arrow sign. The number of whitespaces
+        %is thus reduced to one;
+        equations = regexprep(equations,'  <=>', ' <=>');
+        
         %Construct the S matrix and list of metabolites
         [S, mets, badRxns]=constructS(equations);
         model.S=S;
@@ -359,12 +367,6 @@ else
         [~, I]=ismember(reversibility.rxns(irrevIDs),model.rxns);
         [~, prodMetIDs]=ismember(reversibility.product(irrevIDs),model.mets);
         model.rev(I)=0;
-    
-        % There may be KEGG rxns and corresponding mets, which are no longer in
-        % KEGG. Remove these
-        indxToDelete=or(~prodMetIDs,~I);
-        prodMetIDs = prodMetIDs(indxToDelete==0);
-        I = I(indxToDelete==0);
     
         %See if the reactions are written in the same order in model.S
         linearInd=sub2ind(size(model.S), prodMetIDs, I);

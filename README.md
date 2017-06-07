@@ -57,6 +57,22 @@ Gurobi is currently the recommended solver (the other available choices are 'mos
 Some tutorials highlighting basic RAVEN functionality can be found in the 'tutorial' folder in the installation directory.
 
 ## Pre-trained Hidden Markov Models (HMMs) for KEGG Orthology (KO) protein sets
+_For newer RAVEN versions, including GitHub commits after RAVEN 1.9.0_
+
+HMMs were trained from KO protein sets, based on KEGG Release 82.0. CD-HIT was used to obtain non-redundant representative KO protein sets thereby clustering proteins with the defined identity and overlap with the longest protein in the corresponding cluster threshold values. Multisequence alignment with MAFFT and training with HMMER 3.1b2 were then performed. The archives contain only pre-trained HMMs. Such HMM sets can be downloaded automatically during genome-scale metabolic model reconstruction from KEGG (see *dataDir* parameter in *getKEGGModelForOrganism*). The download links for HMM sets are also included below and in BioMet ToolBox. The following HMM sets are available:	
+- [euk100_kegg82](http://biomet-toolbox.org/tools/downloadable/files/euk100_kegg82.zip). CD-HIT was used for all Eukaryotic proteins and the following threshold values: identity 100 %, overlap 90 %.
+
+- [euk90_kegg82](http://biomet-toolbox.org/tools/downloadable/files/euk90_kegg82.zip). CD-HIT was used for euk100_kegg82 dataset and the following threshold values: identity 90 %, overlap 90 %.
+
+- [euk50_kegg82](http://biomet-toolbox.org/tools/downloadable/files/euk50_kegg82.zip). CD-HIT was used for euk90_kegg82 dataset and the following threshold values: identity 50 %, overlap 90 %.
+
+- [prok100_kegg82](http://biomet-toolbox.org/tools/downloadable/files/prok100_kegg82.zip). CD-HIT was used for all Prokaryotic proteins and the following threshold values: identity 100 %, overlap 90 %.
+
+- [prok90_kegg82](http://biomet-toolbox.org/tools/downloadable/files/prok90_kegg82.zip). CD-HIT was used for prok100_kegg82 dataset and the following threshold values: identity 90 %, overlap 90 %.
+
+- [prok50_kegg82](http://biomet-toolbox.org/tools/downloadable/files/prok50_kegg82.zip). CD-HIT was used for prok90_kegg82 dataset and the following threshold values: identity 50 %, overlap 90 %.
+
+
 _For RAVEN 1.9.0 or older_
 
 HMMs were trained from KO protein sets, based on KEGG Release 58.1. Multisequence alignment was performed with ClustalW2, whereas HMMs were trained with HMMER 2.3. All the associated proteins were used in multisequence alignment and HMMs training. In addition to pre-trained HMMs, the archives also contain multisequence alignment data. The following HMM sets are available:
@@ -65,21 +81,6 @@ HMMs were trained from KO protein sets, based on KEGG Release 58.1. Multisequenc
 
 - [prokaryota](http://biomet-toolbox.org/tools/downloadable/files/prokaryota.zip). Contains HMMs, trained from Prokaryotic organisms proteome.
 
- 
-_For newer RAVEN versions, including GitHub commits after RAVEN 1.9.0_
-
-HMMs were trained from KO protein sets, based on KEGG Release 80.0. CD-HIT was used to obtain non-redundant representative KO protein sets thereby clustering proteins having defined identity and overlap with the longest protein in the corresponding cluster threshold values. Multisequence alignment with MAFFT and training with HMMER 3.1 were then performed. The archives contain only pre-trained HMMs. The following HMM sets are available:	
-- [euk100_kegg80](http://biomet-toolbox.org/tools/downloadable/files/euk100_kegg80.zip). CD-HIT was used for all Eukaryotic proteins and the following threshold values: identity 100 %, overlap 90 %.
-
-- [euk90_kegg80](http://biomet-toolbox.org/tools/downloadable/files/euk90_kegg80.zip). CD-HIT was used for euk100_kegg80 dataset and the following threshold values: identity 90 %, overlap 90 %.
-
-- [euk50_kegg80](http://biomet-toolbox.org/tools/downloadable/files/euk50_kegg80.zip). CD-HIT was used for euk90_kegg80 dataset and the following threshold values: identity 50 %, overlap 90 %.
-
-- [prok100_kegg80](http://biomet-toolbox.org/tools/downloadable/files/prok100_kegg80.zip). CD-HIT was used for all Prokaryotic proteins and the following threshold values: identity 100 %, overlap 90 %.
-
-- [prok90_kegg80](http://biomet-toolbox.org/tools/downloadable/files/prok90_kegg80.zip). CD-HIT was used for prok100_kegg80 dataset and the following threshold values: identity 90 %, overlap 90 %.
-
-- [prok50_kegg80](http://biomet-toolbox.org/tools/downloadable/files/prok50_kegg80.zip). CD-HIT was used for prok90_kegg80 dataset and the following threshold values: identity 50 %, overlap 90 %.
 
 ## Links
 For more information on software connected to Genome Scale models please visit the Systems Biology [Github page](https://github.com/SysBioChalmers). For information and publications by the Systems Biology department please visit [SysBio](www.sysbio.se).

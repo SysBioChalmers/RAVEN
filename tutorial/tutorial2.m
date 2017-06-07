@@ -1,5 +1,9 @@
 %This contains the code necessary for running Exercises 2. It is assumed
 %that you have completed Exercises 1 before.
+%
+% Rasmus Agren, 2014-01-06
+% Simonas Marcisauskas, 2017-06-06 - revision
+%
 
 %Loads the model
 model=importExcelModel('smallYeast.xlsx',true);
@@ -21,14 +25,14 @@ load 'pathway.mat' pathway;
 drawMap('Aerobic vs Anaerobic',pathway,model,solA.x,solB.x,[],'mapFBA.pdf',10^-5);
 
 %This is for running a single gene deletion
-[genes fluxes originalGenes details]=findGeneDeletions(model,'sgd','fba');
+[genes, fluxes, originalGenes, details]=findGeneDeletions(model,'sgd','fba');
 
 %Get the indexes of these reactions
 I=getIndexes(model,{'biomassOUT'},'rxns');
 J=getIndexes(model,{'glyOUT'},'rxns');
 
 okSolutions=find(fluxes(I,:)>10^-2); %Only look at solutions which are still growing
-[maxGlycerol J]=max(fluxes(J,okSolutions));
+[maxGlycerol, J]=max(fluxes(J,okSolutions));
 maxGlycerol
 originalGenes(genes(okSolutions(J),:))
 
@@ -53,14 +57,14 @@ model2.ub(I)=1000;
 model2=setParam(model2,'eq',{'ZWF'},0);
 
 %Then run MOMA
-[fluxA,fluxB, flag]=qMOMA(model,model2);
+[fluxA, fluxB, flag]=qMOMA(model,model2);
 drawMap('Aerobic vs Anaerobic MOMA',pathway,model,fluxA,fluxB,[],'mapMOMA.pdf',10^-5);
 
 %Read microarray results and calculate reporter metabolites (metabolites
 %around which there are significant transcriptional changes)
-[orfs,pvalues]=textread('expression.txt','%s%f');
+[orfs, pvalues]=textread('expression.txt','%s%f');
 repMets=reporterMetabolites(model,orfs,pvalues);
-[I J]=sort(repMets.metPValues);
+[I, J]=sort(repMets.metPValues);
  
 fprintf('TOP 10 REPORTER METABOLITES:\n');
 for i=1:min(numel(J),10)
@@ -69,6 +73,6 @@ end
  
 %Get all reactions involving those metabolites and display them on a map
 mets=ismember(model.mets,repMets.mets(J(1:10)));
-[crap I]=find(model.S(mets,:));
+[~, I]=find(model.S(mets,:));
 pathway=trimPathway(pathway, model.rxns(I), true);
 drawMap('Reactions involving the top 10 Reporter Metabolites',pathway,model,ones(numel(model.rxns),1),zeros(numel(model.rxns),1),[],'mapRM.pdf',10^-5);

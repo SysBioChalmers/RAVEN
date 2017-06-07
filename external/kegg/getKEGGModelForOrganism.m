@@ -156,7 +156,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...
 %    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 %
-%   Eduard Kerkhoven, 2017-02-28
+%   Simonas Marcisauskas, 2017-05-16
 %
 
 if nargin<2
@@ -200,6 +200,36 @@ end
 if nargin<13
     seqIdentity=-1; %CD-HIT is not used in the pipeline
 end
+
+% Checking if dataDir is consistent. It must point to pre-trained HMMs set,
+% compatible with the the current RAVEN version.
+% The user may have the required zip file already in working directory or
+% have it extracted. If the zip file and directory is not here, it is
+% downloaded from BioMet ToolBox 2.0 server.
+
+if ~isempty(dataDir)
+    hmmOptions={'euk100_kegg82'; ...
+        'euk90_kegg82'; ...
+        'euk50_kegg82'; ...
+        'prok100_kegg82'; ...
+        'prok90_kegg82'; ...
+        'prok50_kegg82'};
+    if ~ismember(dataDir,hmmOptions)
+        EM='Pre-trained HMMs set is not recognised. The following sets are available to download:';
+        disp(EM);
+        disp(hmmOptions);
+        return;
+    end;
+    if ~exist(dataDir,'dir') && exist([dataDir,'.zip'],'file')
+        fprintf('Extracting HMMs archive file...\n');
+        unzip([dataDir,'.zip']);
+    else
+        fprintf('Downloading HMMs archive file...\n');
+        websave([dataDir,'.zip'],['http://biomet-toolbox.org/tools/downloadable/files/',dataDir,'.zip']);
+        fprintf('Extracting HMMs archive file...\n');
+        unzip([dataDir,'.zip']);
+    end;
+end;
 
 %Check if the fasta-file contains '/' or'\'. If not then it's probably just
 %a file name. It is then merged with the current folder
@@ -527,9 +557,9 @@ if ~isempty(missingAligned)
                 end
                 %Do the alignment for this file
                 if ~ispc
-                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.221',['mafft' binEnd]) '" --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.305',['mafft' binEnd]) '" --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 else
-                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.221','mafft.bat') '" --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.305','mafft.bat') '" --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 end
                 if status~=0
                     EM=['Error when performing alignment of ' missingAligned{i} ':\n' output];
@@ -602,7 +632,7 @@ if ~isempty(missingHMMs)
             fclose(fid);
 
             %Create HMM
-            [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1',['hmmbuild' binEnd]) '" "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
+            [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1b2',['hmmbuild' binEnd]) '" "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
             if status~=0
                 EM=['Error when training HMM for ' missingHMMs{i} ':\n' output];
                 dispEM(EM);
@@ -645,7 +675,7 @@ if ~isempty(missingOUT)
             end
 
             %Check each gene in the input file against this model
-            [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1',['hmmsearch' binEnd]) '" "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
+            [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1b2',['hmmsearch' binEnd]) '" "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
             if status~=0
                 EM=['Error when querying HMM for ' missingOUT{i} ':\n' output];
                 dispEM(EM);
@@ -758,7 +788,7 @@ model.rxnGeneMat=sparse(numel(model.rxns),numel(model.genes));
 for i=1:numel(model.rxns)
     if isstruct(model.rxnMiriams{i})
         %Get all KOs
-        I=find(strcmpi(model.rxnMiriams{i}.name,'urn:miriam:kegg.ko'));
+        I=find(strcmpi(model.rxnMiriams{i}.name,'kegg.orthology'));
         KOs=model.rxnMiriams{i}.value(I);
         %Find the KOs and the corresponding genes
         J=ismember(KOModel.rxns,KOs);

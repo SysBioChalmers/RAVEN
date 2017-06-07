@@ -1,4 +1,4 @@
-function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw)
+function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)
 % writeSheet
 %   Writes a cell matrix to an Excel sheet into using the Java library Apache POI
 %
@@ -6,13 +6,19 @@ function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw)
 %   sheetName       name of the sheet
 %   sheetPosition   0-based position of the sheet
 %   captions        cell array of captions (opt)
-%   units            WRITE INFO
+%   units           WRITE INFO
 %   raw             cell array with the data in the sheet
+%   isIntegers      true if numeric values should be integers (opt, default
+%                   true)
 %
 %   Usage: wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw)
 %
-%   Rasmus Agren, 2017-02-27
+%   Simonas Marcisauskas, 2017-06-02
 %
+
+if nargin<7
+    isIntegers=true;
+end
 
 %Adds the required classes to the static Java path if not already added
 addJavaPaths();
@@ -25,7 +31,11 @@ import org.apache.poi.xssf.usermodel.*;
     
 %Set default style object and bold style object
 defaultStyle = wb.createCellStyle();
-idx = wb.getCreationHelper().createDataFormat().getFormat('##0.00');
+if isIntegers
+    idx = wb.getCreationHelper().createDataFormat().getFormat('0');
+else
+    idx = wb.getCreationHelper().createDataFormat().getFormat('##0.00');
+end
 defaultStyle.setDataFormat(idx);
 
 boldFont=wb.createFont();
@@ -99,9 +109,22 @@ for i=0:size(raw,1)-1
     end
 end
 
+%Pre-determine column widths for each sheet
+if strcmp(sheetName,'RXNS')
+    widths=[786;2358;7860;15719;3406;7860;3406;3406;2358;3406;7860;7860;3668;7860;7860;4192];
+elseif strcmp(sheetName,'METS')
+    widths=[786;7860;7860;3668;7860;7860;7860;3406;3668;1834];
+elseif strcmp(sheetName,'COMPS')
+    widths=[786;3144;7860;3144;7860];
+elseif strcmp(sheetName,'GENES')
+    widths=[786;3144;7860;3144;3406];
+elseif strcmp(sheetName,'MODEL')
+    widths=[786;3144;7860;3668;3668;5240;5240;7860;7860;2620;7860];
+end;
+
 %Resize columns
 for i=0:size(raw,2)-1
-    s.autoSizeColumn(i);
+    s.setColumnWidth(i,widths(i+1));
 end
 
 %Add freeze panes

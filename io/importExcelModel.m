@@ -36,11 +36,12 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %       eccodes          EC-codes for the reactions
 %       rxnMiriams       structure with MIRIAM information about the reactions
 %       rxnNotes         reaction notes
-%       rxnReferences   reaction references
+%       rxnReferences    reaction references
 %       confidenceScores reaction confidence scores
 %       genes            list of all genes
 %       geneComps        compartments for reactions
 %       geneMiriams      structure with MIRIAM information about the genes
+%       geneShortNames   gene alternative names (e.g. ERG10)
 %       metNames         metabolite description
 %       metComps         compartments for metabolites
 %       inchis           InChI-codes for metabolites
@@ -64,8 +65,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
-%   rxnReferences, confidenceScores and metCharge
+%   Simonas Marcisauskas, 2017-06-05
 %
 
 if nargin<2
@@ -285,7 +285,7 @@ else
     raw(1,:)=upper(raw(1,:));
     raw(1,:)=strrep(raw(1,:),'GENE NAME','NAME');
 
-    allLabels={'NAME';'MIRIAM';'COMPARTMENT'};
+    allLabels={'NAME';'MIRIAM';'SHORT NAME''COMPARTMENT'};
 
     %Loop through the labels
     [I, J]=ismember(upper(raw(1,:)),allLabels);
@@ -299,6 +299,8 @@ else
             case 2
                 model.geneMiriams=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
             case 3
+                model.geneShortNames=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);    
+            case 4
                 model.geneComps=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         end
     end
@@ -500,24 +502,29 @@ if ~isempty(model.genes)
     model.rxnGeneMat=zeros(numel(model.rxns),numel(model.genes));
 end
 if ~isempty(model.grRules)
+    tempRules=model.grRules;
     for i=1:length(model.rxns)
        %Check that all gene associations have a match in the gene list
-       if ~isempty(model.grRules{i})
-           indexes=strfind(model.grRules{i},':'); %Genes are separated by ":" for AND and ";" for OR
-           indexes=unique([indexes strfind(model.grRules{i},';')]);
+       if ~isempty(model.grRules{i})          
+           tempRules{i}=regexprep(tempRules{i},' and | or ','>'); %New format: Genes are separated 'and' and 'or' strings with parentheses
+           tempRules{i}=regexprep(tempRules{i},'(',''); %New format: Genes are separated 'and' and 'or' strings with parentheses
+           tempRules{i}=regexprep(tempRules{i},')',''); %New format: Genes are separated 'and' and 'or' strings with parentheses
+           indexesNew=strfind(tempRules{i},'>'); %Old format: Genes are separated by ":" for AND and ";" for OR
+           indexes=strfind(tempRules{i},':'); %Old format: Genes are separated by ":" for AND and ";" for OR
+           indexes=unique([indexesNew indexes strfind(tempRules{i},';')]);
            if isempty(indexes)
                %See if you have a match
-               I=find(strcmp(model.grRules{i},model.genes));
+               I=find(strcmp(tempRules{i},model.genes));
                if isempty(I)
-                   EM=['The gene association in reaction ' model.rxns{i} ' (' model.grRules{i} ') is not present in the gene list'];
+                   EM=['The gene association in reaction ' model.rxns{i} ' (' tempRules{i} ') is not present in the gene list'];
                    dispEM(EM);
                end
                model.rxnGeneMat(i,I)=1;
            else
-               temp=[0 indexes numel(model.grRules{i})+1];
+               temp=[0 indexes numel(tempRules{i})+1];
                for j=1:numel(indexes)+1;
                    %The reaction has several associated genes
-                   geneName=model.grRules{i}(temp(j)+1:temp(j+1)-1);
+                   geneName=tempRules{i}(temp(j)+1:temp(j+1)-1);
                    I=find(strcmp(geneName,model.genes));
                    if isempty(I)
                        EM=['The gene association in reaction ' model.rxns{i} ' (' geneName ') is not present in the gene list'];
@@ -752,38 +759,41 @@ dispEM(EM,false,model.rxns(badRxns));
 model.b=zeros(numel(model.mets),1);
 
 %Remove unused fields
-if isempty(model.compOutside)
+if all(cellfun(@isempty,model.compOutside))
     model=rmfield(model,'compOutside');
 end
-if isempty(model.compMiriams)
+if all(cellfun(@isempty,model.compMiriams))
     model=rmfield(model,'compMiriams');
+end
+if all(cellfun(@isempty,model.rxnNames))
+	model=rmfield(model,'rxnNames');
 end
 if isempty(model.rxnComps)
     model=rmfield(model,'rxnComps');
 end
-if isempty(model.grRules)
+if all(cellfun(@isempty,model.grRules))
     model=rmfield(model,'grRules');
 end
-if isempty(model.rxnGeneMat)
+if isfield(model,'rxnGeneMat') && isempty(model.rxnGeneMat)
     model=rmfield(model,'rxnGeneMat');
 end
-if isempty(model.subSystems)
+if all(cellfun(@isempty,model.subSystems))
     model=rmfield(model,'subSystems');
 end
-if isempty(model.eccodes)
+if all(cellfun(@isempty,model.eccodes))
     model=rmfield(model,'eccodes');
 end
-if isempty(model.rxnMiriams)
+if all(cellfun(@isempty,model.rxnMiriams))
     model=rmfield(model,'rxnMiriams');
 end
-if isempty(model.rxnNotes)
-       model=rmfield(model,'rxnNotes');
+if all(cellfun(@isempty,model.rxnNotes))
+	model=rmfield(model,'rxnNotes');
 end
-if isempty(model.rxnReferences)
-       model=rmfield(model,'rxnReferences');
+if all(cellfun(@isempty,model.rxnReferences))
+	model=rmfield(model,'rxnReferences');
 end
-if isempty(model.confidenceScores)
-       model=rmfield(model,'confidenceScores');
+if all(cellfun(@isempty,model.confidenceScores))
+	model=rmfield(model,'confidenceScores');
 end
 if isempty(model.genes)
     model=rmfield(model,'genes');
@@ -794,13 +804,16 @@ end
 if isempty(model.geneMiriams)
     model=rmfield(model,'geneMiriams');
 end
-if isempty(model.inchis)
+if isfield(model,'geneShortNames') && cellfun(@isempty,model.geneShortNames)
+    model=rmfield(model,'geneShortNames');
+end
+if all(cellfun(@isempty,model.inchis))
     model=rmfield(model,'inchis');
 end
-if isempty(model.metFormulas)
+if all(cellfun(@isempty,model.metFormulas))
     model=rmfield(model,'metFormulas');
 end
-if isempty(model.metMiriams)
+if all(cellfun(@isempty,model.metMiriams))
     model=rmfield(model,'metMiriams');
 end
 if isempty(model.metCharge)
@@ -829,7 +842,8 @@ end
 for i=1:numel(strings)
     if any(strings{i})
         %A Miriam string can be several ids separated by ";". Each id is
-        %"name(..:..):value"
+        %"name(..:..)/value"; an old format when value is separated by
+        %colon is also supported
         I=regexp(strings{i},';','split');
         if isfield(miriamStruct{i},'name')
             startIndex=numel(miriamStruct{i}.name);
@@ -842,14 +856,25 @@ for i=1:numel(strings)
         end
 
         for j=1:numel(I)
-            index=max(strfind(I{j},':'));
+            if contains(I{j},'/')
+                index=max(strfind(I{j},'/'));
+            elseif contains(I{j},':')                
+                index=max(strfind(I{j},':'));
+            end
             if any(index)
-                miriamStruct{i}.name{startIndex+j}=I{j}(1:index-1);
+                miriamStruct{i}.name{startIndex+j}=I{j}(1:index-1);               
                 miriamStruct{i}.value{startIndex+j}=I{j}(index+1:end);
             else
-                EM=['"' I{j} '" is not a valid MIRIAM string. The format must be "identifier:value"'];
+                EM=['"' I{j} '" is not a valid MIRIAM string. The format must be "identifier/value" or identifier:value'];
                 dispEM(EM);
             end
+        end
+        if contains(miriamStruct{i}.name,'chebi')
+            miriamStruct{i}.name=regexprep(miriamStruct{i}.name,'obo.chebi:CHEBI|chebi:CHEBI','chebi');
+            miriamStruct{i}.value=strcat('CHEBI:',miriamStruct{i}.value);
+        elseif contains(miriamStruct{i}.name,'go:GO')
+            miriamStruct{i}.name=regexprep(miriamStruct{i}.name,'obi.go:GO|obo.go:GO|go:GO','go');
+            miriamStruct{i}.value=strcat('GO:',miriamStruct{i}.value);            
         end
     end
 end

@@ -14,8 +14,7 @@ function checkModelStruct(model,throwErrors,trimWarnings)
 %
 %   Usage: checkModelStruct(model,throwErrors,trimWarnings)
 %
-%   Simonas Marcisauskas, 2016-11-01 - added checks for rxnNotes,
-%   rxnReferences, confidenceScores and metCharge
+%   Simonas Marcisauskas, 2017-06-02
 %
 
 if nargin<2
@@ -291,7 +290,7 @@ if isfield(model,'metMiriams')
           %Loop through and add for each miriam
           for j=1:numel(model.metMiriams{i}.name)
              %Get existing metabolite indexes
-             current=strcat(model.metMiriams{i}.name{j},':',model.metMiriams{i}.value{j});
+             current=strcat(model.metMiriams{i}.name{j},'/',model.metMiriams{i}.value{j});
              if isKey(miriams,current)
                  existing=miriams(current);
              else

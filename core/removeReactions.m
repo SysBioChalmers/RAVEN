@@ -98,6 +98,12 @@ if ~isempty(rxnsToRemove) || removeUnusedMets || removeUnusedGenes
         if isfield(reducedModel,'confidenceScores')
             reducedModel.confidenceScores(indexesToDelete,:)=[];
         end
+        if isfield(reducedModel,'pwys')
+            reducedModel.pwys(indexesToDelete,:)=[];
+        end
+        if isfield(reducedModel,'spontaneous')
+            reducedModel.spontaneous(indexesToDelete)=[];
+        end
     end
 
     %Remove unused metabolites

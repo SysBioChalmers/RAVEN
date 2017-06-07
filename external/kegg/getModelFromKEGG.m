@@ -30,7 +30,7 @@ function [model, KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepInco
 %
 %   Usage: getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Eduard Kerkhoven, 2017-02-28
+%   Simonas Marcisauskas, 2017-06-06
 %
 
 if nargin<2
@@ -56,7 +56,7 @@ addToIndex=1;
 for i=1:numel(model.rxns)
    if isstruct(model.rxnMiriams{i})
       for j=1:numel(model.rxnMiriams{i}.name)
-         if strcmpi('urn:miriam:kegg.ko',model.rxnMiriams{i}.name{j});
+         if strcmpi('kegg.orthology',model.rxnMiriams{i}.name{j});
             %Add the KO id
             KOs(addToIndex)=model.rxnMiriams{i}.value(j);
             addToIndex=addToIndex+1;
@@ -85,7 +85,7 @@ for i=1:numel(model.rxns)
     if isstruct(model.rxnMiriams{i})
         for j=1:numel(model.rxnMiriams{i}.name)
             toDel=[];
-            if strcmp(model.rxnMiriams{i}.name{j},'urn:miriam:kegg.ko')
+            if strcmp(model.rxnMiriams{i}.name{j},'kegg.orthology')
                 if ismember(model.rxnMiriams{i}.value{j},KOsToRemove)
                    toDel=[toDel;j];
                 end
@@ -111,7 +111,7 @@ c=zeros(10000000,1);
 counter=1;
 for i=1:numel(model.rxns)
     if isstruct(model.rxnMiriams{i})
-        I=strncmp('urn:miriam:kegg.ko',model.rxnMiriams{i}.name,18);
+        I=strncmp('kegg.orthology',model.rxnMiriams{i}.name,18);
         [J, K]=ismember(model.rxnMiriams{i}.value(I),KOModel.rxns);
         %Find all gene indexes that correspond to any of these KOs
         [~, L]=find(KOModel.rxnGeneMat(K(J),:));
@@ -164,6 +164,17 @@ if ~isfield(model,'metMiriams')
    model.metMiriams=cell(numel(model.mets),1);
 end
 model.metMiriams(a)=metModel.metMiriams(b);
+
+%The composition should be loaded from InChIs when available
+I=find(~cellfun(@isempty,model.inchis));
+for i=1:numel(I)
+    S=regexp(model.inchis(I(i)),'/','split');
+    S=S{1};
+    if numel(S)>=2
+        %Don't copy if it doesn't look good
+        model.metFormulas(I(i))=S(2);
+    end
+end
 
 %Put all metabolites in one compartment called 's' (for system). This is
 %done just to be more compatible with the rest of the code
