@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Simonas Marcisauskas, 2017-06-06
+%   Simonas Marcisauskas, 2017-06-12
 %
 
 if nargin<2
@@ -372,54 +372,55 @@ for i=1:numel(modelSBML.species)
         end     
     end
     % The following lines are executed regardless isSBML2COBRA setting;
-    if ~strfind(modelSBML.species(i).id,'E_')
-        if ~strfind(modelSBML.species(i).id,'Cx_')   
-            % Metabolite names could be of format NAME [compartment]. First
-            % check whether metabolite name ends with square brackets, and
-            % then check if the text within these brackets is a compartment
-            % name. If so, then remove this section from the metabolite
-            % name.
-            comp.match=regexp(modelSBML.species(i).name,'.* \[(.*)\]$','match');
-            if ~isempty(comp.match)
-                comp.split=strsplit(comp.match{1},{'[',']'});
-                comp.true=any(strcmpi({modelSBML.compartment.name},comp.split{2}));
-                if comp.true==1
-                    metaboliteNames{numel(metaboliteNames),1}=strtrim(comp.split{1});
+    if length(modelSBML.species(i).id)>=4
+    	if ~strcmpi(modelSBML.species(i).id(1:3),'E_')
+        	if ~strcmpi(modelSBML.species(i).id(1:4),'Cx_')     
+                % Metabolite names could be of format NAME [compartment]. First
+                % check whether metabolite name ends with square brackets, and
+                % then check if the text within these brackets is a compartment
+                % name. If so, then remove this section from the metabolite
+                % name.
+                comp.match=regexp(modelSBML.species(i).name,'.* \[(.*)\]$','match');
+                if ~isempty(comp.match)
+                    comp.split=strsplit(comp.match{1},{'[',']'});
+                    comp.true=any(strcmpi({modelSBML.compartment.name},comp.split{2}));
+                    if comp.true==1
+                        metaboliteNames{numel(metaboliteNames),1}=strtrim(comp.split{1});
+                    else
+                        metaboliteNames{numel(metaboliteNames),1}=regexprep(modelSBML.species(i).name,'^M_','');
+                    end
                 else
-                    metaboliteNames{numel(metaboliteNames),1}=regexprep(modelSBML.species(i).name,'^M_','');
+                    %Use the full name
+                    metaboliteNames{i,1}=modelSBML.species(i).name;
                 end
-            else
-                %Use the full name
-                metaboliteNames{i,1}=modelSBML.species(i).name;
-            end
-            if isfield(modelSBML.species(i),'fbc_charge')
-                if ~isempty(modelSBML.species(i).fbc_charge)
-                    metaboliteCharge(numel(metaboliteCharge)+1,1)=modelSBML.species(i).fbc_charge;
-                end
-            elseif ~isempty(modelSBML.species(i).notes)
-                if strfind(modelSBML.species(i).notes,'CHARGE')
-                    %Get the charge if available
-                    startString='CHARGE:';
-                    endString='</';
-                    formStart=strfind(modelSBML.species(i).notes,startString);
-                    if ~isempty(formStart)
-                        formEnd=strfind(modelSBML.species(i).notes,endString);
-                        formEndIndex=find(formEnd>formStart, 1 );
-                        charge=strtrim(modelSBML.species(i).notes(formStart+numel(startString):formEnd(formEndIndex)-1));
-                        metaboliteCharge(numel(metaboliteCharge)+1,1)=str2double(charge);
+                if isfield(modelSBML.species(i),'fbc_charge')
+                    if ~isempty(modelSBML.species(i).fbc_charge)
+                        metaboliteCharge(numel(metaboliteCharge)+1,1)=modelSBML.species(i).fbc_charge;
+                    end
+                elseif ~isempty(modelSBML.species(i).notes)
+                    if strfind(modelSBML.species(i).notes,'CHARGE')
+                        %Get the charge if available
+                        startString='CHARGE:';
+                        endString='</';
+                        formStart=strfind(modelSBML.species(i).notes,startString);
+                        if ~isempty(formStart)
+                            formEnd=strfind(modelSBML.species(i).notes,endString);
+                            formEndIndex=find(formEnd>formStart, 1 );
+                            charge=strtrim(modelSBML.species(i).notes(formStart+numel(startString):formEnd(formEndIndex)-1));
+                            metaboliteCharge(numel(metaboliteCharge)+1,1)=str2double(charge);
+                        end
                     end
                 end
-            end
-            %Additional information from FBC format
-            %Chemical formula
-            if isfield(modelSBML.species(i),'fbc_chemicalFormula')
-                if ~isempty(modelSBML.species(i).fbc_chemicalFormula)
-                    metaboliteFormula{numel(metaboliteFormula),1}=modelSBML.species(i).fbc_chemicalFormula;
+                %Additional information from FBC format
+                %Chemical formula
+                if isfield(modelSBML.species(i),'fbc_chemicalFormula')
+                    if ~isempty(modelSBML.species(i).fbc_chemicalFormula)
+                        metaboliteFormula{numel(metaboliteFormula),1}=modelSBML.species(i).fbc_chemicalFormula;
+                    end
                 end
             end
         end
     end    
-    % ADD ANNOTATION (KEGG/CHEBI) TO MIRIAM, LOCATED IN SPECIES.ANNOTATION
 end
 
 % Several metabolite may have charge information missing. The charge is
