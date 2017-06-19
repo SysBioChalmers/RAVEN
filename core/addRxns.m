@@ -81,8 +81,7 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
 %   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
-%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
-%   rxnReferences and confidenceScores
+%   Simonas Marcisauskas, 2017-06-15
 %
 
 if nargin<4
@@ -179,7 +178,7 @@ end
 
 %Parse the equations. This is done at this early stage since I need the
 %reversibility info
-[S mets badRxns reversible]=constructS(rxnsToAdd.equations);
+[S, mets, badRxns, reversible]=constructS(rxnsToAdd.equations);
 EM='The following equations have one or more metabolites both as substrate and product. Only the net equations will be added:';
 dispEM(EM,false,rxnsToAdd.rxns(badRxns));
 
@@ -418,15 +417,17 @@ if eqnType==1
     dispEM(EM,true,mets(~cellfun(@isempty,illegalCells)));
 else
     %If the mets are metNames
-    illegalCells=regexp(mets,'["%<>\\]', 'once');
-    EM='Illegal character(s) in metabolite names:';
-    dispEM(EM,true,mets(~cellfun(@isempty,illegalCells)));
+    if ~contains(mets,'->')
+        illegalCells=regexp(mets,'["%<>\\]', 'once');
+        EM='Illegal character(s) in metabolite names:';
+        dispEM(EM,true,mets(~cellfun(@isempty,illegalCells)));
+    end
 end
 
 %***Start parsing the equations and adding the info to the S matrix
 %The mets are matched to model.mets
 if eqnType==1
-    [I J]=ismember(mets,model.mets);
+    [I, J]=ismember(mets,model.mets);
     if ~all(I)
         if allowNewMets==true
             %Add the new mets
@@ -455,7 +456,7 @@ if eqnType==2
     %%Check that the metabolite names aren't present in the same compartment.
     %Not the neatest way maybe..
     t1=strcat(mets,'***',compartment);
-    [I J]=ismember(t1,t2);
+    [I, J]=ismember(t1,t2);
 
     if ~all(I)
         if allowNewMets==true
@@ -501,7 +502,7 @@ if eqnType==3
 
     %Check if the metabolite exists already
     t1=strcat(metNames,'***',compartments);
-    [I J]=ismember(t1,t2);
+    [I, J]=ismember(t1,t2);
 
     if ~all(I)
         if allowNewMets==true
@@ -534,7 +535,7 @@ for i=1:nRxns
        rule=strrep(rule,' or ',' ');
        rule=strrep(rule,' and ',' ');
        genes=regexp(rule,' ','split');
-       [I J]=ismember(genes,newModel.genes);
+       [I, J]=ismember(genes,newModel.genes);
        if ~all(I) && any(rule)
             EM=['Not all genes for reaction ' rxnsToAdd.rxns{i} ' were found in model.genes. If needed, add genes with addGenes before calling this function'];
             dispEM(EM);

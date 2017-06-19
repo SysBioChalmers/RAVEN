@@ -24,7 +24,7 @@ function blastStructure=getBlast(organismID,fastaFile,modelIDs,refFastaFiles)
 %   Usage: blastStructure=getBlast(organismID,fastaFile,modelIDs,...
 %           refFastaFiles)
 %
-%   Simonas Marcisauskas, 2017-05-08
+%   Simonas Marcisauskas, 2017-06-16
 %
 
 %Everything should be cell arrays
@@ -37,7 +37,7 @@ blastStructure=[];
 
 %Get the directory for RAVEN Toolbox. This may not be the easiest or best
 %way to do this
-[ST I]=dbstack('-completenames');
+[ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(ST(I).file));
 
 %Construct databases and output file
@@ -60,11 +60,11 @@ else
     return
 end
 
-[status output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['makeblastdb' binEnd]) '" -in "' fastaFile{1} '" -out "' tmpDB '" -dbtype "prot"']);
+[status, output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['makeblastdb' binEnd]) '" -in "' fastaFile{1} '" -out "' tmpDB '" -dbtype "prot"']);
 
 for i=1:numel(refFastaFiles)
     fprintf(['BLASTing "' modelIDs{i} '" against "' organismID{1} '"..\n']);
-    [status output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['blastp' binEnd]) '" -query "' refFastaFiles{i} '" -out "' outFile '_' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos"']);
+    [status, output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['blastp' binEnd]) '" -query "' refFastaFiles{i} '" -out "' outFile '_' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos"']);
 end
 delete([tmpDB '*']);
 
@@ -72,8 +72,8 @@ delete([tmpDB '*']);
 %the new organism against them
 for i=1:numel(refFastaFiles)
     fprintf(['BLASTing "' organismID{1} '" against "' modelIDs{i} '"..\n']);
-    [status output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['makeblastdb' binEnd]) '" -in "' refFastaFiles{i} '" -out "' tmpDB '" -dbtype "prot"']);
-    [status output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['blastp' binEnd]) '" -query "' fastaFile{1} '" -out "' outFile '_r' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos"']);
+    [status, output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['makeblastdb' binEnd]) '" -in "' refFastaFiles{i} '" -out "' tmpDB '" -dbtype "prot"']);
+    [status, output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['blastp' binEnd]) '" -query "' fastaFile{1} '" -out "' outFile '_r' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos"']);
     delete([tmpDB '*']);
 end
     
