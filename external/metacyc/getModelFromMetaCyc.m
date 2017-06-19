@@ -66,7 +66,7 @@ for i=1:rxnNum
 
 	metaCycModel.grRules{i}='';
 	%Find out if this is an enzymatic reaction
-	[a b]=ismember(metaCycModel.rxns(i),metaCycEnzymes.rxns);
+	[a, b]=ismember(metaCycModel.rxns(i),metaCycEnzymes.rxns);
 	if a
 		I=[];   %Find out all catalyzing enzymes, which are treated as isoenzymes
 		I=find(metaCycEnzymes.rxnEnzymeMat(b,:));
@@ -76,7 +76,7 @@ for i=1:rxnNum
 			for j=1:numel(I)
 								
 				subgrRule=''; %Find out if enzyme complex
-				[c d]=ismember(metaCycEnzymes.enzymes(I(j)),metaCycEnzymes.cplxs);
+				[c, d]=ismember(metaCycEnzymes.enzymes(I(j)),metaCycEnzymes.cplxs);
 				if c
 						for k=1:numel(metaCycEnzymes.cplxComp{d}.subunit)
 							if strcmp(subgrRule,'')
@@ -85,7 +85,7 @@ for i=1:rxnNum
 								subgrRule=strcat(subgrRule,{' and '},metaCycEnzymes.cplxComp{d}.subunit{k});
 							end
 							
-							[x geneIndex]=ismember(metaCycEnzymes.cplxComp{d}.subunit{k},metaCycModel.genes);
+							[x, geneIndex]=ismember(metaCycEnzymes.cplxComp{d}.subunit{k},metaCycModel.genes);
 							%if x
 								metaCycModel.rxnGeneMat(i,geneIndex)=1;
 							%else
