@@ -105,7 +105,7 @@ end
 % are any references in rModel.rxnMiriams, these must be concatenated with
 % cModel.rxnReferences, which was obtain during group III fields
 % processing;
-if isfield(rModel,'rxnReferences')
+if isfield(rModel,'rxnMiriams')
     if isfield(cModel,'rxnReferences')
         cModel.rxnReferences=strcat(cModel.rxnReferences,';',extractMiriam(rModel.rxnMiriams,'pubmed'));
         cModel.rxnReferences=regexprep(cModel.rxnReferences,'^;|;$','');
