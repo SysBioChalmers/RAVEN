@@ -3,6 +3,8 @@ RAVEN (Reconstruction, Analysis and Visualization of Metabolic Networks) Toolbox
 
 If you are using RAVEN in any scientific work, please cite: [R. Agren, et. al, “The RAVEN Toolbox and Its Use for Generating a Genome-scale Metabolic Model for Penicillium chrysogenum,” PLoS Comput. Biol., vol. 9, no. 3, p. e1002980, Mar. 2013.](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002980).
 
+Please report any technical issues and bugs [here](https://github.com/SysBioChalmers/RAVEN/issues). For other issues, please contact [Eduard Kerkhoven](https://github.com/edkerk).
+
 ## Releases
 RAVEN can be installed via cloning the Github repository as per below or by downloading and extracting one of the a zipped [release](https://github.com/SysBioChalmers/RAVEN/releases). Please note that the releases do not always represent the most up to date version.
 

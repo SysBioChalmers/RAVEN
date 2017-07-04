@@ -296,7 +296,11 @@ for i=1:numel(modelSBML.species)
                             metaboliteFormula{numel(metaboliteFormula)+1,1}='';
                         end
                     end
-                else
+				elseif ~isempty(modelSBML.species(i).fbc_chemicalFormula)
+                    metaboliteInChI{numel(metaboliteInChI)+1,1}='';
+                    % Cannot extract InChi from formula, so remains empty.
+                    metaboliteFormula{numel(metaboliteFormula)+1,1}=modelSBML.species(i).fbc_chemicalFormula;
+                 else
                     metaboliteInChI{numel(metaboliteInChI)+1,1}='';
                     metaboliteFormula{numel(metaboliteFormula)+1,1}='';
                 end
