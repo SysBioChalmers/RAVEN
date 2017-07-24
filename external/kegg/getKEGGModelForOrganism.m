@@ -30,6 +30,11 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %                       -dataDir\hmms
 %                           The hidden Markov models as generated in 2b or
 %                           downloaded from BioMet Toolbox (see below)
+%                       The final directory in dataDir should be styled as
+%                       proXXX_keggYY or eukXXX_keggYY, indicating whether
+%                       the HMMs were trained on pro- or eukaryotic sequences,
+%                       using a sequence similarity threshold of XXX %,
+%                       fitting the KEGG version YY. E.g. euk100_kegg82.
 %                       (opt, see note about fastaFile. Note that in order to
 %                       rebuild the KEGG model from a database dump, as opposed to
 %                       using the version supplied with RAVEN, you would still need
@@ -156,7 +161,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...
 %    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2017-05-16
+%   Eduard Kerkhoven, 2017-07-24
 %
 
 if nargin<2
@@ -214,13 +219,15 @@ if ~isempty(dataDir)
         'prok100_kegg82'; ...
         'prok90_kegg82'; ...
         'prok50_kegg82'};
-    if ~ismember(dataDir,hmmOptions)
-        EM='Pre-trained HMMs set is not recognised. The following sets are available to download:';
+    if isempty(regexp(dataDir,strcat(hmmOptions,'$'))) % Check if dataDir ends with any of the hmmOptions
+        EM='Pre-trained HMMs set is not recognised. It should match any of the following sets (which are available to download):';
         disp(EM);
         disp(hmmOptions);
         return;
     end;
-    if ~exist(dataDir,'dir') && exist([dataDir,'.zip'],'file')
+    if exist(dataDir,'dir')
+        fprintf('Provided dataDir is in correct format for this RAVEN version in order to use pre-trained HMMs...\n')
+    elseif ~exist(dataDir,'dir') && exist([dataDir,'.zip'],'file')
         fprintf('Extracting HMMs archive file...\n');
         unzip([dataDir,'.zip']);
     else
@@ -374,7 +381,7 @@ missingFASTA=setdiff(KOModel.rxns,[fastaFiles;alignedFiles;hmmFiles;outFiles]);
 
 if ~isempty(missingFASTA)
     if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file')
-        EM=fprintf(['The file ''genes.pep'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
+        EM=fprintf(['The file ''genes.pep'' cannot be located at ' strrep(dataDir,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
         dispEM(EM);
     end
     %Only construct models for KOs which don't have files already
