@@ -296,7 +296,7 @@ for i=1:numel(modelSBML.species)
                             metaboliteFormula{numel(metaboliteFormula)+1,1}='';
                         end
                     end
-				elseif ~isempty(modelSBML.species(i).fbc_chemicalFormula)
+				elseif isfield(modelSBML.species(i),'fbc_chemicalFormula') & ~isempty(modelSBML.species(i).fbc_chemicalFormula)
                     metaboliteInChI{numel(metaboliteInChI)+1,1}='';
                     % Cannot extract InChi from formula, so remains empty.
                     metaboliteFormula{numel(metaboliteFormula)+1,1}=modelSBML.species(i).fbc_chemicalFormula;
@@ -376,9 +376,9 @@ for i=1:numel(modelSBML.species)
         end     
     end
     % The following lines are executed regardless isSBML2COBRA setting;
-    if length(modelSBML.species(i).id)>=4
-    	if ~strcmpi(modelSBML.species(i).id(1:3),'E_')
-        	if ~strcmpi(modelSBML.species(i).id(1:4),'Cx_')     
+    if length(modelSBML.species(i).id)>=3
+    	if ~strcmpi(modelSBML.species(i).id(1:2),'E_')
+        	if ~strcmpi(modelSBML.species(i).id(1:3),'Cx_')     
                 % Metabolite names could be of format NAME [compartment]. First
                 % check whether metabolite name ends with square brackets, and
                 % then check if the text within these brackets is a compartment
