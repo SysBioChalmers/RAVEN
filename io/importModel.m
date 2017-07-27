@@ -686,10 +686,11 @@ for i=1:numel(modelSBML.reaction)
         for j=1:numel(ecStart)
             ecEndIndex=find(ecEnd>ecStart(j), 1 );
             eccode=strtrim(searchString(ecStart(j)+numel(startString):ecEnd(ecEndIndex)-1));
+            eccode=strcat('ec-code/',eccode);
             if j==1
                 eccodes{counter}=eccode;
             else
-                eccodes{counter}=[eccodes{counter} ';' eccode];
+                eccodes{counter}=[eccodes{counter} ':' eccode];
             end
         end
     end    
