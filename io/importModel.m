@@ -631,6 +631,23 @@ for i=1:numel(modelSBML.reaction)
         end
     end
 
+    %Get other Miriam fields. This may include for example database indexes
+    %to organism-specific databases. EC-codes are supported by the COBRA
+    %Toolbox format and are therefore loaded separately
+    if isSBML2COBRA==false
+        if strfind(modelSBML.reaction(i).annotation,'urn:miriam:')
+            miriamStruct=parseMiriam(modelSBML.reaction(i).annotation,'urn:miriam:',':');
+        else
+            miriamStruct=parseMiriam(modelSBML.reaction(i).annotation,'http://identifiers.org/','/');
+        end
+        rxnMiriams{counter}=miriamStruct;
+        [subsystems{i,1},eccodes{i,1},confidencescores{i,1},rxnreferences{i,1},rxnnotes{i,1}]=parseNote(modelSBML.reaction(i).notes);
+        if strfind(modelSBML.reaction(i).annotation,'http://identifiers.org/')
+            rxnreferences{i,1}=strcat(rxnreferences{i,1},';',extractMiriam(parseMiriam(modelSBML.reaction(i).annotation,'http://identifiers.org/','/',true),'pubmed'));
+            rxnreferences{i,1}=regexprep(rxnreferences{i,1},'^;','');
+        end
+    end
+
     %Get ec-codes
     flagEmpty=false;
     if isSBML2COBRA==false
@@ -675,25 +692,8 @@ for i=1:numel(modelSBML.reaction)
                 eccodes{counter}=[eccodes{counter} ';' eccode];
             end
         end
-    end
-
-    %Get other Miriam fields. This may include for example database indexes
-    %to organism-specific databases. EC-codes are supported by the COBRA
-    %Toolbox format and are therefore loaded separately
-    if isSBML2COBRA==false
-        if strfind(modelSBML.reaction(i).annotation,'urn:miriam:')
-            miriamStruct=parseMiriam(modelSBML.reaction(i).annotation,'urn:miriam:',':');
-        else
-            miriamStruct=parseMiriam(modelSBML.reaction(i).annotation,'http://identifiers.org/','/');
-        end
-        rxnMiriams{counter}=miriamStruct;
-        [subsystems{i,1},eccodes{i,1},confidencescores{i,1},rxnreferences{i,1},rxnnotes{i,1}]=parseNote(modelSBML.reaction(i).notes);
-        if strfind(modelSBML.reaction(i).annotation,'http://identifiers.org/')
-            rxnreferences{i,1}=strcat(rxnreferences{i,1},';',extractMiriam(parseMiriam(modelSBML.reaction(i).annotation,'http://identifiers.org/','/',true),'pubmed'));
-            rxnreferences{i,1}=regexprep(rxnreferences{i,1},'^;','');
-        end
-    end
-
+    end    
+    
     %Add all reactants
     for j=1:numel(modelSBML.reaction(i).reactant)
        %Get the index of the metabolite in metaboliteIDs. External
