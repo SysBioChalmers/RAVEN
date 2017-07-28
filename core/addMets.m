@@ -39,6 +39,14 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 %   NOTE: This function does not make extensive checks about MIRIAM formats,
 %   forbidden characters or such.
 %
+%   Example: If multiple metabolites are added at once, the metMiriams cell
+%   array should be defined as (example with ChEBI and KEGG):
+%   
+%   metsToAdd.metMiriams{1} = struct('name',{{'chebi';'kegg.compound'}},...
+%       'value',{{'CHEBI:18072';'C11821'}});
+%   metsToAdd.metMiriams{2} = struct('name',{{'chebi';'kegg.compound'}},...
+%       'value',{{'CHEBI:31132';'C12248'}});
+%
 %   Usage: newModel=addMets(model,metsToAdd,copyInfo)
 %
 %   Simonas Marcisauskas, 2016-11-01 - added support for metCharge
