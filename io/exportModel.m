@@ -1,22 +1,22 @@
-function exportModel(model,fileName,toCOBRA,supressWarnings)
+function exportModel(model,fileName,toSBML2COBRA,supressWarnings)
 % exportModel
 %   Exports a constraint-based model to a SBML file
 %
 %   model           a model structure
 %   fileName        the filename  to export the model to
-%   toCOBRA         true if the model should be exported to COBRA format. The
+%   toSBML2COBRA    true if the model should be exported to COBRA SBML2 format. The
 %                   normal format is that which was defined in the Yeast
 %                   consensus model (opt, default false)
 %   supressWarnings true if warnings should be supressed (opt, default
 %                   false)
 %
-%   Usage: exportModel(model,fileName,toCOBRA,supressWarnings)
+%   Usage: exportModel(model,fileName,toSBML2COBRA,supressWarnings)
 %
-%   Rasmus Agren, 2014-01-08
+%   Simonas Marcisauskas, 2017-08-24
 %
 
 if nargin<3
-    toCOBRA=false;
+    toSBML2COBRA=false;
 end
 if nargin<4
     supressWarnings=false;
@@ -56,7 +56,7 @@ tempF=tempname();
 fid = fopen(tempF,'w');
 
 %Writes the intro
-if toCOBRA==false
+if toSBML2COBRA==false
     intro=['<?xml version="1.0" encoding="UTF-8" ?>'...
     '<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">'...
     '<model metaid="metaid_' model.id '" id="' model.id '" name="' model.description '">'];
@@ -111,7 +111,7 @@ if toCOBRA==false
 
     if isfield(model,'annotation')
         if isfield(model.annotation,'taxonomy')
-            intro=[intro '<bqbiol:is><rdf:Bag><rdf:li rdf:resource="urn:miriam:' model.annotation.taxonomy '" /></rdf:Bag></bqbiol:is>'];
+            intro=[intro '<bqbiol:is><rdf:Bag><rdf:li rdf:resource="http://identifiers.org/' model.annotation.taxonomy '" /></rdf:Bag></bqbiol:is>'];
         end
     end
     intro=[intro '</rdf:Description>'...
@@ -152,7 +152,7 @@ for i=1:numel(model.comps)
         append=' spatialDimensions="3"';
     end
 
-    if toCOBRA==false
+    if toSBML2COBRA==false
         fprintf(fid,['<compartment metaid="metaid_C_' model.comps{i} '" id="C_' model.comps{i} '" name="' model.compNames{i} '"' append ' size="1" sboTerm="SBO:0000290">']);
 
         %Print associated Miriam strings
@@ -188,7 +188,7 @@ for i=1:numel(model.mets)
         unbounded='false';
     end
 
-    if toCOBRA==false
+    if toSBML2COBRA==false
         toprint=['<species metaid="metaid_M_' model.mets{i} '" id="M_' model.mets{i} '" name="' model.metNames{i} '" compartment="C_' model.comps{model.metComps(i)} '" initialAmount="0" boundaryCondition="' unbounded '" sboTerm="SBO:0000299">'];
     else
         %For COBRA format the formula is appended to the metabolite name
@@ -205,7 +205,7 @@ for i=1:numel(model.mets)
     end
 
     %Print some stuff if there is a formula for the compound
-    if toCOBRA==false
+    if toSBML2COBRA==false
         if isfield(model,'metFormulas')
             %Only print formula if there is no InChI. This is because the
             %metFormulas field is populated by InChIs if available
@@ -262,7 +262,7 @@ for i=1:numel(model.mets)
 end
 
 %Write genes and complexes
-if toCOBRA==false
+if toSBML2COBRA==false
     %Write genes
     if isfield(model,'genes')
         for i=1:numel(model.genes)
@@ -330,7 +330,7 @@ fprintf(fid,'</listOfSpecies>');
 %Add reactions
 fprintf(fid,'<listOfReactions>');
 
-if toCOBRA==false
+if toSBML2COBRA==false
     if isfield(model,'grRules')
         %This is for dealing with complexes
         model.grRules=strrep(model.grRules,'(','');
@@ -362,7 +362,7 @@ for i=1:length(model.rxns)
         eccode=[];
     end
 
-    if toCOBRA==false
+    if toSBML2COBRA==false
         fprintf(fid,['<reaction metaid="metaid_R_' model.rxns{i} '" id="R_' model.rxns{i} '" name="' model.rxnNames{i} '" reversible="' reversible '" sboTerm="SBO:0000176">']);
 
         if ~isempty(subsystem) || ~isempty(rxnComps)
@@ -390,7 +390,7 @@ for i=1:length(model.rxns)
             %Several ec-codes can be delimited by ";"
             eccodes=regexp(eccode,';','split');
             for j=1:numel(eccodes)
-                miriamString=[miriamString  '<rdf:li rdf:resource="urn:miriam:ec-code:' eccodes{j} '"/>'];
+                miriamString=[miriamString  '<rdf:li rdf:resource="http://identifiers.org/' eccodes{j} '"/>'];
             end
         end
 
@@ -454,7 +454,7 @@ for i=1:length(model.rxns)
         end
         fprintf(fid,'</listOfProducts>');
     end
-    if toCOBRA==false
+    if toSBML2COBRA==false
         if isfield(model,'genes') && isfield(model,'grRules')
             if ~isempty(model.grRules{i})
                 genes=regexp(model.grRules(i),' or ','split');
@@ -483,7 +483,7 @@ for i=1:length(model.rxns)
 
     %Note that the order of parameters is hard-coded. It's the same thing
     %in importModel
-    if toCOBRA==false
+    if toSBML2COBRA==false
         fprintf(fid,'<kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><ci>FLUX_VALUE</ci></math><listOfParameters>');
         fprintf(fid,['<parameter id="LB_R_' model.rxns{i} '" name="LOWER_BOUND" value="' sprintf('%15.8f',model.lb(i)) '" units="mmol_per_gDW_per_hr"/><parameter id="UB_R_' model.rxns{i} '" name="UPPER_BOUND" value="' sprintf('%15.8f',model.ub(i)) '" units="mmol_per_gDW_per_hr"/><parameter id="OBJ_R_' model.rxns{i} '" name="OBJECTIVE_COEFFICIENT" value="' sprintf('%15.8f',model.c(i)) '" units="dimensionless"/><parameter id="FLUX_VALUE" value="0.00000000" units="mmol_per_gDW_per_hr"/>']);
     else
@@ -507,13 +507,13 @@ end
 
 function miriamString=getMiriam(miriamStruct)
 %Returns a string with list elements for a miriam structure ('<rdf:li
-%rdf:resource="urn:miriam:obo.go:GO:0005739"/>' for example). This is just
+%rdf:resource="http://identifiers.org/'obo.go/GO:0005739"/>' for example). This is just
 %to speed ut things since this is done many times during the exporting
 
 miriamString='';
 if isfield(miriamStruct,'name')
 	for i=1:numel(miriamStruct.name)
-        miriamString=[miriamString '<rdf:li rdf:resource="urn:miriam:' miriamStruct.name{i} ':' miriamStruct.value{i} '"/>'];
+        miriamString=[miriamString '<rdf:li rdf:resource="http://identifiers.org/' miriamStruct.name{i} '/' miriamStruct.value{i} '"/>'];
 	end
 end
 end

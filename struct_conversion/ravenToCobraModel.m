@@ -31,6 +31,8 @@ function cModel=ravenToCobraModel(rModel)
 %           -metCharge;
 %           -rules;
 %           -subSystems;
+%           -csense;
+%           -osense;
 %       III. Optional COBRA fields with matching titles (f.optionalEquiv):
 %           -id;
 %           -rxnNames;
@@ -44,12 +46,12 @@ function cModel=ravenToCobraModel(rModel)
 %
 %   Usage: cModel = ravenToCobraModel(rModel)
 %
-%   Simonas Marcisauskas, 2017-06-02
+%   Simonas Marcisauskas, 2017-08-24
 %
 
 % Initializing f variable, which categorizes all the fields;
-f.requiredEquiv={'rxns','mets','S','c','genes','lb','ub','rev','grRules','rxnGeneMat','metFormulas','description'};
-f.required={'metCharge','rules','subSystems'};
+f.requiredEquiv={'rxns','mets','S','c','genes','lb','ub','rev','grRules','rxnGeneMat','metFormulas','description','b'};
+f.required={'metCharge','rules','subSystems','csense','osense'};
 f.optionalEquiv={'id','rxnNames','metNames','rxnNotes','rxnReferences','confidenceScores'};
 f.optionalOtherName=containers.Map({'inchis','eccodes'},{'metInchiString','rxnECNumbers'});
 
@@ -76,6 +78,9 @@ if (isfield(rModel,'subSystems'))
 else
 	cModel=setfield(cModel,'subSystems',repmat({''},size(rModel.rxns,1)));
 end
+
+cModel.csense=repmat('E',size(cModel.mets));
+cModel.osense=-1;
 
 % Now preparing group III fields;
 fields = rmfield(rModel,setdiff(fieldnames(rModel), f.optionalEquiv));
