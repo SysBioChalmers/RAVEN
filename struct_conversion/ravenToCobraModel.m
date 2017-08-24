@@ -53,7 +53,7 @@ function cModel=ravenToCobraModel(rModel)
 f.requiredEquiv={'rxns','mets','S','c','genes','lb','ub','rev','grRules','rxnGeneMat','metFormulas','description','b'};
 f.required={'metCharge','rules','subSystems','csense','osense'};
 f.optionalEquiv={'id','rxnNames','metNames','rxnNotes','rxnReferences','confidenceScores'};
-f.optionalOtherName=containers.Map({'inchis','eccodes'},{'metInchiString','rxnECNumbers'});
+f.optionalOtherName=containers.Map({'inchis','eccodes','geneShortNames'},{'metInchiString','rxnECNumbers','geneNames'});
 
 % Creating a new COBRA-compatible structure, containing only the fields
 % from group I, which are found in the current RAVEN model structure;
@@ -92,6 +92,9 @@ if (isfield(rModel,'inchis'))
 end
 if (isfield(rModel,'eccodes'))
     cModel=setfield(cModel,f.optionalOtherName('eccodes'),rModel.eccodes);
+end
+if (isfield(rModel,'geneShortNames'))
+    cModel=setfield(cModel,f.optionalOtherName('geneShortNames'),rModel.geneShortNames);
 end
 
 % Now obtaining the annotation for metabolites,

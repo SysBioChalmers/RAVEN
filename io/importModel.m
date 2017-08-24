@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Simonas Marcisauskas, 2017-06-12
+%   Simonas Marcisauskas, 2017-08-24
 %
 
 if nargin<2
@@ -126,7 +126,7 @@ model.metCharge=[];
 model.unconstrained=[];
 
 %Load the model using libSBML
-modelSBML = TranslateSBML(fileName);
+modelSBML = TranslateSBML(fileName,0,0,[1 1]);
 
 if isempty(modelSBML)
     EM='There is a problem with the SBML file. Try using the SBML Validator at http://sbml.org/Facilities/Validator';
@@ -914,6 +914,16 @@ end
 % Make sure that AND and OR string are in lowercase in grRules
 model.grRules=strrep(model.grRules,' AND ',' and ');
 model.grRules=strrep(model.grRules,' OR ',' or ');
+
+if all(cellfun(@isempty,geneShortNames))
+    if isfield(modelSBML,'fbc_geneProduct')
+        for i=1:numel(genes)
+            if isempty(modelSBML.fbc_geneProduct(i).fbc_name)
+                geneShortNames{i,1}=modelSBML.fbc_geneProduct(i).fbc_label;
+            end;
+        end;
+    end;
+end;
 
 %If any InChIs have been loaded
 if any(~cellfun(@isempty,metaboliteInChI))
