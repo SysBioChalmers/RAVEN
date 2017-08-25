@@ -39,7 +39,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %       rxnMiriams       structure with MIRIAM information about the reactions
 %       rxnNotes         reaction notes
 %       rxnReferences	 reaction references
-%       confidenceScores reaction confidence scores
+%       rxnConfidenceScores reaction confidence scores
 %       genes            list of all genes
 %       geneComps        compartments for reactions
 %       geneMiriams      structure with MIRIAM information about the genes
@@ -113,7 +113,7 @@ model.eccodes={};
 model.rxnMiriams={};
 model.rxnNotes={};
 model.rxnReferences={};
-model.confidenceScores={};
+model.rxnConfidenceScores={};
 model.genes={};
 model.geneComps=[];
 model.geneMiriams={};
@@ -747,7 +747,7 @@ model.c=reactionObjective;
 model.b=zeros(numel(metaboliteIDs),1);
 model.comps=compartmentIDs;
 model.compNames=compartmentNames;
-model.confidenceScores=confidencescores;
+model.rxnConfidenceScores=confidencescores;
 model.rxnReferences=rxnreferences;
 model.rxnNotes=rxnnotes;
 
@@ -1023,8 +1023,8 @@ end
 if cellfun(@isempty,model.rxnReferences)
 	model=rmfield(model,'rxnReferences');
 end
-if cellfun(@isempty,model.confidenceScores)
-	model=rmfield(model,'confidenceScores');
+if cellfun(@isempty,model.rxnConfidenceScores)
+	model=rmfield(model,'rxnConfidenceScores');
 end
 if isempty(model.genes)
     model=rmfield(model,'genes');

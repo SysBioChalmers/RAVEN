@@ -157,9 +157,9 @@ function str=getCompString(elements,comp)
     for i=1:numel(comp)
        if comp(i)~=0
           if comp(i)==1
-             str=[str  elements.abbrevs{i}];
+             str=[str elements.abbrevs{i}];
           else
-             str=[str  elements.abbrevs{i} num2str(comp(i))];
+             str=[str elements.abbrevs{i} num2str(comp(i))];
           end
        end
     end

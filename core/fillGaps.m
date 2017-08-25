@@ -59,7 +59,7 @@ function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(m
 %   of reactions that have to be included in order for the model to produce
 %   biomass.
 %
-%   Usage: [newConnected cannotConnect addedRxns newModel exitFlag]=...
+%   Usage: [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=...
 %           fillGaps(model,models,allowNetProduction,useModelConstraints,...
 %           supressWarnings,rxnScores,params)
 %
@@ -105,7 +105,7 @@ rxnScores=rxnScores(:);
 
 %Check if the original model has an unconstrained field. If so, give a warning
 if supressWarnings==false
-    if isfield(model,'unconstrained');
+    if isfield(model,'unconstrained')
         EM='This algorithm is meant to function on a model with exchange reactions for uptake and excretion of metabolites. The current model still has the "unconstrained" field';
         dispEM(EM,false);
     else
@@ -201,7 +201,7 @@ else
 
     %Return stuff
     newConnected=K;
-    cannotConnect=setdiff(model.rxns(~originalFlux ),newConnected);
+    cannotConnect=setdiff(model.rxns(~originalFlux),newConnected);
 end
 
 %Then minimize for the number of fluxes used. The fixed rxns doesn't need

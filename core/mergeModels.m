@@ -13,8 +13,7 @@ function model=mergeModels(models,supressWarnings)
 %
 %   Usage: model=mergeModels(models)
 %
-%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
-%   rxnReferences, confidenceScores and metCharge
+%   Simonas Marcisauskas, 2017-08-25
 %
 
 %Just return the model
@@ -164,19 +163,19 @@ for i=2:numel(models)
        end
     end
 
-    if isfield(models{i},'confidenceScores')
-       if isfield(model,'confidenceScores')
-           model.confidenceScores=[model.confidenceScores;models{i}.confidenceScores];
+    if isfield(models{i},'rxnConfidenceScores')
+       if isfield(model,'rxnConfidenceScores')
+           model.rxnConfidenceScores=[model.rxnConfidenceScores;models{i}.rxnConfidenceScores];
        else
            emptyConfidenceScores=cell(numel(model.rxns)-numel(models{i}.rxns),1);
            emptyConfidenceScores(:)={''};
-           model.confidenceScores=[emptyConfidenceScores;models{i}.confidenceScores];
+           model.rxnConfidenceScores=[emptyConfidenceScores;models{i}.rxnConfidenceScores];
        end
     else
-       if isfield(model,'confidenceScores')
+       if isfield(model,'rxnConfidenceScores')
            emptyConfidenceScores=cell(numel(models{i}.rxns),1);
            emptyConfidenceScores(:)={''};
-           model.confidenceScores=[model.confidenceScores;emptyConfidenceScores];
+           model.rxnConfidenceScores=[model.rxnConfidenceScores;emptyConfidenceScores];
        end
     end
 
@@ -227,7 +226,7 @@ for i=2:numel(models)
 
     %First add the new metabolites
     %Make sure that there are no conflicting metabolite ids
-    [conflicting, ~]=ismember(models{i}.mets(metsToAdd),model.mets);
+    conflicting=ismember(models{i}.mets(metsToAdd),model.mets);
 
     conflicting=find(conflicting);
 
@@ -417,7 +416,7 @@ for i=2:numel(models)
             end
         else
             %If gene info should be merged
-            [a, ~]=ismember(models{i}.genes,model.genes);
+            a=ismember(models{i}.genes,model.genes);
 
             genesToAdd=find(~a);
 

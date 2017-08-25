@@ -1,5 +1,5 @@
 function pushCheck()
-	[ST I]=dbstack('-completenames');
+	[ST, I]=dbstack('-completenames');
 	ravenPath=fileparts(fileparts(ST(I).file));
 	
 	paths=genpath(ravenPath);

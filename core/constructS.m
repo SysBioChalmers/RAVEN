@@ -20,7 +20,7 @@ function [S, mets, badRxns, reversible]=constructS(equations,mets,rxns)
 %               can be problematic
 %   reversible  boolean vector with true if the equation is reversible
 %
-%   Usage: [S mets badRxns reversible]=constructS(equations,mets)
+%   Usage: [S, mets, badRxns, reversible]=constructS(equations,mets)
 %
 %   Rasmus Agren, 2014-01-08
 %

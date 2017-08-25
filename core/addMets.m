@@ -301,6 +301,7 @@ if copyInfo==true
    end
 end
 end
+
 %For getting the numerical form of metabolite ids on the form "m1".
 function I=getInteger(s)
     %Checks if a string is on the form "m1" and if so returns the value of

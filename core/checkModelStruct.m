@@ -14,7 +14,7 @@ function checkModelStruct(model,throwErrors,trimWarnings)
 %
 %   Usage: checkModelStruct(model,throwErrors,trimWarnings)
 %
-%   Simonas Marcisauskas, 2017-06-02
+%   Simonas Marcisauskas, 2017-08-25
 %
 
 if nargin<2
@@ -178,9 +178,9 @@ if isfield(model,'rxnReferences')
         dispEM(EM,throwErrors);
     end
 end
-if isfield(model,'confidenceScores')
-    if ~iscellstr(model.confidenceScores)
-        EM='The "confidenceScores" field must be a cell array of strings';
+if isfield(model,'rxnConfidenceScores')
+    if ~iscellstr(model.rxnConfidenceScores)
+        EM='The "rxnConfidenceScores" field must be a cell array of strings';
         dispEM(EM,throwErrors);
     end
 end
@@ -363,6 +363,7 @@ function I=duplicates(strings)
         I(L)=true;
     end
 end
+
 function I=illegal(strings,type)
     %Just to save some space
     if strcmpi(type,'id')

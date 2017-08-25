@@ -66,7 +66,7 @@ function [newModel, removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames
 %   and then iterating until no metabolites can be produced/consumed.
 %   makeSomething is called before consumeSomething.
 %
-%   Usage: [newModel removedRxns]=removeBadRxns(model,rxnRules,...
+%   Usage: [newModel, removedRxns]=removeBadRxns(model,rxnRules,...
 %       ignoreMets,isNames,refModel,ignoreIntBounds,printReport)
 %
 %   Rasmus Agren, 2014-01-08

@@ -11,7 +11,7 @@ function [pathway, notMapped]=mapPathwayRxnNames(pathway,originalLabels,newLabel
 %   notMapped       a cell array with labels that could not be found in the
 %                   pathway object
 %
-%   Usage: [pathway notMapped]=mapPathwayRxnNames(pathway,originalLabels,newLabels)
+%   Usage: [pathway, notMapped]=mapPathwayRxnNames(pathway,originalLabels,newLabels)
 %
 %   Rasmus Agren, 2014-01-09
 %
@@ -39,3 +39,4 @@ for i=1:numel(pathway.listOfSpecies)
 end
 
 notMapped=originalLabels(~mapped);
+end

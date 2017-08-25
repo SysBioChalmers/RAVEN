@@ -27,7 +27,7 @@ function [colorCodes, signChange, errorFlag]= getColorCodes(referenceFluxes, flu
 %                       order correspondes to the order of the fluxes
 %   errorFlag           true if there has been an error
 %
-%   Usage: [colorCodes signChange errorFlag]=getColorCodes(referenceFluxes,...
+%   Usage: [colorCodes, signChange, errorFlag]=getColorCodes(referenceFluxes,...
 %           fluxes, maxChange, defaultColor, upColor, downColor)
 %
 %   Rasmus Agren, 2010-12-16
@@ -135,4 +135,5 @@ else
                    defaultColor(2)+(upColor(2)-defaultColor(2))*logvalue/(maxChange)...
                    defaultColor(3)+(upColor(3)-defaultColor(3))*logvalue/(maxChange)];
    end
+end
 end

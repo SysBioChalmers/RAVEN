@@ -74,3 +74,4 @@ for i=[1 -1]
 end
 
 I=ismember(rxns,smallModel.rxns(mixIndexes(J)));
+end

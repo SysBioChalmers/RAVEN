@@ -16,6 +16,7 @@ function geneScoreStruct=getWoLFScores(inputFile,kingdom)
 %   Usage: geneScoreStruct=getWoLFScores(inputFile,kingdom)
 %
 %   Rasmus Agren, 2014-01-08
+%
 
 if ~strcmp(kingdom,'animal') && ~strcmp(kingdom,'fungi') && ~strcmp(kingdom,'plant')
     EM='Allowed kingdoms are "animal", "fungi", and "plant"';
@@ -46,3 +47,4 @@ geneScoreStruct=parseScores(outFile,'wolf');
 
 %Clean up
 delete(outFile);
+end

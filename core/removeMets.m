@@ -23,7 +23,7 @@ function reducedModel=removeMets(model,metsToRemove,isNames,removeUnusedRxns,rem
 %   Usage: reducedModel=removeMets(model,metsToRemove,isNames,...
 %           removeUnusedRxns,removeUnusedGenes,removeUnusedComps)
 %
-%   Simonas Marcisauskas, 2016-11-01 - added support for metCharge
+%   Simonas Marcisauskas, 2016-11-01
 %
 
 if ischar(metsToRemove)

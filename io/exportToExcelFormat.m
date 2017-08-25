@@ -17,7 +17,7 @@ function exportToExcelFormat(model,filename)
 %
 %   Usage: exportToExcelFormat(model,filename)
 %
-%   Simonas Marcisauskas, 2017-06-02
+%   Simonas Marcisauskas, 2017-08-25
 %
 
 [~, A, B]=fileparts(filename);
@@ -49,7 +49,7 @@ wb=loadWorkbook(filename,true);
 model.equations=constructEquations(model,model.rxns,true);
 
 %Check if it should print genes
-if isfield(model,'grRules');
+if isfield(model,'grRules')
     rules=model.grRules;
 else
     rules=[];
@@ -184,8 +184,8 @@ else
     rxnSheet=[rxnSheet emptyColumn];
 end
 
-if isfield(model,'confidenceScores')
-    rxnSheet=[rxnSheet model.confidenceScores];
+if isfield(model,'rxnConfidenceScores')
+    rxnSheet=[rxnSheet model.rxnConfidenceScores];
 else
     rxnSheet=[rxnSheet emptyColumn];
 end

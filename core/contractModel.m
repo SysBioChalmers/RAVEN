@@ -12,7 +12,7 @@ function [reducedModel, removedRxns]=contractModel(model)
 %   NOTE: This code might not work for advanced grRules strings
 %         that involve nested expressions of 'and' and 'or'.
 %
-%   Usage: [reducedModel removedRxns]=contractModel(model)
+%   Usage: [reducedModel, removedRxns]=contractModel(model)
 %
 %   Rasmus Agren, 2014-01-08
 %

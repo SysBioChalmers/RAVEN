@@ -39,7 +39,7 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %                               default '')
 %            rxnReferences      cell array with reaction references (opt,
 %                               default '')
-%            confidenceScores   cell array with reaction confidence scores
+%            rxnConfidenceScores   cell array with reaction confidence scores
 %                               (opt, default '')
 %   eqnType          double describing how the equation string should be
 %                    interpreted
@@ -81,7 +81,7 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
 %   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
-%   Simonas Marcisauskas, 2017-06-15
+%   Simonas Marcisauskas, 2017-08-25
 %
 
 if nargin<4
@@ -392,20 +392,20 @@ else
    end
 end
 
-if isfield(rxnsToAdd,'confidenceScores')
-   if numel(rxnsToAdd.confidenceScores)~=nRxns
-       EM='rxnsToAdd.confidenceScores must have the same number of elements as rxnsToAdd.rxns';
+if isfield(rxnsToAdd,'rxnConfidenceScores')
+   if numel(rxnsToAdd.rxnConfidenceScores)~=nRxns
+       EM='rxnsToAdd.rxnConfidenceScores must have the same number of elements as rxnsToAdd.rxns';
        dispEM(EM);
    end
    %Fill with standard if it doesn't exist
-   if ~isfield(newModel,'confidenceScores')
-       newModel.confidenceScores=largeFiller;
+   if ~isfield(newModel,'rxnConfidenceScores')
+       newModel.rxnConfidenceScores=largeFiller;
    end
-   newModel.confidenceScores=[newModel.confidenceScores;rxnsToAdd.confidenceScores(:)];
+   newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;rxnsToAdd.rxnConfidenceScores(:)];
 else
     %Fill with standard if it doesn't exist
-   if isfield(newModel,'confidenceScores')
-       newModel.confidenceScores=[newModel.confidenceScores;filler];
+   if isfield(newModel,'rxnConfidenceScores')
+       newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;filler];
    end
 end
 

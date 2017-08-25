@@ -38,3 +38,4 @@ end
 if isfield(reducedModel,'geneComps')
    reducedModel.geneComps=reducedModel.geneComps(toKeep);
 end
+end

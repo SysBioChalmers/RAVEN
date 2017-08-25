@@ -33,7 +33,8 @@ function model=addsRxnsGenesMets(model,sourcemodel,rxns,add_gene,rxnNote,confide
 %
 %   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
-%   Eduard Kerkhoven, 2016-12-20
+%   Simonas Marcisauskas, 2017-08-25
+%
 
 if nargin<6
     confidence=0;
@@ -113,10 +114,11 @@ rxnToAdd.lb=sourcemodel.lb(rxnIdx);
 rxnToAdd.ub=sourcemodel.ub(rxnIdx);
 rxnToAdd.rxnNotes=cell(1,numel(rxnToAdd.rxns));
 rxnToAdd.rxnNotes(:)={rxnNote};
-rxnToAdd.confidenceScores=cell(1,numel(rxnToAdd.rxns));
-rxnToAdd.confidenceScores(:)={confidence};
+rxnToAdd.rxnConfidenceScores=cell(1,numel(rxnToAdd.rxns));
+rxnToAdd.rxnConfidenceScores(:)={confidence};
 model=addRxns(model,rxnToAdd,3,'',false);
 
 disp('Number of reactions added to the model:')
 disp(numel(rxnIdx))
 
+end

@@ -56,7 +56,7 @@ addToIndex=1;
 for i=1:numel(model.rxns)
    if isstruct(model.rxnMiriams{i})
       for j=1:numel(model.rxnMiriams{i}.name)
-         if strcmpi('kegg.orthology',model.rxnMiriams{i}.name{j});
+         if strcmpi('kegg.orthology',model.rxnMiriams{i}.name{j})
             %Add the KO id
             KOs(addToIndex)=model.rxnMiriams{i}.value(j);
             addToIndex=addToIndex+1;

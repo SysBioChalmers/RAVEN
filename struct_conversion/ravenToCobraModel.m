@@ -39,20 +39,20 @@ function cModel=ravenToCobraModel(rModel)
 %           -metNames;
 %           -rxnNotes;
 %           -rxnReferences;
-%           -confidenceScores.
+%           -rxnConfidenceScores.
 %       IV. Optional fields with non-matching titles (f.optionalOtherName):
 %           -metInchiString (inchis in RAVEN);
 %           -rxnECNumbers (eccodes in RAVEN).
 %
 %   Usage: cModel = ravenToCobraModel(rModel)
 %
-%   Simonas Marcisauskas, 2017-08-24
+%   Simonas Marcisauskas, 2017-08-25
 %
 
 % Initializing f variable, which categorizes all the fields;
 f.requiredEquiv={'rxns','mets','S','c','genes','lb','ub','rev','grRules','rxnGeneMat','metFormulas','description','b'};
 f.required={'metCharge','rules','subSystems','csense','osense'};
-f.optionalEquiv={'id','rxnNames','metNames','rxnNotes','rxnReferences','confidenceScores'};
+f.optionalEquiv={'id','rxnNames','metNames','rxnNotes','rxnReferences','rxnConfidenceScores'};
 f.optionalOtherName=containers.Map({'inchis','eccodes','geneShortNames'},{'metInchiString','rxnECNumbers','geneNames'});
 
 % Creating a new COBRA-compatible structure, containing only the fields

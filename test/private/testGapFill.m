@@ -8,7 +8,7 @@ function out=testGapFill(param)
 	def.biomassReactionExcludeRatio=.4;
 	def.useConstraints=true;
 
-	param=structUpdate(def,param)
+	param=structUpdate(def,param);
 
 	modLoad('~all RAVENgit',[]);
 	modelPath='/Users/hedani/Documents/GitRepos/yeast-metabolic-network-7.6/';
@@ -45,7 +45,7 @@ function out=testGapFill(param)
 	%mosekRes={newConnected cannotConnect addedRxns newModel exitFlag};
 
 	setRavenSolver(param.solver)
-	[newConnected cannotConnect addedRxns newModel exitFlag]=fillGaps(model,refModel,false,param.useConstraints)
+	[newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,refModel,false,param.useConstraints);
 	gurobiRes={newConnected cannotConnect addedRxns newModel exitFlag};
 
 

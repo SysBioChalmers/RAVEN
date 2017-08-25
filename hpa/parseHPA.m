@@ -59,3 +59,4 @@ hpaData.celltypes=hpa{3}(J);
 hpaData.gene2Level=sparse(I,K,L,numel(hpaData.genes),numel(hpaData.tissues));
 hpaData.gene2Type=sparse(I,K,M,numel(hpaData.genes),numel(hpaData.tissues));
 hpaData.gene2Reliability=sparse(I,K,N,numel(hpaData.genes),numel(hpaData.tissues));
+end

@@ -159,3 +159,4 @@ if any(I)
     geneScoreStructure.scores(I,:)=[];
     geneScoreStructure.genes(I)=[];
 end
+end

@@ -69,7 +69,7 @@ function pathway = constructPathwayFromCelldesigner(inputFile)
 %
 
 %Loads the specified xml file using XML Toolbox
-[ST I]=dbstack('-completenames');
+[ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(ST(I).file));
 
 %Current path and xml toolbox path
@@ -304,6 +304,7 @@ for i=1:length(v.model{1,1}.listOfReactions{1,1}.reaction)
         end
     end
 end
+end
 
 function [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)
 % getBindingPos
@@ -479,4 +480,5 @@ for i=1:length(pathway.listOfSpecies)
            break;
        end
    end
+end
 end

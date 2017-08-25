@@ -15,14 +15,14 @@ function newModel=expandModel(model)
 %
 %   Usage: newModel=expandModel(model)
 %
-%   Eduard Kerkhoven, 2017-04-06
+%   Simonas Marcisauskas, 2017-08-25
 %
 
 %Start by checking which reactions could be expanded
 rxnsToExpand=false(numel(model.rxns),1);
 
 for i=1:numel(model.rxns)
-    if ~isempty(strfind(model.grRules{i},' or '));
+    if ~isempty(strfind(model.grRules{i},' or '))
         rxnsToExpand(i)=true;
     end
 end
@@ -114,8 +114,8 @@ if any(rxnsToExpand)
             if isfield(model,'rxnReferences')
                 model.rxnReferences=[model.rxnReferences;model.rxnReferences(rxnsToExpand(i))];
             end
-            if isfield(model,'confidenceScores')
-                model.confidenceScores=[model.confidenceScores;model.confidenceScores(rxnsToExpand(i))];
+            if isfield(model,'rxnConfidenceScores')
+                model.rxnConfidenceScores=[model.rxnConfidenceScores;model.rxnConfidenceScores(rxnsToExpand(i))];
             end
         end
     end

@@ -37,7 +37,7 @@ function [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,minNrF
 %   metabolite is consumed, it picks one of them to be consumed and then
 %   minimizes for the sum of fluxes.
 %
-%   Usage: [solution metabolite]=consumeSomething(model,ignoreMets,isNames,...
+%   Usage: [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,...
 %               minNrFluxes,params,ignoreIntBounds)
 %
 %   Rasmus Agren, 2015-09-25

@@ -94,4 +94,4 @@ elseif keepSolver
 else
 	fprintf(['Preferred solver... CHANGED\nSolver saved as preference... ',lastWorking,'\n']);
 end
-
+end

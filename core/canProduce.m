@@ -20,6 +20,6 @@ if nargin<2
     mets=model.mets;
 end
 
-[model rxns]=addExchangeRxns(model,'out',mets);
+[model, rxns]=addExchangeRxns(model,'out',mets);
 produced=haveFlux(model,10^-5,rxns);
 end

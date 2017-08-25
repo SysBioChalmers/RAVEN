@@ -13,10 +13,10 @@ function out=testTasks(param)
 
 	%[taskReport1 essentialRxns1 taskStructure1]=checkTasks(model,[modelPath 'Dataset7.xlsx'],true,false,true);
 
-	modelInit=getINITModel(model,'colon',[],hpaData,[],[],[modelPath 'Dataset7.xlsx'])
+	modelInit=getINITModel(model,'colon',[],hpaData,[],[],[modelPath 'Dataset7.xlsx']);
 
-	[taskReport2 essentialRxns2 taskStructure2]=checkTasks(modelInit,[modelPath 'Dataset7.xlsx'],true,false,true);
-	out=modelInit
+	[taskReport2, essentialRxns2, taskStructure2]=checkTasks(modelInit,[modelPath 'Dataset7.xlsx'],true,false,true);
+	out=modelInit;
 end
 
 function s_merged=structUpdate(s_old,s_new)

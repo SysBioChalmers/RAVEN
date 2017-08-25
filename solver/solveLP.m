@@ -33,7 +33,7 @@ function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
 %   hsSolOut      solution to be used as hot-start solution (see the input
 %                 parameters). Only used if minFlux is 0 or 1
 %
-%   Usage: [solution hsSolOut]=solveLP(model,minFlux,params,hsSol)
+%   Usage: [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
 %
 %   Rasmus Agren, 2017-02-28
 %
@@ -111,7 +111,7 @@ end
 %Construct the output structure
 if isfield(res.sol,'bas')
     solution.x=res.sol.bas.xx;
-    if minFlux<=1;
+    if minFlux<=1
         hsSolOut=res.sol.bas;
         if(isfield(res,'vbasis')) % gurobi uses vbasis and cbasis as hotstart
             hsSolOut.vbasis=res.vbasis;

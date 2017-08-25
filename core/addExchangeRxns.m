@@ -1,4 +1,4 @@
-function [model addedRxns]=addExchangeRxns(model,reactionType,mets)
+function [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
 % addExchangeRxns
 %   Adds exchange reactions for some metabolites
 %
@@ -18,10 +18,9 @@ function [model addedRxns]=addExchangeRxns(model,reactionType,mets)
 %   This is a faster version than addRxns when adding exchange reactions.
 %   New reactions are named "EXC_OUT/IN/BOTH_METID".
 %
-%   Usage: [model addedRxns]=addExchangeRxns(model,reactionType,mets)
+%   Usage: [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
 %
-%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
-%   rxnReferences and confidenceScores
+%   Simonas Marcisauskas, 2017-08-25
 %
 
 if nargin<3
@@ -85,7 +84,7 @@ end
 if isfield(model,'rxnReferences')
     model.rxnReferences=[model.rxnReferences;cell(numel(J),1)];
 end
-if isfield(model,'confidenceScores')
-    model.confidenceScores=[model.confidenceScores;cell(numel(J),1)];
+if isfield(model,'rxnConfidenceScores')
+    model.rxnConfidenceScores=[model.rxnConfidenceScores;cell(numel(J),1)];
 end
 end

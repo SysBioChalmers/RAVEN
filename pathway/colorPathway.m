@@ -70,3 +70,4 @@ for i=1:length(pathway.listOfSpecies)
       end
    end
 end
+end

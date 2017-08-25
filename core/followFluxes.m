@@ -1,4 +1,4 @@
-function [errorFlag]=followFluxes(model, fluxesA, lowerFlux, upperFlux, fluxesB)
+function errorFlag=followFluxes(model, fluxesA, lowerFlux, upperFlux, fluxesB)
 % followFluxes
 %	Prints fluxes and reactions for each of the reactions that results in
 %   fluxes in the specified interval.
@@ -11,7 +11,7 @@ function [errorFlag]=followFluxes(model, fluxesA, lowerFlux, upperFlux, fluxesB)
 %               value are displayed (opt, default Inf)
 %   fluxesB     flux vector for the reference case(opt)
 %
-%   Usage: [errorFlag]=followFluxes(model, fluxesA, lowerFlux, upperFlux,
+%   Usage: errorFlag=followFluxes(model, fluxesA, lowerFlux, upperFlux,
 %           fluxesB)
 %
 %   Rasmus Agren, 2010-12-16
@@ -48,4 +48,5 @@ for i=1:length(formulas)
     end
     fprintf('%s: %s\n\t%s\n\t%s\n', char(model.rxns(fluxIndexes(i))), char(formulas(i)),...
         char(model.rxnNames(fluxIndexes(i))),fluxText);
+end
 end

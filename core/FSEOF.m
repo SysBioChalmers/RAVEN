@@ -115,3 +115,4 @@ end
 if output == 1    %Output to a file
 	fclose(fid);
 end
+end

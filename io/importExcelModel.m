@@ -37,7 +37,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %       rxnMiriams       structure with MIRIAM information about the reactions
 %       rxnNotes         reaction notes
 %       rxnReferences    reaction references
-%       confidenceScores reaction confidence scores
+%       rxnConfidenceScores reaction confidence scores
 %       genes            list of all genes
 %       geneComps        compartments for reactions
 %       geneMiriams      structure with MIRIAM information about the genes
@@ -65,7 +65,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Simonas Marcisauskas, 2017-06-05
+%   Simonas Marcisauskas, 2017-08-25
 %
 
 if nargin<2
@@ -108,7 +108,7 @@ model.eccodes={};
 model.rxnMiriams={};
 model.rxnNotes={};
 model.rxnReferences={};
-model.confidenceScores={};
+model.rxnConfidenceScores={};
 model.genes={};
 model.geneComps={}; %Will be double later
 model.geneMiriams={};
@@ -412,7 +412,7 @@ for i=1:numel(I)
         case 14
             model.rxnReferences=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         case 15
-            model.confidenceScores=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+            model.rxnConfidenceScores=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
     end
 end
 
@@ -522,7 +522,7 @@ if ~isempty(model.grRules)
                model.rxnGeneMat(i,I)=1;
            else
                temp=[0 indexes numel(tempRules{i})+1];
-               for j=1:numel(indexes)+1;
+               for j=1:numel(indexes)+1
                    %The reaction has several associated genes
                    geneName=tempRules{i}(temp(j)+1:temp(j+1)-1);
                    I=find(strcmp(geneName,model.genes));
@@ -792,8 +792,8 @@ end
 if all(cellfun(@isempty,model.rxnReferences))
 	model=rmfield(model,'rxnReferences');
 end
-if all(cellfun(@isempty,model.confidenceScores))
-	model=rmfield(model,'confidenceScores');
+if all(cellfun(@isempty,model.rxnConfidenceScores))
+	model=rmfield(model,'rxnConfidenceScores');
 end
 if isempty(model.genes)
     model=rmfield(model,'genes');

@@ -45,7 +45,7 @@ function draftModel=getModelFromHomology(models,blastStructure,getModelFor,prefe
 %
 %   draftModel        a new model structure
 %
-%   Rasmus Agren, 2014-01-08
+%   Simonas Marcisauskas, 2017-08-25
 %
 
 %NOTE: "to" and "from" means relative the new organism
@@ -379,7 +379,7 @@ for i=1:numel(models)
 
             if ~isempty(mapIndex)
                 %Get the new genes for that gene
-                [a, ~]=find(finalMappings{i}(:,mapIndex));
+                a=find(finalMappings{i}(:,mapIndex));
 
                 %Find the positions of these genes in the final gene list
                 [~, b]=ismember(allGenes{1}(a),fullGeneList);
@@ -442,6 +442,6 @@ end
 draftModel.description=description;
 draftModel.rxnNotes=cell(length(draftModel.rxns),1);
 draftModel.rxnNotes(:)={'Reaction included by getModelFromHomology'};
-draftModel.confidenceScores=cell(length(draftModel.rxns),1);
-draftModel.confidenceScores(:)={'2'};
+draftModel.rxnConfidenceScores=cell(length(draftModel.rxns),1);
+draftModel.rxnConfidenceScores(:)={'2'};
 end

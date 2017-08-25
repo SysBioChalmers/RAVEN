@@ -42,7 +42,7 @@ function [genes, fluxes, originalGenes, details]=findGeneDeletions(model,testTyp
 %   NOTE: This function disregards complexes. Any one gene can encode a
 %         reaction even if parts of the complex is deleted.
 %
-%   Usage: [genes fluxes]=findGeneDeletions(model,testType,analysisType,...
+%   Usage: [genes, fluxes, originalGenes, details]==findGeneDeletions(model,testType,analysisType,...
 %           refModel,oeFactor)
 %
 %   Rasmus Agren, 2014-01-08
@@ -176,7 +176,7 @@ if strcmpi(testType,'dgo')
 
     fluxes=sparse(numel(model.rxns),size(genesToModify,1));
     for i=1:size(genesToModify,1)
-       [I, ~]=find(model.rxnGeneMat(:,genesToModify(i,:)));
+       I=find(model.rxnGeneMat(:,genesToModify(i,:)));
        %To over express a gene, the stoichiometry of the corresponding
        %reactions are changed so that the same flux leads to a higher
        %production
@@ -198,7 +198,7 @@ if strcmpi(testType,'dgd')
 
     fluxes=sparse(numel(model.rxns),size(genesToModify,1));
     for i=1:size(genesToModify,1)
-       [I, ~]=find(model.rxnGeneMat(:,genesToModify(i,:)));
+       I=find(model.rxnGeneMat(:,genesToModify(i,:)));
 
        %Constrain all reactions involving the gene to 0
        tempModel=setParam(model,'eq',model.rxns(I),0);

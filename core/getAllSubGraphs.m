@@ -53,7 +53,7 @@ while ~all(isAssigned)
 end
 subGraphs=subGraphs(:,1:counter);
 
-[crap, I]=sort(sum(subGraphs),'descend');
+[~, I]=sort(sum(subGraphs),'descend');
 
 subGraphs=subGraphs(:,I);
 

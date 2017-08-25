@@ -20,6 +20,6 @@ if nargin<2
     mets=model.mets;
 end
 
-[model rxns]=addExchangeRxns(model,'in',mets);
+[model, rxns]=addExchangeRxns(model,'in',mets);
 consumed=haveFlux(model,10^-5,rxns);
 end

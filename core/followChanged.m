@@ -103,3 +103,4 @@ for i=1:length(formulas)
         fprintf('%s: %s\n\t%s\n\t%s\n\n', char(model.rxns(fluxIndexes(i))), char(formulas(i)),...
         char(model.rxnNames(fluxIndexes(i))),fluxText);
 end
+end

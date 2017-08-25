@@ -31,7 +31,7 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxn
 %   all tasks at once. This means that the order of the tasks could influence
 %   the result.
 %
-%   Usage: [outModel addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...
+%   Usage: [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...
 %           rxnScores,taskStructure,params)
 %
 %   Rasmus Agren, 2014-01-08

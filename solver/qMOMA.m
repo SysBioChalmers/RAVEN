@@ -74,7 +74,7 @@ fullB=zeros(size(modelA.S,1)+size(modelB.S,1),1);
 
 H=[eye(size(fullS,2)/2)*fluxMinWeight eye(size(fullS,2)/2)*-1;eye(size(fullS,2)/2)*-1 eye(size(fullS,2)/2)*fluxMinWeight];
 
-[x,~,~,~]=quadprog(H,zeros(size(H,1),1),[],[],fullS,fullB,fullLB,fullUB);
+x=quadprog(H,zeros(size(H,1),1),[],[],fullS,fullB,fullLB,fullUB);
 
 if any(x)
     fluxA=x(1:numel(modelB.rxns));

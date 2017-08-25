@@ -45,7 +45,7 @@ end
 model.equations=constructEquations(model,model.rxns,true);
 
 %Check if it should print genes
-if isfield(model,'grRules');    
+if isfield(model,'grRules')    
     %Also do some parsing here
     rules=model.grRules;
     rules=strrep(rules,'(','');
