@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Simonas Marcisauskas, 2017-08-24
+%   Simonas Marcisauskas, 2017-08-25
 %
 
 if nargin<2
@@ -918,7 +918,9 @@ model.grRules=strrep(model.grRules,' OR ',' or ');
 if all(cellfun(@isempty,geneShortNames))
     if isfield(modelSBML,'fbc_geneProduct')
         for i=1:numel(genes)
-            if isempty(modelSBML.fbc_geneProduct(i).fbc_name)
+            if ~isempty(modelSBML.fbc_geneProduct(i).fbc_name)
+                geneShortNames{i,1}=modelSBML.fbc_geneProduct(i).fbc_name;
+            elseif ~isempty(modelSBML.fbc_geneProduct(i).fbc_label)
                 geneShortNames{i,1}=modelSBML.fbc_geneProduct(i).fbc_label;
             end;
         end;
