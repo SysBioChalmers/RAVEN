@@ -17,7 +17,7 @@ function exportToExcelFormat(model,filename)
 %
 %   Usage: exportToExcelFormat(model,filename)
 %
-%   Simonas Marcisauskas, 2017-08-25
+%   Simonas Marcisauskas, 2017-08-29
 %
 
 [~, A, B]=fileparts(filename);
@@ -218,10 +218,18 @@ for i=1:numel(model.mets)
            metSheet{i,5}=toPrint(1:end-1);
        end
     end
-
+    
+    % Making sure that only these metFormulas are exported, which don't
+    % have InChI strings
     if isfield(model,'metFormulas')
-        metSheet(i,6)=model.metFormulas(i);
-    end
+        if isfield(model,'inchis')
+            if isempty(model.inchis{i})
+                metSheet(i,6)=model.metFormulas(i);
+            end;
+        else
+            metSheet(i,6)=model.metFormulas(i);
+        end;
+    end;
 
     if isfield(model,'inchis')
         metSheet(i,7)=model.inchis(i);
