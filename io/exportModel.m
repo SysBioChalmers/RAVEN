@@ -1,26 +1,33 @@
-function exportModel(model,fileName,toSBML2COBRA,supressWarnings)
+function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 % exportModel
 %   Exports a constraint-based model to a SBML file
 %
-%   model           a model structure
-%   fileName        the filename  to export the model to
-%   toSBML2COBRA    true if the model should be exported to COBRA SBML2 format. The
-%                   normal format is that which was defined in the Yeast
-%                   consensus model (opt, default false)
-%   supressWarnings true if warnings should be supressed (opt, default
-%                   false)
+%   model               a model structure
+%   fileName            the filename to export the model to
+%   exportGeneComplexes	true if gene complexes (all gene sets linked with
+%                       AND relationship) should be recognised and exported
+%                       (opt, default false)
+%   supressWarnings     true if warnings should be supressed (opt, default
+%                       false)
 %
-%   Usage: exportModel(model,fileName,toSBML2COBRA,supressWarnings)
+%   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
-%   Simonas Marcisauskas, 2017-08-24
+%   Simonas Marcisauskas, 2017-09-06
 %
 
 if nargin<3
-    toSBML2COBRA=false;
+    exportGeneComplexes=false;
 end
 if nargin<4
     supressWarnings=false;
 end
+
+% The default SBML format settings, which are used as input for appropriate
+% libSBML functions to generate the blank SBML model structure before using
+% exporting in with OutputSBML to xml file;
+sbmlLevel=3;
+sbmlVersion=1;
+fbcVersion=2;
 
 %Check if the "unconstrained" field is still present. This shows if
 %exchange metabolites have been removed
@@ -37,263 +44,272 @@ if supressWarnings==false
    checkModelStruct(model,false);
 end
 
-%For converting illegal characters to their entity reference
-model=cleanBadCharsInModel(model);
+% Adding several blank fields, if they don't exist already. This is
+% to reduce the number of conditions below;
+if ~isfield(model,'compMiriams')
+    model.compMiriams=cell(numel(model.comps),1);
+end;
+if ~isfield(model,'inchis')
+    model.inchis=cell(numel(model.mets),1);
+end;
+if ~isfield(model,'metFormulas')
+    model.metFormulas=cell(numel(model.mets),1);
+end;
+if ~isfield(model,'metMiriams')
+    model.metMiriams=cell(numel(model.mets),1);
+end;
+if ~isfield(model,'geneMiriams')
+    model.geneMiriams=cell(numel(model.genes),1);
+end;
+if ~isfield(model,'subSystems')
+    model.subSystems=cell(numel(model.rxns),1);
+end;
+if ~isfield(model,'eccodes')
+    model.eccodes=cell(numel(model.rxns),1);
+end;
+if ~isfield(model,'rxnReferences')
+    model.rxnReferences=cell(numel(model.rxns),1);
+end;
+if ~isfield(model,'rxnConfidenceScores')
+    model.rxnConfidenceScores=cell(numel(model.rxns),1);
+end;
+if ~isfield(model,'rxnNotes')
+    model.rxnNotes=cell(numel(model.rxns),1);
+end;
+if ~isfield(model,'rxnMiriams')
+    model.rxnMiriams=cell(numel(model.rxns),1);
+end;
 
-%Check if genes have associated compartments
-if ~isfield(model,'geneComps') && isfield(model,'genes')
-    if supressWarnings==false
-        EM='There are no compartments specified for genes. All genes will be assigned to the first compartment. This is because the SBML structure requires all elements to be assigned to a compartment';
-        dispEM(EM,false);
-    end
-    model.geneComps=ones(numel(model.genes),1);
+if sbmlLevel<3
+	%Check if genes have associated compartments
+	if ~isfield(model,'geneComps') && isfield(model,'genes')
+        if supressWarnings==false
+            EM='There are no compartments specified for genes. All genes will be assigned to the first compartment. This is because the SBML structure requires all elements to be assigned to a compartment';
+            dispEM(EM,false);
+        end
+        model.geneComps=ones(numel(model.genes),1);
+	end
 end
 
-%Generate temporary filename
-tempF=tempname();
+% Generate an empty SBML structure;
+modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,fbcVersion);
+modelSBML.metaid=strcat('meta_',model.id);
+modelSBML.id=model.id;
+modelSBML.name=model.description;
 
-%Open a stream
-fid = fopen(tempF,'w');
-
-%Writes the intro
-if toSBML2COBRA==false
-    intro=['<?xml version="1.0" encoding="UTF-8" ?>'...
-    '<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">'...
-    '<model metaid="metaid_' model.id '" id="' model.id '" name="' model.description '">'];
-    if isfield(model,'annotation')
-        if isfield(model.annotation,'note')
-            intro=[intro '<notes><body xmlns="http://www.w3.org/1999/xhtml">' model.annotation.note '</body></notes>\n'];
-        end
-    else
-        intro=[intro '<notes><body xmlns="http://www.w3.org/1999/xhtml">This file was generated using the exportModel function in RAVEN Toolbox</body></notes>\n'];
+if isfield(model,'annotation')
+    if isfield(model.annotation,'note')
+        modelSBML.notes=['<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>',regexprep(model.annotation.note,'<p>|</p>',''),'</p></body></notes>'];        
     end
-    intro=[intro '<annotation>'...
-    '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/">'...
-    '<rdf:Description rdf:about="#metaid_' model.id '">'];
-    if isfield(model,'annotation')
-        nameString='';
-        if isfield(model.annotation,'givenName')
-            if ~isempty(model.annotation.givenName)
-                nameString=['<vCard:Given>' model.annotation.givenName '</vCard:Given>'];
-            end
-        end
-        if isfield(model.annotation,'familyName')
-            if ~isempty(model.annotation.familyName)
-                nameString=[nameString '<vCard:Family>' model.annotation.familyName '</vCard:Family>'];
-            end
-        end
-        email='';
-        if isfield(model.annotation,'email')
-            if ~isempty(model.annotation.email)
-                email=['<vCard:EMAIL>' model.annotation.email '</vCard:EMAIL>'];
-            end
-        end
-        org='';
-        if isfield(model.annotation,'organization')
-            if ~isempty(model.annotation.organization)
-                org=['<vCard:ORG><vCard:Orgname>' model.annotation.organization '</vCard:Orgname></vCard:ORG>'];
-            end
-        end
-        if ~isempty(nameString) || ~isempty(email) || ~isempty(org)
-            intro=[intro '<dc:creator rdf:parseType="Resource"><rdf:Bag><rdf:li rdf:parseType="Resource">'];
-            if ~isempty(nameString)
-                intro=[intro '<vCard:N rdf:parseType="Resource">' nameString '</vCard:N>'];
-            end
-            intro=[intro email org '</rdf:li></rdf:Bag></dc:creator>'];
-        end
-    end
-    intro=[intro '<dcterms:created rdf:parseType="Resource">'...
-    '<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF>'...
-    '</dcterms:created>'...
-    '<dcterms:modified rdf:parseType="Resource">'...
-    '<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF>'...
-    '</dcterms:modified>'];
-
-    if isfield(model,'annotation')
-        if isfield(model.annotation,'taxonomy')
-            intro=[intro '<bqbiol:is><rdf:Bag><rdf:li rdf:resource="http://identifiers.org/' model.annotation.taxonomy '" /></rdf:Bag></bqbiol:is>'];
-        end
-    end
-    intro=[intro '</rdf:Description>'...
-    '</rdf:RDF>'...
-    '</annotation>'];
 else
-    intro=['<?xml version="1.0" encoding="UTF-8"?><sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="1" xmlns:html="http://www.w3.org/1999/xhtml"><model id="' model.id '" name="' model.description '">'];
-    if isfield(model,'annotation')
-        if isfield(model.annotation,'note')
-            intro=[intro '<notes><body xmlns="http://www.w3.org/1999/xhtml">' model.annotation.note '</body></notes>\n'];
-        end
-    end
+    modelSBML.notes='<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>This file was generated using the exportModel function in RAVEN Toolbox 2.0</p></body></notes>';
 end
 
-intro=[intro '<listOfUnitDefinitions>'...
-'<unitDefinition id="mmol_per_gDW_per_hr">'...
-'<listOfUnits>'...
-'<unit kind="mole" scale="-3"/>'...
-'<unit kind="second" multiplier="0.00027778" exponent="-1"/>'...
-'</listOfUnits>'...
-'</unitDefinition>'...
-'</listOfUnitDefinitions>'...
-'<listOfCompartments>'];
+modelSBML.annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.id '">'];
+if isfield(model,'annotation')
+    nameString='';
+    if isfield(model.annotation,'familyName')
+        if ~isempty(model.annotation.familyName)
+            nameString=['<vCard:Family>' model.annotation.familyName '</vCard:Family>'];
+        end
+    end
+    if isfield(model.annotation,'givenName')
+        if ~isempty(model.annotation.givenName)
+            nameString=[nameString '<vCard:Given>' model.annotation.givenName '</vCard:Given>'];
+        end
+    end
+    email='';
+    if isfield(model.annotation,'email')
+        if ~isempty(model.annotation.email)
+            email=['<vCard:EMAIL>' model.annotation.email '</vCard:EMAIL>'];
+        end
+    end
+    org='';
+    if isfield(model.annotation,'organization')
+        if ~isempty(model.annotation.organization)
+            org=['<vCard:ORG rdf:parseType="Resource"><vCard:Orgname>' model.annotation.organization '</vCard:Orgname></vCard:ORG>'];
+        end
+    end
+    if ~isempty(nameString) || ~isempty(email) || ~isempty(org)
+        modelSBML.annotation=[modelSBML.annotation '<dc:creator><rdf:Bag><rdf:li rdf:parseType="Resource">'];
+        if ~isempty(nameString)
+            modelSBML.annotation=[modelSBML.annotation '<vCard:N rdf:parseType="Resource">' nameString '</vCard:N>'];
+        end
+        modelSBML.annotation=[modelSBML.annotation email org '</rdf:li></rdf:Bag></dc:creator>'];
+    end
+end
+modelSBML.annotation=[modelSBML.annotation '<dcterms:created rdf:parseType="Resource">'...
+'<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF>'...
+'</dcterms:created>'...
+'<dcterms:modified rdf:parseType="Resource">'...
+'<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF>'...
+'</dcterms:modified>'];
 
-%Write intro
-fprintf(fid,intro);
+if isfield(model,'annotation')
+    if isfield(model.annotation,'taxonomy')
+        modelSBML.annotation=[modelSBML.annotation '<bqbiol:is><rdf:Bag><rdf:li rdf:resource="http://identifiers.org/taxonomy/' model.annotation.taxonomy '"/></rdf:Bag></bqbiol:is>'];
+    end
+end
+modelSBML.annotation=[modelSBML.annotation '</rdf:Description></rdf:RDF></annotation>'];
 
-%Write compartments
+%Prepare compartments
 for i=1:numel(model.comps)
-    %Check if it's outside anything
-    if isfield(model, 'compOutside')
-        if ~isempty(model.compOutside{i})
-            append=[' outside="C_' model.compOutside{i} '" spatialDimensions="3"'];
-        else
-            append=' spatialDimensions="3"';
-        end
-    else
-        append=' spatialDimensions="3"';
-    end
+    % Adding the default values, as these will be the same in all entries;
+    if i==1
+        if isfield(modelSBML.compartment, 'sboTerm')
+            modelSBML.compartment(i).sboTerm=290;
+        end;
+        if isfield(modelSBML.compartment, 'spatialDimensions')
+            modelSBML.compartment(i).spatialDimensions=3;
+        end;
+        if isfield(modelSBML.compartment, 'size')
+            modelSBML.compartment(i).size=1;
+        end;
+        if isfield(modelSBML.compartment, 'constant')
+            modelSBML.compartment(i).constant=1;
+        end;
+        if isfield(modelSBML.compartment, 'isSetSize')
+            modelSBML.compartment(i).isSetSize=1;
+        end;
+        if isfield(modelSBML.compartment, 'isSetSpatialDimensions')
+            modelSBML.compartment(i).isSetSpatialDimensions=1;
+        end;
+    end;
+    % Copying the default values to the next entry as long as it is not the
+    % last one;
+    if i<numel(model.comps)
+    	modelSBML.compartment(i+1)=modelSBML.compartment(i);
+    end;
+    
+    if isfield(modelSBML.compartment,'metaid')
+        modelSBML.compartment(i).metaid=['meta_' model.comps{i}];
+    end;
+    %Prepare Miriam strings
+    if ~isempty(model.compMiriams{i}) && isfield(modelSBML.compartment(i),'.annotation')
+        modelSBML.compartment(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.comps{i} '">'];
+        modelSBML.compartment(i).annotation=[modelSBML.compartment(i).annotation '<bqbiol:is><rdf:Bag>'];
+        modelSBML.compartment(i).annotation=[modelSBML.compartment(i).annotation getMiriam(model.compMiriams{i}) '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>']; 
+    end;
+    if isfield(modelSBML.compartment, 'name')
+        modelSBML.compartment(i).name=model.compNames{i};
+    end;
+    if isfield(modelSBML.compartment, 'id')
+        modelSBML.compartment(i).id=model.comps{i};
+    end;    
 
-    if toSBML2COBRA==false
-        fprintf(fid,['<compartment metaid="metaid_C_' model.comps{i} '" id="C_' model.comps{i} '" name="' model.compNames{i} '"' append ' size="1" sboTerm="SBO:0000290">']);
-
-        %Print associated Miriam strings
-        if isfield(model,'compMiriams')
-            miriamString=getMiriam(model.compMiriams{i});
-        else
-            miriamString=[];
-        end
-
-        if ~isempty(miriamString)
-            compinfo=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms='...
-                    '"http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" '...
-                    'xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#metaid_C_' model.comps{i} '">'...
-                    '<bqbiol:is><rdf:Bag>' miriamString '</rdf:Bag></bqbiol:is>'...
-                    '</rdf:Description></rdf:RDF></annotation></compartment>'];
-        else
-            compinfo='</compartment>\n';
-        end
-        fprintf(fid,compinfo);
-    else
-        fprintf(fid,['<compartment id="C_' model.comps{i} '" name="' model.compNames{i} '"' append '></compartment>']);
-    end
-end
-
-intro='</listOfCompartments><listOfSpecies>';
-fprintf(fid,intro);
+end;
 
 %Begin writing species
 for i=1:numel(model.mets)
-    if model.unconstrained(i)
-        unbounded='true';
-    else
-        unbounded='false';
+    % Adding the default values, as these will be the same in all entries;
+    if i==1
+        if isfield(modelSBML.species, 'sboTerm')
+            modelSBML.species(i).sboTerm=247;
+        end;
+        if isfield(modelSBML.species, 'initialAmount')
+            modelSBML.species(i).initialAmount=1;
+        end;
+        if isfield(modelSBML.species, 'initialConcentration')
+            modelSBML.species(i).initialConcentration=0;
+        end;
+        if isfield(modelSBML.species, 'isSetInitialAmount')
+            modelSBML.species(i).isSetInitialAmount=1;
+        end;
+        if isfield(modelSBML.species, 'isSetInitialConcentration')
+            modelSBML.species(i).isSetInitialConcentration=1;
+        end;
+    end;
+    % Copying the default values to the next entry as long as it is not the
+    % last one;
+    if i<numel(model.mets)
+    	modelSBML.species(i+1)=modelSBML.species(i);
+    end;
+    
+    if isfield(modelSBML.species,'metaid')
+        modelSBML.species(i).metaid=['meta_' model.mets{i}];
+    end;
+    if isfield(modelSBML.species, 'name')
+        modelSBML.species(i).name=model.metNames{i};
+    end;
+    if isfield(modelSBML.species, 'id')
+        modelSBML.species(i).id=model.mets{i};
+    end;    
+    if isfield(modelSBML.species, 'compartment')
+        modelSBML.species(i).compartment=model.comps{model.metComps(i)};
+    end; 
+    if isfield(model,'unconstrained')
+        if model.unconstrained(i)
+            modelSBML.species(i).boundaryCondition=1;
+        end;
     end
-
-    if toSBML2COBRA==false
-        toprint=['<species metaid="metaid_M_' model.mets{i} '" id="M_' model.mets{i} '" name="' model.metNames{i} '" compartment="C_' model.comps{model.metComps(i)} '" initialAmount="0" boundaryCondition="' unbounded '" sboTerm="SBO:0000299">'];
-    else
-        %For COBRA format the formula is appended to the metabolite name
-        if isfield(model,'metFormulas')
-            if ~isempty(model.metFormulas(i))
-                append=['_' model.metFormulas{i}];
-            else
-                append='_';
-            end
-        else
-        	append='_';
-        end
-        toprint=['<species id="M_' model.mets{i} '" name="' model.metNames{i} append '" compartment="C_' model.comps{model.metComps(i)} '" initialAmount="0" boundaryCondition="' unbounded '">'];
-    end
-
-    %Print some stuff if there is a formula for the compound
-    if toSBML2COBRA==false
-        if isfield(model,'metFormulas')
-            %Only print formula if there is no InChI. This is because the
-            %metFormulas field is populated by InChIs if available
+    if isfield(modelSBML.species, 'fbc_charge')
+        modelSBML.species(i).fbc_charge=model.metCharge(i);
+        if isfield(modelSBML.species, 'isSetfbc_charge')
+            modelSBML.species(i).isSetfbc_charge=1;
+        end;
+    end;
+    if isfield(modelSBML.species,'annotation')
+        if ~isempty(model.metMiriams{i}) || ~isempty(model.metFormulas{i})
             hasInchi=false;
-            if isfield(model,'inchis')
+            if ~isempty(model.metFormulas{i})
+            %Only export formula if there is no InChI. This is because the
+            %metFormulas field is populated by InChIs if available
                 if ~isempty(model.inchis{i})
                     hasInchi=true;
+                end;
+                if hasInchi==false
+                    modelSBML.species(i).fbc_chemicalFormula=model.metFormulas{i};
                 end
             end
+            if ~isempty(model.metMiriams{i}) || hasInchi==true
+                modelSBML.species(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.mets{i} '">'];
+                modelSBML.species(i).annotation=[modelSBML.species(i).annotation '<bqbiol:is><rdf:Bag>'];
+                if ~isempty(model.metMiriams{i})
+                    modelSBML.species(i).annotation=[modelSBML.species(i).annotation getMiriam(model.metMiriams{i})];
+                end;
+                if hasInchi==true
+                    modelSBML.species(i).annotation=[modelSBML.species(i).annotation '<rdf:li rdf:resource="http://identifiers.org/inchi/InChI=' model.inchis{i} '"/>'];
+                end;
+                modelSBML.species(i).annotation=[modelSBML.species(i).annotation '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>'];
+            end;
+        end;
+    end;
+end; 
 
-            if ~isempty(model.metFormulas{i}) && hasInchi==false
-                toprint=[toprint '<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>FORMULA: '  model.metFormulas{i} '</p></body></notes>'];
-            end
-        end
-        if isfield(model,'metMiriams')
-            miriamString=getMiriam(model.metMiriams{i});
+if isfield(model,'genes')
+    for i=1:numel(model.genes)
+        % Adding the default values, as these will be the same in all entries;
+        if i==1
+            if isfield(modelSBML.fbc_geneProduct, 'sboTerm')
+                modelSBML.fbc_geneProduct(i).sboTerm=252;
+            end;    
+        end;
+        % Copying the default values to the next index as long as it is not the
+        % last one;
+        if i<numel(model.genes)
+            modelSBML.fbc_geneProduct(i+1)=modelSBML.fbc_geneProduct(i);
+        end;
+        
+        if isfield(modelSBML.fbc_geneProduct,'metaid')
+            modelSBML.fbc_geneProduct(i).metaid=['meta_' model.genes{i}];
+        end;
+        if ~isempty(model.geneMiriams{i}) && isfield(modelSBML.fbc_geneProduct(i),'annotation')
+            modelSBML.fbc_geneProduct(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.genes{i} '">'];
+            modelSBML.fbc_geneProduct(i).annotation=[modelSBML.fbc_geneProduct(i).annotation '<bqbiol:is><rdf:Bag>'];
+            modelSBML.fbc_geneProduct(i).annotation=[modelSBML.fbc_geneProduct(i).annotation getMiriam(model.geneMiriams{i}) '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>']; 
+        end;
+        if isfield(modelSBML.fbc_geneProduct, 'fbc_id')
+            modelSBML.fbc_geneProduct(i).fbc_id=model.genes{i};
+        end;
+        if isfield(modelSBML.fbc_geneProduct, 'fbc_label') && isfield(model,'geneShortNames')
+            modelSBML.fbc_geneProduct(i).fbc_label=model.geneShortNames{i};
         else
-            miriamString='';
-        end
-
-        if isfield(model,'inchis')
-           if ~isempty(model.inchis{i})
-                isInchi=true;
-           else
-                isInchi=false;
-           end
-        else
-            isInchi=false;
-        end
-
-        if any(miriamString) || isInchi==true
-            toprint=[toprint '<annotation>'];
-
-            %Print InChI if available
-            if isInchi==true
-                toprint=[toprint '<in:inchi xmlns:in="http://biomodels.net/inchi" metaid="metaid_M_' model.mets{i} '_inchi">InChI=' model.inchis{i} '</in:inchi>'];
-            end
-            %Print some more annotation stuff
-            toprint=[toprint '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" '...
-                'xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/">'...
-                '<rdf:Description rdf:about="#metaid_M_' model.mets{i} '">'...
-                '<bqbiol:is>'...
-                '<rdf:Bag>'];
-            if isInchi==true
-                toprint=[toprint '<rdf:li rdf:resource="#metaid_M_' model.mets{i} '_inchi" />'];
-            end
-
-            %Print Miriam and finish up
-            toprint=[toprint miriamString '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>'];
-        end
-    end
-    toprint=[toprint '</species>\n'];
-    fprintf(fid,toprint);
-end
-
-%Write genes and complexes
-if toSBML2COBRA==false
-    %Write genes
-    if isfield(model,'genes')
-        for i=1:numel(model.genes)
-           toprint=['<species metaid="metaid_E_' int2str(i) '" id="E_' int2str(i) '" name="' model.genes{i} '" compartment="C_' model.comps{model.geneComps(i)} '" initialAmount="0" sboTerm="SBO:0000014">'];
-
-           %Print gene name if present
-           if isfield(model,'geneShortNames')
-               if ~isempty(model.geneShortNames{i})
-                    toprint=[toprint '<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>SHORT NAME: '  model.geneShortNames{i} '</p></body></notes>'];
-               end
-           end
-
-           if isfield(model,'geneMiriams')
-                miriamString=getMiriam(model.geneMiriams{i});
-           else
-                miriamString=[];
-           end
-
-           if ~isempty(miriamString)
-               toprint=[toprint '<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" '...
-                    'xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" '...
-                    'xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#metaid_E_' int2str(i) '"><bqbiol:is><rdf:Bag>'...
-                    miriamString '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>'];
-           end
-
-           toprint=[toprint '</species>\n'];
-           fprintf(fid,toprint);
-        end
-
-        %Also add the complexes as species. This is done by splitting grRules
-        %on "or" and addding the ones which contain several genes
+            modelSBML.fbc_geneProduct(i).fbc_label=modelSBML.fbc_geneProduct(i).fbc_id;
+        end;
+    end;
+    if exportGeneComplexes==true
+        %Also add the complexes as genes. This is done by splitting grRules
+        %on "or" and adding the ones which contain several genes
         geneComplexes={};
         if isfield(model,'grRules')
             %Only grRules which contain " and " can be complexes
@@ -312,202 +328,266 @@ if toSBML2COBRA==false
             end
         end
         geneComplexes=unique(geneComplexes);
+        if ~isempty(geneComplexes)
+            %Then add them as genes. There is a possiblity that a complex A&B is
+            %added as separate from B&A. This isn't really an issue so I don't deal
+            %with it
+            for i=1:numel(geneComplexes)
+                modelSBML.fbc_geneProduct(numel(model.genes)+i)=modelSBML.fbc_geneProduct(1);
+                if isfield(modelSBML.fbc_geneProduct,'metaid')
+                    modelSBML.fbc_geneProduct(numel(model.genes)+i).metaid=['meta_' geneComplexes{i}];
+                end;
+                if isfield(modelSBML.fbc_geneProduct,'fbc_id')
+                    modelSBML.fbc_geneProduct(numel(model.genes)+i).fbc_id=geneComplexes{i};
+                else
+                	modelSBML.fbc_geneProduct(i).fbc_label=modelSBML.fbc_geneProduct(i).fbc_id;
+                end;           
+            end;
+        end;
+    end;
+end;
 
-        %Then add them as species. There is a possiblity that a complex A&B is
-        %added as separate from B&A. This isn't really an issue so I don't deal
-        %with it
-        for i=1:numel(geneComplexes)
-            %The SBO term for the complex is set to the same as for genes. Might not be
-            %correct. All complexes are added to the first compartment
-            fprintf(fid,['<species metaid="metaid_Cx_' int2str(i) '" id="Cx_' int2str(i) '" name="' geneComplexes{i} '" compartment="C_' model.comps{1} '" initialAmount="0" sboTerm="SBO:0000014"></species>\n']);
-        end
-    end
+% Generate a list of unique fbc_bound names
+totalValues=[model.lb; model.ub];
+totalNames=cell(size(totalValues,1),1);
+
+listUniqueValues=unique(totalValues);
+
+for i=1:length(listUniqueValues)
+    listUniqueNames{i,1}=['FB',num2str(i),'N',num2str(abs(round(listUniqueValues(i))))]; % create unique flux bound IDs.
+    ind=find(ismember(totalValues,listUniqueValues(i)));
+    totalNames(ind)=listUniqueNames(i,1);
 end
 
-%Finish metbolites
-fprintf(fid,'</listOfSpecies>');
-
-%Add reactions
-fprintf(fid,'<listOfReactions>');
-
-if toSBML2COBRA==false
-    if isfield(model,'grRules')
-        %This is for dealing with complexes
-        model.grRules=strrep(model.grRules,'(','');
-        model.grRules=strrep(model.grRules,')','');
-        model.grRules=strrep(model.grRules,' and ',':');
-    end
+for i=1:length(listUniqueNames)
+    % Adding the default values, as these will be the same in all entries;
+	if i==1
+        if isfield(modelSBML.parameter, 'constant')
+            modelSBML.parameter(i).constant=1;
+        end;
+        if isfield(modelSBML.parameter, 'isSetValue')
+            modelSBML.parameter(i).isSetValue=1;
+        end;
+	end;
+    % Copying the default values to the next index as long as it is not the
+    % last one;
+    if i<numel(listUniqueNames)
+        modelSBML.parameter(i+1)=modelSBML.parameter(i);
+    end;
+    modelSBML.parameter(i).id=listUniqueNames{i};
+    modelSBML.parameter(i).value=listUniqueValues(i);
 end
 
-for i=1:length(model.rxns)
-    %Get reversibility
-    reversible='false';
-    if model.rev(i)==1
-        reversible='true';
-    end
-
-    if isfield(model,'subSystems')
-        subsystem=model.subSystems{i};
-    else
-        subsystem=[];
-    end
-    if isfield(model,'rxnComps')
-        rxnComps=model.comps{model.rxnComps(i)};
-    else
-        rxnComps=[];
-    end
-    if isfield(model,'eccodes')
-        eccode=model.eccodes{i};
-    else
-        eccode=[];
-    end
-
-    if toSBML2COBRA==false
-        fprintf(fid,['<reaction metaid="metaid_R_' model.rxns{i} '" id="R_' model.rxns{i} '" name="' model.rxnNames{i} '" reversible="' reversible '" sboTerm="SBO:0000176">']);
-
-        if ~isempty(subsystem) || ~isempty(rxnComps)
-            toPrint='';
-            if ~isempty(subsystem)
-               toPrint=[toPrint '<p>SUBSYSTEM: ' subsystem '</p>'];
-            end
-            %Compartment isn't an allowed attribute until SBML L3 and I don't
-            %feel like changing format just for that
-            if ~isempty(rxnComps)
-               toPrint=[toPrint '<p>COMPARTMENT: ' rxnComps '</p>'];
-            end
-            fprintf(fid,['<notes><body xmlns="http://www.w3.org/1999/xhtml">' toPrint '</body></notes>']);
-        end
-
-        %Print annotation
-        if isfield(model,'rxnMiriams')
-            miriamString=getMiriam(model.rxnMiriams{i});
-        else
-            miriamString=[];
-        end
-
-        %Check to see if there is an associated ec-code
-        if any(eccode)
-            %Several ec-codes can be delimited by ";"
-            eccodes=regexp(eccode,';','split');
+for i=1:numel(model.rxns)
+    % Adding the default values, as these will be the same in all entries;
+    if i==1
+        if isfield(modelSBML.reaction, 'sboTerm')
+        	modelSBML.reaction(i).sboTerm=176;
+        end;
+        if isfield(modelSBML.reaction, 'isSetFast')
+        	modelSBML.reaction(i).isSetFast=1;
+        end;
+    end;
+    % Copying the default values to the next index as long as it is not the
+    % last one;
+    if i<numel(model.rxns)
+    	modelSBML.reaction(i+1)=modelSBML.reaction(i);
+    end;
+    
+    if isfield(modelSBML.reaction,'metaid')
+    	modelSBML.reaction(i).metaid=['meta_' model.rxns{i}];
+    end;
+    
+    % Exporting notes information;
+    if ~isempty(model.subSystems{i}) || ~isempty(model.eccodes{i}) || ~isempty(model.rxnConfidenceScores{i}) || ~isempty(model.rxnReferences{i})
+        modelSBML.reaction(i).notes='<notes><body xmlns="http://www.w3.org/1999/xhtml">';
+        if ~isempty(model.subSystems{i})
+            modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>SUBSYSTEM: ' model.subSystems{i} '</p>'];
+        end;
+        if ~isempty(model.rxnConfidenceScores{i})
+            modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>Confidence Level: ' model.rxnConfidenceScores{i} '</p>'];
+        end;
+        if ~isempty(model.rxnReferences{i})
+            modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>AUTHORS: ' model.rxnReferences{i} '</p>'];
+        end;
+        if ~isempty(model.rxnNotes{i})
+            modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>NOTES: ' model.rxnNotes{i} '</p>'];
+        end;
+        modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '</body></notes>'];
+    end;
+    
+    % Exporting annotation information from rxnMiriams;
+    if (~isempty(model.rxnMiriams{i}) && isfield(modelSBML.rxnMiriams(i),'annotation')) || ~isempty(model.eccodes{i})
+    	modelSBML.reaction(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.rxns{i} '">'];
+    	modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation '<bqbiol:is><rdf:Bag>'];
+        if ~isempty(model.eccodes{i})
+        	eccodes=regexp(model.eccodes{i},';','split');
             for j=1:numel(eccodes)
-                miriamString=[miriamString  '<rdf:li rdf:resource="http://identifiers.org/' eccodes{j} '"/>'];
-            end
-        end
+                modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation  '<rdf:li rdf:resource="http://identifiers.org/' eccodes{j} '"/>'];
+            end;
+        end;
+    	modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation getMiriam(model.rxnMiriams{i}) '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>']; 
+    end;
+    
+    if isfield(modelSBML.reaction, 'name')
+        modelSBML.reaction(i).name=model.rxnNames{i};
+    end;
+    if isfield(modelSBML.reaction, 'id')
+        modelSBML.reaction(i).id=model.rxns{i};
+    end 
+    
+    % Adding the information about reactants and products;
+    involvedMets=addReactantsProducts(model,modelSBML,i);
+    for j=1:numel(involvedMets.reactant)
+        if j<numel(involvedMets.reactant)
+            modelSBML.reaction(i).reactant(j+1)=modelSBML.reaction(i).reactant(j);
+        end;
+        modelSBML.reaction(i).reactant(j).species=involvedMets.reactant(j).species;
+        modelSBML.reaction(i).reactant(j).stoichiometry=involvedMets.reactant(j).stoichiometry;
+        modelSBML.reaction(i).reactant(j).isSetStoichiometry=involvedMets.reactant(j).isSetStoichiometry;
+        modelSBML.reaction(i).reactant(j).constant=involvedMets.reactant(j).constant;
+    end;
+    if numel(involvedMets.reactant)==0
+        modelSBML.reaction(i).reactant='';
+    end;
+    for j=1:numel(involvedMets.product)
+        if j<numel(involvedMets.product)
+            modelSBML.reaction(i).product(j+1)=modelSBML.reaction(i).product(j);
+        end;
+        modelSBML.reaction(i).product(j).species=involvedMets.product(j).species;
+        modelSBML.reaction(i).product(j).stoichiometry=involvedMets.product(j).stoichiometry;
+        modelSBML.reaction(i).product(j).isSetStoichiometry=involvedMets.product(j).isSetStoichiometry;
+        modelSBML.reaction(i).product(j).constant=involvedMets.product(j).constant;
+    end;
+    if numel(involvedMets.product)==0
+        modelSBML.reaction(i).product='';
+    end;
+    %Export reversibility information. Reactions are irreversible by
+    %default;
+    if model.rev(i)==1
+        modelSBML.reaction(i).reversible=1;
+    end;
+    if isfield(model, 'rxnComps')
+        modelSBML.reaction(i).compartment=model.comps{model.rxnComps(i)};
+    end;
+    if isfield(model, 'grRules')
+        modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association.fbc_association=model.grRules{i};
+    end;
+    modelSBML.reaction(i).fbc_lowerFluxBound=totalNames{i};
+    modelSBML.reaction(i).fbc_upperFluxBound=totalNames{length(model.lb)+i};
+end;
 
-        if ~isempty(miriamString)
-            fprintf(fid,['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" '...
-            'xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" '...
-            'xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" '...
-            'xmlns:bqmodel="http://biomodels.net/model-qualifiers/">'...
-            '<rdf:Description rdf:about="#metaid_R_' model.rxns{i} '">'...
-            '<bqbiol:is>'...
-            '<rdf:Bag>'...
-            miriamString...
-            '</rdf:Bag>'...
-            '</bqbiol:is>'...
-            '</rdf:Description>'...
-            '</rdf:RDF>'...
-            '</annotation>']);
-        end
-    else
-       if isfield(model,'grRules')
-            grRules=model.grRules{i};
-       else
-            grRules=[];
-       end
+% Preparing fbc_objective subfield;
 
-       %COBRA format
-       fprintf(fid,['<reaction id="R_' model.rxns{i} '" name="' model.rxnNames{i} '" reversible="' reversible '">']);
+modelSBML.fbc_objective.fbc_type='maximize';
+modelSBML.fbc_objective.fbc_id='obj';
 
-        fprintf(fid,'<notes>');
-        if any(grRules)
-        	fprintf(fid,['<html:p>GENE_ASSOCIATION: ' grRules '</html:p>']);
-        end
-        if any(subsystem)
-            fprintf(fid,['<html:p>SUBSYSTEM: ' subsystem '</html:p>']);
-        end
-        if any(eccode)
-            fprintf(fid,['<html:p>PROTEIN_CLASS: ' eccode '</html:p>']);
-        end
-        fprintf(fid,'</notes>');
-    end
+ind=find(model.c);
 
-    %The reactants have negative values in the stochiometric matrix
-    compounds=model.S(:,i);
-    reactants=find(compounds<0);
-    products=find(compounds>0);
+if isempty(ind)
+    modelSBML.fbc_objective.fbc_fluxObjective.fbc_coefficient=0;
+else
+    for i=1:length(ind)
+        % Copying the default values to the next index as long as it is not the
+        % last one;
+        if i<numel(ind)
+            modelSBML.reaction(i+1)=modelSBML.reaction(i);
+        end;
+        values=model.c(model.c~=0);
+        modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_reaction=modelSBML.reaction(ind(i)).id;
+        modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_coefficient=values(i);
+        modelSBML.fbc_objective(i).fbc_fluxObjective.isSetfbc_coefficient=1;
+    end;
+end;
 
-    if any(reactants)
-        fprintf(fid,'<listOfReactants>');
-        for j=1:length(reactants)
-            tempmetname=model.mets{reactants(j)};
-            fprintf(fid,['<speciesReference species="M_' tempmetname '" stoichiometry="' num2str(-1*compounds(reactants(j))) '"/>']);
-        end
+modelSBML.fbc_activeObjective=modelSBML.fbc_objective.fbc_id;
 
-        fprintf(fid,'</listOfReactants>');
-    end
-    if any(products)
-        fprintf(fid,'<listOfProducts>');
-        for j=1:length(products)
-           tempmetname=model.mets{products(j)};
-           fprintf(fid,['<speciesReference species="M_' tempmetname '" stoichiometry="' num2str(compounds(products(j))) '"></speciesReference>']);
-        end
-        fprintf(fid,'</listOfProducts>');
-    end
-    if toSBML2COBRA==false
-        if isfield(model,'genes') && isfield(model,'grRules')
-            if ~isempty(model.grRules{i})
-                genes=regexp(model.grRules(i),' or ','split');
-                genes=genes{1}(:);
-                %Check which of them are complexes
-                complexes=cellfun(@any,strfind(genes,':'));
-                [I, normalGenes]=ismember(genes(~complexes),model.genes);
-                normalGenes(~I)=[];
-                [I, complexGenes]=ismember(genes(complexes),geneComplexes);
-                complexGenes(~I)=[];
-                toPrint='';
-                for j=1:numel(normalGenes)
-                    toPrint=[toPrint '<modifierSpeciesReference species="E_' num2str(normalGenes(j)) '" />'];
-                end
-                for j=1:numel(complexGenes)
-                    toPrint=[toPrint '<modifierSpeciesReference species="Cx_' num2str(complexGenes(j)) '" />'];
-                end
-                fprintf(fid,['<listOfModifiers>' toPrint '</listOfModifiers>']);
-            end
-        end
-    end
+fbcStr=['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/','fbc/version',num2str(fbcVersion)];
 
-    %Print constraints, reversibility, and objective. It's assumed that all
-    %information is present in the model structure. This should be ok, since
-    %it should have been set to standard values when imported
+modelSBML.namespaces=struct('prefix',{'','fbc'},...
+    'uri',{['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/core'],...
+    fbcStr});
 
-    %Note that the order of parameters is hard-coded. It's the same thing
-    %in importModel
-    if toSBML2COBRA==false
-        fprintf(fid,'<kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><ci>FLUX_VALUE</ci></math><listOfParameters>');
-        fprintf(fid,['<parameter id="LB_R_' model.rxns{i} '" name="LOWER_BOUND" value="' sprintf('%15.8f',model.lb(i)) '" units="mmol_per_gDW_per_hr"/><parameter id="UB_R_' model.rxns{i} '" name="UPPER_BOUND" value="' sprintf('%15.8f',model.ub(i)) '" units="mmol_per_gDW_per_hr"/><parameter id="OBJ_R_' model.rxns{i} '" name="OBJECTIVE_COEFFICIENT" value="' sprintf('%15.8f',model.c(i)) '" units="dimensionless"/><parameter id="FLUX_VALUE" value="0.00000000" units="mmol_per_gDW_per_hr"/>']);
-    else
-        fprintf(fid,'<kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><ci> LOWER_BOUND </ci><ci> UPPER_BOUND </ci><ci> OBJECTIVE_COEFFICIENT </ci></apply></math><listOfParameters>');
-        fprintf(fid,['<parameter id="LOWER_BOUND" value="' sprintf('%15.8f',model.lb(i)) '"/><parameter id="UPPER_BOUND" value="' sprintf('%15.8f',model.ub(i)) '"/><parameter id="OBJECTIVE_COEFFICIENT" value="' sprintf('%15.8f',model.c(i)) '"/>']);
-    end
-    fprintf(fid,'</listOfParameters></kineticLaw>');
-    fprintf(fid,'</reaction>\n');
+if fbcVersion==2
+    modelSBML.fbc_strict=1;
+end;
+
+OutputSBML(modelSBML,fileName,1,0,[1,0]);
+
 end
 
-%Write outro
-outro='</listOfReactions></model></sbml>';
-fprintf(fid,outro);
+function modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,fbcVersion)
+%Returns the blank SBML model structure by using appropriate libSBML
+%functions. This creates structure by considering three levels
 
-fclose(fid);
+sbmlFieldNames=getStructureFieldnames('model',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+sbmlDefaultValues=getDefaultValues('model',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
 
-%Replace the target file with the temporary file
-delete(fileName);
-movefile(tempF,fileName,'f');
+for i=1:numel(sbmlFieldNames)
+	modelSBML.(sbmlFieldNames{1,i})=sbmlDefaultValues{1,i};
+    sbmlSubfieldNames=getStructureFieldnames(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+    sbmlSubfieldValues=getDefaultValues(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+    if ~strcmp(sbmlFieldNames{1,i},'event') && ~strcmp(sbmlFieldNames{1,i},'functionDefinition') && ~strcmp(sbmlFieldNames{1,i},'initialAssignment')
+        for j=1:numel(sbmlSubfieldNames)
+            modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j})=sbmlSubfieldValues{1,j};
+            sbmlSubsubfieldNames=getStructureFieldnames(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+            sbmlSubsubfieldValues=getDefaultValues(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+            if ~strcmp(sbmlSubfieldNames{1,j},'modifier') &&  ~strcmp(sbmlSubfieldNames{1,j},'kineticLaw')
+                for k=1:numel(sbmlSubsubfieldNames)
+                    % 'compartment' and 'species' field are not supposed to have
+                    % their standalone structures if they are subfields or
+                    % subsubfields;
+                    if ~strcmp(sbmlSubfieldNames{1,j},'compartment') && ~strcmp(sbmlSubfieldNames{1,j},'species')
+                        modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j}).(sbmlSubsubfieldNames{1,k})=sbmlSubsubfieldValues{1,k};
+                    end;   
+                    % If it is fbc_association in the third level, we need to
+                    % establish the fourth level, since libSBML requires it;
+                    if strcmp(sbmlSubsubfieldNames{1,k},'fbc_association')
+                        fbc_associationFieldNames=getStructureFieldnames('fbc_association',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+                        fbc_associationFieldValues=getDefaultValues('fbc_association',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+                        for l=1:numel(fbc_associationFieldNames)
+                            modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j}).(sbmlSubsubfieldNames{1,k}).(fbc_associationFieldNames{1,l})=fbc_associationFieldValues{1,l};
+                        end;
+                    end;
+                end;
+            end;
+        end;
+    end;
+    if ~isstruct(modelSBML.(sbmlFieldNames{1,i}))
+        modelSBML.(sbmlFieldNames{1,i})=sbmlDefaultValues{1,i};
+    end;
+end;
+
+modelSBML.unitDefinition.id='mmol_per_gDW_per_hr';
+
+unitFieldNames=getStructureFieldnames('unit',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+unitDefaultValues=getDefaultValues('unit',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+
+kinds={'mole','gram','second'};
+exponents=[1 -1 -1];
+scales=[-3 0 0];
+multipliers=[1 1 1*60*60];
+
+for i=1:numel(unitFieldNames)
+    modelSBML.unitDefinition.unit(1).(unitFieldNames{1,i})=unitDefaultValues{1,i};
+    for j=1:3
+        modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=unitDefaultValues{1,i};
+        if strcmp(unitFieldNames{1,i},'kind')
+            modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=kinds{j};
+        elseif strcmp(unitFieldNames{1,i},'exponent')
+            modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=exponents(j);
+        elseif strcmp(unitFieldNames{1,i},'scale')
+            modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=scales(j);
+        elseif strcmp(unitFieldNames{1,i},'multiplier')
+            modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=multipliers(j);
+        end;            
+    end;
+end;
 end
 
 function miriamString=getMiriam(miriamStruct)
 %Returns a string with list elements for a miriam structure ('<rdf:li
-%rdf:resource="http://identifiers.org/'obo.go/GO:0005739"/>' for example). This is just
+%rdf:resource="http://identifiers.org/obo.go/GO:0005739"/>' for example). This is just
 %to speed ut things since this is done many times during the exporting
 
 miriamString='';
@@ -515,5 +595,28 @@ if isfield(miriamStruct,'name')
 	for i=1:numel(miriamStruct.name)
         miriamString=[miriamString '<rdf:li rdf:resource="http://identifiers.org/' miriamStruct.name{i} '/' miriamStruct.value{i} '"/>'];
 	end
+end
+end
+
+function [tmp_Rxn]=addReactantsProducts(model,sbmlModel,i)
+% This function provides reactants and products for particular reaction.
+% The function was 'borrowed' from writeSBML in COBRA toolbox, lines
+% 663-679;
+
+met_idx = find(model.S(:, i));
+tmp_Rxn.product=[];
+tmp_Rxn.reactant=[];
+for j_met=1:size(met_idx,1)
+    tmp_idx = met_idx(j_met,1);
+    sbml_tmp_species_ref.species = sbmlModel.species(tmp_idx).id;
+    met_stoich = model.S(tmp_idx, i);
+    sbml_tmp_species_ref.stoichiometry = abs(met_stoich);
+    sbml_tmp_species_ref.isSetStoichiometry=1;
+    sbml_tmp_species_ref.constant=1;
+    if (met_stoich > 0)
+        tmp_Rxn.product = [ tmp_Rxn.product, sbml_tmp_species_ref ];
+    else
+        tmp_Rxn.reactant = [ tmp_Rxn.reactant, sbml_tmp_species_ref];
+    end
 end
 end
