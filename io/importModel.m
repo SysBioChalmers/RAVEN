@@ -601,7 +601,7 @@ for i=1:numel(modelSBML.reaction)
     
     % If FBC, get gene association data from corresponding fields;
     if isfield(modelSBML.reaction(i),'fbc_geneProductAssociation')
-        if ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation)
+        if ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation) && ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association)
             grRules{counter}=modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association.fbc_association;
         end;
     end;
