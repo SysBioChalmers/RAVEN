@@ -23,7 +23,7 @@ function reducedModel=removeMets(model,metsToRemove,isNames,removeUnusedRxns,rem
 %   Usage: reducedModel=removeMets(model,metsToRemove,isNames,...
 %           removeUnusedRxns,removeUnusedGenes,removeUnusedComps)
 %
-%   Simonas Marcisauskas, 2016-11-01
+%   Simonas Marcisauskas, 2017-09-06
 %
 
 if ischar(metsToRemove)

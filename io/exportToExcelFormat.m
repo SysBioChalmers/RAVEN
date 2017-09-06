@@ -17,7 +17,7 @@ function exportToExcelFormat(model,filename)
 %
 %   Usage: exportToExcelFormat(model,filename)
 %
-%   Simonas Marcisauskas, 2017-08-29
+%   Simonas Marcisauskas, 2017-09-06
 %
 
 [~, A, B]=fileparts(filename);

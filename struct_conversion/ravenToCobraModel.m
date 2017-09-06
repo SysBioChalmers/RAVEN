@@ -46,7 +46,7 @@ function cModel=ravenToCobraModel(rModel)
 %
 %   Usage: cModel = ravenToCobraModel(rModel)
 %
-%   Simonas Marcisauskas, 2017-08-25
+%   Simonas Marcisauskas, 2017-09-06
 %
 
 % Initializing f variable, which categorizes all the fields;

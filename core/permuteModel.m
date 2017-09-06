@@ -11,7 +11,7 @@ function newModel=permuteModel(model, indexes, type)
 %
 % 	Usage: newModel=permuteModel(model, indexes, type)
 %
-%   Simonas Marcisauskas, 2017-08-25
+%   Simonas Marcisauskas, 2017-09-06
 %
 
 newModel=model;

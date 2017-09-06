@@ -51,7 +51,7 @@ function [outModel, geneLocalization, transportStruct, scores, removedRxns]=pred
 %   Usage: [outModel, geneLocalization, transportStruct, score, removedRxns]=...
 %       predictLocalization(model,GSS,defaultCompartment,transportCost,maxTime)
 %
-%   Simonas Marcisauskas, 2017-08-25
+%   Simonas Marcisauskas, 2017-09-06
 %
 
 if nargin<4

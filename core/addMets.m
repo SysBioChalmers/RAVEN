@@ -49,7 +49,7 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 %
 %   Usage: newModel=addMets(model,metsToAdd,copyInfo)
 %
-%   Simonas Marcisauskas, 2016-11-01 - added support for metCharges
+%   Simonas Marcisauskas, 2017-09-06
 %
 
 if nargin<3
