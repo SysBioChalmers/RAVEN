@@ -297,19 +297,19 @@ for i=2:numel(models)
            end
         end
 
-        if isfield(models{i},'metCharge')
-           if isfield(model,'metCharge')
-               model.metCharge=[model.metCharge;models{i}.metCharge(metsToAdd)];
+        if isfield(models{i},'metCharges')
+           if isfield(model,'metCharges')
+               model.metCharges=[model.metCharges;models{i}.metCharges(metsToAdd)];
            else
                emptyMetCharge=cell(numel(model.mets)-numel(metsToAdd),1);
                emptyMetCharge(:)={''};
-               model.metCharge=[emptyMetCharge;models{i}.metCharge(metsToAdd)];
+               model.metCharges=[emptyMetCharge;models{i}.metCharges(metsToAdd)];
            end
         else
-           if isfield(model,'metCharge')
+           if isfield(model,'metCharges')
                emptyMetCharge=cell(numel(metsToAdd),1);
                emptyMetCharge(:)={''};
-               model.metCharge=[model.metCharge;emptyMetCharge];
+               model.metCharges=[model.metCharges;emptyMetCharge];
            end
         end
 

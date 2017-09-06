@@ -49,7 +49,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %       inchis           InChI-codes for metabolites
 %       metFormulas      metabolite chemical formula
 %       metMiriams       structure with MIRIAM information about the metabolites
-%       metCharge        metabolite charge
+%       metCharges        metabolite charge
 %       unconstrained    true if the metabolite is an exchange metabolite
 %
 %   Loads models in the COBRA Toolbox format and in the format used in
@@ -122,7 +122,7 @@ model.metComps=[];
 model.inchis={};
 model.metFormulas={};
 model.metMiriams={};
-model.metCharge=[];
+model.metCharges=[];
 model.unconstrained=[];
 
 %Load the model using libSBML
@@ -939,7 +939,7 @@ end
 
 %If any charges have been loaded
 if ~isempty(metaboliteCharge)
-    model.metCharge=metaboliteCharge;
+    model.metCharges=metaboliteCharge;
 end
 
 %If any gene short names have been loaded
@@ -1044,8 +1044,8 @@ end
 if isempty(model.metMiriams)
     model=rmfield(model,'metMiriams');
 end
-if isempty(model.metCharge)
-    model=rmfield(model,'metCharge');
+if isempty(model.metCharges)
+    model=rmfield(model,'metCharges');
 end
 
 %This just removes the grRules if no genes have been loaded

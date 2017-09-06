@@ -243,7 +243,7 @@ for i=1:numel(model.mets)
         end;
     end
     if isfield(modelSBML.species, 'fbc_charge')
-        modelSBML.species(i).fbc_charge=model.metCharge(i);
+        modelSBML.species(i).fbc_charge=model.metCharges(i);
         if isfield(modelSBML.species, 'isSetfbc_charge')
             modelSBML.species(i).isSetfbc_charge=1;
         end;

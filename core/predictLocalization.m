@@ -662,8 +662,8 @@ for i=1:nComps-1
     if isfield(outModel,'metFrom')
         outModel.metFrom=[outModel.metFrom;outModel.metFrom(nEM+1:nEM+nMets)];
     end
-    if isfield(outModel,'metCharge')
-        outModel.metCharge=[outModel.metCharge;outModel.metCharge(nEM+1:nEM+nMets)];
+    if isfield(outModel,'metCharges')
+        outModel.metCharges=[outModel.metCharges;outModel.metCharges(nEM+1:nEM+nMets)];
     end
 end
 

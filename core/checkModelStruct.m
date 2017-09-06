@@ -142,9 +142,9 @@ if isfield(model,'metFormulas')
         dispEM(EM,throwErrors);
     end
 end
-if isfield(model,'metCharge')
-    if ~isnumeric(model.metCharge)
-        EM='The "metCharge" field must be a double';
+if isfield(model,'metCharges')
+    if ~isnumeric(model.metCharges)
+        EM='The "metCharges" field must be a double';
         dispEM(EM,throwErrors);
     end
 end

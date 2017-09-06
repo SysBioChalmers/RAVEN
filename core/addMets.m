@@ -29,7 +29,7 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 %                               the metabolites (opt, default '')
 %                metMiriams     cell array with MIRIAM structures (opt,
 %                               default [])
-%                metCharge      metabolite charge (opt, default 0)
+%                metCharges      metabolite charge (opt, default 0)
 %   copyInfo     when adding metabolites to a compartment where it previously
 %                doesn't exist, the function will copy any available annotation
 %                from the metabolite in another compartment (opt, default true)
@@ -49,7 +49,7 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 %
 %   Usage: newModel=addMets(model,metsToAdd,copyInfo)
 %
-%   Simonas Marcisauskas, 2016-11-01 - added support for metCharge
+%   Simonas Marcisauskas, 2016-11-01 - added support for metCharges
 %
 
 if nargin<3
@@ -231,20 +231,20 @@ else
     end
 end
 
-if isfield(metsToAdd,'metCharge')
-   if numel(metsToAdd.metCharge)~=nMets
-       EM='metsToAdd.metCharge must have the same number of elements as metsToAdd.mets';
+if isfield(metsToAdd,'metCharges')
+   if numel(metsToAdd.metCharges)~=nMets
+       EM='metsToAdd.metCharges must have the same number of elements as metsToAdd.mets';
        dispEM(EM);
    end
-   if ~isnumeric(metsToAdd.metCharge)
-        EM='metsToAdd.metCharge must be of type "double"';
+   if ~isnumeric(metsToAdd.metCharges)
+        EM='metsToAdd.metCharges must be of type "double"';
         dispEM(EM);
    end
-   newModel.metCharge=[newModel.metCharge;metsToAdd.metCharge(:)];
+   newModel.metCharges=[newModel.metCharges;metsToAdd.metCharges(:)];
 else
     %Add default
-    if isfield(newModel,'metCharge')
-       newModel.metCharge=[newModel.metCharge;zeros(numel(filler),1)];
+    if isfield(newModel,'metCharges')
+       newModel.metCharges=[newModel.metCharges;zeros(numel(filler),1)];
     end
 end
 
@@ -295,8 +295,8 @@ if copyInfo==true
                newModel.metMiriams(I(i))=newModel.metMiriams(J(i));
            end
        end
-       if isfield(newModel,'metCharge')
-           newModel.metCharge(I(i))=newModel.metCharge(J(i));
+       if isfield(newModel,'metCharges')
+           newModel.metCharges(I(i))=newModel.metCharges(J(i));
        end
    end
 end

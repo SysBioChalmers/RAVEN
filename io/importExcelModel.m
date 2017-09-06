@@ -47,7 +47,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %       inchis           InChI-codes for metabolites
 %       metFormulas      metabolite chemical formula
 %       metMiriams       structure with MIRIAM information about the metabolites
-%       metCharge        metabolite charge
+%       metCharges        metabolite charge
 %       unconstrained    true if the metabolite is an exchange metabolite
 %
 %   Loads models in the RAVEN Toolbox Excel format. A number of consistency
@@ -117,7 +117,7 @@ model.metComps=[];
 model.inchis={};
 model.metFormulas={};
 model.metMiriams={};
-model.metCharge={}; %Will be double later
+model.metCharges={}; %Will be double later
 model.unconstrained=[];
 
 workbook=loadWorkbook(fileName);
@@ -629,7 +629,7 @@ else
             case 8
                metReplacement=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
             case 9
-               model.metCharge=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+               model.metCharges=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         end
     end
 
@@ -719,19 +719,19 @@ else
 
     %Either all metabolites have charge or none of them.
     %Check if it's only empty and if so return it to []
-    if ~isempty(model.metCharge)
-        if all(cellfun(@isempty,model.metCharge))
-            model.metCharge=[];
+    if ~isempty(model.metCharges)
+        if all(cellfun(@isempty,model.metCharges))
+            model.metCharges=[];
         end
     end
-    if ~isempty(model.metCharge)
-        if any(strcmp('',model.metCharge))
+    if ~isempty(model.metCharges)
+        if any(strcmp('',model.metCharges))
             EM='Either all metabolites have charge information or none of them';
             dispEM(EM);
         end
     end
-    if ~isempty(model.metCharge)
-        model.metCharge=str2double(model.metCharge);
+    if ~isempty(model.metCharges)
+        model.metCharges=str2double(model.metCharges);
     end
 end
 
@@ -816,8 +816,8 @@ end
 if all(cellfun(@isempty,model.metMiriams))
     model=rmfield(model,'metMiriams');
 end
-if isempty(model.metCharge)
-    model=rmfield(model,'metCharge');
+if isempty(model.metCharges)
+    model=rmfield(model,'metCharges');
 end
 
 %The model structure has now been reconstructed but it can still contain

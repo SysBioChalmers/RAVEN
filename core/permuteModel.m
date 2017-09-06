@@ -108,8 +108,8 @@ if strcmp(type,'mets')
     if isfield(newModel,'metFrom')
         newModel.metFrom=newModel.metFrom(indexes);
     end
-    if isfield(newModel,'metCharge')
-        newModel.metCharge=newModel.metCharge(indexes);
+    if isfield(newModel,'metCharges')
+        newModel.metCharges=newModel.metCharges(indexes);
     end
 end
 end

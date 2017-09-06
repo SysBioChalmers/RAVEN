@@ -97,8 +97,8 @@ if ~isempty(indexesToDelete)
     if isfield(reducedModel,'metFrom')
         reducedModel.metFrom(indexesToDelete)=[];
     end
-    if isfield(reducedModel,'metCharge')
-        reducedModel.metCharge(indexesToDelete)=[];
+    if isfield(reducedModel,'metCharges')
+        reducedModel.metCharges(indexesToDelete)=[];
     end
 end
 

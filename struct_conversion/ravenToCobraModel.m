@@ -28,7 +28,7 @@ function cModel=ravenToCobraModel(rModel)
 %           -description.
 %       II. Fields which are not in RAVEN structure, but are mandatory in
 %       COBRA structure (f.required):
-%           -metCharge;
+%           -metCharges;
 %           -rules;
 %           -subSystems;
 %           -csense;
@@ -51,7 +51,7 @@ function cModel=ravenToCobraModel(rModel)
 
 % Initializing f variable, which categorizes all the fields;
 f.requiredEquiv={'rxns','mets','S','c','genes','lb','ub','rev','grRules','rxnGeneMat','metFormulas','description','b'};
-f.required={'metCharge','rules','subSystems','csense','osense'};
+f.required={'metCharges','rules','subSystems','csense','osense'};
 f.optionalEquiv={'id','rxnNames','metNames','rxnNotes','rxnReferences','rxnConfidenceScores'};
 f.optionalOtherName=containers.Map({'inchis','eccodes','geneShortNames'},{'metInchiString','rxnECNumbers','geneNames'});
 
@@ -67,10 +67,10 @@ cModel = rmfield(rModel,fieldnames(fieldOther));
 cModel=setfield(cModel,'mets',convertMets(rModel.mets,rModel.comps(rModel.metComps)));
 
 % Now preparing group II fields;
-if (isfield(rModel,'metCharge'))
-	cModel=setfield(cModel,'metCharge',rModel.metCharge);
+if (isfield(rModel,'metCharges'))
+	cModel=setfield(cModel,'metCharges',rModel.metCharges);
 else
-	cModel=setfield(cModel,'metCharge',zeros(numel(rModel.mets),1));
+	cModel=setfield(cModel,'metCharges',zeros(numel(rModel.mets),1));
 end
 cModel=setfield(cModel,'rules',convertRules(rModel));
 if (isfield(rModel,'subSystems'))

@@ -241,8 +241,8 @@ for i=1:numel(model.mets)
 
     metSheet(i,9)=model.mets(i);
 
-    if isfield(model,'metCharge')
-        metSheet{i,10}=model.metCharge(i);
+    if isfield(model,'metCharges')
+        metSheet{i,10}=model.metCharges(i);
     end
 end
 
