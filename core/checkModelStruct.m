@@ -278,7 +278,7 @@ dispEM(EM,throwErrors,model.mets(I),trimWarnings);
 if isfield(model,'metFormulas')
     [~, ~, exitFlag]=parseFormulas(model.metFormulas,true,false);
     EM='The composition for the following metabolites could not be parsed:';
-     dispEM(EM,false,model.mets(exitFlag==-1),trimWarnings);
+    dispEM(EM,false,model.mets(exitFlag==-1),trimWarnings);
 end
 
 %Check if there are metabolites with different names but the same MIRIAM

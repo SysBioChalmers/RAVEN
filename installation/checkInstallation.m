@@ -1,11 +1,13 @@
 function checkInstallation()
 % checkInstallation
 %   The purpose of this function is to check if all necessary functions are
-%   installed and working
-
+%   installed and working. It also checks whether there ary any functions
+%   with overlapping names between RAVEN and other toolboxes or
+%   user-defined functions, which are accessible from Matlab pathlist
+%
 %   Usage: checkInstallation()
 %
-%	Rasmus Agren, 2017-02-27
+%	Simonas Marcisauskas, 2017-09-08
 %
 
 fprintf('*** RAVEN TOOLBOX v. 1.9\n');
@@ -94,4 +96,8 @@ elseif keepSolver
 else
 	fprintf(['Preferred solver... CHANGED\nSolver saved as preference... ',lastWorking,'\n']);
 end
+
+fprintf(['Checking the uniqueness of RAVEN functions across Matlab path...\n']);
+checkFunctionUniqueness();
+
 end
