@@ -41,7 +41,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %       rxnReferences	 reaction references
 %       rxnConfidenceScores reaction confidence scores
 %       genes            list of all genes
-%       geneComps        compartments for reactions
+%       geneComps        compartments for genes
 %       geneMiriams      structure with MIRIAM information about the genes
 %       geneShortNames   gene alternative names (e.g. ERG10)
 %       metNames         metabolite description
