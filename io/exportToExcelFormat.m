@@ -17,7 +17,7 @@ function exportToExcelFormat(model,filename)
 %
 %   Usage: exportToExcelFormat(model,filename)
 %
-%   Simonas Marcisauskas, 2017-09-06
+%   Simonas Marcisauskas, 2017-09-12
 %
 
 [~, A, B]=fileparts(filename);
@@ -326,9 +326,13 @@ end
 
 if isfield(model,'id')
     modelSheet{1,2}=model.id;
+else
+    modelSheet{1,2}='blankID';
 end
 if isfield(model,'description')
     modelSheet{1,3}=model.description;
+else
+    modelSheet{1,3}='blankName';
 end
 if isfield(model.annotation,'defaultLB')
     modelSheet{1,4}=model.annotation.defaultLB;

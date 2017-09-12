@@ -12,7 +12,7 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
 %   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
-%   Simonas Marcisauskas, 2017-09-06
+%   Simonas Marcisauskas, 2017-09-12
 %
 
 if nargin<3
@@ -39,6 +39,17 @@ if ~isfield(model,'unconstrained')
     model.unconstrained=zeros(numel(model.mets),1);
 end
 
+% If model id and name (description) don't exist, make sure that default
+% strings are included;
+if ~isfield(model,'id')
+    fprintf('WARNING: The model is missing the "id" field. Uses "blankID". \n');
+    model.id='blankID';
+end;
+if ~isfield(model,'description')
+    fprintf('WARNING: The model is missing the "id" field. Uses "blankName". \n');
+    model.description='blankName';
+end;
+
 %Check the model structure
 if supressWarnings==false
    checkModelStruct(model,false);
@@ -58,7 +69,8 @@ end;
 if ~isfield(model,'metMiriams')
     model.metMiriams=cell(numel(model.mets),1);
 end;
-if ~isfield(model,'geneMiriams')
+
+if ~isfield(model,'geneMiriams') && isfield(model,'genes')
     model.geneMiriams=cell(numel(model.genes),1);
 end;
 if ~isfield(model,'subSystems')
@@ -102,7 +114,7 @@ if isfield(model,'annotation')
         modelSBML.notes=['<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>',regexprep(model.annotation.note,'<p>|</p>',''),'</p></body></notes>'];        
     end
 else
-    modelSBML.notes='<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>This file was generated using the exportModel function in RAVEN Toolbox 2.0</p></body></notes>';
+    modelSBML.notes='<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>This file was generated using the exportModel function in RAVEN Toolbox 2.0 and OutputSBML in libSBML </p></body></notes>';
 end
 
 modelSBML.annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.id '">'];
@@ -147,7 +159,7 @@ modelSBML.annotation=[modelSBML.annotation '<dcterms:created rdf:parseType="Reso
 
 if isfield(model,'annotation')
     if isfield(model.annotation,'taxonomy')
-        modelSBML.annotation=[modelSBML.annotation '<bqbiol:is><rdf:Bag><rdf:li rdf:resource="http://identifiers.org/taxonomy/' model.annotation.taxonomy '"/></rdf:Bag></bqbiol:is>'];
+        modelSBML.annotation=[modelSBML.annotation '<bqbiol:is><rdf:Bag><rdf:li rdf:resource="http://identifiers.org/taxonomy/' regexprep(model.annotation.taxonomy,'taxonomy/','') '"/></rdf:Bag></bqbiol:is>'];
     end
 end
 modelSBML.annotation=[modelSBML.annotation '</rdf:Description></rdf:RDF></annotation>'];
@@ -185,7 +197,7 @@ for i=1:numel(model.comps)
         modelSBML.compartment(i).metaid=['meta_' model.comps{i}];
     end;
     %Prepare Miriam strings
-    if ~isempty(model.compMiriams{i}) && isfield(modelSBML.compartment(i),'.annotation')
+    if ~isempty(model.compMiriams{i}) && isfield(modelSBML.compartment(i),'annotation')
         modelSBML.compartment(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.comps{i} '">'];
         modelSBML.compartment(i).annotation=[modelSBML.compartment(i).annotation '<bqbiol:is><rdf:Bag>'];
         modelSBML.compartment(i).annotation=[modelSBML.compartment(i).annotation getMiriam(model.compMiriams{i}) '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>']; 
@@ -226,14 +238,20 @@ for i=1:numel(model.mets)
     end;
     
     if isfield(modelSBML.species,'metaid')
-        modelSBML.species(i).metaid=['meta_' model.mets{i}];
+        modelSBML.species(i).metaid=['meta_M_' model.mets{i}];
+        % Removing compartment abbreviation from metabolite id as we
+        % save metComp in compartment subfield later;
+        modelSBML.species(i).metaid=regexprep(modelSBML.species(i).metaid,['_' model.comps{model.metComps(i)} '$'],'');
     end;
     if isfield(modelSBML.species, 'name')
         modelSBML.species(i).name=model.metNames{i};
     end;
     if isfield(modelSBML.species, 'id')
-        modelSBML.species(i).id=model.mets{i};
-    end;    
+        modelSBML.species(i).id=['M_' model.mets{i}];
+        % Removing compartment abbreviation from metabolite id as we
+        % save metComp in compartment subfield later;
+        modelSBML.species(i).id=regexprep(modelSBML.species(i).id,['_' model.comps{model.metComps(i)} '$'],'');
+    end;
     if isfield(modelSBML.species, 'compartment')
         modelSBML.species(i).compartment=model.comps{model.metComps(i)};
     end; 
@@ -242,7 +260,7 @@ for i=1:numel(model.mets)
             modelSBML.species(i).boundaryCondition=1;
         end;
     end
-    if isfield(modelSBML.species, 'fbc_charge')
+    if isfield(modelSBML.species, 'fbc_charge') && isfield(model,'metCharges')
         modelSBML.species(i).fbc_charge=model.metCharges(i);
         if isfield(modelSBML.species, 'isSetfbc_charge')
             modelSBML.species(i).isSetfbc_charge=1;
@@ -262,7 +280,7 @@ for i=1:numel(model.mets)
                 end
             end
             if ~isempty(model.metMiriams{i}) || hasInchi==true
-                modelSBML.species(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.mets{i} '">'];
+                modelSBML.species(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_M_' model.mets{i} '">'];
                 modelSBML.species(i).annotation=[modelSBML.species(i).annotation '<bqbiol:is><rdf:Bag>'];
                 if ~isempty(model.metMiriams{i})
                     modelSBML.species(i).annotation=[modelSBML.species(i).annotation getMiriam(model.metMiriams{i})];
@@ -395,11 +413,11 @@ for i=1:numel(model.rxns)
     end;
     
     if isfield(modelSBML.reaction,'metaid')
-    	modelSBML.reaction(i).metaid=['meta_' model.rxns{i}];
+    	modelSBML.reaction(i).metaid=['meta_R_' model.rxns{i}];
     end;
     
     % Exporting notes information;
-    if ~isempty(model.subSystems{i}) || ~isempty(model.eccodes{i}) || ~isempty(model.rxnConfidenceScores{i}) || ~isempty(model.rxnReferences{i})
+    if (~isempty(model.subSystems{i}) || ~isempty(model.rxnConfidenceScores{i}) || ~isempty(model.rxnReferences{i}) || ~isempty(model.rxnNotes{i}))
         modelSBML.reaction(i).notes='<notes><body xmlns="http://www.w3.org/1999/xhtml">';
         if ~isempty(model.subSystems{i})
             modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>SUBSYSTEM: ' model.subSystems{i} '</p>'];
@@ -417,13 +435,13 @@ for i=1:numel(model.rxns)
     end;
     
     % Exporting annotation information from rxnMiriams;
-    if (~isempty(model.rxnMiriams{i}) && isfield(modelSBML.rxnMiriams(i),'annotation')) || ~isempty(model.eccodes{i})
-    	modelSBML.reaction(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.rxns{i} '">'];
+    if (~isempty(model.rxnMiriams{i}) && isfield(modelSBML.reaction(i),'annotation')) || ~isempty(model.eccodes{i})
+    	modelSBML.reaction(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_R_' model.rxns{i} '">'];
     	modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation '<bqbiol:is><rdf:Bag>'];
         if ~isempty(model.eccodes{i})
         	eccodes=regexp(model.eccodes{i},';','split');
             for j=1:numel(eccodes)
-                modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation  '<rdf:li rdf:resource="http://identifiers.org/' eccodes{j} '"/>'];
+                modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation  '<rdf:li rdf:resource="http://identifiers.org/ec-code/' regexprep(eccodes{j},'ec-code/|EC','') '"/>'];
             end;
         end;
     	modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation getMiriam(model.rxnMiriams{i}) '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>']; 
@@ -433,7 +451,7 @@ for i=1:numel(model.rxns)
         modelSBML.reaction(i).name=model.rxnNames{i};
     end;
     if isfield(modelSBML.reaction, 'id')
-        modelSBML.reaction(i).id=model.rxns{i};
+        modelSBML.reaction(i).id=['R_' model.rxns{i}];
     end 
     
     % Adding the information about reactants and products;
@@ -532,7 +550,7 @@ for i=1:numel(sbmlFieldNames)
             modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j})=sbmlSubfieldValues{1,j};
             sbmlSubsubfieldNames=getStructureFieldnames(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
             sbmlSubsubfieldValues=getDefaultValues(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
-            if ~strcmp(sbmlSubfieldNames{1,j},'modifier') &&  ~strcmp(sbmlSubfieldNames{1,j},'kineticLaw')
+            if ~strcmp(sbmlSubfieldNames{1,j},'modifier') && ~strcmp(sbmlSubfieldNames{1,j},'kineticLaw')
                 for k=1:numel(sbmlSubsubfieldNames)
                     % 'compartment' and 'species' field are not supposed to have
                     % their standalone structures if they are subfields or
@@ -587,7 +605,7 @@ end
 
 function miriamString=getMiriam(miriamStruct)
 %Returns a string with list elements for a miriam structure ('<rdf:li
-%rdf:resource="http://identifiers.org/obo.go/GO:0005739"/>' for example). This is just
+%rdf:resource="http://identifiers.org/go/GO:0005739"/>' for example). This is just
 %to speed ut things since this is done many times during the exporting
 
 miriamString='';

@@ -285,7 +285,7 @@ else
     raw(1,:)=upper(raw(1,:));
     raw(1,:)=strrep(raw(1,:),'GENE NAME','NAME');
 
-    allLabels={'NAME';'MIRIAM';'SHORT NAME''COMPARTMENT'};
+    allLabels={'NAME';'MIRIAM';'SHORT NAME';'COMPARTMENT'};
 
     %Loop through the labels
     [I, J]=ismember(upper(raw(1,:)),allLabels);
@@ -804,7 +804,7 @@ end
 if isempty(model.geneMiriams)
     model=rmfield(model,'geneMiriams');
 end
-if isfield(model,'geneShortNames') && cellfun(@isempty,model.geneShortNames)
+if all(cellfun(@isempty,model.geneShortNames))
     model=rmfield(model,'geneShortNames');
 end
 if all(cellfun(@isempty,model.inchis))
