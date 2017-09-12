@@ -44,6 +44,8 @@ end;
 
 if hasConflicts
     fprintf('It is strongly recommended to resolve conflicting functions as this may compromise RAVEN functionality\n');
+else
+    fprintf('No conflicting functions were found\n');    
 end;
 
 end
