@@ -65,7 +65,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Simonas Marcisauskas, 2017-09-06
+%   Simonas Marcisauskas, 2017-09-12
 %
 
 if nargin<2
@@ -868,13 +868,6 @@ for i=1:numel(strings)
                 EM=['"' I{j} '" is not a valid MIRIAM string. The format must be "identifier/value" or identifier:value'];
                 dispEM(EM);
             end
-        end
-        if contains(miriamStruct{i}.name,'chebi')
-            miriamStruct{i}.name=regexprep(miriamStruct{i}.name,'obo.chebi:CHEBI|chebi:CHEBI','chebi');
-            miriamStruct{i}.value=strcat('CHEBI:',miriamStruct{i}.value);
-        elseif contains(miriamStruct{i}.name,'go:GO')
-            miriamStruct{i}.name=regexprep(miriamStruct{i}.name,'obi.go:GO|obo.go:GO|go:GO','go');
-            miriamStruct{i}.value=strcat('GO:',miriamStruct{i}.value);            
         end
     end
 end

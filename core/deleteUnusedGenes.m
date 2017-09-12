@@ -1,14 +1,14 @@
-function reducedModel=removeUnusedGenes(model)
-% removeUnusedGenes
+function reducedModel=deleteUnusedGenes(model)
+% deleteUnusedGenes
 %   Deletes all genes that are not associated to any reaction
 %
 %   model           a model structure
 %
 %   reducedModel    an updated model structure
 %
-%   Usage: reducedModel=removeUnusedGenes(model)
+%   Usage: reducedModel=deleteUnusedGenes(model)
 %
-%   Eduard Kerkhoven, 2017-05-09
+%   Simonas Marcisauskas, 2017-09-12
 %
 reducedModel=model;
 
