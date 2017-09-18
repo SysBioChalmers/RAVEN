@@ -7,10 +7,10 @@ function checkInstallation()
 %
 %   Usage: checkInstallation()
 %
-%	Simonas Marcisauskas, 2017-09-08
+%	Simonas Marcisauskas, 2017-09-18
 %
 
-fprintf('*** RAVEN TOOLBOX v. 1.9\n');
+fprintf('*** RAVEN TOOLBOX v. 2.0\n');
 
 keepSolver=false;
 lastWorking='';
@@ -60,7 +60,7 @@ end
 
 %Check if it is possible to import an SBML model using libSBML
 try
-    smallModel=importModel(xmlFile);
+    importModel(xmlFile);
     fprintf('Checking if it is possible to import an SBML model using libSBML... PASSED\n');
 catch
     fprintf('Checking if it is possible to import an SBML model using libSBML... FAILED\nTo import SBML models, download libSBML from http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n');
@@ -72,6 +72,7 @@ solver={'mosek','gurobi'};
 for i=1:numel(solver)
     try
         setRavenSolver(solver{i});
+        load('empty.mat')
         solveLP(smallModel);
         lastWorking=solver{i};
         fprintf(['Checking if it is possible to solve an LP problem using ',solver{i},'... PASSED\n']);
@@ -97,7 +98,7 @@ else
 	fprintf(['Preferred solver... CHANGED\nSolver saved as preference... ',lastWorking,'\n']);
 end
 
-fprintf(['Checking the uniqueness of RAVEN functions across Matlab path...\n']);
+fprintf('Checking the uniqueness of RAVEN functions across Matlab path...\n');
 checkFunctionUniqueness();
 
 end
