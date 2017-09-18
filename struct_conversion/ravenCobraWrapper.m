@@ -12,9 +12,11 @@ function newModel=ravenCobraWrapper(model)
 %
 %   NOTE: During RAVEN -> COBRA -> RAVEN conversion cycle the following
 %   fields are lost: id, description, annotation, compOutside, compMiriams,
-%   rxnComps, geneComps. The field 'rev' is also partially
-%   lost, but during COBRA -> RAVEN conversion it's reconstructed based on
-%   lower bound values
+%   rxnComps, geneComps, unconstrained. Boundary metabolites are lost,
+%   because COBRA structure does not involve boundary metabolites, so they
+%   are removed using simplifyModel before RAVEN -> COBRA conversion. The
+%   field 'rev' is also partially lost, but during COBRA -> RAVEN
+%   conversion it's reconstructed based on lower bound reaction values
 %
 %   NOTE: During COBRA -> RAVEN -> COBRA conversion cycle the following
 %   fields are lost: b, csense, osense, description, geneEntrezID,
@@ -39,6 +41,9 @@ if isRaven
     fprintf('Converting RAVEN structure to COBRA..\n');
     % Converting from RAVEN to COBRA structure;
     
+    % Firstly removing boundary metabolites;
+    model=simplifyModel(model);
+
     % Mandatory COBRA fields;
     newModel.rxns=model.rxns;
     newModel.mets=strcat(model.mets,'[',model.comps(model.metComps),']');
