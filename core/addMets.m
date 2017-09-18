@@ -29,7 +29,7 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 %                               the metabolites (opt, default '')
 %                metMiriams     cell array with MIRIAM structures (opt,
 %                               default [])
-%                metCharges      metabolite charge (opt, default 0)
+%                metCharges     metabolite charge (opt, default 0)
 %   copyInfo     when adding metabolites to a compartment where it previously
 %                doesn't exist, the function will copy any available annotation
 %                from the metabolite in another compartment (opt, default true)
@@ -49,7 +49,7 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 %
 %   Usage: newModel=addMets(model,metsToAdd,copyInfo)
 %
-%   Simonas Marcisauskas, 2017-09-06
+%   Simonas Marcisauskas, 2017-09-18
 %
 
 if nargin<3
@@ -115,7 +115,7 @@ else
 end
 
 %Check that all the compartments could be found
-[I compMap]=ismember(metsToAdd.compartments,model.comps);
+[I, compMap]=ismember(metsToAdd.compartments,model.comps);
 if ~all(I)
     EM='metsToAdd.compartments must match model.comps';
     dispEM(EM);
@@ -273,7 +273,7 @@ end
 newModel.S=[newModel.S;sparse(nMets,size(newModel.S,2))];
 
 if copyInfo==true
-   [I J]=ismember(metsToAdd.metNames,model.metNames);
+   [I, J]=ismember(metsToAdd.metNames,model.metNames);
    J=J(I);
    %I is the indexes of the new metabolites for which a metabolite with the
    %same name existed
