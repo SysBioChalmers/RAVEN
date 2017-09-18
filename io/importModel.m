@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Simonas Marcisauskas, 2017-09-12
+%   Simonas Marcisauskas, 2017-09-18
 
 if nargin<2
     removeExcMets=true;
@@ -116,6 +116,7 @@ model.rxnConfidenceScores={};
 model.genes={};
 model.geneComps=[];
 model.geneMiriams={};
+model.geneShortNames={};
 model.metNames={};
 model.metComps=[];
 model.inchis={};
@@ -375,11 +376,24 @@ for i=1:numel(modelSBML.species)
                     metaboliteNames{i,1}=modelSBML.species(i).name;
                 end
                 if isfield(modelSBML.species(i),'fbc_charge')
-                    if ~isempty(modelSBML.species(i).fbc_charge)
+                    if ~isempty(modelSBML.species(i).fbc_charge) && modelSBML.species(i).isSetfbc_charge
                         metaboliteCharge(numel(metaboliteCharge)+1,1)=str2double(modelSBML.species(i).fbc_charge);
                         if isnan(metaboliteCharge(numel(metaboliteCharge),1))
                             metaboliteCharge(numel(metaboliteCharge),1)=0;
                         end;
+                    else
+                        if isfield(modelSBML.species(i),'notes')
+                            if strfind(modelSBML.species(i).notes,'CHARGE')
+                                metaboliteCharge(numel(metaboliteCharge)+1,1)=str2double(parseNote(modelSBML.species(i).notes,'CHARGE'));
+%                                 if isnan(metaboliteCharge(numel(metaboliteCharge),1))
+%                                     metaboliteCharge(numel(metaboliteCharge),1)=0;
+%                                 end;
+                            else
+                                metaboliteCharge(numel(metaboliteCharge)+1,1)=0;
+                            end;
+                        else
+                            metaboliteCharge(numel(metaboliteCharge)+1,1)=0;
+                        end
                     end
                 elseif isfield(modelSBML.species(i),'notes')
                     if strfind(modelSBML.species(i).notes,'CHARGE')

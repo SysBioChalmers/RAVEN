@@ -12,7 +12,7 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
 %   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
-%   Simonas Marcisauskas, 2017-09-12
+%   Simonas Marcisauskas, 2017-09-18
 %
 
 if nargin<3
@@ -261,9 +261,11 @@ for i=1:numel(model.mets)
         end;
     end
     if isfield(modelSBML.species, 'fbc_charge') && isfield(model,'metCharges')
-        modelSBML.species(i).fbc_charge=model.metCharges(i);
-        if isfield(modelSBML.species, 'isSetfbc_charge')
+        if ~isnan(model.metCharges(i))
+            modelSBML.species(i).fbc_charge=model.metCharges(i);
             modelSBML.species(i).isSetfbc_charge=1;
+        else
+            modelSBML.species(i).isSetfbc_charge=0;
         end;
     end;
     if isfield(modelSBML.species,'annotation')

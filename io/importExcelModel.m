@@ -65,7 +65,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Simonas Marcisauskas, 2017-09-12
+%   Simonas Marcisauskas, 2017-09-18
 %
 
 if nargin<2
@@ -112,6 +112,7 @@ model.rxnConfidenceScores={};
 model.genes={};
 model.geneComps={}; %Will be double later
 model.geneMiriams={};
+model.geneShortNames={};
 model.metNames={};
 model.metComps=[];
 model.inchis={};
@@ -722,12 +723,6 @@ else
     if ~isempty(model.metCharges)
         if all(cellfun(@isempty,model.metCharges))
             model.metCharges=[];
-        end
-    end
-    if ~isempty(model.metCharges)
-        if any(strcmp('',model.metCharges))
-            EM='Either all metabolites have charge information or none of them';
-            dispEM(EM);
         end
     end
     if ~isempty(model.metCharges)
