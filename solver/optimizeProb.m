@@ -54,7 +54,7 @@ elseif strcmp(solver,'mosek')
 			[~,res] = mosekopt('minimize echo(0)',prob);
 		end
 else
-		dispEM(['Raven solver not defined or unknown. Try using setRavenSolver(',char(39),'solver',char(39),').']);
+		dispEM(['Raven solver not defined or unknown. Try using setRavenSolver(',char(39),'solver',char(39),')']);
 end
 
 function s_merged=structUpdate(s_old,s_new)

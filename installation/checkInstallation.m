@@ -1,7 +1,7 @@
 function checkInstallation()
 % checkInstallation
 %   The purpose of this function is to check if all necessary functions are
-%   installed and working. It also checks whether there ary any functions
+%   installed and working. It also checks whether there are any functions
 %   with overlapping names between RAVEN and other toolboxes or
 %   user-defined functions, which are accessible from Matlab pathlist
 %
@@ -10,10 +10,10 @@ function checkInstallation()
 %	Simonas Marcisauskas, 2017-09-19
 %
 
-fprintf('*** RAVEN TOOLBOX v. 2.0\n');
+fprintf('\n*** THE RAVEN TOOLBOX v. 2.0 ***\n\n');
 
 keepSolver=false;
-lastWorking='';
+workingSolvers='';
 
 %Check if RAVEN is in the path list
 paths=textscan(path,'%s','delimiter', pathsep);
@@ -23,9 +23,11 @@ paths=paths{1};
 [ST, I]=dbstack('-completenames');
 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
 
-% get current solver
+% Get current solver. Set it to 'none', if it is not set;
 if ~ispref('RAVEN','solver')
 	fprintf('Solver found in preferences... NONE\n');
+    setRavenSolver('none');
+	curSolv=getpref('RAVEN','solver');
 else
 	curSolv=getpref('RAVEN','solver');
 	fprintf(['Solver found in preferences... ',curSolv,'\n']);
@@ -68,16 +70,16 @@ catch
 end
 
 %Check if it is possible to solve an LP problem using different solvers
-solver={'mosek','gurobi','cobra'};
+solver={'gurobi','mosek','cobra'};
 
 for i=1:numel(solver)
     try
         setRavenSolver(solver{i});
         load(matFile);
         solveLP(empty);
-        lastWorking=solver{i};
+        workingSolvers=strcat(workingSolvers,';',solver{i});
         fprintf(['Checking if it is possible to solve an LP problem using ',solver{i},'... PASSED\n']);
-        if and(exist('curSolv','var'),strcmp(curSolv,solver{i}))
+        if strcmp(curSolv,solver{i})
             keepSolver=true;
         end
     catch
@@ -86,23 +88,40 @@ for i=1:numel(solver)
 end
 
 if keepSolver
+    % The solver set in curSolv is functional, so the settings are restored
+    % to the ones which were set before running checkInstallation;
     setRavenSolver(curSolv);
-elseif ~isempty(lastWorking)
-    setRavenSolver(lastWorking);
+    fprintf(['Preferred solver... KEPT\nSolver saved as preference... ',curSolv,'\n']);
+elseif ~isempty(workingSolvers)
+    % There are working solvers, but the none of them is the solver defined
+    % by curSolv. The first working solver is therefore set as RAVEN
+    % solver;
+    workingSolvers=regexprep(workingSolvers,'^;','');
+    workingSolvers=regexprep(workingSolvers,';.+$','');
+    % Only one working solver should be left by now in workingSolvers;
+    setRavenSolver(workingSolvers);
+    fprintf(['Preferred solver... NEW\nSolver saved as preference... ',workingSolvers,'\n']);
 else
-    setRavenSolver('none');
+    % No functional solvers were found, so the setting is restored back to
+    % original;
+    setRavenSolver(curSolv);
 end
 
-if ~exist('curSolv','var') || strcmp(curSolv,'none')
-	fprintf(['Preferred solver... NEW\nSolver saved as preference... ',lastWorking,'\n']);
-elseif keepSolver
-	fprintf(['Preferred solver... KEPT\nSolver saved as preference... ',curSolv,'\n']);
+if keepSolver
+    % The currently set LP solver is functional, so the original setting is
+    % restored;
+    setRavenSolver(curSolv);
+elseif ~isempty(workingSolvers)
+    % It is possible that there are several working solvers. Setting the
+    % first solver as LP solver;
+    workingSolvers=regexprep(workingSolvers,'^;','');
+    workingSolvers=regexprep(workingSolvers,';.+$','');
+    % Only one working solver should be left by now in workingSolvers;
+    setRavenSolver(workingSolvers);
 else
-    if strcmp(getpref('RAVEN','solver'),'none')
-		fprintf('WARNING: No working solver was found!\nInstall the solver, set it using setRavenSolver(''solverName'') and run checkInstallation again.\nAvailable solverName options are ''mosek'', ''gurobi'' and ''cobra''\n');
-    else
-        fprintf(['Preferred solver... CHANGED\nSolver saved as preference... ',lastWorking,'\n']);
-    end
+    % No working LP solvers were found;
+    setRavenSolver(curSolv);
+    fprintf('WARNING: No working solver was found!\nInstall the solver, set it using setRavenSolver(''solverName'') and run checkInstallation again.\nAvailable solverName options are ''mosek'', ''gurobi'' and ''cobra''\n\n');
 end
 
 fprintf('Checking the uniqueness of RAVEN functions across Matlab path...\n');
