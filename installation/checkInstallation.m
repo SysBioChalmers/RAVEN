@@ -105,22 +105,6 @@ else
     % No functional solvers were found, so the setting is restored back to
     % original;
     setRavenSolver(curSolv);
-end
-
-if keepSolver
-    % The currently set LP solver is functional, so the original setting is
-    % restored;
-    setRavenSolver(curSolv);
-elseif ~isempty(workingSolvers)
-    % It is possible that there are several working solvers. Setting the
-    % first solver as LP solver;
-    workingSolvers=regexprep(workingSolvers,'^;','');
-    workingSolvers=regexprep(workingSolvers,';.+$','');
-    % Only one working solver should be left by now in workingSolvers;
-    setRavenSolver(workingSolvers);
-else
-    % No working LP solvers were found;
-    setRavenSolver(curSolv);
     fprintf('WARNING: No working solver was found!\nInstall the solver, set it using setRavenSolver(''solverName'') and run checkInstallation again.\nAvailable solverName options are ''mosek'', ''gurobi'' and ''cobra''\n\n');
 end
 
