@@ -68,7 +68,7 @@ catch
 end
 
 %Check if it is possible to solve an LP problem using different solvers
-solver={'mosek','cobra','gurobi'};
+solver={'mosek','gurobi','cobra'};
 
 for i=1:numel(solver)
     try
