@@ -7,7 +7,7 @@ function checkInstallation()
 %
 %   Usage: checkInstallation()
 %
-%	Simonas Marcisauskas, 2017-09-18
+%	Simonas Marcisauskas, 2017-09-19
 %
 
 fprintf('*** RAVEN TOOLBOX v. 2.0\n');
@@ -49,6 +49,7 @@ addJavaPaths();
     
 excelFile=fullfile(ravenDir,'tutorial','empty.xlsx');
 xmlFile=fullfile(ravenDir,'tutorial','empty.xml');
+matFile=fullfile(ravenDir,'tutorial','empty.mat');
 
 %Check if it is possible to parse an Excel file
 try
@@ -67,13 +68,13 @@ catch
 end
 
 %Check if it is possible to solve an LP problem using different solvers
-solver={'mosek','gurobi'};
+solver={'mosek','cobra','gurobi'};
 
 for i=1:numel(solver)
     try
         setRavenSolver(solver{i});
-        load('empty.mat')
-        solveLP(smallModel);
+        load(matFile);
+        solveLP(empty);
         lastWorking=solver{i};
         fprintf(['Checking if it is possible to solve an LP problem using ',solver{i},'... PASSED\n']);
         if and(exist('curSolv','var'),strcmp(curSolv,solver{i}))
@@ -88,14 +89,20 @@ if keepSolver
     setRavenSolver(curSolv);
 elseif ~isempty(lastWorking)
     setRavenSolver(lastWorking);
+else
+    setRavenSolver('none');
 end
 
-if ~exist('curSolv','var')
+if ~exist('curSolv','var') || strcmp(curSolv,'none')
 	fprintf(['Preferred solver... NEW\nSolver saved as preference... ',lastWorking,'\n']);
 elseif keepSolver
 	fprintf(['Preferred solver... KEPT\nSolver saved as preference... ',curSolv,'\n']);
 else
-	fprintf(['Preferred solver... CHANGED\nSolver saved as preference... ',lastWorking,'\n']);
+    if strcmp(getpref('RAVEN','solver'),'none')
+		fprintf('WARNING: No working solver was found!\nInstall the solver, set it using setRavenSolver(''solverName'') and run checkInstallation again.\nAvailable solverName options are ''mosek'', ''gurobi'' and ''cobra''\n');
+    else
+        fprintf(['Preferred solver... CHANGED\nSolver saved as preference... ',lastWorking,'\n']);
+    end
 end
 
 fprintf('Checking the uniqueness of RAVEN functions across Matlab path...\n');
