@@ -7,7 +7,7 @@ function checkInstallation()
 %
 %   Usage: checkInstallation()
 %
-%	Simonas Marcisauskas, 2017-09-19
+%	Simonas Marcisauskas, 2017-09-22
 %
 
 fprintf('\n*** THE RAVEN TOOLBOX v. 2.0 ***\n\n');
@@ -91,7 +91,7 @@ if keepSolver
     % The solver set in curSolv is functional, so the settings are restored
     % to the ones which were set before running checkInstallation;
     setRavenSolver(curSolv);
-    fprintf(['Preferred solver... KEPT\nSolver saved as preference... ',curSolv,'\n']);
+    fprintf(['Preferred solver... KEPT\nSolver saved as preference... ',curSolv,'\n\n']);
 elseif ~isempty(workingSolvers)
     % There are working solvers, but the none of them is the solver defined
     % by curSolv. The first working solver is therefore set as RAVEN
@@ -100,13 +100,58 @@ elseif ~isempty(workingSolvers)
     workingSolvers=regexprep(workingSolvers,';.+$','');
     % Only one working solver should be left by now in workingSolvers;
     setRavenSolver(workingSolvers);
-    fprintf(['Preferred solver... NEW\nSolver saved as preference... ',workingSolvers,'\n']);
+    fprintf(['Preferred solver... NEW\nSolver saved as preference... ',workingSolvers,'\n\n']);
 else
     % No functional solvers were found, so the setting is restored back to
     % original;
     setRavenSolver(curSolv);
     fprintf('WARNING: No working solver was found!\nInstall the solver, set it using setRavenSolver(''solverName'') and run checkInstallation again.\nAvailable solverName options are ''mosek'', ''gurobi'' and ''cobra''\n\n');
 end
+
+if ~ispc
+    if ismac
+        binEnd='.mac';
+    elseif isunix
+        binEnd='';
+    end
+    fprintf('Checking binary executables..\n');
+    [res,~]=system(['"' fullfile(ravenDir,'software','blast-2.6.0+',['blastp' binEnd]) '"']);
+    if res==1
+        fprintf(['Checking blastp' binEnd '.. OK\n']);
+    else
+        fprintf(['Checking blastp' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n']);
+    end;
+    [res,~]=system(['"' fullfile(ravenDir,'software','blast-2.6.0+',['makeblastdb' binEnd]) '"']);
+    if res==1
+        fprintf(['Checking makeblastdb' binEnd '.. OK\n']);
+    else
+        fprintf(['Checking makeblastdb' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n']);
+    end;
+    [res,~]=system(['"' fullfile(ravenDir,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '"']);
+    if res==1
+        fprintf(['Checking cd-hit' binEnd '.. OK\n']);
+    else
+        fprintf(['Checking cd-hit' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n']);
+    end;
+    [res,~]=system(['"' fullfile(ravenDir,'software','hmmer-3.1b2',['hmmbuild' binEnd]) '"']);
+    if res==1
+        fprintf(['Checking hmmbuild' binEnd '.. OK\n']);
+    else
+        fprintf(['Checking hmmbuild' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n']);
+    end;
+    [res,~]=system(['"' fullfile(ravenDir,'software','hmmer-3.1b2',['hmmsearch' binEnd]) '"']);
+    if res==1
+        fprintf(['Checking hmmsearch' binEnd '.. OK\n']);
+    else
+        fprintf(['Checking hmmsearch' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n']);
+    end;
+    [res,~]=system(['"' fullfile(ravenDir,'software','mafft-7.305',['mafft' binEnd]) '"']);
+    if res==1
+        fprintf(['Checking mafft' binEnd '.. OK\n\n']);
+    else
+        fprintf(['Checking mafft' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n\n']);
+    end;
+end;
 
 fprintf('Checking the uniqueness of RAVEN functions across Matlab path...\n');
 checkFunctionUniqueness();
