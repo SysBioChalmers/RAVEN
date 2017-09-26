@@ -28,7 +28,7 @@ function newModel=ravenCobraWrapper(model)
 %
 %   Usage: newModel=ravenCobraWrapper(model)
 %
-%   Simonas Marcisauskas, 2017-09-18
+%   Simonas Marcisauskas, 2017-09-26
 %
 
 if isfield(model,'rules')
@@ -126,7 +126,7 @@ if isRaven
             newModel.metMetaNetXID=tmp_metanetx;
         end;
     end;
-    newModel.b=zeros(numel(model.rxns),1);
+    newModel.b=zeros(numel(model.mets),1);
     newModel.csense=repmat('E',size(model.mets));
     if isfield(model,'geneMiriams')
         tmp_kegggeneid=strrep(extractMiriam(model.geneMiriams,'kegg.genes'),'kegg.genes/','');
@@ -186,7 +186,7 @@ if isRaven
         end;
     end;
     newModel.c=model.c;
-    newModel.b=zeros(numel(model.rxns),1);
+    newModel.b=zeros(numel(model.mets),1);
     if isfield(model,'comps')
         newModel.comps=model.comps;
     else
@@ -278,8 +278,10 @@ if isRaven
     if isfield(model,'geneNames')
         newModel.geneShortNames=model.geneNames;
     end;
-    if isfield(model,'metNames')
-        newModel.metNames=model.metNames;
+    for i=1:numel(model.comps)
+        newModel.metNames=regexprep(model.metNames,['[', model.comps{i}, ']'],'');
+        newModel.metNames=regexprep(newModel.metNames,['[', model.compNames{i}, ']'],'');
+        newModel.metNames=strrep(newModel.metNames ,'[]',''); 
     end;
     newModel.metComps=regexprep(model.mets,'^.+\[','');
     newModel.metComps=regexprep(newModel.metComps,'\]$','');
