@@ -28,7 +28,7 @@ function newModel=ravenCobraWrapper(model)
 %
 %   Usage: newModel=ravenCobraWrapper(model)
 %
-%   Simonas Marcisauskas, 2017-09-26
+%   Simonas Marcisauskas, 2017-09-27
 %
 
 if isfield(model,'rules')
@@ -168,18 +168,29 @@ if isRaven
     
     % Mandatory RAVEN fields;
     newModel.rxns=model.rxns;
+    newModel.mets=model.mets;
     for i=1:numel(model.comps)
-        newModel.mets=regexprep(model.mets,['[', model.comps{i}, ']'],'');
-        newModel.mets=regexprep(newModel.mets,['[', model.compNames{i}, ']'],'');
-        newModel.mets=strrep(newModel.mets,'[]','');
+        newModel.mets=regexprep(newModel.mets,['\[', model.comps{i}, '\]$'],'');
+        newModel.mets=regexprep(newModel.mets,['\[', model.compNames{i}, '\]$'],'');
     end;
+    
+    % It some rare cases, there may be overlapping mets due to removal e.g.
+    % [c]. To avoid this, we change e.g. [c] into _c;
+    if numel(unique(newModel.mets))~=numel(model.mets)
+    	newModel.mets=model.mets;
+        for i=1:numel(model.comps)
+            newModel.mets=regexprep(newModel.mets,'\]$','');
+            newModel.mets=regexprep(newModel.mets,['\[', model.comps{i}, '$'],['_', model.comps{i}]);
+        end;
+    end;
+        
     newModel.S=model.S;
     newModel.lb=model.lb;
     newModel.ub=model.ub;
     % Since COBRA no longer contains rev field it is assumed that rxn is
     % reversible if its lower bound is set to zero;
     for i=1:numel(model.rxns)
-        if ~model.lb(i)
+        if model.lb(i)<0
             newModel.rev(i,1)=1;
         else
             newModel.rev(i,1)=0;
@@ -278,10 +289,10 @@ if isRaven
     if isfield(model,'geneNames')
         newModel.geneShortNames=model.geneNames;
     end;
+    newModel.metNames=model.metNames;
     for i=1:numel(model.comps)
-        newModel.metNames=regexprep(model.metNames,['[', model.comps{i}, ']'],'');
-        newModel.metNames=regexprep(newModel.metNames,['[', model.compNames{i}, ']'],'');
-        newModel.metNames=strrep(newModel.metNames ,'[]',''); 
+        newModel.metNames=regexprep(newModel.metNames,['\[', model.comps{i}, '\]$'],'');
+        newModel.metNames=regexprep(newModel.metNames,['\[', model.compNames{i}, '\]$'],'');
     end;
     newModel.metComps=regexprep(model.mets,'^.+\[','');
     newModel.metComps=regexprep(newModel.metComps,'\]$','');
