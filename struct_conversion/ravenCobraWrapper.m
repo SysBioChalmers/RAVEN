@@ -28,7 +28,7 @@ function newModel=ravenCobraWrapper(model)
 %
 %   Usage: newModel=ravenCobraWrapper(model)
 %
-%   Simonas Marcisauskas, 2017-09-27
+%   Simonas Marcisauskas, 2017-10-04
 %
 
 if isfield(model,'rules')
@@ -153,7 +153,7 @@ if isRaven
     end;
     newModel.osense=-1;
     
-    % It seems that grRules and rxnGeneMat are disposable fields in COBRA
+    % It seems that grRules, rxnGeneMat and rev are disposable fields in COBRA
     % version, but we export them to make things faster, when converting
     % COBRA structure back to RAVEN;
     if isfield(model,'grRules')
@@ -162,6 +162,7 @@ if isRaven
     if isfield(model,'rxnGeneMat')
         newModel.rxnGeneMat=model.rxnGeneMat;
     end;
+    newModel.rev=model.rev;
  else
     fprintf('Converting COBRA structure to RAVEN..\n');
     % Converting from COBRA to RAVEN structure;
@@ -189,12 +190,16 @@ if isRaven
     newModel.ub=model.ub;
     % Since COBRA no longer contains rev field it is assumed that rxn is
     % reversible if its lower bound is set to zero;
-    for i=1:numel(model.rxns)
-        if model.lb(i)<0
-            newModel.rev(i,1)=1;
-        else
-            newModel.rev(i,1)=0;
+    if ~isfield(model,'rev')
+        for i=1:numel(model.rxns)
+            if model.lb(i)<0
+                newModel.rev(i,1)=1;
+            else
+                newModel.rev(i,1)=0;
+            end;
         end;
+    else
+    	newModel.rev=model.rev;
     end;
     newModel.c=model.c;
     newModel.b=zeros(numel(model.mets),1);
@@ -242,8 +247,8 @@ if isRaven
         for i=1:numel(model.rxns)
             counter=1;
             if ~isempty(model.rxnKEGGID{i})
-                newModel.rxnMiriams.name{counter,1} = 'kegg.reaction';  
-                newModel.rxnMiriams.value{counter,1} = model.rxnKEGGID{i};
+                newModel.rxnMiriams{i,1}.name{counter,1} = 'kegg.reaction';  
+                newModel.rxnMiriams{i,1}.value{counter,1} = model.rxnKEGGID{i};
                 counter=counter+1;
             end;
         end;
@@ -265,22 +270,22 @@ if isRaven
             counter=1;
             if isfield(model,'geneiskegg__46__genesID')
                 if ~isempty(model.geneiskegg__46__genesID{i})
-                    newModel.geneMiriams.name{counter,1} = 'kegg.genes';  
-                    newModel.geneMiriams.value{counter,1} = model.geneiskegg__46__genesID{i};
+                    newModel.geneMiriams{i,1}.name{counter,1} = 'kegg.genes';  
+                    newModel.geneMiriams{i,1}.value{counter,1} = model.geneiskegg__46__genesID{i};
                     counter=counter+1;
                 end;
             end;
             if isfield(model,'geneissgdID')
                 if ~isempty(model.geneissgdID{i})
-                    newModel.geneMiriams.name{counter,1} = 'sgd';  
-                    newModel.geneMiriams.value{counter,1} = model.geneissgdID{i};
+                    newModel.geneMiriams{i,1}.name{counter,1} = 'sgd';  
+                    newModel.geneMiriams{i,1}.value{counter,1} = model.geneissgdID{i};
                     counter=counter+1;
                 end;
             end;
             if isfield(model,'proteinisuniprotID')
                 if ~isempty(model.proteinisuniprotID{i})
-                    newModel.geneMiriams.name{counter,1} = 'uniprot';  
-                    newModel.geneMiriams.value{counter,1} = model.proteinisuniprotID{i};
+                    newModel.geneMiriams{i,1}.name{counter,1} = 'uniprot';  
+                    newModel.geneMiriams{i,1}.value{counter,1} = model.proteinisuniprotID{i};
                     counter=counter+1;
                 end;
             end;
@@ -309,27 +314,27 @@ if isRaven
             counter=1;
             if isfield(model,'metChEBIID')
                 if ~isempty(model.metChEBIID{i})
-                    newModel.metMiriams.name{counter,1} = 'chebi';  
-                    newModel.metMiriams.value{counter,1} = model.metChEBIID{i};
+                    newModel.metMiriams{i,1}.name{counter,1} = 'chebi';  
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metChEBIID{i};
                     counter=counter+1;
                 end;
             end;
             if isfield(model,'metHMDBID')
                 if ~isempty(model.metHMDBID{i})
-                    newModel.metMiriams.name{counter,1} = 'hmdb';  
-                    newModel.metMiriams.value{counter,1} = model.metHMDBID{i};
+                    newModel.metMiriams{i,1}.name{counter,1} = 'hmdb';  
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metHMDBID{i};
                     counter=counter+1;
                 end;
             end;
             if isfield(model,'metKEGGID')
                 if ~isempty(model.metKEGGID{i})
                     if strcmp(model.metKEGGID{i}(1),'C')
-                        newModel.metMiriams.name{counter,1} = 'kegg.compound';  
-                        newModel.metMiriams.value{counter,1} = model.metKEGGID{i};
+                        newModel.metMiriams{i,1}.name{counter,1} = 'kegg.compound';  
+                        newModel.metMiriams{i,1}.value{counter,1} = model.metKEGGID{i};
                         counter=counter+1;
                     elseif strcmp(model.metKEGGID{i}(1),'G')
-                        newModel.metMiriams.name{counter,1} = 'kegg.glycan';  
-                        newModel.metMiriams.value{counter,1} = model.metKEGGID{i};
+                        newModel.metMiriams{i,1}.name{counter,1} = 'kegg.glycan';  
+                        newModel.metMiriams{i,1}.value{counter,1} = model.metKEGGID{i};
                         counter=counter+1;
                     end;
                 end;
@@ -337,16 +342,16 @@ if isRaven
             if isfield(model,'metPubChemID')
                 if ~isempty(model.metPubChemID{i})
                     if strcmp(model.metPubChemID{i}(1:4),'CID:')
-                        newModel.metMiriams.name{counter,1} = 'pubchem.compound';  
-                        newModel.metMiriams.value{counter,1} = model.metPubChemID{i};
+                        newModel.metMiriams{i,1}.name{counter,1} = 'pubchem.compound';  
+                        newModel.metMiriams{i,1}.value{counter,1} = model.metPubChemID{i};
                         counter=counter+1;
                     elseif strcmp(model.metPubChemID{i}(1:4),'SID:')
-                        newModel.metMiriams.name{counter,1} = 'pubchem.substance';  
-                        newModel.metMiriams.value{counter,1} = model.metPubChemID{i};
+                        newModel.metMiriams{i,1}.name{counter,1} = 'pubchem.substance';  
+                        newModel.metMiriams{i,1}.value{counter,1} = model.metPubChemID{i};
                         counter=counter+1;
                     else
-                        newModel.metMiriams.name{counter,1} = 'pubchem.compound';  
-                        newModel.metMiriams.value{counter,1} = model.metPubChemID{i};
+                        newModel.metMiriams{i,1}.name{counter,1} = 'pubchem.compound';  
+                        newModel.metMiriams{i,1}.value{counter,1} = model.metPubChemID{i};
                         counter=counter+1;
                         printWarning=true;
                     end;
@@ -354,8 +359,8 @@ if isRaven
             end;
             if isfield(model,'metMetaNetXID')
                 if ~isempty(model.metMetaNetXID{i})
-                    newModel.metMiriams.name{counter,1} = 'metanetx.chemical';  
-                    newModel.metMiriams.value{counter,1} = model.metMetaNetXID{i};
+                    newModel.metMiriams{i,1}.name{counter,1} = 'metanetx.chemical';  
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metMetaNetXID{i};
                     counter=counter+1;
                 end;
             end;
@@ -397,7 +402,7 @@ function grRules=rulesTogrrules(model)
     for i=1:numel(replacingGenes)
         replacingGenes{i}=strcat('x(',num2str(i),')');
     end;
-    for i=1:numel(model.grRules)
+    for i=1:numel(model.rules)
         grRules{i}=regexprep(model.rules{i},replacingGenes,model.genes);
         grRules{i}=regexprep(grRules{i},' & ',' and ');
         grRules{i}=regexprep(grRules{i},' | ',' or ');
