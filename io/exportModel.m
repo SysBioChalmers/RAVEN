@@ -12,7 +12,7 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
 %   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
-%   Simonas Marcisauskas, 2017-09-18
+%   Simonas Marcisauskas, 2017-10-09
 %
 
 if nargin<3
@@ -323,8 +323,6 @@ if isfield(model,'genes')
         end;
         if isfield(modelSBML.fbc_geneProduct, 'fbc_label') && isfield(model,'geneShortNames')
             modelSBML.fbc_geneProduct(i).fbc_label=model.geneShortNames{i};
-        else
-            modelSBML.fbc_geneProduct(i).fbc_label=modelSBML.fbc_geneProduct(i).fbc_id;
         end;
     end;
     if exportGeneComplexes==true

@@ -1,6 +1,6 @@
 function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 % importModel
-%   Import a constraint-based model from a SBML file
+%   Import a constraint-based model from a SBML gegg
 %
 %   fileName        a SBML file to import
 %   removeExcMets   true if exchange metabolites should be removed. This is
@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Simonas Marcisauskas, 2017-09-18
+%   Simonas Marcisauskas, 2017-10-09
 
 if nargin<2
     removeExcMets=true;
@@ -857,10 +857,10 @@ model.grRules=strrep(model.grRules,' OR ',' or ');
 if all(cellfun(@isempty,geneShortNames))
     if isfield(modelSBML,'fbc_geneProduct')
         for i=1:numel(genes)
-            if ~isempty(modelSBML.fbc_geneProduct(i).fbc_name)
-                geneShortNames{i,1}=modelSBML.fbc_geneProduct(i).fbc_name;
-            elseif ~isempty(modelSBML.fbc_geneProduct(i).fbc_label)
+            if ~isempty(modelSBML.fbc_geneProduct(i).fbc_label)
                 geneShortNames{i,1}=modelSBML.fbc_geneProduct(i).fbc_label;
+            elseif ~isempty(modelSBML.fbc_geneProduct(i).fbc_name)
+                geneShortNames{i,1}=modelSBML.fbc_geneProduct(i).fbc_name;
             else
                 geneShortNames{i,1}='';
             end;
