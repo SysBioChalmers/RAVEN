@@ -146,7 +146,7 @@ if isRaven
         newModel.geneNames=model.geneShortNames;
     end;
     if isfield(model,'rxnConfidenceScores')
-        newModel.rxnConfidenceScores=model.rxnConfidenceScores;
+        newModel.rxnConfidenceScores=cell2mat(model.rxnConfidenceScores);
     end;
     if isfield(model,'genes')
         newModel.rules=grrulesToRules(model);
@@ -230,14 +230,13 @@ if isRaven
     if isfield(model,'grRules')
         newModel.grRules=model.grRules;
     else
-        newModel.grRules=rulesTogrrules(model);
+        model.grRules=rulesTogrrules(model);
+        newModel.grRules=model.grRules;
     end;
     if isfield(model,'rxnGeneMat')
         newModel.rxnGeneMat=model.rxnGeneMat;
     elseif isfield(model,'grRules')
         newModel.rxnGeneMat=getRxnGeneMat(model);
-    elseif isfield(newModel,'grRules')
-        newModel.rxnGeneMat=getRxnGeneMat(newModel);
     end;
     if isfield(model,'subSystems')
         newModel.subSystems=model.subSystems;
@@ -262,7 +261,7 @@ if isRaven
         newModel.rxnReferences=model.rxnReferences;
     end;
     if isfield(model,'rxnConfidenceScores')
-        newModel.rxnConfidenceScores=model.rxnConfidenceScores;
+        newModel.rxnConfidenceScores=num2cell(model.rxnConfidenceScores);
     end;
     if isfield(model,'genes')
         newModel.genes=model.genes;
