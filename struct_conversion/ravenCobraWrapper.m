@@ -28,7 +28,7 @@ function newModel=ravenCobraWrapper(model)
 %
 %   Usage: newModel=ravenCobraWrapper(model)
 %
-%   Simonas Marcisauskas, 2017-10-04
+%   Simonas Marcisauskas, 2017-10-12
 %
 
 if isfield(model,'rules')
@@ -236,6 +236,8 @@ if isRaven
         newModel.rxnGeneMat=model.rxnGeneMat;
     elseif isfield(model,'grRules')
         newModel.rxnGeneMat=getRxnGeneMat(model);
+    elseif isfield(newModel,'grRules')
+        newModel.rxnGeneMat=getRxnGeneMat(newModel);
     end;
     if isfield(model,'subSystems')
         newModel.subSystems=model.subSystems;
