@@ -60,11 +60,14 @@ else
     return
 end
 
+% Run BLAST multi-threaded to use all physical cores (number of logical cores can be higher).
+cores=feature('numcores');
+
 [status, output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['makeblastdb' binEnd]) '" -in "' fastaFile{1} '" -out "' tmpDB '" -dbtype "prot"']);
 
 for i=1:numel(refFastaFiles)
     fprintf(['BLASTing "' modelIDs{i} '" against "' organismID{1} '"..\n']);
-    [status, output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['blastp' binEnd]) '" -query "' refFastaFiles{i} '" -out "' outFile '_' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos"']);
+    [status, output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['blastp' binEnd]) '" -query "' refFastaFiles{i} '" -out "' outFile '_' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads ' num2str(cores)]);
 end
 delete([tmpDB '*']);
 
@@ -73,7 +76,7 @@ delete([tmpDB '*']);
 for i=1:numel(refFastaFiles)
     fprintf(['BLASTing "' organismID{1} '" against "' modelIDs{i} '"..\n']);
     [status, output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['makeblastdb' binEnd]) '" -in "' refFastaFiles{i} '" -out "' tmpDB '" -dbtype "prot"']);
-    [status, output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['blastp' binEnd]) '" -query "' fastaFile{1} '" -out "' outFile '_r' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos"']);
+    [status, output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['blastp' binEnd]) '" -query "' fastaFile{1} '" -out "' outFile '_r' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads ' num2str(cores)]);
     delete([tmpDB '*']);
 end
     
