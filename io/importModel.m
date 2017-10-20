@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Simonas Marcisauskas, 2017-10-09
+%   Eduard Kerkhoven, 2017-10-20
 
 if nargin<2
     removeExcMets=true;
@@ -820,20 +820,17 @@ if ~isempty(geneNames)
     model.geneComps=J;
 else
     if ~isempty(grRules)
-       grRules=strrep(grRules,' AND ',' and ');
-       grRules=strrep(grRules,' OR ',' or ');
        %In the non-COBRA version genes are surrounded by parenthesis even
        %if they are the only gene. Also, only single spaces are used
        %between genes. I'm pretty sure this is compatible with COBRA Toolbox so I
        %change it to be the same here.
        grRules=strrep(grRules,'  ',' ');
-       grRules=strrep(grRules,'((','(');
-       grRules=strrep(grRules,'))',')');
        grRules=strrep(grRules,'( ','(');
        grRules=strrep(grRules,' )',')');
        grRules=strrep(grRules,') or (','*%%%%*');
        grRules=strrep(grRules,' or ',') or (');
        grRules=strrep(grRules,'*%%%%*',') or (');
+       grRules=regexprep(grRules,'\(\((.*)\)\)','\($1\)'); 
 
        %Not very neat, but add parenthesis if missing
        for i=1:numel(grRules)
