@@ -28,7 +28,7 @@ function newModel=ravenCobraWrapper(model)
 %
 %   Usage: newModel=ravenCobraWrapper(model)
 %
-%   Simonas Marcisauskas, 2017-10-12
+%   Simonas Marcisauskas, 2017-10-20
 %
 
 if isfield(model,'rules')
@@ -247,6 +247,7 @@ if isRaven
     if isfield(model,'rxnKEGGID')
         for i=1:numel(model.rxns)
             counter=1;
+            newModel.rxnMiriams{i,1}=[];
             if ~isempty(model.rxnKEGGID{i})
                 newModel.rxnMiriams{i,1}.name{counter,1} = 'kegg.reaction';  
                 newModel.rxnMiriams{i,1}.value{counter,1} = model.rxnKEGGID{i};
@@ -269,6 +270,7 @@ if isRaven
     if isfield(model,'geneiskegg__46__genesID') || isfield(model,'geneissgdID') || isfield(model,'metKEGGID')
         for i=1:numel(model.genes)
             counter=1;
+            newModel.geneMiriams{i,1}=[];
             if isfield(model,'geneiskegg__46__genesID')
                 if ~isempty(model.geneiskegg__46__genesID{i})
                     newModel.geneMiriams{i,1}.name{counter,1} = 'kegg.genes';  
@@ -313,6 +315,7 @@ if isRaven
     if isfield(model,'metChEBIID') || isfield(model,'metHMDBID') || isfield(model,'metKEGGID') || isfield(model,'metPubChemID') || isfield(model,'metMetaNetXID')
         for i=1:numel(model.mets)
             counter=1;
+            newModel.metMiriams{i,1}=[];
             if isfield(model,'metChEBIID')
                 if ~isempty(model.metChEBIID{i})
                     newModel.metMiriams{i,1}.name{counter,1} = 'chebi';  
