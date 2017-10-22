@@ -24,7 +24,7 @@ function blastStructure=makeFakeBlastStructure(orthologList,sourceModelID,getMod
 %                       all orthologous pairs will pass the filter when
 %                       running getModelFromHomology
 %
-%   Eduard Kerkhoven, 2016-12-22
+%   Eduard Kerkhoven, 2017-10-22
 %
 
 if nargin<3
@@ -53,4 +53,8 @@ blastStructure(1).identity(1:size(orthologList,1),1)=100;
 blastStructure(2).identity(1:size(orthologList,1),1)=100;
 blastStructure(1).aligLen(1:size(orthologList,1),1)=1000;
 blastStructure(2).aligLen(1:size(orthologList,1),1)=1000;
+blastStructure(1).bitscore(1:size(orthologList,1),1)=100;
+blastStructure(2).bitscore(1:size(orthologList,1),1)=100;
+blastStructure(1).ppos(1:size(orthologList,1),1)=100;
+blastStructure(2).ppos(1:size(orthologList,1),1)=100;
 end

@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Eduard Kerkhoven, 2017-10-20
+%   Eduard Kerkhoven, 2017-10-22
 
 if nargin<2
     removeExcMets=true;
@@ -377,7 +377,7 @@ for i=1:numel(modelSBML.species)
                 end
                 if isfield(modelSBML.species(i),'fbc_charge')
                     if ~isempty(modelSBML.species(i).fbc_charge) && modelSBML.species(i).isSetfbc_charge
-                        metaboliteCharge(numel(metaboliteCharge)+1,1)=str2double(modelSBML.species(i).fbc_charge);
+                        metaboliteCharge(numel(metaboliteCharge)+1,1)=double(modelSBML.species(i).fbc_charge);
                         if isnan(metaboliteCharge(numel(metaboliteCharge),1))
                             metaboliteCharge(numel(metaboliteCharge),1)=0;
                         end;
