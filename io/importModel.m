@@ -840,7 +840,13 @@ else
               end
           end
        end
-       [rxnGeneMat, genes]=getGeneMat(grRules);
+       %If fbc_geneProduct exist, follow the specified gene order, such
+       %that matching geneShortNames in function below will work.
+       if isfield(modelSBML,'fbc_geneProduct')
+           [rxnGeneMat, genes]=getGeneMat(grRules,extractfield(modelSBML.fbc_geneProduct,'fbc_id'));
+       else
+           [rxnGeneMat, genes]=getGeneMat(grRules);
+       end
        model.rxnGeneMat=rxnGeneMat;
        model.genes=genes;
        model.grRules=grRules;

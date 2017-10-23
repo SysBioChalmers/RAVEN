@@ -52,9 +52,7 @@ notNewRxn=rxns(ismember(rxns,model.rxns));
 rxns=rxns(~ismember(rxns,model.rxns));
 if isempty(rxns)
     throw(MException('','All reactions are already in the model.'));
-end
-
-if ~isempty(notNewRxn)
+elseif ~isempty(notNewRxn)
     fprintf('\n The following reactions were already present in the model and will not be added:')
     fprintf(strjoin(notNewRxn,'\n'))
 end
