@@ -972,6 +972,8 @@ if cellfun(@isempty,model.rxnConfidenceScores)
 end
 if isempty(model.genes)
     model=rmfield(model,'genes');
+elseif isrow(model.genes)
+    model.genes=transpose(model.genes);
 end
 if isempty(model.geneComps)
     model=rmfield(model,'geneComps');

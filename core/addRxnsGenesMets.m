@@ -53,7 +53,7 @@ rxns=rxns(~ismember(rxns,model.rxns));
 if isempty(rxns)
     throw(MException('','All reactions are already in the model.'));
 elseif ~isempty(notNewRxn)
-    fprintf('\n The following reactions were already present in the model and will not be added:')
+    fprintf('\n The following reactions were already present in the model and will not be added:\n')
     fprintf(strjoin(notNewRxn,'\n'))
 end
 
@@ -64,31 +64,31 @@ metIdx=find(any(sourcemodel.S(:,rxnIdx),2)); % Get metabolite IDs
 % Many of the metabolites in are already in the draft model, so only add the new metabolites
 
 % Match by metNames[metComps]. First make these structures for each model.
-model.metCompsN = cellstr(num2str(model.metComps));
+metCompsN =cellstr(num2str(model.metComps));
 map = containers.Map(cellstr(num2str(transpose([1:length(model.comps)]))),model.comps);
-model.metCompsN = map.values(model.metCompsN);
-model.metCompsN = strcat(model.metNames,'[',model.metCompsN,']');
+metCompsN = map.values(metCompsN);
+metCompsN = strcat(model.metNames,'[',metCompsN,']');
 
-sourcemodel.metCompsN = cellstr(num2str(sourcemodel.metComps));
+sourcemetCompsN = cellstr(num2str(sourcemodel.metComps));
 map = containers.Map(cellstr(num2str(transpose([1:length(sourcemodel.comps)]))),sourcemodel.comps);
-sourcemodel.metCompsN = map.values(sourcemodel.metCompsN);
-sourcemodel.metCompsN = strcat(sourcemodel.metNames,'[',sourcemodel.metCompsN,']');
+sourcemetCompsN = map.values(sourcemetCompsN);
+sourcemetCompsN = strcat(sourcemodel.metNames,'[',sourcemetCompsN,']');
 
-newMetCompsN=sourcemodel.metCompsN(metIdx);
-notNewMet=newMetCompsN(ismember(newMetCompsN,model.metCompsN));
+newMetCompsN=sourcemetCompsN(metIdx);
+notNewMet=newMetCompsN(ismember(newMetCompsN,metCompsN));
 
 if ~isempty(notNewMet)
     fprintf('\n\nThe following metabolites were already present in the model and will not be added:\n')
     fprintf(strjoin(notNewMet,'\n'))
 end
 
-metIdx=metIdx(~ismember(sourcemodel.metCompsN(metIdx),model.metCompsN));
+metIdx=metIdx(~ismember(sourcemetCompsN(metIdx),metCompsN));
 
 
 
 if ~isempty(metIdx)
     fprintf('\n\nThe following metabolites will be added to the model:\n')
-    fprintf(strjoin(sourcemodel.metCompsN(metIdx),'\n'))    
+    fprintf(strjoin(sourcemetCompsN(metIdx),'\n'))    
        
     if isfield(sourcemodel,'mets')
         metsToAdd.mets=sourcemodel.mets(metIdx);
@@ -117,6 +117,7 @@ if ~isempty(metIdx)
 end
 fprintf('\n\nNumber of metabolites added to the model:\n')
 fprintf(num2str(numel(metIdx)))
+fprintf('\n')
 
 %% Add new genes
 if add_gene
