@@ -979,6 +979,9 @@ end
 if isempty(model.geneMiriams)
     model=rmfield(model,'geneMiriams');
 end
+if isempty(model.geneShortNames)
+    model=rmfield(model,'geneShortNames');
+end
 if isempty(model.inchis)
     model=rmfield(model,'inchis');
 end
