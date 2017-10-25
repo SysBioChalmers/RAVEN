@@ -39,7 +39,7 @@ function repMets=reporterMetabolites(model,genes,genePValues,printResults,output
 %   Usage: repMets=reporterMetabolites(model,genes,genePValues,printResults,...
 %           outputFile,geneFoldChanges)
 %
-%   Rasmus Agren, 2014-01-08
+%   Simonas Marcisauskas, 2017-10-25
 %
 
 if nargin<4
@@ -64,6 +64,9 @@ end
 
 %Remove the genes which are not in the model
 genePValues(~ismember(genes,model.genes))=[];
+if ~isempty(geneFoldChanges)
+    geneFoldChanges(~ismember(genes,model.genes))=[];
+end;
 genes(~ismember(genes,model.genes))=[];
 
 %Convert p-values to Z-scores
