@@ -78,7 +78,7 @@
 
    Usage: model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
 
-   Eduard Kerkhoven, 2017-02-28</pre></div>
+   Simonas Marcisauskas, 2017-05-02</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
@@ -145,7 +145,7 @@ This function is called by:
 0050 <span class="comment">%</span>
 0051 <span class="comment">%   Usage: model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)</span>
 0052 <span class="comment">%</span>
-0053 <span class="comment">%   Eduard Kerkhoven, 2017-02-28</span>
+0053 <span class="comment">%   Simonas Marcisauskas, 2017-05-02</span>
 0054 <span class="comment">%</span>
 0055 
 0056 <span class="comment">%NOTE: This is how one entry looks in the file</span>
@@ -271,229 +271,231 @@ This function is called by:
 0176           <span class="comment">%Add ec-number</span>
 0177           <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'ENZYME      '</span>)
 0178               model.eccodes{rxnCounter}=tline(13:end);
-0179           <span class="keyword">end</span>
-0180           <span class="keyword">if</span> numel(tline)&gt;8
-0181             <span class="keyword">if</span> strcmp(tline(1:9),<span class="string">'REFERENCE'</span>)
-0182                 pathway=false;
-0183                 orthology=false;
-0184             <span class="keyword">end</span>
-0185           <span class="keyword">end</span>
-0186     
-0187           <span class="comment">%Add KO-ids</span>
-0188           <span class="keyword">if</span> numel(tline)&gt;16
-0189               <span class="keyword">if</span> strcmp(tline(1:16),<span class="string">'ORTHOLOGY   KO: '</span>) || strcmp(tline(1:16),<span class="string">'            KO: '</span>) || strcmp(tline(1:12),<span class="string">'ORTHOLOGY   '</span>) || orthology==true
-0190                   pathway=false;
-0191                   <span class="comment">%Check if KO has been added already (each reaction may belong to</span>
-0192                   <span class="comment">%several)</span>
-0193                   <span class="keyword">if</span> isstruct(model.rxnMiriams{rxnCounter})
-0194                       addToIndex=numel(model.rxnMiriams{rxnCounter}.name)+1;
-0195                   <span class="keyword">else</span>
-0196                       addToIndex=1;
-0197                   <span class="keyword">end</span>
-0198     
-0199                   tempStruct=model.rxnMiriams{rxnCounter};
-0200                   tempStruct.name{addToIndex,1}=<span class="string">'urn:miriam:kegg.ko'</span>; <span class="comment">%WARNING: This is not a real MIRIAM identifier</span>
-0201                   <span class="keyword">if</span> strcmp(tline(13:16),<span class="string">'KO:'</span>) <span class="comment">%This is in the old version</span>
-0202                     tempStruct.value{addToIndex,1}=tline(17:22);
-0203                   <span class="keyword">else</span>
-0204                       <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'ORTHOLOGY   '</span>)
-0205                         <span class="comment">%This means that it found one KO in the new format and that</span>
-0206                         <span class="comment">%subsequent lines might be other KOs</span>
-0207                         orthology=true;
-0208                       <span class="keyword">end</span>
-0209                       tempStruct.value{addToIndex,1}=tline(13:18);
-0210                   <span class="keyword">end</span>
-0211                   model.rxnMiriams{rxnCounter}=tempStruct;
-0212               <span class="keyword">end</span>
-0213           <span class="keyword">end</span>
-0214     
-0215           <span class="comment">%Add pathways</span>
-0216           <span class="keyword">if</span> numel(tline)&gt;18
-0217               <span class="keyword">if</span> strcmp(tline(1:18),<span class="string">'PATHWAY     PATH: '</span>) || strcmp(tline(1:18),<span class="string">'            PATH: '</span>) || strcmp(tline(1:12),<span class="string">'PATHWAY     '</span>) || pathway==true
-0218                   <span class="comment">%Check if annotation has been added already</span>
-0219                   <span class="keyword">if</span> isstruct(model.rxnMiriams{rxnCounter})
-0220                       addToIndex=numel(model.rxnMiriams{rxnCounter}.name)+1;
-0221                   <span class="keyword">else</span>
-0222                       addToIndex=1;
-0223                   <span class="keyword">end</span>
-0224     
-0225                   tempStruct=model.rxnMiriams{rxnCounter};
-0226                   tempStruct.name{addToIndex,1}=<span class="string">'urn:miriam:kegg.pathway'</span>;
-0227                   <span class="comment">%If it's the old version</span>
-0228                   <span class="keyword">if</span> strcmp(tline(14:17),<span class="string">'PATH:'</span>)
-0229                     tempStruct.value{addToIndex,1}=tline(19:25);
-0230                   <span class="keyword">else</span>
-0231                     <span class="comment">%If it's the new version</span>
-0232                     tempStruct.value{addToIndex,1}=tline(13:19);
-0233                     pathway=true;
-0234                   <span class="keyword">end</span>
-0235     
-0236                   <span class="comment">%Don't do this if the pathway is rn01100 (Metabolic pathways)</span>
-0237                   <span class="keyword">if</span> ~strcmp(<span class="string">'rn01100'</span>,tempStruct.value{addToIndex,1})
-0238                     model.rxnMiriams{rxnCounter}=tempStruct;
-0239     
-0240                     <span class="comment">%Also save the subSystems entry as being the first path found</span>
-0241                     <span class="keyword">if</span> ~any(model.subSystems{rxnCounter})
-0242                         <span class="keyword">if</span> strcmp(tline(14:17),<span class="string">'PATH:'</span>)
-0243                             model.subSystems{rxnCounter}=tline(28:end);
-0244                         <span class="keyword">else</span>
-0245                             model.subSystems{rxnCounter}=tline(22:end);
-0246                         <span class="keyword">end</span>
-0247                     <span class="keyword">end</span>
-0248                   <span class="keyword">end</span>
-0249               <span class="keyword">end</span>
-0250           <span class="keyword">end</span>
-0251         <span class="keyword">end</span>
-0252     
-0253         <span class="comment">%Close the file</span>
-0254         fclose(fid);
+0179               model.eccodes{rxnCounter}=deblank(model.eccodes{rxnCounter});
+0180               model.eccodes{rxnCounter}=strcat(<span class="string">'ec-code/'</span>,model.eccodes{rxnCounter});
+0181               model.eccodes{rxnCounter}=regexprep(model.eccodes{rxnCounter},<span class="string">'\s+'</span>,<span class="string">';ec-code/'</span>);
+0182           <span class="keyword">end</span>
+0183           <span class="keyword">if</span> numel(tline)&gt;8
+0184             <span class="keyword">if</span> strcmp(tline(1:9),<span class="string">'REFERENCE'</span>)
+0185                 pathway=false;
+0186                 orthology=false;
+0187             <span class="keyword">end</span>
+0188           <span class="keyword">end</span>
+0189     
+0190           <span class="comment">%Add KO-ids</span>
+0191           <span class="keyword">if</span> numel(tline)&gt;16
+0192               <span class="keyword">if</span> strcmp(tline(1:16),<span class="string">'ORTHOLOGY   KO: '</span>) || strcmp(tline(1:16),<span class="string">'            KO: '</span>) || strcmp(tline(1:12),<span class="string">'ORTHOLOGY   '</span>) || orthology==true
+0193                   pathway=false;
+0194                   <span class="comment">%Check if KO has been added already (each reaction may belong to</span>
+0195                   <span class="comment">%several)</span>
+0196                   <span class="keyword">if</span> isstruct(model.rxnMiriams{rxnCounter})
+0197                       addToIndex=numel(model.rxnMiriams{rxnCounter}.name)+1;
+0198                   <span class="keyword">else</span>
+0199                       addToIndex=1;
+0200                   <span class="keyword">end</span>
+0201     
+0202                   tempStruct=model.rxnMiriams{rxnCounter};
+0203                   tempStruct.name{addToIndex,1}=<span class="string">'kegg.orthology'</span>;
+0204                   <span class="keyword">if</span> strcmp(tline(13:16),<span class="string">'KO:'</span>) <span class="comment">%This is in the old version</span>
+0205                     tempStruct.value{addToIndex,1}=tline(17:22);
+0206                   <span class="keyword">else</span>
+0207                       <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'ORTHOLOGY   '</span>)
+0208                         <span class="comment">%This means that it found one KO in the new format and that</span>
+0209                         <span class="comment">%subsequent lines might be other KOs</span>
+0210                         orthology=true;
+0211                       <span class="keyword">end</span>
+0212                       tempStruct.value{addToIndex,1}=tline(13:18);
+0213                   <span class="keyword">end</span>
+0214                   model.rxnMiriams{rxnCounter}=tempStruct;
+0215               <span class="keyword">end</span>
+0216           <span class="keyword">end</span>
+0217     
+0218           <span class="comment">%Add pathways</span>
+0219           <span class="keyword">if</span> numel(tline)&gt;18
+0220               <span class="keyword">if</span> strcmp(tline(1:18),<span class="string">'PATHWAY     PATH: '</span>) || strcmp(tline(1:18),<span class="string">'            PATH: '</span>) || strcmp(tline(1:12),<span class="string">'PATHWAY     '</span>) || pathway==true
+0221                   <span class="comment">%Check if annotation has been added already</span>
+0222                   <span class="keyword">if</span> isstruct(model.rxnMiriams{rxnCounter})
+0223                       addToIndex=numel(model.rxnMiriams{rxnCounter}.name)+1;
+0224                   <span class="keyword">else</span>
+0225                       addToIndex=1;
+0226                   <span class="keyword">end</span>
+0227     
+0228                   tempStruct=model.rxnMiriams{rxnCounter};
+0229                   tempStruct.name{addToIndex,1}=<span class="string">'kegg.pathway'</span>;
+0230                   <span class="comment">%If it's the old version</span>
+0231                   <span class="keyword">if</span> strcmp(tline(14:17),<span class="string">'PATH:'</span>)
+0232                     tempStruct.value{addToIndex,1}=tline(19:25);
+0233                   <span class="keyword">else</span>
+0234                     <span class="comment">%If it's the new version</span>
+0235                     tempStruct.value{addToIndex,1}=tline(13:19);
+0236                     pathway=true;
+0237                   <span class="keyword">end</span>
+0238     
+0239                   <span class="comment">%Don't do this if the pathway is rn01100 (Metabolic pathways)</span>
+0240                   <span class="keyword">if</span> ~strcmp(<span class="string">'rn01100'</span>,tempStruct.value{addToIndex,1})
+0241                     model.rxnMiriams{rxnCounter}=tempStruct;
+0242     
+0243                     <span class="comment">%Also save the subSystems entry as being the first path found</span>
+0244                     <span class="keyword">if</span> ~any(model.subSystems{rxnCounter})
+0245                         <span class="keyword">if</span> strcmp(tline(14:17),<span class="string">'PATH:'</span>)
+0246                             model.subSystems{rxnCounter}=tline(28:end);
+0247                         <span class="keyword">else</span>
+0248                             model.subSystems{rxnCounter}=tline(22:end);
+0249                         <span class="keyword">end</span>
+0250                     <span class="keyword">end</span>
+0251                   <span class="keyword">end</span>
+0252               <span class="keyword">end</span>
+0253           <span class="keyword">end</span>
+0254         <span class="keyword">end</span>
 0255     
-0256         <span class="comment">%This is done here since the the indexes won't match since some reactions</span>
-0257         <span class="comment">%are removed along the way</span>
-0258         isIncomplete=model.rxns(isIncomplete);
-0259         isGeneral=model.rxns(isGeneral);
-0260     
-0261         <span class="comment">%If too much space was allocated, shrink the model</span>
-0262         model.rxns=model.rxns(1:rxnCounter);
-0263         model.rxnNames=model.rxnNames(1:rxnCounter);
-0264         model.eccodes=model.eccodes(1:rxnCounter);
-0265         equations=equations(1:rxnCounter);
-0266         model.rxnMiriams=model.rxnMiriams(1:rxnCounter);
-0267         model.subSystems=model.subSystems(1:rxnCounter);
-0268     
-0269         <span class="comment">%Then load the equations from another file. This is because the equations</span>
-0270         <span class="comment">%are easier to retrieve from there</span>
+0256         <span class="comment">%Close the file</span>
+0257         fclose(fid);
+0258     
+0259         <span class="comment">%This is done here since the the indexes won't match since some reactions</span>
+0260         <span class="comment">%are removed along the way</span>
+0261         isIncomplete=model.rxns(isIncomplete);
+0262         isGeneral=model.rxns(isGeneral);
+0263     
+0264         <span class="comment">%If too much space was allocated, shrink the model</span>
+0265         model.rxns=model.rxns(1:rxnCounter);
+0266         model.rxnNames=model.rxnNames(1:rxnCounter);
+0267         model.eccodes=model.eccodes(1:rxnCounter);
+0268         equations=equations(1:rxnCounter);
+0269         model.rxnMiriams=model.rxnMiriams(1:rxnCounter);
+0270         model.subSystems=model.subSystems(1:rxnCounter);
 0271     
-0272         <span class="comment">%The format is rxnID: equation</span>
-0273         <span class="comment">%The reactions should have been loaded in the exact same order</span>
-0274         fid = fopen(fullfile(keggPath,<span class="string">'reaction.lst'</span>), <span class="string">'r'</span>);
-0275     
-0276         <span class="comment">%Loop through the file</span>
-0277         <span class="keyword">for</span> i=1:rxnCounter
-0278           <span class="comment">%Get the next line</span>
-0279           tline = fgetl(fid);
-0280     
-0281           equations{i}=tline(9:end);
-0282         <span class="keyword">end</span>
+0272         <span class="comment">%Then load the equations from another file. This is because the equations</span>
+0273         <span class="comment">%are easier to retrieve from there</span>
+0274     
+0275         <span class="comment">%The format is rxnID: equation</span>
+0276         <span class="comment">%The reactions should have been loaded in the exact same order</span>
+0277         fid = fopen(fullfile(keggPath,<span class="string">'reaction.lst'</span>), <span class="string">'r'</span>);
+0278     
+0279         <span class="comment">%Loop through the file</span>
+0280         <span class="keyword">for</span> i=1:rxnCounter
+0281           <span class="comment">%Get the next line</span>
+0282           tline = fgetl(fid);
 0283     
-0284         <span class="comment">%Close the file</span>
-0285         fclose(fid);
+0284           equations{i}=tline(9:end);
+0285         <span class="keyword">end</span>
 0286     
-0287         <span class="comment">%Construct the S matrix and list of metabolites</span>
-0288         [S, mets, badRxns]=constructS(equations);
-0289         model.S=S;
-0290         model.mets=mets;
-0291     
-0292         <span class="comment">%There is some limited evidence for directionality in</span>
-0293         <span class="comment">%reaction_mapformula.lst. The information there concerns how the reactions</span>
-0294         <span class="comment">%are drawn in the KEGG maps. If a reaction is irreversible in the same</span>
-0295         <span class="comment">%direction for all maps, then I consider is irreversible, otherwise</span>
-0296         <span class="comment">%reversible. Also, not all reactions are present in the maps, so not all</span>
-0297         <span class="comment">%will have directionality. They will be considered to be reversible.</span>
-0298     
-0299         <span class="comment">%The format is R00005: 00330: C01010 =&gt; C00011</span>
-0300         <span class="comment">%Generate a reversibility structure with the fields:</span>
-0301         <span class="comment">%rxns: reaction ids</span>
-0302         <span class="comment">%product: one met id that is a product. This is because the reactions</span>
-0303         <span class="comment">%might be written in another direction compared to in the reactions.lst</span>
-0304         <span class="comment">%file</span>
-0305         <span class="comment">%rev: 1 if reversible, otherwise 0</span>
-0306         reversibility.rxns={};
-0307         reversibility.product={};
-0308         reversibility.rev=[];
-0309     
-0310         fid = fopen(fullfile(keggPath,<span class="string">'reaction_mapformula.lst'</span>), <span class="string">'r'</span>);
-0311         <span class="keyword">while</span> 1
-0312           <span class="comment">%Get the next line</span>
-0313           tline = fgetl(fid);
-0314     
-0315           <span class="comment">%Abort at end of file</span>
-0316           <span class="keyword">if</span> ~ischar(tline)
-0317               <span class="keyword">break</span>;
-0318           <span class="keyword">end</span>
-0319     
-0320           rxn=tline(1:6);
-0321           prod=tline(end-5:end);
-0322           rev=any(strfind(tline,<span class="string">'&lt;=&gt;'</span>));
-0323           <span class="keyword">if</span> isempty(reversibility.rxns)
-0324             reversibility.rxns{1}=rxn;
-0325             reversibility.product{1}=prod;
-0326             reversibility.rev(1)=rev;
-0327           <span class="keyword">else</span>
-0328             <span class="comment">%Check if the reaction was added before. It's an ordered list, so only</span>
-0329             <span class="comment">%check the last element</span>
-0330             <span class="keyword">if</span> strcmp(reversibility.rxns(end),rxn)
-0331                 <span class="comment">%If it's reversible in the new reaction or reversible in the old reaction</span>
-0332                 <span class="comment">%then set (keep) to be reversible</span>
-0333                 <span class="keyword">if</span> rev==1 || reversibility.rev(end)==1
-0334                     reversibility.rev(end)=1;
-0335                 <span class="keyword">else</span>
-0336                     <span class="comment">%This means that the reaction was already loaded, that it was</span>
-0337                     <span class="comment">%irreversible before and irreversible in the new reaction.</span>
-0338                     <span class="comment">%However, it could be that they are written in diferent</span>
-0339                     <span class="comment">%directions. If the product differ, then set to be reversible.</span>
-0340                     <span class="comment">%This assumes that the reactions are written with the same</span>
-0341                     <span class="comment">%metabolite as the last one if they are in the same direction.</span>
-0342                     <span class="keyword">if</span> ~strcmp(prod,reversibility.product(end))
-0343                         reversibility.rev(end)=1;
-0344                     <span class="keyword">end</span>
-0345                 <span class="keyword">end</span>
-0346             <span class="keyword">else</span>
-0347                 reversibility.rxns=[reversibility.rxns;rxn];
-0348                 reversibility.product=[reversibility.product;prod];
-0349                 reversibility.rev=[reversibility.rev;rev];
-0350             <span class="keyword">end</span>
-0351           <span class="keyword">end</span>
-0352         <span class="keyword">end</span>
-0353         fclose(fid);
-0354     
-0355         <span class="comment">%Update the reversibility</span>
-0356         model.rev=ones(rxnCounter,1);
-0357         <span class="comment">%Match the reaction ids</span>
-0358         irrevIDs=find(reversibility.rev==0);
-0359         [~, I]=ismember(reversibility.rxns(irrevIDs),model.rxns);
-0360         [~, prodMetIDs]=ismember(reversibility.product(irrevIDs),model.mets);
-0361         model.rev(I)=0;
+0287         <span class="comment">%Close the file</span>
+0288         fclose(fid);
+0289         
+0290         <span class="comment">%Several equations may have two whitespaces between the last</span>
+0291         <span class="comment">%reactant and the reversible arrow sign. The number of whitespaces</span>
+0292         <span class="comment">%is thus reduced to one;</span>
+0293         equations = regexprep(equations,<span class="string">'  &lt;=&gt;'</span>, <span class="string">' &lt;=&gt;'</span>);
+0294         
+0295         <span class="comment">%Construct the S matrix and list of metabolites</span>
+0296         [S, mets, badRxns]=constructS(equations);
+0297         model.S=S;
+0298         model.mets=mets;
+0299     
+0300         <span class="comment">%There is some limited evidence for directionality in</span>
+0301         <span class="comment">%reaction_mapformula.lst. The information there concerns how the reactions</span>
+0302         <span class="comment">%are drawn in the KEGG maps. If a reaction is irreversible in the same</span>
+0303         <span class="comment">%direction for all maps, then I consider is irreversible, otherwise</span>
+0304         <span class="comment">%reversible. Also, not all reactions are present in the maps, so not all</span>
+0305         <span class="comment">%will have directionality. They will be considered to be reversible.</span>
+0306     
+0307         <span class="comment">%The format is R00005: 00330: C01010 =&gt; C00011</span>
+0308         <span class="comment">%Generate a reversibility structure with the fields:</span>
+0309         <span class="comment">%rxns: reaction ids</span>
+0310         <span class="comment">%product: one met id that is a product. This is because the reactions</span>
+0311         <span class="comment">%might be written in another direction compared to in the reactions.lst</span>
+0312         <span class="comment">%file</span>
+0313         <span class="comment">%rev: 1 if reversible, otherwise 0</span>
+0314         reversibility.rxns={};
+0315         reversibility.product={};
+0316         reversibility.rev=[];
+0317     
+0318         fid = fopen(fullfile(keggPath,<span class="string">'reaction_mapformula.lst'</span>), <span class="string">'r'</span>);
+0319         <span class="keyword">while</span> 1
+0320           <span class="comment">%Get the next line</span>
+0321           tline = fgetl(fid);
+0322     
+0323           <span class="comment">%Abort at end of file</span>
+0324           <span class="keyword">if</span> ~ischar(tline)
+0325               <span class="keyword">break</span>;
+0326           <span class="keyword">end</span>
+0327     
+0328           rxn=tline(1:6);
+0329           prod=tline(end-5:end);
+0330           rev=any(strfind(tline,<span class="string">'&lt;=&gt;'</span>));
+0331           <span class="keyword">if</span> isempty(reversibility.rxns)
+0332             reversibility.rxns{1}=rxn;
+0333             reversibility.product{1}=prod;
+0334             reversibility.rev(1)=rev;
+0335           <span class="keyword">else</span>
+0336             <span class="comment">%Check if the reaction was added before. It's an ordered list, so only</span>
+0337             <span class="comment">%check the last element</span>
+0338             <span class="keyword">if</span> strcmp(reversibility.rxns(end),rxn)
+0339                 <span class="comment">%If it's reversible in the new reaction or reversible in the old reaction</span>
+0340                 <span class="comment">%then set (keep) to be reversible</span>
+0341                 <span class="keyword">if</span> rev==1 || reversibility.rev(end)==1
+0342                     reversibility.rev(end)=1;
+0343                 <span class="keyword">else</span>
+0344                     <span class="comment">%This means that the reaction was already loaded, that it was</span>
+0345                     <span class="comment">%irreversible before and irreversible in the new reaction.</span>
+0346                     <span class="comment">%However, it could be that they are written in diferent</span>
+0347                     <span class="comment">%directions. If the product differ, then set to be reversible.</span>
+0348                     <span class="comment">%This assumes that the reactions are written with the same</span>
+0349                     <span class="comment">%metabolite as the last one if they are in the same direction.</span>
+0350                     <span class="keyword">if</span> ~strcmp(prod,reversibility.product(end))
+0351                         reversibility.rev(end)=1;
+0352                     <span class="keyword">end</span>
+0353                 <span class="keyword">end</span>
+0354             <span class="keyword">else</span>
+0355                 reversibility.rxns=[reversibility.rxns;rxn];
+0356                 reversibility.product=[reversibility.product;prod];
+0357                 reversibility.rev=[reversibility.rev;rev];
+0358             <span class="keyword">end</span>
+0359           <span class="keyword">end</span>
+0360         <span class="keyword">end</span>
+0361         fclose(fid);
 0362     
-0363         <span class="comment">% There may be KEGG rxns and corresponding mets, which are no longer in</span>
-0364         <span class="comment">% KEGG. Remove these</span>
-0365         indxToDelete=or(~prodMetIDs,~I);
-0366         prodMetIDs = prodMetIDs(indxToDelete==0);
-0367         I = I(indxToDelete==0);
-0368     
-0369         <span class="comment">%See if the reactions are written in the same order in model.S</span>
-0370         linearInd=sub2ind(size(model.S), prodMetIDs, I);
-0371         changeOrder=I(model.S(linearInd)&lt;0);
-0372         model.S(:,changeOrder)=model.S(:,changeOrder).*-1; <span class="comment">%Change the order of these reactions</span>
-0373     
-0374         <span class="comment">%Add some stuff to get a correct model structure</span>
-0375         model.ub=ones(rxnCounter,1)*1000;
-0376         model.lb=model.rev*-1000;
-0377         model.c=zeros(rxnCounter,1);
-0378         model.b=zeros(numel(model.mets),1);
-0379         model=removeReactions(model,badRxns,true,true);
-0380     
-0381         <span class="comment">%Save the model structure</span>
-0382         save(rxnsFile,<span class="string">'model'</span>,<span class="string">'isGeneral'</span>,<span class="string">'isIncomplete'</span>);
-0383     <span class="keyword">end</span>
-0384 <span class="keyword">end</span>
-0385 <span class="comment">%Delete reaction which are labeled as &quot;incomplete&quot;, &quot;erroneous&quot;, &quot;unclear&quot;</span>
-0386 <span class="comment">%or &quot;general reaction&quot; (depending on settings.</span>
-0387 <span class="keyword">if</span> keepGeneral==false
-0388     model=removeReactions(model,intersect(isGeneral,model.rxns),true,true);
-0389 <span class="keyword">end</span>
-0390 <span class="keyword">if</span> keepIncomplete==false
-0391     model=removeReactions(model,intersect(isIncomplete,model.rxns),true,true);
-0392 <span class="keyword">end</span>
-0393 
-0394 <span class="comment">%Delete reactions involving undefined stoichiometry. These metabolites have</span>
-0395 <span class="comment">%an ID containing the letter &quot;n&quot; or &quot;m&quot;</span>
-0396 <span class="keyword">if</span> keepUndefinedStoich==false
-0397     I=cellfun(@any,strfind(model.mets,<span class="string">'n'</span>)) | cellfun(@any,strfind(model.mets,<span class="string">'m'</span>));
-0398     [~, J]=find(model.S(I,:));
-0399     model=removeReactions(model,J,true,true);
-0400 <span class="keyword">end</span>
-0401 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 28-Feb-2017 23:41:43 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0363         <span class="comment">%Update the reversibility</span>
+0364         model.rev=ones(rxnCounter,1);
+0365         <span class="comment">%Match the reaction ids</span>
+0366         irrevIDs=find(reversibility.rev==0);
+0367         [~, I]=ismember(reversibility.rxns(irrevIDs),model.rxns);
+0368         [~, prodMetIDs]=ismember(reversibility.product(irrevIDs),model.mets);
+0369         model.rev(I)=0;
+0370     
+0371         <span class="comment">%See if the reactions are written in the same order in model.S</span>
+0372         linearInd=sub2ind(size(model.S), prodMetIDs, I);
+0373         changeOrder=I(model.S(linearInd)&lt;0);
+0374         model.S(:,changeOrder)=model.S(:,changeOrder).*-1; <span class="comment">%Change the order of these reactions</span>
+0375     
+0376         <span class="comment">%Add some stuff to get a correct model structure</span>
+0377         model.ub=ones(rxnCounter,1)*1000;
+0378         model.lb=model.rev*-1000;
+0379         model.c=zeros(rxnCounter,1);
+0380         model.b=zeros(numel(model.mets),1);
+0381         model=removeReactions(model,badRxns,true,true);
+0382     
+0383         <span class="comment">%Save the model structure</span>
+0384         save(rxnsFile,<span class="string">'model'</span>,<span class="string">'isGeneral'</span>,<span class="string">'isIncomplete'</span>);
+0385     <span class="keyword">end</span>
+0386 <span class="keyword">end</span>
+0387 <span class="comment">%Delete reaction which are labeled as &quot;incomplete&quot;, &quot;erroneous&quot;, &quot;unclear&quot;</span>
+0388 <span class="comment">%or &quot;general reaction&quot; (depending on settings.</span>
+0389 <span class="keyword">if</span> keepGeneral==false
+0390     model=removeReactions(model,intersect(isGeneral,model.rxns),true,true);
+0391 <span class="keyword">end</span>
+0392 <span class="keyword">if</span> keepIncomplete==false
+0393     model=removeReactions(model,intersect(isIncomplete,model.rxns),true,true);
+0394 <span class="keyword">end</span>
+0395 
+0396 <span class="comment">%Delete reactions involving undefined stoichiometry. These metabolites have</span>
+0397 <span class="comment">%an ID containing the letter &quot;n&quot; or &quot;m&quot;</span>
+0398 <span class="keyword">if</span> keepUndefinedStoich==false
+0399     I=cellfun(@any,strfind(model.mets,<span class="string">'n'</span>)) | cellfun(@any,strfind(model.mets,<span class="string">'m'</span>));
+0400     [~, J]=find(model.S(I,:));
+0401     model=removeReactions(model,J,true,true);
+0402 <span class="keyword">end</span>
+0403 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 01-Nov-2017 16:53:54 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

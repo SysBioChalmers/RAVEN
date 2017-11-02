@@ -58,7 +58,7 @@
 
    Usage: getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
 
-   Eduard Kerkhoven, 2017-02-28</pre></div>
+   Simonas Marcisauskas, 2017-06-06</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
@@ -105,7 +105,7 @@ This function is called by:
 0030 <span class="comment">%</span>
 0031 <span class="comment">%   Usage: getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)</span>
 0032 <span class="comment">%</span>
-0033 <span class="comment">%   Eduard Kerkhoven, 2017-02-28</span>
+0033 <span class="comment">%   Simonas Marcisauskas, 2017-06-06</span>
 0034 <span class="comment">%</span>
 0035 
 0036 <span class="keyword">if</span> nargin&lt;2
@@ -131,7 +131,7 @@ This function is called by:
 0056 <span class="keyword">for</span> i=1:numel(model.rxns)
 0057    <span class="keyword">if</span> isstruct(model.rxnMiriams{i})
 0058       <span class="keyword">for</span> j=1:numel(model.rxnMiriams{i}.name)
-0059          <span class="keyword">if</span> strcmpi(<span class="string">'urn:miriam:kegg.ko'</span>,model.rxnMiriams{i}.name{j});
+0059          <span class="keyword">if</span> strcmpi(<span class="string">'kegg.orthology'</span>,model.rxnMiriams{i}.name{j})
 0060             <span class="comment">%Add the KO id</span>
 0061             KOs(addToIndex)=model.rxnMiriams{i}.value(j);
 0062             addToIndex=addToIndex+1;
@@ -160,7 +160,7 @@ This function is called by:
 0085     <span class="keyword">if</span> isstruct(model.rxnMiriams{i})
 0086         <span class="keyword">for</span> j=1:numel(model.rxnMiriams{i}.name)
 0087             toDel=[];
-0088             <span class="keyword">if</span> strcmp(model.rxnMiriams{i}.name{j},<span class="string">'urn:miriam:kegg.ko'</span>)
+0088             <span class="keyword">if</span> strcmp(model.rxnMiriams{i}.name{j},<span class="string">'kegg.orthology'</span>)
 0089                 <span class="keyword">if</span> ismember(model.rxnMiriams{i}.value{j},KOsToRemove)
 0090                    toDel=[toDel;j];
 0091                 <span class="keyword">end</span>
@@ -186,7 +186,7 @@ This function is called by:
 0111 counter=1;
 0112 <span class="keyword">for</span> i=1:numel(model.rxns)
 0113     <span class="keyword">if</span> isstruct(model.rxnMiriams{i})
-0114         I=strncmp(<span class="string">'urn:miriam:kegg.ko'</span>,model.rxnMiriams{i}.name,18);
+0114         I=strncmp(<span class="string">'kegg.orthology'</span>,model.rxnMiriams{i}.name,18);
 0115         [J, K]=ismember(model.rxnMiriams{i}.value(I),KOModel.rxns);
 0116         <span class="comment">%Find all gene indexes that correspond to any of these KOs</span>
 0117         [~, L]=find(KOModel.rxnGeneMat(K(J),:));
@@ -240,29 +240,40 @@ This function is called by:
 0165 <span class="keyword">end</span>
 0166 model.metMiriams(a)=metModel.metMiriams(b);
 0167 
-0168 <span class="comment">%Put all metabolites in one compartment called 's' (for system). This is</span>
-0169 <span class="comment">%done just to be more compatible with the rest of the code</span>
-0170 model.comps={<span class="string">'s'</span>};
-0171 model.compNames={<span class="string">'System'</span>};
-0172 model.compOutside={<span class="string">''</span>};
-0173 model.metComps=ones(numel(model.mets),1);
-0174 
-0175 <span class="comment">%If reactions with undefined stoichiometry are kept, then the corresponding</span>
-0176 <span class="comment">%metabolites will have ids such as &quot;(n+1) C000001&quot; and their names will be</span>
-0177 <span class="comment">%empty. These ids are not valid SBML identifiers and are therefore replaced</span>
-0178 <span class="comment">%with &quot;undefined1, undefined2...&quot;. The former ids are stored as the new</span>
-0179 <span class="comment">%names</span>
-0180 I=find(cellfun(@any,strfind(model.mets,<span class="string">'n'</span>)) | cellfun(@any,strfind(model.mets,<span class="string">'m'</span>)));
-0181 model.metNames(I)=model.mets(I);
-0182 repNums=1:numel(I);
-0183 repIDs=strcat(<span class="string">'undefined_'</span>,cellfun(@num2str,num2cell(repNums(:)),<span class="string">'UniformOutput'</span>,false));
-0184 model.mets(I)=repIDs;
+0168 <span class="comment">%The composition should be loaded from InChIs when available</span>
+0169 I=find(~cellfun(@isempty,model.inchis));
+0170 <span class="keyword">for</span> i=1:numel(I)
+0171     S=regexp(model.inchis(I(i)),<span class="string">'/'</span>,<span class="string">'split'</span>);
+0172     S=S{1};
+0173     <span class="keyword">if</span> numel(S)&gt;=2
+0174         <span class="comment">%Don't copy if it doesn't look good</span>
+0175         model.metFormulas(I(i))=S(2);
+0176     <span class="keyword">end</span>
+0177 <span class="keyword">end</span>
+0178 
+0179 <span class="comment">%Put all metabolites in one compartment called 's' (for system). This is</span>
+0180 <span class="comment">%done just to be more compatible with the rest of the code</span>
+0181 model.comps={<span class="string">'s'</span>};
+0182 model.compNames={<span class="string">'System'</span>};
+0183 model.compOutside={<span class="string">''</span>};
+0184 model.metComps=ones(numel(model.mets),1);
 0185 
-0186 <span class="comment">%It could also be that the metabolite names are empty for some other</span>
-0187 <span class="comment">%reason. In that case, use the ID instead</span>
-0188 I=cellfun(@isempty,model.metNames);
-0189 model.metNames(I)=model.mets(I);
-0190 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 28-Feb-2017 23:41:43 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0186 <span class="comment">%If reactions with undefined stoichiometry are kept, then the corresponding</span>
+0187 <span class="comment">%metabolites will have ids such as &quot;(n+1) C000001&quot; and their names will be</span>
+0188 <span class="comment">%empty. These ids are not valid SBML identifiers and are therefore replaced</span>
+0189 <span class="comment">%with &quot;undefined1, undefined2...&quot;. The former ids are stored as the new</span>
+0190 <span class="comment">%names</span>
+0191 I=find(cellfun(@any,strfind(model.mets,<span class="string">'n'</span>)) | cellfun(@any,strfind(model.mets,<span class="string">'m'</span>)));
+0192 model.metNames(I)=model.mets(I);
+0193 repNums=1:numel(I);
+0194 repIDs=strcat(<span class="string">'undefined_'</span>,cellfun(@num2str,num2cell(repNums(:)),<span class="string">'UniformOutput'</span>,false));
+0195 model.mets(I)=repIDs;
+0196 
+0197 <span class="comment">%It could also be that the metabolite names are empty for some other</span>
+0198 <span class="comment">%reason. In that case, use the ID instead</span>
+0199 I=cellfun(@isempty,model.metNames);
+0200 model.metNames(I)=model.mets(I);
+0201 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 01-Nov-2017 16:53:54 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

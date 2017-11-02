@@ -1,0 +1,650 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of getRxnsFromMetaCyc</title>
+  <meta name="keywords" content="getRxnsFromMetaCyc">
+  <meta name="description" content="getRxnsFromMetaCyc">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="../index.html">external</a> &gt; <a href="index.html">metacyc</a> &gt; getRxnsFromMetaCyc.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for external\metacyc&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>getRxnsFromMetaCyc
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>getRxnsFromMetaCyc</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> getRxnsFromMetaCyc
+   Retrieves reactions information from MetaCyc database
+
+   metacycPath         if metaCycRxns.mat is not in the RAVEN\external\metacyc
+                       directory, this function will attempt to read data
+                       from a local dump of the metacyc database. metacycPath
+                       is the path to the root of this database
+   keepTransportRxns   include transportation reactions, which often have identical
+                       reactants and products that turn to be all-zero columns in
+                       the S matrix (opt, default false)
+   keepUnbalanced      include reactions cannot be unbalanced reactions, usually
+                       because they are polymeric reactions or because of a
+                       specific difficulty in balancing class structures
+                       (opt, default false)
+   keepUndetermined    include reactions that have substrates lack chemical
+                       structures or with non-numerical coefficients (e.g. n+1)
+                       (opt, default false)
+
+   model     a model structure generated from the database. The following
+             fields are filled
+             id:             'MetaCyc'
+             description:    'Automatically generated from MetaCyc database'
+             rxns:           MetaCyc reaction ids
+             rxnNames:       Name for each reaction entry
+             mets:           MetaCyc compound ids. If the equations use
+                             stoichiometry such as ID(n+1) then the whole
+                             expression is saved as the id
+             pathway         MetaCyc pathway id
+             eccodes:        Corresponding ec-number if available
+             rxnMiriams:     Contains reaction specific information such as
+                             associated RHEA and KEGG reaction ids
+             S:              Stoichiometric matrix
+             lb:             -1000 for all reactions
+             ub:             1000 for all reactions
+             rev:            1 for reversible and 0 for irreversible. For
+                             reactions present in pathway maps the reversibility
+                             is taken from there
+             b:              0 for all metabolites
+
+   If the file metaCycRxns.mat is in the RAVEN/external/metacyc directory, it
+   will be directly loaded instead of parsing the MetaCyc flat files and
+   pre-prepared lists of MetaCyc transport and undetermined reactions.
+
+   Usage: model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
+
+   Hao Wang, 2017-06-17</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="getModelFromMetaCyc.html" class="code" title="function metaCycModel=getModelFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)">getModelFromMetaCyc</a>	getModelFromMetaCyc</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function newString=removeHTMLcodes(string)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)</a>
+0002 <span class="comment">% getRxnsFromMetaCyc</span>
+0003 <span class="comment">%   Retrieves reactions information from MetaCyc database</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%   metacycPath         if metaCycRxns.mat is not in the RAVEN\external\metacyc</span>
+0006 <span class="comment">%                       directory, this function will attempt to read data</span>
+0007 <span class="comment">%                       from a local dump of the metacyc database. metacycPath</span>
+0008 <span class="comment">%                       is the path to the root of this database</span>
+0009 <span class="comment">%   keepTransportRxns   include transportation reactions, which often have identical</span>
+0010 <span class="comment">%                       reactants and products that turn to be all-zero columns in</span>
+0011 <span class="comment">%                       the S matrix (opt, default false)</span>
+0012 <span class="comment">%   keepUnbalanced      include reactions cannot be unbalanced reactions, usually</span>
+0013 <span class="comment">%                       because they are polymeric reactions or because of a</span>
+0014 <span class="comment">%                       specific difficulty in balancing class structures</span>
+0015 <span class="comment">%                       (opt, default false)</span>
+0016 <span class="comment">%   keepUndetermined    include reactions that have substrates lack chemical</span>
+0017 <span class="comment">%                       structures or with non-numerical coefficients (e.g. n+1)</span>
+0018 <span class="comment">%                       (opt, default false)</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">%   model     a model structure generated from the database. The following</span>
+0021 <span class="comment">%             fields are filled</span>
+0022 <span class="comment">%             id:             'MetaCyc'</span>
+0023 <span class="comment">%             description:    'Automatically generated from MetaCyc database'</span>
+0024 <span class="comment">%             rxns:           MetaCyc reaction ids</span>
+0025 <span class="comment">%             rxnNames:       Name for each reaction entry</span>
+0026 <span class="comment">%             mets:           MetaCyc compound ids. If the equations use</span>
+0027 <span class="comment">%                             stoichiometry such as ID(n+1) then the whole</span>
+0028 <span class="comment">%                             expression is saved as the id</span>
+0029 <span class="comment">%             pathway         MetaCyc pathway id</span>
+0030 <span class="comment">%             eccodes:        Corresponding ec-number if available</span>
+0031 <span class="comment">%             rxnMiriams:     Contains reaction specific information such as</span>
+0032 <span class="comment">%                             associated RHEA and KEGG reaction ids</span>
+0033 <span class="comment">%             S:              Stoichiometric matrix</span>
+0034 <span class="comment">%             lb:             -1000 for all reactions</span>
+0035 <span class="comment">%             ub:             1000 for all reactions</span>
+0036 <span class="comment">%             rev:            1 for reversible and 0 for irreversible. For</span>
+0037 <span class="comment">%                             reactions present in pathway maps the reversibility</span>
+0038 <span class="comment">%                             is taken from there</span>
+0039 <span class="comment">%             b:              0 for all metabolites</span>
+0040 <span class="comment">%</span>
+0041 <span class="comment">%   If the file metaCycRxns.mat is in the RAVEN/external/metacyc directory, it</span>
+0042 <span class="comment">%   will be directly loaded instead of parsing the MetaCyc flat files and</span>
+0043 <span class="comment">%   pre-prepared lists of MetaCyc transport and undetermined reactions.</span>
+0044 <span class="comment">%</span>
+0045 <span class="comment">%   Usage: model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)</span>
+0046 <span class="comment">%</span>
+0047 <span class="comment">%   Hao Wang, 2017-06-17</span>
+0048 <span class="comment">%</span>
+0049 
+0050 <span class="comment">%NOTE: This is how one entry looks in the file</span>
+0051 
+0052 <span class="comment">% UNIQUE-ID - 4-HYDROXY-2-KETOPIMELATE-LYSIS-RXN</span>
+0053 <span class="comment">% TYPES - Small-Molecule-Reactions</span>
+0054 <span class="comment">% TYPES - Chemical-Reactions</span>
+0055 <span class="comment">% ATOM-MAPPINGS - (:NO-HYDROGEN-ENCODING (6 7 0 8 1 9 2 10 3 12 11 5 4) (((PYRUVATE 0 5) (SUCC-S-ALD 6 12)) ((CPD-804 0 12))))</span>
+0056 <span class="comment">% DBLINKS - (LIGAND-RXN &quot;R01647&quot; NIL |kr| 3650824949 NIL NIL)</span>
+0057 <span class="comment">% DBLINKS - (LIGAND-RXN &quot;R01645&quot; NIL |taltman| 3459474590 NIL NIL)</span>
+0058 <span class="comment">% EC-NUMBER - EC-4.1.2.52</span>
+0059 <span class="comment">% ^OFFICIAL? - T</span>
+0060 <span class="comment">% ENZYMATIC-REACTION - ENZRXN-3009</span>
+0061 <span class="comment">% IN-PATHWAY - 3-HYDROXYPHENYLACETATE-DEGRADATION-PWY</span>
+0062 <span class="comment">% LEFT - CPD-804</span>
+0063 <span class="comment">% ORPHAN? - :NO</span>
+0064 <span class="comment">% PHYSIOLOGICALLY-RELEVANT? - T</span>
+0065 <span class="comment">% REACTION-DIRECTION - LEFT-TO-RIGHT</span>
+0066 <span class="comment">% RIGHT - SUCC-S-ALD</span>
+0067 <span class="comment">% RIGHT - PYRUVATE</span>
+0068 <span class="comment">% //</span>
+0069 
+0070 <span class="comment">% A line that contains only '//' separates each object.</span>
+0071 
+0072 <span class="keyword">if</span> nargin&lt;2
+0073     keepTransportRxns=false;
+0074 <span class="keyword">end</span>
+0075 <span class="keyword">if</span> nargin&lt;3
+0076     keepUnbalanced=false;
+0077 <span class="keyword">end</span>
+0078 <span class="keyword">if</span> nargin&lt;4
+0079     keepUndetermined=false;
+0080 <span class="keyword">end</span>
+0081 
+0082 <span class="comment">%Check if the reactions have been parsed before and saved. Directly load the model if so.</span>
+0083 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
+0084 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+0085 rxnsFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'metacyc'</span>,<span class="string">'metaCycRxns.mat'</span>);
+0086 metaCycRxnFile=<span class="string">'reactions.dat'</span>;
+0087 metaCycPwyFile=<span class="string">'pathway-links.dat'</span>;
+0088 
+0089 <span class="keyword">if</span> exist(rxnsFile, <span class="string">'file'</span>)
+0090     fprintf([<span class="string">'NOTE: Importing MetaCyc reactions from '</span> strrep(rxnsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'.\n'</span>]);
+0091     load(rxnsFile);
+0092 <span class="keyword">else</span>
+0093     fprintf([<span class="string">'Cannot locate '</span> strrep(rxnsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">' and will try to generate it from the local MetaCyc database files.\n'</span>]);
+0094     <span class="keyword">if</span> ~exist(rxnsFile) || ~exist(fullfile(metacycPath,metaCycRxnFile),<span class="string">'file'</span>) || ~exist(fullfile(metacycPath,metaCycPwyFile),<span class="string">'file'</span>)
+0095         EM=fprintf([<span class="string">'The files of reactions or pathways cannot be located, and should be downloaded from MetaCyc.\n'</span>]);
+0096         dispEM(EM);
+0097     <span class="keyword">else</span>
+0098         metaCycRxns.id=<span class="string">'MetaCyc'</span>;
+0099         metaCycRxns.description=<span class="string">'Automatically generated from MetaCyc database'</span>;
+0100 
+0101           <span class="comment">%Get pathway names and add them to the field of subSystems</span>
+0102         fid = fopen(fullfile(metacycPath,metaCycPwyFile), <span class="string">'r'</span>);
+0103     
+0104         <span class="comment">%Keeps track of how many pathways that have been added</span>
+0105         pwyCounter=0;
+0106                 pwys=cell(10000,1);
+0107             pwyNames=cell(10000,1);
+0108             
+0109         <span class="comment">%Loop through the file</span>
+0110         <span class="keyword">while</span> 1
+0111           <span class="comment">%Get the next line</span>
+0112           tline = fgetl(fid);
+0113     
+0114           <span class="comment">%Abort at end of file</span>
+0115           <span class="keyword">if</span> ~ischar(tline)
+0116               <span class="keyword">break</span>;
+0117           <span class="keyword">end</span>
+0118         
+0119           <span class="comment">%Read in pathway ids and names</span>
+0120           <span class="keyword">if</span> ~strcmp(tline(1),<span class="string">'#'</span>)
+0121               pwyCounter=pwyCounter+1;
+0122               vars = regexp(tline, <span class="string">'\t'</span>, <span class="string">'split'</span>);
+0123                         pwys{pwyCounter}=vars{1};
+0124             pwyNames{pwyCounter}=vars{2};
+0125             
+0126             <span class="comment">%Romve HTML symbols</span>
+0127             pwyNames{pwyCounter}=<a href="#_sub1" class="code" title="subfunction newString=removeHTMLcodes(string)">removeHTMLcodes</a>(pwyNames{pwyCounter});
+0128 
+0129           <span class="keyword">end</span>              
+0130         <span class="keyword">end</span>
+0131         fclose(fid);
+0132                 pwys=pwys(1:pwyCounter);
+0133             pwyNames=pwyNames(1:pwyCounter);
+0134     
+0135         <span class="comment">%Preallocate memory for 50000 reactions</span>
+0136         metaCycRxns.rxns=cell(50000,1);
+0137         metaCycRxns.rxnNames=cell(50000,1);
+0138         metaCycRxns.eccodes=cell(50000,1);
+0139         metaCycRxns.subSystems=cell(50000,1);
+0140         metaCycRxns.pwys=cell(50000,1);
+0141         metaCycRxns.rxnMiriams=cell(50000,1);
+0142         metaCycRxns.rxnReferences=cell(50000,1);
+0143         metaCycRxns.rev=ones(50000,1); <span class="comment">%reversibility;</span>
+0144         
+0145         rxnLinks.metacyc=cell(10000,1);
+0146         rxnLinks.kegg=cell(10000,1);
+0147         rxnLinks.check=cell(10000,1);
+0148         isSpontaneous=false(10000,1); <span class="comment">%spontaneous;</span>
+0149         UNBALANCED=false(10000,1);
+0150         UNDETERMINED=cell(10000,1);
+0151         TRANSPORT=cell(10000,1);
+0152 
+0153         <span class="comment">%Transport reactions were organzied into a file</span>
+0154         fid = fopen(fullfile(metacycPath,<span class="string">'transportRxns.txt'</span>), <span class="string">'r'</span>);
+0155         transportCounter=0;
+0156         <span class="comment">%Loop through the file</span>
+0157         <span class="keyword">while</span> 1
+0158           <span class="comment">%Get the next line</span>
+0159           tline = fgetl(fid);
+0160     
+0161           <span class="comment">%Abort at end of file</span>
+0162           <span class="keyword">if</span> ~ischar(tline)
+0163               <span class="keyword">break</span>;
+0164           <span class="keyword">end</span>
+0165             
+0166             <span class="comment">%disp(tline);</span>
+0167               transportCounter=transportCounter+1;
+0168                  TRANSPORT{transportCounter}=tline;
+0169             <span class="keyword">end</span>
+0170         <span class="comment">%Close the file</span>
+0171         fclose(fid);
+0172         TRANSPORT=TRANSPORT(1:transportCounter);
+0173         
+0174         <span class="comment">%Undetermined reactions were organzied into a file</span>
+0175         fid = fopen(fullfile(metacycPath,<span class="string">'undeterminedRxns.txt'</span>), <span class="string">'r'</span>);
+0176         undetermCounter=0;
+0177         <span class="comment">%Loop through the file</span>
+0178         <span class="keyword">while</span> 1
+0179           <span class="comment">%Get the next line</span>
+0180           tline = fgetl(fid);
+0181     
+0182           <span class="comment">%Abort at end of file</span>
+0183           <span class="keyword">if</span> ~ischar(tline)
+0184               <span class="keyword">break</span>;
+0185           <span class="keyword">end</span>
+0186             
+0187             <span class="comment">%disp(tline);</span>
+0188               undetermCounter=undetermCounter+1;
+0189                 s=strfind(tline,<span class="string">': '</span>);
+0190                 <span class="keyword">if</span> s
+0191                   UNDETERMINED{undetermCounter}=tline(1:s-1);
+0192               <span class="keyword">end</span>
+0193             <span class="keyword">end</span>
+0194         <span class="comment">%Close the file</span>
+0195         fclose(fid);
+0196         UNDETERMINED=UNDETERMINED(1:undetermCounter);
+0197 
+0198         metaCycRxns.equations=cell(50000,1); <span class="comment">%reaction equations</span>
+0199         left=cell(50000,1); <span class="comment">%Temporarily stores the equations</span>
+0200         right=cell(50000,1); <span class="comment">%Temporarily stores the equations</span>
+0201     
+0202         <span class="comment">%First load information on reaction ID, reaction name,, pathway, and ec-number</span>
+0203         fid = fopen(fullfile(metacycPath,metaCycRxnFile), <span class="string">'r'</span>);
+0204     
+0205         <span class="comment">%Keeps track of how many reactions that have been added</span>
+0206         rxnCounter=0;
+0207         addSpont=false;
+0208         dbLinkCounter=0;
+0209     
+0210         <span class="comment">%Loop through the file</span>
+0211         <span class="keyword">while</span> 1
+0212           <span class="comment">%Get the next line</span>
+0213           tline = fgetl(fid);
+0214     
+0215           <span class="comment">%Abort at end of file</span>
+0216           <span class="keyword">if</span> ~ischar(tline)
+0217               <span class="keyword">break</span>;
+0218           <span class="keyword">end</span>
+0219         
+0220           <span class="comment">%Check if it is a new reaction</span>
+0221           <span class="keyword">if</span> numel(tline)&gt;12 &amp;&amp; strcmp(tline(1:12),<span class="string">'UNIQUE-ID - '</span>)
+0222               rxnCounter=rxnCounter+1;
+0223               nPwys=0;
+0224     
+0225               <span class="comment">%Add empty strings where there should be such</span>
+0226               metaCycRxns.rxnNames{rxnCounter}=<span class="string">''</span>;
+0227               metaCycRxns.eccodes{rxnCounter}=<span class="string">''</span>;
+0228               metaCycRxns.subSystems{rxnCounter}=<span class="string">''</span>;
+0229               metaCycRxns.pwys{rxnCounter}=<span class="string">''</span>;
+0230               metaCycRxns.equations{rxnCounter}=<span class="string">''</span>;
+0231               metaCycRxns.rxnReferences{rxnCounter}=<span class="string">''</span>;
+0232               reverse=0;   <span class="comment">%Value for reversing the equation when necessary</span>
+0233               
+0234               <span class="comment">% A complex evaluation system for generating the equations</span>
+0235               left{rxnCounter}=<span class="string">''</span>;
+0236               right{rxnCounter}=<span class="string">''</span>;
+0237               coefficient=<span class="string">''</span>;
+0238               templeft=<span class="string">''</span>;
+0239               tempright=<span class="string">''</span>;
+0240               <span class="comment">% might be simplified with a better algorithem</span>
+0241     
+0242               <span class="comment">%Add reaction ID</span>
+0243                 metaCycRxns.rxns{rxnCounter}=tline(13:end);
+0244 
+0245           <span class="keyword">end</span>
+0246     
+0247           <span class="comment">%Add name</span>
+0248           <span class="keyword">if</span> numel(tline)&gt;14 &amp;&amp; strcmp(tline(1:14),<span class="string">'COMMON-NAME - '</span>)
+0249               metaCycRxns.rxnNames{rxnCounter}=tline(15:end);
+0250               
+0251               <span class="comment">%Romve HTML symbols</span>
+0252               metaCycRxns.rxnNames{rxnCounter}=<a href="#_sub1" class="code" title="subfunction newString=removeHTMLcodes(string)">removeHTMLcodes</a>(metaCycRxns.rxnNames{rxnCounter});
+0253           <span class="keyword">end</span>
+0254 
+0255           <span class="comment">%Add eccodes</span>
+0256           <span class="keyword">if</span> numel(tline)&gt;15 &amp;&amp; strcmp(tline(1:15),<span class="string">'EC-NUMBER - EC-'</span>)
+0257                   <span class="keyword">if</span> isempty(metaCycRxns.eccodes{rxnCounter})
+0258                   metaCycRxns.eccodes{rxnCounter}=strcat(<span class="string">'ec-code/'</span>,tline(16:end));
+0259                 <span class="keyword">else</span>
+0260                     metaCycRxns.eccodes{rxnCounter}=strcat(metaCycRxns.eccodes{rxnCounter},<span class="string">';ec-code/'</span>,tline(16:end));
+0261                 <span class="keyword">end</span>
+0262           <span class="keyword">end</span>
+0263           <span class="keyword">if</span> numel(tline)&gt;16 &amp;&amp; strcmp(tline(1:16),<span class="string">'EC-NUMBER - |EC-'</span>)
+0264                   <span class="keyword">if</span> isempty(metaCycRxns.eccodes{rxnCounter})
+0265                   metaCycRxns.eccodes{rxnCounter}=strcat(<span class="string">'ec-code/'</span>,tline(17:end-1));
+0266                 <span class="keyword">else</span>
+0267                     metaCycRxns.eccodes{rxnCounter}=strcat(metaCycRxns.eccodes{rxnCounter},<span class="string">';ec-code/'</span>,tline(17:end-1));
+0268                 <span class="keyword">end</span>
+0269           <span class="keyword">end</span>
+0270           
+0271           <span class="comment">%Add pathway id and assign pathway name to subSystem field</span>
+0272           <span class="keyword">if</span> numel(tline)&gt;13 &amp;&amp; strcmp(tline(1:13),<span class="string">'IN-PATHWAY - '</span>)
+0273                   <span class="keyword">if</span> isempty(metaCycRxns.pwys{rxnCounter})
+0274                       metaCycRxns.pwys{rxnCounter}=tline(14:end);
+0275                   <span class="keyword">else</span>
+0276                       metaCycRxns.pwys{rxnCounter}=strcat(metaCycRxns.pwys{rxnCounter},<span class="string">';'</span>,tline(14:end));
+0277                   <span class="keyword">end</span>
+0278 
+0279                   [x, y]=ismember(tline(14:end),pwys);
+0280                   <span class="keyword">if</span> x
+0281                       <span class="keyword">if</span> isempty(metaCycRxns.subSystems{rxnCounter})
+0282                           metaCycRxns.subSystems{rxnCounter}=pwyNames{y};
+0283                       <span class="keyword">else</span>
+0284                           metaCycRxns.subSystems{rxnCounter}=strcat(metaCycRxns.subSystems{rxnCounter},<span class="string">';'</span>,pwyNames{y});
+0285                       <span class="keyword">end</span>
+0286                   <span class="keyword">end</span>
+0287           <span class="keyword">end</span>
+0288 
+0289           <span class="comment">%Add references (pubmed ids)</span>
+0290           <span class="keyword">if</span> numel(tline)&gt;12 &amp;&amp; strcmp(tline(1:12),<span class="string">'CITATIONS - '</span>)
+0291                   <span class="keyword">if</span> isempty(metaCycRxns.rxnReferences{rxnCounter})
+0292                   metaCycRxns.rxnReferences{rxnCounter}=strcat(<span class="string">'pubmed/'</span>,tline(13:end));
+0293                 <span class="keyword">else</span>
+0294                     metaCycRxns.rxnReferences{rxnCounter}=strcat(metaCycRxns.rxnReferences{rxnCounter},<span class="string">';pubmed/'</span>,tline(13:end));
+0295                 <span class="keyword">end</span>
+0296           <span class="keyword">end</span>
+0297 
+0298           <span class="comment">%Add Miriam info (cross-links other database)</span>
+0299           <span class="keyword">if</span> numel(tline)&gt;11 &amp;&amp; strcmp(tline(1:11),<span class="string">'DBLINKS - ('</span>)
+0300                   dblink=tline(12:end);
+0301                   <span class="comment">%KEGG reaction id</span>
+0302               <span class="keyword">if</span> strcmp(dblink(1:12),<span class="string">'LIGAND-RXN &quot;'</span>)
+0303                       dblink=dblink(13:end);
+0304                       s=strfind(dblink,<span class="string">'&quot;'</span>);
+0305                       <span class="keyword">if</span> any(s)
+0306                          dblink=dblink(1:s-1);
+0307                       <span class="keyword">end</span>
+0308 
+0309                   <span class="keyword">if</span> isstruct(metaCycRxns.rxnMiriams{rxnCounter})
+0310                       addToIndex=numel(metaCycRxns.rxnMiriams{rxnCounter}.name)+1;
+0311                   <span class="keyword">else</span>
+0312                       addToIndex=1;
+0313                   <span class="keyword">end</span>    
+0314                   tempStruct=metaCycRxns.rxnMiriams{rxnCounter};
+0315                   tempStruct.name{addToIndex,1}=<span class="string">'urn:miriam:kegg.rxnid'</span>;
+0316                   tempStruct.value{addToIndex,1}=strcat(<span class="string">'kegg.reaction/'</span>,dblink);
+0317                   metaCycRxns.rxnMiriams{rxnCounter}=tempStruct;
+0318                   
+0319                   <span class="comment">%For generating the rxnLinks structure</span>
+0320                   dbLinkCounter=dbLinkCounter+1;
+0321                   rxnLinks.metacyc{dbLinkCounter}=metaCycRxns.rxns{rxnCounter};
+0322                   rxnLinks.kegg{dbLinkCounter}=dblink;
+0323                   rxnLinks.check{dbLinkCounter}=strcat(metaCycRxns.rxns{rxnCounter},dblink);
+0324               <span class="keyword">end</span>
+0325               
+0326                   <span class="comment">%RHEA reaction id</span>
+0327               <span class="keyword">if</span> strcmp(dblink(1:6),<span class="string">'RHEA &quot;'</span>)
+0328                       dblink=dblink(7:end);
+0329                       s=strfind(dblink,<span class="string">'&quot;'</span>);
+0330                       <span class="keyword">if</span> any(s)
+0331                          dblink=dblink(1:s-1);
+0332                       <span class="keyword">end</span>
+0333 
+0334                   <span class="keyword">if</span> isstruct(metaCycRxns.rxnMiriams{rxnCounter})
+0335                       addToIndex=numel(metaCycRxns.rxnMiriams{rxnCounter}.name)+1;
+0336                   <span class="keyword">else</span>
+0337                       addToIndex=1;
+0338                   <span class="keyword">end</span>    
+0339                   tempStruct=metaCycRxns.rxnMiriams{rxnCounter};
+0340                   tempStruct.name{addToIndex,1}=<span class="string">'urn:miriam:rhea.rxnid'</span>;
+0341                   tempStruct.value{addToIndex,1}=strcat(<span class="string">'rhea/'</span>,dblink);
+0342                   metaCycRxns.rxnMiriams{rxnCounter}=tempStruct;
+0343               <span class="keyword">end</span>
+0344           <span class="keyword">end</span>
+0345 
+0346           <span class="keyword">if</span> numel(tline)&gt;21 &amp;&amp; strcmp(tline(1:21),<span class="string">'REACTION-DIRECTION - '</span>)
+0347               rxnDirection=tline(22:end);
+0348                         <span class="keyword">switch</span>(rxnDirection)
+0349                         <span class="keyword">case</span> <span class="string">'IRREVERSIBLE-LEFT-TO-RIGHT'</span>
+0350                             metaCycRxns.rev(rxnCounter,1)=0;
+0351                         <span class="keyword">case</span> <span class="string">'LEFT-TO-RIGHT'</span>
+0352                             metaCycRxns.rev(rxnCounter,1)=0;
+0353                         <span class="keyword">case</span> <span class="string">'PHYSIOL-LEFT-TO-RIGHT'</span>
+0354                             metaCycRxns.rev(rxnCounter,1)=0;
+0355                         <span class="keyword">case</span> <span class="string">'IRREVERSIBLE-RIGHT-TO-LEFT'</span>
+0356                             metaCycRxns.rev(rxnCounter,1)=0;
+0357                             reverse=1;
+0358                         <span class="keyword">case</span> <span class="string">'RIGHT-TO-LEFT'</span>
+0359                             metaCycRxns.rev(rxnCounter,1)=0;
+0360                             reverse=1;
+0361                         <span class="keyword">case</span> <span class="string">'PHYSIOL-RIGHT-TO-LEFT'</span>
+0362                             metaCycRxns.rev(rxnCounter,1)=0;
+0363                             reverse=1;
+0364                         <span class="keyword">end</span>
+0365           <span class="keyword">end</span>
+0366 
+0367           <span class="comment">%Add spontaneous</span>
+0368           <span class="keyword">if</span> strcmp(tline,<span class="string">'SPONTANEOUS? - T'</span>)
+0369               <span class="comment">%metaCycRxns.spontaneous(rxnCounter,1)=1;</span>
+0370               isSpontaneous(rxnCounter)=true;
+0371           <span class="keyword">end</span>
+0372 
+0373           <span class="comment">%Add mass-balance information</span>
+0374           <span class="keyword">if</span> strcmp(tline,<span class="string">'CANNOT-BALANCE? - T'</span>)
+0375               UNBALANCED(rxnCounter)=true;
+0376           <span class="keyword">end</span>
+0377             
+0378           <span class="comment">%Add left side equation</span>
+0379           <span class="keyword">if</span> numel(tline)&gt;7 &amp;&amp; strcmp(tline(1:7),<span class="string">'LEFT - '</span>)
+0380               <span class="keyword">if</span> strcmp(left{rxnCounter},<span class="string">''</span>)
+0381                   <span class="keyword">if</span> strcmp(templeft,<span class="string">''</span>)
+0382                       templeft=tline(8:end); <span class="comment">% this is the real first, save to a temp variable</span>
+0383                   <span class="keyword">else</span> <span class="comment">% count in the coefficient here</span>
+0384                       <span class="keyword">if</span> strcmp(coefficient,<span class="string">''</span>)
+0385                           left{rxnCounter}=templeft;
+0386                       <span class="keyword">else</span>
+0387                           left{rxnCounter}=strcat(coefficient,32,templeft);
+0388                           coefficient=<span class="string">''</span>;
+0389                       <span class="keyword">end</span>
+0390                       templeft=tline(8:end);
+0391                   <span class="keyword">end</span>
+0392                 <span class="keyword">else</span>
+0393                   <span class="keyword">if</span> strcmp(coefficient,<span class="string">''</span>)
+0394                       left{rxnCounter}=strcat(left{rxnCounter},<span class="string">' +'</span>,32,templeft);
+0395                   <span class="keyword">else</span>
+0396                       left{rxnCounter}=strcat(left{rxnCounter},<span class="string">' +'</span>,32,coefficient,32,templeft);
+0397                       coefficient=<span class="string">''</span>;
+0398                   <span class="keyword">end</span>
+0399                   templeft=tline(8:end);                              
+0400               <span class="keyword">end</span>
+0401           <span class="keyword">end</span>
+0402 
+0403           <span class="comment">%Add right side equation</span>
+0404           <span class="keyword">if</span> numel(tline)&gt;8 &amp;&amp; strcmp(tline(1:8),<span class="string">'RIGHT - '</span>)
+0405               <span class="keyword">if</span> strcmp(right{rxnCounter},<span class="string">''</span>)
+0406                   <span class="keyword">if</span> strcmp(tempright,<span class="string">''</span>)
+0407                       
+0408                       <span class="comment">% a complicated process for the last left metabolite</span>
+0409                       <span class="keyword">if</span> strcmp(coefficient,<span class="string">''</span>)
+0410                           <span class="keyword">if</span> strcmp(left{rxnCounter},<span class="string">''</span>)
+0411                               left{rxnCounter}=templeft;
+0412                           <span class="keyword">else</span>
+0413                               left{rxnCounter}=strcat(left{rxnCounter},<span class="string">' +'</span>,32,templeft);
+0414                           <span class="keyword">end</span>
+0415                         
+0416                       <span class="keyword">else</span>
+0417                           <span class="keyword">if</span> strcmp(left{rxnCounter},<span class="string">''</span>)
+0418                               left{rxnCounter}=strcat(coefficient,32,templeft);
+0419                           <span class="keyword">else</span>
+0420                               left{rxnCounter}=strcat(left{rxnCounter},<span class="string">' +'</span>,32,coefficient,32,templeft);
+0421                           <span class="keyword">end</span>
+0422                           coefficient=<span class="string">''</span>;
+0423                       <span class="keyword">end</span>
+0424                       <span class="comment">% process end</span>
+0425                       
+0426                       tempright=tline(9:end); <span class="comment">% this is the real first, save to a temp variable</span>
+0427                   <span class="keyword">else</span>
+0428                       <span class="keyword">if</span> strcmp(coefficient,<span class="string">''</span>)
+0429                           right{rxnCounter}=tempright;
+0430                       <span class="keyword">else</span>
+0431                           right{rxnCounter}=strcat(coefficient,32,tempright);
+0432                           coefficient=<span class="string">''</span>;
+0433                       <span class="keyword">end</span>
+0434                       tempright=tline(9:end);
+0435                   <span class="keyword">end</span>
+0436                 <span class="keyword">else</span>
+0437                   <span class="keyword">if</span> strcmp(coefficient,<span class="string">''</span>)
+0438                       right{rxnCounter}=strcat(right{rxnCounter},<span class="string">' +'</span>,32,tempright);
+0439                   <span class="keyword">else</span>
+0440                       right{rxnCounter}=strcat(right{rxnCounter},<span class="string">' +'</span>,32,coefficient,32,tempright);
+0441                       coefficient=<span class="string">''</span>;
+0442                   <span class="keyword">end</span>
+0443                   tempright=tline(9:end);                              
+0444               <span class="keyword">end</span>
+0445 
+0446             <span class="keyword">end</span>
+0447 
+0448           <span class="keyword">if</span> numel(tline)&gt;15 &amp;&amp; strcmp(tline(1:15),<span class="string">'^COEFFICIENT - '</span>)
+0449                   coefficient=tline(16:end);
+0450             <span class="keyword">end</span>
+0451  
+0452         <span class="comment">%Generate equation at the end of each object section</span>
+0453           <span class="keyword">if</span> strcmp(tline,<span class="string">'//'</span>)
+0454 
+0455                <span class="comment">% a complicated process for the last right metabolite, sub-function is needed here</span>
+0456                 <span class="keyword">if</span> strcmp(coefficient,<span class="string">''</span>)
+0457                     <span class="keyword">if</span> strcmp(right{rxnCounter},<span class="string">''</span>)
+0458                         right{rxnCounter}=tempright;
+0459                     <span class="keyword">else</span>
+0460                           right{rxnCounter}=strcat(right{rxnCounter},<span class="string">' +'</span>,32,tempright);
+0461                       <span class="keyword">end</span>
+0462                     
+0463                   <span class="keyword">else</span>
+0464                     <span class="keyword">if</span> strcmp(right{rxnCounter},<span class="string">''</span>)
+0465                         right{rxnCounter}=strcat(coefficient,32,tempright);
+0466                     <span class="keyword">else</span>
+0467                           right{rxnCounter}=strcat(right{rxnCounter},<span class="string">' +'</span>,32,coefficient,32,tempright);
+0468                       <span class="keyword">end</span>
+0469                       coefficient=<span class="string">''</span>;
+0470                   <span class="keyword">end</span>
+0471               <span class="comment">% process end</span>
+0472 
+0473                         <span class="comment">%get the right direction symbol</span>
+0474                         <span class="keyword">if</span> metaCycRxns.rev(rxnCounter,1)
+0475                             symbol = <span class="string">' &lt;=&gt;'</span>;
+0476                         <span class="keyword">else</span>
+0477                             symbol = <span class="string">' =&gt;'</span>;
+0478                         <span class="keyword">end</span>
+0479                         
+0480                         <span class="keyword">if</span> reverse
+0481                             metaCycRxns.equations{rxnCounter}=strcat(right{rxnCounter},symbol,32,left{rxnCounter});
+0482                         <span class="keyword">else</span>
+0483                    metaCycRxns.equations{rxnCounter}=strcat(left{rxnCounter},symbol,32,right{rxnCounter});
+0484               <span class="keyword">end</span>
+0485               
+0486               <span class="comment">%Final equation check</span>
+0487               <span class="keyword">if</span> strcmp(left{rxnCounter},<span class="string">''</span>) || strcmp(right{rxnCounter},<span class="string">''</span>)
+0488                   rxnCounter=rxnCounter-1;
+0489                   
+0490               <span class="keyword">end</span>
+0491               
+0492           <span class="keyword">end</span>
+0493 
+0494           <span class="keyword">end</span>
+0495         <span class="comment">%Close the file</span>
+0496         fclose(fid);
+0497         
+0498         <span class="comment">%===</span>
+0499             UNBALANCED=metaCycRxns.rxns(UNBALANCED);
+0500             isSpontaneous=metaCycRxns.rxns(isSpontaneous);
+0501             
+0502         <span class="comment">%If too much space was allocated, shrink the model</span>
+0503         metaCycRxns.rxns=metaCycRxns.rxns(1:rxnCounter);
+0504         metaCycRxns.rxnNames=metaCycRxns.rxnNames(1:rxnCounter);
+0505         metaCycRxns.eccodes=metaCycRxns.eccodes(1:rxnCounter);
+0506         metaCycRxns.equations=metaCycRxns.equations(1:rxnCounter);
+0507         metaCycRxns.rxnMiriams=metaCycRxns.rxnMiriams(1:rxnCounter);
+0508         metaCycRxns.rxnReferences=metaCycRxns.rxnReferences(1:rxnCounter);
+0509         metaCycRxns.subSystems=metaCycRxns.subSystems(1:rxnCounter);
+0510         metaCycRxns.pwys=metaCycRxns.pwys(1:rxnCounter);
+0511         metaCycRxns.rev=metaCycRxns.rev(1:rxnCounter,:);
+0512             
+0513         rxnLinks.kegg=rxnLinks.kegg(1:dbLinkCounter);
+0514         rxnLinks.metacyc=rxnLinks.metacyc(1:dbLinkCounter);
+0515         rxnLinks.check=rxnLinks.check(1:dbLinkCounter);
+0516         [~,index]=unique(rxnLinks.check);
+0517         rxnLinks.kegg=rxnLinks.kegg(index);
+0518         rxnLinks.metacyc=rxnLinks.metacyc(index);
+0519         rxnLinks=rmfield(rxnLinks,<span class="string">'check'</span>);
+0520     
+0521         <span class="comment">%Construct the S matrix and list of metabolites</span>
+0522         [S, mets, badRxns]=constructS(metaCycRxns.equations);
+0523         metaCycRxns.S=S;
+0524         metaCycRxns.mets=mets;
+0525     
+0526         <span class="comment">%Add some stuff to get a correct model structure</span>
+0527         metaCycRxns.ub=ones(rxnCounter,1)*1000;
+0528         metaCycRxns.lb=metaCycRxns.rev*-1000;
+0529         metaCycRxns.c=zeros(rxnCounter,1);
+0530         metaCycRxns.b=zeros(numel(metaCycRxns.mets),1);
+0531     
+0532         <span class="comment">%Save the model structure</span>
+0533         save(rxnsFile,<span class="string">'metaCycRxns'</span>,<span class="string">'rxnLinks'</span>,<span class="string">'TRANSPORT'</span>,<span class="string">'UNBALANCED'</span>,<span class="string">'UNDETERMINED'</span>,<span class="string">'isSpontaneous'</span>);
+0534     <span class="keyword">end</span>
+0535 <span class="keyword">end</span>
+0536     
+0537 <span class="comment">%Deal with reactions that are labeled as &quot;TRANSPORT&quot;, &quot;UNBALANCED&quot;,</span>
+0538 <span class="comment">%or &quot;UNDETERMINED&quot; (depending on settings).</span>
+0539 model=metaCycRxns;
+0540 <span class="keyword">if</span> keepTransportRxns==false
+0541     model=removeReactions(model,intersect(TRANSPORT,model.rxns),true,true);
+0542 <span class="keyword">end</span>
+0543 <span class="keyword">if</span> keepUnbalanced==false
+0544     model=removeReactions(model,intersect(UNBALANCED,model.rxns),true,true);
+0545 <span class="keyword">end</span>
+0546 <span class="keyword">if</span> keepUndetermined==false
+0547     model=removeReactions(model,intersect(UNDETERMINED,model.rxns),true,true);
+0548 <span class="keyword">end</span>
+0549 
+0550 <span class="comment">%Sub function for romving HTML symbols from the names of reaction and pathway</span>
+0551 <a name="_sub1" href="#_subfunctions" class="code">function newString=removeHTMLcodes(string)</a>
+0552         string=regexprep(string,<span class="string">'&lt;(\w+)&gt;'</span>,<span class="string">''</span>);
+0553     string=regexprep(string,<span class="string">'&lt;/(\w+)&gt;'</span>,<span class="string">''</span>);
+0554     string=regexprep(string,<span class="string">'[&amp;;]'</span>,<span class="string">''</span>);
+0555     newString=string;
+0556 <span class="keyword">return</span>;</pre></div>
+<hr><address>Generated on Wed 01-Nov-2017 16:53:54 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
