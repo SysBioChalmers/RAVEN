@@ -108,8 +108,11 @@ if ~isempty(metIdx)
     if isfield(sourcemodel,'metFormulas')
         metsToAdd.metFormulas=sourcemodel.metFormulas(metIdx);
     end
+    if isfield(sourcemodel,'inchis')
+        metsToAdd.inchis=sourcemodel.inchis(metIdx);
+    end
     
-    metsToAdd.compartments=strtrim(cellstr(num2str(sourcemodel.metComps(metIdx)))); % Convert from compartment string to comparment number
+    metsToAdd.compartments=strtrim(cellstr(num2str(sourcemodel.metComps(metIdx)))); % Convert from compartment string to compartment number
     [~,idx]=ismember(metsToAdd.compartments,strsplit(num2str(1:length(sourcemodel.comps)))); % Match compartment number to compartment abbreviation
     metsToAdd.compartments=sourcemodel.comps(idx); % Fill in compartment abbreviations
 
