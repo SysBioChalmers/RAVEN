@@ -378,31 +378,25 @@ for i=1:numel(modelSBML.species)
                 if isfield(modelSBML.species(i),'fbc_charge')
                     if ~isempty(modelSBML.species(i).fbc_charge) && modelSBML.species(i).isSetfbc_charge
                         metaboliteCharge(numel(metaboliteCharge)+1,1)=double(modelSBML.species(i).fbc_charge);
-                        if isnan(metaboliteCharge(numel(metaboliteCharge),1))
-                            metaboliteCharge(numel(metaboliteCharge),1)=0;
-                        end;
                     else
                         if isfield(modelSBML.species(i),'notes')
                             if strfind(modelSBML.species(i).notes,'CHARGE')
                                 metaboliteCharge(numel(metaboliteCharge)+1,1)=str2double(parseNote(modelSBML.species(i).notes,'CHARGE'));
-%                                 if isnan(metaboliteCharge(numel(metaboliteCharge),1))
-%                                     metaboliteCharge(numel(metaboliteCharge),1)=0;
-%                                 end;
                             else
-                                metaboliteCharge(numel(metaboliteCharge)+1,1)=0;
+                                metaboliteCharge(numel(metaboliteCharge)+1,1)=NaN;
                             end;
                         else
-                            metaboliteCharge(numel(metaboliteCharge)+1,1)=0;
+                            metaboliteCharge(numel(metaboliteCharge)+1,1)=NaN;
                         end
                     end
                 elseif isfield(modelSBML.species(i),'notes')
                     if strfind(modelSBML.species(i).notes,'CHARGE')
                         metaboliteCharge(numel(metaboliteCharge)+1,1)=str2double(parseNote(modelSBML.species(i).notes,'CHARGE'));
                     else
-                     	metaboliteCharge(numel(metaboliteCharge)+1,1)=0;
+                     	metaboliteCharge(numel(metaboliteCharge)+1,1)=NaN;
                     end;
                 else
-                    metaboliteCharge(numel(metaboliteCharge)+1,1)=0;
+                    metaboliteCharge(numel(metaboliteCharge)+1,1)=NaN;
                 end
                 %Additional information from FBC format
                 %Chemical formula
