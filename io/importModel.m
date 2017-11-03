@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Eduard Kerkhoven, 2017-10-22
+%   Simonas Marcisauskas, 2017-11-03
 
 if nargin<2
     removeExcMets=true;
@@ -932,6 +932,14 @@ if any(~cellfun(@isempty,geneMiriams))
 end
 
 model.unconstrained=metaboliteUnconstrained;
+
+% Convert SBML IDs back into their original strings. Here we are using part
+% from convertSBMLID, originating from the COBRA Toolbox
+model.rxns=regexprep(model.rxns,'__([0-9]+)__','${char(str2num($1))}');
+model.mets=regexprep(model.mets,'__([0-9]+)__','${char(str2num($1))}');
+model.comps=regexprep(model.comps,'__([0-9]+)__','${char(str2num($1))}');
+model.grRules=regexprep(model.grRules,'__([0-9]+)__','${char(str2num($1))}');
+model.genes=regexprep(model.genes,'__([0-9]+)__','${char(str2num($1))}');
 
 %Remove unused fields
 if isempty(model.annotation)
