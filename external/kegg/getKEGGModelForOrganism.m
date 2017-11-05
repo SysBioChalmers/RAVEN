@@ -219,7 +219,7 @@ if ~isempty(dataDir)
         'prok100_kegg82'; ...
         'prok90_kegg82'; ...
         'prok50_kegg82'};
-    if isempty(regexp(dataDir,strcat(hmmOptions,'$'))) % Check if dataDir ends with any of the hmmOptions
+    if all(cellfun(@isempty,regexp(dataDir,strcat(hmmOptions,'$')))) % Check if dataDir ends with any of the hmmOptions
         EM='Pre-trained HMMs set is not recognised. It should match any of the following sets (which are available to download):';
         disp(EM);
         disp(hmmOptions);
@@ -232,7 +232,7 @@ if ~isempty(dataDir)
         unzip([dataDir,'.zip']);
     else
         fprintf('Downloading HMMs archive file...\n');
-        websave([dataDir,'.zip'],['http://biomet-toolbox.org/tools/downloadable/files/',dataDir,'.zip']);
+        websave([dataDir,'.zip'],['http://biomet-toolbox.chalmers.se/tools/downloadable/files/',dataDir,'.zip']);
         fprintf('Extracting HMMs archive file...\n');
         unzip([dataDir,'.zip']);
     end;

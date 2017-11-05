@@ -71,7 +71,7 @@ end
 [I, J]=ismember(rxns,model.rxns);
 if ~all(I)
     EM='All reaction ids must exist in the model';
-    distEM(EM);
+    dispEM(EM);
 end
 
 %The reactions are changed in the following manner. First create a

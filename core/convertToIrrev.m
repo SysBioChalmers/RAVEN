@@ -80,5 +80,14 @@ if any(revIndexesBool)
     if isfield(irrevModel,'rxnFrom')
     	irrevModel.rxnFrom=[irrevModel.rxnFrom;irrevModel.rxnFrom(revIndexes)];
     end
+    if isfield(irrevModel,'rxnScores')
+    	irrevModel.rxnScores=[irrevModel.rxnScores;irrevModel.rxnScores(revIndexes)];
+    end
+    if isfield(irrevModel,'rxnNotes')
+    	irrevModel.rxnNotes=[irrevModel.rxnNotes;irrevModel.rxnNotes(revIndexes)];
+    end
+    if isfield(irrevModel,'rxnConfidenceScores')
+    	irrevModel.rxnConfidenceScores=[irrevModel.rxnConfidenceScores;irrevModel.rxnConfidenceScores(revIndexes)];
+    end
 end
 end
