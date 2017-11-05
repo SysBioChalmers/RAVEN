@@ -12,7 +12,7 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
 %   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
-%   Simonas Marcisauskas, 2017-10-09
+%   Simonas Marcisauskas, 2017-11-03
 %
 
 if nargin<3
@@ -102,6 +102,15 @@ if sbmlLevel<3
         model.geneComps=ones(numel(model.genes),1);
 	end
 end
+
+% Convert ids to SBML-convenient format. This is to avoid the data loss
+% when unsupported characters are included in ids. Here we are using part
+% from convertSBMLID, originating from the COBRA Toolbox;
+model.rxns=regexprep(model.rxns,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
+model.mets=regexprep(model.mets,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
+model.comps=regexprep(model.comps,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
+model.grRules=regexprep(model.grRules,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
+model.genes=regexprep(model.genes,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 
 % Generate an empty SBML structure;
 modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,fbcVersion);

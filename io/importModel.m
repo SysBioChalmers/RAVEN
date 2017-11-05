@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Eduard Kerkhoven, 2017-10-22
+%   Simonas Marcisauskas, 2017-11-03
 
 if nargin<2
     removeExcMets=true;
@@ -378,31 +378,25 @@ for i=1:numel(modelSBML.species)
                 if isfield(modelSBML.species(i),'fbc_charge')
                     if ~isempty(modelSBML.species(i).fbc_charge) && modelSBML.species(i).isSetfbc_charge
                         metaboliteCharge(numel(metaboliteCharge)+1,1)=double(modelSBML.species(i).fbc_charge);
-                        if isnan(metaboliteCharge(numel(metaboliteCharge),1))
-                            metaboliteCharge(numel(metaboliteCharge),1)=0;
-                        end;
                     else
                         if isfield(modelSBML.species(i),'notes')
                             if strfind(modelSBML.species(i).notes,'CHARGE')
                                 metaboliteCharge(numel(metaboliteCharge)+1,1)=str2double(parseNote(modelSBML.species(i).notes,'CHARGE'));
-%                                 if isnan(metaboliteCharge(numel(metaboliteCharge),1))
-%                                     metaboliteCharge(numel(metaboliteCharge),1)=0;
-%                                 end;
                             else
-                                metaboliteCharge(numel(metaboliteCharge)+1,1)=0;
+                                metaboliteCharge(numel(metaboliteCharge)+1,1)=NaN;
                             end;
                         else
-                            metaboliteCharge(numel(metaboliteCharge)+1,1)=0;
+                            metaboliteCharge(numel(metaboliteCharge)+1,1)=NaN;
                         end
                     end
                 elseif isfield(modelSBML.species(i),'notes')
                     if strfind(modelSBML.species(i).notes,'CHARGE')
                         metaboliteCharge(numel(metaboliteCharge)+1,1)=str2double(parseNote(modelSBML.species(i).notes,'CHARGE'));
                     else
-                     	metaboliteCharge(numel(metaboliteCharge)+1,1)=0;
+                     	metaboliteCharge(numel(metaboliteCharge)+1,1)=NaN;
                     end;
                 else
-                    metaboliteCharge(numel(metaboliteCharge)+1,1)=0;
+                    metaboliteCharge(numel(metaboliteCharge)+1,1)=NaN;
                 end
                 %Additional information from FBC format
                 %Chemical formula
@@ -932,6 +926,14 @@ if any(~cellfun(@isempty,geneMiriams))
 end
 
 model.unconstrained=metaboliteUnconstrained;
+
+% Convert SBML IDs back into their original strings. Here we are using part
+% from convertSBMLID, originating from the COBRA Toolbox
+model.rxns=regexprep(model.rxns,'__([0-9]+)__','${char(str2num($1))}');
+model.mets=regexprep(model.mets,'__([0-9]+)__','${char(str2num($1))}');
+model.comps=regexprep(model.comps,'__([0-9]+)__','${char(str2num($1))}');
+model.grRules=regexprep(model.grRules,'__([0-9]+)__','${char(str2num($1))}');
+model.genes=regexprep(model.genes,'__([0-9]+)__','${char(str2num($1))}');
 
 %Remove unused fields
 if isempty(model.annotation)
