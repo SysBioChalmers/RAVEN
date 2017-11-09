@@ -109,7 +109,7 @@ else
 end
 
 %Construct the output structure
-if isfield(res.sol,'bas')
+if isfield(res.sol.bas,'xx')
     solution.x=res.sol.bas.xx;
     if minFlux<=1
         hsSolOut=res.sol.bas;
