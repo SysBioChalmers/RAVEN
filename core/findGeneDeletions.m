@@ -35,14 +35,14 @@ function [genes, fluxes, originalGenes, details]=findGeneDeletions(model,testTyp
 %                   each gene in originalGenes and why or why not it was
 %                   deleted
 %                   1: Was deleted
-%                   2: Proved lethal in SGD
+%                   2: Proved lethal in sgd (single gene deletion)
 %                   3: Only involved in reactions with too many iso-enzymes
 %                   4: Involved in dead-end reaction
 %
 %   NOTE: This function disregards complexes. Any one gene can encode a
 %         reaction even if parts of the complex is deleted.
 %
-%   Usage: [genes, fluxes, originalGenes, details]==findGeneDeletions(model,testType,analysisType,...
+%   Usage: [genes, fluxes, originalGenes, details]=findGeneDeletions(model,testType,analysisType,...
 %           refModel,oeFactor)
 %
 %   Rasmus Agren, 2014-01-08
