@@ -19,12 +19,12 @@ temp_res2=dir([ravenDir '/*/*/*.m']);
 ravenFunctions={temp_res1.name,temp_res2.name}';
 
 %Getting all the paths added to Matlab
-matlabPaths=regexp(path, ':', 'split')';
+matlabPaths=regexp(path, ';', 'split')';
 
 hasConflicts=false;
 
 for i=1:numel(matlabPaths)
-    if ~contains(matlabPaths{i},ravenDir)
+    if ~any(strfind(matlabPaths{i},ravenDir))
         temp_res=dir([matlabPaths{i} '/*.m']);
         if ~isempty(temp_res)
             pathFunctions={temp_res.name}';
