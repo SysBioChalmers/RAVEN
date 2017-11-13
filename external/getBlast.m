@@ -24,7 +24,7 @@ function blastStructure=getBlast(organismID,fastaFile,modelIDs,refFastaFiles)
 %   Usage: blastStructure=getBlast(organismID,fastaFile,modelIDs,...
 %           refFastaFiles)
 %
-%   Eduard Kerkhoven, 2017-11-12
+%   Eduard Kerkhoven, 2017-11-13
 %
 
 %Everything should be cell arrays
@@ -43,6 +43,15 @@ ravenPath=fileparts(fileparts(ST(I).file));
 %Construct databases and output file
 tmpDB=tempname;
 outFile=tempname;
+
+% Check that the query and reference fasta files are in the current folder
+files = cat(1,refFastaFiles,fastaFile);
+for i=1:numel(files)
+    if exist(files{i})==0
+        EM=['Cannot find the following file in the current folder: ', files{i}];
+        dispEM(EM,true);
+    end
+end
 
 %Create a database for the new organism and blast each of the
 %refFastaFiles against it
@@ -69,7 +78,7 @@ cores = cores{1};
 [status, output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['makeblastdb' binEnd]) '" -in "' fastaFile{1} '" -out "' tmpDB '" -dbtype "prot"']);
 if (status~=0);
      EM=['makeblastdb did not run successfully, error: ', num2str(status)];
-     dispEM(EM,false);
+     dispEM(EM,true);
 end
 
 for i=1:numel(refFastaFiles)
@@ -77,7 +86,7 @@ for i=1:numel(refFastaFiles)
     [status, output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['blastp' binEnd]) '" -query "' refFastaFiles{i} '" -out "' outFile '_' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads ' cores]);
     if (status~=0);
         EM=['blastp did not run successfully, error: ', num2str(status)];
-        dispEM(EM,false);
+        dispEM(EM,true);
     end
 end
 delete([tmpDB '*']);
@@ -89,13 +98,13 @@ for i=1:numel(refFastaFiles)
     [status, output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['makeblastdb' binEnd]) '" -in "' refFastaFiles{i} '" -out "' tmpDB '" -dbtype "prot"']);
     if (status~=0);
         EM=['makeblastdb did not run successfully, error: ', num2str(status)];
-        dispEM(EM,false);
+        dispEM(EM,true);
     end
     [status, output]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['blastp' binEnd]) '" -query "' fastaFile{1} '" -out "' outFile '_r' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads ' cores]);
     delete([tmpDB '*']);
     if (status~=0);
         EM=['blastp did not run successfully, error: ', num2str(status)];
-        dispEM(EM,false);
+        dispEM(EM,true);
     end
 end
     
