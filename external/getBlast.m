@@ -45,7 +45,11 @@ tmpDB=tempname;
 outFile=tempname;
 
 % Check that the query and reference fasta files are in the current folder
-files = cat(1,refFastaFiles,fastaFile);
+if isrow(refFastaFiles)
+    files = horzcat(refFastaFiles,fastaFile)
+else
+    files = vertcat(refFastaFiles,fastaFile)
+end
 for i=1:numel(files)
     if exist(files{i})==0
         EM=['Cannot find the following file in the current folder: ', files{i}];
