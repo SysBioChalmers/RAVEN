@@ -5,7 +5,7 @@ function checkFunctionUniqueness()
 %
 %   Usage: checkFunctionUniqueness()
 %
-%   Simonas Marcisauskas, 2017-09-17
+%   Eduard Kerkhoven, 2017-11-12
 %
 
 %Get the RAVEN path

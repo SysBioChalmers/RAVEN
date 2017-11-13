@@ -35,7 +35,7 @@ function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
 %
 %   Usage: [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
 %
-%   Rasmus Agren, 2017-02-28
+%   Eduard Kerkhoven, 2017-11-09
 %
 
 if nargin<2
