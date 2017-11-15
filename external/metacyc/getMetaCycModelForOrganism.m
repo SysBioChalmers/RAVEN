@@ -25,7 +25,7 @@ function model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %   Usage: model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives)
 %
-%   Hao Wang, 2017-06-19
+%   Hao Wang, 2017-11-15
 %
 
 if nargin<2
@@ -149,8 +149,8 @@ model=removeReactions(model,~hasGenes,true);
 %Generate grRules, only consider the or relationship here
 %Matched enzymes are stored in field rxnScores, 
 rxnNum=numel(model.rxns);
-model.confidenceScores=cell(rxnNum,1);
-model.confidenceScores(:)={'2'};
+model.rxnConfidenceScores=cell(rxnNum,1);
+model.rxnConfidenceScores(:)={'2'};
 model.grRules=cell(rxnNum,1);
 %model.rxnScores=cell(rxnNum,1);
 for j=1:rxnNum
@@ -194,10 +194,10 @@ if ~isfield(model,'metFormulas')
 end
 model.metFormulas(a)=metaCycMets.metFormulas(b);
 
-if ~isfield(model,'metCharge')
-   model.metCharge=zeros(numel(model.mets),1);
+if ~isfield(model,'metCharges')
+   model.metCharges=zeros(numel(model.mets),1);
 end
-model.metCharge(a)=metaCycMets.metCharge(b);
+model.metCharges(a)=metaCycMets.metCharges(b);
 
 if ~isfield(model,'b')
    model.b=zeros(numel(model.mets),1);
@@ -219,7 +219,6 @@ model.metMiriams(a)=metaCycMets.metMiriams(b);
 %done just to be more compatible with the rest of the code
 model.comps={'s'};
 model.compNames={'System'};
-model.compOutside={''};
 model.metComps=ones(numel(model.mets),1);
 
 %It could also be that the metabolite names are empty for some reason

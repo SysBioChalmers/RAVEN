@@ -23,7 +23,7 @@ function metaCycModel=getModelFromMetaCyc(metacycPath,keepTransportRxns,keepUnba
 %
 %   Usage: getModelFromMetaCyc(metacycPath)
 %
-%   Hao Wang, 2017-06-17
+%   Hao Wang, 2017-11-15
 %
 
 if nargin<1
@@ -136,10 +136,10 @@ if ~isfield(metaCycModel,'metFormulas')
 end
 metaCycModel.metFormulas(a)=metaCycMets.metFormulas(b);
 
-if ~isfield(metaCycModel,'metCharge')
-   metaCycModel.metCharge=zeros(numel(metaCycModel.mets),1);
+if ~isfield(metaCycModel,'metCharges')
+   metaCycModel.metCharges=zeros(numel(metaCycModel.mets),1);
 end
-metaCycModel.metCharge(a)=metaCycMets.metCharge(b);
+metaCycModel.metCharges(a)=metaCycMets.metCharges(b);
 
 if ~isfield(metaCycModel,'inchis')
    metaCycModel.inchis=cell(numel(metaCycModel.mets),1);
@@ -161,20 +161,8 @@ metaCycModel.keggid(a)=metaCycMets.keggid(b);
 %done just to be more compatible with the rest of the code
 metaCycModel.comps={'s'};
 metaCycModel.compNames={'System'};
-metaCycModel.compOutside={''};
 metaCycModel.metComps=ones(numel(metaCycModel.mets),1);
 
-%If reactions with undefined stoichiometry are kept, then the corresponding
-%metabolites will have ids such as "(n+1) C000001" and their names will be
-%empty. These ids are not valid SBML identifiers and are therefore replaced
-%with "undefined1, undefined2...". The former ids are stored as the new
-%names
-%I=find(cellfun(@any,strfind(metaCycModel.mets,'n')) | cellfun(@any,strfind(metaCycModel.mets,'m')));
-%I=find(cellfun(@any,strfind(metaCycModel.mets,'n')) | cellfun(@any,strfind(metaCycModel.mets,'m')) | cellfun(@any,strfind(metaCycModel.mets,'n+1')) | cellfun(@any,strfind(metaCycModel.mets,'m+1')));
-%metaCycModel.metNames(I)=metaCycModel.mets(I);
-%repNums=1:numel(I);
-%repIDs=strcat('undefined_',cellfun(@num2str,num2cell(repNums(:)),'UniformOutput',false));
-%metaCycModel.mets(I)=repIDs;
 
 %It could also be that the metabolite and reaction names are empty
 %for some reasons. In that case, use the ID instead

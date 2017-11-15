@@ -16,7 +16,7 @@ function metaCycMets=getMetsFromMetaCyc(metacycPath)
 %                                there is no name provided
 %                metFormulas:    The chemical composition of the metabolite.
 %                inchis:         InChI string for the metabolite
-%                metCharge:      Compound charge state
+%                metCharges:     Compound charge state
 %                metMiriams:     If there is a CHEBI id available, then that
 %                                will be saved here
 %                keggid:         The corresponding KEGG compound id if available
@@ -28,7 +28,7 @@ function metaCycMets=getMetsFromMetaCyc(metacycPath)
 %               
 %   Usage: model=getMetsFromMetaCyc(metacycPath)
 %
-%   Hao Wang, 2017-06-17
+%   Hao Wang, 2017-11-15
 %
 
 % NOTE: This is how one entry looks in the file
@@ -79,7 +79,7 @@ else
        metaCycMets.metNames=cell(50000,1);
        metaCycMets.metFormulas=cell(50000,1);
        metaCycMets.inchis=cell(50000,1);
-       metaCycMets.metCharge=zeros(50000,1);
+       metaCycMets.metCharges=zeros(50000,1);
        metaCycMets.metMiriams=cell(50000,1);
        metaCycMets.keggid=cell(50000,1);
     
@@ -135,7 +135,7 @@ else
             s=strfind(atomCharge,' ');
             if any(s)
             	atomCharge=atomCharge(s+1:end);
-            	metaCycMets.metCharge(metCounter,1)=metaCycMets.metCharge(metCounter,1)+str2num(atomCharge);
+            	metaCycMets.metCharges(metCounter,1)=metaCycMets.metCharges(metCounter,1)+str2num(atomCharge);
             end
 					end
 
@@ -158,7 +158,7 @@ else
                   addToIndex=1;
               end    
               tempStruct=metaCycMets.metMiriams{metCounter};
-              tempStruct.name{addToIndex,1}='obo.chebi:SMILES';
+              tempStruct.name{addToIndex,1}='SMILES';
               tempStruct.value{addToIndex,1}=tline(10:end);
               metaCycMets.metMiriams{metCounter}=tempStruct;
           end
@@ -196,8 +196,8 @@ else
                   addToIndex=1;
               end    
               tempStruct=metaCycMets.metMiriams{metCounter};
-              tempStruct.name{addToIndex,1}='obo.chebi:CHEBI';
-              tempStruct.value{addToIndex,1}=chebiID;
+              tempStruct.name{addToIndex,1}='chebi';
+              tempStruct.value{addToIndex,1}=strcat('CHEBI:',chebiID);
               metaCycMets.metMiriams{metCounter}=tempStruct;
           end
 
@@ -216,7 +216,7 @@ else
                   addToIndex=1;
               end    
               tempStruct=metaCycMets.metMiriams{metCounter};
-              tempStruct.name{addToIndex,1}='obo.chebi:PUBCHEM';
+              tempStruct.name{addToIndex,1}='pubchem.compound';
               tempStruct.value{addToIndex,1}=pubchemID;
               metaCycMets.metMiriams{metCounter}=tempStruct;
           end
@@ -251,7 +251,7 @@ else
         metaCycMets.metFormulas=metaCycMets.metFormulas(1:metCounter);
         metaCycMets.metMiriams=metaCycMets.metMiriams(1:metCounter);
         metaCycMets.inchis=metaCycMets.inchis(1:metCounter);
-        metaCycMets.metCharge=metaCycMets.metCharge(1:metCounter,:);
+        metaCycMets.metCharges=metaCycMets.metCharges(1:metCounter,:);
         %metaCycMets.smiles=metaCycMets.smiles(1:metCounter);
         %metaCycMets.pubchem=metaCycMets.pubchem(1:metCounter);
         metaCycMets.keggid=metaCycMets.keggid(1:metCounter);

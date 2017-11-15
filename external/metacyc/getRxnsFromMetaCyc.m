@@ -44,7 +44,7 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 %
 %   Usage: model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
 %
-%   Hao Wang, 2017-06-17
+%   Hao Wang, 2017-11-15
 %
 
 %NOTE: This is how one entry looks in the file
@@ -91,7 +91,7 @@ if exist(rxnsFile, 'file')
     load(rxnsFile);
 else
     fprintf(['Cannot locate ' strrep(rxnsFile,'\','/') ' and will try to generate it from the local MetaCyc database files.\n']);
-    if ~exist(rxnsFile) || ~exist(fullfile(metacycPath,metaCycRxnFile),'file') || ~exist(fullfile(metacycPath,metaCycPwyFile),'file')
+    if ~exist(fullfile(metacycPath,metaCycRxnFile),'file') || ~exist(fullfile(metacycPath,metaCycPwyFile),'file')
         EM=fprintf(['The files of reactions or pathways cannot be located, and should be downloaded from MetaCyc.\n']);
         dispEM(EM);
     else
@@ -312,8 +312,8 @@ else
                       addToIndex=1;
                   end    
                   tempStruct=metaCycRxns.rxnMiriams{rxnCounter};
-                  tempStruct.name{addToIndex,1}='urn:miriam:kegg.rxnid';
-                  tempStruct.value{addToIndex,1}=strcat('kegg.reaction/',dblink);
+                  tempStruct.name{addToIndex,1}='kegg.reaction';
+                  tempStruct.value{addToIndex,1}=dblink;
                   metaCycRxns.rxnMiriams{rxnCounter}=tempStruct;
                   
                   %For generating the rxnLinks structure
@@ -337,8 +337,8 @@ else
                       addToIndex=1;
                   end    
                   tempStruct=metaCycRxns.rxnMiriams{rxnCounter};
-                  tempStruct.name{addToIndex,1}='urn:miriam:rhea.rxnid';
-                  tempStruct.value{addToIndex,1}=strcat('rhea/',dblink);
+                  tempStruct.name{addToIndex,1}='rhea';
+                  tempStruct.value{addToIndex,1}=dblink;
                   metaCycRxns.rxnMiriams{rxnCounter}=tempStruct;
               end
           end
