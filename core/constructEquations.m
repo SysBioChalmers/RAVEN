@@ -6,11 +6,11 @@ function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sort
 %   rxns              either a cell array of reaction IDs, a logical vector with the
 %                     same number of elements as reactions in the model, or a vector
 %                     of reaction indexes (opt, default model.rxns)
-%	  useComps          include the compartment of each metabolite (opt, default true)
-%	  sortRevRxns       sort reversible reactions so that the metabolite that is first in
+%	useComps          include the compartment of each metabolite (opt, default true)
+%	sortRevRxns       sort reversible reactions so that the metabolite that is first in
 %                     the lexiographic order is a reactant (opt, default
 %                     false)
-%	  sortMetNames      sort the metabolite names in the equation. Uses
+%	sortMetNames      sort the metabolite names in the equation. Uses
 %                     compartment even if useComps is false (opt, default
 %                     false)
 %   useMetID          use metabolite ID in generated equations, otherwise metNames are
