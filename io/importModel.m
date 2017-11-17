@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Simonas Marcisauskas, 2017-11-03
+%   Simonas Marcisauskas, 2017-11-17
 
 if nargin<2
     removeExcMets=true;
@@ -1130,8 +1130,8 @@ targetString=regexprep(targetString,midString,'/','once');
 
 counter=0;
 for i=1:numel(targetString)
-    if ~contains(targetString{1,i},'inchi')
-        if ~contains(targetString{1,i},'ec-code')
+    if ~regexp(targetString{1,i},'inchi')
+        if ~regexp(targetString{1,i},'ec-code')
             counter=counter+1;
             miriamStruct.name{counter,1} = regexprep(targetString{1,i},'/.+','','once');   
             miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} midString],'','once');

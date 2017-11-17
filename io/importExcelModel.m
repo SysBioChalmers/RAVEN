@@ -65,7 +65,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Simonas Marcisauskas, 2017-09-18
+%   Simonas Marcisauskas, 2017-11-17
 %
 
 if nargin<2
@@ -850,10 +850,10 @@ for i=1:numel(strings)
             miriamStruct{i}.value=cell(numel(I),1);
         end
 
-        for j=1:numel(I)
-            if contains(I{j},'/')
+        for j=1:numel(I)  
+            if any(strfind(I{j},'/'))
                 index=max(strfind(I{j},'/'));
-            elseif contains(I{j},':')                
+            elseif any(strfind(I{j},':'))            
                 index=max(strfind(I{j},':'));
             end
             if any(index)
