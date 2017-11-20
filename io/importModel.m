@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Simonas Marcisauskas, 2017-11-17
+%   Eduard Kerkhoven, 2017-11-20
 
 if nargin<2
     removeExcMets=true;
@@ -837,7 +837,7 @@ else
        %If fbc_geneProduct exist, follow the specified gene order, such
        %that matching geneShortNames in function below will work.
        if isfield(modelSBML,'fbc_geneProduct')
-           [rxnGeneMat, genes]=getGeneMat(grRules,extractfield(modelSBML.fbc_geneProduct,'fbc_id'));
+           [rxnGeneMat, genes]=getGeneMat(grRules,{modelSBML.fbc_geneProduct.fbc_id});
        else
            [rxnGeneMat, genes]=getGeneMat(grRules);
        end
