@@ -228,3 +228,4 @@ model.metNames(I)=model.mets(I);
 
 %Remove additional fields
 model=rmfield(model,{'proteins','bitscore','ppos'});
+end

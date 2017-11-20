@@ -546,6 +546,7 @@ end
 if keepUndetermined==false
     model=removeReactions(model,intersect(UNDETERMINED,model.rxns),true,true);
 end
+end
 
 %Sub function for romving HTML symbols from the names of reaction and pathway
 function newString=removeHTMLcodes(string)
@@ -553,4 +554,4 @@ function newString=removeHTMLcodes(string)
     string=regexprep(string,'</(\w+)>','');
     string=regexprep(string,'[&;]','');
     newString=string;
-return;
+end
