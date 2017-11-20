@@ -24,7 +24,7 @@ function blastStructure=getBlast(organismID,fastaFile,modelIDs,refFastaFiles)
 %   Usage: blastStructure=getBlast(organismID,fastaFile,modelIDs,...
 %           refFastaFiles)
 %
-%   Eduard Kerkhoven, 2017-11-13
+%   Eduard Kerkhoven, 2017-11-20
 %
 
 %Everything should be cell arrays
@@ -54,6 +54,9 @@ for i=1:numel(files)
     if exist(files{i})==0
         EM=['Cannot find the following file in the current folder: ', files{i}];
         dispEM(EM,true);
+    elseif any(strfind(strjoin(files,','),' '))
+        EM=['One or more FASTA files have a space in the filename. Remove this before running getBlast'];
+        dispEM(EM,true);        
     end
 end
 
