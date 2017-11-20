@@ -13,7 +13,7 @@ function model=mergeModels(models,supressWarnings)
 %
 %   Usage: model=mergeModels(models)
 %
-%   Simonas Marcisauskas, 2017-09-06
+%   Eduard Kerkhoven, 2017-11-20
 %
 
 %Just return the model
@@ -342,8 +342,10 @@ for i=2:numel(models)
 
         %Make sure that there are no conflicting compartment ids
         [~, conflicting]=ismember(models{i}.compNames(compIndexes),model.compNames);
-        EM=['The following compartment IDs in ' models{i}.id ' are already present in the model but with another name. They have to be renamed'];
-        dispEM(EM,true,model.comps(conflicting));
+        if any(conflicting)
+            EM=['The following compartment IDs in ' models{i}.id ' are already present in the model but with another name. They have to be renamed'];
+            dispEM(EM,true,model.comps(conflicting));
+        end
 
         %It's ok to add duplicate name, but not duplicate IDs
         model.compNames=[model.compNames; models{i}.compNames(compIndexes)];
