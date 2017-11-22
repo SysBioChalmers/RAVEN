@@ -354,8 +354,8 @@ for i=1:numel(modelSBML.species)
         end;
     end
     % The following lines are executed regardless isSBML2COBRA setting;
-    if isempty(modelSBML.species(1565).id) || ~strcmpi(modelSBML.species(i).id(1:2),'E_')
-        if isempty(modelSBML.species(1565).id) || ~strcmpi(modelSBML.species(i).id(1:3),'Cx_')
+    if isempty(modelSBML.species(i).id) || ~strcmpi(modelSBML.species(i).id(1:2),'E_')
+        if isempty(modelSBML.species(i).id) || ~strcmpi(modelSBML.species(i).id(1:3),'Cx_')
             % Metabolite names could be of format NAME [compartment]. First
             % check whether metabolite name ends with square brackets, and
             % then check if the text within these brackets is a compartment
