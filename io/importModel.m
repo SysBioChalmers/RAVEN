@@ -1002,6 +1002,18 @@ if ~isfield(model,'genes') && isfield(model,'grRules')
    model=rmfield(model,'grRules');
 end
 
+%The metabolite ids may still contain the compartment abbreviations in the
+%end, so these are removed. However, such removal is only saved if the
+%metabolite ids are still unique;
+for i=1:numel(model.comps)
+    tempMets=model.mets;
+    tempMets=regexprep(tempMets,'\]$','');
+    tempMets=regexprep(tempMets,['\[', model.comps{i}, '$'],'');
+    if numel(unique(tempMets))==numel(model.mets)
+        model.mets=tempMets;
+    end;
+end;
+
 %Print warnings about bad structure
 if supressWarnings==false
     checkModelStruct(model,false);
