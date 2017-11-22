@@ -12,7 +12,7 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
 %   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
-%   Simonas Marcisauskas, 2017-11-03
+%   Simonas Marcisauskas, 2017-11-22
 %
 
 if nargin<3
@@ -109,7 +109,6 @@ end
 model.rxns=regexprep(model.rxns,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 model.mets=regexprep(model.mets,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 model.comps=regexprep(model.comps,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
-model.grRules=regexprep(model.grRules,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 model.genes=regexprep(model.genes,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 
 % Generate an empty SBML structure;
