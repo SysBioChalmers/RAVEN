@@ -161,7 +161,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...
 %    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2017-11-20
+%   Simonas Marcisauskas, 2017-11-22
 %
 
 if nargin<2
@@ -206,18 +206,17 @@ if nargin<13
     seqIdentity=-1; %CD-HIT is not used in the pipeline
 end
 
-% Checking if dataDir is consistent. It must point to pre-trained HMMs set,
-% compatible with the the current RAVEN version.
-% The user may have the required zip file already in working directory or
-% have it extracted. If the zip file and directory is not here, it is
-% downloaded from BioMet ToolBox 2.0 server.
-
 % Run the external binaries multi-threaded to use all logical cores assigned to MATLAB.
 cores = evalc('feature(''numcores'')');
 cores = strsplit(cores, 'MATLAB was assigned: ');
 cores = regexp(cores{2},'^\d*','match');
 cores = cores{1};
 
+% Checking if dataDir is consistent. It must point to pre-trained HMMs set,
+% compatible with the the current RAVEN version.
+% The user may have the required zip file already in working directory or
+% have it extracted. If the zip file and directory is not here, it is
+% downloaded from BioMet ToolBox 2.0 server.
 if ~isempty(dataDir)
     hmmOptions={'euk100_kegg82'; ...
         'euk90_kegg82'; ...
@@ -289,7 +288,7 @@ if isempty(fastaFile)
         else
             proxyid='eco'; %Use E. coli here
         end
-        [~,phylDistId]=ismember(proxyid,phylDists.ids);
+        [~, phylDistId]=ismember(proxyid,phylDists.ids);
         idsToKeep=phylDists.ids(~isinf(phylDists.distMat(phylDistId,:)));
         taxIDs=cellfun(@(x) x{1},cellfun(@(x) strsplit(x,':'),model.genes,'UniformOutput',false),'UniformOutput',false);
         I=ismember(upper(taxIDs),upper(idsToKeep));
@@ -298,12 +297,10 @@ if isempty(fastaFile)
         organismID=strcat(organismID,':');   %Add colon for accurate matching
         if length(organismID)==4
             I=cellfun(@(x) strcmpi(x(1:4),organismID),model.genes);
-        else if length(organismID)==5
+        elseif length(organismID)==5
             I=cellfun(@(x) strcmpi(x(1:5),organismID),model.genes);
-            end
         end
     end
-
     %Remove those genes
     model.genes=model.genes(I);
     model.rxnGeneMat=model.rxnGeneMat(:,I);
@@ -311,14 +308,12 @@ end
 
 %First remove all reactions without genes
 hasGenes=any(model.rxnGeneMat,2);
-
 model=removeReactions(model,~hasGenes,true);
 
 %Clean gene names
 for i=1:numel(model.genes)
-    %First get rid of the prefix organism id
+	%First get rid of the prefix organism id
     model.genes{i}=model.genes{i}(strfind(model.genes{i},':')+1:end);
-    
     %Find and remove the description in parentheses if any
     s=strfind(model.genes{i},'(');
     if any(s)
@@ -331,7 +326,6 @@ if isempty(fastaFile)
     %Create grRules
     model.grRules=cell(numel(model.rxns),1);
     model.grRules(:)={''};
-    
     %Add the gene associations as 'or'
     for i=1:numel(model.rxns)
         %Find the involved genes
@@ -348,7 +342,6 @@ end
 %Trim the genes so that they only contain information that can be matched
 %to the KEGG file of protein sequences (remove all information after first
 %parenthesis)
-
 %NOTE: For some reason the organism abbreviation should be in lower case in
 %this database. Fix this here
 for i=1:numel(KOModel.genes)
@@ -418,7 +411,6 @@ else
     return
 end
 
-
 %Check if alignment of FASTA files should be performed
 missingAligned=setdiff(KOModel.rxns,[alignedFiles;hmmFiles;alignedWorking;outFiles]);
 if ~isempty(missingAligned)
@@ -459,15 +451,15 @@ if ~isempty(missingAligned)
             fastaStruct=fastaread(fullfile(dataDir,'fasta',[missingAligned{i} '.fa']));
             phylDist=inf(numel(fastaStruct),1);
             for j=1:numel(fastaStruct)
-               %Get the organism abbreviation
-               index=strfind(fastaStruct(j).Header,':');
-               if any(index)
+                %Get the organism abbreviation
+                index=strfind(fastaStruct(j).Header,':');
+                if any(index)
                     abbrev=fastaStruct(j).Header(1:index(1)-1);
                     [~, index]=ismember(abbrev,phylDistStruct.ids);
                     if any(index)
                         phylDist(j)=phylDistStruct.distMat(index(1),phylDistId);
                     end
-               end
+                end
             end
 
             %Inf means that it should not be included
@@ -492,7 +484,7 @@ if ~isempty(missingAligned)
                             cdhitInp100=tempname;
                             fastawrite(cdhitInp100,fastaStruct);
                             tmpFile=tempname;
-                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' cores '" -i "' cdhitInp100 '" -o "' tmpFile '" -c 1.0 -s 0.8 -n 5 -M 2000 -T 8']);
+                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' cores '" -i "' cdhitInp100 '" -o "' tmpFile '" -c 1.0 -s 0.8 -n 5 -M 2000']);
                             if status~=0
                                 EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
                                 dispEM(EM);
@@ -835,7 +827,6 @@ for i=1:numel(model.rxns)
     model.grRules{i}=[model.grRules{i} ')'];
 end
 end
-
 
 %Supporter function to list the files in a directory and return them as a
 %cell array
