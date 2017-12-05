@@ -34,7 +34,7 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %
 %   Usage: newModel=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)
 %
-%   Eduard Kerkhoven, 2017-11-29
+%   Eduard Kerkhoven, 2017-12-05
 %
 
 if nargin<6
@@ -72,12 +72,12 @@ metIdx=find(any(sourceModel.S(:,rxnIdx),2)); % Get metabolite IDs
 % Match by metNames[metComps]. First make these structures for each model.
 metCompsN =cellstr(num2str(model.metComps));
 map=containers.Map(cellstr(num2str(transpose([1:length(model.comps)]))),model.comps);
-metCompsN=map.values(metCompsN);
-metCompsN=strcat(model.metNames,'[',metCompsN,']');
+metCompsN = map.values(metCompsN);
+metCompsN = strcat(model.metNames,'[',metCompsN,']');
 
 sourcemetCompsN=cellstr(num2str(sourceModel.metComps));
 map=containers.Map(cellstr(num2str(transpose([1:length(sourceModel.comps)]))),sourceModel.comps);
-sourcemetCompsN=map.values(sourcemetCompsN);
+sourcemetCompsN = map.values(sourcemetCompsN);
 sourcemetCompsN=strcat(sourceModel.metNames,'[',sourcemetCompsN,']');
 
 newMetCompsN=sourcemetCompsN(metIdx);
@@ -85,16 +85,14 @@ notNewMet=newMetCompsN(ismember(newMetCompsN,metCompsN));
 
 if ~isempty(notNewMet)
     fprintf('\n\nThe following metabolites were already present in the model and will not be added:\n')
-    fprintf(strjoin(notNewMet,'\n'))
+    fprintf(strjoin(transpose(notNewMet),'\n'))
 end
 
 metIdx=metIdx(~ismember(sourcemetCompsN(metIdx),metCompsN));
 
-
-
 if ~isempty(metIdx)
     fprintf('\n\nThe following metabolites will be added to the model:\n')
-    fprintf(strjoin(sourcemetCompsN(metIdx),'\n'))    
+    fprintf(strjoin(transpose(sourcemetCompsN(metIdx)),'\n'))    
        
     if isfield(sourceModel,'mets')
         metsToAdd.mets=sourceModel.mets(metIdx);
@@ -137,7 +135,9 @@ if addGene
     genesToAdd.genes=setdiff(unique(geneList),model.genes); % Only keep new genes
     if ~isempty(genesToAdd.genes)
         genesToAdd.geneComps=zeros(1,numel(genesToAdd.genes));
-        genesToAdd.geneComps(:)=sourceModel.geneComps(1); % Assume all genes are in same compartment
+        if isfield(sourcemodel,'geneComps')
+            genesToAdd.geneComps(:)=sourcemodel.geneComps(1); % Assume all genes are in same compartment
+        end
         model=addGenes(model,genesToAdd);
         fprintf('\n\nNumber of genes added to the model:\n')
         fprintf(num2str(numel(genesToAdd.genes)))
