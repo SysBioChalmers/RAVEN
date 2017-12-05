@@ -81,7 +81,7 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
 %   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
-%   Simonas Marcisauskas, 2017-08-25
+%   Eduard Kerkhoven, 2017-12-05
 %
 
 if nargin<4
@@ -417,7 +417,7 @@ if eqnType==1
     dispEM(EM,true,mets(~cellfun(@isempty,illegalCells)));
 else
     %If the mets are metNames
-    if ~contains(mets,'->')
+    if ~any(~cellfun(@isempty,strfind(mets,'->')))
         illegalCells=regexp(mets,'["%<>\\]', 'once');
         EM='Illegal character(s) in metabolite names:';
         dispEM(EM,true,mets(~cellfun(@isempty,illegalCells)));

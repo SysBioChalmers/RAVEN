@@ -135,8 +135,8 @@ if addGene
     genesToAdd.genes=setdiff(unique(geneList),model.genes); % Only keep new genes
     if ~isempty(genesToAdd.genes)
         genesToAdd.geneComps=zeros(1,numel(genesToAdd.genes));
-        if isfield(sourcemodel,'geneComps')
-            genesToAdd.geneComps(:)=sourcemodel.geneComps(1); % Assume all genes are in same compartment
+        if isfield(sourceModel,'geneComps')
+            genesToAdd.geneComps(:)=sourceModel.geneComps(1); % Assume all genes are in same compartment
         end
         model=addGenes(model,genesToAdd);
         fprintf('\n\nNumber of genes added to the model:\n')
