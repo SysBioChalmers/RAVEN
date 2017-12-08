@@ -24,7 +24,7 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %                       hypothetical reaction
 %                   0:  no evidence
 %
-%   newModel         an updated model structure
+%   newModel        an updated model structure
 %
 % 	This function only works if the draft model and source model follow
 %	the same metabolite and compartment naming convention. Metabolites are
@@ -134,8 +134,8 @@ if addGene
     geneList=geneList(~cellfun(@isempty,geneList)); % Remove spaces and empty genes
     genesToAdd.genes=setdiff(unique(geneList),model.genes); % Only keep new genes
     if ~isempty(genesToAdd.genes)
-        genesToAdd.geneComps=zeros(1,numel(genesToAdd.genes));
         if isfield(model,'geneComps') & isfield(sourceModel,'geneComps')
+            genesToAdd.geneComps=zeros(1,numel(genesToAdd.genes));
             genesToAdd.geneComps(:)=sourceModel.geneComps(1); % Assume all genes are in same compartment
         end
         model=addGenes(model,genesToAdd);
