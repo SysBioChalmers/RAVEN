@@ -34,7 +34,7 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %
 %   Usage: newModel=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)
 %
-%   Eduard Kerkhoven, 2017-12-05
+%   Eduard Kerkhoven, 2017-12-08
 %
 
 if nargin<6
@@ -135,7 +135,7 @@ if addGene
     genesToAdd.genes=setdiff(unique(geneList),model.genes); % Only keep new genes
     if ~isempty(genesToAdd.genes)
         genesToAdd.geneComps=zeros(1,numel(genesToAdd.genes));
-        if isfield(sourceModel,'geneComps')
+        if isfield(model,'geneComps') & isfield(sourceModel,'geneComps')
             genesToAdd.geneComps(:)=sourceModel.geneComps(1); % Assume all genes are in same compartment
         end
         model=addGenes(model,genesToAdd);
