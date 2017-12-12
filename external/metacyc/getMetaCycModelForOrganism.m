@@ -25,11 +25,12 @@ function model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %   Usage: model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives)
 %
-%   Hao Wang, 2017-11-15
+%   Eduard Kerkhoven, 2017-12-12
 %
 
 if nargin<2
-    fastaFile=[];
+    EM='No query protein fasta file is specified';
+    dispEM(EM);
 end
 if nargin<3
     keepTransportRxns=false;
@@ -47,11 +48,10 @@ if nargin<7
     minPositives=45;
 end
 
-%Check if the fasta-file contains '/' or'\'. If not then it's probably just
-%a file name. It is then merged with the current folder
-if ~any(fastaFile)
-    EM=fprintf(['The query proteome file is missing, it is requried for GEM reconstruction using MetaCyc database!\n']);
-    dispEM(EM);
+%Check if query fasta exists
+if ~exist(fastaFile,'file')
+    EM='Cannot find the query protein fasta file';
+    dispEM(EM,true);
 end
 
 %First generate the full MetaCyc model
