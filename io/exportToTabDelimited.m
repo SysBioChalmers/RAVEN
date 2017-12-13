@@ -16,17 +16,16 @@ function exportToTabDelimited(model,path)
 %
 %   Usage: exportToTabDelimited(model,path)
 %
-%   Rasmus Agren, 2013-10-09
-%
+%   Simonas Marcisauskas, 2017-12-13
 
 %If the folder doesn't exist then create it
 if ~exist(path,'dir')
-    mkdir(path);
+	mkdir(path);
 end
 
 %Remove the files if they already exist
 if exist(fullfile(path,'excelRxns.txt'),'file')
-    delete(fullfile(path,'excelRxns.txt'));
+	delete(fullfile(path,'excelRxns.txt'));
 end
 if exist(fullfile(path,'excelMets.txt'),'file')
     delete(fullfile(path,'excelMets.txt'));
@@ -44,21 +43,11 @@ end
 %Construct equations
 model.equations=constructEquations(model,model.rxns,true);
 
-%Check if it should print genes
-if isfield(model,'grRules')    
-    %Also do some parsing here
-    rules=model.grRules;
-    rules=strrep(rules,'(','');
-    rules=strrep(rules,')','');
-    rules=strrep(rules,' and ',':');
-    rules=strrep(rules,' or ',';');
-end
-
 %Open for printing the rxn sheet
 rxnFile=fopen(fullfile(path,'excelRxns.txt'),'wt');
 
 %Print header
-fprintf(rxnFile,'#\tID\tNAME\tEQUATION\tEC-NUMBER\tGENE ASSOCIATION\tLOWER BOUND\tUPPER BOUND\tOBJECTIVE\tCOMPARTMENT\tSUBSYSTEM\tMIRIAM\tREPLACEMENT ID\n');
+fprintf(rxnFile,'#\tID\tNAME\tEQUATION\tEC-NUMBER\tGENE ASSOCIATION\tLOWER BOUND\tUPPER BOUND\tOBJECTIVE\tCOMPARTMENT\tMIRIAM\tSUBSYSTEM\tREPLACEMENT ID\tNOTE\tREFERENCE\tCONFIDENCE SCORE\n');
 
 %Loop through the reactions
 for i=1:numel(model.rxns)
@@ -71,7 +60,7 @@ for i=1:numel(model.rxns)
    end
    
    if isfield(model,'grRules')
-        fprintf(rxnFile,[rules{i} '\t']);
+        fprintf(rxnFile,[model.grRules{i} '\t']);
    else
         fprintf(rxnFile,'\t');
    end
@@ -91,17 +80,11 @@ for i=1:numel(model.rxns)
         fprintf(rxnFile,'\t');
    end   
    
-   if isfield(model,'subSystems')
-        fprintf(rxnFile,[model.subSystems{i} '\t']);
-   else
-        fprintf(rxnFile,'\t');
-   end
-   
    if isfield(model,'rxnMiriams')
        if ~isempty(model.rxnMiriams{i})
            toPrint=[];
            for j=1:numel(model.rxnMiriams{i}.name)
-               toPrint=[toPrint strtrim(model.rxnMiriams{i}.name{j}) ':' strtrim(model.rxnMiriams{i}.value{j}) ';']; 
+               toPrint=[toPrint strtrim(model.rxnMiriams{i}.name{j}) '/' strtrim(model.rxnMiriams{i}.value{j}) ';']; 
            end
            fprintf(rxnFile,[toPrint(1:end-1) '\t']);
        else
@@ -111,8 +94,32 @@ for i=1:numel(model.rxns)
         fprintf(rxnFile,'\t');
    end
    
+   if isfield(model,'subSystems')
+       fprintf(rxnFile,[model.subSystems{i} '\t']);
+   else
+       fprintf(rxnFile,'\t');
+   end
+   
    %Print replacement IDs
    fprintf(rxnFile,'\t');
+   
+   if isfield(model,'rxnNotes')
+       fprintf(rxnFile,[model.rxnNotes{i} '\t']);
+   else
+       fprintf(rxnFile,'\t');
+   end
+   
+   if isfield(model,'rxnReferences')
+       fprintf(rxnFile,[model.rxnReferences{i} '\t']);
+   else
+       fprintf(rxnFile,'\t');
+   end
+   
+   if isfield(model,'rxnConfidenceScores')
+       fprintf(rxnFile,[model.rxnConfidenceScores{i} '\t']);
+   else
+       fprintf(rxnFile,'\t');
+   end
    
    fprintf(rxnFile,'\n');
 end
@@ -123,7 +130,7 @@ fclose(rxnFile);
 metFile=fopen(fullfile(path,'excelMets.txt'),'wt');
 
 %Print header
-fprintf(metFile,'#\tID\tNAME\tUNCONSTRAINED\tMIRIAM\tCOMPOSITION\tINCHI\tCOMPARTMENT\tREPLACEMENT ID\tMETS FIELD\n');
+fprintf(metFile,'#\tID\tNAME\tUNCONSTRAINED\tMIRIAM\tCOMPOSITION\tInChI\tCOMPARTMENT\tREPLACEMENT ID\tMETS FIELD\tCHARGE\n');
 
 %Loop through the metabolites
 for i=1:numel(model.mets)
@@ -131,7 +138,7 @@ for i=1:numel(model.mets)
    
    if isfield(model,'unconstrained')
        if model.unconstrained(i)~=0
-            fprintf(metFile,'true\t');
+            fprintf(metFile,'TRUE\t');
        else
             fprintf(metFile,'\t');
        end
@@ -143,7 +150,7 @@ for i=1:numel(model.mets)
        if ~isempty(model.metMiriams{i})
            toPrint=[];
            for j=1:numel(model.metMiriams{i}.name)
-               toPrint=[toPrint strtrim(model.metMiriams{i}.name{j}) ':' strtrim(model.metMiriams{i}.value{j}) ';']; 
+               toPrint=[toPrint strtrim(model.metMiriams{i}.name{j}) '/' strtrim(model.metMiriams{i}.value{j}) ';']; 
            end
            fprintf(rxnFile,[toPrint(1:end-1) '\t']);
        else
@@ -174,6 +181,12 @@ for i=1:numel(model.mets)
    %Print the model.mets field. The reason for not putting this as
    %replacement ID is that it's not guaranteed to be a valid SBML id.
    fprintf(metFile,[model.mets{i} '\t']);
+      
+   if isfield(model,'metCharges')
+       fprintf(metFile,[num2str(model.metCharges(i)) '\t']);
+   else
+       fprintf(metFile,'\t');
+   end
    
    fprintf(metFile,'\n');
 end
@@ -185,7 +198,7 @@ if isfield(model,'genes')
     geneFile=fopen(fullfile(path,'excelGenes.txt'),'wt');
 
     %Print header
-    fprintf(geneFile,'#\tNAME\tMIRIAM\tCOMPARTMENT\n');
+    fprintf(geneFile,'#\tNAME\tMIRIAM\tSHORT NAME\tCOMPARTMENT\n');
 
     %Loop through the genes
     for i=1:numel(model.genes)
@@ -195,7 +208,7 @@ if isfield(model,'genes')
            if ~isempty(model.geneMiriams{i})
                toPrint=[];
                for j=1:numel(model.geneMiriams{i}.name)
-                   toPrint=[toPrint strtrim(model.geneMiriams{i}.name{j}) ':' strtrim(model.geneMiriams{i}.value{j}) ';']; 
+                   toPrint=[toPrint strtrim(model.geneMiriams{i}.name{j}) '/' strtrim(model.geneMiriams{i}.value{j}) ';']; 
                end
                fprintf(geneFile,[toPrint(1:end-1) '\t']);
            else
@@ -205,13 +218,19 @@ if isfield(model,'genes')
             fprintf(geneFile,'\t');
        end
        
+       if isfield(model,'geneShortNames')
+           fprintf(geneFile,[model.geneShortNames{i} '\t']);
+       else
+           fprintf(geneFile,'\t');
+       end
+       
        if isfield(model,'geneComps')
             fprintf(geneFile,[model.comps{model.geneComps(i)} '\t']);
        else
             fprintf(geneFile,'\t');
        end 
 
-        fprintf(geneFile,'\n');
+       fprintf(geneFile,'\n');
     end
     fclose(geneFile);
 end
@@ -268,7 +287,7 @@ if isfield(model,'id')
             toPrint=[toPrint '\t'];
         end
     else
-        toPrint=[toPrint num2str(min(model.lb)) '\t' num2str(max(model.ub)) '\tRasmus\tAgren\trasmus.j.agren@gmail.com\tChalmers University of Technology\t\t\n'];
+        toPrint=[toPrint num2str(min(model.lb)) '\t' num2str(max(model.ub)) '\tRasmus\tAgren\trasmus.agren@scilifelab.se\tChalmers University of Technology\t\t\n'];
     end
     fprintf(modelFile,toPrint);
     fclose(modelFile);
@@ -291,7 +310,7 @@ if isfield(model,'comps')
         if isfield(model,'compMiriams')
             if ~isempty(model.compMiriams{i})
                for j=1:numel(model.compMiriams{i}.name)
-                   toPrint=[toPrint strtrim(model.compMiriams{i}.name{j}) ':' strtrim(model.compMiriams{i}.value{j}) ';']; 
+                   toPrint=[toPrint strtrim(model.compMiriams{i}.name{j}) '/' strtrim(model.compMiriams{i}.value{j}) ';']; 
                end
                toPrint(end)=[];
                toPrint=[toPrint '\t'];
