@@ -7,7 +7,7 @@ function checkInstallation()
 %
 %   Usage: checkInstallation()
 %
-%	Simonas Marcisauskas, 2017-09-22
+%	Eduard Kerkhoven, 2017-12-15
 %
 
 fprintf('\n*** THE RAVEN TOOLBOX v. 2.0 ***\n\n');
@@ -22,16 +22,6 @@ paths=paths{1};
 %Get the RAVEN path
 [ST, I]=dbstack('-completenames');
 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
-
-% Get current solver. Set it to 'none', if it is not set;
-if ~ispref('RAVEN','solver')
-	fprintf('Solver found in preferences... NONE\n');
-    setRavenSolver('none');
-	curSolv=getpref('RAVEN','solver');
-else
-	curSolv=getpref('RAVEN','solver');
-	fprintf(['Solver found in preferences... ',curSolv,'\n']);
-end
 
 if ismember(ravenDir,paths)
     fprintf('Checking if RAVEN is on the Matlab path... PASSED\n');
@@ -67,6 +57,16 @@ try
     fprintf('Checking if it is possible to import an SBML model using libSBML... PASSED\n');
 catch
     fprintf('Checking if it is possible to import an SBML model using libSBML... FAILED\nTo import SBML models, download libSBML from http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n');
+end
+
+% Get current solver. Set it to 'none', if it is not set;
+if ~ispref('RAVEN','solver')
+	fprintf('Solver found in preferences... NONE\n');
+    setRavenSolver('none');
+	curSolv=getpref('RAVEN','solver');
+else
+	curSolv=getpref('RAVEN','solver');
+	fprintf(['Solver found in preferences... ',curSolv,'\n']);
 end
 
 %Check if it is possible to solve an LP problem using different solvers
