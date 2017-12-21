@@ -8,7 +8,7 @@ function [genes, fluxes, originalGenes, details]=findGeneDeletions(model,testTyp
 %                   expression only available if using MOMA
 %                   'sgd'   single gene deletion
 %                   'dgd'   double gene deletion
-%                   'sgo'   singel gene over expression
+%                   'sgo'   single gene over expression
 %                   'dgo'   double gene over expression
 %   analysisType    determines whether to use FBA ('fba') or MOMA ('moma')
 %                   in the optimization
