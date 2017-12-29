@@ -35,10 +35,10 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %                       the HMMs were trained on pro- or eukaryotic sequences,
 %                       using a sequence similarity threshold of XXX %,
 %                       fitting the KEGG version YY. E.g. euk100_kegg82.
-%                       (opt, see note about fastaFile. Note that in order to
-%                       rebuild the KEGG model from a database dump, as opposed to
-%                       using the version supplied with RAVEN, you would still need
-%                       to supply this)
+%                       (opt, see note about fastaFile. Note that in order
+%                       to rebuild the KEGG model from a database dump, as
+%                       opposed to using the version supplied with RAVEN,
+%                       you would still need to supply this)
 %   outDir              directory to save the results from the quering of
 %                       the hidden Markov models. The output is specific
 %                       for the input sequences and the settings used. It
@@ -123,7 +123,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %   The most common alternatives here would be to use sequences from only
 %   eukaryotes, only prokaryotes or all sequences in KEGG. As explained in
 %   the README.md file, various sets of pre-trained hidden Markov models are
-%   available at <a href="matlab: web('http://biomet-toolbox.org/index.php?page=downtools-raven')">BioMet Toolbox</a>.
+%   available at <a href="matlab: web('http://biomet-toolbox.chalmers.se/index.php?page=downtools-raven')">BioMet Toolbox</a>.
 %   This is normally the most convenient way, but if you would like to use,
 %   for example, only fungal sequences for training the HMMs then you need
 %   to run this part.
@@ -161,7 +161,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...
 %    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2017-11-22
+%   Eduard Kerkhoven, 2017-12-28
 %
 
 if nargin<2

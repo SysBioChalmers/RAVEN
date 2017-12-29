@@ -123,7 +123,7 @@ end
 if ~isfield(rxnsToAdd,'rxns')
     EM='rxns is a required field in rxnsToAdd';
     dispEM(EM);
-else
+elseif iscell(rxnsToAdd.rxns)
     %To fit with some later printing
     rxnsToAdd.rxns=rxnsToAdd.rxns(:);
 end

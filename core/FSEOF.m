@@ -56,7 +56,7 @@ for i=1:iterations
     n=i*targetMax/iterations;
     model=setParam(model,'lb',targetRxn,n);
   
-  sol=solveLP(model,1);
+    sol=solveLP(model,1);
   
     fseof.results(:,i)=sol.x;
 
