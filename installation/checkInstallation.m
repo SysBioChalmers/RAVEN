@@ -7,8 +7,7 @@ function checkInstallation()
 %
 %   Usage: checkInstallation()
 %
-%	Eduard Kerkhoven, 2017-12-15
-%
+%	  Eduard Kerkhoven, 2017-12-15
 
 fprintf('\n*** THE RAVEN TOOLBOX v. 2.0 ***\n\n');
 
