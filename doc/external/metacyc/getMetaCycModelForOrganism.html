@@ -52,7 +52,7 @@
    Usage: model=getMetaCycModelForOrganism(organismID,fastaFile,...
     keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives)
 
-   Hao Wang, 2017-06-19</pre></div>
+   Eduard Kerkhoven, 2017-12-12</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
@@ -94,33 +94,33 @@ This function is called by:
 0025 <span class="comment">%   Usage: model=getMetaCycModelForOrganism(organismID,fastaFile,...</span>
 0026 <span class="comment">%    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives)</span>
 0027 <span class="comment">%</span>
-0028 <span class="comment">%   Hao Wang, 2017-06-19</span>
+0028 <span class="comment">%   Eduard Kerkhoven, 2017-12-12</span>
 0029 <span class="comment">%</span>
 0030 
 0031 <span class="keyword">if</span> nargin&lt;2
-0032     fastaFile=[];
-0033 <span class="keyword">end</span>
-0034 <span class="keyword">if</span> nargin&lt;3
-0035     keepTransportRxns=false;
-0036 <span class="keyword">end</span>
-0037 <span class="keyword">if</span> nargin&lt;4
-0038     keepUnbalanced=false;
-0039 <span class="keyword">end</span>
-0040 <span class="keyword">if</span> nargin&lt;5
-0041     keepUndetermined=false;
-0042 <span class="keyword">end</span>
-0043 <span class="keyword">if</span> nargin&lt;6
-0044     minScore=100;
-0045 <span class="keyword">end</span>
-0046 <span class="keyword">if</span> nargin&lt;7
-0047     minPositives=45;
-0048 <span class="keyword">end</span>
-0049 
-0050 <span class="comment">%Check if the fasta-file contains '/' or'\'. If not then it's probably just</span>
-0051 <span class="comment">%a file name. It is then merged with the current folder</span>
-0052 <span class="keyword">if</span> ~any(fastaFile)
-0053     EM=fprintf([<span class="string">'The query proteome file is missing, it is requried for GEM reconstruction using MetaCyc database!\n'</span>]);
-0054     dispEM(EM);
+0032     EM=<span class="string">'No query protein fasta file is specified'</span>;
+0033     dispEM(EM);
+0034 <span class="keyword">end</span>
+0035 <span class="keyword">if</span> nargin&lt;3
+0036     keepTransportRxns=false;
+0037 <span class="keyword">end</span>
+0038 <span class="keyword">if</span> nargin&lt;4
+0039     keepUnbalanced=false;
+0040 <span class="keyword">end</span>
+0041 <span class="keyword">if</span> nargin&lt;5
+0042     keepUndetermined=false;
+0043 <span class="keyword">end</span>
+0044 <span class="keyword">if</span> nargin&lt;6
+0045     minScore=100;
+0046 <span class="keyword">end</span>
+0047 <span class="keyword">if</span> nargin&lt;7
+0048     minPositives=45;
+0049 <span class="keyword">end</span>
+0050 
+0051 <span class="comment">%Check if query fasta exists</span>
+0052 <span class="keyword">if</span> ~exist(fastaFile,<span class="string">'file'</span>)
+0053     EM=<span class="string">'Cannot find the query protein fasta file'</span>;
+0054     dispEM(EM,true);
 0055 <span class="keyword">end</span>
 0056 
 0057 <span class="comment">%First generate the full MetaCyc model</span>
@@ -218,8 +218,8 @@ This function is called by:
 0149 <span class="comment">%Generate grRules, only consider the or relationship here</span>
 0150 <span class="comment">%Matched enzymes are stored in field rxnScores,</span>
 0151 rxnNum=numel(model.rxns);
-0152 model.confidenceScores=cell(rxnNum,1);
-0153 model.confidenceScores(:)={<span class="string">'2'</span>};
+0152 model.rxnConfidenceScores=cell(rxnNum,1);
+0153 model.rxnConfidenceScores(:)={<span class="string">'2'</span>};
 0154 model.grRules=cell(rxnNum,1);
 0155 <span class="comment">%model.rxnScores=cell(rxnNum,1);</span>
 0156 <span class="keyword">for</span> j=1:rxnNum
@@ -263,10 +263,10 @@ This function is called by:
 0194 <span class="keyword">end</span>
 0195 model.metFormulas(a)=metaCycMets.metFormulas(b);
 0196 
-0197 <span class="keyword">if</span> ~isfield(model,<span class="string">'metCharge'</span>)
-0198    model.metCharge=zeros(numel(model.mets),1);
+0197 <span class="keyword">if</span> ~isfield(model,<span class="string">'metCharges'</span>)
+0198    model.metCharges=zeros(numel(model.mets),1);
 0199 <span class="keyword">end</span>
-0200 model.metCharge(a)=metaCycMets.metCharge(b);
+0200 model.metCharges(a)=metaCycMets.metCharges(b);
 0201 
 0202 <span class="keyword">if</span> ~isfield(model,<span class="string">'b'</span>)
 0203    model.b=zeros(numel(model.mets),1);
@@ -288,16 +288,16 @@ This function is called by:
 0219 <span class="comment">%done just to be more compatible with the rest of the code</span>
 0220 model.comps={<span class="string">'s'</span>};
 0221 model.compNames={<span class="string">'System'</span>};
-0222 model.compOutside={<span class="string">''</span>};
-0223 model.metComps=ones(numel(model.mets),1);
-0224 
-0225 <span class="comment">%It could also be that the metabolite names are empty for some reason</span>
-0226 <span class="comment">%In that case, use the ID instead</span>
-0227 I=cellfun(@isempty,model.metNames);
-0228 model.metNames(I)=model.mets(I);
-0229 
-0230 <span class="comment">%Remove additional fields</span>
-0231 model=rmfield(model,{<span class="string">'proteins'</span>,<span class="string">'bitscore'</span>,<span class="string">'ppos'</span>});</pre></div>
-<hr><address>Generated on Wed 01-Nov-2017 16:53:54 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0222 model.metComps=ones(numel(model.mets),1);
+0223 
+0224 <span class="comment">%It could also be that the metabolite names are empty for some reason</span>
+0225 <span class="comment">%In that case, use the ID instead</span>
+0226 I=cellfun(@isempty,model.metNames);
+0227 model.metNames(I)=model.mets(I);
+0228 
+0229 <span class="comment">%Remove additional fields</span>
+0230 model=rmfield(model,{<span class="string">'proteins'</span>,<span class="string">'bitscore'</span>,<span class="string">'ppos'</span>});
+0231 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 28-Dec-2017 10:46:27 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
