@@ -37,9 +37,9 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %       rxnMiriams       structure with MIRIAM information about the reactions
 %       rxnNotes         reaction notes
 %       rxnReferences    reaction references
-%       confidenceScores reaction confidence scores
+%       rxnConfidenceScores reaction confidence scores
 %       genes            list of all genes
-%       geneComps        compartments for reactions
+%       geneComps        compartments for genes
 %       geneMiriams      structure with MIRIAM information about the genes
 %       geneShortNames   gene alternative names (e.g. ERG10)
 %       metNames         metabolite description
@@ -47,7 +47,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %       inchis           InChI-codes for metabolites
 %       metFormulas      metabolite chemical formula
 %       metMiriams       structure with MIRIAM information about the metabolites
-%       metCharge        metabolite charge
+%       metCharges        metabolite charge
 %       unconstrained    true if the metabolite is an exchange metabolite
 %
 %   Loads models in the RAVEN Toolbox Excel format. A number of consistency
@@ -65,7 +65,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Simonas Marcisauskas, 2017-06-05
+%   Simonas Marcisauskas, 2017-11-17
 %
 
 if nargin<2
@@ -108,16 +108,17 @@ model.eccodes={};
 model.rxnMiriams={};
 model.rxnNotes={};
 model.rxnReferences={};
-model.confidenceScores={};
+model.rxnConfidenceScores={};
 model.genes={};
 model.geneComps={}; %Will be double later
 model.geneMiriams={};
+model.geneShortNames={};
 model.metNames={};
 model.metComps=[];
 model.inchis={};
 model.metFormulas={};
 model.metMiriams={};
-model.metCharge={}; %Will be double later
+model.metCharges={}; %Will be double later
 model.unconstrained=[];
 
 workbook=loadWorkbook(fileName);
@@ -285,7 +286,7 @@ else
     raw(1,:)=upper(raw(1,:));
     raw(1,:)=strrep(raw(1,:),'GENE NAME','NAME');
 
-    allLabels={'NAME';'MIRIAM';'SHORT NAME''COMPARTMENT'};
+    allLabels={'NAME';'MIRIAM';'SHORT NAME';'COMPARTMENT'};
 
     %Loop through the labels
     [I, J]=ismember(upper(raw(1,:)),allLabels);
@@ -412,7 +413,7 @@ for i=1:numel(I)
         case 14
             model.rxnReferences=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         case 15
-            model.confidenceScores=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+            model.rxnConfidenceScores=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
     end
 end
 
@@ -522,7 +523,7 @@ if ~isempty(model.grRules)
                model.rxnGeneMat(i,I)=1;
            else
                temp=[0 indexes numel(tempRules{i})+1];
-               for j=1:numel(indexes)+1;
+               for j=1:numel(indexes)+1
                    %The reaction has several associated genes
                    geneName=tempRules{i}(temp(j)+1:temp(j+1)-1);
                    I=find(strcmp(geneName,model.genes));
@@ -629,7 +630,7 @@ else
             case 8
                metReplacement=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
             case 9
-               model.metCharge=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+               model.metCharges=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         end
     end
 
@@ -719,19 +720,13 @@ else
 
     %Either all metabolites have charge or none of them.
     %Check if it's only empty and if so return it to []
-    if ~isempty(model.metCharge)
-        if all(cellfun(@isempty,model.metCharge))
-            model.metCharge=[];
+    if ~isempty(model.metCharges)
+        if all(cellfun(@isempty,model.metCharges))
+            model.metCharges=[];
         end
     end
-    if ~isempty(model.metCharge)
-        if any(strcmp('',model.metCharge))
-            EM='Either all metabolites have charge information or none of them';
-            dispEM(EM);
-        end
-    end
-    if ~isempty(model.metCharge)
-        model.metCharge=str2double(model.metCharge);
+    if ~isempty(model.metCharges)
+        model.metCharges=str2double(model.metCharges);
     end
 end
 
@@ -792,8 +787,8 @@ end
 if all(cellfun(@isempty,model.rxnReferences))
 	model=rmfield(model,'rxnReferences');
 end
-if all(cellfun(@isempty,model.confidenceScores))
-	model=rmfield(model,'confidenceScores');
+if all(cellfun(@isempty,model.rxnConfidenceScores))
+	model=rmfield(model,'rxnConfidenceScores');
 end
 if isempty(model.genes)
     model=rmfield(model,'genes');
@@ -804,7 +799,7 @@ end
 if isempty(model.geneMiriams)
     model=rmfield(model,'geneMiriams');
 end
-if isfield(model,'geneShortNames') && cellfun(@isempty,model.geneShortNames)
+if all(cellfun(@isempty,model.geneShortNames))
     model=rmfield(model,'geneShortNames');
 end
 if all(cellfun(@isempty,model.inchis))
@@ -816,8 +811,8 @@ end
 if all(cellfun(@isempty,model.metMiriams))
     model=rmfield(model,'metMiriams');
 end
-if isempty(model.metCharge)
-    model=rmfield(model,'metCharge');
+if isempty(model.metCharges)
+    model=rmfield(model,'metCharges');
 end
 
 %The model structure has now been reconstructed but it can still contain
@@ -855,10 +850,10 @@ for i=1:numel(strings)
             miriamStruct{i}.value=cell(numel(I),1);
         end
 
-        for j=1:numel(I)
-            if contains(I{j},'/')
+        for j=1:numel(I)  
+            if any(strfind(I{j},'/'))
                 index=max(strfind(I{j},'/'));
-            elseif contains(I{j},':')                
+            elseif any(strfind(I{j},':'))            
                 index=max(strfind(I{j},':'));
             end
             if any(index)
@@ -868,13 +863,6 @@ for i=1:numel(strings)
                 EM=['"' I{j} '" is not a valid MIRIAM string. The format must be "identifier/value" or identifier:value'];
                 dispEM(EM);
             end
-        end
-        if contains(miriamStruct{i}.name,'chebi')
-            miriamStruct{i}.name=regexprep(miriamStruct{i}.name,'obo.chebi:CHEBI|chebi:CHEBI','chebi');
-            miriamStruct{i}.value=strcat('CHEBI:',miriamStruct{i}.value);
-        elseif contains(miriamStruct{i}.name,'go:GO')
-            miriamStruct{i}.name=regexprep(miriamStruct{i}.name,'obi.go:GO|obo.go:GO|go:GO','go');
-            miriamStruct{i}.value=strcat('GO:',miriamStruct{i}.value);            
         end
     end
 end

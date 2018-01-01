@@ -64,3 +64,4 @@ for i=1:numel(rxnsToCheck)
 end
 
 [~, essentialRxnsIndexes]=ismember(essentialRxns,model.rxns);
+end

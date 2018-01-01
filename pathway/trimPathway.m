@@ -87,5 +87,4 @@ if deleteUnconnectedMets==true
     
     pathway.listOfSpecies(indexesToDelete)=[];
 end
-
-
+end

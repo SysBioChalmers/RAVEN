@@ -1,4 +1,4 @@
-function out=testStructTiming(param)
+function out=testStructTiming(~)
 	%modLoad('~all COBRA RAVENgit')
 	modelPath='/Users/hedani/Documents/Models/HMR/';
 
@@ -6,7 +6,7 @@ function out=testStructTiming(param)
 	model=setParam(model,'obj',{'Biomass_SCO'},1);
 
 	setRavenSolver('gurobi');
-	[res crap prob]=solveLP(model);
+	[res, ~, prob]=solveLP(model);
 	ts=tic;
 	for i=1:100 solveLP(model); end
 	tTot=toc(ts);

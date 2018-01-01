@@ -49,8 +49,7 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %
 %   Usage: model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %
-%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
-%   rxnReferences and confidenceScores
+%   Simonas Marcisauskas, 2017-08-25
 %
 
 if nargin<5
@@ -69,10 +68,10 @@ end
 
 %Find the indexes of the reactions and throw an error if they aren't all
 %found
-[I J]=ismember(rxns,model.rxns);
+[I, J]=ismember(rxns,model.rxns);
 if ~all(I)
     EM='All reaction ids must exist in the model';
-    distEM(EM);
+    dispEM(EM);
 end
 
 %The reactions are changed in the following manner. First create a
@@ -121,8 +120,8 @@ end
 if isfield(model,'rxnReferences')
     rxnsToChange.rxnReferences=model.rxnReferences(J);
 end
-if isfield(model,'confidenceScores')
-    rxnsToChange.confidenceScores=model.confidenceScores(J);
+if isfield(model,'rxnConfidenceScores')
+    rxnsToChange.rxnConfidenceScores=model.rxnConfidenceScores(J);
 end
 
 %Calculate the new order of reactions

@@ -13,8 +13,7 @@ function model=mergeModels(models,supressWarnings)
 %
 %   Usage: model=mergeModels(models)
 %
-%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
-%   rxnReferences, confidenceScores and metCharge
+%   Eduard Kerkhoven, 2017-11-20
 %
 
 %Just return the model
@@ -164,19 +163,19 @@ for i=2:numel(models)
        end
     end
 
-    if isfield(models{i},'confidenceScores')
-       if isfield(model,'confidenceScores')
-           model.confidenceScores=[model.confidenceScores;models{i}.confidenceScores];
+    if isfield(models{i},'rxnConfidenceScores')
+       if isfield(model,'rxnConfidenceScores')
+           model.rxnConfidenceScores=[model.rxnConfidenceScores;models{i}.rxnConfidenceScores];
        else
            emptyConfidenceScores=cell(numel(model.rxns)-numel(models{i}.rxns),1);
            emptyConfidenceScores(:)={''};
-           model.confidenceScores=[emptyConfidenceScores;models{i}.confidenceScores];
+           model.rxnConfidenceScores=[emptyConfidenceScores;models{i}.rxnConfidenceScores];
        end
     else
-       if isfield(model,'confidenceScores')
+       if isfield(model,'rxnConfidenceScores')
            emptyConfidenceScores=cell(numel(models{i}.rxns),1);
            emptyConfidenceScores(:)={''};
-           model.confidenceScores=[model.confidenceScores;emptyConfidenceScores];
+           model.rxnConfidenceScores=[model.rxnConfidenceScores;emptyConfidenceScores];
        end
     end
 
@@ -227,7 +226,7 @@ for i=2:numel(models)
 
     %First add the new metabolites
     %Make sure that there are no conflicting metabolite ids
-    [conflicting, ~]=ismember(models{i}.mets(metsToAdd),model.mets);
+    conflicting=ismember(models{i}.mets(metsToAdd),model.mets);
 
     conflicting=find(conflicting);
 
@@ -298,19 +297,19 @@ for i=2:numel(models)
            end
         end
 
-        if isfield(models{i},'metCharge')
-           if isfield(model,'metCharge')
-               model.metCharge=[model.metCharge;models{i}.metCharge(metsToAdd)];
+        if isfield(models{i},'metCharges')
+           if isfield(model,'metCharges')
+               model.metCharges=[model.metCharges;models{i}.metCharges(metsToAdd)];
            else
                emptyMetCharge=cell(numel(model.mets)-numel(metsToAdd),1);
                emptyMetCharge(:)={''};
-               model.metCharge=[emptyMetCharge;models{i}.metCharge(metsToAdd)];
+               model.metCharges=[emptyMetCharge;models{i}.metCharges(metsToAdd)];
            end
         else
-           if isfield(model,'metCharge')
+           if isfield(model,'metCharges')
                emptyMetCharge=cell(numel(metsToAdd),1);
                emptyMetCharge(:)={''};
-               model.metCharge=[model.metCharge;emptyMetCharge];
+               model.metCharges=[model.metCharges;emptyMetCharge];
            end
         end
 
@@ -343,8 +342,10 @@ for i=2:numel(models)
 
         %Make sure that there are no conflicting compartment ids
         [~, conflicting]=ismember(models{i}.compNames(compIndexes),model.compNames);
-        EM=['The following compartment IDs in ' models{i}.id ' are already present in the model but with another name. They have to be renamed'];
-        dispEM(EM,true,model.comps(conflicting));
+        if any(conflicting)
+            EM=['The following compartment IDs in ' models{i}.id ' are already present in the model but with another name. They have to be renamed'];
+            dispEM(EM,true,model.comps(conflicting));
+        end
 
         %It's ok to add duplicate name, but not duplicate IDs
         model.compNames=[model.compNames; models{i}.compNames(compIndexes)];
@@ -417,7 +418,7 @@ for i=2:numel(models)
             end
         else
             %If gene info should be merged
-            [a, ~]=ismember(models{i}.genes,model.genes);
+            a=ismember(models{i}.genes,model.genes);
 
             genesToAdd=find(~a);
 

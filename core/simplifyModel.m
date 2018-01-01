@@ -317,5 +317,4 @@ if groupLinear==true
     
     reducedModel=irrevModel;
 end
-
 end

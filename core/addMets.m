@@ -29,7 +29,7 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 %                               the metabolites (opt, default '')
 %                metMiriams     cell array with MIRIAM structures (opt,
 %                               default [])
-%                metCharge      metabolite charge (opt, default 0)
+%                metCharges     metabolite charge (opt, default 0)
 %   copyInfo     when adding metabolites to a compartment where it previously
 %                doesn't exist, the function will copy any available annotation
 %                from the metabolite in another compartment (opt, default true)
@@ -39,9 +39,17 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 %   NOTE: This function does not make extensive checks about MIRIAM formats,
 %   forbidden characters or such.
 %
+%   Example: If multiple metabolites are added at once, the metMiriams cell
+%   array should be defined as (example with ChEBI and KEGG):
+%   
+%   metsToAdd.metMiriams{1} = struct('name',{{'chebi';'kegg.compound'}},...
+%       'value',{{'CHEBI:18072';'C11821'}});
+%   metsToAdd.metMiriams{2} = struct('name',{{'chebi';'kegg.compound'}},...
+%       'value',{{'CHEBI:31132';'C12248'}});
+%
 %   Usage: newModel=addMets(model,metsToAdd,copyInfo)
 %
-%   Simonas Marcisauskas, 2016-11-01 - added support for metCharge
+%   Simonas Marcisauskas, 2017-09-18
 %
 
 if nargin<3
@@ -107,7 +115,7 @@ else
 end
 
 %Check that all the compartments could be found
-[I compMap]=ismember(metsToAdd.compartments,model.comps);
+[I, compMap]=ismember(metsToAdd.compartments,model.comps);
 if ~all(I)
     EM='metsToAdd.compartments must match model.comps';
     dispEM(EM);
@@ -223,20 +231,20 @@ else
     end
 end
 
-if isfield(metsToAdd,'metCharge')
-   if numel(metsToAdd.metCharge)~=nMets
-       EM='metsToAdd.metCharge must have the same number of elements as metsToAdd.mets';
+if isfield(metsToAdd,'metCharges')
+   if numel(metsToAdd.metCharges)~=nMets
+       EM='metsToAdd.metCharges must have the same number of elements as metsToAdd.mets';
        dispEM(EM);
    end
-   if ~isnumeric(metsToAdd.metCharge)
-        EM='metsToAdd.metCharge must be of type "double"';
+   if ~isnumeric(metsToAdd.metCharges)
+        EM='metsToAdd.metCharges must be of type "double"';
         dispEM(EM);
    end
-   newModel.metCharge=[newModel.metCharge;metsToAdd.metCharge(:)];
+   newModel.metCharges=[newModel.metCharges;metsToAdd.metCharges(:)];
 else
     %Add default
-    if isfield(newModel,'metCharge')
-       newModel.metCharge=[newModel.metCharge;zeros(numel(filler),1)];
+    if isfield(newModel,'metCharges')
+       newModel.metCharges=[newModel.metCharges;zeros(numel(filler),1)];
     end
 end
 
@@ -265,7 +273,7 @@ end
 newModel.S=[newModel.S;sparse(nMets,size(newModel.S,2))];
 
 if copyInfo==true
-   [I J]=ismember(metsToAdd.metNames,model.metNames);
+   [I, J]=ismember(metsToAdd.metNames,model.metNames);
    J=J(I);
    %I is the indexes of the new metabolites for which a metabolite with the
    %same name existed
@@ -287,12 +295,13 @@ if copyInfo==true
                newModel.metMiriams(I(i))=newModel.metMiriams(J(i));
            end
        end
-       if isfield(newModel,'metCharge')
-           newModel.metCharge(I(i))=newModel.metCharge(J(i));
+       if isfield(newModel,'metCharges')
+           newModel.metCharges(I(i))=newModel.metCharges(J(i));
        end
    end
 end
 end
+
 %For getting the numerical form of metabolite ids on the form "m1".
 function I=getInteger(s)
     %Checks if a string is on the form "m1" and if so returns the value of

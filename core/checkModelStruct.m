@@ -14,7 +14,7 @@ function checkModelStruct(model,throwErrors,trimWarnings)
 %
 %   Usage: checkModelStruct(model,throwErrors,trimWarnings)
 %
-%   Simonas Marcisauskas, 2017-06-02
+%   Simonas Marcisauskas, 2017-09-06
 %
 
 if nargin<2
@@ -142,9 +142,9 @@ if isfield(model,'metFormulas')
         dispEM(EM,throwErrors);
     end
 end
-if isfield(model,'metCharge')
-    if ~isnumeric(model.metCharge)
-        EM='The "metCharge" field must be a double';
+if isfield(model,'metCharges')
+    if ~isnumeric(model.metCharges)
+        EM='The "metCharges" field must be a double';
         dispEM(EM,throwErrors);
     end
 end
@@ -178,9 +178,9 @@ if isfield(model,'rxnReferences')
         dispEM(EM,throwErrors);
     end
 end
-if isfield(model,'confidenceScores')
-    if ~iscellstr(model.confidenceScores)
-        EM='The "confidenceScores" field must be a cell array of strings';
+if isfield(model,'rxnConfidenceScores')
+    if ~iscellstr(model.rxnConfidenceScores)
+        EM='The "rxnConfidenceScores" field must be a cell array of strings';
         dispEM(EM,throwErrors);
     end
 end
@@ -278,7 +278,7 @@ dispEM(EM,throwErrors,model.mets(I),trimWarnings);
 if isfield(model,'metFormulas')
     [~, ~, exitFlag]=parseFormulas(model.metFormulas,true,false);
     EM='The composition for the following metabolites could not be parsed:';
-     dispEM(EM,false,model.mets(exitFlag==-1),trimWarnings);
+    dispEM(EM,false,model.mets(exitFlag==-1),trimWarnings);
 end
 
 %Check if there are metabolites with different names but the same MIRIAM
@@ -363,6 +363,7 @@ function I=duplicates(strings)
         I(L)=true;
     end
 end
+
 function I=illegal(strings,type)
     %Just to save some space
     if strcmpi(type,'id')

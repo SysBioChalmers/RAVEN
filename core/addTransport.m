@@ -1,4 +1,4 @@
-function [model addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,onlyToExisting)
+function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,onlyToExisting)
 % addTransport
 %   Adds transport reactions between compartments
 %
@@ -18,17 +18,16 @@ function [model addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,on
 %   This is a faster version than addRxns when adding transport reactions.
 %   New reactions are named "T_fromComp_to_toComp_metID in fromComp".
 %
-%   Usage: [model addedRxns]=addTransport(model,fromComp,toComps,metNames,...
+%   Usage: [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,...
 %           isRev,onlyToExisting)
 %
-%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
-%   rxnReferences, confidenceScores and metCharge
+%   Simonas Marcisauskas, 2017-08-25
 %
 
 if iscell(fromComp)
     fromComp=fromComp{1};
 end
-[I fromID]=ismember(model.comps,fromComp);
+[I, fromID]=ismember(model.comps,fromComp);
 fromID=find(fromID);
 if sum(I)~=1
     EM='fromComps must have exactly one match in model.comps';
@@ -37,7 +36,7 @@ end
 if ischar(toComps)
     toComps={toComps};
 end
-[I toIDs]=ismember(toComps,model.comps);
+[I, toIDs]=ismember(toComps,model.comps);
 if ~all(I)
     EM='All compartments in toComps must have a match in model.comps';
     dispEM(EM);
@@ -156,8 +155,8 @@ for i=1:numel(toComps)
     if isfield(model,'rxnReferences')
         model.rxnReferences=[model.rxnReferences;filler];
     end
-    if isfield(model,'confidenceScores')
-        model.confidenceScores=[model.confidenceScores;filler];
+    if isfield(model,'rxnConfidenceScores')
+        model.rxnConfidenceScores=[model.rxnConfidenceScores;filler];
     end
 end
 end

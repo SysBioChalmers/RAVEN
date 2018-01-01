@@ -39,10 +39,10 @@ function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFlux
 %   metabolite is produced, it picks one of them to be produced and then
 %   minimizes for the sum of fluxes.
 %
-%   Usage: [solution metabolite]=makeSomething(model,ignoreMets,isNames,...
+%   Usage: [solution, metabolite]=makeSomething(model,ignoreMets,isNames,...
 %           minNrFluxes,allowExcretion,params,ignoreIntBounds)
 %
-%   Rasmus Agren, 2017-02-19
+%   Simonas Marcisauskas, 2017-08-25
 %
 
 if nargin<2
@@ -137,7 +137,7 @@ model.rxnFrom=padding;
 model.rxnComps=ones(numel(model.rev),1);
 model.rxnNotes=padding;
 model.rxnReferences=padding;
-model.confidenceScores=padding;
+model.rxnConfidenceScores=padding;
 
 sol=solveLP(model,1);
 if any(sol.x)

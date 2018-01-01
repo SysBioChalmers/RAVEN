@@ -11,7 +11,7 @@ function [I, rxnNames]=getRxnsInComp(model,comp,includePartial)
 %   I               boolean vector of the reactions
 %   rxnNames        the names of the reactions
 %
-%   Usage: [I rxnNames]=getRxnsInComp(model,comp,includePartial)
+%   Usage: [I, rxnNames]=getRxnsInComp(model,comp,includePartial)
 %
 %   Rasmus Agren, 2014-01-08
 %

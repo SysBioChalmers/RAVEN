@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of linkMetaCycKEGGRxns</title>
+  <meta name="keywords" content="linkMetaCycKEGGRxns">
+  <meta name="description" content="linkMetaCycKEGGRxns">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="../index.html">external</a> &gt; <a href="index.html">metacyc</a> &gt; linkMetaCycKEGGRxns.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for external\metacyc&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>linkMetaCycKEGGRxns
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>linkMetaCycKEGGRxns</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function linkMetaCycKEGGRxns </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> linkMetaCycKEGGRxns
+   Link additional MetaCyc and KEGG reactions through metabolite mapping
+   This function only need to run once after MetaCyc database update
+
+   Usage: linkMetaCycKEGGRxns
+
+   Hao Wang, 2017-12-03</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function linkMetaCycKEGGRxns</a>
+0002 <span class="comment">% linkMetaCycKEGGRxns</span>
+0003 <span class="comment">%   Link additional MetaCyc and KEGG reactions through metabolite mapping</span>
+0004 <span class="comment">%   This function only need to run once after MetaCyc database update</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">%   Usage: linkMetaCycKEGGRxns</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">%   Hao Wang, 2017-12-03</span>
+0009 <span class="comment">%</span>
+0010 
+0011 <span class="comment">% No arguments are required</span>
+0012 
+0013 load(<span class="string">'metaCycRxns.mat'</span>); <span class="comment">%load MetaCyc reactions</span>
+0014 metaCycRxns.rxnFrom=cell(numel(metaCycRxns.rxns),1);
+0015 metaCycRxns.rxnFrom(:)={<span class="string">'MetaCyc'</span>};
+0016 
+0017 keggModel=getRxnsFromKEGG(); <span class="comment">%load KEGG reactions</span>
+0018 
+0019 <span class="comment">%Remove KEGG reactions with MetaCyc links based on original rxnLinks</span>
+0020 rxnToRemove=intersect(rxnLinks.kegg,keggModel.rxns);
+0021 rxnToRemove=unique(rxnToRemove);
+0022 shrinkedKeggModel=removeReactions(keggModel,rxnToRemove,true,true);
+0023 
+0024 <span class="comment">%Resolve the shared but unmapped reactions (through mapping the involved metabolites).</span>
+0025 <span class="comment">%Replace mets information in KEGG model with the corresponding ones in MetaCyc.</span>
+0026 load(<span class="string">'metaCycMets.mat'</span>);
+0027 <span class="keyword">for</span> i=1:numel(shrinkedKeggModel.mets)
+0028     [a, b]=ismember(shrinkedKeggModel.mets{i},metaCycMets.keggid);
+0029     <span class="keyword">if</span> a
+0030         <span class="comment">%Replace the met ids</span>
+0031         shrinkedKeggModel.mets{i}=metaCycMets.mets{b};
+0032         shrinkedKeggModel.metNames{i}=metaCycMets.mets{b};
+0033     <span class="keyword">end</span>
+0034 <span class="keyword">end</span>
+0035 
+0036 <span class="comment">%Prepare for the merge of KEGG and MetaCyc super models</span>
+0037 
+0038 <span class="comment">%Adding fields (comps, compNames, metNames, metComps)</span>
+0039 metaCycRxns.comps={<span class="string">'s'</span>};
+0040 metaCycRxns.compNames={<span class="string">'System'</span>};
+0041 metaCycRxns.metNames=metaCycRxns.mets;
+0042 <span class="keyword">if</span> ~isfield(metaCycRxns,<span class="string">'metComps'</span>)
+0043     metaCycRxns.metComps=ones(numel(metaCycRxns.mets),1);
+0044 <span class="keyword">end</span>
+0045 
+0046 shrinkedKeggModel.comps={<span class="string">'s'</span>};
+0047 shrinkedKeggModel.compNames={<span class="string">'System'</span>};
+0048 shrinkedKeggModel.metNames=shrinkedKeggModel.mets;
+0049 <span class="keyword">if</span> ~isfield(shrinkedKeggModel,<span class="string">'metComps'</span>)
+0050    shrinkedKeggModel.metComps=ones(numel(shrinkedKeggModel.mets),1);
+0051 <span class="keyword">end</span>
+0052 
+0053 <span class="comment">%Merge models</span>
+0054 mappingModel=mergeModels({shrinkedKeggModel metaCycRxns});
+0055 
+0056 <span class="comment">%Remove compounds proton and water because KEGG reactions often miss them</span>
+0057 mappingModel=removeMets(mappingModel,{<span class="string">'PROTON'</span>,<span class="string">'WATER'</span>});
+0058 
+0059 <span class="comment">%Find same/similiar reactions by check identical columns in S matrix</span>
+0060 <span class="comment">%Go through the pure KEGG model and collect rxns id that have</span>
+0061 <span class="comment">%identical reactions to the ones in MetaCyc</span>
+0062 I=find(ismember(mappingModel.rxnFrom,<span class="string">'KEGG'</span>));
+0063 <span class="keyword">for</span> i=1:numel(I)
+0064     testRxn=mappingModel.S(:,I(i));
+0065     match=find(~any(bsxfun(@minus, mappingModel.S,testRxn))); <span class="comment">%Figure out the matched columns in S matrix</span>
+0066     <span class="comment">% if ~isequal(match,I(i))</span>
+0067         count=numel(match);
+0068         <span class="keyword">if</span> count&gt;1 <span class="comment">%Only consider one-to-one match here</span>
+0069             <span class="keyword">for</span> j=2:count
+0070                 <span class="comment">%Only consider the match between KEGG and MetaCyc</span>
+0071                 <span class="keyword">if</span> isequal(mappingModel.rxnFrom{match(j)},<span class="string">'MetaCyc'</span>)
+0072                     <span class="comment">%disp([mappingModel.rxns(match(1)) mappingModel.rxns(match(j))]); %keep this for later checking</span>
+0073                     rxnLinks.kegg=[rxnLinks.kegg;mappingModel.rxns(match(1))];
+0074                     rxnLinks.metacyc=[rxnLinks.metacyc;mappingModel.rxns(match(j))];
+0075                 <span class="keyword">end</span>
+0076             <span class="keyword">end</span>
+0077         <span class="keyword">end</span>
+0078     <span class="comment">% end</span>
+0079 <span class="keyword">end</span>
+0080 
+0081 <span class="comment">% Load orginal rxnLinks</span>
+0082 numLink=numel(rxnLinks.kegg);
+0083 rxnLinks.check=cell(numLink,1);
+0084 <span class="keyword">for</span> i=1:numLink
+0085     rxnLinks.check{i}=strcat(rxnLinks.kegg{i},rxnLinks.metacyc{i});
+0086 <span class="keyword">end</span>
+0087 
+0088 [~, index]=unique(rxnLinks.check);
+0089 rxnLinks.kegg=rxnLinks.kegg(index);
+0090 rxnLinks.metacyc=rxnLinks.metacyc(index);
+0091 rxnLinks=rmfield(rxnLinks,<span class="string">'check'</span>);
+0092 
+0093 save(<span class="string">'metaCycRxns.mat'</span>,<span class="string">'metaCycRxns'</span>,<span class="string">'rxnLinks'</span>,<span class="string">'UNBALANCED'</span>,<span class="string">'UNDETERMINED'</span>);
+0094 
+0095 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 28-Dec-2017 10:46:27 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

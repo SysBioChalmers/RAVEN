@@ -13,7 +13,7 @@ function geneScoreStructure=parseScores(inputFile,predictor)
 %
 %   Usage: geneScoreStructure=parseScores(inputFile,predictor,normalize)
 %
-%   Simonas Marcisauskas, 2016-11-15 - added compatibility for CELLO v2.5
+%   Simonas Marcisauskas, 2017-08-25
 %
 
 if nargin<2
@@ -90,7 +90,7 @@ else if strcmpi(predictor,'cello')
 end
 
 %Check if there are duplicate genes
-[crap J K]=unique(geneScoreStructure.genes);
+[~, J, K]=unique(geneScoreStructure.genes);
 
 if numel(J)~=numel(K)
    EM='There are duplicate genes in the input file';
@@ -104,3 +104,4 @@ I=max(geneScoreStructure.scores,[],2);
 geneScoreStructure.scores=bsxfun(@times, geneScoreStructure.scores, 1./I);
 
 fclose(fid);
+end

@@ -18,8 +18,7 @@ function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,remove
 %   Usage: reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,...
 %           removeUnusedGenes,removeUnusedComps)
 %
-%   Simonas Marcisauskas, 2016-11-01 - added support for rxnNotes,
-%   rxnReferences and confidenceScores
+%   Simonas Marcisauskas, 2017-08-25
 %
 
 if nargin<3
@@ -95,8 +94,8 @@ if ~isempty(rxnsToRemove) || removeUnusedMets || removeUnusedGenes
         if isfield(reducedModel,'rxnReferences')
             reducedModel.rxnReferences(indexesToDelete,:)=[];
         end
-        if isfield(reducedModel,'confidenceScores')
-            reducedModel.confidenceScores(indexesToDelete,:)=[];
+        if isfield(reducedModel,'rxnConfidenceScores')
+            reducedModel.rxnConfidenceScores(indexesToDelete,:)=[];
         end
         if isfield(reducedModel,'pwys')
             reducedModel.pwys(indexesToDelete,:)=[];

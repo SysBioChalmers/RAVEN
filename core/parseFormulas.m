@@ -237,7 +237,7 @@ if nargout>3
     MW=sum(P,2);
 
     %Then remove the calculations for elements with unknown mass
-    [I crap]=find(useMat(:,isnan(EWs)));
+    I=find(useMat(:,isnan(EWs)));
     MW(I)=nan;
     MW(exitFlag~=1)=nan;
 end

@@ -23,7 +23,7 @@ function reducedModel=removeMets(model,metsToRemove,isNames,removeUnusedRxns,rem
 %   Usage: reducedModel=removeMets(model,metsToRemove,isNames,...
 %           removeUnusedRxns,removeUnusedGenes,removeUnusedComps)
 %
-%   Simonas Marcisauskas, 2016-11-01 - added support for metCharge
+%   Simonas Marcisauskas, 2017-09-06
 %
 
 if ischar(metsToRemove)
@@ -97,8 +97,8 @@ if ~isempty(indexesToDelete)
     if isfield(reducedModel,'metFrom')
         reducedModel.metFrom(indexesToDelete)=[];
     end
-    if isfield(reducedModel,'metCharge')
-        reducedModel.metCharge(indexesToDelete)=[];
+    if isfield(reducedModel,'metCharges')
+        reducedModel.metCharges(indexesToDelete)=[];
     end
 end
 

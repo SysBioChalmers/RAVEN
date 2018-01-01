@@ -34,7 +34,6 @@ function hpaData=parseHPA(fileName, version)
 %
 %   Usage: hpaData=parseHPA(fileName)
 %
-%   Rasmus Agren, 2014-01-08
 %   Johan Gustafsson, 2017-10-10
 
 if nargin<2

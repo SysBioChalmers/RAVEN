@@ -107,6 +107,7 @@ if printResults==true
     fprintf('\n\n');
 end
 end
+
 function A=getElements(models,field)
     A={};
     for i=1:numel(models)
@@ -115,6 +116,7 @@ function A=getElements(models,field)
        end
     end
 end
+
 function toCheck=getToCheck(models,field)
     %Get all the combinations that should be checked for overlap (including the
     %single ones)
@@ -139,6 +141,7 @@ function toCheck=getToCheck(models,field)
         I=isfield(A,field);
     end
 end
+
 function printList(models,toCheck,nElements)
     %To guess how many spaces that are needed to align
     firstLen=[];
@@ -155,6 +158,7 @@ function printList(models,toCheck,nElements)
        fprintf([label(1:end-1) '  ' repmat(sprintf(' '),1,nSpaces) num2str(nElements(i)) '\n']);
     end
 end
+
 function nElements=checkStuff(A,toCheck)
     %Now loop through the toCheck matrix, starting with the combination with the
     %most models. Only elements that weren't in iteration n are considered in

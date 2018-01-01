@@ -8,7 +8,7 @@ function [genes, fluxes, originalGenes, details]=findGeneDeletions(model,testTyp
 %                   expression only available if using MOMA
 %                   'sgd'   single gene deletion
 %                   'dgd'   double gene deletion
-%                   'sgo'   singel gene over expression
+%                   'sgo'   single gene over expression
 %                   'dgo'   double gene over expression
 %   analysisType    determines whether to use FBA ('fba') or MOMA ('moma')
 %                   in the optimization
@@ -35,14 +35,14 @@ function [genes, fluxes, originalGenes, details]=findGeneDeletions(model,testTyp
 %                   each gene in originalGenes and why or why not it was
 %                   deleted
 %                   1: Was deleted
-%                   2: Proved lethal in SGD
+%                   2: Proved lethal in sgd (single gene deletion)
 %                   3: Only involved in reactions with too many iso-enzymes
 %                   4: Involved in dead-end reaction
 %
 %   NOTE: This function disregards complexes. Any one gene can encode a
 %         reaction even if parts of the complex is deleted.
 %
-%   Usage: [genes fluxes]=findGeneDeletions(model,testType,analysisType,...
+%   Usage: [genes, fluxes, originalGenes, details]=findGeneDeletions(model,testType,analysisType,...
 %           refModel,oeFactor)
 %
 %   Rasmus Agren, 2014-01-08
@@ -176,7 +176,7 @@ if strcmpi(testType,'dgo')
 
     fluxes=sparse(numel(model.rxns),size(genesToModify,1));
     for i=1:size(genesToModify,1)
-       [I, ~]=find(model.rxnGeneMat(:,genesToModify(i,:)));
+       I=find(model.rxnGeneMat(:,genesToModify(i,:)));
        %To over express a gene, the stoichiometry of the corresponding
        %reactions are changed so that the same flux leads to a higher
        %production
@@ -198,7 +198,7 @@ if strcmpi(testType,'dgd')
 
     fluxes=sparse(numel(model.rxns),size(genesToModify,1));
     for i=1:size(genesToModify,1)
-       [I, ~]=find(model.rxnGeneMat(:,genesToModify(i,:)));
+       I=find(model.rxnGeneMat(:,genesToModify(i,:)));
 
        %Constrain all reactions involving the gene to 0
        tempModel=setParam(model,'eq',model.rxns(I),0);

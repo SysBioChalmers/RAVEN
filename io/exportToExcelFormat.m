@@ -17,7 +17,7 @@ function exportToExcelFormat(model,filename)
 %
 %   Usage: exportToExcelFormat(model,filename)
 %
-%   Simonas Marcisauskas, 2017-06-02
+%   Simonas Marcisauskas, 2017-09-12
 %
 
 [~, A, B]=fileparts(filename);
@@ -49,7 +49,7 @@ wb=loadWorkbook(filename,true);
 model.equations=constructEquations(model,model.rxns,true);
 
 %Check if it should print genes
-if isfield(model,'grRules');
+if isfield(model,'grRules')
     rules=model.grRules;
 else
     rules=[];
@@ -184,8 +184,8 @@ else
     rxnSheet=[rxnSheet emptyColumn];
 end
 
-if isfield(model,'confidenceScores')
-    rxnSheet=[rxnSheet model.confidenceScores];
+if isfield(model,'rxnConfidenceScores')
+    rxnSheet=[rxnSheet model.rxnConfidenceScores];
 else
     rxnSheet=[rxnSheet emptyColumn];
 end
@@ -218,10 +218,18 @@ for i=1:numel(model.mets)
            metSheet{i,5}=toPrint(1:end-1);
        end
     end
-
+    
+    % Making sure that only these metFormulas are exported, which don't
+    % have InChI strings
     if isfield(model,'metFormulas')
-        metSheet(i,6)=model.metFormulas(i);
-    end
+        if isfield(model,'inchis')
+            if isempty(model.inchis{i})
+                metSheet(i,6)=model.metFormulas(i);
+            end;
+        else
+            metSheet(i,6)=model.metFormulas(i);
+        end;
+    end;
 
     if isfield(model,'inchis')
         metSheet(i,7)=model.inchis(i);
@@ -233,8 +241,8 @@ for i=1:numel(model.mets)
 
     metSheet(i,9)=model.mets(i);
 
-    if isfield(model,'metCharge')
-        metSheet{i,10}=model.metCharge(i);
+    if isfield(model,'metCharges')
+        metSheet{i,10}=model.metCharges(i);
     end
 end
 
@@ -318,9 +326,13 @@ end
 
 if isfield(model,'id')
     modelSheet{1,2}=model.id;
+else
+    modelSheet{1,2}='blankID';
 end
 if isfield(model,'description')
     modelSheet{1,3}=model.description;
+else
+    modelSheet{1,3}='blankName';
 end
 if isfield(model.annotation,'defaultLB')
     modelSheet{1,4}=model.annotation.defaultLB;

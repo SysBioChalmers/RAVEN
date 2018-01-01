@@ -48,10 +48,10 @@ function [outModel, geneLocalization, transportStruct, scores, removedRxns]=pred
 %   This is a simplification to keep the problem size down. The problem is
 %   solved using simulated annealing.
 %
-%   Usage: [outModel geneLocalization transportStruct score removedRxns]=...
+%   Usage: [outModel, geneLocalization, transportStruct, score, removedRxns]=...
 %       predictLocalization(model,GSS,defaultCompartment,transportCost,maxTime)
 %
-%   Rasmus Agren, 2017-02-19
+%   Simonas Marcisauskas, 2017-09-06
 %
 
 if nargin<4
@@ -639,8 +639,8 @@ for i=1:nComps-1
     if isfield(outModel,'rxnReferences')
         outModel.rxnReferences=[outModel.rxnReferences;outModel.rxnReferences(nER+1:nER+nRxns)];
     end
-    if isfield(outModel,'confidenceScores')
-        outModel.confidenceScores=[outModel.confidenceScores;outModel.confidenceScores(nER+1:nER+nRxns)];
+    if isfield(outModel,'rxnConfidenceScores')
+        outModel.rxnConfidenceScores=[outModel.rxnConfidenceScores;outModel.rxnConfidenceScores(nER+1:nER+nRxns)];
     end
     outModel.mets=[outModel.mets;strcat(outModel.mets(nEM+1:nEM+nMets),'_',GSS.compartments{i+1})];
     outModel.metNames=[outModel.metNames;outModel.metNames(nEM+1:nEM+nMets)];
@@ -662,8 +662,8 @@ for i=1:nComps-1
     if isfield(outModel,'metFrom')
         outModel.metFrom=[outModel.metFrom;outModel.metFrom(nEM+1:nEM+nMets)];
     end
-    if isfield(outModel,'metCharge')
-        outModel.metCharge=[outModel.metCharge;outModel.metCharge(nEM+1:nEM+nMets)];
+    if isfield(outModel,'metCharges')
+        outModel.metCharges=[outModel.metCharges;outModel.metCharges(nEM+1:nEM+nMets)];
     end
 end
 
@@ -709,8 +709,8 @@ for i=1:numel(I)
     if isfield(outModel,'rxnReferences')
         outModel.rxnReferences=[outModel.rxnReferences;{''}];
     end
-    if isfield(outModel,'confidenceScores')
-        outModel.confidenceScores=[outModel.confidenceScores;{''}];
+    if isfield(outModel,'rxnConfidenceScores')
+        outModel.rxnConfidenceScores=[outModel.rxnConfidenceScores;{''}];
     end
 end
 

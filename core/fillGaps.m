@@ -59,12 +59,18 @@ function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(m
 %   of reactions that have to be included in order for the model to produce
 %   biomass.
 %
-%   Usage: [newConnected cannotConnect addedRxns newModel exitFlag]=...
+%   Usage: [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=...
 %           fillGaps(model,models,allowNetProduction,useModelConstraints,...
 %           supressWarnings,rxnScores,params)
 %
-%   Rasmus Agren, 2014-05-07
+%   Eduard Kerkhoven, 2017-11-28
 %
+
+% fillGaps doesn't work well with the glpk solver as implemented by COBRA for MILP.
+global CBT_MILP_SOLVER
+if strcmp(getpref('RAVEN','solver'),'cobra') && strcmp(CBT_MILP_SOLVER,'glpk')
+    dispEM('The current solver is set to ''cobra'', while in COBRA the MILP solver has been set to ''glpk''. The COBRA implementation of glpk is not well suitable for solving MILPs. Please install the Gurobi or Mosek solver to run fillGaps.',true);
+end
 
 %If the user only supplied a single template model
 if ~iscell(models)
@@ -105,7 +111,7 @@ rxnScores=rxnScores(:);
 
 %Check if the original model has an unconstrained field. If so, give a warning
 if supressWarnings==false
-    if isfield(model,'unconstrained');
+    if isfield(model,'unconstrained')
         EM='This algorithm is meant to function on a model with exchange reactions for uptake and excretion of metabolites. The current model still has the "unconstrained" field';
         dispEM(EM,false);
     else
@@ -201,7 +207,7 @@ else
 
     %Return stuff
     newConnected=K;
-    cannotConnect=setdiff(model.rxns(~originalFlux ),newConnected);
+    cannotConnect=setdiff(model.rxns(~originalFlux),newConnected);
 end
 
 %Then minimize for the number of fluxes used. The fixed rxns doesn't need

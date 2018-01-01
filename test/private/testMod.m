@@ -1,4 +1,4 @@
-function out=testGapFill2(param)
+function out=testMod(param)
 	if nargin<1
 		param.solver='gurobi';
 		param.useConstraints=true;
@@ -15,8 +15,8 @@ for i=1:length(Index)
 	model2=setParam(model2,'obj',{'r_4041'},1); % biomass
 	model2=setParam(model2,'lb',{'r_4041'},.1);
 	model2.id='yeast_reduced';
-	[newConnected cannotConnect addedRxns newModel exitFlag]=fillGaps(model2,model,false,true)
-	if (length(addedRxns)==0)
+	[newConnected_2a, cannotConnect_2a, addedRxns_2a, newModel_2a, exitFlag_2a]=fillGaps(model2,model,false,true);
+	if (isempty(addedRxns))
 		nonEssential{end+1}=model.rxns{Index(i)};
 	else
 		essential{end+1}=model.rxns{Index(i)};
@@ -29,7 +29,7 @@ model2=removeReactions(model,Index,true);
 model2=setParam(model2,'obj',{'r_4041'},1); % biomass
 model2=setParam(model2,'lb',{'r_4041'},.1);
 model2.id='yeast_reduced';
-[newConnected cannotConnect addedRxns newModel exitFlag]=fillGaps(model2,model,false,true)
+[newConnected_2b, cannotConnect_2b, addedRxns_2b, newModel_2b, exitFlag_2b]=fillGaps(model2,model,false,true);
 
 cellfun(@(rxn) printModel(model,rxn),essential)
 disp('')
@@ -51,3 +51,4 @@ diary off
 %     'r_1166'
 %     'r_1714'
 %     'r_1805'
+end

@@ -37,7 +37,7 @@ function [taskReport, essentialRxns, taskStructure]=checkTasks(model,inputFile,p
 %   bounds. If more bounds are needed to define the task, then several rows
 %   can be used for each task.
 %
-%   Usage: [taskReport essentialReactions taskStructure]=checkTasks(model,inputFile,...
+%   Usage: [taskReport, essentialReactions, taskStructure]=checkTasks(model,inputFile,...
 %           printOutput,printOnlyFailed,getEssential,taskStructure)
 %
 %   Rasmus Agren, 2014-01-08

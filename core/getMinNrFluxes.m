@@ -25,7 +25,7 @@ function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)
 %   NOTE: Uses 1000 mmol/gDW/h as an arbitary large flux. Could possibly
 %   cause problems if the fluxes in the model are larger than that.
 %
-%   Usage: [x,I]=getMinNrFluxes(model, toMinimize, params, scores)
+%   Usage: [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params, scores)
 %
 %   Rasmus Agren, 2017-02-28
 %

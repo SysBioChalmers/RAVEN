@@ -1,13 +1,14 @@
-function model=addsRxnsGenesMets(model,sourcemodel,rxns,add_gene,rxnNote,confidence)
+function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)
 % addRxnsGenesMets
-%   Adds reactions to a model, including new metabolites and genes
+%   Copies reactions from a source model to a new model, including
+%   (new) metabolites and genes
 %
-%   model           draft model where reactions should be added
-%   sourcemodel     model where reactions and metabolites are sourced from
+%   model           draft model where reactions should be copied to
+%   sourceModel     model where reactions and metabolites are sourced from
 %   rxns            cell array with reaction IDs (from source model)
-%   add_gene        logical whether genes should be added or not (opt,
+%   addGene         logical whether genes should be copied or not (opt,
 %                   default false)
-%   rxnNote         string explaining why reactions were added to model,
+%   rxnNote         string explaining why reactions were copied to model,
 %                   is included as newModel.rxnNotes (opt, default
 %                   'Added via addRxnsAndMets()')
 %   confidence      string, specifying confidence score for all reactions.
@@ -23,100 +24,147 @@ function model=addsRxnsGenesMets(model,sourcemodel,rxns,add_gene,rxnNote,confide
 %                       hypothetical reaction
 %                   0:  no evidence
 %
-%   newModel         an updated model structure
+%   newModel        an updated model structure
 %
 % 	This function only works if the draft model and source model follow
 %	the same metabolite and compartment naming convention. Metabolites are
-%	only matched on their metabolite ID. Useful if one wants to move
+%	only matched by metaboliteName[compartment]. Useful if one wants to copy
 %	additional reactions from source to draft after getModelFromHomology was
 %	used involving the same models.
 %
-%   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
+%   Usage: newModel=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)
 %
-%   Eduard Kerkhoven, 2016-12-20
+%   Eduard Kerkhoven, 2017-12-08
+%
 
 if nargin<6
     confidence=0;
 end
 if nargin<5
-    rxnNote='Added via addRxnsAndMets()';
+    rxnNote='Added via addRxnsGenesMets()';
 end
 if nargin<4
-    add_gene=false;
+    addGene=false;
 end
 
+%If the supplied object is a character array, then convert it to a cell
+%array
+if ischar(rxns)
+    rxns={rxns};
+end
 
 %% Obtain indexes of reactions in source model
 notNewRxn=rxns(ismember(rxns,model.rxns));
 rxns=rxns(~ismember(rxns,model.rxns));
 if isempty(rxns)
     throw(MException('','All reactions are already in the model.'));
+elseif ~isempty(notNewRxn)
+    fprintf('\n The following reactions were already present in the model and will not be added:\n')
+    fprintf(strjoin(notNewRxn,'\n'))
 end
 
-if ~isempty(notNewRxn)
-    disp('The following reactions were already present in the model and will not be added:')
-    disp(strjoin(notNewRxn,'\n'))
-end
-
-
-rxnIdx=find(ismember(sourcemodel.rxns,rxns)); % Get rxnIDs
+rxnIdx=find(ismember(sourceModel.rxns,rxns)); % Get rxnIDs
 
 %% Add new metabolites
-metIdx=find(any(sourcemodel.S(:,rxnIdx),2)); % Get metabolite IDs
+metIdx=find(any(sourceModel.S(:,rxnIdx),2)); % Get metabolite IDs
 % Many of the metabolites in are already in the draft model, so only add the new metabolites
-mets=sourcemodel.mets(metIdx);
-notNewMet=mets(ismember(mets,model.mets));
+
+% Match by metNames[metComps]. First make these structures for each model.
+metCompsN =cellstr(num2str(model.metComps));
+map=containers.Map(cellstr(num2str(transpose([1:length(model.comps)]))),model.comps);
+metCompsN = map.values(metCompsN);
+metCompsN = strcat(model.metNames,'[',metCompsN,']');
+
+sourcemetCompsN=cellstr(num2str(sourceModel.metComps));
+map=containers.Map(cellstr(num2str(transpose([1:length(sourceModel.comps)]))),sourceModel.comps);
+sourcemetCompsN = map.values(sourcemetCompsN);
+sourcemetCompsN=strcat(sourceModel.metNames,'[',sourcemetCompsN,']');
+
+newMetCompsN=sourcemetCompsN(metIdx);
+notNewMet=newMetCompsN(ismember(newMetCompsN,metCompsN));
+
 if ~isempty(notNewMet)
-    disp('The following metabolites were already present in the model and will not be added:')
-    disp(strjoin(notNewMet,'\n'))
+    fprintf('\n\nThe following metabolites were already present in the model and will not be added:\n')
+    fprintf(strjoin(transpose(notNewMet),'\n'))
 end
 
-metIdx=metIdx(~ismember(sourcemodel.mets(metIdx),model.mets));
+metIdx=metIdx(~ismember(sourcemetCompsN(metIdx),metCompsN));
 
 if ~isempty(metIdx)
-    metsToAdd.mets=sourcemodel.mets(metIdx);
-    metsToAdd.metNames=sourcemodel.metNames(metIdx);
-    metsToAdd.metFormulas=sourcemodel.metFormulas(metIdx);
-
-    metsToAdd.compartments=strtrim(cellstr(num2str(sourcemodel.metComps(metIdx)))); % Convert from compartment string to comparment number
-    [~,idx]=ismember(metsToAdd.compartments,strsplit(num2str(1:length(sourcemodel.comps)))); % Match compartment number to compartment abbreviation
-    metsToAdd.compartments=sourcemodel.comps(idx); % Fill in compartment abbreviations
+    fprintf('\n\nThe following metabolites will be added to the model:\n')
+    fprintf(strjoin(transpose(sourcemetCompsN(metIdx)),'\n'))    
+       
+    if isfield(sourceModel,'mets')
+        metsToAdd.mets=sourceModel.mets(metIdx);
+    end
+    if isfield(sourceModel,'metNames')
+        metsToAdd.metNames=sourceModel.metNames(metIdx);
+    end
+    if isfield(sourceModel,'metFormulas')
+        metsToAdd.metFormulas=sourceModel.metFormulas(metIdx);
+    end
+    if isfield(sourceModel,'metCharge')
+        metsToAdd.metCharge=sourceModel.metCharge(metIdx);
+    end
+    if isfield(sourceModel,'metMiriams')
+        metsToAdd.metMiriams=sourceModel.metMiriams(metIdx);
+    end
+    if isfield(sourceModel,'metFormulas')
+        metsToAdd.metFormulas=sourceModel.metFormulas(metIdx);
+    end
+    if isfield(sourceModel,'inchis')
+        metsToAdd.inchis=sourceModel.inchis(metIdx);
+    end
+    
+    metsToAdd.compartments=strtrim(cellstr(num2str(sourceModel.metComps(metIdx)))); % Convert from compartment string to compartment number
+    [~,idx]=ismember(metsToAdd.compartments,strsplit(num2str(1:length(sourceModel.comps)))); % Match compartment number to compartment abbreviation
+    metsToAdd.compartments=sourceModel.comps(idx); % Fill in compartment abbreviations
 
     model=addMets(model,metsToAdd);
 end
-disp('Number of metabolites added to the model:')
-disp(numel(metIdx))
+fprintf('\n\nNumber of metabolites added to the model:\n')
+fprintf(num2str(numel(metIdx)))
+fprintf('\n')
 
 %% Add new genes
-if add_gene
-    rxnToAdd.grRules=sourcemodel.grRules(rxnIdx); % Get the relevant grRules
+if addGene
+    rxnToAdd.grRules=sourceModel.grRules(rxnIdx); % Get the relevant grRules
     geneList=strjoin(rxnToAdd.grRules);
     geneList=regexp(geneList,' |)|(|and|or','split');% Remove all grRule punctuation
     geneList=geneList(~cellfun(@isempty,geneList)); % Remove spaces and empty genes
     genesToAdd.genes=setdiff(unique(geneList),model.genes); % Only keep new genes
     if ~isempty(genesToAdd.genes)
-        genesToAdd.geneComps=zeros(1,numel(genesToAdd.genes));
-        genesToAdd.geneComps(:)=sourcemodel.geneComps(1); % Assume all genes are in same compartment
+        if isfield(model,'geneComps') & isfield(sourceModel,'geneComps')
+            genesToAdd.geneComps=zeros(1,numel(genesToAdd.genes));
+            genesToAdd.geneComps(:)=sourceModel.geneComps(1); % Assume all genes are in same compartment
+        end
         model=addGenes(model,genesToAdd);
-        disp('Number of genes added to the model:')
-        disp(numel(genesToAdd.genes))
+        fprintf('\n\nNumber of genes added to the model:\n')
+        fprintf(num2str(numel(genesToAdd.genes)))
     else
-        disp(['No genes added to the model, because no genes were annotated or all genes were already present'])
+        fprintf('\n\nNo genes added to the model, because no genes were annotated or all genes were already present.')
     end
 end
 
 %% Add new reactions
-rxnToAdd.equations=constructEquations(sourcemodel,rxnIdx);
-rxnToAdd.rxnNames=sourcemodel.rxnNames(rxnIdx);
-rxnToAdd.rxns=sourcemodel.rxns(rxnIdx);
-rxnToAdd.lb=sourcemodel.lb(rxnIdx);
-rxnToAdd.ub=sourcemodel.ub(rxnIdx);
+rxnToAdd.equations=constructEquations(sourceModel,rxnIdx);
+rxnToAdd.rxnNames=sourceModel.rxnNames(rxnIdx);
+rxnToAdd.rxns=sourceModel.rxns(rxnIdx);
+rxnToAdd.lb=sourceModel.lb(rxnIdx);
+rxnToAdd.ub=sourceModel.ub(rxnIdx);
 rxnToAdd.rxnNotes=cell(1,numel(rxnToAdd.rxns));
 rxnToAdd.rxnNotes(:)={rxnNote};
 rxnToAdd.confidenceScores=cell(1,numel(rxnToAdd.rxns));
 rxnToAdd.confidenceScores(:)={confidence};
+if isfield(sourceModel,'subSystems')
+	rxnToAdd.subSystems=sourceModel.subSystems(rxnIdx);
+end
+if isfield(sourceModel,'eccodes')
+	rxnToAdd.eccodes=sourceModel.eccodes(rxnIdx);
+end
 model=addRxns(model,rxnToAdd,3,'',false);
 
-disp('Number of reactions added to the model:')
-disp(numel(rxnIdx))
+fprintf('\n\nNumber of reactions added to the model:\n')
+fprintf([num2str(numel(rxnIdx)),'\n'])
 
+end

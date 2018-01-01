@@ -73,3 +73,4 @@ if returnLogical==true
 end
 
 indexes=indexes(:);
+end

@@ -64,3 +64,4 @@ if ~isempty(metaboliteList)
 else
     printFluxes(model, I, false, 0.1, outputFile,outputString);
 end
+end

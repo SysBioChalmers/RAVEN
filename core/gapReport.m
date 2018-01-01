@@ -37,8 +37,8 @@ function [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnec
 %                               added from the template models and which 
 %                               model they were added from
 %
-%   Usage: [noFluxRxns noFluxRxnsRelaxed subGraphs notProducedMets minToConnect...
-%    neededForProductionMat connectedFromTemplates addedFromTemplates]=...
+%   Usage: [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnect,...
+%    neededForProductionMat, connectedFromTemplates, addedFromTemplates]=...
 %    gapReport(model, templateModels)
 %
 %   Rasmus Agren, 2013-11-22
@@ -83,7 +83,7 @@ for i=1:size(subGraphs,2)
 end
 
 fprintf('\n***Metabolite connectivity\n');
-[notProducedMets, crap, neededForProductionMat,minToConnect]=checkProduction(model,true,model.comps,false);
+[notProducedMets, ~, neededForProductionMat,minToConnect]=checkProduction(model,true,model.comps,false);
 fprintf(['To enable net production of all metabolites, a total of ' num2str(numel(minToConnect)) ' metabolites must be connected\n']);
 fprintf('Top 10 metabolites to connect:\n');
 for i=1:min(10,numel(minToConnect))
@@ -101,7 +101,7 @@ end
 
 if ~isempty(templateModels)
     fprintf('\n***Automated gap-filling\n');
-    [connectedFromTemplates crap addedFromTemplates]=fillGaps(model,templateModels);
+    [connectedFromTemplates, ~, addedFromTemplates]=fillGaps(model,templateModels);
     t=templateModels{1}.id;
     for i=2:numel(templateModels)
         t=[t ', ' templateModels{i}.id];

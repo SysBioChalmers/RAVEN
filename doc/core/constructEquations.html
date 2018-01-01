@@ -24,7 +24,7 @@
 <div class="box"><strong>constructEquations</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames) </strong></div>
+<div class="box"><strong>function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> constructEquations
@@ -41,13 +41,15 @@
     sortMetNames      sort the metabolite names in the equation. Uses
                      compartment even if useComps is false (opt, default
                      false)
+   useMetID          use metabolite ID in generated equations, otherwise metNames are
+                     used (opt, default false)
 
    equationStrings     a cell array with equations
 
      Usage: equationStrings=constructEquations(model,rxns,useComps,...
-           sortRevRxns,sortMetNames)
+           sortRevRxns,sortMetNames,useMetID)
 
-   Rasmus Agren, 2014-07-03</pre></div>
+   Hao Wang, 2017-05-15</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -56,13 +58,13 @@ This function calls:
 <li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model,objects, type, returnLogical)">getIndexes</a>	getIndexes</li><li><a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>	sortModel</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="compareModels.html" class="code" title="function compStruct=compareModels(models,printResults)">compareModels</a>	compareModels</li><li><a href="followChanged.html" class="code" title="function followChanged(model,fluxesA,fluxesB, cutOffChange, cutOffFlux, cutOffDiff, metaboliteList)">followChanged</a>	followChanged</li><li><a href="followFluxes.html" class="code" title="function [errorFlag]=followFluxes(model, fluxesA, lowerFlux, upperFlux, fluxesB)">followFluxes</a>	followFluxes</li><li><a href="printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>	printFluxes</li><li><a href="printModelStats.html" class="code" title="function printModelStats(model, printModelIssues, printDetails)">printModelStats</a>	printModelStats</li></ul>
+<li><a href="addRxnsGenesMets.html" class="code" title="function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)">addRxnsGenesMets</a>	addRxnsGenesMets</li><li><a href="compareModels.html" class="code" title="function compStruct=compareModels(models,printResults)">compareModels</a>	compareModels</li><li><a href="followChanged.html" class="code" title="function followChanged(model,fluxesA,fluxesB, cutOffChange, cutOffFlux, cutOffDiff, metaboliteList)">followChanged</a>	followChanged</li><li><a href="followFluxes.html" class="code" title="function errorFlag=followFluxes(model, fluxesA, lowerFlux, upperFlux, fluxesB)">followFluxes</a>	followFluxes</li><li><a href="printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>	printFluxes</li><li><a href="printModelStats.html" class="code" title="function printModelStats(model, printModelIssues, printDetails)">printModelStats</a>	printModelStats</li></ul>
 <!-- crossreference -->
 
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID)</a>
 0002 <span class="comment">% constructEquations</span>
 0003 <span class="comment">%   Construct equation strings for reactions</span>
 0004 <span class="comment">%</span>
@@ -77,102 +79,123 @@ This function is called by:
 0013 <span class="comment">%    sortMetNames      sort the metabolite names in the equation. Uses</span>
 0014 <span class="comment">%                     compartment even if useComps is false (opt, default</span>
 0015 <span class="comment">%                     false)</span>
-0016 <span class="comment">%</span>
-0017 <span class="comment">%   equationStrings     a cell array with equations</span>
+0016 <span class="comment">%   useMetID          use metabolite ID in generated equations, otherwise metNames are</span>
+0017 <span class="comment">%                     used (opt, default false)</span>
 0018 <span class="comment">%</span>
-0019 <span class="comment">%     Usage: equationStrings=constructEquations(model,rxns,useComps,...</span>
-0020 <span class="comment">%           sortRevRxns,sortMetNames)</span>
-0021 <span class="comment">%</span>
-0022 <span class="comment">%   Rasmus Agren, 2014-07-03</span>
+0019 <span class="comment">%   equationStrings     a cell array with equations</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">%     Usage: equationStrings=constructEquations(model,rxns,useComps,...</span>
+0022 <span class="comment">%           sortRevRxns,sortMetNames,useMetID)</span>
 0023 <span class="comment">%</span>
-0024 
-0025 <span class="keyword">if</span> nargin&lt;2
-0026     rxns=model.rxns;
-0027 <span class="keyword">end</span>
-0028 <span class="keyword">if</span> nargin&lt;3
-0029     useComps=true;
-0030 <span class="keyword">end</span>
-0031 <span class="keyword">if</span> nargin&lt;4
-0032     sortRevRxns=false;
-0033 <span class="keyword">end</span>
-0034 <span class="keyword">if</span> nargin&lt;5
-0035     sortMetNames=false;
-0036 <span class="keyword">end</span>
-0037 <span class="keyword">if</span> isempty(rxns) &amp;&amp; nargin&gt;2
-0038     rxns=model.rxns;
-0039 <span class="keyword">end</span>
-0040 
-0041 <span class="comment">%Sort reversible equations</span>
-0042 <span class="keyword">if</span> sortRevRxns==true
-0043     model=<a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>(model);
+0024 <span class="comment">%   Hao Wang, 2017-05-15</span>
+0025 <span class="comment">%</span>
+0026 
+0027 <span class="keyword">if</span> nargin&lt;2
+0028     rxns=model.rxns;
+0029 <span class="keyword">end</span>
+0030 <span class="keyword">if</span> nargin&lt;3
+0031     useComps=true;
+0032 <span class="keyword">end</span>
+0033 <span class="keyword">if</span> nargin&lt;4
+0034     sortRevRxns=false;
+0035 <span class="keyword">end</span>
+0036 <span class="keyword">if</span> nargin&lt;5
+0037     sortMetNames=false;
+0038 <span class="keyword">end</span>
+0039 <span class="keyword">if</span> nargin&lt;6
+0040     useMetID=false;
+0041 <span class="keyword">end</span>
+0042 <span class="keyword">if</span> isempty(rxns) &amp;&amp; nargin&gt;2
+0043     rxns=model.rxns;
 0044 <span class="keyword">end</span>
 0045 
-0046 <span class="comment">%Sort metabolite names, including compartment</span>
-0047 <span class="keyword">if</span> sortMetNames==true
-0048     model=<a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>(model,false,true);
+0046 <span class="comment">%Sort reversible equations</span>
+0047 <span class="keyword">if</span> sortRevRxns==true
+0048     model=<a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>(model);
 0049 <span class="keyword">end</span>
 0050 
-0051 indexes=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model,objects, type, returnLogical)">getIndexes</a>(model,rxns,<span class="string">'rxns'</span>);
-0052 
-0053 equationStrings=cell(numel(indexes),1);
-0054 
-0055 <span class="keyword">for</span> i=1:numel(indexes)
-0056     reactants=find(model.S(:,indexes(i))&lt;0);
-0057     products=find(model.S(:,indexes(i))&gt;0);
-0058     eqn=<span class="string">''</span>;
+0051 <span class="comment">%Sort metabolite names, including compartment</span>
+0052 <span class="keyword">if</span> sortMetNames==true
+0053     model=<a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>(model,false,true);
+0054 <span class="keyword">end</span>
+0055 
+0056 indexes=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model,objects, type, returnLogical)">getIndexes</a>(model,rxns,<span class="string">'rxns'</span>);
+0057 
+0058 equationStrings=cell(numel(indexes),1);
 0059 
-0060     <span class="keyword">for</span> j=1:numel(reactants)
-0061         <span class="keyword">if</span> j==1
-0062             plusString=<span class="string">''</span>;
-0063         <span class="keyword">else</span>
-0064             plusString=<span class="string">' + '</span>;
-0065         <span class="keyword">end</span>
-0066 
-0067         stoich=num2str(model.S(reactants(j),indexes(i))*-1);
-0068 
-0069         <span class="keyword">if</span> str2double(stoich)==1
-0070             stoich=<span class="string">''</span>;
-0071         <span class="keyword">else</span>
-0072             stoich=[stoich <span class="string">' '</span>];
-0073         <span class="keyword">end</span>
-0074 
-0075         <span class="keyword">if</span> useComps==true
-0076             eqn=[eqn plusString stoich model.metNames{reactants(j)} <span class="string">'['</span> model.comps{model.metComps(reactants(j))} <span class="string">']'</span>];
-0077         <span class="keyword">else</span>
-0078             eqn=[eqn plusString stoich model.metNames{reactants(j)}];
-0079         <span class="keyword">end</span>
-0080     <span class="keyword">end</span>
-0081 
-0082     <span class="keyword">if</span> model.rev(indexes(i))==0
-0083         eqn=[eqn <span class="string">' =&gt; '</span>];
-0084     <span class="keyword">else</span>
-0085         eqn=[eqn <span class="string">' &lt;=&gt; '</span>];
-0086     <span class="keyword">end</span>
-0087 
-0088     <span class="keyword">for</span> j=1:numel(products)
-0089         <span class="keyword">if</span> j==1
-0090             plusString=<span class="string">''</span>;
-0091         <span class="keyword">else</span>
-0092             plusString=<span class="string">' + '</span>;
-0093         <span class="keyword">end</span>
+0060 <span class="keyword">for</span> i=1:numel(indexes)
+0061     reactants=find(model.S(:,indexes(i))&lt;0);
+0062     products=find(model.S(:,indexes(i))&gt;0);
+0063     eqn=<span class="string">''</span>;
+0064 
+0065     <span class="keyword">for</span> j=1:numel(reactants)
+0066         <span class="keyword">if</span> j==1
+0067             plusString=<span class="string">''</span>;
+0068         <span class="keyword">else</span>
+0069             plusString=<span class="string">' + '</span>;
+0070         <span class="keyword">end</span>
+0071 
+0072         stoich=num2str(model.S(reactants(j),indexes(i))*-1);
+0073 
+0074         <span class="keyword">if</span> str2double(stoich)==1
+0075             stoich=<span class="string">''</span>;
+0076         <span class="keyword">else</span>
+0077             stoich=[stoich <span class="string">' '</span>];
+0078         <span class="keyword">end</span>
+0079 
+0080         <span class="keyword">if</span> useComps==true
+0081                 <span class="keyword">if</span> useMetID==true
+0082                 eqn=[eqn plusString stoich model.mets{reactants(j)} <span class="string">'['</span> model.comps{model.metComps(reactants(j))} <span class="string">']'</span>];
+0083               <span class="keyword">else</span>
+0084                 eqn=[eqn plusString stoich model.metNames{reactants(j)} <span class="string">'['</span> model.comps{model.metComps(reactants(j))} <span class="string">']'</span>];
+0085               <span class="keyword">end</span>
+0086         <span class="keyword">else</span>
+0087                 <span class="keyword">if</span> useMetID==true
+0088                     eqn=[eqn plusString stoich model.mets{reactants(j)}];
+0089                 <span class="keyword">else</span>
+0090                     eqn=[eqn plusString stoich model.metNames{reactants(j)}];
+0091                 <span class="keyword">end</span>
+0092         <span class="keyword">end</span>
+0093     <span class="keyword">end</span>
 0094 
-0095         stoich=num2str(model.S(products(j),indexes(i)));
-0096 
-0097         <span class="keyword">if</span> str2double(stoich)==1
-0098             stoich=<span class="string">''</span>;
-0099         <span class="keyword">else</span>
-0100             stoich=[stoich <span class="string">' '</span>];
-0101         <span class="keyword">end</span>
-0102 
-0103         <span class="keyword">if</span> useComps==true
-0104             eqn=[eqn plusString stoich model.metNames{products(j)} <span class="string">'['</span> model.comps{model.metComps(products(j))} <span class="string">']'</span>];
-0105         <span class="keyword">else</span>
-0106             eqn=[eqn plusString stoich model.metNames{products(j)}];
-0107         <span class="keyword">end</span>
-0108     <span class="keyword">end</span>
-0109     equationStrings{i}=eqn;
-0110 <span class="keyword">end</span>
-0111 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 28-Feb-2017 23:41:43 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0095     <span class="keyword">if</span> model.rev(indexes(i))==0
+0096         eqn=[eqn <span class="string">' =&gt; '</span>];
+0097     <span class="keyword">else</span>
+0098         eqn=[eqn <span class="string">' &lt;=&gt; '</span>];
+0099     <span class="keyword">end</span>
+0100 
+0101     <span class="keyword">for</span> j=1:numel(products)
+0102         <span class="keyword">if</span> j==1
+0103             plusString=<span class="string">''</span>;
+0104         <span class="keyword">else</span>
+0105             plusString=<span class="string">' + '</span>;
+0106         <span class="keyword">end</span>
+0107 
+0108         stoich=num2str(model.S(products(j),indexes(i)));
+0109 
+0110         <span class="keyword">if</span> str2double(stoich)==1
+0111             stoich=<span class="string">''</span>;
+0112         <span class="keyword">else</span>
+0113             stoich=[stoich <span class="string">' '</span>];
+0114         <span class="keyword">end</span>
+0115 
+0116         <span class="keyword">if</span> useComps==true
+0117                 <span class="keyword">if</span> useMetID==true
+0118                     eqn=[eqn plusString stoich model.mets{products(j)} <span class="string">'['</span> model.comps{model.metComps(products(j))} <span class="string">']'</span>];
+0119                 <span class="keyword">else</span>
+0120                     eqn=[eqn plusString stoich model.metNames{products(j)} <span class="string">'['</span> model.comps{model.metComps(products(j))} <span class="string">']'</span>];    
+0121                 <span class="keyword">end</span>
+0122         <span class="keyword">else</span>
+0123                 <span class="keyword">if</span> useMetID==true
+0124                     eqn=[eqn plusString stoich model.mets{products(j)}];
+0125                 <span class="keyword">else</span>
+0126                     eqn=[eqn plusString stoich model.metNames{products(j)}];
+0127                 <span class="keyword">end</span>
+0128         <span class="keyword">end</span>
+0129     <span class="keyword">end</span>
+0130     equationStrings{i}=eqn;
+0131 <span class="keyword">end</span>
+0132 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 28-Dec-2017 10:46:27 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -30,10 +30,15 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %                       -dataDir\hmms
 %                           The hidden Markov models as generated in 2b or
 %                           downloaded from BioMet Toolbox (see below)
-%                       (opt, see note about fastaFile. Note that in order to
-%                       rebuild the KEGG model from a database dump, as opposed to
-%                       using the version supplied with RAVEN, you would still need
-%                       to supply this)
+%                       The final directory in dataDir should be styled as
+%                       proXXX_keggYY or eukXXX_keggYY, indicating whether
+%                       the HMMs were trained on pro- or eukaryotic sequences,
+%                       using a sequence similarity threshold of XXX %,
+%                       fitting the KEGG version YY. E.g. euk100_kegg82.
+%                       (opt, see note about fastaFile. Note that in order
+%                       to rebuild the KEGG model from a database dump, as
+%                       opposed to using the version supplied with RAVEN,
+%                       you would still need to supply this)
 %   outDir              directory to save the results from the quering of
 %                       the hidden Markov models. The output is specific
 %                       for the input sequences and the settings used. It
@@ -118,7 +123,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %   The most common alternatives here would be to use sequences from only
 %   eukaryotes, only prokaryotes or all sequences in KEGG. As explained in
 %   the README.md file, various sets of pre-trained hidden Markov models are
-%   available at <a href="matlab: web('http://biomet-toolbox.org/index.php?page=downtools-raven')">BioMet Toolbox</a>.
+%   available at <a href="matlab: web('http://biomet-toolbox.chalmers.se/index.php?page=downtools-raven')">BioMet Toolbox</a>.
 %   This is normally the most convenient way, but if you would like to use,
 %   for example, only fungal sequences for training the HMMs then you need
 %   to run this part.
@@ -156,7 +161,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...
 %    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2017-05-16
+%   Eduard Kerkhoven, 2017-12-28
 %
 
 if nargin<2
@@ -201,12 +206,17 @@ if nargin<13
     seqIdentity=-1; %CD-HIT is not used in the pipeline
 end
 
+% Run the external binaries multi-threaded to use all logical cores assigned to MATLAB.
+cores = evalc('feature(''numcores'')');
+cores = strsplit(cores, 'MATLAB was assigned: ');
+cores = regexp(cores{2},'^\d*','match');
+cores = cores{1};
+
 % Checking if dataDir is consistent. It must point to pre-trained HMMs set,
 % compatible with the the current RAVEN version.
 % The user may have the required zip file already in working directory or
 % have it extracted. If the zip file and directory is not here, it is
 % downloaded from BioMet ToolBox 2.0 server.
-
 if ~isempty(dataDir)
     hmmOptions={'euk100_kegg82'; ...
         'euk90_kegg82'; ...
@@ -214,18 +224,20 @@ if ~isempty(dataDir)
         'prok100_kegg82'; ...
         'prok90_kegg82'; ...
         'prok50_kegg82'};
-    if ~ismember(dataDir,hmmOptions)
-        EM='Pre-trained HMMs set is not recognised. The following sets are available to download:';
+    if all(cellfun(@isempty,regexp(dataDir,strcat(hmmOptions,'$')))) % Check if dataDir ends with any of the hmmOptions
+        EM='Pre-trained HMMs set is not recognised. It should match any of the following sets (which are available to download):';
         disp(EM);
         disp(hmmOptions);
         return;
     end;
-    if ~exist(dataDir,'dir') && exist([dataDir,'.zip'],'file')
+    if exist(dataDir,'dir')
+        fprintf('Provided dataDir is in correct format for this RAVEN version in order to use pre-trained HMMs...\n')
+    elseif ~exist(dataDir,'dir') && exist([dataDir,'.zip'],'file')
         fprintf('Extracting HMMs archive file...\n');
         unzip([dataDir,'.zip']);
     else
         fprintf('Downloading HMMs archive file...\n');
-        websave([dataDir,'.zip'],['http://biomet-toolbox.org/tools/downloadable/files/',dataDir,'.zip']);
+        websave([dataDir,'.zip'],['http://biomet-toolbox.chalmers.se/tools/downloadable/files/',dataDir,'.zip']);
         fprintf('Extracting HMMs archive file...\n');
         unzip([dataDir,'.zip']);
     end;
@@ -276,7 +288,7 @@ if isempty(fastaFile)
         else
             proxyid='eco'; %Use E. coli here
         end
-        [~,phylDistId]=ismember(proxyid,phylDists.ids);
+        [~, phylDistId]=ismember(proxyid,phylDists.ids);
         idsToKeep=phylDists.ids(~isinf(phylDists.distMat(phylDistId,:)));
         taxIDs=cellfun(@(x) x{1},cellfun(@(x) strsplit(x,':'),model.genes,'UniformOutput',false),'UniformOutput',false);
         I=ismember(upper(taxIDs),upper(idsToKeep));
@@ -285,12 +297,10 @@ if isempty(fastaFile)
         organismID=strcat(organismID,':');   %Add colon for accurate matching
         if length(organismID)==4
             I=cellfun(@(x) strcmpi(x(1:4),organismID),model.genes);
-        else if length(organismID)==5
+        elseif length(organismID)==5
             I=cellfun(@(x) strcmpi(x(1:5),organismID),model.genes);
-            end
         end
     end
-
     %Remove those genes
     model.genes=model.genes(I);
     model.rxnGeneMat=model.rxnGeneMat(:,I);
@@ -298,14 +308,12 @@ end
 
 %First remove all reactions without genes
 hasGenes=any(model.rxnGeneMat,2);
-
 model=removeReactions(model,~hasGenes,true);
 
 %Clean gene names
 for i=1:numel(model.genes)
-    %First get rid of the prefix organism id
+	%First get rid of the prefix organism id
     model.genes{i}=model.genes{i}(strfind(model.genes{i},':')+1:end);
-    
     %Find and remove the description in parentheses if any
     s=strfind(model.genes{i},'(');
     if any(s)
@@ -318,7 +326,6 @@ if isempty(fastaFile)
     %Create grRules
     model.grRules=cell(numel(model.rxns),1);
     model.grRules(:)={''};
-    
     %Add the gene associations as 'or'
     for i=1:numel(model.rxns)
         %Find the involved genes
@@ -335,7 +342,6 @@ end
 %Trim the genes so that they only contain information that can be matched
 %to the KEGG file of protein sequences (remove all information after first
 %parenthesis)
-
 %NOTE: For some reason the organism abbreviation should be in lower case in
 %this database. Fix this here
 for i=1:numel(KOModel.genes)
@@ -374,7 +380,7 @@ missingFASTA=setdiff(KOModel.rxns,[fastaFiles;alignedFiles;hmmFiles;outFiles]);
 
 if ~isempty(missingFASTA)
     if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file')
-        EM=fprintf(['The file ''genes.pep'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
+        EM=fprintf(['The file ''genes.pep'' cannot be located at ' strrep(dataDir,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
         dispEM(EM);
     end
     %Only construct models for KOs which don't have files already
@@ -404,7 +410,6 @@ else
     disp(EM);
     return
 end
-
 
 %Check if alignment of FASTA files should be performed
 missingAligned=setdiff(KOModel.rxns,[alignedFiles;hmmFiles;alignedWorking;outFiles]);
@@ -446,15 +451,15 @@ if ~isempty(missingAligned)
             fastaStruct=fastaread(fullfile(dataDir,'fasta',[missingAligned{i} '.fa']));
             phylDist=inf(numel(fastaStruct),1);
             for j=1:numel(fastaStruct)
-               %Get the organism abbreviation
-               index=strfind(fastaStruct(j).Header,':');
-               if any(index)
+                %Get the organism abbreviation
+                index=strfind(fastaStruct(j).Header,':');
+                if any(index)
                     abbrev=fastaStruct(j).Header(1:index(1)-1);
                     [~, index]=ismember(abbrev,phylDistStruct.ids);
                     if any(index)
                         phylDist(j)=phylDistStruct.distMat(index(1),phylDistId);
                     end
-               end
+                end
             end
 
             %Inf means that it should not be included
@@ -479,7 +484,7 @@ if ~isempty(missingAligned)
                             cdhitInp100=tempname;
                             fastawrite(cdhitInp100,fastaStruct);
                             tmpFile=tempname;
-                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' tmpFile '" -c 1.0 -s 0.8 -n 5 -M 2000 -T 8']);
+                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' cores '" -i "' cdhitInp100 '" -o "' tmpFile '" -c 1.0 -s 0.8 -n 5 -M 2000']);
                             if status~=0
                                 EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
                                 dispEM(EM);
@@ -492,7 +497,7 @@ if ~isempty(missingAligned)
                             cdhitInp100=tempname;
                             fastawrite(cdhitInp100,fastaStruct);
                             cdhitInp90=tempname;
-                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -s 0.8 -n 5 -M 2000']);
+                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' cores '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -s 0.8 -n 5 -M 2000']);
                             if status~=0
                                 EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
                                 dispEM(EM);
@@ -502,7 +507,7 @@ if ~isempty(missingAligned)
                                 delete([cdhitInp100 '*']);
                             end
                             tmpFile=tempname;
-                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp90 '" -o "' tmpFile '" -c 0.9 -s 0.8 -n 5 -M 2000']);
+                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' cores '" -i "' cdhitInp90 '" -o "' tmpFile '" -c 0.9 -s 0.8 -n 5 -M 2000']);
                             if status~=0
                                 EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
                                 dispEM(EM);
@@ -515,7 +520,7 @@ if ~isempty(missingAligned)
                             cdhitInp100=tempname;
                             fastawrite(cdhitInp100,fastaStruct);
                             cdhitInp90=tempname;
-                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -s 0.8 -n 5 -M 2000']);
+                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' cores '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -s 0.8 -n 5 -M 2000']);
                             if status~=0
                                 EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
                                 dispEM(EM);
@@ -525,7 +530,7 @@ if ~isempty(missingAligned)
                                 delete([cdhitInp100 '*']);
                             end
                             cdhitInp50=tempname;
-                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp90 '" -o "' cdhitInp50 '" -c 0.9 -s 0.8 -n 5 -M 2000']);
+                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' cores '" -i "' cdhitInp90 '" -o "' cdhitInp50 '" -c 0.9 -s 0.8 -n 5 -M 2000']);
                             if status~=0
                                 EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
                                 dispEM(EM);
@@ -535,7 +540,7 @@ if ~isempty(missingAligned)
                                 delete([cdhitInp90 '*']);
                             end
                             tmpFile=tempname;
-                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -i "' cdhitInp50 '" -o "' tmpFile '" -c 0.5 -s 0.8 -n 3 -M 2000']);
+                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' cores '" -i "' cdhitInp50 '" -o "' tmpFile '" -c 0.5 -s 0.8 -n 3 -M 2000']);
                             if status~=0
                                 EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
                                 dispEM(EM);
@@ -557,9 +562,9 @@ if ~isempty(missingAligned)
                 end
                 %Do the alignment for this file
                 if ~ispc
-                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.305',['mafft' binEnd]) '" --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.305',['mafft' binEnd]) '" --auto --thread "' cores '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 else
-                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.305','mafft.bat') '" --auto "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.305','mafft.bat') '" --auto --thread "' cores '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 end
                 if status~=0
                     EM=['Error when performing alignment of ' missingAligned{i} ':\n' output];
@@ -632,7 +637,7 @@ if ~isempty(missingHMMs)
             fclose(fid);
 
             %Create HMM
-            [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1b2',['hmmbuild' binEnd]) '" "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
+            [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1b2',['hmmbuild' binEnd]) '" --cpu "' cores '" "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
             if status~=0
                 EM=['Error when training HMM for ' missingHMMs{i} ':\n' output];
                 dispEM(EM);
@@ -675,7 +680,7 @@ if ~isempty(missingOUT)
             end
 
             %Check each gene in the input file against this model
-            [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1b2',['hmmsearch' binEnd]) '" "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
+            [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1b2',['hmmsearch' binEnd]) '" --cpu "' cores '" "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
             if status~=0
                 EM=['Error when querying HMM for ' missingOUT{i} ':\n' output];
                 dispEM(EM);
@@ -822,7 +827,6 @@ for i=1:numel(model.rxns)
     model.grRules{i}=[model.grRules{i} ')'];
 end
 end
-
 
 %Supporter function to list the files in a directory and return them as a
 %cell array

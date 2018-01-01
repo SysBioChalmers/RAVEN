@@ -24,7 +24,7 @@ function [model, deletedRxns]=mergeCompartments(model,keepUnconstrained,deleteRx
 %   NOTE: If the metabolite IDs reflect the compartment that they are in
 %   the IDs may no longer be representative.
 %
-%   Usage: model=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet)
+%   Usage: [model, deletedRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet)
 %
 %   Rasmus Agren, 2014-01-08
 %

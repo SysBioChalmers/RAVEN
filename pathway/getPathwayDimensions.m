@@ -53,3 +53,4 @@ for i=1:length(pathway.listOfSpecies)
 end
 
 dimensions=[left,top,right-left,bottom-top];
+end

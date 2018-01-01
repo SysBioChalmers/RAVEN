@@ -1,4 +1,4 @@
-function [returnPathway errorFlag]= markPathwayWithFluxes(pathway, reactionIDs, fluxes, referenceFluxes)
+function [returnPathway, errorFlag]= markPathwayWithFluxes(pathway, reactionIDs, fluxes, referenceFluxes)
 % markPathwayWithFluxes
 %   Marks each enzyme in a pathway structure with the corresponding fluxes
 %   from two simulation results. This is done for enzymes that has the name
@@ -14,7 +14,7 @@ function [returnPathway errorFlag]= markPathwayWithFluxes(pathway, reactionIDs, 
 %                   fields flux and referenceFlux for each marked reaction
 %   errorFlag       true if there has been an error
 %
-%   Usage: [returnPathway errorFlag] = markPathwayWithFluxes(pathway, reactionIDs,
+%   Usage: [returnPathway, errorFlag] = markPathwayWithFluxes(pathway, reactionIDs,
 %   fluxes, referenceFluxes)
 %
 %   Rasmus Agren, 2010-12-16
@@ -46,4 +46,5 @@ for i=1:length(pathway.listOfSpecies)
           end
       end
    end
+end
 end
