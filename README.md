@@ -18,6 +18,10 @@ Please report any technical issues and bugs [here](https://github.com/SysBioChal
 
 [Hidden Markov Models (HMMs) for KEGG reconstruction](#hidden-markov-models-for-kegg-based-reconstruction)
 
+[Development](#development-guidelines)
+
+[Links](#links)
+
 -----
 
 ## Releases
