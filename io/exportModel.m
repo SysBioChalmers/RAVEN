@@ -1,18 +1,21 @@
-function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
+function exportModel(model,fileName,exportGeneComplexes,supressWarnings, exportToYAML)
 % exportModel
-%   Exports a constraint-based model to a SBML file
+%   Exports a constraint-based model to an SBML file. Optionally writes a
+%   human-readable YAML file as well.
 %
 %   model               a model structure
-%   fileName            the filename to export the model to
+%   fileName            the filename to export the model to (without extension)
 %   exportGeneComplexes	true if gene complexes (all gene sets linked with
 %                       AND relationship) should be recognised and exported
 %                       (opt, default false)
 %   supressWarnings     true if warnings should be supressed (opt, default
 %                       false)
+%   exportToYAML        true for additional export to YAML file, false for
+%                       only export to SBML file (opt, default false)
 %
 %   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
-%   Simonas Marcisauskas, 2017-11-22
+%   Eduard Kerkhoven, 2018-01-30
 %
 
 if nargin<3
@@ -20,6 +23,9 @@ if nargin<3
 end
 if nargin<4
     supressWarnings=false;
+end
+if nargin<5
+    exportToYAML=false;
 end
 
 % The default SBML format settings, which are used as input for appropriate
@@ -538,8 +544,10 @@ if fbcVersion==2
     modelSBML.fbc_strict=1;
 end;
 
-OutputSBML(modelSBML,fileName,1,0,[1,0]);
-
+if exportToYAML==true
+    YAML.write(regexprep(fileName,'.yml'),modelSBML)
+end;
+OutputSBML(modelSBML,strcat(fileName,'.xml'),1,0,[1,0]);
 end
 
 function modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,fbcVersion)
