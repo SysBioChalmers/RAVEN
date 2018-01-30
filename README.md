@@ -84,7 +84,7 @@ savepath
 
 #### Mosek
 1. Download from the link [above](#dependencies) and install Mosek to your favourite location.
-2. Make sure you obtained a [license](https://www.mosek.com/products/academic-licenses/) following [instructions](https://docs.mosek.com/8.0/install/installation.html#setting-up-the-license).
+2. Make sure you obtained a [license](https://www.mosek.com/products/academic-licenses/) following [instructions] (https://docs.mosek.com/8.0/install/installation.html#setting-up-the-license).
 3. To install Mosek in MATLAB, follow [instructions](https://docs.mosek.com/8.0/toolbox/installation.html#id1). Note: the documentation mentions version 8, but RAVEN only works with version 7 of Mosek.
 4.  Make sure that MATLAB remembers the Mosek installation for next time, by running the following command: 
 
@@ -131,6 +131,38 @@ HMMs were trained from KO protein sets, based on KEGG Release 58.1. Multisequenc
 |:-------:|:------------:|:---------:|
 |[eukaryota](http://biomet-toolbox.org/tools/downloadable/files/euk100_kegg82.zip)|58.1|eukaryota
 |[prokaryota](http://biomet-toolbox.org/tools/downloadable/files/euk100_kegg82.zip)|58.1|eukaryota
+
+## Development guidelines
+
+Anybody is welcome to contribute to the development of RAVEN Toolbox, but please abide by the following guidelines.
+
+### Urgent bugfix
+* When fixing a bug in an existing function, make a separate branch from `master` and name the branch after the function you are fixing.
+* Make commits to this branch while working on your bugfix. Note that bugfixes have to be backwards compatible.
+* When you are certain that your bugfix works, make a pull request to the `master` branch. Also, see [Pull request](#pull-request) below.
+
+### New features/functions
+* For other development (not bugfixes, but for instance introducing new functions or new/updated features for existing functions): make a separate branch from `devel` and name the branch for instance after the function/feature you are fixing/developing.
+* Make commits to this branch while developing. Aim for backwards compatibility, and try to avoid very new MATLAB functions when possible, to accommodate users with older MATLAB versions.
+* When you are happy with your new function/feature, make a pull request to the `devel` branch. Also, see [Pull request](#pull-request) below.
+
+### Semantic commits
+Use semantic commit messages to make it easier to show what you are aiming to do:
+* `chore`: updating binaries, KEGG or MetaCyc database files, etc.
+* `doc`: updating documentation (in `doc` folder) or explanatory comments in functions.
+* `feat`: new feature added, e.g. new function introduced / new parameters / new algorithm / etc.
+* `fix`: bugfix.
+* `refactor`: see [code refactoring](https://en.wikipedia.org/wiki/Code_refactoring).
+* `style`: minor format changes of functions (spaces, semi-colons, etc., no code change).
+
+### Pull request
+* No changes should be directly commited to the `master` or `devel` branches. Pull requests should be used.
+* The person making the pull request and the one accepting the merge _cannot_ be the same person.
+* Typically, wait ~ 1 week before merging, to allow for other developers to inspect the pull request.
+* A merge with the master branch typically invokes a new release (see [versioning](#versioning)).
+
+### Versioning
+RAVEN Toolbox follows [semantic versioning](https://semver.org/), and a `version.txt` file is updated with each release of the master branch.
 
 ## Links
 For more systems biology related software and recently published genome-scale models from the Systems and Synthetic Biology group at Chalmers University of Technology, please visit the [Github page](https://github.com/SysBioChalmers). For more information and publications by the Systems and Synthetic Biology please visit [SysBio](www.sysbio.se).
