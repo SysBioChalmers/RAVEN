@@ -88,7 +88,7 @@ savepath
 
 #### Mosek
 1. Download from the link [above](#dependencies) and install Mosek to your favourite location.
-2. Make sure you obtained a [license](https://www.mosek.com/products/academic-licenses/) following [instructions] (https://docs.mosek.com/8.0/install/installation.html#setting-up-the-license).
+2. Make sure you obtained a [license](https://www.mosek.com/products/academic-licenses/) following [instructions](https://docs.mosek.com/8.0/install/installation.html#setting-up-the-license).
 3. To install Mosek in MATLAB, follow [instructions](https://docs.mosek.com/8.0/toolbox/installation.html#id1). Note: the documentation mentions version 8, but RAVEN only works with version 7 of Mosek.
 4.  Make sure that MATLAB remembers the Mosek installation for next time, by running the following command: 
 
