@@ -8,6 +8,18 @@ If you are using RAVEN in any scientific work, please cite: [R. Agren, et. al, â
 Please report any technical issues and bugs [here](https://github.com/SysBioChalmers/RAVEN/issues). For other issues, please contact [Eduard Kerkhoven](https://github.com/edkerk).
 
 -----
+## Overview
+
+[Releases](#releases)
+
+[Installation](#installation)
+
+[Tutorials](#tutorials)
+
+[Hidden Markov Models for KEGG reconstruction](#hidden-markov-models-for-kegg-reconstruction)
+
+-----
+
 ## Releases
 RAVEN can be installed via cloning the GitHub repository as per below or by downloading and extracting one of the a zipped [release](https://github.com/SysBioChalmers/RAVEN/releases). Please note that the releases do not always represent the most up to date version.
 
@@ -32,7 +44,7 @@ git clone git@github.com:SysBioChalmers/RAVEN.git
 ```
 * Alternatively, download the latest [release](https://github.com/SysBioChalmers/RAVEN/releases) of RAVEN Toolbox as a ZIP file, and extracted to your favourite directory.
 
-Once extracted, ensure that all other software dependencies (e.g. libSBML, Gurobi) are installed (see above for [list](#dependencies), below for [instructions](#libSBML). Then, open MATLAB and run the following command:
+Once extracted, ensure that all other software dependencies (e.g. libSBML, Gurobi) are installed (see above for [list](#dependencies), below for [instructions](#libsbml). Then, open MATLAB and run the following command:
 ```matlab
 cd('[location]/RAVEN/installation'))
 checkInstallation
@@ -72,7 +84,7 @@ savepath
 
 #### Mosek
 1. Download from the link [above](#dependencies) and install Mosek to your favourite location.
-2. Make sure you obtained a [license](https://www.mosek.com/products/academic-licenses/) following [instructions] (https://docs.mosek.com/8.0/install/installation.html#setting-up-the-license).
+2. Make sure you obtained a [license](https://www.mosek.com/products/academic-licenses/) following [instructions](https://docs.mosek.com/8.0/install/installation.html#setting-up-the-license).
 3. To install Mosek in MATLAB, follow [instructions](https://docs.mosek.com/8.0/toolbox/installation.html#id1). Note: the documentation mentions version 8, but RAVEN only works with version 7 of Mosek.
 4.  Make sure that MATLAB remembers the Mosek installation for next time, by running the following command: 
 
@@ -119,3 +131,6 @@ HMMs were trained from KO protein sets, based on KEGG Release 58.1. Multisequenc
 |:-------:|:------------:|:---------:|
 |[eukaryota](http://biomet-toolbox.org/tools/downloadable/files/euk100_kegg82.zip)|58.1|eukaryota
 |[prokaryota](http://biomet-toolbox.org/tools/downloadable/files/euk100_kegg82.zip)|58.1|eukaryota
+
+## Links
+For more systems biology related software and recently published genome-scale models from the Systems and Synthetic Biology group at Chalmers University of Technology, please visit the [Github page](https://github.com/SysBioChalmers). For more information and publications by the Systems and Synthetic Biology please visit [SysBio](www.sysbio.se).
