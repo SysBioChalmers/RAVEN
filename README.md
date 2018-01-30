@@ -16,7 +16,7 @@ Please report any technical issues and bugs [here](https://github.com/SysBioChal
 
 [Tutorials](#tutorials)
 
-[Hidden Markov Models for KEGG reconstruction](#hidden-markov-models-for-kegg-reconstruction)
+[Hidden Markov Models (HMMs) for KEGG reconstruction](#hidden-markov-models-for-kegg-based-reconstruction)
 
 -----
 
@@ -104,7 +104,7 @@ setRavenSolver('cobra')
 ## Tutorials
 Some tutorials highlighting basic RAVEN functionality can be found in the 'tutorial' folder in the installation directory.
 
-## Hidden Markov Models (HMMs) for KEGG based reconstruction
+## Hidden Markov Models for KEGG based reconstruction
 
 Provided are pre-trained Hidden Markov Models (HMMs) for KEGG Orthology (KO) protein sets:
 
