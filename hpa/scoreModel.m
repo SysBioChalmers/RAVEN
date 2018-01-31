@@ -50,7 +50,7 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 %
 %   Rasmus Agren, 2014-01-08
 %
-%   Edited by Jonathan Robinson, 2018-01-25
+%   Edited by Jonathan Robinson, 2018-01-31
 %
 
 if nargin<3
@@ -89,7 +89,7 @@ end
 
 
 %Throw an error if array data for only one tissue is supplied
-if any(arrayData)
+if ~isempty(arrayData)
     if numel(arrayData.tissues)<2
         EM='arrayData must contain measurements for at least two celltypes/tissues since the score is calculated based on the expression level compared to the overall average';
         dispEM(EM);
