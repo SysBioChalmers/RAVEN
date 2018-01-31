@@ -159,6 +159,14 @@ Use semantic commit messages to make it easier to show what you are aiming to do
 * `refactor`: see [code refactoring](https://en.wikipedia.org/wiki/Code_refactoring).
 * `style`: minor format changes of functions (spaces, semi-colons, etc., no code change).
 
+Examples:
+```
+feat: exportModel additional export to YAML
+chore: update KEGG model to version 83.0
+fix: optimizeProb parsing results from Gurobi
+```
+More detailed explanation or comments can be left in the commit description.
+
 ### Pull request
 * No changes should be directly commited to the `master` or `devel` branches. Pull requests should be used.
 * The person making the pull request and the one accepting the merge _cannot_ be the same person.
