@@ -154,7 +154,7 @@ if printReport==true
     if ~isempty(metabolomicsData)
         fprintf('-Using metabolomics data\n');
     end
-    if any(taskFile)
+    if ~isempty(taskFile) || ~isempty(taskStructure)
         fprintf('-Using metabolic tasks\n');
     end
     fprintf('\n');
