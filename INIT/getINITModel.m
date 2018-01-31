@@ -94,6 +94,8 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %
 %   Rasmus Agren, 2014-01-08
 %
+%   Edited by Jonathan Robinson, 2018-01-31
+%
 
 if nargin<3
     celltype=[];
@@ -110,10 +112,10 @@ end
 if nargin<7
     taskFile=[];
 end
-if nargin<8
+if nargin<8 || isempty(useScoresForTasks)
     useScoresForTasks=true;
 end
-if nargin<9
+if nargin<9 || isempty(printReport)
     printReport=true;
 end
 if nargin<10
