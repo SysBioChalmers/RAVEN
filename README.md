@@ -140,6 +140,8 @@ HMMs were trained from KO protein sets, based on KEGG Release 58.1. Multisequenc
 
 Anybody is welcome to contribute to the development of RAVEN Toolbox, but please abide by the following guidelines.
 
+When making _any_ changes to an existing function (`*.m`-file, change the name and date near the bottom of the commented section that is included the beginning of each function. In this section, please specify what each parameter is doing, and what are default settings. Have a look at existing functions to see what style is used.
+
 ### Urgent bugfix
 * When fixing a bug in an existing function, make a separate branch from `master` and name the branch after the function you are fixing.
 * Make commits to this branch while working on your bugfix. Note that bugfixes have to be backwards compatible.
