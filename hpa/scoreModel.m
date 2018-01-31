@@ -50,6 +50,8 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 %
 %   Rasmus Agren, 2014-01-08
 %
+%   Edited by Jonathan Robinson, 2018-01-25
+%
 
 if nargin<3
     arrayData=[];
@@ -208,6 +210,7 @@ else
 end
 aScores(aScores>0)=min(aScores(aScores>0),10);
 aScores(aScores<0)=max(aScores(aScores<0),-5);
+aScores(isnan(aScores)) = -5;  % NaNs occur when gene expression is zero across all tissues
 
 %Map the HPA levels to scores
 [I, J]=ismember(upper(hpaData.levels),upper(hpaLevelScores.names));
