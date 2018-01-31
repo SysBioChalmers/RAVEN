@@ -36,7 +36,7 @@ RAVEN can be installed via cloning the GitHub repository as per below or by down
 * At least one solver for linear programming:
   * Preferred: [Gurobi Optimizer](http://www.gurobi.com/downloads/gurobi-optimizer) (version 7.5 or higher), academic license is available [here](https://user.gurobi.com/download/licenses/free-academic).
   * Alternative/legacy: [MOSEK](https://www.mosek.com/downloads/details/5/) (version 7 only), academic license is available [here](https://www.mosek.com/products/academic-licenses/).
-  * If the user has [COBRA Toolbox](https://github.com/opencobra/cobratoolbox) installed, it is possible to use the default COBRA solver (the one which is set by _changeCobraSolver_).
+  * If the user has [COBRA Toolbox](https://github.com/opencobra/cobratoolbox) installed, it is possible to use the default COBRA solver (the one which is set by [_changeCobraSolver_](#cobra-toolbox).
 
 
 ### Instructions
