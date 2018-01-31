@@ -13,7 +13,7 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings, exportT
 %   exportToYAML        true for additional export to YAML file, false for
 %                       only export to SBML file (opt, default false)
 %
-%   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
+%   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings, exportToYAML)
 %
 %   Eduard Kerkhoven, 2018-01-30
 %
