@@ -1,10 +1,11 @@
 function exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarnings)
 % exportModel
-%   Exports a constraint-based model to an SBML file. Optionally writes a
-%   human-readable YAML file as well.
+%   Exports a constraint-based model to an SBML file (L3V1 FBCv2). Optionally
+%   writes a human-readable YAML file that can be used for model versioning and
+%   comparison only.
 %
 %   model               a model structure
-%   fileName            the filename to export the model to (without extension)
+%   fileName            filename to export the model to (without file extension)
 %   exportToYAML        true for additional export of YAML file, false for
 %                       only export to SBML file (opt, default false)
 %   exportGeneComplexes	true if gene complexes (all gene sets linked with
@@ -13,6 +14,10 @@ function exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarn
 %   supressWarnings     true if warnings should be supressed (opt, default
 %                       false)
 %
+%   The optional YAML file is only meant for comparison between different model
+%   versions, e.g. as part of model development on GitHub. SBML is the preferred
+%   format for storage and redistribution of models. YAML import is therefore not
+%   supported, and the file generated here is not compatible with e.g. COBRApy.
 %
 %   Usage: exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarnings)
 %
