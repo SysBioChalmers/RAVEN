@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Simonas Marcisauskas, 2017-11-22
+%   Eduard Kerkhoven, 2018-02-08
 
 if nargin<2
     removeExcMets=true;
@@ -645,6 +645,22 @@ for i=1:numel(modelSBML.reaction)
            dispEM(EM);
        end
        S(metIndex,counter)=S(metIndex,counter)+modelSBML.reaction(i).product(j).stoichiometry;
+    end
+end
+
+%subSystems can be stored as groups instead of in annotations
+if isfield(modelSBML,'groups_group')
+    for i=1:numel(modelSBML.groups_group)
+        [~, idx] = ismember({modelSBML.groups_group(i).groups_member(:).groups_idRef}, reactionIDs);
+        for j=1:numel(idx)
+            if isempty(subsystems{idx(j)}) % First subsystem printed as string
+                subsystems{idx(j)} = modelSBML.groups_group(i).groups_name;
+            elseif ischar(subsystems{idx(j)}) % Second subsystem, convert to cell array
+                subsystems{idx(j)} = {subsystems{idx(j)}, modelSBML.groups_group(i).groups_name};
+            else % Third and consecutive subsystems: concatenate
+                subsystems{idx(j)} = horzcat(subsystems{idx(j)}, modelSBML.groups_group(i).groups_name);
+            end
+        end
     end
 end
 
