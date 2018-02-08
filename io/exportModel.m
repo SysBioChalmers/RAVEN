@@ -551,7 +551,7 @@ if fbcVersion==2
 end;
 
 if exportToYAML==true
-    YAML.write(regexprep(fileName,'.yml'),modelSBML)
+    YAML.write(strcat(fileName,'.yml'),modelSBML)
 end;
 OutputSBML(modelSBML,strcat(fileName,'.xml'),1,0,[1,0]);
 end
