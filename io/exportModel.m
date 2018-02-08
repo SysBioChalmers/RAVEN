@@ -1,24 +1,36 @@
-function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
+function exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarnings)
 % exportModel
-%   Exports a constraint-based model to a SBML file
+%   Exports a constraint-based model to an SBML file (L3V1 FBCv2). Optionally
+%   writes a human-readable YAML file that can be used for model versioning and
+%   comparison only.
 %
 %   model               a model structure
-%   fileName            the filename to export the model to
+%   fileName            filename to export the model to (without file extension)
+%   exportToYAML        true for additional export of YAML file, false for
+%                       only export to SBML file (opt, default false)
 %   exportGeneComplexes	true if gene complexes (all gene sets linked with
 %                       AND relationship) should be recognised and exported
 %                       (opt, default false)
 %   supressWarnings     true if warnings should be supressed (opt, default
 %                       false)
 %
-%   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
+%   The optional YAML file is only meant for comparison between different model
+%   versions, e.g. as part of model development on GitHub. SBML is the preferred
+%   format for storage and redistribution of models. YAML import is therefore not
+%   supported, and the file generated here is not compatible with e.g. COBRApy.
 %
-%   Simonas Marcisauskas, 2017-11-22
+%   Usage: exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarnings)
+%
+%   Eduard Kerkhoven, 2018-02-01
 %
 
 if nargin<3
-    exportGeneComplexes=false;
+    exportToYAML=false;
 end
 if nargin<4
+    exportGeneComplexes=false;
+end
+if nargin<5
     supressWarnings=false;
 end
 
@@ -538,8 +550,10 @@ if fbcVersion==2
     modelSBML.fbc_strict=1;
 end;
 
-OutputSBML(modelSBML,fileName,1,0,[1,0]);
-
+if exportToYAML==true
+    YAML.write(strcat(fileName,'.yml'),modelSBML)
+end;
+OutputSBML(modelSBML,strcat(fileName,'.xml'),1,0,[1,0]);
 end
 
 function modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,fbcVersion)
