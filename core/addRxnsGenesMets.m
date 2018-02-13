@@ -6,8 +6,15 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %   model           draft model where reactions should be copied to
 %   sourceModel     model where reactions and metabolites are sourced from
 %   rxns            cell array with reaction IDs (from source model)
-%   addGene         logical whether genes should be copied or not (opt,
-%                   default false)
+%   addGene         three options:
+%                   false   no genes are annotated to the new reactions
+%                   true    grRules ared copied from the sourceModel and
+%                           new genes are added when required
+%                   string or cell array
+%                           new grRules are specified as string or cell
+%                           array, and any new genes are added when
+%                           required
+%                   (opt, default false)
 %   rxnNote         string explaining why reactions were copied to model,
 %                   is included as newModel.rxnNotes (opt, default
 %                   'Added via addRxnsAndMets()')
@@ -34,7 +41,7 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %
 %   Usage: newModel=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)
 %
-%   Eduard Kerkhoven, 2017-12-08
+%   Eduard Kerkhoven, 2017-02-13
 %
 
 if nargin<6
@@ -127,9 +134,19 @@ fprintf(num2str(numel(metIdx)))
 fprintf('\n')
 
 %% Add new genes
-if addGene
-    rxnToAdd.grRules=sourceModel.grRules(rxnIdx); % Get the relevant grRules
-    geneList=strjoin(rxnToAdd.grRules);
+if addGene ~= false
+    if ischar(addGene)
+        rxnToAdd.grRules={addGene};
+    elseif iscell(addGene)
+        rxnToAdd.grRules=addGene;
+    else
+        rxnToAdd.grRules=sourceModel.grRules(rxnIdx); % Get the relevant grRules
+    end
+    if length(rxnIdx)>1
+        geneList=strjoin(rxnToAdd.grRules);
+    else
+        geneList=rxnToAdd.grRules{1};
+    end
     geneList=regexp(geneList,' |)|(|and|or','split');% Remove all grRule punctuation
     geneList=geneList(~cellfun(@isempty,geneList)); % Remove spaces and empty genes
     genesToAdd.genes=setdiff(unique(geneList),model.genes); % Only keep new genes
@@ -145,7 +162,6 @@ if addGene
         fprintf('\n\nNo genes added to the model, because no genes were annotated or all genes were already present.')
     end
 end
-
 %% Add new reactions
 rxnToAdd.equations=constructEquations(sourceModel,rxnIdx);
 rxnToAdd.rxnNames=sourceModel.rxnNames(rxnIdx);
