@@ -155,7 +155,7 @@ end
 %Check some formatting
 illegalCells=regexp(rxnsToAdd.rxns,'[^a-z_A-Z0-9]', 'once');
 EM='Illegal character(s) in reaction IDs:';
-dispEM(EM,true,rxnsToAdd.rxns(~cellfun(@isempty,illegalCells)));
+dispEM(EM,false,rxnsToAdd.rxns(~cellfun(@isempty,illegalCells)));
 
 if isfield(rxnsToAdd,'rxnNames')
     illegalCells=regexp(rxnsToAdd.rxnNames,'["%<>\\]', 'once');
