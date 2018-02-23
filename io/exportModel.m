@@ -21,7 +21,7 @@ function exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarn
 %
 %   Usage: exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarnings)
 %
-%   Eduard Kerkhoven, 2018-02-01
+%   Eduard Kerkhoven, 2018-02-23
 %
 
 if nargin<3
@@ -440,9 +440,6 @@ for i=1:numel(model.rxns)
     % Exporting notes information;
     if (~isempty(model.subSystems{i}) || ~isempty(model.rxnConfidenceScores{i}) || ~isempty(model.rxnReferences{i}) || ~isempty(model.rxnNotes{i}))
         modelSBML.reaction(i).notes='<notes><body xmlns="http://www.w3.org/1999/xhtml">';
-%        if ~isempty(model.subSystems{i})
-%            modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>SUBSYSTEM: ' model.subSystems{i} '</p>'];
-%        end;
         if ~isempty(model.rxnConfidenceScores{i})
             modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>Confidence Level: ' model.rxnConfidenceScores{i} '</p>'];
         end;
@@ -582,11 +579,11 @@ end;
 
 modelSBML.fbc_activeObjective=modelSBML.fbc_objective.fbc_id;
 
-fbcStr=['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/fbc/version',num2str(sbmlPackageVersions(1)),'/groups/version',num2str(sbmlPackageVersions(2))];
-
-modelSBML.namespaces=struct('prefix',{'','fbc'},...
+fbcStr=['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/fbc/version',num2str(sbmlPackageVersions(1))];
+groupStr=['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/groups/version',num2str(sbmlPackageVersions(2))];
+modelSBML.namespaces=struct('prefix',{'','fbc','groups'},...
     'uri',{['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/core'],...
-    fbcStr});
+    fbcStr,groupStr});
 
 if sbmlPackageVersions(1) == 2
     modelSBML.fbc_strict=1;
