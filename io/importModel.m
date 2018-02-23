@@ -412,7 +412,6 @@ end
 reactionNames=cell(numel(modelSBML.reaction),1);
 reactionIDs=cell(numel(modelSBML.reaction),1);
 subsystems=cell(numel(modelSBML.reaction),1);
-subsystems(:,:)=cellstr('');
 eccodes=cell(numel(modelSBML.reaction),1);
 eccodes(:,:)=cellstr('');
 confidencescores=cell(numel(modelSBML.reaction),1);
@@ -600,7 +599,7 @@ for i=1:numel(modelSBML.reaction)
         miriamStruct=parseMiriam(modelSBML.reaction(i).annotation);
         rxnMiriams{counter}=miriamStruct;
         if isfield(modelSBML.reaction(i),'notes')
-            subsystems{counter,1}=parseNote(modelSBML.reaction(i).notes,'SUBSYSTEM');
+            subsystems{counter,1}=cellstr(parseNote(modelSBML.reaction(i).notes,'SUBSYSTEM'));
             confidencescores{counter,1}=parseNote(modelSBML.reaction(i).notes,'Confidence Level');
             rxnreferences{counter,1}=parseNote(modelSBML.reaction(i).notes,'AUTHORS');
             rxnnotes{counter,1}=parseNote(modelSBML.reaction(i).notes,'NOTES');
@@ -653,11 +652,9 @@ if isfield(modelSBML,'groups_group')
     for i=1:numel(modelSBML.groups_group)
         [~, idx] = ismember({modelSBML.groups_group(i).groups_member(:).groups_idRef}, reactionIDs);
         for j=1:numel(idx)
-            if isempty(subsystems{idx(j)}) % First subsystem printed as string
-                subsystems{idx(j)} = modelSBML.groups_group(i).groups_name;
-            elseif ischar(subsystems{idx(j)}) % Second subsystem, convert to cell array
-                subsystems{idx(j)} = {subsystems{idx(j)}, modelSBML.groups_group(i).groups_name};
-            else % Third and consecutive subsystems: concatenate
+            if isempty(subsystems{idx(j)}) % First subsystem
+                subsystems{idx(j)} = {modelSBML.groups_group(i).groups_name};
+            else % Consecutive subsystems: concatenate
                 subsystems{idx(j)} = horzcat(subsystems{idx(j)}, modelSBML.groups_group(i).groups_name);
             end
         end
