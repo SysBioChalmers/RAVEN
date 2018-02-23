@@ -39,7 +39,8 @@ end
 % exporting in with OutputSBML to xml file;
 sbmlLevel=3;
 sbmlVersion=1;
-fbcVersion=2;
+sbmlPackages = {'fbc','groups'};
+sbmlPackageVersions = [2,1];
 
 %Check if the "unconstrained" field is still present. This shows if
 %exchange metabolites have been removed
@@ -124,7 +125,7 @@ model.comps=regexprep(model.comps,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 model.genes=regexprep(model.genes,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 
 % Generate an empty SBML structure;
-modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,fbcVersion);
+modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
 modelSBML.metaid=strcat('meta_',model.id);
 modelSBML.id=model.id;
 modelSBML.name=model.description;
@@ -540,13 +541,13 @@ end;
 
 modelSBML.fbc_activeObjective=modelSBML.fbc_objective.fbc_id;
 
-fbcStr=['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/','fbc/version',num2str(fbcVersion)];
+fbcStr=['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/fbc/version',num2str(sbmlPackageVersions(1)),'/groups/version',num2str(sbmlPackageVersions(2))];
 
 modelSBML.namespaces=struct('prefix',{'','fbc'},...
     'uri',{['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/core'],...
     fbcStr});
 
-if fbcVersion==2
+if sbmlPackageVersions(1) == 2
     modelSBML.fbc_strict=1;
 end;
 
@@ -556,22 +557,22 @@ end;
 OutputSBML(modelSBML,strcat(fileName,'.xml'),1,0,[1,0]);
 end
 
-function modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,fbcVersion)
+function modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions)
 %Returns the blank SBML model structure by using appropriate libSBML
 %functions. This creates structure by considering three levels
 
-sbmlFieldNames=getStructureFieldnames('model',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
-sbmlDefaultValues=getDefaultValues('model',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+sbmlFieldNames=getStructureFieldnames('model',sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+sbmlDefaultValues=getDefaultValues('model',sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
 
 for i=1:numel(sbmlFieldNames)
 	modelSBML.(sbmlFieldNames{1,i})=sbmlDefaultValues{1,i};
-    sbmlSubfieldNames=getStructureFieldnames(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
-    sbmlSubfieldValues=getDefaultValues(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+    sbmlSubfieldNames=getStructureFieldnames(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+    sbmlSubfieldValues=getDefaultValues(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
     if ~strcmp(sbmlFieldNames{1,i},'event') && ~strcmp(sbmlFieldNames{1,i},'functionDefinition') && ~strcmp(sbmlFieldNames{1,i},'initialAssignment')
         for j=1:numel(sbmlSubfieldNames)
             modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j})=sbmlSubfieldValues{1,j};
-            sbmlSubsubfieldNames=getStructureFieldnames(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
-            sbmlSubsubfieldValues=getDefaultValues(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+            sbmlSubsubfieldNames=getStructureFieldnames(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+            sbmlSubsubfieldValues=getDefaultValues(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
             if ~strcmp(sbmlSubfieldNames{1,j},'modifier') && ~strcmp(sbmlSubfieldNames{1,j},'kineticLaw')
                 for k=1:numel(sbmlSubsubfieldNames)
                     % 'compartment' and 'species' field are not supposed to have
@@ -583,8 +584,8 @@ for i=1:numel(sbmlFieldNames)
                     % If it is fbc_association in the third level, we need to
                     % establish the fourth level, since libSBML requires it;
                     if strcmp(sbmlSubsubfieldNames{1,k},'fbc_association')
-                        fbc_associationFieldNames=getStructureFieldnames('fbc_association',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
-                        fbc_associationFieldValues=getDefaultValues('fbc_association',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+                        fbc_associationFieldNames=getStructureFieldnames('fbc_association',sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+                        fbc_associationFieldValues=getDefaultValues('fbc_association',sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
                         for l=1:numel(fbc_associationFieldNames)
                             modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j}).(sbmlSubsubfieldNames{1,k}).(fbc_associationFieldNames{1,l})=fbc_associationFieldValues{1,l};
                         end;
@@ -600,8 +601,8 @@ end;
 
 modelSBML.unitDefinition.id='mmol_per_gDW_per_hr';
 
-unitFieldNames=getStructureFieldnames('unit',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
-unitDefaultValues=getDefaultValues('unit',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+unitFieldNames=getStructureFieldnames('unit',sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+unitDefaultValues=getDefaultValues('unit',sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
 
 kinds={'mole','gram','second'};
 exponents=[1 -1 -1];
