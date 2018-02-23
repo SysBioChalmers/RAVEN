@@ -440,9 +440,9 @@ for i=1:numel(model.rxns)
     % Exporting notes information;
     if (~isempty(model.subSystems{i}) || ~isempty(model.rxnConfidenceScores{i}) || ~isempty(model.rxnReferences{i}) || ~isempty(model.rxnNotes{i}))
         modelSBML.reaction(i).notes='<notes><body xmlns="http://www.w3.org/1999/xhtml">';
-        if ~isempty(model.subSystems{i})
-            modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>SUBSYSTEM: ' model.subSystems{i} '</p>'];
-        end;
+%        if ~isempty(model.subSystems{i})
+%            modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>SUBSYSTEM: ' model.subSystems{i} '</p>'];
+%        end;
         if ~isempty(model.rxnConfidenceScores{i})
             modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>Confidence Level: ' model.rxnConfidenceScores{i} '</p>'];
         end;
@@ -516,6 +516,47 @@ for i=1:numel(model.rxns)
     modelSBML.reaction(i).fbc_upperFluxBound=totalNames{length(model.lb)+i};
 end;
 
+% Prepare subSystems
+% Code taken from COBRA functions getModelSubSystems, writeSBML, 
+% findRxnsFromSubSystem under
+% GNU General Public License v3.0, license file in readme/GPL.MD. Code
+% modified for RAVEN.
+modelSBML.groups_group.groups_kind = 'partonomy';
+modelSBML.groups_group.sboTerm = 633;
+tmpStruct=modelSBML.groups_group;
+if isfield(model, 'subSystems')
+    orderedSubs = cellfun(@(x) columnVector(x),model.subSystems,'UniformOUtput',false);
+    subSystems = setdiff(vertcat(orderedSubs{:}),'');
+    if isempty(subSystems)
+        subSystems = {};
+    end
+    if ~isempty(subSystems)
+    %Build the groups for the group package.
+    groupIDs = strcat('group',cellfun(@num2str, num2cell(1:length(subSystems))','UniformOutput',false));    
+    for i = 1:length(subSystems)
+        cgroup = tmpStruct;
+        present = cellfun(@(x) any(ismember(x,subSystems{i})),model.subSystems);
+        groupMembers = model.rxns(present);
+        for j = 1:numel(groupMembers)            
+            cMember = tmpStruct.groups_member;
+            cMember.groups_idRef = groupMembers{j};
+            if j == 1
+                cgroup.groups_member = cMember;
+            else
+                cgroup.groups_member(j) = cMember;
+            end
+        end
+        cgroup.groups_id = groupIDs{i};
+        cgroup.groups_name = subSystems{i};
+        if i == 1
+            modelSBML.groups_group = cgroup;
+        else
+            modelSBML.groups_group(i) = cgroup;
+        end
+    end
+    end
+end
+ 
 % Preparing fbc_objective subfield;
 
 modelSBML.fbc_objective.fbc_type='maximize';
@@ -661,3 +702,33 @@ for j_met=1:size(met_idx,1)
     end
 end
 end
+
+% Code below taken from COBRA Toolbox under GNU General Public License v3.0
+% license file in readme/GPL.MD.
+function vecT = columnVector(vec)
+ 
+% Converts a vector to a column vector
+%
+% USAGE:
+%
+%   vecT = columnVector(vec)
+%
+% INPUT:
+%   vec:     a vector
+%
+% OUTPUT:
+%   vecT:    a column vector
+%
+% .. Authors:
+%     - Original file: Markus Herrgard
+%     - Minor changes: Laurent Heirendt January 2017
+ 
+[n, m] = size(vec);
+
+if n < m
+    vecT = vec';
+else
+    vecT = vec;
+end
+end
+ 
