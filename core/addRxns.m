@@ -81,7 +81,7 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
 %   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
-%   Eduard Kerkhoven, 2017-12-05
+%   Eduard Kerkhoven, 2018-02-23
 %
 
 if nargin<4
@@ -150,17 +150,6 @@ if ~iscellstr(rxnsToAdd.equations) && ~ischar(rxnsToAdd.equations)
     dispEM(EM);
 else
     rxnsToAdd.equations=cellstr(rxnsToAdd.equations);
-end
-
-%Check some formatting
-illegalCells=regexp(rxnsToAdd.rxns,'[^a-z_A-Z0-9]', 'once');
-EM='Illegal character(s) in reaction IDs:';
-dispEM(EM,false,rxnsToAdd.rxns(~cellfun(@isempty,illegalCells)));
-
-if isfield(rxnsToAdd,'rxnNames')
-    illegalCells=regexp(rxnsToAdd.rxnNames,'["%<>\\]', 'once');
-    EM='Illegal character(s) in reaction names:';
-    dispEM(EM,true,rxnsToAdd.rxnNames(~cellfun(@isempty,illegalCells)));
 end
 
 nRxns=numel(rxnsToAdd.rxns);

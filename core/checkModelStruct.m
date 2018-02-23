@@ -14,7 +14,7 @@ function checkModelStruct(model,throwErrors,trimWarnings)
 %
 %   Usage: checkModelStruct(model,throwErrors,trimWarnings)
 %
-%   Simonas Marcisauskas, 2017-09-06
+%   Eduard Kerkhoven, 2018-02-23
 %
 
 if nargin<2
@@ -212,14 +212,6 @@ if isfield(model,'genes')
     end
 end
 
-%Illegal characters in IDs
-EM='Illegal characters in reaction IDs:';
-dispEM(EM,throwErrors,model.rxns(illegal(model.rxns,'id')),trimWarnings);
-EM='Illegal characters in metabolite IDs:';
-dispEM(EM,throwErrors,model.mets(illegal(model.mets,'id')),trimWarnings);
-EM='Illegal characters in compartment IDs:';
-dispEM(EM,throwErrors,model.comps(illegal(model.comps,'id')),trimWarnings);
-
 %Duplicates
 EM='The following reaction IDs are duplicates:';
 dispEM(EM,throwErrors,model.rxns(duplicates(model.rxns)),trimWarnings);
@@ -361,15 +353,5 @@ function I=duplicates(strings)
         L=1:numel(strings);
         L(K)=[];
         I(L)=true;
-    end
-end
-
-function I=illegal(strings,type)
-    %Just to save some space
-    if strcmpi(type,'id')
-        %Checks which strings in a cell array contains illegal characters
-        I=cellfun(@any,regexp(strings,'[^a-z_A-Z0-9-]', 'once'));
-    else
-
     end
 end
