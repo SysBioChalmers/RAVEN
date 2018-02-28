@@ -35,7 +35,7 @@ if ~isempty(model.grRules)
                    %The reaction has several associated genes
                    geneName=tempRules{i}(temp(j)+1:temp(j+1)-1);
                    I=find(strcmp(geneName,model.genes));
-                   model.rxnGeneMat(i,I)=1;
+                   rxnGeneMat(i,I)=1;
                end
            end
        end

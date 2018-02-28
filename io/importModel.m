@@ -840,6 +840,12 @@ else
            [rxnGeneMat, genes]=getGeneMat(grRules);
        end
        model.rxnGeneMat=rxnGeneMat;
+       if strcmpi(genes{1}(1:2),'G_')
+           genes=regexprep(genes,'^G_','');
+           grRules=regexprep(grRules,'^G_','');
+           grRules=regexprep(grRules,'\(G_','(');
+           grRules=regexprep(grRules,' G_',' ');
+       end
        model.genes=genes;
        model.grRules=grRules;
     end
