@@ -28,7 +28,7 @@ function solutions=randomSampling(model, nSamples, replaceBoundsWithInf,supressE
 %
 %   Usage: solutions=randomSampling(model, nSamples, replaceBoundsWithInf)
 %
-%   Rasmus Agren, 2014-01-08
+%   Eduard Kerkhoven, 2018-02-28
 %
 
 if nargin<2
@@ -58,7 +58,9 @@ model=simplifyModel(model,false,false,true,true);
 %loops in the solutions
 if replaceBoundsWithInf==true
    model.ub(model.ub==max(model.ub))=Inf;
-   model.lb(model.lb==min(model.lb))=-Inf;
+   if min(model.lb)<0 % Only negative lower bounds should be set to -Inf
+      model.lb(model.lb==min(model.lb))=-Inf;
+   end
 end
 
 %Reactions which can be involved in loops should not be optimized
