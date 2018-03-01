@@ -28,6 +28,11 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %       levels          GENESxTISSUES array with the expression level for
 %                       each gene in each tissue/celltype. NaN should be
 %                       used when no measurement was performed
+%       threshold       a single value or a vector of gene expression 
+%                       thresholds, above which genes are considered to be
+%                       "expressed". (opt, by default, the mean expression
+%                       levels of each gene across all tissues in arrayData
+%                       will be used as the threshold values)
 %   metabolomicsData    cell array with metabolite names that the model
 %                       should produce (opt, default [])
 %   taskFile            a task list in Excel format. See parseTaskList for
@@ -92,9 +97,7 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %               metabolomicsData, taskFile, useScoresForTasks, printReport,...
 %               taskStructure, params, paramsFT)
 %
-%   Rasmus Agren, 2014-01-08
-%
-%   Edited by Jonathan Robinson, 2018-01-31
+%   Jonathan Robinson, 2018-03-01
 %
 
 if nargin<3
