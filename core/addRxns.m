@@ -398,21 +398,6 @@ else
    end
 end
 
-%Check that ids contain no weird characters. This is only done if the
-%equations are with metabolite ids
-if eqnType==1
-    illegalCells=regexp(mets,'[^a-z_A-Z0-9]', 'once');
-    EM='Illegal character(s) in metabolite IDs:';
-    dispEM(EM,true,mets(~cellfun(@isempty,illegalCells)));
-else
-    %If the mets are metNames
-    if ~any(~cellfun(@isempty,strfind(mets,'->')))
-        illegalCells=regexp(mets,'["%<>\\]', 'once');
-        EM='Illegal character(s) in metabolite names:';
-        dispEM(EM,true,mets(~cellfun(@isempty,illegalCells)));
-    end
-end
-
 %***Start parsing the equations and adding the info to the S matrix
 %The mets are matched to model.mets
 if eqnType==1
