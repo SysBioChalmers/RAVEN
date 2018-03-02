@@ -381,6 +381,23 @@ else
    end
 end
 
+if isfield(rxnsToAdd,'pwys')
+   if numel(rxnsToAdd.pwys)~=nRxns
+       EM='rxnsToAdd.pwys must have the same number of elements as rxnsToAdd.rxns';
+       dispEM(EM);
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'pwys')
+       newModel.pwys=largeFiller;
+   end
+   newModel.pwys=[newModel.pwys;rxnsToAdd.pwys(:)];
+else
+    %Fill with standard if it doesn't exist
+   if isfield(newModel,'pwys')
+       newModel.pwys=[newModel.pwys;filler];
+   end
+end
+
 if isfield(rxnsToAdd,'rxnConfidenceScores')
    if numel(rxnsToAdd.rxnConfidenceScores)~=nRxns
        EM='rxnsToAdd.rxnConfidenceScores must have the same number of elements as rxnsToAdd.rxns';
