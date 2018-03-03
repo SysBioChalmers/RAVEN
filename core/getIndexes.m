@@ -7,8 +7,9 @@ function indexes=getIndexes(model, objects, type, returnLogical)
 %                   same number of elements as metabolites in the model,
 %                   of a vector of indexes
 %   type            'rxns', 'mets', or 'genes' depending on what to retrieve
-%                   'metscomps' allows to provide specific metabolites and
-%                   their compartments in the format metaboliteName[comp]
+%                   'metnames' queries metabolite names, while 'metscomps'
+%                   allows to provide specific metabolites and their
+%                   compartments in the format metaboliteName[comp]
 %   returnLogical   Sets whether to return a logical array or an array with
 %                   the indexes (opt, default false)
 %
@@ -17,7 +18,7 @@ function indexes=getIndexes(model, objects, type, returnLogical)
 %
 % 	Usage: indexes=getIndexes(model, objects, type, returnLogical)
 %
-%   Eduard Kerkhoven, 2018-02-15
+%   Eduard Kerkhoven, 2018-03-03
 %
 
 if nargin<4
@@ -38,6 +39,8 @@ elseif strcmpi(type,'mets')
     searchIn=model.mets;
 elseif strcmpi(type,'genes')
     searchIn=model.genes;
+elseif strcmpi(type,'metnames')
+    searchIn=model.metNames;
 elseif strcmpi(type,'metscomps')
     % If provided as metaboliteName[comp], then index search
     % is quite different from general approach, and therefore
@@ -58,7 +61,7 @@ elseif strcmpi(type,'metscomps')
         end
     end
     indexes=indexes(:);
-    return;
+    return; % If metscomps is queried, remaining codes doesn't need executing
 else
     EM='Incorrect value of the "type" parameter. Allowed values are "rxns", "mets" or "genes"';
     dispEM(EM);
