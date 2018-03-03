@@ -853,6 +853,12 @@ else
            [rxnGeneMat, genes]=getGeneMat(grRules);
        end
        model.rxnGeneMat=rxnGeneMat;
+       if strcmpi(genes{1}(1:2),'G_')
+           genes=regexprep(genes,'^G_','');
+           grRules=regexprep(grRules,'^G_','');
+           grRules=regexprep(grRules,'\(G_','(');
+           grRules=regexprep(grRules,' G_',' ');
+       end
        model.genes=genes;
        model.grRules=grRules;
     end
@@ -1153,12 +1159,10 @@ targetString=regexprep(targetString,midString,'/','once');
 
 counter=0;
 for i=1:numel(targetString)
-    if ~regexp(targetString{1,i},'inchi')
-        if ~regexp(targetString{1,i},'ec-code')
-            counter=counter+1;
-            miriamStruct.name{counter,1} = regexprep(targetString{1,i},'/.+','','once');   
-            miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} midString],'','once');
-        end;
+    if isempty(regexp(targetString{1,i},'inchi|ec-code'))
+        counter=counter+1;
+        miriamStruct.name{counter,1} = regexprep(targetString{1,i},'/.+','','once');
+        miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} midString],'','once');
     end;
 end;
 end

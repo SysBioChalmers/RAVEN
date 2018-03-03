@@ -21,8 +21,7 @@ function exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarn
 %
 %   Usage: exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarnings)
 %
-%   Eduard Kerkhoven, 2018-02-23
-%
+%   Eduard Kerkhoven, 2018-03-02
 
 if nargin<3
     exportToYAML=false;
@@ -589,11 +588,48 @@ if sbmlPackageVersions(1) == 2
     modelSBML.fbc_strict=1;
 end;
 
-if exportToYAML==true
-    YAML.write(strcat(fileName,'.yml'),modelSBML)
-end;
 OutputSBML(modelSBML,strcat(fileName,'.xml'),1,0,[1,0]);
+
+if exportToYAML==true
+    % Simplify structure by removing empty fields to reduce YAML size.
+    fnm=fieldnames(modelSBML);
+    idx=structfun(@isempty,modelSBML);
+    modelSBML=rmfield(modelSBML,fnm(idx));
+    fnm=fieldnames(modelSBML);
+    ws=modelSBML; % Keep working structure, as removing fields below will interfer with indexing
+    for i=1:length(fnm)
+        if isstruct(ws.(fnm{i}))
+            fnm2=fieldnames(ws.(fnm{i}));
+            for j=1:length(fnm2)
+                if isempty([ws.(fnm{i})(:).(fnm2{j})])
+                    modelSBML.(fnm{i})=rmfield(modelSBML.(fnm{i}),fnm2{j});
+                else
+                    for l=1:length({ws.(fnm{i}).(fnm2{j})})
+                        if isstruct(ws.(fnm{i})(l).(fnm2{j}))
+                            fnm3=fieldnames(ws.(fnm{i})(l).(fnm2{j}));
+                            for k=1:length(fnm3)
+                                if isempty([ws.(fnm{i})(l).(fnm2{j})(:).(fnm3{k})])
+                                    modelSBML.(fnm{i})(l).(fnm2{j})=rmfield(modelSBML.(fnm{i})(l).(fnm2{j}),fnm3{k});
+%                                 else
+%                                     isstruct(isstruct({ws.(fnm{i})(l).(fnm2{j}).(fnm3{k})}));
+%                                     fnm4=fieldnames(ws.(fnm{i})(l).(fnm2{j}).(fnm3{k}));
+%                                     for m=1:length(fnm4)
+%                                         if isempty([ws.(fnm{i})(l).(fnm2{j}).(fnm3{k}).(fnm4{m})])
+%                                             modelSBML.(fnm{i})(l).(fnm2{j}).(fnm3{k})=rmfield(modelSBML.(fnm{i})(l).(fnm2{j}).(fnm3{k}),fnm4{m});
+%                                         end
+%                                     end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    YAML.write(strcat(fileName,'.yml'),modelSBML)
 end
+end
+
 
 function modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions)
 %Returns the blank SBML model structure by using appropriate libSBML
