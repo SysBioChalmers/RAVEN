@@ -1,4 +1,4 @@
-function [model, deletedRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet)
+function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet)
 % mergeCompartments
 %   Merge all compartments in a model
 %
@@ -16,6 +16,9 @@ function [model, deletedRxns]=mergeCompartments(model,keepUnconstrained,deleteRx
 %   model                 a model with all reactions located to one compartment
 %   deletedRxns           reactions that were deleted because of only
 %                         having one metabolite after merging
+%   duplicateRxns         identical reactions that occurred in different
+%                         compartments and were deleted because they turned
+%                         to be duplicated after merging
 %
 %   Merges all compartments into one 's' compartment (for 'System'). This can
 %   be useful for example to ensure that there are metabolic capabilities to
@@ -52,7 +55,7 @@ if deleteRxnsWithOneMet==true
     end
 end
 
-%Loop through each metabolite, and if it's not unconstrained then change
+%Loop through each metabolite, and if it is not unconstrained then change
 %the S matrix to use the metabolite with the lowest index in model.comps
 %instead
 uNames=unique(model.metNames);
@@ -73,7 +76,7 @@ for i=1:numel(uNames)
     else
         mergeTo=find(I,1);
     end
-    I(mergeTo)=false; %Don't do anything for itself
+    I(mergeTo)=false; %Do not do anything for itself
     I=find(I);
 
     %Go through each of the metabolites with this name and update them to
@@ -121,5 +124,5 @@ else
 end
 
 %And then finally merge the identical reactions
-model=contractModel(model);
+[model, duplicateRxns]=contractModel(model);
 end
