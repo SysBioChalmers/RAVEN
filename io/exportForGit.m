@@ -22,12 +22,17 @@ end
 
 %% Write txt format
 fid=fopen([fullfile(path,'ModelFiles','txt',prefix),'.txt'],'w');
-eqns=constructEquations(model,model.rxns,true,false,false,true);
+eqns=constructEquations(model,model.rxns,false,false,false,true);
+eqns=strrep(eqns,' => ','  -> ');
+eqns=strrep(eqns,' <=> ','  <=> ');
+eqns=regexprep(eqns,'> $','>');
+grRules=regexprep(model.grRules,'\((?!\()','( ');
+grRules=regexprep(grRules,'(?<!\))\)',' )');
 fprintf(fid, 'Rxn name\tFormula\tGene-reaction association\tLB\tUB\tObjective\n');
 for i = 1:numel(model.rxns)
     fprintf(fid, '%s\t', model.rxns{i});
-    fprintf(fid, '%s\t', eqns{i});
-    fprintf(fid, '%s\t', model.grRules{i});
+    fprintf(fid, '%s \t', eqns{i});
+    fprintf(fid, '%s\t', grRules{i});
     fprintf(fid, '%6.2f\t%6.2f\t%6.2f\n', model.lb(i), model.ub(i), model.c(i));
 end
 fclose(fid);
