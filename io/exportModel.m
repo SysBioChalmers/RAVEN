@@ -521,8 +521,12 @@ modelSBML.groups_group.groups_kind = 'partonomy';
 modelSBML.groups_group.sboTerm = 633;
 tmpStruct=modelSBML.groups_group;
 if isfield(model, 'subSystems')
-    orderedSubs = cellfun(@(x) columnVector(x),model.subSystems,'UniformOUtput',false);
-    subSystems = setdiff(vertcat(orderedSubs{:}),'');
+    if ~any(cellfun(@iscell,model.subSystems))
+        subSystems = setdiff(model.subSystems,'');
+    else
+        orderedSubs = cellfun(@(x) columnVector(x),model.subSystems,'UniformOUtput',false);
+        subSystems = setdiff(vertcat(orderedSubs{:}),'');
+    end
     if isempty(subSystems)
         subSystems = {};
     end
@@ -531,7 +535,11 @@ if isfield(model, 'subSystems')
     groupIDs = strcat('group',cellfun(@num2str, num2cell(1:length(subSystems))','UniformOutput',false));    
     for i = 1:length(subSystems)
         cgroup = tmpStruct;
-        present = cellfun(@(x) any(ismember(x,subSystems{i})),model.subSystems);
+        if ~any(cellfun(@iscell,model.subSystems))
+            present = ismember(model.subSystems,subSystems{i});
+        else
+            present = cellfun(@(x) any(ismember(x,subSystems{i})),model.subSystems);
+        end
         groupMembers = model.rxns(present);
         for j = 1:numel(groupMembers)            
             cMember = tmpStruct.groups_member;
