@@ -15,7 +15,7 @@ function model=replaceMets(model,metabolite,replacement,verbose)
 %   This function is useful when the model contains both 'oxygen' and 'o2'
 %   as metabolites.
 %
-%   Usage: model=replaceMets(model,metabolite,replacement,verbose))
+%   Usage: model=replaceMets(model,metabolite,replacement,verbose)
 %
 %   Eduard Kerkhoven, 2018-03-03
 
