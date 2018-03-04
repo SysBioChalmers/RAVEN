@@ -21,7 +21,7 @@ function exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarn
 %
 %   Usage: exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarnings)
 %
-%   Eduard Kerkhoven, 2018-03-02
+%   Eduard Kerkhoven, 2018-03-04
 
 if nargin<3
     exportToYAML=false;
@@ -520,6 +520,7 @@ end;
 modelSBML.groups_group.groups_kind = 'partonomy';
 modelSBML.groups_group.sboTerm = 633;
 tmpStruct=modelSBML.groups_group;
+rxns=strcat('R_',model.rxns);
 if isfield(model, 'subSystems')
     if ~any(cellfun(@iscell,model.subSystems))
         subSystems = setdiff(model.subSystems,'');
@@ -540,7 +541,7 @@ if isfield(model, 'subSystems')
         else
             present = cellfun(@(x) any(ismember(x,subSystems{i})),model.subSystems);
         end
-        groupMembers = model.rxns(present);
+        groupMembers = rxns(present);
         for j = 1:numel(groupMembers)            
             cMember = tmpStruct.groups_member;
             cMember.groups_idRef = groupMembers{j};
