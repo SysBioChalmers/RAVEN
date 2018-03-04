@@ -41,7 +41,7 @@ classdef YAML
         function [ S ] = jarfile()
             %JARFILE path to the SnakeYAML jar file
             S = fileparts(mfilename('fullpath'));
-            S = [S filesep 'java' filesep 'snakeyaml-1.9.jar'];
+            S = [S filesep 'java' filesep 'snakeyaml-1.19.jar'];
         end
         
         function [ X ] = load( S )
