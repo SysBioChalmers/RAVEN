@@ -259,9 +259,6 @@ for i=1:numel(model.mets)
     
     if isfield(modelSBML.species,'metaid')
         modelSBML.species(i).metaid=['meta_M_' model.mets{i}];
-        % Removing compartment abbreviation from metabolite id as we
-        % save metComp in compartment subfield later;
-        modelSBML.species(i).metaid=regexprep(modelSBML.species(i).metaid,['_' model.comps{model.metComps(i)} '$'],'');
     end;
     if isfield(modelSBML.species, 'name')
         modelSBML.species(i).name=model.metNames{i};
