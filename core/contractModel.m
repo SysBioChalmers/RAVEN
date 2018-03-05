@@ -1,28 +1,38 @@
-function [reducedModel, removedRxns]=contractModel(model)
+function [reducedModel, removedRxns]=contractModel(model, distReverse)
 % contractModel
 %   Contracts a model by grouping all identical reactions. Similar to the
 %   deleteDuplicates part in simplifyModel but more care is taken here
 %   when it comes to gene associations
 %
-%	model           a model structure
+%   model           a model structure
+%   distReverse     distinguish reactions with same metabolites but different
+%                   reversibility as different reactions (opt, default true)
 %
-%	reducedModel	a model structure with grouped reactions
+%   reducedModel    a model structure with grouped reactions
 %   removedRxns     cell array with the duplicate reactions
 %
 %   NOTE: This code might not work for advanced grRules strings
 %         that involve nested expressions of 'and' and 'or'.
 %
-%   Usage: [reducedModel, removedRxns]=contractModel(model)
+%   Usage: [reducedModel, removedRxns]=contractModel(model, distReverse)
 %
-%   Rasmus Agren, 2014-01-08
+%   Hao Wang, 2018-03-05
 %
+
+if nargin<2
+    distReverse=true;
+end
 
 %First sort the model so that reversible reactions are in the same
 %direction
 modelS=sortModel(model);
 
 %Get a list of duplicate reactions
-x=[modelS.S; model.rev']';
+if distReverse
+    x=[modelS.S; model.rev']';
+else
+    x=modelS.S';
+end
 [~,I,J] = unique(x,'rows','first');
 
 duplicateRxns=setdiff(1:numel(model.rxns),I);
