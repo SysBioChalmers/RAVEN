@@ -9,15 +9,20 @@ function [reducedModel, removedRxns]=contractModel(model, distReverse)
 %                   reversibility as different reactions (opt, default true)
 %
 %   reducedModel    a model structure with grouped reactions
-%   removedRxns     cell array with the duplicate reactions
+%   removedRxns     cell array for the removed duplicate reactions
 %
 %   NOTE: This code might not work for advanced grRules strings
 %         that involve nested expressions of 'and' and 'or'.
 %
 %   Usage: [reducedModel, removedRxns]=contractModel(model, distReverse)
 %
-%   Hao Wang, 2018-03-05
-%
+%   Rasmus Agren,     2014-01-08
+%   Hao Wang,         2018-03-06  Add parameter distReverse to enable overlooking
+%                                 reaction reversibility when detecting
+%                                 duplication; Restructure removedRxns cell
+%                                 array for retaining the assocation between
+%                                 duplicated reactions
+% 
 
 if nargin<2
     distReverse=true;
@@ -34,6 +39,10 @@ else
     x=modelS.S';
 end
 [~,I,J] = unique(x,'rows','first');
+
+%Initialize cell array of removedRxns
+removedRxns=cell(numel(model.rxns),1);
+removedRxns(:)={''};
 
 duplicateRxns=setdiff(1:numel(model.rxns),I);
 mergeTo=I(J(duplicateRxns));
@@ -100,9 +109,19 @@ for i=1:numel(duplicateRxns)
            end
         end
     end
+    
+    %Generate removedRxns cell array
+    if ~isequal(duplicateRxns(i),mergeTo(i))
+        if isempty(removedRxns{mergeTo(i)})
+            removedRxns{mergeTo(i)}=model.rxns{duplicateRxns(i)};
+        else
+            removedRxns{mergeTo(i)}=strcat(removedRxns{mergeTo(i)},';',model.rxns{duplicateRxns(i)});
+        end
+    end
 end
 
 %Delete the duplicate reactions
 reducedModel=removeReactions(model,duplicateRxns);
-removedRxns=model.rxns(duplicateRxns);
+[~, index]=ismember(reducedModel.rxns,model.rxns);
+removedRxns=removedRxns(index);
 end
