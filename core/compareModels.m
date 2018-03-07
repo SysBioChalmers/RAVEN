@@ -46,7 +46,7 @@ function compStruct=compareModels(models,printResults,plotResults,groupVector,fl
 %                       subsystem
 %           ID          vector consisting of names of all subsystems
 %       structComp      matrix with pairwise comparisons of model structure
-%                       based on Hamming distance between models
+%                       based on (1-Hamming distance) between models
 %       structCompMap   matrix with 3D tSNE mapping of model structures
 %                       based on Hamming distances
 %       funcCompMap     matrix with 3D tSNE mapping of model fluxes using numRuns
@@ -198,6 +198,21 @@ if plotResults==true
     plottingData = compStruct.subsystems.matrix./median(compStruct.subsystems.matrix,2);
     color_map = redblue(length(0:.01:2));
     h = genHeatMap(plottingData,compStruct.modelIDs,compStruct.subsystems.ID,'both','euclidean',color_map,[0,2]);
+end
+
+field = 'rxns';
+all_rxns = catModelElements(models,field);
+% Create binary matrix of reactions
+binary_matrix = zeros(length(all_rxns),numel(models));
+for i=1:numel(models)
+    binary_matrix(:,i) = ismember(all_rxns,models{i}.rxns);
+end
+compStruct.structComp = squareform(1-pdist(binary_matrix','hamming'));
+for i = 1:101
+    color_map(i,:) = [(i-1)/100 0 0];
+end
+if plotResults == true
+    h = genHeatMap(compStruct.structComp,compStruct.modelIDs,compStruct.modelIDs,'both','hamming',color_map,[0,1]);
 end
 
 end
