@@ -1,4 +1,4 @@
-function [reducedModel, removedRxns]=contractModel(model, distReverse)
+function [reducedModel, removedRxns]=contractModel(model,distReverse)
 % contractModel
 %   Contracts a model by grouping all identical reactions. Similar to the
 %   deleteDuplicates part in simplifyModel but more care is taken here
@@ -14,7 +14,7 @@ function [reducedModel, removedRxns]=contractModel(model, distReverse)
 %   NOTE: This code might not work for advanced grRules strings
 %         that involve nested expressions of 'and' and 'or'.
 %
-%   Usage: [reducedModel, removedRxns]=contractModel(model, distReverse)
+%   Usage: [reducedModel, removedRxns]=contractModel(model,distReverse)
 %
 %   Rasmus Agren,     2014-01-08
 %   Hao Wang,         2018-03-06  Add parameter distReverse to enable overlooking

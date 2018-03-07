@@ -1,4 +1,4 @@
-function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet)
+function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet,distReverse)
 % mergeCompartments
 %   Merge all compartments in a model
 %
@@ -12,6 +12,9 @@ function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconst
 %                         => A[m]. In some models hydrogen is balanced around
 %                         each membrane with reactions like this (opt,
 %                         default false)
+%   distReverse           distinguish reactions with same metabolites but
+%                         different reversibility as different reactions
+%                         (opt, default true)
 %
 %   model                 a model with all reactions located to one compartment
 %   deletedRxns           reactions that were deleted because of only
@@ -27,9 +30,13 @@ function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconst
 %   NOTE: If the metabolite IDs reflect the compartment that they are in
 %   the IDs may no longer be representative.
 %
-%   Usage: [model, deletedRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet)
+%   Usage: [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet,distReverse)
 %
 %   Rasmus Agren, 2014-01-08
+%   Hao Wang,     2018-03-07  Add parameter distReverse to enable overlooking
+%                             reaction reversibility when merging duplicated
+%                             reactions; Add optional output of duplicated
+%                             reactions that have been removed after merging
 %
 
 if nargin<2
@@ -37,6 +44,9 @@ if nargin<2
 end
 if nargin<3
     deleteRxnsWithOneMet=false;
+end
+if nargin<4
+    distReverse=true;
 end
 
 if ~isfield(model,'unconstrained')
@@ -68,7 +78,7 @@ for i=1:numel(uNames)
     if keepUnconstrained==true
         mergeTo=find(I & model.unconstrained==false,1);
 
-        %This could happen if there is only one metabolite and it's
+        %This could happen if there is only one metabolite and it is
         %unconstrained
         if isempty(mergeTo)
             continue;
@@ -124,5 +134,5 @@ else
 end
 
 %And then finally merge the identical reactions
-[model, duplicateRxns]=contractModel(model);
+[model, duplicateRxns]=contractModel(model,distReverse);
 end
