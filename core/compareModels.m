@@ -170,6 +170,7 @@ if printResults==true
 end
 
 %% Compare models structure & function based on high-dimensional methods
+% Compare number of reactions in each subsystem in each model using a heatmap
 field = 'subSystems';
 compStruct.subsystems.ID = catModelElements(models,field);
 compStruct.subsystems.matrix = compareSubsystems(models,field);
@@ -200,6 +201,7 @@ if plotResults==true
     h = genHeatMap(plottingData,compStruct.modelIDs,compStruct.subsystems.ID,'both','euclidean',color_map,[0,2]);
 end
 
+% Compare overall reaction structure across all models using a heatmap
 field = 'rxns';
 all_rxns = catModelElements(models,field);
 % Create binary matrix of reactions
@@ -215,6 +217,27 @@ if plotResults == true
     h = genHeatMap(compStruct.structComp,compStruct.modelIDs,compStruct.modelIDs,'both','hamming',color_map,[0,1]);
 end
 
+% Compare overall reaction structure across all modeling using tSNE projection
+rng(42) % For consistency
+if exist('tsne') > 0
+    t_vars_3d_struc = tsne(double(binary_matrix'),'Distance','hamming','NumDimensions',3); % 3D
+    compStruct.structCompMap = t_vars_3d_struc;
+    if plotResults == true
+        figure();hold on; 
+        if length(groupVector) > 0
+            color_vector = groupVector;
+            colormap(parula(max(groupVector)));
+        else
+            color_vector = 'k';
+        end
+        scatter3(t_vars_3d_struc(:,1),t_vars_3d_struc(:,2),t_vars_3d_struc(:,3),35,color_vector,'filled')
+        xlabel('tSNE 1');ylabel('tSNE 2');zlabel('tSNE 3');set(gca,'FontSize',14,'LineWidth',1.25);
+        title('Structural Similarity','FontSize',18,'FontWeight','bold')
+    end
+else
+    fprintf('\nWARNING: The function "tsne" does not exist in your Matlab version. \n')
+    fprintf('Please upgrade to Matlab 2017b or higher for full functionality. \n\n')
+end
 end
 
 %% Additional Functions
