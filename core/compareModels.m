@@ -27,9 +27,10 @@ function compStruct=compareModels(models,printResults)
 %
 %   Rasmus Agren, 2014-02-07
 %
+%   Edited: Daniel Cook, 2018-03-12
 
 if nargin<2
-    printResults=true;
+    printResults=false;
 end
 
 if numel(models)<=1
