@@ -1,4 +1,4 @@
-function compStruct=compareModels(models,printResults,plotResults,groupVector,fluxMets,fluxValues,objectiveFunctions,numRuns)
+function compStruct=compareModels(models,printResults,plotResults,groupVector,functionalComp,fluxMets,fluxValues,objectiveFunctions,numRuns)
 % compareModels
 %   Compares two or more models with respect to overlap in terms of genes,
 %   reactions, metabolites and compartments. New functionality also
@@ -15,13 +15,13 @@ function compStruct=compareModels(models,printResults,plotResults,groupVector,fl
 %   functionalComp      true if functional model comparison should be run
 %                       (opt, default, false)
 %   fluxMets            string array of metabolites used to constrain model
-%                       simulations (opt, default = no constraints)
+%                       simulations (opt, default = uptake rate constraints)
 %   fluxValues          numeric vector (type: double) of values for
 %                       constraining fluxMets during model simulations
-%                       (opt, default = -1000, 1000)
-%   objectiveFunctions  string array containing the objective function name
-%                       for each model (opt, default is use objective
-%                       function pre-set in model)
+%                       (opt, default = -10, 1000)
+%   objectiveFunctions  string array or single string value containing the 
+%                       objective function name for each model 
+%                       (opt, default is use objective function pre-set in model)
 %   numRuns             single value selecting the number of simulations to
 %                       perform for functional similarity comparisons
 %                       (default, 30)
@@ -233,11 +233,26 @@ if exist('tsne') > 0
         scatter3(t_vars_3d_struc(:,1),t_vars_3d_struc(:,2),t_vars_3d_struc(:,3),35,color_vector,'filled')
         xlabel('tSNE 1');ylabel('tSNE 2');zlabel('tSNE 3');set(gca,'FontSize',14,'LineWidth',1.25);
         title('Structural Similarity','FontSize',18,'FontWeight','bold')
+        % Need to add legend
     end
 else
-    fprintf('\nWARNING: The function "tsne" does not exist in your Matlab version. \n')
-    fprintf('Please upgrade to Matlab 2017b or higher for full functionality. \n\n')
+    fprintf('\nWARNING: Could not complete structural comparison because the function \n')
+    fprintf('         "tsne" does not exist in your Matlab version. \n')
+    fprintf('         Please upgrade to Matlab 2017b or higher for full functionality. \n\n')
 end
+
+% Compare model function across all models using tSNE projection of fluxes
+% in response to micropurturbations
+if functionalComp == true
+    if exist('tsne') > 0
+        compStruc.funcCompMap = mapFunction(models,groupVector,fluxMets,fluxValues,objectiveFunctions,numRuns,plotResults);
+    else
+        fprintf('\nWARNING: Could not complete functional comparison because the function \n')
+        fprintf('         "tsne" does not exist in your Matlab version. \n')
+        fprintf('         Please upgrade to Matlab 2017b or higher for full functionality. \n\n')
+    end
+end
+
 end
 
 %% Additional Functions
@@ -328,6 +343,162 @@ function C = catModelElements(models,field)
         allElements = [allElements;A{i}];
     end
     C = unique(allElements);
+end
+
+function compMap = mapFunction(models,groupVector,fluxMets,fluxValues,objectiveFunctions,numRuns,plotResults)
+    % This function takes a set of input fluxes, performs (numRuns) number of
+    % microperturbations (+/- 10% of nominal), and plots model flux outputs
+    % for optimizing the given objective functions.
+    
+    if length(fluxMets) > 0
+        % Split flux metabolites into metabolite name and compartment
+        fluxMets_split = split(insertBefore(fluxMets,'[',':'),':'); % Split biomassMets into name & compartment
+        fluxMets_names = fluxMets_split(:,1); % biomassMet Names
+        fluxMets_comp = fluxMets_split(:,2); % biomassMet Compartments
+    end
+        
+    % Perform microperturbations (+/- ~10% of nominal value)
+    n = numRuns; % Number of microperturbations to perform for each model
+    if length(fluxValues) > 0
+        for(i = 1:n)
+            fluxValuesMatrix(:,i) = fluxValues + (fluxValues/10).*randn(size(fluxValues,1),1)/3;
+        end
+    end     
+    
+    % Solve the models
+    for (i = 1:numel(models))
+        % Set up model parameters for solver
+        model=models{i};
+        
+        % Set fluxes if none are user-defined (all components able to be taken from the media)
+        % (-50 was chosen to induce a limiting growth condition)
+        if length(fluxValues)==0
+            if length(fluxMets)==0
+                fluxMets_names = model.metNames(find(ismember(model.comps(model.metComps),'s')));
+                fluxMets_comp = repelem('[s]',length(fluxMets_names));
+                fluxValues = -50;
+            else
+                fluxValues = repelem(-50,1,length(fluxMets_names));
+            end
+        end
+        
+        % Set all upper bounds to 1000 (can be necessary for pfba)
+        model.ub(:) = 1000;
+        
+        % Set up objective function
+        if numel(objectiveFunctions) > 1
+            objectiveFunction = objectiveFunctions{i};
+        elseif numel(objectiveFunctions) == 1
+            objectiveFunction = string(objectiveFunctions);
+        end
+        if exist('objectiveFunction')    
+            model = setParam(model, 'obj', objectiveFunction, 1);
+            model = setParam(model, 'lb', objectiveFunction, 0);
+            model = setParam(model, 'ub', objectiveFunction, 1000);
+        end
+        
+        % Solve model for all micropurturbations
+        for (j = 1:size(fluxValuesMatrix,2))
+            % Set all exchange reactions to zero & set uptake rates equal to micropurturbations
+            [id, exchangeRxns] =getExchangeRxns(model); % Get all exchange rxns (should not exist)
+            model = setParam(model, 'lb', exchangeRxns, 0); % Bind all exchange rxns LB to 0
+            model = setParam(model, 'ub', exchangeRxns, 0); % Bind all exchange rxns UB to 0
+            for (k = 1:length(fluxMets_names)) % Get inputs & compartments
+                metNumbers = find(ismember(model.metNames,fluxMets_names(k)));
+                compNumbers = find(ismember(model.comps(model.metComps),regexprep(fluxMets_comp(k), '\[(.*)\]', '$1')));
+                metExchNumber = intersect(metNumbers,compNumbers);
+                if ~isempty(exchangeRxns(find(model.S(metExchNumber,exchangeRxns))))
+                    reactionNumbers(k) = exchangeRxns(find(model.S(metExchNumber,exchangeRxns)));
+                else reactionNumbers(k) = NaN;
+                end
+            end
+            fluxes = fluxValuesMatrix(:,i);
+            model = setParam(model, 'lb', reactionNumbers(~isnan(reactionNumbers)), fluxes(~isnan(reactionNumbers)));
+            if any(fluxValues > 0)
+                % This should be the case for user-defined fluxes
+                model = setParam(model, 'ub', reactionNumbers(~isnan(reactionNumbers)), fluxes(~isnan(reactionNumbers))); % Restrictive of uptake/secretion 
+            else
+                % This should be the case for automatically generated fluxes
+                model = setParam(model, 'ub', reactionNumbers(~isnan(reactionNumbers)), 1000); % Permissive of secretion
+            end
+            
+            upMets = {'H2O[s]', 'O2[s]', 'H+[s]', 'NH3[s]', 'urea[s]', 'Pi[s]', 'sulfate[s]'};
+            upMets_split = split(insertBefore(upMets,'[',':'),':'); % Split upMets into name & compartment
+            upMets_names = upMets_split(:,1); % upMet Names
+            upMets_comp = upMets_split(:,2); % upMet Compartments
+            for (k = 1:length(upMets_names))
+                metNumbers = find(ismember(model.metNames,upMets_names(k)));
+                compNumbers = find(ismember(model.comps(model.metComps),regexprep(upMets_comp(k), '\[(.*)\]', '$1')));
+                metExchNumber = intersect(metNumbers,compNumbers);
+                if ~isempty(exchangeRxns(find(model.S(metExchNumber,exchangeRxns))))
+                    uptake(k) = exchangeRxns(find(model.S(metExchNumber,exchangeRxns)));
+                else uptake(k) = NaN;
+                end
+            end
+            model = setParam(model, 'lb', uptake(~isnan(uptake)), -1000);
+            
+            reMets = {'HCO3-[s]', 'CO2[s]', 'H+[s]', 'NH3[s]', 'urea[s]', 'H2S[s]', 'biomass[s]'};
+            reMets_split = split(insertBefore(reMets,'[',':'),':'); % Split upMets into name & compartment
+            reMets_names = reMets_split(:,1); % upMet Names
+            reMets_comp = reMets_split(:,2); % upMet Compartments
+            for (k = 1:length(reMets_names))
+                metNumbers = find(ismember(model.metNames,reMets_names(k)));
+                compNumbers = find(ismember(model.comps(model.metComps),regexprep(reMets_comp(k), '\[(.*)\]', '$1')));
+                metExchNumber = intersect(metNumbers,compNumbers);
+                if ~isempty(exchangeRxns(find(model.S(metExchNumber,exchangeRxns))))
+                    release(k) = exchangeRxns(find(model.S(metExchNumber,exchangeRxns)));
+                else release(k) = NaN;
+                end
+            end
+            model = setParam(model, 'ub', release(~isnan(release)), 1000);
+            
+            % Solve model & save output
+            solutions{(i-1)*numRuns+j} = solveLP(model,1); % pFBA
+        end
+    end
+
+    % Set up reaction matrix
+    field = 'rxns';
+    all_rxns = catModelElements(models,field);
+    
+    % Set up flux matrix
+    flux_matrix = zeros(length(all_rxns),numel(solutions));
+    for(i=1:numel(solutions))
+        model_number = ceil(i/n);
+        if (length(solutions{i}.x) ~= 0)
+            flux_matrix(ismember(all_rxns,models{model_number}.rxns),i) = solutions{i}.x;
+            obj_matrix(i) = solutions{i}.f;
+        end
+    end
+    I = sum((flux_matrix~=0),2)~=0; % Find reactions that carry flux in at least one simulation
+    flux_matrix = flux_matrix(I,:); % Remove reactions that carry no flux
+    
+    % calculate tSNE & save results
+    rng(42)
+    t_vars_3d = tsne(log10(abs(double(flux_matrix'))+1),'Distance','euclidean','NumDimensions',3); % 3D
+    compMap = t_vars_3d;
+    
+    % Plot results
+    if plotResults == true
+        figure();  hold on; 
+        if length(groupVector) == numel(models)
+            color_vector = groupVector;
+        else
+            color_vector = [];
+            for (i = 1:numel(models))
+                color_vector = [color_vector,repelem(i,n)];
+            end
+        end
+        colormap(parula(max(color_vector)));scatter3(t_vars_3d(:,1),t_vars_3d(:,2),t_vars_3d(:,3),35,color_vector,'filled')
+        xlabel('tSNE 1');ylabel('tSNE 2');zlabel('tSNE 3');set(gca,'FontSize',14,'LineWidth',1.25);
+        title('Functional Similarity','FontSize',18,'FontWeight','bold')
+        
+        % Check objective function values
+        [hist_data,hist_bins] = hist(obj_matrix);
+        figure(); hold on; bar(hist_bins,hist_data,'facecolor',[.75,.75,.75],'LineWidth',1.25)
+        xlabel('Objective Function Value');ylabel('Frequency');set(gca,'FontSize',14,'LineWidth',1.25);
+        title('Objective Function Comparison','FontSize',18,'FontWeight','bold')
+    end
 end
 
 function h = genHeatMap(data,colnames,rownames,clust_dim,clust_dist,col_map,col_bounds)
