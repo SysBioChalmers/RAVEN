@@ -19,8 +19,8 @@ function compStruct=compareModels(models,printResults,plotResults,groupVector,fu
 %   fluxValues          numeric vector (type: double) of values for
 %                       constraining fluxMets during model simulations
 %                       (opt, default = -10, 1000)
-%   objectiveFunctions  string array or single string value containing the 
-%                       objective function name for each model 
+%   objectiveFunctions  string array containing the objective function name 
+%                       for each model or containing a single objective function
 %                       (opt, default is use objective function pre-set in model)
 %   numRuns             single value selecting the number of simulations to
 %                       perform for functional similarity comparisons
@@ -53,7 +53,7 @@ function compStruct=compareModels(models,printResults,plotResults,groupVector,fu
 %                       perturbations to the fluxMet input values "fluxValues" 
 %                       (+/- 10% nominal) based on Euclidean distances
 %
-%   Usage: compStruct=compareModels(models,printResults,plotResults,...
+%   Usage: compStruct=compareModels(models,printResults,plotResults,functionalComp,...
 %                     groupVector,fluxMets,fluxValues,objectiveFunctions,numRuns)
 %
 %   Rasmus Agren, 2014-02-07
@@ -171,6 +171,7 @@ end
 
 %% Compare models structure & function based on high-dimensional methods
 % Compare number of reactions in each subsystem in each model using a heatmap
+% ISSUE: This section breaks the code when not all models have the "subSystems" field
 field = 'subSystems';
 compStruct.subsystems.ID = catModelElements(models,field);
 compStruct.subsystems.matrix = compareSubsystems(models,field);
@@ -196,9 +197,9 @@ if printResults==true
     fprintf('\n\n');
 end
 if plotResults==true
-    plottingData = compStruct.subsystems.matrix./median(compStruct.subsystems.matrix,2);
+    plottingData = compStruct.subsystems.matrix./mean(compStruct.subsystems.matrix,2);
     color_map = redblue(length(0:.01:2));
-    h = genHeatMap(plottingData,compStruct.modelIDs,compStruct.subsystems.ID,'both','euclidean',color_map,[0,2]);
+    h = genHeatMap(plottingData',compStruct.subsystems.ID,compStruct.modelIDs,'both','euclidean',color_map,[0,2]);
 end
 
 % Compare overall reaction structure across all models using a heatmap
@@ -217,7 +218,7 @@ if plotResults == true
     h = genHeatMap(compStruct.structComp,compStruct.modelIDs,compStruct.modelIDs,'both','hamming',color_map,[0,1]);
 end
 
-% Compare overall reaction structure across all modeling using tSNE projection
+% Compare overall reaction structure across all models using tSNE projection
 rng(42) % For consistency
 if exist('tsne') > 0
     t_vars_3d_struc = tsne(double(binary_matrix'),'Distance','hamming','NumDimensions',3); % 3D
@@ -402,7 +403,7 @@ function compMap = mapFunction(models,groupVector,fluxMets,fluxValues,objectiveF
             % Set all exchange reactions to zero & set uptake rates equal to micropurturbations
             [id, exchangeRxns] =getExchangeRxns(model); % Get all exchange rxns (should not exist)
             model = setParam(model, 'lb', exchangeRxns, 0); % Bind all exchange rxns LB to 0
-            model = setParam(model, 'ub', exchangeRxns, 0); % Bind all exchange rxns UB to 0
+            model = setParam(model, 'ub', exchangeRxns, 1000); % Permissive of secretion
             for (k = 1:length(fluxMets_names)) % Get inputs & compartments
                 metNumbers = find(ismember(model.metNames,fluxMets_names(k)));
                 compNumbers = find(ismember(model.comps(model.metComps),regexprep(fluxMets_comp(k), '\[(.*)\]', '$1')));
@@ -481,10 +482,12 @@ function compMap = mapFunction(models,groupVector,fluxMets,fluxValues,objectiveF
     % Plot results
     if plotResults == true
         figure();  hold on; 
+        color_vector = [];
         if length(groupVector) == numel(models)
-            color_vector = groupVector;
+            for i = 1:length(groupVector)
+                color_vector = [color_vector,repelem(groupVector(i),n)];
+            end
         else
-            color_vector = [];
             for (i = 1:numel(models))
                 color_vector = [color_vector,repelem(i,n)];
             end
