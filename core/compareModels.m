@@ -173,33 +173,41 @@ end
 % Compare number of reactions in each subsystem in each model using a heatmap
 % ISSUE: This section breaks the code when not all models have the "subSystems" field
 field = 'subSystems';
-compStruct.subsystems.ID = catModelElements(models,field);
-compStruct.subsystems.matrix = compareSubsystems(models,field);
-if printResults==true
-    % This could use come cleaning up
-    fprintf('*** Comparison of reaction subsystem populations:\n');    
-    str = [" "];
-    for i=1:length(compStruct.modelIDs)
-        str(1,i+1) = compStruct.modelIDs{i};
-    end
-    for i = 1:size(compStruct.subsystems.matrix,1)
-        if length(compStruct.subsystems.ID{i}) <= 16
-            str(i+1,1) = compStruct.subsystems.ID{i};
-        else
-            str(i+1,1) = [compStruct.subsystems.ID{i}(1:16) ' ...'];
-        end
-        for j=1:length(compStruct.modelIDs)
-            str(i+1,j+1) = num2str(compStruct.subsystems.matrix(i,j));
-        end
-    end
-    subsystem_comparison = str;
-    subsystem_comparison
-    fprintf('\n\n');
+for i = 1:numel(models)
+    field_present(i) = isfield(models{i},field);
 end
-if plotResults==true
-    plottingData = compStruct.subsystems.matrix./mean(compStruct.subsystems.matrix,2);
-    color_map = redblue(length(0:.01:2));
-    h = genHeatMap(plottingData',compStruct.subsystems.ID,compStruct.modelIDs,'both','euclidean',color_map,[0,2]);
+if sum(field_present) ~= numel(models)
+    fprintf('\nWARNING: At least one model does not contain the field "subSystems". \n')
+    fprintf('         Skipping subsystem comparison. \n\n')
+else
+    compStruct.subsystems.ID = catModelElements(models,field);
+    compStruct.subsystems.matrix = compareSubsystems(models,field);
+    if printResults==true
+        % This could use come cleaning up
+        fprintf('*** Comparison of reaction subsystem populations:\n');
+        str = [" "];
+        for i=1:length(compStruct.modelIDs)
+            str(1,i+1) = compStruct.modelIDs{i};
+        end
+        for i = 1:size(compStruct.subsystems.matrix,1)
+            if length(compStruct.subsystems.ID{i}) <= 16
+                str(i+1,1) = compStruct.subsystems.ID{i};
+            else
+                str(i+1,1) = [compStruct.subsystems.ID{i}(1:16) ' ...'];
+            end
+            for j=1:length(compStruct.modelIDs)
+                str(i+1,j+1) = num2str(compStruct.subsystems.matrix(i,j));
+            end
+        end
+        subsystem_comparison = str;
+        subsystem_comparison
+        fprintf('\n\n');
+    end
+    if plotResults==true
+        plottingData = compStruct.subsystems.matrix./mean(compStruct.subsystems.matrix,2);
+        color_map = redblue(length(0:.01:2));
+        h = genHeatMap(plottingData',compStruct.subsystems.ID,compStruct.modelIDs,'both','euclidean',color_map,[0,2]);
+    end
 end
 
 % Compare overall reaction structure across all models using a heatmap
