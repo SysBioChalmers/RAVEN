@@ -116,7 +116,11 @@ for i=1:rxnNum
 				end
 				
 			end
-			metaCycModel.grRules{i}=grRule;
+			if iscell(grRule)
+					metaCycModel.grRules{i}=grRule{1};
+			else
+					metaCycModel.grRules{i}=grRule;
+			end
 						
 		end
 
