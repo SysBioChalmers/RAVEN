@@ -381,6 +381,23 @@ else
    end
 end
 
+if isfield(rxnsToAdd,'pwys')
+   if numel(rxnsToAdd.pwys)~=nRxns
+       EM='rxnsToAdd.pwys must have the same number of elements as rxnsToAdd.rxns';
+       dispEM(EM);
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'pwys')
+       newModel.pwys=largeFiller;
+   end
+   newModel.pwys=[newModel.pwys;rxnsToAdd.pwys(:)];
+else
+    %Fill with standard if it doesn't exist
+   if isfield(newModel,'pwys')
+       newModel.pwys=[newModel.pwys;filler];
+   end
+end
+
 if isfield(rxnsToAdd,'rxnConfidenceScores')
    if numel(rxnsToAdd.rxnConfidenceScores)~=nRxns
        EM='rxnsToAdd.rxnConfidenceScores must have the same number of elements as rxnsToAdd.rxns';
@@ -396,21 +413,6 @@ else
    if isfield(newModel,'rxnConfidenceScores')
        newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;filler];
    end
-end
-
-%Check that ids contain no weird characters. This is only done if the
-%equations are with metabolite ids
-if eqnType==1
-    illegalCells=regexp(mets,'[^a-z_A-Z0-9]', 'once');
-    EM='Illegal character(s) in metabolite IDs:';
-    dispEM(EM,true,mets(~cellfun(@isempty,illegalCells)));
-else
-    %If the mets are metNames
-    if ~any(~cellfun(@isempty,strfind(mets,'->')))
-        illegalCells=regexp(mets,'["%<>\\]', 'once');
-        EM='Illegal character(s) in metabolite names:';
-        dispEM(EM,true,mets(~cellfun(@isempty,illegalCells)));
-    end
 end
 
 %***Start parsing the equations and adding the info to the S matrix

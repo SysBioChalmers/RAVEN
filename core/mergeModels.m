@@ -207,6 +207,18 @@ for i=2:numel(models)
        end
     end
 
+    if isfield(models{i},'pwys')
+       if isfield(model,'pwys')
+           model.pwys=[model.pwys;models{i}.pwys];
+       else
+           model.pwys=[cell(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.pwys];
+       end
+    else
+       if isfield(model,'pwys')
+           model.pwys=[model.pwys;cell(numel(models{i}.rxns),1)];
+       end
+    end
+    
     %Get the new metabolites from matching the models.
     %Metabolites are said to be the same if they share name and
     %compartment id. This means that metabolite IDs are not taken into
