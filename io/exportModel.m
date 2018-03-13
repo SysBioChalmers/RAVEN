@@ -437,7 +437,7 @@ for i=1:numel(model.rxns)
     end;
     
     % Exporting notes information;
-    if (~isempty(model.subSystems{i}) || ~isempty(model.rxnConfidenceScores{i}) || ~isempty(model.rxnReferences{i}) || ~isempty(model.rxnNotes{i}))
+    if ~isempty(model.rxnConfidenceScores{i}) || ~isempty(model.rxnReferences{i}) || ~isempty(model.rxnNotes{i}))
         modelSBML.reaction(i).notes='<notes><body xmlns="http://www.w3.org/1999/xhtml">';
         if ~isempty(model.subSystems{i})
             modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>SUBSYSTEM: ' model.subSystems{i} '</p>'];

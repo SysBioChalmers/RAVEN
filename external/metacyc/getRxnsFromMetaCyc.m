@@ -26,7 +26,7 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 %             mets:           MetaCyc compound ids. If the equations use
 %                             stoichiometry such as ID(n+1) then the whole
 %                             expression is saved as the id
-%             pathway         MetaCyc pathway id
+%             pwys:           MetaCyc pathway id
 %             eccodes:        Corresponding ec-number if available
 %             rxnMiriams:     Contains reaction specific information such as
 %                             associated RHEA and KEGG reaction ids
