@@ -125,7 +125,7 @@ model.genes=regexprep(model.genes,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 
 % Generate an empty SBML structure;
 modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-modelSBML.metaid=strcat('meta_',model.id);
+modelSBML.metaid=model.id;
 modelSBML.id=model.id;
 modelSBML.name=model.description;
 
@@ -214,7 +214,7 @@ for i=1:numel(model.comps)
     end;
     
     if isfield(modelSBML.compartment,'metaid')
-        modelSBML.compartment(i).metaid=['meta_' model.comps{i}];
+        modelSBML.compartment(i).metaid=model.comps{i};
     end;
     %Prepare Miriam strings
     if ~isempty(model.compMiriams{i}) && isfield(modelSBML.compartment(i),'annotation')
@@ -258,7 +258,7 @@ for i=1:numel(model.mets)
     end;
     
     if isfield(modelSBML.species,'metaid')
-        modelSBML.species(i).metaid=['meta_M_' model.mets{i}];
+        modelSBML.species(i).metaid=['M_' model.mets{i}];
     end;
     if isfield(modelSBML.species, 'name')
         modelSBML.species(i).name=model.metNames{i};
@@ -325,7 +325,7 @@ if isfield(model,'genes')
         end;
         
         if isfield(modelSBML.fbc_geneProduct,'metaid')
-            modelSBML.fbc_geneProduct(i).metaid=['meta_' model.genes{i}];
+            modelSBML.fbc_geneProduct(i).metaid=model.genes{i};
         end;
         if ~isempty(model.geneMiriams{i}) && isfield(modelSBML.fbc_geneProduct(i),'annotation')
             modelSBML.fbc_geneProduct(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.genes{i} '">'];
@@ -367,7 +367,7 @@ if isfield(model,'genes')
             for i=1:numel(geneComplexes)
                 modelSBML.fbc_geneProduct(numel(model.genes)+i)=modelSBML.fbc_geneProduct(1);
                 if isfield(modelSBML.fbc_geneProduct,'metaid')
-                    modelSBML.fbc_geneProduct(numel(model.genes)+i).metaid=['meta_' geneComplexes{i}];
+                    modelSBML.fbc_geneProduct(numel(model.genes)+i).metaid=geneComplexes{i};
                 end;
                 if isfield(modelSBML.fbc_geneProduct,'fbc_id')
                     modelSBML.fbc_geneProduct(numel(model.genes)+i).fbc_id=geneComplexes{i};
@@ -427,7 +427,7 @@ for i=1:numel(model.rxns)
     end;
     
     if isfield(modelSBML.reaction,'metaid')
-    	modelSBML.reaction(i).metaid=['meta_R_' model.rxns{i}];
+    	modelSBML.reaction(i).metaid=['R_' model.rxns{i}];
     end;
     
     % Exporting notes information;
