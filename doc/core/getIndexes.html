@@ -24,7 +24,7 @@
 <div class="box"><strong>getIndexes</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function indexes=getIndexes(model,objects, type, returnLogical) </strong></div>
+<div class="box"><strong>function indexes=getIndexes(model, objects, type, returnLogical) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> getIndexes
@@ -35,15 +35,18 @@
                    same number of elements as metabolites in the model,
                    of a vector of indexes
    type            'rxns', 'mets', or 'genes' depending on what to retrieve
+                   'metnames' queries metabolite names, while 'metscomps'
+                   allows to provide specific metabolites and their
+                   compartments in the format metaboliteName[comp]
    returnLogical   Sets whether to return a logical array or an array with
                    the indexes (opt, default false)
 
    indexes         can be a logical array or a double array depending on
                    the value of returnLogical
 
-     Usage: indexes=getIndexes(model,objects, type, returnLogical)
+     Usage: indexes=getIndexes(model, objects, type, returnLogical)
 
-   Rasmus Agren, 2014-01-08</pre></div>
+   Eduard Kerkhoven, 2018-03-03</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -58,7 +61,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function indexes=getIndexes(model,objects, type, returnLogical)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function indexes=getIndexes(model, objects, type, returnLogical)</a>
 0002 <span class="comment">% getIndexes</span>
 0003 <span class="comment">%   Retrieves the indexes for a list of reactions or metabolites</span>
 0004 <span class="comment">%</span>
@@ -67,73 +70,95 @@ This function is called by:
 0007 <span class="comment">%                   same number of elements as metabolites in the model,</span>
 0008 <span class="comment">%                   of a vector of indexes</span>
 0009 <span class="comment">%   type            'rxns', 'mets', or 'genes' depending on what to retrieve</span>
-0010 <span class="comment">%   returnLogical   Sets whether to return a logical array or an array with</span>
-0011 <span class="comment">%                   the indexes (opt, default false)</span>
-0012 <span class="comment">%</span>
-0013 <span class="comment">%   indexes         can be a logical array or a double array depending on</span>
-0014 <span class="comment">%                   the value of returnLogical</span>
+0010 <span class="comment">%                   'metnames' queries metabolite names, while 'metscomps'</span>
+0011 <span class="comment">%                   allows to provide specific metabolites and their</span>
+0012 <span class="comment">%                   compartments in the format metaboliteName[comp]</span>
+0013 <span class="comment">%   returnLogical   Sets whether to return a logical array or an array with</span>
+0014 <span class="comment">%                   the indexes (opt, default false)</span>
 0015 <span class="comment">%</span>
-0016 <span class="comment">%     Usage: indexes=getIndexes(model,objects, type, returnLogical)</span>
-0017 <span class="comment">%</span>
-0018 <span class="comment">%   Rasmus Agren, 2014-01-08</span>
-0019 <span class="comment">%</span>
-0020 
-0021 <span class="keyword">if</span> nargin&lt;4
-0022     returnLogical=false;
-0023 <span class="keyword">end</span>
-0024 
-0025 <span class="comment">%If the supplied object is a character array, then convert it to a cell</span>
-0026 <span class="comment">%array</span>
-0027 <span class="keyword">if</span> ischar(objects)
-0028     objects={objects};
-0029 <span class="keyword">end</span>
-0030 
-0031 indexes=[];
-0032 
-0033 <span class="keyword">if</span> strcmpi(type,<span class="string">'rxns'</span>)
-0034     searchIn=model.rxns;
-0035 <span class="keyword">else</span>
-0036     <span class="keyword">if</span> strcmpi(type,<span class="string">'mets'</span>)
-0037         searchIn=model.mets;
-0038     <span class="keyword">else</span>
-0039         <span class="keyword">if</span> strcmpi(type,<span class="string">'genes'</span>)
-0040             searchIn=model.genes;
-0041         <span class="keyword">else</span>
-0042             EM=<span class="string">'Incorrect value of the &quot;type&quot; parameter. Allowed values are &quot;rxns&quot;, &quot;mets&quot; or &quot;genes&quot;'</span>;
-0043             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0044         <span class="keyword">end</span>
-0045     <span class="keyword">end</span>
-0046 <span class="keyword">end</span>
-0047 
-0048 <span class="keyword">if</span> iscell(objects)
-0049     <span class="keyword">for</span> i=1:numel(objects)
-0050         index=find(strcmp(objects(i),searchIn),1);
-0051         <span class="keyword">if</span> ~isempty(index)
-0052             indexes(i)=index;
-0053         <span class="keyword">else</span>
-0054             EM=[<span class="string">'Could not find object '</span> objects{i} <span class="string">' in the model'</span>];
-0055             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0056         <span class="keyword">end</span>
-0057     <span class="keyword">end</span>
-0058 <span class="keyword">else</span>
-0059     <span class="comment">%Now it's either a logical (or 0/1) array or an array with indexes.</span>
-0060     <span class="comment">%We want it to be an array with indexes.</span>
-0061     <span class="keyword">if</span> all(objects)
-0062         <span class="comment">%This gets weird if it's all 1</span>
-0063         indexes=objects;
-0064     <span class="keyword">else</span>
-0065         indexes=find(objects);
-0066     <span class="keyword">end</span>
-0067 <span class="keyword">end</span>
-0068 
-0069 <span class="keyword">if</span> returnLogical==true
-0070     tempIndexes=false(numel(searchIn),1);
-0071     tempIndexes(indexes)=true;
-0072     indexes=tempIndexes;
-0073 <span class="keyword">end</span>
-0074 
-0075 indexes=indexes(:);
-0076 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Thu 28-Dec-2017 10:46:27 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0016 <span class="comment">%   indexes         can be a logical array or a double array depending on</span>
+0017 <span class="comment">%                   the value of returnLogical</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">%     Usage: indexes=getIndexes(model, objects, type, returnLogical)</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">%   Eduard Kerkhoven, 2018-03-03</span>
+0022 <span class="comment">%</span>
+0023 
+0024 <span class="keyword">if</span> nargin&lt;4
+0025     returnLogical=false;
+0026 <span class="keyword">end</span>
+0027 
+0028 <span class="comment">%If the supplied object is a character array, then convert it to a cell</span>
+0029 <span class="comment">%array</span>
+0030 <span class="keyword">if</span> ischar(objects)
+0031     objects={objects};
+0032 <span class="keyword">end</span>
+0033 
+0034 indexes=[];
+0035 
+0036 <span class="keyword">if</span> strcmpi(type,<span class="string">'rxns'</span>)
+0037     searchIn=model.rxns;
+0038 <span class="keyword">elseif</span> strcmpi(type,<span class="string">'mets'</span>)
+0039     searchIn=model.mets;
+0040 <span class="keyword">elseif</span> strcmpi(type,<span class="string">'genes'</span>)
+0041     searchIn=model.genes;
+0042 <span class="keyword">elseif</span> strcmpi(type,<span class="string">'metnames'</span>)
+0043     searchIn=model.metNames;
+0044 <span class="keyword">elseif</span> strcmpi(type,<span class="string">'metscomps'</span>)
+0045     <span class="comment">% If provided as metaboliteName[comp], then index search</span>
+0046     <span class="comment">% is quite different from general approach, and therefore</span>
+0047     <span class="comment">% coded separately.</span>
+0048     <span class="keyword">if</span> isstr(objects)
+0049         objects={objects};
+0050     <span class="keyword">end</span>
+0051     mets=regexprep(objects,<span class="string">'(^.+)\[(.+)\]$'</span>,<span class="string">'$1'</span>);
+0052     comps=regexprep(objects,<span class="string">'(^.+)\[(.+)\]$'</span>,<span class="string">'$2'</span>);
+0053     <span class="keyword">for</span> i=1:numel(objects)
+0054         index=find(strcmp(mets(i),model.metNames));
+0055         index=index(strcmp(comps(i),model.comps(model.metComps(index))));
+0056         <span class="keyword">if</span> ~isempty(index)
+0057             indexes(i)=index;
+0058         <span class="keyword">else</span>
+0059             EM=[<span class="string">'Could not find object '</span> objects{i} <span class="string">' in the model'</span>];
+0060             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0061         <span class="keyword">end</span>
+0062     <span class="keyword">end</span>
+0063     indexes=indexes(:);
+0064     <span class="keyword">return</span>; <span class="comment">% If metscomps is queried, remaining codes doesn't need executing</span>
+0065 <span class="keyword">else</span>
+0066     EM=<span class="string">'Incorrect value of the &quot;type&quot; parameter. Allowed values are &quot;rxns&quot;, &quot;mets&quot; or &quot;genes&quot;'</span>;
+0067     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0068 <span class="keyword">end</span>
+0069 
+0070 <span class="keyword">if</span> iscell(objects)
+0071     <span class="keyword">for</span> i=1:numel(objects)
+0072         index=find(strcmp(objects(i),searchIn),1);
+0073         <span class="keyword">if</span> ~isempty(index)
+0074             indexes(i)=index;
+0075         <span class="keyword">else</span>
+0076             EM=[<span class="string">'Could not find object '</span> objects{i} <span class="string">' in the model'</span>];
+0077             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0078         <span class="keyword">end</span>
+0079     <span class="keyword">end</span>
+0080 <span class="keyword">else</span>
+0081     <span class="comment">%Now it's either a logical (or 0/1) array or an array with indexes.</span>
+0082     <span class="comment">%We want it to be an array with indexes.</span>
+0083     <span class="keyword">if</span> all(objects)
+0084         <span class="comment">%This gets weird if it's all 1</span>
+0085         indexes=objects;
+0086     <span class="keyword">else</span>
+0087         indexes=find(objects);
+0088     <span class="keyword">end</span>
+0089 <span class="keyword">end</span>
+0090 
+0091 <span class="keyword">if</span> returnLogical==true
+0092     tempIndexes=false(numel(searchIn),1);
+0093     tempIndexes(indexes)=true;
+0094     indexes=tempIndexes;
+0095 <span class="keyword">end</span>
+0096 
+0097 indexes=indexes(:);
+0098 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 14-Mar-2018 21:08:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
