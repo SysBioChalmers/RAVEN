@@ -1,5 +1,20 @@
 function out=exportForGit(model,prefix,path)
-
+% exportForGit
+%   Generates a directory structure and populates this with model files, ready
+%   to be commited to a Git(Hub) maintained model repository. Writes the model
+%   as SBML L3V1 FBCv2 (both XML and YAML), COBRA text, Matlab MAT-file
+%   orthologies in KEGG
+%
+%   model               model structure in RAVEN format that should be exported
+%   prefix              prefix for all filenames (opt, default 'model')
+%   path                path where the directory structure should be generated
+%                       and populated with all files (opt, default to current
+%                       working directory)
+%
+%   Usage: exportForGit(model,prefix,path)
+%
+%   Eduard Kerkhoven, 2018-03-14
+%
 if nargin<3
     path='.';
 end
@@ -7,7 +22,7 @@ if nargin<2
     prefix='model';
 end
 
-%% Make folder structure if needed
+% Make folder structure if needed
 if ~exist(fullfile(path,'ModelFiles'),'dir')
     mkdir(fullfile(path,'ModelFiles'));
 end
@@ -20,7 +35,7 @@ for i=1:length(formats);
     end
 end
 
-%% Write txt format
+% Write txt format
 fid=fopen([fullfile(path,'ModelFiles','txt',prefix),'.txt'],'w');
 eqns=constructEquations(model,model.rxns,false,false,false,true);
 eqns=strrep(eqns,' => ','  -> ');
@@ -37,8 +52,73 @@ for i = 1:numel(model.rxns)
 end
 fclose(fid);
 
-%% Write XML (SBML) and YAML formats
+% Write XML (SBML) and YAML formats
 exportModel(model,prefix,true);
 movefile([prefix,'.xml'],fullfile(path,'ModelFiles','xml'));
 movefile([prefix,'.yml'],fullfile(path,'ModelFiles','yaml'));
 save([fullfile(path,'ModelFiles','mat',prefix),'.mat'],'model');
+
+%Code below is modified from SysBioChalmers/YeastMetabolicNetwork-GEM
+%Track versions
+RAVENver = getVersion('checkInstallation.m','version.txt');
+%Retrieve latest COBRA commit:
+COBRApath   = which('initCobraToolbox.m');
+if ~isempty(COBRApath)
+    slashPos    = getSlashPos(COBRApath);
+    COBRApath   = COBRApath(1:slashPos(end)-1);
+    currentPath = pwd;
+    cd(COBRApath)
+    try
+        COBRAcommit = git('log -n 1 --format=%H');
+    catch
+        disp('COBRA is not fully installed (including Git wrapper)')
+        COBRAcommit = 'unknown';
+    end
+    cd(currentPath)
+else
+    disp('COBRA version cannot be found')
+end
+%Retrieve libSBML version:
+fid = fopen('tempModelForLibSBMLversion.xml','w+');
+fclose(fid);
+evalc('[~,~,libSBMLver]=TranslateSBML(''tempModelForLibSBMLversion.xml'',0,0)');
+libSBMLver=libSBMLver.libSBML_version_string;
+delete('tempModelForLibSBMLversion.xml');
+
+%Save file with versions:
+fid = fopen('dependencies.txt','wt');
+fprintf(fid,['MATLAB\t' version '\n']);
+fprintf(fid,['libSBML\t' libSBMLver '\n']);
+fprintf(fid,['RAVEN_toolbox\t' RAVENver '\n']);
+if ~isempty(COBRApath)
+    fprintf(fid,['COBRA_toolbox\tcommit ' COBRAcommit(1:7) '\n']);
+end
+if isfield(model,'modelVersion')
+    fields = fieldnames(model.modelVersion);
+    for i = 1:length(fields)
+        value = model.modelVersion.(fields{i});
+        fprintf(fid,[fields{i} '\t' num2str(value) '\n']);
+    end
+end
+fclose(fid);
+end
+
+function version = getVersion(IDfileName,VERfileName)
+    try
+        path     = which(IDfileName);
+        slashPos = getSlashPos(path);
+        path     = path(1:slashPos(end-1));
+        fid      = fopen([path VERfileName],'r');
+        version  = fscanf(fid,'%s');
+        fclose(fid);
+        catch
+        version = '?';
+    end
+end
+
+function slashPos = getSlashPos(path)
+    slashPos = strfind(path,'\');       %Windows
+    if isempty(slashPos)
+        slashPos = strfind(path,'/');   %MAC/Linux
+    end
+end
