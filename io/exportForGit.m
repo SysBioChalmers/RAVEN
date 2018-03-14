@@ -59,16 +59,6 @@ movefile([prefix,'.yml'],fullfile(path,'ModelFiles','yaml'));
 save([fullfile(path,'ModelFiles','mat',prefix),'.mat'],'model');
 
 %Code below is modified from SysBioChalmers/YeastMetabolicNetwork-GEM
-%Detect boundary metabolites and save them in a .txt file:
-fid = fopen('boundaryMets.txt','wt');
-for i = 1:length(model.rxns)
-    pos = find(model.S(:,i) ~= 0);
-    if length(pos) == 1 %Exchange rxn
-        fprintf(fid,[model.mets{pos} '\t' model.metNames{pos} '\n']);
-    end
-end
-fclose(fid);
-
 %Track versions
 RAVENver = getVersion('checkInstallation.m','version.txt');
 %Retrieve latest COBRA commit:
@@ -88,10 +78,18 @@ if ~isempty(COBRApath)
 else
     disp('COBRA version cannot be found')
 end
+%Retrieve libSBML version:
+fid = fopen('tempModelForLibSBMLversion.xml','w+');
+fclose(fid);
+evalc('[~,~,libSBMLver]=TranslateSBML(''tempModelForLibSBMLversion.xml'',0,0)');
+libSBMLver=libSBMLver.libSBML_version_string;
+delete('tempModelForLibSBMLversion.xml');
 
 %Save file with versions:
 fid = fopen('dependencies.txt','wt');
-fprintf(fid,['RAVEN_toolbox\tv' RAVENver '\n']);
+fprintf(fid,['MATLAB\t' version '\n']);
+fprintf(fid,['libSBML\t' libSBMLver '\n']);
+fprintf(fid,['RAVEN_toolbox\t' RAVENver '\n']);
 if ~isempty(COBRApath)
     fprintf(fid,['COBRA_toolbox\tcommit ' COBRAcommit(1:7) '\n']);
 end
