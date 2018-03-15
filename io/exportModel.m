@@ -1,24 +1,35 @@
-function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
+function exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarnings)
 % exportModel
-%   Exports a constraint-based model to a SBML file
+%   Exports a constraint-based model to an SBML file (L3V1 FBCv2). Optionally
+%   writes a human-readable YAML file that can be used for model versioning and
+%   comparison only.
 %
 %   model               a model structure
-%   fileName            the filename to export the model to
+%   fileName            filename to export the model to (without file extension)
+%   exportToYAML        true for additional export of YAML file, false for
+%                       only export to SBML file (opt, default false)
 %   exportGeneComplexes	true if gene complexes (all gene sets linked with
 %                       AND relationship) should be recognised and exported
 %                       (opt, default false)
 %   supressWarnings     true if warnings should be supressed (opt, default
 %                       false)
 %
-%   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
+%   The optional YAML file is only meant for comparison between different model
+%   versions, e.g. as part of model development on GitHub. SBML is the preferred
+%   format for storage and redistribution of models. YAML import is therefore not
+%   supported, and the file generated here is not compatible with e.g. COBRApy.
 %
-%   Simonas Marcisauskas, 2017-11-22
+%   Usage: exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarnings)
 %
+%   Eduard Kerkhoven, 2018-03-04
 
 if nargin<3
-    exportGeneComplexes=false;
+    exportToYAML=false;
 end
 if nargin<4
+    exportGeneComplexes=false;
+end
+if nargin<5
     supressWarnings=false;
 end
 
@@ -27,7 +38,8 @@ end
 % exporting in with OutputSBML to xml file;
 sbmlLevel=3;
 sbmlVersion=1;
-fbcVersion=2;
+sbmlPackages = {'fbc','groups'};
+sbmlPackageVersions = [2,1];
 
 %Check if the "unconstrained" field is still present. This shows if
 %exchange metabolites have been removed
@@ -112,8 +124,8 @@ model.comps=regexprep(model.comps,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 model.genes=regexprep(model.genes,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 
 % Generate an empty SBML structure;
-modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,fbcVersion);
-modelSBML.metaid=strcat('meta_',model.id);
+modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+modelSBML.metaid=model.id;
 modelSBML.id=model.id;
 modelSBML.name=model.description;
 
@@ -202,7 +214,7 @@ for i=1:numel(model.comps)
     end;
     
     if isfield(modelSBML.compartment,'metaid')
-        modelSBML.compartment(i).metaid=['meta_' model.comps{i}];
+        modelSBML.compartment(i).metaid=model.comps{i};
     end;
     %Prepare Miriam strings
     if ~isempty(model.compMiriams{i}) && isfield(modelSBML.compartment(i),'annotation')
@@ -246,19 +258,13 @@ for i=1:numel(model.mets)
     end;
     
     if isfield(modelSBML.species,'metaid')
-        modelSBML.species(i).metaid=['meta_M_' model.mets{i}];
-        % Removing compartment abbreviation from metabolite id as we
-        % save metComp in compartment subfield later;
-        modelSBML.species(i).metaid=regexprep(modelSBML.species(i).metaid,['_' model.comps{model.metComps(i)} '$'],'');
+        modelSBML.species(i).metaid=['M_' model.mets{i}];
     end;
     if isfield(modelSBML.species, 'name')
         modelSBML.species(i).name=model.metNames{i};
     end;
     if isfield(modelSBML.species, 'id')
         modelSBML.species(i).id=['M_' model.mets{i}];
-        % Removing compartment abbreviation from metabolite id as we
-        % save metComp in compartment subfield later;
-        modelSBML.species(i).id=regexprep(modelSBML.species(i).id,['_' model.comps{model.metComps(i)} '$'],'');
     end;
     if isfield(modelSBML.species, 'compartment')
         modelSBML.species(i).compartment=model.comps{model.metComps(i)};
@@ -319,7 +325,7 @@ if isfield(model,'genes')
         end;
         
         if isfield(modelSBML.fbc_geneProduct,'metaid')
-            modelSBML.fbc_geneProduct(i).metaid=['meta_' model.genes{i}];
+            modelSBML.fbc_geneProduct(i).metaid=model.genes{i};
         end;
         if ~isempty(model.geneMiriams{i}) && isfield(modelSBML.fbc_geneProduct(i),'annotation')
             modelSBML.fbc_geneProduct(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.genes{i} '">'];
@@ -361,7 +367,7 @@ if isfield(model,'genes')
             for i=1:numel(geneComplexes)
                 modelSBML.fbc_geneProduct(numel(model.genes)+i)=modelSBML.fbc_geneProduct(1);
                 if isfield(modelSBML.fbc_geneProduct,'metaid')
-                    modelSBML.fbc_geneProduct(numel(model.genes)+i).metaid=['meta_' geneComplexes{i}];
+                    modelSBML.fbc_geneProduct(numel(model.genes)+i).metaid=geneComplexes{i};
                 end;
                 if isfield(modelSBML.fbc_geneProduct,'fbc_id')
                     modelSBML.fbc_geneProduct(numel(model.genes)+i).fbc_id=geneComplexes{i};
@@ -421,15 +427,12 @@ for i=1:numel(model.rxns)
     end;
     
     if isfield(modelSBML.reaction,'metaid')
-    	modelSBML.reaction(i).metaid=['meta_R_' model.rxns{i}];
+    	modelSBML.reaction(i).metaid=['R_' model.rxns{i}];
     end;
     
     % Exporting notes information;
-    if (~isempty(model.subSystems{i}) || ~isempty(model.rxnConfidenceScores{i}) || ~isempty(model.rxnReferences{i}) || ~isempty(model.rxnNotes{i}))
+    if (~isempty(model.rxnConfidenceScores{i}) || ~isempty(model.rxnReferences{i}) || ~isempty(model.rxnNotes{i}))
         modelSBML.reaction(i).notes='<notes><body xmlns="http://www.w3.org/1999/xhtml">';
-        if ~isempty(model.subSystems{i})
-            modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>SUBSYSTEM: ' model.subSystems{i} '</p>'];
-        end;
         if ~isempty(model.rxnConfidenceScores{i})
             modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>Confidence Level: ' model.rxnConfidenceScores{i} '</p>'];
         end;
@@ -503,6 +506,56 @@ for i=1:numel(model.rxns)
     modelSBML.reaction(i).fbc_upperFluxBound=totalNames{length(model.lb)+i};
 end;
 
+% Prepare subSystems
+% Code taken from COBRA functions getModelSubSystems, writeSBML, 
+% findRxnsFromSubSystem under
+% GNU General Public License v3.0, license file in readme/GPL.MD. Code
+% modified for RAVEN.
+modelSBML.groups_group.groups_kind = 'partonomy';
+modelSBML.groups_group.sboTerm = 633;
+tmpStruct=modelSBML.groups_group;
+rxns=strcat('R_',model.rxns);
+if isfield(model, 'subSystems')
+    if ~any(cellfun(@iscell,model.subSystems))
+        subSystems = setdiff(model.subSystems,'');
+    else
+        orderedSubs = cellfun(@(x) columnVector(x),model.subSystems,'UniformOUtput',false);
+        subSystems = setdiff(vertcat(orderedSubs{:}),'');
+    end
+    if isempty(subSystems)
+        subSystems = {};
+    end
+    if ~isempty(subSystems)
+    %Build the groups for the group package.
+    groupIDs = strcat('group',cellfun(@num2str, num2cell(1:length(subSystems))','UniformOutput',false));    
+    for i = 1:length(subSystems)
+        cgroup = tmpStruct;
+        if ~any(cellfun(@iscell,model.subSystems))
+            present = ismember(model.subSystems,subSystems{i});
+        else
+            present = cellfun(@(x) any(ismember(x,subSystems{i})),model.subSystems);
+        end
+        groupMembers = rxns(present);
+        for j = 1:numel(groupMembers)            
+            cMember = tmpStruct.groups_member;
+            cMember.groups_idRef = groupMembers{j};
+            if j == 1
+                cgroup.groups_member = cMember;
+            else
+                cgroup.groups_member(j) = cMember;
+            end
+        end
+        cgroup.groups_id = groupIDs{i};
+        cgroup.groups_name = subSystems{i};
+        if i == 1
+            modelSBML.groups_group = cgroup;
+        else
+            modelSBML.groups_group(i) = cgroup;
+        end
+    end
+    end
+end
+ 
 % Preparing fbc_objective subfield;
 
 modelSBML.fbc_objective.fbc_type='maximize';
@@ -528,36 +581,75 @@ end;
 
 modelSBML.fbc_activeObjective=modelSBML.fbc_objective.fbc_id;
 
-fbcStr=['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/','fbc/version',num2str(fbcVersion)];
-
-modelSBML.namespaces=struct('prefix',{'','fbc'},...
+fbcStr=['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/fbc/version',num2str(sbmlPackageVersions(1))];
+groupStr=['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/groups/version',num2str(sbmlPackageVersions(2))];
+modelSBML.namespaces=struct('prefix',{'','fbc','groups'},...
     'uri',{['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/core'],...
-    fbcStr});
+    fbcStr,groupStr});
 
-if fbcVersion==2
+if sbmlPackageVersions(1) == 2
     modelSBML.fbc_strict=1;
 end;
 
-OutputSBML(modelSBML,fileName,1,0,[1,0]);
+OutputSBML(modelSBML,strcat(fileName,'.xml'),1,0,[1,0]);
 
+if exportToYAML==true
+    % Simplify structure by removing empty fields to reduce YAML size.
+    fnm=fieldnames(modelSBML);
+    idx=structfun(@isempty,modelSBML);
+    modelSBML=rmfield(modelSBML,fnm(idx));
+    fnm=fieldnames(modelSBML);
+    ws=modelSBML; % Keep working structure, as removing fields below will interfer with indexing
+    for i=1:length(fnm)
+        if isstruct(ws.(fnm{i}))
+            fnm2=fieldnames(ws.(fnm{i}));
+            for j=1:length(fnm2)
+                if isempty([ws.(fnm{i})(:).(fnm2{j})])
+                    modelSBML.(fnm{i})=rmfield(modelSBML.(fnm{i}),fnm2{j});
+                else
+                    for l=1:length({ws.(fnm{i}).(fnm2{j})})
+                        if isstruct(ws.(fnm{i})(l).(fnm2{j}))
+                            fnm3=fieldnames(ws.(fnm{i})(l).(fnm2{j}));
+                            for k=1:length(fnm3)
+                                if isempty([ws.(fnm{i})(l).(fnm2{j})(:).(fnm3{k})])
+                                    modelSBML.(fnm{i})(l).(fnm2{j})=rmfield(modelSBML.(fnm{i})(l).(fnm2{j}),fnm3{k});
+%                                 else
+%                                     isstruct(isstruct({ws.(fnm{i})(l).(fnm2{j}).(fnm3{k})}));
+%                                     fnm4=fieldnames(ws.(fnm{i})(l).(fnm2{j}).(fnm3{k}));
+%                                     for m=1:length(fnm4)
+%                                         if isempty([ws.(fnm{i})(l).(fnm2{j}).(fnm3{k}).(fnm4{m})])
+%                                             modelSBML.(fnm{i})(l).(fnm2{j}).(fnm3{k})=rmfield(modelSBML.(fnm{i})(l).(fnm2{j}).(fnm3{k}),fnm4{m});
+%                                         end
+%                                     end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    YAML.write(strcat(fileName,'.yml'),modelSBML)
+end
 end
 
-function modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,fbcVersion)
+
+function modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions)
 %Returns the blank SBML model structure by using appropriate libSBML
 %functions. This creates structure by considering three levels
 
-sbmlFieldNames=getStructureFieldnames('model',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
-sbmlDefaultValues=getDefaultValues('model',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+sbmlFieldNames=getStructureFieldnames('model',sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+sbmlDefaultValues=getDefaultValues('model',sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
 
 for i=1:numel(sbmlFieldNames)
 	modelSBML.(sbmlFieldNames{1,i})=sbmlDefaultValues{1,i};
-    sbmlSubfieldNames=getStructureFieldnames(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
-    sbmlSubfieldValues=getDefaultValues(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+    sbmlSubfieldNames=getStructureFieldnames(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+    sbmlSubfieldValues=getDefaultValues(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
     if ~strcmp(sbmlFieldNames{1,i},'event') && ~strcmp(sbmlFieldNames{1,i},'functionDefinition') && ~strcmp(sbmlFieldNames{1,i},'initialAssignment')
         for j=1:numel(sbmlSubfieldNames)
             modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j})=sbmlSubfieldValues{1,j};
-            sbmlSubsubfieldNames=getStructureFieldnames(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
-            sbmlSubsubfieldValues=getDefaultValues(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+            sbmlSubsubfieldNames=getStructureFieldnames(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+            sbmlSubsubfieldValues=getDefaultValues(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
             if ~strcmp(sbmlSubfieldNames{1,j},'modifier') && ~strcmp(sbmlSubfieldNames{1,j},'kineticLaw')
                 for k=1:numel(sbmlSubsubfieldNames)
                     % 'compartment' and 'species' field are not supposed to have
@@ -569,8 +661,8 @@ for i=1:numel(sbmlFieldNames)
                     % If it is fbc_association in the third level, we need to
                     % establish the fourth level, since libSBML requires it;
                     if strcmp(sbmlSubsubfieldNames{1,k},'fbc_association')
-                        fbc_associationFieldNames=getStructureFieldnames('fbc_association',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
-                        fbc_associationFieldValues=getDefaultValues('fbc_association',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+                        fbc_associationFieldNames=getStructureFieldnames('fbc_association',sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+                        fbc_associationFieldValues=getDefaultValues('fbc_association',sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
                         for l=1:numel(fbc_associationFieldNames)
                             modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j}).(sbmlSubsubfieldNames{1,k}).(fbc_associationFieldNames{1,l})=fbc_associationFieldValues{1,l};
                         end;
@@ -586,8 +678,8 @@ end;
 
 modelSBML.unitDefinition.id='mmol_per_gDW_per_hr';
 
-unitFieldNames=getStructureFieldnames('unit',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
-unitDefaultValues=getDefaultValues('unit',sbmlLevel,sbmlVersion,{'fbc'},fbcVersion);
+unitFieldNames=getStructureFieldnames('unit',sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+unitDefaultValues=getDefaultValues('unit',sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
 
 kinds={'mole','gram','second'};
 exponents=[1 -1 -1];
@@ -646,3 +738,33 @@ for j_met=1:size(met_idx,1)
     end
 end
 end
+
+% Code below taken from COBRA Toolbox under GNU General Public License v3.0
+% license file in readme/GPL.MD.
+function vecT = columnVector(vec)
+ 
+% Converts a vector to a column vector
+%
+% USAGE:
+%
+%   vecT = columnVector(vec)
+%
+% INPUT:
+%   vec:     a vector
+%
+% OUTPUT:
+%   vecT:    a column vector
+%
+% .. Authors:
+%     - Original file: Markus Herrgard
+%     - Minor changes: Laurent Heirendt January 2017
+ 
+[n, m] = size(vec);
+
+if n < m
+    vecT = vec';
+else
+    vecT = vec;
+end
+end
+ 

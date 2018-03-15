@@ -3,10 +3,11 @@ function [model, KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepInco
 %   Retrieves information stored in KEGG database and generates a model
 %
 %   keggPath            if keggGenes.mat, keggMets.mat, keggPhylDist.mat
-%                       or keggRxns.mat is not in the RAVEN\external\kegg
+%                       or keggRxns.mat are not in the RAVEN/external/kegg
 %                       directory, this function will attempt to read data
 %                       from a local FTP dump of the KEGG database.
 %                       keggPath is the path to the root of this database
+%                       (opt, default 'RAVEN/external/kegg'
 %   keepUndefinedStoich include reactions in the form n A <=> n+1 A. These
 %                       will be dealt with as two separate metabolites
 %                       (opt, default true)
@@ -30,9 +31,11 @@ function [model, KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepInco
 %
 %   Usage: getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Simonas Marcisauskas, 2017-06-06
+%   Eduard Kerkhoven, 2018-02-12
 %
-
+if nargin<1
+	keggPath='RAVEN/external/kegg';
+end
 if nargin<2
     keepUndefinedStoich=true;
 end

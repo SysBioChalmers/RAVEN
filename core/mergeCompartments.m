@@ -1,4 +1,4 @@
-function [model, deletedRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet)
+function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet,distReverse)
 % mergeCompartments
 %   Merge all compartments in a model
 %
@@ -12,10 +12,16 @@ function [model, deletedRxns]=mergeCompartments(model,keepUnconstrained,deleteRx
 %                         => A[m]. In some models hydrogen is balanced around
 %                         each membrane with reactions like this (opt,
 %                         default false)
+%   distReverse           distinguish reactions with same metabolites but
+%                         different reversibility as different reactions
+%                         (opt, default true)
 %
 %   model                 a model with all reactions located to one compartment
 %   deletedRxns           reactions that were deleted because of only
 %                         having one metabolite after merging
+%   duplicateRxns         identical reactions that occurred in different
+%                         compartments and were deleted because they turned
+%                         to be duplicated after merging
 %
 %   Merges all compartments into one 's' compartment (for 'System'). This can
 %   be useful for example to ensure that there are metabolic capabilities to
@@ -24,9 +30,13 @@ function [model, deletedRxns]=mergeCompartments(model,keepUnconstrained,deleteRx
 %   NOTE: If the metabolite IDs reflect the compartment that they are in
 %   the IDs may no longer be representative.
 %
-%   Usage: [model, deletedRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet)
+%   Usage: [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet,distReverse)
 %
 %   Rasmus Agren, 2014-01-08
+%   Hao Wang,     2018-03-07  Add parameter distReverse to enable overlooking
+%                             reaction reversibility when merging duplicated
+%                             reactions; Add optional output of duplicated
+%                             reactions that have been removed after merging
 %
 
 if nargin<2
@@ -34,6 +44,9 @@ if nargin<2
 end
 if nargin<3
     deleteRxnsWithOneMet=false;
+end
+if nargin<4
+    distReverse=true;
 end
 
 if ~isfield(model,'unconstrained')
@@ -52,7 +65,7 @@ if deleteRxnsWithOneMet==true
     end
 end
 
-%Loop through each metabolite, and if it's not unconstrained then change
+%Loop through each metabolite, and if it is not unconstrained then change
 %the S matrix to use the metabolite with the lowest index in model.comps
 %instead
 uNames=unique(model.metNames);
@@ -65,7 +78,7 @@ for i=1:numel(uNames)
     if keepUnconstrained==true
         mergeTo=find(I & model.unconstrained==false,1);
 
-        %This could happen if there is only one metabolite and it's
+        %This could happen if there is only one metabolite and it is
         %unconstrained
         if isempty(mergeTo)
             continue;
@@ -73,7 +86,7 @@ for i=1:numel(uNames)
     else
         mergeTo=find(I,1);
     end
-    I(mergeTo)=false; %Don't do anything for itself
+    I(mergeTo)=false; %Do not do anything for itself
     I=find(I);
 
     %Go through each of the metabolites with this name and update them to
@@ -121,5 +134,5 @@ else
 end
 
 %And then finally merge the identical reactions
-model=contractModel(model);
+[model, duplicateRxns]=contractModel(model,distReverse);
 end
