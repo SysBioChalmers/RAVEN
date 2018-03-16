@@ -47,9 +47,9 @@ function compStruct=compareModels(models,printResults,plotResults,groupVector,fu
 %           ID          vector consisting of names of all subsystems
 %       structComp      matrix with pairwise comparisons of model structure
 %                       based on (1-Hamming distance) between models
-%       structCompMap   matrix with 3D tSNE mapping of model structures
+%       structCompMap   matrix with 3D tSNE (or MDS) mapping of model structures
 %                       based on Hamming distances
-%       funcCompMap     matrix with 3D tSNE mapping of model fluxes using numRuns
+%       funcCompMap     matrix with 3D tSNE (or MDS) mapping of model fluxes using numRuns
 %                       perturbations to the fluxMet input values "fluxValues" 
 %                       (+/- 10% nominal) based on Euclidean distances
 %
@@ -58,7 +58,7 @@ function compStruct=compareModels(models,printResults,plotResults,groupVector,fu
 %
 %   Rasmus Agren, 2014-02-07
 %
-%   Edited: Daniel Cook, 2018-03-12
+%   Edited: Daniel Cook, 2018-03-16
 
 %% Set up input defaults
 if nargin<2
@@ -245,20 +245,85 @@ if exist('tsne') > 0
         % Need to add legend
     end
 else
-    fprintf('\nWARNING: Could not complete structural comparison because the function \n')
+    fprintf('\nWARNING: Could not complete full structural comparison because the function \n')
     fprintf('         "tsne" does not exist in your Matlab version. \n')
+    fprintf('         Using MDS to project data instead of tSNE. \n')
     fprintf('         Please upgrade to Matlab 2017b or higher for full functionality. \n\n')
+    [mds_vars_3d_struc,stress,disparities] = mdscale(pdist(double(binary_matrix'),'hamming'),3);
+    compStruct.structCompMap = mds_vars_3d_struc;
+    if plotResults == true
+        figure();hold on; 
+        if length(groupVector) > 0
+            color_vector = groupVector;
+            colormap(parula(max(groupVector)));
+        else
+            color_vector = 'k';
+        end
+        scatter3(mds_vars_3d_struc(:,1),mds_vars_3d_struc(:,2),mds_vars_3d_struc(:,3),35,color_vector,'filled')
+        xlabel('MDS 1');ylabel('MDS 2');zlabel('MDS 3');set(gca,'FontSize',14,'LineWidth',1.25);
+        title('Structural Similarity','FontSize',18,'FontWeight','bold')
+    end
 end
 
 % Compare model function across all models using tSNE projection of fluxes
 % in response to micropurturbations
 if functionalComp == true
+    [flux_matrix,obj_matrix] = mapFunction(models,groupVector,fluxMets,fluxValues,objectiveFunctions,numRuns);
     if exist('tsne') > 0
-        compStruc.funcCompMap = mapFunction(models,groupVector,fluxMets,fluxValues,objectiveFunctions,numRuns,plotResults);
+        % calculate tSNE & save results
+        rng(42)
+        t_vars_3d = tsne(log10(abs(double(flux_matrix'))+1),'Distance','euclidean','NumDimensions',3); % 3D
+        compStruc.funcCompMap = t_vars_3d_func;
+        
+        % Plot results
+        if plotResults == true
+            figure();  hold on;
+            color_vector = [];
+            if length(groupVector) == numel(models)
+                for i = 1:length(groupVector)
+                    color_vector = [color_vector,repelem(groupVector(i),n)];
+                end
+            else
+                for (i = 1:numel(models))
+                    color_vector = [color_vector,repelem(i,n)];
+                end
+            end
+            colormap(parula(max(color_vector)));scatter3(t_vars_3d(:,1),t_vars_3d(:,2),t_vars_3d(:,3),35,color_vector,'filled')
+            xlabel('tSNE 1');ylabel('tSNE 2');zlabel('tSNE 3');set(gca,'FontSize',14,'LineWidth',1.25);
+            title('Functional Similarity','FontSize',18,'FontWeight','bold')
+        end
     else
-        fprintf('\nWARNING: Could not complete functional comparison because the function \n')
+        fprintf('\nWARNING: Could not complete full functional comparison because the function \n')
         fprintf('         "tsne" does not exist in your Matlab version. \n')
+        fprintf('         Using MDS to project data instead of tSNE. \n')
         fprintf('         Please upgrade to Matlab 2017b or higher for full functionality. \n\n')
+        
+        [mds_vars_3d_func,stress,disparities] = mdscale(pdist(log10(abs(double(flux_matrix'))+1),'euclidean'),3);
+        compStruc.funcCompMap = mds_vars_3d_func;
+        
+        if plotResults == true
+            figure();  hold on;
+            color_vector = [];
+            if length(groupVector) == numel(models)
+                for i = 1:length(groupVector)
+                    color_vector = [color_vector,repelem(groupVector(i),n)];
+                end
+            else
+                for (i = 1:numel(models))
+                    color_vector = [color_vector,repelem(i,n)];
+                end
+            end
+            colormap(parula(max(color_vector)));scatter3(mds_vars_3d_struc(:,1),mds_vars_3d_struc(:,2),mds_vars_3d_struc(:,3),35,color_vector,'filled')
+            xlabel('MDS 1');ylabel('MDS 2');zlabel('MDS 3');set(gca,'FontSize',14,'LineWidth',1.25);
+            title('Functional Similarity','FontSize',18,'FontWeight','bold')
+        end
+    end
+    if plotResults == true
+        % Check objective function values
+        [hist_data,hist_bins] = hist(obj_matrix);
+        figure(); hold on; bar(hist_bins,hist_data,'facecolor',[.75,.75,.75],'LineWidth',1.25)
+        xlabel('Objective Function Value');ylabel('Frequency');set(gca,'FontSize',14,'LineWidth',1.25);
+        title('Objective Function Comparison','FontSize',18,'FontWeight','bold')
     end
 end
 
@@ -354,7 +419,7 @@ function C = catModelElements(models,field)
     C = unique(allElements);
 end
 
-function compMap = mapFunction(models,groupVector,fluxMets,fluxValues,objectiveFunctions,numRuns,plotResults)
+function [flux_matrix,obj_matrix] = mapFunction(models,groupVector,fluxMets,fluxValues,objectiveFunctions,numRuns)
     % This function takes a set of input fluxes, performs (numRuns) number of
     % microperturbations (+/- 10% of nominal), and plots model flux outputs
     % for optimizing the given objective functions.
@@ -481,35 +546,6 @@ function compMap = mapFunction(models,groupVector,fluxMets,fluxValues,objectiveF
     end
     I = sum((flux_matrix~=0),2)~=0; % Find reactions that carry flux in at least one simulation
     flux_matrix = flux_matrix(I,:); % Remove reactions that carry no flux
-    
-    % calculate tSNE & save results
-    rng(42)
-    t_vars_3d = tsne(log10(abs(double(flux_matrix'))+1),'Distance','euclidean','NumDimensions',3); % 3D
-    compMap = t_vars_3d;
-    
-    % Plot results
-    if plotResults == true
-        figure();  hold on; 
-        color_vector = [];
-        if length(groupVector) == numel(models)
-            for i = 1:length(groupVector)
-                color_vector = [color_vector,repelem(groupVector(i),n)];
-            end
-        else
-            for (i = 1:numel(models))
-                color_vector = [color_vector,repelem(i,n)];
-            end
-        end
-        colormap(parula(max(color_vector)));scatter3(t_vars_3d(:,1),t_vars_3d(:,2),t_vars_3d(:,3),35,color_vector,'filled')
-        xlabel('tSNE 1');ylabel('tSNE 2');zlabel('tSNE 3');set(gca,'FontSize',14,'LineWidth',1.25);
-        title('Functional Similarity','FontSize',18,'FontWeight','bold')
-        
-        % Check objective function values
-        [hist_data,hist_bins] = hist(obj_matrix);
-        figure(); hold on; bar(hist_bins,hist_data,'facecolor',[.75,.75,.75],'LineWidth',1.25)
-        xlabel('Objective Function Value');ylabel('Frequency');set(gca,'FontSize',14,'LineWidth',1.25);
-        title('Objective Function Comparison','FontSize',18,'FontWeight','bold')
-    end
 end
 
 function h = genHeatMap(data,colnames,rownames,clust_dim,clust_dist,col_map,col_bounds)
