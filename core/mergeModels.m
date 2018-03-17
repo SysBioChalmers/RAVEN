@@ -13,7 +13,7 @@ function model=mergeModels(models,supressWarnings)
 %
 %   Usage: model=mergeModels(models)
 %
-%   Eduard Kerkhoven, 2017-11-20
+%   Simonas Marcisauskas, 2018-03-18
 %
 
 %Just return the model
@@ -167,15 +167,11 @@ for i=2:numel(models)
        if isfield(model,'rxnConfidenceScores')
            model.rxnConfidenceScores=[model.rxnConfidenceScores;models{i}.rxnConfidenceScores];
        else
-           emptyConfidenceScores=cell(numel(model.rxns)-numel(models{i}.rxns),1);
-           emptyConfidenceScores(:)={''};
-           model.rxnConfidenceScores=[emptyConfidenceScores;models{i}.rxnConfidenceScores];
+           model.rxnConfidenceScores=[NaN(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnConfidenceScores];
        end
     else
        if isfield(model,'rxnConfidenceScores')
-           emptyConfidenceScores=cell(numel(models{i}.rxns),1);
-           emptyConfidenceScores(:)={''};
-           model.rxnConfidenceScores=[model.rxnConfidenceScores;emptyConfidenceScores];
+           model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(numel(models{i}.rxns),1)];
        end
     end
 

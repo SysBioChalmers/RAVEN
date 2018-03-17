@@ -65,7 +65,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Simonas Marcisauskas, 2017-11-17
+%   Simonas Marcisauskas, 2018-03-18
 %
 
 if nargin<2
@@ -108,7 +108,7 @@ model.eccodes={};
 model.rxnMiriams={};
 model.rxnNotes={};
 model.rxnReferences={};
-model.rxnConfidenceScores={};
+model.rxnConfidenceScores={}; %Will be double later
 model.genes={};
 model.geneComps={}; %Will be double later
 model.geneMiriams={};
@@ -415,6 +415,10 @@ for i=1:numel(I)
         case 15
             model.rxnConfidenceScores=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
     end
+end
+
+if ~isempty(model.rxnConfidenceScores)
+	model.rxnConfidenceScores=str2double(model.rxnConfidenceScores);
 end
 
 %Check that all necessary reaction info has been loaded
@@ -787,8 +791,8 @@ end
 if all(cellfun(@isempty,model.rxnReferences))
 	model=rmfield(model,'rxnReferences');
 end
-if all(cellfun(@isempty,model.rxnConfidenceScores))
-	model=rmfield(model,'rxnConfidenceScores');
+if isempty(model.rxnConfidenceScores)
+    model=rmfield(model,'rxnConfidenceScores');
 end
 if isempty(model.genes)
     model=rmfield(model,'genes');

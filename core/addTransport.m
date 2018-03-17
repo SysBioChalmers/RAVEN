@@ -21,7 +21,7 @@ function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,o
 %   Usage: [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,...
 %           isRev,onlyToExisting)
 %
-%   Simonas Marcisauskas, 2017-08-25
+%   Simonas Marcisauskas, 2018-03-17
 %
 
 if iscell(fromComp)
@@ -156,7 +156,8 @@ for i=1:numel(toComps)
         model.rxnReferences=[model.rxnReferences;filler];
     end
     if isfield(model,'rxnConfidenceScores')
-        model.rxnConfidenceScores=[model.rxnConfidenceScores;filler];
+        model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(nRxns,1)];
+        fprintf('NOTE: The added transport reactions will have confidence scores as NaNs\n');
     end
 end
 end

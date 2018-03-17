@@ -21,7 +21,7 @@ function exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarn
 %
 %   Usage: exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarnings)
 %
-%   Eduard Kerkhoven, 2018-03-04
+%   Simonas Marcisauskas, 2018-03-17
 
 if nargin<3
     exportToYAML=false;
@@ -95,7 +95,7 @@ if ~isfield(model,'rxnReferences')
     model.rxnReferences=cell(numel(model.rxns),1);
 end;
 if ~isfield(model,'rxnConfidenceScores')
-    model.rxnConfidenceScores=cell(numel(model.rxns),1);
+    model.rxnConfidenceScores=NaN(numel(model.rxns),1);
 end;
 if ~isfield(model,'rxnNotes')
     model.rxnNotes=cell(numel(model.rxns),1);
@@ -431,10 +431,10 @@ for i=1:numel(model.rxns)
     end;
     
     % Exporting notes information;
-    if (~isempty(model.rxnConfidenceScores{i}) || ~isempty(model.rxnReferences{i}) || ~isempty(model.rxnNotes{i}))
+    if (~isnan(model.rxnConfidenceScores(i)) || ~isempty(model.rxnReferences{i}) || ~isempty(model.rxnNotes{i}))
         modelSBML.reaction(i).notes='<notes><body xmlns="http://www.w3.org/1999/xhtml">';
-        if ~isempty(model.rxnConfidenceScores{i})
-            modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>Confidence Level: ' model.rxnConfidenceScores{i} '</p>'];
+        if ~isnan(model.rxnConfidenceScores(i))
+            modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>Confidence Level: ' num2str(model.rxnConfidenceScores(i)) '</p>'];
         end;
         if ~isempty(model.rxnReferences{i})
             modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>AUTHORS: ' model.rxnReferences{i} '</p>'];

@@ -112,7 +112,7 @@ model.eccodes={};
 model.rxnMiriams={};
 model.rxnNotes={};
 model.rxnReferences={};
-model.rxnConfidenceScores={};
+model.rxnConfidenceScores=[];
 model.genes={};
 model.geneComps=[];
 model.geneMiriams={};
@@ -414,8 +414,7 @@ reactionIDs=cell(numel(modelSBML.reaction),1);
 subsystems=cell(numel(modelSBML.reaction),1);
 eccodes=cell(numel(modelSBML.reaction),1);
 eccodes(:,:)=cellstr('');
-confidencescores=cell(numel(modelSBML.reaction),1);
-confidencescores(:,:)=cellstr('');
+confidencescores=zeros(numel(modelSBML.reaction),1);
 rxnreferences=cell(numel(modelSBML.reaction),1);
 rxnreferences(:,:)=cellstr('');
 rxnnotes=cell(numel(modelSBML.reaction),1);
@@ -600,7 +599,7 @@ for i=1:numel(modelSBML.reaction)
         rxnMiriams{counter}=miriamStruct;
         if isfield(modelSBML.reaction(i),'notes')
             subsystems{counter,1}=cellstr(parseNote(modelSBML.reaction(i).notes,'SUBSYSTEM'));
-            confidencescores{counter,1}=parseNote(modelSBML.reaction(i).notes,'Confidence Level');
+            confidencescores(counter)=str2num(parseNote(modelSBML.reaction(i).notes,'Confidence Level'));
             rxnreferences{counter,1}=parseNote(modelSBML.reaction(i).notes,'AUTHORS');
             rxnnotes{counter,1}=parseNote(modelSBML.reaction(i).notes,'NOTES');
         end;
@@ -988,8 +987,8 @@ end
 if cellfun(@isempty,model.rxnReferences)
 	model=rmfield(model,'rxnReferences');
 end
-if cellfun(@isempty,model.rxnConfidenceScores)
-	model=rmfield(model,'rxnConfidenceScores');
+if isempty(model.rxnConfidenceScores)
+    model=rmfield(model,'rxnConfidenceScores');
 end
 if isempty(model.genes)
     model=rmfield(model,'genes');

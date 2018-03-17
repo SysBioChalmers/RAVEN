@@ -9,7 +9,7 @@ function model=combineMetaCycKEGGModels(metacycModel,keggModel)
 %
 %   Usage: model=combineMetaCycKEGGModels(metacycModel,keggModel)
 %
-%   Hao Wang, 2017-11-16
+%   Simonas Marcisauskas, 2018-03-17
 %
 
 %Just return the model
@@ -292,10 +292,10 @@ model.metNames(I)=model.mets(I);
 
 %Add confidenceScores to model in a rough way
 if isfield(model,'rxnConfidenceScores')
-		model=rmfield(model,'rxnConfidenceScores');
+	model=rmfield(model,'rxnConfidenceScores');
 end
-model.rxnConfidenceScores=cell(numel(model.rxns),1);
-model.rxnConfidenceScores(:)={'2'};
+model.rxnConfidenceScores=NaN(numel(model.rxns),1);
+model.rxnConfidenceScores(:)=2;
 
 %Put all metabolites in one compartment called 's' (for system). This is
 %done just to be more compatible with the rest of the code

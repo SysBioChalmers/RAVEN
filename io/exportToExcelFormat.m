@@ -185,7 +185,7 @@ else
 end
 
 if isfield(model,'rxnConfidenceScores')
-    rxnSheet=[rxnSheet model.rxnConfidenceScores];
+    rxnSheet=[rxnSheet num2cell(model.rxnConfidenceScores)];
 else
     rxnSheet=[rxnSheet emptyColumn];
 end
