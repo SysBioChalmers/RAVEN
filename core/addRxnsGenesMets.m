@@ -170,8 +170,8 @@ rxnToAdd.lb=sourceModel.lb(rxnIdx);
 rxnToAdd.ub=sourceModel.ub(rxnIdx);
 rxnToAdd.rxnNotes=cell(1,numel(rxnToAdd.rxns));
 rxnToAdd.rxnNotes(:)={rxnNote};
-rxnToAdd.confidenceScores=cell(1,numel(rxnToAdd.rxns));
-rxnToAdd.confidenceScores(:)={confidence};
+rxnToAdd.rxnConfidenceScores=NaN(1,numel(rxnToAdd.rxns));
+rxnToAdd.rxnConfidenceScores(:)=str2num(confidence);
 if isfield(sourceModel,'subSystems')
 	rxnToAdd.subSystems=sourceModel.subSystems(rxnIdx);
 end
