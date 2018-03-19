@@ -17,7 +17,7 @@ function exportToExcelFormat(model,filename)
 %
 %   Usage: exportToExcelFormat(model,filename)
 %
-%   Simonas Marcisauskas, 2017-09-12
+%   Simonas Marcisauskas, 2018-03-18
 %
 
 [~, A, B]=fileparts(filename);
@@ -164,7 +164,10 @@ end
 rxnSheet=[rxnSheet rxnMiriams];
 
 if isfield(model,'subSystems')
-    rxnSheet=[rxnSheet model.subSystems];
+    for i=1:numel(model.subSystems)
+        subsystems{i,1}=strjoin(model.subSystems{i,1},';');
+    end
+    rxnSheet=[rxnSheet subsystems];
 else
     rxnSheet=[rxnSheet emptyColumn];
 end

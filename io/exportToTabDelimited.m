@@ -16,7 +16,7 @@ function exportToTabDelimited(model,path)
 %
 %   Usage: exportToTabDelimited(model,path)
 %
-%   Simonas Marcisauskas, 2018-03-17
+%   Simonas Marcisauskas, 2018-03-18
 
 if nargin<2
 	path='./';
@@ -99,7 +99,7 @@ for i=1:numel(model.rxns)
     end
    
 	if isfield(model,'subSystems')
-        fprintf(rxnFile,[model.subSystems{i} '\t']);
+        fprintf(rxnFile,[strjoin(model.subSystems{i,1},';') '\t']);
     else
         fprintf(rxnFile,'\t');
 	end

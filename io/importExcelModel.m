@@ -403,7 +403,7 @@ for i=1:numel(I)
         case 9
         	model.rxnComps=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         case 10
-        	model.subSystems=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+        	subsystems=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         case 11
         	reactionReplacement=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         case 12
@@ -420,6 +420,9 @@ end
 if ~isempty(model.rxnConfidenceScores)
 	model.rxnConfidenceScores=str2double(model.rxnConfidenceScores);
 end
+for i=1:numel(subsystems)
+    model.subSystems{i,1}=cellstr(strsplit(subsystems{i,1},';'));
+end;
 
 %Check that all necessary reaction info has been loaded
 if isempty(equations)

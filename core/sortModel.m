@@ -19,7 +19,7 @@ function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)
 %
 %   Usage: model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)
 %
-%   Rasmus Agren, 2014-01-09
+%   Simonas Marcisauskas, 2018-03-19
 %
 
 if nargin<2
@@ -65,10 +65,20 @@ if sortReactionOrder==true
        dispEM(EM);
    end
 
-   subsystems=unique(model.subSystems);
+   subsystemsUnique='';
+   subsystemsConcatenated='';
+   for i=1:numel(model.subSystems)
+        subsystemsConcatenated{i,1}=strjoin(model.subSystems{i,1},';');
+        if ~isempty(model.subSystems{i,1})
+            for j=1:numel(model.subSystems{i,1})
+                subsystemsUnique{numel(subsystemsUnique)+1,1}=model.subSystems{i,1}{1,j};
+            end
+        end
+   end
+   subsystemsUnique=unique(subsystemsUnique);
    for i=1:numel(subsystems)
        %Get all reactions for that subsystem
-       rxns=find(ismember(model.subSystems,subsystems(i)));
+       rxns=find(~cellfun(@isempty,regexp(subsystemsConcatenated,subsystemsUnique(i))));
 
        %Temporarily ignore large subsystems because of inefficient
        %implementation

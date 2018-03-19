@@ -50,7 +50,7 @@ function model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete, keep
 %
 %   Usage: model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Simonas Marcisauskas, 2017-05-02
+%   Simonas Marcisauskas, 2018-03-19
 %
 
 %NOTE: This is how one entry looks in the file
@@ -236,17 +236,18 @@ else
                     pathway=true;
                   end
     
-                  %Don't do this if the pathway is rn01100 (Metabolic pathways)
-                  if ~strcmp('rn01100',tempStruct.value{addToIndex,1})
+                  %Don't save global or overview pathways. The
+                  %ids for such pathways begin with rn011 or rn012;
+                  if ~strcmp('rn011',tempStruct.value{addToIndex,1}(1:5)) && ~strcmp('rn012',tempStruct.value{addToIndex,1}(1:5))
                     model.rxnMiriams{rxnCounter}=tempStruct;
     
-                    %Also save the subSystems entry as being the first path found
-                    if ~any(model.subSystems{rxnCounter})
-                        if strcmp(tline(14:17),'PATH:')
-                            model.subSystems{rxnCounter}=tline(28:end);
-                        else
-                            model.subSystems{rxnCounter}=tline(22:end);
-                        end
+                    %Also save the subSystems names. For the old KEGG
+                    %format, only the first mentioned subsystem is picked.
+                    %Use the newer KEGG format to fetch all the subsystems;
+                    if strcmp(tline(14:17),'PATH:')
+                        model.subSystems{rxnCounter}=tline(28:end);%The old format;
+                    else
+                        model.subSystems{rxnCounter,1}{1,numel(model.subSystems{rxnCounter,1})+1}=tline(22:end);%The new format;
                     end
                   end
               end
