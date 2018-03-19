@@ -100,15 +100,19 @@ end
 
 %% Compare models (original)
 compStruct.modelIDs={};
+fprintf('\n Setting up comparison structure \n')
 for i=1:numel(models)
     compStruct.modelIDs=[compStruct.modelIDs;models{i}.id];
     models{i}.equ=constructEquations(models{i},models{i}.rxns,true,true,true);
     models{i}.uEqu=constructEquations(models{i},models{i}.rxns,false,true,true);
 end
+fprintf('*** Done \n\n')
 
 field='rxns';
+fprintf('\n Comparing reaction overlap \n')
 compStruct.rxns.comparison=getToCheck(models,field);
 compStruct.rxns.nElements=checkStuff(getElements(models,field),compStruct.rxns.comparison);
+fprintf('*** Done \n\n')
 if printResults==true
     fprintf('*** Comparison of reaction IDs:\n');
     printList(models,compStruct.rxns.comparison,compStruct.rxns.nElements);
@@ -116,8 +120,10 @@ if printResults==true
 end
 
 field='mets';
+fprintf('\n Comparing metabolite overlap \n')
 compStruct.mets.comparison=getToCheck(models,field);
 compStruct.mets.nElements=checkStuff(getElements(models,field),compStruct.mets.comparison);
+fprintf('*** Done \n\n')
 if printResults==true
     fprintf('*** Comparison of metabolite IDs:\n');
     printList(models,compStruct.mets.comparison,compStruct.mets.nElements);
@@ -125,8 +131,10 @@ if printResults==true
 end
 
 field='genes';
+fprintf('\n Comparing gene overlap \n')
 compStruct.genes.comparison=getToCheck(models,field);
 compStruct.genes.nElements=checkStuff(getElements(models,field),compStruct.genes.comparison);
+fprintf('*** Done \n\n')
 if printResults==true
     fprintf('*** Comparison of gene IDs:\n');
     printList(models,compStruct.genes.comparison,compStruct.genes.nElements);
@@ -134,8 +142,10 @@ if printResults==true
 end
 
 field='eccodes';
+fprintf('\n Comparing EC number overlap \n')
 compStruct.eccodes.comparison=getToCheck(models,field);
 compStruct.eccodes.nElements=checkStuff(getElements(models,field),compStruct.eccodes.comparison);
+fprintf('*** Done \n\n')
 if printResults==true
     fprintf('*** Comparison of ec-numbers:\n');
     printList(models,compStruct.eccodes.comparison,compStruct.eccodes.nElements);
@@ -143,8 +153,10 @@ if printResults==true
 end
 
 field='metNames';
+fprintf('\n Comparing metabolite name overlap \n')
 compStruct.metNames.comparison=getToCheck(models,field);
 compStruct.metNames.nElements=checkStuff(getElements(models,field),compStruct.metNames.comparison);
+fprintf('*** Done \n\n')
 if printResults==true
     fprintf('*** Comparison of metabolite names:\n');
     printList(models,compStruct.metNames.comparison,compStruct.metNames.nElements);
@@ -152,6 +164,7 @@ if printResults==true
 end
 
 field='equ';
+fprintf('\n Comparing equation overlap \n')
 compStruct.equ.comparison=getToCheck(models,field);
 compStruct.equ.nElements=checkStuff(getElements(models,field),compStruct.equ.comparison);
 if printResults==true
@@ -163,6 +176,7 @@ end
 field='uEqu';
 compStruct.uEqu.comparison=getToCheck(models,field);
 compStruct.uEqu.nElements=checkStuff(getElements(models,field),compStruct.uEqu.comparison);
+fprintf('*** Done \n\n')
 if printResults==true
     fprintf('*** Comparison of equations without compartment:\n');
     printList(models,compStruct.uEqu.comparison,compStruct.uEqu.nElements);
@@ -173,6 +187,7 @@ end
 % Compare number of reactions in each subsystem in each model using a heatmap
 % ISSUE: This section breaks the code when not all models have the "subSystems" field
 field = 'subSystems';
+fprintf('\n Comparing subsystem utilization \n\n')
 for i = 1:numel(models)
     field_present(i) = isfield(models{i},field);
 end
@@ -182,6 +197,7 @@ if sum(field_present) ~= numel(models)
 else
     compStruct.subsystems.ID = catModelElements(models,field);
     compStruct.subsystems.matrix = compareSubsystems(models,field);
+    fprintf('*** Done \n\n')
     if printResults==true
         % This could use come cleaning up
         fprintf('*** Comparison of reaction subsystem populations:\n');
@@ -212,6 +228,7 @@ end
 
 % Compare overall reaction structure across all models using a heatmap
 field = 'rxns';
+fprintf('\n Comparing model reaction correlations \n\n')
 all_rxns = catModelElements(models,field);
 % Create binary matrix of reactions
 binary_matrix = zeros(length(all_rxns),numel(models));
@@ -222,15 +239,18 @@ compStruct.structComp = squareform(1-pdist(binary_matrix','hamming'));
 for i = 1:101
     color_map(i,:) = [(i-1)/100 0 0];
 end
+fprintf('*** Done \n\n')
 if plotResults == true
     h = genHeatMap(compStruct.structComp,compStruct.modelIDs,compStruct.modelIDs,'both','hamming',color_map,[0,1]);
 end
 
 % Compare overall reaction structure across all models using tSNE projection
 rng(42) % For consistency
+fprintf('\n Comparing model reaction structures \n\n')
 if exist('tsne') > 0
     t_vars_3d_struc = tsne(double(binary_matrix'),'Distance','hamming','NumDimensions',3); % 3D
     compStruct.structCompMap = t_vars_3d_struc;
+    fprintf('*** Done \n\n')
     if plotResults == true
         figure();hold on; 
         if length(groupVector) > 0
@@ -268,11 +288,12 @@ end
 % Compare model function across all models using tSNE projection of fluxes
 % in response to micropurturbations
 if functionalComp == true
+    fprintf('\n Comparing model reaction functions \n\n')
     [flux_matrix,obj_matrix] = mapFunction(models,groupVector,fluxMets,fluxValues,objectiveFunctions,numRuns);
     if exist('tsne') > 0
         % calculate tSNE & save results
         rng(42)
-        t_vars_3d = tsne(log10(abs(double(flux_matrix'))+1),'Distance','euclidean','NumDimensions',3); % 3D
+        t_vars_3d_func = tsne(log10(abs(double(flux_matrix'))+1),'Distance','euclidean','NumDimensions',3); % 3D
         compStruc.funcCompMap = t_vars_3d_func;
         
         % Plot results
@@ -288,7 +309,7 @@ if functionalComp == true
                     color_vector = [color_vector,repelem(i,n)];
                 end
             end
-            colormap(parula(max(color_vector)));scatter3(t_vars_3d(:,1),t_vars_3d(:,2),t_vars_3d(:,3),35,color_vector,'filled')
+            colormap(parula(max(color_vector)));scatter3(t_vars_3d_func(:,1),t_vars_3d_func(:,2),t_vars_3d_func(:,3),35,color_vector,'filled')
             xlabel('tSNE 1');ylabel('tSNE 2');zlabel('tSNE 3');set(gca,'FontSize',14,'LineWidth',1.25);
             title('Functional Similarity','FontSize',18,'FontWeight','bold')
         end
@@ -313,11 +334,12 @@ if functionalComp == true
                     color_vector = [color_vector,repelem(i,n)];
                 end
             end
-            colormap(parula(max(color_vector)));scatter3(mds_vars_3d_struc(:,1),mds_vars_3d_struc(:,2),mds_vars_3d_struc(:,3),35,color_vector,'filled')
+            colormap(parula(max(color_vector)));scatter3(mds_vars_3d_func(:,1),mds_vars_3d_func(:,2),mds_vars_3d_func(:,3),35,color_vector,'filled')
             xlabel('MDS 1');ylabel('MDS 2');zlabel('MDS 3');set(gca,'FontSize',14,'LineWidth',1.25);
             title('Functional Similarity','FontSize',18,'FontWeight','bold')
         end
     end
+    fprintf('*** Done \n\n')
     if plotResults == true
         % Check objective function values
         [hist_data,hist_bins] = hist(obj_matrix);
