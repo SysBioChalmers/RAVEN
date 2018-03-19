@@ -114,6 +114,7 @@ model.c=zeros(size(model.S,2),1);
 padding=1:numel(model.rev);
 padding=num2cell(padding)';
 padding=cellfun(@num2str,padding,'uniformoutput',false);
+model.rxns=padding;
 model.rxnNames=padding;
 model.eccodes=padding;
 model.rxnMiriams=padding;
@@ -124,6 +125,9 @@ end
 model.subSystems=padding;
 model.rxnFrom=padding;
 model.rxnComps=ones(numel(model.rev),1);
+model.rxnNotes=padding;
+model.rxnReferences=padding;
+model.rxnConfidenceScores=NaN(numel(model.rev),1);
 
 sol=solveLP(model,1);
 if any(sol.x)
