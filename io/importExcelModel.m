@@ -47,7 +47,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %       inchis           InChI-codes for metabolites
 %       metFormulas      metabolite chemical formula
 %       metMiriams       structure with MIRIAM information about the metabolites
-%       metCharges        metabolite charge
+%       metCharges       metabolite charge
 %       unconstrained    true if the metabolite is an exchange metabolite
 %
 %   Loads models in the RAVEN Toolbox Excel format. A number of consistency
@@ -65,7 +65,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Simonas Marcisauskas, 2018-03-18
+%   Simonas Marcisauskas, 2018-03-19
 %
 
 if nargin<2

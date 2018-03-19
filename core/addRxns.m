@@ -39,8 +39,8 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %                               default '')
 %            rxnReferences      cell array with reaction references (opt,
 %                               default '')
-%            rxnConfidenceScores   cell array with reaction confidence scores
-%                               (opt, default '')
+%            rxnConfidenceScores   vector with reaction confidence scores
+%                               (opt, default NaN)
 %   eqnType          double describing how the equation string should be
 %                    interpreted
 %                    1 - The metabolites are matched to model.mets. New
@@ -81,7 +81,7 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
 %   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
-%   Simonas Marcisauskas, 2018-03-17
+%   Simonas Marcisauskas, 2018-03-19
 %
 
 if nargin<4
