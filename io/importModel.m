@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Simonas Marcisauskas, 2018-03-18
+%   Simonas Marcisauskas, 2018-03-19
 
 if nargin<2
     removeExcMets=true;
@@ -600,7 +600,9 @@ for i=1:numel(modelSBML.reaction)
         if isfield(modelSBML.reaction(i),'notes')
             subsystems{counter,1}=cellstr(parseNote(modelSBML.reaction(i).notes,'SUBSYSTEM'));
             subsystems{counter,1}(cellfun('isempty',subsystems{counter,1})) = [];
-            rxnconfidencescores(counter)=str2num(parseNote(modelSBML.reaction(i).notes,'Confidence Level'));
+            if strfind(modelSBML.reaction(i).notes,'Confidence Level')
+                rxnconfidencescores(counter)=str2num(parseNote(modelSBML.reaction(i).notes,'Confidence Level'));
+            end
             rxnreferences{counter,1}=parseNote(modelSBML.reaction(i).notes,'AUTHORS');
             rxnnotes{counter,1}=parseNote(modelSBML.reaction(i).notes,'NOTES');
         end;
@@ -988,7 +990,7 @@ end
 if cellfun(@isempty,model.rxnReferences)
 	model=rmfield(model,'rxnReferences');
 end
-if isempty(model.rxnConfidenceScores)
+if isempty(model.rxnConfidenceScores) || all(isnan(model.rxnConfidenceScores))
     model=rmfield(model,'rxnConfidenceScores');
 end
 if isempty(model.genes)
