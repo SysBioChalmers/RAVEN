@@ -595,9 +595,9 @@ if strcmp(fileFormat,'yaml')
     modelSBML = constructYaml(modelSBML);
     YAML.write(strcat(fileName,'.yml'),modelSBML);
 elseif strcmp(fileFormat,'both')
+    OutputSBML(modelSBML,strcat(fileName,'.xml'),1,0,[1,0]);
     modelSBML = constructYaml(modelSBML);
     YAML.write(strcat(fileName,'.yml'),modelSBML);
-    OutputSBML(modelSBML,strcat(fileName,'.xml'),1,0,[1,0]);
 else
     OutputSBML(modelSBML,strcat(fileName,'.xml'),1,0,[1,0]);
 end
