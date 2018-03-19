@@ -1,4 +1,4 @@
-function exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarnings)
+function exportModel(model,fileName,fileFormat,exportGeneComplexes,supressWarnings)
 % exportModel
 %   Exports a constraint-based model to an SBML file (L3V1 FBCv2). Optionally
 %   writes a human-readable YAML file that can be used for model versioning and
@@ -6,9 +6,9 @@ function exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarn
 %
 %   model               a model structure
 %   fileName            filename to export the model to (without file extension)
-%   exportToYAML        true for additional export of YAML file, false for
-%                       only export to SBML file (opt, default false)
-%   exportGeneComplexes	true if gene complexes (all gene sets linked with
+%   fileFormat          string indicating to export SBML ('sbml'), YAML ('yaml')
+%                       or both ('both') file formats (opt, default 'sbml')
+%   exportGeneComplexes true if gene complexes (all gene sets linked with
 %                       AND relationship) should be recognised and exported
 %                       (opt, default false)
 %   supressWarnings     true if warnings should be supressed (opt, default
@@ -19,12 +19,12 @@ function exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarn
 %   format for storage and redistribution of models. YAML import is therefore not
 %   supported, and the file generated here is not compatible with e.g. COBRApy.
 %
-%   Usage: exportModel(model,fileName,exportToYAML,exportGeneComplexes,supressWarnings)
+%   Usage: exportModel(model,fileName,fileFormat,exportGeneComplexes,supressWarnings)
 %
-%   Eduard Kerkhoven, 2018-03-04
+%   Eduard Kerkhoven, 2018-03-19
 
 if nargin<3
-    exportToYAML=false;
+    fileFormat='sbml';
 end
 if nargin<4
     exportGeneComplexes=false;
@@ -591,45 +591,15 @@ if sbmlPackageVersions(1) == 2
     modelSBML.fbc_strict=1;
 end;
 
-OutputSBML(modelSBML,strcat(fileName,'.xml'),1,0,[1,0]);
-
-if exportToYAML==true
-    % Simplify structure by removing empty fields to reduce YAML size.
-    fnm=fieldnames(modelSBML);
-    idx=structfun(@isempty,modelSBML);
-    modelSBML=rmfield(modelSBML,fnm(idx));
-    fnm=fieldnames(modelSBML);
-    ws=modelSBML; % Keep working structure, as removing fields below will interfer with indexing
-    for i=1:length(fnm)
-        if isstruct(ws.(fnm{i}))
-            fnm2=fieldnames(ws.(fnm{i}));
-            for j=1:length(fnm2)
-                if isempty([ws.(fnm{i})(:).(fnm2{j})])
-                    modelSBML.(fnm{i})=rmfield(modelSBML.(fnm{i}),fnm2{j});
-                else
-                    for l=1:length({ws.(fnm{i}).(fnm2{j})})
-                        if isstruct(ws.(fnm{i})(l).(fnm2{j}))
-                            fnm3=fieldnames(ws.(fnm{i})(l).(fnm2{j}));
-                            for k=1:length(fnm3)
-                                if isempty([ws.(fnm{i})(l).(fnm2{j})(:).(fnm3{k})])
-                                    modelSBML.(fnm{i})(l).(fnm2{j})=rmfield(modelSBML.(fnm{i})(l).(fnm2{j}),fnm3{k});
-%                                 else
-%                                     isstruct(isstruct({ws.(fnm{i})(l).(fnm2{j}).(fnm3{k})}));
-%                                     fnm4=fieldnames(ws.(fnm{i})(l).(fnm2{j}).(fnm3{k}));
-%                                     for m=1:length(fnm4)
-%                                         if isempty([ws.(fnm{i})(l).(fnm2{j}).(fnm3{k}).(fnm4{m})])
-%                                             modelSBML.(fnm{i})(l).(fnm2{j}).(fnm3{k})=rmfield(modelSBML.(fnm{i})(l).(fnm2{j}).(fnm3{k}),fnm4{m});
-%                                         end
-%                                     end
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-    YAML.write(strcat(fileName,'.yml'),modelSBML)
+if strcmp(fileFormat,'yaml')
+    modelSBML = constructYaml(modelSBML);
+    YAML.write(strcat(fileName,'.yml'),modelSBML);
+elseif strcmp(fileFormat,'both')
+    modelSBML = constructYaml(modelSBML);
+    YAML.write(strcat(fileName,'.yml'),modelSBML);
+    OutputSBML(modelSBML,strcat(fileName,'.xml'),1,0,[1,0]);
+else
+    OutputSBML(modelSBML,strcat(fileName,'.xml'),1,0,[1,0]);
 end
 end
 
