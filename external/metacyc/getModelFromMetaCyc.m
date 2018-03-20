@@ -85,23 +85,19 @@ for i=1:rxnNum
 								
 				subgrRule=''; %Find out if enzyme complex
 				[c, d]=ismember(metaCycEnzymes.enzymes(I(j)),metaCycEnzymes.cplxs);
-				if c
-						for k=1:numel(metaCycEnzymes.cplxComp{d}.subunit)
-							if strcmp(subgrRule,'')
-								subgrRule=strcat('(',metaCycEnzymes.cplxComp{d}.subunit{k});
-							else
-								subgrRule=strcat(subgrRule,{' and '},metaCycEnzymes.cplxComp{d}.subunit{k});
-							end
-							
-							[x, geneIndex]=ismember(metaCycEnzymes.cplxComp{d}.subunit{k},metaCycModel.genes);
-							%if x
-								metaCycModel.rxnGeneMat(i,geneIndex)=1;
-							%else
-							%	disp(metaCycEnzymes.cplxComp{d}.subunit{k});
-							%end
+				if c   %In cases of an enzyme complex
+						%With single subunit
+						if numel(metaCycEnzymes.cplxComp{d}.subunit)==1
+								subgrRule=metaCycEnzymes.cplxComp{d}.subunit{1};
+						%With multiple subunits
+						else
+								subgrRule=strjoin(metaCycEnzymes.cplxComp{d}.subunit,' and ');
+								subgrRule=strcat('(',subgrRule,')');
 						end
-						subgrRule=strcat(subgrRule,')');
-				else
+						[x, geneIndex]=ismember(metaCycEnzymes.cplxComp{d}.subunit,metaCycModel.genes);
+						metaCycModel.rxnGeneMat(i,geneIndex)=1;
+
+				else  %In cases of NOT an enzyme complex
 						subgrRule=metaCycEnzymes.enzymes(I(j));
 						metaCycModel.rxnGeneMat(i,I(j))=1;
 				end
@@ -116,7 +112,11 @@ for i=1:rxnNum
 				end
 				
 			end
-			metaCycModel.grRules{i}=grRule;
+			if iscell(grRule)
+					metaCycModel.grRules{i}=grRule{1};
+			else
+					metaCycModel.grRules{i}=grRule;
+			end
 						
 		end
 

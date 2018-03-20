@@ -123,6 +123,9 @@ end
 if isfield(model,'rxnConfidenceScores')
     rxnsToChange.rxnConfidenceScores=model.rxnConfidenceScores(J);
 end
+if isfield(model,'pwys')
+    rxnsToChange.pwys=model.pwys(J);
+end
 
 %Calculate the new order of reactions
 order=ones(numel(model.rxns),1);

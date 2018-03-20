@@ -22,7 +22,7 @@ function newModel=addGenes(model,genesToAdd)
 %
 %   Usage: newModel=addGenes(model,genesToAdd)
 %
-%   Rasmus Agren, 2014-01-08
+%   Eduard Kerkhoven, 2018-02-23
 %
 
 newModel=model;
@@ -41,10 +41,6 @@ if ~iscellstr(genesToAdd.genes)
     EM='genesToAdd.genes must be a cell array of strings';
     dispEM(EM);
 end
-
-illegalCells=regexp(genesToAdd.genes,'[();:]', 'once');
-EM='Illegal character(s) in gene names:';
-dispEM(EM,true,genesToAdd.genes(~cellfun(@isempty,illegalCells)));
 
 %Number of genes
 nGenes=numel(genesToAdd.genes);
