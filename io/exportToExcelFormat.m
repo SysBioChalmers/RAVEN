@@ -163,9 +163,14 @@ end
 
 rxnSheet=[rxnSheet rxnMiriams];
 
+subsystems='';
 if isfield(model,'subSystems')
     for i=1:numel(model.subSystems)
-        subsystems{i,1}=strjoin(model.subSystems{i,1},';');
+        if ~isempty(model.subSystems{i,1})
+            subsystems{i,1}=strjoin(model.subSystems{i,1},';');
+        else
+            subsystems{i,1}='';
+        end
     end
     rxnSheet=[rxnSheet subsystems];
 else
