@@ -20,7 +20,7 @@ function [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
 %
 %   Usage: [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
 %
-%   Simonas Marcisauskas, 2017-08-25
+%   Simonas Marcisauskas, 2018-03-17
 %
 
 if nargin<3
@@ -69,7 +69,7 @@ if isfield(model,'rxnFrom')
     model.rxnFrom=[model.rxnFrom;filler];
 end
 if isfield(model,'rxnMiriams')
-    model.rxnMiriams=[model.rxnMiriams;cell(numel(J),1)];
+    model.rxnMiriams=[model.rxnMiriams;filler];
 end
 if isfield(model,'rxnGeneMat')
     model.rxnGeneMat=[model.rxnGeneMat;sparse(numel(J),numel(model.genes))];
@@ -79,12 +79,12 @@ if isfield(model,'rxnComps')
    fprintf('NOTE: The exchange reactions are assigned to the first compartment\n');
 end
 if isfield(model,'rxnNotes')
-    model.rxnNotes=[model.rxnNotes;cell(numel(J),1)];
+    model.rxnNotes=[model.rxnNotes;filler];
 end
 if isfield(model,'rxnReferences')
-    model.rxnReferences=[model.rxnReferences;cell(numel(J),1)];
+    model.rxnReferences=[model.rxnReferences;filler];
 end
 if isfield(model,'rxnConfidenceScores')
-    model.rxnConfidenceScores=[model.rxnConfidenceScores;cell(numel(J),1)];
+    model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(numel(J),1)];
 end
 end

@@ -44,7 +44,7 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 %
 %   Usage: model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
 %
-%   Hao Wang, 2017-11-15
+%   Simonas Marcisauskas, 2018-03-19
 %
 
 %NOTE: This is how one entry looks in the file
@@ -278,11 +278,7 @@ else
 
 		          [x, y]=ismember(tline(14:end),pwys);
 		          if x
-	          		if isempty(metaCycRxns.subSystems{rxnCounter})
-  	        			metaCycRxns.subSystems{rxnCounter}=pwyNames{y};
-    	      		else
-      	    			metaCycRxns.subSystems{rxnCounter}=strcat(metaCycRxns.subSystems{rxnCounter},';',pwyNames{y});
-        	  		end
+                    metaCycRxns.subSystems{rxnCounter,1}{1,numel(metaCycRxns.subSystems{rxnCounter,1})+1}=pwyNames{y};
 	    	      end
           end
 

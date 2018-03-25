@@ -51,7 +51,7 @@ function [outModel, geneLocalization, transportStruct, scores, removedRxns]=pred
 %   Usage: [outModel, geneLocalization, transportStruct, score, removedRxns]=...
 %       predictLocalization(model,GSS,defaultCompartment,transportCost,maxTime)
 %
-%   Simonas Marcisauskas, 2017-09-06
+%   Simonas Marcisauskas, 2018-03-17
 %
 
 if nargin<4
@@ -710,7 +710,7 @@ for i=1:numel(I)
         outModel.rxnReferences=[outModel.rxnReferences;{''}];
     end
     if isfield(outModel,'rxnConfidenceScores')
-        outModel.rxnConfidenceScores=[outModel.rxnConfidenceScores;{''}];
+        outModel.rxnConfidenceScores=[outModel.rxnConfidenceScores;NaN];
     end
 end
 

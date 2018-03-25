@@ -28,7 +28,7 @@ function newModel=ravenCobraWrapper(model)
 %
 %   Usage: newModel=ravenCobraWrapper(model)
 %
-%   Simonas Marcisauskas, 2017-10-20
+%   Simonas Marcisauskas, 2018-03-17
 %
 
 if isfield(model,'rules')
@@ -146,7 +146,7 @@ if isRaven
         newModel.geneNames=model.geneShortNames;
     end;
     if isfield(model,'rxnConfidenceScores')
-        newModel.rxnConfidenceScores=cell2mat(model.rxnConfidenceScores);
+        newModel.rxnConfidenceScores=model.rxnConfidenceScores;
     end;
     if isfield(model,'genes')
         newModel.rules=grrulesToRules(model);
@@ -262,7 +262,7 @@ if isRaven
         newModel.rxnReferences=model.rxnReferences;
     end;
     if isfield(model,'rxnConfidenceScores')
-        newModel.rxnConfidenceScores=num2cell(model.rxnConfidenceScores);
+        newModel.rxnConfidenceScores=model.rxnConfidenceScores;
     end;
     if isfield(model,'genes')
         newModel.genes=model.genes;
