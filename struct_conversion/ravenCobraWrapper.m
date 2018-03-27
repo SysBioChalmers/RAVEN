@@ -29,6 +29,7 @@ function newModel=ravenCobraWrapper(model)
 %   Usage: newModel=ravenCobraWrapper(model)
 %
 %   Simonas Marcisauskas, 2018-03-17
+%   Benjamin J. Sanchez, 2018-03-27
 %
 
 if isfield(model,'rules')
@@ -397,19 +398,19 @@ function rules=grrulesToRules(model)
 end
 
 function grRules=rulesTogrrules(model)
-    % This function just takes rules, changes all gene names to
-    % grRules and also changes 'or' and 'and' relations from
-    % corresponding symbols
-    replacingGenes=cell([size(model.genes,1) 1]);
-    grRules=cell([size(model.rules,1) 1]);
+    % This function takes rules, replaces &/| for and/or, takes out extra
+    % whitespace and redundant parenthesis introduced by COBRA, and
+    % replaces the x(i) format with the actual gene ID, to create grRules.
+    grRules = strrep(model.rules,'&','and');
+    grRules = strrep(grRules,'|','or');
+    grRules = strrep(grRules,'( ','(');
+    grRules = strrep(grRules,' )',')');
+    grRules = regexprep(grRules,'^(','');   %rules that start with a "("
+    grRules = regexprep(grRules,')$','');   %rules that end with a ")"
     
-    for i=1:numel(replacingGenes)
-        replacingGenes{i}=strcat('x(',num2str(i),')');
-    end;
-    for i=1:numel(model.rules)
-        grRules{i}=regexprep(model.rules{i},replacingGenes,model.genes);
-        grRules{i}=regexprep(grRules{i},' & ',' and ');
-        grRules{i}=regexprep(grRules{i},' | ',' or ');
+    %Change gene ids:
+    for i = 1:length(model.genes)
+        grRules = strrep(grRules,['x(' num2str(i) ')'],model.genes{i});
     end;
 end
 
