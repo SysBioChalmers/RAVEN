@@ -403,6 +403,10 @@ function grRules=rulesTogrrules(model)
     % corresponding symbols
     grRules = strrep(model.rules,'&','and');
     grRules = strrep(grRules,'|','or');
+    grRules = strrep(grRules,'( ','(');
+    grRules = strrep(grRules,' )',')');
+    grRules = regexprep(grRules,'^(','');   %rules that start with a "("
+    grRules = regexprep(grRules,')$','');   %rules that end with a ")"
     
     %Change gene ids:
     for i = 1:length(model.genes)
