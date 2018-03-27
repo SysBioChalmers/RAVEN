@@ -398,9 +398,9 @@ function rules=grrulesToRules(model)
 end
 
 function grRules=rulesTogrrules(model)
-    % This function just takes rules, changes all gene names to
-    % grRules and also changes 'or' and 'and' relations from
-    % corresponding symbols
+    % This function takes rules, replaces &/| for and/or, takes out extra
+    % whitespace and redundant parenthesis introduced by COBRA, and
+    % replaces the x(i) format with the actual gene ID, to create grRules.
     grRules = strrep(model.rules,'&','and');
     grRules = strrep(grRules,'|','or');
     grRules = strrep(grRules,'( ','(');
