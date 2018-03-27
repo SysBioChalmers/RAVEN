@@ -45,7 +45,7 @@ function draftModel=getModelFromHomology(models,blastStructure,getModelFor,prefe
 %
 %   draftModel        a new model structure
 %
-%   Simonas Marcisauskas, 2017-10-11
+%   Simonas Marcisauskas, 2018-03-17
 %
 
 %NOTE: "to" and "from" means relative the new organism
@@ -448,8 +448,8 @@ end
 draftModel.description=description;
 draftModel.rxnNotes=cell(length(draftModel.rxns),1);
 draftModel.rxnNotes(:)={'Reaction included by getModelFromHomology'};
-draftModel.rxnConfidenceScores=cell(length(draftModel.rxns),1);
-draftModel.rxnConfidenceScores(:)={'2'};
+draftModel.rxnConfidenceScores=NaN(length(draftModel.rxns),1);
+draftModel.rxnConfidenceScores(:)=2;
 % Gene short names are often different between species, safer not to
 % include them.
 if isfield(draftModel,'geneShortNames');

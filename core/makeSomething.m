@@ -42,7 +42,7 @@ function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFlux
 %   Usage: [solution, metabolite]=makeSomething(model,ignoreMets,isNames,...
 %           minNrFluxes,allowExcretion,params,ignoreIntBounds)
 %
-%   Simonas Marcisauskas, 2017-08-25
+%   Simonas Marcisauskas, 2018-03-17
 %
 
 if nargin<2
@@ -137,7 +137,7 @@ model.rxnFrom=padding;
 model.rxnComps=ones(numel(model.rev),1);
 model.rxnNotes=padding;
 model.rxnReferences=padding;
-model.rxnConfidenceScores=padding;
+model.rxnConfidenceScores=NaN(numel(model.rev),1);
 
 sol=solveLP(model,1);
 if any(sol.x)

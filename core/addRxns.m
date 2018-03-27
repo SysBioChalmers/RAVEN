@@ -39,8 +39,8 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %                               default '')
 %            rxnReferences      cell array with reaction references (opt,
 %                               default '')
-%            rxnConfidenceScores   cell array with reaction confidence scores
-%                               (opt, default '')
+%            rxnConfidenceScores   vector with reaction confidence scores
+%                               (opt, default NaN)
 %   eqnType          double describing how the equation string should be
 %                    interpreted
 %                    1 - The metabolites are matched to model.mets. New
@@ -81,7 +81,7 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
 %   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
-%   Eduard Kerkhoven, 2018-02-23
+%   Simonas Marcisauskas, 2018-03-19
 %
 
 if nargin<4
@@ -405,15 +405,18 @@ if isfield(rxnsToAdd,'rxnConfidenceScores')
    end
    %Fill with standard if it doesn't exist
    if ~isfield(newModel,'rxnConfidenceScores')
-       newModel.rxnConfidenceScores=largeFiller;
+       newModel.rxnConfidenceScores=NaN(nOldRxns,1);
+       EM='Adding reactions with confidence scores without such information. All existing reactions will have confidence scores as NaNs';
+       dispEM(EM,false);
    end
    newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;rxnsToAdd.rxnConfidenceScores(:)];
 else
     %Fill with standard if it doesn't exist
    if isfield(newModel,'rxnConfidenceScores')
-       newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;filler];
+       newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;NaN(nRxns,1)];
    end
 end
+
 
 %***Start parsing the equations and adding the info to the S matrix
 %The mets are matched to model.mets

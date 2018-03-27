@@ -47,7 +47,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %       inchis           InChI-codes for metabolites
 %       metFormulas      metabolite chemical formula
 %       metMiriams       structure with MIRIAM information about the metabolites
-%       metCharges        metabolite charge
+%       metCharges       metabolite charge
 %       unconstrained    true if the metabolite is an exchange metabolite
 %
 %   Loads models in the RAVEN Toolbox Excel format. A number of consistency
@@ -65,7 +65,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Simonas Marcisauskas, 2017-11-17
+%   Simonas Marcisauskas, 2018-03-19
 %
 
 if nargin<2
@@ -108,7 +108,7 @@ model.eccodes={};
 model.rxnMiriams={};
 model.rxnNotes={};
 model.rxnReferences={};
-model.rxnConfidenceScores={};
+model.rxnConfidenceScores={}; %Will be double later
 model.genes={};
 model.geneComps={}; %Will be double later
 model.geneMiriams={};
@@ -403,7 +403,7 @@ for i=1:numel(I)
         case 9
         	model.rxnComps=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         case 10
-        	model.subSystems=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+        	subsystems=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         case 11
         	reactionReplacement=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         case 12
@@ -416,6 +416,13 @@ for i=1:numel(I)
             model.rxnConfidenceScores=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
     end
 end
+
+if ~isempty(model.rxnConfidenceScores)
+	model.rxnConfidenceScores=str2double(model.rxnConfidenceScores);
+end
+for i=1:numel(subsystems)
+    model.subSystems{i,1}=cellstr(strsplit(subsystems{i,1},';'));
+end;
 
 %Check that all necessary reaction info has been loaded
 if isempty(equations)
@@ -787,8 +794,8 @@ end
 if all(cellfun(@isempty,model.rxnReferences))
 	model=rmfield(model,'rxnReferences');
 end
-if all(cellfun(@isempty,model.rxnConfidenceScores))
-	model=rmfield(model,'rxnConfidenceScores');
+if isempty(model.rxnConfidenceScores)
+    model=rmfield(model,'rxnConfidenceScores');
 end
 if isempty(model.genes)
     model=rmfield(model,'genes');

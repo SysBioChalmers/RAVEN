@@ -1,13 +1,13 @@
-function [model, KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
+function [model,KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
 % getModelFromKEGG
 %   Retrieves information stored in KEGG database and generates a model
 %
-%   keggPath            if keggGenes.mat, keggMets.mat, keggPhylDist.mat
-%                       or keggRxns.mat are not in the RAVEN/external/kegg
+%   keggPath            if keggGenes.mat, keggMets.mat, keggPhylDist.mat or
+%                       keggRxns.mat are not in the RAVEN/external/kegg
 %                       directory, this function will attempt to read data
 %                       from a local FTP dump of the KEGG database.
 %                       keggPath is the path to the root of this database
-%                       (opt, default 'RAVEN/external/kegg'
+%                       (opt, default 'RAVEN/external/kegg')
 %   keepUndefinedStoich include reactions in the form n A <=> n+1 A. These
 %                       will be dealt with as two separate metabolites
 %                       (opt, default true)
@@ -22,19 +22,20 @@ function [model, KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepInco
 %                       script will therefore not be able to remove all
 %                       such reactions (opt, default false)
 %
-%   model               a model structure generated from the database.
-%                       All reactions and the metabolites used in them
-%                       will be added
+%   model               a model structure generated from the database. All
+%                       reactions and the metabolites used in them will be
+%                       added
 %   KOModel             a model structure representing the KEGG Orthology
 %                       ids and their associated genes. The KO ids are
 %                       saved as reactions
 %
-%   Usage: getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
+%   Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Eduard Kerkhoven, 2018-02-12
+%   Simonas Marcisauskas, 2018-03-19
 %
+
 if nargin<1
-	keggPath='RAVEN/external/kegg';
+    keggPath='RAVEN/external/kegg';
 end
 if nargin<2
     keepUndefinedStoich=true;
@@ -52,27 +53,28 @@ fprintf('KEGG reactions loaded\n');
 
 %Get the KO ids that are associated with any of the reactions. They will be
 %used later on to create a rxn-gene matrix
-KOs=cell(numel(model.rxns)*2,1); %Make room for two KO ids per reaction
+KOs=cell(numel(model.rxns)*2,1);
+%Make room for two KO ids per reaction
 
 addToIndex=1;
 %Add all KO ids that are used
 for i=1:numel(model.rxns)
-   if isstruct(model.rxnMiriams{i})
-      for j=1:numel(model.rxnMiriams{i}.name)
-         if strcmpi('kegg.orthology',model.rxnMiriams{i}.name{j})
-            %Add the KO id
-            KOs(addToIndex)=model.rxnMiriams{i}.value(j);
-            addToIndex=addToIndex+1;
-         end
-      end
-   end
+    if isstruct(model.rxnMiriams{i})
+        for j=1:numel(model.rxnMiriams{i}.name)
+            if strcmpi('kegg.orthology',model.rxnMiriams{i}.name{j})
+                %Add the KO id
+                KOs(addToIndex)=model.rxnMiriams{i}.value(j);
+                addToIndex=addToIndex+1;
+            end
+        end
+    end
 end
 
 KOs=KOs(1:addToIndex-1);
 KOs=unique(KOs);
 
-%Get all genes from any organism in KEGG that is associated with any of
-%the KOs
+%Get all genes from any organism in KEGG that is associated with any of the
+%KOs
 KOModel=getGenesFromKEGG(keggPath,KOs);
 fprintf('KEGG genes loaded\n');
 
@@ -90,26 +92,27 @@ for i=1:numel(model.rxns)
             toDel=[];
             if strcmp(model.rxnMiriams{i}.name{j},'kegg.orthology')
                 if ismember(model.rxnMiriams{i}.value{j},KOsToRemove)
-                   toDel=[toDel;j];
+                    toDel=[toDel;j];
                 end
             end
         end
         %Delete the KOs
         if any(toDel)
-           %If all posts are deleted, then delete the whole structure
-           if numel(toDel)==j
+            %If all posts are deleted, then delete the whole structure
+            if numel(toDel)==j
                 model.rxnMiriams{i}=[];
-           else
+            else
                 model.rxnMiriams{i}.name(toDel)=[];
                 model.rxnMiriams{i}.value(toDel)=[];
-           end
+            end
         end
     end
 end
 
 %Create the rxnGeneMat for the reactions. This is simply done by merging
 %the gene associations for all the involved KOs
-r=zeros(10000000,1); %Store the positions since it's slow to write to a sparse array in a loop
+r=zeros(10000000,1);
+%Store the positions since it's slow to write to a sparse array in a loop
 c=zeros(10000000,1);
 counter=1;
 for i=1:numel(model.rxns)
@@ -146,25 +149,25 @@ a=find(a);
 b=b(a);
 
 if ~isfield(model,'metNames')
-   model.metNames=cell(numel(model.mets),1);
-   model.metNames(:)={''};
+    model.metNames=cell(numel(model.mets),1);
+    model.metNames(:)={''};
 end
 model.metNames(a)=metModel.metNames(b);
 
 if ~isfield(model,'metFormulas')
-   model.metFormulas=cell(numel(model.mets),1);
-   model.metFormulas(:)={''};
+    model.metFormulas=cell(numel(model.mets),1);
+    model.metFormulas(:)={''};
 end
 model.metFormulas(a)=metModel.metFormulas(b);
 
 if ~isfield(model,'inchis')
-   model.inchis=cell(numel(model.mets),1);
-   model.inchis(:)={''};
+    model.inchis=cell(numel(model.mets),1);
+    model.inchis(:)={''};
 end
 model.inchis(a)=metModel.inchis(b);
 
 if ~isfield(model,'metMiriams')
-   model.metMiriams=cell(numel(model.mets),1);
+    model.metMiriams=cell(numel(model.mets),1);
 end
 model.metMiriams(a)=metModel.metMiriams(b);
 

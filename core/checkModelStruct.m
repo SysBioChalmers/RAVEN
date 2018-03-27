@@ -14,7 +14,7 @@ function checkModelStruct(model,throwErrors,trimWarnings)
 %
 %   Usage: checkModelStruct(model,throwErrors,trimWarnings)
 %
-%   Eduard Kerkhoven; 2018-02-23
+%   Simonas Marcisauskas, 2018-03-18
 %
 
 if nargin<2
@@ -149,9 +149,11 @@ if isfield(model,'metCharges')
     end
 end
 if isfield(model,'subSystems')
-    if ~iscellstr(model.subSystems)
-        EM='The "subSystems" field must be a cell array';
-        dispEM(EM,throwErrors);
+    for i=1:numel(model.subSystems)
+        if ~iscell(model.subSystems{i,1})
+            EM='The "subSystems" field must be a cell array';
+            dispEM(EM,throwErrors);
+        end
     end
 end
 if isfield(model,'eccodes')
@@ -179,8 +181,8 @@ if isfield(model,'rxnReferences')
     end
 end
 if isfield(model,'rxnConfidenceScores')
-    if ~iscellstr(model.rxnConfidenceScores)
-        EM='The "rxnConfidenceScores" field must be a cell array of strings';
+    if ~isnumeric(model.rxnConfidenceScores)
+        EM='The "rxnConfidenceScores" field must be a double';
         dispEM(EM,throwErrors);
     end
 end

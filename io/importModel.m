@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Eduard Kerkhoven, 2018-03-14
+%   Simonas Marcisauskas, 2018-03-19
 
 if nargin<2
     removeExcMets=true;
@@ -112,7 +112,7 @@ model.eccodes={};
 model.rxnMiriams={};
 model.rxnNotes={};
 model.rxnReferences={};
-model.rxnConfidenceScores={};
+model.rxnConfidenceScores=[];
 model.genes={};
 model.geneComps=[];
 model.geneMiriams={};
@@ -190,7 +190,7 @@ metaboliteUnconstrained=[];
 metaboliteFormula={};
 metaboliteInChI={};
 metaboliteMiriams={};
-metaboliteCharge=[];
+metaboliteCharges=[];
 
 geneNames={};
 geneIDs={};
@@ -376,26 +376,26 @@ for i=1:numel(modelSBML.species)
             end
             if isfield(modelSBML.species(i),'fbc_charge')
                 if ~isempty(modelSBML.species(i).fbc_charge) && modelSBML.species(i).isSetfbc_charge
-                    metaboliteCharge(numel(metaboliteCharge)+1,1)=double(modelSBML.species(i).fbc_charge);
+                    metaboliteCharges(numel(metaboliteCharges)+1,1)=double(modelSBML.species(i).fbc_charge);
                 else
                     if isfield(modelSBML.species(i),'notes')
                         if strfind(modelSBML.species(i).notes,'CHARGE')
-                            metaboliteCharge(numel(metaboliteCharge)+1,1)=str2double(parseNote(modelSBML.species(i).notes,'CHARGE'));
+                            metaboliteCharges(numel(metaboliteCharges)+1,1)=str2double(parseNote(modelSBML.species(i).notes,'CHARGE'));
                         else
-                            metaboliteCharge(numel(metaboliteCharge)+1,1)=NaN;
+                            metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
                         end;
                     else
-                        metaboliteCharge(numel(metaboliteCharge)+1,1)=NaN;
+                        metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
                     end
                 end
             elseif isfield(modelSBML.species(i),'notes')
                 if strfind(modelSBML.species(i).notes,'CHARGE')
-                    metaboliteCharge(numel(metaboliteCharge)+1,1)=str2double(parseNote(modelSBML.species(i).notes,'CHARGE'));
+                    metaboliteCharges(numel(metaboliteCharges)+1,1)=str2double(parseNote(modelSBML.species(i).notes,'CHARGE'));
                 else
-                    metaboliteCharge(numel(metaboliteCharge)+1,1)=NaN;
+                    metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
                 end;
             else
-                metaboliteCharge(numel(metaboliteCharge)+1,1)=NaN;
+                metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
             end
             %Additional information from FBC format
             %Chemical formula
@@ -414,8 +414,7 @@ reactionIDs=cell(numel(modelSBML.reaction),1);
 subsystems=cell(numel(modelSBML.reaction),1);
 eccodes=cell(numel(modelSBML.reaction),1);
 eccodes(:,:)=cellstr('');
-confidencescores=cell(numel(modelSBML.reaction),1);
-confidencescores(:,:)=cellstr('');
+rxnconfidencescores=NaN(numel(modelSBML.reaction),1);
 rxnreferences=cell(numel(modelSBML.reaction),1);
 rxnreferences(:,:)=cellstr('');
 rxnnotes=cell(numel(modelSBML.reaction),1);
@@ -600,7 +599,10 @@ for i=1:numel(modelSBML.reaction)
         rxnMiriams{counter}=miriamStruct;
         if isfield(modelSBML.reaction(i),'notes')
             subsystems{counter,1}=cellstr(parseNote(modelSBML.reaction(i).notes,'SUBSYSTEM'));
-            confidencescores{counter,1}=parseNote(modelSBML.reaction(i).notes,'Confidence Level');
+            subsystems{counter,1}(cellfun('isempty',subsystems{counter,1})) = [];
+            if strfind(modelSBML.reaction(i).notes,'Confidence Level')
+                rxnconfidencescores(counter)=str2num(parseNote(modelSBML.reaction(i).notes,'Confidence Level'));
+            end
             rxnreferences{counter,1}=parseNote(modelSBML.reaction(i).notes,'AUTHORS');
             rxnnotes{counter,1}=parseNote(modelSBML.reaction(i).notes,'NOTES');
         end;
@@ -668,7 +670,7 @@ reactionNames=reactionNames(1:counter);
 reactionIDs=reactionIDs(1:counter);
 subsystems=subsystems(1:counter);
 eccodes=eccodes(1:counter);
-confidencescores=confidencescores(1:counter);
+rxnconfidencescores=rxnconfidencescores(1:counter);
 rxnreferences=rxnreferences(1:counter);
 rxnnotes=rxnnotes(1:counter);
 grRules=grRules(1:counter);
@@ -691,7 +693,7 @@ model.c=reactionObjective;
 model.b=zeros(numel(metaboliteIDs),1);
 model.comps=compartmentIDs;
 model.compNames=compartmentNames;
-model.rxnConfidenceScores=confidencescores;
+model.rxnConfidenceScores=rxnconfidencescores;
 model.rxnReferences=rxnreferences;
 model.rxnNotes=rxnnotes;
 
@@ -895,8 +897,8 @@ if any(~cellfun(@isempty,metaboliteFormula))
 end
 
 %If any charges have been loaded
-if ~isempty(metaboliteCharge)
-    model.metCharges=metaboliteCharge;
+if ~isempty(metaboliteCharges)
+    model.metCharges=metaboliteCharges;
 end
 
 %If any gene short names have been loaded
@@ -988,8 +990,8 @@ end
 if cellfun(@isempty,model.rxnReferences)
 	model=rmfield(model,'rxnReferences');
 end
-if cellfun(@isempty,model.rxnConfidenceScores)
-	model=rmfield(model,'rxnConfidenceScores');
+if isempty(model.rxnConfidenceScores) || all(isnan(model.rxnConfidenceScores))
+    model=rmfield(model,'rxnConfidenceScores');
 end
 if isempty(model.genes)
     model=rmfield(model,'genes');
