@@ -29,6 +29,7 @@ function newModel=ravenCobraWrapper(model)
 %   Usage: newModel=ravenCobraWrapper(model)
 %
 %   Simonas Marcisauskas, 2017-10-20
+%   Benjamin J. Sanchez, 2018-03-27
 %
 
 if isfield(model,'rules')
@@ -400,16 +401,12 @@ function grRules=rulesTogrrules(model)
     % This function just takes rules, changes all gene names to
     % grRules and also changes 'or' and 'and' relations from
     % corresponding symbols
-    replacingGenes=cell([size(model.genes,1) 1]);
-    grRules=cell([size(model.rules,1) 1]);
+    grRules = strrep(model.rules,'&','and');
+    grRules = strrep(grRules,'|','or');
     
-    for i=1:numel(replacingGenes)
-        replacingGenes{i}=strcat('x(',num2str(i),')');
-    end;
-    for i=1:numel(model.rules)
-        grRules{i}=regexprep(model.rules{i},replacingGenes,model.genes);
-        grRules{i}=regexprep(grRules{i},' & ',' and ');
-        grRules{i}=regexprep(grRules{i},' | ',' or ');
+    %Change gene ids:
+    for i = 1:length(model.genes)
+        grRules = strrep(grRules,['x(' num2str(i) ')'],model.genes{i});
     end;
 end
 
