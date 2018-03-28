@@ -29,7 +29,7 @@ function newModel=ravenCobraWrapper(model)
 %   Usage: newModel=ravenCobraWrapper(model)
 %
 %   Simonas Marcisauskas, 2018-03-17
-%   Benjamin J. Sanchez, 2018-03-27
+%   Benjamin J. Sanchez, 2018-03-28
 %
 
 if isfield(model,'rules')
@@ -398,20 +398,18 @@ function rules=grrulesToRules(model)
 end
 
 function grRules=rulesTogrrules(model)
-    % This function takes rules, replaces &/| for and/or, takes out extra
-    % whitespace and redundant parenthesis introduced by COBRA, and
-    % replaces the x(i) format with the actual gene ID, to create grRules.
+    % This function takes rules, replaces &/| for and/or, replaces the x(i)
+    % format with the actual gene ID, and takes out extra whitespace and
+    % redundant parenthesis introduced by COBRA, to create grRules.
     grRules = strrep(model.rules,'&','and');
     grRules = strrep(grRules,'|','or');
+    for i = 1:length(model.genes)
+        grRules = strrep(grRules,['x(' num2str(i) ')'],model.genes{i});
+    end
     grRules = strrep(grRules,'( ','(');
     grRules = strrep(grRules,' )',')');
     grRules = regexprep(grRules,'^(','');   %rules that start with a "("
     grRules = regexprep(grRules,')$','');   %rules that end with a ")"
-    
-    %Change gene ids:
-    for i = 1:length(model.genes)
-        grRules = strrep(grRules,['x(' num2str(i) ')'],model.genes{i});
-    end;
 end
 
 function rxnGeneMat=getRxnGeneMat(model)
