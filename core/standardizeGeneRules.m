@@ -18,6 +18,8 @@ newModel = model;
 RGMat    = sparse(n,g);
 
 if isfield(model,'grRules')
+    % Search logical errors in the grRules field
+    findLogicalErrors(model)  
     for i=1:length(model.grRules)
         originalSTR = model.grRules{i};
         newSTR      = [];
@@ -83,5 +85,20 @@ function rxnGeneMat = modifyRxnGeneMat(genesSet,modelGenes,rxnGeneMat,i)
                 % genes field (and to all of its dependencies)
             end
         end
+    end
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% function that gets a simple genes set (single gene or enzyme complex) and
+% a rxn index. The rxnGeneMat row (rxn) will be modified accordingly to the
+function findLogicalErrors(model)  
+    errors_l = find(~cellfun(@isempty,strfind(model.grRules,') and (')));
+    errors_U = find(~cellfun(@isempty,strfind(model.grRules,') AND (')));
+    errors   = union(errors_l,errors_U);
+    if ~isempty(errors)
+        for i=1:length(errors)
+            index = errors(i);
+            disp(['     grRule #:',num2str(index),' ',model.grRules{index}])
+        end
+        error('Logical errors found on grRules') 
     end
 end
