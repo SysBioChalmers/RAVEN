@@ -29,7 +29,9 @@ if isfield(model,'grRules')
                 RGMat = modifyRxnGeneMat(simpleSet,model.genes,RGMat,i);
                 % Enclose simpleSet in brackets
                 if length(genesSets)>1
-                    simpleSet = horzcat('(',simpleSet,')');
+                    if ~isempty(strfind(simpleSet,' and '))
+                        simpleSet = horzcat('(',simpleSet,')');
+                    end
                 end
                 % Separate genesSets in the substring (in case of
                 % isoenzymes)

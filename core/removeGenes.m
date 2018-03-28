@@ -91,6 +91,9 @@ function geneRule = removeGeneFromRule(geneRule,geneToRemove)
     hasGene  = ~cellfun(@isempty,strfind(geneSets,geneToRemove));
     geneSets = geneSets(~hasGene);
     geneRule = strjoin(geneSets,' or ');
+    if length(geneSets) == 1 && ~isempty(strfind(geneRule,'('))
+        geneRule = geneRule(2:end-1);
+    end
 end
 
 
