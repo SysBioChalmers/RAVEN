@@ -1,34 +1,44 @@
-function newModel = standardizeGeneRules(model)
-% standardizeGeneRules
-%   Standardizes gene-rxn rules in a model and modifies rxnGeneMat for 
-%   providing consistency with the grRules field
+function [grRules,rxnGeneMat] = standardizeGrRules(model)
+% standardizeGrRules
+%   Standardizes gene-rxn rules in a model according to the following      
+%       - No overall containing brackets
+%       - Just enzyme complexes are enclosed into brackets
+%       - ' and ' & ' or ' strings are strictly set to lowercases
+%
+%   A rxnGeneMat matrix consistent with the standardized grRules is created 
 %
 %   model        a model structure
 %
-%   newModel     an updated model structure
+%   grRules      [nRxns x 1] cell array with the standardized grRules
+%   rxnGeneMat   [nRxns x nGenes]Sparse matrix consitent with the 
+%                standardized grRules
 %
-%   Usage: newModel = standardizeGeneRules(model)
+%   Usage: [grRules,rxnGeneMat] = standardizeGrRules(model)
 %
-%   Ivan Domenzain, 2018-03-28
+%   Ivan Domenzain, 2018-03-29
 %
-newModel = model;
-% Preallocate rxnGeneMat
-[~,n]    = size(model.S);
-[g,~]    = size(model.genes);
-RGMat    = sparse(n,g);
+
+% Preallocate fields
+[~,n]      = size(model.S);
+[g,~]      = size(model.genes);
+rxnGeneMat = sparse(n,g);
+grRules    = cell(n,1);
 
 if isfield(model,'grRules')
     % Search logical errors in the grRules field
-    findLogicalErrors(model)  
+    findLogicalErrors(model) 
+    
     for i=1:length(model.grRules)
         originalSTR = model.grRules{i};
+        grRules{i}  = originalSTR;
         newSTR      = [];
         % Non-empty grRules are splitted in all their different isoenzymes
         genesSets = getSimpleGeneSets(originalSTR);
+        
         if ~isempty(genesSets)
             for j=1:length(genesSets)
                 simpleSet  = genesSets{j};
-                RGMat = modifyRxnGeneMat(simpleSet,model.genes,RGMat,i);
+                rxnGeneMat = modifyRxnGeneMat(simpleSet,model.genes,rxnGeneMat,i);
                 % Enclose simpleSet in brackets
                 if length(genesSets)>1
                     if ~isempty(strfind(simpleSet,' and '))
@@ -39,17 +49,18 @@ if isfield(model,'grRules')
                 % isoenzymes)
                 if j<length(genesSets)
                     newSTR = [newSTR, simpleSet, ' or '];
-                    % Add the last simpleSet
+                % Add the last simpleSet
                 else
                     newSTR = [newSTR, simpleSet];
                 end
                 
             end
-            newModel.grRules{i} = newSTR;
+            grRules{i} = newSTR;
         end
+        
     end
 end
-newModel.rxnGeneMat = RGMat;
+
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function that gets a cell array with all the simple geneSets in a given 

@@ -157,12 +157,15 @@ if isRaven
     % It seems that grRules, rxnGeneMat and rev are disposable fields in COBRA
     % version, but we export them to make things faster, when converting
     % COBRA structure back to RAVEN;
-    if isfield(model,'grRules')
-        newModel.grRules=model.grRules;
-    end;
     if isfield(model,'rxnGeneMat')
         newModel.rxnGeneMat=model.rxnGeneMat;
     end;
+    if isfield(model,'grRules')
+        [grRules, rxnGeneMat] = standardizeGrRules(model);
+        newModel.grRules      = grRules;
+        %Incorporate a rxnGeneMat consistent with standardized grRules
+        newModel.rxnGeneMat   = rxnGeneMat;
+    end
     newModel.rev=model.rev;
  else
     fprintf('Converting COBRA structure to RAVEN..\n');
@@ -229,15 +232,14 @@ if isRaven
         newModel.rxnNames=model.rxnNames;
     end;
     if isfield(model,'grRules')
-        newModel.grRules=model.grRules;
+        [grRules,rxnGeneMat] = standardizeGrRules(model);
+        newModel.grRules     = grRules;
+        newModel.rxnGeneMat  = rxnGeneMat;
     else
-        model.grRules=rulesTogrrules(model);
-        newModel.grRules=model.grRules;
-    end;
-    if isfield(model,'rxnGeneMat')
-        newModel.rxnGeneMat=model.rxnGeneMat;
-    elseif isfield(model,'grRules')
-        newModel.rxnGeneMat=getRxnGeneMat(model);
+        model.grRules        = rulesTogrrules(model);
+        [grRules,rxnGeneMat] = standardizeGrRules(model);
+        newModel.grRules     = grRules;
+        newModel.rxnGeneMat  = rxnGeneMat;
     end;
     if isfield(model,'subSystems')
         newModel.subSystems=model.subSystems;
@@ -410,10 +412,4 @@ function grRules=rulesTogrrules(model)
     grRules = strrep(grRules,' )',')');
     grRules = regexprep(grRules,'^(','');   %rules that start with a "("
     grRules = regexprep(grRules,')$','');   %rules that end with a ")"
-end
-
-function rxnGeneMat=getRxnGeneMat(model)
-    %Check gene association for each reaction and populate rxnGeneMat
-    modelTemp  = standardizeGeneRules(model);
-    rxnGeneMat = modelTemp.rxnGeneMat;
 end
