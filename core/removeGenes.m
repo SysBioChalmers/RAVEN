@@ -1,4 +1,4 @@
-function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns)
+function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)
 % removeGenes
 %   Deletes a set of genes from a model
 %
@@ -10,12 +10,14 @@ function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeB
 %                           false)
 %   removeBlockedRxns       remove reactions that get blocked after deleting the genes
 %                           (opt, default false)
+%   standardizeRules        format gene rules to be compliant with standard format
+%                           (opt, default true)
 %
 %   reducedModel            an updated model structure
 %
 %   Usage: reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns)
 %
-%   Benjamín J. Sánchez, 2018-03-28
+%   Benjamín J. Sánchez, 2018-03-29
 %
 
 if nargin<3
@@ -24,6 +26,15 @@ end
 
 if nargin<4
     removeBlockedRxns = false;
+end
+
+if nargin<5
+    standardizeRules = true;
+end
+
+%Format grRules and rxnGeneMatrix:
+if standardizeRules
+    model = standardizeGrRules(model);
 end
 
 reducedModel = model;
