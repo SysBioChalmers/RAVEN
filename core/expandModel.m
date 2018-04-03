@@ -15,7 +15,7 @@ function newModel=expandModel(model)
 %
 %   Usage: newModel=expandModel(model)
 %
-%   Simonas Marcisauskas, 2017-08-25
+%   Simonas Marcisauskas, 2018-04-03
 %
 
 %Start by checking which reactions could be expanded
@@ -124,4 +124,9 @@ else
     %There are no reactions to expand, return the model as is
     newModel=model;
 end
+
+%Fix grRules and reconstruct rxnGeneMat
+[grRules,rxnGeneMat] = standardizeGrRules(newModel);
+newModel.grRules = grRules;
+newModel.rxnGeneMat = rxnGeneMat;
 end

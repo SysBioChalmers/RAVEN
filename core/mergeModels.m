@@ -13,7 +13,7 @@ function model=mergeModels(models,supressWarnings)
 %
 %   Usage: model=mergeModels(models)
 %
-%   Simonas Marcisauskas, 2018-03-18
+%   Simonas Marcisauskas, 2018-04-03
 %
 
 %Just return the model
@@ -498,21 +498,19 @@ for i=2:numel(models)
                 EM='There was an unexpected error in matching genes';
                 dispEM(EM);
             end
-
-            %Create the new rxnGene matrix
-            rxnGeneMat=sparse(numel(models{i}.rxns),numel(model.genes));
-            rxnGeneMat(:,b)=models{i}.rxnGeneMat;
-            model.rxnGeneMat=[model.rxnGeneMat; rxnGeneMat];
             model.grRules=[model.grRules;models{i}.grRules];
         end
     else
         %Add empty gene associations
         if isfield(model,'genes')
-            model.rxnGeneMat=[model.rxnGeneMat;sparse(numel(models{i}.rxns),numel(model.genes))];
             emptyGene=cell(numel(models{i}.rxns),1);
             emptyGene(:)={''};
             model.grRules=[model.grRules;emptyGene];
         end
     end
 end
+%Fix grRules and reconstruct rxnGeneMat
+[grRules,rxnGeneMat] = standardizeGrRules(model);
+model.grRules = grRules;
+model.rxnGeneMat = rxnGeneMat;
 end

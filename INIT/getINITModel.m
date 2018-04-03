@@ -92,7 +92,7 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %               metabolomicsData, taskFile, useScoresForTasks, printReport,...
 %               taskStructure, params, paramsFT)
 %
-%   Rasmus Agren, 2014-01-08
+%   Simonas Marcisauskas, 2018-04-03
 %
 
 if nargin<3
@@ -334,6 +334,11 @@ if ~isempty(taskStructure)
 else
     taskReport=[];
 end
+
+%Fix grRules and reconstruct rxnGeneMat
+[grRules,rxnGeneMat] = standardizeGrRules(model);
+model.grRules = grRules;
+model.rxnGeneMat = rxnGeneMat;
 end
 
 %This is for printing a summary of a model

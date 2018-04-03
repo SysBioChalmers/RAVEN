@@ -65,7 +65,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Simonas Marcisauskas, 2018-03-19
+%   Simonas Marcisauskas, 2018-04-03
 %
 
 if nargin<2
@@ -527,7 +527,6 @@ if ~isempty(model.grRules)
                    EM=['The gene association in reaction ' model.rxns{i} ' (' tempRules{i} ') is not present in the gene list'];
                    dispEM(EM);
                end
-               model.rxnGeneMat(i,I)=1;
            else
                temp=[0 indexes numel(tempRules{i})+1];
                for j=1:numel(indexes)+1
@@ -538,7 +537,6 @@ if ~isempty(model.grRules)
                        EM=['The gene association in reaction ' model.rxns{i} ' (' geneName ') is not present in the gene list'];
                        dispEM(EM);
                    end
-                   model.rxnGeneMat(i,I)=1;
                end
            end
             %In order to adhere to the COBRA standards it should be like
@@ -568,7 +566,11 @@ if ~isempty(model.grRules)
        end
     end
 end
-model.rxnGeneMat=sparse(model.rxnGeneMat);
+
+%Fix grRules and reconstruct rxnGeneMat
+[grRules,rxnGeneMat] = standardizeGrRules(model);
+model.grRules = grRules;
+model.rxnGeneMat = rxnGeneMat;
 
 %Check that the compartment for each reaction can be found
 if ~isempty(model.rxnComps)

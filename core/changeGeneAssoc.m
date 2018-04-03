@@ -16,9 +16,9 @@ function model = changeGeneAssoc(model,rxnID,geneAssoc,replace)
 %
 %   Usage: changeGeneAssoc(model,rxnID,geneAssoc,replace)
 %
-%   Eduard Kerkhoven, 2015-10-07
+%   Simonas Marcisauskas, 2018-04-03
+%
 
-% 
 if nargin==3
     replace=true;
 end
@@ -44,4 +44,8 @@ else % Add gene associations, add new gene rules after 'OR'.
     model.grRules(idxRxn)=cellstr([model.grRules{idxRxn},' or ',geneAssoc]);
     model.rxnGeneMat(idxRxn,idxGene)=1;
 end
+%Fix grRules and reconstruct rxnGeneMat
+[grRules,rxnGeneMat] = standardizeGrRules(model);
+model.grRules = grRules;
+model.rxnGeneMat = rxnGeneMat;
 end
