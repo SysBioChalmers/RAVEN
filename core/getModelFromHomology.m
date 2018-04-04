@@ -310,7 +310,7 @@ for i=1:numel(models)
     %deleted. This approach works fine for 'and' complexes, but there
     %should be a check that it doesn't keep 'or' genes if it doesn't have
     %to!
-    models{useOrderIndexes(i)}=removeGenes(models{useOrderIndexes(i)},~a,true,false);
+    models{useOrderIndexes(i)}=removeGenes(models{useOrderIndexes(i)},~a,true,true,false);
 end
 
 %Since I want to use mergeModels in the end, I simplify the models further

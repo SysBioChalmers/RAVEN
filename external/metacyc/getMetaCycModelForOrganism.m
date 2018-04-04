@@ -25,7 +25,7 @@ function model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %   Usage: model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives)
 %
-%   Simonas Marcisauskas, 2018-03-17
+%   Simonas Marcisauskas, 2018-04-03
 %
 
 if nargin<2
@@ -228,4 +228,9 @@ model.metNames(I)=model.mets(I);
 
 %Remove additional fields
 model=rmfield(model,{'proteins','bitscore','ppos'});
+
+%In the end fix grRules and rxnGeneMat
+[grRules,rxnGeneMat] = standardizeGrRules(model);
+model.grRules = grRules;
+model.rxnGeneMat = rxnGeneMat;
 end

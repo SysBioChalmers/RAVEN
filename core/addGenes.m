@@ -22,7 +22,7 @@ function newModel=addGenes(model,genesToAdd)
 %
 %   Usage: newModel=addGenes(model,genesToAdd)
 %
-%   Eduard Kerkhoven, 2018-02-23
+%   Simonas Marcisauskas, 2018-04-04
 %
 
 newModel=model;
@@ -122,6 +122,9 @@ if isfield(newModel,'geneFrom')
 end
 
 if isfield(newModel,'rxnGeneMat')
-    newModel.rxnGeneMat=[newModel.rxnGeneMat sparse(numel(model.rxns),nGenes)];
+    %Fix grRules and reconstruct rxnGeneMat
+    [grRules,rxnGeneMat] = standardizeGrRules(newModel);
+    newModel.grRules = grRules;
+    newModel.rxnGeneMat = rxnGeneMat;
 end
 end

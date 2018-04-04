@@ -168,7 +168,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...
 %    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2018-03-20
+%   Simonas Marcisauskas, 2018-04-03
 %
 
 if nargin<2
@@ -847,6 +847,11 @@ for i=1:numel(model.rxns)
     end
     model.grRules{i}=[model.grRules{i} ')'];
 end
+
+%Fix grRules and reconstruct rxnGeneMat
+[grRules,rxnGeneMat] = standardizeGrRules(model);
+model.grRules = grRules;
+model.rxnGeneMat = rxnGeneMat;
 end
 
 %Supporter function to list the files in a directory and return them as a

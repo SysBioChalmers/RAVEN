@@ -16,12 +16,7 @@ function [reducedModel, removedRxns]=contractModel(model,distReverse)
 %
 %   Usage: [reducedModel, removedRxns]=contractModel(model,distReverse)
 %
-%   Rasmus Agren,     2014-01-08
-%   Hao Wang,         2018-03-06  Add parameter distReverse to enable overlooking
-%                                 reaction reversibility when detecting
-%                                 duplication; Restructure removedRxns cell
-%                                 array for retaining the assocation between
-%                                 duplicated reactions
+%   Simonas Marcisauskas, 2018-04-03
 % 
 
 if nargin<2
@@ -67,13 +62,6 @@ for i=1:numel(duplicateRxns)
        model.c(mergeTo(i))=model.c(duplicateRxns(i));
     end
 
-    %Genes are added as 'or'
-    if isfield(model,'rxnGeneMat')
-        commonGenes=find(model.rxnGeneMat(duplicateRxns(i),:) & model.rxnGeneMat(mergeTo(i),:));
-        newGenes=model.rxnGeneMat(duplicateRxns(i),:);
-        newGenes(commonGenes)=0;
-        model.rxnGeneMat(mergeTo(i),:)=model.rxnGeneMat(mergeTo(i),:)+newGenes;
-    end
     if isfield(model,'grRules')
         if any(model.grRules{duplicateRxns(i)})
            if any(model.grRules{mergeTo(i)})
@@ -93,6 +81,7 @@ for i=1:numel(duplicateRxns)
            end
         end
     end
+
     if isfield(model,'eccodes')
         if any(model.eccodes{duplicateRxns(i)})
            if any(model.eccodes{mergeTo(i)})
@@ -124,4 +113,11 @@ end
 reducedModel=removeReactions(model,duplicateRxns);
 [~, index]=ismember(reducedModel.rxns,model.rxns);
 removedRxns=removedRxns(index);
+
+if isfield(reducedModel,'rxnGeneMat')
+    %Fix grRules and reconstruct rxnGeneMat
+    [grRules,rxnGeneMat] = standardizeGrRules(reducedModel);
+    reducedModel.grRules = grRules;
+    reducedModel.rxnGeneMat = rxnGeneMat;
+end
 end
