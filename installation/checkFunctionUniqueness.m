@@ -5,7 +5,7 @@ function checkFunctionUniqueness()
 %
 %   Usage: checkFunctionUniqueness()
 %
-%   Eduard Kerkhoven, 2017-11-15
+%   Simonas Marcisauskas, 2018-04-04
 %
 
 %Get the RAVEN path
@@ -19,7 +19,7 @@ temp_res2=dir([ravenDir '/*/*/*.m']);
 ravenFunctions={temp_res1.name,temp_res2.name}';
 
 %Getting all the paths added to Matlab
-matlabPaths=regexp(path, ';', 'split')';
+matlabPaths=regexp(path, ':', 'split')';
 
 hasConflicts=false;
 
