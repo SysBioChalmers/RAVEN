@@ -65,7 +65,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Simonas Marcisauskas, 2018-04-03
+%   Simonas Marcisauskas, 2018-04-04
 %
 
 if nargin<2
@@ -505,10 +505,6 @@ if ~isempty(model.rxnComps)
     end
 end
 
-%Check gene association for each reaction and populate rxnGeneMat
-if ~isempty(model.genes)
-    model.rxnGeneMat=zeros(numel(model.rxns),numel(model.genes));
-end
 if ~isempty(model.grRules)
     tempRules=model.grRules;
     for i=1:length(model.rxns)
@@ -566,11 +562,6 @@ if ~isempty(model.grRules)
        end
     end
 end
-
-%Fix grRules and reconstruct rxnGeneMat
-[grRules,rxnGeneMat] = standardizeGrRules(model);
-model.grRules = grRules;
-model.rxnGeneMat = rxnGeneMat;
 
 %Check that the compartment for each reaction can be found
 if ~isempty(model.rxnComps)
@@ -761,6 +752,11 @@ EM='The following reactions have metabolites which are present more than once. O
 dispEM(EM,false,model.rxns(badRxns));
 
 model.b=zeros(numel(model.mets),1);
+
+%Fix grRules and reconstruct rxnGeneMat
+[grRules,rxnGeneMat] = standardizeGrRules(model);
+model.grRules = grRules;
+model.rxnGeneMat = rxnGeneMat;
 
 %Remove unused fields
 if all(cellfun(@isempty,model.compOutside))
