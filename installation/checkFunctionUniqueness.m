@@ -30,22 +30,22 @@ for i=1:numel(matlabPaths)
             pathFunctions={temp_res.name}';
         else
             pathFunctions='';
-        end;
+        end
         if ~isempty(pathFunctions)
             if any(ismember(ravenFunctions,pathFunctions))
                 disp(['WARNING: Duplicate functions in ',matlabPaths{i},': ']);
                 ovrlpFunctions=ravenFunctions(ismember(ravenFunctions,pathFunctions));
                 disp(ovrlpFunctions);
                 hasConflicts=true;
-            end;
-        end;
-    end;
-end;
+            end
+        end
+    end
+end
 
 if hasConflicts
     fprintf('It is strongly recommended to resolve conflicting functions as this may compromise RAVEN functionality\n');
 else
-    fprintf('No conflicting functions were found\n');    
-end;
+    fprintf('No conflicting functions were found\n');
+end
 
 end
