@@ -6,6 +6,7 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %   model           draft model where reactions should be copied to
 %   sourceModel     model where reactions and metabolites are sourced from
 %   rxns            cell array with reaction IDs (from source model)
+%                   string allowed if only one reaction is added
 %   addGene         three options:
 %                   false   no genes are annotated to the new reactions
 %                   true    grRules ared copied from the sourceModel and
@@ -18,8 +19,7 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %   rxnNote         string explaining why reactions were copied to model,
 %                   is included as newModel.rxnNotes (opt, default
 %                   'Added via addRxnsAndMets()')
-%   confidence      string, specifying confidence score for all reactions.
-%                   Following doi:10.1038/nprot.2009.203 (opt, default 0)
+%   confidence      double specifying confidence score for all reactions.
 %                   4:  biochemical data: direct evidence from enzymes
 %                       assays
 %                   3:  genetic data: knockout/-in or overexpression
@@ -30,6 +30,7 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %                   1:  modeling data: required for functional model,
 %                       hypothetical reaction
 %                   0:  no evidence
+%                   following doi:10.1038/nprot.2009.203 (opt, default 0)
 %
 %   newModel        an updated model structure
 %
@@ -41,7 +42,7 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %
 %   Usage: newModel=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)
 %
-%   Eduard Kerkhoven, 2017-02-13
+%   Eduard Kerkhoven, 2017-04-05
 %
 
 if nargin<6
@@ -171,7 +172,11 @@ rxnToAdd.ub=sourceModel.ub(rxnIdx);
 rxnToAdd.rxnNotes=cell(1,numel(rxnToAdd.rxns));
 rxnToAdd.rxnNotes(:)={rxnNote};
 rxnToAdd.rxnConfidenceScores=NaN(1,numel(rxnToAdd.rxns));
-rxnToAdd.rxnConfidenceScores(:)=str2num(confidence);
+if ~isnumeric(confidence)
+    EM='confidence score must be numeric';
+    dispEM(EM, true);
+end
+rxnToAdd.rxnConfidenceScores(:)=confidence;
 if isfield(sourceModel,'subSystems')
 	rxnToAdd.subSystems=sourceModel.subSystems(rxnIdx);
 end
