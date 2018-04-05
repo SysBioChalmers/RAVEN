@@ -100,8 +100,8 @@ metIdx=metIdx(~ismember(sourcemetCompsN(metIdx),metCompsN));
 
 if ~isempty(metIdx)
     fprintf('\n\nThe following metabolites will be added to the model:\n')
-    fprintf(strjoin(transpose(sourcemetCompsN(metIdx)),'\n'))    
-       
+    fprintf(strjoin(transpose(sourcemetCompsN(metIdx)),'\n'))
+    
     if isfield(sourceModel,'mets')
         metsToAdd.mets=sourceModel.mets(metIdx);
     end
@@ -127,7 +127,7 @@ if ~isempty(metIdx)
     metsToAdd.compartments=strtrim(cellstr(num2str(sourceModel.metComps(metIdx)))); % Convert from compartment string to compartment number
     [~,idx]=ismember(metsToAdd.compartments,strsplit(num2str(1:length(sourceModel.comps)))); % Match compartment number to compartment abbreviation
     metsToAdd.compartments=sourceModel.comps(idx); % Fill in compartment abbreviations
-
+    
     model=addMets(model,metsToAdd);
 end
 fprintf('\n\nNumber of metabolites added to the model:\n')
@@ -178,14 +178,13 @@ if ~isnumeric(confidence)
 end
 rxnToAdd.rxnConfidenceScores(:)=confidence;
 if isfield(sourceModel,'subSystems')
-	rxnToAdd.subSystems=sourceModel.subSystems(rxnIdx);
+    rxnToAdd.subSystems=sourceModel.subSystems(rxnIdx);
 end
 if isfield(sourceModel,'eccodes')
-	rxnToAdd.eccodes=sourceModel.eccodes(rxnIdx);
+    rxnToAdd.eccodes=sourceModel.eccodes(rxnIdx);
 end
 model=addRxns(model,rxnToAdd,3,'',false);
 
 fprintf('\n\nNumber of reactions added to the model:\n')
 fprintf([num2str(numel(rxnIdx)),'\n'])
-
 end
