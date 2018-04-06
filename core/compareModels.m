@@ -187,7 +187,7 @@ end
 % Compare number of reactions in each subsystem in each model using a heatmap
 % ISSUE: This section breaks the code when not all models have the "subSystems" field
 field = 'subSystems';
-fprintf('\n Comparing subsystem utilization \n\n')
+fprintf('\n Comparing subsystem utilization \n')
 for i = 1:numel(models)
     field_present(i) = isfield(models{i},field);
 end
@@ -228,7 +228,7 @@ end
 
 % Compare overall reaction structure across all models using a heatmap
 field = 'rxns';
-fprintf('\n Comparing model reaction correlations \n\n')
+fprintf('\n Comparing model reaction correlations \n')
 all_rxns = catModelElements(models,field);
 % Create binary matrix of reactions
 binary_matrix = zeros(length(all_rxns),numel(models));
@@ -246,7 +246,7 @@ end
 
 % Compare overall reaction structure across all models using tSNE projection
 rng(42) % For consistency
-fprintf('\n Comparing model reaction structures \n\n')
+fprintf('\n Comparing model reaction structures \n')
 if exist('tsne') > 0
     t_vars_3d_struc = tsne(double(binary_matrix'),'Distance','hamming','NumDimensions',3); % 3D
     compStruct.structCompMap = t_vars_3d_struc;
@@ -288,7 +288,7 @@ end
 % Compare model function across all models using tSNE projection of fluxes
 % in response to micropurturbations
 if functionalComp == true
-    fprintf('\n Comparing model reaction functions \n\n')
+    fprintf('\n Comparing model reaction functions \n')
     [flux_matrix,obj_matrix] = mapFunction(models,groupVector,fluxMets,fluxValues,objectiveFunctions,numRuns);
     if exist('tsne') > 0
         % calculate tSNE & save results
@@ -302,11 +302,11 @@ if functionalComp == true
             color_vector = [];
             if length(groupVector) == numel(models)
                 for i = 1:length(groupVector)
-                    color_vector = [color_vector,repelem(groupVector(i),n)];
+                    color_vector = [color_vector,repelem(groupVector(i),numRuns)];
                 end
             else
                 for (i = 1:numel(models))
-                    color_vector = [color_vector,repelem(i,n)];
+                    color_vector = [color_vector,repelem(i,numRuns)];
                 end
             end
             colormap(parula(max(color_vector)));scatter3(t_vars_3d_func(:,1),t_vars_3d_func(:,2),t_vars_3d_func(:,3),35,color_vector,'filled')
@@ -327,11 +327,11 @@ if functionalComp == true
             color_vector = [];
             if length(groupVector) == numel(models)
                 for i = 1:length(groupVector)
-                    color_vector = [color_vector,repelem(groupVector(i),n)];
+                    color_vector = [color_vector,repelem(groupVector(i),numRuns)];
                 end
             else
                 for (i = 1:numel(models))
-                    color_vector = [color_vector,repelem(i,n)];
+                    color_vector = [color_vector,repelem(i,numRuns)];
                 end
             end
             colormap(parula(max(color_vector)));scatter3(mds_vars_3d_func(:,1),mds_vars_3d_func(:,2),mds_vars_3d_func(:,3),35,color_vector,'filled')
@@ -452,14 +452,6 @@ function [flux_matrix,obj_matrix] = mapFunction(models,groupVector,fluxMets,flux
         fluxMets_names = fluxMets_split(:,1); % biomassMet Names
         fluxMets_comp = fluxMets_split(:,2); % biomassMet Compartments
     end
-        
-    % Perform microperturbations (+/- ~10% of nominal value)
-    n = numRuns; % Number of microperturbations to perform for each model
-    if length(fluxValues) > 0
-        for(i = 1:n)
-            fluxValuesMatrix(:,i) = fluxValues + (fluxValues/10).*randn(size(fluxValues,1),1)/3;
-        end
-    end     
     
     % Solve the models
     for (i = 1:numel(models))
@@ -470,11 +462,49 @@ function [flux_matrix,obj_matrix] = mapFunction(models,groupVector,fluxMets,flux
         % (-50 was chosen to induce a limiting growth condition)
         if length(fluxValues)==0
             if length(fluxMets)==0
-                fluxMets_names = model.metNames(find(ismember(model.comps(model.metComps),'s')));
-                fluxMets_comp = repelem('[s]',length(fluxMets_names));
-                fluxValues = -50;
+%                 fluxMets_names = model.metNames(find(ismember(model.comps(model.metComps),'s')));
+%                 fluxMets_comp = repelem('[s]',length(fluxMets_names));
+%                 fluxValues = -50;
+                input_rxns=[];
+                input_fluxes=[];
+                input_metNames = [];
+                input_metComps = [];
+                for k = 1:numel(models)
+                    if numel(objectiveFunctions) > 1
+                        objectiveFunction = objectiveFunctions{k};
+                    elseif numel(objectiveFunctions) == 1
+                        objectiveFunction = string(objectiveFunctions);
+                    end
+                    models{k} = setParam(models{k}, 'obj', objectiveFunction, 1);
+                    models{k} = setParam(models{k}, 'lb', objectiveFunction, 0);
+                    models{k} = setParam(models{k}, 'ub', objectiveFunction, 1000);
+                    sol_init = solveLP(models{k},1);
+                    [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(models{k},'in');
+                    [input_mets,~] = find(models{k}.S(:,ismember(models{k}.rxns,exchangeRxns(find(ismember(exchangeRxnsIndexes,find(sol_init.x~=0)))))));
+                    input_metNames = [input_metNames;models{k}.metNames(input_mets)];
+                    input_metComps = [input_metComps;models{k}.comps(models{k}.metComps(input_mets))];
+                    input_rxns = [input_rxns;exchangeRxns(find(ismember(exchangeRxnsIndexes,find(sol_init.x~=0))))];
+                    input_fluxes = [input_fluxes;sol_init.x(exchangeRxnsIndexes(find(ismember(exchangeRxnsIndexes,find(sol_init.x~=0)))))];
+                end
+                [input_unique,index] = unique(input_rxns);
+                for k = 1:length(unique(input_unique))
+%                     input_fluxes_unique(k) = max(input_fluxes(ismember(input_rxns,input_unique(k))));
+                    input_fluxes_unique(k) = min(input_fluxes(ismember(input_rxns,input_unique(k)))); % Unrestricted
+                end
+                fluxMets_names = input_metNames(index);
+                fluxMets_comp = input_metComps(index);
+                fluxValues = input_fluxes_unique'*0.75;
             else
                 fluxValues = repelem(-50,1,length(fluxMets_names));
+            end
+        end
+        
+        % Perform microperturbations (+/- ~50% of nominal value)
+        n = numRuns; % Number of microperturbations to perform for each model
+        if length(fluxValues) > 0
+            for(k = 1:n)
+                fluxValuesMatrix(:,k) = fluxValues + (fluxValues/10).*randn(size(fluxValues,1),1)/3;
+%                 fluxValuesMatrix(:,k) = fluxValues + (fluxValues/2).*randn(size(fluxValues,1),1)/3;
             end
         end
         
@@ -499,22 +529,26 @@ function [flux_matrix,obj_matrix] = mapFunction(models,groupVector,fluxMets,flux
             [id, exchangeRxns] =getExchangeRxns(model); % Get all exchange rxns (should not exist)
             model = setParam(model, 'lb', exchangeRxns, 0); % Bind all exchange rxns LB to 0
             model = setParam(model, 'ub', exchangeRxns, 1000); % Permissive of secretion
+            clear reactionNumbers
             for (k = 1:length(fluxMets_names)) % Get inputs & compartments
                 metNumbers = find(ismember(model.metNames,fluxMets_names(k)));
                 compNumbers = find(ismember(model.comps(model.metComps),regexprep(fluxMets_comp(k), '\[(.*)\]', '$1')));
                 metExchNumber = intersect(metNumbers,compNumbers);
                 if ~isempty(exchangeRxns(find(model.S(metExchNumber,exchangeRxns))))
-                    reactionNumbers(k) = exchangeRxns(find(model.S(metExchNumber,exchangeRxns)));
+                    reactionNumbers(k) = exchangeRxns(find(model.S(metExchNumber,exchangeRxns)==1));
                 else reactionNumbers(k) = NaN;
                 end
             end
             fluxes = fluxValuesMatrix(:,i);
-            model = setParam(model, 'lb', reactionNumbers(~isnan(reactionNumbers)), fluxes(~isnan(reactionNumbers)));
-            if any(fluxValues > 0)
+            negativeFluxes = fluxes; % Set up new flux vector for only negatives
+            negativeFluxes(find(negativeFluxes>0)) = 0; % Set all flux values to a maximum of zero
+            if length(fluxMets)>0
                 % This should be the case for user-defined fluxes
+                model = setParam(model, 'lb', reactionNumbers(~isnan(reactionNumbers)), fluxes(~isnan(reactionNumbers))); % Restrictive of uptake/secretion
                 model = setParam(model, 'ub', reactionNumbers(~isnan(reactionNumbers)), fluxes(~isnan(reactionNumbers))); % Restrictive of uptake/secretion 
             else
                 % This should be the case for automatically generated fluxes
+                model = setParam(model, 'lb', reactionNumbers(~isnan(reactionNumbers)), negativeFluxes(~isnan(reactionNumbers))); % Sets uptake rate for negative fluxes
                 model = setParam(model, 'ub', reactionNumbers(~isnan(reactionNumbers)), 1000); % Permissive of secretion
             end
             
