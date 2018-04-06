@@ -35,7 +35,7 @@
 
    Usage: checkInstallation()
 
-    Eduard Kerkhoven, 2017-12-15</pre></div>
+      Eduard Kerkhoven, 2017-12-15</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -59,156 +59,155 @@ This function is called by:
 0007 <span class="comment">%</span>
 0008 <span class="comment">%   Usage: checkInstallation()</span>
 0009 <span class="comment">%</span>
-0010 <span class="comment">%    Eduard Kerkhoven, 2017-12-15</span>
-0011 <span class="comment">%</span>
-0012 
-0013 fprintf(<span class="string">'\n*** THE RAVEN TOOLBOX v. 2.0 ***\n\n'</span>);
-0014 
-0015 keepSolver=false;
-0016 workingSolvers=<span class="string">''</span>;
-0017 
-0018 <span class="comment">%Check if RAVEN is in the path list</span>
-0019 paths=textscan(path,<span class="string">'%s'</span>,<span class="string">'delimiter'</span>, pathsep);
-0020 paths=paths{1};
-0021 
-0022 <span class="comment">%Get the RAVEN path</span>
-0023 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
-0024 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
-0025 
-0026 <span class="keyword">if</span> ismember(ravenDir,paths)
-0027     fprintf(<span class="string">'Checking if RAVEN is on the Matlab path... PASSED\n'</span>);
-0028 <span class="keyword">else</span>
-0029     fprintf(<span class="string">'Checking if RAVEN is on the Matlab path... FAILED\n'</span>);
-0030     addMe=input(<span class="string">'Would you like to add the RAVEN directory to the path list? Y/N\n'</span>,<span class="string">'s'</span>);
-0031     <span class="keyword">if</span> strcmpi(addMe,<span class="string">'y'</span>)
-0032         subpath=regexp(genpath(ravenDir),pathsep,<span class="string">'split'</span>); <span class="comment">% Lists all subdirectories</span>
-0033         pathsToKeep=cellfun(@(x) isempty(strfind(x,<span class="string">'.git'</span>)),subpath) &amp; cellfun(@(x) isempty(strfind(x,<span class="string">'doc'</span>)),subpath);
-0034         addpath(strjoin(subpath(pathsToKeep),pathsep));
-0035         savepath
-0036     <span class="keyword">end</span>
-0037 <span class="keyword">end</span>
-0038 
-0039 <span class="comment">%Adds the required classes to the static Java path if not already added</span>
-0040 addJavaPaths();
-0041     
-0042 excelFile=fullfile(ravenDir,<span class="string">'tutorial'</span>,<span class="string">'empty.xlsx'</span>);
-0043 xmlFile=fullfile(ravenDir,<span class="string">'tutorial'</span>,<span class="string">'empty.xml'</span>);
-0044 matFile=fullfile(ravenDir,<span class="string">'tutorial'</span>,<span class="string">'empty.mat'</span>);
-0045 
-0046 <span class="comment">%Check if it is possible to parse an Excel file</span>
-0047 <span class="keyword">try</span>
-0048     importExcelModel(excelFile,false,false,true);
-0049     fprintf(<span class="string">'Checking if it is possible to parse a model in Microsoft Excel format... PASSED\n'</span>);
-0050 <span class="keyword">catch</span>
-0051     fprintf(<span class="string">'Checking if it is possible to parse a model in Microsoft Excel format... FAILED\n'</span>);
-0052 <span class="keyword">end</span>
-0053 
-0054 <span class="comment">%Check if it is possible to import an SBML model using libSBML</span>
-0055 <span class="keyword">try</span>
-0056     importModel(xmlFile);
-0057     fprintf(<span class="string">'Checking if it is possible to import an SBML model using libSBML... PASSED\n'</span>);
-0058 <span class="keyword">catch</span>
-0059     fprintf(<span class="string">'Checking if it is possible to import an SBML model using libSBML... FAILED\nTo import SBML models, download libSBML from http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n'</span>);
-0060 <span class="keyword">end</span>
-0061 
-0062 <span class="comment">% Get current solver. Set it to 'none', if it is not set;</span>
-0063 <span class="keyword">if</span> ~ispref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>)
-0064     fprintf(<span class="string">'Solver found in preferences... NONE\n'</span>);
-0065     setRavenSolver(<span class="string">'none'</span>);
-0066     curSolv=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0067 <span class="keyword">else</span>
-0068     curSolv=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0069     fprintf([<span class="string">'Solver found in preferences... '</span>,curSolv,<span class="string">'\n'</span>]);
-0070 <span class="keyword">end</span>
-0071 
-0072 <span class="comment">%Check if it is possible to solve an LP problem using different solvers</span>
-0073 solver={<span class="string">'gurobi'</span>,<span class="string">'mosek'</span>,<span class="string">'cobra'</span>};
-0074 
-0075 <span class="keyword">for</span> i=1:numel(solver)
-0076     <span class="keyword">try</span>
-0077         setRavenSolver(solver{i});
-0078         load(matFile);
-0079         solveLP(empty);
-0080         workingSolvers=strcat(workingSolvers,<span class="string">';'</span>,solver{i});
-0081         fprintf([<span class="string">'Checking if it is possible to solve an LP problem using '</span>,solver{i},<span class="string">'... PASSED\n'</span>]);
-0082         <span class="keyword">if</span> strcmp(curSolv,solver{i})
-0083             keepSolver=true;
-0084         <span class="keyword">end</span>
-0085     <span class="keyword">catch</span>
-0086         fprintf([<span class="string">'Checking if it is possible to solve an LP problem using '</span>,solver{i},<span class="string">'... FAILED\n'</span>]);
-0087     <span class="keyword">end</span>
-0088 <span class="keyword">end</span>
-0089 
-0090 <span class="keyword">if</span> keepSolver
-0091     <span class="comment">% The solver set in curSolv is functional, so the settings are restored</span>
-0092     <span class="comment">% to the ones which were set before running checkInstallation;</span>
-0093     setRavenSolver(curSolv);
-0094     fprintf([<span class="string">'Preferred solver... KEPT\nSolver saved as preference... '</span>,curSolv,<span class="string">'\n\n'</span>]);
-0095 <span class="keyword">elseif</span> ~isempty(workingSolvers)
-0096     <span class="comment">% There are working solvers, but the none of them is the solver defined</span>
-0097     <span class="comment">% by curSolv. The first working solver is therefore set as RAVEN</span>
-0098     <span class="comment">% solver;</span>
-0099     workingSolvers=regexprep(workingSolvers,<span class="string">'^;'</span>,<span class="string">''</span>);
-0100     workingSolvers=regexprep(workingSolvers,<span class="string">';.+$'</span>,<span class="string">''</span>);
-0101     <span class="comment">% Only one working solver should be left by now in workingSolvers;</span>
-0102     setRavenSolver(workingSolvers);
-0103     fprintf([<span class="string">'Preferred solver... NEW\nSolver saved as preference... '</span>,workingSolvers,<span class="string">'\n\n'</span>]);
-0104 <span class="keyword">else</span>
-0105     <span class="comment">% No functional solvers were found, so the setting is restored back to</span>
-0106     <span class="comment">% original;</span>
-0107     setRavenSolver(curSolv);
-0108     fprintf(<span class="string">'WARNING: No working solver was found!\nInstall the solver, set it using setRavenSolver(''solverName'') and run checkInstallation again.\nAvailable solverName options are ''mosek'', ''gurobi'' and ''cobra''\n\n'</span>);
-0109 <span class="keyword">end</span>
-0110 
-0111 <span class="keyword">if</span> ~ispc
-0112     <span class="keyword">if</span> ismac
-0113         binEnd=<span class="string">'.mac'</span>;
-0114     <span class="keyword">elseif</span> isunix
-0115         binEnd=<span class="string">''</span>;
-0116     <span class="keyword">end</span>
-0117     fprintf(<span class="string">'Checking binary executables..\n'</span>);
-0118     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'blast-2.6.0+'</span>,[<span class="string">'blastp'</span> binEnd]) <span class="string">'&quot;'</span>]);
-0119     <span class="keyword">if</span> res==1
-0120         fprintf([<span class="string">'Checking blastp'</span> binEnd <span class="string">'.. OK\n'</span>]);
-0121     <span class="keyword">else</span>
-0122         fprintf([<span class="string">'Checking blastp'</span> binEnd <span class="string">'.. Not OK! The binary must be recompiled from source before running RAVEN\n'</span>]);
-0123     <span class="keyword">end</span>;
-0124     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'blast-2.6.0+'</span>,[<span class="string">'makeblastdb'</span> binEnd]) <span class="string">'&quot;'</span>]);
-0125     <span class="keyword">if</span> res==1
-0126         fprintf([<span class="string">'Checking makeblastdb'</span> binEnd <span class="string">'.. OK\n'</span>]);
-0127     <span class="keyword">else</span>
-0128         fprintf([<span class="string">'Checking makeblastdb'</span> binEnd <span class="string">'.. Not OK! The binary must be recompiled from source before running RAVEN\n'</span>]);
-0129     <span class="keyword">end</span>;
-0130     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'cd-hit-v4.6.6'</span>,[<span class="string">'cd-hit'</span> binEnd]) <span class="string">'&quot;'</span>]);
-0131     <span class="keyword">if</span> res==1
-0132         fprintf([<span class="string">'Checking cd-hit'</span> binEnd <span class="string">'.. OK\n'</span>]);
-0133     <span class="keyword">else</span>
-0134         fprintf([<span class="string">'Checking cd-hit'</span> binEnd <span class="string">'.. Not OK! The binary must be recompiled from source before running RAVEN\n'</span>]);
-0135     <span class="keyword">end</span>;
-0136     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'hmmer-3.1b2'</span>,[<span class="string">'hmmbuild'</span> binEnd]) <span class="string">'&quot;'</span>]);
-0137     <span class="keyword">if</span> res==1
-0138         fprintf([<span class="string">'Checking hmmbuild'</span> binEnd <span class="string">'.. OK\n'</span>]);
-0139     <span class="keyword">else</span>
-0140         fprintf([<span class="string">'Checking hmmbuild'</span> binEnd <span class="string">'.. Not OK! The binary must be recompiled from source before running RAVEN\n'</span>]);
-0141     <span class="keyword">end</span>;
-0142     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'hmmer-3.1b2'</span>,[<span class="string">'hmmsearch'</span> binEnd]) <span class="string">'&quot;'</span>]);
-0143     <span class="keyword">if</span> res==1
-0144         fprintf([<span class="string">'Checking hmmsearch'</span> binEnd <span class="string">'.. OK\n'</span>]);
-0145     <span class="keyword">else</span>
-0146         fprintf([<span class="string">'Checking hmmsearch'</span> binEnd <span class="string">'.. Not OK! The binary must be recompiled from source before running RAVEN\n'</span>]);
-0147     <span class="keyword">end</span>;
-0148     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'mafft-7.305'</span>,[<span class="string">'mafft'</span> binEnd]) <span class="string">'&quot;'</span>]);
-0149     <span class="keyword">if</span> res==1
-0150         fprintf([<span class="string">'Checking mafft'</span> binEnd <span class="string">'.. OK\n\n'</span>]);
-0151     <span class="keyword">else</span>
-0152         fprintf([<span class="string">'Checking mafft'</span> binEnd <span class="string">'.. Not OK! The binary must be recompiled from source before running RAVEN\n\n'</span>]);
-0153     <span class="keyword">end</span>;
-0154 <span class="keyword">end</span>;
-0155 
-0156 fprintf(<span class="string">'Checking the uniqueness of RAVEN functions across Matlab path...\n'</span>);
-0157 <a href="checkFunctionUniqueness.html" class="code" title="function checkFunctionUniqueness()">checkFunctionUniqueness</a>();
-0158 
-0159 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Thu 28-Dec-2017 10:46:27 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0010 <span class="comment">%      Eduard Kerkhoven, 2017-12-15</span>
+0011 
+0012 fprintf(<span class="string">'\n*** THE RAVEN TOOLBOX v. 2.0 ***\n\n'</span>);
+0013 
+0014 keepSolver=false;
+0015 workingSolvers=<span class="string">''</span>;
+0016 
+0017 <span class="comment">%Check if RAVEN is in the path list</span>
+0018 paths=textscan(path,<span class="string">'%s'</span>,<span class="string">'delimiter'</span>, pathsep);
+0019 paths=paths{1};
+0020 
+0021 <span class="comment">%Get the RAVEN path</span>
+0022 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
+0023 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
+0024 
+0025 <span class="keyword">if</span> ismember(ravenDir,paths)
+0026     fprintf(<span class="string">'Checking if RAVEN is on the Matlab path... PASSED\n'</span>);
+0027 <span class="keyword">else</span>
+0028     fprintf(<span class="string">'Checking if RAVEN is on the Matlab path... FAILED\n'</span>);
+0029     addMe=input(<span class="string">'Would you like to add the RAVEN directory to the path list? Y/N\n'</span>,<span class="string">'s'</span>);
+0030     <span class="keyword">if</span> strcmpi(addMe,<span class="string">'y'</span>)
+0031         subpath=regexp(genpath(ravenDir),pathsep,<span class="string">'split'</span>); <span class="comment">% Lists all subdirectories</span>
+0032         pathsToKeep=cellfun(@(x) isempty(strfind(x,<span class="string">'.git'</span>)),subpath) &amp; cellfun(@(x) isempty(strfind(x,<span class="string">'doc'</span>)),subpath);
+0033         addpath(strjoin(subpath(pathsToKeep),pathsep));
+0034         savepath
+0035     <span class="keyword">end</span>
+0036 <span class="keyword">end</span>
+0037 
+0038 <span class="comment">%Adds the required classes to the static Java path if not already added</span>
+0039 addJavaPaths();
+0040     
+0041 excelFile=fullfile(ravenDir,<span class="string">'tutorial'</span>,<span class="string">'empty.xlsx'</span>);
+0042 xmlFile=fullfile(ravenDir,<span class="string">'tutorial'</span>,<span class="string">'empty.xml'</span>);
+0043 matFile=fullfile(ravenDir,<span class="string">'tutorial'</span>,<span class="string">'empty.mat'</span>);
+0044 
+0045 <span class="comment">%Check if it is possible to parse an Excel file</span>
+0046 <span class="keyword">try</span>
+0047     importExcelModel(excelFile,false,false,true);
+0048     fprintf(<span class="string">'Checking if it is possible to parse a model in Microsoft Excel format... PASSED\n'</span>);
+0049 <span class="keyword">catch</span>
+0050     fprintf(<span class="string">'Checking if it is possible to parse a model in Microsoft Excel format... FAILED\n'</span>);
+0051 <span class="keyword">end</span>
+0052 
+0053 <span class="comment">%Check if it is possible to import an SBML model using libSBML</span>
+0054 <span class="keyword">try</span>
+0055     importModel(xmlFile);
+0056     fprintf(<span class="string">'Checking if it is possible to import an SBML model using libSBML... PASSED\n'</span>);
+0057 <span class="keyword">catch</span>
+0058     fprintf(<span class="string">'Checking if it is possible to import an SBML model using libSBML... FAILED\nTo import SBML models, download libSBML from http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n'</span>);
+0059 <span class="keyword">end</span>
+0060 
+0061 <span class="comment">% Get current solver. Set it to 'none', if it is not set;</span>
+0062 <span class="keyword">if</span> ~ispref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>)
+0063     fprintf(<span class="string">'Solver found in preferences... NONE\n'</span>);
+0064     setRavenSolver(<span class="string">'none'</span>);
+0065     curSolv=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0066 <span class="keyword">else</span>
+0067     curSolv=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0068     fprintf([<span class="string">'Solver found in preferences... '</span>,curSolv,<span class="string">'\n'</span>]);
+0069 <span class="keyword">end</span>
+0070 
+0071 <span class="comment">%Check if it is possible to solve an LP problem using different solvers</span>
+0072 solver={<span class="string">'gurobi'</span>,<span class="string">'mosek'</span>,<span class="string">'cobra'</span>};
+0073 
+0074 <span class="keyword">for</span> i=1:numel(solver)
+0075     <span class="keyword">try</span>
+0076         setRavenSolver(solver{i});
+0077         load(matFile);
+0078         solveLP(empty);
+0079         workingSolvers=strcat(workingSolvers,<span class="string">';'</span>,solver{i});
+0080         fprintf([<span class="string">'Checking if it is possible to solve an LP problem using '</span>,solver{i},<span class="string">'... PASSED\n'</span>]);
+0081         <span class="keyword">if</span> strcmp(curSolv,solver{i})
+0082             keepSolver=true;
+0083         <span class="keyword">end</span>
+0084     <span class="keyword">catch</span>
+0085         fprintf([<span class="string">'Checking if it is possible to solve an LP problem using '</span>,solver{i},<span class="string">'... FAILED\n'</span>]);
+0086     <span class="keyword">end</span>
+0087 <span class="keyword">end</span>
+0088 
+0089 <span class="keyword">if</span> keepSolver
+0090     <span class="comment">% The solver set in curSolv is functional, so the settings are restored</span>
+0091     <span class="comment">% to the ones which were set before running checkInstallation;</span>
+0092     setRavenSolver(curSolv);
+0093     fprintf([<span class="string">'Preferred solver... KEPT\nSolver saved as preference... '</span>,curSolv,<span class="string">'\n\n'</span>]);
+0094 <span class="keyword">elseif</span> ~isempty(workingSolvers)
+0095     <span class="comment">% There are working solvers, but the none of them is the solver defined</span>
+0096     <span class="comment">% by curSolv. The first working solver is therefore set as RAVEN</span>
+0097     <span class="comment">% solver;</span>
+0098     workingSolvers=regexprep(workingSolvers,<span class="string">'^;'</span>,<span class="string">''</span>);
+0099     workingSolvers=regexprep(workingSolvers,<span class="string">';.+$'</span>,<span class="string">''</span>);
+0100     <span class="comment">% Only one working solver should be left by now in workingSolvers;</span>
+0101     setRavenSolver(workingSolvers);
+0102     fprintf([<span class="string">'Preferred solver... NEW\nSolver saved as preference... '</span>,workingSolvers,<span class="string">'\n\n'</span>]);
+0103 <span class="keyword">else</span>
+0104     <span class="comment">% No functional solvers were found, so the setting is restored back to</span>
+0105     <span class="comment">% original;</span>
+0106     setRavenSolver(curSolv);
+0107     fprintf(<span class="string">'WARNING: No working solver was found!\nInstall the solver, set it using setRavenSolver(''solverName'') and run checkInstallation again.\nAvailable solverName options are ''mosek'', ''gurobi'' and ''cobra''\n\n'</span>);
+0108 <span class="keyword">end</span>
+0109 
+0110 <span class="keyword">if</span> ~ispc
+0111     <span class="keyword">if</span> ismac
+0112         binEnd=<span class="string">'.mac'</span>;
+0113     <span class="keyword">elseif</span> isunix
+0114         binEnd=<span class="string">''</span>;
+0115     <span class="keyword">end</span>
+0116     fprintf(<span class="string">'Checking binary executables..\n'</span>);
+0117     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'blast-2.6.0+'</span>,[<span class="string">'blastp'</span> binEnd]) <span class="string">'&quot;'</span>]);
+0118     <span class="keyword">if</span> res==1
+0119         fprintf([<span class="string">'Checking blastp'</span> binEnd <span class="string">'.. OK\n'</span>]);
+0120     <span class="keyword">else</span>
+0121         fprintf([<span class="string">'Checking blastp'</span> binEnd <span class="string">'.. Not OK! The binary must be recompiled from source before running RAVEN\n'</span>]);
+0122     <span class="keyword">end</span>;
+0123     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'blast-2.6.0+'</span>,[<span class="string">'makeblastdb'</span> binEnd]) <span class="string">'&quot;'</span>]);
+0124     <span class="keyword">if</span> res==1
+0125         fprintf([<span class="string">'Checking makeblastdb'</span> binEnd <span class="string">'.. OK\n'</span>]);
+0126     <span class="keyword">else</span>
+0127         fprintf([<span class="string">'Checking makeblastdb'</span> binEnd <span class="string">'.. Not OK! The binary must be recompiled from source before running RAVEN\n'</span>]);
+0128     <span class="keyword">end</span>;
+0129     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'cd-hit-v4.6.6'</span>,[<span class="string">'cd-hit'</span> binEnd]) <span class="string">'&quot;'</span>]);
+0130     <span class="keyword">if</span> res==1
+0131         fprintf([<span class="string">'Checking cd-hit'</span> binEnd <span class="string">'.. OK\n'</span>]);
+0132     <span class="keyword">else</span>
+0133         fprintf([<span class="string">'Checking cd-hit'</span> binEnd <span class="string">'.. Not OK! The binary must be recompiled from source before running RAVEN\n'</span>]);
+0134     <span class="keyword">end</span>;
+0135     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'hmmer-3.1b2'</span>,[<span class="string">'hmmbuild'</span> binEnd]) <span class="string">'&quot;'</span>]);
+0136     <span class="keyword">if</span> res==1
+0137         fprintf([<span class="string">'Checking hmmbuild'</span> binEnd <span class="string">'.. OK\n'</span>]);
+0138     <span class="keyword">else</span>
+0139         fprintf([<span class="string">'Checking hmmbuild'</span> binEnd <span class="string">'.. Not OK! The binary must be recompiled from source before running RAVEN\n'</span>]);
+0140     <span class="keyword">end</span>;
+0141     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'hmmer-3.1b2'</span>,[<span class="string">'hmmsearch'</span> binEnd]) <span class="string">'&quot;'</span>]);
+0142     <span class="keyword">if</span> res==1
+0143         fprintf([<span class="string">'Checking hmmsearch'</span> binEnd <span class="string">'.. OK\n'</span>]);
+0144     <span class="keyword">else</span>
+0145         fprintf([<span class="string">'Checking hmmsearch'</span> binEnd <span class="string">'.. Not OK! The binary must be recompiled from source before running RAVEN\n'</span>]);
+0146     <span class="keyword">end</span>;
+0147     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'mafft-7.305'</span>,[<span class="string">'mafft'</span> binEnd]) <span class="string">'&quot;'</span>]);
+0148     <span class="keyword">if</span> res==1
+0149         fprintf([<span class="string">'Checking mafft'</span> binEnd <span class="string">'.. OK\n\n'</span>]);
+0150     <span class="keyword">else</span>
+0151         fprintf([<span class="string">'Checking mafft'</span> binEnd <span class="string">'.. Not OK! The binary must be recompiled from source before running RAVEN\n\n'</span>]);
+0152     <span class="keyword">end</span>;
+0153 <span class="keyword">end</span>;
+0154 
+0155 fprintf(<span class="string">'Checking the uniqueness of RAVEN functions across Matlab path...\n'</span>);
+0156 <a href="checkFunctionUniqueness.html" class="code" title="function checkFunctionUniqueness()">checkFunctionUniqueness</a>();
+0157 
+0158 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 14-Mar-2018 21:08:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

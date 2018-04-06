@@ -18,6 +18,10 @@ function exportToTabDelimited(model,path)
 %
 %   Simonas Marcisauskas, 2017-12-13
 
+if nargin<2
+    path='./';
+end
+
 %If the folder doesn't exist then create it
 if ~exist(path,'dir')
 	mkdir(path);
