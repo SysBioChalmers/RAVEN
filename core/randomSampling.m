@@ -19,9 +19,9 @@ function solutions=randomSampling(model, nSamples, replaceBoundsWithInf,supressE
 %                           as unlimited glucose uptake) or too strict
 %                           (such as too many and too narrow constraints)
 %                           (opt, default false)
-%	showProgress			if true, it will display in the command window 
-%							how many iterations have been done (opt, default
-%							false)
+%   showProgress            if true, it will display in the command window 
+%                           how many iterations have been done (opt, default
+%                           false)
 %
 %   solutions               matrix with the solutions
 %
@@ -32,7 +32,7 @@ function solutions=randomSampling(model, nSamples, replaceBoundsWithInf,supressE
 %   Usage: solutions=randomSampling(model, nSamples, replaceBoundsWithInf)
 %
 %   Eduard Kerkhoven, 2018-02-28
-%	Benjamin Sanchez, 2018-04-10
+%   Benjamin Sanchez, 2018-04-10
 %
 
 if nargin<2
