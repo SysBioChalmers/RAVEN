@@ -1,4 +1,4 @@
-function spontaneousRxnList=addSpontaneousRxns(rxnList, metList)
+function [spontaneousRxnList, pathwayID]=addSpontaneousRxns(rxnList, metList)
 % addSpontaneousRxns
 %   Retrieve spontaneous reactions based on the pathway-spontaneousRxn
 %   associations curated by the MetaCyc database
@@ -9,6 +9,8 @@ function spontaneousRxnList=addSpontaneousRxns(rxnList, metList)
 %
 %   spontaneousRxnList   reterieved spontaneous reactions associated to
 %                        the queried MetaCyc reactions and metabolites
+%
+%   pathwayID            the cell array of relevant pathways
 %
 %   Usage: spontaneousRxnList=addSpontaneousRxns(rxnList, metList)
 %
@@ -42,7 +44,7 @@ for i=1:numel(isSpontaneous)
 	end
 end
 
-% Go through the rxnList and obtain relevant pathways
+% Go through the rxnList to obtain relevant pathways
 pwys={};
 for i=1:numel(rxnList)
     [a, b]=ismember(rxnList{i},metaCycRxns.rxns);
@@ -86,5 +88,14 @@ spontaneousRxnList=spontaneousRxnList(~cellfun(@isempty, spontaneousRxnList));
 
 % Remove the spontaneousRxns that have already been included
 spontaneousRxnList=setdiff(spontaneousRxnList,rxnList);
+
+% Generate the cell array of relevant pathways
+pathwayID=cell(numel(spontaneousRxnList),1);
+for i=1:numel(spontaneousRxnList)
+    index=find(strcmp(spontaneousRxnList{i},isSpontaneous));
+    % locate the relevant pathways
+    relevantpwys=intersect(pathways(find(sprxnPwyMat(index,:))),pwys);
+    pathwayID{i}=strjoin(relevantpwys,';');
+end
 
 end

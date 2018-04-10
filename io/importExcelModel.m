@@ -47,7 +47,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %       inchis           InChI-codes for metabolites
 %       metFormulas      metabolite chemical formula
 %       metMiriams       structure with MIRIAM information about the metabolites
-%       metCharges        metabolite charge
+%       metCharges       metabolite charge
 %       unconstrained    true if the metabolite is an exchange metabolite
 %
 %   Loads models in the RAVEN Toolbox Excel format. A number of consistency
@@ -65,7 +65,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Simonas Marcisauskas, 2017-11-17
+%   Simonas Marcisauskas, 2018-04-04
 %
 
 if nargin<2
@@ -108,7 +108,7 @@ model.eccodes={};
 model.rxnMiriams={};
 model.rxnNotes={};
 model.rxnReferences={};
-model.rxnConfidenceScores={};
+model.rxnConfidenceScores={}; %Will be double later
 model.genes={};
 model.geneComps={}; %Will be double later
 model.geneMiriams={};
@@ -403,7 +403,7 @@ for i=1:numel(I)
         case 9
         	model.rxnComps=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         case 10
-        	model.subSystems=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+        	subsystems=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         case 11
         	reactionReplacement=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
         case 12
@@ -416,6 +416,13 @@ for i=1:numel(I)
             model.rxnConfidenceScores=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
     end
 end
+
+if ~isempty(model.rxnConfidenceScores)
+	model.rxnConfidenceScores=str2double(model.rxnConfidenceScores);
+end
+for i=1:numel(subsystems)
+    model.subSystems{i,1}=cellstr(strsplit(subsystems{i,1},';'));
+end;
 
 %Check that all necessary reaction info has been loaded
 if isempty(equations)
@@ -498,10 +505,6 @@ if ~isempty(model.rxnComps)
     end
 end
 
-%Check gene association for each reaction and populate rxnGeneMat
-if ~isempty(model.genes)
-    model.rxnGeneMat=zeros(numel(model.rxns),numel(model.genes));
-end
 if ~isempty(model.grRules)
     tempRules=model.grRules;
     for i=1:length(model.rxns)
@@ -520,7 +523,6 @@ if ~isempty(model.grRules)
                    EM=['The gene association in reaction ' model.rxns{i} ' (' tempRules{i} ') is not present in the gene list'];
                    dispEM(EM);
                end
-               model.rxnGeneMat(i,I)=1;
            else
                temp=[0 indexes numel(tempRules{i})+1];
                for j=1:numel(indexes)+1
@@ -531,7 +533,6 @@ if ~isempty(model.grRules)
                        EM=['The gene association in reaction ' model.rxns{i} ' (' geneName ') is not present in the gene list'];
                        dispEM(EM);
                    end
-                   model.rxnGeneMat(i,I)=1;
                end
            end
             %In order to adhere to the COBRA standards it should be like
@@ -561,7 +562,6 @@ if ~isempty(model.grRules)
        end
     end
 end
-model.rxnGeneMat=sparse(model.rxnGeneMat);
 
 %Check that the compartment for each reaction can be found
 if ~isempty(model.rxnComps)
@@ -753,6 +753,11 @@ dispEM(EM,false,model.rxns(badRxns));
 
 model.b=zeros(numel(model.mets),1);
 
+%Fix grRules and reconstruct rxnGeneMat
+[grRules,rxnGeneMat] = standardizeGrRules(model);
+model.grRules = grRules;
+model.rxnGeneMat = rxnGeneMat;
+
 %Remove unused fields
 if all(cellfun(@isempty,model.compOutside))
     model=rmfield(model,'compOutside');
@@ -787,8 +792,8 @@ end
 if all(cellfun(@isempty,model.rxnReferences))
 	model=rmfield(model,'rxnReferences');
 end
-if all(cellfun(@isempty,model.rxnConfidenceScores))
-	model=rmfield(model,'rxnConfidenceScores');
+if isempty(model.rxnConfidenceScores)
+    model=rmfield(model,'rxnConfidenceScores');
 end
 if isempty(model.genes)
     model=rmfield(model,'genes');

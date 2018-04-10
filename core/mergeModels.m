@@ -13,7 +13,7 @@ function model=mergeModels(models,supressWarnings)
 %
 %   Usage: model=mergeModels(models)
 %
-%   Eduard Kerkhoven, 2017-11-20
+%   Simonas Marcisauskas, 2018-04-03
 %
 
 %Just return the model
@@ -167,15 +167,11 @@ for i=2:numel(models)
        if isfield(model,'rxnConfidenceScores')
            model.rxnConfidenceScores=[model.rxnConfidenceScores;models{i}.rxnConfidenceScores];
        else
-           emptyConfidenceScores=cell(numel(model.rxns)-numel(models{i}.rxns),1);
-           emptyConfidenceScores(:)={''};
-           model.rxnConfidenceScores=[emptyConfidenceScores;models{i}.rxnConfidenceScores];
+           model.rxnConfidenceScores=[NaN(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnConfidenceScores];
        end
     else
        if isfield(model,'rxnConfidenceScores')
-           emptyConfidenceScores=cell(numel(models{i}.rxns),1);
-           emptyConfidenceScores(:)={''};
-           model.rxnConfidenceScores=[model.rxnConfidenceScores;emptyConfidenceScores];
+           model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(numel(models{i}.rxns),1)];
        end
     end
 
@@ -502,21 +498,19 @@ for i=2:numel(models)
                 EM='There was an unexpected error in matching genes';
                 dispEM(EM);
             end
-
-            %Create the new rxnGene matrix
-            rxnGeneMat=sparse(numel(models{i}.rxns),numel(model.genes));
-            rxnGeneMat(:,b)=models{i}.rxnGeneMat;
-            model.rxnGeneMat=[model.rxnGeneMat; rxnGeneMat];
             model.grRules=[model.grRules;models{i}.grRules];
         end
     else
         %Add empty gene associations
         if isfield(model,'genes')
-            model.rxnGeneMat=[model.rxnGeneMat;sparse(numel(models{i}.rxns),numel(model.genes))];
             emptyGene=cell(numel(models{i}.rxns),1);
             emptyGene(:)={''};
             model.grRules=[model.grRules;emptyGene];
         end
     end
 end
+%Fix grRules and reconstruct rxnGeneMat
+[grRules,rxnGeneMat] = standardizeGrRules(model);
+model.grRules = grRules;
+model.rxnGeneMat = rxnGeneMat;
 end

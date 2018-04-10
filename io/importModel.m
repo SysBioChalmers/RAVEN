@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Eduard Kerkhoven, 2018-03-14
+%   Simonas Marcisauskas, 2018-04-04
 
 if nargin<2
     removeExcMets=true;
@@ -112,7 +112,7 @@ model.eccodes={};
 model.rxnMiriams={};
 model.rxnNotes={};
 model.rxnReferences={};
-model.rxnConfidenceScores={};
+model.rxnConfidenceScores=[];
 model.genes={};
 model.geneComps=[];
 model.geneMiriams={};
@@ -190,7 +190,7 @@ metaboliteUnconstrained=[];
 metaboliteFormula={};
 metaboliteInChI={};
 metaboliteMiriams={};
-metaboliteCharge=[];
+metaboliteCharges=[];
 
 geneNames={};
 geneIDs={};
@@ -376,26 +376,26 @@ for i=1:numel(modelSBML.species)
             end
             if isfield(modelSBML.species(i),'fbc_charge')
                 if ~isempty(modelSBML.species(i).fbc_charge) && modelSBML.species(i).isSetfbc_charge
-                    metaboliteCharge(numel(metaboliteCharge)+1,1)=double(modelSBML.species(i).fbc_charge);
+                    metaboliteCharges(numel(metaboliteCharges)+1,1)=double(modelSBML.species(i).fbc_charge);
                 else
                     if isfield(modelSBML.species(i),'notes')
                         if strfind(modelSBML.species(i).notes,'CHARGE')
-                            metaboliteCharge(numel(metaboliteCharge)+1,1)=str2double(parseNote(modelSBML.species(i).notes,'CHARGE'));
+                            metaboliteCharges(numel(metaboliteCharges)+1,1)=str2double(parseNote(modelSBML.species(i).notes,'CHARGE'));
                         else
-                            metaboliteCharge(numel(metaboliteCharge)+1,1)=NaN;
+                            metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
                         end;
                     else
-                        metaboliteCharge(numel(metaboliteCharge)+1,1)=NaN;
+                        metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
                     end
                 end
             elseif isfield(modelSBML.species(i),'notes')
                 if strfind(modelSBML.species(i).notes,'CHARGE')
-                    metaboliteCharge(numel(metaboliteCharge)+1,1)=str2double(parseNote(modelSBML.species(i).notes,'CHARGE'));
+                    metaboliteCharges(numel(metaboliteCharges)+1,1)=str2double(parseNote(modelSBML.species(i).notes,'CHARGE'));
                 else
-                    metaboliteCharge(numel(metaboliteCharge)+1,1)=NaN;
+                    metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
                 end;
             else
-                metaboliteCharge(numel(metaboliteCharge)+1,1)=NaN;
+                metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
             end
             %Additional information from FBC format
             %Chemical formula
@@ -414,8 +414,7 @@ reactionIDs=cell(numel(modelSBML.reaction),1);
 subsystems=cell(numel(modelSBML.reaction),1);
 eccodes=cell(numel(modelSBML.reaction),1);
 eccodes(:,:)=cellstr('');
-confidencescores=cell(numel(modelSBML.reaction),1);
-confidencescores(:,:)=cellstr('');
+rxnconfidencescores=NaN(numel(modelSBML.reaction),1);
 rxnreferences=cell(numel(modelSBML.reaction),1);
 rxnreferences(:,:)=cellstr('');
 rxnnotes=cell(numel(modelSBML.reaction),1);
@@ -505,8 +504,6 @@ for i=1:numel(modelSBML.reaction)
                             EM=['Could not get the gene association data from reaction ' reactionIDs{i}];
                             dispEM(EM);
                         end
-                        %Add the association
-                        %rxnGeneMat(i,index)=1;
                         if ~isempty(rules)
                             rules=[rules ' or (' geneNames{index} ')'];
                         else
@@ -520,8 +517,6 @@ for i=1:numel(modelSBML.reaction)
                             EM=['Could not get the gene association data from reaction ' reactionIDs{i}];
                             dispEM(EM);
                         end
-                        %Add the association
-                        %rxnGeneMat(i,index)=1;
                         if ~isempty(rules)
                             rules=[rules ' or (' metaboliteIDs{index} ')'];
                         else
@@ -600,7 +595,10 @@ for i=1:numel(modelSBML.reaction)
         rxnMiriams{counter}=miriamStruct;
         if isfield(modelSBML.reaction(i),'notes')
             subsystems{counter,1}=cellstr(parseNote(modelSBML.reaction(i).notes,'SUBSYSTEM'));
-            confidencescores{counter,1}=parseNote(modelSBML.reaction(i).notes,'Confidence Level');
+            subsystems{counter,1}(cellfun('isempty',subsystems{counter,1})) = [];
+            if strfind(modelSBML.reaction(i).notes,'Confidence Level')
+                rxnconfidencescores(counter)=str2num(parseNote(modelSBML.reaction(i).notes,'Confidence Level'));
+            end
             rxnreferences{counter,1}=parseNote(modelSBML.reaction(i).notes,'AUTHORS');
             rxnnotes{counter,1}=parseNote(modelSBML.reaction(i).notes,'NOTES');
         end;
@@ -668,7 +666,7 @@ reactionNames=reactionNames(1:counter);
 reactionIDs=reactionIDs(1:counter);
 subsystems=subsystems(1:counter);
 eccodes=eccodes(1:counter);
-confidencescores=confidencescores(1:counter);
+rxnconfidencescores=rxnconfidencescores(1:counter);
 rxnreferences=rxnreferences(1:counter);
 rxnnotes=rxnnotes(1:counter);
 grRules=grRules(1:counter);
@@ -691,7 +689,7 @@ model.c=reactionObjective;
 model.b=zeros(numel(metaboliteIDs),1);
 model.comps=compartmentIDs;
 model.compNames=compartmentNames;
-model.rxnConfidenceScores=confidencescores;
+model.rxnConfidenceScores=rxnconfidencescores;
 model.rxnReferences=rxnreferences;
 model.rxnNotes=rxnnotes;
 
@@ -820,8 +818,11 @@ if ~isempty(geneNames)
         end;
     end;              
     model.genes=geneNames;
-    model.rxnGeneMat=getGeneMat(grRules,geneNames);
     model.grRules=grRules;
+    [grRules,rxnGeneMat] = standardizeGrRules(model);
+    model.grRules = grRules;
+    model.rxnGeneMat = rxnGeneMat;
+
     %Match the compartments for genes
     [~, J]=ismember(geneCompartments,model.comps);
     model.geneComps=J;
@@ -847,14 +848,13 @@ else
               end
           end
        end
-       %If fbc_geneProduct exist, follow the specified gene order, such
+       %If fbc_geneProduct exists, follow the specified gene order, such
        %that matching geneShortNames in function below will work.
        if isfield(modelSBML,'fbc_geneProduct')
-           [rxnGeneMat, genes]=getGeneMat(grRules,{modelSBML.fbc_geneProduct.fbc_id});
+            genes={modelSBML.fbc_geneProduct.fbc_id};
        else
-           [rxnGeneMat, genes]=getGeneMat(grRules);
+            genes=getGeneList(grRules);
        end
-       model.rxnGeneMat=rxnGeneMat;
        if strcmpi(genes{1}(1:2),'G_')
            genes=regexprep(genes,'^G_','');
            grRules=regexprep(grRules,'^G_','');
@@ -863,6 +863,9 @@ else
        end
        model.genes=genes;
        model.grRules=grRules;
+       [grRules,rxnGeneMat] = standardizeGrRules(model);
+       model.grRules = grRules;
+       model.rxnGeneMat = rxnGeneMat;
     end
 end
 
@@ -895,8 +898,8 @@ if any(~cellfun(@isempty,metaboliteFormula))
 end
 
 %If any charges have been loaded
-if ~isempty(metaboliteCharge)
-    model.metCharges=metaboliteCharge;
+if ~isempty(metaboliteCharges)
+    model.metCharges=metaboliteCharges;
 end
 
 %If any gene short names have been loaded
@@ -988,8 +991,8 @@ end
 if cellfun(@isempty,model.rxnReferences)
 	model=rmfield(model,'rxnReferences');
 end
-if cellfun(@isempty,model.rxnConfidenceScores)
-	model=rmfield(model,'rxnConfidenceScores');
+if isempty(model.rxnConfidenceScores) || all(isnan(model.rxnConfidenceScores))
+    model=rmfield(model,'rxnConfidenceScores');
 end
 if isempty(model.genes)
     model=rmfield(model,'genes');
@@ -1033,16 +1036,10 @@ if removeExcMets==true
 end
 end
 
-function [rxnGeneMat, matchGenes]=getGeneMat(grRules,matchGenes)
-%Constructs the rxnGeneMat matrix and the cell array with gene names from
-%the grRules. Uses the genes in the order defined by matchGenes if supplied. No
-%checks are made here since that should have been made before.
+function matchGenes=getGeneList(grRules)
+%Constructs the list of unique genes from grRules
 
-if nargin<2
-    matchGenes={};
-end
-
-%Assume that everything that isn't a paranthesis, " AND " or " or " is a
+%Assumes that everything that isn't a paranthesis, " AND " or " or " is a
 %gene name
 genes=strrep(grRules,'(','');
 genes=strrep(genes,')','');
@@ -1052,38 +1049,16 @@ genes=strrep(genes,' OR ',' ');
 genes=strrep(genes,' AND ',' ');
 genes=regexp(genes,' ','split');
 
-if isempty(matchGenes)
-    allNames={};
-    for i=1:numel(genes)
-        allNames=[allNames genes{i}];
-    end
-    matchGenes=unique(allNames)';
-
-    %Remove the empty element if present
-    if isempty(matchGenes{1})
-        matchGenes(1)=[];
-    end
-end
-
-%Create the matrix
-rxnGeneMat=zeros(numel(genes),numel(matchGenes));
-
+allNames={};
 for i=1:numel(genes)
-    if ~isempty(genes{i})
-        for j=1:numel(genes{i})
-            if ~isempty(genes{i}{j})
-                index=find(strcmp(genes{i}{j},matchGenes));
-                if numel(index)==1
-                    rxnGeneMat(i,index)=1;
-                else
-                    EM=['The gene ' genes{i}{j} ' could not be matched to a gene in the gene list'];
-                    dispEM(EM);
-                end
-            end
-        end
-    end
+    allNames=[allNames genes{i}];
 end
-rxnGeneMat=sparse(rxnGeneMat);
+matchGenes=unique(allNames)';
+
+%Remove the empty element if present
+if isempty(matchGenes{1})
+    matchGenes(1)=[];
+end
 end
 
 function fieldContent=parseNote(searchString,fieldName)

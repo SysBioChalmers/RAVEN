@@ -39,8 +39,8 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %                               default '')
 %            rxnReferences      cell array with reaction references (opt,
 %                               default '')
-%            rxnConfidenceScores   cell array with reaction confidence scores
-%                               (opt, default '')
+%            rxnConfidenceScores   vector with reaction confidence scores
+%                               (opt, default NaN)
 %   eqnType          double describing how the equation string should be
 %                    interpreted
 %                    1 - The metabolites are matched to model.mets. New
@@ -81,7 +81,7 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
 %   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
-%   Eduard Kerkhoven, 2018-02-23
+%   Simonas Marcisauskas, 2018-04-03
 %
 
 if nargin<4
@@ -405,15 +405,18 @@ if isfield(rxnsToAdd,'rxnConfidenceScores')
    end
    %Fill with standard if it doesn't exist
    if ~isfield(newModel,'rxnConfidenceScores')
-       newModel.rxnConfidenceScores=largeFiller;
+       newModel.rxnConfidenceScores=NaN(nOldRxns,1);
+       EM='Adding reactions with confidence scores without such information. All existing reactions will have confidence scores as NaNs';
+       dispEM(EM,false);
    end
    newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;rxnsToAdd.rxnConfidenceScores(:)];
 else
     %Fill with standard if it doesn't exist
    if isfield(newModel,'rxnConfidenceScores')
-       newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;filler];
+       newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;NaN(nRxns,1)];
    end
 end
+
 
 %***Start parsing the equations and adding the info to the S matrix
 %The mets are matched to model.mets
@@ -512,13 +515,11 @@ if eqnType==3
     metIndexes(~I)=numel(newModel.mets)-sum(~I)+1:numel(newModel.mets);
 end
 
-%Add the info to the stoichiometric matrix and to the rxnGeneMat. I do this
-%in a loop, but maybe not necessary
+%Add the info to the stoichiometric matrix
 newModel.S=[newModel.S sparse(size(newModel.S,1),nRxns)];
 for i=1:nRxns
     newModel.S(metIndexes,nOldRxns+i)=S(:,i);
-
-    %Parse the grRules and add to rxnGeneMat
+    %Parse the grRules and check whether all genes in grRules appear in genes
     if isfield(newModel,'grRules')
        rule=newModel.grRules{nOldRxns+i};
        rule=strrep(rule,'(','');
@@ -531,13 +532,11 @@ for i=1:nRxns
             EM=['Not all genes for reaction ' rxnsToAdd.rxns{i} ' were found in model.genes. If needed, add genes with addGenes before calling this function'];
             dispEM(EM);
        end
-       if any(rule)
-            newModel.rxnGeneMat(nOldRxns+i,J)=1;
-       else
-            %If there are no genes for the reaction, the rxnGeneMat should
-            %still be resized
-            newModel.rxnGeneMat=[newModel.rxnGeneMat;sparse(1,numel(newModel.genes))];
-       end
     end
 end
+
+%Fix grRules and reconstruct rxnGeneMat
+[grRules,rxnGeneMat] = standardizeGrRules(newModel);
+newModel.grRules = grRules;
+newModel.rxnGeneMat = rxnGeneMat;
 end

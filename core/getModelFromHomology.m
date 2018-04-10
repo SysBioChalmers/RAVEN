@@ -45,7 +45,7 @@ function draftModel=getModelFromHomology(models,blastStructure,getModelFor,prefe
 %
 %   draftModel        a new model structure
 %
-%   Simonas Marcisauskas, 2017-10-11
+%   Simonas Marcisauskas, 2018-03-17
 %
 
 %NOTE: "to" and "from" means relative the new organism
@@ -310,7 +310,7 @@ for i=1:numel(models)
     %deleted. This approach works fine for 'and' complexes, but there
     %should be a check that it doesn't keep 'or' genes if it doesn't have
     %to!
-    models{useOrderIndexes(i)}=removeGenes(models{useOrderIndexes(i)},~a,true,false);
+    models{useOrderIndexes(i)}=removeGenes(models{useOrderIndexes(i)},~a,true,true,false);
 end
 
 %Since I want to use mergeModels in the end, I simplify the models further
@@ -448,8 +448,8 @@ end
 draftModel.description=description;
 draftModel.rxnNotes=cell(length(draftModel.rxns),1);
 draftModel.rxnNotes(:)={'Reaction included by getModelFromHomology'};
-draftModel.rxnConfidenceScores=cell(length(draftModel.rxns),1);
-draftModel.rxnConfidenceScores(:)={'2'};
+draftModel.rxnConfidenceScores=NaN(length(draftModel.rxns),1);
+draftModel.rxnConfidenceScores(:)=2;
 % Gene short names are often different between species, safer not to
 % include them.
 if isfield(draftModel,'geneShortNames');

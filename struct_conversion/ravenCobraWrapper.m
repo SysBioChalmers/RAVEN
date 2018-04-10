@@ -28,7 +28,8 @@ function newModel=ravenCobraWrapper(model)
 %
 %   Usage: newModel=ravenCobraWrapper(model)
 %
-%   Simonas Marcisauskas, 2017-10-20
+%   Simonas Marcisauskas, 2018-03-17
+%   Benjamin J. Sanchez, 2018-03-28
 %
 
 if isfield(model,'rules')
@@ -146,7 +147,7 @@ if isRaven
         newModel.geneNames=model.geneShortNames;
     end;
     if isfield(model,'rxnConfidenceScores')
-        newModel.rxnConfidenceScores=cell2mat(model.rxnConfidenceScores);
+        newModel.rxnConfidenceScores=model.rxnConfidenceScores;
     end;
     if isfield(model,'genes')
         newModel.rules=grrulesToRules(model);
@@ -156,12 +157,15 @@ if isRaven
     % It seems that grRules, rxnGeneMat and rev are disposable fields in COBRA
     % version, but we export them to make things faster, when converting
     % COBRA structure back to RAVEN;
-    if isfield(model,'grRules')
-        newModel.grRules=model.grRules;
-    end;
     if isfield(model,'rxnGeneMat')
         newModel.rxnGeneMat=model.rxnGeneMat;
     end;
+    if isfield(model,'grRules')
+        [grRules, rxnGeneMat] = standardizeGrRules(model);
+        newModel.grRules      = grRules;
+        %Incorporate a rxnGeneMat consistent with standardized grRules
+        newModel.rxnGeneMat   = rxnGeneMat;
+    end
     newModel.rev=model.rev;
  else
     fprintf('Converting COBRA structure to RAVEN..\n');
@@ -228,15 +232,14 @@ if isRaven
         newModel.rxnNames=model.rxnNames;
     end;
     if isfield(model,'grRules')
-        newModel.grRules=model.grRules;
+        [grRules,rxnGeneMat] = standardizeGrRules(model);
+        newModel.grRules     = grRules;
+        newModel.rxnGeneMat  = rxnGeneMat;
     else
-        model.grRules=rulesTogrrules(model);
-        newModel.grRules=model.grRules;
-    end;
-    if isfield(model,'rxnGeneMat')
-        newModel.rxnGeneMat=model.rxnGeneMat;
-    elseif isfield(model,'grRules')
-        newModel.rxnGeneMat=getRxnGeneMat(model);
+        model.grRules        = rulesTogrrules(model);
+        [grRules,rxnGeneMat] = standardizeGrRules(model);
+        newModel.grRules     = grRules;
+        newModel.rxnGeneMat  = rxnGeneMat;
     end;
     if isfield(model,'subSystems')
         newModel.subSystems=model.subSystems;
@@ -262,7 +265,7 @@ if isRaven
         newModel.rxnReferences=model.rxnReferences;
     end;
     if isfield(model,'rxnConfidenceScores')
-        newModel.rxnConfidenceScores=num2cell(model.rxnConfidenceScores);
+        newModel.rxnConfidenceScores=model.rxnConfidenceScores;
     end;
     if isfield(model,'genes')
         newModel.genes=model.genes;
@@ -397,53 +400,16 @@ function rules=grrulesToRules(model)
 end
 
 function grRules=rulesTogrrules(model)
-    % This function just takes rules, changes all gene names to
-    % grRules and also changes 'or' and 'and' relations from
-    % corresponding symbols
-    replacingGenes=cell([size(model.genes,1) 1]);
-    grRules=cell([size(model.rules,1) 1]);
-    
-    for i=1:numel(replacingGenes)
-        replacingGenes{i}=strcat('x(',num2str(i),')');
-    end;
-    for i=1:numel(model.rules)
-        grRules{i}=regexprep(model.rules{i},replacingGenes,model.genes);
-        grRules{i}=regexprep(grRules{i},' & ',' and ');
-        grRules{i}=regexprep(grRules{i},' | ',' or ');
-    end;
-end
-
-function rxnGeneMat=getRxnGeneMat(model)
-    %Check gene association for each reaction and populate rxnGeneMat
-    if ~isempty(model.genes)
-        rxnGeneMat=zeros(numel(model.rxns),numel(model.genes));
+    % This function takes rules, replaces &/| for and/or, replaces the x(i)
+    % format with the actual gene ID, and takes out extra whitespace and
+    % redundant parenthesis introduced by COBRA, to create grRules.
+    grRules = strrep(model.rules,'&','and');
+    grRules = strrep(grRules,'|','or');
+    for i = 1:length(model.genes)
+        grRules = strrep(grRules,['x(' num2str(i) ')'],model.genes{i});
     end
-    if ~isempty(model.grRules)
-        tempRules=model.grRules;
-        for i=1:length(model.rxns)
-           %Check that all gene associations have a match in the gene list
-           if ~isempty(model.grRules{i})          
-               tempRules{i}=regexprep(tempRules{i},' and | or ','>'); %New format: Genes are separated 'and' and 'or' strings with parentheses
-               tempRules{i}=regexprep(tempRules{i},'(',''); %New format: Genes are separated 'and' and 'or' strings with parentheses
-               tempRules{i}=regexprep(tempRules{i},')',''); %New format: Genes are separated 'and' and 'or' strings with parentheses
-               indexesNew=strfind(tempRules{i},'>'); %Old format: Genes are separated by ":" for AND and ";" for OR
-               indexes=strfind(tempRules{i},':'); %Old format: Genes are separated by ":" for AND and ";" for OR
-               indexes=unique([indexesNew indexes strfind(tempRules{i},';')]);
-               if isempty(indexes)
-                   %See if you have a match
-                   I=find(strcmp(tempRules{i},model.genes));
-                   rxnGeneMat(i,I)=1;
-               else
-                   temp=[0 indexes numel(tempRules{i})+1];
-                   for j=1:numel(indexes)+1
-                       %The reaction has several associated genes
-                       geneName=tempRules{i}(temp(j)+1:temp(j+1)-1);
-                       I=find(strcmp(geneName,model.genes));
-                       model.rxnGeneMat(i,I)=1;
-                   end
-               end
-           end
-        end
-    end
-    rxnGeneMat=sparse(rxnGeneMat);
+    grRules = strrep(grRules,'( ','(');
+    grRules = strrep(grRules,' )',')');
+    grRules = regexprep(grRules,'^(','');   %rules that start with a "("
+    grRules = regexprep(grRules,')$','');   %rules that end with a ")"
 end

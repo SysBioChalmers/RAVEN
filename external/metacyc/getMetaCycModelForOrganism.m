@@ -25,7 +25,7 @@ function model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %   Usage: model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives)
 %
-%   Eduard Kerkhoven, 2017-12-12
+%   Simonas Marcisauskas, 2018-04-03
 %
 
 if nargin<2
@@ -149,8 +149,8 @@ model=removeReactions(model,~hasGenes,true);
 %Generate grRules, only consider the or relationship here
 %Matched enzymes are stored in field rxnScores, 
 rxnNum=numel(model.rxns);
-model.rxnConfidenceScores=cell(rxnNum,1);
-model.rxnConfidenceScores(:)={'2'};
+model.rxnConfidenceScores=NaN(rxnNum,1);
+model.rxnConfidenceScores(:)=2;
 model.grRules=cell(rxnNum,1);
 %model.rxnScores=cell(rxnNum,1);
 for j=1:rxnNum
@@ -228,4 +228,9 @@ model.metNames(I)=model.mets(I);
 
 %Remove additional fields
 model=rmfield(model,{'proteins','bitscore','ppos'});
+
+%In the end fix grRules and rxnGeneMat
+[grRules,rxnGeneMat] = standardizeGrRules(model);
+model.grRules = grRules;
+model.rxnGeneMat = rxnGeneMat;
 end
