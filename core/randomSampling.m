@@ -74,8 +74,8 @@ end
 %for. Check which reactions reach an arbitary high upper bound
 goodRxns=true(numel(model.rxns),1);
 for i=1:numel(model.rxns)
-    if showProgress
-      disp(['Preparing random sampling: checking rxn #' num2str(i) '/' num2str(numel(model.rxns))])
+    if showProgress && rem(i,100) == 0
+      disp(['Preparing random sampling: ready with ' num2str(i) '/' num2str(numel(model.rxns)) ' rxns'])
     end
     if goodRxns(i)==true
         testModel=setParam(model,'eq',model.rxns(i),1000);
@@ -103,8 +103,8 @@ counter=1;
 badSolutions=0;
 goodRxns=find(goodRxns);
 while counter<=nSamples
-   if showProgress
-      disp(['Performing random sampling: iteration #' num2str(counter) '/' num2str(nSamples)])
+   if showProgress && rem(counter,100) == 0
+      disp(['Performing random sampling: ready with ' num2str(counter) '/' num2str(nSamples) ' iterations'])
    end
    rxns=randsample(numel(goodRxns),nRxns);
    model.c=zeros(numel(model.rxns),1);
