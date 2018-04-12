@@ -1,35 +1,24 @@
 function exportModel(model,fileName,fileFormat,exportGeneComplexes,supressWarnings)
 % exportModel
-%   Exports a constraint-based model to an SBML file (L3V1 FBCv2). Optionally
-%   writes a human-readable YAML file that can be used for model versioning and
-%   comparison only.
+%   Exports a constraint-based model to an SBML file (L3V1 FBCv2)
 %
 %   model               a model structure
 %   fileName            filename to export the model to (without file extension)
-%   fileFormat          string indicating to export SBML ('sbml'), YAML ('yaml')
-%                       or both ('both') file formats (opt, default 'sbml')
 %   exportGeneComplexes true if gene complexes (all gene sets linked with
 %                       AND relationship) should be recognised and exported
 %                       (opt, default false)
 %   supressWarnings     true if warnings should be supressed (opt, default
 %                       false)
 %
-%   The optional YAML file is only meant for comparison between different model
-%   versions, e.g. as part of model development on GitHub. SBML is the preferred
-%   format for storage and redistribution of models. YAML import is therefore not
-%   supported, and the file generated here is not compatible with e.g. COBRApy.
 %
-%   Usage: exportModel(model,fileName,fileFormat,exportGeneComplexes,supressWarnings)
+%   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
-%   Eduard Kerkhoven, 2018-03-19
+%   Eduard Kerkhoven, 2018-04-12
 
 if nargin<3
-    fileFormat='sbml';
-end
-if nargin<4
     exportGeneComplexes=false;
 end
-if nargin<5
+if nargin<4
     supressWarnings=false;
 end
 
@@ -64,7 +53,7 @@ end;
 
 %Check the model structure
 if supressWarnings==false
-   checkModelStruct(model,false);
+    checkModelStruct(model,false);
 end
 
 % Adding several blank fields, if they don't exist already. This is
@@ -105,14 +94,14 @@ if ~isfield(model,'rxnMiriams')
 end;
 
 if sbmlLevel<3
-	%Check if genes have associated compartments
-	if ~isfield(model,'geneComps') && isfield(model,'genes')
+    %Check if genes have associated compartments
+    if ~isfield(model,'geneComps') && isfield(model,'genes')
         if supressWarnings==false
             EM='There are no compartments specified for genes. All genes will be assigned to the first compartment. This is because the SBML structure requires all elements to be assigned to a compartment';
             dispEM(EM,false);
         end
         model.geneComps=ones(numel(model.genes),1);
-	end
+    end
 end
 
 % Convert ids to SBML-convenient format. This is to avoid the data loss
@@ -131,7 +120,7 @@ modelSBML.name=model.description;
 
 if isfield(model,'annotation')
     if isfield(model.annotation,'note')
-        modelSBML.notes=['<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>',regexprep(model.annotation.note,'<p>|</p>',''),'</p></body></notes>'];        
+        modelSBML.notes=['<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>',regexprep(model.annotation.note,'<p>|</p>',''),'</p></body></notes>'];
     end
 else
     modelSBML.notes='<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>This file was generated using the exportModel function in RAVEN Toolbox 2.0 and OutputSBML in libSBML </p></body></notes>';
@@ -171,11 +160,11 @@ if isfield(model,'annotation')
     end
 end
 modelSBML.annotation=[modelSBML.annotation '<dcterms:created rdf:parseType="Resource">'...
-'<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF>'...
-'</dcterms:created>'...
-'<dcterms:modified rdf:parseType="Resource">'...
-'<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF>'...
-'</dcterms:modified>'];
+    '<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF>'...
+    '</dcterms:created>'...
+    '<dcterms:modified rdf:parseType="Resource">'...
+    '<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF>'...
+    '</dcterms:modified>'];
 
 if isfield(model,'annotation')
     if isfield(model.annotation,'taxonomy')
@@ -210,7 +199,7 @@ for i=1:numel(model.comps)
     % Copying the default values to the next entry as long as it is not the
     % last one;
     if i<numel(model.comps)
-    	modelSBML.compartment(i+1)=modelSBML.compartment(i);
+        modelSBML.compartment(i+1)=modelSBML.compartment(i);
     end;
     
     if isfield(modelSBML.compartment,'metaid')
@@ -220,15 +209,15 @@ for i=1:numel(model.comps)
     if ~isempty(model.compMiriams{i}) && isfield(modelSBML.compartment(i),'annotation')
         modelSBML.compartment(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.comps{i} '">'];
         modelSBML.compartment(i).annotation=[modelSBML.compartment(i).annotation '<bqbiol:is><rdf:Bag>'];
-        modelSBML.compartment(i).annotation=[modelSBML.compartment(i).annotation getMiriam(model.compMiriams{i}) '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>']; 
+        modelSBML.compartment(i).annotation=[modelSBML.compartment(i).annotation getMiriam(model.compMiriams{i}) '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>'];
     end;
     if isfield(modelSBML.compartment, 'name')
         modelSBML.compartment(i).name=model.compNames{i};
     end;
     if isfield(modelSBML.compartment, 'id')
         modelSBML.compartment(i).id=model.comps{i};
-    end;    
-
+    end;
+    
 end;
 
 %Begin writing species
@@ -254,7 +243,7 @@ for i=1:numel(model.mets)
     % Copying the default values to the next entry as long as it is not the
     % last one;
     if i<numel(model.mets)
-    	modelSBML.species(i+1)=modelSBML.species(i);
+        modelSBML.species(i+1)=modelSBML.species(i);
     end;
     
     if isfield(modelSBML.species,'metaid')
@@ -268,7 +257,7 @@ for i=1:numel(model.mets)
     end;
     if isfield(modelSBML.species, 'compartment')
         modelSBML.species(i).compartment=model.comps{model.metComps(i)};
-    end; 
+    end;
     if isfield(model,'unconstrained')
         if model.unconstrained(i)
             modelSBML.species(i).boundaryCondition=1;
@@ -286,8 +275,8 @@ for i=1:numel(model.mets)
         if ~isempty(model.metMiriams{i}) || ~isempty(model.metFormulas{i})
             hasInchi=false;
             if ~isempty(model.metFormulas{i})
-            %Only export formula if there is no InChI. This is because the
-            %metFormulas field is populated by InChIs if available
+                %Only export formula if there is no InChI. This is because the
+                %metFormulas field is populated by InChIs if available
                 if ~isempty(model.inchis{i})
                     hasInchi=true;
                 end;
@@ -308,7 +297,7 @@ for i=1:numel(model.mets)
             end;
         end;
     end;
-end; 
+end;
 
 if isfield(model,'genes')
     for i=1:numel(model.genes)
@@ -316,7 +305,7 @@ if isfield(model,'genes')
         if i==1
             if isfield(modelSBML.fbc_geneProduct, 'sboTerm')
                 modelSBML.fbc_geneProduct(i).sboTerm=252;
-            end;    
+            end;
         end;
         % Copying the default values to the next index as long as it is not the
         % last one;
@@ -330,7 +319,7 @@ if isfield(model,'genes')
         if ~isempty(model.geneMiriams{i}) && isfield(modelSBML.fbc_geneProduct(i),'annotation')
             modelSBML.fbc_geneProduct(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.genes{i} '">'];
             modelSBML.fbc_geneProduct(i).annotation=[modelSBML.fbc_geneProduct(i).annotation '<bqbiol:is><rdf:Bag>'];
-            modelSBML.fbc_geneProduct(i).annotation=[modelSBML.fbc_geneProduct(i).annotation getMiriam(model.geneMiriams{i}) '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>']; 
+            modelSBML.fbc_geneProduct(i).annotation=[modelSBML.fbc_geneProduct(i).annotation getMiriam(model.geneMiriams{i}) '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>'];
         end;
         if isfield(modelSBML.fbc_geneProduct, 'fbc_id')
             modelSBML.fbc_geneProduct(i).fbc_id=model.genes{i};
@@ -372,8 +361,8 @@ if isfield(model,'genes')
                 if isfield(modelSBML.fbc_geneProduct,'fbc_id')
                     modelSBML.fbc_geneProduct(numel(model.genes)+i).fbc_id=geneComplexes{i};
                 else
-                	modelSBML.fbc_geneProduct(i).fbc_label=modelSBML.fbc_geneProduct(i).fbc_id;
-                end;           
+                    modelSBML.fbc_geneProduct(i).fbc_label=modelSBML.fbc_geneProduct(i).fbc_id;
+                end;
             end;
         end;
     end;
@@ -393,14 +382,14 @@ end
 
 for i=1:length(listUniqueNames)
     % Adding the default values, as these will be the same in all entries;
-	if i==1
+    if i==1
         if isfield(modelSBML.parameter, 'constant')
             modelSBML.parameter(i).constant=1;
         end;
         if isfield(modelSBML.parameter, 'isSetValue')
             modelSBML.parameter(i).isSetValue=1;
         end;
-	end;
+    end;
     % Copying the default values to the next index as long as it is not the
     % last one;
     if i<numel(listUniqueNames)
@@ -414,20 +403,20 @@ for i=1:numel(model.rxns)
     % Adding the default values, as these will be the same in all entries;
     if i==1
         if isfield(modelSBML.reaction, 'sboTerm')
-        	modelSBML.reaction(i).sboTerm=176;
+            modelSBML.reaction(i).sboTerm=176;
         end;
         if isfield(modelSBML.reaction, 'isSetFast')
-        	modelSBML.reaction(i).isSetFast=1;
+            modelSBML.reaction(i).isSetFast=1;
         end;
     end;
     % Copying the default values to the next index as long as it is not the
     % last one;
     if i<numel(model.rxns)
-    	modelSBML.reaction(i+1)=modelSBML.reaction(i);
+        modelSBML.reaction(i+1)=modelSBML.reaction(i);
     end;
     
     if isfield(modelSBML.reaction,'metaid')
-    	modelSBML.reaction(i).metaid=['R_' model.rxns{i}];
+        modelSBML.reaction(i).metaid=['R_' model.rxns{i}];
     end;
     
     % Exporting notes information;
@@ -447,15 +436,15 @@ for i=1:numel(model.rxns)
     
     % Exporting annotation information from rxnMiriams;
     if (~isempty(model.rxnMiriams{i}) && isfield(modelSBML.reaction(i),'annotation')) || ~isempty(model.eccodes{i})
-    	modelSBML.reaction(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_R_' model.rxns{i} '">'];
-    	modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation '<bqbiol:is><rdf:Bag>'];
+        modelSBML.reaction(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_R_' model.rxns{i} '">'];
+        modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation '<bqbiol:is><rdf:Bag>'];
         if ~isempty(model.eccodes{i})
-        	eccodes=regexp(model.eccodes{i},';','split');
+            eccodes=regexp(model.eccodes{i},';','split');
             for j=1:numel(eccodes)
                 modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation  '<rdf:li rdf:resource="http://identifiers.org/ec-code/' regexprep(eccodes{j},'ec-code/|EC','') '"/>'];
             end;
         end;
-    	modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation getMiriam(model.rxnMiriams{i}) '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>']; 
+        modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation getMiriam(model.rxnMiriams{i}) '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>'];
     end;
     
     if isfield(modelSBML.reaction, 'name')
@@ -463,7 +452,7 @@ for i=1:numel(model.rxns)
     end;
     if isfield(modelSBML.reaction, 'id')
         modelSBML.reaction(i).id=['R_' model.rxns{i}];
-    end 
+    end
     
     % Adding the information about reactants and products;
     involvedMets=addReactantsProducts(model,modelSBML,i);
@@ -507,7 +496,7 @@ for i=1:numel(model.rxns)
 end;
 
 % Prepare subSystems
-% Code taken from COBRA functions getModelSubSystems, writeSBML, 
+% Code taken from COBRA functions getModelSubSystems, writeSBML,
 % findRxnsFromSubSystem under
 % GNU General Public License v3.0, license file in readme/GPL.MD. Code
 % modified for RAVEN.
@@ -526,36 +515,36 @@ if isfield(model, 'subSystems')
         subSystems = {};
     end
     if ~isempty(subSystems)
-    %Build the groups for the group package.
-    groupIDs = strcat('group',cellfun(@num2str, num2cell(1:length(subSystems))','UniformOutput',false));    
-    for i = 1:length(subSystems)
-        cgroup = tmpStruct;
-        if ~any(cellfun(@iscell,model.subSystems))
-            present = ismember(model.subSystems,subSystems{i});
-        else
-            present = cellfun(@(x) any(ismember(x,subSystems{i})),model.subSystems);
-        end
-        groupMembers = rxns(present);
-        for j = 1:numel(groupMembers)            
-            cMember = tmpStruct.groups_member;
-            cMember.groups_idRef = groupMembers{j};
-            if j == 1
-                cgroup.groups_member = cMember;
+        %Build the groups for the group package.
+        groupIDs = strcat('group',cellfun(@num2str, num2cell(1:length(subSystems))','UniformOutput',false));
+        for i = 1:length(subSystems)
+            cgroup = tmpStruct;
+            if ~any(cellfun(@iscell,model.subSystems))
+                present = ismember(model.subSystems,subSystems{i});
             else
-                cgroup.groups_member(j) = cMember;
+                present = cellfun(@(x) any(ismember(x,subSystems{i})),model.subSystems);
+            end
+            groupMembers = rxns(present);
+            for j = 1:numel(groupMembers)
+                cMember = tmpStruct.groups_member;
+                cMember.groups_idRef = groupMembers{j};
+                if j == 1
+                    cgroup.groups_member = cMember;
+                else
+                    cgroup.groups_member(j) = cMember;
+                end
+            end
+            cgroup.groups_id = groupIDs{i};
+            cgroup.groups_name = subSystems{i};
+            if i == 1
+                modelSBML.groups_group = cgroup;
+            else
+                modelSBML.groups_group(i) = cgroup;
             end
         end
-        cgroup.groups_id = groupIDs{i};
-        cgroup.groups_name = subSystems{i};
-        if i == 1
-            modelSBML.groups_group = cgroup;
-        else
-            modelSBML.groups_group(i) = cgroup;
-        end
-    end
     end
 end
- 
+
 % Preparing fbc_objective subfield;
 
 modelSBML.fbc_objective.fbc_type='maximize';
@@ -591,16 +580,7 @@ if sbmlPackageVersions(1) == 2
     modelSBML.fbc_strict=1;
 end;
 
-if strcmp(fileFormat,'yaml')
-    modelSBML = constructYaml(modelSBML);
-    YAML.write(strcat(fileName,'.yml'),modelSBML);
-elseif strcmp(fileFormat,'both')
-    OutputSBML(modelSBML,strcat(fileName,'.xml'),1,0,[1,0]);
-    modelSBML = constructYaml(modelSBML);
-    YAML.write(strcat(fileName,'.yml'),modelSBML);
-else
-    OutputSBML(modelSBML,strcat(fileName,'.xml'),1,0,[1,0]);
-end
+OutputSBML(modelSBML,fileName,1,0,[1,0]);
 end
 
 
@@ -612,7 +592,7 @@ sbmlFieldNames=getStructureFieldnames('model',sbmlLevel,sbmlVersion,sbmlPackages
 sbmlDefaultValues=getDefaultValues('model',sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
 
 for i=1:numel(sbmlFieldNames)
-	modelSBML.(sbmlFieldNames{1,i})=sbmlDefaultValues{1,i};
+    modelSBML.(sbmlFieldNames{1,i})=sbmlDefaultValues{1,i};
     sbmlSubfieldNames=getStructureFieldnames(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
     sbmlSubfieldValues=getDefaultValues(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
     if ~strcmp(sbmlFieldNames{1,i},'event') && ~strcmp(sbmlFieldNames{1,i},'functionDefinition') && ~strcmp(sbmlFieldNames{1,i},'initialAssignment')
@@ -627,7 +607,7 @@ for i=1:numel(sbmlFieldNames)
                     % subsubfields;
                     if ~strcmp(sbmlSubfieldNames{1,j},'compartment') && ~strcmp(sbmlSubfieldNames{1,j},'species')
                         modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j}).(sbmlSubsubfieldNames{1,k})=sbmlSubsubfieldValues{1,k};
-                    end;   
+                    end;
                     % If it is fbc_association in the third level, we need to
                     % establish the fourth level, since libSBML requires it;
                     if strcmp(sbmlSubsubfieldNames{1,k},'fbc_association')
@@ -668,7 +648,7 @@ for i=1:numel(unitFieldNames)
             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=scales(j);
         elseif strcmp(unitFieldNames{1,i},'multiplier')
             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=multipliers(j);
-        end;            
+        end;
     end;
 end;
 end
@@ -680,9 +660,9 @@ function miriamString=getMiriam(miriamStruct)
 
 miriamString='';
 if isfield(miriamStruct,'name')
-	for i=1:numel(miriamStruct.name)
+    for i=1:numel(miriamStruct.name)
         miriamString=[miriamString '<rdf:li rdf:resource="http://identifiers.org/' miriamStruct.name{i} '/' miriamStruct.value{i} '"/>'];
-	end
+    end
 end
 end
 
@@ -709,10 +689,10 @@ for j_met=1:size(met_idx,1)
 end
 end
 
+function vecT = columnVector(vec)
 % Code below taken from COBRA Toolbox under GNU General Public License v3.0
 % license file in readme/GPL.MD.
-function vecT = columnVector(vec)
- 
+%
 % Converts a vector to a column vector
 %
 % USAGE:
@@ -728,7 +708,7 @@ function vecT = columnVector(vec)
 % .. Authors:
 %     - Original file: Markus Herrgard
 %     - Minor changes: Laurent Heirendt January 2017
- 
+
 [n, m] = size(vec);
 
 if n < m
@@ -737,4 +717,3 @@ else
     vecT = vec;
 end
 end
- 
