@@ -29,7 +29,7 @@ function newModel=ravenCobraWrapper(model)
 %   Usage: newModel=ravenCobraWrapper(model)
 %
 %   Simonas Marcisauskas, 2018-03-17
-%   Benjamin J. Sanchez, 2018-03-28
+%   Benjamin J. Sanchez, 2018-04-12
 %
 
 if isfield(model,'rules')
@@ -302,8 +302,8 @@ if isRaven
     end;
     newModel.metNames=model.metNames;
     for i=1:numel(model.comps)
-        newModel.metNames=regexprep(newModel.metNames,['\[', model.comps{i}, '\]$'],'');
-        newModel.metNames=regexprep(newModel.metNames,['\[', model.compNames{i}, '\]$'],'');
+        newModel.metNames=regexprep(newModel.metNames,['\ [', model.comps{i}, '\]$'],'');
+        newModel.metNames=regexprep(newModel.metNames,['\ [', model.compNames{i}, '\]$'],'');
     end;
     newModel.metComps=regexprep(model.mets,'^.+\[','');
     newModel.metComps=regexprep(newModel.metComps,'\]$','');
