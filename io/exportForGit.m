@@ -13,7 +13,7 @@ function out=exportForGit(model,prefix,path)
 %
 %   Usage: exportForGit(model,prefix,path)
 %
-%   Eduard Kerkhoven, 2018-03-19
+%   Eduard Kerkhoven, 2018-04-12
 %
 if nargin<3
     path='.';
@@ -56,7 +56,8 @@ end
 fclose(fid);
 
 % Write XML (SBML) and YAML formats
-exportModel(model,prefix,'both');
+exportModel(model,strcat(prefix,'.xml'));
+writeYaml(model,strcat(prefix,'.yml'));
 movefile([prefix,'.xml'],fullfile(path,'ModelFiles','xml'));
 movefile([prefix,'.yml'],fullfile(path,'ModelFiles','yaml'));
 save([fullfile(path,'ModelFiles','mat',prefix),'.mat'],'model');
