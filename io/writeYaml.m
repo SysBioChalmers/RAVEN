@@ -7,7 +7,7 @@ function writeYaml(model,name)
 %
 %   Usage: writeYaml(model,name)
 %
-%   Benjamin Sanchez, 2018-04-11
+%   Benjamin Sanchez, 2018-04-12
 %
 
 %Check that model is in RAVEN format:
@@ -24,7 +24,7 @@ if isfield(model,'metMiriams')
 end
 if isfield(model,'rxnMiriams')
     model.rxnKEGG  = extractMiriam(model.rxnMiriams,'kegg.reaction');
-    model.metKEGG  = strrep(model.metKEGG,'kegg.reaction/','');
+    model.rxnKEGG  = strrep(model.rxnKEGG,'kegg.reaction/','');
 end
 
 %Open file:
