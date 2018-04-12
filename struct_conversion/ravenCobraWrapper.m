@@ -302,9 +302,10 @@ if isRaven
     end;
     newModel.metNames=model.metNames;
     for i=1:numel(model.comps)
-        newModel.metNames=regexprep(newModel.metNames,['\ [', model.comps{i}, '\]$'],'');
-        newModel.metNames=regexprep(newModel.metNames,['\ [', model.compNames{i}, '\]$'],'');
+        newModel.metNames=regexprep(newModel.metNames,['\[', model.comps{i}, '\]$'],'');
+        newModel.metNames=regexprep(newModel.metNames,['\[', model.compNames{i}, '\]$'],'');
     end;
+    newModel.metNames=deblank(newModel.metNames);
     newModel.metComps=regexprep(model.mets,'^.+\[','');
     newModel.metComps=regexprep(newModel.metComps,'\]$','');
     [~, newModel.metComps]=ismember(newModel.metComps,newModel.comps);
