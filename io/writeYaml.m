@@ -7,7 +7,7 @@ function writeYaml(model,name)
 %
 %   Usage: writeYaml(model,name)
 %
-%   Benjamin Sanchez, 2018-04-12
+%   Simonas Marcisauskas, 2018-04-13
 %
 
 %Check that model is in RAVEN format:
@@ -17,14 +17,20 @@ end
 
 %Simplify Miriam fields:
 if isfield(model,'metMiriams')
-    model.metCHEBI = extractMiriam(model.metMiriams,'chebi');
-    model.metCHEBI = strrep(model.metCHEBI,'chebi/','');
-    model.metKEGG  = extractMiriam(model.metMiriams,'kegg.compound');
-    model.metKEGG  = strrep(model.metKEGG,'kegg.compound/','');
+    [model.newMetMiriams,model.newMetMiriamNames]   = extractMiriam(model.metMiriams);
+    model.newMetMiriams                             = regexprep(model.newMetMiriams,'^.+/','');
 end
 if isfield(model,'rxnMiriams')
-    model.rxnKEGG  = extractMiriam(model.rxnMiriams,'kegg.reaction');
-    model.rxnKEGG  = strrep(model.rxnKEGG,'kegg.reaction/','');
+    [model.newRxnMiriams,model.newRxnMiriamNames]   = extractMiriam(model.rxnMiriams);
+    model.newRxnMiriams                             = regexprep(model.newRxnMiriams,'^.+/','');
+end
+if isfield(model,'geneMiriams')
+    [model.newGeneMiriams,model.newGeneMiriamNames] = extractMiriam(model.geneMiriams);
+    model.newGeneMiriams                            = regexprep(model.newGeneMiriams,'^.+/','');
+end
+if isfield(model,'compMiriams')
+    [model.newCompMiriams,model.newCompMiriamNames] = extractMiriam(model.compMiriams);
+    model.newCompMiriams                            = regexprep(model.newCompMiriams,'^.+/','');
 end
 
 %Open file:
@@ -40,7 +46,7 @@ for i = 1:length(model.mets)
     writeField(model, fid, 'metNames',    'txt', pos(i), '- name')
     writeField(model, fid, 'metComps',    'txt', pos(i), '- compartment')
     writeField(model, fid, 'metFormulas', 'txt', pos(i), '- formula')
-    writeField(model, fid, 'metCharges',  'num', pos(i), '- charge')    
+    writeField(model, fid, 'metCharges',  'num', pos(i), '- charge')
     writeField(model, fid, 'metMiriams',  'txt', pos(i), '- annotation')
 end
 
@@ -57,7 +63,7 @@ for i = 1:length(model.rxns)
     writeField(model, fid, 'grRules',             'txt', pos(i), '- gene_reaction_rule')
     writeField(model, fid, 'subSystems',          'txt', pos(i), '- subsystem')
     writeField(model, fid, 'rxnMiriams',          'txt', pos(i), '- annotation')
-    writeField(model, fid, 'rxnConfidenceScores', 'num', pos(i), '- confidence_score')    
+    writeField(model, fid, 'rxnConfidenceScores', 'num', pos(i), '- confidence_score')
 end
 
 %Genes:
@@ -67,13 +73,15 @@ for i = 1:length(model.genes)
     fprintf(fid,'  - !!omap\n');
     writeField(model, fid, 'genes',          'txt', pos(i), '- id')
     writeField(model, fid, 'geneShortNames', 'txt', pos(i), '- name')
+    writeField(model, fid, 'geneMiriams',    'txt', pos(i), '- annotation')
 end
 
 %Compartments:
 fprintf(fid,'- compartments:\n');
 [~,pos] = sort(model.comps);
 for i = 1:length(model.comps)
-    writeField(model, fid, 'compNames', 'txt', pos(i), ['- ' model.comps{pos(i)}])
+    writeField(model, fid, 'compNames',   'txt', pos(i), ['- ' model.comps{pos(i)}])
+    writeField(model, fid, 'compMiriams', 'txt', pos(i), '- annotation')
 end
 
 %TODO: include id, name & version (lost in RAVEN)
@@ -98,20 +106,50 @@ if isfield(model,fieldName)
     field = eval(['model.' fieldName]);
     
     if strcmp(fieldName,'metMiriams')
-        %metMiriams: create header & write chebi & kegg.compound
-        if ~isempty(model.metCHEBI{pos}) || ~isempty(model.metKEGG{pos})
+        if ~isempty(model.metMiriams{pos})
             fprintf(fid,['    ' name ': !!omap\n']);
-            writeField(model, fid, 'metCHEBI', 'txt', pos, '  - chebi')
-            writeField(model, fid, 'metKEGG',  'txt', pos, '  - kegg.compound')
+            for i=1:size(model.newMetMiriams,2)
+                %'i' represents the different miriam names, e.g.
+                %kegg.compound or chebi
+                if ~isempty(model.newMetMiriams{pos,i})
+                    %As during the following writeField call the value of
+                    %'i' would be lost, it is temporarily concatenated to
+                    %'name' parameter, which will be edited later
+                    writeField(model, fid, 'newMetMiriams', 'txt', pos, ['  - ' model.newMetMiriamNames{i} '_' num2str(i)])
+                end
+            end
         end
         
     elseif strcmp(fieldName,'rxnMiriams')
-        %rxnMiriams: create header & write ec-codes & kegg.reaction
-        if ~isempty(model.eccodes{pos}) || ~isempty(model.rxnKEGG{pos}) || ~isempty(model.rxnNotes{pos})
+        if ~isempty(model.eccodes{pos}) || ~isempty(model.rxnNotes{pos}) || ~isempty(model.rxnMiriams{pos})
             fprintf(fid,['    ' name ': !!omap\n']);
             writeField(model, fid, 'eccodes',  'txt', pos, '  - ec-code')
-            writeField(model, fid, 'rxnKEGG',  'txt', pos, '  - kegg.reaction')
+            for i=1:size(model.newRxnMiriams,2)
+                if ~isempty(model.newRxnMiriams{pos,i})
+                    writeField(model, fid, 'newRxnMiriams', 'txt', pos, ['  - ' model.newRxnMiriamNames{i} '_' num2str(i)])
+                end
+            end
             writeField(model, fid, 'rxnNotes', 'txt', pos, '  - pmid')
+        end
+        
+    elseif strcmp(fieldName,'geneMiriams')
+        if ~isempty(model.geneMiriams{pos})
+            fprintf(fid,['    ' name ': !!omap\n']);
+            for i=1:size(model.newGeneMiriams,2)
+                if ~isempty(model.newGeneMiriams{pos,i})
+                    writeField(model, fid, 'newGeneMiriams', 'txt', pos, ['  - ' model.newGeneMiriamNames{i} '_' num2str(i)])
+                end
+            end
+        end
+        
+    elseif strcmp(fieldName,'compMiriams')
+        if ~isempty(model.compMiriams{pos})
+            fprintf(fid,['    ' name ': !!omap\n']);
+            for i=1:size(model.newCompMiriams,2)
+                if ~isempty(model.newCompMiriams{pos,i})
+                    writeField(model, fid, 'newCompMiriams', 'txt', pos, ['  - ' model.newCompMiriamNames{i} '_' num2str(i)])
+                end
+            end
         end
         
     elseif strcmp(fieldName,'S')
@@ -128,12 +166,28 @@ if isfield(model,fieldName)
             end
         end
         
-    elseif sum(strcmp({'eccodes','rxnNotes','subSystems','metCHEBI','metKEGG','rxnKEGG'},fieldName)) > 0
+    elseif sum(strcmp({'eccodes','rxnNotes','subSystems','newMetMiriams','newRxnMiriams','newGeneMiriams','newCompMiriams'},fieldName)) > 0
         %eccodes/rxnNotes/subSystems: if 1 write in 1 line, if more create header and list
         if strcmp(fieldName,'subSystems')
             list = field{pos};  %subSystems already comes in a cell array
+        elseif strcmp(fieldName,'newMetMiriams')
+            index = str2double(regexprep(name,'^.+_',''));
+            name  = regexprep(name,'_\d+$','');
+            list = strsplit(model.newMetMiriams{pos,index},';');
+        elseif strcmp(fieldName,'newRxnMiriams')
+            index = str2double(regexprep(name,'^.+_',''));
+            name  = regexprep(name,'_\d+$','');
+            list = strsplit(model.newRxnMiriams{pos,index},';');
+        elseif strcmp(fieldName,'newGeneMiriams')
+            index = str2double(regexprep(name,'^.+_',''));
+            name  = regexprep(name,'_\d+$','');
+            list = strsplit(model.newGeneMiriams{pos,index},';');
+        elseif strcmp(fieldName,'newCompMiriams')
+            index = str2double(regexprep(name,'^.+_',''));
+            name  = regexprep(name,'_\d+$','');
+            list = strsplit(model.newCompMiriams{pos,index},';');
         else
-            list = strrep(field{pos},' ','');     %Exception for eccodes & rxnNotes
+            list = strrep(field{pos,1},' ','');     %Exception for eccodes & rxnNotes
             list = strsplit(list,';');
         end
         if length(list) == 1 && ~strcmp(list{1},'')
