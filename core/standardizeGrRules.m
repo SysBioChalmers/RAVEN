@@ -21,7 +21,7 @@ function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)
 %
 %   Usage: [grRules,rxnGeneMat,indexes2check]=standardizeGrRules(model,embedded)
 %
-%   Ivan Domenzain, 2018-04-11
+%   Ivan Domenzain, 2018-04-12
 %
 
 %Preallocate fields
@@ -29,7 +29,7 @@ function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)
 [g,~]      = size(model.genes);
 rxnGeneMat = sparse(n,g);
 grRules    = cell(n,1);
-
+genes      = model.genes;
 if nargin<2
     embedded = false;
 end
@@ -41,17 +41,16 @@ if isfield(model,'grRules')
     for i=1:length(model.grRules)
         originalSTR = model.grRules{i};
         grRules{i}  = originalSTR;
+        %Non-empty grRules are splitted in all their different isoenzymes
+        genesSets   = getSimpleGeneSets(originalSTR);
+        rxnGeneMat  = modifyRxnGeneMat(genesSets,genes,rxnGeneMat,i);
         %standardize the non-conflicting grRules
         if ~ismember(i,indexes2check)
-            grRules{i}  = originalSTR;
-            newSTR      = [];
-            %Non-empty grRules are splitted in all their different isoenzymes
-            genesSets = getSimpleGeneSets(originalSTR);
-
+            newSTR = [];
             if ~isempty(genesSets)
+                %For each simple genes set in the rule
                 for j=1:length(genesSets)
                     simpleSet  = genesSets{j};
-                    rxnGeneMat = modifyRxnGeneMat(simpleSet,model.genes,rxnGeneMat,i);
                     %Enclose simpleSet in brackets
                     if length(genesSets)>1
                         if ~isempty(strfind(simpleSet,' and '))
@@ -66,8 +65,8 @@ if isfield(model,'grRules')
                     else
                         newSTR = [newSTR, simpleSet];
                     end
-
                 end
+                %Update grRule 
                 grRules{i} = char(newSTR);
             end
         end
@@ -93,21 +92,29 @@ if ~isempty(originalSTR)
 end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Function that gets a simple genes set (single gene or enzyme complex)
-%associated with the i-th reaction and modifies the correspondent row in the 
-%rxnGeneMat accordingly.
-function rxnGeneMat = modifyRxnGeneMat(genesSet,modelGenes,rxnGeneMat,i)
-%Get individual genes
-STR   = strrep(genesSet,') and (',' and ');
-genes = strsplit(STR,' ');
-for k=1:length(genes)
-    if ~strcmpi(genes(k),' and ')
-        genePos = find(strcmpi(modelGenes,genes(k)));
-        if ~isempty(genePos)
-            rxnGeneMat(i,genePos) = 1;
-            %else
-            %In this case the gene should be added to the
-            %genes field (and to all of its dependencies)
+%Function that gets a cell array of simple genes sets (single genes or 
+% enzyme complexes) associated with the i-th reaction and modifies the 
+%correspondent row in the rxnGeneMat accordingly.
+function rxnGeneMat = modifyRxnGeneMat(genesSets,modelGenes,rxnGeneMat,i)
+
+if ~isempty(genesSets)
+    for j=1:length(genesSets)
+    	simpleSet  = genesSets{j};
+%        rxnGeneMat = modifyRxnGeneMat(simpleSet,model.genes,rxnGeneMat,i);
+        %Get individual genes
+        STR   = strrep(simpleSet,') and (',' and ');
+        genes = strsplit(STR,' ');
+        for k=1:length(genes)
+            if ~strcmpi(genes(k),' and ')
+                %Get gene index
+                genePos = find(strcmpi(modelGenes,genes(k)));
+                if ~isempty(genePos)
+                    rxnGeneMat(i,genePos) = 1;
+                    %else
+                    %In this case the gene should be added to the
+                    %genes field (and to all of its dependencies)
+                end
+            end
         end
     end
 end
@@ -123,35 +130,33 @@ indexes2check = union(indexes_l,indexes_U);
 if ~isempty(indexes2check)
 
     if embedded
-        STR = ' Some ") AND (" relationships were found in grRules, ';
-        STR = [STR,'this might lead to ambiguous genes-rxn asssociations.'];
-        STR = [STR,'\n\nIf this field has been already curated then '];
-        STR = [STR,' please ignore this message, otherwise run the function'];
-        STR = [STR,' standardizeGrRules in the next way for further instructions:\n\n']; 
-        STR = [STR,'  [~,~,indexes2check] = standardizeGrRules(model)\n'];
+        STR = ' Some ") AND (" relationships were found in grRules, this ';
+        STR = [STR,'might lead to ambiguous genes-rxn asssociations.\n\n'];
+        STR = [STR,'If this field has been already curated then  please i'];
+        STR = [STR,'gnore this message, otherwise run the function standa'];
+        STR = [STR,'rdizeGrRules in the next way for further instructions']; 
+        STR = [STR,':\n\n  [~,~,indexes2check]=standardizeGrRules(model)\n'];
         warning(sprintf(STR))
     else
-        STR = ['") AND ("  relationships  found in:\n\n'];
+        STR = 'Potentially problematic ") AND (" relationships found in\n\n';
         for i=1:length(indexes2check)
             index = indexes2check(i);
-            STR = [STR '  - grRule #' num2str(index) ': ' grRules{index} '\n'];
+            STR = [STR '  - grRule #' num2str(index) grRules{index} '\n'];
         end
-        STR = [STR,'\n This kind of relationship should only be present in '];
-        STR = [STR,' reactions catalysed by complexes of isoenzymes e.g.\n\n'];
-        STR = [STR,'  - (G1 or G2) and (G3 or G4)\n\n'];
-        STR = [STR,' For these cases modify the grRules manually,'];
-        STR = [STR,' writing all the possible combinations e.g.\n\n'];
-        STR = [STR,'  - (G1 and G3) or (G1 and G4) or (G2 and G3) or (G2 and G4)\n\n'];
-        STR = [STR,' For other cases modify the correspondent grRules'];
-        STR = [STR,' avoiding:\n\n'];
-        STR = [STR,'  1) Overall container brackets, e.g. \n'];
-        STR = [STR,'        "(G1 and G2)" should be "G1 and G2"\n\n'];
-        STR = [STR,'  2) Single unit enzymes enclosed into brackets, e.g.\n']; 
-        STR = [STR,'        "(G1)" should be "G1"\n\n'];
-        STR = [STR,'  3) The use of uppercases for logical operators, e.g.\n'];
-        STR = [STR,'        "G1 OR G2" should be "G1 or G2"\n\n'];
-        STR = [STR,'  4) Unbalanced brackets, e.g.\n'];
-        STR = [STR,'        "((G1 and G2) or G3" should be "(G1 and G2) or G3"\n'];
+        STR = [STR,'\n This kind of relationship should only be present '];
+        STR = [STR,'in  reactions catalysed by complexes of isoenzymes e'];
+        STR = [STR,'.g.\n\n  - (G1 or G2) and (G3 or G4)\n\n For these c'];
+        STR = [STR,'ases modify the grRules manually, writing all the po'];
+        STR = [STR,'ssible combinations e.g.\n\n  - (G1 and G3) or (G1 a'];
+        STR = [STR,'nd G4) or (G2 and G3) or (G2 and G4)\n\n For other c'];
+        STR = [STR,'ases modify the correspondent grRules avoiding:\n\n '];
+        STR = [STR,' 1) Overall container brackets, e.g.\n        "(G1 a'];
+        STR = [STR,'nd G2)" should be "G1 and G2"\n\n  2) Single unit en'];
+        STR = [STR,'zymes enclosed into brackets, e.g.\n        "(G1)" s']; 
+        STR = [STR,'hould be "G1"\n\n  3) The use of uppercases for logi'];
+        STR = [STR,'cal operators, e.g.\n        "G1 OR G2" should be "G'];
+        STR = [STR,'1 or G2"\n\n  4) Unbalanced brackets, e.g.\n        '];
+        STR = [STR,'"((G1 and G2) or G3" should be "(G1 and G2) or G3"\n'];
         warning(sprintf(STR))
     end
 end
