@@ -121,7 +121,7 @@ if isfield(model,fieldName)
         end
         
     elseif strcmp(fieldName,'rxnMiriams')
-        if ~isempty(model.eccodes{pos}) || ~isempty(model.rxnNotes{pos}) || ~isempty(model.rxnMiriams{pos})
+        if ~isempty(model.eccodes{pos}) || ~isempty(model.rxnMiriams{pos})
             fprintf(fid,['    ' name ': !!omap\n']);
             writeField(model, fid, 'eccodes',  'txt', pos, '  - ec-code')
             for i=1:size(model.newRxnMiriams,2)
@@ -129,7 +129,6 @@ if isfield(model,fieldName)
                     writeField(model, fid, 'newRxnMiriams', 'txt', pos, ['  - ' model.newRxnMiriamNames{i} '_' num2str(i)])
                 end
             end
-            writeField(model, fid, 'rxnNotes', 'txt', pos, '  - pmid')
         end
         
     elseif strcmp(fieldName,'geneMiriams')
@@ -166,7 +165,7 @@ if isfield(model,fieldName)
             end
         end
         
-    elseif sum(strcmp({'eccodes','rxnNotes','subSystems','newMetMiriams','newRxnMiriams','newGeneMiriams','newCompMiriams'},fieldName)) > 0
+    elseif sum(strcmp({'eccodes','subSystems','newMetMiriams','newRxnMiriams','newGeneMiriams','newCompMiriams'},fieldName)) > 0
         %eccodes/rxnNotes/subSystems: if 1 write in 1 line, if more create header and list
         if strcmp(fieldName,'subSystems')
             list = field{pos};  %subSystems already comes in a cell array
@@ -187,7 +186,7 @@ if isfield(model,fieldName)
             name  = regexprep(name,'_\d+$','');
             list = strsplit(model.newCompMiriams{pos,index},';');
         else
-            list = strrep(field{pos},' ','');     %Exception for eccodes & rxnNotes
+            list = strrep(field{pos},' ','');     %Exception for eccodes
             list = strsplit(list,';');
         end
         if length(list) == 1 && ~strcmp(list{1},'')
