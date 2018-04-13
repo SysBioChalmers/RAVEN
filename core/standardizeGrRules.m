@@ -123,9 +123,14 @@ end
 %Function that gets the model field grRules and returns the indexes of the
 %rules in which the pattern ") and (" is present. 
 function indexes2check = findPotentialErrors(grRules,embedded)
-indexes_l     = find(~cellfun(@isempty,strfind(grRules,') and (')));
-indexes_U     = find(~cellfun(@isempty,strfind(grRules,') AND (')));
-indexes2check = union(indexes_l,indexes_U);
+indxs_l       = find(~cellfun(@isempty,strfind(grRules,') and (')));
+indxs_U       = find(~cellfun(@isempty,strfind(grRules,') AND (')));
+indxs_l_L     = find(~cellfun(@isempty,strfind(grRules,') and')));
+indxs_U_L     = find(~cellfun(@isempty,strfind(grRules,') AND')));
+indxs_l_R     = find(~cellfun(@isempty,strfind(grRules,'and (')));
+indxs_U_R     = find(~cellfun(@isempty,strfind(grRules,'AND (')));
+indexes2check = vertcat(indxs_l,indxs_U,indxs_l_L,indxs_U_L,indxs_l_R,indxs_U_R);
+indexes2check = unique(indexes2check);
 
 if ~isempty(indexes2check)
 
@@ -138,12 +143,13 @@ if ~isempty(indexes2check)
         STR = [STR,':\n\n  [~,~,indexes2check]=standardizeGrRules(model)\n'];
         warning(sprintf(STR))
     else
-        STR = 'Potentially problematic ") AND (" relationships found in\n\n';
+        STR = 'Potentially problematic ") AND (", ") AND" or "AND ("relat';
+        STR = [STR,'ionships found in\n\n'];
         for i=1:length(indexes2check)
             index = indexes2check(i);
             STR = [STR '  - grRule #' num2str(index) grRules{index} '\n'];
         end
-        STR = [STR,'\n This kind of relationship should only be present '];
+        STR = [STR,'\n This kind of relationships should only be present '];
         STR = [STR,'in  reactions catalysed by complexes of isoenzymes e'];
         STR = [STR,'.g.\n\n  - (G1 or G2) and (G3 or G4)\n\n For these c'];
         STR = [STR,'ases modify the grRules manually, writing all the po'];
