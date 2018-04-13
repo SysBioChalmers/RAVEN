@@ -187,7 +187,7 @@ if isfield(model,fieldName)
             name  = regexprep(name,'_\d+$','');
             list = strsplit(model.newCompMiriams{pos,index},';');
         else
-            list = strrep(field{pos,1},' ','');     %Exception for eccodes & rxnNotes
+            list = strrep(field{pos},' ','');     %Exception for eccodes & rxnNotes
             list = strsplit(list,';');
         end
         if length(list) == 1 && ~strcmp(list{1},'')
