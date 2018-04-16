@@ -488,7 +488,7 @@ function [flux_matrix,obj_matrix] = mapFunction(models,groupVector,fluxMets,flux
                 end
                 [input_unique,index] = unique(input_rxns);
                 for k = 1:length(unique(input_unique))
-                    input_fluxes_unique(k) = max(input_fluxes(ismember(input_rxns,input_unique(k))));
+                    input_fluxes_unique(k) = max(input_fluxes(ismember(input_rxns,input_unique(k)))); % Maximally restricted
 %                      input_fluxes_unique(k) = min(input_fluxes(ismember(input_rxns,input_unique(k)))); % Unrestricted
 %                      input_fluxes_unique(k) = min(input_fluxes(ismember(input_rxns,input_unique(k))))/10; % Restricted
                 end
