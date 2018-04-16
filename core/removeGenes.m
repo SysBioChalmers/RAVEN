@@ -17,7 +17,7 @@ function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeB
 %
 %   Usage: reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns)
 %
-%   Benjamín J. Sánchez, 2018-04-16
+%   BenjamÃ­n J. SÃ¡nchez, 2018-04-16
 %
 
 if nargin<3
@@ -83,36 +83,32 @@ end
 end
 
 function canIt = canRxnCarryFlux(model,geneRule,geneToRemove)
-    %This function converts a gene rule to a logical statement, and then asseses
-    % if the rule is true (i.e. rxn can still carry flux) or not (cannot carry flux).
-    for i = 1:length(model.genes)
-        if strcmp(model.genes{i},geneToRemove)
-            geneRule = strrep(geneRule,[' ' model.genes{i} ' '],' false ');
-			geneRule = strrep(geneRule,['(' model.genes{i} ' '],'(false ');
-			geneRule = strrep(geneRule,[' ' model.genes{i} ')'],' false)');
-        else
-            geneRule = strrep(geneRule,[' ' model.genes{i} ' '],' true ');
-			geneRule = strrep(geneRule,['(' model.genes{i} ' '],'(true ');
-			geneRule = strrep(geneRule,[' ' model.genes{i} ')'],' true)');
-        end
+%This function converts a gene rule to a logical statement, and then asseses
+% if the rule is true (i.e. rxn can still carry flux) or not (cannot carry flux).
+for i = 1:length(model.genes)
+    if strcmp(model.genes{i},geneToRemove)
+        geneRule = strrep(geneRule,[' ' model.genes{i} ' '],' false ');
+        geneRule = strrep(geneRule,['(' model.genes{i} ' '],'(false ');
+        geneRule = strrep(geneRule,[' ' model.genes{i} ')'],' false)');
+    else
+        geneRule = strrep(geneRule,[' ' model.genes{i} ' '],' true ');
+        geneRule = strrep(geneRule,['(' model.genes{i} ' '],'(true ');
+        geneRule = strrep(geneRule,[' ' model.genes{i} ')'],' true)');
     end
-    geneRule = strrep(geneRule,'and','&&');
-    geneRule = strrep(geneRule,'or','||');
-    canIt    = eval(geneRule);
+end
+geneRule = strrep(geneRule,'and','&&');
+geneRule = strrep(geneRule,'or','||');
+canIt    = eval(geneRule);
 end
 
 function geneRule = removeGeneFromRule(geneRule,geneToRemove)
-    %This function receives a standard gene rule and it returns it without the
-    %chosen gene.
-    geneSets = strsplit(geneRule,' or ');
-    hasGene  = ~cellfun(@isempty,strfind(geneSets,geneToRemove));
-    geneSets = geneSets(~hasGene);
-    geneRule = strjoin(geneSets,' or ');
-    if length(geneSets) == 1 && ~isempty(strfind(geneRule,'('))
-        geneRule = geneRule(2:end-1);
-    end
+%This function receives a standard gene rule and it returns it without the
+%chosen gene.
+geneSets = strsplit(geneRule,' or ');
+hasGene  = ~cellfun(@isempty,strfind(geneSets,geneToRemove));
+geneSets = geneSets(~hasGene);
+geneRule = strjoin(geneSets,' or ');
+if length(geneSets) == 1 && ~isempty(strfind(geneRule,'('))
+    geneRule = geneRule(2:end-1);
 end
-
-
-
-
+end

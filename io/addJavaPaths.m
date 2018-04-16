@@ -19,28 +19,11 @@ function addJavaPaths()
         fullfile(poiPATH,'stax-api-1.0.1.jar')};
 
     %Open the javaclasspath.txt file or create it
-    %otherwise
-    fid=fopen(fullfile(prefdir,'javaclasspath.txt'),'r');
-    if fid>0
-        current=textscan(fid,'%s','Delimiter','\n');
-        current=current{1};
-        fclose(fid);
-    else
-        current={};
-    end
+    %otherwise   
 
-    %Get the ones to add
-    [~,I]=setdiff(upper(toAdd),upper(current));
-    if any(I)
-        fid=fopen(fullfile(prefdir,'javaclasspath.txt'),'at');
-        fprintf(fid,'\n');
-        for i=1:numel(I)
-            fprintf(fid,[strrep(toAdd{I(i)},'\','\\') '\n']);
-        end
-        fclose(fid);
-
-        %Throw an error to say that Matlab has to be restarted
-        EM='RAVEN has added the Apache POI classes to the static Java path. Please restart Matlab to have these changes take effect';
-        dispEM(EM);
+    %Get the ones to add    
+    for i=1:numel(toAdd)
+        javaaddpath(toAdd{i});
     end
+    %Throw an error to say that Matlab has to be restarted
 end

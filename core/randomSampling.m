@@ -1,4 +1,4 @@
-function solutions=randomSampling(model, nSamples, replaceBoundsWithInf,supressErrors)
+function solutions=randomSampling(model, nSamples, replaceBoundsWithInf,supressErrors,showProgress)
 % randomSampling
 %   Returns a number of random solutions
 %
@@ -19,6 +19,9 @@ function solutions=randomSampling(model, nSamples, replaceBoundsWithInf,supressE
 %                           as unlimited glucose uptake) or too strict
 %                           (such as too many and too narrow constraints)
 %                           (opt, default false)
+%   showProgress            if true, it will display in the command window 
+%                           how many iterations have been done (opt, default
+%                           false)
 %
 %   solutions               matrix with the solutions
 %
@@ -29,6 +32,7 @@ function solutions=randomSampling(model, nSamples, replaceBoundsWithInf,supressE
 %   Usage: solutions=randomSampling(model, nSamples, replaceBoundsWithInf)
 %
 %   Eduard Kerkhoven, 2018-02-28
+%   Benjamin Sanchez, 2018-04-10
 %
 
 if nargin<2
@@ -39,6 +43,9 @@ if nargin<3
 end
 if nargin<4
     supressErrors=false;
+end
+if nargin<5
+    showProgress=false;
 end
 
 nRxns=2; %Number of reactions in the objective function in each iteration
@@ -67,6 +74,9 @@ end
 %for. Check which reactions reach an arbitary high upper bound
 goodRxns=true(numel(model.rxns),1);
 for i=1:numel(model.rxns)
+    if showProgress && rem(i,100) == 0
+      disp(['Preparing random sampling: ready with ' num2str(i) '/' num2str(numel(model.rxns)) ' rxns'])
+    end
     if goodRxns(i)==true
         testModel=setParam(model,'eq',model.rxns(i),1000);
         sol=solveLP(testModel);
@@ -93,6 +103,9 @@ counter=1;
 badSolutions=0;
 goodRxns=find(goodRxns);
 while counter<=nSamples
+   if showProgress && rem(counter,100) == 0
+      disp(['Performing random sampling: ready with ' num2str(counter) '/' num2str(nSamples) ' iterations'])
+   end
    rxns=randsample(numel(goodRxns),nRxns);
    model.c=zeros(numel(model.rxns),1);
    multipliers=randsample([-1 1],nRxns,true);
