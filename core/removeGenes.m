@@ -84,16 +84,18 @@ end
 
 function canIt = canRxnCarryFlux(model,geneRule,geneToRemove)
 %This function converts a gene rule to a logical statement, and then asseses
-% if the rule is true (i.e. rxn can still carry flux) or not (cannot carry flux).
+%if the rule is true (i.e. rxn can still carry flux) or not (cannot carry flux).
 for i = 1:length(model.genes)
     if strcmp(model.genes{i},geneToRemove)
         geneRule = strrep(geneRule,[' ' model.genes{i} ' '],' false ');
         geneRule = strrep(geneRule,['(' model.genes{i} ' '],'(false ');
         geneRule = strrep(geneRule,[' ' model.genes{i} ')'],' false)');
+        geneRule = strrep(geneRule,model.genes{i},'false');
     else
         geneRule = strrep(geneRule,[' ' model.genes{i} ' '],' true ');
         geneRule = strrep(geneRule,['(' model.genes{i} ' '],'(true ');
         geneRule = strrep(geneRule,[' ' model.genes{i} ')'],' true)');
+        geneRule = strrep(geneRule,model.genes{i},'true');
     end
 end
 geneRule = strrep(geneRule,'and','&&');
