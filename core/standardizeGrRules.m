@@ -8,8 +8,8 @@ function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)
 %   A rxnGeneMat matrix consistent with the standardized grRules is created.
 %
 %   model        a model structure
-%   embedded     TRUE if this function is called inside of another 
-%                RAVEN function, default FALSE
+%   embedded     true if this function is called inside of another 
+%                RAVEN function (opt, default false)
 %
 %   grRules      [nRxns x 1] cell array with the standardized grRules
 %   rxnGeneMat   [nRxns x nGenes]Sparse matrix consitent with the
@@ -66,7 +66,7 @@ if isfield(model,'grRules')
                         newSTR = [newSTR, simpleSet];
                     end
                 end
-                %Update grRule 
+                %Update grRule
                 grRules{i} = char(newSTR);
             end
         end
@@ -92,15 +92,15 @@ if ~isempty(originalSTR)
 end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Function that gets a cell array of simple genes sets (single genes or 
-% enzyme complexes) associated with the i-th reaction and modifies the 
+%Function that gets a cell array of simple genes sets (single genes or
+%enzyme complexes) associated with the i-th reaction and modifies the
 %correspondent row in the rxnGeneMat accordingly.
 function rxnGeneMat = modifyRxnGeneMat(genesSets,modelGenes,rxnGeneMat,i)
 
 if ~isempty(genesSets)
     for j=1:length(genesSets)
-    	simpleSet  = genesSets{j};
-%        rxnGeneMat = modifyRxnGeneMat(simpleSet,model.genes,rxnGeneMat,i);
+        simpleSet  = genesSets{j};
+        %        rxnGeneMat = modifyRxnGeneMat(simpleSet,model.genes,rxnGeneMat,i);
         %Get individual genes
         STR   = strrep(simpleSet,') and (',' and ');
         genes = strsplit(STR,' ');
@@ -121,7 +121,7 @@ end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Function that gets the model field grRules and returns the indexes of the
-%rules in which the pattern ") and (" is present. 
+%rules in which the pattern ") and (" is present.
 function indexes2check = findPotentialErrors(grRules,embedded)
 indxs_l       = find(~cellfun(@isempty,strfind(grRules,') and (')));
 indxs_U       = find(~cellfun(@isempty,strfind(grRules,') AND (')));
@@ -133,13 +133,13 @@ indexes2check = vertcat(indxs_l,indxs_U,indxs_l_L,indxs_U_L,indxs_l_R,indxs_U_R)
 indexes2check = unique(indexes2check);
 
 if ~isempty(indexes2check)
-
+    
     if embedded
         STR = ' Some ") AND (" relationships were found in grRules, this ';
         STR = [STR,'might lead to ambiguous genes-rxn asssociations.\n\n'];
         STR = [STR,'If this field has been already curated then  please i'];
         STR = [STR,'gnore this message, otherwise run the function standa'];
-        STR = [STR,'rdizeGrRules in the next way for further instructions']; 
+        STR = [STR,'rdizeGrRules in the next way for further instructions'];
         STR = [STR,':\n\n  [~,~,indexes2check]=standardizeGrRules(model)\n'];
         warning(sprintf(STR))
     else
@@ -158,7 +158,7 @@ if ~isempty(indexes2check)
         STR = [STR,'ases modify the correspondent grRules avoiding:\n\n '];
         STR = [STR,' 1) Overall container brackets, e.g.\n        "(G1 a'];
         STR = [STR,'nd G2)" should be "G1 and G2"\n\n  2) Single unit en'];
-        STR = [STR,'zymes enclosed into brackets, e.g.\n        "(G1)" s']; 
+        STR = [STR,'zymes enclosed into brackets, e.g.\n        "(G1)" s'];
         STR = [STR,'hould be "G1"\n\n  3) The use of uppercases for logi'];
         STR = [STR,'cal operators, e.g.\n        "G1 OR G2" should be "G'];
         STR = [STR,'1 or G2"\n\n  4) Unbalanced brackets, e.g.\n        '];
