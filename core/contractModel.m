@@ -1,22 +1,25 @@
-function [reducedModel, removedRxns]=contractModel(model,distReverse)
+function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse)
 % contractModel
 %   Contracts a model by grouping all identical reactions. Similar to the
 %   deleteDuplicates part in simplifyModel but more care is taken here
 %   when it comes to gene associations
 %
-%   model           a model structure
-%   distReverse     distinguish reactions with same metabolites but different
-%                   reversibility as different reactions (opt, default true)
+%   model                  a model structure
+%   distReverse            distinguish reactions with same metabolites
+%                          but different reversibility as different
+%                          reactions (opt, default true)
 %
-%   reducedModel    a model structure with grouped reactions
-%   removedRxns     cell array for the removed duplicate reactions
+%   reducedModel           a model structure without duplicate reactions
+%   removedRxns            cell array for the removed duplicate reactions
+%   indexedDuplicateRxns   indexed cell array for the removed duplicate
+%                          reactions (multiple valuess separated by semicolon)
 %
 %   NOTE: This code might not work for advanced grRules strings
 %         that involve nested expressions of 'and' and 'or'.
 %
-%   Usage: [reducedModel, removedRxns]=contractModel(model,distReverse)
+%   Usage: [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse)
 %
-%   Simonas Marcisauskas, 2018-04-03
+%   Hao Wang, 2018-04-16
 % 
 
 if nargin<2
@@ -35,9 +38,9 @@ else
 end
 [~,I,J] = unique(x,'rows','first');
 
-%Initialize cell array of removedRxns
-removedRxns=cell(numel(model.rxns),1);
-removedRxns(:)={''};
+%Initialize cell array of indexedDuplicateRxns
+indexedDuplicateRxns=cell(numel(model.rxns),1);
+indexedDuplicateRxns(:)={''};
 
 duplicateRxns=setdiff(1:numel(model.rxns),I);
 mergeTo=I(J(duplicateRxns));
@@ -99,20 +102,21 @@ for i=1:numel(duplicateRxns)
         end
     end
     
-    %Generate removedRxns cell array
+    %Generate indexedDuplicateRxns cell array
     if ~isequal(duplicateRxns(i),mergeTo(i))
-        if isempty(removedRxns{mergeTo(i)})
-            removedRxns{mergeTo(i)}=model.rxns{duplicateRxns(i)};
+        if isempty(indexedDuplicateRxns{mergeTo(i)})
+            indexedDuplicateRxns{mergeTo(i)}=model.rxns{duplicateRxns(i)};
         else
-            removedRxns{mergeTo(i)}=strcat(removedRxns{mergeTo(i)},';',model.rxns{duplicateRxns(i)});
+            indexedDuplicateRxns{mergeTo(i)}=strcat(indexedDuplicateRxns{mergeTo(i)},';',model.rxns{duplicateRxns(i)});
         end
     end
 end
 
 %Delete the duplicate reactions
 reducedModel=removeReactions(model,duplicateRxns);
+removedRxns=model.rxns(duplicateRxns);
 [~, index]=ismember(reducedModel.rxns,model.rxns);
-removedRxns=removedRxns(index);
+indexedDuplicateRxns=removedRxns(index);
 
 if isfield(reducedModel,'rxnGeneMat')
     %Fix grRules and reconstruct rxnGeneMat
