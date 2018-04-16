@@ -7,6 +7,7 @@ function writeYaml(model,name)
 %
 %   Usage: writeYaml(model,name)
 %
+%   Benjamin Sanchez, 2018-04-11
 %   Simonas Marcisauskas, 2018-04-13
 %
 
@@ -77,7 +78,7 @@ for i = 1:length(model.genes)
 end
 
 %Compartments:
-fprintf(fid,'- compartments:\n');
+fprintf(fid,'- compartments: !!omap\n');
 [~,pos] = sort(model.comps);
 for i = 1:length(model.comps)
     writeField(model, fid, 'compNames',   'txt', pos(i), ['- ' model.comps{pos(i)}])
