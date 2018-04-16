@@ -44,18 +44,18 @@ if (version == 17)
     fid=fopen(fileName,'r');
     hpa=textscan(fid,'%q %q %q %q %q %q','Delimiter','\t');
     fclose(fid);
-
+    
     %Go through and see if the headers match what was expected
     headers={'Gene' 'Gene name' 'Tissue' 'Cell type' 'Level' 'Reliability'};
     for i=1:numel(headers)
         if ~strcmpi(headers(i),hpa{i}(1))
             EM=['Could not find the header "' headers{i} '". Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'];
-          dispEM(EM);
+            dispEM(EM);
         end
         %Remove the header line here
         hpa{i}(1)=[];
     end
-
+    
     %Get the unique values of each data type
     [hpaData.genes, P, I]=unique(hpa{1});
     hpaData.geneNames=hpa{2}(P); %make this vector use the index as genes
@@ -64,7 +64,7 @@ if (version == 17)
     hpaData.celltypes=hpa{4}(J);
     [hpaData.levels, ~, L]=unique(hpa{5});
     [hpaData.reliabilities, ~, N]=unique(hpa{6});
-
+    
     %Map the data to be sparse matrises instead
     hpaData.gene2Level=sparse(I,K,L,numel(hpaData.genes),numel(hpaData.tissues));
     hpaData.gene2Reliability=sparse(I,K,N,numel(hpaData.genes),numel(hpaData.tissues));
@@ -72,18 +72,18 @@ else
     fid=fopen(fileName,'r');
     hpa=textscan(fid,'%q %q %q %q %q %q','Delimiter',',');
     fclose(fid);
-
+    
     %Go through and see if the headers match what was expected
     headers={'Gene' 'Tissue' 'Cell type' 'Level' 'Expression type' 'Reliability'};
     for i=1:numel(headers)
         if ~strcmpi(headers(i),hpa{i}(1))
             EM=['Could not find the header "' headers{i} '". Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'];
-          dispEM(EM);
+            dispEM(EM);
         end
         %Remove the header line here
         hpa{i}(1)=[];
     end
-
+    
     %Get the unique values of each data type
     [hpaData.genes, ~, I]=unique(hpa{1});
     [~, J, K]=unique(strcat(hpa{2},'€',hpa{3}));
@@ -92,9 +92,10 @@ else
     [hpaData.levels, ~, L]=unique(hpa{4});
     [hpaData.types, ~, M]=unique(hpa{5});
     [hpaData.reliabilities, ~, N]=unique(hpa{6});
-
+    
     %Map the data to be sparse matrises instead
     hpaData.gene2Level=sparse(I,K,L,numel(hpaData.genes),numel(hpaData.tissues));
     hpaData.gene2Type=sparse(I,K,M,numel(hpaData.genes),numel(hpaData.tissues));
-    hpaData.gene2Reliability=sparse(I,K,N,numel(hpaData.genes),numel(hpaData.tissues));    
+    hpaData.gene2Reliability=sparse(I,K,N,numel(hpaData.genes),numel(hpaData.tissues));
+end
 end

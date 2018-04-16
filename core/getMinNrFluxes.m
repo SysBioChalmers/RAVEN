@@ -36,7 +36,7 @@ if nargin<2
     toMinimize=model.rxns;
 else
     if ~iscell(toMinimize)
-       toMinimize=model.rxns(toMinimize);
+        toMinimize=model.rxns(toMinimize);
     end
 end
 
@@ -53,11 +53,11 @@ else
         EM='The number of scores must be the same as the number of reactions to minimize';
         dispEM(EM);
     end
-
+    
     %Change positive scores to have a small negative weight. This is a
     %temporary solution.
     scores(scores>=0)=max(scores(scores<0));
-
+    
     %It says that the default is -1, but that is to fit with other code
     scores=scores*-1;
 end
@@ -66,12 +66,12 @@ end
 if any(model.rev)
     %Convert the model to irreversible format
     irrevModel=convertToIrrev(model);
-
+    
     %Find the indexes for the reactions in toMinimize
     [indexes, I]=ismember(strrep(irrevModel.rxns,'_REV',''),toMinimize);
 else
     irrevModel=model;
-
+    
     %Find the indexes for the reactions in toMinimize
     [indexes, I]=ismember(irrevModel.rxns,toMinimize);
 end
@@ -80,8 +80,8 @@ indexes=find(indexes);
 %Adjust scores to fit with reversible
 scores=scores(I(indexes));
 
-%Add binary constraints in the following manner:
-%-  Add one unique "metabolite" for each integer reaction as a substrate.
+%Add binary constraints in the following manner: -  Add one unique
+%"metabolite" for each integer reaction as a substrate.
 %   These metabolites can have net production
 %-  Add reactions for the production of each of those metabolites. The
 %   amount produced in one reaction unit must be larger than the largest

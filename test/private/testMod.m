@@ -1,8 +1,8 @@
 function out=testMod(param)
-	if nargin<1
-		param.solver='gurobi';
-		param.useConstraints=true;
-	end
+if nargin<1
+    param.solver='gurobi';
+    param.useConstraints=true;
+end
 
 diary on
 
@@ -11,18 +11,18 @@ essential={};
 models={};
 
 for i=1:length(Index)
-	model2=removeReactions(model,Index(i),true);
-	model2=setParam(model2,'obj',{'r_4041'},1); % biomass
-	model2=setParam(model2,'lb',{'r_4041'},.1);
-	model2.id='yeast_reduced';
-	[newConnected_2a, cannotConnect_2a, addedRxns_2a, newModel_2a, exitFlag_2a]=fillGaps(model2,model,false,true);
-	if (isempty(addedRxns))
-		nonEssential{end+1}=model.rxns{Index(i)};
-	else
-		essential{end+1}=model.rxns{Index(i)};
-	end
-	models{end+1}=newModel;
-	solveLP(newModel)
+    model2=removeReactions(model,Index(i),true);
+    model2=setParam(model2,'obj',{'r_4041'},1); % biomass
+    model2=setParam(model2,'lb',{'r_4041'},.1);
+    model2.id='yeast_reduced';
+    [newConnected_2a, cannotConnect_2a, addedRxns_2a, newModel_2a, exitFlag_2a]=fillGaps(model2,model,false,true);
+    if (isempty(addedRxns))
+        nonEssential{end+1}=model.rxns{Index(i)};
+    else
+        essential{end+1}=model.rxns{Index(i)};
+    end
+    models{end+1}=newModel;
+    solveLP(newModel)
 end
 
 model2=removeReactions(model,Index,true);
@@ -39,7 +39,7 @@ diary off
 
 % >> model.rxns(Index)
 
-% ans = 
+% ans =
 
 %     'r_0466'
 %     'r_0467'

@@ -15,6 +15,7 @@ function out=exportForGit(model,prefix,path)
 %
 %   Eduard Kerkhoven, 2018-04-12
 %
+
 if nargin<3
     path='.';
 end
@@ -62,8 +63,8 @@ movefile([prefix,'.xml'],fullfile(path,'ModelFiles','xml'));
 movefile([prefix,'.yml'],fullfile(path,'ModelFiles','yaml'));
 save([fullfile(path,'ModelFiles','mat',prefix),'.mat'],'model');
 
-%Code below is modified from SysBioChalmers/YeastMetabolicNetwork-GEM
-%Track versions
+%Code below is modified from SysBioChalmers/YeastMetabolicNetwork-GEM Track
+%versions
 RAVENver = getVersion('checkInstallation.m','version.txt');
 %Retrieve latest COBRA commit:
 COBRApath   = which('initCobraToolbox.m');

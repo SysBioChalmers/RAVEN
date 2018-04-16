@@ -167,7 +167,8 @@ if isfield(model,fieldName)
         end
         
     elseif sum(strcmp({'eccodes','subSystems','newMetMiriams','newRxnMiriams','newGeneMiriams','newCompMiriams'},fieldName)) > 0
-        %eccodes/rxnNotes/subSystems: if 1 write in 1 line, if more create header and list
+        %eccodes/rxnNotes/subSystems: if 1 write in 1 line, if more create
+        %header and list
         if strcmp(fieldName,'subSystems')
             list = field{pos};  %subSystems already comes in a cell array
         elseif strcmp(fieldName,'newMetMiriams')
@@ -215,5 +216,6 @@ if isfield(model,fieldName)
         end
     end
 end
+
 
 end
