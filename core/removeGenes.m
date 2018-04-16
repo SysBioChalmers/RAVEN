@@ -17,7 +17,7 @@ function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeB
 %
 %   Usage: reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns)
 %
-%   Benjamín J. Sánchez, 2018-04-16
+%   Benjam??n J. S??nchez, 2018-04-16
 %
 
 if nargin<3
@@ -85,19 +85,19 @@ end
 function canIt = canRxnCarryFlux(model,geneRule,geneToRemove)
 %This function converts a gene rule to a logical statement, and then asseses
 %if the rule is true (i.e. rxn can still carry flux) or not (cannot carry flux).
+geneRule = [' ', geneRule, ' '];
 for i = 1:length(model.genes)
     if strcmp(model.genes{i},geneToRemove)
         geneRule = strrep(geneRule,[' ' model.genes{i} ' '],' false ');
         geneRule = strrep(geneRule,['(' model.genes{i} ' '],'(false ');
         geneRule = strrep(geneRule,[' ' model.genes{i} ')'],' false)');
-        geneRule = strrep(geneRule,model.genes{i},'false');
     else
         geneRule = strrep(geneRule,[' ' model.genes{i} ' '],' true ');
         geneRule = strrep(geneRule,['(' model.genes{i} ' '],'(true ');
         geneRule = strrep(geneRule,[' ' model.genes{i} ')'],' true)');
-        geneRule = strrep(geneRule,model.genes{i},'true');
     end
 end
+geneRule = strtrim(geneRule);
 geneRule = strrep(geneRule,'and','&&');
 geneRule = strrep(geneRule,'or','||');
 canIt    = eval(geneRule);
