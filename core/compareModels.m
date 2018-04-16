@@ -488,8 +488,9 @@ function [flux_matrix,obj_matrix] = mapFunction(models,groupVector,fluxMets,flux
                 end
                 [input_unique,index] = unique(input_rxns);
                 for k = 1:length(unique(input_unique))
-%                     input_fluxes_unique(k) = max(input_fluxes(ismember(input_rxns,input_unique(k))));
-                    input_fluxes_unique(k) = min(input_fluxes(ismember(input_rxns,input_unique(k)))); % Unrestricted
+                    input_fluxes_unique(k) = max(input_fluxes(ismember(input_rxns,input_unique(k))));
+%                      input_fluxes_unique(k) = min(input_fluxes(ismember(input_rxns,input_unique(k)))); % Unrestricted
+%                      input_fluxes_unique(k) = min(input_fluxes(ismember(input_rxns,input_unique(k))))/10; % Restricted
                 end
                 fluxMets_names = input_metNames(index);
                 fluxMets_comp = input_metComps(index);
@@ -503,8 +504,8 @@ function [flux_matrix,obj_matrix] = mapFunction(models,groupVector,fluxMets,flux
         n = numRuns; % Number of microperturbations to perform for each model
         if length(fluxValues) > 0
             for(k = 1:n)
-                fluxValuesMatrix(:,k) = fluxValues + (fluxValues/10).*randn(size(fluxValues,1),1)/3;
-%                 fluxValuesMatrix(:,k) = fluxValues + (fluxValues/2).*randn(size(fluxValues,1),1)/3;
+%                 fluxValuesMatrix(:,k) = fluxValues + (fluxValues/10).*randn(size(fluxValues,1),1)/3;
+                fluxValuesMatrix(:,k) = fluxValues + (fluxValues/2).*randn(size(fluxValues,1),1)/3;
             end
         end
         
@@ -526,7 +527,7 @@ function [flux_matrix,obj_matrix] = mapFunction(models,groupVector,fluxMets,flux
         % Solve model for all micropurturbations
         for (j = 1:size(fluxValuesMatrix,2))
             % Set all exchange reactions to zero & set uptake rates equal to micropurturbations
-            [id, exchangeRxns] =getExchangeRxns(model); % Get all exchange rxns (should not exist)
+            [id, exchangeRxns] =getExchangeRxns(model); % Get all exchange rxns
             model = setParam(model, 'lb', exchangeRxns, 0); % Bind all exchange rxns LB to 0
             model = setParam(model, 'ub', exchangeRxns, 1000); % Permissive of secretion
             clear reactionNumbers
@@ -539,7 +540,7 @@ function [flux_matrix,obj_matrix] = mapFunction(models,groupVector,fluxMets,flux
                 else reactionNumbers(k) = NaN;
                 end
             end
-            fluxes = fluxValuesMatrix(:,i);
+            fluxes = fluxValuesMatrix(:,j);
             negativeFluxes = fluxes; % Set up new flux vector for only negatives
             negativeFluxes(find(negativeFluxes>0)) = 0; % Set all flux values to a maximum of zero
             if length(fluxMets)>0
