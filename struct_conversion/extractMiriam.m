@@ -1,62 +1,88 @@
-function miriams=extractMiriam(modelMiriams,miriamName,addNull)
+function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)
 % extractMiriam
-%   This function is useful if miriams are needed to be extracted to the
-%   separate cell array, e.g. ChEBI ids or KEGG COMPOUND ids
+%   This function unpacks the information kept in metMiriams, rxnMiriams,
+%   geneMiriams or compMiriams to make the annotation more
+%   human-readable. The obtained cell array looks the same like in Excel
+%   format, just the columns are split to have particular miriam name in
+%   corresponding column
 %
-%   modelMiriams      a miriam structure (e.g. model.metMiriams)
-%   miriamName        the name of miriam which is supposed to be extracted
-%                     (e.g. ChEBI ids)
-%   addNull           true if the indexes without miriams should contain
-%                     'null' strings, otherwise corresponding positions are
-%                     left blank (optional, default false)
+%   modelMiriams                a miriam structure (e.g. model.metMiriams)
+%                               for one or multiple metabolites
+%   miriamNames                 cell array with miriam names to be
+%                               extracted (optional, default 'all', meaning
+%                               that annotation for all miriam names found
+%                               in modelMiriams will be extracted)
 %
-%   miriams            a cell array with extracted miriams
+%   miriams                     a cell array with extracted miriams. if
+%                               several miriam names are requested, the
+%                               corresponding information is saved in
+%                               different columns. if there are several ids
+%                               available for the same entity (metabolite,
+%                               gene, reaction or compartment), they are
+%                               concatenated into one column. the total
+%                               number of column represent the number of
+%                               unique miriam names per entity
+%   extractedMiriamNames        cell array with extracted miriam names
 %
 %   Usage: miriam=extractMiriam(modelMiriams,miriamName,addNull)
 %
-%   Simonas Marcisauskas, 2017-06-02
+%   Simonas Marcisauskas, 2018-04-12
+%   Benjamin Sanchez, 2018-04-13
 %
 
-if nargin<3
-	addNull=false;
-end;
+if nargin<2 || strcmp(miriamNames,'all')
+    extractAllTypes=true;
+else
+    extractAllTypes=false;    
+end
 
-% Creating an empty cell array for rxn ids vector;
-tempMiriams = cell([size(modelMiriams,1) 1]);
-% Firstly obtaining the list of relevant miriam ids. Several entries
-% may have several miriam ids, such ids are kept in additional columns;
-for i=1:numel(modelMiriams)
-    if numel(modelMiriams)>1
-        if (~isempty(modelMiriams{i,1})) && any(strcmp(modelMiriams{i,1}.name,miriamName))
+%The annotation for all miriam names should be extracted
+if extractAllTypes
+    miriamNames='';
+    for i=1:numel(modelMiriams)
+        if ~isempty(modelMiriams{i,1})
             for j=1:numel(modelMiriams{i,1}.name)
-                if strcmp(modelMiriams{i,1}.name(j),miriamName)
-                    tempMiriams(i,j) = modelMiriams{i,1}.value(j);
-                end;           
-            end;
-        else
-            modelMiriams{i,1} = 'null';
-            if addNull==false
-                tempMiriams{i,1} = regexprep(modelMiriams{i,1},'null','');
-            end;
-        end;
+                miriamNames{numel(miriamNames)+1,1}=modelMiriams{i,1}.name{j};
+            end
+        end
+    end
+    miriamNames=sort(unique(miriamNames));
+end
+
+%Ensure that the list of miriam names is in appropriate structure
+if ischar(miriamNames)
+    miriamNames={miriamNames};
+end
+
+%Aggregate the final cell array table with extracted miriam information
+miriams='';
+for i=1:numel(miriamNames)
+    miriams=[miriams, extractMiriamType(modelMiriams,miriamNames{i})];
+end
+extractedMiriamNames=miriamNames;
+
+end
+
+function miriams=extractMiriamType(modelMiriams,miriamName)
+%Create an empty cell array for ids vector
+tempMiriams = cell([size(modelMiriams,1) 1]);
+%Firstly obtain the list of relevant miriam ids. Several entries may
+%have several miriam ids, such ids are kept in additional columns
+for i=1:numel(modelMiriams)
+    if (~isempty(modelMiriams{i,1})) && any(strcmp(modelMiriams{i,1}.name,miriamName))
+        for j=1:numel(modelMiriams{i,1}.name)
+            if strcmp(modelMiriams{i,1}.name(j),miriamName)
+                tempMiriams(i,j) = modelMiriams{i,1}.value(j);
+            end
+        end
     else
-        if (~isempty(modelMiriams)) && any(strcmp(modelMiriams.name,miriamName))
-            for j=1:numel(modelMiriams.name)
-                if strcmp(modelMiriams.name(j),miriamName)
-                    tempMiriams(1,j) = modelMiriams.value(j);
-                end;           
-            end;
-        else
-            modelMiriams = 'null';
-            if addNull==false
-                tempMiriams = regexprep(modelMiriams,'null','');
-            end;
-        end;
-    end;
-end;
-% Now adding headers to the newly obtained miriam ids. For reactions
-% which are associated with more than one miriam, these are
-% concatenated by using semicolon as separator;
+        modelMiriams{i,1} = '';
+    end
+end
+
+%Now add miriam names to the newly obtained miriam ids. Entities with
+%multiple ids per miriam name have the ids concatenated by using semicolon
+%as separator
 miriams = cell([size(tempMiriams,1) 1]);
 for i=1:size(tempMiriams,1)
     for j=1:size(tempMiriams,2)
@@ -64,12 +90,16 @@ for i=1:size(tempMiriams,1)
             miriams{i,1}=strcat(miriamName,'/',tempMiriams{i,1});
         else
             miriams{i,1}=strcat(miriams{i,1},';',miriamName,'/',tempMiriams{i,j});
-        end;
-    end;
-end;
+        end
+    end
+end
 
-% Make sure that cell positions without miriams are blank;
+%Ensure that cell positions without miriams are blank
 miriams=regexprep(miriams,strcat(miriamName,'/;'),'');
 miriams=regexprep(miriams,strcat('^',miriamName,'/$'),'');
 miriams=regexprep(miriams,strcat(';',miriamName,'/$'),'');
+
+%Delete middle names:
+miriams=regexprep(miriams,strcat(';',miriamName,'/'),';');
+
 end
