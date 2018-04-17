@@ -134,5 +134,5 @@ else
 end
 
 %And then finally merge the identical reactions
-[model, duplicateRxns]=contractModel(model,distReverse);
+[model, ~, duplicateRxns]=contractModel(model,distReverse);
 end

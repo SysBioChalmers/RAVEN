@@ -84,7 +84,7 @@ if deleteDuplicates==true
     %Delete all but the last occurrence of duplicate reactions. The
     %reactions must have the same bounds, reversibility, and objective
     %coefficient to be regarded as duplicate
-    [reducedModel, rxnsToDelete]=contractModel(reducedModel);
+    [reducedModel, rxnsToDelete, ~]=contractModel(reducedModel);
     deletedReactions=[deletedReactions; rxnsToDelete];
 end
 

@@ -116,7 +116,7 @@ end
 reducedModel=removeReactions(model,duplicateRxns);
 removedRxns=model.rxns(duplicateRxns);
 [~, index]=ismember(reducedModel.rxns,model.rxns);
-indexedDuplicateRxns=removedRxns(index);
+indexedDuplicateRxns=indexedDuplicateRxns(index);
 
 if isfield(reducedModel,'rxnGeneMat')
     %Fix grRules and reconstruct rxnGeneMat
