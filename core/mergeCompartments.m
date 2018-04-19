@@ -70,14 +70,14 @@ end
 %instead
 uNames=unique(model.metNames);
 for i=1:numel(uNames)
-	%Find all metabolites with this name..
+    %Find all metabolites with this name..
     I=ismember(model.metNames,uNames(i));
-
+    
     %Find the first of those that is not unconstrained. This is the one
     %that the other "un-unconstrained" should be changed to.
     if keepUnconstrained==true
         mergeTo=find(I & model.unconstrained==false,1);
-
+        
         %This could happen if there is only one metabolite and it is
         %unconstrained
         if isempty(mergeTo)
@@ -88,7 +88,7 @@ for i=1:numel(uNames)
     end
     I(mergeTo)=false; %Do not do anything for itself
     I=find(I);
-
+    
     %Go through each of the metabolites with this name and update them to
     %mergeTo
     for j=1:numel(I)
@@ -113,7 +113,7 @@ model.metComps=ones(numel(model.mets),1);
 %Add exchange mets to another compartment "b" with id "2"
 if keepUnconstrained==true
     model.compNames=[model.compNames; {'Unconstrained'}];
-	model.comps=[model.comps; {'b'}];
+    model.comps=[model.comps; {'b'}];
     model.compOutside=[model.compOutside; {'s'}];
     model.metComps(model.unconstrained~=0)=2;
 end
@@ -124,7 +124,7 @@ model=removeMets(model,{},false,true,true);
 
 if deleteRxnsWithOneMet==true
     I=model.rxns(sum(model.S~=0)==1);
-
+    
     %Delete the reactions that contain only one metabolite after the
     %merging but not before
     deletedRxns=setdiff(I,reservedRxns);

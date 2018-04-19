@@ -64,8 +64,9 @@ end
 
 %Check some stuff regarding the required fields
 if ~isfield(metsToAdd,'mets')
-    %Name the metabolites as "m1, m2...". If IDs on the same form are already
-    %used in the model then the first available integers should be used
+    %Name the metabolites as "m1, m2...". If IDs on the same form are
+    %already used in the model then the first available integers should be
+    %used
     maxCurrent=ceil(max(cellfun(@getInteger,model.mets)));
     m=maxCurrent+1:maxCurrent+numel(metsToAdd.metNames);
     metsToAdd.mets=strcat({'m'},num2str(m(:)));
@@ -275,10 +276,11 @@ newModel.S=[newModel.S;sparse(nMets,size(newModel.S,2))];
 if copyInfo==true
     [I, J]=ismember(metsToAdd.metNames,model.metNames);
     J=J(I);
-    %I is the indexes of the new metabolites for which a metabolite with the
-    %same name existed
+    %I is the indexes of the new metabolites for which a metabolite with
+    %the same name existed
     I=find(I)+nOldMets;
-    %Go through each of the added mets and copy annotation if it doesn't exist
+    %Go through each of the added mets and copy annotation if it doesn't
+    %exist
     for i=1:numel(I)
         if isfield(newModel,'inchis')
             if isempty(newModel.inchis{I(i)})
@@ -304,8 +306,8 @@ end
 
 %For getting the numerical form of metabolite ids on the form "m1".
 function I=getInteger(s)
-%Checks if a string is on the form "m1" and if so returns the value of
-%the integer
+%Checks if a string is on the form "m1" and if so returns the value of the
+%integer
 I=0;
 if strcmpi(s(1),'m')
     t=str2double(s(2:end));

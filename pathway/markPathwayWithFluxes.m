@@ -33,18 +33,19 @@ end
 returnPathway=pathway;
 
 for i=1:length(pathway.listOfSpecies)
-   if strcmpi(pathway.listOfSpecies(i).type,'PROTEIN')
-      if isfield(pathway.listOfSpecies(i),'note')
-          if ~isempty(pathway.listOfSpecies(i).note)
-             %If there is a note check if there is a corresponding reaction id
-             index=find(strcmpi(reactionIDs,pathway.listOfSpecies(i).note));
-             %If there is a match
-             if any(index)
-                 returnPathway.listOfSpecies(i).flux=fluxes(index);
-                 returnPathway.listOfSpecies(i).referenceFlux=referenceFluxes(index);
-             end
-          end
-      end
-   end
+    if strcmpi(pathway.listOfSpecies(i).type,'PROTEIN')
+        if isfield(pathway.listOfSpecies(i),'note')
+            if ~isempty(pathway.listOfSpecies(i).note)
+                %If there is a note check if there is a corresponding
+                %reaction id
+                index=find(strcmpi(reactionIDs,pathway.listOfSpecies(i).note));
+                %If there is a match
+                if any(index)
+                    returnPathway.listOfSpecies(i).flux=fluxes(index);
+                    returnPathway.listOfSpecies(i).referenceFlux=referenceFluxes(index);
+                end
+            end
+        end
+    end
 end
 end

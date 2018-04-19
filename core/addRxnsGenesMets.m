@@ -61,7 +61,7 @@ if ischar(rxns)
     rxns={rxns};
 end
 
-%% Obtain indexes of reactions in source model
+% Obtain indexes of reactions in source model
 notNewRxn=rxns(ismember(rxns,model.rxns));
 rxns=rxns(~ismember(rxns,model.rxns));
 if isempty(rxns)
@@ -73,9 +73,10 @@ end
 
 rxnIdx=find(ismember(sourceModel.rxns,rxns)); % Get rxnIDs
 
-%% Add new metabolites
+% Add new metabolites
 metIdx=find(any(sourceModel.S(:,rxnIdx),2)); % Get metabolite IDs
-% Many of the metabolites in are already in the draft model, so only add the new metabolites
+% Many of the metabolites in are already in the draft model, so only add
+% the new metabolites
 
 % Match by metNames[metComps]. First make these structures for each model.
 metCompsN =cellstr(num2str(model.metComps));
@@ -134,7 +135,7 @@ fprintf('\n\nNumber of metabolites added to the model:\n')
 fprintf(num2str(numel(metIdx)))
 fprintf('\n')
 
-%% Add new genes
+% Add new genes
 if addGene ~= false
     if ischar(addGene)
         rxnToAdd.grRules={addGene};
@@ -163,7 +164,7 @@ if addGene ~= false
         fprintf('\n\nNo genes added to the model, because no genes were annotated or all genes were already present.')
     end
 end
-%% Add new reactions
+% Add new reactions
 rxnToAdd.equations=constructEquations(sourceModel,rxnIdx);
 rxnToAdd.rxnNames=sourceModel.rxnNames(rxnIdx);
 rxnToAdd.rxns=sourceModel.rxns(rxnIdx);

@@ -42,8 +42,8 @@ if nargin<4
 end
 
 if ~isempty(rxns)
-   indexes=~getIndexes(model,rxns,'rxns',true);
-   model=removeReactions(model,indexes,true);
+    indexes=~getIndexes(model,rxns,'rxns',true);
+    model=removeReactions(model,indexes,true);
 end
 
 balanceStructure.balanceStatus=nan(numel(model.rxns),1);
@@ -107,10 +107,10 @@ balanceStructure.balanceStatus(isnan(balanceStructure.balanceStatus))=1;
 %Print warnings
 toPrint=[];
 if printUnbalanced==true
-   toPrint=[toPrint;find(balanceStructure.balanceStatus==0)];
+    toPrint=[toPrint;find(balanceStructure.balanceStatus==0)];
 end
 if printUnparsable==true
-   toPrint=[toPrint;find(balanceStructure.balanceStatus<0)];
+    toPrint=[toPrint;find(balanceStructure.balanceStatus<0)];
 end
 
 toPrint=sort(toPrint);
@@ -124,12 +124,12 @@ for i=1:numel(toPrint)
             dispEM(EM,false);
         end
     else
-       %Find the compounds that it's not balanced for
-       notBalanced=find(total(toPrint(i),:));
-       for j=1:numel(notBalanced)
-           EM=['The reaction ' model.rxns{toPrint(i)} ' is not balanced with respect to ' balanceStructure.elements.names{notBalanced(j)}];
-           dispEM(EM,false);
-       end
+        %Find the compounds that it's not balanced for
+        notBalanced=find(total(toPrint(i),:));
+        for j=1:numel(notBalanced)
+            EM=['The reaction ' model.rxns{toPrint(i)} ' is not balanced with respect to ' balanceStructure.elements.names{notBalanced(j)}];
+            dispEM(EM,false);
+        end
     end
 end
 end

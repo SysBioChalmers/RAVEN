@@ -53,12 +53,12 @@ toMerge={};
 I=regexp(varargin,'=','split');
 for i=1:numel(varargin)
     if numel(I{i})==1
-       toKeep=[toKeep;I{i}];
+        toKeep=[toKeep;I{i}];
     else
-       J=regexp(I{i}(1),' ','split');
-       K=regexp(I{i}(2),' ','split');
-       toKeep=[toKeep;J{1}(:)];
-       toMerge=[toMerge;K{1}(:)];
+        J=regexp(I{i}(1),' ','split');
+        K=regexp(I{i}(2),' ','split');
+        toKeep=[toKeep;J{1}(:)];
+        toMerge=[toMerge;K{1}(:)];
     end
 end
 
@@ -82,44 +82,44 @@ end
 otherIndex=[]; %This stores the rule which maps 'other'.
 
 for i=1:numel(I)
-   if numel(I{i})>1
-       %Get the compartment indexes that should be mapped
-       J=regexp(I{i}(2),' ','split');
-       if strcmpi(J{1},'other')
-           otherIndex=i;
-           continue;
-       end
-       [k, K]=ismember(J{1},uComps);
-
-       %And to where they should be mapped
-       J=regexp(I{i}(1),' ','split');
-       [l, L]=ismember(J{1},uComps);
-
-       %It's not allowed to have rules like A B=C D
-       if numel(K)>1 && numel(L)>1
-           EM='It is not allowed to have rules like "A B=C D" (map more than one compartment to more than one compartment)';
-           dispEM(EM);
-       end
-
-       if ~all(k) || ~all(l)
-           EM='Error in mapping. This most likely means that some compartment(s) are mapped to different compartments in different rules. Use A B=C if you want to map C to several compartments';
-           dispEM(EM);
-       end
-
-       %Get the sum of the scores for the compartments that should be
-       %merged to something else
-       S=max(geneScoreStructure.scores(:,K),[],2);
-       for j=1:numel(L)
-           %If the scores are mapped to several different compartments then
-           %split the scores between them
-           geneScoreStructure.scores(:,L(j))=max(geneScoreStructure.scores(:,L(j)),S./numel(L));
-       end
-
-       %Remove the comparement that were merged
-       geneScoreStructure.compartments(K)=[];
-       geneScoreStructure.scores(:,K)=[];
-       uComps(K)=[];
-   end
+    if numel(I{i})>1
+        %Get the compartment indexes that should be mapped
+        J=regexp(I{i}(2),' ','split');
+        if strcmpi(J{1},'other')
+            otherIndex=i;
+            continue;
+        end
+        [k, K]=ismember(J{1},uComps);
+        
+        %And to where they should be mapped
+        J=regexp(I{i}(1),' ','split');
+        [l, L]=ismember(J{1},uComps);
+        
+        %It's not allowed to have rules like A B=C D
+        if numel(K)>1 && numel(L)>1
+            EM='It is not allowed to have rules like "A B=C D" (map more than one compartment to more than one compartment)';
+            dispEM(EM);
+        end
+        
+        if ~all(k) || ~all(l)
+            EM='Error in mapping. This most likely means that some compartment(s) are mapped to different compartments in different rules. Use A B=C if you want to map C to several compartments';
+            dispEM(EM);
+        end
+        
+        %Get the sum of the scores for the compartments that should be
+        %merged to something else
+        S=max(geneScoreStructure.scores(:,K),[],2);
+        for j=1:numel(L)
+            %If the scores are mapped to several different compartments
+            %then split the scores between them
+            geneScoreStructure.scores(:,L(j))=max(geneScoreStructure.scores(:,L(j)),S./numel(L));
+        end
+        
+        %Remove the comparement that were merged
+        geneScoreStructure.compartments(K)=[];
+        geneScoreStructure.scores(:,K)=[];
+        uComps(K)=[];
+    end
 end
 
 %Then check if there are remaining compartments that should be removed or
@@ -140,7 +140,7 @@ if any(J)
         EM='There are compartments that are not defined if they should be kept or removed. Use "A=other" or define more rules if you do not want them to be deleted';
         dispEM(EM,false);
     end
-
+    
     %Remove the comparement that were merged
     geneScoreStructure.compartments(J)=[];
     geneScoreStructure.scores(:,J)=[];

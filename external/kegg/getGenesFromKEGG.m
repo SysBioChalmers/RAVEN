@@ -270,9 +270,8 @@ if exist(rxnsFile, 'file')
         end
     end
 else
-    %Parse the reaction file instead
-    %First load information on reaction ID, reaction name, KO, pathway and
-    %ec-number
+    %Parse the reaction file instead First load information on reaction ID,
+    %reaction name, KO, pathway and ec-number
     fid = fopen(fullfile(keggPath,'reaction'), 'r');
     orthology=false;
     while 1

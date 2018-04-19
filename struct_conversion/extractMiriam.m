@@ -33,7 +33,7 @@ function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)
 if nargin<2 || strcmp(miriamNames,'all')
     extractAllTypes=true;
 else
-    extractAllTypes=false;    
+    extractAllTypes=false;
 end
 
 %The annotation for all miriam names should be extracted
@@ -66,8 +66,8 @@ end
 function miriams=extractMiriamType(modelMiriams,miriamName)
 %Create an empty cell array for ids vector
 tempMiriams = cell([size(modelMiriams,1) 1]);
-%Firstly obtain the list of relevant miriam ids. Several entries may
-%have several miriam ids, such ids are kept in additional columns
+%Firstly obtain the list of relevant miriam ids. Several entries may have
+%several miriam ids, such ids are kept in additional columns
 for i=1:numel(modelMiriams)
     if (~isempty(modelMiriams{i,1})) && any(strcmp(modelMiriams{i,1}.name,miriamName))
         for j=1:numel(modelMiriams{i,1}.name)

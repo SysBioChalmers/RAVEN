@@ -79,7 +79,7 @@ fprintf('\n***Isolated subnetworks\n');
 subGraphs=getAllSubGraphs(model);
 fprintf(['A total of ' num2str(size(subGraphs,2)) ' isolated sub-networks are present in the model\n']);
 for i=1:size(subGraphs,2)
-   fprintf(['\t' num2str(i) '. ' num2str(sum(subGraphs(:,i))) ' metabolites\n']); 
+    fprintf(['\t' num2str(i) '. ' num2str(sum(subGraphs(:,i))) ' metabolites\n']);
 end
 
 fprintf('\n***Metabolite connectivity\n');
@@ -87,7 +87,7 @@ fprintf('\n***Metabolite connectivity\n');
 fprintf(['To enable net production of all metabolites, a total of ' num2str(numel(minToConnect)) ' metabolites must be connected\n']);
 fprintf('Top 10 metabolites to connect:\n');
 for i=1:min(10,numel(minToConnect))
-   fprintf(['\t' num2str(i) '. ' minToConnect{i} '\n']); 
+    fprintf(['\t' num2str(i) '. ' minToConnect{i} '\n']);
 end
 
 if calculateINOUT==true

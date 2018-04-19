@@ -99,7 +99,8 @@ if nargin<8
     printReport=false;
 end
 
-%Check if the model has open exchange reactions and print a warning in that case
+%Check if the model has open exchange reactions and print a warning in that
+%case
 if ~isfield(model,'unconstrained')
     [~, I]=getExchangeRxns(model);
     if any(I)
@@ -146,7 +147,7 @@ for i=1:2
             [solution, metabolite]=makeSomething(model,ignoreMets,isNames,false,true,[],ignoreIntBounds);
             if ~isempty(solution)
                 if printReport
-                   fprintf(['Can make: ' model.metNames{metabolite(1)} '\n']);
+                    fprintf(['Can make: ' model.metNames{metabolite(1)} '\n']);
                 end
             else
                 %If no solution could be found, then finish
@@ -156,17 +157,17 @@ for i=1:2
             [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,false,[],ignoreIntBounds);
             if ~isempty(solution)
                 if printReport
-                   fprintf(['Can consume: ' model.metNames{metabolite(1)} '\n']);
+                    fprintf(['Can consume: ' model.metNames{metabolite(1)} '\n']);
                 end
             else
                 %If no solution could be found, then finish
                 break;
             end
         end
-
+        
         %Find all reactions that are unbalanced and still carry flux
         I=find(abs(solution)>10^-8 & balanceStructure.balanceStatus>=0 & ~all(balanceStructure.leftComp(:,bal)==balanceStructure.rightComp(:,bal),2));
-
+        
         %If there are unbalanced rxns then delete one of them and iterate
         if any(I)
             rxnToRemove=I(randsample(numel(I),1));
@@ -182,10 +183,10 @@ for i=1:2
                 end
                 break;
             else
-                %Find reactions which are not checked for mass balancing, but
-                %that still carry flux
+                %Find reactions which are not checked for mass balancing,
+                %but that still carry flux
                 I=find(abs(solution)>10^-8 & balanceStructure.balanceStatus<0);
-
+                
                 %If there are any such reactions, remove one of them and
                 %iterate
                 if any(I)
@@ -193,9 +194,10 @@ for i=1:2
                 else
                     if rxnRules==2
                         %This happens when all reactions used are balanced
-                        %according to the metabolite formulas. This cannot be, and
-                        %indicates that one or more of the formulas are wrong.
-                        %Print a warning and delete any reaction with flux
+                        %according to the metabolite formulas. This cannot
+                        %be, and indicates that one or more of the formulas
+                        %are wrong. Print a warning and delete any reaction
+                        %with flux
                         if i==1
                             EM=['No unbalanced or unparsable reactions were found in the solution, but the model can still make "' model.metNames{metabolite} '". Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'];
                             dispEM(EM,false);
@@ -226,7 +228,7 @@ for i=1:2
         end
         removedRxns=[removedRxns;model.rxns(rxnToRemove)];
         if printReport
-           fprintf(['\tRemoved: '  model.rxns{rxnToRemove} '\n']);
+            fprintf(['\tRemoved: '  model.rxns{rxnToRemove} '\n']);
         end
         model=removeReactions(model,rxnToRemove);
         balanceStructure.balanceStatus(rxnToRemove)=[];

@@ -258,12 +258,12 @@ end
 %Met names which start with number
 I=false(numel(model.metNames),1);
 for i=1:numel(model.metNames)
-   index=strfind(model.metNames{i},' ');
-   if any(index)
-       if any(str2double(model.metNames{i}(1:index(1)-1)))
-           I(i)=true;
-       end
-   end
+    index=strfind(model.metNames{i},' ');
+    if any(index)
+        if any(str2double(model.metNames{i}(1:index(1)-1)))
+            I(i)=true;
+        end
+    end
 end
 EM='The following metabolite names begin with a number directly followed by space:';
 dispEM(EM,throwErrors,model.mets(I),trimWarnings);
@@ -280,34 +280,34 @@ end
 if isfield(model,'metMiriams')
     miriams=containers.Map();
     for i=1:numel(model.mets)
-       if ~isempty(model.metMiriams{i})
-          %Loop through and add for each miriam
-          for j=1:numel(model.metMiriams{i}.name)
-             %Get existing metabolite indexes
-             current=strcat(model.metMiriams{i}.name{j},'/',model.metMiriams{i}.value{j});
-             if isKey(miriams,current)
-                 existing=miriams(current);
-             else
-                 existing=[];
-             end
-             miriams(current)=[existing;i];
-          end
-       end
+        if ~isempty(model.metMiriams{i})
+            %Loop through and add for each miriam
+            for j=1:numel(model.metMiriams{i}.name)
+                %Get existing metabolite indexes
+                current=strcat(model.metMiriams{i}.name{j},'/',model.metMiriams{i}.value{j});
+                if isKey(miriams,current)
+                    existing=miriams(current);
+                else
+                    existing=[];
+                end
+                miriams(current)=[existing;i];
+            end
+        end
     end
-
+    
     %Get all keys
     allMiriams=keys(miriams);
-
+    
     hasMultiple=false(numel(allMiriams),1);
     for i=1:numel(allMiriams)
         if numel(miriams(allMiriams{i}))>1
-           %Check if they all have the same name
-           if numel(unique(model.metNames(miriams(allMiriams{i}))))>1
-               hasMultiple(i)=true;
-           end
+            %Check if they all have the same name
+            if numel(unique(model.metNames(miriams(allMiriams{i}))))>1
+                hasMultiple(i)=true;
+            end
         end
     end
-
+    
     %Print output
     EM='The following MIRIAM strings are associated to more than one unique metabolite name:';
     dispEM(EM,false,allMiriams(hasMultiple));
@@ -318,30 +318,30 @@ end
 if isfield(model,'inchis')
     inchis=containers.Map();
     for i=1:numel(model.mets)
-       if ~isempty(model.inchis{i})
-         %Get existing metabolite indexes
-         if isKey(inchis,model.inchis{i})
-             existing=inchis(model.inchis{i});
-         else
-             existing=[];
-         end
-         inchis(model.inchis{i})=[existing;i];
-       end
+        if ~isempty(model.inchis{i})
+            %Get existing metabolite indexes
+            if isKey(inchis,model.inchis{i})
+                existing=inchis(model.inchis{i});
+            else
+                existing=[];
+            end
+            inchis(model.inchis{i})=[existing;i];
+        end
     end
-
+    
     %Get all keys
     allInchis=keys(inchis);
-
+    
     hasMultiple=false(numel(allInchis),1);
     for i=1:numel(allInchis)
         if numel(inchis(allInchis{i}))>1
-           %Check if they all have the same name
-           if numel(unique(model.metNames(inchis(allInchis{i}))))>1
-               hasMultiple(i)=true;
-           end
+            %Check if they all have the same name
+            if numel(unique(model.metNames(inchis(allInchis{i}))))>1
+                hasMultiple(i)=true;
+            end
         end
     end
-
+    
     %Print output
     EM='The following InChI strings are associated to more than one unique metabolite name:';
     dispEM(EM,false,allInchis(hasMultiple));
@@ -349,11 +349,11 @@ end
 end
 
 function I=duplicates(strings)
-    I=false(numel(strings),1);
-    [J, K]=unique(strings);
-    if numel(J)~=numel(strings)
-        L=1:numel(strings);
-        L(K)=[];
-        I(L)=true;
-    end
+I=false(numel(strings),1);
+[J, K]=unique(strings);
+if numel(J)~=numel(strings)
+    L=1:numel(strings);
+    L(K)=[];
+    I(L)=true;
+end
 end

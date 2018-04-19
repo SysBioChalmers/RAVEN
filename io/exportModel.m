@@ -56,8 +56,8 @@ if supressWarnings==false
     checkModelStruct(model,false);
 end
 
-% Adding several blank fields, if they don't exist already. This is
-% to reduce the number of conditions below;
+% Adding several blank fields, if they don't exist already. This is to
+% reduce the number of conditions below;
 if ~isfield(model,'compMiriams')
     model.compMiriams=cell(numel(model.comps),1);
 end;
@@ -275,8 +275,8 @@ for i=1:numel(model.mets)
         if ~isempty(model.metMiriams{i}) || ~isempty(model.metFormulas{i})
             hasInchi=false;
             if ~isempty(model.metFormulas{i})
-                %Only export formula if there is no InChI. This is because the
-                %metFormulas field is populated by InChIs if available
+                %Only export formula if there is no InChI. This is because
+                %the metFormulas field is populated by InChIs if available
                 if ~isempty(model.inchis{i})
                     hasInchi=true;
                 end;
@@ -301,14 +301,15 @@ end;
 
 if isfield(model,'genes')
     for i=1:numel(model.genes)
-        % Adding the default values, as these will be the same in all entries;
+        % Adding the default values, as these will be the same in all
+        % entries;
         if i==1
             if isfield(modelSBML.fbc_geneProduct, 'sboTerm')
                 modelSBML.fbc_geneProduct(i).sboTerm=252;
             end;
         end;
-        % Copying the default values to the next index as long as it is not the
-        % last one;
+        % Copying the default values to the next index as long as it is not
+        % the last one;
         if i<numel(model.genes)
             modelSBML.fbc_geneProduct(i+1)=modelSBML.fbc_geneProduct(i);
         end;
@@ -350,9 +351,9 @@ if isfield(model,'genes')
         end
         geneComplexes=unique(geneComplexes);
         if ~isempty(geneComplexes)
-            %Then add them as genes. There is a possiblity that a complex A&B is
-            %added as separate from B&A. This isn't really an issue so I don't deal
-            %with it
+            %Then add them as genes. There is a possiblity that a complex
+            %A&B is added as separate from B&A. This isn't really an issue
+            %so I don't deal with it
             for i=1:numel(geneComplexes)
                 modelSBML.fbc_geneProduct(numel(model.genes)+i)=modelSBML.fbc_geneProduct(1);
                 if isfield(modelSBML.fbc_geneProduct,'metaid')
@@ -495,11 +496,9 @@ for i=1:numel(model.rxns)
     modelSBML.reaction(i).fbc_upperFluxBound=totalNames{length(model.lb)+i};
 end;
 
-% Prepare subSystems
-% Code taken from COBRA functions getModelSubSystems, writeSBML,
-% findRxnsFromSubSystem under
-% GNU General Public License v3.0, license file in readme/GPL.MD. Code
-% modified for RAVEN.
+% Prepare subSystems Code taken from COBRA functions getModelSubSystems,
+% writeSBML, findRxnsFromSubSystem under GNU General Public License v3.0,
+% license file in readme/GPL.MD. Code modified for RAVEN.
 modelSBML.groups_group.groups_kind = 'partonomy';
 modelSBML.groups_group.sboTerm = 633;
 tmpStruct=modelSBML.groups_group;
@@ -556,8 +555,8 @@ if isempty(ind)
     modelSBML.fbc_objective.fbc_fluxObjective.fbc_coefficient=0;
 else
     for i=1:length(ind)
-        % Copying the default values to the next index as long as it is not the
-        % last one;
+        % Copying the default values to the next index as long as it is not
+        % the last one;
         if i<numel(ind)
             modelSBML.reaction(i+1)=modelSBML.reaction(i);
         end;
@@ -602,14 +601,15 @@ for i=1:numel(sbmlFieldNames)
             sbmlSubsubfieldValues=getDefaultValues(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
             if ~strcmp(sbmlSubfieldNames{1,j},'modifier') && ~strcmp(sbmlSubfieldNames{1,j},'kineticLaw')
                 for k=1:numel(sbmlSubsubfieldNames)
-                    % 'compartment' and 'species' field are not supposed to have
-                    % their standalone structures if they are subfields or
-                    % subsubfields;
+                    % 'compartment' and 'species' field are not supposed to
+                    % have their standalone structures if they are
+                    % subfields or subsubfields;
                     if ~strcmp(sbmlSubfieldNames{1,j},'compartment') && ~strcmp(sbmlSubfieldNames{1,j},'species')
                         modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j}).(sbmlSubsubfieldNames{1,k})=sbmlSubsubfieldValues{1,k};
                     end;
-                    % If it is fbc_association in the third level, we need to
-                    % establish the fourth level, since libSBML requires it;
+                    % If it is fbc_association in the third level, we need
+                    % to establish the fourth level, since libSBML requires
+                    % it;
                     if strcmp(sbmlSubsubfieldNames{1,k},'fbc_association')
                         fbc_associationFieldNames=getStructureFieldnames('fbc_association',sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
                         fbc_associationFieldValues=getDefaultValues('fbc_association',sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
@@ -655,8 +655,9 @@ end
 
 function miriamString=getMiriam(miriamStruct)
 %Returns a string with list elements for a miriam structure ('<rdf:li
-%rdf:resource="http://identifiers.org/go/GO:0005739"/>' for example). This is just
-%to speed ut things since this is done many times during the exporting
+%rdf:resource="http://identifiers.org/go/GO:0005739"/>' for example). This
+%is just to speed ut things since this is done many times during the
+%exporting
 
 miriamString='';
 if isfield(miriamStruct,'name')
@@ -706,8 +707,8 @@ function vecT = columnVector(vec)
 %   vecT:    a column vector
 %
 % .. Authors:
-%     - Original file: Markus Herrgard
-%     - Minor changes: Laurent Heirendt January 2017
+%     - Original file: Markus Herrgard - Minor changes: Laurent Heirendt
+%     January 2017
 
 [n, m] = size(vec);
 

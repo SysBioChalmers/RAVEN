@@ -56,29 +56,29 @@ end
 
 for i=2:numel(models)
     %Add the model id to the rxn id id it already exists in the model (id
-    %have to be unique)
-    %This is because it makes a '[]' string if no new reactions
+    %have to be unique) This is because it makes a '[]' string if no new
+    %reactions
     if ~isempty(models{i}.rxns)
         I=ismember(models{i}.rxns,model.rxns);
         models{i}.rxns(I)=strcat(models{i}.rxns(I),['_' models{i}.id]);
     end
-
+    
     %Make sure that there are no conflicting reaction ids
     [~, ~, conflicting]=intersect(model.rxns,models{i}.rxns);
-
+    
     if ~isempty(conflicting)
-       printString=cell(numel(conflicting),1);
-       for j=1:numel(conflicting)
-           printString{j}=['Old: ' models{i}.rxns{conflicting(j)} ' New: ' models{i}.rxns{conflicting(j)} '_' models{i}.id];
-           models{i}.rxns{conflicting(j)}=[models{i}.rxns{conflicting(j)} '_' models{i}.id];
-       end
-       if supressWarnings==false
-           EM=['The following reaction IDs in ' models{i}.id ' are already present in the model and were renamed:'];
-           dispEM(EM,false,printString);
-           fprintf('\n');
-       end
+        printString=cell(numel(conflicting),1);
+        for j=1:numel(conflicting)
+            printString{j}=['Old: ' models{i}.rxns{conflicting(j)} ' New: ' models{i}.rxns{conflicting(j)} '_' models{i}.id];
+            models{i}.rxns{conflicting(j)}=[models{i}.rxns{conflicting(j)} '_' models{i}.id];
+        end
+        if supressWarnings==false
+            EM=['The following reaction IDs in ' models{i}.id ' are already present in the model and were renamed:'];
+            dispEM(EM,false,printString);
+            fprintf('\n');
+        end
     end
-
+    
     %Add all static stuff
     rxnFrom=cell(numel(models{i}.rxns),1);
     rxnFrom(:)={models{i}.id};
@@ -89,136 +89,135 @@ for i=2:numel(models)
     model.ub=[model.ub;models{i}.ub];
     model.c=[model.c;models{i}.c];
     model.rev=[model.rev;models{i}.rev];
-
+    
     if hasDeletedSubSystem==false
         if isfield(models{i},'subSystems')
-        	model.subSystems=[model.subSystems;models{i}.subSystems];
+            model.subSystems=[model.subSystems;models{i}.subSystems];
         else
-           if supressWarnings==false
-               EM='Cannot add subsystems since the existing model has no subsystems info. All reactions must have a subsystem for this to be included. Deleting subSystems field';
-               dispEM(EM,false);
-           end
-           hasDeletedSubSystem=true;
-           model=rmfield(model,'subSystems');
+            if supressWarnings==false
+                EM='Cannot add subsystems since the existing model has no subsystems info. All reactions must have a subsystem for this to be included. Deleting subSystems field';
+                dispEM(EM,false);
+            end
+            hasDeletedSubSystem=true;
+            model=rmfield(model,'subSystems');
         end
     end
-
+    
     if isfield(models{i},'eccodes')
-       if isfield(model,'eccodes')
-           model.eccodes=[model.eccodes;models{i}.eccodes];
-       else
-           emptyEC=cell(numel(model.rxns)-numel(models{i}.rxns),1);
-           emptyEC(:)={''};
-           model.eccodes=[emptyEC;models{i}.eccodes];
-       end
+        if isfield(model,'eccodes')
+            model.eccodes=[model.eccodes;models{i}.eccodes];
+        else
+            emptyEC=cell(numel(model.rxns)-numel(models{i}.rxns),1);
+            emptyEC(:)={''};
+            model.eccodes=[emptyEC;models{i}.eccodes];
+        end
     else
-       if isfield(model,'eccodes')
-           emptyEC=cell(numel(models{i}.rxns),1);
-           emptyEC(:)={''};
-           model.eccodes=[model.eccodes;emptyEC];
-       end
-    end
-
-    if isfield(models{i},'rxnMiriams')
-       if isfield(model,'rxnMiriams')
-           model.rxnMiriams=[model.rxnMiriams;models{i}.rxnMiriams];
-       else
-           model.rxnMiriams=[cell(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnMiriams];
-       end
-    else
-       if isfield(model,'rxnMiriams')
-           model.rxnMiriams=[model.rxnMiriams;cell(numel(models{i}.rxns),1)];
-       end
-    end
-
-    if isfield(models{i},'rxnNotes')
-       if isfield(model,'rxnNotes')
-           model.rxnNotes=[model.rxnNotes;models{i}.rxnNotes];
-       else
-           emptyNotes=cell(numel(model.rxns)-numel(models{i}.rxns),1);
-           emptyNotes(:)={''};
-           model.rxnNotes=[emptyNotes;models{i}.rxnNotes];
-       end
-    else
-       if isfield(model,'rxnNotes')
-           emptyNotes=cell(numel(models{i}.rxns),1);
-           emptyNotes(:)={''};
-           model.rxnNotes=[model.rxnNotes;emptyNotes];
-       end
-    end
-
-    if isfield(models{i},'rxnReferences')
-       if isfield(model,'rxnReferences')
-           model.rxnReferences=[model.rxnReferences;models{i}.rxnReferences];
-       else
-           emptyReferences=cell(numel(model.rxns)-numel(models{i}.rxns),1);
-           emptyReferences(:)={''};
-           model.rxnReferences=[emptyReferences;models{i}.rxnReferences];
-       end
-    else
-       if isfield(model,'rxnReferences')
-           emptyReferences=cell(numel(models{i}.rxns),1);
-           emptyReferences(:)={''};
-           model.rxnReferences=[model.rxnReferences;emptyReferences];
-       end
-    end
-
-    if isfield(models{i},'rxnConfidenceScores')
-       if isfield(model,'rxnConfidenceScores')
-           model.rxnConfidenceScores=[model.rxnConfidenceScores;models{i}.rxnConfidenceScores];
-       else
-           model.rxnConfidenceScores=[NaN(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnConfidenceScores];
-       end
-    else
-       if isfield(model,'rxnConfidenceScores')
-           model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(numel(models{i}.rxns),1)];
-       end
-    end
-
-    if isfield(models{i},'rxnComps')
-       if isfield(model,'rxnComps')
-           model.rxnComps=[model.rxnComps;models{i}.rxnComps];
-       else
-           model.rxnComps=[ones(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnComps];
-           fprintf('NOTE: One of the models does not contain compartment information for its reactions. All reactions in that model has been assigned to the first compartment\n');
-       end
-    else
-       if isfield(model,'rxnComps')
-           model.rxnComps=[model.rxnComps;ones(numel(models{i}.rxns),1)];
-           fprintf('NOTE: One of the models does not contain compartment information for its reactions. All reactions in that model has been assigned to the first compartment\n');
-       end
-    end
-
-    if isfield(models{i},'rxnScores')
-       if isfield(model,'rxnScores')
-           model.rxnScores=[model.rxnScores;models{i}.rxnScores];
-       else
-           emptyRS=zeros(numel(model.rxns)-numel(models{i}.rxns),1);
-           model.rxnScores=[emptyRS;models{i}.rxnScores];
-       end
-    else
-       if isfield(model,'rxnScores')
-           emptyRS=zeros(numel(models{i}.rxns),1);
-           model.rxnScores=[model.rxnScores;emptyRS];
-       end
-    end
-
-    if isfield(models{i},'pwys')
-       if isfield(model,'pwys')
-           model.pwys=[model.pwys;models{i}.pwys];
-       else
-           model.pwys=[cell(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.pwys];
-       end
-    else
-       if isfield(model,'pwys')
-           model.pwys=[model.pwys;cell(numel(models{i}.rxns),1)];
-       end
+        if isfield(model,'eccodes')
+            emptyEC=cell(numel(models{i}.rxns),1);
+            emptyEC(:)={''};
+            model.eccodes=[model.eccodes;emptyEC];
+        end
     end
     
-    %Get the new metabolites from matching the models.
-    %Metabolites are said to be the same if they share name and
-    %compartment id. This means that metabolite IDs are not taken into
-    %account.
+    if isfield(models{i},'rxnMiriams')
+        if isfield(model,'rxnMiriams')
+            model.rxnMiriams=[model.rxnMiriams;models{i}.rxnMiriams];
+        else
+            model.rxnMiriams=[cell(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnMiriams];
+        end
+    else
+        if isfield(model,'rxnMiriams')
+            model.rxnMiriams=[model.rxnMiriams;cell(numel(models{i}.rxns),1)];
+        end
+    end
+    
+    if isfield(models{i},'rxnNotes')
+        if isfield(model,'rxnNotes')
+            model.rxnNotes=[model.rxnNotes;models{i}.rxnNotes];
+        else
+            emptyNotes=cell(numel(model.rxns)-numel(models{i}.rxns),1);
+            emptyNotes(:)={''};
+            model.rxnNotes=[emptyNotes;models{i}.rxnNotes];
+        end
+    else
+        if isfield(model,'rxnNotes')
+            emptyNotes=cell(numel(models{i}.rxns),1);
+            emptyNotes(:)={''};
+            model.rxnNotes=[model.rxnNotes;emptyNotes];
+        end
+    end
+    
+    if isfield(models{i},'rxnReferences')
+        if isfield(model,'rxnReferences')
+            model.rxnReferences=[model.rxnReferences;models{i}.rxnReferences];
+        else
+            emptyReferences=cell(numel(model.rxns)-numel(models{i}.rxns),1);
+            emptyReferences(:)={''};
+            model.rxnReferences=[emptyReferences;models{i}.rxnReferences];
+        end
+    else
+        if isfield(model,'rxnReferences')
+            emptyReferences=cell(numel(models{i}.rxns),1);
+            emptyReferences(:)={''};
+            model.rxnReferences=[model.rxnReferences;emptyReferences];
+        end
+    end
+    
+    if isfield(models{i},'rxnConfidenceScores')
+        if isfield(model,'rxnConfidenceScores')
+            model.rxnConfidenceScores=[model.rxnConfidenceScores;models{i}.rxnConfidenceScores];
+        else
+            model.rxnConfidenceScores=[NaN(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnConfidenceScores];
+        end
+    else
+        if isfield(model,'rxnConfidenceScores')
+            model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(numel(models{i}.rxns),1)];
+        end
+    end
+    
+    if isfield(models{i},'rxnComps')
+        if isfield(model,'rxnComps')
+            model.rxnComps=[model.rxnComps;models{i}.rxnComps];
+        else
+            model.rxnComps=[ones(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnComps];
+            fprintf('NOTE: One of the models does not contain compartment information for its reactions. All reactions in that model has been assigned to the first compartment\n');
+        end
+    else
+        if isfield(model,'rxnComps')
+            model.rxnComps=[model.rxnComps;ones(numel(models{i}.rxns),1)];
+            fprintf('NOTE: One of the models does not contain compartment information for its reactions. All reactions in that model has been assigned to the first compartment\n');
+        end
+    end
+    
+    if isfield(models{i},'rxnScores')
+        if isfield(model,'rxnScores')
+            model.rxnScores=[model.rxnScores;models{i}.rxnScores];
+        else
+            emptyRS=zeros(numel(model.rxns)-numel(models{i}.rxns),1);
+            model.rxnScores=[emptyRS;models{i}.rxnScores];
+        end
+    else
+        if isfield(model,'rxnScores')
+            emptyRS=zeros(numel(models{i}.rxns),1);
+            model.rxnScores=[model.rxnScores;emptyRS];
+        end
+    end
+    
+    if isfield(models{i},'pwys')
+        if isfield(model,'pwys')
+            model.pwys=[model.pwys;models{i}.pwys];
+        else
+            model.pwys=[cell(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.pwys];
+        end
+    else
+        if isfield(model,'pwys')
+            model.pwys=[model.pwys;cell(numel(models{i}.rxns),1)];
+        end
+    end
+    
+    %Get the new metabolites from matching the models. Metabolites are said
+    %to be the same if they share name and compartment id. This means that
+    %metabolite IDs are not taken into account.
     oldMetComps=model.comps(model.metComps);
     oldMets=strcat(model.metNames,'[',oldMetComps,']');
     %This is because it makes a '[]' string if no new metabolites
@@ -231,25 +230,25 @@ for i=2:numel(models)
     end
     tf=ismember(newMets,oldMets);
     metsToAdd=find(~tf);
-
-    %First add the new metabolites
-    %Make sure that there are no conflicting metabolite ids
+    
+    %First add the new metabolites Make sure that there are no conflicting
+    %metabolite ids
     conflicting=ismember(models{i}.mets(metsToAdd),model.mets);
-
+    
     conflicting=find(conflicting);
-
+    
     if ~isempty(conflicting)
-       printString=cell(numel(conflicting),1);
-       for j=1:numel(conflicting)
-           printString{j}=['Old: ' models{i}.mets{metsToAdd(conflicting(j))} ' New: ' models{i}.mets{metsToAdd(conflicting(j))} '_' models{i}.id];
-           models{i}.mets{metsToAdd(conflicting(j))}=[models{i}.mets{metsToAdd(conflicting(j))} '_' models{i}.id];
-       end
-       if supressWarnings==false
-           EM=['The following metabolite IDs in ' models{i}.id ' are already present in the model and were renamed:'];
-           dispEM(EM,false,printString);
-       end
+        printString=cell(numel(conflicting),1);
+        for j=1:numel(conflicting)
+            printString{j}=['Old: ' models{i}.mets{metsToAdd(conflicting(j))} ' New: ' models{i}.mets{metsToAdd(conflicting(j))} '_' models{i}.id];
+            models{i}.mets{metsToAdd(conflicting(j))}=[models{i}.mets{metsToAdd(conflicting(j))} '_' models{i}.id];
+        end
+        if supressWarnings==false
+            EM=['The following metabolite IDs in ' models{i}.id ' are already present in the model and were renamed:'];
+            dispEM(EM,false,printString);
+        end
     end
-
+    
     %Add static info on the metabolites
     metFrom=cell(numel(metsToAdd),1);
     metFrom(:)={models{i}.id};
@@ -257,104 +256,104 @@ for i=2:numel(models)
     model.mets=[model.mets;models{i}.mets(metsToAdd)];
     model.metNames=[model.metNames;models{i}.metNames(metsToAdd)];
     model.b=[model.b;zeros(numel(metsToAdd),size(model.b,2))];
-
+    
     if isfield(model,'unconstrained')
-       if isfield(models{i},'unconstrained')
+        if isfield(models{i},'unconstrained')
             model.unconstrained=[model.unconstrained;models{i}.unconstrained(metsToAdd)];
-       else
-           model.unconstrained=[model.unconstrained;zeros(numel(metsToAdd),1)];
-       end
+        else
+            model.unconstrained=[model.unconstrained;zeros(numel(metsToAdd),1)];
+        end
     else
-       if isfield(models{i},'unconstrained')
-          model.unconstrained=[zeros(numel(model.mets),1);models{i}.unconstrained(metsToAdd)];
-       end
+        if isfield(models{i},'unconstrained')
+            model.unconstrained=[zeros(numel(model.mets),1);models{i}.unconstrained(metsToAdd)];
+        end
     end
-
+    
     %Only add extra info on new metabolites since it's a little tricky to
     %chose what to keep otherwise. Should change in the future
     if ~isempty(metsToAdd)
         if isfield(models{i},'inchis')
-           if isfield(model,'inchis')
-               model.inchis=[model.inchis;models{i}.inchis(metsToAdd)];
-           else
-               emptyInchi=cell(numel(model.mets)-numel(metsToAdd),1);
-               emptyInchi(:)={''};
-               model.inchis=[emptyInchi;models{i}.inchis(metsToAdd)];
-           end
+            if isfield(model,'inchis')
+                model.inchis=[model.inchis;models{i}.inchis(metsToAdd)];
+            else
+                emptyInchi=cell(numel(model.mets)-numel(metsToAdd),1);
+                emptyInchi(:)={''};
+                model.inchis=[emptyInchi;models{i}.inchis(metsToAdd)];
+            end
         else
-           if isfield(model,'inchis')
-               emptyInchi=cell(numel(metsToAdd),1);
-               emptyInchi(:)={''};
-               model.inchis=[model.inchis;emptyInchi];
-           end
+            if isfield(model,'inchis')
+                emptyInchi=cell(numel(metsToAdd),1);
+                emptyInchi(:)={''};
+                model.inchis=[model.inchis;emptyInchi];
+            end
         end
-
+        
         if isfield(models{i},'metFormulas')
-           if isfield(model,'metFormulas')
-               model.metFormulas=[model.metFormulas;models{i}.metFormulas(metsToAdd)];
-           else
-               emptyMetFormulas=cell(numel(model.mets)-numel(metsToAdd),1);
-               emptyMetFormulas(:)={''};
-               model.metFormulas=[emptyMetFormulas;models{i}.metFormulas(metsToAdd)];
-           end
+            if isfield(model,'metFormulas')
+                model.metFormulas=[model.metFormulas;models{i}.metFormulas(metsToAdd)];
+            else
+                emptyMetFormulas=cell(numel(model.mets)-numel(metsToAdd),1);
+                emptyMetFormulas(:)={''};
+                model.metFormulas=[emptyMetFormulas;models{i}.metFormulas(metsToAdd)];
+            end
         else
-           if isfield(model,'metFormulas')
-               emptyMetFormulas=cell(numel(metsToAdd),1);
-               emptyMetFormulas(:)={''};
-               model.metFormulas=[model.metFormulas;emptyMetFormulas];
-           end
+            if isfield(model,'metFormulas')
+                emptyMetFormulas=cell(numel(metsToAdd),1);
+                emptyMetFormulas(:)={''};
+                model.metFormulas=[model.metFormulas;emptyMetFormulas];
+            end
         end
-
+        
         if isfield(models{i},'metCharges')
-           if isfield(model,'metCharges')
-               model.metCharges=[model.metCharges;models{i}.metCharges(metsToAdd)];
-           else
-               emptyMetCharge=cell(numel(model.mets)-numel(metsToAdd),1);
-               emptyMetCharge(:)={''};
-               model.metCharges=[emptyMetCharge;models{i}.metCharges(metsToAdd)];
-           end
+            if isfield(model,'metCharges')
+                model.metCharges=[model.metCharges;models{i}.metCharges(metsToAdd)];
+            else
+                emptyMetCharge=cell(numel(model.mets)-numel(metsToAdd),1);
+                emptyMetCharge(:)={''};
+                model.metCharges=[emptyMetCharge;models{i}.metCharges(metsToAdd)];
+            end
         else
-           if isfield(model,'metCharges')
-               emptyMetCharge=cell(numel(metsToAdd),1);
-               emptyMetCharge(:)={''};
-               model.metCharges=[model.metCharges;emptyMetCharge];
-           end
+            if isfield(model,'metCharges')
+                emptyMetCharge=cell(numel(metsToAdd),1);
+                emptyMetCharge(:)={''};
+                model.metCharges=[model.metCharges;emptyMetCharge];
+            end
         end
-
+        
         if isfield(models{i},'metMiriams')
-           if isfield(model,'metMiriams')
-               model.metMiriams=[model.metMiriams;models{i}.metMiriams(metsToAdd)];
-           else
-               emptyMetMiriam=cell(numel(model.mets)-numel(metsToAdd),1);
-               model.metMiriams=[emptyMetMiriam;models{i}.metMiriams(metsToAdd)];
-           end
+            if isfield(model,'metMiriams')
+                model.metMiriams=[model.metMiriams;models{i}.metMiriams(metsToAdd)];
+            else
+                emptyMetMiriam=cell(numel(model.mets)-numel(metsToAdd),1);
+                model.metMiriams=[emptyMetMiriam;models{i}.metMiriams(metsToAdd)];
+            end
         else
-           if isfield(model,'metMiriams')
-               emptyMetMiriam=cell(numel(metsToAdd),1);
-               model.metMiriams=[model.metMiriams;emptyMetMiriam];
-           end
+            if isfield(model,'metMiriams')
+                emptyMetMiriam=cell(numel(metsToAdd),1);
+                model.metMiriams=[model.metMiriams;emptyMetMiriam];
+            end
         end
     end
-
+    
     %Add if there are any new compartments and add those. This can change
     %the order of compartments and the corresponding indexes in
     %model.metComps.
-
+    
     %Find overlapping and new compartments
     [overlap, oldIDs]=ismember(models{i}.comps,model.comps);
     overlap=find(overlap);
-
+    
     %Add the new compartments if any
     if numel(overlap)~=numel(models{i}.compNames)
         compIndexes=oldIDs==0;
-
+        
         %Make sure that there are no conflicting compartment ids
         [~, conflicting]=ismember(models{i}.compNames(compIndexes),model.compNames);
         if any(conflicting)
             EM=['The following compartment IDs in ' models{i}.id ' are already present in the model but with another name. They have to be renamed'];
             dispEM(EM,true,model.comps(conflicting));
         end
-
+        
         %It's ok to add duplicate name, but not duplicate IDs
         model.compNames=[model.compNames; models{i}.compNames(compIndexes)];
         model.comps=[model.comps; models{i}.comps(compIndexes)];
@@ -377,9 +376,9 @@ for i=2:numel(models)
             end
         end
     end
-
-    %Only add new comp info on the un-matched metabolites since the old ones will
-    %be mapped to the existing list anyways
+    
+    %Only add new comp info on the un-matched metabolites since the old
+    %ones will be mapped to the existing list anyways
     [I, J]=ismember(newMetComps(metsToAdd),model.comps);
     %Just a check
     if ~all(I)
@@ -387,20 +386,20 @@ for i=2:numel(models)
         dispEM(EM);
     end
     model.metComps=[model.metComps;J];
-
+    
     %Create the new stoichiometric matrix
     model.S=[model.S;sparse(numel(metsToAdd),size(model.S,2))];
-
+    
     %Rematch metabolite names. Not the most clever way to do it maybe
     allMets=strcat(model.metNames,'[',model.comps(model.metComps),']');
     [~, J]=ismember(newMets,allMets);
-
+    
     %Update the stoichiometric matrix for the model to add
     newS=sparse(numel(model.mets),numel(models{i}.rxns));
     newS(J,:)=models{i}.S;
-
+    
     model.S=[model.S newS];
-
+    
     %Now add new genes
     if isfield(models{i},'genes')
         if ~isfield(model,'genes')
@@ -412,24 +411,24 @@ for i=2:numel(models)
             model.grRules=[emptyGene;models{i}.grRules];
             model.geneFrom=cell(numel(models{i}.genes),1);
             model.geneFrom(:)={models{i}.id};
-
+            
             if isfield(models{i},'geneShortNames')
-               model.geneShortNames=models{i}.geneShortNames;
+                model.geneShortNames=models{i}.geneShortNames;
             end
-
+            
             if isfield(models{i},'geneMiriams')
-               model.geneMiriams=models{i}.geneMiriams;
+                model.geneMiriams=models{i}.geneMiriams;
             end
-
+            
             if isfield(models{i},'geneComps')
-               model.geneComps=models{i}.geneComps;
+                model.geneComps=models{i}.geneComps;
             end
         else
             %If gene info should be merged
             a=ismember(models{i}.genes,model.genes);
-
+            
             genesToAdd=find(~a);
-
+            
             %Only add extra gene info on new genes. This might not be
             %correct and should be changed later...
             if ~isempty(genesToAdd)
@@ -438,7 +437,7 @@ for i=2:numel(models)
                 emptyGene(:)={models{i}.id};
                 model.geneFrom=[model.geneFrom;emptyGene];
                 model.rxnGeneMat=[model.rxnGeneMat sparse(size(model.rxnGeneMat,1),numel(genesToAdd))];
-
+                
                 if isfield(models{i},'geneShortNames')
                     if isfield(model,'geneShortNames')
                         model.geneShortNames=[model.geneShortNames;models{i}.geneShortNames(genesToAdd)];
@@ -454,7 +453,7 @@ for i=2:numel(models)
                         model.geneShortNames=[model.geneShortNames;emptyGeneSN];
                     end
                 end
-
+                
                 if isfield(models{i},'geneMiriams')
                     if isfield(model,'geneMiriams')
                         model.geneMiriams=[model.geneMiriams;models{i}.geneMiriams(genesToAdd)];
@@ -468,7 +467,7 @@ for i=2:numel(models)
                         model.geneMiriams=[model.geneMiriams;emptyGeneMir];
                     end
                 end
-
+                
                 if isfield(models{i},'geneComps')
                     if isfield(model,'geneComps')
                         model.geneComps=[model.geneComps;models{i}.geneComps(genesToAdd)];
@@ -487,12 +486,12 @@ for i=2:numel(models)
                     end
                 end
             end
-
+            
             %Remap the genes from the new model. The same thing as with
             %mets; this is a wasteful way to do it but I don't care right
             %now
             [a, b]=ismember(models{i}.genes,model.genes);
-
+            
             %Just a check
             if ~all(a)
                 EM='There was an unexpected error in matching genes';

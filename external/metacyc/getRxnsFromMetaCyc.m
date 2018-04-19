@@ -79,7 +79,8 @@ if nargin<4
     keepUndetermined=false;
 end
 
-%Check if the reactions have been parsed before and saved. Directly load the model if so.
+%Check if the reactions have been parsed before and saved. Directly load
+%the model if so.
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 rxnsFile=fullfile(ravenPath,'external','metacyc','metaCycRxns.mat');
@@ -97,41 +98,41 @@ else
     else
         metaCycRxns.id='MetaCyc';
         metaCycRxns.description='Automatically generated from MetaCyc database';
-
-      	%Get pathway names and add them to the field of subSystems
+        
+        %Get pathway names and add them to the field of subSystems
         fid = fopen(fullfile(metacycPath,metaCycPwyFile), 'r');
-    
+        
         %Keeps track of how many pathways that have been added
         pwyCounter=0;
-				pwys=cell(10000,1);
-    		pwyNames=cell(10000,1);
-    		
+        pwys=cell(10000,1);
+        pwyNames=cell(10000,1);
+        
         %Loop through the file
         while 1
-          %Get the next line
-          tline = fgetl(fid);
-    
-          %Abort at end of file
-          if ~ischar(tline)
-              break;
-          end
-        
-          %Read in pathway ids and names
-          if ~strcmp(tline(1),'#')
-          	pwyCounter=pwyCounter+1;
-          	vars = regexp(tline, '\t', 'split');
-						pwys{pwyCounter}=vars{1};
-            pwyNames{pwyCounter}=vars{2};
+            %Get the next line
+            tline = fgetl(fid);
             
-            %Romve HTML symbols
-            pwyNames{pwyCounter}=removeHTMLcodes(pwyNames{pwyCounter});
-
-          end          	
+            %Abort at end of file
+            if ~ischar(tline)
+                break;
+            end
+            
+            %Read in pathway ids and names
+            if ~strcmp(tline(1),'#')
+                pwyCounter=pwyCounter+1;
+                vars = regexp(tline, '\t', 'split');
+                pwys{pwyCounter}=vars{1};
+                pwyNames{pwyCounter}=vars{2};
+                
+                %Romve HTML symbols
+                pwyNames{pwyCounter}=removeHTMLcodes(pwyNames{pwyCounter});
+                
+            end
         end
         fclose(fid);
-				pwys=pwys(1:pwyCounter);
-    		pwyNames=pwyNames(1:pwyCounter);
-    
+        pwys=pwys(1:pwyCounter);
+        pwyNames=pwyNames(1:pwyCounter);
+        
         %Preallocate memory for 50000 reactions
         metaCycRxns.rxns=cell(50000,1);
         metaCycRxns.rxnNames=cell(50000,1);
@@ -149,24 +150,24 @@ else
         UNBALANCED=false(10000,1);
         UNDETERMINED=cell(10000,1);
         TRANSPORT=cell(10000,1);
-
+        
         %Transport reactions were organzied into a file
         fid = fopen(fullfile(metacycPath,'transportRxns.txt'), 'r');
         transportCounter=0;
         %Loop through the file
         while 1
-          %Get the next line
-          tline = fgetl(fid);
-    
-          %Abort at end of file
-          if ~ischar(tline)
-              break;
-          end
-        	
-        	%disp(tline);
-		      transportCounter=transportCounter+1;
-   		  	TRANSPORT{transportCounter}=tline;
-    		end
+            %Get the next line
+            tline = fgetl(fid);
+            
+            %Abort at end of file
+            if ~ischar(tline)
+                break;
+            end
+            
+            %disp(tline);
+            transportCounter=transportCounter+1;
+            TRANSPORT{transportCounter}=tline;
+        end
         %Close the file
         fclose(fid);
         TRANSPORT=TRANSPORT(1:transportCounter);
@@ -176,325 +177,328 @@ else
         undetermCounter=0;
         %Loop through the file
         while 1
-          %Get the next line
-          tline = fgetl(fid);
-    
-          %Abort at end of file
-          if ~ischar(tline)
-              break;
-          end
-        	
-        	%disp(tline);
-		      undetermCounter=undetermCounter+1;
-			    s=strfind(tline,': ');
-		  	  if s
-    		  	UNDETERMINED{undetermCounter}=tline(1:s-1);
-      		end
-    		end
+            %Get the next line
+            tline = fgetl(fid);
+            
+            %Abort at end of file
+            if ~ischar(tline)
+                break;
+            end
+            
+            %disp(tline);
+            undetermCounter=undetermCounter+1;
+            s=strfind(tline,': ');
+            if s
+                UNDETERMINED{undetermCounter}=tline(1:s-1);
+            end
+        end
         %Close the file
         fclose(fid);
         UNDETERMINED=UNDETERMINED(1:undetermCounter);
-
+        
         metaCycRxns.equations=cell(50000,1); %reaction equations
         left=cell(50000,1); %Temporarily stores the equations
         right=cell(50000,1); %Temporarily stores the equations
-    
-        %First load information on reaction ID, reaction name,, pathway, and ec-number
+        
+        %First load information on reaction ID, reaction name,, pathway,
+        %and ec-number
         fid = fopen(fullfile(metacycPath,metaCycRxnFile), 'r');
-    
+        
         %Keeps track of how many reactions that have been added
         rxnCounter=0;
         addSpont=false;
         dbLinkCounter=0;
-    
+        
         %Loop through the file
         while 1
-          %Get the next line
-          tline = fgetl(fid);
-    
-          %Abort at end of file
-          if ~ischar(tline)
-              break;
-          end
-        
-          %Check if it is a new reaction
-          if numel(tline)>12 && strcmp(tline(1:12),'UNIQUE-ID - ')
-              rxnCounter=rxnCounter+1;
-              nPwys=0;
-    
-              %Add empty strings where there should be such
-              metaCycRxns.rxnNames{rxnCounter}='';
-              metaCycRxns.eccodes{rxnCounter}='';
-              metaCycRxns.subSystems{rxnCounter}='';
-              metaCycRxns.pwys{rxnCounter}='';
-              metaCycRxns.equations{rxnCounter}='';
-              metaCycRxns.rxnReferences{rxnCounter}='';
-              reverse=0;   %Value for reversing the equation when necessary
-              
-              % A complex evaluation system for generating the equations
-              left{rxnCounter}='';
-              right{rxnCounter}='';
-              coefficient='';
-              templeft='';
-              tempright='';
-              % might be simplified with a better algorithem
-    
-              %Add reaction ID
-            	metaCycRxns.rxns{rxnCounter}=tline(13:end);
-
-          end
-    
-          %Add name
-          if numel(tline)>14 && strcmp(tline(1:14),'COMMON-NAME - ')
-              metaCycRxns.rxnNames{rxnCounter}=tline(15:end);
-              
-              %Romve HTML symbols
-              metaCycRxns.rxnNames{rxnCounter}=removeHTMLcodes(metaCycRxns.rxnNames{rxnCounter});
-          end
-
-          %Add eccodes
-          if numel(tline)>15 && strcmp(tline(1:15),'EC-NUMBER - EC-')
-          		if isempty(metaCycRxns.eccodes{rxnCounter})
-	              metaCycRxns.eccodes{rxnCounter}=strcat('ec-code/',tline(16:end));
-	            else
-	            	metaCycRxns.eccodes{rxnCounter}=strcat(metaCycRxns.eccodes{rxnCounter},';ec-code/',tline(16:end));
-	            end
-          end
-          if numel(tline)>16 && strcmp(tline(1:16),'EC-NUMBER - |EC-')
-          		if isempty(metaCycRxns.eccodes{rxnCounter})
-              	metaCycRxns.eccodes{rxnCounter}=strcat('ec-code/',tline(17:end-1));
-	            else
-	            	metaCycRxns.eccodes{rxnCounter}=strcat(metaCycRxns.eccodes{rxnCounter},';ec-code/',tline(17:end-1));
-	            end
-          end
-          
-          %Add pathway id and assign pathway name to subSystem field
-          if numel(tline)>13 && strcmp(tline(1:13),'IN-PATHWAY - ')
-          		if isempty(metaCycRxns.pwys{rxnCounter})
-          			metaCycRxns.pwys{rxnCounter}=tline(14:end);
-          		else
-          			metaCycRxns.pwys{rxnCounter}=strcat(metaCycRxns.pwys{rxnCounter},';',tline(14:end));
-          		end
-
-		          [x, y]=ismember(tline(14:end),pwys);
-		          if x
-                    metaCycRxns.subSystems{rxnCounter,1}{1,numel(metaCycRxns.subSystems{rxnCounter,1})+1}=pwyNames{y};
-	    	      end
-          end
-
-          %Add references (pubmed ids)
-          if numel(tline)>12 && strcmp(tline(1:12),'CITATIONS - ')
-          		if isempty(metaCycRxns.rxnReferences{rxnCounter})
-              	metaCycRxns.rxnReferences{rxnCounter}=strcat('pubmed/',tline(13:end));
-	            else
-	            	metaCycRxns.rxnReferences{rxnCounter}=strcat(metaCycRxns.rxnReferences{rxnCounter},';pubmed/',tline(13:end));
-	            end
-          end
-
-          %Add Miriam info (cross-links other database)
-          if numel(tline)>11 && strcmp(tline(1:11),'DBLINKS - (')
-          		dblink=tline(12:end);
-          		%KEGG reaction id
-              if strcmp(dblink(1:12),'LIGAND-RXN "')
-              		dblink=dblink(13:end);
-	      	        s=strfind(dblink,'"');
-  	      	      if any(s)
-    	      	       dblink=dblink(1:s-1);
-      	      	  end
-
-                  if isstruct(metaCycRxns.rxnMiriams{rxnCounter})
-                      addToIndex=numel(metaCycRxns.rxnMiriams{rxnCounter}.name)+1;
-                  else
-                      addToIndex=1;
-                  end    
-                  tempStruct=metaCycRxns.rxnMiriams{rxnCounter};
-                  tempStruct.name{addToIndex,1}='kegg.reaction';
-                  tempStruct.value{addToIndex,1}=dblink;
-                  metaCycRxns.rxnMiriams{rxnCounter}=tempStruct;
-                  
-                  %For generating the rxnLinks structure
-                  dbLinkCounter=dbLinkCounter+1;
-                  rxnLinks.metacyc{dbLinkCounter}=metaCycRxns.rxns{rxnCounter};
-                  rxnLinks.kegg{dbLinkCounter}=dblink;
-                  rxnLinks.check{dbLinkCounter}=strcat(metaCycRxns.rxns{rxnCounter},dblink);
-              end
-              
-          		%RHEA reaction id
-              if strcmp(dblink(1:6),'RHEA "')
-              		dblink=dblink(7:end);
-	      	        s=strfind(dblink,'"');
-  	      	      if any(s)
-    	      	       dblink=dblink(1:s-1);
-      	      	  end
-
-                  if isstruct(metaCycRxns.rxnMiriams{rxnCounter})
-                      addToIndex=numel(metaCycRxns.rxnMiriams{rxnCounter}.name)+1;
-                  else
-                      addToIndex=1;
-                  end    
-                  tempStruct=metaCycRxns.rxnMiriams{rxnCounter};
-                  tempStruct.name{addToIndex,1}='rhea';
-                  tempStruct.value{addToIndex,1}=dblink;
-                  metaCycRxns.rxnMiriams{rxnCounter}=tempStruct;
-              end
-          end
-
-          if numel(tline)>21 && strcmp(tline(1:21),'REACTION-DIRECTION - ')
-          	rxnDirection=tline(22:end);
-						switch(rxnDirection)
-						case 'IRREVERSIBLE-LEFT-TO-RIGHT'
-							metaCycRxns.rev(rxnCounter,1)=0;
-						case 'LEFT-TO-RIGHT'
-							metaCycRxns.rev(rxnCounter,1)=0;
-						case 'PHYSIOL-LEFT-TO-RIGHT'
-							metaCycRxns.rev(rxnCounter,1)=0;
-						case 'IRREVERSIBLE-RIGHT-TO-LEFT'
-							metaCycRxns.rev(rxnCounter,1)=0;
-							reverse=1;
-						case 'RIGHT-TO-LEFT'
-							metaCycRxns.rev(rxnCounter,1)=0;
-							reverse=1;
-						case 'PHYSIOL-RIGHT-TO-LEFT'
-							metaCycRxns.rev(rxnCounter,1)=0;
-							reverse=1;
-						end
-          end
-
-          %Add spontaneous
-          if strcmp(tline,'SPONTANEOUS? - T')
-              %metaCycRxns.spontaneous(rxnCounter,1)=1;
-              isSpontaneous(rxnCounter)=true;
-          end
-
-          %Add mass-balance information
-          if strcmp(tline,'CANNOT-BALANCE? - T')
-              UNBALANCED(rxnCounter)=true;
-          end
+            %Get the next line
+            tline = fgetl(fid);
             
-          %Add left side equation
-          if numel(tline)>7 && strcmp(tline(1:7),'LEFT - ')
-          	if strcmp(left{rxnCounter},'')
-          		if strcmp(templeft,'')
-	          		templeft=tline(8:end); % this is the real first, save to a temp variable
-	          	else % count in the coefficient here
-	          		if strcmp(coefficient,'')
-		          		left{rxnCounter}=templeft;
-		          	else
-		          		left{rxnCounter}=strcat(coefficient,32,templeft);
-		          		coefficient='';
-		          	end
-		          	templeft=tline(8:end);
-		          end
-		        else
-	          	if strcmp(coefficient,'')
-		          	left{rxnCounter}=strcat(left{rxnCounter},' +',32,templeft);
-		          else
-		          	left{rxnCounter}=strcat(left{rxnCounter},' +',32,coefficient,32,templeft);
-		          	coefficient='';
-		          end
-		          templeft=tline(8:end);          		            
-	          end
-          end
-
-          %Add right side equation
-          if numel(tline)>8 && strcmp(tline(1:8),'RIGHT - ')
-          	if strcmp(right{rxnCounter},'')
-          		if strcmp(tempright,'')
-          			
-          			% a complicated process for the last left metabolite
-		          	if strcmp(coefficient,'')
-		          		if strcmp(left{rxnCounter},'')
-		          			left{rxnCounter}=templeft;
-		          		else
-				          	left{rxnCounter}=strcat(left{rxnCounter},' +',32,templeft);
-				          end
-				        
-			          else
-		          		if strcmp(left{rxnCounter},'')
-		          			left{rxnCounter}=strcat(coefficient,32,templeft);
-		          		else
-				          	left{rxnCounter}=strcat(left{rxnCounter},' +',32,coefficient,32,templeft);
-				          end
-		    	      	coefficient='';
-		      	    end
-          			% process end
-          			
-	          		tempright=tline(9:end); % this is the real first, save to a temp variable
-	          	else
-	          		if strcmp(coefficient,'')
-		          		right{rxnCounter}=tempright;
-		          	else
-		          		right{rxnCounter}=strcat(coefficient,32,tempright);
-		          		coefficient='';
-		          	end
-		          	tempright=tline(9:end);
-		          end
-		        else
-	          	if strcmp(coefficient,'')
-		          	right{rxnCounter}=strcat(right{rxnCounter},' +',32,tempright);
-		          else
-		          	right{rxnCounter}=strcat(right{rxnCounter},' +',32,coefficient,32,tempright);
-		          	coefficient='';
-		          end
-		          tempright=tline(9:end);          		            
-	          end
-
-	        end
-
-          if numel(tline)>15 && strcmp(tline(1:15),'^COEFFICIENT - ')
-	          	coefficient=tline(16:end);
-	        end
- 
-        %Generate equation at the end of each object section
-          if strcmp(tline,'//')
-
-           	% a complicated process for the last right metabolite, sub-function is needed here
-		        if strcmp(coefficient,'')
-		        	if strcmp(right{rxnCounter},'')
-		        		right{rxnCounter}=tempright;
-		        	else
-				      	right{rxnCounter}=strcat(right{rxnCounter},' +',32,tempright);
-				      end
-				    
-			      else
-		        	if strcmp(right{rxnCounter},'')
-		        		right{rxnCounter}=strcat(coefficient,32,tempright);
-		        	else
-				      	right{rxnCounter}=strcat(right{rxnCounter},' +',32,coefficient,32,tempright);
-				      end
-		    	  	coefficient='';
-		      	end
-          	% process end
-
-						%get the right direction symbol
-						if metaCycRxns.rev(rxnCounter,1)
-							symbol = ' <=>';
-						else
-							symbol = ' =>';
-						end
-						
-						if reverse
-							metaCycRxns.equations{rxnCounter}=strcat(right{rxnCounter},symbol,32,left{rxnCounter});
-						else
-	           	metaCycRxns.equations{rxnCounter}=strcat(left{rxnCounter},symbol,32,right{rxnCounter});
-	          end
-	          
-	          %Final equation check
-	          if strcmp(left{rxnCounter},'') || strcmp(right{rxnCounter},'')
-	          	rxnCounter=rxnCounter-1;
-	          	
-	          end
-	          
-          end
-
-      	end
+            %Abort at end of file
+            if ~ischar(tline)
+                break;
+            end
+            
+            %Check if it is a new reaction
+            if numel(tline)>12 && strcmp(tline(1:12),'UNIQUE-ID - ')
+                rxnCounter=rxnCounter+1;
+                nPwys=0;
+                
+                %Add empty strings where there should be such
+                metaCycRxns.rxnNames{rxnCounter}='';
+                metaCycRxns.eccodes{rxnCounter}='';
+                metaCycRxns.subSystems{rxnCounter}='';
+                metaCycRxns.pwys{rxnCounter}='';
+                metaCycRxns.equations{rxnCounter}='';
+                metaCycRxns.rxnReferences{rxnCounter}='';
+                reverse=0;   %Value for reversing the equation when necessary
+                
+                % A complex evaluation system for generating the equations
+                left{rxnCounter}='';
+                right{rxnCounter}='';
+                coefficient='';
+                templeft='';
+                tempright='';
+                % might be simplified with a better algorithem
+                
+                %Add reaction ID
+                metaCycRxns.rxns{rxnCounter}=tline(13:end);
+                
+            end
+            
+            %Add name
+            if numel(tline)>14 && strcmp(tline(1:14),'COMMON-NAME - ')
+                metaCycRxns.rxnNames{rxnCounter}=tline(15:end);
+                
+                %Romve HTML symbols
+                metaCycRxns.rxnNames{rxnCounter}=removeHTMLcodes(metaCycRxns.rxnNames{rxnCounter});
+            end
+            
+            %Add eccodes
+            if numel(tline)>15 && strcmp(tline(1:15),'EC-NUMBER - EC-')
+                if isempty(metaCycRxns.eccodes{rxnCounter})
+                    metaCycRxns.eccodes{rxnCounter}=strcat('ec-code/',tline(16:end));
+                else
+                    metaCycRxns.eccodes{rxnCounter}=strcat(metaCycRxns.eccodes{rxnCounter},';ec-code/',tline(16:end));
+                end
+            end
+            if numel(tline)>16 && strcmp(tline(1:16),'EC-NUMBER - |EC-')
+                if isempty(metaCycRxns.eccodes{rxnCounter})
+                    metaCycRxns.eccodes{rxnCounter}=strcat('ec-code/',tline(17:end-1));
+                else
+                    metaCycRxns.eccodes{rxnCounter}=strcat(metaCycRxns.eccodes{rxnCounter},';ec-code/',tline(17:end-1));
+                end
+            end
+            
+            %Add pathway id and assign pathway name to subSystem field
+            if numel(tline)>13 && strcmp(tline(1:13),'IN-PATHWAY - ')
+                if isempty(metaCycRxns.pwys{rxnCounter})
+                    metaCycRxns.pwys{rxnCounter}=tline(14:end);
+                else
+                    metaCycRxns.pwys{rxnCounter}=strcat(metaCycRxns.pwys{rxnCounter},';',tline(14:end));
+                end
+                
+                [x, y]=ismember(tline(14:end),pwys);
+                if x
+                    metaCycRxns.subSystems{rxnCounter,1}{1,numel(metaCycRxns.subSystems{rxnCounter,1})+1}=pwyNames{y};
+                end
+            end
+            
+            %Add references (pubmed ids)
+            if numel(tline)>12 && strcmp(tline(1:12),'CITATIONS - ')
+                if isempty(metaCycRxns.rxnReferences{rxnCounter})
+                    metaCycRxns.rxnReferences{rxnCounter}=strcat('pubmed/',tline(13:end));
+                else
+                    metaCycRxns.rxnReferences{rxnCounter}=strcat(metaCycRxns.rxnReferences{rxnCounter},';pubmed/',tline(13:end));
+                end
+            end
+            
+            %Add Miriam info (cross-links other database)
+            if numel(tline)>11 && strcmp(tline(1:11),'DBLINKS - (')
+                dblink=tline(12:end);
+                %KEGG reaction id
+                if strcmp(dblink(1:12),'LIGAND-RXN "')
+                    dblink=dblink(13:end);
+                    s=strfind(dblink,'"');
+                    if any(s)
+                        dblink=dblink(1:s-1);
+                    end
+                    
+                    if isstruct(metaCycRxns.rxnMiriams{rxnCounter})
+                        addToIndex=numel(metaCycRxns.rxnMiriams{rxnCounter}.name)+1;
+                    else
+                        addToIndex=1;
+                    end
+                    tempStruct=metaCycRxns.rxnMiriams{rxnCounter};
+                    tempStruct.name{addToIndex,1}='kegg.reaction';
+                    tempStruct.value{addToIndex,1}=dblink;
+                    metaCycRxns.rxnMiriams{rxnCounter}=tempStruct;
+                    
+                    %For generating the rxnLinks structure
+                    dbLinkCounter=dbLinkCounter+1;
+                    rxnLinks.metacyc{dbLinkCounter}=metaCycRxns.rxns{rxnCounter};
+                    rxnLinks.kegg{dbLinkCounter}=dblink;
+                    rxnLinks.check{dbLinkCounter}=strcat(metaCycRxns.rxns{rxnCounter},dblink);
+                end
+                
+                %RHEA reaction id
+                if strcmp(dblink(1:6),'RHEA "')
+                    dblink=dblink(7:end);
+                    s=strfind(dblink,'"');
+                    if any(s)
+                        dblink=dblink(1:s-1);
+                    end
+                    
+                    if isstruct(metaCycRxns.rxnMiriams{rxnCounter})
+                        addToIndex=numel(metaCycRxns.rxnMiriams{rxnCounter}.name)+1;
+                    else
+                        addToIndex=1;
+                    end
+                    tempStruct=metaCycRxns.rxnMiriams{rxnCounter};
+                    tempStruct.name{addToIndex,1}='rhea';
+                    tempStruct.value{addToIndex,1}=dblink;
+                    metaCycRxns.rxnMiriams{rxnCounter}=tempStruct;
+                end
+            end
+            
+            if numel(tline)>21 && strcmp(tline(1:21),'REACTION-DIRECTION - ')
+                rxnDirection=tline(22:end);
+                switch(rxnDirection)
+                    case 'IRREVERSIBLE-LEFT-TO-RIGHT'
+                        metaCycRxns.rev(rxnCounter,1)=0;
+                    case 'LEFT-TO-RIGHT'
+                        metaCycRxns.rev(rxnCounter,1)=0;
+                    case 'PHYSIOL-LEFT-TO-RIGHT'
+                        metaCycRxns.rev(rxnCounter,1)=0;
+                    case 'IRREVERSIBLE-RIGHT-TO-LEFT'
+                        metaCycRxns.rev(rxnCounter,1)=0;
+                        reverse=1;
+                    case 'RIGHT-TO-LEFT'
+                        metaCycRxns.rev(rxnCounter,1)=0;
+                        reverse=1;
+                    case 'PHYSIOL-RIGHT-TO-LEFT'
+                        metaCycRxns.rev(rxnCounter,1)=0;
+                        reverse=1;
+                end
+            end
+            
+            %Add spontaneous
+            if strcmp(tline,'SPONTANEOUS? - T')
+                %metaCycRxns.spontaneous(rxnCounter,1)=1;
+                isSpontaneous(rxnCounter)=true;
+            end
+            
+            %Add mass-balance information
+            if strcmp(tline,'CANNOT-BALANCE? - T')
+                UNBALANCED(rxnCounter)=true;
+            end
+            
+            %Add left side equation
+            if numel(tline)>7 && strcmp(tline(1:7),'LEFT - ')
+                if strcmp(left{rxnCounter},'')
+                    if strcmp(templeft,'')
+                        templeft=tline(8:end); % this is the real first, save to a temp variable
+                    else % count in the coefficient here
+                        if strcmp(coefficient,'')
+                            left{rxnCounter}=templeft;
+                        else
+                            left{rxnCounter}=strcat(coefficient,32,templeft);
+                            coefficient='';
+                        end
+                        templeft=tline(8:end);
+                    end
+                else
+                    if strcmp(coefficient,'')
+                        left{rxnCounter}=strcat(left{rxnCounter},' +',32,templeft);
+                    else
+                        left{rxnCounter}=strcat(left{rxnCounter},' +',32,coefficient,32,templeft);
+                        coefficient='';
+                    end
+                    templeft=tline(8:end);
+                end
+            end
+            
+            %Add right side equation
+            if numel(tline)>8 && strcmp(tline(1:8),'RIGHT - ')
+                if strcmp(right{rxnCounter},'')
+                    if strcmp(tempright,'')
+                        
+                        % a complicated process for the last left
+                        % metabolite
+                        if strcmp(coefficient,'')
+                            if strcmp(left{rxnCounter},'')
+                                left{rxnCounter}=templeft;
+                            else
+                                left{rxnCounter}=strcat(left{rxnCounter},' +',32,templeft);
+                            end
+                            
+                        else
+                            if strcmp(left{rxnCounter},'')
+                                left{rxnCounter}=strcat(coefficient,32,templeft);
+                            else
+                                left{rxnCounter}=strcat(left{rxnCounter},' +',32,coefficient,32,templeft);
+                            end
+                            coefficient='';
+                        end
+                        % process end
+                        
+                        tempright=tline(9:end); % this is the real first, save to a temp variable
+                    else
+                        if strcmp(coefficient,'')
+                            right{rxnCounter}=tempright;
+                        else
+                            right{rxnCounter}=strcat(coefficient,32,tempright);
+                            coefficient='';
+                        end
+                        tempright=tline(9:end);
+                    end
+                else
+                    if strcmp(coefficient,'')
+                        right{rxnCounter}=strcat(right{rxnCounter},' +',32,tempright);
+                    else
+                        right{rxnCounter}=strcat(right{rxnCounter},' +',32,coefficient,32,tempright);
+                        coefficient='';
+                    end
+                    tempright=tline(9:end);
+                end
+                
+            end
+            
+            if numel(tline)>15 && strcmp(tline(1:15),'^COEFFICIENT - ')
+                coefficient=tline(16:end);
+            end
+            
+            %Generate equation at the end of each object section
+            if strcmp(tline,'//')
+                
+                % a complicated process for the last right metabolite,
+                % sub-function is needed here
+                if strcmp(coefficient,'')
+                    if strcmp(right{rxnCounter},'')
+                        right{rxnCounter}=tempright;
+                    else
+                        right{rxnCounter}=strcat(right{rxnCounter},' +',32,tempright);
+                    end
+                    
+                else
+                    if strcmp(right{rxnCounter},'')
+                        right{rxnCounter}=strcat(coefficient,32,tempright);
+                    else
+                        right{rxnCounter}=strcat(right{rxnCounter},' +',32,coefficient,32,tempright);
+                    end
+                    coefficient='';
+                end
+                % process end
+                
+                %get the right direction symbol
+                if metaCycRxns.rev(rxnCounter,1)
+                    symbol = ' <=>';
+                else
+                    symbol = ' =>';
+                end
+                
+                if reverse
+                    metaCycRxns.equations{rxnCounter}=strcat(right{rxnCounter},symbol,32,left{rxnCounter});
+                else
+                    metaCycRxns.equations{rxnCounter}=strcat(left{rxnCounter},symbol,32,right{rxnCounter});
+                end
+                
+                %Final equation check
+                if strcmp(left{rxnCounter},'') || strcmp(right{rxnCounter},'')
+                    rxnCounter=rxnCounter-1;
+                    
+                end
+                
+            end
+            
+        end
         %Close the file
         fclose(fid);
         
         %===
-    		UNBALANCED=metaCycRxns.rxns(UNBALANCED);
-    		isSpontaneous=metaCycRxns.rxns(isSpontaneous);
-    		
+        UNBALANCED=metaCycRxns.rxns(UNBALANCED);
+        isSpontaneous=metaCycRxns.rxns(isSpontaneous);
+        
         %If too much space was allocated, shrink the model
         metaCycRxns.rxns=metaCycRxns.rxns(1:rxnCounter);
         metaCycRxns.rxnNames=metaCycRxns.rxnNames(1:rxnCounter);
@@ -505,7 +509,7 @@ else
         metaCycRxns.subSystems=metaCycRxns.subSystems(1:rxnCounter);
         metaCycRxns.pwys=metaCycRxns.pwys(1:rxnCounter);
         metaCycRxns.rev=metaCycRxns.rev(1:rxnCounter,:);
-        	
+        
         rxnLinks.kegg=rxnLinks.kegg(1:dbLinkCounter);
         rxnLinks.metacyc=rxnLinks.metacyc(1:dbLinkCounter);
         rxnLinks.check=rxnLinks.check(1:dbLinkCounter);
@@ -513,25 +517,25 @@ else
         rxnLinks.kegg=rxnLinks.kegg(index);
         rxnLinks.metacyc=rxnLinks.metacyc(index);
         rxnLinks=rmfield(rxnLinks,'check');
-    
+        
         %Construct the S matrix and list of metabolites
         [S, mets, badRxns]=constructS(metaCycRxns.equations);
         metaCycRxns.S=S;
         metaCycRxns.mets=mets;
-    
+        
         %Add some stuff to get a correct model structure
         metaCycRxns.ub=ones(rxnCounter,1)*1000;
         metaCycRxns.lb=metaCycRxns.rev*-1000;
         metaCycRxns.c=zeros(rxnCounter,1);
         metaCycRxns.b=zeros(numel(metaCycRxns.mets),1);
-    
+        
         %Save the model structure
         save(rxnsFile,'metaCycRxns','rxnLinks','TRANSPORT','UNBALANCED','UNDETERMINED','isSpontaneous');
     end
 end
-    
-%Deal with reactions that are labeled as "TRANSPORT", "UNBALANCED",
-%or "UNDETERMINED" (depending on settings).
+
+%Deal with reactions that are labeled as "TRANSPORT", "UNBALANCED", or
+%"UNDETERMINED" (depending on settings).
 model=metaCycRxns;
 if keepTransportRxns==false
     model=removeReactions(model,intersect(TRANSPORT,model.rxns),true,true);
@@ -544,10 +548,11 @@ if keepUndetermined==false
 end
 end
 
-%Sub function for romving HTML symbols from the names of reaction and pathway
+%Sub function for romving HTML symbols from the names of reaction and
+%pathway
 function newString=removeHTMLcodes(string)
-		string=regexprep(string,'<(\w+)>','');
-    string=regexprep(string,'</(\w+)>','');
-    string=regexprep(string,'[&;]','');
-    newString=string;
+string=regexprep(string,'<(\w+)>','');
+string=regexprep(string,'</(\w+)>','');
+string=regexprep(string,'[&;]','');
+newString=string;
 end
