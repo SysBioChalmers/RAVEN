@@ -849,7 +849,7 @@ for i=1:numel(model.rxns)
 end
 
 %Fix grRules and reconstruct rxnGeneMat
-[grRules,rxnGeneMat] = standardizeGrRules(model,true);
+[grRules,rxnGeneMat] = standardizeGrRules(model,false); %Give detailed output
 model.grRules = grRules;
 model.rxnGeneMat = rxnGeneMat;
 end
