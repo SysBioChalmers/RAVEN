@@ -536,7 +536,7 @@ for i=1:nRxns
 end
 
 %Fix grRules and reconstruct rxnGeneMat
-[grRules,rxnGeneMat] = standardizeGrRules(newModel);
+[grRules,rxnGeneMat] = standardizeGrRules(newModel,true);
 newModel.grRules = grRules;
 newModel.rxnGeneMat = rxnGeneMat;
 end

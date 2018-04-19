@@ -754,7 +754,7 @@ dispEM(EM,false,model.rxns(badRxns));
 model.b=zeros(numel(model.mets),1);
 
 %Fix grRules and reconstruct rxnGeneMat
-[grRules,rxnGeneMat] = standardizeGrRules(model);
+[grRules,rxnGeneMat] = standardizeGrRules(model,true);
 model.grRules = grRules;
 model.rxnGeneMat = rxnGeneMat;
 

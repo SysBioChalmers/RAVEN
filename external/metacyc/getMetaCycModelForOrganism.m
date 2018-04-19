@@ -230,7 +230,7 @@ model.metNames(I)=model.mets(I);
 model=rmfield(model,{'proteins','bitscore','ppos'});
 
 %In the end fix grRules and rxnGeneMat
-[grRules,rxnGeneMat] = standardizeGrRules(model);
+[grRules,rxnGeneMat] = standardizeGrRules(model,true);
 model.grRules = grRules;
 model.rxnGeneMat = rxnGeneMat;
 end

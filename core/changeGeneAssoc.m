@@ -45,7 +45,7 @@ else % Add gene associations, add new gene rules after 'OR'.
     model.rxnGeneMat(idxRxn,idxGene)=1;
 end
 %Fix grRules and reconstruct rxnGeneMat
-[grRules,rxnGeneMat] = standardizeGrRules(model);
+[grRules,rxnGeneMat] = standardizeGrRules(model,true);
 model.grRules = grRules;
 model.rxnGeneMat = rxnGeneMat;
 end

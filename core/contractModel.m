@@ -116,7 +116,7 @@ removedRxns=removedRxns(index);
 
 if isfield(reducedModel,'rxnGeneMat')
     %Fix grRules and reconstruct rxnGeneMat
-    [grRules,rxnGeneMat] = standardizeGrRules(reducedModel);
+    [grRules,rxnGeneMat] = standardizeGrRules(reducedModel,true);
     reducedModel.grRules = grRules;
     reducedModel.rxnGeneMat = rxnGeneMat;
 end

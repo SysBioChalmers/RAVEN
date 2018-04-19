@@ -510,7 +510,7 @@ for i=2:numel(models)
     end
 end
 %Fix grRules and reconstruct rxnGeneMat
-[grRules,rxnGeneMat] = standardizeGrRules(model);
+[grRules,rxnGeneMat] = standardizeGrRules(model,true);
 model.grRules = grRules;
 model.rxnGeneMat = rxnGeneMat;
 end

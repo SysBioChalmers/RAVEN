@@ -819,7 +819,7 @@ if ~isempty(geneNames)
     end;              
     model.genes=geneNames;
     model.grRules=grRules;
-    [grRules,rxnGeneMat] = standardizeGrRules(model);
+    [grRules,rxnGeneMat] = standardizeGrRules(model,true);
     model.grRules = grRules;
     model.rxnGeneMat = rxnGeneMat;
 
@@ -863,7 +863,7 @@ else
        end
        model.genes=genes;
        model.grRules=grRules;
-       [grRules,rxnGeneMat] = standardizeGrRules(model);
+       [grRules,rxnGeneMat] = standardizeGrRules(model,true);
        model.grRules = grRules;
        model.rxnGeneMat = rxnGeneMat;
     end

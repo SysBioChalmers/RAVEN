@@ -734,7 +734,7 @@ end
 outModel.rxnGeneMat(:,I)=[];
 
 %Fix grRules and reconstruct rxnGeneMat
-[grRules,rxnGeneMat] = standardizeGrRules(outModel);
+[grRules,rxnGeneMat] = standardizeGrRules(outModel,true);
 outModel.grRules = grRules;
 outModel.rxnGeneMat = rxnGeneMat;
 end
