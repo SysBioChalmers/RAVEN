@@ -3,7 +3,7 @@
 %
 %   Usage: addJavaPaths()
 %
-%   Rasmus Agren, 2016-02-19
+%   Eduard Kerkhoven, 2018-04-20
 %
 
 function addJavaPaths()
@@ -19,11 +19,12 @@ toAdd={fullfile(poiPATH,'dom4j-1.6.1.jar');
     fullfile(poiPATH,'xmlbeans-2.3.0.jar');
     fullfile(poiPATH,'stax-api-1.0.1.jar')};
 
-%Open the javaclasspath.txt file or create it otherwise
+existingPaths=javaclasspath();
 
-%Get the ones to add
+%Add the paths that are not already present
 for i=1:numel(toAdd)
-    javaaddpath(toAdd{i});
+    if ~any(ismember(existingPaths,toAdd{i}))
+        javaaddpath(toAdd{i});
+    end
 end
-%Throw an error to say that Matlab has to be restarted
 end
