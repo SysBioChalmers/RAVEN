@@ -29,7 +29,7 @@ function newModel=ravenCobraWrapper(model)
 %   Usage: newModel=ravenCobraWrapper(model)
 %
 %   Simonas Marcisauskas, 2018-03-17
-%   Benjamin J. Sanchez, 2018-04-12
+%   Benjamin J. Sanchez, 2018-04-20
 %
 
 if isfield(model,'rules')
@@ -248,7 +248,7 @@ else
     if isfield(model,'rxnECNumbers')
         newModel.eccodes=regexprep(model.rxnECNumbers,'EC|EC:','');
     end;
-    if isfield(model,'rxnKEGGID') || isfield(model,'rxnNotes')
+    if isfield(model,'rxnKEGGID') || isfield(model,'rxnReferences')
         for i=1:numel(model.rxns)
             counter=1;
             newModel.rxnMiriams{i,1}=[];
@@ -259,23 +259,14 @@ else
                     counter=counter+1;
                 end;
             end;
-            if isfield(model,'rxnNotes')
-                if ~isempty(model.rxnNotes{i})
-                    rxnNote=model.rxnNotes{i};
-                    if length(rxnNote) > 5
-                        if strcmp(rxnNote(1:5),'pmid:')     %field starts with pmid
-                            pmids = strrep(rxnNote,'pmid:','');
-                            pmids = strsplit(pmids,'; ');
-                            for j = 1:length(pmids)
-                                newModel.rxnMiriams{i,1}.name{counter,1} = 'pmid';
-                                newModel.rxnMiriams{i,1}.value{counter,1} = pmids{j};
-                                counter=counter+1;
-                            end;
-                        else
-                            newModel.rxnNotes{i}=rxnNote;
-                        end;
-                    else
-                        newModel.rxnNotes{i}=rxnNote;
+            if isfield(model,'rxnReferences')
+                if ~isempty(model.rxnReferences{i})
+                    pmids = model.rxnReferences{i};
+                    pmids = strsplit(pmids,'; ');
+                    for j = 1:length(pmids)
+                        newModel.rxnMiriams{i,1}.name{counter,1} = 'pmid';
+                        newModel.rxnMiriams{i,1}.value{counter,1} = pmids{j};
+                        counter=counter+1;
                     end;
                 end;
             end;
