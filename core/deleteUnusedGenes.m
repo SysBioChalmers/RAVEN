@@ -10,6 +10,7 @@ function reducedModel=deleteUnusedGenes(model)
 %
 %   Simonas Marcisauskas, 2017-09-12
 %
+
 reducedModel=model;
 
 %Find all genes that are not used
@@ -24,18 +25,18 @@ disp('Number of unused genes removed from the model:')
 disp(numel(toKeep(~toKeep)))
 
 if isfield(reducedModel,'geneShortNames')
-   reducedModel.geneShortNames=reducedModel.geneShortNames(toKeep);
+    reducedModel.geneShortNames=reducedModel.geneShortNames(toKeep);
 end
 
 if isfield(reducedModel,'geneMiriams')
-   reducedModel.geneMiriams=reducedModel.geneMiriams(toKeep);
+    reducedModel.geneMiriams=reducedModel.geneMiriams(toKeep);
 end
 
 if isfield(reducedModel,'geneFrom')
-   reducedModel.geneFrom=reducedModel.geneFrom(toKeep);
+    reducedModel.geneFrom=reducedModel.geneFrom(toKeep);
 end
 
 if isfield(reducedModel,'geneComps')
-   reducedModel.geneComps=reducedModel.geneComps(toKeep);
+    reducedModel.geneComps=reducedModel.geneComps(toKeep);
 end
 end

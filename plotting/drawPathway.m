@@ -67,7 +67,7 @@ compRec=[];
 
 %Check if it should plot expression data
 if isfield(pathway.listOfSpecies(1),'orfs')
-	drawExpression=true;
+    drawExpression=true;
 else
     drawExpression=false;
 end
@@ -113,11 +113,11 @@ for i=1:length(pathway.listOfReactions)
         y(1)=middle(2);
         x(2)=pathway.listOfReactions(i).componentList(j).anchor(1);
         y(2)=pathway.listOfReactions(i).componentList(j).anchor(2);
-
+        
         %Check to see if a line or an arrow should be drawn
         if strcmpi(pathway.listOfReactions(i).componentList(j).toArrow,'true')
             rxnArrows=[rxnArrows;x(1) y(1) x(2) y(2)];
-
+            
             %Draw a red arrow if it's a base product
             if strcmpi(pathway.listOfReactions(i).componentList(j).baseProduct,'true')
                 rxnArrowsColor=[rxnArrowsColor;1 0 0];
@@ -143,7 +143,7 @@ for i=1:length(pathway.listOfSpecies)
     %Species should be represented with ellipses and enzymes with
     %rectangles
     position=[pathway.listOfSpecies(i).x pathway.listOfSpecies(i).y...
-            pathway.listOfSpecies(i).w pathway.listOfSpecies(i).h];
+        pathway.listOfSpecies(i).w pathway.listOfSpecies(i).h];
     if strcmpi(pathway.listOfSpecies(i).type, 'SIMPLE_MOLECULE')
         metRec=[metRec;position];
         metText=[metText;pathway.listOfSpecies(i).name];
@@ -167,7 +167,7 @@ for i=1:length(pathway.listOfSpecies)
                 end
             end
         end
-
+        
         %If the reaction is associated with a sign change and either of the
         %fluxes are larger than the cutoff value, then use a different frame
         edgeColor=[0 0 0];
@@ -178,14 +178,14 @@ for i=1:length(pathway.listOfSpecies)
                 end
             end
         end
-
+        
         rxnFace=[rxnFace;faceColor];
         rxnEdge=[rxnEdge;edgeColor];
-
+        
         %Draw smaller boxes if expression data should also be printed
         if drawExpression==true
             rxnRec=[rxnRec;position-[0 0 40 0]];
-
+            
             %Draw rectangles representing each gene. Max 8 circles are used.
             %Their width is hardcoded and so is the width of the area where
             %they are printed (40)
@@ -193,18 +193,18 @@ for i=1:length(pathway.listOfSpecies)
                 %Calculate the position of the dots. 4 in each column.
                 firstFourX=pathway.listOfSpecies(i).x+pathway.listOfSpecies(i).w-34;
                 fourY=pathway.listOfSpecies(i).y:pathway.listOfSpecies(i).h/4:pathway.listOfSpecies(i).y+pathway.listOfSpecies(i).h;
-
+                
                 nExp=numel(pathway.listOfSpecies(i).expA);
-
+                
                 %One log10-fold change is total up or down
                 colorCodes=getColorCodes(pathway.listOfSpecies(i).expA, pathway.listOfSpecies(i).expB);
-
+                
                 %Plot the circles
                 for j=1:min(nExp,4)
                     expRec=[expRec;firstFourX fourY(j) 16 pathway.listOfSpecies(i).h/4];
                     expFace=[expFace;colorCodes{j}];
                 end
-
+                
                 %If a second row is needed
                 if nExp>4
                     secondFourX=pathway.listOfSpecies(i).x+pathway.listOfSpecies(i).w-16;
@@ -217,20 +217,20 @@ for i=1:length(pathway.listOfSpecies)
         else
             rxnRec=[rxnRec;position];
         end
-
+        
         %If no fluxes are specified then should only the name be printed.
         %Flux values should only be printed if at least one of the fluxes
         %is above the cutoff value
         textToPrint={};
-
+        
         %NOTE:  This is done since I know that I have names including '_' which is a reserved
         %       character in LaTeX. This should be done more systematically
-
+        
         %NOTE:  The notation used means that only flux values with with less than
         %       nine characters can be used
-
+        
         textToPrint{1,1}=strrep(pathway.listOfSpecies(i).name,'_','\_');
-
+        
         %Check that the fluxes are specified
         %NOTE: Should you only print if there are two fluxes?
         if isfield(pathway.listOfSpecies(i),'flux') && isfield(pathway.listOfSpecies(i),'referenceFlux')
@@ -242,11 +242,11 @@ for i=1:length(pathway.listOfSpecies)
                 end
             end
         end
-
+        
         xPos=ones(numel(textToPrint),1)*(position(1)+3);
         distance=position(4)/(numel(textToPrint)+1);
         yPos=position(2)+distance:distance:(position(2)+position(4)-distance);
-
+        
         rxnText=[rxnText;textToPrint];
         rxnX=[rxnX;xPos];
         rxnY=[rxnY;yPos'];
@@ -280,7 +280,7 @@ line(enzLinesX',enzLinesY','marker','o','markeredgecolor',[0 0 0],'markersize',0
 %Metabolite rectangles
 for i=1:size(metRec,1)
     rectangle('edgecolor', [0 0 0], 'facecolor', [1 1 0.78], 'curvature', [0.8 0.8],...
-                'position',metRec(i,:),'linewidth',0.1);
+        'position',metRec(i,:),'linewidth',0.1);
 end
 
 %Reaction rectangles
@@ -356,8 +356,8 @@ if ~isempty( varargin )
     for c = 1:floor(length(varargin)/2)
         switch lower(varargin{c*2-1})
             % head properties - do nothing, since handled above already
-        case 'headheight',alpha = max( min( varargin{c*2},1 ),0.01 );
-        case 'headwidth', beta = max( min( varargin{c*2},1 ),0.01 );
+            case 'headheight',alpha = max( min( varargin{c*2},1 ),0.01 );
+            case 'headwidth', beta = max( min( varargin{c*2},1 ),0.01 );
         end
     end
 end
@@ -395,25 +395,25 @@ handles = [h1 h2];
 if ~isempty( varargin )
     for c = 1:floor(length(varargin)/2)
         switch lower(varargin{c*2-1})
-
-         % only patch properties
-        case 'edgecolor',   set( h2,'EdgeColor',varargin{c*2} );
-        case 'facecolor',   set( h2,'FaceColor',varargin{c*2} );
-        case 'facelighting',set( h2,'FaceLighting',varargin{c*2} );
-        case 'edgelighting',set( h2,'EdgeLighting',varargin{c*2} );
-
-        % only line properties
-        case 'color'    , set( h1,'Color',varargin{c*2} );
-
-        % shared properties
-        case 'linestyle', set( handles,'LineStyle',varargin{c*2} );
-        case 'linewidth', set( handles,'LineWidth',varargin{c*2} );
-        case 'parent',    set( handles,'parent',varargin{c*2} );
-
-        % head properties - do nothing, since handled above already
-        case 'headwidth',
-        case 'headheight',
-
+            
+            % only patch properties
+            case 'edgecolor',   set( h2,'EdgeColor',varargin{c*2} );
+            case 'facecolor',   set( h2,'FaceColor',varargin{c*2} );
+            case 'facelighting',set( h2,'FaceLighting',varargin{c*2} );
+            case 'edgelighting',set( h2,'EdgeLighting',varargin{c*2} );
+                
+                % only line properties
+            case 'color'    , set( h1,'Color',varargin{c*2} );
+                
+                % shared properties
+            case 'linestyle', set( handles,'LineStyle',varargin{c*2} );
+            case 'linewidth', set( handles,'LineWidth',varargin{c*2} );
+            case 'parent',    set( handles,'parent',varargin{c*2} );
+                
+                % head properties - do nothing, since handled above already
+            case 'headwidth',
+            case 'headheight',
+                
         end
     end
 end

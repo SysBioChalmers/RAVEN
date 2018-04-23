@@ -47,51 +47,51 @@ if isfield(model,'eccodes')
 end
 if isfield(model,'metNames')
     model.metNames=cleanBadChars(model.metNames);
-end       
+end
 if isfield(model,'genes')
     model.genes=cleanBadChars(model.genes);
-end    
+end
 if isfield(model,'geneShortName')
     model.geneShortName=cleanBadChars(model.geneShortName);
-end 
+end
 if isfield(model,'inchis')
     model.inchis=cleanBadChars(model.inchis);
-end   
+end
 if isfield(model,'metFormulas')
     model.metFormulas=cleanBadChars(model.metFormulas);
-end   
+end
 
 %These fields are cell arrays of structures
 if isfield(model,'metMiriams')
     for i=1:numel(model.metMiriams)
-       if ~isempty(model.metMiriams{i})
-           model.metMiriams{i}.name=cleanBadChars(model.metMiriams{i}.name);
-           model.metMiriams{i}.value=cleanBadChars(model.metMiriams{i}.value);
-       end
+        if ~isempty(model.metMiriams{i})
+            model.metMiriams{i}.name=cleanBadChars(model.metMiriams{i}.name);
+            model.metMiriams{i}.value=cleanBadChars(model.metMiriams{i}.value);
+        end
     end
 end
 if isfield(model,'rxnMiriams')
     for i=1:numel(model.rxnMiriams)
-       if ~isempty(model.rxnMiriams{i})
-           model.rxnMiriams{i}.name=cleanBadChars(model.rxnMiriams{i}.name);
-           model.rxnMiriams{i}.value=cleanBadChars(model.rxnMiriams{i}.value);
-       end
+        if ~isempty(model.rxnMiriams{i})
+            model.rxnMiriams{i}.name=cleanBadChars(model.rxnMiriams{i}.name);
+            model.rxnMiriams{i}.value=cleanBadChars(model.rxnMiriams{i}.value);
+        end
     end
 end
 if isfield(model,'compMiriams')
     for i=1:numel(model.compMiriams)
-       if ~isempty(model.compMiriams{i})
-           model.compMiriams{i}.name=cleanBadChars(model.compMiriams{i}.name);
-           model.compMiriams{i}.value=cleanBadChars(model.compMiriams{i}.value);
-       end
+        if ~isempty(model.compMiriams{i})
+            model.compMiriams{i}.name=cleanBadChars(model.compMiriams{i}.name);
+            model.compMiriams{i}.value=cleanBadChars(model.compMiriams{i}.value);
+        end
     end
 end
 if isfield(model,'geneMiriams')
     for i=1:numel(model.geneMiriams)
-       if ~isempty(model.geneMiriams{i})
-           model.geneMiriams{i}.name=cleanBadChars(model.geneMiriams{i}.name);
-           model.geneMiriams{i}.value=cleanBadChars(model.geneMiriams{i}.value);
-       end
+        if ~isempty(model.geneMiriams{i})
+            model.geneMiriams{i}.name=cleanBadChars(model.geneMiriams{i}.name);
+            model.geneMiriams{i}.value=cleanBadChars(model.geneMiriams{i}.value);
+        end
     end
 end
 end
