@@ -851,9 +851,9 @@ else
        %If fbc_geneProduct exists, follow the specified gene order, such
        %that matching geneShortNames in function below will work.
        if isfield(modelSBML,'fbc_geneProduct')
-            genes={modelSBML.fbc_geneProduct.fbc_id};
+           genes={modelSBML.fbc_geneProduct.fbc_id};
        else
-            genes=getGeneList(grRules);
+           genes=getGeneList(grRules);
        end
        if strcmpi(genes{1}(1:2),'G_')
            genes=regexprep(genes,'^G_','');
