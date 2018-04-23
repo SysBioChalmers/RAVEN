@@ -134,9 +134,9 @@ if isempty(modelSBML)
 end
 
 % Remove the preceding strings for reactions, compartments and
-% reactants/products in 'reaction' field. The strings for
-% metabolites, genes and complexes are not removed, as we will need them
-% later to identify them from 'species' field;
+% reactants/products in 'reaction' field. The strings for metabolites,
+% genes and complexes are not removed, as we will need them later to
+% identify them from 'species' field;
 for i=1:numel(modelSBML.reaction)
     modelSBML.reaction(i).name=regexprep(modelSBML.reaction(i).name,'^R_','');
     modelSBML.reaction(i).id=regexprep(modelSBML.reaction(i).id,'^R_','');
@@ -247,10 +247,9 @@ for i=1:numel(modelSBML.species)
             metaboliteUnconstrained(numel(metaboliteUnconstrained)+1,1)=modelSBML.species(i).boundaryCondition;
             
             %For each metabolite retrieve the formula and the InChI code if
-            %available
-            %First add the InChI code and the formula from the InChI. This
-            %allows for overwriting the formula by setting the actual formula
-            %field
+            %available First add the InChI code and the formula from the
+            %InChI. This allows for overwriting the formula by setting the
+            %actual formula field
             if ~isempty(modelSBML.species(i).annotation)
                 %Get the formula if available
                 startString='>InChI=';
@@ -277,8 +276,8 @@ for i=1:numel(modelSBML.species)
                             formula(compositionIndexes(1)+1:compositionIndexes(2)-1);
                     else
                         if numel(compositionIndexes)==1
-                            %Probably a simple molecule which can have only one
-                            %conformation
+                            %Probably a simple molecule which can have only
+                            %one conformation
                             metaboliteFormula{numel(metaboliteFormula)+1,1}=...
                                 formula(compositionIndexes(1)+1:numel(formula));
                         else
@@ -288,7 +287,8 @@ for i=1:numel(modelSBML.species)
                 elseif isfield(modelSBML.species(i),'fbc_chemicalFormula')
                     metaboliteInChI{numel(metaboliteInChI)+1,1}='';
                     if ~isempty(modelSBML.species(i).fbc_chemicalFormula)
-                        % Cannot extract InChi from formula, so remains empty.
+                        % Cannot extract InChi from formula, so remains
+                        % empty.
                         metaboliteFormula{numel(metaboliteFormula)+1,1}=modelSBML.species(i).fbc_chemicalFormula;
                     else
                         metaboliteFormula{numel(metaboliteFormula)+1,1}='';
@@ -347,8 +347,8 @@ for i=1:numel(modelSBML.species)
             metaboliteFormula{numel(metaboliteFormula)+1,1}='';
         end
         
-        %The old COBRA version sometimes has composition information in
-        %the notes instead
+        %The old COBRA version sometimes has composition information in the
+        %notes instead
         if isfield(modelSBML.species(i),'notes')
             metaboliteFormula{numel(metaboliteFormula)+1,1}=parseNote(modelSBML.species(i).notes,'FORMULA');
         end;
@@ -397,8 +397,7 @@ for i=1:numel(modelSBML.species)
             else
                 metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
             end
-            %Additional information from FBC format
-            %Chemical formula
+            %Additional information from FBC format Chemical formula
             if isfield(modelSBML.species(i),'fbc_chemicalFormula')
                 if ~isempty(modelSBML.species(i).fbc_chemicalFormula)
                     metaboliteFormula{numel(metaboliteFormula),1}=modelSBML.species(i).fbc_chemicalFormula;
@@ -442,10 +441,10 @@ end
 
 for i=1:numel(modelSBML.reaction)
     
-    %Check that the reaction doesn't produce a complex and nothing else.
-    %If so, then jump to the next reaction. This is because I get the
-    %genes for complexes from the names and not from the reactions that
-    %create them. This only applies to the non-COBRA format.
+    %Check that the reaction doesn't produce a complex and nothing else. If
+    %so, then jump to the next reaction. This is because I get the genes
+    %for complexes from the names and not from the reactions that create
+    %them. This only applies to the non-COBRA format.
     if numel(modelSBML.reaction(i).product)==1
         if length(modelSBML.reaction(i).product(1).species)>=3
             if strcmp(modelSBML.reaction(i).product(1).species(1:3),'Cx_')==true
@@ -462,9 +461,9 @@ for i=1:numel(modelSBML.reaction)
     reactionIDs{counter}=modelSBML.reaction(i).id;
     reactionReversibility(counter)=modelSBML.reaction(i).reversible;
     
-    %If model is FBC, first get parameter of bound and then replace it
-    %with the correct value. Probably faster with replace(), but this was
-    %only introduced in Matlab R2016b
+    %If model is FBC, first get parameter of bound and then replace it with
+    %the correct value. Probably faster with replace(), but this was only
+    %introduced in Matlab R2016b
     if isfield(modelSBML.reaction(i),'fbc_lowerFluxBound')
         lb=modelSBML.reaction(i).fbc_lowerFluxBound;
         ub=modelSBML.reaction(i).fbc_upperFluxBound;
@@ -498,8 +497,8 @@ for i=1:numel(modelSBML.reaction)
                 if ~isempty(modifier)
                     if strcmpi(modifier(1:2),'E_')
                         index=find(strcmp(modifier,geneIDs));
-                        %This should be unique and in the geneIDs list, otherwise
-                        %something is wrong
+                        %This should be unique and in the geneIDs list,
+                        %otherwise something is wrong
                         if numel(index)~=1
                             EM=['Could not get the gene association data from reaction ' reactionIDs{i}];
                             dispEM(EM);
@@ -511,8 +510,8 @@ for i=1:numel(modelSBML.reaction)
                         end
                     elseif strcmp(modifier(1:2),'s_')
                         index=find(strcmp(modifier,metaboliteIDs));
-                        %This should be unique and in the geneIDs list, otherwise
-                        %something is wrong
+                        %This should be unique and in the geneIDs list,
+                        %otherwise something is wrong
                         if numel(index)~=1
                             EM=['Could not get the gene association data from reaction ' reactionIDs{i}];
                             dispEM(EM);
@@ -559,8 +558,8 @@ for i=1:numel(modelSBML.reaction)
     end;
     
     if ~isempty(geneAssociation)
-        %This adds the grRules. The gene list and rxnGeneMat
-        %are created later
+        %This adds the grRules. The gene list and rxnGeneMat are created
+        %later
         grRules{counter}=geneAssociation;
     end;
     
@@ -830,8 +829,8 @@ else
     if ~isempty(grRules)
         %In the non-COBRA version genes are surrounded by parenthesis even
         %if they are the only gene. Also, only single spaces are used
-        %between genes. I'm pretty sure this is compatible with COBRA Toolbox so I
-        %change it to be the same here.
+        %between genes. I'm pretty sure this is compatible with COBRA
+        %Toolbox so I change it to be the same here.
         grRules=strrep(grRules,'  ',' ');
         grRules=strrep(grRules,'( ','(');
         grRules=strrep(grRules,' )',')');
