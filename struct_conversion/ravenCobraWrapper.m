@@ -161,7 +161,7 @@ if isRaven
         newModel.rxnGeneMat=model.rxnGeneMat;
     end;
     if isfield(model,'grRules')
-        [grRules, rxnGeneMat] = standardizeGrRules(model);
+        [grRules, rxnGeneMat] = standardizeGrRules(model,true);
         newModel.grRules      = grRules;
         %Incorporate a rxnGeneMat consistent with standardized grRules
         newModel.rxnGeneMat   = rxnGeneMat;
@@ -233,12 +233,12 @@ else
         newModel.rxnNames=model.rxnNames;
     end;
     if isfield(model,'grRules')
-        [grRules,rxnGeneMat] = standardizeGrRules(model);
+        [grRules,rxnGeneMat] = standardizeGrRules(model,true);
         newModel.grRules     = grRules;
         newModel.rxnGeneMat  = rxnGeneMat;
     else
         model.grRules        = rulesTogrrules(model);
-        [grRules,rxnGeneMat] = standardizeGrRules(model);
+        [grRules,rxnGeneMat] = standardizeGrRules(model,true);
         newModel.grRules     = grRules;
         newModel.rxnGeneMat  = rxnGeneMat;
     end;

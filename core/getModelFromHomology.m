@@ -424,8 +424,8 @@ for i=1:numel(models)
     if isfield(models{useOrderIndexes(i)},'geneComps')
         geneComps=models{useOrderIndexes(i)}.geneComps(1);
         models{useOrderIndexes(i)}.geneComps=zeros(numel(models{useOrderIndexes(i)}.genes),1);
-        % Assume that all genes are in the same compartment, and this
-        % compartment is specified for the first gene
+        %Assume that all genes are in the same compartment, and this
+        %compartment is specified for the first gene
         models{useOrderIndexes(i)}.geneComps(:)=geneComps;
     end
 end
@@ -449,9 +449,11 @@ draftModel.rxnNotes=cell(length(draftModel.rxns),1);
 draftModel.rxnNotes(:)={'Reaction included by getModelFromHomology'};
 draftModel.rxnConfidenceScores=NaN(length(draftModel.rxns),1);
 draftModel.rxnConfidenceScores(:)=2;
-% Gene short names are often different between species, safer not to
-% include them.
+%Gene short names are often different between species, safer not to
+%include them.
 if isfield(draftModel,'geneShortNames');
     draftModel = rmfield(draftModel,'geneShortNames');
 end
+%Standardize grRules and notify if problematic grRules are found
+[draftModel.grRules,draftModel.rxnGeneMat] = standardizeGrRules(draftModel,false);
 end

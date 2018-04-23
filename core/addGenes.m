@@ -123,7 +123,7 @@ end
 
 if isfield(newModel,'rxnGeneMat')
     %Fix grRules and reconstruct rxnGeneMat
-    [grRules,rxnGeneMat] = standardizeGrRules(newModel);
+    [grRules,rxnGeneMat] = standardizeGrRules(newModel,true);
     newModel.grRules = grRules;
     newModel.rxnGeneMat = rxnGeneMat;
 end

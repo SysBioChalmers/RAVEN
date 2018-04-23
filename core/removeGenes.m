@@ -34,7 +34,7 @@ end
 
 %Format grRules and rxnGeneMatrix:
 if standardizeRules
-    [grRules,rxnGeneMat] = standardizeGrRules(model);
+    [grRules,rxnGeneMat] = standardizeGrRules(model,true);
     model.grRules = grRules;
     model.rxnGeneMat = rxnGeneMat;
 end
