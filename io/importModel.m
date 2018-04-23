@@ -267,10 +267,10 @@ for i=1:numel(modelSBML.species)
                     formula=modelSBML.species(i).annotation(formStart+numel(startString):formEnd(formEndIndex)-1);
                     metaboliteInChI{numel(metaboliteInChI)+1,1}=formula;
                     
-                    %The composition is most often present between the first
-                    %and second "/" in the model. In some simple molecules,
-                    %such as salts, there is no second "/". The formula is then
-                    %assumed to be to the end of the string
+                    %The composition is most often present between the
+                    %first and second "/" in the model. In some simple
+                    %molecules, such as salts, there is no second "/". The
+                    %formula is then assumed to be to the end of the string
                     compositionIndexes=strfind(formula,'/');
                     if numel(compositionIndexes)>1
                         metaboliteFormula{numel(metaboliteFormula)+1,1}=...
