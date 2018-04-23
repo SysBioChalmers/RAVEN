@@ -24,7 +24,7 @@
 <div class="box"><strong>addSpontaneousRxns</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
-<div class="box"><strong>function spontaneousRxnList=addSpontaneousRxns(rxnList, metList) </strong></div>
+<div class="box"><strong>function [spontaneousRxnList, pathwayID]=addSpontaneousRxns(rxnList, metList) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> addSpontaneousRxns
@@ -37,6 +37,8 @@
 
    spontaneousRxnList   reterieved spontaneous reactions associated to
                         the queried MetaCyc reactions and metabolites
+
+   pathwayID            the cell array of relevant pathways
 
    Usage: spontaneousRxnList=addSpontaneousRxns(rxnList, metList)
 
@@ -55,7 +57,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function spontaneousRxnList=addSpontaneousRxns(rxnList, metList)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [spontaneousRxnList, pathwayID]=addSpontaneousRxns(rxnList, metList)</a>
 0002 <span class="comment">% addSpontaneousRxns</span>
 0003 <span class="comment">%   Retrieve spontaneous reactions based on the pathway-spontaneousRxn</span>
 0004 <span class="comment">%   associations curated by the MetaCyc database</span>
@@ -67,84 +69,95 @@ This function is called by:
 0010 <span class="comment">%   spontaneousRxnList   reterieved spontaneous reactions associated to</span>
 0011 <span class="comment">%                        the queried MetaCyc reactions and metabolites</span>
 0012 <span class="comment">%</span>
-0013 <span class="comment">%   Usage: spontaneousRxnList=addSpontaneousRxns(rxnList, metList)</span>
+0013 <span class="comment">%   pathwayID            the cell array of relevant pathways</span>
 0014 <span class="comment">%</span>
-0015 <span class="comment">%   Hao Wang, 2018-03-01</span>
+0015 <span class="comment">%   Usage: spontaneousRxnList=addSpontaneousRxns(rxnList, metList)</span>
 0016 <span class="comment">%</span>
-0017 
-0018 <span class="keyword">if</span> nargin&lt;2
-0019     disp(<span class="string">'Missing input arguments'</span>);
-0020     <span class="keyword">return</span>;
-0021 <span class="keyword">end</span>
-0022 
-0023 rxnList=unique(rxnList);
+0017 <span class="comment">%   Hao Wang, 2018-03-01</span>
+0018 <span class="comment">%</span>
+0019 
+0020 <span class="keyword">if</span> nargin&lt;2
+0021     disp(<span class="string">'Missing input arguments'</span>);
+0022     <span class="keyword">return</span>;
+0023 <span class="keyword">end</span>
 0024 
-0025 <span class="comment">% Create the matrix of MetaCyc pathways and spontaneous reactions</span>
-0026 load(<span class="string">'metaCycRxns.mat'</span>);
-0027 pathways={};
-0028 <span class="keyword">for</span> i=1:numel(metaCycRxns.rxns)
-0029     <span class="keyword">if</span> ~isempty(metaCycRxns.pwys{i})
-0030         pathways=[pathways;transpose(strsplit(metaCycRxns.pwys{i},<span class="string">';'</span>))];
-0031     <span class="keyword">end</span>
-0032 <span class="keyword">end</span>
-0033 pathways=unique(pathways);
-0034 
-0035 <span class="comment">% Genearte the matirx, row: spontaneousRxns, column: pathways</span>
-0036 sprxnPwyMat=zeros(numel(isSpontaneous),numel(pathways));
-0037 <span class="keyword">for</span> i=1:numel(isSpontaneous)
-0038     [a, b]=ismember(isSpontaneous{i},metaCycRxns.rxns);
-0039     <span class="keyword">if</span> ~isempty(metaCycRxns.pwys{b})
-0040         [crap, indexes]=ismember(strsplit(metaCycRxns.pwys{b},<span class="string">';'</span>),pathways);
-0041         sprxnPwyMat(i,indexes)=1;   
-0042     <span class="keyword">end</span>
-0043 <span class="keyword">end</span>
-0044 
-0045 <span class="comment">% Go through the rxnList and obtain relevant pathways</span>
-0046 pwys={};
-0047 <span class="keyword">for</span> i=1:numel(rxnList)
-0048     [a, b]=ismember(rxnList{i},metaCycRxns.rxns);
-0049     <span class="keyword">if</span> a &amp;&amp; ~isempty(metaCycRxns.pwys{b})
-0050         pwys=[pwys;transpose(strsplit(metaCycRxns.pwys{b},<span class="string">';'</span>))];
-0051     <span class="keyword">end</span>
-0052 <span class="keyword">end</span>
-0053 pwys=unique(pwys);
-0054 
-0055 <span class="comment">% Get spontaneous reactions associated with the pathways</span>
-0056 hits=[];
-0057 <span class="keyword">for</span> i=1:numel(pwys)
-0058     [a, b]=ismember(pwys{i},pathways);
-0059     <span class="keyword">if</span> ~isempty(find(sprxnPwyMat(:,b)))
-0060         hits=[hits;find(sprxnPwyMat(:,b))];
-0061     <span class="keyword">end</span>        
-0062 <span class="keyword">end</span>
-0063 spontaneousRxnList=isSpontaneous(unique(hits));
-0064 
-0065 <span class="comment">% Check if the reactants/products are included in metList</span>
-0066 <span class="keyword">for</span> i=1:numel(spontaneousRxnList)
-0067     [a, b]=ismember(spontaneousRxnList{i},metaCycRxns.rxns);
-0068 
-0069     <span class="comment">%Obtain the reactants and products</span>
-0070     reactants=all(ismember(metaCycRxns.mets(find(metaCycRxns.S(:,b)==-1)),metList));
-0071     products=all(ismember(metaCycRxns.mets(find(metaCycRxns.S(:,b)==1)),metList));
-0072 
-0073     <span class="comment">%Either reactants or products should be present for reversible reaction</span>
-0074     <span class="keyword">if</span> metaCycRxns.rev(b)==1
-0075         <span class="keyword">if</span> ~(reactants || products)
-0076             spontaneousRxnList{i}=[];
-0077         <span class="keyword">end</span>
-0078     <span class="comment">%Reactants should be present for irreversible reactions</span>
-0079     <span class="keyword">else</span>
-0080         <span class="keyword">if</span> ~reactants
-0081             spontaneousRxnList{i}=[];
-0082         <span class="keyword">end</span>    
-0083     <span class="keyword">end</span>
-0084 <span class="keyword">end</span>
-0085 spontaneousRxnList=spontaneousRxnList(~cellfun(@isempty, spontaneousRxnList));
-0086 
-0087 <span class="comment">% Remove the spontaneousRxns that have already been included</span>
-0088 spontaneousRxnList=setdiff(spontaneousRxnList,rxnList);
-0089 
-0090 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 14-Mar-2018 21:08:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0025 rxnList=unique(rxnList);
+0026 
+0027 <span class="comment">% Create the matrix of MetaCyc pathways and spontaneous reactions</span>
+0028 load(<span class="string">'metaCycRxns.mat'</span>);
+0029 pathways={};
+0030 <span class="keyword">for</span> i=1:numel(metaCycRxns.rxns)
+0031     <span class="keyword">if</span> ~isempty(metaCycRxns.pwys{i})
+0032         pathways=[pathways;transpose(strsplit(metaCycRxns.pwys{i},<span class="string">';'</span>))];
+0033     <span class="keyword">end</span>
+0034 <span class="keyword">end</span>
+0035 pathways=unique(pathways);
+0036 
+0037 <span class="comment">% Genearte the matirx, row: spontaneousRxns, column: pathways</span>
+0038 sprxnPwyMat=zeros(numel(isSpontaneous),numel(pathways));
+0039 <span class="keyword">for</span> i=1:numel(isSpontaneous)
+0040     [a, b]=ismember(isSpontaneous{i},metaCycRxns.rxns);
+0041     <span class="keyword">if</span> ~isempty(metaCycRxns.pwys{b})
+0042         [crap, indexes]=ismember(strsplit(metaCycRxns.pwys{b},<span class="string">';'</span>),pathways);
+0043         sprxnPwyMat(i,indexes)=1;
+0044     <span class="keyword">end</span>
+0045 <span class="keyword">end</span>
+0046 
+0047 <span class="comment">% Go through the rxnList to obtain relevant pathways</span>
+0048 pwys={};
+0049 <span class="keyword">for</span> i=1:numel(rxnList)
+0050     [a, b]=ismember(rxnList{i},metaCycRxns.rxns);
+0051     <span class="keyword">if</span> a &amp;&amp; ~isempty(metaCycRxns.pwys{b})
+0052         pwys=[pwys;transpose(strsplit(metaCycRxns.pwys{b},<span class="string">';'</span>))];
+0053     <span class="keyword">end</span>
+0054 <span class="keyword">end</span>
+0055 pwys=unique(pwys);
+0056 
+0057 <span class="comment">% Get spontaneous reactions associated with the pathways</span>
+0058 hits=[];
+0059 <span class="keyword">for</span> i=1:numel(pwys)
+0060     [a, b]=ismember(pwys{i},pathways);
+0061     <span class="keyword">if</span> ~isempty(find(sprxnPwyMat(:,b)))
+0062         hits=[hits;find(sprxnPwyMat(:,b))];
+0063     <span class="keyword">end</span>
+0064 <span class="keyword">end</span>
+0065 spontaneousRxnList=isSpontaneous(unique(hits));
+0066 
+0067 <span class="comment">% Check if the reactants/products are included in metList</span>
+0068 <span class="keyword">for</span> i=1:numel(spontaneousRxnList)
+0069     [a, b]=ismember(spontaneousRxnList{i},metaCycRxns.rxns);
+0070     
+0071     <span class="comment">%Obtain the reactants and products</span>
+0072     reactants=all(ismember(metaCycRxns.mets(find(metaCycRxns.S(:,b)==-1)),metList));
+0073     products=all(ismember(metaCycRxns.mets(find(metaCycRxns.S(:,b)==1)),metList));
+0074     
+0075     <span class="comment">%Either reactants or products should be present for reversible reaction</span>
+0076     <span class="keyword">if</span> metaCycRxns.rev(b)==1
+0077         <span class="keyword">if</span> ~(reactants || products)
+0078             spontaneousRxnList{i}=[];
+0079         <span class="keyword">end</span>
+0080         <span class="comment">%Reactants should be present for irreversible reactions</span>
+0081     <span class="keyword">else</span>
+0082         <span class="keyword">if</span> ~reactants
+0083             spontaneousRxnList{i}=[];
+0084         <span class="keyword">end</span>
+0085     <span class="keyword">end</span>
+0086 <span class="keyword">end</span>
+0087 spontaneousRxnList=spontaneousRxnList(~cellfun(@isempty, spontaneousRxnList));
+0088 
+0089 <span class="comment">% Remove the spontaneousRxns that have already been included</span>
+0090 spontaneousRxnList=setdiff(spontaneousRxnList,rxnList);
+0091 
+0092 <span class="comment">% Generate the cell array of relevant pathways</span>
+0093 pathwayID=cell(numel(spontaneousRxnList),1);
+0094 <span class="keyword">for</span> i=1:numel(spontaneousRxnList)
+0095     index=find(strcmp(spontaneousRxnList{i},isSpontaneous));
+0096     <span class="comment">% locate the relevant pathways</span>
+0097     relevantpwys=intersect(pathways(find(sprxnPwyMat(index,:))),pwys);
+0098     pathwayID{i}=strjoin(relevantpwys,<span class="string">';'</span>);
+0099 <span class="keyword">end</span>
+0100 
+0101 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 23-Apr-2018 15:56:33 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
