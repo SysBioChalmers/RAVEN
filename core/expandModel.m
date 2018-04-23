@@ -38,21 +38,21 @@ if any(rxnsToExpand)
             EM=['Reaction ' model.rxns{rxnsToExpand(i)} ' contains nested and/or-relations. Large risk of errors'];
             dispEM(EM,false);
         end
-
+        
         %Get rid of all '(' and ')' since I'm not looking at complex stuff
         %anyways
         geneString=model.grRules{rxnsToExpand(i)};
         geneString=strrep(geneString,'(','');
         geneString=strrep(geneString,')','');
         geneString=strrep(geneString,' or ',';');
-
+        
         %Split the string into gene names
         geneNames=regexp(geneString,';','split');
-
+        
         %Update the reaction to only use the first gene
         model.grRules{rxnsToExpand(i)}=['(' geneNames{1} ')'];
-        %Find the gene in the gene list
-        %If ' and ' relationship, first split the genes
+        %Find the gene in the gene list If ' and ' relationship, first
+        %split the genes
         model.rxnGeneMat(rxnsToExpand(i),:)=0;
         if ~isempty(strfind(geneNames(1),' and '))
             andGenes=regexp(geneNames{1},' and ','split');
@@ -64,7 +64,7 @@ if any(rxnsToExpand)
             [~, index]=ismember(geneNames(1),model.genes);
             model.rxnGeneMat(rxnsToExpand(i),index)=1;
         end
-
+        
         %Insert the reactions at the end of the model and without
         %allocating space. This is not nice, but ok for now
         for j=2:numel(geneNames)
@@ -76,7 +76,7 @@ if any(rxnsToExpand)
             model.c=[model.c;model.c(rxnsToExpand(i))];
             model.S=[model.S model.S(:,rxnsToExpand(i))];
             model.grRules=[model.grRules;['(' geneNames{j} ')']];
-
+            
             pad=zeros(1,numel(model.genes));
             if ~isempty(strfind(geneNames(j),' and '))
                 andGenes=regexp(geneNames{j},' and ','split');
@@ -89,7 +89,7 @@ if any(rxnsToExpand)
                 pad(index)=1;
             end
             model.rxnGeneMat=[model.rxnGeneMat;pad];
-
+            
             if isfield(model,'subSystems')
                 model.subSystems=[model.subSystems;model.subSystems(rxnsToExpand(i))];
             end

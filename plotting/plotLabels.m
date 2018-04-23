@@ -14,10 +14,10 @@ function plotLabels(handle,pathway)
 %
 
 for i=1:numel(pathway.listOfSpecies)
-   if strcmp(pathway.listOfSpecies(i).type,'PHENOTYPE')
-       handle=text(pathway.listOfSpecies(i).x+pathway.listOfSpecies(i).w/2, pathway.listOfSpecies(i).y,...
+    if strcmp(pathway.listOfSpecies(i).type,'PHENOTYPE')
+        handle=text(pathway.listOfSpecies(i).x+pathway.listOfSpecies(i).w/2, pathway.listOfSpecies(i).y,...
             pathway.listOfSpecies(i).name,'fontname','Small Fonts','fontsize',4,...
             'interpreter', 'tex','HorizontalAlignment','center','verticalalignment','middle');
-   end
+    end
 end
 end

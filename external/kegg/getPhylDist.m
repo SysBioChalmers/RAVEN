@@ -82,8 +82,8 @@ else
                     currentCat{depth}=tline(sPos+2:end);
                 else
                     orgCounter=orgCounter+1;
-                    %It is an organism
-                    %Get the id between first and second white space
+                    %It is an organism Get the id between first and second
+                    %white space
                     sPos=find(isstrprop(tline, 'wspace'));
                     %Should always exist
                     

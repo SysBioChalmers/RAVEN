@@ -18,8 +18,8 @@ function transportRxns=getTransportRxns(model)
 transportRxns=false(numel(model.rxns),1);
 
 for i=1:numel(model.rxns)
-   %Get the involved metabolites in each reaction
-   mets=model.metNames(model.S(:,i)~=0);
-   transportRxns(i)=numel(mets)~=numel(unique(mets));
+    %Get the involved metabolites in each reaction
+    mets=model.metNames(model.S(:,i)~=0);
+    transportRxns(i)=numel(mets)~=numel(unique(mets));
 end
 end

@@ -334,8 +334,8 @@ else
         %Then load the equations from another file. This is because the
         %equations are easier to retrieve from there
         
-        %The format is rxnID: equation
-        %The reactions should have been loaded in the exact same order
+        %The format is rxnID: equation The reactions should have been
+        %loaded in the exact same order
         fid = fopen(fullfile(keggPath,'reaction.lst'), 'r');
         
         %Loop through the file
@@ -349,9 +349,9 @@ else
         %Close the file
         fclose(fid);
         
-        %Several equations may have two whitespaces between the
-        %last reactant and the reversible arrow sign. The number of
-        %whitespaces is thus reduced to one
+        %Several equations may have two whitespaces between the last
+        %reactant and the reversible arrow sign. The number of whitespaces
+        %is thus reduced to one
         equations = regexprep(equations,'  <=>', ' <=>');
         
         %Construct the S matrix and list of metabolites
@@ -367,9 +367,8 @@ else
         %present in the maps, so not all will have directionality. They
         %will be considered to be reversible
         
-        %The format is R00005: 00330: C01010 => C00011
-        %Generate a reversibility structure with the fields:
-        %*rxns: reaction ids
+        %The format is R00005: 00330: C01010 => C00011 Generate a
+        %reversibility structure with the fields: *rxns: reaction ids
         %*product: one met id that is a product. This is because the
         %*reactions might be written in another direction compared to in
         % the reactions.lst file
@@ -397,9 +396,9 @@ else
                 reversibility.rev(1)=rev;
             elseif strcmp(reversibility.rxns(end),rxn)
                 %Check if the reaction was added before. It's an ordered
-                %list, so only check the last element
-                %If it's reversible in the new reaction or reversible in
-                %the old reaction then set (keep) to be reversible
+                %list, so only check the last element If it's reversible in
+                %the new reaction or reversible in the old reaction then
+                %set (keep) to be reversible
                 if rev==1 || reversibility.rev(end)==1
                     reversibility.rev(end)=1;
                 else

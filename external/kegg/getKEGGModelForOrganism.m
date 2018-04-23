@@ -224,10 +224,10 @@ cores = regexp(cores{2},'^\d*','match');
 cores = cores{1};
 
 %Checking if dataDir is consistent. It must point to pre-trained HMMs set,
-%compatible with the the current RAVEN version.
-%The user may have the required zip file already in working directory or
-%have it extracted. If the zip file and directory is not here, it is
-%downloaded from BioMet ToolBox 2.0 server.
+%compatible with the the current RAVEN version. The user may have the
+%required zip file already in working directory or have it extracted. If
+%the zip file and directory is not here, it is downloaded from BioMet
+%ToolBox 2.0 server.
 if ~isempty(dataDir)
     hmmOptions={'euk100_kegg82'; ...
         'euk90_kegg82'; ...
@@ -362,9 +362,8 @@ end
 
 %Trim the genes so that they only contain information that can be matched
 %to the KEGG file of protein sequences (remove all information after first
-%parenthesis)
-%NOTE: For some reason the organism abbreviation should be in lower case in
-%this database. Fix this here
+%parenthesis) NOTE: For some reason the organism abbreviation should be in
+%lower case in this database. Fix this here
 for i=1:numel(KOModel.genes)
     parIndex=strfind(KOModel.genes{i},'(');
     if any(parIndex)
@@ -460,14 +459,15 @@ if ~isempty(missingAligned)
                 continue;
             end
             
-            %Create an empty file to prevent other threads to start to work on the same alignment
+            %Create an empty file to prevent other threads to start to work
+            %on the same alignment
             fid=fopen(fullfile(dataDir,'aligned',[missingAligned{i} '.faw']),'w');
             fclose(fid);
             
-            %First load the FASTA file, then select up to nSequences sequences
-            %of the most closely related species, apply any constraints from
-            %maxPhylDist, and save it as a temporary file, and create the
-            %model from that
+            %First load the FASTA file, then select up to nSequences
+            %sequences of the most closely related species, apply any
+            %constraints from maxPhylDist, and save it as a temporary file,
+            %and create the model from that
             
             fastaStruct=fastaread(fullfile(dataDir,'fasta',[missingAligned{i} '.fa']));
             phylDist=inf(numel(fastaStruct),1);
@@ -671,8 +671,8 @@ if ~isempty(missingHMMs)
 end
 fprintf('Completed generation of HMMs\n');
 
-%Check which new .out files that should be generated
-%Check if training of Hidden Markov models should be performed
+%Check which new .out files that should be generated Check if training of
+%Hidden Markov models should be performed
 missingOUT=setdiff(KOModel.rxns,outFiles);
 if ~isempty(missingOUT)
     missingOUT=missingOUT(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingOUT)));
