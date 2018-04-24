@@ -60,11 +60,11 @@ if nargin<6
 end
 
 if isNames==true && ~isempty(ignoreMets)
-   %Check that metsToRemove is a cell array
-   if iscellstr(ignoreMets)==false
-       EM='Must supply a cell array of strings if isNames=true';
-       dispEM(EM);
-   end
+    %Check that metsToRemove is a cell array
+    if iscellstr(ignoreMets)==false
+        EM='Must supply a cell array of strings if isNames=true';
+        dispEM(EM);
+    end
 end
 
 if isNames==false
@@ -72,7 +72,7 @@ if isNames==false
 else
     indexesToIgnore=[];
     for i=1:numel(ignoreMets)
-       indexesToIgnore=[indexesToIgnore;find(strcmp(ignoreMets(i),model.metNames))];
+        indexesToIgnore=[indexesToIgnore;find(strcmp(ignoreMets(i),model.metNames))];
     end
 end
 
@@ -114,6 +114,7 @@ model.c=zeros(size(model.S,2),1);
 padding=1:numel(model.rev);
 padding=num2cell(padding)';
 padding=cellfun(@num2str,padding,'uniformoutput',false);
+model.rxns=padding;
 model.rxnNames=padding;
 model.eccodes=padding;
 model.rxnMiriams=padding;
@@ -124,19 +125,22 @@ end
 model.subSystems=padding;
 model.rxnFrom=padding;
 model.rxnComps=ones(numel(model.rev),1);
+model.rxnNotes=padding;
+model.rxnReferences=padding;
+model.rxnConfidenceScores=NaN(numel(model.rev),1);
 
 sol=solveLP(model,1);
 if any(sol.x)
-   %It could be that several metabolites were consumed in order to get the
-   %best solution.
-   %The setdiff is to avoid including the last fake metabolite
-   I=setdiff(find(sol.x(nRxns+1:end)>0.1),size(model.S,1));
-
-   if any(I) %This should always be true
-        %Change the coefficients so that only the first is
-        %consumed. This is not always possible, but it is tested for since it it
-        %results in more easily interpretable results
-
+    %It could be that several metabolites were consumed in order to get the
+    %best solution. The setdiff is to avoid including the last fake
+    %metabolite
+    I=setdiff(find(sol.x(nRxns+1:end)>0.1),size(model.S,1));
+    
+    if any(I) %This should always be true
+        %Change the coefficients so that only the first is consumed. This
+        %is not always possible, but it is tested for since it it results
+        %in more easily interpretable results
+        
         oldS=model.S;
         foundSingle=false;
         %Test if any of the metabolites could be consumed on their own
@@ -169,6 +173,6 @@ if any(sol.x)
         end
         solution=sol.x(1:nRxns);
         metabolite=find(sol.x(nRxns+1:end-1)>0.1);
-   end
+    end
 end
 end

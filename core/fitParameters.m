@@ -63,7 +63,7 @@ end
 
 if ~all(I)
     EM='Could not find all reactions in xRxns';
-	dispEM(EM);
+    dispEM(EM);
 end
 
 [parameters, fitnessScore, exitFlag]=fminsearch(@(parameters) getRSS(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,fitToRatio),initialGuess);
@@ -78,38 +78,38 @@ end
 end
 
 function [rss, resultingFluxes, newModel]=getRSS(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,fitToRatio)
-    parameters=abs(parameters);
+parameters=abs(parameters);
 
-    %Set the parameters at the positions specified in parameterPositions
-    for i=1:numel(parameterPositions.position)
-        %Set positive
-        model.S(parameterPositions.position{i}(parameterPositions.isNegative{i}==false))=parameters(i);
+%Set the parameters at the positions specified in parameterPositions
+for i=1:numel(parameterPositions.position)
+    %Set positive
+    model.S(parameterPositions.position{i}(parameterPositions.isNegative{i}==false))=parameters(i);
+    
+    %Set negative
+    model.S(parameterPositions.position{i}(parameterPositions.isNegative{i}==true))=parameters(i)*-1;
+end
 
-        %Set negative
-        model.S(parameterPositions.position{i}(parameterPositions.isNegative{i}==true))=parameters(i)*-1;
+%Also return an updated model
+newModel=model;
+
+%Loop through each data point, set xRxns to xValues and calculate the sum
+%of squares for the rxnsToFit
+rss=0;
+resultingFluxes=[];
+for i=1:size(xValues,1)
+    %Fix for more xRxns!
+    model.lb(xRxnsIndexes)=xValues(i,:);
+    model.ub(xRxnsIndexes)=xValues(i);
+    
+    sol=solveLP(model);
+    
+    %Calculate the rss
+    if fitToRatio==false
+        rs=sol.x(rxnsToFitIndexes)'-valuesToFit(i,:);
+    else
+        rs=sol.x(rxnsToFitIndexes)'./valuesToFit(i,:)-ones(1,size(valuesToFit,2));
     end
-
-    %Also return an updated model
-    newModel=model;
-
-    %Loop through each data point, set xRxns to xValues and calculate the sum
-    %of squares for the rxnsToFit
-    rss=0;
-    resultingFluxes=[];
-    for i=1:size(xValues,1)
-        %Fix for more xRxns!
-        model.lb(xRxnsIndexes)=xValues(i,:);
-        model.ub(xRxnsIndexes)=xValues(i);
-
-        sol=solveLP(model);
-
-        %Calculate the rss
-        if fitToRatio==false
-            rs=sol.x(rxnsToFitIndexes)'-valuesToFit(i,:);
-        else
-            rs=sol.x(rxnsToFitIndexes)'./valuesToFit(i,:)-ones(1,size(valuesToFit,2));
-        end
-        rss=rss+rs*rs';
-        resultingFluxes=[resultingFluxes sol.x(rxnsToFitIndexes)];
-    end
+    rss=rss+rs*rs';
+    resultingFluxes=[resultingFluxes sol.x(rxnsToFitIndexes)];
+end
 end

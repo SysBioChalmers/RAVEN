@@ -42,9 +42,8 @@ elseif strcmpi(type,'genes')
 elseif strcmpi(type,'metnames')
     searchIn=model.metNames;
 elseif strcmpi(type,'metscomps')
-    % If provided as metaboliteName[comp], then index search
-    % is quite different from general approach, and therefore
-    % coded separately.
+    % If provided as metaboliteName[comp], then index search is quite
+    % different from general approach, and therefore coded separately.
     if isstr(objects)
         objects={objects};
     end
@@ -78,8 +77,8 @@ if iscell(objects)
         end
     end
 else
-    %Now it's either a logical (or 0/1) array or an array with indexes.
-    %We want it to be an array with indexes.
+    %Now it's either a logical (or 0/1) array or an array with indexes. We
+    %want it to be an array with indexes.
     if all(objects)
         %This gets weird if it's all 1
         indexes=objects;

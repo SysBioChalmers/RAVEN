@@ -49,7 +49,7 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %
 %   Usage: model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %
-%   Simonas Marcisauskas, 2017-08-25
+%   Simonas Marcisauskas, 2018-03-17
 %
 
 if nargin<5

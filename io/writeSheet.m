@@ -28,7 +28,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.*;
 import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.xssf.usermodel.*;
-    
+
 %Set default style object and bold style object
 defaultStyle = wb.createCellStyle();
 if isIntegers
@@ -64,11 +64,10 @@ if ~isempty(units)
         content=units{i+1};
         if iscell(content) && numel(content)==2
             c.setCellValue(content{1});
-
-            %This means that the cell should have a list of allowed
-            %values
+            
+            %This means that the cell should have a list of allowed values
             dvHelper=XSSFDataValidationHelper(s);
-
+            
             cellRange=CellRangeAddressList(1,1,i,i); %Units are on the second line
             dvConstraint=dvHelper.createExplicitListConstraint(toValid(content{2}));
             validation=dvHelper.createValidation(dvConstraint, cellRange);
@@ -134,21 +133,21 @@ end
 end
 
 function I=toValid(J)
-    I=cell(numel(J),1);
-    for i=1:numel(J)
-        if ischar(J{i})
-            I(i)=J(i);
-        else
-            if islogical(J{i})
-               if J{i}==true
-                    I{i}='TRUE';
-               else
-                    I{i}='FALSE';
-               end
+I=cell(numel(J),1);
+for i=1:numel(J)
+    if ischar(J{i})
+        I(i)=J(i);
+    else
+        if islogical(J{i})
+            if J{i}==true
+                I{i}='TRUE';
             else
-                %Other, most likely numbers
-                I{i}=num2str(J{i});
+                I{i}='FALSE';
             end
+        else
+            %Other, most likely numbers
+            I{i}=num2str(J{i});
         end
     end
+end
 end
