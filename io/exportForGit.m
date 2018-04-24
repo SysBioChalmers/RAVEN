@@ -13,7 +13,7 @@ function out=exportForGit(model,prefix,path)
 %
 %   Usage: exportForGit(model,prefix,path)
 %
-%   Eduard Kerkhoven, 2018-04-12
+%   Eduard Kerkhoven, 2018-04-24
 %
 
 if nargin<3
@@ -31,7 +31,7 @@ for i=1:length(folders);
     end
 end
 
-formats={'xml','yaml','txt','mat'};
+formats={'xml','yml','txt','mat'};
 
 for i=1:length(formats);
     if ~exist(fullfile(path,'ModelFiles',formats{i}),'dir')
@@ -60,7 +60,7 @@ fclose(fid);
 exportModel(model,strcat(prefix,'.xml'));
 writeYaml(model,strcat(prefix,'.yml'));
 movefile([prefix,'.xml'],fullfile(path,'ModelFiles','xml'));
-movefile([prefix,'.yml'],fullfile(path,'ModelFiles','yaml'));
+movefile([prefix,'.yml'],fullfile(path,'ModelFiles','yml'));
 save([fullfile(path,'ModelFiles','mat',prefix),'.mat'],'model');
 
 %Code below is modified from SysBioChalmers/YeastMetabolicNetwork-GEM Track
