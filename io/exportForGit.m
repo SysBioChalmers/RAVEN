@@ -49,7 +49,12 @@ for i=1:length(formats);
     end
 end
 
-% Write txt format
+% Write MAT format
+if ismember('mat', formats)
+    save([fullfile(path,'ModelFiles','mat',prefix),'.mat'],'model');
+end
+
+% Write TXT format
 if ismember('txt', formats)
     fid=fopen([fullfile(path,'ModelFiles','txt',prefix),'.txt'],'w');
     eqns=constructEquations(model,model.rxns,false,false,false,true);
@@ -68,22 +73,24 @@ if ismember('txt', formats)
     fclose(fid);
 end
 
-% Write XML (SBML) and YAML formats
-if ismember('xml', formats)
-    exportModel(model,strcat(prefix,'.xml'));
-    movefile([prefix,'.xml'],fullfile(path,'ModelFiles','xml'));
-end
-if ismember('yml', formats)
-    writeYaml(model,strcat(prefix,'.yml'));
-    movefile([prefix,'.yml'],fullfile(path,'ModelFiles','yml'));
-end
-if ismember('mat', formats)
-    save([fullfile(path,'ModelFiles','mat',prefix),'.mat'],'model');
-end
+% Write XLSX format
 if ismember('xlsx', formats)
     exportToExcelFormat(model,strcat(prefix,'.xlsx'));
     movefile([prefix,'.xlsx'],fullfile(path,'ModelFiles','xlsx'));
 end
+
+% Write XML format
+if ismember('xml', formats)
+    exportModel(model,strcat(prefix,'.xml'));
+    movefile([prefix,'.xml'],fullfile(path,'ModelFiles','xml'));
+end
+
+% Write YML format
+if ismember('yml', formats)
+    writeYaml(model,strcat(prefix,'.yml'));
+    movefile([prefix,'.yml'],fullfile(path,'ModelFiles','yml'));
+end
+
 %Code below is modified from SysBioChalmers/yeast-GEM
 %Track versions
 RAVENver = getVersion('checkInstallation.m','version.txt');
