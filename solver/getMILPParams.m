@@ -26,8 +26,8 @@ mosekParams=params;
 mosekParams.MSK_DPAR_MIO_TOL_ABS_RELAX_INT=10^-9;
 mosekParams.MSK_DPAR_MIO_TOL_REL_GAP=0.05;
 
-%NOTE: These options were removed or renamed in Mosek 8. Should be investigated.
-%mosekParams.MSK_DPAR_MIO_TOL_REL_RELAX_INT=10^-9;
+%NOTE: These options were removed or renamed in Mosek 8. Should be
+%investigated. mosekParams.MSK_DPAR_MIO_TOL_REL_RELAX_INT=10^-9;
 %mosekParams.MSK_DPAR_MIO_TOL_X=10^-9;
 mosekParams.MSK_DPAR_MIO_TOL_FEAS=10^-9;
 mosekParams.MSK_DPAR_BASIS_TOL_S=10^-9;
@@ -43,19 +43,18 @@ else
     if any(strfind(evalc('mosekopt info'),'MOSEK Version 7'))
         mosekParams.MSK_IPAR_PRESOLVE_USE=1;
     else
-        % NOTE: This options were removed or renamed in Mosek 8. Should be investigated.
-        % mosekParams.MSK_DPAR_PRESOLVE_TOL_LIN_DEP=10^-9;
+        % NOTE: This options were removed or renamed in Mosek 8. Should be
+        % investigated. mosekParams.MSK_DPAR_PRESOLVE_TOL_LIN_DEP=10^-9;
         
-        %Turn off the presolve. This is because Mosek sometimes returns non-feasible
-        %solutions because of problems with the presolver. Should check if version
-        %is <6.0.0.147
+        %Turn off the presolve. This is because Mosek sometimes returns
+        %non-feasible solutions because of problems with the presolver.
+        %Should check if version is <6.0.0.147
         mosekParams.MSK_IPAR_PRESOLVE_USE=0;
     end
 end
 
 %Use a starting integer solution if supplied. This has no effect if no such
-%solution is supplied
-%mosekParams.MSK_IPAR_MIO_CONSTRUCT_SOL=1;
+%solution is supplied mosekParams.MSK_IPAR_MIO_CONSTRUCT_SOL=1;
 
 %10 hours as default upper time limit
 mosekParams.MSK_DPAR_OPTIMIZER_MAX_TIME=10*60*60;

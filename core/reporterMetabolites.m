@@ -46,10 +46,10 @@ if nargin<4
     printResults=false;
 end
 if nargin<5
-	outputFile=[];
+    outputFile=[];
 end
 if nargin<6
-	geneFoldChanges=[];
+    geneFoldChanges=[];
 end
 
 %Check some stuff
@@ -83,8 +83,8 @@ geneZScores=norminv(genePValues)*-1;
 geneZScores(geneZScores==-inf)=-15;
 geneZScores(geneZScores==inf)=15;
 
-%For each metabolite, calculate the aggregate Z-score and keep track of
-%the number of neighbouring genes
+%For each metabolite, calculate the aggregate Z-score and keep track of the
+%number of neighbouring genes
 metZScores=nan(numel(model.mets),1);
 metNGenes=nan(numel(model.mets),1);
 meanZ=nan(numel(model.mets),1);
@@ -92,13 +92,13 @@ stdZ=nan(numel(model.mets),1);
 for i=1:numel(model.mets)
     %Get the involved rxns
     I=model.S(i,:);
-
+    
     %Get the involved genes
     [~, J]=find(model.rxnGeneMat(I~=0,:));
-
+    
     %Find the genes in the gene list
     K=find(ismember(genes,model.genes(J)));
-
+    
     %Calculate the aggregated Z-score for the metabolite
     if any(K)
         metZScores(i)=sum(geneZScores(K))/sqrt(numel(K));
@@ -122,12 +122,12 @@ sizes=unique(metNGenes);
 nGenes=numel(genes);
 
 for i=1:numel(sizes)
-    %Sample 100000 sets for each size. Sample with replacement, which may or
-    %may not be the best choice.
+    %Sample 100000 sets for each size. Sample with replacement, which may
+    %or may not be the best choice.
     I=ceil(rand(100000,sizes(i))*nGenes);
     J=geneZScores(I);
     K=sum(J,2)/sqrt(sizes(i));
-
+    
     %Correct all elements of this size
     mK=mean(K);
     stdK=std(K);

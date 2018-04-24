@@ -13,8 +13,9 @@ function out=exportForGit(model,prefix,path)
 %
 %   Usage: exportForGit(model,prefix,path)
 %
-%   Eduard Kerkhoven, 2018-03-14
+%   Eduard Kerkhoven, 2018-04-12
 %
+
 if nargin<3
     path='.';
 end
@@ -23,8 +24,11 @@ if nargin<2
 end
 
 % Make folder structure if needed
-if ~exist(fullfile(path,'ModelFiles'),'dir')
-    mkdir(fullfile(path,'ModelFiles'));
+folders={'ModelFiles','ComplementaryScripts','ComplementaryData'};
+for i=1:length(folders);
+    if ~exist(fullfile(path,folders{i}),'dir')
+        mkdir(fullfile(path,folders{i}));
+    end
 end
 
 formats={'xml','yaml','txt','mat'};
@@ -53,13 +57,14 @@ end
 fclose(fid);
 
 % Write XML (SBML) and YAML formats
-exportModel(model,prefix,true);
+exportModel(model,strcat(prefix,'.xml'));
+writeYaml(model,strcat(prefix,'.yml'));
 movefile([prefix,'.xml'],fullfile(path,'ModelFiles','xml'));
 movefile([prefix,'.yml'],fullfile(path,'ModelFiles','yaml'));
 save([fullfile(path,'ModelFiles','mat',prefix),'.mat'],'model');
 
-%Code below is modified from SysBioChalmers/YeastMetabolicNetwork-GEM
-%Track versions
+%Code below is modified from SysBioChalmers/YeastMetabolicNetwork-GEM Track
+%versions
 RAVENver = getVersion('checkInstallation.m','version.txt');
 %Retrieve latest COBRA commit:
 COBRApath   = which('initCobraToolbox.m');
@@ -101,24 +106,26 @@ if isfield(model,'modelVersion')
     end
 end
 fclose(fid);
+
+movefile('*.txt',fullfile(path,'ModelFiles'));
 end
 
 function version = getVersion(IDfileName,VERfileName)
-    try
-        path     = which(IDfileName);
-        slashPos = getSlashPos(path);
-        path     = path(1:slashPos(end-1));
-        fid      = fopen([path VERfileName],'r');
-        version  = fscanf(fid,'%s');
-        fclose(fid);
-        catch
-        version = '?';
-    end
+try
+    path     = which(IDfileName);
+    slashPos = getSlashPos(path);
+    path     = path(1:slashPos(end-1));
+    fid      = fopen([path VERfileName],'r');
+    version  = fscanf(fid,'%s');
+    fclose(fid);
+catch
+    version = '?';
+end
 end
 
 function slashPos = getSlashPos(path)
-    slashPos = strfind(path,'\');       %Windows
-    if isempty(slashPos)
-        slashPos = strfind(path,'/');   %MAC/Linux
-    end
+slashPos = strfind(path,'\');       %Windows
+if isempty(slashPos)
+    slashPos = strfind(path,'/');   %MAC/Linux
+end
 end

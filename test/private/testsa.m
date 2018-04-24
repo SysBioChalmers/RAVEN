@@ -20,9 +20,9 @@ T=-eye(size(S,1));
 
 tic
 for i=1:1
-	[is, js, ss] = find(S);
-	[it, jt, st] = find(T);
-	ST = sparse([is;it], [js;jt+size(S,2)], [ss;st]);
+    [is, js, ss] = find(S);
+    [it, jt, st] = find(T);
+    ST = sparse([is;it], [js;jt+size(S,2)], [ss;st]);
 end
 toc
 

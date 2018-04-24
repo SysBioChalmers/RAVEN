@@ -84,7 +84,7 @@ if deleteDuplicates==true
     %Delete all but the last occurrence of duplicate reactions. The
     %reactions must have the same bounds, reversibility, and objective
     %coefficient to be regarded as duplicate
-    [reducedModel, rxnsToDelete]=contractModel(reducedModel);
+    [reducedModel, rxnsToDelete, ~]=contractModel(reducedModel);
     deletedReactions=[deletedReactions; rxnsToDelete];
 end
 
@@ -93,7 +93,7 @@ if deleteZeroInterval==true
     zeroIntervalReactions=and(reducedModel.lb==0,reducedModel.ub==0);
     
     rxnsToDelete=setdiff(reducedModel.rxns(zeroIntervalReactions),reservedRxns);
-    deletedReactions=[deletedReactions; rxnsToDelete];   
+    deletedReactions=[deletedReactions; rxnsToDelete];
     
     %Remove reactions
     reducedModel=removeReactions(reducedModel,rxnsToDelete);
@@ -112,7 +112,7 @@ if deleteInaccessible==true
     %are taken up be the system
     if isfield(reducedModel,'unconstrained') && suppressWarnings==false
         EM='Removing dead-end reactions before removing exchange metabolites';
-        dispEM(EM,false); 
+        dispEM(EM,false);
     end
     
     while true
@@ -133,12 +133,12 @@ if deleteInaccessible==true
         onlyProducts=sum(revS'>0) == metUsage;
         onlyReactants=sum(revS'<0) == metUsage;
         
-        %Also remove metabolites that only participate in one reversible reaction
-        %Don't remove the ones in one reversible reaction if is also has a
-        %non-zero coefficient in model.b
+        %Also remove metabolites that only participate in one reversible
+        %reaction Don't remove the ones in one reversible reaction if is
+        %also has a non-zero coefficient in model.b
         notInUse=onlyProducts | onlyReactants | (sum(abs(reducedModel.S')>0)<=1 & (~in & ~out)');
         deletedRxn=false;
-        if any(notInUse)        
+        if any(notInUse)
             %Find their corresponding reactions
             rxnsNotInUse=sum(abs(reducedModel.S(notInUse,:))>0,1)>0;
             rxnsToDelete=setdiff(reducedModel.rxns(rxnsNotInUse),reservedRxns);
@@ -146,7 +146,7 @@ if deleteInaccessible==true
             
             %Remove reactions
             reducedModel=removeReactions(reducedModel,rxnsToDelete);
-
+            
             %Remove metabolites. Recalculate since it could be that some
             %cannot be deleted due to reserved rxns
             notInUse=sum(reducedModel.S~=0,2)==0;
@@ -176,7 +176,7 @@ if deleteMinMax==true
     rxnsToDelete=setdiff(reducedModel.rxns(I),reservedRxns);
     deletedReactions=[deletedReactions; rxnsToDelete];
     reducedModel=removeReactions(reducedModel,rxnsToDelete);
-            
+    
     %Remove metabolites
     notInUse=sum(reducedModel.S~=0,2)==0;
     deletedMetabolites=[deletedMetabolites; reducedModel.mets(notInUse)];
@@ -184,7 +184,7 @@ if deleteMinMax==true
 end
 
 if constrainReversible==true
-	revs=find(reducedModel.rev);
+    revs=find(reducedModel.rev);
     [I,J]=getAllowedBounds(reducedModel,revs);
     
     I=abs(I);
@@ -218,7 +218,7 @@ if groupLinear==true
     reducedModel.genes={};
     reducedModel.rxnGeneMat=sparse(numel(reducedModel.rxns),0);
     reducedModel.grRules(:)={''};
-
+    
     if isfield(reducedModel,'geneShortNames')
         reducedModel.geneShortNames={};
     end
@@ -260,20 +260,20 @@ if groupLinear==true
                 %Calculate how many times the second reaction has to be
                 %multiplied before being merged with the first
                 stoichRatio=abs(irrevModel.S(common(i),involvedRxns(1))/irrevModel.S(common(i),involvedRxns(2)));
-
+                
                 %Add the second to the first
                 irrevModel.S(:,involvedRxns(1))=irrevModel.S(:,involvedRxns(1))+irrevModel.S(:,involvedRxns(2))*stoichRatio;
-
+                
                 %Clear the second reaction
                 irrevModel.S(:,involvedRxns(2))=0;
-
+                
                 %This is to prevent numerical issues. It should be 0
                 %already
                 irrevModel.S(common(i),involvedRxns(1))=0;
-
+                
                 %At this point the second reaction is certain to be deleted
                 %in a later step and can therefore be ignored
-
+                
                 %Recalculate the bounds for the new reaction. This can be
                 %problematic since the scale of the bounds may change
                 %dramatically. Let the most constraining reaction determine
@@ -289,7 +289,7 @@ if groupLinear==true
                 if ub2~=inf
                     irrevModel.ub(involvedRxns(1))=min(ub1,ub2/stoichRatio);
                 end
-
+                
                 %Then recalculate the objective coefficient. The resulting
                 %coefficient is the weighted sum of the previous
                 irrevModel.c(involvedRxns(1))=irrevModel.c(involvedRxns(1))+irrevModel.c(involvedRxns(2))*stoichRatio;
@@ -306,10 +306,10 @@ if groupLinear==true
         
         %Now delete all reactions that involve no metabolites
         I=find(sum(irrevModel.S~=0)==0);
-
+        
         %Remove reactions
         irrevModel=removeReactions(irrevModel,I);
-
+        
         %Remove metabolites
         notInUse=sum(irrevModel.S~=0,2)==0;
         irrevModel=removeMets(irrevModel,notInUse);

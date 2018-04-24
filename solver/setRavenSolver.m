@@ -17,7 +17,7 @@ function setRavenSolver(solver)
 
 if (~ischar(solver)) dispEM('Input should be a string.'); end
 
-if strcmpi(solver,'mosek') || strcmpi(solver,'gurobi') || strcmpi(solver,'cobra') || strcmpi(solver,'none')  
+if strcmpi(solver,'mosek') || strcmpi(solver,'gurobi') || strcmpi(solver,'cobra') || strcmpi(solver,'none')
     setpref('RAVEN','solver',solver)
 else
     EM='Such solver is not compatible with RAVEN. Available options are ''mosek'', ''gurobi'' and ''cobra''';
