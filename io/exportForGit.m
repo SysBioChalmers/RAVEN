@@ -124,7 +124,7 @@ if isfield(model,'modelVersion')
 end
 fclose(fid);
 
-movefile('*.txt',fullfile(path,'ModelFiles'));
+movefile('dependencies.txt',fullfile(path,'ModelFiles'));
 end
 
 function version = getVersion(IDfileName,VERfileName)
