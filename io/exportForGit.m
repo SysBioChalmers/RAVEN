@@ -17,6 +17,7 @@ function out=exportForGit(model,prefix,path,formats)
 %   Usage: exportForGit(model,prefix,path,formats)
 %
 %   Eduard Kerkhoven, 2018-04-24
+%	Benjamin Sanchez, 2018-04-27
 %
 if nargin<4
     formats={'mat', 'txt', 'xlsx', 'xml', 'yml'};
@@ -80,9 +81,8 @@ if ismember('yml', formats)
     movefile([prefix,'.yml'],fullfile(path,'ModelFiles','yml'));
 end
 
-%Code below is modified from SysBioChalmers/yeast-GEM
 %Track versions
-RAVENver = getVersion('checkInstallation.m','version.txt');
+RAVENver = getVersion('ravenCobraWrapper.m','version.txt');
 %Retrieve latest COBRA commit:
 COBRApath   = which('initCobraToolbox.m');
 if ~isempty(COBRApath)
