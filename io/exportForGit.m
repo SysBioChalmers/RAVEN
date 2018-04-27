@@ -35,19 +35,8 @@ if nargin<2
     prefix='model';
 end
 
-% Make folder structure if needed
-folders={'ModelFiles','ComplementaryScripts','ComplementaryData'};
-for i=1:length(folders);
-    if ~exist(fullfile(path,folders{i}),'dir')
-        mkdir(fullfile(path,folders{i}));
-    end
-end
-
-for i=1:length(formats);
-    if ~exist(fullfile(path,'ModelFiles',formats{i}),'dir')
-        mkdir(fullfile(path,'ModelFiles',formats{i}))
-    end
-end
+% Make ModelFiles folder, no warnings if folder already exists
+[~,~,~]=mkdir('ModelFiles');
 
 % Write MAT format
 if ismember('mat', formats)
