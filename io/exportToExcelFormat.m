@@ -233,11 +233,11 @@ for i=1:numel(model.mets)
         if isfield(model,'inchis')
             if isempty(model.inchis{i})
                 metSheet(i,6)=model.metFormulas(i);
-            end;
+            end
         else
             metSheet(i,6)=model.metFormulas(i);
-        end;
-    end;
+        end
+    end
     
     if isfield(model,'inchis')
         metSheet(i,7)=model.inchis(i);
