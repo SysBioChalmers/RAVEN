@@ -28,8 +28,7 @@ function newModel=ravenCobraWrapper(model)
 %
 %   Usage: newModel=ravenCobraWrapper(model)
 %
-%   Simonas Marcisauskas, 2018-03-17
-%   Benjamin J. Sanchez, 2018-04-20
+%   Simonas Marcisauskas, 2018-05-02
 %
 
 if isfield(model,'rules')
@@ -360,11 +359,11 @@ else
             end;
             if isfield(model,'metPubChemID')
                 if ~isempty(model.metPubChemID{i})
-                    if strcmp(model.metPubChemID{i}(1:4),'CID:')
+                    if length(model.metPubChemID{i})>3 && strcmp(model.metPubChemID{i}(1:4),'CID:')
                         newModel.metMiriams{i,1}.name{counter,1} = 'pubchem.compound';
                         newModel.metMiriams{i,1}.value{counter,1} = model.metPubChemID{i};
                         counter=counter+1;
-                    elseif strcmp(model.metPubChemID{i}(1:4),'SID:')
+                    elseif length(model.metPubChemID{i})>3 && strcmp(model.metPubChemID{i}(1:4),'SID:')
                         newModel.metMiriams{i,1}.name{counter,1} = 'pubchem.substance';
                         newModel.metMiriams{i,1}.value{counter,1} = model.metPubChemID{i};
                         counter=counter+1;
