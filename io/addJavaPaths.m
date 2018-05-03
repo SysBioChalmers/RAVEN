@@ -12,11 +12,11 @@ function addJavaPaths()
 ravenPath=fileparts(fileparts(ST(I).file));
 poiPATH=fullfile(ravenPath,'software','apache-poi');
 
-toAdd={fullfile(poiPATH,'dom4j-1.6.1.jar');
-    fullfile(poiPATH,'poi-3.8-20120326.jar');
-    fullfile(poiPATH,'poi-ooxml-3.8-20120326.jar');
-    fullfile(poiPATH,'poi-ooxml-schemas-3.8-20120326.jar');
-    fullfile(poiPATH,'xmlbeans-2.3.0.jar');
+toAdd={fullfile(poiPATH,'poi-3.11-BETA1.jar');
+    fullfile(poiPATH,'poi-ooxml-3.11-BETA1.jar');
+    fullfile(poiPATH,'poi-ooxml-schemas-3.11-BETA1.jar');
+    fullfile(poiPATH,'xmlbeans-2.6.0.jar');
+    fullfile(poiPATH,'commons-collections4-4.1.jar');
     fullfile(poiPATH,'stax-api-1.0.1.jar')};
 
 existingPaths=javaclasspath();

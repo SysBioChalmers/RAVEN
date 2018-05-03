@@ -39,7 +39,7 @@ end
 defaultStyle.setDataFormat(idx);
 
 boldFont=wb.createFont();
-boldFont.setBoldweight(boldFont.BOLDWEIGHT_BOLD);
+boldFont.setBold(1);
 boldStyle=defaultStyle.clone();
 boldStyle.setFont(boldFont);
 

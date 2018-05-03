@@ -376,5 +376,5 @@ end
 %Open the output stream
 out = FileOutputStream(filename);
 wb.write(out);
-out.close();
+wb.close();
 end
