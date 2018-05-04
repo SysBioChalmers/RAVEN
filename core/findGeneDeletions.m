@@ -47,6 +47,7 @@ function [genes, fluxes, originalGenes, details]=findGeneDeletions(model,testTyp
 %
 %   Rasmus Agren, 2014-01-08
 %
+
 originalModel=model;
 
 if nargin<5
@@ -87,19 +88,18 @@ details(~ismember(originalGenes,model.genes))=4;
 
 %Get the genes that should be deleted. Not all genes are deleted in all
 %optimizations. For example, if all reactions involving a gene have
-%iso-enzymes a single deletion of that gene will never have an effect.
-%FBA and SGD:   All genes that encode reactions on their own
-%FBA and DGD:   All genes that have at most one other gene encoding for at
+%iso-enzymes a single deletion of that gene will never have an effect. FBA
+%and SGD:   All genes that encode reactions on their own FBA and DGD:   All
+%genes that have at most one other gene encoding for at
 %               least one of its reactions and doesn't participate
 %               exclusively in reactions where a single deletion results in
 %               an unsolvable problem
-%MOMA and SGD:  All genes that encode reactions on their own
-%MOMA and DGD:  All combinations of genes that have at most one other gene
+%MOMA and SGD:  All genes that encode reactions on their own MOMA and DGD:
+%All combinations of genes that have at most one other gene
 %               encoding for at east one of its reactions and doesn't
 %               participate exclusively in reactions where a single
 %               deletion results in an unsolvable problem
-%MOMA and SGO:  All genes
-%MOMA and DGO:  All combinations of genes
+%MOMA and SGO:  All genes MOMA and DGO:  All combinations of genes
 genesForSGD=[];
 if strcmpi(testType,'sgd') || strcmpi(testType,'dgd')
     if strcmpi(testType,'sgd')
@@ -107,7 +107,7 @@ if strcmpi(testType,'sgd') || strcmpi(testType,'dgd')
     else
         I=sum(model.rxnGeneMat,2)>2; %Reactions with more than one iso-enzyme
     end
-
+    
     %Find genes involved only in these reactions
     [~, inIsoRxns]=find(model.rxnGeneMat(I,:));
     [~, inNonIsoRxns]=find(model.rxnGeneMat(~I,:));
@@ -117,51 +117,51 @@ end
 
 %Get the genes that should be deleted in a SGD
 if strcmpi(testType,'sgd') || strcmpi(testType,'dgd')
-   genesToModify=genesForSGD;
+    genesToModify=genesForSGD;
 end
 
 %Get the genes that should be deleted in SGO
 if strcmpi(testType,'sgo')
-   genesToModify=1:numel(model.genes);
-   genesToModify=genesToModify(:);
+    genesToModify=1:numel(model.genes);
+    genesToModify=genesToModify(:);
 end
 
 %Do single deletion/over expression. This is done here since the double
-%deletion depends on which single deletions prove lethal
-%(to reduce the size of the system)
+%deletion depends on which single deletions prove lethal (to reduce the
+%size of the system)
 if strcmpi(testType,'sgd') || strcmpi(testType,'sgo') || strcmpi(testType,'dgd')
     fluxes=zeros(numel(model.rxns),numel(genesToModify));
     solvable=true(numel(genesToModify),1);
     for i=1:numel(genesToModify)
-       I=find(model.rxnGeneMat(:,genesToModify(i)));
-       if strcmpi(testType,'sgd') || strcmpi(testType,'dgd')
-           %Constrain all reactions involving the gene to 0
-           tempModel=setParam(model,'eq',model.rxns(I),0);
-       else
-           %To over express a gene, the stoichiometry of the corresponding
-           %reactions are changed so that the same flux leads to a higher
-           %production
-           tempModel=model;
-           tempModel.S(:,I)=tempModel.S(:,I).*oeFactor;
-       end
-       if strcmpi(analysisType,'fba') || strcmpi(testType,'dgd')
+        I=find(model.rxnGeneMat(:,genesToModify(i)));
+        if strcmpi(testType,'sgd') || strcmpi(testType,'dgd')
+            %Constrain all reactions involving the gene to 0
+            tempModel=setParam(model,'eq',model.rxns(I),0);
+        else
+            %To over express a gene, the stoichiometry of the corresponding
+            %reactions are changed so that the same flux leads to a higher
+            %production
+            tempModel=model;
+            tempModel.S(:,I)=tempModel.S(:,I).*oeFactor;
+        end
+        if strcmpi(analysisType,'fba') || strcmpi(testType,'dgd')
             sol=solveLP(tempModel);
-       else
+        else
             [fluxA, ~, flag]=qMOMA(tempModel,refModel);
             sol.x=fluxA;
             sol.stat=flag;
-       end
-
-       %If the optimization terminated successfully
-       if sol.stat==1
-           fluxes(:,i)=sol.x;
-           details(geneMapping(genesToModify(i)))=1;
-       else
-           solvable(i)=false;
-           details(geneMapping(genesToModify(i)))=2;
-       end
+        end
+        
+        %If the optimization terminated successfully
+        if sol.stat==1
+            fluxes(:,i)=sol.x;
+            details(geneMapping(genesToModify(i)))=1;
+        else
+            solvable(i)=false;
+            details(geneMapping(genesToModify(i)))=2;
+        end
     end
-
+    
     fluxes=fluxes(:,solvable);
     genes=geneMapping(genesToModify(solvable));
 end
@@ -173,17 +173,17 @@ if strcmpi(testType,'dgo')
     genes=geneMapping(genesToModify);
     %Since I assume that this is never lethal I set the details already
     details(geneMapping)=1;
-
+    
     fluxes=sparse(numel(model.rxns),size(genesToModify,1));
     for i=1:size(genesToModify,1)
-       I=find(model.rxnGeneMat(:,genesToModify(i,:)));
-       %To over express a gene, the stoichiometry of the corresponding
-       %reactions are changed so that the same flux leads to a higher
-       %production
-       tempModel=model;
-       tempModel.S(:,I)=tempModel.S(:,I).*oeFactor;
-       fluxA=qMOMA(tempModel,refModel);
-       fluxes(:,i)=fluxA;
+        I=find(model.rxnGeneMat(:,genesToModify(i,:)));
+        %To over express a gene, the stoichiometry of the corresponding
+        %reactions are changed so that the same flux leads to a higher
+        %production
+        tempModel=model;
+        tempModel.S(:,I)=tempModel.S(:,I).*oeFactor;
+        fluxA=qMOMA(tempModel,refModel);
+        fluxes(:,i)=fluxA;
     end
 end
 
@@ -195,25 +195,25 @@ if strcmpi(testType,'dgd')
     [~, I]=ismember(originalGenes(details==1),model.genes);
     genesToModify=nchoosek(I,2);
     genes=geneMapping(genesToModify);
-
+    
     fluxes=sparse(numel(model.rxns),size(genesToModify,1));
     for i=1:size(genesToModify,1)
-       I=find(model.rxnGeneMat(:,genesToModify(i,:)));
-
-       %Constrain all reactions involving the gene to 0
-       tempModel=setParam(model,'eq',model.rxns(I),0);
-
-       if strcmpi(analysisType,'fba')
+        I=find(model.rxnGeneMat(:,genesToModify(i,:)));
+        
+        %Constrain all reactions involving the gene to 0
+        tempModel=setParam(model,'eq',model.rxns(I),0);
+        
+        if strcmpi(analysisType,'fba')
             sol=solveLP(tempModel);
-       else
+        else
             [fluxA, ~, flag]=qMOMA(tempModel,refModel);
             sol.x=fluxA;
             sol.stat=flag;
-       end
-
-       if sol.stat==1
-           fluxes(:,i)=sol.x;
-       end
+        end
+        
+        if sol.stat==1
+            fluxes(:,i)=sol.x;
+        end
     end
 end
 

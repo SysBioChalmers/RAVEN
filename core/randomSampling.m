@@ -1,4 +1,4 @@
-function solutions=randomSampling(model, nSamples, replaceBoundsWithInf,supressErrors)
+function solutions=randomSampling(model, nSamples, replaceBoundsWithInf,supressErrors,showProgress)
 % randomSampling
 %   Returns a number of random solutions
 %
@@ -19,6 +19,9 @@ function solutions=randomSampling(model, nSamples, replaceBoundsWithInf,supressE
 %                           as unlimited glucose uptake) or too strict
 %                           (such as too many and too narrow constraints)
 %                           (opt, default false)
+%   showProgress            if true, it will display in the command window 
+%                           how many iterations have been done (opt, default
+%                           false)
 %
 %   solutions               matrix with the solutions
 %
@@ -29,6 +32,7 @@ function solutions=randomSampling(model, nSamples, replaceBoundsWithInf,supressE
 %   Usage: solutions=randomSampling(model, nSamples, replaceBoundsWithInf)
 %
 %   Eduard Kerkhoven, 2018-02-28
+%   Benjamin Sanchez, 2018-04-10
 %
 
 if nargin<2
@@ -39,6 +43,9 @@ if nargin<3
 end
 if nargin<4
     supressErrors=false;
+end
+if nargin<5
+    showProgress=false;
 end
 
 nRxns=2; %Number of reactions in the objective function in each iteration
@@ -57,16 +64,19 @@ model=simplifyModel(model,false,false,true,true);
 %Then change the bounds to +/- Inf. This is needed in order to not have
 %loops in the solutions
 if replaceBoundsWithInf==true
-   model.ub(model.ub==max(model.ub))=Inf;
-   if min(model.lb)<0 % Only negative lower bounds should be set to -Inf
-      model.lb(model.lb==min(model.lb))=-Inf;
-   end
+    model.ub(model.ub==max(model.ub))=Inf;
+    if min(model.lb)<0 % Only negative lower bounds should be set to -Inf
+        model.lb(model.lb==min(model.lb))=-Inf;
+    end
 end
 
-%Reactions which can be involved in loops should not be optimized
-%for. Check which reactions reach an arbitary high upper bound
+%Reactions which can be involved in loops should not be optimized for.
+%Check which reactions reach an arbitary high upper bound
 goodRxns=true(numel(model.rxns),1);
 for i=1:numel(model.rxns)
+    if showProgress && rem(i,100) == 0
+        disp(['Preparing random sampling: ready with ' num2str(i) '/' num2str(numel(model.rxns)) ' rxns'])
+    end
     if goodRxns(i)==true
         testModel=setParam(model,'eq',model.rxns(i),1000);
         sol=solveLP(testModel);
@@ -93,26 +103,29 @@ counter=1;
 badSolutions=0;
 goodRxns=find(goodRxns);
 while counter<=nSamples
-   rxns=randsample(numel(goodRxns),nRxns);
-   model.c=zeros(numel(model.rxns),1);
-   multipliers=randsample([-1 1],nRxns,true);
-   multipliers(model.rev(goodRxns(rxns))==0)=1;
-   model.c(goodRxns(rxns))=rand(nRxns,1).*multipliers;
-   sol=solveLP(model);
-   if any(sol.x)
-       if abs(sol.f)>10^-8
+    if showProgress && rem(counter,100) == 0
+        disp(['Performing random sampling: ready with ' num2str(counter) '/' num2str(nSamples) ' iterations'])
+    end
+    rxns=randsample(numel(goodRxns),nRxns);
+    model.c=zeros(numel(model.rxns),1);
+    multipliers=randsample([-1 1],nRxns,true);
+    multipliers(model.rev(goodRxns(rxns))==0)=1;
+    model.c(goodRxns(rxns))=rand(nRxns,1).*multipliers;
+    sol=solveLP(model);
+    if any(sol.x)
+        if abs(sol.f)>10^-8
             sols(:,counter)=sol.x;
             counter=counter+1;
             badSolutions=0;
-       else
+        else
             badSolutions=badSolutions+1;
             %If it only finds bad solutions then throw an error.
             if badSolutions==50 && supressErrors==false
                 EM='The program is having problems finding non-zero solutions that are not involved in loops. Review the constraints on your model. Set supressErrors to true to ignore this error';
                 dispEM(EM);
             end
-       end
-   end
+        end
+    end
 end
 
 %Map to original model
@@ -125,26 +138,25 @@ end
 %To use instead of the normal Matlab randsample function. This is in order
 %to not depend on the Matlab statistical toolbox.
 function I=randsample(n,k,replacement)
-    if nargin<3
-        replacement=false;
+if nargin<3
+    replacement=false;
+end
+%n can be a integer, which leads to I being sampled from 1:n, or it can be
+%a population to sample from.
+if numel(n)==1 && isnumeric(n)
+    n=1:n;
+end
+%Loop and get random numbers until the list is unique. This is only a good
+%option is the number of samples is small compared to the population. There
+%are several checks that should be made here, for example regarding size
+%and that the number of samples is <=population size if replacement==false.
+%This is not the case in randomSampling, so such checks are ignored
+while true
+    J=randi(numel(n),[k,1]);
+    if replacement==true || numel(J)==numel(unique(J))
+        I=n(J);
+        break;
     end
-    %n can be a integer, which leads to I being sampled from 1:n, or it can
-    %be a population to sample from.
-    if numel(n)==1 && isnumeric(n)
-       n=1:n;
-    end
-    %Loop and get random numbers until the list is unique. This is only a
-    %good option is the number of samples is small compared to the
-    %population. There are several checks that should be made here, for
-    %example regarding size and that the number of samples is <=population
-    %size if replacement==false. This is not the case in randomSampling, so
-    %such checks are ignored
-    while true
-        J=randi(numel(n),[k,1]);
-        if replacement==true || numel(J)==numel(unique(J))
-            I=n(J);
-            break;
-        end
-    end
-    I=I(:);
+end
+I=I(:);
 end

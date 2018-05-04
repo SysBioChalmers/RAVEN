@@ -68,9 +68,9 @@ canProduce=haveFlux(model,10^-5,addedRxns);
 notProduced=find(~canProduce);
 minToConnect={};
 if checkNeededForProduction==true
-    %For each of the metabolites that couldn't be produced allow uptake and check
-    %which of the other metabolites that couldn't be produced that can be
-    %produced
+    %For each of the metabolites that couldn't be produced allow uptake and
+    %check which of the other metabolites that couldn't be produced that
+    %can be produced
     neededForProductionMat=false(numel(notProduced));
     for i=1:numel(notProduced)
         %Add uptake for this metabolite
@@ -80,14 +80,14 @@ if checkNeededForProduction==true
         end
         %Change the production reaction to an uptake reaction
         model.S(:,numel(model.rxns)-numel(addedRxns)+notProduced(i))=model.S(:,numel(model.rxns)-numel(addedRxns)+notProduced(i))*-1;
-
+        
         %Test which of the metabolites that couldn't be produced that can
         %be produced now
         neededForProductionMat(i,:)=haveFlux(model,10^-5,addedRxns(notProduced));
     end
     %Calculate the smallest number of metabolites that must be connected to
     %make everything connected and return their names
-
+    
     %The algorithm is relatively straight forward. It finds the metabolite
     %that connects the most unconnected metabolites (iteratively), adds it
     %and removes the now connected metabolites until all are connected.
@@ -98,20 +98,20 @@ if checkNeededForProduction==true
         totalConnected=false(size(neededForProdTemp));
         for i=1:numel(notProduced)
             totalConnected(i,:)=neededForProdTemp(i,:);
-
+            
             lastIter=0;
             while 1==1
                 [~, a]=find(neededForProdTemp(totalConnected(i,:),:));
                 totalConnected(i,a)=true;
                 if numel(a)==lastIter
-                   break; %No more connections were possible
+                    break; %No more connections were possible
                 else
                     lastIter=numel(a);
                 end
             end
         end
         [connections, mostConnected]=max(sum(totalConnected,2));
-
+        
         if connections>0
             %Add the most connected metabolite to the list and remove all
             %metabolites that it's connected to
@@ -133,13 +133,13 @@ notProducedNames=strcat(model.metNames(allowedMetIndexes(notProduced)),'[',model
 if printDetails==true
     fprintf('The following metabolites could not be produced:\n');
     [notProducedNamesTemp,perm]=sort(notProducedNames);
-
+    
     if checkNeededForProduction==true
         neededForProdTemp=neededForProductionMat(:,perm);
         neededForProdTemp=neededForProdTemp(perm,:);
         fprintf('\tIf the production of a metabolite is dependent on some other metabolites then those are printed under the name\n\n');
     end
-	for i=1:numel(notProducedNamesTemp)
+    for i=1:numel(notProducedNamesTemp)
         fprintf([notProducedNamesTemp{i} '\n']);
         neededForProdTemp(i,i)=false; %Not neat to do this here. Prevent printing itself
         if checkNeededForProduction==true
@@ -150,6 +150,6 @@ if printDetails==true
                 end
             end
         end
-	end
+    end
 end
 end

@@ -28,7 +28,8 @@ function newModel=ravenCobraWrapper(model)
 %
 %   Usage: newModel=ravenCobraWrapper(model)
 %
-%   Simonas Marcisauskas, 2017-10-20
+%   Simonas Marcisauskas, 2018-03-17
+%   Benjamin J. Sanchez, 2018-04-20
 %
 
 if isfield(model,'rules')
@@ -43,7 +44,7 @@ if isRaven
     
     % Firstly removing boundary metabolites;
     model=simplifyModel(model);
-
+    
     % Mandatory COBRA fields;
     newModel.rxns=model.rxns;
     newModel.mets=strcat(model.mets,'[',model.comps(model.metComps),']');
@@ -73,7 +74,7 @@ if isRaven
     if isfield(model,'rxnReferences')
         newModel.rxnReferences=model.rxnReferences;
     end;
-    if isfield(model,'rxnNotes')    
+    if isfield(model,'rxnNotes')
         newModel.rxnNotes=model.rxnNotes;
     end;
     if isfield(model,'metNames')
@@ -99,7 +100,7 @@ if isRaven
         end;
     end;
     if isfield(model,'inchis')
-    	newModel.metInChIString=regexprep(strcat('InChI=', model.inchis),'^InChI=$','');
+        newModel.metInChIString=regexprep(strcat('InChI=', model.inchis),'^InChI=$','');
     end;
     if isfield(model,'genes')
         newModel.genes=model.genes;
@@ -119,7 +120,7 @@ if isRaven
     if isfield(model,'metMiriams')
         tmp_hmdbid=strrep(extractMiriam(model.metMiriams,'hmdb'),'hmdb/','');
         if ~all(cellfun(@isempty,tmp_hmdbid))
-        	newModel.metHMDBID=tmp_hmdbid;
+            newModel.metHMDBID=tmp_hmdbid;
         end;
         tmp_metanetx=strrep(extractMiriam(model.metMiriams,'metanetx.chemical'),'metanetx.chemical/','');
         if ~all(cellfun(@isempty,tmp_metanetx))
@@ -131,7 +132,7 @@ if isRaven
     if isfield(model,'geneMiriams')
         tmp_kegggeneid=strrep(extractMiriam(model.geneMiriams,'kegg.genes'),'kegg.genes/','');
         if ~all(cellfun(@isempty,tmp_kegggeneid))
-        	newModel.geneiskegg__46__genesID=tmp_kegggeneid;
+            newModel.geneiskegg__46__genesID=tmp_kegggeneid;
         end;
         tmp_genesgdid=strrep(extractMiriam(model.geneMiriams,'sgd'),'sgd/','');
         if ~all(cellfun(@isempty,tmp_genesgdid))
@@ -146,24 +147,27 @@ if isRaven
         newModel.geneNames=model.geneShortNames;
     end;
     if isfield(model,'rxnConfidenceScores')
-        newModel.rxnConfidenceScores=cell2mat(model.rxnConfidenceScores);
+        newModel.rxnConfidenceScores=model.rxnConfidenceScores;
     end;
     if isfield(model,'genes')
         newModel.rules=grrulesToRules(model);
     end;
     newModel.osense=-1;
     
-    % It seems that grRules, rxnGeneMat and rev are disposable fields in COBRA
-    % version, but we export them to make things faster, when converting
-    % COBRA structure back to RAVEN;
-    if isfield(model,'grRules')
-        newModel.grRules=model.grRules;
-    end;
+    % It seems that grRules, rxnGeneMat and rev are disposable fields in
+    % COBRA version, but we export them to make things faster, when
+    % converting COBRA structure back to RAVEN;
     if isfield(model,'rxnGeneMat')
         newModel.rxnGeneMat=model.rxnGeneMat;
     end;
+    if isfield(model,'grRules')
+        [grRules, rxnGeneMat] = standardizeGrRules(model,true);
+        newModel.grRules      = grRules;
+        %Incorporate a rxnGeneMat consistent with standardized grRules
+        newModel.rxnGeneMat   = rxnGeneMat;
+    end
     newModel.rev=model.rev;
- else
+else
     fprintf('Converting COBRA structure to RAVEN..\n');
     % Converting from COBRA to RAVEN structure;
     
@@ -178,13 +182,13 @@ if isRaven
     % It some rare cases, there may be overlapping mets due to removal e.g.
     % [c]. To avoid this, we change e.g. [c] into _c;
     if numel(unique(newModel.mets))~=numel(model.mets)
-    	newModel.mets=model.mets;
+        newModel.mets=model.mets;
         for i=1:numel(model.comps)
             newModel.mets=regexprep(newModel.mets,'\]$','');
             newModel.mets=regexprep(newModel.mets,['\[', model.comps{i}, '$'],['_', model.comps{i}]);
         end;
     end;
-        
+    
     newModel.S=model.S;
     newModel.lb=model.lb;
     newModel.ub=model.ub;
@@ -199,7 +203,7 @@ if isRaven
             end;
         end;
     else
-    	newModel.rev=model.rev;
+        newModel.rev=model.rev;
     end;
     newModel.c=model.c;
     newModel.b=zeros(numel(model.mets),1);
@@ -214,7 +218,8 @@ if isRaven
         newModel.comps=unique(newModel.comps);
     end;
     
-    % metComps is also mandatory, but defined later to match the order of fields;
+    % metComps is also mandatory, but defined later to match the order of
+    % fields;
     
     % Fields 'description' and 'id' are also considered as mandatory, but
     % these are added to the model during exportModel/exportToExcelFormat
@@ -228,15 +233,14 @@ if isRaven
         newModel.rxnNames=model.rxnNames;
     end;
     if isfield(model,'grRules')
-        newModel.grRules=model.grRules;
+        [grRules,rxnGeneMat] = standardizeGrRules(model,true);
+        newModel.grRules     = grRules;
+        newModel.rxnGeneMat  = rxnGeneMat;
     else
-        model.grRules=rulesTogrrules(model);
-        newModel.grRules=model.grRules;
-    end;
-    if isfield(model,'rxnGeneMat')
-        newModel.rxnGeneMat=model.rxnGeneMat;
-    elseif isfield(model,'grRules')
-        newModel.rxnGeneMat=getRxnGeneMat(model);
+        model.grRules        = rulesTogrrules(model);
+        [grRules,rxnGeneMat] = standardizeGrRules(model,true);
+        newModel.grRules     = grRules;
+        newModel.rxnGeneMat  = rxnGeneMat;
     end;
     if isfield(model,'subSystems')
         newModel.subSystems=model.subSystems;
@@ -244,25 +248,35 @@ if isRaven
     if isfield(model,'rxnECNumbers')
         newModel.eccodes=regexprep(model.rxnECNumbers,'EC|EC:','');
     end;
-    if isfield(model,'rxnKEGGID')
+    if isfield(model,'rxnKEGGID') || isfield(model,'rxnReferences')
         for i=1:numel(model.rxns)
             counter=1;
             newModel.rxnMiriams{i,1}=[];
-            if ~isempty(model.rxnKEGGID{i})
-                newModel.rxnMiriams{i,1}.name{counter,1} = 'kegg.reaction';  
-                newModel.rxnMiriams{i,1}.value{counter,1} = model.rxnKEGGID{i};
-                counter=counter+1;
+            if isfield(model,'rxnKEGGID')
+                if ~isempty(model.rxnKEGGID{i})
+                    newModel.rxnMiriams{i,1}.name{counter,1} = 'kegg.reaction';
+                    newModel.rxnMiriams{i,1}.value{counter,1} = model.rxnKEGGID{i};
+                    counter=counter+1;
+                end;
+            end;
+            if isfield(model,'rxnReferences')
+                if ~isempty(model.rxnReferences{i})
+                    pmids = model.rxnReferences{i};
+                    pmids = strsplit(pmids,'; ');
+                    for j = 1:length(pmids)
+                        newModel.rxnMiriams{i,1}.name{counter,1} = 'pmid';
+                        newModel.rxnMiriams{i,1}.value{counter,1} = pmids{j};
+                        counter=counter+1;
+                    end;
+                end;
             end;
         end;
-    end;
-    if isfield(model,'rxnNotes')
-        newModel.rxnNotes=model.rxnNotes;
     end;
     if isfield(model,'rxnReferences')
         newModel.rxnReferences=model.rxnReferences;
     end;
     if isfield(model,'rxnConfidenceScores')
-        newModel.rxnConfidenceScores=num2cell(model.rxnConfidenceScores);
+        newModel.rxnConfidenceScores=model.rxnConfidenceScores;
     end;
     if isfield(model,'genes')
         newModel.genes=model.genes;
@@ -273,21 +287,21 @@ if isRaven
             newModel.geneMiriams{i,1}=[];
             if isfield(model,'geneiskegg__46__genesID')
                 if ~isempty(model.geneiskegg__46__genesID{i})
-                    newModel.geneMiriams{i,1}.name{counter,1} = 'kegg.genes';  
+                    newModel.geneMiriams{i,1}.name{counter,1} = 'kegg.genes';
                     newModel.geneMiriams{i,1}.value{counter,1} = model.geneiskegg__46__genesID{i};
                     counter=counter+1;
                 end;
             end;
             if isfield(model,'geneissgdID')
                 if ~isempty(model.geneissgdID{i})
-                    newModel.geneMiriams{i,1}.name{counter,1} = 'sgd';  
+                    newModel.geneMiriams{i,1}.name{counter,1} = 'sgd';
                     newModel.geneMiriams{i,1}.value{counter,1} = model.geneissgdID{i};
                     counter=counter+1;
                 end;
             end;
             if isfield(model,'proteinisuniprotID')
                 if ~isempty(model.proteinisuniprotID{i})
-                    newModel.geneMiriams{i,1}.name{counter,1} = 'uniprot';  
+                    newModel.geneMiriams{i,1}.name{counter,1} = 'uniprot';
                     newModel.geneMiriams{i,1}.value{counter,1} = model.proteinisuniprotID{i};
                     counter=counter+1;
                 end;
@@ -302,6 +316,7 @@ if isRaven
         newModel.metNames=regexprep(newModel.metNames,['\[', model.comps{i}, '\]$'],'');
         newModel.metNames=regexprep(newModel.metNames,['\[', model.compNames{i}, '\]$'],'');
     end;
+    newModel.metNames=deblank(newModel.metNames);
     newModel.metComps=regexprep(model.mets,'^.+\[','');
     newModel.metComps=regexprep(newModel.metComps,'\]$','');
     [~, newModel.metComps]=ismember(newModel.metComps,newModel.comps);
@@ -318,14 +333,14 @@ if isRaven
             newModel.metMiriams{i,1}=[];
             if isfield(model,'metChEBIID')
                 if ~isempty(model.metChEBIID{i})
-                    newModel.metMiriams{i,1}.name{counter,1} = 'chebi';  
+                    newModel.metMiriams{i,1}.name{counter,1} = 'chebi';
                     newModel.metMiriams{i,1}.value{counter,1} = model.metChEBIID{i};
                     counter=counter+1;
                 end;
             end;
             if isfield(model,'metHMDBID')
                 if ~isempty(model.metHMDBID{i})
-                    newModel.metMiriams{i,1}.name{counter,1} = 'hmdb';  
+                    newModel.metMiriams{i,1}.name{counter,1} = 'hmdb';
                     newModel.metMiriams{i,1}.value{counter,1} = model.metHMDBID{i};
                     counter=counter+1;
                 end;
@@ -333,11 +348,11 @@ if isRaven
             if isfield(model,'metKEGGID')
                 if ~isempty(model.metKEGGID{i})
                     if strcmp(model.metKEGGID{i}(1),'C')
-                        newModel.metMiriams{i,1}.name{counter,1} = 'kegg.compound';  
+                        newModel.metMiriams{i,1}.name{counter,1} = 'kegg.compound';
                         newModel.metMiriams{i,1}.value{counter,1} = model.metKEGGID{i};
                         counter=counter+1;
                     elseif strcmp(model.metKEGGID{i}(1),'G')
-                        newModel.metMiriams{i,1}.name{counter,1} = 'kegg.glycan';  
+                        newModel.metMiriams{i,1}.name{counter,1} = 'kegg.glycan';
                         newModel.metMiriams{i,1}.value{counter,1} = model.metKEGGID{i};
                         counter=counter+1;
                     end;
@@ -346,15 +361,15 @@ if isRaven
             if isfield(model,'metPubChemID')
                 if ~isempty(model.metPubChemID{i})
                     if strcmp(model.metPubChemID{i}(1:4),'CID:')
-                        newModel.metMiriams{i,1}.name{counter,1} = 'pubchem.compound';  
+                        newModel.metMiriams{i,1}.name{counter,1} = 'pubchem.compound';
                         newModel.metMiriams{i,1}.value{counter,1} = model.metPubChemID{i};
                         counter=counter+1;
                     elseif strcmp(model.metPubChemID{i}(1:4),'SID:')
-                        newModel.metMiriams{i,1}.name{counter,1} = 'pubchem.substance';  
+                        newModel.metMiriams{i,1}.name{counter,1} = 'pubchem.substance';
                         newModel.metMiriams{i,1}.value{counter,1} = model.metPubChemID{i};
                         counter=counter+1;
                     else
-                        newModel.metMiriams{i,1}.name{counter,1} = 'pubchem.compound';  
+                        newModel.metMiriams{i,1}.name{counter,1} = 'pubchem.compound';
                         newModel.metMiriams{i,1}.value{counter,1} = model.metPubChemID{i};
                         counter=counter+1;
                         printWarning=true;
@@ -363,7 +378,7 @@ if isRaven
             end;
             if isfield(model,'metMetaNetXID')
                 if ~isempty(model.metMetaNetXID{i})
-                    newModel.metMiriams{i,1}.name{counter,1} = 'metanetx.chemical';  
+                    newModel.metMiriams{i,1}.name{counter,1} = 'metanetx.chemical';
                     newModel.metMiriams{i,1}.value{counter,1} = model.metMetaNetXID{i};
                     counter=counter+1;
                 end;
@@ -381,69 +396,32 @@ end;
 end
 
 function rules=grrulesToRules(model)
-    % This function just takes grRules, changes all gene names to
-    % 'x(geneNumber)' and also changes 'or' and 'and' relations to
-    % corresponding symbols
-    replacingGenes=cell([size(model.genes,1) 1]);
-    rules=cell([size(model.grRules,1) 1]);
-    for i=1:numel(replacingGenes)
-        replacingGenes{i}=strcat('x(',num2str(i),')');
-    end;
-    for i=1:numel(model.grRules)
-        rules{i}=regexprep(model.grRules{i},model.genes,replacingGenes);
-        rules{i}=regexprep(rules{i},' and ',' & ');
-        rules{i}=regexprep(rules{i},' or ',' | ');
-    end;
+% This function just takes grRules, changes all gene names to
+% 'x(geneNumber)' and also changes 'or' and 'and' relations to
+% corresponding symbols
+replacingGenes=cell([size(model.genes,1) 1]);
+rules=cell([size(model.grRules,1) 1]);
+for i=1:numel(replacingGenes)
+    replacingGenes{i}=strcat('x(',num2str(i),')');
+end;
+for i=1:numel(model.grRules)
+    rules{i}=regexprep(model.grRules{i},model.genes,replacingGenes);
+    rules{i}=regexprep(rules{i},' and ',' & ');
+    rules{i}=regexprep(rules{i},' or ',' | ');
+end;
 end
 
 function grRules=rulesTogrrules(model)
-    % This function just takes rules, changes all gene names to
-    % grRules and also changes 'or' and 'and' relations from
-    % corresponding symbols
-    replacingGenes=cell([size(model.genes,1) 1]);
-    grRules=cell([size(model.rules,1) 1]);
-    
-    for i=1:numel(replacingGenes)
-        replacingGenes{i}=strcat('x(',num2str(i),')');
-    end;
-    for i=1:numel(model.rules)
-        grRules{i}=regexprep(model.rules{i},replacingGenes,model.genes);
-        grRules{i}=regexprep(grRules{i},' & ',' and ');
-        grRules{i}=regexprep(grRules{i},' | ',' or ');
-    end;
+% This function takes rules, replaces &/| for and/or, replaces the x(i)
+% format with the actual gene ID, and takes out extra whitespace and
+% redundant parenthesis introduced by COBRA, to create grRules.
+grRules = strrep(model.rules,'&','and');
+grRules = strrep(grRules,'|','or');
+for i = 1:length(model.genes)
+    grRules = strrep(grRules,['x(' num2str(i) ')'],model.genes{i});
 end
-
-function rxnGeneMat=getRxnGeneMat(model)
-    %Check gene association for each reaction and populate rxnGeneMat
-    if ~isempty(model.genes)
-        rxnGeneMat=zeros(numel(model.rxns),numel(model.genes));
-    end
-    if ~isempty(model.grRules)
-        tempRules=model.grRules;
-        for i=1:length(model.rxns)
-           %Check that all gene associations have a match in the gene list
-           if ~isempty(model.grRules{i})          
-               tempRules{i}=regexprep(tempRules{i},' and | or ','>'); %New format: Genes are separated 'and' and 'or' strings with parentheses
-               tempRules{i}=regexprep(tempRules{i},'(',''); %New format: Genes are separated 'and' and 'or' strings with parentheses
-               tempRules{i}=regexprep(tempRules{i},')',''); %New format: Genes are separated 'and' and 'or' strings with parentheses
-               indexesNew=strfind(tempRules{i},'>'); %Old format: Genes are separated by ":" for AND and ";" for OR
-               indexes=strfind(tempRules{i},':'); %Old format: Genes are separated by ":" for AND and ";" for OR
-               indexes=unique([indexesNew indexes strfind(tempRules{i},';')]);
-               if isempty(indexes)
-                   %See if you have a match
-                   I=find(strcmp(tempRules{i},model.genes));
-                   rxnGeneMat(i,I)=1;
-               else
-                   temp=[0 indexes numel(tempRules{i})+1];
-                   for j=1:numel(indexes)+1
-                       %The reaction has several associated genes
-                       geneName=tempRules{i}(temp(j)+1:temp(j+1)-1);
-                       I=find(strcmp(geneName,model.genes));
-                       model.rxnGeneMat(i,I)=1;
-                   end
-               end
-           end
-        end
-    end
-    rxnGeneMat=sparse(rxnGeneMat);
+grRules = strrep(grRules,'( ','(');
+grRules = strrep(grRules,' )',')');
+grRules = regexprep(grRules,'^(','');   %rules that start with a "("
+grRules = regexprep(grRules,')$','');   %rules that end with a ")"
 end

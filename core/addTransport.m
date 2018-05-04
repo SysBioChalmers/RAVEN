@@ -21,7 +21,7 @@ function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,o
 %   Usage: [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,...
 %           isRev,onlyToExisting)
 %
-%   Simonas Marcisauskas, 2017-08-25
+%   Simonas Marcisauskas, 2018-03-17
 %
 
 if iscell(fromComp)
@@ -88,20 +88,20 @@ for i=1:numel(toComps)
         metsToAdd.metNames=metNames(J==0);
         metsToAdd.compartments=toComps{i};
         model=addMets(model,metsToAdd);
-
+        
         %Redo the mapping when all mets are there. A bit lazy, but it's
         %fast anyways
         I=find(model.metComps==toIDs(i));
         [~, K]=ismember(metNames,model.metNames(I));
         toMets=I(K); %All are guaranteed to be found now
     end
-
+    
     %Construct the S matrix
     nRxns=numel(fromMetsInComp);
     newS=zeros(numel(model.mets),nRxns);
     newS(sub2ind(size(newS),fromMetsInComp(:),(1:nRxns)'))=-1;
     newS(sub2ind(size(newS),toMets(:),(1:nRxns)'))=1;
-
+    
     %Add the reactions
     model.S=[model.S sparse(newS)];
     if isRev==true
@@ -113,14 +113,14 @@ for i=1:numel(toComps)
     end
     model.ub=[model.ub;ones(nRxns,1)*inf];
     model.c=[model.c;zeros(nRxns,1)];
-
+    
     %Add annotation
     filler=cell(nRxns,1);
     filler(:)={''};
     addedRxns=strcat({['T_' fromComp '_to_' toComps{i} '_']},model.mets(fromMetsInComp));
     model.rxns=[model.rxns;addedRxns];
     model.rxnNames=[model.rxnNames;addedRxns];
-
+    
     if isfield(model,'eccodes')
         model.eccodes=[model.eccodes;filler];
     end
@@ -156,7 +156,8 @@ for i=1:numel(toComps)
         model.rxnReferences=[model.rxnReferences;filler];
     end
     if isfield(model,'rxnConfidenceScores')
-        model.rxnConfidenceScores=[model.rxnConfidenceScores;filler];
+        model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(nRxns,1)];
+        fprintf('NOTE: The added transport reactions will have confidence scores as NaNs\n');
     end
 end
 end

@@ -218,19 +218,19 @@ for i=2:size(raw,1)
     end
     %Add changed bounds
     if ischar(raw{i,colI(12)})
-    	changed=regexp(raw{i,colI(12)},';','split');
+        changed=regexp(raw{i,colI(12)},';','split');
         task.changed=[task.changed;changed(:)];
         task.LBrxn=[task.LBrxn;ones(numel(changed),1)*raw{i,colI(13)}];
         task.UBrxn=[task.UBrxn;ones(numel(changed),1)*raw{i,colI(14)}];
     end
-
+    
     %Check if it should add more constraints
     if i<size(raw,1)
         if isempty(raw{i+1,colI(1)})
             continue;
         end
     end
-
+    
     taskStruct=[taskStruct;task];
     task=eTask;
     if i<size(raw,1)

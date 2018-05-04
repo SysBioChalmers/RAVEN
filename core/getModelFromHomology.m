@@ -45,7 +45,7 @@ function draftModel=getModelFromHomology(models,blastStructure,getModelFor,prefe
 %
 %   draftModel        a new model structure
 %
-%   Simonas Marcisauskas, 2017-10-11
+%   Simonas Marcisauskas, 2018-03-17
 %
 
 %NOTE: "to" and "from" means relative the new organism
@@ -80,8 +80,8 @@ for i=1:numel(models)
     modelNames{i}=models{i}.id;
 end
 
-%Assume for now that all information is there and that it's correct
-%This is important to fix since no further checks are being made!
+%Assume for now that all information is there and that it's correct This is
+%important to fix since no further checks are being made!
 
 %Remove all gene matches that are below the cutoffs
 for i=1:numel(blastStructure)
@@ -102,13 +102,13 @@ for i=1:numel(models)
     [hasGenes, ~]=find(models{i}.rxnGeneMat);
     hasNoGenes=1:numel(models{i}.rxns);
     hasNoGenes(hasGenes)=[];
-
+    
     models{i}=removeReactions(models{i},hasNoGenes,true,true);
 end
 
 %Create a structure that contains all genes used in the blasts in any
-%direction for each of the models in models and for the new organism
-%The first cell is for the new organism and then according to the preferred
+%direction for each of the models in models and for the new organism The
+%first cell is for the new organism and then according to the preferred
 %order. If no such order is supplied, then according to the order in
 %models.
 allGenes=cell(numel(models)+1,1);
@@ -145,12 +145,12 @@ if onlyGenesInModels==true
         blastStructure(i).aligLen(~indexes)=[];
         blastStructure(i).bitscore(~indexes)=[];
         blastStructure(i).ppos(~indexes)=[];
-
+        
         %Check that no matching in blastStructure is empty. This happens if
         %no genes in the models are present in the corresponding sheet
         if isempty(blastStructure(i).fromGenes)
-        	EM=['No genes in matching from ' blastStructure(i).fromId ' to ' blastStructure(i).toId ' are present in the corresponding model'];
-          dispEM(EM);
+            EM=['No genes in matching from ' blastStructure(i).fromId ' to ' blastStructure(i).toId ' are present in the corresponding model'];
+            dispEM(EM);
         end
     end
 end
@@ -163,16 +163,16 @@ if strictness==3
     for i=1:numel(blastStructure)
         keep=false(numel(blastStructure(i).toGenes),1);
         [allFromGenes, ~, I]=unique(blastStructure(i).fromGenes);
-
+        
         %It would be nice to get rid of this loop
         for j=1:numel(allFromGenes)
             allMatches=find(I==j);
             bestMatches=allMatches(blastStructure(i).evalue(allMatches)==min(blastStructure(i).evalue(allMatches)));
-
+            
             %Keep the best matches
             keep(bestMatches)=true;
         end
-
+        
         %Delete all matches that were not best matches
         blastStructure(i).fromGenes(~keep)=[];
         blastStructure(i).toGenes(~keep)=[];
@@ -189,7 +189,7 @@ useOrder=[{getModelFor};useOrder];
 for i=1:numel(blastStructure)
     [~, toIndex]=ismember(blastStructure(i).toId,useOrder);
     [~, fromIndex]=ismember(blastStructure(i).fromId,useOrder);
-
+    
     %Add all genes to the corresponding list in allGenes
     allGenes{toIndex}=[allGenes{toIndex};blastStructure(i).toGenes];
     allGenes{fromIndex}=[allGenes{fromIndex};blastStructure(i).fromGenes];
@@ -198,19 +198,19 @@ end
 %Keep only the unique gene names
 maxOtherGeneNr=0; %Determines the dimension of the connectivity matrixes
 for i=1:numel(allGenes)
-   allGenes{i}=unique(allGenes{i});
-   if i>1
-       if numel(allGenes{i})>maxOtherGeneNr
+    allGenes{i}=unique(allGenes{i});
+    if i>1
+        if numel(allGenes{i})>maxOtherGeneNr
             maxOtherGeneNr=numel(allGenes{i});
-       end
-   end
+        end
+    end
 end
 
 %Generate a cell array of matrixes that describes how the genes in the new
-%organism map to the models. Each cell matches to the corresponding model in
-%useOrder (starting at 2 of course). First dimension is gene in new organism,
-%second which gene it is in the other organism. The second matrix describes
-%how they map back.
+%organism map to the models. Each cell matches to the corresponding model
+%in useOrder (starting at 2 of course). First dimension is gene in new
+%organism, second which gene it is in the other organism. The second matrix
+%describes how they map back.
 
 %As it is now, a significant match is indicated by a 1. This could be
 %expanded to contain some kind of significance level. The first dimension
@@ -227,8 +227,8 @@ end
 %Fill the matches to other species
 for i=1:numel(blastStructure)
     if strcmp(blastStructure(i).toId,getModelFor)
-        %This was to the new organism
-        %They should all match so no checks are being made
+        %This was to the new organism They should all match so no checks
+        %are being made
         [~, a]=ismember(blastStructure(i).toGenes,allGenes{1});
         [~, fromModel]=ismember(blastStructure(i).fromId,useOrder);
         [~, b]=ismember(blastStructure(i).fromGenes,allGenes{fromModel});
@@ -247,8 +247,8 @@ end
 %Now we have all the gene matches in a convenient way. For all the genes in
 %the new organism get the genes that should be included from other
 %organisms. If all genes should be included this simply means keep the
-%allFrom matrix as is is. If only 1-1 orthologs are to be included then only
-%those elements are kept.
+%allFrom matrix as is is. If only 1-1 orthologs are to be included then
+%only those elements are kept.
 
 finalMappings=cell(numel(useOrder)-1,1);
 if strictness==1 || strictness==3
@@ -264,9 +264,9 @@ else
 end
 
 %Remove all genes from the mapping that are not in the models. This doesn't
-%do much if only genes in the models were used for the original
-%mapping. Also simplify the finalMapping and allGenes structures so that
-%they only contain mappings that exist
+%do much if only genes in the models were used for the original mapping.
+%Also simplify the finalMapping and allGenes structures so that they only
+%contain mappings that exist
 usedNewGenes=false(numel(allGenes{1}),1);
 
 for i=1:numel(allGenes)-1
@@ -275,7 +275,7 @@ for i=1:numel(allGenes)-1
         a=ismember(allGenes{i+1},models{useOrderIndexes(i)}.genes);
         finalMappings{i}(:,~a)=false;
     end
-
+    
     %Then remove unused ones and simplify
     [a, b]=find(finalMappings{i});
     usedGenes=false(numel(allGenes{i+1}),1);
@@ -295,22 +295,21 @@ end
 %models. If there is a preferred order specified then each gene can only
 %result in reactions from one model, otherwise they should all be included
 
-%Start by simplifying the models by removing genes/reactions that are
-%not used. This is where it gets weird with complexes, especially "or" complexes.
-%In this step only reactions which are encoded by one single gene, or where all
-%genes should be deleted, are deleted. The info on the full complex is still
-%present in the grRules
+%Start by simplifying the models by removing genes/reactions that are not
+%used. This is where it gets weird with complexes, especially "or"
+%complexes. In this step only reactions which are encoded by one single
+%gene, or where all genes should be deleted, are deleted. The info on the
+%full complex is still present in the grRules
 
 for i=1:numel(models)
     a=ismember(models{useOrderIndexes(i)}.genes,allGenes{i+1});
-
+    
     %Don't remove reactions with complexes if not all genes in the complex
-    %should be deleted.
-    %NOTE: This means that not all the genes in 'a' are guaranteed to be
-    %deleted. This approach works fine for 'and' complexes, but there
-    %should be a check that it doesn't keep 'or' genes if it doesn't have
-    %to!
-    models{useOrderIndexes(i)}=removeGenes(models{useOrderIndexes(i)},~a,true,false);
+    %should be deleted. NOTE: This means that not all the genes in 'a' are
+    %guaranteed to be deleted. This approach works fine for 'and'
+    %complexes, but there should be a check that it doesn't keep 'or' genes
+    %if it doesn't have to!
+    models{useOrderIndexes(i)}=removeGenes(models{useOrderIndexes(i)},~a,true,true,false);
 end
 
 %Since I want to use mergeModels in the end, I simplify the models further
@@ -327,18 +326,18 @@ if ~isempty(preferredOrder) && numel(models)>1
         [usedGenes, ~]=find(finalMappings{i});
         usedGenes=unique(usedGenes);
         a=ismember(usedGenes,find(allUsedGenes));
-
+        
         [~, genesToDelete]=find(finalMappings{i}(usedGenes(a),:)); %IMPORTANT! IS it really correct to remove all genes that map?
         genesToDelete=unique(genesToDelete); %Maybe not needed, but for clarity if nothing else
-
+        
         %Remove all the genes that were already found and add the other
         %ones to allUsedGenes
         [models{useOrderIndexes(i)}, notDeleted]=removeGenes(models{useOrderIndexes(i)},allGenes{i+1}(genesToDelete),true,false);
         allUsedGenes(usedGenes)=true;
-
-        %Remove the deleted genes from finalMappings and allGenes
-        %Don't remove the genes in notDeleted, they are part of complexes
-        %with some non-mapped genes
+        
+        %Remove the deleted genes from finalMappings and allGenes Don't
+        %remove the genes in notDeleted, they are part of complexes with
+        %some non-mapped genes
         deletedIndexes=~ismember(allGenes{i+1}(genesToDelete),notDeleted);
         finalMappings{i}(:,genesToDelete(deletedIndexes))=[];
         allGenes{i+1}(genesToDelete(deletedIndexes))=[];
@@ -350,52 +349,52 @@ end
 for i=1:numel(models)
     %Find all the new genes that should be used for this model
     [newGenes, oldGenes]=find(finalMappings{i});
-
+    
     %Create a new gene list with the genes from the new organism and those
     %genes that could not be removed
     replaceableGenes=allGenes{i+1}(unique(oldGenes));
     nonReplaceableGenes=setdiff(models{useOrderIndexes(i)}.genes,replaceableGenes);
     fullGeneList=[allGenes{1}(unique(newGenes));nonReplaceableGenes];
-
+    
     %Just to save some indexing later. This is the LAST index of
     %replaceable ones
     nonRepStartIndex=numel(unique(newGenes));
-
+    
     %Construct a new rxnGeneMat
     newRxnGeneMat=sparse(numel(models{useOrderIndexes(i)}.rxns),numel(fullGeneList));
-
+    
     %Now update the rxnGeneMat matrix. This is a little tricky and could
     %probably be done in a more efficient way, but I just loop through the
     %reactions and add them one by one
     for j=1:numel(models{useOrderIndexes(i)}.rxns)
-       	%Get the old genes encoding for this reaction
+        %Get the old genes encoding for this reaction
         [~, oldGeneIds]=find(models{useOrderIndexes(i)}.rxnGeneMat(j,:));
-
+        
         %Update the matrix for each gene. This includes replacing one gene
         %with several new ones if there were several matches
         for k=1:numel(oldGeneIds)
             %Match the gene to one in the gene list. This is done as a text
             %match. Could probably be done better, but I'm a little lost in
             %the indexing
-
+            
             geneName=models{useOrderIndexes(i)}.genes(oldGeneIds(k));
-
+            
             %First search in the mappable genes
             mapIndex=find(ismember(allGenes{i+1},geneName));
-
+            
             if ~isempty(mapIndex)
                 %Get the new genes for that gene
                 a=find(finalMappings{i}(:,mapIndex));
-
+                
                 %Find the positions of these genes in the final gene list
                 [~, b]=ismember(allGenes{1}(a),fullGeneList);
-
+                
                 %Update the matrix
                 newRxnGeneMat(j,b)=1;
-
-                %Update the grRules string. This is tricky, but I hope
-                %that it's ok to replace the old gene name with the new one
-                %and add ') or (' if there were several matches. Be sure of
+                
+                %Update the grRules string. This is tricky, but I hope that
+                %it's ok to replace the old gene name with the new one and
+                %add ') or (' if there were several matches. Be sure of
                 %this!
                 repString=fullGeneList{b(1)};
                 for l=2:numel(b)
@@ -406,15 +405,15 @@ for i=1:numel(models)
                 %Then search in the non-replaceable genes. There could only
                 %be one match here
                 index=find(ismember(nonReplaceableGenes,geneName));
-
+                
                 %Update the matrix
                 newRxnGeneMat(j,nonRepStartIndex+index)=1;
-
+                
                 models{useOrderIndexes(i)}.grRules{j}=strrep(models{useOrderIndexes(i)}.grRules{j},geneName{1},strcat('OLD_',models{useOrderIndexes(i)}.id,'_',geneName{1}));
             end
         end
     end
-
+    
     %Add the new list of genes
     models{useOrderIndexes(i)}.rxnGeneMat=newRxnGeneMat;
     if ~isempty(nonReplaceableGenes)
@@ -425,8 +424,8 @@ for i=1:numel(models)
     if isfield(models{useOrderIndexes(i)},'geneComps')
         geneComps=models{useOrderIndexes(i)}.geneComps(1);
         models{useOrderIndexes(i)}.geneComps=zeros(numel(models{useOrderIndexes(i)}.genes),1);
-        % Assume that all genes are in the same compartment, and this
-        % compartment is specified for the first gene
+        %Assume that all genes are in the same compartment, and this
+        %compartment is specified for the first gene
         models{useOrderIndexes(i)}.geneComps(:)=geneComps;
     end
 end
@@ -448,11 +447,13 @@ end
 draftModel.description=description;
 draftModel.rxnNotes=cell(length(draftModel.rxns),1);
 draftModel.rxnNotes(:)={'Reaction included by getModelFromHomology'};
-draftModel.rxnConfidenceScores=cell(length(draftModel.rxns),1);
-draftModel.rxnConfidenceScores(:)={'2'};
-% Gene short names are often different between species, safer not to
-% include them.
+draftModel.rxnConfidenceScores=NaN(length(draftModel.rxns),1);
+draftModel.rxnConfidenceScores(:)=2;
+%Gene short names are often different between species, safer not to
+%include them.
 if isfield(draftModel,'geneShortNames');
     draftModel = rmfield(draftModel,'geneShortNames');
 end
+%Standardize grRules and notify if problematic grRules are found
+[draftModel.grRules,draftModel.rxnGeneMat] = standardizeGrRules(draftModel,false);
 end

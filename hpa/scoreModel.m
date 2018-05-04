@@ -147,8 +147,8 @@ if any(celltype)
     end
 end
 
-%Some preprocessing of the structures to speed up a little
-%Remove all tissues that are not the correct one
+%Some preprocessing of the structures to speed up a little Remove all
+%tissues that are not the correct one
 J=~strcmpi(hpaData.tissues,tissue);
 
 %If cell type is supplied, then only keep that cell type
@@ -203,10 +203,10 @@ if isfield(arrayData,'threshold')
     arrayData.threshold(J) = [];
 end
 
-%Calculate the scores for the arrayData. These scores are
-%calculated for each genes from its fold change between the tissue/celltype(s) in
-%question and all other celltypes. This is a lower quality data than
-%protein abundance, since a gene that is equally highly expressed in all cell types
+%Calculate the scores for the arrayData. These scores are calculated for
+%each genes from its fold change between the tissue/celltype(s) in question
+%and all other celltypes. This is a lower quality data than protein
+%abundance, since a gene that is equally highly expressed in all cell types
 %will have a score of 0.0. These scores are therefore only used for genes
 %for which there is no HPA data available. The fold changes are transformed
 %as min(log(x),10) for x>1 and max(log(x),-5) for x<1 in order to have
@@ -276,43 +276,43 @@ rxnScores=ones(numel(model.rxns),1)*noGeneScore;
 
 %Loop through the reactions and calculate the scores
 for i=1:numel(model.rxns)
-   %Check if it has genes
-   I=find(model.rxnGeneMat(i,:));
-   if any(I)
-       %If any of the genes exist in hpaData, then don't use arrayData
-       if any(hpaExist(I))
-           %At least one gene was found in HPA
-           if strcmpi(multipleGeneScoring,'best')
-               rxnScores(i)=max(hScores(hpaMap(I(hpaExist(I)))));
-           else
-               rxnScores(i)=mean(hScores(hpaMap(I(hpaExist(I)))));
-           end
-       else
-           %Use array data
-           if any(arrayExist(I))
-              %At least one gene was found in the array data
-               if strcmpi(multipleGeneScoring,'best')
-                   rxnScores(i)=max(aScores(arrayMap(I(arrayExist(I)))));
-               else
-                   rxnScores(i)=mean(aScores(arrayMap(I(arrayExist(I)))));
-               end
-           end
-       end
-   end
+    %Check if it has genes
+    I=find(model.rxnGeneMat(i,:));
+    if any(I)
+        %If any of the genes exist in hpaData, then don't use arrayData
+        if any(hpaExist(I))
+            %At least one gene was found in HPA
+            if strcmpi(multipleGeneScoring,'best')
+                rxnScores(i)=max(hScores(hpaMap(I(hpaExist(I)))));
+            else
+                rxnScores(i)=mean(hScores(hpaMap(I(hpaExist(I)))));
+            end
+        else
+            %Use array data
+            if any(arrayExist(I))
+                %At least one gene was found in the array data
+                if strcmpi(multipleGeneScoring,'best')
+                    rxnScores(i)=max(aScores(arrayMap(I(arrayExist(I)))));
+                else
+                    rxnScores(i)=mean(aScores(arrayMap(I(arrayExist(I)))));
+                end
+            end
+        end
+    end
 end
 end
 
 %This is because isinf and all returns 0x1 for empty set, which gives a
 %concatenation error. Do like this instead of having many if statements
 function y=myIsInf(x)
-	y=isinf(x);
-    if isempty(y)
-        y=[];
-    end
+y=isinf(x);
+if isempty(y)
+    y=[];
+end
 end
 function y=myAll(x,dim)
-	y=all(x,dim);
-    if isempty(y)
-        y=[];
-    end
+y=all(x,dim);
+if isempty(y)
+    y=[];
+end
 end

@@ -75,7 +75,7 @@ for i=1:numel(sheets)
             blastStructure(numel(blastStructure)).evalue=values(:,1);
             blastStructure(numel(blastStructure)).aligLen=values(:,2);
             blastStructure(numel(blastStructure)).identity=values(:,3);
-
+            
             %Remove matches where any of the values is NaN. This would have
             %been done anyways in getModelFromHomology, but it's neater to
             %do it here

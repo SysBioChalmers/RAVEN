@@ -34,7 +34,7 @@ hsSolMin=[];
 hsSolMax=[];
 for i=1:numel(rxns)
     model.c=c;
-
+    
     %Get minimal flux
     model.c(rxns(i))=-1;
     [solution, hsSolMin]=solveLP(model,0,[],hsSolMin);
@@ -44,13 +44,13 @@ for i=1:numel(rxns)
     else
         minFluxes(i)=NaN;
     end
-
+    
     %Get maximal flux
     model.c(rxns(i))=1;
     [solution, hsSolMax]=solveLP(model,0,[],hsSolMax);
     exitFlags(i,2)=solution.stat;
     if ~isempty(solution.f)
-    	maxFluxes(i)=solution.x(rxns(i));
+        maxFluxes(i)=solution.x(rxns(i));
     else
         maxFluxes(i)=NaN;
     end

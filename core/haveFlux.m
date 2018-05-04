@@ -54,7 +54,8 @@ smallModel.c=ones(numel(smallModel.c),1);
 sol=solveLP(smallModel);
 J(abs(sol.x(mixIndexes))>cutOff)=true;
 
-%Loop through and maximize then minimize each rxn if it doesn't already have a flux
+%Loop through and maximize then minimize each rxn if it doesn't already
+%have a flux
 Z=zeros(numel(smallModel.c),1);
 hsSolOut=[];
 for i=[1 -1]

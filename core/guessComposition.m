@@ -48,46 +48,47 @@ guessedFor={};
 predicted=true;
 while predicted==true
     predicted=false;
-
-    %Get the unique names (composition should be independent of compartment)
-    %for the metabolites without composition
+    
+    %Get the unique names (composition should be independent of
+    %compartment) for the metabolites without composition
     metNames=unique(model.metNames(cellfun(@isempty,model.metFormulas)));
-
+    
     %Parse the formulas in the model
     [elements, useMat, exitFlag]=parseFormulas(model.metFormulas, true,false);
-
+    
     for i=1:numel(metNames)
         %Get the metabolites with this name. Not so neat, but this is a
         %fast function anyways
         mets=find(ismember(model.metNames,metNames(i)));
-
+        
         currentComp=[];
-
-        %Loop through the metabolites
-        %-1: Could not assign due to missing info. -2: Could not assign due to contradiction
-        %1: Composition assigned
+        
+        %Loop through the metabolites -1: Could not assign due to missing
+        %info. -2: Could not assign due to contradiction 1: Composition
+        %assigned
         metStatus=-1;
         for j=1:numel(mets)
             %Get the reactions that the metabolite participates in
             [~, I]=find(model.S(mets(j),:));
             if any(I)
                 for k=1:numel(I)
-                    %Loop through the reactions and check if all other mets in them
-                    %have known composition
+                    %Loop through the reactions and check if all other mets
+                    %in them have known composition
                     eqn=model.S(:,I(k));
                     eqn(mets(j))=0;
                     if all(exitFlag(eqn~=0)==1)
-                        %This means that all other mets had composition. Calculate
-                        %the resulting composition for the unknown one
+                        %This means that all other mets had composition.
+                        %Calculate the resulting composition for the
+                        %unknown one
                         comp=useMat'*eqn;
-
+                        
                         %This can result in round off errors if there are
                         %stoichiometries with many decimals. Ignore values
                         %below 10^-12
                         comp(abs(comp)<10^-12)=0;
-
-                        %Check if the composition consist of both negative and
-                        %positive values. If so, throw an error
+                        
+                        %Check if the composition consist of both negative
+                        %and positive values. If so, throw an error
                         if all(comp<=0) || all(comp>=0)
                             comp=abs(comp);
                             if isempty(currentComp)
@@ -99,24 +100,26 @@ while predicted==true
                             else
                                 metStatus=-2;
                                 break;
-
+                                
                                 %%Check if there is an inconcistency
                                 %if any(currentComp~=comp)
-                                %    dispEM(['Could not predict composition of ' model.metNames{mets(i)} ],false);
+                                %    dispEM(['Could not predict composition
+                                %    of ' model.metNames{mets(i)} ],false);
                                 %end
                             end
                         else
-                            %Check if there is an inconcistency
-                            %if any(currentComp~=comp)
-                            %    dispEM(['Could not predict composition of ' model.metNames{loopThrough(i)} ],false);
+                            %Check if there is an inconcistency if
+                            %any(currentComp~=comp)
+                            %    dispEM(['Could not predict composition of
+                            %    ' model.metNames{loopThrough(i)} ],false);
                             %end
                             metStatus=-2;
                             break;
                         end
                     end
                 end
-                %If there was contradictions in one compartment, then abort for
-                %all compartments
+                %If there was contradictions in one compartment, then abort
+                %for all compartments
                 if metStatus==-2
                     break;
                 end
@@ -138,10 +141,10 @@ while predicted==true
                 if printResults==true
                     fprintf(['Predicted composition for "' metNames{i} '" to be ' str '\n']);
                 end
-
+                
                 %Keep track
                 guessedFor=[guessedFor;metNames(i)];
-
+                
                 predicted=true; %To loop again
         end
     end
@@ -152,15 +155,15 @@ end
 
 %Helper function for getting the composition string
 function str=getCompString(elements,comp)
-    str='';
+str='';
 
-    for i=1:numel(comp)
-       if comp(i)~=0
-          if comp(i)==1
-             str=[str elements.abbrevs{i}];
-          else
-             str=[str elements.abbrevs{i} num2str(comp(i))];
-          end
-       end
+for i=1:numel(comp)
+    if comp(i)~=0
+        if comp(i)==1
+            str=[str elements.abbrevs{i}];
+        else
+            str=[str elements.abbrevs{i} num2str(comp(i))];
+        end
     end
+end
 end

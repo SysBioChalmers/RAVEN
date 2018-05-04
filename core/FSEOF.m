@@ -23,7 +23,7 @@ function targets=FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputF
 %
 %   Usage: targets=FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile)
 %
-%   Eduard Kerkhoven, 2017-12-21
+%   Simonas Marcisauskas, 2018-03-18
 
 if nargin<4
     iterations=10;
@@ -55,42 +55,43 @@ rxnDirection=zeros(length(model.rxns),1);
 for i=1:iterations
     n=i*targetMax/iterations;
     model=setParam(model,'lb',targetRxn,n);
-  
+    
     sol=solveLP(model,1);
-  
+    
     fseof.results(:,i)=sol.x;
-
-    %Loop through all fluxes and identify the ones that increased upon the enforced objective flux
+    
+    %Loop through all fluxes and identify the ones that increased upon the
+    %enforced objective flux
     for j=1:length(fseof.results)
-      if fseof.results(j,1) > 0   %Check the positive fluxes
-      
-          if i == 1   %The initial round
-              rxnDirection(j,1)=1;
-              fseof.target(j,1)=1;
+        if fseof.results(j,1) > 0   %Check the positive fluxes
+            
+            if i == 1   %The initial round
+                rxnDirection(j,1)=1;
+                fseof.target(j,1)=1;
             else
                 
                 if (fseof.results(j,i) > fseof.results(j,i-1)) & fseof.target(j,1)
-                  fseof.target(j,1)=1;
-              else
-                  fseof.target(j,1)=0;
-              end
-          end
-
-      elseif fseof.results(j,1) < 0 %Check the negative fluxes
-      
-          if i == 1   %The initial round
-              rxnDirection(j,1)=-1;
-              fseof.target(j,1)=1;
+                    fseof.target(j,1)=1;
+                else
+                    fseof.target(j,1)=0;
+                end
+            end
+            
+        elseif fseof.results(j,1) < 0 %Check the negative fluxes
+            
+            if i == 1   %The initial round
+                rxnDirection(j,1)=-1;
+                fseof.target(j,1)=1;
             else
                 if (fseof.results(j,i) < fseof.results(j,i-1)) & fseof.target(j,1)
-                  fseof.target(j,1)=1;
-              else
-                  fseof.target(j,1)=0;
-              end
-          end
-      
+                    fseof.target(j,1)=1;
+                else
+                    fseof.target(j,1)=0;
+                end
+            end
+            
         end
-
+        
     end
 end
 
@@ -98,9 +99,9 @@ end
 formatSpec='%s\t%s\t%s\t%s\t%s\t%s\t%s\n';
 if output == 1    %Output to a file
     fid=fopen(outputFile,'w');
-    fprintf(fid,formatSpec,'Slope','rowID','Enzyme ID','Enzyme Name','Subsystem','Direction','Gr Rule');
+    fprintf(fid,formatSpec,'Slope','rowID','Enzyme ID','Enzyme Name','Subsystems','Direction','Gr Rule');
 else              %Output to screen
-    fprintf(formatSpec,'Slope','rowID','Enzyme ID','Enzyme Name','Subsystem','Direction','Gr Rule');
+    fprintf(formatSpec,'Slope','rowID','Enzyme ID','Enzyme Name','Subsystems','Direction','Gr Rule');
 end
 
 for num=1:length(fseof.target)
@@ -109,7 +110,7 @@ for num=1:length(fseof.target)
         A1=num2str(num);                                  %row ID
         A2=char(model.rxns(num));                         %enzyme ID
         A3=char(model.rxnNames(num));                     %enzyme Name
-        A4=char(model.subSystems(num));                   %Subsystem
+        A4=char(strjoin(model.subSystems{num,1},';'));                   %Subsystems
         A5=num2str(model.rev(num)*rxnDirection(num,1));   %reaction Dirction
         A6=char(model.grRules(num));                      %Gr Rule
         if output == 1    %Output to a file
