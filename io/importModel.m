@@ -826,26 +826,6 @@ if ~isempty(geneNames)
     model.geneComps=J;
 else
     if ~isempty(grRules)
-        %In the non-COBRA version genes are surrounded by parenthesis even
-        %if they are the only gene. Also, only single spaces are used
-        %between genes. I'm pretty sure this is compatible with COBRA
-        %Toolbox so I change it to be the same here
-        grRules=strrep(grRules,'  ',' ');
-        grRules=strrep(grRules,'( ','(');
-        grRules=strrep(grRules,' )',')');
-        grRules=strrep(grRules,') or (','*%%%%*');
-        grRules=strrep(grRules,' or ',') or (');
-        grRules=strrep(grRules,'*%%%%*',') or (');
-        grRules=regexprep(grRules,'\(\((.*)\)\)','\($1\)');
-        
-        %Not very neat, but add parenthesis if missing
-        for i=1:numel(grRules)
-            if any(grRules{i})
-                if ~strcmp(grRules{i}(1),'(')
-                    grRules{i}=['(' grRules{i} ')'];
-                end
-            end
-        end
         %If fbc_geneProduct exists, follow the specified gene order, such
         %that matching geneShortNames in function below will work
         if isfield(modelSBML,'fbc_geneProduct')
@@ -866,10 +846,6 @@ else
         model.rxnGeneMat = rxnGeneMat;
     end
 end
-
-%Make sure that AND and OR string are in lowercase in grRules
-model.grRules=strrep(model.grRules,' AND ',' and ');
-model.grRules=strrep(model.grRules,' OR ',' or ');
 
 if all(cellfun(@isempty,geneShortNames))
     if isfield(modelSBML,'fbc_geneProduct')
