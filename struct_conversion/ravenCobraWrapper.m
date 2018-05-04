@@ -385,7 +385,7 @@ else
         end
     end
     if printWarning
-        fprintf('Could not separate between PubChemID compounds and substances. All annotated PubChemIDs will therefore be assigned as compounds\n');
+        fprintf('Could not determine whether PubChemIDs are compounds (CID)\n or substances (SID). All annotated PubChemIDs will therefore \n be assigned as compounds (CID).\n');
     end
     if isfield(model,'metCharges')
         newModel.metCharges=model.metCharges;
