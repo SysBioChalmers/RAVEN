@@ -422,7 +422,7 @@ if ~isempty(model.rxnConfidenceScores)
 end
 for i=1:numel(subsystems)
     model.subSystems{i,1}=cellstr(strsplit(subsystems{i,1},';'));
-end;
+end
 
 %Check that all necessary reaction info has been loaded
 if isempty(equations)
