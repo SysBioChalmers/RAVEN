@@ -21,7 +21,7 @@ function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)
 %
 %   Usage: [grRules,rxnGeneMat,indexes2check]=standardizeGrRules(model,embedded)
 %
-%   Ivan Domenzain, 2018-04-12
+%   Ivan Domenzain, 2018-05-04
 %
 
 %Preallocate fields
@@ -35,11 +35,13 @@ if nargin<2
 end
 
 if isfield(model,'grRules')
+    originalGrRules=model.grRules; 
+    originalGrRules=grRulesPreparation(originalGrRules);
     %Search for potential logical errors in the grRules field
-    indexes2check = findPotentialErrors(model.grRules,embedded);
+    indexes2check = findPotentialErrors(originalGrRules,embedded);
     
-    for i=1:length(model.grRules)
-        originalSTR = model.grRules{i};
+    for i=1:length(originalGrRules)
+        originalSTR = originalGrRules{i};
         grRules{i}  = originalSTR;
         %Non-empty grRules are splitted in all their different isoenzymes
         genesSets   = getSimpleGeneSets(originalSTR);
@@ -82,8 +84,6 @@ genesSets  = [];
 %If gene rule is not empty split in all its different isoenzymes
 if ~isempty(originalSTR)
     originalSTR = strtrim(originalSTR);
-    originalSTR = strrep(originalSTR,' OR ',' or ');
-    originalSTR = strrep(originalSTR,' AND ',' and ');
     %Remove all brackets
     originalSTR = strrep(originalSTR,'(','');
     originalSTR = strrep(originalSTR,')','');
@@ -124,12 +124,9 @@ end
 %rules in which the pattern ") and (" is present.
 function indexes2check = findPotentialErrors(grRules,embedded)
 indxs_l       = find(~cellfun(@isempty,strfind(grRules,') and (')));
-indxs_U       = find(~cellfun(@isempty,strfind(grRules,') AND (')));
 indxs_l_L     = find(~cellfun(@isempty,strfind(grRules,') and')));
-indxs_U_L     = find(~cellfun(@isempty,strfind(grRules,') AND')));
 indxs_l_R     = find(~cellfun(@isempty,strfind(grRules,'and (')));
-indxs_U_R     = find(~cellfun(@isempty,strfind(grRules,'AND (')));
-indexes2check = vertcat(indxs_l,indxs_U,indxs_l_L,indxs_U_L,indxs_l_R,indxs_U_R);
+indexes2check = vertcat(indxs_l,indxs_l_L,indxs_l_R);
 indexes2check = unique(indexes2check);
 
 if ~isempty(indexes2check)
@@ -147,7 +144,7 @@ if ~isempty(indexes2check)
         STR = [STR,'ionships found in\n\n'];
         for i=1:length(indexes2check)
             index = indexes2check(i);
-            STR = [STR '  - grRule #' num2str(index) grRules{index} '\n'];
+            STR = [STR '  - grRule #' num2str(index) ': ' grRules{index} '\n'];
         end
         STR = [STR,'\n This kind of relationships should only be present '];
         STR = [STR,'in  reactions catalysed by complexes of isoenzymes e'];
@@ -166,4 +163,14 @@ if ~isempty(indexes2check)
         warning(sprintf(STR))
     end
 end
+end
+
+function grRules = grRulesPreparation(grRules)
+%Remove unnecessary blanks
+grRules=strrep(grRules,'  ',' ');
+grRules=strrep(grRules,'( ','(');
+grRules=strrep(grRules,' )',')');
+% Make sure that AND and OR strings are in lowercase
+grRules=strrep(grRules,' AND ',' and ');
+grRules=strrep(grRules,' OR ',' or ');
 end
