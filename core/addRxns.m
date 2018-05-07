@@ -29,8 +29,8 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %                               could be catalyzed by a complex between
 %                               A & B or by C on its own. All the genes
 %                               have to be present in model.genes. Add
-%                               genes with addGenes before calling this
-%                               function if needed (opt, default '')
+%                               genes with addGenesRaven before calling
+%                               this function if needed (opt, default '')
 %            rxnMiriams         cell array with Miriam structures (opt,
 %                               default [])
 %            rxnComps           cell array with compartments (as in
@@ -532,7 +532,7 @@ for i=1:nRxns
         genes=regexp(rule,' ','split');
         [I, J]=ismember(genes,newModel.genes);
         if ~all(I) && any(rule)
-            EM=['Not all genes for reaction ' rxnsToAdd.rxns{i} ' were found in model.genes. If needed, add genes with addGenes before calling this function'];
+            EM=['Not all genes for reaction ' rxnsToAdd.rxns{i} ' were found in model.genes. If needed, add genes with addGenesRaven before calling this function'];
             dispEM(EM);
         end
     end

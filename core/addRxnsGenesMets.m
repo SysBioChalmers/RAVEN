@@ -157,7 +157,7 @@ if addGene ~= false
             genesToAdd.geneComps=zeros(1,numel(genesToAdd.genes));
             genesToAdd.geneComps(:)=sourceModel.geneComps(1); % Assume all genes are in same compartment
         end
-        model=addGenes(model,genesToAdd);
+        model=addGenesRaven(model,genesToAdd);
         fprintf('\n\nNumber of genes added to the model:\n')
         fprintf(num2str(numel(genesToAdd.genes)))
     else

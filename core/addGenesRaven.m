@@ -1,5 +1,5 @@
-function newModel=addGenes(model,genesToAdd)
-% addGenes
+function newModel=addGenesRaven(model,genesToAdd)
+% addGenesRaven
 %   Adds genes to a model
 %
 %   model        a model structure
@@ -20,7 +20,7 @@ function newModel=addGenes(model,genesToAdd)
 %   NOTE: This function does not make extensive checks about MIRIAM formats,
 %   forbidden characters or such.
 %
-%   Usage: newModel=addGenes(model,genesToAdd)
+%   Usage: newModel=addGenesRaven(model,genesToAdd)
 %
 %   Simonas Marcisauskas, 2018-04-04
 %
