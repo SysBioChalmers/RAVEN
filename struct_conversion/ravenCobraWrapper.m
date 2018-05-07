@@ -19,7 +19,7 @@ function newModel=ravenCobraWrapper(model)
 %   conversion it's reconstructed based on lower bound reaction values
 %
 %   NOTE: During COBRA -> RAVEN -> COBRA conversion cycle the following
-%   fields are lost: b, csense, osense, description, geneEntrezID,
+%   fields are lost: b, csense, osenseStr, description, geneEntrezID,
 %   metNotes, metSmiles, modelVersion, proteinNames, proteins
 %
 %   NOTE: The information about mandatory RAVEN fields was taken from
@@ -28,7 +28,7 @@ function newModel=ravenCobraWrapper(model)
 %
 %   Usage: newModel=ravenCobraWrapper(model)
 %
-%   Simonas Marcisauskas, 2018-05-02
+%   Simonas Marcisauskas, 2018-05-07
 %
 
 if isfield(model,'rules')
@@ -51,7 +51,7 @@ if isRaven
     newModel.lb=model.lb;
     newModel.ub=model.ub;
     newModel.c=model.c;
-    % b, csense, osense, genes, rules are also mandatory, but defined later
+    % b, csense, osenseStr, genes, rules are also mandatory, but defined later
     % to match the order of fields;
     
     % Optional COBRA fields;
@@ -151,7 +151,7 @@ if isRaven
     if isfield(model,'genes')
         newModel.rules=grrulesToRules(model);
     end
-    newModel.osense=-1;
+    newModel.osenseStr='max';
     
     % It seems that grRules, rxnGeneMat and rev are disposable fields in
     % COBRA version, but we export them to make things faster, when
