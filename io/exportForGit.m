@@ -40,7 +40,7 @@ end
 [~,~,~]=mkdir('ModelFiles');
 for i = 1:length(formats)
     [~,~,~]=mkdir('ModelFiles');
-
+end
 
 % Write MAT format
 if ismember('mat', formats)
@@ -147,6 +147,5 @@ function slashPos = getSlashPos(path)
 slashPos = strfind(path,'\');       %Windows
 if isempty(slashPos)
     slashPos = strfind(path,'/');   %MAC/Linux
-end
 end
 end
