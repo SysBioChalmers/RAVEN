@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Simonas Marcisauskas, 2018-05-02
+%   Eduard Kerkhoven, 2018-05-08
 
 if nargin<2
     removeExcMets=true;
@@ -641,6 +641,20 @@ for i=1:numel(modelSBML.reaction)
             dispEM(EM);
         end
         S(metIndex,counter)=S(metIndex,counter)+modelSBML.reaction(i).product(j).stoichiometry;
+    end
+end
+
+%if FBC, objective function is separately defined. Multiple objective
+%functions can be defined, one is set as active
+if isfield(modelSBML, 'fbc_activeObjective')
+    obj=modelSBML.fbc_activeObjective;
+    for i=1:numel(modelSBML.fbc_objective)
+        if strcmp(obj,modelSBML.fbc_objective(i).fbc_id)
+            rxn=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_reaction;
+            rxn=regexprep(rxn,'^R_','');
+            idx=find(ismember(reactionIDs,rxn));
+            reactionObjective(idx)=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_coefficient;
+        end
     end
 end
 
