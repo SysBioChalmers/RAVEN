@@ -19,7 +19,7 @@ function newModel=ravenCobraWrapper(model)
 %   conversion it's reconstructed based on lower bound reaction values
 %
 %   NOTE: During COBRA -> RAVEN -> COBRA conversion cycle the following
-%   fields are lost: b, csense, osense, description, geneEntrezID,
+%   fields are lost: b, csense, osenseStr, description, geneEntrezID,
 %   metNotes, metSmiles, modelVersion, proteinNames, proteins
 %
 %   NOTE: The information about mandatory RAVEN fields was taken from
@@ -28,7 +28,7 @@ function newModel=ravenCobraWrapper(model)
 %
 %   Usage: newModel=ravenCobraWrapper(model)
 %
-%   Simonas Marcisauskas, 2018-05-02
+%   Simonas Marcisauskas, 2018-05-07
 %
 
 if isfield(model,'rules')
@@ -39,22 +39,22 @@ end
 
 if isRaven
     fprintf('Converting RAVEN structure to COBRA..\n');
-    % Converting from RAVEN to COBRA structure;
+    %Convert from RAVEN to COBRA structure
     
-    % Firstly removing boundary metabolites;
+    %Firstly remove boundary metabolites
     model=simplifyModel(model);
     
-    % Mandatory COBRA fields;
+    %Mandatory COBRA fields
     newModel.rxns=model.rxns;
     newModel.mets=strcat(model.mets,'[',model.comps(model.metComps),']');
     newModel.S=model.S;
     newModel.lb=model.lb;
     newModel.ub=model.ub;
     newModel.c=model.c;
-    % b, csense, osense, genes, rules are also mandatory, but defined later
-    % to match the order of fields;
+    %b, csense, osenseStr, genes, rules are also mandatory, but defined
+    %later to match the order of fields
     
-    % Optional COBRA fields;
+    %Optional COBRA fields
     if isfield(model,'rxnNames')
         newModel.rxnNames=model.rxnNames;
     end
@@ -151,11 +151,11 @@ if isRaven
     if isfield(model,'genes')
         newModel.rules=grrulesToRules(model);
     end
-    newModel.osense=-1;
+    newModel.osenseStr='max';
     
-    % It seems that grRules, rxnGeneMat and rev are disposable fields in
-    % COBRA version, but we export them to make things faster, when
-    % converting COBRA structure back to RAVEN;
+    %It seems that grRules, rxnGeneMat and rev are disposable fields in
+    %COBRA version, but we export them to make things faster, when
+    %converting COBRA structure back to RAVEN
     if isfield(model,'rxnGeneMat')
         newModel.rxnGeneMat=model.rxnGeneMat;
     end
@@ -168,9 +168,9 @@ if isRaven
     newModel.rev=model.rev;
 else
     fprintf('Converting COBRA structure to RAVEN..\n');
-    % Converting from COBRA to RAVEN structure;
+    %Convert from COBRA to RAVEN structure
     
-    % Mandatory RAVEN fields;
+    %Mandatory RAVEN fields
     newModel.rxns=model.rxns;
     newModel.mets=model.mets;
     for i=1:numel(model.comps)
@@ -178,8 +178,8 @@ else
         newModel.mets=regexprep(newModel.mets,['\[', model.compNames{i}, '\]$'],'');
     end
     
-    % It some rare cases, there may be overlapping mets due to removal e.g.
-    % [c]. To avoid this, we change e.g. [c] into _c;
+    %In some rare cases, there may be overlapping mets due to removal e.g.
+    %[c]. To avoid this, we change e.g. [c] into _c
     if numel(unique(newModel.mets))~=numel(model.mets)
         newModel.mets=model.mets;
         for i=1:numel(model.comps)
@@ -191,8 +191,8 @@ else
     newModel.S=model.S;
     newModel.lb=model.lb;
     newModel.ub=model.ub;
-    % Since COBRA no longer contains rev field it is assumed that rxn is
-    % reversible if its lower bound is set to zero;
+    %Since COBRA no longer contains rev field it is assumed that rxn is
+    %reversible if its lower bound is set to zero
     if ~isfield(model,'rev')
         for i=1:numel(model.rxns)
             if model.lb(i)<0
@@ -209,22 +209,22 @@ else
     if isfield(model,'comps')
         newModel.comps=model.comps;
     else
-        % Since 'comps' field is not mandatory in COBRA, it may be required
-        % to obtain the non-redundant list of comps from metabolite ids, if
-        % 'comps' field is not available;
+        %Since 'comps' field is not mandatory in COBRA, it may be required
+        %to obtain the non-redundant list of comps from metabolite ids, if
+        %'comps' field is not available
         newModel.comps=regexprep(model.mets,'^.+\[','');
         newModel.comps=regexprep(newModel.comps,'\]$','');
         newModel.comps=unique(newModel.comps);
     end
     
-    % metComps is also mandatory, but defined later to match the order of
-    % fields;
+    %metComps is also mandatory, but defined later to match the order of
+    %fields
     
-    % Fields 'description' and 'id' are also considered as mandatory, but
-    % these are added to the model during exportModel/exportToExcelFormat
-    % anyway, so there is no point to add this information here;
+    %Fields 'description' and 'id' are also considered as mandatory, but
+    %these are added to the model during exportModel/exportToExcelFormat
+    %anyway, so there is no point to add this information here
     
-    % Optional RAVEN fields;
+    %Optional RAVEN fields
     if isfield(model,'compNames')
         newModel.compNames=model.compNames;
     end
@@ -395,9 +395,9 @@ end
 end
 
 function rules=grrulesToRules(model)
-% This function just takes grRules, changes all gene names to
-% 'x(geneNumber)' and also changes 'or' and 'and' relations to
-% corresponding symbols
+%This function just takes grRules, changes all gene names to
+%'x(geneNumber)' and also changes 'or' and 'and' relations to corresponding
+%symbols
 replacingGenes=cell([size(model.genes,1) 1]);
 rules=cell([size(model.grRules,1) 1]);
 for i=1:numel(replacingGenes)
@@ -411,9 +411,9 @@ end
 end
 
 function grRules=rulesTogrrules(model)
-% This function takes rules, replaces &/| for and/or, replaces the x(i)
-% format with the actual gene ID, and takes out extra whitespace and
-% redundant parenthesis introduced by COBRA, to create grRules.
+%This function takes rules, replaces &/| for and/or, replaces the x(i)
+%format with the actual gene ID, and takes out extra whitespace and
+%redundant parenthesis introduced by COBRA, to create grRules.
 grRules = strrep(model.rules,'&','and');
 grRules = strrep(grRules,'|','or');
 for i = 1:length(model.genes)
@@ -421,6 +421,6 @@ for i = 1:length(model.genes)
 end
 grRules = strrep(grRules,'( ','(');
 grRules = strrep(grRules,' )',')');
-grRules = regexprep(grRules,'^(','');   %rules that start with a "("
-grRules = regexprep(grRules,')$','');   %rules that end with a ")"
+grRules = regexprep(grRules,'^(',''); %rules that start with a "("
+grRules = regexprep(grRules,')$',''); %rules that end with a ")"
 end
