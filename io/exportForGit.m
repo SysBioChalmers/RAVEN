@@ -149,3 +149,4 @@ if isempty(slashPos)
     slashPos = strfind(path,'/');   %MAC/Linux
 end
 end
+end
