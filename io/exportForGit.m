@@ -38,6 +38,9 @@ end
 
 % Make ModelFiles folder, no warnings if folder already exists
 [~,~,~]=mkdir('ModelFiles');
+for i = 1:length(formats)
+    [~,~,~]=mkdir('ModelFiles');
+end
 
 % Write MAT format
 if ismember('mat', formats)
