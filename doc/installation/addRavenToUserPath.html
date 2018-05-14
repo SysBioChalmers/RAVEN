@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of addRavenToUserPath</title>
+  <meta name="keywords" content="addRavenToUserPath">
+  <meta name="description" content="This function writes a startup.m file in the userpath, adding RAVEN (and">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">installation</a> &gt; addRavenToUserPath.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for installation&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>addRavenToUserPath
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This function writes a startup.m file in the userpath, adding RAVEN (and</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function addRavenToUserPath(overwrite) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> This function writes a startup.m file in the userpath, adding RAVEN (and
+ all subdirectories) to the path each time Matlab is started.
+ This function is useful if the user has no rights to save paths to the
+ pathdef.m file in the matlabroot, for instance due to a lack of admin
+ rights. As the startup.m file in the userpath automatically runs with
+ each Matlab start, the paths are automatically loaded.
+
+   overwrite       logical, whether startup.m in the userpath should
+                   overwritten (otherwise the RAVEN paths are appended)
+                   (opt, default true)
+
+   2018-04-26  Eduard Kerkhoven</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function addRavenToUserPath(overwrite)</a>
+0002 <span class="comment">% This function writes a startup.m file in the userpath, adding RAVEN (and</span>
+0003 <span class="comment">% all subdirectories) to the path each time Matlab is started.</span>
+0004 <span class="comment">% This function is useful if the user has no rights to save paths to the</span>
+0005 <span class="comment">% pathdef.m file in the matlabroot, for instance due to a lack of admin</span>
+0006 <span class="comment">% rights. As the startup.m file in the userpath automatically runs with</span>
+0007 <span class="comment">% each Matlab start, the paths are automatically loaded.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">%   overwrite       logical, whether startup.m in the userpath should</span>
+0010 <span class="comment">%                   overwritten (otherwise the RAVEN paths are appended)</span>
+0011 <span class="comment">%                   (opt, default true)</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">%   2018-04-26  Eduard Kerkhoven</span>
+0014 
+0015 <span class="keyword">if</span> nargin1
+0016     overwrite=true;
+0017 <span class="keyword">end</span>
+0018 
+0019 <span class="comment">% Get current RAVEN directory</span>
+0020 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
+0021 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
+0022 
+0023 <span class="comment">% Lists all subdirectories</span>
+0024 subpath=regexp(genpath(ravenDir),pathsep,<span class="string">'split'</span>);
+0025 <span class="comment">% Remove .git and doc folders</span>
+0026 pathsToKeep=cellfun(@(x) isempty(strfind(x,<span class="string">'.git'</span>)),subpath) &amp; cellfun(@(x) isempty(strfind(x,<span class="string">'doc'</span>)),subpath);
+0027 <span class="comment">% Only keep useful paths</span>
+0028 subpath = subpath(pathsToKeep);
+0029 subpath = subpath(1:end-1); <span class="comment">% Remove last entry, is empty field</span>
+0030 
+0031 <span class="comment">% Write startup.m file</span>
+0032 <span class="keyword">if</span> overwrite
+0033     fid=fopen(fullfile(userpath,<span class="string">'startup.m'</span>),<span class="string">'w'</span>);
+0034     fprintf(fid,<span class="string">'%sn'</span>,<span class="string">'%%% RAVEN path'</span>);
+0035 <span class="keyword">else</span>
+0036     fid=fopen(fullfile(userpath,<span class="string">'startup.m'</span>),<span class="string">'a'</span>);
+0037     fprintf(fid,<span class="string">'n%sn'</span>,<span class="string">'%%% RAVEN path'</span>);
+0038 <span class="keyword">end</span>
+0039 fprintf(fid,<span class="string">'%sn'</span>,strcat(<span class="string">'addpath('''</span>,subpath{1},<span class="string">''',...'</span>));
+0040 <span class="keyword">for</span> i=2(length(subpath)-1)
+0041     fprintf(fid,<span class="string">'t%sn'</span>,strcat(<span class="string">''''</span>,subpath{i},<span class="string">''',...'</span>));
+0042 <span class="keyword">end</span>
+0043 fprintf(fid,<span class="string">'t%s'</span>,strcat(<span class="string">''''</span>,subpath{length(subpath)},<span class="string">''');'</span>));
+0044 fclose(fid);
+0045 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 14-May-2018 16:12:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

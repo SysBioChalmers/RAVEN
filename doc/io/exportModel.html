@@ -41,7 +41,7 @@
 
    Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 
-   Eduard Kerkhoven, 2018-04-12</pre></div>
+   Simonas Marcisauskas, 2018-05-08</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -50,7 +50,7 @@ This function calls:
 </ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="SBMLFromExcel.html" class="code" title="function SBMLFromExcel(fileName, outputFileName,toCOBRA,printWarnings)">SBMLFromExcel</a>	SBMLFromExcel</li><li><a href="exportForGit.html" class="code" title="function out=exportForGit(model,prefix,path)">exportForGit</a>	exportForGit</li></ul>
+<li><a href="SBMLFromExcel.html" class="code" title="function SBMLFromExcel(fileName, outputFileName,toCOBRA,printWarnings)">SBMLFromExcel</a>	SBMLFromExcel</li><li><a href="exportForGit.html" class="code" title="function out=exportForGit(model,prefix,path,formats)">exportForGit</a>	exportForGit</li></ul>
 <!-- crossreference -->
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -73,7 +73,7 @@ This function is called by:
 0013 <span class="comment">%</span>
 0014 <span class="comment">%   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)</span>
 0015 <span class="comment">%</span>
-0016 <span class="comment">%   Eduard Kerkhoven, 2018-04-12</span>
+0016 <span class="comment">%   Simonas Marcisauskas, 2018-05-08</span>
 0017 
 0018 <span class="keyword">if</span> nargin&lt;3
 0019     exportGeneComplexes=false;
@@ -82,9 +82,9 @@ This function is called by:
 0022     supressWarnings=false;
 0023 <span class="keyword">end</span>
 0024 
-0025 <span class="comment">% The default SBML format settings, which are used as input for appropriate</span>
-0026 <span class="comment">% libSBML functions to generate the blank SBML model structure before using</span>
-0027 <span class="comment">% exporting in with OutputSBML to xml file;</span>
+0025 <span class="comment">%The default SBML format settings, which are used as input for appropriate</span>
+0026 <span class="comment">%libSBML functions to generate the blank SBML model structure before using</span>
+0027 <span class="comment">%exporting in with OutputSBML to xml file</span>
 0028 sbmlLevel=3;
 0029 sbmlVersion=1;
 0030 sbmlPackages = {<span class="string">'fbc'</span>,<span class="string">'groups'</span>};
@@ -100,684 +100,688 @@ This function is called by:
 0040     model.unconstrained=zeros(numel(model.mets),1);
 0041 <span class="keyword">end</span>
 0042 
-0043 <span class="comment">% If model id and name (description) don't exist, make sure that default</span>
-0044 <span class="comment">% strings are included;</span>
+0043 <span class="comment">%If model id and name (description) don't exist, make sure that default</span>
+0044 <span class="comment">%strings are included</span>
 0045 <span class="keyword">if</span> ~isfield(model,<span class="string">'id'</span>)
 0046     fprintf(<span class="string">'WARNING: The model is missing the &quot;id&quot; field. Uses &quot;blankID&quot;. \n'</span>);
 0047     model.id=<span class="string">'blankID'</span>;
-0048 <span class="keyword">end</span>;
+0048 <span class="keyword">end</span>
 0049 <span class="keyword">if</span> ~isfield(model,<span class="string">'description'</span>)
 0050     fprintf(<span class="string">'WARNING: The model is missing the &quot;id&quot; field. Uses &quot;blankName&quot;. \n'</span>);
 0051     model.description=<span class="string">'blankName'</span>;
-0052 <span class="keyword">end</span>;
+0052 <span class="keyword">end</span>
 0053 
 0054 <span class="comment">%Check the model structure</span>
 0055 <span class="keyword">if</span> supressWarnings==false
 0056     checkModelStruct(model,false);
 0057 <span class="keyword">end</span>
 0058 
-0059 <span class="comment">% Adding several blank fields, if they don't exist already. This is to</span>
-0060 <span class="comment">% reduce the number of conditions below;</span>
+0059 <span class="comment">%Add several blank fields, if they don't exist already. This is to reduce</span>
+0060 <span class="comment">%the number of conditions below</span>
 0061 <span class="keyword">if</span> ~isfield(model,<span class="string">'compMiriams'</span>)
 0062     model.compMiriams=cell(numel(model.comps),1);
-0063 <span class="keyword">end</span>;
+0063 <span class="keyword">end</span>
 0064 <span class="keyword">if</span> ~isfield(model,<span class="string">'inchis'</span>)
 0065     model.inchis=cell(numel(model.mets),1);
-0066 <span class="keyword">end</span>;
+0066 <span class="keyword">end</span>
 0067 <span class="keyword">if</span> ~isfield(model,<span class="string">'metFormulas'</span>)
 0068     model.metFormulas=cell(numel(model.mets),1);
-0069 <span class="keyword">end</span>;
+0069 <span class="keyword">end</span>
 0070 <span class="keyword">if</span> ~isfield(model,<span class="string">'metMiriams'</span>)
 0071     model.metMiriams=cell(numel(model.mets),1);
-0072 <span class="keyword">end</span>;
-0073 
-0074 <span class="keyword">if</span> ~isfield(model,<span class="string">'geneMiriams'</span>) &amp;&amp; isfield(model,<span class="string">'genes'</span>)
-0075     model.geneMiriams=cell(numel(model.genes),1);
-0076 <span class="keyword">end</span>;
-0077 <span class="keyword">if</span> ~isfield(model,<span class="string">'subSystems'</span>)
-0078     model.subSystems=cell(numel(model.rxns),1);
-0079 <span class="keyword">end</span>;
-0080 <span class="keyword">if</span> ~isfield(model,<span class="string">'eccodes'</span>)
-0081     model.eccodes=cell(numel(model.rxns),1);
-0082 <span class="keyword">end</span>;
-0083 <span class="keyword">if</span> ~isfield(model,<span class="string">'rxnReferences'</span>)
-0084     model.rxnReferences=cell(numel(model.rxns),1);
-0085 <span class="keyword">end</span>;
-0086 <span class="keyword">if</span> ~isfield(model,<span class="string">'rxnConfidenceScores'</span>)
-0087     model.rxnConfidenceScores=NaN(numel(model.rxns),1);
-0088 <span class="keyword">end</span>;
-0089 <span class="keyword">if</span> ~isfield(model,<span class="string">'rxnNotes'</span>)
-0090     model.rxnNotes=cell(numel(model.rxns),1);
-0091 <span class="keyword">end</span>;
-0092 <span class="keyword">if</span> ~isfield(model,<span class="string">'rxnMiriams'</span>)
-0093     model.rxnMiriams=cell(numel(model.rxns),1);
-0094 <span class="keyword">end</span>;
-0095 
-0096 <span class="keyword">if</span> sbmlLevel&lt;3
-0097     <span class="comment">%Check if genes have associated compartments</span>
-0098     <span class="keyword">if</span> ~isfield(model,<span class="string">'geneComps'</span>) &amp;&amp; isfield(model,<span class="string">'genes'</span>)
-0099         <span class="keyword">if</span> supressWarnings==false
-0100             EM=<span class="string">'There are no compartments specified for genes. All genes will be assigned to the first compartment. This is because the SBML structure requires all elements to be assigned to a compartment'</span>;
-0101             dispEM(EM,false);
-0102         <span class="keyword">end</span>
-0103         model.geneComps=ones(numel(model.genes),1);
-0104     <span class="keyword">end</span>
-0105 <span class="keyword">end</span>
-0106 
-0107 <span class="comment">% Convert ids to SBML-convenient format. This is to avoid the data loss</span>
-0108 <span class="comment">% when unsupported characters are included in ids. Here we are using part</span>
-0109 <span class="comment">% from convertSBMLID, originating from the COBRA Toolbox;</span>
-0110 model.rxns=regexprep(model.rxns,<span class="string">'([^0-9_a-zA-Z])'</span>,<span class="string">'__${num2str($1+0)}__'</span>);
-0111 model.mets=regexprep(model.mets,<span class="string">'([^0-9_a-zA-Z])'</span>,<span class="string">'__${num2str($1+0)}__'</span>);
-0112 model.comps=regexprep(model.comps,<span class="string">'([^0-9_a-zA-Z])'</span>,<span class="string">'__${num2str($1+0)}__'</span>);
-0113 model.genes=regexprep(model.genes,<span class="string">'([^0-9_a-zA-Z])'</span>,<span class="string">'__${num2str($1+0)}__'</span>);
-0114 
-0115 <span class="comment">% Generate an empty SBML structure;</span>
-0116 modelSBML=<a href="#_sub1" class="code" title="subfunction modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions)">getSBMLStructure</a>(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0117 modelSBML.metaid=model.id;
-0118 modelSBML.id=model.id;
-0119 modelSBML.name=model.description;
-0120 
-0121 <span class="keyword">if</span> isfield(model,<span class="string">'annotation'</span>)
-0122     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'note'</span>)
-0123         modelSBML.notes=[<span class="string">'&lt;notes&gt;&lt;body xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;&lt;p&gt;'</span>,regexprep(model.annotation.note,<span class="string">'&lt;p&gt;|&lt;/p&gt;'</span>,<span class="string">''</span>),<span class="string">'&lt;/p&gt;&lt;/body&gt;&lt;/notes&gt;'</span>];
-0124     <span class="keyword">end</span>
-0125 <span class="keyword">else</span>
-0126     modelSBML.notes=<span class="string">'&lt;notes&gt;&lt;body xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;&lt;p&gt;This file was generated using the exportModel function in RAVEN Toolbox 2.0 and OutputSBML in libSBML &lt;/p&gt;&lt;/body&gt;&lt;/notes&gt;'</span>;
-0127 <span class="keyword">end</span>
-0128 
-0129 modelSBML.annotation=[<span class="string">'&lt;annotation&gt;&lt;rdf:RDF xmlns:rdf=&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#&quot; xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:dcterms=&quot;http://purl.org/dc/terms/&quot; xmlns:vCard=&quot;http://www.w3.org/2001/vcard-rdf/3.0#&quot; xmlns:bqbiol=&quot;http://biomodels.net/biology-qualifiers/&quot; xmlns:bqmodel=&quot;http://biomodels.net/model-qualifiers/&quot;&gt;&lt;rdf:Description rdf:about=&quot;#meta_'</span> model.id <span class="string">'&quot;&gt;'</span>];
-0130 <span class="keyword">if</span> isfield(model,<span class="string">'annotation'</span>)
-0131     nameString=<span class="string">''</span>;
-0132     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'familyName'</span>)
-0133         <span class="keyword">if</span> ~isempty(model.annotation.familyName)
-0134             nameString=[<span class="string">'&lt;vCard:Family&gt;'</span> model.annotation.familyName <span class="string">'&lt;/vCard:Family&gt;'</span>];
-0135         <span class="keyword">end</span>
-0136     <span class="keyword">end</span>
-0137     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'givenName'</span>)
-0138         <span class="keyword">if</span> ~isempty(model.annotation.givenName)
-0139             nameString=[nameString <span class="string">'&lt;vCard:Given&gt;'</span> model.annotation.givenName <span class="string">'&lt;/vCard:Given&gt;'</span>];
-0140         <span class="keyword">end</span>
-0141     <span class="keyword">end</span>
-0142     email=<span class="string">''</span>;
-0143     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'email'</span>)
-0144         <span class="keyword">if</span> ~isempty(model.annotation.email)
-0145             email=[<span class="string">'&lt;vCard:EMAIL&gt;'</span> model.annotation.email <span class="string">'&lt;/vCard:EMAIL&gt;'</span>];
-0146         <span class="keyword">end</span>
-0147     <span class="keyword">end</span>
-0148     org=<span class="string">''</span>;
-0149     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'organization'</span>)
-0150         <span class="keyword">if</span> ~isempty(model.annotation.organization)
-0151             org=[<span class="string">'&lt;vCard:ORG rdf:parseType=&quot;Resource&quot;&gt;&lt;vCard:Orgname&gt;'</span> model.annotation.organization <span class="string">'&lt;/vCard:Orgname&gt;&lt;/vCard:ORG&gt;'</span>];
-0152         <span class="keyword">end</span>
-0153     <span class="keyword">end</span>
-0154     <span class="keyword">if</span> ~isempty(nameString) || ~isempty(email) || ~isempty(org)
-0155         modelSBML.annotation=[modelSBML.annotation <span class="string">'&lt;dc:creator&gt;&lt;rdf:Bag&gt;&lt;rdf:li rdf:parseType=&quot;Resource&quot;&gt;'</span>];
-0156         <span class="keyword">if</span> ~isempty(nameString)
-0157             modelSBML.annotation=[modelSBML.annotation <span class="string">'&lt;vCard:N rdf:parseType=&quot;Resource&quot;&gt;'</span> nameString <span class="string">'&lt;/vCard:N&gt;'</span>];
-0158         <span class="keyword">end</span>
-0159         modelSBML.annotation=[modelSBML.annotation email org <span class="string">'&lt;/rdf:li&gt;&lt;/rdf:Bag&gt;&lt;/dc:creator&gt;'</span>];
-0160     <span class="keyword">end</span>
-0161 <span class="keyword">end</span>
-0162 modelSBML.annotation=[modelSBML.annotation <span class="string">'&lt;dcterms:created rdf:parseType=&quot;Resource&quot;&gt;'</span><span class="keyword">...</span>
-0163     <span class="string">'&lt;dcterms:W3CDTF&gt;'</span> datestr(now,<span class="string">'yyyy-mm-ddTHH:MM:SSZ'</span>) <span class="string">'&lt;/dcterms:W3CDTF&gt;'</span><span class="keyword">...</span>
-0164     <span class="string">'&lt;/dcterms:created&gt;'</span><span class="keyword">...</span>
-0165     <span class="string">'&lt;dcterms:modified rdf:parseType=&quot;Resource&quot;&gt;'</span><span class="keyword">...</span>
-0166     <span class="string">'&lt;dcterms:W3CDTF&gt;'</span> datestr(now,<span class="string">'yyyy-mm-ddTHH:MM:SSZ'</span>) <span class="string">'&lt;/dcterms:W3CDTF&gt;'</span><span class="keyword">...</span>
-0167     <span class="string">'&lt;/dcterms:modified&gt;'</span>];
-0168 
-0169 <span class="keyword">if</span> isfield(model,<span class="string">'annotation'</span>)
-0170     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'taxonomy'</span>)
-0171         modelSBML.annotation=[modelSBML.annotation <span class="string">'&lt;bqbiol:is&gt;&lt;rdf:Bag&gt;&lt;rdf:li rdf:resource=&quot;http://identifiers.org/taxonomy/'</span> regexprep(model.annotation.taxonomy,<span class="string">'taxonomy/'</span>,<span class="string">''</span>) <span class="string">'&quot;/&gt;&lt;/rdf:Bag&gt;&lt;/bqbiol:is&gt;'</span>];
-0172     <span class="keyword">end</span>
-0173 <span class="keyword">end</span>
-0174 modelSBML.annotation=[modelSBML.annotation <span class="string">'&lt;/rdf:Description&gt;&lt;/rdf:RDF&gt;&lt;/annotation&gt;'</span>];
-0175 
-0176 <span class="comment">%Prepare compartments</span>
-0177 <span class="keyword">for</span> i=1:numel(model.comps)
-0178     <span class="comment">% Adding the default values, as these will be the same in all entries;</span>
-0179     <span class="keyword">if</span> i==1
-0180         <span class="keyword">if</span> isfield(modelSBML.compartment, <span class="string">'sboTerm'</span>)
-0181             modelSBML.compartment(i).sboTerm=290;
-0182         <span class="keyword">end</span>;
-0183         <span class="keyword">if</span> isfield(modelSBML.compartment, <span class="string">'spatialDimensions'</span>)
-0184             modelSBML.compartment(i).spatialDimensions=3;
-0185         <span class="keyword">end</span>;
-0186         <span class="keyword">if</span> isfield(modelSBML.compartment, <span class="string">'size'</span>)
-0187             modelSBML.compartment(i).size=1;
-0188         <span class="keyword">end</span>;
-0189         <span class="keyword">if</span> isfield(modelSBML.compartment, <span class="string">'constant'</span>)
-0190             modelSBML.compartment(i).constant=1;
-0191         <span class="keyword">end</span>;
-0192         <span class="keyword">if</span> isfield(modelSBML.compartment, <span class="string">'isSetSize'</span>)
-0193             modelSBML.compartment(i).isSetSize=1;
-0194         <span class="keyword">end</span>;
-0195         <span class="keyword">if</span> isfield(modelSBML.compartment, <span class="string">'isSetSpatialDimensions'</span>)
-0196             modelSBML.compartment(i).isSetSpatialDimensions=1;
-0197         <span class="keyword">end</span>;
-0198     <span class="keyword">end</span>;
-0199     <span class="comment">% Copying the default values to the next entry as long as it is not the</span>
-0200     <span class="comment">% last one;</span>
-0201     <span class="keyword">if</span> i&lt;numel(model.comps)
-0202         modelSBML.compartment(i+1)=modelSBML.compartment(i);
-0203     <span class="keyword">end</span>;
-0204     
-0205     <span class="keyword">if</span> isfield(modelSBML.compartment,<span class="string">'metaid'</span>)
-0206         modelSBML.compartment(i).metaid=model.comps{i};
-0207     <span class="keyword">end</span>;
-0208     <span class="comment">%Prepare Miriam strings</span>
-0209     <span class="keyword">if</span> ~isempty(model.compMiriams{i}) &amp;&amp; isfield(modelSBML.compartment(i),<span class="string">'annotation'</span>)
-0210         modelSBML.compartment(i).annotation=[<span class="string">'&lt;annotation&gt;&lt;rdf:RDF xmlns:rdf=&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#&quot; xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:dcterms=&quot;http://purl.org/dc/terms/&quot; xmlns:vCard=&quot;http://www.w3.org/2001/vcard-rdf/3.0#&quot; xmlns:bqbiol=&quot;http://biomodels.net/biology-qualifiers/&quot; xmlns:bqmodel=&quot;http://biomodels.net/model-qualifiers/&quot;&gt;&lt;rdf:Description rdf:about=&quot;#meta_'</span> model.comps{i} <span class="string">'&quot;&gt;'</span>];
-0211         modelSBML.compartment(i).annotation=[modelSBML.compartment(i).annotation <span class="string">'&lt;bqbiol:is&gt;&lt;rdf:Bag&gt;'</span>];
-0212         modelSBML.compartment(i).annotation=[modelSBML.compartment(i).annotation <a href="#_sub2" class="code" title="subfunction miriamString=getMiriam(miriamStruct)">getMiriam</a>(model.compMiriams{i}) <span class="string">'&lt;/rdf:Bag&gt;&lt;/bqbiol:is&gt;&lt;/rdf:Description&gt;&lt;/rdf:RDF&gt;&lt;/annotation&gt;'</span>];
-0213     <span class="keyword">end</span>;
-0214     <span class="keyword">if</span> isfield(modelSBML.compartment, <span class="string">'name'</span>)
-0215         modelSBML.compartment(i).name=model.compNames{i};
-0216     <span class="keyword">end</span>;
-0217     <span class="keyword">if</span> isfield(modelSBML.compartment, <span class="string">'id'</span>)
-0218         modelSBML.compartment(i).id=model.comps{i};
-0219     <span class="keyword">end</span>;
-0220     
-0221 <span class="keyword">end</span>;
-0222 
-0223 <span class="comment">%Begin writing species</span>
-0224 <span class="keyword">for</span> i=1:numel(model.mets)
-0225     <span class="comment">% Adding the default values, as these will be the same in all entries;</span>
-0226     <span class="keyword">if</span> i==1
-0227         <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'sboTerm'</span>)
-0228             modelSBML.species(i).sboTerm=247;
-0229         <span class="keyword">end</span>;
-0230         <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'initialAmount'</span>)
-0231             modelSBML.species(i).initialAmount=1;
-0232         <span class="keyword">end</span>;
-0233         <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'initialConcentration'</span>)
-0234             modelSBML.species(i).initialConcentration=0;
-0235         <span class="keyword">end</span>;
-0236         <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'isSetInitialAmount'</span>)
-0237             modelSBML.species(i).isSetInitialAmount=1;
-0238         <span class="keyword">end</span>;
-0239         <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'isSetInitialConcentration'</span>)
-0240             modelSBML.species(i).isSetInitialConcentration=1;
-0241         <span class="keyword">end</span>;
-0242     <span class="keyword">end</span>;
-0243     <span class="comment">% Copying the default values to the next entry as long as it is not the</span>
-0244     <span class="comment">% last one;</span>
-0245     <span class="keyword">if</span> i&lt;numel(model.mets)
-0246         modelSBML.species(i+1)=modelSBML.species(i);
-0247     <span class="keyword">end</span>;
-0248     
-0249     <span class="keyword">if</span> isfield(modelSBML.species,<span class="string">'metaid'</span>)
-0250         modelSBML.species(i).metaid=[<span class="string">'M_'</span> model.mets{i}];
-0251     <span class="keyword">end</span>;
-0252     <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'name'</span>)
-0253         modelSBML.species(i).name=model.metNames{i};
-0254     <span class="keyword">end</span>;
-0255     <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'id'</span>)
-0256         modelSBML.species(i).id=[<span class="string">'M_'</span> model.mets{i}];
-0257     <span class="keyword">end</span>;
-0258     <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'compartment'</span>)
-0259         modelSBML.species(i).compartment=model.comps{model.metComps(i)};
-0260     <span class="keyword">end</span>;
-0261     <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
-0262         <span class="keyword">if</span> model.unconstrained(i)
-0263             modelSBML.species(i).boundaryCondition=1;
-0264         <span class="keyword">end</span>;
-0265     <span class="keyword">end</span>
-0266     <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'fbc_charge'</span>) &amp;&amp; isfield(model,<span class="string">'metCharges'</span>)
-0267         <span class="keyword">if</span> ~isnan(model.metCharges(i))
-0268             modelSBML.species(i).fbc_charge=model.metCharges(i);
-0269             modelSBML.species(i).isSetfbc_charge=1;
-0270         <span class="keyword">else</span>
-0271             modelSBML.species(i).isSetfbc_charge=0;
-0272         <span class="keyword">end</span>;
-0273     <span class="keyword">end</span>;
-0274     <span class="keyword">if</span> isfield(modelSBML.species,<span class="string">'annotation'</span>)
-0275         <span class="keyword">if</span> ~isempty(model.metMiriams{i}) || ~isempty(model.metFormulas{i})
-0276             hasInchi=false;
-0277             <span class="keyword">if</span> ~isempty(model.metFormulas{i})
-0278                 <span class="comment">%Only export formula if there is no InChI. This is because</span>
-0279                 <span class="comment">%the metFormulas field is populated by InChIs if available</span>
-0280                 <span class="keyword">if</span> ~isempty(model.inchis{i})
-0281                     hasInchi=true;
-0282                 <span class="keyword">end</span>;
-0283                 <span class="keyword">if</span> hasInchi==false
-0284                     modelSBML.species(i).fbc_chemicalFormula=model.metFormulas{i};
-0285                 <span class="keyword">end</span>
-0286             <span class="keyword">end</span>
-0287             <span class="keyword">if</span> ~isempty(model.metMiriams{i}) || hasInchi==true
-0288                 modelSBML.species(i).annotation=[<span class="string">'&lt;annotation&gt;&lt;rdf:RDF xmlns:rdf=&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#&quot; xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:dcterms=&quot;http://purl.org/dc/terms/&quot; xmlns:vCard=&quot;http://www.w3.org/2001/vcard-rdf/3.0#&quot; xmlns:bqbiol=&quot;http://biomodels.net/biology-qualifiers/&quot; xmlns:bqmodel=&quot;http://biomodels.net/model-qualifiers/&quot;&gt;&lt;rdf:Description rdf:about=&quot;#meta_M_'</span> model.mets{i} <span class="string">'&quot;&gt;'</span>];
-0289                 modelSBML.species(i).annotation=[modelSBML.species(i).annotation <span class="string">'&lt;bqbiol:is&gt;&lt;rdf:Bag&gt;'</span>];
-0290                 <span class="keyword">if</span> ~isempty(model.metMiriams{i})
-0291                     modelSBML.species(i).annotation=[modelSBML.species(i).annotation <a href="#_sub2" class="code" title="subfunction miriamString=getMiriam(miriamStruct)">getMiriam</a>(model.metMiriams{i})];
-0292                 <span class="keyword">end</span>;
-0293                 <span class="keyword">if</span> hasInchi==true
-0294                     modelSBML.species(i).annotation=[modelSBML.species(i).annotation <span class="string">'&lt;rdf:li rdf:resource=&quot;http://identifiers.org/inchi/InChI='</span> model.inchis{i} <span class="string">'&quot;/&gt;'</span>];
-0295                 <span class="keyword">end</span>;
-0296                 modelSBML.species(i).annotation=[modelSBML.species(i).annotation <span class="string">'&lt;/rdf:Bag&gt;&lt;/bqbiol:is&gt;&lt;/rdf:Description&gt;&lt;/rdf:RDF&gt;&lt;/annotation&gt;'</span>];
-0297             <span class="keyword">end</span>;
-0298         <span class="keyword">end</span>;
-0299     <span class="keyword">end</span>;
-0300 <span class="keyword">end</span>;
-0301 
-0302 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
-0303     <span class="keyword">for</span> i=1:numel(model.genes)
-0304         <span class="comment">% Adding the default values, as these will be the same in all</span>
-0305         <span class="comment">% entries;</span>
-0306         <span class="keyword">if</span> i==1
-0307             <span class="keyword">if</span> isfield(modelSBML.fbc_geneProduct, <span class="string">'sboTerm'</span>)
-0308                 modelSBML.fbc_geneProduct(i).sboTerm=252;
-0309             <span class="keyword">end</span>;
-0310         <span class="keyword">end</span>;
-0311         <span class="comment">% Copying the default values to the next index as long as it is not</span>
-0312         <span class="comment">% the last one;</span>
-0313         <span class="keyword">if</span> i&lt;numel(model.genes)
-0314             modelSBML.fbc_geneProduct(i+1)=modelSBML.fbc_geneProduct(i);
-0315         <span class="keyword">end</span>;
-0316         
-0317         <span class="keyword">if</span> isfield(modelSBML.fbc_geneProduct,<span class="string">'metaid'</span>)
-0318             modelSBML.fbc_geneProduct(i).metaid=model.genes{i};
-0319         <span class="keyword">end</span>;
-0320         <span class="keyword">if</span> ~isempty(model.geneMiriams{i}) &amp;&amp; isfield(modelSBML.fbc_geneProduct(i),<span class="string">'annotation'</span>)
-0321             modelSBML.fbc_geneProduct(i).annotation=[<span class="string">'&lt;annotation&gt;&lt;rdf:RDF xmlns:rdf=&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#&quot; xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:dcterms=&quot;http://purl.org/dc/terms/&quot; xmlns:vCard=&quot;http://www.w3.org/2001/vcard-rdf/3.0#&quot; xmlns:bqbiol=&quot;http://biomodels.net/biology-qualifiers/&quot; xmlns:bqmodel=&quot;http://biomodels.net/model-qualifiers/&quot;&gt;&lt;rdf:Description rdf:about=&quot;#meta_'</span> model.genes{i} <span class="string">'&quot;&gt;'</span>];
-0322             modelSBML.fbc_geneProduct(i).annotation=[modelSBML.fbc_geneProduct(i).annotation <span class="string">'&lt;bqbiol:is&gt;&lt;rdf:Bag&gt;'</span>];
-0323             modelSBML.fbc_geneProduct(i).annotation=[modelSBML.fbc_geneProduct(i).annotation <a href="#_sub2" class="code" title="subfunction miriamString=getMiriam(miriamStruct)">getMiriam</a>(model.geneMiriams{i}) <span class="string">'&lt;/rdf:Bag&gt;&lt;/bqbiol:is&gt;&lt;/rdf:Description&gt;&lt;/rdf:RDF&gt;&lt;/annotation&gt;'</span>];
-0324         <span class="keyword">end</span>;
-0325         <span class="keyword">if</span> isfield(modelSBML.fbc_geneProduct, <span class="string">'fbc_id'</span>)
-0326             modelSBML.fbc_geneProduct(i).fbc_id=model.genes{i};
-0327         <span class="keyword">end</span>;
-0328         <span class="keyword">if</span> isfield(modelSBML.fbc_geneProduct, <span class="string">'fbc_label'</span>) &amp;&amp; isfield(model,<span class="string">'geneShortNames'</span>)
-0329             modelSBML.fbc_geneProduct(i).fbc_label=model.geneShortNames{i};
-0330         <span class="keyword">end</span>;
-0331     <span class="keyword">end</span>;
-0332     <span class="keyword">if</span> exportGeneComplexes==true
-0333         <span class="comment">%Also add the complexes as genes. This is done by splitting grRules</span>
-0334         <span class="comment">%on &quot;or&quot; and adding the ones which contain several genes</span>
-0335         geneComplexes={};
-0336         <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
-0337             <span class="comment">%Only grRules which contain &quot; and &quot; can be complexes</span>
-0338             uniqueRules=unique(model.grRules);
-0339             I=cellfun(@any,strfind(uniqueRules,<span class="string">' and '</span>));
-0340             uniqueRules(~I)=[];
-0341             uniqueRules=strrep(uniqueRules,<span class="string">'('</span>,<span class="string">''</span>);
-0342             uniqueRules=strrep(uniqueRules,<span class="string">')'</span>,<span class="string">''</span>);
-0343             uniqueRules=strrep(uniqueRules,<span class="string">' and '</span>,<span class="string">':'</span>);
-0344             <span class="keyword">for</span> i=1:numel(uniqueRules)
-0345                 genes=regexp(uniqueRules(i),<span class="string">' or '</span>,<span class="string">'split'</span>);
-0346                 genes=genes{1}(:);
-0347                 <span class="comment">%Check which ones are complexes</span>
-0348                 I=cellfun(@any,strfind(genes,<span class="string">':'</span>));
-0349                 geneComplexes=[geneComplexes;genes(I)];
-0350             <span class="keyword">end</span>
-0351         <span class="keyword">end</span>
-0352         geneComplexes=unique(geneComplexes);
-0353         <span class="keyword">if</span> ~isempty(geneComplexes)
-0354             <span class="comment">%Then add them as genes. There is a possiblity that a complex</span>
-0355             <span class="comment">%A&amp;B is added as separate from B&amp;A. This isn't really an issue</span>
-0356             <span class="comment">%so I don't deal with it</span>
-0357             <span class="keyword">for</span> i=1:numel(geneComplexes)
-0358                 modelSBML.fbc_geneProduct(numel(model.genes)+i)=modelSBML.fbc_geneProduct(1);
-0359                 <span class="keyword">if</span> isfield(modelSBML.fbc_geneProduct,<span class="string">'metaid'</span>)
-0360                     modelSBML.fbc_geneProduct(numel(model.genes)+i).metaid=geneComplexes{i};
-0361                 <span class="keyword">end</span>;
-0362                 <span class="keyword">if</span> isfield(modelSBML.fbc_geneProduct,<span class="string">'fbc_id'</span>)
-0363                     modelSBML.fbc_geneProduct(numel(model.genes)+i).fbc_id=geneComplexes{i};
-0364                 <span class="keyword">else</span>
-0365                     modelSBML.fbc_geneProduct(i).fbc_label=modelSBML.fbc_geneProduct(i).fbc_id;
-0366                 <span class="keyword">end</span>;
-0367             <span class="keyword">end</span>;
-0368         <span class="keyword">end</span>;
-0369     <span class="keyword">end</span>;
-0370 <span class="keyword">end</span>;
-0371 
-0372 <span class="comment">% Generate a list of unique fbc_bound names</span>
-0373 totalValues=[model.lb; model.ub];
-0374 totalNames=cell(size(totalValues,1),1);
-0375 
-0376 listUniqueValues=unique(totalValues);
-0377 
-0378 <span class="keyword">for</span> i=1:length(listUniqueValues)
-0379     listUniqueNames{i,1}=[<span class="string">'FB'</span>,num2str(i),<span class="string">'N'</span>,num2str(abs(round(listUniqueValues(i))))]; <span class="comment">% create unique flux bound IDs.</span>
-0380     ind=find(ismember(totalValues,listUniqueValues(i)));
-0381     totalNames(ind)=listUniqueNames(i,1);
-0382 <span class="keyword">end</span>
-0383 
-0384 <span class="keyword">for</span> i=1:length(listUniqueNames)
-0385     <span class="comment">% Adding the default values, as these will be the same in all entries;</span>
-0386     <span class="keyword">if</span> i==1
-0387         <span class="keyword">if</span> isfield(modelSBML.parameter, <span class="string">'constant'</span>)
-0388             modelSBML.parameter(i).constant=1;
-0389         <span class="keyword">end</span>;
-0390         <span class="keyword">if</span> isfield(modelSBML.parameter, <span class="string">'isSetValue'</span>)
-0391             modelSBML.parameter(i).isSetValue=1;
-0392         <span class="keyword">end</span>;
-0393     <span class="keyword">end</span>;
-0394     <span class="comment">% Copying the default values to the next index as long as it is not the</span>
-0395     <span class="comment">% last one;</span>
-0396     <span class="keyword">if</span> i&lt;numel(listUniqueNames)
-0397         modelSBML.parameter(i+1)=modelSBML.parameter(i);
-0398     <span class="keyword">end</span>;
-0399     modelSBML.parameter(i).id=listUniqueNames{i};
-0400     modelSBML.parameter(i).value=listUniqueValues(i);
-0401 <span class="keyword">end</span>
-0402 
-0403 <span class="keyword">for</span> i=1:numel(model.rxns)
-0404     <span class="comment">% Adding the default values, as these will be the same in all entries;</span>
-0405     <span class="keyword">if</span> i==1
-0406         <span class="keyword">if</span> isfield(modelSBML.reaction, <span class="string">'sboTerm'</span>)
-0407             modelSBML.reaction(i).sboTerm=176;
-0408         <span class="keyword">end</span>;
-0409         <span class="keyword">if</span> isfield(modelSBML.reaction, <span class="string">'isSetFast'</span>)
-0410             modelSBML.reaction(i).isSetFast=1;
-0411         <span class="keyword">end</span>;
-0412     <span class="keyword">end</span>;
-0413     <span class="comment">% Copying the default values to the next index as long as it is not the</span>
-0414     <span class="comment">% last one;</span>
-0415     <span class="keyword">if</span> i&lt;numel(model.rxns)
-0416         modelSBML.reaction(i+1)=modelSBML.reaction(i);
-0417     <span class="keyword">end</span>;
-0418     
-0419     <span class="keyword">if</span> isfield(modelSBML.reaction,<span class="string">'metaid'</span>)
-0420         modelSBML.reaction(i).metaid=[<span class="string">'R_'</span> model.rxns{i}];
-0421     <span class="keyword">end</span>;
-0422     
-0423     <span class="comment">% Exporting notes information;</span>
-0424     <span class="keyword">if</span> (~isnan(model.rxnConfidenceScores(i)) || ~isempty(model.rxnReferences{i}) || ~isempty(model.rxnNotes{i}))
-0425         modelSBML.reaction(i).notes=<span class="string">'&lt;notes&gt;&lt;body xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;'</span>;
-0426         <span class="keyword">if</span> ~isnan(model.rxnConfidenceScores(i))
-0427             modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes <span class="string">'&lt;p&gt;Confidence Level: '</span> num2str(model.rxnConfidenceScores(i)) <span class="string">'&lt;/p&gt;'</span>];
-0428         <span class="keyword">end</span>;
-0429         <span class="keyword">if</span> ~isempty(model.rxnReferences{i})
-0430             modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes <span class="string">'&lt;p&gt;AUTHORS: '</span> model.rxnReferences{i} <span class="string">'&lt;/p&gt;'</span>];
-0431         <span class="keyword">end</span>;
-0432         <span class="keyword">if</span> ~isempty(model.rxnNotes{i})
-0433             modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes <span class="string">'&lt;p&gt;NOTES: '</span> model.rxnNotes{i} <span class="string">'&lt;/p&gt;'</span>];
-0434         <span class="keyword">end</span>;
-0435         modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes <span class="string">'&lt;/body&gt;&lt;/notes&gt;'</span>];
-0436     <span class="keyword">end</span>;
-0437     
-0438     <span class="comment">% Exporting annotation information from rxnMiriams;</span>
-0439     <span class="keyword">if</span> (~isempty(model.rxnMiriams{i}) &amp;&amp; isfield(modelSBML.reaction(i),<span class="string">'annotation'</span>)) || ~isempty(model.eccodes{i})
-0440         modelSBML.reaction(i).annotation=[<span class="string">'&lt;annotation&gt;&lt;rdf:RDF xmlns:rdf=&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#&quot; xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:dcterms=&quot;http://purl.org/dc/terms/&quot; xmlns:vCard=&quot;http://www.w3.org/2001/vcard-rdf/3.0#&quot; xmlns:bqbiol=&quot;http://biomodels.net/biology-qualifiers/&quot; xmlns:bqmodel=&quot;http://biomodels.net/model-qualifiers/&quot;&gt;&lt;rdf:Description rdf:about=&quot;#meta_R_'</span> model.rxns{i} <span class="string">'&quot;&gt;'</span>];
-0441         modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation <span class="string">'&lt;bqbiol:is&gt;&lt;rdf:Bag&gt;'</span>];
-0442         <span class="keyword">if</span> ~isempty(model.eccodes{i})
-0443             eccodes=regexp(model.eccodes{i},<span class="string">';'</span>,<span class="string">'split'</span>);
-0444             <span class="keyword">for</span> j=1:numel(eccodes)
-0445                 modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation  <span class="string">'&lt;rdf:li rdf:resource=&quot;http://identifiers.org/ec-code/'</span> regexprep(eccodes{j},<span class="string">'ec-code/|EC'</span>,<span class="string">''</span>) <span class="string">'&quot;/&gt;'</span>];
-0446             <span class="keyword">end</span>;
-0447         <span class="keyword">end</span>;
-0448         modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation <a href="#_sub2" class="code" title="subfunction miriamString=getMiriam(miriamStruct)">getMiriam</a>(model.rxnMiriams{i}) <span class="string">'&lt;/rdf:Bag&gt;&lt;/bqbiol:is&gt;&lt;/rdf:Description&gt;&lt;/rdf:RDF&gt;&lt;/annotation&gt;'</span>];
-0449     <span class="keyword">end</span>;
-0450     
-0451     <span class="keyword">if</span> isfield(modelSBML.reaction, <span class="string">'name'</span>)
-0452         modelSBML.reaction(i).name=model.rxnNames{i};
-0453     <span class="keyword">end</span>;
-0454     <span class="keyword">if</span> isfield(modelSBML.reaction, <span class="string">'id'</span>)
-0455         modelSBML.reaction(i).id=[<span class="string">'R_'</span> model.rxns{i}];
-0456     <span class="keyword">end</span>
-0457     
-0458     <span class="comment">% Adding the information about reactants and products;</span>
-0459     involvedMets=<a href="#_sub3" class="code" title="subfunction [tmp_Rxn]=addReactantsProducts(model,sbmlModel,i)">addReactantsProducts</a>(model,modelSBML,i);
-0460     <span class="keyword">for</span> j=1:numel(involvedMets.reactant)
-0461         <span class="keyword">if</span> j&lt;numel(involvedMets.reactant)
-0462             modelSBML.reaction(i).reactant(j+1)=modelSBML.reaction(i).reactant(j);
-0463         <span class="keyword">end</span>;
-0464         modelSBML.reaction(i).reactant(j).species=involvedMets.reactant(j).species;
-0465         modelSBML.reaction(i).reactant(j).stoichiometry=involvedMets.reactant(j).stoichiometry;
-0466         modelSBML.reaction(i).reactant(j).isSetStoichiometry=involvedMets.reactant(j).isSetStoichiometry;
-0467         modelSBML.reaction(i).reactant(j).constant=involvedMets.reactant(j).constant;
-0468     <span class="keyword">end</span>;
-0469     <span class="keyword">if</span> numel(involvedMets.reactant)==0
-0470         modelSBML.reaction(i).reactant=<span class="string">''</span>;
-0471     <span class="keyword">end</span>;
-0472     <span class="keyword">for</span> j=1:numel(involvedMets.product)
-0473         <span class="keyword">if</span> j&lt;numel(involvedMets.product)
-0474             modelSBML.reaction(i).product(j+1)=modelSBML.reaction(i).product(j);
-0475         <span class="keyword">end</span>;
-0476         modelSBML.reaction(i).product(j).species=involvedMets.product(j).species;
-0477         modelSBML.reaction(i).product(j).stoichiometry=involvedMets.product(j).stoichiometry;
-0478         modelSBML.reaction(i).product(j).isSetStoichiometry=involvedMets.product(j).isSetStoichiometry;
-0479         modelSBML.reaction(i).product(j).constant=involvedMets.product(j).constant;
-0480     <span class="keyword">end</span>;
-0481     <span class="keyword">if</span> numel(involvedMets.product)==0
-0482         modelSBML.reaction(i).product=<span class="string">''</span>;
-0483     <span class="keyword">end</span>;
-0484     <span class="comment">%Export reversibility information. Reactions are irreversible by</span>
-0485     <span class="comment">%default;</span>
-0486     <span class="keyword">if</span> model.rev(i)==1
-0487         modelSBML.reaction(i).reversible=1;
-0488     <span class="keyword">end</span>;
-0489     <span class="keyword">if</span> isfield(model, <span class="string">'rxnComps'</span>)
-0490         modelSBML.reaction(i).compartment=model.comps{model.rxnComps(i)};
-0491     <span class="keyword">end</span>;
-0492     <span class="keyword">if</span> isfield(model, <span class="string">'grRules'</span>)
-0493         modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association.fbc_association=model.grRules{i};
-0494     <span class="keyword">end</span>;
-0495     modelSBML.reaction(i).fbc_lowerFluxBound=totalNames{i};
-0496     modelSBML.reaction(i).fbc_upperFluxBound=totalNames{length(model.lb)+i};
-0497 <span class="keyword">end</span>;
-0498 
-0499 <span class="comment">% Prepare subSystems Code taken from COBRA functions getModelSubSystems,</span>
-0500 <span class="comment">% writeSBML, findRxnsFromSubSystem under GNU General Public License v3.0,</span>
-0501 <span class="comment">% license file in readme/GPL.MD. Code modified for RAVEN.</span>
-0502 modelSBML.groups_group.groups_kind = <span class="string">'partonomy'</span>;
-0503 modelSBML.groups_group.sboTerm = 633;
-0504 tmpStruct=modelSBML.groups_group;
-0505 rxns=strcat(<span class="string">'R_'</span>,model.rxns);
-0506 <span class="keyword">if</span> isfield(model, <span class="string">'subSystems'</span>)
-0507     <span class="keyword">if</span> ~any(cellfun(@iscell,model.subSystems))
-0508         subSystems = setdiff(model.subSystems,<span class="string">''</span>);
-0509     <span class="keyword">else</span>
-0510         orderedSubs = cellfun(@(x) <a href="#_sub4" class="code" title="subfunction vecT = columnVector(vec)">columnVector</a>(x),model.subSystems,<span class="string">'UniformOUtput'</span>,false);
-0511         subSystems = setdiff(vertcat(orderedSubs{:}),<span class="string">''</span>);
-0512     <span class="keyword">end</span>
-0513     <span class="keyword">if</span> isempty(subSystems)
-0514         subSystems = {};
-0515     <span class="keyword">end</span>
-0516     <span class="keyword">if</span> ~isempty(subSystems)
-0517         <span class="comment">%Build the groups for the group package.</span>
-0518         groupIDs = strcat(<span class="string">'group'</span>,cellfun(@num2str, num2cell(1:length(subSystems))',<span class="string">'UniformOutput'</span>,false));
-0519         <span class="keyword">for</span> i = 1:length(subSystems)
-0520             cgroup = tmpStruct;
-0521             <span class="keyword">if</span> ~any(cellfun(@iscell,model.subSystems))
-0522                 present = ismember(model.subSystems,subSystems{i});
-0523             <span class="keyword">else</span>
-0524                 present = cellfun(@(x) any(ismember(x,subSystems{i})),model.subSystems);
-0525             <span class="keyword">end</span>
-0526             groupMembers = rxns(present);
-0527             <span class="keyword">for</span> j = 1:numel(groupMembers)
-0528                 cMember = tmpStruct.groups_member;
-0529                 cMember.groups_idRef = groupMembers{j};
-0530                 <span class="keyword">if</span> j == 1
-0531                     cgroup.groups_member = cMember;
-0532                 <span class="keyword">else</span>
-0533                     cgroup.groups_member(j) = cMember;
-0534                 <span class="keyword">end</span>
-0535             <span class="keyword">end</span>
-0536             cgroup.groups_id = groupIDs{i};
-0537             cgroup.groups_name = subSystems{i};
-0538             <span class="keyword">if</span> i == 1
-0539                 modelSBML.groups_group = cgroup;
-0540             <span class="keyword">else</span>
-0541                 modelSBML.groups_group(i) = cgroup;
-0542             <span class="keyword">end</span>
-0543         <span class="keyword">end</span>
-0544     <span class="keyword">end</span>
-0545 <span class="keyword">end</span>
-0546 
-0547 <span class="comment">% Preparing fbc_objective subfield;</span>
-0548 
-0549 modelSBML.fbc_objective.fbc_type=<span class="string">'maximize'</span>;
-0550 modelSBML.fbc_objective.fbc_id=<span class="string">'obj'</span>;
+0072 <span class="keyword">end</span>
+0073 <span class="keyword">if</span> ~isfield(model,<span class="string">'geneMiriams'</span>) &amp;&amp; isfield(model,<span class="string">'genes'</span>)
+0074     model.geneMiriams=cell(numel(model.genes),1);
+0075 <span class="keyword">end</span>
+0076 <span class="keyword">if</span> ~isfield(model,<span class="string">'geneShortNames'</span>) &amp;&amp; isfield(model,<span class="string">'genes'</span>)
+0077     model.geneShortNames=cell(numel(model.genes),1);
+0078 <span class="keyword">end</span>
+0079 <span class="keyword">if</span> ~isfield(model,<span class="string">'subSystems'</span>)
+0080     model.subSystems=cell(numel(model.rxns),1);
+0081 <span class="keyword">end</span>
+0082 <span class="keyword">if</span> ~isfield(model,<span class="string">'eccodes'</span>)
+0083     model.eccodes=cell(numel(model.rxns),1);
+0084 <span class="keyword">end</span>
+0085 <span class="keyword">if</span> ~isfield(model,<span class="string">'rxnReferences'</span>)
+0086     model.rxnReferences=cell(numel(model.rxns),1);
+0087 <span class="keyword">end</span>
+0088 <span class="keyword">if</span> ~isfield(model,<span class="string">'rxnConfidenceScores'</span>)
+0089     model.rxnConfidenceScores=NaN(numel(model.rxns),1);
+0090 <span class="keyword">end</span>
+0091 <span class="keyword">if</span> ~isfield(model,<span class="string">'rxnNotes'</span>)
+0092     model.rxnNotes=cell(numel(model.rxns),1);
+0093 <span class="keyword">end</span>
+0094 <span class="keyword">if</span> ~isfield(model,<span class="string">'rxnMiriams'</span>)
+0095     model.rxnMiriams=cell(numel(model.rxns),1);
+0096 <span class="keyword">end</span>
+0097 
+0098 <span class="keyword">if</span> sbmlLevel&lt;3
+0099     <span class="comment">%Check if genes have associated compartments</span>
+0100     <span class="keyword">if</span> ~isfield(model,<span class="string">'geneComps'</span>) &amp;&amp; isfield(model,<span class="string">'genes'</span>)
+0101         <span class="keyword">if</span> supressWarnings==false
+0102             EM=<span class="string">'There are no compartments specified for genes. All genes will be assigned to the first compartment. This is because the SBML structure requires all elements to be assigned to a compartment'</span>;
+0103             dispEM(EM,false);
+0104         <span class="keyword">end</span>
+0105         model.geneComps=ones(numel(model.genes),1);
+0106     <span class="keyword">end</span>
+0107 <span class="keyword">end</span>
+0108 
+0109 <span class="comment">%Convert ids to SBML-convenient format. This is to avoid the data loss when</span>
+0110 <span class="comment">%unsupported characters are included in ids. Here we are using part from</span>
+0111 <span class="comment">%convertSBMLID, originating from the COBRA Toolbox</span>
+0112 model.rxns=regexprep(model.rxns,<span class="string">'([^0-9_a-zA-Z])'</span>,<span class="string">'__${num2str($1+0)}__'</span>);
+0113 model.mets=regexprep(model.mets,<span class="string">'([^0-9_a-zA-Z])'</span>,<span class="string">'__${num2str($1+0)}__'</span>);
+0114 model.comps=regexprep(model.comps,<span class="string">'([^0-9_a-zA-Z])'</span>,<span class="string">'__${num2str($1+0)}__'</span>);
+0115 model.genes=regexprep(model.genes,<span class="string">'([^0-9_a-zA-Z])'</span>,<span class="string">'__${num2str($1+0)}__'</span>);
+0116 
+0117 <span class="comment">%Generate an empty SBML structure</span>
+0118 modelSBML=<a href="#_sub1" class="code" title="subfunction modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions)">getSBMLStructure</a>(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0119 modelSBML.metaid=model.id;
+0120 modelSBML.id=model.id;
+0121 modelSBML.name=model.description;
+0122 
+0123 <span class="keyword">if</span> isfield(model,<span class="string">'annotation'</span>)
+0124     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'note'</span>)
+0125         modelSBML.notes=[<span class="string">'&lt;notes&gt;&lt;body xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;&lt;p&gt;'</span>,regexprep(model.annotation.note,<span class="string">'&lt;p&gt;|&lt;/p&gt;'</span>,<span class="string">''</span>),<span class="string">'&lt;/p&gt;&lt;/body&gt;&lt;/notes&gt;'</span>];
+0126     <span class="keyword">end</span>
+0127 <span class="keyword">else</span>
+0128     modelSBML.notes=<span class="string">'&lt;notes&gt;&lt;body xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;&lt;p&gt;This file was generated using the exportModel function in RAVEN Toolbox 2.0 and OutputSBML in libSBML &lt;/p&gt;&lt;/body&gt;&lt;/notes&gt;'</span>;
+0129 <span class="keyword">end</span>
+0130 
+0131 modelSBML.annotation=[<span class="string">'&lt;annotation&gt;&lt;rdf:RDF xmlns:rdf=&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#&quot; xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:dcterms=&quot;http://purl.org/dc/terms/&quot; xmlns:vCard=&quot;http://www.w3.org/2001/vcard-rdf/3.0#&quot; xmlns:bqbiol=&quot;http://biomodels.net/biology-qualifiers/&quot; xmlns:bqmodel=&quot;http://biomodels.net/model-qualifiers/&quot;&gt;&lt;rdf:Description rdf:about=&quot;#meta_'</span> model.id <span class="string">'&quot;&gt;'</span>];
+0132 <span class="keyword">if</span> isfield(model,<span class="string">'annotation'</span>)
+0133     nameString=<span class="string">''</span>;
+0134     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'familyName'</span>)
+0135         <span class="keyword">if</span> ~isempty(model.annotation.familyName)
+0136             nameString=[<span class="string">'&lt;vCard:Family&gt;'</span> model.annotation.familyName <span class="string">'&lt;/vCard:Family&gt;'</span>];
+0137         <span class="keyword">end</span>
+0138     <span class="keyword">end</span>
+0139     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'givenName'</span>)
+0140         <span class="keyword">if</span> ~isempty(model.annotation.givenName)
+0141             nameString=[nameString <span class="string">'&lt;vCard:Given&gt;'</span> model.annotation.givenName <span class="string">'&lt;/vCard:Given&gt;'</span>];
+0142         <span class="keyword">end</span>
+0143     <span class="keyword">end</span>
+0144     email=<span class="string">''</span>;
+0145     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'email'</span>)
+0146         <span class="keyword">if</span> ~isempty(model.annotation.email)
+0147             email=[<span class="string">'&lt;vCard:EMAIL&gt;'</span> model.annotation.email <span class="string">'&lt;/vCard:EMAIL&gt;'</span>];
+0148         <span class="keyword">end</span>
+0149     <span class="keyword">end</span>
+0150     org=<span class="string">''</span>;
+0151     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'organization'</span>)
+0152         <span class="keyword">if</span> ~isempty(model.annotation.organization)
+0153             org=[<span class="string">'&lt;vCard:ORG rdf:parseType=&quot;Resource&quot;&gt;&lt;vCard:Orgname&gt;'</span> model.annotation.organization <span class="string">'&lt;/vCard:Orgname&gt;&lt;/vCard:ORG&gt;'</span>];
+0154         <span class="keyword">end</span>
+0155     <span class="keyword">end</span>
+0156     <span class="keyword">if</span> ~isempty(nameString) || ~isempty(email) || ~isempty(org)
+0157         modelSBML.annotation=[modelSBML.annotation <span class="string">'&lt;dc:creator&gt;&lt;rdf:Bag&gt;&lt;rdf:li rdf:parseType=&quot;Resource&quot;&gt;'</span>];
+0158         <span class="keyword">if</span> ~isempty(nameString)
+0159             modelSBML.annotation=[modelSBML.annotation <span class="string">'&lt;vCard:N rdf:parseType=&quot;Resource&quot;&gt;'</span> nameString <span class="string">'&lt;/vCard:N&gt;'</span>];
+0160         <span class="keyword">end</span>
+0161         modelSBML.annotation=[modelSBML.annotation email org <span class="string">'&lt;/rdf:li&gt;&lt;/rdf:Bag&gt;&lt;/dc:creator&gt;'</span>];
+0162     <span class="keyword">end</span>
+0163 <span class="keyword">end</span>
+0164 modelSBML.annotation=[modelSBML.annotation <span class="string">'&lt;dcterms:created rdf:parseType=&quot;Resource&quot;&gt;'</span><span class="keyword">...</span>
+0165     <span class="string">'&lt;dcterms:W3CDTF&gt;'</span> datestr(now,<span class="string">'yyyy-mm-ddTHH:MM:SSZ'</span>) <span class="string">'&lt;/dcterms:W3CDTF&gt;'</span><span class="keyword">...</span>
+0166     <span class="string">'&lt;/dcterms:created&gt;'</span><span class="keyword">...</span>
+0167     <span class="string">'&lt;dcterms:modified rdf:parseType=&quot;Resource&quot;&gt;'</span><span class="keyword">...</span>
+0168     <span class="string">'&lt;dcterms:W3CDTF&gt;'</span> datestr(now,<span class="string">'yyyy-mm-ddTHH:MM:SSZ'</span>) <span class="string">'&lt;/dcterms:W3CDTF&gt;'</span><span class="keyword">...</span>
+0169     <span class="string">'&lt;/dcterms:modified&gt;'</span>];
+0170 
+0171 <span class="keyword">if</span> isfield(model,<span class="string">'annotation'</span>)
+0172     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'taxonomy'</span>)
+0173         modelSBML.annotation=[modelSBML.annotation <span class="string">'&lt;bqbiol:is&gt;&lt;rdf:Bag&gt;&lt;rdf:li rdf:resource=&quot;http://identifiers.org/taxonomy/'</span> regexprep(model.annotation.taxonomy,<span class="string">'taxonomy/'</span>,<span class="string">''</span>) <span class="string">'&quot;/&gt;&lt;/rdf:Bag&gt;&lt;/bqbiol:is&gt;'</span>];
+0174     <span class="keyword">end</span>
+0175 <span class="keyword">end</span>
+0176 modelSBML.annotation=[modelSBML.annotation <span class="string">'&lt;/rdf:Description&gt;&lt;/rdf:RDF&gt;&lt;/annotation&gt;'</span>];
+0177 
+0178 <span class="comment">%Prepare compartments</span>
+0179 <span class="keyword">for</span> i=1:numel(model.comps)
+0180     <span class="comment">%Add the default values, as these will be the same in all entries</span>
+0181     <span class="keyword">if</span> i==1
+0182         <span class="keyword">if</span> isfield(modelSBML.compartment, <span class="string">'sboTerm'</span>)
+0183             modelSBML.compartment(i).sboTerm=290;
+0184         <span class="keyword">end</span>
+0185         <span class="keyword">if</span> isfield(modelSBML.compartment, <span class="string">'spatialDimensions'</span>)
+0186             modelSBML.compartment(i).spatialDimensions=3;
+0187         <span class="keyword">end</span>
+0188         <span class="keyword">if</span> isfield(modelSBML.compartment, <span class="string">'size'</span>)
+0189             modelSBML.compartment(i).size=1;
+0190         <span class="keyword">end</span>
+0191         <span class="keyword">if</span> isfield(modelSBML.compartment, <span class="string">'constant'</span>)
+0192             modelSBML.compartment(i).constant=1;
+0193         <span class="keyword">end</span>
+0194         <span class="keyword">if</span> isfield(modelSBML.compartment, <span class="string">'isSetSize'</span>)
+0195             modelSBML.compartment(i).isSetSize=1;
+0196         <span class="keyword">end</span>
+0197         <span class="keyword">if</span> isfield(modelSBML.compartment, <span class="string">'isSetSpatialDimensions'</span>)
+0198             modelSBML.compartment(i).isSetSpatialDimensions=1;
+0199         <span class="keyword">end</span>
+0200     <span class="keyword">end</span>
+0201     <span class="comment">%Copy the default values to the next entry as long as it is not the</span>
+0202     <span class="comment">%last one</span>
+0203     <span class="keyword">if</span> i&lt;numel(model.comps)
+0204         modelSBML.compartment(i+1)=modelSBML.compartment(i);
+0205     <span class="keyword">end</span>
+0206     
+0207     <span class="keyword">if</span> isfield(modelSBML.compartment,<span class="string">'metaid'</span>)
+0208         modelSBML.compartment(i).metaid=model.comps{i};
+0209     <span class="keyword">end</span>
+0210     <span class="comment">%Prepare Miriam strings</span>
+0211     <span class="keyword">if</span> ~isempty(model.compMiriams{i}) &amp;&amp; isfield(modelSBML.compartment(i),<span class="string">'annotation'</span>)
+0212         modelSBML.compartment(i).annotation=[<span class="string">'&lt;annotation&gt;&lt;rdf:RDF xmlns:rdf=&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#&quot; xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:dcterms=&quot;http://purl.org/dc/terms/&quot; xmlns:vCard=&quot;http://www.w3.org/2001/vcard-rdf/3.0#&quot; xmlns:bqbiol=&quot;http://biomodels.net/biology-qualifiers/&quot; xmlns:bqmodel=&quot;http://biomodels.net/model-qualifiers/&quot;&gt;&lt;rdf:Description rdf:about=&quot;#meta_'</span> model.comps{i} <span class="string">'&quot;&gt;'</span>];
+0213         modelSBML.compartment(i).annotation=[modelSBML.compartment(i).annotation <span class="string">'&lt;bqbiol:is&gt;&lt;rdf:Bag&gt;'</span>];
+0214         modelSBML.compartment(i).annotation=[modelSBML.compartment(i).annotation <a href="#_sub2" class="code" title="subfunction miriamString=getMiriam(miriamStruct)">getMiriam</a>(model.compMiriams{i}) <span class="string">'&lt;/rdf:Bag&gt;&lt;/bqbiol:is&gt;&lt;/rdf:Description&gt;&lt;/rdf:RDF&gt;&lt;/annotation&gt;'</span>];
+0215     <span class="keyword">end</span>
+0216     <span class="keyword">if</span> isfield(modelSBML.compartment, <span class="string">'name'</span>)
+0217         modelSBML.compartment(i).name=model.compNames{i};
+0218     <span class="keyword">end</span>
+0219     <span class="keyword">if</span> isfield(modelSBML.compartment, <span class="string">'id'</span>)
+0220         modelSBML.compartment(i).id=model.comps{i};
+0221     <span class="keyword">end</span>
+0222     
+0223 <span class="keyword">end</span>
+0224 
+0225 <span class="comment">%Begin writing species</span>
+0226 <span class="keyword">for</span> i=1:numel(model.mets)
+0227     <span class="comment">%Add the default values, as these will be the same in all entries</span>
+0228     <span class="keyword">if</span> i==1
+0229         <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'sboTerm'</span>)
+0230             modelSBML.species(i).sboTerm=247;
+0231         <span class="keyword">end</span>
+0232         <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'initialAmount'</span>)
+0233             modelSBML.species(i).initialAmount=1;
+0234         <span class="keyword">end</span>
+0235         <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'initialConcentration'</span>)
+0236             modelSBML.species(i).initialConcentration=0;
+0237         <span class="keyword">end</span>
+0238         <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'isSetInitialAmount'</span>)
+0239             modelSBML.species(i).isSetInitialAmount=1;
+0240         <span class="keyword">end</span>
+0241         <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'isSetInitialConcentration'</span>)
+0242             modelSBML.species(i).isSetInitialConcentration=1;
+0243         <span class="keyword">end</span>
+0244     <span class="keyword">end</span>
+0245     <span class="comment">%Copy the default values to the next entry as long as it is not the</span>
+0246     <span class="comment">%last one</span>
+0247     <span class="keyword">if</span> i&lt;numel(model.mets)
+0248         modelSBML.species(i+1)=modelSBML.species(i);
+0249     <span class="keyword">end</span>
+0250     
+0251     <span class="keyword">if</span> isfield(modelSBML.species,<span class="string">'metaid'</span>)
+0252         modelSBML.species(i).metaid=[<span class="string">'M_'</span> model.mets{i}];
+0253     <span class="keyword">end</span>
+0254     <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'name'</span>)
+0255         modelSBML.species(i).name=model.metNames{i};
+0256     <span class="keyword">end</span>
+0257     <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'id'</span>)
+0258         modelSBML.species(i).id=[<span class="string">'M_'</span> model.mets{i}];
+0259     <span class="keyword">end</span>
+0260     <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'compartment'</span>)
+0261         modelSBML.species(i).compartment=model.comps{model.metComps(i)};
+0262     <span class="keyword">end</span>
+0263     <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
+0264         <span class="keyword">if</span> model.unconstrained(i)
+0265             modelSBML.species(i).boundaryCondition=1;
+0266         <span class="keyword">end</span>
+0267     <span class="keyword">end</span>
+0268     <span class="keyword">if</span> isfield(modelSBML.species, <span class="string">'fbc_charge'</span>) &amp;&amp; isfield(model,<span class="string">'metCharges'</span>)
+0269         <span class="keyword">if</span> ~isnan(model.metCharges(i))
+0270             modelSBML.species(i).fbc_charge=model.metCharges(i);
+0271             modelSBML.species(i).isSetfbc_charge=1;
+0272         <span class="keyword">else</span>
+0273             modelSBML.species(i).isSetfbc_charge=0;
+0274         <span class="keyword">end</span>
+0275     <span class="keyword">end</span>
+0276     <span class="keyword">if</span> isfield(modelSBML.species,<span class="string">'annotation'</span>)
+0277         <span class="keyword">if</span> ~isempty(model.metMiriams{i}) || ~isempty(model.metFormulas{i})
+0278             hasInchi=false;
+0279             <span class="keyword">if</span> ~isempty(model.metFormulas{i})
+0280                 <span class="comment">%Only export formula if there is no InChI. This is because</span>
+0281                 <span class="comment">%the metFormulas field is populated by InChIs if available</span>
+0282                 <span class="keyword">if</span> ~isempty(model.inchis{i})
+0283                     hasInchi=true;
+0284                 <span class="keyword">end</span>
+0285                 <span class="keyword">if</span> hasInchi==false
+0286                     modelSBML.species(i).fbc_chemicalFormula=model.metFormulas{i};
+0287                 <span class="keyword">end</span>
+0288             <span class="keyword">end</span>
+0289             <span class="keyword">if</span> ~isempty(model.metMiriams{i}) || hasInchi==true
+0290                 modelSBML.species(i).annotation=[<span class="string">'&lt;annotation&gt;&lt;rdf:RDF xmlns:rdf=&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#&quot; xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:dcterms=&quot;http://purl.org/dc/terms/&quot; xmlns:vCard=&quot;http://www.w3.org/2001/vcard-rdf/3.0#&quot; xmlns:bqbiol=&quot;http://biomodels.net/biology-qualifiers/&quot; xmlns:bqmodel=&quot;http://biomodels.net/model-qualifiers/&quot;&gt;&lt;rdf:Description rdf:about=&quot;#meta_M_'</span> model.mets{i} <span class="string">'&quot;&gt;'</span>];
+0291                 modelSBML.species(i).annotation=[modelSBML.species(i).annotation <span class="string">'&lt;bqbiol:is&gt;&lt;rdf:Bag&gt;'</span>];
+0292                 <span class="keyword">if</span> ~isempty(model.metMiriams{i})
+0293                     modelSBML.species(i).annotation=[modelSBML.species(i).annotation <a href="#_sub2" class="code" title="subfunction miriamString=getMiriam(miriamStruct)">getMiriam</a>(model.metMiriams{i})];
+0294                 <span class="keyword">end</span>
+0295                 <span class="keyword">if</span> hasInchi==true
+0296                     modelSBML.species(i).annotation=[modelSBML.species(i).annotation <span class="string">'&lt;rdf:li rdf:resource=&quot;http://identifiers.org/inchi/InChI='</span> model.inchis{i} <span class="string">'&quot;/&gt;'</span>];
+0297                 <span class="keyword">end</span>
+0298                 modelSBML.species(i).annotation=[modelSBML.species(i).annotation <span class="string">'&lt;/rdf:Bag&gt;&lt;/bqbiol:is&gt;&lt;/rdf:Description&gt;&lt;/rdf:RDF&gt;&lt;/annotation&gt;'</span>];
+0299             <span class="keyword">end</span>
+0300         <span class="keyword">end</span>
+0301     <span class="keyword">end</span>
+0302 <span class="keyword">end</span>
+0303 
+0304 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
+0305     <span class="keyword">for</span> i=1:numel(model.genes)
+0306         <span class="comment">%Add the default values, as these will be the same in all entries</span>
+0307         <span class="keyword">if</span> i==1
+0308             <span class="keyword">if</span> isfield(modelSBML.fbc_geneProduct, <span class="string">'sboTerm'</span>)
+0309                 modelSBML.fbc_geneProduct(i).sboTerm=252;
+0310             <span class="keyword">end</span>
+0311         <span class="keyword">end</span>
+0312         <span class="comment">%Copy the default values to the next index as long as it is not the</span>
+0313         <span class="comment">%last one</span>
+0314         <span class="keyword">if</span> i&lt;numel(model.genes)
+0315             modelSBML.fbc_geneProduct(i+1)=modelSBML.fbc_geneProduct(i);
+0316         <span class="keyword">end</span>
+0317         
+0318         <span class="keyword">if</span> isfield(modelSBML.fbc_geneProduct,<span class="string">'metaid'</span>)
+0319             modelSBML.fbc_geneProduct(i).metaid=model.genes{i};
+0320         <span class="keyword">end</span>
+0321         <span class="keyword">if</span> ~isempty(model.geneMiriams{i}) &amp;&amp; isfield(modelSBML.fbc_geneProduct(i),<span class="string">'annotation'</span>)
+0322             modelSBML.fbc_geneProduct(i).annotation=[<span class="string">'&lt;annotation&gt;&lt;rdf:RDF xmlns:rdf=&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#&quot; xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:dcterms=&quot;http://purl.org/dc/terms/&quot; xmlns:vCard=&quot;http://www.w3.org/2001/vcard-rdf/3.0#&quot; xmlns:bqbiol=&quot;http://biomodels.net/biology-qualifiers/&quot; xmlns:bqmodel=&quot;http://biomodels.net/model-qualifiers/&quot;&gt;&lt;rdf:Description rdf:about=&quot;#meta_'</span> model.genes{i} <span class="string">'&quot;&gt;'</span>];
+0323             modelSBML.fbc_geneProduct(i).annotation=[modelSBML.fbc_geneProduct(i).annotation <span class="string">'&lt;bqbiol:is&gt;&lt;rdf:Bag&gt;'</span>];
+0324             modelSBML.fbc_geneProduct(i).annotation=[modelSBML.fbc_geneProduct(i).annotation <a href="#_sub2" class="code" title="subfunction miriamString=getMiriam(miriamStruct)">getMiriam</a>(model.geneMiriams{i}) <span class="string">'&lt;/rdf:Bag&gt;&lt;/bqbiol:is&gt;&lt;/rdf:Description&gt;&lt;/rdf:RDF&gt;&lt;/annotation&gt;'</span>];
+0325         <span class="keyword">end</span>
+0326         <span class="keyword">if</span> isfield(modelSBML.fbc_geneProduct, <span class="string">'fbc_id'</span>)
+0327             modelSBML.fbc_geneProduct(i).fbc_id=model.genes{i};
+0328         <span class="keyword">end</span>
+0329         <span class="keyword">if</span> isfield(modelSBML.fbc_geneProduct, <span class="string">'fbc_label'</span>) &amp;&amp; isfield(model,<span class="string">'geneShortNames'</span>)
+0330             <span class="keyword">if</span> isempty(model.geneShortNames{i})
+0331                 modelSBML.fbc_geneProduct(i).fbc_label=model.genes{i};
+0332             <span class="keyword">else</span>
+0333                 modelSBML.fbc_geneProduct(i).fbc_label=model.geneShortNames{i};
+0334             <span class="keyword">end</span>
+0335         <span class="keyword">end</span>
+0336     <span class="keyword">end</span>
+0337     <span class="keyword">if</span> exportGeneComplexes==true
+0338         <span class="comment">%Also add the complexes as genes. This is done by splitting grRules</span>
+0339         <span class="comment">%on &quot;or&quot; and adding the ones which contain several genes</span>
+0340         geneComplexes={};
+0341         <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
+0342             <span class="comment">%Only grRules which contain &quot; and &quot; can be complexes</span>
+0343             uniqueRules=unique(model.grRules);
+0344             I=cellfun(@any,strfind(uniqueRules,<span class="string">' and '</span>));
+0345             uniqueRules(~I)=[];
+0346             uniqueRules=strrep(uniqueRules,<span class="string">'('</span>,<span class="string">''</span>);
+0347             uniqueRules=strrep(uniqueRules,<span class="string">')'</span>,<span class="string">''</span>);
+0348             uniqueRules=strrep(uniqueRules,<span class="string">' and '</span>,<span class="string">':'</span>);
+0349             <span class="keyword">for</span> i=1:numel(uniqueRules)
+0350                 genes=regexp(uniqueRules(i),<span class="string">' or '</span>,<span class="string">'split'</span>);
+0351                 genes=genes{1}(:);
+0352                 <span class="comment">%Check which ones are complexes</span>
+0353                 I=cellfun(@any,strfind(genes,<span class="string">':'</span>));
+0354                 geneComplexes=[geneComplexes;genes(I)];
+0355             <span class="keyword">end</span>
+0356         <span class="keyword">end</span>
+0357         geneComplexes=unique(geneComplexes);
+0358         <span class="keyword">if</span> ~isempty(geneComplexes)
+0359             <span class="comment">%Then add them as genes. There is a possiblity that a complex</span>
+0360             <span class="comment">%A&amp;B is added as separate from B&amp;A. This isn't really an issue</span>
+0361             <span class="comment">%so I don't deal with it</span>
+0362             <span class="keyword">for</span> i=1:numel(geneComplexes)
+0363                 modelSBML.fbc_geneProduct(numel(model.genes)+i)=modelSBML.fbc_geneProduct(1);
+0364                 <span class="keyword">if</span> isfield(modelSBML.fbc_geneProduct,<span class="string">'metaid'</span>)
+0365                     modelSBML.fbc_geneProduct(numel(model.genes)+i).metaid=geneComplexes{i};
+0366                 <span class="keyword">end</span>
+0367                 <span class="keyword">if</span> isfield(modelSBML.fbc_geneProduct,<span class="string">'fbc_id'</span>)
+0368                     modelSBML.fbc_geneProduct(numel(model.genes)+i).fbc_id=geneComplexes{i};
+0369                 <span class="keyword">else</span>
+0370                     modelSBML.fbc_geneProduct(i).fbc_label=modelSBML.fbc_geneProduct(i).fbc_id;
+0371                 <span class="keyword">end</span>
+0372             <span class="keyword">end</span>
+0373         <span class="keyword">end</span>
+0374     <span class="keyword">end</span>
+0375 <span class="keyword">end</span>
+0376 
+0377 <span class="comment">%Generate a list of unique fbc_bound names</span>
+0378 totalValues=[model.lb; model.ub];
+0379 totalNames=cell(size(totalValues,1),1);
+0380 
+0381 listUniqueValues=unique(totalValues);
+0382 
+0383 <span class="keyword">for</span> i=1:length(listUniqueValues)
+0384     listUniqueNames{i,1}=[<span class="string">'FB'</span>,num2str(i),<span class="string">'N'</span>,num2str(abs(round(listUniqueValues(i))))]; <span class="comment">% create unique flux bound IDs.</span>
+0385     ind=find(ismember(totalValues,listUniqueValues(i)));
+0386     totalNames(ind)=listUniqueNames(i,1);
+0387 <span class="keyword">end</span>
+0388 
+0389 <span class="keyword">for</span> i=1:length(listUniqueNames)
+0390     <span class="comment">%Add the default values, as these will be the same in all entries</span>
+0391     <span class="keyword">if</span> i==1
+0392         <span class="keyword">if</span> isfield(modelSBML.parameter, <span class="string">'constant'</span>)
+0393             modelSBML.parameter(i).constant=1;
+0394         <span class="keyword">end</span>
+0395         <span class="keyword">if</span> isfield(modelSBML.parameter, <span class="string">'isSetValue'</span>)
+0396             modelSBML.parameter(i).isSetValue=1;
+0397         <span class="keyword">end</span>
+0398     <span class="keyword">end</span>
+0399     <span class="comment">%Copy the default values to the next index as long as it is not the</span>
+0400     <span class="comment">%last one</span>
+0401     <span class="keyword">if</span> i&lt;numel(listUniqueNames)
+0402         modelSBML.parameter(i+1)=modelSBML.parameter(i);
+0403     <span class="keyword">end</span>
+0404     modelSBML.parameter(i).id=listUniqueNames{i};
+0405     modelSBML.parameter(i).value=listUniqueValues(i);
+0406 <span class="keyword">end</span>
+0407 
+0408 <span class="keyword">for</span> i=1:numel(model.rxns)
+0409     <span class="comment">%Add the default values, as these will be the same in all entries</span>
+0410     <span class="keyword">if</span> i==1
+0411         <span class="keyword">if</span> isfield(modelSBML.reaction, <span class="string">'sboTerm'</span>)
+0412             modelSBML.reaction(i).sboTerm=176;
+0413         <span class="keyword">end</span>
+0414         <span class="keyword">if</span> isfield(modelSBML.reaction, <span class="string">'isSetFast'</span>)
+0415             modelSBML.reaction(i).isSetFast=1;
+0416         <span class="keyword">end</span>
+0417     <span class="keyword">end</span>
+0418     <span class="comment">%Copy the default values to the next index as long as it is not the</span>
+0419     <span class="comment">%last one</span>
+0420     <span class="keyword">if</span> i&lt;numel(model.rxns)
+0421         modelSBML.reaction(i+1)=modelSBML.reaction(i);
+0422     <span class="keyword">end</span>
+0423     
+0424     <span class="keyword">if</span> isfield(modelSBML.reaction,<span class="string">'metaid'</span>)
+0425         modelSBML.reaction(i).metaid=[<span class="string">'R_'</span> model.rxns{i}];
+0426     <span class="keyword">end</span>
+0427     
+0428     <span class="comment">%Export notes information</span>
+0429     <span class="keyword">if</span> (~isnan(model.rxnConfidenceScores(i)) || ~isempty(model.rxnReferences{i}) || ~isempty(model.rxnNotes{i}))
+0430         modelSBML.reaction(i).notes=<span class="string">'&lt;notes&gt;&lt;body xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;'</span>;
+0431         <span class="keyword">if</span> ~isnan(model.rxnConfidenceScores(i))
+0432             modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes <span class="string">'&lt;p&gt;Confidence Level: '</span> num2str(model.rxnConfidenceScores(i)) <span class="string">'&lt;/p&gt;'</span>];
+0433         <span class="keyword">end</span>
+0434         <span class="keyword">if</span> ~isempty(model.rxnReferences{i})
+0435             modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes <span class="string">'&lt;p&gt;AUTHORS: '</span> model.rxnReferences{i} <span class="string">'&lt;/p&gt;'</span>];
+0436         <span class="keyword">end</span>
+0437         <span class="keyword">if</span> ~isempty(model.rxnNotes{i})
+0438             modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes <span class="string">'&lt;p&gt;NOTES: '</span> model.rxnNotes{i} <span class="string">'&lt;/p&gt;'</span>];
+0439         <span class="keyword">end</span>
+0440         modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes <span class="string">'&lt;/body&gt;&lt;/notes&gt;'</span>];
+0441     <span class="keyword">end</span>
+0442     
+0443     <span class="comment">%Export annotation information from rxnMiriams</span>
+0444     <span class="keyword">if</span> (~isempty(model.rxnMiriams{i}) &amp;&amp; isfield(modelSBML.reaction(i),<span class="string">'annotation'</span>)) || ~isempty(model.eccodes{i})
+0445         modelSBML.reaction(i).annotation=[<span class="string">'&lt;annotation&gt;&lt;rdf:RDF xmlns:rdf=&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#&quot; xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:dcterms=&quot;http://purl.org/dc/terms/&quot; xmlns:vCard=&quot;http://www.w3.org/2001/vcard-rdf/3.0#&quot; xmlns:bqbiol=&quot;http://biomodels.net/biology-qualifiers/&quot; xmlns:bqmodel=&quot;http://biomodels.net/model-qualifiers/&quot;&gt;&lt;rdf:Description rdf:about=&quot;#meta_R_'</span> model.rxns{i} <span class="string">'&quot;&gt;'</span>];
+0446         modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation <span class="string">'&lt;bqbiol:is&gt;&lt;rdf:Bag&gt;'</span>];
+0447         <span class="keyword">if</span> ~isempty(model.eccodes{i})
+0448             eccodes=regexp(model.eccodes{i},<span class="string">';'</span>,<span class="string">'split'</span>);
+0449             <span class="keyword">for</span> j=1:numel(eccodes)
+0450                 modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation  <span class="string">'&lt;rdf:li rdf:resource=&quot;http://identifiers.org/ec-code/'</span> regexprep(eccodes{j},<span class="string">'ec-code/|EC'</span>,<span class="string">''</span>) <span class="string">'&quot;/&gt;'</span>];
+0451             <span class="keyword">end</span>
+0452         <span class="keyword">end</span>
+0453         modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation <a href="#_sub2" class="code" title="subfunction miriamString=getMiriam(miriamStruct)">getMiriam</a>(model.rxnMiriams{i}) <span class="string">'&lt;/rdf:Bag&gt;&lt;/bqbiol:is&gt;&lt;/rdf:Description&gt;&lt;/rdf:RDF&gt;&lt;/annotation&gt;'</span>];
+0454     <span class="keyword">end</span>
+0455     
+0456     <span class="keyword">if</span> isfield(modelSBML.reaction, <span class="string">'name'</span>)
+0457         modelSBML.reaction(i).name=model.rxnNames{i};
+0458     <span class="keyword">end</span>
+0459     <span class="keyword">if</span> isfield(modelSBML.reaction, <span class="string">'id'</span>)
+0460         modelSBML.reaction(i).id=[<span class="string">'R_'</span> model.rxns{i}];
+0461     <span class="keyword">end</span>
+0462     
+0463     <span class="comment">%Add the information about reactants and products</span>
+0464     involvedMets=<a href="#_sub3" class="code" title="subfunction [tmp_Rxn]=addReactantsProducts(model,sbmlModel,i)">addReactantsProducts</a>(model,modelSBML,i);
+0465     <span class="keyword">for</span> j=1:numel(involvedMets.reactant)
+0466         <span class="keyword">if</span> j&lt;numel(involvedMets.reactant)
+0467             modelSBML.reaction(i).reactant(j+1)=modelSBML.reaction(i).reactant(j);
+0468         <span class="keyword">end</span>
+0469         modelSBML.reaction(i).reactant(j).species=involvedMets.reactant(j).species;
+0470         modelSBML.reaction(i).reactant(j).stoichiometry=involvedMets.reactant(j).stoichiometry;
+0471         modelSBML.reaction(i).reactant(j).isSetStoichiometry=involvedMets.reactant(j).isSetStoichiometry;
+0472         modelSBML.reaction(i).reactant(j).constant=involvedMets.reactant(j).constant;
+0473     <span class="keyword">end</span>
+0474     <span class="keyword">if</span> numel(involvedMets.reactant)==0
+0475         modelSBML.reaction(i).reactant=<span class="string">''</span>;
+0476     <span class="keyword">end</span>
+0477     <span class="keyword">for</span> j=1:numel(involvedMets.product)
+0478         <span class="keyword">if</span> j&lt;numel(involvedMets.product)
+0479             modelSBML.reaction(i).product(j+1)=modelSBML.reaction(i).product(j);
+0480         <span class="keyword">end</span>
+0481         modelSBML.reaction(i).product(j).species=involvedMets.product(j).species;
+0482         modelSBML.reaction(i).product(j).stoichiometry=involvedMets.product(j).stoichiometry;
+0483         modelSBML.reaction(i).product(j).isSetStoichiometry=involvedMets.product(j).isSetStoichiometry;
+0484         modelSBML.reaction(i).product(j).constant=involvedMets.product(j).constant;
+0485     <span class="keyword">end</span>
+0486     <span class="keyword">if</span> numel(involvedMets.product)==0
+0487         modelSBML.reaction(i).product=<span class="string">''</span>;
+0488     <span class="keyword">end</span>
+0489     <span class="comment">%Export reversibility information. Reactions are irreversible by</span>
+0490     <span class="comment">%default</span>
+0491     <span class="keyword">if</span> model.rev(i)==1
+0492         modelSBML.reaction(i).reversible=1;
+0493     <span class="keyword">end</span>
+0494     <span class="keyword">if</span> isfield(model, <span class="string">'rxnComps'</span>)
+0495         modelSBML.reaction(i).compartment=model.comps{model.rxnComps(i)};
+0496     <span class="keyword">end</span>
+0497     <span class="keyword">if</span> isfield(model, <span class="string">'grRules'</span>)
+0498         modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association.fbc_association=model.grRules{i};
+0499     <span class="keyword">end</span>
+0500     modelSBML.reaction(i).fbc_lowerFluxBound=totalNames{i};
+0501     modelSBML.reaction(i).fbc_upperFluxBound=totalNames{length(model.lb)+i};
+0502 <span class="keyword">end</span>
+0503 
+0504 <span class="comment">%Prepare subSystems Code taken from COBRA functions getModelSubSystems,</span>
+0505 <span class="comment">%writeSBML, findRxnsFromSubSystem under GNU General Public License v3.0,</span>
+0506 <span class="comment">%license file in readme/GPL.MD. Code modified for RAVEN</span>
+0507 modelSBML.groups_group.groups_kind = <span class="string">'partonomy'</span>;
+0508 modelSBML.groups_group.sboTerm = 633;
+0509 tmpStruct=modelSBML.groups_group;
+0510 rxns=strcat(<span class="string">'R_'</span>,model.rxns);
+0511 <span class="keyword">if</span> isfield(model, <span class="string">'subSystems'</span>)
+0512     <span class="keyword">if</span> ~any(cellfun(@iscell,model.subSystems))
+0513         subSystems = setdiff(model.subSystems,<span class="string">''</span>);
+0514     <span class="keyword">else</span>
+0515         orderedSubs = cellfun(@(x) <a href="#_sub4" class="code" title="subfunction vecT = columnVector(vec)">columnVector</a>(x),model.subSystems,<span class="string">'UniformOUtput'</span>,false);
+0516         subSystems = setdiff(vertcat(orderedSubs{:}),<span class="string">''</span>);
+0517     <span class="keyword">end</span>
+0518     <span class="keyword">if</span> isempty(subSystems)
+0519         subSystems = {};
+0520     <span class="keyword">end</span>
+0521     <span class="keyword">if</span> ~isempty(subSystems)
+0522         <span class="comment">%Build the groups for the group package</span>
+0523         groupIDs = strcat(<span class="string">'group'</span>,cellfun(@num2str, num2cell(1:length(subSystems))',<span class="string">'UniformOutput'</span>,false));
+0524         <span class="keyword">for</span> i = 1:length(subSystems)
+0525             cgroup = tmpStruct;
+0526             <span class="keyword">if</span> ~any(cellfun(@iscell,model.subSystems))
+0527                 present = ismember(model.subSystems,subSystems{i});
+0528             <span class="keyword">else</span>
+0529                 present = cellfun(@(x) any(ismember(x,subSystems{i})),model.subSystems);
+0530             <span class="keyword">end</span>
+0531             groupMembers = rxns(present);
+0532             <span class="keyword">for</span> j = 1:numel(groupMembers)
+0533                 cMember = tmpStruct.groups_member;
+0534                 cMember.groups_idRef = groupMembers{j};
+0535                 <span class="keyword">if</span> j == 1
+0536                     cgroup.groups_member = cMember;
+0537                 <span class="keyword">else</span>
+0538                     cgroup.groups_member(j) = cMember;
+0539                 <span class="keyword">end</span>
+0540             <span class="keyword">end</span>
+0541             cgroup.groups_id = groupIDs{i};
+0542             cgroup.groups_name = subSystems{i};
+0543             <span class="keyword">if</span> i == 1
+0544                 modelSBML.groups_group = cgroup;
+0545             <span class="keyword">else</span>
+0546                 modelSBML.groups_group(i) = cgroup;
+0547             <span class="keyword">end</span>
+0548         <span class="keyword">end</span>
+0549     <span class="keyword">end</span>
+0550 <span class="keyword">end</span>
 0551 
-0552 ind=find(model.c);
+0552 <span class="comment">%Prepare fbc_objective subfield</span>
 0553 
-0554 <span class="keyword">if</span> isempty(ind)
-0555     modelSBML.fbc_objective.fbc_fluxObjective.fbc_coefficient=0;
-0556 <span class="keyword">else</span>
-0557     <span class="keyword">for</span> i=1:length(ind)
-0558         <span class="comment">% Copying the default values to the next index as long as it is not</span>
-0559         <span class="comment">% the last one;</span>
-0560         <span class="keyword">if</span> i&lt;numel(ind)
-0561             modelSBML.reaction(i+1)=modelSBML.reaction(i);
-0562         <span class="keyword">end</span>;
-0563         values=model.c(model.c~=0);
-0564         modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_reaction=modelSBML.reaction(ind(i)).id;
-0565         modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_coefficient=values(i);
-0566         modelSBML.fbc_objective(i).fbc_fluxObjective.isSetfbc_coefficient=1;
-0567     <span class="keyword">end</span>;
-0568 <span class="keyword">end</span>;
-0569 
-0570 modelSBML.fbc_activeObjective=modelSBML.fbc_objective.fbc_id;
-0571 
-0572 fbcStr=[<span class="string">'http://www.sbml.org/sbml/level'</span>, num2str(sbmlLevel), <span class="string">'/version'</span>, num2str(sbmlVersion), <span class="string">'/fbc/version'</span>,num2str(sbmlPackageVersions(1))];
-0573 groupStr=[<span class="string">'http://www.sbml.org/sbml/level'</span>, num2str(sbmlLevel), <span class="string">'/version'</span>, num2str(sbmlVersion), <span class="string">'/groups/version'</span>,num2str(sbmlPackageVersions(2))];
-0574 modelSBML.namespaces=struct(<span class="string">'prefix'</span>,{<span class="string">''</span>,<span class="string">'fbc'</span>,<span class="string">'groups'</span>},<span class="keyword">...</span>
-0575     <span class="string">'uri'</span>,{[<span class="string">'http://www.sbml.org/sbml/level'</span>, num2str(sbmlLevel), <span class="string">'/version'</span>, num2str(sbmlVersion), <span class="string">'/core'</span>],<span class="keyword">...</span>
-0576     fbcStr,groupStr});
-0577 
-0578 <span class="keyword">if</span> sbmlPackageVersions(1) == 2
-0579     modelSBML.fbc_strict=1;
-0580 <span class="keyword">end</span>;
-0581 
-0582 OutputSBML(modelSBML,fileName,1,0,[1,0]);
-0583 <span class="keyword">end</span>
-0584 
-0585 
-0586 <a name="_sub1" href="#_subfunctions" class="code">function modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions)</a>
-0587 <span class="comment">%Returns the blank SBML model structure by using appropriate libSBML</span>
-0588 <span class="comment">%functions. This creates structure by considering three levels</span>
+0554 modelSBML.fbc_objective.fbc_type=<span class="string">'maximize'</span>;
+0555 modelSBML.fbc_objective.fbc_id=<span class="string">'obj'</span>;
+0556 
+0557 ind=find(model.c);
+0558 
+0559 <span class="keyword">if</span> isempty(ind)
+0560     modelSBML.fbc_objective.fbc_fluxObjective.fbc_coefficient=0;
+0561 <span class="keyword">else</span>
+0562     <span class="keyword">for</span> i=1:length(ind)
+0563         <span class="comment">%Copy the default values to the next index as long as it is not the</span>
+0564         <span class="comment">%last one</span>
+0565         <span class="keyword">if</span> i&lt;numel(ind)
+0566             modelSBML.reaction(i+1)=modelSBML.reaction(i);
+0567         <span class="keyword">end</span>
+0568         values=model.c(model.c~=0);
+0569         modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_reaction=modelSBML.reaction(ind(i)).id;
+0570         modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_coefficient=values(i);
+0571         modelSBML.fbc_objective(i).fbc_fluxObjective.isSetfbc_coefficient=1;
+0572     <span class="keyword">end</span>
+0573 <span class="keyword">end</span>
+0574 
+0575 modelSBML.fbc_activeObjective=modelSBML.fbc_objective.fbc_id;
+0576 
+0577 fbcStr=[<span class="string">'http://www.sbml.org/sbml/level'</span>, num2str(sbmlLevel), <span class="string">'/version'</span>, num2str(sbmlVersion), <span class="string">'/fbc/version'</span>,num2str(sbmlPackageVersions(1))];
+0578 groupStr=[<span class="string">'http://www.sbml.org/sbml/level'</span>, num2str(sbmlLevel), <span class="string">'/version'</span>, num2str(sbmlVersion), <span class="string">'/groups/version'</span>,num2str(sbmlPackageVersions(2))];
+0579 modelSBML.namespaces=struct(<span class="string">'prefix'</span>,{<span class="string">''</span>,<span class="string">'fbc'</span>,<span class="string">'groups'</span>},<span class="keyword">...</span>
+0580     <span class="string">'uri'</span>,{[<span class="string">'http://www.sbml.org/sbml/level'</span>, num2str(sbmlLevel), <span class="string">'/version'</span>, num2str(sbmlVersion), <span class="string">'/core'</span>],<span class="keyword">...</span>
+0581     fbcStr,groupStr});
+0582 
+0583 <span class="keyword">if</span> sbmlPackageVersions(1) == 2
+0584     modelSBML.fbc_strict=1;
+0585 <span class="keyword">end</span>
+0586 
+0587 OutputSBML(modelSBML,fileName,1,0,[1,0]);
+0588 <span class="keyword">end</span>
 0589 
-0590 sbmlFieldNames=getStructureFieldnames(<span class="string">'model'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0591 sbmlDefaultValues=getDefaultValues(<span class="string">'model'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0592 
-0593 <span class="keyword">for</span> i=1:numel(sbmlFieldNames)
-0594     modelSBML.(sbmlFieldNames{1,i})=sbmlDefaultValues{1,i};
-0595     sbmlSubfieldNames=getStructureFieldnames(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0596     sbmlSubfieldValues=getDefaultValues(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0597     <span class="keyword">if</span> ~strcmp(sbmlFieldNames{1,i},<span class="string">'event'</span>) &amp;&amp; ~strcmp(sbmlFieldNames{1,i},<span class="string">'functionDefinition'</span>) &amp;&amp; ~strcmp(sbmlFieldNames{1,i},<span class="string">'initialAssignment'</span>)
-0598         <span class="keyword">for</span> j=1:numel(sbmlSubfieldNames)
-0599             modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j})=sbmlSubfieldValues{1,j};
-0600             sbmlSubsubfieldNames=getStructureFieldnames(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0601             sbmlSubsubfieldValues=getDefaultValues(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0602             <span class="keyword">if</span> ~strcmp(sbmlSubfieldNames{1,j},<span class="string">'modifier'</span>) &amp;&amp; ~strcmp(sbmlSubfieldNames{1,j},<span class="string">'kineticLaw'</span>)
-0603                 <span class="keyword">for</span> k=1:numel(sbmlSubsubfieldNames)
-0604                     <span class="comment">% 'compartment' and 'species' field are not supposed to</span>
-0605                     <span class="comment">% have their standalone structures if they are</span>
-0606                     <span class="comment">% subfields or subsubfields;</span>
-0607                     <span class="keyword">if</span> ~strcmp(sbmlSubfieldNames{1,j},<span class="string">'compartment'</span>) &amp;&amp; ~strcmp(sbmlSubfieldNames{1,j},<span class="string">'species'</span>)
-0608                         modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j}).(sbmlSubsubfieldNames{1,k})=sbmlSubsubfieldValues{1,k};
-0609                     <span class="keyword">end</span>;
-0610                     <span class="comment">% If it is fbc_association in the third level, we need</span>
-0611                     <span class="comment">% to establish the fourth level, since libSBML requires</span>
-0612                     <span class="comment">% it;</span>
-0613                     <span class="keyword">if</span> strcmp(sbmlSubsubfieldNames{1,k},<span class="string">'fbc_association'</span>)
-0614                         fbc_associationFieldNames=getStructureFieldnames(<span class="string">'fbc_association'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0615                         fbc_associationFieldValues=getDefaultValues(<span class="string">'fbc_association'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0616                         <span class="keyword">for</span> l=1:numel(fbc_associationFieldNames)
-0617                             modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j}).(sbmlSubsubfieldNames{1,k}).(fbc_associationFieldNames{1,l})=fbc_associationFieldValues{1,l};
-0618                         <span class="keyword">end</span>;
-0619                     <span class="keyword">end</span>;
-0620                 <span class="keyword">end</span>;
-0621             <span class="keyword">end</span>;
-0622         <span class="keyword">end</span>;
-0623     <span class="keyword">end</span>;
-0624     <span class="keyword">if</span> ~isstruct(modelSBML.(sbmlFieldNames{1,i}))
-0625         modelSBML.(sbmlFieldNames{1,i})=sbmlDefaultValues{1,i};
-0626     <span class="keyword">end</span>;
-0627 <span class="keyword">end</span>;
-0628 
-0629 modelSBML.unitDefinition.id=<span class="string">'mmol_per_gDW_per_hr'</span>;
-0630 
-0631 unitFieldNames=getStructureFieldnames(<span class="string">'unit'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0632 unitDefaultValues=getDefaultValues(<span class="string">'unit'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0590 
+0591 <a name="_sub1" href="#_subfunctions" class="code">function modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions)</a>
+0592 <span class="comment">%Returns the blank SBML model structure by using appropriate libSBML</span>
+0593 <span class="comment">%functions. This creates structure by considering three levels</span>
+0594 
+0595 sbmlFieldNames=getStructureFieldnames(<span class="string">'model'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0596 sbmlDefaultValues=getDefaultValues(<span class="string">'model'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0597 
+0598 <span class="keyword">for</span> i=1:numel(sbmlFieldNames)
+0599     modelSBML.(sbmlFieldNames{1,i})=sbmlDefaultValues{1,i};
+0600     sbmlSubfieldNames=getStructureFieldnames(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0601     sbmlSubfieldValues=getDefaultValues(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0602     <span class="keyword">if</span> ~strcmp(sbmlFieldNames{1,i},<span class="string">'event'</span>) &amp;&amp; ~strcmp(sbmlFieldNames{1,i},<span class="string">'functionDefinition'</span>) &amp;&amp; ~strcmp(sbmlFieldNames{1,i},<span class="string">'initialAssignment'</span>)
+0603         <span class="keyword">for</span> j=1:numel(sbmlSubfieldNames)
+0604             modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j})=sbmlSubfieldValues{1,j};
+0605             sbmlSubsubfieldNames=getStructureFieldnames(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0606             sbmlSubsubfieldValues=getDefaultValues(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0607             <span class="keyword">if</span> ~strcmp(sbmlSubfieldNames{1,j},<span class="string">'modifier'</span>) &amp;&amp; ~strcmp(sbmlSubfieldNames{1,j},<span class="string">'kineticLaw'</span>)
+0608                 <span class="keyword">for</span> k=1:numel(sbmlSubsubfieldNames)
+0609                     <span class="comment">%'compartment' and 'species' fields are not supposed to</span>
+0610                     <span class="comment">%have their standalone structures if they are subfields</span>
+0611                     <span class="comment">%or subsubfields</span>
+0612                     <span class="keyword">if</span> ~strcmp(sbmlSubfieldNames{1,j},<span class="string">'compartment'</span>) &amp;&amp; ~strcmp(sbmlSubfieldNames{1,j},<span class="string">'species'</span>)
+0613                         modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j}).(sbmlSubsubfieldNames{1,k})=sbmlSubsubfieldValues{1,k};
+0614                     <span class="keyword">end</span>
+0615                     <span class="comment">%If it is fbc_association in the third level, we need</span>
+0616                     <span class="comment">%to establish the fourth level, since libSBML requires</span>
+0617                     <span class="comment">%it</span>
+0618                     <span class="keyword">if</span> strcmp(sbmlSubsubfieldNames{1,k},<span class="string">'fbc_association'</span>)
+0619                         fbc_associationFieldNames=getStructureFieldnames(<span class="string">'fbc_association'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0620                         fbc_associationFieldValues=getDefaultValues(<span class="string">'fbc_association'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0621                         <span class="keyword">for</span> l=1:numel(fbc_associationFieldNames)
+0622                             modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j}).(sbmlSubsubfieldNames{1,k}).(fbc_associationFieldNames{1,l})=fbc_associationFieldValues{1,l};
+0623                         <span class="keyword">end</span>
+0624                     <span class="keyword">end</span>
+0625                 <span class="keyword">end</span>
+0626             <span class="keyword">end</span>
+0627         <span class="keyword">end</span>
+0628     <span class="keyword">end</span>
+0629     <span class="keyword">if</span> ~isstruct(modelSBML.(sbmlFieldNames{1,i}))
+0630         modelSBML.(sbmlFieldNames{1,i})=sbmlDefaultValues{1,i};
+0631     <span class="keyword">end</span>
+0632 <span class="keyword">end</span>
 0633 
-0634 kinds={<span class="string">'mole'</span>,<span class="string">'gram'</span>,<span class="string">'second'</span>};
-0635 exponents=[1 -1 -1];
-0636 scales=[-3 0 0];
-0637 multipliers=[1 1 1*60*60];
+0634 modelSBML.unitDefinition.id=<span class="string">'mmol_per_gDW_per_hr'</span>;
+0635 
+0636 unitFieldNames=getStructureFieldnames(<span class="string">'unit'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0637 unitDefaultValues=getDefaultValues(<span class="string">'unit'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
 0638 
-0639 <span class="keyword">for</span> i=1:numel(unitFieldNames)
-0640     modelSBML.unitDefinition.unit(1).(unitFieldNames{1,i})=unitDefaultValues{1,i};
-0641     <span class="keyword">for</span> j=1:3
-0642         modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=unitDefaultValues{1,i};
-0643         <span class="keyword">if</span> strcmp(unitFieldNames{1,i},<span class="string">'kind'</span>)
-0644             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=kinds{j};
-0645         <span class="keyword">elseif</span> strcmp(unitFieldNames{1,i},<span class="string">'exponent'</span>)
-0646             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=exponents(j);
-0647         <span class="keyword">elseif</span> strcmp(unitFieldNames{1,i},<span class="string">'scale'</span>)
-0648             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=scales(j);
-0649         <span class="keyword">elseif</span> strcmp(unitFieldNames{1,i},<span class="string">'multiplier'</span>)
-0650             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=multipliers(j);
-0651         <span class="keyword">end</span>;
-0652     <span class="keyword">end</span>;
-0653 <span class="keyword">end</span>;
-0654 <span class="keyword">end</span>
-0655 
-0656 <a name="_sub2" href="#_subfunctions" class="code">function miriamString=getMiriam(miriamStruct)</a>
-0657 <span class="comment">%Returns a string with list elements for a miriam structure ('&lt;rdf:li</span>
-0658 <span class="comment">%rdf:resource=&quot;http://identifiers.org/go/GO:0005739&quot;/&gt;' for example). This</span>
-0659 <span class="comment">%is just to speed ut things since this is done many times during the</span>
-0660 <span class="comment">%exporting</span>
-0661 
-0662 miriamString=<span class="string">''</span>;
-0663 <span class="keyword">if</span> isfield(miriamStruct,<span class="string">'name'</span>)
-0664     <span class="keyword">for</span> i=1:numel(miriamStruct.name)
-0665         miriamString=[miriamString <span class="string">'&lt;rdf:li rdf:resource=&quot;http://identifiers.org/'</span> miriamStruct.name{i} <span class="string">'/'</span> miriamStruct.value{i} <span class="string">'&quot;/&gt;'</span>];
-0666     <span class="keyword">end</span>
-0667 <span class="keyword">end</span>
-0668 <span class="keyword">end</span>
-0669 
-0670 <a name="_sub3" href="#_subfunctions" class="code">function [tmp_Rxn]=addReactantsProducts(model,sbmlModel,i)</a>
-0671 <span class="comment">% This function provides reactants and products for particular reaction.</span>
-0672 <span class="comment">% The function was 'borrowed' from writeSBML in COBRA toolbox, lines</span>
-0673 <span class="comment">% 663-679;</span>
+0639 kinds={<span class="string">'mole'</span>,<span class="string">'gram'</span>,<span class="string">'second'</span>};
+0640 exponents=[1 -1 -1];
+0641 scales=[-3 0 0];
+0642 multipliers=[1 1 1*60*60];
+0643 
+0644 <span class="keyword">for</span> i=1:numel(unitFieldNames)
+0645     modelSBML.unitDefinition.unit(1).(unitFieldNames{1,i})=unitDefaultValues{1,i};
+0646     <span class="keyword">for</span> j=1:3
+0647         modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=unitDefaultValues{1,i};
+0648         <span class="keyword">if</span> strcmp(unitFieldNames{1,i},<span class="string">'kind'</span>)
+0649             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=kinds{j};
+0650         <span class="keyword">elseif</span> strcmp(unitFieldNames{1,i},<span class="string">'exponent'</span>)
+0651             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=exponents(j);
+0652         <span class="keyword">elseif</span> strcmp(unitFieldNames{1,i},<span class="string">'scale'</span>)
+0653             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=scales(j);
+0654         <span class="keyword">elseif</span> strcmp(unitFieldNames{1,i},<span class="string">'multiplier'</span>)
+0655             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=multipliers(j);
+0656         <span class="keyword">end</span>
+0657     <span class="keyword">end</span>
+0658 <span class="keyword">end</span>
+0659 <span class="keyword">end</span>
+0660 
+0661 <a name="_sub2" href="#_subfunctions" class="code">function miriamString=getMiriam(miriamStruct)</a>
+0662 <span class="comment">%Returns a string with list elements for a miriam structure ('&lt;rdf:li</span>
+0663 <span class="comment">%rdf:resource=&quot;http://identifiers.org/go/GO:0005739&quot;/&gt;' for example). This</span>
+0664 <span class="comment">%is just to speed up things since this is done many times during the</span>
+0665 <span class="comment">%exporting</span>
+0666 
+0667 miriamString=<span class="string">''</span>;
+0668 <span class="keyword">if</span> isfield(miriamStruct,<span class="string">'name'</span>)
+0669     <span class="keyword">for</span> i=1:numel(miriamStruct.name)
+0670         miriamString=[miriamString <span class="string">'&lt;rdf:li rdf:resource=&quot;http://identifiers.org/'</span> miriamStruct.name{i} <span class="string">'/'</span> miriamStruct.value{i} <span class="string">'&quot;/&gt;'</span>];
+0671     <span class="keyword">end</span>
+0672 <span class="keyword">end</span>
+0673 <span class="keyword">end</span>
 0674 
-0675 met_idx = find(model.S(:, i));
-0676 tmp_Rxn.product=[];
-0677 tmp_Rxn.reactant=[];
-0678 <span class="keyword">for</span> j_met=1:size(met_idx,1)
-0679     tmp_idx = met_idx(j_met,1);
-0680     sbml_tmp_species_ref.species = sbmlModel.species(tmp_idx).id;
-0681     met_stoich = model.S(tmp_idx, i);
-0682     sbml_tmp_species_ref.stoichiometry = abs(met_stoich);
-0683     sbml_tmp_species_ref.isSetStoichiometry=1;
-0684     sbml_tmp_species_ref.constant=1;
-0685     <span class="keyword">if</span> (met_stoich &gt; 0)
-0686         tmp_Rxn.product = [ tmp_Rxn.product, sbml_tmp_species_ref ];
-0687     <span class="keyword">else</span>
-0688         tmp_Rxn.reactant = [ tmp_Rxn.reactant, sbml_tmp_species_ref];
-0689     <span class="keyword">end</span>
-0690 <span class="keyword">end</span>
-0691 <span class="keyword">end</span>
-0692 
-0693 <a name="_sub4" href="#_subfunctions" class="code">function vecT = columnVector(vec)</a>
-0694 <span class="comment">% Code below taken from COBRA Toolbox under GNU General Public License v3.0</span>
-0695 <span class="comment">% license file in readme/GPL.MD.</span>
-0696 <span class="comment">%</span>
-0697 <span class="comment">% Converts a vector to a column vector</span>
-0698 <span class="comment">%</span>
-0699 <span class="comment">% USAGE:</span>
+0675 <a name="_sub3" href="#_subfunctions" class="code">function [tmp_Rxn]=addReactantsProducts(model,sbmlModel,i)</a>
+0676 <span class="comment">%This function provides reactants and products for particular reaction. The</span>
+0677 <span class="comment">%function was 'borrowed' from writeSBML in COBRA toolbox, lines 663-679</span>
+0678 
+0679 met_idx = find(model.S(:, i));
+0680 tmp_Rxn.product=[];
+0681 tmp_Rxn.reactant=[];
+0682 <span class="keyword">for</span> j_met=1:size(met_idx,1)
+0683     tmp_idx = met_idx(j_met,1);
+0684     sbml_tmp_species_ref.species = sbmlModel.species(tmp_idx).id;
+0685     met_stoich = model.S(tmp_idx, i);
+0686     sbml_tmp_species_ref.stoichiometry = abs(met_stoich);
+0687     sbml_tmp_species_ref.isSetStoichiometry=1;
+0688     sbml_tmp_species_ref.constant=1;
+0689     <span class="keyword">if</span> (met_stoich &gt; 0)
+0690         tmp_Rxn.product = [ tmp_Rxn.product, sbml_tmp_species_ref ];
+0691     <span class="keyword">else</span>
+0692         tmp_Rxn.reactant = [ tmp_Rxn.reactant, sbml_tmp_species_ref];
+0693     <span class="keyword">end</span>
+0694 <span class="keyword">end</span>
+0695 <span class="keyword">end</span>
+0696 
+0697 <a name="_sub4" href="#_subfunctions" class="code">function vecT = columnVector(vec)</a>
+0698 <span class="comment">% Code below taken from COBRA Toolbox under GNU General Public License v3.0</span>
+0699 <span class="comment">% license file in readme/GPL.MD.</span>
 0700 <span class="comment">%</span>
-0701 <span class="comment">%   vecT = columnVector(vec)</span>
+0701 <span class="comment">% Converts a vector to a column vector</span>
 0702 <span class="comment">%</span>
-0703 <span class="comment">% INPUT:</span>
-0704 <span class="comment">%   vec:     a vector</span>
-0705 <span class="comment">%</span>
-0706 <span class="comment">% OUTPUT:</span>
-0707 <span class="comment">%   vecT:    a column vector</span>
-0708 <span class="comment">%</span>
-0709 <span class="comment">% .. Authors:</span>
-0710 <span class="comment">%     - Original file: Markus Herrgard - Minor changes: Laurent Heirendt</span>
-0711 <span class="comment">%     January 2017</span>
-0712 
-0713 [n, m] = size(vec);
-0714 
-0715 <span class="keyword">if</span> n &lt; m
-0716     vecT = vec';
-0717 <span class="keyword">else</span>
-0718     vecT = vec;
-0719 <span class="keyword">end</span>
-0720 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 23-Apr-2018 15:56:33 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0703 <span class="comment">% USAGE:</span>
+0704 <span class="comment">%</span>
+0705 <span class="comment">%   vecT = columnVector(vec)</span>
+0706 <span class="comment">%</span>
+0707 <span class="comment">% INPUT:</span>
+0708 <span class="comment">%   vec:     a vector</span>
+0709 <span class="comment">%</span>
+0710 <span class="comment">% OUTPUT:</span>
+0711 <span class="comment">%   vecT:    a column vector</span>
+0712 <span class="comment">%</span>
+0713 <span class="comment">% .. Authors:</span>
+0714 <span class="comment">%     - Original file: Markus Herrgard - Minor changes: Laurent Heirendt</span>
+0715 <span class="comment">%     January 2017</span>
+0716 
+0717 [n, m] = size(vec);
+0718 
+0719 <span class="keyword">if</span> n &lt; m
+0720     vecT = vec';
+0721 <span class="keyword">else</span>
+0722     vecT = vec;
+0723 <span class="keyword">end</span>
+0724 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 14-May-2018 16:12:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
