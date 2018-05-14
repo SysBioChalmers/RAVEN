@@ -1,0 +1,286 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of getModelFromKEGG</title>
+  <meta name="keywords" content="getModelFromKEGG">
+  <meta name="description" content="getModelFromKEGG">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="../index.html">external</a> &gt; <a href="index.html">kegg</a> &gt; getModelFromKEGG.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for external\kegg&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>getModelFromKEGG
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>getModelFromKEGG</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function [model,KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> getModelFromKEGG
+   Retrieves information stored in KEGG database and generates a model
+
+   keggPath            if keggGenes.mat, keggMets.mat, keggPhylDist.mat or
+                       keggRxns.mat are not in the RAVEN/external/kegg
+                       directory, this function will attempt to read data
+                       from a local FTP dump of the KEGG database.
+                       keggPath is the path to the root of this database
+                       (opt, default 'RAVEN/external/kegg')
+   keepUndefinedStoich include reactions in the form n A &lt;=&gt; n+1 A. These
+                       will be dealt with as two separate metabolites
+                       (opt, default true)
+   keepIncomplete      include reactions which have been labelled as
+                       &quot;incomplete&quot;, &quot;erroneous&quot; or &quot;unclear&quot; (opt,
+                       default true)
+   keepGeneral         include reactions which have been labelled as
+                       &quot;general reaction&quot;. These are reactions on the form
+                       &quot;an aldehyde &lt;=&gt; an alcohol&quot;, and are therefore
+                       unsuited for modelling purposes. Note that not all
+                       reactions have this type of annotation, and the
+                       script will therefore not be able to remove all
+                       such reactions (opt, default false)
+
+   model               a model structure generated from the database. All
+                       reactions and the metabolites used in them will be
+                       added
+   KOModel             a model structure representing the KEGG Orthology
+                       ids and their associated genes. The KO ids are
+                       saved as reactions
+
+   Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
+
+   Simonas Marcisauskas, 2018-03-19</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="getGenesFromKEGG.html" class="code" title="function model=getGenesFromKEGG(keggPath,koList)">getGenesFromKEGG</a>	getGenesFromKEGG</li><li><a href="getMetsFromKEGG.html" class="code" title="function model=getMetsFromKEGG(keggPath)">getMetsFromKEGG</a>	getMetsFromKEGG</li><li><a href="getRxnsFromKEGG.html" class="code" title="function model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)">getRxnsFromKEGG</a>	getRxnsFromKEGG</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="getKEGGModelForOrganism.html" class="code" title="function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)">getKEGGModelForOrganism</a>	getKEGGModelForOrganism</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [model,KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)</a>
+0002 <span class="comment">% getModelFromKEGG</span>
+0003 <span class="comment">%   Retrieves information stored in KEGG database and generates a model</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%   keggPath            if keggGenes.mat, keggMets.mat, keggPhylDist.mat or</span>
+0006 <span class="comment">%                       keggRxns.mat are not in the RAVEN/external/kegg</span>
+0007 <span class="comment">%                       directory, this function will attempt to read data</span>
+0008 <span class="comment">%                       from a local FTP dump of the KEGG database.</span>
+0009 <span class="comment">%                       keggPath is the path to the root of this database</span>
+0010 <span class="comment">%                       (opt, default 'RAVEN/external/kegg')</span>
+0011 <span class="comment">%   keepUndefinedStoich include reactions in the form n A &lt;=&gt; n+1 A. These</span>
+0012 <span class="comment">%                       will be dealt with as two separate metabolites</span>
+0013 <span class="comment">%                       (opt, default true)</span>
+0014 <span class="comment">%   keepIncomplete      include reactions which have been labelled as</span>
+0015 <span class="comment">%                       &quot;incomplete&quot;, &quot;erroneous&quot; or &quot;unclear&quot; (opt,</span>
+0016 <span class="comment">%                       default true)</span>
+0017 <span class="comment">%   keepGeneral         include reactions which have been labelled as</span>
+0018 <span class="comment">%                       &quot;general reaction&quot;. These are reactions on the form</span>
+0019 <span class="comment">%                       &quot;an aldehyde &lt;=&gt; an alcohol&quot;, and are therefore</span>
+0020 <span class="comment">%                       unsuited for modelling purposes. Note that not all</span>
+0021 <span class="comment">%                       reactions have this type of annotation, and the</span>
+0022 <span class="comment">%                       script will therefore not be able to remove all</span>
+0023 <span class="comment">%                       such reactions (opt, default false)</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">%   model               a model structure generated from the database. All</span>
+0026 <span class="comment">%                       reactions and the metabolites used in them will be</span>
+0027 <span class="comment">%                       added</span>
+0028 <span class="comment">%   KOModel             a model structure representing the KEGG Orthology</span>
+0029 <span class="comment">%                       ids and their associated genes. The KO ids are</span>
+0030 <span class="comment">%                       saved as reactions</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">%   Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">%   Simonas Marcisauskas, 2018-03-19</span>
+0035 <span class="comment">%</span>
+0036 
+0037 <span class="keyword">if</span> nargin&lt;1
+0038     keggPath=<span class="string">'RAVEN/external/kegg'</span>;
+0039 <span class="keyword">end</span>
+0040 <span class="keyword">if</span> nargin&lt;2
+0041     keepUndefinedStoich=true;
+0042 <span class="keyword">end</span>
+0043 <span class="keyword">if</span> nargin&lt;3
+0044     keepIncomplete=true;
+0045 <span class="keyword">end</span>
+0046 <span class="keyword">if</span> nargin&lt;4
+0047     keepGeneral=true;
+0048 <span class="keyword">end</span>
+0049 
+0050 <span class="comment">%First get all reactions</span>
+0051 model=<a href="getRxnsFromKEGG.html" class="code" title="function model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)">getRxnsFromKEGG</a>(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral);
+0052 fprintf(<span class="string">'KEGG reactions loaded\n'</span>);
+0053 
+0054 <span class="comment">%Get the KO ids that are associated with any of the reactions. They will be</span>
+0055 <span class="comment">%used later on to create a rxn-gene matrix</span>
+0056 KOs=cell(numel(model.rxns)*2,1);
+0057 <span class="comment">%Make room for two KO ids per reaction</span>
+0058 
+0059 addToIndex=1;
+0060 <span class="comment">%Add all KO ids that are used</span>
+0061 <span class="keyword">for</span> i=1:numel(model.rxns)
+0062     <span class="keyword">if</span> isstruct(model.rxnMiriams{i})
+0063         <span class="keyword">for</span> j=1:numel(model.rxnMiriams{i}.name)
+0064             <span class="keyword">if</span> strcmpi(<span class="string">'kegg.orthology'</span>,model.rxnMiriams{i}.name{j})
+0065                 <span class="comment">%Add the KO id</span>
+0066                 KOs(addToIndex)=model.rxnMiriams{i}.value(j);
+0067                 addToIndex=addToIndex+1;
+0068             <span class="keyword">end</span>
+0069         <span class="keyword">end</span>
+0070     <span class="keyword">end</span>
+0071 <span class="keyword">end</span>
+0072 
+0073 KOs=KOs(1:addToIndex-1);
+0074 KOs=unique(KOs);
+0075 
+0076 <span class="comment">%Get all genes from any organism in KEGG that is associated with any of the</span>
+0077 <span class="comment">%KOs</span>
+0078 KOModel=<a href="getGenesFromKEGG.html" class="code" title="function model=getGenesFromKEGG(keggPath,koList)">getGenesFromKEGG</a>(keggPath,KOs);
+0079 fprintf(<span class="string">'KEGG genes loaded\n'</span>);
+0080 
+0081 model.genes=KOModel.genes;
+0082 
+0083 <span class="comment">%It can be that there are KOs from the reactions that have no database</span>
+0084 <span class="comment">%entry. These are (as far as I've seen) lumped versions of other KOs and</span>
+0085 <span class="comment">%should be removed</span>
+0086 KOsToRemove=setdiff(KOs, KOModel.rxns);
+0087 
+0088 <span class="comment">%Loop through all reactions and delete the KOs that weren't found</span>
+0089 <span class="keyword">for</span> i=1:numel(model.rxns)
+0090     <span class="keyword">if</span> isstruct(model.rxnMiriams{i})
+0091         <span class="keyword">for</span> j=1:numel(model.rxnMiriams{i}.name)
+0092             toDel=[];
+0093             <span class="keyword">if</span> strcmp(model.rxnMiriams{i}.name{j},<span class="string">'kegg.orthology'</span>)
+0094                 <span class="keyword">if</span> ismember(model.rxnMiriams{i}.value{j},KOsToRemove)
+0095                     toDel=[toDel;j];
+0096                 <span class="keyword">end</span>
+0097             <span class="keyword">end</span>
+0098         <span class="keyword">end</span>
+0099         <span class="comment">%Delete the KOs</span>
+0100         <span class="keyword">if</span> any(toDel)
+0101             <span class="comment">%If all posts are deleted, then delete the whole structure</span>
+0102             <span class="keyword">if</span> numel(toDel)==j
+0103                 model.rxnMiriams{i}=[];
+0104             <span class="keyword">else</span>
+0105                 model.rxnMiriams{i}.name(toDel)=[];
+0106                 model.rxnMiriams{i}.value(toDel)=[];
+0107             <span class="keyword">end</span>
+0108         <span class="keyword">end</span>
+0109     <span class="keyword">end</span>
+0110 <span class="keyword">end</span>
+0111 
+0112 <span class="comment">%Create the rxnGeneMat for the reactions. This is simply done by merging</span>
+0113 <span class="comment">%the gene associations for all the involved KOs</span>
+0114 r=zeros(10000000,1);
+0115 <span class="comment">%Store the positions since it's slow to write to a sparse array in a loop</span>
+0116 c=zeros(10000000,1);
+0117 counter=1;
+0118 <span class="keyword">for</span> i=1:numel(model.rxns)
+0119     <span class="keyword">if</span> isstruct(model.rxnMiriams{i})
+0120         I=strncmp(<span class="string">'kegg.orthology'</span>,model.rxnMiriams{i}.name,18);
+0121         [J, K]=ismember(model.rxnMiriams{i}.value(I),KOModel.rxns);
+0122         <span class="comment">%Find all gene indexes that correspond to any of these KOs</span>
+0123         [~, L]=find(KOModel.rxnGeneMat(K(J),:));
+0124         <span class="keyword">if</span> any(L)
+0125             <span class="comment">%Allocate room for more elements if needed</span>
+0126             <span class="keyword">if</span> counter+numel(L)-1&gt;=numel(r)
+0127                 r=[r;zeros(numel(r),1)];
+0128                 c=[c;zeros(numel(c),1)];
+0129             <span class="keyword">end</span>
+0130             r(counter:counter+numel(L)-1)=ones(numel(L),1)*i;
+0131             c(counter:counter+numel(L)-1)=L(:);
+0132             counter=counter+numel(L);
+0133         <span class="keyword">end</span>
+0134     <span class="keyword">end</span>
+0135 <span class="keyword">end</span>
+0136 
+0137 model.rxnGeneMat=sparse(r(1:counter-1),c(1:counter-1),ones(counter-1,1));
+0138 <span class="keyword">if</span> size(model.rxnGeneMat,1)~=numel(model.rxns) || size(model.rxnGeneMat,2)~=numel(KOModel.genes)
+0139     model.rxnGeneMat(numel(model.rxns),numel(KOModel.genes))=0;
+0140 <span class="keyword">end</span>
+0141 
+0142 <span class="comment">%Then get all metabolites</span>
+0143 metModel=<a href="getMetsFromKEGG.html" class="code" title="function model=getMetsFromKEGG(keggPath)">getMetsFromKEGG</a>(keggPath);
+0144 fprintf(<span class="string">'KEGG metabolites loaded\n'</span>);
+0145 
+0146 <span class="comment">%Add information about all metabolites to the model</span>
+0147 [a, b]=ismember(model.mets,metModel.mets);
+0148 a=find(a);
+0149 b=b(a);
+0150 
+0151 <span class="keyword">if</span> ~isfield(model,<span class="string">'metNames'</span>)
+0152     model.metNames=cell(numel(model.mets),1);
+0153     model.metNames(:)={<span class="string">''</span>};
+0154 <span class="keyword">end</span>
+0155 model.metNames(a)=metModel.metNames(b);
+0156 
+0157 <span class="keyword">if</span> ~isfield(model,<span class="string">'metFormulas'</span>)
+0158     model.metFormulas=cell(numel(model.mets),1);
+0159     model.metFormulas(:)={<span class="string">''</span>};
+0160 <span class="keyword">end</span>
+0161 model.metFormulas(a)=metModel.metFormulas(b);
+0162 
+0163 <span class="keyword">if</span> ~isfield(model,<span class="string">'inchis'</span>)
+0164     model.inchis=cell(numel(model.mets),1);
+0165     model.inchis(:)={<span class="string">''</span>};
+0166 <span class="keyword">end</span>
+0167 model.inchis(a)=metModel.inchis(b);
+0168 
+0169 <span class="keyword">if</span> ~isfield(model,<span class="string">'metMiriams'</span>)
+0170     model.metMiriams=cell(numel(model.mets),1);
+0171 <span class="keyword">end</span>
+0172 model.metMiriams(a)=metModel.metMiriams(b);
+0173 
+0174 <span class="comment">%The composition should be loaded from InChIs when available</span>
+0175 I=find(~cellfun(@isempty,model.inchis));
+0176 <span class="keyword">for</span> i=1:numel(I)
+0177     S=regexp(model.inchis(I(i)),<span class="string">'/'</span>,<span class="string">'split'</span>);
+0178     S=S{1};
+0179     <span class="keyword">if</span> numel(S)&gt;=2
+0180         <span class="comment">%Don't copy if it doesn't look good</span>
+0181         model.metFormulas(I(i))=S(2);
+0182     <span class="keyword">end</span>
+0183 <span class="keyword">end</span>
+0184 
+0185 <span class="comment">%Put all metabolites in one compartment called 's' (for system). This is</span>
+0186 <span class="comment">%done just to be more compatible with the rest of the code</span>
+0187 model.comps={<span class="string">'s'</span>};
+0188 model.compNames={<span class="string">'System'</span>};
+0189 model.compOutside={<span class="string">''</span>};
+0190 model.metComps=ones(numel(model.mets),1);
+0191 
+0192 <span class="comment">%If reactions with undefined stoichiometry are kept, then the corresponding</span>
+0193 <span class="comment">%metabolites will have ids such as &quot;(n+1) C000001&quot; and their names will be</span>
+0194 <span class="comment">%empty. These ids are not valid SBML identifiers and are therefore replaced</span>
+0195 <span class="comment">%with &quot;undefined1, undefined2...&quot;. The former ids are stored as the new</span>
+0196 <span class="comment">%names</span>
+0197 I=find(cellfun(@any,strfind(model.mets,<span class="string">'n'</span>)) | cellfun(@any,strfind(model.mets,<span class="string">'m'</span>)));
+0198 model.metNames(I)=model.mets(I);
+0199 repNums=1:numel(I);
+0200 repIDs=strcat(<span class="string">'undefined_'</span>,cellfun(@num2str,num2cell(repNums(:)),<span class="string">'UniformOutput'</span>,false));
+0201 model.mets(I)=repIDs;
+0202 
+0203 <span class="comment">%It could also be that the metabolite names are empty for some other</span>
+0204 <span class="comment">%reason. In that case, use the ID instead</span>
+0205 I=cellfun(@isempty,model.metNames);
+0206 model.metNames(I)=model.mets(I);
+0207 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 14-May-2018 15:44:35 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

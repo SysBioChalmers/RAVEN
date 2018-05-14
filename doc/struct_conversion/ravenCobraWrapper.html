@@ -47,7 +47,7 @@
    conversion it's reconstructed based on lower bound reaction values
 
    NOTE: During COBRA -&gt; RAVEN -&gt; COBRA conversion cycle the following
-   fields are lost: b, csense, osense, description, geneEntrezID,
+   fields are lost: b, csense, osenseStr, description, geneEntrezID,
    metNotes, metSmiles, modelVersion, proteinNames, proteins
 
    NOTE: The information about mandatory RAVEN fields was taken from
@@ -56,7 +56,7 @@
 
    Usage: newModel=ravenCobraWrapper(model)
 
-   Simonas Marcisauskas, 2018-05-02</pre></div>
+   Simonas Marcisauskas, 2018-05-07</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -94,7 +94,7 @@ This function is called by:
 0019 <span class="comment">%   conversion it's reconstructed based on lower bound reaction values</span>
 0020 <span class="comment">%</span>
 0021 <span class="comment">%   NOTE: During COBRA -&gt; RAVEN -&gt; COBRA conversion cycle the following</span>
-0022 <span class="comment">%   fields are lost: b, csense, osense, description, geneEntrezID,</span>
+0022 <span class="comment">%   fields are lost: b, csense, osenseStr, description, geneEntrezID,</span>
 0023 <span class="comment">%   metNotes, metSmiles, modelVersion, proteinNames, proteins</span>
 0024 <span class="comment">%</span>
 0025 <span class="comment">%   NOTE: The information about mandatory RAVEN fields was taken from</span>
@@ -103,7 +103,7 @@ This function is called by:
 0028 <span class="comment">%</span>
 0029 <span class="comment">%   Usage: newModel=ravenCobraWrapper(model)</span>
 0030 <span class="comment">%</span>
-0031 <span class="comment">%   Simonas Marcisauskas, 2018-05-02</span>
+0031 <span class="comment">%   Simonas Marcisauskas, 2018-05-07</span>
 0032 <span class="comment">%</span>
 0033 
 0034 <span class="keyword">if</span> isfield(model,<span class="string">'rules'</span>)
@@ -114,22 +114,22 @@ This function is called by:
 0039 
 0040 <span class="keyword">if</span> isRaven
 0041     fprintf(<span class="string">'Converting RAVEN structure to COBRA..\n'</span>);
-0042     <span class="comment">% Converting from RAVEN to COBRA structure;</span>
+0042     <span class="comment">%Convert from RAVEN to COBRA structure</span>
 0043     
-0044     <span class="comment">% Firstly removing boundary metabolites;</span>
+0044     <span class="comment">%Firstly remove boundary metabolites</span>
 0045     model=simplifyModel(model);
 0046     
-0047     <span class="comment">% Mandatory COBRA fields;</span>
+0047     <span class="comment">%Mandatory COBRA fields</span>
 0048     newModel.rxns=model.rxns;
 0049     newModel.mets=strcat(model.mets,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>);
 0050     newModel.S=model.S;
 0051     newModel.lb=model.lb;
 0052     newModel.ub=model.ub;
 0053     newModel.c=model.c;
-0054     <span class="comment">% b, csense, osense, genes, rules are also mandatory, but defined later</span>
-0055     <span class="comment">% to match the order of fields;</span>
+0054     <span class="comment">%b, csense, osenseStr, genes, rules are also mandatory, but defined</span>
+0055     <span class="comment">%later to match the order of fields</span>
 0056     
-0057     <span class="comment">% Optional COBRA fields;</span>
+0057     <span class="comment">%Optional COBRA fields</span>
 0058     <span class="keyword">if</span> isfield(model,<span class="string">'rxnNames'</span>)
 0059         newModel.rxnNames=model.rxnNames;
 0060     <span class="keyword">end</span>
@@ -226,11 +226,11 @@ This function is called by:
 0151     <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
 0152         newModel.rules=<a href="#_sub1" class="code" title="subfunction rules=grrulesToRules(model)">grrulesToRules</a>(model);
 0153     <span class="keyword">end</span>
-0154     newModel.osense=-1;
+0154     newModel.osenseStr=<span class="string">'max'</span>;
 0155     
-0156     <span class="comment">% It seems that grRules, rxnGeneMat and rev are disposable fields in</span>
-0157     <span class="comment">% COBRA version, but we export them to make things faster, when</span>
-0158     <span class="comment">% converting COBRA structure back to RAVEN;</span>
+0156     <span class="comment">%It seems that grRules, rxnGeneMat and rev are disposable fields in</span>
+0157     <span class="comment">%COBRA version, but we export them to make things faster, when</span>
+0158     <span class="comment">%converting COBRA structure back to RAVEN</span>
 0159     <span class="keyword">if</span> isfield(model,<span class="string">'rxnGeneMat'</span>)
 0160         newModel.rxnGeneMat=model.rxnGeneMat;
 0161     <span class="keyword">end</span>
@@ -243,9 +243,9 @@ This function is called by:
 0168     newModel.rev=model.rev;
 0169 <span class="keyword">else</span>
 0170     fprintf(<span class="string">'Converting COBRA structure to RAVEN..\n'</span>);
-0171     <span class="comment">% Converting from COBRA to RAVEN structure;</span>
+0171     <span class="comment">%Convert from COBRA to RAVEN structure</span>
 0172     
-0173     <span class="comment">% Mandatory RAVEN fields;</span>
+0173     <span class="comment">%Mandatory RAVEN fields</span>
 0174     newModel.rxns=model.rxns;
 0175     newModel.mets=model.mets;
 0176     <span class="keyword">for</span> i=1:numel(model.comps)
@@ -253,8 +253,8 @@ This function is called by:
 0178         newModel.mets=regexprep(newModel.mets,[<span class="string">'\['</span>, model.compNames{i}, <span class="string">'\]$'</span>],<span class="string">''</span>);
 0179     <span class="keyword">end</span>
 0180     
-0181     <span class="comment">% It some rare cases, there may be overlapping mets due to removal e.g.</span>
-0182     <span class="comment">% [c]. To avoid this, we change e.g. [c] into _c;</span>
+0181     <span class="comment">%In some rare cases, there may be overlapping mets due to removal e.g.</span>
+0182     <span class="comment">%[c]. To avoid this, we change e.g. [c] into _c</span>
 0183     <span class="keyword">if</span> numel(unique(newModel.mets))~=numel(model.mets)
 0184         newModel.mets=model.mets;
 0185         <span class="keyword">for</span> i=1:numel(model.comps)
@@ -266,8 +266,8 @@ This function is called by:
 0191     newModel.S=model.S;
 0192     newModel.lb=model.lb;
 0193     newModel.ub=model.ub;
-0194     <span class="comment">% Since COBRA no longer contains rev field it is assumed that rxn is</span>
-0195     <span class="comment">% reversible if its lower bound is set to zero;</span>
+0194     <span class="comment">%Since COBRA no longer contains rev field it is assumed that rxn is</span>
+0195     <span class="comment">%reversible if its lower bound is set to zero</span>
 0196     <span class="keyword">if</span> ~isfield(model,<span class="string">'rev'</span>)
 0197         <span class="keyword">for</span> i=1:numel(model.rxns)
 0198             <span class="keyword">if</span> model.lb(i)&lt;0
@@ -284,22 +284,22 @@ This function is called by:
 0209     <span class="keyword">if</span> isfield(model,<span class="string">'comps'</span>)
 0210         newModel.comps=model.comps;
 0211     <span class="keyword">else</span>
-0212         <span class="comment">% Since 'comps' field is not mandatory in COBRA, it may be required</span>
-0213         <span class="comment">% to obtain the non-redundant list of comps from metabolite ids, if</span>
-0214         <span class="comment">% 'comps' field is not available;</span>
+0212         <span class="comment">%Since 'comps' field is not mandatory in COBRA, it may be required</span>
+0213         <span class="comment">%to obtain the non-redundant list of comps from metabolite ids, if</span>
+0214         <span class="comment">%'comps' field is not available</span>
 0215         newModel.comps=regexprep(model.mets,<span class="string">'^.+\['</span>,<span class="string">''</span>);
 0216         newModel.comps=regexprep(newModel.comps,<span class="string">'\]$'</span>,<span class="string">''</span>);
 0217         newModel.comps=unique(newModel.comps);
 0218     <span class="keyword">end</span>
 0219     
-0220     <span class="comment">% metComps is also mandatory, but defined later to match the order of</span>
-0221     <span class="comment">% fields;</span>
+0220     <span class="comment">%metComps is also mandatory, but defined later to match the order of</span>
+0221     <span class="comment">%fields</span>
 0222     
-0223     <span class="comment">% Fields 'description' and 'id' are also considered as mandatory, but</span>
-0224     <span class="comment">% these are added to the model during exportModel/exportToExcelFormat</span>
-0225     <span class="comment">% anyway, so there is no point to add this information here;</span>
+0223     <span class="comment">%Fields 'description' and 'id' are also considered as mandatory, but</span>
+0224     <span class="comment">%these are added to the model during exportModel/exportToExcelFormat</span>
+0225     <span class="comment">%anyway, so there is no point to add this information here</span>
 0226     
-0227     <span class="comment">% Optional RAVEN fields;</span>
+0227     <span class="comment">%Optional RAVEN fields</span>
 0228     <span class="keyword">if</span> isfield(model,<span class="string">'compNames'</span>)
 0229         newModel.compNames=model.compNames;
 0230     <span class="keyword">end</span>
@@ -470,9 +470,9 @@ This function is called by:
 0395 <span class="keyword">end</span>
 0396 
 0397 <a name="_sub1" href="#_subfunctions" class="code">function rules=grrulesToRules(model)</a>
-0398 <span class="comment">% This function just takes grRules, changes all gene names to</span>
-0399 <span class="comment">% 'x(geneNumber)' and also changes 'or' and 'and' relations to</span>
-0400 <span class="comment">% corresponding symbols</span>
+0398 <span class="comment">%This function just takes grRules, changes all gene names to</span>
+0399 <span class="comment">%'x(geneNumber)' and also changes 'or' and 'and' relations to corresponding</span>
+0400 <span class="comment">%symbols</span>
 0401 replacingGenes=cell([size(model.genes,1) 1]);
 0402 rules=cell([size(model.grRules,1) 1]);
 0403 <span class="keyword">for</span> i=1:numel(replacingGenes)
@@ -486,9 +486,9 @@ This function is called by:
 0411 <span class="keyword">end</span>
 0412 
 0413 <a name="_sub2" href="#_subfunctions" class="code">function grRules=rulesTogrrules(model)</a>
-0414 <span class="comment">% This function takes rules, replaces &amp;/| for and/or, replaces the x(i)</span>
-0415 <span class="comment">% format with the actual gene ID, and takes out extra whitespace and</span>
-0416 <span class="comment">% redundant parenthesis introduced by COBRA, to create grRules.</span>
+0414 <span class="comment">%This function takes rules, replaces &amp;/| for and/or, replaces the x(i)</span>
+0415 <span class="comment">%format with the actual gene ID, and takes out extra whitespace and</span>
+0416 <span class="comment">%redundant parenthesis introduced by COBRA, to create grRules.</span>
 0417 grRules = strrep(model.rules,<span class="string">'&amp;'</span>,<span class="string">'and'</span>);
 0418 grRules = strrep(grRules,<span class="string">'|'</span>,<span class="string">'or'</span>);
 0419 <span class="keyword">for</span> i = 1:length(model.genes)
@@ -496,9 +496,9 @@ This function is called by:
 0421 <span class="keyword">end</span>
 0422 grRules = strrep(grRules,<span class="string">'( '</span>,<span class="string">'('</span>);
 0423 grRules = strrep(grRules,<span class="string">' )'</span>,<span class="string">')'</span>);
-0424 grRules = regexprep(grRules,<span class="string">'^('</span>,<span class="string">''</span>);   <span class="comment">%rules that start with a &quot;(&quot;</span>
-0425 grRules = regexprep(grRules,<span class="string">')$'</span>,<span class="string">''</span>);   <span class="comment">%rules that end with a &quot;)&quot;</span>
+0424 grRules = regexprep(grRules,<span class="string">'^('</span>,<span class="string">''</span>); <span class="comment">%rules that start with a &quot;(&quot;</span>
+0425 grRules = regexprep(grRules,<span class="string">')$'</span>,<span class="string">''</span>); <span class="comment">%rules that end with a &quot;)&quot;</span>
 0426 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 07-May-2018 14:25:05 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Mon 14-May-2018 15:44:35 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
