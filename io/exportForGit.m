@@ -16,8 +16,7 @@ function out=exportForGit(model,prefix,path,formats)
 %
 %   Usage: exportForGit(model,prefix,path,formats)
 %
-%   Eduard Kerkhoven, 2018-04-24
-%	Benjamin Sanchez, 2018-04-27
+%   Eduard Kerkhoven, 2018-05-14
 %
 if nargin<4
     formats={'mat', 'txt', 'xlsx', 'xml', 'yml'};
@@ -37,9 +36,9 @@ if nargin<2
 end
 
 % Make ModelFiles folder, no warnings if folder already exists
-[~,~,~]=mkdir('ModelFiles');
+[~,~,~]=mkdir(fullfile(path,'ModelFiles'));
 for i = 1:length(formats)
-    [~,~,~]=mkdir('ModelFiles');
+    [~,~,~]=mkdir(fullfile(path,'ModelFiles',formats{i}));
 end
 
 % Write MAT format
