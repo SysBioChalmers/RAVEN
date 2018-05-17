@@ -1,5 +1,9 @@
 ### Description of the issue:
-*Try to be as clear as possible: did an existing function fail; what is the exact error message that you got; is there a functionality missing; what have you tried yourself to fix it?
+*Try to be as clear as possible, e.g.:
+- Is there a functionality missing?
+- Did an existing function fail?
+- What is the exact error message, and other output that you got?
+- What have you tried yourself to fix it?
 
 #### Reproducing this issue:
 *If applicable, please attach the problematic code. PLEASE DELETE THIS LINE.*
