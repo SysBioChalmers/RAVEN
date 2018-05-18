@@ -34,7 +34,7 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxn
 %   Usage: [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...
 %           rxnScores,taskStructure,params)
 %
-%   Rasmus Agren, 2014-01-08
+%   Eduard Kerkhoven, 2018-05-18
 %
 
 if nargin<4
@@ -51,6 +51,10 @@ if nargin<6
 end
 if nargin<7
     params=[];
+end
+
+if ~(exist(fullfile(cd,inputFile), 'file')==2)
+    error('Task file %s cannot be found',string(inputFile));
 end
 
 if strcmpi(model.id,refModel.id)

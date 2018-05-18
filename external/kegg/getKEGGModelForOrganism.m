@@ -168,7 +168,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...
 %    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 %
-%   Eduard Kerkhoven, 2018-05-17
+%   Eduard Kerkhoven, 2018-05-18
 %
 
 if nargin<2
@@ -219,8 +219,7 @@ end
 %Check that FASTA file exists
 if ~isempty(fastaFile)
     if ~(exist(fullfile(cd,fastaFile), 'file')==2)
-        error(['FASTA file %s cannot be opened. \nPlease check whether '...
-            'filename and location are correct.'],string(fastaFile));
+        error('FASTA file %s cannot be found',string(fastaFile));
     end
 end
 %Run the external binaries multi-threaded to use all logical cores assigned

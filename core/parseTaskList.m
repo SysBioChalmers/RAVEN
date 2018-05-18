@@ -109,8 +109,12 @@ function taskStruct=parseTaskList(inputFile)
 %
 %   Usage: taskStruct=parseTaskList(inputFile)
 %
-%   Rasmus Agren, 2017-02-28
+%   Eduard Kerkhoven, 2018-05-18
 %
+
+if ~(exist(fullfile(cd,inputFile), 'file')==2)
+    error('Task list %s cannot be found',string(inputFile));
+end
 
 %Load the tasks file
 [raw,flag]=loadSheet(loadWorkbook(inputFile), 'TASKS');
