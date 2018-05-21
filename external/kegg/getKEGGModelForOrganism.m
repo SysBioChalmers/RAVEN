@@ -218,7 +218,7 @@ end
 
 %Check that FASTA file exists
 if ~isempty(fastaFile)
-    if ~(exist(fullfile(cd,fastaFile), 'file')==2)
+    if ~(exist(fastaFile,'file')==2)
         error('FASTA file %s cannot be found',string(fastaFile));
     end
 end

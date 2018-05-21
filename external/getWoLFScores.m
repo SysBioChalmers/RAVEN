@@ -18,7 +18,7 @@ function geneScoreStruct=getWoLFScores(inputFile,kingdom)
 %   Eduard Kerkhoven, 2018-05-18
 %
 
-if ~(exist(fullfile(cd,inputFile), 'file')==2)
+if ~(exist(inputFile,'file')==2)
     error('FASTA file %s cannot be found',string(inputFile));
 end
 

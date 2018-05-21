@@ -51,7 +51,7 @@ else
     files=vertcat(refFastaFiles,fastaFile);
 end
 for i=1:numel(files)
-    if ~(exist(fullfile(cd,files{i}),'file')==2)
+    if ~(exist(files{i},'file')==2)
         error('FASTA file %s cannot be found',string(files{i}));
     elseif any(strfind(strjoin(files,','),' '))
         error('One or more FASTA files have a space in the filename. Remove this before running getBlast');

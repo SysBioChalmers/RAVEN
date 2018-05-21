@@ -49,7 +49,7 @@ if nargin<7
 end
 
 %Check if query fasta exists
-if ~(exist(fullfile(cd,fastaFile),'file')==2)
+if ~(exist(fastaFile,'file')==2)
     error('FASTA file %s cannot be found',string(fastaFile));
     dispEM(EM,true);
 end

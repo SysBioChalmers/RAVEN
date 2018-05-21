@@ -18,9 +18,6 @@ if nargin<2
     createEmpty=false;
 end
 
-if ~(exist(fullfile(cd,fileName), 'file')==2)
-    error('Excel file %s cannot be found',string(fileName));
-end
 
 %Adds the required classes to the static Java path if not already added
 addJavaPaths();
@@ -33,7 +30,7 @@ import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.xssf.usermodel.*;
 
 %Check if the file exists
-if ~exist(fileName,'file')
+if ~(exist(fileName,'file')==2)
     if createEmpty==false
         EM='The Excel file could not be found';
         dispEM(EM);

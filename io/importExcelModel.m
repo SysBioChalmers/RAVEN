@@ -78,7 +78,7 @@ if nargin<4
     ignoreErrors=false;
 end
 
-if ~(exist(fullfile(cd,fileName), 'file')==2)
+if ~(exist(fileName,'file')==2)
     error('Excel file %s cannot be found',string(fileName));
 end
 

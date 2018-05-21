@@ -86,7 +86,7 @@ if nargin<4
     supressWarnings=false;
 end
 
-if ~(exist(fullfile(cd,fileName), 'file')==2)
+if ~(exist(fileName,'file')==2)
     error('SBML file %s cannot be found',string(fileName));
 end
 
