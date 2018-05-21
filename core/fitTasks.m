@@ -53,7 +53,7 @@ if nargin<7
     params=[];
 end
 
-if ~(exist(fullfile(cd,inputFile), 'file')==2)
+if ~(exist(inputFile,'file')==2)
     error('Task file %s cannot be found',string(inputFile));
 end
 
