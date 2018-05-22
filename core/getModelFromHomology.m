@@ -83,6 +83,27 @@ end
 %Assume for now that all information is there and that it's correct This is
 %important to fix since no further checks are being made!
 
+%Check whether provided fasta files use the same gene identifiers as
+%provided template models
+for i=1:numel(blastStructure)
+    if ~strcmp(blastStructure(i).fromId,getModelFor)
+        j=strcmpi(blastStructure(i).fromId,models{:}.id);
+        if j==0
+            error(['While the blastStructure contains sequences from '...
+                'organismID "%s" (as\nprovided in getBlast), none of '...
+                'template models have this id (as model.id)'],...
+                string(blastStructure(i).fromId));
+        end
+        k=sum(ismember(blastStructure(i).fromGenes,models{j}.genes));
+        if k<(numel(models{j}.genes)*0.05)
+            error(['Less than 5%% of the genes in the template model '...
+                'with model.id "%s"\ncan be found in the blastStructure. '...
+                'Ensure that the protein FASTA\nused in getBlast and '...
+                'the template model used in getModelFromHomology\nuse '...
+                'the same style of gene identifiers'],models{j}.id)
+    end
+end
+
 %Remove all gene matches that are below the cutoffs
 for i=1:numel(blastStructure)
     indexes=blastStructure(i).evalue<maxE & blastStructure(i).aligLen>=minLen & blastStructure(i).identity>=minSim; %Do it in this direction to lose NaNs
