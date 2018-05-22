@@ -16,7 +16,7 @@ function out=exportForGit(model,prefix,path,formats)
 %
 %   Usage: exportForGit(model,prefix,path,formats)
 %
-%   Eduard Kerkhoven, 2018-05-14
+%   Eduard Kerkhoven, 2018-05-22
 %
 if nargin<4
     formats={'mat', 'txt', 'xlsx', 'xml', 'yml'};
@@ -103,11 +103,16 @@ else
     disp('COBRA version cannot be found')
 end
 %Retrieve libSBML version:
-fid = fopen('tempModelForLibSBMLversion.xml','w+');
-fclose(fid);
-evalc('[~,~,libSBMLver]=TranslateSBML(''tempModelForLibSBMLversion.xml'',0,0)');
-libSBMLver=libSBMLver.libSBML_version_string;
-delete('tempModelForLibSBMLversion.xml');
+try % 5.17.0 and newer
+    libSBMLver=OutputSBML;
+    libSBMLver=libSBMLver.libSBML_version_string;
+catch % before 5.17.0
+    fid = fopen('tempModelForLibSBMLversion.xml','w+');
+    fclose(fid);
+    evalc('[~,~,libSBMLver]=TranslateSBML(''tempModelForLibSBMLversion.xml'',0,0)');
+    libSBMLver=libSBMLver.libSBML_version_string;
+    delete('tempModelForLibSBMLversion.xml');
+end
 
 %Save file with versions:
 fid = fopen('dependencies.txt','wt');
