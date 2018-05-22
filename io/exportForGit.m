@@ -103,11 +103,15 @@ else
     disp('COBRA version cannot be found')
 end
 %Retrieve libSBML version:
-try
+try % 5.17.0 and newer
     libSBMLver=OutputSBML;
     libSBMLver=libSBMLver.libSBML_version_string;
-catch
-    error('Make sure libSBML 5.17.0 is installed')
+catch % before 5.17.0
+    fid = fopen('tempModelForLibSBMLversion.xml','w+');
+    fclose(fid);
+    evalc('[~,~,libSBMLver]=TranslateSBML(''tempModelForLibSBMLversion.xml'',0,0)');
+    libSBMLver=libSBMLver.libSBML_version_string;
+    delete('tempModelForLibSBMLversion.xml');
 end
 
 %Save file with versions:
