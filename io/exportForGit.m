@@ -41,11 +41,6 @@ for i = 1:length(formats)
     [~,~,~]=mkdir(fullfile(path,'ModelFiles',formats{i}));
 end
 
-% Write MAT format
-if ismember('mat', formats)
-    save(fullfile(path,'ModelFiles','mat',strcat(prefix,'.mat')),'model');
-end
-
 % Write TXT format
 if ismember('txt', formats)
     fid=fopen(fullfile(path,'ModelFiles','txt',strcat(prefix,'.txt')),'w');
@@ -65,6 +60,16 @@ if ismember('txt', formats)
     fclose(fid);
 end
 
+% Write YML format
+if ismember('yml', formats)
+    writeYaml(model,fullfile(path,'ModelFiles','yml',strcat(prefix,'.yml')));
+end
+
+% Write MAT format
+if ismember('mat', formats)
+    save(fullfile(path,'ModelFiles','mat',strcat(prefix,'.mat')),'model');
+end
+
 % Write XLSX format
 if ismember('xlsx', formats)
     exportToExcelFormat(model,fullfile(path,'ModelFiles','xlsx',strcat(prefix,'.xlsx')));
@@ -73,11 +78,6 @@ end
 % Write XML format
 if ismember('xml', formats)
     exportModel(model,fullfile(path,'ModelFiles','xml',strcat(prefix,'.xml')));
-end
-
-% Write YML format
-if ismember('yml', formats)
-    writeYaml(model,fullfile(path,'ModelFiles','yml',strcat(prefix,'.yml')));
 end
 
 %Track versions
