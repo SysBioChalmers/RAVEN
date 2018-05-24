@@ -43,12 +43,12 @@ end
 
 % Write MAT format
 if ismember('mat', formats)
-    save([fullfile(path,'ModelFiles','mat',prefix),'.mat'],'model');
+    save(fullfile(path,'ModelFiles','mat',strcat(prefix,'.mat')),'model');
 end
 
 % Write TXT format
 if ismember('txt', formats)
-    fid=fopen([fullfile(path,'ModelFiles','txt',prefix),'.txt'],'w');
+    fid=fopen(fullfile(path,'ModelFiles','txt',strcat(prefix,'.txt')),'w');
     eqns=constructEquations(model,model.rxns,false,false,false,true);
     eqns=strrep(eqns,' => ','  -> ');
     eqns=strrep(eqns,' <=> ','  <=> ');
@@ -67,20 +67,17 @@ end
 
 % Write XLSX format
 if ismember('xlsx', formats)
-    exportToExcelFormat(model,strcat(prefix,'.xlsx'));
-    movefile([prefix,'.xlsx'],fullfile(path,'ModelFiles','xlsx'));
+    exportToExcelFormat(model,fullfile(path,'ModelFiles','xlsx',strcat(prefix,'.xlsx')));
 end
 
 % Write XML format
 if ismember('xml', formats)
-    exportModel(model,strcat(prefix,'.xml'));
-    movefile([prefix,'.xml'],fullfile(path,'ModelFiles','xml'));
+    exportModel(model,fullfile(path,'ModelFiles','xml',strcat(prefix,'.xml')));
 end
 
 % Write YML format
 if ismember('yml', formats)
-    writeYaml(model,strcat(prefix,'.yml'));
-    movefile([prefix,'.yml'],fullfile(path,'ModelFiles','yml'));
+    writeYaml(model,fullfile(path,'ModelFiles','yml',strcat(prefix,'.yml')));
 end
 
 %Track versions
@@ -110,7 +107,7 @@ libSBMLver=libSBMLver.libSBML_version_string;
 delete('tempModelForLibSBMLversion.xml');
 
 %Save file with versions:
-fid = fopen('dependencies.txt','wt');
+fid = fopen(fullfile(path,'ModelFiles','dependencies.txt'),'wt');
 fprintf(fid,['MATLAB\t' version '\n']);
 fprintf(fid,['libSBML\t' libSBMLver '\n']);
 fprintf(fid,['RAVEN_toolbox\t' RAVENver '\n']);
@@ -125,8 +122,6 @@ if isfield(model,'modelVersion')
     end
 end
 fclose(fid);
-
-movefile('dependencies.txt',fullfile(path,'ModelFiles'));
 end
 
 function version = getVersion(IDfileName,VERfileName)
