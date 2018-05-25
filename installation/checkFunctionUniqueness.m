@@ -5,7 +5,7 @@ function checkFunctionUniqueness()
 %
 %   Usage: checkFunctionUniqueness()
 %
-%   Eduard Kerkhoven, 2017-11-15
+%   Simonas Marcisauskas, 2018-04-05
 %
 
 %Get the RAVEN path
@@ -17,9 +17,16 @@ temp_res1=dir([ravenDir '/*/*.m']);
 temp_res2=dir([ravenDir '/*/*/*.m']);
 
 ravenFunctions={temp_res1.name,temp_res2.name}';
+%startup.m is not a normal function, any startup.m in the path should run
+%during startup, so duplicate use of this name is fine
+ravenFunctions=ravenFunctions(~ismember(ravenFunctions,'startup.m'));
 
 %Getting all the paths added to Matlab
-matlabPaths=regexp(path, ';', 'split')';
+if ispc
+    matlabPaths=regexp(path, ';', 'split')';
+elseif isunix
+    matlabPaths=regexp(path, ':', 'split')';
+end
 
 hasConflicts=false;
 
@@ -30,22 +37,22 @@ for i=1:numel(matlabPaths)
             pathFunctions={temp_res.name}';
         else
             pathFunctions='';
-        end;
+        end
         if ~isempty(pathFunctions)
             if any(ismember(ravenFunctions,pathFunctions))
                 disp(['WARNING: Duplicate functions in ',matlabPaths{i},': ']);
                 ovrlpFunctions=ravenFunctions(ismember(ravenFunctions,pathFunctions));
                 disp(ovrlpFunctions);
                 hasConflicts=true;
-            end;
-        end;
-    end;
-end;
+            end
+        end
+    end
+end
 
 if hasConflicts
     fprintf('It is strongly recommended to resolve conflicting functions as this may compromise RAVEN functionality\n');
 else
-    fprintf('No conflicting functions were found\n');    
-end;
+    fprintf('No conflicting functions were found\n');
+end
 
 end

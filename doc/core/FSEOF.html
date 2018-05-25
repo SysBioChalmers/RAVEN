@@ -81,7 +81,7 @@ This function is called by:
 0023 <span class="comment">%</span>
 0024 <span class="comment">%   Usage: targets=FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile)</span>
 0025 <span class="comment">%</span>
-0026 <span class="comment">%   Eduard Kerkhoven, 2017-12-21</span>
+0026 <span class="comment">%   Simonas Marcisauskas, 2018-03-18</span>
 0027 
 0028 <span class="keyword">if</span> nargin&lt;4
 0029     iterations=10;
@@ -113,80 +113,81 @@ This function is called by:
 0055 <span class="keyword">for</span> i=1:iterations
 0056     n=i*targetMax/iterations;
 0057     model=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'lb'</span>,targetRxn,n);
-0058   
+0058     
 0059     sol=solveLP(model,1);
-0060   
+0060     
 0061     fseof.results(:,i)=sol.x;
-0062 
-0063     <span class="comment">%Loop through all fluxes and identify the ones that increased upon the enforced objective flux</span>
-0064     <span class="keyword">for</span> j=1:length(fseof.results)
-0065       <span class="keyword">if</span> fseof.results(j,1) &gt; 0   <span class="comment">%Check the positive fluxes</span>
-0066       
-0067           <span class="keyword">if</span> i == 1   <span class="comment">%The initial round</span>
-0068               rxnDirection(j,1)=1;
-0069               fseof.target(j,1)=1;
-0070             <span class="keyword">else</span>
-0071                 
-0072                 <span class="keyword">if</span> (fseof.results(j,i) &gt; fseof.results(j,i-1)) &amp; fseof.target(j,1)
-0073                   fseof.target(j,1)=1;
-0074               <span class="keyword">else</span>
-0075                   fseof.target(j,1)=0;
-0076               <span class="keyword">end</span>
-0077           <span class="keyword">end</span>
-0078 
-0079       <span class="keyword">elseif</span> fseof.results(j,1) &lt; 0 <span class="comment">%Check the negative fluxes</span>
-0080       
-0081           <span class="keyword">if</span> i == 1   <span class="comment">%The initial round</span>
-0082               rxnDirection(j,1)=-1;
-0083               fseof.target(j,1)=1;
-0084             <span class="keyword">else</span>
-0085                 <span class="keyword">if</span> (fseof.results(j,i) &lt; fseof.results(j,i-1)) &amp; fseof.target(j,1)
-0086                   fseof.target(j,1)=1;
-0087               <span class="keyword">else</span>
-0088                   fseof.target(j,1)=0;
-0089               <span class="keyword">end</span>
-0090           <span class="keyword">end</span>
-0091       
-0092         <span class="keyword">end</span>
-0093 
-0094     <span class="keyword">end</span>
-0095 <span class="keyword">end</span>
-0096 
-0097 <span class="comment">%Generating output</span>
-0098 formatSpec=<span class="string">'%s\t%s\t%s\t%s\t%s\t%s\t%s\n'</span>;
-0099 <span class="keyword">if</span> output == 1    <span class="comment">%Output to a file</span>
-0100     fid=fopen(outputFile,<span class="string">'w'</span>);
-0101     fprintf(fid,formatSpec,<span class="string">'Slope'</span>,<span class="string">'rowID'</span>,<span class="string">'Enzyme ID'</span>,<span class="string">'Enzyme Name'</span>,<span class="string">'Subsystem'</span>,<span class="string">'Direction'</span>,<span class="string">'Gr Rule'</span>);
-0102 <span class="keyword">else</span>              <span class="comment">%Output to screen</span>
-0103     fprintf(formatSpec,<span class="string">'Slope'</span>,<span class="string">'rowID'</span>,<span class="string">'Enzyme ID'</span>,<span class="string">'Enzyme Name'</span>,<span class="string">'Subsystem'</span>,<span class="string">'Direction'</span>,<span class="string">'Gr Rule'</span>);
-0104 <span class="keyword">end</span>
-0105 
-0106 <span class="keyword">for</span> num=1:length(fseof.target)
-0107     <span class="keyword">if</span> fseof.target(num,1) == 1
-0108         A0=num2str(abs(fseof.results(num,iterations)-fseof.results(num,1))/abs(targetMax-targetMax/iterations)); <span class="comment">%Slope calculation</span>
-0109         A1=num2str(num);                                  <span class="comment">%row ID</span>
-0110         A2=char(model.rxns(num));                         <span class="comment">%enzyme ID</span>
-0111         A3=char(model.rxnNames(num));                     <span class="comment">%enzyme Name</span>
-0112         A4=char(model.subSystems(num));                   <span class="comment">%Subsystem</span>
-0113         A5=num2str(model.rev(num)*rxnDirection(num,1));   <span class="comment">%reaction Dirction</span>
-0114         A6=char(model.grRules(num));                      <span class="comment">%Gr Rule</span>
-0115         <span class="keyword">if</span> output == 1    <span class="comment">%Output to a file</span>
-0116             fprintf(fid,formatSpec,A0,A1,A2,A3,A4,A5,A6);
-0117         <span class="keyword">else</span>              <span class="comment">%Output screen</span>
-0118             fprintf(formatSpec,A0,A1,A2,A3,A4,A5,A6);
-0119         <span class="keyword">end</span>
-0120     <span class="keyword">end</span>
-0121 <span class="keyword">end</span>
-0122 
-0123 <span class="keyword">if</span> output == 1    <span class="comment">%Output to a file</span>
-0124     fclose(fid);
-0125 <span class="keyword">end</span>
-0126 
-0127 <span class="keyword">if</span> nargout == 1
-0128     targets.logical=logical(fseof.target);
-0129     targets.slope=abs(fseof.results(:,iterations)-fseof.results(:,1))/abs(targetMax-targetMax/iterations); <span class="comment">%Slope calculation</span>
-0130 <span class="keyword">end</span>
-0131 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 14-Mar-2018 21:08:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0062     
+0063     <span class="comment">%Loop through all fluxes and identify the ones that increased upon the</span>
+0064     <span class="comment">%enforced objective flux</span>
+0065     <span class="keyword">for</span> j=1:length(fseof.results)
+0066         <span class="keyword">if</span> fseof.results(j,1) &gt; 0   <span class="comment">%Check the positive fluxes</span>
+0067             
+0068             <span class="keyword">if</span> i == 1   <span class="comment">%The initial round</span>
+0069                 rxnDirection(j,1)=1;
+0070                 fseof.target(j,1)=1;
+0071             <span class="keyword">else</span>
+0072                 
+0073                 <span class="keyword">if</span> (fseof.results(j,i) &gt; fseof.results(j,i-1)) &amp; fseof.target(j,1)
+0074                     fseof.target(j,1)=1;
+0075                 <span class="keyword">else</span>
+0076                     fseof.target(j,1)=0;
+0077                 <span class="keyword">end</span>
+0078             <span class="keyword">end</span>
+0079             
+0080         <span class="keyword">elseif</span> fseof.results(j,1) &lt; 0 <span class="comment">%Check the negative fluxes</span>
+0081             
+0082             <span class="keyword">if</span> i == 1   <span class="comment">%The initial round</span>
+0083                 rxnDirection(j,1)=-1;
+0084                 fseof.target(j,1)=1;
+0085             <span class="keyword">else</span>
+0086                 <span class="keyword">if</span> (fseof.results(j,i) &lt; fseof.results(j,i-1)) &amp; fseof.target(j,1)
+0087                     fseof.target(j,1)=1;
+0088                 <span class="keyword">else</span>
+0089                     fseof.target(j,1)=0;
+0090                 <span class="keyword">end</span>
+0091             <span class="keyword">end</span>
+0092             
+0093         <span class="keyword">end</span>
+0094         
+0095     <span class="keyword">end</span>
+0096 <span class="keyword">end</span>
+0097 
+0098 <span class="comment">%Generating output</span>
+0099 formatSpec=<span class="string">'%s\t%s\t%s\t%s\t%s\t%s\t%s\n'</span>;
+0100 <span class="keyword">if</span> output == 1    <span class="comment">%Output to a file</span>
+0101     fid=fopen(outputFile,<span class="string">'w'</span>);
+0102     fprintf(fid,formatSpec,<span class="string">'Slope'</span>,<span class="string">'rowID'</span>,<span class="string">'Enzyme ID'</span>,<span class="string">'Enzyme Name'</span>,<span class="string">'Subsystems'</span>,<span class="string">'Direction'</span>,<span class="string">'Gr Rule'</span>);
+0103 <span class="keyword">else</span>              <span class="comment">%Output to screen</span>
+0104     fprintf(formatSpec,<span class="string">'Slope'</span>,<span class="string">'rowID'</span>,<span class="string">'Enzyme ID'</span>,<span class="string">'Enzyme Name'</span>,<span class="string">'Subsystems'</span>,<span class="string">'Direction'</span>,<span class="string">'Gr Rule'</span>);
+0105 <span class="keyword">end</span>
+0106 
+0107 <span class="keyword">for</span> num=1:length(fseof.target)
+0108     <span class="keyword">if</span> fseof.target(num,1) == 1
+0109         A0=num2str(abs(fseof.results(num,iterations)-fseof.results(num,1))/abs(targetMax-targetMax/iterations)); <span class="comment">%Slope calculation</span>
+0110         A1=num2str(num);                                  <span class="comment">%row ID</span>
+0111         A2=char(model.rxns(num));                         <span class="comment">%enzyme ID</span>
+0112         A3=char(model.rxnNames(num));                     <span class="comment">%enzyme Name</span>
+0113         A4=char(strjoin(model.subSystems{num,1},<span class="string">';'</span>));                   <span class="comment">%Subsystems</span>
+0114         A5=num2str(model.rev(num)*rxnDirection(num,1));   <span class="comment">%reaction Dirction</span>
+0115         A6=char(model.grRules(num));                      <span class="comment">%Gr Rule</span>
+0116         <span class="keyword">if</span> output == 1    <span class="comment">%Output to a file</span>
+0117             fprintf(fid,formatSpec,A0,A1,A2,A3,A4,A5,A6);
+0118         <span class="keyword">else</span>              <span class="comment">%Output screen</span>
+0119             fprintf(formatSpec,A0,A1,A2,A3,A4,A5,A6);
+0120         <span class="keyword">end</span>
+0121     <span class="keyword">end</span>
+0122 <span class="keyword">end</span>
+0123 
+0124 <span class="keyword">if</span> output == 1    <span class="comment">%Output to a file</span>
+0125     fclose(fid);
+0126 <span class="keyword">end</span>
+0127 
+0128 <span class="keyword">if</span> nargout == 1
+0129     targets.logical=logical(fseof.target);
+0130     targets.slope=abs(fseof.results(:,iterations)-fseof.results(:,1))/abs(targetMax-targetMax/iterations); <span class="comment">%Slope calculation</span>
+0131 <span class="keyword">end</span>
+0132 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 14-May-2018 16:12:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

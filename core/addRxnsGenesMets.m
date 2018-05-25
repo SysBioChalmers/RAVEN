@@ -6,6 +6,7 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %   model           draft model where reactions should be copied to
 %   sourceModel     model where reactions and metabolites are sourced from
 %   rxns            cell array with reaction IDs (from source model)
+%                   string allowed if only one reaction is added
 %   addGene         three options:
 %                   false   no genes are annotated to the new reactions
 %                   true    grRules ared copied from the sourceModel and
@@ -18,8 +19,7 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %   rxnNote         string explaining why reactions were copied to model,
 %                   is included as newModel.rxnNotes (opt, default
 %                   'Added via addRxnsAndMets()')
-%   confidence      string, specifying confidence score for all reactions.
-%                   Following doi:10.1038/nprot.2009.203 (opt, default 0)
+%   confidence      double specifying confidence score for all reactions.
 %                   4:  biochemical data: direct evidence from enzymes
 %                       assays
 %                   3:  genetic data: knockout/-in or overexpression
@@ -30,6 +30,7 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %                   1:  modeling data: required for functional model,
 %                       hypothetical reaction
 %                   0:  no evidence
+%                   following doi:10.1038/nprot.2009.203 (opt, default 0)
 %
 %   newModel        an updated model structure
 %
@@ -41,7 +42,7 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %
 %   Usage: newModel=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)
 %
-%   Eduard Kerkhoven, 2017-02-13
+%   Eduard Kerkhoven, 2017-04-05
 %
 
 if nargin<6
@@ -60,7 +61,7 @@ if ischar(rxns)
     rxns={rxns};
 end
 
-%% Obtain indexes of reactions in source model
+% Obtain indexes of reactions in source model
 notNewRxn=rxns(ismember(rxns,model.rxns));
 rxns=rxns(~ismember(rxns,model.rxns));
 if isempty(rxns)
@@ -72,9 +73,10 @@ end
 
 rxnIdx=find(ismember(sourceModel.rxns,rxns)); % Get rxnIDs
 
-%% Add new metabolites
+% Add new metabolites
 metIdx=find(any(sourceModel.S(:,rxnIdx),2)); % Get metabolite IDs
-% Many of the metabolites in are already in the draft model, so only add the new metabolites
+% Many of the metabolites in are already in the draft model, so only add
+% the new metabolites
 
 % Match by metNames[metComps]. First make these structures for each model.
 metCompsN =cellstr(num2str(model.metComps));
@@ -99,8 +101,8 @@ metIdx=metIdx(~ismember(sourcemetCompsN(metIdx),metCompsN));
 
 if ~isempty(metIdx)
     fprintf('\n\nThe following metabolites will be added to the model:\n')
-    fprintf(strjoin(transpose(sourcemetCompsN(metIdx)),'\n'))    
-       
+    fprintf(strjoin(transpose(sourcemetCompsN(metIdx)),'\n'))
+    
     if isfield(sourceModel,'mets')
         metsToAdd.mets=sourceModel.mets(metIdx);
     end
@@ -126,14 +128,14 @@ if ~isempty(metIdx)
     metsToAdd.compartments=strtrim(cellstr(num2str(sourceModel.metComps(metIdx)))); % Convert from compartment string to compartment number
     [~,idx]=ismember(metsToAdd.compartments,strsplit(num2str(1:length(sourceModel.comps)))); % Match compartment number to compartment abbreviation
     metsToAdd.compartments=sourceModel.comps(idx); % Fill in compartment abbreviations
-
+    
     model=addMets(model,metsToAdd);
 end
 fprintf('\n\nNumber of metabolites added to the model:\n')
 fprintf(num2str(numel(metIdx)))
 fprintf('\n')
 
-%% Add new genes
+% Add new genes
 if addGene ~= false
     if ischar(addGene)
         rxnToAdd.grRules={addGene};
@@ -155,14 +157,14 @@ if addGene ~= false
             genesToAdd.geneComps=zeros(1,numel(genesToAdd.genes));
             genesToAdd.geneComps(:)=sourceModel.geneComps(1); % Assume all genes are in same compartment
         end
-        model=addGenes(model,genesToAdd);
+        model=addGenesRaven(model,genesToAdd);
         fprintf('\n\nNumber of genes added to the model:\n')
         fprintf(num2str(numel(genesToAdd.genes)))
     else
         fprintf('\n\nNo genes added to the model, because no genes were annotated or all genes were already present.')
     end
 end
-%% Add new reactions
+% Add new reactions
 rxnToAdd.equations=constructEquations(sourceModel,rxnIdx);
 rxnToAdd.rxnNames=sourceModel.rxnNames(rxnIdx);
 rxnToAdd.rxns=sourceModel.rxns(rxnIdx);
@@ -171,16 +173,19 @@ rxnToAdd.ub=sourceModel.ub(rxnIdx);
 rxnToAdd.rxnNotes=cell(1,numel(rxnToAdd.rxns));
 rxnToAdd.rxnNotes(:)={rxnNote};
 rxnToAdd.rxnConfidenceScores=NaN(1,numel(rxnToAdd.rxns));
-rxnToAdd.rxnConfidenceScores(:)=str2num(confidence);
+if ~isnumeric(confidence)
+    EM='confidence score must be numeric';
+    dispEM(EM, true);
+end
+rxnToAdd.rxnConfidenceScores(:)=confidence;
 if isfield(sourceModel,'subSystems')
-	rxnToAdd.subSystems=sourceModel.subSystems(rxnIdx);
+    rxnToAdd.subSystems=sourceModel.subSystems(rxnIdx);
 end
 if isfield(sourceModel,'eccodes')
-	rxnToAdd.eccodes=sourceModel.eccodes(rxnIdx);
+    rxnToAdd.eccodes=sourceModel.eccodes(rxnIdx);
 end
 model=addRxns(model,rxnToAdd,3,'',false);
 
 fprintf('\n\nNumber of reactions added to the model:\n')
 fprintf([num2str(numel(rxnIdx)),'\n'])
-
 end

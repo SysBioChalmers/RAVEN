@@ -7,7 +7,8 @@ function checkInstallation()
 %
 %   Usage: checkInstallation()
 %
-%	  Eduard Kerkhoven, 2017-12-15
+%	Eduard Kerkhoven, 2018-05-22
+%
 
 fprintf('\n*** THE RAVEN TOOLBOX v. 2.0 ***\n\n');
 
@@ -37,7 +38,7 @@ end
 
 %Adds the required classes to the static Java path if not already added
 addJavaPaths();
-    
+
 excelFile=fullfile(ravenDir,'tutorial','empty.xlsx');
 xmlFile=fullfile(ravenDir,'tutorial','empty.xml');
 matFile=fullfile(ravenDir,'tutorial','empty.mat');
@@ -53,19 +54,26 @@ end
 %Check if it is possible to import an SBML model using libSBML
 try
     importModel(xmlFile);
-    fprintf('Checking if it is possible to import an SBML model using libSBML... PASSED\n');
+    try
+        libSBMLver=OutputSBML; % Only works in libSBML 5.17.0+
+        fprintf('Checking if it is possible to import an SBML model using libSBML... PASSED\n');
+    catch
+        fprintf(['Checking if it is possible to import an SBML model using libSBML... PASSED\n\n'...
+            'An older libSBML version was found, update to version 5.17.0 or higher\n'...
+            'for a significant improvement of model import.\n\n']);
+    end
 catch
     fprintf('Checking if it is possible to import an SBML model using libSBML... FAILED\nTo import SBML models, download libSBML from http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n');
 end
 
 % Get current solver. Set it to 'none', if it is not set;
 if ~ispref('RAVEN','solver')
-	fprintf('Solver found in preferences... NONE\n');
+    fprintf('Solver found in preferences... NONE\n');
     setRavenSolver('none');
-	curSolv=getpref('RAVEN','solver');
+    curSolv=getpref('RAVEN','solver');
 else
-	curSolv=getpref('RAVEN','solver');
-	fprintf(['Solver found in preferences... ',curSolv,'\n']);
+    curSolv=getpref('RAVEN','solver');
+    fprintf(['Solver found in preferences... ',curSolv,'\n']);
 end
 
 %Check if it is possible to solve an LP problem using different solvers
@@ -119,38 +127,38 @@ if ~ispc
         fprintf(['Checking blastp' binEnd '.. OK\n']);
     else
         fprintf(['Checking blastp' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n']);
-    end;
+    end
     [res,~]=system(['"' fullfile(ravenDir,'software','blast-2.6.0+',['makeblastdb' binEnd]) '"']);
     if res==1
         fprintf(['Checking makeblastdb' binEnd '.. OK\n']);
     else
         fprintf(['Checking makeblastdb' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n']);
-    end;
+    end
     [res,~]=system(['"' fullfile(ravenDir,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '"']);
     if res==1
         fprintf(['Checking cd-hit' binEnd '.. OK\n']);
     else
         fprintf(['Checking cd-hit' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n']);
-    end;
+    end
     [res,~]=system(['"' fullfile(ravenDir,'software','hmmer-3.1b2',['hmmbuild' binEnd]) '"']);
     if res==1
         fprintf(['Checking hmmbuild' binEnd '.. OK\n']);
     else
         fprintf(['Checking hmmbuild' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n']);
-    end;
+    end
     [res,~]=system(['"' fullfile(ravenDir,'software','hmmer-3.1b2',['hmmsearch' binEnd]) '"']);
     if res==1
         fprintf(['Checking hmmsearch' binEnd '.. OK\n']);
     else
         fprintf(['Checking hmmsearch' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n']);
-    end;
+    end
     [res,~]=system(['"' fullfile(ravenDir,'software','mafft-7.305',['mafft' binEnd]) '"']);
     if res==1
         fprintf(['Checking mafft' binEnd '.. OK\n\n']);
     else
         fprintf(['Checking mafft' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n\n']);
-    end;
-end;
+    end
+end
 
 fprintf('Checking the uniqueness of RAVEN functions across Matlab path...\n');
 checkFunctionUniqueness();

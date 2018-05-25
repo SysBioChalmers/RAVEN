@@ -73,7 +73,7 @@ end
 if ~isempty(metaboliteList)
     I=ismember(upper(model.metNames),upper(metaboliteList));
     [~, K]=find(model.S(I,:));
-
+    
     %Delete all other reactions
     toDelete=true(numel(model.rxns),1);
     toDelete(K)=false;
@@ -111,14 +111,14 @@ else
 end
 
 if any(strfind(outputString,'%unbalanced')) || any(strfind(outputString,'%lumped'))
-   balanceStructure=getElementalBalance(model);
+    balanceStructure=getElementalBalance(model);
 end
 
 unbalanced=cell(numel(model.rxns),1);
 unbalanced(:)={''};
 if any(strfind(outputString,'%unbalanced'))
-   unbalanced(balanceStructure.balanceStatus==0)={'(*)'};
-   unbalanced(balanceStructure.balanceStatus<0)={'(-)'};
+    unbalanced(balanceStructure.balanceStatus==0)={'(*)'};
+    unbalanced(balanceStructure.balanceStatus<0)={'(-)'};
 end
 
 lumped=cell(numel(model.rxns),1);
@@ -146,7 +146,7 @@ if any(strfind(outputString,'%lumped'))
             end
         end
         if model.rev(i)
-        	lumped{i}=[leftGroup ' <=> ' rightGroup];
+            lumped{i}=[leftGroup ' <=> ' rightGroup];
         else
             lumped{i}=[leftGroup ' => ' rightGroup];
         end
@@ -154,28 +154,28 @@ if any(strfind(outputString,'%lumped'))
 end
 
 for i=1:numel(model.rxns)
-   %Only print if it's an exchange reaction or if all reactions should be
-   %printed. Exchange reactions only have reactants or only products.
-   reactants=model.S(:,i)<0;
-   products=model.S(:,i)>0;
-
-   %Only print if the absolute value is >= cutOffFlux
-   if (onlyExchange==false || (~any(reactants) || ~any(products)))
-       printString=outputString;
-
-       %Produce the final string
-       printString=strrep(printString,'%rxnID',model.rxns{i});
-       printString=strrep(printString,'%eqn',eqn{i});
-       printString=strrep(printString,'%rxnName',model.rxnNames{i});
-       printString=strrep(printString,'%lower',num2str(model.lb(i)));
-       printString=strrep(printString,'%upper',num2str(model.ub(i)));
-       printString=strrep(printString,'%obj',num2str(model.c(i)));
-       printString=strrep(printString,'%flux',num2str(fluxes(i)));
-       printString=strrep(printString,'%element',element{i});
-       printString=strrep(printString,'%unbalanced',unbalanced{i});
-       printString=strrep(printString,'%lumped',lumped{i});
-       fprintf(fid,printString);
-   end
+    %Only print if it's an exchange reaction or if all reactions should be
+    %printed. Exchange reactions only have reactants or only products.
+    reactants=model.S(:,i)<0;
+    products=model.S(:,i)>0;
+    
+    %Only print if the absolute value is >= cutOffFlux
+    if (onlyExchange==false || (~any(reactants) || ~any(products)))
+        printString=outputString;
+        
+        %Produce the final string
+        printString=strrep(printString,'%rxnID',model.rxns{i});
+        printString=strrep(printString,'%eqn',eqn{i});
+        printString=strrep(printString,'%rxnName',model.rxnNames{i});
+        printString=strrep(printString,'%lower',num2str(model.lb(i)));
+        printString=strrep(printString,'%upper',num2str(model.ub(i)));
+        printString=strrep(printString,'%obj',num2str(model.c(i)));
+        printString=strrep(printString,'%flux',num2str(fluxes(i)));
+        printString=strrep(printString,'%element',element{i});
+        printString=strrep(printString,'%unbalanced',unbalanced{i});
+        printString=strrep(printString,'%lumped',lumped{i});
+        fprintf(fid,printString);
+    end
 end
 
 if fid~=1

@@ -32,8 +32,8 @@ if sol.stat==-1 || isempty(sol.x)
     dispEM(EM);
 end
 
-%Check which reactions have flux. Only those can be essential. This
-%is not the smallest list of reactions, but it's a fast way
+%Check which reactions have flux. Only those can be essential. This is not
+%the smallest list of reactions, but it's a fast way
 rxnsToCheck=setdiff(model.rxns(abs(sol.x)>10^-8),ignoreRxns);
 nToCheck=numel(rxnsToCheck);
 minimize=true;
@@ -57,10 +57,10 @@ end
 
 essentialRxns={};
 for i=1:numel(rxnsToCheck)
-   sol=solveLP(setParam(model,'eq',rxnsToCheck(i),0),0,[],hsSolOut);
-   if sol.stat==-1 || isempty(sol.x)
-       essentialRxns=[essentialRxns;rxnsToCheck(i)];
-   end
+    sol=solveLP(setParam(model,'eq',rxnsToCheck(i),0),0,[],hsSolOut);
+    if sol.stat==-1 || isempty(sol.x)
+        essentialRxns=[essentialRxns;rxnsToCheck(i)];
+    end
 end
 
 [~, essentialRxnsIndexes]=ismember(essentialRxns,model.rxns);

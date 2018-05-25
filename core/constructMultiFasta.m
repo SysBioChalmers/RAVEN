@@ -13,8 +13,12 @@ function constructMultiFasta(model,sourceFile,outputDir)
 %
 %   Usage: constructMultiFasta(model,sourceFile,outputDir)
 %
-%   Simonas Marcisauskas, 2017-05-02
+%   Eduard Kerkhoven, 2018-05-18
 %
+
+if ~(exist(sourceFile,'file')==2)
+    error('FASTA file %s cannot be found',string(sourceFile));
+end
 
 %Open the source file
 fid = fopen(sourceFile, 'r');
@@ -34,16 +38,16 @@ whereAmI=0; %Keeps track of where in the file we are
 while 1
     %Read 10 mb at a time
     str=fread(fid,10000000,'int8');
-
+    
     %Find any '>' which indicates a new label in FASTA format
     newPosts=find(str==62); %62 is '>'
-
+    
     elementPositions(totalElements+1:totalElements+numel(newPosts))=whereAmI+newPosts;
-
+    
     totalElements=totalElements+numel(newPosts);
-
+    
     whereAmI=whereAmI+10000000;
-
+    
     if feof(fid)
         break;
     end
@@ -58,33 +62,33 @@ fprintf('NOTICE: If Matlab is freezing and does not provide any output in 30 min
 %to get the distance to the following element
 genePositions=zeros(numel(model.genes),1);
 for i=1:numel(elementPositions)
-	fseek(fid,elementPositions(i),-1);
+    fseek(fid,elementPositions(i),-1);
     str=fread(fid,[1 30],'*char'); %Assumes that no ID is longer than 20 characters
     delim=find(str==32 | str==10,1,'first'); %Space or line feed
-
+    
     geneIdentifier=str(1:delim-1);
-
+    
     %This should never happen, but just to prevent errors. Could be that
     %'>' is a part of some gene information. An alternative would be to
     %check that the indexes follows a line feed
-	if isempty(geneIdentifier)
+    if isempty(geneIdentifier)
         continue;
-	end
-
+    end
+    
     %If not found it means that the id was too long
     if isempty(delim)
         EM='Too long gene identifier, increase read length';
         dispEM(EM);
     end
-
+    
     %See if the gene was found
     id=hTable.get(geneIdentifier);
-
-	if any(id)
+    
+    if any(id)
         if genePositions(id)==0
             genePositions(id)=i;
         end
-	end
+    end
 end
 
 fprintf('Completed mapping of genes to source file\n');
@@ -93,32 +97,32 @@ fprintf('Completed mapping of genes to source file\n');
 for i=1:numel(model.rxns)
     %Don't overwrite existing files
     if ~exist(fullfile(outputDir,[model.rxns{i} '.fa']), 'file')
-
+        
         %Get the positions in elementPositions for the involved genes
         genesUsed=model.rxnGeneMat(i,:);
-
+        
         %Open a file for this reaction. This saves empty files for KOs
         %without genes
         rxnfid=fopen(fullfile(outputDir,[model.rxns{i} '.fa']),'w');
-
+        
         if any(genesUsed)
             positions=genePositions(genesUsed~=0);
-
-            %It could be that some genes were not found. Delete those elements
+            
+            %It could be that some genes were not found. Delete those
+            %elements
             positions(positions==0)=[];
-
+            
             %Print each sequence
             for j=1:numel(positions)
                 fseek(fid,elementPositions(positions(j)),-1);
-                %Should check that it ends with a gene!!!!
-                %Check for eof
+                %Should check that it ends with a gene!!!! Check for eof
                 if positions(j)<numel(elementPositions)
                     str=fread(fid,[1 double(elementPositions(positions(j)+1))-double(elementPositions(positions(j)))-1],'*char');
-
+                    
                     %If the string doesn't end with a line feed character
                     if str(end)~=10
                         str=[str fread(fid,[1 double(elementPositions(positions(j)+2))-double(elementPositions(positions(j)+1))],'*char')];
-
+                        
                         %This is if we still haven't found a new gene.
                         %Maximal unluck. This whole check should be done
                         %when elementPositions are calculated!

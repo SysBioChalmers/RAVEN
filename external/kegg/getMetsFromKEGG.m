@@ -155,7 +155,7 @@ else
             
             %Add PubChem id
             if numel(tline)>21
-                if strcmp(tline(13:21),'PubChem: ')   
+                if strcmp(tline(13:21),'PubChem: ')
                     if isstruct(model.metMiriams{metCounter})
                         addToIndex=numel(model.metMiriams{metCounter}.name)+1;
                     else

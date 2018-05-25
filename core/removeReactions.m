@@ -39,7 +39,7 @@ reducedModel=model;
 
 if ~isempty(rxnsToRemove) || removeUnusedMets || removeUnusedGenes
     indexesToDelete=getIndexes(model,rxnsToRemove,'rxns');
-
+    
     %Remove reactions
     if ~isempty(indexesToDelete)
         reducedModel.rxns(indexesToDelete)=[];
@@ -104,7 +104,7 @@ if ~isempty(rxnsToRemove) || removeUnusedMets || removeUnusedGenes
             reducedModel.spontaneous(indexesToDelete)=[];
         end
     end
-
+    
     %Remove unused metabolites
     if removeUnusedMets==true
         if isfield(reducedModel,'S')
@@ -114,31 +114,31 @@ if ~isempty(rxnsToRemove) || removeUnusedMets || removeUnusedGenes
             reducedModel=removeMets(reducedModel,unUsedMets,false,false,false,removeUnusedComps);
         end
     end
-
+    
     %Remove unused genes
     if removeUnusedGenes==true && isfield(reducedModel,'rxnGeneMat')
         %Find all genes that are not used
         [~, b]=find(reducedModel.rxnGeneMat);
         toKeep=false(numel(reducedModel.genes),1);
         toKeep(b)=true;
-
+        
         reducedModel.genes=reducedModel.genes(toKeep);
         reducedModel.rxnGeneMat=reducedModel.rxnGeneMat(:,toKeep);
-
+        
         if isfield(reducedModel,'geneShortNames')
-           reducedModel.geneShortNames=reducedModel.geneShortNames(toKeep);
+            reducedModel.geneShortNames=reducedModel.geneShortNames(toKeep);
         end
-
+        
         if isfield(reducedModel,'geneMiriams')
-           reducedModel.geneMiriams=reducedModel.geneMiriams(toKeep);
+            reducedModel.geneMiriams=reducedModel.geneMiriams(toKeep);
         end
-
+        
         if isfield(reducedModel,'geneFrom')
-           reducedModel.geneFrom=reducedModel.geneFrom(toKeep);
+            reducedModel.geneFrom=reducedModel.geneFrom(toKeep);
         end
-
+        
         if isfield(reducedModel,'geneComps')
-           reducedModel.geneComps=reducedModel.geneComps(toKeep);
+            reducedModel.geneComps=reducedModel.geneComps(toKeep);
         end
     end
 else

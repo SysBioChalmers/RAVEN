@@ -61,10 +61,10 @@ hasDefaultLB=false;
 hasDefaultUB=false;
 if isfield(model,'annotation')
     if isfield(model.annotation,'defaultLB')
-       hasDefaultLB=true;
+        hasDefaultLB=true;
     end
     if isfield(model.annotation,'defaultUB')
-       hasDefaultUB=true;
+        hasDefaultUB=true;
     end
 end
 
@@ -141,13 +141,13 @@ for i=1:numel(model.rxns)
     end
     
     if isfield(model,'rxnMiriams')
-       if ~isempty(model.rxnMiriams{i})
-           toPrint=[];
-           for j=1:numel(model.rxnMiriams{i}.name)
-               toPrint=[toPrint strtrim(model.rxnMiriams{i}.name{j}) '/' strtrim(model.rxnMiriams{i}.value{j}) ';'];
-           end
-           rxnMiriams{i}=toPrint(1:end-1);
-       end
+        if ~isempty(model.rxnMiriams{i})
+            toPrint=[];
+            for j=1:numel(model.rxnMiriams{i}.name)
+                toPrint=[toPrint strtrim(model.rxnMiriams{i}.name{j}) '/' strtrim(model.rxnMiriams{i}.value{j}) ';'];
+            end
+            rxnMiriams{i}=toPrint(1:end-1);
+        end
     end
 end
 
@@ -206,25 +206,25 @@ metSheet=cell(numel(model.mets),numel(headers));
 
 for i=1:numel(model.mets)
     metSheet{i,2}=[model.metNames{i} '[' model.comps{model.metComps(i)} ']'];
-
+    
     if isfield(model,'metNames')
         metSheet(i,3)=model.metNames(i);
     end
-
+    
     if isfield(model,'unconstrained')
         if model.unconstrained(i)~=0
             metSheet{i,4}=true;
         end
     end
-
+    
     if isfield(model,'metMiriams')
-       if ~isempty(model.metMiriams{i})
-           toPrint=[];
-           for j=1:numel(model.metMiriams{i}.name)
-               toPrint=[toPrint strtrim(model.metMiriams{i}.name{j}) '/' strtrim(model.metMiriams{i}.value{j}) ';'];
-           end
-           metSheet{i,5}=toPrint(1:end-1);
-       end
+        if ~isempty(model.metMiriams{i})
+            toPrint=[];
+            for j=1:numel(model.metMiriams{i}.name)
+                toPrint=[toPrint strtrim(model.metMiriams{i}.name{j}) '/' strtrim(model.metMiriams{i}.value{j}) ';'];
+            end
+            metSheet{i,5}=toPrint(1:end-1);
+        end
     end
     
     % Making sure that only these metFormulas are exported, which don't
@@ -233,22 +233,22 @@ for i=1:numel(model.mets)
         if isfield(model,'inchis')
             if isempty(model.inchis{i})
                 metSheet(i,6)=model.metFormulas(i);
-            end;
+            end
         else
             metSheet(i,6)=model.metFormulas(i);
-        end;
-    end;
-
+        end
+    end
+    
     if isfield(model,'inchis')
         metSheet(i,7)=model.inchis(i);
     end
-
+    
     if isfield(model,'metComps')
         metSheet(i,8)=model.comps(model.metComps(i));
     end
-
+    
     metSheet(i,9)=model.mets(i);
-
+    
     if isfield(model,'metCharges')
         metSheet{i,10}=model.metCharges(i);
     end
@@ -265,23 +265,23 @@ compSheet=cell(numel(model.comps),numel(headers));
 
 for i=1:numel(model.comps)
     compSheet(i,2)=model.comps(i);
-
+    
     if isfield(model,'compNames')
         compSheet(i,3)=model.compNames(i);
     end
-
+    
     if isfield(model,'compOutside')
         compSheet(i,4)=model.compOutside(i);
     end
-
+    
     if isfield(model,'compMiriams')
-       if ~isempty(model.compMiriams{i})
-           toPrint=[];
-           for j=1:numel(model.compMiriams{i}.name)
-               toPrint=[toPrint strtrim(model.compMiriams{i}.name{j}) '/' strtrim(model.compMiriams{i}.value{j}) ';'];
-           end
-           compSheet{i,5}=toPrint(1:end-1);
-       end
+        if ~isempty(model.compMiriams{i})
+            toPrint=[];
+            for j=1:numel(model.compMiriams{i}.name)
+                toPrint=[toPrint strtrim(model.compMiriams{i}.name{j}) '/' strtrim(model.compMiriams{i}.value{j}) ';'];
+            end
+            compSheet{i,5}=toPrint(1:end-1);
+        end
     end
 end
 
@@ -293,25 +293,25 @@ if isfield(model,'genes')
     headers={'#';'NAME';'MIRIAM';'SHORT NAME';'COMPARTMENT'};
     
     geneSheet=cell(numel(model.genes),numel(headers));
-
+    
     for i=1:numel(model.genes)
-       geneSheet(i,2)=model.genes(i);
-
-       if isfield(model,'geneMiriams')
-           if ~isempty(model.geneMiriams{i})
-               toPrint=[];
-               for j=1:numel(model.geneMiriams{i}.name)
-                   toPrint=[toPrint strtrim(model.geneMiriams{i}.name{j}) '/' strtrim(model.geneMiriams{i}.value{j}) ';'];
-               end
-               geneSheet{i,3}=toPrint(1:end-1);
-           end
-       end
-       if isfield(model,'geneShortNames')
-           geneSheet(i,4)=model.geneShortNames(i);
-       end
-       if isfield(model,'geneComps')
-           geneSheet(i,5)=model.comps(model.geneComps(i));
-       end
+        geneSheet(i,2)=model.genes(i);
+        
+        if isfield(model,'geneMiriams')
+            if ~isempty(model.geneMiriams{i})
+                toPrint=[];
+                for j=1:numel(model.geneMiriams{i}.name)
+                    toPrint=[toPrint strtrim(model.geneMiriams{i}.name{j}) '/' strtrim(model.geneMiriams{i}.value{j}) ';'];
+                end
+                geneSheet{i,3}=toPrint(1:end-1);
+            end
+        end
+        if isfield(model,'geneShortNames')
+            geneSheet(i,4)=model.geneShortNames(i);
+        end
+        if isfield(model,'geneComps')
+            geneSheet(i,5)=model.comps(model.geneComps(i));
+        end
     end
     
     wb=writeSheet(wb,'GENES',3,headers,[],geneSheet);
@@ -326,10 +326,10 @@ modelSheet=cell(1,numel(headers));
 
 %Add some default stuff if needed
 if ~isfield(model,'annotation')
-   model.annotation.familyName='Agren';
-   model.annotation.givenName='Rasmus';
-   model.annotation.email='rasmus.agren@scilifelab.se';
-   model.annotation.organization='Chalmers University of Technology';
+    model.annotation.familyName='Agren';
+    model.annotation.givenName='Rasmus';
+    model.annotation.email='rasmus.agren@scilifelab.se';
+    model.annotation.organization='Chalmers University of Technology';
 end
 
 if isfield(model,'id')

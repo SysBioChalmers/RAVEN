@@ -48,41 +48,41 @@ originalDescription=model.description;
 rxns=getIndexes(model,rxns,'rxns');
 
 for i=1:numel(toComps)
-   %Check if the compartment exists, otherwise add it
-   [I J]=ismember(toComps(i),model.comps);
-   if I==false
-       model.comps=[model.comps;toComps(i)];
-       model.compNames=[model.compNames;compNames(i)];
-       if isfield(model,'compOutside')
-           model.compOutside=[model.compOutside;compOutside(i)];
-       end
-       if isfield(model,'compMiriams')
-           model.compMiriams=[model.compMiriams;cell(1,1)];
-       end
-       J=numel(model.comps);
-   end
-   %Copy the reactions by making a model structure with only them, then
-   %change the localization, and finally merge with the original model
-   modelToAdd=model;
-   modelToAdd=removeReactions(modelToAdd,setdiff(1:numel(model.rxns),rxns),true,true);
-   modelToAdd.rxns=strcat(modelToAdd.rxns,'_',toComps(i));
-   modelToAdd.mets=strcat(modelToAdd.mets,'_',toComps(i));
-   modelToAdd.comps=modelToAdd.comps(J);
-   modelToAdd.compNames=modelToAdd.compNames(J);
-   if isfield(modelToAdd,'compOutside')
+    %Check if the compartment exists, otherwise add it
+    [I J]=ismember(toComps(i),model.comps);
+    if I==false
+        model.comps=[model.comps;toComps(i)];
+        model.compNames=[model.compNames;compNames(i)];
+        if isfield(model,'compOutside')
+            model.compOutside=[model.compOutside;compOutside(i)];
+        end
+        if isfield(model,'compMiriams')
+            model.compMiriams=[model.compMiriams;cell(1,1)];
+        end
+        J=numel(model.comps);
+    end
+    %Copy the reactions by making a model structure with only them, then
+    %change the localization, and finally merge with the original model
+    modelToAdd=model;
+    modelToAdd=removeReactions(modelToAdd,setdiff(1:numel(model.rxns),rxns),true,true);
+    modelToAdd.rxns=strcat(modelToAdd.rxns,'_',toComps(i));
+    modelToAdd.mets=strcat(modelToAdd.mets,'_',toComps(i));
+    modelToAdd.comps=modelToAdd.comps(J);
+    modelToAdd.compNames=modelToAdd.compNames(J);
+    if isfield(modelToAdd,'compOutside')
         modelToAdd.compOutside=modelToAdd.compOutside(J);
-   end
-   if isfield(modelToAdd,'compMiriams')
+    end
+    if isfield(modelToAdd,'compMiriams')
         modelToAdd.compMiriams=modelToAdd.compMiriams(J);
-   end
-   modelToAdd.metComps=ones(numel(modelToAdd.mets),1);
-   
-   %Merge the models
-   model=mergeModels({model;modelToAdd});
+    end
+    modelToAdd.metComps=ones(numel(modelToAdd.mets),1);
+    
+    %Merge the models
+    model=mergeModels({model;modelToAdd});
 end
 
 if deleteOriginal==true
-   model=removeReactions(model,rxns,true,true,true); %Also delete unused compartments
+    model=removeReactions(model,rxns,true,true,true); %Also delete unused compartments
 end
 
 model.id=originalID;

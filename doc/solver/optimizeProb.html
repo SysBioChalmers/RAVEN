@@ -80,46 +80,47 @@ This function is called by:
 0025 
 0026 solver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
 0027 <span class="keyword">if</span> strcmp(solver,<span class="string">'gurobi'</span>)
-0028         gparams=struct(<span class="string">'Presolve'</span>,2,<span class="string">'TimeLimit'</span>,1000,<span class="string">'OutputFlag'</span>,1,<span class="string">'MIPGap'</span>,1e-9,<span class="string">'Seed'</span>,0,<span class="string">'FeasibilityTol'</span>,1e-8,<span class="string">'OptimalityTol'</span>,1e-8);
-0029         <span class="keyword">if</span> (~milp) gparams.OutputFlag=0; <span class="keyword">end</span>
-0030         <span class="comment">%gparams=structUpdate(gparams,params);</span>
-0031         res = gurobi(mosekToGurobiProb(prob), gparams);
-0032 
-0033         res=gurobiToMosekRes(res,length(prob.c),milp);
+0028     gparams=struct(<span class="string">'Presolve'</span>,2,<span class="string">'TimeLimit'</span>,1000,<span class="string">'OutputFlag'</span>,1,<span class="string">'MIPGap'</span>,1e-9,<span class="string">'Seed'</span>,0,<span class="string">'FeasibilityTol'</span>,1e-8,<span class="string">'OptimalityTol'</span>,1e-8);
+0029     <span class="keyword">if</span> (~milp) gparams.OutputFlag=0; <span class="keyword">end</span>
+0030     <span class="comment">%gparams=structUpdate(gparams,params);</span>
+0031     res = gurobi(mosekToGurobiProb(prob), gparams);
+0032     
+0033     res=gurobiToMosekRes(res,length(prob.c),milp);
 0034 <span class="keyword">elseif</span> strcmp(solver,<span class="string">'cobra'</span>)
-0035         <span class="keyword">if</span> (milp)
-0036             cparams=struct(<span class="string">'timeLimit'</span>,1e9,<span class="string">'printLevel'</span>,0,<span class="string">'intTol'</span>,1e-6,<span class="string">'relMipGapTol'</span>,1e-9);
-0037             cparams=<a href="#_sub1" class="code" title="subfunction s_merged=structUpdate(s_old,s_new)">structUpdate</a>(cparams,params);
-0038             res=solveCobraMILP(mosekToCobraProb(prob),cparams);
-0039         <span class="keyword">else</span>
-0040             <span class="comment">% no hot start =/</span>
-0041             cparams=struct(<span class="string">'PrintLevel'</span>,1);
-0042             res=solveCobraLP(mosekToCobraProb(prob));
-0043         <span class="keyword">end</span>
-0044         res=cobraToMosekRes(res,length(prob.c),milp);
-0045 
+0035     <span class="keyword">if</span> (milp)
+0036         cparams=struct(<span class="string">'timeLimit'</span>,1e9,<span class="string">'printLevel'</span>,0,<span class="string">'intTol'</span>,1e-6,<span class="string">'relMipGapTol'</span>,1e-9);
+0037         cparams=<a href="#_sub1" class="code" title="subfunction s_merged=structUpdate(s_old,s_new)">structUpdate</a>(cparams,params);
+0038         res=solveCobraMILP(mosekToCobraProb(prob),cparams);
+0039     <span class="keyword">else</span>
+0040         <span class="comment">% no hot start =/</span>
+0041         cparams=struct(<span class="string">'PrintLevel'</span>,1);
+0042         res=solveCobraLP(mosekToCobraProb(prob));
+0043     <span class="keyword">end</span>
+0044     res=cobraToMosekRes(res,length(prob.c),milp);
+0045     
 0046 <span class="keyword">elseif</span> strcmp(solver,<span class="string">'mosek'</span>)
-0047         <span class="keyword">if</span> (milp)
-0048             echo=0;
-0049             <span class="keyword">if</span> isfield(params,<span class="string">'printReport'</span>) &amp;&amp; params.printReport==true
-0050                 echo=<span class="string">'3'</span>;
-0051             <span class="keyword">end</span>
-0052             [~,res] = mosekopt([<span class="string">'minimize echo('</span> echo <span class="string">')'</span>],prob,<a href="getMILPParams.html" class="code" title="function mosekParams=getMILPParams(params)">getMILPParams</a>(params));
-0053         <span class="keyword">else</span>
-0054             [~,res] = mosekopt(<span class="string">'minimize echo(0)'</span>,prob);
-0055         <span class="keyword">end</span>
+0047     <span class="keyword">if</span> (milp)
+0048         echo=0;
+0049         <span class="keyword">if</span> isfield(params,<span class="string">'printReport'</span>) &amp;&amp; params.printReport==true
+0050             echo=<span class="string">'3'</span>;
+0051         <span class="keyword">end</span>
+0052         [~,res] = mosekopt([<span class="string">'minimize echo('</span> echo <span class="string">')'</span>],prob,<a href="getMILPParams.html" class="code" title="function mosekParams=getMILPParams(params)">getMILPParams</a>(params));
+0053     <span class="keyword">else</span>
+0054         [~,res] = mosekopt(<span class="string">'minimize echo(0)'</span>,prob);
+0055     <span class="keyword">end</span>
 0056 <span class="keyword">else</span>
-0057         dispEM([<span class="string">'Raven solver not defined or unknown. Try using setRavenSolver('</span>,char(39),<span class="string">'solver'</span>,char(39),<span class="string">')'</span>]);
+0057     dispEM([<span class="string">'Raven solver not defined or unknown. Try using setRavenSolver('</span>,char(39),<span class="string">'solver'</span>,char(39),<span class="string">')'</span>]);
 0058 <span class="keyword">end</span>
 0059 
-0060 <a name="_sub1" href="#_subfunctions" class="code">function s_merged=structUpdate(s_old,s_new)</a>
-0061     <span class="comment">%// Remove overlapping fields from first struct%// Obtain all unique names of remaining fields,%// Merge both structs</span>
-0062     s_merged = rmfield(s_old, intersect(fieldnames(s_old), fieldnames(s_new)));
-0063     names = [fieldnames(s_merged); fieldnames(s_new)];
-0064     s_merged = cell2struct([struct2cell(s_merged); struct2cell(s_new)], names, 1);
-0065 <span class="keyword">end</span>
-0066 
-0067 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 14-Mar-2018 21:08:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0060     <a name="_sub1" href="#_subfunctions" class="code">function s_merged=structUpdate(s_old,s_new)</a>
+0061         <span class="comment">%// Remove overlapping fields from first struct%// Obtain all</span>
+0062         <span class="comment">%unique names of remaining fields,%// Merge both structs</span>
+0063         s_merged = rmfield(s_old, intersect(fieldnames(s_old), fieldnames(s_new)));
+0064         names = [fieldnames(s_merged); fieldnames(s_new)];
+0065         s_merged = cell2struct([struct2cell(s_merged); struct2cell(s_new)], names, 1);
+0066     <span class="keyword">end</span>
+0067 
+0068 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 14-May-2018 16:12:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

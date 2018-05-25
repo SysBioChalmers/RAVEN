@@ -37,10 +37,10 @@ if nargin<7
     upColor=[0 1 0];
 end
 if nargin<6
-   defaultColor=[1 1 1]; 
+    defaultColor=[1 1 1];
 end
 if nargin<5
-   cutOff=0; 
+    cutOff=0;
 end
 
 %Loop through the components in the pathway. Check if any component has a
@@ -48,26 +48,27 @@ end
 returnPathway=pathway;
 
 for i=1:length(pathway.listOfSpecies)
-   if strcmpi(pathway.listOfSpecies(i).type,'PROTEIN')
-      if isfield(pathway.listOfSpecies(i),'note')
-          if ~isempty(pathway.listOfSpecies(i).note)
-             %If there is a note check if there is a corresponding reaction id
-             correspondingReaction=find(strcmpi(reactionIDs,pathway.listOfSpecies(i).note));
-             if correspondingReaction>0
-                 %Check if either flux is above the cutoff value
-                 if abs(referenceFluxes(correspondingReaction))>=cutOff ||...
-                         abs(fluxes(correspondingReaction))>=cutOff
-                     %Calculate the corresponding color
-                     [color, signChange]=getColorCodes(referenceFluxes(correspondingReaction)...
-                         ,fluxes(correspondingReaction),1 , defaultColor, upColor, downColor);
-                     if ~isempty(color)
-                        returnPathway.listOfSpecies(i).color=color{1,1};
-                        returnPathway.listOfSpecies(i).signChange=signChange{1,1};
-                     end
-                 end
-             end
-          end
-      end
-   end
+    if strcmpi(pathway.listOfSpecies(i).type,'PROTEIN')
+        if isfield(pathway.listOfSpecies(i),'note')
+            if ~isempty(pathway.listOfSpecies(i).note)
+                %If there is a note check if there is a corresponding
+                %reaction id
+                correspondingReaction=find(strcmpi(reactionIDs,pathway.listOfSpecies(i).note));
+                if correspondingReaction>0
+                    %Check if either flux is above the cutoff value
+                    if abs(referenceFluxes(correspondingReaction))>=cutOff ||...
+                            abs(fluxes(correspondingReaction))>=cutOff
+                        %Calculate the corresponding color
+                        [color, signChange]=getColorCodes(referenceFluxes(correspondingReaction)...
+                            ,fluxes(correspondingReaction),1 , defaultColor, upColor, downColor);
+                        if ~isempty(color)
+                            returnPathway.listOfSpecies(i).color=color{1,1};
+                            returnPathway.listOfSpecies(i).signChange=signChange{1,1};
+                        end
+                    end
+                end
+            end
+        end
+    end
 end
 end
