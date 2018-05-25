@@ -310,7 +310,7 @@ if isfield(model,'metMiriams')
     
     %Print output
     EM='The following MIRIAM strings are associated to more than one unique metabolite name:';
-    dispEM(EM,false,allMiriams(hasMultiple));
+    dispEM(EM,false,allMiriams(hasMultiple),trimWarnings);
 end
 
 %Check if there are metabolites with different names but the same InChI
@@ -344,7 +344,7 @@ if isfield(model,'inchis')
     
     %Print output
     EM='The following InChI strings are associated to more than one unique metabolite name:';
-    dispEM(EM,false,allInchis(hasMultiple));
+    dispEM(EM,false,allInchis(hasMultiple),trimWarnings);
 end
 end
 

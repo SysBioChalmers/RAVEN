@@ -1,3 +1,4 @@
+function workbook=loadWorkbook(fileName,createEmpty)
 % loadWorkbook
 %   Loads an Excel file into a Workbook object using the Java library Apache POI
 %
@@ -10,13 +11,13 @@
 %
 %   Usage: workbook=loadWorkbook(fileName,createEmpty)
 %
-%   Rasmus Agren, 2015-08-19
+%   Eduard Kerkhoven, 2018-05-18
 %
 
-function workbook=loadWorkbook(fileName,createEmpty)
 if nargin<2
     createEmpty=false;
 end
+
 
 %Adds the required classes to the static Java path if not already added
 addJavaPaths();
@@ -29,7 +30,7 @@ import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.xssf.usermodel.*;
 
 %Check if the file exists
-if ~exist(fileName,'file')
+if ~(exist(fileName,'file')==2)
     if createEmpty==false
         EM='The Excel file could not be found';
         dispEM(EM);

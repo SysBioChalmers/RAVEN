@@ -38,7 +38,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %       eccodes          EC-codes for the reactions
 %       rxnMiriams       structure with MIRIAM information about the reactions
 %       rxnNotes         reaction notes
-%       rxnReferences	 reaction references
+%       rxnReferences    reaction references
 %       rxnConfidenceScores reaction confidence scores
 %       genes            list of all genes
 %       geneComps        compartments for genes
@@ -71,7 +71,8 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Eduard Kerkhoven, 2018-05-08
+%   Eduard Kerkhoven, 2018-05-18
+%
 
 if nargin<2
     removeExcMets=true;
@@ -83,6 +84,10 @@ end
 
 if nargin<4
     supressWarnings=false;
+end
+
+if ~(exist(fileName,'file')==2)
+    error('SBML file %s cannot be found',string(fileName));
 end
 
 %This is to match the order of the fields to those you get from importing

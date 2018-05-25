@@ -41,14 +41,9 @@ for i = 1:length(formats)
     [~,~,~]=mkdir(fullfile(path,'ModelFiles',formats{i}));
 end
 
-% Write MAT format
-if ismember('mat', formats)
-    save([fullfile(path,'ModelFiles','mat',prefix),'.mat'],'model');
-end
-
 % Write TXT format
 if ismember('txt', formats)
-    fid=fopen([fullfile(path,'ModelFiles','txt',prefix),'.txt'],'w');
+    fid=fopen(fullfile(path,'ModelFiles','txt',strcat(prefix,'.txt')),'w');
     eqns=constructEquations(model,model.rxns,false,false,false,true);
     eqns=strrep(eqns,' => ','  -> ');
     eqns=strrep(eqns,' <=> ','  <=> ');
@@ -65,22 +60,24 @@ if ismember('txt', formats)
     fclose(fid);
 end
 
+% Write YML format
+if ismember('yml', formats)
+    writeYaml(model,fullfile(path,'ModelFiles','yml',strcat(prefix,'.yml')));
+end
+
+% Write MAT format
+if ismember('mat', formats)
+    save(fullfile(path,'ModelFiles','mat',strcat(prefix,'.mat')),'model');
+end
+
 % Write XLSX format
 if ismember('xlsx', formats)
-    exportToExcelFormat(model,strcat(prefix,'.xlsx'));
-    movefile([prefix,'.xlsx'],fullfile(path,'ModelFiles','xlsx'));
+    exportToExcelFormat(model,fullfile(path,'ModelFiles','xlsx',strcat(prefix,'.xlsx')));
 end
 
 % Write XML format
 if ismember('xml', formats)
-    exportModel(model,strcat(prefix,'.xml'));
-    movefile([prefix,'.xml'],fullfile(path,'ModelFiles','xml'));
-end
-
-% Write YML format
-if ismember('yml', formats)
-    writeYaml(model,strcat(prefix,'.yml'));
-    movefile([prefix,'.yml'],fullfile(path,'ModelFiles','yml'));
+    exportModel(model,fullfile(path,'ModelFiles','xml',strcat(prefix,'.xml')));
 end
 
 %Track versions
@@ -115,7 +112,7 @@ catch % before 5.17.0
 end
 
 %Save file with versions:
-fid = fopen('dependencies.txt','wt');
+fid = fopen(fullfile(path,'ModelFiles','dependencies.txt'),'wt');
 fprintf(fid,['MATLAB\t' version '\n']);
 fprintf(fid,['libSBML\t' libSBMLver '\n']);
 fprintf(fid,['RAVEN_toolbox\t' RAVENver '\n']);
@@ -130,8 +127,6 @@ if isfield(model,'modelVersion')
     end
 end
 fclose(fid);
-
-movefile('dependencies.txt',fullfile(path,'ModelFiles'));
 end
 
 function version = getVersion(IDfileName,VERfileName)

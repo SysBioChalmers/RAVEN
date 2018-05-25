@@ -25,7 +25,7 @@ function model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %   Usage: model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives)
 %
-%   Simonas Marcisauskas, 2018-04-03
+%   Eduard Kerkhoven, 2018-05-18
 %
 
 if nargin<2
@@ -49,8 +49,8 @@ if nargin<7
 end
 
 %Check if query fasta exists
-if ~exist(fastaFile,'file')
-    EM='Cannot find the query protein fasta file';
+if ~(exist(fastaFile,'file')==2)
+    error('FASTA file %s cannot be found',string(fastaFile));
     dispEM(EM,true);
 end
 

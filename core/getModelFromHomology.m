@@ -45,7 +45,7 @@ function draftModel=getModelFromHomology(models,blastStructure,getModelFor,prefe
 %
 %   draftModel        a new model structure
 %
-%   Simonas Marcisauskas, 2018-03-17
+%   Eduard Kerkhoven, 2018-05-22
 %
 
 %NOTE: "to" and "from" means relative the new organism
@@ -82,6 +82,28 @@ end
 
 %Assume for now that all information is there and that it's correct This is
 %important to fix since no further checks are being made!
+
+%Check whether provided fasta files use the same gene identifiers as
+%provided template models
+for i=1:numel(blastStructure)
+    if ~strcmp(blastStructure(i).fromId,getModelFor)
+        j=strcmpi(blastStructure(i).fromId,models{:}.id);
+        if j==0
+            error(['While the blastStructure contains sequences from '...
+                'organismID "%s" (as\nprovided in getBlast), none of '...
+                'template models have this id (as model.id)'],...
+                string(blastStructure(i).fromId));
+        end
+        k=sum(ismember(blastStructure(i).fromGenes,models{j}.genes));
+        if k<(numel(models{j}.genes)*0.05)
+            error(['Less than 5%% of the genes in the template model '...
+                'with model.id "%s"\ncan be found in the blastStructure. '...
+                'Ensure that the protein FASTA\nused in getBlast and '...
+                'the template model used in getModelFromHomology\nuse '...
+                'the same style of gene identifiers'],models{j}.id)
+        end
+    end
+end
 
 %Remove all gene matches that are below the cutoffs
 for i=1:numel(blastStructure)
@@ -449,11 +471,14 @@ draftModel.rxnNotes=cell(length(draftModel.rxns),1);
 draftModel.rxnNotes(:)={'Reaction included by getModelFromHomology'};
 draftModel.rxnConfidenceScores=NaN(length(draftModel.rxns),1);
 draftModel.rxnConfidenceScores(:)=2;
-%Gene short names are often different between species, safer not to
-%include them.
+%Gene short names and geneMirirams are often different between species,
+%safer not to include them.
 if isfield(draftModel,'geneShortNames');
-    draftModel = rmfield(draftModel,'geneShortNames');
+    draftModel=rmfield(draftModel,'geneShortNames');
+end
+if isfield(draftModel,'geneMiriams');
+    draftModel=rmfield(draftModel,'geneMiriams');
 end
 %Standardize grRules and notify if problematic grRules are found
-[draftModel.grRules,draftModel.rxnGeneMat] = standardizeGrRules(draftModel,false);
+[draftModel.grRules,draftModel.rxnGeneMat]=standardizeGrRules(draftModel,false);
 end
