@@ -35,8 +35,8 @@ for i=1:length(pathway.listOfCompartments)
     end
 end
 
-%Loops through the species to find the object furthest to the right, left,
-%top and bottom
+%Loops through the species to find the object furthest to the right, left, top
+%and bottom
 for i=1:length(pathway.listOfSpecies)
     if pathway.listOfSpecies(1,i).x<left
         left=pathway.listOfSpecies(1,i).x;

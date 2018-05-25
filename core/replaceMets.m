@@ -17,7 +17,7 @@ function model=replaceMets(model,metabolite,replacement,verbose)
 %
 %   Usage: model=replaceMets(model,metabolite,replacement,verbose)
 %
-%   Eduard Kerkhoven, 2018-03-30
+%   Eduard Kerkhoven, 2018-03-03
 
 if nargin<4
     verbose=false;
@@ -71,7 +71,7 @@ idxDelete=[];
 for i = 1:length(repIdx)
     metCompsNidx=find(strcmp(metCompsN(repIdx(i)), metCompsN));
     if gt(length(metCompsNidx),1) % If more than 1 metabolite matches
-        model.S(metCompsNidx(1),:) = model.S(metCompsNidx(1),:) + model.S(metCompsNidx(2:end),:);
+        model.S(repIdx(i),:) = model.S(repIdx(i),:) + model.S(metCompsNidx(2:end),:);
         idxDelete=[idxDelete; metCompsNidx(2:end)]; % Make list of metabolite IDs to delete
     end
 end

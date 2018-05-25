@@ -68,14 +68,14 @@ elements.names={'carbon', 'nitrogen', 'oxygen', 'sulfur', 'phosphorus', 'hydroge
     'darmstadtium', 'roentgenium', 'copernicium', 'generic group', 'bound protein'}';
 
 EWs=[12.0107 14.0067 15.9994 32.065 30.973762 1.00794 4.002602 6.941 9.012182 10.811 18.9984032 ...
-    20.1797 22.98976928 24.305 26.9815386 28.0855 35.453 39.948 39.0983 40.078 44.955912 47.867 50.9415 ...
-    51.9961 54.938045 55.845 58.933195 58.6934 63.546 65.39 69.723 72.64 74.9216 78.96 79.904 83.798 ...
-    85.4678 87.62 88.90585 91.224 92.906 95.94 97.9072 101.07 102.905 106.42 107.8682 112.411 114.818 ...
-    118.71 121.76 127.6 126.904 131.293 132.9054519 137.327 138.90547 140.116 140.90765 144.242 144.9127 ...
-    150.36 151.964 157.25 158.92535 162.5 164.93 167.259 168.93421 173.04 174.967 178.49 180.94788 183.84 ...
-    186.207 190.23 192.217 195.084 196.966569 200.59 204.3833 207.2 208.9804 208.9824 209.9871 222.0176 ...
-    223.0197 226.0254 227.0277 232.03806 231.03588 238.02891 237.0482 244.0642 243.0614 247.0704 247.0703 ...
-    251.0796 252.083 257.0951 258.0984 259.101 262.1097 261.1088 262 266 264 277 268 271 272 nan nan nan]';
+20.1797 22.98976928 24.305 26.9815386 28.0855 35.453 39.948 39.0983 40.078 44.955912 47.867 50.9415 ...
+51.9961 54.938045 55.845 58.933195 58.6934 63.546 65.39 69.723 72.64 74.9216 78.96 79.904 83.798 ...
+85.4678 87.62 88.90585 91.224 92.906 95.94 97.9072 101.07 102.905 106.42 107.8682 112.411 114.818 ...
+118.71 121.76 127.6 126.904 131.293 132.9054519 137.327 138.90547 140.116 140.90765 144.242 144.9127 ...
+150.36 151.964 157.25 158.92535 162.5 164.93 167.259 168.93421 173.04 174.967 178.49 180.94788 183.84 ...
+186.207 190.23 192.217 195.084 196.966569 200.59 204.3833 207.2 208.9804 208.9824 209.9871 222.0176 ...
+223.0197 226.0254 227.0277 232.03806 231.03588 238.02891 237.0482 244.0642 243.0614 247.0704 247.0703 ...
+251.0796 252.083 257.0951 258.0984 259.101 262.1097 261.1088 262 266 264 277 268 271 272 nan nan nan]';
 
 %Set the EWs of these groups to 0
 if ignoreRX==true
@@ -100,9 +100,8 @@ for i=1:numel(formulas)
         sucess=false; %To see if it works
         formula=formulas{i};
         
-        %If it's an InChI code. The composition is found between the first
-        %and the second "/" For some simple molecules such as salts only
-        %the first "/" is present
+        %If it's an InChI code. The composition is found between the first and the second "/"
+        %For some simple molecules such as salts only the first "/" is present
         if isInchi==true
             S=regexp(formula,'/','split');
             if numel(S)>=2
@@ -114,31 +113,33 @@ for i=1:numel(formulas)
         %Only look at what's between the parantheses (polymers are not
         %supported in InChI)
         if isInchi==false
-            LP=strfind(formula,'(');
-            RP=strfind(formula,')n');
-            %            if numel(LP)>1 || numel(RP)>1
-            %               exitFlag(i)=-1; continue;
-            %            end if numel(LP)>1 || numel(RP)>1
-            %               exitFlag(i)=-1; continue;
-            %            end
-            if numel(LP)==1 && numel(RP)==1
-                %This means that the polymer should be regarded as a
-                %monomer
-                if noPolymers==true
+           LP=strfind(formula,'(');
+           RP=strfind(formula,')n');
+%            if numel(LP)>1 || numel(RP)>1
+%               exitFlag(i)=-1;
+%               continue;
+%            end
+%            if numel(LP)>1 || numel(RP)>1
+%               exitFlag(i)=-1;
+%               continue;
+%            end
+           if numel(LP)==1 && numel(RP)==1
+               %This means that the polymer should be regarded as a monomer
+               if noPolymers==true
                     %This means that there are one set of parantheses
                     formula=strrep(formula,'(','');
                     formula=strrep(formula,')n','');
-                else
+               else
                     %This means that polymers should be ignored
                     exitFlag(i)=-1;
                     continue;
-                end
-            else
-                if ~isempty(LP) || ~isempty(RP)
+               end
+           else
+               if ~isempty(LP) || ~isempty(RP)
                     exitFlag(i)=-1;
                     continue;
-                end
-            end
+               end
+           end
         end
         
         %Get the indexes of the numeric (or ".") characters
@@ -155,31 +156,29 @@ for i=1:numel(formulas)
             %coefficient must be 1
             isLast=false;
             if upperX(j)==numel(formula)
-                coeff=1;
-                element=formula(upperX(j));
-                isLast=true;
+               coeff=1;
+               element=formula(upperX(j));
+               isLast=true;
             end
             
             if isLast==false
-                %The second case is when the following character is a
-                %character
+                %The second case is when the following character is a character
                 if nonNumeric(upperX(j)+1)
                     %Is it a new element?
                     if upperI(upperX(j)+1)
-                        %New element, that means that the coefficient was 1
-                        %and that the element was only one character
-                        coeff=1;
-                        element=formula(upperX(j));
+                       %New element, that means that the coefficient was 1 and that
+                       %the element was only one character
+                       coeff=1;
+                       element=formula(upperX(j));
                     else
-                        %This means that it's an element with two
-                        %characters
-                        if j==numel(upperX)
+                       %This means that it's an element with two characters
+                       if j==numel(upperX)
                             if upperX(j)<numel(formula)-1
                                 coeff=str2double(formula(upperX(j)+2:end));
                             else
                                 coeff=1;
                             end
-                        else
+                       else
                             %Check if there is a number or a new element
                             %after it
                             if nonNumeric(upperX(j)+2)==true
@@ -187,8 +186,8 @@ for i=1:numel(formulas)
                             else
                                 coeff=str2double(formula(upperX(j)+2:upperX(j+1)-1));
                             end
-                        end
-                        element=formula(upperX(j):upperX(j)+1);
+                       end
+                       element=formula(upperX(j):upperX(j)+1);
                     end
                 else
                     %Then it is a numeral
@@ -236,7 +235,7 @@ EWs(I)=[];
 if nargout>3
     P=bsxfun(@times,useMat(:,~isnan(EWs)),EWs(~isnan(EWs)).');
     MW=sum(P,2);
-    
+
     %Then remove the calculations for elements with unknown mass
     I=find(useMat(:,isnan(EWs)));
     MW(I)=nan;

@@ -77,96 +77,95 @@ else
     else
         metaCycEnzymes.id='MetaCyc';
         metaCycEnzymes.description='Automatically generated from MetaCyc database';
-        
-        %Reserve space for 10000 enzyme complexs
+           
+				%Reserve space for 10000 enzyme complexs
         metaCycEnzymes.cplxs=cell(10000,1);
         metaCycEnzymes.cplxComp=cell(10000,1);
         metaCycEnzymes.enzymes=cell(50000,1);
-        
+
         %Get the information of protein complexes and their components
         nCplx=0;
         enzymeCounter=0;
-        
+
         fid = fopen(fullfile(metacycPath,metaCycProteinFile), 'r');
         %Loop through the file
         while 1
-            tline = fgetl(fid);
-            
-            %Abort at end of file
-            if ~ischar(tline)
-                break;
-            end
-            
-            %Add Enzyme id
-            if numel(tline)>12 && strcmp(tline(1:12),'UNIQUE-ID - ')
-                enzymeCounter=enzymeCounter+1;
-                addMe=false;
-                enzymeID=tline(13:end);
-                metaCycEnzymes.enzymes{enzymeCounter}=enzymeID;
-            end
-            
-            %Check if enzyme complexes
-            if strcmp(tline(1:end),'TYPES - Protein-Complexes')
-                nCplx=nCplx+1;
-                nComp=0;
-                
-                %Reserve 100 subunits for each enzyme complex
-                Comp.subunit=cell(100,1);
-                metaCycEnzymes.cplxs{nCplx}=enzymeID;
-                
-                addMe=true;
-            end
-            
-            if numel(tline)>13 && strcmp(tline(1:13),'COMPONENTS - ')
-                nComp=nComp+1;
-                Comp.subunit{nComp}=tline(14:end);
-            end
-            
-            if strcmp(tline(1:end),'//')
-                if addMe
-                    Comp.subunit=Comp.subunit(1:nComp);
-                    metaCycEnzymes.cplxComp{nCplx}=Comp;
-                end
-                addMe=false;
-            end
+          tline = fgetl(fid);
+   
+          %Abort at end of file
+          if ~ischar(tline)
+              break;
+          end
+   
+          %Add Enzyme id
+          if numel(tline)>12 && strcmp(tline(1:12),'UNIQUE-ID - ')
+          	enzymeCounter=enzymeCounter+1;
+          	addMe=false;
+          	enzymeID=tline(13:end);
+          	metaCycEnzymes.enzymes{enzymeCounter}=enzymeID;
+          end
+
+          %Check if enzyme complexes
+          if strcmp(tline(1:end),'TYPES - Protein-Complexes')
+          	nCplx=nCplx+1;
+          	nComp=0;
+          	
+          	%Reserve 100 subunits for each enzyme complex
+          	Comp.subunit=cell(100,1);
+          	metaCycEnzymes.cplxs{nCplx}=enzymeID;
+						
+            addMe=true;
+          end         
+          
+          if numel(tline)>13 && strcmp(tline(1:13),'COMPONENTS - ')
+						nComp=nComp+1;
+						Comp.subunit{nComp}=tline(14:end);
+          end
+
+          if strcmp(tline(1:end),'//')
+          	if addMe
+          		Comp.subunit=Comp.subunit(1:nComp);
+	          	metaCycEnzymes.cplxComp{nCplx}=Comp;
+	          end
+	          addMe=false;
+          end             
         end
         %Close the file
         fclose(fid);
-        
+  
         %If too much space was allocated, shrink the model
         metaCycEnzymes.cplxs=metaCycEnzymes.cplxs(1:nCplx);
         metaCycEnzymes.cplxComp=metaCycEnzymes.cplxComp(1:nCplx);
         metaCycEnzymes.enzymes=metaCycEnzymes.enzymes(1:enzymeCounter);
-        
-        % Iteratively replace all components of complexes into polypeptide
-        % subunits
+       
+       	% Iteratively replace all components of complexes into polypeptide subunits
         for i=1:numel(metaCycEnzymes.cplxComp)
-            checkCplx=true;
-            while checkCplx
-                x=0;
-                mat=[]; %Matrix for component of protein-complexs
-                for j=1:numel(metaCycEnzymes.cplxComp{i}.subunit)
-                    [a, b]=ismember(metaCycEnzymes.cplxComp{i}.subunit{j},metaCycEnzymes.cplxs);
-                    if a
-                        x=x+1;   %record this value j, and the cplx id b
-                        mat(x,:)=[j b];
-                    end
-                end
-                
-                if isempty(mat)
-                    checkCplx=false; % No complexs found among components
-                else
-                    %go through matrix JB
-                    for k=1:x
-                        %disp(metaCycEnzymes.cplxComp{i}.subunit{mat(k,1)});
-                        metaCycEnzymes.cplxComp{i}.subunit(mat(k,1))=[];
-                        metaCycEnzymes.cplxComp{i}.subunit=[metaCycEnzymes.cplxComp{i}.subunit; metaCycEnzymes.cplxComp{mat(k,2)}.subunit];
-                    end
-                end
-                
-            end
-        end
-        
+        	checkCplx=true;
+        	while checkCplx
+		       	x=0;
+  	      	mat=[]; %Matrix for component of protein-complexs
+    	    	for j=1:numel(metaCycEnzymes.cplxComp{i}.subunit)
+      	  		[a, b]=ismember(metaCycEnzymes.cplxComp{i}.subunit{j},metaCycEnzymes.cplxs);
+        			if a
+        				x=x+1;   %record this value j, and the cplx id b
+								mat(x,:)=[j b];
+							end
+						end
+
+						if isempty(mat)
+							checkCplx=false; % No complexs found among components
+						else									
+        			%go through matrix JB
+        			for k=1:x
+        				%disp(metaCycEnzymes.cplxComp{i}.subunit{mat(k,1)});
+       	 				metaCycEnzymes.cplxComp{i}.subunit(mat(k,1))=[];
+        				metaCycEnzymes.cplxComp{i}.subunit=[metaCycEnzymes.cplxComp{i}.subunit; metaCycEnzymes.cplxComp{mat(k,2)}.subunit];
+        			end
+        		end
+        		
+        	end
+      	end
+
         %Preallocate space for 500000 enzymatic reactions
         metaCycEnzymes.enzrxns=cell(50000,1);
         metaCycEnzymes.rxns=cell(50000,1);
@@ -174,94 +173,92 @@ else
         metaCycEnzymes.commoname=cell(50000,1);
         %metaCycEnzymes.enzymes=cell(50000,1);
         metaCycEnzymes.rxnEnzymeMat=sparse(50000,enzymeCounter); % row: rxn, column: enzymes
-        
+
         %Load enzyme and reaction association information
         fid = fopen(fullfile(metacycPath,metaCycEnzrxnsFile), 'r');
-        
+   
         %Keeps track of how many enzymes and reactions have been added
         enzrxnCounter=0;
         nRxn=0;
-        
-        %These contain the mapping between Reactions and Enzymes Loop
-        %through the file
+   
+        %These contain the mapping between Reactions and Enzymes
+        %Loop through the file
         while 1
-            tline = fgetl(fid);
-            
-            %Abort at end of file
-            if ~ischar(tline)
-                break;
-            end
-            
-            %Check if it is a new enzymatic reaction
-            if numel(tline)>12 && strcmp(tline(1:12),'UNIQUE-ID - ')
-                enzrxnCounter=enzrxnCounter+1;
-                metaCycEnzymes.enzrxns{enzrxnCounter}=tline(13:end);
-                metaCycEnzymes.commoname{enzrxnCounter}='';
-            end
-            
-            %Add common name of enzymatic reactions
-            if numel(tline)>14 && strcmp(tline(1:14),'COMMON-NAME - ')
-                metaCycEnzymes.commoname{enzrxnCounter}=tline(15:end);
-                
-                %Remove HTML symobls
-                metaCycEnzymes.commoname{enzrxnCounter}=regexprep(metaCycEnzymes.commoname{enzrxnCounter},'<(\w+)>','');
-                metaCycEnzymes.commoname{enzrxnCounter}=regexprep(metaCycEnzymes.commoname{enzrxnCounter},'</(\w+)>','');
-                metaCycEnzymes.commoname{enzrxnCounter}=regexprep(metaCycEnzymes.commoname{enzrxnCounter},'[&;]','');
-            end
-            
-            % I add one cell array rxns for checking existing ones by
-            % ismember because I cannot manage field rxns in this function
-            
-            %Add enzyme name
-            if numel(tline)>9 && strcmp(tline(1:9),'ENZYME - ')
-                
-                %Save the index in enzymes field to nEnzyme
-                [x, nEnzyme]=ismember(tline(10:end),metaCycEnzymes.enzymes);
-                if ~x
-                    %disp(tline(10:end));
-                end
-            end
-            
-            %Add reaction id, and rxnNames by concatenating unique common
-            %names
-            if numel(tline)>11 && strcmp(tline(1:11),'REACTION - ')
-                nRxn=nRxn+1;
-                rxns{nRxn}='';
-                rxnID=tline(12:end);
-                [c, d]=ismember(rxnID,rxns);
-                if c
-                    nRxn=nRxn-1;
-                    
-                    %Check if this common name has been included by
-                    %rxnNames
-                    k=strfind(metaCycEnzymes.rxnNames{d},metaCycEnzymes.commoname{enzrxnCounter});
-                    if isempty(k)
-                        metaCycEnzymes.rxnNames{d}=strcat(metaCycEnzymes.rxnNames{d},';',metaCycEnzymes.commoname{enzrxnCounter});
-                    end
-                    metaCycEnzymes.rxnEnzymeMat(d,nEnzyme)=1;
-                else
-                    metaCycEnzymes.rxns{nRxn}=rxnID;
-                    metaCycEnzymes.rxnNames{nRxn}=metaCycEnzymes.commoname{enzrxnCounter};
-                    rxns{nRxn}=rxnID;
-                    metaCycEnzymes.rxnEnzymeMat(nRxn,nEnzyme)=1;
-                end
-            end
-            
+          tline = fgetl(fid);
+   
+          %Abort at end of file
+          if ~ischar(tline)
+              break;
+          end
+
+          %Check if it is a new enzymatic reaction
+          if numel(tline)>12 && strcmp(tline(1:12),'UNIQUE-ID - ')
+              enzrxnCounter=enzrxnCounter+1;
+              metaCycEnzymes.enzrxns{enzrxnCounter}=tline(13:end);
+              metaCycEnzymes.commoname{enzrxnCounter}='';
+          end
+					
+          %Add common name of enzymatic reactions
+          if numel(tline)>14 && strcmp(tline(1:14),'COMMON-NAME - ')
+							metaCycEnzymes.commoname{enzrxnCounter}=tline(15:end);
+							
+							%Remove HTML symobls
+							metaCycEnzymes.commoname{enzrxnCounter}=regexprep(metaCycEnzymes.commoname{enzrxnCounter},'<(\w+)>','');
+							metaCycEnzymes.commoname{enzrxnCounter}=regexprep(metaCycEnzymes.commoname{enzrxnCounter},'</(\w+)>','');
+							metaCycEnzymes.commoname{enzrxnCounter}=regexprep(metaCycEnzymes.commoname{enzrxnCounter},'[&;]','');
+          end
+
+					% I add one cell array rxns for checking existing ones by ismember
+					% because I cannot manage field rxns in this function
+
+          %Add enzyme name
+          if numel(tline)>9 && strcmp(tline(1:9),'ENZYME - ')
+          		
+          		%Save the index in enzymes field to nEnzyme
+          		[x, nEnzyme]=ismember(tline(10:end),metaCycEnzymes.enzymes);
+          		if ~x
+          			%disp(tline(10:end));
+	            end
+          end
+   
+          %Add reaction id, and rxnNames by concatenating unique common names
+          if numel(tline)>11 && strcmp(tline(1:11),'REACTION - ')
+          		nRxn=nRxn+1;
+          		rxns{nRxn}='';
+          		rxnID=tline(12:end);
+          		[c, d]=ismember(rxnID,rxns);
+          		if c
+          			nRxn=nRxn-1;
+          			
+          			%Check if this common name has been included by rxnNames
+          			k=strfind(metaCycEnzymes.rxnNames{d},metaCycEnzymes.commoname{enzrxnCounter});
+          			if isempty(k)
+          				metaCycEnzymes.rxnNames{d}=strcat(metaCycEnzymes.rxnNames{d},';',metaCycEnzymes.commoname{enzrxnCounter});
+          			end
+          			metaCycEnzymes.rxnEnzymeMat(d,nEnzyme)=1;
+          		else
+	              metaCycEnzymes.rxns{nRxn}=rxnID;
+								metaCycEnzymes.rxnNames{nRxn}=metaCycEnzymes.commoname{enzrxnCounter};
+	              rxns{nRxn}=rxnID;
+          			metaCycEnzymes.rxnEnzymeMat(nRxn,nEnzyme)=1;
+	            end
+          end
+             
         end
         
         %Close the file
         fclose(fid);
-        
+ 
         %Shrink the sizes
         metaCycEnzymes.enzrxns=metaCycEnzymes.enzrxns(1:enzrxnCounter);
         metaCycEnzymes.commoname=metaCycEnzymes.commoname(1:enzrxnCounter);
         metaCycEnzymes.rxns=metaCycEnzymes.rxns(1:nRxn);
         metaCycEnzymes.rxnNames=metaCycEnzymes.rxnNames(1:nRxn);
         metaCycEnzymes.rxnEnzymeMat=metaCycEnzymes.rxnEnzymeMat(1:nRxn,:);
-        
+      		
         %Save the model structure
         save(enzymesFile,'metaCycEnzymes');
+      end
+
     end
-    
-end
 end

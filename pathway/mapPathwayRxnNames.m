@@ -18,7 +18,7 @@ function [pathway, notMapped]=mapPathwayRxnNames(pathway,originalLabels,newLabel
 
 if numel(originalLabels)~=numel(newLabels)
     EM='The new label cell array must have the same length as the old label cell array';
-    dispEM(EM);
+	dispEM(EM);
 end
 
 mapped=false(numel(originalLabels),1);
@@ -32,7 +32,7 @@ for i=1:numel(pathway.listOfSpecies)
                 mapped(I)=true;
             else
                 EM=['The label "' pathway.listOfSpecies(i).name '" was found in several positions in oldLabels'];
-                dispEM(EM);
+								dispEM(EM);
             end
         end
     end

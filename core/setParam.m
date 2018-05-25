@@ -39,8 +39,9 @@ end
 %If it's a char array
 rxnList=cellstr(rxnList);
 
-%Find the indexes for the reactions in rxnList I do not use getIndexes
-%since I don't want to throw errors if you don't get matches
+%Find the indexes for the reactions in rxnList
+%I do not use getIndexes since I don't want to throw errors if you don't
+%get matches
 indexes=zeros(numel(rxnList),1);
 
 for i=1:numel(rxnList)

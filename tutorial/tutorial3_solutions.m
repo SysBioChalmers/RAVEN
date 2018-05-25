@@ -21,8 +21,7 @@ rxns.rxns={'FREE_ATP';'FREE_NADH';'FREE_NADPH'};
 rxns.equations={'ATP <=> ADP + phosphate';'NAD(+) <=> NADH';'NADP(+) <=> NADPH'};
 model=addRxns(model,rxns,2,'c');
 sol=solveLP(model,1);
-%Lots of ethanol produced.We also plot the equations to make the error
-%easier to find
+%Lots of ethanol produced.We also plot the equations to make the error easier to find
 printFluxes(model,sol.x,false,[],[],'%rxnID (%rxnName):%flux\n\t%eqn\n');
 
 %You will see that ADH1 should only produce one unit of ethanol. Change the
@@ -93,8 +92,8 @@ deletedMetabolites
 Igood=ismember(model.mets,'G15L_c');
 Ibad=ismember(model.mets,'G15Lc');
 
-%Then get all reactions and the coefficients in which the wrong one
-%participates move them to be for the right one instead
+%Then get all reactions and the coefficients in which the wrong one participates
+%move them to be for the right one instead
 model.S(Igood,:)=model.S(Igood,:)+model.S(Ibad,:);
 
 %Then delete the bad one
@@ -120,8 +119,8 @@ minToConnect
 Igood=ismember(model.mets,'DHAP_c');
 Ibad=ismember(model.mets,'GLYP_c');
 
-%Then get all reactions and the coefficients in which the wrong one
-%participates move them to be for the right one instead
+%Then get all reactions and the coefficients in which the wrong one participates
+%move them to be for the right one instead
 model.S(Igood,:)=model.S(Igood,:)+model.S(Ibad,:);
 
 %Then delete the bad one

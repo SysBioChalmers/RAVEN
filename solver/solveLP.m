@@ -56,9 +56,9 @@ solution.stat=-1;
 
 %Ignore the hot-start if the previous solution wasn't feasible
 if isfield(hsSol,'prosta')
-    if strfind(hsSol.prosta,'INFEASIBLE')
+   if strfind(hsSol.prosta,'INFEASIBLE')
         hsSol=[];
-    end
+   end
 end
 
 % Setup the problem to feed to MOSEK.
@@ -73,8 +73,8 @@ prob.bux=model.ub;
 
 %If hot-start should be used
 if ~isempty(hsSol)
-    prob.sol.bas=hsSol;
-    params.MSK_IPAR_SIM_HOTSTART=1;
+   prob.sol.bas=hsSol;
+   params.MSK_IPAR_SIM_HOTSTART=1;
 end
 
 %Use MSK_OPTIMIZER_FREE_SIMPLEX. This should not be necessary, but I've
@@ -129,17 +129,16 @@ end
 %then the objective function value should be fixed before another
 %optimization. It is not correct to fix the reactions which participate in
 %the objective function to their values in solution.x, as there can be
-%multiple solutions with the same objective function value. In addition,
-%this approach could result in numerical issues when several fluxes are
-%fixed. Instead a new "fake metabolite" is added to the problem. This
-%metabolite is produced by each reaction with the stoichiometry that
-%reaction has in the objective function. The equality constraint of that
-%"fake metabolite" is then set to be at least as good as the objective
-%function value.
+%multiple solutions with the same objective function value. In addition, this
+%approach could result in numerical issues when several fluxes are fixed.
+%Instead a new "fake metabolite" is added to the problem. This metabolite
+%is produced by each reaction with the stoichiometry that reaction has in
+%the objective function. The equality constraint of that "fake metabolite"
+%is then set to be at least as good as the objective function value.
 if minFlux~=0
     model.S=[model.S;prob.c'];
     model.mets=[model.mets;'TEMP'];
-    
+
     %If the constraint on the objective function value is exact there is a
     %larger risk of numerical errors. However for the quadratic fitting
     %intervals are not allowed
@@ -155,22 +154,22 @@ if minFlux~=0
     else
         model.b=[model.b;ones(1,size(model.b,2))*solution.f];
     end
-    
+
     switch minFlux
         %The sum of fluxes should be minimized
         case 1
             %Convert the model to the irreversible format
             revRxns=find(model.rev);
             if ~isempty(revRxns)
-                iModel=convertToIrrev(model);
+               iModel=convertToIrrev(model);
             else
                 iModel=model;
             end
-            
+
             %Minimize all fluxes
             iModel.c(:)=-1;
             sol=solveLP(iModel);
-            
+
             %Map back to reversible fluxes
             if sol.stat>=0
                 solution.x=sol.x(1:numel(model.c));
@@ -180,29 +179,29 @@ if minFlux~=0
                 dispEM(EM,false);
                 solution.stat=-2;
             end
-            %The square of fluxes should be minimized. This only works when
-            %there is no interval on the mass balance constraints (model.b is a
-            %vector)
+        %The square of fluxes should be minimized. This only works when
+        %there is no interval on the mass balance constraints (model.b is a
+        %vector)
         case 2
-            %         if size(model.b,2)==1
-            %             qsol=solveQP(model,model.rxns,zeros(numel(model.lb),1));
-            %             %There is a problem that the solver seldom converges totally in this
-            %             %kind of minimization. Print a warning but use the fluxes
-            %             if any(qsol.x)
-            %                 solution.x=qsol.x;
-            %                 if qsol.stat==-1
-            %                     fprintf('WARNING: The quadratic fitting did not converge\n');
-            %                 end
-            %             else
-            %                 fprintf('WARNING: Could not solve the problem of minimizing the square of fluxes. Uses output from linear program\n');
-            %             end
-            %         else
-            %         	fprintf('WARNING: Cannot minimize square of fluxes when size(model.b,2)==2. Uses output from linear program\n');
-            %         end
-            EM='Quadratic solver currently not working. Uses output from original problem';
-            dispEM(EM,false);
-            solution.stat=-2;
-            %The number of fluxes should be minimized
+%         if size(model.b,2)==1
+%             qsol=solveQP(model,model.rxns,zeros(numel(model.lb),1));
+%             %There is a problem that the solver seldom converges totally in this
+%             %kind of minimization. Print a warning but use the fluxes
+%             if any(qsol.x)
+%                 solution.x=qsol.x;
+%                 if qsol.stat==-1
+%                     fprintf('WARNING: The quadratic fitting did not converge\n');
+%                 end
+%             else
+%                 fprintf('WARNING: Could not solve the problem of minimizing the square of fluxes. Uses output from linear program\n');
+%             end
+%         else
+%         	fprintf('WARNING: Cannot minimize square of fluxes when size(model.b,2)==2. Uses output from linear program\n');
+%         end
+        EM='Quadratic solver currently not working. Uses output from original problem';
+        dispEM(EM,false);
+        solution.stat=-2;
+        %The number of fluxes should be minimized
         case 3
             [qx,I]=getMinNrFluxes(model,model.rxns,params);
             qx(~I)=0;

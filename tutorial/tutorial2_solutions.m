@@ -21,8 +21,8 @@ sol=solveLP(model);
 %4.0 in tutorial 1, but there sucrose was used instead of glucose.
 printFluxes(model,sol.x,false);
 
-%Check the yield of different products and print the results Change to
-%fully aerobic
+%Check the yield of different products and print the results
+%Change to fully aerobic
 model=setParam(model,'ub',{'glcIN' 'o2IN'},[1 1000]);
 model=setParam(model,'obj',{'ethOUT'},1);
 sol=solveLP(model);
@@ -42,7 +42,8 @@ solA=solveLP(model);
 model=setParam(model,'ub',{'o2IN'},0.5);
 solB=solveLP(model);
 
-%Plot the differences Load the map
+%Plot the differences
+%Load the map
 load 'pathway.mat' pathway;
 drawMap('Aerobic vs Anaerobic',pathway,model,solA.x,solB.x,[],'mapFBA.pdf',10^-5);
 
@@ -101,7 +102,7 @@ repMets=reporterMetabolites(model,orfs,pvalues);
 
 fprintf('TOP 10 REPORTER METABOLITES:\n');
 for i=1:min(numel(J),10)
-    fprintf([repMets.mets{J(i)} '\t' num2str(I(i)) '\n'])
+   fprintf([repMets.mets{J(i)} '\t' num2str(I(i)) '\n']) 
 end
 
 %Get all reactions involving those metabolites and display them on a map

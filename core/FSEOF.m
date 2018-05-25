@@ -55,43 +55,42 @@ rxnDirection=zeros(length(model.rxns),1);
 for i=1:iterations
     n=i*targetMax/iterations;
     model=setParam(model,'lb',targetRxn,n);
-    
+  
     sol=solveLP(model,1);
-    
+  
     fseof.results(:,i)=sol.x;
-    
-    %Loop through all fluxes and identify the ones that increased upon the
-    %enforced objective flux
+
+    %Loop through all fluxes and identify the ones that increased upon the enforced objective flux
     for j=1:length(fseof.results)
-        if fseof.results(j,1) > 0   %Check the positive fluxes
-            
-            if i == 1   %The initial round
-                rxnDirection(j,1)=1;
-                fseof.target(j,1)=1;
+      if fseof.results(j,1) > 0   %Check the positive fluxes
+      
+          if i == 1   %The initial round
+              rxnDirection(j,1)=1;
+              fseof.target(j,1)=1;
             else
                 
                 if (fseof.results(j,i) > fseof.results(j,i-1)) & fseof.target(j,1)
-                    fseof.target(j,1)=1;
-                else
-                    fseof.target(j,1)=0;
-                end
-            end
-            
-        elseif fseof.results(j,1) < 0 %Check the negative fluxes
-            
-            if i == 1   %The initial round
-                rxnDirection(j,1)=-1;
-                fseof.target(j,1)=1;
+                  fseof.target(j,1)=1;
+              else
+                  fseof.target(j,1)=0;
+              end
+          end
+
+      elseif fseof.results(j,1) < 0 %Check the negative fluxes
+      
+          if i == 1   %The initial round
+              rxnDirection(j,1)=-1;
+              fseof.target(j,1)=1;
             else
                 if (fseof.results(j,i) < fseof.results(j,i-1)) & fseof.target(j,1)
-                    fseof.target(j,1)=1;
-                else
-                    fseof.target(j,1)=0;
-                end
-            end
-            
+                  fseof.target(j,1)=1;
+              else
+                  fseof.target(j,1)=0;
+              end
+          end
+      
         end
-        
+
     end
 end
 

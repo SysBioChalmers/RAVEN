@@ -18,42 +18,42 @@ function objectiveString = getObjectiveString(max, objectiveNames, objectiveValu
 objectiveString='';
 
 if max==true
-    objectiveString=[objectiveString 'MAX: '];
+   objectiveString=[objectiveString 'MAX: ']; 
 else
-    objectiveString=[objectiveString 'MIN: '];
+   objectiveString=[objectiveString 'MIN: '];    
 end
 
 %Loops through the reactions
 for i=1:length(objectiveNames)
-    %Add no sign if it's the first reaction
-    if i>1
-        if objectiveValues(i)==1
-            objectiveString=[objectiveString ' + ' objectiveNames{i}];
+   %Add no sign if it's the first reaction
+   if i>1
+       if objectiveValues(i)==1
+            objectiveString=[objectiveString ' + ' objectiveNames{i}]; 
             continue;
-        end
-        if objectiveValues(i)==-1
-            objectiveString=[objectiveString ' - ' objectiveNames{i}];
+       end
+       if objectiveValues(i)==-1
+            objectiveString=[objectiveString ' - ' objectiveNames{i}]; 
             continue;
-        end
-        if objectiveValues(i)>=0
-            objectiveString=[objectiveString ' + ' num2str(objectiveValues(i)) ' ' objectiveNames{i}];
-        else
-            objectiveString=[objectiveString ' - ' num2str(abs(objectiveValues(i))) ' ' objectiveNames{i}];
-        end
-    else
-        if objectiveValues(i)==1
-            objectiveString=[objectiveString objectiveNames{i}];
+       end
+       if objectiveValues(i)>=0
+           objectiveString=[objectiveString ' + ' num2str(objectiveValues(i)) ' ' objectiveNames{i}];
+       else
+           objectiveString=[objectiveString ' - ' num2str(abs(objectiveValues(i))) ' ' objectiveNames{i}];
+       end
+   else
+       if objectiveValues(i)==1
+            objectiveString=[objectiveString objectiveNames{i}]; 
             continue;
-        end
-        if objectiveValues(i)==-1
-            objectiveString=[objectiveString '- ' objectiveNames{i}];
+       end
+       if objectiveValues(i)==-1
+            objectiveString=[objectiveString '- ' objectiveNames{i}]; 
             continue;
-        end
-        if objectiveValues(i)>=0
-            objectiveString=[objectiveString num2str(objectiveValues(i)) ' ' objectiveNames{i}];
-        else
-            objectiveString=[objectiveString '- ' num2str(abs(objectiveValues(i))) ' ' objectiveNames{i}];
-        end
-    end
+       end
+       if objectiveValues(i)>=0
+           objectiveString=[objectiveString num2str(objectiveValues(i)) ' ' objectiveNames{i}];
+       else
+           objectiveString=[objectiveString '- ' num2str(abs(objectiveValues(i))) ' ' objectiveNames{i}];
+       end
+   end
 end
 end

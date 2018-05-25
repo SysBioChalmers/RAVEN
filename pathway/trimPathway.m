@@ -25,13 +25,13 @@ indexesToDelete=false(numel(pathway.listOfSpecies),1);
 aliasesToDelete={};
 
 for i=1:numel(pathway.listOfSpecies)
-    if strcmpi(pathway.listOfSpecies(i).type,'PROTEIN')
-        %Check if the name is in the list of reactions to delete
-        if ~ismember(pathway.listOfSpecies(i).name,rxnsToKeep)
-            indexesToDelete(i)=true;
-            aliasesToDelete=[aliasesToDelete;pathway.listOfSpecies(i).alias];
-        end
-    end
+   if strcmpi(pathway.listOfSpecies(i).type,'PROTEIN')
+      %Check if the name is in the list of reactions to delete
+      if ~ismember(pathway.listOfSpecies(i).name,rxnsToKeep)
+          indexesToDelete(i)=true;
+          aliasesToDelete=[aliasesToDelete;pathway.listOfSpecies(i).alias];
+      end
+   end
 end
 
 %Then go through each of the reactions and delete the ones that only have
@@ -39,8 +39,8 @@ end
 rxnsToDelete=false(numel(pathway.listOfReactions),1);
 
 for i=1:numel(pathway.listOfReactions)
-    %Keeps track of which components to delete. -1=enzyme to delete,
-    %0=metabolite, 1=enzyme to keep
+    %Keeps track of which components to delete. -1=enzyme to delete, 0=metabolite,
+    %1=enzyme to keep
     componentsToDelete=zeros(numel(pathway.listOfReactions(i).componentList),1);
     for j=1:numel(pathway.listOfReactions(i).componentList)
         if strcmpi(pathway.listOfReactions(i).componentList(j).type,'ENZYME')
@@ -71,9 +71,9 @@ pathway.listOfReactions(rxnsToDelete)=[];
 aliasesToKeeep={};
 if deleteUnconnectedMets==true
     for i=1:numel(pathway.listOfReactions)
-        for j=1:numel(pathway.listOfReactions(i).componentList)
-            aliasesToKeeep=[aliasesToKeeep;pathway.listOfReactions(i).componentList(j).alias];
-        end
+       for j=1:numel(pathway.listOfReactions(i).componentList)
+           aliasesToKeeep=[aliasesToKeeep;pathway.listOfReactions(i).componentList(j).alias];
+       end
     end
     
     %Go through the species again and only keep those that are in the

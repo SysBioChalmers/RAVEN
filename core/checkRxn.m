@@ -71,10 +71,10 @@ for i=1:numel(report.reactants)
     tempModel=setParam(tempModel,'obj',testRxn,1);
     sol=solveLP(tempModel);
     if sol.f*-1>cutoff
-        report.canMake(i)=true;
+       report.canMake(i)=true;
     else
         if printReport==true
-            fprintf(['Failed to make ' model.metNames{report.reactants(i)} '[' model.comps{model.metComps(report.reactants(i))} ']\n']);
+           fprintf(['Failed to make ' model.metNames{report.reactants(i)} '[' model.comps{model.metComps(report.reactants(i))} ']\n']);
         end
     end
 end
@@ -84,7 +84,7 @@ for i=1:numel(report.products)
     tempModel=setParam(tempModel,'obj',testRxn,1);
     sol=solveLP(tempModel);
     if sol.f*-1>cutoff
-        report.canConsume(i)=true;
+       report.canConsume(i)=true;
     else
         if printReport==true
             fprintf(['Failed to consume ' model.metNames{report.products(i)} '[' model.comps{model.metComps(report.products(i))} ']\n']);
@@ -92,3 +92,4 @@ for i=1:numel(report.products)
     end
 end
 end
+

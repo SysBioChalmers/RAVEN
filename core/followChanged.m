@@ -38,7 +38,8 @@ if nargin<7
 end
 
 %If a metabolite list is to be used, then find all the reactions involving
-%any of those metabolites Finds the metabolites
+%any of those metabolites
+%Finds the metabolites
 if nargin>6
     reactionIndexes=[];
     for i=1:length(metaboliteList)
@@ -90,7 +91,7 @@ end
 
 metaboliteNames=[];
 for i=1:length(metaboliteList)
-    metaboliteNames=[metaboliteNames char(metaboliteList(i)) ' '];
+   metaboliteNames=[metaboliteNames char(metaboliteList(i)) ' '];
 end
 
 if ~isempty(metaboliteNames)
@@ -99,7 +100,7 @@ end
 
 for i=1:length(formulas)
     fluxText=['Flux: ' num2str(fluxesA(fluxIndexes(i))) ' Reference flux: ' num2str(fluxesB(fluxIndexes(i))) ' Difference: ' num2str(fluxesA(fluxIndexes(i))-fluxesB(fluxIndexes(i)))];
-    fprintf('%s: %s\n\t%s\n\t%s\n\n', char(model.rxns(fluxIndexes(i))), char(formulas(i)),...
+        fprintf('%s: %s\n\t%s\n\t%s\n\n', char(model.rxns(fluxIndexes(i))), char(formulas(i)),...
         char(model.rxnNames(fluxIndexes(i))),fluxText);
 end
 end

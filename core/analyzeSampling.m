@@ -75,7 +75,7 @@ for i=1:nRxns
             Zf(i)=Zf(i)*-1;
         end
     end
-    
+
     I=Zf(i)/Tex(i);
     if I<0
         pM(i)=erf(abs(Zf(i)));
@@ -91,26 +91,26 @@ end
 scores=[pR pH pM];
 
 if printResults==true
-    fprintf('TOP SCORING REACTIONS\n\n');
-    %The top 10 hits in the first category
-    [I, J]=sort(pR,'descend');
-    fprintf('Reactions which change both in flux and expression in the same direction\nReaction\tProbability\n');
-    for i=1:10
-        fprintf([num2str(J(i)) '\t' num2str(I(i)) '\n']);
-    end
-    
-    %The top 10 hits in the first category
-    [I, J]=sort(pH,'descend');
-    fprintf('\nReactions which change in expression but not in flux\nReaction\tProbability\n');
-    for i=1:10
-        fprintf([num2str(J(i)) '\t' num2str(I(i)) '\n']);
-    end
-    
-    %The top 10 hits in the first category
-    [I, J]=sort(pM,'descend');
-    fprintf('\nReactions which change in flux but not in expression, or in opposed directions in flux and expression\nReaction\tProbability\n');
-    for i=1:10
-        fprintf([num2str(J(i)) '\t' num2str(I(i)) '\n']);
-    end
+   fprintf('TOP SCORING REACTIONS\n\n');
+   %The top 10 hits in the first category
+   [I, J]=sort(pR,'descend');
+   fprintf('Reactions which change both in flux and expression in the same direction\nReaction\tProbability\n');
+   for i=1:10
+      fprintf([num2str(J(i)) '\t' num2str(I(i)) '\n']);
+   end
+
+   %The top 10 hits in the first category
+   [I, J]=sort(pH,'descend');
+   fprintf('\nReactions which change in expression but not in flux\nReaction\tProbability\n');
+   for i=1:10
+      fprintf([num2str(J(i)) '\t' num2str(I(i)) '\n']);
+   end
+
+   %The top 10 hits in the first category
+   [I, J]=sort(pM,'descend');
+   fprintf('\nReactions which change in flux but not in expression, or in opposed directions in flux and expression\nReaction\tProbability\n');
+   for i=1:10
+      fprintf([num2str(J(i)) '\t' num2str(I(i)) '\n']);
+   end
 end
 end

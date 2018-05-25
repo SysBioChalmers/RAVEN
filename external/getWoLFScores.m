@@ -5,7 +5,7 @@ function geneScoreStruct=getWoLFScores(inputFile,kingdom)
 %   is currently only available for Linux and requires PERL to be
 %   installed. If you want to use another predictor, see parseScores.
 %
-%   inputFile   a FASTA file with protein sequences
+%   inputFile	a FASTA file with protein sequences
 %   kingdom     the kingdom of the organism, 'animal', 'fungi' or 'plant'.
 %
 %   The function normalizes the scores so that the best score for each gene
@@ -15,12 +15,8 @@ function geneScoreStruct=getWoLFScores(inputFile,kingdom)
 %
 %   Usage: geneScoreStruct=getWoLFScores(inputFile,kingdom)
 %
-%   Eduard Kerkhoven, 2018-05-18
+%   Rasmus Agren, 2014-01-08
 %
-
-if ~(exist(inputFile,'file')==2)
-    error('FASTA file %s cannot be found',string(inputFile));
-end
 
 if ~strcmp(kingdom,'animal') && ~strcmp(kingdom,'fungi') && ~strcmp(kingdom,'plant')
     EM='Allowed kingdoms are "animal", "fungi", and "plant"';

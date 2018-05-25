@@ -66,8 +66,7 @@ function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(m
 %   Eduard Kerkhoven, 2017-11-28
 %
 
-% fillGaps doesn't work well with the glpk solver as implemented by COBRA
-% for MILP.
+% fillGaps doesn't work well with the glpk solver as implemented by COBRA for MILP.
 global CBT_MILP_SOLVER
 if strcmp(getpref('RAVEN','solver'),'cobra') && strcmp(CBT_MILP_SOLVER,'glpk')
     dispEM('The current solver is set to ''cobra'', while in COBRA the MILP solver has been set to ''glpk''. The COBRA implementation of glpk is not well suitable for solving MILPs. Please install the Gurobi or Mosek solver to run fillGaps.',true);
@@ -90,13 +89,13 @@ end
 if nargin<6
     rxnScores=cell(numel(models),1);
     for i=1:numel(models)
-        rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
+       rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
     end
 end
 if isempty(rxnScores)
     rxnScores=cell(numel(models),1);
     for i=1:numel(models)
-        rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
+       rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
     end
 end
 if nargin<7
@@ -110,8 +109,7 @@ end
 models=models(:);
 rxnScores=rxnScores(:);
 
-%Check if the original model has an unconstrained field. If so, give a
-%warning
+%Check if the original model has an unconstrained field. If so, give a warning
 if supressWarnings==false
     if isfield(model,'unconstrained')
         EM='This algorithm is meant to function on a model with exchange reactions for uptake and excretion of metabolites. The current model still has the "unconstrained" field';
@@ -124,15 +122,15 @@ if supressWarnings==false
 end
 
 %Simplify the template models to remove constrained rxns. At the same time,
-%check that the id of the template models isn't the same as the model. That
-%would cause an error further down
+%check that the id of the template models isn't the same as the model.
+%That would cause an error further down
 for i=1:numel(models)
-    models{i}.rxnScores=rxnScores{i};
-    models{i}=simplifyModel(models{i},false,false,true);
-    if strcmpi(models{i}.id,model.id)
-        EM='The reference model(s) cannot have the same id as the model';
-        dispEM(EM);
-    end
+   models{i}.rxnScores=rxnScores{i};
+   models{i}=simplifyModel(models{i},false,false,true);
+   if strcmpi(models{i}.id,model.id)
+       EM='The reference model(s) cannot have the same id as the model';
+       dispEM(EM);
+   end
 end
 
 %This is a rather ugly solution to the issue that it's a bit tricky to keep
@@ -145,16 +143,16 @@ allModels=mergeModels([{model};models],true);
 
 %Add that net production is ok
 if allowNetProduction==true
-    %A second column in model.b means that the b field is lower and upper
-    %bound on the RHS.
-    model.b=[model.b(:,1) inf(numel(model.mets),1)];
-    allModels.b=[allModels.b(:,1) inf(numel(allModels.mets),1)];
+   %A second column in model.b means that the b field is lower and upper
+   %bound on the RHS.
+   model.b=[model.b(:,1) inf(numel(model.mets),1)];
+   allModels.b=[allModels.b(:,1) inf(numel(allModels.mets),1)];
 end
 
 if useModelConstraints==true
     newConnected={};
     cannotConnect={};
-    
+
     %Check that the input model isn't solveable without any input
     sol=solveLP(model);
     if ~isempty(sol.f)
@@ -163,14 +161,14 @@ if useModelConstraints==true
         exitFlag=1;
         return;
     end
-    
+
     %Then check that the merged model is solveable
     sol=solveLP(allModels);
     if isempty(sol.f)
         EM='There are no reactions in the template model(s) that can make the model constraints satisfied';
         dispEM(EM);
     end
-    
+
     %Remove dead ends for speed reasons. This has to be done here and
     %duplicate below because there is otherwise a risk that a reaction
     %which is constrained to something relevant is removed
@@ -180,33 +178,33 @@ else
     %Remove dead ends for speed reasons
     allModels=simplifyModel(allModels,false,false,false,true,false,false,false,[],true);
     allModels.c(:)=0;
-    
-    %If model constraints shouldn't be used, then determine which reactions
-    %to force to have flux
-    
+
+    %If model constraints shouldn't be used, then determine which reactions to
+    %force to have flux
+
     %Get the reactions that can carry flux in the original model
     originalFlux=haveFlux(model,1);
-    
-    %For the ones that can't carry flux, see if they can do so in the
-    %merged model
+
+    %For the ones that can't carry flux, see if they can do so in the merged
+    %model
     toCheck=intersect(allModels.rxns(strcmp(allModels.rxnFrom,model.id)),model.rxns(~originalFlux));
-    
+
     %Get the ones that still cannot carry flux
     I=haveFlux(allModels,1,toCheck);
-    
+
     %Get the reactions that can't carry flux in the original model, but can
     %in the merged one
     K=toCheck(I);
-    
+
     %This is a temporary thing to only look at the non-reversible rxns.
-    %This is because all reversible rxns can have a flux in the
-    %irreversible model format that is used by getMinNrFluxes
+    %This is because all reversible rxns can have a flux in the irreversible
+    %model format that is used by getMinNrFluxes
     [~, I]=ismember(K,model.rxns);
     K(model.rev(I)~=0)=[];
-    
+
     %Constrain all reactions in the original model to have a flux
     allModels.lb(ismember(allModels.rxns,K))=0.1;
-    
+
     %Return stuff
     newConnected=K;
     cannotConnect=setdiff(model.rxns(~originalFlux),newConnected);

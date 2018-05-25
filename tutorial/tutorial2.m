@@ -19,7 +19,8 @@ sol=solveLP(model);
 %Print the resulting exchange fluxes
 printFluxes(model,sol.x,true);
 
-%This is for comparing two flux distributions Load the map
+%This is for comparing two flux distributions
+%Load the map
 load 'pathway.mat' pathway;
 drawMap('Aerobic vs Anaerobic',pathway,model,solA.x,solB.x,[],'mapFBA.pdf',10^-5);
 
@@ -64,12 +65,12 @@ drawMap('Aerobic vs Anaerobic MOMA',pathway,model,fluxA,fluxB,[],'mapMOMA.pdf',1
 [orfs, pvalues]=textread('expression.txt','%s%f');
 repMets=reporterMetabolites(model,orfs,pvalues);
 [I, J]=sort(repMets.metPValues);
-
+ 
 fprintf('TOP 10 REPORTER METABOLITES:\n');
 for i=1:min(numel(J),10)
-    fprintf([repMets.mets{J(i)} '\t' num2str(I(i)) '\n'])
+   fprintf([repMets.mets{J(i)} '\t' num2str(I(i)) '\n']) 
 end
-
+ 
 %Get all reactions involving those metabolites and display them on a map
 mets=ismember(model.mets,repMets.mets(J(1:10)));
 [~, I]=find(model.S(mets,:));

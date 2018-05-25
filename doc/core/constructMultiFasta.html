@@ -92,16 +92,16 @@ This function is called by:
 0034 <span class="keyword">while</span> 1
 0035     <span class="comment">%Read 10 mb at a time</span>
 0036     str=fread(fid,10000000,<span class="string">'int8'</span>);
-0037     
+0037 
 0038     <span class="comment">%Find any '&gt;' which indicates a new label in FASTA format</span>
 0039     newPosts=find(str==62); <span class="comment">%62 is '&gt;'</span>
-0040     
+0040 
 0041     elementPositions(totalElements+1:totalElements+numel(newPosts))=whereAmI+newPosts;
-0042     
+0042 
 0043     totalElements=totalElements+numel(newPosts);
-0044     
+0044 
 0045     whereAmI=whereAmI+10000000;
-0046     
+0046 
 0047     <span class="keyword">if</span> feof(fid)
 0048         <span class="keyword">break</span>;
 0049     <span class="keyword">end</span>
@@ -119,25 +119,25 @@ This function is called by:
 0061     fseek(fid,elementPositions(i),-1);
 0062     str=fread(fid,[1 30],<span class="string">'*char'</span>); <span class="comment">%Assumes that no ID is longer than 20 characters</span>
 0063     delim=find(str==32 | str==10,1,<span class="string">'first'</span>); <span class="comment">%Space or line feed</span>
-0064     
+0064 
 0065     geneIdentifier=str(1:delim-1);
-0066     
+0066 
 0067     <span class="comment">%This should never happen, but just to prevent errors. Could be that</span>
 0068     <span class="comment">%'&gt;' is a part of some gene information. An alternative would be to</span>
 0069     <span class="comment">%check that the indexes follows a line feed</span>
 0070     <span class="keyword">if</span> isempty(geneIdentifier)
 0071         <span class="keyword">continue</span>;
 0072     <span class="keyword">end</span>
-0073     
+0073 
 0074     <span class="comment">%If not found it means that the id was too long</span>
 0075     <span class="keyword">if</span> isempty(delim)
 0076         EM=<span class="string">'Too long gene identifier, increase read length'</span>;
 0077         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
 0078     <span class="keyword">end</span>
-0079     
+0079 
 0080     <span class="comment">%See if the gene was found</span>
 0081     id=hTable.get(geneIdentifier);
-0082     
+0082 
 0083     <span class="keyword">if</span> any(id)
 0084         <span class="keyword">if</span> genePositions(id)==0
 0085             genePositions(id)=i;
@@ -151,32 +151,32 @@ This function is called by:
 0093 <span class="keyword">for</span> i=1:numel(model.rxns)
 0094     <span class="comment">%Don't overwrite existing files</span>
 0095     <span class="keyword">if</span> ~exist(fullfile(outputDir,[model.rxns{i} <span class="string">'.fa'</span>]), <span class="string">'file'</span>)
-0096         
+0096 
 0097         <span class="comment">%Get the positions in elementPositions for the involved genes</span>
 0098         genesUsed=model.rxnGeneMat(i,:);
-0099         
+0099 
 0100         <span class="comment">%Open a file for this reaction. This saves empty files for KOs</span>
 0101         <span class="comment">%without genes</span>
 0102         rxnfid=fopen(fullfile(outputDir,[model.rxns{i} <span class="string">'.fa'</span>]),<span class="string">'w'</span>);
-0103         
+0103 
 0104         <span class="keyword">if</span> any(genesUsed)
 0105             positions=genePositions(genesUsed~=0);
-0106             
-0107             <span class="comment">%It could be that some genes were not found. Delete those</span>
-0108             <span class="comment">%elements</span>
-0109             positions(positions==0)=[];
-0110             
-0111             <span class="comment">%Print each sequence</span>
-0112             <span class="keyword">for</span> j=1:numel(positions)
-0113                 fseek(fid,elementPositions(positions(j)),-1);
-0114                 <span class="comment">%Should check that it ends with a gene!!!! Check for eof</span>
+0106 
+0107             <span class="comment">%It could be that some genes were not found. Delete those elements</span>
+0108             positions(positions==0)=[];
+0109 
+0110             <span class="comment">%Print each sequence</span>
+0111             <span class="keyword">for</span> j=1:numel(positions)
+0112                 fseek(fid,elementPositions(positions(j)),-1);
+0113                 <span class="comment">%Should check that it ends with a gene!!!!</span>
+0114                 <span class="comment">%Check for eof</span>
 0115                 <span class="keyword">if</span> positions(j)&lt;numel(elementPositions)
 0116                     str=fread(fid,[1 double(elementPositions(positions(j)+1))-double(elementPositions(positions(j)))-1],<span class="string">'*char'</span>);
-0117                     
+0117 
 0118                     <span class="comment">%If the string doesn't end with a line feed character</span>
 0119                     <span class="keyword">if</span> str(end)~=10
 0120                         str=[str fread(fid,[1 double(elementPositions(positions(j)+2))-double(elementPositions(positions(j)+1))],<span class="string">'*char'</span>)];
-0121                         
+0121 
 0122                         <span class="comment">%This is if we still haven't found a new gene.</span>
 0123                         <span class="comment">%Maximal unluck. This whole check should be done</span>
 0124                         <span class="comment">%when elementPositions are calculated!</span>
@@ -198,6 +198,6 @@ This function is called by:
 0140 <span class="comment">%Close the source file</span>
 0141 fclose(fid);
 0142 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 14-May-2018 16:12:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Wed 14-Mar-2018 21:08:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -64,7 +64,7 @@ end
 
 %Parse the task file
 if nargin<6
-    taskStructure=parseTaskList(inputFile);
+   taskStructure=parseTaskList(inputFile);
 end
 
 essentialRxns=false(numel(model.rxns),numel(taskStructure));
@@ -89,8 +89,8 @@ for i=1:numel(taskStructure)
             continue;
         end
         if numel(J)~=numel(unique(J))
-            EM=['The constraints on some input(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time'];
-            dispEM(EM);
+        	EM=['The constraints on some input(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time'];
+          dispEM(EM);
         end
         %If all metabolites should be added
         if any(K)
@@ -143,8 +143,8 @@ for i=1:numel(taskStructure)
             continue;
         end
         if numel(J)~=numel(unique(J))
-            EM=['The constraints on some output(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time'];
-            dispEM(EM);
+        	EM=['The constraints on some output(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time'];
+          dispEM(EM);
         end
         %If all metabolites should be added
         if any(K)
@@ -194,10 +194,10 @@ for i=1:numel(taskStructure)
     end
     %Add changed bounds
     if ~isempty(taskStructure(i).changed)
-        tModel=setParam(tModel,'lb',taskStructure(i).changed,taskStructure(i).LBrxn);
-        tModel=setParam(tModel,'ub',taskStructure(i).changed,taskStructure(i).UBrxn);
+       tModel=setParam(tModel,'lb',taskStructure(i).changed,taskStructure(i).LBrxn);
+       tModel=setParam(tModel,'ub',taskStructure(i).changed,taskStructure(i).UBrxn);
     end
-    
+
     %Solve and print
     sol=solveLP(tModel);
     if ~isempty(sol.x)
@@ -209,8 +209,8 @@ for i=1:numel(taskStructure)
             %Calculate the essential reactions
             if getEssential==true
                 [~, taskEssential]=getEssentialRxns(tModel);
-                %This is because there could be more reactions in tModel
-                %than in model
+                %This is because there could be more reactions in tModel than
+                %in model
                 essentialRxns(taskEssential(taskEssential<=numel(model.rxns)),i)=true;
             end
         else

@@ -34,7 +34,7 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxn
 %   Usage: [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...
 %           rxnScores,taskStructure,params)
 %
-%   Eduard Kerkhoven, 2018-05-18
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<4
@@ -53,17 +53,13 @@ if nargin<7
     params=[];
 end
 
-if ~(exist(inputFile,'file')==2)
-    error('Task file %s cannot be found',string(inputFile));
-end
-
 if strcmpi(model.id,refModel.id)
-    fprintf('NOTE: The model and reference model have the same IDs. The ID for the reference model was set to "refModel" in order to keep track of the origin of reactions.\n');
+	fprintf('NOTE: The model and reference model have the same IDs. The ID for the reference model was set to "refModel" in order to keep track of the origin of reactions.\n');
     refModel.id='refModel';
 end
 
 if any(rxnScores>=0)
-    EM='Only negative values are allowed in rxnScores';
+	EM='Only negative values are allowed in rxnScores';
     dispEM(EM);
 end
 
@@ -80,7 +76,7 @@ if ~isfield(model,'unconstrained')
 end
 
 if isempty(taskStructure)
-    taskStructure=parseTaskList(inputFile);
+   taskStructure=parseTaskList(inputFile);
 end
 
 tModel=model;
@@ -98,24 +94,24 @@ for i=1:numel(taskStructure)
             %ALLMETS/ALLMETSIN
             goodMets=I|K|L;
             if ~all(goodMets)
-                %Not all of the inputs could be found in the small model.
-                %Check if they exist in the large model
+                %Not all of the inputs could be found in the small model. Check
+                %if they exist in the large model
                 [found, metMatch]=ismember(upper(taskStructure(i).inputs(~goodMets)),largeModelMets);
                 if ~all(found)
                     EM=['Could not find all inputs in "[' taskStructure(i).id '] ' taskStructure(i).description '" in either model'];
                     disp(EM);
                 else
-                    %Otherwise add them to the model
-                    met.metNames=refModel.metNames(metMatch);
-                    met.compartments=refModel.comps(refModel.metComps(metMatch));
-                    
-                    %Add the metabolite both to the base model and the
-                    %model used in the current task
-                    model=addMets(model,met);
-                    tModel=addMets(tModel,met);
-                    modelMets=[modelMets;upper(taskStructure(i).inputs(~goodMets))];
+                   %Otherwise add them to the model
+                   met.metNames=refModel.metNames(metMatch);
+                   met.compartments=refModel.comps(refModel.metComps(metMatch));
+
+                   %Add the metabolite both to the base model and the model
+                   %used in the current task
+                   model=addMets(model,met);
+                   tModel=addMets(tModel,met);
+                   modelMets=[modelMets;upper(taskStructure(i).inputs(~goodMets))];
                 end
-                
+
                 %By now the indexes might be getting a bit confusing, but
                 %this is to update the indexes of the "real" metabolites to
                 %point to the newly added ones
@@ -128,15 +124,15 @@ for i=1:numel(taskStructure)
             end
             %If all metabolites should be added
             if any(K)
-                %Check if ALLMETS is the first metabolite. Otherwise print
-                %a warning since it will write over any other constraints
-                %that are set
+                %Check if ALLMETS is the first metabolite. Otherwise print a
+                %warning since it will write over any other constraints that
+                %are set
                 if K(1)==0
                     EM=['ALLMETS is used as an input in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'];
                     dispEM(EM,false);
                 end
-                %Use the first match of ALLMETS. There should only be one,
-                %but still..
+                %Use the first match of ALLMETS. There should only be one, but
+                %still..
                 tModel.b(:,1)=taskStructure(i).UBin(find(K,1))*-1;
             end
             %If metabolites in a specific compartment should be used
@@ -171,24 +167,24 @@ for i=1:numel(taskStructure)
             %ALLMETS/ALLMETSIN
             goodMets=I|K|L;
             if ~all(goodMets)
-                %Not all of the outputs could be found in the small model.
-                %Check if they exist in the large model
+                %Not all of the outputs could be found in the small model. Check
+                %if they exist in the large model
                 [found, metMatch]=ismember(upper(taskStructure(i).outputs(~goodMets)),largeModelMets);
                 if ~all(found)
                     EM=['Could not find all outputs in "[' taskStructure(i).id '] ' taskStructure(i).description '" in either model'];
                     dispEM(EM);
                 else
-                    %Otherwise add them to the model
-                    met.metNames=refModel.metNames(metMatch);
-                    met.compartments=refModel.comps(refModel.metComps(metMatch));
-                    
-                    %Add the metabolite both to the base model and the
-                    %model used in the current task
-                    model=addMets(model,met);
-                    tModel=addMets(tModel,met);
-                    modelMets=[modelMets;upper(taskStructure(i).outputs(~goodMets))];
+                   %Otherwise add them to the model
+                   met.metNames=refModel.metNames(metMatch);
+                   met.compartments=refModel.comps(refModel.metComps(metMatch));
+
+                   %Add the metabolite both to the base model and the model
+                   %used in the current task
+                   model=addMets(model,met);
+                   tModel=addMets(tModel,met);
+                   modelMets=[modelMets;upper(taskStructure(i).outputs(~goodMets))];
                 end
-                
+
                 %By now the indexes might be getting a bit confusing, but
                 %this is to update the indexes of the "real" metabolites to
                 %point to the newly added ones
@@ -201,15 +197,15 @@ for i=1:numel(taskStructure)
             end
             %If all metabolites should be added
             if any(K)
-                %Check if ALLMETS is the first metabolite. Otherwise print
-                %a warning since it will write over any other constraints
-                %that are set
+                %Check if ALLMETS is the first metabolite. Otherwise print a
+                %warning since it will write over any other constraints that
+                %are set
                 if K(1)==0
                     EM=['ALLMETS is used as an output in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'];
                     dispEM(EM,false);
                 end
-                %Use the first match of ALLMETS. There should only be one,
-                %but still..
+                %Use the first match of ALLMETS. There should only be one, but
+                %still..
                 tModel.b(:,2)=taskStructure(i).UBout(find(K,1));
             end
             %If metabolites in a specific compartment should be used
@@ -235,7 +231,7 @@ for i=1:numel(taskStructure)
                 tModel.b(J(I),2)=taskStructure(i).UBout(I);
             end
         end
-        
+
         %Add new rxns
         if ~isempty(taskStructure(i).equations)
             rxn.equations=taskStructure(i).equations;
@@ -246,10 +242,10 @@ for i=1:numel(taskStructure)
         end
         %Add changed bounds
         if ~isempty(taskStructure(i).changed)
-            tModel=setParam(tModel,'lb',taskStructure(i).changed,taskStructure(i).LBrxn);
-            tModel=setParam(tModel,'ub',taskStructure(i).changed,taskStructure(i).UBrxn);
+           tModel=setParam(tModel,'lb',taskStructure(i).changed,taskStructure(i).LBrxn);
+           tModel=setParam(tModel,'ub',taskStructure(i).changed,taskStructure(i).UBrxn);
         end
-        
+
         %Solve and print. Display a warning if the problem is not solveable
         sol=solveLP(tModel);
         if isempty(sol.x)
@@ -269,12 +265,12 @@ for i=1:numel(taskStructure)
             if failed==false
                 if ~isempty(newRxns)
                     nAdded=nAdded+numel(newRxns);
-                    
-                    %Add the reactions to the base model. It is not correct
-                    %to use newModel directly, as it may contain
-                    %reactions/constraints that are specific to this task
+
+                    %Add the reactions to the base model. It is not correct to use newModel
+                    %directly, as it may contain reactions/constraints that are specific to
+                    %this task
                     model=mergeModels({model,removeReactions(newModel,setdiff(newModel.rxns,newRxns),true,true)},true);
-                    
+
                     %Keep track of the added reactions
                     addedRxns(ismember(refModel.rxns,newRxns),i)=true;
                 end
@@ -288,7 +284,7 @@ for i=1:numel(taskStructure)
             end
         end
         supressWarnings=true;
-        
+
         %Print the output if chosen
         if taskStructure(i).printFluxes && printOutput
             if ~isempty(sol.x)
@@ -305,7 +301,7 @@ for i=1:numel(taskStructure)
                 end
             end
         end
-        
+
         tModel=model;
         %Since new mets are added by merging the new reactions and not only
         %from the task sheet

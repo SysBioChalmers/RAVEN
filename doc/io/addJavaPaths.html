@@ -32,7 +32,9 @@
 
    Usage: addJavaPaths()
 
-   Eduard Kerkhoven, 2018-04-20</pre></div>
+   Rasmus Agren, 2016-02-19
+
+Get the path to Apache POI</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -41,7 +43,7 @@ This function calls:
 </ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="loadWorkbook.html" class="code" title="function workbook=loadWorkbook(fileName,createEmpty)">loadWorkbook</a>	loadWorkbook</li><li><a href="startup.html" class="code" title="">startup</a>	Add the Java Paths at startup in order to be ready for use if the Toolbox is on the path</li><li><a href="writeSheet.html" class="code" title="function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)">writeSheet</a>	writeSheet</li></ul>
+<li><a href="loadWorkbook.html" class="code" title="function workbook=loadWorkbook(fileName,createEmpty)">loadWorkbook</a>	loadWorkbook</li><li><a href="writeSheet.html" class="code" title="function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)">writeSheet</a>	writeSheet</li></ul>
 <!-- crossreference -->
 
 
@@ -52,31 +54,47 @@ This function is called by:
 0003 <span class="comment">%</span>
 0004 <span class="comment">%   Usage: addJavaPaths()</span>
 0005 <span class="comment">%</span>
-0006 <span class="comment">%   Eduard Kerkhoven, 2018-04-20</span>
+0006 <span class="comment">%   Rasmus Agren, 2016-02-19</span>
 0007 <span class="comment">%</span>
-0008 
-0009 <a name="_sub0" href="#_subfunctions" class="code">function addJavaPaths()</a>
-0010 <span class="comment">%Get the path to Apache POI</span>
-0011 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
-0012 ravenPath=fileparts(fileparts(ST(I).file));
-0013 poiPATH=fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'apache-poi'</span>);
-0014 
-0015 toAdd={fullfile(poiPATH,<span class="string">'dom4j-1.6.1.jar'</span>);
-0016     fullfile(poiPATH,<span class="string">'poi-3.8-20120326.jar'</span>);
-0017     fullfile(poiPATH,<span class="string">'poi-ooxml-3.8-20120326.jar'</span>);
-0018     fullfile(poiPATH,<span class="string">'poi-ooxml-schemas-3.8-20120326.jar'</span>);
-0019     fullfile(poiPATH,<span class="string">'xmlbeans-2.3.0.jar'</span>);
-0020     fullfile(poiPATH,<span class="string">'stax-api-1.0.1.jar'</span>)};
-0021 
-0022 existingPaths=javaclasspath();
-0023 
-0024 <span class="comment">%Add the paths that are not already present</span>
-0025 <span class="keyword">for</span> i=1:numel(toAdd)
-0026     <span class="keyword">if</span> ~any(ismember(existingPaths,toAdd{i}))
-0027         javaaddpath(toAdd{i});
-0028     <span class="keyword">end</span>
-0029 <span class="keyword">end</span>
-0030 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 14-May-2018 16:12:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0008 <a name="_sub0" href="#_subfunctions" class="code">function addJavaPaths()</a>
+0009     <span class="comment">%Get the path to Apache POI</span>
+0010     [ST, I]=dbstack(<span class="string">'-completenames'</span>);
+0011     ravenPath=fileparts(fileparts(ST(I).file));
+0012     poiPATH=fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'apache-poi'</span>);
+0013 
+0014     toAdd={fullfile(poiPATH,<span class="string">'dom4j-1.6.1.jar'</span>);
+0015         fullfile(poiPATH,<span class="string">'poi-3.8-20120326.jar'</span>);
+0016         fullfile(poiPATH,<span class="string">'poi-ooxml-3.8-20120326.jar'</span>);
+0017         fullfile(poiPATH,<span class="string">'poi-ooxml-schemas-3.8-20120326.jar'</span>);
+0018         fullfile(poiPATH,<span class="string">'xmlbeans-2.3.0.jar'</span>);
+0019         fullfile(poiPATH,<span class="string">'stax-api-1.0.1.jar'</span>)};
+0020 
+0021     <span class="comment">%Open the javaclasspath.txt file or create it</span>
+0022     <span class="comment">%otherwise</span>
+0023     fid=fopen(fullfile(prefdir,<span class="string">'javaclasspath.txt'</span>),<span class="string">'r'</span>);
+0024     <span class="keyword">if</span> fid&gt;0
+0025         current=textscan(fid,<span class="string">'%s'</span>,<span class="string">'Delimiter'</span>,<span class="string">'\n'</span>);
+0026         current=current{1};
+0027         fclose(fid);
+0028     <span class="keyword">else</span>
+0029         current={};
+0030     <span class="keyword">end</span>
+0031 
+0032     <span class="comment">%Get the ones to add</span>
+0033     [~,I]=setdiff(upper(toAdd),upper(current));
+0034     <span class="keyword">if</span> any(I)
+0035         fid=fopen(fullfile(prefdir,<span class="string">'javaclasspath.txt'</span>),<span class="string">'at'</span>);
+0036         fprintf(fid,<span class="string">'\n'</span>);
+0037         <span class="keyword">for</span> i=1:numel(I)
+0038             fprintf(fid,[strrep(toAdd{I(i)},<span class="string">'\'</span>,<span class="string">'\\'</span>) <span class="string">'\n'</span>]);
+0039         <span class="keyword">end</span>
+0040         fclose(fid);
+0041 
+0042         <span class="comment">%Throw an error to say that Matlab has to be restarted</span>
+0043         EM=<span class="string">'RAVEN has added the Apache POI classes to the static Java path. Please restart Matlab to have these changes take effect'</span>;
+0044         dispEM(EM);
+0045     <span class="keyword">end</span>
+0046 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 14-Mar-2018 21:08:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

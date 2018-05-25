@@ -16,7 +16,6 @@ function produced=canProduce(model,mets)
 %
 %   Rasmus Agren, 2012-11-14
 %
-
 if nargin<2
     mets=model.mets;
 end

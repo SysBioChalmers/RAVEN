@@ -31,8 +31,8 @@ if nargin<4
     trimWarnings=true;
 end
 if numel(toList)>10 && trimWarnings==true
-    toList{10}=['...and ' num2str(numel(toList)-9) ' more'];
-    toList(11:end)=[];
+   toList{10}=['...and ' num2str(numel(toList)-9) ' more'];
+   toList(11:end)=[];
 end
 if throwErrors==false
     errorText=['WARNING: ' string '\n'];

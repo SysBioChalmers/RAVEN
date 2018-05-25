@@ -24,7 +24,7 @@ function blastStructure=getBlast(organismID,fastaFile,modelIDs,refFastaFiles)
 %   Usage: blastStructure=getBlast(organismID,fastaFile,modelIDs,...
 %           refFastaFiles)
 %
-%   Eduard Kerkhoven, 2018-05-18
+%   Simonas Marcisauskas, 2017-11-22
 %
 
 %Everything should be cell arrays
@@ -51,15 +51,17 @@ else
     files=vertcat(refFastaFiles,fastaFile);
 end
 for i=1:numel(files)
-    if ~(exist(files{i},'file')==2)
-        error('FASTA file %s cannot be found',string(files{i}));
+    if ~exist(files{i},'file')
+        EM=['Cannot find the following file in the current folder: ', files{i}];
+        dispEM(EM,true);
     elseif any(strfind(strjoin(files,','),' '))
-        error('One or more FASTA files have a space in the filename. Remove this before running getBlast');
+        EM='One or more FASTA files have a space in the filename. Remove this before running getBlast';
+        dispEM(EM,true);        
     end
 end
 
-%Create a database for the new organism and blast each of the refFastaFiles
-%against it
+%Create a database for the new organism and blast each of the
+%refFastaFiles against it
 
 if isunix
     if ismac
@@ -69,7 +71,7 @@ if isunix
     end
 elseif ispc
     binEnd='';
-else
+else 
     dispEM('Unknown OS, exiting.')
     return
 end
@@ -82,8 +84,8 @@ cores = cores{1};
 
 [status, ~]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['makeblastdb' binEnd]) '" -in "' fastaFile{1} '" -out "' tmpDB '" -dbtype prot']);
 if status~=0
-    EM=['makeblastdb did not run successfully, error: ', num2str(status)];
-    dispEM(EM,true);
+     EM=['makeblastdb did not run successfully, error: ', num2str(status)];
+     dispEM(EM,true);
 end
 
 for i=1:numel(refFastaFiles)
@@ -96,8 +98,8 @@ for i=1:numel(refFastaFiles)
 end
 delete([tmpDB '*']);
 
-%Then create a database for each of the reference organisms and blast the
-%new organism against them
+%Then create a database for each of the reference organisms and blast
+%the new organism against them
 for i=1:numel(refFastaFiles)
     fprintf(['BLASTing "' organismID{1} '" against "' modelIDs{i} '"..\n']);
     [status, ~]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['makeblastdb' binEnd]) '" -in "' refFastaFiles{i} '" -out "' tmpDB '" -dbtype prot']);
@@ -112,7 +114,7 @@ for i=1:numel(refFastaFiles)
         dispEM(EM,true);
     end
 end
-
+    
 %Done with the BLAST, do the parsing of the text files
 for i=1:numel(refFastaFiles)*2
     tempStruct=[];

@@ -68,7 +68,7 @@ S=zeros(numel(mets),numel(equations));
 for i=1:numel(equations)
     %Start by finding the position of the (=> or <=>)
     arrowIndex=strfind(equations{i},' <=> ');
-    
+
     if numel(arrowIndex)~=1
         if isempty(rxns)
             EM=['The following equation does not have reversibility data: ' equations{i} ];
@@ -78,49 +78,50 @@ for i=1:numel(equations)
             dispEM(EM);
         end
     end
-    
+
     reactants=regexp(equations{i}(1:arrowIndex-1),'€','split');
     products=regexp(equations{i}(arrowIndex+5:end),'€','split');
-    
+
     %If the splitting character is at the end (if exchange rxns), then an
     %empty string will exist together with the real ones. Remove it
     reactants(cellfun(@isempty,reactants))=[];
     products(cellfun(@isempty,products))=[];
-    
+
     %A vector where an element is -1 is the corresponding metabolite is a
     %reactant and 1 if it's a product
     multiplyWith=[ones(numel(reactants),1)*-1; ones(numel(products),1)];
-    
+
     metabolites=[reactants products];
-    
-    %Now loop through the reactants and see if the metabolite has a
-    %coefficient (it will look as 'number name')
+
+    %Now loop through the reactants and see if the metabolite has a coefficient
+    %(it will look as 'number name')
     for j=1:numel(metabolites)
         space=strfind(metabolites{j},' ');
-        
+
         if isempty(space)
             %No coefficient
             coeff=1;
             name=metabolites{j};
         else
             coeff=str2double(metabolites{j}(1:space(1)));
-            
+
             %If it was not a coefficiant
             if isnan(coeff)
-                coeff=1;
-                name=metabolites{j};
+               coeff=1;
+               name=metabolites{j};
             else
-                name=metabolites{j}(space+1:end);
+               name=metabolites{j}(space+1:end);
             end
         end
-        
-        %Find the name in the mets list [a b]=ismember(name,mets);
+
+        %Find the name in the mets list
+        %[a b]=ismember(name,mets);
         b=find(strcmp(name,mets),1);
-        
+
         if any(b)
             %Check if the metabolite already participates in this reaction
             if S(b,i)~=0
-                badRxns(i)=true;
+               badRxns(i)=true;
             end
             S(b,i)=S(b,i)+coeff*multiplyWith(j);
         else
@@ -143,12 +144,12 @@ function equ=fixEquations(equ)
 %producing reactions
 equ=equ(:);
 for i=1:numel(equ)
-    if strcmp(equ{i}(1:2),'=>') || strcmp(equ{i}(1:3),'<=>')
-        equ{i}=[' ' equ{i}];
-    else
-        if strcmp(equ{i}(end-1:end),'=>') || strcmp(equ{i}(end-2:end),'<=>')
+   if strcmp(equ{i}(1:2),'=>') || strcmp(equ{i}(1:3),'<=>')
+       equ{i}=[' ' equ{i}];
+   else
+       if strcmp(equ{i}(end-1:end),'=>') || strcmp(equ{i}(end-2:end),'<=>')
             equ{i}=[equ{i} ' '];
-        end
-    end
+       end
+   end
 end
 end

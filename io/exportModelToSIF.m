@@ -19,25 +19,25 @@ function exportModelToSIF(model,fileName,graphType,rxnLabels,metLabels)
 %
 
 if nargin<3
-    graphType='rc';
+   graphType='rc';
 end
 
 if nargin<4
-    rxnLabels=model.rxns;
+   rxnLabels=model.rxns;
 end
 if nargin<5
-    metLabels=model.mets;
+   metLabels=model.mets;
 end
 if isempty(rxnLabels)
-    rxnLabels=model.rxns;
+   rxnLabels=model.rxns;
 end
 if isempty(metLabels)
-    metLabels=model.mets;
+   metLabels=model.mets;
 end
 
 if ~strcmpi(graphType,'rc') && ~strcmpi(graphType,'rr') && ~strcmpi(graphType,'cc')
     EM='The graph type is incorrect';
-    dispEM(EM);
+   dispEM(EM);
 end
 
 if numel(rxnLabels)~=numel(unique(rxnLabels))
@@ -50,28 +50,28 @@ if numel(metLabels)~=numel(unique(metLabels))
 end
 
 if strcmpi(graphType,'rc')
-    G=model.S;
-    A=rxnLabels;
-    B=metLabels;
+   G=model.S;
+   A=rxnLabels;
+   B=metLabels;
 end
 if strcmpi(graphType,'rr')
-    G=model.S'*model.S;
-    A=rxnLabels;
-    B=rxnLabels;
+   G=model.S'*model.S;
+   A=rxnLabels;
+   B=rxnLabels;
 end
 if strcmpi(graphType,'cc')
-    %A metabolite is linked to all products of the reactions that it
-    %participates in If G=model.S*model.S' then all connections will be
-    %double, which looks weird
-    irrevModel=convertToIrrev(model);
-    G=sparse(numel(model.mets),numel(model.mets));
-    for i=1:numel(model.mets)
-        I=irrevModel.S(i,:)<0; %Get the reactions in which it is a substrate
-        [J, ~]=find(irrevModel.S(:,I)>0);
-        G(J,i)=1;
-    end
-    A=metLabels;
-    B=metLabels;
+   %A metabolite is linked to all products of the reactions that it participates in
+   %If G=model.S*model.S' then all connections will be double, which looks
+   %weird
+   irrevModel=convertToIrrev(model);
+   G=sparse(numel(model.mets),numel(model.mets));
+   for i=1:numel(model.mets)
+      I=irrevModel.S(i,:)<0; %Get the reactions in which it is a substrate
+      [J, ~]=find(irrevModel.S(:,I)>0);
+      G(J,i)=1;
+   end
+   A=metLabels;
+   B=metLabels;
 end
 
 fid=fopen(fileName,'w');

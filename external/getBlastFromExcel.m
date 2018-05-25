@@ -22,12 +22,8 @@ function blastStructure=getBlastFromExcel(models,blastFile,organismId)
 %
 %   Usage: blastStructure=getBlastFromExcel(models,blastFile,organismId)
 %
-%   Eduard Kerkhoven, 2018-05-18
+%   Rasmus Agren, 2014-01-08
 %
-
-if ~(exist(blastFile,'file')==2)
-    error('BLAST result file %s cannot be found',string(blastFile));
-end
 
 blastStructure=[];
 
@@ -79,7 +75,7 @@ for i=1:numel(sheets)
             blastStructure(numel(blastStructure)).evalue=values(:,1);
             blastStructure(numel(blastStructure)).aligLen=values(:,2);
             blastStructure(numel(blastStructure)).identity=values(:,3);
-            
+
             %Remove matches where any of the values is NaN. This would have
             %been done anyways in getModelFromHomology, but it's neater to
             %do it here

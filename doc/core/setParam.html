@@ -55,7 +55,7 @@ This function calls:
 <li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="FSEOF.html" class="code" title="function targets=FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile)">FSEOF</a>	FSEOF: implements the algorithm of Flux Scanning based on Enforced Objective Flux.</li><li><a href="checkRxn.html" class="code" title="function report=checkRxn(model,rxn,cutoff,revDir,printReport)">checkRxn</a>	checkRxn</li><li><a href="checkTasks.html" class="code" title="function [taskReport, essentialRxns, taskStructure]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure)">checkTasks</a>	checkTasks</li><li><a href="consumeSomething.html" class="code" title="function [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,minNrFluxes,params,ignoreIntBounds)">consumeSomething</a>	consumeSomething</li><li><a href="fitTasks.html" class="code" title="function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params)">fitTasks</a>	fitTasks</li><li><a href="getEssentialRxns.html" class="code" title="function [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns)">getEssentialRxns</a>	getEssentialRxns</li><li><a href="makeSomething.html" class="code" title="function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFluxes,allowExcretion,params,ignoreIntBounds)">makeSomething</a>	makeSomething</li><li><a href="randomSampling.html" class="code" title="function solutions=randomSampling(model, nSamples, replaceBoundsWithInf,supressErrors,showProgress)">randomSampling</a>	randomSampling</li></ul>
+<li><a href="FSEOF.html" class="code" title="function targets=FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile)">FSEOF</a>	FSEOF: implements the algorithm of Flux Scanning based on Enforced Objective Flux.</li><li><a href="checkRxn.html" class="code" title="function report=checkRxn(model,rxn,cutoff,revDir,printReport)">checkRxn</a>	checkRxn</li><li><a href="checkTasks.html" class="code" title="function [taskReport, essentialRxns, taskStructure]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure)">checkTasks</a>	checkTasks</li><li><a href="consumeSomething.html" class="code" title="function [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,minNrFluxes,params,ignoreIntBounds)">consumeSomething</a>	consumeSomething</li><li><a href="findGeneDeletions.html" class="code" title="function [genes, fluxes, originalGenes, details]=findGeneDeletions(model,testType,analysisType,refModel,oeFactor)">findGeneDeletions</a>	findGeneDeletions</li><li><a href="fitTasks.html" class="code" title="function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params)">fitTasks</a>	fitTasks</li><li><a href="getEssentialRxns.html" class="code" title="function [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns)">getEssentialRxns</a>	getEssentialRxns</li><li><a href="makeSomething.html" class="code" title="function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFluxes,allowExcretion,params,ignoreIntBounds)">makeSomething</a>	makeSomething</li><li><a href="randomSampling.html" class="code" title="function solutions=randomSampling(model, nSamples, replaceBoundsWithInf,supressErrors)">randomSampling</a>	randomSampling</li></ul>
 <!-- crossreference -->
 
 
@@ -102,49 +102,50 @@ This function is called by:
 0039 <span class="comment">%If it's a char array</span>
 0040 rxnList=cellstr(rxnList);
 0041 
-0042 <span class="comment">%Find the indexes for the reactions in rxnList I do not use getIndexes</span>
-0043 <span class="comment">%since I don't want to throw errors if you don't get matches</span>
-0044 indexes=zeros(numel(rxnList),1);
-0045 
-0046 <span class="keyword">for</span> i=1:numel(rxnList)
-0047     index=find(strcmp(rxnList{i},model.rxns),1);
-0048     <span class="keyword">if</span> ~isempty(index)
-0049         indexes(i)=index;
-0050     <span class="keyword">else</span>
-0051         indexes(i)=-1;
-0052         EM=[<span class="string">'Reaction '</span> rxnList{i} <span class="string">' is not present in the reaction list'</span>];
-0053         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0054     <span class="keyword">end</span>
-0055 <span class="keyword">end</span>
-0056 
-0057 <span class="comment">%Remove the reactions that weren't found</span>
-0058 params(indexes==-1)=[];
-0059 indexes(indexes==-1)=[];
-0060 
-0061 <span class="comment">%Change the parameters</span>
-0062 <span class="keyword">if</span> ~isempty(indexes)
-0063     <span class="keyword">if</span> strcmpi(paramType,<span class="string">'eq'</span>)
-0064         model.lb(indexes)=params;
-0065         model.ub(indexes)=params;
-0066     <span class="keyword">end</span>
-0067     <span class="keyword">if</span> strcmpi(paramType,<span class="string">'lb'</span>)
-0068         model.lb(indexes)=params;
-0069     <span class="keyword">end</span>
-0070     <span class="keyword">if</span> strcmpi(paramType,<span class="string">'ub'</span>)
-0071         model.ub(indexes)=params;
-0072     <span class="keyword">end</span>
-0073     <span class="keyword">if</span> strcmpi(paramType,<span class="string">'obj'</span>)
-0074         <span class="comment">%NOTE: The objective is changed to the new parameters, they are not</span>
-0075         <span class="comment">%added</span>
-0076         model.c=zeros(numel(model.c),1);
-0077         model.c(indexes)=params;
-0078     <span class="keyword">end</span>
-0079     <span class="keyword">if</span> strcmpi(paramType,<span class="string">'rev'</span>)
-0080         <span class="comment">%Non-zero values are interpreted as reversible</span>
-0081         model.rev(indexes)=params~=0;
-0082     <span class="keyword">end</span>
-0083 <span class="keyword">end</span>
-0084 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 14-May-2018 16:12:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0042 <span class="comment">%Find the indexes for the reactions in rxnList</span>
+0043 <span class="comment">%I do not use getIndexes since I don't want to throw errors if you don't</span>
+0044 <span class="comment">%get matches</span>
+0045 indexes=zeros(numel(rxnList),1);
+0046 
+0047 <span class="keyword">for</span> i=1:numel(rxnList)
+0048     index=find(strcmp(rxnList{i},model.rxns),1);
+0049     <span class="keyword">if</span> ~isempty(index)
+0050         indexes(i)=index;
+0051     <span class="keyword">else</span>
+0052         indexes(i)=-1;
+0053         EM=[<span class="string">'Reaction '</span> rxnList{i} <span class="string">' is not present in the reaction list'</span>];
+0054         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0055     <span class="keyword">end</span>
+0056 <span class="keyword">end</span>
+0057 
+0058 <span class="comment">%Remove the reactions that weren't found</span>
+0059 params(indexes==-1)=[];
+0060 indexes(indexes==-1)=[];
+0061 
+0062 <span class="comment">%Change the parameters</span>
+0063 <span class="keyword">if</span> ~isempty(indexes)
+0064     <span class="keyword">if</span> strcmpi(paramType,<span class="string">'eq'</span>)
+0065         model.lb(indexes)=params;
+0066         model.ub(indexes)=params;
+0067     <span class="keyword">end</span>
+0068     <span class="keyword">if</span> strcmpi(paramType,<span class="string">'lb'</span>)
+0069         model.lb(indexes)=params;
+0070     <span class="keyword">end</span>
+0071     <span class="keyword">if</span> strcmpi(paramType,<span class="string">'ub'</span>)
+0072         model.ub(indexes)=params;
+0073     <span class="keyword">end</span>
+0074     <span class="keyword">if</span> strcmpi(paramType,<span class="string">'obj'</span>)
+0075         <span class="comment">%NOTE: The objective is changed to the new parameters, they are not</span>
+0076         <span class="comment">%added</span>
+0077         model.c=zeros(numel(model.c),1);
+0078         model.c(indexes)=params;
+0079     <span class="keyword">end</span>
+0080     <span class="keyword">if</span> strcmpi(paramType,<span class="string">'rev'</span>)
+0081         <span class="comment">%Non-zero values are interpreted as reversible</span>
+0082         model.rev(indexes)=params~=0;
+0083     <span class="keyword">end</span>
+0084 <span class="keyword">end</span>
+0085 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 14-Mar-2018 21:08:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

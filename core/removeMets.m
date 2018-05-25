@@ -47,15 +47,15 @@ if nargin<6
 end
 
 if isNames==true
-    %Check that metsToRemove is a cell array
-    if iscellstr(metsToRemove)==false
-        if ischar(metsToRemove)
+   %Check that metsToRemove is a cell array
+   if iscellstr(metsToRemove)==false
+       if ischar(metsToRemove)
             metsToRemove={metsToRemove};
-        else
-            EM='Must supply a cell array of strings if isNames=true';
-            dispEM(EM);
-        end
-    end
+       else
+           EM='Must supply a cell array of strings if isNames=true';
+           dispEM(EM);
+       end
+   end
 end
 
 reducedModel=model;
@@ -65,7 +65,7 @@ if isNames==false
 else
     indexesToDelete=[];
     for i=1:numel(metsToRemove)
-        indexesToDelete=[indexesToDelete;find(strcmp(metsToRemove(i),model.metNames))];
+       indexesToDelete=[indexesToDelete;find(strcmp(metsToRemove(i),model.metNames))];
     end
 end
 
@@ -108,7 +108,7 @@ if removeUnusedRxns==true
     [~, a]=find(reducedModel.S);
     rxnsToRemove=1:numel(reducedModel.rxns);
     rxnsToRemove(a)=[];
-    reducedModel=removeReactions(reducedModel,rxnsToRemove,false,removeUnusedGenes);
+	reducedModel=removeReactions(reducedModel,rxnsToRemove,false,removeUnusedGenes);
 end
 
 %Remove unused compartments

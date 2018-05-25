@@ -29,8 +29,8 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %                               could be catalyzed by a complex between
 %                               A & B or by C on its own. All the genes
 %                               have to be present in model.genes. Add
-%                               genes with addGenesRaven before calling
-%                               this function if needed (opt, default '')
+%                               genes with addGenes before calling this
+%                               function if needed (opt, default '')
 %            rxnMiriams         cell array with Miriam structures (opt,
 %                               default [])
 %            rxnComps           cell array with compartments (as in
@@ -81,7 +81,7 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
 %   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
-%   Simonas Marcisauskas, 2018-04-03
+%   Simonas Marcisauskas, 2018-03-19
 %
 
 if nargin<4
@@ -161,8 +161,8 @@ largeFiller(:)={''};
 
 %***Add everything to the model except for the equations.
 if numel(rxnsToAdd.equations)~=nRxns
-    EM='rxnsToAdd.equations must have the same number of elements as rxnsToAdd.rxns';
-    dispEM(EM);
+   EM='rxnsToAdd.equations must have the same number of elements as rxnsToAdd.rxns';
+   dispEM(EM);
 end
 
 %Parse the equations. This is done at this early stage since I need the
@@ -175,252 +175,251 @@ newModel.rev=[newModel.rev;reversible];
 newModel.rxns=[newModel.rxns;rxnsToAdd.rxns(:)];
 
 if isfield(rxnsToAdd,'rxnNames')
-    if numel(rxnsToAdd.rxnNames)~=nRxns
-        EM='rxnsToAdd.rxnNames must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
-    end
-    %Fill with standard if it doesn't exist
-    if ~isfield(newModel,'rxnNames')
-        newModel.rxnNames=largeFiller;
-    end
-    newModel.rxnNames=[newModel.rxnNames;rxnsToAdd.rxnNames(:)];
+   if numel(rxnsToAdd.rxnNames)~=nRxns
+       EM='rxnsToAdd.rxnNames must have the same number of elements as rxnsToAdd.rxns';
+       dispEM(EM);
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'rxnNames')
+       newModel.rxnNames=largeFiller;
+   end
+   newModel.rxnNames=[newModel.rxnNames;rxnsToAdd.rxnNames(:)];
 else
     %Fill with standard if it doesn't exist
-    if isfield(newModel,'rxnNames')
-        newModel.rxnNames=[newModel.rxnNames;filler];
-    end
+   if isfield(newModel,'rxnNames')
+       newModel.rxnNames=[newModel.rxnNames;filler];
+   end
 end
 
 if isfield(rxnsToAdd,'lb')
-    if numel(rxnsToAdd.lb)~=nRxns
-        EM='rxnsToAdd.lb must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
-    end
-    %Fill with standard if it doesn't exist
-    if ~isfield(newModel,'lb')
-        newModel.lb=zeros(nOldRxns,1);
-        newModel.lb(newModel.rev~=0)=-inf;
-    end
-    newModel.lb=[newModel.lb;rxnsToAdd.lb(:)];
+   if numel(rxnsToAdd.lb)~=nRxns
+       EM='rxnsToAdd.lb must have the same number of elements as rxnsToAdd.rxns';
+       dispEM(EM);
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'lb')
+       newModel.lb=zeros(nOldRxns,1);
+       newModel.lb(newModel.rev~=0)=-inf;
+   end
+   newModel.lb=[newModel.lb;rxnsToAdd.lb(:)];
 else
     %Fill with standard if it doesn't exist
-    if isfield(newModel,'lb')
-        I=zeros(nRxns,1);
-        I(reversible~=0)=-inf;
-        newModel.lb=[newModel.lb;I];
-    end
+   if isfield(newModel,'lb')
+       I=zeros(nRxns,1);
+       I(reversible~=0)=-inf;
+       newModel.lb=[newModel.lb;I];
+   end
 end
 
 if isfield(rxnsToAdd,'ub')
-    if numel(rxnsToAdd.ub)~=nRxns
-        EM='rxnsToAdd.ub must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
-    end
-    %Fill with standard if it doesn't exist
-    if ~isfield(newModel,'ub')
-        newModel.ub=inf(nOldRxns,1);
-    end
-    newModel.ub=[newModel.ub;rxnsToAdd.ub(:)];
+   if numel(rxnsToAdd.ub)~=nRxns
+       EM='rxnsToAdd.ub must have the same number of elements as rxnsToAdd.rxns';
+       dispEM(EM);
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'ub')
+       newModel.ub=inf(nOldRxns,1);
+   end
+   newModel.ub=[newModel.ub;rxnsToAdd.ub(:)];
 else
     %Fill with standard if it doesn't exist
-    if isfield(newModel,'ub')
-        newModel.ub=[newModel.ub;inf(nRxns,1)];
-    end
+   if isfield(newModel,'ub')
+       newModel.ub=[newModel.ub;inf(nRxns,1)];
+   end
 end
 
 if isfield(rxnsToAdd,'c')
-    if numel(rxnsToAdd.c)~=nRxns
-        EM='rxnsToAdd.c must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
-    end
-    %Fill with standard if it doesn't exist
-    if ~isfield(newModel,'c')
-        newModel.c=zeros(nOldRxns,1);
-    end
-    newModel.c=[newModel.c;rxnsToAdd.c(:)];
+   if numel(rxnsToAdd.c)~=nRxns
+       EM='rxnsToAdd.c must have the same number of elements as rxnsToAdd.rxns';
+       dispEM(EM);
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'c')
+       newModel.c=zeros(nOldRxns,1);
+   end
+   newModel.c=[newModel.c;rxnsToAdd.c(:)];
 else
     %Fill with standard if it doesn't exist
-    if isfield(newModel,'c')
-        newModel.c=[newModel.c;zeros(nRxns,1)];
-    end
+   if isfield(newModel,'c')
+       newModel.c=[newModel.c;zeros(nRxns,1)];
+   end
 end
 
 if isfield(rxnsToAdd,'eccodes')
-    if numel(rxnsToAdd.eccodes)~=nRxns
-        EM='rxnsToAdd.eccodes must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
-    end
-    %Fill with standard if it doesn't exist
-    if ~isfield(newModel,'eccodes')
-        newModel.eccodes=largeFiller;
-    end
-    newModel.eccodes=[newModel.eccodes;rxnsToAdd.eccodes(:)];
+   if numel(rxnsToAdd.eccodes)~=nRxns
+       EM='rxnsToAdd.eccodes must have the same number of elements as rxnsToAdd.rxns';
+       dispEM(EM);
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'eccodes')
+       newModel.eccodes=largeFiller;
+   end
+   newModel.eccodes=[newModel.eccodes;rxnsToAdd.eccodes(:)];
 else
     %Fill with standard if it doesn't exist
-    if isfield(newModel,'eccodes')
-        newModel.eccodes=[newModel.eccodes;filler];
-    end
+   if isfield(newModel,'eccodes')
+       newModel.eccodes=[newModel.eccodes;filler];
+   end
 end
 
 if isfield(rxnsToAdd,'subSystems')
-    if numel(rxnsToAdd.subSystems)~=nRxns
-        EM='rxnsToAdd.subSystems must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
-    end
-    %Fill with standard if it doesn't exist
-    if ~isfield(newModel,'subSystems')
-        newModel.subSystems=largeFiller;
-    end
-    newModel.subSystems=[newModel.subSystems;rxnsToAdd.subSystems(:)];
+   if numel(rxnsToAdd.subSystems)~=nRxns
+       EM='rxnsToAdd.subSystems must have the same number of elements as rxnsToAdd.rxns';
+       dispEM(EM);
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'subSystems')
+       newModel.subSystems=largeFiller;
+   end
+   newModel.subSystems=[newModel.subSystems;rxnsToAdd.subSystems(:)];
 else
     %Fill with standard if it doesn't exist
-    if isfield(newModel,'subSystems')
-        newModel.subSystems=[newModel.subSystems;filler];
-    end
+   if isfield(newModel,'subSystems')
+       newModel.subSystems=[newModel.subSystems;filler];
+   end
 end
 if isfield(rxnsToAdd,'rxnMiriams')
-    if numel(rxnsToAdd.rxnMiriams)~=nRxns
-        EM='rxnsToAdd.rxnMiriams must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
-    end
-    %Fill with standard if it doesn't exist
-    if ~isfield(newModel,'rxnMiriams')
-        newModel.rxnMiriams=cell(nOldRxns,1);
-    end
-    newModel.rxnMiriams=[newModel.rxnMiriams;rxnsToAdd.rxnMiriams(:)];
+   if numel(rxnsToAdd.rxnMiriams)~=nRxns
+       EM='rxnsToAdd.rxnMiriams must have the same number of elements as rxnsToAdd.rxns';
+       dispEM(EM);
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'rxnMiriams')
+       newModel.rxnMiriams=cell(nOldRxns,1);
+   end
+   newModel.rxnMiriams=[newModel.rxnMiriams;rxnsToAdd.rxnMiriams(:)];
 else
     %Fill with standard if it doesn't exist
-    if isfield(newModel,'rxnMiriams')
-        newModel.rxnMiriams=[newModel.rxnMiriams;cell(nRxns,1)];
-    end
+   if isfield(newModel,'rxnMiriams')
+       newModel.rxnMiriams=[newModel.rxnMiriams;cell(nRxns,1)];
+   end
 end
 if isfield(rxnsToAdd,'rxnComps')
-    if numel(rxnsToAdd.rxnComps)~=nRxns
-        EM='rxnsToAdd.rxnComps must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
-    end
-    %Fill with standard if it doesn't exist
-    if ~isfield(newModel,'rxnComps')
-        newModel.rxnComps=ones(nOldRxns,1);
-        EM='Adding reactions with compartment information to a model without such information. All existing reactions will be assigned to the first compartment';
-        dispEM(EM,false);
-    end
-    newModel.rxnComps=[newModel.rxnComps;rxnsToAdd.rxnComps(:)];
+   if numel(rxnsToAdd.rxnComps)~=nRxns
+       EM='rxnsToAdd.rxnComps must have the same number of elements as rxnsToAdd.rxns';
+       dispEM(EM);
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'rxnComps')
+       newModel.rxnComps=ones(nOldRxns,1);
+       EM='Adding reactions with compartment information to a model without such information. All existing reactions will be assigned to the first compartment';
+       dispEM(EM,false);
+   end
+   newModel.rxnComps=[newModel.rxnComps;rxnsToAdd.rxnComps(:)];
 else
     %Fill with standard if it doesn't exist
-    if isfield(newModel,'rxnComps')
-        newModel.rxnComps=[newModel.rxnComps;ones(nRxns,1)];
-        %fprintf('NOTE: The added reactions will be assigned to the first
-        %compartment\n');
-    end
+   if isfield(newModel,'rxnComps')
+       newModel.rxnComps=[newModel.rxnComps;ones(nRxns,1)];
+       %fprintf('NOTE: The added reactions will be assigned to the first compartment\n');
+   end
 end
 if isfield(rxnsToAdd,'grRules')
-    if numel(rxnsToAdd.grRules)~=nRxns
-        EM='rxnsToAdd.grRules must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
-    end
-    %Fill with standard if it doesn't exist
-    if ~isfield(newModel,'grRules')
-        newModel.grRules=largeFiller;
-    end
-    newModel.grRules=[newModel.grRules;rxnsToAdd.grRules(:)];
+   if numel(rxnsToAdd.grRules)~=nRxns
+       EM='rxnsToAdd.grRules must have the same number of elements as rxnsToAdd.rxns';
+       dispEM(EM);
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'grRules')
+       newModel.grRules=largeFiller;
+   end
+   newModel.grRules=[newModel.grRules;rxnsToAdd.grRules(:)];
 else
     %Fill with standard if it doesn't exist
-    if isfield(newModel,'grRules')
-        newModel.grRules=[newModel.grRules;filler];
-    end
+   if isfield(newModel,'grRules')
+       newModel.grRules=[newModel.grRules;filler];
+   end
 end
 
 if isfield(rxnsToAdd,'rxnFrom')
-    if numel(rxnsToAdd.rxnFrom)~=nRxns
-        EM='rxnsToAdd.rxnFrom must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
-    end
-    %Fill with standard if it doesn't exist
-    if ~isfield(newModel,'rxnFrom')
-        newModel.rxnFrom=largeFiller;
-    end
-    newModel.rxnFrom=[newModel.rxnFrom;rxnsToAdd.rxnFrom(:)];
+   if numel(rxnsToAdd.rxnFrom)~=nRxns
+       EM='rxnsToAdd.rxnFrom must have the same number of elements as rxnsToAdd.rxns';
+       dispEM(EM);
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'rxnFrom')
+       newModel.rxnFrom=largeFiller;
+   end
+   newModel.rxnFrom=[newModel.rxnFrom;rxnsToAdd.rxnFrom(:)];
 else
     %Fill with standard if it doesn't exist
-    if isfield(newModel,'rxnFrom')
-        newModel.rxnFrom=[newModel.rxnFrom;filler];
-    end
+   if isfield(newModel,'rxnFrom')
+       newModel.rxnFrom=[newModel.rxnFrom;filler];
+   end
 end
 
 if isfield(rxnsToAdd,'rxnNotes')
-    if numel(rxnsToAdd.rxnNotes)~=nRxns
-        EM='rxnsToAdd.rxnNotes must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
-    end
-    %Fill with standard if it doesn't exist
-    if ~isfield(newModel,'rxnNotes')
-        newModel.rxnNotes=largeFiller;
-    end
-    newModel.rxnNotes=[newModel.rxnNotes;rxnsToAdd.rxnNotes(:)];
+   if numel(rxnsToAdd.rxnNotes)~=nRxns
+       EM='rxnsToAdd.rxnNotes must have the same number of elements as rxnsToAdd.rxns';
+       dispEM(EM);
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'rxnNotes')
+       newModel.rxnNotes=largeFiller;
+   end
+   newModel.rxnNotes=[newModel.rxnNotes;rxnsToAdd.rxnNotes(:)];
 else
     %Fill with standard if it doesn't exist
-    if isfield(newModel,'rxnNotes')
-        newModel.rxnNotes=[newModel.rxnNotes;filler];
-    end
+   if isfield(newModel,'rxnNotes')
+       newModel.rxnNotes=[newModel.rxnNotes;filler];
+   end
 end
 
 if isfield(rxnsToAdd,'rxnReferences')
-    if numel(rxnsToAdd.rxnReferences)~=nRxns
-        EM='rxnsToAdd.rxnReferences must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
-    end
-    %Fill with standard if it doesn't exist
-    if ~isfield(newModel,'rxnReferences')
-        newModel.rxnReferences=largeFiller;
-    end
-    newModel.rxnReferences=[newModel.rxnReferences;rxnsToAdd.rxnReferences(:)];
+   if numel(rxnsToAdd.rxnReferences)~=nRxns
+       EM='rxnsToAdd.rxnReferences must have the same number of elements as rxnsToAdd.rxns';
+       dispEM(EM);
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'rxnReferences')
+       newModel.rxnReferences=largeFiller;
+   end
+   newModel.rxnReferences=[newModel.rxnReferences;rxnsToAdd.rxnReferences(:)];
 else
     %Fill with standard if it doesn't exist
-    if isfield(newModel,'rxnReferences')
-        newModel.rxnReferences=[newModel.rxnReferences;filler];
-    end
+   if isfield(newModel,'rxnReferences')
+       newModel.rxnReferences=[newModel.rxnReferences;filler];
+   end
 end
 
 if isfield(rxnsToAdd,'pwys')
-    if numel(rxnsToAdd.pwys)~=nRxns
-        EM='rxnsToAdd.pwys must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
-    end
-    %Fill with standard if it doesn't exist
-    if ~isfield(newModel,'pwys')
-        newModel.pwys=largeFiller;
-    end
-    newModel.pwys=[newModel.pwys;rxnsToAdd.pwys(:)];
+   if numel(rxnsToAdd.pwys)~=nRxns
+       EM='rxnsToAdd.pwys must have the same number of elements as rxnsToAdd.rxns';
+       dispEM(EM);
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'pwys')
+       newModel.pwys=largeFiller;
+   end
+   newModel.pwys=[newModel.pwys;rxnsToAdd.pwys(:)];
 else
     %Fill with standard if it doesn't exist
-    if isfield(newModel,'pwys')
-        newModel.pwys=[newModel.pwys;filler];
-    end
+   if isfield(newModel,'pwys')
+       newModel.pwys=[newModel.pwys;filler];
+   end
 end
 
 if isfield(rxnsToAdd,'rxnConfidenceScores')
-    if numel(rxnsToAdd.rxnConfidenceScores)~=nRxns
-        EM='rxnsToAdd.rxnConfidenceScores must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
-    end
-    %Fill with standard if it doesn't exist
-    if ~isfield(newModel,'rxnConfidenceScores')
-        newModel.rxnConfidenceScores=NaN(nOldRxns,1);
-        EM='Adding reactions with confidence scores without such information. All existing reactions will have confidence scores as NaNs';
-        dispEM(EM,false);
-    end
-    newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;rxnsToAdd.rxnConfidenceScores(:)];
+   if numel(rxnsToAdd.rxnConfidenceScores)~=nRxns
+       EM='rxnsToAdd.rxnConfidenceScores must have the same number of elements as rxnsToAdd.rxns';
+       dispEM(EM);
+   end
+   %Fill with standard if it doesn't exist
+   if ~isfield(newModel,'rxnConfidenceScores')
+       newModel.rxnConfidenceScores=NaN(nOldRxns,1);
+       EM='Adding reactions with confidence scores without such information. All existing reactions will have confidence scores as NaNs';
+       dispEM(EM,false);
+   end
+   newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;rxnsToAdd.rxnConfidenceScores(:)];
 else
     %Fill with standard if it doesn't exist
-    if isfield(newModel,'rxnConfidenceScores')
-        newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;NaN(nRxns,1)];
-    end
+   if isfield(newModel,'rxnConfidenceScores')
+       newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;NaN(nRxns,1)];
+   end
 end
 
 
-%***Start parsing the equations and adding the info to the S matrix The
-%mets are matched to model.mets
+%***Start parsing the equations and adding the info to the S matrix
+%The mets are matched to model.mets
 if eqnType==1
     [I, J]=ismember(mets,model.mets);
     if ~all(I)
@@ -448,12 +447,11 @@ end
 
 %The mets are matched to model.metNames and assigned to "compartment"
 if eqnType==2
-    %%Check that the metabolite names aren't present in the same
-    %%compartment.
+    %%Check that the metabolite names aren't present in the same compartment.
     %Not the neatest way maybe..
     t1=strcat(mets,'***',compartment);
     [I, J]=ismember(t1,t2);
-    
+
     if ~all(I)
         if allowNewMets==true
             %Add the new mets
@@ -465,7 +463,7 @@ if eqnType==2
             dispEM(EM);
         end
     end
-    
+
     %Calculate the indexes of the metabolites
     metIndexes=J;
     metIndexes(~I)=numel(newModel.mets)-sum(~I)+1:numel(newModel.mets);
@@ -479,13 +477,13 @@ if eqnType==3
     for i=1:numel(mets)
         starts=max(strfind(mets{i},'['));
         ends=max(strfind(mets{i},']'));
-        
+
         %Check that the formatting is correct
         if isempty(starts) || isempty(ends) || ends<numel(mets{i})
-            EM=['The metabolite ' mets{i} ' is not correctly formatted for eqnType=3'];
-            dispEM(EM);
+          EM=['The metabolite ' mets{i} ' is not correctly formatted for eqnType=3'];
+          dispEM(EM);
         end
-        
+
         %Check that the compartment is correct
         compartments{i}=mets{i}(starts+1:ends-1);
         I=ismember(compartments(i),newModel.comps);
@@ -495,11 +493,11 @@ if eqnType==3
         end
         metNames{i}=mets{i}(1:starts-1);
     end
-    
+
     %Check if the metabolite exists already
     t1=strcat(metNames,'***',compartments);
     [I, J]=ismember(t1,t2);
-    
+
     if ~all(I)
         if allowNewMets==true
             %Add the new mets
@@ -511,35 +509,38 @@ if eqnType==3
             dispEM(EM);
         end
     end
-    
+
     %Calculate the indexes of the metabolites
     metIndexes=J;
     metIndexes(~I)=numel(newModel.mets)-sum(~I)+1:numel(newModel.mets);
 end
 
-%Add the info to the stoichiometric matrix
+%Add the info to the stoichiometric matrix and to the rxnGeneMat. I do this
+%in a loop, but maybe not necessary
 newModel.S=[newModel.S sparse(size(newModel.S,1),nRxns)];
 for i=1:nRxns
     newModel.S(metIndexes,nOldRxns+i)=S(:,i);
-    %Parse the grRules and check whether all genes in grRules appear in
-    %genes
+
+    %Parse the grRules and add to rxnGeneMat
     if isfield(newModel,'grRules')
-        rule=newModel.grRules{nOldRxns+i};
-        rule=strrep(rule,'(','');
-        rule=strrep(rule,')','');
-        rule=strrep(rule,' or ',' ');
-        rule=strrep(rule,' and ',' ');
-        genes=regexp(rule,' ','split');
-        [I, J]=ismember(genes,newModel.genes);
-        if ~all(I) && any(rule)
-            EM=['Not all genes for reaction ' rxnsToAdd.rxns{i} ' were found in model.genes. If needed, add genes with addGenesRaven before calling this function'];
+       rule=newModel.grRules{nOldRxns+i};
+       rule=strrep(rule,'(','');
+       rule=strrep(rule,')','');
+       rule=strrep(rule,' or ',' ');
+       rule=strrep(rule,' and ',' ');
+       genes=regexp(rule,' ','split');
+       [I, J]=ismember(genes,newModel.genes);
+       if ~all(I) && any(rule)
+            EM=['Not all genes for reaction ' rxnsToAdd.rxns{i} ' were found in model.genes. If needed, add genes with addGenes before calling this function'];
             dispEM(EM);
-        end
+       end
+       if any(rule)
+            newModel.rxnGeneMat(nOldRxns+i,J)=1;
+       else
+            %If there are no genes for the reaction, the rxnGeneMat should
+            %still be resized
+            newModel.rxnGeneMat=[newModel.rxnGeneMat;sparse(1,numel(newModel.genes))];
+       end
     end
 end
-
-%Fix grRules and reconstruct rxnGeneMat
-[grRules,rxnGeneMat] = standardizeGrRules(newModel,true);
-newModel.grRules = grRules;
-newModel.rxnGeneMat = rxnGeneMat;
 end

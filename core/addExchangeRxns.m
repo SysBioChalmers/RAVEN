@@ -75,8 +75,8 @@ if isfield(model,'rxnGeneMat')
     model.rxnGeneMat=[model.rxnGeneMat;sparse(numel(J),numel(model.genes))];
 end
 if isfield(model,'rxnComps')
-    model.rxnComps=[model.rxnComps;ones(numel(J),1)];
-    fprintf('NOTE: The exchange reactions are assigned to the first compartment\n');
+   model.rxnComps=[model.rxnComps;ones(numel(J),1)];
+   fprintf('NOTE: The exchange reactions are assigned to the first compartment\n');
 end
 if isfield(model,'rxnNotes')
     model.rxnNotes=[model.rxnNotes;filler];

@@ -55,197 +55,196 @@ function metaCycMets=getMetsFromMetaCyc(metacycPath)
 
 % A line that contains only '//' separates each object.
 
-% Check if the metabolites have been parsed before and saved. If so, load
-% the model.
+% Check if the metabolites have been parsed before and saved. If so, load the model.
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 metsFile=fullfile(ravenPath,'external','metacyc','metaCycMets.mat');
 metaCycMetFile='compounds.dat';
 
 if exist(metsFile, 'file')
-    fprintf(['NOTE: Importing MetaCyc metabolites from ' strrep(metsFile,'\','/') '.\n']);
-    load(metsFile);
+   fprintf(['NOTE: Importing MetaCyc metabolites from ' strrep(metsFile,'\','/') '.\n']);
+   load(metsFile);
 else
-    fprintf(['Cannot locate ' strrep(metsFile,'\','/') ' and will try to generate it from the local MetaCyc database files.\n']);
-    if ~exist(fullfile(metacycPath,metaCycMetFile),'file')
-        EM=fprintf(['The file of metabolites cannot be located, and should be downloaded from MetaCyc.\n']);
-        dispEM(EM);
-    else
-        %Add new functionality in the order specified in models
-        metaCycMets.id='MetaCyc';
-        metaCycMets.description='Automatically generated from MetaCyc database';
-        
-        %Preallocate memory for 50000 metabolites
-        metaCycMets.mets=cell(50000,1);
-        metaCycMets.metNames=cell(50000,1);
-        metaCycMets.metFormulas=cell(50000,1);
-        metaCycMets.inchis=cell(50000,1);
-        metaCycMets.metCharges=zeros(50000,1);
-        metaCycMets.metMiriams=cell(50000,1);
-        metaCycMets.keggid=cell(50000,1);
-        
-        %First load information on metabolite ID, name, formula, and others
-        fid = fopen(fullfile(metacycPath,metaCycMetFile), 'r');
-        
-        %Keeps track of how many metabolites that have been added
-        metCounter=0;
-        
-        %Loop through the file
-        while 1
-            %Get the next line
-            tline = fgetl(fid);
-            %disp(tline);
-            
-            % Abort at end of file
-            if ~ischar(tline)
-                break;
+   fprintf(['Cannot locate ' strrep(metsFile,'\','/') ' and will try to generate it from the local MetaCyc database files.\n']);
+   if ~exist(fullfile(metacycPath,metaCycMetFile),'file')
+       EM=fprintf(['The file of metabolites cannot be located, and should be downloaded from MetaCyc.\n']);
+       dispEM(EM);
+   else
+       %Add new functionality in the order specified in models
+       metaCycMets.id='MetaCyc';
+       metaCycMets.description='Automatically generated from MetaCyc database';
+    
+       %Preallocate memory for 50000 metabolites
+       metaCycMets.mets=cell(50000,1);
+       metaCycMets.metNames=cell(50000,1);
+       metaCycMets.metFormulas=cell(50000,1);
+       metaCycMets.inchis=cell(50000,1);
+       metaCycMets.metCharges=zeros(50000,1);
+       metaCycMets.metMiriams=cell(50000,1);
+       metaCycMets.keggid=cell(50000,1);
+    
+       %First load information on metabolite ID, name, formula, and others
+       fid = fopen(fullfile(metacycPath,metaCycMetFile), 'r');
+    
+       %Keeps track of how many metabolites that have been added
+       metCounter=0;
+    
+       %Loop through the file
+       while 1
+          %Get the next line
+          tline = fgetl(fid);
+    			%disp(tline);
+    			
+          % Abort at end of file
+          if ~ischar(tline)
+              break;
+          end
+    
+          %Check if it is a new entry
+          if numel(tline)>12 && strcmp(tline(1:12),'UNIQUE-ID - ')
+          	metCounter=metCounter+1;
+    				
+          	%Add empty strings as initial values
+          	metaCycMets.metNames{metCounter}='';
+          	metaCycMets.metFormulas{metCounter}='';
+          	metaCycMets.inchis{metCounter}='';
+          	%metaCycMets.smiles{metCounter}='';
+          	%metaCycMets.pubchem{metCounter}='';
+          	metaCycMets.keggid{metCounter}='';
+          	nonStandardInchis = '';
+          	
+          	%Add compound ID
+          	metaCycMets.mets{metCounter}=tline(13:end);
+          end
+        	
+    
+          %Add name
+          if numel(tline)>14 &&	strcmp(tline(1:14),'COMMON-NAME - ')
+          	metaCycMets.metNames{metCounter}=tline(15:end);
+
+            %Romve HTML symbols
+            metaCycMets.metNames{metCounter}=regexprep(metaCycMets.metNames{metCounter},'<(\w+)>','');
+            metaCycMets.metNames{metCounter}=regexprep(metaCycMets.metNames{metCounter},'</(\w+)>','');
+            metaCycMets.metNames{metCounter}=regexprep(metaCycMets.metNames{metCounter},'[&;]','');
+					end
+					
+          %Add charge
+          if numel(tline)>16 &&	strcmp(tline(1:16),'ATOM-CHARGES - (')
+          	atomCharge=tline(17:end-1);
+
+            s=strfind(atomCharge,' ');
+            if any(s)
+            	atomCharge=atomCharge(s+1:end);
+            	metaCycMets.metCharges(metCounter,1)=metaCycMets.metCharges(metCounter,1)+str2num(atomCharge);
             end
-            
-            %Check if it is a new entry
-            if numel(tline)>12 && strcmp(tline(1:12),'UNIQUE-ID - ')
-                metCounter=metCounter+1;
-                
-                %Add empty strings as initial values
-                metaCycMets.metNames{metCounter}='';
-                metaCycMets.metFormulas{metCounter}='';
-                metaCycMets.inchis{metCounter}='';
-                %metaCycMets.smiles{metCounter}='';
-                %metaCycMets.pubchem{metCounter}='';
-                metaCycMets.keggid{metCounter}='';
-                nonStandardInchis = '';
-                
-                %Add compound ID
-                metaCycMets.mets{metCounter}=tline(13:end);
-            end
-            
-            
-            %Add name
-            if numel(tline)>14 &&	strcmp(tline(1:14),'COMMON-NAME - ')
-                metaCycMets.metNames{metCounter}=tline(15:end);
-                
-                %Romve HTML symbols
-                metaCycMets.metNames{metCounter}=regexprep(metaCycMets.metNames{metCounter},'<(\w+)>','');
-                metaCycMets.metNames{metCounter}=regexprep(metaCycMets.metNames{metCounter},'</(\w+)>','');
-                metaCycMets.metNames{metCounter}=regexprep(metaCycMets.metNames{metCounter},'[&;]','');
-            end
-            
-            %Add charge
-            if numel(tline)>16 &&	strcmp(tline(1:16),'ATOM-CHARGES - (')
-                atomCharge=tline(17:end-1);
-                
-                s=strfind(atomCharge,' ');
-                if any(s)
-                    atomCharge=atomCharge(s+1:end);
-                    metaCycMets.metCharges(metCounter,1)=metaCycMets.metCharges(metCounter,1)+str2num(atomCharge);
-                end
-            end
-            
-            %Add inchis
-            if numel(tline)>14 && strcmp(tline(1:14),'INCHI - InChI=')
-                metaCycMets.inchis{metCounter}=tline(15:end);
-            end
-            
-            %Add non-standard inchis
-            if numel(tline)>27 && strcmp(tline(1:27),'NON-STANDARD-INCHI - InChI=')
-                nonStandardInchis=tline(28:end);
-            end
-            
-            %Add SMILES
-            if numel(tline)>9 && strcmp(tline(1:9),'SMILES - ')
-                
-                if isstruct(metaCycMets.metMiriams{metCounter})
-                    addToIndex=numel(metaCycMets.metMiriams{metCounter}.name)+1;
-                else
-                    addToIndex=1;
-                end
-                tempStruct=metaCycMets.metMiriams{metCounter};
-                tempStruct.name{addToIndex,1}='SMILES';
-                tempStruct.value{addToIndex,1}=tline(10:end);
-                metaCycMets.metMiriams{metCounter}=tempStruct;
-            end
-            
-            %Add formula
-            if numel(tline)>20 && strcmp(tline(1:20),'CHEMICAL-FORMULA - (')
-                metaCycMets.metFormulas{metCounter}=strcat(metaCycMets.metFormulas{metCounter},tline(21:end-1));
-                metaCycMets.metFormulas{metCounter}(isspace(metaCycMets.metFormulas{metCounter})) = [];
-            end
-            
-            %Add KEGG id
-            if numel(tline)>23 && strcmp(tline(1:23),'DBLINKS - (LIGAND-CPD "')
-                keggid=tline(24:end);
-                
-                s=strfind(keggid,'"');
-                if any(s)
-                    keggid=keggid(1:s-1);
-                end
-                
-                metaCycMets.keggid{metCounter}=keggid;
-            end
-            
-            %Add CHEBI id
-            if numel(tline)>18 && strcmp(tline(1:18),'DBLINKS - (CHEBI "')
-                chebiID=tline(20:end); %This is because there is sometimes more than one CHEBI index
-                
-                s=strfind(chebiID,'"');
-                if any(s)
-                    chebiID=chebiID(1:s-1);
-                end
-                
-                if isstruct(metaCycMets.metMiriams{metCounter})
-                    addToIndex=numel(metaCycMets.metMiriams{metCounter}.name)+1;
-                else
-                    addToIndex=1;
-                end
-                tempStruct=metaCycMets.metMiriams{metCounter};
-                tempStruct.name{addToIndex,1}='chebi';
-                tempStruct.value{addToIndex,1}=strcat('CHEBI:',chebiID);
-                metaCycMets.metMiriams{metCounter}=tempStruct;
-            end
-            
-            %Add PubChem
-            if numel(tline)>20 && strcmp(tline(1:20),'DBLINKS - (PUBCHEM "')
-                pubchemID=tline(21:end);
-                
-                s=strfind(pubchemID,'"');
-                if any(s)
-                    pubchemID=pubchemID(1:s-1);
-                end
-                
-                if isstruct(metaCycMets.metMiriams{metCounter})
-                    addToIndex=numel(metaCycMets.metMiriams{metCounter}.name)+1;
-                else
-                    addToIndex=1;
-                end
-                tempStruct=metaCycMets.metMiriams{metCounter};
-                tempStruct.name{addToIndex,1}='pubchem.compound';
-                tempStruct.value{addToIndex,1}=pubchemID;
-                metaCycMets.metMiriams{metCounter}=tempStruct;
-            end
-            
-            %Add non-standard inchis when standard one is unavailable
-            if strcmp(tline,'//') && strcmp(metaCycMets.inchis{metCounter},'')
-                metaCycMets.inchis{metCounter}=nonStandardInchis;
-                nonStandardInchis = '';
-                
-                %Refine formula from inchis
-                s=strfind(metaCycMets.inchis{metCounter},'/');
-                if any(s)
-                    inchiFormula=metaCycMets.inchis{metCounter}(s(1)+1:s(2)-1);
-                    
-                    %And remove dot characters
-                    inchiFormula(regexp(inchiFormula,'[.]'))=[];
-                    if ~strcmp(metaCycMets.metFormulas{metCounter},inchiFormula)
-                        metaCycMets.metFormulas{metCounter}=inchiFormula;
-                    end
-                end
-                
-            end
-            
+					end
+
+          %Add inchis
+          if numel(tline)>14 && strcmp(tline(1:14),'INCHI - InChI=')
+          	metaCycMets.inchis{metCounter}=tline(15:end);
+          end
+
+          %Add non-standard inchis
+          if numel(tline)>27 && strcmp(tline(1:27),'NON-STANDARD-INCHI - InChI=')
+          	  nonStandardInchis=tline(28:end);
+          end
+
+          %Add SMILES
+          if numel(tline)>9 && strcmp(tline(1:9),'SMILES - ')
+    	        
+              if isstruct(metaCycMets.metMiriams{metCounter})
+                  addToIndex=numel(metaCycMets.metMiriams{metCounter}.name)+1;
+              else
+                  addToIndex=1;
+              end    
+              tempStruct=metaCycMets.metMiriams{metCounter};
+              tempStruct.name{addToIndex,1}='SMILES';
+              tempStruct.value{addToIndex,1}=tline(10:end);
+              metaCycMets.metMiriams{metCounter}=tempStruct;
+          end
+    
+          %Add formula
+          if numel(tline)>20 && strcmp(tline(1:20),'CHEMICAL-FORMULA - (')
+          	metaCycMets.metFormulas{metCounter}=strcat(metaCycMets.metFormulas{metCounter},tline(21:end-1));
+            metaCycMets.metFormulas{metCounter}(isspace(metaCycMets.metFormulas{metCounter})) = [];
+          end
+
+          %Add KEGG id
+          if numel(tline)>23 && strcmp(tline(1:23),'DBLINKS - (LIGAND-CPD "')
+              keggid=tline(24:end);
+    
+              s=strfind(keggid,'"');
+              if any(s)
+                 keggid=keggid(1:s-1);
+              end
+    	        
+              metaCycMets.keggid{metCounter}=keggid;
+          end
+    
+          %Add CHEBI id
+          if numel(tline)>18 && strcmp(tline(1:18),'DBLINKS - (CHEBI "')
+              chebiID=tline(20:end); %This is because there is sometimes more than one CHEBI index
+    
+              s=strfind(chebiID,'"');
+              if any(s)
+                 chebiID=chebiID(1:s-1);
+              end
+    	        
+              if isstruct(metaCycMets.metMiriams{metCounter})
+                  addToIndex=numel(metaCycMets.metMiriams{metCounter}.name)+1;
+              else
+                  addToIndex=1;
+              end    
+              tempStruct=metaCycMets.metMiriams{metCounter};
+              tempStruct.name{addToIndex,1}='chebi';
+              tempStruct.value{addToIndex,1}=strcat('CHEBI:',chebiID);
+              metaCycMets.metMiriams{metCounter}=tempStruct;
+          end
+
+          %Add PubChem
+          if numel(tline)>20 && strcmp(tline(1:20),'DBLINKS - (PUBCHEM "')
+          		pubchemID=tline(21:end);
+
+              s=strfind(pubchemID,'"');
+              if any(s)
+                 pubchemID=pubchemID(1:s-1);
+              end
+
+              if isstruct(metaCycMets.metMiriams{metCounter})
+                  addToIndex=numel(metaCycMets.metMiriams{metCounter}.name)+1;
+              else
+                  addToIndex=1;
+              end    
+              tempStruct=metaCycMets.metMiriams{metCounter};
+              tempStruct.name{addToIndex,1}='pubchem.compound';
+              tempStruct.value{addToIndex,1}=pubchemID;
+              metaCycMets.metMiriams{metCounter}=tempStruct;
+          end
+         
+          %Add non-standard inchis when standard one is unavailable
+          if strcmp(tline,'//') && strcmp(metaCycMets.inchis{metCounter},'')
+          	metaCycMets.inchis{metCounter}=nonStandardInchis;
+          	nonStandardInchis = '';
+          	
+          	%Refine formula from inchis
+          	s=strfind(metaCycMets.inchis{metCounter},'/');
+          	if any(s)
+          		inchiFormula=metaCycMets.inchis{metCounter}(s(1)+1:s(2)-1);
+          		
+          		%And remove dot characters
+          		inchiFormula(regexp(inchiFormula,'[.]'))=[];
+	          	if ~strcmp(metaCycMets.metFormulas{metCounter},inchiFormula)
+          			metaCycMets.metFormulas{metCounter}=inchiFormula;
+          		end
+          	end
+          	
+          end
+
         end
-        
+    
         %Close the file
         fclose(fid);
-        
+    
         %If too much space was allocated, shrink the model
         metaCycMets.mets=metaCycMets.mets(1:metCounter);
         metaCycMets.metNames=metaCycMets.metNames(1:metCounter);
@@ -256,7 +255,7 @@ else
         %metaCycMets.smiles=metaCycMets.smiles(1:metCounter);
         %metaCycMets.pubchem=metaCycMets.pubchem(1:metCounter);
         metaCycMets.keggid=metaCycMets.keggid(1:metCounter);
-        
+    
         %If the metMiriams structure is empty, use MetaCyc id as metMiriams
         for i=1:numel(metaCycMets.mets)
             if ~isstruct(metaCycMets.metMiriams{i})
@@ -268,6 +267,6 @@ else
         
         %Saves the model
         save('metaCycMets.mat','metaCycMets');
-    end
+     end
 end
 end

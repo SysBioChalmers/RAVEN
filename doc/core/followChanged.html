@@ -103,71 +103,72 @@ This function is called by:
 0038 <span class="keyword">end</span>
 0039 
 0040 <span class="comment">%If a metabolite list is to be used, then find all the reactions involving</span>
-0041 <span class="comment">%any of those metabolites Finds the metabolites</span>
-0042 <span class="keyword">if</span> nargin&gt;6
-0043     reactionIndexes=[];
-0044     <span class="keyword">for</span> i=1:length(metaboliteList)
-0045         metaboliteIndex=find(strcmpi(metaboliteList(i),model.metNames)); <span class="comment">%Should use id maybe, setting</span>
-0046         <span class="keyword">if</span> ~isempty(metaboliteIndex)
-0047             [~, b]=find(model.S(metaboliteIndex,:));
-0048             reactionIndexes=[reactionIndexes; b(:)];
-0049         <span class="keyword">else</span>
-0050             fprintf(<span class="string">'Could not find any reactions with the metabolite %s\n\n'</span>,char(metaboliteList(i)))
-0051         <span class="keyword">end</span>
-0052     <span class="keyword">end</span>
-0053     reactionIndexes=unique(reactionIndexes);
-0054 <span class="keyword">else</span>
-0055     reactionIndexes=(1:length(fluxesA))';
-0056 <span class="keyword">end</span>
-0057 
-0058 <span class="comment">%Finds the reactions where either flux is at or above the cutOffFlux value</span>
-0059 in1=find(abs(fluxesA(reactionIndexes))&gt;=cutOffFlux)';
-0060 in2=find(abs(fluxesB(reactionIndexes))&gt;=cutOffFlux)';
-0061 ineither=reactionIndexes(unique([in1 in2]));
-0062 
-0063 <span class="comment">%Keep only those solutions where the difference is larger than or equal to</span>
-0064 <span class="comment">%cutOffDiff</span>
-0065 ineither=ineither(find(abs(fluxesA(ineither)-fluxesB(ineither))&gt;=cutOffDiff));
-0066 
-0067 <span class="comment">%Finds the reactions where the fluxes differ more than cutOffChange percent</span>
-0068 <span class="comment">%First check those fluxes that are non-zero in solution1.x</span>
-0069 nonZeroFluxes=ineither(find(fluxesA(ineither)));
-0070 quota=1+cutOffChange/100;
-0071 larger=nonZeroFluxes(find((fluxesB(nonZeroFluxes)./fluxesA(nonZeroFluxes))&gt;=(quota)))';
-0072 smaller=nonZeroFluxes(find((fluxesB(nonZeroFluxes)./fluxesA(nonZeroFluxes))&lt;(1/quota)))';
-0073 fluxIndexes=[larger smaller];
-0074 
-0075 <span class="comment">%Then add those where solution1 has a zero flux</span>
-0076 zeroFluxes=ineither(find(fluxesA(ineither)==0));
-0077 fluxIndexes=unique([fluxIndexes zeroFluxes(find(abs(fluxesB(zeroFluxes))&gt;=cutOffFlux))']);
-0078 
-0079 formulas=<a href="constructEquations.html" class="code" title="function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID)">constructEquations</a>(model,model.rxns(fluxIndexes));
-0080 
-0081 <span class="keyword">if</span> nargin&gt;4
-0082     <span class="keyword">if</span> nargin&gt;5
-0083         fprintf(<span class="string">'These reactions have flux values that differ by more than %s percent, absolute values above %s, and a total difference above %s (%s reactions)\n\n'</span>,num2str(cutOffChange),num2str(cutOffFlux),num2str(cutOffDiff),num2str(length(formulas)));
-0084     <span class="keyword">else</span>
-0085         fprintf(<span class="string">'These reactions have flux values that differ by more than %s percent and absolute values above %s (%s reactions)\n\n'</span>,num2str(cutOffChange),num2str(cutOffFlux),num2str(length(formulas)));
-0086     <span class="keyword">end</span>
-0087 <span class="keyword">else</span>
-0088     fprintf(<span class="string">'These reactions have flux values that differ by more than %s percent (%s reactions)\n\n'</span>,num2str(cutOffChange),num2str(length(formulas)));
-0089 <span class="keyword">end</span>
-0090 
-0091 metaboliteNames=[];
-0092 <span class="keyword">for</span> i=1:length(metaboliteList)
-0093     metaboliteNames=[metaboliteNames char(metaboliteList(i)) <span class="string">' '</span>];
-0094 <span class="keyword">end</span>
-0095 
-0096 <span class="keyword">if</span> ~isempty(metaboliteNames)
-0097     fprintf(<span class="string">'Only prints reactions involving one or more of the following metabolites:\n%s\n\n'</span>,metaboliteNames)
-0098 <span class="keyword">end</span>
-0099 
-0100 <span class="keyword">for</span> i=1:length(formulas)
-0101     fluxText=[<span class="string">'Flux: '</span> num2str(fluxesA(fluxIndexes(i))) <span class="string">' Reference flux: '</span> num2str(fluxesB(fluxIndexes(i))) <span class="string">' Difference: '</span> num2str(fluxesA(fluxIndexes(i))-fluxesB(fluxIndexes(i)))];
-0102     fprintf(<span class="string">'%s: %s\n\t%s\n\t%s\n\n'</span>, char(model.rxns(fluxIndexes(i))), char(formulas(i)),<span class="keyword">...</span>
-0103         char(model.rxnNames(fluxIndexes(i))),fluxText);
-0104 <span class="keyword">end</span>
-0105 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 14-May-2018 16:12:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0041 <span class="comment">%any of those metabolites</span>
+0042 <span class="comment">%Finds the metabolites</span>
+0043 <span class="keyword">if</span> nargin&gt;6
+0044     reactionIndexes=[];
+0045     <span class="keyword">for</span> i=1:length(metaboliteList)
+0046         metaboliteIndex=find(strcmpi(metaboliteList(i),model.metNames)); <span class="comment">%Should use id maybe, setting</span>
+0047         <span class="keyword">if</span> ~isempty(metaboliteIndex)
+0048             [~, b]=find(model.S(metaboliteIndex,:));
+0049             reactionIndexes=[reactionIndexes; b(:)];
+0050         <span class="keyword">else</span>
+0051             fprintf(<span class="string">'Could not find any reactions with the metabolite %s\n\n'</span>,char(metaboliteList(i)))
+0052         <span class="keyword">end</span>
+0053     <span class="keyword">end</span>
+0054     reactionIndexes=unique(reactionIndexes);
+0055 <span class="keyword">else</span>
+0056     reactionIndexes=(1:length(fluxesA))';
+0057 <span class="keyword">end</span>
+0058 
+0059 <span class="comment">%Finds the reactions where either flux is at or above the cutOffFlux value</span>
+0060 in1=find(abs(fluxesA(reactionIndexes))&gt;=cutOffFlux)';
+0061 in2=find(abs(fluxesB(reactionIndexes))&gt;=cutOffFlux)';
+0062 ineither=reactionIndexes(unique([in1 in2]));
+0063 
+0064 <span class="comment">%Keep only those solutions where the difference is larger than or equal to</span>
+0065 <span class="comment">%cutOffDiff</span>
+0066 ineither=ineither(find(abs(fluxesA(ineither)-fluxesB(ineither))&gt;=cutOffDiff));
+0067 
+0068 <span class="comment">%Finds the reactions where the fluxes differ more than cutOffChange percent</span>
+0069 <span class="comment">%First check those fluxes that are non-zero in solution1.x</span>
+0070 nonZeroFluxes=ineither(find(fluxesA(ineither)));
+0071 quota=1+cutOffChange/100;
+0072 larger=nonZeroFluxes(find((fluxesB(nonZeroFluxes)./fluxesA(nonZeroFluxes))&gt;=(quota)))';
+0073 smaller=nonZeroFluxes(find((fluxesB(nonZeroFluxes)./fluxesA(nonZeroFluxes))&lt;(1/quota)))';
+0074 fluxIndexes=[larger smaller];
+0075 
+0076 <span class="comment">%Then add those where solution1 has a zero flux</span>
+0077 zeroFluxes=ineither(find(fluxesA(ineither)==0));
+0078 fluxIndexes=unique([fluxIndexes zeroFluxes(find(abs(fluxesB(zeroFluxes))&gt;=cutOffFlux))']);
+0079 
+0080 formulas=<a href="constructEquations.html" class="code" title="function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID)">constructEquations</a>(model,model.rxns(fluxIndexes));
+0081 
+0082 <span class="keyword">if</span> nargin&gt;4
+0083     <span class="keyword">if</span> nargin&gt;5
+0084         fprintf(<span class="string">'These reactions have flux values that differ by more than %s percent, absolute values above %s, and a total difference above %s (%s reactions)\n\n'</span>,num2str(cutOffChange),num2str(cutOffFlux),num2str(cutOffDiff),num2str(length(formulas)));
+0085     <span class="keyword">else</span>
+0086         fprintf(<span class="string">'These reactions have flux values that differ by more than %s percent and absolute values above %s (%s reactions)\n\n'</span>,num2str(cutOffChange),num2str(cutOffFlux),num2str(length(formulas)));
+0087     <span class="keyword">end</span>
+0088 <span class="keyword">else</span>
+0089     fprintf(<span class="string">'These reactions have flux values that differ by more than %s percent (%s reactions)\n\n'</span>,num2str(cutOffChange),num2str(length(formulas)));
+0090 <span class="keyword">end</span>
+0091 
+0092 metaboliteNames=[];
+0093 <span class="keyword">for</span> i=1:length(metaboliteList)
+0094    metaboliteNames=[metaboliteNames char(metaboliteList(i)) <span class="string">' '</span>];
+0095 <span class="keyword">end</span>
+0096 
+0097 <span class="keyword">if</span> ~isempty(metaboliteNames)
+0098     fprintf(<span class="string">'Only prints reactions involving one or more of the following metabolites:\n%s\n\n'</span>,metaboliteNames)
+0099 <span class="keyword">end</span>
+0100 
+0101 <span class="keyword">for</span> i=1:length(formulas)
+0102     fluxText=[<span class="string">'Flux: '</span> num2str(fluxesA(fluxIndexes(i))) <span class="string">' Reference flux: '</span> num2str(fluxesB(fluxIndexes(i))) <span class="string">' Difference: '</span> num2str(fluxesA(fluxIndexes(i))-fluxesB(fluxIndexes(i)))];
+0103         fprintf(<span class="string">'%s: %s\n\t%s\n\t%s\n\n'</span>, char(model.rxns(fluxIndexes(i))), char(formulas(i)),<span class="keyword">...</span>
+0104         char(model.rxnNames(fluxIndexes(i))),fluxText);
+0105 <span class="keyword">end</span>
+0106 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 14-Mar-2018 21:08:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

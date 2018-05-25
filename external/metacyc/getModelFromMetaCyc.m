@@ -68,59 +68,59 @@ metaCycModel.genes=metaCycEnzymes.enzymes;
 metaCycModel.rxnGeneMat=sparse(rxnNum,numel(metaCycEnzymes.enzymes));
 metaCycModel.grRules=cell(rxnNum,1);
 
-%Loop through all reactions to generate rxnGeneMat matrix and grRules This
-%step also cross-link reactions to their catalyzing enzymes
+%Loop through all reactions to generate rxnGeneMat matrix and grRules
+%This step also cross-link reactions to their catalyzing enzymes
 for i=1:rxnNum
-    
-    metaCycModel.grRules{i}='';
-    %Find out if this is an enzymatic reaction
-    [a, b]=ismember(metaCycModel.rxns(i),metaCycEnzymes.rxns);
-    if a
-        I=[];   %Find out all catalyzing enzymes, which are treated as isoenzymes
-        I=find(metaCycEnzymes.rxnEnzymeMat(b,:));
-        if ~isempty(I)
-            
-            grRule='';
-            for j=1:numel(I)
-                
-                subgrRule=''; %Find out if enzyme complex
-                [c, d]=ismember(metaCycEnzymes.enzymes(I(j)),metaCycEnzymes.cplxs);
-                if c   %In cases of an enzyme complex
-                    %With single subunit
-                    if numel(metaCycEnzymes.cplxComp{d}.subunit)==1
-                        subgrRule=metaCycEnzymes.cplxComp{d}.subunit{1};
-                        %With multiple subunits
-                    else
-                        subgrRule=strjoin(metaCycEnzymes.cplxComp{d}.subunit,' and ');
-                        subgrRule=strcat('(',subgrRule,')');
-                    end
-                    [x, geneIndex]=ismember(metaCycEnzymes.cplxComp{d}.subunit,metaCycModel.genes);
-                    metaCycModel.rxnGeneMat(i,geneIndex)=1;
-                    
-                else  %In cases of NOT an enzyme complex
-                    subgrRule=metaCycEnzymes.enzymes(I(j));
-                    metaCycModel.rxnGeneMat(i,I(j))=1;
-                end
-                
-                %Generating grRules
-                if ~strcmp(subgrRule,'')
-                    if ~strcmp(grRule,'')
-                        grRule=strcat(grRule,{' or '},subgrRule);
-                    else
-                        grRule=subgrRule;
-                    end
-                end
-                
-            end
-            if iscell(grRule)
-                metaCycModel.grRules{i}=grRule{1};
-            else
-                metaCycModel.grRules{i}=grRule;
-            end
-            
-        end
-        
-    end
+
+	metaCycModel.grRules{i}='';
+	%Find out if this is an enzymatic reaction
+	[a, b]=ismember(metaCycModel.rxns(i),metaCycEnzymes.rxns);
+	if a
+		I=[];   %Find out all catalyzing enzymes, which are treated as isoenzymes
+		I=find(metaCycEnzymes.rxnEnzymeMat(b,:));
+		if ~isempty(I)
+			
+			grRule='';
+			for j=1:numel(I)
+								
+				subgrRule=''; %Find out if enzyme complex
+				[c, d]=ismember(metaCycEnzymes.enzymes(I(j)),metaCycEnzymes.cplxs);
+				if c   %In cases of an enzyme complex
+						%With single subunit
+						if numel(metaCycEnzymes.cplxComp{d}.subunit)==1
+								subgrRule=metaCycEnzymes.cplxComp{d}.subunit{1};
+						%With multiple subunits
+						else
+								subgrRule=strjoin(metaCycEnzymes.cplxComp{d}.subunit,' and ');
+								subgrRule=strcat('(',subgrRule,')');
+						end
+						[x, geneIndex]=ismember(metaCycEnzymes.cplxComp{d}.subunit,metaCycModel.genes);
+						metaCycModel.rxnGeneMat(i,geneIndex)=1;
+
+				else  %In cases of NOT an enzyme complex
+						subgrRule=metaCycEnzymes.enzymes(I(j));
+						metaCycModel.rxnGeneMat(i,I(j))=1;
+				end
+				
+				%Generating grRules
+				if ~strcmp(subgrRule,'')
+					if ~strcmp(grRule,'')
+						grRule=strcat(grRule,{' or '},subgrRule);
+					else
+						grRule=subgrRule;
+					end
+				end
+				
+			end
+			if iscell(grRule)
+					metaCycModel.grRules{i}=grRule{1};
+			else
+					metaCycModel.grRules{i}=grRule;
+			end
+						
+		end
+
+	end
 end
 
 %Then get all metabolites
@@ -133,35 +133,35 @@ a=find(a);
 b=b(a);
 
 if ~isfield(metaCycModel,'metNames')
-    metaCycModel.metNames=cell(numel(metaCycModel.mets),1);
-    metaCycModel.metNames(:)={''};
+   metaCycModel.metNames=cell(numel(metaCycModel.mets),1);
+   metaCycModel.metNames(:)={''};
 end
 metaCycModel.metNames(a)=metaCycMets.metNames(b);
 
 if ~isfield(metaCycModel,'metFormulas')
-    metaCycModel.metFormulas=cell(numel(metaCycModel.mets),1);
-    metaCycModel.metFormulas(:)={''};
+   metaCycModel.metFormulas=cell(numel(metaCycModel.mets),1);
+   metaCycModel.metFormulas(:)={''};
 end
 metaCycModel.metFormulas(a)=metaCycMets.metFormulas(b);
 
 if ~isfield(metaCycModel,'metCharges')
-    metaCycModel.metCharges=zeros(numel(metaCycModel.mets),1);
+   metaCycModel.metCharges=zeros(numel(metaCycModel.mets),1);
 end
 metaCycModel.metCharges(a)=metaCycMets.metCharges(b);
 
 if ~isfield(metaCycModel,'inchis')
-    metaCycModel.inchis=cell(numel(metaCycModel.mets),1);
-    metaCycModel.inchis(:)={''};
+   metaCycModel.inchis=cell(numel(metaCycModel.mets),1);
+   metaCycModel.inchis(:)={''};
 end
 metaCycModel.inchis(a)=metaCycMets.inchis(b);
 
 if ~isfield(metaCycModel,'metMiriams')
-    metaCycModel.metMiriams=cell(numel(metaCycModel.mets),1);
+   metaCycModel.metMiriams=cell(numel(metaCycModel.mets),1);
 end
 metaCycModel.metMiriams(a)=metaCycMets.metMiriams(b);
 
 if ~isfield(metaCycModel,'keggid')
-    metaCycModel.keggid=cell(numel(metaCycModel.mets),1);
+   metaCycModel.keggid=cell(numel(metaCycModel.mets),1);
 end
 metaCycModel.keggid(a)=metaCycMets.keggid(b);
 
@@ -172,8 +172,8 @@ metaCycModel.compNames={'System'};
 metaCycModel.metComps=ones(numel(metaCycModel.mets),1);
 
 
-%It could also be that the metabolite and reaction names are empty for some
-%reasons. In that case, use the ID instead
+%It could also be that the metabolite and reaction names are empty
+%for some reasons. In that case, use the ID instead
 I=cellfun(@isempty,metaCycModel.metNames);
 metaCycModel.metNames(I)=metaCycModel.mets(I);
 I=cellfun(@isempty,metaCycModel.rxnNames);

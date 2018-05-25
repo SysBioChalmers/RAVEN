@@ -200,17 +200,17 @@ This function is called by:
 0096 
 0097 <span class="comment">% Magix prefix for long Windows names:</span>
 0098 <span class="keyword">if</span> nargin &lt; 2
-0099     Style = <span class="string">'auto'</span>;
+0099    Style = <span class="string">'auto'</span>;
 0100 <span class="keyword">end</span>
 0101 
-0102 <span class="comment">% Handle cell strings: NOTE: It is faster to create a function</span>
-0103 <span class="comment">% @cell\getFullPath.m under Linux, but under Windows this would shadow the</span>
-0104 <span class="comment">% fast C-Mex.</span>
+0102 <span class="comment">% Handle cell strings:</span>
+0103 <span class="comment">% NOTE: It is faster to create a function @cell\getFullPath.m under Linux, but</span>
+0104 <span class="comment">% under Windows this would shadow the fast C-Mex.</span>
 0105 <span class="keyword">if</span> isa(File, <span class="string">'cell'</span>)
-0106     <span class="keyword">for</span> iC = 1:numel(File)
-0107         File{iC} = <a href="getFullPath.html" class="code" title="function File = getFullPath(File, Style)">getFullPath</a>(File{iC}, Style);
-0108     <span class="keyword">end</span>
-0109     <span class="keyword">return</span>;
+0106    <span class="keyword">for</span> iC = 1:numel(File)
+0107       File{iC} = <a href="getFullPath.html" class="code" title="function File = getFullPath(File, Style)">getFullPath</a>(File{iC}, Style);
+0108    <span class="keyword">end</span>
+0109    <span class="keyword">return</span>;
 0110 <span class="keyword">end</span>
 0111 
 0112 <span class="comment">% Check this once only:</span>
@@ -220,220 +220,215 @@ This function is called by:
 0116 <span class="comment">% Warn once per session (disable this under Linux/MacOS):</span>
 0117 <span class="keyword">persistent</span> hasDataRead
 0118 <span class="keyword">if</span> isempty(hasDataRead)
-0119     <span class="comment">% Test this once only - there is no relation to the existence of</span>
-0120     <span class="comment">% DATAREAD!</span>
-0121     <span class="comment">%if isWIN</span>
-0122     <span class="comment">%   Show a warning, if the slower Matlab version is used - commented,</span>
-0123     <span class="comment">%   because this is not a problem and it might be even useful when the</span>
-0124     <span class="comment">%   MEX-folder is not inlcuded in the path yet.</span>
-0125     <span class="comment">%   warning('JSimon:getFullPath:NoMex', ...</span>
-0126     <span class="comment">%      ['getFullPath: Using slow Matlab-version instead of fast Mex.',</span>
-0127     <span class="comment">%      ...</span>
-0128     <span class="comment">%       char(10), 'Compile: InstallMex getFullPath.c']);</span>
-0129     <span class="comment">%end</span>
-0130     
-0131     <span class="comment">% DATAREAD is deprecated in 2011b, but still available. In Matlab 6.5,</span>
-0132     <span class="comment">% REGEXP does not know the 'split' command, therefore DATAREAD is</span>
-0133     <span class="comment">% preferred:</span>
-0134     hasDataRead = ~isempty(which(<span class="string">'dataread'</span>));
-0135 <span class="keyword">end</span>
-0136 
-0137 <span class="keyword">if</span> isempty(File)  <span class="comment">% Accept empty matrix as input:</span>
-0138     <span class="keyword">if</span> ischar(File) || isnumeric(File)
-0139         File = cd;
-0140         <span class="keyword">return</span>;
-0141     <span class="keyword">else</span>
-0142         error([<span class="string">'JSimon:'</span>, mfilename, <span class="string">':BadTypeInput1'</span>], <span class="keyword">...</span>
-0143             [<span class="string">'*** '</span>, mfilename, <span class="string">': Input must be a string or cell string'</span>]);
-0144     <span class="keyword">end</span>
-0145 <span class="keyword">end</span>
-0146 
-0147 <span class="keyword">if</span> ischar(File) == 0  <span class="comment">% Non-empty inputs must be strings</span>
-0148     error([<span class="string">'JSimon:'</span>, mfilename, <span class="string">':BadTypeInput1'</span>], <span class="keyword">...</span>
-0149         [<span class="string">'*** '</span>, mfilename, <span class="string">': Input must be a string or cell string'</span>]);
-0150 <span class="keyword">end</span>
-0151 
-0152 <span class="keyword">if</span> isWIN  <span class="comment">% Windows: --------------------------------------------------------</span>
-0153     FSep = <span class="string">'\'</span>;
-0154     File = strrep(File, <span class="string">'/'</span>, FSep);
-0155     
-0156     <span class="comment">% Remove the magic key on demand, it is appended finally again:</span>
-0157     <span class="keyword">if</span> strncmp(File, <span class="string">'\\?\'</span>, 4)
-0158         <span class="keyword">if</span> strncmpi(File, <span class="string">'\\?\UNC\'</span>, 8)
-0159             File = [<span class="string">'\'</span>, File(7:length(File))];  <span class="comment">% Two leading backslashes!</span>
-0160         <span class="keyword">else</span>
-0161             File = File(5:length(File));
-0162         <span class="keyword">end</span>
-0163     <span class="keyword">end</span>
-0164     
-0165     isUNC   = strncmp(File, <span class="string">'\\'</span>, 2);
-0166     FileLen = length(File);
-0167     <span class="keyword">if</span> isUNC == 0                        <span class="comment">% File is not a UNC path</span>
-0168         <span class="comment">% Leading file separator means relative to current drive or base</span>
-0169         <span class="comment">% folder:</span>
-0170         ThePath = cd;
-0171         <span class="keyword">if</span> File(1) == FSep
-0172             <span class="keyword">if</span> strncmp(ThePath, <span class="string">'\\'</span>, 2)   <span class="comment">% Current directory is a UNC path</span>
-0173                 sepInd  = strfind(ThePath, <span class="string">'\'</span>);
-0174                 ThePath = ThePath(1:sepInd(4));
-0175             <span class="keyword">else</span>
-0176                 ThePath = ThePath(1:3);     <span class="comment">% Drive letter only</span>
-0177             <span class="keyword">end</span>
-0178         <span class="keyword">end</span>
-0179         
-0180         <span class="keyword">if</span> FileLen &lt; 2 || File(2) ~= <span class="string">':'</span>  <span class="comment">% Does not start with drive letter</span>
-0181             <span class="keyword">if</span> ThePath(length(ThePath)) ~= FSep
-0182                 <span class="keyword">if</span> File(1) ~= FSep
-0183                     File = [ThePath, FSep, File];
-0184                 <span class="keyword">else</span>                        <span class="comment">% File starts with separator:</span>
-0185                     File = [ThePath, File];
-0186                 <span class="keyword">end</span>
-0187             <span class="keyword">else</span>                           <span class="comment">% Current path ends with separator:</span>
-0188                 <span class="keyword">if</span> File(1) ~= FSep
-0189                     File = [ThePath, File];
-0190                 <span class="keyword">else</span>                        <span class="comment">% File starts with separator:</span>
-0191                     ThePath(length(ThePath)) = [];
-0192                     File = [ThePath, File];
-0193                 <span class="keyword">end</span>
-0194             <span class="keyword">end</span>
-0195             
-0196         <span class="keyword">elseif</span> FileLen == 2 &amp;&amp; File(2) == <span class="string">':'</span>   <span class="comment">% &quot;C:&quot; current directory on C!</span>
-0197             <span class="comment">% &quot;C:&quot; is the current directory on the C-disk, even if the</span>
-0198             <span class="comment">% current directory is on another disk! This was ignored in</span>
-0199             <span class="comment">% Matlab 6.5, but modern versions considers this strange</span>
-0200             <span class="comment">% behaviour.</span>
-0201             <span class="keyword">if</span> strncmpi(ThePath, File, 2)
-0202                 File = ThePath;
-0203             <span class="keyword">else</span>
-0204                 <span class="keyword">try</span>
-0205                     File = cd(cd(File));
-0206                 <span class="keyword">catch</span>    <span class="comment">% No MException to support Matlab6.5...</span>
-0207                     <span class="keyword">if</span> exist(File, <span class="string">'dir'</span>)  <span class="comment">% No idea what could cause an error then!</span>
-0208                         rethrow(lasterror);
-0209                     <span class="keyword">else</span>  <span class="comment">% Reply &quot;K:\&quot; for not existing disk:</span>
-0210                         File = [File, FSep];
-0211                     <span class="keyword">end</span>
-0212                 <span class="keyword">end</span>
-0213             <span class="keyword">end</span>
-0214         <span class="keyword">end</span>
-0215     <span class="keyword">end</span>
-0216     
-0217 <span class="keyword">else</span>         <span class="comment">% Linux, MacOS: ---------------------------------------------------</span>
-0218     FSep = <span class="string">'/'</span>;
-0219     File = strrep(File, <span class="string">'\'</span>, FSep);
-0220     
-0221     <span class="keyword">if</span> strcmp(File, <span class="string">'~'</span>) || strncmp(File, <span class="string">'~/'</span>, 2)  <span class="comment">% Home directory:</span>
-0222         HomeDir = getenv(<span class="string">'HOME'</span>);
-0223         <span class="keyword">if</span> ~isempty(HomeDir)
-0224             File(1) = [];
-0225             File    = [HomeDir, File];
-0226         <span class="keyword">end</span>
-0227         
-0228     <span class="keyword">elseif</span> strncmpi(File, FSep, 1) == 0
-0229         <span class="comment">% Append relative path to current folder:</span>
-0230         ThePath = cd;
-0231         <span class="keyword">if</span> ThePath(length(ThePath)) == FSep
-0232             File = [ThePath, File];
-0233         <span class="keyword">else</span>
-0234             File = [ThePath, FSep, File];
-0235         <span class="keyword">end</span>
-0236     <span class="keyword">end</span>
-0237 <span class="keyword">end</span>
-0238 
-0239 <span class="comment">% Care for &quot;\.&quot; and &quot;\..&quot; - no efficient algorithm, but the fast Mex is</span>
-0240 <span class="comment">% recommended at all!</span>
-0241 <span class="keyword">if</span> ~isempty(strfind(File, [FSep, <span class="string">'.'</span>]))
-0242     <span class="keyword">if</span> isWIN
-0243         <span class="keyword">if</span> strncmp(File, <span class="string">'\\'</span>, 2)  <span class="comment">% UNC path</span>
-0244             index = strfind(File, <span class="string">'\'</span>);
-0245             <span class="keyword">if</span> length(index) &lt; 4    <span class="comment">% UNC path without separator after the folder:</span>
-0246                 <span class="keyword">return</span>;
-0247             <span class="keyword">end</span>
-0248             Drive            = File(1:index(4));
-0249             File(1:index(4)) = [];
-0250         <span class="keyword">else</span>
-0251             Drive     = File(1:3);
-0252             File(1:3) = [];
-0253         <span class="keyword">end</span>
-0254     <span class="keyword">else</span>  <span class="comment">% Unix, MacOS:</span>
-0255         isUNC   = false;
-0256         Drive   = FSep;
-0257         File(1) = [];
-0258     <span class="keyword">end</span>
-0259     
-0260     hasTrailFSep = (File(length(File)) == FSep);
-0261     <span class="keyword">if</span> hasTrailFSep
-0262         File(length(File)) = [];
-0263     <span class="keyword">end</span>
-0264     
-0265     <span class="keyword">if</span> hasDataRead
-0266         <span class="keyword">if</span> isWIN  <span class="comment">% Need &quot;\\&quot; as separator:</span>
-0267             C = dataread(<span class="string">'string'</span>, File, <span class="string">'%s'</span>, <span class="string">'delimiter'</span>, <span class="string">'\\'</span>);  <span class="comment">%#ok&lt;REMFF1&gt;</span>
-0268         <span class="keyword">else</span>
-0269             C = dataread(<span class="string">'string'</span>, File, <span class="string">'%s'</span>, <span class="string">'delimiter'</span>, FSep);  <span class="comment">%#ok&lt;REMFF1&gt;</span>
-0270         <span class="keyword">end</span>
-0271     <span class="keyword">else</span>  <span class="comment">% Use the slower REGEXP, when DATAREAD is not available anymore:</span>
-0272         C = regexp(File, FSep, <span class="string">'split'</span>);
-0273     <span class="keyword">end</span>
-0274     
-0275     <span class="comment">% Remove '\.\' directly without side effects:</span>
-0276     C(strcmp(C, <span class="string">'.'</span>)) = [];
-0277     
-0278     <span class="comment">% Remove '\..' with the parent recursively:</span>
-0279     R = 1:length(C);
-0280     <span class="keyword">for</span> dd = reshape(find(strcmp(C, <span class="string">'..'</span>)), 1, [])
-0281         index    = find(R == dd);
-0282         R(index) = [];
-0283         <span class="keyword">if</span> index &gt; 1
-0284             R(index - 1) = [];
-0285         <span class="keyword">end</span>
-0286     <span class="keyword">end</span>
-0287     
-0288     <span class="keyword">if</span> isempty(R)
-0289         File = Drive;
-0290         <span class="keyword">if</span> isUNC &amp;&amp; ~hasTrailFSep
-0291             File(length(File)) = [];
-0292         <span class="keyword">end</span>
-0293         
-0294     <span class="keyword">elseif</span> isWIN
-0295         <span class="comment">% If you have CStr2String, use the faster:</span>
-0296         <span class="comment">%   File = CStr2String(C(R), FSep, hasTrailFSep);</span>
-0297         File = sprintf(<span class="string">'%s\\'</span>, C{R});
-0298         <span class="keyword">if</span> hasTrailFSep
-0299             File = [Drive, File];
-0300         <span class="keyword">else</span>
-0301             File = [Drive, File(1:length(File) - 1)];
-0302         <span class="keyword">end</span>
-0303         
-0304     <span class="keyword">else</span>  <span class="comment">% Unix:</span>
-0305         File = [Drive, sprintf(<span class="string">'%s/'</span>, C{R})];
-0306         <span class="keyword">if</span> ~hasTrailFSep
-0307             File(length(File)) = [];
-0308         <span class="keyword">end</span>
-0309     <span class="keyword">end</span>
-0310 <span class="keyword">end</span>
-0311 
-0312 <span class="comment">% &quot;Very&quot; long names under Windows:</span>
-0313 <span class="keyword">if</span> isWIN
-0314     <span class="keyword">if</span> ~ischar(Style)
-0315         error([<span class="string">'JSimon:'</span>, mfilename, <span class="string">':BadTypeInput2'</span>], <span class="keyword">...</span>
-0316             [<span class="string">'*** '</span>, mfilename, <span class="string">': Input must be a string or cell string'</span>]);
-0317     <span class="keyword">end</span>
-0318     
-0319     <span class="keyword">if</span> (strncmpi(Style, <span class="string">'a'</span>, 1) &amp;&amp; length(File) &gt;= MAX_PATH) || <span class="keyword">...</span>
-0320             strncmpi(Style, <span class="string">'f'</span>, 1)
-0321         <span class="comment">% Do not use [isUNC] here, because this concerns the input, which</span>
-0322         <span class="comment">% can '.\File', while the current directory is an UNC path.</span>
-0323         <span class="keyword">if</span> strncmp(File, <span class="string">'\\'</span>, 2)  <span class="comment">% UNC path</span>
-0324             File = [<span class="string">'\\?\UNC'</span>, File(2:end)];
-0325         <span class="keyword">else</span>
-0326             File = [<span class="string">'\\?\'</span>, File];
-0327         <span class="keyword">end</span>
-0328     <span class="keyword">end</span>
-0329 <span class="keyword">end</span>
-0330 
-0331 <span class="comment">% return;</span>
-0332 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 14-May-2018 16:12:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0119    <span class="comment">% Test this once only - there is no relation to the existence of DATAREAD!</span>
+0120    <span class="comment">%if isWIN</span>
+0121    <span class="comment">%   Show a warning, if the slower Matlab version is used - commented, because</span>
+0122    <span class="comment">%   this is not a problem and it might be even useful when the MEX-folder is</span>
+0123    <span class="comment">%   not inlcuded in the path yet.</span>
+0124    <span class="comment">%   warning('JSimon:getFullPath:NoMex', ...</span>
+0125    <span class="comment">%      ['getFullPath: Using slow Matlab-version instead of fast Mex.', ...</span>
+0126    <span class="comment">%       char(10), 'Compile: InstallMex getFullPath.c']);</span>
+0127    <span class="comment">%end</span>
+0128    
+0129    <span class="comment">% DATAREAD is deprecated in 2011b, but still available. In Matlab 6.5, REGEXP</span>
+0130    <span class="comment">% does not know the 'split' command, therefore DATAREAD is preferred:</span>
+0131    hasDataRead = ~isempty(which(<span class="string">'dataread'</span>));
+0132 <span class="keyword">end</span>
+0133 
+0134 <span class="keyword">if</span> isempty(File)  <span class="comment">% Accept empty matrix as input:</span>
+0135    <span class="keyword">if</span> ischar(File) || isnumeric(File)
+0136       File = cd;
+0137       <span class="keyword">return</span>;
+0138    <span class="keyword">else</span>
+0139       error([<span class="string">'JSimon:'</span>, mfilename, <span class="string">':BadTypeInput1'</span>], <span class="keyword">...</span>
+0140          [<span class="string">'*** '</span>, mfilename, <span class="string">': Input must be a string or cell string'</span>]);
+0141    <span class="keyword">end</span>
+0142 <span class="keyword">end</span>
+0143 
+0144 <span class="keyword">if</span> ischar(File) == 0  <span class="comment">% Non-empty inputs must be strings</span>
+0145    error([<span class="string">'JSimon:'</span>, mfilename, <span class="string">':BadTypeInput1'</span>], <span class="keyword">...</span>
+0146       [<span class="string">'*** '</span>, mfilename, <span class="string">': Input must be a string or cell string'</span>]);
+0147 <span class="keyword">end</span>
+0148 
+0149 <span class="keyword">if</span> isWIN  <span class="comment">% Windows: --------------------------------------------------------</span>
+0150    FSep = <span class="string">'\'</span>;
+0151    File = strrep(File, <span class="string">'/'</span>, FSep);
+0152    
+0153    <span class="comment">% Remove the magic key on demand, it is appended finally again:</span>
+0154    <span class="keyword">if</span> strncmp(File, <span class="string">'\\?\'</span>, 4)
+0155       <span class="keyword">if</span> strncmpi(File, <span class="string">'\\?\UNC\'</span>, 8)
+0156          File = [<span class="string">'\'</span>, File(7:length(File))];  <span class="comment">% Two leading backslashes!</span>
+0157       <span class="keyword">else</span>
+0158          File = File(5:length(File));
+0159       <span class="keyword">end</span>
+0160    <span class="keyword">end</span>
+0161    
+0162    isUNC   = strncmp(File, <span class="string">'\\'</span>, 2);
+0163    FileLen = length(File);
+0164    <span class="keyword">if</span> isUNC == 0                        <span class="comment">% File is not a UNC path</span>
+0165       <span class="comment">% Leading file separator means relative to current drive or base folder:</span>
+0166       ThePath = cd;
+0167       <span class="keyword">if</span> File(1) == FSep
+0168          <span class="keyword">if</span> strncmp(ThePath, <span class="string">'\\'</span>, 2)   <span class="comment">% Current directory is a UNC path</span>
+0169             sepInd  = strfind(ThePath, <span class="string">'\'</span>);
+0170             ThePath = ThePath(1:sepInd(4));
+0171          <span class="keyword">else</span>
+0172             ThePath = ThePath(1:3);     <span class="comment">% Drive letter only</span>
+0173          <span class="keyword">end</span>
+0174       <span class="keyword">end</span>
+0175       
+0176       <span class="keyword">if</span> FileLen &lt; 2 || File(2) ~= <span class="string">':'</span>  <span class="comment">% Does not start with drive letter</span>
+0177          <span class="keyword">if</span> ThePath(length(ThePath)) ~= FSep
+0178             <span class="keyword">if</span> File(1) ~= FSep
+0179                File = [ThePath, FSep, File];
+0180             <span class="keyword">else</span>                        <span class="comment">% File starts with separator:</span>
+0181                File = [ThePath, File];
+0182             <span class="keyword">end</span>
+0183          <span class="keyword">else</span>                           <span class="comment">% Current path ends with separator:</span>
+0184             <span class="keyword">if</span> File(1) ~= FSep
+0185                File = [ThePath, File];
+0186             <span class="keyword">else</span>                        <span class="comment">% File starts with separator:</span>
+0187                ThePath(length(ThePath)) = [];
+0188                File = [ThePath, File];
+0189             <span class="keyword">end</span>
+0190          <span class="keyword">end</span>
+0191          
+0192       <span class="keyword">elseif</span> FileLen == 2 &amp;&amp; File(2) == <span class="string">':'</span>   <span class="comment">% &quot;C:&quot; current directory on C!</span>
+0193          <span class="comment">% &quot;C:&quot; is the current directory on the C-disk, even if the current</span>
+0194          <span class="comment">% directory is on another disk! This was ignored in Matlab 6.5, but</span>
+0195          <span class="comment">% modern versions considers this strange behaviour.</span>
+0196          <span class="keyword">if</span> strncmpi(ThePath, File, 2)
+0197             File = ThePath;
+0198          <span class="keyword">else</span>
+0199             <span class="keyword">try</span>
+0200                File = cd(cd(File));
+0201             <span class="keyword">catch</span>    <span class="comment">% No MException to support Matlab6.5...</span>
+0202                <span class="keyword">if</span> exist(File, <span class="string">'dir'</span>)  <span class="comment">% No idea what could cause an error then!</span>
+0203                   rethrow(lasterror);
+0204                <span class="keyword">else</span>  <span class="comment">% Reply &quot;K:\&quot; for not existing disk:</span>
+0205                   File = [File, FSep];
+0206                <span class="keyword">end</span>
+0207             <span class="keyword">end</span>
+0208          <span class="keyword">end</span>
+0209       <span class="keyword">end</span>
+0210    <span class="keyword">end</span>
+0211    
+0212 <span class="keyword">else</span>         <span class="comment">% Linux, MacOS: ---------------------------------------------------</span>
+0213    FSep = <span class="string">'/'</span>;
+0214    File = strrep(File, <span class="string">'\'</span>, FSep);
+0215    
+0216    <span class="keyword">if</span> strcmp(File, <span class="string">'~'</span>) || strncmp(File, <span class="string">'~/'</span>, 2)  <span class="comment">% Home directory:</span>
+0217       HomeDir = getenv(<span class="string">'HOME'</span>);
+0218       <span class="keyword">if</span> ~isempty(HomeDir)
+0219          File(1) = [];
+0220          File    = [HomeDir, File];
+0221       <span class="keyword">end</span>
+0222       
+0223    <span class="keyword">elseif</span> strncmpi(File, FSep, 1) == 0
+0224       <span class="comment">% Append relative path to current folder:</span>
+0225       ThePath = cd;
+0226       <span class="keyword">if</span> ThePath(length(ThePath)) == FSep
+0227          File = [ThePath, File];
+0228       <span class="keyword">else</span>
+0229          File = [ThePath, FSep, File];
+0230       <span class="keyword">end</span>
+0231    <span class="keyword">end</span>
+0232 <span class="keyword">end</span>
+0233 
+0234 <span class="comment">% Care for &quot;\.&quot; and &quot;\..&quot; - no efficient algorithm, but the fast Mex is</span>
+0235 <span class="comment">% recommended at all!</span>
+0236 <span class="keyword">if</span> ~isempty(strfind(File, [FSep, <span class="string">'.'</span>]))
+0237    <span class="keyword">if</span> isWIN
+0238       <span class="keyword">if</span> strncmp(File, <span class="string">'\\'</span>, 2)  <span class="comment">% UNC path</span>
+0239          index = strfind(File, <span class="string">'\'</span>);
+0240          <span class="keyword">if</span> length(index) &lt; 4    <span class="comment">% UNC path without separator after the folder:</span>
+0241             <span class="keyword">return</span>;
+0242          <span class="keyword">end</span>
+0243          Drive            = File(1:index(4));
+0244          File(1:index(4)) = [];
+0245       <span class="keyword">else</span>
+0246          Drive     = File(1:3);
+0247          File(1:3) = [];
+0248       <span class="keyword">end</span>
+0249    <span class="keyword">else</span>  <span class="comment">% Unix, MacOS:</span>
+0250       isUNC   = false;
+0251       Drive   = FSep;
+0252       File(1) = [];
+0253    <span class="keyword">end</span>
+0254    
+0255    hasTrailFSep = (File(length(File)) == FSep);
+0256    <span class="keyword">if</span> hasTrailFSep
+0257       File(length(File)) = [];
+0258    <span class="keyword">end</span>
+0259    
+0260    <span class="keyword">if</span> hasDataRead
+0261       <span class="keyword">if</span> isWIN  <span class="comment">% Need &quot;\\&quot; as separator:</span>
+0262          C = dataread(<span class="string">'string'</span>, File, <span class="string">'%s'</span>, <span class="string">'delimiter'</span>, <span class="string">'\\'</span>);  <span class="comment">%#ok&lt;REMFF1&gt;</span>
+0263       <span class="keyword">else</span>
+0264          C = dataread(<span class="string">'string'</span>, File, <span class="string">'%s'</span>, <span class="string">'delimiter'</span>, FSep);  <span class="comment">%#ok&lt;REMFF1&gt;</span>
+0265       <span class="keyword">end</span>
+0266    <span class="keyword">else</span>  <span class="comment">% Use the slower REGEXP, when DATAREAD is not available anymore:</span>
+0267       C = regexp(File, FSep, <span class="string">'split'</span>);
+0268    <span class="keyword">end</span>
+0269    
+0270    <span class="comment">% Remove '\.\' directly without side effects:</span>
+0271    C(strcmp(C, <span class="string">'.'</span>)) = [];
+0272    
+0273    <span class="comment">% Remove '\..' with the parent recursively:</span>
+0274    R = 1:length(C);
+0275    <span class="keyword">for</span> dd = reshape(find(strcmp(C, <span class="string">'..'</span>)), 1, [])
+0276       index    = find(R == dd);
+0277       R(index) = [];
+0278       <span class="keyword">if</span> index &gt; 1
+0279          R(index - 1) = [];
+0280       <span class="keyword">end</span>
+0281    <span class="keyword">end</span>
+0282    
+0283    <span class="keyword">if</span> isempty(R)
+0284       File = Drive;
+0285       <span class="keyword">if</span> isUNC &amp;&amp; ~hasTrailFSep
+0286          File(length(File)) = [];
+0287       <span class="keyword">end</span>
+0288       
+0289    <span class="keyword">elseif</span> isWIN
+0290       <span class="comment">% If you have CStr2String, use the faster:</span>
+0291       <span class="comment">%   File = CStr2String(C(R), FSep, hasTrailFSep);</span>
+0292       File = sprintf(<span class="string">'%s\\'</span>, C{R});
+0293       <span class="keyword">if</span> hasTrailFSep
+0294          File = [Drive, File];
+0295       <span class="keyword">else</span>
+0296          File = [Drive, File(1:length(File) - 1)];
+0297       <span class="keyword">end</span>
+0298       
+0299    <span class="keyword">else</span>  <span class="comment">% Unix:</span>
+0300       File = [Drive, sprintf(<span class="string">'%s/'</span>, C{R})];
+0301       <span class="keyword">if</span> ~hasTrailFSep
+0302          File(length(File)) = [];
+0303       <span class="keyword">end</span>
+0304    <span class="keyword">end</span>
+0305 <span class="keyword">end</span>
+0306 
+0307 <span class="comment">% &quot;Very&quot; long names under Windows:</span>
+0308 <span class="keyword">if</span> isWIN
+0309    <span class="keyword">if</span> ~ischar(Style)
+0310       error([<span class="string">'JSimon:'</span>, mfilename, <span class="string">':BadTypeInput2'</span>], <span class="keyword">...</span>
+0311          [<span class="string">'*** '</span>, mfilename, <span class="string">': Input must be a string or cell string'</span>]);
+0312    <span class="keyword">end</span>
+0313    
+0314    <span class="keyword">if</span> (strncmpi(Style, <span class="string">'a'</span>, 1) &amp;&amp; length(File) &gt;= MAX_PATH) || <span class="keyword">...</span>
+0315          strncmpi(Style, <span class="string">'f'</span>, 1)
+0316       <span class="comment">% Do not use [isUNC] here, because this concerns the input, which can</span>
+0317       <span class="comment">% '.\File', while the current directory is an UNC path.</span>
+0318       <span class="keyword">if</span> strncmp(File, <span class="string">'\\'</span>, 2)  <span class="comment">% UNC path</span>
+0319          File = [<span class="string">'\\?\UNC'</span>, File(2:end)];
+0320       <span class="keyword">else</span>
+0321          File = [<span class="string">'\\?\'</span>, File];
+0322       <span class="keyword">end</span>
+0323    <span class="keyword">end</span>
+0324 <span class="keyword">end</span>
+0325 
+0326 <span class="comment">% return;</span>
+0327 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 14-Mar-2018 21:08:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -39,15 +39,15 @@ for i=1:numel(pathway.listOfSpecies)
             if ~isempty(pathway.listOfSpecies(i).note)
                 %Get the reaction if present in model
                 [present, index]=ismember(pathway.listOfSpecies(i).note,model.rxns);
-                
+
                 %If present, then get the genes
                 if any(present)
                     [~, genes]=find(model.rxnGeneMat(index,:));
-                    
+
                     %If it was associated with genes match them to the ORFs
                     if any(genes)
                         [present, experimentIndexes]=ismember(model.genes(genes),experiment.orfs);
-                        
+
                         %Add annotation to pathway structure
                         if any(present)
                             pathway.listOfSpecies(i).orfs=experiment.orfs(experimentIndexes(present));

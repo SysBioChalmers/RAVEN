@@ -92,7 +92,7 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %               metabolomicsData, taskFile, useScoresForTasks, printReport,...
 %               taskStructure, params, paramsFT)
 %
-%   Simonas Marcisauskas, 2018-04-03
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<3
@@ -134,7 +134,7 @@ end
 
 %Create the task structure if not supplied
 if any(taskFile) && isempty(taskStructure)
-    taskStructure=parseTaskList(taskFile);
+	taskStructure=parseTaskList(taskFile);
 end
 
 if printReport==true
@@ -156,7 +156,7 @@ if printReport==true
         fprintf('-Using metabolic tasks\n');
     end
     fprintf('\n');
-    
+
     printScores(refModel,'Reference model statistics',hpaData,arrayData,tissue,celltype);
 end
 
@@ -175,9 +175,9 @@ end
 %reactions
 if ~isempty(taskStructure)
     [taskReport, essentialRxnMat]=checkTasks(cModel,[],printReport,true,true,taskStructure);
-    
+
     essentialRxnsForTasks=cModel.rxns(any(essentialRxnMat,2));
-    
+
     %Remove tasks that cannot be performed
     taskStructure(taskReport.ok==false)=[];
     if printReport==true
@@ -192,11 +192,11 @@ end
 
 %Run the INIT algorithm. The exchange reactions that are used in the final
 %reactions will be open, which doesn't fit with the last step. Therefore
-%delete reactions from the original model instead of taking the output. The
-%default implementation does not constrain reversible reactions to only
-%carry flux in one direction. Runs without the constraints on reversibility
-%and with all output allowed. This is to reduce the complexity of the
-%problem.
+%delete reactions from the original model instead of taking the output.
+%The default implementation does not constrain reversible reactions to only
+%carry flux in one direction.
+%Runs without the constraints on reversibility and with all output allowed.
+%This is to reduce the complexity of the problem.
 [~, deletedRxnsInINIT, metProduction]=runINIT(simplifyModel(cModel),rxnScores,metabolomicsData,essentialRxnsForTasks,0,true,false,params);
 initModel=removeReactions(cModel,deletedRxnsInINIT,true,true);
 if printReport==true
@@ -217,7 +217,7 @@ if ~isempty(taskStructure)
     %Remove exchange reactions and reactions already included in the INIT
     %model
     refModelNoExc=removeReactions(refModel,union(initModel.rxns,getExchangeRxns(refModel)),true,true);
-    
+
     %At this stage the model is fully connected and most of the genes with
     %good scores should have been included. The final gap-filling should
     %take the scores of the genes into account, so that "rather bad"
@@ -235,7 +235,7 @@ if ~isempty(taskStructure)
         printScores(outModel,'Functional model statistics',hpaData,arrayData,tissue,celltype);
         printScores(removeReactions(outModel,intersect(outModel.rxns,initModel.rxns),true,true),'Reactions added to perform the tasks',hpaData,arrayData,tissue,celltype);
     end
-    
+
     addedRxnsForTasks=refModelNoExc.rxns(any(addedRxnMat,2));
 else
     outModel=initModel;
@@ -258,19 +258,19 @@ model.grRules(:)={''};
 for i=1:numel(model.rxns)
     ids=find(model.rxnGeneMat(i,:));
     if numel(ids)>1
-        scores=geneScores(I(ids));
-        %Only keep the positive ones if possible
-        model.rxnGeneMat(i,ids(~(scores>0 | scores==max(scores))))=0;
+       scores=geneScores(I(ids));
+       %Only keep the positive ones if possible
+       model.rxnGeneMat(i,ids(~(scores>0 | scores==max(scores))))=0;
     end
     %Rewrite the grRules to be only OR
     if isfield(model,'grRules')
-        J=find(model.rxnGeneMat(i,:));
-        for j=1:numel(J)
-            model.grRules{i}=[model.grRules{i} '(' model.genes{J(j)} ')'];
-            if j<numel(J)
-                model.grRules{i}=[model.grRules{i} ' or '];
-            end
-        end
+       J=find(model.rxnGeneMat(i,:));
+       for j=1:numel(J)
+           model.grRules{i}=[model.grRules{i} '(' model.genes{J(j)} ')'];
+           if j<numel(J)
+               model.grRules{i}=[model.grRules{i} ' or '];
+           end
+       end
     end
 end
 
@@ -291,10 +291,10 @@ if isfield(model,'geneComps')
     model.geneComps(I)=[];
 end
 
-%At this stage the model will contain some exchange reactions but probably
-%not all (and maybe zero). This can be inconvenient, so all exchange
-%reactions from the reference model are added, except for those which
-%involve metabolites that are not in the model.
+%At this stage the model will contain some exchange reactions but probably not all
+%(and maybe zero). This can be inconvenient, so all exchange reactions from the
+%reference model are added, except for those which involve metabolites that
+%are not in the model.
 
 %First delete and included exchange reactions in order to prevent the order
 %from changing
@@ -334,21 +334,16 @@ if ~isempty(taskStructure)
 else
     taskReport=[];
 end
-
-%Fix grRules and reconstruct rxnGeneMat
-[grRules,rxnGeneMat] = standardizeGrRules(model,true);
-model.grRules = grRules;
-model.rxnGeneMat = rxnGeneMat;
 end
 
 %This is for printing a summary of a model
 function [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)
-[a, b]=scoreModel(model,hpaData,arrayData,tissue,celltype);
-rxnS=mean(a);
-geneS=mean(b(~isinf(b)));
-fprintf([name ':\n']);
-fprintf(['\t' num2str(numel(model.rxns)) ' reactions, ' num2str(numel(model.genes)) ' genes\n']);
-fprintf(['\tMean reaction score: ' num2str(rxnS) '\n']);
-fprintf(['\tMean gene score: ' num2str(geneS) '\n']);
-fprintf(['\tReactions with positive scores: ' num2str(100*sum(a>0)/numel(a)) '%%\n\n']);
+    [a, b]=scoreModel(model,hpaData,arrayData,tissue,celltype);
+    rxnS=mean(a);
+    geneS=mean(b(~isinf(b)));
+    fprintf([name ':\n']);
+    fprintf(['\t' num2str(numel(model.rxns)) ' reactions, ' num2str(numel(model.genes)) ' genes\n']);
+    fprintf(['\tMean reaction score: ' num2str(rxnS) '\n']);
+    fprintf(['\tMean gene score: ' num2str(geneS) '\n']);
+    fprintf(['\tReactions with positive scores: ' num2str(100*sum(a>0)/numel(a)) '%%\n\n']);
 end

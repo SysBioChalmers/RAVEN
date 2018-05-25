@@ -12,6 +12,7 @@ function closedModel=closeModel(model)
 %   Simonas Marcisauskas, 2017-09-18
 %
 
+
 closedModel=model;
 
 closedModel.comps{numel(closedModel.comps)+1}='b';

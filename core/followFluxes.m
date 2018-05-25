@@ -19,10 +19,10 @@ function errorFlag=followFluxes(model, fluxesA, lowerFlux, upperFlux, fluxesB)
 
 %Checks that the upper flux is larger than the lower flux
 if nargin>3
-    if upperFlux<=lowerFlux
-        errorFlag=1;
-        return;
-    end
+   if upperFlux<=lowerFlux
+      errorFlag=1;
+      return;
+   end
 end
 
 %Gets the fluxes for the reactions

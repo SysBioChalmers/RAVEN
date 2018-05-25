@@ -48,12 +48,12 @@ end
 
 f(allIndexes)=values.*-2;
 
-%For a badly formulated problem it can occur that the solver stalls. This
-%can sometimes be fixed by trying to solve the problem again
+%For a badly formulated problem it can occur that the solver stalls.
+%This can sometimes be fixed by trying to solve the problem again
 options=optimset('MaxIter',maxIter);
 for j=1:restartIter
     [x,fval,flag] = ...
-        quadprog(H,f,[],[],model.S,model.b,model.lb,model.ub,[],options);
+    quadprog(H,f,[],[],model.S,model.b,model.lb,model.ub,[],options);
     if flag>0
         break;
     end

@@ -101,7 +101,7 @@ if nargin<8
 end
 
 if numel(presentMets)~=numel(unique(presentMets))
-    EM='Duplicate metabolite names in presentMets';
+	EM='Duplicate metabolite names in presentMets';
     dispEM(EM);
 end
 
@@ -123,13 +123,13 @@ if isfield(model,'unconstrained')
     dispEM(EM,false);
 end
 
-%The irreversible reactions that are essential must have a flux and are
-%therefore not optimized for using MILP, which reduces the problem size.
-%However, reversible reactions must have a flux in one direction, so they
-%have to stay in the problem. The essentiality constraint on reversible
-%reactions is implemented in the same manner as for reversible reactions
-%when noRevLoops==true, but with the additional constraint that C ub=-1.
-%This forces one of the directions to be active.
+%The irreversible reactions that are essential must have a flux and are therefore not
+%optimized for using MILP, which reduces the problem size. However, reversible
+%reactions must have a flux in one direction, so they have to stay in
+%the problem. The essentiality constraint on reversible reactions is
+%implemented in the same manner as for reversible reactions when
+%noRevLoops==true, but with the additional constraint that C ub=-1. This
+%forces one of the directions to be active.
 revRxns=find(model.rev~=0);
 essentialReversible=find(ismember(model.rxns(revRxns),essentialRxns));
 essentialRxns=intersect(essentialRxns,model.rxns(model.rev==0));
@@ -164,7 +164,7 @@ if any(pmIndexes)
     metsToAdd.mets=strcat({'FAKEFORPM'},num2str(pmIndexes));
     metsToAdd.metNames=metsToAdd.mets;
     metsToAdd.compartments=irrevModel.comps{1};
-    
+
     %There is no constraints on the metabolites yet, since maybe not all of
     %them could be produced
     irrevModel=addMets(irrevModel,metsToAdd);
@@ -174,16 +174,16 @@ end
 for i=1:numel(pmIndexes)
     %Get the matching mets
     I=ismember(irrevModel.metNames,presentMets(pmIndexes(i)));
-    
+
     %Find the reactions where any of them are used.
     [~, K, L]=find(irrevModel.S(I,:));
-    
+
     %This ugly loop is to avoid problems if a metabolite occurs several
     %times in one reaction
     KK=unique(K);
     LL=zeros(numel(KK),1);
     for j=1:numel(KK)
-        LL(j)=sum(L(K==KK(j)));
+       LL(j)=sum(L(K==KK(j)));
     end
     irrevModel.S(numel(irrevModel.mets)-numel(pmIndexes)+i,KK)=LL;
 end
@@ -196,8 +196,7 @@ nNonEssential=nRxns-nEssential;
 nonEssentialIndex=setdiff(1:nRxns,essentialIndex);
 S=irrevModel.S;
 
-%Add so that each non-essential reaction produces one unit of a fake
-%metabolite
+%Add so that each non-essential reaction produces one unit of a fake metabolite
 temp=sparse(1:nRxns,1:nRxns,1);
 temp(essentialIndex,:)=[];
 S=[S;temp];
@@ -221,25 +220,31 @@ end
 %Add constraints so that reversible reactions can only be used in one
 %direction. This is done by adding the fake metabolites A, B, C for each
 %reversible reaction in the following manner
-% forward: A + .. => ... backwards: B + ... => ... int1: C => 1000 A int2:
-% C => 1000 B A ub=999.9 B ub=999.9 C lb=-1 int1 and int2 are binary
+% forward: A + .. => ...
+% backwards: B + ... => ...
+% int1: C => 1000 A
+% int2: C => 1000 B
+% A ub=999.9
+% B ub=999.9
+% C lb=-1
+% int1 and int2 are binary
 if any(forwardIndexes)
     nRevBounds=numel(forwardIndexes);
-    
-    %Add the A metabolites for the forward reactions and the B metabolites
-    %for the reverse reactions
+
+    %Add the A metabolites for the forward reactions and the B
+    %metabolites for the reverse reactions
     I=speye(numel(irrevModel.rxns))*-1;
     temp=[I(forwardIndexes,:);I(backwardIndexes,:)];
-    
+
     %Padding
     temp=[temp sparse(size(temp,1),size(S,2)-numel(irrevModel.rxns))];
-    
+
     %Add the int1 & int2 reactions that produce A and B
     temp=[temp speye(nRevBounds*2)*1000];
-    
+
     %And add that they also consume C
     temp=[temp;[sparse(nRevBounds,size(S,2)) speye(nRevBounds)*-1 speye(nRevBounds)*-1]];
-    
+
     %Add the new reactions and metabolites
     S=[S sparse(size(S,1),nRevBounds*2)];
     S=[S;temp];
@@ -248,13 +253,12 @@ else
 end
 
 %Add so that the essential reactions must have a small flux and that the
-%binary ones (and net-production reactions) may have zero flux. The integer
-%reactions for reversible reactions have [0 1]
+%binary ones (and net-production reactions) may have zero flux. The
+%integer reactions for reversible reactions have [0 1]
 prob.blx=[irrevModel.lb;zeros(nNonEssential+nNetProd+nRevBounds*2,1)];
 prob.blx(essentialIndex)=max(0.1,prob.blx(essentialIndex));
 
-%Add so that the binary ones and net-production reactions can have at the
-%most flux 1.0
+%Add so that the binary ones and net-production reactions can have at the most flux 1.0
 prob.bux=[irrevModel.ub;ones(nNonEssential+nNetProd+nRevBounds*2,1)];
 
 %Add that the fake metabolites must be produced in a small amount and that
@@ -262,11 +266,10 @@ prob.bux=[irrevModel.ub;ones(nNonEssential+nNetProd+nRevBounds*2,1)];
 %metabolites [-1 0]
 prob.blc=[irrevModel.b(:,1);ones(nNonEssential,1);zeros(nRevBounds*2,1);ones(nRevBounds,1)*-1];
 
-%Add that normal metabolites can be freely excreted if
-%allowExcretion==true, and that the fake ones can be excreted 1000 units at
-%most. C metabolites for essential reversible reactions should have an
-%upper bound of -1. If noRevLoops is false, then add this constraint for
-%all the reactions instead.
+%Add that normal metabolites can be freely excreted if allowExcretion==true,
+%and that the fake ones can be excreted 1000 units at most. C metabolites
+%for essential reversible reactions should have an upper bound of -1.
+%If noRevLoops is false, then add this constraint for all the reactions instead.
 if noRevLoops==true
     revUB=zeros(nRevBounds,1);
     revUB(essentialReversible)=-1;
@@ -281,8 +284,9 @@ end
 prob.buc=[metUB;ones(nNonEssential,1)*1000;ones(nRevBounds*2,1)*999.9;revUB];
 
 %Add objective coefficients for the binary reactions. The negative is used
-%since we're minimizing. The negative is taken for the prodWeight as well,
-%in order to be consistent with the syntax that positive scores are good
+%since we're minimizing. The negative is taken for the prodWeight
+%as well, in order to be consistent with the syntax that positive scores
+%are good
 prob.c=[zeros(nRxns,1);rxnScores;ones(nNetProd,1)*prodWeight*-1;zeros(nRevBounds*2,1)];
 prob.a=S;
 
