@@ -1120,7 +1120,8 @@ for i=1:numel(targetString)
     if isempty(regexp(targetString{1,i},'inchi|ec-code', 'once'))
         counter=counter+1;
         miriamStruct.name{counter,1} = regexprep(targetString{1,i},'/.+','','once');
-        miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} midString],'','once');
+        miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} '/'],'','once');
+        miriamStruct.name{counter,1} = regexprep(miriamStruct.name{counter,1},'^obo\.','');
     end
 end
 end
