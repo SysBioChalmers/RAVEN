@@ -28,7 +28,7 @@ function newModel=ravenCobraWrapper(model)
 %
 %   Usage: newModel=ravenCobraWrapper(model)
 %
-%   Simonas Marcisauskas, 2018-05-07
+%   Eduard Kerkhoven, 2018-05-31
 %
 
 if isfield(model,'rules')
@@ -96,6 +96,34 @@ if isRaven
         tmp_pubchem_2=strrep(extractMiriam(model.metMiriams,'pubchem.substance'),'pubchem.substance/','');
         if ~all(cellfun(@isempty,tmp_pubchem_1)) || ~all(cellfun(@isempty,tmp_pubchem_2))
             newModel.metPubChemID=regexprep(strcat(tmp_pubchem_1, ';',tmp_pubchem_2),'^;|;$','');
+        end
+        tmp=strrep(extractMiriam(model.metMiriams,'bigg.metabolite'),'bigg.metabolite','');
+        if ~all(cellfun(@isempty,tmp))
+            newModel.metBiGGID=tmp;
+        end
+        tmp=strrep(extractMiriam(model.metMiriams,'hmdb'),'hmdb','');
+        if ~all(cellfun(@isempty,tmp))
+            newModel.metHMDBID=tmp;
+        end
+        tmp=strrep(extractMiriam(model.metMiriams,'lipidmaps'),'lipidmaps','');
+        if ~all(cellfun(@isempty,tmp))
+            newModel.metLIPIDMAPSID=tmp;
+        end
+        tmp=strrep(extractMiriam(model.metMiriams,'metacyc.compound'),'metacyc.compound','');
+        if ~all(cellfun(@isempty,tmp))
+            newModel.metMetaCycID=tmp;
+        end
+        tmp=strrep(extractMiriam(model.metMiriams,'reactome'),'reactome','');
+        if ~all(cellfun(@isempty,tmp))
+            newModel.metREACTOMEID=tmp;
+        end
+        tmp=strrep(extractMiriam(model.metMiriams,'seed.compound'),'seed.compound','');
+        if ~all(cellfun(@isempty,tmp))
+            newModel.metSEEDID=tmp;
+        end
+        tmp=strrep(extractMiriam(model.metMiriams,'slm'),'slm','');
+        if ~all(cellfun(@isempty,tmp))
+            newModel.metSLMID=tmp;
         end
     end
     if isfield(model,'inchis')
@@ -326,7 +354,7 @@ else
     if isfield(model,'metFormulas')
         newModel.metFormulas=model.metFormulas;
     end
-    if isfield(model,'metChEBIID') || isfield(model,'metHMDBID') || isfield(model,'metKEGGID') || isfield(model,'metPubChemID') || isfield(model,'metMetaNetXID')
+    if isfield(model,'metChEBIID') || isfield(model,'metHMDBID') || isfield(model,'metKEGGID') || isfield(model,'metPubChemID') || isfield(model,'metMetaNetXID') || isfield(model,'metBiGGID') || isfield(model,'metLIPIDMAPSID') || isfield(model,'metMetaCycID') || isfield(model,'metREACTOMEID') || isfield(model,'metSEEDID') || isfield(model,'metSLMID')
         for i=1:numel(model.mets)
             counter=1;
             newModel.metMiriams{i,1}=[];
@@ -379,6 +407,48 @@ else
                 if ~isempty(model.metMetaNetXID{i})
                     newModel.metMiriams{i,1}.name{counter,1} = 'metanetx.chemical';
                     newModel.metMiriams{i,1}.value{counter,1} = model.metMetaNetXID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'metBiGGID')
+                if ~isempty(model.metBiGGID{i})
+                    newModel.metMiriams{i,1}.name{counter,1} = 'bigg.metabolite';
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metBiGGID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'metLIPIDMAPSID')
+                if ~isempty(model.metLIPIDMAPSID{i})
+                    newModel.metMiriams{i,1}.name{counter,1} = 'lipidmaps';
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metLIPIDMAPSID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'metMetaCycID')
+                if ~isempty(model.metMetaCycID{i})
+                    newModel.metMiriams{i,1}.name{counter,1} = 'metacyc.compound';
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metMetaCycID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'metREACTOMEID')
+                if ~isempty(model.metREACTOMEID{i})
+                    newModel.metMiriams{i,1}.name{counter,1} = 'reactome';
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metREACTOMEID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'metSEEDID')
+                if ~isempty(model.metSEEDID{i})
+                    newModel.metMiriams{i,1}.name{counter,1} = 'seed.compound';
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metSEEDID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'metSLMID')
+                if ~isempty(model.metSLMID{i})
+                    newModel.metMiriams{i,1}.name{counter,1} = 'swisslipid';
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metSLMID{i};
                     counter=counter+1;
                 end
             end
