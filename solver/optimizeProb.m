@@ -12,7 +12,7 @@ function res = optimizeProb(prob,params)
 %
 
 if nargin<2
-    params=[];
+    params=struct();
 end
 
 
