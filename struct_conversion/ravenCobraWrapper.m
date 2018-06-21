@@ -28,7 +28,7 @@ function newModel=ravenCobraWrapper(model)
 %
 %   Usage: newModel=ravenCobraWrapper(model)
 %
-%   Eduard Kerkhoven, 2018-05-31
+%   Eduard Kerkhoven, 2018-06-21
 %
 
 if isfield(model,'rules')
@@ -65,9 +65,11 @@ if isRaven
         newModel.rxnECNumbers=model.eccodes;
     end
     if isfield(model,'rxnMiriams')
-        tmp_rxnkeggid=strrep(extractMiriam(model.rxnMiriams,'kegg.reaction'),'kegg.reaction/','');
-        if ~all(cellfun(@isempty,tmp_rxnkeggid))
-            newModel.rxnKEGGID=tmp_rxnkeggid;
+        [miriams,extractedMiriamNames]=extractMiriam(model.rxnMiriams);
+        miriams=regexprep(miriams,'^[A-Za-z\.]*\/','');
+        i=contains(extractedMiriamNames,'kegg.reaction');
+        if any(i)
+            newModel.rxnKEGGID=miriams(:,i);
         end
     end
     if isfield(model,'rxnReferences')
@@ -83,48 +85,52 @@ if isRaven
         newModel.metFormulas=model.metFormulas;
     end
     if isfield(model,'metMiriams')
-        tmp_kegg_1=strrep(extractMiriam(model.metMiriams,'kegg.compound'),'kegg.compound/','');
-        tmp_kegg_2=strrep(extractMiriam(model.metMiriams,'kegg.glycan'),'kegg.glycan/','');
-        if ~all(cellfun(@isempty,tmp_kegg_1)) || ~all(cellfun(@isempty,tmp_kegg_2))
-            newModel.metKEGGID=regexprep(strcat(tmp_kegg_1, ';',tmp_kegg_2),'^;|;$','');
+        [miriams,extractedMiriamNames]=extractMiriam(model.metMiriams);
+        miriams=regexprep(miriams,'^[A-Za-z\.]*\/','');
+        i=contains(extractedMiriamNames,'kegg');
+        if any(i) % Combine KEGG compounds and glycans
+            newModel.metKEGGID=regexprep(join(miriams(:,i),';',2),'^;|;$','');
         end
-        tmp_chebi=strrep(extractMiriam(model.metMiriams,'chebi'),'chebi/','');
-        if ~all(cellfun(@isempty,tmp_chebi))
-            newModel.metChEBIID=tmp_chebi;
+        i=contains(extractedMiriamNames,'chebi');
+        if any(i)
+            newModel.metChEBIID=miriams(:,i);
         end
-        tmp_pubchem_1=strrep(extractMiriam(model.metMiriams,'pubchem.compound'),'pubchem.compound/','');
-        tmp_pubchem_2=strrep(extractMiriam(model.metMiriams,'pubchem.substance'),'pubchem.substance/','');
-        if ~all(cellfun(@isempty,tmp_pubchem_1)) || ~all(cellfun(@isempty,tmp_pubchem_2))
-            newModel.metPubChemID=regexprep(strcat(tmp_pubchem_1, ';',tmp_pubchem_2),'^;|;$','');
+        i=contains(extractedMiriamNames,'pubchem');
+        if any(i) % Combine Pubchem compounds and substances
+            newModel.metPubChemID=regexprep(join(miriams(:,i),';',2),'^;|;$','');
+        end        
+        i=contains(extractedMiriamNames,'bigg.metabolite');
+        if any(i)
+            newModel.metBiGGID=miriams(:,i);
         end
-        tmp=strrep(extractMiriam(model.metMiriams,'bigg.metabolite'),'bigg.metabolite','');
-        if ~all(cellfun(@isempty,tmp))
-            newModel.metBiGGID=tmp;
+        i=contains(extractedMiriamNames,'hmdb');
+        if any(i)
+            newModel.metHMDBID=miriams(:,i);
         end
-        tmp=strrep(extractMiriam(model.metMiriams,'hmdb'),'hmdb','');
-        if ~all(cellfun(@isempty,tmp))
-            newModel.metHMDBID=tmp;
+        i=contains(extractedMiriamNames,'lipidmaps');
+        if any(i)
+            newModel.metLIPIDMAPSID=miriams(:,i);
         end
-        tmp=strrep(extractMiriam(model.metMiriams,'lipidmaps'),'lipidmaps','');
-        if ~all(cellfun(@isempty,tmp))
-            newModel.metLIPIDMAPSID=tmp;
+        i=contains(extractedMiriamNames,'metacyc.compound');
+        if any(i)
+            newModel.metMetaCycID=miriams(:,i);
         end
-        tmp=strrep(extractMiriam(model.metMiriams,'metacyc.compound'),'metacyc.compound','');
-        if ~all(cellfun(@isempty,tmp))
-            newModel.metMetaCycID=tmp;
+        i=contains(extractedMiriamNames,'reactome');
+        if any(i)
+            newModel.metREACTOMEID=miriams(:,i);
+        end   
+        i=contains(extractedMiriamNames,'seed.compound');
+        if any(i)
+            newModel.metSEEDID=miriams(:,i);
         end
-        tmp=strrep(extractMiriam(model.metMiriams,'reactome'),'reactome','');
-        if ~all(cellfun(@isempty,tmp))
-            newModel.metREACTOMEID=tmp;
+        i=contains(extractedMiriamNames,'slm');
+        if any(i)
+            newModel.metSLMID=miriams(:,i);
         end
-        tmp=strrep(extractMiriam(model.metMiriams,'seed.compound'),'seed.compound','');
-        if ~all(cellfun(@isempty,tmp))
-            newModel.metSEEDID=tmp;
-        end
-        tmp=strrep(extractMiriam(model.metMiriams,'slm'),'slm','');
-        if ~all(cellfun(@isempty,tmp))
-            newModel.metSLMID=tmp;
-        end
+        i=contains(extractedMiriamNames,'metanetx.chemical');
+        if any(i)
+            newModel.metMetaNetXID=miriams(:,i);
+        end        
     end
     if isfield(model,'inchis')
         newModel.metInChIString=regexprep(strcat('InChI=', model.inchis),'^InChI=$','');
@@ -144,31 +150,27 @@ if isRaven
     if isfield(model,'metCharges')
         newModel.metCharges=model.metCharges;
     end
-    if isfield(model,'metMiriams')
-        tmp_hmdbid=strrep(extractMiriam(model.metMiriams,'hmdb'),'hmdb/','');
-        if ~all(cellfun(@isempty,tmp_hmdbid))
-            newModel.metHMDBID=tmp_hmdbid;
-        end
-        tmp_metanetx=strrep(extractMiriam(model.metMiriams,'metanetx.chemical'),'metanetx.chemical/','');
-        if ~all(cellfun(@isempty,tmp_metanetx))
-            newModel.metMetaNetXID=tmp_metanetx;
-        end
-    end
     newModel.b=zeros(numel(model.mets),1);
     newModel.csense=repmat('E',size(model.mets));
     if isfield(model,'geneMiriams')
-        tmp_kegggeneid=strrep(extractMiriam(model.geneMiriams,'kegg.genes'),'kegg.genes/','');
-        if ~all(cellfun(@isempty,tmp_kegggeneid))
-            newModel.geneiskegg__46__genesID=tmp_kegggeneid;
+       [miriams,extractedMiriamNames]=extractMiriam(model.geneMiriams);
+        miriams=regexprep(miriams,'^[A-Za-z\.]*\/','');
+        i=contains(extractedMiriamNames,'kegg.genes');
+        if any(i)
+            newModel.geneiskegg__46__genesID=miriams(:,i);
         end
-        tmp_genesgdid=strrep(extractMiriam(model.geneMiriams,'sgd'),'sgd/','');
-        if ~all(cellfun(@isempty,tmp_genesgdid))
-            newModel.geneissgdID=tmp_genesgdid;
+        i=contains(extractedMiriamNames,'kegg.genes');
+        if any(i)
+            newModel.geneiskegg__46__genesID=miriams(:,i);
         end
-        tmp_proteinuniprotid=strrep(extractMiriam(model.geneMiriams,'uniprot'),'uniprot/','');
-        if ~all(cellfun(@isempty,tmp_proteinuniprotid))
-            newModel.proteinisuniprotID=tmp_proteinuniprotid;
-        end
+        i=contains(extractedMiriamNames,'sgd');
+        if any(i)
+            newModel.geneissgdID=miriams(:,i);
+        end      
+        i=contains(extractedMiriamNames,'uniprot');
+        if any(i)
+            newModel.proteinisuniprotID=miriams(:,i);
+        end      
     end
     if isfield(model,'geneShortNames')
         newModel.geneNames=model.geneShortNames;
