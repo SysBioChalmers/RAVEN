@@ -28,7 +28,7 @@ function newModel=ravenCobraWrapper(model)
 %
 %   Usage: newModel=ravenCobraWrapper(model)
 %
-%   Eduard Kerkhoven, 2018-06-21
+%   Simonas Marcisauskas, 2018-07-12
 %
 
 if isfield(model,'rules')
@@ -67,7 +67,7 @@ if isRaven
     if isfield(model,'rxnMiriams')
         [miriams,extractedMiriamNames]=extractMiriam(model.rxnMiriams);
         miriams=regexprep(miriams,'^[A-Za-z\.]*\/','');
-        i=contains(extractedMiriamNames,'kegg.reaction');
+        i=ismember(extractedMiriamNames,'kegg.reaction');
         if any(i)
             newModel.rxnKEGGID=miriams(:,i);
         end
@@ -87,47 +87,66 @@ if isRaven
     if isfield(model,'metMiriams')
         [miriams,extractedMiriamNames]=extractMiriam(model.metMiriams);
         miriams=regexprep(miriams,'^[A-Za-z\.]*\/','');
-        i=contains(extractedMiriamNames,'kegg');
+        %Shorten miriam names for KEGG and PubChem. These shorter names
+        %will be used later to concatenate KEGG COMPOUND/GLYCAN and PubChem
+        %Compound/Substance, into corresponding COBRA model fields
+        extractedMiriamNames=regexprep(extractedMiriamNames,'^kegg\..+','kegg');
+        extractedMiriamNames=regexprep(extractedMiriamNames,'^pubchem\..+','pubchem');
+        i=ismember(extractedMiriamNames,'kegg');
         if any(i) % Combine KEGG compounds and glycans
-            newModel.metKEGGID=regexprep(join(miriams(:,i),';',2),'^;|;$','');
+            for j=1:length(i)
+                if i(j) && isfield(newModel,'metKEGGID')~=1
+                    newModel.metKEGGID=miriams(:,j);
+                elseif i(j)
+                    newModel.metKEGGID=strcat(newModel.metKEGGID,';',miriams(:,j));
+                end
+            end
+            newModel.metKEGGID=regexprep(newModel.metKEGGID,'^;|;$','');
         end
-        i=contains(extractedMiriamNames,'chebi');
+        i=ismember(extractedMiriamNames,'chebi');
         if any(i)
             newModel.metChEBIID=miriams(:,i);
         end
-        i=contains(extractedMiriamNames,'pubchem');
+        i=ismember(extractedMiriamNames,'pubchem');
         if any(i) % Combine Pubchem compounds and substances
-            newModel.metPubChemID=regexprep(join(miriams(:,i),';',2),'^;|;$','');
-        end        
-        i=contains(extractedMiriamNames,'bigg.metabolite');
+            for j=1:length(i)
+                if i(j) && isfield(newModel,'metPubChemID')~=1
+                    newModel.metPubChemID=miriams(:,j);
+                elseif i(j)
+                    newModel.metPubChemID=strcat(newModel.metPubChemID,';',miriams(:,j));
+                end
+            end
+            newModel.metPubChemID=regexprep(newModel.metPubChemID,'^;|;$','');
+        end
+        i=ismember(extractedMiriamNames,'bigg.metabolite');
         if any(i)
             newModel.metBiGGID=miriams(:,i);
         end
-        i=contains(extractedMiriamNames,'hmdb');
+        i=ismember(extractedMiriamNames,'hmdb');
         if any(i)
             newModel.metHMDBID=miriams(:,i);
         end
-        i=contains(extractedMiriamNames,'lipidmaps');
+        i=ismember(extractedMiriamNames,'lipidmaps');
         if any(i)
             newModel.metLIPIDMAPSID=miriams(:,i);
         end
-        i=contains(extractedMiriamNames,'metacyc.compound');
+        i=ismember(extractedMiriamNames,'metacyc.compound');
         if any(i)
             newModel.metMetaCycID=miriams(:,i);
         end
-        i=contains(extractedMiriamNames,'reactome');
+        i=ismember(extractedMiriamNames,'reactome');
         if any(i)
             newModel.metREACTOMEID=miriams(:,i);
         end   
-        i=contains(extractedMiriamNames,'seed.compound');
+        i=ismember(extractedMiriamNames,'seed.compound');
         if any(i)
             newModel.metSEEDID=miriams(:,i);
         end
-        i=contains(extractedMiriamNames,'slm');
+        i=ismember(extractedMiriamNames,'slm');
         if any(i)
             newModel.metSLMID=miriams(:,i);
         end
-        i=contains(extractedMiriamNames,'metanetx.chemical');
+        i=ismember(extractedMiriamNames,'metanetx.chemical');
         if any(i)
             newModel.metMetaNetXID=miriams(:,i);
         end        
@@ -155,19 +174,19 @@ if isRaven
     if isfield(model,'geneMiriams')
        [miriams,extractedMiriamNames]=extractMiriam(model.geneMiriams);
         miriams=regexprep(miriams,'^[A-Za-z\.]*\/','');
-        i=contains(extractedMiriamNames,'kegg.genes');
+        i=ismember(extractedMiriamNames,'kegg.genes');
         if any(i)
             newModel.geneiskegg__46__genesID=miriams(:,i);
         end
-        i=contains(extractedMiriamNames,'kegg.genes');
+        i=ismember(extractedMiriamNames,'kegg.genes');
         if any(i)
             newModel.geneiskegg__46__genesID=miriams(:,i);
         end
-        i=contains(extractedMiriamNames,'sgd');
+        i=ismember(extractedMiriamNames,'sgd');
         if any(i)
             newModel.geneissgdID=miriams(:,i);
         end      
-        i=contains(extractedMiriamNames,'uniprot');
+        i=ismember(extractedMiriamNames,'uniprot');
         if any(i)
             newModel.proteinisuniprotID=miriams(:,i);
         end      
