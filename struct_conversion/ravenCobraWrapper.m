@@ -28,7 +28,7 @@ function newModel=ravenCobraWrapper(model)
 %
 %   Usage: newModel=ravenCobraWrapper(model)
 %
-%   Simonas Marcisauskas, 2018-05-07
+%   Simonas Marcisauskas, 2018-07-12
 %
 
 if isfield(model,'rules')
@@ -65,9 +65,11 @@ if isRaven
         newModel.rxnECNumbers=model.eccodes;
     end
     if isfield(model,'rxnMiriams')
-        tmp_rxnkeggid=strrep(extractMiriam(model.rxnMiriams,'kegg.reaction'),'kegg.reaction/','');
-        if ~all(cellfun(@isempty,tmp_rxnkeggid))
-            newModel.rxnKEGGID=tmp_rxnkeggid;
+        [miriams,extractedMiriamNames]=extractMiriam(model.rxnMiriams);
+        miriams=regexprep(miriams,'^[A-Za-z\.]*\/','');
+        i=ismember(extractedMiriamNames,'kegg.reaction');
+        if any(i)
+            newModel.rxnKEGGID=miriams(:,i);
         end
     end
     if isfield(model,'rxnReferences')
@@ -83,20 +85,71 @@ if isRaven
         newModel.metFormulas=model.metFormulas;
     end
     if isfield(model,'metMiriams')
-        tmp_kegg_1=strrep(extractMiriam(model.metMiriams,'kegg.compound'),'kegg.compound/','');
-        tmp_kegg_2=strrep(extractMiriam(model.metMiriams,'kegg.glycan'),'kegg.glycan/','');
-        if ~all(cellfun(@isempty,tmp_kegg_1)) || ~all(cellfun(@isempty,tmp_kegg_2))
-            newModel.metKEGGID=regexprep(strcat(tmp_kegg_1, ';',tmp_kegg_2),'^;|;$','');
+        [miriams,extractedMiriamNames]=extractMiriam(model.metMiriams);
+        miriams=regexprep(miriams,'^[A-Za-z\.]*\/','');
+        %Shorten miriam names for KEGG and PubChem. These shorter names
+        %will be used later to concatenate KEGG COMPOUND/GLYCAN and PubChem
+        %Compound/Substance, into corresponding COBRA model fields
+        extractedMiriamNames=regexprep(extractedMiriamNames,'^kegg\..+','kegg');
+        extractedMiriamNames=regexprep(extractedMiriamNames,'^pubchem\..+','pubchem');
+        i=ismember(extractedMiriamNames,'kegg');
+        if any(i) % Combine KEGG compounds and glycans
+            for j=1:length(i)
+                if i(j) && isfield(newModel,'metKEGGID')~=1
+                    newModel.metKEGGID=miriams(:,j);
+                elseif i(j)
+                    newModel.metKEGGID=strcat(newModel.metKEGGID,';',miriams(:,j));
+                end
+            end
+            newModel.metKEGGID=regexprep(newModel.metKEGGID,'^;|;$','');
         end
-        tmp_chebi=strrep(extractMiriam(model.metMiriams,'chebi'),'chebi/','');
-        if ~all(cellfun(@isempty,tmp_chebi))
-            newModel.metChEBIID=tmp_chebi;
+        i=ismember(extractedMiriamNames,'chebi');
+        if any(i)
+            newModel.metChEBIID=miriams(:,i);
         end
-        tmp_pubchem_1=strrep(extractMiriam(model.metMiriams,'pubchem.compound'),'pubchem.compound/','');
-        tmp_pubchem_2=strrep(extractMiriam(model.metMiriams,'pubchem.substance'),'pubchem.substance/','');
-        if ~all(cellfun(@isempty,tmp_pubchem_1)) || ~all(cellfun(@isempty,tmp_pubchem_2))
-            newModel.metPubChemID=regexprep(strcat(tmp_pubchem_1, ';',tmp_pubchem_2),'^;|;$','');
+        i=ismember(extractedMiriamNames,'pubchem');
+        if any(i) % Combine Pubchem compounds and substances
+            for j=1:length(i)
+                if i(j) && isfield(newModel,'metPubChemID')~=1
+                    newModel.metPubChemID=miriams(:,j);
+                elseif i(j)
+                    newModel.metPubChemID=strcat(newModel.metPubChemID,';',miriams(:,j));
+                end
+            end
+            newModel.metPubChemID=regexprep(newModel.metPubChemID,'^;|;$','');
         end
+        i=ismember(extractedMiriamNames,'bigg.metabolite');
+        if any(i)
+            newModel.metBiGGID=miriams(:,i);
+        end
+        i=ismember(extractedMiriamNames,'hmdb');
+        if any(i)
+            newModel.metHMDBID=miriams(:,i);
+        end
+        i=ismember(extractedMiriamNames,'lipidmaps');
+        if any(i)
+            newModel.metLIPIDMAPSID=miriams(:,i);
+        end
+        i=ismember(extractedMiriamNames,'metacyc.compound');
+        if any(i)
+            newModel.metMetaCycID=miriams(:,i);
+        end
+        i=ismember(extractedMiriamNames,'reactome');
+        if any(i)
+            newModel.metREACTOMEID=miriams(:,i);
+        end   
+        i=ismember(extractedMiriamNames,'seed.compound');
+        if any(i)
+            newModel.metSEEDID=miriams(:,i);
+        end
+        i=ismember(extractedMiriamNames,'slm');
+        if any(i)
+            newModel.metSLMID=miriams(:,i);
+        end
+        i=ismember(extractedMiriamNames,'metanetx.chemical');
+        if any(i)
+            newModel.metMetaNetXID=miriams(:,i);
+        end        
     end
     if isfield(model,'inchis')
         newModel.metInChIString=regexprep(strcat('InChI=', model.inchis),'^InChI=$','');
@@ -116,31 +169,27 @@ if isRaven
     if isfield(model,'metCharges')
         newModel.metCharges=model.metCharges;
     end
-    if isfield(model,'metMiriams')
-        tmp_hmdbid=strrep(extractMiriam(model.metMiriams,'hmdb'),'hmdb/','');
-        if ~all(cellfun(@isempty,tmp_hmdbid))
-            newModel.metHMDBID=tmp_hmdbid;
-        end
-        tmp_metanetx=strrep(extractMiriam(model.metMiriams,'metanetx.chemical'),'metanetx.chemical/','');
-        if ~all(cellfun(@isempty,tmp_metanetx))
-            newModel.metMetaNetXID=tmp_metanetx;
-        end
-    end
     newModel.b=zeros(numel(model.mets),1);
     newModel.csense=repmat('E',size(model.mets));
     if isfield(model,'geneMiriams')
-        tmp_kegggeneid=strrep(extractMiriam(model.geneMiriams,'kegg.genes'),'kegg.genes/','');
-        if ~all(cellfun(@isempty,tmp_kegggeneid))
-            newModel.geneiskegg__46__genesID=tmp_kegggeneid;
+       [miriams,extractedMiriamNames]=extractMiriam(model.geneMiriams);
+        miriams=regexprep(miriams,'^[A-Za-z\.]*\/','');
+        i=ismember(extractedMiriamNames,'kegg.genes');
+        if any(i)
+            newModel.geneiskegg__46__genesID=miriams(:,i);
         end
-        tmp_genesgdid=strrep(extractMiriam(model.geneMiriams,'sgd'),'sgd/','');
-        if ~all(cellfun(@isempty,tmp_genesgdid))
-            newModel.geneissgdID=tmp_genesgdid;
+        i=ismember(extractedMiriamNames,'kegg.genes');
+        if any(i)
+            newModel.geneiskegg__46__genesID=miriams(:,i);
         end
-        tmp_proteinuniprotid=strrep(extractMiriam(model.geneMiriams,'uniprot'),'uniprot/','');
-        if ~all(cellfun(@isempty,tmp_proteinuniprotid))
-            newModel.proteinisuniprotID=tmp_proteinuniprotid;
-        end
+        i=ismember(extractedMiriamNames,'sgd');
+        if any(i)
+            newModel.geneissgdID=miriams(:,i);
+        end      
+        i=ismember(extractedMiriamNames,'uniprot');
+        if any(i)
+            newModel.proteinisuniprotID=miriams(:,i);
+        end      
     end
     if isfield(model,'geneShortNames')
         newModel.geneNames=model.geneShortNames;
@@ -326,7 +375,7 @@ else
     if isfield(model,'metFormulas')
         newModel.metFormulas=model.metFormulas;
     end
-    if isfield(model,'metChEBIID') || isfield(model,'metHMDBID') || isfield(model,'metKEGGID') || isfield(model,'metPubChemID') || isfield(model,'metMetaNetXID')
+    if isfield(model,'metChEBIID') || isfield(model,'metHMDBID') || isfield(model,'metKEGGID') || isfield(model,'metPubChemID') || isfield(model,'metMetaNetXID') || isfield(model,'metBiGGID') || isfield(model,'metLIPIDMAPSID') || isfield(model,'metMetaCycID') || isfield(model,'metREACTOMEID') || isfield(model,'metSEEDID') || isfield(model,'metSLMID')
         for i=1:numel(model.mets)
             counter=1;
             newModel.metMiriams{i,1}=[];
@@ -379,6 +428,48 @@ else
                 if ~isempty(model.metMetaNetXID{i})
                     newModel.metMiriams{i,1}.name{counter,1} = 'metanetx.chemical';
                     newModel.metMiriams{i,1}.value{counter,1} = model.metMetaNetXID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'metBiGGID')
+                if ~isempty(model.metBiGGID{i})
+                    newModel.metMiriams{i,1}.name{counter,1} = 'bigg.metabolite';
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metBiGGID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'metLIPIDMAPSID')
+                if ~isempty(model.metLIPIDMAPSID{i})
+                    newModel.metMiriams{i,1}.name{counter,1} = 'lipidmaps';
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metLIPIDMAPSID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'metMetaCycID')
+                if ~isempty(model.metMetaCycID{i})
+                    newModel.metMiriams{i,1}.name{counter,1} = 'metacyc.compound';
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metMetaCycID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'metREACTOMEID')
+                if ~isempty(model.metREACTOMEID{i})
+                    newModel.metMiriams{i,1}.name{counter,1} = 'reactome';
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metREACTOMEID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'metSEEDID')
+                if ~isempty(model.metSEEDID{i})
+                    newModel.metMiriams{i,1}.name{counter,1} = 'seed.compound';
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metSEEDID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'metSLMID')
+                if ~isempty(model.metSLMID{i})
+                    newModel.metMiriams{i,1}.name{counter,1} = 'swisslipid';
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metSLMID{i};
                     counter=counter+1;
                 end
             end
