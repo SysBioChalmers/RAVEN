@@ -442,13 +442,12 @@ else
         model.b=zeros(numel(model.mets),1);
         model=removeReactions(model,badRxns,true,true);
         
-        %Identify reactions involving undefined stoichiometry. These metabolites have
-        %an ID containing the letter "n" or "m"
-        if keepUndefinedStoich==false
-            I=cellfun(@any,strfind(model.mets,'n')) | cellfun(@any,strfind(model.mets,'m'));
-            [~, J]=find(model.S(I,:));
-            isUndefinedStoich=model.rxns(unique(J));
-        end
+        %Identify reactions with undefined stoichiometry. Such
+        %reactions involve metabolites with an ID containing the letter "n"
+        %or "m"
+        I=cellfun(@any,strfind(model.mets,'n')) | cellfun(@any,strfind(model.mets,'m'));
+        [~, J]=find(model.S(I,:));
+        isUndefinedStoich=model.rxns(unique(J));
         
         %Save the model structure
         save(rxnsFile,'model','isGeneral','isIncomplete','isUndefinedStoich');
