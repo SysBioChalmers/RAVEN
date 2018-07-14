@@ -50,7 +50,7 @@ function model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepG
 %
 %   Usage: model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Simonas Marcisauskas, 2018-03-20
+%   Simonas Marcisauskas, 2018-07-14
 %
 %
 % NOTE: This is how one entry looks in the file
@@ -108,7 +108,7 @@ else
         model.rxnMiriams=cell(11000,1);
         
         equations=cell(11000,1);
-        %Temporarily stores the equations
+        %Temporarily store the equations
         
         isIncomplete=false(11000,1);
         isGeneral=false(11000,1);
@@ -117,7 +117,7 @@ else
         %and ec-number
         fid = fopen(fullfile(keggPath,'reaction'), 'r');
         
-        %Keeps track of how many reactions that have been added
+        %Keep track of how many reactions that have been added
         rxnCounter=0;
         
         %Loop through the file
@@ -432,8 +432,8 @@ else
         %See if the reactions are written in the same order in model.S
         linearInd=sub2ind(size(model.S), prodMetIDs, I);
         changeOrder=I(model.S(linearInd)<0);
-        model.S(:,changeOrder)=model.S(:,changeOrder).*-1;
         %Change the order of these reactions
+        model.S(:,changeOrder)=model.S(:,changeOrder).*-1;
         
         %Add some stuff to get a correct model structure
         model.ub=ones(rxnCounter,1)*1000;
@@ -442,24 +442,28 @@ else
         model.b=zeros(numel(model.mets),1);
         model=removeReactions(model,badRxns,true,true);
         
+        %Identify reactions involving undefined stoichiometry. These metabolites have
+        %an ID containing the letter "n" or "m"
+        if keepUndefinedStoich==false
+            I=cellfun(@any,strfind(model.mets,'n')) | cellfun(@any,strfind(model.mets,'m'));
+            [~, J]=find(model.S(I,:));
+            isUndefinedStoich=model.rxns(unique(J));
+        end
+        
         %Save the model structure
-        save(rxnsFile,'model','isGeneral','isIncomplete');
+        save(rxnsFile,'model','isGeneral','isIncomplete','isUndefinedStoich');
     end
 end
-%Delete reaction which are labeled as "incomplete", "erroneous", "unclear"
-%or "general reaction" (depending on settings)
+%Delete reactions which are labeled as "incomplete", "erroneous",
+%"unclear", "general reaction" or having undefined stoichiometry (depending
+%on settings)
 if keepGeneral==false
     model=removeReactions(model,intersect(isGeneral,model.rxns),true,true);
 end
 if keepIncomplete==false
     model=removeReactions(model,intersect(isIncomplete,model.rxns),true,true);
 end
-
-%Delete reactions involving undefined stoichiometry. These metabolites have
-%an ID containing the letter "n" or "m"
 if keepUndefinedStoich==false
-    I=cellfun(@any,strfind(model.mets,'n')) | cellfun(@any,strfind(model.mets,'m'));
-    [~, J]=find(model.S(I,:));
-    model=removeReactions(model,J,true,true);
+    model=removeReactions(model,intersect(isUndefinedStoich,model.rxns),true,true);
 end
 end
