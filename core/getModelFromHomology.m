@@ -45,7 +45,7 @@ function draftModel=getModelFromHomology(models,blastStructure,getModelFor,prefe
 %
 %   draftModel        a new model structure
 %
-%   Eduard Kerkhoven, 2018-05-22
+%   Eduard Kerkhoven, 2018-07-16
 %
 
 %NOTE: "to" and "from" means relative the new organism
@@ -104,6 +104,13 @@ for i=1:numel(blastStructure)
         end
     end
 end
+
+%Standardize grRules of template models
+for i=1:length(models)
+    fprintf('\nStandardizing grRules of template model with ID "%s" ...',models{i}.id);
+    [models{i}.grRules,models{i}.rxnGeneMat]=standardizeGrRules(models{i},false);
+end
+fprintf(' done\n');
 
 %Remove all gene matches that are below the cutoffs
 for i=1:numel(blastStructure)
@@ -354,7 +361,7 @@ if ~isempty(preferredOrder) && numel(models)>1
         
         %Remove all the genes that were already found and add the other
         %ones to allUsedGenes
-        [models{useOrderIndexes(i)}, notDeleted]=removeGenes(models{useOrderIndexes(i)},allGenes{i+1}(genesToDelete),true,false);
+        [models{useOrderIndexes(i)}, notDeleted]=removeGenes(models{useOrderIndexes(i)},allGenes{i+1}(genesToDelete),true,false,false);
         allUsedGenes(usedGenes)=true;
         
         %Remove the deleted genes from finalMappings and allGenes Don't
