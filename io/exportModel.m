@@ -510,7 +510,11 @@ tmpStruct=modelSBML.groups_group;
 rxns=strcat('R_',model.rxns);
 if isfield(model, 'subSystems')
     if ~any(cellfun(@iscell,model.subSystems))
-        subSystems = setdiff(model.subSystems,'');
+        if ~any(~cellfun(@isempty,model.subSystems))
+            subSystems = {};
+        else
+            subSystems = setdiff(model.subSystems,'');
+        end
     else
         orderedSubs = cellfun(@(x) columnVector(x),model.subSystems,'UniformOUtput',false);
         subSystems = setdiff(vertcat(orderedSubs{:}),'');
@@ -520,7 +524,7 @@ if isfield(model, 'subSystems')
     end
     if ~isempty(subSystems)
         %Build the groups for the group package
-        groupIDs = strcat('group',cellfun(@num2str, num2cell(1:length(subSystems))','UniformOutput',false));
+        groupIDs = strcat('group',cellfun(@num2str, num2cell(1:length(subSystems)),'UniformOutput',false));
         for i = 1:length(subSystems)
             cgroup = tmpStruct;
             if ~any(cellfun(@iscell,model.subSystems))
