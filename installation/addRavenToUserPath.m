@@ -10,10 +10,10 @@ function addRavenToUserPath(overwrite)
 %                   overwritten (otherwise the RAVEN paths are appended)
 %                   (opt, default true)
 %
-%   Eduard Kerkhoven, 2018-04-26
+%   Eduard Kerkhoven, 2018-07-18
 %
 
-if nargin1
+if nargin<1
     overwrite=true;
 end
 
