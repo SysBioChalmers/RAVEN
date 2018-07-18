@@ -844,7 +844,7 @@ if ~isempty(geneNames)
     [~, J]=ismember(geneCompartments,model.comps);
     model.geneComps=J;
 else
-    if ~isempty(grRules)
+    if ~all(cellfun(@isempty,grRules))
         %If fbc_geneProduct exists, follow the specified gene order, such
         %that matching geneShortNames in function below will work
         if isfield(modelSBML,'fbc_geneProduct')
@@ -1028,7 +1028,7 @@ if removeExcMets==true
     model=simplifyModel(model);
 end
 end
-
+ 
 function matchGenes=getGeneList(grRules)
 %Constructs the list of unique genes from grRules
 
