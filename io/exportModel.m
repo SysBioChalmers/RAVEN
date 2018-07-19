@@ -13,7 +13,7 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
 %   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
-%   Simonas Marcisauskas, 2018-05-08
+%   Eduard Kerkhoven, 2018-07-19
 
 if nargin<3
     exportGeneComplexes=false;

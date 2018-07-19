@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Eduard Kerkhoven, 2018-05-18
+%   Eduard Kerkhoven, 2018-07-19
 %
 
 if nargin<2
@@ -494,15 +494,15 @@ for i=1:numel(modelSBML.reaction)
     end
     
     %Find the associated gene if available
-        %If FBC, get gene association data from corresponding fields
+    %If FBC, get gene association data from corresponding fields
     if isfield(modelSBML.reaction(i),'fbc_geneProductAssociation')
         if ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation) && ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association)
             grRules{counter}=modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association.fbc_association;
         end
     elseif isfield(modelSBML.reaction(i),'notes')
-    %This section was previously executed only if isSBML2COBRA is true. Now
-    %it will be executed, if 'GENE_ASSOCIATION' is found in
-    %modelSBML.reaction(i).notes
+        %This section was previously executed only if isSBML2COBRA is true. Now
+        %it will be executed, if 'GENE_ASSOCIATION' is found in
+        %modelSBML.reaction(i).notes
         if strfind(modelSBML.reaction(i).notes,'GENE_ASSOCIATION')
             geneAssociation=parseNote(modelSBML.reaction(i).notes,'GENE_ASSOCIATION');
         elseif strfind(modelSBML.reaction(i).notes,'GENE ASSOCIATION')
@@ -511,8 +511,8 @@ for i=1:numel(modelSBML.reaction)
             geneAssociation='';
         end
         if ~isempty(geneAssociation)
-        %This adds the grRules. The gene list and rxnGeneMat are created
-        %later
+            %This adds the grRules. The gene list and rxnGeneMat are created
+            %later
             grRules{counter}=geneAssociation;
         end
     elseif isfield(modelSBML.reaction(i),'modifier')
@@ -570,7 +570,7 @@ for i=1:numel(modelSBML.reaction)
             grRulesFromModifier{counter}=rules;%Backup copy for grRules, useful to parse Yeast 7.6
         end
     end
-   
+    
     %Add reaction compartment
     if isfield(modelSBML.reaction(i),'compartment')
         if ~isempty(modelSBML.reaction(i).compartment)
@@ -1024,7 +1024,7 @@ if removeExcMets==true
     model=simplifyModel(model);
 end
 end
- 
+
 function matchGenes=getGeneList(grRules)
 %Constructs the list of unique genes from grRules
 
