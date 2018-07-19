@@ -112,15 +112,12 @@ if isempty(mnx)
 end
 
 % flatten mnx.rxnMets (single column -> multi column cell array)
-mnx.rxnMets = flattenCell(mnx.rxnMets,true);
+flatrxnMets = flattenCell(mnx.rxnMets,true);
 
 % find MNX rxns with mets that aren't present in model
-mismatches = ~ismember(mnx.rxnMets,allMetMNXIDs);
-mismatches(cellfun(@isempty,mnx.rxnMets)) = false;
+mismatches = ~ismember(mnx.flatrxnMets,allMetMNXIDs);
+mismatches(cellfun(@isempty,flatrxnMets)) = false;
 del_rxns = any(mismatches,2);
-
-% restore mnx.rxnMets to its original format of a column of nested cells
-mnx.rxnMets = nestCell(mnx.rxnMets,true);
 
 % remove reactions from MNX structure
 nrxns = length(mnx.rxns);
@@ -173,9 +170,8 @@ model.S(rem_ind,:) = 0;
 rem_ind = ismember(mnx.metFormulas,{'H2O','H'});
 rem_ind(contains(mnx.metNames,{'(.)','deuterium','tritium','hydride'},'IgnoreCase',true)) = false;  % exclude other variants
 rem_IDs = mnx.mets(rem_ind);
-mnx.rxnMets = flattenCell(mnx.rxnMets,true);  % flatten cell
-mnx.rxnMets(ismember(mnx.rxnMets,rem_IDs)) = {''};  % remove IDs
-mnx.rxnMets = nestCell(mnx.rxnMets,true);  % re-nest cell
+flatrxnMets(ismember(flatrxnMets,rem_IDs)) = {''};  % remove IDs
+mnx.rxnMets = nestCell(flatrxnMets,true);  % re-nest cell
 
 % map reactions
 rxnMNXID(mapRxns) = findMNXrxns(model,mnx,mapRxns);
