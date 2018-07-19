@@ -494,7 +494,28 @@ for i=1:numel(modelSBML.reaction)
     end
     
     %Find the associated gene if available
-    if isfield(modelSBML.reaction(i),'modifier')
+        %If FBC, get gene association data from corresponding fields
+    if isfield(modelSBML.reaction(i),'fbc_geneProductAssociation')
+        if ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation) && ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association)
+            grRules{counter}=modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association.fbc_association;
+        end
+    elseif isfield(modelSBML.reaction(i),'notes')
+    %This section was previously executed only if isSBML2COBRA is true. Now
+    %it will be executed, if 'GENE_ASSOCIATION' is found in
+    %modelSBML.reaction(i).notes
+        if strfind(modelSBML.reaction(i).notes,'GENE_ASSOCIATION')
+            geneAssociation=parseNote(modelSBML.reaction(i).notes,'GENE_ASSOCIATION');
+        elseif strfind(modelSBML.reaction(i).notes,'GENE ASSOCIATION')
+            geneAssociation=parseNote(modelSBML.reaction(i).notes,'GENE ASSOCIATION');
+        else
+            geneAssociation='';
+        end
+        if ~isempty(geneAssociation)
+        %This adds the grRules. The gene list and rxnGeneMat are created
+        %later
+            grRules{counter}=geneAssociation;
+        end
+    elseif isfield(modelSBML.reaction(i),'modifier')
         if ~isempty(modelSBML.reaction(i).modifier)
             rules='';
             for j=1:numel(modelSBML.reaction(i).modifier)
@@ -549,32 +570,7 @@ for i=1:numel(modelSBML.reaction)
             grRulesFromModifier{counter}=rules;%Backup copy for grRules, useful to parse Yeast 7.6
         end
     end
-    %This section was previously executed only if isSBML2COBRA is true. Now
-    %it will be executed, if 'GENE_ASSOCIATION' is found in
-    %modelSBML.reaction(i).notes
-    if isfield(modelSBML.reaction(i),'notes')
-        if strfind(modelSBML.reaction(i).notes,'GENE_ASSOCIATION')
-            geneAssociation=parseNote(modelSBML.reaction(i).notes,'GENE_ASSOCIATION');
-        elseif strfind(modelSBML.reaction(i).notes,'GENE ASSOCIATION')
-            geneAssociation=parseNote(modelSBML.reaction(i).notes,'GENE ASSOCIATION');
-        else
-            geneAssociation='';
-        end
-    end
-    
-    if ~isempty(geneAssociation)
-        %This adds the grRules. The gene list and rxnGeneMat are created
-        %later
-        grRules{counter}=geneAssociation;
-    end
-    
-    %If FBC, get gene association data from corresponding fields
-    if isfield(modelSBML.reaction(i),'fbc_geneProductAssociation')
-        if ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation) && ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association)
-            grRules{counter}=modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association.fbc_association;
-        end
-    end
-    
+   
     %Add reaction compartment
     if isfield(modelSBML.reaction(i),'compartment')
         if ~isempty(modelSBML.reaction(i).compartment)
