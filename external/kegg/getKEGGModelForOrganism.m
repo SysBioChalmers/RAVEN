@@ -1,9 +1,12 @@
 function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
-    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...
-    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
+    keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,...
+    minScoreRatioG,minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 % getKEGGModelForOrganism
 %   Reconstructs a genome-scale metabolic model based on protein homology to the
-%   orthologies in KEGG
+%   orthologies in KEGG. If the target species is not available in KEGG,
+%   the user must select a closely related species. It is also possible to
+%   circumvent protein homology search (see fastaFile parameter for more
+%   details)
 %
 %   organismID          three or four letter abbreviation of the organism
 %                       (as used in KEGG). If not available, use a closely
@@ -17,8 +20,8 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %                       if no FASTA file is supplied then a model is
 %                       reconstructed based only on the organism
 %                       abbreviation. This option ignores all settings
-%                       except for keepUndefinedStoich, keepIncomplete and
-%                       keepGeneral)
+%                       except for keepSpontaneous, keepUndefinedStoich,
+%                       keepIncomplete and keepGeneral)
 %   dataDir             directory for which to retrieve the input data.
 %                       Should contain a combination of these sub-folders:
 %                       -dataDir\keggdb
@@ -53,6 +56,8 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %                       (opt, default is a temporary dir where all *.out
 %                       files are deleted before and after doing the
 %                       reconstruction)
+%   keepSpontaneous     include reactions labeled as "spontaneous". (opt,
+%                       default true)
 %   keepUndefinedStoich	include reactions in the form n A <=> n+1 A. These
 %                       will be dealt with as two separate metabolites
 %                       (opt, default true)
@@ -165,10 +170,10 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %   -3b is always performed.
 %
 %   Usage: model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
-%    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...
-%    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
+%    keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,...
+%    minScoreRatioG,minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 %
-%   Eduard Kerkhoven, 2018-05-18
+%   Simonas Marcisauskas, 2018-07-20
 %
 
 if nargin<2
@@ -186,32 +191,35 @@ if isempty(outDir)
     delete(fullfile(outDir,'*.out'));
 end
 if nargin<5
-    keepUndefinedStoich=true;
+    keepSpontaneous=true;
 end
 if nargin<6
-    keepIncomplete=true;
+    keepUndefinedStoich=true;
 end
 if nargin<7
-    keepGeneral=false;
+    keepIncomplete=true;
 end
 if nargin<8
-    cutOff=10^-50;
+    keepGeneral=false;
 end
 if nargin<9
-    minScoreRatioG=0.8;
+    cutOff=10^-50;
 end
 if nargin<10
-    minScoreRatioKO=0.3;
+    minScoreRatioG=0.8;
 end
 if nargin<11
+    minScoreRatioKO=0.3;
+end
+if nargin<12
     maxPhylDist=inf;
     %Include all sequences for each reaction
 end
-if nargin<12
+if nargin<13
     nSequences=inf;
     %Include all sequences for each reaction
 end
-if nargin<13
+if nargin<14
     seqIdentity=-1;
     %CD-HIT is not used in the pipeline
 end
@@ -284,12 +292,17 @@ if any(fastaFile)
     end
 end
 
+%Get the directory for RAVEN Toolbox. This is to get the path to the third
+%party software used
+[ST, I]=dbstack('-completenames');
+ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+
 %First generate the full KEGG model. The dataDir mustn't be supplied as
 %there is also an internal RAVEN version available
 if any(dataDir)
-    [model, KOModel]=getModelFromKEGG(fullfile(dataDir,'keggdb'),keepUndefinedStoich,keepIncomplete,keepGeneral);
+    [model, KOModel]=getModelFromKEGG(fullfile(dataDir,'keggdb'),keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral);
 else
-    [model, KOModel]=getModelFromKEGG([],keepUndefinedStoich,keepIncomplete,keepGeneral);
+    [model, KOModel]=getModelFromKEGG([],keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral);
 end
 fprintf('Completed generation of KEGG model\n');
 model.id=organismID;
@@ -327,8 +340,14 @@ if isempty(fastaFile)
 end
 
 %First remove all reactions without genes
-hasGenes=any(model.rxnGeneMat,2);
-model=removeReactions(model,~hasGenes,true);
+if keepSpontaneous==true
+    load(fullfile(ravenPath,'external','kegg','keggRxns.mat'),'isSpontaneous');
+    I=~any(model.rxnGeneMat,2)&~ismember(model.rxns,isSpontaneous);
+    spontRxnsWithGenes=model.rxns(any(model.rxnGeneMat,2)&~ismember(model.rxns,isSpontaneous));
+else
+    I=~any(model.rxnGeneMat,2);
+end
+model=removeReactions(model,I,true);
 
 %Clean gene names
 for i=1:numel(model.genes)
@@ -350,11 +369,13 @@ if isempty(fastaFile)
     for i=1:numel(model.rxns)
         %Find the involved genes
         I=find(model.rxnGeneMat(i,:));
-        model.grRules{i}=['(' model.genes{I(1)}];
-        for j=2:numel(I)
-            model.grRules{i}=[model.grRules{i} ' or ' model.genes{I(j)}];
+        if any(I)
+            model.grRules{i}=['(' model.genes{I(1)}];
+            for j=2:numel(I)
+                model.grRules{i}=[model.grRules{i} ' or ' model.genes{I(j)}];
+            end
+            model.grRules{i}=[model.grRules{i} ')'];
         end
-        model.grRules{i}=[model.grRules{i} ')'];
     end
     %Add geneMiriams, assuming that it follows the syntax
     %kegg.genes/organismID:geneName
@@ -417,11 +438,6 @@ if ~isempty(missingFASTA)
     constructMultiFasta(fastaModel,fullfile(dataDir,'keggdb','genes.pep'),fullfile(dataDir,'fasta'));
 end
 fprintf('Completed generation of multi-FASTA files\n');
-
-%Get the directory for RAVEN Toolbox. This is to get the path to the third
-%party software used
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 
 if isunix
     if ismac
@@ -837,11 +853,29 @@ for i=1:numel(model.rxns)
     end
 end
 
-%Find and delete all reactions without any genes. This also removes genes
-%that are not used (which could happen because minScoreRatioG and
-%minScoreRatioKO)
-I=sum(model.rxnGeneMat,2)==0;
-model=removeReactions(model,I,true,true);
+%Find and delete all reactions without genes. This also removes genes that
+%are not used (which could happen because minScoreRatioG and
+%minScoreRatioKO). If keepSpontaneous==true, the spontaneous reactions
+%without genes are kept in the model. Spontaneous reactions with original
+%gene associations are treated in the same way, like the rest of the
+%reactions - if gene associations were removed during HMM search, such
+%reactions are deleted from the model
+if keepSpontaneous==true
+    %Not the most comprise way to delete reactions without genes, but this
+    %makes the code easier to understand. Firstly the non-spontaneous
+    %reactions without genes are removed. After that, the second deletion
+    %step removes spontaneous reactions, which had gene associations before
+    %HMM search, but no longer have after it
+    I=~any(model.rxnGeneMat,2)&~ismember(model.rxns,isSpontaneous);
+    model=removeReactions(model,I,true,true);
+    I=~any(model.rxnGeneMat,2)&ismember(model.rxns,spontRxnsWithGenes);
+    model=removeReactions(model,I,true,true);
+else
+    %Just simply check for any new reactions without genes and remove
+    %it
+    I=~any(model.rxnGeneMat,2);
+    model=removeReactions(model,I,true,true);
+end
 
 %Add the gene associations as 'or'
 for i=1:numel(model.rxns)

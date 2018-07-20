@@ -1,4 +1,4 @@
-function [model,KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
+function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral)
 % getModelFromKEGG
 %   Retrieves information stored in KEGG database and generates a model
 %
@@ -8,6 +8,8 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncom
 %                       from a local FTP dump of the KEGG database.
 %                       keggPath is the path to the root of this database
 %                       (opt, default 'RAVEN/external/kegg')
+%   keepSpontaneous     include reactions labeled as "spontaneous" (opt,
+%                       default true)
 %   keepUndefinedStoich include reactions in the form n A <=> n+1 A. These
 %                       will be dealt with as two separate metabolites
 %                       (opt, default true)
@@ -20,7 +22,7 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncom
 %                       unsuited for modelling purposes. Note that not all
 %                       reactions have this type of annotation, and the
 %                       script will therefore not be able to remove all
-%                       such reactions (opt, default false)
+%                       such reactions (opt, default true)
 %
 %   model               a model structure generated from the database. All
 %                       reactions and the metabolites used in them will be
@@ -31,24 +33,27 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncom
 %
 %   Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Simonas Marcisauskas, 2018-03-19
+%   Simonas Marcisauskas, 2018-07-20
 %
 
 if nargin<1
     keggPath='RAVEN/external/kegg';
 end
 if nargin<2
-    keepUndefinedStoich=true;
+    keepSpontaneous=true;
 end
 if nargin<3
-    keepIncomplete=true;
+    keepUndefinedStoich=true;
 end
 if nargin<4
-    keepGeneral=true;
+    keepIncomplete=true;
+end
+if nargin<5
+    keepGeneral=false;
 end
 
 %First get all reactions
-model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral);
+model=getRxnsFromKEGG(keggPath,keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral);
 fprintf('KEGG reactions loaded\n');
 
 %Get the KO ids that are associated with any of the reactions. They will be
@@ -186,11 +191,10 @@ end
 %done just to be more compatible with the rest of the code
 model.comps={'s'};
 model.compNames={'System'};
-model.compOutside={''};
 model.metComps=ones(numel(model.mets),1);
 
 %If reactions with undefined stoichiometry are kept, then the corresponding
-%metabolites will have ids such as "(n+1) C000001" and their names will be
+%metabolites will have ids such as "(n+1) C00001" and their names will be
 %empty. These ids are not valid SBML identifiers and are therefore replaced
 %with "undefined1, undefined2...". The former ids are stored as the new
 %names

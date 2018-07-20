@@ -1,4 +1,4 @@
-function model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
+function model=getRxnsFromKEGG(keggPath,keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral)
 % getRxnsFromKEGG
 %   Retrieves information on all reactions stored in KEGG database
 %
@@ -6,6 +6,8 @@ function model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepG
 %                       directory, this function will attempt to read data
 %                       from a local FTP dump of the KEGG database.
 %                       keggPath is the path to the root of this database
+%   keepSpontaneous     include reactions labeled as "spontaneous" (opt,
+%                       default true)
 %   keepUndefinedStoich	include reactions in the form n A <=> n+1 A. These
 %                       will be dealt with as two separate metabolites
 %                       (opt, default true)
@@ -48,9 +50,9 @@ function model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepG
 %   the keggRxns.mat file if you want to rebuild the model structure from a
 %   newer version of KEGG.
 %
-%   Usage: model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
+%   Usage: model=getRxnsFromKEGG(keggPath,keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Simonas Marcisauskas, 2018-07-14
+%   Simonas Marcisauskas, 2018-07-20
 %
 %
 % NOTE: This is how one entry looks in the file
@@ -73,12 +75,15 @@ function model=getRxnsFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepG
 %
 
 if nargin<2
-    keepUndefinedStoich=true;
+    keepSpontaneous=true;
 end
 if nargin<3
-    keepIncomplete=true;
+    keepUndefinedStoich=true;
 end
 if nargin<4
+    keepIncomplete=true;
+end
+if nargin<5
     keepGeneral=false;
 end
 
@@ -106,13 +111,14 @@ else
         model.eccodes=cell(11000,1);
         model.subSystems=cell(11000,1);
         model.rxnMiriams=cell(11000,1);
-        
+        model.rxnNotes=cell(11000,1);
         equations=cell(11000,1);
         %Temporarily store the equations
         
+        isSpontaneous=false(11000,1);
         isIncomplete=false(11000,1);
         isGeneral=false(11000,1);
-        
+
         %First load information on reaction ID, reaction name, KO, pathway,
         %and ec-number
         fid = fopen(fullfile(keggPath,'reaction'), 'r');
@@ -146,6 +152,7 @@ else
                 model.rxnNames{rxnCounter}='';
                 model.eccodes{rxnCounter}='';
                 model.subSystems{rxnCounter}='';
+                model.rxnNotes{rxnCounter}='';
                 equations{rxnCounter}='';
                 
                 %Add reaction ID (always 6 characters)
@@ -169,21 +176,24 @@ else
             %Add whether the comment includes "incomplete", "erroneous" or
             %"unclear"
             if strcmp(tline(1:12),'COMMENT     ')
-                %Read all text until '///' or 'RPAIR'
+                %Read all text until '///', 'RPAIR', 'ENZYME', 'PATHWAY' or 'RCLASS'
                 commentText=tline(13:end);
                 while 1
                     tline = fgetl(fid);
-                    if ~strcmp(tline(1:3),'///') && ~strcmp(tline(1:3),'RPA') && ~strcmp(tline(1:3),'ENZ')
-                        commentText=strcat(commentText,' ',tline);
+                    if ~strcmp(tline(1:3),'///') && ~strcmp(tline(1:3),'RPA') && ~strcmp(tline(1:3),'ENZ') && ~strcmp(tline(1:3),'PAT') && ~strcmp(tline(1:3),'RCL')
+                        commentText=[commentText ' ' strtrim(tline)];
                     else
                         break;
                     end
                 end
-                upperLine=upper(commentText);
-                if any(strfind(upperLine,'INCOMPLETE')) || any(strfind(upperLine,'ERRONEOUS')) || any(strfind(upperLine,'UNCLEAR'))
+                if any(regexpi(commentText,'SPONTANEOUS'))
+                    %It should start this way
+                    isSpontaneous(rxnCounter)=true;
+                end
+                if any(regexpi(commentText,'INCOMPLETE')) || any(regexpi(commentText,'ERRONEOUS')) || any(regexpi(commentText,'UNCLEAR'))
                     isIncomplete(rxnCounter)=true;
                 end
-                if any(strfind(upperLine,'GENERAL REACTION')==1)
+                if any(regexpi(commentText,'GENERAL REACTION'))
                     %It should start this way
                     isGeneral(rxnCounter)=true;
                 end
@@ -322,13 +332,15 @@ else
         %reactions are removed along the way
         isIncomplete=model.rxns(isIncomplete);
         isGeneral=model.rxns(isGeneral);
-        
+        isSpontaneous=model.rxns(isSpontaneous);
+
         %If too much space was allocated, shrink the model
         model.rxns=model.rxns(1:rxnCounter);
         model.rxnNames=model.rxnNames(1:rxnCounter);
         model.eccodes=model.eccodes(1:rxnCounter);
         equations=equations(1:rxnCounter);
         model.rxnMiriams=model.rxnMiriams(1:rxnCounter);
+        model.rxnNotes=model.rxnNotes(1:rxnCounter);
         model.subSystems=model.subSystems(1:rxnCounter);
         
         %Then load the equations from another file. This is because the
@@ -447,10 +459,53 @@ else
         %or "m"
         I=cellfun(@any,strfind(model.mets,'n')) | cellfun(@any,strfind(model.mets,'m'));
         [~, J]=find(model.S(I,:));
-        isUndefinedStoich=model.rxns(unique(J));
+        isUndefinedStoich=model.rxns(unique(J));   
+        %Sort model that metabolites with undefined stoichiometry would
+        %appear in the end of metabolites list      
+        metList=[model.mets(~I);model.mets(I)];
+        [~,metIndexes]=ismember(metList,model.mets);
+        model=permuteModel(model,metIndexes,'mets');
+        
+        %Sort model that i) spontaneous, ii) with undefined
+        %stoichiometry, iii) incomplete and iv) general reactions would bve
+        %ranked in the end of the model
+        endRxnList=unique([model.rxns(ismember(model.rxns,isSpontaneous));model.rxns(ismember(model.rxns,isUndefinedStoich));model.rxns(ismember(model.rxns,isIncomplete));model.rxns(ismember(model.rxns,isGeneral))],'stable');
+        rxnList=[model.rxns(~ismember(model.rxns,endRxnList));endRxnList];
+        [~,rxnIndexes]=ismember(rxnList,model.rxns);
+        model=permuteModel(model,rxnIndexes,'rxns');
+        
+        %Add information in rxnNotes, whether reaction belongs to any of
+        %type i-iv mentioned a few lines above
+        for i=(numel(rxnList)-numel(endRxnList)+1):numel(model.rxns)
+            if ismember(model.rxns(i),isSpontaneous)
+                model.rxnNotes(i)=strcat(model.rxnNotes(i),'Spontaneous');
+            end
+            if ismember(model.rxns(i),isUndefinedStoich)
+                if isempty(model.rxnNotes{i})
+                    model.rxnNotes(i)=strcat(model.rxnNotes(i),'With undefined stoichiometry');
+                else
+                    model.rxnNotes(i)=strcat(model.rxnNotes(i),', with undefined stoichiometry');
+                end
+            end
+            if ismember(model.rxns(i),isIncomplete)
+                if isempty(model.rxnNotes{i})
+                    model.rxnNotes(i)=strcat(model.rxnNotes(i),'Incomplete');
+                else
+                    model.rxnNotes(i)=strcat(model.rxnNotes(i),', incomplete');
+                end
+            end
+            if ismember(model.rxns(i),isGeneral)
+                if isempty(model.rxnNotes{i})
+                    model.rxnNotes(i)=strcat(model.rxnNotes(i),'General');
+                else
+                    model.rxnNotes(i)=strcat(model.rxnNotes(i),', general');
+                end
+            end
+            model.rxnNotes(i)=strcat(model.rxnNotes(i),' reaction');
+        end
         
         %Save the model structure
-        save(rxnsFile,'model','isGeneral','isIncomplete','isUndefinedStoich');
+        save(rxnsFile,'model','isGeneral','isIncomplete','isUndefinedStoich','isSpontaneous');
     end
 end
 %Delete reactions which are labeled as "incomplete", "erroneous",
@@ -465,4 +520,14 @@ end
 if keepUndefinedStoich==false
     model=removeReactions(model,intersect(isUndefinedStoich,model.rxns),true,true);
 end
+if keepSpontaneous==false
+    model=removeReactions(model,intersect(isSpontaneous,model.rxns),true,true);
+end
+
+%Add temporary warning that the set of spontaneous reactions shall not be
+%trusted as long as KEGG mat files are not generated from up-to-date KEGG
+%database. The field isSpontaneous is added just for testing purposes. The
+%warning will be removed as soon as KEGG mat files are generated from the
+%current KEGG release
+disp("WARNING: The set of spontaneous reactions is not the final one. This will be fixed with the following KEGG mat files update")
 end
