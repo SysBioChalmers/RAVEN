@@ -21,8 +21,8 @@ function results = mapRxnsViaMets(model,mnx,mapRxns)
 %   model    Model structure.
 %
 %   mnx      (Optional, will be generated if not provided) MNX database
-%            structure, generated using the following command: 
-%            mnx = buildMNXmodel('both');
+%            structure, generated using the following command:
+%            mnx = buildMNXref('both');
 %
 %   mapRxns  (Optional, Default = all reactions) A logical vector of the
 %            same size as model.rxns, indicating which reactions should be
@@ -39,7 +39,7 @@ function results = mapRxnsViaMets(model,mnx,mapRxns)
 %                 cell of MNX IDs.
 %
 %      rxnMNXeqn: A column cell array containing the reaction equations
-%                 from the MNX database that correspond to the MNX ID(s) 
+%                 from the MNX database that correspond to the MNX ID(s)
 %                 mapped to each model reaction.
 %
 %          notes: A column of strings providing information on if and how
@@ -70,7 +70,7 @@ results.notes(~mapRxns) = {'IGNORED'};
 
 fprintf('Pre-processing model and MNX structures... ');
 
-% if the model.metMNXID field contains multiple columns, convert it to a 
+% if the model.metMNXID field contains multiple columns, convert it to a
 % single column of nested cells
 if size(model.metMNXID,2) > 1
     model.metMNXID = nestCell(model.metMNXID,true);
@@ -108,7 +108,7 @@ allMetMNXIDs(cellfun(@isempty,allMetMNXIDs)) = [];
 % load MNX database structure if not provided as input
 if isempty(mnx)
     fprintf('MNX database structure not provided. It will be loaded.\n\n');
-    mnx = buildMNXmodel('both');
+    mnx = buildMNXref('both');
 end
 
 % flatten mnx.rxnMets (single column -> multi column cell array)
@@ -246,7 +246,7 @@ for i = 1:length(model.rxns)
     % now check if each of the mets in the model rxn are contained in the MNX rxns
     met_inds = find(S(:,i));
     for j = 1:length(met_inds)
-
+        
         % stop checking metabolites if no further matches remain
         if ~any(match)
             break

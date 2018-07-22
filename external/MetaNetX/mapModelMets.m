@@ -11,7 +11,7 @@ function mappedModel = mapModelMets(model,mnx)
 %           fields (e.g., mets, metNames, etc.).
 %
 %   mnx     An MNX metabolite database structure generated using the
-%           buildMNXmodel('met') function.
+%           buildMNXref('mets') function.
 %
 % OUTPUS:
 %
@@ -35,13 +35,13 @@ end
 
 % get list of metID fields
 ignoreFields = {'metFormulas','metMiriams','metComps','mets', ...
-                'metNamesAlt','metCharges','metSMILES','metPdMap'};
+    'metNamesAlt','metCharges','metSMILES','metPdMap'};
 metIDfields = fields(model);
 metIDfields(~startsWith(metIDfields,'met') | ismember(lower(metIDfields),lower(ignoreFields))) = [];
 
 % load metabolite information from MNX database file
 if isempty(mnx)
-    mnx = buildMNXmodel('met');
+    mnx = buildMNXref('mets');
 end
 
 % associate each set of IDs to MNX IDs
@@ -74,7 +74,7 @@ for i = 1:length(metIDfields)
         % and search again for any mets that were not matched during the
         % first pass.
         for ii = 1:2
-           
+            
             if ii == 2
                 % remove special characters from metabolite names
                 metNames = regexprep(metNames,'[^a-zA-Z0-9]','');
@@ -150,12 +150,3 @@ model.metMNXID = flattenCell(model.metMNXID,true);
 mappedModel = model;
 
 end
-
-
-
-
-
-
-
-
-

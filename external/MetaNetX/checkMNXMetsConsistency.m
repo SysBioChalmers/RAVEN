@@ -5,8 +5,8 @@ function result=checkMNXMetsConsistency(metMNXID,MNXmets)
 %
 %   metMNXID    cell array derived from model structure, with MNX
 %               metabolite ids.
-%   MNXmets     MNXref structure, reconstructed by buildMNXmodel. (opt, if
-%               not specified, buildMNXmodel is called)
+%   MNXmets     MNXref structure, reconstructed by buildMNXref. (opt, if
+%               not specified, buildMNXref is called)
 %
 %   result      vector of scores with length, detailing:
 %               0   no MNXid annotated for this metabolite
@@ -21,7 +21,7 @@ function result=checkMNXMetsConsistency(metMNXID,MNXmets)
 %   Eduard Kerkhoven, 2018-07-16
 
 if nargin<2
-    MNXmets=buildMNXmodel('mets');
+    MNXmets=buildMNXref('mets');
 end
 
 % Sort MNXMets structure to speedup later processes

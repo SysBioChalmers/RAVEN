@@ -1,13 +1,13 @@
 function [MNXfields, MetMNXmatch]=mapToMNX(model,rxns,MNXref,keepOneMetMNX)
 % mapToMNX
-%   Maps a model to MetaNetX as much as possible, 
+%   Maps a model to MetaNetX as much as possible,
 %
 %   model           model structure
 %   rxns            logical whether reactions should be mapped to MetaNetX.
 %                   'false' matches only metabolites, 'true' matches both
 %                   metabolites and reactions (opt, default 'true')
-%   MNXref          MNXref structure, reconstructed by buildMNXmodel. (opt,
-%                   if not specified, buildMNXmodel is called)
+%   MNXref          MNXref structure, reconstructed by buildMNXref. (opt,
+%                   if not specified, buildMNXref is called)
 %   keepOneMetMNX   logical, whether metabolites should only retain one
 %                   MNXid. If 'true', then metabolites with multiple MNXids
 %                   will be checked for identical chemical formula and
@@ -15,10 +15,10 @@ function [MNXfields, MetMNXmatch]=mapToMNX(model,rxns,MNXref,keepOneMetMNX)
 %                   alternative situations are detailed in MetMNXmatch.
 %                   (opt, default 'true' if MetMNXmatch is specified as
 %                   output)
-%   
+%
 %   MNXfields       structure containing metMNXID and rxnMNXID, depending
 %                   'rxns' parameter setting
-%   MetMNXmatch     vector 
+%   MetMNXmatch     vector
 %
 %   Usage: MNXfields=mapToMNX(model,rxns,MNXref)
 %
@@ -30,9 +30,9 @@ end
 
 if ~exist('MNXref','var')
     if rxns
-        MNXref=buildMNXmodel('both');
+        MNXref=buildMNXref('both');
     else
-        MNXref=buildMNXmodel('mets');
+        MNXref=buildMNXref('mets');
     end
 end
 if ~exist('keepOneMetMNX','var') && nargout<2
@@ -41,7 +41,7 @@ else
     keepOneMetMNX=true;
 end
 
-if ~isfield(model,'rules') % If RAVEN model, first convert to Cobra    
+if ~isfield(model,'rules') % If RAVEN model, first convert to Cobra
     fprintf('Extract annotations by converting to COBRA model.\n');
     model=ravenCobraWrapper(model);
 end
@@ -77,5 +77,3 @@ if rxns
     MNXfields.rxnMNXID=model.rxnMNXID;
 end
 end
-
-

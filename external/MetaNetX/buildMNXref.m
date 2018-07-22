@@ -1,37 +1,18 @@
-function model = buildMNXmodel(model_type,mnxPath)
-%buildMNXmodel  Construct a model structure from MNX database files.
+function model = buildMNXref(type,mnxPath)
+%buildMNXref  Construct a reference structure from MNX database files.
 %
-%   model_type      (OPTIONAL) Specify the type of model that will be
-%                   built, which determines what information is included:
+%   type        string, specifying the type of reference structure
+%               'mets'  include only metabolite-related fields.
+%               'rxns'  included only reaction-related fields
+%               'both'  include fields related to both reactions and
+%                       metabolites. (opt, default 'both')
+%   mnxPath     string of path where MetaNetX reference files (chem_xref,
+%               chem_prop, reac_xref and reac_prop) are stored. (opt,
+%               default to RAVENdir/external/metanetx)
 %
-%                   'met'   Include only metabolite-related fields. This
-%                           will include ALL metabolites in the MNX
-%                           database, and will therefore contain more met
-%                           information than if the 'model' option is
-%                           specified.
+% Usage: model = buildMNXref(model_type,mnxPath)
 %
-%                   'rxn'   Included only reaction-related fields. No
-%                           stoichiometry matrix will be constructed, but
-%                           the model will include ALL reactions from the
-%                           MNX database.
-%
-%                  'both'   (default) Include fields related to either reactions or
-%                           metabolites, but do not associate them with
-%                           each other (i.e., no stoichimetry matrix). This
-%                           will contain all the fields that would be
-%                           obtained by running both the 'met' and 'rxn'
-%                           options. More information will be present in
-%                           this format than if the 'model' option is
-%                           specified, because reactions and/or metabolites
-%                           will not be removed to construct a functioning
-%                           stoichiometry matrix.
-%   mnxPath         character string of location where MetaNetX reference
-%                   files (chem_xref, chem_prop, reac_xref and reac_prop)
-%                   are saved. (opt, default to RAVENdir/external/metanetx)
-%
-% Usage: model = buildMNXmodel(model_type,mnxPath)
-%
-% Eduard Kerkhoven, 2018-07-16
+% Eduard Kerkhoven, 2018-07-22
 
 if ~exist('mnxPath','var')
     [ST, I]=dbstack('-completenames');
@@ -40,9 +21,9 @@ if ~exist('mnxPath','var')
 end
 
 files={'chem_xref','chem_prop','reac_prop','reac_xref'};
-if strcmp(model_type,'met')
+if strcmp(type,'mets')
     files=files(1:2);
-elseif strcmp(model_type,'rxn')
+elseif strcmp(type,'rxnx')
     files=files(3:4);
 end
 for i=1:length(files)
@@ -59,16 +40,14 @@ end
 
 % handle inputs
 if nargin < 1
-    model_type = 'both';
+    type = 'both';
 end
 
 %% Initialize model
-% use similar field order as those from SBML
 model=[];
-model.id='MNXdatabase';
 
 %% Load reaction properties
-if ismember(model_type,{'rxn','both'})
+if ismember(type,{'rxns','both'})
     fprintf('Loading reaction data files... ');
     opts=detectImportOptions(fullfile(mnxPath,'reac_prop.txt'),...
         'Delimiter','\t','NumHeaderLines',365);
@@ -76,21 +55,21 @@ if ismember(model_type,{'rxn','both'})
     mnx = readtable(fullfile(mnxPath,'reac_prop.txt'),opts);
     
     opts=detectImportOptions(fullfile(mnxPath,'reac_xref.txt'),...
-    'Delimiter','\t','NumHeaderLines',365);
+        'Delimiter','\t','NumHeaderLines',365);
     opts.VariableNames(1)=regexprep(opts.VariableNames(1),'^x_','');
     mnx_xref = readtable(fullfile(mnxPath,'reac_xref.txt'),opts);
     
     % add a field that contains a list of mets that participate in each reaction
     rxnMets = cellfun(@(r) regexp(r,'(\w+)@\w+','tokens'),mnx.Equation,'UniformOutput',false);
     model.rxnMets = cellfun(@(r) unique([r{:}]),rxnMets,'UniformOutput',false);
-
+    
     % extract reaction MNX IDs and other information
     model.rxns = mnx.MNX_ID;
     model.rxnBalanced = mnx.Balance;
     model.eccodes = mnx.EC;
     model.rxnEqnMNX = mnx.Equation;
     model.rxnEqnNames = mnx.Description;
-       
+    
     % get other rxn IDs
     %remove deprecated and other lines
     mnx_xref(~contains(mnx_xref.XREF,':') | contains(mnx_xref.XREF,'deprecated:'),:) = [];
@@ -124,29 +103,25 @@ if ismember(model_type,{'rxn','both'})
         DBstruct(idx)=mnxs(:,2);
         model.(fNames{i})=DBstruct;
     end
-    
     model.rxnMNXID = model.rxns;
     fprintf('done.\n');
 end
 
-
 %% Load metabolite properties
-
-if ismember(model_type,{'met','both'})
-    
+if ismember(type,{'mets','both'})
     fprintf('Loading metabolite data... ');
     opts=detectImportOptions(fullfile(mnxPath,'chem_prop.txt'),...
-    'Delimiter','\t','NumHeaderLines',365);
+        'Delimiter','\t','NumHeaderLines',365);
     opts.VariableNames(1)=regexprep(opts.VariableNames(1),'^x_','');
     mnx = readtable(fullfile(mnxPath,'chem_prop.txt'),opts);  % ~45 sec load time
     opts=detectImportOptions(fullfile(mnxPath,'chem_xref.txt'),...
-    'Delimiter','\t','NumHeaderLines',365);
+        'Delimiter','\t','NumHeaderLines',365);
     opts.VariableNames(1)=regexprep(opts.VariableNames(1),'^x_','');
     mnx_xref = readtable(fullfile(mnxPath,'chem_xref.txt'),opts);
     fprintf('done.\n');
     
     fprintf('Processing metabolite data... ');
-    if strcmp(model_type,'model') 
+    if strcmp(type,'model')
         % retrieve row indices corresponding to model met list
         [~,met_ind] = ismember(model.metMNXID,mnx.MNX_ID);
         mnx = mnx(met_ind,:);
@@ -167,7 +142,7 @@ if ismember(model_type,{'met','both'})
     metSources(~contains(metSources,':')) = {''};  % only keep entries with a colon, which indicates they have a source beyond MNX
     metSourceNames = regexprep(metSources,':.+$','');  % retrieve source name
     metSourceIDs = regexprep(metSources,'^.+:','');  % retrieve source ID
-        
+    
     % remove rows of mnx_xref that don't contain external IDs
     mnx_xref(~contains(mnx_xref.XREF,':') | contains(mnx_xref.XREF,'deprecated:'),:) = [];
     
@@ -197,7 +172,7 @@ if ismember(model_type,{'met','both'})
     fprintf('Organizing MNXID-name pairs... ');
     mnxIDs = cellfun(@(id,descr) repmat({id},1,numel(descr)),mnx_xref.MNX_ID,mnxDescr,'UniformOutput',false);
     model.mnxID2name = [[mnxIDs{:}]',[mnxDescr{:}]'];
-
+    
     % remove repeated ID-name pairs
     [~,numericPair] = ismember(lower(model.mnxID2name),unique(lower(model.mnxID2name)));  % make numeric for faster processing
     [~,uniq_ind] = unique(numericPair,'rows');
@@ -205,7 +180,7 @@ if ismember(model_type,{'met','both'})
     
     % instead of splitting add unsplit name field as additional column
     %mnxID2extID = [mnxID2extID,mnx_xref.Description];
-   
+    
     % add model fields corresponding to available source names
     sNames = {'bigg','chebi','envipath','hmdb','kegg','lipidmaps','metacyc','reactome','sabiork','seed','slm'};
     fNames = {'metBiGGID','metChEBIID','metEnviPathID','metHMDBID','metKEGGID','metLIPIDMAPSID','metMetaCycID','metREACTOMEID','metSABIORKID','metSEEDID','metSLMID'};
@@ -229,57 +204,15 @@ if ismember(model_type,{'met','both'})
         DBstruct(idx)=mnxs(:,2);
         model.(fNames{i})=DBstruct;
     end
-    % This portion of code would be nice, but it takes forever to run. 
-%     for i = 1:length(sNames)
-%         fprintf('Retrieving %s met IDs... ',upper(sNames{i}));
-%         id2id = mnxID2extID(ismember(metSourceNamesX,sNames{i}),:);  % subset ID data for speed
-%         ind = ismember(model.mets,id2id(:,1));  % subset met list for speed
-%         model.(fNames{i}) = repmat({''},size(model.mets));
-%         model.(fNames{i})(ind) = cellfun(@(id) id2id(ismember(id2id(:,1),id),3),model.mets(ind),'UniformOutput',false);
-%         fprintf('Done.\n');
-%     end
-
-    % instead, just save the unprocessed information
-    [~,ind] = ismember(mnxID2extID(:,2),sNames);
-    mnxID2extID(:,2) = fNames(ind);  % rename to match field names
-    model.mnxID2extID = mnxID2extID;
-    
-    
-    % fill in other fields
-    model.metBiGGID = repmat({''},size(model.mets));
-    model.metBiGGID(ismember(metSourceNames,'bigg')) = metSourceIDs(ismember(metSourceNames,'bigg'));
-    model.metChEBIID = repmat({''},size(model.mets));
-    model.metChEBIID(ismember(metSourceNames,'chebi')) = metSourceIDs(ismember(metSourceNames,'chebi'));
-    model.metEnviPathID = repmat({''},size(model.mets));
-    model.metEnviPathID(ismember(metSourceNames,'envipath')) = metSourceIDs(ismember(metSourceNames,'envipath'));
-    model.metHMDBID = repmat({''},size(model.mets));
-    model.metHMDBID(ismember(metSourceNames,'hmdb')) = metSourceIDs(ismember(metSourceNames,'hmdb'));
-    model.metKEGGID = repmat({''},size(model.mets));
-    model.metKEGGID(ismember(metSourceNames,'kegg')) = metSourceIDs(ismember(metSourceNames,'kegg'));
-    model.metLIPIDMAPSID = repmat({''},size(model.mets));
-    model.metLIPIDMAPSID(ismember(metSourceNames,'lipidmaps')) = metSourceIDs(ismember(metSourceNames,'lipidmaps'));
-    model.metMetaCycID = repmat({''},size(model.mets));
-    model.metMetaCycID(ismember(metSourceNames,'metacyc')) = metSourceIDs(ismember(metSourceNames,'metacyc'));
-    model.metREACTOMEID = repmat({''},size(model.mets));
-    model.metREACTOMEID(ismember(metSourceNames,'reactome')) = metSourceIDs(ismember(metSourceNames,'reactome'));
-    model.metSABIORKID = repmat({''},size(model.mets));
-    model.metSABIORKID(ismember(metSourceNames,'sabiork')) = metSourceIDs(ismember(metSourceNames,'sabiork'));
-    model.metSEEDID = repmat({''},size(model.mets));
-    model.metSEEDID(ismember(metSourceNames,'seed')) = metSourceIDs(ismember(metSourceNames,'seed'));
-    model.metSLMID = repmat({''},size(model.mets));  % SwissLipids database
-    model.metSLMID(ismember(metSourceNames,'slm')) = metSourceIDs(ismember(metSourceNames,'slm'));
-    fprintf('Done.\n');
+    fprintf(' done.')
 end
 
 %% Final model adjustments
-if ismember(model_type,{'met','both'})
+if ismember(type,{'met','both'})
     % remove NAs from metFormulas
     model.metFormulas(ismember(model.metFormulas,'NA')) = {''};
-    if strcmp(model_type,'model')
+    if strcmp(type,'model')
         % change format of mets from "met@comp" to "met[comp]"
         model.mets = strcat(regexprep(model.mets,'@','['),']');
     end
 end
-
-
-

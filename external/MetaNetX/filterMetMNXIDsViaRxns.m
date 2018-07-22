@@ -1,18 +1,18 @@
 function [fmodel,removed] = filterMetMNXIDsViaRxns(model,mnx,ignoreComp,keepAtLeastOne)
 %filterMetMNXIDsViaRxns  Remove met MNXID associations based on their rxns.
 %
-% filterMetMNXIDsViaRxns determines which met MNXIDs (if any) should be 
-% removed for mets associated with multiple MNXIDs. This is accomplished by 
-% finding all model rxns that involve the met, obtaining their associated 
-% MNX rxn IDs, and retrieving those rxns from the MNX database. Any MNXIDs 
-% associated with the met that are not included in that set of rxns from 
+% filterMetMNXIDsViaRxns determines which met MNXIDs (if any) should be
+% removed for mets associated with multiple MNXIDs. This is accomplished by
+% finding all model rxns that involve the met, obtaining their associated
+% MNX rxn IDs, and retrieving those rxns from the MNX database. Any MNXIDs
+% associated with the met that are not included in that set of rxns from
 % the MNX database will be removed.
 %
 % NOTE: metabolites that occur only in reactions that have no associated
 %       rxnMNXIDs will be skipped, as there is insufficient evidence to
 %       properly filter their associated metMNXIDs.
-% 
-% 
+%
+%
 % USAGE:
 %
 %   [fmodel,removed] = filterMetMNXIDsViaRxns(model,mnx,ignoreComp,keepAtLeastOne);
@@ -24,7 +24,7 @@ function [fmodel,removed] = filterMetMNXIDsViaRxns(model,mnx,ignoreComp,keepAtLe
 %
 %   mnx      (Optional) An MNX database structure, containing reaction-
 %            related information retrieved from the MNX database, generated
-%            using the following command: mnx = buildMNXmodel('rxn');
+%            using the following command: mnx = buildMNXref('rxns');
 %            By default, the function will automatically run the above
 %            command to regenerate the MNX database structure (slower).
 %
@@ -37,7 +37,7 @@ function [fmodel,removed] = filterMetMNXIDsViaRxns(model,mnx,ignoreComp,keepAtLe
 %   keepAtLeastOne  (Optional, Default FALSE) In some cases, none of the
 %                   MNXIDs associated with a metabolite are found in any of
 %                   the reactions, and will result in a met with zero MNXID
-%                   associations in the filtered model. 
+%                   associations in the filtered model.
 %                   If keepAtLeastOne = TRUE, then in cases such as this,
 %                   the MNXID associations will not be removed in the
 %                   filtered model, but will be indicated in the "removed"
@@ -59,7 +59,7 @@ function [fmodel,removed] = filterMetMNXIDsViaRxns(model,mnx,ignoreComp,keepAtLe
 
 % handle input arguments
 if nargin < 2 || isempty(mnx)
-    mnx = buildMNXmodel('rxn');
+    mnx = buildMNXref('rxns');
 end
 if nargin < 3
     ignoreComp = false;
@@ -73,7 +73,7 @@ fmodel = model;
 removed.mets = {};
 removed.metMNXID = {};
 
-% if metMNXID and/or rxnMNXID field contains multiple columns, consolidate 
+% if metMNXID and/or rxnMNXID field contains multiple columns, consolidate
 % into a single column with nested cell entries
 if size(model.metMNXID,2) > 1
     model.metMNXID = nestCell(model.metMNXID,true);
@@ -119,9 +119,9 @@ if ( ignoreComp )
             fprintf('of mets that are identical except for their compartment. If any mets are associated\n');
             fprintf('with compartment-specific metMNXIDs, this is not recommended.\n');
             
-            % If ignoring compartments, convert the stoich matrix into a 
-            % binary met-rxn association matrix (i.e., set all nonzero 
-            % entries = 1), and combine all associations for metabolites 
+            % If ignoring compartments, convert the stoich matrix into a
+            % binary met-rxn association matrix (i.e., set all nonzero
+            % entries = 1), and combine all associations for metabolites
             % that are identical except for their compartment. Also combine
             % their metMNXIDs.
             S = (model.S ~= 0);
@@ -141,10 +141,10 @@ if ( ignoreComp )
             S = S(uniq_ind,:);
             model.metMNXID = model.metMNXID(uniq_ind);
             
-        end 
+        end
         
     end
-
+    
 else
     S = model.S;
 end
@@ -186,7 +186,7 @@ for i = 1:length(model.mets)
     elseif all(rem_mets) && (keepAtLeastOne)
         % In this case, all the MNXIDs associated with this met are to be
         % removed, but the user has indicated that they do not want this to
-        % happen. Therefore,  NONE will be removed, but the information 
+        % happen. Therefore,  NONE will be removed, but the information
         % will be reported in the "removed" structure, so these cases can
         % be manually evaluated by the user.
         removed.mets = [removed.mets; model.mets(i)];
@@ -222,8 +222,3 @@ if ( ignoreComp )
 else
     fmodel.metMNXID = model.metMNXID;
 end
-
-
-
-
-
