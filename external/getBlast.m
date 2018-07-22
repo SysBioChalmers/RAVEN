@@ -24,7 +24,7 @@ function blastStructure=getBlast(organismID,fastaFile,modelIDs,refFastaFiles)
 %   Usage: blastStructure=getBlast(organismID,fastaFile,modelIDs,...
 %           refFastaFiles)
 %
-%   Eduard Kerkhoven, 2018-05-18
+%   Simonas Marcisauskas, 2018-07-20
 %
 
 %Everything should be cell arrays
@@ -119,19 +119,19 @@ for i=1:numel(refFastaFiles)*2
     if i<=numel(refFastaFiles)
         tempStruct.fromId=modelIDs{i};
         tempStruct.toId=organismID{1};
-        A=importdata([outFile '_' num2str(i)]);
+        A=readtable([outFile '_' num2str(i)],'Delimiter',',','Format','%s%s%f%f%f%f%f');
     else
         tempStruct.fromId=organismID{1};
         tempStruct.toId=modelIDs{i-numel(refFastaFiles)};
-        A=importdata([outFile '_r' num2str(i-numel(refFastaFiles))]);
+        A=readtable([outFile '_r' num2str(i-numel(refFastaFiles))],'Delimiter',',','Format','%s%s%f%f%f%f%f');
     end
-    tempStruct.fromGenes=A.textdata(:,1);
-    tempStruct.toGenes=A.textdata(:,2);
-    tempStruct.evalue=A.data(:,1);
-    tempStruct.identity=A.data(:,2);
-    tempStruct.aligLen=A.data(:,3);
-    tempStruct.bitscore=A.data(:,4);
-    tempStruct.ppos=A.data(:,5);
+    tempStruct.fromGenes=A{:,1};
+    tempStruct.toGenes=A{:,2};
+    tempStruct.evalue=A(:,3);
+    tempStruct.identity=A(:,4);
+    tempStruct.aligLen=A(:,5);
+    tempStruct.bitscore=A(:,6);
+    tempStruct.ppos=A(:,7);
     blastStructure=[blastStructure tempStruct];
 end
 
