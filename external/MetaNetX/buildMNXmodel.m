@@ -120,9 +120,9 @@ if ismember(model_type,{'rxn','both'})
         end
         
         [~,idx]=ismember(mnxs(:,1),model.rxns);
-        rxnDBstruct=cell(length(model.rxns),1);
-        rxnDBstruct(idx)=mnxs(:,2);
-        model.(fNames{i})=rxnDBstruct;
+        DBstruct=cell(length(model.rxns),1);
+        DBstruct(idx)=mnxs(:,2);
+        model.(fNames{i})=DBstruct;
     end
     
     model.rxnMNXID = model.rxns;
@@ -187,12 +187,12 @@ if ismember(model_type,{'met','both'})
     
     % split met names
     mnxDescr = cell(size(mnx_xref,1),1);
-    fprintf('\nSplitting MNX metabolite names: ');
+    fprintf(' done.\nSplitting MNX metabolite names: ');
     for i = 1:length(chunk_ind)-1
         fprintf('%u%% ',round(chunk_ind(i)/length(mnx_xref.Description)*100)+10);
         mnxDescr(chunk_ind(i):chunk_ind(i+1)-1) = cellfun(@(x) strsplit(x,'|'),mnx_xref.Description(chunk_ind(i):chunk_ind(i+1)-1),'UniformOutput',false);
     end
-    fprintf('100% done\n');
+    fprintf('100%% done\n');
     % flatten nested cells to obtain an Nx2 matrix of MNXID-name pairs
     fprintf('Organizing MNXID-name pairs... ');
     mnxIDs = cellfun(@(id,descr) repmat({id},1,numel(descr)),mnx_xref.MNX_ID,mnxDescr,'UniformOutput',false);
@@ -202,7 +202,6 @@ if ismember(model_type,{'met','both'})
     [~,numericPair] = ismember(lower(model.mnxID2name),unique(lower(model.mnxID2name)));  % make numeric for faster processing
     [~,uniq_ind] = unique(numericPair,'rows');
     model.mnxID2name = model.mnxID2name(uniq_ind,:);
-    fprintf('done.\n');
     
     % instead of splitting add unsplit name field as additional column
     %mnxID2extID = [mnxID2extID,mnx_xref.Description];
@@ -211,34 +210,24 @@ if ismember(model_type,{'met','both'})
     sNames = {'bigg','chebi','envipath','hmdb','kegg','lipidmaps','metacyc','reactome','sabiork','seed','slm'};
     fNames = {'metBiGGID','metChEBIID','metEnviPathID','metHMDBID','metKEGGID','metLIPIDMAPSID','metMetaCycID','metREACTOMEID','metSABIORKID','metSEEDID','metSLMID'};
     for i=1:length(sNames)
-        dbIDs=find(ismember(mnxID2extID(:,2),sNames{i}));
-        [~,MNXdbIDs]=ismember(mnxID2extID(dbIDs,1),model.metMNXID);
-        model.(fNames{i}) = cell(numel(model.mets),1);
+        fprintf(' done\nRetrieving %s reaction IDs...',upper(sNames{i}));
+        currentDbOnly=ismember(mnxID2extID(:,2),sNames{i});
+        currentmnxID2extID=mnxID2extID(currentDbOnly,:);
         
-        [numbOfMNXmatches,ia,~]=unique(MNXdbIDs);
-        numbOfMNXmatches=hist(MNXdbIDs,numbOfMNXmatches);
-        numbOfMNXmatches=hist(MNXdbIDs,numbOfMNXmatches);
+        [mnxs,indices,indices2] = unique(currentmnxID2extID(:,1),'stable');
+        counts = hist(indices2, 1:size(indices));
+        mnxs(counts==1,2)=currentmnxID2extID(indices2(counts==1),3);
+        multiMnxs=find(counts>1);
         
-        % If only one ID, directly assign
-        singleMatch=find(numbOfMNXmatches==1);
-        model.(fNames{i})(MNXdbIDs(ia(singleMatch)))=mnxID2extID(dbIDs(ia(singleMatch)));
+        for j=1:length(multiMnxs)
+            idx=strcmp(mnxs(multiMnxs(j)),currentmnxID2extID(:,1));
+            mnxs(multiMnxs(j),2)={currentmnxID2extID(idx,3)};
+        end
         
-        % Multiple matches, nest dbIds
-        multiMatch=find(hist(numbOfMNXmatches>1));
-        dbIDs(ia(multiMatch));
-        mnxIDs = cellfun(@(id,descr) repmat({id},1,numel(descr)),mnx_xref.MNX_ID,mnxDescr,'UniformOutput',false);
-
-        
-        % If multiple IDs
-        multiDb=find(hist(MNXdbIDs,uq)>1);
-        multiDb=hist(MNXdbIDs,uq);
-        model.(fNames{i})(MNXdbIDs(multiDb));
-        tmp=mnxID2extID(biggIDs(multiDb),3);
-        multiDbMnxs = cellfun(@(id,descr) repmat({id},1,numel(descr)),mnx_xref.MNX_ID,mnxDescr,'UniformOutput',false);
-
-        
-        MNXdbIDs=MNXdbIDs(multiDbId);
-        (~singleDbId);
+        [~,idx]=ismember(mnxs(:,1),model.mets);
+        DBstruct=cell(length(model.mets),1);
+        DBstruct(idx)=mnxs(:,2);
+        model.(fNames{i})=DBstruct;
     end
     % This portion of code would be nice, but it takes forever to run. 
 %     for i = 1:length(sNames)
