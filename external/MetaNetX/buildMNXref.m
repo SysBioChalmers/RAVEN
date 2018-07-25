@@ -179,9 +179,9 @@ if ismember(type,{'mets','both'})
     sNames = {'bigg','chebi','envipath','hmdb','kegg','lipidmaps','metacyc','reactome','sabiork','seed','slm'};
     fNames = {'metBiGGID','metChEBIID','metEnviPathID','metHMDBID','metKEGGID','metLIPIDMAPSID','metMetaCycID','metREACTOMEID','metSABIORKID','metSEEDID','metSLMID'};
     for i=1:length(sNames)
-        fprintf(' done\nRetrieving %s reaction IDs...',upper(sNames{i}));
         currentDbOnly=ismember(mnxID2extID(:,2),sNames{i});
         currentmnxID2extID=mnxID2extID(currentDbOnly,:);
+        fprintf(' done.\nRetrieving %s metabolite IDs...',upper(sNames{i}));
         
         [mnxs,indices,indices2] = unique(currentmnxID2extID(:,1),'stable');
         counts = hist(indices2, 1:size(indices));
