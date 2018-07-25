@@ -173,7 +173,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %    keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,...
 %    minScoreRatioG,minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2018-07-20
+%   Simonas Marcisauskas, 2018-07-25
 %
 
 if nargin<2
@@ -377,6 +377,10 @@ if isempty(fastaFile)
             model.grRules{i}=[model.grRules{i} ')'];
         end
     end
+    %Fix grRules and reconstruct rxnGeneMat
+    [grRules,rxnGeneMat] = standardizeGrRules(model); %Give detailed output
+    model.grRules = grRules;
+    model.rxnGeneMat = rxnGeneMat;
     %Add geneMiriams, assuming that it follows the syntax
     %kegg.genes/organismID:geneName
     model.geneMiriams='';

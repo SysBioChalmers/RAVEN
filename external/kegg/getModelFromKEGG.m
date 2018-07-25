@@ -1,4 +1,5 @@
-function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral)
+function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
+    keepUndefinedStoich,keepIncomplete,keepGeneral)
 % getModelFromKEGG
 %   Retrieves information stored in KEGG database and generates a model
 %
@@ -7,7 +8,10 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,keepUndefined
 %                       directory, this function will attempt to read data
 %                       from a local FTP dump of the KEGG database.
 %                       keggPath is the path to the root of this database
-%                       (opt, default 'RAVEN/external/kegg')
+%                       (opt, default 'RAVEN/external/kegg'). If
+%                       keggModel.mat is present in the same directory, the
+%                       function reads the data from this file and ignores
+%                       keggGenes.mat, keggMets.mat and keggRxns.mat
 %   keepSpontaneous     include reactions labeled as "spontaneous" (opt,
 %                       default true)
 %   keepUndefinedStoich include reactions in the form n A <=> n+1 A. These
@@ -31,9 +35,10 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,keepUndefined
 %                       ids and their associated genes. The KO ids are
 %                       saved as reactions
 %
-%   Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
+%   Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
+%    keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Simonas Marcisauskas, 2018-07-20
+%   Simonas Marcisauskas, 2018-07-25
 %
 
 if nargin<1
@@ -52,160 +57,197 @@ if nargin<5
     keepGeneral=false;
 end
 
-%First get all reactions
-model=getRxnsFromKEGG(keggPath,keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral);
-fprintf('KEGG reactions loaded\n');
-
-%Get the KO ids that are associated with any of the reactions. They will be
-%used later on to create a rxn-gene matrix
-KOs=cell(numel(model.rxns)*2,1);
-%Make room for two KO ids per reaction
-
-addToIndex=1;
-%Add all KO ids that are used
-for i=1:numel(model.rxns)
-    if isstruct(model.rxnMiriams{i})
-        for j=1:numel(model.rxnMiriams{i}.name)
-            if strcmpi('kegg.orthology',model.rxnMiriams{i}.name{j})
-                %Add the KO id
-                KOs(addToIndex)=model.rxnMiriams{i}.value(j);
-                addToIndex=addToIndex+1;
-            end
-        end
-    end
-end
-
-KOs=KOs(1:addToIndex-1);
-KOs=unique(KOs);
-
-%Get all genes from any organism in KEGG that is associated with any of the
-%KOs
-KOModel=getGenesFromKEGG(keggPath,KOs);
-fprintf('KEGG genes loaded\n');
-
-model.genes=KOModel.genes;
-
-%It can be that there are KOs from the reactions that have no database
-%entry. These are (as far as I've seen) lumped versions of other KOs and
-%should be removed
-KOsToRemove=setdiff(KOs, KOModel.rxns);
-
-%Loop through all reactions and delete the KOs that weren't found
-for i=1:numel(model.rxns)
-    if isstruct(model.rxnMiriams{i})
-        for j=1:numel(model.rxnMiriams{i}.name)
-            toDel=[];
-            if strcmp(model.rxnMiriams{i}.name{j},'kegg.orthology')
-                if ismember(model.rxnMiriams{i}.value{j},KOsToRemove)
-                    toDel=[toDel;j];
+[ST, I]=dbstack('-completenames');
+ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+modelFile=fullfile(ravenPath,'external','kegg','keggModel.mat');
+if exist(modelFile, 'file')
+    fprintf(['NOTE: Importing KEGG model from ' strrep(modelFile,'\','/') '.\n']);
+    load(modelFile);
+else
+    fprintf(['Cannot locate ' strrep(modelFile,'\','/') ' and will try to generate it kegg***.mat files.\n']);
+    %First get all reactions
+    [model,isSpontaneous,isUndefinedStoich,isIncomplete,isGeneral]=getRxnsFromKEGG(keggPath);
+    fprintf('KEGG reactions loaded\n');
+    
+    %Get the KO ids that are associated with any of the reactions. They
+    %will be used later on to create a rxn-gene matrix
+    KOs=cell(numel(model.rxns)*2,1);
+    %Make room for two KO ids per reaction
+    
+    addToIndex=1;
+    %Add all KO ids that are used
+    for i=1:numel(model.rxns)
+        if isstruct(model.rxnMiriams{i})
+            for j=1:numel(model.rxnMiriams{i}.name)
+                if strcmpi('kegg.orthology',model.rxnMiriams{i}.name{j})
+                    %Add the KO id
+                    KOs(addToIndex)=model.rxnMiriams{i}.value(j);
+                    addToIndex=addToIndex+1;
                 end
             end
         end
-        %Delete the KOs
-        if any(toDel)
-            %If all posts are deleted, then delete the whole structure
-            if numel(toDel)==j
-                model.rxnMiriams{i}=[];
-            else
-                model.rxnMiriams{i}.name(toDel)=[];
-                model.rxnMiriams{i}.value(toDel)=[];
+    end
+    
+    KOs=KOs(1:addToIndex-1);
+    KOs=unique(KOs);
+    
+    %Get all genes from any organism in KEGG that is associated with any of
+    %the KOs
+    KOModel=getGenesFromKEGG(keggPath,KOs);
+    fprintf('KEGG genes loaded\n');
+    
+    model.genes=KOModel.genes;
+    
+    %It can be that there are KOs from the reactions that have no database
+    %entry. These are (as far as I've seen) lumped versions of other KOs
+    %and should be removed
+    KOsToRemove=setdiff(KOs, KOModel.rxns);
+    
+    %Loop through all reactions and delete the KOs that weren't found
+    for i=1:numel(model.rxns)
+        if isstruct(model.rxnMiriams{i})
+            for j=1:numel(model.rxnMiriams{i}.name)
+                toDel=[];
+                if strcmp(model.rxnMiriams{i}.name{j},'kegg.orthology')
+                    if ismember(model.rxnMiriams{i}.value{j},KOsToRemove)
+                        toDel=[toDel;j];
+                    end
+                end
+            end
+            %Delete the KOs
+            if any(toDel)
+                %If all posts are deleted, then delete the whole structure
+                if numel(toDel)==j
+                    model.rxnMiriams{i}=[];
+                else
+                    model.rxnMiriams{i}.name(toDel)=[];
+                    model.rxnMiriams{i}.value(toDel)=[];
+                end
             end
         end
     end
-end
-
-%Create the rxnGeneMat for the reactions. This is simply done by merging
-%the gene associations for all the involved KOs
-r=zeros(10000000,1);
-%Store the positions since it's slow to write to a sparse array in a loop
-c=zeros(10000000,1);
-counter=1;
-for i=1:numel(model.rxns)
-    if isstruct(model.rxnMiriams{i})
-        I=strncmp('kegg.orthology',model.rxnMiriams{i}.name,18);
-        [J, K]=ismember(model.rxnMiriams{i}.value(I),KOModel.rxns);
-        %Find all gene indexes that correspond to any of these KOs
-        [~, L]=find(KOModel.rxnGeneMat(K(J),:));
-        if any(L)
-            %Allocate room for more elements if needed
-            if counter+numel(L)-1>=numel(r)
-                r=[r;zeros(numel(r),1)];
-                c=[c;zeros(numel(c),1)];
+    
+    %Create the rxnGeneMat for the reactions. This is simply done by
+    %merging the gene associations for all the involved KOs
+    r=zeros(10000000,1);
+    %Store the positions since it's slow to write to a sparse array in a
+    %loop
+    c=zeros(10000000,1);
+    counter=1;
+    for i=1:numel(model.rxns)
+        if isstruct(model.rxnMiriams{i})
+            I=strncmp('kegg.orthology',model.rxnMiriams{i}.name,18);
+            [J, K]=ismember(model.rxnMiriams{i}.value(I),KOModel.rxns);
+            %Find all gene indexes that correspond to any of these KOs
+            [~, L]=find(KOModel.rxnGeneMat(K(J),:));
+            if any(L)
+                %Allocate room for more elements if needed
+                if counter+numel(L)-1>=numel(r)
+                    r=[r;zeros(numel(r),1)];
+                    c=[c;zeros(numel(c),1)];
+                end
+                r(counter:counter+numel(L)-1)=ones(numel(L),1)*i;
+                c(counter:counter+numel(L)-1)=L(:);
+                counter=counter+numel(L);
             end
-            r(counter:counter+numel(L)-1)=ones(numel(L),1)*i;
-            c(counter:counter+numel(L)-1)=L(:);
-            counter=counter+numel(L);
         end
     end
-end
-
-model.rxnGeneMat=sparse(r(1:counter-1),c(1:counter-1),ones(counter-1,1));
-if size(model.rxnGeneMat,1)~=numel(model.rxns) || size(model.rxnGeneMat,2)~=numel(KOModel.genes)
-    model.rxnGeneMat(numel(model.rxns),numel(KOModel.genes))=0;
-end
-
-%Then get all metabolites
-metModel=getMetsFromKEGG(keggPath);
-fprintf('KEGG metabolites loaded\n');
-
-%Add information about all metabolites to the model
-[a, b]=ismember(model.mets,metModel.mets);
-a=find(a);
-b=b(a);
-
-if ~isfield(model,'metNames')
-    model.metNames=cell(numel(model.mets),1);
-    model.metNames(:)={''};
-end
-model.metNames(a)=metModel.metNames(b);
-
-if ~isfield(model,'metFormulas')
-    model.metFormulas=cell(numel(model.mets),1);
-    model.metFormulas(:)={''};
-end
-model.metFormulas(a)=metModel.metFormulas(b);
-
-if ~isfield(model,'inchis')
-    model.inchis=cell(numel(model.mets),1);
-    model.inchis(:)={''};
-end
-model.inchis(a)=metModel.inchis(b);
-
-if ~isfield(model,'metMiriams')
-    model.metMiriams=cell(numel(model.mets),1);
-end
-model.metMiriams(a)=metModel.metMiriams(b);
-
-%The composition should be loaded from InChIs when available
-I=find(~cellfun(@isempty,model.inchis));
-for i=1:numel(I)
-    S=regexp(model.inchis(I(i)),'/','split');
-    S=S{1};
-    if numel(S)>=2
-        %Don't copy if it doesn't look good
-        model.metFormulas(I(i))=S(2);
+    
+    model.rxnGeneMat=sparse(r(1:counter-1),c(1:counter-1),ones(counter-1,1));
+    if size(model.rxnGeneMat,1)~=numel(model.rxns) || size(model.rxnGeneMat,2)~=numel(KOModel.genes)
+        model.rxnGeneMat(numel(model.rxns),numel(KOModel.genes))=0;
     end
+    
+    %Then get all metabolites
+    metModel=getMetsFromKEGG(keggPath);
+    fprintf('KEGG metabolites loaded\n');
+    
+    %Add information about all metabolites to the model
+    [a, b]=ismember(model.mets,metModel.mets);
+    a=find(a);
+    b=b(a);
+    
+    if ~isfield(model,'metNames')
+        model.metNames=cell(numel(model.mets),1);
+        model.metNames(:)={''};
+    end
+    model.metNames(a)=metModel.metNames(b);
+    
+    if ~isfield(model,'metFormulas')
+        model.metFormulas=cell(numel(model.mets),1);
+        model.metFormulas(:)={''};
+    end
+    model.metFormulas(a)=metModel.metFormulas(b);
+    
+    if ~isfield(model,'inchis')
+        model.inchis=cell(numel(model.mets),1);
+        model.inchis(:)={''};
+    end
+    model.inchis(a)=metModel.inchis(b);
+    
+    if ~isfield(model,'metMiriams')
+        model.metMiriams=cell(numel(model.mets),1);
+    end
+    model.metMiriams(a)=metModel.metMiriams(b);
+    
+    %The composition should be loaded from InChIs when available
+    I=find(~cellfun(@isempty,model.inchis));
+    for i=1:numel(I)
+        S=regexp(model.inchis(I(i)),'/','split');
+        S=S{1};
+        if numel(S)>=2
+            %Don't copy if it doesn't look good
+            model.metFormulas(I(i))=S(2);
+        end
+    end
+    
+    %Put all metabolites in one compartment called 's' (for system). This
+    %is done just to be more compatible with the rest of the code
+    model.comps={'s'};
+    model.compNames={'System'};
+    model.metComps=ones(numel(model.mets),1);
+    
+    %If reactions with undefined stoichiometry are kept, then the
+    %corresponding metabolites will have ids such as "(n+1) C00001" and
+    %their names will be empty. These ids are not valid SBML identifiers
+    %and are therefore replaced with "undefined1, undefined2...". The
+    %former ids are stored as the new names
+    I=find(cellfun(@any,strfind(model.mets,'n')) | cellfun(@any,strfind(model.mets,'m')));
+    model.metNames(I)=model.mets(I);
+    repNums=1:numel(I);
+    repIDs=strcat('undefined_',cellfun(@num2str,num2cell(repNums(:)),'UniformOutput',false));
+    model.mets(I)=repIDs;
+    
+    %It could also be that the metabolite names are empty for some other
+    %reason. In that case, use the ID instead
+    I=cellfun(@isempty,model.metNames);
+    model.metNames(I)=model.mets(I);
+    
+    %Save the model structure
+    save(modelFile,'model','KOModel');
 end
 
-%Put all metabolites in one compartment called 's' (for system). This is
-%done just to be more compatible with the rest of the code
-model.comps={'s'};
-model.compNames={'System'};
-model.metComps=ones(numel(model.mets),1);
+%Delete reactions which are labeled as "incomplete", "erroneous",
+%"unclear", "general reaction" or having undefined stoichiometry (depending
+%on settings)
+if keepSpontaneous==false
+    model=removeReactions(model,intersect(isSpontaneous,model.rxns),true,true);
+end
+if keepUndefinedStoich==false
+    model=removeReactions(model,intersect(isUndefinedStoich,model.rxns),true,true);
+end
+if keepIncomplete==false
+    model=removeReactions(model,intersect(isIncomplete,model.rxns),true,true);
+end
+if keepGeneral==false
+    model=removeReactions(model,intersect(isGeneral,model.rxns),true,true);
+end
 
-%If reactions with undefined stoichiometry are kept, then the corresponding
-%metabolites will have ids such as "(n+1) C00001" and their names will be
-%empty. These ids are not valid SBML identifiers and are therefore replaced
-%with "undefined1, undefined2...". The former ids are stored as the new
-%names
-I=find(cellfun(@any,strfind(model.mets,'n')) | cellfun(@any,strfind(model.mets,'m')));
-model.metNames(I)=model.mets(I);
-repNums=1:numel(I);
-repIDs=strcat('undefined_',cellfun(@num2str,num2cell(repNums(:)),'UniformOutput',false));
-model.mets(I)=repIDs;
+%Add temporary warning that the set of spontaneous reactions shall not be
+%trusted as long as KEGG mat files are not generated from up-to-date KEGG
+%database. The field isSpontaneous is added just for testing purposes. The
+%warning will be removed as soon as KEGG mat files are generated from the
+%current KEGG release
+disp("WARNING: The set of spontaneous reactions is not the final one. This will be fixed with the following KEGG mat files update")
 
-%It could also be that the metabolite names are empty for some other
-%reason. In that case, use the ID instead
-I=cellfun(@isempty,model.metNames);
-model.metNames(I)=model.mets(I);
 end

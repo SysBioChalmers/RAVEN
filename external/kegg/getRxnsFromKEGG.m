@@ -1,4 +1,5 @@
-function model=getRxnsFromKEGG(keggPath,keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral)
+function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
+    isGeneral]=getRxnsFromKEGG(keggPath)
 % getRxnsFromKEGG
 %   Retrieves information on all reactions stored in KEGG database
 %
@@ -6,21 +7,6 @@ function model=getRxnsFromKEGG(keggPath,keepSpontaneous,keepUndefinedStoich,keep
 %                       directory, this function will attempt to read data
 %                       from a local FTP dump of the KEGG database.
 %                       keggPath is the path to the root of this database
-%   keepSpontaneous     include reactions labeled as "spontaneous" (opt,
-%                       default true)
-%   keepUndefinedStoich	include reactions in the form n A <=> n+1 A. These
-%                       will be dealt with as two separate metabolites
-%                       (opt, default true)
-%   keepIncomplete      include reactions which have been labelled as
-%                       "incomplete", "erroneous" or "unclear" (opt,
-%                       default true)
-%   keepGeneral         include reactions which have been labelled as
-%                       "general reaction". These are reactions on the form
-%                       "an aldehyde <=> an alcohol", and are therefore
-%                       unsuited for modelling purposes. Note that not all
-%                       reactions have this type of annotation, and the
-%                       script will therefore not be able to remove all
-%                       such reactions (opt, default false)
 %
 %   model               a model structure generated from the database. The
 %                       following fields are filled
@@ -42,17 +28,26 @@ function model=getRxnsFromKEGG(keggPath,keepSpontaneous,keepUndefinedStoich,keep
 %                           reactions present in pathway maps the
 %                           reversibility is taken from there
 %       b                   0 for all metabolites
+%   isSpontaneous       a cell array with the reactions labelled as
+%                       "spontaneous"
+%   isUndefinedStoich	a cell array with the reactions labelled as with
+%                       undefined stoichiometry
+%   isIncomplete        a cell array with the reactions labelled as
+%                       "incomplete", "erroneous" or "unclear"
+%   isGeneral           a cell array with the reactions labelled as
+%                       "general reaction"
 %
 %   Reactions on the form A <=> A + B will not be loaded. If the file
 %   keggRxns.mat is in the RAVEN/external/kegg directory it will be loaded
 %   instead of parsing of the KEGG files. If it does not exist it will be
 %   saved after parsing of the KEGG files. In general, you should remove
-%   the keggRxns.mat file if you want to rebuild the model structure from a
-%   newer version of KEGG.
+%   the keggRxns.mat file along with other KEGG mat files if you want to
+%   rebuild the model structure from a newer version of KEGG.
 %
-%   Usage: model=getRxnsFromKEGG(keggPath,keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral)
+%   Usage: [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
+%    isGeneral]=getRxnsFromKEGG(keggPath)
 %
-%   Simonas Marcisauskas, 2018-07-20
+%   Simonas Marcisauskas, 2018-07-25
 %
 %
 % NOTE: This is how one entry looks in the file
@@ -74,17 +69,8 @@ function model=getRxnsFromKEGG(keggPath,keepSpontaneous,keepUndefinedStoich,keep
 % (except for '///')
 %
 
-if nargin<2
-    keepSpontaneous=true;
-end
-if nargin<3
-    keepUndefinedStoich=true;
-end
-if nargin<4
-    keepIncomplete=true;
-end
-if nargin<5
-    keepGeneral=false;
+if nargin<1
+    keggPath='RAVEN/external/kegg';
 end
 
 %Check if the reactions have been parsed before and saved. If so, load the
@@ -508,26 +494,5 @@ else
         save(rxnsFile,'model','isGeneral','isIncomplete','isUndefinedStoich','isSpontaneous');
     end
 end
-%Delete reactions which are labeled as "incomplete", "erroneous",
-%"unclear", "general reaction" or having undefined stoichiometry (depending
-%on settings)
-if keepGeneral==false
-    model=removeReactions(model,intersect(isGeneral,model.rxns),true,true);
-end
-if keepIncomplete==false
-    model=removeReactions(model,intersect(isIncomplete,model.rxns),true,true);
-end
-if keepUndefinedStoich==false
-    model=removeReactions(model,intersect(isUndefinedStoich,model.rxns),true,true);
-end
-if keepSpontaneous==false
-    model=removeReactions(model,intersect(isSpontaneous,model.rxns),true,true);
-end
 
-%Add temporary warning that the set of spontaneous reactions shall not be
-%trusted as long as KEGG mat files are not generated from up-to-date KEGG
-%database. The field isSpontaneous is added just for testing purposes. The
-%warning will be removed as soon as KEGG mat files are generated from the
-%current KEGG release
-disp("WARNING: The set of spontaneous reactions is not the final one. This will be fixed with the following KEGG mat files update")
 end
