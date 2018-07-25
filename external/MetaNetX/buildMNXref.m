@@ -23,7 +23,7 @@ end
 files={'chem_xref','chem_prop','reac_prop','reac_xref'};
 if strcmp(type,'mets')
     files=files(1:2);
-elseif strcmp(type,'rxnx')
+elseif strcmp(type,'rxns')
     files=files(3:4);
 end
 for i=1:length(files)
@@ -48,7 +48,7 @@ model=[];
 
 %% Load reaction properties
 if ismember(type,{'rxns','both'})
-    fprintf('Loading reaction data files... ');
+    fprintf('Loading reaction data files...');
     opts=detectImportOptions(fullfile(mnxPath,'reac_prop.txt'),...
         'Delimiter','\t','NumHeaderLines',365);
     opts.VariableNames(1)=regexprep(opts.VariableNames(1),'^x_','');
@@ -84,13 +84,13 @@ if ismember(type,{'rxns','both'})
         'rxnRheaID','rxnSABIORKID','rxnSEEDID'};
     
     for i=1:length(sNames)
-        fprintf(' done\nRetrieving %s reaction IDs...',upper(sNames{i}));
+        fprintf(' done.\nRetrieving %s reaction IDs...',upper(sNames{i}));
         currentDbOnly=ismember(mnxID2extID(:,2),sNames{i});
         currentmnxID2extID=mnxID2extID(currentDbOnly,:);
         
         [mnxs,indices,indices2] = unique(currentmnxID2extID(:,1),'stable');
         counts = hist(indices2, 1:size(indices));
-        mnxs(counts==1,2)=currentmnxID2extID(indices2(counts==1),3);
+        mnxs(counts==1,2)=currentmnxID2extID(indices(counts==1),3);
         multiMnxs=find(counts>1);
         
         for j=1:length(multiMnxs)
@@ -104,7 +104,7 @@ if ismember(type,{'rxns','both'})
         model.(fNames{i})=DBstruct;
     end
     model.rxnMNXID = model.rxns;
-    fprintf('done.\n');
+    fprintf(' done.\n');
 end
 
 %% Load metabolite properties
@@ -119,16 +119,10 @@ if ismember(type,{'mets','both'})
     opts.VariableNames(1)=regexprep(opts.VariableNames(1),'^x_','');
     mnx_xref = readtable(fullfile(mnxPath,'chem_xref.txt'),opts);
     fprintf('done.\n');
-    
-    fprintf('Processing metabolite data... ');
-    if strcmp(type,'model')
-        % retrieve row indices corresponding to model met list
-        [~,met_ind] = ismember(model.metMNXID,mnx.MNX_ID);
-        mnx = mnx(met_ind,:);
-    else
-        model.mets = mnx.MNX_ID;
-        model.metMNXID = mnx.MNX_ID;
-    end
+
+    fprintf('Processing metabolite data...');
+    model.mets = mnx.MNX_ID;
+    model.metMNXID = mnx.MNX_ID;
     
     % extract information and add to model
     model.metNames = mnx.Description;
@@ -191,7 +185,7 @@ if ismember(type,{'mets','both'})
         
         [mnxs,indices,indices2] = unique(currentmnxID2extID(:,1),'stable');
         counts = hist(indices2, 1:size(indices));
-        mnxs(counts==1,2)=currentmnxID2extID(indices2(counts==1),3);
+        mnxs(counts==1,2)=currentmnxID2extID(indices(counts==1),3);
         multiMnxs=find(counts>1);
         
         for j=1:length(multiMnxs)
@@ -204,15 +198,14 @@ if ismember(type,{'mets','both'})
         DBstruct(idx)=mnxs(:,2);
         model.(fNames{i})=DBstruct;
     end
-    fprintf(' done.')
+    fprintf(' done.\n')
+    [~,ind] = ismember(mnxID2extID(:,2),sNames);
+    mnxID2extID(:,2) = fNames(ind);  % rename to match field names
+    model.mnxID2extID = mnxID2extID;
 end
 
 %% Final model adjustments
-if ismember(type,{'met','both'})
+if ismember(type,{'mets','both'})
     % remove NAs from metFormulas
     model.metFormulas(ismember(model.metFormulas,'NA')) = {''};
-    if strcmp(type,'model')
-        % change format of mets from "met@comp" to "met[comp]"
-        model.mets = strcat(regexprep(model.mets,'@','['),']');
-    end
 end
