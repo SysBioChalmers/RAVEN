@@ -24,7 +24,7 @@ function blastStructure=getBlast(organismID,fastaFile,modelIDs,refFastaFiles)
 %   Usage: blastStructure=getBlast(organismID,fastaFile,modelIDs,...
 %           refFastaFiles)
 %
-%   Simonas Marcisauskas, 2018-07-20
+%   Simonas Marcisauskas, 2018-07-25
 %
 
 %Everything should be cell arrays
@@ -127,11 +127,11 @@ for i=1:numel(refFastaFiles)*2
     end
     tempStruct.fromGenes=A{:,1};
     tempStruct.toGenes=A{:,2};
-    tempStruct.evalue=A(:,3);
-    tempStruct.identity=A(:,4);
-    tempStruct.aligLen=A(:,5);
-    tempStruct.bitscore=A(:,6);
-    tempStruct.ppos=A(:,7);
+    tempStruct.evalue=table2array(A(:,3));
+    tempStruct.identity=table2array(A(:,4));
+    tempStruct.aligLen=table2array(A(:,5));
+    tempStruct.bitscore=table2array(A(:,6));
+    tempStruct.ppos=table2array(A(:,7));
     blastStructure=[blastStructure tempStruct];
 end
 
