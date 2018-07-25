@@ -1,4 +1,4 @@
-function model = buildMNXref(type,mnxPath)
+function model = buildMNXref(type,allIDs,mnxPath)
 %buildMNXref  Construct a reference structure from MNX database files.
 %
 %   type        string, specifying the type of reference structure
@@ -6,15 +6,26 @@ function model = buildMNXref(type,mnxPath)
 %               'rxns'  included only reaction-related fields
 %               'both'  include fields related to both reactions and
 %                       metabolites. (opt, default 'both')
+%   allIDs      string whether all IDs from different databases should be
+%               provided for each metabolite or reaction.
+%               'all'   all IDs from the ...._xref files are included
+%               'chebi' same as 'all', but filtered for secondary ChEBI IDs
+%               'pref'  only preferred IDs from ...._prop files (one per
+%                       metabolite / reaction) are included. (opt, default
+%                       'chebi')
 %   mnxPath     string of path where MetaNetX reference files (chem_xref,
-%               chem_prop, reac_xref and reac_prop) are stored. (opt,
-%               default to RAVENdir/external/metanetx)
+%               chem_prop, reac_xref, reac_prop and chebiSecondary) are
+%               stored. (opt, default to RAVENdir/external/metanetx)
 %
-% Usage: model = buildMNXref(model_type,mnxPath)
+% Usage: model = buildMNXref(model,allIDs,mnxPath)
 %
-% Eduard Kerkhoven, 2018-07-22
+% Eduard Kerkhoven, 2018-07-25
 
-if ~exist('mnxPath','var')
+if nargin<2
+    allIDs='chebi';
+end
+
+if nargin<3
     [ST, I]=dbstack('-completenames');
     mnxPath=fileparts(fileparts(fileparts(ST(I).file)));
     mnxPath=fullfile(mnxPath,'external','metanetx');
@@ -73,8 +84,15 @@ if ismember(type,{'rxns','both'})
     % get other rxn IDs
     %remove deprecated and other lines
     mnx_xref(~contains(mnx_xref.XREF,':') | contains(mnx_xref.XREF,'deprecated:'),:) = [];
-    
-    % extract source and ID information from MNX xref data
+        
+    % extract source and ID information from MNX data
+    if strcmp(allIDs,'pref')
+        rxnSources = mnx.Source;
+        rxnSources(~contains(rxnSources,':')) = {''};  % only keep entries with a colon, which indicates they have a source beyond MNX
+        rxnSourceNames = regexprep(rxnSources,':.+$','');  % retrieve source name
+        rxnSourceIDs = regexprep(rxnSources,'^.+:','');  % retrieve source ID
+        mnxID2DBID = [mnx.MNX_ID,rxnSourceNames,rxnSourceIDs];
+    end
     rxnSources = regexprep(mnx_xref.XREF,':.+$','');  % retrieve source name
     rxnSourceIDs = regexprep(mnx_xref.XREF,'^.+:','');  % retrieve source ID
     mnxID2extID = [mnx_xref.MNX_ID,rxnSources,rxnSourceIDs];
@@ -82,11 +100,15 @@ if ismember(type,{'rxns','both'})
     sNames={'bigg','kegg','metacyc','reactome','rhea','sabiork','seed'};
     fNames={'rxnBIGGID','rxnKEGGID','rxnMetaCycID','rxnREACTOMEID',...
         'rxnRheaID','rxnSABIORKID','rxnSEEDID'};
-    
+    if strcmp(allIDs,'no')
+        mnxIDdb=mnxID2DBID;
+    else
+        mnxIDdb=mnxID2extID;
+    end   
     for i=1:length(sNames)
         fprintf(' done.\nRetrieving %s reaction IDs...',upper(sNames{i}));
-        currentDbOnly=ismember(mnxID2extID(:,2),sNames{i});
-        currentmnxID2extID=mnxID2extID(currentDbOnly,:);
+        currentDbOnly=ismember(mnxIDdb(:,2),sNames{i});
+        currentmnxID2extID=mnxIDdb(currentDbOnly,:);
         
         [mnxs,indices,indices2] = unique(currentmnxID2extID(:,1),'stable');
         counts = hist(indices2, 1:size(indices));
@@ -104,6 +126,9 @@ if ismember(type,{'rxns','both'})
         model.(fNames{i})=DBstruct;
     end
     model.rxnMNXID = model.rxns;
+    [~,ind] = ismember(mnxID2extID(:,2),sNames);
+    mnxID2extID(:,2) = fNames(ind);  % rename to match field names
+    model.rxnmnxID2extID = mnxID2extID;
     fprintf(' done.\n');
 end
 
@@ -131,16 +156,18 @@ if ismember(type,{'mets','both'})
     model.inchis = mnx.InChI;
     model.metSMILES = mnx.SMILES;
     
-    % get other IDs
-    metSources = mnx.Source;
-    metSources(~contains(metSources,':')) = {''};  % only keep entries with a colon, which indicates they have a source beyond MNX
-    metSourceNames = regexprep(metSources,':.+$','');  % retrieve source name
-    metSourceIDs = regexprep(metSources,'^.+:','');  % retrieve source ID
-    
     % remove rows of mnx_xref that don't contain external IDs
     mnx_xref(~contains(mnx_xref.XREF,':') | contains(mnx_xref.XREF,'deprecated:'),:) = [];
     
-    % extract source and ID information from MNX xref data
+    % extract source and ID information from MNX data
+    if strcmp(allIDs,'pref')
+        metSources = mnx.Source;
+        metSources(~contains(metSources,':')) = {''};  % only keep entries with a colon, which indicates they have a source beyond MNX
+        metSourceNames = regexprep(metSources,':.+$','');  % retrieve source name
+        metSourceIDs = regexprep(metSources,'^.+:','');  % retrieve source ID
+        mnxID2DBID = [mnx.MNX_ID,metSourceNames,metSourceIDs];
+    end
+    
     metSourceNamesX = regexprep(mnx_xref.XREF,':.+$','');  % retrieve source name
     metSourceIDsX = regexprep(mnx_xref.XREF,'^.+:','');  % retrieve source ID
     mnxID2extID = [mnx_xref.MNX_ID,metSourceNamesX,metSourceIDsX];
@@ -154,16 +181,16 @@ if ismember(type,{'mets','both'})
     chunk_ind = 1:round(length(mnx_xref.Description)/10):length(mnx_xref.Description);
     chunk_ind(end) = length(mnx_xref.Description)+1;
     
-    % split met names
+    %split met names
     mnxDescr = cell(size(mnx_xref,1),1);
-    fprintf(' done.\nSplitting MNX metabolite names: ');
+    fprintf(' done.\nSplitting synonymous MNX metabolite names: ');
     for i = 1:length(chunk_ind)-1
         fprintf('%u%% ',round(chunk_ind(i)/length(mnx_xref.Description)*100)+10);
         mnxDescr(chunk_ind(i):chunk_ind(i+1)-1) = cellfun(@(x) strsplit(x,'|'),mnx_xref.Description(chunk_ind(i):chunk_ind(i+1)-1),'UniformOutput',false);
     end
-    fprintf('100%% done\n');
+    fprintf('100%% done.\n');
     % flatten nested cells to obtain an Nx2 matrix of MNXID-name pairs
-    fprintf('Organizing MNXID-name pairs... ');
+    fprintf('Indexing metabolite names to their MNX ID...');
     mnxIDs = cellfun(@(id,descr) repmat({id},1,numel(descr)),mnx_xref.MNX_ID,mnxDescr,'UniformOutput',false);
     model.mnxID2name = [[mnxIDs{:}]',[mnxDescr{:}]'];
     
@@ -171,17 +198,26 @@ if ismember(type,{'mets','both'})
     [~,numericPair] = ismember(lower(model.mnxID2name),unique(lower(model.mnxID2name)));  % make numeric for faster processing
     [~,uniq_ind] = unique(numericPair,'rows');
     model.mnxID2name = model.mnxID2name(uniq_ind,:);
-    
-    % instead of splitting add unsplit name field as additional column
-    %mnxID2extID = [mnxID2extID,mnx_xref.Description];
-    
+        
     % add model fields corresponding to available source names
     sNames = {'bigg','chebi','envipath','hmdb','kegg','lipidmaps','metacyc','reactome','sabiork','seed','slm'};
     fNames = {'metBiGGID','metChEBIID','metEnviPathID','metHMDBID','metKEGGID','metLIPIDMAPSID','metMetaCycID','metREACTOMEID','metSABIORKID','metSEEDID','metSLMID'};
+    if strcmp(allIDs,'no')
+        mnxIDdb=mnxID2DBID;
+    else
+        mnxIDdb=mnxID2extID;
+    end    
     for i=1:length(sNames)
-        currentDbOnly=ismember(mnxID2extID(:,2),sNames{i});
-        currentmnxID2extID=mnxID2extID(currentDbOnly,:);
         fprintf(' done.\nRetrieving %s metabolite IDs...',upper(sNames{i}));
+        currentDbOnly=ismember(mnxIDdb(:,2),sNames{i});
+        currentmnxID2extID=mnxIDdb(currentDbOnly,:);
+        
+        if i==2 && strcmp(allIDs,'chebi')
+            chebi=fileread([mnxPath,'\chebiSecondary.dat']);
+            chebi=strsplit(chebi,'\n');
+            secChebi=ismember(currentmnxID2extID(:,3),chebi);
+            currentmnxID2extID(secChebi,:)=[];
+        end
         
         [mnxs,indices,indices2] = unique(currentmnxID2extID(:,1),'stable');
         counts = hist(indices2, 1:size(indices));
