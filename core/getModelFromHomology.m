@@ -74,6 +74,10 @@ end
 
 preferredOrder=preferredOrder(:);
 
+if isfield(models,'S')
+    models={'models'};
+end
+    
 %Check that all the information is in the blast structure
 modelNames=cell(numel(models),1);
 for i=1:numel(models)
