@@ -100,7 +100,7 @@ if ismember(type,{'rxns','both'})
     sNames={'bigg','kegg','metacyc','reactome','rhea','sabiork','seed'};
     fNames={'rxnBIGGID','rxnKEGGID','rxnMetaCycID','rxnREACTOMEID',...
         'rxnRheaID','rxnSABIORKID','rxnSEEDID'};
-    if strcmp(allIDs,'no')
+    if strcmp(allIDs,'pref')
         mnxIDdb=mnxID2DBID;
     else
         mnxIDdb=mnxID2extID;
@@ -201,8 +201,8 @@ if ismember(type,{'mets','both'})
         
     % add model fields corresponding to available source names
     sNames = {'bigg','chebi','envipath','hmdb','kegg','lipidmaps','metacyc','reactome','sabiork','seed','slm'};
-    fNames = {'metBiGGID','metChEBIID','metEnviPathID','metHMDBID','metKEGGID','metLIPIDMAPSID','metMetaCycID','metREACTOMEID','metSABIORKID','metSEEDID','metSLMID'};
-    if strcmp(allIDs,'no')
+    fNames = {'metBIGGID','metChEBIID','metEnviPathID','metHMDBID','metKEGGID','metLIPIDMAPSID','metMetaCycID','metREACTOMEID','metSABIORKID','metSEEDID','metSLMID'};
+    if strcmp(allIDs,'pref')
         mnxIDdb=mnxID2DBID;
     else
         mnxIDdb=mnxID2extID;
