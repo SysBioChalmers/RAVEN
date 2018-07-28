@@ -1,6 +1,6 @@
-function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)
+function reducedModel=removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)
 % removeGenes
-%   Deletes a set of genes from a model
+%   Removes a set of genes from a model
 %
 %   model                   a model structure
 %   genesToRemove           either a cell array of gene IDs, a logical vector
@@ -15,103 +15,98 @@ function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeB
 %
 %   reducedModel            an updated model structure
 %
-%   Usage: reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns)
+%   Usage: reducedModel=removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)
 %
-%   Benjam??n J. S??nchez, 2018-04-16
+%   Eduard Kerkhoven, 2018-07-28
 %
 
 if nargin<3
-    removeUnusedMets = false;
+    removeUnusedMets=false;
 end
 
 if nargin<4
-    removeBlockedRxns = false;
+    removeBlockedRxns=false;
 end
 
 if nargin<5
-    standardizeRules = true;
+    standardizeRules=true;
 end
 
 %Format grRules and rxnGeneMatrix:
 if standardizeRules
-    [grRules,rxnGeneMat] = standardizeGrRules(model,true);
-    model.grRules = grRules;
-    model.rxnGeneMat = rxnGeneMat;
+    [grRules,rxnGeneMat]=standardizeGrRules(model,true);
+    model.grRules=grRules;
+    model.rxnGeneMat=rxnGeneMat;
 end
 
-reducedModel = model;
+reducedModel=model;
 
-if ~isempty(genesToRemove)
-    indexesToRemove = getIndexes(model,genesToRemove,'genes');
-    if ~isempty(indexesToRemove)
-        %Make 0 corresponding columns from rxnGeneMat:
-        reducedModel.rxnGeneMat(:,indexesToRemove) = 0;
-        
-        genes        = model.genes(indexesToRemove);
-        canCarryFlux = true(size(model.rxns));
-        
-        %Loop through genes and adapt rxns:
-        for i = 1:length(genes)
-            %Find all reactions for this gene and loop through them:
-            isGeneInRxn = ~cellfun(@isempty,strfind(reducedModel.grRules,genes{i}));
-            for j = 1:length(reducedModel.grRules)
-                if isGeneInRxn(j) && canCarryFlux(j)
-                    grRule = reducedModel.grRules{j};
-                    
-                    %Check if rxn can carry flux without this gene:
-                    canCarryFlux(j) = canRxnCarryFlux(reducedModel,grRule,genes{i});
-                    
-                    %Adapt gene rule & gene matrix:
-                    grRule = removeGeneFromRule(grRule,genes{i});
-                    reducedModel.grRules{j} = grRule;
-                end
-            end
-        end
-        
-        %Delete or block the reactions that cannot carry flux:
-        if removeBlockedRxns
-            rxnsToRemove = reducedModel.rxns(~canCarryFlux);
-            reducedModel = removeReactions(reducedModel,rxnsToRemove,removeUnusedMets,true);
-        else
-            reducedModel = removeReactions(reducedModel,[],removeUnusedMets,true);
-            reducedModel.lb(~canCarryFlux) = 0;
-            reducedModel.ub(~canCarryFlux) = 0;
+indexesToRemove=getIndexes(model,genesToRemove,'genes');
+%Make 0 corresponding columns from rxnGeneMat:
+reducedModel.rxnGeneMat(:,indexesToRemove)=0;
+
+genes=model.genes(indexesToRemove);
+canCarryFlux=true(size(model.rxns));
+
+%Loop through genes and adapt rxns:
+for i=1:length(genes)
+    %Find all reactions for this gene and loop through them:
+    isGeneInRxn=~cellfun(@isempty,strfind(reducedModel.grRules,genes{i}));
+    for j=1:length(reducedModel.grRules)
+        if isGeneInRxn(j) && canCarryFlux(j)
+            grRule=reducedModel.grRules{j};
+            
+            %Check if rxn can carry flux without this gene:
+            canCarryFlux(j)=canRxnCarryFlux(reducedModel,grRule,genes{i});
+            
+            %Adapt gene rule & gene matrix:
+            grRule=removeGeneFromRule(grRule,genes{i});
+            reducedModel.grRules{j}=grRule;
         end
     end
 end
 
+%Delete or block the reactions that cannot carry flux:
+if removeBlockedRxns
+    rxnsToRemove=reducedModel.rxns(~canCarryFlux);
+    reducedModel=removeReactions(reducedModel,rxnsToRemove,removeUnusedMets,true);
+else
+    reducedModel=removeReactions(reducedModel,[],removeUnusedMets,true);
+    reducedModel.lb(~canCarryFlux)=0;
+    reducedModel.ub(~canCarryFlux)=0;
+end
 end
 
-function canIt = canRxnCarryFlux(model,geneRule,geneToRemove)
+function canIt=canRxnCarryFlux(model,geneRule,geneToRemove)
 %This function converts a gene rule to a logical statement, and then
 %asseses if the rule is true (i.e. rxn can still carry flux) or not (cannot
 %carry flux).
-geneRule = [' ', geneRule, ' '];
-for i = 1:length(model.genes)
+geneRule=[' ', geneRule, ' '];
+for i=1:length(model.genes)
     if strcmp(model.genes{i},geneToRemove)
-        geneRule = strrep(geneRule,[' ' model.genes{i} ' '],' false ');
-        geneRule = strrep(geneRule,['(' model.genes{i} ' '],'(false ');
-        geneRule = strrep(geneRule,[' ' model.genes{i} ')'],' false)');
+        geneRule=strrep(geneRule,[' ' model.genes{i} ' '],' false ');
+        geneRule=strrep(geneRule,['(' model.genes{i} ' '],'(false ');
+        geneRule=strrep(geneRule,[' ' model.genes{i} ')'],' false)');
     else
-        geneRule = strrep(geneRule,[' ' model.genes{i} ' '],' true ');
-        geneRule = strrep(geneRule,['(' model.genes{i} ' '],'(true ');
-        geneRule = strrep(geneRule,[' ' model.genes{i} ')'],' true)');
+        geneRule=strrep(geneRule,[' ' model.genes{i} ' '],' true ');
+        geneRule=strrep(geneRule,['(' model.genes{i} ' '],'(true ');
+        geneRule=strrep(geneRule,[' ' model.genes{i} ')'],' true)');
     end
 end
-geneRule = strtrim(geneRule);
-geneRule = strrep(geneRule,'and','&&');
-geneRule = strrep(geneRule,'or','||');
-canIt    = eval(geneRule);
+geneRule=strtrim(geneRule);
+geneRule=strrep(geneRule,'and','&&');
+geneRule=strrep(geneRule,'or','||');
+canIt=eval(geneRule);
 end
 
-function geneRule = removeGeneFromRule(geneRule,geneToRemove)
+function geneRule=removeGeneFromRule(geneRule,geneToRemove)
 %This function receives a standard gene rule and it returns it without the
 %chosen gene.
-geneSets = strsplit(geneRule,' or ');
-hasGene  = ~cellfun(@isempty,strfind(geneSets,geneToRemove));
-geneSets = geneSets(~hasGene);
-geneRule = strjoin(geneSets,' or ');
-if length(geneSets) == 1 && ~isempty(strfind(geneRule,'('))
-    geneRule = geneRule(2:end-1);
+geneSets=strsplit(geneRule,' or ');
+hasGene=~cellfun(@isempty,strfind(geneSets,geneToRemove));
+geneSets=geneSets(~hasGene);
+geneRule=strjoin(geneSets,' or ');
+if length(geneSets)==1 && ~isempty(strfind(geneRule,'('))
+    geneRule=geneRule(2:end-1);
 end
 end
