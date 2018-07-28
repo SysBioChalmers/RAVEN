@@ -17,7 +17,7 @@ function mappedModel = mapModelMets(model,mnx)
 %
 %   mappedModel   The model returned with additional metabolite-related
 %                 fields, associating various metabolite IDs to MNX IDs, as
-%                 well as a metMNXID field which combines the MNX IDs
+%                 well as a metMetaNetXID field which combines the MNX IDs
 %                 obtained by mapping metabolites along each of its
 %                 available ID fields.
 %                 *NOTE: Some of the met-related fields in mappedModel may
@@ -132,19 +132,19 @@ fprintf('Done.\n');
 % now combine all the MNX IDs for each metabolite
 mnxIDfields = fields(model);
 mnxIDfields(~(startsWith(mnxIDfields,'met') & endsWith(mnxIDfields,'2MNX'))) = [];
-metMNXIDs = {};  % intialize cell array of met MNX IDs
+metMetaNetXIDs = {};  % intialize cell array of met MNX IDs
 for i = 1:length(mnxIDfields)
     % append each field as new column(s)
-    metMNXIDs = [metMNXIDs,model.(mnxIDfields{i})];
+    metMetaNetXIDs = [metMetaNetXIDs,model.(mnxIDfields{i})];
 end
-empty_inds = cellfun(@isempty,metMNXIDs);
-% metMNXIDs(empty_inds) = {''};
+empty_inds = cellfun(@isempty,metMetaNetXIDs);
+% metMetaNetXIDs(empty_inds) = {''};
 
 
 % obtain unique set of MNX IDs for each metabolite
 met_index = transpose(1:length(model.mets));
-model.metMNXID = arrayfun(@(i) unique(metMNXIDs(i,~empty_inds(i,:))),met_index,'UniformOutput',false);
-model.metMNXID = flattenCell(model.metMNXID,true);
+model.metMetaNetXID = arrayfun(@(i) unique(metMetaNetXIDs(i,~empty_inds(i,:))),met_index,'UniformOutput',false);
+model.metMetaNetXID = flattenCell(model.metMetaNetXID,true);
 
 % assign output
 mappedModel = model;

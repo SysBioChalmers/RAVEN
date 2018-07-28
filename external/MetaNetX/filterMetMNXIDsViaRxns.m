@@ -1,7 +1,7 @@
-function [fmodel,removed] = filterMetMNXIDsViaRxns(model,mnx,ignoreComp,keepAtLeastOne)
-%filterMetMNXIDsViaRxns  Remove met MNXID associations based on their rxns.
+function [fmodel,removed] = filtermetMetaNetXIDsViaRxns(model,mnx,ignoreComp,keepAtLeastOne)
+%filtermetMetaNetXIDsViaRxns  Remove met MNXID associations based on their rxns.
 %
-% filterMetMNXIDsViaRxns determines which met MNXIDs (if any) should be
+% filtermetMetaNetXIDsViaRxns determines which met MNXIDs (if any) should be
 % removed for mets associated with multiple MNXIDs. This is accomplished by
 % finding all model rxns that involve the met, obtaining their associated
 % MNX rxn IDs, and retrieving those rxns from the MNX database. Any MNXIDs
@@ -9,18 +9,18 @@ function [fmodel,removed] = filterMetMNXIDsViaRxns(model,mnx,ignoreComp,keepAtLe
 % the MNX database will be removed.
 %
 % NOTE: metabolites that occur only in reactions that have no associated
-%       rxnMNXIDs will be skipped, as there is insufficient evidence to
-%       properly filter their associated metMNXIDs.
+%       rxnMetaNetXIDs will be skipped, as there is insufficient evidence to
+%       properly filter their associated metMetaNetXIDs.
 %
 %
 % USAGE:
 %
-%   [fmodel,removed] = filterMetMNXIDsViaRxns(model,mnx,ignoreComp,keepAtLeastOne);
+%   [fmodel,removed] = filtermetMetaNetXIDsViaRxns(model,mnx,ignoreComp,keepAtLeastOne);
 %
 % INPUT:
 %
 %   model    A model structure containing reaction and metabolite MNX ID
-%            association fields ("rxnMNXID" and "metMNXID", respectively).
+%            association fields ("rxnMetaNetXID" and "metMetaNetXID", respectively).
 %
 %   mnx      (Optional) An MNX database structure, containing reaction-
 %            related information retrieved from the MNX database, generated
@@ -71,15 +71,15 @@ end
 % initialize "removed" structure and "fmodel" outputs
 fmodel = model;
 removed.mets = {};
-removed.metMNXID = {};
+removed.metMetaNetXID = {};
 
-% if metMNXID and/or rxnMNXID field contains multiple columns, consolidate
+% if metMetaNetXID and/or rxnMetaNetXID field contains multiple columns, consolidate
 % into a single column with nested cell entries
-if size(model.metMNXID,2) > 1
-    model.metMNXID = nestCell(model.metMNXID,true);
+if size(model.metMetaNetXID,2) > 1
+    model.metMetaNetXID = nestCell(model.metMetaNetXID,true);
 end
-if size(model.rxnMNXID,2) > 1
-    model.rxnMNXID = nestCell(model.rxnMNXID,true);
+if size(model.rxnMetaNetXID,2) > 1
+    model.rxnMetaNetXID = nestCell(model.rxnMetaNetXID,true);
 end
 
 if ( ignoreComp )
@@ -115,22 +115,22 @@ if ( ignoreComp )
             ignoreComp = false;
         else
             
-            fprintf('\nMetabolite compartments will be ignored. NOTE: This process will merge metMNXIDs\n');
+            fprintf('\nMetabolite compartments will be ignored. NOTE: This process will merge metMetaNetXIDs\n');
             fprintf('of mets that are identical except for their compartment. If any mets are associated\n');
-            fprintf('with compartment-specific metMNXIDs, this is not recommended.\n');
+            fprintf('with compartment-specific metMetaNetXIDs, this is not recommended.\n');
             
             % If ignoring compartments, convert the stoich matrix into a
             % binary met-rxn association matrix (i.e., set all nonzero
             % entries = 1), and combine all associations for metabolites
             % that are identical except for their compartment. Also combine
-            % their metMNXIDs.
+            % their metMetaNetXIDs.
             S = (model.S ~= 0);
             [~,uniq_ind,met_groups] = unique(model.mets);
             h = waitbar(0,'Merging model metabolites across compartments...');
             for i = 1:max(met_groups)
                 ind = (met_groups == i);
                 S(ind,:) = repmat(any(S(ind,:),1),sum(ind),1);
-                model.metMNXID(ind) = repmat({unique(horzcat(model.metMNXID{ind}))},sum(ind),1);
+                model.metMetaNetXID(ind) = repmat({unique(horzcat(model.metMetaNetXID{ind}))},sum(ind),1);
                 waitbar(i/max(met_groups),h);
             end
             close(h);
@@ -139,7 +139,7 @@ if ( ignoreComp )
             model.mets_nocomp = model.mets;  % first save these for indexing later
             model.mets = model.mets(uniq_ind);
             S = S(uniq_ind,:);
-            model.metMNXID = model.metMNXID(uniq_ind);
+            model.metMetaNetXID = model.metMetaNetXID(uniq_ind);
             
         end
         
@@ -151,7 +151,7 @@ end
 
 % % Identify all mets with two or more MNXID associations. Mets with one or
 % % zero MNXIDs will be ignored.
-% multi_ind = find(cellfun(@numel,model.metMNXID) > 1);
+% multi_ind = find(cellfun(@numel,model.metMetaNetXID) > 1);
 
 % Iterate through mets with multiple MNXIDs, and determine which MNXIDs
 % should be removed.
@@ -163,7 +163,7 @@ for i = 1:length(model.mets)
     
     % obtain a unique list of all the rxn MNXIDs associated with those
     % rxns, as well as their indices in the MNX database structure
-    MNX_rxnIDs = unique(vertcat(model.rxnMNXID{rxn_ind}));
+    MNX_rxnIDs = unique(vertcat(model.rxnMetaNetXID{rxn_ind}));
     MNX_rxn_ind = ismember(mnx.rxns,MNX_rxnIDs);
     
     if isempty(MNX_rxnIDs)
@@ -178,7 +178,7 @@ for i = 1:length(model.mets)
     
     % determine which of the MNXIDs currently associated to the model met
     % are not found in any of the MNX rxns
-    rem_mets = ~ismember(model.metMNXID{i},MNX_metIDs);
+    rem_mets = ~ismember(model.metMetaNetXID{i},MNX_metIDs);
     
     if ~any(rem_mets)
         % if no met MNXID associations should be removed, continue to next met
@@ -190,19 +190,19 @@ for i = 1:length(model.mets)
         % will be reported in the "removed" structure, so these cases can
         % be manually evaluated by the user.
         removed.mets = [removed.mets; model.mets(i)];
-        removed.metMNXID = [removed.metMNXID; {'ALL SHOULD BE REMOVED!'}];
+        removed.metMetaNetXID = [removed.metMetaNetXID; {'ALL SHOULD BE REMOVED!'}];
     else
         % remove one or more MNXID associations from the metabolite
         removed.mets = [removed.mets; model.mets(i)];
-        removed.metMNXID = [removed.metMNXID; {model.metMNXID{i}(rem_mets)}];
-        model.metMNXID{i}(rem_mets) = [];
+        removed.metMetaNetXID = [removed.metMetaNetXID; {model.metMetaNetXID{i}(rem_mets)}];
+        model.metMetaNetXID{i}(rem_mets) = [];
     end
     
     waitbar(i/length(model.mets),h);
 end
 close(h);
 
-if any(cellfun(@(x) ismember({'ALL SHOULD BE REMOVED!'},x),removed.metMNXID))
+if any(cellfun(@(x) ismember({'ALL SHOULD BE REMOVED!'},x),removed.metMetaNetXID))
     fprintf('\n*** NOTE: There was at least one case where ALL the MNXIDs associated\n');
     fprintf('          with a metabolite were not found in any of the involved rxns,\n');
     fprintf('          and therefore NONE were removed. See "removed" structure for\n');
@@ -210,15 +210,15 @@ if any(cellfun(@(x) ismember({'ALL SHOULD BE REMOVED!'},x),removed.metMNXID))
 end
 
 
-% update filtered model (fmodel) metMNXID field
+% update filtered model (fmodel) metMetaNetXID field
 if ( ignoreComp )
     % if compartment was ignored (and thus mets were merged), distribute
-    % the updated metMNXID assignments to all compartment-versions of each
+    % the updated metMetaNetXID assignments to all compartment-versions of each
     % metabolite.
     for i = 1:length(model.mets)
         ind = ismember(model.mets_nocomp,model.mets(i));
-        fmodel.metMNXID(ind) = model.metMNXID(i);
+        fmodel.metMetaNetXID(ind) = model.metMetaNetXID(i);
     end
 else
-    fmodel.metMNXID = model.metMNXID;
+    fmodel.metMetaNetXID = model.metMetaNetXID;
 end

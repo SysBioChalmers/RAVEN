@@ -33,16 +33,16 @@ function results = mapRxnsViaMets(model,mnx,mapRxns)
 %
 %   results  A results structure with the following fields:
 %
-%       rxnMNXID: A column cell array containing the MNX IDs mapped to each
+%   rxnMetaNetXID:A column cell array containing the MNX IDs mapped to each
 %                 reaction. For reactions to which multiple MNX IDs were
-%                 mapped, the corresponding rxnMNXID entry will be a nested
+%                 mapped, the corresponding rxnMetaNetXID entry will be a nested
 %                 cell of MNX IDs.
 %
-%      rxnMNXeqn: A column cell array containing the reaction equations
+%   rxnMNXeqn:    A column cell array containing the reaction equations
 %                 from the MNX database that correspond to the MNX ID(s)
 %                 mapped to each model reaction.
 %
-%          notes: A column of strings providing information on if and how
+%   notes:        A column of strings providing information on if and how
 %                 each model reaction was mapped to any MXN ID(s).
 %
 %
@@ -60,7 +60,7 @@ if nargin < 2
 end
 
 % initialize results structure
-results.rxnMNXID = {};
+results.rxnMetaNetXID = {};
 results.rxnMNXeqn = {};
 results.notes = repmat({''},size(model.rxns));
 results.notes(~mapRxns) = {'IGNORED'};
@@ -70,14 +70,14 @@ results.notes(~mapRxns) = {'IGNORED'};
 
 fprintf('Pre-processing model and MNX structures... ');
 
-% if the model.metMNXID field contains multiple columns, convert it to a
+% if the model.metMetaNetXID field contains multiple columns, convert it to a
 % single column of nested cells
-if size(model.metMNXID,2) > 1
-    model.metMNXID = nestCell(model.metMNXID,true);
-elseif all(cellfun(@ischar,model.metMNXID)) && any(contains(model.metMNXID,';'))
-    empty_inds = cellfun(@isempty,model.metMNXID);
-    model.metMNXID = cellfun(@(id) strsplit(id,';\s*','DelimiterType','RegularExpression'),model.metMNXID,'UniformOutput',false);
-    model.metMNXID(empty_inds) = {''};  % to deal with cells that should be empty, but are recognized as non-empty
+if size(model.metMetaNetXID,2) > 1
+    model.metMetaNetXID = nestCell(model.metMetaNetXID,true);
+elseif all(cellfun(@ischar,model.metMetaNetXID)) && any(contains(model.metMetaNetXID,';'))
+    empty_inds = cellfun(@isempty,model.metMetaNetXID);
+    model.metMetaNetXID = cellfun(@(id) strsplit(id,';\s*','DelimiterType','RegularExpression'),model.metMetaNetXID,'UniformOutput',false);
+    model.metMetaNetXID(empty_inds) = {''};  % to deal with cells that should be empty, but are recognized as non-empty
 end
 
 % generate binary (logical) version of S-matrix indicating which mets are
@@ -85,25 +85,25 @@ end
 S = (full(model.S) ~= 0);
 
 % do not try to map model rxns that contain a metabolite without an MNXID
-met_noID = cellfun(@isempty,model.metMNXID);
+met_noID = cellfun(@isempty,model.metMetaNetXID);
 rxn_noID = any(S(met_noID,:),1)';
 results.notes(mapRxns & rxn_noID) = {'SKIPPED: one or more mets lacking MNXID'};
 mapRxns(rxn_noID) = false;
 
-% Create an additional field in model that lists all possible metMNXIDs
+% Create an additional field in model that lists all possible metMetaNetXIDs
 % associated with each reaction.
 for i = 1:length(model.rxns)
-    model.rxnMetsMNX{i,1} = unique(horzcat(model.metMNXID{S(:,i)}));
+    model.rxnMetsMNX{i,1} = unique(horzcat(model.metMetaNetXID{S(:,i)}));
 end
 
 
 % For faster processing later on, remove all rxns in the MNX structure that
 % contain at least one metabolite that is not present in the model.
 
-% get list of all metMNXIDs in the model (for reactions to be mapped)
+% get list of all metMetaNetXIDs in the model (for reactions to be mapped)
 met_inds = any(S(:,mapRxns),2);
-allMetMNXIDs = unique(horzcat(model.metMNXID{met_inds}))';
-allMetMNXIDs(cellfun(@isempty,allMetMNXIDs)) = [];
+allmetMetaNetXIDs = unique(horzcat(model.metMetaNetXID{met_inds}))';
+allmetMetaNetXIDs(cellfun(@isempty,allmetMetaNetXIDs)) = [];
 
 % load MNX database structure if not provided as input
 if isempty(mnx)
@@ -115,7 +115,7 @@ end
 mnx.rxnMets = flattenCell(mnx.rxnMets,true);
 
 % find MNX rxns with mets that aren't present in model
-mismatches = ~ismember(mnx.rxnMets,allMetMNXIDs);
+mismatches = ~ismember(mnx.rxnMets,allmetMetaNetXIDs);
 mismatches(cellfun(@isempty,mnx.rxnMets)) = false;
 del_rxns = any(mismatches,2);
 
@@ -132,7 +132,7 @@ for i = 1:length(f)
 end
 
 % initialize rxn MNX IDs
-rxnMNXID = repmat({''},size(model.rxns));
+rxnMetaNetXID = repmat({''},size(model.rxns));
 
 fprintf('Done.\n');
 
@@ -148,10 +148,10 @@ mnx_bal.rxns(unbal) = [];
 mnx_bal.rxnMets(unbal) = [];
 
 % map reactions
-rxnMNXID(mapRxns) = findMNXrxns(model,mnx_bal,mapRxns);
+rxnMetaNetXID(mapRxns) = findMNXrxns(model,mnx_bal,mapRxns);
 
 % find newly mapped rxns
-newMapped = mapRxns & ~cellfun(@isempty,rxnMNXID);
+newMapped = mapRxns & ~cellfun(@isempty,rxnMetaNetXID);
 results.notes(newMapped) = {'MATCH: exact'};
 mapRxns(newMapped) = false;  % update to ignore rxns that are now mapped
 
@@ -178,10 +178,10 @@ mnx.rxnMets(ismember(mnx.rxnMets,rem_IDs)) = {''};  % remove IDs
 mnx.rxnMets = nestCell(mnx.rxnMets,true);  % re-nest cell
 
 % map reactions
-rxnMNXID(mapRxns) = findMNXrxns(model,mnx,mapRxns);
+rxnMetaNetXID(mapRxns) = findMNXrxns(model,mnx,mapRxns);
 
 % find newly mapped rxns
-newMapped = mapRxns & ~cellfun(@isempty,rxnMNXID);
+newMapped = mapRxns & ~cellfun(@isempty,rxnMetaNetXID);
 results.notes(newMapped) = {'MATCH: ignored H+ and H2O'};
 
 fprintf('Done.\n');
@@ -191,18 +191,18 @@ fprintf('Done.\n');
 
 fprintf('Finalizing output... ');
 
-results.notes(cellfun(@isempty,rxnMNXID) & mapRxns) = {'NO MATCHES FOUND'};
+results.notes(cellfun(@isempty,rxnMetaNetXID) & mapRxns) = {'NO MATCHES FOUND'};
 
 % retrieve MNX reaction equations for all mapped MNXIDs
 rxnMNXeqn = repmat({''},size(model.rxns));
-for i = 1:length(rxnMNXID)
-    if ~isempty(rxnMNXID{i})
-        rxnMNXeqn{i} = mnx.rxnEqnNames(ismember(mnx.rxns,rxnMNXID{i}));
+for i = 1:length(rxnMetaNetXID)
+    if ~isempty(rxnMetaNetXID{i})
+        rxnMNXeqn{i} = mnx.rxnEqnNames(ismember(mnx.rxns,rxnMetaNetXID{i}));
     end
 end
 
 % add data to results structure
-results.rxnMNXID = rxnMNXID;
+results.rxnMetaNetXID = rxnMetaNetXID;
 results.rxnMNXeqn = rxnMNXeqn;
 
 fprintf('Done.\n');
@@ -257,7 +257,7 @@ for i = 1:length(model.rxns)
         end
         
         % remove matching MNX rxns that don't contain the current model met
-        match(match) = cellfun(@(m) any(ismember(model.metMNXID{met_inds(j)},m)),mnx.rxnMets(match));
+        match(match) = cellfun(@(m) any(ismember(model.metMetaNetXID{met_inds(j)},m)),mnx.rxnMets(match));
     end
     
     % obtain IDs of all MNX rxns with a matching set of mets as the model rxn

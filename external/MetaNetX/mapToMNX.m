@@ -16,8 +16,8 @@ function [MNXfields, MetMNXmatch]=mapToMNX(model,rxns,MNXref,keepOneMetMNX)
 %                   (opt, default 'true' if MetMNXmatch is specified as
 %                   output)
 %
-%   MNXfields       structure containing metMNXID and rxnMNXID, depending
-%                   'rxns' parameter setting
+%   MNXfields       structure containing metMetaNetXID and/or rxnMetaNetXID,
+%                   depending on the 'rxns' parameter setting
 %   MetMNXmatch     vector
 %
 %   Usage: MNXfields=mapToMNX(model,rxns,MNXref)
@@ -49,31 +49,31 @@ end
 %Initial met to MNX mapping
 model=mapModelMets(model,MNXref);
 
-%Map rxns to MNX via metabolites, and filter metMNXIDs with these
-%rxnMNXIDs.
+%Map rxns to MNX via metabolites, and filter metMetaNetXIDs with these
+%rxnMetaNetXIDs.
 if rxns
     rxnMaps=mapRxnsViaMets(model,MNXref);
-    model.rxnMNXID=rxnMaps.rxnMNXID;
-    [model,~] = filterMetMNXIDsViaRxns(model,MNXref,true,true);
+    model.rxnMetaNetXID=rxnMaps.rxnMetaNetXID;
+    [model,~] = filtermetMetaNetXIDsViaRxns(model,MNXref,true,true);
 end
 
 if keepOneMetMNX
-    result=checkMNXMetsConsistency(model.metMNXID,MNXref);
+    result=checkMNXMetsConsistency(model.metMetaNetXID,MNXref);
     newMNXID=strings(size(model.mets));
     oneMatch=find(result==1);
-    newMNXID(oneMatch)=model.metMNXID(oneMatch,1);
+    newMNXID(oneMatch)=model.metMetaNetXID(oneMatch,1);
     twoMatch=find(result==2);
     for i=1:length(twoMatch)
-        MNXid=model.metMNXID{twoMatch(i),:};
+        MNXid=model.metMetaNetXID{twoMatch(i),:};
         MNXid=MNXid(~cellfun('isempty',MNXid));
         MNXid=sort(MNXid);
         newMNXID(twoMatch(i))=MNXid(1);
     end
-    model.metMNXID=newMNXID;
+    model.metMetaNetXID=newMNXID;
     MetMNXmatch=result;
 end
-MNXfields.metMNXID=model.metMNXID;
+MNXfields.metMetaNetXID=model.metMetaNetXID;
 if rxns
-    MNXfields.rxnMNXID=model.rxnMNXID;
+    MNXfields.rxnMetaNetXID=model.rxnMetaNetXID;
 end
 end

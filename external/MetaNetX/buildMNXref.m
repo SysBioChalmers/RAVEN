@@ -125,10 +125,10 @@ if ismember(type,{'rxns','both'})
         DBstruct(idx)=mnxs(:,2);
         model.(fNames{i})=DBstruct;
     end
-    model.rxnMNXID = model.rxns;
+    model.rxnMetaNetXID = model.rxns;
     [~,ind] = ismember(mnxID2extID(:,2),sNames);
     mnxID2extID(:,2) = fNames(ind);  % rename to match field names
-    model.rxnmnxID2extID = mnxID2extID;
+    model.rxnMetaNetXID2extID = mnxID2extID;
     fprintf(' done.\n');
 end
 
@@ -147,7 +147,7 @@ if ismember(type,{'mets','both'})
 
     fprintf('Processing metabolite data...');
     model.mets = mnx.MNX_ID;
-    model.metMNXID = mnx.MNX_ID;
+    model.metMetaNetXID = mnx.MNX_ID;
     
     % extract information and add to model
     model.metNames = mnx.Description;

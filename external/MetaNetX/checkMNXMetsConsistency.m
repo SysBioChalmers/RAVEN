@@ -1,9 +1,9 @@
-function result=checkMNXMetsConsistency(metMNXID,MNXmets)
+function result=checkMNXMetsConsistency(metMetaNetXID,MNXmets)
 % checkMNXMetsConsistency
 %   checkMNXMetsConsistency checks consistency in chemical formula and
 %   charge when multiple MNX metids are associated to the same metabolite.
 %
-%   metMNXID    cell array derived from model structure, with MNX
+%   metMetaNetXID    cell array derived from model structure, with MNX
 %               metabolite ids.
 %   MNXmets     MNXref structure, reconstructed by buildMNXref. (opt, if
 %               not specified, buildMNXref is called)
@@ -16,7 +16,7 @@ function result=checkMNXMetsConsistency(metMNXID,MNXmets)
 %               -1  multiple MNXids anotated for this metabolite, with
 %                   different chemical formula and/or charge
 %
-%   Usage: result=checkMNXMetsConsistency(metMNXID,MNXmets)
+%   Usage: result=checkMNXMetsConsistency(metMetaNetXID,MNXmets)
 %
 %   Eduard Kerkhoven, 2018-07-16
 
@@ -25,7 +25,7 @@ if nargin<2
 end
 
 % Sort MNXMets structure to speedup later processes
-[MNXmets.metMNXID, I]=sort(MNXmets.metMNXID);
+[MNXmets.metMetaNetXID, I]=sort(MNXmets.metMetaNetXID);
 fields=fieldnames(MNXmets);
 for i=1:length(fields)
     if isequal(size(eval(strcat('MNXmets.',fields{i})),1),length(I))
@@ -34,17 +34,17 @@ for i=1:length(fields)
 end
 
 % Initilize output cell array
-result=zeros(size(metMNXID,1),1);
+result=zeros(size(metMetaNetXID,1),1);
 
 % no MNX metID associated: score 0; one MNX metID associated: score 1
-numIds=cellfun(@numel,metMNXID);
+numIds=cellfun(@numel,metMetaNetXID);
 % result(find(numIds==0))=0; % already 0
 result(find(numIds==1))=1;
 
 % loop through multiple MNX associations
 numIds=find(numIds>1);
 for i=1:length(numIds)
-    query=metMNXID{numIds(i),:};
+    query=metMetaNetXID{numIds(i),:};
 	[hit, j]=ismember(query,MNXmets.mets);
     if all(hit)
         charges=num2cell(MNXmets.metCharges(j));

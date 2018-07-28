@@ -32,9 +32,9 @@ function newModel = addMNXannot(model,MNXfields,MNXref,fields)
 
 if nargin<4
     fields={'rxnBIGGID','rxnKEGGID','rxnMetaCycID','rxnRheaID',...
-        'rxnSABIORKID','rxnSEEDID','rxnMNXID','metBIGGID','metChEBIID',...
+        'rxnSABIORKID','rxnSEEDID','rxnMetaNetXID','metBIGGID','metChEBIID',...
         'metKEGGID','metLIPIDMAPSID','metMetaCycID','metSEEDID',...
-        'metSLMID','metMNXID'};
+        'metSLMID','metMetaNetXID'};
 end
 
 if ischar(fields)
@@ -45,7 +45,7 @@ if ~exist('MNXref','var')
     MNXref=buildMNXref('both');
 end
 
-%check if metMNXID or rxnMNXID should be added, as they can be appended
+%check if metMetaNetXID or rxnMetaNetXID should be added, as they can be appended
 idx=find(~cellfun(@isempty, regexp(fields,'(met|rxn)MNXID')));
 for i=1:length(idx)
     j=fields{idx(i)};
@@ -55,11 +55,11 @@ end
 % reactions
 fieldIdx=find(~cellfun(@isempty, regexp(fields,'^rxn.*'))); %which fields are rxn
 
-MNXID=flattenCell(flattenCell(MNXfields.rxnMNXID,true));
+MNXID=flattenCell(flattenCell(MNXfields.rxnMetaNetXID,true));
 [Lia, Locb]=ismember(MNXID,MNXref.rxns);
 
 for j=1:length(fieldIdx)
-    annotStruct=cell(numel(model.rxns),1);
+    annotStruct=strings(numel(model.rxns),1);
     for i=1:size(MNXID,1)
         idx=Locb(i,:);
         if ~sum(idx)==0
@@ -79,11 +79,11 @@ end
 
 fieldIdx=find(~cellfun(@isempty, regexp(fields,'^met.*'))); %which fields are met
 
-MNXID=flattenCell(flattenCell(MNXfields.metMNXID,true));
+MNXID=flattenCell(flattenCell(MNXfields.metMetaNetXID,true));
 [Lia, Locb]=ismember(MNXID,MNXref.mets);
 
 for j=1:length(fieldIdx)
-    annotStruct=cell(numel(model.rxns),1);
+    annotStruct=strings(numel(model.rxns),1);
     for i=1:size(MNXID,1)
         idx=Locb(i,:);
         if ~sum(idx)==0
