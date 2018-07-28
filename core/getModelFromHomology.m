@@ -87,7 +87,7 @@ end
 %provided template models
 for i=1:numel(blastStructure)
     if ~strcmp(blastStructure(i).fromId,getModelFor)
-        j=strcmpi(blastStructure(i).fromId,models{:}.id);
+        j=strcmpi(blastStructure(i).fromId,modelNames);
         if j==0
             error(['While the blastStructure contains sequences from '...
                 'organismID "%s" (as\nprovided in getBlast), none of '...
@@ -354,7 +354,7 @@ if ~isempty(preferredOrder) && numel(models)>1
         
         %Remove all the genes that were already found and add the other
         %ones to allUsedGenes
-        [models{useOrderIndexes(i)}, notDeleted]=removeGenes(models{useOrderIndexes(i)},allGenes{i+1}(genesToDelete),true,false);
+        [models{useOrderIndexes(i)}, notDeleted]=removeGenes(models{useOrderIndexes(i)},allGenes{i+1}(genesToDelete),true,false,false);
         allUsedGenes(usedGenes)=true;
         
         %Remove the deleted genes from finalMappings and allGenes Don't
