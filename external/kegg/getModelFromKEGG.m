@@ -224,7 +224,7 @@ else
     model.metNames(I)=model.mets(I);
     
     %Save the model structure
-    save(modelFile,'model','KOModel');
+    save(modelFile,'model','KOModel','isGeneral','isIncomplete','isUndefinedStoich','isSpontaneous');
 end
 
 %Delete reactions which are labeled as "incomplete", "erroneous",
