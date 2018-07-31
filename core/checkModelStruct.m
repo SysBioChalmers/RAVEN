@@ -232,7 +232,7 @@ dispEM(EM,throwErrors,metInComp(duplicates(metInComp)),trimWarnings);
 %Elements never used (print only as warnings
 EM='The following reactions are empty (no involved metabolites):';
 dispEM(EM,false,model.rxns(~any(model.S,1)),trimWarnings);
-'The following metabolites are never used in a reaction:';
+EM='The following metabolites are never used in a reaction:';
 dispEM(EM,false,model.mets(~any(model.S,2)),trimWarnings);
 if isfield(model,'genes')
     EM='The following genes are not associated to a reaction:';
