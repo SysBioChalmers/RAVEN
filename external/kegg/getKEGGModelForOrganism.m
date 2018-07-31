@@ -263,7 +263,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %    nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2018-07-31
+%   Simonas Marcisauskas, 2018-08-01
 %
 
 if nargin<2
@@ -477,6 +477,15 @@ if isempty(fastaFile)
     for i=1:numel(model.genes)
         model.geneMiriams{i,1}.name{1,1}='kegg.genes';
         model.geneMiriams{i,1}.value{1,1}=strcat(lower(organismID),model.genes{i,1});
+    end
+    %Add the description to the reactions
+    for i=1:numel(model.rxns)
+        if ~isempty(model.rxnNotes{i})
+            model.rxnNotes(i)=strcat('Included by getKEGGModelFromOrganism (without HMMs).',model.rxnNotes(i));
+            model.rxnNotes(i)=strrep(model.rxnNotes(i),'.','. ');
+        else
+            model.rxnNotes(i)={'Included by getKEGGModelFromOrganism (without HMMs)'};
+        end
     end
     return;
 end
@@ -997,6 +1006,16 @@ end
 [grRules,rxnGeneMat] = standardizeGrRules(model,false); %Give detailed output
 model.grRules = grRules;
 model.rxnGeneMat = rxnGeneMat;
+
+%Add the description to the reactions
+for i=1:numel(model.rxns)
+    if ~isempty(model.rxnNotes{i})
+        model.rxnNotes(i)=strcat('Included by getKEGGModelFromOrganism (using HMMs).',model.rxnNotes(i));
+        model.rxnNotes(i)=strrep(model.rxnNotes(i),'.','. ');
+    else
+        model.rxnNotes(i)={'Included by getKEGGModelFromOrganism (using HMMs)'};
+    end
+end
 end
 
 %Supporter function to list the files in a directory and return them as a
