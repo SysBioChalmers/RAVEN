@@ -38,7 +38,7 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %   Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Simonas Marcisauskas, 2018-07-25
+%   Simonas Marcisauskas, 2018-08-01
 %
 
 if nargin<1
@@ -60,11 +60,11 @@ end
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 modelFile=fullfile(ravenPath,'external','kegg','keggModel.mat');
-if exist(modelFile, 'file')
+if exist(modelFile, 'file') && isNewestFile(ravenPath)
     fprintf(['NOTE: Importing KEGG model from ' strrep(modelFile,'\','/') '.\n']);
     load(modelFile);
 else
-    fprintf(['Cannot locate ' strrep(modelFile,'\','/') ' and will try to generate it kegg***.mat files.\n']);
+    fprintf(['The file ' strrep(modelFile,'\','/') ' cannot be located or is older than kegg***.mat files. It will therefore be regenerated.\n']);
     %First get all reactions
     [model,isSpontaneous,isUndefinedStoich,isIncomplete,isGeneral]=getRxnsFromKEGG(keggPath);
     fprintf('KEGG reactions loaded\n');
@@ -250,4 +250,29 @@ end
 %current KEGG release
 disp("WARNING: The set of spontaneous reactions is not the final one. This will be fixed with the following KEGG mat files update")
 
+end
+
+function output = isNewestFile(ravenPath)
+%An ad hoc function, which checks whether keggModel.mat is the more
+%recently modified than keggRxns.mat, keggGenes.mat and keggRxns.mat
+modelFile=fullfile(ravenPath,'external','kegg','keggModel.mat');
+rxnsFile=fullfile(ravenPath,'external','kegg','keggRxns.mat');
+genesFile=fullfile(ravenPath,'external','kegg','keggGenes.mat');
+metsFile=fullfile(ravenPath,'external','kegg','keggMets.mat');
+if (getFileTime(modelFile)>getFileTime(rxnsFile))&&...
+        (getFileTime(modelFile)>getFileTime(genesFile))&&...
+        (getFileTime(modelFile)>getFileTime(metsFile))
+    output=1;
+else
+    output=0;
+end
+end
+
+function modTime = getFileTime(fileName)
+%Gets a last modification time for a particular file in datenum format that
+%the numbers could be easily compared for different files
+listing = dir(fileName);
+assert(numel(listing) == 1, 'No such file: %s', fileName);
+modTime = listing.datenum;
+format long;
 end
