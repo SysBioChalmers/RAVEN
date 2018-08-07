@@ -29,6 +29,7 @@ function newModel=ravenCobraWrapper(model)
 %   Usage: newModel=ravenCobraWrapper(model)
 %
 %   Simonas Marcisauskas, 2018-07-12
+%   Benjamín J. Sánchez, 2018-08-07
 %
 
 if isfield(model,'rules')
@@ -79,7 +80,7 @@ if isRaven
         newModel.rxnNotes=model.rxnNotes;
     end
     if isfield(model,'metNames')
-        newModel.metNames=model.metNames;
+        newModel.metNames=strcat(model.metNames,' [',model.compNames(model.metComps),']');
     end
     if isfield(model,'metFormulas')
         newModel.metFormulas=model.metFormulas;
