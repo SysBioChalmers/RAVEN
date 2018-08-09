@@ -1,33 +1,46 @@
-function draftModel=getModelFromHomology(models,blastStructure,getModelFor,preferredOrder,strictness,onlyGenesInModels,maxE,minLen,minSim,mapNewGenesToOld)
+function draftModel=getModelFromHomology(models,blastStructure,...
+    getModelFor,preferredOrder,strictness,onlyGenesInModels,maxE,...
+    minLen,minIde,mapNewGenesToOld)
 % getModelFromHomology
-%   Constructs a new model from a set of existing models and gene
-%   homology information.
+%   Constructs a new model from a set of existing models and gene homology
+%   information.
 %
 %   models            a cell array of model structures to build the model
-%                     from
+%                     from. These models must be sorted by importance in
+%                     decreasing order
 %   blastStructure    a blastStructure as produced by getBlast or
 %                     getBlastFromExcel
-%   getModelFor       the name of the organism to build a model for. Must
-%                     have hits in both directions to the organisms in models
+%   getModelFor       a three-four letter abbreviation of the organism to
+%                     build a model for. Must have BLASTP hits in both
+%                     directions to the organisms in 'models'
 %   preferredOrder    the order in which reactions should be added from the
-%                     models. If not supplied, reactions will be included from
-%                     all models, otherwise one gene will only result in reactions
-%                     from one model (opt, default {})
-%   strictness        integer that specifies which reactions that should be included
-%                     1: Include only 1-1 orthologs (only include genes that
-%                     map back to the original gene in the blast in the
-%                     opposite direction)
-%                     2: Include the reactions for all genes below the cutoff
-%                     3: Include only best 1-1 orthologs (opt, default 1)
-%   onlyGenesInModels blast only against genes that exists in the models.
-%                     This tends to import a larger fraction from the existing
-%                     models but may give less reliable results. Has effect only
-%                     if strictness=3 (opt, default false)
-%   maxE              only look at genes with E-values <= this value (opt, default 10^-30)
-%   minLen            only look at genes with overlap >= this value (opt,
-%                     default 200)
-%   minSim            only look at genes with similarity >= this value (opt,
-%                     default 40 (%))
+%                     models. If not supplied, reactions will be included
+%                     from all models, otherwise one gene will only result
+%                     in reactions from one model (opt, default {})
+%   strictness        integer that specifies which reactions should be
+%                     included:
+%                     1: Map new genes to old for all pairs, which have
+%                     acceptable BLASTP results in both directions
+%                     2: Map new genes to old for all pairs, which have
+%                     acceptable BLASTP results in correspondent direction
+%                     (mapping can be done in the opposite direction, see
+%                     mapNewGenesToOld below)
+%                     3: Check all BLASTP results and retain only the best
+%                     results by E-value for all gene pairs in each
+%                     direction separately. Then map new genes to old for
+%                     all pairs, which have acceptable BLASTP results in
+%                     both directions (opt, default 1).
+%   onlyGenesInModels consider BLASTP results only for genes that exist in
+%                     the models. This tends to import a larger fraction
+%                     from the existing models but may give less reliable
+%                     results. Has effect only if strictness=3 (opt,
+%                     default false)
+%   maxE              only look at genes with E-values <= this value (opt,
+%                     default 10^-30)
+%   minLen            only look at genes with alignment length >= this
+%                     value (opt, default 200)
+%   minIde            only look at genes with identity >= this value
+%                     (opt, default 40 (%))
 %   mapNewGenesToOld  determines how to match genes if not looking at only
 %                     1-1 orthologs. Either map the new genes to the old or
 %                     old genes to new. The default is to map the new genes
@@ -35,20 +48,25 @@ function draftModel=getModelFromHomology(models,blastStructure,getModelFor,prefe
 %
 %   draftModel        a model structure for the new organism
 %
-%   The models in the models structure should have named the metabolites in
-%   the same manner, have their reversible reactions in the
-%   same direction (run sortModel), and use the same compartment names.
-%   To avoid keeping unneccesary old genes, the models should not have
+%   The models in the 'models' structure should have named the metabolites
+%   in the same manner, have their reversible reactions in the same
+%   direction (run sortModel), and use the same compartment names. To avoid
+%   keeping unneccesary old genes, the models should not have
 %   'or'-relations in their grRules (use expandModel).
 %
-%   Returns a model structure for the new organism.
+%   The resulting draft model contains only reactions associated with
+%   orthologous genes. The old (original) genes involved in 'and'
+%   relations in grRules without any orthologs are still included in
+%   the draft model as OLD_MODELID_geneName.
 %
-%   draftModel        a new model structure
+%   NOTE: "to" and "from" means relative to the new organism
 %
-%   Eduard Kerkhoven, 2018-07-16
+%   Usage: draftModel=getModelFromHomology(models,blastStructure,...
+%    getModelFor,preferredOrder,strictness,onlyGenesInModels,maxE,...
+%    minLen,minIde,mapNewGenesToOld)
 %
-
-%NOTE: "to" and "from" means relative the new organism
+%   Simonas Marcisauskas, 2018-08-09
+%
 
 if nargin<4
     preferredOrder=[];
@@ -66,7 +84,7 @@ if nargin<8
     minLen=200;
 end
 if nargin<9
-    minSim=40;
+    minIde=40;
 end
 if nargin<10
     mapNewGenesToOld=true;
@@ -80,8 +98,8 @@ for i=1:numel(models)
     modelNames{i}=models{i}.id;
 end
 
-%Assume for now that all information is there and that it's correct This is
-%important to fix since no further checks are being made!
+%Assume for now that all information is there and that it's correct. This
+%is important to fix since no further checks are being made!
 
 %Check whether provided fasta files use the same gene identifiers as
 %provided template models
@@ -114,7 +132,7 @@ fprintf(' done\n');
 
 %Remove all gene matches that are below the cutoffs
 for i=1:numel(blastStructure)
-    indexes=blastStructure(i).evalue<maxE & blastStructure(i).aligLen>=minLen & blastStructure(i).identity>=minSim; %Do it in this direction to lose NaNs
+    indexes=blastStructure(i).evalue<maxE & blastStructure(i).aligLen>=minLen & blastStructure(i).identity>=minIde; %Do it in this direction to lose NaNs
     blastStructure(i).fromGenes(~indexes)=[];
     blastStructure(i).toGenes(~indexes)=[];
     blastStructure(i).evalue(~indexes)=[];
@@ -131,15 +149,14 @@ for i=1:numel(models)
     [hasGenes, ~]=find(models{i}.rxnGeneMat);
     hasNoGenes=1:numel(models{i}.rxns);
     hasNoGenes(hasGenes)=[];
-    
     models{i}=removeReactions(models{i},hasNoGenes,true,true);
 end
 
 %Create a structure that contains all genes used in the blasts in any
-%direction for each of the models in models and for the new organism The
+%direction for each of the models in 'models' and for the new organism. The
 %first cell is for the new organism and then according to the preferred
 %order. If no such order is supplied, then according to the order in
-%models.
+%'models'
 allGenes=cell(numel(models)+1,1);
 if isempty(preferredOrder)
     useOrder=modelNames;
@@ -147,7 +164,7 @@ else
     useOrder=preferredOrder;
 end
 
-%Get the corresponding indexes for those models in the models structure
+%Get the corresponding indexes for those models in the 'models' structure
 useOrderIndexes=zeros(numel(models),1);
 for i=1:numel(models)
     [~, index]=ismember(models{i}.id,useOrder);
@@ -184,7 +201,7 @@ if onlyGenesInModels==true
     end
 end
 
-%If only best 1-1 orthologs are to be used then all other measurements are
+%If only best orthologs are to be used then all other measurements are
 %deleted from the blastStructure. All code after this stays the same. This
 %means that preferred order can still matter. The best ortholog scoring is
 %based only on the E-value
@@ -256,7 +273,7 @@ end
 %Fill the matches to other species
 for i=1:numel(blastStructure)
     if strcmp(blastStructure(i).toId,getModelFor)
-        %This was to the new organism They should all match so no checks
+        %This was 'to' the new organism. They should all match so no checks
         %are being made
         [~, a]=ismember(blastStructure(i).toGenes,allGenes{1});
         [~, fromModel]=ismember(blastStructure(i).fromId,useOrder);
@@ -264,7 +281,7 @@ for i=1:numel(blastStructure)
         idx = sub2ind(size(allTo{fromModel-1}), a, b);
         allTo{fromModel-1}(idx)=1;
     else
-        %This was from the new organism
+        %This was 'from' the new organism
         [~, a]=ismember(blastStructure(i).fromGenes,allGenes{1});
         [~, toModel]=ismember(blastStructure(i).toId,useOrder);
         [~, b]=ismember(blastStructure(i).toGenes,allGenes{toModel});
@@ -276,8 +293,8 @@ end
 %Now we have all the gene matches in a convenient way. For all the genes in
 %the new organism get the genes that should be included from other
 %organisms. If all genes should be included this simply means keep the
-%allFrom matrix as is is. If only 1-1 orthologs are to be included then
-%only those elements are kept.
+%allFrom matrix as it is. If only orthologs which could be mapped in both
+%BLAST directions are to be included then only those elements are kept.
 
 finalMappings=cell(numel(useOrder)-1,1);
 if strictness==1 || strictness==3
@@ -341,10 +358,10 @@ for i=1:numel(models)
     models{useOrderIndexes(i)}=removeGenes(models{useOrderIndexes(i)},~a,true,true,false);
 end
 
-%Since I want to use mergeModels in the end, I simplify the models further
-%by deleting genes/reactions in the order specified by preferredOrder. This
-%means that the last model will only contain reactions for genes that
-%mapped only to that model
+%Since mergeModels function will be used in the end, the models are
+%simplified further by deleting genes/reactions in the order specified by
+%preferredOrder. This means that the last model will only contain reactions
+%for genes that mapped only to that model
 
 allUsedGenes=false(numel(allGenes{1}),1);
 
@@ -364,7 +381,7 @@ if ~isempty(preferredOrder) && numel(models)>1
         [models{useOrderIndexes(i)}, notDeleted]=removeGenes(models{useOrderIndexes(i)},allGenes{i+1}(genesToDelete),true,false,false);
         allUsedGenes(usedGenes)=true;
         
-        %Remove the deleted genes from finalMappings and allGenes Don't
+        %Remove the deleted genes from finalMappings and allGenes. Don't
         %remove the genes in notDeleted, they are part of complexes with
         %some non-mapped genes
         deletedIndexes=~ismember(allGenes{i+1}(genesToDelete),notDeleted);
@@ -392,7 +409,7 @@ for i=1:numel(models)
     %Construct a new rxnGeneMat
     newRxnGeneMat=sparse(numel(models{useOrderIndexes(i)}.rxns),numel(fullGeneList));
     
-    %Now update the rxnGeneMat matrix. This is a little tricky and could
+    %Now update the rxnGeneMat. This is a little tricky and could
     %probably be done in a more efficient way, but I just loop through the
     %reactions and add them one by one
     for j=1:numel(models{useOrderIndexes(i)}.rxns)
@@ -475,15 +492,15 @@ for i=1:numel(models)
 end
 draftModel.description=description;
 draftModel.rxnNotes=cell(length(draftModel.rxns),1);
-draftModel.rxnNotes(:)={'Reaction included by getModelFromHomology'};
+draftModel.rxnNotes(:)={'Included by getModelFromHomology'};
 draftModel.rxnConfidenceScores=NaN(length(draftModel.rxns),1);
 draftModel.rxnConfidenceScores(:)=2;
-%Gene short names and geneMirirams are often different between species,
-%safer not to include them.
-if isfield(draftModel,'geneShortNames');
+%Gene short names and geneMiriams are often different between species,
+%safer not to include them
+if isfield(draftModel,'geneShortNames')
     draftModel=rmfield(draftModel,'geneShortNames');
 end
-if isfield(draftModel,'geneMiriams');
+if isfield(draftModel,'geneMiriams')
     draftModel=rmfield(draftModel,'geneMiriams');
 end
 %Standardize grRules and notify if problematic grRules are found
