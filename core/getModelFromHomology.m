@@ -184,13 +184,13 @@ if onlyGenesInModels==true
         else
             I=ismember(blastStructure(i).fromGenes,modelGenes);
         end
-        blastStructure(i).fromGenes(~indexes)=[];
-        blastStructure(i).toGenes(~indexes)=[];
-        blastStructure(i).evalue(~indexes)=[];
-        blastStructure(i).identity(~indexes)=[];
-        blastStructure(i).aligLen(~indexes)=[];
-        blastStructure(i).bitscore(~indexes)=[];
-        blastStructure(i).ppos(~indexes)=[];
+        blastStructure(i).fromGenes(~I)=[];
+        blastStructure(i).toGenes(~I)=[];
+        blastStructure(i).evalue(~I)=[];
+        blastStructure(i).identity(~I)=[];
+        blastStructure(i).aligLen(~I)=[];
+        blastStructure(i).bitscore(~I)=[];
+        blastStructure(i).ppos(~I)=[];
         
         %Check that no matching in blastStructure is empty. This happens if
         %no genes in the models are present in the corresponding sheet
