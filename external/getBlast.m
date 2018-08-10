@@ -1,30 +1,31 @@
 function blastStructure=getBlast(organismID,fastaFile,modelIDs,refFastaFiles)
 % getBlast
-%   Performs a bidirectional BLASTp between the organism of interest and a
+%   Performs a bidirectional BLASTP between the organism of interest and a
 %   set of template organisms.
 %
 %   organismID      the id of the organism of interest. This should also
 %                   match with the id supplied to getModelFromHomology
 %   fastaFile       a FASTA file with the protein sequences for the
 %                   organism of interest
-%   modelIDs        a cell array of model id:s. These must match the
-%                   "model.id" fields in the "models" structure if the output
-%                   is to be used with getModelFromHomology
+%   modelIDs        a cell array of model ids. These must match the
+%                   "model.id" fields in the "models" structure if the
+%                   output is to be used with getModelFromHomology
 %   refFastaFiles   a cell array with the paths to the corresponding FASTA
 %                   files
 %   
 %   blastStructure  structure containing the bidirectional homology
 %                   measurements which are used by getModelFromHomology
 %
-%   NOTE: This function calls BLASTp to perform a bidirectional homology
+%   NOTE: This function calls BLASTP to perform a bidirectional homology
 %   test between the organism of interest and a set of other organisms
-%   using standard settings. If you would like to use other homology
-%   measurements, please see getBlastFromExcel.
+%   using standard settings. The only filtering this functions does is the
+%   removal of hits with E value higher than 10e-5. If you would like to
+%   use other homology measurements, please see getBlastFromExcel.
 %
 %   Usage: blastStructure=getBlast(organismID,fastaFile,modelIDs,...
 %           refFastaFiles)
 %
-%   Simonas Marcisauskas, 2018-07-25
+%   Simonas Marcisauskas, 2018-08-09
 %
 
 %Everything should be cell arrays
