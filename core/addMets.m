@@ -49,7 +49,7 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 %
 %   Usage: newModel=addMets(model,metsToAdd,copyInfo)
 %
-%   Eduard Kerkhoven, 2018-04-10
+%   Daniel Cook, 2018-08-10
 %
 
 if nargin<3
@@ -67,7 +67,7 @@ if ~isfield(metsToAdd,'mets')
     %Name the metabolites as "m1, m2...". If IDs on the same form are
     %already used in the model then the first available integers should be
     %used
-    maxCurrent=ceil(max(cellfun(@getInteger,model.mets)));
+    maxCurrent=ceil(max(real(cellfun(@getInteger,model.mets)))); % Ignores imaginary portion of function result
     m=maxCurrent+1:maxCurrent+numel(metsToAdd.metNames);
     metsToAdd.mets=strcat({'m'},num2str(m(:)));
 end
