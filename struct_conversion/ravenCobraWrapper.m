@@ -536,15 +536,18 @@ function rules=grrulesToRules(model)
 %'x(geneNumber)' and also changes 'or' and 'and' relations to corresponding
 %symbols
 replacingGenes=cell([size(model.genes,1) 1]);
-rules=cell([size(model.grRules,1) 1]);
 for i=1:numel(replacingGenes)
     replacingGenes{i}=strcat('x(',num2str(i),')');
 end
-for i=1:numel(model.grRules)
-    rules{i}=regexprep(model.grRules{i},model.genes,replacingGenes);
-    rules{i}=regexprep(rules{i},' and ',' & ');
-    rules{i}=regexprep(rules{i},' or ',' | ');
+rules = strcat({' '},model.grRules,{' '});
+for i=1:length(model.genes)
+    rules=regexprep(rules,[' ' model.genes{i} ' '],[' ' replacingGenes{i} ' ']);
+    rules=regexprep(rules,['(' model.genes{i} ' '],['(' replacingGenes{i} ' ']);
+    rules=regexprep(rules,[' ' model.genes{i} ')'],[' ' replacingGenes{i} ')']);
 end
+rules=regexprep(rules,' and ',' & ');
+rules=regexprep(rules,' or ',' | ');
+rules=strtrim(rules);
 end
 
 function grRules=rulesTogrrules(model)
