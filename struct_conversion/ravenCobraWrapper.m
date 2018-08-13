@@ -78,6 +78,14 @@ if isRaven
         if any(i)
             newModel.rxnKEGGID=miriams(:,i);
         end
+        i=ismember(extractedMiriamNames,'metanetx.reaction');
+        if any(i)
+            newModel.rxnMetaNetXID=miriams(:,i);
+        end
+        i=ismember(extractedMiriamNames,'sbo');
+        if any(i)
+            newModel.rxnSBOTerms=miriams(:,i);
+        end
     end
     if isfield(model,'rxnReferences')
         newModel.rxnReferences=model.rxnReferences;
@@ -144,7 +152,11 @@ if isRaven
         i=ismember(extractedMiriamNames,'reactome');
         if any(i)
             newModel.metREACTOMEID=miriams(:,i);
-        end   
+        end
+        i=ismember(extractedMiriamNames,'sbo');
+        if any(i)
+            newModel.metSBOTerms=miriams(:,i);
+        end
         i=ismember(extractedMiriamNames,'seed.compound');
         if any(i)
             newModel.metSEEDID=miriams(:,i);
@@ -309,7 +321,7 @@ else
     if isfield(model,'rxnECNumbers')
         newModel.eccodes=regexprep(model.rxnECNumbers,'EC|EC:','');
     end
-    if isfield(model,'rxnKEGGID') || isfield(model,'rxnReferences')
+    if isfield(model,'rxnKEGGID') || isfield(model,'rxnMetaNetXID') || isfield(model,'rxnSBOTerms') || isfield(model,'rxnReferences')
         for i=1:numel(model.rxns)
             counter=1;
             newModel.rxnMiriams{i,1}=[];
@@ -317,6 +329,20 @@ else
                 if ~isempty(model.rxnKEGGID{i})
                     newModel.rxnMiriams{i,1}.name{counter,1} = 'kegg.reaction';
                     newModel.rxnMiriams{i,1}.value{counter,1} = model.rxnKEGGID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'rxnMetaNetXID')
+                if ~isempty(model.rxnMetaNetXID{i})
+                    newModel.rxnMiriams{i,1}.name{counter,1} = 'metanetx.reaction';
+                    newModel.rxnMiriams{i,1}.value{counter,1} = model.rxnMetaNetXID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'rxnSBOTerms')
+                if ~isempty(model.rxnSBOTerms{i})
+                    newModel.rxnMiriams{i,1}.name{counter,1} = 'sbo';
+                    newModel.rxnMiriams{i,1}.value{counter,1} = model.rxnSBOTerms{i};
                     counter=counter+1;
                 end
             end
@@ -388,7 +414,7 @@ else
     if isfield(model,'metFormulas')
         newModel.metFormulas=model.metFormulas;
     end
-    if isfield(model,'metChEBIID') || isfield(model,'metHMDBID') || isfield(model,'metKEGGID') || isfield(model,'metPubChemID') || isfield(model,'metMetaNetXID') || isfield(model,'metBiGGID') || isfield(model,'metLIPIDMAPSID') || isfield(model,'metMetaCycID') || isfield(model,'metREACTOMEID') || isfield(model,'metSEEDID') || isfield(model,'metSLMID')
+    if isfield(model,'metChEBIID') || isfield(model,'metHMDBID') || isfield(model,'metKEGGID') || isfield(model,'metPubChemID') || isfield(model,'metMetaNetXID') || isfield(model,'metBiGGID') || isfield(model,'metLIPIDMAPSID') || isfield(model,'metMetaCycID') || isfield(model,'metREACTOMEID') || isfield(model,'metSBOTerms') || isfield(model,'metSEEDID') || isfield(model,'metSLMID')
         for i=1:numel(model.mets)
             counter=1;
             newModel.metMiriams{i,1}=[];
@@ -469,6 +495,13 @@ else
                 if ~isempty(model.metREACTOMEID{i})
                     newModel.metMiriams{i,1}.name{counter,1} = 'reactome';
                     newModel.metMiriams{i,1}.value{counter,1} = model.metREACTOMEID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'metSBOTerms')
+                if ~isempty(model.metSBOTerms{i})
+                    newModel.metMiriams{i,1}.name{counter,1} = 'sbo';
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metSBOTerms{i};
                     counter=counter+1;
                 end
             end
