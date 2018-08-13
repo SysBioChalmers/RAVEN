@@ -11,8 +11,8 @@ function newModel=ravenCobraWrapper(model)
 %   existense, which is only found in COBRA Toolbox structure.
 %
 %   NOTE: During RAVEN -> COBRA -> RAVEN conversion cycle the following
-%   fields are lost: id, description, annotation, compOutside, compMiriams,
-%   rxnComps, geneComps, unconstrained. Boundary metabolites are lost,
+%   fields are lost: annotation, compOutside, compMiriams, rxnComps,
+%   geneComps, unconstrained. Boundary metabolites are lost,
 %   because COBRA structure does not involve boundary metabolites, so they
 %   are removed using simplifyModel before RAVEN -> COBRA conversion. The
 %   field 'rev' is also partially lost, but during COBRA -> RAVEN
@@ -29,7 +29,7 @@ function newModel=ravenCobraWrapper(model)
 %   Usage: newModel=ravenCobraWrapper(model)
 %
 %   Simonas Marcisauskas, 2018-07-12
-%   Benjamín J. Sánchez, 2018-08-07
+%   Benjamín J. Sánchez, 2018-08-13
 %
 
 if isfield(model,'rules')
@@ -56,6 +56,12 @@ if isRaven
     %later to match the order of fields
     
     %Optional COBRA fields
+    if isfield(model,'id')
+        newModel.modelID=model.id;
+    end
+    if isfield(model,'description')
+        newModel.modelName=model.description;
+    end
     if isfield(model,'rxnNames')
         newModel.rxnNames=model.rxnNames;
     end
@@ -275,6 +281,12 @@ else
     %anyway, so there is no point to add this information here
     
     %Optional RAVEN fields
+    if isfield(model,'modelID')
+        newModel.id=model.modelID;
+    end
+    if isfield(model,'modelName')
+        newModel.description=model.modelName;
+    end
     if isfield(model,'compNames')
         newModel.compNames=model.compNames;
     end
