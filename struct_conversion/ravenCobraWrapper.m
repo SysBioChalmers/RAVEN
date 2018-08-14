@@ -11,8 +11,8 @@ function newModel=ravenCobraWrapper(model)
 %   existense, which is only found in COBRA Toolbox structure.
 %
 %   NOTE: During RAVEN -> COBRA -> RAVEN conversion cycle the following
-%   fields are lost: id, description, annotation, compOutside, compMiriams,
-%   rxnComps, geneComps, unconstrained. Boundary metabolites are lost,
+%   fields are lost: annotation, compOutside, compMiriams, rxnComps,
+%   geneComps, unconstrained. Boundary metabolites are lost,
 %   because COBRA structure does not involve boundary metabolites, so they
 %   are removed using simplifyModel before RAVEN -> COBRA conversion. The
 %   field 'rev' is also partially lost, but during COBRA -> RAVEN
@@ -29,6 +29,7 @@ function newModel=ravenCobraWrapper(model)
 %   Usage: newModel=ravenCobraWrapper(model)
 %
 %   Simonas Marcisauskas, 2018-07-12
+%   Benjamín J. Sánchez, 2018-08-13
 %
 
 if isfield(model,'rules')
@@ -55,6 +56,12 @@ if isRaven
     %later to match the order of fields
     
     %Optional COBRA fields
+    if isfield(model,'id')
+        newModel.modelID=model.id;
+    end
+    if isfield(model,'description')
+        newModel.modelName=model.description;
+    end
     if isfield(model,'rxnNames')
         newModel.rxnNames=model.rxnNames;
     end
@@ -71,6 +78,14 @@ if isRaven
         if any(i)
             newModel.rxnKEGGID=miriams(:,i);
         end
+        i=ismember(extractedMiriamNames,'metanetx.reaction');
+        if any(i)
+            newModel.rxnMetaNetXID=miriams(:,i);
+        end
+        i=ismember(extractedMiriamNames,'sbo');
+        if any(i)
+            newModel.rxnSBOTerms=miriams(:,i);
+        end
     end
     if isfield(model,'rxnReferences')
         newModel.rxnReferences=model.rxnReferences;
@@ -79,7 +94,7 @@ if isRaven
         newModel.rxnNotes=model.rxnNotes;
     end
     if isfield(model,'metNames')
-        newModel.metNames=model.metNames;
+        newModel.metNames=strcat(model.metNames,' [',model.compNames(model.metComps),']');
     end
     if isfield(model,'metFormulas')
         newModel.metFormulas=model.metFormulas;
@@ -137,7 +152,11 @@ if isRaven
         i=ismember(extractedMiriamNames,'reactome');
         if any(i)
             newModel.metREACTOMEID=miriams(:,i);
-        end   
+        end
+        i=ismember(extractedMiriamNames,'sbo');
+        if any(i)
+            newModel.metSBOTerms=miriams(:,i);
+        end
         i=ismember(extractedMiriamNames,'seed.compound');
         if any(i)
             newModel.metSEEDID=miriams(:,i);
@@ -274,6 +293,12 @@ else
     %anyway, so there is no point to add this information here
     
     %Optional RAVEN fields
+    if isfield(model,'modelID')
+        newModel.id=model.modelID;
+    end
+    if isfield(model,'modelName')
+        newModel.description=model.modelName;
+    end
     if isfield(model,'compNames')
         newModel.compNames=model.compNames;
     end
@@ -296,7 +321,7 @@ else
     if isfield(model,'rxnECNumbers')
         newModel.eccodes=regexprep(model.rxnECNumbers,'EC|EC:','');
     end
-    if isfield(model,'rxnKEGGID') || isfield(model,'rxnReferences')
+    if isfield(model,'rxnKEGGID') || isfield(model,'rxnMetaNetXID') || isfield(model,'rxnSBOTerms') || isfield(model,'rxnReferences')
         for i=1:numel(model.rxns)
             counter=1;
             newModel.rxnMiriams{i,1}=[];
@@ -304,6 +329,20 @@ else
                 if ~isempty(model.rxnKEGGID{i})
                     newModel.rxnMiriams{i,1}.name{counter,1} = 'kegg.reaction';
                     newModel.rxnMiriams{i,1}.value{counter,1} = model.rxnKEGGID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'rxnMetaNetXID')
+                if ~isempty(model.rxnMetaNetXID{i})
+                    newModel.rxnMiriams{i,1}.name{counter,1} = 'metanetx.reaction';
+                    newModel.rxnMiriams{i,1}.value{counter,1} = model.rxnMetaNetXID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'rxnSBOTerms')
+                if ~isempty(model.rxnSBOTerms{i})
+                    newModel.rxnMiriams{i,1}.name{counter,1} = 'sbo';
+                    newModel.rxnMiriams{i,1}.value{counter,1} = model.rxnSBOTerms{i};
                     counter=counter+1;
                 end
             end
@@ -375,7 +414,7 @@ else
     if isfield(model,'metFormulas')
         newModel.metFormulas=model.metFormulas;
     end
-    if isfield(model,'metChEBIID') || isfield(model,'metHMDBID') || isfield(model,'metKEGGID') || isfield(model,'metPubChemID') || isfield(model,'metMetaNetXID') || isfield(model,'metBiGGID') || isfield(model,'metLIPIDMAPSID') || isfield(model,'metMetaCycID') || isfield(model,'metREACTOMEID') || isfield(model,'metSEEDID') || isfield(model,'metSLMID')
+    if isfield(model,'metChEBIID') || isfield(model,'metHMDBID') || isfield(model,'metKEGGID') || isfield(model,'metPubChemID') || isfield(model,'metMetaNetXID') || isfield(model,'metBiGGID') || isfield(model,'metLIPIDMAPSID') || isfield(model,'metMetaCycID') || isfield(model,'metREACTOMEID') || isfield(model,'metSBOTerms') || isfield(model,'metSEEDID') || isfield(model,'metSLMID')
         for i=1:numel(model.mets)
             counter=1;
             newModel.metMiriams{i,1}=[];
@@ -459,6 +498,13 @@ else
                     counter=counter+1;
                 end
             end
+            if isfield(model,'metSBOTerms')
+                if ~isempty(model.metSBOTerms{i})
+                    newModel.metMiriams{i,1}.name{counter,1} = 'sbo';
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metSBOTerms{i};
+                    counter=counter+1;
+                end
+            end
             if isfield(model,'metSEEDID')
                 if ~isempty(model.metSEEDID{i})
                     newModel.metMiriams{i,1}.name{counter,1} = 'seed.compound';
@@ -490,15 +536,18 @@ function rules=grrulesToRules(model)
 %'x(geneNumber)' and also changes 'or' and 'and' relations to corresponding
 %symbols
 replacingGenes=cell([size(model.genes,1) 1]);
-rules=cell([size(model.grRules,1) 1]);
 for i=1:numel(replacingGenes)
     replacingGenes{i}=strcat('x(',num2str(i),')');
 end
-for i=1:numel(model.grRules)
-    rules{i}=regexprep(model.grRules{i},model.genes,replacingGenes);
-    rules{i}=regexprep(rules{i},' and ',' & ');
-    rules{i}=regexprep(rules{i},' or ',' | ');
+rules = strcat({' '},model.grRules,{' '});
+for i=1:length(model.genes)
+    rules=regexprep(rules,[' ' model.genes{i} ' '],[' ' replacingGenes{i} ' ']);
+    rules=regexprep(rules,['(' model.genes{i} ' '],['(' replacingGenes{i} ' ']);
+    rules=regexprep(rules,[' ' model.genes{i} ')'],[' ' replacingGenes{i} ')']);
 end
+rules=regexprep(rules,' and ',' & ');
+rules=regexprep(rules,' or ',' | ');
+rules=strtrim(rules);
 end
 
 function grRules=rulesTogrrules(model)
