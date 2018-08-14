@@ -1,4 +1,5 @@
-% FILE NAME:    Sco4ReconstrctionByRaven2.m
+%
+% FILE NAME:    tutorial2018.m
 % 
 % DATE CREATED: 2018-01-08
 %     MODIFIED: 2018-08-12
@@ -8,12 +9,24 @@
 %               Chalmers University of Technology
 % 
 % 
-% PURPOSE: The S. coelicolor GEM reconstruction and refinement using RAVEN 2.0.
-%	
+% PURPOSE: This tutorial script demonstrates an automated process of
+%          genome-scale model generation and curation for Streptomyces
+%          coelicolor strin A3(2) by using the RAVEN Toolbox version 2.0.
+%          This script includes two parts: de novo GEM reconstruciton and
+%          model refinement based on manual curation.
+% 
+% 
+% Input files:
+%	  Sco_all_protein.faa   S. coelicolor proteome sequences in FASTA format
+%           iMK1208.mat   The MATLAB file of iMK1208 model in RAVEN format
+% SupportingTables.xlsx   Manual curation results in Excel format
+%
+% Output files:
+% ScoCombinedModel.xlsx   The combined draft model in Excel format
+%   newRxnSubModel.xlsx   The sub-model of new reacctions in Excel format
+%
 
-% Load MetaCyc database for reconstruction
-load('metaCycRxns.mat');
-load('metaCycMets.mat');
+% Part One: De novo GEM Reconstruction
 
 % 1. Draft GEM reconstruction using MetaCyc database
 
@@ -22,41 +35,47 @@ ScoMetaCycDraftModel=getMetaCycModelForOrganism('ScoMetaCyc','Sco_all_protein.fa
 
 % 2. Draft GEM reconstruction using KEGG database
 
-% a. Draft GEM based on the genome annotation KEGG database
+% a. Draft GEM based on the genome information annotated by KEGG
 ScoKEGGAnnotation=getKEGGModelForOrganism('sco','','','',0,0);
 ScoKEGGAnnotation.id='ScoKEGGAnnotation';
 
 % b. Draft GEM reconstructed from homology with HMMs traind from KEGG
 % KO orthologs using the default cut-off values
 
-% Define the folder of KEGG KOs data folder
+% Define the type of  pre-trained hmms used in KEGG-based de novo reconstruction
 dataDir = 'prok90_kegg82';
 
 ScoKEGGHomology=getKEGGModelForOrganism('ScoKEGGHMMs',....
 'Sco_all_protein.faa',dataDir,'',false,false);
 
-% c. Direct merge the two KEGG models
+% c. Direct merge the two KEGG-based  models
 ScoKEGGDraftModel=mergeModels({ScoKEGGAnnotation ScoKEGGHomology});
-% expandModel and contractModel
+% expandModel and contractModel for thorough integration
 ScoKEGGDraftModel=expandModel(ScoKEGGDraftModel);
 ScoKEGGDraftModel=contractModel(ScoKEGGDraftModel);
 ScoKEGGDraftModel.id='mergedKEGG';
 ScoKEGGDraftModel.description='Merged from reconstructions of KEGG annoation and homology search';
 
 
-% 3. Combine the KEGG and MetaCyc draft GEMs
+% 3. Combine the two draft GEMs obtained from KEGG and MetaCyc
 
 ScoCombinedDraftModel=combineMetaCycKEGGModels(ScoMetaCycDraftModel, ScoKEGGDraftModel);
 
-% Export the combined model into Excel format for manual curation
+% Export the combined model into Excel format and subject for manual curation
 exportToExcelFormat(ScoCombinedDraftModel,'ScoCombinedModel.xlsx');
 
 
-% 4. Generate the subModel of new reactions
+
+% Part Two: Model Refinements Based on Manual Curation
+
+% 4. A total of 398 reactions in the combined draft model were determined
+% as new pathways that are absent from the iMK1208. They were extracted
+% out as a sub model.
+
 % a. Read in the list of manually selected reactions
-[~, textData]=xlsread('SupplementaryTables.xlsx','TableS6');
-selectedNewRxns.rxns=textData(3:end,1);
-selectedNewRxns.subSystems=textData(3:end,3);
+[~, textData]=xlsread('SupportingTables.xlsx','TableS3');
+selectedNewRxns.rxns=textData(2:end,1);
+selectedNewRxns.subSystems=textData(2:end,3);
 % b. Remove non-selected reactions from combined model and unused fields
 rxnsToRemove=setdiff(ScoCombinedDraftModel.rxns,selectedNewRxns.rxns);
 newRxnSubModel=removeReactions(ScoCombinedDraftModel,rxnsToRemove,true,true);
@@ -75,7 +94,7 @@ for k=1:numel(newRxnSubModel.rxns)
    newRxnSubModel.genes=[newRxnSubModel.genes;transpose(strsplit(newRxnSubModel.grRules{k},' or '))];
 end
 newRxnSubModel.genes=unique(newRxnSubModel.genes);
-% f. Regenerate the rxnGeneMat, and only 'or' relationship was considered
+% f. Regenerate the rxnGeneMat field, and only 'or' relationship is considered
 newRxnSubModel.rxnGeneMat=sparse(numel(newRxnSubModel.rxns),numel(newRxnSubModel.genes));
 for i=1:numel(newRxnSubModel.rxns)
    %newRxnSubModel.genes=[newRxnSubModel.genes;transpose(strsplit(newRxnSubModel.grRules{k},' or '))];
@@ -106,28 +125,31 @@ exportToExcelFormat(newRxnSubModel,'newRxnSubModel.xlsx');
 
 
 % 5. Generate the subModel of retrieved spontaneous reactions
-% a. Read in the mapped MetaCyc reactions in iMK1208
-[~, textData]=xlsread('SupplementaryTables.xlsx','TableS4');
-metaCycRxnsIniMK=textData(4:end,8);
+% a. Load MetaCyc reactions and metabolites for model refinements
+load('metaCycRxns.mat');
+load('metaCycMets.mat');
+% b. Read in the mapped MetaCyc reactions in iMK1208
+[~, textData]=xlsread('SupportingTables.xlsx','TableS1');
+metaCycRxnsIniMK=textData(3:end,8);
 metaCycRxnsIniMK=metaCycRxnsIniMK(~cellfun(@isempty, metaCycRxnsIniMK));  %Remove empty elements
-% b. Read in the mapped MetaCyc metabolites in iMK1208
-[~, textData]=xlsread('SupplementaryTables.xlsx','TableS5');
-metaCycMetsIniMK=textData(3:end,4);
-keggMetsIniMK=textData(3:end,3);
+% c. Read in the mapped MetaCyc metabolites in iMK1208
+[~, textData]=xlsread('SupportingTables.xlsx','TableS2');
+metaCycMetsIniMK=textData(2:end,4);
+keggMetsIniMK=textData(2:end,3);
 metaCycMetsIniMK=metaCycMetsIniMK(~cellfun(@isempty, metaCycMetsIniMK));  %Remove empty elements
-% c. Retrieve associated spontaneous reactions and obtain the submodel
+% d. Retrieve associated spontaneous reactions and obtain the submodel
 % Get the list of all MetaCyc reactions
 rxnList=unique([metaCycRxnsIniMK;newRxnSubModel.rxns]);
 % Get the list of metabolites with MetaCyc ids
 metList=unique([metaCycMetsIniMK;newRxnSubModel.mets]);
 % Get the associated spontaneous reactions
 spRxnList=retrieveSpontaneous(rxnList,metList);
-% d. Generate spontaneous reaction submodel
+% e. Generate spontaneous reaction submodel
 rxnsToRemove=setdiff(metaCycRxns.rxns,spRxnList);
 spRxnSubModel=removeReactions(metaCycRxns,rxnsToRemove,true,true);
-% e. Regenerate the empty genes field
+% f. Regenerate the empty genes field
 spRxnSubModel.genes{1}='s0001';
-% f. Regenerate the rxnGeneMat with all zeros
+% g. Regenerate the rxnGeneMat with all zeros
 spRxnSubModel.rxnGeneMat=ones(numel(spRxnSubModel.rxns),1);
 spRxnSubModel.grRules=cell(numel(spRxnSubModel.rxns),1);
 spRxnSubModel.grRules(:)={'s0001'};
@@ -145,7 +167,7 @@ spRxnSubModel.metNames(I)=spRxnSubModel.mets(I);
 
 
 % 6. Prepare the metabolites for merge
-% a. Load iMK model
+% a. Load the iMK1208 model
 model=load('iMK1208.mat');
 % b. Match metabolites in newRxnSubModel to iMK1208
 [a, b]=ismember(newRxnSubModel.mets,metaCycMetsIniMK);
@@ -180,15 +202,15 @@ spRxnModel4Merge.metComps=ones(numel(spRxnModel4Merge.mets),1);
 Sco4=mergeModels({model newRxnModel4Merge spRxnModel4Merge});
 
 
-% 8. Gap-filling based on RAVEN2 reconstructions
-% a. New gene-association from RAVEN2 reconstruction
-[~, textData]=xlsread('SupplementaryTables.xlsx','TableS7');
-gapfilling.rxns=textData(4:end,2);
-gapfilling.grRules=textData(4:end,4);
+% 8. Gap-filling for missing gene-associations in iMK1208
+% a. New gene-associations from RAVEN2 reconstruction
+[~, textData]=xlsread('SupportingTables.xlsx','TableS4');
+gapfilling.rxns=textData(3:end,2);
+gapfilling.grRules=textData(3:end,4);
 % b. New gene-association for transport reactions
-[~, textData]=xlsread('SupplementaryTables.xlsx','TableS9');
-gapfilling.rxns=[gapfilling.rxns;textData(3:7,2)];
-gapfilling.grRules=[gapfilling.grRules;textData(3:7,3)];
+[~, textData]=xlsread('SupportingTables.xlsx','TableS6');
+gapfilling.rxns=[gapfilling.rxns;textData(2:6,2)];
+gapfilling.grRules=[gapfilling.grRules;textData(2:6,3)];
 % c. Use new grRules from RAVEN2 reconstruction to fill gaps in iMK1208
 [~, index]=ismember(gapfilling.rxns,Sco4.rxns);
 Sco4.grRules(index)=gapfilling.grRules;
@@ -204,6 +226,7 @@ Sco4.rxnGeneMat=getRxnGeneMat(Sco4);
 
 
 % 9. Add new transport reactions from MetaCyc reconstruction
+% based on the curated transport reactions in Table S6
 % a. First add new metabolites: gtca3[e], ENTEROBACTIN[c] and ENTEROBACTIN[e]
 A=find(strcmp('gtca3_c',Sco4.mets));  % Find index for gtca3[c]
 B=find(strcmp('ENTEROBACTIN',metaCycMets.mets)); % Find index for ENTEROBACTIN
@@ -225,13 +248,13 @@ metToAdd.metCharges(1,1)=Sco4.metCharges(A);
 metToAdd.metCharges(2,1)=metaCycMets.metCharges(B);
 metToAdd.metCharges(3,1)=metaCycMets.metCharges(B);
 Sco4=addMets(Sco4,metToAdd,0);
-% b. Prepare a structure for adding reactions, info from Table S9
-rxnToAdd.rxns=textData(8:end,1);
-rxnToAdd.grRules=textData(8:end,3);
-rxnToAdd.subSystems=textData(8:end,4);
-rxnToAdd.rxnNames=textData(8:end,5);
-rxnToAdd.equations=textData(8:end,6);
-rxnToAdd.eccodes=textData(8:end,8);
+% b. Prepare a structure of new transport reactions (Table S6)
+rxnToAdd.rxns=textData(7:end,1);
+rxnToAdd.grRules=textData(7:end,3);
+rxnToAdd.subSystems=textData(7:end,4);
+rxnToAdd.rxnNames=textData(7:end,5);
+rxnToAdd.equations=textData(7:end,6);
+rxnToAdd.eccodes=textData(7:end,8);
 rxnToAdd.lb=[0; 0; 0; 0; 0];
 rxnToAdd.ub=[1000; 1000; 1000; 1000; 1000];
 rxnToAdd.confidenceScores={'2';'2';'2';'2';'2'};
@@ -241,8 +264,7 @@ for i=1:length(rxnToAdd.rxns)
 	geneToAdd.genes=[geneToAdd.genes;transpose(strsplit(rxnToAdd.grRules{i},' or '))];
 end
 Sco4=addGenes(Sco4,geneToAdd);
-% d. Add the structure of new transport reactions
-% Several places of addRxns were commented off to skip format checking
+% d. Add the new transport reactions
 Sco4=addRxns(Sco4,rxnToAdd,1,'',0);
 
 
