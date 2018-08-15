@@ -13,14 +13,13 @@ function out=exportForGit(model,prefix,path,formats,masterFlag)
 %   formats             cell array of strings specifying in what file formats
 %                       the model should be exported (opt, default to all
 %                       formats as {'mat', 'txt', 'xlsx', 'xml', 'yml'})
-%   masterFlag          logical: if =TRUE, function will error if RAVEN (and
+%   masterFlag          logical, if true, function will error if RAVEN (and
 %                       COBRA if detected) is/are not on the master branch.
-%                       Default is FALSE.
+%                       (opt, default false)
 %
 %   Usage: exportForGit(model,prefix,path,formats,masterFlag)
 %
-%   Eduard Kerkhoven, 2018-05-22
-%   Benjamín J. Sánchez, 2018-08-03
+%   Benjamin J. Sanchez, 2018-08-03
 %
 if nargin<5
     masterFlag=false;
@@ -163,7 +162,7 @@ if masterFlag
     currentBranch = git('rev-parse --abbrev-ref HEAD');
     cd(currentPath)
     if ~strcmp(currentBranch,'master')
-        error(['ERROR: ' toolbox ' not in master'])
+        error(['ERROR: ' toolbox ' not in master. Check-out the master branch of ' toolbox ' before submitting model for Git.'])
     end
 end
 end
