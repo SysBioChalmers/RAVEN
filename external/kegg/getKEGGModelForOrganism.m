@@ -327,6 +327,11 @@ cores = strsplit(cores, 'MATLAB was assigned: ');
 cores = regexp(cores{2},'^\d*','match');
 cores = cores{1};
 
+%Get the directory for RAVEN Toolbox. This is to get the path to the third
+%party software used
+[ST, I]=dbstack('-completenames');
+ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+
 %Checking if dataDir is consistent. It must point to pre-trained HMMs set,
 %compatible with the the current RAVEN version. The user may have the
 %required zip file already in working directory or have it extracted. If
@@ -340,7 +345,9 @@ if ~isempty(dataDir)
         'prok90_kegg82'; ...
         'prok50_kegg82'};
     if all(cellfun(@isempty,regexp(dataDir,strcat(hmmOptions,'$')))) %Check if dataDir ends with any of the hmmOptions
-        if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file') &&...
+        if ~exist(fullfile(ravenPath,'external','kegg','genes.pep'),'file') &&...
+                ~exist(fullfile(dataDir,'genes.pep'),'file') &&...
+                ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file') &&...
                 ~exist(fullfile(dataDir,'fasta'),'dir') &&...
                 ~exist(fullfile(dataDir,'aligned'),'dir') &&...
                 ~exist(fullfile(dataDir,'hmms'),'dir')
@@ -388,11 +395,6 @@ if any(fastaFile)
         mkdir(outDir);
     end
 end
-
-%Get the directory for RAVEN Toolbox. This is to get the path to the third
-%party software used
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 
 %First generate the full KEGG model. The dataDir mustn't be supplied as
 %there is also an internal RAVEN version available
