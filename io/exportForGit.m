@@ -1,4 +1,4 @@
-function out=exportForGit(model,prefix,path,formats)
+function out=exportForGit(model,prefix,path,formats,masterFlag)
 % exportForGit
 %   Generates a directory structure and populates this with model files, ready
 %   to be commited to a Git(Hub) maintained model repository. Writes the model
@@ -13,11 +13,17 @@ function out=exportForGit(model,prefix,path,formats)
 %   formats             cell array of strings specifying in what file formats
 %                       the model should be exported (opt, default to all
 %                       formats as {'mat', 'txt', 'xlsx', 'xml', 'yml'})
+%   masterFlag          logical, if true, function will error if RAVEN (and
+%                       COBRA if detected) is/are not on the master branch.
+%                       (opt, default false)
 %
-%   Usage: exportForGit(model,prefix,path,formats)
+%   Usage: exportForGit(model,prefix,path,formats,masterFlag)
 %
-%   Eduard Kerkhoven, 2018-05-22
+%   Benjamin J. Sanchez, 2018-08-03
 %
+if nargin<5
+    masterFlag=false;
+end
 if nargin<4
     formats={'mat', 'txt', 'xlsx', 'xml', 'yml'};
 end
@@ -33,6 +39,50 @@ if nargin<3
 end
 if nargin<2
     prefix='model';
+end
+
+%Get RAVEN version:
+RAVENpath = which('ravenCobraWrapper.m');
+slashPos  = getSlashPos(RAVENpath);
+RAVENpath = RAVENpath(1:slashPos(end-1));
+checkIfMaster(RAVENpath,'RAVEN',masterFlag)
+try
+    fid      = fopen([RAVENpath 'version.txt'],'r');
+    RAVENver = fscanf(fid,'%s');
+    fclose(fid);
+catch
+    RAVENver = 'unknown';
+end
+
+%Retrieve latest COBRA commit:
+COBRApath = which('initCobraToolbox.m');
+if ~isempty(COBRApath)
+    slashPos  = getSlashPos(COBRApath);
+    COBRApath = COBRApath(1:slashPos(end));
+    checkIfMaster(COBRApath,'COBRA',masterFlag)
+    currentPath = pwd;
+    cd(COBRApath)
+    try
+        COBRAcommit = git('log -n 1 --format=%H');
+    catch
+        disp('COBRA is not fully installed (including Git wrapper)')
+        COBRAcommit = 'unknown';
+    end
+    cd(currentPath)
+else
+    disp('COBRA version cannot be found')
+end
+
+%Retrieve libSBML version:
+try % 5.17.0 and newer
+    libSBMLver=OutputSBML;
+    libSBMLver=libSBMLver.libSBML_version_string;
+catch % before 5.17.0
+    fid = fopen('tempModelForLibSBMLversion.xml','w+');
+    fclose(fid);
+    evalc('[~,~,libSBMLver]=TranslateSBML(''tempModelForLibSBMLversion.xml'',0,0)');
+    libSBMLver=libSBMLver.libSBML_version_string;
+    delete('tempModelForLibSBMLversion.xml');
 end
 
 % Make ModelFiles folder, no warnings if folder already exists
@@ -80,37 +130,6 @@ if ismember('xml', formats)
     exportModel(model,fullfile(path,'ModelFiles','xml',strcat(prefix,'.xml')));
 end
 
-%Track versions
-RAVENver = getVersion('ravenCobraWrapper.m','version.txt');
-%Retrieve latest COBRA commit:
-COBRApath   = which('initCobraToolbox.m');
-if ~isempty(COBRApath)
-    slashPos    = getSlashPos(COBRApath);
-    COBRApath   = COBRApath(1:slashPos(end)-1);
-    currentPath = pwd;
-    cd(COBRApath)
-    try
-        COBRAcommit = git('log -n 1 --format=%H');
-    catch
-        disp('COBRA is not fully installed (including Git wrapper)')
-        COBRAcommit = 'unknown';
-    end
-    cd(currentPath)
-else
-    disp('COBRA version cannot be found')
-end
-%Retrieve libSBML version:
-try % 5.17.0 and newer
-    libSBMLver=OutputSBML;
-    libSBMLver=libSBMLver.libSBML_version_string;
-catch % before 5.17.0
-    fid = fopen('tempModelForLibSBMLversion.xml','w+');
-    fclose(fid);
-    evalc('[~,~,libSBMLver]=TranslateSBML(''tempModelForLibSBMLversion.xml'',0,0)');
-    libSBMLver=libSBMLver.libSBML_version_string;
-    delete('tempModelForLibSBMLversion.xml');
-end
-
 %Save file with versions:
 fid = fopen(fullfile(path,'ModelFiles','dependencies.txt'),'wt');
 fprintf(fid,['MATLAB\t' version '\n']);
@@ -129,22 +148,21 @@ end
 fclose(fid);
 end
 
-function version = getVersion(IDfileName,VERfileName)
-try
-    path     = which(IDfileName);
-    slashPos = getSlashPos(path);
-    path     = path(1:slashPos(end-1));
-    fid      = fopen([path VERfileName],'r');
-    version  = fscanf(fid,'%s');
-    fclose(fid);
-catch
-    version = '?';
-end
-end
-
 function slashPos = getSlashPos(path)
 slashPos = strfind(path,'\');       %Windows
 if isempty(slashPos)
     slashPos = strfind(path,'/');   %MAC/Linux
+end
+end
+
+function checkIfMaster(toolboxPath,toolbox,masterFlag)
+if masterFlag
+    currentPath = pwd;
+    cd(toolboxPath)
+    currentBranch = git('rev-parse --abbrev-ref HEAD');
+    cd(currentPath)
+    if ~strcmp(currentBranch,'master')
+        error(['ERROR: ' toolbox ' not in master. Check-out the master branch of ' toolbox ' before submitting model for Git.'])
+    end
 end
 end
