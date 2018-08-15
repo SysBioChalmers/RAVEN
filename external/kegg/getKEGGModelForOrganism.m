@@ -263,7 +263,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %    nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2018-08-01
+%   Simonas Marcisauskas, 2018-08-15
 %
 
 if nargin<2
@@ -488,19 +488,6 @@ if isempty(fastaFile)
         end
     end
     return;
-end
-
-%Trim the genes so that they only contain information that can be matched
-%to the KEGG file of protein sequences (remove all information after first
-%parenthesis) NOTE: For some reason the organism abbreviation should be in
-%lower case in this database. Fix this here
-for i=1:numel(KOModel.genes)
-    parIndex=strfind(KOModel.genes{i},'(');
-    if any(parIndex)
-        KOModel.genes{i}=KOModel.genes{i}(1:parIndex-1);
-    end
-    colIndex=strfind(KOModel.genes{i},':');
-    KOModel.genes{i}=[lower(KOModel.genes{i}(1:colIndex-1)) KOModel.genes{i}(colIndex:end)];
 end
 
 %Create a phylogenetic distance structure

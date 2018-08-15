@@ -26,7 +26,7 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %                       unsuited for modelling purposes. Note that not all
 %                       reactions have this type of annotation, and the
 %                       script will therefore not be able to remove all
-%                       such reactions (opt, default true)
+%                       such reactions (opt, default false)
 %
 %   model               a model structure generated from the database. All
 %                       reactions and the metabolites used in them will be
@@ -38,7 +38,7 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %   Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Simonas Marcisauskas, 2018-08-01
+%   Simonas Marcisauskas, 2018-08-15
 %
 
 if nargin<1
