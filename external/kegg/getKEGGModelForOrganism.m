@@ -263,7 +263,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %    nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2018-08-15
+%   Simonas Marcisauskas, 2018-08-16
 %
 
 if nargin<2
@@ -339,22 +339,29 @@ if ~isempty(dataDir)
         'prok100_kegg82'; ...
         'prok90_kegg82'; ...
         'prok50_kegg82'};
-    if all(cellfun(@isempty,regexp(dataDir,strcat(hmmOptions,'$')))) % Check if dataDir ends with any of the hmmOptions
-        EM='Pre-trained HMMs set is not recognised. It should match any of the following sets (which are available to download):';
-        disp(EM);
-        disp(hmmOptions);
-        return;
-    end
-    if exist(dataDir,'dir')
-        fprintf('Provided dataDir is in correct format for this RAVEN version in order to use pre-trained HMMs...\n')
-    elseif ~exist(dataDir,'dir') && exist([dataDir,'.zip'],'file')
-        fprintf('Extracting HMMs archive file...\n');
-        unzip([dataDir,'.zip']);
+    if all(cellfun(@isempty,regexp(dataDir,strcat(hmmOptions,'$')))) %Check if dataDir ends with any of the hmmOptions
+        if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file') &&...
+                ~exist(fullfile(dataDir,'fasta'),'dir') &&...
+                ~exist(fullfile(dataDir,'aligned'),'dir') &&...
+                ~exist(fullfile(dataDir,'hmms'),'dir')
+            
+            EM='Pre-trained HMMs set is not recognised. It should match any of the following sets (which are available to download):';
+            disp(EM);
+            disp(hmmOptions);
+            error('Fatal error occured. See the details above');
+        end
     else
-        fprintf('Downloading HMMs archive file...\n');
-        websave([dataDir,'.zip'],['http://biomet-toolbox.chalmers.se/tools/downloadable/files/',dataDir,'.zip']);
-        fprintf('Extracting HMMs archive file...\n');
-        unzip([dataDir,'.zip']);
+        if exist(dataDir,'dir')
+            fprintf('Provided dataDir is in correct format for this RAVEN version in order to use pre-trained HMMs...\n')
+        elseif ~exist(dataDir,'dir') && exist([dataDir,'.zip'],'file')
+            fprintf('Extracting HMMs archive file...\n');
+            unzip([dataDir,'.zip']);
+        else
+            fprintf('Downloading HMMs archive file...\n');
+            websave([dataDir,'.zip'],['http://biomet-toolbox.chalmers.se/tools/downloadable/files/',dataDir,'.zip']);
+            fprintf('Extracting HMMs archive file...\n');
+            unzip([dataDir,'.zip']);
+        end
     end
 end
 
