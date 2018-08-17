@@ -263,8 +263,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %    nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2018-08-16
-%
+%   Simonas Marcisauskas, 2018-08-18
 
 if nargin<2
     fastaFile=[];
@@ -345,13 +344,10 @@ if ~isempty(dataDir)
         'prok90_kegg82'; ...
         'prok50_kegg82'};
     if all(cellfun(@isempty,regexp(dataDir,strcat(hmmOptions,'$')))) %Check if dataDir ends with any of the hmmOptions
-        if ~exist(fullfile(ravenPath,'external','kegg','genes.pep'),'file') &&...
-                ~exist(fullfile(dataDir,'genes.pep'),'file') &&...
-                ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file') &&...
+        if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file') &&...
                 ~exist(fullfile(dataDir,'fasta'),'dir') &&...
                 ~exist(fullfile(dataDir,'aligned'),'dir') &&...
                 ~exist(fullfile(dataDir,'hmms'),'dir')
-            
             EM='Pre-trained HMMs set is not recognised. It should match any of the following sets (which are available to download):';
             disp(EM);
             disp(hmmOptions);
@@ -561,7 +557,8 @@ if ~isempty(missingAligned)
         %This is checked here because it could be that it is created by a
         %parallel process. The faw-files are saved as temporary files to
         %kept track of which files are being worked on
-        if ~exist(fullfile(dataDir,'aligned',[missingAligned{i} '.faw']),'file') && ~exist(fullfile(dataDir,'aligned',[missingAligned{i} '.fa']),'file')
+        if ~exist(fullfile(dataDir,'aligned',[missingAligned{i} '.faw']),'file') &&...
+                ~exist(fullfile(dataDir,'aligned',[missingAligned{i} '.fa']),'file')
             %Check that the multi-FASTA file exists. It should do so since
             %we are saving empty files as well. Print a warning and
             %continue if not
@@ -625,7 +622,7 @@ if ~isempty(missingAligned)
                         cdhitInp100=tempname;
                         fastawrite(cdhitInp100,fastaStruct);
                         cdhitInp90=tempname;
-                        [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' cores '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -n 5 -M 2000']);
+                        [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -n 5 -M 2000']);
                         if status~=0
                             EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
                             dispEM(EM);
@@ -635,7 +632,7 @@ if ~isempty(missingAligned)
                             delete([cdhitInp100 '*']);
                         end
                         tmpFile=tempname;
-                        [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' cores '" -i "' cdhitInp90 '" -o "' tmpFile '" -c 0.9 -n 5 -M 2000 -aL 0.8']);
+                        [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp90 '" -o "' tmpFile '" -c 0.9 -n 5 -M 2000 -aL 0.8']);
                         if status~=0
                             EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
                             dispEM(EM);
@@ -648,7 +645,7 @@ if ~isempty(missingAligned)
                         cdhitInp100=tempname;
                         fastawrite(cdhitInp100,fastaStruct);
                         cdhitInp90=tempname;
-                        [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' cores '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -n 5 -M 2000']);
+                        [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -n 5 -M 2000']);
                         if status~=0
                             EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
                             dispEM(EM);
@@ -658,7 +655,7 @@ if ~isempty(missingAligned)
                             delete([cdhitInp100 '*']);
                         end
                         cdhitInp50=tempname;
-                        [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' cores '" -i "' cdhitInp90 '" -o "' cdhitInp50 '" -c 0.9 -n 5 -M 2000 -aL 0.8']);
+                        [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp90 '" -o "' cdhitInp50 '" -c 0.9 -n 5 -M 2000 -aL 0.8']);
                         if status~=0
                             EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
                             dispEM(EM);
@@ -668,7 +665,7 @@ if ~isempty(missingAligned)
                             delete([cdhitInp90 '*']);
                         end
                         tmpFile=tempname;
-                        [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' cores '" -i "' cdhitInp50 '" -o "' tmpFile '" -c 0.5 -n 3 -M 2000 -aL 0.8']);
+                        [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp50 '" -o "' tmpFile '" -c 0.5 -n 3 -M 2000 -aL 0.8']);
                         if status~=0
                             EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
                             dispEM(EM);
@@ -682,15 +679,15 @@ if ~isempty(missingAligned)
                         fastawrite(cdhitInpCustom,fastaStruct);
                         tmpFile=tempname;
                         if seqIdentity<=1 && seqIdentity>0.7
-                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' cores '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' seqIdentity '" -n 5 -M 2000']);
+                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n 5 -M 2000']);
                         elseif seqIdentity>0.6
-                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' cores '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' seqIdentity '" -n 4 -M 2000']);
+                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n 4 -M 2000']);
                         elseif seqidentity>0.5
-                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' cores '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' seqIdentity '" -n 3 -M 2000']);
+                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n 3 -M 2000']);
                         elseif seqidentity>0.4
-                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' cores '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' seqIdentity '" -n 2 -M 2000']);
+                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n 2 -M 2000']);
                         else
-                            EM=['The provided seqIdentity must be between 0 and 1\n'];
+                            EM='The provided seqIdentity must be between 0 and 1\n';
                             dispEM(EM);
                         end 
                         if status~=0
@@ -715,9 +712,9 @@ if ~isempty(missingAligned)
                 end
                 %Do the alignment for this file
                 if ~ispc
-                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.305',['mafft' binEnd]) '" --auto --thread "' cores '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                    [status, output]=unix(['"' fullfile(ravenPath,'software','mafft-7.305',['mafft' binEnd]) '" --auto --thread "' num2str(cores) '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 else
-                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.305','mafft.bat') '" --auto --thread "' cores '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.305','mafft.bat') '" --auto --thread "' num2str(cores) '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 end
                 if status~=0
                     EM=['Error when performing alignment of ' missingAligned{i} ':\n' output];
@@ -743,13 +740,13 @@ if ~isempty(missingAligned)
 end
 
 if ~ispc
-    if (seqIdentity==1 || seqIdentity==0.9 || seqIdentity==0.5)
+    if seqIdentity~=-1
         fprintf('Completed clustering and multiple alignment of sequences\n');
     else
         fprintf('Completed multiple alignment of sequences. Protein clustering was not requested or incorrect seqIdentity value was used\n');
     end
 else
-    if (seqIdentity==1 || seqIdentity==0.9 || seqIdentity==0.5)
+    if seqIdentity~=-1
         fprintf('Protein clustering was skipped, since CD-HIT is not compatible with Windows');
     end
     fprintf('Completed multiple alignment of sequences\n');
@@ -790,7 +787,7 @@ if ~isempty(missingHMMs)
             fclose(fid);
             
             %Create HMM
-            [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1b2',['hmmbuild' binEnd]) '" --cpu "' cores '" "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
+            [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1b2',['hmmbuild' binEnd]) '" --cpu "' num2str(cores) '" "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
             if status~=0
                 EM=['Error when training HMM for ' missingHMMs{i} ':\n' output];
                 dispEM(EM);
@@ -833,7 +830,7 @@ if ~isempty(missingOUT)
             end
             
             %Check each gene in the input file against this model
-            [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1b2',['hmmsearch' binEnd]) '" --cpu "' cores '" "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
+            [status, output]=system(['"' fullfile(ravenPath,'software','hmmer-3.1b2',['hmmsearch' binEnd]) '" --cpu "' num2str(cores) '" "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
             if status~=0
                 EM=['Error when querying HMM for ' missingOUT{i} ':\n' output];
                 dispEM(EM);
@@ -889,7 +886,7 @@ for i=1:numel(KOModel.rxns)
                     elements=elements(cellfun(@any,elements));
                     
                     %Check if the match is below the treshhold
-                    score=str2num(elements{1});
+                    score=str2double(elements{1});
                     gene=elements{9};
                     if score<=cutOff
                         %If the score is exactly 0, change it to a very
@@ -1014,9 +1011,9 @@ for i=1:numel(model.rxns)
 end
 end
 
+function files=listFiles(directory)
 %Supporter function to list the files in a directory and return them as a
 %cell array
-function files=listFiles(directory)
 temp=dir(directory);
 files=cell(numel(temp),1);
 for i=1:numel(temp)
