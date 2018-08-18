@@ -712,9 +712,9 @@ if ~isempty(missingAligned)
                 end
                 %Do the alignment for this file
                 if ~ispc
-                    [status, output]=unix(['"' fullfile(ravenPath,'software','mafft-7.305',['mafft' binEnd]) '" --auto --thread "' num2str(cores) '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                    [status, output]=unix(['"' fullfile(ravenPath,'software','mafft-7.305',['mafft' binEnd]) '" --auto --anysymbol --thread "' num2str(cores) '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 else
-                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.305','mafft.bat') '" --auto --thread "' num2str(cores) '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.305','mafft.bat') '" --auto --anysymbol --thread "' num2str(cores) '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 end
                 if status~=0
                     EM=['Error when performing alignment of ' missingAligned{i} ':\n' output];
