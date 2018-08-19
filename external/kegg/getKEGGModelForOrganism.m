@@ -263,7 +263,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %    nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2018-08-18
+%   Simonas Marcisauskas, 2018-08-19
 
 if nargin<2
     fastaFile=[];
@@ -988,11 +988,13 @@ end
 for i=1:numel(model.rxns)
     %Find the involved genes
     I=find(model.rxnGeneMat(i,:));
-    model.grRules{i}=['(' model.genes{I(1)}];
-    for j=2:numel(I)
-        model.grRules{i}=[model.grRules{i} ' or ' model.genes{I(j)}];
+    if any(I)
+        model.grRules{i}=['(' model.genes{I(1)}];
+        for j=2:numel(I)
+            model.grRules{i}=[model.grRules{i} ' or ' model.genes{I(j)}];
+        end
+        model.grRules{i}=[model.grRules{i} ')'];
     end
-    model.grRules{i}=[model.grRules{i} ')'];
 end
 
 %Fix grRules and reconstruct rxnGeneMat
