@@ -4,7 +4,7 @@ function geneScoreStructure=parseScores(inputFile,predictor)
 %
 %   inputFile	a file with the output from the predictor
 %   predictor   the predictor that was used. 'wolf' for WoLF PSORT, 'cello'
-%               for CELLO. (opt, default 'wolf')
+%               for CELLO, 'deeploc' for DeepLoc (opt, default 'wolf')
 %
 %   The function normalizes the scores so that the best score for each gene
 %   is 1.0.
@@ -13,7 +13,7 @@ function geneScoreStructure=parseScores(inputFile,predictor)
 %
 %   Usage: geneScoreStructure=parseScores(inputFile,predictor,normalize)
 %
-%   Simonas Marcisauskas, 2017-08-25
+%   Eduard Kerkhoven, 2018-07-13
 %
 
 if nargin<2
@@ -62,30 +62,50 @@ if strcmpi(predictor,'wolf')
             geneScoreStructure.scores(i,J)=str2double(b(j+1));
         end
     end
-else if strcmpi(predictor,'cello')
-        fid=fopen(inputFile,'r');
-        % Reading the title line and fetching the list of compartments;
+elseif strcmpi(predictor,'cello')
+    fid=fopen(inputFile,'r');
+    % Reading the title line and fetching the list of compartments;
+    tline = fgetl(fid);
+    tline=regexprep(tline,'^.+#Combined:\t','');
+    tline=regexprep(tline,'\t#Most-likely-Location.+','');
+    geneScoreStructure.compartments=transpose(regexp(tline,'\t','split'));
+    
+    % Now iterating through the following lines in the file. Each row
+    % corresponds to one gene and it consists of the scores for
+    % compartments. Gene name is in the end of each line;
+    row=0;
+    while 1
+        row=row+1;
         tline = fgetl(fid);
-        tline=regexprep(tline,'^.+#Combined:\t','');
-        tline=regexprep(tline,'\t#Most-likely-Location.+','');
-        geneScoreStructure.compartments=transpose(regexp(tline,'\t','split'));
-        
-        % Now iterating through the following lines in the file. Each row
-        % corresponds to one gene and it consists of the scores for
-        % compartments. Gene name is in the end of each line;
-        row=0;
-        while 1
-            row=row+1;
-            tline = fgetl(fid);
-            if ~ischar(tline)
-                break;
-            end
-            tline=regexprep(tline,'^.+:\t','');
-            tline=regexprep(tline,' .+','');
-            tline=regexp(tline,'\t','split');
-            geneScoreStructure.scores(row,:)=str2double(tline(1:numel(geneScoreStructure.compartments)));
-            geneScoreStructure.genes{row,1}=tline{1,end};
+        if ~ischar(tline)
+            break;
         end
+        tline=regexprep(tline,'^.+:\t','');
+        tline=regexprep(tline,' .+','');
+        tline=regexp(tline,'\t','split');
+        geneScoreStructure.scores(row,:)=str2double(tline(1:numel(geneScoreStructure.compartments)));
+        geneScoreStructure.genes{row,1}=tline{1,end};
+    end
+elseif strcmpi(predictor,'deeploc')
+    fid=fopen(inputFile,'r');
+    % Reading the title line and fetching the list of compartments;
+    tline = fgetl(fid);
+    geneScoreStructure.compartments=regexp(tline,'\t','split');
+    geneScoreStructure.compartments=geneScoreStructure.compartments(3:end);
+    
+    % Now iterating through the following lines in the file. Each row
+    % corresponds to one gene and it consists of the scores for
+    % compartments. Gene name is in the end of each line;
+    row=0;
+    while 1
+        row=row+1;
+        tline = fgetl(fid);
+        if ~ischar(tline)
+            break;
+        end
+        tline=regexp(tline,'\t','split');
+        geneScoreStructure.scores(row,:)=str2double(tline(3:end));
+        geneScoreStructure.genes{row,1}=tline{1,1};
     end
 end
 

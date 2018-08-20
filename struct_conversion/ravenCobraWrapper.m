@@ -11,8 +11,8 @@ function newModel=ravenCobraWrapper(model)
 %   existense, which is only found in COBRA Toolbox structure.
 %
 %   NOTE: During RAVEN -> COBRA -> RAVEN conversion cycle the following
-%   fields are lost: annotation, compOutside, compMiriams,
-%   rxnComps, geneComps, unconstrained. Boundary metabolites are lost,
+%   fields are lost: annotation, compOutside, compMiriams, rxnComps,
+%   geneComps, unconstrained. Boundary metabolites are lost,
 %   because COBRA structure does not involve boundary metabolites, so they
 %   are removed using simplifyModel before RAVEN -> COBRA conversion. The
 %   field 'rev' is also partially lost, but during COBRA -> RAVEN
@@ -587,6 +587,13 @@ else
                     %non-official identifiers.org, 'reactome' namespace
                     %refers to reactions
                     newModel.metMiriams{i,1}.value{counter,1} = model.metREACTOMEID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'metSBOTerms')
+                if ~isempty(model.metSBOTerms{i})
+                    newModel.metMiriams{i,1}.name{counter,1} = 'sbo';
+                    newModel.metMiriams{i,1}.value{counter,1} = model.metSBOTerms{i};
                     counter=counter+1;
                 end
             end
