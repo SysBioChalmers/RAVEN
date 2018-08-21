@@ -175,7 +175,7 @@ fprintf('NOTE: A shrinked KEGG model with %d reactions and %d metabolites was ob
 load('metaCycMets.mat');
 
 if ~isfield(pureKeggModel,'metCharges')
-    pureKeggModel.metCharges=zeros(numel(pureKeggModel.mets),1);
+    pureKeggModel.metCharges=NaN(numel(pureKeggModel.mets),1);
 end
 
 num=0;
@@ -247,7 +247,7 @@ model.metFormulas(:)={''};
 if ~isfield(model,'metCharges')
     model=rmfield(model,'metCharges');
 end
-model.metCharges=zeros(numel(model.mets),1);
+model.metCharges=NaN(numel(model.mets),1);
 
 if ~isfield(model,'inchis')
     model=rmfield(model,'inchis');
