@@ -313,8 +313,7 @@ for i=2:numel(models)
             end
         else
             if isfield(model,'metCharges')
-                emptyMetCharge=cell(numel(metsToAdd),1);
-                emptyMetCharge(:)={''};
+                emptyMetCharge=nan(numel(metsToAdd),1);
                 model.metCharges=[model.metCharges;emptyMetCharge];
             end
         end
