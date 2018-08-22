@@ -109,7 +109,7 @@ end
 %provided template models
 for i=1:numel(blastStructure)
     if ~strcmp(blastStructure(i).fromId,getModelFor)
-        j=strcmpi(blastStructure(i).fromId,models{:}.id);
+        j=strcmpi(blastStructure(i).fromId,modelNames);
         if j==0
             error(['While the blastStructure contains sequences from '...
                 'organismID "%s" (as\nprovided in getBlast), none of '...
