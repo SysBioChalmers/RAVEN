@@ -263,7 +263,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %    nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2018-08-19
+%   Simonas Marcisauskas, 2018-08-22
 
 if nargin<2
     fastaFile=[];
@@ -717,8 +717,16 @@ if ~isempty(missingAligned)
                     [status, output]=system(['"' fullfile(ravenPath,'software','mafft-7.305','mafft.bat') '" --auto --anysymbol --thread "' num2str(cores) '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 end
                 if status~=0
-                    EM=['Error when performing alignment of ' missingAligned{i} ':\n' output];
-                    dispEM(EM);
+                    %It could be that alignment failed because only one
+                    %sequence was left after clustering. If that is the
+                    %case, then the clustered file is just copied as 'faw'
+                    %file
+                    if any(regexp(output,'Only 1 sequence found'))
+                        movefile(tmpFile,fullfile(dataDir,'aligned',[missingAligned{i} '.faw']),'f');
+                    else
+                        EM=['Error when performing alignment of ' missingAligned{i} ':\n' output];
+                        dispEM(EM);
+                    end
                 end
                 %Remove the old tempfile
                 if exist(tmpFile, 'file')
