@@ -1,30 +1,31 @@
 function blastStructure=getBlast(organismID,fastaFile,modelIDs,refFastaFiles)
 % getBlast
-%   Performs a bidirectional BLASTp between the organism of interest and a
+%   Performs a bidirectional BLASTP between the organism of interest and a
 %   set of template organisms.
 %
 %   organismID      the id of the organism of interest. This should also
 %                   match with the id supplied to getModelFromHomology
 %   fastaFile       a FASTA file with the protein sequences for the
 %                   organism of interest
-%   modelIDs        a cell array of model id:s. These must match the
-%                   "model.id" fields in the "models" structure if the output
-%                   is to be used with getModelFromHomology
+%   modelIDs        a cell array of model ids. These must match the
+%                   "model.id" fields in the "models" structure if the
+%                   output is to be used with getModelFromHomology
 %   refFastaFiles   a cell array with the paths to the corresponding FASTA
 %                   files
 %   
 %   blastStructure  structure containing the bidirectional homology
 %                   measurements which are used by getModelFromHomology
 %
-%   NOTE: This function calls BLASTp to perform a bidirectional homology
+%   NOTE: This function calls BLASTP to perform a bidirectional homology
 %   test between the organism of interest and a set of other organisms
-%   using standard settings. If you would like to use other homology
-%   measurements, please see getBlastFromExcel.
+%   using standard settings. The only filtering this functions does is the
+%   removal of hits with E value higher than 10e-5. If you would like to
+%   use other homology measurements, please see getBlastFromExcel.
 %
 %   Usage: blastStructure=getBlast(organismID,fastaFile,modelIDs,...
 %           refFastaFiles)
 %
-%   Simonas Marcisauskas, 2017-11-22
+%   Simonas Marcisauskas, 2018-08-09
 %
 
 %Everything should be cell arrays
@@ -51,12 +52,10 @@ else
     files=vertcat(refFastaFiles,fastaFile);
 end
 for i=1:numel(files)
-    if ~exist(files{i},'file')
-        EM=['Cannot find the following file in the current folder: ', files{i}];
-        dispEM(EM,true);
+    if ~(exist(files{i},'file')==2)
+        error('FASTA file %s cannot be found',string(files{i}));
     elseif any(strfind(strjoin(files,','),' '))
-        EM='One or more FASTA files have a space in the filename. Remove this before running getBlast';
-        dispEM(EM,true);
+        error('One or more FASTA files have a space in the filename. Remove this before running getBlast');
     end
 end
 
@@ -121,19 +120,19 @@ for i=1:numel(refFastaFiles)*2
     if i<=numel(refFastaFiles)
         tempStruct.fromId=modelIDs{i};
         tempStruct.toId=organismID{1};
-        A=importdata([outFile '_' num2str(i)]);
+        A=readtable([outFile '_' num2str(i)],'Delimiter',',','Format','%s%s%f%f%f%f%f');
     else
         tempStruct.fromId=organismID{1};
         tempStruct.toId=modelIDs{i-numel(refFastaFiles)};
-        A=importdata([outFile '_r' num2str(i-numel(refFastaFiles))]);
+        A=readtable([outFile '_r' num2str(i-numel(refFastaFiles))],'Delimiter',',','Format','%s%s%f%f%f%f%f');
     end
-    tempStruct.fromGenes=A.textdata(:,1);
-    tempStruct.toGenes=A.textdata(:,2);
-    tempStruct.evalue=A.data(:,1);
-    tempStruct.identity=A.data(:,2);
-    tempStruct.aligLen=A.data(:,3);
-    tempStruct.bitscore=A.data(:,4);
-    tempStruct.ppos=A.data(:,5);
+    tempStruct.fromGenes=A{:,1};
+    tempStruct.toGenes=A{:,2};
+    tempStruct.evalue=table2array(A(:,3));
+    tempStruct.identity=table2array(A(:,4));
+    tempStruct.aligLen=table2array(A(:,5));
+    tempStruct.bitscore=table2array(A(:,6));
+    tempStruct.ppos=table2array(A(:,7));
     blastStructure=[blastStructure tempStruct];
 end
 

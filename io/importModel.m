@@ -38,7 +38,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %       eccodes          EC-codes for the reactions
 %       rxnMiriams       structure with MIRIAM information about the reactions
 %       rxnNotes         reaction notes
-%       rxnReferences	 reaction references
+%       rxnReferences    reaction references
 %       rxnConfidenceScores reaction confidence scores
 %       genes            list of all genes
 %       geneComps        compartments for genes
@@ -71,7 +71,8 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Eduard Kerkhoven, 2018-05-08
+%   Eduard Kerkhoven, 2018-07-19
+%
 
 if nargin<2
     removeExcMets=true;
@@ -83,6 +84,10 @@ end
 
 if nargin<4
     supressWarnings=false;
+end
+
+if ~(exist(fileName,'file')==2)
+    error('SBML file %s cannot be found',string(fileName));
 end
 
 %This is to match the order of the fields to those you get from importing
@@ -489,7 +494,28 @@ for i=1:numel(modelSBML.reaction)
     end
     
     %Find the associated gene if available
-    if isfield(modelSBML.reaction(i),'modifier')
+    %If FBC, get gene association data from corresponding fields
+    if isfield(modelSBML.reaction(i),'fbc_geneProductAssociation')
+        if ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation) && ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association)
+            grRules{counter}=modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association.fbc_association;
+        end
+    elseif isfield(modelSBML.reaction(i),'notes')
+        %This section was previously executed only if isSBML2COBRA is true. Now
+        %it will be executed, if 'GENE_ASSOCIATION' is found in
+        %modelSBML.reaction(i).notes
+        if strfind(modelSBML.reaction(i).notes,'GENE_ASSOCIATION')
+            geneAssociation=parseNote(modelSBML.reaction(i).notes,'GENE_ASSOCIATION');
+        elseif strfind(modelSBML.reaction(i).notes,'GENE ASSOCIATION')
+            geneAssociation=parseNote(modelSBML.reaction(i).notes,'GENE ASSOCIATION');
+        else
+            geneAssociation='';
+        end
+        if ~isempty(geneAssociation)
+            %This adds the grRules. The gene list and rxnGeneMat are created
+            %later
+            grRules{counter}=geneAssociation;
+        end
+    elseif isfield(modelSBML.reaction(i),'modifier')
         if ~isempty(modelSBML.reaction(i).modifier)
             rules='';
             for j=1:numel(modelSBML.reaction(i).modifier)
@@ -542,31 +568,6 @@ for i=1:numel(modelSBML.reaction)
             end
             grRules{counter}=rules;
             grRulesFromModifier{counter}=rules;%Backup copy for grRules, useful to parse Yeast 7.6
-        end
-    end
-    %This section was previously executed only if isSBML2COBRA is true. Now
-    %it will be executed, if 'GENE_ASSOCIATION' is found in
-    %modelSBML.reaction(i).notes
-    if isfield(modelSBML.reaction(i),'notes')
-        if strfind(modelSBML.reaction(i).notes,'GENE_ASSOCIATION')
-            geneAssociation=parseNote(modelSBML.reaction(i).notes,'GENE_ASSOCIATION');
-        elseif strfind(modelSBML.reaction(i).notes,'GENE ASSOCIATION')
-            geneAssociation=parseNote(modelSBML.reaction(i).notes,'GENE ASSOCIATION');
-        else
-            geneAssociation='';
-        end
-    end
-    
-    if ~isempty(geneAssociation)
-        %This adds the grRules. The gene list and rxnGeneMat are created
-        %later
-        grRules{counter}=geneAssociation;
-    end
-    
-    %If FBC, get gene association data from corresponding fields
-    if isfield(modelSBML.reaction(i),'fbc_geneProductAssociation')
-        if ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation) && ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association)
-            grRules{counter}=modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association.fbc_association;
         end
     end
     
@@ -839,7 +840,7 @@ if ~isempty(geneNames)
     [~, J]=ismember(geneCompartments,model.comps);
     model.geneComps=J;
 else
-    if ~isempty(grRules)
+    if ~all(cellfun(@isempty,grRules))
         %If fbc_geneProduct exists, follow the specified gene order, such
         %that matching geneShortNames in function below will work
         if isfield(modelSBML,'fbc_geneProduct')
@@ -1115,7 +1116,8 @@ for i=1:numel(targetString)
     if isempty(regexp(targetString{1,i},'inchi|ec-code', 'once'))
         counter=counter+1;
         miriamStruct.name{counter,1} = regexprep(targetString{1,i},'/.+','','once');
-        miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} midString],'','once');
+        miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} '/'],'','once');
+        miriamStruct.name{counter,1} = regexprep(miriamStruct.name{counter,1},'^obo\.','');
     end
 end
 end

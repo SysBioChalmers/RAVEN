@@ -13,7 +13,7 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
 %   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
-%   Simonas Marcisauskas, 2018-05-08
+%   Eduard Kerkhoven, 2018-07-19
 
 if nargin<3
     exportGeneComplexes=false;
@@ -112,7 +112,9 @@ end
 model.rxns=regexprep(model.rxns,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 model.mets=regexprep(model.mets,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 model.comps=regexprep(model.comps,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
-model.genes=regexprep(model.genes,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
+if isfield(model,'genes')
+    model.genes=regexprep(model.genes,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
+end
 
 %Generate an empty SBML structure
 modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
@@ -510,7 +512,11 @@ tmpStruct=modelSBML.groups_group;
 rxns=strcat('R_',model.rxns);
 if isfield(model, 'subSystems')
     if ~any(cellfun(@iscell,model.subSystems))
-        subSystems = setdiff(model.subSystems,'');
+        if ~any(~cellfun(@isempty,model.subSystems))
+            subSystems = {};
+        else
+            subSystems = setdiff(model.subSystems,'');
+        end
     else
         orderedSubs = cellfun(@(x) columnVector(x),model.subSystems,'UniformOUtput',false);
         subSystems = setdiff(vertcat(orderedSubs{:}),'');
@@ -520,7 +526,7 @@ if isfield(model, 'subSystems')
     end
     if ~isempty(subSystems)
         %Build the groups for the group package
-        groupIDs = strcat('group',cellfun(@num2str, num2cell(1:length(subSystems))','UniformOutput',false));
+        groupIDs = strcat('group',cellfun(@num2str, num2cell(1:length(subSystems)),'UniformOutput',false));
         for i = 1:length(subSystems)
             cgroup = tmpStruct;
             if ~any(cellfun(@iscell,model.subSystems))

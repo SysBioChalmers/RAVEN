@@ -31,14 +31,18 @@ function hpaData=parseHPA(fileName, version)
 %                           The value for element i,j is the index in
 %                           hpaData.reliabilities of gene i in cell type j
 %
+%   Usage: hpaData=parseHPA(fileName,version)
 %
-%   Usage: hpaData=parseHPA(fileName)
+%   Eduard Kerkhoven, 2018-05-18
 %
-%   Johan Gustafsson, 2017-10-10
 
 if nargin<2
     version=17; %Change this and add code for more versions when the current HPA version is increased and the format is changed
 end;
+
+if ~(exist(fileName,'file')==2)
+    error('HPA file %s cannot be found',string(fileName));
+end
 
 if (version == 17)
     fid=fopen(fileName,'r');

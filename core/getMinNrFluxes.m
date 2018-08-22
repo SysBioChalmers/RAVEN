@@ -42,7 +42,7 @@ end
 
 %For passing parameters to the solver
 if nargin<3
-    params=[];
+    params=struct();
 end
 
 if nargin<4
@@ -141,7 +141,7 @@ xx=res.sol.int.xx(1:numel(irrevModel.rxns));
 I=res.sol.int.xx(numel(xx)+1:end);
 
 %Check if Mosek aborted because it reached the time limit
-if strcmp('MSK_RES_TRM_MAX_TIME',res.rcodestr)
+if strcmp('MSK_RES_TRM_MAX_TIME',res.rcode)
     exitFlag=-2;
 end
 

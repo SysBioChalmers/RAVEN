@@ -100,7 +100,7 @@ if isempty(rxnScores)
     end
 end
 if nargin<7
-    params=[];
+    params=struct();
 end
 
 if ~iscell(rxnScores)
