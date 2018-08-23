@@ -179,7 +179,7 @@ if isRaven
         i=ismember(extractedMiriamNames,'reactome.metabolite');
         if any(i)
             newModel.metREACTOMEID=miriams(:,i);
-        end
+        end   
         i=ismember(extractedMiriamNames,'sabiork.metabolite');
         if any(i)
             newModel.metSABIORKID=miriams(:,i);
@@ -409,13 +409,6 @@ else
                     counter=counter+1;
                 end
             end
-            if isfield(model,'rxnMetaNetXID')
-                if ~isempty(model.rxnMNXID{i})
-                    newModel.rxnMiriams{i,1}.name{counter,1} = 'metanetx.reaction';
-                    newModel.rxnMiriams{i,1}.value{counter,1} = model.rxnMetaNetXID{i};
-                    counter=counter+1;
-                end
-            end
             if isfield(model,'rxnSBOTerms')
                 if ~isempty(model.rxnSBOTerms{i})
                     newModel.rxnMiriams{i,1}.name{counter,1} = 'sbo';
@@ -423,6 +416,13 @@ else
                     counter=counter+1;
                 end
             end
+            if isfield(model,'rxnMetaNetXID')
+                if ~isempty(model.rxnMetaNetXID{i})
+                    newModel.rxnMiriams{i,1}.name{counter,1} = 'metanetx.reaction';
+                    newModel.rxnMiriams{i,1}.value{counter,1} = model.rxnMetaNetXID{i};
+                    counter=counter+1;
+            end
+                end
             if isfield(model,'rxnReferences')
                 if ~isempty(model.rxnReferences{i})
                     pmids = model.rxnReferences{i};
