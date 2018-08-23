@@ -74,7 +74,7 @@ for i=1:numel(indexes)
     isrev        = model.rev(indexes(i))==1;
     
     %Construct equation:
-    equationStrings{i} = constructEquation(mets,stoichCoeffs,isrev);
+    equationStrings{i} = buildEquation(mets,stoichCoeffs,isrev);
 end
 
 end

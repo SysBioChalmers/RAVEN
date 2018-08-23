@@ -1,5 +1,5 @@
-function equationString=constructEquation(mets,stoichCoeffs,isrev)
-% constructEquation
+function equationString=buildEquation(mets,stoichCoeffs,isrev)
+% buildEquation
 %   Construct single equation string for a given reaction
 %
 %   mets            string array with metabolites involved in the reaction.
@@ -9,7 +9,7 @@ function equationString=constructEquation(mets,stoichCoeffs,isrev)
 %
 %   equationString  equation as a string
 %
-%    Usage: equationString=constructEquation(mets,stoichCoeffs,isrev)
+%    Usage: equationString=buildEquation(mets,stoichCoeffs,isrev)
 %
 %   Benjamin Sanchez, 2018-08-22
 %
