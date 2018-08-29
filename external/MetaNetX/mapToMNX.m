@@ -54,7 +54,7 @@ model=mapModelMets(model,MNXref);
 if rxns
     rxnMaps=mapRxnsViaMets(model,MNXref);
     model.rxnMetaNetXID=rxnMaps.rxnMNXID;
-    [model,~] = filtermetMetaNetXIDsViaRxns(model,MNXref,true,true);
+    [model,~] = filterMetMNXIDsViaRxns(model,MNXref,true,true);
 end
 
 if keepOneMetMNX
