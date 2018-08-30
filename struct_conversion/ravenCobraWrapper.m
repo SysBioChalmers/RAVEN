@@ -590,13 +590,6 @@ else
                     counter=counter+1;
                 end
             end
-            if isfield(model,'metSBOTerms')
-                if ~isempty(model.metSBOTerms{i})
-                    newModel.metMiriams{i,1}.name{counter,1} = 'sbo';
-                    newModel.metMiriams{i,1}.value{counter,1} = model.metSBOTerms{i};
-                    counter=counter+1;
-                end
-            end
             if isfield(model,'metSEEDID')
                 if ~isempty(model.metSEEDID{i})
                     newModel.metMiriams{i,1}.name{counter,1} = 'seed.compound';
