@@ -1,10 +1,10 @@
 function [fmodel,removed] = filtermetMetaNetXIDsViaRxns(model,mnx,ignoreComp,keepAtLeastOne)
-%filtermetMetaNetXIDsViaRxns  Remove met MNXID associations based on their rxns.
+%filtermetMetaNetXIDsViaRxns  Remove met MetaNetXID associations based on their rxns.
 %
-% filtermetMetaNetXIDsViaRxns determines which met MNXIDs (if any) should be
-% removed for mets associated with multiple MNXIDs. This is accomplished by
+% filtermetMetaNetXIDsViaRxns determines which met MetaNetXIDs (if any) should be
+% removed for mets associated with multiple MetaNetXIDs. This is accomplished by
 % finding all model rxns that involve the met, obtaining their associated
-% MNX rxn IDs, and retrieving those rxns from the MNX database. Any MNXIDs
+% MNX rxn IDs, and retrieving those rxns from the MNX database. Any MetaNetXIDs
 % associated with the met that are not included in that set of rxns from
 % the MNX database will be removed.
 %
@@ -35,23 +35,23 @@ function [fmodel,removed] = filtermetMetaNetXIDsViaRxns(model,mnx,ignoreComp,kee
 %                ignored.
 %
 %   keepAtLeastOne  (Optional, Default FALSE) In some cases, none of the
-%                   MNXIDs associated with a metabolite are found in any of
-%                   the reactions, and will result in a met with zero MNXID
+%                   MetaNetXIDs associated with a metabolite are found in any of
+%                   the reactions, and will result in a met with zero MetaNetXID
 %                   associations in the filtered model.
 %                   If keepAtLeastOne = TRUE, then in cases such as this,
-%                   the MNXID associations will not be removed in the
+%                   the MetaNetXID associations will not be removed in the
 %                   filtered model, but will be indicated in the "removed"
 %                   structure, with the text "ALL SHOULD BE REMOVED!" next
 %                   to the metabolite ID.
 %
 % OUTPUT:
 %
-%   fmodel   A filtered model, which has removed metabolite MNXIDs that
+%   fmodel   A filtered model, which has removed metabolite MetaNetXIDs that
 %            were not found in any of the MNX reactions associated with the
 %            model and that metabolite.
 %
 %   removed  A structure containing more detailed information on the met
-%            MNXID associations that were removed.
+%            MetaNetXID associations that were removed.
 %
 %
 % Jonathan Robinson 2018-05-28
@@ -149,11 +149,11 @@ else
     S = model.S;
 end
 
-% % Identify all mets with two or more MNXID associations. Mets with one or
-% % zero MNXIDs will be ignored.
+% % Identify all mets with two or more MetaNetXID associations. Mets with one or
+% % zero MetaNetXIDs will be ignored.
 % multi_ind = find(cellfun(@numel,model.metMetaNetXID) > 1);
 
-% Iterate through mets with multiple MNXIDs, and determine which MNXIDs
+% Iterate through mets with multiple MetaNetXIDs, and determine which MetaNetXIDs
 % should be removed.
 h = waitbar(0,'Processing metabolites...');
 for i = 1:length(model.mets)
@@ -161,14 +161,14 @@ for i = 1:length(model.mets)
     % get indices of all rxns in which the met participates
     rxn_ind = S(i,:) ~= 0;
     
-    % obtain a unique list of all the rxn MNXIDs associated with those
+    % obtain a unique list of all the rxn MetaNetXIDs associated with those
     % rxns, as well as their indices in the MNX database structure
     MNX_rxnIDs = unique(vertcat(model.rxnMetaNetXID{rxn_ind}));
     MNX_rxn_ind = ismember(mnx.rxns,MNX_rxnIDs);
     
     if isempty(MNX_rxnIDs)
-        % If none of the rxns are associated to any rxn MNXIDs, just skip
-        % this metabolite. Otherwise, all met MNXIDs associated with the
+        % If none of the rxns are associated to any rxn MetaNetXIDs, just skip
+        % this metabolite. Otherwise, all met MetaNetXIDs associated with the
         % metabolite will be removed, which is not so helpful.
         continue
     end
@@ -176,15 +176,15 @@ for i = 1:length(model.mets)
     % obtain unique set of all mets participating in the MNX rxns
     MNX_metIDs = unique([mnx.rxnMets{MNX_rxn_ind}]);
     
-    % determine which of the MNXIDs currently associated to the model met
+    % determine which of the MetaNetXIDs currently associated to the model met
     % are not found in any of the MNX rxns
     rem_mets = ~ismember(model.metMetaNetXID{i},MNX_metIDs);
     
     if ~any(rem_mets)
-        % if no met MNXID associations should be removed, continue to next met
+        % if no met MetaNetXID associations should be removed, continue to next met
         continue
     elseif all(rem_mets) && (keepAtLeastOne)
-        % In this case, all the MNXIDs associated with this met are to be
+        % In this case, all the MetaNetXIDs associated with this met are to be
         % removed, but the user has indicated that they do not want this to
         % happen. Therefore,  NONE will be removed, but the information
         % will be reported in the "removed" structure, so these cases can
@@ -192,7 +192,7 @@ for i = 1:length(model.mets)
         removed.mets = [removed.mets; model.mets(i)];
         removed.metMetaNetXID = [removed.metMetaNetXID; {'ALL SHOULD BE REMOVED!'}];
     else
-        % remove one or more MNXID associations from the metabolite
+        % remove one or more MetaNetXID associations from the metabolite
         removed.mets = [removed.mets; model.mets(i)];
         removed.metMetaNetXID = [removed.metMetaNetXID; {model.metMetaNetXID{i}(rem_mets)}];
         model.metMetaNetXID{i}(rem_mets) = [];
@@ -203,7 +203,7 @@ end
 close(h);
 
 if any(cellfun(@(x) ismember({'ALL SHOULD BE REMOVED!'},x),removed.metMetaNetXID))
-    fprintf('\n*** NOTE: There was at least one case where ALL the MNXIDs associated\n');
+    fprintf('\n*** NOTE: There was at least one case where ALL the MetaNetXIDs associated\n');
     fprintf('          with a metabolite were not found in any of the involved rxns,\n');
     fprintf('          and therefore NONE were removed. See "removed" structure for\n');
     fprintf('          further information.\n\n');

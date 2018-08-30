@@ -53,7 +53,7 @@ model=mapModelMets(model,MNXref);
 %rxnMetaNetXIDs.
 if rxns
     rxnMaps=mapRxnsViaMets(model,MNXref);
-    model.rxnMetaNetXID=rxnMaps.rxnMNXID;
+    model.rxnMetaNetXID=rxnMaps.rxnMetaNetXID;
     [model,~] = filterMetMNXIDsViaRxns(model,MNXref,true,true);
 end
 
