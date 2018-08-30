@@ -1,7 +1,6 @@
 function newModel = addMNXannot(model,MNXfields,MNXref,fields)
 % addMNXannot
-%   checkMNXMetsConsistency checks consistency in chemical formula and
-%   charge when multiple MNX metids are associated to the same metabolite.
+%   adds annotations fields based on MetaNetX annotation
 %
 %   model       a model structure, as used to run mapToMNX
 %   MNXfields   output from mapToMNX
@@ -26,7 +25,7 @@ function newModel = addMNXannot(model,MNXfields,MNXref,fields)
 %           Note that rxnRheaID contains all four identifiers, representing
 %           all possible reaction reversibilities.   
 %
-%   Usage: result=addMNXannot(model,MNXfields,fields)
+%   Usage: result=addMNXannot(model,MNXfields,MNXref,fields)
 %
 %   Eduard Kerkhoven, 2018-07-27
 
