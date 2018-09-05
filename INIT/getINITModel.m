@@ -28,17 +28,6 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %       levels          GENESxTISSUES array with the expression level for
 %                       each gene in each tissue/celltype. NaN should be
 %                       used when no measurement was performed
-%       threshold       a single value or a vector of gene expression 
-%                       thresholds, above which genes are considered to be
-%                       "expressed". (opt, by default, the mean expression
-%                       levels of each gene across all tissues in arrayData
-%                       will be used as the threshold values)
-%       singleCells     binary value selecting whether to use the
-%                       single-cell algorithm to identify expressed genes.
-%                       If used, specify cell subpopulations in CELLTYPES
-%                       (opt, default [])
-%       plotResults     true if single cell probability distributions
-%                       should be plotted (opt, default = False)
 %   metabolomicsData    cell array with metabolite names that the model
 %                       should produce (opt, default [])
 %   taskFile            a task list in Excel format. See parseTaskList for
@@ -103,7 +92,7 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %               metabolomicsData, taskFile, useScoresForTasks, printReport,...
 %               taskStructure, params, paramsFT)
 %
-%   Daniel Cook, 2018-03-12
+%   Simonas Marcisauskas, 2018-04-03
 %
 
 if nargin<3
@@ -121,10 +110,10 @@ end
 if nargin<7
     taskFile=[];
 end
-if nargin<8 || isempty(useScoresForTasks)
+if nargin<8
     useScoresForTasks=true;
 end
-if nargin<9 || isempty(printReport)
+if nargin<9
     printReport=true;
 end
 if nargin<10
@@ -148,99 +137,6 @@ if any(taskFile) && isempty(taskStructure)
     taskStructure=parseTaskList(taskFile);
 end
 
-
-% sc-tINIT to identify confidence levels of gene expression
-if isfield(arrayData,'singleCells')
-    if arrayData.singleCells == 1
-        % Check to ensure cell type is defined
-        if ~isfield(arrayData,'celltypes')
-            dispEM('arrayData must contain cell type information if sc-tINIT is to be used','false');   
-        end
-        if ~ismember(upper(celltype),upper(arrayData.celltypes))
-            dispEM('The cell type name does not match');   
-        end
-        
-        % Analyze only cell type of interest
-        J= strcmpi(arrayData.celltypes,celltype);
-        
-        % Analyze only genes included in the reference model
-        I=ismember(arrayData.genes,refModel.genes);
-        
-        % Convert expression data to population fractions
-        binary_levels = arrayData.levels(I,J)~=0; % Classify each gene as detected (1) or not (0) in each cell
-        cell_count_levels = sum(binary_levels,2); % Number of cells expressing each transcript
-        cell_frac_levels = cell_count_levels/size(binary_levels,2); % Number of cells expressing each transcript
-
-        % Bin cell_frac_counts manually
-        x = 0:.01:1;
-        for(i = 1:length(x))
-            cell_frac_count(i) = sum(round(cell_frac_levels,2)==x(i));
-        end
-        
-        % Fit four beta distributions
-        cell_frac_count(cell_frac_count==0) = NaN; % Remove zeros from optimization
-        cell_frac_count(1) = NaN; % Remove non-expressed genes from optimization
-        x_lim = 1; % Somewhat arbitrary parameter to fit left tail of distr.
-        myfun = @(par) nansum((cell_frac_count(1:find(x>=x_lim,1)) - ...
-            abs(par(1))*betapdf(x(1:find(x>=x_lim,1)),abs(par(2)),abs(par(3))) - ...
-            abs(par(4))*betapdf(x(1:find(x>=x_lim,1)),abs(par(5)),abs(par(6))) - ...
-            abs(par(7))*betapdf(x(1:find(x>=x_lim,1)),abs(par(8)),abs(par(9))) - ...
-            abs(par(10))*betapdf(x(1:find(x>=x_lim,1)),abs(par(11)),abs(par(12)))).^2);
-        
-        par0 = [4,2,100,7,2,30,7,5,20,5,15,20];
-        opts = optimset('Display','off');
-        [par,f_val] = fminsearch(myfun,par0,opts);
-        par = abs(par);
-        
-        % Plot results
-        if (isfield(arrayData,'plotResults'))
-            if arrayData.plotResults == true
-                figure(); hold on; plot(x,cell_frac_count,'ko','MarkerSize',5);
-                plot(x,abs(par(1))*betapdf(x,abs(par(2)),abs(par(3))),'b-','LineWidth',1)
-                plot(x,abs(par(4))*betapdf(x,abs(par(5)),abs(par(6))),'b-','LineWidth',1)
-                plot(x,abs(par(7))*betapdf(x,abs(par(8)),abs(par(9))),'b-','LineWidth',1)
-                plot(x,abs(par(10))*betapdf(x,abs(par(11)),abs(par(12))),'b-','LineWidth',1)
-                plot(x,abs(par(1))*betapdf(x,abs(par(2)),abs(par(3))) + ...
-                    abs(par(4))*betapdf(x,abs(par(5)),abs(par(6))) + ...
-                    abs(par(7))*betapdf(x,abs(par(8)),abs(par(9))) + ...
-                    abs(par(10))*betapdf(x,abs(par(11)),abs(par(12))),'-','Color',[.5 .5 .5],'LineWidth',2)
-                xlabel('Expression Probability');ylabel('# of genes');set(gca,'FontSize',14,'LineWidth',1.25);
-                title('Expression prediction','FontSize',18,'FontWeight','bold')
-            end
-        end
-        
-        % Score genes based on population expression (p = .05)
-        exprs_cutoff_1 = find(cdf('beta',x,par(2),par(3)) >.95,1)-1; % Find index of no confidence genes
-        exprs_cutoff_2 = find(cdf('beta',x,par(5),par(6)) >.95,1)-1; % Find index of low confidence genes
-        exprs_cutoff_3 = find(cdf('beta',x,par(8),par(9)) >.95,1)-1; % Find index of low confidence genes
-        exprs_cutoffs = sort([exprs_cutoff_1,exprs_cutoff_2,exprs_cutoff_3]);
-        gene_scores = cell_frac_levels*0;
-        gene_scores(cell_frac_levels <= x(exprs_cutoffs(1))) = 4; % Not detected
-        gene_scores(logical((cell_frac_levels >= x(exprs_cutoffs(1))).*(cell_frac_levels < x(exprs_cutoffs(2))))) = 3; % Low detection
-        gene_scores(logical((cell_frac_levels >= x(exprs_cutoffs(2))).*(cell_frac_levels < x(exprs_cutoffs(3))))) = 2; % Medium detection
-        gene_scores(cell_frac_levels > x(exprs_cutoffs(3))) = 1; % High detection
-
-        % Replace hpaData with singleCellData
-        if printReport==true
-            dispEM('Single cell data is not currently compatible with HPA data. \n         Replacing hpaData with single cell-based scoring.',false);
-        end
-        hpaData.genes = arrayData.genes;
-        hpaData.tissues = arrayData.tissues;
-        hpaData.celltypes = arrayData.celltypes;
-        hpaData.levels = [{'High'},{'Medium'},{'Low'},{'None'}];
-        hpaData.gene2Level = zeros(length(arrayData.genes),length(arrayData.celltypes));
-        for i = 1:length(find(J))
-            find_var = find(J,i);
-            hpaData.gene2Level(I,find_var(end)) = gene_scores;
-        end
-        
-        % Remove arrayData from the analysis (Might be a bad idea)
-        clear arrayData
-        arrayData=[];
-    end
-end
-
-
 if printReport==true
     if any(celltype)
         fprintf(['***Generating model for: ' tissue ' - ' celltype '\n']);
@@ -256,7 +152,7 @@ if printReport==true
     if ~isempty(metabolomicsData)
         fprintf('-Using metabolomics data\n');
     end
-    if ~isempty(taskFile) || ~isempty(taskStructure)
+    if any(taskFile)
         fprintf('-Using metabolic tasks\n');
     end
     fprintf('\n');

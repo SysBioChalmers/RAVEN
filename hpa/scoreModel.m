@@ -15,11 +15,6 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 %       levels          GENESxTISSUES array with the expression level for
 %                       each gene in each tissue/celltype. NaN should be
 %                       used when no measurement was performed
-%       threshold       a single value or a vector of gene expression 
-%                       thresholds, above which genes are considered to be
-%                       "expressed". (opt, by default, the mean expression
-%                       levels of each gene across all tissues in arrayData
-%                       will be used as the threshold values)
 %   tissue              tissue to score for. Should exist in either
 %                       hpaData.tissues or arrayData.tissues
 %   celltype            cell type to score for. Should exist in either
@@ -53,7 +48,7 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 %               hpaData,arrayData,tissue,celltype,noGeneScore,multipleGeneScoring,...
 %               multipleCellScoring,hpaLevelScores)
 %
-%   Jonathan Robinson, 2018-03-01
+%   Rasmus Agren, 2014-01-08
 %
 
 if nargin<3
@@ -91,32 +86,21 @@ if ~strcmpi(multipleCellScoring,'best') && ~strcmpi(multipleCellScoring,'average
 end
 
 
-%Throw an error if array data for only one tissue is supplied without
-%specifying threshold values
-if ~isempty(arrayData)
-    if numel(unique(arrayData.tissues))<2
-        if ~isfield(arrayData,'threshold') || isempty(arrayData.threshold)
-            EM='arrayData must contain measurements for at least two celltypes/tissues since the score is calculated based on the expression level compared to the overall average';
-            dispEM(EM);
-        end
+%Throw an error if array data for only one tissue is supplied
+if any(arrayData)
+    if numel(arrayData.tissues)<2
+        EM='arrayData must contain measurements for at least two celltypes/tissues since the score is calculated based on the expression level compared to the overall average';
+        dispEM(EM);
     end
 end
 
-%Process arrayData.threshold if necessary
-if isfield(arrayData,'threshold') && (numel(arrayData.threshold) == 1)
-    % if only a single gene threshold value is provided, then just
-    % duplicate this value for all genes.
-    arrayData.threshold = arrayData.threshold*ones(size(arrayData.genes));
-end
-
-%This is so that the code can ignore which combination of input data that is
-%used
+%This is so that the code can ignore which combination of input data that
+%is used
 if isempty(arrayData)
     arrayData.genes={};
     arrayData.tissues={};
     arrayData.celltypes={};
     arrayData.levels=[];
-    arrayData.threshold=[];
 end
 if isempty(hpaData)
     hpaData.genes={};
@@ -199,9 +183,6 @@ end
 J=~ismember(arrayData.genes,model.genes) | myAll(isnan(arrayData.levels(:,I)),2);
 arrayData.genes(J)=[];
 arrayData.levels(J,:)=[];
-if isfield(arrayData,'threshold')
-    arrayData.threshold(J) = [];
-end
 
 %Calculate the scores for the arrayData. These scores are calculated for
 %each genes from its fold change between the tissue/celltype(s) in question
@@ -214,14 +195,7 @@ end
 %somewhat lower weights than the HPA scores
 tempArrayLevels=arrayData.levels;
 tempArrayLevels(isnan(tempArrayLevels))=0;
-if isfield(arrayData,'threshold') && ~isempty(arrayData.threshold)
-    % if provided, the user-supplied expression threshold value(s) will be
-    % used as the "average" expression level to which each gene is
-    % compared.
-    average=arrayData.threshold;
-else
-    average=sum(tempArrayLevels,2)./sum(~isnan(arrayData.levels),2);
-end
+average=sum(tempArrayLevels,2)./sum(~isnan(arrayData.levels),2);
 if strcmpi(multipleCellScoring,'best')
     current=max(tempArrayLevels(:,I),[],2);
 else
@@ -234,7 +208,6 @@ else
 end
 aScores(aScores>0)=min(aScores(aScores>0),10);
 aScores(aScores<0)=max(aScores(aScores<0),-5);
-aScores(isnan(aScores)) = -5;  % NaNs occur when gene expression is zero across all tissues
 
 %Map the HPA levels to scores
 [I, J]=ismember(upper(hpaData.levels),upper(hpaLevelScores.names));
