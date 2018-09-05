@@ -13,8 +13,12 @@ function constructMultiFasta(model,sourceFile,outputDir)
 %
 %   Usage: constructMultiFasta(model,sourceFile,outputDir)
 %
-%   Simonas Marcisauskas, 2017-05-02
+%   Eduard Kerkhoven, 2018-05-18
 %
+
+if ~(exist(sourceFile,'file')==2)
+    error('FASTA file %s cannot be found',string(sourceFile));
+end
 
 %Open the source file
 fid = fopen(sourceFile, 'r');

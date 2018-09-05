@@ -17,6 +17,9 @@ temp_res1=dir([ravenDir '/*/*.m']);
 temp_res2=dir([ravenDir '/*/*/*.m']);
 
 ravenFunctions={temp_res1.name,temp_res2.name}';
+%startup.m is not a normal function, any startup.m in the path should run
+%during startup, so duplicate use of this name is fine
+ravenFunctions=ravenFunctions(~ismember(ravenFunctions,'startup.m'));
 
 %Getting all the paths added to Matlab
 if ispc

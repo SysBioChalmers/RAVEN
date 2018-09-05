@@ -43,13 +43,13 @@
 
    Usage: newModel=expandModel(model)
 
-   Simonas Marcisauskas, 2017-08-25</pre></div>
+   Simonas Marcisauskas, 2018-04-03</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li></ul>
+<li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>	standardizeGrRules</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 <li><a href="predictLocalization.html" class="code" title="function [outModel, geneLocalization, transportStruct, scores, removedRxns]=predictLocalization(model,GSS,defaultCompartment,transportCost,maxTime,plotResults)">predictLocalization</a>	predictLocalization</li></ul>
@@ -75,7 +75,7 @@ This function is called by:
 0015 <span class="comment">%</span>
 0016 <span class="comment">%   Usage: newModel=expandModel(model)</span>
 0017 <span class="comment">%</span>
-0018 <span class="comment">%   Simonas Marcisauskas, 2017-08-25</span>
+0018 <span class="comment">%   Simonas Marcisauskas, 2018-04-03</span>
 0019 <span class="comment">%</span>
 0020 
 0021 <span class="comment">%Start by checking which reactions could be expanded</span>
@@ -98,21 +98,21 @@ This function is called by:
 0038             EM=[<span class="string">'Reaction '</span> model.rxns{rxnsToExpand(i)} <span class="string">' contains nested and/or-relations. Large risk of errors'</span>];
 0039             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
 0040         <span class="keyword">end</span>
-0041 
+0041         
 0042         <span class="comment">%Get rid of all '(' and ')' since I'm not looking at complex stuff</span>
 0043         <span class="comment">%anyways</span>
 0044         geneString=model.grRules{rxnsToExpand(i)};
 0045         geneString=strrep(geneString,<span class="string">'('</span>,<span class="string">''</span>);
 0046         geneString=strrep(geneString,<span class="string">')'</span>,<span class="string">''</span>);
 0047         geneString=strrep(geneString,<span class="string">' or '</span>,<span class="string">';'</span>);
-0048 
+0048         
 0049         <span class="comment">%Split the string into gene names</span>
 0050         geneNames=regexp(geneString,<span class="string">';'</span>,<span class="string">'split'</span>);
-0051 
+0051         
 0052         <span class="comment">%Update the reaction to only use the first gene</span>
 0053         model.grRules{rxnsToExpand(i)}=[<span class="string">'('</span> geneNames{1} <span class="string">')'</span>];
-0054         <span class="comment">%Find the gene in the gene list</span>
-0055         <span class="comment">%If ' and ' relationship, first split the genes</span>
+0054         <span class="comment">%Find the gene in the gene list If ' and ' relationship, first</span>
+0055         <span class="comment">%split the genes</span>
 0056         model.rxnGeneMat(rxnsToExpand(i),:)=0;
 0057         <span class="keyword">if</span> ~isempty(strfind(geneNames(1),<span class="string">' and '</span>))
 0058             andGenes=regexp(geneNames{1},<span class="string">' and '</span>,<span class="string">'split'</span>);
@@ -124,7 +124,7 @@ This function is called by:
 0064             [~, index]=ismember(geneNames(1),model.genes);
 0065             model.rxnGeneMat(rxnsToExpand(i),index)=1;
 0066         <span class="keyword">end</span>
-0067 
+0067         
 0068         <span class="comment">%Insert the reactions at the end of the model and without</span>
 0069         <span class="comment">%allocating space. This is not nice, but ok for now</span>
 0070         <span class="keyword">for</span> j=2:numel(geneNames)
@@ -136,7 +136,7 @@ This function is called by:
 0076             model.c=[model.c;model.c(rxnsToExpand(i))];
 0077             model.S=[model.S model.S(:,rxnsToExpand(i))];
 0078             model.grRules=[model.grRules;[<span class="string">'('</span> geneNames{j} <span class="string">')'</span>]];
-0079 
+0079             
 0080             pad=zeros(1,numel(model.genes));
 0081             <span class="keyword">if</span> ~isempty(strfind(geneNames(j),<span class="string">' and '</span>))
 0082                 andGenes=regexp(geneNames{j},<span class="string">' and '</span>,<span class="string">'split'</span>);
@@ -149,7 +149,7 @@ This function is called by:
 0089                 pad(index)=1;
 0090             <span class="keyword">end</span>
 0091             model.rxnGeneMat=[model.rxnGeneMat;pad];
-0092 
+0092             
 0093             <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
 0094                 model.subSystems=[model.subSystems;model.subSystems(rxnsToExpand(i))];
 0095             <span class="keyword">end</span>
@@ -184,7 +184,12 @@ This function is called by:
 0124     <span class="comment">%There are no reactions to expand, return the model as is</span>
 0125     newModel=model;
 0126 <span class="keyword">end</span>
-0127 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 14-Mar-2018 21:08:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0127 
+0128 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
+0129 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(newModel,true);
+0130 newModel.grRules = grRules;
+0131 newModel.rxnGeneMat = rxnGeneMat;
+0132 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 22-Aug-2018 16:19:49 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

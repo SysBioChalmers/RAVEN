@@ -62,9 +62,9 @@
                    reactions. This is a vector with details about
                    each gene in originalGenes and why or why not it was
                    deleted
-                   1: Was deleted
+                   1: Was deleted/overexpressed
                    2: Proved lethal in sgd (single gene deletion)
-                   3: Only involved in reactions with too many iso-enzymes
+                   3: - redundant, no longer used -
                    4: Involved in dead-end reaction
 
    NOTE: This function disregards complexes. Any one gene can encode a
@@ -73,13 +73,13 @@
    Usage: [genes, fluxes, originalGenes, details]=findGeneDeletions(model,testType,analysisType,...
            refModel,oeFactor)
 
-   Rasmus Agren, 2014-01-08</pre></div>
+   Eduard Kerkhoven, 2018-04-27</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>	removeReactions</li><li><a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>	setParam</li><li><a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>	simplifyModel</li></ul>
+<li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="removeGenes.html" class="code" title="function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)">removeGenes</a>	removeGenes</li><li><a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>	removeReactions</li><li><a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>	simplifyModel</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -124,9 +124,9 @@ This function is called by:
 0034 <span class="comment">%                   reactions. This is a vector with details about</span>
 0035 <span class="comment">%                   each gene in originalGenes and why or why not it was</span>
 0036 <span class="comment">%                   deleted</span>
-0037 <span class="comment">%                   1: Was deleted</span>
+0037 <span class="comment">%                   1: Was deleted/overexpressed</span>
 0038 <span class="comment">%                   2: Proved lethal in sgd (single gene deletion)</span>
-0039 <span class="comment">%                   3: Only involved in reactions with too many iso-enzymes</span>
+0039 <span class="comment">%                   3: - redundant, no longer used -</span>
 0040 <span class="comment">%                   4: Involved in dead-end reaction</span>
 0041 <span class="comment">%</span>
 0042 <span class="comment">%   NOTE: This function disregards complexes. Any one gene can encode a</span>
@@ -135,184 +135,140 @@ This function is called by:
 0045 <span class="comment">%   Usage: [genes, fluxes, originalGenes, details]=findGeneDeletions(model,testType,analysisType,...</span>
 0046 <span class="comment">%           refModel,oeFactor)</span>
 0047 <span class="comment">%</span>
-0048 <span class="comment">%   Rasmus Agren, 2014-01-08</span>
+0048 <span class="comment">%   Eduard Kerkhoven, 2018-04-27</span>
 0049 <span class="comment">%</span>
-0050 originalModel=model;
-0051 
-0052 <span class="keyword">if</span> nargin&lt;5
-0053     oeFactor=10;
-0054 <span class="keyword">end</span>
-0055 
-0056 <span class="comment">%Check that the test type is correct</span>
-0057 <span class="keyword">if</span> ~strcmpi(testType,<span class="string">'sgd'</span>) &amp;&amp; ~strcmpi(testType,<span class="string">'dgd'</span>) &amp;&amp; ~strcmpi(testType,<span class="string">'sgo'</span>) &amp;&amp; ~strcmpi(testType,<span class="string">'dgo'</span>)
-0058     EM=<span class="string">'Incorrect test type'</span>;
-0059     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0060 <span class="keyword">end</span>
-0061 
-0062 <span class="comment">%Check that the analysis type is correct</span>
-0063 <span class="keyword">if</span> ~strcmpi(analysisType,<span class="string">'fba'</span>) &amp;&amp; ~strcmpi(analysisType,<span class="string">'moma'</span>)
-0064     EM=<span class="string">'Incorrect analysis type'</span>;
-0065     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0066 <span class="keyword">end</span>
-0067 
-0068 <span class="keyword">if</span> (strcmpi(testType,<span class="string">'sgo'</span>) || strcmpi(testType,<span class="string">'dgo'</span>)) &amp;&amp; strcmpi(analysisType,<span class="string">'fba'</span>)
-0069     EM=<span class="string">'Over expression is only available when using MOMA'</span>;
-0070     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0071 <span class="keyword">end</span>
-0072 
-0073 <span class="keyword">if</span> strcmpi(analysisType,<span class="string">'moma'</span>) &amp;&amp; nargin&lt;4
-0074     EM=<span class="string">'A reference model must be supplied when using MOMA'</span>;
-0075     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0076 <span class="keyword">end</span>
-0077 
-0078 originalGenes=model.genes;
-0079 details=zeros(numel(model.genes),1);
-0080 
-0081 <span class="comment">%First simplify the model to reduce the size</span>
-0082 model=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>(model,true,false,true,true);
-0083 model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,{},true,true); <span class="comment">%Removes unused genes</span>
-0084 details(~ismember(originalGenes,model.genes))=4;
-0085 
-0086 [~, geneMapping]=ismember(model.genes,originalGenes);
-0087 
-0088 <span class="comment">%Get the genes that should be deleted. Not all genes are deleted in all</span>
-0089 <span class="comment">%optimizations. For example, if all reactions involving a gene have</span>
-0090 <span class="comment">%iso-enzymes a single deletion of that gene will never have an effect.</span>
-0091 <span class="comment">%FBA and SGD:   All genes that encode reactions on their own</span>
-0092 <span class="comment">%FBA and DGD:   All genes that have at most one other gene encoding for at</span>
-0093 <span class="comment">%               least one of its reactions and doesn't participate</span>
-0094 <span class="comment">%               exclusively in reactions where a single deletion results in</span>
-0095 <span class="comment">%               an unsolvable problem</span>
-0096 <span class="comment">%MOMA and SGD:  All genes that encode reactions on their own</span>
-0097 <span class="comment">%MOMA and DGD:  All combinations of genes that have at most one other gene</span>
-0098 <span class="comment">%               encoding for at east one of its reactions and doesn't</span>
-0099 <span class="comment">%               participate exclusively in reactions where a single</span>
-0100 <span class="comment">%               deletion results in an unsolvable problem</span>
-0101 <span class="comment">%MOMA and SGO:  All genes</span>
-0102 <span class="comment">%MOMA and DGO:  All combinations of genes</span>
-0103 genesForSGD=[];
-0104 <span class="keyword">if</span> strcmpi(testType,<span class="string">'sgd'</span>) || strcmpi(testType,<span class="string">'dgd'</span>)
-0105     <span class="keyword">if</span> strcmpi(testType,<span class="string">'sgd'</span>)
-0106         I=sum(model.rxnGeneMat,2)&gt;1; <span class="comment">%Reactions with iso-enzymes</span>
-0107     <span class="keyword">else</span>
-0108         I=sum(model.rxnGeneMat,2)&gt;2; <span class="comment">%Reactions with more than one iso-enzyme</span>
-0109     <span class="keyword">end</span>
-0110 
-0111     <span class="comment">%Find genes involved only in these reactions</span>
-0112     [~, inIsoRxns]=find(model.rxnGeneMat(I,:));
-0113     [~, inNonIsoRxns]=find(model.rxnGeneMat(~I,:));
-0114     genesForSGD=unique(inNonIsoRxns);
-0115     details(geneMapping(setdiff(inIsoRxns,inNonIsoRxns)))=3;
-0116 <span class="keyword">end</span>
-0117 
-0118 <span class="comment">%Get the genes that should be deleted in a SGD</span>
-0119 <span class="keyword">if</span> strcmpi(testType,<span class="string">'sgd'</span>) || strcmpi(testType,<span class="string">'dgd'</span>)
-0120    genesToModify=genesForSGD;
-0121 <span class="keyword">end</span>
-0122 
-0123 <span class="comment">%Get the genes that should be deleted in SGO</span>
-0124 <span class="keyword">if</span> strcmpi(testType,<span class="string">'sgo'</span>)
-0125    genesToModify=1:numel(model.genes);
-0126    genesToModify=genesToModify(:);
+0050 
+0051 originalModel=model;
+0052 
+0053 <span class="keyword">if</span> nargin&lt;5
+0054     oeFactor=10;
+0055 <span class="keyword">end</span>
+0056 
+0057 <span class="comment">%Check that the test type is correct</span>
+0058 <span class="keyword">if</span> ~strcmpi(testType,<span class="string">'sgd'</span>) &amp;&amp; ~strcmpi(testType,<span class="string">'dgd'</span>) &amp;&amp; ~strcmpi(testType,<span class="string">'sgo'</span>) &amp;&amp; ~strcmpi(testType,<span class="string">'dgo'</span>)
+0059     EM=<span class="string">'Incorrect test type'</span>;
+0060     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0061 <span class="keyword">end</span>
+0062 
+0063 <span class="comment">%Check that the analysis type is correct</span>
+0064 <span class="keyword">if</span> ~strcmpi(analysisType,<span class="string">'fba'</span>) &amp;&amp; ~strcmpi(analysisType,<span class="string">'moma'</span>)
+0065     EM=<span class="string">'Incorrect analysis type'</span>;
+0066     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0067 <span class="keyword">end</span>
+0068 
+0069 <span class="keyword">if</span> (strcmpi(testType,<span class="string">'sgo'</span>) || strcmpi(testType,<span class="string">'dgo'</span>)) &amp;&amp; strcmpi(analysisType,<span class="string">'fba'</span>)
+0070     EM=<span class="string">'Over expression is only available when using MOMA'</span>;
+0071     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0072 <span class="keyword">end</span>
+0073 
+0074 <span class="keyword">if</span> strcmpi(analysisType,<span class="string">'moma'</span>) &amp;&amp; nargin&lt;4
+0075     EM=<span class="string">'A reference model must be supplied when using MOMA'</span>;
+0076     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0077 <span class="keyword">end</span>
+0078 
+0079 originalGenes=model.genes;
+0080 details=zeros(numel(model.genes),1);
+0081 
+0082 <span class="comment">%First simplify the model to reduce the size</span>
+0083 model=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>(model,true,false,true,true);
+0084 model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,{},true,true); <span class="comment">%Removes unused genes</span>
+0085 details(~ismember(originalGenes,model.genes))=4;
+0086 
+0087 [~, geneMapping]=ismember(model.genes,originalGenes);
+0088 
+0089 <span class="comment">%Do single deletion/over expression. This is done here since the double</span>
+0090 <span class="comment">%deletion depends on which single deletions prove lethal (to reduce the</span>
+0091 <span class="comment">%size of the system)</span>
+0092 <span class="keyword">if</span> strcmpi(testType,<span class="string">'sgd'</span>) || strcmpi(testType,<span class="string">'sgo'</span>) || strcmpi(testType,<span class="string">'dgd'</span>)
+0093     fluxes=zeros(numel(model.rxns),numel(model.genes));
+0094     solvable=true(numel(model.genes),1);
+0095     <span class="keyword">for</span> i=1:numel(model.genes)
+0096         <span class="keyword">if</span> strcmpi(testType,<span class="string">'sgd'</span>) || strcmpi(testType,<span class="string">'dgd'</span>)
+0097             <span class="comment">%Constrain all reactions involving the gene to 0</span>
+0098             tempModel=<a href="removeGenes.html" class="code" title="function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)">removeGenes</a>(model,i,false,false,false);
+0099         <span class="keyword">else</span>
+0100             <span class="comment">%To over express a gene, the stoichiometry of the corresponding</span>
+0101             <span class="comment">%reactions are changed so that the same flux leads to a higher</span>
+0102             <span class="comment">%production</span>
+0103             tempModel=model;
+0104             I=find(model.rxnGeneMat(:,i));
+0105             tempModel.S(:,I)=tempModel.S(:,I).*oeFactor;
+0106         <span class="keyword">end</span>
+0107         <span class="keyword">if</span> strcmpi(analysisType,<span class="string">'fba'</span>) || strcmpi(testType,<span class="string">'dgd'</span>)
+0108             sol=solveLP(tempModel);
+0109         <span class="keyword">else</span>
+0110             [fluxA, ~, flag]=qMOMA(tempModel,refModel);
+0111             sol.x=fluxA;
+0112             sol.stat=flag;
+0113         <span class="keyword">end</span>
+0114         
+0115         <span class="comment">%If the optimization terminated successfully</span>
+0116         <span class="keyword">if</span> sol.stat==1
+0117             fluxes(:,i)=sol.x;
+0118             details(geneMapping(i))=1;
+0119         <span class="keyword">else</span>
+0120             solvable(i)=false;
+0121             details(geneMapping(i))=2;
+0122         <span class="keyword">end</span>
+0123     <span class="keyword">end</span>
+0124     
+0125     fluxes=fluxes(:,solvable);
+0126     genes=geneMapping(solvable);
 0127 <span class="keyword">end</span>
 0128 
-0129 <span class="comment">%Do single deletion/over expression. This is done here since the double</span>
-0130 <span class="comment">%deletion depends on which single deletions prove lethal</span>
-0131 <span class="comment">%(to reduce the size of the system)</span>
-0132 <span class="keyword">if</span> strcmpi(testType,<span class="string">'sgd'</span>) || strcmpi(testType,<span class="string">'sgo'</span>) || strcmpi(testType,<span class="string">'dgd'</span>)
-0133     fluxes=zeros(numel(model.rxns),numel(genesToModify));
-0134     solvable=true(numel(genesToModify),1);
-0135     <span class="keyword">for</span> i=1:numel(genesToModify)
-0136        I=find(model.rxnGeneMat(:,genesToModify(i)));
-0137        <span class="keyword">if</span> strcmpi(testType,<span class="string">'sgd'</span>) || strcmpi(testType,<span class="string">'dgd'</span>)
-0138            <span class="comment">%Constrain all reactions involving the gene to 0</span>
-0139            tempModel=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'eq'</span>,model.rxns(I),0);
-0140        <span class="keyword">else</span>
-0141            <span class="comment">%To over express a gene, the stoichiometry of the corresponding</span>
-0142            <span class="comment">%reactions are changed so that the same flux leads to a higher</span>
-0143            <span class="comment">%production</span>
-0144            tempModel=model;
-0145            tempModel.S(:,I)=tempModel.S(:,I).*oeFactor;
-0146        <span class="keyword">end</span>
-0147        <span class="keyword">if</span> strcmpi(analysisType,<span class="string">'fba'</span>) || strcmpi(testType,<span class="string">'dgd'</span>)
-0148             sol=solveLP(tempModel);
-0149        <span class="keyword">else</span>
-0150             [fluxA, ~, flag]=qMOMA(tempModel,refModel);
-0151             sol.x=fluxA;
-0152             sol.stat=flag;
-0153        <span class="keyword">end</span>
-0154 
-0155        <span class="comment">%If the optimization terminated successfully</span>
-0156        <span class="keyword">if</span> sol.stat==1
-0157            fluxes(:,i)=sol.x;
-0158            details(geneMapping(genesToModify(i)))=1;
-0159        <span class="keyword">else</span>
-0160            solvable(i)=false;
-0161            details(geneMapping(genesToModify(i)))=2;
-0162        <span class="keyword">end</span>
-0163     <span class="keyword">end</span>
-0164 
-0165     fluxes=fluxes(:,solvable);
-0166     genes=geneMapping(genesToModify(solvable));
-0167 <span class="keyword">end</span>
-0168 
-0169 <span class="comment">%Now do for DGO. This is rather straight forward since it is always</span>
-0170 <span class="comment">%solvable and it doesn't matter if there are iso-enzymes</span>
-0171 <span class="keyword">if</span> strcmpi(testType,<span class="string">'dgo'</span>)
-0172     genesToModify=nchoosek(1:numel(model.genes),2);
-0173     genes=geneMapping(genesToModify);
-0174     <span class="comment">%Since I assume that this is never lethal I set the details already</span>
-0175     details(geneMapping)=1;
-0176 
-0177     fluxes=sparse(numel(model.rxns),size(genesToModify,1));
-0178     <span class="keyword">for</span> i=1:size(genesToModify,1)
-0179        I=find(model.rxnGeneMat(:,genesToModify(i,:)));
-0180        <span class="comment">%To over express a gene, the stoichiometry of the corresponding</span>
-0181        <span class="comment">%reactions are changed so that the same flux leads to a higher</span>
-0182        <span class="comment">%production</span>
-0183        tempModel=model;
-0184        tempModel.S(:,I)=tempModel.S(:,I).*oeFactor;
-0185        fluxA=qMOMA(tempModel,refModel);
-0186        fluxes(:,i)=fluxA;
-0187     <span class="keyword">end</span>
-0188 <span class="keyword">end</span>
-0189 
-0190 <span class="comment">%For double deletions FBA or MOMA</span>
-0191 <span class="keyword">if</span> strcmpi(testType,<span class="string">'dgd'</span>)
-0192     <span class="comment">%This is a little lazy but it's fine. Check which genes that have</span>
-0193     <span class="comment">%already been labled as either ony with too many iso-enzymes or</span>
-0194     <span class="comment">%non-solveable as a single deletion.</span>
-0195     [~, I]=ismember(originalGenes(details==1),model.genes);
-0196     genesToModify=nchoosek(I,2);
-0197     genes=geneMapping(genesToModify);
-0198 
-0199     fluxes=sparse(numel(model.rxns),size(genesToModify,1));
-0200     <span class="keyword">for</span> i=1:size(genesToModify,1)
-0201        I=find(model.rxnGeneMat(:,genesToModify(i,:)));
-0202 
-0203        <span class="comment">%Constrain all reactions involving the gene to 0</span>
-0204        tempModel=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'eq'</span>,model.rxns(I),0);
-0205 
-0206        <span class="keyword">if</span> strcmpi(analysisType,<span class="string">'fba'</span>)
-0207             sol=solveLP(tempModel);
-0208        <span class="keyword">else</span>
-0209             [fluxA, ~, flag]=qMOMA(tempModel,refModel);
-0210             sol.x=fluxA;
-0211             sol.stat=flag;
-0212        <span class="keyword">end</span>
-0213 
-0214        <span class="keyword">if</span> sol.stat==1
-0215            fluxes(:,i)=sol.x;
-0216        <span class="keyword">end</span>
-0217     <span class="keyword">end</span>
-0218 <span class="keyword">end</span>
-0219 
-0220 <span class="comment">%Map back to the old model</span>
-0221 [~, I]=ismember(model.rxns,originalModel.rxns);
-0222 temp=fluxes;
-0223 fluxes=sparse(numel(originalModel.rxns),size(temp,2));
-0224 fluxes(I,:)=temp;
-0225 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 14-Mar-2018 21:08:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0129 <span class="comment">%Now do for DGO. This is rather straight forward since it is always</span>
+0130 <span class="comment">%solvable and it doesn't matter if there are iso-enzymes</span>
+0131 <span class="keyword">if</span> strcmpi(testType,<span class="string">'dgo'</span>)
+0132     genesToModify=nchoosek(1:numel(model.genes),2);
+0133     genes=geneMapping(genesToModify);
+0134     <span class="comment">%Since I assume that this is never lethal I set the details already</span>
+0135     details(geneMapping)=1;
+0136     
+0137     fluxes=sparse(numel(model.rxns),size(genesToModify,1));
+0138     <span class="keyword">for</span> i=1:size(genesToModify,1)
+0139         I=find(model.rxnGeneMat(:,genesToModify(i,:)));
+0140         <span class="comment">%To over express a gene, the stoichiometry of the corresponding</span>
+0141         <span class="comment">%reactions are changed so that the same flux leads to a higher</span>
+0142         <span class="comment">%production</span>
+0143         tempModel=model;
+0144         tempModel.S(:,I)=tempModel.S(:,I).*oeFactor;
+0145         fluxA=qMOMA(tempModel,refModel);
+0146         fluxes(:,i)=fluxA;
+0147     <span class="keyword">end</span>
+0148 <span class="keyword">end</span>
+0149 
+0150 <span class="comment">%For double deletions FBA or MOMA</span>
+0151 <span class="keyword">if</span> strcmpi(testType,<span class="string">'dgd'</span>)
+0152     <span class="comment">%This is a little lazy but it's fine. Check which genes have already</span>
+0153     <span class="comment">%been deleted in 'sgd' analysis.</span>
+0154     [~, I]=ismember(originalGenes(details==1),model.genes);
+0155     genesToModify=nchoosek(I,2);
+0156     genes=geneMapping(genesToModify);
+0157     
+0158     fluxes=sparse(numel(model.rxns),size(genesToModify,1));
+0159     <span class="keyword">for</span> i=1:size(genesToModify,1)
+0160         tempModel=<a href="removeGenes.html" class="code" title="function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)">removeGenes</a>(model,genesToModify(i,:),false,false,false);
+0161         
+0162         <span class="keyword">if</span> strcmpi(analysisType,<span class="string">'fba'</span>)
+0163             sol=solveLP(tempModel);
+0164         <span class="keyword">else</span>
+0165             [fluxA, ~, flag]=qMOMA(tempModel,refModel);
+0166             sol.x=fluxA;
+0167             sol.stat=flag;
+0168         <span class="keyword">end</span>
+0169         
+0170         <span class="keyword">if</span> sol.stat==1
+0171             fluxes(:,i)=sol.x;
+0172         <span class="keyword">end</span>
+0173     <span class="keyword">end</span>
+0174 <span class="keyword">end</span>
+0175 
+0176 <span class="comment">%Map back to the old model</span>
+0177 [~, I]=ismember(model.rxns,originalModel.rxns);
+0178 temp=fluxes;
+0179 fluxes=sparse(numel(originalModel.rxns),size(temp,2));
+0180 fluxes(I,:)=temp;
+0181 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 22-Aug-2018 16:19:49 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

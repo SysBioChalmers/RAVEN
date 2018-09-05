@@ -67,7 +67,7 @@ if ~isfield(metsToAdd,'mets')
     %Name the metabolites as "m1, m2...". If IDs on the same form are
     %already used in the model then the first available integers should be
     %used
-    maxCurrent=ceil(max(real(cellfun(@getInteger,model.mets)))); % Ignores imaginary portion of function result
+    maxCurrent=ceil(max(real(cellfun(@getInteger,model.mets))));
     m=maxCurrent+1:maxCurrent+numel(metsToAdd.metNames);
     metsToAdd.mets=strcat({'m'},num2str(m(:)));
 end

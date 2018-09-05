@@ -31,7 +31,7 @@
    Changes gene association for a defined reaction
 
    model       a model structure to change the gene association
-   rxnID       string of reaction ID
+   rxnID       string or cell array of reaction IDs
    geneAssoc   string of additional or replacement gene association.
                Should be written with ' and ' to indicate subunits, ' or '
                to indicate isoenzymes, and brackets '()' to separate
@@ -44,13 +44,13 @@
 
    Usage: changeGeneAssoc(model,rxnID,geneAssoc,replace)
 
-   Eduard Kerkhoven, 2015-10-07</pre></div>
+   Eduard Kerkhoven, 2018-04-24</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="addGenes.html" class="code" title="function newModel=addGenes(model,genesToAdd)">addGenes</a>	addGenes</li></ul>
+<li><a href="addGenesRaven.html" class="code" title="function newModel=addGenesRaven(model,genesToAdd)">addGenesRaven</a>	addGenesRaven</li><li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>	getIndexes</li><li><a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>	standardizeGrRules</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -64,7 +64,7 @@ This function is called by:
 0003 <span class="comment">%   Changes gene association for a defined reaction</span>
 0004 <span class="comment">%</span>
 0005 <span class="comment">%   model       a model structure to change the gene association</span>
-0006 <span class="comment">%   rxnID       string of reaction ID</span>
+0006 <span class="comment">%   rxnID       string or cell array of reaction IDs</span>
 0007 <span class="comment">%   geneAssoc   string of additional or replacement gene association.</span>
 0008 <span class="comment">%               Should be written with ' and ' to indicate subunits, ' or '</span>
 0009 <span class="comment">%               to indicate isoenzymes, and brackets '()' to separate</span>
@@ -77,35 +77,42 @@ This function is called by:
 0016 <span class="comment">%</span>
 0017 <span class="comment">%   Usage: changeGeneAssoc(model,rxnID,geneAssoc,replace)</span>
 0018 <span class="comment">%</span>
-0019 <span class="comment">%   Eduard Kerkhoven, 2015-10-07</span>
-0020 
-0021 <span class="comment">%</span>
+0019 <span class="comment">%   Eduard Kerkhoven, 2018-04-24</span>
+0020 <span class="comment">%</span>
+0021 
 0022 <span class="keyword">if</span> nargin==3
 0023     replace=true;
 0024 <span class="keyword">end</span>
 0025 
-0026 <span class="comment">% Add genes to model</span>
-0027 geneList=transpose(cell(unique(regexp(geneAssoc,<span class="string">'[)(]*|( and )*|( or )*'</span>,<span class="string">'split'</span>)))); <span class="comment">% Extract individual, unique genes from the geneAssoc provided</span>
-0028 genesToAdd.genes=setdiff(geneList(2:length(geneList)),model.genes); <span class="comment">% Only keep the genes that are not yet part of the model.genes.</span>
-0029 model=<a href="addGenes.html" class="code" title="function newModel=addGenes(model,genesToAdd)">addGenes</a>(model,genesToAdd); <span class="comment">% Add genes</span>
-0030 
-0031 <span class="comment">% Find reaction and gene indices</span>
-0032 [~,idxRxn]=ismember(rxnID,model.rxns); <span class="comment">% Find indices of rxnID in model.rxns</span>
-0033 idxGene=zeros(length(geneList)-1,1); <span class="comment">% Prepare an empty list to be filed with indices, and subsequently fill it.</span>
-0034 <span class="keyword">for</span> n=2:length(geneList)
-0035     idxGene(n-1)=find(strcmp(model.genes,geneList(n)));
-0036 <span class="keyword">end</span>
-0037 
-0038 <span class="comment">% Change gene associations</span>
-0039 <span class="keyword">if</span> replace==true <span class="comment">% Replace old gene associations</span>
-0040     model.grRules(idxRxn)=cellstr(geneAssoc);
-0041     model.rxnGeneMat(idxRxn,:)=0;
-0042     model.rxnGeneMat(idxRxn,idxGene)=1;
-0043 <span class="keyword">else</span> <span class="comment">% Add gene associations, add new gene rules after 'OR'.</span>
-0044     model.grRules(idxRxn)=cellstr([model.grRules{idxRxn},<span class="string">' or '</span>,geneAssoc]);
-0045     model.rxnGeneMat(idxRxn,idxGene)=1;
-0046 <span class="keyword">end</span>
-0047 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 14-Mar-2018 21:08:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0026 <span class="keyword">if</span> isstr(rxnID)
+0027     rxnID={rxnID};
+0028 <span class="keyword">end</span>
+0029 
+0030 <span class="keyword">if</span> ~isstr(geneAssoc)
+0031     EM=<span class="string">'geneAssoc has to be string'</span>;
+0032     error(sprintf(EM))
+0033 <span class="keyword">end</span>
+0034 
+0035 <span class="comment">% Add genes to model</span>
+0036 geneList=transpose(cell(unique(regexp(geneAssoc,<span class="string">'[)(]*|( and )*|( or )*'</span>,<span class="string">'split'</span>)))); <span class="comment">% Extract individual, unique genes from the geneAssoc provided</span>
+0037 genesToAdd.genes=setdiff(geneList(2:length(geneList)),model.genes); <span class="comment">% Only keep the genes that are not yet part of the model.genes.</span>
+0038 model=<a href="addGenesRaven.html" class="code" title="function newModel=addGenesRaven(model,genesToAdd)">addGenesRaven</a>(model,genesToAdd); <span class="comment">% Add genes</span>
+0039 
+0040 <span class="comment">% Find reaction and gene indices</span>
+0041 idx=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxnID,<span class="string">'rxns'</span>);
+0042 
+0043 <span class="comment">% Change gene associations</span>
+0044 <span class="keyword">if</span> replace==true <span class="comment">% Replace old gene associations</span>
+0045     model.grRules(idx)=cellstr(geneAssoc);
+0046 <span class="keyword">else</span> <span class="comment">% Add gene associations, add new gene rules after 'OR'.</span>
+0047     model.grRules(idx)=cellstr(<span class="string">'('</span>,[model.grRules{idx},<span class="string">') or ('</span>,geneAssoc,<span class="string">')'</span>]);
+0048 <span class="keyword">end</span>
+0049 
+0050 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
+0051 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(model,true);
+0052 model.grRules = grRules;
+0053 model.rxnGeneMat = rxnGeneMat;
+0054 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 22-Aug-2018 16:19:49 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

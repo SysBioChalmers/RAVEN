@@ -9,11 +9,24 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %            equations          cell array with equation strings. Decimal
 %                               coefficients are expressed as "1.2".
 %                               Reversibility is indicated by "<=>" or "=>"
+%            mets               (alternative to equations) cell array with
+%                               the metabolites involved in each reaction
+%                               as nested arrays. E.g.:
+%                               {{'met1','met2'},{'met1','met3','met4'}}
+%                               In the case of one single reaction added,
+%                               it can be a string array: {'met1','met2'}
+%            stoichCoeffs       (alternative to equations) cell array with
+%                               the corresponding stoichiometries as nested
+%                               vectors. E.g.: {[-1,+2],[-1,-1,+1]}
+%                               In the case of one single reaction added,
+%                               it can be a vector: [-1,+2]
 %            rxnNames           cell array with the names of each reaction
 %                               (opt, default '')
 %            lb                 vector with the lower bounds (opt, default
 %                               -inf for reversible reactions and 0 for
-%                               irreversible)
+%                               irreversible when "equations" is used, or
+%                               -inf for all reactions when "mets" + 
+%                               "stoichCoeffs" are used
 %            ub                 vector with the upper bounds (opt, default
 %                               inf)
 %            c                  vector with the objective function
@@ -29,8 +42,8 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %                               could be catalyzed by a complex between
 %                               A & B or by C on its own. All the genes
 %                               have to be present in model.genes. Add
-%                               genes with addGenes before calling this
-%                               function if needed (opt, default '')
+%                               genes with addGenesRaven before calling
+%                               this function if needed (opt, default '')
 %            rxnMiriams         cell array with Miriam structures (opt,
 %                               default [])
 %            rxnComps           cell array with compartments (as in
@@ -82,6 +95,7 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %
 %   Simonas Marcisauskas, 2018-04-03
+%   Benjamin J. Sanchez,  2018-08-22
 %
 
 if nargin<4
@@ -127,8 +141,8 @@ elseif iscell(rxnsToAdd.rxns)
     %To fit with some later printing
     rxnsToAdd.rxns=rxnsToAdd.rxns(:);
 end
-if ~isfield(rxnsToAdd,'equations')
-    EM='equations is a required field in rxnsToAdd';
+if ~(isfield(rxnsToAdd,'equations') || (isfield(rxnsToAdd,'mets') && isfield(rxnsToAdd,'stoichCoeffs')))
+    EM='Either "equations" or "mets"+"stoichCoeffs" are required fields in rxnsToAdd';
     dispEM(EM);
 end
 
@@ -144,12 +158,55 @@ if ~iscellstr(rxnsToAdd.rxns) && ~ischar(rxnsToAdd.rxns)
 else
     rxnsToAdd.rxns=cellstr(rxnsToAdd.rxns);
 end
-if ~iscellstr(rxnsToAdd.equations) && ~ischar(rxnsToAdd.equations)
-    %It could also be a string, but it's not encouraged
-    EM='rxnsToAdd.equations must be a cell array of strings';
-    dispEM(EM);
+
+%Normal case: equations provided
+if isfield(rxnsToAdd,'equations')
+    if ~iscellstr(rxnsToAdd.equations) && ~ischar(rxnsToAdd.equations)
+        %It could also be a string, but it's not encouraged
+        EM='rxnsToAdd.equations must be a cell array of strings';
+        dispEM(EM);
+    else
+        rxnsToAdd.equations=cellstr(rxnsToAdd.equations);
+    end
+    
+%Alternative case: mets+stoichiometry provided
 else
-    rxnsToAdd.equations=cellstr(rxnsToAdd.equations);
+    %In the case of 1 rxn added (array of strings + vector), transform to
+    %cells of length=1:
+    if iscellstr(rxnsToAdd.mets)
+        rxnsToAdd.mets = {rxnsToAdd.mets};        
+    end
+    if isnumeric(rxnsToAdd.stoichCoeffs)
+        rxnsToAdd.stoichCoeffs = {rxnsToAdd.stoichCoeffs};        
+    end
+    %Now both rxnsToAdd.mets and rxnsToAdd.stoichCoeffs should be cell
+    %arrays & of the same size:
+    if ~iscell(rxnsToAdd.mets) || ~iscell(rxnsToAdd.stoichCoeffs)
+        EM='rxnsToAdd.mets & rxnsToAdd.stoichCoeffs must be cell arrays';
+        dispEM(EM);
+    elseif length(rxnsToAdd.stoichCoeffs) ~= length(rxnsToAdd.mets)
+        EM = 'rxnsToAdd.stoichCoeffs must have the same number of elements as rxnsToAdd.mets';
+        dispEM(EM);
+    end
+    %In this case we need lb to decide if the reaction is reversible or not:
+    if ~isfield(rxnsToAdd,'lb')
+        %Fill with standard if it doesn't exist
+        rxnsToAdd.lb=-inf(size(rxnsToAdd.mets));
+    elseif ~isnumeric(rxnsToAdd.lb)
+        EM = 'rxnsToAdd.lb must be a vector';
+        dispEM(EM);
+    elseif length(rxnsToAdd.lb) ~= length(rxnsToAdd.mets)
+        EM = 'rxnsToAdd.lb must have the same number of elements as rxnsToAdd.mets';
+        dispEM(EM);
+    end
+    %Now we construct equations, to comply with the rest of the script:
+    rxnsToAdd.equations = cell(size(rxnsToAdd.mets));
+    for i = 1:length(rxnsToAdd.mets)
+        mets         = rxnsToAdd.mets{i};
+        stoichCoeffs = rxnsToAdd.stoichCoeffs{i};
+        isrev        = rxnsToAdd.lb(i) < 0;
+        rxnsToAdd.equations{i} = buildEquation(mets,stoichCoeffs,isrev);
+    end
 end
 
 nRxns=numel(rxnsToAdd.rxns);
@@ -532,7 +589,7 @@ for i=1:nRxns
         genes=regexp(rule,' ','split');
         [I, J]=ismember(genes,newModel.genes);
         if ~all(I) && any(rule)
-            EM=['Not all genes for reaction ' rxnsToAdd.rxns{i} ' were found in model.genes. If needed, add genes with addGenes before calling this function'];
+            EM=['Not all genes for reaction ' rxnsToAdd.rxns{i} ' were found in model.genes. If needed, add genes with addGenesRaven before calling this function'];
             dispEM(EM);
         end
     end

@@ -168,7 +168,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,...
 %    minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2018-04-03
+%   Eduard Kerkhoven, 2018-05-18
 %
 
 if nargin<2
@@ -184,6 +184,8 @@ if isempty(outDir)
     outDir=tempdir;
     %Delete all *.out files if any exist
     delete(fullfile(outDir,'*.out'));
+elseif ~isstring(outDir)
+    error('outDir should be provided as string');
 end
 if nargin<5
     keepUndefinedStoich=true;
@@ -216,6 +218,15 @@ if nargin<13
     %CD-HIT is not used in the pipeline
 end
 
+%Check that FASTA file exists
+if ~isempty(fastaFile)
+    if ~isstr(fastaFile)
+        error('FASTA file should be provided as string');
+    end
+    if ~(exist(fastaFile,'file')==2)
+        error('FASTA file %s cannot be found',string(fastaFile));
+    end
+end
 %Run the external binaries multi-threaded to use all logical cores assigned
 %to MATLAB
 cores = evalc('feature(''numcores'')');

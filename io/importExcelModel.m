@@ -65,7 +65,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Simonas Marcisauskas, 2018-04-04
+%   Eduard Kerkhoven, 2018-05-18
 %
 
 if nargin<2
@@ -76,6 +76,10 @@ if nargin<3
 end
 if nargin<4
     ignoreErrors=false;
+end
+
+if ~(exist(fileName,'file')==2)
+    error('Excel file %s cannot be found',string(fileName));
 end
 
 %This is to match the order of the fields to those you get from importing
@@ -422,7 +426,7 @@ if ~isempty(model.rxnConfidenceScores)
 end
 for i=1:numel(subsystems)
     model.subSystems{i,1}=cellstr(strsplit(subsystems{i,1},';'));
-end;
+end
 
 %Check that all necessary reaction info has been loaded
 if isempty(equations)
