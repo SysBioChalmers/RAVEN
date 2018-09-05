@@ -184,6 +184,8 @@ if isempty(outDir)
     outDir=tempdir;
     %Delete all *.out files if any exist
     delete(fullfile(outDir,'*.out'));
+elseif ~isstring(outDir)
+    error('outDir should be provided as string');
 end
 if nargin<5
     keepUndefinedStoich=true;
@@ -218,6 +220,9 @@ end
 
 %Check that FASTA file exists
 if ~isempty(fastaFile)
+    if ~isstr(fastaFile)
+        error('FASTA file should be provided as string');
+    end
     if ~(exist(fastaFile,'file')==2)
         error('FASTA file %s cannot be found',string(fastaFile));
     end

@@ -31,6 +31,11 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncom
 %
 %   Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
+%   Note:               The model output from getModelFromKEGG can be used
+%                       as template for fillGaps. In that case, ensure that
+%                       the genes and rxnGeneMat fields are removed before
+%                       parsing: model=rmfield(model,'genes'), etc.
+%
 %   Simonas Marcisauskas, 2018-03-19
 %
 
