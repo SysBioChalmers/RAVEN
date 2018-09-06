@@ -38,7 +38,7 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %   Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Simonas Marcisauskas, 2018-08-15
+%   Simonas Marcisauskas, 2018-09-06
 %
 
 if nargin<1
@@ -243,17 +243,10 @@ if keepGeneral==false
     model=removeReactions(model,intersect(isGeneral,model.rxns),true,true);
 end
 
-%Add temporary warning that the set of spontaneous reactions shall not be
-%trusted as long as KEGG mat files are not generated from up-to-date KEGG
-%database. The field isSpontaneous is added just for testing purposes. The
-%warning will be removed as soon as KEGG mat files are generated from the
-%current KEGG release
-disp("WARNING: The set of spontaneous reactions is not the final one. This will be fixed with the following KEGG mat files update")
-
 end
 
 function output = isNewestFile(ravenPath)
-%An ad hoc function, which checks whether keggModel.mat is the more
+%The ad hoc function, which checks whether keggModel.mat is the more
 %recently modified than keggRxns.mat, keggGenes.mat and keggRxns.mat
 modelFile=fullfile(ravenPath,'external','kegg','keggModel.mat');
 rxnsFile=fullfile(ravenPath,'external','kegg','keggRxns.mat');
