@@ -515,60 +515,59 @@ for i=1:numel(modelSBML.reaction)
             %later
             grRules{counter}=geneAssociation;
         end
-    elseif isfield(modelSBML.reaction(i),'modifier')
-        if ~isempty(modelSBML.reaction(i).modifier)
-            rules='';
-            for j=1:numel(modelSBML.reaction(i).modifier)
-                modifier=modelSBML.reaction(i).modifier(j).species;
-                if ~isempty(modifier)
-                    if strcmpi(modifier(1:2),'E_')
-                        index=find(strcmp(modifier,geneIDs));
-                        %This should be unique and in the geneIDs list,
-                        %otherwise something is wrong
-                        if numel(index)~=1
-                            EM=['Could not get the gene association data from reaction ' reactionIDs{i}];
-                            dispEM(EM);
-                        end
+    end
+    if isempty(grRules{counter}) && ~isempty(modelSBML.reaction(i).modifier)
+        rules='';
+        for j=1:numel(modelSBML.reaction(i).modifier)
+            modifier=modelSBML.reaction(i).modifier(j).species;
+            if ~isempty(modifier)
+                if strcmpi(modifier(1:2),'E_')
+                    index=find(strcmp(modifier,geneIDs));
+                    %This should be unique and in the geneIDs list,
+                    %otherwise something is wrong
+                    if numel(index)~=1
+                        EM=['Could not get the gene association data from reaction ' reactionIDs{i}];
+                        dispEM(EM);
+                    end
+                    if ~isempty(rules)
+                        rules=[rules ' or (' geneNames{index} ')'];
+                    else
+                        rules=['(' geneNames{index} ')'];
+                    end
+                elseif strcmp(modifier(1:2),'s_')
+                    index=find(strcmp(modifier,metaboliteIDs));
+                    %This should be unique and in the geneIDs list,
+                    %otherwise something is wrong
+                    if numel(index)~=1
+                        EM=['Could not get the gene association data from reaction ' reactionIDs{i}];
+                        dispEM(EM);
+                    end
+                    if ~isempty(rules)
+                        rules=[rules ' or (' metaboliteIDs{index} ')'];
+                    else
+                        rules=['(' metaboliteIDs{index} ')'];
+                    end
+                else
+                    %It seems to be a complex. Add the corresponding
+                    %genes from the name of the complex (not the
+                    %reaction that creates it)
+                    index=find(strcmp(modifier,complexIDs));
+                    if numel(index)==1
                         if ~isempty(rules)
-                            rules=[rules ' or (' geneNames{index} ')'];
+                            rules=[rules ' or (' strrep(complexNames{index},':',' and ') ')'];
                         else
-                            rules=['(' geneNames{index} ')'];
-                        end
-                    elseif strcmp(modifier(1:2),'s_')
-                        index=find(strcmp(modifier,metaboliteIDs));
-                        %This should be unique and in the geneIDs list,
-                        %otherwise something is wrong
-                        if numel(index)~=1
-                            EM=['Could not get the gene association data from reaction ' reactionIDs{i}];
-                            dispEM(EM);
-                        end
-                        if ~isempty(rules)
-                            rules=[rules ' or (' metaboliteIDs{index} ')'];
-                        else
-                            rules=['(' metaboliteIDs{index} ')'];
+                            rules=['(' strrep(complexNames{index},':',' and ') ')'];
                         end
                     else
-                        %It seems to be a complex. Add the corresponding
-                        %genes from the name of the complex (not the
-                        %reaction that creates it)
-                        index=find(strcmp(modifier,complexIDs));
-                        if numel(index)==1
-                            if ~isempty(rules)
-                                rules=[rules ' or (' strrep(complexNames{index},':',' and ') ')'];
-                            else
-                                rules=['(' strrep(complexNames{index},':',' and ') ')'];
-                            end
-                        else
-                            %Could not find a complex
-                            EM=['Could not get the gene association data from reaction ' reactionIDs{i}];
-                            dispEM(EM);
-                        end
+                        %Could not find a complex
+                        EM=['Could not get the gene association data from reaction ' reactionIDs{i}];
+                        dispEM(EM);
                     end
                 end
             end
-            grRules{counter}=rules;
-            grRulesFromModifier{counter}=rules;%Backup copy for grRules, useful to parse Yeast 7.6
         end
+        grRules{counter}=rules;
+        grRulesFromModifier{counter}=rules;%Backup copy for grRules, useful to parse Yeast 7.6
     end
     
     %Add reaction compartment
