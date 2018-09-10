@@ -66,7 +66,7 @@ for i=1:numel(indexes)
         mets = model.metNames(model.S(:,indexes(i))~=0);
     end
     if useComps==true
-        comps = model.comps{model.metComps(model.S(:,indexes(i))~=0)};
+        comps = model.comps(model.metComps(model.S(:,indexes(i))~=0));
         mets  = strcat(mets,'[',comps,']');
     end
     %Define stoich coeffs and reversibility:
