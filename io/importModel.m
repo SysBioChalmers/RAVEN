@@ -71,7 +71,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %
-%   Eduard Kerkhoven, 2018-07-19
+%   Simonas Marcisauskas, 2018-09-10
 %
 
 if nargin<2
@@ -659,7 +659,7 @@ if isfield(modelSBML, 'fbc_activeObjective')
 end
 
 %subSystems can be stored as groups instead of in annotations
-if isfield(modelSBML,'groups_group')
+if isfield(modelSBML,'groups_group') && any(~cellfun(@isempty,subsystems))
     for i=1:numel(modelSBML.groups_group)
         groupreactions={modelSBML.groups_group(i).groups_member(:).groups_idRef};
         groupreactions=regexprep(groupreactions,'^R_','');
