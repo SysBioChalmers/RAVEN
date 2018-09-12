@@ -32,7 +32,7 @@ function model=getGenesFromKEGG(keggPath,koList)
 %
 %   Usage: model=getGenesFromKEGG(keggPath,koList)
 %
-%   Simonas Marcisauskas, 2018-03-19
+%   Simonas Marcisauskas, 2018-08-15
 %
 %
 % NOTE: This is how one entry looks in the file
@@ -64,6 +64,10 @@ function model=getGenesFromKEGG(keggPath,koList)
 % Check if the genes have been parsed before and saved. If so, load the
 % model.
 %
+
+if nargin<1
+    keggPath='RAVEN/external/kegg';
+end
 
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
@@ -235,6 +239,20 @@ else
         %To make sure the size is correct if the last KOs don't have genes
         if size(model.rxnGeneMat,1)~=koCounter
             model.rxnGeneMat(koCounter,1)=0;
+        end
+        
+        %Trim the genes so that they only contain information that can be
+        %matched to the KEGG file of protein sequences (remove all
+        %information after first parenthesis)
+        %NOTE: For some reason the organism abbreviation should be in lower
+        %case in this database. Fix this here
+        for i=1:numel(model.genes)
+            parIndex=strfind(model.genes{i},'(');
+            if any(parIndex)
+                model.genes{i}=model.genes{i}(1:parIndex-1);
+            end
+            colIndex=strfind(model.genes{i},':');
+            model.genes{i}=[lower(model.genes{i}(1:colIndex-1)) model.genes{i}(colIndex:end)];
         end
         
         %Save the model structure
