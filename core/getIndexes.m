@@ -68,8 +68,10 @@ end
 
 if iscell(objects)
     for i=1:numel(objects)
-        index=find(strcmp(objects(i),searchIn),1);
-        if ~isempty(index)
+        index=find(strcmp(objects(i),searchIn));
+        if strcmpi(type,'metnames')
+            indexes{i}=index;
+        elseif ~isempty(index)
             indexes(i)=index;
         else
             EM=['Could not find object ' objects{i} ' in the model'];
@@ -94,4 +96,7 @@ if returnLogical==true
 end
 
 indexes=indexes(:);
+if iscell(indexes) && length(indexes)==1
+    indexes=indexes{1};
+end
 end

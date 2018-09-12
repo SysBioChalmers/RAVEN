@@ -4,7 +4,11 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %
 %   model            a model structure
 %   rxns             cell array with reaction ids
-%   equations        cell array with equations
+%   equations        cell array with equations. Alternatively, it can be a
+%                    structure with the fields "mets" and "stoichCoeffs",
+%                    in the same fashion as addRxns. E.g.:
+%                    equations.mets = {{'met1','met2'},{'met1','met3'}}
+%                    equations.stoichCoeffs = {[-1,+2],[-1,+1]}
 %   eqnType          double describing how the equation string should be
 %                    interpreted
 %                    1 - The metabolites are matched to model.mets. New
@@ -50,6 +54,7 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %   Usage: model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %
 %   Simonas Marcisauskas, 2018-03-17
+%   Benjamin J. Sanchez,  2018-08-22
 %
 
 if nargin<5
@@ -80,7 +85,12 @@ end
 %reordered to match the original order. This is done like this to make use
 %of the advanced parsing of equations that addRxns use.
 rxnsToChange.rxns=rxns;
-rxnsToChange.equations=equations;
+if isfield(equations,'mets') && isfield(equations,'stoichCoeffs')
+    rxnsToChange.mets=equations.mets;
+    rxnsToChange.stoichCoeffs=equations.stoichCoeffs;
+else
+    rxnsToChange.equations=equations;
+end
 if isfield(model,'rxnNames')
     rxnsToChange.rxnNames=model.rxnNames(J);
 end

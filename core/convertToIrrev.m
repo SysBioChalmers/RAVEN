@@ -14,6 +14,7 @@ function irrevModel=convertToIrrev(model,rxns)
 %   Usage: irrevModel=convertToIrrev(model,rxns)
 %
 %   Rasmus Agren, 2013-08-01
+%	Benjamín J. Sánchez, 2018-08-06
 %
 
 if nargin<2
@@ -88,6 +89,9 @@ if any(revIndexesBool)
     end
     if isfield(irrevModel,'rxnConfidenceScores')
         irrevModel.rxnConfidenceScores=[irrevModel.rxnConfidenceScores;irrevModel.rxnConfidenceScores(revIndexes)];
+    end
+    if isfield(irrevModel,'rxnReferences')
+        irrevModel.rxnReferences=[irrevModel.rxnReferences;irrevModel.rxnReferences(revIndexes)];
     end
 end
 end
