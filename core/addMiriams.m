@@ -61,7 +61,7 @@ for i=1:length(id)
     end
     miriamIdx=ismember(Miriam.name,name);
     % Add annotation only if it doesn't exist yet
-    if ~any(miriamIdx) || ~ismember(Miriam.value(miriamIdx),value(i))
+    if ~any(miriamIdx) | ~ismember(Miriam.value(miriamIdx),value(i))
         Miriam.name(end+1)={name};
         Miriam.value(end+1)=value(i);
     end
