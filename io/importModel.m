@@ -664,13 +664,14 @@ if isfield(modelSBML,'groups_group')
         groupreactions={modelSBML.groups_group(i).groups_member(:).groups_idRef};
         groupreactions=regexprep(groupreactions,'^R_','');
         [~, idx] = ismember(groupreactions, reactionIDs);
+        if idx==0;else
         for j=1:numel(idx)
             if isempty(subsystems{idx(j)}) % First subsystem
                 subsystems{idx(j)} = {modelSBML.groups_group(i).groups_name};
             else % Consecutive subsystems: concatenate
                 subsystems{idx(j)} = horzcat(subsystems{idx(j)}, modelSBML.groups_group(i).groups_name);
             end
-        end
+        end;end
     end
 end
 
