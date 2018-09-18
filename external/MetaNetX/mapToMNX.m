@@ -37,9 +37,9 @@ if ~exist('MNXref','var')
 end
 if ~exist('keepOneMetMNX','var')
     if nargout>1
-        keepOneMetMNX=false;
-    else
         keepOneMetMNX=true;
+    else
+        keepOneMetMNX=false;
     end
 end
 
