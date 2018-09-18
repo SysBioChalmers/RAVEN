@@ -65,6 +65,10 @@ for i = 1:length(metIDfields)
         
         % ignore case
         metNames = lower(metNames);
+        for i=1:numel(model.comps)
+            metNames=regexprep(metNames,[' ?\[', lower(model.comps{i}), '\]$'],'');
+            metNames=regexprep(metNames,[' ?\[', lower(model.compNames{i}), '\]$'],'');
+        end
         mnx.mnxID2name(:,2) = lower(mnx.mnxID2name(:,2));
         
         % Perform the name-matching process twice. The first pass will
