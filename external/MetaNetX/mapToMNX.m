@@ -35,10 +35,12 @@ if ~exist('MNXref','var')
         MNXref=buildMNXref('mets');
     end
 end
-if ~exist('keepOneMetMNX','var') && nargout<2
-    keepOneMetMNX=false;
-else
-    keepOneMetMNX=true;
+if ~exist('keepOneMetMNX','var')
+    if nargout>1
+        keepOneMetMNX=false;
+    else
+        keepOneMetMNX=true;
+    end
 end
 
 if ~isfield(model,'rules') % If RAVEN model, first convert to Cobra
