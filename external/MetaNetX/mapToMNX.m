@@ -43,9 +43,9 @@ if ~exist('keepOneMetMNX','var')
     end
 end
 
-if ~isfield(model,'rules') % If RAVEN model, first convert to Cobra
-    fprintf('Extract annotations by converting to COBRA model.\n');
-    model=ravenCobraWrapper(model);
+if ~any(isfield(model,{'metMiriams','rxnMiriams'})) % Convert Miriam annotations
+    model=convertMiriams(model);
+    fprintf('Converting Miriam annotations to COBRA-style...\n');
 end
 
 %Initial met to MNX mapping
