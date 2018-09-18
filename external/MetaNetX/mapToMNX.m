@@ -43,9 +43,9 @@ if ~exist('keepOneMetMNX','var')
     end
 end
 
-if ~any(isfield(model,{'metMiriams','rxnMiriams'})) % Convert Miriam annotations
-    model=convertMiriams(model);
+if any(isfield(model,{'metMiriams','rxnMiriams'})) % Convert Miriam annotations
     fprintf('Converting Miriam annotations to COBRA-style...\n');
+    model=convertMiriams(model);
 end
 
 %Initial met to MNX mapping
