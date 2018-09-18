@@ -7,8 +7,8 @@ function newModel = addMNXannot(model,MNXfields,MNXref,fields)
 %   MNXref      MNXref structure, reconstructed by buildMNXref. (opt,
 %               if not specified, buildMNXref is called)
 %   fields      cell array specifying what annotation fields from MNXref
-%               should be appended to model (opt, default appends most
-%               relevant fields, as detailed below)
+%               should be added to model, overwriting existing fields
+%               (opt, default adds most relevant fields, as detailed below)
 %
 %   newModel    model with new annotations
 %
@@ -53,50 +53,50 @@ end
 
 % reactions
 fieldIdx=find(~cellfun(@isempty, regexp(fields,'^rxn.*'))); %which fields are rxn
-
-MNXID=flattenCell(flattenCell(MNXfields.rxnMetaNetXID,true));
-[Lia, Locb]=ismember(MNXID,MNXref.rxns);
-
-for j=1:length(fieldIdx)
-    annotStruct=strings(numel(model.rxns),1);
-    for i=1:size(MNXID,1)
-        idx=Locb(i,:);
-        if ~sum(idx)==0
-            idx=idx(Lia(i,:));
-            DBID=MNXref.(fields{fieldIdx(j)})(idx);
-            DBID=DBID(~cellfun(@isempty,DBID));
-            if ~isempty(DBID)
-                DBID=flattenCell(DBID);
+if ~isempty(fieldIdx)
+    MNXID=flattenCell(flattenCell(MNXfields.rxnMetaNetXID,true));
+    [Lia, Locb]=ismember(MNXID,MNXref.rxns);
+    for j=1:length(fieldIdx)
+        annotStruct=strings(numel(model.rxns),1);
+        for i=1:size(MNXID,1)
+            idx=Locb(i,:);
+            if ~sum(idx)==0
+                idx=idx(Lia(i,:));
+                DBID=MNXref.(fields{fieldIdx(j)})(idx);
                 DBID=DBID(~cellfun(@isempty,DBID));
-                annotStruct{i}=strjoin(DBID,';');
+                if ~isempty(DBID)
+                    DBID=flattenCell(DBID);
+                    DBID=DBID(~cellfun(@isempty,DBID));
+                    annotStruct{i}=strjoin(DBID,';');
+                end
             end
         end
+        model.(fields{fieldIdx(j)})=cellstr(annotStruct);
     end
-    model.(fields{fieldIdx(j)})=annotStruct;
 end
 
-
 fieldIdx=find(~cellfun(@isempty, regexp(fields,'^met.*'))); %which fields are met
+if ~isempty(fieldIdx)
+    MNXID=flattenCell(flattenCell(MNXfields.metMetaNetXID,true));
+    [Lia, Locb]=ismember(MNXID,MNXref.mets);
 
-MNXID=flattenCell(flattenCell(MNXfields.metMetaNetXID,true));
-[Lia, Locb]=ismember(MNXID,MNXref.mets);
-
-for j=1:length(fieldIdx)
-    annotStruct=strings(numel(model.rxns),1);
-    for i=1:size(MNXID,1)
-        idx=Locb(i,:);
-        if ~sum(idx)==0
-            idx=idx(Lia(i,:));
-            DBID=MNXref.(fields{fieldIdx(j)})(idx);
-            DBID=DBID(~cellfun(@isempty,DBID));
-            if ~isempty(DBID)
-                DBID=flattenCell(DBID);
+    for j=1:length(fieldIdx)
+        annotStruct=strings(numel(model.rxns),1);
+        for i=1:size(MNXID,1)
+            idx=Locb(i,:);
+            if ~sum(idx)==0
+                idx=idx(Lia(i,:));
+                DBID=MNXref.(fields{fieldIdx(j)})(idx);
                 DBID=DBID(~cellfun(@isempty,DBID));
-                annotStruct{i}=strjoin(DBID,';');
+                if ~isempty(DBID)
+                    DBID=flattenCell(DBID);
+                    DBID=DBID(~cellfun(@isempty,DBID));
+                    annotStruct{i}=strjoin(DBID,';');
+                end
             end
         end
+        model.(fields{fieldIdx(j)})=cellstr(annotStruct);
     end
-    model.(fields{fieldIdx(j)})=annotStruct;
 end
 newModel=model;
 end
