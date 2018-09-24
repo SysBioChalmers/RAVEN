@@ -151,40 +151,31 @@ else
     
     %It is assumed that the first line is labels and that the second one is
     %info
-    allLabels={'ID';'DESCRIPTION';'TAXONOMY';'DEFAULT LOWER';'DEFAULT UPPER';'CONTACT GIVEN NAME';'CONTACT FAMILY NAME';'CONTACT EMAIL';'ORGANIZATION';'NOTES'};
-    
-    %Map to new captions
     raw(1,:)=upper(raw(1,:));
     raw(1,:)=strrep(raw(1,:),'MODELID','ID');
     raw(1,:)=strrep(raw(1,:),'MODELNAME','DESCRIPTION');
     
     %Loop through the labels
-    [I, J]=ismember(raw(1,:),allLabels);
-    I=find(I);
-    for i=1:numel(I)
-        switch J(I(i))
-            case 1
-                if any(raw{I(i),2})
-                    model.id=toStr(raw{2,I(i)}); %Should be string already
+    for i=1:numel(raw(1,:))
+        switch raw{1,i}
+            case 'ID'
+                if any(raw{2,i})
+                    model.id=toStr(raw{2,i}); %Should be string already
                 else
                     EM='No model ID supplied';
                     dispEM(EM);
                 end
-            case 2
-                if any(raw{2,I(i)})
-                    model.description=toStr(raw{2,I(i)}); %Should be string already
+            case 'DESCRIPTION'
+                if any(raw{2,i})
+                    model.description=toStr(raw{2,i}); %Should be string already
                 else
                     EM='No model name supplied';
                     dispEM(EM);
                 end
-            case 3
-                if any(raw{2,I(i)})
-                    model.annotation.taxonomy=toStr(raw{2,I(i)}); %Should be string already
-                end
-            case 4
-                if ~isempty(raw{2,I(i)})
+            case 'DEFAULT LOWER'
+                if ~isempty(raw{2,i})
                     try
-                        model.annotation.defaultLB=toDouble(raw{2,I(i)},NaN);
+                        model.annotation.defaultLB=toDouble(raw{2,i},NaN);
                     catch
                         EM='DEFAULT LOWER must be numeric';
                         dispEM(EM);
@@ -195,10 +186,10 @@ else
                     end
                     model.annotation.defaultLB=-1000;
                 end
-            case 5
-                if ~isempty(raw{2,I(i)})
+            case 'DEFAULT UPPER'
+                if ~isempty(raw{2,i})
                     try
-                        model.annotation.defaultUB=toDouble(raw{2,I(i)},NaN);
+                        model.annotation.defaultUB=toDouble(raw{2,i},NaN);
                     catch
                         EM='DEFAULT UPPER must be numeric';
                         dispEM(EM);
@@ -209,25 +200,29 @@ else
                     end
                     model.annotation.defaultUB=1000;
                 end
-            case 6
-                if any(raw{2,I(i)})
-                    model.annotation.givenName=toStr(raw{2,I(i)}); %Should be string already
+            case 'TAXONOMY'
+                if any(raw{2,i})
+                    model.annotation.taxonomy=toStr(raw{2,i}); %Should be string already
                 end
-            case 7
-                if any(raw{2,I(i)})
-                    model.annotation.familyName=toStr(raw{2,I(i)}); %Should be string already
+            case 'CONTACT GIVEN NAME'
+                if any(raw{2,i})
+                    model.annotation.givenName=toStr(raw{2,i}); %Should be string already
                 end
-            case 8
-                if any(raw{2,I(i)})
-                    model.annotation.email=toStr(raw{2,I(i)}); %Should be string already
+            case 'CONTACT FAMILY NAME'
+                if any(raw{2,i})
+                    model.annotation.familyName=toStr(raw{2,i}); %Should be string already
                 end
-            case 9
-                if any(raw{2,I(i)})
-                    model.annotation.organization=toStr(raw{2,I(i)}); %Should be string already
+            case 'CONTACT EMAIL'
+                if any(raw{2,i})
+                    model.annotation.email=toStr(raw{2,i}); %Should be string already
                 end
-            case 10
-                if any(raw{2,I(i)})
-                    model.annotation.note=toStr(raw{2,I(i)}); %Should be string already
+            case 'ORGANIZATION'
+                if any(raw{2,i})
+                    model.annotation.organization=toStr(raw{2,i}); %Should be string already
+                end
+            case 'NOTES'
+                if any(raw{2,i})
+                    model.annotation.note=toStr(raw{2,i}); %Should be string already
                 end
         end
     end
@@ -250,22 +245,18 @@ else
     raw(1,:)=upper(raw(1,:));
     raw(1,:)=strrep(raw(1,:),'COMPABBREV','ABBREVIATION');
     raw(1,:)=strrep(raw(1,:),'COMPNAME','NAME');
-    
-    allLabels={'ABBREVIATION';'NAME';'INSIDE';'MIRIAM'};
-    
+        
     %Loop through the labels
-    [I, J]=ismember(raw(1,:),allLabels);
-    I=find(I);
-    for i=1:numel(I)
-        switch J(I(i))
-            case 1
-                model.comps=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-            case 2
-                model.compNames=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-            case 3
-                model.compOutside=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-            case 4
-                model.compMiriams=raw(2:end,I(i));
+    for i=1:numel(raw(1,:))
+        switch raw{1,i}
+            case 'ABBREVIATION'
+                model.comps=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+            case 'NAME'
+                model.compNames=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+            case 'INSIDE'
+                model.compOutside=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+            case 'MIRIAM'
+                model.compMiriams=raw(2:end,i);
         end
     end
     
@@ -281,7 +272,6 @@ else
             dispEM(EM,false);
         end
     end
-    
     model.compMiriams=parseMiriam(model.compMiriams);
 end
 
@@ -299,24 +289,20 @@ else
     %Map to new captions
     raw(1,:)=upper(raw(1,:));
     raw(1,:)=strrep(raw(1,:),'GENE NAME','NAME');
-    
-    allLabels={'NAME';'MIRIAM';'SHORT NAME';'COMPARTMENT'};
-    
+        
     %Loop through the labels
-    [I, J]=ismember(upper(raw(1,:)),allLabels);
-    I=find(I);
     foundGenes=false;
-    for i=1:numel(I)
-        switch J(I(i))
-            case 1
-                model.genes=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+    for i=1:numel(raw(1,:))
+        switch raw{1,i}
+            case 'NAME'
+                model.genes=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
                 foundGenes=true;
-            case 2
-                model.geneMiriams=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-            case 3
-                model.geneShortNames=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-            case 4
-                model.geneComps=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+            case 'MIRIAM'
+                model.geneMiriams=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+            case 'SHORT NAME'
+                model.geneShortNames=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+            case 'COMPARTMENT'
+                model.geneComps=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
         end
     end
     
@@ -374,60 +360,56 @@ raw=cleanSheet(raw);
 raw(1,:)=upper(raw(1,:));
 raw(1,:)=strrep(raw(1,:),'RXNID','ID');
 
-allLabels={'ID';'NAME';'EQUATION';'EC-NUMBER';'GENE ASSOCIATION';'LOWER BOUND';'UPPER BOUND';'OBJECTIVE';'COMPARTMENT';'SUBSYSTEM';'REPLACEMENT ID';'MIRIAM';'NOTE';'REFERENCE';'CONFIDENCE SCORE'};
+%Loop through the labels
 equations={};
 reactionReplacement={};
-
-%Loop through the labels
-[I, J]=ismember(raw(1,:),allLabels);
-I=find(I);
-for i=1:numel(I)
-    switch J(I(i))
-        case 1
-            model.rxns=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-        case 2
-            model.rxnNames=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-        case 3
-            equations=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-        case 4
-            model.eccodes=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-        case 5
-            model.grRules=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-        case 6
+for i=1:numel(raw(1,:))
+    switch raw{1,i}
+        case 'ID'
+            model.rxns=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+        case 'NAME'
+            model.rxnNames=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+        case 'EQUATION'
+            equations=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+        case 'EC-NUMBER'
+            model.eccodes=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+        case 'GENE ASSOCIATION'
+            model.grRules=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+        case 'LOWER BOUND'
             try
-                model.lb=cellfun(@(x) toDouble(x,NaN),raw(2:end,I(i)));
+                model.lb=cellfun(@(x) toDouble(x,NaN),raw(2:end,i));
             catch
                 EM='The lower bounds must be numerical values';
                 dispEM(EM);
             end
-        case 7
+        case 'UPPER BOUND'
             try
-                model.ub=cellfun(@(x) toDouble(x,NaN),raw(2:end,I(i)));
+                model.ub=cellfun(@(x) toDouble(x,NaN),raw(2:end,i));
             catch
                 EM='The upper bounds must be numerical values';
                 dispEM(EM);
             end
-        case 8
+        case 'OBJECTIVE'
             try
-                model.c=cellfun(@(x) toDouble(x,0),raw(2:end,I(i)));
+                model.c=cellfun(@(x) toDouble(x,0),raw(2:end,i));
             catch
                 EM='The objective coefficients must be numerical values';
                 dispEM(EM);
             end
-        case 9
-            model.rxnComps=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-        case 10
-            subsystems=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-        case 11
-            reactionReplacement=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-        case 12
-            model.rxnMiriams=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-        case 13
-            model.rxnNotes=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-        case 14
-            model.rxnReferences=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-        case 15
-            model.rxnConfidenceScores=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+        case 'COMPARTMENT'
+            model.rxnComps=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+        case 'SUBSYSTEM'
+            subsystems=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+        case 'REPLACEMENT ID'
+            reactionReplacement=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+        case 'MIRIAM'
+            model.rxnMiriams=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+        case 'NOTE'
+            model.rxnNotes=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+        case 'REFERENCE'
+            model.rxnReferences=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+        case 'CONFIDENCE SCORE'
+            model.rxnConfidenceScores=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
     end
 end
 
@@ -605,44 +587,37 @@ else
     raw(1,:)=strrep(raw(1,:),'METID','ID');
     raw(1,:)=strrep(raw(1,:),'METNAME','NAME');
     
-    allLabels={'ID';'NAME';'UNCONSTRAINED';'MIRIAM';'COMPOSITION';'INCHI';'COMPARTMENT';'REPLACEMENT ID';'CHARGE'};
-    
-    %Load the metabolite information
-    metReplacement={};
-    
     %Loop through the labels
-    [I, J]=ismember(raw(1,:),allLabels);
-    I=find(I);
-    for i=1:numel(I)
-        switch J(I(i))
-            case 1
-                model.mets=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-            case 2
-                model.metNames=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-            case 3
-                model.unconstrained=cellfun(@boolToDouble,raw(2:end,I(i)));
-                
+    metReplacement={};
+    for i=1:numel(raw(1,:))
+        switch raw{1,i}
+            case 'ID'
+                model.mets=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+            case 'NAME'
+                model.metNames=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+            case 'UNCONSTRAINED'
+                model.unconstrained=cellfun(@boolToDouble,raw(2:end,i));
                 %NaN is returned if the values couldn't be parsed
                 EM='The UNCONSTRAINED property for the following metabolites must be "true"/"false", 1/0, TRUE/FALSE or not set:';
                 dispEM(EM,true,model.mets(isnan(model.unconstrained)));
-            case 4
-                model.metMiriams=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-            case 5
-                model.metFormulas=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-            case 6
-                model.inchis=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-            case 7
-                model.metComps=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+            case 'MIRIAM'
+                model.metMiriams=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+            case 'COMPOSITION'
+                model.metFormulas=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+            case 'INCHI'
+                model.inchis=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+            case 'COMPARTMENT'
+                model.metComps=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
                 
                 %Check that all metabolites have compartments defined
                 if any(strcmp('',model.metComps))
                     EM='All metabolites must have an associated compartment string';
                     dispEM(EM);
                 end
-            case 8
-                metReplacement=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
-            case 9
-                model.metCharges=cellfun(@toStr,raw(2:end,I(i)),'UniformOutput',false);
+            case 'REPLACEMENT ID'
+                metReplacement=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
+            case 'CHARGE'
+                model.metCharges=cellfun(@toStr,raw(2:end,i),'UniformOutput',false);
         end
     end
     
