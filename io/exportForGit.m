@@ -51,7 +51,14 @@ try
     RAVENver = fscanf(fid,'%s');
     fclose(fid);
 catch
-    RAVENver = 'unknown';
+    try
+        currentPath=pwd;
+        cd(RAVENpath);
+        RAVENver = git('log -n 1 --format=%H');
+        cd(currentPath);
+    catch
+        RAVENver = 'unknown';
+    end
 end
 
 %Retrieve latest COBRA commit:
