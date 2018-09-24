@@ -12,6 +12,15 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %                 (opt, default false)
 %
 %   model
+%       annotation       
+%           taxonomy	 String with the taxonomy for the target species
+%           defaultLB	 Double	with the default lower bound values for reactions
+%           defaultUB	 Double	with the default upper bound values for reactions
+%           givenName	 String	with the name of the main model author
+%           familyName	 String	with the surname of the main model author
+%           email        String	with the e-mail address of the main model author
+%           organization String	with the organization of the main model author
+%           note         String	with additional comments about the model
 %       description      description of model contents
 %       id               model ID
 %       rxns             reaction ids
@@ -65,7 +74,8 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 %
-%   Eduard Kerkhoven, 2018-05-18
+%   Eduard Kerkhoven        2018-05-18
+%   Benjamin J. Sanchez     2018-09-24
 %
 
 if nargin<2
@@ -141,7 +151,7 @@ else
     
     %It is assumed that the first line is labels and that the second one is
     %info
-    allLabels={'ID';'DESCRIPTION';'DEFAULT LOWER';'DEFAULT UPPER';'CONTACT GIVEN NAME';'CONTACT FAMILY NAME';'CONTACT EMAIL';'ORGANIZATION';'TAXONOMY';'NOTES'};
+    allLabels={'ID';'DESCRIPTION';'TAXONOMY';'DEFAULT LOWER';'DEFAULT UPPER';'CONTACT GIVEN NAME';'CONTACT FAMILY NAME';'CONTACT EMAIL';'ORGANIZATION';'NOTES'};
     
     %Map to new captions
     raw(1,:)=upper(raw(1,:));
@@ -168,6 +178,10 @@ else
                     dispEM(EM);
                 end
             case 3
+                if any(raw{2,I(i)})
+                    model.annotation.taxonomy=toStr(raw{2,I(i)}); %Should be string already
+                end
+            case 4
                 if ~isempty(raw{2,I(i)})
                     try
                         model.annotation.defaultLB=toDouble(raw{2,I(i)},NaN);
@@ -181,7 +195,7 @@ else
                     end
                     model.annotation.defaultLB=-1000;
                 end
-            case 4
+            case 5
                 if ~isempty(raw{2,I(i)})
                     try
                         model.annotation.defaultUB=toDouble(raw{2,I(i)},NaN);
@@ -195,25 +209,21 @@ else
                     end
                     model.annotation.defaultUB=1000;
                 end
-            case 5
+            case 6
                 if any(raw{2,I(i)})
                     model.annotation.givenName=toStr(raw{2,I(i)}); %Should be string already
                 end
-            case 6
+            case 7
                 if any(raw{2,I(i)})
                     model.annotation.familyName=toStr(raw{2,I(i)}); %Should be string already
                 end
-            case 7
+            case 8
                 if any(raw{2,I(i)})
                     model.annotation.email=toStr(raw{2,I(i)}); %Should be string already
                 end
-            case 8
-                if any(raw{2,I(i)})
-                    model.annotation.organization=toStr(raw{2,I(i)}); %Should be string already
-                end
             case 9
                 if any(raw{2,I(i)})
-                    model.annotation.taxonomy=toStr(raw{2,I(i)}); %Should be string already
+                    model.annotation.organization=toStr(raw{2,I(i)}); %Should be string already
                 end
             case 10
                 if any(raw{2,I(i)})

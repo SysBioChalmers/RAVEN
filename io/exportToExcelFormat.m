@@ -18,6 +18,7 @@ function exportToExcelFormat(model,filename)
 %   Usage: exportToExcelFormat(model,filename)
 %
 %   Simonas Marcisauskas, 2018-03-18
+%   Benjamin Sanchez,     2018-09-20
 %
 
 [~, A, B]=fileparts(filename);
@@ -320,16 +321,12 @@ end
 %Add the MODEL sheet
 
 %Create the header row
-headers={'#';'ID';'DESCRIPTION';'DEFAULT LOWER';'DEFAULT UPPER';'CONTACT GIVEN NAME';'CONTACT FAMILY NAME';'CONTACT EMAIL';'ORGANIZATION';'TAXONOMY';'NOTES'};
+headers={'#';'ID';'DESCRIPTION';'TAXONOMY';'DEFAULT LOWER';'DEFAULT UPPER';'CONTACT GIVEN NAME';'CONTACT FAMILY NAME';'CONTACT EMAIL';'ORGANIZATION';'NOTES'};
 
 modelSheet=cell(1,numel(headers));
 
-%Add some default stuff if needed
 if ~isfield(model,'annotation')
-    model.annotation.familyName='Agren';
-    model.annotation.givenName='Rasmus';
-    model.annotation.email='rasmus.agren@scilifelab.se';
-    model.annotation.organization='Chalmers University of Technology';
+    model.annotation = [];
 end
 
 if isfield(model,'id')
@@ -342,26 +339,26 @@ if isfield(model,'description')
 else
     modelSheet{1,3}='blankName';
 end
+if isfield(model.annotation,'taxonomy')
+    modelSheet{1,4}=model.annotation.taxonomy;
+end
 if isfield(model.annotation,'defaultLB')
-    modelSheet{1,4}=model.annotation.defaultLB;
+    modelSheet{1,5}=model.annotation.defaultLB;
 end
 if isfield(model.annotation,'defaultUB')
-    modelSheet{1,5}=model.annotation.defaultUB;
+    modelSheet{1,6}=model.annotation.defaultUB;
 end
 if isfield(model.annotation,'givenName')
-    modelSheet{1,6}=model.annotation.givenName;
+    modelSheet{1,7}=model.annotation.givenName;
 end
 if isfield(model.annotation,'familyName')
-    modelSheet{1,7}=model.annotation.familyName;
+    modelSheet{1,8}=model.annotation.familyName;
 end
 if isfield(model.annotation,'email')
-    modelSheet{1,8}=model.annotation.email;
+    modelSheet{1,9}=model.annotation.email;
 end
 if isfield(model.annotation,'organization')
-    modelSheet{1,9}=model.annotation.organization;
-end
-if isfield(model.annotation,'taxonomy')
-    modelSheet{1,10}=model.annotation.taxonomy;
+    modelSheet{1,10}=model.annotation.organization;
 end
 if isfield(model.annotation,'note')
     modelSheet{1,11}=model.annotation.note;
