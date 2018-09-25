@@ -213,9 +213,9 @@ if ismember(type,{'mets','both'})
         currentmnxID2extID=mnxIDdb(currentDbOnly,:);
         
         if i==2 && strcmp(allIDs,'chebi')
-            chebi=fileread([mnxPath,'\chebiSecondary.dat']);
+            chebi=fileread([mnxPath,'\chebi.dat']);
             chebi=strsplit(chebi,'\n');
-            secChebi=ismember(currentmnxID2extID(:,3),chebi);
+            secChebi=~ismember(currentmnxID2extID(:,3),chebi);
             currentmnxID2extID(secChebi,:)=[];
         end
         

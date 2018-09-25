@@ -44,6 +44,20 @@ if ~exist('MNXref','var')
     MNXref=buildMNXref('both');
 end
 
+% If metChEBI, prepare chebi list
+if ismember('metChEBIID',fields)
+    % If ChEBI, then filter out secondary ChEBI IDs
+    % First find location of chebi.dat file
+    [ST, I]=dbstack('-completenames');
+    mnxPath=fileparts(fileparts(fileparts(ST(I).file)));
+    mnxPath=fullfile(mnxPath,'external','metanetx'); % Used later in script as well
+    if ~(exist([mnxPath,'\chebi.dat'])==2)
+        listChEBI;
+    end
+    chebi=fileread([mnxPath,'\chebi.dat']);
+    chebi=strsplit(chebi,{'\n','\r'});
+end
+
 %check if metMetaNetXID or rxnMetaNetXID should be added, as they can be appended
 idx=find(~cellfun(@isempty, regexp(fields,'(met|rxn)MNXID')));
 for i=1:length(idx)
@@ -91,6 +105,10 @@ if ~isempty(fieldIdx)
                 if ~isempty(DBID)
                     DBID=flattenCell(DBID);
                     DBID=DBID(~cellfun(@isempty,DBID));
+                    if ismember(fields(fieldIdx),'metChEBIID')
+                        secChebi=~ismember(DBID,chebi);
+                        DBID(secChebi)=[];
+                    end
                     annotStruct{i}=strjoin(DBID,';');
                 end
             end
