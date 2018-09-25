@@ -13,7 +13,8 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %
 %   model
 %       annotation       
-%           taxonomy	 String with the taxonomy for the target species
+%           taxonomy	 String with the NCBI Taxonomy ID, as valid
+%                        identifiers.org annotation
 %           defaultLB	 Double	with the default lower bound values for reactions
 %           defaultUB	 Double	with the default upper bound values for reactions
 %           givenName	 String	with the name of the main model author
