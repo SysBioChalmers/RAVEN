@@ -18,7 +18,9 @@ function blastStructure=getDiamond(organismID,fastaFile,modelIDs,refFastaFiles)
 %
 %   NOTE: This function calls BLASTP to perform a bidirectional homology
 %   test between the organism of interest and a set of other organisms
-%   using the '--more-sensitive' setting from DIAMOND. The blastStructure
+%   using the '--more-sensitive' setting from DIAMOND. For the most
+%   sensitive results, the use of getBlast() is adviced, however,
+%   getDiamond() is a fast alternative (>15x faster). The blastStructure
 %   generated is in the same format as those obtained from getBlast().
 %
 %   Usage: blastStructure=getDiamond(organismID,fastaFile,modelIDs,...
