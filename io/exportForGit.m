@@ -19,7 +19,7 @@ function out=exportForGit(model,prefix,path,formats,masterFlag)
 %
 %   Usage: exportForGit(model,prefix,path,formats,masterFlag)
 %
-%   Benjamin J. Sanchez, 2018-08-03
+%   Benjamin J. Sanchez, 2018-09-26
 %
 if nargin<5
     masterFlag=false;
@@ -41,45 +41,9 @@ if nargin<2
     prefix='model';
 end
 
-%Get RAVEN version:
-RAVENpath = which('ravenCobraWrapper.m');
-slashPos  = getSlashPos(RAVENpath);
-RAVENpath = RAVENpath(1:slashPos(end-1));
-checkIfMaster(RAVENpath,'RAVEN',masterFlag)
-try
-    fid      = fopen([RAVENpath 'version.txt'],'r');
-    RAVENver = fscanf(fid,'%s');
-    fclose(fid);
-catch
-    try
-        currentPath=pwd;
-        cd(RAVENpath);
-        RAVENcommit = git('log -n 1 --format=%H');
-        RAVENver    = ['commit ' RAVENcommit(1:7)];
-        cd(currentPath);
-    catch
-        RAVENver = 'unknown';
-    end
-end
-
-%Retrieve latest COBRA commit:
-COBRApath = which('initCobraToolbox.m');
-if ~isempty(COBRApath)
-    slashPos  = getSlashPos(COBRApath);
-    COBRApath = COBRApath(1:slashPos(end));
-    checkIfMaster(COBRApath,'COBRA',masterFlag)
-    currentPath = pwd;
-    cd(COBRApath)
-    try
-        COBRAcommit = git('log -n 1 --format=%H');
-    catch
-        disp('COBRA is not fully installed (including Git wrapper)')
-        COBRAcommit = 'unknown';
-    end
-    cd(currentPath)
-else
-    disp('COBRA version cannot be found')
-end
+%Get versions or commits of toolboxes:
+RAVENver = getVersion('RAVEN','ravenCobraWrapper.m',masterFlag);
+COBRAver = getVersion('COBRA','initCobraToolbox.m',masterFlag);
 
 %Retrieve libSBML version:
 try % 5.17.0 and newer
@@ -143,8 +107,8 @@ fid = fopen(fullfile(path,'ModelFiles','dependencies.txt'),'wt');
 fprintf(fid,['MATLAB\t' version '\n']);
 fprintf(fid,['libSBML\t' libSBMLver '\n']);
 fprintf(fid,['RAVEN_toolbox\t' RAVENver '\n']);
-if ~isempty(COBRApath)
-    fprintf(fid,['COBRA_toolbox\tcommit ' COBRAcommit(1:7) '\n']);
+if ~isempty(COBRAver)
+    fprintf(fid,['COBRA_toolbox\t' COBRAver '\n']);
 end
 if isfield(model,'modelVersion')
     fields = fieldnames(model.modelVersion);
@@ -156,6 +120,38 @@ end
 fclose(fid);
 end
 
+function version = getVersion(toolbox,IDfile,masterFlag)
+currentPath = pwd;
+try
+    toolboxPath = which(IDfile);
+    %Go up until the root is found:
+    while ~ismember({'.git'},ls(toolboxPath))
+        slashPos    = getSlashPos(toolboxPath);
+        toolboxPath = toolboxPath(1:slashPos(end)-1);
+    end
+    cd(toolboxPath);
+    checkIfMaster(toolbox,masterFlag)
+    %Try to find version file of the toolbox:
+    try
+        fid     = fopen('version.txt','r');
+        version = fscanf(fid,'%s');
+        fclose(fid);
+    catch
+        %If not possible, try to find latest commit:
+        try
+            commit  = git('log -n 1 --format=%H');
+            version = ['commit ' commit(1:7)];
+        catch
+            version = 'unknown';
+        end
+    end
+catch
+    disp([toolbox ' toolbox cannot be found'])
+    version = '';
+end
+cd(currentPath);
+end
+
 function slashPos = getSlashPos(path)
 slashPos = strfind(path,'\');       %Windows
 if isempty(slashPos)
@@ -163,12 +159,9 @@ if isempty(slashPos)
 end
 end
 
-function checkIfMaster(toolboxPath,toolbox,masterFlag)
+function checkIfMaster(toolbox,masterFlag)
 if masterFlag
-    currentPath = pwd;
-    cd(toolboxPath)
     currentBranch = git('rev-parse --abbrev-ref HEAD');
-    cd(currentPath)
     if ~strcmp(currentBranch,'master')
         error(['ERROR: ' toolbox ' not in master. Check-out the master branch of ' toolbox ' before submitting model for Git.'])
     end
