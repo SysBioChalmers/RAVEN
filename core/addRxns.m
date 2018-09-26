@@ -1,4 +1,4 @@
-function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
+function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allowNewGenes)
 % addRxns
 %   Adds reactions to a model
 %
@@ -82,6 +82,8 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %                    more annotation of metabolites, allows for the use of
 %                    exchange metabolites, and using it reduces the risk
 %                    of parsing errors (opt, default false)
+%   allowNewGenes    true if the functions is allowed to add new genes
+%                    (opt, default false)
 %
 %   newModel         an updated model structure
 %
@@ -92,10 +94,10 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %   doesn't exist, the function will copy any available information from
 %   the metabolite in another compartment.
 %
-%   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
+%   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,...
+%                           allowNewMets,allowNewGenes)
 %
-%   Simonas Marcisauskas, 2018-04-03
-%   Benjamin J. Sanchez,  2018-08-22
+%   Eduard Kerkhoven, 2018-09-26
 %
 
 if nargin<4
@@ -104,8 +106,26 @@ end
 if nargin<5
     allowNewMets=false;
 end
+if nargin<6
+    allowNewGenes=false;
+end
 
-newModel=model;
+if allowNewGenes
+    genesToAdd.genes = strjoin(rxnsToAdd.grRules);
+    genesToAdd.genes = regexp(genesToAdd.genes,' |)|(|and|or','split'); % Remove all grRule punctuation
+    genesToAdd.genes = genesToAdd.genes(~cellfun(@isempty,genesToAdd.genes));  % Remove spaces and empty genes
+    genesToAdd.genes = setdiff(unique(genesToAdd.genes),model.genes); % Only keep new genes
+    if isfield(model,'geneComps')
+        genesToAdd.geneComps(1:numel(genesToAdd.genes)) = repmat(11,numel(genesToAdd.genes),1);
+    end
+    if ~isempty(genesToAdd.genes)
+        fprintf('\nNew genes added to the model:\n')
+        fprintf([strjoin(genesToAdd.genes,', ') '\n'])
+        newModel=addGenesRaven(model,genesToAdd);
+    end
+else
+    newModel=model;
+end
 
 %If no reactions should be added
 if isempty(rxnsToAdd)
@@ -576,6 +596,7 @@ end
 
 %Add the info to the stoichiometric matrix
 newModel.S=[newModel.S sparse(size(newModel.S,1),nRxns)];
+
 for i=1:nRxns
     newModel.S(metIndexes,nOldRxns+i)=S(:,i);
     %Parse the grRules and check whether all genes in grRules appear in
@@ -589,7 +610,7 @@ for i=1:nRxns
         genes=regexp(rule,' ','split');
         [I, J]=ismember(genes,newModel.genes);
         if ~all(I) && any(rule)
-            EM=['Not all genes for reaction ' rxnsToAdd.rxns{i} ' were found in model.genes. If needed, add genes with addGenesRaven before calling this function'];
+            EM=['Not all genes for reaction ' rxnsToAdd.rxns{i} ' were found in model.genes. If needed, add genes with addGenesRaven before calling this function, or set the ''allowNewGenes'' flag to true'];
             dispEM(EM);
         end
     end
