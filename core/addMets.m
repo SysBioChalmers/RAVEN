@@ -110,7 +110,8 @@ largeFiller(:)={''};
 %Check that no metabolite ids are already present in the model
 I=ismember(metsToAdd.mets,model.mets);
 if any(I)
-    dispEM('One or more elements in metsToAdd.mets are already present in model.mets');
+    dispEM(['One or more elements in metsToAdd.mets are already present in model.mets: '...
+        metsToAdd.mets{I}]);
 else
     newModel.mets=[newModel.mets;metsToAdd.mets(:)];
 end
