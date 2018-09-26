@@ -54,7 +54,8 @@ catch
     try
         currentPath=pwd;
         cd(RAVENpath);
-        RAVENver = git('log -n 1 --format=%H');
+        RAVENcommit = git('log -n 1 --format=%H');
+        RAVENver    = ['commit ' RAVENcommit(1:7)];
         cd(currentPath);
     catch
         RAVENver = 'unknown';
