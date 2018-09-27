@@ -291,7 +291,7 @@ else
     %Fill with standard if it doesn't exist
     if isfield(newModel,'lb')
         I=zeros(nRxns,1);
-        I(reversible~=0)=-newLb;
+        I(reversible~=0)=newLb;
         newModel.lb=[newModel.lb;I];
     end
 end
