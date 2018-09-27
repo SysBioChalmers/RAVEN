@@ -18,9 +18,12 @@ function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 %
 %   Usage: phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 %
-%   Simonas Marcisauskas, 2018-03-19
+%   Simonas Marcisauskas, 2018-07-25
 %
 
+if nargin<1
+    keggPath='RAVEN/external/kegg';
+end
 if nargin<2
     onlyInKingdom=false;
 end
