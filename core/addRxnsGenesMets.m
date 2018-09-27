@@ -138,7 +138,7 @@ fprintf('\n\nNumber of metabolites added to the model:\n')
 fprintf(num2str(numel(metIdx)))
 
 % Add new genes
-if ~islogical(addGene) | addGenes ~= false
+if ~islogical(addGene) | addGene ~= false
     if ischar(addGene)
         rxnToAdd.grRules={addGene};
     elseif iscell(addGene)
