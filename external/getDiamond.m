@@ -26,7 +26,7 @@ function blastStructure=getDiamond(organismID,fastaFile,modelIDs,refFastaFiles)
 %   Usage: blastStructure=getDiamond(organismID,fastaFile,modelIDs,...
 %           refFastaFiles)
 %
-%   Eduard Kerkhoven, 2018-09-26
+%   Simonas Marcisauskas, 2018-09-27
 %
 
 %Everything should be cell arrays
@@ -62,13 +62,27 @@ end
 
 %Create a database for the new organism and blast each of the refFastaFiles
 %against it
+
+if isunix
+    if ismac
+        binEnd='.mac';
+    else
+        binEnd='';
+    end
+elseif ispc
+    binEnd='';
+else
+    dispEM('Unknown OS, exiting.')
+    return
+end
+
 % Run BLAST multi-threaded to use all logical cores assigned to MATLAB.
 cores = evalc('feature(''numcores'')');
 cores = strsplit(cores, 'MATLAB was assigned: ');
 cores = regexp(cores{2},'^\d*','match');
 cores = cores{1};
 
-[status, ~]=system(['"' fullfile(ravenPath,'software','diamond-0.9.22','diamond') '" makedb --in "' fastaFile{1} '" --db "' tmpDB '"']);
+[status, ~]=system(['"' fullfile(ravenPath,'software','diamond-0.9.22',['diamond' binEnd]) '" makedb --in "' fastaFile{1} '" --db "' tmpDB '"']);
 if status~=0
     EM=['DIAMOND makedb did not run successfully, error: ', num2str(status)];
     dispEM(EM,true);
@@ -76,7 +90,7 @@ end
 
 for i=1:numel(refFastaFiles)
     fprintf(['Running DIAMOND blastp with "' modelIDs{i} '" against "' organismID{1} '"..\n']);
-    [status, ~]=system(['"' fullfile(ravenPath,'software','diamond-0.9.22','diamond') '" blastp --query "' refFastaFiles{i} '" --out "' outFile '_' num2str(i) '" --db "' tmpDB '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
+    [status, ~]=system(['"' fullfile(ravenPath,'software','diamond-0.9.22',['diamond' binEnd]) '" blastp --query "' refFastaFiles{i} '" --out "' outFile '_' num2str(i) '" --db "' tmpDB '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
     if status~=0
         EM=['DIAMOND blastp did not run successfully, error: ', num2str(status)];
         dispEM(EM,true);
@@ -88,12 +102,12 @@ delete([tmpDB '*']);
 %new organism against them
 for i=1:numel(refFastaFiles)
     fprintf(['Running DIAMOND blastp with "' organismID{1} '" against "' modelIDs{i} '"..\n']);
-    [status, ~]=system(['"' fullfile(ravenPath,'software','diamond-0.9.22','diamond') '" makedb --in "' refFastaFiles{i} '" --db "' tmpDB '"']);
+    [status, ~]=system(['"' fullfile(ravenPath,'software','diamond-0.9.22',['diamond' binEnd]) '" makedb --in "' refFastaFiles{i} '" --db "' tmpDB '"']);
     if status~=0
         EM=['DIAMOND makedb did not run successfully, error: ', num2str(status)];
         dispEM(EM,true);
     end
-    [status, ~]=system(['"' fullfile(ravenPath,'software','diamond-0.9.22','diamond') '" blastp --query "' fastaFile{1} '" --out "' outFile '_r' num2str(i) '" --db "' tmpDB '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores]);
+    [status, ~]=system(['"' fullfile(ravenPath,'software','diamond-0.9.22',['diamond' binEnd]) '" blastp --query "' fastaFile{1} '" --out "' outFile '_r' num2str(i) '" --db "' tmpDB '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores]);
     delete([tmpDB '*']);
     if status~=0
         EM=['DIAMOND blastp did not run successfully, error: ', num2str(status)];
