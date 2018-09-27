@@ -23,12 +23,14 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allow
 %            rxnNames           cell array with the names of each reaction
 %                               (opt, default '')
 %            lb                 vector with the lower bounds (opt, default
-%                               -inf for reversible reactions and 0 for
-%                               irreversible when "equations" is used, or
-%                               -inf for all reactions when "mets" + 
-%                               "stoichCoeffs" are used
+%                               to model.annotations.defaultLB or -inf for
+%                               reversible reactions and 0 for irreversible
+%                               when "equations" is used. When "mets" and
+%                               "stoichCoeffs" are used it defaults for all
+%                               reactions to model.annotations.defaultLB or
+%                               -inf)
 %            ub                 vector with the upper bounds (opt, default
-%                               inf)
+%                               to model.annotations.defaultUB or inf)
 %            c                  vector with the objective function
 %                               coefficients (opt, default 0)
 %            eccodes            cell array with the EC-numbers for each
@@ -268,6 +270,12 @@ else
     end
 end
 
+if isfield(newModel.annotation,'defaultLB')
+    newLb=newModel.annotation.defaultLB;
+else
+    newLb=-inf;
+end
+
 if isfield(rxnsToAdd,'lb')
     if numel(rxnsToAdd.lb)~=nRxns
         EM='rxnsToAdd.lb must have the same number of elements as rxnsToAdd.rxns';
@@ -276,16 +284,22 @@ if isfield(rxnsToAdd,'lb')
     %Fill with standard if it doesn't exist
     if ~isfield(newModel,'lb')
         newModel.lb=zeros(nOldRxns,1);
-        newModel.lb(newModel.rev~=0)=-inf;
+        newModel.lb(newModel.rev~=0)=newLb;
     end
     newModel.lb=[newModel.lb;rxnsToAdd.lb(:)];
 else
     %Fill with standard if it doesn't exist
     if isfield(newModel,'lb')
         I=zeros(nRxns,1);
-        I(reversible~=0)=-inf;
+        I(reversible~=0)=-newLb;
         newModel.lb=[newModel.lb;I];
     end
+end
+
+if isfield(newModel.annotation,'defaultUB')
+    newUb=newModel.annotation.defaultUB;
+else
+    newUb=inf;
 end
 
 if isfield(rxnsToAdd,'ub')
@@ -295,13 +309,13 @@ if isfield(rxnsToAdd,'ub')
     end
     %Fill with standard if it doesn't exist
     if ~isfield(newModel,'ub')
-        newModel.ub=inf(nOldRxns,1);
+        newModel.ub=repmat(newUb,nOldrxns,1);
     end
     newModel.ub=[newModel.ub;rxnsToAdd.ub(:)];
 else
     %Fill with standard if it doesn't exist
     if isfield(newModel,'ub')
-        newModel.ub=[newModel.ub;inf(nRxns,1)];
+        newModel.ub=[newModel.ub;repmat(newUb,nRxns,1)];
     end
 end
 
