@@ -15,8 +15,6 @@ function newIds=generateNewIds(model,type,prefix,quantity)
 %   Eduard Kerkhoven, 2018-09-26
 %
 
-%TODO: If prefix is not used yet in model, start numbering from 0001.
-
 if type=='rxns'
     existingIds=model.rxns;
 elseif type=='mets'
@@ -28,11 +26,17 @@ end
 % Subset only existingIds that have the prefix
 existingIds=existingIds(~cellfun(@isempty,regexp(existingIds,['^' prefix])));
 
-existingIds=regexprep(existingIds,['^' prefix],'');
-existingIds=sort(existingIds);
-lastId=existingIds{end};
-idLength=length(lastId);
-lastId=str2double(lastId);
+if ~isempty(existingIds)
+    existingIds=regexprep(existingIds,['^' prefix],'');
+    existingIds=sort(existingIds);
+    lastId=existingIds{end};
+    idLength=length(lastId);
+    lastId=str2double(lastId);
+else
+    fprintf(['No ' type ' ids with prefix "' prefix '" currently exist in the model. The first new id will be "' prefix '0001"\n'],'%s')
+    lastId=0;
+    idLength=4;
+end
 
 newIds=cell(quantity,1);
 
