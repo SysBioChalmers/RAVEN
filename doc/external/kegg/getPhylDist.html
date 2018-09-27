@@ -46,7 +46,7 @@
 
    Usage: phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 
-   Simonas Marcisauskas, 2018-03-19</pre></div>
+   Simonas Marcisauskas, 2018-07-25</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
@@ -55,7 +55,7 @@ This function calls:
 </ul>
 This function is called by:
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="getKEGGModelForOrganism.html" class="code" title="function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioG,minScoreRatioKO,maxPhylDist,nSequences,seqIdentity)">getKEGGModelForOrganism</a>	getKEGGModelForOrganism</li></ul>
+<li><a href="getKEGGModelForOrganism.html" class="code" title="function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,nSequences,seqIdentity)">getKEGGModelForOrganism</a>	getKEGGModelForOrganism</li></ul>
 <!-- crossreference -->
 
 
@@ -81,119 +81,122 @@ This function is called by:
 0018 <span class="comment">%</span>
 0019 <span class="comment">%   Usage: phylDistStruct=getPhylDist(keggPath,onlyInKingdom)</span>
 0020 <span class="comment">%</span>
-0021 <span class="comment">%   Simonas Marcisauskas, 2018-03-19</span>
+0021 <span class="comment">%   Simonas Marcisauskas, 2018-07-25</span>
 0022 <span class="comment">%</span>
 0023 
-0024 <span class="keyword">if</span> nargin&lt;2
-0025     onlyInKingdom=false;
+0024 <span class="keyword">if</span> nargin&lt;1
+0025     keggPath=<span class="string">'RAVEN/external/kegg'</span>;
 0026 <span class="keyword">end</span>
-0027 
-0028 <span class="comment">%Check if the reactions have been parsed before and saved. If so, load the</span>
-0029 <span class="comment">%model</span>
-0030 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
-0031 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-0032 distFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggPhylDist.mat'</span>);
-0033 <span class="keyword">if</span> exist(distFile, <span class="string">'file'</span>)
-0034     fprintf([<span class="string">'NOTE: Importing KEGG phylogenetic distance matrix from '</span> strrep(distFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'.\n'</span>]);
-0035     load(distFile);
-0036 <span class="keyword">else</span>
-0037     fprintf([<span class="string">'Cannot locate '</span> strrep(distFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">' and will try to generate it from the local KEGG database.\n'</span>]);
-0038     <span class="keyword">if</span> ~exist(fullfile(keggPath,<span class="string">'taxonomy'</span>),<span class="string">'file'</span>)
-0039         EM=fprintf([<span class="string">'The file ''taxonomy'' cannot be located at '</span> strrep(keggPath,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'/ and should be downloaded from the KEGG FTP.\n'</span>]);
-0040         dispEM(EM);
-0041     <span class="keyword">else</span>
-0042         <span class="comment">%Open the file that describes the naming of the species</span>
-0043         fid = fopen(fullfile(keggPath,<span class="string">'taxonomy'</span>), <span class="string">'r'</span>);
-0044         
-0045         phylDistStruct.ids={};
-0046         
-0047         <span class="comment">%Keeps the categories for each organism</span>
-0048         orgCat={};
+0027 <span class="keyword">if</span> nargin&lt;2
+0028     onlyInKingdom=false;
+0029 <span class="keyword">end</span>
+0030 
+0031 <span class="comment">%Check if the reactions have been parsed before and saved. If so, load the</span>
+0032 <span class="comment">%model</span>
+0033 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
+0034 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+0035 distFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggPhylDist.mat'</span>);
+0036 <span class="keyword">if</span> exist(distFile, <span class="string">'file'</span>)
+0037     fprintf([<span class="string">'NOTE: Importing KEGG phylogenetic distance matrix from '</span> strrep(distFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'.\n'</span>]);
+0038     load(distFile);
+0039 <span class="keyword">else</span>
+0040     fprintf([<span class="string">'Cannot locate '</span> strrep(distFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">' and will try to generate it from the local KEGG database.\n'</span>]);
+0041     <span class="keyword">if</span> ~exist(fullfile(keggPath,<span class="string">'taxonomy'</span>),<span class="string">'file'</span>)
+0042         EM=fprintf([<span class="string">'The file ''taxonomy'' cannot be located at '</span> strrep(keggPath,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'/ and should be downloaded from the KEGG FTP.\n'</span>]);
+0043         dispEM(EM);
+0044     <span class="keyword">else</span>
+0045         <span class="comment">%Open the file that describes the naming of the species</span>
+0046         fid = fopen(fullfile(keggPath,<span class="string">'taxonomy'</span>), <span class="string">'r'</span>);
+0047         
+0048         phylDistStruct.ids={};
 0049         
-0050         currentCat={};
-0051         <span class="comment">%Keeps track of the current category</span>
+0050         <span class="comment">%Keeps the categories for each organism</span>
+0051         orgCat={};
 0052         
-0053         depth=0;
-0054         <span class="comment">%Keeps track of the current tree depth</span>
+0053         currentCat={};
+0054         <span class="comment">%Keeps track of the current category</span>
 0055         
-0056         <span class="comment">%Loop through the file</span>
-0057         orgCounter=0;
-0058         <span class="keyword">while</span> 1
-0059             <span class="comment">%Get the next line</span>
-0060             tline = fgetl(fid);
-0061             
-0062             <span class="comment">%Abort at end of file</span>
-0063             <span class="keyword">if</span> ~ischar(tline)
-0064                 <span class="keyword">break</span>;
-0065             <span class="keyword">end</span>
-0066             
-0067             <span class="keyword">if</span> any(tline)
-0068                 <span class="comment">%Check if it's a new category</span>
-0069                 <span class="keyword">if</span> tline(1)==<span class="string">'#'</span>
-0070                     <span class="comment">%Find the first space (=depth +1)</span>
-0071                     sPos=strfind(tline,<span class="string">' '</span>)-1;
-0072                     <span class="comment">%Should always exist</span>
-0073                     
-0074                     sPos=sPos(1);
-0075                     
-0076                     <span class="comment">%If we have stepped back one step in the tree</span>
-0077                     <span class="keyword">if</span> sPos&lt;depth
-0078                         currentCat=currentCat(1:sPos);
-0079                     <span class="keyword">end</span>
-0080                     depth=sPos;
-0081                     
-0082                     currentCat{depth}=tline(sPos+2:end);
-0083                 <span class="keyword">else</span>
-0084                     orgCounter=orgCounter+1;
-0085                     <span class="comment">%It is an organism Get the id between first and second</span>
-0086                     <span class="comment">%white space</span>
-0087                     sPos=find(isstrprop(tline, <span class="string">'wspace'</span>));
-0088                     <span class="comment">%Should always exist</span>
-0089                     
-0090                     phylDistStruct.ids{orgCounter}=tline(sPos(1)+1:sPos(2)-1);
-0091                     orgCat{orgCounter}=currentCat;
-0092                 <span class="keyword">end</span>
-0093             <span class="keyword">end</span>
-0094         <span class="keyword">end</span>
-0095         
-0096         <span class="comment">%Generate a distance matrix (very straight forward here, not neat)</span>
-0097         phylDistStruct.distMat=zeros(numel(phylDistStruct.ids));
-0098         <span class="keyword">for</span> i=1:numel(phylDistStruct.ids)
-0099             <span class="keyword">for</span> j=1:numel(phylDistStruct.ids)
-0100                 <span class="keyword">if</span> onlyInKingdom==true
-0101                     <span class="keyword">if</span> ~strcmp(orgCat{i}(1),orgCat{j}(1))
-0102                         phylDistStruct.distMat(i,j)=Inf;
-0103                         <span class="keyword">continue</span>;
-0104                     <span class="keyword">end</span>
-0105                 <span class="keyword">end</span>
-0106                 <span class="comment">%Calculate the distance between then</span>
-0107                 dist=numel(orgCat{i})-numel(orgCat{j});
-0108                 <span class="keyword">if</span> dist&gt;0
-0109                     aCat=orgCat{i}(1:end-dist);
-0110                 <span class="keyword">else</span>
-0111                     aCat=orgCat{i};
-0112                 <span class="keyword">end</span>
-0113                 <span class="keyword">if</span> dist&lt;0
-0114                     bCat=orgCat{j}(1:end+dist);
-0115                 <span class="keyword">else</span>
-0116                     bCat=orgCat{j};
-0117                 <span class="keyword">end</span>
-0118                 
-0119                 <span class="comment">%Loop through the categories and stop when they are the</span>
-0120                 <span class="comment">%same</span>
-0121                 <span class="keyword">for</span> k=numel(aCat):-1:1
-0122                     <span class="keyword">if</span> strcmp(aCat{k},bCat{k})
-0123                         <span class="keyword">break</span>;
-0124                     <span class="keyword">end</span>
-0125                 <span class="keyword">end</span>
-0126                 phylDistStruct.distMat(i,j)=dist+numel(aCat)-k;
-0127             <span class="keyword">end</span>
-0128         <span class="keyword">end</span>
-0129         <span class="comment">%Save the structure</span>
-0130         save(distFile,<span class="string">'phylDistStruct'</span>);
-0131     <span class="keyword">end</span>
-0132 <span class="keyword">end</span>
-0133 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 22-Aug-2018 16:19:49 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0056         depth=0;
+0057         <span class="comment">%Keeps track of the current tree depth</span>
+0058         
+0059         <span class="comment">%Loop through the file</span>
+0060         orgCounter=0;
+0061         <span class="keyword">while</span> 1
+0062             <span class="comment">%Get the next line</span>
+0063             tline = fgetl(fid);
+0064             
+0065             <span class="comment">%Abort at end of file</span>
+0066             <span class="keyword">if</span> ~ischar(tline)
+0067                 <span class="keyword">break</span>;
+0068             <span class="keyword">end</span>
+0069             
+0070             <span class="keyword">if</span> any(tline)
+0071                 <span class="comment">%Check if it's a new category</span>
+0072                 <span class="keyword">if</span> tline(1)==<span class="string">'#'</span>
+0073                     <span class="comment">%Find the first space (=depth +1)</span>
+0074                     sPos=strfind(tline,<span class="string">' '</span>)-1;
+0075                     <span class="comment">%Should always exist</span>
+0076                     
+0077                     sPos=sPos(1);
+0078                     
+0079                     <span class="comment">%If we have stepped back one step in the tree</span>
+0080                     <span class="keyword">if</span> sPos&lt;depth
+0081                         currentCat=currentCat(1:sPos);
+0082                     <span class="keyword">end</span>
+0083                     depth=sPos;
+0084                     
+0085                     currentCat{depth}=tline(sPos+2:end);
+0086                 <span class="keyword">else</span>
+0087                     orgCounter=orgCounter+1;
+0088                     <span class="comment">%It is an organism Get the id between first and second</span>
+0089                     <span class="comment">%white space</span>
+0090                     sPos=find(isstrprop(tline, <span class="string">'wspace'</span>));
+0091                     <span class="comment">%Should always exist</span>
+0092                     
+0093                     phylDistStruct.ids{orgCounter}=tline(sPos(1)+1:sPos(2)-1);
+0094                     orgCat{orgCounter}=currentCat;
+0095                 <span class="keyword">end</span>
+0096             <span class="keyword">end</span>
+0097         <span class="keyword">end</span>
+0098         
+0099         <span class="comment">%Generate a distance matrix (very straight forward here, not neat)</span>
+0100         phylDistStruct.distMat=zeros(numel(phylDistStruct.ids));
+0101         <span class="keyword">for</span> i=1:numel(phylDistStruct.ids)
+0102             <span class="keyword">for</span> j=1:numel(phylDistStruct.ids)
+0103                 <span class="keyword">if</span> onlyInKingdom==true
+0104                     <span class="keyword">if</span> ~strcmp(orgCat{i}(1),orgCat{j}(1))
+0105                         phylDistStruct.distMat(i,j)=Inf;
+0106                         <span class="keyword">continue</span>;
+0107                     <span class="keyword">end</span>
+0108                 <span class="keyword">end</span>
+0109                 <span class="comment">%Calculate the distance between then</span>
+0110                 dist=numel(orgCat{i})-numel(orgCat{j});
+0111                 <span class="keyword">if</span> dist&gt;0
+0112                     aCat=orgCat{i}(1:end-dist);
+0113                 <span class="keyword">else</span>
+0114                     aCat=orgCat{i};
+0115                 <span class="keyword">end</span>
+0116                 <span class="keyword">if</span> dist&lt;0
+0117                     bCat=orgCat{j}(1:end+dist);
+0118                 <span class="keyword">else</span>
+0119                     bCat=orgCat{j};
+0120                 <span class="keyword">end</span>
+0121                 
+0122                 <span class="comment">%Loop through the categories and stop when they are the</span>
+0123                 <span class="comment">%same</span>
+0124                 <span class="keyword">for</span> k=numel(aCat):-1:1
+0125                     <span class="keyword">if</span> strcmp(aCat{k},bCat{k})
+0126                         <span class="keyword">break</span>;
+0127                     <span class="keyword">end</span>
+0128                 <span class="keyword">end</span>
+0129                 phylDistStruct.distMat(i,j)=dist+numel(aCat)-k;
+0130             <span class="keyword">end</span>
+0131         <span class="keyword">end</span>
+0132         <span class="comment">%Save the structure</span>
+0133         save(distFile,<span class="string">'phylDistStruct'</span>);
+0134     <span class="keyword">end</span>
+0135 <span class="keyword">end</span>
+0136 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 27-Sep-2018 11:46:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
