@@ -93,7 +93,7 @@ end
 preferredOrder=preferredOrder(:);
 
 if isfield(models,'S')
-    models={'models'};
+    models={models};
 end
     
 %Check that all the information is in the blast structure

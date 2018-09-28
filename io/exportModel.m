@@ -13,7 +13,7 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
 %   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
-%   Eduard Kerkhoven, 2018-07-19
+%   Simonas Marcisauskas, 2018-09-06
 
 if nargin<3
     exportGeneComplexes=false;
@@ -207,6 +207,11 @@ for i=1:numel(model.comps)
     end
     
     if isfield(modelSBML.compartment,'metaid')
+        if ~isnan(str2double(model.comps(i)))
+            EM='The compartment IDs are in numeric format. For the compliance with SBML specifications, compartment IDs will be preceded with "c_" string';
+            dispEM(EM,false);
+            model.comps(i)=strcat('c_',model.comps(i));
+        end
         modelSBML.compartment(i).metaid=model.comps{i};
     end
     %Prepare Miriam strings
@@ -564,6 +569,8 @@ ind=find(model.c);
 
 if isempty(ind)
     modelSBML.fbc_objective.fbc_fluxObjective.fbc_coefficient=0;
+    EM='The objective function is not defined. The model will be exported as it is. Notice that having undefined objective function may produce warnings related to "fbc:coefficient" and "fbc:reaction" in SBML Validator';
+    dispEM(EM,false);
 else
     for i=1:length(ind)
         %Copy the default values to the next index as long as it is not the

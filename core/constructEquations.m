@@ -54,24 +54,25 @@ if sortMetNames==true
     model=sortModel(model,false,true);
 end
 
-indexes=getIndexes(model,rxns,'rxns');
+Rindexes=getIndexes(model,rxns,'rxns');
 
-equationStrings=cell(numel(indexes),1);
+equationStrings=cell(numel(Rindexes),1);
 
-for i=1:numel(indexes)
+for i=1:numel(Rindexes)
+    Mindexes=find(model.S(:,Rindexes(i)));
     %Define metabolites by id or name, and with or without compartment:
     if useMetID==true
-        mets = model.mets(model.S(:,indexes(i))~=0);
+        mets = model.mets(Mindexes);
     else
-        mets = model.metNames(model.S(:,indexes(i))~=0);
+        mets = model.metNames(Mindexes);
     end
     if useComps==true
-        comps = model.comps{model.metComps(model.S(:,indexes(i))~=0)};
+        comps = model.comps(model.metComps(Mindexes));
         mets  = strcat(mets,'[',comps,']');
     end
     %Define stoich coeffs and reversibility:
-    stoichCoeffs = model.S(model.S(:,indexes(i))~=0,i);
-    isrev        = model.rev(indexes(i))==1;
+    stoichCoeffs = model.S(Mindexes,Rindexes(i));
+    isrev        = model.rev(Rindexes(i))==1;
     
     %Construct equation:
     equationStrings{i} = buildEquation(mets,stoichCoeffs,isrev);
