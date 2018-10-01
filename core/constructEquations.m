@@ -16,12 +16,13 @@ function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sort
 %   useMetID          use metabolite ID in generated equations, otherwise metNames are
 %                     used (opt, default false)
 %
-%   equationStrings     a cell array with equations
+%   equationStrings   a cell array with equations
 %
 %    Usage: equationStrings=constructEquations(model,rxns,useComps,...
 %           sortRevRxns,sortMetNames,useMetID)
 %
 %   Hao Wang, 2017-05-15
+%   Benjamin Sanchez, 2018-08-22
 %
 
 if nargin<2
@@ -53,80 +54,28 @@ if sortMetNames==true
     model=sortModel(model,false,true);
 end
 
-indexes=getIndexes(model,rxns,'rxns');
+Rindexes=getIndexes(model,rxns,'rxns');
 
-equationStrings=cell(numel(indexes),1);
+equationStrings=cell(numel(Rindexes),1);
 
-for i=1:numel(indexes)
-    reactants=find(model.S(:,indexes(i))<0);
-    products=find(model.S(:,indexes(i))>0);
-    eqn='';
-    
-    for j=1:numel(reactants)
-        if j==1
-            plusString='';
-        else
-            plusString=' + ';
-        end
-        
-        stoich=num2str(model.S(reactants(j),indexes(i))*-1);
-        
-        if str2double(stoich)==1
-            stoich='';
-        else
-            stoich=[stoich ' '];
-        end
-        
-        if useComps==true
-            if useMetID==true
-                eqn=[eqn plusString stoich model.mets{reactants(j)} '[' model.comps{model.metComps(reactants(j))} ']'];
-            else
-                eqn=[eqn plusString stoich model.metNames{reactants(j)} '[' model.comps{model.metComps(reactants(j))} ']'];
-            end
-        else
-            if useMetID==true
-                eqn=[eqn plusString stoich model.mets{reactants(j)}];
-            else
-                eqn=[eqn plusString stoich model.metNames{reactants(j)}];
-            end
-        end
-    end
-    
-    if model.rev(indexes(i))==0
-        eqn=[eqn ' => '];
+for i=1:numel(Rindexes)
+    Mindexes=find(model.S(:,Rindexes(i)));
+    %Define metabolites by id or name, and with or without compartment:
+    if useMetID==true
+        mets = model.mets(Mindexes);
     else
-        eqn=[eqn ' <=> '];
+        mets = model.metNames(Mindexes);
     end
+    if useComps==true
+        comps = model.comps(model.metComps(Mindexes));
+        mets  = strcat(mets,'[',comps,']');
+    end
+    %Define stoich coeffs and reversibility:
+    stoichCoeffs = model.S(Mindexes,Rindexes(i));
+    isrev        = model.rev(Rindexes(i))==1;
     
-    for j=1:numel(products)
-        if j==1
-            plusString='';
-        else
-            plusString=' + ';
-        end
-        
-        stoich=num2str(model.S(products(j),indexes(i)));
-        
-        if str2double(stoich)==1
-            stoich='';
-        else
-            stoich=[stoich ' '];
-        end
-        
-        if useComps==true
-            if useMetID==true
-                eqn=[eqn plusString stoich model.mets{products(j)} '[' model.comps{model.metComps(products(j))} ']'];
-            else
-                eqn=[eqn plusString stoich model.metNames{products(j)} '[' model.comps{model.metComps(products(j))} ']'];
-            end
-        else
-            if useMetID==true
-                eqn=[eqn plusString stoich model.mets{products(j)}];
-            else
-                eqn=[eqn plusString stoich model.metNames{products(j)}];
-            end
-        end
-    end
-    equationStrings{i}=eqn;
+    %Construct equation:
+    equationStrings{i} = buildEquation(mets,stoichCoeffs,isrev);
 end
+
 end

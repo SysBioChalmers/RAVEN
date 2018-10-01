@@ -28,7 +28,7 @@ function model=getMetsFromKEGG(keggPath)
 %               
 %   Usage: model=getMetsFromKEGG(keggPath)
 %
-%   Simonas Marcisauskas, 2018-03-19
+%   Simonas Marcisauskas, 2018-07-25
 %
 %
 % NOTE: This is how one entry looks in the file
@@ -62,6 +62,10 @@ function model=getMetsFromKEGG(keggPath)
 % Check if the reactions have been parsed before and saved. If so, load the
 % model.
 %
+
+if nargin<1
+    keggPath='RAVEN/external/kegg';
+end
 
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));

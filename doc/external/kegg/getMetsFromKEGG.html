@@ -56,7 +56,7 @@
                
    Usage: model=getMetsFromKEGG(keggPath)
 
-   Simonas Marcisauskas, 2018-03-19
+   Simonas Marcisauskas, 2018-07-25
 
 
  NOTE: This is how one entry looks in the file
@@ -97,7 +97,7 @@ This function calls:
 </ul>
 This function is called by:
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="getModelFromKEGG.html" class="code" title="function [model,KOModel]=getModelFromKEGG(keggPath,keepUndefinedStoich,keepIncomplete,keepGeneral)">getModelFromKEGG</a>	getModelFromKEGG</li></ul>
+<li><a href="getModelFromKEGG.html" class="code" title="function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral)">getModelFromKEGG</a>	getModelFromKEGG</li></ul>
 <!-- crossreference -->
 
 
@@ -133,7 +133,7 @@ This function is called by:
 0028 <span class="comment">%</span>
 0029 <span class="comment">%   Usage: model=getMetsFromKEGG(keggPath)</span>
 0030 <span class="comment">%</span>
-0031 <span class="comment">%   Simonas Marcisauskas, 2018-03-19</span>
+0031 <span class="comment">%   Simonas Marcisauskas, 2018-07-25</span>
 0032 <span class="comment">%</span>
 0033 <span class="comment">%</span>
 0034 <span class="comment">% NOTE: This is how one entry looks in the file</span>
@@ -168,219 +168,223 @@ This function is called by:
 0063 <span class="comment">% model.</span>
 0064 <span class="comment">%</span>
 0065 
-0066 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
-0067 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-0068 metsFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggMets.mat'</span>);
-0069 <span class="keyword">if</span> exist(metsFile, <span class="string">'file'</span>)
-0070     fprintf([<span class="string">'NOTE: Importing KEGG metabolites from '</span> strrep(metsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'.\n'</span>]);
-0071     load(metsFile);
-0072 <span class="keyword">else</span>
-0073     fprintf([<span class="string">'Cannot locate '</span> strrep(metsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">' and will try to generate it from the local KEGG database.\n'</span>]);
-0074     <span class="keyword">if</span> ~exist(fullfile(keggPath,<span class="string">'compound'</span>),<span class="string">'file'</span>) || ~exist(fullfile(keggPath,<span class="string">'compound.inchi'</span>),<span class="string">'file'</span>)
-0075         EM=fprintf([<span class="string">'The files ''compound'' and ''compound.inchi'' cannot be located at '</span> strrep(keggPath,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'/ and should be downloaded from the KEGG FTP.\n'</span>]);
-0076         dispEM(EM);
-0077     <span class="keyword">else</span>
-0078         <span class="comment">%Add new functionality in the order specified in models</span>
-0079         model.id=<span class="string">'KEGG'</span>;
-0080         model.description=<span class="string">'Automatically generated from KEGG database'</span>;
-0081         
-0082         <span class="comment">%Preallocate memory for 30000 metabolites</span>
-0083         model.mets=cell(30000,1);
-0084         model.metNames=cell(30000,1);
-0085         model.metFormulas=cell(30000,1);
-0086         model.metMiriams=cell(30000,1);
-0087         
-0088         <span class="comment">%First load information on metabolite ID, metabolite name,</span>
-0089         <span class="comment">%composition, and ChEBI</span>
-0090         
-0091         fid = fopen(fullfile(keggPath,<span class="string">'compound'</span>), <span class="string">'r'</span>);
-0092         
-0093         <span class="comment">%Keeps track of how many metabolites that have been added</span>
-0094         metCounter=0;
-0095         
-0096         <span class="comment">%Loop through the file</span>
-0097         <span class="keyword">while</span> 1
-0098             <span class="comment">%Get the next line</span>
-0099             tline = fgetl(fid);
-0100             
-0101             <span class="comment">%Abort at end of file</span>
-0102             <span class="keyword">if</span> ~ischar(tline)
-0103                 <span class="keyword">break</span>;
-0104             <span class="keyword">end</span>
-0105             
-0106             <span class="comment">%Skip '///'</span>
-0107             <span class="keyword">if</span> numel(tline)&lt;12
-0108                 <span class="keyword">continue</span>;
-0109             <span class="keyword">end</span>
-0110             
-0111             <span class="comment">%Check if it's a new reaction</span>
-0112             <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'ENTRY       '</span>)
-0113                 metCounter=metCounter+1;
-0114                 
-0115                 <span class="comment">%Add empty strings where there should be such</span>
-0116                 model.metNames{metCounter}=<span class="string">''</span>;
-0117                 model.metFormulas{metCounter}=<span class="string">''</span>;
+0066 <span class="keyword">if</span> nargin&lt;1
+0067     keggPath=<span class="string">'RAVEN/external/kegg'</span>;
+0068 <span class="keyword">end</span>
+0069 
+0070 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
+0071 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+0072 metsFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggMets.mat'</span>);
+0073 <span class="keyword">if</span> exist(metsFile, <span class="string">'file'</span>)
+0074     fprintf([<span class="string">'NOTE: Importing KEGG metabolites from '</span> strrep(metsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'.\n'</span>]);
+0075     load(metsFile);
+0076 <span class="keyword">else</span>
+0077     fprintf([<span class="string">'Cannot locate '</span> strrep(metsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">' and will try to generate it from the local KEGG database.\n'</span>]);
+0078     <span class="keyword">if</span> ~exist(fullfile(keggPath,<span class="string">'compound'</span>),<span class="string">'file'</span>) || ~exist(fullfile(keggPath,<span class="string">'compound.inchi'</span>),<span class="string">'file'</span>)
+0079         EM=fprintf([<span class="string">'The files ''compound'' and ''compound.inchi'' cannot be located at '</span> strrep(keggPath,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'/ and should be downloaded from the KEGG FTP.\n'</span>]);
+0080         dispEM(EM);
+0081     <span class="keyword">else</span>
+0082         <span class="comment">%Add new functionality in the order specified in models</span>
+0083         model.id=<span class="string">'KEGG'</span>;
+0084         model.description=<span class="string">'Automatically generated from KEGG database'</span>;
+0085         
+0086         <span class="comment">%Preallocate memory for 30000 metabolites</span>
+0087         model.mets=cell(30000,1);
+0088         model.metNames=cell(30000,1);
+0089         model.metFormulas=cell(30000,1);
+0090         model.metMiriams=cell(30000,1);
+0091         
+0092         <span class="comment">%First load information on metabolite ID, metabolite name,</span>
+0093         <span class="comment">%composition, and ChEBI</span>
+0094         
+0095         fid = fopen(fullfile(keggPath,<span class="string">'compound'</span>), <span class="string">'r'</span>);
+0096         
+0097         <span class="comment">%Keeps track of how many metabolites that have been added</span>
+0098         metCounter=0;
+0099         
+0100         <span class="comment">%Loop through the file</span>
+0101         <span class="keyword">while</span> 1
+0102             <span class="comment">%Get the next line</span>
+0103             tline = fgetl(fid);
+0104             
+0105             <span class="comment">%Abort at end of file</span>
+0106             <span class="keyword">if</span> ~ischar(tline)
+0107                 <span class="keyword">break</span>;
+0108             <span class="keyword">end</span>
+0109             
+0110             <span class="comment">%Skip '///'</span>
+0111             <span class="keyword">if</span> numel(tline)&lt;12
+0112                 <span class="keyword">continue</span>;
+0113             <span class="keyword">end</span>
+0114             
+0115             <span class="comment">%Check if it's a new reaction</span>
+0116             <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'ENTRY       '</span>)
+0117                 metCounter=metCounter+1;
 0118                 
-0119                 <span class="comment">%Add compound ID (always 6 characters)</span>
-0120                 model.mets{metCounter}=tline(13:18);
-0121                 
-0122                 <span class="comment">%Add the KEGG id as metMiriams</span>
-0123                 <span class="keyword">if</span> length(model.mets{metCounter})==6
-0124                     miriamStruct=model.metMiriams{metCounter};
-0125                     <span class="keyword">if</span> strcmp(<span class="string">'G'</span>,model.mets{metCounter}(1))
-0126                         miriamStruct.name{1,1}=<span class="string">'kegg.glycan'</span>;
-0127                     <span class="keyword">else</span>
-0128                         miriamStruct.name{1,1}=<span class="string">'kegg.compound'</span>;
-0129                     <span class="keyword">end</span>
-0130                     miriamStruct.value{1,1}=tline(13:18);
-0131                     model.metMiriams{metCounter}=miriamStruct;
-0132                 <span class="keyword">end</span>
-0133             <span class="keyword">end</span>
-0134             
-0135             <span class="comment">%Add name</span>
-0136             <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'NAME        '</span>)
-0137                 <span class="comment">%If there are synonyms, then the last character is ';'</span>
-0138                 <span class="keyword">if</span> strcmp(tline(end),<span class="string">';'</span>)
-0139                     model.metNames{metCounter}=tline(13:end-1);
-0140                     <span class="comment">%Semicolon can also occur in the middle, separating</span>
-0141                     <span class="comment">%several synonims in the same line</span>
-0142                     model.metNames{metCounter} = regexprep(model.metNames{metCounter},<span class="string">';.+'</span>,<span class="string">''</span>);
-0143                 <span class="keyword">elseif</span> regexp(tline,<span class="string">';'</span>)
-0144                     model.metNames{metCounter}=tline(13:end);
-0145                     model.metNames{metCounter} = regexprep(model.metNames{metCounter},<span class="string">';.+'</span>,<span class="string">''</span>);
-0146                 <span class="keyword">else</span>
-0147                     model.metNames{metCounter}=tline(13:end);
-0148                 <span class="keyword">end</span>
-0149             <span class="keyword">end</span>
-0150             
-0151             <span class="comment">%Add composition</span>
-0152             <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'FORMULA     '</span>)
-0153                 model.metFormulas{metCounter}=tline(13:end);
-0154             <span class="keyword">end</span>
-0155             
-0156             <span class="comment">%Add PubChem id</span>
-0157             <span class="keyword">if</span> numel(tline)&gt;21
-0158                 <span class="keyword">if</span> strcmp(tline(13:21),<span class="string">'PubChem: '</span>)
-0159                     <span class="keyword">if</span> isstruct(model.metMiriams{metCounter})
-0160                         addToIndex=numel(model.metMiriams{metCounter}.name)+1;
-0161                     <span class="keyword">else</span>
-0162                         addToIndex=1;
-0163                     <span class="keyword">end</span>
-0164                     miriamStruct=model.metMiriams{metCounter};
-0165                     miriamStruct.name{addToIndex,1}=<span class="string">'pubchem.substance'</span>;
-0166                     miriamStruct.value{addToIndex,1}=tline(22:end);
-0167                     model.metMiriams{metCounter}=miriamStruct;
-0168                 <span class="keyword">end</span>
-0169             <span class="keyword">end</span>
-0170             
-0171             <span class="comment">%Add CHEBI id</span>
-0172             <span class="keyword">if</span> numel(tline)&gt;19
-0173                 <span class="keyword">if</span> strcmp(tline(13:19),<span class="string">'ChEBI: '</span>)
-0174                     <span class="keyword">if</span> isstruct(model.metMiriams{metCounter})
-0175                         addToIndex=numel(model.metMiriams{metCounter}.name)+1;
-0176                     <span class="keyword">else</span>
-0177                         addToIndex=1;
-0178                     <span class="keyword">end</span>
-0179                     chebiIDs=strsplit(tline(20:end),<span class="string">' '</span>);
-0180                     miriamStruct=model.metMiriams{metCounter};
-0181                     <span class="keyword">for</span> i=1:numel(chebiIDs)
-0182                         miriamStruct.name{addToIndex,1}=<span class="string">'chebi'</span>;
-0183                         miriamStruct.value{addToIndex,1}=strcat(<span class="string">'CHEBI:'</span>,chebiIDs{i});
-0184                         addToIndex=addToIndex+1;
-0185                     <span class="keyword">end</span>
-0186                     model.metMiriams{metCounter}=miriamStruct;
-0187                 <span class="keyword">end</span>
-0188             <span class="keyword">end</span>
-0189         <span class="keyword">end</span>
-0190         
-0191         <span class="comment">%Close the file</span>
-0192         fclose(fid);
-0193         
-0194         <span class="comment">%If too much space was allocated, shrink the model</span>
-0195         model.mets=model.mets(1:metCounter);
-0196         model.metNames=model.metNames(1:metCounter);
-0197         model.metFormulas=model.metFormulas(1:metCounter);
-0198         model.metMiriams=model.metMiriams(1:metCounter);
-0199         
-0200         <span class="comment">%Then load the InChI strings from another file. Not all metabolites</span>
-0201         <span class="comment">%will be present in the list</span>
-0202         
-0203         inchIDs=cell(numel(model.mets),1);
-0204         inchis=cell(numel(model.mets),1);
-0205         
-0206         <span class="comment">%The format is metID*tab*string</span>
-0207         
-0208         fid = fopen(fullfile(keggPath,<span class="string">'compound.inchi'</span>), <span class="string">'r'</span>);
+0119                 <span class="comment">%Add empty strings where there should be such</span>
+0120                 model.metNames{metCounter}=<span class="string">''</span>;
+0121                 model.metFormulas{metCounter}=<span class="string">''</span>;
+0122                 
+0123                 <span class="comment">%Add compound ID (always 6 characters)</span>
+0124                 model.mets{metCounter}=tline(13:18);
+0125                 
+0126                 <span class="comment">%Add the KEGG id as metMiriams</span>
+0127                 <span class="keyword">if</span> length(model.mets{metCounter})==6
+0128                     miriamStruct=model.metMiriams{metCounter};
+0129                     <span class="keyword">if</span> strcmp(<span class="string">'G'</span>,model.mets{metCounter}(1))
+0130                         miriamStruct.name{1,1}=<span class="string">'kegg.glycan'</span>;
+0131                     <span class="keyword">else</span>
+0132                         miriamStruct.name{1,1}=<span class="string">'kegg.compound'</span>;
+0133                     <span class="keyword">end</span>
+0134                     miriamStruct.value{1,1}=tline(13:18);
+0135                     model.metMiriams{metCounter}=miriamStruct;
+0136                 <span class="keyword">end</span>
+0137             <span class="keyword">end</span>
+0138             
+0139             <span class="comment">%Add name</span>
+0140             <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'NAME        '</span>)
+0141                 <span class="comment">%If there are synonyms, then the last character is ';'</span>
+0142                 <span class="keyword">if</span> strcmp(tline(end),<span class="string">';'</span>)
+0143                     model.metNames{metCounter}=tline(13:end-1);
+0144                     <span class="comment">%Semicolon can also occur in the middle, separating</span>
+0145                     <span class="comment">%several synonims in the same line</span>
+0146                     model.metNames{metCounter} = regexprep(model.metNames{metCounter},<span class="string">';.+'</span>,<span class="string">''</span>);
+0147                 <span class="keyword">elseif</span> regexp(tline,<span class="string">';'</span>)
+0148                     model.metNames{metCounter}=tline(13:end);
+0149                     model.metNames{metCounter} = regexprep(model.metNames{metCounter},<span class="string">';.+'</span>,<span class="string">''</span>);
+0150                 <span class="keyword">else</span>
+0151                     model.metNames{metCounter}=tline(13:end);
+0152                 <span class="keyword">end</span>
+0153             <span class="keyword">end</span>
+0154             
+0155             <span class="comment">%Add composition</span>
+0156             <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'FORMULA     '</span>)
+0157                 model.metFormulas{metCounter}=tline(13:end);
+0158             <span class="keyword">end</span>
+0159             
+0160             <span class="comment">%Add PubChem id</span>
+0161             <span class="keyword">if</span> numel(tline)&gt;21
+0162                 <span class="keyword">if</span> strcmp(tline(13:21),<span class="string">'PubChem: '</span>)
+0163                     <span class="keyword">if</span> isstruct(model.metMiriams{metCounter})
+0164                         addToIndex=numel(model.metMiriams{metCounter}.name)+1;
+0165                     <span class="keyword">else</span>
+0166                         addToIndex=1;
+0167                     <span class="keyword">end</span>
+0168                     miriamStruct=model.metMiriams{metCounter};
+0169                     miriamStruct.name{addToIndex,1}=<span class="string">'pubchem.substance'</span>;
+0170                     miriamStruct.value{addToIndex,1}=tline(22:end);
+0171                     model.metMiriams{metCounter}=miriamStruct;
+0172                 <span class="keyword">end</span>
+0173             <span class="keyword">end</span>
+0174             
+0175             <span class="comment">%Add CHEBI id</span>
+0176             <span class="keyword">if</span> numel(tline)&gt;19
+0177                 <span class="keyword">if</span> strcmp(tline(13:19),<span class="string">'ChEBI: '</span>)
+0178                     <span class="keyword">if</span> isstruct(model.metMiriams{metCounter})
+0179                         addToIndex=numel(model.metMiriams{metCounter}.name)+1;
+0180                     <span class="keyword">else</span>
+0181                         addToIndex=1;
+0182                     <span class="keyword">end</span>
+0183                     chebiIDs=strsplit(tline(20:end),<span class="string">' '</span>);
+0184                     miriamStruct=model.metMiriams{metCounter};
+0185                     <span class="keyword">for</span> i=1:numel(chebiIDs)
+0186                         miriamStruct.name{addToIndex,1}=<span class="string">'chebi'</span>;
+0187                         miriamStruct.value{addToIndex,1}=strcat(<span class="string">'CHEBI:'</span>,chebiIDs{i});
+0188                         addToIndex=addToIndex+1;
+0189                     <span class="keyword">end</span>
+0190                     model.metMiriams{metCounter}=miriamStruct;
+0191                 <span class="keyword">end</span>
+0192             <span class="keyword">end</span>
+0193         <span class="keyword">end</span>
+0194         
+0195         <span class="comment">%Close the file</span>
+0196         fclose(fid);
+0197         
+0198         <span class="comment">%If too much space was allocated, shrink the model</span>
+0199         model.mets=model.mets(1:metCounter);
+0200         model.metNames=model.metNames(1:metCounter);
+0201         model.metFormulas=model.metFormulas(1:metCounter);
+0202         model.metMiriams=model.metMiriams(1:metCounter);
+0203         
+0204         <span class="comment">%Then load the InChI strings from another file. Not all metabolites</span>
+0205         <span class="comment">%will be present in the list</span>
+0206         
+0207         inchIDs=cell(numel(model.mets),1);
+0208         inchis=cell(numel(model.mets),1);
 0209         
-0210         <span class="comment">%Loop through the file</span>
-0211         counter=1;
-0212         <span class="keyword">while</span> 1
-0213             <span class="comment">%Get the next line</span>
-0214             tline = fgetl(fid);
-0215             
-0216             <span class="comment">%Abort at end of file</span>
-0217             <span class="keyword">if</span> ~ischar(tline)
-0218                 <span class="keyword">break</span>;
-0219             <span class="keyword">end</span>
-0220             
-0221             <span class="comment">%Get the ID and the InChI</span>
-0222             inchIDs{counter}=tline(1:6);
-0223             inchis{counter}=tline(14:end);
-0224             counter=counter+1;
-0225         <span class="keyword">end</span>
-0226         
-0227         <span class="comment">%Close the file</span>
-0228         fclose(fid);
-0229         
-0230         inchIDs=inchIDs(1:counter-1);
-0231         inchis=inchis(1:counter-1);
-0232         
-0233         <span class="comment">%Find the metabolites that had InChI strings and add them to the</span>
-0234         <span class="comment">%model</span>
-0235         [a, b]=ismember(inchIDs,model.mets);
+0210         <span class="comment">%The format is metID*tab*string</span>
+0211         
+0212         fid = fopen(fullfile(keggPath,<span class="string">'compound.inchi'</span>), <span class="string">'r'</span>);
+0213         
+0214         <span class="comment">%Loop through the file</span>
+0215         counter=1;
+0216         <span class="keyword">while</span> 1
+0217             <span class="comment">%Get the next line</span>
+0218             tline = fgetl(fid);
+0219             
+0220             <span class="comment">%Abort at end of file</span>
+0221             <span class="keyword">if</span> ~ischar(tline)
+0222                 <span class="keyword">break</span>;
+0223             <span class="keyword">end</span>
+0224             
+0225             <span class="comment">%Get the ID and the InChI</span>
+0226             inchIDs{counter}=tline(1:6);
+0227             inchis{counter}=tline(14:end);
+0228             counter=counter+1;
+0229         <span class="keyword">end</span>
+0230         
+0231         <span class="comment">%Close the file</span>
+0232         fclose(fid);
+0233         
+0234         inchIDs=inchIDs(1:counter-1);
+0235         inchis=inchis(1:counter-1);
 0236         
-0237         <span class="comment">%If there were mets with InChIs but that were not in the list</span>
-0238         <span class="keyword">if</span> ~all(a)
-0239             EM=<span class="string">'Not all metabolites with InChI strings were found in the original list'</span>;
-0240             disp(EM);
-0241         <span class="keyword">end</span>
-0242         
-0243         model.inchis=cell(numel(model.mets),1);
-0244         model.inchis(:)={<span class="string">''</span>};
-0245         model.inchis(b)=inchis;
+0237         <span class="comment">%Find the metabolites that had InChI strings and add them to the</span>
+0238         <span class="comment">%model</span>
+0239         [a, b]=ismember(inchIDs,model.mets);
+0240         
+0241         <span class="comment">%If there were mets with InChIs but that were not in the list</span>
+0242         <span class="keyword">if</span> ~all(a)
+0243             EM=<span class="string">'Not all metabolites with InChI strings were found in the original list'</span>;
+0244             disp(EM);
+0245         <span class="keyword">end</span>
 0246         
-0247         <span class="comment">%Remove composition if InChI was found</span>
-0248         model.metFormulas(b)={<span class="string">''</span>};
-0249         
-0250         <span class="comment">%Ensuring that all model.metMiriams.value consist only of strings,</span>
-0251         <span class="comment">%no double</span>
-0252         <span class="keyword">for</span> i=1:(numel(model.mets))
-0253             <span class="keyword">for</span> j=1:(numel(model.metMiriams{i}))
-0254                 <span class="keyword">if</span> isa(model.metMiriams{i}.value{j},<span class="string">'double'</span>)
-0255                     model.metMiriams{i}.value{j}=num2str(model.metMiriams{i}.value{j});
-0256                 <span class="keyword">end</span>
-0257             <span class="keyword">end</span>
-0258         <span class="keyword">end</span>
-0259         
-0260         <span class="comment">%Removing fronting and trailing whitespace from metNames</span>
-0261         model.metNames = deblank(model.metNames);
-0262         
-0263         <span class="comment">%Fixing redundant metNames. The first occurence of particular</span>
-0264         <span class="comment">%metabolite name is not changed, but starting from the second</span>
-0265         <span class="comment">%occurence, original metabolite name is concatenated with KEGG</span>
-0266         <span class="comment">%COMPOUND id between the brackets</span>
-0267         <span class="keyword">for</span> i=1:(numel(model.metNames))
-0268             <span class="keyword">if</span> ~isempty(model.metNames{i})
-0269                 <span class="keyword">if</span> sum(ismember(model.metNames(1:i-1),model.metNames(i)))&gt;=1
-0270                     model.metNames(i) = strcat(model.metNames(i), <span class="string">' ('</span>, model.mets(i),<span class="string">')'</span>);
-0271                 <span class="keyword">end</span>
-0272             <span class="keyword">end</span>
-0273         <span class="keyword">end</span>
-0274         <span class="comment">%Saves the model</span>
-0275         save(metsFile,<span class="string">'model'</span>);
-0276     <span class="keyword">end</span>
-0277 <span class="keyword">end</span>
-0278 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 22-Aug-2018 16:19:49 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0247         model.inchis=cell(numel(model.mets),1);
+0248         model.inchis(:)={<span class="string">''</span>};
+0249         model.inchis(b)=inchis;
+0250         
+0251         <span class="comment">%Remove composition if InChI was found</span>
+0252         model.metFormulas(b)={<span class="string">''</span>};
+0253         
+0254         <span class="comment">%Ensuring that all model.metMiriams.value consist only of strings,</span>
+0255         <span class="comment">%no double</span>
+0256         <span class="keyword">for</span> i=1:(numel(model.mets))
+0257             <span class="keyword">for</span> j=1:(numel(model.metMiriams{i}))
+0258                 <span class="keyword">if</span> isa(model.metMiriams{i}.value{j},<span class="string">'double'</span>)
+0259                     model.metMiriams{i}.value{j}=num2str(model.metMiriams{i}.value{j});
+0260                 <span class="keyword">end</span>
+0261             <span class="keyword">end</span>
+0262         <span class="keyword">end</span>
+0263         
+0264         <span class="comment">%Removing fronting and trailing whitespace from metNames</span>
+0265         model.metNames = deblank(model.metNames);
+0266         
+0267         <span class="comment">%Fixing redundant metNames. The first occurence of particular</span>
+0268         <span class="comment">%metabolite name is not changed, but starting from the second</span>
+0269         <span class="comment">%occurence, original metabolite name is concatenated with KEGG</span>
+0270         <span class="comment">%COMPOUND id between the brackets</span>
+0271         <span class="keyword">for</span> i=1:(numel(model.metNames))
+0272             <span class="keyword">if</span> ~isempty(model.metNames{i})
+0273                 <span class="keyword">if</span> sum(ismember(model.metNames(1:i-1),model.metNames(i)))&gt;=1
+0274                     model.metNames(i) = strcat(model.metNames(i), <span class="string">' ('</span>, model.mets(i),<span class="string">')'</span>);
+0275                 <span class="keyword">end</span>
+0276             <span class="keyword">end</span>
+0277         <span class="keyword">end</span>
+0278         <span class="comment">%Saves the model</span>
+0279         save(metsFile,<span class="string">'model'</span>);
+0280     <span class="keyword">end</span>
+0281 <span class="keyword">end</span>
+0282 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Fri 28-Sep-2018 09:04:35 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
