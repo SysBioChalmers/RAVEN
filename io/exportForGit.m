@@ -123,17 +123,19 @@ end
 function version = getVersion(toolbox,IDfile,masterFlag)
 currentPath = pwd;
 try
-    toolboxPath = which(IDfile);
+    toolboxPath = which(IDfile);                %full file path
+    slashPos    = getSlashPos(toolboxPath);
+    toolboxPath = toolboxPath(1:slashPos(end)); %folder path
     %Go up until the root is found:
     while ~ismember({'.git'},ls(toolboxPath))
         slashPos    = getSlashPos(toolboxPath);
-        toolboxPath = toolboxPath(1:slashPos(end)-1);
+        toolboxPath = toolboxPath(1:slashPos(end-1));
     end
     cd(toolboxPath);
     checkIfMaster(toolbox,masterFlag)
     %Try to find version file of the toolbox:
     try
-        fid     = fopen('version.txt','r');
+        fid     = fopen([toolboxPath 'version.txt'],'r');
         version = fscanf(fid,'%s');
         fclose(fid);
     catch
