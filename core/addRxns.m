@@ -633,6 +633,7 @@ end
 newRxnsModel=removeReactions(newModel,model.rxns,false,false,false);
 
 %Fix grRules and reconstruct rxnGeneMat
-[~,rxnGeneMat] = standardizeGrRules(newRxnsModel,true);
+[grRules,rxnGeneMat] = standardizeGrRules(newRxnsModel,true);
 newModel.rxnGeneMat = [newModel.rxnGeneMat; rxnGeneMat];
+newModel.grRules = [newModel.grRules(1:nOldRxns); grRules];
 end
