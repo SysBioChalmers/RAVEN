@@ -270,7 +270,7 @@ else
     end
 end
 
-if isfield(newModel.annotation,'defaultLB')
+if isfield(newModel,'annotation') & isfield(newModel.annotation,'defaultLB')
     newLb=newModel.annotation.defaultLB;
 else
     newLb=-inf;
@@ -296,7 +296,7 @@ else
     end
 end
 
-if isfield(newModel.annotation,'defaultUB')
+if isfield(newModel,'annotation') & isfield(newModel.annotation,'defaultUB')
     newUb=newModel.annotation.defaultUB;
 else
     newUb=inf;
@@ -630,8 +630,9 @@ for i=1:nRxns
     end
 end
 
+newRxnsModel=removeReactions(newModel,model.rxns,false,false,false);
+
 %Fix grRules and reconstruct rxnGeneMat
-[grRules,rxnGeneMat] = standardizeGrRules(newModel,true);
-newModel.grRules = grRules;
-newModel.rxnGeneMat = rxnGeneMat;
+[~,rxnGeneMat] = standardizeGrRules(newRxnsModel,true);
+newModel.rxnGeneMat = [newModel.rxnGeneMat; rxnGeneMat];
 end
