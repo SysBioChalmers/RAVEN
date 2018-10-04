@@ -2,37 +2,39 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 % addMets
 %   Adds metabolites to a model
 %
-%   model        a model structure
-%   metsToAdd    the metabolite structure can have the following fields:
-%                mets           cell array with unique strings that
-%                               identifies each metabolite (opt, default is
-%                               that new metabolites that are added will be
-%                               assigned IDs "m1", "m2"... If IDs on the same
-%                               form are already used in the model then the
-%                               numbering will start from the highest existing
-%                               integer+1)
-%                metNames       cell array with the names of each
-%                               metabolite
-%                compartments   cell array with the compartment of each
-%                               metabolite. Should match model.comps.
-%                               If this is a string rather than a cell
-%                               array it is assumed that all mets are in
-%                               that compartment
-%                b              Nx1 or Nx2 matrix with equality constraints
-%                               for each metabolite (opt, default 0)
-%                unconstrained  vector describing if each metabolite is an
-%                               exchange metabolite (1) or not (0) (opt,
-%                               default 0)
-%                inchis         cell array with InChI strings for each
-%                               metabolite (opt, default '')
-%                metFormulas    cell array with the formulas for each of
-%                               the metabolites (opt, default '')
-%                metMiriams     cell array with MIRIAM structures (opt,
-%                               default [])
-%                metCharges     metabolite charge (opt, default NaN)
-%   copyInfo     when adding metabolites to a compartment where it previously
-%                doesn't exist, the function will copy any available annotation
-%                from the metabolite in another compartment (opt, default true)
+%   model       a model structure
+%   metsToAdd   the metabolite structure can have the following fields:
+%               mets           cell array with unique strings that
+%                              identifies each metabolite (opt, default IDs
+%                              of new metabolites are numbered with the
+%                              prefix defined below)
+%               metNames       cell array with the names of each
+%                              metabolite
+%               compartments   cell array with the compartment of each
+%                              metabolite. Should match model.comps.
+%                              If this is a string rather than a cell
+%                              array it is assumed that all mets are in
+%                              that compartment
+%               b              Nx1 or Nx2 matrix with equality constraints
+%                              for each metabolite (opt, default 0)
+%               unconstrained  vector describing if each metabolite is an
+%                              exchange metabolite (1) or not (0) (opt,
+%                              default 0)
+%               inchis         cell array with InChI strings for each
+%                              metabolite (opt, default '')
+%               metFormulas    cell array with the formulas for each of
+%                              the metabolites (opt, default '')
+%               metMiriams     cell array with MIRIAM structures (opt,
+%                              default [])
+%               metCharges     metabolite charge (opt, default NaN)
+%   copyInfo    when adding metabolites to a compartment where it previously
+%               doesn't exist, the function will copy any available annotation
+%               from the metabolite in another compartment (opt, default true)
+%   prefix      when metsToAdd.mets is not specified, new metabolite IDs
+%               are generated with the prefix specified here. If IDs with
+%               the prefix are already used in the model then the
+%               numbering will start from the highest existing integer+1
+%               (opt, default 'm_')
 %
 %   newModel     an updated model structure
 %
@@ -49,11 +51,14 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 %
 %   Usage: newModel=addMets(model,metsToAdd,copyInfo)
 %
-%   Daniel Cook, 2018-08-10
+%   Eduard Kerkhoven, 2018-10-03
 %
 
 if nargin<3
     copyInfo=true;
+end
+if nargin<4
+    prefix='m_';
 end
 
 newModel=model;
@@ -64,12 +69,7 @@ end
 
 %Check some stuff regarding the required fields
 if ~isfield(metsToAdd,'mets')
-    %Name the metabolites as "m1, m2...". If IDs on the same form are
-    %already used in the model then the first available integers should be
-    %used
-    maxCurrent=ceil(max(real(cellfun(@getInteger,model.mets))));
-    m=maxCurrent+1:maxCurrent+numel(metsToAdd.metNames);
-    metsToAdd.mets=strcat({'m'},num2str(m(:)));
+    metsToAdd.mets=generateNewIds(newModel,'mets',prefix,numel(metsToAdd.metNames));
 end
 if ~isfield(metsToAdd,'metNames')
     EM='metNames is a required field in metsToAdd';
