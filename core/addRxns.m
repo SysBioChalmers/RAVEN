@@ -135,14 +135,14 @@ if isempty(rxnsToAdd)
 end
 
 %Check the input
-if ~isnumeric(eqnType)
+if isfield(rxnsToAdd,'stoichCoeffs')
+    eqnType=1;
+elseif ~isnumeric(eqnType)
     EM='eqnType must be numeric';
     dispEM(EM);
-else
-    if ~ismember(eqnType,[1 2 3])
-        EM='eqnType must be 1, 2, or 3';
-        dispEM(EM);
-    end
+elseif ~ismember(eqnType,[1 2 3])
+    EM='eqnType must be 1, 2, or 3';
+    dispEM(EM);
 end
 
 if eqnType==2 || (eqnType==1 && allowNewMets==true)
