@@ -25,7 +25,7 @@ function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)
 %
 
 %Preallocate fields
-[~,n]      = size(model.S);
+n          = length(model.rxns);
 [g,~]      = size(model.genes);
 rxnGeneMat = sparse(n,g);
 grRules    = cell(n,1);

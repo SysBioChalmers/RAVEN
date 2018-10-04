@@ -630,7 +630,11 @@ for i=1:nRxns
     end
 end
 
-newRxnsModel=removeReactions(newModel,model.rxns,false,false,false);
+%Make temporary minimal model structure with only new rxns, to parse to
+%standardizeGrRules
+newRxnsModel.genes=newModel.genes;
+newRxnsModel.grRules=newModel.grRules(length(model.rxns)+1:end);
+newRxnsModel.rxns=newModel.rxns(length(model.rxns)+1:end);
 
 %Fix grRules and reconstruct rxnGeneMat
 [grRules,rxnGeneMat] = standardizeGrRules(newRxnsModel,true);
