@@ -132,9 +132,8 @@ indexes2check = unique(indexes2check);
 if ~isempty(indexes2check)
     
     if embedded
-        STR = ['Potentially problematic ") AND (" grRules for reaction(s): '...
-            strjoin(model.rxns(indexes2check),'; ') '\n'];
-        fprintf(STR);
+        EM = 'Potentially problematic ") AND (" in the grRules for reaction(s): ';
+        dispEM(EM,false,model.rxns(indexes2check),true)
     else
         STR = 'Potentially problematic ") AND (", ") AND" or "AND ("relat';
         STR = [STR,'ionships found in\n\n'];
