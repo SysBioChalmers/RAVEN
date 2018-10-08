@@ -122,6 +122,8 @@ end
 
 function version = getVersion(toolbox,IDfile,masterFlag)
 currentPath = pwd;
+version     = '';
+%Try to find root of toolbox:
 try
     toolboxPath = which(IDfile);                %full file path
     slashPos    = getSlashPos(toolboxPath);
@@ -132,8 +134,20 @@ try
         toolboxPath = toolboxPath(1:slashPos(end-1));
     end
     cd(toolboxPath);
-    checkIfMaster(toolbox,masterFlag)
-    %Try to find version file of the toolbox:
+catch
+    disp([toolbox ' toolbox cannot be found'])
+    version = 'unknown';
+end
+%Check if in master:
+if masterFlag
+    currentBranch = git('rev-parse --abbrev-ref HEAD');
+    if ~strcmp(currentBranch,'master')
+        cd(currentPath);
+        error(['ERROR: ' toolbox ' not in master. Check-out the master branch of ' toolbox ' before submitting model for Git.'])
+    end
+end
+%Try to find version file of the toolbox:
+if isempty(version)
     try
         fid     = fopen([toolboxPath 'version.txt'],'r');
         version = fscanf(fid,'%s');
@@ -147,9 +161,6 @@ try
             version = 'unknown';
         end
     end
-catch
-    disp([toolbox ' toolbox cannot be found'])
-    version = '';
 end
 cd(currentPath);
 end
@@ -161,11 +172,3 @@ if isempty(slashPos)
 end
 end
 
-function checkIfMaster(toolbox,masterFlag)
-if masterFlag
-    currentBranch = git('rev-parse --abbrev-ref HEAD');
-    if ~strcmp(currentBranch,'master')
-        error(['ERROR: ' toolbox ' not in master. Check-out the master branch of ' toolbox ' before submitting model for Git.'])
-    end
-end
-end
