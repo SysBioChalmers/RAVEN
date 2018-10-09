@@ -53,9 +53,12 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %
 %   Usage: model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %
-%   Simonas Marcisauskas, 2018-03-17
-%   Benjamin J. Sanchez,  2018-08-22
+%   Eduard Kerkhoven, 2018-10-04
 %
+
+if nargin<4 & isfield(equations,'stoichCoeffs')
+    eqnType=1;
+end
 
 if nargin<5
     compartment=[];

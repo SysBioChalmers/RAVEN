@@ -303,7 +303,9 @@ if isfield(model,'metMiriams')
         if numel(miriams(allMiriams{i}))>1
             %Check if they all have the same name
             if numel(unique(model.metNames(miriams(allMiriams{i}))))>1
-                hasMultiple(i)=true;
+                if ~regexp(allMiriams{i},'^sbo\/SBO:') % SBO terms are expected to be multiple
+                    hasMultiple(i)=true;
+                end                
             end
         end
     end
