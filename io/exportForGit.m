@@ -129,9 +129,11 @@ try
     slashPos    = getSlashPos(toolboxPath);
     toolboxPath = toolboxPath(1:slashPos(end)); %folder path
     %Go up until the root is found:
-    while ~ismember({'.git'},ls(toolboxPath))
+    D = dir(toolboxPath);
+    while ~ismember({'.git'},{D.name})
         slashPos    = getSlashPos(toolboxPath);
         toolboxPath = toolboxPath(1:slashPos(end-1));
+        D           = dir(toolboxPath);
     end
     cd(toolboxPath);
 catch
