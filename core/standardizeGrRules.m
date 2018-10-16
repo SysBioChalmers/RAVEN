@@ -25,7 +25,7 @@ function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)
 %
 
 %Preallocate fields
-[~,n]      = size(model.S);
+n          = length(model.rxns);
 [g,~]      = size(model.genes);
 rxnGeneMat = sparse(n,g);
 grRules    = cell(n,1);
@@ -38,7 +38,7 @@ if isfield(model,'grRules')
     originalGrRules=model.grRules; 
     originalGrRules=grRulesPreparation(originalGrRules);
     %Search for potential logical errors in the grRules field
-    indexes2check = findPotentialErrors(originalGrRules,embedded);
+    indexes2check = findPotentialErrors(originalGrRules,embedded,model);
     
     for i=1:length(originalGrRules)
         originalSTR = originalGrRules{i};
@@ -122,7 +122,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Function that gets the model field grRules and returns the indexes of the
 %rules in which the pattern ") and (" is present.
-function indexes2check = findPotentialErrors(grRules,embedded)
+function indexes2check = findPotentialErrors(grRules,embedded,model)
 indxs_l       = find(~cellfun(@isempty,strfind(grRules,') and (')));
 indxs_l_L     = find(~cellfun(@isempty,strfind(grRules,') and')));
 indxs_l_R     = find(~cellfun(@isempty,strfind(grRules,'and (')));
@@ -132,13 +132,8 @@ indexes2check = unique(indexes2check);
 if ~isempty(indexes2check)
     
     if embedded
-        STR = ' Some ") AND (" relationships were found in grRules, this ';
-        STR = [STR,'might lead to ambiguous genes-rxn asssociations.\n\n'];
-        STR = [STR,'If this field has been already curated then  please i'];
-        STR = [STR,'gnore this message, otherwise run the function standa'];
-        STR = [STR,'rdizeGrRules in the next way for further instructions'];
-        STR = [STR,':\n\n  [~,~,indexes2check]=standardizeGrRules(model)\n'];
-        warning(sprintf(STR))
+        EM = 'Potentially problematic ") AND (" in the grRules for reaction(s): ';
+        dispEM(EM,false,model.rxns(indexes2check),true)
     else
         STR = 'Potentially problematic ") AND (", ") AND" or "AND ("relat';
         STR = [STR,'ionships found in\n\n'];

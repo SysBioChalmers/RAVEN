@@ -62,16 +62,19 @@ if ischar(rxns)
 end
 
 % Obtain indexes of reactions in source model
-notNewRxn=rxns(ismember(rxns,model.rxns));
-rxns=rxns(~ismember(rxns,model.rxns));
+[notNewRxn,oldRxn]=ismember(rxns,model.rxns);
+rxns=rxns(~notNewRxn);
 if isempty(rxns)
-    throw(MException('','All reactions are already in the model.'));
+    error('All reactions are already in the model.');
 elseif ~isempty(notNewRxn)
     fprintf('\n The following reactions were already present in the model and will not be added:\n')
-    fprintf(strjoin(notNewRxn,'\n'))
+    fprintf(strjoin(model.rxns(oldRxn(find(oldRxn))),'\n'))
 end
 
 rxnIdx=find(ismember(sourceModel.rxns,rxns)); % Get rxnIDs
+if length(rxnIdx)~=length(rxns)
+    error('Not all reaction IDs could be found in the source model')
+end
 
 % Add new metabolites
 metIdx=find(any(sourceModel.S(:,rxnIdx),2)); % Get metabolite IDs
@@ -133,14 +136,13 @@ if ~isempty(metIdx)
 end
 fprintf('\n\nNumber of metabolites added to the model:\n')
 fprintf(num2str(numel(metIdx)))
-fprintf('\n')
 
 % Add new genes
-if addGene ~= false
+if ~islogical(addGene) | addGene ~= false
     if ischar(addGene)
         rxnToAdd.grRules={addGene};
     elseif iscell(addGene)
-        rxnToAdd.grRules=addGene;
+        rxnToAdd.grRules=addGene(~notNewRxn); 
     else
         rxnToAdd.grRules=sourceModel.grRules(rxnIdx); % Get the relevant grRules
     end
