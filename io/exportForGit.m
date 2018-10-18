@@ -19,7 +19,7 @@ function out=exportForGit(model,prefix,path,formats,masterFlag)
 %
 %   Usage: exportForGit(model,prefix,path,formats,masterFlag)
 %
-%   Benjamin J. Sanchez, 2018-09-26
+%   Benjamin J. Sanchez, 2018-10-19
 %
 if nargin<5
     masterFlag=false;
@@ -119,58 +119,3 @@ if isfield(model,'modelVersion')
 end
 fclose(fid);
 end
-
-function version = getVersion(toolbox,IDfile,masterFlag)
-currentPath = pwd;
-version     = '';
-%Try to find root of toolbox:
-try
-    toolboxPath = which(IDfile);                %full file path
-    slashPos    = getSlashPos(toolboxPath);
-    toolboxPath = toolboxPath(1:slashPos(end)); %folder path
-    %Go up until the root is found:
-    D = dir(toolboxPath);
-    while ~ismember({'.git'},{D.name})
-        slashPos    = getSlashPos(toolboxPath);
-        toolboxPath = toolboxPath(1:slashPos(end-1));
-        D           = dir(toolboxPath);
-    end
-    cd(toolboxPath);
-catch
-    disp([toolbox ' toolbox cannot be found'])
-    version = 'unknown';
-end
-%Check if in master:
-if masterFlag
-    currentBranch = git('rev-parse --abbrev-ref HEAD');
-    if ~strcmp(currentBranch,'master')
-        cd(currentPath);
-        error(['ERROR: ' toolbox ' not in master. Check-out the master branch of ' toolbox ' before submitting model for Git.'])
-    end
-end
-%Try to find version file of the toolbox:
-if isempty(version)
-    try
-        fid     = fopen([toolboxPath 'version.txt'],'r');
-        version = fscanf(fid,'%s');
-        fclose(fid);
-    catch
-        %If not possible, try to find latest commit:
-        try
-            commit  = git('log -n 1 --format=%H');
-            version = ['commit ' commit(1:7)];
-        catch
-            version = 'unknown';
-        end
-    end
-end
-cd(currentPath);
-end
-
-function slashPos = getSlashPos(path)
-slashPos = strfind(path,'\');       %Windows
-if isempty(slashPos)
-    slashPos = strfind(path,'/');   %MAC/Linux
-end
-end
-
