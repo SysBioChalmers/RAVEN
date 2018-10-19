@@ -56,10 +56,17 @@ if isempty(version)
         version = fscanf(fid,'%s');
         fclose(fid);
     catch
-        %If not possible, try to find latest commit:
+        %If no file available, look up the tag:
         try
+            version = git('describe --tags');
             commit  = git('log -n 1 --format=%H');
-            version = ['commit ' commit(1:7)];
+            commit = commit(1:7);
+            %If no tag available or commit is part of tag, get commit instead:
+            if ~isempty(strfind(version,'fatal')) || ~isempty(strfind(version,commit))
+                version = ['commit ' commit];
+            else
+                version = strrep(version,'v','');
+            end
         catch
             version = 'unknown';
         end
