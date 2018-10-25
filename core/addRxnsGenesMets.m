@@ -146,25 +146,6 @@ if ~islogical(addGene) | addGene ~= false
     else
         rxnToAdd.grRules=sourceModel.grRules(rxnIdx); % Get the relevant grRules
     end
-    if length(rxnIdx)>1
-        geneList=strjoin(rxnToAdd.grRules);
-    else
-        geneList=rxnToAdd.grRules{1};
-    end
-    geneList=regexp(geneList,' |)|(|and|or','split');% Remove all grRule punctuation
-    geneList=geneList(~cellfun(@isempty,geneList)); % Remove spaces and empty genes
-    genesToAdd.genes=setdiff(unique(geneList),model.genes); % Only keep new genes
-    if ~isempty(genesToAdd.genes)
-        if isfield(model,'geneComps') & isfield(sourceModel,'geneComps')
-            genesToAdd.geneComps=zeros(1,numel(genesToAdd.genes));
-            genesToAdd.geneComps(:)=sourceModel.geneComps(1); % Assume all genes are in same compartment
-        end
-        model=addGenesRaven(model,genesToAdd);
-        fprintf('\n\nNumber of genes added to the model:\n')
-        fprintf(num2str(numel(genesToAdd.genes)))
-    else
-        fprintf('\n\nNo genes added to the model, because no genes were annotated or all genes were already present.')
-    end
 end
 % Add new reactions
 rxnToAdd.equations=constructEquations(sourceModel,rxnIdx);
@@ -186,7 +167,7 @@ end
 if isfield(sourceModel,'eccodes')
     rxnToAdd.eccodes=sourceModel.eccodes(rxnIdx);
 end
-model=addRxns(model,rxnToAdd,3,'',false);
+model=addRxns(model,rxnToAdd,3,'',false,true);
 
 fprintf('\n\nNumber of reactions added to the model:\n')
 fprintf([num2str(numel(rxnIdx)),'\n'])

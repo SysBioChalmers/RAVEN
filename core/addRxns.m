@@ -124,6 +124,8 @@ if allowNewGenes
         fprintf('\nNew genes added to the model:\n')
         fprintf([strjoin(genesToAdd.genes,', ') '\n'])
         newModel=addGenesRaven(model,genesToAdd);
+    else
+        newModel=model;
     end
 else
     newModel=model;
