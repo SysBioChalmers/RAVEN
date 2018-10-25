@@ -122,7 +122,7 @@ if allowNewGenes & isfield(rxnsToAdd,'grRules')
     end
     if ~isempty(genesToAdd.genes)
         fprintf('\nNew genes added to the model:\n')
-        fprintf(strjoin(genesToAdd.genes,'\n'))
+        fprintf([strjoin(genesToAdd.genes,'\n') '\n'])
         newModel=addGenesRaven(model,genesToAdd);
     else
         newModel=model;

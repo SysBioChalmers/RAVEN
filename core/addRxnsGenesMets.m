@@ -65,10 +65,10 @@ end
 [notNewRxn,oldRxn]=ismember(rxns,model.rxns);
 rxns=rxns(~notNewRxn);
 if isempty(rxns)
-    error('All reactions are already in the model.');
+    error('All reactions are already in the model.\n');
 elseif ~isempty(notNewRxn)
-    fprintf('\n The following reactions were already present in the model and will not be added:\n')
-    fprintf(strjoin(model.rxns(oldRxn(find(oldRxn))),'\n'))
+    fprintf('The following reactions were already present in the model and will not be added:\n')
+    fprintf([strjoin(model.rxns(oldRxn(find(oldRxn))),'\n') '\n'])
 end
 
 rxnIdx=find(ismember(sourceModel.rxns,rxns)); % Get rxnIDs
@@ -96,15 +96,15 @@ newMetCompsN=sourcemetCompsN(metIdx);
 notNewMet=newMetCompsN(ismember(newMetCompsN,metCompsN));
 
 if ~isempty(notNewMet)
-    fprintf('\n\nThe following metabolites were already present in the model and will not be added:\n')
-    fprintf(strjoin(transpose(notNewMet),'\n'))
+    fprintf('\nThe following metabolites were already present in the model and will not be added:\n')
+    fprintf([strjoin(transpose(notNewMet),'\n') '\n'])
 end
 
 metIdx=metIdx(~ismember(sourcemetCompsN(metIdx),metCompsN));
 
 if ~isempty(metIdx)
-    fprintf('\n\nThe following metabolites will be added to the model:\n')
-    fprintf(strjoin(transpose(sourcemetCompsN(metIdx)),'\n'))
+    fprintf('\nThe following metabolites will be added to the model:\n')
+    fprintf([strjoin(transpose(sourcemetCompsN(metIdx)),'\n') '\n'])
     
     if isfield(sourceModel,'mets')
         metsToAdd.mets=sourceModel.mets(metIdx);
@@ -134,7 +134,7 @@ if ~isempty(metIdx)
     
     model=addMets(model,metsToAdd);
 end
-fprintf('\n\nNumber of metabolites added to the model:\n')
+fprintf('\nNumber of metabolites added to the model:\n')
 fprintf([num2str(numel(metIdx)),'\n'])
 
 % Add new genes
@@ -169,6 +169,6 @@ if isfield(sourceModel,'eccodes')
 end
 model=addRxns(model,rxnToAdd,3,'',false,true);
 
-fprintf('\n\nNumber of reactions added to the model:\n')
+fprintf('\nNumber of reactions added to the model:\n')
 fprintf([num2str(numel(rxnIdx)),'\n'])
 end
