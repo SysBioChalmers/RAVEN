@@ -112,7 +112,7 @@ if nargin<6
     allowNewGenes=false;
 end
 
-if allowNewGenes
+if allowNewGenes & isfield(rxnsToAdd,'grRules')
     genesToAdd.genes = strjoin(rxnsToAdd.grRules);
     genesToAdd.genes = regexp(genesToAdd.genes,' |)|(|and|or','split'); % Remove all grRule punctuation
     genesToAdd.genes = genesToAdd.genes(~cellfun(@isempty,genesToAdd.genes));  % Remove spaces and empty genes
