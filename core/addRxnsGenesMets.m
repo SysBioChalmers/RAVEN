@@ -135,7 +135,7 @@ if ~isempty(metIdx)
     model=addMets(model,metsToAdd);
 end
 fprintf('\n\nNumber of metabolites added to the model:\n')
-fprintf(num2str(numel(metIdx)))
+fprintf([num2str(numel(metIdx)),'\n'])
 
 % Add new genes
 if ~islogical(addGene) | addGene ~= false

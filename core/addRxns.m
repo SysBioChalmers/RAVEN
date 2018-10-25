@@ -122,7 +122,7 @@ if allowNewGenes
     end
     if ~isempty(genesToAdd.genes)
         fprintf('\nNew genes added to the model:\n')
-        fprintf([strjoin(genesToAdd.genes,', ') '\n'])
+        fprintf(strjoin(genesToAdd.genes,'\n'))
         newModel=addGenesRaven(model,genesToAdd);
     else
         newModel=model;
