@@ -1,4 +1,4 @@
-function newModel=addMets(model,metsToAdd,copyInfo)
+function newModel=addMets(model,metsToAdd,copyInfo,prefix)
 % addMets
 %   Adds metabolites to a model
 %
@@ -49,7 +49,7 @@ function newModel=addMets(model,metsToAdd,copyInfo)
 %   metsToAdd.metMiriams{2} = struct('name',{{'chebi';'kegg.compound'}},...
 %       'value',{{'CHEBI:31132';'C12248'}});
 %
-%   Usage: newModel=addMets(model,metsToAdd,copyInfo)
+%   Usage: newModel=addMets(model,metsToAdd,copyInfo,prefix)
 %
 %   Eduard Kerkhoven, 2018-10-03
 %
