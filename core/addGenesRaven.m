@@ -122,6 +122,6 @@ if isfield(newModel,'geneFrom')
 end
 
 if isfield(newModel,'rxnGeneMat')
-    newModel.rxnGeneMat=[newModel.rxnGeneMat,zeros(length(newModel.rxns),1)];
+    newModel.rxnGeneMat=[newModel.rxnGeneMat,zeros(length(newModel.rxns),nGenes)];
 end
 end

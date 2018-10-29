@@ -112,7 +112,7 @@ if nargin<6
     allowNewGenes=false;
 end
 
-if allowNewGenes
+if allowNewGenes & isfield(rxnsToAdd,'grRules')
     genesToAdd.genes = strjoin(rxnsToAdd.grRules);
     genesToAdd.genes = regexp(genesToAdd.genes,' |)|(|and|or','split'); % Remove all grRule punctuation
     genesToAdd.genes = genesToAdd.genes(~cellfun(@isempty,genesToAdd.genes));  % Remove spaces and empty genes
@@ -122,8 +122,10 @@ if allowNewGenes
     end
     if ~isempty(genesToAdd.genes)
         fprintf('\nNew genes added to the model:\n')
-        fprintf([strjoin(genesToAdd.genes,', ') '\n'])
+        fprintf([strjoin(genesToAdd.genes,'\n') '\n'])
         newModel=addGenesRaven(model,genesToAdd);
+    else
+        newModel=model;
     end
 else
     newModel=model;
