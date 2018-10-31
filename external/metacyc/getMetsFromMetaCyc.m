@@ -103,6 +103,11 @@ else
                 break;
             end
             
+            % Get the version of MetaCyc database
+            if numel(tline)>11 && strcmp(tline(1:11),'# Version: ')
+                metaCycMets.version=tline(12:end);
+            end
+            
             %Check if it is a new entry
             if numel(tline)>12 && strcmp(tline(1:12),'UNIQUE-ID - ')
                 metCounter=metCounter+1;
