@@ -2,11 +2,13 @@ function metaCycMets=getMetsFromMetaCyc(metacycPath)
 % getMetsFromMetaCyc
 %   Retrieves information of all metabolites in MetaCyc database
 %
+%   Input:
 %   metacycPath  if metacycMets.mat is not in the RAVEN\external\metacyc directory,
 %                this function will attempt to read data from a local dump
-%                of the MetaCyc database. metacycPath is the path to the root of
-%                this database
+%                of the MetaCyc database. metacycPath is the path to the
+%                MetaCyc data files
 %
+%   Output:
 %   model        a model structure generated from the database. The following
 %                fields are filled
 %                id:             'MetaCyc'
@@ -28,7 +30,7 @@ function metaCycMets=getMetsFromMetaCyc(metacycPath)
 %               
 %   Usage: model=getMetsFromMetaCyc(metacycPath)
 %
-%   Hao Wang, 2017-11-15
+%   Hao Wang, 2018-10-31
 %
 
 % NOTE: This is how one entry looks in the file
@@ -66,7 +68,7 @@ if exist(metsFile, 'file')
     fprintf(['NOTE: Importing MetaCyc metabolites from ' strrep(metsFile,'\','/') '.\n']);
     load(metsFile);
 else
-    fprintf(['Cannot locate ' strrep(metsFile,'\','/') ' and will try to generate it from the local MetaCyc database files.\n']);
+    fprintf(['Cannot locate ' strrep(metsFile,'\','/') '\nNow try to generate it from local MetaCyc data files...\n']);
     if ~exist(fullfile(metacycPath,metaCycMetFile),'file')
         EM=fprintf(['The file of metabolites cannot be located, and should be downloaded from MetaCyc.\n']);
         dispEM(EM);
@@ -267,7 +269,8 @@ else
         end
         
         %Saves the model
-        save('metaCycMets.mat','metaCycMets');
+        save(metsFile,'metaCycMets');
+        fprintf(['New metaCycMets.mat has been successfully updated!\n\n']);
     end
 end
 end
