@@ -1,14 +1,14 @@
 function linkMetaCycKEGGRxns
 % linkMetaCycKEGGRxns
 %   Link additional MetaCyc and KEGG reactions through metabolite mapping
-%   This function only need to run once after MetaCyc database update
+%   This function only need to run once when the MetaCyc database is updated
+%
+%   NOTE: No arguments are required
 %
 %   Usage: linkMetaCycKEGGRxns
 %
-%   Hao Wang, 2017-12-03
+%   Hao Wang, 2018-11-01
 %
-
-% No arguments are required
 
 load('metaCycRxns.mat'); %load MetaCyc reactions
 metaCycRxns.rxnFrom=cell(numel(metaCycRxns.rxns),1);
@@ -25,6 +25,7 @@ shrinkedKeggModel=removeReactions(keggModel,rxnToRemove,true,true);
 %metabolites). Replace mets information in KEGG model with the
 %corresponding ones in MetaCyc.
 load('metaCycMets.mat');
+fprintf('NOTE: Importing MetaCyc reactions\n\nMapping MetaCyc and KEGG reactions...\n');
 for i=1:numel(shrinkedKeggModel.mets)
     [a, b]=ismember(shrinkedKeggModel.mets{i},metaCycMets.keggid);
     if a
@@ -93,6 +94,11 @@ rxnLinks.kegg=rxnLinks.kegg(index);
 rxnLinks.metacyc=rxnLinks.metacyc(index);
 rxnLinks=rmfield(rxnLinks,'check');
 
-save('metaCycRxns.mat','metaCycRxns','rxnLinks','UNBALANCED','UNDETERMINED');
+%Get the MetaCyc path and update the metaCycRxns.mat
+[ST, I]=dbstack('-completenames');
+metaCycPath=fileparts(ST(I).file);
+rxnsFile=fullfile(metaCycPath,'metaCycRxns.mat');
+save(rxnsFile,'metaCycRxns','rxnLinks','TRANSPORT','UNBALANCED','UNDETERMINED','isSpontaneous');
+fprintf(['Reaction associations between MetaCyc and KEGG have been successfully updated!\n\n']);
 
 end
