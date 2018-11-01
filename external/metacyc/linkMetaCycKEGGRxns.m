@@ -11,8 +11,10 @@ function linkMetaCycKEGGRxns
 %
 
 load('metaCycRxns.mat'); %load MetaCyc reactions
-metaCycRxns.rxnFrom=cell(numel(metaCycRxns.rxns),1);
-metaCycRxns.rxnFrom(:)={'MetaCyc'};
+fprintf('NOTE: Importing MetaCyc reactions...\n');
+metaCycModel = metaCycRxns;
+metaCycModel.rxnFrom=cell(numel(metaCycModel.rxns),1);
+metaCycModel.rxnFrom(:)={'MetaCyc'};
 
 keggModel=getRxnsFromKEGG(); %load KEGG reactions
 
@@ -21,11 +23,11 @@ rxnToRemove=intersect(rxnLinks.kegg,keggModel.rxns);
 rxnToRemove=unique(rxnToRemove);
 shrinkedKeggModel=removeReactions(keggModel,rxnToRemove,true,true);
 
+fprintf('Mapping MetaCyc and KEGG reactions...\n');
 %Resolve the shared but unmapped reactions (through mapping the involved
 %metabolites). Replace mets information in KEGG model with the
 %corresponding ones in MetaCyc.
 load('metaCycMets.mat');
-fprintf('NOTE: Importing MetaCyc reactions\n\nMapping MetaCyc and KEGG reactions...\n');
 for i=1:numel(shrinkedKeggModel.mets)
     [a, b]=ismember(shrinkedKeggModel.mets{i},metaCycMets.keggid);
     if a
@@ -38,11 +40,11 @@ end
 %Prepare for the merge of KEGG and MetaCyc super models
 
 %Adding fields (comps, compNames, metNames, metComps)
-metaCycRxns.comps={'s'};
-metaCycRxns.compNames={'System'};
-metaCycRxns.metNames=metaCycRxns.mets;
-if ~isfield(metaCycRxns,'metComps')
-    metaCycRxns.metComps=ones(numel(metaCycRxns.mets),1);
+metaCycModel.comps={'s'};
+metaCycModel.compNames={'System'};
+metaCycModel.metNames=metaCycModel.mets;
+if ~isfield(metaCycModel,'metComps')
+    metaCycModel.metComps=ones(numel(metaCycModel.mets),1);
 end
 
 shrinkedKeggModel.comps={'s'};
@@ -53,7 +55,7 @@ if ~isfield(shrinkedKeggModel,'metComps')
 end
 
 %Merge models
-mappingModel=mergeModels({shrinkedKeggModel metaCycRxns});
+mappingModel=mergeModels({shrinkedKeggModel metaCycModel});
 
 %Remove compounds proton and water because KEGG reactions often miss them
 mappingModel=removeMets(mappingModel,{'PROTON','WATER'});
