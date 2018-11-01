@@ -2,10 +2,11 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 % getRxnsFromMetaCyc
 %   Retrieves reactions information from MetaCyc database
 %
+%   Input:
 %   metacycPath         if metaCycRxns.mat is not in the RAVEN\external\metacyc
-%                       directory, this function will attempt to read data
-%                       from a local dump of the metacyc database. metacycPath
-%                       is the path to the root of this database
+%                       directory, this function will attempt to build it by
+%                       reading info from a local dump of MetaCyc database,
+%                       metacycPath is the path to the MetaCyc data files
 %   keepTransportRxns   include transportation reactions, which often have identical
 %                       reactants and products that turn to be all-zero columns in
 %                       the S matrix (opt, default false)
@@ -17,6 +18,7 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 %                       structures or with non-numerical coefficients (e.g. n+1)
 %                       (opt, default false)
 %
+%   Output:
 %   model     a model structure generated from the database. The following
 %             fields are filled
 %             id:             'MetaCyc'
@@ -37,14 +39,15 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 %                             reactions present in pathway maps the reversibility
 %                             is taken from there
 %             b:              0 for all metabolites
+%             version:        MetaCyc database version
 %
 %   If the file metaCycRxns.mat is in the RAVEN/external/metacyc directory, it
-%   will be directly loaded instead of parsing the MetaCyc flat files and
+%   will be directly loaded instead of parsing the MetaCyc data files and
 %   pre-prepared lists of MetaCyc transport and undetermined reactions.
 %
 %   Usage: model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
 %
-%   Simonas Marcisauskas, 2018-03-19
+%   Hao Wang, 2018-11-01
 %
 
 %NOTE: This is how one entry looks in the file
@@ -91,7 +94,7 @@ if exist(rxnsFile, 'file')
     fprintf(['NOTE: Importing MetaCyc reactions from ' strrep(rxnsFile,'\','/') '.\n']);
     load(rxnsFile);
 else
-    fprintf(['Cannot locate ' strrep(rxnsFile,'\','/') ' and will try to generate it from the local MetaCyc database files.\n']);
+    fprintf(['Cannot locate ' strrep(rxnsFile,'\','/') '\nNow try to generate it from local MetaCyc data files...\n']);
     if ~exist(fullfile(metacycPath,metaCycRxnFile),'file') || ~exist(fullfile(metacycPath,metaCycPwyFile),'file')
         EM=fprintf(['The files of reactions or pathways cannot be located, and should be downloaded from MetaCyc.\n']);
         dispEM(EM);
@@ -218,7 +221,12 @@ else
             if ~ischar(tline)
                 break;
             end
-            
+
+            % Get the version of MetaCyc database
+            if numel(tline)>11 && strcmp(tline(1:11),'# Version: ')
+                version=tline(12:end);
+            end
+
             %Check if it is a new reaction
             if numel(tline)>12 && strcmp(tline(1:12),'UNIQUE-ID - ')
                 rxnCounter=rxnCounter+1;
@@ -528,9 +536,11 @@ else
         metaCycRxns.lb=metaCycRxns.rev*-1000;
         metaCycRxns.c=zeros(rxnCounter,1);
         metaCycRxns.b=zeros(numel(metaCycRxns.mets),1);
+        metaCycRxns.version=version;
         
         %Save the model structure
         save(rxnsFile,'metaCycRxns','rxnLinks','TRANSPORT','UNBALANCED','UNDETERMINED','isSpontaneous');
+        fprintf(['New metaCycRxns.mat has been successfully updated!\n\n']);
     end
 end
 
