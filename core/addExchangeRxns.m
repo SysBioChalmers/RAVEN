@@ -16,7 +16,8 @@ function [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
 %   addedRxns       ids of the added reactions
 %
 %   This is a faster version than addRxns when adding exchange reactions.
-%   New reactions are named "EXC_OUT/IN/BOTH_METID".
+%   New reactions are named "metName exchange (OUT/IN/BOTH)" while reaction
+%   ids are formatted as "EXC_OUT/IN/BOTH_METID".
 %
 %   Usage: [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
 %
@@ -52,9 +53,10 @@ model.c=[model.c;zeros(numel(J),1)];
 
 filler=cell(numel(J),1);
 filler(:)={''};
-addedRxns=strcat({['EXC_' reactionType '_']},mets);
+addedRxns=strcat('EXC_',reactionType,'_',mets);
+addedRxnNames=strcat(model.metNames(J),' exchange (',reactionType,')');
 model.rxns=[model.rxns;addedRxns];
-model.rxnNames=[model.rxnNames;addedRxns];
+model.rxnNames=[model.rxnNames;addedRxnNames];
 
 if isfield(model,'eccodes')
     model.eccodes=[model.eccodes;filler];
