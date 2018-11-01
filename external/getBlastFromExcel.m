@@ -18,7 +18,7 @@ function blastStructure=getBlastFromExcel(models,blastFile,organismId)
 %   The entries should correspond to the gene names in those models. The third,
 %   fourth, and fifth columns represent the E-value, alignment length, and
 %   identity for each measurement (captions should be "E-value", "Alignment length",
-%   and "Identity").
+%   "Identity", "Bitscore" and "PPOS").
 %
 %   Usage: blastStructure=getBlastFromExcel(models,blastFile,organismId)
 %
@@ -52,7 +52,9 @@ for i=1:numel(sheets)
     %are in "models"
     [values,dataSheet]=xlsread(blastFile,i);
     labels=dataSheet(1,:);
-    if strcmpi(labels{3},'E-value') && strcmpi(labels{4},'Alignment length') && strcmpi(labels{5},'Identity')
+    if strcmpi(labels{3},'E-value') && strcmpi(labels{4},'Alignment length') ...
+            && strcmpi(labels{5},'Identity') && strcmpi(labels{6},'Bitscore') ...
+            && strcmpi(labels{7},'PPOS')
         %At least one of the organisms must have a model
         fromID=find(strcmpi(labels{1},organisms));
         toID=find(strcmpi(labels{2},organisms));
@@ -79,6 +81,8 @@ for i=1:numel(sheets)
             blastStructure(numel(blastStructure)).evalue=values(:,1);
             blastStructure(numel(blastStructure)).aligLen=values(:,2);
             blastStructure(numel(blastStructure)).identity=values(:,3);
+            blastStructure(numel(blastStructure)).bitscore=values(:,4);
+            blastStructure(numel(blastStructure)).ppos=values(:,5);
             
             %Remove matches where any of the values is NaN. This would have
             %been done anyways in getModelFromHomology, but it's neater to
@@ -89,6 +93,8 @@ for i=1:numel(sheets)
             blastStructure(end).evalue(I)=[];
             blastStructure(end).aligLen(I)=[];
             blastStructure(end).identity(I)=[];
+            blastStructure(end).bitscore(I)=[];
+            blastStructure(end).ppos(I)=[];            
         else
             if isempty(toID) || isempty(fromID)
                 EM=['The data in sheet ' sheets{i} ' has no corresponding model. Ignoring sheet'];
