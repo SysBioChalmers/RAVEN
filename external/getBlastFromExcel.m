@@ -43,7 +43,7 @@ end
 [type, sheets]=xlsfinfo(blastFile);
 
 %Check if the file is a Microsoft Excel Spreadsheet
-if ~strcmp(type,'Microsoft Excel Spreadsheet')
+if ~any(regexp(type,'Excel Spreadsheet')
     EM='The file is not a Microsoft Excel Spreadsheet';
     dispEM(EM);
 end
@@ -51,7 +51,7 @@ end
 for i=1:numel(sheets)
     %Check if the sheet has the right header and deal with organisms that
     %are in "models"
-    [values,dataSheet]=xlsread(blastFile,i);
+    [values,dataSheet]=xlsread(blastFile,dataSheet{i});
     labels=dataSheet(1,:);
     if strcmpi(labels{3},'E-value') && strcmpi(labels{4},'Alignment length') ...
             && strcmpi(labels{5},'Identity') && strcmpi(labels{6},'Bitscore') ...
