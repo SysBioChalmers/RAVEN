@@ -16,13 +16,14 @@ function blastStructure=getBlastFromExcel(models,blastFile,organismId)
 %   organisms. The first and second column headers in each sheet is the
 %   "to" and "from" model ids (as defined in models or for the new organism).
 %   The entries should correspond to the gene names in those models. The third,
-%   fourth, and fifth columns represent the E-value, alignment length, and
-%   identity for each measurement (captions should be "E-value", "Alignment length",
+%   fourth, fifth, sixth and seventh columns represent the E-value, alignment
+%   length, identity, bitscore and percentage of positive-scoring matches for
+%   each measurement (captions should be "E-value", "Alignment length",
 %   "Identity", "Bitscore" and "PPOS").
 %
 %   Usage: blastStructure=getBlastFromExcel(models,blastFile,organismId)
 %
-%   Eduard Kerkhoven, 2018-05-18
+%   Eduard Kerkhoven, 2018-11-02
 %
 
 if ~(exist(blastFile,'file')==2)
