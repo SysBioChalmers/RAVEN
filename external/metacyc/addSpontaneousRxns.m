@@ -3,6 +3,7 @@ function [spontaneousRxnList, pathwayID]=addSpontaneousRxns(rxnList, metList)
 %   Retrieve spontaneous reactions based on the pathway-spontaneousRxn
 %   associations curated by the MetaCyc database
 %
+%   Input:
 %   rxnList              query list of reactions in cell array
 %
 %   metList              query list of metabolites in cell array
@@ -10,11 +11,12 @@ function [spontaneousRxnList, pathwayID]=addSpontaneousRxns(rxnList, metList)
 %   spontaneousRxnList   reterieved spontaneous reactions associated to
 %                        the queried MetaCyc reactions and metabolites
 %
+%   Output:
 %   pathwayID            the cell array of relevant pathways
 %
 %   Usage: spontaneousRxnList=addSpontaneousRxns(rxnList, metList)
 %
-%   Hao Wang, 2018-03-01
+%   Hao Wang, 2018-11-06
 %
 
 if nargin<2
