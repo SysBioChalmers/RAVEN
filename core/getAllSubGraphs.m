@@ -3,8 +3,10 @@ function subGraphs=getAllSubGraphs(model)
 %   Get all metabolic subgraphs in a model. Two metabolites 
 %   are connected if they share a reaction.
 %
+%   Input:
 %   model         a model structure
 %
+%   Output:
 %   subGraphs     a boolean matrix where the rows correspond to the metabolites
 %                 and the columns to which subgraph they are assigned to. The
 %                 columns are ordered so that larger subgraphs come first
