@@ -22,8 +22,8 @@ G(G~=0)=1;
 %Keeps track of which mets have been assigned to a subgraph
 isAssigned=false(numel(model.mets),1);
 
-%Allocate space for 100 subgraphs
-subGraphs=false(numel(model.mets),100);
+%Allocate space for subgraphs, initially one graph for each met
+subGraphs=false(numel(model.mets),numel(model.mets));
 
 %Main loop continues until all mets have been assigned to a subgraph
 counter=1;
