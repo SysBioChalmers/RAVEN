@@ -1,10 +1,12 @@
 function model=getMetaCycModelForOrganism(organismID,fastaFile,...
-    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives)
+    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond)
 % getMetaCycModelForOrganism
 %   Reconstructs a genome-scale metabolic model based on protein homology to the
 %   MetaCyc pathway database
 %
-%   organismID          abbreviation of the query organism 
+%   Input:
+%   organismID          the query organism's abbreviation, which is defined
+%                       by user
 %   fastaFile           a FASTA file that contains the protein sequences of
 %                       the organism for which to reconstruct a model
 %   keepTransportRxns   include transportation reactions, which often have identical
@@ -19,13 +21,16 @@ function model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %                       (opt, default false)
 %   minScore            minimum Bit scores of BLASTp search (opt, default 100)
 %   minPositives        minimum Positives values of BLASTp search (opt, default 45 %)
+%   useDiamond          use DIAMOND alignment tools to perform homology search
+%                       if true, otherwise the BLASTP is used (opt, default true)
 %
+%   Output:
 %   model               a model structure for the query organism
 %
 %   Usage: model=getMetaCycModelForOrganism(organismID,fastaFile,...
-%    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives)
+%    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond)
 %
-%   Eduard Kerkhoven, 2018-05-18
+%   Hao Wang, 2018-11-05
 %
 
 if nargin<2
@@ -46,6 +51,9 @@ if nargin<6
 end
 if nargin<7
     minPositives=45;
+end
+if nargin<8
+    useDiamond=true;
 end
 
 %Check if query fasta exists
@@ -77,9 +85,12 @@ model.equations=metaCycModel.equations;
 [ST I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(ST(I).file));
 
-%Generate blast strcture (ensure location of MetaCyc functions are is
-%$RAVEN/external/metacyc)
-blastStruc=getBlast(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'metacyc','protseq.fsa'));
+%Generate blast strcture by either DIAMOND or BLASTP
+if useDiamond
+    blastStruc=getDiamond(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'metacyc','protseq.fsa'));
+else
+    blastStruc=getBlast(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'metacyc','protseq.fsa'));
+end
 
 %Only look the query
 blastStructure=blastStruc(2);
