@@ -4,8 +4,6 @@
 
 The RAVEN (Reconstruction, Analysis and Visualization of Metabolic Networks) Toolbox 2 is a software suite for Matlab that allows for semi-automated reconstruction of genome-scale models (GEMs). It makes use of published models and/or KEGG, MetaCyc databases, coupled with extensive gap-filling and quality control features. The software suite also contains methods for visualizing simulation results and omics data, as well as a range of methods for performing simulations and analyzing the results. The software is a useful tool for system-wide data analysis in a metabolic context and for streamlined reconstruction of metabolic networks based on protein homology.
 
-**The RAVEN Toolbox 2 paper is now available from [bioRxiv](https://doi.org/10.1101/321067).**
-
 
 ## Documentation
 The information about downloading, installing and developing RAVEN is included in the [Wiki](https://github.com/SysBioChalmers/RAVEN/wiki)
@@ -13,7 +11,7 @@ The information about downloading, installing and developing RAVEN is included i
 
 ## Citation
 If you use RAVEN 2.0 in your scientific work, please cite:
-> Wang H _et al_. (2018) "RAVEN 2.0: a versatile platform for metabolic network reconstruction and a case study on _Streptomyces coelicolor_" bioRxiv doi:[10.1101/321067](https://doi.org/10.1101/321067)
+> Wang H, Marcišauskas S, Sánchez BJ, Domenzain I, Hermansson D, Agren R, Nielsen J, Kerkhoven EJ. (2018) RAVEN 2.0: A versatile toolbox for metabolic network reconstruction and a case study on _Streptomyces coelicolor_. PLoS Comput Biol 14(10): e1006541. doi:[10.1371/journal.pcbi.1006541](https://doi.org/10.1371/journal.pcbi.1006541).
 
 If you use any of the following functions, please also cite the relevant paper:
 

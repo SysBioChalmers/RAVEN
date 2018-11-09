@@ -122,9 +122,6 @@ if isfield(newModel,'geneFrom')
 end
 
 if isfield(newModel,'rxnGeneMat')
-    %Fix grRules and reconstruct rxnGeneMat
-    [grRules,rxnGeneMat] = standardizeGrRules(newModel,true);
-    newModel.grRules = grRules;
-    newModel.rxnGeneMat = rxnGeneMat;
+    newModel.rxnGeneMat=[newModel.rxnGeneMat,zeros(length(newModel.rxns),nGenes)];
 end
 end

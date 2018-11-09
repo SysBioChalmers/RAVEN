@@ -1,18 +1,20 @@
 function linkMetaCycKEGGRxns
 % linkMetaCycKEGGRxns
 %   Link additional MetaCyc and KEGG reactions through metabolite mapping
-%   This function only need to run once after MetaCyc database update
+%   This function only need to run once when the MetaCyc database is updated
+%
+%   NOTE: No arguments are required
 %
 %   Usage: linkMetaCycKEGGRxns
 %
-%   Hao Wang, 2017-12-03
+%   Hao Wang, 2018-11-01
 %
 
-% No arguments are required
-
 load('metaCycRxns.mat'); %load MetaCyc reactions
-metaCycRxns.rxnFrom=cell(numel(metaCycRxns.rxns),1);
-metaCycRxns.rxnFrom(:)={'MetaCyc'};
+fprintf('NOTE: Importing MetaCyc reactions...\n');
+metaCycModel = metaCycRxns;
+metaCycModel.rxnFrom=cell(numel(metaCycModel.rxns),1);
+metaCycModel.rxnFrom(:)={'MetaCyc'};
 
 keggModel=getRxnsFromKEGG(); %load KEGG reactions
 
@@ -21,6 +23,7 @@ rxnToRemove=intersect(rxnLinks.kegg,keggModel.rxns);
 rxnToRemove=unique(rxnToRemove);
 shrinkedKeggModel=removeReactions(keggModel,rxnToRemove,true,true);
 
+fprintf('Mapping MetaCyc and KEGG reactions...\n');
 %Resolve the shared but unmapped reactions (through mapping the involved
 %metabolites). Replace mets information in KEGG model with the
 %corresponding ones in MetaCyc.
@@ -37,11 +40,11 @@ end
 %Prepare for the merge of KEGG and MetaCyc super models
 
 %Adding fields (comps, compNames, metNames, metComps)
-metaCycRxns.comps={'s'};
-metaCycRxns.compNames={'System'};
-metaCycRxns.metNames=metaCycRxns.mets;
-if ~isfield(metaCycRxns,'metComps')
-    metaCycRxns.metComps=ones(numel(metaCycRxns.mets),1);
+metaCycModel.comps={'s'};
+metaCycModel.compNames={'System'};
+metaCycModel.metNames=metaCycModel.mets;
+if ~isfield(metaCycModel,'metComps')
+    metaCycModel.metComps=ones(numel(metaCycModel.mets),1);
 end
 
 shrinkedKeggModel.comps={'s'};
@@ -52,7 +55,7 @@ if ~isfield(shrinkedKeggModel,'metComps')
 end
 
 %Merge models
-mappingModel=mergeModels({shrinkedKeggModel metaCycRxns});
+mappingModel=mergeModels({shrinkedKeggModel metaCycModel});
 
 %Remove compounds proton and water because KEGG reactions often miss them
 mappingModel=removeMets(mappingModel,{'PROTON','WATER'});
@@ -93,6 +96,11 @@ rxnLinks.kegg=rxnLinks.kegg(index);
 rxnLinks.metacyc=rxnLinks.metacyc(index);
 rxnLinks=rmfield(rxnLinks,'check');
 
-save('metaCycRxns.mat','metaCycRxns','rxnLinks','UNBALANCED','UNDETERMINED');
+%Get the MetaCyc path and update the metaCycRxns.mat
+[ST, I]=dbstack('-completenames');
+metaCycPath=fileparts(ST(I).file);
+rxnsFile=fullfile(metaCycPath,'metaCycRxns.mat');
+save(rxnsFile,'metaCycRxns','rxnLinks','TRANSPORT','UNBALANCED','UNDETERMINED','isSpontaneous');
+fprintf(['Reaction associations between MetaCyc and KEGG have been successfully updated!\n\n']);
 
 end

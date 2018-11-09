@@ -62,16 +62,19 @@ if ischar(rxns)
 end
 
 % Obtain indexes of reactions in source model
-notNewRxn=rxns(ismember(rxns,model.rxns));
-rxns=rxns(~ismember(rxns,model.rxns));
+[notNewRxn,oldRxn]=ismember(rxns,model.rxns);
+rxns=rxns(~notNewRxn);
 if isempty(rxns)
-    throw(MException('','All reactions are already in the model.'));
+    error('All reactions are already in the model.\n');
 elseif ~isempty(notNewRxn)
-    fprintf('\n The following reactions were already present in the model and will not be added:\n')
-    fprintf(strjoin(notNewRxn,'\n'))
+    fprintf('The following reactions were already present in the model and will not be added:\n')
+    fprintf([strjoin(model.rxns(oldRxn(find(oldRxn))),'\n') '\n'])
 end
 
 rxnIdx=find(ismember(sourceModel.rxns,rxns)); % Get rxnIDs
+if length(rxnIdx)~=length(rxns)
+    error('Not all reaction IDs could be found in the source model')
+end
 
 % Add new metabolites
 metIdx=find(any(sourceModel.S(:,rxnIdx),2)); % Get metabolite IDs
@@ -93,15 +96,15 @@ newMetCompsN=sourcemetCompsN(metIdx);
 notNewMet=newMetCompsN(ismember(newMetCompsN,metCompsN));
 
 if ~isempty(notNewMet)
-    fprintf('\n\nThe following metabolites were already present in the model and will not be added:\n')
-    fprintf(strjoin(transpose(notNewMet),'\n'))
+    fprintf('\nThe following metabolites were already present in the model and will not be added:\n')
+    fprintf([strjoin(transpose(notNewMet),'\n') '\n'])
 end
 
 metIdx=metIdx(~ismember(sourcemetCompsN(metIdx),metCompsN));
 
 if ~isempty(metIdx)
-    fprintf('\n\nThe following metabolites will be added to the model:\n')
-    fprintf(strjoin(transpose(sourcemetCompsN(metIdx)),'\n'))
+    fprintf('\nThe following metabolites will be added to the model:\n')
+    fprintf([strjoin(transpose(sourcemetCompsN(metIdx)),'\n') '\n'])
     
     if isfield(sourceModel,'mets')
         metsToAdd.mets=sourceModel.mets(metIdx);
@@ -131,37 +134,17 @@ if ~isempty(metIdx)
     
     model=addMets(model,metsToAdd);
 end
-fprintf('\n\nNumber of metabolites added to the model:\n')
-fprintf(num2str(numel(metIdx)))
-fprintf('\n')
+fprintf('\nNumber of metabolites added to the model:\n')
+fprintf([num2str(numel(metIdx)),'\n'])
 
 % Add new genes
-if addGene ~= false
+if ~islogical(addGene) | addGene ~= false
     if ischar(addGene)
         rxnToAdd.grRules={addGene};
     elseif iscell(addGene)
-        rxnToAdd.grRules=addGene;
+        rxnToAdd.grRules=addGene(~notNewRxn); 
     else
         rxnToAdd.grRules=sourceModel.grRules(rxnIdx); % Get the relevant grRules
-    end
-    if length(rxnIdx)>1
-        geneList=strjoin(rxnToAdd.grRules);
-    else
-        geneList=rxnToAdd.grRules{1};
-    end
-    geneList=regexp(geneList,' |)|(|and|or','split');% Remove all grRule punctuation
-    geneList=geneList(~cellfun(@isempty,geneList)); % Remove spaces and empty genes
-    genesToAdd.genes=setdiff(unique(geneList),model.genes); % Only keep new genes
-    if ~isempty(genesToAdd.genes)
-        if isfield(model,'geneComps') & isfield(sourceModel,'geneComps')
-            genesToAdd.geneComps=zeros(1,numel(genesToAdd.genes));
-            genesToAdd.geneComps(:)=sourceModel.geneComps(1); % Assume all genes are in same compartment
-        end
-        model=addGenesRaven(model,genesToAdd);
-        fprintf('\n\nNumber of genes added to the model:\n')
-        fprintf(num2str(numel(genesToAdd.genes)))
-    else
-        fprintf('\n\nNo genes added to the model, because no genes were annotated or all genes were already present.')
     end
 end
 % Add new reactions
@@ -184,8 +167,8 @@ end
 if isfield(sourceModel,'eccodes')
     rxnToAdd.eccodes=sourceModel.eccodes(rxnIdx);
 end
-model=addRxns(model,rxnToAdd,3,'',false);
+model=addRxns(model,rxnToAdd,3,'',false,true);
 
-fprintf('\n\nNumber of reactions added to the model:\n')
+fprintf('\nNumber of reactions added to the model:\n')
 fprintf([num2str(numel(rxnIdx)),'\n'])
 end

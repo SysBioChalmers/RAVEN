@@ -61,7 +61,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function version = getVersion(toolbox,IDfile,masterFlag)</a></li><li><a href="#_sub2" class="code">function slashPos = getSlashPos(path)</a></li><li><a href="#_sub3" class="code">function checkIfMaster(toolbox,masterFlag)</a></li></ul>
+<li><a href="#_sub1" class="code">function version = getVersion(toolbox,IDfile,masterFlag)</a></li><li><a href="#_sub2" class="code">function slashPos = getSlashPos(path)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function out=exportForGit(model,prefix,path,formats,masterFlag)</a>
@@ -188,51 +188,58 @@ This function is called by:
 0122 
 0123 <a name="_sub1" href="#_subfunctions" class="code">function version = getVersion(toolbox,IDfile,masterFlag)</a>
 0124 currentPath = pwd;
-0125 <span class="keyword">try</span>
-0126     toolboxPath = which(IDfile);
-0127     <span class="comment">%Go up until the root is found:</span>
-0128     <span class="keyword">while</span> ~ismember({<span class="string">'.git'</span>},ls(toolboxPath))
-0129         slashPos    = <a href="#_sub2" class="code" title="subfunction slashPos = getSlashPos(path)">getSlashPos</a>(toolboxPath);
-0130         toolboxPath = toolboxPath(1:slashPos(end)-1);
-0131     <span class="keyword">end</span>
-0132     cd(toolboxPath);
-0133     <a href="#_sub3" class="code" title="subfunction checkIfMaster(toolbox,masterFlag)">checkIfMaster</a>(toolbox,masterFlag)
-0134     <span class="comment">%Try to find version file of the toolbox:</span>
-0135     <span class="keyword">try</span>
-0136         fid     = fopen(<span class="string">'version.txt'</span>,<span class="string">'r'</span>);
-0137         version = fscanf(fid,<span class="string">'%s'</span>);
-0138         fclose(fid);
-0139     <span class="keyword">catch</span>
-0140         <span class="comment">%If not possible, try to find latest commit:</span>
-0141         <span class="keyword">try</span>
-0142             commit  = git(<span class="string">'log -n 1 --format=%H'</span>);
-0143             version = [<span class="string">'commit '</span> commit(1:7)];
-0144         <span class="keyword">catch</span>
-0145             version = <span class="string">'unknown'</span>;
-0146         <span class="keyword">end</span>
-0147     <span class="keyword">end</span>
-0148 <span class="keyword">catch</span>
-0149     disp([toolbox <span class="string">' toolbox cannot be found'</span>])
-0150     version = <span class="string">''</span>;
-0151 <span class="keyword">end</span>
-0152 cd(currentPath);
-0153 <span class="keyword">end</span>
-0154 
-0155 <a name="_sub2" href="#_subfunctions" class="code">function slashPos = getSlashPos(path)</a>
-0156 slashPos = strfind(path,<span class="string">'\'</span>);       <span class="comment">%Windows</span>
-0157 <span class="keyword">if</span> isempty(slashPos)
-0158     slashPos = strfind(path,<span class="string">'/'</span>);   <span class="comment">%MAC/Linux</span>
-0159 <span class="keyword">end</span>
-0160 <span class="keyword">end</span>
-0161 
-0162 <a name="_sub3" href="#_subfunctions" class="code">function checkIfMaster(toolbox,masterFlag)</a>
-0163 <span class="keyword">if</span> masterFlag
-0164     currentBranch = git(<span class="string">'rev-parse --abbrev-ref HEAD'</span>);
-0165     <span class="keyword">if</span> ~strcmp(currentBranch,<span class="string">'master'</span>)
-0166         error([<span class="string">'ERROR: '</span> toolbox <span class="string">' not in master. Check-out the master branch of '</span> toolbox <span class="string">' before submitting model for Git.'</span>])
-0167     <span class="keyword">end</span>
+0125 version     = <span class="string">''</span>;
+0126 <span class="comment">%Try to find root of toolbox:</span>
+0127 <span class="keyword">try</span>
+0128     toolboxPath = which(IDfile);                <span class="comment">%full file path</span>
+0129     slashPos    = <a href="#_sub2" class="code" title="subfunction slashPos = getSlashPos(path)">getSlashPos</a>(toolboxPath);
+0130     toolboxPath = toolboxPath(1:slashPos(end)); <span class="comment">%folder path</span>
+0131     <span class="comment">%Go up until the root is found:</span>
+0132     D = dir(toolboxPath);
+0133     <span class="keyword">while</span> ~ismember({<span class="string">'.git'</span>},{D.name})
+0134         slashPos    = <a href="#_sub2" class="code" title="subfunction slashPos = getSlashPos(path)">getSlashPos</a>(toolboxPath);
+0135         toolboxPath = toolboxPath(1:slashPos(end-1));
+0136         D           = dir(toolboxPath);
+0137     <span class="keyword">end</span>
+0138     cd(toolboxPath);
+0139 <span class="keyword">catch</span>
+0140     disp([toolbox <span class="string">' toolbox cannot be found'</span>])
+0141     version = <span class="string">'unknown'</span>;
+0142 <span class="keyword">end</span>
+0143 <span class="comment">%Check if in master:</span>
+0144 <span class="keyword">if</span> masterFlag
+0145     currentBranch = git(<span class="string">'rev-parse --abbrev-ref HEAD'</span>);
+0146     <span class="keyword">if</span> ~strcmp(currentBranch,<span class="string">'master'</span>)
+0147         cd(currentPath);
+0148         error([<span class="string">'ERROR: '</span> toolbox <span class="string">' not in master. Check-out the master branch of '</span> toolbox <span class="string">' before submitting model for Git.'</span>])
+0149     <span class="keyword">end</span>
+0150 <span class="keyword">end</span>
+0151 <span class="comment">%Try to find version file of the toolbox:</span>
+0152 <span class="keyword">if</span> isempty(version)
+0153     <span class="keyword">try</span>
+0154         fid     = fopen([toolboxPath <span class="string">'version.txt'</span>],<span class="string">'r'</span>);
+0155         version = fscanf(fid,<span class="string">'%s'</span>);
+0156         fclose(fid);
+0157     <span class="keyword">catch</span>
+0158         <span class="comment">%If not possible, try to find latest commit:</span>
+0159         <span class="keyword">try</span>
+0160             commit  = git(<span class="string">'log -n 1 --format=%H'</span>);
+0161             version = [<span class="string">'commit '</span> commit(1:7)];
+0162         <span class="keyword">catch</span>
+0163             version = <span class="string">'unknown'</span>;
+0164         <span class="keyword">end</span>
+0165     <span class="keyword">end</span>
+0166 <span class="keyword">end</span>
+0167 cd(currentPath);
 0168 <span class="keyword">end</span>
-0169 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Thu 27-Sep-2018 11:46:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0169 
+0170 <a name="_sub2" href="#_subfunctions" class="code">function slashPos = getSlashPos(path)</a>
+0171 slashPos = strfind(path,<span class="string">'\'</span>);       <span class="comment">%Windows</span>
+0172 <span class="keyword">if</span> isempty(slashPos)
+0173     slashPos = strfind(path,<span class="string">'/'</span>);   <span class="comment">%MAC/Linux</span>
+0174 <span class="keyword">end</span>
+0175 <span class="keyword">end</span>
+0176</pre></div>
+<hr><address>Generated on Tue 16-Oct-2018 13:07:34 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
