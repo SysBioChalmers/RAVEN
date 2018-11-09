@@ -19,7 +19,7 @@ function out=exportForGit(model,prefix,path,formats,masterFlag)
 %
 %   Usage: exportForGit(model,prefix,path,formats,masterFlag)
 %
-%   Benjamin J. Sanchez, 2018-09-26
+%   Benjamin J. Sanchez, 2018-10-19
 %
 if nargin<5
     masterFlag=false;
@@ -118,52 +118,4 @@ if isfield(model,'modelVersion')
     end
 end
 fclose(fid);
-end
-
-function version = getVersion(toolbox,IDfile,masterFlag)
-currentPath = pwd;
-try
-    toolboxPath = which(IDfile);
-    %Go up until the root is found:
-    while ~ismember({'.git'},ls(toolboxPath))
-        slashPos    = getSlashPos(toolboxPath);
-        toolboxPath = toolboxPath(1:slashPos(end)-1);
-    end
-    cd(toolboxPath);
-    checkIfMaster(toolbox,masterFlag)
-    %Try to find version file of the toolbox:
-    try
-        fid     = fopen('version.txt','r');
-        version = fscanf(fid,'%s');
-        fclose(fid);
-    catch
-        %If not possible, try to find latest commit:
-        try
-            commit  = git('log -n 1 --format=%H');
-            version = ['commit ' commit(1:7)];
-        catch
-            version = 'unknown';
-        end
-    end
-catch
-    disp([toolbox ' toolbox cannot be found'])
-    version = '';
-end
-cd(currentPath);
-end
-
-function slashPos = getSlashPos(path)
-slashPos = strfind(path,'\');       %Windows
-if isempty(slashPos)
-    slashPos = strfind(path,'/');   %MAC/Linux
-end
-end
-
-function checkIfMaster(toolbox,masterFlag)
-if masterFlag
-    currentBranch = git('rev-parse --abbrev-ref HEAD');
-    if ~strcmp(currentBranch,'master')
-        error(['ERROR: ' toolbox ' not in master. Check-out the master branch of ' toolbox ' before submitting model for Git.'])
-    end
-end
 end

@@ -76,7 +76,7 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="addGenesRaven.html" class="code" title="function newModel=addGenesRaven(model,genesToAdd)">addGenesRaven</a>	addGenesRaven</li><li><a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,copyInfo)">addMets</a>	addMets</li><li><a href="addRxns.html" class="code" title="function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)">addRxns</a>	addRxns</li><li><a href="constructEquations.html" class="code" title="function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID)">constructEquations</a>	constructEquations</li><li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li></ul>
+<li><a href="addGenesRaven.html" class="code" title="function newModel=addGenesRaven(model,genesToAdd)">addGenesRaven</a>	addGenesRaven</li><li><a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,copyInfo)">addMets</a>	addMets</li><li><a href="addRxns.html" class="code" title="function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allowNewGenes)">addRxns</a>	addRxns</li><li><a href="constructEquations.html" class="code" title="function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID)">constructEquations</a>	constructEquations</li><li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -149,133 +149,135 @@ This function is called by:
 0062 <span class="keyword">end</span>
 0063 
 0064 <span class="comment">% Obtain indexes of reactions in source model</span>
-0065 notNewRxn=rxns(ismember(rxns,model.rxns));
-0066 rxns=rxns(~ismember(rxns,model.rxns));
+0065 [notNewRxn,oldRxn]=ismember(rxns,model.rxns);
+0066 rxns=rxns(~notNewRxn);
 0067 <span class="keyword">if</span> isempty(rxns)
-0068     throw(MException(<span class="string">''</span>,<span class="string">'All reactions are already in the model.'</span>));
+0068     error(<span class="string">'All reactions are already in the model.'</span>);
 0069 <span class="keyword">elseif</span> ~isempty(notNewRxn)
 0070     fprintf(<span class="string">'\n The following reactions were already present in the model and will not be added:\n'</span>)
-0071     fprintf(strjoin(notNewRxn,<span class="string">'\n'</span>))
+0071     fprintf(strjoin(model.rxns(oldRxn(find(oldRxn))),<span class="string">'\n'</span>))
 0072 <span class="keyword">end</span>
 0073 
 0074 rxnIdx=find(ismember(sourceModel.rxns,rxns)); <span class="comment">% Get rxnIDs</span>
-0075 
-0076 <span class="comment">% Add new metabolites</span>
-0077 metIdx=find(any(sourceModel.S(:,rxnIdx),2)); <span class="comment">% Get metabolite IDs</span>
-0078 <span class="comment">% Many of the metabolites in are already in the draft model, so only add</span>
-0079 <span class="comment">% the new metabolites</span>
-0080 
-0081 <span class="comment">% Match by metNames[metComps]. First make these structures for each model.</span>
-0082 metCompsN =cellstr(num2str(model.metComps));
-0083 map=containers.Map(cellstr(num2str(transpose([1:length(model.comps)]))),model.comps);
-0084 metCompsN = map.values(metCompsN);
-0085 metCompsN = strcat(model.metNames,<span class="string">'['</span>,metCompsN,<span class="string">']'</span>);
-0086 
-0087 sourcemetCompsN=cellstr(num2str(sourceModel.metComps));
-0088 map=containers.Map(cellstr(num2str(transpose([1:length(sourceModel.comps)]))),sourceModel.comps);
-0089 sourcemetCompsN = map.values(sourcemetCompsN);
-0090 sourcemetCompsN=strcat(sourceModel.metNames,<span class="string">'['</span>,sourcemetCompsN,<span class="string">']'</span>);
-0091 
-0092 newMetCompsN=sourcemetCompsN(metIdx);
-0093 notNewMet=newMetCompsN(ismember(newMetCompsN,metCompsN));
+0075 <span class="keyword">if</span> length(rxnIdx)~=length(rxns)
+0076     error(<span class="string">'Not all reaction IDs could be found in the source model'</span>)
+0077 <span class="keyword">end</span>
+0078 
+0079 <span class="comment">% Add new metabolites</span>
+0080 metIdx=find(any(sourceModel.S(:,rxnIdx),2)); <span class="comment">% Get metabolite IDs</span>
+0081 <span class="comment">% Many of the metabolites in are already in the draft model, so only add</span>
+0082 <span class="comment">% the new metabolites</span>
+0083 
+0084 <span class="comment">% Match by metNames[metComps]. First make these structures for each model.</span>
+0085 metCompsN =cellstr(num2str(model.metComps));
+0086 map=containers.Map(cellstr(num2str(transpose([1:length(model.comps)]))),model.comps);
+0087 metCompsN = map.values(metCompsN);
+0088 metCompsN = strcat(model.metNames,<span class="string">'['</span>,metCompsN,<span class="string">']'</span>);
+0089 
+0090 sourcemetCompsN=cellstr(num2str(sourceModel.metComps));
+0091 map=containers.Map(cellstr(num2str(transpose([1:length(sourceModel.comps)]))),sourceModel.comps);
+0092 sourcemetCompsN = map.values(sourcemetCompsN);
+0093 sourcemetCompsN=strcat(sourceModel.metNames,<span class="string">'['</span>,sourcemetCompsN,<span class="string">']'</span>);
 0094 
-0095 <span class="keyword">if</span> ~isempty(notNewMet)
-0096     fprintf(<span class="string">'\n\nThe following metabolites were already present in the model and will not be added:\n'</span>)
-0097     fprintf(strjoin(transpose(notNewMet),<span class="string">'\n'</span>))
-0098 <span class="keyword">end</span>
-0099 
-0100 metIdx=metIdx(~ismember(sourcemetCompsN(metIdx),metCompsN));
-0101 
-0102 <span class="keyword">if</span> ~isempty(metIdx)
-0103     fprintf(<span class="string">'\n\nThe following metabolites will be added to the model:\n'</span>)
-0104     fprintf(strjoin(transpose(sourcemetCompsN(metIdx)),<span class="string">'\n'</span>))
-0105     
-0106     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'mets'</span>)
-0107         metsToAdd.mets=sourceModel.mets(metIdx);
-0108     <span class="keyword">end</span>
-0109     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'metNames'</span>)
-0110         metsToAdd.metNames=sourceModel.metNames(metIdx);
+0095 newMetCompsN=sourcemetCompsN(metIdx);
+0096 notNewMet=newMetCompsN(ismember(newMetCompsN,metCompsN));
+0097 
+0098 <span class="keyword">if</span> ~isempty(notNewMet)
+0099     fprintf(<span class="string">'\n\nThe following metabolites were already present in the model and will not be added:\n'</span>)
+0100     fprintf(strjoin(transpose(notNewMet),<span class="string">'\n'</span>))
+0101 <span class="keyword">end</span>
+0102 
+0103 metIdx=metIdx(~ismember(sourcemetCompsN(metIdx),metCompsN));
+0104 
+0105 <span class="keyword">if</span> ~isempty(metIdx)
+0106     fprintf(<span class="string">'\n\nThe following metabolites will be added to the model:\n'</span>)
+0107     fprintf(strjoin(transpose(sourcemetCompsN(metIdx)),<span class="string">'\n'</span>))
+0108     
+0109     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'mets'</span>)
+0110         metsToAdd.mets=sourceModel.mets(metIdx);
 0111     <span class="keyword">end</span>
-0112     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'metFormulas'</span>)
-0113         metsToAdd.metFormulas=sourceModel.metFormulas(metIdx);
+0112     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'metNames'</span>)
+0113         metsToAdd.metNames=sourceModel.metNames(metIdx);
 0114     <span class="keyword">end</span>
-0115     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'metCharge'</span>)
-0116         metsToAdd.metCharge=sourceModel.metCharge(metIdx);
+0115     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'metFormulas'</span>)
+0116         metsToAdd.metFormulas=sourceModel.metFormulas(metIdx);
 0117     <span class="keyword">end</span>
-0118     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'metMiriams'</span>)
-0119         metsToAdd.metMiriams=sourceModel.metMiriams(metIdx);
+0118     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'metCharge'</span>)
+0119         metsToAdd.metCharge=sourceModel.metCharge(metIdx);
 0120     <span class="keyword">end</span>
-0121     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'metFormulas'</span>)
-0122         metsToAdd.metFormulas=sourceModel.metFormulas(metIdx);
+0121     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'metMiriams'</span>)
+0122         metsToAdd.metMiriams=sourceModel.metMiriams(metIdx);
 0123     <span class="keyword">end</span>
-0124     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'inchis'</span>)
-0125         metsToAdd.inchis=sourceModel.inchis(metIdx);
+0124     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'metFormulas'</span>)
+0125         metsToAdd.metFormulas=sourceModel.metFormulas(metIdx);
 0126     <span class="keyword">end</span>
-0127     
-0128     metsToAdd.compartments=strtrim(cellstr(num2str(sourceModel.metComps(metIdx)))); <span class="comment">% Convert from compartment string to compartment number</span>
-0129     [~,idx]=ismember(metsToAdd.compartments,strsplit(num2str(1:length(sourceModel.comps)))); <span class="comment">% Match compartment number to compartment abbreviation</span>
-0130     metsToAdd.compartments=sourceModel.comps(idx); <span class="comment">% Fill in compartment abbreviations</span>
-0131     
-0132     model=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,copyInfo)">addMets</a>(model,metsToAdd);
-0133 <span class="keyword">end</span>
-0134 fprintf(<span class="string">'\n\nNumber of metabolites added to the model:\n'</span>)
-0135 fprintf(num2str(numel(metIdx)))
-0136 fprintf(<span class="string">'\n'</span>)
-0137 
-0138 <span class="comment">% Add new genes</span>
-0139 <span class="keyword">if</span> addGene ~= false
-0140     <span class="keyword">if</span> ischar(addGene)
-0141         rxnToAdd.grRules={addGene};
-0142     <span class="keyword">elseif</span> iscell(addGene)
-0143         rxnToAdd.grRules=addGene;
-0144     <span class="keyword">else</span>
-0145         rxnToAdd.grRules=sourceModel.grRules(rxnIdx); <span class="comment">% Get the relevant grRules</span>
-0146     <span class="keyword">end</span>
-0147     <span class="keyword">if</span> length(rxnIdx)&gt;1
-0148         geneList=strjoin(rxnToAdd.grRules);
-0149     <span class="keyword">else</span>
-0150         geneList=rxnToAdd.grRules{1};
-0151     <span class="keyword">end</span>
-0152     geneList=regexp(geneList,<span class="string">' |)|(|and|or'</span>,<span class="string">'split'</span>);<span class="comment">% Remove all grRule punctuation</span>
-0153     geneList=geneList(~cellfun(@isempty,geneList)); <span class="comment">% Remove spaces and empty genes</span>
-0154     genesToAdd.genes=setdiff(unique(geneList),model.genes); <span class="comment">% Only keep new genes</span>
-0155     <span class="keyword">if</span> ~isempty(genesToAdd.genes)
-0156         <span class="keyword">if</span> isfield(model,<span class="string">'geneComps'</span>) &amp; isfield(sourceModel,<span class="string">'geneComps'</span>)
-0157             genesToAdd.geneComps=zeros(1,numel(genesToAdd.genes));
-0158             genesToAdd.geneComps(:)=sourceModel.geneComps(1); <span class="comment">% Assume all genes are in same compartment</span>
-0159         <span class="keyword">end</span>
-0160         model=<a href="addGenesRaven.html" class="code" title="function newModel=addGenesRaven(model,genesToAdd)">addGenesRaven</a>(model,genesToAdd);
-0161         fprintf(<span class="string">'\n\nNumber of genes added to the model:\n'</span>)
-0162         fprintf(num2str(numel(genesToAdd.genes)))
-0163     <span class="keyword">else</span>
-0164         fprintf(<span class="string">'\n\nNo genes added to the model, because no genes were annotated or all genes were already present.'</span>)
-0165     <span class="keyword">end</span>
-0166 <span class="keyword">end</span>
-0167 <span class="comment">% Add new reactions</span>
-0168 rxnToAdd.equations=<a href="constructEquations.html" class="code" title="function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID)">constructEquations</a>(sourceModel,rxnIdx);
-0169 rxnToAdd.rxnNames=sourceModel.rxnNames(rxnIdx);
-0170 rxnToAdd.rxns=sourceModel.rxns(rxnIdx);
-0171 rxnToAdd.lb=sourceModel.lb(rxnIdx);
-0172 rxnToAdd.ub=sourceModel.ub(rxnIdx);
-0173 rxnToAdd.rxnNotes=cell(1,numel(rxnToAdd.rxns));
-0174 rxnToAdd.rxnNotes(:)={rxnNote};
-0175 rxnToAdd.rxnConfidenceScores=NaN(1,numel(rxnToAdd.rxns));
-0176 <span class="keyword">if</span> ~isnumeric(confidence)
-0177     EM=<span class="string">'confidence score must be numeric'</span>;
-0178     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM, true);
-0179 <span class="keyword">end</span>
-0180 rxnToAdd.rxnConfidenceScores(:)=confidence;
-0181 <span class="keyword">if</span> isfield(sourceModel,<span class="string">'subSystems'</span>)
-0182     rxnToAdd.subSystems=sourceModel.subSystems(rxnIdx);
-0183 <span class="keyword">end</span>
-0184 <span class="keyword">if</span> isfield(sourceModel,<span class="string">'eccodes'</span>)
-0185     rxnToAdd.eccodes=sourceModel.eccodes(rxnIdx);
-0186 <span class="keyword">end</span>
-0187 model=<a href="addRxns.html" class="code" title="function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)">addRxns</a>(model,rxnToAdd,3,<span class="string">''</span>,false);
-0188 
-0189 fprintf(<span class="string">'\n\nNumber of reactions added to the model:\n'</span>)
-0190 fprintf([num2str(numel(rxnIdx)),<span class="string">'\n'</span>])
-0191 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Fri 28-Sep-2018 09:04:35 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0127     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'inchis'</span>)
+0128         metsToAdd.inchis=sourceModel.inchis(metIdx);
+0129     <span class="keyword">end</span>
+0130     
+0131     metsToAdd.compartments=strtrim(cellstr(num2str(sourceModel.metComps(metIdx)))); <span class="comment">% Convert from compartment string to compartment number</span>
+0132     [~,idx]=ismember(metsToAdd.compartments,strsplit(num2str(1:length(sourceModel.comps)))); <span class="comment">% Match compartment number to compartment abbreviation</span>
+0133     metsToAdd.compartments=sourceModel.comps(idx); <span class="comment">% Fill in compartment abbreviations</span>
+0134     
+0135     model=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,copyInfo)">addMets</a>(model,metsToAdd);
+0136 <span class="keyword">end</span>
+0137 fprintf(<span class="string">'\n\nNumber of metabolites added to the model:\n'</span>)
+0138 fprintf(num2str(numel(metIdx)))
+0139 
+0140 <span class="comment">% Add new genes</span>
+0141 <span class="keyword">if</span> ~islogical(addGene) | addGene ~= false
+0142     <span class="keyword">if</span> ischar(addGene)
+0143         rxnToAdd.grRules={addGene};
+0144     <span class="keyword">elseif</span> iscell(addGene)
+0145         rxnToAdd.grRules=addGene(~notNewRxn); 
+0146     <span class="keyword">else</span>
+0147         rxnToAdd.grRules=sourceModel.grRules(rxnIdx); <span class="comment">% Get the relevant grRules</span>
+0148     <span class="keyword">end</span>
+0149     <span class="keyword">if</span> length(rxnIdx)&gt;1
+0150         geneList=strjoin(rxnToAdd.grRules);
+0151     <span class="keyword">else</span>
+0152         geneList=rxnToAdd.grRules{1};
+0153     <span class="keyword">end</span>
+0154     geneList=regexp(geneList,<span class="string">' |)|(|and|or'</span>,<span class="string">'split'</span>);<span class="comment">% Remove all grRule punctuation</span>
+0155     geneList=geneList(~cellfun(@isempty,geneList)); <span class="comment">% Remove spaces and empty genes</span>
+0156     genesToAdd.genes=setdiff(unique(geneList),model.genes); <span class="comment">% Only keep new genes</span>
+0157     <span class="keyword">if</span> ~isempty(genesToAdd.genes)
+0158         <span class="keyword">if</span> isfield(model,<span class="string">'geneComps'</span>) &amp; isfield(sourceModel,<span class="string">'geneComps'</span>)
+0159             genesToAdd.geneComps=zeros(1,numel(genesToAdd.genes));
+0160             genesToAdd.geneComps(:)=sourceModel.geneComps(1); <span class="comment">% Assume all genes are in same compartment</span>
+0161         <span class="keyword">end</span>
+0162         model=<a href="addGenesRaven.html" class="code" title="function newModel=addGenesRaven(model,genesToAdd)">addGenesRaven</a>(model,genesToAdd);
+0163         fprintf(<span class="string">'\n\nNumber of genes added to the model:\n'</span>)
+0164         fprintf(num2str(numel(genesToAdd.genes)))
+0165     <span class="keyword">else</span>
+0166         fprintf(<span class="string">'\n\nNo genes added to the model, because no genes were annotated or all genes were already present.'</span>)
+0167     <span class="keyword">end</span>
+0168 <span class="keyword">end</span>
+0169 <span class="comment">% Add new reactions</span>
+0170 rxnToAdd.equations=<a href="constructEquations.html" class="code" title="function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID)">constructEquations</a>(sourceModel,rxnIdx);
+0171 rxnToAdd.rxnNames=sourceModel.rxnNames(rxnIdx);
+0172 rxnToAdd.rxns=sourceModel.rxns(rxnIdx);
+0173 rxnToAdd.lb=sourceModel.lb(rxnIdx);
+0174 rxnToAdd.ub=sourceModel.ub(rxnIdx);
+0175 rxnToAdd.rxnNotes=cell(1,numel(rxnToAdd.rxns));
+0176 rxnToAdd.rxnNotes(:)={rxnNote};
+0177 rxnToAdd.rxnConfidenceScores=NaN(1,numel(rxnToAdd.rxns));
+0178 <span class="keyword">if</span> ~isnumeric(confidence)
+0179     EM=<span class="string">'confidence score must be numeric'</span>;
+0180     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM, true);
+0181 <span class="keyword">end</span>
+0182 rxnToAdd.rxnConfidenceScores(:)=confidence;
+0183 <span class="keyword">if</span> isfield(sourceModel,<span class="string">'subSystems'</span>)
+0184     rxnToAdd.subSystems=sourceModel.subSystems(rxnIdx);
+0185 <span class="keyword">end</span>
+0186 <span class="keyword">if</span> isfield(sourceModel,<span class="string">'eccodes'</span>)
+0187     rxnToAdd.eccodes=sourceModel.eccodes(rxnIdx);
+0188 <span class="keyword">end</span>
+0189 model=<a href="addRxns.html" class="code" title="function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allowNewGenes)">addRxns</a>(model,rxnToAdd,3,<span class="string">''</span>,false);
+0190 
+0191 fprintf(<span class="string">'\n\nNumber of reactions added to the model:\n'</span>)
+0192 fprintf([num2str(numel(rxnIdx)),<span class="string">'\n'</span>])
+0193 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 16-Oct-2018 13:07:34 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

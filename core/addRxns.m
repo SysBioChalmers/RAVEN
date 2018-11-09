@@ -1,4 +1,4 @@
-function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
+function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allowNewGenes)
 % addRxns
 %   Adds reactions to a model
 %
@@ -23,12 +23,14 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %            rxnNames           cell array with the names of each reaction
 %                               (opt, default '')
 %            lb                 vector with the lower bounds (opt, default
-%                               -inf for reversible reactions and 0 for
-%                               irreversible when "equations" is used, or
-%                               -inf for all reactions when "mets" + 
-%                               "stoichCoeffs" are used
+%                               to model.annotations.defaultLB or -inf for
+%                               reversible reactions and 0 for irreversible
+%                               when "equations" is used. When "mets" and
+%                               "stoichCoeffs" are used it defaults for all
+%                               reactions to model.annotations.defaultLB or
+%                               -inf)
 %            ub                 vector with the upper bounds (opt, default
-%                               inf)
+%                               to model.annotations.defaultUB or inf)
 %            c                  vector with the objective function
 %                               coefficients (opt, default 0)
 %            eccodes            cell array with the EC-numbers for each
@@ -82,6 +84,8 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %                    more annotation of metabolites, allows for the use of
 %                    exchange metabolites, and using it reduces the risk
 %                    of parsing errors (opt, default false)
+%   allowNewGenes    true if the functions is allowed to add new genes
+%                    (opt, default false)
 %
 %   newModel         an updated model structure
 %
@@ -92,10 +96,10 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
 %   doesn't exist, the function will copy any available information from
 %   the metabolite in another compartment.
 %
-%   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets)
+%   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,...
+%                           allowNewMets,allowNewGenes)
 %
-%   Simonas Marcisauskas, 2018-04-03
-%   Benjamin J. Sanchez,  2018-08-22
+%   Eduard Kerkhoven, 2018-09-26
 %
 
 if nargin<4
@@ -104,8 +108,28 @@ end
 if nargin<5
     allowNewMets=false;
 end
+if nargin<6
+    allowNewGenes=false;
+end
 
-newModel=model;
+if allowNewGenes & isfield(rxnsToAdd,'grRules')
+    genesToAdd.genes = strjoin(rxnsToAdd.grRules);
+    genesToAdd.genes = regexp(genesToAdd.genes,' |)|(|and|or','split'); % Remove all grRule punctuation
+    genesToAdd.genes = genesToAdd.genes(~cellfun(@isempty,genesToAdd.genes));  % Remove spaces and empty genes
+    genesToAdd.genes = setdiff(unique(genesToAdd.genes),model.genes); % Only keep new genes
+    if isfield(model,'geneComps')
+        genesToAdd.geneComps(1:numel(genesToAdd.genes)) = repmat(11,numel(genesToAdd.genes),1);
+    end
+    if ~isempty(genesToAdd.genes)
+        fprintf('\nNew genes added to the model:\n')
+        fprintf([strjoin(genesToAdd.genes,'\n') '\n'])
+        newModel=addGenesRaven(model,genesToAdd);
+    else
+        newModel=model;
+    end
+else
+    newModel=model;
+end
 
 %If no reactions should be added
 if isempty(rxnsToAdd)
@@ -113,14 +137,14 @@ if isempty(rxnsToAdd)
 end
 
 %Check the input
-if ~isnumeric(eqnType)
+if isfield(rxnsToAdd,'stoichCoeffs')
+    eqnType=1;
+elseif ~isnumeric(eqnType)
     EM='eqnType must be numeric';
     dispEM(EM);
-else
-    if ~ismember(eqnType,[1 2 3])
-        EM='eqnType must be 1, 2, or 3';
-        dispEM(EM);
-    end
+elseif ~ismember(eqnType,[1 2 3])
+    EM='eqnType must be 1, 2, or 3';
+    dispEM(EM);
 end
 
 if eqnType==2 || (eqnType==1 && allowNewMets==true)
@@ -248,6 +272,12 @@ else
     end
 end
 
+if isfield(newModel,'annotation') & isfield(newModel.annotation,'defaultLB')
+    newLb=newModel.annotation.defaultLB;
+else
+    newLb=-inf;
+end
+
 if isfield(rxnsToAdd,'lb')
     if numel(rxnsToAdd.lb)~=nRxns
         EM='rxnsToAdd.lb must have the same number of elements as rxnsToAdd.rxns';
@@ -256,16 +286,22 @@ if isfield(rxnsToAdd,'lb')
     %Fill with standard if it doesn't exist
     if ~isfield(newModel,'lb')
         newModel.lb=zeros(nOldRxns,1);
-        newModel.lb(newModel.rev~=0)=-inf;
+        newModel.lb(newModel.rev~=0)=newLb;
     end
     newModel.lb=[newModel.lb;rxnsToAdd.lb(:)];
 else
     %Fill with standard if it doesn't exist
     if isfield(newModel,'lb')
         I=zeros(nRxns,1);
-        I(reversible~=0)=-inf;
+        I(reversible~=0)=newLb;
         newModel.lb=[newModel.lb;I];
     end
+end
+
+if isfield(newModel,'annotation') & isfield(newModel.annotation,'defaultUB')
+    newUb=newModel.annotation.defaultUB;
+else
+    newUb=inf;
 end
 
 if isfield(rxnsToAdd,'ub')
@@ -275,13 +311,13 @@ if isfield(rxnsToAdd,'ub')
     end
     %Fill with standard if it doesn't exist
     if ~isfield(newModel,'ub')
-        newModel.ub=inf(nOldRxns,1);
+        newModel.ub=repmat(newUb,nOldrxns,1);
     end
     newModel.ub=[newModel.ub;rxnsToAdd.ub(:)];
 else
     %Fill with standard if it doesn't exist
     if isfield(newModel,'ub')
-        newModel.ub=[newModel.ub;inf(nRxns,1)];
+        newModel.ub=[newModel.ub;repmat(newUb,nRxns,1)];
     end
 end
 
@@ -576,6 +612,7 @@ end
 
 %Add the info to the stoichiometric matrix
 newModel.S=[newModel.S sparse(size(newModel.S,1),nRxns)];
+
 for i=1:nRxns
     newModel.S(metIndexes,nOldRxns+i)=S(:,i);
     %Parse the grRules and check whether all genes in grRules appear in
@@ -589,14 +626,20 @@ for i=1:nRxns
         genes=regexp(rule,' ','split');
         [I, J]=ismember(genes,newModel.genes);
         if ~all(I) && any(rule)
-            EM=['Not all genes for reaction ' rxnsToAdd.rxns{i} ' were found in model.genes. If needed, add genes with addGenesRaven before calling this function'];
+            EM=['Not all genes for reaction ' rxnsToAdd.rxns{i} ' were found in model.genes. If needed, add genes with addGenesRaven before calling this function, or set the ''allowNewGenes'' flag to true'];
             dispEM(EM);
         end
     end
 end
 
+%Make temporary minimal model structure with only new rxns, to parse to
+%standardizeGrRules
+newRxnsModel.genes=newModel.genes;
+newRxnsModel.grRules=newModel.grRules(length(model.rxns)+1:end);
+newRxnsModel.rxns=newModel.rxns(length(model.rxns)+1:end);
+
 %Fix grRules and reconstruct rxnGeneMat
-[grRules,rxnGeneMat] = standardizeGrRules(newModel,true);
-newModel.grRules = grRules;
-newModel.rxnGeneMat = rxnGeneMat;
+[grRules,rxnGeneMat] = standardizeGrRules(newRxnsModel,true);
+newModel.rxnGeneMat = [newModel.rxnGeneMat; rxnGeneMat];
+newModel.grRules = [newModel.grRules(1:nOldRxns); grRules];
 end
