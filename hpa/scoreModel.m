@@ -227,7 +227,7 @@ if strcmpi(multipleCellScoring,'best')
 else
     current=sum(tempArrayLevels(:,I),2)./sum(~isnan(arrayData.levels(:,I)),2);
 end
-if any(current)
+if ~isempty(current)
     aScores=5*log(current./average);
 else
     aScores=[];
