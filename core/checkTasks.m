@@ -43,13 +43,13 @@ function [taskReport, essentialRxns, taskStructure]=checkTasks(model,inputFile,p
 %   Rasmus Agren, 2014-01-08
 %
 
-if nargin<3
+if nargin<3 || isempty(printOutput)
     printOutput=true;
 end
-if nargin<4
+if nargin<4 || isempty(printOnlyFailed)
     printOnlyFailed=false;
 end
-if nargin<5
+if nargin<5 || isempty(getEssential)
     getEssential=false;
 end
 
