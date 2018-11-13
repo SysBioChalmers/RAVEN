@@ -3,8 +3,10 @@ function subGraphs=getAllSubGraphs(model)
 %   Get all metabolic subgraphs in a model. Two metabolites 
 %   are connected if they share a reaction.
 %
+%   Input:
 %   model         a model structure
 %
+%   Output:
 %   subGraphs     a boolean matrix where the rows correspond to the metabolites
 %                 and the columns to which subgraph they are assigned to. The
 %                 columns are ordered so that larger subgraphs come first
@@ -22,8 +24,8 @@ G(G~=0)=1;
 %Keeps track of which mets have been assigned to a subgraph
 isAssigned=false(numel(model.mets),1);
 
-%Allocate space for 100 subgraphs
-subGraphs=false(numel(model.mets),100);
+%Allocate space for subgraphs, initially one graph for each met
+subGraphs=false(numel(model.mets),numel(model.mets));
 
 %Main loop continues until all mets have been assigned to a subgraph
 counter=1;
