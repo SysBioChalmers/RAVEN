@@ -31,8 +31,10 @@
    Get all metabolic subgraphs in a model. Two metabolites 
    are connected if they share a reaction.
 
+   Input:
    model         a model structure
 
+   Output:
    subGraphs     a boolean matrix where the rows correspond to the metabolites
                  and the columns to which subgraph they are assigned to. The
                  columns are ordered so that larger subgraphs come first
@@ -59,63 +61,65 @@ This function is called by:
 0003 <span class="comment">%   Get all metabolic subgraphs in a model. Two metabolites</span>
 0004 <span class="comment">%   are connected if they share a reaction.</span>
 0005 <span class="comment">%</span>
-0006 <span class="comment">%   model         a model structure</span>
-0007 <span class="comment">%</span>
-0008 <span class="comment">%   subGraphs     a boolean matrix where the rows correspond to the metabolites</span>
-0009 <span class="comment">%                 and the columns to which subgraph they are assigned to. The</span>
-0010 <span class="comment">%                 columns are ordered so that larger subgraphs come first</span>
-0011 <span class="comment">%</span>
-0012 <span class="comment">%   Usage: subGraphs=getAllSubGraphs(model)</span>
+0006 <span class="comment">%   Input:</span>
+0007 <span class="comment">%   model         a model structure</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">%   Output:</span>
+0010 <span class="comment">%   subGraphs     a boolean matrix where the rows correspond to the metabolites</span>
+0011 <span class="comment">%                 and the columns to which subgraph they are assigned to. The</span>
+0012 <span class="comment">%                 columns are ordered so that larger subgraphs come first</span>
 0013 <span class="comment">%</span>
-0014 <span class="comment">%   Rasmus Agren, 2013-11-22</span>
+0014 <span class="comment">%   Usage: subGraphs=getAllSubGraphs(model)</span>
 0015 <span class="comment">%</span>
-0016 
-0017 <span class="comment">%Generate the connectivity graph. Metabolites are connected through</span>
-0018 <span class="comment">%reactions. This is not a bipartite graph with the reactions.</span>
-0019 G=model.S*model.S';
-0020 G(G~=0)=1;
-0021 
-0022 <span class="comment">%Keeps track of which mets have been assigned to a subgraph</span>
-0023 isAssigned=false(numel(model.mets),1);
-0024 
-0025 <span class="comment">%Allocate space for 100 subgraphs</span>
-0026 subGraphs=false(numel(model.mets),100);
-0027 
-0028 <span class="comment">%Main loop continues until all mets have been assigned to a subgraph</span>
-0029 counter=1;
-0030 <span class="keyword">while</span> ~all(isAssigned)
-0031     currentSG=false(numel(model.mets),1);
-0032     <span class="comment">%Find the first non-assigned metabolite and assign it to the current SG</span>
-0033     I=find(isAssigned==false,1);
-0034     currentSG(I)=true;
-0035     isAssigned(I)=true;
-0036     <span class="comment">%Then iteratively add all mets that are connected to each other, until</span>
-0037     <span class="comment">%no more such mets can be found</span>
-0038     <span class="keyword">while</span> true
-0039         J=sum(G(:,currentSG),2);
-0040         
-0041         <span class="comment">%Get the new mets for this SG. Also assign them to the current SG</span>
-0042         newOnes=J~=0 &amp; currentSG==false;
-0043         isAssigned(newOnes)=true;
-0044         currentSG(newOnes)=true;
-0045         
-0046         <span class="comment">%If there are no new mets, then abort</span>
-0047         <span class="keyword">if</span> ~any(newOnes)
-0048             subGraphs(currentSG,counter)=true;
-0049             counter=counter+1;
-0050             <span class="keyword">break</span>;
-0051         <span class="keyword">end</span>
-0052     <span class="keyword">end</span>
-0053 <span class="keyword">end</span>
-0054 subGraphs=subGraphs(:,1:counter);
-0055 
-0056 [~, I]=sort(sum(subGraphs),<span class="string">'descend'</span>);
+0016 <span class="comment">%   Rasmus Agren, 2013-11-22</span>
+0017 <span class="comment">%</span>
+0018 
+0019 <span class="comment">%Generate the connectivity graph. Metabolites are connected through</span>
+0020 <span class="comment">%reactions. This is not a bipartite graph with the reactions.</span>
+0021 G=model.S*model.S';
+0022 G(G~=0)=1;
+0023 
+0024 <span class="comment">%Keeps track of which mets have been assigned to a subgraph</span>
+0025 isAssigned=false(numel(model.mets),1);
+0026 
+0027 <span class="comment">%Allocate space for subgraphs, initially one graph for each met</span>
+0028 subGraphs=false(numel(model.mets),numel(model.mets));
+0029 
+0030 <span class="comment">%Main loop continues until all mets have been assigned to a subgraph</span>
+0031 counter=1;
+0032 <span class="keyword">while</span> ~all(isAssigned)
+0033     currentSG=false(numel(model.mets),1);
+0034     <span class="comment">%Find the first non-assigned metabolite and assign it to the current SG</span>
+0035     I=find(isAssigned==false,1);
+0036     currentSG(I)=true;
+0037     isAssigned(I)=true;
+0038     <span class="comment">%Then iteratively add all mets that are connected to each other, until</span>
+0039     <span class="comment">%no more such mets can be found</span>
+0040     <span class="keyword">while</span> true
+0041         J=sum(G(:,currentSG),2);
+0042         
+0043         <span class="comment">%Get the new mets for this SG. Also assign them to the current SG</span>
+0044         newOnes=J~=0 &amp; currentSG==false;
+0045         isAssigned(newOnes)=true;
+0046         currentSG(newOnes)=true;
+0047         
+0048         <span class="comment">%If there are no new mets, then abort</span>
+0049         <span class="keyword">if</span> ~any(newOnes)
+0050             subGraphs(currentSG,counter)=true;
+0051             counter=counter+1;
+0052             <span class="keyword">break</span>;
+0053         <span class="keyword">end</span>
+0054     <span class="keyword">end</span>
+0055 <span class="keyword">end</span>
+0056 subGraphs=subGraphs(:,1:counter);
 0057 
-0058 subGraphs=subGraphs(:,I);
+0058 [~, I]=sort(sum(subGraphs),<span class="string">'descend'</span>);
 0059 
-0060 <span class="comment">%Also remove empty subgraphs (can happen when metabolites are never used)</span>
-0061 subGraphs(:,sum(subGraphs)==0)=[];
-0062 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 16-Oct-2018 13:07:34 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0060 subGraphs=subGraphs(:,I);
+0061 
+0062 <span class="comment">%Also remove empty subgraphs (can happen when metabolites are never used)</span>
+0063 subGraphs(:,sum(subGraphs)==0)=[];
+0064 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 13-Nov-2018 13:56:44 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
