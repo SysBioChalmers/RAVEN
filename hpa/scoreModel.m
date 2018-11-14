@@ -73,8 +73,8 @@ if nargin<8
 end
 if nargin<9
     %The first four are for APE, the other ones for staining
-    hpaLevelScores.names={'High' 'Medium' 'Low' 'None' 'Strong' 'Moderate' 'Weak' 'Negative'};
-    hpaLevelScores.scores=[20 15 10 -8 20 15 10 -8];
+    hpaLevelScores.names={'High' 'Medium' 'Low' 'None' 'Strong' 'Moderate' 'Weak' 'Negative' 'Not detected'};
+    hpaLevelScores.scores=[20 15 10 -8 20 15 10 -8 -8];
 end
 
 if isempty(hpaData) && isempty(arrayData)
