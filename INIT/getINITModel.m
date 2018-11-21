@@ -150,7 +150,7 @@ end
 
 
 % sc-tINIT to identify confidence levels of gene expression
-if isfield(arrayData,'singleCells')
+if ~isempty(arrayData) && isfield(arrayData,'singleCells')
     if arrayData.singleCells == 1
         % Check to ensure cell type is defined
         if ~isfield(arrayData,'celltypes')
