@@ -71,8 +71,8 @@ elseif ~isempty(notNewRxn)
     fprintf([strjoin(model.rxns(oldRxn(find(oldRxn))),'\n') '\n'])
 end
 
-rxnIdx=find(ismember(sourceModel.rxns,rxns)); % Get rxnIDs
-if length(rxnIdx)~=length(rxns)
+[~, rxnIdx]=ismember(rxns,sourceModel.rxns); % Get rxnIDs
+if any(rxnIdx==0)
     error('Not all reaction IDs could be found in the source model')
 end
 
