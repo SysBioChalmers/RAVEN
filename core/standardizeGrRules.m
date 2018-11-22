@@ -139,7 +139,7 @@ if ~isempty(indexes2check)
         STR = [STR,'ionships found in\n\n'];
         for i=1:length(indexes2check)
             index = indexes2check(i);
-            STR = [STR '  - grRule #' num2str(index) ': ' grRules{index} '\n'];
+            STR = [STR '  - grRule #' model.rxns{index} ': ' grRules{index} '\n'];
         end
         STR = [STR,'\n This kind of relationships should only be present '];
         STR = [STR,'in  reactions catalysed by complexes of isoenzymes e'];
