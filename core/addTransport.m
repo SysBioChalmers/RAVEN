@@ -133,9 +133,9 @@ for i=1:numel(toComps)
     if isfield(model,'subSystems')
         ssFiller=filler;
         if isRev==1
-            ssFiller(:)={['Transport between ' fromComp ' and ' toComps{i}]};
+            ssFiller(:)={{['Transport between ' fromComp ' and ' toComps{i}]}};
         else
-            ssFiller(:)={['Transport from ' fromComp ' to ' toComps{i}]};
+            ssFiller(:)={{['Transport from ' fromComp ' to ' toComps{i}]}};
         end
         model.subSystems=[model.subSystems;ssFiller];
     end
