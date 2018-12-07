@@ -272,6 +272,10 @@ else
     %Mandatory RAVEN fields
     newModel.rxns=model.rxns;
     newModel.mets=model.mets;
+    if ~isfield(model,'comps')
+        model.comps = setdiff({''},unique(regexprep(model.mets,'.*\[[^\]]+\]$','')));
+    end
+
     for i=1:numel(model.comps)
         newModel.mets=regexprep(newModel.mets,['\[', model.comps{i}, '\]$'],'');
         newModel.mets=regexprep(newModel.mets,['\[', model.compNames{i}, '\]$'],'');
