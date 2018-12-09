@@ -133,9 +133,9 @@ for i=1:numel(toComps)
     if isfield(model,'subSystems')
         ssFiller=filler;
         if isRev==1
-            ssFiller(:)={['Transport between ' fromComp ' and ' toComps{i}]};
+            ssFiller(:)={{['Transport between ' fromComp ' and ' toComps{i}]}};
         else
-            ssFiller(:)={['Transport from ' fromComp ' to ' toComps{i}]};
+            ssFiller(:)={{['Transport from ' fromComp ' to ' toComps{i}]}};
         end
         model.subSystems=[model.subSystems;ssFiller];
     end
@@ -146,7 +146,7 @@ for i=1:numel(toComps)
         model.rxnFrom=[model.rxnFrom;filler];
     end
     if isfield(model,'rxnMiriams')
-        model.rxnMiriams=[model.rxnFrom;cell(nRxns,1)];
+        model.rxnMiriams=[model.rxnMiriams;cell(nRxns,1)];
     end
     if isfield(model,'rxnComps')
         model.rxnComps=[model.rxnComps;ones(nRxns,1)];
