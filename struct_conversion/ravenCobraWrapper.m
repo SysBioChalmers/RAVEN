@@ -46,7 +46,11 @@ if isRaven
     
     %Mandatory COBRA fields
     newModel.rxns=model.rxns;
-    newModel.mets=strcat(model.mets,'[',model.comps(model.metComps),']');
+    if all(~cellfun(@isempty,regexp(model.mets,'\[[^\]]+\]$')))
+        newModel.mets=model.mets;
+    else
+        newModel.mets=strcat(model.mets,'[',model.comps(model.metComps),']');
+    end
     newModel.S=model.S;
     newModel.lb=model.lb;
     newModel.ub=model.ub;
