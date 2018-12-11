@@ -277,7 +277,7 @@ else
     newModel.rxns=model.rxns;
     newModel.mets=model.mets;
     if ~isfield(model,'comps')
-        model.comps = setdiff({''},unique(regexprep(model.mets,'.*\[[^\]]+\]$','')));
+        model.comps = unique(regexprep(model.mets,'.*\[([^\]]+)\]$','$1'));
     end
 
     for i=1:numel(model.comps)
