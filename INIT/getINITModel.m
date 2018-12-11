@@ -3,6 +3,7 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %   Generates a model using the INIT algorithm, based on proteomics and/or
 %   transcriptomics and/or metabolomics and/or metabolic tasks.
 %
+%   Input:
 %   refModel            a model structure. The model should be in the
 %                       closed form (no exchange reactions open). Import
 %                       using import(filename,false). If the model is not
@@ -58,6 +59,8 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %                       for the fitTasks step. For the INIT algorithm, see
 %                       params (opt, default [])
 %
+%
+%   Output:
 %   model                   the resulting model structure
 %   metProduction           array that indicates which of the
 %                           metabolites in metabolomicsData that could be
@@ -87,9 +90,10 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %                           in the gap-filling for the task
 %
 %   This is the main function for automatic reconstruction of models based
-%   on the INIT algorithm (PLoS Comput Biol. 2012;8(5):e1002518). Not all
-%   settings are possible using this function, and you may want to call the
-%   functions scoreModel, runINIT and fitTasks individually instead.
+%   on the (t)INIT algorithm (PLoS Comput Biol. 2012;8(5):e1002518, 
+%   Mol Syst Biol. 2014;10:721). Not all settings are possible using this
+%   function, and you may want to call the functions scoreModel, runINIT
+%   and fitTasks individually instead.
 %
 %   NOTE: Exchange metabolites should normally not be removed from the model
 %   when using this approach, since checkTasks/fitTasks rely on putting specific
