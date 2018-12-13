@@ -3,6 +3,7 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 %   Scores the reactions and genes in a model based on expression data
 %   from HPA and/or gene arrays
 %
+%   Input:
 %   model               a model structure
 %   hpaData             HPA data structure from parseHPA (opt if arrayData is
 %                       supplied, default [])
@@ -39,6 +40,8 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 %                       "names" and a "scores" field (opt, see code for
 %                       default scores)
 %
+%
+%   Output:
 %   rxnScores       scores for each of the reactions in model
 %   geneScores      scores for each of the genes in model. Genes which are
 %                   not in the dataset(s) have -Inf as scores

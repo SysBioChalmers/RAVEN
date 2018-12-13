@@ -2,11 +2,14 @@ function hpaData=parseHPA(fileName, version)
 % parseHPA
 %   Parses a database dump of the Human Protein Atlas (HPA)
 %
+%   Input:
 %   fileName            comma- or tab-separated database dump of HPA. For details
 %                       regarding the format, see
 %                       http://www.proteinatlas.org/about/download.
 %   version             version of HPA [optional, default=18]
 %
+%
+%   Output:
 %   hpaData
 %       genes               cell array with the unique gene names. In
 %                           version 18 this is the ensemble name, see
