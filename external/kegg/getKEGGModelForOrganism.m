@@ -299,10 +299,10 @@ if nargin<9
     cutOff=10^-50;
 end
 if nargin<10
-    minScoreRatioG=0.8;
+    minScoreRatioKO=0.3;
 end
 if nargin<11
-    minScoreRatioKO=0.3;
+    minScoreRatioG=0.8;
 end
 if nargin<12
     maxPhylDist=inf;
