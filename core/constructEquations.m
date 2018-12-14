@@ -2,6 +2,7 @@ function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sort
 % constructEquations
 %   Construct equation strings for reactions
 %
+%   Input:
 %   model             a model structure
 %   rxns              either a cell array of reaction IDs, a logical vector with the
 %                     same number of elements as reactions in the model, or a vector
@@ -16,9 +17,10 @@ function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sort
 %   useMetID          use metabolite ID in generated equations, otherwise metNames are
 %                     used (opt, default false)
 %
+%   Outut:
 %   equationStrings   a cell array with equations
 %
-%    Usage: equationStrings=constructEquations(model,rxns,useComps,...
+%   Usage: equationStrings=constructEquations(model,rxns,useComps,...
 %           sortRevRxns,sortMetNames,useMetID)
 %
 %   Hao Wang, 2017-05-15
