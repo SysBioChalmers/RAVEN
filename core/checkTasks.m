@@ -2,6 +2,7 @@ function [taskReport, essentialRxns, taskStructure]=checkTasks(model,inputFile,p
 % checkTasks
 %   Performs a set of simulations as defined in a task file.
 %
+%   Input:
 %   model           a model structure
 %   inputFile       a task list in Excel format. See the function
 %                   parseTaskList for details (opt if taskStructure is
@@ -16,6 +17,8 @@ function [taskReport, essentialRxns, taskStructure]=checkTasks(model,inputFile,p
 %   taskStructure   structure with the tasks, as from parseTaskList. If
 %                   this is supplied then inputFile is ignored (opt)
 %
+%
+%   Output:
 %   taskReport          structure with the results
 %       id              cell array with the id of the task
 %       description     cell array with the description of the task
@@ -43,13 +46,13 @@ function [taskReport, essentialRxns, taskStructure]=checkTasks(model,inputFile,p
 %   Rasmus Agren, 2014-01-08
 %
 
-if nargin<3
+if nargin<3 || isempty(printOutput)
     printOutput=true;
 end
-if nargin<4
+if nargin<4 || isempty(printOnlyFailed)
     printOnlyFailed=false;
 end
-if nargin<5
+if nargin<5 || isempty(getEssential)
     getEssential=false;
 end
 
