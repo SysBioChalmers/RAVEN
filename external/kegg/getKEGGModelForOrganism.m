@@ -368,16 +368,18 @@ if ~isempty(dataDir)
     else
         if exist(dataDir,'dir')
             fprintf('Provided dataDir is in correct format for this RAVEN version in order to use pre-trained HMMs...\n')
-        elseif ~exist(dataDir,'dir') && exist([dataDir,'.zip'],'file')
-            fprintf('Extracting HMMs archive file...\n');
-            unzip([dataDir,'.zip']);
         else
-            hmmIndex=regexp(dataDir,hmmOptions);
-            hmmIndex=~cellfun(@isempty,hmmIndex);
-            fprintf('Downloading HMMs archive file...\n');
-            websave([dataDir,'.zip'],['https://chalmersuniversity.box.com/shared/static/',hmmLinks{hmmIndex},'.zip']);
+            if ~exist(dataDir,'dir') && ~exist([dataDir,'.zip'],'file')
+                hmmIndex=regexp(dataDir,hmmOptions);
+                hmmIndex=~cellfun(@isempty,hmmIndex);
+                fprintf('Downloading HMMs archive file...\n');
+                websave([dataDir,'.zip'],['https://chalmersuniversity.box.com/shared/static/',hmmLinks{hmmIndex},'.zip']);
+            end
             fprintf('Extracting HMMs archive file...\n');
             unzip([dataDir,'.zip']);
+            if ~exist(fullfile(dataDir,'hmms','K00001.hmm'),'file')
+                error('Extracting HMMs archive file failed. Unzip the file manually in the dedicated folder and then rerun this function.');
+            end           
         end
     end
 end
