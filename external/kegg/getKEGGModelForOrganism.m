@@ -9,6 +9,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %   possible to circumvent protein homology search (see fastaFile parameter
 %   for more details)
 %
+%   Input:
 %   organismID          three or four letter abbreviation of the organism
 %                       (as used in KEGG). If not available, use a closely
 %                       related species. This is used for determing the
@@ -103,6 +104,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %                       CD-HIT is skipped (opt, default -1, i.e. CD-HIT is
 %                       skipped)
 %
+%   Output:
 %   model               the reconstructed model
 %
 %   PLEASE READ THIS: The input to this function can be confusing, because
@@ -156,7 +158,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %       | Sequence identity (-c)    | 1.0    | 0.9    | 0.5    | x       |
 %       | word_length (-n)          | 5      | 5      | 4      | 2-5*    |
 %       | Max available memory (-M) |               2000                 |
-%       ------------------------------------------------------------------        
+%       ------------------------------------------------------------------
 %       * - word length depends from sequence identity value (see CD-HIT
 %       manual for more details)
 %
@@ -701,7 +703,7 @@ if ~isempty(missingAligned)
                         else
                             EM='The provided seqIdentity must be between 0 and 1\n';
                             dispEM(EM);
-                        end 
+                        end
                         if status~=0
                             EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
                             dispEM(EM);
