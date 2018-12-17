@@ -110,7 +110,11 @@ for num=1:length(fseof.target)
         A1=num2str(num);                                  %row ID
         A2=char(model.rxns(num));                         %enzyme ID
         A3=char(model.rxnNames(num));                     %enzyme Name
-        A4=char(strjoin(model.subSystems{num,1},';'));                   %Subsystems
+        if isfield(model,'subSystems') && ~isempty(model.subSystems{num});
+            A4=char(strjoin(model.subSystems{num,1},';'));                   %Subsystems
+        else
+            A4='';
+        end
         A5=num2str(model.rev(num)*rxnDirection(num,1));   %reaction Dirction
         A6=char(model.grRules(num));                      %Gr Rule
         if output == 1    %Output to a file

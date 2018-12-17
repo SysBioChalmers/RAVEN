@@ -16,7 +16,9 @@ function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,o
 %                   are added with addMets first (opt, default true)
 %
 %   This is a faster version than addRxns when adding transport reactions.
-%   New reactions are named "T_fromComp_to_toComp_metID in fromComp".
+%   New reaction names are formatted as "metaboliteName, fromComp-toComp", 
+%   while new reaction IDs are sequentially counted with a tr_ prefix:
+%   e.g. tr_0001, tr_0002, etc.
 %
 %   Usage: [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,...
 %           isRev,onlyToExisting)
@@ -60,6 +62,9 @@ if nargin<6
 end
 
 %Check that the names are unique
+if ischar(metNames)
+    metNames={metNames};
+end
 if numel(unique(metNames))~=numel(metNames)
     dispEM('Not all metabolite names are unique');
 end
@@ -117,9 +122,10 @@ for i=1:numel(toComps)
     %Add annotation
     filler=cell(nRxns,1);
     filler(:)={''};
-    addedRxns=strcat({['T_' fromComp '_to_' toComps{i} '_']},model.mets(fromMetsInComp));
-    model.rxns=[model.rxns;addedRxns];
-    model.rxnNames=[model.rxnNames;addedRxns];
+    addedRxnsID=generateNewIds(model,'rxns','tr_',length(nRxns));
+    addedRxnsName=strcat(metNames, ' transport, ', model.compNames(fromID), '-', model.compNames(toIDs(i)));
+    model.rxns=[model.rxns;addedRxnsID];
+    model.rxnNames=[model.rxnNames;addedRxnsName];
     
     if isfield(model,'eccodes')
         model.eccodes=[model.eccodes;filler];
@@ -127,9 +133,9 @@ for i=1:numel(toComps)
     if isfield(model,'subSystems')
         ssFiller=filler;
         if isRev==1
-            ssFiller(:)={['Transport between ' fromComp ' and ' toComps{i}]};
+            ssFiller(:)={{['Transport between ' fromComp ' and ' toComps{i}]}};
         else
-            ssFiller(:)={['Transport from ' fromComp ' to ' toComps{i}]};
+            ssFiller(:)={{['Transport from ' fromComp ' to ' toComps{i}]}};
         end
         model.subSystems=[model.subSystems;ssFiller];
     end
@@ -140,7 +146,7 @@ for i=1:numel(toComps)
         model.rxnFrom=[model.rxnFrom;filler];
     end
     if isfield(model,'rxnMiriams')
-        model.rxnMiriams=[model.rxnFrom;cell(nRxns,1)];
+        model.rxnMiriams=[model.rxnMiriams;cell(nRxns,1)];
     end
     if isfield(model,'rxnComps')
         model.rxnComps=[model.rxnComps;ones(nRxns,1)];

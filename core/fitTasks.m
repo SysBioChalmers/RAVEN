@@ -3,6 +3,7 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxn
 %   Fills gaps in a model by including reactions from a reference model,
 %   so that the resulting model can perform all the tasks in a task list
 %
+%   Input:
 %   model           model structure
 %   refModel        reference model from which to include reactions
 %   inputFile       a task list in Excel format. See the function
@@ -18,6 +19,8 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxn
 %                   this is supplied then inputFile is ignored (opt)
 %   params          parameter structure as used by getMILPParams (opt)
 %
+%
+%   Output:
 %   outModel        model structure with reactions added to perform the
 %                   tasks
 %   addedRxns       MxN matrix with the added reactions (M) from refModel
@@ -53,7 +56,7 @@ if nargin<7
     params=[];
 end
 
-if ~(exist(inputFile,'file')==2)
+if isempty(taskStructure) && ~(exist(inputFile,'file')==2)
     error('Task file %s cannot be found',string(inputFile));
 end
 

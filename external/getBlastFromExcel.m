@@ -3,11 +3,13 @@ function blastStructure=getBlastFromExcel(models,blastFile,organismId)
 %   Retrieves gene homology information from Excel files. Used as
 %   input to getModelFromHomology.
 %
+%   Input:
 %   models          a cell array of model structures
 %   blastFile       Excel file with homology information
 %   organismId      the id of the organism of interest (as described in the
 %                   Excel file)
 %
+%   Output:
 %   blastStructure  structure containing the information in the Excel
 %                   sheets.
 %
@@ -23,7 +25,7 @@ function blastStructure=getBlastFromExcel(models,blastFile,organismId)
 %
 %   Usage: blastStructure=getBlastFromExcel(models,blastFile,organismId)
 %
-%   Eduard Kerkhoven, 2018-11-02
+%   Eduard Kerkhoven, 2018-12-10
 %
 
 if ~(exist(blastFile,'file')==2)
@@ -43,7 +45,7 @@ end
 [type, sheets]=xlsfinfo(blastFile);
 
 %Check if the file is a Microsoft Excel Spreadsheet
-if ~any(regexp(type,'Excel Spreadsheet')
+if ~any(regexp(type,'Excel Spreadsheet'))
     EM='The file is not a Microsoft Excel Spreadsheet';
     dispEM(EM);
 end
@@ -51,7 +53,7 @@ end
 for i=1:numel(sheets)
     %Check if the sheet has the right header and deal with organisms that
     %are in "models"
-    [values,dataSheet]=xlsread(blastFile,dataSheet{i});
+    [values,dataSheet]=xlsread(blastFile,i);
     labels=dataSheet(1,:);
     if strcmpi(labels{3},'E-value') && strcmpi(labels{4},'Alignment length') ...
             && strcmpi(labels{5},'Identity') && strcmpi(labels{6},'Bitscore') ...
@@ -95,7 +97,7 @@ for i=1:numel(sheets)
             blastStructure(end).aligLen(I)=[];
             blastStructure(end).identity(I)=[];
             blastStructure(end).bitscore(I)=[];
-            blastStructure(end).ppos(I)=[];            
+            blastStructure(end).ppos(I)=[];
         else
             if isempty(toID) || isempty(fromID)
                 EM=['The data in sheet ' sheets{i} ' has no corresponding model. Ignoring sheet'];
