@@ -74,7 +74,7 @@ for i=1:numel(Rindexes)
     end
     %Define stoich coeffs and reversibility:
     stoichCoeffs = model.S(Mindexes,Rindexes(i));
-    isrev        = model.lb(Rindexes(i))<0;
+    isrev        = model.lb(Rindexes(i))<0 & model.ub(Rindexes(i))>0;
     
     %Construct equation:
     equationStrings{i} = buildEquation(mets,stoichCoeffs,isrev);
