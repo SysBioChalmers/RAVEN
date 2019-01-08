@@ -9,6 +9,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %   possible to circumvent protein homology search (see fastaFile parameter
 %   for more details)
 %
+%   Input:
 %   organismID          three or four letter abbreviation of the organism
 %                       (as used in KEGG). If not available, use a closely
 %                       related species. This is used for determing the
@@ -103,6 +104,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %                       CD-HIT is skipped (opt, default -1, i.e. CD-HIT is
 %                       skipped)
 %
+%   Output:
 %   model               the reconstructed model
 %
 %   PLEASE READ THIS: The input to this function can be confusing, because

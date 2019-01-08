@@ -3,11 +3,13 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 % getRxnsFromKEGG
 %   Retrieves information on all reactions stored in KEGG database
 %
+%   Input:
 %   keggPath            if keggRxns.mat is not in the RAVEN\external\kegg
 %                       directory, this function will attempt to read data
 %                       from a local FTP dump of the KEGG database.
 %                       keggPath is the path to the root of this database
 %
+%   Output:
 %   model               a model structure generated from the database. The
 %                       following fields are filled
 %       id                  'KEGG'
@@ -37,7 +39,7 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 %   isGeneral           a cell array with the reactions labelled as
 %                       "general reaction"
 %
-%   Reactions on the form A <=> A + B will not be loaded. If the file
+%   NOTE: Reactions on the form A <=> A + B will not be loaded. If the file
 %   keggRxns.mat is in the RAVEN/external/kegg directory it will be loaded
 %   instead of parsing of the KEGG files. If it does not exist it will be
 %   saved after parsing of the KEGG files. In general, you should remove
@@ -47,7 +49,7 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 %   Usage: [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 %    isGeneral]=getRxnsFromKEGG(keggPath)
 %
-%   Simonas Marcisauskas, 2018-07-25
+%   Simonas Marcisauskas, 2019-01-08
 %
 %
 % NOTE: This is how one entry looks in the file
