@@ -263,7 +263,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %    nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2018-09-06
+%   Simonas Marcisauskas, 2019-01-08
 
 if nargin<2
     fastaFile=[];
@@ -354,9 +354,9 @@ if ~isempty(dataDir)
         'u3z7s31q5be4zqpmmsxgvfb0ye1x2lez', ...
         'rsug46hptvoy7hurooi6fsc1hz2f5b6v'};
     if all(cellfun(@isempty,regexp(dataDir,strcat(hmmOptions,'$')))) %Check if dataDir ends with any of the hmmOptions
-        if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file') &&...
-                ~exist(fullfile(dataDir,'fasta'),'dir') &&...
-                ~exist(fullfile(dataDir,'aligned'),'dir') &&...
+        if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file') && ...
+                ~exist(fullfile(dataDir,'fasta'),'dir') && ...
+                ~exist(fullfile(dataDir,'aligned'),'dir') && ...
                 ~exist(fullfile(dataDir,'hmms'),'dir')
             EM='Pre-trained HMMs set is not recognised. It should match any of the following sets (which are available to download):';
             disp(EM);
@@ -371,11 +371,16 @@ if ~isempty(dataDir)
             unzip([dataDir,'.zip']);
         else
             [~,hmmIndex]=ismember(dataDir,hmmOptions);
-            
             fprintf('Downloading HMMs archive file...\n');
             websave([dataDir,'.zip'],['https://chalmersuniversity.box.com/shared/static/',hmmLinks{hmmIndex},'.zip']);
             fprintf('Extracting HMMs archive file...\n');
             unzip([dataDir,'.zip']);
+        end
+        %Check if HMMs are extracted
+        if ~exist(fullfile(dataDir,'hmms','K00844.hmm'),'file')
+            EM='No HMMs are available in dataDir/hmms. Try to manually remove dataDir parent directory and start over\n';
+            disp(EM);
+            error('Fatal error occured. See the details above');
         end
     end
 end
