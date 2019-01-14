@@ -265,7 +265,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %    nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2019-01-08
+%   Simonas Marcisauskas, 2019-01-14
 
 if nargin<2
     fastaFile=[];
@@ -380,7 +380,7 @@ if ~isempty(dataDir)
         end
         %Check if HMMs are extracted
         if ~exist(fullfile(dataDir,'hmms','K00844.hmm'),'file')
-            EM='No HMMs are available in dataDir/hmms. Try to manually remove dataDir parent directory and start over\n';
+            EM=['The HMM files seem improperly extracted and not found in ',dataDir,'/hmms. Please remove ',dataDir,' folder and rerun getKEGGModelForOrganism'];
             disp(EM);
             error('Fatal error occured. See the details above');
         end
