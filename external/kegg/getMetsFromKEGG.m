@@ -2,11 +2,13 @@ function model=getMetsFromKEGG(keggPath)
 % getMetsFromKEGG
 %   Retrieves information on all metabolites stored in KEGG database
 %
+%   Input:
 %   keggPath	if keggMets.mat is not in the RAVEN\external\kegg
 %               directory, this function will attempt to read data from a
 %               local FTP dump of the KEGG database. keggPath is the path
 %               to the root of this database
 %
+%   Output:
 %   model       a model structure generated from the database. The
 %               following fields are filled
 %   	id              'KEGG'
@@ -20,15 +22,15 @@ function model=getMetsFromKEGG(keggPath)
 %   	metFormulas     The chemical composition of the metabolite. This
 %                       will only be loaded if there is no InChI string
 %
-%   If the file keggMets.mat is in the RAVEN\external\kegg directory it
-%   will be loaded instead of parsing of the KEGG files. If it does not
+%   NOTE: If the file keggMets.mat is in the RAVEN\external\kegg directory
+%   it will be loaded instead of parsing of the KEGG files. If it does not
 %   exist it will be saved after parsing of the KEGG files. In general, you
 %   should remove the keggMets.mat file if you want to rebuild the model
 %   structure from a newer version of KEGG.
 %               
 %   Usage: model=getMetsFromKEGG(keggPath)
 %
-%   Simonas Marcisauskas, 2018-07-25
+%   Simonas Marcisauskas, 2019-01-08
 %
 %
 % NOTE: This is how one entry looks in the file

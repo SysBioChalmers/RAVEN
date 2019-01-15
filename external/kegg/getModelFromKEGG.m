@@ -3,6 +3,7 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 % getModelFromKEGG
 %   Retrieves information stored in KEGG database and generates a model
 %
+%   Input:
 %   keggPath            if keggGenes.mat, keggMets.mat, keggPhylDist.mat or
 %                       keggRxns.mat are not in the RAVEN/external/kegg
 %                       directory, this function will attempt to read data
@@ -28,6 +29,7 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %                       script will therefore not be able to remove all
 %                       such reactions (opt, default false)
 %
+%   Output:
 %   model               a model structure generated from the database. All
 %                       reactions and the metabolites used in them will be
 %                       added
@@ -35,15 +37,14 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %                       ids and their associated genes. The KO ids are
 %                       saved as reactions
 %
+%   NOTE: The model output from getModelFromKEGG can be used as template
+%   for fillGaps. In that case, ensure that the genes and rxnGeneMat fields
+%   are removed before parsing: model=rmfield(model,'genes'), etc.
+%
 %   Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Note:               The model output from getModelFromKEGG can be used
-%                       as template for fillGaps. In that case, ensure that
-%                       the genes and rxnGeneMat fields are removed before
-%                       parsing: model=rmfield(model,'genes'), etc.
-%
-%   Simonas Marcisauskas, 2018-09-06
+%   Simonas Marcisauskas, 2019-01-08
 %
 
 if nargin<1
