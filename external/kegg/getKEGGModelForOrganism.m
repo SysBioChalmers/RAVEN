@@ -280,7 +280,7 @@ if isempty(outDir)
     outDir=tempdir;
     %Delete all *.out files if any exist
     delete(fullfile(outDir,'*.out'));
-elseif ~isstring(outDir)
+elseif ~isstr(outDir)
     error('outDir should be provided as string');
 end
 if nargin<5
@@ -299,10 +299,10 @@ if nargin<9
     cutOff=10^-50;
 end
 if nargin<10
-    minScoreRatioG=0.8;
+    minScoreRatioKO=0.3;
 end
 if nargin<11
-    minScoreRatioKO=0.3;
+    minScoreRatioG=0.8;
 end
 if nargin<12
     maxPhylDist=inf;
@@ -372,7 +372,8 @@ if ~isempty(dataDir)
             fprintf('Extracting HMMs archive file...\n');
             unzip([dataDir,'.zip']);
         else
-            [~,hmmIndex]=ismember(dataDir,hmmOptions);
+            hmmIndex=regexp(dataDir,hmmOptions);
+            hmmIndex=~cellfun(@isempty,hmmIndex);
             fprintf('Downloading HMMs archive file...\n');
             websave([dataDir,'.zip'],['https://chalmersuniversity.box.com/shared/static/',hmmLinks{hmmIndex},'.zip']);
             fprintf('Extracting HMMs archive file...\n');
@@ -541,7 +542,7 @@ missingFASTA=setdiff(KOModel.rxns,[fastaFiles;alignedFiles;hmmFiles;outFiles]);
 
 if ~isempty(missingFASTA)
     if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file')
-        EM=fprintf(['The file ''genes.pep'' cannot be located at ' strrep(dataDir,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
+        EM=['The file ''genes.pep'' cannot be located at ' strrep(dataDir,'\','/') '/ and should be downloaded from the KEGG FTP.\n'];
         dispEM(EM);
     end
     %Only construct models for KOs which don't have files already
