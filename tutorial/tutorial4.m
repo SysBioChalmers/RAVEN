@@ -19,7 +19,7 @@
 %Type "help getKEGGModelForOrganism" to see what the different parameters
 %are for. This process takes up to 10-15 minutes, depending on your
 %hardware and the size of target organism proteome;
-model=getKEGGModelForOrganism('sce','sce.fa','euk100_kegg82','output',false,false,false,10^-30,0.8,0.3,-1);
+model=getKEGGModelForOrganism('sce','sce.fa','euk100_kegg87','output',false,false,false,10^-30,0.8,0.3,-1);
 
 %As you can see the resulting model contains (around) 1219 reactions, 1267
 %metabolites and 906 genes. Small variations are possible since it is an
