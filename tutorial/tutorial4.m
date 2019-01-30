@@ -21,8 +21,8 @@
 %hardware and the size of target organism proteome;
 model=getKEGGModelForOrganism('sce','sce.fa','euk100_kegg87','output',false,false,false,10^-30,0.8,0.3,-1);
 
-%As you can see the resulting model contains (around) 1219 reactions, 1267
-%metabolites and 906 genes. Small variations are possible since it is an
+%As you can see the resulting model contains (around) 2606 reactions, 2535
+%metabolites and 1276 genes. Small variations are possible since it is an
 %heuristic algorithm.
 model
 
@@ -36,22 +36,22 @@ model
 [newModel, removedRxns]=removeBadRxns(model);
 
 %You will see an error about that H+ can be made even if no reactions were
-%unbalanced (don't bother about several errors in red below). Protons are
-%particularly problematic since it's rather arbitary at which pH the
-%formulas are written for. For the purpose of this analysis we can ignore
-%protons and try to fix it later.
+%unbalanced. Protons are particularly problematic since it's rather
+%arbitary at which pH the formulas are written for. For the purpose of this
+%analysis we can ignore protons and try to fix it later.
 [newModel, removedRxns]=removeBadRxns(model,1,{'H+'},true);
 
-%Errors in red should be gone by the latest command. Only one reaction was
-%removed because it enabled the model to produce something from nothing.
-%Since there were so few, it might be worthwhile to look into this in more
+%Only a few reactions were removed because they enabled the model to
+%produce something from nothing. Since there were so few, it might be
+%worthwhile to look into this in more
 %detail.
 removedRxns
 
-%If you look it up in KEGG you will find that it is a general polymer
-%reaction. You might want to look at the flux distributions more in detail
-%to try to find out if there is any better alternative to delete. Use
-%makeSomething to do this
+%If you look it up in KEGG you will find that the reactions involve general
+%instead of specific metabolites or are general polymer reactions. You
+%might want to look at the flux distributions more in detail to try to find
+%out if there is any better alternative to delete. Use makeSomething to do
+%this
 [fluxes, metabolite]=makeSomething(model,{'H+'},true);
 model.metNames(metabolite)
 
@@ -68,19 +68,23 @@ goodOnes=balanceStructure.leftComp(:,6)==balanceStructure.rightComp(:,6);
 printFluxes(removeReactions(model,goodOnes), fluxes(~goodOnes), false, [], [],'%rxnID (%rxnName):\n\t%eqn: %flux\n')
 
 %We still got a good number of reactions. Let's leave only the reactions
-%which involve amylose or starch.
+%which involve amylose or starch, from one of the problematic reactions
+%that we identified earlier.
 printFluxes(model, fluxes, false, [], [],'%rxnID (%rxnName):\n\t%eqn: %flux\n',{'Amylose';'Starch'});
 
-%We got three elementally unbalanced reactions, including, the reaction
+%We got two elementally unbalanced reactions, including, the reaction
 %which was identified by removeBadRxns. When looking to these reactions
 %closer, one can notice the contradiction between the reactions. The first
-%one says that you can cleave of a glucose unit from starch to form
-%glucose, whereas the second one shows that amylose and starch are
-%interconvertible. The third reaction supports the first reaction, as it
-%shows that amylose contains one less glucose unit than starch. This type
-%of general reactions are problematic and should be fixed manually. We
-%therefore choose to trust removeBadRxns and delete R02110.
+%one shows that amylose and starch are interconvertible, while the second
+%reaction shows that amylose contains one less glucose unit than starch.
+%This type of general reactions are problematic and should be fixed
+%manually. We therefore choose to trust removeBadRxns and delete R02110.
 model=removeReactions(model,'R02110');
+
+%In a similar way you can curate the other problematic reactions that we
+%identified earlier. For simplicity we will also trust removeBadRxns for
+%the other reactions and remove these from our model.
+model=removeReactions(model,removedRxns(2:end));
 
 %The model can no longer make something from nothing. Can it consume
 %something without any output?
@@ -108,8 +112,8 @@ sum(I)/numel(model.mets)
 %significantly higher number
 keggModel=getModelFromKEGG([],false,false,false);
 
-%The KEGG model is associated to some 3000000 genes. They won't be used for
-%this, so we remove them to make this a little faster
+%The KEGG model is associated to more than 3,000,000 genes. They won't be
+%used for the gapfilling, so we remove them to make this a little faster
 keggModel=rmfield(keggModel,'genes');
 keggModel=rmfield(keggModel,'rxnGeneMat');
 
@@ -126,7 +130,7 @@ params.relGap=0.6; %Lower number for a more exhaustive search
 params.printReport=true;
 [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,keggModel,true,false,false,[],params);
 
-%We see that we could connect 63 reactions (newConnected) by including 71
+%We see that we could connect 161 reactions (newConnected) by including 91
 %reactions from the KEGG model (addedRxns). Those should of course be
 %checked manually to see that they exist in yeast, but let's say that we
 %have done so now.
@@ -134,36 +138,38 @@ params.printReport=true;
 %You can now continue to improve the connectivity of the model by
 %identifying metabolites that should be connected. A convenient way to get
 %an overview of how connected the model is, and at the same time getting a
-%lot of useful data, is to use gapReport. Note that it can take several
-%hours to run, depending on the number of gaps in the model.
+%lot of useful data, is to use gapReport. Note that it can take several to
+%many hours to run, depending on the number of gaps in the model.
 [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnect,...
     neededForProductionMat]=gapReport(newModel);
 
-%You will see that 366/1294 reactions cannot carry flux. Remember that we
-%allow for output of all metabolites, that's why it calculates 366 in both
-%cases. 540/1287 metabolites cannot be synthesized from the precursors we
-%have supplied. There are 7 subnetworks in the model, of which 1275/1294
+%You will see that 799/2697 reactions cannot carry flux. Remember that we
+%allow for output of all metabolites, that's why it calculates 799 in both
+%cases. 1114/2548 metabolites cannot be synthesized from the precursors we
+%have supplied. There are 7 subnetworks in the model, of which 2524/2548
 %metabolites belong to the first one.
 %
 %It will also print something similar to:
 %
 %To enable net production of all metabolites, a total of 266 metabolites
 %must be connected Top 10 metabolites to connect:
-% 	1. Acyl-[acyl-carrier protein][s] (connects 65 metabolites) 2.
-% 	1-Radyl-2-acyl-sn-glycero-3-phosphocholine[s] (connects 16 metabolites)
-% 	3. G00146[s] (connects 13 metabolites) 4. NAD+[s] (connects 12
-% 	metabolites) 5. Tetrahydrofolate[s] (connects 11 metabolites) 6.
-% 	Methylselenic acid[s] (connects 10 metabolites) 7. G00003[s] (connects
-% 	10 metabolites) 8. G00009[s] (connects 8 metabolites) 9. FAD[s]
-% 	(connects 6 metabolites) 10. Thiamin monophosphate[s] (connects 6
-% 	metabolites)
+% 	1. Acyl-[acyl-carrier protein][s] (connects 65 metabolites)
+%   2. 1-Radyl-2-acyl-sn-glycero-3-phosphocholine[s] (connects 16 metabolites)
+% 	3. G00146[s] (connects 13 metabolites)
+%   4. NAD+[s] (connects 12	metabolites)
+%   5. Tetrahydrofolate[s] (connects 11 metabolites)
+%   6. Methylselenic acid[s] (connects 10 metabolites)
+%   7. G00003[s] (connects 10 metabolites)
+%   8. G00009[s] (connects 8 metabolites)
+%   9. FAD[s] (connects 6 metabolites)
+%   10. Thiamin monophosphate[s] (connects 6 metabolites)
 
 %This is a very useful way of directing the gap-filling tasks to where they
 %are of the greatest use. In this case it says that in order to have net
 %production of all metabolites in the model from the simple inputs that we
-%have defined (557 metabolites can currently not have net production) we
-%need to connect 226 unconnected metabolites in. However, by connecting
-%only the top 10 in the list 157/557 (28%) of them will now be connected.
+%have defined (1114 metabolites can currently not have net production) we
+%need to connect xxx unconnected metabolites in. However, by connecting
+%only the top 10 in the list xxx/1114 (xx%) of them will now be connected.
 %If we look at the list we see that the top ranking one is
 %Acyl-[acyl-carrier protein]. This is because acyl-carrier protein acts as
 %a carrier for many fatty acids, but it is not synthesized in the model
