@@ -24,7 +24,7 @@
 <div class="box"><strong>generateNewIds</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function newIds=generateNewIds(model,type,prefix,quantity) </strong></div>
+<div class="box"><strong>function newIds=generateNewIds(model,type,prefix,quantity,numLength) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> generateNewIds
@@ -36,9 +36,13 @@
    type        string specifying type of id, 'rxns' or 'mets'
    prefix      string specifying prefix to be used in all ids. E.g. 's_'
                or 'r_'.
-   quantity    number of new ids that should be generated
+   quantity    number of new ids that should be generated (opt, default 1)
+   numLength   length of numerical part of id. E.g. 4 gives ids like
+               r_0001 and 6 gives ids like r_000001. If the prefix is
+               already used in the model, then the model-defined length
+               will be used instead. (opt, default 4)
 
-   Usage: newIds=generateNewIds(model,type,prefix,quantity)
+   Usage: newIds=generateNewIds(model,type,prefix,quantity,numLength)
    
    Eduard Kerkhoven, 2018-09-26</pre></div>
 
@@ -49,13 +53,13 @@ This function calls:
 </ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,copyInfo)">addMets</a>	addMets</li></ul>
+<li><a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,copyInfo,prefix)">addMets</a>	addMets</li><li><a href="addTransport.html" class="code" title="function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,onlyToExisting)">addTransport</a>	addTransport</li></ul>
 <!-- crossreference -->
 
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function newIds=generateNewIds(model,type,prefix,quantity)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function newIds=generateNewIds(model,type,prefix,quantity,numLength)</a>
 0002 <span class="comment">% generateNewIds</span>
 0003 <span class="comment">%   Generates a list of new metabolite or reaction ids, sequentially</span>
 0004 <span class="comment">%   numbered with a defined prefix. The model is queried for the highest</span>
@@ -65,42 +69,51 @@ This function is called by:
 0008 <span class="comment">%   type        string specifying type of id, 'rxns' or 'mets'</span>
 0009 <span class="comment">%   prefix      string specifying prefix to be used in all ids. E.g. 's_'</span>
 0010 <span class="comment">%               or 'r_'.</span>
-0011 <span class="comment">%   quantity    number of new ids that should be generated</span>
-0012 <span class="comment">%</span>
-0013 <span class="comment">%   Usage: newIds=generateNewIds(model,type,prefix,quantity)</span>
-0014 <span class="comment">%</span>
-0015 <span class="comment">%   Eduard Kerkhoven, 2018-09-26</span>
+0011 <span class="comment">%   quantity    number of new ids that should be generated (opt, default 1)</span>
+0012 <span class="comment">%   numLength   length of numerical part of id. E.g. 4 gives ids like</span>
+0013 <span class="comment">%               r_0001 and 6 gives ids like r_000001. If the prefix is</span>
+0014 <span class="comment">%               already used in the model, then the model-defined length</span>
+0015 <span class="comment">%               will be used instead. (opt, default 4)</span>
 0016 <span class="comment">%</span>
-0017 
-0018 <span class="keyword">if</span> type==<span class="string">'rxns'</span>
-0019     existingIds=model.rxns;
-0020 <span class="keyword">elseif</span> type==<span class="string">'mets'</span>
-0021     existingIds=model.mets;
-0022 <span class="keyword">else</span>
-0023     error(<span class="string">'type should be either ''rxns'' or ''mets''.'</span>)
-0024 <span class="keyword">end</span>
-0025 
-0026 <span class="comment">% Subset only existingIds that have the prefix</span>
-0027 existingIds=existingIds(~cellfun(@isempty,regexp(existingIds,[<span class="string">'^'</span> prefix])));
-0028 
-0029 <span class="keyword">if</span> ~isempty(existingIds)
-0030     existingIds=regexprep(existingIds,[<span class="string">'^'</span> prefix],<span class="string">''</span>);
-0031     existingIds=sort(existingIds);
-0032     lastId=existingIds{end};
-0033     idLength=length(lastId);
-0034     lastId=str2double(lastId);
-0035 <span class="keyword">else</span>
-0036     fprintf([<span class="string">'No '</span> type <span class="string">' ids with prefix &quot;'</span> prefix <span class="string">'&quot; currently exist in the model. The first new id will be &quot;'</span> prefix <span class="string">'0001&quot;\n'</span>],<span class="string">'%s'</span>)
-0037     lastId=0;
-0038     idLength=4;
-0039 <span class="keyword">end</span>
-0040 
-0041 newIds=cell(quantity,1);
-0042 
-0043 <span class="keyword">for</span> k=1:quantity
-0044     newIds{k}=[prefix,num2str(k+lastId,[<span class="string">'%0'</span> num2str(idLength) <span class="string">'d'</span>])];
-0045 <span class="keyword">end</span>
-0046 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 13-Nov-2018 13:56:44 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0017 <span class="comment">%   Usage: newIds=generateNewIds(model,type,prefix,quantity,numLength)</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">%   Eduard Kerkhoven, 2018-09-26</span>
+0020 <span class="comment">%</span>
+0021 
+0022 <span class="keyword">if</span> type==<span class="string">'rxns'</span>
+0023     existingIds=model.rxns;
+0024 <span class="keyword">elseif</span> type==<span class="string">'mets'</span>
+0025     existingIds=model.mets;
+0026 <span class="keyword">else</span>
+0027     error(<span class="string">'type should be either ''rxns'' or ''mets''.'</span>)
+0028 <span class="keyword">end</span>
+0029 <span class="keyword">if</span> nargin&lt;5
+0030     numLength=4;
+0031 <span class="keyword">end</span>
+0032 
+0033 <span class="comment">% Subset only existingIds that have the prefix</span>
+0034 existingIds=existingIds(~cellfun(@isempty,regexp(existingIds,[<span class="string">'^'</span> prefix])));
+0035 
+0036 <span class="keyword">if</span> ~isempty(existingIds)
+0037     existingIds=regexprep(existingIds,[<span class="string">'^'</span> prefix],<span class="string">''</span>);
+0038     existingIds=sort(existingIds);
+0039     lastId=existingIds{end};
+0040     numLength=length(lastId);
+0041     lastId=str2double(lastId);
+0042 <span class="keyword">else</span>
+0043     lastId=0;
+0044     fprintf([<span class="string">'No '</span> type <span class="string">' ids with prefix &quot;'</span> prefix <span class="keyword">...</span>
+0045         <span class="string">'&quot; currently exist in the model. The first new id will be &quot;'</span> <span class="keyword">...</span>
+0046         [prefix,num2str(1,[<span class="string">'%0'</span> num2str(numLength) <span class="string">'d'</span>])] <span class="string">'&quot;\n'</span>],<span class="string">'%s'</span>)
+0047     lastId=0;
+0048 <span class="keyword">end</span>
+0049 
+0050 newIds=cell(quantity,1);
+0051 
+0052 <span class="keyword">for</span> k=1:quantity
+0053     newIds{k}=[prefix,num2str(k+lastId,[<span class="string">'%0'</span> num2str(numLength) <span class="string">'d'</span>])];
+0054 <span class="keyword">end</span>
+0055 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Sun 03-Feb-2019 21:32:08 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
