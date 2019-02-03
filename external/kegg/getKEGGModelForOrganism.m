@@ -389,10 +389,10 @@ if ~isempty(dataDir)
 end
 
 %Check if the fasta-file contains '/' or'\'. If not then it's probably just
-%a file name. It is then merged with the current folder
+%a file name. Expand to full path.
 if any(fastaFile)
     if ~any(strfind(fastaFile,'\')) && ~any(strfind(fastaFile,'/'))
-        fastaFile=fullfile(pwd,fastaFile);
+        fastaFile=which(fastaFile);
     end
     %Create the required sub-folders in dataDir if they dont exist
     if ~exist(fullfile(dataDir,'keggdb'),'dir')
