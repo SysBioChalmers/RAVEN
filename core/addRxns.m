@@ -78,12 +78,14 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allow
 %                    be placed in when using eqnType=2. Must match
 %                    model.comps (opt when eqnType=1 or eqnType=3)
 %   allowNewMets     true if the function is allowed to add new
-%                    metabolites. It is highly recommended to first add
-%                    any new metabolites with addMets rather than
-%                    automatically through this function. addMets supports
-%                    more annotation of metabolites, allows for the use of
-%                    exchange metabolites, and using it reduces the risk
-%                    of parsing errors (opt, default false)
+%                    metabolites. Can also be a string, which will be used
+%                    as prefix for the new metabolite IDs. It is highly
+%                    recommended to first add any new metabolites with
+%                    addMets rather than automatically through this
+%                    function. addMets supports more annotation of
+%                    metabolites, allows for the use of exchange
+%                    metabolites, and using it reduces the risk of parsing
+%                    errors (opt, default false)
 %   allowNewGenes    true if the functions is allowed to add new genes
 %                    (opt, default false)
 %
@@ -193,15 +195,15 @@ if isfield(rxnsToAdd,'equations')
         rxnsToAdd.equations=cellstr(rxnsToAdd.equations);
     end
     
-%Alternative case: mets+stoichiometry provided
+    %Alternative case: mets+stoichiometry provided
 else
     %In the case of 1 rxn added (array of strings + vector), transform to
     %cells of length=1:
     if iscellstr(rxnsToAdd.mets)
-        rxnsToAdd.mets = {rxnsToAdd.mets};        
+        rxnsToAdd.mets = {rxnsToAdd.mets};
     end
     if isnumeric(rxnsToAdd.stoichCoeffs)
-        rxnsToAdd.stoichCoeffs = {rxnsToAdd.stoichCoeffs};        
+        rxnsToAdd.stoichCoeffs = {rxnsToAdd.stoichCoeffs};
     end
     %Now both rxnsToAdd.mets and rxnsToAdd.stoichCoeffs should be cell
     %arrays & of the same size:
@@ -237,6 +239,7 @@ nRxns=numel(rxnsToAdd.rxns);
 nOldRxns=numel(model.rxns);
 filler=cell(nRxns,1);
 filler(:)={''};
+cellfiller=cellfun(@(x) cell(0,0),filler,'UniformOutput',false);
 largeFiller=cell(nOldRxns,1);
 largeFiller(:)={''};
 
@@ -368,7 +371,7 @@ if isfield(rxnsToAdd,'subSystems')
 else
     %Fill with standard if it doesn't exist
     if isfield(newModel,'subSystems')
-        newModel.subSystems=[newModel.subSystems;filler];
+        newModel.subSystems=[newModel.subSystems;cellfiller];
     end
 end
 if isfield(rxnsToAdd,'rxnMiriams')
@@ -517,12 +520,16 @@ end
 if eqnType==1
     [I, J]=ismember(mets,model.mets);
     if ~all(I)
-        if allowNewMets==true
+        if allowNewMets==true | isstr(allowNewMets)
             %Add the new mets
             metsToAdd.mets=mets(~I);
             metsToAdd.metNames=metsToAdd.mets;
             metsToAdd.compartments=compartment;
-            newModel=addMets(newModel,metsToAdd);
+            if isstr(allowNewMets)
+                newModel=addMets(newModel,metsToAdd,true,allowNewMets);
+            else
+                newModel=addMets(newModel,metsToAdd,true);
+            end
         else
             EM='One or more equations contain metabolites that are not in model.mets. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function';
             dispEM(EM);
@@ -548,11 +555,15 @@ if eqnType==2
     [I, J]=ismember(t1,t2);
     
     if ~all(I)
-        if allowNewMets==true
+        if allowNewMets==true | isstr(allowNewMets)
             %Add the new mets
             metsToAdd.metNames=mets(~I);
             metsToAdd.compartments=compartment;
-            newModel=addMets(newModel,metsToAdd);
+            if isstr(allowNewMets)
+                newModel=addMets(newModel,metsToAdd,true,allowNewMets);
+            else
+                newModel=addMets(newModel,metsToAdd,true);
+            end
         else
             EM='One or more equations contain metabolites that are not in model.mets. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function';
             dispEM(EM);
@@ -594,11 +605,15 @@ if eqnType==3
     [I, J]=ismember(t1,t2);
     
     if ~all(I)
-        if allowNewMets==true
+        if allowNewMets==true | isstr(allowNewMets)
             %Add the new mets
             metsToAdd.metNames=metNames(~I);
             metsToAdd.compartments=compartments(~I);
-            newModel=addMets(newModel,metsToAdd);
+            if isstr(allowNewMets)
+                newModel=addMets(newModel,metsToAdd,true,allowNewMets);
+            else
+                newModel=addMets(newModel,metsToAdd,true);
+            end
         else
             EM='One or more equations contain metabolites that are not in model.metNames. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function';
             dispEM(EM);

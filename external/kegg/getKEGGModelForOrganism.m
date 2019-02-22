@@ -9,6 +9,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %   possible to circumvent protein homology search (see fastaFile parameter
 %   for more details)
 %
+%   Input:
 %   organismID          three or four letter abbreviation of the organism
 %                       (as used in KEGG). If not available, use a closely
 %                       related species. This is used for determing the
@@ -103,6 +104,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %                       CD-HIT is skipped (opt, default -1, i.e. CD-HIT is
 %                       skipped)
 %
+%   Output:
 %   model               the reconstructed model
 %
 %   PLEASE READ THIS: The input to this function can be confusing, because
@@ -263,7 +265,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %    nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2018-09-06
+%   Simonas Marcisauskas, 2019-01-14
 
 if nargin<2
     fastaFile=[];
@@ -278,7 +280,7 @@ if isempty(outDir)
     outDir=tempdir;
     %Delete all *.out files if any exist
     delete(fullfile(outDir,'*.out'));
-elseif ~isstring(outDir)
+elseif ~isstr(outDir)
     error('outDir should be provided as string');
 end
 if nargin<5
@@ -297,10 +299,10 @@ if nargin<9
     cutOff=10^-50;
 end
 if nargin<10
-    minScoreRatioG=0.8;
+    minScoreRatioKO=0.3;
 end
 if nargin<11
-    minScoreRatioKO=0.3;
+    minScoreRatioG=0.8;
 end
 if nargin<12
     maxPhylDist=inf;
@@ -354,9 +356,9 @@ if ~isempty(dataDir)
         'u3z7s31q5be4zqpmmsxgvfb0ye1x2lez', ...
         'rsug46hptvoy7hurooi6fsc1hz2f5b6v'};
     if all(cellfun(@isempty,regexp(dataDir,strcat(hmmOptions,'$')))) %Check if dataDir ends with any of the hmmOptions
-        if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file') &&...
-                ~exist(fullfile(dataDir,'fasta'),'dir') &&...
-                ~exist(fullfile(dataDir,'aligned'),'dir') &&...
+        if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file') && ...
+                ~exist(fullfile(dataDir,'fasta'),'dir') && ...
+                ~exist(fullfile(dataDir,'aligned'),'dir') && ...
                 ~exist(fullfile(dataDir,'hmms'),'dir')
             EM='Pre-trained HMMs set is not recognised. It should match any of the following sets (which are available to download):';
             disp(EM);
@@ -370,21 +372,27 @@ if ~isempty(dataDir)
             fprintf('Extracting HMMs archive file...\n');
             unzip([dataDir,'.zip']);
         else
-            [~,hmmIndex]=ismember(dataDir,hmmOptions);
-            
+            hmmIndex=regexp(dataDir,hmmOptions);
+            hmmIndex=~cellfun(@isempty,hmmIndex);
             fprintf('Downloading HMMs archive file...\n');
             websave([dataDir,'.zip'],['https://chalmersuniversity.box.com/shared/static/',hmmLinks{hmmIndex},'.zip']);
             fprintf('Extracting HMMs archive file...\n');
             unzip([dataDir,'.zip']);
         end
+        %Check if HMMs are extracted
+        if ~exist(fullfile(dataDir,'hmms','K00844.hmm'),'file')
+            EM=['The HMM files seem improperly extracted and not found in ',dataDir,'/hmms. Please remove ',dataDir,' folder and rerun getKEGGModelForOrganism'];
+            disp(EM);
+            error('Fatal error occured. See the details above');
+        end
     end
 end
 
 %Check if the fasta-file contains '/' or'\'. If not then it's probably just
-%a file name. It is then merged with the current folder
+%a file name. Expand to full path.
 if any(fastaFile)
     if ~any(strfind(fastaFile,'\')) && ~any(strfind(fastaFile,'/'))
-        fastaFile=fullfile(pwd,fastaFile);
+        fastaFile=which(fastaFile);
     end
     %Create the required sub-folders in dataDir if they dont exist
     if ~exist(fullfile(dataDir,'keggdb'),'dir')
@@ -534,7 +542,7 @@ missingFASTA=setdiff(KOModel.rxns,[fastaFiles;alignedFiles;hmmFiles;outFiles]);
 
 if ~isempty(missingFASTA)
     if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file')
-        EM=fprintf(['The file ''genes.pep'' cannot be located at ' strrep(dataDir,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
+        EM=['The file ''genes.pep'' cannot be located at ' strrep(dataDir,'\','/') '/ and should be downloaded from the KEGG FTP.\n'];
         dispEM(EM);
     end
     %Only construct models for KOs which don't have files already

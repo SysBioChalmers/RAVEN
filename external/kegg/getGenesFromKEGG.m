@@ -2,16 +2,17 @@ function model=getGenesFromKEGG(keggPath,koList)
 % getGenesFromKEGG
 %   Retrieves information on all genes stored in KEGG database
 %
+%   Input:
 %   keggPath	if keggGenes.mat is not in the RAVEN\external\kegg
 %               directory, this function will attempt to read data from a
 %               local FTP dump of the KEGG database. keggPath is the path
 %               to the root of this database
-%
 %   koList      the number of genes in KEGG is very large. koList can be a
 %               cell array with KO identifiers, in which case only genes
 %               belonging to one of those KEGG orthologies are retrieved
 %               (opt, default all KOs with associated reactions)
 %
+%   Output:
 %   model       a model structure generated from the database. The
 %               following fields are filled
 %       id              'KEGG'
@@ -24,15 +25,15 @@ function model=getGenesFromKEGG(keggPath,koList)
 %       rxnGeneMat      A binary matrix that indicates whether a specific
 %                       gene is present in a KO id
 %
-%   If the file keggGenes.mat is in the RAVEN\external\kegg directory it
-%   will be loaded instead of parsing of the KEGG files. If it does not
+%   NOTE: If the file keggGenes.mat is in the RAVEN\external\kegg directory
+%   it will be loaded instead of parsing of the KEGG files. If it does not
 %   exist it will be saved after parsing of the KEGG files. In general, you
 %   should remove the keggGenes.mat file if you want to rebuild the model
 %   structure from a newer version of KEGG.
 %
 %   Usage: model=getGenesFromKEGG(keggPath,koList)
 %
-%   Simonas Marcisauskas, 2018-08-15
+%   Simonas Marcisauskas, 2019-01-08
 %
 %
 % NOTE: This is how one entry looks in the file
