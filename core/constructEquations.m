@@ -20,6 +20,10 @@ function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sort
 %   Outut:
 %   equationStrings   a cell array with equations
 %
+%   NOTE: Reactions in a model should be organized in their forward direction
+%   (e.g. ub = 1000 and lb = -1000/0) so that their equations can be correctly
+%   constructed by this function.
+%
 %   Usage: equationStrings=constructEquations(model,rxns,useComps,...
 %           sortRevRxns,sortMetNames,useMetID)
 %
