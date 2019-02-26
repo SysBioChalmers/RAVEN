@@ -1,5 +1,5 @@
-function compStruct=compareMultipleModels(models,printResults,plotResults,groupVector,funcCompare,taskFile)
-% compareModels
+function compStruct = compareMultipleModels(models,printResults,plotResults,groupVector,funcCompare,taskFile)
+% compareMultipleModels
 %   Compares two or more condition-specific models generated from the same
 %   base model using high-dimensional comparisons in the reaction-space.
 %
@@ -8,8 +8,9 @@ function compStruct=compareMultipleModels(models,printResults,plotResults,groupV
 %                       (opt, default false)
 %   plotResults         true if the results should be plotted
 %                       (opt, default false)
-%   groupVector         numeric vector for grouping similar models, i.e. by
-%                       tissue (opt, default, all models ungrouped)
+%   groupVector         numeric vector or cell array for grouping similar 
+%                       models, i.e. by tissue (opt, default, all models
+%                       ungrouped)
 %   funcCompare         logical, should a functional comparison be run
 %                       (opt,default, false)
 %   taskFile            string containing the name of the task file to use
@@ -39,122 +40,134 @@ function compStruct=compareMultipleModels(models,printResults,plotResults,groupV
 %                       plotResults,groupVector,funcCompare,taskFile);
 %   
 %   Daniel Cook, 2018-03-16
+%   Jonathan Robinson, 2019-02-26
+%
 
 %% Set up input defaults
-if nargin<2
+if nargin < 2
     printResults=false;
 end
 
-if nargin<3
+if nargin < 3
     plotResults=false;
 end
 
-if nargin<4
+if nargin < 4
     groupVector = [];
+elseif ~isnumeric(groupVector)
+    % convert strings to numeric groups
+    [~,~,groupVector] = unique(groupVector);
 end
 
-if nargin<5
+if nargin < 5
     funcCompare = false;
 end
 
-if nargin<6
+if nargin < 6
     taskFile = [];
 end
 
-if numel(models)<=1
-    EM='Cannot compare only one model. Use printModelStats if you want a summary of a model';
+if numel(models) <= 1
+    EM = 'Cannot compare only one model. Use printModelStats if you want a summary of a model';
     dispEM(EM);
 end
 
-if nargin<6 && funcCompare==T
-    EM='Cannot perform the functional comparison without a task file. Specify taskFile or set funcCompare to FALSE.';
+if nargin < 6 && funcCompare
+    EM = 'Cannot perform the functional comparison without a task file. Specify taskFile or set funcCompare to FALSE.';
     dispEM(EM);
 end
 
 %% Set up model ID structure
-compStruct.modelIDs={};
-fprintf('\n Getting model IDs \n')
-for i=1:numel(models)
-    compStruct.modelIDs=[compStruct.modelIDs;models{i}.id];
+compStruct.modelIDs = {};
+fprintf('\n Getting model IDs \n')    
+for i = 1:numel(models)
+    if ~ischar(models{i}.id)  % to deal with non-character IDs (cells, strings, etc)
+        compStruct.modelIDs{i,1} = models{i}.id{1};
+    else
+        compStruct.modelIDs{i,1} = models{i}.id;
+    end
 end
 fprintf('*** Done \n\n')
+
 
 %% Compare models structure & function based on high-dimensional methods
 % Compare number of reactions in each subsystem in each model using a heatmap
 field = 'subSystems';
 fprintf('\n Comparing subsystem utilization \n')
-for i = 1:numel(models)
-    field_present(i) = isfield(models{i},field);
-end
-if sum(field_present) ~= numel(models)
+if any(~cellfun(@(m) isfield(m,field),models))
     fprintf('\nWARNING: At least one model does not contain the field "subSystems". \n')
     fprintf('         Skipping subsystem comparison. \n\n')
 else
-    compStruct.subsystems.ID = catModelElements(models,field);
-    compStruct.subsystems.matrix = compareSubsystems(models,field);
+    
+    [id,compMat] = compareModelField(models,field);
+    compStruct.subsystems.ID = id;
+    compStruct.subsystems.matrix = compMat;
     fprintf('*** Done \n\n')
-    if printResults==true
-        % This could use come cleaning up
-        fprintf('*** Comparison of reaction subsystem populations:\n');
-        str = [" "];
-        for i=1:length(compStruct.modelIDs)
-            str(1,i+1) = compStruct.modelIDs{i};
+    
+    if printResults
+        % This could use some cleaning up
+        fprintf('*** Comparison of reaction subsystem populations:\n\n');
+        
+        nrow = min([15,numel(compStruct.subsystems.ID)]);
+        ncol = min([10,numel(compStruct.modelIDs)]);
+        summaryArray = [{field}, compStruct.modelIDs(1:ncol)'];
+        summaryArray = [summaryArray; [compStruct.subsystems.ID(1:nrow), ...
+            arrayfun(@num2str,compStruct.subsystems.matrix(1:nrow,1:ncol),'UniformOutput',false)]];
+        
+        charArray = [];
+        for i = 1:size(summaryArray,2)
+            charArray = [charArray, char(strcat(summaryArray(:,i),{'   '}))];
         end
-        for i = 1:size(compStruct.subsystems.matrix,1)
-            if length(compStruct.subsystems.ID{i}) <= 16
-                str(i+1,1) = compStruct.subsystems.ID{i};
-            else
-                str(i+1,1) = [compStruct.subsystems.ID{i}(1:16) ' ...'];
-            end
-            for j=1:length(compStruct.modelIDs)
-                str(i+1,j+1) = num2str(compStruct.subsystems.matrix(i,j));
-            end
+        disp(charArray);
+        if numel(compStruct.subsystems.ID) > 15
+            fprintf('...\n');
         end
-        subsystem_comparison = str;
-        subsystem_comparison
         fprintf('\n\n');
     end
+    
     if plotResults==true
         % Plot all subsystems
+        figure;
         plottingData = (compStruct.subsystems.matrix - mean(compStruct.subsystems.matrix,2))./mean(compStruct.subsystems.matrix,2);
         color_map = redblue(length(0:.01:2));
         h = genHeatMap(plottingData',compStruct.subsystems.ID,compStruct.modelIDs,'both','euclidean',color_map,[-1,1]);
         title('Subsystem Coverage - all subsystems','FontSize',18,'FontWeight','bold')
         
         % Plot only subsystems with deviation from mean
+        figure;
         h_small = genHeatMap(plottingData(sum(plottingData~=0,2)~=0,:)',compStruct.subsystems.ID(sum(plottingData~=0,2)~=0),...
             compStruct.modelIDs,'both','euclidean',color_map,[-1,1]);
         title('Subsystem Coverage','FontSize',18,'FontWeight','bold')
         
         % Plot enrichment in subsystems with deviation from mean
+        figure;
         color_map_bw = [1 1 1;0 0 0];
         h_enriched = genHeatMap(plottingData(sum(plottingData~=0,2)~=0,:)',compStruct.subsystems.ID(sum(plottingData~=0,2)~=0),...
             compStruct.modelIDs,'both','euclidean',color_map_bw,[-10^-4,10^-4]);  
         title('Subsystem Enrichment','FontSize',18,'FontWeight','bold')
     end
+    
 end
 
 % Compare overall reaction structure across all models using a heatmap
 field = 'rxns';
 fprintf('\n Comparing model reaction correlations \n')
-all_rxns = catModelElements(models,field);
-% Create binary matrix of reactions
-binary_matrix = zeros(length(all_rxns),numel(models));
-for i=1:numel(models)
-    binary_matrix(:,i) = ismember(all_rxns,models{i}.rxns);
-end
 
-% Save results
-compStruct.reactions.IDs = all_rxns;
+% Create binary matrix of reactions
+[id,binary_matrix] = compareModelField(models,field);
+compStruct.reactions.IDs = id;
 compStruct.reactions.matrix = binary_matrix;
+
+% calculate hamming similarity
 compStruct.structComp = 1-squareform(pdist(binary_matrix','hamming'));
 
-clear color_map
+color_map = [];
 for i = 1:101
     color_map(i,:) = [1 (1-(i-1)/100) (1-(i-1)/100)];
 end
 fprintf('*** Done \n\n')
 if plotResults == true
+    figure;
     h = genHeatMap(compStruct.structComp,compStruct.modelIDs,compStruct.modelIDs,'both','euclidean',color_map,[0,1]);
     title('Structural Similarity','FontSize',18,'FontWeight','bold')
 end
@@ -167,8 +180,8 @@ if exist('tsne') > 0
     compStruct.structCompMap = t_vars_3d_struc;
     fprintf('*** Done \n\n')
     if plotResults == true
-        figure();hold on; 
-        if length(groupVector) > 0
+        figure; hold on; 
+        if ~isempty(groupVector)
             color_vector = groupVector;
             colormap(parula(max(groupVector)));
         else
@@ -187,8 +200,8 @@ else
     [mds_vars_3d_struc,stress,disparities] = mdscale(pdist(double(binary_matrix'),'hamming'),3);
     compStruct.structCompMap = mds_vars_3d_struc;
     if plotResults == true
-        figure();hold on; 
-        if length(groupVector) > 0
+        figure; hold on; 
+        if ~isempty(groupVector)
             color_vector = groupVector;
             colormap(parula(max(groupVector)));
         else
@@ -200,13 +213,13 @@ else
     end
 end
 
-% Compare model functions by simulating their capacity to perform tasks
+% Compare model functions by assessing their capacity to perform tasks
 if funcCompare == true && ~isempty(taskFile)
     fprintf('\n Checking model performance on specified tasks. \n')
     taskStructure=parseTaskList(taskFile);
     for i = 1:numel(models)
         fprintf('\n Checking model # %.0f \n',i)
-        taskReport{i}=checkTasks(models{i},[],false,false,false,taskStructure);
+        taskReport{i} = checkTasks(models{i},[],false,false,false,taskStructure);
     end    
     
     % Save results
@@ -219,12 +232,14 @@ if funcCompare == true && ~isempty(taskFile)
     fprintf('*** Done \n\n')
    
     % Plot results
-    if plotResults == true        
+    if plotResults == true
+        figure;
         color_map_bw = [1 1 1;0 0 0];
         h_enriched = genHeatMap(taskMatrix,compStruct.modelIDs,...
             taskReport{1}.description,'both','euclidean',color_map_bw,[0,1]);
         title('Functional Comparison - All Tasks','FontSize',18,'FontWeight','bold')
         
+        figure;
         color_map_bw = [1 1 1;0 0 0];
         h_enriched = genHeatMap(taskMatrix(intersect(find(sum(taskMatrix,2)~=numel(models)),find(sum(taskMatrix,2)~=0)),:),...
             compStruct.modelIDs,taskReport{1}.description(intersect(find(sum(taskMatrix,2)~=numel(models)),find(sum(taskMatrix,2)~=0))),...
@@ -236,50 +251,39 @@ end
 end
 
 %% Additional Functions
-function A=getElements(models,field)
-    A={};
-    for i=1:numel(models)
-       if isfield(models{i},field)
-           A=[A;{models{i}.(field)}];
-       end
+
+function [id,compMat] = compareModelField(models,field)
+    % Generates a list of unique field entries and a matrix quantifying the
+    % number of appearances of each field entry in each model
+    
+    % get unique list of field entries
+    hasfield = cellfun(@(m) isfield(m,field),models);
+    id = cellfun(@(m) m.(field),models(hasfield),'UniformOutput',false);
+    id = unique(vertcat(id{:}));
+    
+    % assemble matrix comparing frequency of each entry in each model
+    compMat = zeros(numel(id),numel(models));
+    for i = 1:numel(models)
+        [~,entryIndex] = ismember(models{i}.(field),id);  % get index of each field entry in the unique id list
+        compMat(:,i) = histcounts(entryIndex, 0.5:1:(numel(id)+0.5));  % determine the frequency at which each index appears
     end
 end
 
-function B = compareSubsystems(models,field)
-    % Compares number of reactions in each subsystem included in the models
-    allSubsys = catModelElements(models,field);
-    B = zeros(length(allSubsys),numel(models));
-    for i=1:numel(models)
-        for j=1:length(allSubsys)
-            B(j,i) = sum(ismember(models{i}.subSystems,allSubsys(j)));
-        end
-    end
-end
-
-function C = catModelElements(models,field)
-    % Creates a vector of all IDs included in models
-    A = getElements(models,field);
-    allElements = [];
-    for i=1:numel(models)
-        allElements = [allElements;A{i}];
-    end
-    C = unique(allElements);
-end
 
 function h = genHeatMap(data,colnames,rownames,clust_dim,clust_dist,col_map,col_bounds)
-%GENHEATMAP  Generate a heatmap for a given matrix of data.
+%genHeatMap  Generate a heatmap for a given matrix of data.
 %
-%   GENHEATMAP(DATA,COLNAMES,ROWNAMES,CLUSTER,COL_MAP,COL_BOUNDS) takes as
-%   input a matrix of values and produces a heatmap using the built-in
-%   PCOLOR function.
+% Usage:
 %
-%--------------------------------- INPUTS ---------------------------------
+%   genHeatMap(data,colnames,rownames,,clust_dim,clust_dist,col_map,col_bounds);
+%
+% Inputs:
 %
 % data        Numerical matrix.
 %
-% colnames    Names of DATA columns.
+% colnames    Cell array of data column names.
 % 
-% rownames    Names of DATA rows.
+% rownames    Cell array of data row names.
 %
 % clust_dim   'none' - the data will be plotted as provided (DEFAULT)
 %             'rows' - cluster/rearrange the rows based on distance
@@ -287,43 +291,42 @@ function h = genHeatMap(data,colnames,rownames,clust_dim,clust_dist,col_map,col_
 %             'both' - cluster/rearrange rows and columns based on distance
 %
 % clust_dist  Distance metric to be used for clustering, ignored if
-%             CLUST_DIM is 'none'. Options are the same as those for
+%             clust_dim is 'none'. Options are the same as those for
 %             distance in, e.g., PDIST ('euclidean', 'hamming', etc.).
 %             (DEFAULT = 'euclidean')
 %
 % col_map     Colormap, provided as string (e.g., 'parula', 'hot', 'etc.')
 %             or an Nx3 RGB matrix of N colors.
-%             (DEFAULT = 'parula')
+%             (DEFAULT = 'hot')
 %
 % col_bounds  A 2-element vector with min and max values, to manually set
 %             the bounds of the colormap.
-%             (DEFAULT = min/max of DATA).
+%             (DEFAULT = min/max of data).
 %
 %
-% Jonathan Robinson, 2018-03-06
+% Jonathan Robinson, 2019-02-26
 %
-
 
 % ***** additional adjustable parameters *****
-grid_color = 'none';  % color of gridlines (RGB vector or string). e.g., [1 0 0] or 'r' (for red)
+grid_color = 'none';  % color of gridlines (RGB vector or string). e.g., [1 0 0] or 'r' (for red); or 'none'.
 linkage_method = 'average';  % linkage algorithm for hierarchical clustering (see linkage function for more options)
 % ********************************************
 
 
 % handle input arguments
+if nargin < 4 || isempty(clust_dim)
+    clust_dim = 'none';
+elseif ~ismember(clust_dim,{'none','rows','cols','both'})
+    error('%s is not a valid CLUST_DIM option. Choose "none", "rows", "cols", or "both".',clust_dim);
+end
+if nargin < 5 || isempty(clust_dist)
+    clust_dist = 'euclidean';
+end
+if nargin < 6 || isempty(col_map)
+    col_map = 'hot';
+end
 if nargin < 7 || isempty(col_bounds)
     col_bounds = [min(data(:)),max(data(:))];
-    if nargin < 6 || isempty(col_map)
-        col_map = 'parula';
-        if nargin < 5 || isempty(clust_dist)
-            clust_dist = 'euclidean';
-            if nargin < 4 || isempty(clust_dim)
-                clust_dim = 'none';
-            elseif ~ismember(clust_dim,{'none','rows','cols','both'})
-                error('%s is not a valid CLUST_DIM option. Choose "none", "rows", "cols", or "both".',clust_dim);
-            end
-        end
-    end
 end
 
 
@@ -357,10 +360,10 @@ end
 % pad data matrix with zeros (pcolor cuts off last row and column)
 sortdata(end+1,end+1) = 0;
 
-% generate pcolor plot
-warning('off','MATLAB:hg:willberemoved');  % suppress warnings about tick label adjustment not being supported in future Matlab releases.
+% suppress warnings about tick label adjustment not being supported in future Matlab releases.
+warning('off','MATLAB:hg:willberemoved');
 
-figure(); % Generate new figure?
+% generate pcolor plot
 a = axes;
 set(a,'YAxisLocation','Right','XTick',[],'YTick', (1:size(sortdata,1))+0.5,'YTickLabels',sortrows);
 set(a,'TickLength',[0 0],'XLim',[1 size(sortdata,2)],'YLim',[1 size(sortdata,1)]);
@@ -384,6 +387,7 @@ plot(xl([1,1,2,2,1]),yl([1,2,2,1,1]),'k');
 
 warning('on','MATLAB:hg:willberemoved');  % turn the warning back on
 end
+
 
 function c = redblue(m)
 %REDBLUE    Shades of red and blue color map
