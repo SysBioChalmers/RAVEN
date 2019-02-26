@@ -41,6 +41,12 @@ end
 
 reducedModel = model;
 
+%Only remove genes that are actually in the model
+try
+    ischar(genesToRemove{1});
+    genesToRemove=genesToRemove(ismember(genesToRemove,model.genes));
+end
+
 if ~isempty(genesToRemove)
     indexesToRemove = getIndexes(model,genesToRemove,'genes');
     if ~isempty(indexesToRemove)
