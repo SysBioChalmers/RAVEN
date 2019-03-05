@@ -29,7 +29,7 @@ function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sort
 %   Usage: equationStrings=constructEquations(model,rxns,useComps,...
 %           sortRevRxns,sortMetNames,useMetID,useFormula)
 %
-%   Hao Wang, 2017-05-15
+%   Hao Wang, 2019-03-05
 %   Benjamin Sanchez, 2018-08-22
 %
 
@@ -71,7 +71,7 @@ equationStrings=cell(numel(Rindexes),1);
 
 for i=1:numel(Rindexes)
     Mindexes=find(model.S(:,Rindexes(i)));
-    %Define metabolites by id or name, and with or without compartment:
+    %Define metabolites by id, formula or name, and with or without compartment: 
     if useMetID==true && useFormula==false
         mets = model.mets(Mindexes);
     elseif useMetID==false && useFormula==true
