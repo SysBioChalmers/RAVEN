@@ -1,4 +1,4 @@
-function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID)
+function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID,useFormula)
 % constructEquations
 %   Construct equation strings for reactions
 %
@@ -14,8 +14,10 @@ function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sort
 %   sortMetNames      sort the metabolite names in the equation. Uses
 %                     compartment even if useComps is false (opt, default
 %                     false)
-%   useMetID          use metabolite ID in generated equations, otherwise metNames are
-%                     used (opt, default false)
+%   useMetID          use metabolite ID in generated equations (opt,
+%                     default false)
+%   useFormula        use metabolite formula in generated equations (opt,
+%                     default false)
 %
 %   Outut:
 %   equationStrings   a cell array with equations
@@ -25,7 +27,7 @@ function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sort
 %   constructed by this function.
 %
 %   Usage: equationStrings=constructEquations(model,rxns,useComps,...
-%           sortRevRxns,sortMetNames,useMetID)
+%           sortRevRxns,sortMetNames,useMetID,useFormula)
 %
 %   Hao Wang, 2017-05-15
 %   Benjamin Sanchez, 2018-08-22
@@ -45,6 +47,9 @@ if nargin<5
 end
 if nargin<6
     useMetID=false;
+end
+if nargin<7
+    useFormula=false;
 end
 if isempty(rxns) && nargin>2
     rxns=model.rxns;
@@ -67,8 +72,12 @@ equationStrings=cell(numel(Rindexes),1);
 for i=1:numel(Rindexes)
     Mindexes=find(model.S(:,Rindexes(i)));
     %Define metabolites by id or name, and with or without compartment:
-    if useMetID==true
+    if useMetID==true && useFormula==false
         mets = model.mets(Mindexes);
+    elseif useMetID==false && useFormula==true
+        mets = strcat('[',model.metFormulas(Mindexes),']');
+    elseif useMetID==true && useFormula==true
+        error('Arguments useMetID and useFormula cannot be both TRUE!');
     else
         mets = model.metNames(Mindexes);
     end
