@@ -61,12 +61,12 @@ model=[];
 if ismember(type,{'rxns','both'})
     fprintf('Loading reaction data files...');
     opts=detectImportOptions(fullfile(mnxPath,'reac_prop.txt'),...
-        'Delimiter','\t','NumHeaderLines',365);
+        'Delimiter','\t','NumHeaderLines',385);
     opts.VariableNames(1)=regexprep(opts.VariableNames(1),'^x_','');
     mnx = readtable(fullfile(mnxPath,'reac_prop.txt'),opts);
     
     opts=detectImportOptions(fullfile(mnxPath,'reac_xref.txt'),...
-        'Delimiter','\t','NumHeaderLines',365);
+        'Delimiter','\t','NumHeaderLines',385);
     opts.VariableNames(1)=regexprep(opts.VariableNames(1),'^x_','');
     mnx_xref = readtable(fullfile(mnxPath,'reac_xref.txt'),opts);
     
@@ -97,6 +97,19 @@ if ismember(type,{'rxns','both'})
     rxnSourceIDs = regexprep(mnx_xref.XREF,'^.+:','');  % retrieve source ID
     mnxID2extID = [mnx_xref.MNX_ID,rxnSources,rxnSourceIDs];
     
+    % Remove any BIGG id that ends with small letter: localization, which
+    % is not mapped in this function
+    rmIds = strcmp(mnxID2extID(:,2),'bigg') & ~cellfun(@isempty,regexp(mnxID2extID(:,3),'.*[a-z]$'));
+    rmIds = logical(rmIds + strcmp(mnxID2extID(:,2),'bigg') & startsWith(mnxID2extID(:,3),'R_'));
+    % Only keep first entry for each reaction in rhea
+    rheaIdx = find(strcmp(mnxID2extID(:,2),'rhea'));
+    [~,keep,~] = unique(mnxID2extID(rheaIdx,1),'first');
+    rheaRemove = ~ismember(rheaIdx,rheaIdx(keep));
+    rmIds(rheaIdx(rheaRemove)) = 1;
+    
+    mnxID2extID(rmIds,:)=[];
+    mnx_xref(rmIds,:)=[];
+        
     sNames={'bigg','kegg','metacyc','reactome','rhea','sabiork','seed'};
     fNames={'rxnBIGGID','rxnKEGGID','rxnMetaCycID','rxnREACTOMEID',...
         'rxnRheaID','rxnSABIORKID','rxnSEEDID'};
@@ -136,11 +149,11 @@ end
 if ismember(type,{'mets','both'})
     fprintf('Loading metabolite data... ');
     opts=detectImportOptions(fullfile(mnxPath,'chem_prop.txt'),...
-        'Delimiter','\t','NumHeaderLines',365);
+        'Delimiter','\t','NumHeaderLines',385);
     opts.VariableNames(1)=regexprep(opts.VariableNames(1),'^x_','');
     mnx = readtable(fullfile(mnxPath,'chem_prop.txt'),opts);  % ~45 sec load time
     opts=detectImportOptions(fullfile(mnxPath,'chem_xref.txt'),...
-        'Delimiter','\t','NumHeaderLines',365);
+        'Delimiter','\t','NumHeaderLines',385);
     opts.VariableNames(1)=regexprep(opts.VariableNames(1),'^x_','');
     mnx_xref = readtable(fullfile(mnxPath,'chem_xref.txt'),opts);
     fprintf('done.\n');
@@ -172,6 +185,13 @@ if ismember(type,{'mets','both'})
     metSourceIDsX = regexprep(mnx_xref.XREF,'^.+:','');  % retrieve source ID
     mnxID2extID = [mnx_xref.MNX_ID,metSourceNamesX,metSourceIDsX];
     
+    rmIds = strcmp(mnxID2extID(:,2),'bigg') & startsWith(mnxID2extID(:,3),'M_');
+    rmIds(find(strcmp(mnxID2extID(:,2),'kegg') & startsWith(mnxID2extID(:,3),'D'))) = 1;
+    rmIds(find(strcmp(mnxID2extID(:,2),'kegg') & startsWith(mnxID2extID(:,3),'G'))) = 1;
+    
+    mnxID2extID(rmIds,:)=[];
+    mnx_xref(rmIds,:)=[];
+
     % Split met name field by delimiters '|' and '; '. This takes a very
     % long time, and should only be done if necessary.
     % change semicolon+space delimiters to vertical bar "|"
@@ -212,6 +232,11 @@ if ismember(type,{'mets','both'})
         currentDbOnly=ismember(mnxIDdb(:,2),sNames{i});
         currentmnxID2extID=mnxIDdb(currentDbOnly,:);
         
+        if strcmp(sNames(i),'bigg')
+            rmIds=startsWith(currentmnxID2extID(:,3),'M_');
+            currentmnxID2extID(rmIds,:)=[];
+        end
+    
         if i==2 && strcmp(allIDs,'chebi')
             chebi=fileread([mnxPath,'\chebi.dat']);
             chebi=strsplit(chebi,'\n');

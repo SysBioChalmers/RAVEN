@@ -95,7 +95,7 @@ if ~isempty(fieldIdx)
     [Lia, Locb]=ismember(MNXID,MNXref.mets);
 
     for j=1:length(fieldIdx)
-        annotStruct=strings(numel(model.rxns),1);
+        annotStruct=strings(numel(model.mets),1);
         for i=1:size(MNXID,1)
             idx=Locb(i,:);
             if ~sum(idx)==0

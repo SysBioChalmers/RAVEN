@@ -38,8 +38,10 @@ result=zeros(size(metMetaNetXID,1),1);
 
 % no MNX metID associated: score 0; one MNX metID associated: score 1
 numIds=cellfun(@numel,metMetaNetXID);
+%numIds(numIds>1) = 1;
+%numIds = sum(numIds,2);
 % result(find(numIds==0))=0; % already 0
-result(find(numIds==1))=1;
+result(numIds==1)=1;
 
 % loop through multiple MNX associations
 numIds=find(numIds>1);
@@ -47,11 +49,13 @@ for i=1:length(numIds)
     query=metMetaNetXID{numIds(i),:};
 	[hit, j]=ismember(query,MNXmets.mets);
     if all(hit)
-        charges=num2cell(MNXmets.metCharges(j));
-		if isequal(MNXmets.metFormulas{j}) && isequal(charges{:})
-            result(numIds(i))=2;
-        else
-			result(numIds(i))=-1;
+        if numel(hit)>1
+            charges=num2cell(MNXmets.metCharges(j));
+            if isequal(MNXmets.metFormulas{j}) && isequal(charges{:})
+                result(numIds(i))=2;
+            else
+                result(numIds(i))=-1;
+            end
 		end
 	else
 		error('The model contains unknown MNX identifiers.');

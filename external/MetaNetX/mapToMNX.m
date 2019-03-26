@@ -63,12 +63,14 @@ if keepOneMetMNX
     result=checkMNXMetsConsistency(model.metMetaNetXID,MNXref);
     newMNXID=strings(size(model.mets));
     oneMatch=find(result==1);
-    newMNXID(oneMatch)=model.metMetaNetXID(oneMatch,1);
+    metMetaNetXID=flattenCell(model.metMetaNetXID);
+    newMNXID(oneMatch)=metMetaNetXID(oneMatch,1);
     twoMatch=find(result==2);
     for i=1:length(twoMatch)
         MNXid=model.metMetaNetXID{twoMatch(i),:};
         MNXid=MNXid(~cellfun('isempty',MNXid));
-        MNXid=sort(MNXid);
+        [~,j]=sort(str2double(regexprep(MNXid,'MNXM','')));
+        MNXid=MNXid(j);
         newMNXID(twoMatch(i))=MNXid(1);
     end
     model.metMetaNetXID=newMNXID;
