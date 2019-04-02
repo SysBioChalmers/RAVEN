@@ -390,15 +390,12 @@ if ~isempty(preferredOrder) && numel(models)>1
         
         %Remove all the genes that were already found and add the other
         %ones to allUsedGenes
-        [models{useOrderIndexes(i)}, notDeleted]=removeGenes(models{useOrderIndexes(i)},allGenes{i+1}(genesToDelete),true,false,false);
+        models{useOrderIndexes(i)}=removeGenes(models{useOrderIndexes(i)},allGenes{i+1}(genesToDelete),true,false,false);
         allUsedGenes(usedGenes)=true;
         
-        %Remove the deleted genes from finalMappings and allGenes. Don't
-        %remove the genes in notDeleted, they are part of complexes with
-        %some non-mapped genes
-        deletedIndexes=~ismember(allGenes{i+1}(genesToDelete),notDeleted);
-        finalMappings{i}(:,genesToDelete(deletedIndexes))=[];
-        allGenes{i+1}(genesToDelete(deletedIndexes))=[];
+        %Remove the deleted genes from finalMappings and allGenes.
+        finalMappings{i}(:,genesToDelete)=[];
+        allGenes{i+1}(genesToDelete)=[];
     end
 end
 
