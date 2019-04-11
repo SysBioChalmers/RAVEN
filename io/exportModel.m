@@ -597,6 +597,9 @@ if sbmlPackageVersions(1) == 2
     modelSBML.fbc_strict=1;
 end
 
+modelSBML.rule=[];
+modelSBML.constraint=[];
+
 OutputSBML(modelSBML,fileName,1,0,[1,0]);
 end
 
