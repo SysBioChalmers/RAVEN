@@ -16,7 +16,7 @@ function exportToTabDelimited(model,path)
 %
 %   Usage: exportToTabDelimited(model,path)
 %
-%   Simonas Marcisauskas, 2018-03-18
+%   Cheewin Kittikunapong, 2019-04-02
 
 if nargin<2
     path='./';
@@ -99,9 +99,11 @@ for i=1:numel(model.rxns)
     end
     
     if isfield(model,'subSystems')
-        fprintf(rxnFile,[strjoin(model.subSystems{i,1},';') '\t']);
-    else
-        fprintf(rxnFile,'\t');
+        if ~isempty(model.subSystems{i})
+            fprintf(rxnFile,[strjoin(model.subSystems{i,1},';') '\t']);
+        else
+            fprintf(rxnFile,'\t');
+        end
     end
     
     %Print replacement IDs
