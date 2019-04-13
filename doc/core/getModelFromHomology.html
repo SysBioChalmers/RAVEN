@@ -498,126 +498,123 @@ This function is called by:
 0390         
 0391         <span class="comment">%Remove all the genes that were already found and add the other</span>
 0392         <span class="comment">%ones to allUsedGenes</span>
-0393         [models{useOrderIndexes(i)}, notDeleted]=<a href="removeGenes.html" class="code" title="function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)">removeGenes</a>(models{useOrderIndexes(i)},allGenes{i+1}(genesToDelete),true,false,false);
+0393         models{useOrderIndexes(i)}=<a href="removeGenes.html" class="code" title="function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)">removeGenes</a>(models{useOrderIndexes(i)},allGenes{i+1}(genesToDelete),true,false,false);
 0394         allUsedGenes(usedGenes)=true;
 0395         
-0396         <span class="comment">%Remove the deleted genes from finalMappings and allGenes. Don't</span>
-0397         <span class="comment">%remove the genes in notDeleted, they are part of complexes with</span>
-0398         <span class="comment">%some non-mapped genes</span>
-0399         deletedIndexes=~ismember(allGenes{i+1}(genesToDelete),notDeleted);
-0400         finalMappings{i}(:,genesToDelete(deletedIndexes))=[];
-0401         allGenes{i+1}(genesToDelete(deletedIndexes))=[];
-0402     <span class="keyword">end</span>
-0403 <span class="keyword">end</span>
-0404 
-0405 <span class="comment">%Now loop through the models and update the gene associations. Genes not</span>
-0406 <span class="comment">%belonging to the new organism will be renamed as 'OLD_MODELID_gene'</span>
-0407 <span class="keyword">for</span> i=1:numel(models)
-0408     <span class="comment">%Find all the new genes that should be used for this model</span>
-0409     [newGenes, oldGenes]=find(finalMappings{i});
-0410     
-0411     <span class="comment">%Create a new gene list with the genes from the new organism and those</span>
-0412     <span class="comment">%genes that could not be removed</span>
-0413     replaceableGenes=allGenes{i+1}(unique(oldGenes));
-0414     nonReplaceableGenes=setdiff(models{useOrderIndexes(i)}.genes,replaceableGenes);
-0415     fullGeneList=[allGenes{1}(unique(newGenes));nonReplaceableGenes];
-0416     
-0417     <span class="comment">%Just to save some indexing later. This is the LAST index of</span>
-0418     <span class="comment">%replaceable ones</span>
-0419     nonRepStartIndex=numel(unique(newGenes));
+0396         <span class="comment">%Remove the deleted genes from finalMappings and allGenes.</span>
+0397         finalMappings{i}(:,genesToDelete)=[];
+0398         allGenes{i+1}(genesToDelete)=[];
+0399     <span class="keyword">end</span>
+0400 <span class="keyword">end</span>
+0401 
+0402 <span class="comment">%Now loop through the models and update the gene associations. Genes not</span>
+0403 <span class="comment">%belonging to the new organism will be renamed as 'OLD_MODELID_gene'</span>
+0404 <span class="keyword">for</span> i=1:numel(models)
+0405     <span class="comment">%Find all the new genes that should be used for this model</span>
+0406     [newGenes, oldGenes]=find(finalMappings{i});
+0407     
+0408     <span class="comment">%Create a new gene list with the genes from the new organism and those</span>
+0409     <span class="comment">%genes that could not be removed</span>
+0410     replaceableGenes=allGenes{i+1}(unique(oldGenes));
+0411     nonReplaceableGenes=setdiff(models{useOrderIndexes(i)}.genes,replaceableGenes);
+0412     fullGeneList=[allGenes{1}(unique(newGenes));nonReplaceableGenes];
+0413     
+0414     <span class="comment">%Just to save some indexing later. This is the LAST index of</span>
+0415     <span class="comment">%replaceable ones</span>
+0416     nonRepStartIndex=numel(unique(newGenes));
+0417     
+0418     <span class="comment">%Construct a new rxnGeneMat</span>
+0419     newRxnGeneMat=sparse(numel(models{useOrderIndexes(i)}.rxns),numel(fullGeneList));
 0420     
-0421     <span class="comment">%Construct a new rxnGeneMat</span>
-0422     newRxnGeneMat=sparse(numel(models{useOrderIndexes(i)}.rxns),numel(fullGeneList));
-0423     
-0424     <span class="comment">%Now update the rxnGeneMat. This is a little tricky and could</span>
-0425     <span class="comment">%probably be done in a more efficient way, but I just loop through the</span>
-0426     <span class="comment">%reactions and add them one by one</span>
-0427     <span class="keyword">for</span> j=1:numel(models{useOrderIndexes(i)}.rxns)
-0428         <span class="comment">%Get the old genes encoding for this reaction</span>
-0429         [~, oldGeneIds]=find(models{useOrderIndexes(i)}.rxnGeneMat(j,:));
-0430         
-0431         <span class="comment">%Update the matrix for each gene. This includes replacing one gene</span>
-0432         <span class="comment">%with several new ones if there were several matches</span>
-0433         <span class="keyword">for</span> k=1:numel(oldGeneIds)
-0434             <span class="comment">%Match the gene to one in the gene list. This is done as a text</span>
-0435             <span class="comment">%match. Could probably be done better, but I'm a little lost in</span>
-0436             <span class="comment">%the indexing</span>
-0437             
-0438             geneName=models{useOrderIndexes(i)}.genes(oldGeneIds(k));
+0421     <span class="comment">%Now update the rxnGeneMat. This is a little tricky and could</span>
+0422     <span class="comment">%probably be done in a more efficient way, but I just loop through the</span>
+0423     <span class="comment">%reactions and add them one by one</span>
+0424     <span class="keyword">for</span> j=1:numel(models{useOrderIndexes(i)}.rxns)
+0425         <span class="comment">%Get the old genes encoding for this reaction</span>
+0426         [~, oldGeneIds]=find(models{useOrderIndexes(i)}.rxnGeneMat(j,:));
+0427         
+0428         <span class="comment">%Update the matrix for each gene. This includes replacing one gene</span>
+0429         <span class="comment">%with several new ones if there were several matches</span>
+0430         <span class="keyword">for</span> k=1:numel(oldGeneIds)
+0431             <span class="comment">%Match the gene to one in the gene list. This is done as a text</span>
+0432             <span class="comment">%match. Could probably be done better, but I'm a little lost in</span>
+0433             <span class="comment">%the indexing</span>
+0434             
+0435             geneName=models{useOrderIndexes(i)}.genes(oldGeneIds(k));
+0436             
+0437             <span class="comment">%First search in the mappable genes</span>
+0438             mapIndex=find(ismember(allGenes{i+1},geneName));
 0439             
-0440             <span class="comment">%First search in the mappable genes</span>
-0441             mapIndex=find(ismember(allGenes{i+1},geneName));
-0442             
-0443             <span class="keyword">if</span> ~isempty(mapIndex)
-0444                 <span class="comment">%Get the new genes for that gene</span>
-0445                 a=find(finalMappings{i}(:,mapIndex));
+0440             <span class="keyword">if</span> ~isempty(mapIndex)
+0441                 <span class="comment">%Get the new genes for that gene</span>
+0442                 a=find(finalMappings{i}(:,mapIndex));
+0443                 
+0444                 <span class="comment">%Find the positions of these genes in the final gene list</span>
+0445                 [~, b]=ismember(allGenes{1}(a),fullGeneList);
 0446                 
-0447                 <span class="comment">%Find the positions of these genes in the final gene list</span>
-0448                 [~, b]=ismember(allGenes{1}(a),fullGeneList);
+0447                 <span class="comment">%Update the matrix</span>
+0448                 newRxnGeneMat(j,b)=1;
 0449                 
-0450                 <span class="comment">%Update the matrix</span>
-0451                 newRxnGeneMat(j,b)=1;
-0452                 
-0453                 <span class="comment">%Update the grRules string. This is tricky, but I hope that</span>
-0454                 <span class="comment">%it's ok to replace the old gene name with the new one and</span>
-0455                 <span class="comment">%add ') or (' if there were several matches. Be sure of</span>
-0456                 <span class="comment">%this!</span>
-0457                 repString=fullGeneList{b(1)};
-0458                 <span class="keyword">for</span> l=2:numel(b)
-0459                     repString=[repString <span class="string">') or ('</span> fullGeneList{b(l)}];
-0460                 <span class="keyword">end</span>
-0461                 models{useOrderIndexes(i)}.grRules{j}=strrep(models{useOrderIndexes(i)}.grRules{j},geneName{1},repString);
-0462             <span class="keyword">else</span>
-0463                 <span class="comment">%Then search in the non-replaceable genes. There could only</span>
-0464                 <span class="comment">%be one match here</span>
-0465                 index=find(ismember(nonReplaceableGenes,geneName));
+0450                 <span class="comment">%Update the grRules string. This is tricky, but I hope that</span>
+0451                 <span class="comment">%it's ok to replace the old gene name with the new one and</span>
+0452                 <span class="comment">%add ') or (' if there were several matches. Be sure of</span>
+0453                 <span class="comment">%this!</span>
+0454                 repString=fullGeneList{b(1)};
+0455                 <span class="keyword">for</span> l=2:numel(b)
+0456                     repString=[repString <span class="string">') or ('</span> fullGeneList{b(l)}];
+0457                 <span class="keyword">end</span>
+0458                 models{useOrderIndexes(i)}.grRules{j}=strrep(models{useOrderIndexes(i)}.grRules{j},geneName{1},repString);
+0459             <span class="keyword">else</span>
+0460                 <span class="comment">%Then search in the non-replaceable genes. There could only</span>
+0461                 <span class="comment">%be one match here</span>
+0462                 index=find(ismember(nonReplaceableGenes,geneName));
+0463                 
+0464                 <span class="comment">%Update the matrix</span>
+0465                 newRxnGeneMat(j,nonRepStartIndex+index)=1;
 0466                 
-0467                 <span class="comment">%Update the matrix</span>
-0468                 newRxnGeneMat(j,nonRepStartIndex+index)=1;
-0469                 
-0470                 models{useOrderIndexes(i)}.grRules{j}=strrep(models{useOrderIndexes(i)}.grRules{j},geneName{1},strcat(<span class="string">'OLD_'</span>,models{useOrderIndexes(i)}.id,<span class="string">'_'</span>,geneName{1}));
-0471             <span class="keyword">end</span>
-0472         <span class="keyword">end</span>
-0473     <span class="keyword">end</span>
-0474     
-0475     <span class="comment">%Add the new list of genes</span>
-0476     models{useOrderIndexes(i)}.rxnGeneMat=newRxnGeneMat;
-0477     <span class="keyword">if</span> ~isempty(nonReplaceableGenes)
-0478         models{useOrderIndexes(i)}.genes=[allGenes{1}(unique(newGenes));strcat(<span class="string">'OLD_'</span>,models{useOrderIndexes(i)}.id,<span class="string">'_'</span>,nonReplaceableGenes)];
-0479     <span class="keyword">else</span>
-0480         models{useOrderIndexes(i)}.genes=allGenes{1}(unique(newGenes));
-0481     <span class="keyword">end</span>
-0482     <span class="keyword">if</span> isfield(models{useOrderIndexes(i)},<span class="string">'geneComps'</span>)
-0483         geneComps=models{useOrderIndexes(i)}.geneComps(1);
-0484         models{useOrderIndexes(i)}.geneComps=zeros(numel(models{useOrderIndexes(i)}.genes),1);
-0485         <span class="comment">%Assume that all genes are in the same compartment, and this</span>
-0486         <span class="comment">%compartment is specified for the first gene</span>
-0487         models{useOrderIndexes(i)}.geneComps(:)=geneComps;
-0488     <span class="keyword">end</span>
-0489 <span class="keyword">end</span>
-0490 
-0491 <span class="comment">%Now merge the models. All information should be correct except for 'or'</span>
-0492 <span class="comment">%complexes</span>
-0493 draftModel=<a href="mergeModels.html" class="code" title="function model=mergeModels(models,supressWarnings)">mergeModels</a>(models);
-0494 
-0495 <span class="comment">%Change description of the resulting model</span>
-0496 draftModel.id=getModelFor;
-0497 description=<span class="string">'Generated by getModelFromHomology using '</span>;
-0498 <span class="keyword">for</span> i=1:numel(models)
-0499     <span class="keyword">if</span> i&lt;numel(models)
-0500         description=[description models{i}.id <span class="string">', '</span>];
-0501     <span class="keyword">else</span>
-0502         description=[description models{i}.id];
-0503     <span class="keyword">end</span>
-0504 <span class="keyword">end</span>
-0505 draftModel.description=description;
-0506 draftModel.rxnNotes=cell(length(draftModel.rxns),1);
-0507 draftModel.rxnNotes(:)={<span class="string">'Included by getModelFromHomology'</span>};
-0508 draftModel.rxnConfidenceScores=NaN(length(draftModel.rxns),1);
-0509 draftModel.rxnConfidenceScores(:)=2;
-0510 <span class="comment">%Standardize grRules and notify if problematic grRules are found</span>
-0511 [draftModel.grRules,draftModel.rxnGeneMat]=<a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(draftModel,false);
-0512 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Sun 03-Feb-2019 21:32:08 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0467                 models{useOrderIndexes(i)}.grRules{j}=strrep(models{useOrderIndexes(i)}.grRules{j},geneName{1},strcat(<span class="string">'OLD_'</span>,models{useOrderIndexes(i)}.id,<span class="string">'_'</span>,geneName{1}));
+0468             <span class="keyword">end</span>
+0469         <span class="keyword">end</span>
+0470     <span class="keyword">end</span>
+0471     
+0472     <span class="comment">%Add the new list of genes</span>
+0473     models{useOrderIndexes(i)}.rxnGeneMat=newRxnGeneMat;
+0474     <span class="keyword">if</span> ~isempty(nonReplaceableGenes)
+0475         models{useOrderIndexes(i)}.genes=[allGenes{1}(unique(newGenes));strcat(<span class="string">'OLD_'</span>,models{useOrderIndexes(i)}.id,<span class="string">'_'</span>,nonReplaceableGenes)];
+0476     <span class="keyword">else</span>
+0477         models{useOrderIndexes(i)}.genes=allGenes{1}(unique(newGenes));
+0478     <span class="keyword">end</span>
+0479     <span class="keyword">if</span> isfield(models{useOrderIndexes(i)},<span class="string">'geneComps'</span>)
+0480         geneComps=models{useOrderIndexes(i)}.geneComps(1);
+0481         models{useOrderIndexes(i)}.geneComps=zeros(numel(models{useOrderIndexes(i)}.genes),1);
+0482         <span class="comment">%Assume that all genes are in the same compartment, and this</span>
+0483         <span class="comment">%compartment is specified for the first gene</span>
+0484         models{useOrderIndexes(i)}.geneComps(:)=geneComps;
+0485     <span class="keyword">end</span>
+0486 <span class="keyword">end</span>
+0487 
+0488 <span class="comment">%Now merge the models. All information should be correct except for 'or'</span>
+0489 <span class="comment">%complexes</span>
+0490 draftModel=<a href="mergeModels.html" class="code" title="function model=mergeModels(models,supressWarnings)">mergeModels</a>(models);
+0491 
+0492 <span class="comment">%Change description of the resulting model</span>
+0493 draftModel.id=getModelFor;
+0494 description=<span class="string">'Generated by getModelFromHomology using '</span>;
+0495 <span class="keyword">for</span> i=1:numel(models)
+0496     <span class="keyword">if</span> i&lt;numel(models)
+0497         description=[description models{i}.id <span class="string">', '</span>];
+0498     <span class="keyword">else</span>
+0499         description=[description models{i}.id];
+0500     <span class="keyword">end</span>
+0501 <span class="keyword">end</span>
+0502 draftModel.description=description;
+0503 draftModel.rxnNotes=cell(length(draftModel.rxns),1);
+0504 draftModel.rxnNotes(:)={<span class="string">'Included by getModelFromHomology'</span>};
+0505 draftModel.rxnConfidenceScores=NaN(length(draftModel.rxns),1);
+0506 draftModel.rxnConfidenceScores(:)=2;
+0507 <span class="comment">%Standardize grRules and notify if problematic grRules are found</span>
+0508 [draftModel.grRules,draftModel.rxnGeneMat]=<a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(draftModel,false);
+0509 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Fri 12-Apr-2019 17:48:05 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
