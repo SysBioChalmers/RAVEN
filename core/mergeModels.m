@@ -13,7 +13,7 @@ function model=mergeModels(models,supressWarnings)
 %
 %   Usage: model=mergeModels(models)
 %
-%   Simonas Marcisauskas, 2018-04-03
+%   Cheewin Kittikunapong 2019-05-20
 %
 
 %Just return the model
@@ -215,15 +215,14 @@ for i=2:numel(models)
         end
     end
     
-    %Get the new metabolites from matching the models. Metabolites are said
-    %to be the same if they share name and compartment id. This means that
-    %metabolite IDs are not taken into account.
+    %Get the new metabolites from matching the models. Metabolites are matched by metabolite ID (model.mets).
+
     oldMetComps=model.comps(model.metComps);
-    oldMets=strcat(model.metNames,'[',oldMetComps,']');
-    %This is because it makes a '[]' string if no new metabolites
-    if ~isempty(models{i}.metNames)
+    oldMets=model.mets;
+
+    if ~isempty(models{i}.mets)
         newMetComps=models{i}.comps(models{i}.metComps);
-        newMets=strcat(models{i}.metNames,'[',newMetComps,']');
+        newMets=models{i}.mets;
     else
         newMets={};
         newMetComps={};
@@ -271,6 +270,7 @@ for i=2:numel(models)
     
     %Only add extra info on new metabolites since it's a little tricky to
     %chose what to keep otherwise. Should change in the future
+
     if ~isempty(metsToAdd)
         if isfield(models{i},'inchis')
             if isfield(model,'inchis')
@@ -384,12 +384,14 @@ for i=2:numel(models)
         dispEM(EM);
     end
     model.metComps=[model.metComps;J];
-    
+     
     %Create the new stoichiometric matrix
     model.S=[model.S;sparse(numel(metsToAdd),size(model.S,2))];
     
-    %Rematch metabolite names. Not the most clever way to do it maybe
-    allMets=strcat(model.metNames,'[',model.comps(model.metComps),']');
+    %Rematch metabolite by IDs and add unique new metabolites
+    allMets=model.mets;
+    uniqueNewMets = setdiff(newMets,oldMets);
+    allMets(end+1:end+numel(uniqueNewMets)) = uniqueNewMets;
     [~, J]=ismember(newMets,allMets);
     
     %Update the stoichiometric matrix for the model to add
