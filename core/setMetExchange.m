@@ -2,6 +2,7 @@ function [exchModel,unusedMets] = setMetExchange(model,mets,lb,ub,closeOthers,me
 % setMetExchange
 %   Define the exchange flux bounds for a set of metabolites.
 %
+% Input:
 %   model         a model structure
 %   mets          a cell array of metabolite names (case insensitive) or 
 %                 metabolite IDs, or a vector of metabolite indices
@@ -14,9 +15,10 @@ function [exchModel,unusedMets] = setMetExchange(model,mets,lb,ub,closeOthers,me
 %                 bounds corresponding to each of the provided metabolites,
 %                 or a single value that will be applied to all.
 %                 (opt, default 1000)
-%   closeOthers   close (set lb=ub=0) exchange reactions corresponding to
-%                 all other exchanged metabolites not present in the
-%                 provided list
+%   closeOthers   close exchange reactions for all other exchanged 
+%                 metabolites not present in the provided list. This will
+%                 prevent IMPORT of the metabolites, but their EXPORT will
+%                 not be modified.
 %                 (opt, default true)
 %   mediaOnly     only consider exchange reactions involving exchange to or
 %                 from the extracellular (media) compartment. Reactions
@@ -30,19 +32,20 @@ function [exchModel,unusedMets] = setMetExchange(model,mets,lb,ub,closeOthers,me
 %                 otherwise the mediaOnly flag will be ignored.
 %                 (opt, default false)
 %
+% Output:
 %   exchModel     a model structure with updated exchange flux bounds for
 %                 the provided set of metabolites
 %   unusedMets    metabolites provided by the user that were not used
 %                 because they are not involved in any exchange reactions
 %                 in the model
 %
-%   NOTE: Exchange reactions involving more than one metabolite will be
-%   ignored.
+% NOTE: Exchange reactions involving more than one metabolite will be
+% ignored.
 %
-%   Usage: exchModel = setMetExchange(model,mets,lb,ub,closeOthers,mediaOnly);
+% Usage: exchModel = setMetExchange(model,mets,lb,ub,closeOthers,mediaOnly);
 %
 %
-% Jonathan L. Robinson, 2019-05-20
+% Jonathan Robinson, 2019-05-20
 %
 
 
@@ -104,8 +107,15 @@ end
 % reactions, but indicates export for others. Therefore, the LB and UB
 % would need to be specified differently depending on the exchange reaction
 % direction, which is error-prone.
-if ~( all(all(model.S(exchMetInd,exchRxnInd) <= 0)) || all(all(model.S(exchMetInd,exchRxnInd) >= 0)) )
-    warning('Some exchange reactions differ in direction, and therefore have opposite meanings of LB and UB');
+if all(all(model.S(exchMetInd,exchRxnInd) <= 0))
+    importDir = 'backward';
+elseif all(all(model.S(exchMetInd,exchRxnInd) >= 0))
+    importDir = 'forward';
+else
+    fprintf('WARNING: Some exchange reactions differ in direction, and therefore have opposite meanings of LB and UB.');
+    if closeOthers
+        fprintf('         Therefore, the "closeOthers" option will be set to FALSE.');
+    end
 end
 
 % prepare exchanged metabolites and bounds
@@ -181,12 +191,17 @@ if ~isempty(multiMetInd)
 end
 
 % set exchange reaction bounds
-model.lb(exchRxnInd(rxnInd)) = lb(metInd);
-model.ub(exchRxnInd(rxnInd)) = ub(metInd);
+model = setParam(model,'lb',exchRxnInd(rxnInd),lb(metInd));
+model = setParam(model,'ub',exchRxnInd(rxnInd),ub(metInd));
 
 if closeOthers
-    % constrain flux of all other exchange reactions to zero
-    model = setParam(model,'eq',setdiff(exchRxnInd,exchRxnInd(rxnInd)),0);
+    % constrain import of all other exchange reactions to zero
+    constrainInd = setdiff(exchRxnInd,exchRxnInd(rxnInd));
+    if strcmp(importDir,'backward')
+        model = setParam(model,'lb',constrainInd,0);
+    else
+        model = setParam(model,'ub',constrainInd,0);
+    end
 end
 
 % assign output model
