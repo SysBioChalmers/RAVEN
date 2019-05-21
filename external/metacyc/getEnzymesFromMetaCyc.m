@@ -121,16 +121,18 @@ else
             end
             
             if numel(tline)>13 && strcmp(tline(1:13),'COMPONENTS - ')
-                nComp=nComp+1;
-                Comp.subunit{nComp}=tline(14:end);
+                if addMe
+                    nComp=nComp+1;
+                    Comp.subunit{nComp}=tline(14:end);
+                end
             end
             
             if strcmp(tline(1:end),'//')
                 if addMe
                     Comp.subunit=Comp.subunit(1:nComp);
                     metaCycEnzymes.cplxComp{nCplx}=Comp;
+                    addMe=false;
                 end
-                addMe=false;
             end
         end
         %Close the file
