@@ -15,7 +15,7 @@ function [exchModel,unusedMets] = setMetExchange(model,mets,lb,ub,closeOthers,me
 %   ub            upper bound of exchange flux. Can be either a vector of
 %                 bounds corresponding to each of the provided metabolites,
 %                 or a single value that will be applied to all.
-%                 (opt, default to model.annotation.defaultLB if it exists,
+%                 (opt, default to model.annotation.defaultUB if it exists,
 %                 otherwise 1000)
 %   closeOthers   close exchange reactions for all other exchanged 
 %                 metabolites not present in the provided list. This will
