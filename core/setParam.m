@@ -1,4 +1,4 @@
-function model=setParam(model, paramType, rxnList, params)
+function model=setParam(model, paramType, rxnList, params, var)
 % setParam
 %   Sets parameters for reactions
 %
@@ -10,18 +10,21 @@ function model=setParam(model, paramType, rxnList, params)
 %                       constraint)
 %               'obj'   Objective coefficient
 %               'rev'   Reversibility
+%               'var'   Variance around measured bound
 %   rxnList     a cell array of reaction IDs or a vector with their
 %               corresponding indexes
 %   params      a vector of the corresponding values
+%   var         percentage of variance around measured value, if 'var' is
+%               set as paramType
 %
 %   model       an updated model structure
 %
 %   Usage: model=setParam(model, paramType, rxnList, params)
 %
-%   Rasmus Agren, 2014-09-01
+%   Eduard Kerkhoven, 2019-05-03
 %
 
-if ~isempty(setdiff(paramType,{'lb';'ub';'eq';'obj';'rev'}))
+if ~isempty(setdiff(paramType,{'lb';'ub';'eq';'obj';'rev';'var'}))
     EM=['Incorrect parameter type: "' paramType '"'];
     dispEM(EM);
 end
@@ -79,6 +82,17 @@ if ~isempty(indexes)
     if strcmpi(paramType,'rev')
         %Non-zero values are interpreted as reversible
         model.rev(indexes)=params~=0;
+    end
+    if strcmpi(paramType,'var')
+        for i=1:numel(params)
+            if params(i) < 0
+                model.lb(indexes(i)) = params(i) * (1+var/200);
+                model.ub(indexes(i)) = params(i) * (1-var/200);
+            else
+                model.lb(indexes(i)) = params(i) * (1-var/200);
+                model.ub(indexes(i)) = params(i) * (1+var/200);
+            end
+        end
     end
 end
 end
