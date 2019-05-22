@@ -1,8 +1,10 @@
-function model=mergeModels(models,supressWarnings)
+function model=mergeModels(models,metParam,supressWarnings)
 % mergeModels
 %   Merges models into one model structure.
 %
 %   models          a cell array with model structures
+%   metParam        string specifying whether to refer to metabolite name
+%                   (metNames) or ID (mets) for matching (default, metNames)
 %   supressWarnings true if warnings should be supressed (opt, default
 %                   false)
 %
@@ -23,6 +25,10 @@ if numel(models)<=1
 end
 
 if nargin<2
+    metParam='metNames';
+end
+
+if nargin<3
     supressWarnings=false;
 end
 
@@ -214,21 +220,44 @@ for i=2:numel(models)
             model.pwys=[model.pwys;cell(numel(models{i}.rxns),1)];
         end
     end
-    
+
+    if strcmpi(metParam,'metNames')
+    %Get the new metabolites from matching the models. Metabolites are said
+    %to be the same if they share name and compartment id. This means that
+    %metabolite IDs are not taken into account.
+        
+        oldMetComps=model.comps(model.metComps);
+        oldMets=strcat(model.metNames,'[',oldMetComps,']');
+        %This is because it makes a '[]' string if no new metabolites
+        if ~isempty(models{i}.metNames)
+            newMetComps=models{i}.comps(models{i}.metComps);
+            newMets=strcat(models{i}.metNames,'[',newMetComps,']');
+        else
+            newMets={};
+            newMetComps={};
+        end
+        tf=ismember(newMets,oldMets);
+        metsToAdd=find(~tf);
+
+    end
+
+    if strcmpi(metParam,'mets')
     %Get the new metabolites from matching the models. Metabolites are matched by metabolite ID (model.mets).
 
-    oldMetComps=model.comps(model.metComps);
-    oldMets=model.mets;
+        oldMetComps=model.comps(model.metComps);
+        oldMets=model.mets;
+    
+        if ~isempty(models{i}.mets)
+            newMetComps=models{i}.comps(models{i}.metComps);
+            newMets=models{i}.mets;
+        else
+            newMets={};
+            newMetComps={};
+        end
+        tf=ismember(newMets,oldMets);
+        metsToAdd=find(~tf);
 
-    if ~isempty(models{i}.mets)
-        newMetComps=models{i}.comps(models{i}.metComps);
-        newMets=models{i}.mets;
-    else
-        newMets={};
-        newMetComps={};
     end
-    tf=ismember(newMets,oldMets);
-    metsToAdd=find(~tf);
     
     %First add the new metabolites Make sure that there are no conflicting
     %metabolite ids
@@ -388,17 +417,26 @@ for i=2:numel(models)
     %Create the new stoichiometric matrix
     model.S=[model.S;sparse(numel(metsToAdd),size(model.S,2))];
     
-    %Rematch metabolite by IDs and add unique new metabolites
-    allMets=model.mets;
-    uniqueNewMets = setdiff(newMets,oldMets);
-    allMets(end+1:end+numel(uniqueNewMets)) = uniqueNewMets;
-    [~, J]=ismember(newMets,allMets);
-    
+
+    if strcmpi(metParam,'metNames')
+        %Rematch metabolite names. Not the most clever way to do it maybe
+        allMets=strcat(model.metNames,'[',model.comps(model.metComps),']');
+        [~, J]=ismember(newMets,allMets);
+    end
+
+    if strcmpi(metParam,'mets')
+        %Rematch metabolite by IDs and add unique new metabolites
+        allMets=model.mets;
+        uniqueNewMets = setdiff(newMets,oldMets);
+        allMets(end+1:end+numel(uniqueNewMets)) = uniqueNewMets;
+        [~, J]=ismember(newMets,allMets);
+    end
+
     %Update the stoichiometric matrix for the model to add
     newS=sparse(numel(model.mets),numel(models{i}.rxns));
     newS(J,:)=models{i}.S;
-    
     model.S=[model.S newS];
+
     
     %Now add new genes
     if isfield(models{i},'genes')
