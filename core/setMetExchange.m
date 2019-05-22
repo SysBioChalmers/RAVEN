@@ -10,11 +10,13 @@ function [exchModel,unusedMets] = setMetExchange(model,mets,lb,ub,closeOthers,me
 %   lb            lower bound of exchange flux. Can be either a vector of
 %                 bounds corresponding to each of the provided metabolites,
 %                 or a single value that will be applied to all.
-%                 (opt, default -1000)
+%                 (opt, default to model.annotation.defaultLB if it exists,
+%                 otherwise -1000)
 %   ub            upper bound of exchange flux. Can be either a vector of
 %                 bounds corresponding to each of the provided metabolites,
 %                 or a single value that will be applied to all.
-%                 (opt, default 1000)
+%                 (opt, default to model.annotation.defaultLB if it exists,
+%                 otherwise 1000)
 %   closeOthers   close exchange reactions for all other exchanged 
 %                 metabolites not present in the provided list. This will
 %                 prevent IMPORT of the metabolites, but their EXPORT will
@@ -45,7 +47,7 @@ function [exchModel,unusedMets] = setMetExchange(model,mets,lb,ub,closeOthers,me
 % Usage: exchModel = setMetExchange(model,mets,lb,ub,closeOthers,mediaOnly);
 %
 %
-% Jonathan Robinson, 2019-05-20
+% Jonathan Robinson, 2019-05-22
 %
 
 
@@ -55,15 +57,27 @@ if nargin < 2
 elseif ischar(mets)
     mets = {mets};  % in case only one metabolite is provided as a string
 end 
+
 if nargin < 3 || isempty(lb)
-    lb = -1000;
+    if isfield(model,'annotation') && isfield(model.annotation,'defaultLB')
+        lb = model.annotation.defaultLB;
+    else
+        lb = -1000;
+    end
 end
+
 if nargin < 4 || isempty(ub)
-    ub = 1000;
+    if isfield(model,'annotation') && isfield(model.annotation,'defaultUB')
+        ub = model.annotation.defaultUB;
+    else
+        ub = 1000;
+    end
 end
+
 if nargin < 5 || isempty(closeOthers)
     closeOthers = true;
 end
+
 if nargin < 6
     mediaOnly = false;
 elseif mediaOnly
