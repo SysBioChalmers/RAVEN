@@ -126,9 +126,9 @@ if all(all(model.S(exchMetInd,exchRxnInd) <= 0))
 elseif all(all(model.S(exchMetInd,exchRxnInd) >= 0))
     importDir = 'forward';
 else
-    fprintf('WARNING: Some exchange reactions differ in direction, and therefore have opposite meanings of LB and UB.');
+    fprintf('WARNING: Some exchange reactions differ in direction, and therefore have opposite meanings of LB and UB.\n');
     if closeOthers
-        fprintf('         Therefore, the "closeOthers" option will be set to FALSE.');
+        fprintf('         Therefore, the "closeOthers" option will be set to FALSE.\n');
     end
 end
 
