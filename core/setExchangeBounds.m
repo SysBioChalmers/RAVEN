@@ -1,6 +1,6 @@
-function [exchModel,unusedMets] = setMetExchange(model,mets,lb,ub,closeOthers,mediaOnly)
-% setMetExchange
-%   Define the exchange flux bounds for a set of metabolites.
+function [exchModel,unusedMets] = setExchangeBounds(model,mets,lb,ub,closeOthers,mediaOnly)
+% setExchangeBounds
+%   Define the exchange flux bounds for a given set of metabolites.
 %
 % Input:
 %   model         a model structure
@@ -44,10 +44,10 @@ function [exchModel,unusedMets] = setMetExchange(model,mets,lb,ub,closeOthers,me
 % NOTE: Exchange reactions involving more than one metabolite will be
 % ignored.
 %
-% Usage: exchModel = setMetExchange(model,mets,lb,ub,closeOthers,mediaOnly);
+% Usage: exchModel = setExchangeBounds(model,mets,lb,ub,closeOthers,mediaOnly);
 %
 %
-% Jonathan Robinson, 2019-05-22
+% Jonathan Robinson, 2019-05-23
 %
 
 
@@ -220,7 +220,5 @@ end
 
 % assign output model
 exchModel = model;
-
-
 
 
