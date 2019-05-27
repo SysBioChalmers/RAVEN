@@ -150,26 +150,22 @@ if ~isempty(mets)
     % map provided mets to exchanged metabolites
     if isnumeric(mets)
         % mets are provided as indices
-        exchMetInd = intersect(mets,exchMetInd);
-        [~,keepMet] = ismember(exchMetInd,mets);
+        [isExch,metInd] = ismember(mets,exchMetInd);    
     elseif sum(ismember(lower(mets),lower(model.metNames))) > sum(ismember(mets,model.mets))
         % assume that mets are provided as names
-        metInd = find(ismember(lower(model.metNames),lower(mets)));
-        exchMetInd = intersect(metInd,exchMetInd);
-        [~,keepMet] = ismember(lower(model.metNames(exchMetInd)),lower(mets));
+        [isExch,metInd] = ismember(lower(mets),lower(model.metNames(exchMetInd)));
     else
         % assume that mets are provided as met IDs
-        metInd = find(ismember(model.mets,mets));
-        exchMetInd = intersect(metInd,exchMetInd);
-        [~,keepMet] = ismember(model.mets(exchMetInd),mets);
+        [isExch,metInd] = ismember(mets,model.mets(exchMetInd));
     end
     
-    % update bound vectors
-    lb = lb(keepMet);
-    ub = ub(keepMet);
+    % get exchanged met indices and determine unused (non-exchanged) mets
+    unusedMets = mets(~isExch);
+    exchMetInd = exchMetInd(metInd(isExch));
     
-    % get provided metabolites not used
-    unusedMets = setdiff(mets,mets(keepMet));
+    % update bound vectors
+    lb = lb(isExch);
+    ub = ub(isExch);
     
 else
     % if no mets were provided, use all exchanged mets
