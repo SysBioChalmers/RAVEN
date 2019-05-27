@@ -137,12 +137,12 @@ if ~isempty(mets)
     
     % prepare lb and ub variables
     if numel(lb) == 1
-        lb = lb*ones(size(exchMetInd));
+        lb = lb*ones(size(mets));
     elseif numel(lb) ~= numel(mets)
         error('lb must be a single value or a vector of equal length as mets');
     end
     if numel(ub) == 1
-        ub = ub*ones(size(exchMetInd));
+        ub = ub*ones(size(mets));
     elseif numel(ub) ~= numel(mets)
         error('ub must be a single value or a vector of equal length as mets');
     end
