@@ -10,8 +10,8 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 %   keepTransportRxns   include transportation reactions, which often have identical
 %                       reactants and products that turn to be all-zero columns in
 %                       the S matrix (opt, default false)
-%   keepUnbalanced      include reactions cannot be unbalanced reactions, usually
-%                       because they are polymeric reactions or because of a
+%   keepUnbalanced      include reactions cannot be balanced, usually
+%                       because they are polymeric reactions or with
 %                       specific difficulty in balancing class structures
 %                       (opt, default false)
 %   keepUndetermined    include reactions that have substrates lack chemical
@@ -151,7 +151,7 @@ else
         rxnLinks.check=cell(10000,1);
         isSpontaneous=false(10000,1); %spontaneous;
         UNBALANCED=false(10000,1);
-        UNDETERMINED=cell(10000,1);
+        UNDETERMINED=false(10000,1);
         TRANSPORT=cell(10000,1);
         
         %Transport reactions were organzied into a file
@@ -174,30 +174,6 @@ else
         %Close the file
         fclose(fid);
         TRANSPORT=TRANSPORT(1:transportCounter);
-        
-        %Undetermined reactions were organzied into a file
-        fid = fopen(fullfile(metacycPath,'undeterminedRxns.txt'), 'r');
-        undetermCounter=0;
-        %Loop through the file
-        while 1
-            %Get the next line
-            tline = fgetl(fid);
-            
-            %Abort at end of file
-            if ~ischar(tline)
-                break;
-            end
-            
-            %disp(tline);
-            undetermCounter=undetermCounter+1;
-            s=strfind(tline,': ');
-            if s
-                UNDETERMINED{undetermCounter}=tline(1:s-1);
-            end
-        end
-        %Close the file
-        fclose(fid);
-        UNDETERMINED=UNDETERMINED(1:undetermCounter);
         
         metaCycRxns.equations=cell(50000,1); %reaction equations
         left=cell(50000,1); %Temporarily stores the equations
@@ -376,9 +352,13 @@ else
                 isSpontaneous(rxnCounter)=true;
             end
             
-            %Add mass-balance information
-            if strcmp(tline,'CANNOT-BALANCE? - T')
-                UNBALANCED(rxnCounter)=true;
+            %Extract mass-balance status
+            if numel(tline)>27 && strcmp(tline(1:27),'REACTION-BALANCE-STATUS - :')
+                if isequal(tline(28:35), 'UNBALANC')
+                    UNBALANCED(rxnCounter)=true;
+                elseif isequal(tline(28:35), 'UNDETERM')
+                    UNDETERMINED(rxnCounter)=true;
+                end
             end
             
             %Add left side equation
@@ -505,6 +485,7 @@ else
         
         %===
         UNBALANCED=metaCycRxns.rxns(UNBALANCED);
+        UNDETERMINED=metaCycRxns.rxns(UNDETERMINED);
         isSpontaneous=metaCycRxns.rxns(isSpontaneous);
         
         %If too much space was allocated, shrink the model
