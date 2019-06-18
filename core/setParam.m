@@ -3,7 +3,7 @@ function model=setParam(model, paramType, rxnList, params, var)
 %   Sets parameters for reactions
 %
 %   model       a model structure
-%   paramType	the type of parameter to set:
+%   paramType   the type of parameter to set:
 %               'lb'    Lower bound
 %               'ub'    Upper bound
 %               'eq'    Both upper and lower bound (equality
@@ -15,7 +15,9 @@ function model=setParam(model, paramType, rxnList, params, var)
 %               corresponding indexes
 %   params      a vector of the corresponding values
 %   var         percentage of variance around measured value, if 'var' is
-%               set as paramType
+%               set as paramType. Defining 'var' as 5 results in lb and ub
+%               at 97.5% and 102.5% of the provide params value (if params
+%               value is negative, then lb and ub are 102.5% and 97.5%).
 %
 %   model       an updated model structure
 %
