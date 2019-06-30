@@ -23,16 +23,16 @@ if nargin<1
 end
 
 mosekParams=params;
-mosekParams.MSK_DPAR_MIO_TOL_ABS_RELAX_INT=10^-9;
+mosekParams.MSK_DPAR_MIO_TOL_ABS_RELAX_INT=10^-12;
 mosekParams.MSK_DPAR_MIO_TOL_REL_GAP=0.05;
 
 %NOTE: These options were removed or renamed in Mosek 8. Should be
 %investigated. mosekParams.MSK_DPAR_MIO_TOL_REL_RELAX_INT=10^-9;
 %mosekParams.MSK_DPAR_MIO_TOL_X=10^-9;
-mosekParams.MSK_DPAR_MIO_TOL_FEAS=10^-9;
-mosekParams.MSK_DPAR_BASIS_TOL_S=10^-9;
-mosekParams.MSK_DPAR_BASIS_TOL_X=10^-9;
-mosekParams.MSK_DPAR_PRESOLVE_TOL_ABS_LINDEP=10^-9;
+mosekParams.MSK_DPAR_MIO_TOL_FEAS=10^-12;
+mosekParams.MSK_DPAR_BASIS_TOL_S=10^-12;
+mosekParams.MSK_DPAR_BASIS_TOL_X=10^-12;
+mosekParams.MSK_DPAR_PRESOLVE_TOL_ABS_LINDEP=10^-12;
 
 %Get the mosek version. This is a bit problematic since the Mosek function
 %for getting the version came in version 7.
