@@ -390,7 +390,7 @@ if ~isempty(preferredOrder) && numel(models)>1
         
         %Remove all the genes that were already found and add the other
         %ones to allUsedGenes
-        models{useOrderIndexes(i)}=removeGenes(models{useOrderIndexes(i)},allGenes{i+1}(genesToDelete),true,false,false);
+        models{useOrderIndexes(i)}=removeGenes(models{useOrderIndexes(i)},allGenes{i+1}(genesToDelete),true,true,false);
         allUsedGenes(usedGenes)=true;
         
         %Remove the deleted genes from finalMappings and allGenes.
