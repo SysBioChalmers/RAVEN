@@ -115,6 +115,9 @@ model.comps=regexprep(model.comps,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 if isfield(model,'genes')
     model.genes=regexprep(model.genes,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 end
+if isfield(model,'grRules')
+    model.grRules=regexprep(model.grRules,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
+end
 
 %Generate an empty SBML structure
 modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
