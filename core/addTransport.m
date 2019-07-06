@@ -82,7 +82,7 @@ if ~all(J)
     dispEM(EM);
 end
 fromMets=I(K); %These are the ids of the metabolites to transport. The order corresponds to metNames
-
+addedRxns={};
 %Loop through and add for each compartment in toComps
 for i=1:numel(toComps)
     fromMetsInComp=fromMets; %If onlyToExisting==true then not all mets are transported to each compartment
@@ -176,5 +176,6 @@ for i=1:numel(toComps)
     if isfield(model,'rxnConfidenceScores')
         model.rxnConfidenceScores=[model.rxnConfidenceScores;ones(nRxns,1)];
     end
+    addedRxns = [addedRxns; addedRxnsID];
 end
 end
