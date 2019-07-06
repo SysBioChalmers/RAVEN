@@ -135,7 +135,7 @@ for i=1:numel(toComps)
     filler=cell(nRxns,1);
     filler(:)={''};
     addedRxnsID=generateNewIds(model,'rxns',prefix,nRxns);
-    addedRxnsName=strcat(metNames, {' transport, '}, model.compNames(fromID), '-', model.compNames(toIDs(i)));
+    addedRxnsName=transpose(strcat(metNames, {' transport, '}, model.compNames(fromID), '-', model.compNames(toIDs(i))));
     model.rxns=[model.rxns;addedRxnsID];
     model.rxnNames=[model.rxnNames;addedRxnsName];
     
