@@ -144,7 +144,7 @@ if numel(compMap)~=nMets
     EM='metsToAdd.compartments must have the same number of elements as metsToAdd.mets';
     dispEM(EM);
 else
-    newModel.metComps=[newModel.metComps;compMap];
+    newModel.metComps=[newModel.metComps;compMap(:)];
 end
 
 if isfield(metsToAdd,'b')
