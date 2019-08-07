@@ -49,7 +49,7 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 %   Usage: [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 %    isGeneral]=getRxnsFromKEGG(keggPath)
 %
-%   Simonas Marcisauskas, 2019-01-08
+%   Simonas Marcisauskas, 2019-07-21
 %
 %
 % NOTE: This is how one entry looks in the file
@@ -93,25 +93,25 @@ else
         model.id='KEGG';
         model.description='Automatically generated from KEGG database';
         
-        %Preallocate memory for 11000 reactions
-        model.rxns=cell(11000,1);
-        model.rxnNames=cell(11000,1);
-        model.eccodes=cell(11000,1);
-        model.subSystems=cell(11000,1);
-        model.rxnMiriams=cell(11000,1);
-        model.rxnNotes=cell(11000,1);
-        equations=cell(11000,1);
+        %Preallocate memory for 15000 reactions
+        model.rxns=cell(15000,1);
+        model.rxnNames=cell(15000,1);
+        model.eccodes=cell(15000,1);
+        model.subSystems=cell(15000,1);
+        model.rxnMiriams=cell(15000,1);
+        model.rxnNotes=cell(15000,1);
+        equations=cell(15000,1);
         %Temporarily store the equations
         
-        isSpontaneous=false(11000,1);
-        isIncomplete=false(11000,1);
-        isGeneral=false(11000,1);
+        isSpontaneous=false(15000,1);
+        isIncomplete=false(15000,1);
+        isGeneral=false(15000,1);
 
         %First load information on reaction ID, reaction name, KO, pathway,
         %and ec-number
         fid = fopen(fullfile(keggPath,'reaction'), 'r');
         
-        %Keep track of how many reactions that have been added
+        %Keep track of how many reactions have been added
         rxnCounter=0;
         
         %Loop through the file
@@ -149,7 +149,7 @@ else
                 pathway=false;
                 module=false;
                 
-                %Add KEGG reaction ID miriam;
+                %Add KEGG reaction ID miriam
                 tempStruct=model.rxnMiriams{rxnCounter};
                 tempStruct.name{1,1}='kegg.reaction';
                 tempStruct.value{1,1}=tline(13:18);
@@ -283,16 +283,16 @@ else
                     
                     tempStruct=model.rxnMiriams{rxnCounter};
                     tempStruct.name{addToIndex,1}='kegg.pathway';
-                    %If it's the old version
+                    %If it is the old version
                     if strcmp(tline(14:17),'PATH:')
                         tempStruct.value{addToIndex,1}=tline(19:25);
                     else
-                        %If it's the new version
+                        %If it is the new version
                         tempStruct.value{addToIndex,1}=tline(13:19);
                         pathway=true;
                     end
                     
-                    %Don't save global or overview pathways. The ids for
+                    %Do not save global or overview pathways. The ids for
                     %such pathways begin with rn011 or rn012
                     if ~strcmp('rn011',tempStruct.value{addToIndex,1}(1:5)) && ~strcmp('rn012',tempStruct.value{addToIndex,1}(1:5))
                         model.rxnMiriams{rxnCounter}=tempStruct;
