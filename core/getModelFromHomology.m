@@ -390,7 +390,7 @@ if ~isempty(preferredOrder) && numel(models)>1
         
         %Remove all the genes that were already found and add the other
         %ones to allUsedGenes
-        models{useOrderIndexes(i)}=removeGenes(models{useOrderIndexes(i)},allGenes{i+1}(genesToDelete),true,false,false);
+        models{useOrderIndexes(i)}=removeGenes(models{useOrderIndexes(i)},allGenes{i+1}(genesToDelete),true,true,false);
         allUsedGenes(usedGenes)=true;
         
         %Remove the deleted genes from finalMappings and allGenes.
@@ -455,7 +455,8 @@ for i=1:numel(models)
                 for l=2:numel(b)
                     repString=[repString ') or (' fullGeneList{b(l)}];
                 end
-                models{useOrderIndexes(i)}.grRules{j}=strrep(models{useOrderIndexes(i)}.grRules{j},geneName{1},repString);
+                %Use regexprep instead of strrep to prevent partial matches
+                models{useOrderIndexes(i)}.grRules{j}=regexprep(models{useOrderIndexes(i)}.grRules{j},['(^|\s|\()' geneName{1} '($|\s|\))'],['$1' repString '$2']);
             else
                 %Then search in the non-replaceable genes. There could only
                 %be one match here
