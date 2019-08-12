@@ -118,7 +118,7 @@ if isfield(model,'genes')
     replacedGenes=regexprep(model.genes(problemGenes),'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
     model.genes(problemGenes)=replacedGenes;
     for i=1:numel(problemGenes)
-        model.grRules=strrep(model.grRules,originalGenes{i},replacedGenes{i});
+        model.grRules = regexprep(model.grRules, ['(^|\s|\()' originalGenes{i} '($|\s|\))'], ['$1' replacedGenes{i} '$2']);
     end
 end
 
