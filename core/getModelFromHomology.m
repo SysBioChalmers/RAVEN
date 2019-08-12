@@ -456,7 +456,7 @@ for i=1:numel(models)
                     repString=[repString ') or (' fullGeneList{b(l)}];
                 end
                 %Use regexprep instead of strrep to prevent partial matches
-                models{useOrderIndexes(i)}.grRules{j}=regexprep(models{useOrderIndexes(i)}.grRules{j},[geneName{1} '($|\s|\))'],[repString '$1']);
+                models{useOrderIndexes(i)}.grRules{j}=regexprep(models{useOrderIndexes(i)}.grRules{j},['(^|\s|\()' geneName{1} '($|\s|\))'],['$1' repString '$2']);
             else
                 %Then search in the non-replaceable genes. There could only
                 %be one match here
