@@ -265,7 +265,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %    nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2019-01-14
+%   Simonas Marcisauskas, 2019-07-21
 
 if nargin<2
     fastaFile=[];
@@ -506,10 +506,10 @@ if isempty(fastaFile)
     %Add the description to the reactions
     for i=1:numel(model.rxns)
         if ~isempty(model.rxnNotes{i})
-            model.rxnNotes(i)=strcat('Included by getKEGGModelFromOrganism (without HMMs).',model.rxnNotes(i));
+            model.rxnNotes(i)=strcat('Included by getKEGGModelForOrganism (without HMMs).',model.rxnNotes(i));
             model.rxnNotes(i)=strrep(model.rxnNotes(i),'.','. ');
         else
-            model.rxnNotes(i)={'Included by getKEGGModelFromOrganism (without HMMs)'};
+            model.rxnNotes(i)={'Included by getKEGGModelForOrganism (without HMMs)'};
         end
     end
     return;
@@ -1033,10 +1033,10 @@ model.rxnGeneMat = rxnGeneMat;
 %Add the description to the reactions
 for i=1:numel(model.rxns)
     if ~isempty(model.rxnNotes{i})
-        model.rxnNotes(i)=strcat('Included by getKEGGModelFromOrganism (using HMMs).',model.rxnNotes(i));
+        model.rxnNotes(i)=strcat('Included by getKEGGModelForOrganism (using HMMs).',model.rxnNotes(i));
         model.rxnNotes(i)=strrep(model.rxnNotes(i),'.','. ');
     else
-        model.rxnNotes(i)={'Included by getKEGGModelFromOrganism (using HMMs)'};
+        model.rxnNotes(i)={'Included by getKEGGModelForOrganism (using HMMs)'};
     end
 end
 end
