@@ -221,6 +221,12 @@ for i=1:numel(model.comps)
         modelSBML.compartment(i).metaid=model.comps{i};
     end
     %Prepare Miriam strings
+    if ~isempty(model.compMiriams{i})
+        [~,sbo_ind] = ismember('sbo',model.compMiriams{i}.name);
+        if sbo_ind > 0
+            modelSBML.compartment(i).sboTerm=str2double(regexprep(model.compMiriams{i}.value{sbo_ind},'SBO:','','ignorecase'));
+        end
+    end
     if ~isempty(model.compMiriams{i}) && isfield(modelSBML.compartment(i),'annotation')
         modelSBML.compartment(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.comps{i} '">'];
         modelSBML.compartment(i).annotation=[modelSBML.compartment(i).annotation '<bqbiol:is><rdf:Bag>'];
@@ -286,6 +292,12 @@ for i=1:numel(model.mets)
             modelSBML.species(i).isSetfbc_charge=0;
         end
     end
+    if ~isempty(model.metMiriams{i})
+        [~,sbo_ind] = ismember('sbo',model.metMiriams{i}.name);
+        if sbo_ind > 0
+            modelSBML.species(i).sboTerm=str2double(regexprep(model.metMiriams{i}.value{sbo_ind},'SBO:','','ignorecase'));
+        end
+    end
     if isfield(modelSBML.species,'annotation')
         if ~isempty(model.metMiriams{i}) || ~isempty(model.metFormulas{i})
             hasInchi=false;
@@ -330,6 +342,12 @@ if isfield(model,'genes')
         
         if isfield(modelSBML.fbc_geneProduct,'metaid')
             modelSBML.fbc_geneProduct(i).metaid=model.genes{i};
+        end
+        if ~isempty(model.geneMiriams{i})
+            [~,sbo_ind] = ismember('sbo',model.geneMiriams{i}.name);
+            if sbo_ind > 0
+                modelSBML.fbc_geneProduct(i).sboTerm=str2double(regexprep(model.geneMiriams{i}.value{sbo_ind},'SBO:','','ignorecase'));
+            end
         end
         if ~isempty(model.geneMiriams{i}) && isfield(modelSBML.fbc_geneProduct(i),'annotation')
             modelSBML.fbc_geneProduct(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.genes{i} '">'];
@@ -451,6 +469,14 @@ for i=1:numel(model.rxns)
             modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>NOTES: ' model.rxnNotes{i} '</p>'];
         end
         modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '</body></notes>'];
+    end
+    
+    % Export SBO terms from rxnMiriams
+    if ~isempty(model.rxnMiriams{i})
+        [~,sbo_ind] = ismember('sbo',model.rxnMiriams{i}.name);
+        if sbo_ind > 0
+            modelSBML.reaction(i).sboTerm=str2double(regexprep(model.rxnMiriams{i}.value{sbo_ind},'SBO:','','ignorecase'));
+        end
     end
     
     %Export annotation information from rxnMiriams
