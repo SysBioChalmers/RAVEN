@@ -60,6 +60,11 @@ elseif strcmpi(type,'metscomps')
         end
     end
     indexes=indexes(:);
+    if returnLogical==true
+        tempIndexes=false(numel(model.mets),1);
+        tempIndexes(indexes)=true;
+        indexes=tempIndexes;
+    end
     return; % If metscomps is queried, remaining codes doesn't need executing
 else
     EM='Incorrect value of the "type" parameter. Allowed values are "rxns", "mets" or "genes"';
