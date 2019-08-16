@@ -846,6 +846,15 @@ else
         %that matching geneShortNames in function below will work
         if isfield(modelSBML,'fbc_geneProduct')
             genes={modelSBML.fbc_geneProduct.fbc_id};
+            
+            %Get gene Miriams if they were not retrieved above (this occurs
+            %when genes are stored as fbc_geneProduct instead of species)
+            if isempty(geneMiriams)
+                geneMiriams = cell(numel(genes),1);
+                for i = 1:numel(genes)
+                    geneMiriams{i}=parseMiriam(modelSBML.fbc_geneProduct(i).annotation);
+                end
+            end
         else
             genes=getGeneList(grRules);
         end
