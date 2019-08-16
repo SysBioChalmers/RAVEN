@@ -331,7 +331,7 @@ if isfield(model,'genes')
         %Add the default values, as these will be the same in all entries
         if i==1
             if isfield(modelSBML.fbc_geneProduct, 'sboTerm')
-                modelSBML.fbc_geneProduct(i).sboTerm=252;
+                modelSBML.fbc_geneProduct(i).sboTerm=243;
             end
         end
         %Copy the default values to the next index as long as it is not the
