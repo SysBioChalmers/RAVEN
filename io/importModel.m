@@ -2,6 +2,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 % importModel
 %   Import a constraint-based model from a SBML file
 %
+%   Input:
 %   fileName        a SBML file to import
 %   removeExcMets   true if exchange metabolites should be removed. This is
 %                   needed to be able to run simulations, but it could also
@@ -12,6 +13,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %   supressWarnings true if warnings regarding the model structure should
 %                   be supressed (opt, default false)
 %
+%   Output:
 %   model
 %       id               model ID
 %       description      description of model contents

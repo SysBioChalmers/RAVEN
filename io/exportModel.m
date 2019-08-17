@@ -2,6 +2,7 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 % exportModel
 %   Exports a constraint-based model to an SBML file (L3V1 FBCv2)
 %
+%   Input:
 %   model               a model structure
 %   fileName            filename to export the model to (without file extension)
 %   exportGeneComplexes true if gene complexes (all gene sets linked with

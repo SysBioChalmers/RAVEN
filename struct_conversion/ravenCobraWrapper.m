@@ -2,8 +2,10 @@ function newModel=ravenCobraWrapper(model)
 % ravenCobraWrapper
 %   Converts between RAVEN and COBRA structures
 %
+%   Input:
 %   model          a RAVEN/COBRA-compatible model structure
 %
+%   Ouput:
 %   newModel       a COBRA/RAVEN-compatible model structure
 %   
 %   This function is a bidirectional tool to convert between RAVEN and COBRA
