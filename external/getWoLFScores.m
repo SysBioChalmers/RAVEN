@@ -4,18 +4,20 @@ function geneScoreStruct=getWoLFScores(inputFile,kingdom)
 %   The output can be used as input to predictLocalization. This function
 %   is currently only available for Linux and requires PERL to be
 %   installed. If you want to use another predictor, see parseScores.
-%
-%   inputFile   a FASTA file with protein sequences
-%   kingdom     the kingdom of the organism, 'animal', 'fungi' or 'plant'.
-%
 %   The function normalizes the scores so that the best score for each gene
 %   is 1.0.
 %
-%   geneScoreStructure  a structure to be used in predictLocalization
+%   Input:
+%   inputFile               a FASTA file with protein sequences
+%   kingdom                 the kingdom of the organism, 'animal', 'fungi'
+%                           or 'plant'
+%
+%   Output:
+%   geneScoreStructure      a structure to be used in predictLocalization
 %
 %   Usage: geneScoreStruct=getWoLFScores(inputFile,kingdom)
 %
-%   Eduard Kerkhoven, 2018-05-18
+%   Simonas Marcisauskas, 2019-08-17
 %
 
 if ~(exist(inputFile,'file')==2)
@@ -42,7 +44,7 @@ outFile=tempname;
 fid=fopen(outFile,'w');
 
 %Do the prediction
-[~, output]=unix(['perl "' ravenPath '/software/WoLFPSORT_package_v0.2/bin/runWolfPsortSummary" ' kingdom ' < ' inputFile]);
+[~, output]=unix(['perl "' ravenPath '/software/WoLFPSORT/bin/runWolfPsortSummary" ' kingdom ' < ' inputFile]);
 
 %Save output and call the general parser
 fprintf(fid,output);
