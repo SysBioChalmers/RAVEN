@@ -152,11 +152,15 @@ if ~ispc
     else
         fprintf(['Checking hmmsearch' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n']);
     end
-    [res,~]=system(['"' fullfile(ravenDir,'software','mafft',['mafft' binEnd]) '"']);
+    if ismac
+        [res,~]=system(['"' fullfile(ravenDir,'software','mafft','mafft-mac','mafft.bat') '" --help ']);
+    elseif unix
+        [res,~]=system(['"' fullfile(ravenDir,'software','mafft','mafft-linux64','mafft.bat') '" --help ']);
+    end
     if res==1
-        fprintf(['Checking mafft' binEnd '.. OK\n\n']);
+        fprintf('Checking mafft.bat.. OK\n\n');
     else
-        fprintf(['Checking mafft' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n\n']);
+        fprintf('Checking mafft.bat.. Not OK! The binary must be recompiled from source before running RAVEN\n\n');
     end
 end
 

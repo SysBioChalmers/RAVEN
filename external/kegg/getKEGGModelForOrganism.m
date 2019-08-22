@@ -731,10 +731,12 @@ if ~isempty(missingAligned)
                     fastawrite(tmpFile,fastaStruct);
                 end
                 %Do the alignment for this file
-                if ~ispc
-                    [status, output]=unix(['"' fullfile(ravenPath,'software','mafft',['mafft' binEnd]) '" --auto --anysymbol --thread "' num2str(cores) '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
-                else
-                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft','mafft.bat') '" --auto --anysymbol --thread "' num2str(cores) '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                if ismac
+                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft','mafft-mac','mafft.bat') '" --auto --anysymbol --thread "' num2str(cores) '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                elseif isunix
+                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft','mafft-linux64','mafft.bat') '" --auto --anysymbol --thread "' num2str(cores) '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                elseif ispc
+                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft','mafft-win','mafft.bat') '" --auto --anysymbol --thread "' num2str(cores) '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 end
                 if status~=0
                     %It could be that alignment failed because only one
