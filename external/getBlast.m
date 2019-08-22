@@ -3,6 +3,7 @@ function blastStructure=getBlast(organismID,fastaFile,modelIDs,refFastaFiles)
 %   Performs a bidirectional BLASTP between the organism of interest and a
 %   set of template organisms.
 %
+%   Input:
 %   organismID      the id of the organism of interest. This should also
 %                   match with the id supplied to getModelFromHomology
 %   fastaFile       a FASTA file with the protein sequences for the
@@ -13,6 +14,7 @@ function blastStructure=getBlast(organismID,fastaFile,modelIDs,refFastaFiles)
 %   refFastaFiles   a cell array with the paths to the corresponding FASTA
 %                   files
 %   
+%   Output: 
 %   blastStructure  structure containing the bidirectional homology
 %                   measurements which are used by getModelFromHomology
 %
@@ -25,7 +27,7 @@ function blastStructure=getBlast(organismID,fastaFile,modelIDs,refFastaFiles)
 %   Usage: blastStructure=getBlast(organismID,fastaFile,modelIDs,...
 %           refFastaFiles)
 %
-%   Simonas Marcisauskas, 2018-08-09
+%   Simonas Marcisauskas, 2019-08-17
 %
 
 %Everything should be cell arrays
@@ -81,7 +83,7 @@ cores = strsplit(cores, 'MATLAB was assigned: ');
 cores = regexp(cores{2},'^\d*','match');
 cores = cores{1};
 
-[status, ~]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['makeblastdb' binEnd]) '" -in "' fastaFile{1} '" -out "' tmpDB '" -dbtype prot']);
+[status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in "' fastaFile{1} '" -out "' tmpDB '" -dbtype prot']);
 if status~=0
     EM=['makeblastdb did not run successfully, error: ', num2str(status)];
     dispEM(EM,true);
@@ -89,7 +91,7 @@ end
 
 for i=1:numel(refFastaFiles)
     fprintf(['BLASTing "' modelIDs{i} '" against "' organismID{1} '"..\n']);
-    [status, ~]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['blastp' binEnd]) '" -query "' refFastaFiles{i} '" -out "' outFile '_' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
+    [status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query "' refFastaFiles{i} '" -out "' outFile '_' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
     if status~=0
         EM=['blastp did not run successfully, error: ', num2str(status)];
         dispEM(EM,true);
@@ -101,12 +103,12 @@ delete([tmpDB '*']);
 %new organism against them
 for i=1:numel(refFastaFiles)
     fprintf(['BLASTing "' organismID{1} '" against "' modelIDs{i} '"..\n']);
-    [status, ~]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['makeblastdb' binEnd]) '" -in "' refFastaFiles{i} '" -out "' tmpDB '" -dbtype prot']);
+    [status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in "' refFastaFiles{i} '" -out "' tmpDB '" -dbtype prot']);
     if status~=0
         EM=['makeblastdb did not run successfully, error: ', num2str(status)];
         dispEM(EM,true);
     end
-    [status, ~]=system(['"' fullfile(ravenPath,'software','blast-2.6.0+',['blastp' binEnd]) '" -query "' fastaFile{1} '" -out "' outFile '_r' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
+    [status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query "' fastaFile{1} '" -out "' outFile '_r' num2str(i) '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
     delete([tmpDB '*']);
     if status~=0
         EM=['blastp did not run successfully, error: ', num2str(status)];
