@@ -265,7 +265,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %    nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2019-08-18
+%   Simonas Marcisauskas, 2019-08-22
 
 if nargin<2
     fastaFile=[];
@@ -637,96 +637,89 @@ if ~isempty(missingAligned)
             %Do the clustering and alignment if there are more than one
             %sequences, otherwise just save the sequence (or an empty file)
             if numel(fastaStruct)>1
-                if ~ispc
-                    if seqIdentity==0.9
-                        cdhitInp100=tempname;
-                        fastawrite(cdhitInp100,fastaStruct);
-                        cdhitInp90=tempname;
-                        [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -n 5 -M 2000']);
-                        if status~=0
-                            EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
-                            dispEM(EM);
-                        end
-                        %Remove the old tempfile
-                        if exist(cdhitInp100, 'file')
-                            delete([cdhitInp100 '*']);
-                        end
-                        tmpFile=tempname;
-                        [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp90 '" -o "' tmpFile '" -c 0.9 -n 5 -M 2000 -aL 0.8']);
-                        if status~=0
-                            EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
-                            dispEM(EM);
-                        end
-                        %Remove the old tempfile
-                        if exist(cdhitInp90, 'file')
-                            delete([cdhitInp90 '*']);
-                        end
-                    elseif seqIdentity==0.5
-                        cdhitInp100=tempname;
-                        fastawrite(cdhitInp100,fastaStruct);
-                        cdhitInp90=tempname;
-                        [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -n 5 -M 2000']);
-                        if status~=0
-                            EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
-                            dispEM(EM);
-                        end
-                        %Remove the old tempfile
-                        if exist(cdhitInp100, 'file')
-                            delete([cdhitInp100 '*']);
-                        end
-                        cdhitInp50=tempname;
-                        [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp90 '" -o "' cdhitInp50 '" -c 0.9 -n 5 -M 2000 -aL 0.8']);
-                        if status~=0
-                            EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
-                            dispEM(EM);
-                        end
-                        %Remove the old tempfile
-                        if exist(cdhitInp90, 'file')
-                            delete([cdhitInp90 '*']);
-                        end
-                        tmpFile=tempname;
-                        [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp50 '" -o "' tmpFile '" -c 0.5 -n 3 -M 2000 -aL 0.8']);
-                        if status~=0
-                            EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
-                            dispEM(EM);
-                        end
-                        %Remove the old tempfile
-                        if exist(cdhitInp50, 'file')
-                            delete([cdhitInp50 '*']);
-                        end
-                    elseif seqIdentity~=-1
-                        cdhitInpCustom=tempname;
-                        fastawrite(cdhitInpCustom,fastaStruct);
-                        tmpFile=tempname;
-                        if seqIdentity<=1 && seqIdentity>0.7
-                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n 5 -M 2000']);
-                        elseif seqIdentity>0.6
-                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n 4 -M 2000']);
-                        elseif seqidentity>0.5
-                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n 3 -M 2000']);
-                        elseif seqidentity>0.4
-                            [status, output]=unix(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n 2 -M 2000']);
-                        else
-                            EM='The provided seqIdentity must be between 0 and 1\n';
-                            dispEM(EM);
-                        end 
-                        if status~=0
-                            EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
-                            dispEM(EM);
-                        end
-                        %Remove the old tempfile
-                        if exist(cdhitInpCustom, 'file')
-                            delete([cdhitInpCustom '*']);
-                        end
+                if seqIdentity==0.9
+                    cdhitInp100=tempname;
+                    fastawrite(cdhitInp100,fastaStruct);
+                    cdhitInp90=tempname;
+                    [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -n 5 -M 2000']);
+                    if status~=0
+                        EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                        dispEM(EM);
+                    end
+                    %Remove the old tempfile
+                    if exist(cdhitInp100, 'file')
+                        delete([cdhitInp100 '*']);
+                    end
+                    tmpFile=tempname;
+                    [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp90 '" -o "' tmpFile '" -c 0.9 -n 5 -M 2000 -aL 0.8']);
+                    if status~=0
+                        EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                        dispEM(EM);
+                    end
+                    %Remove the old tempfile
+                    if exist(cdhitInp90, 'file')
+                        delete([cdhitInp90 '*']);
+                    end
+                elseif seqIdentity==0.5
+                    cdhitInp100=tempname;
+                    fastawrite(cdhitInp100,fastaStruct);
+                    cdhitInp90=tempname;
+                    [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -n 5 -M 2000']);
+                    if status~=0
+                        EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                        dispEM(EM);
+                    end
+                    %Remove the old tempfile
+                    if exist(cdhitInp100, 'file')
+                        delete([cdhitInp100 '*']);
+                    end
+                    cdhitInp50=tempname;
+                    [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp90 '" -o "' cdhitInp50 '" -c 0.9 -n 5 -M 2000 -aL 0.8']);
+                    if status~=0
+                        EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                        dispEM(EM);
+                    end
+                    %Remove the old tempfile
+                    if exist(cdhitInp90, 'file')
+                        delete([cdhitInp90 '*']);
+                    end
+                    tmpFile=tempname;
+                    [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp50 '" -o "' tmpFile '" -c 0.5 -n 3 -M 2000 -aL 0.8']);
+                    if status~=0
+                        EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                        dispEM(EM);
+                    end
+                    %Remove the old tempfile
+                    if exist(cdhitInp50, 'file')
+                        delete([cdhitInp50 '*']);
+                    end
+                elseif seqIdentity~=-1
+                    cdhitInpCustom=tempname;
+                    fastawrite(cdhitInpCustom,fastaStruct);
+                    tmpFile=tempname;
+                    if seqIdentity<=1 && seqIdentity>0.7
+                        [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n 5 -M 2000']);
+                    elseif seqIdentity>0.6
+                        [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n 4 -M 2000']);
+                    elseif seqidentity>0.5
+                        [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n 3 -M 2000']);
+                    elseif seqidentity>0.4
+                        [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n 2 -M 2000']);
                     else
-                        %This means that CD-HIT should be skipped since
-                        %seqIdentity is equal to -1
-                        tmpFile=tempname;
-                        fastawrite(tmpFile,fastaStruct);
+                        EM='The provided seqIdentity must be between 0 and 1\n';
+                        dispEM(EM);
+                    end
+                    if status~=0
+                        EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+                        dispEM(EM);
+                    end
+                    %Remove the old tempfile
+                    if exist(cdhitInpCustom, 'file')
+                        delete([cdhitInpCustom '*']);
                     end
                 else
-                    %CD-HIT is not available in Windows so we just
-                    %export multifasta file into temporary file
+                    %This means that CD-HIT should be skipped since
+                    %seqIdentity is equal to -1
                     tmpFile=tempname;
                     fastawrite(tmpFile,fastaStruct);
                 end
@@ -769,17 +762,10 @@ if ~isempty(missingAligned)
     end
 end
 
-if ~ispc
-    if seqIdentity~=-1
-        fprintf('Completed clustering and multiple alignment of sequences\n');
-    else
-        fprintf('Completed multiple alignment of sequences. Protein clustering was not requested or incorrect seqIdentity value was used\n');
-    end
+if seqIdentity~=-1
+    fprintf('Completed clustering and multiple alignment of sequences\n');
 else
-    if seqIdentity~=-1
-        fprintf('Protein clustering was skipped, since CD-HIT is not compatible with Windows');
-    end
-    fprintf('Completed multiple alignment of sequences\n');
+    fprintf('Completed multiple alignment of sequences. Protein clustering was not requested or incorrect seqIdentity value was used\n');
 end
 
 %Check if training of Hidden Markov models should be performed
