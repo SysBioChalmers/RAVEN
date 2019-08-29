@@ -5,7 +5,7 @@
 %is to serve as a scaffold if you would like to reconstruct a GEM for your
 %own organism.
 %
-%Eduard Kerkhoven, 2019-02-01
+%Simonas Marcisauskas, 2019-08-28
 %
 
 %Start by downloading trained Hidden Markov Models for eukaryotes. This can
@@ -17,8 +17,9 @@
 %This creates a model for S. cerevisiae. The parameters are set to exclude
 %general or unclear reactions and reactions with undefined stoichiometry.
 %Type "help getKEGGModelForOrganism" to see what the different parameters
-%are for. This process takes up to 10-15 minutes, depending on your
-%hardware and the size of target organism proteome;
+%are for. This process takes up to 20-30 minutes in macOS, Unix systems and
+%40-50 minutes in Windows, depending on your hardware and the size of
+%target organism proteome
 model=getKEGGModelForOrganism('sce','sce.fa','euk100_kegg87','output',false,false,false,false,10^-30,0.8,0.3,-1);
 
 %As you can see the resulting model contains (around) 1501 reactions, 1513
