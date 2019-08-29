@@ -317,15 +317,13 @@ if nargin<14
     %CD-HIT is not used in the pipeline
 end
 
-%Check that FASTA file exists
-if ~isempty(fastaFile)
-    if ~isstr(fastaFile)
-        error('FASTA file should be provided as string');
-    end
-    if ~(exist(fastaFile,'file')==2)
-        error('FASTA file %s cannot be found',string(fastaFile));
-    end
+%Check if query fasta exists
+dirContent=dir;
+filePresent=ismember(fastaFile,{dirContent.name});
+if ~filePresent
+    error('FASTA file %s cannot be found in the current directory',fastaFile);
 end
+
 %Run the external binaries multi-threaded to use all logical cores assigned
 %to MATLAB
 cores = evalc('feature(''numcores'')');
