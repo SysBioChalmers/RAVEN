@@ -354,7 +354,7 @@ for i=1:numel(modelSBML.species)
         
         %The old COBRA version sometimes has composition information in the
         %notes instead
-        if isfield(modelSBML.species(i),'notes')
+        if isfield(modelSBML.species(i),'notes') && ~isempty(parseNote(modelSBML.species(i).notes,'FORMULA'))
             metaboliteFormula{numel(metaboliteFormula)+1,1}=parseNote(modelSBML.species(i).notes,'FORMULA');
         end
     end
