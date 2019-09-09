@@ -13,13 +13,14 @@ function constructMultiFasta(model,sourceFile,outputDir)
 %
 %   Usage: constructMultiFasta(model,sourceFile,outputDir)
 %
-%   Eduard Kerkhoven, 2018-05-18
+%   Simonas Marcisauskas, 2019-09-09
 %
 
 if ~(exist(sourceFile,'file')==2)
     error('FASTA file %s cannot be found',string(sourceFile));
 end
 
+fprintf('Scanning the source multi-FASTA file... ');
 %Open the source file
 fid = fopen(sourceFile, 'r');
 
@@ -53,10 +54,11 @@ while 1
     end
 end
 elementPositions=elementPositions(1:totalElements);
-fprintf('Completed scanning of source file\n');
+fprintf('COMPLETE\n');
 
-fprintf('NOTICE: If Matlab is freezing and does not provide any output in 30 minutes, consider increasing Java Heap Memory in MATLAB settings and start over with the new session\n');
-
+fprintf(['NOTICE: If Matlab is freezing and does not provide any output in 30 minutes, consider increasing Java Heap Memory\n', ...
+    'in MATLAB settings and start over with the new session\n']);
+fprintf('Mapping genes to the multi-FASTA source file... ');
 %Now loop through the file to see which genes are present in the gene list
 %and save their position IN elementPositions! This is to enable a easy way
 %to get the distance to the following element
@@ -90,12 +92,14 @@ for i=1:numel(elementPositions)
         end
     end
 end
+fprintf('COMPLETE\n');
 
-fprintf('Completed mapping of genes to source file\n');
-
+fprintf('Generating the KEGG Orthology specific multi-FASTA files... ');
 %Loop through the reactions and print the corresponding sequences
+progressFlag=0;
 for i=1:numel(model.rxns)
-    %Don't overwrite existing files
+
+    %Do not overwrite existing files
     if ~exist(fullfile(outputDir,[model.rxns{i} '.fa']), 'file')
         
         %Get the positions in elementPositions for the involved genes
@@ -119,11 +123,11 @@ for i=1:numel(model.rxns)
                 if positions(j)<numel(elementPositions)
                     str=fread(fid,[1 double(elementPositions(positions(j)+1))-double(elementPositions(positions(j)))-1],'*char');
                     
-                    %If the string doesn't end with a line feed character
+                    %If the string does not end with a line feed character
                     if str(end)~=10
                         str=[str fread(fid,[1 double(elementPositions(positions(j)+2))-double(elementPositions(positions(j)+1))],'*char')];
                         
-                        %This is if we still haven't found a new gene.
+                        %This is if we still have not found a new gene.
                         %Maximal unluck. This whole check should be done
                         %when elementPositions are calculated!
                         if str(end)~=10
@@ -139,8 +143,32 @@ for i=1:numel(model.rxns)
         end
         fclose(rxnfid);
     end
+    %Print the progress: no need to update this for every
+    %iteration, just report once 25%, 50% and 75% are done
+    if progressFlag==0 && i>numel(model.rxns)*0.25
+        fprintf('%*.*f%% complete',5,2,(numel(listFiles(fullfile(outputDir,'*.fa')))/numel(model.rxns))*100);
+        progressFlag=progressFlag+1;
+    elseif (progressFlag==1 && i>=numel(model.rxns)*0.5) || (progressFlag==2 && i>=numel(model.rxns)*0.75)
+        fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%*.*f%% complete',5,2,(numel(listFiles(fullfile(outputDir,'*.fa')))/numel(model.rxns))*100);
+        progressFlag=progressFlag+1;
+    end
 end
+fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 
 %Close the source file
 fclose(fid);
+end
+
+function files=listFiles(directory)
+%Supporter function to list the files in a directory and return them as a
+%cell array
+temp=dir(directory);
+files=cell(numel(temp),1);
+for i=1:numel(temp)
+    files{i}=temp(i,1).name;
+end
+files=strrep(files,'.fa','');
+files=strrep(files,'.hmm','');
+files=strrep(files,'.out','');
+files=strrep(files,'.faw','');
 end

@@ -265,7 +265,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %    nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2019-08-22
+%   Simonas Marcisauskas, 2019-09-10
 
 if nargin<2
     fastaFile=[];
@@ -326,6 +326,13 @@ if ~isempty(fastaFile)
         error('FASTA file %s cannot be found',string(fastaFile));
     end
 end
+
+if isempty(fastaFile)
+    fprintf(['\n\n*** The model reconstruction from KEGG based on the annotation available for KEGG Species <strong>' organismID '</strong> ***\n\n']);
+else
+    fprintf('\n\n*** The model reconstruction from KEGG based on the protein homology search against KEGG Orthology specific HMMs ***\n\n');
+end
+
 %Run the external binaries multi-threaded to use all logical cores assigned
 %to MATLAB
 cores = evalc('feature(''numcores'')');
@@ -360,24 +367,27 @@ if ~isempty(dataDir)
                 ~exist(fullfile(dataDir,'fasta'),'dir') && ...
                 ~exist(fullfile(dataDir,'aligned'),'dir') && ...
                 ~exist(fullfile(dataDir,'hmms'),'dir')
-            EM='Pre-trained HMMs set is not recognised. It should match any of the following sets (which are available to download):';
+            EM='Pre-trained HMMs set is not recognised. It should match any of the following sets:';
             disp(EM);
             disp(hmmOptions);
             error('Fatal error occured. See the details above');
         end
     else
-        if exist(dataDir,'dir')
-            fprintf('Provided dataDir is in correct format for this RAVEN version in order to use pre-trained HMMs...\n')
+        if exist(dataDir,'dir') && exist(fullfile(dataDir,'hmms','K00844.hmm'),'file')
+            fprintf(['NOTE: Found<strong> ' dataDir '</strong> directory with pre-trained HMMs, it will therefore be used during reconstruction\n']);
         elseif ~exist(dataDir,'dir') && exist([dataDir,'.zip'],'file')
-            fprintf('Extracting HMMs archive file...\n');
+            fprintf('Extracting the HMMs archive file... ');
             unzip([dataDir,'.zip']);
+            fprintf('COMPLETE\n');
         else
             hmmIndex=regexp(dataDir,hmmOptions);
             hmmIndex=~cellfun(@isempty,hmmIndex);
-            fprintf('Downloading HMMs archive file...\n');
+            fprintf('Downloading the HMMs archive file... ');
             websave([dataDir,'.zip'],['https://chalmersuniversity.box.com/shared/static/',hmmLinks{hmmIndex},'.zip']);
-            fprintf('Extracting HMMs archive file...\n');
+            fprintf('COMPLETE\n');
+            fprintf('Extracting the HMMs archive file... ');
             unzip([dataDir,'.zip']);
+            fprintf('COMPLETE\n');
         end
         %Check if HMMs are extracted
         if ~exist(fullfile(dataDir,'hmms','K00844.hmm'),'file')
@@ -412,20 +422,20 @@ if any(fastaFile)
     end
 end
 
-%First generate the full KEGG model. The dataDir mustn't be supplied as
+%First generate the full KEGG model. The dataDir must not be supplied as
 %there is also an internal RAVEN version available
 if any(dataDir)
     [model, KOModel]=getModelFromKEGG(fullfile(dataDir,'keggdb'),keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral);
 else
     [model, KOModel]=getModelFromKEGG([],keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral);
 end
-fprintf('Completed generation of KEGG model\n');
 model.id=organismID;
 model.c=zeros(numel(model.rxns),1);
 
 %If no FASTA file is supplied, then just remove all genes which are not for
 %the given organism ID
 if isempty(fastaFile)
+    fprintf(['Pruning the model from <strong>non-' organismID '</strong> genes... ']);
     if ismember(organismID,{'eukaryotes','prokaryotes'})
         phylDists=getPhylDist(fullfile(dataDir,'keggdb'),maxPhylDist==-1);
         if strcmp(organismID,'eukaryotes')
@@ -452,19 +462,24 @@ if isempty(fastaFile)
     %Remove those genes
     model.genes=model.genes(I);
     model.rxnGeneMat=model.rxnGeneMat(:,I);
+    fprintf('COMPLETE\n');
 end
 
 %First remove all reactions without genes
 if keepSpontaneous==true
+    fprintf('Removing non-spontaneous reactions without GPR rules... ');
     load(fullfile(ravenPath,'external','kegg','keggRxns.mat'),'isSpontaneous');
     I=~any(model.rxnGeneMat,2)&~ismember(model.rxns,isSpontaneous);
     spontRxnsWithGenes=model.rxns(any(model.rxnGeneMat,2)&~ismember(model.rxns,isSpontaneous));
 else
+    fprintf('Removing reactions without GPR rules... ');
     I=~any(model.rxnGeneMat,2);
 end
 model=removeReactions(model,I,true);
+fprintf('COMPLETE\n');
 
 %Clean gene names
+fprintf('Fixing gene names in the model... ');
 for i=1:numel(model.genes)
     %First get rid of the prefix organism id
     model.genes{i}=model.genes{i}(strfind(model.genes{i},':')+1:end);
@@ -474,10 +489,12 @@ for i=1:numel(model.genes)
         model.genes{i}=model.genes{i}(1:s-1);
     end
 end
+fprintf('COMPLETE\n');
 
-%If no FASTA file is supplied, then we're done here
+%If no FASTA file is supplied, then we are done here
 if isempty(fastaFile)
     %Create grRules
+    fprintf('Constructing GPR associations and annotations for the model... ');
     model.grRules=cell(numel(model.rxns),1);
     model.grRules(:)={''};
     %Add the gene associations as 'or'
@@ -512,17 +529,18 @@ if isempty(fastaFile)
             model.rxnNotes(i)={'Included by getKEGGModelForOrganism (without HMMs)'};
         end
     end
+    fprintf('COMPLETE\n\n');
+    fprintf('*** Model reconstruction complete ***\n');
     return;
 end
 
 %Create a phylogenetic distance structure
 phylDistStruct=getPhylDist(fullfile(dataDir,'keggdb'),maxPhylDist==-1);
 [~, phylDistId]=ismember(model.id,phylDistStruct.ids);
-fprintf('Completed creation of phylogenetic distance matrix\n');
 
 %Calculate the real maximal distance now. An abitary large number of 1000
 %is used for the "all in kingdom" or "all sequences" options. This is a bit
-%inconvenient way to do it, but it's to make it fit with some older code
+%inconvenient way to do it, but it is to make it fit with some older code
 if isinf(maxPhylDist) || maxPhylDist==-1
     maxPhylDist=1000;
 end
@@ -551,8 +569,9 @@ if ~isempty(missingFASTA)
     %can be run on several processors at once
     fastaModel=permuteModel(fastaModel,randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(fastaModel.rxns)),'rxns');
     constructMultiFasta(fastaModel,fullfile(dataDir,'keggdb','genes.pep'),fullfile(dataDir,'fasta'));
+else
+    fprintf('Generating the KEGG Orthology specific multi-FASTA files... COMPLETE\n');
 end
-fprintf('Completed generation of multi-FASTA files\n');
 
 if isunix
     if ismac
@@ -571,7 +590,16 @@ end
 %Check if alignment of FASTA files should be performed
 missingAligned=setdiff(KOModel.rxns,[alignedFiles;hmmFiles;alignedWorking;outFiles]);
 if ~isempty(missingAligned)
+    if seqIdentity==-1
+        fprintf('Performing the multiple alignment for KEGG Orthology specific protein sets... ');
+    else
+        fprintf('Performing clustering and multiple alignment for KEGG Orthology specific protein sets... ');
+    end
     missingAligned=missingAligned(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingAligned)));
+    progressFlag=0;
+    %Update fastaFiles. This is needed once rebuilding KEGG from FTP dump
+    %files for more accurate progress reporting
+    fastaFiles=listFiles(fullfile(dataDir,'fasta','*.fa'));
     %Align all sequences using MAFFT
     for i=1:numel(missingAligned)
         %This is checked here because it could be that it is created by a
@@ -758,21 +786,36 @@ if ~isempty(missingAligned)
             end
             %Move the temporary file to the real one
             movefile(fullfile(dataDir,'aligned',[missingAligned{i} '.faw']),fullfile(dataDir,'aligned',[missingAligned{i} '.fa']),'f');
+            
+            %Print the progress: no need to update this for every
+            %iteration, just report once 25%, 50% and 75% are done
+            if progressFlag==0 && i>numel(missingAligned)*0.25
+                fprintf('%*.*f%% complete',5,2,(numel(listFiles(fullfile(dataDir,'*.fa')))/numel(fastaFiles))*100);
+                progressFlag=progressFlag+1;
+            elseif (progressFlag==1 && i>=numel(missingAligned)*0.5) || (progressFlag==2 && i>=numel(missingAligned)*0.75)
+                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%*.*f%% complete',5,2,(numel(listFiles(fullfile(dataDir,'*.fa')))/numel(fastaFiles))*100);
+                progressFlag=progressFlag+1;
+            end
         end
     end
-end
-
-if seqIdentity~=-1
-    fprintf('Completed clustering and multiple alignment of sequences\n');
+    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 else
-    fprintf('Completed multiple alignment of sequences. Protein clustering was not requested or incorrect seqIdentity value was used\n');
+    if seqIdentity==-1
+        fprintf('Performing the multiple alignment for KEGG Orthology specific protein sets... COMPLETE\n');
+    else
+        fprintf('Performing clustering and multiple alignment for KEGG Orthology specific protein sets... COMPLETE\n');
+    end
 end
 
 %Check if training of Hidden Markov models should be performed
 missingHMMs=setdiff(KOModel.rxns,[hmmFiles;outFiles]);
 if ~isempty(missingHMMs)
+    fprintf('Training the KEGG Orthology specific HMMs... ');
     missingHMMs=missingHMMs(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingHMMs)));
-    
+    progressFlag=0;
+    %Update alignedFiles. This is needed once rebuilding KEGG from FTP dump
+    %files for more accurate progress reporting
+    alignedFiles=listFiles(fullfile(dataDir,'aligned','*.fa'));
     %Train models for all missing KOs
     for i=1:numel(missingHMMs)
         %This is checked here because it could be that it is created by a
@@ -811,16 +854,33 @@ if ~isempty(missingHMMs)
             
             %Delete the temporary file
             delete(fullfile(dataDir,'hmms',[missingHMMs{i} '.hmw']));
+            
+            %Print the progress: no need to update this for every
+            %iteration, just report once 25%, 50% and 75% are done
+            if progressFlag==0 && i>numel(missingHMMs)*0.25
+                fprintf('%*.*f%% complete',5,2,(numel(listFiles(fullfile(dataDir,'*.hmm')))/numel(alignedFiles))*100);
+                progressFlag=progressFlag+1;
+            elseif (progressFlag==1 && i>=numel(missingHMMs)*0.5) || (progressFlag==2 && i>=numel(missingHMMs)*0.75)
+                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%*.*f%% complete',5,2,(numel(listFiles(fullfile(dataDir,'*.hmm')))/numel(alignedFiles))*100);
+                progressFlag=progressFlag+1;
+            end
         end
     end
+    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+else
+    fprintf('Training the KEGG Orthology specific HMMs... COMPLETE\n');
 end
-fprintf('Completed generation of HMMs\n');
 
-%Check which new .out files that should be generated Check if training of
+%Check which new .out files that should be generated. Check if training of
 %Hidden Markov models should be performed
 missingOUT=setdiff(KOModel.rxns,outFiles);
 if ~isempty(missingOUT)
+    fprintf(['Querying <strong>' fastaFile '</strong> against the KEGG Orthology specific HMMs... ']);
     missingOUT=missingOUT(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingOUT)));
+    progressFlag=0;
+    %Update hmmFiles. This is needed once rebuilding KEGG from FTP dump
+    %files for more accurate progress reporting
+    hmmFiles=listFiles(fullfile(dataDir,'hmms','*.hmm'));
     for i=1:numel(missingOUT)
         %This is checked here because it could be that it is created by a
         %parallel process
@@ -856,13 +916,27 @@ if ~isempty(missingOUT)
             fid=fopen(fullfile(outDir,[missingOUT{i} '.out']),'w');
             fwrite(fid,output);
             fclose(fid);
+            
+            %Print the progress: no need to update this for every
+            %iteration, just report once 25%, 50% and 75% are done
+            if progressFlag==0 && i>numel(missingOUT)*0.25
+                fprintf('%*.*f%% complete',5,2,(numel(listFiles(fullfile(outDir,'*.out')))/numel(hmmFiles))*100);
+                progressFlag=progressFlag+1;
+            elseif (progressFlag==1 && i>=numel(missingOUT)*0.5) || (progressFlag==2 && i>=numel(missingOUT)*0.75)
+                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%*.*f%% complete',5,2,(numel(listFiles(fullfile(outDir,'*.out')))/numel(hmmFiles))*100);
+                progressFlag=progressFlag+1;
+            end
         end
     end
+    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+else
+    fprintf(['Querying <strong>' fastaFile '</strong> against the KEGG Orthology specific HMMs... COMPLETE\n']);
 end
-fprintf('Completed matching to HMMs\n');
+
 
 %***Begin retrieving the output and putting together the resulting model
 
+fprintf('Parsing the HMM search results... ');
 %Retrieve matched genes from the HMMs
 koGeneMat=zeros(numel(KOModel.rxns),3000); %Make room for 3000 genes
 genes=cell(3000,1);
@@ -931,6 +1005,9 @@ for i=1:numel(KOModel.rxns)
         fclose(fid);
     end
 end
+fprintf('COMPLETE\n');
+
+fprintf('Removing gene, KEGG Orthology associations below minScoreRatioKO, minScoreRatioG... ');
 koGeneMat=koGeneMat(:,1:geneCounter);
 
 %Remove the genes for each KO that are below minScoreRatioKO.
@@ -948,7 +1025,9 @@ for i=1:size(koGeneMat,2)
         koGeneMat(J(log(koGeneMat(J,i))/log(min(koGeneMat(J,i)))<minScoreRatioG),i)=0;
     end
 end
+fprintf('COMPLETE\n');
 
+fprintf('Adding gene annotations to the model... ');
 %Create the new model
 model.genes=genes(1:geneCounter);
 model.grRules=cell(numel(model.rxns),1);
@@ -975,6 +1054,7 @@ for i=1:numel(model.rxns)
         end
     end
 end
+fprintf('COMPLETE\n');
 
 %Find and delete all reactions without genes. This also removes genes that
 %are not used (which could happen because minScoreRatioG and
@@ -989,6 +1069,7 @@ if keepSpontaneous==true
     %reactions without genes are removed. After that, the second deletion
     %step removes spontaneous reactions, which had gene associations before
     %HMM search, but no longer have after it
+    fprintf('Removing non-spontaneous reactions which after HMM search no longer have GPR rules... ');
     I=~any(model.rxnGeneMat,2)&~ismember(model.rxns,isSpontaneous);
     model=removeReactions(model,I,true,true);
     I=~any(model.rxnGeneMat,2)&ismember(model.rxns,spontRxnsWithGenes);
@@ -996,10 +1077,13 @@ if keepSpontaneous==true
 else
     %Just simply check for any new reactions without genes and remove
     %it
+    fprintf('Removing reactions which after HMM search no longer have GPR rules... ');
     I=~any(model.rxnGeneMat,2);
     model=removeReactions(model,I,true,true);
 end
+fprintf('COMPLETE\n');
 
+fprintf('Constructing GPR rules and finalizing the model... ');
 %Add the gene associations as 'or'
 for i=1:numel(model.rxns)
     %Find the involved genes
@@ -1027,6 +1111,7 @@ for i=1:numel(model.rxns)
         model.rxnNotes(i)={'Included by getKEGGModelForOrganism (using HMMs)'};
     end
 end
+fprintf('COMPLETE\n\n*** Model reconstruction complete ***\n');
 end
 
 function files=listFiles(directory)
