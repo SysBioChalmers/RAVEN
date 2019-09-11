@@ -54,12 +54,12 @@ if isrow(refFastaFiles)
 else
     files=vertcat(refFastaFiles,fastaFile);
 end
-for i=1:numel(files)
-    if ~(exist(files{i},'file')==2)
-        error('FASTA file %s cannot be found',string(files{i}));
-    elseif any(strfind(strjoin(files,','),' '))
-        error('One or more FASTA files have a space in the filename. Remove this before running getDiamond');
-    end
+dirContent=dir;
+filePresent=ismember(files,{dirContent.name});
+if any(~filePresent)
+    error('FASTA file %s cannot be found in the current directory\n',string(files(~filePresent)));
+elseif any(strfind(strjoin(files,','),' '))
+    error('One or more FASTA files have a space in the filename. Remove this before running getDiamond');
 end
 
 %Create a database for the new organism and blast each of the refFastaFiles
