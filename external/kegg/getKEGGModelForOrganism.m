@@ -265,7 +265,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %    nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2019-09-10
+%   Simonas Marcisauskas, 2019-09-11
 
 if nargin<2
     fastaFile=[];
@@ -374,7 +374,7 @@ if ~isempty(dataDir)
         end
     else
         if exist(dataDir,'dir') && exist(fullfile(dataDir,'hmms','K00844.hmm'),'file')
-            fprintf(['NOTE: Found<strong> ' dataDir '</strong> directory with pre-trained HMMs, it will therefore be used during reconstruction\n']);
+            fprintf(['NOTE: Found <strong>' dataDir '</strong> directory with pre-trained HMMs, it will therefore be used during reconstruction\n']);
         elseif ~exist(dataDir,'dir') && exist([dataDir,'.zip'],'file')
             fprintf('Extracting the HMMs archive file... ');
             unzip([dataDir,'.zip']);
@@ -875,7 +875,7 @@ end
 %Hidden Markov models should be performed
 missingOUT=setdiff(KOModel.rxns,outFiles);
 if ~isempty(missingOUT)
-    fprintf(['Querying <strong>' fastaFile '</strong> against the KEGG Orthology specific HMMs... ']);
+    fprintf(['Querying <strong>' strrep(fastaFile,'\','/') '</strong> against the KEGG Orthology specific HMMs... ']);
     missingOUT=missingOUT(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingOUT)));
     progressFlag=0;
     %Update hmmFiles. This is needed once rebuilding KEGG from FTP dump
