@@ -130,6 +130,7 @@ else
     if closeOthers
         fprintf('         Therefore, the "closeOthers" option will be set to FALSE.\n');
     end
+    closeOthers = false;
 end
 
 % prepare exchanged metabolites and bounds
