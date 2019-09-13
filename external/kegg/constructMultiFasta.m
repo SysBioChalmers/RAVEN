@@ -2,6 +2,7 @@ function constructMultiFasta(model,sourceFile,outputDir)
 % constructMultiFasta
 %   Saves one file in FASTA format for each reaction in the model that has genes
 %
+%   Input:
 %   model         a model structure
 %   sourceFile    a file with sequences in FASTA format
 %   outputDir     the directory to save the resulting FASTA files in
@@ -13,7 +14,7 @@ function constructMultiFasta(model,sourceFile,outputDir)
 %
 %   Usage: constructMultiFasta(model,sourceFile,outputDir)
 %
-%   Simonas Marcisauskas, 2019-09-09
+%   Simonas Marcisauskas, 2019-09-12
 %
 
 if ~(exist(sourceFile,'file')==2)
