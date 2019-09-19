@@ -2,6 +2,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 % importModel
 %   Import a constraint-based model from a SBML file
 %
+%   Input:
 %   fileName        a SBML file to import
 %   removeExcMets   true if exchange metabolites should be removed. This is
 %                   needed to be able to run simulations, but it could also
@@ -12,6 +13,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %   supressWarnings true if warnings regarding the model structure should
 %                   be supressed (opt, default false)
 %
+%   Output:
 %   model
 %       id               model ID
 %       description      description of model contents
@@ -162,6 +164,11 @@ compartmentIDs=cell(numel(modelSBML.compartment),1);
 compartmentOutside=cell(numel(modelSBML.compartment),1);
 compartmentMiriams=cell(numel(modelSBML.compartment),1);
 
+if isfield(modelSBML.compartment,'sboTerm') && numel(unique([modelSBML.compartment.sboTerm])) == 1
+    %If all the SBO terms are identical, don't add them to compMiriams
+    modelSBML.compartment = rmfield(modelSBML.compartment,'sboTerm');
+end
+    
 for i=1:numel(modelSBML.compartment)
     compartmentNames{i}=modelSBML.compartment(i).name;
     compartmentIDs{i}=regexprep(modelSBML.compartment(i).id,'^C_','');
@@ -179,6 +186,10 @@ for i=1:numel(modelSBML.compartment)
         compartmentMiriams{i}=parseMiriam(modelSBML.compartment(i).annotation);
     else
         compartmentMiriams{i}=[];
+    end
+    
+    if isfield(modelSBML.compartment(i),'sboTerm')
+        compartmentMiriams{i} = addSBOtoMiriam(compartmentMiriams{i},modelSBML.compartment(i).sboTerm);
     end
 end
 
@@ -209,7 +220,8 @@ complexNames={};
 %specified in the yeast consensus model both metabolites and genes are a
 %type of 'species'. The metabolites have names starting with 'M_' and genes
 %with 'E_'
-
+geneSBOs = [];
+metSBOs = [];
 for i=1:numel(modelSBML.species)
     if ~isSBML2COBRA
         if length(modelSBML.species(i).id)>=2 && strcmpi(modelSBML.species(i).id(1:2),'E_')
@@ -240,8 +252,13 @@ for i=1:numel(modelSBML.species)
             else
                 geneShortNames{numel(geneShortNames)+1,1}='';
             end
-            %If it's a complex keep the ID and name
+            
+            %Get SBO term
+            if isfield(modelSBML.species(i),'sboTerm')
+                geneSBOs(end+1,1) = modelSBML.species(i).sboTerm;
+            end
         elseif length(modelSBML.species(i).id)>=2 && strcmpi(modelSBML.species(i).id(1:3),'Cx_')
+            %If it's a complex keep the ID and name
             complexIDs=[complexIDs;modelSBML.species(i).id];
             complexNames=[complexNames;modelSBML.species(i).name];
         else
@@ -322,6 +339,10 @@ for i=1:numel(modelSBML.species)
             elseif ~isfield(modelSBML.species(i),'annotation')
                 metaboliteFormula{numel(metaboliteFormula)+1,1}='';
             end
+            %Get SBO term
+            if isfield(modelSBML.species(i),'sboTerm')
+                metSBOs(end+1,1) = modelSBML.species(i).sboTerm;
+            end
         end
         
     elseif isSBML2COBRA
@@ -356,6 +377,19 @@ for i=1:numel(modelSBML.species)
         %notes instead
         if isfield(modelSBML.species(i),'notes') && ~isempty(parseNote(modelSBML.species(i).notes,'FORMULA'))
             metaboliteFormula{numel(metaboliteFormula)+1,1}=parseNote(modelSBML.species(i).notes,'FORMULA');
+        end
+        
+        %Get Miriam info
+        if ~isempty(modelSBML.species(i).annotation)
+            metMiriam=parseMiriam(modelSBML.species(i).annotation);    
+        else
+            metMiriam=[];
+        end
+        metaboliteMiriams{numel(metaboliteMiriams)+1,1}=metMiriam;
+        
+        %Get SBO term
+        if isfield(modelSBML.species(i),'sboTerm')
+            metSBOs(end+1,1) = modelSBML.species(i).sboTerm;
         end
     end
     %The following lines are executed regardless isSBML2COBRA setting
@@ -412,6 +446,18 @@ for i=1:numel(modelSBML.species)
     end
 end
 
+%Add SBO terms to gene and metabolite miriam fields
+if numel(unique(geneSBOs)) > 1  % don't add if they're all identical
+    for i = 1:numel(geneNames)
+        geneMiriams{i} = addSBOtoMiriam(geneMiriams{i},geneSBOs(i));
+    end
+end
+if numel(unique(metSBOs)) > 1
+    for i = 1:numel(metaboliteNames)
+        metaboliteMiriams{i} = addSBOtoMiriam(metaboliteMiriams{i},metSBOs(i));
+    end
+end
+
 %Retrieve info on reactions
 reactionNames=cell(numel(modelSBML.reaction),1);
 reactionIDs=cell(numel(modelSBML.reaction),1);
@@ -442,6 +488,11 @@ if isfield(modelSBML,'parameter')
     parameter.name=cell(numel(modelSBML.parameter),1);
     parameter.name={modelSBML.parameter(:).id}';
     parameter.value={modelSBML.parameter(:).value}';
+end
+
+if isfield(modelSBML.reaction,'sboTerm') && numel(unique([modelSBML.reaction.sboTerm])) == 1
+    %If all the SBO terms are identical, don't add them to rxnMiriams
+    modelSBML.reaction = rmfield(modelSBML.reaction,'sboTerm');
 end
 
 for i=1:numel(modelSBML.reaction)
@@ -601,6 +652,11 @@ for i=1:numel(modelSBML.reaction)
             rxnreferences{counter,1}=parseNote(modelSBML.reaction(i).notes,'AUTHORS');
             rxnnotes{counter,1}=parseNote(modelSBML.reaction(i).notes,'NOTES');
         end
+    end
+    
+    %Get SBO terms
+    if isfield(modelSBML.reaction(i),'sboTerm')
+        rxnMiriams{counter} = addSBOtoMiriam(rxnMiriams{counter}, modelSBML.reaction(i).sboTerm);
     end
     
     %Get ec-codes
@@ -846,6 +902,22 @@ else
         %that matching geneShortNames in function below will work
         if isfield(modelSBML,'fbc_geneProduct')
             genes={modelSBML.fbc_geneProduct.fbc_id};
+            
+            %Get gene Miriams if they were not retrieved above (this occurs
+            %when genes are stored as fbc_geneProduct instead of species)
+            if isempty(geneMiriams)
+                geneMiriams = cell(numel(genes),1);
+                if isfield(modelSBML.fbc_geneProduct,'sboTerm') && numel(unique([modelSBML.fbc_geneProduct.sboTerm])) == 1
+                    %If all the SBO terms are identical, don't add them to geneMiriams
+                    modelSBML.fbc_geneProduct = rmfield(modelSBML.fbc_geneProduct,'sboTerm');
+                end
+                for i = 1:numel(genes)
+                    geneMiriams{i}=parseMiriam(modelSBML.fbc_geneProduct(i).annotation);
+                    if isfield(modelSBML.fbc_geneProduct(i),'sboTerm')
+                        geneMiriams{i} = addSBOtoMiriam(geneMiriams{i},modelSBML.fbc_geneProduct(i).sboTerm);
+                    end
+                end
+            end
         else
             genes=getGeneList(grRules);
         end
@@ -1121,4 +1193,18 @@ for i=1:numel(targetString)
         miriamStruct.name{counter,1} = regexprep(miriamStruct.name{counter,1},'^obo\.','');
     end
 end
+end
+
+function miriam = addSBOtoMiriam(miriam,sboTerm)
+%Appends SBO term to miriam structure
+
+sboTerm = {['SBO:' sprintf('%07u',sboTerm)]};  % convert to proper format
+if isempty(miriam)
+    miriam.name = {'sbo'};
+    miriam.value = sboTerm;
+else
+    miriam.name(end+1) = {'sbo'};
+    miriam.value(end+1) = sboTerm;
+end
+
 end
