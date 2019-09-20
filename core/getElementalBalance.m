@@ -133,9 +133,10 @@ for i=1:numel(toPrint)
     end
 end
 
-% if reaction index numbers were provided, re-order the structure entries
-% so they're consistent with the ordering of the input reaction indexes
-if ~isempty(rxns) && isnumeric(rxns)
+% Re-order the structure entries so they're consistent with the ordering of
+% the input reaction indexes
+if ~isempty(rxns)
+    rxns = getIndexes(model,rxns,'rxns');
     [~,i] = sort(rxns);
     balanceStructure.balanceStatus(i) = balanceStructure.balanceStatus;
     balanceStructure.leftComp(i,:) = balanceStructure.leftComp;
