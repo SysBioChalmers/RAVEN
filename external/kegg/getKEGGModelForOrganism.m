@@ -324,10 +324,12 @@ else
 end
 
 %Check if query fasta exists
-dirContent=dir;
-filePresent=ismember(fastaFile,{dirContent.name});
-if ~filePresent
-    error('FASTA file %s cannot be found in the current directory',fastaFile);
+if ~isempty(fastaFile)
+    dirContent=dir;
+    filePresent=ismember(fastaFile,{dirContent.name});
+    if ~filePresent
+        error('FASTA file %s cannot be found in the current directory',fastaFile);
+    end
 end
 
 %Run the external binaries multi-threaded to use all logical cores assigned
