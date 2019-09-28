@@ -265,7 +265,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %    nSequences,seqIdentity)
 %
-%   Simonas Marcisauskas, 2019-09-11
+%   Simonas Marcisauskas, 2019-09-28
 
 if nargin<2
     fastaFile=[];
@@ -317,17 +317,17 @@ if nargin<14
     %CD-HIT is not used in the pipeline
 end
 
+if isempty(fastaFile)
+    fprintf(['\n\n*** The model reconstruction from KEGG based on the annotation available for KEGG Species <strong>' organismID '</strong> ***\n\n']);
+else
+    fprintf('\n\n*** The model reconstruction from KEGG based on the protein homology search against KEGG Orthology specific HMMs ***\n\n');
+end
+
 %Check if query fasta exists
 dirContent=dir;
 filePresent=ismember(fastaFile,{dirContent.name});
 if ~filePresent
     error('FASTA file %s cannot be found in the current directory',fastaFile);
-end
-
-if isempty(fastaFile)
-    fprintf(['\n\n*** The model reconstruction from KEGG based on the annotation available for KEGG Species <strong>' organismID '</strong> ***\n\n']);
-else
-    fprintf('\n\n*** The model reconstruction from KEGG based on the protein homology search against KEGG Orthology specific HMMs ***\n\n');
 end
 
 %Run the external binaries multi-threaded to use all logical cores assigned
