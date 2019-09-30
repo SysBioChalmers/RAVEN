@@ -124,7 +124,7 @@ prob.ints.sub=numel(irrevModel.rxns)+1:numel(irrevModel.rxns)+numel(indexes);
 %Use the output from the linear solution as starting point. Only the values
 %for the integer variables will be used, but all are supplied.
 prob.sol.int.xx=zeros(numel(prob.c),1);
-prob.sol.int.xx(prob.ints.sub(sol.x(indexes)>10^-7))=1;
+prob.sol.int.xx(prob.ints.sub(sol.x(indexes)>10^-12))=1;
 
 % Optimize the problem
 res = optimizeProb(prob,params);
@@ -151,5 +151,5 @@ if numel(irrevModel.rxns)>numel(model.rxns)
     x(model.rev~=0)=x(model.rev~=0)-xx(numel(model.rxns)+1:end);
 end
 
-I=ismember(toMinimize,strrep(irrevModel.rxns(indexes(I>10^-7)),'_REV',''));
+I=ismember(toMinimize,strrep(irrevModel.rxns(indexes(I>10^-12)),'_REV',''));
 end

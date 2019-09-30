@@ -220,7 +220,7 @@ templateRxns=find(~strcmp(allModels.rxnFrom,model.id));
 %Remove everything except for the added ones
 I=true(numel(allModels.rxns),1);
 I(templateRxns(J))=false;
-addedModel=removeReactions(allModels,I,true);
+addedModel=removeReactions(allModels,I,true,true,true);
 
 newModel=mergeModels({model;addedModel},'metNames',true);
 addedRxns=setdiff(newModel.rxns,model.rxns);

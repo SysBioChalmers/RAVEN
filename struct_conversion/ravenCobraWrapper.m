@@ -2,8 +2,10 @@ function newModel=ravenCobraWrapper(model)
 % ravenCobraWrapper
 %   Converts between RAVEN and COBRA structures
 %
+%   Input:
 %   model          a RAVEN/COBRA-compatible model structure
 %
+%   Ouput:
 %   newModel       a COBRA/RAVEN-compatible model structure
 %   
 %   This function is a bidirectional tool to convert between RAVEN and COBRA
@@ -243,7 +245,11 @@ if isRaven
         i=ismember(extractedMiriamNames,'uniprot');
         if any(i)
             newModel.proteinisuniprotID=miriams(:,i);
-        end      
+        end
+        i=ismember(extractedMiriamNames,'sbo');
+        if any(i)
+            newModel.geneSBOTerms=miriams(:,i);
+        end
     end
     if isfield(model,'geneShortNames')
         newModel.geneNames=model.geneShortNames;
@@ -456,7 +462,7 @@ else
     if isfield(model,'genes')
         newModel.genes=model.genes;
     end
-    if isfield(model,'geneiskegg__46__genesID') || isfield(model,'geneissgdID') || isfield(model,'proteinisuniprotID')
+    if any(isfield(model,{'geneiskegg__46__genesID','geneissgdID','proteinisuniprotID','geneSBOTerm'}))
         for i=1:numel(model.genes)
             counter=1;
             newModel.geneMiriams{i,1}=[];
@@ -478,6 +484,13 @@ else
                 if ~isempty(model.proteinisuniprotID{i})
                     newModel.geneMiriams{i,1}.name{counter,1} = 'uniprot';
                     newModel.geneMiriams{i,1}.value{counter,1} = model.proteinisuniprotID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'geneSBOTerm')
+                if ~isempty(model.geneSBOTerm{i})
+                    newModel.geneMiriams{i,1}.name{counter,1} = 'sbo';
+                    newModel.geneMiriams{i,1}.value{counter,1} = model.geneSBOTerm{i};
                     counter=counter+1;
                 end
             end

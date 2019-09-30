@@ -7,7 +7,7 @@ function checkInstallation()
 %
 %   Usage: checkInstallation()
 %
-%	Eduard Kerkhoven, 2018-05-22
+%	Simonas Marcisauskas, 2019-08-22
 %
 
 fprintf('\n*** THE RAVEN TOOLBOX v. 2.0 ***\n\n');
@@ -122,37 +122,37 @@ if ~ispc
         binEnd='';
     end
     fprintf('Checking binary executables..\n');
-    [res,~]=system(['"' fullfile(ravenDir,'software','blast-2.6.0+',['blastp' binEnd]) '"']);
+    [res,~]=system(['"' fullfile(ravenDir,'software','blast+',['blastp' binEnd]) '"']);
     if res==1
         fprintf(['Checking blastp' binEnd '.. OK\n']);
     else
         fprintf(['Checking blastp' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n']);
     end
-    [res,~]=system(['"' fullfile(ravenDir,'software','blast-2.6.0+',['makeblastdb' binEnd]) '"']);
+    [res,~]=system(['"' fullfile(ravenDir,'software','blast+',['makeblastdb' binEnd]) '"']);
     if res==1
         fprintf(['Checking makeblastdb' binEnd '.. OK\n']);
     else
         fprintf(['Checking makeblastdb' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n']);
     end
-    [res,~]=system(['"' fullfile(ravenDir,'software','cd-hit-v4.6.6',['cd-hit' binEnd]) '"']);
+    [res,~]=system(['"' fullfile(ravenDir,'software','cd-hit',['cd-hit' binEnd]) '"']);
     if res==1
         fprintf(['Checking cd-hit' binEnd '.. OK\n']);
     else
         fprintf(['Checking cd-hit' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n']);
     end
-    [res,~]=system(['"' fullfile(ravenDir,'software','hmmer-3.1b2',['hmmbuild' binEnd]) '"']);
+    [res,~]=system(['"' fullfile(ravenDir,'software','hmmer',['hmmbuild' binEnd]) '"']);
     if res==1
         fprintf(['Checking hmmbuild' binEnd '.. OK\n']);
     else
         fprintf(['Checking hmmbuild' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n']);
     end
-    [res,~]=system(['"' fullfile(ravenDir,'software','hmmer-3.1b2',['hmmsearch' binEnd]) '"']);
+    [res,~]=system(['"' fullfile(ravenDir,'software','hmmer',['hmmsearch' binEnd]) '"']);
     if res==1
         fprintf(['Checking hmmsearch' binEnd '.. OK\n']);
     else
         fprintf(['Checking hmmsearch' binEnd '.. Not OK! The binary must be recompiled from source before running RAVEN\n']);
     end
-    [res,~]=system(['"' fullfile(ravenDir,'software','mafft-7.305',['mafft' binEnd]) '"']);
+    [res,~]=system(['"' fullfile(ravenDir,'software','mafft',['mafft' binEnd]) '"']);
     if res==1
         fprintf(['Checking mafft' binEnd '.. OK\n\n']);
     else

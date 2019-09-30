@@ -3,6 +3,7 @@ function blastStructure=getDiamond(organismID,fastaFile,modelIDs,refFastaFiles)
 %   Uses DIAMOND to performs a bidirectional BLASTP between the organism
 %   of interest and a set of template organisms.
 %
+%   Input:
 %   organismID      the id of the organism of interest. This should also
 %                   match with the id supplied to getModelFromHomology
 %   fastaFile       a FASTA file with the protein sequences for the
@@ -12,7 +13,8 @@ function blastStructure=getDiamond(organismID,fastaFile,modelIDs,refFastaFiles)
 %                   output is to be used with getModelFromHomology
 %   refFastaFiles   a cell array with the paths to the corresponding FASTA
 %                   files
-%   
+%
+%   Output:
 %   blastStructure  structure containing the bidirectional homology
 %                   measurements which are used by getModelFromHomology
 %
@@ -26,7 +28,7 @@ function blastStructure=getDiamond(organismID,fastaFile,modelIDs,refFastaFiles)
 %   Usage: blastStructure=getDiamond(organismID,fastaFile,modelIDs,...
 %           refFastaFiles)
 %
-%   Simonas Marcisauskas, 2018-09-27
+%   Simonas Marcisauskas, 2019-08-17
 %
 
 %Everything should be cell arrays
@@ -52,12 +54,12 @@ if isrow(refFastaFiles)
 else
     files=vertcat(refFastaFiles,fastaFile);
 end
-for i=1:numel(files)
-    if ~(exist(files{i},'file')==2)
-        error('FASTA file %s cannot be found',string(files{i}));
-    elseif any(strfind(strjoin(files,','),' '))
-        error('One or more FASTA files have a space in the filename. Remove this before running getDiamond');
-    end
+dirContent=dir;
+filePresent=ismember(files,{dirContent.name});
+if any(~filePresent)
+    error('FASTA file %s cannot be found in the current directory\n',string(files(~filePresent)));
+elseif any(strfind(strjoin(files,','),' '))
+    error('One or more FASTA files have a space in the filename. Remove this before running getDiamond');
 end
 
 %Create a database for the new organism and blast each of the refFastaFiles
@@ -82,7 +84,7 @@ cores = strsplit(cores, 'MATLAB was assigned: ');
 cores = regexp(cores{2},'^\d*','match');
 cores = cores{1};
 
-[status, ~]=system(['"' fullfile(ravenPath,'software','diamond-0.9.22',['diamond' binEnd]) '" makedb --in "' fastaFile{1} '" --db "' tmpDB '"']);
+[status, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" makedb --in "' fastaFile{1} '" --db "' tmpDB '"']);
 if status~=0
     EM=['DIAMOND makedb did not run successfully, error: ', num2str(status)];
     dispEM(EM,true);
@@ -90,7 +92,7 @@ end
 
 for i=1:numel(refFastaFiles)
     fprintf(['Running DIAMOND blastp with "' modelIDs{i} '" against "' organismID{1} '"..\n']);
-    [status, ~]=system(['"' fullfile(ravenPath,'software','diamond-0.9.22',['diamond' binEnd]) '" blastp --query "' refFastaFiles{i} '" --out "' outFile '_' num2str(i) '" --db "' tmpDB '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
+    [status, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' refFastaFiles{i} '" --out "' outFile '_' num2str(i) '" --db "' tmpDB '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
     if status~=0
         EM=['DIAMOND blastp did not run successfully, error: ', num2str(status)];
         dispEM(EM,true);
@@ -102,12 +104,12 @@ delete([tmpDB '*']);
 %new organism against them
 for i=1:numel(refFastaFiles)
     fprintf(['Running DIAMOND blastp with "' organismID{1} '" against "' modelIDs{i} '"..\n']);
-    [status, ~]=system(['"' fullfile(ravenPath,'software','diamond-0.9.22',['diamond' binEnd]) '" makedb --in "' refFastaFiles{i} '" --db "' tmpDB '"']);
+    [status, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" makedb --in "' refFastaFiles{i} '" --db "' tmpDB '"']);
     if status~=0
         EM=['DIAMOND makedb did not run successfully, error: ', num2str(status)];
         dispEM(EM,true);
     end
-    [status, ~]=system(['"' fullfile(ravenPath,'software','diamond-0.9.22',['diamond' binEnd]) '" blastp --query "' fastaFile{1} '" --out "' outFile '_r' num2str(i) '" --db "' tmpDB '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores]);
+    [status, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' fastaFile{1} '" --out "' outFile '_r' num2str(i) '" --db "' tmpDB '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores]);
     delete([tmpDB '*']);
     if status~=0
         EM=['DIAMOND blastp did not run successfully, error: ', num2str(status)];
