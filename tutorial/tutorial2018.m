@@ -47,7 +47,7 @@ ScoMetaCycDraftModel=getMetaCycModelForOrganism('ScoMetaCyc','Sco_all_protein.fa
 %https://www.kegg.jp/kegg/catalog/org_list.html
 %The following command generates a draft model using KEGG annotation and
 %excludes incomplete reactions and reactions with undefined stoichiometry.
-ScoKEGGAnnotation=getKEGGModelForOrganism('sco','','','',0,0);
+ScoKEGGAnnotation=getKEGGModelForOrganism('sco','','','',1,0,0);
 
 %The second KEGG-based draft model is generated based on sequence homology
 %to KEGG Ortholog sequence clusters with excluding incomplete reactions and
@@ -55,7 +55,7 @@ ScoKEGGAnnotation=getKEGGModelForOrganism('sco','','','',0,0);
 %to see the detailed instructions for the choice of different parameters.
 %The default values for homology search are used because they have been
 %optimized for the best performance.
-ScoKEGGHomology=getKEGGModelForOrganism('ScoKEGGHMMs','Sco_all_protein.faa','prok90_kegg91','',0,0);
+ScoKEGGHomology=getKEGGModelForOrganism('ScoKEGGHMMs','Sco_all_protein.faa','prok90_kegg91','',1,0,0);
 
 %De novo reconstruction from MetaCyc should take about 10 minutes, while
 %both reconstructions from KEGG may take up to 50-60 minutes in overall
