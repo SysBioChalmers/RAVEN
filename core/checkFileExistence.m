@@ -25,6 +25,7 @@ if nargin<2
     makeFullPath = true;
 end
 if isstr(files)
+    oneFile=true;
     files={files};
 end
 filesOriginal = files;
@@ -42,4 +43,7 @@ end
 
 if makeFullPath == false;
     files = filesOriginal;
+end
+if oneFile == true;
+    files = files{1};
 end
