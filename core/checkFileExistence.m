@@ -29,8 +29,8 @@ if isstr(files)
 end
 filesOriginal = files;
 
-inCurrDir = ~contains(files,'\') && ~contains(files,'/');
-files(inCurrDir) = join([cd, '\', files(inCurrDir)],'');
+inCurrDir = ~contains(files,'\') & ~contains(files,'/');
+files(inCurrDir) = fullfile(cd,files(inCurrDir));
 
 for i=1:numel(files)
     if ~exist(files{i},'file')
