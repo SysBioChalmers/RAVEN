@@ -29,7 +29,7 @@ if isstr(files)
 end
 filesOriginal = files;
 
-inCurrDir = ~any(strfind(fastaFile,'\')) && ~any(strfind(fastaFile,'/'));
+inCurrDir = ~any(strfind(files,'\')) && ~any(strfind(files,'/'));
 files(inCurrDir) = join([cd, '\', files(inCurrDir)],'');
 
 for i=1:numel(files)
