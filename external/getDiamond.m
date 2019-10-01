@@ -48,19 +48,17 @@ ravenPath=fileparts(fileparts(ST(I).file));
 tmpDB=tempname;
 outFile=tempname;
 
-% Check that the query and reference fasta files are in the current folder
+%Check for existence of files. If no full path is specified for a file,
+%assume that it is in the current folder
 if isrow(refFastaFiles)
-    files=horzcat(refFastaFiles,fastaFile);
+    files=horzcat(fastaFile,refFastaFiles);
 else
-    files=vertcat(refFastaFiles,fastaFile);
+    files=vertcat(fastaFile,refFastaFiles);
 end
-dirContent=dir;
-filePresent=ismember(files,{dirContent.name});
-if any(~filePresent)
-    error('FASTA file %s cannot be found in the current directory\n',string(files(~filePresent)));
-elseif any(strfind(strjoin(files,','),' '))
-    error('One or more FASTA files have a space in the filename. Remove this before running getDiamond');
-end
+
+files=checkFileExistence(files,true,false); %No whitespace allowed
+fastaFile = files(1);
+refFastaFiles = files(2:end);
 
 %Create a database for the new organism and blast each of the refFastaFiles
 %against it

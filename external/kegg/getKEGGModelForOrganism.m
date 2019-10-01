@@ -324,13 +324,7 @@ else
 end
 
 %Check if query fasta exists
-if ~isempty(fastaFile)
-    dirContent=dir;
-    filePresent=ismember(fastaFile,{dirContent.name});
-    if ~filePresent
-        error('FASTA file %s cannot be found in the current directory',fastaFile);
-    end
-end
+fastaFile=checkFileExistence(fastaFile);
 
 %Run the external binaries multi-threaded to use all logical cores assigned
 %to MATLAB
