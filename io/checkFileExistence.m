@@ -28,6 +28,8 @@ end
 if isstr(files)
     oneFile=true;
     files={files};
+else
+    oneFile=false;
 end
 filesOriginal = files;
 
