@@ -18,12 +18,13 @@ function files=checkFileExistence(files,makeFullPath,allowSpace)
 %   Eduard Kerkhoven, 2019-09-30
 %
 
-if nargin<3
-    allowSpace = true;
-end
 if nargin<2
     makeFullPath = true;
 end
+if nargin<3
+    allowSpace = true;
+end
+
 if isstr(files)
     oneFile=true;
     files={files};
@@ -41,9 +42,9 @@ for i=1:numel(files)
     end
 end
 
-if makeFullPath == false;
+if makeFullPath == false
     files = filesOriginal;
 end
-if oneFile == true;
+if oneFile == true
     files = files{1};
 end
