@@ -321,10 +321,9 @@ if isempty(fastaFile)
     fprintf(['\n\n*** The model reconstruction from KEGG based on the annotation available for KEGG Species <strong>' organismID '</strong> ***\n\n']);
 else
     fprintf('\n\n*** The model reconstruction from KEGG based on the protein homology search against KEGG Orthology specific HMMs ***\n\n');
+    %Check if query fasta exists
+    fastaFile=checkFileExistence(fastaFile);
 end
-
-%Check if query fasta exists
-fastaFile=checkFileExistence(fastaFile);
 
 %Run the external binaries multi-threaded to use all logical cores assigned
 %to MATLAB
