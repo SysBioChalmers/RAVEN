@@ -488,7 +488,7 @@ end
 
 %Now merge the models. All information should be correct except for 'or'
 %complexes
-draftModel=mergeModels(models);
+draftModel=mergeModels(models,'metNames');
 
 %Change description of the resulting model
 draftModel.id=getModelFor;
