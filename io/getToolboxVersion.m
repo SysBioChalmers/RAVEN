@@ -1,5 +1,5 @@
-function version = getVersion(toolbox,fileID,masterFlag)
-% getVersion
+function version = getToolboxVersion(toolbox,fileID,masterFlag)
+% getToolboxVersion
 %   Returns the version of a given toolbox, or if not available the latest
 %   commit hash (7 characters).
 %
@@ -12,7 +12,7 @@ function version = getVersion(toolbox,fileID,masterFlag)
 %   version         string containing either the toolbox version or latest
 %                   commit hash (7 characters).
 %
-%   Usage: version = getVersion(toolbox,fileID,masterFlag)
+%   Usage: version = getToolboxVersion(toolbox,fileID,masterFlag)
 %
 %   Benjamin J. Sanchez, 2018-10-19
 %
