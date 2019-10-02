@@ -276,7 +276,7 @@ for i=1:numel(taskStructure)
                     %Add the reactions to the base model. It is not correct
                     %to use newModel directly, as it may contain
                     %reactions/constraints that are specific to this task
-                    model=mergeModels({model,removeReactions(newModel,setdiff(newModel.rxns,newRxns),true,true)},true);
+                    model=mergeModels({model,removeReactions(newModel,setdiff(newModel.rxns,newRxns),true,true)},'metNames',true);
                     
                     %Keep track of the added reactions
                     addedRxns(ismember(refModel.rxns,newRxns),i)=true;
