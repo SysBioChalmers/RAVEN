@@ -81,14 +81,15 @@ end
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 rxnsFile=fullfile(ravenPath,'external','kegg','keggRxns.mat');
 if exist(rxnsFile, 'file')
-    fprintf(['NOTE: Importing KEGG reactions from ' strrep(rxnsFile,'\','/') '.\n']);
+    fprintf(['Importing KEGG reactions from ' strrep(rxnsFile,'\','/') '... ']);
     load(rxnsFile);
 else
-    fprintf(['Cannot locate ' strrep(rxnsFile,'\','/') ' and will try to generate it from the local KEGG database.\n']);
+    fprintf(['NOTE: Cannot locate ' strrep(rxnsFile,'\','/') ', it will therefore be generated from the local KEGG database\n']);
     if ~exist(fullfile(keggPath,'reaction'),'file') || ~exist(fullfile(keggPath,'reaction.lst'),'file') || ~exist(fullfile(keggPath,'reaction_mapformula.lst'),'file')
-        EM=fprintf(['The files ''reaction'', ''reaction.lst'' and ''reaction_mapformula.lst'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
+        EM=fprintf(['The files ''reaction'', ''reaction.lst'' and ''reaction_mapformula.lst'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP\n']);
         dispEM(EM);
     else
+        fprintf('Generating keggRxns.mat file... ');
         %Add new functionality in the order specified in models
         model.id='KEGG';
         model.description='Automatically generated from KEGG database';
@@ -496,5 +497,6 @@ else
         save(rxnsFile,'model','isGeneral','isIncomplete','isUndefinedStoich','isSpontaneous');
     end
 end
+fprintf('COMPLETE\n');
 
 end

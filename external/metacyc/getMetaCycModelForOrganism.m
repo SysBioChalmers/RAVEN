@@ -56,13 +56,6 @@ if nargin<8
     useDiamond=true;
 end
 
-%Check if query fasta exists
-dirContent=dir;
-filePresent=ismember(fastaFile,{dirContent.name});
-if ~filePresent
-    error('FASTA file %s cannot be found in the current directory',fastaFile);
-end
-
 %First generate the full MetaCyc model
 metaCycModel=getModelFromMetaCyc([],keepTransportRxns,keepUnbalanced,keepUndetermined);
 fprintf('The full MetaCyc model loaded\n');
