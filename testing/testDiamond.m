@@ -17,8 +17,8 @@ function [success,blastStructure]=testDiamond(fullCheck)
 %   NOTE: The purpose of the thorough check is to assess whether the
 %   homology search can be successfully performed using existing BLAST+
 %   binaries. This testing function is completely standalone, only
-%   requiring DIAMOND binary and multi-FASTA files sce.fa and
-%   Sco_all_protein.faa from tutorials directory
+%   requiring DIAMOND binary and multi-FASTA file sce.fa from tutorials
+%   directory
 %
 %   Usage: [success,blastStructure]=testDiamond(fullCheck)
 %
@@ -63,16 +63,15 @@ else
     tmpDB=tempname;
     outFile=tempname;
     
-    %Run DIAMOND multi-threaded to use all logical cores assigned to MATLAB.
+    %Run DIAMOND multi-threaded to use all logical cores assigned to MATLAB
     cores = evalc('feature(''numcores'')');
     cores = strsplit(cores, 'MATLAB was assigned: ');
     cores = regexp(cores{2},'^\d*','match');
     cores = cores{1};
     
-    %Create a temporary folder and copy both multi-FASTA files there
+    %Create a temporary folder and copy multi-FASTA file there
     [~, ~]=system(['mkdir "' tmpDB '"']);
     copyfile(fullfile(ravenPath,'tutorial','sce.fa'),tmpDB);
-    copyfile(fullfile(ravenPath,'tutorial','Sco_all_protein.faa'),tmpDB);
     
     %Construct a DIAMOND database
     fprintf('Testing DIAMOND makedb... ');
@@ -86,7 +85,7 @@ else
     
     %Run a homology search
     fprintf('Testing DIAMOND blastp... ');
-    [res, message]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' fullfile(tmpDB,'Sco_all_protein.faa') '" --out "' outFile '" --db "' tmpDB '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
+    [res, message]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' fullfile(tmpDB,'sce.fa') '" --out "' outFile '" --db "' tmpDB '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
     if res~=0
         fprintf('Not OK\n');
         disp(message)

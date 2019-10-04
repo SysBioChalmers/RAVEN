@@ -17,8 +17,8 @@ function [success,blastStructure]=testBlast(fullCheck)
 %   NOTE: The purpose of the thorough check is to assess whether the
 %   homology search can be successfully performed using existing BLAST+
 %   binaries. This testing function is completely standalone, only
-%   requiring BLAST+ binaries and multi-FASTA files sce.fa and
-%   Sco_all_protein.faa from tutorials directory
+%   requiring BLAST+ binaries and multi-FASTA file sce.fa from tutorials
+%   directory
 %
 %   Usage: [success,blastStructure]=testBlast(fullCheck)
 %
@@ -70,16 +70,15 @@ else
     tmpDB=tempname;
     outFile=tempname;
     
-    %Run BLAST multi-threaded to use all logical cores assigned to MATLAB.
+    %Run BLAST multi-threaded to use all logical cores assigned to MATLAB
     cores = evalc('feature(''numcores'')');
     cores = strsplit(cores, 'MATLAB was assigned: ');
     cores = regexp(cores{2},'^\d*','match');
     cores = cores{1};
     
-    %Create a temporary folder and copy both multi-FASTA files there
+    %Create a temporary folder and copy multi-FASTA file there
     [~, ~]=system(['mkdir "' tmpDB '"']);
     copyfile(fullfile(ravenPath,'tutorial','sce.fa'),tmpDB);
-    copyfile(fullfile(ravenPath,'tutorial','Sco_all_protein.faa'),tmpDB);
     
     %Construct a BLAST database
     fprintf('Testing makeblastdb... ');
@@ -93,7 +92,7 @@ else
     
     %Run a homology search
     fprintf('Testing blastp... ');
-    [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query "' fullfile(tmpDB,'Sco_all_protein.faa') '" -out "' outFile '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
+    [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query "' fullfile(tmpDB,'sce.fa') '" -out "' outFile '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
     if res~=0
         fprintf('Not OK\n');
         EM=['blastp did not run successfully, error: ', num2str(res)];
