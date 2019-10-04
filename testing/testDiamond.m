@@ -100,7 +100,7 @@ else
     %Done with the DIAMOND, do the parsing of the text file
     blastStructure.fromId='sce';
     blastStructure.toId='sco';
-    A=readtable(outFile,'Delimiter',',','Format','%s%s%f%f%f%f%f');
+    A=readtable(outFile,'Delimiter','\t','Format','%s%s%f%f%f%f%f');
     blastStructure.fromGenes=A{:,1};
     blastStructure.toGenes=A{:,2};
     blastStructure.evalue=table2array(A(:,3));
