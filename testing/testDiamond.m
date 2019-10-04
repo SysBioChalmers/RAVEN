@@ -85,10 +85,9 @@ else
     
     %Run a homology search
     fprintf('Testing DIAMOND blastp... ');
-    [res, message]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' fullfile(tmpDB,'sce.fa') '" --out "' outFile '" --db "' tmpDB '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
+    [res, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' fullfile(tmpDB,'sce.fa') '" --out "' outFile '" --db "' tmpDB '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
     if res~=0
         fprintf('Not OK\n');
-        disp(message)
         EM=['DIAMOND blastp did not run successfully, error: ', num2str(res)];
         dispEM(EM,true);
     end
