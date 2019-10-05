@@ -38,7 +38,7 @@ else
     end
 end
 
-%Adds the required classes to the static Java path if not already added
+%Add the required classes to the static Java path if not already added
 addJavaPaths();
 
 excelFile=fullfile(ravenDir,'tutorial','empty.xlsx');
@@ -72,7 +72,7 @@ end
 %functionality check
 keepSolver=false;
 workingSolvers='';
-% Get current solver. Set it to 'none', if it is not set;
+%Get current solver. Set it to 'none', if it is not set
 if ~ispref('RAVEN','solver')
     fprintf('Solver found in preferences... NONE\n');
     setRavenSolver('none');
@@ -101,22 +101,21 @@ for i=1:numel(solver)
 end
 
 if keepSolver
-    % The solver set in curSolv is functional, so the settings are restored
-    % to the ones which were set before running checkInstallation;
+    %The solver set in curSolv is functional, so the settings are restored
+    %to the ones which were set before running checkInstallation
     setRavenSolver(curSolv);
     fprintf(['Preferred solver... KEPT\nSolver saved as preference... ',curSolv,'\n\n']);
 elseif ~isempty(workingSolvers)
-    % There are working solvers, but the none of them is the solver defined
-    % by curSolv. The first working solver is therefore set as RAVEN
-    % solver;
+    %There are working solvers, but the none of them is the solver defined
+    %by curSolv. The first working solver is therefore set as RAVEN solver
     workingSolvers=regexprep(workingSolvers,'^;','');
     workingSolvers=regexprep(workingSolvers,';.+$','');
-    % Only one working solver should be left by now in workingSolvers;
+    %Only one working solver should be left by now in workingSolvers
     setRavenSolver(workingSolvers);
     fprintf(['Preferred solver... NEW\nSolver saved as preference... ',workingSolvers,'\n\n']);
 else
-    % No functional solvers were found, so the setting is restored back to
-    % original;
+    %No functional solvers were found, so the setting is restored back to
+    %original
     setRavenSolver(curSolv);
     fprintf('WARNING: No working solver was found!\nInstall the solver, set it using setRavenSolver(''solverName'') and run checkInstallation again.\nAvailable solverName options are ''mosek'', ''gurobi'' and ''cobra''\n\n');
 end
