@@ -127,69 +127,71 @@ else
         'Available solverName options are ''mosek'', ''gurobi'' and ''cobra''\n\n']);
 end
 
-if ~ispc
-    if ismac
-        binEnd='.mac';
-    elseif isunix
-        binEnd='';
-    end
-    fprintf('Checking essential binary executables:\n');
-    fprintf('NOTE: Broken binary executables <strong>must be fixed</strong> before running RAVEN\n');    
-    fprintf(['\tmakeblastdb' binEnd '... ']);
-    [res,~]=system(['"' fullfile(ravenDir,'software','blast+',['makeblastdb' binEnd]) '"']);
-    if res==1
-        fprintf('OK\n');
-    else
-        fprintf('Not OK! Download/compile the binary and run checkInstallation again\n');
-    end
-    fprintf(['\tblastp' binEnd '... ']);
-    [res,~]=system(['"' fullfile(ravenDir,'software','blast+',['blastp' binEnd]) '"']);
-    if res==1
-        fprintf('OK\n');
-    else
-        fprintf('Not OK! Download/compile the binary and run checkInstallation again\n');
-    end
-    fprintf(['\tdiamond' binEnd '... ']);
-    [res,~]=system(['"' fullfile(ravenDir,'software','diamond',['diamond' binEnd]) '"']);
-    if res==1
-        fprintf('OK\n');
-    else
-        fprintf('Not OK! Download/compile the binary and run checkInstallation again\n');
-    end
-    fprintf(['\thmmsearch' binEnd '... ']);
-    [res,~]=system(['"' fullfile(ravenDir,'software','hmmer',['hmmsearch' binEnd]) '"']);
-    if res==1
-        fprintf('OK\n');
-    else
-        fprintf('Not OK! Download/compile the binary and run checkInstallation again\n');
-    end
-    fprintf('Checking non-essential/development binary executables:\n');
-    fprintf('NOTE: Only fix these binaries if planning to use KEGG FTP dump files in getKEGGModelForOrganism\n');
-    fprintf(['\tcd-hit' binEnd '... ']);
-    [res,~]=system(['"' fullfile(ravenDir,'software','cd-hit',['cd-hit' binEnd]) '"']);
-    if res==1
-        fprintf('OK\n');
-    else
-        fprintf('Not OK! If necessary, download/compile the binary and run checkInstallation again\n');
-    end
-    fprintf('\tmafft.bat... ');
-    if ismac
-        [res,~]=system(['"' fullfile(ravenDir,'software','mafft','mafft-mac','mafft.bat') '" --help ']);
-    elseif unix
-        [res,~]=system(['"' fullfile(ravenDir,'software','mafft','mafft-linux64','mafft.bat') '" --help ']);
-    end
-    if res==1
-        fprintf('OK\n');
-    else
-        fprintf('Not OK! If necessary, download/compile the binary and run checkInstallation again\n');
-    end
-    fprintf(['\thmmbuild' binEnd '... ']);
-    [res,~]=system(['"' fullfile(ravenDir,'software','hmmer',['hmmbuild' binEnd]) '"']);
-    if res==1
-        fprintf('OK\n\n');
-    else
-        fprintf('Not OK! If necessary, download/compile the binary and run checkInstallation again\n');
-    end
+if ismac
+    binEnd='.mac';
+elseif isunix
+    binEnd='';
+elseif ispc
+    binEnd='.exe';
+end
+fprintf('Checking essential binary executables:\n');
+fprintf('NOTE: Broken binary executables <strong>must be fixed</strong> before running RAVEN\n');
+fprintf(['\tmakeblastdb' binEnd '... ']);
+[res,~]=system(['"' fullfile(ravenDir,'software','blast+',['makeblastdb' binEnd]) '"']);
+if res==1
+    fprintf('OK\n');
+else
+    fprintf('Not OK! Download/compile the binary and run checkInstallation again\n');
+end
+fprintf(['\tblastp' binEnd '... ']);
+[res,~]=system(['"' fullfile(ravenDir,'software','blast+',['blastp' binEnd]) '"']);
+if res==1
+    fprintf('OK\n');
+else
+    fprintf('Not OK! Download/compile the binary and run checkInstallation again\n');
+end
+fprintf(['\tdiamond' binEnd '... ']);
+[res,~]=system(['"' fullfile(ravenDir,'software','diamond',['diamond' binEnd]) '"']);
+if res==1
+    fprintf('OK\n');
+else
+    fprintf('Not OK! Download/compile the binary and run checkInstallation again\n');
+end
+fprintf(['\thmmsearch' binEnd '... ']);
+[res,~]=system(['"' fullfile(ravenDir,'software','hmmer',['hmmsearch' binEnd]) '"']);
+if res==1
+    fprintf('OK\n');
+else
+    fprintf('Not OK! Download/compile the binary and run checkInstallation again\n');
+end
+fprintf('Checking non-essential/development binary executables:\n');
+fprintf('NOTE: Only fix these binaries if planning to use KEGG FTP dump files in getKEGGModelForOrganism\n');
+fprintf(['\tcd-hit' binEnd '... ']);
+[res,~]=system(['"' fullfile(ravenDir,'software','cd-hit',['cd-hit' binEnd]) '"']);
+if res==1
+    fprintf('OK\n');
+else
+    fprintf('Not OK! If necessary, download/compile the binary and run checkInstallation again\n');
+end
+fprintf('\tmafft.bat... ');
+if ismac
+    [res,~]=system(['"' fullfile(ravenDir,'software','mafft','mafft-mac','mafft.bat') '" --help ']);
+elseif isunix
+    [res,~]=system(['"' fullfile(ravenDir,'software','mafft','mafft-linux64','mafft.bat') '" --help ']);
+elseif ispc
+    [res,~]=system(['"' fullfile(ravenDir,'software','mafft','mafft-win','mafft.bat') '" --help ']);
+end
+if res==1
+    fprintf('OK\n');
+else
+    fprintf('Not OK! If necessary, download/compile the binary and run checkInstallation again\n');
+end
+fprintf(['\thmmbuild' binEnd '... ']);
+[res,~]=system(['"' fullfile(ravenDir,'software','hmmer',['hmmbuild' binEnd]) '"']);
+if res==1
+    fprintf('OK\n\n');
+else
+    fprintf('Not OK! If necessary, download/compile the binary and run checkInstallation again\n');
 end
 
 fprintf('Checking whether RAVEN functions are non-redundant across MATLAB path... ');
