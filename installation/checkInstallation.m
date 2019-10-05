@@ -149,6 +149,13 @@ if ~ispc
     else
         fprintf('Not OK! Download/compile the binary and run checkInstallation again\n');
     end
+    fprintf(['\tdiamond' binEnd '... ']);
+    [res,~]=system(['"' fullfile(ravenDir,'software','diamond',['diamond' binEnd]) '"']);
+    if res==1
+        fprintf('OK\n');
+    else
+        fprintf('Not OK! Download/compile the binary and run checkInstallation again\n');
+    end
     fprintf(['\thmmsearch' binEnd '... ']);
     [res,~]=system(['"' fullfile(ravenDir,'software','hmmer',['hmmsearch' binEnd]) '"']);
     if res==1
