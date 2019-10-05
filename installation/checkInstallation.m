@@ -7,21 +7,23 @@ function checkInstallation()
 %
 %   Usage: checkInstallation()
 %
-%	Simonas Marcisauskas, 2019-08-22
+%	Simonas Marcisauskas, 2019-10-04
 %
 
-fprintf('\n*** THE RAVEN TOOLBOX v. 2.0 ***\n\n');
-
-keepSolver=false;
-workingSolvers='';
-
-%Check if RAVEN is in the path list
+%Check if RAVEN is in the Matlab path list
 paths=textscan(path,'%s','delimiter', pathsep);
 paths=paths{1};
 
 %Get the RAVEN path
 [ST, I]=dbstack('-completenames');
 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
+
+%Print the RAVEN version if it is not the development version
+if exist(fullfile(ravenDir,'version.txt'), 'file') == 2
+    fprintf(['\n*** THE RAVEN TOOLBOX v.' fgetl(fopen(fullfile(ravenDir,'version.txt'))) ' ***\n\n']);
+else
+    fprintf('\n*** THE RAVEN TOOLBOX - DEVELOPMENT VERSION ***\n\n');
+end
 
 if ismember(ravenDir,paths)
     fprintf('Checking if RAVEN is on the Matlab path... PASSED\n');
@@ -66,6 +68,10 @@ catch
     fprintf('Checking if it is possible to import an SBML model using libSBML... FAILED\nTo import SBML models, download libSBML from http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n');
 end
 
+%Define values for keepSolver and workingSolvers, needed for solver
+%functionality check
+keepSolver=false;
+workingSolvers='';
 % Get current solver. Set it to 'none', if it is not set;
 if ~ispref('RAVEN','solver')
     fprintf('Solver found in preferences... NONE\n');
