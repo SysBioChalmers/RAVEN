@@ -7,7 +7,7 @@ function checkInstallation()
 %
 %   Usage: checkInstallation()
 %
-%	Simonas Marcisauskas, 2019-10-05
+%	Simonas Marcisauskas, 2019-10-09
 %
 
 %Check if RAVEN is in the MATLAB path list
@@ -25,7 +25,7 @@ else
     fprintf('\n*** THE RAVEN TOOLBOX - DEVELOPMENT VERSION ***\n\n');
 end
 
-fprintf('Checking if RAVEN is on the MATLAB path... ');
+fprintf('Checking if RAVEN is on the MATLAB path...\t\t\t\t\t');
 if ismember(ravenDir,paths)
     fprintf('OK\n');
 else
@@ -47,7 +47,7 @@ xmlFile=fullfile(ravenDir,'tutorial','empty.xml');
 matFile=fullfile(ravenDir,'tutorial','empty.mat');
 
 %Check if it is possible to parse an Excel file
-fprintf('Checking if it is possible to parse a model in Microsoft Excel format... ');
+fprintf('Checking if it is possible to parse a model in Microsoft Excel format...\t');
 try
     importExcelModel(excelFile,false,false,true);
     fprintf('OK\n');
@@ -56,7 +56,7 @@ catch
 end
 
 %Check if it is possible to import an SBML model using libSBML
-fprintf('Checking if it is possible to import an SBML model using libSBML... ');
+fprintf('Checking if it is possible to import an SBML model using libSBML...\t\t');
 try
     importModel(xmlFile);
     try
@@ -90,7 +90,7 @@ end
 solver={'gurobi','mosek','cobra'};
 
 for i=1:numel(solver)
-    fprintf(['Checking if it is possible to solve an LP problem using ',solver{i},'... ']);
+    fprintf(['Checking if it is possible to solve an LP problem using ',solver{i},'...\t\t']);
     try
         setRavenSolver(solver{i});
         load(matFile);
@@ -136,28 +136,28 @@ elseif ispc
 end
 fprintf('Checking essential binary executables:\n');
 fprintf('NOTE: Broken binary executables <strong>must be fixed</strong> before running RAVEN\n');
-fprintf(['\tmakeblastdb' binEnd '... ']);
+fprintf(['\tmakeblastdb' binEnd '...\t\t\t\t\t\t\t']);
 [res,~]=system(['"' fullfile(ravenDir,'software','blast+',['makeblastdb' binEnd]) '"']);
 if res==1
     fprintf('OK\n');
 else
     fprintf('Not OK! Download/compile the binary and run checkInstallation again\n');
 end
-fprintf(['\tblastp' binEnd '... ']);
+fprintf(['\tblastp' binEnd '...\t\t\t\t\t\t\t\t']);
 [res,~]=system(['"' fullfile(ravenDir,'software','blast+',['blastp' binEnd]) '"']);
 if res==1
     fprintf('OK\n');
 else
     fprintf('Not OK! Download/compile the binary and run checkInstallation again\n');
 end
-fprintf(['\tdiamond' binEnd '... ']);
+fprintf(['\tdiamond' binEnd '...\t\t\t\t\t\t\t\t']);
 [res,~]=system(['"' fullfile(ravenDir,'software','diamond',['diamond' binEnd]) '"']);
 if res==1
     fprintf('OK\n');
 else
     fprintf('Not OK! Download/compile the binary and run checkInstallation again\n');
 end
-fprintf(['\thmmsearch' binEnd '... ']);
+fprintf(['\thmmsearch' binEnd '...\t\t\t\t\t\t\t']);
 [res,~]=system(['"' fullfile(ravenDir,'software','hmmer',['hmmsearch' binEnd]) '"']);
 if res==1
     fprintf('OK\n');
@@ -166,14 +166,14 @@ else
 end
 fprintf('Checking non-essential/development binary executables:\n');
 fprintf('NOTE: Only fix these binaries if planning to use KEGG FTP dump files in getKEGGModelForOrganism\n');
-fprintf(['\tcd-hit' binEnd '... ']);
+fprintf(['\tcd-hit' binEnd '...\t\t\t\t\t\t\t\t']);
 [res,~]=system(['"' fullfile(ravenDir,'software','cd-hit',['cd-hit' binEnd]) '"']);
 if res==1
     fprintf('OK\n');
 else
     fprintf('Not OK! If necessary, download/compile the binary and run checkInstallation again\n');
 end
-fprintf('\tmafft.bat... ');
+fprintf('\tmafft.bat...\t\t\t\t\t\t\t\t');
 if ismac
     [res,~]=system(['"' fullfile(ravenDir,'software','mafft','mafft-mac','mafft.bat') '" --help ']);
 elseif isunix
@@ -186,7 +186,7 @@ if res==1
 else
     fprintf('Not OK! If necessary, download/compile the binary and run checkInstallation again\n');
 end
-fprintf(['\thmmbuild' binEnd '... ']);
+fprintf(['\thmmbuild' binEnd '...\t\t\t\t\t\t\t\t']);
 [res,~]=system(['"' fullfile(ravenDir,'software','hmmer',['hmmbuild' binEnd]) '"']);
 if res==1
     fprintf('OK\n\n');
@@ -194,7 +194,7 @@ else
     fprintf('Not OK! If necessary, download/compile the binary and run checkInstallation again\n');
 end
 
-fprintf('Checking whether RAVEN functions are non-redundant across MATLAB path... ');
+fprintf('Checking whether RAVEN functions are non-redundant across MATLAB path...\t');
 checkFunctionUniqueness();
 
 fprintf('\n*** checkInstallation complete ***\n\n');
