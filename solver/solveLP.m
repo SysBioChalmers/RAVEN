@@ -55,32 +55,31 @@ solution.f=[];
 solution.stat=-1;
 
 %Ignore the hot-start if the previous solution wasn't feasible
-if isfield(hsSol,'prosta')
-    if strfind(hsSol.prosta,'INFEASIBLE')
+if isfield(hsSol,'stat')
+    if hsSol.stat<1
         hsSol=[];
     end
 end
 
-% Setup the problem to feed to MOSEK.
+% Setup the problem to feed to COBRA.
 prob=[];
-prob.c=model.c*-1;
-prob.a=model.S;
-prob.blc=model.b(:,1);
-%If model.b has two column, then they are for lower/upper bound on the RHS
-prob.buc=model.b(:,min(size(model.b,2),2));
-prob.blx=model.lb;
-prob.bux=model.ub;
+prob.c=[model.c*-1;zeros(size(model.S,1),1)];
+prob.b = zeros(size(model.S,1), 1);
+prob.lb = [model.lb; model.b(:,1)];
+prob.ub = [model.ub; model.b(:,min(size(model.b,2),2))];
+prob.osense = 1;
+prob.csense = char(zeros(size(model.S,1),1));
+prob.csense(:) = 'E';
+prob.A = [model.S -speye(size(model.S,1))];
+prob.a = model.S;
 
 %If hot-start should be used
 if ~isempty(hsSol)
-    prob.sol.bas=hsSol;
-    params.MSK_IPAR_SIM_HOTSTART=1;
+    prob.vbasis=hsSol.vbasis;
+    prob.cbasis=hsSol.cbasis;
 end
 
-%Use MSK_OPTIMIZER_FREE_SIMPLEX. This should not be necessary, but I've
-%noticed that the interior point solver is not as good at finding feasible
-%solutions.
-params.MSK_IPAR_OPTIMIZER='MSK_OPTIMIZER_FREE_SIMPLEX';
+% Parse the problem to the LP solver
 res = optimizeProb(prob,params);
 
 %Check if the problem was feasible and that the solution was optimal
@@ -89,7 +88,7 @@ res = optimizeProb(prob,params);
 %If the problem was infeasible using hot-start it is often possible to
 %re-solve it without hot-start and get a feasible solution
 if ~isFeasible && ~isempty(hsSol)
-    prob.sol=rmfield(prob.sol,'bas');
+    prob=rmfield(prob,{'vbasis','cbasis'});
     res=optimizeProb(prob,params);
     [isFeasible, isOptimal]=checkSolution(res);
 end
@@ -109,20 +108,19 @@ else
 end
 
 %Construct the output structure
-if isfield(res.sol.bas,'xx')
-    solution.x=res.sol.bas.xx;
+if isfield(res,'full')
+    solution.x=res.full;
     if minFlux<=1
-        hsSolOut=res.sol.bas;
         if(isfield(res,'vbasis')) % gurobi uses vbasis and cbasis as hotstart
             hsSolOut.vbasis=res.vbasis;
             hsSolOut.cbasis=res.cbasis;
         end
     end
-    solution.f=res.sol.bas.pobjval;
+    solution.f=res.obj;
 else
     %Interior-point. This is not used at the moment
-    solution.x=res.sol.itr.xx;
-    solution.f=res.sol.itr.pobjval;
+    solution.x=res.full;
+    solution.f=res.obj;
 end
 
 %If either the square, the number, or the sum of fluxes should be minimized
@@ -137,7 +135,7 @@ end
 %"fake metabolite" is then set to be at least as good as the objective
 %function value.
 if minFlux~=0
-    model.S=[model.S;prob.c'];
+    model.S=[model.S;(model.c*-1)'];
     model.mets=[model.mets;'TEMP'];
     
     %If the constraint on the objective function value is exact there is a

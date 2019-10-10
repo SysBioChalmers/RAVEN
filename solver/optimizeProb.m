@@ -8,7 +8,7 @@ function res = optimizeProb(prob,params)
 %   res		the output structure from the selected solver RAVENSOLVER
 %   		(mosek style)
 %
-%	Eduard Kerkhoven, 2016-10-22 - Use Matlab preferences for solver selection
+%	Eduard Kerkhoven, 2019-10-10
 %
 
 if nargin<2
@@ -17,7 +17,7 @@ end
 
 
 if(~ispref('RAVEN','solver'))
-    dispEM(['Raven solver not defined or unknown. Try using setRavenSolver(',char(39),'solver',char(39),').']);
+    dispEM('RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
 end
 
 milp=false;
@@ -27,34 +27,22 @@ solver=getpref('RAVEN','solver');
 if strcmp(solver,'gurobi')
     gparams=struct('Presolve',2,'TimeLimit',1000,'OutputFlag',1,'MIPGap',1e-12,'Seed',0,'FeasibilityTol',1e-9,'OptimalityTol',1e-9);
     if (~milp) gparams.OutputFlag=0; end
-    %gparams=structUpdate(gparams,params);
-    res = gurobi(mosekToGurobiProb(prob), gparams);
-    
-    res=gurobiToMosekRes(res,length(prob.c),milp);
+    res = gurobi(cobraToGurobiProb(prob),gparams);
+    res = gurobiToCobraRes(res);
 elseif strcmp(solver,'cobra')
     if (milp)
         cparams=struct('timeLimit',1e9,'printLevel',0,'intTol',1e-6,'relMipGapTol',1e-9);
         cparams=structUpdate(cparams,params);
-        res=solveCobraMILP(mosekToCobraProb(prob),cparams);
+        res=solveCobraMILP(prob,cparams);
     else
-        % no hot start =/
-        cparams=struct('PrintLevel',1);
-        res=solveCobraLP(mosekToCobraProb(prob));
+        res=solveCobraLP(prob);
     end
-    res=cobraToMosekRes(res,length(prob.c),milp);
-    
-elseif strcmp(solver,'mosek')
-    if (milp)
-        echo=0;
-        if isfield(params,'printReport') && params.printReport==true
-            echo='3';
-        end
-        [~,res] = mosekopt(['minimize echo(' echo ')'],prob,getMILPParams(params));
-    else
-        [~,res] = mosekopt('minimize echo(0)',prob);
-    end
+    %res=cobraToMosekRes(res,size(prob.a,2),milp);
 else
-    dispEM(['Raven solver not defined or unknown. Try using setRavenSolver(',char(39),'solver',char(39),')']);
+    dispEM('RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
+end
+if res.stat>0
+    res.full=res.full(1:size(prob.a,2));
 end
 
     function s_merged=structUpdate(s_old,s_new)

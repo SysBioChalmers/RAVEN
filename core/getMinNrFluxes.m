@@ -110,7 +110,15 @@ end
 %then use 1000 instead.
 maxFlux=max(max(sol.x)*5,1000);
 
-prob.c=[zeros(numel(irrevModel.rxns),1);scores(:)]; %Minimize the number of fluxes
+intArray=speye(numel(irrevModel.rxns))*-1;
+intArray=intArray(indexes,:);
+prob.a=[irrevModel.S;intArray];
+a=[sparse(numel(irrevModel.mets),numel(indexes));speye(numel(indexes))*maxFlux];
+prob.a=[prob.a a];
+prob.ints.sub=numel(irrevModel.rxns)+1:numel(irrevModel.rxns)+numel(indexes);
+
+prob.c=[zeros(numel(irrevModel.rxns),1);scores(:);zeros(size(prob.a,1),1)]; %Minimize the number of fluxes
+prob.A=[prob.a -speye(size(prob.a,1))];
 prob.blc=[irrevModel.b(:,1);zeros(numel(indexes),1)];
 if size(irrevModel.b,2)==2
     prob.buc=[irrevModel.b(:,2);inf(numel(indexes),1)];
@@ -119,18 +127,21 @@ else
 end
 prob.blx=[irrevModel.lb;zeros(numel(indexes),1)];
 prob.bux=[irrevModel.ub;ones(numel(indexes),1)];
-
-intArray=speye(numel(irrevModel.rxns))*-1;
-intArray=intArray(indexes,:);
-prob.a=[irrevModel.S;intArray];
-a=[sparse(numel(irrevModel.mets),numel(indexes));speye(numel(indexes))*maxFlux];
-prob.a=[prob.a a];
-prob.ints.sub=numel(irrevModel.rxns)+1:numel(irrevModel.rxns)+numel(indexes);
+prob.lb = [prob.blx; prob.blc];
+prob.ub = [prob.bux; prob.buc];
+prob.osense=1;
+prob.csense=char(zeros(size(prob.a,1),1));
+prob.csense(:)='E';
+prob.b=zeros(size(prob.a,1), 1);
 
 %Use the output from the linear solution as starting point. Only the values
 %for the integer variables will be used, but all are supplied.
 prob.sol.int.xx=zeros(numel(prob.c),1);
 prob.sol.int.xx(prob.ints.sub(sol.x(indexes)>10^-12))=1;
+prob.x0=[];
+prob.vartype=repmat('C', 1, size(prob.A,2));
+prob.vartype(prob.ints.sub) = 'B';
+prob=rmfield(prob,{'blx','bux','blc','buc'});
 
 % Optimize the problem
 res = optimizeProb(prob,params);
@@ -143,13 +154,14 @@ if ~isFeasible
     return;
 end
 
-xx=res.sol.int.xx(1:numel(irrevModel.rxns));
-I=res.sol.int.xx(numel(xx)+1:end);
+xx=res.full(1:numel(irrevModel.rxns));
+I=res.full(numel(xx)+1:end);
 
 %Check if Mosek aborted because it reached the time limit
-if strcmp('MSK_RES_TRM_MAX_TIME',res.rcode)
-    exitFlag=-2;
-end
+%TODO: modify for cobra/gurobi
+% if strcmp('MSK_RES_TRM_MAX_TIME',res.rcode)
+%     exitFlag=-2;
+% end
 
 %Map back to original model from irrevModel
 x=xx(1:numel(model.rxns));
