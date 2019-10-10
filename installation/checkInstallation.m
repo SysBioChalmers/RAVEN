@@ -25,7 +25,7 @@ else
     fprintf('\n*** THE RAVEN TOOLBOX - DEVELOPMENT VERSION ***\n\n');
 end
 
-fprintf('Checking if RAVEN is on the MATLAB path...\t\t\t\t\t');
+fprintf('Checking if RAVEN is on the MATLAB path...\t\t\t\t\t\t\t\t\t');
 if ismember(ravenDir,paths)
     fprintf('OK\n');
 else
@@ -56,7 +56,7 @@ catch
 end
 
 %Check if it is possible to import an SBML model using libSBML
-fprintf('Checking if it is possible to import an SBML model using libSBML...\t\t');
+fprintf('Checking if it is possible to import an SBML model using libSBML...\t\t\t');
 try
     importModel(xmlFile);
     try
@@ -90,7 +90,7 @@ end
 solver={'gurobi','mosek','cobra'};
 
 for i=1:numel(solver)
-    fprintf(['Checking if it is possible to solve an LP problem using ',solver{i},'...\t\t']);
+    fprintf(['Checking if it is possible to solve an LP problem using ',solver{i},'...\t\t\t']);
     try
         setRavenSolver(solver{i});
         load(matFile);
