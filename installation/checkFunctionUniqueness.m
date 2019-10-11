@@ -5,7 +5,7 @@ function checkFunctionUniqueness()
 %
 %   Usage: checkFunctionUniqueness()
 %
-%   Simonas Marcisauskas, 2019-08-28
+%   Simonas Marcisauskas, 2019-10-05
 %
 
 %Get the RAVEN path
@@ -40,6 +40,7 @@ for i=1:numel(matlabPaths)
         end
         if ~isempty(pathFunctions)
             if any(ismember(ravenFunctions,pathFunctions))
+                fprintf('Not OK\n');
                 if sum(ismember(ravenFunctions,pathFunctions))>(numel(ravenFunctions)/4)
                     EM='Multiple RAVEN versions detected in MATLAB path. Leave only one RAVEN version in MATLAB path and re-run checkInstallation\n';
                     dispEM(EM);
@@ -57,7 +58,7 @@ end
 if hasConflicts
     fprintf('It is strongly recommended to resolve conflicting functions as this may compromise RAVEN functionality\n');
 else
-    fprintf('No conflicting functions were found\n');
+    fprintf('OK\n');
 end
 
 end
