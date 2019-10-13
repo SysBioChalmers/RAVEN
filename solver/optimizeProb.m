@@ -29,6 +29,8 @@ if strcmp(solver,'gurobi')
     if (~milp) gparams.OutputFlag=0; end
     %gparams=structUpdate(gparams,params);
     gparams=structUpdate(gparams,params);
+    % remove some MOSEK-specific fields that generate warnings with Gurobi
+    gparams=rmfield(gparams, intersect(fieldnames(gparams),{'MSK_IPAR_OPTIMIZER';'relGap'}));
     res = gurobi(mosekToGurobiProb(prob), gparams);
     
     res=gurobiToMosekRes(res,length(prob.c),milp);
