@@ -26,13 +26,13 @@ if(isfield(prob,'ints')), disp('MILP detected.'); milp=true; end
 solver=getpref('RAVEN','solver');
 if strcmp(solver,'gurobi')
     gparams=struct('Presolve',2,'TimeLimit',1000,'OutputFlag',1,'MIPGap',1e-12,'Seed',0,'FeasibilityTol',1e-9,'OptimalityTol',1e-9);
-    if (~milp) gparams.OutputFlag=0; end
-    %gparams=structUpdate(gparams,params);
+    if (~milp)
+        gparams.OutputFlag=0;
+    end
     gparams=structUpdate(gparams,params);
     % remove some MOSEK-specific fields that generate warnings with Gurobi
     gparams=rmfield(gparams, intersect(fieldnames(gparams),{'MSK_IPAR_OPTIMIZER';'relGap'}));
     res = gurobi(mosekToGurobiProb(prob), gparams);
-    
     res=gurobiToMosekRes(res,length(prob.c),milp);
 elseif strcmp(solver,'cobra')
     if (milp)
@@ -60,12 +60,14 @@ else
     dispEM(['Raven solver not defined or unknown. Try using setRavenSolver(',char(39),'solver',char(39),')']);
 end
 
-    function s_merged=structUpdate(s_old,s_new)
-        %// Remove overlapping fields from first struct%// Obtain all
-        %unique names of remaining fields,%// Merge both structs
-        s_merged = rmfield(s_old, intersect(fieldnames(s_old), fieldnames(s_new)));
-        names = [fieldnames(s_merged); fieldnames(s_new)];
-        s_merged = cell2struct([struct2cell(s_merged); struct2cell(s_new)], names, 1);
-    end
+end
 
+
+function s_merged=structUpdate(s_old,s_new)
+%Remove overlapping fields from first struct;
+%Obtain all unique names of remaining fields;
+%Merge both structs
+s_merged = rmfield(s_old, intersect(fieldnames(s_old), fieldnames(s_new)));
+names = [fieldnames(s_merged); fieldnames(s_new)];
+s_merged = cell2struct([struct2cell(s_merged); struct2cell(s_new)], names, 1);
 end
