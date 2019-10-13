@@ -11,7 +11,7 @@ function res = optimizeProb(prob,params)
 %	Eduard Kerkhoven, 2016-10-22 - Use Matlab preferences for solver selection
 %
 
-if nargin<2
+if nargin<2 || isempty(params)
     params=struct();
 end
 
