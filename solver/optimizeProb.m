@@ -28,6 +28,7 @@ if strcmp(solver,'gurobi')
     gparams=struct('Presolve',2,'TimeLimit',1000,'OutputFlag',1,'MIPGap',1e-12,'Seed',0,'FeasibilityTol',1e-9,'OptimalityTol',1e-9);
     if (~milp) gparams.OutputFlag=0; end
     %gparams=structUpdate(gparams,params);
+    gparams=structUpdate(gparams,params);
     res = gurobi(mosekToGurobiProb(prob), gparams);
     
     res=gurobiToMosekRes(res,length(prob.c),milp);
