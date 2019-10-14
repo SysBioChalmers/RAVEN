@@ -1,12 +1,12 @@
 function res = optimizeProb(prob,params)
 % optimizeProb
-%   Optimize an LP or MILP formulated in mosek terms.
+%   Optimize an LP or MILP formulated in cobra terms.
 %
-%   prob	mosek style LP/MILP problem struct to be optimised
+%   prob	cobra style LP/MILP problem struct to be optimised
 %   params	solver specific parameters (optional)
 %
 %   res		the output structure from the selected solver RAVENSOLVER
-%   		(mosek style)
+%   		(cobra style)
 %
 %	Eduard Kerkhoven, 2019-10-10
 %
@@ -14,7 +14,6 @@ function res = optimizeProb(prob,params)
 if nargin<2 || isempty(params)
     params=struct();
 end
-
 
 if(~ispref('RAVEN','solver'))
     dispEM('RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
@@ -27,7 +26,7 @@ solver=getpref('RAVEN','solver');
 if strcmp(solver,'gurobi')
     gparams=struct('Presolve',2,'TimeLimit',1000,'OutputFlag',1,'MIPGap',1e-12,'Seed',0,'FeasibilityTol',1e-9,'OptimalityTol',1e-9);
     gparams=structUpdate(gparams,params);
-    if (~milp) gparams.OutputFlag=0; end
+    if (~milp), gparams.OutputFlag=0; end
     res = gurobi(cobraToGurobiProb(prob),gparams);
     res = gurobiToCobraRes(res);
 elseif strcmp(solver,'cobra')
@@ -38,16 +37,13 @@ elseif strcmp(solver,'cobra')
     else
         res=solveCobraLP(prob);
     end
-    %res=cobraToMosekRes(res,size(prob.a,2),milp);
 else
     dispEM('RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
 end
 if res.stat>0
     res.full=res.full(1:size(prob.a,2));
 end
-
 end
-
 
 function s_merged=structUpdate(s_old,s_new)
 %Remove overlapping fields from first struct;
