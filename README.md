@@ -9,7 +9,7 @@ The RAVEN (Reconstruction, Analysis and Visualization of Metabolic Networks) Too
 The information about downloading, installing and developing RAVEN is included in the [Wiki](https://github.com/SysBioChalmers/RAVEN/wiki)
 
 
-## Citation
+## Cite Us
 If you use RAVEN 2.0 in your scientific work, please cite:
 > Wang H, Marcišauskas S, Sánchez BJ, Domenzain I, Hermansson D, Agren R, Nielsen J, Kerkhoven EJ. (2018) RAVEN 2.0: A versatile toolbox for metabolic network reconstruction and a case study on _Streptomyces coelicolor_. PLoS Comput Biol 14(10): e1006541. doi:[10.1371/journal.pcbi.1006541](https://doi.org/10.1371/journal.pcbi.1006541).
 
@@ -32,5 +32,5 @@ If you use any of the following functions, please also cite the relevant paper:
 For support, technical issues, bug reports etc., please [![Join the chat at https://gitter.im/SysBioChalmers/RAVEN](https://badges.gitter.im/SysBioChalmers/RAVEN.svg)](https://gitter.im/SysBioChalmers/RAVEN?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge). For other issues, please contact [Eduard Kerkhoven](https://github.com/edkerk).
 
 
-## Links
-For more systems biology related software and recently published genome-scale models from the Systems and Synthetic Biology group at Chalmers University of Technology, please visit the [Github page](https://github.com/SysBioChalmers). For more information and publications by the Systems and Synthetic Biology please visit [SysBio](www.sysbio.se).
+## More from SysBio Chalmers
+For more systems biology related software and recently published genome-scale models from the Systems and Synthetic Biology group at Chalmers University of Technology, please visit the [GitHub page](https://github.com/SysBioChalmers). For more information and publications by the Systems and Synthetic Biology please visit [SysBio](https://www.sysbio.se/).
