@@ -1,17 +1,18 @@
-%This is the solution to tutorial 1. The file small.xlsx contains all the
-%necessary modifications to solve for ATP production in glycolysis.
+% tutorial1_solutions
+%   This script contains the solutions for Exercise 1 (tutorial1). The file
+%   "small.xlsx" contains all the necessary modifications to solve for ATP
+%   production in glycolysis.
 %
-% Rasmus Agren, 2013-08-06
-% Simonas Marcisauskas, 2017-06-06 - revision
+%	Simonas Marcisauskas, 2019-10-14
 %
 
-%This loads the Excel model and converts it into a RAVEN model structure
+%Import the Excel model into a RAVEN model structure
 smallModel=importExcelModel('small.xlsx');
 
-%This solves the problem. If it looks like: sol=
-%   f: []
-%... then the problem is not solvable. Be sure that you have added uptake
-%and excretion of all necessary stuff.
+%This solves the linear programming problem.
+%NOTE: if sol.f is equal to zero then the problem is not solvable. Ensure
+%that uptake and excretion of all necessary stuff are added to the model
+%and run the solveLP again.
 sol=solveLP(smallModel);
 
 %Print the resulting exchange fluxes

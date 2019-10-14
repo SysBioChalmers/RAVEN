@@ -1,10 +1,12 @@
-%This exercise is about creating a model from KEGG, based on protein
-%sequences in a FASTA file, and doing some functionality checks on the
-%model. The example case is for the yeast Saccharomyces cerevisiae. This
-%tutorial is more of a showcase than the previous four, and its main
-%purpose is to serve as a scaffold to reconstruct a GEM for any organism.
+% tutorial4
+%   This exercise is about creating a model from KEGG, based on protein
+%   sequences in a FASTA file, and doing some functionality checks on the
+%   model. The example case is for the yeast Saccharomyces cerevisiae. This
+%   tutorial is more of a showcase than the previous four, and its main
+%   purpose is to serve as a scaffold to reconstruct a GEM for any
+%   organism.
 %
-%Simonas Marcisauskas, 2019-09-12
+%   Simonas Marcisauskas, 2019-09-12
 %
 
 %Start by downloading trained Hidden Markov Models for eukaryotes. This can

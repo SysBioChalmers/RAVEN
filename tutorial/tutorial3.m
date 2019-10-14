@@ -1,11 +1,16 @@
-%This contains the code necessary for running Exercises 3. It is assumed
-%that you are somewhat familiar with linear programming.
+% tutorial3
+%   This script contains the list of functions necessary for running
+%   Exercise 3. Several key stages may be missing, try to fill these gaps
+%   before checking the solutions in tutorial3_solutions. It is assumed
+%   that the user is somewhat familiar with linear programming.
 %
-% Rasmus Agren, 2013-08-06
-% Simonas Marcisauskas, 2017-06-06 - revision
+%	It is assumed that the user has already completed Exercises 1-2
+%	(tutorial1-tutorial2)
+%
+%	Simonas Marcisauskas, 2019-10-14
 %
 
-%Load the model
+%Import the Excel model
 model=importExcelModel('smallYeastBad.xlsx');
 model.b=[model.b inf(numel(model.b),1)];
 sol=solveLP(model,1);

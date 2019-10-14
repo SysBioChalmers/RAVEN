@@ -1,15 +1,20 @@
-%This contains the code necessary for running Exercises 2. It is assumed
-%that you have completed Exercises 1 before.
+% tutorial2
+%   This contains the list of functions necessary for running Exercise 2.
+%   Several key stages may be missing, try to fill these gaps before
+%   checking the solutions in tutorial2_solutions.
+%   
+%	It is assumed that the user has already completed Exercise 1
+%	(tutorial1)
 %
-% Rasmus Agren, 2014-01-06
-% Simonas Marcisauskas, 2017-06-06 - revision
+%	Simonas Marcisauskas, 2019-10-14
 %
 
-%Loads the model
+%Import the Excel model
 model=importExcelModel('smallYeast.xlsx',true);
 
-%Sets the upper bound of glucose uptake to 1 and O2 uptake to unlimited.
+%Set the upper bound of glucose uptake to 1 and O2 uptake to unlimited
 model=setParam(model,'ub',{'glcIN' 'o2IN'},[1 1000]);
+
 %Set the objective to be ethanol production
 model=setParam(model,'obj',{'ethOUT'},1);
 
@@ -19,11 +24,11 @@ sol=solveLP(model);
 %Print the resulting exchange fluxes
 printFluxes(model,sol.x,true);
 
-%This is for comparing two flux distributions Load the map
+%Compare two flux distributions by loading the map
 load 'pathway.mat' pathway;
 drawMap('Aerobic vs Anaerobic',pathway,model,solA.x,solB.x,[],'mapFBA.pdf',10^-5);
 
-%This is for running a single gene deletion
+%Run a single gene deletion
 [genes, fluxes, originalGenes, details]=findGeneDeletions(model,'sgd','fba');
 
 %Get the indexes of these reactions
@@ -41,21 +46,21 @@ sol2=solveLP(model2);
 drawMap('ZWF1 deletion vs WT',pathway,model,sol.x,sol2.x,[],'mapZWF.pdf',10^-5);
 followChanged(model,sol2.x,sol.x, 10, 10^-2, 0,{'NADPH' 'NADH' 'NAD' 'NADP'});
 
-%Load the model
+%Import the model
 SBMLFromExcel('smallYeast.xlsx','smallYeast.xml')
 model=importModel('smallYeast.xml',true);
 sol=solveLP(model);
 
-%Define another model where all exchange reactions are open.
+%Define another model where all exchange reactions are open
 model2=model;
 I=getIndexes(model,getExchangeRxns(model),'rxns');
 model2.lb(I)=0;
 model2.ub(I)=1000;
 
-%Then delete ZWF
+%Delete ZWF gene
 model2=setParam(model2,'eq',{'ZWF'},0);
 
-%Then run MOMA
+%Run MOMA
 [fluxA, fluxB, flag]=qMOMA(model,model2);
 drawMap('Aerobic vs Anaerobic MOMA',pathway,model,fluxA,fluxB,[],'mapMOMA.pdf',10^-5);
 
