@@ -285,12 +285,19 @@ prob.buc=[metUB;ones(nNonEssential,1)*1000;ones(nRevBounds*2,1)*999.9;revUB];
 %in order to be consistent with the syntax that positive scores are good
 prob.c=[zeros(nRxns,1);rxnScores;ones(nNetProd,1)*prodWeight*-1;zeros(nRevBounds*2,1)];
 prob.a=S;
+prob.c=[prob.c;zeros(size(prob.a,1),1)];
+prob.A=[prob.a -speye(size(prob.a,1))];
+prob.b = zeros(size(prob.a,1), 1);
+prob.ub = [prob.bux; prob.buc];
+prob.osense=1;
+prob.csense=char(zeros(size(prob.a,1),1));
+prob.csense(:)='E';
 
 %We still don't know which of the presentMets that can be produced. Go
 %through them, force production, and see if the problem can be solved
-params.MSK_IPAR_OPTIMIZER='MSK_OPTIMIZER_FREE_SIMPLEX';
 for i=1:numel(pmIndexes)
     prob.blc(numel(irrevModel.mets)-numel(pmIndexes)+i)=1;
+    prob.lb = [prob.blx; prob.blc];
     res=optimizeProb(prob,params);
     isFeasible=checkSolution(res);
     if ~isFeasible
@@ -314,10 +321,10 @@ if ~checkSolution(res)
     dispEM(EM);
 end
 
-fValue=res.sol.int.pobjval;
+fValue=res.obj;
 
 %Get all reactions used in the irreversible model
-usedRxns=(nonEssentialIndex(res.sol.int.xx(nRxns+1:nRxns+nNonEssential)<0.1))';
+usedRxns=(nonEssentialIndex(res.full(nRxns+1:nRxns+nNonEssential)<0.1))';
 
 %Map to reversible model IDs
 usedRxns=[usedRxns(usedRxns<=numel(model.rxns));revRxns(usedRxns(usedRxns>numel(model.rxns))-numel(model.rxns))];
