@@ -1,9 +1,9 @@
 % tutorial0
-%   This tutorial script will use the Penicillium chrysogenum model to show
-%   some of the functionality of the RAVEN Toolbox, with a focus on the
-%   import/export functions and how to interpret the simulation data. For a
-%   more detailed description of the individual functions, see
-%   [raven_directory]/doc/index.html.
+%   This tutorial script will use the Penicillium chrysogenum GEM to show
+%   some functionality of RAVEN, with a focus on the import/export
+%   functions, model modification and the ways to interpret the simulation
+%   results. For a more detailed description of the individual functions,
+%   see [raven_directory]/doc/index.html.
 %
 %   A genome-scale metabolic model (GEM) for the filamentous fungus
 %   Penicillium chrysogenum will be used in this tutorial. The model can be
@@ -13,7 +13,7 @@
 %   It is assumed that all files are in the current directory or in the
 %   MATLAB path list
 %
-%	Simonas Marcisauskas, 2019-10-14
+%	Simonas Marcisauskas, 2019-10-16
 %
 
 %Import the model from Excel. This function performs a number of checks
