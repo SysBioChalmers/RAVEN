@@ -287,8 +287,8 @@ prob.c=[zeros(nRxns,1);rxnScores;ones(nNetProd,1)*prodWeight*-1;zeros(nRevBounds
 prob.a=S;
 prob.c=[prob.c;zeros(size(prob.a,1),1)];
 prob.A=[prob.a -speye(size(prob.a,1))];
-prob.b = zeros(size(prob.a,1), 1);
-prob.ub = [prob.bux; prob.buc];
+prob.b=zeros(size(prob.a,1), 1);
+prob.ub=[prob.bux; prob.buc];
 prob.osense=1;
 prob.csense=char(zeros(size(prob.a,1),1));
 prob.csense(:)='E';
@@ -297,7 +297,7 @@ prob.csense(:)='E';
 %through them, force production, and see if the problem can be solved
 for i=1:numel(pmIndexes)
     prob.blc(numel(irrevModel.mets)-numel(pmIndexes)+i)=1;
-    prob.lb = [prob.blx; prob.blc];
+    prob.lb=[prob.blx; prob.blc];
     res=optimizeProb(prob,params);
     isFeasible=checkSolution(res);
     if ~isFeasible
@@ -312,6 +312,7 @@ end
 %Add that the binary reactions may only take integer values.
 allInt=[(nRxns+1):(nRxns+nNonEssential) size(S,2)-nRevBounds*2+1:size(S,2)];
 prob.ints.sub=allInt;
+prob.lb=[prob.blx; prob.blc];
 res=optimizeProb(prob,params);
 
 %I don't think that this problem can be infeasible, so this is mainly a way
