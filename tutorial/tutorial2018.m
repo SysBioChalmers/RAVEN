@@ -12,7 +12,7 @@
 %   Streptomyces coelicolor strain A3(2). Users may apply this script as
 %   the template in their own work for other organisms.
 %
-%   Simonas Marcisauskas, 2019-10-17
+%   Simonas Marcisauskas, 2019-10-18
 %
 
 %Note that the detailed instructions of the RAVEN functions can be found
@@ -71,8 +71,8 @@ ScoKEGGHomology=getKEGGModelForOrganism('ScoKEGGHMMs','Sco_all_protein.faa','pro
 %At first, the two KEGG-based models can be directly merged
 ScoKEGGDraftModel=mergeModels({ScoKEGGAnnotation ScoKEGGHomology});
 
-numel(ScoKEGGHomology.rxns)+numel(ScoKEGGAnnotation.rxns)
-numel(ScoKEGGDraftModel.rxns)
+disp(numel(ScoKEGGHomology.rxns)+numel(ScoKEGGAnnotation.rxns));
+disp(numel(ScoKEGGDraftModel.rxns));
 %By checking the reaction number, it can be seen that reaction number in
 %the merged model equals adding up the reaction numbers in homology and
 %annotation KEGG draft models. And there are duplicated reactions in this
@@ -101,10 +101,8 @@ ScoCombinedDraftModel=combineMetaCycKEGGModels(ScoMetaCycDraftModel, ScoKEGGDraf
 %file SupportingTables.xlsx. Now read in these manually selected reactions
 %and their subSystems from the sheet TableS3 into an array structure
 %selectedNewRxns
-[~, textData]=xlsread('SupportingTables.xlsx','TableS3');
-selectedNewRxns.rxns=textData(2:end,1);
-selectedNewRxns.subSystems=textData(2:end,3);
-selectedNewRxns
+load('iMK1208+suppInfo.mat','selectedNewRxns');
+disp(selectedNewRxns);
 
 %Next step is to generate a sub-model that includes only these new
 %reactions. This is implemented by subtracting the other reactions from the
@@ -128,7 +126,7 @@ newRxnSubModel.genes=unique(newRxnSubModel.genes);
 
 %Since the newRxnSubModel is ready for incorportation, the iMK1208 model
 %can be read in for integration
-load('iMK1208.mat');
+load('iMK1208+suppInfo.mat','iMK1208');
 
 %It should be noted that the incompatible nomenclatures (especially the
 %metabolite identifiers) used in different GEMs and databases led to a
@@ -139,8 +137,7 @@ load('iMK1208.mat');
 %model. We implemented database mining and intensive manual curation in
 %associating these metabolite identifiers and organized the results into
 %sheet TableS2 in the SupportingTables.xlsx.
-[~, textData]=xlsread('SupportingTables.xlsx','TableS2');
-metaCycMetsIniMK=textData(2:end,4);
+load('iMK1208+suppInfo.mat','metaCycMetsIniMK');
 
 %The following section is to replace the metabolites in the sub-model with
 %the identifiers and names used in iMK1208 according to the mapping
