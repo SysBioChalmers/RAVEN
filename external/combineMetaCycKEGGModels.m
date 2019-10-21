@@ -110,6 +110,8 @@ for i=1:numel(keggModel.rxns)
             if ~Repeat
                 rxnsToMove=[rxnsToMove;y];  %Record rxns to be moved from kegg to metacyc model
                 if isempty(keggModel.grRules{i})
+                    %Rxns may have emtpy grRules (e.g. spontaneous) that
+                    %are identified and added back here
                     grRulesToMove=[grRulesToMove;{''}];
                 else
                     grRulesToMove=[grRulesToMove;keggModel.grRules{i}];
