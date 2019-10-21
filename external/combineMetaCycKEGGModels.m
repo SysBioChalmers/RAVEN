@@ -109,7 +109,11 @@ for i=1:numel(keggModel.rxns)
             [Repeat, Index]=ismember(y,rxnsToMove);
             if ~Repeat
                 rxnsToMove=[rxnsToMove;y];  %Record rxns to be moved from kegg to metacyc model
-                grRulesToMove=[grRulesToMove;keggModel.grRules{i}];
+                if isempty(keggModel.grRules{i})
+                    grRulesToMove=[grRulesToMove;{''}];
+                else
+                    grRulesToMove=[grRulesToMove;keggModel.grRules{i}];
+                end
                 numToMove=numToMove+1;
             else
                 %If this reaction has been recorded, append the grRules if
