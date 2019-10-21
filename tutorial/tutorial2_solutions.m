@@ -103,13 +103,13 @@ drawMap('ZWF deletion vs wild type',pathway,model,fluxB,fluxA,[],'mapMOMA.pdf',1
 %Step 6
 %Read microarray results and calculate reporter metabolites (metabolites
 %around which there are significant transcriptional changes)
-[orfs, pvalues]=textscan('expression.txt','%s%f');
+[orfs, pvalues]=textread('expression.txt','%s%f');
 repMets=reporterMetabolites(model,orfs,pvalues);
 [I, J]=sort(repMets.metPValues);
 
 fprintf('TOP 10 REPORTER METABOLITES:\n');
 for i=1:min(numel(J),10)
-    fprintf([repMets.mets{J(i)} '\t' num2str(I(i)) '\n'])
+    fprintf([repMets.mets{J(i)} '\t' num2str(I(i)) '\n']);
 end
 
 %Get all reactions involving those metabolites and display them on a map

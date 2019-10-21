@@ -40,7 +40,7 @@ J=getIndexes(model,{'glyOUT'},'rxns');
 okSolutions=find(fluxes(I,:)>10^-2); %Only look at solutions which are still growing
 [maxGlycerol, J]=max(fluxes(J,okSolutions));
 disp(maxGlycerol);
-originalGenes(genes(okSolutions(J),:))
+disp(originalGenes(genes(okSolutions(J),:)));
 
 %Draw map for the ZWF1 deletion strain
 model2=setParam(model,'eq',{'ZWF'},0);
@@ -68,7 +68,7 @@ drawMap('Aerobic vs Anaerobic MOMA',pathway,model,fluxA,fluxB,[],'mapMOMA.pdf',1
 
 %Read microarray results and calculate reporter metabolites (metabolites
 %around which there are significant transcriptional changes)
-[orfs, pvalues]=textscan('expression.txt','%s%f');
+[orfs, pvalues]=textread('expression.txt','%s%f');
 repMets=reporterMetabolites(model,orfs,pvalues);
 [I, J]=sort(repMets.metPValues);
 
