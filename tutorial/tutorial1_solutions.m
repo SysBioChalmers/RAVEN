@@ -1,9 +1,8 @@
 % tutorial1_solutions
-%   This script contains the solutions for Exercise 1 (tutorial1). The file
-%   "small.xlsx" contains all the necessary modifications to solve for ATP
-%   production in glycolysis.
+%   This script contains the solutions for Exercise 1, see Exercise 1 in
+%   "RAVEN mini tutorial.docx" for more details.
 %
-%	Simonas Marcisauskas, 2019-10-14
+%	Simonas Marcisauskas, 2019-10-21
 %
 
 %Import the Excel model into a RAVEN model structure

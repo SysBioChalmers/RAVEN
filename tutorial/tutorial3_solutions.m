@@ -1,10 +1,11 @@
 % tutorial3_solutions
-%   This script contains the solutions for Exercise 3 (tutorial3)
+%   This script contains the solutions for Exercise 3, see Exercise 3 in
+%   "RAVEN mini tutorial.docx" for more details.
 %
 %   NOTE: Many of these changes are easier to do in the Excel sheet. They
 %   are done here in code just to avoid having several model files.
 %
-%	Simonas Marcisauskas, 2019-10-14
+%	Simonas Marcisauskas, 2019-10-21
 %
 
 %Import the Excel model
@@ -57,7 +58,7 @@ model=setParam(model,'eq',getExchangeRxns(model),0);
 %production, one can no longer have free production of all metabolites
 model.b=model.b(:,1);
 I=canConsume(model);
-model.mets(I) %These 12 metabolites can be consumed without any production
+disp(model.mets(I)); %These 12 metabolites can be consumed without any production
 
 %Allow all uptake
 model.b=[ones(numel(model.b),1)*-1000 model.b];
@@ -87,8 +88,8 @@ sol=solveLP(model);
 %***Second part of tutorial
 model=importExcelModel('smallYeastBad2.xlsx',true,false,true); %This has to be loaded with the setting to ignore error or it would find the error
 [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,false,false,false,true);
-deletedReactions
-deletedMetabolites
+disp(deletedReactions);
+disp(deletedMetabolites);
 
 %It turned out that G15L_c was spelled G15Lc in one reaction. The best
 %solution would be just to change it in the reaction list and remove the
@@ -104,8 +105,8 @@ model.S(Igood,:)=model.S(Igood,:)+model.S(Ibad,:);
 %Delete the bad one
 model=removeMets(model,'G15Lc');
 [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,false,false,false,true);
-deletedReactions
-deletedMetabolites
+disp(deletedReactions);
+disp(deletedMetabolites);
 
 %The only difference was that there were 20 deleted metabolites instead of
 %21. Nothing too spectacular. Check production can tell the user what one
@@ -116,7 +117,7 @@ deletedMetabolites
 %production of these 12. This small model does not include net synthesis of
 %co-factors, so one should concentrate on the other ones. Glycerone
 %phosphate allows for connection 18 others, so it seems like a good target.
-minToConnect
+disp(minToConnect);
 
 %If one googles around a little bit, and knows the metabolism, one would
 %find that DHAP (dihydroxyacetone) and GLYP (glycerone phosphate) are
@@ -131,27 +132,27 @@ model.S(Igood,:)=model.S(Igood,:)+model.S(Ibad,:);
 %Delete the bad one
 model=removeMets(model,'GLYP_c');
 [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,false,false,false,true);
-deletedReactions
-deletedMetabolites
+disp(deletedReactions);
+disp(deletedMetabolites);
 [notProducedMets, ~, neededForProductionMat, minToConnect]=checkProduction(model,true,model.comps,false);
-minToConnect
+disp(minToConnect);
 
 %Still quite a lot of gaps and no immediate way to fix it. One could try
 %including reactions from a reference network and see if that helps. Use
 %the small yeast model from tutorial2
 refModel=importExcelModel('smallYeast.xlsx');
 [newConnected, cannotConnect, addedRxns, newModel]=fillGaps(model,{refModel},false);
-addedRxns
-newConnected
+disp(addedRxns);
+disp(newConnected);
 
 %By including the ALD6 reaction from the reference model it was possible to
 %connect 21 reactions
 [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(newModel,false,false,false,true);
-deletedMetabolites
-deletedReactions
+disp(deletedMetabolites);
+disp(deletedReactions);
 
 %All the model seems to be connected
 
-%All this stuff could be done in a more automated manner as well
+%All this stuff may be done in a more automated manner as well
 model=importExcelModel('smallYeastBad2.xlsx',true,false,true);
 gapReport(model,{refModel});

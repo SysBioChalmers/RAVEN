@@ -1,14 +1,15 @@
 % tutorial2_solutions
-%   This script contains the solutions for Exercise 2 (tutorial2). All the parameters are
-%   set in this script, rather than modifying the Excel model file
+%   This script contains the solutions for Exercise 2, see Exercise 2 in
+%   "RAVEN mini tutorial.docx" for more details. All the parameters are set
+%   in this script, rather than modifying the Excel model file.
 %
-%	Simonas Marcisauskas, 2019-10-14
+%	Simonas Marcisauskas, 2019-10-21
 %
 
 %Import the Excel model
 model=importExcelModel('smallYeast.xlsx',true);
 
-%Task "a"
+%Step 1
 %Set the upper bound of glucose uptake to 1 and O2 uptake to zero
 model=setParam(model,'ub',{'glcIN' 'o2IN'},[1 0]);
 
@@ -22,7 +23,7 @@ sol=solveLP(model);
 %4.0 in tutorial1, but there sucrose was used instead of glucose.
 printFluxes(model,sol.x,false);
 
-%Task "b"
+%Step 2
 %Check the yield of different products and print the results
 %Change to fully aerobic
 model=setParam(model,'ub',{'glcIN' 'o2IN'},[1 1000]);
@@ -39,7 +40,7 @@ model=setParam(model,'obj',{'biomassOUT'},1);
 sol=solveLP(model);
 fprintf(['Yield of biomass is ' num2str(sol.f*-1) '/h\n']);
 
-%Task "c"
+%Step 3
 %Solve for both aerobic and anaerobic growth
 solA=solveLP(model);
 model=setParam(model,'ub',{'o2IN'},0.5);
@@ -50,7 +51,7 @@ solB=solveLP(model);
 load 'pathway.mat' pathway;
 drawMap('Aerobic vs Anaerobic',pathway,model,solA.x,solB.x,[],'mapFBA.pdf',10^-5);
 
-%Task "d"
+%Step 4
 %Change to anaerobic growth and maximize for biomass
 model=setParam(model,'eq',{'o2IN'},0);
 model=setParam(model,'obj',{'biomassOUT'},1);
@@ -77,7 +78,7 @@ sol2=solveLP(model2);
 drawMap('ZWF1 deletion vs WT',pathway,model,sol2.x,sol.x,[],'mapZWF.pdf',10^-5);
 followChanged(model,sol2.x,sol.x, 10, 10^-2, 0,{'NADPH' 'NADH' 'NAD' 'NADP'});
 
-%Task "e"
+%Step 5
 %Set the exchange rates to the recorded batch values
 model=setParam(model,'lb',{'acOUT' 'biomassOUT' 'co2OUT' 'ethOUT' 'glyOUT' 'glcIN' 'o2IN' 'ethIN'},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*0.9999);
 model=setParam(model,'ub',{'acOUT' 'biomassOUT' 'co2OUT' 'ethOUT' 'glyOUT' 'glcIN' 'o2IN' 'ethIN'},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*1.0001);
@@ -99,10 +100,10 @@ drawMap('ZWF deletion vs wild type',pathway,model,fluxB,fluxA,[],'mapMOMA.pdf',1
 %Note that this is without any objectives, just by trying to maintain the
 %cells original flux distribution.
 
-%Task "f"
+%Step 6
 %Read microarray results and calculate reporter metabolites (metabolites
 %around which there are significant transcriptional changes)
-[orfs, pvalues]=textread('expression.txt','%s%f');
+[orfs, pvalues]=textscan('expression.txt','%s%f');
 repMets=reporterMetabolites(model,orfs,pvalues);
 [I, J]=sort(repMets.metPValues);
 

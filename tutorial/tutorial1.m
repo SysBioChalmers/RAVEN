@@ -1,9 +1,11 @@
 % tutorial1
-%   This script contains the code necessary for Exercise 1: importing a
-%   model from Excel into a RAVEN model structure, as well as for running a
-%   simulation with the parameters set in the Excel file.
+%   This exercise deals with the a small glycolysis model in RAVEN
+%   compatible Excel format and shows the most basic aspects of the
+%   stoichiometric modelling. It is shown how to build a simple model from
+%   scratch, set parameters and perform simple simulations.
+%   See Exercise 1 in "RAVEN mini tutorial.docx" for more details.
 %
-%	Simonas Marcisauskas, 2019-10-14
+%	Simonas Marcisauskas, 2019-10-21
 %
 
 %Import the Excel model into a RAVEN model structure

@@ -1,28 +1,20 @@
 % tutorial2018
-%   This tutorial script demonstrates how to reconstruct draft GEMs by
-%   using both KEGG and MetaCyc pathway databases. A combined model with
-%   the comprehensive coverage of metabolic pathways will be eventually
-%   generated from different de novo reconstruction approaches. The input
-%   is a FASTA format file with whole-proteome sequences. The combined
-%   model will be subsequently used for refinement of existing high-quality
-%   model and generation of a new version of GEM, by utilizing the manual
-%   curation results. This tutorial is a showcase of the new features
-%   released in RAVEN 2.0 through demonstrating the utilization of the
-%   newly developed functions on GEM reconstruction and curation for
-%   Streptomyces coelicolor strain A3(2). Users may apply this script as
-%   the template in their own work for other organisms.
+%   This exercise demonstrates how to reconstruct a combined draft GEM by
+%   from KEGG and MetaCyc pathway databases. A combined model with the
+%   comprehensive coverage of metabolic pathways is generated from
+%   different de novo reconstruction approaches. The input is a FASTA
+%   format file with whole-proteome sequences. The combined model is
+%   subsequently used for refinement of existing high-quality model and
+%   generation of a new version of GEM, by utilizing the manual curation
+%   results. This tutorial is a showcase of the new features released in
+%   RAVEN 2.0 through demonstrating the utilization of the newly developed
+%   functions on GEM reconstruction and curation for Streptomyces
+%   coelicolor strain A3(2). Users may apply this script as the template in
+%   their own work for other organisms.
+%   This refers to Exercise 5 from "RAVEN mini tutorial.docx"
 %
-%   Simonas Marcisauskas, 2019-10-18
+%   Simonas Marcisauskas, 2019-10-21
 %
-
-%Note that the detailed instructions of the RAVEN functions can be found
-%both in MATLAB by typing 'help functionName' and from the HTML
-%files functionName.html under the 'doc' folder in RAVEN. The available
-%parameters, input and output files, the choice of parameters and their
-%default values are specified in the descriptions for corresponding
-%functions. Any futher questions can be brought up through Gitter chat room
-%or posted as an issue in GitHub from:
-%https://github.com/SysBioChalmers/RAVEN/issues/new
 
 %Before reconstruction, a FASTA file with protein sequences of the target
 %organism needs to be prepared. In this tutorial, all protein sequences of
@@ -35,7 +27,7 @@
 %Generate a draft GEM from MetaCyc database. The first parameter is
 %organismID and needs to be specified by user. The other parameters are set
 %to exclude unbalanced and undetermined reactions, but keep transport
-%rections. The two parameters for homology search are set to the default
+%reactions. The two parameters for homology search are set to the default
 %values that have been optimized to capture the protein hits with both
 %comprehensive coverage and the least false positives.
 ScoMetaCycDraftModel=getMetaCycModelForOrganism('ScoMetaCyc','Sco_all_protein.faa',1);
@@ -80,7 +72,7 @@ disp(numel(ScoKEGGDraftModel.rxns));
 
 %Merge the duplicated reactions into one and combine multiple iso-enzymes
 %into a single grRules. The expandModel and contractModel functions are
-%applied, see their instructions for details.
+%utilised, see their instructions for details.
 ScoKEGGDraftModel=expandModel(ScoKEGGDraftModel);
 ScoKEGGDraftModel=contractModel(ScoKEGGDraftModel);
 
@@ -91,22 +83,21 @@ ScoKEGGDraftModel=contractModel(ScoKEGGDraftModel);
 %model into corresponding MetaCyc ids, and then detects duplications and
 %keeps only unique reactions and metabolites that are mostly in MetaCyc
 %identifiers.
-ScoCombinedDraftModel=combineMetaCycKEGGModels(ScoMetaCycDraftModel, ScoKEGGDraftModel)
+ScoCombinedDraftModel=combineMetaCycKEGGModels(ScoMetaCycDraftModel, ScoKEGGDraftModel);
 
-%With this combined model, we are going to refine an existing high quality
-%GEM iMK1208 by incorporating the new pathways/reactions that are found in
-%the combined model but absent from the previous iMK1208 model. A total of
-%398 reactions in the combined draft model were determined as new pathways
-%based on manual curation results, which have been organized into the Excel
-%file SupportingTables.xlsx. Now read in these manually selected reactions
-%and their subSystems from the sheet TableS3 into an array structure
-%selectedNewRxns
+%With this combined model, the existing iMK1208 model is refined by
+%incorporating the new pathways/reactions that are found in the combined
+%model but absent from the previous iMK1208 model. A total of 398 reactions
+%in the combined draft model were determined as new pathways based on
+%manual curation results, which have been organized into TableS3. Load
+%these manually selected reactions and their subSystems as the
+%pre-processed array structure selectedNewRxns.
 load('iMK1208+suppInfo.mat','selectedNewRxns');
 disp(selectedNewRxns);
 
-%Next step is to generate a sub-model that includes only these new
-%reactions. This is implemented by subtracting the other reactions from the
-%combined model using function removeReactions
+%Generate a sub-model that includes only these new reactions. This is
+%implemented by subtracting the other reactions from the combined model
+%using function removeReactions
 rxnsToRemove=setdiff(ScoCombinedDraftModel.rxns,selectedNewRxns.rxns);
 newRxnSubModel=removeReactions(ScoCombinedDraftModel,rxnsToRemove,1,1);
 
@@ -116,7 +107,7 @@ newRxnSubModel=removeReactions(ScoCombinedDraftModel,rxnsToRemove,1,1);
 newRxnSubModel.comps{1}='c';
 newRxnSubModel.compNames{1}='Cytoplasm';
 
-%Here are some amendaments to the genes and rxnGeneMat fields
+%Amend to the genes and rxnGeneMat fields
 newRxnSubModel.genes={};
 for k=1:numel(newRxnSubModel.rxns)
    newRxnSubModel.genes=[newRxnSubModel.genes;transpose(strsplit(newRxnSubModel.grRules{k},' or '))];
@@ -125,7 +116,7 @@ newRxnSubModel.genes=unique(newRxnSubModel.genes);
 [~, newRxnSubModel.rxnGeneMat, ~]=standardizeGrRules(newRxnSubModel);
 
 %Since the newRxnSubModel is ready for incorportation, the iMK1208 model
-%can be read in for integration
+%can be loaded for integration
 load('iMK1208+suppInfo.mat','iMK1208');
 
 %It should be noted that the incompatible nomenclatures (especially the
@@ -134,31 +125,28 @@ load('iMK1208+suppInfo.mat','iMK1208');
 %properly integrate the iMK1208 with this sub-model, both models should be
 %unified into the same name space, since the metabolites in the sub-model
 %use MetaCyc identifiers that are different from the ones used in iMK1208
-%model. We implemented database mining and intensive manual curation in
-%associating these metabolite identifiers and organized the results into
-%sheet TableS2 in the SupportingTables.xlsx.
+%model. TableS2 contains the results for database mining and intensive
+%manual curation while associating these metabolite identifiers. Load
+%these manually selected reactions and their subSystems as the
+%pre-processed array structure metaCycMetsIniMK.
 load('iMK1208+suppInfo.mat','metaCycMetsIniMK');
 
-%The following section is to replace the metabolites in the sub-model with
-%the identifiers and names used in iMK1208 according to the mapping
-%information in TableS2.
+%Replace the metabolites in the sub-model with the identifiers and names
+%used in iMK1208 according to the mapping information in TableS2
+%(metaCycMetsIniMK).
 [a, b]=ismember(newRxnSubModel.mets,metaCycMetsIniMK);
 I=find(a);
 newRxnSubModel.mets=strcat(newRxnSubModel.mets,'_c');
 newRxnSubModel.metNames(I)=iMK1208.metNames(b(I));
 newRxnSubModel.mets(I)=iMK1208.mets(b(I));
 
-%We have resolved the necessary issues for merging of iMK1208 with the new
-%reactions determed from de novo reconstructions. They can be direclty
-%merged into the Sco4 model, which refers to the 4th major update of the
-%GEM for Streptomyces coelicolor.
+%The necessary issues for merging iMK1208 with the new reactions determined
+%from de novo generated draft GEMs have been resolved. Those can be
+%directly merged into the Sco4 model, which refers to the 4th major update
+%of the GEM for Streptomyces coelicolor.
 Sco4=mergeModels({iMK1208 newRxnSubModel});
 
 %Check out if the newly generated Sco4 could grow
-sol=solveLP(Sco4)
+sol=solveLP(Sco4);
+disp(sol.f);
 %The results indicate that this new model is functional
-
-%Here in this tutorial we present a complete reconstruciton process using
-%different approaches introduced by RAVEN 2.0. Furthermore, the combined
-%draft model obtained from de novo reconstructions is used in model
-%refinements and curation for making an upgraded version of GEM.

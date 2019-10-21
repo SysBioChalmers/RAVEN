@@ -1,19 +1,16 @@
 % tutorial0
-%   This tutorial script will use the Penicillium chrysogenum GEM to show
-%   some functionality of RAVEN, with a focus on the import/export
-%   functions, model modification and the ways to interpret the simulation
-%   results. For a more detailed description of the individual functions,
-%   see [raven_directory]/doc/index.html.
+%	This is a short introduction that shows how to load a genome-scale
+%	metabolic model (GEM), set reaction constraints, objective function and
+%	perform an optimization through flux balance analysis (FBA). The
+%	resulting fluxes are visualized and exported to a PDF file.
+%   For a more detailed description of the individual functions, see
+%   [raven_directory]/doc/index.html.
+%   A GEM for the filamentous fungus Penicillium chrysogenum is used in
+%   this tutorial. The model can be found in a Microsoft Excel file under
+%   the name "iAL1006 v1.00.xlsx" and in SBML file "iAL1006 v1.00.xml".
+%   See Exercise 0 in "RAVEN mini tutorial.docx" for more details.
 %
-%   A genome-scale metabolic model (GEM) for the filamentous fungus
-%   Penicillium chrysogenum will be used in this tutorial. The model can be
-%   found in a Microsoft Excel file under the name "iAL1006 v1.00.xlsx" and
-%   in SBML file "iAL1006 v1.00.xml".
-%
-%   It is assumed that all files are in the current directory or in the
-%   MATLAB path list
-%
-%	Simonas Marcisauskas, 2019-10-16
+%	Simonas Marcisauskas, 2019-10-21
 %
 
 %Import the model from Excel. This function performs a number of checks

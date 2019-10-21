@@ -1,12 +1,14 @@
 % tutorial2
-%   This contains the list of functions necessary for running Exercise 2.
-%   Several key stages may be missing, try to fill these gaps before
-%   checking the solutions in tutorial2_solutions.
-%   
+%   This exercise shows how to run FBA and minimization of metabolic
+%   adjustment (MOMA) simulations and how one can use GEMs as a scaffold
+%   for interpreting microarray data. A simplified model of yeast
+%   metabolism is used in this approach as an example.
+%   See Exercise 2 in "RAVEN mini tutorial.docx" for more details.
+%
 %	It is assumed that the user has already completed Exercise 1
 %	(tutorial1)
 %
-%	Simonas Marcisauskas, 2019-10-14
+%	Simonas Marcisauskas, 2019-10-21
 %
 
 %Import the Excel model
@@ -37,7 +39,7 @@ J=getIndexes(model,{'glyOUT'},'rxns');
 
 okSolutions=find(fluxes(I,:)>10^-2); %Only look at solutions which are still growing
 [maxGlycerol, J]=max(fluxes(J,okSolutions));
-maxGlycerol
+disp(maxGlycerol);
 originalGenes(genes(okSolutions(J),:))
 
 %Draw map for the ZWF1 deletion strain
@@ -66,13 +68,13 @@ drawMap('Aerobic vs Anaerobic MOMA',pathway,model,fluxA,fluxB,[],'mapMOMA.pdf',1
 
 %Read microarray results and calculate reporter metabolites (metabolites
 %around which there are significant transcriptional changes)
-[orfs, pvalues]=textread('expression.txt','%s%f');
+[orfs, pvalues]=textscan('expression.txt','%s%f');
 repMets=reporterMetabolites(model,orfs,pvalues);
 [I, J]=sort(repMets.metPValues);
 
 fprintf('TOP 10 REPORTER METABOLITES:\n');
 for i=1:min(numel(J),10)
-    fprintf([repMets.mets{J(i)} '\t' num2str(I(i)) '\n'])
+    fprintf([repMets.mets{J(i)} '\t' num2str(I(i)) '\n']);
 end
 
 %Get all reactions involving those metabolites and display them on a map
