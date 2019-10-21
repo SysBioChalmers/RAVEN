@@ -1,4 +1,4 @@
-% tutorial2018
+% tutorial5
 %   This exercise demonstrates how to reconstruct a combined draft GEM by
 %   from KEGG and MetaCyc pathway databases. A combined model with the
 %   comprehensive coverage of metabolic pathways is generated from
