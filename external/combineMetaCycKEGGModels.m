@@ -9,7 +9,7 @@ function model=combineMetaCycKEGGModels(metacycModel,keggModel)
 %
 %   Usage: model=combineMetaCycKEGGModels(metacycModel,keggModel)
 %
-%   Simonas Marcisauskas, 2018-03-17
+%   Hao Wang, 2019-10-21
 %
 
 %Just return the model
