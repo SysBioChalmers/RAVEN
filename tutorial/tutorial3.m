@@ -1,6 +1,6 @@
 % tutorial3
 %   This script contains the list of functions necessary for running
-%   Exercise 3, see Exercise 3 in "RAVEN mini tutorial.docx" for more
+%   Exercise 3, see Exercise 3 in "RAVEN tutorials.docx" for more
 %   details. Several key stages may be missing, try to fill these gaps
 %   before checking the solutions in tutorial3_solutions. It is assumed
 %   that the user is somewhat familiar with linear programming.
