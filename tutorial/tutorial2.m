@@ -3,7 +3,7 @@
 %   adjustment (MOMA) simulations and how one can use GEMs as a scaffold
 %   for interpreting microarray data. A simplified model of yeast
 %   metabolism is used in this approach as an example.
-%   See Exercise 2 in "RAVEN mini tutorial.docx" for more details.
+%   See Exercise 2 in "RAVEN tutorials.docx" for more details.
 %
 %	It is assumed that the user has already completed Exercise 1
 %	(tutorial1)

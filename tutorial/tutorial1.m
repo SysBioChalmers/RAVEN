@@ -3,7 +3,7 @@
 %   compatible Excel format and shows the most basic aspects of the
 %   stoichiometric modelling. It is shown how to build a simple model from
 %   scratch, set parameters and perform simple simulations.
-%   See Exercise 1 in "RAVEN mini tutorial.docx" for more details.
+%   See Exercise 1 in "RAVEN tutorials.docx" for more details.
 %
 %	Simonas Marcisauskas, 2019-10-21
 %

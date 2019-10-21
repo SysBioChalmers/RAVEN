@@ -1,6 +1,6 @@
 % tutorial3_solutions
 %   This script contains the solutions for Exercise 3, see Exercise 3 in
-%   "RAVEN mini tutorial.docx" for more details.
+%   "RAVEN tutorials.docx" for more details.
 %
 %   NOTE: Many of these changes are easier to do in the Excel sheet. They
 %   are done here in code just to avoid having several model files.

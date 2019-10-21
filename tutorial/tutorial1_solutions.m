@@ -1,6 +1,6 @@
 % tutorial1_solutions
 %   This script contains the solutions for Exercise 1, see Exercise 1 in
-%   "RAVEN mini tutorial.docx" for more details.
+%   "RAVEN tutorials.docx" for more details.
 %
 %	Simonas Marcisauskas, 2019-10-21
 %

@@ -8,7 +8,7 @@
 %   A GEM for the filamentous fungus Penicillium chrysogenum is used in
 %   this tutorial. The model can be found in a Microsoft Excel file under
 %   the name "iAL1006 v1.00.xlsx" and in SBML file "iAL1006 v1.00.xml".
-%   See Exercise 0 in "RAVEN mini tutorial.docx" for more details.
+%   See Exercise 0 in "RAVEN tutorials.docx" for more details.
 %
 %	Simonas Marcisauskas, 2019-10-21
 %

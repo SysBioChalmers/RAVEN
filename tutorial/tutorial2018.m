@@ -11,7 +11,7 @@
 %   functions on GEM reconstruction and curation for Streptomyces
 %   coelicolor strain A3(2). Users may apply this script as the template in
 %   their own work for other organisms.
-%   This refers to Exercise 5 from "RAVEN mini tutorial.docx"
+%   This refers to Exercise 5 from "RAVEN tutorials.docx"
 %
 %   Simonas Marcisauskas, 2019-10-21
 %

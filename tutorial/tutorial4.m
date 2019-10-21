@@ -5,7 +5,7 @@
 %   tutorial is more of a showcase than the previous four, and its main
 %   purpose is to serve as a scaffold to reconstruct a GEM for any
 %   organism.
-%   This refers to Exercise 4 from "RAVEN mini tutorial.docx"
+%   This refers to Exercise 4 from "RAVEN tutorials.docx"
 %
 %   Simonas Marcisauskas, 2019-09-21
 %

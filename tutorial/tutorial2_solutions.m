@@ -1,6 +1,6 @@
 % tutorial2_solutions
 %   This script contains the solutions for Exercise 2, see Exercise 2 in
-%   "RAVEN mini tutorial.docx" for more details. All the parameters are set
+%   "RAVEN tutorials.docx" for more details. All the parameters are set
 %   in this script, rather than modifying the Excel model file.
 %
 %	Simonas Marcisauskas, 2019-10-21
