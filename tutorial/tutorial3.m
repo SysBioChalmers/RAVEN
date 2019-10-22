@@ -5,10 +5,10 @@
 %   before checking the solutions in tutorial3_solutions. It is assumed
 %   that the user is somewhat familiar with linear programming.
 %
-%	It is assumed that the user has already completed Exercises 1-2
-%	(tutorial1-tutorial2)
+%   It is assumed that the user has already completed Exercises 1-2
+%   (tutorial1-tutorial2)
 %
-%	Simonas Marcisauskas, 2019-10-21
+%   Simonas Marcisauskas, 2019-10-21
 %
 
 %Import the Excel model
