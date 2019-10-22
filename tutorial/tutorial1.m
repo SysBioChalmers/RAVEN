@@ -5,7 +5,7 @@
 %   scratch, set parameters and perform simple simulations.
 %   See Exercise 1 in "RAVEN tutorials.docx" for more details.
 %
-%	Simonas Marcisauskas, 2019-10-21
+%   Simonas Marcisauskas, 2019-10-21
 %
 
 %Import the Excel model into a RAVEN model structure
