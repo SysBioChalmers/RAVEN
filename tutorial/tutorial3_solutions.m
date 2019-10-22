@@ -5,7 +5,7 @@
 %   NOTE: Many of these changes are easier to do in the Excel sheet. They
 %   are done here in code just to avoid having several model files.
 %
-%	Simonas Marcisauskas, 2019-10-21
+%   Simonas Marcisauskas, 2019-10-21
 %
 
 %Import the Excel model
