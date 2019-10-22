@@ -72,7 +72,7 @@ end
 %Collect the ones found in MetaCyc as mappedRxns
 mappedRxns=[];
 rxnsToMove=[];
-grRulesToMove={}; %Storing the grRules to be moved to metacyc model
+grRulesToMove={}; %Storing the grRules to be moved to MetaCyc model
 
 %Read in dbLinks, note that linkMetaCycKEGGRxns need to be run in advance
 load('metaCycRxns.mat');
@@ -87,15 +87,15 @@ for i=1:numel(keggModel.rxns)
     if numel(I)==1
         %Find out the corresponding MetaCyc reactions
         num=num+1;
-        %Record the mapped rxn index in kegg model and remove them later
+        %Record the mapped rxn index in KEGG model and remove them later
         mappedRxns=[mappedRxns,i];
         %keggModel.rxns{i}=rxnLinks.metacyc{I(1)};
         
         [c, d]=ismember(rxnLinks.metacyc{I(1)},model.rxns);
         if c
             model.rxnFrom{d}='Both';
-            %Combine the grRule info Check if kegg grRules equals or a
-            %subset of metacyc grRules If not, save the kegg grRules to a
+            %Combine the grRule info Check if KEGG grRules equals or a
+            %subset of MetaCyc grRules If not, save the KEGG grRules to a
             %new field grRulesKEGG for manual curation
             k=strfind(model.grRules{d},keggModel.grRules{i});
             if isempty(k)
@@ -113,9 +113,9 @@ for i=1:numel(keggModel.rxns)
             %Check if this reaction is repitetive and save the grRules
             [Repeat, Index]=ismember(y,rxnsToMove);
             if ~Repeat
-                rxnsToMove=[rxnsToMove;y];  %Record rxns to be moved from kegg to metacyc model
+                rxnsToMove=[rxnsToMove;y];  %Record rxns to be moved from KEGG to MetaCyc model
                 if isempty(keggModel.grRules{i})
-                    %Rxns may have emtpy grRules (e.g. spontaneous) that
+                    %Rxns may have empty grRules (e.g. spontaneous) that
                     %are identified and added back here
                     grRulesToMove=[grRulesToMove;{''}];
                 else
@@ -132,7 +132,7 @@ for i=1:numel(keggModel.rxns)
             end
         end
     else
-        %Here are the case of one kegg rxn id link to several MetaCyc ids
+        %Here are the case of one KEGG rxn id link to several MetaCyc ids
         %for j=2:numel(I) Ignore this issue for now, and resolve it later,
         %because it never happened This case can be solved by adding above
         %section into a loop below disp(I(j)); end
@@ -141,7 +141,7 @@ end
 fprintf('NOTE: A total of %d reactions in the KEGG model were mapped to MetaCyc.\n',num);
 fprintf('NOTE: %d reactions already in MetaCyc model, %d will be combined.\n',num-numToMove,numToMove);
 
-%Append mapped metacyc rxns in kegg model that are absent from metacyc
+%Append mapped MetaCyc rxns in KEGG model that are absent from MetaCyc
 %model
 rxnFrom=cell(numel(rxnsToMove),1);
 rxnFrom(:)={'KEGG'};
@@ -178,9 +178,9 @@ model.grRulesKEGG=[model.grRulesKEGG;rxnFields];
 
 %Remove all mapped reactions from KEGG model
 pureKeggModel=removeReactions(keggModel,mappedRxns,true,true);
-fprintf('NOTE: A shrinked KEGG model with %d reactions and %d metabolites was obtained.\n',numel(pureKeggModel.rxns),numel(pureKeggModel.mets));
+fprintf('NOTE: A global KEGG model with %d reactions and %d metabolites was obtained.\n',numel(pureKeggModel.rxns),numel(pureKeggModel.mets));
 
-%Replace mets information in kegg model with the corresponding ones in
+%Replace mets information in KEGG model with the corresponding ones in
 %MetaCyc This includes updating all metabolite-related fields, except S
 %matrix.
 load('metaCycMets.mat');
@@ -199,7 +199,7 @@ for i=1:numel(pureKeggModel.mets)
         %Record the replaced mets into a vector for later
     end
 end
-fprintf('NOTE: A total of %d metabolites from the shrinked KEGG model were mapped to MetaCyc again.\n',num);
+fprintf('NOTE: A total of %d metabolites from the global KEGG model will be re-mapped to MetaCyc.\n',num);
 
 %Generate equations for pureKeggModel
 equationStrings=constructEquations(pureKeggModel,'',false,false,false,true);
