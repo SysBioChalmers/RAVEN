@@ -1,8 +1,8 @@
 % tutorial0
-%	This is a short introduction that shows how to load a genome-scale
-%	metabolic model (GEM), set reaction constraints, objective function and
-%	perform an optimization through flux balance analysis (FBA). The
-%	resulting fluxes are visualized and exported to a PDF file.
+%   This is a short introduction that shows how to load a genome-scale
+%   metabolic model (GEM), set reaction constraints, objective function and
+%   perform an optimization through flux balance analysis (FBA). The
+%   resulting fluxes are visualized and exported to a PDF file.
 %   For a more detailed description of the individual functions, see
 %   [raven_directory]/doc/index.html.
 %   A GEM for the filamentous fungus Penicillium chrysogenum is used in
@@ -10,7 +10,7 @@
 %   the name "iAL1006 v1.00.xlsx" and in SBML file "iAL1006 v1.00.xml".
 %   See Exercise 0 in "RAVEN tutorials.docx" for more details.
 %
-%	Simonas Marcisauskas, 2019-10-21
+%   Simonas Marcisauskas, 2019-10-21
 %
 
 %Import the model from Excel. This function performs a number of checks
