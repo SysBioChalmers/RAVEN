@@ -48,9 +48,9 @@ end
 
 %Arrange the genes related fields
 
-%Shared genes between KEGG and MetaCyc
+%Identify the shared genes between KEGG and MetaCyc
 sharedGenes=intersect(keggModel.genes,model.genes);
-[a, b]=ismember(sharedGenes,model.genes);
+[~, b]=ismember(sharedGenes,model.genes);
 model.geneFrom(b)={'Both'};
 
 %Add unique genes from KEGG and update geneFrom
@@ -61,13 +61,13 @@ geneFrom(:)={'KEGG'};
 model.geneFrom=[model.geneFrom;geneFrom];
 
 %Prepare for matching grRules
-if isfield(keggModel,'grRules');
+if isfield(keggModel,'grRules')
     keggModel.grRules=strrep(keggModel.grRules,'(','');
     keggModel.grRules=strrep(keggModel.grRules,')','');
 end
 
-%Replace rxns in KEGG model with the corresponding ones in MetaCyc. by
-%updating values rxns field to MetaCyc version whenever possible.
+%Replace rxns in KEGG model with the corresponding ones in MetaCyc by
+%updating values rxns field to MetaCyc version whenever possible
 
 %Collect the ones found in MetaCyc as mappedRxns
 mappedRxns=[];
@@ -81,7 +81,7 @@ numToMove=0;
 %Loop through the KEGG model and replace the rxn id from KEGG to MetaCyc
 %version
 for i=1:numel(keggModel.rxns)
-    [a, b]=ismember(rxnLinks.kegg,keggModel.rxns{i});
+    [~, b]=ismember(rxnLinks.kegg,keggModel.rxns{i});
     I=find(b);
     
     if numel(I)==1
@@ -108,7 +108,7 @@ for i=1:numel(keggModel.rxns)
         else
             %For the KEGG rxns have MetaCyc version but not in MetaCyc
             %draft model
-            [x, y]=ismember(rxnLinks.metacyc{I(1)},metaCycRxns.rxns);
+            [~, y]=ismember(rxnLinks.metacyc{I(1)},metaCycRxns.rxns);
             
             %Check if this reaction is repitetive and save the grRules
             [Repeat, Index]=ismember(y,rxnsToMove);
@@ -201,7 +201,7 @@ for i=1:numel(pureKeggModel.mets)
 end
 fprintf('NOTE: A total of %d metabolites from the shrinked KEGG model were mapped to MetaCyc again.\n',num);
 
-%Generate euqations for pureKeggModel
+%Generate equations for pureKeggModel
 equationStrings=constructEquations(pureKeggModel,'',false,false,false,true);
 
 %Add the pure KEGG reactions to MetaCyc model
@@ -232,7 +232,7 @@ I=cellfun(@isempty,model.rxnNames);
 model.rxnNames(I)=model.rxns(I);
 
 %Generate S matrix and mets
-[S, mets, badRxns]=constructS(model.equations);
+[S, mets, ~]=constructS(model.equations);
 model.S=S;
 model.mets=mets;
 
