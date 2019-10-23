@@ -1,10 +1,13 @@
-%This exercise is about creating a model from KEGG, based on protein
-%sequences in a FASTA file, and doing some functionality checks on the
-%model. The example case is for the yeast Saccharomyces cerevisiae. This
-%tutorial is more of a showcase than the previous four, and its main
-%purpose is to serve as a scaffold to reconstruct a GEM for any organism.
+% tutorial4
+%   This exercise is about creating a model from KEGG, based on protein
+%   sequences in a FASTA file, and doing some functionality checks on the
+%   model. The example case is for the yeast Saccharomyces cerevisiae. This
+%   tutorial is more of a showcase than the previous four, and its main
+%   purpose is to serve as a scaffold to reconstruct a GEM for any
+%   organism.
+%   This refers to Exercise 4 from "RAVEN tutorials.docx"
 %
-%Simonas Marcisauskas, 2019-09-12
+%   Simonas Marcisauskas, 2019-09-21
 %
 
 %Start by downloading trained Hidden Markov Models for eukaryotes. This can
@@ -24,7 +27,7 @@ model=getKEGGModelForOrganism('sce','sce.fa','euk100_kegg91','output',false,fals
 %The resulting model should contain around 1574 reactions, 1601
 %metabolites and 821 genes. Small variations are possible since it is an
 %heuristic algorithm.
-model
+disp(model);
 
 %A first control is that the model should not be able to produce any
 %metabolites without uptake of some metabolites. This commonly happens when
@@ -44,7 +47,7 @@ model
 %Only one reaction was removed because it enabled the model to produce
 %something from nothing. Since it is only one reaction, it might be
 %worthwhile to look into this in more detail.
-removedRxns
+disp(removedRxns);
 
 %According to the information in KEGG about this reaction it is a general
 %polymer reaction. One might want to look at the flux distributions
@@ -86,7 +89,7 @@ model=removeReactions(model,'R02110');
 model.metNames(metabolite)
 
 %Nope, so that was good. Add some uptakes and see what it can produce.
-[I, J]=ismember({'D-Glucose';'H2O';'Orthophosphate';'Oxygen';'NH3';'Sulfate'},model.metNames);
+[~, J]=ismember({'D-Glucose';'H2O';'Orthophosphate';'Oxygen';'NH3';'Sulfate'},model.metNames);
 [model, addedRxns]=addExchangeRxns(model,'in',J);
 
 %Check which metabolites can be produced given these uptakes. The
@@ -175,7 +178,7 @@ params.printReport=true;
 
 %Add uptake reactions for the minimal media constituents needed for yeast
 %to grow.
-[I, J]=ismember({'4-Aminobenzoate';'Riboflavin';'Thiamine';'Biotin';'Folate';'Nicotinate';'Zymosterol';'Choline'},newModel.metNames);
+[~, J]=ismember({'4-Aminobenzoate';'Riboflavin';'Thiamine';'Biotin';'Folate';'Nicotinate';'Zymosterol';'Choline'},newModel.metNames);
 [newModel, addedRxns]=addExchangeRxns(newModel,'in',J);
 
 %Rerun gapReport and use the output for targeting the gap-filling efforts.

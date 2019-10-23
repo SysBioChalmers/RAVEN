@@ -1,14 +1,16 @@
-%This is the solution to tutorial 2. All parameters are set in this file,
-%rather than changing the Excel sheet
+% tutorial2_solutions
+%   This script contains the solutions for Exercise 2, see Exercise 2 in
+%   "RAVEN tutorials.docx" for more details. All the parameters are set
+%   in this script, rather than modifying the Excel model file.
 %
-% Rasmus Agren, 2014-01-06
-% Simonas Marcisauskas, 2017-06-06 - revision
+%   Simonas Marcisauskas, 2019-10-21
 %
 
-%Loads the model
+%Import the Excel model
 model=importExcelModel('smallYeast.xlsx',true);
 
-%Sets the upper bound of glucose uptake to 1 and O2 uptake to zero.
+%Step 1
+%Set the upper bound of glucose uptake to 1 and O2 uptake to zero
 model=setParam(model,'ub',{'glcIN' 'o2IN'},[1 0]);
 
 %Set the objective to be ATP hydrolysis
@@ -18,11 +20,12 @@ model=setParam(model,'obj',{'ATPX'},1);
 sol=solveLP(model);
 
 %Print the resulting fluxes. The ATP production rate should be 2.0. It was
-%4.0 in tutorial 1, but there sucrose was used instead of glucose.
+%4.0 in tutorial1, but there sucrose was used instead of glucose.
 printFluxes(model,sol.x,false);
 
-%Check the yield of different products and print the results Change to
-%fully aerobic
+%Step 2
+%Check the yield of different products and print the results
+%Change to fully aerobic
 model=setParam(model,'ub',{'glcIN' 'o2IN'},[1 1000]);
 model=setParam(model,'obj',{'ethOUT'},1);
 sol=solveLP(model);
@@ -37,24 +40,27 @@ model=setParam(model,'obj',{'biomassOUT'},1);
 sol=solveLP(model);
 fprintf(['Yield of biomass is ' num2str(sol.f*-1) '/h\n']);
 
+%Step 3
 %Solve for both aerobic and anaerobic growth
 solA=solveLP(model);
 model=setParam(model,'ub',{'o2IN'},0.5);
 solB=solveLP(model);
 
-%Plot the differences Load the map
+%Plot the differences
+%Load the map
 load 'pathway.mat' pathway;
 drawMap('Aerobic vs Anaerobic',pathway,model,solA.x,solB.x,[],'mapFBA.pdf',10^-5);
 
+%Step 4
 %Change to anaerobic growth and maximize for biomass
 model=setParam(model,'eq',{'o2IN'},0);
 model=setParam(model,'obj',{'biomassOUT'},1);
 sol=solveLP(model);
 printFluxes(model,sol.x,true);
-%You can see that the model predicts a glycerol production of 0.23
+%One can see that the model predicts a glycerol production of 0.23
 %mmol/gDW/h
 
-%This is for running a single gene deletion
+%Run a single gene deletion
 [genes, fluxes, originalGenes, details]=findGeneDeletions(model,'sgd','fba');
 
 %Get the indexes of these reactions
@@ -65,13 +71,14 @@ okSolutions=find(fluxes(I,:)>10^-2); %Only look at solutions which are still gro
 [maxGlycerol, J]=max(fluxes(J,okSolutions));
 fprintf(['Glycerol production is ' num2str(maxGlycerol) ' after deletion of ' originalGenes{genes(okSolutions(J),:)} '\n']);
 
-%The best gene deletion corresponded to turning off the ZWF1 reaction
+%The best gene deletion corresponds to turning off the ZWF1 reaction
 %(YNL241C)
 model2=setParam(model,'eq',{'ZWF'},0);
 sol2=solveLP(model2);
 drawMap('ZWF1 deletion vs WT',pathway,model,sol2.x,sol.x,[],'mapZWF.pdf',10^-5);
 followChanged(model,sol2.x,sol.x, 10, 10^-2, 0,{'NADPH' 'NADH' 'NAD' 'NADP'});
 
+%Step 5
 %Set the exchange rates to the recorded batch values
 model=setParam(model,'lb',{'acOUT' 'biomassOUT' 'co2OUT' 'ethOUT' 'glyOUT' 'glcIN' 'o2IN' 'ethIN'},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*0.9999);
 model=setParam(model,'ub',{'acOUT' 'biomassOUT' 'co2OUT' 'ethOUT' 'glyOUT' 'glcIN' 'o2IN' 'ethIN'},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*1.0001);
@@ -82,17 +89,18 @@ I=getIndexes(model,getExchangeRxns(model),'rxns');
 model2.lb(I)=0;
 model2.ub(I)=1000;
 
-%Then delete ZWF
+%Delete ZWF gene
 model2=setParam(model2,'eq',{'ZWF'},0);
 
-%Then run MOMA
+%Run MOMA
 [fluxA, fluxB, flag]=qMOMA(model,model2);
 drawMap('ZWF deletion vs wild type',pathway,model,fluxB,fluxA,[],'mapMOMA.pdf',10^-5);
 
-%As you can see, the glycerol production is higher in the deletion strain.
+%As one can see, the glycerol production is higher in the deletion strain.
 %Note that this is without any objectives, just by trying to maintain the
 %cells original flux distribution.
 
+%Step 6
 %Read microarray results and calculate reporter metabolites (metabolites
 %around which there are significant transcriptional changes)
 [orfs, pvalues]=textread('expression.txt','%s%f');
@@ -101,7 +109,7 @@ repMets=reporterMetabolites(model,orfs,pvalues);
 
 fprintf('TOP 10 REPORTER METABOLITES:\n');
 for i=1:min(numel(J),10)
-    fprintf([repMets.mets{J(i)} '\t' num2str(I(i)) '\n'])
+    fprintf([repMets.mets{J(i)} '\t' num2str(I(i)) '\n']);
 end
 
 %Get all reactions involving those metabolites and display them on a map

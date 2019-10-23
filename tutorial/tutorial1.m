@@ -1,18 +1,20 @@
-%This contains the code necessary for importing a model from Excel and into
-%a RAVEN model structure, as well as for running a simulation with the
-%parameters set in the Excel file.
+% tutorial1
+%   This exercise deals with the a small glycolysis model in RAVEN
+%   compatible Excel format and shows the most basic aspects of the
+%   stoichiometric modelling. It is shown how to build a simple model from
+%   scratch, set parameters and perform simple simulations.
+%   See Exercise 1 in "RAVEN tutorials.docx" for more details.
 %
-% Rasmus Agren, 2013-08-06
-% Simonas Marcisauskas, 2017-06-06 - revision
+%   Simonas Marcisauskas, 2019-10-21
 %
 
-%This loads the Excel model and converts it into a RAVEN model structure
+%Import the Excel model into a RAVEN model structure
 smallModel=importExcelModel('empty.xlsx');
 
-%This solves the problem. If it looks like: sol=
-%   f: []
-%... then the problem is not solvable. Be sure that you have added uptake
-%and excretion of all necessary stuff.
+%This solves the linear programming problem.
+%NOTE: if sol.f is equal to zero then the problem is not solvable. Ensure
+%that uptake and excretion of all necessary stuff are added to the model
+%and run the solveLP again.
 sol=solveLP(smallModel);
 
 %Print the resulting exchange fluxes
