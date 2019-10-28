@@ -1,158 +1,119 @@
 % tutorial3_solutions
-%   This script contains the solutions for Exercise 3, see Exercise 3 in
-%   "RAVEN tutorials.docx" for more details.
+%   This script contains the solutions for Tutorial 3, see Tutorial 3 in
+%   "RAVEN tutorials.docx" for more details. All the parameters are set in
+%   this script, rather than modifying the Excel model file.
 %
-%   NOTE: Many of these changes are easier to do in the Excel sheet. They
-%   are done here in code just to avoid having several model files.
-%
-%   Simonas Marcisauskas, 2019-10-21
+%   Simonas Marcisauskas, 2019-10-24
 %
 
 %Import the Excel model
-model=importExcelModel('smallYeastBad.xlsx');
+model=importExcelModel('smallYeast.xlsx',true);
 
-%Close all uptake and maximize for production
-model=setParam(model,'eq',{'glcIN', 'o2IN'},[0 0]);
-model=setParam(model,'obj',{'acOUT' 'biomassOUT' 'co2OUT' 'ethOUT' 'glyOUT'},[1 1 1 1 1]);
-sol=solveLP(model);
-printFluxes(model,sol.x,true); %Nothing produced, good
+%Step 1
+%Set the upper bound of glucose uptake to 1 and O2 uptake to zero
+model=setParam(model,'ub',{'glcIN' 'o2IN'},[1 0]);
 
-%Add some fake reactions
-rxns.rxns={'FREE_ATP';'FREE_NADH';'FREE_NADPH'};
-rxns.equations={'ATP <=> ADP + phosphate';'NAD(+) <=> NADH';'NADP(+) <=> NADPH'};
-model=addRxns(model,rxns,2,'c');
-sol=solveLP(model,1);
+%Set the objective to be ATP hydrolysis
+model=setParam(model,'obj',{'ATPX'},1);
 
-%Lots of ethanol produced. Also plot the equations to make the error easier
-%to find
-printFluxes(model,sol.x,false,[],[],'%rxnID (%rxnName):%flux\n\t%eqn\n');
-
-%See that ADH1 should only produce one unit of ethanol. Change the reaction
-%equation
-model=changeRxns(model,'ADH1','acetaldehyde[c] + NADH[c] => ethanol[c] + NAD(+)[c]',3);
-sol=solveLP(model,1);
-printFluxes(model,sol.x,true); %Nothing produced, good
-
-%Add excretion of all metabolites
-model.b=[model.b inf(numel(model.b),1)];
-sol=solveLP(model,1);
-printFluxes(model,sol.x,false,10^-5,[],'%rxnID (%rxnName):\n\t%eqn\n\t%flux\n');
-
-%By looking at the reactions which were unbalanced and that were in the
-%flux list one can see that FBP should be changed to result in only one unit
-%of F6P
-model=changeRxns(model,'FBP','beta-D-fructofuranose 1,6-bisphosphate[c] => beta-D-fructofuranose 6-phosphate[c] + phosphate[c]',3);
-sol=solveLP(model,1);
-printFluxes(model,sol.x,false,10^-5,[],'%rxnID (%rxnName):\n\t%eqn\n\t%flux\n');
-
-%The same thing again and one should change PFK to only give one unit of
-%F16P
-model=changeRxns(model,'PFK','ATP[c] + beta-D-fructofuranose 6-phosphate[c] => ADP[c] + beta-D-fructofuranose 1,6-bisphosphate[c]',3);
-sol=solveLP(model,1);
-printFluxes(model,sol.x,false,10^-5,[],'%rxnID (%rxnName):\n\t%eqn\n\t%flux\n'); %Now it works
-
-%Set all uptakes and production to 0
-model=setParam(model,'eq',getExchangeRxns(model),0);
-
-%Since it is checked which metabolites could be consumed without
-%production, one can no longer have free production of all metabolites
-model.b=model.b(:,1);
-I=canConsume(model);
-disp(model.mets(I)); %These 12 metabolites can be consumed without any production
-
-%Allow all uptake
-model.b=[ones(numel(model.b),1)*-1000 model.b];
-
-%Pick CO2 and force uptake of it
-model=setParam(model,'eq',{'co2OUT'},-1); %Negative output means input
-sol=solveLP(model);
-printFluxes(model,sol.x,false,10^-5,[],'%rxnID (%rxnName):\n\t%eqn\n\t%flux\n'); %Now it works
-
-%See that PDC converts pyruvate (3 carbons) to acetaldehyde (2 carbons)
-%without any other products. If one googles, one may realize that CO2 is
-%missing. This would be simpler to change in the Excel file (or using
-%changeRxns), but one can change it here as an exercise. One therefore
-%needs to find the index of the reactions and the index of cytosolic CO2 in
-%order to change the reaction
-Irxn=ismember(model.rxns,'PDC');
-Imet=ismember(model.mets,'CO2_c');
-model.S(Imet,Irxn)=1; %The coefficient is 1.0
-
-%Display the new equation just to be sure
-constructEquations(model,Irxn)
-
-%The solution is now not feasible, meaning that it is no longer possible to
-%force uptake of CO2 without any output
+%Solve the model
 sol=solveLP(model);
 
-%***Second part of tutorial
-model=importExcelModel('smallYeastBad2.xlsx',true,false,true); %This has to be loaded with the setting to ignore error or it would find the error
-[reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,false,false,false,true);
-disp(deletedReactions);
-disp(deletedMetabolites);
+%Print the resulting fluxes. The ATP production rate should be 2.0. It was
+%4.0 in Tutorial 2, but there sucrose was used instead of glucose.
+printFluxes(model,sol.x,false);
 
-%It turned out that G15L_c was spelled G15Lc in one reaction. The best
-%solution would be just to change it in the reaction list and remove the
-%duplicate metabolite, but one can do it here as an exercise. The indexes
-%of the two metabolites are needed.
-Igood=ismember(model.mets,'G15L_c');
-Ibad=ismember(model.mets,'G15Lc');
+%Step 2
+%Check the yield of different products and print the results
+%Change to fully aerobic
+model=setParam(model,'ub',{'glcIN' 'o2IN'},[1 1000]);
+model=setParam(model,'obj',{'ethOUT'},1);
+sol=solveLP(model);
+fprintf(['Yield of ethanol is ' num2str(sol.f*-1) ' mol/mol\n']);
+model=setParam(model,'obj',{'acOUT'},1);
+sol=solveLP(model);
+fprintf(['Yield of acetate is ' num2str(sol.f*-1) ' mol/mol\n']);
+model=setParam(model,'obj',{'glyOUT'},1);
+sol=solveLP(model);
+fprintf(['Yield of glycerol is ' num2str(sol.f*-1) ' mol/mol\n']);
+model=setParam(model,'obj',{'biomassOUT'},1);
+sol=solveLP(model);
+fprintf(['Yield of biomass is ' num2str(sol.f*-1) '/h\n']);
 
-%Get all reactions and the coefficients in which the wrong one participates
-%move them to be for the right one instead
-model.S(Igood,:)=model.S(Igood,:)+model.S(Ibad,:);
+%Step 3
+%Solve for both aerobic and anaerobic growth
+solA=solveLP(model);
+model=setParam(model,'ub',{'o2IN'},0.5);
+solB=solveLP(model);
 
-%Delete the bad one
-model=removeMets(model,'G15Lc');
-[reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,false,false,false,true);
-disp(deletedReactions);
-disp(deletedMetabolites);
+%Plot the differences
+%Load the map
+load 'pathway.mat' pathway;
+drawMap('Aerobic vs Anaerobic',pathway,model,solA.x,solB.x,[],'mapFBA.pdf',10^-5);
 
-%The only difference was that there were 20 deleted metabolites instead of
-%21. Nothing too spectacular. Check production can tell the user what one
-%needs to connect.
-[notProducedMets, ~, neededForProductionMat, minToConnect]=checkProduction(model,true,model.comps,false);
+%Step 4
+%Change to anaerobic growth and maximize for biomass
+model=setParam(model,'eq',{'o2IN'},0);
+model=setParam(model,'obj',{'biomassOUT'},1);
+sol=solveLP(model);
+printFluxes(model,sol.x,true);
+%One can see that the model predicts a glycerol production of 0.23
+%mmol/gDW/h
 
-%In order to have production of all 54 metabolites one needs to enable
-%production of these 12. This small model does not include net synthesis of
-%co-factors, so one should concentrate on the other ones. Glycerone
-%phosphate allows for connection 18 others, so it seems like a good target.
-disp(minToConnect);
+%Run a single gene deletion
+[genes, fluxes, originalGenes, details]=findGeneDeletions(model,'sgd','fba');
 
-%If one googles around a little bit, and knows the metabolism, one would
-%find that DHAP (dihydroxyacetone) and GLYP (glycerone phosphate) are
-%actually synonymes. Only use DHAP
-Igood=ismember(model.mets,'DHAP_c');
-Ibad=ismember(model.mets,'GLYP_c');
+%Get the indexes of these reactions
+I=getIndexes(model,{'biomassOUT'},'rxns');
+J=getIndexes(model,{'glyOUT'},'rxns');
 
-%Get all reactions and the coefficients in which the wrong one participates
-%move them to be for the right one instead
-model.S(Igood,:)=model.S(Igood,:)+model.S(Ibad,:);
+okSolutions=find(fluxes(I,:)>10^-2); %Only look at solutions which are still growing
+[maxGlycerol, J]=max(fluxes(J,okSolutions));
+fprintf(['Glycerol production is ' num2str(maxGlycerol) ' after deletion of ' originalGenes{genes(okSolutions(J),:)} '\n']);
 
-%Delete the bad one
-model=removeMets(model,'GLYP_c');
-[reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,false,false,false,true);
-disp(deletedReactions);
-disp(deletedMetabolites);
-[notProducedMets, ~, neededForProductionMat, minToConnect]=checkProduction(model,true,model.comps,false);
-disp(minToConnect);
+%The best gene deletion corresponds to turning off the ZWF1 reaction
+%(YNL241C)
+model2=setParam(model,'eq',{'ZWF'},0);
+sol2=solveLP(model2);
+drawMap('ZWF1 deletion vs WT',pathway,model,sol2.x,sol.x,[],'mapZWF.pdf',10^-5);
+followChanged(model,sol2.x,sol.x, 10, 10^-2, 0,{'NADPH' 'NADH' 'NAD' 'NADP'});
 
-%Still quite a lot of gaps and no immediate way to fix it. One could try
-%including reactions from a reference network and see if that helps. Use
-%the small yeast model from tutorial2
-refModel=importExcelModel('smallYeast.xlsx');
-[newConnected, cannotConnect, addedRxns, newModel]=fillGaps(model,{refModel},false);
-disp(addedRxns);
-disp(newConnected);
+%Step 5
+%Set the exchange rates to the recorded batch values
+model=setParam(model,'lb',{'acOUT' 'biomassOUT' 'co2OUT' 'ethOUT' 'glyOUT' 'glcIN' 'o2IN' 'ethIN'},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*0.9999);
+model=setParam(model,'ub',{'acOUT' 'biomassOUT' 'co2OUT' 'ethOUT' 'glyOUT' 'glcIN' 'o2IN' 'ethIN'},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*1.0001);
 
-%By including the ALD6 reaction from the reference model it was possible to
-%connect 21 reactions
-[reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(newModel,false,false,false,true);
-disp(deletedMetabolites);
-disp(deletedReactions);
+%Define another model where all exchange reactions are open.
+model2=model;
+I=getIndexes(model,getExchangeRxns(model),'rxns');
+model2.lb(I)=0;
+model2.ub(I)=1000;
 
-%All the model seems to be connected
+%Delete ZWF gene
+model2=setParam(model2,'eq',{'ZWF'},0);
 
-%All this stuff may be done in a more automated manner as well
-model=importExcelModel('smallYeastBad2.xlsx',true,false,true);
-gapReport(model,{refModel});
+%Run MOMA
+[fluxA, fluxB, flag]=qMOMA(model,model2);
+drawMap('ZWF deletion vs wild type',pathway,model,fluxB,fluxA,[],'mapMOMA.pdf',10^-5);
+
+%As one can see, the glycerol production is higher in the deletion strain.
+%Note that this is without any objectives, just by trying to maintain the
+%cells original flux distribution.
+
+%Step 6
+%Read microarray results and calculate reporter metabolites (metabolites
+%around which there are significant transcriptional changes)
+[orfs, pvalues]=textread('expression.txt','%s%f');
+repMets=reporterMetabolites(model,orfs,pvalues);
+[I, J]=sort(repMets.metPValues);
+
+fprintf('TOP 10 REPORTER METABOLITES:\n');
+for i=1:min(numel(J),10)
+    fprintf([repMets.mets{J(i)} '\t' num2str(I(i)) '\n']);
+end
+
+%Get all reactions involving those metabolites and display them on a map
+mets=ismember(model.mets,repMets.mets(J(1:10)));
+[~, I]=find(model.S(mets,:));
+pathway=trimPathway(pathway, model.rxns(I), true);
+drawMap('Reactions involving the top 10 Reporter Metabolites',pathway,model,ones(numel(model.rxns),1),zeros(numel(model.rxns),1),[],'mapRM.pdf',10^-5);
