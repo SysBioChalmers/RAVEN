@@ -5,7 +5,7 @@ function checkFunctionUniqueness()
 %
 %   Usage: checkFunctionUniqueness()
 %
-%   Simonas Marcisauskas, 2019-10-05
+%   Simonas Marcisauskas, 2019-10-14
 %
 
 %Get the RAVEN path
@@ -38,7 +38,7 @@ for i=1:numel(matlabPaths)
         else
             pathFunctions='';
         end
-        if ~isempty(pathFunctions)
+        if ~isempty(pathFunctions) && ~any(ismember('Contents.m',pathFunctions))
             if any(ismember(ravenFunctions,pathFunctions))
                 fprintf('Not OK\n');
                 if sum(ismember(ravenFunctions,pathFunctions))>(numel(ravenFunctions)/4)
