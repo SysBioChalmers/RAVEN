@@ -55,7 +55,7 @@ if ~isfield(shrinkedKeggModel,'metComps')
 end
 
 %Merge models
-mappingModel=mergeModels({shrinkedKeggModel metaCycModel});
+mappingModel=mergeModels({shrinkedKeggModel metaCycModel},'metNames');
 
 %Remove compounds proton and water because KEGG reactions often miss them
 mappingModel=removeMets(mappingModel,{'PROTON','WATER'});

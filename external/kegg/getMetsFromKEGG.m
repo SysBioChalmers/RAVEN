@@ -30,7 +30,7 @@ function model=getMetsFromKEGG(keggPath)
 %               
 %   Usage: model=getMetsFromKEGG(keggPath)
 %
-%   Simonas Marcisauskas, 2019-01-08
+%   Simonas Marcisauskas, 2019-09-09
 %
 %
 % NOTE: This is how one entry looks in the file
@@ -73,14 +73,15 @@ end
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 metsFile=fullfile(ravenPath,'external','kegg','keggMets.mat');
 if exist(metsFile, 'file')
-    fprintf(['NOTE: Importing KEGG metabolites from ' strrep(metsFile,'\','/') '.\n']);
+    fprintf(['Importing KEGG metabolites from ' strrep(metsFile,'\','/') '... ']);
     load(metsFile);
 else
-    fprintf(['Cannot locate ' strrep(metsFile,'\','/') ' and will try to generate it from the local KEGG database.\n']);
+    fprintf(['NOTE: Cannot locate ' strrep(metsFile,'\','/') ', it will therefore be generated from the local KEGG database\n']);
     if ~exist(fullfile(keggPath,'compound'),'file') || ~exist(fullfile(keggPath,'compound.inchi'),'file')
         EM=fprintf(['The files ''compound'' and ''compound.inchi'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
         dispEM(EM);
     else
+        fprintf('Generating keggMets.mat file... ');
         %Add new functionality in the order specified in models
         model.id='KEGG';
         model.description='Automatically generated from KEGG database';
@@ -281,4 +282,5 @@ else
         save(metsFile,'model');
     end
 end
+fprintf('COMPLETE\n');
 end

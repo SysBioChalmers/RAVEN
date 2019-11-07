@@ -222,94 +222,95 @@ This function is called by:
 0130     <span class="keyword">if</span> closeOthers
 0131         fprintf(<span class="string">'         Therefore, the &quot;closeOthers&quot; option will be set to FALSE.\n'</span>);
 0132     <span class="keyword">end</span>
-0133 <span class="keyword">end</span>
-0134 
-0135 <span class="comment">% prepare exchanged metabolites and bounds</span>
-0136 <span class="keyword">if</span> ~isempty(mets)
-0137     
-0138     <span class="comment">% prepare lb and ub variables</span>
-0139     <span class="keyword">if</span> numel(lb) == 1
-0140         lb = lb*ones(size(mets));
-0141     <span class="keyword">elseif</span> numel(lb) ~= numel(mets)
-0142         error(<span class="string">'lb must be a single value or a vector of equal length as mets'</span>);
-0143     <span class="keyword">end</span>
-0144     <span class="keyword">if</span> numel(ub) == 1
-0145         ub = ub*ones(size(mets));
-0146     <span class="keyword">elseif</span> numel(ub) ~= numel(mets)
-0147         error(<span class="string">'ub must be a single value or a vector of equal length as mets'</span>);
-0148     <span class="keyword">end</span>
-0149     
-0150     <span class="comment">% map provided mets to exchanged metabolites</span>
-0151     <span class="keyword">if</span> isnumeric(mets)
-0152         <span class="comment">% mets are provided as indices</span>
-0153         [isExch,metInd] = ismember(mets,exchMetInd);    
-0154     <span class="keyword">elseif</span> sum(ismember(lower(mets),lower(model.metNames))) &gt; sum(ismember(mets,model.mets))
-0155         <span class="comment">% assume that mets are provided as names</span>
-0156         [isExch,metInd] = ismember(lower(mets),lower(model.metNames(exchMetInd)));
-0157     <span class="keyword">else</span>
-0158         <span class="comment">% assume that mets are provided as met IDs</span>
-0159         [isExch,metInd] = ismember(mets,model.mets(exchMetInd));
-0160     <span class="keyword">end</span>
-0161     
-0162     <span class="comment">% get exchanged met indices and determine unused (non-exchanged) mets</span>
-0163     unusedMets = mets(~isExch);
-0164     exchMetInd = exchMetInd(metInd(isExch));
-0165     
-0166     <span class="comment">% update bound vectors</span>
-0167     lb = lb(isExch);
-0168     ub = ub(isExch);
-0169     
-0170 <span class="keyword">else</span>
-0171     <span class="comment">% if no mets were provided, use all exchanged mets</span>
-0172     <span class="keyword">if</span> numel(lb) &gt; 1 || numel(ub) &gt; 1
-0173         error(<span class="string">'Only one upper and one lower bound may be provide if metabolites are not specified.'</span>);
-0174     <span class="keyword">else</span>
-0175         lb = lb*ones(size(exchMetInd));
-0176         ub = ub*ones(size(exchMetInd));
-0177     <span class="keyword">end</span>
-0178     unusedMets = {};
-0179 <span class="keyword">end</span>
-0180 
-0181 <span class="comment">% check that at least one exchanged metabolite matches</span>
-0182 <span class="keyword">if</span> isempty(exchMetInd)
-0183     fprintf(<span class="string">'None of the provided metabolites were found in any exchange reactions.\n'</span>);
-0184     exchModel = model;
-0185     <span class="keyword">return</span>
-0186 <span class="keyword">end</span>
-0187 
-0188 <span class="comment">% determine which metabolite is exchanged in each exchange reaction</span>
-0189 [metInd,rxnInd] = find(model_temp.S(exchMetInd,exchRxnInd) ~= 0);
-0190 
-0191 <span class="comment">% check for any metabolites that are exchanged in more than one reaction</span>
-0192 tbl = tabulate(metInd);
-0193 repeatedInds = tbl(:,2) &gt; 1;
-0194 multiMetInd = exchMetInd(metInd(repeatedInds));
-0195 <span class="keyword">if</span> ~isempty(multiMetInd)
-0196     fprintf(<span class="string">'WARNING: The following metabolites are involved in more than one exchange reaction:\n'</span>);
-0197     fprintf(<span class="string">'\t%s\n'</span>,model.metNames{multiMetInd(1:min(numel(multiMetInd),10))});
-0198     <span class="keyword">if</span> numel(multiMetInd) &gt; 10
-0199         fprintf(<span class="string">'\t... and %u more.\n'</span>,numel(multiMetInd)-10);
-0200     <span class="keyword">end</span>
-0201 <span class="keyword">end</span>
-0202 
-0203 <span class="comment">% set exchange reaction bounds</span>
-0204 model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'lb'</span>,exchRxnInd(rxnInd),lb(metInd));
-0205 model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'ub'</span>,exchRxnInd(rxnInd),ub(metInd));
-0206 
-0207 <span class="keyword">if</span> closeOthers
-0208     <span class="comment">% constrain import of all other exchange reactions to zero</span>
-0209     constrainInd = setdiff(exchRxnInd,exchRxnInd(rxnInd));
-0210     <span class="keyword">if</span> strcmp(importDir,<span class="string">'backward'</span>)
-0211         model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'lb'</span>,constrainInd,0);
-0212     <span class="keyword">else</span>
-0213         model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'ub'</span>,constrainInd,0);
-0214     <span class="keyword">end</span>
-0215 <span class="keyword">end</span>
-0216 
-0217 <span class="comment">% assign output model</span>
-0218 exchModel = model;
-0219 
-0220</pre></div>
-<hr><address>Generated on Mon 12-Aug-2019 13:50:41 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0133     closeOthers = false;
+0134 <span class="keyword">end</span>
+0135 
+0136 <span class="comment">% prepare exchanged metabolites and bounds</span>
+0137 <span class="keyword">if</span> ~isempty(mets)
+0138     
+0139     <span class="comment">% prepare lb and ub variables</span>
+0140     <span class="keyword">if</span> numel(lb) == 1
+0141         lb = lb*ones(size(mets));
+0142     <span class="keyword">elseif</span> numel(lb) ~= numel(mets)
+0143         error(<span class="string">'lb must be a single value or a vector of equal length as mets'</span>);
+0144     <span class="keyword">end</span>
+0145     <span class="keyword">if</span> numel(ub) == 1
+0146         ub = ub*ones(size(mets));
+0147     <span class="keyword">elseif</span> numel(ub) ~= numel(mets)
+0148         error(<span class="string">'ub must be a single value or a vector of equal length as mets'</span>);
+0149     <span class="keyword">end</span>
+0150     
+0151     <span class="comment">% map provided mets to exchanged metabolites</span>
+0152     <span class="keyword">if</span> isnumeric(mets)
+0153         <span class="comment">% mets are provided as indices</span>
+0154         [isExch,metInd] = ismember(mets,exchMetInd);    
+0155     <span class="keyword">elseif</span> sum(ismember(lower(mets),lower(model.metNames))) &gt; sum(ismember(mets,model.mets))
+0156         <span class="comment">% assume that mets are provided as names</span>
+0157         [isExch,metInd] = ismember(lower(mets),lower(model.metNames(exchMetInd)));
+0158     <span class="keyword">else</span>
+0159         <span class="comment">% assume that mets are provided as met IDs</span>
+0160         [isExch,metInd] = ismember(mets,model.mets(exchMetInd));
+0161     <span class="keyword">end</span>
+0162     
+0163     <span class="comment">% get exchanged met indices and determine unused (non-exchanged) mets</span>
+0164     unusedMets = mets(~isExch);
+0165     exchMetInd = exchMetInd(metInd(isExch));
+0166     
+0167     <span class="comment">% update bound vectors</span>
+0168     lb = lb(isExch);
+0169     ub = ub(isExch);
+0170     
+0171 <span class="keyword">else</span>
+0172     <span class="comment">% if no mets were provided, use all exchanged mets</span>
+0173     <span class="keyword">if</span> numel(lb) &gt; 1 || numel(ub) &gt; 1
+0174         error(<span class="string">'Only one upper and one lower bound may be provide if metabolites are not specified.'</span>);
+0175     <span class="keyword">else</span>
+0176         lb = lb*ones(size(exchMetInd));
+0177         ub = ub*ones(size(exchMetInd));
+0178     <span class="keyword">end</span>
+0179     unusedMets = {};
+0180 <span class="keyword">end</span>
+0181 
+0182 <span class="comment">% check that at least one exchanged metabolite matches</span>
+0183 <span class="keyword">if</span> isempty(exchMetInd)
+0184     fprintf(<span class="string">'None of the provided metabolites were found in any exchange reactions.\n'</span>);
+0185     exchModel = model;
+0186     <span class="keyword">return</span>
+0187 <span class="keyword">end</span>
+0188 
+0189 <span class="comment">% determine which metabolite is exchanged in each exchange reaction</span>
+0190 [metInd,rxnInd] = find(model_temp.S(exchMetInd,exchRxnInd) ~= 0);
+0191 
+0192 <span class="comment">% check for any metabolites that are exchanged in more than one reaction</span>
+0193 tbl = tabulate(metInd);
+0194 repeatedInds = tbl(:,2) &gt; 1;
+0195 multiMetInd = exchMetInd(metInd(repeatedInds));
+0196 <span class="keyword">if</span> ~isempty(multiMetInd)
+0197     fprintf(<span class="string">'WARNING: The following metabolites are involved in more than one exchange reaction:\n'</span>);
+0198     fprintf(<span class="string">'\t%s\n'</span>,model.metNames{multiMetInd(1:min(numel(multiMetInd),10))});
+0199     <span class="keyword">if</span> numel(multiMetInd) &gt; 10
+0200         fprintf(<span class="string">'\t... and %u more.\n'</span>,numel(multiMetInd)-10);
+0201     <span class="keyword">end</span>
+0202 <span class="keyword">end</span>
+0203 
+0204 <span class="comment">% set exchange reaction bounds</span>
+0205 model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'lb'</span>,exchRxnInd(rxnInd),lb(metInd));
+0206 model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'ub'</span>,exchRxnInd(rxnInd),ub(metInd));
+0207 
+0208 <span class="keyword">if</span> closeOthers
+0209     <span class="comment">% constrain import of all other exchange reactions to zero</span>
+0210     constrainInd = setdiff(exchRxnInd,exchRxnInd(rxnInd));
+0211     <span class="keyword">if</span> strcmp(importDir,<span class="string">'backward'</span>)
+0212         model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'lb'</span>,constrainInd,0);
+0213     <span class="keyword">else</span>
+0214         model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'ub'</span>,constrainInd,0);
+0215     <span class="keyword">end</span>
+0216 <span class="keyword">end</span>
+0217 
+0218 <span class="comment">% assign output model</span>
+0219 exchModel = model;
+0220 
+0221</pre></div>
+<hr><address>Generated on Wed 06-Nov-2019 21:22:42 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
