@@ -1,6 +1,6 @@
 function [outModel, geneLocalization, transportStruct, scores,...
 	removedRxns] = predictLocalization(model, GSS,...
-	defaultCompartment, transportCost, maxTime)
+	defaultCompartment, transportCost, maxTime, plotResults)
 % predictLocalization
 %	Tries to assign reactions to compartments in a manner that is in
 %	agreement with localization predictors while at the same time
@@ -60,7 +60,7 @@ function [outModel, geneLocalization, transportStruct, scores,...
 %
 %   Usage: [outModel, geneLocalization, transportStruct, scores,...
 %       removedRxns] = predictLocalization(model, GSS,...
-%       defaultCompartment, transportCost, maxTime)
+%       defaultCompartment, transportCost, maxTime, plotResults)
 %
 %	Simonas Marcisauskas, 2019-11-13
 %
