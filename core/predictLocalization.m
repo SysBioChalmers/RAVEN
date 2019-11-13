@@ -1,57 +1,66 @@
-function [outModel, geneLocalization, transportStruct, scores, removedRxns]=predictLocalization(model,GSS,defaultCompartment,transportCost,maxTime,plotResults)
+function [outModel, geneLocalization, transportStruct, scores,...
+	removedRxns] = predictLocalization(model, GSS,...
+	defaultCompartment, transportCost, maxTime)
 % predictLocalization
-%   Tries to assign reactions to compartments in a manner that is in
-%   agreement with localization predictors while at the same time
-%   maintaining connectivity.
+%	Tries to assign reactions to compartments in a manner that is in
+%	agreement with localization predictors while at the same time
+%	maintaining connectivity.
 %
-%   model                 a model structure. If the model contains several
-%                         compartments they will be merged
-%   GSS                   gene scoring structure as from parseScores
-%   defaultCompartment    transport reactions are expressed as diffusion
-%                         between the defaultCompartment and the others.
-%                         This is usually the cytosol. The default
-%                         compartment must have a match in
-%                         GSS
-%   transportCost         the cost for including a transport reaction. If this
-%                         a scalar then the same cost is used for all metabolites.
-%                         It can also be a vector of costs with the same dimension
-%                         as model.mets. Note that negative costs will result in that
-%                         transport of the metabolite is encouraged (opt, default 0.5)
-%   maxTime               maximum optimization time in minutes (opt,
-%                         default 15)
-%   plotResults           true if the result should be plotted during the
-%                         optimization (opt false)
+%   Input:
+%	model                   a model structure. If the model contains
+%                           several compartments they will be merged
+%	GSS                     a gene scoring structure as from parseScores
+%	defaultCompartment      transport reactions are expressed as diffusion
+%                           between the defaultCompartment and the others.
+%                           This is usually the cytosol. The default
+%                           compartment must have a match in GSS
+%	transportCost           the cost for including a transport reaction. If
+%                           this a scalar then the same cost is used for
+%                           all metabolites. It can also be a vector of
+%                           costs with the same dimension as model.mets.
+%                           Note that negative costs will result in that
+%                           transport of the metabolite is encouraged (opt,
+%                           default 0.5)
+%	maxTime                 maximum optimization time in minutes (opt,
+%                           default 15)
+%	plotResults             true if the results should be plotted during the
+%                           optimization (opt, default false)
 %
-%   outModel              the resulting model structure
-%   geneLocalization      structure with the genes and their resulting
-%                         localization
-%   transportStruct       structure with the transport reactions that had
-%                         to be inferred and between which compartments
-%   scores                structure that contains the total score history
-%                         together with the score based on gene localization
-%                         and the score based on included transport reactions
-%   removedRxns           cell array with the reaction ids that had to be
-%                         removed in order to have a connected input model
+%   Output:
+%	outModel                the resulting model structure
+%	geneLocalization        structure with the genes and their resulting
+%                           localization
+%	transportStruct         structure with the transport reactions that had
+%                           to be inferred and between which compartments
+%	scores                  structure that contains the total score history
+%                           together with the score based on gene
+%                           localization and the score based on included
+%                           transport reactions
+%	removedRxns             cell array with the reaction ids that had to be
+%                           removed in order to have a connected input
+%                           model
 %
-%   This function requires that the starting network is connected when it's in
-%   one compartment. Reactions that are unconnected are removed and saved
-%   in removedRxns. Try running fillGaps to have a more connected input
-%   model if there are many such reactions.
+%	This function requires that the starting network is connected when it
+%	is in one compartment. Reactions that are unconnected are removed and
+%	saved in removedRxns. Try running fillGaps to have a more connected
+%	input model if there are many such reactions.
 %
-%   In the final model all metabolites are produced in at least one reaction.
-%   This doesn't guarantee a fully functional model since there can be internal
-%   loops. Transport reactions are only included as passive diffusion (A <=> B).
+%	In the final model all metabolites are produced in at least one
+%	reaction. This does not guarantee a fully functional model since there
+%	can be internal loops. Transport reactions are only included as passive
+%	diffusion (A <=> B).
 %
-%   The score of a model is the sum of scores for all genes in their
-%   assigned compartment minus the cost of all transport reactions that
-%   had to be included. A gene can only be assigned to one compartment.
-%   This is a simplification to keep the problem size down. The problem is
-%   solved using simulated annealing.
+%	The score of a model is the sum of scores for all genes in their
+%	assigned compartment minus the cost of all transport reactions that had
+%	to be included. A gene can only be assigned to one compartment. This is
+%	a simplification to keep the problem size down. The problem is solved
+%	using simulated annealing.
 %
-%   Usage: [outModel, geneLocalization, transportStruct, score, removedRxns]=...
-%       predictLocalization(model,GSS,defaultCompartment,transportCost,maxTime)
+%   Usage: [outModel, geneLocalization, transportStruct, scores,...
+%       removedRxns] = predictLocalization(model, GSS,...
+%       defaultCompartment, transportCost, maxTime)
 %
-%   Simonas Marcisauskas, 2019-11-13
+%	Simonas Marcisauskas, 2019-11-13
 %
 
 if nargin<4
