@@ -51,7 +51,7 @@ function [outModel, geneLocalization, transportStruct, scores, removedRxns]=pred
 %   Usage: [outModel, geneLocalization, transportStruct, score, removedRxns]=...
 %       predictLocalization(model,GSS,defaultCompartment,transportCost,maxTime)
 %
-%   Eduard Kerkhoven, 2018-07-25
+%   Simonas Marcisauskas, 2019-11-13
 %
 
 if nargin<4
@@ -696,7 +696,7 @@ for i=1:numel(I)
         outModel.rxnMiriams=[outModel.rxnMiriams;{[]}];
     end
     if isfield(outModel,'subSystems')
-        outModel.subSystems=[outModel.subSystems;{'Inferred transport reactions'}];
+        outModel.subSystems=[outModel.subSystems;{{'Inferred transport reactions'}}];
     end
     if isfield(outModel,'eccodes')
         outModel.eccodes=[outModel.eccodes;{''}];
