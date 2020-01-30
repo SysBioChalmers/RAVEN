@@ -42,7 +42,7 @@ function compStruct = compareMultipleModels(models,printResults,plotResults,grou
 %                       plotResults,groupVector,funcCompare,taskFile);
 %   
 %   Daniel Cook, 2018-03-16
-%   Jonathan Robinson, 2019-09-30
+%   Jonathan Robinson, 2020-01-30
 %
 
 %% Set up input defaults
@@ -283,7 +283,7 @@ function h = genHeatMap(data,colnames,rownames,clust_dim,clust_dist,col_map,col_
 %
 % Usage:
 %
-%   genHeatMap(data,colnames,rownames,,clust_dim,clust_dist,col_map,col_bounds);
+%   genHeatMap(data,colnames,rownames,clust_dim,clust_dist,col_map,col_bounds,grid_color);
 %
 % Inputs:
 %
@@ -310,6 +310,9 @@ function h = genHeatMap(data,colnames,rownames,clust_dim,clust_dist,col_map,col_
 % col_bounds  A 2-element vector with min and max values, to manually set
 %             the bounds of the colormap.
 %             (DEFAULT = min/max of data).
+%
+% grid_color  Color of the grid surrounding the heatmap cells.
+%             (DEFAULT = 'none')
 %
 %
 
