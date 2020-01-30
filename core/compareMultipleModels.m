@@ -384,10 +384,6 @@ if ~isempty(col_bounds)
     caxis(col_bounds);
 end
 
-xl = get(gca,'XLim');
-yl = get(gca,'YLim');
-plot(xl([1,1,2,2,1]),yl([1,2,2,1,1]),'k');
-
 end
 
 
