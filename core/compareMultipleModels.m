@@ -195,7 +195,8 @@ if exist('tsne') > 0
         else
             color_vector = 'k';
         end
-        scatter3(t_vars_3d_struc(:,1),t_vars_3d_struc(:,2),t_vars_3d_struc(:,3),35,color_vector,'filled')
+        scatter3(t_vars_3d_struc(:,1),t_vars_3d_struc(:,2),t_vars_3d_struc(:,3),35,color_vector,'filled');
+        view(135,25);  % to make it obvious that it is a 3D plot
         xlabel('tSNE 1');ylabel('tSNE 2');zlabel('tSNE 3');set(gca,'FontSize',14,'LineWidth',1.25);
         title('Structural Comparison','FontSize',18,'FontWeight','bold')
         % Need to add legend
