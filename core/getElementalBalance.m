@@ -13,7 +13,7 @@ function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUn
 %                     parsed (opt, default false)
 %
 %   balanceStructure
-%       balanceStatus	1 if the reaction is balanced, 0 if it's unbalanced,
+%       balanceStatus   1 if the reaction is balanced, 0 if it's unbalanced,
 %                      -1 if it couldn't be balanced due to missing information,
 %                      -2 if it couldn't be balanced due to an error
 %       elements
@@ -132,4 +132,13 @@ for i=1:numel(toPrint)
         end
     end
 end
+
+% Re-order the structure entries so they're consistent with the ordering of
+% the input reaction indexes
+if ~isempty(rxns)
+    rxns = getIndexes(model,rxns,'rxns');
+    [~,i] = sort(rxns);
+    balanceStructure.balanceStatus(i) = balanceStructure.balanceStatus;
+    balanceStructure.leftComp(i,:) = balanceStructure.leftComp;
+    balanceStructure.rightComp(i,:) = balanceStructure.rightComp;
 end

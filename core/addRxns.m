@@ -239,6 +239,7 @@ nRxns=numel(rxnsToAdd.rxns);
 nOldRxns=numel(model.rxns);
 filler=cell(nRxns,1);
 filler(:)={''};
+cellfiller=cellfun(@(x) cell(0,0),filler,'UniformOutput',false);
 largeFiller=cell(nOldRxns,1);
 largeFiller(:)={''};
 
@@ -370,7 +371,7 @@ if isfield(rxnsToAdd,'subSystems')
 else
     %Fill with standard if it doesn't exist
     if isfield(newModel,'subSystems')
-        newModel.subSystems=[newModel.subSystems;filler];
+        newModel.subSystems=[newModel.subSystems;cellfiller];
     end
 end
 if isfield(rxnsToAdd,'rxnMiriams')

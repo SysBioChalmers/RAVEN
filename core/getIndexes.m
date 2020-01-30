@@ -2,6 +2,7 @@ function indexes=getIndexes(model, objects, type, returnLogical)
 % getIndexes
 %   Retrieves the indexes for a list of reactions or metabolites
 %
+%   Input:
 %   model           a model structure
 %   objects         either a cell array of IDs, a logical vector with the
 %                   same number of elements as metabolites in the model,
@@ -13,6 +14,7 @@ function indexes=getIndexes(model, objects, type, returnLogical)
 %   returnLogical   Sets whether to return a logical array or an array with
 %                   the indexes (opt, default false)
 %
+%   Output:
 %   indexes         can be a logical array or a double array depending on
 %                   the value of returnLogical
 %
@@ -60,6 +62,11 @@ elseif strcmpi(type,'metscomps')
         end
     end
     indexes=indexes(:);
+    if returnLogical==true
+        tempIndexes=false(numel(model.mets),1);
+        tempIndexes(indexes)=true;
+        indexes=tempIndexes;
+    end
     return; % If metscomps is queried, remaining codes doesn't need executing
 else
     EM='Incorrect value of the "type" parameter. Allowed values are "rxns", "mets" or "genes"';

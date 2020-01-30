@@ -2,16 +2,17 @@ function model=getGenesFromKEGG(keggPath,koList)
 % getGenesFromKEGG
 %   Retrieves information on all genes stored in KEGG database
 %
+%   Input:
 %   keggPath	if keggGenes.mat is not in the RAVEN\external\kegg
 %               directory, this function will attempt to read data from a
 %               local FTP dump of the KEGG database. keggPath is the path
 %               to the root of this database
-%
 %   koList      the number of genes in KEGG is very large. koList can be a
 %               cell array with KO identifiers, in which case only genes
 %               belonging to one of those KEGG orthologies are retrieved
 %               (opt, default all KOs with associated reactions)
 %
+%   Output:
 %   model       a model structure generated from the database. The
 %               following fields are filled
 %       id              'KEGG'
@@ -24,15 +25,15 @@ function model=getGenesFromKEGG(keggPath,koList)
 %       rxnGeneMat      A binary matrix that indicates whether a specific
 %                       gene is present in a KO id
 %
-%   If the file keggGenes.mat is in the RAVEN\external\kegg directory it
-%   will be loaded instead of parsing of the KEGG files. If it does not
+%   NOTE: If the file keggGenes.mat is in the RAVEN\external\kegg directory
+%   it will be loaded instead of parsing of the KEGG files. If it does not
 %   exist it will be saved after parsing of the KEGG files. In general, you
 %   should remove the keggGenes.mat file if you want to rebuild the model
 %   structure from a newer version of KEGG.
 %
 %   Usage: model=getGenesFromKEGG(keggPath,koList)
 %
-%   Simonas Marcisauskas, 2018-08-15
+%   Simonas Marcisauskas, 2019-09-09
 %
 %
 % NOTE: This is how one entry looks in the file
@@ -73,14 +74,15 @@ end
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 genesFile=fullfile(ravenPath,'external','kegg','keggGenes.mat');
 if exist(genesFile, 'file')
-    fprintf(['NOTE: Importing KEGG genes from ' strrep(genesFile,'\','/') '.\n']);
+    fprintf(['Importing KEGG genes from ' strrep(genesFile,'\','/') '... ']);
     load(genesFile);
 else
-    fprintf(['Cannot locate ' strrep(genesFile,'\','/') ' and will try to generate it from the local KEGG database.\n']);
+    fprintf(['NOTE: Cannot locate ' strrep(genesFile,'\','/') ', it will therefore be generated from the local KEGG database\n']);
     if ~exist(fullfile(keggPath,'ko'),'file') || ~exist(fullfile(keggPath,'reaction'),'file')
-        EM=fprintf(['The files ''ko'' and ''reaction'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
+        EM=fprintf(['The files ''ko'' and ''reaction'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP\n']);
         dispEM(EM);
     else
+        fprintf('Generating keggGenes.mat file... ');
         %Get all KOs that are associated to reactions
         allKOs=getAllKOs(keggPath);
         
@@ -263,6 +265,7 @@ end
 %Only get the KOs in koList
 I=~ismember(model.rxns,koList);
 model=removeReactions(model,I,true,true);
+fprintf('COMPLETE\n');
 end
 
 function allKOs=getAllKOs(keggPath)

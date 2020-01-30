@@ -31,11 +31,13 @@
    Retrieves gene homology information from Excel files. Used as
    input to getModelFromHomology.
 
+   Input:
    models          a cell array of model structures
    blastFile       Excel file with homology information
    organismId      the id of the organism of interest (as described in the
                    Excel file)
 
+   Output:
    blastStructure  structure containing the information in the Excel
                    sheets.
 
@@ -51,7 +53,7 @@
 
    Usage: blastStructure=getBlastFromExcel(models,blastFile,organismId)
 
-   Eduard Kerkhoven, 2018-11-02</pre></div>
+   Eduard Kerkhoven, 2018-12-10</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -71,115 +73,117 @@ This function is called by:
 0003 <span class="comment">%   Retrieves gene homology information from Excel files. Used as</span>
 0004 <span class="comment">%   input to getModelFromHomology.</span>
 0005 <span class="comment">%</span>
-0006 <span class="comment">%   models          a cell array of model structures</span>
-0007 <span class="comment">%   blastFile       Excel file with homology information</span>
-0008 <span class="comment">%   organismId      the id of the organism of interest (as described in the</span>
-0009 <span class="comment">%                   Excel file)</span>
-0010 <span class="comment">%</span>
-0011 <span class="comment">%   blastStructure  structure containing the information in the Excel</span>
-0012 <span class="comment">%                   sheets.</span>
-0013 <span class="comment">%</span>
-0014 <span class="comment">%   The Excel file should contain a number of spreadsheets which in turn</span>
-0015 <span class="comment">%   contain the bidirectional homology measurements between the genes in the</span>
-0016 <span class="comment">%   organisms. The first and second column headers in each sheet is the</span>
-0017 <span class="comment">%   &quot;to&quot; and &quot;from&quot; model ids (as defined in models or for the new organism).</span>
-0018 <span class="comment">%   The entries should correspond to the gene names in those models. The third,</span>
-0019 <span class="comment">%   fourth, fifth, sixth and seventh columns represent the E-value, alignment</span>
-0020 <span class="comment">%   length, identity, bitscore and percentage of positive-scoring matches for</span>
-0021 <span class="comment">%   each measurement (captions should be &quot;E-value&quot;, &quot;Alignment length&quot;,</span>
-0022 <span class="comment">%   &quot;Identity&quot;, &quot;Bitscore&quot; and &quot;PPOS&quot;).</span>
-0023 <span class="comment">%</span>
-0024 <span class="comment">%   Usage: blastStructure=getBlastFromExcel(models,blastFile,organismId)</span>
+0006 <span class="comment">%   Input:</span>
+0007 <span class="comment">%   models          a cell array of model structures</span>
+0008 <span class="comment">%   blastFile       Excel file with homology information</span>
+0009 <span class="comment">%   organismId      the id of the organism of interest (as described in the</span>
+0010 <span class="comment">%                   Excel file)</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">%   Output:</span>
+0013 <span class="comment">%   blastStructure  structure containing the information in the Excel</span>
+0014 <span class="comment">%                   sheets.</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">%   The Excel file should contain a number of spreadsheets which in turn</span>
+0017 <span class="comment">%   contain the bidirectional homology measurements between the genes in the</span>
+0018 <span class="comment">%   organisms. The first and second column headers in each sheet is the</span>
+0019 <span class="comment">%   &quot;to&quot; and &quot;from&quot; model ids (as defined in models or for the new organism).</span>
+0020 <span class="comment">%   The entries should correspond to the gene names in those models. The third,</span>
+0021 <span class="comment">%   fourth, fifth, sixth and seventh columns represent the E-value, alignment</span>
+0022 <span class="comment">%   length, identity, bitscore and percentage of positive-scoring matches for</span>
+0023 <span class="comment">%   each measurement (captions should be &quot;E-value&quot;, &quot;Alignment length&quot;,</span>
+0024 <span class="comment">%   &quot;Identity&quot;, &quot;Bitscore&quot; and &quot;PPOS&quot;).</span>
 0025 <span class="comment">%</span>
-0026 <span class="comment">%   Eduard Kerkhoven, 2018-11-02</span>
+0026 <span class="comment">%   Usage: blastStructure=getBlastFromExcel(models,blastFile,organismId)</span>
 0027 <span class="comment">%</span>
-0028 
-0029 <span class="keyword">if</span> ~(exist(blastFile,<span class="string">'file'</span>)==2)
-0030     error(<span class="string">'BLAST result file %s cannot be found'</span>,string(blastFile));
-0031 <span class="keyword">end</span>
-0032 
-0033 blastStructure=[];
+0028 <span class="comment">%   Eduard Kerkhoven, 2018-12-10</span>
+0029 <span class="comment">%</span>
+0030 
+0031 <span class="keyword">if</span> ~(exist(blastFile,<span class="string">'file'</span>)==2)
+0032     error(<span class="string">'BLAST result file %s cannot be found'</span>,string(blastFile));
+0033 <span class="keyword">end</span>
 0034 
-0035 <span class="comment">%Get a list of model IDs</span>
-0036 organisms=cell(numel(models)+1,1);
-0037 organisms{1}=organismId;
-0038 <span class="keyword">for</span> i=1:numel(models)
-0039     organisms{i+1}=models{i}.id;
-0040 <span class="keyword">end</span>
-0041 
-0042 <span class="comment">%Get all the spreadsheets in the file</span>
-0043 [type, sheets]=xlsfinfo(blastFile);
-0044 
-0045 <span class="comment">%Check if the file is a Microsoft Excel Spreadsheet</span>
-0046 <span class="keyword">if</span> ~any(regexp(type,<span class="string">'Excel Spreadsheet'</span>)
-0047     EM=<span class="string">'The file is not a Microsoft Excel Spreadsheet'</span>;
-0048     dispEM(EM);
-0049 <span class="keyword">end</span>
-0050 
-0051 <span class="keyword">for</span> i=1:numel(sheets)
-0052     <span class="comment">%Check if the sheet has the right header and deal with organisms that</span>
-0053     <span class="comment">%are in &quot;models&quot;</span>
-0054     [values,dataSheet]=xlsread(blastFile,dataSheet{i});
-0055     labels=dataSheet(1,:);
-0056     <span class="keyword">if</span> strcmpi(labels{3},<span class="string">'E-value'</span>) &amp;&amp; strcmpi(labels{4},<span class="string">'Alignment length'</span>) <span class="keyword">...</span>
-0057             &amp;&amp; strcmpi(labels{5},<span class="string">'Identity'</span>) &amp;&amp; strcmpi(labels{6},<span class="string">'Bitscore'</span>) <span class="keyword">...</span>
-0058             &amp;&amp; strcmpi(labels{7},<span class="string">'PPOS'</span>)
-0059         <span class="comment">%At least one of the organisms must have a model</span>
-0060         fromID=find(strcmpi(labels{1},organisms));
-0061         toID=find(strcmpi(labels{2},organisms));
-0062         <span class="comment">%Check that the organism ids exist and that one of them is the</span>
-0063         <span class="comment">%organism of interest</span>
-0064         <span class="keyword">if</span> any(fromID) &amp;&amp; any(toID) &amp;&amp; (toID==1 || fromID==1)
-0065             <span class="comment">%Check that no gene ids are empty. This could for example be</span>
-0066             <span class="comment">%the case if the gene names are wrongly formatted as numbers</span>
-0067             <span class="comment">%instead of strings</span>
-0068             emptyNames=cellfun(@isempty,dataSheet(2:<span class="keyword">end</span>,1)) | cellfun(@isempty,dataSheet(2:<span class="keyword">end</span>,2));
-0069             <span class="keyword">if</span> any(emptyNames)
-0070                 <span class="keyword">if</span> all(emptyNames)
-0071                     EM=[<span class="string">'Only empty gene names in sheet from '</span> organisms{fromID} <span class="string">' to '</span> organisms{toID}];
-0072                     dispEM(EM);
-0073                 <span class="keyword">else</span>
-0074                     EM=[<span class="string">'Empty gene names in sheet from '</span> organisms{fromID} <span class="string">' to '</span> organisms{toID} <span class="string">'. Ignoring genes with empty names'</span>];
-0075                     dispEM(EM,false);
-0076                 <span class="keyword">end</span>
-0077             <span class="keyword">end</span>
-0078             blastStructure(numel(blastStructure)+1).toId=organisms{toID};
-0079             blastStructure(numel(blastStructure)).fromId=organisms{fromID};
-0080             blastStructure(numel(blastStructure)).fromGenes=dataSheet(2:<span class="keyword">end</span>,1);
-0081             blastStructure(numel(blastStructure)).toGenes=dataSheet(2:<span class="keyword">end</span>,2);
-0082             blastStructure(numel(blastStructure)).evalue=values(:,1);
-0083             blastStructure(numel(blastStructure)).aligLen=values(:,2);
-0084             blastStructure(numel(blastStructure)).identity=values(:,3);
-0085             blastStructure(numel(blastStructure)).bitscore=values(:,4);
-0086             blastStructure(numel(blastStructure)).ppos=values(:,5);
-0087             
-0088             <span class="comment">%Remove matches where any of the values is NaN. This would have</span>
-0089             <span class="comment">%been done anyways in getModelFromHomology, but it's neater to</span>
-0090             <span class="comment">%do it here</span>
-0091             I=isnan(blastStructure(end).evalue) | isnan(blastStructure(end).aligLen) | isnan(blastStructure(end).identity);
-0092             blastStructure(end).fromGenes(I)=[];
-0093             blastStructure(end).toGenes(I)=[];
-0094             blastStructure(end).evalue(I)=[];
-0095             blastStructure(end).aligLen(I)=[];
-0096             blastStructure(end).identity(I)=[];
-0097             blastStructure(end).bitscore(I)=[];
-0098             blastStructure(end).ppos(I)=[];            
-0099         <span class="keyword">else</span>
-0100             <span class="keyword">if</span> isempty(toID) || isempty(fromID)
-0101                 EM=[<span class="string">'The data in sheet '</span> sheets{i} <span class="string">' has no corresponding model. Ignoring sheet'</span>];
-0102                 dispEM(EM,false);
-0103             <span class="keyword">else</span>
-0104                 EM=[<span class="string">'The data in sheet '</span> sheets{i} <span class="string">' does not involve the organism of interest. Ignoring sheet'</span>];
-0105                 dispEM(EM,false);
-0106             <span class="keyword">end</span>
-0107         <span class="keyword">end</span>
-0108     <span class="keyword">else</span>
-0109         EM=[<span class="string">'The data in sheet '</span> sheets{i} <span class="string">' is not correctly formatted. Ignoring sheet'</span>];
-0110         dispEM(EM,false);
-0111     <span class="keyword">end</span>
-0112 <span class="keyword">end</span>
-0113 
-0114 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 13-Nov-2018 13:56:44 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0035 blastStructure=[];
+0036 
+0037 <span class="comment">%Get a list of model IDs</span>
+0038 organisms=cell(numel(models)+1,1);
+0039 organisms{1}=organismId;
+0040 <span class="keyword">for</span> i=1:numel(models)
+0041     organisms{i+1}=models{i}.id;
+0042 <span class="keyword">end</span>
+0043 
+0044 <span class="comment">%Get all the spreadsheets in the file</span>
+0045 [type, sheets]=xlsfinfo(blastFile);
+0046 
+0047 <span class="comment">%Check if the file is a Microsoft Excel Spreadsheet</span>
+0048 <span class="keyword">if</span> ~any(regexp(type,<span class="string">'Excel Spreadsheet'</span>))
+0049     EM=<span class="string">'The file is not a Microsoft Excel Spreadsheet'</span>;
+0050     dispEM(EM);
+0051 <span class="keyword">end</span>
+0052 
+0053 <span class="keyword">for</span> i=1:numel(sheets)
+0054     <span class="comment">%Check if the sheet has the right header and deal with organisms that</span>
+0055     <span class="comment">%are in &quot;models&quot;</span>
+0056     [values,dataSheet]=xlsread(blastFile,i);
+0057     labels=dataSheet(1,:);
+0058     <span class="keyword">if</span> strcmpi(labels{3},<span class="string">'E-value'</span>) &amp;&amp; strcmpi(labels{4},<span class="string">'Alignment length'</span>) <span class="keyword">...</span>
+0059             &amp;&amp; strcmpi(labels{5},<span class="string">'Identity'</span>) &amp;&amp; strcmpi(labels{6},<span class="string">'Bitscore'</span>) <span class="keyword">...</span>
+0060             &amp;&amp; strcmpi(labels{7},<span class="string">'PPOS'</span>)
+0061         <span class="comment">%At least one of the organisms must have a model</span>
+0062         fromID=find(strcmpi(labels{1},organisms));
+0063         toID=find(strcmpi(labels{2},organisms));
+0064         <span class="comment">%Check that the organism ids exist and that one of them is the</span>
+0065         <span class="comment">%organism of interest</span>
+0066         <span class="keyword">if</span> any(fromID) &amp;&amp; any(toID) &amp;&amp; (toID==1 || fromID==1)
+0067             <span class="comment">%Check that no gene ids are empty. This could for example be</span>
+0068             <span class="comment">%the case if the gene names are wrongly formatted as numbers</span>
+0069             <span class="comment">%instead of strings</span>
+0070             emptyNames=cellfun(@isempty,dataSheet(2:<span class="keyword">end</span>,1)) | cellfun(@isempty,dataSheet(2:<span class="keyword">end</span>,2));
+0071             <span class="keyword">if</span> any(emptyNames)
+0072                 <span class="keyword">if</span> all(emptyNames)
+0073                     EM=[<span class="string">'Only empty gene names in sheet from '</span> organisms{fromID} <span class="string">' to '</span> organisms{toID}];
+0074                     dispEM(EM);
+0075                 <span class="keyword">else</span>
+0076                     EM=[<span class="string">'Empty gene names in sheet from '</span> organisms{fromID} <span class="string">' to '</span> organisms{toID} <span class="string">'. Ignoring genes with empty names'</span>];
+0077                     dispEM(EM,false);
+0078                 <span class="keyword">end</span>
+0079             <span class="keyword">end</span>
+0080             blastStructure(numel(blastStructure)+1).toId=organisms{toID};
+0081             blastStructure(numel(blastStructure)).fromId=organisms{fromID};
+0082             blastStructure(numel(blastStructure)).fromGenes=dataSheet(2:<span class="keyword">end</span>,1);
+0083             blastStructure(numel(blastStructure)).toGenes=dataSheet(2:<span class="keyword">end</span>,2);
+0084             blastStructure(numel(blastStructure)).evalue=values(:,1);
+0085             blastStructure(numel(blastStructure)).aligLen=values(:,2);
+0086             blastStructure(numel(blastStructure)).identity=values(:,3);
+0087             blastStructure(numel(blastStructure)).bitscore=values(:,4);
+0088             blastStructure(numel(blastStructure)).ppos=values(:,5);
+0089             
+0090             <span class="comment">%Remove matches where any of the values is NaN. This would have</span>
+0091             <span class="comment">%been done anyways in getModelFromHomology, but it's neater to</span>
+0092             <span class="comment">%do it here</span>
+0093             I=isnan(blastStructure(end).evalue) | isnan(blastStructure(end).aligLen) | isnan(blastStructure(end).identity);
+0094             blastStructure(end).fromGenes(I)=[];
+0095             blastStructure(end).toGenes(I)=[];
+0096             blastStructure(end).evalue(I)=[];
+0097             blastStructure(end).aligLen(I)=[];
+0098             blastStructure(end).identity(I)=[];
+0099             blastStructure(end).bitscore(I)=[];
+0100             blastStructure(end).ppos(I)=[];
+0101         <span class="keyword">else</span>
+0102             <span class="keyword">if</span> isempty(toID) || isempty(fromID)
+0103                 EM=[<span class="string">'The data in sheet '</span> sheets{i} <span class="string">' has no corresponding model. Ignoring sheet'</span>];
+0104                 dispEM(EM,false);
+0105             <span class="keyword">else</span>
+0106                 EM=[<span class="string">'The data in sheet '</span> sheets{i} <span class="string">' does not involve the organism of interest. Ignoring sheet'</span>];
+0107                 dispEM(EM,false);
+0108             <span class="keyword">end</span>
+0109         <span class="keyword">end</span>
+0110     <span class="keyword">else</span>
+0111         EM=[<span class="string">'The data in sheet '</span> sheets{i} <span class="string">' is not correctly formatted. Ignoring sheet'</span>];
+0112         dispEM(EM,false);
+0113     <span class="keyword">end</span>
+0114 <span class="keyword">end</span>
+0115 
+0116 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 06-Nov-2019 21:22:42 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

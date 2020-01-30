@@ -1,4 +1,4 @@
-function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,onlyToExisting)
+function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,onlyToExisting,prefix)
 % addTransport
 %   Adds transport reactions between compartments
 %
@@ -14,6 +14,8 @@ function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,o
 %   onlyToExisting  true if transport of a metabolite should only be added
 %                   if it already exists in toComp. If false, then new metabolites
 %                   are added with addMets first (opt, default true)
+%   prefix          string specifying prefix to reaction IDs (opt, default
+%                   'tr_')
 %
 %   This is a faster version than addRxns when adding transport reactions.
 %   New reaction names are formatted as "metaboliteName, fromComp-toComp", 
@@ -21,9 +23,9 @@ function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,o
 %   e.g. tr_0001, tr_0002, etc.
 %
 %   Usage: [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,...
-%           isRev,onlyToExisting)
+%           isRev,onlyToExisting,prefix)
 %
-%   Simonas Marcisauskas, 2018-03-17
+%   Eduard Kerkhoven, 2019-03-19
 %
 
 if iscell(fromComp)
@@ -60,6 +62,9 @@ end
 if nargin<6
     onlyToExisting=true;
 end
+if nargin<7
+    prefix='tr_';
+end
 
 %Check that the names are unique
 if ischar(metNames)
@@ -77,7 +82,7 @@ if ~all(J)
     dispEM(EM);
 end
 fromMets=I(K); %These are the ids of the metabolites to transport. The order corresponds to metNames
-
+addedRxns={};
 %Loop through and add for each compartment in toComps
 for i=1:numel(toComps)
     fromMetsInComp=fromMets; %If onlyToExisting==true then not all mets are transported to each compartment
@@ -109,21 +114,28 @@ for i=1:numel(toComps)
     
     %Add the reactions
     model.S=[model.S sparse(newS)];
+    if isfield(model.annotation,'defaultLB')
+        lb = model.annotation.defaultLB;
+        ub = model.annotation.defaultUB;
+    else
+        lb = -inf;
+        ub = inf;
+    end
     if isRev==true
-        model.lb=[model.lb;ones(nRxns,1)*-inf];
+        model.lb=[model.lb;ones(nRxns,1)*lb];
         model.rev=[model.rev;ones(nRxns,1)];
     else
         model.lb=[model.lb;zeros(nRxns,1)];
         model.rev=[model.rev;zeros(nRxns,1)];
     end
-    model.ub=[model.ub;ones(nRxns,1)*inf];
+    model.ub=[model.ub;ones(nRxns,1)*ub];
     model.c=[model.c;zeros(nRxns,1)];
     
     %Add annotation
     filler=cell(nRxns,1);
     filler(:)={''};
-    addedRxnsID=generateNewIds(model,'rxns','tr_',length(nRxns));
-    addedRxnsName=strcat(metNames, ' transport, ', model.compNames(fromID), '-', model.compNames(toIDs(i)));
+    addedRxnsID=generateNewIds(model,'rxns',prefix,nRxns);
+    addedRxnsName=transpose(strcat(metNames, {' transport, '}, model.compNames(fromID), '-', model.compNames(toIDs(i))));
     model.rxns=[model.rxns;addedRxnsID];
     model.rxnNames=[model.rxnNames;addedRxnsName];
     
@@ -162,8 +174,8 @@ for i=1:numel(toComps)
         model.rxnReferences=[model.rxnReferences;filler];
     end
     if isfield(model,'rxnConfidenceScores')
-        model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(nRxns,1)];
-        fprintf('NOTE: The added transport reactions will have confidence scores as NaNs\n');
+        model.rxnConfidenceScores=[model.rxnConfidenceScores;ones(nRxns,1)];
     end
+    addedRxns = [addedRxns; addedRxnsID];
 end
 end

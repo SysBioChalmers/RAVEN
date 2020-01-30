@@ -56,12 +56,6 @@ if nargin<8
     useDiamond=true;
 end
 
-%Check if query fasta exists
-if ~(exist(fastaFile,'file')==2)
-    error('FASTA file %s cannot be found',string(fastaFile));
-    dispEM(EM,true);
-end
-
 %First generate the full MetaCyc model
 metaCycModel=getModelFromMetaCyc([],keepTransportRxns,keepUnbalanced,keepUndetermined);
 fprintf('The full MetaCyc model loaded\n');
