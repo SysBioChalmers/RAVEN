@@ -171,15 +171,11 @@ compStruct.reactions.matrix = binary_matrix;
 
 % calculate hamming similarity
 compStruct.structComp = 1-squareform(pdist(binary_matrix','hamming'));
-
-color_map = [];
-for i = 1:101
-    color_map(i,:) = [1 (1-(i-1)/100) (1-(i-1)/100)];
-end
 fprintf('*** Done \n\n')
 if plotResults == true
+    color_map = [ones(100,1) linspace(1,0,100)' linspace(1,0,100)'];
     figure;
-    h = genHeatMap(compStruct.structComp,compStruct.modelIDs,compStruct.modelIDs,'both','euclidean',color_map,[0,1]);
+    h = genHeatMap(compStruct.structComp,compStruct.modelIDs,compStruct.modelIDs,'both','euclidean',color_map);
     title('Structural Similarity','FontSize',18,'FontWeight','bold')
 end
 
