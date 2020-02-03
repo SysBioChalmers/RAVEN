@@ -187,55 +187,47 @@ end
 rng(42) % For consistency
 fprintf('\n Comparing model reaction structures \n')
 if exist('tsne') > 0
-    t_vars_3d_struc = tsne(double(binary_matrix'),'Distance','hamming','NumDimensions',3); % 3D
-    compStruct.structCompMap = t_vars_3d_struc;
+    proj_coords = tsne(double(binary_matrix'),'Distance','hamming','NumDimensions',3); % 3D
+    compStruct.structCompMap = proj_coords;
+    axis_labels = {'tSNE 1';'tSNE 2';'tSNE 3'};
     fprintf('*** Done \n\n')
-    if plotResults == true
-        figure; hold on; 
-        if ~isempty(groupVector)
-            color_data = groupVector;
-            if length(groupNames) <= 7
-                % "lines" colormap only has 7 unique colors
-                color_palette = lines(length(groupNames));
-            else
-                color_palette = parula(length(groupNames));
-            end
-            colormap(color_palette);
-        else
-            color_data = 'k';
-        end
-        scatter3(t_vars_3d_struc(:,1),t_vars_3d_struc(:,2),t_vars_3d_struc(:,3),35,color_data,'filled');
-        view(135,25);  % to make it obvious that it is a 3D plot
-        xlabel('tSNE 1');ylabel('tSNE 2');zlabel('tSNE 3');set(gca,'FontSize',14,'LineWidth',1.25);
-        title('Structural Comparison','FontSize',18,'FontWeight','bold')
-        
-        % add legend
-        if ~isempty(groupVector)
-            for i = 1:length(groupNames)
-                h(i) = scatter3([],[],[],35,color_palette(i,:),'filled');
-            end
-            legend(h,groupNames);
-        end     
-    end
 else
     fprintf('\nWARNING: Could not complete full structural comparison because the function \n')
     fprintf('         "tsne" does not exist in your Matlab version. \n')
     fprintf('         Using MDS to project data instead of tSNE. \n')
     fprintf('         Please upgrade to Matlab 2017b or higher for full functionality. \n\n')
-    [mds_vars_3d_struc,stress,disparities] = mdscale(pdist(double(binary_matrix'),'hamming'),3);
-    compStruct.structCompMap = mds_vars_3d_struc;
-    if plotResults == true
-        figure; hold on; 
-        if ~isempty(groupVector)
-            color_data = groupVector;
-            colormap(parula(max(groupVector)));
+    [proj_coords,stress,disparities] = mdscale(pdist(double(binary_matrix'),'hamming'),3);
+    compStruct.structCompMap = proj_coords;
+    axis_labels = {'MDS 1';'MDS 2';'MDS 3'};
+end
+
+% plot structure comparison results
+if plotResults == true
+    figure; hold on;
+    if ~isempty(groupVector)
+        color_data = groupVector;
+        if length(groupNames) <= 7
+            % "lines" colormap only has 7 unique colors
+            color_palette = lines(length(groupNames));
         else
-            color_data = 'k';
+            color_palette = parula(length(groupNames));
         end
-        scatter3(mds_vars_3d_struc(:,1),mds_vars_3d_struc(:,2),mds_vars_3d_struc(:,3),35,color_data,'filled');
-        view(135,25);  % to make it obvious that it is a 3D plot
-        xlabel('MDS 1');ylabel('MDS 2');zlabel('MDS 3');set(gca,'FontSize',14,'LineWidth',1.25);
-        title('Structural Comparison','FontSize',18,'FontWeight','bold')
+        colormap(color_palette);
+    else
+        color_data = 'k';
+    end
+    scatter3(proj_coords(:,1),proj_coords(:,2),proj_coords(:,3),35,color_data,'filled');
+    view(135,25);  % to make it obvious that it is a 3D plot
+    xlabel(axis_labels{1}); ylabel(axis_labels{2}); zlabel(axis_labels{3});
+    set(gca,'FontSize',14,'LineWidth',1.25);
+    title('Structural Comparison','FontSize',18,'FontWeight','bold')
+    
+    % add legend
+    if ~isempty(groupVector)
+        for i = 1:length(groupNames)
+            h(i) = scatter3([],[],[],35,color_palette(i,:),'filled');
+        end
+        legend(h,groupNames);
     end
 end
 
