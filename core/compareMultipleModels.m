@@ -56,7 +56,10 @@ if nargin < 4
     groupVector = [];
 elseif ~isnumeric(groupVector)
     % convert strings to numeric groups
-    [~,~,groupVector] = unique(groupVector);
+    [groupNames,~,groupVector] = unique(groupVector);
+else
+    % generate group names for vector of numbers
+    groupNames = arrayfun(@num2str,unique(groupVector),'UniformOutput',false);
 end
 if nargin < 5 || isempty(funcCompare)
     funcCompare = false;
@@ -190,16 +193,29 @@ if exist('tsne') > 0
     if plotResults == true
         figure; hold on; 
         if ~isempty(groupVector)
-            color_vector = groupVector;
-            colormap(parula(max(groupVector)));
+            color_data = groupVector;
+            if length(groupNames) <= 7
+                % "lines" colormap only has 7 unique colors
+                color_palette = lines(length(groupNames));
+            else
+                color_palette = parula(length(groupNames));
+            end
+            colormap(color_palette);
         else
-            color_vector = 'k';
+            color_data = 'k';
         end
-        scatter3(t_vars_3d_struc(:,1),t_vars_3d_struc(:,2),t_vars_3d_struc(:,3),35,color_vector,'filled');
+        scatter3(t_vars_3d_struc(:,1),t_vars_3d_struc(:,2),t_vars_3d_struc(:,3),35,color_data,'filled');
         view(135,25);  % to make it obvious that it is a 3D plot
         xlabel('tSNE 1');ylabel('tSNE 2');zlabel('tSNE 3');set(gca,'FontSize',14,'LineWidth',1.25);
         title('Structural Comparison','FontSize',18,'FontWeight','bold')
-        % Need to add legend
+        
+        % add legend
+        if ~isempty(groupVector)
+            for i = 1:length(groupNames)
+                h(i) = scatter3([],[],[],35,color_palette(i,:),'filled');
+            end
+            legend(h,groupNames);
+        end     
     end
 else
     fprintf('\nWARNING: Could not complete full structural comparison because the function \n')
@@ -211,12 +227,13 @@ else
     if plotResults == true
         figure; hold on; 
         if ~isempty(groupVector)
-            color_vector = groupVector;
+            color_data = groupVector;
             colormap(parula(max(groupVector)));
         else
-            color_vector = 'k';
+            color_data = 'k';
         end
-        scatter3(mds_vars_3d_struc(:,1),mds_vars_3d_struc(:,2),mds_vars_3d_struc(:,3),35,color_vector,'filled')
+        scatter3(mds_vars_3d_struc(:,1),mds_vars_3d_struc(:,2),mds_vars_3d_struc(:,3),35,color_data,'filled');
+        view(135,25);  % to make it obvious that it is a 3D plot
         xlabel('MDS 1');ylabel('MDS 2');zlabel('MDS 3');set(gca,'FontSize',14,'LineWidth',1.25);
         title('Structural Comparison','FontSize',18,'FontWeight','bold')
     end
