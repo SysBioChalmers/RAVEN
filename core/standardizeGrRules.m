@@ -42,7 +42,7 @@ if isfield(model,'grRules')
     
     for i=1:length(originalGrRules)
         originalSTR = originalGrRules{i};
-        grRules{i}  = originalSTR;
+        grRules{i,:}  = originalSTR;
         %Non-empty grRules are splitted in all their different isoenzymes
         genesSets   = getSimpleGeneSets(originalSTR);
         rxnGeneMat  = modifyRxnGeneMat(genesSets,genes,rxnGeneMat,i);

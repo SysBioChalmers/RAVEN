@@ -78,7 +78,7 @@ for i=1:numel(toComps)
     modelToAdd.metComps=ones(numel(modelToAdd.mets),1);
     
     %Merge the models
-    model=mergeModels({model;modelToAdd});
+    model=mergeModels({model;modelToAdd},'metNames');
 end
 
 if deleteOriginal==true
