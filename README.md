@@ -13,7 +13,8 @@ The information about downloading, installing and developing RAVEN is included i
 If you use RAVEN 2.0 in your scientific work, please cite:
 > Wang H, Marcišauskas S, Sánchez BJ, Domenzain I, Hermansson D, Agren R, Nielsen J, Kerkhoven EJ. (2018) RAVEN 2.0: A versatile toolbox for metabolic network reconstruction and a case study on _Streptomyces coelicolor_. PLoS Comput Biol 14(10): e1006541. doi:[10.1371/journal.pcbi.1006541](https://doi.org/10.1371/journal.pcbi.1006541).
 
-Starting with RAVEN v2.3.1, all the releases are also archived in [Zenodo](https://zenodo.org/badge/latestdoi/3689519), for you to cite the specific version of RAVEN that you used in your study
+Starting with RAVEN v2.3.1, all the releases are also archived in [Zenodo](https://doi.org/10.5281/zenodo.3689518), for you to cite the specific version of RAVEN that you used in your study
+
 
 If you use any of the following functions, please also cite the relevant paper:
 
