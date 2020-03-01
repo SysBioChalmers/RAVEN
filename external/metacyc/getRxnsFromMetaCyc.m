@@ -152,28 +152,7 @@ else
         isSpontaneous=false(10000,1); %spontaneous;
         UNBALANCED=false(10000,1);
         UNDETERMINED=false(10000,1);
-        TRANSPORT=cell(10000,1);
-        
-        %Transport reactions were organzied into a file
-        fid = fopen(fullfile(metacycPath,'transportRxns.txt'), 'r');
-        transportCounter=0;
-        %Loop through the file
-        while 1
-            %Get the next line
-            tline = fgetl(fid);
-            
-            %Abort at end of file
-            if ~ischar(tline)
-                break;
-            end
-            
-            %disp(tline);
-            transportCounter=transportCounter+1;
-            TRANSPORT{transportCounter}=tline;
-        end
-        %Close the file
-        fclose(fid);
-        TRANSPORT=TRANSPORT(1:transportCounter);
+        TRANSPORT={};                 %transport reactions;
         
         metaCycRxns.equations=cell(50000,1); %reaction equations
         left=cell(50000,1); %Temporarily stores the equations
@@ -344,6 +323,11 @@ else
                         metaCycRxns.rev(rxnCounter,1)=0;
                         reverse=1;
                 end
+            end
+            
+            %Tag transport reactions
+            if strcmp(tline,'TYPES - Transport-Reactions')
+                TRANSPORT=[TRANSPORT;metaCycRxns.rxns{rxnCounter}];
             end
             
             %Add spontaneous
