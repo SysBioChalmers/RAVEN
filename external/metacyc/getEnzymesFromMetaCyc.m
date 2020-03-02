@@ -143,9 +143,10 @@ else
         metaCycEnzymes.cplxComp=metaCycEnzymes.cplxComp(1:nCplx);
         metaCycEnzymes.enzymes=metaCycEnzymes.enzymes(1:enzymeCounter);
         
-        % Iteratively replace all components of complexes into polypeptide
-        % subunits
+        % Iteratively go through the components of each complex
         for i=1:numel(metaCycEnzymes.cplxComp)
+            
+            %replace all complex-type components with their subunits
             checkCplx=true;
             while checkCplx
                 x=0;
@@ -169,6 +170,13 @@ else
                     end
                 end
                 
+            end
+            
+            % make sure the subunits are all included in the enzyme list
+            % since in one case subunit was not found in enzyme dump file
+            [a, b] = ismember(metaCycEnzymes.cplxComp{i}.subunit,metaCycEnzymes.enzymes);
+            if ~all(a)
+                metaCycEnzymes.cplxComp{i}.subunit = metaCycEnzymes.enzymes(b(find(a)));
             end
         end
         
