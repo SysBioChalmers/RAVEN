@@ -77,21 +77,20 @@ ScoKEGGDraftModel=expandModel(ScoKEGGDraftModel);
 ScoKEGGDraftModel=contractModel(ScoKEGGDraftModel);
 
 %In the end, KEGG- and MetaCyc-based draft models can be further combined
-%into an integrated GEM with 2605 reactions, 3005 metabolites and 2175
-%genes. This step is achieved by the function combineMetaCycKEGGModels,
-%which firstly converts metabolite and reaction identifiers in the KEGG
-%model into corresponding MetaCyc ids, and then detects duplications and
-%keeps only unique reactions and metabolites that are mostly in MetaCyc
-%identifiers.
+%into an integrated GEM. This step is achieved by the function
+%combineMetaCycKEGGModels, which firstly converts metabolite and reaction
+%identifiers in the KEGG model into corresponding MetaCyc ids, and then
+%detects duplications and keeps only unique reactions and metabolites that
+%are mostly in MetaCyc identifiers.
 ScoCombinedDraftModel=combineMetaCycKEGGModels(ScoMetaCycDraftModel, ScoKEGGDraftModel);
 
 %With this combined model, the existing iMK1208 model is refined by
 %incorporating the new pathways/reactions that are found in the combined
-%model but absent from the previous iMK1208 model. A total of 398 reactions
-%in the combined draft model were determined as new pathways based on
-%manual curation results, which have been organized into TableS3. Load
-%these manually selected reactions and their subSystems as the
-%pre-processed array structure selectedNewRxns.
+%model but absent from the previous iMK1208 model. At the time of
+%publication, a total of 398 reactions in the combined draft model were
+%determined as new pathways based on manual curation results, which have
+%been organized into TableS3. Load these manually selected reactions and
+%their subSystems as the pre-processed array structure selectedNewRxns.
 load('iMK1208+suppInfo.mat','selectedNewRxns');
 disp(selectedNewRxns);
 
