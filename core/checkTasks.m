@@ -184,7 +184,8 @@ for i=1:numel(taskStructure)
             %Verify that IN and OUT bounds are consistent. Cannot require
             %that a metabolite is simultaneously input AND output at some
             %nonzero flux.
-            nonzero_LBin = tModel.b(J,2) > 0;
+            I = find(I);  % otherwise indexing becomes confusing
+            nonzero_LBin = tModel.b(J,2) < 0;
             nonzero_LBout = taskStructure(i).LBout(I) > 0;
             if any(nonzero_LBin & nonzero_LBout)
                 EM=['The IN LB and OUT LB in "[' taskStructure(i).id '] ' taskStructure(i).description '" cannot be nonzero for the same metabolite'];
