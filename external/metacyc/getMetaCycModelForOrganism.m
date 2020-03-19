@@ -30,7 +30,7 @@ function model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %   Usage: model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond)
 %
-%   Hao Wang, 2018-11-05
+%   Hao Wang, 2020-03-19
 %
 
 if nargin<2
@@ -172,6 +172,8 @@ for j=1:rxnNum
         end
     end
 end
+%update genes field
+model.genes=model.genes(any(model.rxnGeneMat));
 
 %Construct the S matrix and list of metabolites
 [S, mets, badRxns]=constructS(model.equations);
