@@ -574,7 +574,8 @@ end
 if modelHasSubsystems
     modelSBML.groups_group.groups_kind = 'partonomy';
     modelSBML.groups_group.sboTerm = 633;
-    tmpStruct=modelSBML.grousps_group;
+    tmpStruct=modelSBML.groups_group;
+
     rxns=strcat('R_',model.rxns);
     if ~any(cellfun(@iscell,model.subSystems))
         if ~any(~cellfun(@isempty,model.subSystems))
