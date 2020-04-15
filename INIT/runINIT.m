@@ -320,10 +320,14 @@ prob.vartype(allInt) = 'B';
 % solve problem
 res=optimizeProb(prob,params);
 
-%I don't think that this problem can be infeasible, so this is mainly a way
-%of checking the licence stuff
+%Problem should not be infeasible, but it is possible that the time limit
+%was reached before finding any solutions.
 if ~checkSolution(res)
-    EM='The problem is infeasible';
+    if strcmp(res.origStat, 'TIME_LIMIT')
+        EM='Time limit reached without finding a solution. Try increasing the TimeLimit parameter.';
+    else
+        EM='The problem is infeasible';
+    end
     dispEM(EM);
 end
 
