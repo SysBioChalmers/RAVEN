@@ -285,6 +285,8 @@ prob.buc=[metUB;ones(nNonEssential,1)*1000;ones(nRevBounds*2,1)*999.9;revUB];
 %in order to be consistent with the syntax that positive scores are good
 prob.c=[zeros(nRxns,1);rxnScores;ones(nNetProd,1)*prodWeight*-1;zeros(nRevBounds*2,1)];
 prob.a=S;
+
+% adapt problem structure for cobra-style solver
 prob.c=[prob.c;zeros(size(prob.a,1),1)];
 prob.A=[prob.a -speye(size(prob.a,1))];
 prob.b=zeros(size(prob.a,1), 1);
@@ -308,11 +310,14 @@ for i=1:numel(pmIndexes)
         metProduction(pmIndexes(i))=1;
     end
 end
+prob.lb=[prob.blx; prob.blc];
 
 %Add that the binary reactions may only take integer values.
+prob.vartype = repmat('C', 1, size(prob.A, 2));
 allInt=[(nRxns+1):(nRxns+nNonEssential) size(S,2)-nRevBounds*2+1:size(S,2)];
-prob.ints.sub=allInt;
-prob.lb=[prob.blx; prob.blc];
+prob.vartype(allInt) = 'B';
+
+% solve problem
 res=optimizeProb(prob,params);
 
 %I don't think that this problem can be infeasible, so this is mainly a way
