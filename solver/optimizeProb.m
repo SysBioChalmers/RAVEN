@@ -27,6 +27,7 @@ end
 
 solver=getpref('RAVEN','solver');
 if strcmp(solver,'gurobi')
+    if isfield(params,'relGap'), params=rmfield(params,'relGap'); end
     gparams=struct('Presolve',2,'TimeLimit',1000,'OutputFlag',1,'MIPGap',1e-12,'Seed',0,'FeasibilityTol',1e-9,'OptimalityTol',1e-9);
     gparams=structUpdate(gparams,params);
     if (~milp), gparams.OutputFlag=0; end
