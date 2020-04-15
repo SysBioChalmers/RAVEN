@@ -20,7 +20,10 @@ if(~ispref('RAVEN','solver'))
 end
 
 milp=false;
-if(isfield(prob,'ints')), disp('MILP detected.'); milp=true; end
+if isfield(prob,'vartype') && ~all(lower(prob.vartype) == 'c')
+    disp('MILP detected.');
+    milp=true;
+end
 
 solver=getpref('RAVEN','solver');
 if strcmp(solver,'gurobi')
