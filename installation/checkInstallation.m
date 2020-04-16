@@ -87,7 +87,7 @@ else
 end
 
 %Check if it is possible to solve an LP problem using different solvers
-solver={'gurobi','mosek','cobra'};
+solver={'gurobi','cobra'};
 
 for i=1:numel(solver)
     fprintf(['Checking if it is possible to solve an LP problem using ',solver{i},'...\t\t\t']);

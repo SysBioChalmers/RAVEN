@@ -66,13 +66,6 @@ function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(m
 %   Eduard Kerkhoven, 2017-11-28
 %
 
-% fillGaps doesn't work well with the glpk solver as implemented by COBRA
-% for MILP.
-global CBT_MILP_SOLVER
-if strcmp(getpref('RAVEN','solver'),'cobra') && strcmp(CBT_MILP_SOLVER,'glpk')
-    dispEM('The current solver is set to ''cobra'', while in COBRA the MILP solver has been set to ''glpk''. The COBRA implementation of glpk is not well suitable for solving MILPs. Please install the Gurobi or Mosek solver to run fillGaps.',true);
-end
-
 %If the user only supplied a single template model
 if ~iscell(models)
     models={models};

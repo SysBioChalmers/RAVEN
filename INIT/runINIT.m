@@ -286,11 +286,20 @@ prob.buc=[metUB;ones(nNonEssential,1)*1000;ones(nRevBounds*2,1)*999.9;revUB];
 prob.c=[zeros(nRxns,1);rxnScores;ones(nNetProd,1)*prodWeight*-1;zeros(nRevBounds*2,1)];
 prob.a=S;
 
+% adapt problem structure for cobra-style solver
+prob.c=[prob.c;zeros(size(prob.a,1),1)];
+prob.A=[prob.a -speye(size(prob.a,1))];
+prob.b=zeros(size(prob.a,1), 1);
+prob.ub=[prob.bux; prob.buc];
+prob.osense=1;
+prob.csense=char(zeros(size(prob.a,1),1));
+prob.csense(:)='E';
+
 %We still don't know which of the presentMets that can be produced. Go
 %through them, force production, and see if the problem can be solved
-params.MSK_IPAR_OPTIMIZER='MSK_OPTIMIZER_FREE_SIMPLEX';
 for i=1:numel(pmIndexes)
     prob.blc(numel(irrevModel.mets)-numel(pmIndexes)+i)=1;
+    prob.lb=[prob.blx; prob.blc];
     res=optimizeProb(prob,params);
     isFeasible=checkSolution(res);
     if ~isFeasible
@@ -301,23 +310,31 @@ for i=1:numel(pmIndexes)
         metProduction(pmIndexes(i))=1;
     end
 end
+prob.lb=[prob.blx; prob.blc];
 
 %Add that the binary reactions may only take integer values.
+prob.vartype = repmat('C', 1, size(prob.A, 2));
 allInt=[(nRxns+1):(nRxns+nNonEssential) size(S,2)-nRevBounds*2+1:size(S,2)];
-prob.ints.sub=allInt;
+prob.vartype(allInt) = 'B';
+
+% solve problem
 res=optimizeProb(prob,params);
 
-%I don't think that this problem can be infeasible, so this is mainly a way
-%of checking the licence stuff
+%Problem should not be infeasible, but it is possible that the time limit
+%was reached before finding any solutions.
 if ~checkSolution(res)
-    EM='The problem is infeasible';
+    if strcmp(res.origStat, 'TIME_LIMIT')
+        EM='Time limit reached without finding a solution. Try increasing the TimeLimit parameter.';
+    else
+        EM='The problem is infeasible';
+    end
     dispEM(EM);
 end
 
-fValue=res.sol.int.pobjval;
+fValue=res.obj;
 
 %Get all reactions used in the irreversible model
-usedRxns=(nonEssentialIndex(res.sol.int.xx(nRxns+1:nRxns+nNonEssential)<0.1))';
+usedRxns=(nonEssentialIndex(res.full(nRxns+1:nRxns+nNonEssential)<0.1))';
 
 %Map to reversible model IDs
 usedRxns=[usedRxns(usedRxns<=numel(model.rxns));revRxns(usedRxns(usedRxns>numel(model.rxns))-numel(model.rxns))];
