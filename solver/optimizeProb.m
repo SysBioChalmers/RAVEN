@@ -32,7 +32,7 @@ if strcmp(solver,'gurobi')
     gparams=structUpdate(gparams,params);
     if (~milp), gparams.OutputFlag=0; end
     res = gurobi(cobraToGurobiProb(prob),gparams);
-    res = gurobiToCobraRes(res);
+    res = gurobiToCobraRes(res, milp);
 elseif strcmp(solver,'cobra')
     if (milp)
         cparams=struct('timeLimit',1e9,'printLevel',0,'intTol',1e-6,'relMipGapTol',1e-9);
