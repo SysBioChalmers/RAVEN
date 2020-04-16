@@ -1,6 +1,6 @@
 # ![The RAVEN Toolbox 2](RAVEN2.png)
 
-[![Join the chat at https://gitter.im/SysBioChalmers/RAVEN](https://badges.gitter.im/SysBioChalmers/RAVEN.svg)](https://gitter.im/SysBioChalmers/RAVEN?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)[![GitHub release](https://img.shields.io/github/release/SysBioChalmers/RAVEN/all.svg)](https://GitHub.com/SysBioChalmers/RAVEN/releases/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3689519.svg)](https://doi.org/10.5281/zenodo.3689519) [![GitHub release](https://img.shields.io/github/release/SysBioChalmers/RAVEN/all.svg)](https://GitHub.com/SysBioChalmers/RAVEN/releases/) [![Join the chat at https://gitter.im/SysBioChalmers/RAVEN](https://badges.gitter.im/SysBioChalmers/RAVEN.svg)](https://gitter.im/SysBioChalmers/RAVEN?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 The RAVEN (Reconstruction, Analysis and Visualization of Metabolic Networks) Toolbox 2 is a software suite for Matlab that allows for semi-automated reconstruction of genome-scale models (GEMs). It makes use of published models and/or KEGG, MetaCyc databases, coupled with extensive gap-filling and quality control features. The software suite also contains methods for visualizing simulation results and omics data, as well as a range of methods for performing simulations and analyzing the results. The software is a useful tool for system-wide data analysis in a metabolic context and for streamlined reconstruction of metabolic networks based on protein homology.
 
@@ -9,9 +9,12 @@ The RAVEN (Reconstruction, Analysis and Visualization of Metabolic Networks) Too
 The information about downloading, installing and developing RAVEN is included in the [Wiki](https://github.com/SysBioChalmers/RAVEN/wiki)
 
 
-## Citation
+## Cite Us
 If you use RAVEN 2.0 in your scientific work, please cite:
 > Wang H, Marcišauskas S, Sánchez BJ, Domenzain I, Hermansson D, Agren R, Nielsen J, Kerkhoven EJ. (2018) RAVEN 2.0: A versatile toolbox for metabolic network reconstruction and a case study on _Streptomyces coelicolor_. PLoS Comput Biol 14(10): e1006541. doi:[10.1371/journal.pcbi.1006541](https://doi.org/10.1371/journal.pcbi.1006541).
+
+Starting with RAVEN v2.3.1, all the releases are also archived in [Zenodo](https://doi.org/10.5281/zenodo.3689518), for you to cite the specific version of RAVEN that you used in your study
+
 
 If you use any of the following functions, please also cite the relevant paper:
 
@@ -32,5 +35,5 @@ If you use any of the following functions, please also cite the relevant paper:
 For support, technical issues, bug reports etc., please [![Join the chat at https://gitter.im/SysBioChalmers/RAVEN](https://badges.gitter.im/SysBioChalmers/RAVEN.svg)](https://gitter.im/SysBioChalmers/RAVEN?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge). For other issues, please contact [Eduard Kerkhoven](https://github.com/edkerk).
 
 
-## Links
-For more systems biology related software and recently published genome-scale models from the Systems and Synthetic Biology group at Chalmers University of Technology, please visit the [Github page](https://github.com/SysBioChalmers). For more information and publications by the Systems and Synthetic Biology please visit [SysBio](www.sysbio.se).
+## More from SysBio Chalmers
+For more systems biology related software and recently published genome-scale models from the Systems and Synthetic Biology group at Chalmers University of Technology, please visit the [GitHub page](https://github.com/SysBioChalmers). For more information and publications by the Systems and Synthetic Biology please visit [SysBio](https://www.sysbio.se/).

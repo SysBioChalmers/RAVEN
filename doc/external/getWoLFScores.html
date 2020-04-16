@@ -24,32 +24,33 @@
 <div class="box"><strong>getWoLFScores</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function geneScoreStruct=getWoLFScores(inputFile,kingdom) </strong></div>
+<div class="box"><strong>function GSS = getWoLFScores(inputFile, kingdom) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> getWoLFScores
-   Calls WoLF PSort to predict the sub-cellular localization of proteins.
+   Call WoLF PSort to predict the sub-cellular localization of proteins.
    The output can be used as input to predictLocalization. This function
-   is currently only available for Linux and requires PERL to be
-   installed. If you want to use another predictor, see parseScores.
+   is currently only available for Linux and requires Perl to be
+   installed. If one wants to use another predictor, see parseScores. The
+   function normalizes the scores so that the best score for each gene is
+   1.0.
 
-   inputFile   a FASTA file with protein sequences
-   kingdom     the kingdom of the organism, 'animal', 'fungi' or 'plant'.
+   Input:
+   inputFile    a FASTA file with protein sequences
+   kingdom     the kingdom of the organism, 'animal', 'fungi' or 'plant'
 
-   The function normalizes the scores so that the best score for each gene
-   is 1.0.
+   Output:
+   GSS         a gene scoring structure to be used in predictLocalization
 
-   geneScoreStructure  a structure to be used in predictLocalization
+   Usage: GSS = getWoLFScores(inputFile, kingdom)
 
-   Usage: geneScoreStruct=getWoLFScores(inputFile,kingdom)
-
-   Eduard Kerkhoven, 2018-05-18</pre></div>
+   Simonas Marcisauskas, 2019-11-13</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-</ul>
+<li><a href="parseScores.html" class="code" title="function GSS = parseScores(inputFile, predictor)">parseScores</a>	parseScores</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -58,60 +59,61 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function geneScoreStruct=getWoLFScores(inputFile,kingdom)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function GSS = getWoLFScores(inputFile, kingdom)</a>
 0002 <span class="comment">% getWoLFScores</span>
-0003 <span class="comment">%   Calls WoLF PSort to predict the sub-cellular localization of proteins.</span>
+0003 <span class="comment">%   Call WoLF PSort to predict the sub-cellular localization of proteins.</span>
 0004 <span class="comment">%   The output can be used as input to predictLocalization. This function</span>
-0005 <span class="comment">%   is currently only available for Linux and requires PERL to be</span>
-0006 <span class="comment">%   installed. If you want to use another predictor, see parseScores.</span>
-0007 <span class="comment">%</span>
-0008 <span class="comment">%   inputFile   a FASTA file with protein sequences</span>
-0009 <span class="comment">%   kingdom     the kingdom of the organism, 'animal', 'fungi' or 'plant'.</span>
-0010 <span class="comment">%</span>
-0011 <span class="comment">%   The function normalizes the scores so that the best score for each gene</span>
-0012 <span class="comment">%   is 1.0.</span>
+0005 <span class="comment">%   is currently only available for Linux and requires Perl to be</span>
+0006 <span class="comment">%   installed. If one wants to use another predictor, see parseScores. The</span>
+0007 <span class="comment">%   function normalizes the scores so that the best score for each gene is</span>
+0008 <span class="comment">%   1.0.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">%   Input:</span>
+0011 <span class="comment">%   inputFile    a FASTA file with protein sequences</span>
+0012 <span class="comment">%   kingdom     the kingdom of the organism, 'animal', 'fungi' or 'plant'</span>
 0013 <span class="comment">%</span>
-0014 <span class="comment">%   geneScoreStructure  a structure to be used in predictLocalization</span>
-0015 <span class="comment">%</span>
-0016 <span class="comment">%   Usage: geneScoreStruct=getWoLFScores(inputFile,kingdom)</span>
-0017 <span class="comment">%</span>
-0018 <span class="comment">%   Eduard Kerkhoven, 2018-05-18</span>
-0019 <span class="comment">%</span>
-0020 
-0021 <span class="keyword">if</span> ~(exist(inputFile,<span class="string">'file'</span>)==2)
-0022     error(<span class="string">'FASTA file %s cannot be found'</span>,string(inputFile));
-0023 <span class="keyword">end</span>
-0024 
-0025 <span class="keyword">if</span> ~strcmp(kingdom,<span class="string">'animal'</span>) &amp;&amp; ~strcmp(kingdom,<span class="string">'fungi'</span>) &amp;&amp; ~strcmp(kingdom,<span class="string">'plant'</span>)
-0026     EM=<span class="string">'Allowed kingdoms are &quot;animal&quot;, &quot;fungi&quot;, and &quot;plant&quot;'</span>;
-0027     dispEM(EM);
-0028 <span class="keyword">end</span>
-0029 
-0030 <span class="keyword">if</span> ispc==true
-0031     EM=<span class="string">'This function currently runs only on Linux. Use parseScores if you want to use another predictor'</span>;
-0032     dispEM(EM);
-0033 <span class="keyword">end</span>
-0034 
-0035 <span class="comment">%Get the directory for RAVEN Toolbox. This may not be the easiest or best</span>
-0036 <span class="comment">%way to do this</span>
-0037 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
-0038 ravenPath=fileparts(fileparts(ST(I).file));
-0039 
-0040 <span class="comment">%Temporary output name</span>
-0041 outFile=tempname;
-0042 fid=fopen(outFile,<span class="string">'w'</span>);
-0043 
-0044 <span class="comment">%Do the prediction</span>
-0045 [~, output]=unix([<span class="string">'perl &quot;'</span> ravenPath <span class="string">'/software/WoLFPSORT_package_v0.2/bin/runWolfPsortSummary&quot; '</span> kingdom <span class="string">' &lt; '</span> inputFile]);
-0046 
-0047 <span class="comment">%Save output and call the general parser</span>
-0048 fprintf(fid,output);
-0049 fclose(fid);
-0050 geneScoreStruct=parseScores(outFile,<span class="string">'wolf'</span>);
-0051 
-0052 <span class="comment">%Clean up</span>
-0053 delete(outFile);
-0054 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 12-Aug-2019 13:50:41 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0014 <span class="comment">%   Output:</span>
+0015 <span class="comment">%   GSS         a gene scoring structure to be used in predictLocalization</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">%   Usage: GSS = getWoLFScores(inputFile, kingdom)</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">%   Simonas Marcisauskas, 2019-11-13</span>
+0020 <span class="comment">%</span>
+0021 
+0022 <span class="keyword">if</span> ~(exist(inputFile,<span class="string">'file'</span>)==2)
+0023     error(<span class="string">'FASTA file %s cannot be found'</span>,string(inputFile));
+0024 <span class="keyword">end</span>
+0025 
+0026 <span class="keyword">if</span> ~strcmp(kingdom,<span class="string">'animal'</span>) &amp;&amp; ~strcmp(kingdom,<span class="string">'fungi'</span>) &amp;&amp; ~strcmp(kingdom,<span class="string">'plant'</span>)
+0027     EM=<span class="string">'Allowed kingdoms are &quot;animal&quot;, &quot;fungi&quot;, and &quot;plant&quot;'</span>;
+0028     dispEM(EM);
+0029 <span class="keyword">end</span>
+0030 
+0031 <span class="keyword">if</span> ispc || ismac
+0032     EM=<span class="string">'This function currently runs only on Linux. Use parseScores if you want to use another predictor'</span>;
+0033     dispEM(EM);
+0034 <span class="keyword">end</span>
+0035 
+0036 <span class="comment">%Get the directory for RAVEN Toolbox. This may not be the easiest or best</span>
+0037 <span class="comment">%way to do this</span>
+0038 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
+0039 ravenPath=fileparts(fileparts(ST(I).file));
+0040 
+0041 <span class="comment">%Temporary output name</span>
+0042 outFile=tempname;
+0043 fid=fopen(outFile,<span class="string">'w'</span>);
+0044 
+0045 <span class="comment">%Do the prediction</span>
+0046 [~, output]=unix([<span class="string">'perl &quot;'</span> ravenPath <span class="string">'/software/WoLFPSORT/bin/runWolfPsortSummary&quot; '</span> kingdom <span class="string">' &lt; '</span> inputFile]);
+0047 
+0048 <span class="comment">%Save output and call the general parser</span>
+0049 fprintf(fid,output);
+0050 fclose(fid);
+0051 GSS=<a href="parseScores.html" class="code" title="function GSS = parseScores(inputFile, predictor)">parseScores</a>(outFile,<span class="string">'wolf'</span>);
+0052 
+0053 <span class="comment">%Clean up</span>
+0054 delete(outFile);
+0055 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

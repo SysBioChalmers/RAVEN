@@ -23,13 +23,24 @@ if nargin<4
     supressWarnings=false;
 end
 
+%If no subSystems are defined, then no need to use groups package
+if isfield(model,'subSystems')
+    modelHasSubsystems=true;
+else
+    modelHasSubsystems=false;
+end
+
 %The default SBML format settings, which are used as input for appropriate
 %libSBML functions to generate the blank SBML model structure before using
 %exporting in with OutputSBML to xml file
 sbmlLevel=3;
 sbmlVersion=1;
-sbmlPackages = {'fbc','groups'};
-sbmlPackageVersions = [2,1];
+sbmlPackages={'fbc'};
+sbmlPackageVersions=2;
+if modelHasSubsystems
+    sbmlPackages={sbmlPackages,'groups'};
+    sbmlPackageVersions=[sbmlPackageVersions,1];
+end
 
 %Check if the "unconstrained" field is still present. This shows if
 %exchange metabolites have been removed
@@ -560,11 +571,12 @@ end
 %Prepare subSystems Code taken from COBRA functions getModelSubSystems,
 %writeSBML, findRxnsFromSubSystem under GNU General Public License v3.0,
 %license file in readme/GPL.MD. Code modified for RAVEN
-modelSBML.groups_group.groups_kind = 'partonomy';
-modelSBML.groups_group.sboTerm = 633;
-tmpStruct=modelSBML.groups_group;
-rxns=strcat('R_',model.rxns);
-if isfield(model, 'subSystems')
+if modelHasSubsystems
+    modelSBML.groups_group.groups_kind = 'partonomy';
+    modelSBML.groups_group.sboTerm = 633;
+    tmpStruct=modelSBML.groups_group;
+
+    rxns=strcat('R_',model.rxns);
     if ~any(cellfun(@iscell,model.subSystems))
         if ~any(~cellfun(@isempty,model.subSystems))
             subSystems = {};
@@ -637,10 +649,16 @@ end
 modelSBML.fbc_activeObjective=modelSBML.fbc_objective.fbc_id;
 
 fbcStr=['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/fbc/version',num2str(sbmlPackageVersions(1))];
-groupStr=['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/groups/version',num2str(sbmlPackageVersions(2))];
-modelSBML.namespaces=struct('prefix',{'','fbc','groups'},...
+if modelHasSubsystems
+    groupStr=['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/groups/version',num2str(sbmlPackageVersions(2))];
+    modelSBML.namespaces=struct('prefix',{'','fbc','groups'},...
     'uri',{['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/core'],...
     fbcStr,groupStr});
+else
+    modelSBML.namespaces=struct('prefix',{'','fbc'},...
+    'uri',{['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/core'],...
+    fbcStr});
+end
 
 if sbmlPackageVersions(1) == 2
     modelSBML.fbc_strict=1;
