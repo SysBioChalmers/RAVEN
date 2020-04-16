@@ -1,4 +1,8 @@
-function res = gurobiToCobraRes(res)
+function res = gurobiToCobraRes(res, milp)
+
+if nargin < 2
+    milp = false;
+end
 
 try
     resCb.full = res.x;
@@ -17,8 +21,10 @@ try
         otherwise
             resCb.stat = -1; % Solution not optimal or solver problem        
     end
-    resCb.basis.vbasis=res.vbasis;
-    resCb.basis.cbasis=res.cbasis;
+    if ~milp
+        resCb.basis.vbasis=res.vbasis;
+        resCb.basis.cbasis=res.cbasis;
+    end
 catch
     resCb.stat = 0;
 end
