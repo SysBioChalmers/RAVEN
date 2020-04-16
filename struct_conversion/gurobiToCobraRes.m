@@ -9,6 +9,10 @@ try
     resCb.obj  = res.objval;
     resCb.time = res.runtime;
     resCb.origStat = res.status;
+    if milp && strcmp(res.status, 'TIME_LIMIT')
+        % if the milp res structure has the "objval" field, it succeeded
+        res.status = 'OPTIMAL';
+    end 
     switch res.status
         case 'OPTIMAL'
             resCb.stat = 1;
@@ -27,6 +31,9 @@ try
     end
 catch
     resCb.stat = 0;
+    if isfield(res, 'status')
+        resCb.origStat = res.status;  % useful information to have
+    end
 end
 res=resCb;
 end
