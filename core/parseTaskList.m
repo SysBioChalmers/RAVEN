@@ -117,10 +117,22 @@ if ~(exist(inputFile,'file')==2)
 end
 
 %Load the tasks file
-[raw,flag]=loadSheet(loadWorkbook(inputFile), 'TASKS');
-if flag~=0
-    EM=['Could not load sheet "TASKS" from ' inputFile];
-    dispEM(EM);
+convNumeric = false;
+if strcmp(extractAfter(inputFile,strlength(inputFile) - 4), '.txt')
+    %load from tab delimited text file
+    fid = fopen(inputFile);
+    %Need to read numeric columns as strings, this is converted further
+    %down. If not, the titles would be lost.
+    convNumeric = true;
+    C = textscan(fid,'%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%*[^\n]', 'Delimiter', '\t');
+    fclose(fid);
+    raw = [C{:}];%unnest the cell array of cell arrays into a 2-dim cell array
+else
+    [raw,flag]=loadSheet(loadWorkbook(inputFile), 'TASKS');
+    if flag~=0
+        EM=['Could not load sheet "TASKS" from ' inputFile];
+        dispEM(EM);
+    end
 end
 
 %Remove all lines starting with "#" (or actually any character) and all
@@ -129,15 +141,29 @@ raw=cleanSheet(raw);
 
 %Captions
 columns={'ID';'DESCRIPTION';'IN';'IN LB';'IN UB';'OUT';'OUT LB';'OUT UB';'EQU';'EQU LB';'EQU UB';'CHANGED RXN';'CHANGED LB';'CHANGED UB';'SHOULD FAIL';'PRINT FLUX';'COMMENTS'};
-
 %Match the columns
 [I, colI]=ismember(columns,raw(1,:));
+
+%If read from  a text file, the numbers will be strings - fix that
+if convNumeric % in theory, this if should not be needed, the code should do nothing if all are already numeric. But it is kept as a safeguard.
+    numericColumns = [0 0 0 1 1 0 1 1 0 1 1 0 1 1 0 0 0] == 1;
+    cols = colI(numericColumns);
+    numeric = cellfun(@isnumeric,raw(:,cols));
+    %trick to avoid messing up the title row:
+    numeric(1,:) = 1;
+    for colind = 1:numel(cols)
+        col = cols(colind);
+        raw(~numeric(:,colind),col) = cellfun(@str2num, raw(~numeric(:,colind),col), 'UniformOutput', false);
+    end
+end
 
 %Check that the ID field is present
 if I(1)==0
     EM='The TASKS sheet must have a column named ID';
     dispEM(EM);
 end
+
+%make sure numerical fields are converted from strings
 
 %Add default bounds where needed
 for i=[4 5 7 8]
