@@ -182,11 +182,7 @@ if isRaven
         if any(i)
             newModel.metMetaCycID=miriams(:,i);
         end
-        i=ismember(extractedMiriamNames,'reactome.metabolite');
-        if any(i)
-            newModel.metREACTOMEID=miriams(:,i);
-        end   
-        i=ismember(extractedMiriamNames,'sabiork.metabolite');
+        i=ismember(extractedMiriamNames,'sabiork.compound');
         if any(i)
             newModel.metSABIORKID=miriams(:,i);
         end
@@ -442,8 +438,6 @@ else
             if isfield(model,'rxnSEEDID')
                 if ~isempty(model.rxnSEEDID{i})
                     newModel.rxnMiriams{i,1}.name{counter,1} = 'seed.reaction';
-                    %non-official identifiers.org namespace, 'seed'
-                    %namespace refers to subsystems
                     newModel.rxnMiriams{i,1}.value{counter,1} = model.rxnSEEDID{i};
                     counter=counter+1;
                 end
@@ -517,7 +511,7 @@ else
     end
     if any(isfield(model,{'metBIGGID','metChEBIID','metEnviPathID','metHMDBID',...
             'metKEGGID','metLIPIDMAPSID','metMetaCycID','metMetaNetXID',...
-            'metPubChemID','metREACTOMEID','metSABIORKID','metSBOTerms',...
+            'metPubChemID','metSABIORKID','metSBOTerms',...
             'metSEEDID','metSLMID'}))
         for i=1:numel(model.mets)
             counter=1;
@@ -538,7 +532,7 @@ else
             end
             if isfield(model,'metEnviPathID')
                 if ~isempty(model.metChEBIID{i})
-                    newModel.metMiriams{i,1}.name{counter,1} = 'envipath';%not in identifiers.org
+                    newModel.metMiriams{i,1}.name{counter,1} = 'envipath';
                     newModel.metMiriams{i,1}.value{counter,1} = model.metEnviPathID{i};
                     counter=counter+1;
                 end
@@ -602,20 +596,9 @@ else
                     end
                 end
             end
-            if isfield(model,'metREACTOMEID')
-                if ~isempty(model.metREACTOMEID{i})
-                    newModel.metMiriams{i,1}.name{counter,1} = 'reactome.metabolite';
-                    %non-official identifiers.org, 'reactome' namespace
-                    %refers to reactions
-                    newModel.metMiriams{i,1}.value{counter,1} = model.metREACTOMEID{i};
-                    counter=counter+1;
-                end
-            end
             if isfield(model,'metSABIORKID')
                 if ~isempty(model.metSEEDID{i})
-                    newModel.metMiriams{i,1}.name{counter,1} = 'sabiork.metabolite';
-                    %non-official identifiers.org namespace,
-                    %'sabiork.reaction' refers to reactions
+                    newModel.metMiriams{i,1}.name{counter,1} = 'sabiork.compound';
                     newModel.metMiriams{i,1}.value{counter,1} = model.metSABIORKID{i};
                     counter=counter+1;
                 end
@@ -636,7 +619,7 @@ else
             end
             if isfield(model,'metSLMID')
                 if ~isempty(model.metSLMID{i})
-                    newModel.metMiriams{i,1}.name{counter,1} = 'swisslipid';
+                    newModel.metMiriams{i,1}.name{counter,1} = 'slm';
                     newModel.metMiriams{i,1}.value{counter,1} = model.metSLMID{i};
                     counter=counter+1;
                 end
