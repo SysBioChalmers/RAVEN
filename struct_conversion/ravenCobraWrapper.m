@@ -21,8 +21,8 @@ function newModel=ravenCobraWrapper(model)
 %   conversion it's reconstructed based on lower bound reaction values
 %
 %   NOTE: During COBRA -> RAVEN -> COBRA conversion cycle the following
-%   fields are lost: b, csense, osenseStr, description, geneEntrezID,
-%   metNotes, metSmiles, modelVersion, proteinNames, proteins
+%   fields are lost: description, geneEntrezID, metNotes, metSmiles,
+%   modelVersion, proteinNames, proteins, rxnNotes
 %
 %   NOTE: The information about mandatory RAVEN fields was taken from
 %   checkModelStruct function, whereas the corresponding information about
