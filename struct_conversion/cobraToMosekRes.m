@@ -29,8 +29,7 @@ else
         res.sol.bas.xx=res.full(1:keep);
         res.sol.bas.pobjval=res.obj;
         res.sol.pobjval=res.obj;
+        res.x=res.full(1:keep);
     end
 end
-res.x=res.full(1:keep);
-
 end

@@ -2,6 +2,7 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 % exportModel
 %   Exports a constraint-based model to an SBML file (L3V1 FBCv2)
 %
+%   Input:
 %   model               a model structure
 %   fileName            filename to export the model to (without file extension)
 %   exportGeneComplexes true if gene complexes (all gene sets linked with
@@ -22,13 +23,24 @@ if nargin<4
     supressWarnings=false;
 end
 
+%If no subSystems are defined, then no need to use groups package
+if isfield(model,'subSystems')
+    modelHasSubsystems=true;
+else
+    modelHasSubsystems=false;
+end
+
 %The default SBML format settings, which are used as input for appropriate
 %libSBML functions to generate the blank SBML model structure before using
 %exporting in with OutputSBML to xml file
 sbmlLevel=3;
 sbmlVersion=1;
-sbmlPackages = {'fbc','groups'};
-sbmlPackageVersions = [2,1];
+sbmlPackages={'fbc'};
+sbmlPackageVersions=2;
+if modelHasSubsystems
+    sbmlPackages={sbmlPackages,'groups'};
+    sbmlPackageVersions=[sbmlPackageVersions,1];
+end
 
 %Check if the "unconstrained" field is still present. This shows if
 %exchange metabolites have been removed
@@ -113,7 +125,13 @@ model.rxns=regexprep(model.rxns,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 model.mets=regexprep(model.mets,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 model.comps=regexprep(model.comps,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 if isfield(model,'genes')
-    model.genes=regexprep(model.genes,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
+    problemGenes=find(~cellfun('isempty',regexp(model.genes,'([^0-9_a-zA-Z])')));
+    originalGenes=model.genes(problemGenes);
+    replacedGenes=regexprep(model.genes(problemGenes),'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
+    model.genes(problemGenes)=replacedGenes;
+    for i=1:numel(problemGenes)
+        model.grRules = regexprep(model.grRules, ['(^|\s|\()' originalGenes{i} '($|\s|\))'], ['$1' replacedGenes{i} '$2']);
+    end
 end
 
 %Generate an empty SBML structure
@@ -215,6 +233,16 @@ for i=1:numel(model.comps)
         modelSBML.compartment(i).metaid=model.comps{i};
     end
     %Prepare Miriam strings
+    if ~isempty(model.compMiriams{i})
+        [~,sbo_ind] = ismember('sbo',model.compMiriams{i}.name);
+        if sbo_ind > 0
+            modelSBML.compartment(i).sboTerm=str2double(regexprep(model.compMiriams{i}.value{sbo_ind},'SBO:','','ignorecase'));
+            % remove the SBO term from compMiriams so the information is
+            % not duplicated in the "annotation" field later on
+            model.compMiriams{i}.name(sbo_ind) = [];
+            model.compMiriams{i}.value(sbo_ind) = [];
+        end
+    end
     if ~isempty(model.compMiriams{i}) && isfield(modelSBML.compartment(i),'annotation')
         modelSBML.compartment(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.comps{i} '">'];
         modelSBML.compartment(i).annotation=[modelSBML.compartment(i).annotation '<bqbiol:is><rdf:Bag>'];
@@ -280,6 +308,16 @@ for i=1:numel(model.mets)
             modelSBML.species(i).isSetfbc_charge=0;
         end
     end
+    if ~isempty(model.metMiriams{i})
+        [~,sbo_ind] = ismember('sbo',model.metMiriams{i}.name);
+        if sbo_ind > 0
+            modelSBML.species(i).sboTerm=str2double(regexprep(model.metMiriams{i}.value{sbo_ind},'SBO:','','ignorecase'));
+            % remove the SBO term from metMiriams so the information is
+            % not duplicated in the "annotation" field later on
+            model.metMiriams{i}.name(sbo_ind) = [];
+            model.metMiriams{i}.value(sbo_ind) = [];
+        end
+    end
     if isfield(modelSBML.species,'annotation')
         if ~isempty(model.metMiriams{i}) || ~isempty(model.metFormulas{i})
             hasInchi=false;
@@ -313,7 +351,7 @@ if isfield(model,'genes')
         %Add the default values, as these will be the same in all entries
         if i==1
             if isfield(modelSBML.fbc_geneProduct, 'sboTerm')
-                modelSBML.fbc_geneProduct(i).sboTerm=252;
+                modelSBML.fbc_geneProduct(i).sboTerm=243;
             end
         end
         %Copy the default values to the next index as long as it is not the
@@ -324,6 +362,16 @@ if isfield(model,'genes')
         
         if isfield(modelSBML.fbc_geneProduct,'metaid')
             modelSBML.fbc_geneProduct(i).metaid=model.genes{i};
+        end
+        if ~isempty(model.geneMiriams{i})
+            [~,sbo_ind] = ismember('sbo',model.geneMiriams{i}.name);
+            if sbo_ind > 0
+                modelSBML.fbc_geneProduct(i).sboTerm=str2double(regexprep(model.geneMiriams{i}.value{sbo_ind},'SBO:','','ignorecase'));
+                % remove the SBO term from compMiriams so the information is
+                % not duplicated in the "annotation" field later on
+                model.geneMiriams{i}.name(sbo_ind) = [];
+                model.geneMiriams{i}.value(sbo_ind) = [];
+            end
         end
         if ~isempty(model.geneMiriams{i}) && isfield(modelSBML.fbc_geneProduct(i),'annotation')
             modelSBML.fbc_geneProduct(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.genes{i} '">'];
@@ -447,6 +495,18 @@ for i=1:numel(model.rxns)
         modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '</body></notes>'];
     end
     
+    % Export SBO terms from rxnMiriams
+    if ~isempty(model.rxnMiriams{i})
+        [~,sbo_ind] = ismember('sbo',model.rxnMiriams{i}.name);
+        if sbo_ind > 0
+            modelSBML.reaction(i).sboTerm=str2double(regexprep(model.rxnMiriams{i}.value{sbo_ind},'SBO:','','ignorecase'));
+            % remove the SBO term from rxnMiriams so the information is not
+            % duplicated in the "annotation" field later on
+            model.rxnMiriams{i}.name(sbo_ind) = [];
+            model.rxnMiriams{i}.value(sbo_ind) = [];
+        end
+    end
+    
     %Export annotation information from rxnMiriams
     if (~isempty(model.rxnMiriams{i}) && isfield(modelSBML.reaction(i),'annotation')) || ~isempty(model.eccodes{i})
         modelSBML.reaction(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_R_' model.rxns{i} '">'];
@@ -511,11 +571,12 @@ end
 %Prepare subSystems Code taken from COBRA functions getModelSubSystems,
 %writeSBML, findRxnsFromSubSystem under GNU General Public License v3.0,
 %license file in readme/GPL.MD. Code modified for RAVEN
-modelSBML.groups_group.groups_kind = 'partonomy';
-modelSBML.groups_group.sboTerm = 633;
-tmpStruct=modelSBML.groups_group;
-rxns=strcat('R_',model.rxns);
-if isfield(model, 'subSystems')
+if modelHasSubsystems
+    modelSBML.groups_group.groups_kind = 'partonomy';
+    modelSBML.groups_group.sboTerm = 633;
+    tmpStruct=modelSBML.groups_group;
+
+    rxns=strcat('R_',model.rxns);
     if ~any(cellfun(@iscell,model.subSystems))
         if ~any(~cellfun(@isempty,model.subSystems))
             subSystems = {};
@@ -588,14 +649,23 @@ end
 modelSBML.fbc_activeObjective=modelSBML.fbc_objective.fbc_id;
 
 fbcStr=['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/fbc/version',num2str(sbmlPackageVersions(1))];
-groupStr=['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/groups/version',num2str(sbmlPackageVersions(2))];
-modelSBML.namespaces=struct('prefix',{'','fbc','groups'},...
+if modelHasSubsystems
+    groupStr=['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/groups/version',num2str(sbmlPackageVersions(2))];
+    modelSBML.namespaces=struct('prefix',{'','fbc','groups'},...
     'uri',{['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/core'],...
     fbcStr,groupStr});
+else
+    modelSBML.namespaces=struct('prefix',{'','fbc'},...
+    'uri',{['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/core'],...
+    fbcStr});
+end
 
 if sbmlPackageVersions(1) == 2
     modelSBML.fbc_strict=1;
 end
+
+modelSBML.rule=[];
+modelSBML.constraint=[];
 
 OutputSBML(modelSBML,fileName,1,0,[1,0]);
 end

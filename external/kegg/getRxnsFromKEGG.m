@@ -3,11 +3,13 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 % getRxnsFromKEGG
 %   Retrieves information on all reactions stored in KEGG database
 %
+%   Input:
 %   keggPath            if keggRxns.mat is not in the RAVEN\external\kegg
 %                       directory, this function will attempt to read data
 %                       from a local FTP dump of the KEGG database.
 %                       keggPath is the path to the root of this database
 %
+%   Output:
 %   model               a model structure generated from the database. The
 %                       following fields are filled
 %       id                  'KEGG'
@@ -37,7 +39,7 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 %   isGeneral           a cell array with the reactions labelled as
 %                       "general reaction"
 %
-%   Reactions on the form A <=> A + B will not be loaded. If the file
+%   NOTE: Reactions on the form A <=> A + B will not be loaded. If the file
 %   keggRxns.mat is in the RAVEN/external/kegg directory it will be loaded
 %   instead of parsing of the KEGG files. If it does not exist it will be
 %   saved after parsing of the KEGG files. In general, you should remove
@@ -47,7 +49,7 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 %   Usage: [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 %    isGeneral]=getRxnsFromKEGG(keggPath)
 %
-%   Simonas Marcisauskas, 2018-07-25
+%   Simonas Marcisauskas, 2019-07-21
 %
 %
 % NOTE: This is how one entry looks in the file
@@ -79,37 +81,38 @@ end
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 rxnsFile=fullfile(ravenPath,'external','kegg','keggRxns.mat');
 if exist(rxnsFile, 'file')
-    fprintf(['NOTE: Importing KEGG reactions from ' strrep(rxnsFile,'\','/') '.\n']);
+    fprintf(['Importing KEGG reactions from ' strrep(rxnsFile,'\','/') '... ']);
     load(rxnsFile);
 else
-    fprintf(['Cannot locate ' strrep(rxnsFile,'\','/') ' and will try to generate it from the local KEGG database.\n']);
+    fprintf(['NOTE: Cannot locate ' strrep(rxnsFile,'\','/') ', it will therefore be generated from the local KEGG database\n']);
     if ~exist(fullfile(keggPath,'reaction'),'file') || ~exist(fullfile(keggPath,'reaction.lst'),'file') || ~exist(fullfile(keggPath,'reaction_mapformula.lst'),'file')
-        EM=fprintf(['The files ''reaction'', ''reaction.lst'' and ''reaction_mapformula.lst'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
+        EM=fprintf(['The files ''reaction'', ''reaction.lst'' and ''reaction_mapformula.lst'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP\n']);
         dispEM(EM);
     else
+        fprintf('Generating keggRxns.mat file... ');
         %Add new functionality in the order specified in models
         model.id='KEGG';
         model.description='Automatically generated from KEGG database';
         
-        %Preallocate memory for 11000 reactions
-        model.rxns=cell(11000,1);
-        model.rxnNames=cell(11000,1);
-        model.eccodes=cell(11000,1);
-        model.subSystems=cell(11000,1);
-        model.rxnMiriams=cell(11000,1);
-        model.rxnNotes=cell(11000,1);
-        equations=cell(11000,1);
+        %Preallocate memory for 15000 reactions
+        model.rxns=cell(15000,1);
+        model.rxnNames=cell(15000,1);
+        model.eccodes=cell(15000,1);
+        model.subSystems=cell(15000,1);
+        model.rxnMiriams=cell(15000,1);
+        model.rxnNotes=cell(15000,1);
+        equations=cell(15000,1);
         %Temporarily store the equations
         
-        isSpontaneous=false(11000,1);
-        isIncomplete=false(11000,1);
-        isGeneral=false(11000,1);
+        isSpontaneous=false(15000,1);
+        isIncomplete=false(15000,1);
+        isGeneral=false(15000,1);
 
         %First load information on reaction ID, reaction name, KO, pathway,
         %and ec-number
         fid = fopen(fullfile(keggPath,'reaction'), 'r');
         
-        %Keep track of how many reactions that have been added
+        %Keep track of how many reactions have been added
         rxnCounter=0;
         
         %Loop through the file
@@ -147,7 +150,7 @@ else
                 pathway=false;
                 module=false;
                 
-                %Add KEGG reaction ID miriam;
+                %Add KEGG reaction ID miriam
                 tempStruct=model.rxnMiriams{rxnCounter};
                 tempStruct.name{1,1}='kegg.reaction';
                 tempStruct.value{1,1}=tline(13:18);
@@ -281,16 +284,16 @@ else
                     
                     tempStruct=model.rxnMiriams{rxnCounter};
                     tempStruct.name{addToIndex,1}='kegg.pathway';
-                    %If it's the old version
+                    %If it is the old version
                     if strcmp(tline(14:17),'PATH:')
                         tempStruct.value{addToIndex,1}=tline(19:25);
                     else
-                        %If it's the new version
+                        %If it is the new version
                         tempStruct.value{addToIndex,1}=tline(13:19);
                         pathway=true;
                     end
                     
-                    %Don't save global or overview pathways. The ids for
+                    %Do not save global or overview pathways. The ids for
                     %such pathways begin with rn011 or rn012
                     if ~strcmp('rn011',tempStruct.value{addToIndex,1}(1:5)) && ~strcmp('rn012',tempStruct.value{addToIndex,1}(1:5))
                         model.rxnMiriams{rxnCounter}=tempStruct;
@@ -494,5 +497,6 @@ else
         save(rxnsFile,'model','isGeneral','isIncomplete','isUndefinedStoich','isSpontaneous');
     end
 end
+fprintf('COMPLETE\n');
 
 end

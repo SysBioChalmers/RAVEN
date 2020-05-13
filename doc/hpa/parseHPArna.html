@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of parseHPArna</title>
+  <meta name="keywords" content="parseHPArna">
+  <meta name="description" content="parseHPA">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">hpa</a> &gt; parseHPArna.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for hpa&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>parseHPArna
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>parseHPA</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function arrayData=parseHPArna(fileName, version) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> parseHPA
+   Parses a database dump of the Human Protein Atlas (HPA) RNA-Seq data.
+
+   Input:
+   fileName            tab-separated database dump of HPA RNA data. For
+                       details regarding the format, see
+                       http://www.proteinatlas.org/about/download.
+   version             version of HPA [optional, default=18]
+
+
+   Output:
+   arrayData
+       genes               cell array with the unique ensemble gene IDs
+       geneNames           cell array with the gene names (gene abbrevs)
+       tissues             cell array with the tissue names
+       levels              matrix of gene expression levels (TPM), where
+                           rows correspond to genes, and columns
+                           correspond to tissues
+
+   Usage: arrayData=parseHPArna(fileName,version)
+
+   Jonathan Robinson, 2018-11-11</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function arrayData=parseHPArna(fileName, version)</a>
+0002 <span class="comment">% parseHPA</span>
+0003 <span class="comment">%   Parses a database dump of the Human Protein Atlas (HPA) RNA-Seq data.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%   Input:</span>
+0006 <span class="comment">%   fileName            tab-separated database dump of HPA RNA data. For</span>
+0007 <span class="comment">%                       details regarding the format, see</span>
+0008 <span class="comment">%                       http://www.proteinatlas.org/about/download.</span>
+0009 <span class="comment">%   version             version of HPA [optional, default=18]</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">%   Output:</span>
+0013 <span class="comment">%   arrayData</span>
+0014 <span class="comment">%       genes               cell array with the unique ensemble gene IDs</span>
+0015 <span class="comment">%       geneNames           cell array with the gene names (gene abbrevs)</span>
+0016 <span class="comment">%       tissues             cell array with the tissue names</span>
+0017 <span class="comment">%       levels              matrix of gene expression levels (TPM), where</span>
+0018 <span class="comment">%                           rows correspond to genes, and columns</span>
+0019 <span class="comment">%                           correspond to tissues</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">%   Usage: arrayData=parseHPArna(fileName,version)</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">%   Jonathan Robinson, 2018-11-11</span>
+0024 <span class="comment">%</span>
+0025 
+0026 <span class="keyword">if</span> nargin&lt;2
+0027     <span class="comment">%Change this and add code for more versions when the current HPA</span>
+0028     <span class="comment">%version is increased and the format is changed</span>
+0029     version=18;
+0030 <span class="keyword">end</span>
+0031 
+0032 <span class="keyword">if</span> ~(exist(fileName,<span class="string">'file'</span>)==2)
+0033     error(<span class="string">'HPA file %s cannot be found'</span>,string(fileName));
+0034 <span class="keyword">end</span>
+0035 
+0036 <span class="keyword">if</span> (version == 18)
+0037     fid=fopen(fileName,<span class="string">'r'</span>);
+0038     hpa=textscan(fid,<span class="string">'%q %q %q %q %q'</span>,<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>);
+0039     fclose(fid);
+0040     
+0041     <span class="comment">%Go through and see if the headers match what was expected</span>
+0042     headers={<span class="string">'Gene'</span> <span class="string">'Gene name'</span> <span class="string">'Sample'</span> <span class="string">'Value'</span> <span class="string">'Unit'</span>};
+0043     <span class="keyword">for</span> i=1:numel(headers)
+0044         <span class="keyword">if</span> ~strcmpi(headers(i),hpa{i}(1))
+0045             EM=[<span class="string">'Could not find the header &quot;'</span> headers{i} <span class="string">'&quot;. Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'</span>];
+0046             dispEM(EM);
+0047         <span class="keyword">end</span>
+0048         <span class="comment">%Remove the header line here</span>
+0049         hpa{i}(1)=[];
+0050     <span class="keyword">end</span>
+0051     
+0052     <span class="comment">%Get unique gene IDs and tissue names</span>
+0053     [arrayData.genes, P, I] = unique(hpa{1});
+0054     arrayData.geneNames = hpa{2}(P);  <span class="comment">% retrieve corresponding gene names</span>
+0055     [arrayData.tissues, ~, J] = unique(hpa{3});
+0056     
+0057     <span class="comment">%Now extract the gene levels and organize into matrix</span>
+0058     arrayData.levels = NaN(max(I),max(J));
+0059     linearInd = sub2ind(size(arrayData.levels),I,J);
+0060     arrayData.levels(linearInd) = str2double(hpa{4});
+0061     
+0062 <span class="keyword">else</span>
+0063     error(<span class="string">'Previous HPA versions (before 18) not currently supported.'</span>);
+0064 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

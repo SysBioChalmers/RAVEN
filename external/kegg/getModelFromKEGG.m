@@ -3,6 +3,7 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 % getModelFromKEGG
 %   Retrieves information stored in KEGG database and generates a model
 %
+%   Input:
 %   keggPath            if keggGenes.mat, keggMets.mat, keggPhylDist.mat or
 %                       keggRxns.mat are not in the RAVEN/external/kegg
 %                       directory, this function will attempt to read data
@@ -28,6 +29,7 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %                       script will therefore not be able to remove all
 %                       such reactions (opt, default false)
 %
+%   Output:
 %   model               a model structure generated from the database. All
 %                       reactions and the metabolites used in them will be
 %                       added
@@ -35,15 +37,14 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %                       ids and their associated genes. The KO ids are
 %                       saved as reactions
 %
+%   NOTE: The model output from getModelFromKEGG can be used as template
+%   for fillGaps. In that case, ensure that the genes and rxnGeneMat fields
+%   are removed before parsing: model=rmfield(model,'genes'), etc.
+%
 %   Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral)
 %
-%   Note:               The model output from getModelFromKEGG can be used
-%                       as template for fillGaps. In that case, ensure that
-%                       the genes and rxnGeneMat fields are removed before
-%                       parsing: model=rmfield(model,'genes'), etc.
-%
-%   Simonas Marcisauskas, 2018-09-06
+%   Simonas Marcisauskas, 2019-09-09
 %
 
 if nargin<1
@@ -66,13 +67,13 @@ end
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 modelFile=fullfile(ravenPath,'external','kegg','keggModel.mat');
 if exist(modelFile, 'file') && isNewestFile(ravenPath)
-    fprintf(['NOTE: Importing KEGG model from ' strrep(modelFile,'\','/') '.\n']);
+    fprintf(['Importing the global KEGG model from ' strrep(modelFile,'\','/') '... ']);
     load(modelFile);
+    fprintf('COMPLETE\n');
 else
-    fprintf(['The file ' strrep(modelFile,'\','/') ' cannot be located or is older than kegg***.mat files. It will therefore be regenerated.\n']);
+    fprintf(['NOTE: The file ' strrep(modelFile,'\','/') ' does not exist or is out-of-date and therefore will be (re)generated\n']);
     %First get all reactions
     [model,isSpontaneous,isUndefinedStoich,isIncomplete,isGeneral]=getRxnsFromKEGG(keggPath);
-    fprintf('KEGG reactions loaded\n');
     
     %Get the KO ids that are associated with any of the reactions. They
     %will be used later on to create a rxn-gene matrix
@@ -99,16 +100,16 @@ else
     %Get all genes from any organism in KEGG that is associated with any of
     %the KOs
     KOModel=getGenesFromKEGG(keggPath,KOs);
-    fprintf('KEGG genes loaded\n');
     
+    fprintf('Pruning the global KEGG model from the partially annotated, lumped KEGG Orthology entries... ')
     model.genes=KOModel.genes;
     
     %It can be that there are KOs from the reactions that have no database
-    %entry. These are (as far as I've seen) lumped versions of other KOs
+    %entry. These are (as far as I have seen) lumped versions of other KOs
     %and should be removed
     KOsToRemove=setdiff(KOs, KOModel.rxns);
     
-    %Loop through all reactions and delete the KOs that weren't found
+    %Loop through all reactions and delete the KOs that were not found
     for i=1:numel(model.rxns)
         if isstruct(model.rxnMiriams{i})
             for j=1:numel(model.rxnMiriams{i}.name)
@@ -131,7 +132,9 @@ else
             end
         end
     end
+    fprintf('COMPLETE\n');
     
+    fprintf('Constructing the rxnGeneMat for the global KEGG model, this will take a while... ')
     %Create the rxnGeneMat for the reactions. This is simply done by
     %merging the gene associations for all the involved KOs
     r=zeros(10000000,1);
@@ -162,11 +165,12 @@ else
     if size(model.rxnGeneMat,1)~=numel(model.rxns) || size(model.rxnGeneMat,2)~=numel(KOModel.genes)
         model.rxnGeneMat(numel(model.rxns),numel(KOModel.genes))=0;
     end
+    fprintf('COMPLETE\n');
     
     %Then get all metabolites
     metModel=getMetsFromKEGG(keggPath);
-    fprintf('KEGG metabolites loaded\n');
     
+    fprintf('Finalizing the global KEGG model... ');
     %Add information about all metabolites to the model
     [a, b]=ismember(model.mets,metModel.mets);
     a=find(a);
@@ -230,6 +234,7 @@ else
     
     %Save the model structure
     save(modelFile,'model','KOModel','isGeneral','isIncomplete','isUndefinedStoich','isSpontaneous');
+    fprintf('COMPLETE\n');
 end
 
 %Delete reactions which are labeled as "incomplete", "erroneous",

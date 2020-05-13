@@ -32,9 +32,11 @@ if ~isstr(geneAssoc)
     error(sprintf(EM))
 end
 
+
 % Add genes to model
 geneList=transpose(cell(unique(regexp(geneAssoc,'[)(]*|( and )*|( or )*','split')))); % Extract individual, unique genes from the geneAssoc provided
-genesToAdd.genes=setdiff(geneList(2:length(geneList)),model.genes); % Only keep the genes that are not yet part of the model.genes.
+geneList=geneList(~cellfun(@isempty, geneList));
+genesToAdd.genes=setdiff(geneList,model.genes); % Only keep the genes that are not yet part of the model.genes.
 model=addGenesRaven(model,genesToAdd); % Add genes
 
 % Find reaction and gene indices

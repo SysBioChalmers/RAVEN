@@ -30,7 +30,7 @@ function model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %   Usage: model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond)
 %
-%   Hao Wang, 2018-11-05
+%   Hao Wang, 2020-03-19
 %
 
 if nargin<2
@@ -54,12 +54,6 @@ if nargin<7
 end
 if nargin<8
     useDiamond=true;
-end
-
-%Check if query fasta exists
-if ~(exist(fastaFile,'file')==2)
-    error('FASTA file %s cannot be found',string(fastaFile));
-    dispEM(EM,true);
 end
 
 %First generate the full MetaCyc model
@@ -145,13 +139,13 @@ model.bitscore=model.bitscore(1:num-1);
 model.ppos=model.ppos(1:num-1);
 
 % Get the indexes of matched genes in the metaCycModel
-[crap, indexes]=ismember(model.proteins,metaCycModel.genes);
+% because some enzymes in the FASTA file cannot be found in the dump file
+[hits, indexes]=ismember(model.proteins,metaCycModel.genes);
+found = find(hits);
+model.genes=model.genes(found);
 
-% Go throught the indexes to get the rxnGeneMat matrix
-model.rxnGeneMat=sparse(numel(model.rxns),num-1);
-for i=1:num-1
-    model.rxnGeneMat(:,i)=metaCycModel.rxnGeneMat(:,indexes(i));
-end
+% Restructure the rxnGeneMat matrix
+model.rxnGeneMat=sparse(metaCycModel.rxnGeneMat(:,indexes(found)));
 
 %Remove all reactions without genes
 hasGenes=any(model.rxnGeneMat,2);
@@ -178,6 +172,8 @@ for j=1:rxnNum
         end
     end
 end
+%update genes field
+model.genes=model.genes(any(model.rxnGeneMat));
 
 %Construct the S matrix and list of metabolites
 [S, mets, badRxns]=constructS(model.equations);

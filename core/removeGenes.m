@@ -41,27 +41,47 @@ end
 
 reducedModel=model;
 
-indexesToRemove=getIndexes(model,genesToRemove,'genes');
-%Make 0 corresponding columns from rxnGeneMat:
-reducedModel.rxnGeneMat(:,indexesToRemove)=0;
+%Only remove genes that are actually in the model
+try
+    ischar(genesToRemove{1});
+    genesToRemove=genesToRemove(ismember(genesToRemove,model.genes));
+end
 
-genes=model.genes(indexesToRemove);
-canCarryFlux=true(size(model.rxns));
-
-%Loop through genes and adapt rxns:
-for i=1:length(genes)
-    %Find all reactions for this gene and loop through them:
-    isGeneInRxn=~cellfun(@isempty,strfind(reducedModel.grRules,genes{i}));
-    for j=1:length(reducedModel.grRules)
-        if isGeneInRxn(j) && canCarryFlux(j)
-            grRule=reducedModel.grRules{j};
-            
-            %Check if rxn can carry flux without this gene:
-            canCarryFlux(j)=canRxnCarryFlux(reducedModel,grRule,genes{i});
-            
-            %Adapt gene rule & gene matrix:
-            grRule=removeGeneFromRule(grRule,genes{i});
-            reducedModel.grRules{j}=grRule;
+if ~isempty(genesToRemove)
+    indexesToRemove = getIndexes(model,genesToRemove,'genes');
+    if ~isempty(indexesToRemove)
+        %Make 0 corresponding columns from rxnGeneMat:
+        reducedModel.rxnGeneMat(:,indexesToRemove) = 0;
+        
+        genes        = model.genes(indexesToRemove);
+        canCarryFlux = true(size(model.rxns));
+        
+        %Loop through genes and adapt rxns:
+        for i = 1:length(genes)
+            %Find all reactions for this gene and loop through them:
+            isGeneInRxn = ~cellfun(@isempty,strfind(reducedModel.grRules,genes{i}));
+            for j = 1:length(reducedModel.grRules)
+                if isGeneInRxn(j) && canCarryFlux(j)
+                    grRule = reducedModel.grRules{j};
+                    
+                    %Check if rxn can carry flux without this gene:
+                    canCarryFlux(j) = canRxnCarryFlux(reducedModel,grRule,genes{i});
+                    
+                    %Adapt gene rule & gene matrix:
+                    grRule = removeGeneFromRule(grRule,genes{i});
+                    reducedModel.grRules{j} = grRule;
+                end
+            end
+        end
+        
+        %Delete or block the reactions that cannot carry flux:
+        if removeBlockedRxns
+            rxnsToRemove = reducedModel.rxns(~canCarryFlux);
+            reducedModel = removeReactions(reducedModel,rxnsToRemove,removeUnusedMets,true);
+        else
+            reducedModel = removeReactions(reducedModel,[],removeUnusedMets,true);
+            reducedModel.lb(~canCarryFlux) = 0;
+            reducedModel.ub(~canCarryFlux) = 0;
         end
     end
 end

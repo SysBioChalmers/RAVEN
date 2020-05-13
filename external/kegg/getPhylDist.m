@@ -2,6 +2,7 @@ function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 % getPhylDist
 %   Calculates distance between species in KEGG based on systematic name
 %
+%   Input:
 %   keggPath        if keggPhylDist.mat is not in the RAVEN\external\kegg
 %                   directory, this function will attempt to read data from
 %                   a local FTP dump of the KEGG database. keggPath is the
@@ -10,15 +11,16 @@ function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 %                   Inf for organisms from another domains (Prokaryota,
 %                   Eukaryota) (opt, default false)
 %
+%   Output:
 %   phylDistStruct  a structure with a list of organism ids and a matrix
 %                   that specifies their pairwise distances
 %
-%   This simple metric is based on the number of nodes two organisms are
-%   away from each other in KEGG
+%   NOTE: This simple metric is based on the number of nodes two organisms
+%   are away from each other in KEGG
 %
 %   Usage: phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 %
-%   Simonas Marcisauskas, 2018-07-25
+%   Simonas Marcisauskas, 2019-09-09
 %
 
 if nargin<1
@@ -34,14 +36,16 @@ end
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 distFile=fullfile(ravenPath,'external','kegg','keggPhylDist.mat');
 if exist(distFile, 'file')
-    fprintf(['NOTE: Importing KEGG phylogenetic distance matrix from ' strrep(distFile,'\','/') '.\n']);
+    fprintf(['Importing the KEGG phylogenetic distance matrix from ' strrep(distFile,'\','/') '... ']);
     load(distFile);
+    fprintf('COMPLETE\n');
 else
-    fprintf(['Cannot locate ' strrep(distFile,'\','/') ' and will try to generate it from the local KEGG database.\n']);
+    fprintf(['Cannot locate ' strrep(distFile,'\','/') '\n']);
     if ~exist(fullfile(keggPath,'taxonomy'),'file')
         EM=fprintf(['The file ''taxonomy'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
         dispEM(EM);
     else
+        fprintf(['Generating the KEGG phylogenetic distance matrix from ' fullfile(keggPath,'taxonomy') '... ']);
         %Open the file that describes the naming of the species
         fid = fopen(fullfile(keggPath,'taxonomy'), 'r');
         
@@ -131,6 +135,7 @@ else
         end
         %Save the structure
         save(distFile,'phylDistStruct');
+        fprintf('COMPLETE\n');
     end
 end
 end

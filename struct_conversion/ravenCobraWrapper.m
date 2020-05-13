@@ -2,8 +2,10 @@ function newModel=ravenCobraWrapper(model)
 % ravenCobraWrapper
 %   Converts between RAVEN and COBRA structures
 %
+%   Input:
 %   model          a RAVEN/COBRA-compatible model structure
 %
+%   Ouput:
 %   newModel       a COBRA/RAVEN-compatible model structure
 %   
 %   This function is a bidirectional tool to convert between RAVEN and COBRA
@@ -122,6 +124,30 @@ if isRaven
     end
     newModel.b=zeros(numel(model.mets),1);
     newModel.csense=repmat('E',size(model.mets));
+    if isfield(model,'geneMiriams')
+       [miriams,extractedMiriamNames]=extractMiriam(model.geneMiriams);
+        miriams=regexprep(miriams,'^[A-Za-z\.]*\/','');
+        i=ismember(extractedMiriamNames,'kegg.genes');
+        if any(i)
+            newModel.geneiskegg__46__genesID=miriams(:,i);
+        end
+        i=ismember(extractedMiriamNames,'kegg.genes');
+        if any(i)
+            newModel.geneiskegg__46__genesID=miriams(:,i);
+        end
+        i=ismember(extractedMiriamNames,'sgd');
+        if any(i)
+            newModel.geneissgdID=miriams(:,i);
+        end      
+        i=ismember(extractedMiriamNames,'uniprot');
+        if any(i)
+            newModel.proteinisuniprotID=miriams(:,i);
+        end
+        i=ismember(extractedMiriamNames,'sbo');
+        if any(i)
+            newModel.geneSBOTerms=miriams(:,i);
+        end
+    end
     if isfield(model,'geneShortNames')
         newModel.geneNames=model.geneShortNames;
     end
@@ -255,6 +281,40 @@ else
     end
     if isfield(model,'genes')
         newModel.genes=model.genes;
+    end
+    if any(isfield(model,{'geneiskegg__46__genesID','geneissgdID','proteinisuniprotID','geneSBOTerm'}))
+        for i=1:numel(model.genes)
+            counter=1;
+            newModel.geneMiriams{i,1}=[];
+            if isfield(model,'geneiskegg__46__genesID')
+                if ~isempty(model.geneiskegg__46__genesID{i})
+                    newModel.geneMiriams{i,1}.name{counter,1} = 'kegg.genes';
+                    newModel.geneMiriams{i,1}.value{counter,1} = model.geneiskegg__46__genesID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'geneissgdID')
+                if ~isempty(model.geneissgdID{i})
+                    newModel.geneMiriams{i,1}.name{counter,1} = 'sgd';
+                    newModel.geneMiriams{i,1}.value{counter,1} = model.geneissgdID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'proteinisuniprotID')
+                if ~isempty(model.proteinisuniprotID{i})
+                    newModel.geneMiriams{i,1}.name{counter,1} = 'uniprot';
+                    newModel.geneMiriams{i,1}.value{counter,1} = model.proteinisuniprotID{i};
+                    counter=counter+1;
+                end
+            end
+            if isfield(model,'geneSBOTerm')
+                if ~isempty(model.geneSBOTerm{i})
+                    newModel.geneMiriams{i,1}.name{counter,1} = 'sbo';
+                    newModel.geneMiriams{i,1}.value{counter,1} = model.geneSBOTerm{i};
+                    counter=counter+1;
+                end
+            end
+        end
     end
     if isfield(model,'geneNames')
         newModel.geneShortNames=model.geneNames;

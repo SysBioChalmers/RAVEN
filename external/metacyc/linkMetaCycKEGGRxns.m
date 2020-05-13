@@ -7,7 +7,7 @@ function linkMetaCycKEGGRxns
 %
 %   Usage: linkMetaCycKEGGRxns
 %
-%   Hao Wang, 2018-11-01
+%   Hao Wang, 2020-03-04
 %
 
 load('metaCycRxns.mat'); %load MetaCyc reactions
@@ -15,6 +15,10 @@ fprintf('NOTE: Importing MetaCyc reactions...\n');
 metaCycModel = metaCycRxns;
 metaCycModel.rxnFrom=cell(numel(metaCycModel.rxns),1);
 metaCycModel.rxnFrom(:)={'MetaCyc'};
+metaCycModel.grRules={};
+metaCycModel.genes={};
+metaCycModel.rxnGeneMat=sparse(numel(metaCycModel.rxns),1);
+
 
 keggModel=getRxnsFromKEGG(); %load KEGG reactions
 
@@ -55,7 +59,7 @@ if ~isfield(shrinkedKeggModel,'metComps')
 end
 
 %Merge models
-mappingModel=mergeModels({shrinkedKeggModel metaCycModel});
+mappingModel=mergeModels({shrinkedKeggModel metaCycModel},'metNames');
 
 %Remove compounds proton and water because KEGG reactions often miss them
 mappingModel=removeMets(mappingModel,{'PROTON','WATER'});

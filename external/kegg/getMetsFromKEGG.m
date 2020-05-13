@@ -2,11 +2,13 @@ function model=getMetsFromKEGG(keggPath)
 % getMetsFromKEGG
 %   Retrieves information on all metabolites stored in KEGG database
 %
+%   Input:
 %   keggPath	if keggMets.mat is not in the RAVEN\external\kegg
 %               directory, this function will attempt to read data from a
 %               local FTP dump of the KEGG database. keggPath is the path
 %               to the root of this database
 %
+%   Output:
 %   model       a model structure generated from the database. The
 %               following fields are filled
 %   	id              'KEGG'
@@ -20,15 +22,15 @@ function model=getMetsFromKEGG(keggPath)
 %   	metFormulas     The chemical composition of the metabolite. This
 %                       will only be loaded if there is no InChI string
 %
-%   If the file keggMets.mat is in the RAVEN\external\kegg directory it
-%   will be loaded instead of parsing of the KEGG files. If it does not
+%   NOTE: If the file keggMets.mat is in the RAVEN\external\kegg directory
+%   it will be loaded instead of parsing of the KEGG files. If it does not
 %   exist it will be saved after parsing of the KEGG files. In general, you
 %   should remove the keggMets.mat file if you want to rebuild the model
 %   structure from a newer version of KEGG.
 %               
 %   Usage: model=getMetsFromKEGG(keggPath)
 %
-%   Simonas Marcisauskas, 2018-07-25
+%   Simonas Marcisauskas, 2019-09-09
 %
 %
 % NOTE: This is how one entry looks in the file
@@ -71,14 +73,15 @@ end
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 metsFile=fullfile(ravenPath,'external','kegg','keggMets.mat');
 if exist(metsFile, 'file')
-    fprintf(['NOTE: Importing KEGG metabolites from ' strrep(metsFile,'\','/') '.\n']);
+    fprintf(['Importing KEGG metabolites from ' strrep(metsFile,'\','/') '... ']);
     load(metsFile);
 else
-    fprintf(['Cannot locate ' strrep(metsFile,'\','/') ' and will try to generate it from the local KEGG database.\n']);
+    fprintf(['NOTE: Cannot locate ' strrep(metsFile,'\','/') ', it will therefore be generated from the local KEGG database\n']);
     if ~exist(fullfile(keggPath,'compound'),'file') || ~exist(fullfile(keggPath,'compound.inchi'),'file')
         EM=fprintf(['The files ''compound'' and ''compound.inchi'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
         dispEM(EM);
     else
+        fprintf('Generating keggMets.mat file... ');
         %Add new functionality in the order specified in models
         model.id='KEGG';
         model.description='Automatically generated from KEGG database';
@@ -279,4 +282,5 @@ else
         save(metsFile,'model');
     end
 end
+fprintf('COMPLETE\n');
 end

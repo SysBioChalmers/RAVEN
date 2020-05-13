@@ -66,13 +66,6 @@ function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(m
 %   Eduard Kerkhoven, 2017-11-28
 %
 
-% fillGaps doesn't work well with the glpk solver as implemented by COBRA
-% for MILP.
-global CBT_MILP_SOLVER
-if strcmp(getpref('RAVEN','solver'),'cobra') && strcmp(CBT_MILP_SOLVER,'glpk')
-    dispEM('The current solver is set to ''cobra'', while in COBRA the MILP solver has been set to ''glpk''. The COBRA implementation of glpk is not well suitable for solving MILPs. Please install the Gurobi or Mosek solver to run fillGaps.',true);
-end
-
 %If the user only supplied a single template model
 if ~iscell(models)
     models={models};
@@ -141,7 +134,7 @@ end
 model.rxnScores=zeros(numel(model.rxns),1);
 
 %First merge all models into one big one
-allModels=mergeModels([{model};models],true);
+allModels=mergeModels([{model};models],'metNames',true);
 
 %Add that net production is ok
 if allowNetProduction==true
@@ -220,9 +213,9 @@ templateRxns=find(~strcmp(allModels.rxnFrom,model.id));
 %Remove everything except for the added ones
 I=true(numel(allModels.rxns),1);
 I(templateRxns(J))=false;
-addedModel=removeReactions(allModels,I,true);
+addedModel=removeReactions(allModels,I,true,true,true);
 
-newModel=mergeModels({model;addedModel},true);
+newModel=mergeModels({model;addedModel},'metNames',true);
 addedRxns=setdiff(newModel.rxns,model.rxns);
 newModel=rmfield(newModel,'rxnScores');
 end

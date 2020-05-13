@@ -47,7 +47,7 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>	setParam</li></ul>
+<li><a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>	setParam</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -99,11 +99,11 @@ This function is called by:
 0041 <span class="keyword">end</span>
 0042 
 0043 <span class="comment">%Find out the maximum theoretical yield of target reaction</span>
-0044 model=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'obj'</span>,targetRxn,1);
+0044 model=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'obj'</span>,targetRxn,1);
 0045 sol=solveLP(model,1);
 0046 targetMax=abs(sol.f*coefficient);   <span class="comment">% 90 percent of the theoretical yield</span>
 0047 
-0048 model=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'obj'</span>,biomassRxn,1);
+0048 model=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'obj'</span>,biomassRxn,1);
 0049 
 0050 fseof.results=zeros(length(model.rxns),iterations);
 0051 fseof.target=zeros(length(model.rxns),1);
@@ -112,7 +112,7 @@ This function is called by:
 0054 <span class="comment">%Enforce objective flux iteratively</span>
 0055 <span class="keyword">for</span> i=1:iterations
 0056     n=i*targetMax/iterations;
-0057     model=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params)">setParam</a>(model,<span class="string">'lb'</span>,targetRxn,n);
+0057     model=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'lb'</span>,targetRxn,n);
 0058     
 0059     sol=solveLP(model,1);
 0060     
@@ -168,26 +168,30 @@ This function is called by:
 0110         A1=num2str(num);                                  <span class="comment">%row ID</span>
 0111         A2=char(model.rxns(num));                         <span class="comment">%enzyme ID</span>
 0112         A3=char(model.rxnNames(num));                     <span class="comment">%enzyme Name</span>
-0113         A4=char(strjoin(model.subSystems{num,1},<span class="string">';'</span>));                   <span class="comment">%Subsystems</span>
-0114         A5=num2str(model.rev(num)*rxnDirection(num,1));   <span class="comment">%reaction Dirction</span>
-0115         A6=char(model.grRules(num));                      <span class="comment">%Gr Rule</span>
-0116         <span class="keyword">if</span> output == 1    <span class="comment">%Output to a file</span>
-0117             fprintf(fid,formatSpec,A0,A1,A2,A3,A4,A5,A6);
-0118         <span class="keyword">else</span>              <span class="comment">%Output screen</span>
-0119             fprintf(formatSpec,A0,A1,A2,A3,A4,A5,A6);
-0120         <span class="keyword">end</span>
-0121     <span class="keyword">end</span>
-0122 <span class="keyword">end</span>
-0123 
-0124 <span class="keyword">if</span> output == 1    <span class="comment">%Output to a file</span>
-0125     fclose(fid);
+0113         <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>) &amp;&amp; ~isempty(model.subSystems{num});
+0114             A4=char(strjoin(model.subSystems{num,1},<span class="string">';'</span>));                   <span class="comment">%Subsystems</span>
+0115         <span class="keyword">else</span>
+0116             A4=<span class="string">''</span>;
+0117         <span class="keyword">end</span>
+0118         A5=num2str(model.rev(num)*rxnDirection(num,1));   <span class="comment">%reaction Dirction</span>
+0119         A6=char(model.grRules(num));                      <span class="comment">%Gr Rule</span>
+0120         <span class="keyword">if</span> output == 1    <span class="comment">%Output to a file</span>
+0121             fprintf(fid,formatSpec,A0,A1,A2,A3,A4,A5,A6);
+0122         <span class="keyword">else</span>              <span class="comment">%Output screen</span>
+0123             fprintf(formatSpec,A0,A1,A2,A3,A4,A5,A6);
+0124         <span class="keyword">end</span>
+0125     <span class="keyword">end</span>
 0126 <span class="keyword">end</span>
 0127 
-0128 <span class="keyword">if</span> nargout == 1
-0129     targets.logical=logical(fseof.target);
-0130     targets.slope=abs(fseof.results(:,iterations)-fseof.results(:,1))/abs(targetMax-targetMax/iterations); <span class="comment">%Slope calculation</span>
-0131 <span class="keyword">end</span>
-0132 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 13-Nov-2018 13:56:44 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0128 <span class="keyword">if</span> output == 1    <span class="comment">%Output to a file</span>
+0129     fclose(fid);
+0130 <span class="keyword">end</span>
+0131 
+0132 <span class="keyword">if</span> nargout == 1
+0133     targets.logical=logical(fseof.target);
+0134     targets.slope=abs(fseof.results(:,iterations)-fseof.results(:,1))/abs(targetMax-targetMax/iterations); <span class="comment">%Slope calculation</span>
+0135 <span class="keyword">end</span>
+0136 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
