@@ -39,15 +39,27 @@ else
     isRaven=true;
 end
 
-% Load conversion between COBRA fields and namespaces:
+% Load COBRA field information
+fid             = fopen('COBRA_structure_fields.csv'); % Taken from https://github.com/opencobra/cobratoolbox/blob/develop/src/base/io/definitions/COBRA_structure_fields.csv
+fieldFile       = textscan(fid,repmat('%s',1,15),'Delimiter','\t','HeaderLines',1);
+dbFields        = ~cellfun(@isempty,fieldFile{5}); % Only keep fields with database annotations that should be translated to xxxMiriams
+dbFields        = dbFields & ~contains(fieldFile{1},{'metInChIString','rxnECNumbers','rxnReferences'});
+COBRAnamespace  = fieldFile{5}(dbFields);
+COBRAnamespace  = regexprep(COBRAnamespace,';.*',''); % Only keep first suggested namespace
+COBRAfields     = fieldFile{1}(dbFields);
+fclose(fid);
+
+% Load conversion between additional COBRA fields and namespaces:
 fid             = fopen('cobraNamespaces.csv');
-COBRAnames      = textscan(fid,'%s %s','Delimiter',',','HeaderLines',0);
-rxnCOBRAfields  = COBRAnames{1}(startsWith(COBRAnames{1},'rxn'));
-rxnNamespaces   = COBRAnames{2}(startsWith(COBRAnames{1},'rxn'));
-metCOBRAfields  = COBRAnames{1}(startsWith(COBRAnames{1},'met'));
-metNamespaces   = COBRAnames{2}(startsWith(COBRAnames{1},'met'));
-geneCOBRAfields = COBRAnames{1}(startsWith(COBRAnames{1},'gene'));
-geneNamespaces  = COBRAnames{2}(startsWith(COBRAnames{1},'gene'));
+fieldFile       = textscan(fid,'%s %s','Delimiter',',','HeaderLines',0);
+COBRAfields     = [COBRAfields; fieldFile{1}];
+COBRAnamespace  = [COBRAnamespace; fieldFile{2}];
+rxnCOBRAfields  = COBRAfields(startsWith(COBRAfields,'rxn'));
+rxnNamespaces   = COBRAnamespace(startsWith(COBRAfields,'rxn'));
+metCOBRAfields  = COBRAfields(startsWith(COBRAfields,'met'));
+metNamespaces   = COBRAnamespace(startsWith(COBRAfields,'met'));
+geneCOBRAfields = COBRAfields(startsWith(COBRAfields,'gene'));
+geneNamespaces  = COBRAnamespace(startsWith(COBRAfields,'gene'));
 fclose(fid);
 
 if isRaven
