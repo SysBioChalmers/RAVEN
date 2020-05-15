@@ -29,14 +29,11 @@ fprintf('Checking if RAVEN is on the MATLAB path...\t\t\t\t\t\t\t\t\t');
 if ismember(ravenDir,paths)
     fprintf('OK\n');
 else
-    fprintf('Not OK\n');
-    addMe=input('Would you like to add the RAVEN directory to the path list? Y/N\n','s');
-    if strcmpi(addMe,'y')
-        subpath=regexp(genpath(ravenDir),pathsep,'split'); %List all subdirectories
-        pathsToKeep=cellfun(@(x) isempty(strfind(x,'.git')),subpath) & cellfun(@(x) isempty(strfind(x,'doc')),subpath);
-        addpath(strjoin(subpath(pathsToKeep),pathsep));
-        savepath
-    end
+    fprintf('OK (just added)\n');
+    subpath=regexp(genpath(ravenDir),pathsep,'split'); %List all subdirectories
+    pathsToKeep=cellfun(@(x) isempty(strfind(x,'.git')),subpath) & cellfun(@(x) isempty(strfind(x,'doc')),subpath);
+    addpath(strjoin(subpath(pathsToKeep),pathsep));
+    savepath
 end
 
 %Add the required classes to the static Java path if not already added
