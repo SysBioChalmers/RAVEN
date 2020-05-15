@@ -68,6 +68,11 @@ function pathway = constructPathwayFromCelldesigner(inputFile)
 %   Rasmus Agren, 2010-12-16
 %
 
+%Only works in MATLAB 2014a and earlier
+if ~verLessThan('matlab','8.4');
+    error('This function does not work with your MATLAB version: XML Toolbox required for this function only works with MATLAB version 2014a and earlier.')
+end
+
 %Loads the specified xml file using XML Toolbox
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(ST(I).file));
