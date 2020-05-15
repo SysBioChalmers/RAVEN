@@ -94,7 +94,7 @@ for i=1:numel(solver)
     try
         setRavenSolver(solver{i});
         load(matFile);
-        solveLP(empty);
+        solveLP(emptyModel);
         workingSolvers=strcat(workingSolvers,';',solver{i});
         fprintf('OK\n');
         if strcmp(curSolv,solver{i})
