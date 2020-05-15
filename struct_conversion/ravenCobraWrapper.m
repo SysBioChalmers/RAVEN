@@ -372,6 +372,9 @@ else
         fprintf('Could not determine whether PubChemIDs are compounds (CID)\n or substances (SID). All annotated PubChemIDs will therefore \n be assigned as compounds (CID).\n');
     end
 end
+
+% Order fields
+modelNew=standardizeModelFieldOrder(newModel); % Corrects for both RAVEN and COBRA models
 end
 
 function rules=grrulesToRules(model)
