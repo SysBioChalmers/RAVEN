@@ -41,7 +41,7 @@ end
 fid             = fopen('COBRA_structure_fields.csv'); % Taken from https://github.com/opencobra/cobratoolbox/blob/develop/src/base/io/definitions/COBRA_structure_fields.csv
 fieldFile       = textscan(fid,repmat('%s',1,15),'Delimiter','\t','HeaderLines',1);
 dbFields        = ~cellfun(@isempty,fieldFile{5}); % Only keep fields with database annotations that should be translated to xxxMiriams
-dbFields        = dbFields & ~contains(fieldFile{1},{'metInChIString','rxnECNumbers','rxnReferences'});
+dbFields        = dbFields & ~contains(fieldFile{1},{'metInChIString','metKEGGID','metPubChemID','rxnECNumbers','rxnReferences'});
 COBRAnamespace  = fieldFile{5}(dbFields);
 COBRAnamespace  = regexprep(COBRAnamespace,';.*',''); % Only keep first suggested namespace
 COBRAfields     = fieldFile{1}(dbFields);
