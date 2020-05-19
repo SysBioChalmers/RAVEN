@@ -1,25 +1,34 @@
-function model = buildMNXref(type,allIDs,mnxPath)
+function [model,MNXrefMets,MNXrefRxns] = buildMNXref(type,allIDs,mnxPath,version,saveAsMNXref)
 %buildMNXref  Construct a reference structure from MNX database files.
 %
-%   type        string, specifying the type of reference structure
-%               'mets'  include only metabolite-related fields.
-%               'rxns'  included only reaction-related fields
-%               'both'  include fields related to both reactions and
-%                       metabolites. (opt, default 'both')
-%   allIDs      string whether all IDs from different databases should be
-%               provided for each metabolite or reaction.
-%               'all'   all IDs from the ...._xref files are included
-%               'chebi' same as 'all', but filtered for secondary ChEBI IDs
-%               'pref'  only preferred IDs from ...._prop files (one per
-%                       metabolite / reaction) are included. (opt, default
-%                       'chebi')
-%   mnxPath     string of path where MetaNetX reference files (chem_xref,
-%               chem_prop, reac_xref, reac_prop and chebiSecondary) are
-%               stored. (opt, default to RAVENdir/external/metanetx)
+%   type            string, specifying the type of reference structure
+%                   'mets'  include only metabolite-related fields.
+%                   'rxns'  included only reaction-related fields
+%                   'both'  include fields related to both reactions and
+%                           metabolites. (opt, default 'both')
+%   allIDs          string whether all IDs from different databases should be
+%                   provided for each metabolite or reaction.
+%                   'all'   all IDs from the ...._xref files are included
+%                   'chebi' same as 'all', but filtered for secondary ChEBI IDs
+%                   'pref'  only preferred IDs from ...._prop files (one per
+%                           metabolite / reaction) are included. (opt, default
+%                           'chebi')
+%   mnxPath         string of path where MetaNetX reference files (chem_xref,
+%                   chem_prop, reac_xref, reac_prop and chebiSecondary) are
+%                   stored. (opt, default to RAVENdir/external/metanetx)
 %
-% Usage: model = buildMNXref(model,allIDs,mnxPath)
+%   version         string, specifying the version of MNXref (opt, default '3.2',
+%                   the latest version as of 2020-05-14)
+%
+%   saveAsMNXref    string whether to save structures MNXrefMets and MNXrefRxns as a
+%                   single .mat file in the current directory.
+%                   'yes'   save structures as MNXref.mat
+%                   'no'    MNXref.mat file will not be created (opt, default 'no')         
+%
+% Usage: [model,MNXrefMets,MNXrefRxns] = buildMNXref(type,allIDs,mnxPath,saveAsMNXref)
 %
 % Eduard Kerkhoven, 2018-07-25
+% Cheng Wei Quan (Eiden), 2020-05-14
 
 if nargin<2
     allIDs='chebi';
@@ -29,6 +38,14 @@ if nargin<3
     [ST, I]=dbstack('-completenames');
     mnxPath=fileparts(fileparts(fileparts(ST(I).file)));
     mnxPath=fullfile(mnxPath,'external','metanetx');
+end
+
+if nargin<4
+    version = '3.2';
+end
+
+if nargin<5
+    saveAsMNXref = 'no';
 end
 
 files={'chem_xref','chem_prop','reac_prop','reac_xref'};
@@ -143,6 +160,7 @@ if ismember(type,{'rxns','both'})
     mnxID2extID(:,2) = fNames(ind);  % rename to match field names
     model.rxnMetaNetXID2extID = mnxID2extID;
     fprintf(' done.\n');
+    
 end
 
 %% Load metabolite properties
@@ -270,3 +288,36 @@ if ismember(type,{'mets','both'})
     % remove NAs from metFormulas
     model.metFormulas(ismember(model.metFormulas,'NA')) = {''};
 end
+
+%% Process fields with empty cells/nested cells in model
+if ismember(type,{'rxns','both'})
+[MNXrefRxns.BiGGMNXid,MNXrefRxns.BiGGxref] = extractNestedCell(model.rxnMetaNetXID,model.rxnBIGGID);
+[MNXrefRxns.KEGGMNXid,MNXrefRxns.KEGGxref] = extractNestedCell(model.rxnMetaNetXID,model.rxnKEGGID);
+[MNXrefRxns.MetaCycMNXid,MNXrefRxns.MetaCycxref] = extractNestedCell(model.rxnMetaNetXID,model.rxnMetaCycID);
+[MNXrefRxns.ReactomeMNXid,MNXrefRxns.Reactomexref] = extractNestedCell(model.rxnMetaNetXID,model.rxnREACTOMEID);
+[MNXrefRxns.RheaMNXid,MNXrefRxns.Rheaxref] = extractNestedCell(model.rxnMetaNetXID,model.rxnRheaID);
+[MNXrefRxns.SABIORKMNXid,MNXrefRxns.SABIORKxref] = extractNestedCell(model.rxnMetaNetXID,model.rxnSABIORKID);
+[MNXrefRxns.SEEDMNXid,MNXrefRxns.SEEDxref] = extractNestedCell(model.rxnMetaNetXID,model.rxnSEEDID);
+MNXrefRxns.Version = version;
+end
+
+if ismember(type,{'mets','both'})
+[MNXrefMets.BiGGMNXid,MNXrefMets.BiGGxref] = extractNestedCell(model.metMetaNetXID,model.metBIGGID);
+[MNXrefMets.ChEBIMNXid,MNXrefMets.ChEBIxref] = extractNestedCell(model.metMetaNetXID,model.metChEBIID);
+[MNXrefMets.envipathMNXid,MNXrefMets.envipathxref] = extractNestedCell(model.metMetaNetXID,model.metEnviPathID);
+[MNXrefMets.HMDBMNXid,MNXrefMets.HMDBxref] = extractNestedCell(model.metMetaNetXID,model.metHMDBID);
+[MNXrefMets.KEGGMNXid,MNXrefMets.KEGGxref] = extractNestedCell(model.metMetaNetXID,model.metKEGGID);
+[MNXrefMets.LIPIDMAPSMNXid,MNXrefMets.LIPIDMAPSxref] = extractNestedCell(model.metMetaNetXID,model.metLIPIDMAPSID);
+[MNXrefMets.MetaCycMNXid,MNXrefMets.MetaCycxref] = extractNestedCell(model.metMetaNetXID,model.metMetaCycID);
+[MNXrefMets.ReactomeMNXid,MNXrefMets.Reactomexref] = extractNestedCell(model.metMetaNetXID,model.metREACTOMEID);
+[MNXrefMets.SABIORKMNXid,MNXrefMets.SABIORKxref] = extractNestedCell(model.metMetaNetXID,model.metSABIORKID);
+[MNXrefMets.SEEDMNXid,MNXrefMets.SEEDxref] = extractNestedCell(model.metMetaNetXID,model.metSEEDID);
+[MNXrefMets.SLMMNXid,MNXrefMets.SLMxref] = extractNestedCell(model.metMetaNetXID,model.metSLMID);
+MNXrefMets.Version = version;
+end
+
+if strcmp(saveAsMNXref,'yes')
+    save('MNXref','MNXrefMets','MNXrefRxns');
+end
+end
+
