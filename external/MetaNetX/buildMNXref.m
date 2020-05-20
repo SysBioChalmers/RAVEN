@@ -123,9 +123,7 @@ if ismember(type,{'rxns','both'})
     [~,keep,~] = unique(mnxID2extID(rheaIdx,1),'first');
     rheaRemove = ~ismember(rheaIdx,rheaIdx(keep));
     rmIds(rheaIdx(rheaRemove)) = 1;
-    
     mnxID2extID(rmIds,:)=[];
-    mnx_xref(rmIds,:)=[];
         
     sNames={'bigg','kegg','metacyc','reactome','rhea','sabiork','seed'};
     fNames={'rxnBIGGID','rxnKEGGID','rxnMetaCycID','rxnREACTOMEID',...
@@ -141,7 +139,7 @@ if ismember(type,{'rxns','both'})
         currentmnxID2extID=mnxIDdb(currentDbOnly,:);
         
         [mnxs,indices,indices2] = unique(currentmnxID2extID(:,1),'stable');
-        counts = hist(indices2, 1:size(indices));
+        counts = histcounts(indices2, 1:size(indices));
         mnxs(counts==1,2)=currentmnxID2extID(indices(counts==1),3);
         multiMnxs=find(counts>1);
         
@@ -204,8 +202,8 @@ if ismember(type,{'mets','both'})
     mnxID2extID = [mnx_xref.MNX_ID,metSourceNamesX,metSourceIDsX];
     
     rmIds = strcmp(mnxID2extID(:,2),'bigg') & startsWith(mnxID2extID(:,3),'M_');
-    rmIds(find(strcmp(mnxID2extID(:,2),'kegg') & startsWith(mnxID2extID(:,3),'D'))) = 1;
-    rmIds(find(strcmp(mnxID2extID(:,2),'kegg') & startsWith(mnxID2extID(:,3),'G'))) = 1;
+    rmIds(strcmp(mnxID2extID(:,2),'kegg') & startsWith(mnxID2extID(:,3),'D')) = 1;
+    rmIds(strcmp(mnxID2extID(:,2),'kegg') & startsWith(mnxID2extID(:,3),'G')) = 1;
     
     mnxID2extID(rmIds,:)=[];
     mnx_xref(rmIds,:)=[];
@@ -263,7 +261,7 @@ if ismember(type,{'mets','both'})
         end
         
         [mnxs,indices,indices2] = unique(currentmnxID2extID(:,1),'stable');
-        counts = hist(indices2, 1:size(indices));
+        counts = histcounts(indices2, 1:size(indices));
         mnxs(counts==1,2)=currentmnxID2extID(indices(counts==1),3);
         multiMnxs=find(counts>1);
         
