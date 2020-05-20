@@ -1,7 +1,7 @@
 #! /bin/bash 
 er=0;
 myself=`dirname "$0"`/`basename "$0"`; export myself
-version="v7.427 (2019/Mar/24)"; export version
+version="v7.467 (2020/May/14)"; export version
 LANG=C; export LANG
 os=`uname`
 progname=`basename "$0"`
@@ -214,6 +214,9 @@ dafs=$defaultdafs
 mccaskill=$defaultmccaskill
 contrafold=$defaultcontrafold
 progressfile="/dev/stderr"
+anchorfile="/dev/null"
+anchoropt=""
+maxanchorseparation=1000
 debug=0
 sw=0
 algopt=$defaultalgopt
@@ -236,6 +239,7 @@ partsize=50
 partdist="ktuples"
 partorderopt=" -x "
 treeout=0
+nodeout=0
 distout=0
 treein=0
 topin=0
@@ -377,6 +381,9 @@ if [ $# -gt 0 ]; then
 			distance="parttree"
 			partdist="fasta"
 		elif [ "$1" = "--treeout" ]; then 
+			treeout=1
+		elif [ "$1" = "--nodeout" ]; then 
+			nodeout=1
 			treeout=1
 		elif [ "$1" = "--distout" ]; then 
 			distout=1
@@ -520,6 +527,8 @@ if [ $# -gt 0 ]; then
 			adjustdirection=1
 		elif [ "$1" = "--adjustdirectionaccurately" ]; then 
 			adjustdirection=2
+		elif [ "$1" = "--oneiteration" ]; then 
+			oneiterationopt=" -r "
 		elif [ "$1" = "--progress" ]; then 
 			shift   
 			progressfile="$1"
@@ -530,6 +539,24 @@ if [ $# -gt 0 ]; then
 		elif [ "$1" = "--out" ]; then 
 			shift   
 			outputfile="$1"
+		elif [ "$1" = "--skipanchorsremoterthan" ]; then 
+			shift   
+			if ! expr "$1" : "[0-9]" > /dev/null ; then
+				echo "Specify maximum gap length between anchors." 1>&2
+				exit
+			fi
+			maxanchorseparation=`expr "$1" - 0` 
+		elif [ "$1" = "--anchors" ]; then 
+			shift
+			anchorfile="$1"
+			anchoropt=" -l "
+#			memopt=" -M -B "      # ato de kentou
+#			memopt=" -N "         # no memsave
+			if [ ! -e "$anchorfile" ]; then
+				echo "Cannot open $anchorfile" 1>&2
+				echo "" 1>&2
+				exit
+			fi
 		elif [ "$1" = "--thread" ]; then 
 			shift
 			if ! expr "$1" : "[0-9\-]" > /dev/null ; then
@@ -1047,6 +1074,7 @@ function removetmpfile() { # for MPI
 			cat "$laraparams"     | tr "\r" "\n" | grep -v "^$" > "$TMPFILE/_lara.params"
 			cat "$pdblist"        | tr "\r" "\n" | grep -v "^$" > "$TMPFILE/pdblist"
 			cat "$ownlist"        | tr "\r" "\n" | grep -v "^$" > "$TMPFILE/ownlist"
+			cat "$anchorfile"     | tr "\r" "\n" | grep -v "^$" > "$TMPFILE/_externalanchors"
 
 			SAVEIFS=$IFS
 			IFS='\n'
@@ -1651,7 +1679,11 @@ function removetmpfile() { # for MPI
 
 #new
 	if [ $cycle -eq 0 ]; then
-		treeoutopt="-t -T"
+		if [ $nodeout -eq 1 ]; then
+			treeoutopt="-^ -T"
+		else
+			treeoutopt="-t -T"
+		fi
 		iterate=0 
 		weighti="0.0"  # 2016Jul31, tbfast.c kara idou
 #		if [ $distance = "global" -o $distance = "local" -o $distance = "localgenaf" -o $distance = "globalgenaf" ]; then # 2012/04, localpair --> local alignment distance
@@ -1671,7 +1703,14 @@ function removetmpfile() { # for MPI
 			fi
 		fi
 	else
-		if [ $treeout -eq 1 ]; then
+		if [ $nodeout -eq 1 ]; then
+			if [ $iterate -gt 0 ]; then
+				echo "The --nodeout option supports only progressive method (--maxiterate 0) for now." 1>&2
+				exit 1
+			fi
+			parttreeoutopt="-t"
+			treeoutopt="-^"
+		elif [ $treeout -eq 1 ]; then
 			parttreeoutopt="-t"
 			treeoutopt="-t"
 		else
@@ -1878,19 +1917,19 @@ function removetmpfile() { # for MPI
 			fi
 		fi
 		if [ $iterate -gt 0 ]; then
-			echo 'Iterative refinment is not supported for --'$treeext  1>>"$progressfile"
+			echo 'Iterative refinment is not supported for --large or --'$treeext  1>>"$progressfile"
 			echo '' 1>>"$progressfile"
 			exit 1
 		fi
 		if [ $fragment -ne 0 ]; then
-			echo '--addfragments, --addfull or --addlong is not yet supported for --'$treeext  1>>"$progressfile"
+			echo '--addfragments, --addfull or --addlong is not yet supported for --large or --'$treeext  1>>"$progressfile"
 			echo "Use --add newsequences --$treeext" 1>>"$progressfile"
 			echo "Or, --addfragments (long, full) newsequences, without --"$treeext 1>>"$progressfile"
 			echo '' 1>>"$progressfile"
 			exit 1
 		fi
 		if [ "$mergetable" != "/dev/null" ]; then # 2018/Mar/2
-			echo '--merge is not yet supported for --'$treeext  1>>"$progressfile"
+			echo '--merge is not yet supported for --large or --'$treeext  1>>"$progressfile"
 			echo "Use --merge without --"$treeext 1>>"$progressfile"
 			echo '' 1>>"$progressfile"
 			exit 1
@@ -1925,6 +1964,7 @@ function removetmpfile() { # for MPI
 			bunkatsuopt=" -B "  # fftnsi demo bunktasu shinai
 			if [ "$add2ndhalfarg" != " " ]; then
 				if [ $auto -eq 1 -o $iterate -gt 0 ]; then
+					echo '' 1>>"$progressfile"
 					echo 'The --keeplength and --mapout options are not supported' 1>>"$progressfile"
 					echo 'with the --auto or --maxiterate >0 options.' 1>>"$progressfile"
 					echo 'Use the --maxiterate 0 option (= progressive method).' 1>>"$progressfile"
@@ -1933,10 +1973,19 @@ function removetmpfile() { # for MPI
 				fi
 			fi
 		fi
+		
 
 #		cycle=1 # chuui 2014Aug19
 #		iterate=0
 #		treealg=" -q "  ## 2012/01/24  ## removed 2012/02/06
+	else
+		if [ "$add2ndhalfarg" != " " ]; then
+			echo '' 1>>"$progressfile"
+			echo 'The --keeplength and --mapout options are supported' 1>>"$progressfile"
+			echo 'only with --add, --addfragments or --addlong.' 1>>"$progressfile"
+			echo '' 1>>"$progressfile"
+			exit 1
+		fi
 	fi
 
 
@@ -2093,15 +2142,15 @@ function removetmpfile() { # for MPI
 	fi
 
 	if [ $outputformat = "clustal" -a $outorder = "aligned" ]; then
-		outputopt=" -c $strategy -r _order$$ $f2clext "
+		outputopt=" -c $strategy -r $TMPFILE/order $f2clext "
 	elif [ $outputformat = "clustal" -a $outorder = "input" ]; then
 		outputopt=" -c $strategy  $f2clext "
 	elif [ $outputformat = "phylip" -a $outorder = "aligned" ]; then
-		outputopt=" -y -r _order$$ "
+		outputopt=" -y -r $TMPFILE/order "
 	elif [ $outputformat = "phylip" -a $outorder = "input" ]; then
 		outputopt=" -y "
 	elif [ $outputformat = "pir" -a $outorder = "aligned" ]; then
-		outputopt=" -f -r _order$$ "
+		outputopt=" -f -r $TMPFILE/order "
 	else
 		outputopt="-f"
 	fi
@@ -2267,11 +2316,8 @@ function removetmpfile() { # for MPI
 			fi
 			if [ $anysymbol -eq 1 ]; then
 				mv orig infile # replaceu wo mukouka
-			#else
-			#	Check sequence here
 			fi
-#			mv infile infile2
-#			cat /dev/null > infile
+			sed 's/-//g' infile > dashin # gap nozoku
 
 			if [ ! -x "$prefix/dash_client" -o ! -x "$prefix/dash_client" ]; then
 				echo ""       1>&2
@@ -2286,7 +2332,7 @@ function removetmpfile() { # for MPI
 			fi
 			
 			echo "Calling DASH (https://sysimm.org/dash/)" 1>>"$progressfile"
-			"$prefix/dash_client" -i infile -sequences dashsequences -hat3 hat3.seed 1>>"$progressfile"
+			"$prefix/dash_client" -i dashin -sequences dashsequences -hat3 hat3.seed 1>>"$progressfile"
 			dashres="$?"
 			if [ $dashres -ne "0" ]; then
 				echo "Error in DASH" 1>>"$progressfile"
@@ -2297,6 +2343,17 @@ function removetmpfile() { # for MPI
 			if [ $exclude_ho -eq 1 ]; then # amari yokunai
 				awk 'BEGIN{out=1} !/^>_addedbymaffte_/{if(out) print; out=1} /^>_addedbymaffte_/{out=0}' dashsequences | sed 's/>DASH_/>DASH|/' > ho_excluded
 				mv ho_excluded dashsequences
+			fi
+
+			if [ "$mergetable" != "/dev/null" ]; then # 2020/Apr/30
+				ndash=`grep -c '>DASH_' dashsequences | head -1`
+#				echo "ndash = " $ndash
+				awk "{for( i=1;i<=NF;i++){if(0+\$i==0)break; printf( \"%d \", $ndash+\$i); } print \"\" }" _subalignmentstable > _subalignmentstableshifted
+				mv _subalignmentstableshifted _subalignmentstable
+				cp dashsequences dashsequences.bk
+				awk "BEGIN{nout=0} {if(\$1~/^>/) nout++; if( nout <= $ndash ) print;}" dashsequences > infile2
+				cat infile >> infile2
+				cp infile2 dashsequences
 			fi
 
 			sed 's/>DASH_/>DASH|/' dashsequences > renamed
@@ -2317,53 +2374,10 @@ function removetmpfile() { # for MPI
 				cat dashsequences > infile
 #				cat infile2 >> infile
 			fi
-
-#		elif [ $pdblist != "/dev/null" -o $ownlist != "/dev/null" ]; then
-#			mv infile infile2
-#			if [ $anysymbol -eq 1 ]; then
-#				mv orig orig2
-#				cat /dev/null > orig
-#			fi
-#			cat /dev/null > infile
-#
-#			echo "strdir = " 1>>"$progressfile"
-#			echo $strdir 1>>"$progressfile"
-#
-#			echo "Calling DASH (http://sysimm.ifrec.osaka-u.ac.jp/dash/)" 1>>"$progressfile"
-#			perl "$prefix/mafftash_premafft.pl" -p pdblist -o ownlist -d "$strdir" 2>>"dasherr"
-#			dashres="$?"
-#			cat dasherr  1>>"$progressfile"
-#
-#			if [ $dashres -ne "0" ]; then
-#				echo "Error in DASH" 1>>"$progressfile"
-#				exit 1;
-#			fi
-#			echo "Done." 1>>"$progressfile"
-#
-#			seedoffset=`grep -c '^[>|=]' instr | head -1 ` 
-#
-#			echo "# of structures = " 1>>"$progressfile"
-#			echo $seedoffset 1>>"$progressfile"
-#			mv hat3 hat3.seed
-#
-#			if [ $anysymbol -eq 1 ]; then
-#				cat instr >> orig
-#				"$prefix/replaceu" $seqtype -i instr -o 0 > clean 2>>"$progressfile" || exit 1
-#				mv clean infile
-#
-#				"$prefix/replaceu" $seqtype -i orig2 -o $seedoffset >> infile 2>>"$progressfile" || exit 1  # yarinaoshi
-#				cat orig2 >> orig
-#			else
-#				cat instr > infile
-#				cat infile2 >> infile
-#			fi
 		else
 			cat /dev/null > hat3.seed
 		fi
 #		cat hat3.seed
-
-
-
 
 		if [ $mccaskill -eq 1 ]; then
 			"$prefix/mccaskillwrap" -s -C $numthreads -d "$prefix" -i infile > hat4 2>>"$progressfile" || exit 1
@@ -2524,7 +2538,7 @@ function removetmpfile() { # for MPI
 			if [ $fragment -ne 0 ]; then 
 				"$prefix/addsingle" -Q 100 $legacygapopt -W $tuplesize -O $outnum $addsinglearg $addarg $add2ndhalfarg -C $numthreads $memopt $weightopt $treeinopt $treeoutopt $distoutopt $seqtype $model -f "-"$gop  -h $aof  $param_fft $localparam   $algopt $treealg $scoreoutarg < infile   > /dev/null 2>>"$progressfile" || exit 1
 			else
-				"$prefix/disttbfast" -q $npickup -E $cycledisttbfast -V "-"$gopdist  -s $unalignlevel $legacygapopt $mergearg -W $tuplesize $termgapopt $outnum $addarg $add2ndhalfarg -C $numthreads-$numthreadstb $memopt $weightopt $treeinopt $treeoutopt $distoutopt $seqtype $model -g $gexp -f "-"$gop -Q $spfactor -h $aof  $param_fft $algopt $treealg $scoreoutarg < infile   > pre 2>>"$progressfile" || exit 1
+				"$prefix/disttbfast" -q $npickup -E $cycledisttbfast -V "-"$gopdist  -s $unalignlevel $legacygapopt $mergearg -W $tuplesize $termgapopt $outnum $addarg $add2ndhalfarg -C $numthreads-$numthreadstb $memopt $weightopt $treeinopt $treeoutopt $distoutopt $seqtype $model -g $gexp -f "-"$gop -Q $spfactor -h $aof  $param_fft $algopt $treealg $scoreoutarg $anchoropt -x $maxanchorseparation $oneiterationopt < infile   > pre 2>>"$progressfile" || exit 1
 				mv hat3.seed hat3
 			fi
 		fi
@@ -2542,7 +2556,7 @@ function removetmpfile() { # for MPI
 		done
 		if [ $iterate -gt 0 ]; then
 			if [ $distance = "ktuples" ]; then
-			    "$prefix/dndpre" $model -M 2 -C $numthreads < pre     > /dev/null 2>>"$progressfile" || exit 1
+			    "$prefix/dndpre" $seqtype $model -M 2 -C $numthreads < pre     > /dev/null 2>>"$progressfile" || exit 1
 			fi
 			"$prefix/dvtditr" -W $minimumweight $bunkatsuopt -E $fixthreshold -s $unalignlevel  $legacygapopt $mergearg $outnum -C $numthreadsit -t $randomseed $rnaoptit $memopt $scorecalcopt $localparam -z 50 $seqtype $model -f "-"$gop -Q $spfactor -h $aof  -I $iterate $weightopt $treeinopt $algoptit $treealg -p $parallelizationstrategy  $scoreoutarg  -K $nadd < pre     > /dev/null 2>>"$progressfile" || exit 1
 		fi
@@ -2653,13 +2667,13 @@ function removetmpfile() { # for MPI
 
 	if [ "$outputopt" != "-f" -o "$windows" = "yes" ]; then # Windows deha kaigyo code wo f2cl de modosu.
 #		ln -s "$TMPFILE/order" _order$$ # f2cl ga space ari filename ni taiou shiteinainode
-		cp "$TMPFILE/order" _order$$ # ln -s no error wo sakeru
+#		cp "$TMPFILE/order" _order$$ # ln -s no error wo sakeru
 		if [ "$outputfile" = "" ]; then
 			"$prefix/f2cl" -n $namelength $outputopt < "$TMPFILE/pre" 2>"/dev/null" || exit 1
 		else
 			"$prefix/f2cl" -n $namelength $outputopt < "$TMPFILE/pre" > "$outputfile" 2>"/dev/null" || exit 1
 		fi
-		rm _order$$
+#		rm _order$$
 	else
 		if [ "$outputfile" = "" ]; then
 			cat < "$TMPFILE/pre" || exit 1
