@@ -289,7 +289,7 @@ if ismember(type,{'mets','both'})
 end
 
 %% Process fields with empty cells/nested cells in model
-if nargout>1 || saveAsMnxRef
+if nargout>1 || saveAsMNXRef
     if ismember(type,{'rxns','both'})
         [MNXrefRxns.BiGGMNXid,MNXrefRxns.BiGGxref] = extractNestedCell(model.rxnMetaNetXID,model.rxnBIGGID);
         [MNXrefRxns.KEGGMNXid,MNXrefRxns.KEGGxref] = extractNestedCell(model.rxnMetaNetXID,model.rxnKEGGID);
