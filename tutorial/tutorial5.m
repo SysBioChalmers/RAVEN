@@ -22,11 +22,12 @@
 %are for. This process takes up to 20-35 minutes in macOS, Unix systems and
 %40-55 minutes in Windows, depending on your hardware and the size of
 %target organism proteome
-model=getKEGGModelForOrganism('sce','sce.fa','euk100_kegg91','output',false,false,false,false,10^-30,0.8,0.3,-1);
+model=getKEGGModelForOrganism('sce','sce.fa','euk100_kegg94','output',false,false,false,false,10^-30,0.8,0.3,-1);
 
-%The resulting model should contain around 1574 reactions, 1601
-%metabolites and 821 genes. Small variations are possible since it is an
-%heuristic algorithm.
+%The resulting model should contain around 1669 reactions, 1677
+%metabolites and 838 genes. Small variations are possible since it is an
+%heuristic algorithm and different KEGG versions will give slightly
+%different results.
 disp(model);
 
 %A first control is that the model should not be able to produce any
@@ -100,8 +101,8 @@ model.metNames(metabolite)
 I=canProduce(model);
 
 fprintf('%d%%\n', round(sum(I)/numel(model.mets)*100));
-%It seems that 28% of the metabolites could be synthesized. It is not
-%directly clear whether this is a high or low number, many metabolites
+%It seems that around 30% of the metabolites could be synthesized. It is
+%not directly clear whether this is a high or low number, many metabolites
 %should not be possible to synthesize from those simple precursors.
 
 %Try to fill gaps using the full KEGG model to see if that gives a
@@ -128,10 +129,11 @@ params.relGap=0.6; %Lower number for a more exhaustive search
 params.printReport=true;
 [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,keggModel,true,false,false,[],params);
 
-%The results show that fillGaps could connect 38 reactions (newConnected)
-%by including 42 reactions from the KEGG model (addedRxns). Those should of
-%course be checked manually to see that they exist in yeast, but in this
-%tutorial it is assumed that all of them occur in yeast.
+%The results show that fillGaps could connect around 37 reactions
+%(newConnected) by including around 48 reactions from the KEGG model
+%(addedRxns). Those should of course be checked manually to confirm that
+%they exist in yeast, but in this tutorial it is assumed that all these
+%reactions indeed occur in yeast.
 
 %Continue to improve the connectivity of the model by identifying
 %metabolites that should be connected. A convenient way to get an overview
