@@ -181,16 +181,6 @@ if isRaven
         fprintf('WARNING: no genes detected. The model therefore may not be exportable to SBML file with writeCbModel\n');
     end
     newModel.osenseStr='max';
-    
-    %It seems that grRules, rxnGeneMat and rev are disposable fields in
-    %COBRA version, but we export them to make things faster, when
-    %converting COBRA structure back to RAVEN
-    if isfield(model,'grRules')
-        [grRules, rxnGeneMat] = standardizeGrRules(model,true);
-        newModel.grRules      = grRules;
-        %Incorporate a rxnGeneMat consistent with standardized grRules
-        newModel.rxnGeneMat   = rxnGeneMat;
-    end
 else
     fprintf('Converting COBRA structure to RAVEN..\n');
     %Convert from COBRA to RAVEN structure
@@ -249,11 +239,7 @@ else
     if isfield(model,'modelName')
         newModel.description=model.modelName;
     end
-    if isfield(model,'grRules')
-        [grRules,rxnGeneMat] = standardizeGrRules(model,true);
-        newModel.grRules     = grRules;
-        newModel.rxnGeneMat  = rxnGeneMat;
-    else
+    if isfield(model,'rules')
         model.grRules        = rulesTogrrules(model);
         [grRules,rxnGeneMat] = standardizeGrRules(model,true);
         newModel.grRules     = grRules;
