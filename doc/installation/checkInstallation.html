@@ -81,176 +81,173 @@ This function is called by:
 0029 <span class="keyword">if</span> ismember(ravenDir,paths)
 0030     fprintf(<span class="string">'OK\n'</span>);
 0031 <span class="keyword">else</span>
-0032     fprintf(<span class="string">'Not OK\n'</span>);
-0033     addMe=input(<span class="string">'Would you like to add the RAVEN directory to the path list? Y/N\n'</span>,<span class="string">'s'</span>);
-0034     <span class="keyword">if</span> strcmpi(addMe,<span class="string">'y'</span>)
-0035         subpath=regexp(genpath(ravenDir),pathsep,<span class="string">'split'</span>); <span class="comment">%List all subdirectories</span>
-0036         pathsToKeep=cellfun(@(x) isempty(strfind(x,<span class="string">'.git'</span>)),subpath) &amp; cellfun(@(x) isempty(strfind(x,<span class="string">'doc'</span>)),subpath);
-0037         addpath(strjoin(subpath(pathsToKeep),pathsep));
-0038         savepath
-0039     <span class="keyword">end</span>
-0040 <span class="keyword">end</span>
+0032     fprintf(<span class="string">'OK (just added)\n'</span>);
+0033     subpath=regexp(genpath(ravenDir),pathsep,<span class="string">'split'</span>); <span class="comment">%List all subdirectories</span>
+0034     pathsToKeep=cellfun(@(x) isempty(strfind(x,<span class="string">'.git'</span>)),subpath) &amp; cellfun(@(x) isempty(strfind(x,<span class="string">'doc'</span>)),subpath);
+0035     addpath(strjoin(subpath(pathsToKeep),pathsep));
+0036     savepath
+0037 <span class="keyword">end</span>
+0038 
+0039 <span class="comment">%Add the required classes to the static Java path if not already added</span>
+0040 addJavaPaths();
 0041 
-0042 <span class="comment">%Add the required classes to the static Java path if not already added</span>
-0043 addJavaPaths();
-0044 
-0045 excelFile=fullfile(ravenDir,<span class="string">'tutorial'</span>,<span class="string">'empty.xlsx'</span>);
-0046 xmlFile=fullfile(ravenDir,<span class="string">'tutorial'</span>,<span class="string">'empty.xml'</span>);
-0047 matFile=fullfile(ravenDir,<span class="string">'tutorial'</span>,<span class="string">'empty.mat'</span>);
-0048 
-0049 <span class="comment">%Check if it is possible to parse an Excel file</span>
-0050 fprintf(<span class="string">'Checking if it is possible to parse a model in Microsoft Excel format...\t'</span>);
-0051 <span class="keyword">try</span>
-0052     importExcelModel(excelFile,false,false,true);
-0053     fprintf(<span class="string">'OK\n'</span>);
-0054 <span class="keyword">catch</span>
-0055     fprintf(<span class="string">'Not OK\n'</span>);
-0056 <span class="keyword">end</span>
-0057 
-0058 <span class="comment">%Check if it is possible to import an SBML model using libSBML</span>
-0059 fprintf(<span class="string">'Checking if it is possible to import an SBML model using libSBML...\t\t\t'</span>);
-0060 <span class="keyword">try</span>
-0061     importModel(xmlFile);
-0062     <span class="keyword">try</span>
-0063         libSBMLver=OutputSBML; <span class="comment">% Only works in libSBML 5.17.0+</span>
-0064         fprintf(<span class="string">'OK\n'</span>);
-0065     <span class="keyword">catch</span>
-0066         fprintf([<span class="string">'Not OK\n\n'</span><span class="keyword">...</span>
-0067             <span class="string">'An older libSBML version was found, update to version 5.17.0 or higher\n'</span><span class="keyword">...</span>
-0068             <span class="string">'for a significant improvement of model import\n\n'</span>]);
-0069     <span class="keyword">end</span>
-0070 <span class="keyword">catch</span>
-0071     fprintf([<span class="string">'Not OK\nTo import SBML models, download libSBML from\n'</span><span class="keyword">...</span>
-0072         <span class="string">'http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n'</span>]);
-0073 <span class="keyword">end</span>
-0074 
-0075 <span class="comment">%Define values for keepSolver and workingSolvers, needed for solver</span>
-0076 <span class="comment">%functionality check</span>
-0077 keepSolver=false;
-0078 workingSolvers=<span class="string">''</span>;
-0079 <span class="comment">%Get current solver. Set it to 'none', if it is not set</span>
-0080 <span class="keyword">if</span> ~ispref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>)
-0081     fprintf(<span class="string">'Solver found in preferences... NONE\n'</span>);
-0082     setRavenSolver(<span class="string">'none'</span>);
-0083     curSolv=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0084 <span class="keyword">else</span>
-0085     curSolv=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0086     fprintf([<span class="string">'Solver found in preferences... '</span>,curSolv,<span class="string">'\n'</span>]);
-0087 <span class="keyword">end</span>
+0042 excelFile=fullfile(ravenDir,<span class="string">'tutorial'</span>,<span class="string">'empty.xlsx'</span>);
+0043 xmlFile=fullfile(ravenDir,<span class="string">'tutorial'</span>,<span class="string">'empty.xml'</span>);
+0044 matFile=fullfile(ravenDir,<span class="string">'tutorial'</span>,<span class="string">'empty.mat'</span>);
+0045 
+0046 <span class="comment">%Check if it is possible to parse an Excel file</span>
+0047 fprintf(<span class="string">'Checking if it is possible to parse a model in Microsoft Excel format...\t'</span>);
+0048 <span class="keyword">try</span>
+0049     importExcelModel(excelFile,false,false,true);
+0050     fprintf(<span class="string">'OK\n'</span>);
+0051 <span class="keyword">catch</span>
+0052     fprintf(<span class="string">'Not OK\n'</span>);
+0053 <span class="keyword">end</span>
+0054 
+0055 <span class="comment">%Check if it is possible to import an SBML model using libSBML</span>
+0056 fprintf(<span class="string">'Checking if it is possible to import an SBML model using libSBML...\t\t\t'</span>);
+0057 <span class="keyword">try</span>
+0058     importModel(xmlFile);
+0059     <span class="keyword">try</span>
+0060         libSBMLver=OutputSBML; <span class="comment">% Only works in libSBML 5.17.0+</span>
+0061         fprintf(<span class="string">'OK\n'</span>);
+0062     <span class="keyword">catch</span>
+0063         fprintf([<span class="string">'Not OK\n\n'</span><span class="keyword">...</span>
+0064             <span class="string">'An older libSBML version was found, update to version 5.17.0 or higher\n'</span><span class="keyword">...</span>
+0065             <span class="string">'for a significant improvement of model import\n\n'</span>]);
+0066     <span class="keyword">end</span>
+0067 <span class="keyword">catch</span>
+0068     fprintf([<span class="string">'Not OK\nTo import SBML models, download libSBML from\n'</span><span class="keyword">...</span>
+0069         <span class="string">'http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n'</span>]);
+0070 <span class="keyword">end</span>
+0071 
+0072 <span class="comment">%Define values for keepSolver and workingSolvers, needed for solver</span>
+0073 <span class="comment">%functionality check</span>
+0074 keepSolver=false;
+0075 workingSolvers=<span class="string">''</span>;
+0076 <span class="comment">%Get current solver. Set it to 'none', if it is not set</span>
+0077 <span class="keyword">if</span> ~ispref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>)
+0078     fprintf(<span class="string">'Solver found in preferences... NONE\n'</span>);
+0079     setRavenSolver(<span class="string">'none'</span>);
+0080     curSolv=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0081 <span class="keyword">else</span>
+0082     curSolv=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0083     fprintf([<span class="string">'Solver found in preferences... '</span>,curSolv,<span class="string">'\n'</span>]);
+0084 <span class="keyword">end</span>
+0085 
+0086 <span class="comment">%Check if it is possible to solve an LP problem using different solvers</span>
+0087 solver={<span class="string">'gurobi'</span>,<span class="string">'cobra'</span>};
 0088 
-0089 <span class="comment">%Check if it is possible to solve an LP problem using different solvers</span>
-0090 solver={<span class="string">'gurobi'</span>,<span class="string">'mosek'</span>,<span class="string">'cobra'</span>};
-0091 
-0092 <span class="keyword">for</span> i=1:numel(solver)
-0093     fprintf([<span class="string">'Checking if it is possible to solve an LP problem using '</span>,solver{i},<span class="string">'...\t\t\t'</span>]);
-0094     <span class="keyword">try</span>
-0095         setRavenSolver(solver{i});
-0096         load(matFile);
-0097         solveLP(empty);
-0098         workingSolvers=strcat(workingSolvers,<span class="string">';'</span>,solver{i});
-0099         fprintf(<span class="string">'OK\n'</span>);
-0100         <span class="keyword">if</span> strcmp(curSolv,solver{i})
-0101             keepSolver=true;
-0102         <span class="keyword">end</span>
-0103     <span class="keyword">catch</span>
-0104         fprintf(<span class="string">'Not OK\n'</span>);
-0105     <span class="keyword">end</span>
-0106 <span class="keyword">end</span>
-0107 
-0108 <span class="keyword">if</span> keepSolver
-0109     <span class="comment">%The solver set in curSolv is functional, so the settings are restored</span>
-0110     <span class="comment">%to the ones which were set before running checkInstallation</span>
-0111     setRavenSolver(curSolv);
-0112     fprintf([<span class="string">'Preferred solver... KEPT\nSolver saved as preference... '</span>,curSolv,<span class="string">'\n\n'</span>]);
-0113 <span class="keyword">elseif</span> ~isempty(workingSolvers)
-0114     <span class="comment">%There are working solvers, but the none of them is the solver defined</span>
-0115     <span class="comment">%by curSolv. The first working solver is therefore set as RAVEN solver</span>
-0116     workingSolvers=regexprep(workingSolvers,<span class="string">'^;'</span>,<span class="string">''</span>);
-0117     workingSolvers=regexprep(workingSolvers,<span class="string">';.+$'</span>,<span class="string">''</span>);
-0118     <span class="comment">%Only one working solver should be left by now in workingSolvers</span>
-0119     setRavenSolver(workingSolvers);
-0120     fprintf([<span class="string">'Preferred solver... NEW\nSolver saved as preference... '</span>,workingSolvers,<span class="string">'\n\n'</span>]);
-0121 <span class="keyword">else</span>
-0122     <span class="comment">%No functional solvers were found, so the setting is restored back to</span>
-0123     <span class="comment">%original</span>
-0124     setRavenSolver(curSolv);
-0125     fprintf([<span class="string">'WARNING: No working solver was found!\n'</span><span class="keyword">...</span>
-0126         <span class="string">'Install the solver, set it using setRavenSolver(''solverName'') and run checkInstallation again\n'</span><span class="keyword">...</span>
-0127         <span class="string">'Available solverName options are ''mosek'', ''gurobi'' and ''cobra''\n\n'</span>]);
-0128 <span class="keyword">end</span>
-0129 
-0130 <span class="keyword">if</span> ismac
-0131     binEnd=<span class="string">'.mac'</span>;
-0132 <span class="keyword">elseif</span> isunix
-0133     binEnd=<span class="string">''</span>;
-0134 <span class="keyword">elseif</span> ispc
-0135     binEnd=<span class="string">'.exe'</span>;
-0136 <span class="keyword">end</span>
-0137 fprintf(<span class="string">'Checking essential binary executables:\n'</span>);
-0138 fprintf(<span class="string">'NOTE: Broken binary executables &lt;strong&gt;must be fixed&lt;/strong&gt; before running RAVEN\n'</span>);
-0139 fprintf([<span class="string">'\tmakeblastdb'</span> binEnd <span class="string">'...\t\t\t\t\t\t\t'</span>]);
-0140 [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'makeblastdb'</span> binEnd]) <span class="string">'&quot;'</span>]);
-0141 <span class="keyword">if</span> res==1
-0142     fprintf(<span class="string">'OK\n'</span>);
-0143 <span class="keyword">else</span>
-0144     fprintf(<span class="string">'Not OK! Download/compile the binary and run checkInstallation again\n'</span>);
-0145 <span class="keyword">end</span>
-0146 fprintf([<span class="string">'\tblastp'</span> binEnd <span class="string">'...\t\t\t\t\t\t\t\t'</span>]);
-0147 [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'blastp'</span> binEnd]) <span class="string">'&quot;'</span>]);
-0148 <span class="keyword">if</span> res==1
-0149     fprintf(<span class="string">'OK\n'</span>);
-0150 <span class="keyword">else</span>
-0151     fprintf(<span class="string">'Not OK! Download/compile the binary and run checkInstallation again\n'</span>);
-0152 <span class="keyword">end</span>
-0153 fprintf([<span class="string">'\tdiamond'</span> binEnd <span class="string">'...\t\t\t\t\t\t\t\t'</span>]);
-0154 [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'diamond'</span>,[<span class="string">'diamond'</span> binEnd]) <span class="string">'&quot;'</span>]);
-0155 <span class="keyword">if</span> res==1
-0156     fprintf(<span class="string">'OK\n'</span>);
-0157 <span class="keyword">else</span>
-0158     fprintf(<span class="string">'Not OK! Download/compile the binary and run checkInstallation again\n'</span>);
-0159 <span class="keyword">end</span>
-0160 fprintf([<span class="string">'\thmmsearch'</span> binEnd <span class="string">'...\t\t\t\t\t\t\t'</span>]);
-0161 [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'hmmer'</span>,[<span class="string">'hmmsearch'</span> binEnd]) <span class="string">'&quot;'</span>]);
-0162 <span class="keyword">if</span> res==1
-0163     fprintf(<span class="string">'OK\n'</span>);
-0164 <span class="keyword">else</span>
-0165     fprintf(<span class="string">'Not OK! Download/compile the binary and run checkInstallation again\n'</span>);
-0166 <span class="keyword">end</span>
-0167 fprintf(<span class="string">'Checking non-essential/development binary executables:\n'</span>);
-0168 fprintf(<span class="string">'NOTE: Only fix these binaries if planning to use KEGG FTP dump files in getKEGGModelForOrganism\n'</span>);
-0169 fprintf([<span class="string">'\tcd-hit'</span> binEnd <span class="string">'...\t\t\t\t\t\t\t\t'</span>]);
-0170 [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'cd-hit'</span>,[<span class="string">'cd-hit'</span> binEnd]) <span class="string">'&quot;'</span>]);
-0171 <span class="keyword">if</span> res==1
-0172     fprintf(<span class="string">'OK\n'</span>);
-0173 <span class="keyword">else</span>
-0174     fprintf(<span class="string">'Not OK! If necessary, download/compile the binary and run checkInstallation again\n'</span>);
-0175 <span class="keyword">end</span>
-0176 fprintf(<span class="string">'\tmafft.bat...\t\t\t\t\t\t\t\t'</span>);
-0177 <span class="keyword">if</span> ismac
-0178     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'mafft'</span>,<span class="string">'mafft-mac'</span>,<span class="string">'mafft.bat'</span>) <span class="string">'&quot; --help '</span>]);
-0179 <span class="keyword">elseif</span> isunix
-0180     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'mafft'</span>,<span class="string">'mafft-linux64'</span>,<span class="string">'mafft.bat'</span>) <span class="string">'&quot; --help '</span>]);
-0181 <span class="keyword">elseif</span> ispc
-0182     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'mafft'</span>,<span class="string">'mafft-win'</span>,<span class="string">'mafft.bat'</span>) <span class="string">'&quot; --help '</span>]);
-0183 <span class="keyword">end</span>
-0184 <span class="keyword">if</span> res==1
-0185     fprintf(<span class="string">'OK\n'</span>);
-0186 <span class="keyword">else</span>
-0187     fprintf(<span class="string">'Not OK! If necessary, download/compile the binary and run checkInstallation again\n'</span>);
-0188 <span class="keyword">end</span>
-0189 fprintf([<span class="string">'\thmmbuild'</span> binEnd <span class="string">'...\t\t\t\t\t\t\t\t'</span>]);
-0190 [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'hmmer'</span>,[<span class="string">'hmmbuild'</span> binEnd]) <span class="string">'&quot;'</span>]);
-0191 <span class="keyword">if</span> res==1
-0192     fprintf(<span class="string">'OK\n\n'</span>);
-0193 <span class="keyword">else</span>
-0194     fprintf(<span class="string">'Not OK! If necessary, download/compile the binary and run checkInstallation again\n'</span>);
-0195 <span class="keyword">end</span>
+0089 <span class="keyword">for</span> i=1:numel(solver)
+0090     fprintf([<span class="string">'Checking if it is possible to solve an LP problem using '</span>,solver{i},<span class="string">'...\t\t\t'</span>]);
+0091     <span class="keyword">try</span>
+0092         setRavenSolver(solver{i});
+0093         load(matFile);
+0094         solveLP(emptyModel);
+0095         workingSolvers=strcat(workingSolvers,<span class="string">';'</span>,solver{i});
+0096         fprintf(<span class="string">'OK\n'</span>);
+0097         <span class="keyword">if</span> strcmp(curSolv,solver{i})
+0098             keepSolver=true;
+0099         <span class="keyword">end</span>
+0100     <span class="keyword">catch</span>
+0101         fprintf(<span class="string">'Not OK\n'</span>);
+0102     <span class="keyword">end</span>
+0103 <span class="keyword">end</span>
+0104 
+0105 <span class="keyword">if</span> keepSolver
+0106     <span class="comment">%The solver set in curSolv is functional, so the settings are restored</span>
+0107     <span class="comment">%to the ones which were set before running checkInstallation</span>
+0108     setRavenSolver(curSolv);
+0109     fprintf([<span class="string">'Preferred solver... KEPT\nSolver saved as preference... '</span>,curSolv,<span class="string">'\n\n'</span>]);
+0110 <span class="keyword">elseif</span> ~isempty(workingSolvers)
+0111     <span class="comment">%There are working solvers, but the none of them is the solver defined</span>
+0112     <span class="comment">%by curSolv. The first working solver is therefore set as RAVEN solver</span>
+0113     workingSolvers=regexprep(workingSolvers,<span class="string">'^;'</span>,<span class="string">''</span>);
+0114     workingSolvers=regexprep(workingSolvers,<span class="string">';.+$'</span>,<span class="string">''</span>);
+0115     <span class="comment">%Only one working solver should be left by now in workingSolvers</span>
+0116     setRavenSolver(workingSolvers);
+0117     fprintf([<span class="string">'Preferred solver... NEW\nSolver saved as preference... '</span>,workingSolvers,<span class="string">'\n\n'</span>]);
+0118 <span class="keyword">else</span>
+0119     <span class="comment">%No functional solvers were found, so the setting is restored back to</span>
+0120     <span class="comment">%original</span>
+0121     setRavenSolver(curSolv);
+0122     fprintf([<span class="string">'WARNING: No working solver was found!\n'</span><span class="keyword">...</span>
+0123         <span class="string">'Install the solver, set it using setRavenSolver(''solverName'') and run checkInstallation again\n'</span><span class="keyword">...</span>
+0124         <span class="string">'Available solverName options are ''mosek'', ''gurobi'' and ''cobra''\n\n'</span>]);
+0125 <span class="keyword">end</span>
+0126 
+0127 <span class="keyword">if</span> ismac
+0128     binEnd=<span class="string">'.mac'</span>;
+0129 <span class="keyword">elseif</span> isunix
+0130     binEnd=<span class="string">''</span>;
+0131 <span class="keyword">elseif</span> ispc
+0132     binEnd=<span class="string">'.exe'</span>;
+0133 <span class="keyword">end</span>
+0134 fprintf(<span class="string">'Checking essential binary executables:\n'</span>);
+0135 fprintf(<span class="string">'NOTE: Broken binary executables &lt;strong&gt;must be fixed&lt;/strong&gt; before running RAVEN\n'</span>);
+0136 fprintf([<span class="string">'\tmakeblastdb'</span> binEnd <span class="string">'...\t\t\t\t\t\t\t'</span>]);
+0137 [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'makeblastdb'</span> binEnd]) <span class="string">'&quot;'</span>]);
+0138 <span class="keyword">if</span> res==1
+0139     fprintf(<span class="string">'OK\n'</span>);
+0140 <span class="keyword">else</span>
+0141     fprintf(<span class="string">'Not OK! Download/compile the binary and run checkInstallation again\n'</span>);
+0142 <span class="keyword">end</span>
+0143 fprintf([<span class="string">'\tblastp'</span> binEnd <span class="string">'...\t\t\t\t\t\t\t\t'</span>]);
+0144 [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'blastp'</span> binEnd]) <span class="string">'&quot;'</span>]);
+0145 <span class="keyword">if</span> res==1
+0146     fprintf(<span class="string">'OK\n'</span>);
+0147 <span class="keyword">else</span>
+0148     fprintf(<span class="string">'Not OK! Download/compile the binary and run checkInstallation again\n'</span>);
+0149 <span class="keyword">end</span>
+0150 fprintf([<span class="string">'\tdiamond'</span> binEnd <span class="string">'...\t\t\t\t\t\t\t\t'</span>]);
+0151 [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'diamond'</span>,[<span class="string">'diamond'</span> binEnd]) <span class="string">'&quot;'</span>]);
+0152 <span class="keyword">if</span> res==1
+0153     fprintf(<span class="string">'OK\n'</span>);
+0154 <span class="keyword">else</span>
+0155     fprintf(<span class="string">'Not OK! Download/compile the binary and run checkInstallation again\n'</span>);
+0156 <span class="keyword">end</span>
+0157 fprintf([<span class="string">'\thmmsearch'</span> binEnd <span class="string">'...\t\t\t\t\t\t\t'</span>]);
+0158 [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'hmmer'</span>,[<span class="string">'hmmsearch'</span> binEnd]) <span class="string">'&quot;'</span>]);
+0159 <span class="keyword">if</span> res==1
+0160     fprintf(<span class="string">'OK\n'</span>);
+0161 <span class="keyword">else</span>
+0162     fprintf(<span class="string">'Not OK! Download/compile the binary and run checkInstallation again\n'</span>);
+0163 <span class="keyword">end</span>
+0164 fprintf(<span class="string">'Checking non-essential/development binary executables:\n'</span>);
+0165 fprintf(<span class="string">'NOTE: Only fix these binaries if planning to use KEGG FTP dump files in getKEGGModelForOrganism\n'</span>);
+0166 fprintf([<span class="string">'\tcd-hit'</span> binEnd <span class="string">'...\t\t\t\t\t\t\t\t'</span>]);
+0167 [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'cd-hit'</span>,[<span class="string">'cd-hit'</span> binEnd]) <span class="string">'&quot;'</span>]);
+0168 <span class="keyword">if</span> res==1
+0169     fprintf(<span class="string">'OK\n'</span>);
+0170 <span class="keyword">else</span>
+0171     fprintf(<span class="string">'Not OK! If necessary, download/compile the binary and run checkInstallation again\n'</span>);
+0172 <span class="keyword">end</span>
+0173 fprintf(<span class="string">'\tmafft.bat...\t\t\t\t\t\t\t\t'</span>);
+0174 <span class="keyword">if</span> ismac
+0175     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'mafft'</span>,<span class="string">'mafft-mac'</span>,<span class="string">'mafft.bat'</span>) <span class="string">'&quot; --help '</span>]);
+0176 <span class="keyword">elseif</span> isunix
+0177     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'mafft'</span>,<span class="string">'mafft-linux64'</span>,<span class="string">'mafft.bat'</span>) <span class="string">'&quot; --help '</span>]);
+0178 <span class="keyword">elseif</span> ispc
+0179     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'mafft'</span>,<span class="string">'mafft-win'</span>,<span class="string">'mafft.bat'</span>) <span class="string">'&quot; --help '</span>]);
+0180 <span class="keyword">end</span>
+0181 <span class="keyword">if</span> res==1
+0182     fprintf(<span class="string">'OK\n'</span>);
+0183 <span class="keyword">else</span>
+0184     fprintf(<span class="string">'Not OK! If necessary, download/compile the binary and run checkInstallation again\n'</span>);
+0185 <span class="keyword">end</span>
+0186 fprintf([<span class="string">'\thmmbuild'</span> binEnd <span class="string">'...\t\t\t\t\t\t\t\t'</span>]);
+0187 [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'hmmer'</span>,[<span class="string">'hmmbuild'</span> binEnd]) <span class="string">'&quot;'</span>]);
+0188 <span class="keyword">if</span> res==1
+0189     fprintf(<span class="string">'OK\n\n'</span>);
+0190 <span class="keyword">else</span>
+0191     fprintf(<span class="string">'Not OK! If necessary, download/compile the binary and run checkInstallation again\n'</span>);
+0192 <span class="keyword">end</span>
+0193 
+0194 fprintf(<span class="string">'Checking whether RAVEN functions are non-redundant across MATLAB path...\t'</span>);
+0195 <a href="checkFunctionUniqueness.html" class="code" title="function checkFunctionUniqueness()">checkFunctionUniqueness</a>();
 0196 
-0197 fprintf(<span class="string">'Checking whether RAVEN functions are non-redundant across MATLAB path...\t'</span>);
-0198 <a href="checkFunctionUniqueness.html" class="code" title="function checkFunctionUniqueness()">checkFunctionUniqueness</a>();
-0199 
-0200 fprintf(<span class="string">'\n*** checkInstallation complete ***\n\n'</span>);
-0201 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0197 fprintf(<span class="string">'\n*** checkInstallation complete ***\n\n'</span>);
+0198 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 03-Jun-2020 13:07:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
