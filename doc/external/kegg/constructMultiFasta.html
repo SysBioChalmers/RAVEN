@@ -1,0 +1,239 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of constructMultiFasta</title>
+  <meta name="keywords" content="constructMultiFasta">
+  <meta name="description" content="constructMultiFasta">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="../index.html">external</a> &gt; <a href="index.html">kegg</a> &gt; constructMultiFasta.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for external/kegg&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>constructMultiFasta
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>constructMultiFasta</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function constructMultiFasta(model,sourceFile,outputDir) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> constructMultiFasta
+   Saves one file in FASTA format for each reaction in the model that has genes
+
+   Input:
+   model         a model structure
+   sourceFile    a file with sequences in FASTA format
+   outputDir     the directory to save the resulting FASTA files in
+
+   The source file is assumed to have the format '&gt;gene identifier
+   additional info'. Only the gene identifier is used for matching. This is
+   to be compatible with the rest of the code that retrieves information
+   from KEGG.
+
+   Usage: constructMultiFasta(model,sourceFile,outputDir)
+
+   Simonas Marcisauskas, 2019-09-12</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="getKEGGModelForOrganism.html" class="code" title="function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,outDir,keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,nSequences,seqIdentity)">getKEGGModelForOrganism</a>	getKEGGModelForOrganism</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function files=listFiles(directory)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function constructMultiFasta(model,sourceFile,outputDir)</a>
+0002 <span class="comment">% constructMultiFasta</span>
+0003 <span class="comment">%   Saves one file in FASTA format for each reaction in the model that has genes</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%   Input:</span>
+0006 <span class="comment">%   model         a model structure</span>
+0007 <span class="comment">%   sourceFile    a file with sequences in FASTA format</span>
+0008 <span class="comment">%   outputDir     the directory to save the resulting FASTA files in</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">%   The source file is assumed to have the format '&gt;gene identifier</span>
+0011 <span class="comment">%   additional info'. Only the gene identifier is used for matching. This is</span>
+0012 <span class="comment">%   to be compatible with the rest of the code that retrieves information</span>
+0013 <span class="comment">%   from KEGG.</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">%   Usage: constructMultiFasta(model,sourceFile,outputDir)</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">%   Simonas Marcisauskas, 2019-09-12</span>
+0018 <span class="comment">%</span>
+0019 
+0020 <span class="keyword">if</span> ~(exist(sourceFile,<span class="string">'file'</span>)==2)
+0021     error(<span class="string">'FASTA file %s cannot be found'</span>,string(sourceFile));
+0022 <span class="keyword">end</span>
+0023 
+0024 fprintf(<span class="string">'Scanning the source multi-FASTA file... '</span>);
+0025 <span class="comment">%Open the source file</span>
+0026 fid = fopen(sourceFile, <span class="string">'r'</span>);
+0027 
+0028 <span class="comment">%Since the list of genes will be accessed many times I use a Java hashtable</span>
+0029 hTable = java.util.Hashtable;
+0030 
+0031 <span class="keyword">for</span> i=1:numel(model.genes)
+0032     hTable.put(model.genes{i}, i);
+0033 <span class="keyword">end</span>
+0034 
+0035 <span class="comment">%First go through the source file and save the position (in bytes) of the</span>
+0036 <span class="comment">%start of each gene</span>
+0037 elementPositions=zeros(5000000,1,<span class="string">'int64'</span>); <span class="comment">%Make room for 5000000 elements</span>
+0038 totalElements=0;
+0039 whereAmI=0; <span class="comment">%Keeps track of where in the file we are</span>
+0040 <span class="keyword">while</span> 1
+0041     <span class="comment">%Read 10 mb at a time</span>
+0042     str=fread(fid,10000000,<span class="string">'int8'</span>);
+0043     
+0044     <span class="comment">%Find any '&gt;' which indicates a new label in FASTA format</span>
+0045     newPosts=find(str==62); <span class="comment">%62 is '&gt;'</span>
+0046     
+0047     elementPositions(totalElements+1:totalElements+numel(newPosts))=whereAmI+newPosts;
+0048     
+0049     totalElements=totalElements+numel(newPosts);
+0050     
+0051     whereAmI=whereAmI+10000000;
+0052     
+0053     <span class="keyword">if</span> feof(fid)
+0054         <span class="keyword">break</span>;
+0055     <span class="keyword">end</span>
+0056 <span class="keyword">end</span>
+0057 elementPositions=elementPositions(1:totalElements);
+0058 fprintf(<span class="string">'COMPLETE\n'</span>);
+0059 
+0060 fprintf([<span class="string">'NOTICE: If Matlab is freezing and does not provide any output in 30 minutes, consider increasing Java Heap Memory\n'</span>, <span class="keyword">...</span>
+0061     <span class="string">'in MATLAB settings and start over with the new session\n'</span>]);
+0062 fprintf(<span class="string">'Mapping genes to the multi-FASTA source file... '</span>);
+0063 <span class="comment">%Now loop through the file to see which genes are present in the gene list</span>
+0064 <span class="comment">%and save their position IN elementPositions! This is to enable a easy way</span>
+0065 <span class="comment">%to get the distance to the following element</span>
+0066 genePositions=zeros(numel(model.genes),1);
+0067 <span class="keyword">for</span> i=1:numel(elementPositions)
+0068     fseek(fid,elementPositions(i),-1);
+0069     str=fread(fid,[1 30],<span class="string">'*char'</span>); <span class="comment">%Assumes that no ID is longer than 20 characters</span>
+0070     delim=find(str==32 | str==10,1,<span class="string">'first'</span>); <span class="comment">%Space or line feed</span>
+0071     
+0072     geneIdentifier=str(1:delim-1);
+0073     
+0074     <span class="comment">%This should never happen, but just to prevent errors. Could be that</span>
+0075     <span class="comment">%'&gt;' is a part of some gene information. An alternative would be to</span>
+0076     <span class="comment">%check that the indexes follows a line feed</span>
+0077     <span class="keyword">if</span> isempty(geneIdentifier)
+0078         <span class="keyword">continue</span>;
+0079     <span class="keyword">end</span>
+0080     
+0081     <span class="comment">%If not found it means that the id was too long</span>
+0082     <span class="keyword">if</span> isempty(delim)
+0083         EM=<span class="string">'Too long gene identifier, increase read length'</span>;
+0084         dispEM(EM);
+0085     <span class="keyword">end</span>
+0086     
+0087     <span class="comment">%See if the gene was found</span>
+0088     id=hTable.get(geneIdentifier);
+0089     
+0090     <span class="keyword">if</span> any(id)
+0091         <span class="keyword">if</span> genePositions(id)==0
+0092             genePositions(id)=i;
+0093         <span class="keyword">end</span>
+0094     <span class="keyword">end</span>
+0095 <span class="keyword">end</span>
+0096 fprintf(<span class="string">'COMPLETE\n'</span>);
+0097 
+0098 fprintf(<span class="string">'Generating the KEGG Orthology specific multi-FASTA files... '</span>);
+0099 <span class="comment">%Loop through the reactions and print the corresponding sequences</span>
+0100 progressFlag=0;
+0101 <span class="keyword">for</span> i=1:numel(model.rxns)
+0102 
+0103     <span class="comment">%Do not overwrite existing files</span>
+0104     <span class="keyword">if</span> ~exist(fullfile(outputDir,[model.rxns{i} <span class="string">'.fa'</span>]), <span class="string">'file'</span>)
+0105         
+0106         <span class="comment">%Get the positions in elementPositions for the involved genes</span>
+0107         genesUsed=model.rxnGeneMat(i,:);
+0108         
+0109         <span class="comment">%Open a file for this reaction. This saves empty files for KOs</span>
+0110         <span class="comment">%without genes</span>
+0111         rxnfid=fopen(fullfile(outputDir,[model.rxns{i} <span class="string">'.fa'</span>]),<span class="string">'w'</span>);
+0112         
+0113         <span class="keyword">if</span> any(genesUsed)
+0114             positions=genePositions(genesUsed~=0);
+0115             
+0116             <span class="comment">%It could be that some genes were not found. Delete those</span>
+0117             <span class="comment">%elements</span>
+0118             positions(positions==0)=[];
+0119             
+0120             <span class="comment">%Print each sequence</span>
+0121             <span class="keyword">for</span> j=1:numel(positions)
+0122                 fseek(fid,elementPositions(positions(j)),-1);
+0123                 <span class="comment">%Should check that it ends with a gene!!!! Check for eof</span>
+0124                 <span class="keyword">if</span> positions(j)&lt;numel(elementPositions)
+0125                     str=fread(fid,[1 double(elementPositions(positions(j)+1))-double(elementPositions(positions(j)))-1],<span class="string">'*char'</span>);
+0126                     
+0127                     <span class="comment">%If the string does not end with a line feed character</span>
+0128                     <span class="keyword">if</span> str(end)~=10
+0129                         str=[str fread(fid,[1 double(elementPositions(positions(j)+2))-double(elementPositions(positions(j)+1))],<span class="string">'*char'</span>)];
+0130                         
+0131                         <span class="comment">%This is if we still have not found a new gene.</span>
+0132                         <span class="comment">%Maximal unluck. This whole check should be done</span>
+0133                         <span class="comment">%when elementPositions are calculated!</span>
+0134                         <span class="keyword">if</span> str(end)~=10
+0135                             <span class="comment">%Skip this gene</span>
+0136                             <span class="keyword">continue</span>;
+0137                         <span class="keyword">end</span>
+0138                     <span class="keyword">end</span>
+0139                 <span class="keyword">else</span>
+0140                     str=fread(fid,[1 inf],<span class="string">'*char'</span>);
+0141                 <span class="keyword">end</span>
+0142                 fwrite(rxnfid,[<span class="string">'&gt;'</span> str]);
+0143             <span class="keyword">end</span>
+0144         <span class="keyword">end</span>
+0145         fclose(rxnfid);
+0146     <span class="keyword">end</span>
+0147     <span class="comment">%Print the progress: no need to update this for every</span>
+0148     <span class="comment">%iteration, just report once 25%, 50% and 75% are done</span>
+0149     <span class="keyword">if</span> progressFlag==0 &amp;&amp; i&gt;numel(model.rxns)*0.25
+0150         fprintf(<span class="string">'%*.*f%% complete'</span>,5,2,(numel(<a href="#_sub1" class="code" title="subfunction files=listFiles(directory)">listFiles</a>(fullfile(outputDir,<span class="string">'*.fa'</span>)))/numel(model.rxns))*100);
+0151         progressFlag=progressFlag+1;
+0152     <span class="keyword">elseif</span> (progressFlag==1 &amp;&amp; i&gt;=numel(model.rxns)*0.5) || (progressFlag==2 &amp;&amp; i&gt;=numel(model.rxns)*0.75)
+0153         fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%*.*f%% complete'</span>,5,2,(numel(<a href="#_sub1" class="code" title="subfunction files=listFiles(directory)">listFiles</a>(fullfile(outputDir,<span class="string">'*.fa'</span>)))/numel(model.rxns))*100);
+0154         progressFlag=progressFlag+1;
+0155     <span class="keyword">end</span>
+0156 <span class="keyword">end</span>
+0157 fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n'</span>);
+0158 
+0159 <span class="comment">%Close the source file</span>
+0160 fclose(fid);
+0161 <span class="keyword">end</span>
+0162 
+0163 <a name="_sub1" href="#_subfunctions" class="code">function files=listFiles(directory)</a>
+0164 <span class="comment">%Supporter function to list the files in a directory and return them as a</span>
+0165 <span class="comment">%cell array</span>
+0166 temp=dir(directory);
+0167 files=cell(numel(temp),1);
+0168 <span class="keyword">for</span> i=1:numel(temp)
+0169     files{i}=temp(i,1).name;
+0170 <span class="keyword">end</span>
+0171 files=strrep(files,<span class="string">'.fa'</span>,<span class="string">''</span>);
+0172 files=strrep(files,<span class="string">'.hmm'</span>,<span class="string">''</span>);
+0173 files=strrep(files,<span class="string">'.out'</span>,<span class="string">''</span>);
+0174 files=strrep(files,<span class="string">'.faw'</span>,<span class="string">''</span>);
+0175 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 03-Jun-2020 13:07:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

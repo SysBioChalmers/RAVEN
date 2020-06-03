@@ -392,49 +392,66 @@ This function is called by:
 0286 prob.c=[zeros(nRxns,1);rxnScores;ones(nNetProd,1)*prodWeight*-1;zeros(nRevBounds*2,1)];
 0287 prob.a=S;
 0288 
-0289 <span class="comment">%We still don't know which of the presentMets that can be produced. Go</span>
-0290 <span class="comment">%through them, force production, and see if the problem can be solved</span>
-0291 params.MSK_IPAR_OPTIMIZER=<span class="string">'MSK_OPTIMIZER_FREE_SIMPLEX'</span>;
-0292 <span class="keyword">for</span> i=1:numel(pmIndexes)
-0293     prob.blc(numel(irrevModel.mets)-numel(pmIndexes)+i)=1;
-0294     res=optimizeProb(prob,params);
-0295     isFeasible=checkSolution(res);
-0296     <span class="keyword">if</span> ~isFeasible
-0297         <span class="comment">%Reset the constraint again</span>
-0298         prob.blc(numel(irrevModel.mets)-numel(pmIndexes)+i)=0;
-0299     <span class="keyword">else</span>
-0300         <span class="comment">%Metabolite produced</span>
-0301         metProduction(pmIndexes(i))=1;
-0302     <span class="keyword">end</span>
-0303 <span class="keyword">end</span>
-0304 
-0305 <span class="comment">%Add that the binary reactions may only take integer values.</span>
-0306 allInt=[(nRxns+1):(nRxns+nNonEssential) size(S,2)-nRevBounds*2+1:size(S,2)];
-0307 prob.ints.sub=allInt;
-0308 res=optimizeProb(prob,params);
-0309 
-0310 <span class="comment">%I don't think that this problem can be infeasible, so this is mainly a way</span>
-0311 <span class="comment">%of checking the licence stuff</span>
-0312 <span class="keyword">if</span> ~checkSolution(res)
-0313     EM=<span class="string">'The problem is infeasible'</span>;
-0314     dispEM(EM);
-0315 <span class="keyword">end</span>
-0316 
-0317 fValue=res.sol.int.pobjval;
-0318 
-0319 <span class="comment">%Get all reactions used in the irreversible model</span>
-0320 usedRxns=(nonEssentialIndex(res.sol.int.xx(nRxns+1:nRxns+nNonEssential)&lt;0.1))';
-0321 
-0322 <span class="comment">%Map to reversible model IDs</span>
-0323 usedRxns=[usedRxns(usedRxns&lt;=numel(model.rxns));revRxns(usedRxns(usedRxns&gt;numel(model.rxns))-numel(model.rxns))];
-0324 
-0325 <span class="comment">%Then get the ones that are not used in either direction or is essential</span>
-0326 I=true(numel(model.rxns),1);
-0327 I(usedRxns)=false;
-0328 I(essentialIndex)=false;
-0329 deletedRxns=model.rxns(I);
-0330 outModel=removeReactions(model,I,true,true);
-0331 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0289 <span class="comment">% adapt problem structure for cobra-style solver</span>
+0290 prob.c=[prob.c;zeros(size(prob.a,1),1)];
+0291 prob.A=[prob.a -speye(size(prob.a,1))];
+0292 prob.b=zeros(size(prob.a,1), 1);
+0293 prob.ub=[prob.bux; prob.buc];
+0294 prob.osense=1;
+0295 prob.csense=char(zeros(size(prob.a,1),1));
+0296 prob.csense(:)=<span class="string">'E'</span>;
+0297 
+0298 <span class="comment">%We still don't know which of the presentMets that can be produced. Go</span>
+0299 <span class="comment">%through them, force production, and see if the problem can be solved</span>
+0300 <span class="keyword">for</span> i=1:numel(pmIndexes)
+0301     prob.blc(numel(irrevModel.mets)-numel(pmIndexes)+i)=1;
+0302     prob.lb=[prob.blx; prob.blc];
+0303     res=optimizeProb(prob,params);
+0304     isFeasible=checkSolution(res);
+0305     <span class="keyword">if</span> ~isFeasible
+0306         <span class="comment">%Reset the constraint again</span>
+0307         prob.blc(numel(irrevModel.mets)-numel(pmIndexes)+i)=0;
+0308     <span class="keyword">else</span>
+0309         <span class="comment">%Metabolite produced</span>
+0310         metProduction(pmIndexes(i))=1;
+0311     <span class="keyword">end</span>
+0312 <span class="keyword">end</span>
+0313 prob.lb=[prob.blx; prob.blc];
+0314 
+0315 <span class="comment">%Add that the binary reactions may only take integer values.</span>
+0316 prob.vartype = repmat(<span class="string">'C'</span>, 1, size(prob.A, 2));
+0317 allInt=[(nRxns+1):(nRxns+nNonEssential) size(S,2)-nRevBounds*2+1:size(S,2)];
+0318 prob.vartype(allInt) = <span class="string">'B'</span>;
+0319 
+0320 <span class="comment">% solve problem</span>
+0321 res=optimizeProb(prob,params);
+0322 
+0323 <span class="comment">%Problem should not be infeasible, but it is possible that the time limit</span>
+0324 <span class="comment">%was reached before finding any solutions.</span>
+0325 <span class="keyword">if</span> ~checkSolution(res)
+0326     <span class="keyword">if</span> strcmp(res.origStat, <span class="string">'TIME_LIMIT'</span>)
+0327         EM=<span class="string">'Time limit reached without finding a solution. Try increasing the TimeLimit parameter.'</span>;
+0328     <span class="keyword">else</span>
+0329         EM=<span class="string">'The problem is infeasible'</span>;
+0330     <span class="keyword">end</span>
+0331     dispEM(EM);
+0332 <span class="keyword">end</span>
+0333 
+0334 fValue=res.obj;
+0335 
+0336 <span class="comment">%Get all reactions used in the irreversible model</span>
+0337 usedRxns=(nonEssentialIndex(res.full(nRxns+1:nRxns+nNonEssential)&lt;0.1))';
+0338 
+0339 <span class="comment">%Map to reversible model IDs</span>
+0340 usedRxns=[usedRxns(usedRxns&lt;=numel(model.rxns));revRxns(usedRxns(usedRxns&gt;numel(model.rxns))-numel(model.rxns))];
+0341 
+0342 <span class="comment">%Then get the ones that are not used in either direction or is essential</span>
+0343 I=true(numel(model.rxns),1);
+0344 I(usedRxns)=false;
+0345 I(essentialIndex)=false;
+0346 deletedRxns=model.rxns(I);
+0347 outModel=removeReactions(model,I,true,true);
+0348 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 03-Jun-2020 13:07:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

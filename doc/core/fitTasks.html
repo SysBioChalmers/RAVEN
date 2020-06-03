@@ -316,92 +316,103 @@ This function is called by:
 0234             <span class="keyword">end</span>
 0235             <span class="comment">%Then add the normal constraints</span>
 0236             <span class="keyword">if</span> any(J(I))
-0237                 tModel.b(J(I),1)=taskStructure(i).LBout(I);
-0238                 tModel.b(J(I),2)=taskStructure(i).UBout(I);
-0239             <span class="keyword">end</span>
-0240         <span class="keyword">end</span>
-0241         
-0242         <span class="comment">%Add new rxns</span>
-0243         <span class="keyword">if</span> ~isempty(taskStructure(i).equations)
-0244             rxn.equations=taskStructure(i).equations;
-0245             rxn.lb=taskStructure(i).LBequ;
-0246             rxn.ub=taskStructure(i).UBequ;
-0247             rxn.rxns=strcat({<span class="string">'TEMPORARY_'</span>},num2str((1:numel(taskStructure(i).equations))'));
-0248             tModel=<a href="addRxns.html" class="code" title="function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allowNewGenes)">addRxns</a>(tModel,rxn,3);
-0249         <span class="keyword">end</span>
-0250         <span class="comment">%Add changed bounds</span>
-0251         <span class="keyword">if</span> ~isempty(taskStructure(i).changed)
-0252             tModel=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(tModel,<span class="string">'lb'</span>,taskStructure(i).changed,taskStructure(i).LBrxn);
-0253             tModel=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(tModel,<span class="string">'ub'</span>,taskStructure(i).changed,taskStructure(i).UBrxn);
-0254         <span class="keyword">end</span>
-0255         
-0256         <span class="comment">%Solve and print. Display a warning if the problem is not solveable</span>
-0257         sol=solveLP(tModel);
-0258         <span class="keyword">if</span> isempty(sol.x)
-0259             <span class="comment">%Only do gap-filling if it cannot be solved</span>
-0260             failed=false;
-0261             <span class="keyword">try</span>
-0262                 [~, ~, newRxns, newModel, exitFlag]=<a href="fillGaps.html" class="code" title="function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,allowNetProduction,useModelConstraints,supressWarnings,rxnScores,params)">fillGaps</a>(tModel,refModel,false,true,supressWarnings,rxnScores,params);
-0263                 <span class="keyword">if</span> exitFlag==-2
-0264                     EM=[<span class="string">'&quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; was aborted before reaching optimality. Consider increasing params.maxTime\n'</span>];
-0265                     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0266                 <span class="keyword">end</span>
-0267             <span class="keyword">catch</span>
-0268                 EM=[<span class="string">'&quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; could not be performed for any set of reactions\n'</span>];
-0269                 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0270                 failed=true;
-0271             <span class="keyword">end</span>
-0272             <span class="keyword">if</span> failed==false
-0273                 <span class="keyword">if</span> ~isempty(newRxns)
-0274                     nAdded=nAdded+numel(newRxns);
-0275                     
-0276                     <span class="comment">%Add the reactions to the base model. It is not correct</span>
-0277                     <span class="comment">%to use newModel directly, as it may contain</span>
-0278                     <span class="comment">%reactions/constraints that are specific to this task</span>
-0279                     model=<a href="mergeModels.html" class="code" title="function model=mergeModels(models,metParam,supressWarnings)">mergeModels</a>({model,<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(newModel,setdiff(newModel.rxns,newRxns),true,true)},<span class="string">'metNames'</span>,true);
-0280                     
-0281                     <span class="comment">%Keep track of the added reactions</span>
-0282                     addedRxns(ismember(refModel.rxns,newRxns),i)=true;
-0283                 <span class="keyword">end</span>
-0284                 <span class="keyword">if</span> printOutput==true
-0285                     fprintf([<span class="string">'['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">': Added '</span> num2str(numel(newRxns)) <span class="string">' reaction(s), '</span> num2str(nAdded) <span class="string">' reactions added in total\n'</span>]);
-0286                 <span class="keyword">end</span>
-0287             <span class="keyword">end</span>
-0288         <span class="keyword">else</span>
-0289             <span class="keyword">if</span> printOutput==true
-0290                 fprintf([<span class="string">'['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">': Added 0 reaction(s), '</span> num2str(nAdded) <span class="string">' reactions added in total\n'</span>]);
-0291             <span class="keyword">end</span>
-0292         <span class="keyword">end</span>
-0293         supressWarnings=true;
-0294         
-0295         <span class="comment">%Print the output if chosen</span>
-0296         <span class="keyword">if</span> taskStructure(i).printFluxes &amp;&amp; printOutput
-0297             <span class="keyword">if</span> ~isempty(sol.x)
-0298                 sol=solveLP(tModel,1);
-0299                 <a href="printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>(tModel,sol.x,false,10^-5,[],<span class="string">'%rxnID (%eqn):%flux\n'</span>);
-0300                 fprintf(<span class="string">'\n'</span>);
-0301             <span class="keyword">else</span>
-0302                 <span class="comment">%If the problem wasn't solveable then the gap-filled model</span>
-0303                 <span class="comment">%should be used</span>
-0304                 <span class="keyword">if</span> failed==false
-0305                     sol=solveLP(newModel,1);
-0306                     <a href="printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>(newModel,sol.x,false,10^-5,[],<span class="string">'%rxnID (%eqn):%flux\n'</span>);
-0307                     fprintf(<span class="string">'\n'</span>);
-0308                 <span class="keyword">end</span>
-0309             <span class="keyword">end</span>
-0310         <span class="keyword">end</span>
-0311         
-0312         tModel=model;
-0313         <span class="comment">%Since new mets are added by merging the new reactions and not only</span>
-0314         <span class="comment">%from the task sheet</span>
-0315         modelMets=upper(strcat(model.metNames,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>));
-0316     <span class="keyword">else</span>
-0317         EM=[<span class="string">'&quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; is set as SHOULD FAIL. Such tasks cannot be modelled using this approach and the task is therefore ignored\n'</span>];
-0318         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0319     <span class="keyword">end</span>
-0320 <span class="keyword">end</span>
-0321 outModel=model;
-0322 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0237                 <span class="comment">%Verify that IN and OUT bounds are consistent. Cannot require</span>
+0238                 <span class="comment">%that a metabolite is simultaneously input AND output at some</span>
+0239                 <span class="comment">%nonzero flux.</span>
+0240                 J = J(I);
+0241                 I = find(I);  <span class="comment">% otherwise indexing becomes confusing</span>
+0242                 nonzero_LBin = tModel.b(J,2) &lt; 0;
+0243                 nonzero_LBout = taskStructure(i).LBout(I) &gt; 0;
+0244                 <span class="keyword">if</span> any(nonzero_LBin &amp; nonzero_LBout)
+0245                     EM=[<span class="string">'The IN LB and OUT LB in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; cannot be nonzero for the same metabolite'</span>];
+0246                     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0247                 <span class="keyword">end</span>
+0248                 tModel.b(J(nonzero_LBout),1)=taskStructure(i).LBout(I(nonzero_LBout));
+0249                 tModel.b(J,2)=taskStructure(i).UBout(I);
+0250             <span class="keyword">end</span>
+0251         <span class="keyword">end</span>
+0252         
+0253         <span class="comment">%Add new rxns</span>
+0254         <span class="keyword">if</span> ~isempty(taskStructure(i).equations)
+0255             rxn.equations=taskStructure(i).equations;
+0256             rxn.lb=taskStructure(i).LBequ;
+0257             rxn.ub=taskStructure(i).UBequ;
+0258             rxn.rxns=strcat({<span class="string">'TEMPORARY_'</span>},num2str((1:numel(taskStructure(i).equations))'));
+0259             tModel=<a href="addRxns.html" class="code" title="function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allowNewGenes)">addRxns</a>(tModel,rxn,3);
+0260         <span class="keyword">end</span>
+0261         <span class="comment">%Add changed bounds</span>
+0262         <span class="keyword">if</span> ~isempty(taskStructure(i).changed)
+0263             tModel=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(tModel,<span class="string">'lb'</span>,taskStructure(i).changed,taskStructure(i).LBrxn);
+0264             tModel=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(tModel,<span class="string">'ub'</span>,taskStructure(i).changed,taskStructure(i).UBrxn);
+0265         <span class="keyword">end</span>
+0266         
+0267         <span class="comment">%Solve and print. Display a warning if the problem is not solveable</span>
+0268         sol=solveLP(tModel);
+0269         <span class="keyword">if</span> isempty(sol.x)
+0270             <span class="comment">%Only do gap-filling if it cannot be solved</span>
+0271             failed=false;
+0272             <span class="keyword">try</span>
+0273                 [~, ~, newRxns, newModel, exitFlag]=<a href="fillGaps.html" class="code" title="function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,allowNetProduction,useModelConstraints,supressWarnings,rxnScores,params)">fillGaps</a>(tModel,refModel,false,true,supressWarnings,rxnScores,params);
+0274                 <span class="keyword">if</span> exitFlag==-2
+0275                     EM=[<span class="string">'&quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; was aborted before reaching optimality. Consider increasing params.maxTime\n'</span>];
+0276                     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0277                 <span class="keyword">end</span>
+0278             <span class="keyword">catch</span>
+0279                 EM=[<span class="string">'&quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; could not be performed for any set of reactions\n'</span>];
+0280                 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0281                 failed=true;
+0282             <span class="keyword">end</span>
+0283             <span class="keyword">if</span> failed==false
+0284                 <span class="keyword">if</span> ~isempty(newRxns)
+0285                     nAdded=nAdded+numel(newRxns);
+0286                     
+0287                     <span class="comment">%Add the reactions to the base model. It is not correct</span>
+0288                     <span class="comment">%to use newModel directly, as it may contain</span>
+0289                     <span class="comment">%reactions/constraints that are specific to this task</span>
+0290                     model=<a href="mergeModels.html" class="code" title="function model=mergeModels(models,metParam,supressWarnings)">mergeModels</a>({model,<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(newModel,setdiff(newModel.rxns,newRxns),true,true)},<span class="string">'metNames'</span>,true);
+0291                     
+0292                     <span class="comment">%Keep track of the added reactions</span>
+0293                     addedRxns(ismember(refModel.rxns,newRxns),i)=true;
+0294                 <span class="keyword">end</span>
+0295                 <span class="keyword">if</span> printOutput==true
+0296                     fprintf([<span class="string">'['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">': Added '</span> num2str(numel(newRxns)) <span class="string">' reaction(s), '</span> num2str(nAdded) <span class="string">' reactions added in total\n'</span>]);
+0297                 <span class="keyword">end</span>
+0298             <span class="keyword">end</span>
+0299         <span class="keyword">else</span>
+0300             <span class="keyword">if</span> printOutput==true
+0301                 fprintf([<span class="string">'['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">': Added 0 reaction(s), '</span> num2str(nAdded) <span class="string">' reactions added in total\n'</span>]);
+0302             <span class="keyword">end</span>
+0303         <span class="keyword">end</span>
+0304         supressWarnings=true;
+0305         
+0306         <span class="comment">%Print the output if chosen</span>
+0307         <span class="keyword">if</span> taskStructure(i).printFluxes &amp;&amp; printOutput
+0308             <span class="keyword">if</span> ~isempty(sol.x)
+0309                 sol=solveLP(tModel,1);
+0310                 <a href="printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>(tModel,sol.x,false,10^-5,[],<span class="string">'%rxnID (%eqn):%flux\n'</span>);
+0311                 fprintf(<span class="string">'\n'</span>);
+0312             <span class="keyword">else</span>
+0313                 <span class="comment">%If the problem wasn't solveable then the gap-filled model</span>
+0314                 <span class="comment">%should be used</span>
+0315                 <span class="keyword">if</span> failed==false
+0316                     sol=solveLP(newModel,1);
+0317                     <a href="printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>(newModel,sol.x,false,10^-5,[],<span class="string">'%rxnID (%eqn):%flux\n'</span>);
+0318                     fprintf(<span class="string">'\n'</span>);
+0319                 <span class="keyword">end</span>
+0320             <span class="keyword">end</span>
+0321         <span class="keyword">end</span>
+0322         
+0323         tModel=model;
+0324         <span class="comment">%Since new mets are added by merging the new reactions and not only</span>
+0325         <span class="comment">%from the task sheet</span>
+0326         modelMets=upper(strcat(model.metNames,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>));
+0327     <span class="keyword">else</span>
+0328         EM=[<span class="string">'&quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; is set as SHOULD FAIL. Such tasks cannot be modelled using this approach and the task is therefore ignored\n'</span>];
+0329         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0330     <span class="keyword">end</span>
+0331 <span class="keyword">end</span>
+0332 outModel=model;
+0333 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 03-Jun-2020 13:07:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
