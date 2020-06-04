@@ -29,14 +29,11 @@ fprintf('Checking if RAVEN is on the MATLAB path...\t\t\t\t\t\t\t\t\t');
 if ismember(ravenDir,paths)
     fprintf('OK\n');
 else
-    fprintf('Not OK\n');
-    addMe=input('Would you like to add the RAVEN directory to the path list? Y/N\n','s');
-    if strcmpi(addMe,'y')
-        subpath=regexp(genpath(ravenDir),pathsep,'split'); %List all subdirectories
-        pathsToKeep=cellfun(@(x) isempty(strfind(x,'.git')),subpath) & cellfun(@(x) isempty(strfind(x,'doc')),subpath);
-        addpath(strjoin(subpath(pathsToKeep),pathsep));
-        savepath
-    end
+    fprintf('OK (just added)\n');
+    subpath=regexp(genpath(ravenDir),pathsep,'split'); %List all subdirectories
+    pathsToKeep=cellfun(@(x) isempty(strfind(x,'.git')),subpath) & cellfun(@(x) isempty(strfind(x,'doc')),subpath);
+    addpath(strjoin(subpath(pathsToKeep),pathsep));
+    savepath
 end
 
 %Add the required classes to the static Java path if not already added
@@ -87,14 +84,14 @@ else
 end
 
 %Check if it is possible to solve an LP problem using different solvers
-solver={'gurobi','mosek','cobra'};
+solver={'gurobi','cobra'};
 
 for i=1:numel(solver)
     fprintf(['Checking if it is possible to solve an LP problem using ',solver{i},'...\t\t\t']);
     try
         setRavenSolver(solver{i});
         load(matFile);
-        solveLP(empty);
+        solveLP(emptyModel);
         workingSolvers=strcat(workingSolvers,';',solver{i});
         fprintf('OK\n');
         if strcmp(curSolv,solver{i})

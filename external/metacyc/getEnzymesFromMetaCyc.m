@@ -121,16 +121,18 @@ else
             end
             
             if numel(tline)>13 && strcmp(tline(1:13),'COMPONENTS - ')
-                nComp=nComp+1;
-                Comp.subunit{nComp}=tline(14:end);
+                if addMe
+                    nComp=nComp+1;
+                    Comp.subunit{nComp}=tline(14:end);
+                end
             end
             
             if strcmp(tline(1:end),'//')
                 if addMe
                     Comp.subunit=Comp.subunit(1:nComp);
                     metaCycEnzymes.cplxComp{nCplx}=Comp;
+                    addMe=false;
                 end
-                addMe=false;
             end
         end
         %Close the file
@@ -141,9 +143,10 @@ else
         metaCycEnzymes.cplxComp=metaCycEnzymes.cplxComp(1:nCplx);
         metaCycEnzymes.enzymes=metaCycEnzymes.enzymes(1:enzymeCounter);
         
-        % Iteratively replace all components of complexes into polypeptide
-        % subunits
+        % Iteratively go through the components of each complex
         for i=1:numel(metaCycEnzymes.cplxComp)
+            
+            %replace all complex-type components with their subunits
             checkCplx=true;
             while checkCplx
                 x=0;
@@ -167,6 +170,13 @@ else
                     end
                 end
                 
+            end
+            
+            % make sure the subunits are all included in the enzyme list
+            % since in one case subunit was not found in enzyme dump file
+            [a, b] = ismember(metaCycEnzymes.cplxComp{i}.subunit,metaCycEnzymes.enzymes);
+            if ~all(a)
+                metaCycEnzymes.cplxComp{i}.subunit = metaCycEnzymes.enzymes(b(find(a)));
             end
         end
         
