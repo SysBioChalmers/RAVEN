@@ -6,10 +6,6 @@ function writeYaml(model,name)
 %   name        name that the file will have
 %
 %   Usage: writeYaml(model,name)
-%
-%   Benjamin Sanchez, 2018-04-11
-%   Simonas Marcisauskas, 2018-04-13
-%
 
 %Check that model is in RAVEN format:
 if isfield(model,'rules')

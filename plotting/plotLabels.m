@@ -9,9 +9,6 @@ function plotLabels(handle,pathway)
 %           shape is used. The name of the PHENOTYPE object is used.
 %
 %   Usage: plotLabels(handle,pathway)
-%
-%   Rasmus Agren, 2010-12-16
-%
 
 for i=1:numel(pathway.listOfSpecies)
     if strcmp(pathway.listOfSpecies(i).type,'PHENOTYPE')

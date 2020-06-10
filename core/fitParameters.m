@@ -33,9 +33,6 @@ function [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,xRxn
 %   Usage: [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,...
 %           xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,fitToRatio,...
 %           initialGuess,plotFitting)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
 if nargin<7
     fitToRatio=true;

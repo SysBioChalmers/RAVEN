@@ -34,9 +34,6 @@ function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
 %                 parameters). Only used if minFlux is 0 or 1
 %
 %   Usage: [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
-%
-%   Eduard Kerkhoven, 2017-11-09
-%
 
 if nargin<2
     minFlux=0;

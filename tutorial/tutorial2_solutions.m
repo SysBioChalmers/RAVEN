@@ -1,9 +1,6 @@
 % tutorial2_solutions
 %   This script contains the solutions for Tutorial 2, see Tutorial 2 in
 %   "RAVEN tutorials.docx" for more details.
-%
-%   Simonas Marcisauskas, 2019-10-24
-%
 
 %Import the Excel model into a RAVEN model structure
 smallModel=importExcelModel('small.xlsx');

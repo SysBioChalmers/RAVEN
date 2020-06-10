@@ -108,9 +108,6 @@ function taskStruct=parseTaskList(inputFile)
 %   ones.
 %
 %   Usage: taskStruct=parseTaskList(inputFile)
-%
-%   Eduard Kerkhoven, 2018-05-18
-%
 
 if ~(exist(inputFile,'file')==2)
     error('Task list %s cannot be found',string(inputFile));

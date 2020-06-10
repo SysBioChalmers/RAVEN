@@ -68,9 +68,6 @@ function [newModel, removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames
 %
 %   Usage: [newModel, removedRxns]=removeBadRxns(model,rxnRules,...
 %       ignoreMets,isNames,refModel,ignoreIntBounds,printReport)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
 if nargin<2
     rxnRules=1;

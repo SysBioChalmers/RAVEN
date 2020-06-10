@@ -19,9 +19,6 @@ function followChanged(model,fluxesA,fluxesB, cutOffChange, cutOffFlux, cutOffDi
 %
 %   Usage: followChanged(model,fluxesA,fluxesB, cutOffChange, cutOffFlux,
 %           cutOffDiff, metaboliteList)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
 %Checks if a cut off flux has been set
 if nargin<4

@@ -30,9 +30,6 @@ function metaCycEnzymes=getEnzymesFromMetaCyc(metacycPath)
 %
 %	Usage: model=getEnzymesFromMetaCyc(metacycPath)
 %
-%	Hao Wang, 2018-10-31
-%
-
 %NOTE: This is how one entry looks in the files
 
 %proteins.dat

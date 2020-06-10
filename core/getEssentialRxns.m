@@ -13,9 +13,6 @@ function [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns
 %   infeasible problem.
 %
 %   Usage: [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
 if nargin<2
     ignoreRxns={};

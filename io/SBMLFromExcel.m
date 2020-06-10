@@ -16,9 +16,6 @@ function SBMLFromExcel(fileName, outputFileName,toCOBRA,printWarnings)
 %
 %   NOTE: This is just a wrapper function for importExcelModel, printModelStats
 %   and exportModel. Use those functions directly for greater control.
-%
-%   Rasmus Agren, 2013-08-03
-%
 
 if nargin<3
     toCOBRA=false;

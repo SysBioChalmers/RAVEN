@@ -35,9 +35,6 @@ function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(mode
 %           deleteUnconstrained, deleteDuplicates, deleteZeroInterval,...
 %           deleteInaccessible, deleteMinMax, groupLinear,...
 %           constrainReversible, reservedRxns, suppressWarnings)
-%
-%   Rasmus Agren, 2014-05-07
-%
 
 if nargin<2
     deleteUnconstrained=true;

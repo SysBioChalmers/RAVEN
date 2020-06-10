@@ -23,9 +23,6 @@ function blastStructure=makeFakeBlastStructure(orthologList,sourceModelID,getMod
 %                       and aligLen are set at extreme values, such that
 %                       all orthologous pairs will pass the filter when
 %                       running getModelFromHomology
-%
-%   Eduard Kerkhoven, 2017-10-22
-%
 
 if nargin<3
     throw(MException('','All three parameters should be set'));

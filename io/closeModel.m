@@ -8,9 +8,6 @@ function closedModel=closeModel(model)
 %   closedModel           an updated closedModel structure
 %
 %   Usage: closedModel=closeModel(model)
-%
-%   Simonas Marcisauskas, 2017-09-18
-%
 
 closedModel=model;
 

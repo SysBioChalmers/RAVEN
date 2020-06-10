@@ -8,9 +8,6 @@
 %   flag        0 if everything worked, -1 if it didn't
 %
 %   Usage: [raw, flag]=loadSheet(workbook, sheet)
-%
-%   Rasmus Agren, 2017-02-28
-%
 
 function [raw, flag]=loadSheet(workbook, sheet)
 if nargin<2

@@ -50,9 +50,6 @@ function newModel=addMets(model,metsToAdd,copyInfo,prefix)
 %       'value',{{'CHEBI:31132';'C12248'}});
 %
 %   Usage: newModel=addMets(model,metsToAdd,copyInfo,prefix)
-%
-%   Eduard Kerkhoven, 2018-10-03
-%
 
 if nargin<3
     copyInfo=true;

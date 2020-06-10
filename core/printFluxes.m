@@ -33,9 +33,6 @@ function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputS
 %
 %   Usage: printFluxes(model, fluxes, onlyExchange, cutOffFlux,
 %           outputFile,outputString)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
 if nargin<3
     onlyExchange=true;

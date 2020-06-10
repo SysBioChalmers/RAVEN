@@ -46,9 +46,6 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 %   pre-prepared lists of MetaCyc transport and undetermined reactions.
 %
 %   Usage: model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
-%
-%   Hao Wang, 2018-11-01
-%
 
 %NOTE: This is how one entry looks in the file
 

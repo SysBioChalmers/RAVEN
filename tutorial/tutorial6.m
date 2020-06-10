@@ -12,9 +12,6 @@
 %   coelicolor strain A3(2). Users may apply this script as the template in
 %   their own work for other organisms.
 %   This refers to Tutorial 6 from "RAVEN tutorials.docx"
-%
-%   Simonas Marcisauskas, 2019-10-24
-%
 
 %Before reconstruction, a FASTA file with protein sequences of the target
 %organism needs to be prepared. In this tutorial, all protein sequences of

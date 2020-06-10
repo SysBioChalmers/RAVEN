@@ -12,9 +12,6 @@ function orderedModel=standardizeModelFieldOrder(model)
 %   ravenCobraWrapper().
 %
 %   Usage: orderedModel=standardizeModelFieldOrder(model)
-%
-%   Eduard Kerkhoven, 2020-05-14
-%
 
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(ST(I).file));

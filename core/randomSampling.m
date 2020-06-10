@@ -38,10 +38,6 @@ function [solutions, goodRxns]=randomSampling(model, nSamples, replaceBoundsWith
 %   chooses between maximizing and minimizing.
 %
 %   Usage: solutions=randomSampling(model, nSamples, replaceBoundsWithInf)
-%
-%   Eduard Kerkhoven, 2018-02-28
-%   Benjamin Sanchez, 2018-04-10
-%
 
 if nargin<2
     nSamples=1000;

@@ -15,9 +15,6 @@ function [spontaneousRxnList, pathwayID]=addSpontaneousRxns(rxnList, metList)
 %   pathwayID            the cell array of relevant pathways
 %
 %   Usage: spontaneousRxnList=addSpontaneousRxns(rxnList, metList)
-%
-%   Hao Wang, 2018-11-06
-%
 
 if nargin<2
     disp('Missing input arguments');

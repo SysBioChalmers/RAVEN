@@ -22,8 +22,6 @@ function targets=FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputF
 %   reaction when switching from biomass formation to product formation.
 %
 %   Usage: targets=FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile)
-%
-%   Simonas Marcisauskas, 2018-03-18
 
 if nargin<4
     iterations=10;

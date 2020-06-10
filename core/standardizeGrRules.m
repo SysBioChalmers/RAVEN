@@ -20,9 +20,6 @@ function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)
 %   at the beginning of the process.
 %
 %   Usage: [grRules,rxnGeneMat,indexes2check]=standardizeGrRules(model,embedded)
-%
-%   Ivan Domenzain, 2018-05-04
-%
 
 %Preallocate fields
 n          = length(model.rxns);

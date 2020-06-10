@@ -18,9 +18,6 @@ function out=exportForGit(model,prefix,path,formats,masterFlag)
 %                       (opt, default false)
 %
 %   Usage: exportForGit(model,prefix,path,formats,masterFlag)
-%
-%   Benjamin J. Sanchez, 2018-10-19
-%
 if nargin<5
     masterFlag=false;
 end

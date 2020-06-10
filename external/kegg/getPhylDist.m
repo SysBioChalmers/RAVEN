@@ -19,9 +19,6 @@ function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 %   are away from each other in KEGG
 %
 %   Usage: phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
-%
-%   Simonas Marcisauskas, 2019-09-09
-%
 
 if nargin<1
     keggPath='RAVEN/external/kegg';

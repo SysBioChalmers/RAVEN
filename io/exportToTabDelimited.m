@@ -15,8 +15,6 @@ function exportToTabDelimited(model,path)
 %         checkModelStruct to identify problems in the model structure
 %
 %   Usage: exportToTabDelimited(model,path)
-%
-%   Cheewin Kittikunapong, 2019-04-02
 
 if nargin<2
     path='./';

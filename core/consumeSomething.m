@@ -39,9 +39,6 @@ function [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,minNrF
 %
 %   Usage: [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,...
 %               minNrFluxes,params,ignoreIntBounds)
-%
-%   Rasmus Agren, 2015-09-25
-%
 
 if nargin<2
     ignoreMets=[];

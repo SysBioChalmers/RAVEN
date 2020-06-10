@@ -106,9 +106,6 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %               getINITModel(refModel, tissue, celltype, hpaData, arrayData,...
 %               metabolomicsData, taskFile, useScoresForTasks, printReport,...
 %               taskStructure, params, paramsFT)
-%
-%   Daniel Cook, 2018-03-12
-%
 
 if nargin<3
     celltype=[];

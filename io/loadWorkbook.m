@@ -10,9 +10,6 @@ function workbook=loadWorkbook(fileName,createEmpty)
 %   workbook    Workbook object representing the Excel file
 %
 %   Usage: workbook=loadWorkbook(fileName,createEmpty)
-%
-%   Eduard Kerkhoven, 2018-05-18
-%
 
 if nargin<2
     createEmpty=false;

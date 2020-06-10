@@ -13,9 +13,6 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %
 %
 %   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
-%
-%   Simonas Marcisauskas, 2018-09-06
-
 if nargin<3
     exportGeneComplexes=false;
 end
@@ -792,10 +789,6 @@ function vecT = columnVector(vec)
 %
 % OUTPUT:
 %   vecT:    a column vector
-%
-% .. Authors:
-%     - Original file: Markus Herrgard - Minor changes: Laurent Heirendt
-%     January 2017
 
 [n, m] = size(vec);
 

@@ -16,8 +16,6 @@ function newIds=generateNewIds(model,type,prefix,quantity,numLength)
 %
 %   Usage: newIds=generateNewIds(model,type,prefix,quantity,numLength)
 %   
-%   Eduard Kerkhoven, 2018-09-26
-%
 
 if type=='rxns'
     existingIds=model.rxns;

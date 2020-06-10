@@ -13,9 +13,6 @@ function Z=getFluxZ(solutionsA, solutionsB)
 %                   respect to the first.
 %
 %   Usage: Z=getFluxZ(solutionsA, solutionsB)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
 nRxns=size(solutionsA,1);
 

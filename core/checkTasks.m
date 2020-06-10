@@ -42,9 +42,6 @@ function [taskReport, essentialRxns, taskStructure]=checkTasks(model,inputFile,p
 %
 %   Usage: [taskReport, essentialReactions, taskStructure]=checkTasks(model,inputFile,...
 %           printOutput,printOnlyFailed,getEssential,taskStructure)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
 if nargin<3 || isempty(printOutput)
     printOutput=true;
