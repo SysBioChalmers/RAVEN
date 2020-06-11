@@ -35,9 +35,6 @@ function hpaData=parseHPA(fileName, version)
 %                           hpaData.reliabilities of gene i in cell type j
 %
 %   Usage: hpaData=parseHPA(fileName,version)
-%
-%   Eduard Kerkhoven, 2018-05-18
-%
 
 if nargin<2
     version=18; %Change this and add code for more versions when the current HPA version is increased and the format is changed

@@ -29,9 +29,6 @@ function [colorCodes, signChange, errorFlag]= getColorCodes(referenceFluxes, flu
 %
 %   Usage: [colorCodes, signChange, errorFlag]=getColorCodes(referenceFluxes,...
 %           fluxes, maxChange, defaultColor, upColor, downColor)
-%
-%   Rasmus Agren, 2010-12-16
-%
 
 if nargin<6
     downColor=[1 0 0];
@@ -116,9 +113,6 @@ function colorValue=getColor(logvalue, defaultColor, upColor, downColor, maxChan
 %
 %   Usage: colorValue=getColor(logvalue, defaultColor, upColor,
 %   downColor, maxChange)
-%
-%   Rasmus Agren, 2010-12-16
-%
 
 %If the flux has decreased
 if logvalue<0

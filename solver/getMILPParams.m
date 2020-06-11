@@ -14,9 +14,6 @@ function mosekParams=getMILPParams(params)
 %   mosekParams     a parameter structure to be used with MOSEK
 %
 %   Usage: mosekParams=getMILPParams(params)
-%
-%   Rasmus Agren, 2014-05-08
-%
 
 if nargin<1
     params=[];

@@ -40,9 +40,6 @@ function [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnec
 %   Usage: [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnect,...
 %    neededForProductionMat, connectedFromTemplates, addedFromTemplates]=...
 %    gapReport(model, templateModels)
-%
-%   Rasmus Agren, 2013-11-22
-%
 
 if nargin<2
     templateModels=[];

@@ -19,9 +19,6 @@ function arrayData=parseHPArna(fileName, version)
 %                           correspond to tissues
 %
 %   Usage: arrayData=parseHPArna(fileName,version)
-%
-%   Jonathan Robinson, 2018-11-11
-%
 
 if nargin<2
     %Change this and add code for more versions when the current HPA

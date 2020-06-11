@@ -45,10 +45,6 @@ function [exchModel,unusedMets] = setExchangeBounds(model,mets,lb,ub,closeOthers
 % ignored.
 %
 % Usage: exchModel = setExchangeBounds(model,mets,lb,ub,closeOthers,mediaOnly);
-%
-%
-% Jonathan Robinson, 2019-05-23
-%
 
 
 % handle input arguments

@@ -36,9 +36,6 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxn
 %
 %   Usage: [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...
 %           rxnScores,taskStructure,params)
-%
-%   Eduard Kerkhoven, 2018-05-18
-%
 
 if nargin<4
     printOutput=true;

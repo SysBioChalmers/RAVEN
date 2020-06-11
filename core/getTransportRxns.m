@@ -11,9 +11,6 @@ function transportRxns=getTransportRxns(model)
 %   metabolite name in more than one compartment.
 %
 %   Usage: transportRxns=getTransportRxns(model)
-%
-%   Rasmus Agren, 2013-03-17
-%
 
 transportRxns=false(numel(model.rxns),1);
 

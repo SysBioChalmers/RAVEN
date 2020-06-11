@@ -18,9 +18,6 @@ function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,d
 %         that involve nested expressions of 'and' and 'or'.
 %
 %   Usage: [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse)
-%
-%   Hao Wang, 2018-04-16
-% 
 
 if nargin<2
     distReverse=true;

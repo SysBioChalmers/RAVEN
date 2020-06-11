@@ -44,9 +44,6 @@ function [genes, fluxes, originalGenes, details]=findGeneDeletions(model,testTyp
 %
 %   Usage: [genes, fluxes, originalGenes, details]=findGeneDeletions(model,testType,analysisType,...
 %           refModel,oeFactor)
-%
-%   Eduard Kerkhoven, 2018-04-27
-%
 
 originalModel=model;
 

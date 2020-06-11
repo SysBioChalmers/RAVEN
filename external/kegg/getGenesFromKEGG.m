@@ -33,9 +33,6 @@ function model=getGenesFromKEGG(keggPath,koList)
 %
 %   Usage: model=getGenesFromKEGG(keggPath,koList)
 %
-%   Simonas Marcisauskas, 2019-09-09
-%
-%
 % NOTE: This is how one entry looks in the file
 %
 % ENTRY       K11440                      KO

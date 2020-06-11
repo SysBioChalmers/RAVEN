@@ -30,9 +30,6 @@ function metaCycMets=getMetsFromMetaCyc(metacycPath)
 %   be removed and rebuilt when a newer version of MetaCyc is released.
 %               
 %   Usage: model=getMetsFromMetaCyc(metacycPath)
-%
-%   Hao Wang, 2018-10-31
-%
 
 % NOTE: This is how one entry looks in the file
 

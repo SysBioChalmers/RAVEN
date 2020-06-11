@@ -11,9 +11,6 @@ function printModelStats(model, printModelIssues, printDetails)
 %                       is true (opt, default true)
 %
 %   Usage: printModelStats(model,printModelIssues, printDetails)
-%
-%   Rasmus Agren, 2013-08-01
-%
 
 if nargin<2
     printModelIssues=false;

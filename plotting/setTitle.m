@@ -7,9 +7,6 @@ function setTitle(handle, pathway, title)
 %   title       the title
 %
 %   Usage: setTitle(handle, pathway, title)
-%
-%   Rasmus Agren, 2010-12-16
-%
 
 dimension=getPathwayDimensions(pathway);
 

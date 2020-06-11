@@ -16,9 +16,6 @@ function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeB
 %   reducedModel            an updated model structure
 %
 %   Usage: reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns)
-%
-%   Benjam??n J. S??nchez, 2018-04-16
-%
 
 if nargin<3
     removeUnusedMets = false;

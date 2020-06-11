@@ -29,9 +29,6 @@ function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, noPolymers,isI
 %   
 %   Usage: [elements, useMat, exitFlag, MW]=
 %               parseFormulas(formulas, noPolymers,isInchi,ignoreRX)
-%
-%   Rasmus Agren, 2013-12-09
-%
 
 if nargin<2
     noPolymers=false;

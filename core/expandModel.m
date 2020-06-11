@@ -14,9 +14,6 @@ function newModel=expandModel(model)
 %   that involve nested expressions of 'and' and 'or'
 %
 %   Usage: newModel=expandModel(model)
-%
-%   Simonas Marcisauskas, 2018-04-03
-%
 
 %Start by checking which reactions could be expanded
 rxnsToExpand=false(numel(model.rxns),1);

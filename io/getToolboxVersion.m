@@ -13,9 +13,6 @@ function version = getToolboxVersion(toolbox,fileID,masterFlag)
 %                   commit hash (7 characters).
 %
 %   Usage: version = getToolboxVersion(toolbox,fileID,masterFlag)
-%
-%   Benjamin J. Sanchez, 2018-10-19
-%
 
 if nargin<3
     masterFlag = false;

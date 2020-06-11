@@ -16,9 +16,6 @@
 %
 %   Usage: [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,...
 %               removeNoCap,removeEmptyRows)
-%
-%   Rasmus Agren, 2017-02-28
-%
 
 function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,removeNoCap,removeEmptyRows)
 if nargin<2

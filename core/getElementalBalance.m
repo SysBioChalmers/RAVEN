@@ -25,9 +25,6 @@ function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUn
 %       rightComp       the corresponding matrix for the right side
 %
 %   Usage: balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
 if nargin<2
     rxns=[];

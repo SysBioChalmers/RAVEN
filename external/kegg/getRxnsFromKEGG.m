@@ -49,9 +49,6 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 %   Usage: [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 %    isGeneral]=getRxnsFromKEGG(keggPath)
 %
-%   Simonas Marcisauskas, 2019-07-21
-%
-%
 % NOTE: This is how one entry looks in the file
 %
 % ENTRY       R00010                      Reaction

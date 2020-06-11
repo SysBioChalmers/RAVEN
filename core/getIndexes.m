@@ -19,9 +19,6 @@ function indexes=getIndexes(model, objects, type, returnLogical)
 %                   the value of returnLogical
 %
 % 	Usage: indexes=getIndexes(model, objects, type, returnLogical)
-%
-%   Eduard Kerkhoven, 2018-03-03
-%
 
 if nargin<4
     returnLogical=false;

@@ -7,9 +7,6 @@ function res = optimizeProb(prob,params)
 %
 %   res		the output structure from the selected solver RAVENSOLVER
 %   		(cobra style)
-%
-%	Eduard Kerkhoven, 2019-10-10
-%
 
 if nargin<2 || isempty(params)
     params=struct();

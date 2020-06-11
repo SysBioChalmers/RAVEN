@@ -12,10 +12,6 @@ function irrevModel=convertToIrrev(model,rxns)
 %   The reverse reactions are saved as 'rxnID_REV'.
 %
 %   Usage: irrevModel=convertToIrrev(model,rxns)
-%
-%   Rasmus Agren, 2013-08-01
-%	Benjamín J. Sánchez, 2018-08-06
-%
 
 if nargin<2
     rxns=model.rxns;

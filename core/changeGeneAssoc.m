@@ -15,9 +15,6 @@ function model = changeGeneAssoc(model,rxnID,geneAssoc,replace)
 %   model       an updated model structure
 %
 %   Usage: changeGeneAssoc(model,rxnID,geneAssoc,replace)
-%
-%   Eduard Kerkhoven, 2018-04-24
-%
 
 if nargin==3
     replace=true;

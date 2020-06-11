@@ -32,9 +32,6 @@ function metaCycModel=getModelFromMetaCyc(metacycPath,keepTransportRxns,keepUnba
 %   the database (https://metacyc.org/download.shtml).
 %
 %   Usage: getModelFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
-%
-%   Hao Wang, 2018-11-01
-%
 
 if nargin<1
     metacycPath='';

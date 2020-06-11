@@ -41,9 +41,6 @@ function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFlux
 %
 %   Usage: [solution, metabolite]=makeSomething(model,ignoreMets,isNames,...
 %           minNrFluxes,allowExcretion,params,ignoreIntBounds)
-%
-%   Simonas Marcisauskas, 2018-03-17
-%
 
 if nargin<2
     ignoreMets=[];

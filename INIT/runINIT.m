@@ -60,9 +60,6 @@ function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,
 %   Usage: [outModel deletedRxns metProduction fValue]=runINIT(model,...
 %           rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,...
 %           noRevLoops,params)
-%
-%   Rasmus Agren, 2017-02-28
-%
 
 if nargin<2
     rxnScores=zeros(numel(model.rxns),1);

@@ -10,9 +10,6 @@ function setRavenSolver(solver)
 %                   changeCobraSolver
 %
 %   Usage: setRavenSolver(solver)
-%
-%   Simonas Marcisauskas, 2017-09-19
-%
 
 if (~ischar(solver)) dispEM('Input should be a string.'); end
 

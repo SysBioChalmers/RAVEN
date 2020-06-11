@@ -6,9 +6,6 @@
 %   See Tutorial 3 in "RAVEN tutorials.docx" for more details.
 %
 %   It is assumed that the user has already completed Tutorial 2
-%
-%   Simonas Marcisauskas, 2019-10-24
-%
 
 %Import the Excel model
 model=importExcelModel('smallYeast.xlsx',true);

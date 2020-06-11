@@ -26,9 +26,6 @@ function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)
 %   cause problems if the fluxes in the model are larger than that.
 %
 %   Usage: [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params, scores)
-%
-%   Rasmus Agren, 2017-02-28
-%
 
 % glpk solver as implemented by COBRA does not work well for MILP.
 global CBT_MILP_SOLVER

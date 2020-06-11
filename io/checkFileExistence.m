@@ -14,9 +14,6 @@ function files=checkFileExistence(files,makeFullPath,allowSpace)
 %                   path (opt, default true)
 %   
 %   Usage: files=checkFileExistence(files,makeFullPath,allowSpace)
-%
-%   Eduard Kerkhoven, 2019-09-30
-%
 
 if nargin<2
     makeFullPath = true;

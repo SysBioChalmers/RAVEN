@@ -24,9 +24,6 @@ function compStruct=compareModels(models,printResults)
 %                       comparison
 %
 %   Usage: compStruct=compareModels(models,printResults)
-%
-%   Rasmus Agren, 2014-02-07
-%
 
 if nargin<2
     printResults=true;

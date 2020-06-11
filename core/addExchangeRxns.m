@@ -20,9 +20,6 @@ function [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
 %   ids are formatted as "EXC_OUT/IN/BOTH_METID".
 %
 %   Usage: [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
-%
-%   Simonas Marcisauskas, 2018-03-17
-%
 
 if nargin<3
     mets=model.mets;

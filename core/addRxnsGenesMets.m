@@ -41,9 +41,6 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %	used involving the same models.
 %
 %   Usage: newModel=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)
-%
-%   Eduard Kerkhoven, 2017-04-05
-%
 
 if nargin<6
     confidence=0;

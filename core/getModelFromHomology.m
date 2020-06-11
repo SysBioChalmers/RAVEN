@@ -64,9 +64,6 @@ function draftModel=getModelFromHomology(models,blastStructure,...
 %   Usage: draftModel=getModelFromHomology(models,blastStructure,...
 %    getModelFor,preferredOrder,strictness,onlyGenesInModels,maxE,...
 %    minLen,minIde,mapNewGenesToOld)
-%
-%   Simonas Marcisauskas, 2018-08-09
-%
 
 if nargin<4
     preferredOrder=[];

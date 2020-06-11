@@ -13,9 +13,6 @@ function model=combineMetaCycKEGGModels(metacycModel,keggModel)
 %                   included to indicate the source.
 %
 %	Usage: model=combineMetaCycKEGGModels(metacycModel,keggModel)
-%
-%	Hao Wang, 2019-10-21
-%
 
 %Just return the model
 if nargin<2

@@ -21,9 +21,6 @@ function newModel=addGenesRaven(model,genesToAdd)
 %   forbidden characters or such.
 %
 %   Usage: newModel=addGenesRaven(model,genesToAdd)
-%
-%   Simonas Marcisauskas, 2018-04-04
-%
 
 newModel=model;
 

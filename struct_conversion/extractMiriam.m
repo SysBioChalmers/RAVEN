@@ -25,10 +25,6 @@ function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)
 %   extractedMiriamNames        cell array with extracted miriam names
 %
 %   Usage: miriam=extractMiriam(modelMiriams,miriamName,addNull)
-%
-%   Simonas Marcisauskas, 2018-04-12
-%   Benjamin Sanchez, 2018-04-13
-%
 
 if nargin<2 || strcmp(miriamNames,'all')
     extractAllTypes=true;

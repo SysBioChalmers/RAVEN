@@ -21,9 +21,6 @@ function report=checkRxn(model,rxn,cutoff,revDir,printReport)
 %                   be consumed
 %
 %   Usage: report=checkRxn(model,rxn,cutoff,revDir,printReport)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
 %Convert to cell string
 if ischar(rxn)

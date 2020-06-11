@@ -7,9 +7,6 @@ function reducedModel=deleteUnusedGenes(model)
 %   reducedModel    an updated model structure
 %
 %   Usage: reducedModel=deleteUnusedGenes(model)
-%
-%   Simonas Marcisauskas, 2017-09-12
-%
 
 reducedModel=model;
 

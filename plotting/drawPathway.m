@@ -15,9 +15,6 @@ function drawPathway(pathway, h, cutOff, defaultColor)
 %           This means that this code is not appliable for any map
 %
 %   Usage: drawPathway(pathway, handle, cutOff, defaultColor)
-%
-%   Rasmus Agren, 2015-08-01
-%
 
 if nargin<4
     defaultColor=[1 1 1];

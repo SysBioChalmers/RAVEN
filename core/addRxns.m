@@ -100,9 +100,6 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allow
 %
 %   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,...
 %                           allowNewMets,allowNewGenes)
-%
-%   Eduard Kerkhoven, 2018-09-26
-%
 
 if nargin<4
     compartment=[];

@@ -29,9 +29,6 @@ function model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %
 %   Usage: model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond)
-%
-%   Hao Wang, 2020-03-19
-%
 
 if nargin<2
     EM='No query protein fasta file is specified';

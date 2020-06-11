@@ -24,9 +24,6 @@ function model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutsi
 %   NOTE: New reactions and metabolites will be named as "id_toComps(i)".
 %
 %   Usage: model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutside)
-%
-%   Rasmus Agren, 2013-07-25
-%
 
 if nargin<3
     rxns=model.rxns;

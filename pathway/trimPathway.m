@@ -12,9 +12,6 @@ function pathway=trimPathway(pathway, rxnsToKeep, deleteUnconnectedMets)
 % 	pathway                   an updated pathway object
 %
 %   Usage: pathway=trimPathway(pathway, rxnsToKeep, deleteUnconnectedMets)
-%
-%   Rasmus Agren, 2010-12-16
-%
 
 if nargin<3
     deleteUnconnectedMets=true;

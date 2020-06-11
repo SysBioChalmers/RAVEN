@@ -15,9 +15,6 @@ function model = changeGrRules(model,rxns,grRules,replace)
 %   model       an updated model structure
 %
 %   Usage: changeGrRules(model,rxns,grRules,replace)
-%
-%   Eduard Kerkhoven, 2019-03-26
-%
 
 if nargin==3
     replace=true;

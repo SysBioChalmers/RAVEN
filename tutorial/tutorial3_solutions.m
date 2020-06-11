@@ -2,9 +2,6 @@
 %   This script contains the solutions for Tutorial 3, see Tutorial 3 in
 %   "RAVEN tutorials.docx" for more details. All the parameters are set in
 %   this script, rather than modifying the Excel model file.
-%
-%   Simonas Marcisauskas, 2019-10-24
-%
 
 %Import the Excel model
 model=importExcelModel('smallYeast.xlsx',true);

@@ -13,9 +13,6 @@ function constructMultiFasta(model,sourceFile,outputDir)
 %   from KEGG.
 %
 %   Usage: constructMultiFasta(model,sourceFile,outputDir)
-%
-%   Simonas Marcisauskas, 2019-09-12
-%
 
 if ~(exist(sourceFile,'file')==2)
     error('FASTA file %s cannot be found',string(sourceFile));

@@ -4,9 +4,6 @@ function checkFunctionUniqueness()
 %   toolboxes or user-created functions accessible in Matlab pathlist
 %
 %   Usage: checkFunctionUniqueness()
-%
-%   Simonas Marcisauskas, 2019-10-14
-%
 
 %Get the RAVEN path
 [ST, I]=dbstack('-completenames');
