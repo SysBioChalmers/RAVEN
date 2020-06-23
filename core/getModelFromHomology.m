@@ -1,4 +1,4 @@
-function draftModel=getModelFromHomology(models,blastStructure,...
+function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
     getModelFor,preferredOrder,strictness,onlyGenesInModels,maxE,...
     minLen,minIde,mapNewGenesToOld)
 % getModelFromHomology
@@ -47,6 +47,7 @@ function draftModel=getModelFromHomology(models,blastStructure,...
 %                     (opt, default true)
 %
 %   draftModel        a model structure for the new organism
+%   hitGenes          collect the old and new genes
 %
 %   The models in the 'models' structure should have named the metabolites
 %   in the same manner, have their reversible reactions in the same
@@ -64,6 +65,9 @@ function draftModel=getModelFromHomology(models,blastStructure,...
 %   Usage: draftModel=getModelFromHomology(models,blastStructure,...
 %    getModelFor,preferredOrder,strictness,onlyGenesInModels,maxE,...
 %    minLen,minIde,mapNewGenesToOld)
+
+hitGenes.oldGenes = [];  % collect the old genes from the template model (organism)
+hitGenes.newGenes = [];  % collect the new genes of the draft model (target organism)
 
 if nargin<4
     preferredOrder=[];
@@ -435,6 +439,9 @@ for i=1:numel(models)
             mapIndex=find(ismember(allGenes{i+1},geneName));
             
             if ~isempty(mapIndex)
+                % add the old genes
+                hitGenes.oldGenes = [hitGenes.oldGenes, {geneName}];
+                
                 %Get the new genes for that gene
                 a=find(finalMappings{i}(:,mapIndex));
                 
@@ -452,6 +459,10 @@ for i=1:numel(models)
                 for l=2:numel(b)
                     repString=[repString ') or (' fullGeneList{b(l)}];
                 end
+                
+                % add the new matched genes
+                hitGenes.newGenes = [hitGenes.newGenes, {repString}];
+                
                 %Use regexprep instead of strrep to prevent partial matches
                 models{useOrderIndexes(i)}.grRules{j}=regexprep(models{useOrderIndexes(i)}.grRules{j},['(^|\s|\()' geneName{1} '($|\s|\))'],['$1' repString '$2']);
             else
