@@ -201,8 +201,7 @@ else
     if numel(unique(newModel.mets))~=numel(model.mets)
         newModel.mets=model.mets;
         for i=1:numel(model.comps)
-            newModel.mets=regexprep(newModel.mets,'\]$','');
-            newModel.mets=regexprep(newModel.mets,['\[', model.comps{i}, '$'],['_', model.comps{i}]);
+            newModel.mets=regexprep(newModel.mets,['\[' model.comps{i} '\]$'],['_' model.comps{i}]);
         end
     end
     %Since COBRA no longer contains rev field it is assumed that rxn is
