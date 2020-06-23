@@ -90,7 +90,20 @@ if isRaven
     if all(~cellfun(@isempty,regexp(model.mets,'\[[^\]]+\]$')))
         newModel.mets=model.mets;
     else
-        newModel.mets=strcat(model.mets,'[',model.comps(model.metComps),']');
+        %Check if model has compartment info as "met_c" suffix in all metabolites:
+        BiGGformat = false(size(model.mets));
+        for i=1:numel(model.comps)
+            compPos=model.metComps==i;
+            BiGGformat(compPos)=~cellfun(@isempty,regexp(model.mets(compPos),['_' model.comps{i} '$']));
+        end
+        if all(BiGGformat)
+            newModel.mets=model.mets;
+            for i=1:numel(model.comps)
+                newModel.mets=regexprep(newModel.mets,['_' model.comps{i} '$'],['[' model.comps{i} ']']);
+            end
+        else
+            newModel.mets=strcat(model.mets,'[',model.comps(model.metComps),']');
+        end
     end
 
     %b, csense, osenseStr, genes, rules are also mandatory, but defined
