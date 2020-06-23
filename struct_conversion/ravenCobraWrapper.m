@@ -90,7 +90,20 @@ if isRaven
     if all(~cellfun(@isempty,regexp(model.mets,'\[[^\]]+\]$')))
         newModel.mets=model.mets;
     else
-        newModel.mets=strcat(model.mets,'[',model.comps(model.metComps),']');
+        %Check if model has compartment info as "met_c" suffix in all metabolites:
+        BiGGformat = false(size(model.mets));
+        for i=1:numel(model.comps)
+            compPos=model.metComps==i;
+            BiGGformat(compPos)=~cellfun(@isempty,regexp(model.mets(compPos),['_' model.comps{i} '$']));
+        end
+        if all(BiGGformat)
+            newModel.mets=model.mets;
+            for i=1:numel(model.comps)
+                newModel.mets=regexprep(newModel.mets,['_' model.comps{i} '$'],['[' model.comps{i} ']']);
+            end
+        else
+            newModel.mets=strcat(model.mets,'[',model.comps(model.metComps),']');
+        end
     end
 
     %b, csense, osenseStr, genes, rules are also mandatory, but defined
@@ -195,17 +208,17 @@ else
         newModel.mets=regexprep(newModel.mets,['\[', model.compNames{i}, '\]$'],'');
     end
     
-    %In some rare cases, there may be overlapping mets due to removal e.g.
-    %[c]. To avoid this, we change e.g. [c] into _c
+    %In some cases (e.g. any model that uses BiGG ids as main ids), there
+    %may be overlapping mets due to removal of compartment info. To avoid
+    %this, we change compartments from e.g. [c] into _c
     if numel(unique(newModel.mets))~=numel(model.mets)
         newModel.mets=model.mets;
         for i=1:numel(model.comps)
-            newModel.mets=regexprep(newModel.mets,'\]$','');
-            newModel.mets=regexprep(newModel.mets,['\[', model.comps{i}, '$'],['_', model.comps{i}]);
+            newModel.mets=regexprep(newModel.mets,['\[' model.comps{i} '\]$'],['_' model.comps{i}]);
         end
     end
     %Since COBRA no longer contains rev field it is assumed that rxn is
-    %reversible if its lower bound is set to zero
+    %reversible if its lower bound is set below zero
     if ~isfield(model,'rev')
         for i=1:numel(model.rxns)
             if model.lb(i)<0
