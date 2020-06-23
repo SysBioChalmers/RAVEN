@@ -18,13 +18,13 @@ function out=exportForGit(model,prefix,path,formats,masterFlag,subDirs)
 %                       (opt, default false)
 %   subDirs             logical, whether model files for each file format 
 %                       should be written in its own subdirectory, with
-%                       'models' as parent directory, in accordance to the
+%                       'model' as parent directory, in accordance to the
 %                       standard-GEM repository format. If false, all files
-%                       are stored in the same folder. (opt, default false)
+%                       are stored in the same folder. (opt, default true)
 %
 %   Usage: exportForGit(model,prefix,path,formats,masterFlag)
 if nargin<6
-    subDirs=false;
+    subDirs=true;
 end
 if nargin<5
     masterFlag=false;
@@ -64,7 +64,7 @@ end
 
 % Make models folder, no warnings if folder already exists
 if subDirs
-    path=fullfile(path,'models');
+    path=fullfile(path,'model');
     filePath=strcat(path,filesep,{'txt','yml','mat','xlsx','xml'});
     [~,~,~]=mkdir(path);
     for i = 1:length(formats)
