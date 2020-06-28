@@ -12,7 +12,9 @@ function updateDocumentation()
 %Get a non-redundant list of RAVEN subdirectories containing MATLAB
 %functions. Absolute paths are not compatible with M2HTML, so convert them
 %to the relative paths instead.
-ravenDirs=regexprep(unique({dir(fullfile(ravenDir,'**/*.m')).folder}),'^.+RAVEN.{1,1}','');
+ravenDirs_temp=dir(fullfile(ravenDir,'**/*.m'));
+ravenDirs=regexprep(unique({ravenDirs_temp.folder}),'^.+RAVEN.{1,1}','');
+
 %Get rid of MATLAB functions from external software
 ravenDirs(:,contains(ravenDirs(1,:),'software'))=[];
 
