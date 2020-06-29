@@ -1,4 +1,4 @@
-function out=exportForGit(model,prefix,path,formats,masterFlag)
+function out=exportForGit(model,prefix,path,formats,masterFlag,subDirs)
 % exportForGit
 %   Generates a directory structure and populates this with model files, ready
 %   to be commited to a Git(Hub) maintained model repository. Writes the model
@@ -16,12 +16,20 @@ function out=exportForGit(model,prefix,path,formats,masterFlag)
 %   masterFlag          logical, if true, function will error if RAVEN (and
 %                       COBRA if detected) is/are not on the master branch.
 %                       (opt, default false)
+%   subDirs             logical, whether model files for each file format 
+%                       should be written in its own subdirectory, with
+%                       'model' as parent directory, in accordance to the
+%                       standard-GEM repository format. If false, all files
+%                       are stored in the same folder. (opt, default true)
 %
 %   Usage: exportForGit(model,prefix,path,formats,masterFlag)
+if nargin<6
+    subDirs=true;
+end
 if nargin<5
     masterFlag=false;
 end
-if nargin<4
+if nargin<4 || isempty(formats)
     formats={'mat', 'txt', 'xlsx', 'xml', 'yml'};
 end
 if ischar(formats)
@@ -54,15 +62,22 @@ catch % before 5.17.0
     delete('tempModelForLibSBMLversion.xml');
 end
 
-% Make ModelFiles folder, no warnings if folder already exists
-[~,~,~]=mkdir(fullfile(path,'ModelFiles'));
-for i = 1:length(formats)
-    [~,~,~]=mkdir(fullfile(path,'ModelFiles',formats{i}));
+% Make models folder, no warnings if folder already exists
+if subDirs
+    path=fullfile(path,'model');
+    filePath=strcat(path,filesep,{'txt','yml','mat','xlsx','xml'});
+    [~,~,~]=mkdir(path);
+    for i = 1:length(formats)
+        [~,~,~]=mkdir(fullfile(path,formats{i}));
+    end
+else
+    filePath=cell(1,5); filePath(:)={path};
 end
+
 
 % Write TXT format
 if ismember('txt', formats)
-    fid=fopen(fullfile(path,'ModelFiles','txt',strcat(prefix,'.txt')),'w');
+    fid=fopen(fullfile(filePath{1},strcat(prefix,'.txt')),'w');
     eqns=constructEquations(model,model.rxns,false,false,false,true);
     eqns=strrep(eqns,' => ','  -> ');
     eqns=strrep(eqns,' <=> ','  <=> ');
@@ -81,26 +96,26 @@ end
 
 % Write YML format
 if ismember('yml', formats)
-    writeYaml(model,fullfile(path,'ModelFiles','yml',strcat(prefix,'.yml')));
+    writeYaml(model,fullfile(filePath{2},strcat(prefix,'.yml')));
 end
 
 % Write MAT format
 if ismember('mat', formats)
-    save(fullfile(path,'ModelFiles','mat',strcat(prefix,'.mat')),'model');
+    save(fullfile(filePath{3},strcat(prefix,'.mat')),'model');
 end
 
 % Write XLSX format
 if ismember('xlsx', formats)
-    exportToExcelFormat(model,fullfile(path,'ModelFiles','xlsx',strcat(prefix,'.xlsx')));
+    exportToExcelFormat(model,fullfile(filePath{4},strcat(prefix,'.xlsx')));
 end
 
 % Write XML format
 if ismember('xml', formats)
-    exportModel(model,fullfile(path,'ModelFiles','xml',strcat(prefix,'.xml')));
+        exportModel(model,fullfile(filePath{5},strcat(prefix,'.xml')));
 end
 
 %Save file with versions:
-fid = fopen(fullfile(path,'ModelFiles','dependencies.txt'),'wt');
+fid = fopen(fullfile(path,'dependencies.txt'),'wt');
 fprintf(fid,['MATLAB\t' version '\n']);
 fprintf(fid,['libSBML\t' libSBMLver '\n']);
 fprintf(fid,['RAVEN_toolbox\t' RAVENver '\n']);
