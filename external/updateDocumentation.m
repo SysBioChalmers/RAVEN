@@ -8,7 +8,8 @@ function updateDocumentation()
 %Get the RAVEN path
 [ST, I]=dbstack('-completenames');
 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
-
+%Make sure that RAVEN-provided m2html is used
+path(fullfile(ravenDir,'software','m2html'),path);
 %Get a non-redundant list of RAVEN subdirectories containing MATLAB
 %functions. Absolute paths are not compatible with M2HTML, so convert them
 %to the relative paths instead.
