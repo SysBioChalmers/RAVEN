@@ -53,6 +53,14 @@ if nargin<8
     useDiamond=true;
 end
 
+if isempty(fastaFile)
+    error('*** The query FASTA filename cannot be empty! ***');
+else
+    fprintf('\n\n*** Check existence of query FASTA file ***\n\n');
+    %Check if query fasta exists
+    fastaFile=checkFileExistence(fastaFile,true,false);
+end
+
 %First generate the full MetaCyc model
 metaCycModel=getModelFromMetaCyc([],keepTransportRxns,keepUnbalanced,keepUndetermined);
 fprintf('The full MetaCyc model loaded\n');
