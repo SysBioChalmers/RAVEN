@@ -48,11 +48,9 @@ end
 
 %First get all reactions
 metaCycModel=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined);
-fprintf('MetaCyc reactions loaded\n');
 
 %Get reaction and enzyme association
 metaCycEnzymes=getEnzymesFromMetaCyc(metacycPath);
-fprintf('MetaCyc enzymes loaded\n');
 
 %Replace rxnNames with those from metaCycEnzymes
 [a, b]=ismember(metaCycModel.rxns,metaCycEnzymes.rxns);
@@ -60,6 +58,7 @@ a=find(a);
 b=b(a);
 metaCycModel.rxnNames(a)=metaCycEnzymes.rxnNames(b);
 
+fprintf('Reorganizing reaction-enzyme associations... ')
 %Create the rxnGeneMat for the reactions, by geting all enzymes and
 %corresponding subunits
 rxnNum=numel(metaCycModel.rxns);
@@ -121,10 +120,9 @@ for i=1:rxnNum
         
     end
 end
-
+fprintf('done\n')
 %Then get all metabolites
 metaCycMets=getMetsFromMetaCyc(metacycPath);
-fprintf('MetaCyc compounds loaded\n');
 
 %Add information about all metabolites to the model
 [a, b]=ismember(metaCycModel.mets,metaCycMets.mets);

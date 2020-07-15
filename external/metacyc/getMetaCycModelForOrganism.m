@@ -56,9 +56,10 @@ end
 if isempty(fastaFile)
     error('*** The query FASTA filename cannot be empty! ***');
 else
-    fprintf('\n\n*** Check existence of query FASTA file ***\n\n');
+    fprintf('\nChecking existence of query FASTA file... ');
     %Check if query fasta exists
     fastaFile=checkFileExistence(fastaFile,true,false);
+    fprintf('done\n');
 end
 
 %First generate the full MetaCyc model

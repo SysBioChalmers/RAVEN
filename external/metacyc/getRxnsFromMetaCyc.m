@@ -88,8 +88,9 @@ metaCycRxnFile='reactions.dat';
 metaCycPwyFile='pathway-links.dat';
 
 if exist(rxnsFile, 'file')
-    fprintf(['NOTE: Importing MetaCyc reactions from ' strrep(rxnsFile,'\','/') '.\n']);
+    fprintf(['Importing MetaCyc reactions from ' strrep(rxnsFile,'\','/') '... ']);
     load(rxnsFile);
+    fprintf('done\n');
 else
     fprintf(['Cannot locate ' strrep(rxnsFile,'\','/') '\nNow try to generate it from local MetaCyc data files...\n']);
     if ~exist(fullfile(metacycPath,metaCycRxnFile),'file') || ~exist(fullfile(metacycPath,metaCycPwyFile),'file')
