@@ -1,11 +1,17 @@
-function writeYaml(model,name)
+function writeYaml(model,name,preserveQuotes)
 % writeYaml
 %   Writes a yaml file matching (roughly) the cobrapy yaml structure
 %
-%   model       a model structure
-%   name        name that the file will have
+%   model           a model structure
+%   name            name that the file will have
+%   preserveQuotes  if quotes should be preserved for met/rxn names
+%                   (boolean, default=true)
 %
-%   Usage: writeYaml(model,name)
+%   Usage: writeYaml(model,name,preserveQuotes)
+
+if nargin < 3
+    preserveQuotes = true;
+end
 
 %Check that model is in RAVEN format:
 if isfield(model,'rules')
@@ -28,6 +34,12 @@ end
 if isfield(model,'compMiriams')
     [model.newCompMiriams,model.newCompMiriamNames] = extractMiriam(model.compMiriams);
     model.newCompMiriams                            = regexprep(model.newCompMiriams,'^.+/','');
+end
+
+%Add quotes to met/rxn names:
+if preserveQuotes
+    model.metNames = strcat('"', model.metNames, '"');
+    model.rxnNames = strcat('"', model.rxnNames, '"');
 end
 
 %Open file:
