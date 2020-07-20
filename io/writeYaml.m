@@ -36,12 +36,6 @@ if isfield(model,'compMiriams')
     model.newCompMiriams                            = regexprep(model.newCompMiriams,'^.+/','');
 end
 
-%Add quotes to met/rxn names:
-if preserveQuotes
-    model.metNames = strcat('"', model.metNames, '"');
-    model.rxnNames = strcat('"', model.rxnNames, '"');
-end
-
 %Open file:
 fid = fopen(name,'wt');
 fprintf(fid,'!!omap\n');
@@ -200,18 +194,18 @@ if isfield(model,fieldName)
             list = strsplit(list,';');
         end
         if length(list) == 1 && ~strcmp(list{1},'')
-            fprintf(fid,['    ' name ': ' list{1} '\n']);
+            fprintf(fid,['    ' name ': "' list{1} '"\n']);
         elseif length(list) > 1
             fprintf(fid,['    ' name ':\n']);
             for i = 1:length(list)
-                fprintf(fid,['        - ' list{i} '\n']);
+                fprintf(fid,['        - "' list{i} '"\n']);
             end
         end
         
     elseif sum(pos) > 0
         %All other fields:
         if strcmp(type,'txt')
-            value = field{pos};
+            value = ['"' field{pos} '"'];
         elseif strcmp(type,'num')
             if isnan(field(pos))
                 value = [];
