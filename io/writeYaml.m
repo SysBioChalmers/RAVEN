@@ -4,7 +4,7 @@ function writeYaml(model,name,preserveQuotes)
 %
 %   model           a model structure
 %   name            name that the file will have
-%   preserveQuotes  if quotes should be preserved for met/rxn names
+%   preserveQuotes  if quotes should be preserved for strings
 %                   (boolean, default=true)
 %
 %   Usage: writeYaml(model,name,preserveQuotes)
@@ -45,12 +45,12 @@ fprintf(fid,'- metabolites:\n');
 [~,pos] = sort(model.mets);
 for i = 1:length(model.mets)
     fprintf(fid,'  - !!omap\n');
-    writeField(model, fid, 'mets',        'txt', pos(i), '- id')
-    writeField(model, fid, 'metNames',    'txt', pos(i), '- name')
-    writeField(model, fid, 'metComps',    'txt', pos(i), '- compartment')
-    writeField(model, fid, 'metFormulas', 'txt', pos(i), '- formula')
-    writeField(model, fid, 'metCharges',  'num', pos(i), '- charge')
-    writeField(model, fid, 'metMiriams',  'txt', pos(i), '- annotation')
+    writeField(model, fid, 'mets',        'txt', pos(i), '- id',          preserveQuotes)
+    writeField(model, fid, 'metNames',    'txt', pos(i), '- name',        preserveQuotes)
+    writeField(model, fid, 'metComps',    'txt', pos(i), '- compartment', preserveQuotes)
+    writeField(model, fid, 'metFormulas', 'txt', pos(i), '- formula',     preserveQuotes)
+    writeField(model, fid, 'metCharges',  'num', pos(i), '- charge',      preserveQuotes)
+    writeField(model, fid, 'metMiriams',  'txt', pos(i), '- annotation',  preserveQuotes)
 end
 
 %Reactions:
@@ -58,15 +58,15 @@ fprintf(fid,'- reactions:\n');
 [~,pos] = sort(model.rxns);
 for i = 1:length(model.rxns)
     fprintf(fid,'  - !!omap\n');
-    writeField(model, fid, 'rxns',                'txt', pos(i), '- id')
-    writeField(model, fid, 'rxnNames',            'txt', pos(i), '- name')
-    writeField(model, fid, 'S',                   'txt', pos(i), '- metabolites')
-    writeField(model, fid, 'lb',                  'num', pos(i), '- lower_bound')
-    writeField(model, fid, 'ub',                  'num', pos(i), '- upper_bound')
-    writeField(model, fid, 'grRules',             'txt', pos(i), '- gene_reaction_rule')
-    writeField(model, fid, 'subSystems',          'txt', pos(i), '- subsystem')
-    writeField(model, fid, 'rxnMiriams',          'txt', pos(i), '- annotation')
-    writeField(model, fid, 'rxnConfidenceScores', 'num', pos(i), '- confidence_score')
+    writeField(model, fid, 'rxns',                'txt', pos(i), '- id',                 preserveQuotes)
+    writeField(model, fid, 'rxnNames',            'txt', pos(i), '- name',               preserveQuotes)
+    writeField(model, fid, 'S',                   'txt', pos(i), '- metabolites',        preserveQuotes)
+    writeField(model, fid, 'lb',                  'num', pos(i), '- lower_bound',        preserveQuotes)
+    writeField(model, fid, 'ub',                  'num', pos(i), '- upper_bound',        preserveQuotes)
+    writeField(model, fid, 'grRules',             'txt', pos(i), '- gene_reaction_rule', preserveQuotes)
+    writeField(model, fid, 'subSystems',          'txt', pos(i), '- subsystem',          preserveQuotes)
+    writeField(model, fid, 'rxnMiriams',          'txt', pos(i), '- annotation',         preserveQuotes)
+    writeField(model, fid, 'rxnConfidenceScores', 'num', pos(i), '- confidence_score',   preserveQuotes)
 end
 
 %Genes:
@@ -74,17 +74,17 @@ fprintf(fid,'- genes:\n');
 [~,pos] = sort(model.genes);
 for i = 1:length(model.genes)
     fprintf(fid,'  - !!omap\n');
-    writeField(model, fid, 'genes',          'txt', pos(i), '- id')
-    writeField(model, fid, 'geneShortNames', 'txt', pos(i), '- name')
-    writeField(model, fid, 'geneMiriams',    'txt', pos(i), '- annotation')
+    writeField(model, fid, 'genes',          'txt', pos(i), '- id',         preserveQuotes)
+    writeField(model, fid, 'geneShortNames', 'txt', pos(i), '- name',       preserveQuotes)
+    writeField(model, fid, 'geneMiriams',    'txt', pos(i), '- annotation', preserveQuotes)
 end
 
 %Compartments:
 fprintf(fid,'- compartments: !!omap\n');
 [~,pos] = sort(model.comps);
 for i = 1:length(model.comps)
-    writeField(model, fid, 'compNames',   'txt', pos(i), ['- ' model.comps{pos(i)}])
-    writeField(model, fid, 'compMiriams', 'txt', pos(i), '- annotation')
+    writeField(model, fid, 'compNames',   'txt', pos(i), ['- ' model.comps{pos(i)}], preserveQuotes)
+    writeField(model, fid, 'compMiriams', 'txt', pos(i), '- annotation',             preserveQuotes)
 end
 
 %TODO: include id, name & version (lost in RAVEN)
@@ -94,7 +94,7 @@ fclose(fid);
 
 end
 
-function writeField(model,fid,fieldName,type,pos,name)
+function writeField(model,fid,fieldName,type,pos,name,preserveQuotes)
 %Writes a new line in the yaml file if the field exists and the field is
 %not empty at the correspoinding position. It's recursive for some fields
 %(metMiriams, rxnMiriams, and S)
@@ -118,7 +118,7 @@ if isfield(model,fieldName)
                     %As during the following writeField call the value of
                     %'i' would be lost, it is temporarily concatenated to
                     %'name' parameter, which will be edited later
-                    writeField(model, fid, 'newMetMiriams', 'txt', pos, ['  - ' model.newMetMiriamNames{i} '_' num2str(i)])
+                    writeField(model, fid, 'newMetMiriams', 'txt', pos, ['  - ' model.newMetMiriamNames{i} '_' num2str(i)], preserveQuotes)
                 end
             end
         end
@@ -126,10 +126,10 @@ if isfield(model,fieldName)
     elseif strcmp(fieldName,'rxnMiriams')
         if ~isempty(model.eccodes{pos}) || ~isempty(model.rxnMiriams{pos})
             fprintf(fid,['    ' name ': !!omap\n']);
-            writeField(model, fid, 'eccodes',  'txt', pos, '  - ec-code')
+            writeField(model, fid, 'eccodes',  'txt', pos, '  - ec-code', preserveQuotes)
             for i=1:size(model.newRxnMiriams,2)
                 if ~isempty(model.newRxnMiriams{pos,i})
-                    writeField(model, fid, 'newRxnMiriams', 'txt', pos, ['  - ' model.newRxnMiriamNames{i} '_' num2str(i)])
+                    writeField(model, fid, 'newRxnMiriams', 'txt', pos, ['  - ' model.newRxnMiriamNames{i} '_' num2str(i)], preserveQuotes)
                 end
             end
         end
@@ -139,7 +139,7 @@ if isfield(model,fieldName)
             fprintf(fid,['    ' name ': !!omap\n']);
             for i=1:size(model.newGeneMiriams,2)
                 if ~isempty(model.newGeneMiriams{pos,i})
-                    writeField(model, fid, 'newGeneMiriams', 'txt', pos, ['  - ' model.newGeneMiriamNames{i} '_' num2str(i)])
+                    writeField(model, fid, 'newGeneMiriams', 'txt', pos, ['  - ' model.newGeneMiriamNames{i} '_' num2str(i)], preserveQuotes)
                 end
             end
         end
@@ -149,7 +149,7 @@ if isfield(model,fieldName)
             fprintf(fid,['    ' name ': !!omap\n']);
             for i=1:size(model.newCompMiriams,2)
                 if ~isempty(model.newCompMiriams{pos,i})
-                    writeField(model, fid, 'newCompMiriams', 'txt', pos, ['  - ' model.newCompMiriamNames{i} '_' num2str(i)])
+                    writeField(model, fid, 'newCompMiriams', 'txt', pos, ['  - ' model.newCompMiriamNames{i} '_' num2str(i)], preserveQuotes)
                 end
             end
         end
@@ -164,7 +164,7 @@ if isfield(model,fieldName)
             [model.mets,order] = sort(model.mets);
             model.coeffs       = model.coeffs(order);
             for i = 1:length(model.mets)
-                writeField(model, fid, 'coeffs',  'num', i, ['  - ' model.mets{i}])
+                writeField(model, fid, 'coeffs',  'num', i, ['  - ' model.mets{i}], preserveQuotes)
             end
         end
         
@@ -194,18 +194,27 @@ if isfield(model,fieldName)
             list = strsplit(list,';');
         end
         if length(list) == 1 && ~strcmp(list{1},'')
-            fprintf(fid,['    ' name ': "' list{1} '"\n']);
+            if preserveQuotes
+                list = strcat('"',list,'"');
+            end
+            fprintf(fid,['    ' name ': ' list{1} '\n']);
         elseif length(list) > 1
+            if preserveQuotes
+                list = strcat('"',list,'"');
+            end
             fprintf(fid,['    ' name ':\n']);
             for i = 1:length(list)
-                fprintf(fid,['        - "' list{i} '"\n']);
+                fprintf(fid,['        - ' list{i} '\n']);
             end
         end
         
     elseif sum(pos) > 0
         %All other fields:
         if strcmp(type,'txt')
-            value = ['"' field{pos} '"'];
+            value = field{pos};
+            if preserveQuotes
+                value = strcat('"',value,'"');
+            end
         elseif strcmp(type,'num')
             if isnan(field(pos))
                 value = [];
