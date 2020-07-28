@@ -63,8 +63,9 @@ metsFile=fullfile(ravenPath,'external','metacyc','metaCycMets.mat');
 metaCycMetFile='compounds.dat';
 
 if exist(metsFile, 'file')
-    fprintf(['NOTE: Importing MetaCyc metabolites from ' strrep(metsFile,'\','/') '.\n']);
+    fprintf(['Importing MetaCyc metabolites from ' strrep(metsFile,'\','/') '... ']);
     load(metsFile);
+    fprintf('done\n');
 else
     fprintf(['Cannot locate ' strrep(metsFile,'\','/') '\nNow try to generate it from local MetaCyc data files...\n']);
     if ~exist(fullfile(metacycPath,metaCycMetFile),'file')

@@ -67,8 +67,9 @@ metaCycProteinFile='proteins.dat';
 metaCycEnzrxnsFile='enzrxns.dat';
 
 if exist(enzymesFile, 'file')
-    fprintf(['NOTE: Importing MetaCyc enzymes and reaction-enzyme association from ' strrep(enzymesFile,'\','/') '.\n']);
+    fprintf(['Importing MetaCyc enzymes and reaction-enzyme association from ' strrep(enzymesFile,'\','/') '... ']);
     load(enzymesFile);
+    fprintf('done\n');
 else
     fprintf(['Cannot locate ' strrep(enzymesFile,'\','/') '\nNow try to generate it from local MetaCyc data files...\n']);
     if ~exist(fullfile(metacycPath,metaCycProteinFile),'file') || ~exist(fullfile(metacycPath,metaCycEnzrxnsFile),'file')
