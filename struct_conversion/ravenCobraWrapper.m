@@ -281,7 +281,7 @@ else
                     rxnAnnotation = eval(['model.' rxnCOBRAfields{j} '{i}']);
                     if ~isempty(rxnAnnotation)
                         newModel.rxnMiriams{i,1}.name{counter,1} = rxnNamespaces{j};
-                        newModel.rxnMiriams{i,1}.value{counter,1} = rxnAnnotation;
+                        newModel.rxnMiriams{i,1}.value{counter,1} = strrep(rxnAnnotation,'; ',';');
                         counter=counter+1;
                     end
                 end
