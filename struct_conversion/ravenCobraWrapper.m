@@ -280,9 +280,12 @@ else
                 if isfield(model,rxnCOBRAfields{j})
                     rxnAnnotation = eval(['model.' rxnCOBRAfields{j} '{i}']);
                     if ~isempty(rxnAnnotation)
-                        newModel.rxnMiriams{i,1}.name{counter,1} = rxnNamespaces{j};
-                        newModel.rxnMiriams{i,1}.value{counter,1} = strrep(rxnAnnotation,'; ',';');
-                        counter=counter+1;
+                        rxnAnnotation = strtrim(strsplit(rxnAnnotation,';'));
+                        for a=1:length(rxnAnnotation)
+                            newModel.rxnMiriams{i,1}.name{counter,1} = rxnNamespaces{j};
+                            newModel.rxnMiriams{i,1}.value{counter,1} = rxnAnnotation{a};
+                            counter=counter+1;
+                        end
                     end
                 end
             end
@@ -296,9 +299,12 @@ else
                 if isfield(model,geneCOBRAfields{j})
                     geneAnnotation = eval(['model.' geneCOBRAfields{j} '{i}']);
                     if ~isempty(geneAnnotation)
-                        newModel.geneMiriams{i,1}.name{counter,1} = geneNamespaces{j};
-                        newModel.geneMiriams{i,1}.value{counter,1} = geneAnnotation;
-                        counter=counter+1;
+                        geneAnnotation = strtrim(strsplit(geneAnnotation,';'));
+                        for a=1:length(geneAnnotation)
+                            newModel.geneMiriams{i,1}.name{counter,1} = geneNamespaces{j};
+                            newModel.geneMiriams{i,1}.value{counter,1} = geneAnnotation{a};
+                            counter=counter+1;
+                        end
                     end
                 end
             end
@@ -359,9 +365,12 @@ else
                 if isfield(model,metCOBRAfields{j})
                     metAnnotation = eval(['model.' metCOBRAfields{j} '{i}']);
                     if ~isempty(metAnnotation)
-                        newModel.metMiriams{i,1}.name{counter,1} = metNamespaces{j};
-                        newModel.metMiriams{i,1}.value{counter,1} = metAnnotation;
-                        counter=counter+1;
+                        metAnnotation = strtrim(strsplit(metAnnotation,';'));
+                        for a=1:length(metAnnotation)
+                            newModel.metMiriams{i,1}.name{counter,1} = metNamespaces{j};
+                            newModel.metMiriams{i,1}.value{counter,1} = metAnnotation{a};
+                            counter=counter+1;
+                        end
                     end
                 end
             end
