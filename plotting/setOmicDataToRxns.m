@@ -1,13 +1,12 @@
-function [v1] = setOmicDataToRxns(omics, model)
+function v1 = setOmicDataToRxns(omics, model)
 % USAGE:
-% [v1] = setOmicDataToRxns(transcriptome, model)
+% v1 = setOmicDataToRxns(omics, model)
 % INPUTS:
-% transcriptome         A two columns entrace with gene names and
-%                       log-fold expression changes
-% model                 A model with a COBRA structure
+% omics     two column cell array with genes and log-fold expression changes
+% model     model structure
 % OUTPUTS:
-% v1                    A one column entrace with expression changes in
-%                       metabolic genes.
+% v1       vector with expression changes in metabolic genes
+
     j = 1;
     for i = 1:length(model.genes)
         a = find(ismember(omics(:,1), model.genes{i}));

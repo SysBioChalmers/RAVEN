@@ -4,9 +4,9 @@ function [modifiedMap, xmlMap, model2] = setColorToMapRxns (mapFileName, model, 
 %   setColorToMapRxns (mapFileName, model, v1, rxnsFluxTask, rxnLineWidth, rxnLineColor, molFillColor)
 %
 % INPUTS:
-% mapFileName           XML map file path (i.e. 'yeastMap1.0.xml')
-% model                 A model with a COBRA structure
-% v1                    fluxes from i.e. FBA, Loopless FBA, or FVA.
+% mapFileName           relative path to XML map (e.g. 'yeastMap1.0.xml')
+% model                 model structure
+% v1                    vector of fluxes
 % rxnsFluxTask          1 = Flux
 %                       2 = Flux essentiality; map reactions causing any
 %                           effect on growth (i.e. obj function) 
@@ -17,18 +17,22 @@ function [modifiedMap, xmlMap, model2] = setColorToMapRxns (mapFileName, model, 
 %                           effect on growth (i.e. obj function) when
 %                           deleted
 %                       5 = Omics
-% ADDITIONAL IMPUTS:
+% ADDITIONAL INPUTS:
 % rxnLineWidth          reaction line width; default = 5
 % rxnLineColor          reaction line color; default = Pathways; write
 %                       'Subsystems' to color five subsystems only (central,
 %                       AA, lipids, cofactors, nuclotides and energy).
 %                       'Subsystems' option is the deault option at task 5
-% molFillColor          molecule fill color; default = true (i.e. whrite)
+% molFillColor          molecule fill color; default = true (i.e. white)
 %                       molecule fill color; true (i.e. like CellDesigner default)
 % OUTPUTS:
-% modifiedMap           A map with MATLAB structure, and modified reactions' line color and width
+% modifiedMap           map with MATLAB structure, and modified reactions' line color and width
 % xmlMap                xml structure of the original map obtained from mapFileName 
-% model2                A COBRA model with modified subsystems
+% model2                model with modified subsystems
+
+if ~(exist('transformXML2Map')==2)
+    error('COBRA Toolbox is required, go to https://opencobra.github.io/cobratoolbox/')
+end
 
 if nargin < 5 || rxnLineWidth == 0
     rxnLineWidth = 0;
