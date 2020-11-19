@@ -1,6 +1,6 @@
 function [modifiedMap, xmlMap, model2] = setColorToMapRxns (mapFileName, model, v1, rxnsFluxTask, rxnLineWidth, rxnLineColor, molFillColor)
 % USAGE:
-% [modifiedMap, xmlMap, model2] = 
+% [modifiedMap, xmlMap, model2] =
 %   setColorToMapRxns (mapFileName, model, v1, rxnsFluxTask, rxnLineWidth, rxnLineColor, molFillColor)
 %
 % INPUTS:
@@ -9,9 +9,9 @@ function [modifiedMap, xmlMap, model2] = setColorToMapRxns (mapFileName, model, 
 % v1                    vector of fluxes
 % rxnsFluxTask          1 = Flux
 %                       2 = Flux essentiality; map reactions causing any
-%                           effect on growth (i.e. obj function) 
+%                           effect on growth (i.e. obj function)
 %                       3 = Flux essentiality; map reactions causing no
-%                           growth(i.e. obj function) when deleted, i.e. 
+%                           growth(i.e. obj function) when deleted, i.e.
 %                           essential reactions
 %                       4 = Flux essentiality; map reactions with not any
 %                           effect on growth (i.e. obj function) when
@@ -27,7 +27,7 @@ function [modifiedMap, xmlMap, model2] = setColorToMapRxns (mapFileName, model, 
 %                       molecule fill color; true (i.e. like CellDesigner default)
 % OUTPUTS:
 % modifiedMap           map with MATLAB structure, and modified reactions' line color and width
-% xmlMap                xml structure of the original map obtained from mapFileName 
+% xmlMap                xml structure of the original map obtained from mapFileName
 % model2                model with modified subsystems
 
 if ~(exist('transformXML2Map')==2)
@@ -95,12 +95,12 @@ elseif rxnsFluxTask == 5 && rxnLineWidth == 0.0
     rxnLineWidthInMap(rxnLineWidthInMap >= 0.5 & rxnLineWidthInMap <= 1.0) =  5;
 end
 for i = 1:length(modifiedMap.rxnName)
-        a = find(ismember(model2.rxns, modifiedMap.rxnName{i}));
-        if isempty(a)
-            modifiedMap.rxnWidth{i} = 1;
-        else
-            modifiedMap.rxnWidth{i} = rxnLineWidthInMap(a);
-        end
+    a = find(ismember(model2.rxns, modifiedMap.rxnName{i}));
+    if isempty(a)
+        modifiedMap.rxnWidth{i} = 1;
+    else
+        modifiedMap.rxnWidth{i} = rxnLineWidthInMap(a);
+    end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -108,12 +108,12 @@ end
 %%%%%%%%% Compartments included in the analyses %%%%%%%%%%%%%%%%%%%%%%%%%
 
 % propossed cofactors list for PART A
-cofactorsListA ={'h'; 'h2o'; 'nad'; 'nadh'; 'nadp'; 'nadph';... 
+cofactorsListA ={'h'; 'h2o'; 'nad'; 'nadh'; 'nadp'; 'nadph';...
     'fad'; 'fadh'; 'ppi'; 'adp'; 'gtp'; 'gdp'; 'gmp'; ...
     'utp'; 'udp'; 'ump'; 'ctp'; 'cdp'; 'cmp'};
 
 % propossed cofactors list for PART B
-cofactorsListB ={'h'; 'h2o'; 'co2'; 'coa'; 'accoa'; 'nad'; 'nadh'; 'nadp'; 'nadph';... 
+cofactorsListB ={'h'; 'h2o'; 'co2'; 'coa'; 'accoa'; 'nad'; 'nadh'; 'nadp'; 'nadph';...
     'fad'; 'fadh'; 'pi'; 'ppi'; 'atp'; 'adp'; 'amp'; 'gtp'; 'gdp'; 'gmp';...
     'utp'; 'udp'; 'ump'; 'ctp'; 'cdp'; 'cmp'; 'gthox'; 'gthrd_c'; 'amet_c';...
     'ahcys_c'; 'glu__L'; 'gln__L'; 'akg'; 'nh4'};
@@ -126,16 +126,16 @@ cofactorsListWcompA = cell(length(cofactorsListA), 1);
 c = 1; % general counter
 for i = 1:length(cofactorsListA)
     for j = 1:length(compartmentsList)
-    cofactorsListWcompA{c, 1} = horzcat(cofactorsListA{i},compartmentsList{j});
-    c = c + 1;
+        cofactorsListWcompA{c, 1} = horzcat(cofactorsListA{i},compartmentsList{j});
+        c = c + 1;
     end
 end
 cofactorsListWcompB = cell(length(cofactorsListB), 1);
 c = 1;
 for i = 1:length(cofactorsListB)
     for j = 1:length(compartmentsList)
-    cofactorsListWcompB{c, 1}= horzcat(cofactorsListB{i},compartmentsList{j});
-    c = c + 1;
+        cofactorsListWcompB{c, 1}= horzcat(cofactorsListB{i},compartmentsList{j});
+        c = c + 1;
     end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -146,7 +146,7 @@ end
 % getting transport reactions
 [nrxns,~] = size(model2.rxns);
 transRxns = cell(nrxns, 1);
-for j = 1:size(model2.rxns) 
+for j = 1:size(model2.rxns)
     if true(contains(model2.subSystems {j}, 'S_Transport'))
         transRxns{j, 1} = model2.rxns{j};
     end
@@ -173,12 +173,12 @@ subSystemsNoTrans = subSystemsNoTrans(~cellfun('isempty',subSystemsNoTrans));
 % require conexions among diferents compartments
 [nTransRxns,~] = size(transRxns);
 [nSubSystemsNoTrans, ~] = size (subSystemsNoTrans);
-totalRxnsToIncludeA = cell(nTransRxns,1); 
+totalRxnsToIncludeA = cell(nTransRxns,1);
 for i = 1:nSubSystemsNoTrans
     subSystemRxns = findRxnsFromSubSystem(model2, subSystemsNoTrans(i));
     metsSubSystemRxns = findMetsFromRxns(model2, subSystemRxns);
     [nMetsSubSystemRxns, ~] = size (metsSubSystemRxns);
-% getting unique compartments
+    % getting unique compartments
     metsCompartment = cell(nMetsSubSystemRxns,1);
     for j = 1:nMetsSubSystemRxns
         str = metsSubSystemRxns{j};
@@ -199,7 +199,7 @@ for i = 1:nSubSystemsNoTrans
         end
         [~, o, ~] = unique(metsFromSubSystemRxnsNoComp,'first');
         indexToDupes = find(not(ismember(1:numel(metsFromSubSystemRxnsNoComp),o)));
-        [~, nIndexToDupes] = size(indexToDupes); 
+        [~, nIndexToDupes] = size(indexToDupes);
         duplicatedMets = cell(nIndexToDupes,1);
         for j = 1:nIndexToDupes
             duplicatedMets(j, 1) = metsFromSubSystemRxnsNoComp (indexToDupes(1, j));
@@ -328,10 +328,10 @@ for i = 1:length(remainingTransRxns)
                     subSToUseStr{1, 1} = string(subsLength(k,2));
                     if k > 1
                         if true(rankMax < r(k, 1))
-                        rankMax = r(k, 1);
-                        subSToUseStr{1, 1} = string(subsLength(k,2));
+                            rankMax = r(k, 1);
+                            subSToUseStr{1, 1} = string(subsLength(k,2));
                         end
-                    end 
+                    end
                 end
             end
         end
@@ -348,13 +348,13 @@ totalRxnsToIncludeAB = totalRxnsToIncludeAB(~cellfun('isempty',totalRxnsToInclud
 totalRxnsToIncludeAB = unique(totalRxnsToIncludeAB);
 
 for j = 1:length(rxnsToInclude)
-     rxnID = findRxnIDs(model2, rxnsToInclude{j});
-     model2.subSystems(rxnID) = {subSToInclude(j)};
+    rxnID = findRxnIDs(model2, rxnsToInclude{j});
+    model2.subSystems(rxnID) = {subSToInclude(j)};
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%% ASIGN SUBSYSTEMS' COLOR %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Selection of reactions to include in the map 
+% Selection of reactions to include in the map
 if rxnsFluxTask == 1
     for i = 1:length(model2.rxns)
         if absFlxs(i)==0 % zero flux reactions are not included
@@ -480,7 +480,7 @@ elseif ~(rxnLineColor == "Subsystems" || rxnLineColor == "Payhways" || isempty(r
     for i = 1:length(modifiedMap.rxnName)
         a = find(ismember(model2.rxns, modifiedMap.rxnName{i}));
         if ~isempty(a) & string(model2.subSystems(a)) ~= "NonIncluded"
-                modifiedMap.rxnColor(i, 1) = {colors(rxnLineColor)};
+            modifiedMap.rxnColor(i, 1) = {colors(rxnLineColor)};
         end
     end
 end
@@ -566,7 +566,7 @@ if rxnsFluxTask == 5 % change color to dark-color in negative values
         b = find(ismember(model2.rxns, modifiedMap.rxnName{i}));
         if ~isempty(b) & v1(b) < 0 & string(model2.subSystems(b)) ~= "NonIncluded"
             if string(valueskeys (a,2)) == 'LIME'
-                 modifiedMap.rxnColor(i, 1) = {colors('GREEN')};
+                modifiedMap.rxnColor(i, 1) = {colors('GREEN')};
             else
                 rxnColor =strcat('DARK', char(valueskeys (a(1,1),2)));
                 if string(rxnColor) == 'DARKAQUA'
