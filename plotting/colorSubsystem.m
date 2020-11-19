@@ -1,4 +1,4 @@
-function [newMap] = colorSubsystem(map, model, subsystem, color)
+function newMap = colorSubsystem(map, model, subsystem, color)
 % Modified from colorSubsystemCD as distributed through COBRA Toolbox
 % https://github.com/opencobra/cobratoolbox/blob/src/visualization/metabolicCartography/colorSubsystemCD.m
 %
