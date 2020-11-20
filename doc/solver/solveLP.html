@@ -61,9 +61,7 @@
    hsSolOut      solution to be used as hot-start solution (see the input
                  parameters). Only used if minFlux is 0 or 1
 
-   Usage: [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
-
-   Eduard Kerkhoven, 2017-11-09</pre></div>
+   Usage: [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -114,186 +112,183 @@ This function is called by:
 0034 <span class="comment">%                 parameters). Only used if minFlux is 0 or 1</span>
 0035 <span class="comment">%</span>
 0036 <span class="comment">%   Usage: [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)</span>
-0037 <span class="comment">%</span>
-0038 <span class="comment">%   Eduard Kerkhoven, 2017-11-09</span>
-0039 <span class="comment">%</span>
-0040 
-0041 <span class="keyword">if</span> nargin&lt;2
-0042     minFlux=0;
+0037 
+0038 <span class="keyword">if</span> nargin&lt;2
+0039     minFlux=0;
+0040 <span class="keyword">end</span>
+0041 <span class="keyword">if</span> nargin&lt;3
+0042     params.relGap=0.4;
 0043 <span class="keyword">end</span>
-0044 <span class="keyword">if</span> nargin&lt;3
-0045     params.relGap=0.4;
+0044 <span class="keyword">if</span> nargin&lt;4
+0045     hsSol=[];
 0046 <span class="keyword">end</span>
-0047 <span class="keyword">if</span> nargin&lt;4
-0048     hsSol=[];
-0049 <span class="keyword">end</span>
-0050 
-0051 <span class="comment">%Default return values</span>
-0052 hsSolOut=[];
-0053 solution.x=[];
-0054 solution.f=[];
-0055 solution.stat=-1;
-0056 
-0057 <span class="comment">%Ignore the hot-start if the previous solution wasn't feasible</span>
-0058 <span class="keyword">if</span> isfield(hsSol,<span class="string">'stat'</span>)
-0059     <span class="keyword">if</span> hsSol.stat&lt;1
-0060         hsSol=[];
-0061     <span class="keyword">end</span>
-0062 <span class="keyword">end</span>
-0063 
-0064 <span class="comment">% Setup the problem to feed to COBRA.</span>
-0065 prob=[];
-0066 prob.c=[model.c*-1;zeros(size(model.S,1),1)];
-0067 prob.b = zeros(size(model.S,1), 1);
-0068 prob.lb = [model.lb; model.b(:,1)];
-0069 prob.ub = [model.ub; model.b(:,min(size(model.b,2),2))];
-0070 prob.osense = 1;
-0071 prob.csense = char(zeros(size(model.S,1),1));
-0072 prob.csense(:) = <span class="string">'E'</span>;
-0073 prob.A = [model.S -speye(size(model.S,1))];
-0074 prob.a = model.S;
-0075 
-0076 <span class="comment">%If hot-start should be used</span>
-0077 <span class="keyword">if</span> ~isempty(hsSol)
-0078     prob.vbasis=hsSol.vbasis;
-0079     prob.cbasis=hsSol.cbasis;
-0080 <span class="keyword">end</span>
+0047 
+0048 <span class="comment">%Default return values</span>
+0049 hsSolOut=[];
+0050 solution.x=[];
+0051 solution.f=[];
+0052 solution.stat=-1;
+0053 
+0054 <span class="comment">%Ignore the hot-start if the previous solution wasn't feasible</span>
+0055 <span class="keyword">if</span> isfield(hsSol,<span class="string">'stat'</span>)
+0056     <span class="keyword">if</span> hsSol.stat&lt;1
+0057         hsSol=[];
+0058     <span class="keyword">end</span>
+0059 <span class="keyword">end</span>
+0060 
+0061 <span class="comment">% Setup the problem to feed to COBRA.</span>
+0062 prob=[];
+0063 prob.c=[model.c*-1;zeros(size(model.S,1),1)];
+0064 prob.b = zeros(size(model.S,1), 1);
+0065 prob.lb = [model.lb; model.b(:,1)];
+0066 prob.ub = [model.ub; model.b(:,min(size(model.b,2),2))];
+0067 prob.osense = 1;
+0068 prob.csense = char(zeros(size(model.S,1),1));
+0069 prob.csense(:) = <span class="string">'E'</span>;
+0070 prob.A = [model.S -speye(size(model.S,1))];
+0071 prob.a = model.S;
+0072 
+0073 <span class="comment">%If hot-start should be used</span>
+0074 <span class="keyword">if</span> ~isempty(hsSol)
+0075     prob.vbasis=hsSol.vbasis;
+0076     prob.cbasis=hsSol.cbasis;
+0077 <span class="keyword">end</span>
+0078 
+0079 <span class="comment">% Parse the problem to the LP solver</span>
+0080 res = <a href="optimizeProb.html" class="code" title="function res = optimizeProb(prob,params)">optimizeProb</a>(prob,params);
 0081 
-0082 <span class="comment">% Parse the problem to the LP solver</span>
-0083 res = <a href="optimizeProb.html" class="code" title="function res = optimizeProb(prob,params)">optimizeProb</a>(prob,params);
+0082 <span class="comment">%Check if the problem was feasible and that the solution was optimal</span>
+0083 [isFeasible, isOptimal]=<a href="checkSolution.html" class="code" title="function [isFeasible, isOptimal]=checkSolution(res)">checkSolution</a>(res);
 0084 
-0085 <span class="comment">%Check if the problem was feasible and that the solution was optimal</span>
-0086 [isFeasible, isOptimal]=<a href="checkSolution.html" class="code" title="function [isFeasible, isOptimal]=checkSolution(res)">checkSolution</a>(res);
-0087 
-0088 <span class="comment">%If the problem was infeasible using hot-start it is often possible to</span>
-0089 <span class="comment">%re-solve it without hot-start and get a feasible solution</span>
-0090 <span class="keyword">if</span> ~isFeasible &amp;&amp; ~isempty(hsSol)
-0091     prob=rmfield(prob,{<span class="string">'vbasis'</span>,<span class="string">'cbasis'</span>});
-0092     res=<a href="optimizeProb.html" class="code" title="function res = optimizeProb(prob,params)">optimizeProb</a>(prob,params);
-0093     [isFeasible, isOptimal]=<a href="checkSolution.html" class="code" title="function [isFeasible, isOptimal]=checkSolution(res)">checkSolution</a>(res);
-0094 <span class="keyword">end</span>
-0095 
-0096 <span class="comment">%Return without solution if the problem was infeasible</span>
-0097 <span class="keyword">if</span> ~isFeasible
-0098     solution.msg=<span class="string">'The problem is infeasible'</span>;
-0099     <span class="keyword">return</span>;
-0100 <span class="keyword">end</span>
-0101 <span class="keyword">if</span> ~isOptimal
-0102     solution.msg=<span class="string">'The problem is feasible, but not necessarily optimal'</span>;
-0103     solution.stat=0;
-0104 <span class="keyword">else</span>
-0105     <span class="comment">%All is well</span>
-0106     solution.stat=1;
-0107     solution.msg=<span class="string">'Optimal solution found'</span>;
-0108 <span class="keyword">end</span>
-0109 
-0110 <span class="comment">%Construct the output structure</span>
-0111 <span class="keyword">if</span> isfield(res,<span class="string">'full'</span>)
-0112     solution.x=res.full;
-0113     <span class="keyword">if</span> minFlux&lt;=1
-0114         <span class="keyword">if</span>(isfield(res,<span class="string">'vbasis'</span>)) <span class="comment">% gurobi uses vbasis and cbasis as hotstart</span>
-0115             hsSolOut.vbasis=res.vbasis;
-0116             hsSolOut.cbasis=res.cbasis;
-0117         <span class="keyword">end</span>
-0118     <span class="keyword">end</span>
-0119     solution.f=res.obj;
-0120 <span class="keyword">else</span>
-0121     <span class="comment">%Interior-point. This is not used at the moment</span>
-0122     solution.x=res.full;
-0123     solution.f=res.obj;
-0124 <span class="keyword">end</span>
-0125 
-0126 <span class="comment">%If either the square, the number, or the sum of fluxes should be minimized</span>
-0127 <span class="comment">%then the objective function value should be fixed before another</span>
-0128 <span class="comment">%optimization. It is not correct to fix the reactions which participate in</span>
-0129 <span class="comment">%the objective function to their values in solution.x, as there can be</span>
-0130 <span class="comment">%multiple solutions with the same objective function value. In addition,</span>
-0131 <span class="comment">%this approach could result in numerical issues when several fluxes are</span>
-0132 <span class="comment">%fixed. Instead a new &quot;fake metabolite&quot; is added to the problem. This</span>
-0133 <span class="comment">%metabolite is produced by each reaction with the stoichiometry that</span>
-0134 <span class="comment">%reaction has in the objective function. The equality constraint of that</span>
-0135 <span class="comment">%&quot;fake metabolite&quot; is then set to be at least as good as the objective</span>
-0136 <span class="comment">%function value.</span>
-0137 <span class="keyword">if</span> minFlux~=0
-0138     model.S=[model.S;(model.c*-1)'];
-0139     model.mets=[model.mets;<span class="string">'TEMP'</span>];
-0140     
-0141     <span class="comment">%If the constraint on the objective function value is exact there is a</span>
-0142     <span class="comment">%larger risk of numerical errors. However for the quadratic fitting</span>
-0143     <span class="comment">%intervals are not allowed</span>
-0144     <span class="keyword">if</span> minFlux~=2
-0145         <span class="keyword">if</span> size(model.b,2)==1
-0146             model.b=[model.b model.b];
-0147         <span class="keyword">end</span>
-0148         <span class="keyword">if</span> solution.f&lt;0
-0149             model.b=[model.b;[-inf solution.f*0.999999]];
-0150         <span class="keyword">else</span>
-0151             model.b=[model.b;[-inf solution.f*1.000001]];
-0152         <span class="keyword">end</span>
-0153     <span class="keyword">else</span>
-0154         model.b=[model.b;ones(1,size(model.b,2))*solution.f];
-0155     <span class="keyword">end</span>
-0156     
-0157     <span class="keyword">switch</span> minFlux
-0158         <span class="comment">%The sum of fluxes should be minimized</span>
-0159         <span class="keyword">case</span> 1
-0160             <span class="comment">%Convert the model to the irreversible format</span>
-0161             revRxns=find(model.rev);
-0162             <span class="keyword">if</span> ~isempty(revRxns)
-0163                 iModel=convertToIrrev(model);
-0164             <span class="keyword">else</span>
-0165                 iModel=model;
-0166             <span class="keyword">end</span>
-0167             
-0168             <span class="comment">%Minimize all fluxes</span>
-0169             iModel.c(:)=-1;
-0170             sol=<a href="solveLP.html" class="code" title="function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(iModel);
-0171             
-0172             <span class="comment">%Map back to reversible fluxes</span>
-0173             <span class="keyword">if</span> sol.stat&gt;=0
-0174                 solution.x=sol.x(1:numel(model.c));
-0175                 solution.x(revRxns)=solution.x(revRxns)-sol.x(numel(model.c)+1:end);
-0176             <span class="keyword">else</span>
-0177                 EM=<span class="string">'Could not solve the problem of minimizing the sum of fluxes. Uses output from original problem'</span>;
-0178                 dispEM(EM,false);
-0179                 solution.stat=-2;
-0180             <span class="keyword">end</span>
-0181             <span class="comment">%The square of fluxes should be minimized. This only works when</span>
-0182             <span class="comment">%there is no interval on the mass balance constraints (model.b is a</span>
-0183             <span class="comment">%vector)</span>
-0184         <span class="keyword">case</span> 2
-0185             <span class="comment">%         if size(model.b,2)==1</span>
-0186             <span class="comment">%             qsol=solveQP(model,model.rxns,zeros(numel(model.lb),1));</span>
-0187             <span class="comment">%             %There is a problem that the solver seldom converges totally in this</span>
-0188             <span class="comment">%             %kind of minimization. Print a warning but use the fluxes</span>
-0189             <span class="comment">%             if any(qsol.x)</span>
-0190             <span class="comment">%                 solution.x=qsol.x;</span>
-0191             <span class="comment">%                 if qsol.stat==-1</span>
-0192             <span class="comment">%                     fprintf('WARNING: The quadratic fitting did not converge\n');</span>
-0193             <span class="comment">%                 end</span>
-0194             <span class="comment">%             else</span>
-0195             <span class="comment">%                 fprintf('WARNING: Could not solve the problem of minimizing the square of fluxes. Uses output from linear program\n');</span>
-0196             <span class="comment">%             end</span>
-0197             <span class="comment">%         else</span>
-0198             <span class="comment">%             fprintf('WARNING: Cannot minimize square of fluxes when size(model.b,2)==2. Uses output from linear program\n');</span>
-0199             <span class="comment">%         end</span>
-0200             EM=<span class="string">'Quadratic solver currently not working. Uses output from original problem'</span>;
-0201             dispEM(EM,false);
-0202             solution.stat=-2;
-0203             <span class="comment">%The number of fluxes should be minimized</span>
-0204         <span class="keyword">case</span> 3
-0205             [qx,I]=getMinNrFluxes(model,model.rxns,params);
-0206             qx(~I)=0;
-0207             <span class="keyword">if</span> any(I)
-0208                 solution.x=qx;
-0209             <span class="keyword">else</span>
-0210                 EM=<span class="string">'Could not solve the problem of minimizing the number of fluxes. Uses output from linear program'</span>;
-0211                 dispEM(EM,false);
-0212                 solution.stat=-2;
-0213             <span class="keyword">end</span>
-0214     <span class="keyword">end</span>
-0215 <span class="keyword">end</span>
-0216 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 03-Jun-2020 13:07:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0085 <span class="comment">%If the problem was infeasible using hot-start it is often possible to</span>
+0086 <span class="comment">%re-solve it without hot-start and get a feasible solution</span>
+0087 <span class="keyword">if</span> ~isFeasible &amp;&amp; ~isempty(hsSol)
+0088     prob=rmfield(prob,{<span class="string">'vbasis'</span>,<span class="string">'cbasis'</span>});
+0089     res=<a href="optimizeProb.html" class="code" title="function res = optimizeProb(prob,params)">optimizeProb</a>(prob,params);
+0090     [isFeasible, isOptimal]=<a href="checkSolution.html" class="code" title="function [isFeasible, isOptimal]=checkSolution(res)">checkSolution</a>(res);
+0091 <span class="keyword">end</span>
+0092 
+0093 <span class="comment">%Return without solution if the problem was infeasible</span>
+0094 <span class="keyword">if</span> ~isFeasible
+0095     solution.msg=<span class="string">'The problem is infeasible'</span>;
+0096     <span class="keyword">return</span>;
+0097 <span class="keyword">end</span>
+0098 <span class="keyword">if</span> ~isOptimal
+0099     solution.msg=<span class="string">'The problem is feasible, but not necessarily optimal'</span>;
+0100     solution.stat=0;
+0101 <span class="keyword">else</span>
+0102     <span class="comment">%All is well</span>
+0103     solution.stat=1;
+0104     solution.msg=<span class="string">'Optimal solution found'</span>;
+0105 <span class="keyword">end</span>
+0106 
+0107 <span class="comment">%Construct the output structure</span>
+0108 <span class="keyword">if</span> isfield(res,<span class="string">'full'</span>)
+0109     solution.x=res.full;
+0110     <span class="keyword">if</span> minFlux&lt;=1
+0111         <span class="keyword">if</span>(isfield(res,<span class="string">'vbasis'</span>)) <span class="comment">% gurobi uses vbasis and cbasis as hotstart</span>
+0112             hsSolOut.vbasis=res.vbasis;
+0113             hsSolOut.cbasis=res.cbasis;
+0114         <span class="keyword">end</span>
+0115     <span class="keyword">end</span>
+0116     solution.f=res.obj;
+0117 <span class="keyword">else</span>
+0118     <span class="comment">%Interior-point. This is not used at the moment</span>
+0119     solution.x=res.full;
+0120     solution.f=res.obj;
+0121 <span class="keyword">end</span>
+0122 
+0123 <span class="comment">%If either the square, the number, or the sum of fluxes should be minimized</span>
+0124 <span class="comment">%then the objective function value should be fixed before another</span>
+0125 <span class="comment">%optimization. It is not correct to fix the reactions which participate in</span>
+0126 <span class="comment">%the objective function to their values in solution.x, as there can be</span>
+0127 <span class="comment">%multiple solutions with the same objective function value. In addition,</span>
+0128 <span class="comment">%this approach could result in numerical issues when several fluxes are</span>
+0129 <span class="comment">%fixed. Instead a new &quot;fake metabolite&quot; is added to the problem. This</span>
+0130 <span class="comment">%metabolite is produced by each reaction with the stoichiometry that</span>
+0131 <span class="comment">%reaction has in the objective function. The equality constraint of that</span>
+0132 <span class="comment">%&quot;fake metabolite&quot; is then set to be at least as good as the objective</span>
+0133 <span class="comment">%function value.</span>
+0134 <span class="keyword">if</span> minFlux~=0
+0135     model.S=[model.S;(model.c*-1)'];
+0136     model.mets=[model.mets;<span class="string">'TEMP'</span>];
+0137     
+0138     <span class="comment">%If the constraint on the objective function value is exact there is a</span>
+0139     <span class="comment">%larger risk of numerical errors. However for the quadratic fitting</span>
+0140     <span class="comment">%intervals are not allowed</span>
+0141     <span class="keyword">if</span> minFlux~=2
+0142         <span class="keyword">if</span> size(model.b,2)==1
+0143             model.b=[model.b model.b];
+0144         <span class="keyword">end</span>
+0145         <span class="keyword">if</span> solution.f&lt;0
+0146             model.b=[model.b;[-inf solution.f*0.999999]];
+0147         <span class="keyword">else</span>
+0148             model.b=[model.b;[-inf solution.f*1.000001]];
+0149         <span class="keyword">end</span>
+0150     <span class="keyword">else</span>
+0151         model.b=[model.b;ones(1,size(model.b,2))*solution.f];
+0152     <span class="keyword">end</span>
+0153     
+0154     <span class="keyword">switch</span> minFlux
+0155         <span class="comment">%The sum of fluxes should be minimized</span>
+0156         <span class="keyword">case</span> 1
+0157             <span class="comment">%Convert the model to the irreversible format</span>
+0158             revRxns=find(model.rev);
+0159             <span class="keyword">if</span> ~isempty(revRxns)
+0160                 iModel=convertToIrrev(model);
+0161             <span class="keyword">else</span>
+0162                 iModel=model;
+0163             <span class="keyword">end</span>
+0164             
+0165             <span class="comment">%Minimize all fluxes</span>
+0166             iModel.c(:)=-1;
+0167             sol=<a href="solveLP.html" class="code" title="function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(iModel);
+0168             
+0169             <span class="comment">%Map back to reversible fluxes</span>
+0170             <span class="keyword">if</span> sol.stat&gt;=0
+0171                 solution.x=sol.x(1:numel(model.c));
+0172                 solution.x(revRxns)=solution.x(revRxns)-sol.x(numel(model.c)+1:end);
+0173             <span class="keyword">else</span>
+0174                 EM=<span class="string">'Could not solve the problem of minimizing the sum of fluxes. Uses output from original problem'</span>;
+0175                 dispEM(EM,false);
+0176                 solution.stat=-2;
+0177             <span class="keyword">end</span>
+0178             <span class="comment">%The square of fluxes should be minimized. This only works when</span>
+0179             <span class="comment">%there is no interval on the mass balance constraints (model.b is a</span>
+0180             <span class="comment">%vector)</span>
+0181         <span class="keyword">case</span> 2
+0182             <span class="comment">%         if size(model.b,2)==1</span>
+0183             <span class="comment">%             qsol=solveQP(model,model.rxns,zeros(numel(model.lb),1));</span>
+0184             <span class="comment">%             %There is a problem that the solver seldom converges totally in this</span>
+0185             <span class="comment">%             %kind of minimization. Print a warning but use the fluxes</span>
+0186             <span class="comment">%             if any(qsol.x)</span>
+0187             <span class="comment">%                 solution.x=qsol.x;</span>
+0188             <span class="comment">%                 if qsol.stat==-1</span>
+0189             <span class="comment">%                     fprintf('WARNING: The quadratic fitting did not converge\n');</span>
+0190             <span class="comment">%                 end</span>
+0191             <span class="comment">%             else</span>
+0192             <span class="comment">%                 fprintf('WARNING: Could not solve the problem of minimizing the square of fluxes. Uses output from linear program\n');</span>
+0193             <span class="comment">%             end</span>
+0194             <span class="comment">%         else</span>
+0195             <span class="comment">%             fprintf('WARNING: Cannot minimize square of fluxes when size(model.b,2)==2. Uses output from linear program\n');</span>
+0196             <span class="comment">%         end</span>
+0197             EM=<span class="string">'Quadratic solver currently not working. Uses output from original problem'</span>;
+0198             dispEM(EM,false);
+0199             solution.stat=-2;
+0200             <span class="comment">%The number of fluxes should be minimized</span>
+0201         <span class="keyword">case</span> 3
+0202             [qx,I]=getMinNrFluxes(model,model.rxns,params);
+0203             qx(~I)=0;
+0204             <span class="keyword">if</span> any(I)
+0205                 solution.x=qx;
+0206             <span class="keyword">else</span>
+0207                 EM=<span class="string">'Could not solve the problem of minimizing the number of fluxes. Uses output from linear program'</span>;
+0208                 dispEM(EM,false);
+0209                 solution.stat=-2;
+0210             <span class="keyword">end</span>
+0211     <span class="keyword">end</span>
+0212 <span class="keyword">end</span>
+0213 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Fri 20-Nov-2020 22:58:53 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -40,9 +40,7 @@
                    databases. The 'rxnFrom/metFrom/geneFrom' fields are
                    included to indicate the source.
 
-    Usage: model=combineMetaCycKEGGModels(metacycModel,keggModel)
-
-    Hao Wang, 2019-10-21</pre></div>
+    Usage: model=combineMetaCycKEGGModels(metacycModel,keggModel)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -72,314 +70,311 @@ This function is called by:
 0013 <span class="comment">%                   included to indicate the source.</span>
 0014 <span class="comment">%</span>
 0015 <span class="comment">%    Usage: model=combineMetaCycKEGGModels(metacycModel,keggModel)</span>
-0016 <span class="comment">%</span>
-0017 <span class="comment">%    Hao Wang, 2019-10-21</span>
-0018 <span class="comment">%</span>
-0019 
-0020 <span class="comment">%Just return the model</span>
-0021 <span class="keyword">if</span> nargin&lt;2
-0022     disp(<span class="string">'Missing input model'</span>);
-0023     <span class="keyword">return</span>;
-0024 <span class="keyword">end</span>
-0025 
-0026 <span class="comment">%Add MetaCyc model as template</span>
-0027 model=metacycModel;
-0028 model.id=<span class="string">'COMBINED'</span>;
-0029 model.description=<span class="string">'Combined model from MetaCyc and KEGG draft models'</span>;
-0030 
-0031 <span class="comment">%Use MetaCyc model as template</span>
-0032 model.rxnFrom=cell(numel(model.rxns),1);
-0033 model.rxnFrom(:)={<span class="string">'MetaCyc'</span>};
-0034 model.metFrom=cell(numel(model.mets),1);
-0035 model.metFrom(:)={<span class="string">'MetaCyc'</span>};
-0036 model.geneFrom=cell(numel(model.genes),1);
-0037 model.geneFrom(:)={<span class="string">'MetaCyc'</span>};
-0038 model.grRulesKEGG=cell(numel(model.rxns),1);
-0039 model.grRulesKEGG(:)={<span class="string">''</span>};
-0040 
-0041 <span class="comment">%Remove the S and rxnGeneMat matrix</span>
-0042 <span class="keyword">if</span> isfield(model,<span class="string">'S'</span>)
-0043     model=rmfield(model,<span class="string">'S'</span>);
+0016 
+0017 <span class="comment">%Just return the model</span>
+0018 <span class="keyword">if</span> nargin&lt;2
+0019     disp(<span class="string">'Missing input model'</span>);
+0020     <span class="keyword">return</span>;
+0021 <span class="keyword">end</span>
+0022 
+0023 <span class="comment">%Add MetaCyc model as template</span>
+0024 model=metacycModel;
+0025 model.id=<span class="string">'COMBINED'</span>;
+0026 model.description=<span class="string">'Combined model from MetaCyc and KEGG draft models'</span>;
+0027 
+0028 <span class="comment">%Use MetaCyc model as template</span>
+0029 model.rxnFrom=cell(numel(model.rxns),1);
+0030 model.rxnFrom(:)={<span class="string">'MetaCyc'</span>};
+0031 model.metFrom=cell(numel(model.mets),1);
+0032 model.metFrom(:)={<span class="string">'MetaCyc'</span>};
+0033 model.geneFrom=cell(numel(model.genes),1);
+0034 model.geneFrom(:)={<span class="string">'MetaCyc'</span>};
+0035 model.grRulesKEGG=cell(numel(model.rxns),1);
+0036 model.grRulesKEGG(:)={<span class="string">''</span>};
+0037 
+0038 <span class="comment">%Remove the S and rxnGeneMat matrix</span>
+0039 <span class="keyword">if</span> isfield(model,<span class="string">'S'</span>)
+0040     model=rmfield(model,<span class="string">'S'</span>);
+0041 <span class="keyword">end</span>
+0042 <span class="keyword">if</span> isfield(model,<span class="string">'rxnGeneMat'</span>)
+0043     model=rmfield(model,<span class="string">'rxnGeneMat'</span>);
 0044 <span class="keyword">end</span>
-0045 <span class="keyword">if</span> isfield(model,<span class="string">'rxnGeneMat'</span>)
-0046     model=rmfield(model,<span class="string">'rxnGeneMat'</span>);
-0047 <span class="keyword">end</span>
-0048 
-0049 <span class="comment">%Arrange the genes related fields</span>
-0050 
-0051 <span class="comment">%Identify the shared genes between KEGG and MetaCyc</span>
-0052 sharedGenes=intersect(keggModel.genes,model.genes);
-0053 [~, b]=ismember(sharedGenes,model.genes);
-0054 model.geneFrom(b)={<span class="string">'Both'</span>};
-0055 
-0056 <span class="comment">%Add unique genes from KEGG and update geneFrom</span>
-0057 C=setdiff(keggModel.genes,model.genes);
-0058 model.genes=[model.genes;C];
-0059 geneFrom=cell(numel(C),1);
-0060 geneFrom(:)={<span class="string">'KEGG'</span>};
-0061 model.geneFrom=[model.geneFrom;geneFrom];
-0062 
-0063 <span class="comment">%Prepare for matching grRules</span>
-0064 <span class="keyword">if</span> isfield(keggModel,<span class="string">'grRules'</span>)
-0065     keggModel.grRules=strrep(keggModel.grRules,<span class="string">'('</span>,<span class="string">''</span>);
-0066     keggModel.grRules=strrep(keggModel.grRules,<span class="string">')'</span>,<span class="string">''</span>);
-0067 <span class="keyword">end</span>
+0045 
+0046 <span class="comment">%Arrange the genes related fields</span>
+0047 
+0048 <span class="comment">%Identify the shared genes between KEGG and MetaCyc</span>
+0049 sharedGenes=intersect(keggModel.genes,model.genes);
+0050 [~, b]=ismember(sharedGenes,model.genes);
+0051 model.geneFrom(b)={<span class="string">'Both'</span>};
+0052 
+0053 <span class="comment">%Add unique genes from KEGG and update geneFrom</span>
+0054 C=setdiff(keggModel.genes,model.genes);
+0055 model.genes=[model.genes;C];
+0056 geneFrom=cell(numel(C),1);
+0057 geneFrom(:)={<span class="string">'KEGG'</span>};
+0058 model.geneFrom=[model.geneFrom;geneFrom];
+0059 
+0060 <span class="comment">%Prepare for matching grRules</span>
+0061 <span class="keyword">if</span> isfield(keggModel,<span class="string">'grRules'</span>)
+0062     keggModel.grRules=strrep(keggModel.grRules,<span class="string">'('</span>,<span class="string">''</span>);
+0063     keggModel.grRules=strrep(keggModel.grRules,<span class="string">')'</span>,<span class="string">''</span>);
+0064 <span class="keyword">end</span>
+0065 
+0066 <span class="comment">%Replace rxns in KEGG model with the corresponding ones in MetaCyc by</span>
+0067 <span class="comment">%updating values rxns field to MetaCyc version whenever possible</span>
 0068 
-0069 <span class="comment">%Replace rxns in KEGG model with the corresponding ones in MetaCyc by</span>
-0070 <span class="comment">%updating values rxns field to MetaCyc version whenever possible</span>
-0071 
-0072 <span class="comment">%Collect the ones found in MetaCyc as mappedRxns</span>
-0073 mappedRxns=[];
-0074 rxnsToMove=[];
-0075 grRulesToMove={}; <span class="comment">%Storing the grRules to be moved to MetaCyc model</span>
-0076 
-0077 <span class="comment">%Read in dbLinks, note that linkMetaCycKEGGRxns need to be run in advance</span>
-0078 load(<span class="string">'metaCycRxns.mat'</span>);
-0079 num=0;
-0080 numToMove=0;
-0081 <span class="comment">%Loop through the KEGG model and replace the rxn id from KEGG to MetaCyc</span>
-0082 <span class="comment">%version</span>
-0083 <span class="keyword">for</span> i=1:numel(keggModel.rxns)
-0084     [~, b]=ismember(rxnLinks.kegg,keggModel.rxns{i});
-0085     I=find(b);
-0086     
-0087     <span class="keyword">if</span> numel(I)==1
-0088         <span class="comment">%Find out the corresponding MetaCyc reactions</span>
-0089         num=num+1;
-0090         <span class="comment">%Record the mapped rxn index in KEGG model and remove them later</span>
-0091         mappedRxns=[mappedRxns,i];
-0092         <span class="comment">%keggModel.rxns{i}=rxnLinks.metacyc{I(1)};</span>
-0093         
-0094         [c, d]=ismember(rxnLinks.metacyc{I(1)},model.rxns);
-0095         <span class="keyword">if</span> c
-0096             model.rxnFrom{d}=<span class="string">'Both'</span>;
-0097             <span class="comment">%Combine the grRule info Check if KEGG grRules equals or a</span>
-0098             <span class="comment">%subset of MetaCyc grRules If not, save the KEGG grRules to a</span>
-0099             <span class="comment">%new field grRulesKEGG for manual curation</span>
-0100             k=strfind(model.grRules{d},keggModel.grRules{i});
-0101             <span class="keyword">if</span> isempty(k)
-0102                 <span class="keyword">if</span> isempty(model.grRulesKEGG{d})
-0103                     model.grRulesKEGG{d}=keggModel.grRules{i};
-0104                 <span class="keyword">else</span>
-0105                     model.grRulesKEGG{d}=strcat(model.grRulesKEGG{d},{<span class="string">' or '</span>},keggModel.grRules{i});
-0106                 <span class="keyword">end</span>
-0107             <span class="keyword">end</span>
-0108         <span class="keyword">else</span>
-0109             <span class="comment">%For the KEGG rxns have MetaCyc version but not in MetaCyc</span>
-0110             <span class="comment">%draft model</span>
-0111             [~, y]=ismember(rxnLinks.metacyc{I(1)},metaCycRxns.rxns);
-0112             
-0113             <span class="comment">%Check if this reaction is repitetive and save the grRules</span>
-0114             [Repeat, Index]=ismember(y,rxnsToMove);
-0115             <span class="keyword">if</span> ~Repeat
-0116                 rxnsToMove=[rxnsToMove;y];  <span class="comment">%Record rxns to be moved from KEGG to MetaCyc model</span>
-0117                 <span class="keyword">if</span> isempty(keggModel.grRules{i})
-0118                     <span class="comment">%Rxns may have empty grRules (e.g. spontaneous) that</span>
-0119                     <span class="comment">%are identified and added back here</span>
-0120                     grRulesToMove=[grRulesToMove;{<span class="string">''</span>}];
-0121                 <span class="keyword">else</span>
-0122                     grRulesToMove=[grRulesToMove;keggModel.grRules{i}];
-0123                 <span class="keyword">end</span>
-0124                 numToMove=numToMove+1;
-0125             <span class="keyword">else</span>
-0126                 <span class="comment">%If this reaction has been recorded, append the grRules if</span>
-0127                 <span class="comment">%it is different</span>
-0128                 k=strfind(grRulesToMove{Index},keggModel.grRules{i});
-0129                 <span class="keyword">if</span> isempty(k)
-0130                     grRulesToMove{Index}=strcat(grRulesToMove{Index},{<span class="string">' or '</span>},keggModel.grRules{i});
-0131                 <span class="keyword">end</span>
-0132             <span class="keyword">end</span>
-0133         <span class="keyword">end</span>
-0134     <span class="keyword">else</span>
-0135         <span class="comment">%Here are the case of one KEGG rxn id link to several MetaCyc ids</span>
-0136         <span class="comment">%for j=2:numel(I) Ignore this issue for now, and resolve it later,</span>
-0137         <span class="comment">%because it never happened This case can be solved by adding above</span>
-0138         <span class="comment">%section into a loop below disp(I(j)); end</span>
-0139     <span class="keyword">end</span>
-0140 <span class="keyword">end</span>
-0141 fprintf(<span class="string">'NOTE: A total of %d reactions in the KEGG model were mapped to MetaCyc.\n'</span>,num);
-0142 fprintf(<span class="string">'NOTE: %d reactions already in MetaCyc model, %d will be combined.\n'</span>,num-numToMove,numToMove);
-0143 
-0144 <span class="comment">%Append mapped MetaCyc rxns in KEGG model that are absent from MetaCyc</span>
-0145 <span class="comment">%model</span>
-0146 rxnFrom=cell(numel(rxnsToMove),1);
-0147 rxnFrom(:)={<span class="string">'KEGG'</span>};
-0148 model.rxnFrom=[model.rxnFrom;rxnFrom];
-0149 model.rxns=[model.rxns;metaCycRxns.rxns(rxnsToMove)];
-0150 
-0151 rxnNames=metaCycRxns.rxnNames(rxnsToMove);
-0152 <span class="comment">%Replace rxnNames with those from metaCycEnzymes</span>
-0153 load(<span class="string">'metaCycEnzymes.mat'</span>);
-0154 <span class="keyword">for</span> i=1:numel(rxnsToMove)
-0155     [a, b]=ismember(metaCycRxns.rxns{rxnsToMove(i)},metaCycEnzymes.rxns);
-0156     <span class="keyword">if</span> a
-0157         rxnNames{i}=metaCycEnzymes.rxnNames{b};
-0158     <span class="keyword">end</span>
-0159 <span class="keyword">end</span>
-0160 model.rxnNames=[model.rxnNames;rxnNames];
-0161 
-0162 model.eccodes=[model.eccodes;metaCycRxns.eccodes(rxnsToMove)];
-0163 model.subSystems=[model.subSystems;metaCycRxns.subSystems(rxnsToMove)];
-0164 model.rxnMiriams=[model.rxnMiriams;metaCycRxns.rxnMiriams(rxnsToMove)];
-0165 model.rxnReferences=[model.rxnReferences;metaCycRxns.rxnReferences(rxnsToMove)];
-0166 model.rev=[model.rev;metaCycRxns.rev(rxnsToMove)];
-0167 model.equations=[model.equations;metaCycRxns.equations(rxnsToMove)];
-0168 model.lb=[model.lb;metaCycRxns.lb(rxnsToMove)];
-0169 model.ub=[model.ub;metaCycRxns.ub(rxnsToMove)];
-0170 model.c=[model.c;metaCycRxns.c(rxnsToMove)];
-0171 model.grRules=[model.grRules;grRulesToMove];
-0172 <span class="comment">%model.grRules=[model.grRules;keggModel.grRules(rxnsToMove(:,2))];</span>
-0173 <span class="comment">%model.grRulesKEGG=[model.grRulesKEGG;keggModel.grRules(rxnsToMove(:,2))];</span>
-0174 rxnFields=cell(numel(rxnsToMove),1);
-0175 rxnFields(:)={<span class="string">''</span>};
-0176 <span class="comment">%model.rxnNotes=[model.rxnNotes;rxnFields];</span>
-0177 model.grRulesKEGG=[model.grRulesKEGG;rxnFields];
-0178 
-0179 <span class="comment">%Remove all mapped reactions from KEGG model</span>
-0180 pureKeggModel=removeReactions(keggModel,mappedRxns,true,true);
-0181 fprintf(<span class="string">'NOTE: A global KEGG model with %d reactions and %d metabolites was obtained.\n'</span>,numel(pureKeggModel.rxns),numel(pureKeggModel.mets));
-0182 
-0183 <span class="comment">%Replace mets information in KEGG model with the corresponding ones in</span>
-0184 <span class="comment">%MetaCyc This includes updating all metabolite-related fields, except S</span>
-0185 <span class="comment">%matrix.</span>
-0186 load(<span class="string">'metaCycMets.mat'</span>);
-0187 
-0188 <span class="keyword">if</span> ~isfield(pureKeggModel,<span class="string">'metCharges'</span>)
-0189     pureKeggModel.metCharges=NaN(numel(pureKeggModel.mets),1);
-0190 <span class="keyword">end</span>
-0191 
-0192 num=0;
-0193 <span class="keyword">for</span> i=1:numel(pureKeggModel.mets)
-0194     [a, b]=ismember(pureKeggModel.mets{i},metaCycMets.keggid);
-0195     <span class="keyword">if</span> a
-0196         <span class="comment">%For now only replace the met ids</span>
-0197         num=num+1;
-0198         pureKeggModel.mets{i}=metaCycMets.mets{b};
-0199         <span class="comment">%Record the replaced mets into a vector for later</span>
-0200     <span class="keyword">end</span>
-0201 <span class="keyword">end</span>
-0202 fprintf(<span class="string">'NOTE: A total of %d metabolites from the global KEGG model will be re-mapped to MetaCyc.\n'</span>,num);
+0069 <span class="comment">%Collect the ones found in MetaCyc as mappedRxns</span>
+0070 mappedRxns=[];
+0071 rxnsToMove=[];
+0072 grRulesToMove={}; <span class="comment">%Storing the grRules to be moved to MetaCyc model</span>
+0073 
+0074 <span class="comment">%Read in dbLinks, note that linkMetaCycKEGGRxns need to be run in advance</span>
+0075 load(<span class="string">'metaCycRxns.mat'</span>);
+0076 num=0;
+0077 numToMove=0;
+0078 <span class="comment">%Loop through the KEGG model and replace the rxn id from KEGG to MetaCyc</span>
+0079 <span class="comment">%version</span>
+0080 <span class="keyword">for</span> i=1:numel(keggModel.rxns)
+0081     [~, b]=ismember(rxnLinks.kegg,keggModel.rxns{i});
+0082     I=find(b);
+0083     
+0084     <span class="keyword">if</span> numel(I)==1
+0085         <span class="comment">%Find out the corresponding MetaCyc reactions</span>
+0086         num=num+1;
+0087         <span class="comment">%Record the mapped rxn index in KEGG model and remove them later</span>
+0088         mappedRxns=[mappedRxns,i];
+0089         <span class="comment">%keggModel.rxns{i}=rxnLinks.metacyc{I(1)};</span>
+0090         
+0091         [c, d]=ismember(rxnLinks.metacyc{I(1)},model.rxns);
+0092         <span class="keyword">if</span> c
+0093             model.rxnFrom{d}=<span class="string">'Both'</span>;
+0094             <span class="comment">%Combine the grRule info Check if KEGG grRules equals or a</span>
+0095             <span class="comment">%subset of MetaCyc grRules If not, save the KEGG grRules to a</span>
+0096             <span class="comment">%new field grRulesKEGG for manual curation</span>
+0097             k=strfind(model.grRules{d},keggModel.grRules{i});
+0098             <span class="keyword">if</span> isempty(k)
+0099                 <span class="keyword">if</span> isempty(model.grRulesKEGG{d})
+0100                     model.grRulesKEGG{d}=keggModel.grRules{i};
+0101                 <span class="keyword">else</span>
+0102                     model.grRulesKEGG{d}=strcat(model.grRulesKEGG{d},{<span class="string">' or '</span>},keggModel.grRules{i});
+0103                 <span class="keyword">end</span>
+0104             <span class="keyword">end</span>
+0105         <span class="keyword">else</span>
+0106             <span class="comment">%For the KEGG rxns have MetaCyc version but not in MetaCyc</span>
+0107             <span class="comment">%draft model</span>
+0108             [~, y]=ismember(rxnLinks.metacyc{I(1)},metaCycRxns.rxns);
+0109             
+0110             <span class="comment">%Check if this reaction is repitetive and save the grRules</span>
+0111             [Repeat, Index]=ismember(y,rxnsToMove);
+0112             <span class="keyword">if</span> ~Repeat
+0113                 rxnsToMove=[rxnsToMove;y];  <span class="comment">%Record rxns to be moved from KEGG to MetaCyc model</span>
+0114                 <span class="keyword">if</span> isempty(keggModel.grRules{i})
+0115                     <span class="comment">%Rxns may have empty grRules (e.g. spontaneous) that</span>
+0116                     <span class="comment">%are identified and added back here</span>
+0117                     grRulesToMove=[grRulesToMove;{<span class="string">''</span>}];
+0118                 <span class="keyword">else</span>
+0119                     grRulesToMove=[grRulesToMove;keggModel.grRules{i}];
+0120                 <span class="keyword">end</span>
+0121                 numToMove=numToMove+1;
+0122             <span class="keyword">else</span>
+0123                 <span class="comment">%If this reaction has been recorded, append the grRules if</span>
+0124                 <span class="comment">%it is different</span>
+0125                 k=strfind(grRulesToMove{Index},keggModel.grRules{i});
+0126                 <span class="keyword">if</span> isempty(k)
+0127                     grRulesToMove{Index}=strcat(grRulesToMove{Index},{<span class="string">' or '</span>},keggModel.grRules{i});
+0128                 <span class="keyword">end</span>
+0129             <span class="keyword">end</span>
+0130         <span class="keyword">end</span>
+0131     <span class="keyword">else</span>
+0132         <span class="comment">%Here are the case of one KEGG rxn id link to several MetaCyc ids</span>
+0133         <span class="comment">%for j=2:numel(I) Ignore this issue for now, and resolve it later,</span>
+0134         <span class="comment">%because it never happened This case can be solved by adding above</span>
+0135         <span class="comment">%section into a loop below disp(I(j)); end</span>
+0136     <span class="keyword">end</span>
+0137 <span class="keyword">end</span>
+0138 fprintf(<span class="string">'NOTE: A total of %d reactions in the KEGG model were mapped to MetaCyc.\n'</span>,num);
+0139 fprintf(<span class="string">'NOTE: %d reactions already in MetaCyc model, %d will be combined.\n'</span>,num-numToMove,numToMove);
+0140 
+0141 <span class="comment">%Append mapped MetaCyc rxns in KEGG model that are absent from MetaCyc</span>
+0142 <span class="comment">%model</span>
+0143 rxnFrom=cell(numel(rxnsToMove),1);
+0144 rxnFrom(:)={<span class="string">'KEGG'</span>};
+0145 model.rxnFrom=[model.rxnFrom;rxnFrom];
+0146 model.rxns=[model.rxns;metaCycRxns.rxns(rxnsToMove)];
+0147 
+0148 rxnNames=metaCycRxns.rxnNames(rxnsToMove);
+0149 <span class="comment">%Replace rxnNames with those from metaCycEnzymes</span>
+0150 load(<span class="string">'metaCycEnzymes.mat'</span>);
+0151 <span class="keyword">for</span> i=1:numel(rxnsToMove)
+0152     [a, b]=ismember(metaCycRxns.rxns{rxnsToMove(i)},metaCycEnzymes.rxns);
+0153     <span class="keyword">if</span> a
+0154         rxnNames{i}=metaCycEnzymes.rxnNames{b};
+0155     <span class="keyword">end</span>
+0156 <span class="keyword">end</span>
+0157 model.rxnNames=[model.rxnNames;rxnNames];
+0158 
+0159 model.eccodes=[model.eccodes;metaCycRxns.eccodes(rxnsToMove)];
+0160 model.subSystems=[model.subSystems;metaCycRxns.subSystems(rxnsToMove)];
+0161 model.rxnMiriams=[model.rxnMiriams;metaCycRxns.rxnMiriams(rxnsToMove)];
+0162 model.rxnReferences=[model.rxnReferences;metaCycRxns.rxnReferences(rxnsToMove)];
+0163 model.rev=[model.rev;metaCycRxns.rev(rxnsToMove)];
+0164 model.equations=[model.equations;metaCycRxns.equations(rxnsToMove)];
+0165 model.lb=[model.lb;metaCycRxns.lb(rxnsToMove)];
+0166 model.ub=[model.ub;metaCycRxns.ub(rxnsToMove)];
+0167 model.c=[model.c;metaCycRxns.c(rxnsToMove)];
+0168 model.grRules=[model.grRules;grRulesToMove];
+0169 <span class="comment">%model.grRules=[model.grRules;keggModel.grRules(rxnsToMove(:,2))];</span>
+0170 <span class="comment">%model.grRulesKEGG=[model.grRulesKEGG;keggModel.grRules(rxnsToMove(:,2))];</span>
+0171 rxnFields=cell(numel(rxnsToMove),1);
+0172 rxnFields(:)={<span class="string">''</span>};
+0173 <span class="comment">%model.rxnNotes=[model.rxnNotes;rxnFields];</span>
+0174 model.grRulesKEGG=[model.grRulesKEGG;rxnFields];
+0175 
+0176 <span class="comment">%Remove all mapped reactions from KEGG model</span>
+0177 pureKeggModel=removeReactions(keggModel,mappedRxns,true,true);
+0178 fprintf(<span class="string">'NOTE: A global KEGG model with %d reactions and %d metabolites was obtained.\n'</span>,numel(pureKeggModel.rxns),numel(pureKeggModel.mets));
+0179 
+0180 <span class="comment">%Replace mets information in KEGG model with the corresponding ones in</span>
+0181 <span class="comment">%MetaCyc This includes updating all metabolite-related fields, except S</span>
+0182 <span class="comment">%matrix.</span>
+0183 load(<span class="string">'metaCycMets.mat'</span>);
+0184 
+0185 <span class="keyword">if</span> ~isfield(pureKeggModel,<span class="string">'metCharges'</span>)
+0186     pureKeggModel.metCharges=NaN(numel(pureKeggModel.mets),1);
+0187 <span class="keyword">end</span>
+0188 
+0189 num=0;
+0190 <span class="keyword">for</span> i=1:numel(pureKeggModel.mets)
+0191     [a, b]=ismember(pureKeggModel.mets{i},metaCycMets.keggid);
+0192     <span class="keyword">if</span> a
+0193         <span class="comment">%For now only replace the met ids</span>
+0194         num=num+1;
+0195         pureKeggModel.mets{i}=metaCycMets.mets{b};
+0196         <span class="comment">%Record the replaced mets into a vector for later</span>
+0197     <span class="keyword">end</span>
+0198 <span class="keyword">end</span>
+0199 fprintf(<span class="string">'NOTE: A total of %d metabolites from the global KEGG model will be re-mapped to MetaCyc.\n'</span>,num);
+0200 
+0201 <span class="comment">%Generate equations for pureKeggModel</span>
+0202 equationStrings=constructEquations(pureKeggModel,<span class="string">''</span>,false,false,false,true);
 0203 
-0204 <span class="comment">%Generate equations for pureKeggModel</span>
-0205 equationStrings=constructEquations(pureKeggModel,<span class="string">''</span>,false,false,false,true);
-0206 
-0207 <span class="comment">%Add the pure KEGG reactions to MetaCyc model</span>
-0208 rxnFrom=cell(numel(pureKeggModel.rxns),1);
-0209 rxnFrom(:)={<span class="string">'KEGG'</span>};
-0210 model.rxnFrom=[model.rxnFrom;rxnFrom];
-0211 model.rxns=[model.rxns;pureKeggModel.rxns];
-0212 model.equations=[model.equations;equationStrings];
-0213 model.rxnNames=[model.rxnNames;pureKeggModel.rxnNames];
-0214 model.eccodes=[model.eccodes;pureKeggModel.eccodes];
-0215 model.subSystems=[model.subSystems;pureKeggModel.subSystems];
-0216 model.rxnMiriams=[model.rxnMiriams;pureKeggModel.rxnMiriams];
-0217 model.rev=[model.rev;pureKeggModel.rev];
-0218 model.lb=[model.lb;pureKeggModel.lb];
-0219 model.ub=[model.ub;pureKeggModel.ub];
-0220 model.c=[model.c;pureKeggModel.c];
-0221 model.grRules=[model.grRules;pureKeggModel.grRules];
-0222 rxnFields=cell(numel(pureKeggModel.rxns),1);
-0223 rxnFields(:)={<span class="string">''</span>};
-0224 model.grRulesKEGG=[model.grRulesKEGG;rxnFields];
-0225 model.rxnReferences=[model.rxnReferences;rxnFields];
-0226 <span class="comment">%model.rxnNotes=[model.rxnNotes;rxnFields];</span>
-0227 
-0228 <span class="comment">%It could also be that the metabolite and reaction names are empty for some</span>
-0229 <span class="comment">%reasons. In that case, use the ID instead</span>
-0230 <span class="comment">%I=cellfun(@isempty,model.metNames); model.metNames(I)=model.mets(I);</span>
-0231 I=cellfun(@isempty,model.rxnNames);
-0232 model.rxnNames(I)=model.rxns(I);
-0233 
-0234 <span class="comment">%Generate S matrix and mets</span>
-0235 [S, mets, ~]=constructS(model.equations);
-0236 model.S=S;
-0237 model.mets=mets;
-0238 
-0239 <span class="comment">%Remap metabolite information</span>
-0240 <span class="keyword">if</span> isfield(model,<span class="string">'metFrom'</span>)
-0241     model=rmfield(model,<span class="string">'metFrom'</span>);
-0242 <span class="keyword">end</span>
-0243 model.metFrom=cell(numel(model.mets),1);
-0244 model.metFrom(:)={<span class="string">''</span>};
-0245 
-0246 <span class="keyword">if</span> isfield(model,<span class="string">'metNames'</span>)
-0247     model=rmfield(model,<span class="string">'metNames'</span>);
-0248 <span class="keyword">end</span>
-0249 model.metNames=cell(numel(model.mets),1);
-0250 model.metNames(:)={<span class="string">''</span>};
-0251 
-0252 <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
-0253     model=rmfield(model,<span class="string">'metFormulas'</span>);
-0254 <span class="keyword">end</span>
-0255 model.metFormulas=cell(numel(model.mets),1);
-0256 model.metFormulas(:)={<span class="string">''</span>};
-0257 
-0258 <span class="keyword">if</span> ~isfield(model,<span class="string">'metCharges'</span>)
-0259     model=rmfield(model,<span class="string">'metCharges'</span>);
-0260 <span class="keyword">end</span>
-0261 model.metCharges=NaN(numel(model.mets),1);
-0262 
-0263 <span class="keyword">if</span> ~isfield(model,<span class="string">'inchis'</span>)
-0264     model=rmfield(model,<span class="string">'inchis'</span>);
-0265 <span class="keyword">end</span>
-0266 model.inchis=cell(numel(model.mets),1);
-0267 model.inchis(:)={<span class="string">''</span>};
-0268 
-0269 <span class="keyword">if</span> ~isfield(model,<span class="string">'metMiriams'</span>)
-0270     model=rmfield(model,<span class="string">'metMiriams'</span>);
-0271 <span class="keyword">end</span>
-0272 model.metMiriams=cell(numel(model.mets),1);
-0273 model.metMiriams(:)={<span class="string">''</span>};
-0274 
-0275 keggMets=getMetsFromKEGG();
-0276 <span class="keyword">for</span> i=1:numel(model.mets)
-0277     [a, b]=ismember(model.mets{i},metaCycMets.mets);
-0278     <span class="keyword">if</span> a
-0279         <span class="comment">%Replace the met related info</span>
-0280         model.mets{i}=metaCycMets.mets{b};
-0281         model.metNames{i}=metaCycMets.metNames{b};
-0282         model.metFormulas{i}=metaCycMets.metFormulas{b};
-0283         model.metMiriams{i}=metaCycMets.metMiriams{b};
-0284         model.inchis{i}=metaCycMets.inchis{b};
-0285         model.metCharges(i,1)=metaCycMets.metCharges(b,1);
-0286         num=num+1;
-0287     <span class="keyword">else</span>
-0288         [c, d]=ismember(model.mets{i},keggMets.mets);
-0289         <span class="keyword">if</span> c
-0290             model.mets{i}=keggMets.mets{d};
-0291             model.metNames{i}=keggMets.metNames{d};
-0292             model.metFormulas{i}=keggMets.metFormulas{d};
-0293             model.metMiriams{i}=keggMets.metMiriams{d};
-0294             model.inchis{i}=keggMets.inchis{d};
-0295             num=num+1;
-0296         <span class="keyword">end</span>
-0297     <span class="keyword">end</span>
-0298     
-0299 <span class="keyword">end</span>
-0300 
-0301 <span class="comment">%It could also be that the metabolite and reaction names are empty for some</span>
-0302 <span class="comment">%reasons. In that case, use the ID instead</span>
-0303 I=cellfun(@isempty,model.metNames);
-0304 model.metNames(I)=model.mets(I);
-0305 
-0306 <span class="comment">%Add confidenceScores to model in a rough way</span>
-0307 <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
-0308     model=rmfield(model,<span class="string">'rxnConfidenceScores'</span>);
-0309 <span class="keyword">end</span>
-0310 model.rxnConfidenceScores=NaN(numel(model.rxns),1);
-0311 model.rxnConfidenceScores(:)=2;
-0312 
-0313 <span class="comment">%Put all metabolites in one compartment called 's' (for system). This is</span>
-0314 <span class="comment">%done just to be more compatible with the rest of the code</span>
-0315 model.comps={<span class="string">'s'</span>};
-0316 model.compNames={<span class="string">'System'</span>};
-0317 model.metComps=ones(numel(model.mets),1);
-0318 model.b=zeros(numel(model.mets),1);
+0204 <span class="comment">%Add the pure KEGG reactions to MetaCyc model</span>
+0205 rxnFrom=cell(numel(pureKeggModel.rxns),1);
+0206 rxnFrom(:)={<span class="string">'KEGG'</span>};
+0207 model.rxnFrom=[model.rxnFrom;rxnFrom];
+0208 model.rxns=[model.rxns;pureKeggModel.rxns];
+0209 model.equations=[model.equations;equationStrings];
+0210 model.rxnNames=[model.rxnNames;pureKeggModel.rxnNames];
+0211 model.eccodes=[model.eccodes;pureKeggModel.eccodes];
+0212 model.subSystems=[model.subSystems;pureKeggModel.subSystems];
+0213 model.rxnMiriams=[model.rxnMiriams;pureKeggModel.rxnMiriams];
+0214 model.rev=[model.rev;pureKeggModel.rev];
+0215 model.lb=[model.lb;pureKeggModel.lb];
+0216 model.ub=[model.ub;pureKeggModel.ub];
+0217 model.c=[model.c;pureKeggModel.c];
+0218 model.grRules=[model.grRules;pureKeggModel.grRules];
+0219 rxnFields=cell(numel(pureKeggModel.rxns),1);
+0220 rxnFields(:)={<span class="string">''</span>};
+0221 model.grRulesKEGG=[model.grRulesKEGG;rxnFields];
+0222 model.rxnReferences=[model.rxnReferences;rxnFields];
+0223 <span class="comment">%model.rxnNotes=[model.rxnNotes;rxnFields];</span>
+0224 
+0225 <span class="comment">%It could also be that the metabolite and reaction names are empty for some</span>
+0226 <span class="comment">%reasons. In that case, use the ID instead</span>
+0227 <span class="comment">%I=cellfun(@isempty,model.metNames); model.metNames(I)=model.mets(I);</span>
+0228 I=cellfun(@isempty,model.rxnNames);
+0229 model.rxnNames(I)=model.rxns(I);
+0230 
+0231 <span class="comment">%Generate S matrix and mets</span>
+0232 [S, mets, ~]=constructS(model.equations);
+0233 model.S=S;
+0234 model.mets=mets;
+0235 
+0236 <span class="comment">%Remap metabolite information</span>
+0237 <span class="keyword">if</span> isfield(model,<span class="string">'metFrom'</span>)
+0238     model=rmfield(model,<span class="string">'metFrom'</span>);
+0239 <span class="keyword">end</span>
+0240 model.metFrom=cell(numel(model.mets),1);
+0241 model.metFrom(:)={<span class="string">''</span>};
+0242 
+0243 <span class="keyword">if</span> isfield(model,<span class="string">'metNames'</span>)
+0244     model=rmfield(model,<span class="string">'metNames'</span>);
+0245 <span class="keyword">end</span>
+0246 model.metNames=cell(numel(model.mets),1);
+0247 model.metNames(:)={<span class="string">''</span>};
+0248 
+0249 <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
+0250     model=rmfield(model,<span class="string">'metFormulas'</span>);
+0251 <span class="keyword">end</span>
+0252 model.metFormulas=cell(numel(model.mets),1);
+0253 model.metFormulas(:)={<span class="string">''</span>};
+0254 
+0255 <span class="keyword">if</span> ~isfield(model,<span class="string">'metCharges'</span>)
+0256     model=rmfield(model,<span class="string">'metCharges'</span>);
+0257 <span class="keyword">end</span>
+0258 model.metCharges=NaN(numel(model.mets),1);
+0259 
+0260 <span class="keyword">if</span> ~isfield(model,<span class="string">'inchis'</span>)
+0261     model=rmfield(model,<span class="string">'inchis'</span>);
+0262 <span class="keyword">end</span>
+0263 model.inchis=cell(numel(model.mets),1);
+0264 model.inchis(:)={<span class="string">''</span>};
+0265 
+0266 <span class="keyword">if</span> ~isfield(model,<span class="string">'metMiriams'</span>)
+0267     model=rmfield(model,<span class="string">'metMiriams'</span>);
+0268 <span class="keyword">end</span>
+0269 model.metMiriams=cell(numel(model.mets),1);
+0270 model.metMiriams(:)={<span class="string">''</span>};
+0271 
+0272 keggMets=getMetsFromKEGG();
+0273 <span class="keyword">for</span> i=1:numel(model.mets)
+0274     [a, b]=ismember(model.mets{i},metaCycMets.mets);
+0275     <span class="keyword">if</span> a
+0276         <span class="comment">%Replace the met related info</span>
+0277         model.mets{i}=metaCycMets.mets{b};
+0278         model.metNames{i}=metaCycMets.metNames{b};
+0279         model.metFormulas{i}=metaCycMets.metFormulas{b};
+0280         model.metMiriams{i}=metaCycMets.metMiriams{b};
+0281         model.inchis{i}=metaCycMets.inchis{b};
+0282         model.metCharges(i,1)=metaCycMets.metCharges(b,1);
+0283         num=num+1;
+0284     <span class="keyword">else</span>
+0285         [c, d]=ismember(model.mets{i},keggMets.mets);
+0286         <span class="keyword">if</span> c
+0287             model.mets{i}=keggMets.mets{d};
+0288             model.metNames{i}=keggMets.metNames{d};
+0289             model.metFormulas{i}=keggMets.metFormulas{d};
+0290             model.metMiriams{i}=keggMets.metMiriams{d};
+0291             model.inchis{i}=keggMets.inchis{d};
+0292             num=num+1;
+0293         <span class="keyword">end</span>
+0294     <span class="keyword">end</span>
+0295     
+0296 <span class="keyword">end</span>
+0297 
+0298 <span class="comment">%It could also be that the metabolite and reaction names are empty for some</span>
+0299 <span class="comment">%reasons. In that case, use the ID instead</span>
+0300 I=cellfun(@isempty,model.metNames);
+0301 model.metNames(I)=model.mets(I);
+0302 
+0303 <span class="comment">%Add confidenceScores to model in a rough way</span>
+0304 <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
+0305     model=rmfield(model,<span class="string">'rxnConfidenceScores'</span>);
+0306 <span class="keyword">end</span>
+0307 model.rxnConfidenceScores=NaN(numel(model.rxns),1);
+0308 model.rxnConfidenceScores(:)=2;
+0309 
+0310 <span class="comment">%Put all metabolites in one compartment called 's' (for system). This is</span>
+0311 <span class="comment">%done just to be more compatible with the rest of the code</span>
+0312 model.comps={<span class="string">'s'</span>};
+0313 model.compNames={<span class="string">'System'</span>};
+0314 model.metComps=ones(numel(model.mets),1);
+0315 model.b=zeros(numel(model.mets),1);
+0316 
+0317 <span class="comment">%Create the new rxnGene matrix, get back to this later</span>
+0318 model.rxnGeneMat=sparse(numel(model.rxns),numel(model.genes));
 0319 
-0320 <span class="comment">%Create the new rxnGene matrix, get back to this later</span>
-0321 model.rxnGeneMat=sparse(numel(model.rxns),numel(model.genes));
-0322 
-0323 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 03-Jun-2020 13:07:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0320 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Fri 20-Nov-2020 22:58:53 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

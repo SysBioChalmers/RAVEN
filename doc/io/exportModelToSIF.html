@@ -41,9 +41,7 @@
    metLabels     cell array with labels for metabolites (opt, default
                  model.mets)
 
-   Usage: exportModelToSIF(model,fileName,graphType,rxnLabels,metLabels)
-
-   Rasmus Agren, 2014-01-08</pre></div>
+   Usage: exportModelToSIF(model,fileName,graphType,rxnLabels,metLabels)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -74,80 +72,77 @@ This function is called by:
 0014 <span class="comment">%                 model.mets)</span>
 0015 <span class="comment">%</span>
 0016 <span class="comment">%   Usage: exportModelToSIF(model,fileName,graphType,rxnLabels,metLabels)</span>
-0017 <span class="comment">%</span>
-0018 <span class="comment">%   Rasmus Agren, 2014-01-08</span>
-0019 <span class="comment">%</span>
-0020 
-0021 <span class="keyword">if</span> nargin&lt;3
-0022     graphType=<span class="string">'rc'</span>;
-0023 <span class="keyword">end</span>
-0024 
-0025 <span class="keyword">if</span> nargin&lt;4
-0026     rxnLabels=model.rxns;
+0017 
+0018 <span class="keyword">if</span> nargin&lt;3
+0019     graphType=<span class="string">'rc'</span>;
+0020 <span class="keyword">end</span>
+0021 
+0022 <span class="keyword">if</span> nargin&lt;4
+0023     rxnLabels=model.rxns;
+0024 <span class="keyword">end</span>
+0025 <span class="keyword">if</span> nargin&lt;5
+0026     metLabels=model.mets;
 0027 <span class="keyword">end</span>
-0028 <span class="keyword">if</span> nargin&lt;5
-0029     metLabels=model.mets;
+0028 <span class="keyword">if</span> isempty(rxnLabels)
+0029     rxnLabels=model.rxns;
 0030 <span class="keyword">end</span>
-0031 <span class="keyword">if</span> isempty(rxnLabels)
-0032     rxnLabels=model.rxns;
+0031 <span class="keyword">if</span> isempty(metLabels)
+0032     metLabels=model.mets;
 0033 <span class="keyword">end</span>
-0034 <span class="keyword">if</span> isempty(metLabels)
-0035     metLabels=model.mets;
-0036 <span class="keyword">end</span>
-0037 
-0038 <span class="keyword">if</span> ~strcmpi(graphType,<span class="string">'rc'</span>) &amp;&amp; ~strcmpi(graphType,<span class="string">'rr'</span>) &amp;&amp; ~strcmpi(graphType,<span class="string">'cc'</span>)
-0039     EM=<span class="string">'The graph type is incorrect'</span>;
-0040     dispEM(EM);
-0041 <span class="keyword">end</span>
-0042 
-0043 <span class="keyword">if</span> numel(rxnLabels)~=numel(unique(rxnLabels))
-0044     EM=<span class="string">'Not all reaction labels are unique'</span>;
-0045     dispEM(EM,false);
-0046 <span class="keyword">end</span>
-0047 <span class="keyword">if</span> numel(metLabels)~=numel(unique(metLabels))
-0048     EM=<span class="string">'Not all metabolite labels are unique'</span>;
-0049     dispEM(EM,false);
-0050 <span class="keyword">end</span>
-0051 
-0052 <span class="keyword">if</span> strcmpi(graphType,<span class="string">'rc'</span>)
-0053     G=model.S;
-0054     A=rxnLabels;
-0055     B=metLabels;
-0056 <span class="keyword">end</span>
-0057 <span class="keyword">if</span> strcmpi(graphType,<span class="string">'rr'</span>)
-0058     G=model.S'*model.S;
-0059     A=rxnLabels;
-0060     B=rxnLabels;
-0061 <span class="keyword">end</span>
-0062 <span class="keyword">if</span> strcmpi(graphType,<span class="string">'cc'</span>)
-0063     <span class="comment">%A metabolite is linked to all products of the reactions that it</span>
-0064     <span class="comment">%participates in If G=model.S*model.S' then all connections will be</span>
-0065     <span class="comment">%double, which looks weird</span>
-0066     irrevModel=convertToIrrev(model);
-0067     G=sparse(numel(model.mets),numel(model.mets));
-0068     <span class="keyword">for</span> i=1:numel(model.mets)
-0069         I=irrevModel.S(i,:)&lt;0; <span class="comment">%Get the reactions in which it is a substrate</span>
-0070         [J, ~]=find(irrevModel.S(:,I)&gt;0);
-0071         G(J,i)=1;
-0072     <span class="keyword">end</span>
-0073     A=metLabels;
-0074     B=metLabels;
-0075 <span class="keyword">end</span>
-0076 
-0077 fid=fopen(fileName,<span class="string">'w'</span>);
-0078 
-0079 <span class="keyword">for</span> i=1:size(G,2)
-0080     I=G(:,i)~=0;
-0081     nodes=setdiff(B(I),A(i)); <span class="comment">%Don't include connection to itself</span>
-0082     <span class="keyword">if</span> ~isempty(nodes)
-0083         nNodes=numel(nodes);
-0084         nodes(1:nNodes-1)=strcat(nodes(1:nNodes-1),{<span class="string">'\t'</span>});
-0085         fullString=[nodes{:}];
-0086         fprintf(fid,[A{i} <span class="string">'\t'</span> graphType <span class="string">'\t'</span> fullString <span class="string">'\n'</span>]);
-0087     <span class="keyword">end</span>
-0088 <span class="keyword">end</span>
-0089 fclose(fid);
-0090 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 03-Jun-2020 13:07:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0034 
+0035 <span class="keyword">if</span> ~strcmpi(graphType,<span class="string">'rc'</span>) &amp;&amp; ~strcmpi(graphType,<span class="string">'rr'</span>) &amp;&amp; ~strcmpi(graphType,<span class="string">'cc'</span>)
+0036     EM=<span class="string">'The graph type is incorrect'</span>;
+0037     dispEM(EM);
+0038 <span class="keyword">end</span>
+0039 
+0040 <span class="keyword">if</span> numel(rxnLabels)~=numel(unique(rxnLabels))
+0041     EM=<span class="string">'Not all reaction labels are unique'</span>;
+0042     dispEM(EM,false);
+0043 <span class="keyword">end</span>
+0044 <span class="keyword">if</span> numel(metLabels)~=numel(unique(metLabels))
+0045     EM=<span class="string">'Not all metabolite labels are unique'</span>;
+0046     dispEM(EM,false);
+0047 <span class="keyword">end</span>
+0048 
+0049 <span class="keyword">if</span> strcmpi(graphType,<span class="string">'rc'</span>)
+0050     G=model.S;
+0051     A=rxnLabels;
+0052     B=metLabels;
+0053 <span class="keyword">end</span>
+0054 <span class="keyword">if</span> strcmpi(graphType,<span class="string">'rr'</span>)
+0055     G=model.S'*model.S;
+0056     A=rxnLabels;
+0057     B=rxnLabels;
+0058 <span class="keyword">end</span>
+0059 <span class="keyword">if</span> strcmpi(graphType,<span class="string">'cc'</span>)
+0060     <span class="comment">%A metabolite is linked to all products of the reactions that it</span>
+0061     <span class="comment">%participates in If G=model.S*model.S' then all connections will be</span>
+0062     <span class="comment">%double, which looks weird</span>
+0063     irrevModel=convertToIrrev(model);
+0064     G=sparse(numel(model.mets),numel(model.mets));
+0065     <span class="keyword">for</span> i=1:numel(model.mets)
+0066         I=irrevModel.S(i,:)&lt;0; <span class="comment">%Get the reactions in which it is a substrate</span>
+0067         [J, ~]=find(irrevModel.S(:,I)&gt;0);
+0068         G(J,i)=1;
+0069     <span class="keyword">end</span>
+0070     A=metLabels;
+0071     B=metLabels;
+0072 <span class="keyword">end</span>
+0073 
+0074 fid=fopen(fileName,<span class="string">'w'</span>);
+0075 
+0076 <span class="keyword">for</span> i=1:size(G,2)
+0077     I=G(:,i)~=0;
+0078     nodes=setdiff(B(I),A(i)); <span class="comment">%Don't include connection to itself</span>
+0079     <span class="keyword">if</span> ~isempty(nodes)
+0080         nNodes=numel(nodes);
+0081         nodes(1:nNodes-1)=strcat(nodes(1:nNodes-1),{<span class="string">'\t'</span>});
+0082         fullString=[nodes{:}];
+0083         fprintf(fid,[A{i} <span class="string">'\t'</span> graphType <span class="string">'\t'</span> fullString <span class="string">'\n'</span>]);
+0084     <span class="keyword">end</span>
+0085 <span class="keyword">end</span>
+0086 fclose(fid);
+0087 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Fri 20-Nov-2020 22:58:53 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
