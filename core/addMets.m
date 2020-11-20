@@ -69,19 +69,21 @@ if ~isfield(metsToAdd,'mets')
     metsToAdd.mets=generateNewIds(newModel,'mets',prefix,numel(metsToAdd.metNames));
 end
 if ~isfield(metsToAdd,'metNames')
-    EM='metNames is a required field in metsToAdd';
-    dispEM(EM);
+    metsToAdd.metNames=metsToAdd.mets;
 end
 if ~isfield(metsToAdd,'compartments')
     EM='compartments is a required field in metsToAdd';
     dispEM(EM);
 end
-
-if ~iscellstr(metsToAdd.mets)
+if ischar(metsToAdd.mets)
+    metsToAdd.mets={metsToAdd.mets};
+elseif ~iscellstr(metsToAdd.mets)
     EM='metsToAdd.mets must be a cell array of strings';
     dispEM(EM);
 end
-if ~iscellstr(metsToAdd.metNames)
+if ischar(metsToAdd.metNames)
+    metsToAdd.metNames={metsToAdd.metNames};
+elseif ~iscellstr(metsToAdd.metNames)
     EM='metsToAdd.metNames must be a cell array of strings';
     dispEM(EM);
 end

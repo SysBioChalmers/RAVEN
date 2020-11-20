@@ -8,7 +8,7 @@ function indexes=getIndexes(model, objects, type, returnLogical)
 %                   same number of elements as metabolites in the model,
 %                   of a vector of indexes
 %   type            'rxns', 'mets', or 'genes' depending on what to retrieve
-%                   'metnames' queries metabolite names, while 'metscomps'
+%                   'metnames' queries metabolite names, while 'metcomps'
 %                   allows to provide specific metabolites and their
 %                   compartments in the format metaboliteName[comp]
 %   returnLogical   Sets whether to return a logical array or an array with
@@ -32,42 +32,43 @@ end
 
 indexes=[];
 
-if strcmpi(type,'rxns')
-    searchIn=model.rxns;
-elseif strcmpi(type,'mets')
-    searchIn=model.mets;
-elseif strcmpi(type,'genes')
-    searchIn=model.genes;
-elseif strcmpi(type,'metnames')
-    searchIn=model.metNames;
-elseif strcmpi(type,'metscomps')
-    % If provided as metaboliteName[comp], then index search is quite
-    % different from general approach, and therefore coded separately.
-    if isstr(objects)
-        objects={objects};
-    end
-    mets=regexprep(objects,'(^.+)\[(.+)\]$','$1');
-    comps=regexprep(objects,'(^.+)\[(.+)\]$','$2');
-    for i=1:numel(objects)
-        index=find(strcmp(mets(i),model.metNames));
-        index=index(strcmp(comps(i),model.comps(model.metComps(index))));
-        if ~isempty(index)
-            indexes(i)=index;
-        else
-            EM=['Could not find object ' objects{i} ' in the model'];
-            dispEM(EM);
+switch type
+    case 'rxns'
+        searchIn=model.rxns;
+    case 'mets'
+        searchIn=model.mets;
+    case 'genes'
+        searchIn=model.genes;
+    case 'metnames'
+        searchIn=model.metNames;
+    case 'metcomps'
+        % If provided as metaboliteName[comp], then index search is quite
+        % different from general approach, and therefore coded separately.
+        mets=regexprep(objects,'(^.+)\[(.+)\]$','$1');
+        comps=regexprep(objects,'(^.+)\[(.+)\]$','$2');
+        indexes=zeros(1,numel(objects));
+        for i=1:numel(objects)
+            index=find(strcmp(mets(i),model.metNames));
+            index=index(strcmp(comps(i),model.comps(model.metComps(index))));
+            if ~isempty(index)
+                indexes(i)=index;
+            else
+                error(['Could not find object ' objects{i} ' in the model']);
+            end
         end
-    end
-    indexes=indexes(:);
-    if returnLogical==true
-        tempIndexes=false(numel(model.mets),1);
-        tempIndexes(indexes)=true;
-        indexes=tempIndexes;
-    end
-    return; % If metscomps is queried, remaining codes doesn't need executing
-else
-    EM='Incorrect value of the "type" parameter. Allowed values are "rxns", "mets" or "genes"';
-    dispEM(EM);
+        indexes=indexes(:);
+        if returnLogical==true
+            tempIndexes=false(numel(model.mets),1);
+            tempIndexes(indexes)=true;
+            indexes=tempIndexes;
+        end
+        return %None of the remaining function needs to run if metcomps
+    otherwise
+        if contains(objects,{'rxns','mets','metnames','metcomps','genes'})
+            error('The second and third parameter provided to run getIndexes are likely switched. Note that the second parameter is the object to find the index for, while the third parameter is the object type (''rxns'', ''mets'', ''metnames'', ''metcomps'' or ''genes'').')
+        else
+            error('Incorrect value of the ''type'' parameter. Allowed values are ''rxns'', ''mets'', ''metnames'', ''metcomps'' or ''genes''.');
+        end
 end
 
 if iscell(objects)
@@ -78,8 +79,7 @@ if iscell(objects)
         elseif ~isempty(index)
             indexes(i)=index;
         else
-            EM=['Could not find object ' objects{i} ' in the model'];
-            dispEM(EM);
+            error(['Could not find object ' objects{i} ' in the model']);
         end
     end
 else
