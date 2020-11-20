@@ -44,9 +44,7 @@
    fluxB         the resulting flux distribution in the reference model
    flag          1 if the optimization terminated successfully
 
-   Usage: [fluxA,fluxB, flag]=qMOMA(modelA,modelB,fluxMinWeight)
-
-   Rasmus Agren, 2014-01-08</pre></div>
+   Usage: [fluxA,fluxB, flag]=qMOMA(modelA,modelB,fluxMinWeight)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -80,76 +78,73 @@ This function is called by:
 0017 <span class="comment">%   flag          1 if the optimization terminated successfully</span>
 0018 <span class="comment">%</span>
 0019 <span class="comment">%   Usage: [fluxA,fluxB, flag]=qMOMA(modelA,modelB,fluxMinWeight)</span>
-0020 <span class="comment">%</span>
-0021 <span class="comment">%   Rasmus Agren, 2014-01-08</span>
-0022 <span class="comment">%</span>
-0023 
-0024 <span class="keyword">if</span> nargin&lt;3
-0025     fluxMinWeight=1;
-0026 <span class="keyword">end</span>
-0027 
-0028 <span class="comment">%Match the reactions and metabolites in the small model (modelA) to the</span>
-0029 <span class="comment">%larger model</span>
-0030 [rxnExists,mapRxns]=ismember(modelA.rxns,modelB.rxns);
-0031 
-0032 <span class="comment">%Check that the smaller model is a subset of the larger one</span>
-0033 <span class="keyword">if</span> any(~rxnExists)
-0034     dispEM(<span class="string">'All reactions in the test model must exist in the reference model'</span>);
-0035 <span class="keyword">end</span>
-0036 
-0037 <span class="comment">%In order to make the calculations a little easier to formulate I reshape</span>
-0038 <span class="comment">%modelA.S so that it is the same dimension as modelB.S</span>
-0039 S=modelA.S;
-0040 lb=modelA.lb;
-0041 ub=modelA.ub;
-0042 c=modelA.c;
-0043 modelA.S=sparse(numel(modelA.mets),numel(modelB.rxns));
-0044 modelA.lb=zeros(numel(modelB.rxns),1);
-0045 modelA.ub=modelA.lb;
-0046 modelA.c=modelA.lb;
-0047 modelA.S(:,mapRxns)=S;
-0048 modelA.lb(mapRxns)=lb;
-0049 modelA.ub(mapRxns)=ub;
-0050 modelA.c(mapRxns)=c;
+0020 
+0021 <span class="keyword">if</span> nargin&lt;3
+0022     fluxMinWeight=1;
+0023 <span class="keyword">end</span>
+0024 
+0025 <span class="comment">%Match the reactions and metabolites in the small model (modelA) to the</span>
+0026 <span class="comment">%larger model</span>
+0027 [rxnExists,mapRxns]=ismember(modelA.rxns,modelB.rxns);
+0028 
+0029 <span class="comment">%Check that the smaller model is a subset of the larger one</span>
+0030 <span class="keyword">if</span> any(~rxnExists)
+0031     dispEM(<span class="string">'All reactions in the test model must exist in the reference model'</span>);
+0032 <span class="keyword">end</span>
+0033 
+0034 <span class="comment">%In order to make the calculations a little easier to formulate I reshape</span>
+0035 <span class="comment">%modelA.S so that it is the same dimension as modelB.S</span>
+0036 S=modelA.S;
+0037 lb=modelA.lb;
+0038 ub=modelA.ub;
+0039 c=modelA.c;
+0040 modelA.S=sparse(numel(modelA.mets),numel(modelB.rxns));
+0041 modelA.lb=zeros(numel(modelB.rxns),1);
+0042 modelA.ub=modelA.lb;
+0043 modelA.c=modelA.lb;
+0044 modelA.S(:,mapRxns)=S;
+0045 modelA.lb(mapRxns)=lb;
+0046 modelA.ub(mapRxns)=ub;
+0047 modelA.c(mapRxns)=c;
+0048 
+0049 <span class="comment">%Create the H matrix for the quadratic problem. Note that there are no</span>
+0050 <span class="comment">%linear terms in the equation</span>
 0051 
-0052 <span class="comment">%Create the H matrix for the quadratic problem. Note that there are no</span>
-0053 <span class="comment">%linear terms in the equation</span>
+0052 <span class="comment">%Equation to solve is:(xA1 - xB1)^2 + (xA2 - xB2)^2 ....</span>
+0053 <span class="comment">%Is equal to xA1^2 - xA1*xB1 - xB1*xA1 + xB1^2 + xA2^2 - xA2*xB2 - xB2*xA2 + xB2^2...</span>
 0054 
-0055 <span class="comment">%Equation to solve is:(xA1 - xB1)^2 + (xA2 - xB2)^2 ....</span>
-0056 <span class="comment">%Is equal to xA1^2 - xA1*xB1 - xB1*xA1 + xB1^2 + xA2^2 - xA2*xB2 - xB2*xA2 + xB2^2...</span>
+0055 <span class="comment">%For three fluxes this would give the following H matrix (first three rows</span>
+0056 <span class="comment">%for A and last three rows for B)</span>
 0057 
-0058 <span class="comment">%For three fluxes this would give the following H matrix (first three rows</span>
-0059 <span class="comment">%for A and last three rows for B)</span>
-0060 
-0061 <span class="comment">%   A1 A2 A3 B1 B2 B3</span>
-0062 <span class="comment">%A1 1  0  0  -1  0  0</span>
-0063 <span class="comment">%A2 0  1  0  0  -1  0</span>
-0064 <span class="comment">%A3 0  0  1  0  0  -1</span>
-0065 <span class="comment">%B1 -1  0  0  1  0  0</span>
-0066 <span class="comment">%B2 0  -1  0  0  1  0</span>
-0067 <span class="comment">%B3 0  0  -1  0  0  1</span>
-0068 
-0069 <span class="comment">%Create stoichiometric matrix and bounds that contain both models</span>
-0070 fullS=[modelA.S sparse(size(modelA.S,1),size(modelA.S,2));sparse(size(modelB.S,1),size(modelB.S,2)) modelB.S];
-0071 fullLB=[modelA.lb;modelB.lb];
-0072 fullUB=[modelA.ub;modelB.ub];
-0073 fullB=zeros(size(modelA.S,1)+size(modelB.S,1),1);
-0074 
-0075 H=[eye(size(fullS,2)/2)*fluxMinWeight eye(size(fullS,2)/2)*-1;eye(size(fullS,2)/2)*-1 eye(size(fullS,2)/2)*fluxMinWeight];
-0076 
-0077 x=quadprog(H,zeros(size(H,1),1),[],[],fullS,fullB,fullLB,fullUB);
-0078 
-0079 <span class="keyword">if</span> any(x)
-0080     fluxA=x(1:numel(modelB.rxns));
-0081     fluxA=fluxA(mapRxns);
-0082     fluxB=x(numel(modelB.rxns)+1:end);
-0083     flag=1; <span class="comment">%Since it never converges good enough</span>
-0084 <span class="keyword">else</span>
-0085     fluxA=zeros(numel(modelA.rxns),1); <span class="comment">%Still the old number</span>
-0086     fluxB=zeros(numel(modelB.rxns),1);
-0087     flag=-1;
-0088 <span class="keyword">end</span>
-0089 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 03-Jun-2020 13:07:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0058 <span class="comment">%   A1 A2 A3 B1 B2 B3</span>
+0059 <span class="comment">%A1 1  0  0  -1  0  0</span>
+0060 <span class="comment">%A2 0  1  0  0  -1  0</span>
+0061 <span class="comment">%A3 0  0  1  0  0  -1</span>
+0062 <span class="comment">%B1 -1  0  0  1  0  0</span>
+0063 <span class="comment">%B2 0  -1  0  0  1  0</span>
+0064 <span class="comment">%B3 0  0  -1  0  0  1</span>
+0065 
+0066 <span class="comment">%Create stoichiometric matrix and bounds that contain both models</span>
+0067 fullS=[modelA.S sparse(size(modelA.S,1),size(modelA.S,2));sparse(size(modelB.S,1),size(modelB.S,2)) modelB.S];
+0068 fullLB=[modelA.lb;modelB.lb];
+0069 fullUB=[modelA.ub;modelB.ub];
+0070 fullB=zeros(size(modelA.S,1)+size(modelB.S,1),1);
+0071 
+0072 H=[eye(size(fullS,2)/2)*fluxMinWeight eye(size(fullS,2)/2)*-1;eye(size(fullS,2)/2)*-1 eye(size(fullS,2)/2)*fluxMinWeight];
+0073 
+0074 x=quadprog(H,zeros(size(H,1),1),[],[],fullS,fullB,fullLB,fullUB);
+0075 
+0076 <span class="keyword">if</span> any(x)
+0077     fluxA=x(1:numel(modelB.rxns));
+0078     fluxA=fluxA(mapRxns);
+0079     fluxB=x(numel(modelB.rxns)+1:end);
+0080     flag=1; <span class="comment">%Since it never converges good enough</span>
+0081 <span class="keyword">else</span>
+0082     fluxA=zeros(numel(modelA.rxns),1); <span class="comment">%Still the old number</span>
+0083     fluxB=zeros(numel(modelB.rxns),1);
+0084     flag=-1;
+0085 <span class="keyword">end</span>
+0086 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Fri 20-Nov-2020 22:58:53 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

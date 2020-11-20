@@ -47,9 +47,7 @@
    modification pipeline it is recommended to run this function just
    at the beginning of the process.
 
-   Usage: [grRules,rxnGeneMat,indexes2check]=standardizeGrRules(model,embedded)
-
-   Ivan Domenzain, 2018-05-04</pre></div>
+   Usage: [grRules,rxnGeneMat,indexes2check]=standardizeGrRules(model,embedded)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -58,7 +56,7 @@ This function calls:
 <li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="addRxns.html" class="code" title="function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allowNewGenes)">addRxns</a>	addRxns</li><li><a href="changeGeneAssoc.html" class="code" title="function model = changeGeneAssoc(model,rxnID,geneAssoc,replace)">changeGeneAssoc</a>	changeGeneAssoc</li><li><a href="changeGrRules.html" class="code" title="function model = changeGrRules(model,rxns,grRules,replace)">changeGrRules</a>	changeGrRules</li><li><a href="contractModel.html" class="code" title="function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse)">contractModel</a>	contractModel</li><li><a href="expandModel.html" class="code" title="function newModel=expandModel(model)">expandModel</a>	expandModel</li><li><a href="getModelFromHomology.html" class="code" title="function draftModel=getModelFromHomology(models,blastStructure,getModelFor,preferredOrder,strictness,onlyGenesInModels,maxE,minLen,minIde,mapNewGenesToOld)">getModelFromHomology</a>	getModelFromHomology</li><li><a href="mergeModels.html" class="code" title="function model=mergeModels(models,metParam,supressWarnings)">mergeModels</a>	mergeModels</li><li><a href="predictLocalization.html" class="code" title="function [outModel, geneLocalization, transportStruct, scores,removedRxns] = predictLocalization(model, GSS,defaultCompartment, transportCost, maxTime, plotResults)">predictLocalization</a>	predictLocalization</li><li><a href="removeGenes.html" class="code" title="function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)">removeGenes</a>	removeGenes</li></ul>
+<li><a href="addRxns.html" class="code" title="function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allowNewGenes)">addRxns</a>	addRxns</li><li><a href="changeGeneAssoc.html" class="code" title="function model = changeGeneAssoc(model,rxnID,geneAssoc,replace)">changeGeneAssoc</a>	changeGeneAssoc</li><li><a href="changeGrRules.html" class="code" title="function model = changeGrRules(model,rxns,grRules,replace)">changeGrRules</a>	changeGrRules</li><li><a href="contractModel.html" class="code" title="function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse)">contractModel</a>	contractModel</li><li><a href="expandModel.html" class="code" title="function newModel=expandModel(model)">expandModel</a>	expandModel</li><li><a href="getModelFromHomology.html" class="code" title="function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,getModelFor,preferredOrder,strictness,onlyGenesInModels,maxE,minLen,minIde,mapNewGenesToOld)">getModelFromHomology</a>	getModelFromHomology</li><li><a href="mergeModels.html" class="code" title="function model=mergeModels(models,metParam,supressWarnings)">mergeModels</a>	mergeModels</li><li><a href="predictLocalization.html" class="code" title="function [outModel, geneLocalization, transportStruct, scores,removedRxns] = predictLocalization(model, GSS,defaultCompartment, transportCost, maxTime, plotResults)">predictLocalization</a>	predictLocalization</li><li><a href="removeGenes.html" class="code" title="function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)">removeGenes</a>	removeGenes</li></ul>
 <!-- crossreference -->
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -88,155 +86,152 @@ This function is called by:
 0020 <span class="comment">%   at the beginning of the process.</span>
 0021 <span class="comment">%</span>
 0022 <span class="comment">%   Usage: [grRules,rxnGeneMat,indexes2check]=standardizeGrRules(model,embedded)</span>
-0023 <span class="comment">%</span>
-0024 <span class="comment">%   Ivan Domenzain, 2018-05-04</span>
-0025 <span class="comment">%</span>
-0026 
-0027 <span class="comment">%Preallocate fields</span>
-0028 n          = length(model.rxns);
-0029 [g,~]      = size(model.genes);
-0030 rxnGeneMat = sparse(n,g);
-0031 grRules    = cell(n,1);
-0032 genes      = model.genes;
-0033 <span class="keyword">if</span> nargin&lt;2
-0034     embedded = false;
-0035 <span class="keyword">end</span>
-0036 
-0037 <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
-0038     originalGrRules=model.grRules; 
-0039     originalGrRules=<a href="#_sub4" class="code" title="subfunction grRules = grRulesPreparation(grRules)">grRulesPreparation</a>(originalGrRules);
-0040     <span class="comment">%Search for potential logical errors in the grRules field</span>
-0041     indexes2check = <a href="#_sub3" class="code" title="subfunction indexes2check = findPotentialErrors(grRules,embedded,model)">findPotentialErrors</a>(originalGrRules,embedded,model);
-0042     
-0043     <span class="keyword">for</span> i=1:length(originalGrRules)
-0044         originalSTR = originalGrRules{i};
-0045         grRules{i,:}  = originalSTR;
-0046         <span class="comment">%Non-empty grRules are splitted in all their different isoenzymes</span>
-0047         genesSets   = <a href="#_sub1" class="code" title="subfunction genesSets = getSimpleGeneSets(originalSTR)">getSimpleGeneSets</a>(originalSTR);
-0048         rxnGeneMat  = <a href="#_sub2" class="code" title="subfunction rxnGeneMat = modifyRxnGeneMat(genesSets,modelGenes,rxnGeneMat,i)">modifyRxnGeneMat</a>(genesSets,genes,rxnGeneMat,i);
-0049         <span class="comment">%standardize the non-conflicting grRules</span>
-0050         <span class="keyword">if</span> ~ismember(i,indexes2check)
-0051             newSTR = [];
-0052             <span class="keyword">if</span> ~isempty(genesSets)
-0053                 <span class="comment">%For each simple genes set in the rule</span>
-0054                 <span class="keyword">for</span> j=1:length(genesSets)
-0055                     simpleSet  = genesSets{j};
-0056                     <span class="comment">%Enclose simpleSet in brackets</span>
-0057                     <span class="keyword">if</span> length(genesSets)&gt;1
-0058                         <span class="keyword">if</span> ~isempty(strfind(simpleSet,<span class="string">' and '</span>))
-0059                             simpleSet = horzcat(<span class="string">'('</span>,simpleSet,<span class="string">')'</span>);
-0060                         <span class="keyword">end</span>
-0061                     <span class="keyword">end</span>
-0062                     <span class="comment">%Separate genesSets in the substring (in case of</span>
-0063                     <span class="comment">%isoenzymes)</span>
-0064                     <span class="keyword">if</span> j&lt;length(genesSets)
-0065                         newSTR = [newSTR, simpleSet, <span class="string">' or '</span>];
-0066                         <span class="comment">%Add the last simpleSet</span>
-0067                     <span class="keyword">else</span>
-0068                         newSTR = [newSTR, simpleSet];
-0069                     <span class="keyword">end</span>
-0070                 <span class="keyword">end</span>
-0071                 <span class="comment">%Update grRule</span>
-0072                 grRules{i} = char(newSTR);
-0073             <span class="keyword">end</span>
-0074         <span class="keyword">end</span>
-0075     <span class="keyword">end</span>
-0076 <span class="keyword">end</span>
-0077 
-0078 <span class="keyword">end</span>
-0079 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0080 <span class="comment">%Function that gets a cell array with all the simple geneSets in a given</span>
-0081 <span class="comment">%grRule string</span>
-0082 <a name="_sub1" href="#_subfunctions" class="code">function genesSets = getSimpleGeneSets(originalSTR)</a>
-0083 genesSets  = [];
-0084 <span class="comment">%If gene rule is not empty split in all its different isoenzymes</span>
-0085 <span class="keyword">if</span> ~isempty(originalSTR)
-0086     originalSTR = strtrim(originalSTR);
-0087     <span class="comment">%Remove all brackets</span>
-0088     originalSTR = strrep(originalSTR,<span class="string">'('</span>,<span class="string">''</span>);
-0089     originalSTR = strrep(originalSTR,<span class="string">')'</span>,<span class="string">''</span>);
-0090     <span class="comment">%Split all the different genesSets</span>
-0091     genesSets  = transpose(strsplit(originalSTR,<span class="string">' or '</span>));
-0092 <span class="keyword">end</span>
-0093 <span class="keyword">end</span>
-0094 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0095 <span class="comment">%Function that gets a cell array of simple genes sets (single genes or</span>
-0096 <span class="comment">%enzyme complexes) associated with the i-th reaction and modifies the</span>
-0097 <span class="comment">%correspondent row in the rxnGeneMat accordingly.</span>
-0098 <a name="_sub2" href="#_subfunctions" class="code">function rxnGeneMat = modifyRxnGeneMat(genesSets,modelGenes,rxnGeneMat,i)</a>
-0099 
-0100 <span class="keyword">if</span> ~isempty(genesSets)
-0101     <span class="keyword">for</span> j=1:length(genesSets)
-0102         simpleSet  = genesSets{j};
-0103         <span class="comment">%        rxnGeneMat = modifyRxnGeneMat(simpleSet,model.genes,rxnGeneMat,i);</span>
-0104         <span class="comment">%Get individual genes</span>
-0105         STR   = strrep(simpleSet,<span class="string">') and ('</span>,<span class="string">' and '</span>);
-0106         genes = strsplit(STR,<span class="string">' '</span>);
-0107         <span class="keyword">for</span> k=1:length(genes)
-0108             <span class="keyword">if</span> ~strcmpi(genes(k),<span class="string">' and '</span>)
-0109                 <span class="comment">%Get gene index</span>
-0110                 genePos = find(strcmpi(modelGenes,genes(k)));
-0111                 <span class="keyword">if</span> ~isempty(genePos)
-0112                     rxnGeneMat(i,genePos) = 1;
-0113                     <span class="comment">%else</span>
-0114                     <span class="comment">%In this case the gene should be added to the</span>
-0115                     <span class="comment">%genes field (and to all of its dependencies)</span>
-0116                 <span class="keyword">end</span>
-0117             <span class="keyword">end</span>
-0118         <span class="keyword">end</span>
-0119     <span class="keyword">end</span>
-0120 <span class="keyword">end</span>
-0121 <span class="keyword">end</span>
-0122 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0123 <span class="comment">%Function that gets the model field grRules and returns the indexes of the</span>
-0124 <span class="comment">%rules in which the pattern &quot;) and (&quot; is present.</span>
-0125 <a name="_sub3" href="#_subfunctions" class="code">function indexes2check = findPotentialErrors(grRules,embedded,model)</a>
-0126 indxs_l       = find(~cellfun(@isempty,strfind(grRules,<span class="string">') and ('</span>)));
-0127 indxs_l_L     = find(~cellfun(@isempty,strfind(grRules,<span class="string">') and'</span>)));
-0128 indxs_l_R     = find(~cellfun(@isempty,strfind(grRules,<span class="string">'and ('</span>)));
-0129 indexes2check = vertcat(indxs_l,indxs_l_L,indxs_l_R);
-0130 indexes2check = unique(indexes2check);
-0131 
-0132 <span class="keyword">if</span> ~isempty(indexes2check)
-0133     
-0134     <span class="keyword">if</span> embedded
-0135         EM = <span class="string">'Potentially problematic &quot;) AND (&quot; in the grRules for reaction(s): '</span>;
-0136         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.rxns(indexes2check),true)
-0137     <span class="keyword">else</span>
-0138         STR = <span class="string">'Potentially problematic &quot;) AND (&quot;, &quot;) AND&quot; or &quot;AND (&quot;relat'</span>;
-0139         STR = [STR,<span class="string">'ionships found in\n\n'</span>];
-0140         <span class="keyword">for</span> i=1:length(indexes2check)
-0141             index = indexes2check(i);
-0142             STR = [STR <span class="string">'  - grRule #'</span> model.rxns{index} <span class="string">': '</span> grRules{index} <span class="string">'\n'</span>];
-0143         <span class="keyword">end</span>
-0144         STR = [STR,<span class="string">'\n This kind of relationships should only be present '</span>];
-0145         STR = [STR,<span class="string">'in  reactions catalysed by complexes of isoenzymes e'</span>];
-0146         STR = [STR,<span class="string">'.g.\n\n  - (G1 or G2) and (G3 or G4)\n\n For these c'</span>];
-0147         STR = [STR,<span class="string">'ases modify the grRules manually, writing all the po'</span>];
-0148         STR = [STR,<span class="string">'ssible combinations e.g.\n\n  - (G1 and G3) or (G1 a'</span>];
-0149         STR = [STR,<span class="string">'nd G4) or (G2 and G3) or (G2 and G4)\n\n For other c'</span>];
-0150         STR = [STR,<span class="string">'ases modify the correspondent grRules avoiding:\n\n '</span>];
-0151         STR = [STR,<span class="string">' 1) Overall container brackets, e.g.\n        &quot;(G1 a'</span>];
-0152         STR = [STR,<span class="string">'nd G2)&quot; should be &quot;G1 and G2&quot;\n\n  2) Single unit en'</span>];
-0153         STR = [STR,<span class="string">'zymes enclosed into brackets, e.g.\n        &quot;(G1)&quot; s'</span>];
-0154         STR = [STR,<span class="string">'hould be &quot;G1&quot;\n\n  3) The use of uppercases for logi'</span>];
-0155         STR = [STR,<span class="string">'cal operators, e.g.\n        &quot;G1 OR G2&quot; should be &quot;G'</span>];
-0156         STR = [STR,<span class="string">'1 or G2&quot;\n\n  4) Unbalanced brackets, e.g.\n        '</span>];
-0157         STR = [STR,<span class="string">'&quot;((G1 and G2) or G3&quot; should be &quot;(G1 and G2) or G3&quot;\n'</span>];
-0158         warning(sprintf(STR))
-0159     <span class="keyword">end</span>
-0160 <span class="keyword">end</span>
-0161 <span class="keyword">end</span>
-0162 
-0163 <a name="_sub4" href="#_subfunctions" class="code">function grRules = grRulesPreparation(grRules)</a>
-0164 <span class="comment">%Remove unnecessary blanks</span>
-0165 grRules=strrep(grRules,<span class="string">'  '</span>,<span class="string">' '</span>);
-0166 grRules=strrep(grRules,<span class="string">'( '</span>,<span class="string">'('</span>);
-0167 grRules=strrep(grRules,<span class="string">' )'</span>,<span class="string">')'</span>);
-0168 <span class="comment">% Make sure that AND and OR strings are in lowercase</span>
-0169 grRules=strrep(grRules,<span class="string">' AND '</span>,<span class="string">' and '</span>);
-0170 grRules=strrep(grRules,<span class="string">' OR '</span>,<span class="string">' or '</span>);
-0171 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 03-Jun-2020 13:07:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0023 
+0024 <span class="comment">%Preallocate fields</span>
+0025 n          = length(model.rxns);
+0026 [g,~]      = size(model.genes);
+0027 rxnGeneMat = sparse(n,g);
+0028 grRules    = cell(n,1);
+0029 genes      = model.genes;
+0030 <span class="keyword">if</span> nargin&lt;2
+0031     embedded = false;
+0032 <span class="keyword">end</span>
+0033 
+0034 <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
+0035     originalGrRules=model.grRules; 
+0036     originalGrRules=<a href="#_sub4" class="code" title="subfunction grRules = grRulesPreparation(grRules)">grRulesPreparation</a>(originalGrRules);
+0037     <span class="comment">%Search for potential logical errors in the grRules field</span>
+0038     indexes2check = <a href="#_sub3" class="code" title="subfunction indexes2check = findPotentialErrors(grRules,embedded,model)">findPotentialErrors</a>(originalGrRules,embedded,model);
+0039     
+0040     <span class="keyword">for</span> i=1:length(originalGrRules)
+0041         originalSTR = originalGrRules{i};
+0042         grRules{i,:}  = originalSTR;
+0043         <span class="comment">%Non-empty grRules are splitted in all their different isoenzymes</span>
+0044         genesSets   = <a href="#_sub1" class="code" title="subfunction genesSets = getSimpleGeneSets(originalSTR)">getSimpleGeneSets</a>(originalSTR);
+0045         rxnGeneMat  = <a href="#_sub2" class="code" title="subfunction rxnGeneMat = modifyRxnGeneMat(genesSets,modelGenes,rxnGeneMat,i)">modifyRxnGeneMat</a>(genesSets,genes,rxnGeneMat,i);
+0046         <span class="comment">%standardize the non-conflicting grRules</span>
+0047         <span class="keyword">if</span> ~ismember(i,indexes2check)
+0048             newSTR = [];
+0049             <span class="keyword">if</span> ~isempty(genesSets)
+0050                 <span class="comment">%For each simple genes set in the rule</span>
+0051                 <span class="keyword">for</span> j=1:length(genesSets)
+0052                     simpleSet  = genesSets{j};
+0053                     <span class="comment">%Enclose simpleSet in brackets</span>
+0054                     <span class="keyword">if</span> length(genesSets)&gt;1
+0055                         <span class="keyword">if</span> ~isempty(strfind(simpleSet,<span class="string">' and '</span>))
+0056                             simpleSet = horzcat(<span class="string">'('</span>,simpleSet,<span class="string">')'</span>);
+0057                         <span class="keyword">end</span>
+0058                     <span class="keyword">end</span>
+0059                     <span class="comment">%Separate genesSets in the substring (in case of</span>
+0060                     <span class="comment">%isoenzymes)</span>
+0061                     <span class="keyword">if</span> j&lt;length(genesSets)
+0062                         newSTR = [newSTR, simpleSet, <span class="string">' or '</span>];
+0063                         <span class="comment">%Add the last simpleSet</span>
+0064                     <span class="keyword">else</span>
+0065                         newSTR = [newSTR, simpleSet];
+0066                     <span class="keyword">end</span>
+0067                 <span class="keyword">end</span>
+0068                 <span class="comment">%Update grRule</span>
+0069                 grRules{i} = char(newSTR);
+0070             <span class="keyword">end</span>
+0071         <span class="keyword">end</span>
+0072     <span class="keyword">end</span>
+0073 <span class="keyword">end</span>
+0074 
+0075 <span class="keyword">end</span>
+0076 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0077 <span class="comment">%Function that gets a cell array with all the simple geneSets in a given</span>
+0078 <span class="comment">%grRule string</span>
+0079 <a name="_sub1" href="#_subfunctions" class="code">function genesSets = getSimpleGeneSets(originalSTR)</a>
+0080 genesSets  = [];
+0081 <span class="comment">%If gene rule is not empty split in all its different isoenzymes</span>
+0082 <span class="keyword">if</span> ~isempty(originalSTR)
+0083     originalSTR = strtrim(originalSTR);
+0084     <span class="comment">%Remove all brackets</span>
+0085     originalSTR = strrep(originalSTR,<span class="string">'('</span>,<span class="string">''</span>);
+0086     originalSTR = strrep(originalSTR,<span class="string">')'</span>,<span class="string">''</span>);
+0087     <span class="comment">%Split all the different genesSets</span>
+0088     genesSets  = transpose(strsplit(originalSTR,<span class="string">' or '</span>));
+0089 <span class="keyword">end</span>
+0090 <span class="keyword">end</span>
+0091 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0092 <span class="comment">%Function that gets a cell array of simple genes sets (single genes or</span>
+0093 <span class="comment">%enzyme complexes) associated with the i-th reaction and modifies the</span>
+0094 <span class="comment">%correspondent row in the rxnGeneMat accordingly.</span>
+0095 <a name="_sub2" href="#_subfunctions" class="code">function rxnGeneMat = modifyRxnGeneMat(genesSets,modelGenes,rxnGeneMat,i)</a>
+0096 
+0097 <span class="keyword">if</span> ~isempty(genesSets)
+0098     <span class="keyword">for</span> j=1:length(genesSets)
+0099         simpleSet  = genesSets{j};
+0100         <span class="comment">%        rxnGeneMat = modifyRxnGeneMat(simpleSet,model.genes,rxnGeneMat,i);</span>
+0101         <span class="comment">%Get individual genes</span>
+0102         STR   = strrep(simpleSet,<span class="string">') and ('</span>,<span class="string">' and '</span>);
+0103         genes = strsplit(STR,<span class="string">' '</span>);
+0104         <span class="keyword">for</span> k=1:length(genes)
+0105             <span class="keyword">if</span> ~strcmpi(genes(k),<span class="string">' and '</span>)
+0106                 <span class="comment">%Get gene index</span>
+0107                 genePos = find(strcmpi(modelGenes,genes(k)));
+0108                 <span class="keyword">if</span> ~isempty(genePos)
+0109                     rxnGeneMat(i,genePos) = 1;
+0110                     <span class="comment">%else</span>
+0111                     <span class="comment">%In this case the gene should be added to the</span>
+0112                     <span class="comment">%genes field (and to all of its dependencies)</span>
+0113                 <span class="keyword">end</span>
+0114             <span class="keyword">end</span>
+0115         <span class="keyword">end</span>
+0116     <span class="keyword">end</span>
+0117 <span class="keyword">end</span>
+0118 <span class="keyword">end</span>
+0119 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0120 <span class="comment">%Function that gets the model field grRules and returns the indexes of the</span>
+0121 <span class="comment">%rules in which the pattern &quot;) and (&quot; is present.</span>
+0122 <a name="_sub3" href="#_subfunctions" class="code">function indexes2check = findPotentialErrors(grRules,embedded,model)</a>
+0123 indxs_l       = find(~cellfun(@isempty,strfind(grRules,<span class="string">') and ('</span>)));
+0124 indxs_l_L     = find(~cellfun(@isempty,strfind(grRules,<span class="string">') and'</span>)));
+0125 indxs_l_R     = find(~cellfun(@isempty,strfind(grRules,<span class="string">'and ('</span>)));
+0126 indexes2check = vertcat(indxs_l,indxs_l_L,indxs_l_R);
+0127 indexes2check = unique(indexes2check);
+0128 
+0129 <span class="keyword">if</span> ~isempty(indexes2check)
+0130     
+0131     <span class="keyword">if</span> embedded
+0132         EM = <span class="string">'Potentially problematic &quot;) AND (&quot; in the grRules for reaction(s): '</span>;
+0133         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.rxns(indexes2check),true)
+0134     <span class="keyword">else</span>
+0135         STR = <span class="string">'Potentially problematic &quot;) AND (&quot;, &quot;) AND&quot; or &quot;AND (&quot;relat'</span>;
+0136         STR = [STR,<span class="string">'ionships found in\n\n'</span>];
+0137         <span class="keyword">for</span> i=1:length(indexes2check)
+0138             index = indexes2check(i);
+0139             STR = [STR <span class="string">'  - grRule #'</span> model.rxns{index} <span class="string">': '</span> grRules{index} <span class="string">'\n'</span>];
+0140         <span class="keyword">end</span>
+0141         STR = [STR,<span class="string">'\n This kind of relationships should only be present '</span>];
+0142         STR = [STR,<span class="string">'in  reactions catalysed by complexes of isoenzymes e'</span>];
+0143         STR = [STR,<span class="string">'.g.\n\n  - (G1 or G2) and (G3 or G4)\n\n For these c'</span>];
+0144         STR = [STR,<span class="string">'ases modify the grRules manually, writing all the po'</span>];
+0145         STR = [STR,<span class="string">'ssible combinations e.g.\n\n  - (G1 and G3) or (G1 a'</span>];
+0146         STR = [STR,<span class="string">'nd G4) or (G2 and G3) or (G2 and G4)\n\n For other c'</span>];
+0147         STR = [STR,<span class="string">'ases modify the correspondent grRules avoiding:\n\n '</span>];
+0148         STR = [STR,<span class="string">' 1) Overall container brackets, e.g.\n        &quot;(G1 a'</span>];
+0149         STR = [STR,<span class="string">'nd G2)&quot; should be &quot;G1 and G2&quot;\n\n  2) Single unit en'</span>];
+0150         STR = [STR,<span class="string">'zymes enclosed into brackets, e.g.\n        &quot;(G1)&quot; s'</span>];
+0151         STR = [STR,<span class="string">'hould be &quot;G1&quot;\n\n  3) The use of uppercases for logi'</span>];
+0152         STR = [STR,<span class="string">'cal operators, e.g.\n        &quot;G1 OR G2&quot; should be &quot;G'</span>];
+0153         STR = [STR,<span class="string">'1 or G2&quot;\n\n  4) Unbalanced brackets, e.g.\n        '</span>];
+0154         STR = [STR,<span class="string">'&quot;((G1 and G2) or G3&quot; should be &quot;(G1 and G2) or G3&quot;\n'</span>];
+0155         warning(sprintf(STR))
+0156     <span class="keyword">end</span>
+0157 <span class="keyword">end</span>
+0158 <span class="keyword">end</span>
+0159 
+0160 <a name="_sub4" href="#_subfunctions" class="code">function grRules = grRulesPreparation(grRules)</a>
+0161 <span class="comment">%Remove unnecessary blanks</span>
+0162 grRules=strrep(grRules,<span class="string">'  '</span>,<span class="string">' '</span>);
+0163 grRules=strrep(grRules,<span class="string">'( '</span>,<span class="string">'('</span>);
+0164 grRules=strrep(grRules,<span class="string">' )'</span>,<span class="string">')'</span>);
+0165 <span class="comment">% Make sure that AND and OR strings are in lowercase</span>
+0166 grRules=strrep(grRules,<span class="string">' AND '</span>,<span class="string">' and '</span>);
+0167 grRules=strrep(grRules,<span class="string">' OR '</span>,<span class="string">' or '</span>);
+0168 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Fri 20-Nov-2020 22:58:53 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

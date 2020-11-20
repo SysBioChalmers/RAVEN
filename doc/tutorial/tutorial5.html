@@ -1,0 +1,240 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of tutorial5</title>
+  <meta name="keywords" content="tutorial5">
+  <meta name="description" content="tutorial5">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">tutorial</a> &gt; tutorial5.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for tutorial&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>tutorial5
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>tutorial5</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> tutorial5
+   This exercise is about creating a model from KEGG, based on protein
+   sequences in a FASTA file, and doing some functionality checks on the
+   model. The example case is for the yeast Saccharomyces cerevisiae. This
+   tutorial is more of a showcase than the previous four, and its main
+   purpose is to serve as a scaffold to reconstruct a GEM for any
+   organism.
+   This refers to Tutorial 5 from &quot;RAVEN tutorials.docx&quot;</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">% tutorial5</span>
+0002 <span class="comment">%   This exercise is about creating a model from KEGG, based on protein</span>
+0003 <span class="comment">%   sequences in a FASTA file, and doing some functionality checks on the</span>
+0004 <span class="comment">%   model. The example case is for the yeast Saccharomyces cerevisiae. This</span>
+0005 <span class="comment">%   tutorial is more of a showcase than the previous four, and its main</span>
+0006 <span class="comment">%   purpose is to serve as a scaffold to reconstruct a GEM for any</span>
+0007 <span class="comment">%   organism.</span>
+0008 <span class="comment">%   This refers to Tutorial 5 from &quot;RAVEN tutorials.docx&quot;</span>
+0009 
+0010 <span class="comment">%Start by downloading trained Hidden Markov Models for eukaryotes. This can</span>
+0011 <span class="comment">%be done automatically or manually from the RAVEN Wiki in its GitHub</span>
+0012 <span class="comment">%repository. In this tutorial, the archive &quot;euk100_kegg91&quot; is picked for</span>
+0013 <span class="comment">%the automatic download. See the documentation in the RAVEN Wiki for more</span>
+0014 <span class="comment">%information regarding preparation of such archive.</span>
+0015 
+0016 <span class="comment">%This creates a model for S. cerevisiae. The parameters are set to exclude</span>
+0017 <span class="comment">%general or unclear reactions and reactions with undefined stoichiometry.</span>
+0018 <span class="comment">%Type &quot;help getKEGGModelForOrganism&quot; to see what the different parameters</span>
+0019 <span class="comment">%are for. This process takes up to 20-35 minutes in macOS, Unix systems and</span>
+0020 <span class="comment">%40-55 minutes in Windows, depending on your hardware and the size of</span>
+0021 <span class="comment">%target organism proteome</span>
+0022 model=getKEGGModelForOrganism(<span class="string">'sce'</span>,<span class="string">'sce.fa'</span>,<span class="string">'euk100_kegg94'</span>,<span class="string">'output'</span>,false,false,false,false,10^-30,0.8,0.3,-1);
+0023 
+0024 <span class="comment">%The resulting model should contain around 1669 reactions, 1677</span>
+0025 <span class="comment">%metabolites and 838 genes. Small variations are possible since it is an</span>
+0026 <span class="comment">%heuristic algorithm and different KEGG versions will give slightly</span>
+0027 <span class="comment">%different results.</span>
+0028 disp(model);
+0029 
+0030 <span class="comment">%A first control is that the model should not be able to produce any</span>
+0031 <span class="comment">%metabolites without uptake of some metabolites. This commonly happens when</span>
+0032 <span class="comment">%metabolites have a different meaning in different reactions. The best way</span>
+0033 <span class="comment">%to find such reactions is to run makeSomething and analyze the resulting</span>
+0034 <span class="comment">%solution for bad reactions. An automated approach is to use removeBadRxns,</span>
+0035 <span class="comment">%which tries to do the same thing in an automated manner. Type</span>
+0036 <span class="comment">%&quot;help removeBadRxns&quot; for details.</span>
+0037 [newModel, removedRxns]=removeBadRxns(model);
+0038 
+0039 <span class="comment">%One can see an error about that H+ can be made even if no reactions were</span>
+0040 <span class="comment">%unbalanced. Protons are particularly problematic since it is rather</span>
+0041 <span class="comment">%arbitary at which pH the formulas are written for. For the purpose of this</span>
+0042 <span class="comment">%analysis, the protons can be ignored and fixed later.</span>
+0043 [newModel, removedRxns]=removeBadRxns(model,1,{<span class="string">'H+'</span>},true);
+0044 
+0045 <span class="comment">%Only one reaction was removed because it enabled the model to produce</span>
+0046 <span class="comment">%something from nothing. Since it is only one reaction, it might be</span>
+0047 <span class="comment">%worthwhile to look into this in more detail.</span>
+0048 disp(removedRxns);
+0049 
+0050 <span class="comment">%According to the information in KEGG about this reaction it is a general</span>
+0051 <span class="comment">%polymer reaction. One might want to look at the flux distributions</span>
+0052 <span class="comment">%in more detail to try to find out if there is any better alternative to</span>
+0053 <span class="comment">%delete. Use makeSomething to do this.</span>
+0054 [fluxes, metabolite]=makeSomething(model,{<span class="string">'H+'</span>},true);
+0055 model.metNames(metabolite)
+0056 
+0057 <span class="comment">%The model could produce H2O using the following reactions</span>
+0058 printFluxes(model, fluxes, false, [], [],<span class="string">'%rxnID (%rxnName):\n\t%eqn: %flux\n'</span>)
+0059 
+0060 <span class="comment">%That resulted in quite a lot of fluxes to look through. Maybe it is easier</span>
+0061 <span class="comment">%if the elementally balanced reactions are excluded.</span>
+0062 balanceStructure=getElementalBalance(model);
+0063 
+0064 <span class="comment">%The hydrogen balancing is a bit tricky, so this time it seems more</span>
+0065 <span class="comment">%relevant to only look at the ones unbalanced for oxygen (since water was</span>
+0066 <span class="comment">%produced)</span>
+0067 goodOnes=balanceStructure.leftComp(:,6)==balanceStructure.rightComp(:,6);
+0068 printFluxes(removeReactions(model,goodOnes), fluxes(~goodOnes), false, [], [],<span class="string">'%rxnID (%rxnName):\n\t%eqn: %flux\n'</span>);
+0069 
+0070 <span class="comment">%There is still a good number of reactions. Leave only the reactions which</span>
+0071 <span class="comment">%involve amylose or starch, from one of the problematic reactions that was</span>
+0072 <span class="comment">%identified earlier.</span>
+0073 printFluxes(model, fluxes, false, [], [],<span class="string">'%rxnID (%rxnName):\n\t%eqn: %flux\n'</span>,{<span class="string">'Amylose'</span>;<span class="string">'Starch'</span>});
+0074 
+0075 <span class="comment">%There are two elementally unbalanced reactions, including, the reaction</span>
+0076 <span class="comment">%which was identified by removeBadRxns. When looking to these reactions</span>
+0077 <span class="comment">%closer, one can notice the contradiction between the reactions. The first</span>
+0078 <span class="comment">%one shows that amylose and starch are interconvertible, while the second</span>
+0079 <span class="comment">%reaction shows that amylose contains one less glucose unit than starch.</span>
+0080 <span class="comment">%This type of general reactions are problematic and should be fixed</span>
+0081 <span class="comment">%manually. It is hereby chosen to trust removeBadRxns and delete R02110.</span>
+0082 model=removeReactions(model,<span class="string">'R02110'</span>);
+0083 
+0084 <span class="comment">%The model can no longer make something from nothing. Can it consume</span>
+0085 <span class="comment">%something without any output?</span>
+0086 [solution, metabolite]=consumeSomething(model,{<span class="string">'H+'</span>},true);
+0087 model.metNames(metabolite)
+0088 
+0089 <span class="comment">%Nope, so that was good. Add some uptakes and see what it can produce.</span>
+0090 [~, J]=ismember({<span class="string">'D-Glucose'</span>;<span class="string">'H2O'</span>;<span class="string">'Orthophosphate'</span>;<span class="string">'Oxygen'</span>;<span class="string">'NH3'</span>;<span class="string">'Sulfate'</span>},model.metNames);
+0091 [model, addedRxns]=addExchangeRxns(model,<span class="string">'in'</span>,J);
+0092 
+0093 <span class="comment">%Check which metabolites can be produced given these uptakes. The</span>
+0094 <span class="comment">%canProduce function allows for output of all metabolites. This will not</span>
+0095 <span class="comment">%happen in the real cell, but it is very useful for functionality testing</span>
+0096 <span class="comment">%of the model. Once it is functional, the excretion reactions based on</span>
+0097 <span class="comment">%evidence can be added as well.</span>
+0098 I=canProduce(model);
+0099 
+0100 fprintf(<span class="string">'%d%%\n'</span>, round(sum(I)/numel(model.mets)*100));
+0101 <span class="comment">%It seems that around 30% of the metabolites could be synthesized. It is</span>
+0102 <span class="comment">%not directly clear whether this is a high or low number, many metabolites</span>
+0103 <span class="comment">%should not be possible to synthesize from those simple precursors.</span>
+0104 
+0105 <span class="comment">%Try to fill gaps using the full KEGG model to see if that gives a</span>
+0106 <span class="comment">%significantly higher number</span>
+0107 keggModel=getModelFromKEGG([],false,false,false,false);
+0108 
+0109 <span class="comment">%The KEGG model is associated to more than 4,000,000 genes. They will not</span>
+0110 <span class="comment">%be used for the gapfilling, so they are removed to make this a little</span>
+0111 <span class="comment">%faster</span>
+0112 keggModel=rmfield(keggModel,<span class="string">'genes'</span>);
+0113 keggModel=rmfield(keggModel,<span class="string">'rxnGeneMat'</span>);
+0114 
+0115 <span class="comment">%It is already known from the previous commands that there are some</span>
+0116 <span class="comment">%unbalanced reactions in KEGG. Only use the balanced ones for the gap</span>
+0117 <span class="comment">%filling</span>
+0118 balanceStructure=getElementalBalance(keggModel);
+0119 keggModel=removeReactions(keggModel,balanceStructure.balanceStatus~=1,true,true);
+0120 
+0121 <span class="comment">%The function fillGaps with these settings will try to include reactions in</span>
+0122 <span class="comment">%order to have flux through all reactions in the model. There are other</span>
+0123 <span class="comment">%settings as well. The first flag says that production of all metabolites</span>
+0124 <span class="comment">%should be allowed.</span>
+0125 params.relGap=0.6; <span class="comment">%Lower number for a more exhaustive search</span>
+0126 params.printReport=true;
+0127 [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,keggModel,true,false,false,[],params);
+0128 
+0129 <span class="comment">%The results show that fillGaps could connect around 37 reactions</span>
+0130 <span class="comment">%(newConnected) by including around 48 reactions from the KEGG model</span>
+0131 <span class="comment">%(addedRxns). Those should of course be checked manually to confirm that</span>
+0132 <span class="comment">%they exist in yeast, but in this tutorial it is assumed that all these</span>
+0133 <span class="comment">%reactions indeed occur in yeast.</span>
+0134 
+0135 <span class="comment">%Continue to improve the connectivity of the model by identifying</span>
+0136 <span class="comment">%metabolites that should be connected. A convenient way to get an overview</span>
+0137 <span class="comment">%of how connected the model is, and at the same time getting a lot of</span>
+0138 <span class="comment">%useful data, is to use gapReport. Note that it can take several to many</span>
+0139 <span class="comment">%hours to run, depending on the number of gaps in the model.</span>
+0140 [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnect,<span class="keyword">...</span>
+0141     neededForProductionMat]=gapReport(newModel);
+0142 
+0143 <span class="comment">%The results show that 547 from 1620 reactions cannot carry flux. Remember</span>
+0144 <span class="comment">%that an output is allowed for all metabolites, that is why it calculates</span>
+0145 <span class="comment">%547 in both cases. 787 from 1614 metabolites cannot be synthesized from</span>
+0146 <span class="comment">%the precursors which are supplied. There are 8 subnetworks in the model,</span>
+0147 <span class="comment">%of which 1598 from 1614 metabolites belong to the first one.</span>
+0148 <span class="comment">%</span>
+0149 <span class="comment">%It will also print something similar to:</span>
+0150 <span class="comment">%</span>
+0151 <span class="comment">%To enable net production of all metabolites, a total of 304 metabolites</span>
+0152 <span class="comment">%must be connected</span>
+0153 <span class="comment">%Top 10 metabolites to connect:</span>
+0154 <span class="comment">%     1. 2,3-Dehydroacyl-CoA[s] (connects 144 metabolites)</span>
+0155 <span class="comment">%     2. 7,8-Dihydroneopterin[s] (connects 15 metabolites)</span>
+0156 <span class="comment">%     3. Thiamin diphosphate[s] (connects 13 metabolites)</span>
+0157 <span class="comment">%     4. Ergosterol[s] (connects 13 metabolites)</span>
+0158 <span class="comment">%     5. Methylselenic acid[s] (connects 12 metabolites)</span>
+0159 <span class="comment">%     6. G00003[s] (connects 12 metabolites)</span>
+0160 <span class="comment">%     7. Androstenediol[s] (connects 11 metabolites)</span>
+0161 <span class="comment">%     8. G00146[s] (connects 11 metabolites)</span>
+0162 <span class="comment">%     9. 1-Alkyl-2-acylglycerol[s] (connects 10 metabolites)</span>
+0163 <span class="comment">%     10. Progesterone[s] (connects 9 metabolites)</span>
+0164 
+0165 <span class="comment">%This is a very useful way of directing the gap-filling tasks to where they</span>
+0166 <span class="comment">%are of the greatest use. In this case it says that in order to have net</span>
+0167 <span class="comment">%production of all metabolites in the model from the simple inputs which</span>
+0168 <span class="comment">%have been defined (687 metabolites can currently not have net production)</span>
+0169 <span class="comment">%one needs to connect 304 unconnected metabolites in. However, by</span>
+0170 <span class="comment">%connecting only the top 10 in the list 209/687 (30%) of them will now be</span>
+0171 <span class="comment">%connected. When looking at the list one can see that the top ranking one</span>
+0172 <span class="comment">%is 2,3-Dehydroacyl-CoA, which is involved in the elongation of many</span>
+0173 <span class="comment">%different fatty acid chains. Metabolites 2 and 3 are co-factors or</span>
+0174 <span class="comment">%involved in co- factor metabolism. It turns out that yeast cannot grow on</span>
+0175 <span class="comment">%only the substrates have been defined, but that it requires some other</span>
+0176 <span class="comment">%precursors for co-factor synthesis as well.</span>
+0177 
+0178 <span class="comment">%Add uptake reactions for the minimal media constituents needed for yeast</span>
+0179 <span class="comment">%to grow.</span>
+0180 [~, J]=ismember({<span class="string">'4-Aminobenzoate'</span>;<span class="string">'Riboflavin'</span>;<span class="string">'Thiamine'</span>;<span class="string">'Biotin'</span>;<span class="string">'Folate'</span>;<span class="string">'Nicotinate'</span>;<span class="string">'Zymosterol'</span>;<span class="string">'Choline'</span>},newModel.metNames);
+0181 [newModel, addedRxns]=addExchangeRxns(newModel,<span class="string">'in'</span>,J);
+0182 
+0183 <span class="comment">%Rerun gapReport and use the output for targeting the gap-filling efforts.</span>
+0184 <span class="comment">%Note that only some info is printed; most of it is available in the output</span>
+0185 <span class="comment">%structures. Work like this in an iterative manner until the model is of</span>
+0186 <span class="comment">%sufficient quality.</span></pre></div>
+<hr><address>Generated on Fri 20-Nov-2020 22:58:53 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -38,9 +38,7 @@
                        about model issues. Only used if printModelIssues
                        is true (opt, default true)
 
-   Usage: printModelStats(model,printModelIssues, printDetails)
-
-   Rasmus Agren, 2013-08-01</pre></div>
+   Usage: printModelStats(model,printModelIssues, printDetails)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -68,159 +66,156 @@ This function is called by:
 0011 <span class="comment">%                       is true (opt, default true)</span>
 0012 <span class="comment">%</span>
 0013 <span class="comment">%   Usage: printModelStats(model,printModelIssues, printDetails)</span>
-0014 <span class="comment">%</span>
-0015 <span class="comment">%   Rasmus Agren, 2013-08-01</span>
-0016 <span class="comment">%</span>
-0017 
-0018 <span class="keyword">if</span> nargin&lt;2
-0019     printModelIssues=false;
+0014 
+0015 <span class="keyword">if</span> nargin&lt;2
+0016     printModelIssues=false;
+0017 <span class="keyword">end</span>
+0018 <span class="keyword">if</span> nargin&lt;3
+0019     printDetails=true;
 0020 <span class="keyword">end</span>
-0021 <span class="keyword">if</span> nargin&lt;3
-0022     printDetails=true;
-0023 <span class="keyword">end</span>
-0024 
-0025 fprintf([<span class="string">'Network statistics for '</span> model.id <span class="string">': '</span> model.description <span class="string">'\n'</span>]);
+0021 
+0022 fprintf([<span class="string">'Network statistics for '</span> model.id <span class="string">': '</span> model.description <span class="string">'\n'</span>]);
+0023 
+0024 <span class="comment">%Get which reactions are present in each compartment</span>
+0025 rxnComps=sparse(numel(model.rxns),numel(model.comps));
 0026 
-0027 <span class="comment">%Get which reactions are present in each compartment</span>
-0028 rxnComps=sparse(numel(model.rxns),numel(model.comps));
-0029 
-0030 <span class="comment">%For each compartment, find the metabolites that are present in that</span>
-0031 <span class="comment">%compartment and then the reactions they are involved in</span>
-0032 <span class="keyword">for</span> i=1:numel(model.comps)
-0033     [~, I]=find(model.S(model.metComps==i,:));
-0034     rxnComps(I,i)=1;
-0035 <span class="keyword">end</span>
-0036 
-0037 <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
-0038     fprintf([<span class="string">'EC-numbers\t\t\t'</span> num2str(numel(unique(model.eccodes))) <span class="string">'\n'</span>]);
-0039 <span class="keyword">end</span>
-0040 
-0041 <span class="comment">%Print information about genes</span>
-0042 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
-0043     fprintf([<span class="string">'Genes*\t\t\t\t'</span> num2str(numel(model.genes)) <span class="string">'\n'</span>]);
-0044     <span class="comment">%Find the genes in each compartment</span>
-0045     <span class="keyword">for</span> i=1:numel(model.comps)
-0046         [~, I]=find(model.rxnGeneMat(rxnComps(:,i)==1,:));
-0047         fprintf([<span class="string">'\t'</span> model.compNames{i} <span class="string">'\t'</span> num2str(numel(unique(I))) <span class="string">'\n'</span>]);
-0048     <span class="keyword">end</span>
-0049 <span class="keyword">end</span>
-0050 
-0051 <span class="comment">%Print information about reactions</span>
-0052 fprintf([<span class="string">'\nReactions*\t\t\t'</span> num2str(numel(model.rxns)) <span class="string">'\n'</span>]);
-0053 <span class="keyword">for</span> i=1:numel(model.comps)
-0054     fprintf([<span class="string">'\t'</span> model.compNames{i} <span class="string">'\t'</span> num2str(sum(rxnComps(:,i))) <span class="string">'\n'</span>]);
-0055 <span class="keyword">end</span>
-0056 
-0057 <span class="comment">%Removes the effect of compartments and removes duplicate reactions</span>
-0058 temp=model;
-0059 temp.comps(:)={<span class="string">'s'</span>}; <span class="comment">%Set all compartments to be the same</span>
-0060 equ=<a href="constructEquations.html" class="code" title="function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID,useFormula)">constructEquations</a>(<a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>(temp,true,true),temp.rxns,false);
-0061 
-0062 fprintf([<span class="string">'Unique reactions**\t'</span> num2str(numel(unique(equ))) <span class="string">'\n'</span>]);
-0063 
-0064 <span class="comment">%Print information about metabolites</span>
-0065 fprintf([<span class="string">'\nMetabolites\t\t\t'</span> num2str(numel(model.mets)) <span class="string">'\n'</span>]);
-0066 <span class="keyword">for</span> i=1:numel(model.comps)
-0067     fprintf([<span class="string">'\t'</span> model.compNames{i} <span class="string">'\t'</span> num2str(sum(model.metComps==i)) <span class="string">'\n'</span>]);
-0068 <span class="keyword">end</span>
-0069 
-0070 fprintf([<span class="string">'Unique metabolites\t'</span> num2str(numel(unique(model.metNames))) <span class="string">'\n'</span>]);
+0027 <span class="comment">%For each compartment, find the metabolites that are present in that</span>
+0028 <span class="comment">%compartment and then the reactions they are involved in</span>
+0029 <span class="keyword">for</span> i=1:numel(model.comps)
+0030     [~, I]=find(model.S(model.metComps==i,:));
+0031     rxnComps(I,i)=1;
+0032 <span class="keyword">end</span>
+0033 
+0034 <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
+0035     fprintf([<span class="string">'EC-numbers\t\t\t'</span> num2str(numel(unique(model.eccodes))) <span class="string">'\n'</span>]);
+0036 <span class="keyword">end</span>
+0037 
+0038 <span class="comment">%Print information about genes</span>
+0039 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
+0040     fprintf([<span class="string">'Genes*\t\t\t\t'</span> num2str(numel(model.genes)) <span class="string">'\n'</span>]);
+0041     <span class="comment">%Find the genes in each compartment</span>
+0042     <span class="keyword">for</span> i=1:numel(model.comps)
+0043         [~, I]=find(model.rxnGeneMat(rxnComps(:,i)==1,:));
+0044         fprintf([<span class="string">'\t'</span> model.compNames{i} <span class="string">'\t'</span> num2str(numel(unique(I))) <span class="string">'\n'</span>]);
+0045     <span class="keyword">end</span>
+0046 <span class="keyword">end</span>
+0047 
+0048 <span class="comment">%Print information about reactions</span>
+0049 fprintf([<span class="string">'\nReactions*\t\t\t'</span> num2str(numel(model.rxns)) <span class="string">'\n'</span>]);
+0050 <span class="keyword">for</span> i=1:numel(model.comps)
+0051     fprintf([<span class="string">'\t'</span> model.compNames{i} <span class="string">'\t'</span> num2str(sum(rxnComps(:,i))) <span class="string">'\n'</span>]);
+0052 <span class="keyword">end</span>
+0053 
+0054 <span class="comment">%Removes the effect of compartments and removes duplicate reactions</span>
+0055 temp=model;
+0056 temp.comps(:)={<span class="string">'s'</span>}; <span class="comment">%Set all compartments to be the same</span>
+0057 equ=<a href="constructEquations.html" class="code" title="function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID,useFormula)">constructEquations</a>(<a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>(temp,true,true),temp.rxns,false);
+0058 
+0059 fprintf([<span class="string">'Unique reactions**\t'</span> num2str(numel(unique(equ))) <span class="string">'\n'</span>]);
+0060 
+0061 <span class="comment">%Print information about metabolites</span>
+0062 fprintf([<span class="string">'\nMetabolites\t\t\t'</span> num2str(numel(model.mets)) <span class="string">'\n'</span>]);
+0063 <span class="keyword">for</span> i=1:numel(model.comps)
+0064     fprintf([<span class="string">'\t'</span> model.compNames{i} <span class="string">'\t'</span> num2str(sum(model.metComps==i)) <span class="string">'\n'</span>]);
+0065 <span class="keyword">end</span>
+0066 
+0067 fprintf([<span class="string">'Unique metabolites\t'</span> num2str(numel(unique(model.metNames))) <span class="string">'\n'</span>]);
+0068 
+0069 fprintf(<span class="string">'\n* Genes and reactions are counted for each compartment if any of the corresponding metabolites are in that compartment. The sum may therefore not add up to the total number.\n'</span>);
+0070 fprintf(<span class="string">'** Unique reactions are defined as being biochemically unique (no compartmentalization)\n'</span>);
 0071 
-0072 fprintf(<span class="string">'\n* Genes and reactions are counted for each compartment if any of the corresponding metabolites are in that compartment. The sum may therefore not add up to the total number.\n'</span>);
-0073 fprintf(<span class="string">'** Unique reactions are defined as being biochemically unique (no compartmentalization)\n'</span>);
-0074 
-0075 <span class="comment">%Also print some potential problems if there are any</span>
-0076 <span class="keyword">if</span> printModelIssues==true
-0077     fprintf([<span class="string">'\nShort model quality summary for '</span> model.id <span class="string">': '</span> model.description <span class="string">'\n'</span>]);
-0078     
-0079     <span class="comment">%Check that all the metabolites are being used</span>
-0080     involvedMat=model.S;
-0081     involvedMat(involvedMat~=0)=1;
-0082     usedMets=sum(involvedMat,2);
-0083     notPresent=find(usedMets==0);
-0084     <span class="keyword">if</span> ~isempty(notPresent)
-0085         errorText=[<span class="string">'Non-used metabolites\t'</span> num2str(numel(notPresent)) <span class="string">'\n'</span>];
-0086         <span class="keyword">if</span> printDetails==true
-0087             <span class="keyword">for</span> i=1:numel(notPresent)
-0088                 errorText=[errorText <span class="string">'\t('</span> model.mets{notPresent(i)} <span class="string">') '</span> model.metNames{notPresent(i)} <span class="string">'\n'</span>];
-0089             <span class="keyword">end</span>
-0090             errorText=[errorText <span class="string">'\n'</span>];
-0091         <span class="keyword">end</span>
-0092         fprintf(errorText);
-0093     <span class="keyword">end</span>
-0094     
-0095     <span class="comment">%Check if there are empty reactions</span>
-0096     usedRxns=sum(involvedMat,1);
-0097     notUsed=find(usedRxns==0);
-0098     <span class="keyword">if</span> ~isempty(notUsed)
-0099         errorText=[<span class="string">'Empty reactions\t'</span> num2str(numel(notUsed)) <span class="string">'\n'</span>];
-0100         <span class="keyword">if</span> printDetails==true
-0101             <span class="keyword">for</span> i=1:numel(notUsed)
-0102                 errorText=[errorText <span class="string">'\t'</span> model.rxns{notUsed(i)} <span class="string">'\n'</span>];
-0103             <span class="keyword">end</span>
-0104             errorText=[errorText <span class="string">'\n'</span>];
-0105         <span class="keyword">end</span>
-0106         fprintf(errorText);
-0107     <span class="keyword">end</span>
+0072 <span class="comment">%Also print some potential problems if there are any</span>
+0073 <span class="keyword">if</span> printModelIssues==true
+0074     fprintf([<span class="string">'\nShort model quality summary for '</span> model.id <span class="string">': '</span> model.description <span class="string">'\n'</span>]);
+0075     
+0076     <span class="comment">%Check that all the metabolites are being used</span>
+0077     involvedMat=model.S;
+0078     involvedMat(involvedMat~=0)=1;
+0079     usedMets=sum(involvedMat,2);
+0080     notPresent=find(usedMets==0);
+0081     <span class="keyword">if</span> ~isempty(notPresent)
+0082         errorText=[<span class="string">'Non-used metabolites\t'</span> num2str(numel(notPresent)) <span class="string">'\n'</span>];
+0083         <span class="keyword">if</span> printDetails==true
+0084             <span class="keyword">for</span> i=1:numel(notPresent)
+0085                 errorText=[errorText <span class="string">'\t('</span> model.mets{notPresent(i)} <span class="string">') '</span> model.metNames{notPresent(i)} <span class="string">'\n'</span>];
+0086             <span class="keyword">end</span>
+0087             errorText=[errorText <span class="string">'\n'</span>];
+0088         <span class="keyword">end</span>
+0089         fprintf(errorText);
+0090     <span class="keyword">end</span>
+0091     
+0092     <span class="comment">%Check if there are empty reactions</span>
+0093     usedRxns=sum(involvedMat,1);
+0094     notUsed=find(usedRxns==0);
+0095     <span class="keyword">if</span> ~isempty(notUsed)
+0096         errorText=[<span class="string">'Empty reactions\t'</span> num2str(numel(notUsed)) <span class="string">'\n'</span>];
+0097         <span class="keyword">if</span> printDetails==true
+0098             <span class="keyword">for</span> i=1:numel(notUsed)
+0099                 errorText=[errorText <span class="string">'\t'</span> model.rxns{notUsed(i)} <span class="string">'\n'</span>];
+0100             <span class="keyword">end</span>
+0101             errorText=[errorText <span class="string">'\n'</span>];
+0102         <span class="keyword">end</span>
+0103         fprintf(errorText);
+0104     <span class="keyword">end</span>
+0105     
+0106     <span class="comment">%Check if there are dead-end reactions/metabolites</span>
+0107     [~, deletedReactions, deletedMetabolites]=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>(model,true,false,false,true);
 0108     
-0109     <span class="comment">%Check if there are dead-end reactions/metabolites</span>
-0110     [~, deletedReactions, deletedMetabolites]=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>(model,true,false,false,true);
-0111     
-0112     <span class="keyword">if</span> ~isempty(deletedReactions)
-0113         errorText=[<span class="string">'Dead-end reactions\t'</span> num2str(numel(deletedReactions)) <span class="string">'\n'</span>];
-0114         <span class="keyword">if</span> printDetails==true
-0115             <span class="keyword">for</span> i=1:numel(deletedReactions)
-0116                 errorText=[errorText <span class="string">'\t'</span> deletedReactions{i} <span class="string">'\n'</span>];
-0117             <span class="keyword">end</span>
-0118             errorText=[errorText <span class="string">'\n'</span>];
-0119         <span class="keyword">end</span>
-0120         fprintf(errorText);
-0121     <span class="keyword">end</span>
-0122     
-0123     <span class="comment">%Ignore non-used metabolites</span>
-0124     deletedMetabolites=setdiff(deletedMetabolites,model.mets(notPresent));
-0125     <span class="comment">%Must map to indexes in order to print names</span>
-0126     deletedMetabolites=find(ismember(model.mets,deletedMetabolites));
-0127     <span class="keyword">if</span> ~isempty(deletedMetabolites)
-0128         errorText=[<span class="string">'Dead-end metabolites\t'</span> num2str(numel(deletedMetabolites)) <span class="string">'\n'</span>];
-0129         <span class="keyword">if</span> printDetails==true
-0130             <span class="keyword">for</span> i=1:numel(deletedMetabolites)
-0131                 errorText=[errorText <span class="string">'\t('</span> model.mets{deletedMetabolites(i)} <span class="string">') '</span> model.metNames{deletedMetabolites(i)} <span class="string">'\n'</span>];
-0132             <span class="keyword">end</span>
-0133             errorText=[errorText <span class="string">'\n'</span>];
-0134         <span class="keyword">end</span>
-0135         fprintf(errorText);
-0136     <span class="keyword">end</span>
-0137     
-0138     balanceStructure=<a href="getElementalBalance.html" class="code" title="function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)">getElementalBalance</a>(model);
+0109     <span class="keyword">if</span> ~isempty(deletedReactions)
+0110         errorText=[<span class="string">'Dead-end reactions\t'</span> num2str(numel(deletedReactions)) <span class="string">'\n'</span>];
+0111         <span class="keyword">if</span> printDetails==true
+0112             <span class="keyword">for</span> i=1:numel(deletedReactions)
+0113                 errorText=[errorText <span class="string">'\t'</span> deletedReactions{i} <span class="string">'\n'</span>];
+0114             <span class="keyword">end</span>
+0115             errorText=[errorText <span class="string">'\n'</span>];
+0116         <span class="keyword">end</span>
+0117         fprintf(errorText);
+0118     <span class="keyword">end</span>
+0119     
+0120     <span class="comment">%Ignore non-used metabolites</span>
+0121     deletedMetabolites=setdiff(deletedMetabolites,model.mets(notPresent));
+0122     <span class="comment">%Must map to indexes in order to print names</span>
+0123     deletedMetabolites=find(ismember(model.mets,deletedMetabolites));
+0124     <span class="keyword">if</span> ~isempty(deletedMetabolites)
+0125         errorText=[<span class="string">'Dead-end metabolites\t'</span> num2str(numel(deletedMetabolites)) <span class="string">'\n'</span>];
+0126         <span class="keyword">if</span> printDetails==true
+0127             <span class="keyword">for</span> i=1:numel(deletedMetabolites)
+0128                 errorText=[errorText <span class="string">'\t('</span> model.mets{deletedMetabolites(i)} <span class="string">') '</span> model.metNames{deletedMetabolites(i)} <span class="string">'\n'</span>];
+0129             <span class="keyword">end</span>
+0130             errorText=[errorText <span class="string">'\n'</span>];
+0131         <span class="keyword">end</span>
+0132         fprintf(errorText);
+0133     <span class="keyword">end</span>
+0134     
+0135     balanceStructure=<a href="getElementalBalance.html" class="code" title="function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)">getElementalBalance</a>(model);
+0136     
+0137     notParsed=find(balanceStructure.balanceStatus&lt;0);
+0138     notBalanced=find(balanceStructure.balanceStatus==0);
 0139     
-0140     notParsed=find(balanceStructure.balanceStatus&lt;0);
-0141     notBalanced=find(balanceStructure.balanceStatus==0);
-0142     
-0143     <span class="keyword">if</span> ~isempty(notParsed)
-0144         errorText=[<span class="string">'Reactions which could not be elementally balanced\t'</span> num2str(numel(notParsed)) <span class="string">'\n'</span>];
-0145         <span class="keyword">if</span> printDetails==true
-0146             <span class="keyword">for</span> i=1:numel(notParsed)
-0147                 errorText=[errorText <span class="string">'\t'</span> model.rxns{notParsed(i)} <span class="string">'\n'</span>];
-0148             <span class="keyword">end</span>
-0149             errorText=[errorText <span class="string">'\n'</span>];
-0150         <span class="keyword">end</span>
-0151         fprintf(errorText);
-0152     <span class="keyword">end</span>
-0153     <span class="keyword">if</span> ~isempty(notBalanced)
-0154         errorText=[<span class="string">'Reactions which are elementally unbalanced\t'</span> num2str(numel(notBalanced)) <span class="string">'\n'</span>];
-0155         <span class="keyword">if</span> printDetails==true
-0156             names=strcat(balanceStructure.elements.names,{<span class="string">', '</span>});
-0157             <span class="keyword">for</span> i=1:numel(notBalanced)
-0158                 badOnes=sprintf(<span class="string">'%s'</span>, names{abs(balanceStructure.leftComp(notBalanced(i),:)-balanceStructure.rightComp(notBalanced(i),:))&gt;10^-7});
-0159                 errorText=[errorText <span class="string">'\t'</span> model.rxns{notBalanced(i)} <span class="string">'\t'</span> badOnes(1:end-2) <span class="string">'\n'</span>];
-0160             <span class="keyword">end</span>
-0161             errorText=[errorText <span class="string">'\n'</span>];
-0162         <span class="keyword">end</span>
-0163         fprintf(errorText);
-0164     <span class="keyword">end</span>
-0165 <span class="keyword">end</span>
-0166 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 03-Jun-2020 13:07:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0140     <span class="keyword">if</span> ~isempty(notParsed)
+0141         errorText=[<span class="string">'Reactions which could not be elementally balanced\t'</span> num2str(numel(notParsed)) <span class="string">'\n'</span>];
+0142         <span class="keyword">if</span> printDetails==true
+0143             <span class="keyword">for</span> i=1:numel(notParsed)
+0144                 errorText=[errorText <span class="string">'\t'</span> model.rxns{notParsed(i)} <span class="string">'\n'</span>];
+0145             <span class="keyword">end</span>
+0146             errorText=[errorText <span class="string">'\n'</span>];
+0147         <span class="keyword">end</span>
+0148         fprintf(errorText);
+0149     <span class="keyword">end</span>
+0150     <span class="keyword">if</span> ~isempty(notBalanced)
+0151         errorText=[<span class="string">'Reactions which are elementally unbalanced\t'</span> num2str(numel(notBalanced)) <span class="string">'\n'</span>];
+0152         <span class="keyword">if</span> printDetails==true
+0153             names=strcat(balanceStructure.elements.names,{<span class="string">', '</span>});
+0154             <span class="keyword">for</span> i=1:numel(notBalanced)
+0155                 badOnes=sprintf(<span class="string">'%s'</span>, names{abs(balanceStructure.leftComp(notBalanced(i),:)-balanceStructure.rightComp(notBalanced(i),:))&gt;10^-7});
+0156                 errorText=[errorText <span class="string">'\t'</span> model.rxns{notBalanced(i)} <span class="string">'\t'</span> badOnes(1:end-2) <span class="string">'\n'</span>];
+0157             <span class="keyword">end</span>
+0158             errorText=[errorText <span class="string">'\n'</span>];
+0159         <span class="keyword">end</span>
+0160         fprintf(errorText);
+0161     <span class="keyword">end</span>
+0162 <span class="keyword">end</span>
+0163 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Fri 20-Nov-2020 22:58:53 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
