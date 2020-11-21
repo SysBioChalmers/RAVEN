@@ -29,9 +29,6 @@ function model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %
 %   Usage: model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond)
-%
-%   Hao Wang, 2020-03-19
-%
 
 if nargin<2
     EM='No query protein fasta file is specified';
@@ -54,6 +51,15 @@ if nargin<7
 end
 if nargin<8
     useDiamond=true;
+end
+
+if isempty(fastaFile)
+    error('*** The query FASTA filename cannot be empty! ***');
+else
+    fprintf('\nChecking existence of query FASTA file... ');
+    %Check if query fasta exists
+    fastaFile=checkFileExistence(fastaFile,true,false);
+    fprintf('done\n');
 end
 
 %First generate the full MetaCyc model

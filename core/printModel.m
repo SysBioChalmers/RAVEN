@@ -34,9 +34,6 @@ function printModel(model,rxnList,outputString,outputFile,metaboliteList)
 %           intended to be used when there is no flux distribution.
 %
 %   Usage: printModel(model,rxnList,outputString,outputFile,metaboliteList)
-%
-%   Rasmus Agren, 2013-02-20
-%
 
 if nargin<2
     rxnList=model.rxns;

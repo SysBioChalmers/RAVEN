@@ -24,9 +24,6 @@ function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,o
 %
 %   Usage: [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,...
 %           isRev,onlyToExisting,prefix)
-%
-%   Eduard Kerkhoven, 2019-03-19
-%
 
 if iscell(fromComp)
     fromComp=fromComp{1};

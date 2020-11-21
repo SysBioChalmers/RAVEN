@@ -16,10 +16,6 @@ function exportToExcelFormat(model,filename)
 %         checkModelStruct to identify problems in the model structure
 %
 %   Usage: exportToExcelFormat(model,filename)
-%
-%   Simonas Marcisauskas, 2018-03-18
-%   Benjamin Sanchez,     2018-09-20
-%
 
 [~, A, B]=fileparts(filename);
 

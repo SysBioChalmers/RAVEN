@@ -50,9 +50,6 @@ function newModel=addMets(model,metsToAdd,copyInfo,prefix)
 %       'value',{{'CHEBI:31132';'C12248'}});
 %
 %   Usage: newModel=addMets(model,metsToAdd,copyInfo,prefix)
-%
-%   Eduard Kerkhoven, 2018-10-03
-%
 
 if nargin<3
     copyInfo=true;
@@ -72,19 +69,21 @@ if ~isfield(metsToAdd,'mets')
     metsToAdd.mets=generateNewIds(newModel,'mets',prefix,numel(metsToAdd.metNames));
 end
 if ~isfield(metsToAdd,'metNames')
-    EM='metNames is a required field in metsToAdd';
-    dispEM(EM);
+    metsToAdd.metNames=metsToAdd.mets;
 end
 if ~isfield(metsToAdd,'compartments')
     EM='compartments is a required field in metsToAdd';
     dispEM(EM);
 end
-
-if ~iscellstr(metsToAdd.mets)
+if ischar(metsToAdd.mets)
+    metsToAdd.mets={metsToAdd.mets};
+elseif ~iscellstr(metsToAdd.mets)
     EM='metsToAdd.mets must be a cell array of strings';
     dispEM(EM);
 end
-if ~iscellstr(metsToAdd.metNames)
+if ischar(metsToAdd.metNames)
+    metsToAdd.metNames={metsToAdd.metNames};
+elseif ~iscellstr(metsToAdd.metNames)
     EM='metsToAdd.metNames must be a cell array of strings';
     dispEM(EM);
 end

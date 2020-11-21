@@ -27,9 +27,6 @@ function newModel=ravenCobraWrapper(model)
 %   COBRA fields was fetched from verifyModel function
 %
 %   Usage: newModel=ravenCobraWrapper(model)
-%
-%   Benjamin J. Sanchez, 2020-05-07
-%
 
 if isfield(model,'rules')
     isRaven=false;
@@ -37,8 +34,11 @@ else
     isRaven=true;
 end
 
+[ST, I]=dbstack('-completenames');
+ravenPath=fileparts(fileparts(ST(I).file));
+
 % Load COBRA field information
-fid             = fopen('COBRA_structure_fields.csv'); % Taken from https://github.com/opencobra/cobratoolbox/blob/develop/src/base/io/definitions/COBRA_structure_fields.csv
+fid             = fopen([ravenPath filesep 'struct_conversion' filesep 'COBRA_structure_fields.csv']); % Taken from https://github.com/opencobra/cobratoolbox/blob/develop/src/base/io/definitions/COBRA_structure_fields.csv
 fieldFile       = textscan(fid,repmat('%s',1,15),'Delimiter','\t','HeaderLines',1);
 dbFields        = ~cellfun(@isempty,fieldFile{5}); % Only keep fields with database annotations that should be translated to xxxMiriams
 dbFields        = dbFields & ~contains(fieldFile{1},{'metInChIString','metKEGGID','metPubChemID','rxnECNumbers','rxnReferences'});
@@ -48,7 +48,7 @@ COBRAfields     = fieldFile{1}(dbFields);
 fclose(fid);
 
 % Load conversion between additional COBRA fields and namespaces:
-fid             = fopen('cobraNamespaces.csv');
+fid             = fopen([ravenPath filesep 'struct_conversion' filesep 'cobraNamespaces.csv']);
 fieldFile       = textscan(fid,'%s %s','Delimiter',',','HeaderLines',0);
 COBRAfields     = [COBRAfields; fieldFile{1}];
 COBRAnamespace  = [COBRAnamespace; fieldFile{2}];
@@ -90,7 +90,20 @@ if isRaven
     if all(~cellfun(@isempty,regexp(model.mets,'\[[^\]]+\]$')))
         newModel.mets=model.mets;
     else
-        newModel.mets=strcat(model.mets,'[',model.comps(model.metComps),']');
+        %Check if model has compartment info as "met_c" suffix in all metabolites:
+        BiGGformat = false(size(model.mets));
+        for i=1:numel(model.comps)
+            compPos=model.metComps==i;
+            BiGGformat(compPos)=~cellfun(@isempty,regexp(model.mets(compPos),['_' model.comps{i} '$']));
+        end
+        if all(BiGGformat)
+            newModel.mets=model.mets;
+            for i=1:numel(model.comps)
+                newModel.mets=regexprep(newModel.mets,['_' model.comps{i} '$'],['[' model.comps{i} ']']);
+            end
+        else
+            newModel.mets=strcat(model.mets,'[',model.comps(model.metComps),']');
+        end
     end
 
     %b, csense, osenseStr, genes, rules are also mandatory, but defined
@@ -195,17 +208,17 @@ else
         newModel.mets=regexprep(newModel.mets,['\[', model.compNames{i}, '\]$'],'');
     end
     
-    %In some rare cases, there may be overlapping mets due to removal e.g.
-    %[c]. To avoid this, we change e.g. [c] into _c
+    %In some cases (e.g. any model that uses BiGG ids as main ids), there
+    %may be overlapping mets due to removal of compartment info. To avoid
+    %this, we change compartments from e.g. [c] into _c
     if numel(unique(newModel.mets))~=numel(model.mets)
         newModel.mets=model.mets;
         for i=1:numel(model.comps)
-            newModel.mets=regexprep(newModel.mets,'\]$','');
-            newModel.mets=regexprep(newModel.mets,['\[', model.comps{i}, '$'],['_', model.comps{i}]);
+            newModel.mets=regexprep(newModel.mets,['\[' model.comps{i} '\]$'],['_' model.comps{i}]);
         end
     end
     %Since COBRA no longer contains rev field it is assumed that rxn is
-    %reversible if its lower bound is set to zero
+    %reversible if its lower bound is set below zero
     if ~isfield(model,'rev')
         for i=1:numel(model.rxns)
             if model.lb(i)<0
@@ -267,9 +280,12 @@ else
                 if isfield(model,rxnCOBRAfields{j})
                     rxnAnnotation = eval(['model.' rxnCOBRAfields{j} '{i}']);
                     if ~isempty(rxnAnnotation)
-                        newModel.rxnMiriams{i,1}.name{counter,1} = rxnNamespaces{j};
-                        newModel.rxnMiriams{i,1}.value{counter,1} = rxnAnnotation;
-                        counter=counter+1;
+                        rxnAnnotation = strtrim(strsplit(rxnAnnotation,';'));
+                        for a=1:length(rxnAnnotation)
+                            newModel.rxnMiriams{i,1}.name{counter,1} = rxnNamespaces{j};
+                            newModel.rxnMiriams{i,1}.value{counter,1} = rxnAnnotation{a};
+                            counter=counter+1;
+                        end
                     end
                 end
             end
@@ -283,9 +299,12 @@ else
                 if isfield(model,geneCOBRAfields{j})
                     geneAnnotation = eval(['model.' geneCOBRAfields{j} '{i}']);
                     if ~isempty(geneAnnotation)
-                        newModel.geneMiriams{i,1}.name{counter,1} = geneNamespaces{j};
-                        newModel.geneMiriams{i,1}.value{counter,1} = geneAnnotation;
-                        counter=counter+1;
+                        geneAnnotation = strtrim(strsplit(geneAnnotation,';'));
+                        for a=1:length(geneAnnotation)
+                            newModel.geneMiriams{i,1}.name{counter,1} = geneNamespaces{j};
+                            newModel.geneMiriams{i,1}.value{counter,1} = geneAnnotation{a};
+                            counter=counter+1;
+                        end
                     end
                 end
             end
@@ -346,9 +365,12 @@ else
                 if isfield(model,metCOBRAfields{j})
                     metAnnotation = eval(['model.' metCOBRAfields{j} '{i}']);
                     if ~isempty(metAnnotation)
-                        newModel.metMiriams{i,1}.name{counter,1} = metNamespaces{j};
-                        newModel.metMiriams{i,1}.value{counter,1} = metAnnotation;
-                        counter=counter+1;
+                        metAnnotation = strtrim(strsplit(metAnnotation,';'));
+                        for a=1:length(metAnnotation)
+                            newModel.metMiriams{i,1}.name{counter,1} = metNamespaces{j};
+                            newModel.metMiriams{i,1}.value{counter,1} = metAnnotation{a};
+                            counter=counter+1;
+                        end
                     end
                 end
             end

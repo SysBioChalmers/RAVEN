@@ -40,10 +40,6 @@ function compStruct = compareMultipleModels(models,printResults,plotResults,grou
 %
 %   Usage: compStruct=compareMultipleModels(models,printResults,...
 %                       plotResults,groupVector,funcCompare,taskFile);
-%   
-%   Daniel Cook, 2018-03-16
-%   Jonathan Robinson, 2020-01-30
-%
 
 %% Set up input defaults
 if nargin < 2 || isempty(printResults)
@@ -407,9 +403,6 @@ function c = redblue(m)
 %
 %   See also HSV, GRAY, HOT, BONE, COPPER, PINK, FLAG, 
 %   COLORMAP, RGBPLOT.
-
-%   Adam Auton, 9th October 2009
-
 if nargin < 1, m = size(get(gcf,'colormap'),1); end
 
 if (mod(m,2) == 0)

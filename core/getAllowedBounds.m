@@ -15,9 +15,6 @@ function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns)
 %   NOTE: In cases where no solution can be calculated, NaN is returned.
 %
 %   Usage: [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns)
-%
-%   Rasmus Agren, 2013-04-21
-%
 
 if nargin<2
     rxns=1:numel(model.rxns);

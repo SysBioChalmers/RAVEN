@@ -12,9 +12,6 @@ function [pathway, notMapped]=mapPathwayRxnNames(pathway,originalLabels,newLabel
 %                   pathway object
 %
 %   Usage: [pathway, notMapped]=mapPathwayRxnNames(pathway,originalLabels,newLabels)
-%
-%   Rasmus Agren, 2014-01-09
-%
 
 if numel(originalLabels)~=numel(newLabels)
     EM='The new label cell array must have the same length as the old label cell array';

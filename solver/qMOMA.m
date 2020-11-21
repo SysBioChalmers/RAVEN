@@ -17,9 +17,6 @@ function [fluxA,fluxB, flag]=qMOMA(modelA,modelB,fluxMinWeight)
 %   flag          1 if the optimization terminated successfully
 %
 %   Usage: [fluxA,fluxB, flag]=qMOMA(modelA,modelB,fluxMinWeight)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
 if nargin<3
     fluxMinWeight=1;

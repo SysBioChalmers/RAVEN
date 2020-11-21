@@ -9,9 +9,6 @@ function dimensions=getPathwayDimensions(pathway)
 %                   height and width
 %
 %   Usage: dimensions=getPathwayDimensions(pathway)
-%
-%   Rasmus Agren, 2010-12-16
-%
 
 right=0;
 left=inf;

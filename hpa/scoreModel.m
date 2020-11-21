@@ -55,9 +55,6 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 %   Usage: [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,...
 %               hpaData,arrayData,tissue,celltype,noGeneScore,multipleGeneScoring,...
 %               multipleCellScoring,hpaLevelScores)
-%
-%   Jonathan Robinson, 2018-03-01
-%
 
 if nargin<3
     arrayData=[];

@@ -41,8 +41,6 @@ function geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
 %   geneScoreStructure  a structure to be used in predictLocalization
 %
 %   Usage: geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
-%
-%   Rasmus Agren, 2014-01-08
 
 varargin=upper(varargin);
 

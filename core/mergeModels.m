@@ -14,9 +14,6 @@ function model=mergeModels(models,metParam,supressWarnings)
 %             taken
 %
 %   Usage: model=mergeModels(models)
-%
-%   Cheewin Kittikunapong 2019-05-20
-%
 
 %Just return the model
 if numel(models)<=1

@@ -9,9 +9,6 @@ function [I, metNames]=getMetsInComp(model,comp)
 %   metNames    the names of the metabolites
 %
 %   Usage: [I, metNames]=getMetsInComp(model,comp)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
 if ischar(comp)
     comp={comp};

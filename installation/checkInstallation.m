@@ -6,9 +6,6 @@ function checkInstallation()
 %   user-defined functions, which are accessible from MATLAB pathlist
 %
 %   Usage: checkInstallation()
-%
-%	Simonas Marcisauskas, 2019-10-09
-%
 
 %Check if RAVEN is in the MATLAB path list
 paths=textscan(path,'%s','delimiter', pathsep);

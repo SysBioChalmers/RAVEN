@@ -12,9 +12,6 @@ function subGraphs=getAllSubGraphs(model)
 %                 columns are ordered so that larger subgraphs come first
 %
 %   Usage: subGraphs=getAllSubGraphs(model)
-%
-%   Rasmus Agren, 2013-11-22
-%
 
 %Generate the connectivity graph. Metabolites are connected through
 %reactions. This is not a bipartite graph with the reactions.

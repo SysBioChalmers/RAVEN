@@ -6,9 +6,6 @@
 %   user is somewhat familiar with linear programming.
 %
 %   It is assumed that the user has already completed Tutorials 2-3
-%
-%   Simonas Marcisauskas, 2019-10-24
-%
 
 %Import the Excel model
 model=importExcelModel('smallYeastBad.xlsx');

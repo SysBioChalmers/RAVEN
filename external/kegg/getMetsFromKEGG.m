@@ -30,9 +30,6 @@ function model=getMetsFromKEGG(keggPath)
 %               
 %   Usage: model=getMetsFromKEGG(keggPath)
 %
-%   Simonas Marcisauskas, 2019-09-09
-%
-%
 % NOTE: This is how one entry looks in the file
 %
 % ENTRY       C00001                      Compound

@@ -10,9 +10,6 @@ function newModel=permuteModel(model, indexes, type)
 % 	newModel  an updated model structure
 %
 % 	Usage: newModel=permuteModel(model, indexes, type)
-%
-%   Simonas Marcisauskas, 2017-09-06
-%
 
 newModel=model;
 indexes=indexes(:);

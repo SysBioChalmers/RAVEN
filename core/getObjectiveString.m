@@ -11,9 +11,6 @@ function objectiveString = getObjectiveString(max, objectiveNames, objectiveValu
 %
 %   Usage: objectiveString = getObjectiveString(max, objectiveNames,
 %           objectiveValues)
-%
-%   Rasmus Agren, 2010-12-16
-%
 
 objectiveString='';
 

@@ -18,9 +18,6 @@ function I=haveFlux(model,cutOff,rxns)
 %   arbitary large value of +/- 10000 prior to solving
 %
 %   Usage: I=haveFlux(model,cutOff, rxns)
-%
-%   Rasmus Agren, 2014-05-06
-%
 
 if nargin<2
     cutOff=10^-6;

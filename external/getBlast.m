@@ -26,9 +26,6 @@ function blastStructure=getBlast(organismID,fastaFile,modelIDs,refFastaFiles)
 %
 %   Usage: blastStructure=getBlast(organismID,fastaFile,modelIDs,...
 %           refFastaFiles)
-%
-%   Simonas Marcisauskas, 2019-08-17
-%
 
 %Everything should be cell arrays
 organismID=cellstr(organismID);

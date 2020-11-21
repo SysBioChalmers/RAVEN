@@ -61,9 +61,6 @@ function [outModel, geneLocalization, transportStruct, scores,...
 %   Usage: [outModel, geneLocalization, transportStruct, scores,...
 %       removedRxns] = predictLocalization(model, GSS,...
 %       defaultCompartment, transportCost, maxTime, plotResults)
-%
-%	Simonas Marcisauskas, 2019-11-13
-%
 
 if nargin<4
     transportCost=ones(numel(model.mets),1)*0.5;

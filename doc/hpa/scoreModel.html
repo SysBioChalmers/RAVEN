@@ -82,9 +82,7 @@
 
    Usage: [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,...
                hpaData,arrayData,tissue,celltype,noGeneScore,multipleGeneScoring,...
-               multipleCellScoring,hpaLevelScores)
-
-   Jonathan Robinson, 2018-03-01</pre></div>
+               multipleCellScoring,hpaLevelScores)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -158,270 +156,267 @@ This function is called by:
 0055 <span class="comment">%   Usage: [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,...</span>
 0056 <span class="comment">%               hpaData,arrayData,tissue,celltype,noGeneScore,multipleGeneScoring,...</span>
 0057 <span class="comment">%               multipleCellScoring,hpaLevelScores)</span>
-0058 <span class="comment">%</span>
-0059 <span class="comment">%   Jonathan Robinson, 2018-03-01</span>
-0060 <span class="comment">%</span>
-0061 
-0062 <span class="keyword">if</span> nargin&lt;3
-0063     arrayData=[];
+0058 
+0059 <span class="keyword">if</span> nargin&lt;3
+0060     arrayData=[];
+0061 <span class="keyword">end</span>
+0062 <span class="keyword">if</span> nargin&lt;5
+0063     celltype=[];
 0064 <span class="keyword">end</span>
-0065 <span class="keyword">if</span> nargin&lt;5
-0066     celltype=[];
+0065 <span class="keyword">if</span> nargin&lt;6
+0066     noGeneScore=-2;
 0067 <span class="keyword">end</span>
-0068 <span class="keyword">if</span> nargin&lt;6
-0069     noGeneScore=-2;
+0068 <span class="keyword">if</span> nargin&lt;7
+0069     multipleGeneScoring=<span class="string">'best'</span>;
 0070 <span class="keyword">end</span>
-0071 <span class="keyword">if</span> nargin&lt;7
-0072     multipleGeneScoring=<span class="string">'best'</span>;
+0071 <span class="keyword">if</span> nargin&lt;8
+0072     multipleCellScoring=<span class="string">'best'</span>;
 0073 <span class="keyword">end</span>
-0074 <span class="keyword">if</span> nargin&lt;8
-0075     multipleCellScoring=<span class="string">'best'</span>;
-0076 <span class="keyword">end</span>
-0077 <span class="keyword">if</span> nargin&lt;9
-0078     <span class="comment">%The first four are for APE, the other ones for staining</span>
-0079     hpaLevelScores.names={<span class="string">'High'</span> <span class="string">'Medium'</span> <span class="string">'Low'</span> <span class="string">'None'</span> <span class="string">'Strong'</span> <span class="string">'Moderate'</span> <span class="string">'Weak'</span> <span class="string">'Negative'</span> <span class="string">'Not detected'</span>};
-0080     hpaLevelScores.scores=[20 15 10 -8 20 15 10 -8 -8];
-0081 <span class="keyword">end</span>
-0082 
-0083 <span class="keyword">if</span> isempty(hpaData) &amp;&amp; isempty(arrayData)
-0084     EM=<span class="string">'Must supply hpaData, arrayData or both'</span>;
-0085     dispEM(EM);
-0086 <span class="keyword">end</span>
-0087 <span class="keyword">if</span> ~strcmpi(multipleGeneScoring,<span class="string">'best'</span>) &amp;&amp; ~strcmpi(multipleGeneScoring,<span class="string">'average'</span>)
-0088     EM=<span class="string">'Valid options for multipleGeneScoring are &quot;best&quot; or &quot;average&quot;'</span>;
-0089     dispEM(EM);
-0090 <span class="keyword">end</span>
-0091 <span class="keyword">if</span> ~strcmpi(multipleCellScoring,<span class="string">'best'</span>) &amp;&amp; ~strcmpi(multipleCellScoring,<span class="string">'average'</span>)
-0092     EM=<span class="string">'Valid options for multipleCellScoring are &quot;best&quot; or &quot;average&quot;'</span>;
-0093     dispEM(EM);
-0094 <span class="keyword">end</span>
-0095 
-0096 
-0097 <span class="comment">%Throw an error if array data for only one tissue is supplied without</span>
-0098 <span class="comment">%specifying threshold values</span>
-0099 <span class="keyword">if</span> ~isempty(arrayData)
-0100     <span class="keyword">if</span> numel(unique(arrayData.tissues))&lt;2
-0101         <span class="keyword">if</span> ~isfield(arrayData,<span class="string">'threshold'</span>) || isempty(arrayData.threshold)
-0102             EM=<span class="string">'arrayData must contain measurements for at least two celltypes/tissues since the score is calculated based on the expression level compared to the overall average'</span>;
-0103             dispEM(EM);
-0104         <span class="keyword">end</span>
-0105     <span class="keyword">end</span>
-0106 <span class="keyword">end</span>
-0107 
-0108 <span class="comment">%Process arrayData.threshold if necessary</span>
-0109 <span class="keyword">if</span> isfield(arrayData,<span class="string">'threshold'</span>) &amp;&amp; (numel(arrayData.threshold) == 1)
-0110     <span class="comment">% if only a single gene threshold value is provided, then just</span>
-0111     <span class="comment">% duplicate this value for all genes.</span>
-0112     arrayData.threshold = arrayData.threshold*ones(size(arrayData.genes));
-0113 <span class="keyword">end</span>
-0114 
-0115 <span class="comment">%This is so that the code can ignore which combination of input data that is</span>
-0116 <span class="comment">%used</span>
-0117 <span class="keyword">if</span> isempty(arrayData)
-0118     arrayData.genes={};
-0119     arrayData.tissues={};
-0120     arrayData.celltypes={};
-0121     arrayData.levels=[];
-0122     arrayData.threshold=[];
-0123 <span class="keyword">end</span>
-0124 <span class="keyword">if</span> isempty(hpaData)
-0125     hpaData.genes={};
-0126     hpaData.tissues={};
-0127     hpaData.celltypes={};
-0128     hpaData.levels={};
-0129     hpaData.types={};
-0130     hpaData.reliabilities={};
-0131     hpaData.gene2Level=[];
-0132     hpaData.gene2Type=[];
-0133     hpaData.gene2Reliability=[];
-0134 <span class="keyword">end</span>
-0135 
-0136 <span class="comment">%Check that the tissue exists</span>
-0137 <span class="keyword">if</span> ~ismember(upper(tissue),upper(hpaData.tissues)) &amp;&amp; ~ismember(upper(tissue),upper(arrayData.tissues))
-0138     EM=<span class="string">'The tissue name does not match'</span>;
-0139     dispEM(EM);
-0140 <span class="keyword">end</span>
-0141 <span class="keyword">if</span> any(celltype)
-0142     <span class="comment">%Check that both data types has cell type defined if that is to be used</span>
-0143     <span class="keyword">if</span> ~isfield(hpaData,<span class="string">'celltypes'</span>) || ~isfield(arrayData,<span class="string">'celltypes'</span>)
-0144         EM=<span class="string">'Both hpaData and arrayData must contain cell type information if cell type is to be used'</span>;
-0145         dispEM(EM);
-0146     <span class="keyword">end</span>
-0147     <span class="keyword">if</span> ~ismember(upper(celltype),upper(hpaData.celltypes)) &amp;&amp; ~ismember(upper(celltype),upper(arrayData.celltypes))
-0148         EM=<span class="string">'The cell type name does not match'</span>;
-0149         dispEM(EM);
-0150     <span class="keyword">end</span>
-0151 <span class="keyword">end</span>
-0152 
-0153 <span class="comment">%Some preprocessing of the structures to speed up a little Remove all</span>
-0154 <span class="comment">%tissues that are not the correct one</span>
-0155 J=~strcmpi(hpaData.tissues,tissue);
-0156 
-0157 <span class="comment">%If cell type is supplied, then only keep that cell type</span>
-0158 <span class="keyword">if</span> any(celltype)
-0159     J=J | ~strcmpi(hpaData.celltypes,celltype);
-0160 <span class="keyword">end</span>
-0161 
-0162 hpaData.tissues(J)=[];
-0163 <span class="keyword">if</span> isfield(hpaData,<span class="string">'celltypes'</span>)
-0164     hpaData.celltypes(J)=[];
+0074 <span class="keyword">if</span> nargin&lt;9
+0075     <span class="comment">%The first four are for APE, the other ones for staining</span>
+0076     hpaLevelScores.names={<span class="string">'High'</span> <span class="string">'Medium'</span> <span class="string">'Low'</span> <span class="string">'None'</span> <span class="string">'Strong'</span> <span class="string">'Moderate'</span> <span class="string">'Weak'</span> <span class="string">'Negative'</span> <span class="string">'Not detected'</span>};
+0077     hpaLevelScores.scores=[20 15 10 -8 20 15 10 -8 -8];
+0078 <span class="keyword">end</span>
+0079 
+0080 <span class="keyword">if</span> isempty(hpaData) &amp;&amp; isempty(arrayData)
+0081     EM=<span class="string">'Must supply hpaData, arrayData or both'</span>;
+0082     dispEM(EM);
+0083 <span class="keyword">end</span>
+0084 <span class="keyword">if</span> ~strcmpi(multipleGeneScoring,<span class="string">'best'</span>) &amp;&amp; ~strcmpi(multipleGeneScoring,<span class="string">'average'</span>)
+0085     EM=<span class="string">'Valid options for multipleGeneScoring are &quot;best&quot; or &quot;average&quot;'</span>;
+0086     dispEM(EM);
+0087 <span class="keyword">end</span>
+0088 <span class="keyword">if</span> ~strcmpi(multipleCellScoring,<span class="string">'best'</span>) &amp;&amp; ~strcmpi(multipleCellScoring,<span class="string">'average'</span>)
+0089     EM=<span class="string">'Valid options for multipleCellScoring are &quot;best&quot; or &quot;average&quot;'</span>;
+0090     dispEM(EM);
+0091 <span class="keyword">end</span>
+0092 
+0093 
+0094 <span class="comment">%Throw an error if array data for only one tissue is supplied without</span>
+0095 <span class="comment">%specifying threshold values</span>
+0096 <span class="keyword">if</span> ~isempty(arrayData)
+0097     <span class="keyword">if</span> numel(unique(arrayData.tissues))&lt;2
+0098         <span class="keyword">if</span> ~isfield(arrayData,<span class="string">'threshold'</span>) || isempty(arrayData.threshold)
+0099             EM=<span class="string">'arrayData must contain measurements for at least two celltypes/tissues since the score is calculated based on the expression level compared to the overall average'</span>;
+0100             dispEM(EM);
+0101         <span class="keyword">end</span>
+0102     <span class="keyword">end</span>
+0103 <span class="keyword">end</span>
+0104 
+0105 <span class="comment">%Process arrayData.threshold if necessary</span>
+0106 <span class="keyword">if</span> isfield(arrayData,<span class="string">'threshold'</span>) &amp;&amp; (numel(arrayData.threshold) == 1)
+0107     <span class="comment">% if only a single gene threshold value is provided, then just</span>
+0108     <span class="comment">% duplicate this value for all genes.</span>
+0109     arrayData.threshold = arrayData.threshold*ones(size(arrayData.genes));
+0110 <span class="keyword">end</span>
+0111 
+0112 <span class="comment">%This is so that the code can ignore which combination of input data that is</span>
+0113 <span class="comment">%used</span>
+0114 <span class="keyword">if</span> isempty(arrayData)
+0115     arrayData.genes={};
+0116     arrayData.tissues={};
+0117     arrayData.celltypes={};
+0118     arrayData.levels=[];
+0119     arrayData.threshold=[];
+0120 <span class="keyword">end</span>
+0121 <span class="keyword">if</span> isempty(hpaData)
+0122     hpaData.genes={};
+0123     hpaData.tissues={};
+0124     hpaData.celltypes={};
+0125     hpaData.levels={};
+0126     hpaData.types={};
+0127     hpaData.reliabilities={};
+0128     hpaData.gene2Level=[];
+0129     hpaData.gene2Type=[];
+0130     hpaData.gene2Reliability=[];
+0131 <span class="keyword">end</span>
+0132 
+0133 <span class="comment">%Check that the tissue exists</span>
+0134 <span class="keyword">if</span> ~ismember(upper(tissue),upper(hpaData.tissues)) &amp;&amp; ~ismember(upper(tissue),upper(arrayData.tissues))
+0135     EM=<span class="string">'The tissue name does not match'</span>;
+0136     dispEM(EM);
+0137 <span class="keyword">end</span>
+0138 <span class="keyword">if</span> any(celltype)
+0139     <span class="comment">%Check that both data types has cell type defined if that is to be used</span>
+0140     <span class="keyword">if</span> ~isfield(hpaData,<span class="string">'celltypes'</span>) || ~isfield(arrayData,<span class="string">'celltypes'</span>)
+0141         EM=<span class="string">'Both hpaData and arrayData must contain cell type information if cell type is to be used'</span>;
+0142         dispEM(EM);
+0143     <span class="keyword">end</span>
+0144     <span class="keyword">if</span> ~ismember(upper(celltype),upper(hpaData.celltypes)) &amp;&amp; ~ismember(upper(celltype),upper(arrayData.celltypes))
+0145         EM=<span class="string">'The cell type name does not match'</span>;
+0146         dispEM(EM);
+0147     <span class="keyword">end</span>
+0148 <span class="keyword">end</span>
+0149 
+0150 <span class="comment">%Some preprocessing of the structures to speed up a little Remove all</span>
+0151 <span class="comment">%tissues that are not the correct one</span>
+0152 J=~strcmpi(hpaData.tissues,tissue);
+0153 
+0154 <span class="comment">%If cell type is supplied, then only keep that cell type</span>
+0155 <span class="keyword">if</span> any(celltype)
+0156     J=J | ~strcmpi(hpaData.celltypes,celltype);
+0157 <span class="keyword">end</span>
+0158 
+0159 hpaData.tissues(J)=[];
+0160 <span class="keyword">if</span> isfield(hpaData,<span class="string">'celltypes'</span>)
+0161     hpaData.celltypes(J)=[];
+0162 <span class="keyword">end</span>
+0163 <span class="keyword">if</span> isfield(hpaData,<span class="string">'gene2Level'</span>)
+0164     hpaData.gene2Level(:,J)=[];
 0165 <span class="keyword">end</span>
-0166 <span class="keyword">if</span> isfield(hpaData,<span class="string">'gene2Level'</span>)
-0167     hpaData.gene2Level(:,J)=[];
+0166 <span class="keyword">if</span> isfield(hpaData,<span class="string">'gene2Type'</span>)
+0167     hpaData.gene2Type(:,J)=[];
 0168 <span class="keyword">end</span>
-0169 <span class="keyword">if</span> isfield(hpaData,<span class="string">'gene2Type'</span>)
-0170     hpaData.gene2Type(:,J)=[];
+0169 <span class="keyword">if</span> isfield(hpaData,<span class="string">'gene2Reliability'</span>)
+0170     hpaData.gene2Reliability(:,J)=[];
 0171 <span class="keyword">end</span>
-0172 <span class="keyword">if</span> isfield(hpaData,<span class="string">'gene2Reliability'</span>)
-0173     hpaData.gene2Reliability(:,J)=[];
-0174 <span class="keyword">end</span>
-0175 
-0176 <span class="comment">%Remove all genes from the structures that are not in model or that aren't</span>
-0177 <span class="comment">%measured in the tissue</span>
-0178 <span class="keyword">if</span> ~isempty(hpaData.genes) <span class="comment">%This should not be necessary, but the summation is a 0x1 matrix and the other is []</span>
-0179     I=~ismember(hpaData.genes,model.genes) | sum(hpaData.gene2Level,2)==0;
-0180 <span class="keyword">else</span>
-0181     I=[];
-0182 <span class="keyword">end</span>
-0183 hpaData.genes(I)=[];
-0184 <span class="keyword">if</span> isfield(hpaData,<span class="string">'gene2Level'</span>)
-0185     hpaData.gene2Level(I,:)=[];
+0172 
+0173 <span class="comment">%Remove all genes from the structures that are not in model or that aren't</span>
+0174 <span class="comment">%measured in the tissue</span>
+0175 <span class="keyword">if</span> ~isempty(hpaData.genes) <span class="comment">%This should not be necessary, but the summation is a 0x1 matrix and the other is []</span>
+0176     I=~ismember(hpaData.genes,model.genes) | sum(hpaData.gene2Level,2)==0;
+0177 <span class="keyword">else</span>
+0178     I=[];
+0179 <span class="keyword">end</span>
+0180 hpaData.genes(I)=[];
+0181 <span class="keyword">if</span> isfield(hpaData,<span class="string">'gene2Level'</span>)
+0182     hpaData.gene2Level(I,:)=[];
+0183 <span class="keyword">end</span>
+0184 <span class="keyword">if</span> isfield(hpaData,<span class="string">'gene2Type'</span>)
+0185     hpaData.gene2Type(I,:)=[];
 0186 <span class="keyword">end</span>
-0187 <span class="keyword">if</span> isfield(hpaData,<span class="string">'gene2Type'</span>)
-0188     hpaData.gene2Type(I,:)=[];
+0187 <span class="keyword">if</span> isfield(hpaData,<span class="string">'gene2Reliability'</span>)
+0188     hpaData.gene2Reliability(I,:)=[];
 0189 <span class="keyword">end</span>
-0190 <span class="keyword">if</span> isfield(hpaData,<span class="string">'gene2Reliability'</span>)
-0191     hpaData.gene2Reliability(I,:)=[];
-0192 <span class="keyword">end</span>
-0193 
-0194 I=strcmpi(arrayData.tissues,tissue);
-0195 <span class="comment">%If cell type is supplied, then only keep that cell type</span>
-0196 <span class="keyword">if</span> any(celltype)
-0197     I=I &amp; strcmpi(arrayData.celltypes,celltype);
-0198 <span class="keyword">end</span>
-0199 
-0200 <span class="comment">%Remove all genes from the structures that are not in model or that aren't</span>
-0201 <span class="comment">%measured in the tissue</span>
-0202 J=~ismember(arrayData.genes,model.genes) | <a href="#_sub2" class="code" title="subfunction y=myAll(x,dim)">myAll</a>(isnan(arrayData.levels(:,I)),2);
-0203 arrayData.genes(J)=[];
-0204 arrayData.levels(J,:)=[];
-0205 <span class="keyword">if</span> isfield(arrayData,<span class="string">'threshold'</span>)
-0206     arrayData.threshold(J) = [];
-0207 <span class="keyword">end</span>
-0208 
-0209 <span class="comment">%Calculate the scores for the arrayData. These scores are calculated for</span>
-0210 <span class="comment">%each genes from its fold change between the tissue/celltype(s) in question</span>
-0211 <span class="comment">%and all other celltypes. This is a lower quality data than protein</span>
-0212 <span class="comment">%abundance, since a gene that is equally highly expressed in all cell types</span>
-0213 <span class="comment">%will have a score of 0.0. These scores are therefore only used for genes</span>
-0214 <span class="comment">%for which there is no HPA data available. The fold changes are transformed</span>
-0215 <span class="comment">%as min(log(x),10) for x&gt;1 and max(log(x),-5) for x&lt;1 in order to have</span>
-0216 <span class="comment">%negative scores for lower expressed genes and to scale the scrores to have</span>
-0217 <span class="comment">%somewhat lower weights than the HPA scores</span>
-0218 tempArrayLevels=arrayData.levels;
-0219 tempArrayLevels(isnan(tempArrayLevels))=0;
-0220 <span class="keyword">if</span> isfield(arrayData,<span class="string">'threshold'</span>) &amp;&amp; ~isempty(arrayData.threshold)
-0221     <span class="comment">% if provided, the user-supplied expression threshold value(s) will be</span>
-0222     <span class="comment">% used as the &quot;average&quot; expression level to which each gene is</span>
-0223     <span class="comment">% compared.</span>
-0224     average=arrayData.threshold;
-0225 <span class="keyword">else</span>
-0226     average=sum(tempArrayLevels,2)./sum(~isnan(arrayData.levels),2);
-0227 <span class="keyword">end</span>
-0228 <span class="keyword">if</span> strcmpi(multipleCellScoring,<span class="string">'best'</span>)
-0229     current=max(tempArrayLevels(:,I),[],2);
-0230 <span class="keyword">else</span>
-0231     current=sum(tempArrayLevels(:,I),2)./sum(~isnan(arrayData.levels(:,I)),2);
-0232 <span class="keyword">end</span>
-0233 <span class="keyword">if</span> ~isempty(current)
-0234     aScores=5*log(current./average);
-0235 <span class="keyword">else</span>
-0236     aScores=[];
-0237 <span class="keyword">end</span>
-0238 aScores(aScores&gt;0)=min(aScores(aScores&gt;0),10);
-0239 aScores(aScores&lt;0)=max(aScores(aScores&lt;0),-5);
-0240 aScores(isnan(aScores)) = -5;  <span class="comment">% NaNs occur when gene expression is zero across all tissues</span>
-0241 
-0242 <span class="comment">%Map the HPA levels to scores</span>
-0243 [I, J]=ismember(upper(hpaData.levels),upper(hpaLevelScores.names));
-0244 <span class="keyword">if</span> ~all(I)
-0245     EM=<span class="string">'There are expression level categories that do not match to hpaLevelScores'</span>;
-0246     dispEM(EM);
-0247 <span class="keyword">end</span>
-0248 [K, L, M]=find(hpaData.gene2Level);
-0249 scores=hpaLevelScores.scores(J);
-0250 <span class="keyword">if</span> strcmpi(multipleCellScoring,<span class="string">'best'</span>)
-0251     hScores=max(sparse(K,L,scores(M),numel(hpaData.genes),numel(hpaData.tissues)),[],2);
-0252 <span class="keyword">else</span>
-0253     hScores=mean(sparse(K,L,scores(M),numel(hpaData.genes),numel(hpaData.tissues)),2);
-0254 <span class="keyword">end</span>
-0255 
-0256 <span class="comment">%Get the scores for the genes, only use HPA if available</span>
-0257 geneScores=inf(numel(model.genes),1)*-1;
-0258 hpaScores=geneScores;
-0259 arrayScores=geneScores;
-0260 
-0261 [I, J]=ismember(model.genes,hpaData.genes);
-0262 hpaScores(I)=hScores(J(I));
-0263 geneScores(I)=hScores(J(I));
-0264 [I, J]=ismember(model.genes,arrayData.genes);
-0265 arrayScores(I)=aScores(J(I));
-0266 geneScores(I &amp; <a href="#_sub1" class="code" title="subfunction y=myIsInf(x)">myIsInf</a>(geneScores))=aScores(J(I &amp; <a href="#_sub1" class="code" title="subfunction y=myIsInf(x)">myIsInf</a>(geneScores)));
-0267 
-0268 <span class="comment">%Remove the genes that have no data from the model</span>
-0269 I=ismember(model.genes,hpaData.genes) | ismember(model.genes,arrayData.genes);
-0270 model.genes(~I)=[];
-0271 model.rxnGeneMat(:,~I)=[];
-0272 
-0273 <span class="comment">%Map the genes to the HPA/array genes</span>
-0274 [hpaExist, hpaMap]=ismember(model.genes,hpaData.genes);
-0275 [arrayExist, arrayMap]=ismember(model.genes,arrayData.genes);
+0190 
+0191 I=strcmpi(arrayData.tissues,tissue);
+0192 <span class="comment">%If cell type is supplied, then only keep that cell type</span>
+0193 <span class="keyword">if</span> any(celltype)
+0194     I=I &amp; strcmpi(arrayData.celltypes,celltype);
+0195 <span class="keyword">end</span>
+0196 
+0197 <span class="comment">%Remove all genes from the structures that are not in model or that aren't</span>
+0198 <span class="comment">%measured in the tissue</span>
+0199 J=~ismember(arrayData.genes,model.genes) | <a href="#_sub2" class="code" title="subfunction y=myAll(x,dim)">myAll</a>(isnan(arrayData.levels(:,I)),2);
+0200 arrayData.genes(J)=[];
+0201 arrayData.levels(J,:)=[];
+0202 <span class="keyword">if</span> isfield(arrayData,<span class="string">'threshold'</span>)
+0203     arrayData.threshold(J) = [];
+0204 <span class="keyword">end</span>
+0205 
+0206 <span class="comment">%Calculate the scores for the arrayData. These scores are calculated for</span>
+0207 <span class="comment">%each genes from its fold change between the tissue/celltype(s) in question</span>
+0208 <span class="comment">%and all other celltypes. This is a lower quality data than protein</span>
+0209 <span class="comment">%abundance, since a gene that is equally highly expressed in all cell types</span>
+0210 <span class="comment">%will have a score of 0.0. These scores are therefore only used for genes</span>
+0211 <span class="comment">%for which there is no HPA data available. The fold changes are transformed</span>
+0212 <span class="comment">%as min(log(x),10) for x&gt;1 and max(log(x),-5) for x&lt;1 in order to have</span>
+0213 <span class="comment">%negative scores for lower expressed genes and to scale the scrores to have</span>
+0214 <span class="comment">%somewhat lower weights than the HPA scores</span>
+0215 tempArrayLevels=arrayData.levels;
+0216 tempArrayLevels(isnan(tempArrayLevels))=0;
+0217 <span class="keyword">if</span> isfield(arrayData,<span class="string">'threshold'</span>) &amp;&amp; ~isempty(arrayData.threshold)
+0218     <span class="comment">% if provided, the user-supplied expression threshold value(s) will be</span>
+0219     <span class="comment">% used as the &quot;average&quot; expression level to which each gene is</span>
+0220     <span class="comment">% compared.</span>
+0221     average=arrayData.threshold;
+0222 <span class="keyword">else</span>
+0223     average=sum(tempArrayLevels,2)./sum(~isnan(arrayData.levels),2);
+0224 <span class="keyword">end</span>
+0225 <span class="keyword">if</span> strcmpi(multipleCellScoring,<span class="string">'best'</span>)
+0226     current=max(tempArrayLevels(:,I),[],2);
+0227 <span class="keyword">else</span>
+0228     current=sum(tempArrayLevels(:,I),2)./sum(~isnan(arrayData.levels(:,I)),2);
+0229 <span class="keyword">end</span>
+0230 <span class="keyword">if</span> ~isempty(current)
+0231     aScores=5*log(current./average);
+0232 <span class="keyword">else</span>
+0233     aScores=[];
+0234 <span class="keyword">end</span>
+0235 aScores(aScores&gt;0)=min(aScores(aScores&gt;0),10);
+0236 aScores(aScores&lt;0)=max(aScores(aScores&lt;0),-5);
+0237 aScores(isnan(aScores)) = -5;  <span class="comment">% NaNs occur when gene expression is zero across all tissues</span>
+0238 
+0239 <span class="comment">%Map the HPA levels to scores</span>
+0240 [I, J]=ismember(upper(hpaData.levels),upper(hpaLevelScores.names));
+0241 <span class="keyword">if</span> ~all(I)
+0242     EM=<span class="string">'There are expression level categories that do not match to hpaLevelScores'</span>;
+0243     dispEM(EM);
+0244 <span class="keyword">end</span>
+0245 [K, L, M]=find(hpaData.gene2Level);
+0246 scores=hpaLevelScores.scores(J);
+0247 <span class="keyword">if</span> strcmpi(multipleCellScoring,<span class="string">'best'</span>)
+0248     hScores=max(sparse(K,L,scores(M),numel(hpaData.genes),numel(hpaData.tissues)),[],2);
+0249 <span class="keyword">else</span>
+0250     hScores=mean(sparse(K,L,scores(M),numel(hpaData.genes),numel(hpaData.tissues)),2);
+0251 <span class="keyword">end</span>
+0252 
+0253 <span class="comment">%Get the scores for the genes, only use HPA if available</span>
+0254 geneScores=inf(numel(model.genes),1)*-1;
+0255 hpaScores=geneScores;
+0256 arrayScores=geneScores;
+0257 
+0258 [I, J]=ismember(model.genes,hpaData.genes);
+0259 hpaScores(I)=hScores(J(I));
+0260 geneScores(I)=hScores(J(I));
+0261 [I, J]=ismember(model.genes,arrayData.genes);
+0262 arrayScores(I)=aScores(J(I));
+0263 geneScores(I &amp; <a href="#_sub1" class="code" title="subfunction y=myIsInf(x)">myIsInf</a>(geneScores))=aScores(J(I &amp; <a href="#_sub1" class="code" title="subfunction y=myIsInf(x)">myIsInf</a>(geneScores)));
+0264 
+0265 <span class="comment">%Remove the genes that have no data from the model</span>
+0266 I=ismember(model.genes,hpaData.genes) | ismember(model.genes,arrayData.genes);
+0267 model.genes(~I)=[];
+0268 model.rxnGeneMat(:,~I)=[];
+0269 
+0270 <span class="comment">%Map the genes to the HPA/array genes</span>
+0271 [hpaExist, hpaMap]=ismember(model.genes,hpaData.genes);
+0272 [arrayExist, arrayMap]=ismember(model.genes,arrayData.genes);
+0273 
+0274 <span class="comment">%Set the default scores for reactions without genes</span>
+0275 rxnScores=ones(numel(model.rxns),1)*noGeneScore;
 0276 
-0277 <span class="comment">%Set the default scores for reactions without genes</span>
-0278 rxnScores=ones(numel(model.rxns),1)*noGeneScore;
-0279 
-0280 <span class="comment">%Loop through the reactions and calculate the scores</span>
-0281 <span class="keyword">for</span> i=1:numel(model.rxns)
-0282     <span class="comment">%Check if it has genes</span>
-0283     I=find(model.rxnGeneMat(i,:));
-0284     <span class="keyword">if</span> any(I)
-0285         <span class="comment">%If any of the genes exist in hpaData, then don't use arrayData</span>
-0286         <span class="keyword">if</span> any(hpaExist(I))
-0287             <span class="comment">%At least one gene was found in HPA</span>
-0288             <span class="keyword">if</span> strcmpi(multipleGeneScoring,<span class="string">'best'</span>)
-0289                 rxnScores(i)=max(hScores(hpaMap(I(hpaExist(I)))));
-0290             <span class="keyword">else</span>
-0291                 rxnScores(i)=mean(hScores(hpaMap(I(hpaExist(I)))));
-0292             <span class="keyword">end</span>
-0293         <span class="keyword">else</span>
-0294             <span class="comment">%Use array data</span>
-0295             <span class="keyword">if</span> any(arrayExist(I))
-0296                 <span class="comment">%At least one gene was found in the array data</span>
-0297                 <span class="keyword">if</span> strcmpi(multipleGeneScoring,<span class="string">'best'</span>)
-0298                     rxnScores(i)=max(aScores(arrayMap(I(arrayExist(I)))));
-0299                 <span class="keyword">else</span>
-0300                     rxnScores(i)=mean(aScores(arrayMap(I(arrayExist(I)))));
-0301                 <span class="keyword">end</span>
-0302             <span class="keyword">end</span>
-0303         <span class="keyword">end</span>
-0304     <span class="keyword">end</span>
-0305 <span class="keyword">end</span>
-0306 <span class="keyword">end</span>
-0307 
-0308 <span class="comment">%This is because isinf and all returns 0x1 for empty set, which gives a</span>
-0309 <span class="comment">%concatenation error. Do like this instead of having many if statements</span>
-0310 <a name="_sub1" href="#_subfunctions" class="code">function y=myIsInf(x)</a>
-0311 y=isinf(x);
-0312 <span class="keyword">if</span> isempty(y)
-0313     y=[];
-0314 <span class="keyword">end</span>
-0315 <span class="keyword">end</span>
-0316 <a name="_sub2" href="#_subfunctions" class="code">function y=myAll(x,dim)</a>
-0317 y=all(x,dim);
-0318 <span class="keyword">if</span> isempty(y)
-0319     y=[];
-0320 <span class="keyword">end</span>
-0321 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 03-Jun-2020 13:07:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0277 <span class="comment">%Loop through the reactions and calculate the scores</span>
+0278 <span class="keyword">for</span> i=1:numel(model.rxns)
+0279     <span class="comment">%Check if it has genes</span>
+0280     I=find(model.rxnGeneMat(i,:));
+0281     <span class="keyword">if</span> any(I)
+0282         <span class="comment">%If any of the genes exist in hpaData, then don't use arrayData</span>
+0283         <span class="keyword">if</span> any(hpaExist(I))
+0284             <span class="comment">%At least one gene was found in HPA</span>
+0285             <span class="keyword">if</span> strcmpi(multipleGeneScoring,<span class="string">'best'</span>)
+0286                 rxnScores(i)=max(hScores(hpaMap(I(hpaExist(I)))));
+0287             <span class="keyword">else</span>
+0288                 rxnScores(i)=mean(hScores(hpaMap(I(hpaExist(I)))));
+0289             <span class="keyword">end</span>
+0290         <span class="keyword">else</span>
+0291             <span class="comment">%Use array data</span>
+0292             <span class="keyword">if</span> any(arrayExist(I))
+0293                 <span class="comment">%At least one gene was found in the array data</span>
+0294                 <span class="keyword">if</span> strcmpi(multipleGeneScoring,<span class="string">'best'</span>)
+0295                     rxnScores(i)=max(aScores(arrayMap(I(arrayExist(I)))));
+0296                 <span class="keyword">else</span>
+0297                     rxnScores(i)=mean(aScores(arrayMap(I(arrayExist(I)))));
+0298                 <span class="keyword">end</span>
+0299             <span class="keyword">end</span>
+0300         <span class="keyword">end</span>
+0301     <span class="keyword">end</span>
+0302 <span class="keyword">end</span>
+0303 <span class="keyword">end</span>
+0304 
+0305 <span class="comment">%This is because isinf and all returns 0x1 for empty set, which gives a</span>
+0306 <span class="comment">%concatenation error. Do like this instead of having many if statements</span>
+0307 <a name="_sub1" href="#_subfunctions" class="code">function y=myIsInf(x)</a>
+0308 y=isinf(x);
+0309 <span class="keyword">if</span> isempty(y)
+0310     y=[];
+0311 <span class="keyword">end</span>
+0312 <span class="keyword">end</span>
+0313 <a name="_sub2" href="#_subfunctions" class="code">function y=myAll(x,dim)</a>
+0314 y=all(x,dim);
+0315 <span class="keyword">if</span> isempty(y)
+0316     y=[];
+0317 <span class="keyword">end</span>
+0318 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Fri 20-Nov-2020 22:58:53 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

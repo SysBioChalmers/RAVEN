@@ -22,9 +22,6 @@ function model=setParam(model, paramType, rxnList, params, var)
 %   model       an updated model structure
 %
 %   Usage: model=setParam(model, paramType, rxnList, params)
-%
-%   Eduard Kerkhoven, 2019-05-03
-%
 
 if ~isempty(setdiff(paramType,{'lb';'ub';'eq';'obj';'rev';'var'}))
     EM=['Incorrect parameter type: "' paramType '"'];

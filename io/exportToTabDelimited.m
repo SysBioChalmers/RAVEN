@@ -15,8 +15,6 @@ function exportToTabDelimited(model,path)
 %         checkModelStruct to identify problems in the model structure
 %
 %   Usage: exportToTabDelimited(model,path)
-%
-%   Cheewin Kittikunapong, 2019-04-02
 
 if nargin<2
     path='./';
@@ -293,7 +291,7 @@ if isfield(model,'id')
             toPrint=[toPrint '\t'];
         end
     else
-        toPrint=[toPrint num2str(min(model.lb)) '\t' num2str(max(model.ub)) '\tRasmus\tAgren\trasmus.agren@scilifelab.se\tChalmers University of Technology\t\t\n'];
+        toPrint=[toPrint num2str(min(model.lb)) '\t' num2str(max(model.ub)) '\t\t\t\t\t\t\n'];
     end
     fprintf(modelFile,toPrint);
     fclose(modelFile);

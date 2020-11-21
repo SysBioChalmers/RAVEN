@@ -64,9 +64,6 @@ function pathway = constructPathwayFromCelldesigner(inputFile)
 %               type            'METABOLITE' or 'ENZYME'
 %
 %	Usage: pathway = constructPathwayFromCelldesigner(inputFile)
-%
-%   Rasmus Agren, 2010-12-16
-%
 
 %Loads the specified xml file using XML Toolbox
 [ST, I]=dbstack('-completenames');
@@ -319,9 +316,6 @@ function [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)
 %   [x, y]          The position of the binding site for the species
 %
 %   Usage: [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)
-%
-%   Rasmus Ågren, 2010-12-16
-%
 
 %Find the species
 for i=1:length(pathway.listOfSpecies)

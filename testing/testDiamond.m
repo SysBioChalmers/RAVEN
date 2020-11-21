@@ -21,9 +21,6 @@ function [success,blastStructure]=testDiamond(fullCheck)
 %   directory
 %
 %   Usage: [success,blastStructure]=testDiamond(fullCheck)
-%
-%   Simonas Marcisauskas, 2019-10-04
-%
 
 if nargin<1
     fullCheck=true;

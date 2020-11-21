@@ -13,9 +13,6 @@ function checkModelStruct(model,throwErrors,trimWarnings)
 %   attempting to export a model to SBML format.
 %
 %   Usage: checkModelStruct(model,throwErrors,trimWarnings)
-%
-%   Simonas Marcisauskas, 2018-03-18
-%
 
 if nargin<2
     throwErrors=true;

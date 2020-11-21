@@ -28,10 +28,6 @@ function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sort
 %
 %   Usage: equationStrings=constructEquations(model,rxns,useComps,...
 %           sortRevRxns,sortMetNames,useMetID,useFormula)
-%
-%   Hao Wang, 2019-03-05
-%   Benjamin Sanchez, 2018-08-22
-%
 
 if nargin<2
     rxns=model.rxns;

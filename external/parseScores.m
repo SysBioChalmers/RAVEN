@@ -14,9 +14,6 @@ function GSS = parseScores(inputFile, predictor)
 %	is 1.0.
 %
 %	Usage: GSS = parseScores(inputFile, predictor)
-%
-%	Simonas Marcisauskas, 2019-11-13
-%
 
 if nargin<2
     predictor='wolf';

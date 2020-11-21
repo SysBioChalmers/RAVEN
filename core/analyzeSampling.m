@@ -28,9 +28,6 @@ function scores=analyzeSampling(Tex, df, solutionsA, solutionsB, printResults)
 %                      in opposed directions in flux and expression.
 %
 %   Usage: scores=analyzeSampling(Tex, df, solutionsA, solutionsB, printResults)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
 if nargin<5
     printResults=false;

@@ -13,9 +13,6 @@ function dispEM(string,throwErrors,toList,trimWarnings)
 %                   a given error/warning (opt, default true)
 %
 %   Usage: dispEM(string,throwErrors,toList,trimWarnings)
-%
-%   Rasmus Agren, 2013-08-01
-%
 
 if nargin<2
     throwErrors=true;

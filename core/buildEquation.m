@@ -10,9 +10,6 @@ function equationString=buildEquation(mets,stoichCoeffs,isrev)
 %   equationString  equation as a string
 %
 %    Usage: equationString=buildEquation(mets,stoichCoeffs,isrev)
-%
-%   Benjamin Sanchez, 2018-08-22
-%
 
 if ~iscellstr(mets) && ~ischar(mets)
     EM = 'mets must be a cell array of strings';

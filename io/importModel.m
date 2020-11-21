@@ -72,9 +72,6 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %         consensus network model formulation.
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
-%
-%   Eduard Kerkhoven, 2018-07-19
-%
 
 if nargin<2
     removeExcMets=true;
@@ -749,7 +746,7 @@ reactionObjective=reactionObjective(1:counter);
 S=S(:,1:counter);
 
 model.description=modelSBML.name;
-model.id=modelSBML.id;
+model.id=regexprep(modelSBML.id,'^M_',''); % COBRA adds M_ prefix
 model.rxns=reactionIDs;
 model.mets=metaboliteIDs;
 model.S=sparse(S);
@@ -1018,6 +1015,7 @@ model.mets=regexprep(model.mets,'__([0-9]+)__','${char(str2num($1))}');
 model.comps=regexprep(model.comps,'__([0-9]+)__','${char(str2num($1))}');
 model.grRules=regexprep(model.grRules,'__([0-9]+)__','${char(str2num($1))}');
 model.genes=regexprep(model.genes,'__([0-9]+)__','${char(str2num($1))}');
+model.id=regexprep(model.id,'__([0-9]+)__','${char(str2num($1))}');
 
 %Remove unused fields
 if isempty(model.annotation)

@@ -21,9 +21,6 @@ function [success,blastStructure]=testBlast(fullCheck)
 %   directory
 %
 %   Usage: [success,blastStructure]=testBlast(fullCheck)
-%
-%   Simonas Marcisauskas, 2019-10-04
-%
 
 if nargin<1
     fullCheck=true;

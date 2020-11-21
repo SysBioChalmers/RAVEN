@@ -46,9 +46,6 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 %   pre-prepared lists of MetaCyc transport and undetermined reactions.
 %
 %   Usage: model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
-%
-%   Hao Wang, 2018-11-01
-%
 
 %NOTE: This is how one entry looks in the file
 
@@ -91,8 +88,9 @@ metaCycRxnFile='reactions.dat';
 metaCycPwyFile='pathway-links.dat';
 
 if exist(rxnsFile, 'file')
-    fprintf(['NOTE: Importing MetaCyc reactions from ' strrep(rxnsFile,'\','/') '.\n']);
+    fprintf(['Importing MetaCyc reactions from ' strrep(rxnsFile,'\','/') '... ']);
     load(rxnsFile);
+    fprintf('done\n');
 else
     fprintf(['Cannot locate ' strrep(rxnsFile,'\','/') '\nNow try to generate it from local MetaCyc data files...\n']);
     if ~exist(fullfile(metacycPath,metaCycRxnFile),'file') || ~exist(fullfile(metacycPath,metaCycPwyFile),'file')

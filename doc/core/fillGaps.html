@@ -89,9 +89,7 @@
 
    Usage: [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=...
            fillGaps(model,models,allowNetProduction,useModelConstraints,...
-           supressWarnings,rxnScores,params)
-
-   Eduard Kerkhoven, 2017-11-28</pre></div>
+           supressWarnings,rxnScores,params)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -170,163 +168,160 @@ This function is called by:
 0062 <span class="comment">%   Usage: [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=...</span>
 0063 <span class="comment">%           fillGaps(model,models,allowNetProduction,useModelConstraints,...</span>
 0064 <span class="comment">%           supressWarnings,rxnScores,params)</span>
-0065 <span class="comment">%</span>
-0066 <span class="comment">%   Eduard Kerkhoven, 2017-11-28</span>
-0067 <span class="comment">%</span>
-0068 
-0069 <span class="comment">%If the user only supplied a single template model</span>
-0070 <span class="keyword">if</span> ~iscell(models)
-0071     models={models};
-0072 <span class="keyword">end</span>
-0073 
-0074 <span class="keyword">if</span> nargin&lt;3
-0075     allowNetProduction=false;
+0065 
+0066 <span class="comment">%If the user only supplied a single template model</span>
+0067 <span class="keyword">if</span> ~iscell(models)
+0068     models={models};
+0069 <span class="keyword">end</span>
+0070 
+0071 <span class="keyword">if</span> nargin&lt;3
+0072     allowNetProduction=false;
+0073 <span class="keyword">end</span>
+0074 <span class="keyword">if</span> nargin&lt;4
+0075     useModelConstraints=false;
 0076 <span class="keyword">end</span>
-0077 <span class="keyword">if</span> nargin&lt;4
-0078     useModelConstraints=false;
+0077 <span class="keyword">if</span> nargin&lt;5
+0078     supressWarnings=false;
 0079 <span class="keyword">end</span>
-0080 <span class="keyword">if</span> nargin&lt;5
-0081     supressWarnings=false;
-0082 <span class="keyword">end</span>
-0083 <span class="keyword">if</span> nargin&lt;6
-0084     rxnScores=cell(numel(models),1);
-0085     <span class="keyword">for</span> i=1:numel(models)
-0086         rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
-0087     <span class="keyword">end</span>
-0088 <span class="keyword">end</span>
-0089 <span class="keyword">if</span> isempty(rxnScores)
-0090     rxnScores=cell(numel(models),1);
-0091     <span class="keyword">for</span> i=1:numel(models)
-0092         rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
-0093     <span class="keyword">end</span>
+0080 <span class="keyword">if</span> nargin&lt;6
+0081     rxnScores=cell(numel(models),1);
+0082     <span class="keyword">for</span> i=1:numel(models)
+0083         rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
+0084     <span class="keyword">end</span>
+0085 <span class="keyword">end</span>
+0086 <span class="keyword">if</span> isempty(rxnScores)
+0087     rxnScores=cell(numel(models),1);
+0088     <span class="keyword">for</span> i=1:numel(models)
+0089         rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
+0090     <span class="keyword">end</span>
+0091 <span class="keyword">end</span>
+0092 <span class="keyword">if</span> nargin&lt;7
+0093     params=struct();
 0094 <span class="keyword">end</span>
-0095 <span class="keyword">if</span> nargin&lt;7
-0096     params=struct();
-0097 <span class="keyword">end</span>
-0098 
-0099 <span class="keyword">if</span> ~iscell(rxnScores)
-0100     rxnScores={rxnScores};
-0101 <span class="keyword">end</span>
+0095 
+0096 <span class="keyword">if</span> ~iscell(rxnScores)
+0097     rxnScores={rxnScores};
+0098 <span class="keyword">end</span>
+0099 
+0100 models=models(:);
+0101 rxnScores=rxnScores(:);
 0102 
-0103 models=models(:);
-0104 rxnScores=rxnScores(:);
-0105 
-0106 <span class="comment">%Check if the original model has an unconstrained field. If so, give a</span>
-0107 <span class="comment">%warning</span>
-0108 <span class="keyword">if</span> supressWarnings==false
-0109     <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
-0110         EM=<span class="string">'This algorithm is meant to function on a model with exchange reactions for uptake and excretion of metabolites. The current model still has the &quot;unconstrained&quot; field'</span>;
-0111         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0112     <span class="keyword">else</span>
-0113         <span class="keyword">if</span> isempty(<a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)">getExchangeRxns</a>(model,<span class="string">'both'</span>))
-0114             fprintf(<span class="string">'NOTE: This algorithm is meant to function on a model with exchange reactions for uptake and excretion of metabolites. The current model does not seem to contain any such reactions.\n'</span>);
-0115         <span class="keyword">end</span>
-0116     <span class="keyword">end</span>
-0117 <span class="keyword">end</span>
-0118 
-0119 <span class="comment">%Simplify the template models to remove constrained rxns. At the same time,</span>
-0120 <span class="comment">%check that the id of the template models isn't the same as the model. That</span>
-0121 <span class="comment">%would cause an error further down</span>
-0122 <span class="keyword">for</span> i=1:numel(models)
-0123     models{i}.rxnScores=rxnScores{i};
-0124     models{i}=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>(models{i},false,false,true);
-0125     <span class="keyword">if</span> strcmpi(models{i}.id,model.id)
-0126         EM=<span class="string">'The reference model(s) cannot have the same id as the model'</span>;
-0127         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0128     <span class="keyword">end</span>
-0129 <span class="keyword">end</span>
-0130 
-0131 <span class="comment">%This is a rather ugly solution to the issue that it's a bit tricky to keep</span>
-0132 <span class="comment">%track of which scores belong to which reactions. This requires that</span>
-0133 <span class="comment">%removeReactions and mergeModels are modified to check for the new field.</span>
-0134 model.rxnScores=zeros(numel(model.rxns),1);
+0103 <span class="comment">%Check if the original model has an unconstrained field. If so, give a</span>
+0104 <span class="comment">%warning</span>
+0105 <span class="keyword">if</span> supressWarnings==false
+0106     <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
+0107         EM=<span class="string">'This algorithm is meant to function on a model with exchange reactions for uptake and excretion of metabolites. The current model still has the &quot;unconstrained&quot; field'</span>;
+0108         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0109     <span class="keyword">else</span>
+0110         <span class="keyword">if</span> isempty(<a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)">getExchangeRxns</a>(model,<span class="string">'both'</span>))
+0111             fprintf(<span class="string">'NOTE: This algorithm is meant to function on a model with exchange reactions for uptake and excretion of metabolites. The current model does not seem to contain any such reactions.\n'</span>);
+0112         <span class="keyword">end</span>
+0113     <span class="keyword">end</span>
+0114 <span class="keyword">end</span>
+0115 
+0116 <span class="comment">%Simplify the template models to remove constrained rxns. At the same time,</span>
+0117 <span class="comment">%check that the id of the template models isn't the same as the model. That</span>
+0118 <span class="comment">%would cause an error further down</span>
+0119 <span class="keyword">for</span> i=1:numel(models)
+0120     models{i}.rxnScores=rxnScores{i};
+0121     models{i}=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>(models{i},false,false,true);
+0122     <span class="keyword">if</span> strcmpi(models{i}.id,model.id)
+0123         EM=<span class="string">'The reference model(s) cannot have the same id as the model'</span>;
+0124         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0125     <span class="keyword">end</span>
+0126 <span class="keyword">end</span>
+0127 
+0128 <span class="comment">%This is a rather ugly solution to the issue that it's a bit tricky to keep</span>
+0129 <span class="comment">%track of which scores belong to which reactions. This requires that</span>
+0130 <span class="comment">%removeReactions and mergeModels are modified to check for the new field.</span>
+0131 model.rxnScores=zeros(numel(model.rxns),1);
+0132 
+0133 <span class="comment">%First merge all models into one big one</span>
+0134 allModels=<a href="mergeModels.html" class="code" title="function model=mergeModels(models,metParam,supressWarnings)">mergeModels</a>([{model};models],<span class="string">'metNames'</span>,true);
 0135 
-0136 <span class="comment">%First merge all models into one big one</span>
-0137 allModels=<a href="mergeModels.html" class="code" title="function model=mergeModels(models,metParam,supressWarnings)">mergeModels</a>([{model};models],<span class="string">'metNames'</span>,true);
-0138 
-0139 <span class="comment">%Add that net production is ok</span>
-0140 <span class="keyword">if</span> allowNetProduction==true
-0141     <span class="comment">%A second column in model.b means that the b field is lower and upper</span>
-0142     <span class="comment">%bound on the RHS.</span>
-0143     model.b=[model.b(:,1) inf(numel(model.mets),1)];
-0144     allModels.b=[allModels.b(:,1) inf(numel(allModels.mets),1)];
-0145 <span class="keyword">end</span>
-0146 
-0147 <span class="keyword">if</span> useModelConstraints==true
-0148     newConnected={};
-0149     cannotConnect={};
-0150     
-0151     <span class="comment">%Check that the input model isn't solveable without any input</span>
-0152     sol=solveLP(model);
-0153     <span class="keyword">if</span> ~isempty(sol.f)
-0154         addedRxns={};
-0155         newModel=model;
-0156         exitFlag=1;
-0157         <span class="keyword">return</span>;
-0158     <span class="keyword">end</span>
-0159     
-0160     <span class="comment">%Then check that the merged model is solveable</span>
-0161     sol=solveLP(allModels);
-0162     <span class="keyword">if</span> isempty(sol.f)
-0163         EM=<span class="string">'There are no reactions in the template model(s) that can make the model constraints satisfied'</span>;
-0164         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0165     <span class="keyword">end</span>
-0166     
-0167     <span class="comment">%Remove dead ends for speed reasons. This has to be done here and</span>
-0168     <span class="comment">%duplicate below because there is otherwise a risk that a reaction</span>
-0169     <span class="comment">%which is constrained to something relevant is removed</span>
-0170     allModels=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>(allModels,false,false,false,true,false,false,false,[],true);
-0171     allModels.c(:)=0;
-0172 <span class="keyword">else</span>
-0173     <span class="comment">%Remove dead ends for speed reasons</span>
-0174     allModels=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>(allModels,false,false,false,true,false,false,false,[],true);
-0175     allModels.c(:)=0;
+0136 <span class="comment">%Add that net production is ok</span>
+0137 <span class="keyword">if</span> allowNetProduction==true
+0138     <span class="comment">%A second column in model.b means that the b field is lower and upper</span>
+0139     <span class="comment">%bound on the RHS.</span>
+0140     model.b=[model.b(:,1) inf(numel(model.mets),1)];
+0141     allModels.b=[allModels.b(:,1) inf(numel(allModels.mets),1)];
+0142 <span class="keyword">end</span>
+0143 
+0144 <span class="keyword">if</span> useModelConstraints==true
+0145     newConnected={};
+0146     cannotConnect={};
+0147     
+0148     <span class="comment">%Check that the input model isn't solveable without any input</span>
+0149     sol=solveLP(model);
+0150     <span class="keyword">if</span> ~isempty(sol.f)
+0151         addedRxns={};
+0152         newModel=model;
+0153         exitFlag=1;
+0154         <span class="keyword">return</span>;
+0155     <span class="keyword">end</span>
+0156     
+0157     <span class="comment">%Then check that the merged model is solveable</span>
+0158     sol=solveLP(allModels);
+0159     <span class="keyword">if</span> isempty(sol.f)
+0160         EM=<span class="string">'There are no reactions in the template model(s) that can make the model constraints satisfied'</span>;
+0161         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0162     <span class="keyword">end</span>
+0163     
+0164     <span class="comment">%Remove dead ends for speed reasons. This has to be done here and</span>
+0165     <span class="comment">%duplicate below because there is otherwise a risk that a reaction</span>
+0166     <span class="comment">%which is constrained to something relevant is removed</span>
+0167     allModels=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>(allModels,false,false,false,true,false,false,false,[],true);
+0168     allModels.c(:)=0;
+0169 <span class="keyword">else</span>
+0170     <span class="comment">%Remove dead ends for speed reasons</span>
+0171     allModels=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>(allModels,false,false,false,true,false,false,false,[],true);
+0172     allModels.c(:)=0;
+0173     
+0174     <span class="comment">%If model constraints shouldn't be used, then determine which reactions</span>
+0175     <span class="comment">%to force to have flux</span>
 0176     
-0177     <span class="comment">%If model constraints shouldn't be used, then determine which reactions</span>
-0178     <span class="comment">%to force to have flux</span>
+0177     <span class="comment">%Get the reactions that can carry flux in the original model</span>
+0178     originalFlux=<a href="haveFlux.html" class="code" title="function I=haveFlux(model,cutOff,rxns)">haveFlux</a>(model,1);
 0179     
-0180     <span class="comment">%Get the reactions that can carry flux in the original model</span>
-0181     originalFlux=<a href="haveFlux.html" class="code" title="function I=haveFlux(model,cutOff,rxns)">haveFlux</a>(model,1);
-0182     
-0183     <span class="comment">%For the ones that can't carry flux, see if they can do so in the</span>
-0184     <span class="comment">%merged model</span>
-0185     toCheck=intersect(allModels.rxns(strcmp(allModels.rxnFrom,model.id)),model.rxns(~originalFlux));
+0180     <span class="comment">%For the ones that can't carry flux, see if they can do so in the</span>
+0181     <span class="comment">%merged model</span>
+0182     toCheck=intersect(allModels.rxns(strcmp(allModels.rxnFrom,model.id)),model.rxns(~originalFlux));
+0183     
+0184     <span class="comment">%Get the ones that still cannot carry flux</span>
+0185     I=<a href="haveFlux.html" class="code" title="function I=haveFlux(model,cutOff,rxns)">haveFlux</a>(allModels,1,toCheck);
 0186     
-0187     <span class="comment">%Get the ones that still cannot carry flux</span>
-0188     I=<a href="haveFlux.html" class="code" title="function I=haveFlux(model,cutOff,rxns)">haveFlux</a>(allModels,1,toCheck);
-0189     
-0190     <span class="comment">%Get the reactions that can't carry flux in the original model, but can</span>
-0191     <span class="comment">%in the merged one</span>
-0192     K=toCheck(I);
-0193     
-0194     <span class="comment">%This is a temporary thing to only look at the non-reversible rxns.</span>
-0195     <span class="comment">%This is because all reversible rxns can have a flux in the</span>
-0196     <span class="comment">%irreversible model format that is used by getMinNrFluxes</span>
-0197     [~, I]=ismember(K,model.rxns);
-0198     K(model.rev(I)~=0)=[];
+0187     <span class="comment">%Get the reactions that can't carry flux in the original model, but can</span>
+0188     <span class="comment">%in the merged one</span>
+0189     K=toCheck(I);
+0190     
+0191     <span class="comment">%This is a temporary thing to only look at the non-reversible rxns.</span>
+0192     <span class="comment">%This is because all reversible rxns can have a flux in the</span>
+0193     <span class="comment">%irreversible model format that is used by getMinNrFluxes</span>
+0194     [~, I]=ismember(K,model.rxns);
+0195     K(model.rev(I)~=0)=[];
+0196     
+0197     <span class="comment">%Constrain all reactions in the original model to have a flux</span>
+0198     allModels.lb(ismember(allModels.rxns,K))=0.1;
 0199     
-0200     <span class="comment">%Constrain all reactions in the original model to have a flux</span>
-0201     allModels.lb(ismember(allModels.rxns,K))=0.1;
-0202     
-0203     <span class="comment">%Return stuff</span>
-0204     newConnected=K;
-0205     cannotConnect=setdiff(model.rxns(~originalFlux),newConnected);
-0206 <span class="keyword">end</span>
-0207 
-0208 <span class="comment">%Then minimize for the number of fluxes used. The fixed rxns doesn't need</span>
-0209 <span class="comment">%to participate</span>
-0210 templateRxns=find(~strcmp(allModels.rxnFrom,model.id));
-0211 [~, J, exitFlag]=<a href="getMinNrFluxes.html" class="code" title="function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)">getMinNrFluxes</a>(allModels,templateRxns,params,allModels.rxnScores(templateRxns));
-0212 
-0213 <span class="comment">%Remove everything except for the added ones</span>
-0214 I=true(numel(allModels.rxns),1);
-0215 I(templateRxns(J))=false;
-0216 addedModel=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(allModels,I,true,true,true);
-0217 
-0218 newModel=<a href="mergeModels.html" class="code" title="function model=mergeModels(models,metParam,supressWarnings)">mergeModels</a>({model;addedModel},<span class="string">'metNames'</span>,true);
-0219 addedRxns=setdiff(newModel.rxns,model.rxns);
-0220 newModel=rmfield(newModel,<span class="string">'rxnScores'</span>);
-0221 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 03-Jun-2020 13:07:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0200     <span class="comment">%Return stuff</span>
+0201     newConnected=K;
+0202     cannotConnect=setdiff(model.rxns(~originalFlux),newConnected);
+0203 <span class="keyword">end</span>
+0204 
+0205 <span class="comment">%Then minimize for the number of fluxes used. The fixed rxns doesn't need</span>
+0206 <span class="comment">%to participate</span>
+0207 templateRxns=find(~strcmp(allModels.rxnFrom,model.id));
+0208 [~, J, exitFlag]=<a href="getMinNrFluxes.html" class="code" title="function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)">getMinNrFluxes</a>(allModels,templateRxns,params,allModels.rxnScores(templateRxns));
+0209 
+0210 <span class="comment">%Remove everything except for the added ones</span>
+0211 I=true(numel(allModels.rxns),1);
+0212 I(templateRxns(J))=false;
+0213 addedModel=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(allModels,I,true,true,true);
+0214 
+0215 newModel=<a href="mergeModels.html" class="code" title="function model=mergeModels(models,metParam,supressWarnings)">mergeModels</a>({model;addedModel},<span class="string">'metNames'</span>,true);
+0216 addedRxns=setdiff(newModel.rxns,model.rxns);
+0217 newModel=rmfield(newModel,<span class="string">'rxnScores'</span>);
+0218 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Fri 20-Nov-2020 22:58:53 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

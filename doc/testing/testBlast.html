@@ -48,9 +48,7 @@
    requiring BLAST+ binaries and multi-FASTA file sce.fa from tutorials
    directory
 
-   Usage: [success,blastStructure]=testBlast(fullCheck)
-
-   Simonas Marcisauskas, 2019-10-04</pre></div>
+   Usage: [success,blastStructure]=testBlast(fullCheck)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -88,107 +86,104 @@ This function is called by:
 0021 <span class="comment">%   directory</span>
 0022 <span class="comment">%</span>
 0023 <span class="comment">%   Usage: [success,blastStructure]=testBlast(fullCheck)</span>
-0024 <span class="comment">%</span>
-0025 <span class="comment">%   Simonas Marcisauskas, 2019-10-04</span>
-0026 <span class="comment">%</span>
-0027 
-0028 <span class="keyword">if</span> nargin&lt;1
-0029     fullCheck=true;
-0030 <span class="keyword">end</span>
-0031 
-0032 <span class="comment">%Get the directory for RAVEN Toolbox</span>
-0033 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
-0034 ravenPath=fileparts(fileparts(ST(I).file));
-0035 
-0036 <span class="keyword">if</span> isunix
-0037     <span class="keyword">if</span> ismac
-0038         binEnd=<span class="string">'.mac'</span>;
-0039     <span class="keyword">else</span>
-0040         binEnd=<span class="string">''</span>;
-0041     <span class="keyword">end</span>
-0042 <span class="keyword">elseif</span> ispc
-0043     binEnd=<span class="string">''</span>;
-0044     setenv(<span class="string">'BLASTDB_LMDB_MAP_SIZE'</span>,<span class="string">'1000000'</span>);
-0045 <span class="keyword">else</span>
-0046     dispEM(<span class="string">'Unknown OS, exiting.'</span>)
-0047     <span class="keyword">return</span>
-0048 <span class="keyword">end</span>
-0049 
-0050 <span class="comment">%Create an empty blastStructure. Even if a quick BLAST+ evaluation is</span>
-0051 <span class="comment">%considered, blastStructure should still be in the output</span>
-0052 blastStructure=[];
-0053 
-0054 <span class="keyword">if</span> ~fullCheck
-0055     fprintf([<span class="string">'Checking blastp'</span> binEnd <span class="string">'... '</span>]);
-0056     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'blastp'</span> binEnd]) <span class="string">'&quot;'</span>]);
-0057     <span class="keyword">if</span> res==1
-0058         fprintf(<span class="string">'OK\n'</span>);
-0059     <span class="keyword">else</span>
-0060         fprintf(<span class="string">'Not OK! The binary must be recompiled from source before running RAVEN\n'</span>);
-0061     <span class="keyword">end</span>
-0062     fprintf([<span class="string">'Checking makeblastdb'</span> binEnd <span class="string">'... '</span>]);
-0063     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'makeblastdb'</span> binEnd]) <span class="string">'&quot;'</span>]);
-0064     <span class="keyword">if</span> res==1
-0065         fprintf(<span class="string">'OK\n'</span>);
-0066     <span class="keyword">else</span>
-0067         fprintf(<span class="string">'Not OK! The binary must be recompiled from source before running RAVEN\n'</span>);
-0068     <span class="keyword">end</span>
-0069 <span class="keyword">else</span>    
-0070     <span class="comment">%Generate temporary names for working directory and outFile</span>
-0071     tmpDB=tempname;
-0072     outFile=tempname;
-0073     
-0074     <span class="comment">%Run BLAST multi-threaded to use all logical cores assigned to MATLAB</span>
-0075     cores = evalc(<span class="string">'feature(''numcores'')'</span>);
-0076     cores = strsplit(cores, <span class="string">'MATLAB was assigned: '</span>);
-0077     cores = regexp(cores{2},<span class="string">'^\d*'</span>,<span class="string">'match'</span>);
-0078     cores = cores{1};
-0079     
-0080     <span class="comment">%Create a temporary folder and copy multi-FASTA file there</span>
-0081     [~, ~]=system([<span class="string">'mkdir &quot;'</span> tmpDB <span class="string">'&quot;'</span>]);
-0082     copyfile(fullfile(ravenPath,<span class="string">'tutorial'</span>,<span class="string">'sce.fa'</span>),tmpDB);
-0083     
-0084     <span class="comment">%Construct a BLAST database</span>
-0085     fprintf(<span class="string">'Testing makeblastdb... '</span>);
-0086     [res, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'makeblastdb'</span> binEnd]) <span class="string">'&quot; -in &quot;'</span> fullfile(tmpDB,<span class="string">'sce.fa'</span>) <span class="string">'&quot; -out &quot;'</span> tmpDB <span class="string">'&quot; -dbtype prot'</span>]);
-0087     <span class="keyword">if</span> res~=0
-0088         fprintf(<span class="string">'Not OK\n'</span>);
-0089         EM=[<span class="string">'makeblastdb did not run successfully, error: '</span>, num2str(res)];
-0090         dispEM(EM,true);
-0091     <span class="keyword">end</span>
-0092     fprintf(<span class="string">'OK\n'</span>);
-0093     
-0094     <span class="comment">%Run a homology search</span>
-0095     fprintf(<span class="string">'Testing blastp... '</span>);
-0096     [res, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'blastp'</span> binEnd]) <span class="string">'&quot; -query &quot;'</span> fullfile(tmpDB,<span class="string">'sce.fa'</span>) <span class="string">'&quot; -out &quot;'</span> outFile <span class="string">'&quot; -db &quot;'</span> tmpDB <span class="string">'&quot; -evalue 10e-5 -outfmt &quot;10 qseqid sseqid evalue pident length bitscore ppos&quot; -num_threads &quot;'</span> cores <span class="string">'&quot;'</span>]);
-0097     <span class="keyword">if</span> res~=0
-0098         fprintf(<span class="string">'Not OK\n'</span>);
-0099         EM=[<span class="string">'blastp did not run successfully, error: '</span>, num2str(res)];
-0100         dispEM(EM,true);
-0101     <span class="keyword">end</span>
-0102     fprintf(<span class="string">'OK\n'</span>);
+0024 
+0025 <span class="keyword">if</span> nargin&lt;1
+0026     fullCheck=true;
+0027 <span class="keyword">end</span>
+0028 
+0029 <span class="comment">%Get the directory for RAVEN Toolbox</span>
+0030 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
+0031 ravenPath=fileparts(fileparts(ST(I).file));
+0032 
+0033 <span class="keyword">if</span> isunix
+0034     <span class="keyword">if</span> ismac
+0035         binEnd=<span class="string">'.mac'</span>;
+0036     <span class="keyword">else</span>
+0037         binEnd=<span class="string">''</span>;
+0038     <span class="keyword">end</span>
+0039 <span class="keyword">elseif</span> ispc
+0040     binEnd=<span class="string">''</span>;
+0041     setenv(<span class="string">'BLASTDB_LMDB_MAP_SIZE'</span>,<span class="string">'1000000'</span>);
+0042 <span class="keyword">else</span>
+0043     dispEM(<span class="string">'Unknown OS, exiting.'</span>)
+0044     <span class="keyword">return</span>
+0045 <span class="keyword">end</span>
+0046 
+0047 <span class="comment">%Create an empty blastStructure. Even if a quick BLAST+ evaluation is</span>
+0048 <span class="comment">%considered, blastStructure should still be in the output</span>
+0049 blastStructure=[];
+0050 
+0051 <span class="keyword">if</span> ~fullCheck
+0052     fprintf([<span class="string">'Checking blastp'</span> binEnd <span class="string">'... '</span>]);
+0053     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'blastp'</span> binEnd]) <span class="string">'&quot;'</span>]);
+0054     <span class="keyword">if</span> res==1
+0055         fprintf(<span class="string">'OK\n'</span>);
+0056     <span class="keyword">else</span>
+0057         fprintf(<span class="string">'Not OK! The binary must be recompiled from source before running RAVEN\n'</span>);
+0058     <span class="keyword">end</span>
+0059     fprintf([<span class="string">'Checking makeblastdb'</span> binEnd <span class="string">'... '</span>]);
+0060     [res,~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'makeblastdb'</span> binEnd]) <span class="string">'&quot;'</span>]);
+0061     <span class="keyword">if</span> res==1
+0062         fprintf(<span class="string">'OK\n'</span>);
+0063     <span class="keyword">else</span>
+0064         fprintf(<span class="string">'Not OK! The binary must be recompiled from source before running RAVEN\n'</span>);
+0065     <span class="keyword">end</span>
+0066 <span class="keyword">else</span>    
+0067     <span class="comment">%Generate temporary names for working directory and outFile</span>
+0068     tmpDB=tempname;
+0069     outFile=tempname;
+0070     
+0071     <span class="comment">%Run BLAST multi-threaded to use all logical cores assigned to MATLAB</span>
+0072     cores = evalc(<span class="string">'feature(''numcores'')'</span>);
+0073     cores = strsplit(cores, <span class="string">'MATLAB was assigned: '</span>);
+0074     cores = regexp(cores{2},<span class="string">'^\d*'</span>,<span class="string">'match'</span>);
+0075     cores = cores{1};
+0076     
+0077     <span class="comment">%Create a temporary folder and copy multi-FASTA file there</span>
+0078     [~, ~]=system([<span class="string">'mkdir &quot;'</span> tmpDB <span class="string">'&quot;'</span>]);
+0079     copyfile(fullfile(ravenPath,<span class="string">'tutorial'</span>,<span class="string">'sce.fa'</span>),tmpDB);
+0080     
+0081     <span class="comment">%Construct a BLAST database</span>
+0082     fprintf(<span class="string">'Testing makeblastdb... '</span>);
+0083     [res, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'makeblastdb'</span> binEnd]) <span class="string">'&quot; -in &quot;'</span> fullfile(tmpDB,<span class="string">'sce.fa'</span>) <span class="string">'&quot; -out &quot;'</span> tmpDB <span class="string">'&quot; -dbtype prot'</span>]);
+0084     <span class="keyword">if</span> res~=0
+0085         fprintf(<span class="string">'Not OK\n'</span>);
+0086         EM=[<span class="string">'makeblastdb did not run successfully, error: '</span>, num2str(res)];
+0087         dispEM(EM,true);
+0088     <span class="keyword">end</span>
+0089     fprintf(<span class="string">'OK\n'</span>);
+0090     
+0091     <span class="comment">%Run a homology search</span>
+0092     fprintf(<span class="string">'Testing blastp... '</span>);
+0093     [res, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'blastp'</span> binEnd]) <span class="string">'&quot; -query &quot;'</span> fullfile(tmpDB,<span class="string">'sce.fa'</span>) <span class="string">'&quot; -out &quot;'</span> outFile <span class="string">'&quot; -db &quot;'</span> tmpDB <span class="string">'&quot; -evalue 10e-5 -outfmt &quot;10 qseqid sseqid evalue pident length bitscore ppos&quot; -num_threads &quot;'</span> cores <span class="string">'&quot;'</span>]);
+0094     <span class="keyword">if</span> res~=0
+0095         fprintf(<span class="string">'Not OK\n'</span>);
+0096         EM=[<span class="string">'blastp did not run successfully, error: '</span>, num2str(res)];
+0097         dispEM(EM,true);
+0098     <span class="keyword">end</span>
+0099     fprintf(<span class="string">'OK\n'</span>);
+0100     
+0101     <span class="comment">%Remove temporary folder, since homology search is finished</span>
+0102     [~, ~]=system([<span class="string">'rm &quot;'</span> tmpDB <span class="string">'&quot; -r'</span>]);
 0103     
-0104     <span class="comment">%Remove temporary folder, since homology search is finished</span>
-0105     [~, ~]=system([<span class="string">'rm &quot;'</span> tmpDB <span class="string">'&quot; -r'</span>]);
-0106     
-0107     <span class="comment">%Done with the BLAST, do the parsing of the text file</span>
-0108     blastStructure.fromId=<span class="string">'sce'</span>;
-0109     blastStructure.toId=<span class="string">'sco'</span>;
-0110     A=readtable(outFile,<span class="string">'Delimiter'</span>,<span class="string">','</span>,<span class="string">'Format'</span>,<span class="string">'%s%s%f%f%f%f%f'</span>);
-0111     blastStructure.fromGenes=A{:,1};
-0112     blastStructure.toGenes=A{:,2};
-0113     blastStructure.evalue=table2array(A(:,3));
-0114     blastStructure.identity=table2array(A(:,4));
-0115     blastStructure.aligLen=table2array(A(:,5));
-0116     blastStructure.bitscore=table2array(A(:,6));
-0117     blastStructure.ppos=table2array(A(:,7));
-0118     
-0119     <span class="comment">%Remove the old tempfiles</span>
-0120     delete([outFile <span class="string">'*'</span>]);
-0121 <span class="keyword">end</span>
-0122 
-0123 success=1;
-0124 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 03-Jun-2020 13:07:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0104     <span class="comment">%Done with the BLAST, do the parsing of the text file</span>
+0105     blastStructure.fromId=<span class="string">'sce'</span>;
+0106     blastStructure.toId=<span class="string">'sco'</span>;
+0107     A=readtable(outFile,<span class="string">'Delimiter'</span>,<span class="string">','</span>,<span class="string">'Format'</span>,<span class="string">'%s%s%f%f%f%f%f'</span>);
+0108     blastStructure.fromGenes=A{:,1};
+0109     blastStructure.toGenes=A{:,2};
+0110     blastStructure.evalue=table2array(A(:,3));
+0111     blastStructure.identity=table2array(A(:,4));
+0112     blastStructure.aligLen=table2array(A(:,5));
+0113     blastStructure.bitscore=table2array(A(:,6));
+0114     blastStructure.ppos=table2array(A(:,7));
+0115     
+0116     <span class="comment">%Remove the old tempfiles</span>
+0117     delete([outFile <span class="string">'*'</span>]);
+0118 <span class="keyword">end</span>
+0119 
+0120 success=1;
+0121 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Fri 20-Nov-2020 22:58:53 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

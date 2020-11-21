@@ -18,9 +18,6 @@ function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)
 %   model             an updated model structure
 %
 %   Usage: model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)
-%
-%   Simonas Marcisauskas, 2018-03-19
-%
 
 if nargin<2
     sortReversible=true;

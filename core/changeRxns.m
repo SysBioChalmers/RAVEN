@@ -52,9 +52,6 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %   the metabolite in another compartment.
 %
 %   Usage: model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
-%
-%   Eduard Kerkhoven, 2018-10-04
-%
 
 if nargin<4 & isfield(equations,'stoichCoeffs')
     eqnType=1;

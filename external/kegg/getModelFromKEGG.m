@@ -43,9 +43,6 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %
 %   Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral)
-%
-%   Simonas Marcisauskas, 2019-09-09
-%
 
 if nargin<1
     keggPath='RAVEN/external/kegg';
