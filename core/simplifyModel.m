@@ -74,6 +74,13 @@ if deleteUnconstrained==true
         deletedMetabolites=reducedModel.mets(reducedModel.unconstrained~=0);
         reducedModel=removeMets(reducedModel,reducedModel.unconstrained~=0);
         reducedModel=rmfield(reducedModel,'unconstrained');
+        % remove the boundary compartment if exist
+        if ismember('boundary',lower(reducedModel.compNames))
+            reducedModel.compNames(ismember(reducedModel.compNames,'Boundary')) = [];
+        end
+        if ismember('x',reducedModel.comps)
+            reducedModel.comps(ismember(reducedModel.comps,'x')) = [];
+        end
     end
 end
 
