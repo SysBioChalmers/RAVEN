@@ -59,16 +59,19 @@ if ~isempty(genesToRemove)
         %Loop through genes and adapt rxns:
         for i = 1:length(genes)
             %Find all reactions for this gene and loop through them:
-            isGeneInRxn = ~cellfun(@isempty,strfind(reducedModel.grRules,genes{i}));
-            for j = 1:length(reducedModel.grRules)
-                if ~ismember(j,toCheck)
-                    if isGeneInRxn(j) && canCarryFlux(j)
-                        grRule = reducedModel.grRules{j};
-                        %Check if rxn can carry flux without this gene:
-                        canCarryFlux(j) = canRxnCarryFlux(reducedModel,grRule,genes{i});
-                        %Adapt gene rule & gene matrix:
-                        grRule = removeGeneFromRule(grRule,genes{i});
-                        reducedModel.grRules{j} = grRule;
+            geneRxns = find(rxnGeneMat(:,indexesToRemove(i)));
+            if ~isempty(geneRxns)
+                for j = 1:numel(geneRxns)
+                    index = geneRxns(j);
+                    if ~ismember(index,toCheck)
+                        if canCarryFlux(index)
+                            grRule = reducedModel.grRules{index};
+                            %Check if rxn can carry flux without this gene:
+                            canCarryFlux(index) = canRxnCarryFlux(reducedModel,grRule,genes{i});
+                            %Adapt gene rule & gene matrix:
+                            grRule = removeGeneFromRule(grRule,genes{i});
+                            reducedModel.grRules{index} = grRule;
+                        end
                     end
                 end
             end
@@ -84,7 +87,7 @@ if ~isempty(genesToRemove)
         end
     end
 end
-%Format grRules and rxnGeneMatrix:
+%Format grRules and rxnGeneMatrix after all modifications
 if standardizeRules
     [grRules,rxnGeneMat] = standardizeGrRules(reducedModel,true);
     reducedModel.grRules = grRules;
@@ -121,7 +124,4 @@ geneSets = strsplit(geneRule,' or ');
 hasGene  = ~cellfun(@isempty,strfind(geneSets,geneToRemove));
 geneSets = geneSets(~hasGene);
 geneRule = strjoin(geneSets,' or ');
-if length(geneSets) == 1 && ~isempty(strfind(geneRule,'('))
-    geneRule = geneRule(2:end-1);
-end
 end
