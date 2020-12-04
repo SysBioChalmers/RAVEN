@@ -31,6 +31,9 @@ if standardizeRules
     [grRules,rxnGeneMat,toCheck] = standardizeGrRules(model,true);
     model.grRules    = grRules;
     model.rxnGeneMat = rxnGeneMat;
+else
+    toCheck    = [];
+    rxnGeneMat = model.rxnGeneMat;
 end
 reducedModel = model;
 %Only remove genes that are actually in the model
@@ -62,20 +65,18 @@ if ~isempty(genesToRemove)
             geneRxns = find(rxnGeneMat(:,indexesToRemove(i)));
             if ~isempty(geneRxns)
                 for j = 1:numel(geneRxns)
-                    index = geneRxns(j);
-                    if ~ismember(index,toCheck)
-                        if canCarryFlux(index)
-                            grRule = reducedModel.grRules{index};
-                            %Check if rxn can carry flux without this gene:
-                            canCarryFlux(index) = canRxnCarryFlux(reducedModel,grRule,genes{i});
-                            %Adapt gene rule & gene matrix:
-                            grRule = removeGeneFromRule(grRule,genes{i});
-                            reducedModel.grRules{index} = grRule;
-                        end
+                    index  = geneRxns(j);
+                    grRule = reducedModel.grRules{index};
+                    if ~ismember(index,toCheck) && canCarryFlux(index) && ~isempty(grRule)
+                        %Check if rxn can carry flux without this gene:
+                        canCarryFlux(index) = canRxnCarryFlux(reducedModel,grRule,genes{i});
+                        %Adapt gene rule & gene matrix:
+                        grRule = removeGeneFromRule(grRule,genes{i});
+                        reducedModel.grRules{index} = grRule;
                     end
                 end
             end
-        end        
+        end
         %Delete or block the reactions that cannot carry flux:
         if removeBlockedRxns
             rxnsToRemove = reducedModel.rxns(~canCarryFlux);
