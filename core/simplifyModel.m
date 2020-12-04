@@ -72,7 +72,7 @@ if deleteUnconstrained==true
     if isfield(reducedModel,'unconstrained')
         %Remove unbalanced metabolites
         deletedMetabolites=reducedModel.mets(reducedModel.unconstrained~=0);
-        reducedModel=removeMets(reducedModel,reducedModel.unconstrained~=0);
+        reducedModel=removeMets(reducedModel,reducedModel.unconstrained~=0,false,false,false,true);
         reducedModel=rmfield(reducedModel,'unconstrained');
     end
 end
