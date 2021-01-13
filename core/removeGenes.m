@@ -67,9 +67,10 @@ if ~isempty(genesToRemove)
                 for j = 1:numel(geneRxns)
                     index  = geneRxns(j);
                     grRule = reducedModel.grRules{index};
+                    ruleGenes = reducedModel.genes(logical(rxnGeneMat(index,:)));
                     if ~ismember(index,toCheck) && canCarryFlux(index) && ~isempty(grRule)
                         %Check if rxn can carry flux without this gene:
-                        canCarryFlux(index) = canRxnCarryFlux(reducedModel,grRule,genes{i});
+                        canCarryFlux(index) = canRxnCarryFlux(ruleGenes,grRule,genes{i});
                         %Adapt gene rule & gene matrix:
                         grRule = removeGeneFromRule(grRule,genes{i});
                         reducedModel.grRules{index} = grRule;
@@ -96,20 +97,20 @@ if standardizeRules
 end
 end
 
-function canIt = canRxnCarryFlux(model,geneRule,geneToRemove)
+function canIt = canRxnCarryFlux(ruleGenes,geneRule,geneToRemove)
 %This function converts a gene rule to a logical statement, and then
 %asseses if the rule is true (i.e. rxn can still carry flux) or not (cannot
 %carry flux).
 geneRule = [' ', geneRule, ' '];
-for i = 1:length(model.genes)
-    if strcmp(model.genes{i},geneToRemove)
-        geneRule = strrep(geneRule,[' ' model.genes{i} ' '],' false ');
-        geneRule = strrep(geneRule,['(' model.genes{i} ' '],'(false ');
-        geneRule = strrep(geneRule,[' ' model.genes{i} ')'],' false)');
+for i = 1:length(ruleGenes)
+    if strcmp(ruleGenes{i},geneToRemove)
+        geneRule = strrep(geneRule,[' ' ruleGenes{i} ' '],' false ');
+        geneRule = strrep(geneRule,['(' ruleGenes{i} ' '],'(false ');
+        geneRule = strrep(geneRule,[' ' ruleGenes{i} ')'],' false)');
     else
-        geneRule = strrep(geneRule,[' ' model.genes{i} ' '],' true ');
-        geneRule = strrep(geneRule,['(' model.genes{i} ' '],'(true ');
-        geneRule = strrep(geneRule,[' ' model.genes{i} ')'],' true)');
+        geneRule = strrep(geneRule,[' ' ruleGenes{i} ' '],' true ');
+        geneRule = strrep(geneRule,['(' ruleGenes{i} ' '],'(true ');
+        geneRule = strrep(geneRule,[' ' ruleGenes{i} ')'],' true)');
     end
 end
 geneRule = strtrim(geneRule);
