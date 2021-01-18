@@ -187,7 +187,7 @@ modelSBML.annotation=[modelSBML.annotation '<dcterms:created rdf:parseType="Reso
 
 if isfield(model,'annotation')
     if isfield(model.annotation,'taxonomy')
-        modelSBML.annotation=[modelSBML.annotation '<bqbiol:is><rdf:Bag><rdf:li rdf:resource="http://identifiers.org/taxonomy/' regexprep(model.annotation.taxonomy,'taxonomy/','') '"/></rdf:Bag></bqbiol:is>'];
+        modelSBML.annotation=[modelSBML.annotation '<bqbiol:is><rdf:Bag><rdf:li rdf:resource="https://identifiers.org/taxonomy/' regexprep(model.annotation.taxonomy,'taxonomy/','') '"/></rdf:Bag></bqbiol:is>'];
     end
 end
 modelSBML.annotation=[modelSBML.annotation '</rdf:Description></rdf:RDF></annotation>'];
@@ -335,7 +335,7 @@ for i=1:numel(model.mets)
                     modelSBML.species(i).annotation=[modelSBML.species(i).annotation getMiriam(model.metMiriams{i})];
                 end
                 if hasInchi==true
-                    modelSBML.species(i).annotation=[modelSBML.species(i).annotation '<rdf:li rdf:resource="http://identifiers.org/inchi/InChI=' model.inchis{i} '"/>'];
+                    modelSBML.species(i).annotation=[modelSBML.species(i).annotation '<rdf:li rdf:resource="https://identifiers.org/inchi/InChI=' model.inchis{i} '"/>'];
                 end
                 modelSBML.species(i).annotation=[modelSBML.species(i).annotation '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>'];
             end
@@ -511,7 +511,7 @@ for i=1:numel(model.rxns)
         if ~isempty(model.eccodes{i})
             eccodes=regexp(model.eccodes{i},';','split');
             for j=1:numel(eccodes)
-                modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation  '<rdf:li rdf:resource="http://identifiers.org/ec-code/' regexprep(eccodes{j},'ec-code/|EC','') '"/>'];
+                modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation  '<rdf:li rdf:resource="https://identifiers.org/ec-code/' regexprep(eccodes{j},'ec-code/|EC','') '"/>'];
             end
         end
         modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation getMiriam(model.rxnMiriams{i}) '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>'];
@@ -740,14 +740,14 @@ end
 
 function miriamString=getMiriam(miriamStruct)
 %Returns a string with list elements for a miriam structure ('<rdf:li
-%rdf:resource="http://identifiers.org/go/GO:0005739"/>' for example). This
+%rdf:resource="https://identifiers.org/go/GO:0005739"/>' for example). This
 %is just to speed up things since this is done many times during the
 %exporting
 
 miriamString='';
 if isfield(miriamStruct,'name')
     for i=1:numel(miriamStruct.name)
-        miriamString=[miriamString '<rdf:li rdf:resource="http://identifiers.org/' miriamStruct.name{i} '/' miriamStruct.value{i} '"/>'];
+        miriamString=[miriamString '<rdf:li rdf:resource="https://identifiers.org/' miriamStruct.name{i} '/' miriamStruct.value{i} '"/>'];
     end
 end
 end

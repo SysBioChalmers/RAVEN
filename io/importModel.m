@@ -663,6 +663,8 @@ for i=1:numel(modelSBML.reaction)
             eccode=parseAnnotation(modelSBML.reaction(i).annotation,'urn:miriam:',':','ec-code');
         elseif strfind(modelSBML.reaction(i).annotation,'http://identifiers.org/ec-code')
             eccode=parseAnnotation(modelSBML.reaction(i).annotation,'http://identifiers.org/','/','ec-code');
+        elseif strfind(modelSBML.reaction(i).annotation,'https://identifiers.org/ec-code')
+            eccode=parseAnnotation(modelSBML.reaction(i).annotation,'https://identifiers.org/','/','ec-code');
         end
     elseif isfield(modelSBML.reaction(i),'notes')
         if strfind(modelSBML.reaction(i).notes,'EC Number')
@@ -793,6 +795,11 @@ if isfield(modelSBML,'annotation')
         J=strfind(modelSBML.annotation,'"http://identifiers.org/');
         if any(J)
             model.annotation.taxonomy=modelSBML.annotation(J+24:I(find(I>J,1))-1);
+        else
+            J=strfind(modelSBML.annotation,'"https://identifiers.org/');
+            if any(J)
+                model.annotation.taxonomy=modelSBML.annotation(J+24:I(find(I>J,1))-1);
+            end
         end
     end
 end
@@ -1168,6 +1175,9 @@ if strfind(searchString,'urn:miriam:')
     midString=':';
 elseif strfind(searchString,'http://identifiers.org/')
     startString='http://identifiers.org/';
+    midString='/';
+elseif strfind(searchString,'https://identifiers.org/')
+    startString='https://identifiers.org/';
     midString='/';
 else
     miriamStruct=[];
