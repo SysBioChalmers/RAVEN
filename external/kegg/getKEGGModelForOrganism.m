@@ -373,7 +373,14 @@ if ~isempty(dataDir)
             hmmIndex=regexp(dataDir,hmmOptions);
             hmmIndex=~cellfun(@isempty,hmmIndex);
             fprintf('Downloading the HMMs archive file... ');
-            websave([dataDir,'.zip'],['https://chalmersuniversity.box.com/shared/static/',hmmLinks{hmmIndex},'.zip']);
+            try
+                websave([dataDir,'.zip'],['https://chalmersuniversity.box.com/shared/static/',hmmLinks{hmmIndex},'.zip']);
+            catch ME
+                if strcmp(ME.identifier,'MATLAB:webservices:HTTP404StatusCodeError')
+                    error('Failed to download the HMMs archive file, the server returned a 404 error, try again later. If the problem persists please report it on the RAVEN GitHub Issues page: https://github.com/SysBioChalmers/RAVEN/issues')
+                end
+            end
+            
             fprintf('COMPLETE\n');
             fprintf('Extracting the HMMs archive file... ');
             unzip([dataDir,'.zip']);
