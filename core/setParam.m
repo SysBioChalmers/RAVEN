@@ -36,14 +36,20 @@ end
 
 if isnumeric(rxnList) || islogical(rxnList)
     rxnList=model.rxns(rxnList);
+elseif ischar(rxnList)
+    rxnList={rxnList};
 end
 
 if ischar(paramType)
     paramType={paramType};
 end
 
+if isnumeric(params)
+    params=[params];
+end
+
 if length(rxnList)>1 && length(paramType)==1
-    paramType(1:numel(rxnList))=paramType;
+    paramType(1:length(rxnList))=paramType;
 end
 %If it's a char array
 rxnList=cellstr(rxnList);
