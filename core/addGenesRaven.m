@@ -49,9 +49,19 @@ largeFiller(:)={''};
 
 %Check that no gene ids are already present in the model
 I=ismember(genesToAdd.genes,model.genes);
-if any(I)
-    EM='One or more elements in genesToAdd.genes are already present in model.genes';
-    dispEM(EM);
+if all(I)
+    warning('All genes in genesToAdd.genes are already present in model.genes');
+    return
+elseif any(I)
+    existingGenes=strjoin(genesToAdd.genes(I), ', ');
+    warning(['The following genes are already present in model.genes and will therefore not be added: ', existingGenes])
+    genesToAdd.genes(I)=[];
+    if isfield(genesToAdd,'geneShortNames')
+        genesToAdd.geneShortNames(I)=[];
+    end
+    if isfield(genesToAdd,'geneMiriams')
+        genesToAdd.geneMiriams(I)=[];
+    end
 else
     newModel.genes=[newModel.genes;genesToAdd.genes(:)];
 end
