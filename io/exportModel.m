@@ -335,7 +335,7 @@ for i=1:numel(model.mets)
                     modelSBML.species(i).annotation=[modelSBML.species(i).annotation getMiriam(model.metMiriams{i})];
                 end
                 if hasInchi==true
-                    modelSBML.species(i).annotation=[modelSBML.species(i).annotation '<rdf:li rdf:resource="https://identifiers.org/inchi/InChI=' model.inchis{i} '"/>'];
+                    modelSBML.species(i).annotation=[modelSBML.species(i).annotation '<rdf:li rdf:resource="https://identifiers.org/inchi/InChI=' regexprep(model.inchis{i},'^InChI=','') '"/>'];
                 end
                 modelSBML.species(i).annotation=[modelSBML.species(i).annotation '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>'];
             end
