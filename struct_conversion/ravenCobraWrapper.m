@@ -264,14 +264,6 @@ else
     if any(isfield(model,[rxnCOBRAfields;'rxnReferences']))
         for i=1:numel(model.rxns)
             counter=1;
-            newModel.geneMiriams{i,1}=[];
-            if isfield(model,'geneiskegg__46__genesID')
-                if ~isempty(model.geneiskegg__46__genesID{i})
-                    newModel.geneMiriams{i,1}.name{counter,1} = 'kegg.genes';
-                    newModel.geneMiriams{i,1}.value{counter,1} = model.geneiskegg__46__genesID{i};
-                    counter=counter+1;
-                end
-            end
             newModel.rxnMiriams{i,1}=[];
             if isfield(model,'rxnReferences')
                 if ~isempty(model.rxnReferences{i})
@@ -282,13 +274,6 @@ else
                         newModel.rxnMiriams{i,1}.value{counter,1} = pmids{j};
                         counter=counter+1;
                     end
-                end
-            end
-            if isfield(model,'geneissgdID')
-                if ~isempty(model.geneissgdID{i})
-                    newModel.geneMiriams{i,1}.name{counter,1} = 'sgd';
-                    newModel.geneMiriams{i,1}.value{counter,1} = model.geneissgdID{i};
-                    counter=counter+1;
                 end
             end
             for j = 1:length(rxnCOBRAfields)
@@ -302,20 +287,6 @@ else
                             counter=counter+1;
                         end
                     end
-                end
-            end
-            if isfield(model,'proteinisuniprotID')
-                if ~isempty(model.proteinisuniprotID{i})
-                    newModel.geneMiriams{i,1}.name{counter,1} = 'uniprot';
-                    newModel.geneMiriams{i,1}.value{counter,1} = model.proteinisuniprotID{i};
-                    counter=counter+1;
-                end
-            end
-            if isfield(model,'geneSBOTerm')
-                if ~isempty(model.geneSBOTerm{i})
-                    newModel.geneMiriams{i,1}.name{counter,1} = 'sbo';
-                    newModel.geneMiriams{i,1}.value{counter,1} = model.geneSBOTerm{i};
-                    counter=counter+1;
                 end
             end
         end
