@@ -798,7 +798,7 @@ if isfield(modelSBML,'annotation')
         else
             J=strfind(modelSBML.annotation,'"https://identifiers.org/');
             if any(J)
-                model.annotation.taxonomy=modelSBML.annotation(J+24:I(find(I>J,1))-1);
+                model.annotation.taxonomy=modelSBML.annotation(J+25:I(find(I>J,1))-1);
             end
         end
     end
