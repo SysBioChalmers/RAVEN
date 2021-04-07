@@ -42,70 +42,63 @@ indexedDuplicateRxns(:)={''};
 duplicateRxns=setdiff(1:numel(model.rxns),I);
 mergeTo=I(J(duplicateRxns));
 
+mergedRxns=unique(mergeTo);
+
 %Now add all the info from this one. Print a warning if they have different
 %bounds or objective function coefficients. Uses the widest bounds and
 %largest magnitude of objective coefficient
-for i=1:numel(duplicateRxns)
-    if model.lb(duplicateRxns(i))<model.lb(mergeTo(i))
-        EM=['Duplicate reaction ' model.rxns{duplicateRxns(i)} ' has wider lower bound. Uses the most negative/smallest lower bound'];
+for i=1:numel(mergedRxns)
+    duplRxn=transpose([mergedRxns(i),duplicateRxns(mergeTo==mergedRxns(i))]);
+    if numel(unique(model.lb(duplRxn)))>1
+        EM=['Duplicates of reaction ' model.rxns{mergedRxns(i)} ' have different lower bound. Uses the most negative/smallest lower bound'];
         dispEM(EM,false);
-        model.lb(mergeTo(i))=model.lb(duplicateRxns(i));
+        model.lb(mergedRxns(i))=min(model.lb(duplRxn));
     end
-    if model.ub(duplicateRxns(i))>model.ub(mergeTo(i))
-        EM=['Duplicate reaction ' model.rxns{duplicateRxns(i)} ' has wider upper bound. Uses the most positive/largest upper bound'];
+    if numel(unique(model.ub(duplRxn)))>1
+        EM=['Duplicates of reaction ' model.rxns{mergedRxns(i)} ' have different upper bound. Uses the most positive/largest upper bound'];
         dispEM(EM,false);
-        model.ub(mergeTo(i))=model.ub(duplicateRxns(i));
+        model.ub(mergedRxns(i))=max(model.ub(duplRxn));
     end
-    if abs(model.c(duplicateRxns(i)))>abs(model.c(mergeTo(i)))
-        EM=['Duplicate reaction ' model.rxns{duplicateRxns(i)} ' has a larger objective function coefficient. Uses the largest coefficient'];
+    if numel(unique(model.c(duplRxn)))>1
+        EM=['Duplicates of reaction ' model.rxns{mergedRxns(i)} ' has a different objective function coefficient. Uses the largest coefficient'];
         dispEM(EM,false);
-        model.c(mergeTo(i))=model.c(duplicateRxns(i));
+        model.c(mergedRxns(i))=max(model.c(duplRxn));
     end
-    
-    if isfield(model,'grRules')
-        if any(model.grRules{duplicateRxns(i)})
-            if any(model.grRules{mergeTo(i)})
-                %Split both grStrings on ' or ' and then put together union
-                %with ' or '
-                rules1=regexp(model.grRules{mergeTo(i)},' or ','split');
-                rules2=regexp(model.grRules{duplicateRxns(i)},' or ','split');
-                allRules=union(rules1,rules2);
-                
-                %Probably not the nicest way to do this
-                model.grRules{mergeTo(i)}=allRules{1};
-                for j=2:numel(allRules)
-                    model.grRules{mergeTo(i)}=[model.grRules{mergeTo(i)} ' or ' allRules{j}];
-                end
-            else
-                model.grRules{mergeTo(i)}=model.grRules{duplicateRxns(i)};
-            end
+    if isfield(model,'grRules') && any(~isempty(model.grRules(duplRxn)))
+        rules=model.grRules(duplRxn);
+        allRules={};
+        for j=1:numel(rules)
+            rules{j}=ignoreORinComplex(rules{j});
+            allRules=[allRules regexp(rules{j},' or ','split')];
         end
-    end
-    
-    if isfield(model,'eccodes')
-        if any(model.eccodes{duplicateRxns(i)})
-            if any(model.eccodes{mergeTo(i)})
-                %Split on ';' and put together the union with ';'
-                codes1=regexp(model.eccodes{mergeTo(i)},';','split');
-                codes2=regexp(model.eccodes{duplicateRxns(i)},';','split');
-                codes=union(codes1,codes2);
-                model.eccodes{mergeTo(i)}=codes{1};
-                for j=2:numel(codes)
-                    model.eccodes{mergeTo(i)}=[model.eccodes{mergeTo(i)} ';' codes{j}];
-                end
-            else
-                model.eccodes{mergeTo(i)}=model.eccodes{duplicateRxns(i)};
-            end
-        end
-    end
-    
-    %Generate indexedDuplicateRxns cell array
-    if ~isequal(duplicateRxns(i),mergeTo(i))
-        if isempty(indexedDuplicateRxns{mergeTo(i)})
-            indexedDuplicateRxns{mergeTo(i)}=model.rxns{duplicateRxns(i)};
+        allRules=unique(allRules);
+        allRules=strrep(allRules,'__OR__',' or ');
+        andRules=contains(allRules,' and ');
+        allRules(andRules)=strcat('(',allRules(andRules),')');
+        if numel(allRules)==1
+            model.grRules{mergedRxns(i)}=allRules{1};
         else
-            indexedDuplicateRxns{mergeTo(i)}=strcat(indexedDuplicateRxns{mergeTo(i)},';',model.rxns{duplicateRxns(i)});
+            model.grRules{mergedRxns(i)}=strjoin(allRules,' or ');
         end
+    end    
+    if isfield(model,'eccodes') && any(~isempty(model.eccodes(duplRxn)))
+        codes=model.eccodes(duplRxn);
+        allCodes={};
+        for j=1:numel(codes)
+            allCodes=[allCodes regexp(codes{j},';','split')];
+        end
+        allCodes=unique(allCodes);
+        if numel(allCodes)==1
+            model.eccodes{mergedRxns(i)}=allCodes{1};
+        else
+            model.eccodes{mergedRxns(i)}=strjoin(allCodes,';');
+        end
+    end
+    %Generate indexedDuplicateRxns cell array
+    if numel(duplRxn)==2
+        indexedDuplicateRxns{duplRxn(1)}=model.rxns{duplRxn(2)};
+    else
+        indexedDuplicateRxns{duplRxn(1)}=strjoin(model.rxns(duplRxn(2:end)),';');
     end
 end
 
@@ -121,4 +114,43 @@ if isfield(reducedModel,'rxnGeneMat')
     reducedModel.grRules = grRules;
     reducedModel.rxnGeneMat = rxnGeneMat;
 end
+end
+
+function grRule = ignoreORinComplex(grRule)
+%In a grRule, if OR relationship is nested in an AND relationship, then
+%obfuscate the OR before splitting isoenzymes
+grRule=['(' grRule ')'];
+brOpen=strfind(grRule,'(');
+brClose=strfind(grRule,')');
+andPos=strfind(grRule,' and ');
+%Find opening bracket closest before AND
+stillCapturing = 0;
+for i=1:numel(andPos)
+    searchPos = andPos(i);
+    while stillCapturing == 0
+        closestOpen = brOpen(max(find(brOpen<searchPos)));
+        inbetweenClose = brClose(brClose<searchPos & brClose>closestOpen);
+        if ~isempty(inbetweenClose)
+            searchPos=max(inbetweenClose);
+        else
+            stillCapturing = 1;
+            beginPos = closestOpen;
+        end
+    end
+    stillCapturing = 0;
+    searchPos = andPos(i);
+    while stillCapturing == 0
+        closestClose = brClose(min(find(brClose>searchPos)));
+        inbetweenOpen = brOpen(brOpen>searchPos & brOpen<closestOpen);
+        if ~isempty(inbetweenOpen)
+            searchPos=min(closestClose);
+        else
+            stillCapturing = 1;
+            endPos = closestClose;
+        end
+    end
+    replacePart=regexprep(grRule(beginPos:endPos),' or ','__OR__');
+    grRule=strrep(grRule,grRule(beginPos:endPos),replacePart);
+end
+grRule=grRule(2:end-1);
 end

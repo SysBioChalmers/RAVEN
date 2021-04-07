@@ -36,8 +36,21 @@ end
 
 if isnumeric(rxnList) || islogical(rxnList)
     rxnList=model.rxns(rxnList);
+elseif ischar(rxnList)
+    rxnList={rxnList};
 end
 
+if ischar(paramType)
+    paramType={paramType};
+end
+
+if isnumeric(params)
+    params=[params];
+end
+
+if length(rxnList)>1 && length(paramType)==1
+    paramType(1:length(rxnList))=paramType;
+end
 %If it's a char array
 rxnList=cellstr(rxnList);
 
@@ -59,37 +72,38 @@ end
 %Remove the reactions that weren't found
 params(indexes==-1)=[];
 indexes(indexes==-1)=[];
-
+paramType(indexes==-1)=[];
 %Change the parameters
+
 if ~isempty(indexes)
-    if strcmpi(paramType,'eq')
-        model.lb(indexes)=params;
-        model.ub(indexes)=params;
-    end
-    if strcmpi(paramType,'lb')
-        model.lb(indexes)=params;
-    end
-    if strcmpi(paramType,'ub')
-        model.ub(indexes)=params;
-    end
-    if strcmpi(paramType,'obj')
-        %NOTE: The objective is changed to the new parameters, they are not
-        %added
-        model.c=zeros(numel(model.c),1);
-        model.c(indexes)=params;
-    end
-    if strcmpi(paramType,'rev')
-        %Non-zero values are interpreted as reversible
-        model.rev(indexes)=params~=0;
-    end
-    if strcmpi(paramType,'var')
-        for i=1:numel(params)
-            if params(i) < 0
-                model.lb(indexes(i)) = params(i) * (1+var/200);
-                model.ub(indexes(i)) = params(i) * (1-var/200);
+    for j=1:length(paramType)
+        if strcmpi(paramType{j},'eq')
+            model.lb(indexes(j))=params(j);
+            model.ub(indexes(j))=params(j);
+        end
+        if strcmpi(paramType{j},'lb')
+            model.lb(indexes(j))=params(j);
+        end
+        if strcmpi(paramType{j},'ub')
+            model.ub(indexes(j))=params(j);
+        end
+        if strcmpi(paramType{j},'obj')
+            %NOTE: The objective is changed to the new parameters, they are not
+            %added
+            model.c=zeros(numel(model.c),1);
+            model.c(indexes(j))=params(j);
+        end
+        if strcmpi(paramType{j},'rev')
+            %Non-zero values are interpreted as reversible
+            model.rev(indexes(j))=params(j)~=0;
+        end
+        if strcmpi(paramType{j},'var')
+            if params(j) < 0
+                model.lb(indexes(j)) = params(j) * (1+var/200);
+                model.ub(indexes(j)) = params(j) * (1-var/200);
             else
-                model.lb(indexes(i)) = params(i) * (1-var/200);
-                model.ub(indexes(i)) = params(i) * (1+var/200);
+                model.lb(indexes(j)) = params(j) * (1-var/200);
+                model.ub(indexes(j)) = params(j) * (1+var/200);
             end
         end
     end

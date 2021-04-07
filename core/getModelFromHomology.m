@@ -456,8 +456,11 @@ for i=1:numel(models)
                 %add ') or (' if there were several matches. Be sure of
                 %this!
                 repString=fullGeneList{b(1)};
-                for l=2:numel(b)
-                    repString=[repString ') or (' fullGeneList{b(l)}];
+                if numel(b)>1
+                    for l=2:numel(b)
+                        repString=[repString ' or ' fullGeneList{b(l)}];
+                    end
+                    repString=['(' repString ')'];
                 end
                 
                 % add the new matched genes

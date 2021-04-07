@@ -1,19 +1,21 @@
-function newModel=expandModel(model)
+function [newModel, rxnToCheck]=expandModel(model)
 % expandModel
 %   Expands a model which uses several gene associations for one reaction.
 %   Each such reaction is split into several reactions, each under the control
 %   of only one gene.
 %
-%   model     A model structure
+%   model       A model structure
 %
-%   newModel  A model structure with separate reactions for iso-enzymes
+%   newModel    A model structure with separate reactions for iso-enzymes
+%   rxnToCheck  Cell array with original reaction identifiers for those
+%               that contained nested and/or-relationships in grRules
 %
 %	The reaction ids are renamed according to id_EXP_1, id_EXP_2..
 %
 %   NOTE: As it is now this code might not work for advanced grRules strings
 %   that involve nested expressions of 'and' and 'or'
 %
-%   Usage: newModel=expandModel(model)
+%   Usage: [newModel, rxnToCheck]=expandModel(model)
 
 %Start by checking which reactions could be expanded
 rxnsToExpand=false(numel(model.rxns),1);
@@ -25,7 +27,7 @@ for i=1:numel(model.rxns)
 end
 
 rxnsToExpand=find(rxnsToExpand);
-
+rxnToCheck={};
 if any(rxnsToExpand)
     %Loop throught those reactions and expand them
     for i=1:numel(rxnsToExpand)
@@ -34,6 +36,7 @@ if any(rxnsToExpand)
         if ~isempty(strfind(model.grRules{rxnsToExpand(i)},' and '))
             EM=['Reaction ' model.rxns{rxnsToExpand(i)} ' contains nested and/or-relations. Large risk of errors'];
             dispEM(EM,false);
+            rxnToCheck{end+1,1}=model.rxns{rxnsToExpand(i)};
         end
         
         %Get rid of all '(' and ')' since I'm not looking at complex stuff
