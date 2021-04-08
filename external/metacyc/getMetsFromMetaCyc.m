@@ -12,7 +12,7 @@ function metaCycMets=getMetsFromMetaCyc(metacycPath)
 %   model        a model structure generated from the database. The following
 %                fields are filled
 %                id:             'MetaCyc'
-%                description:    'Automatically generated from MetaCyc database'
+%                name:    'Automatically generated from MetaCyc database'
 %                mets:           MetaCyc compound ids
 %                metNames:       Compound name. Reuse compound id here if
 %                                there is no name provided
@@ -74,7 +74,7 @@ else
     else
         %Add new functionality in the order specified in models
         metaCycMets.id='MetaCyc';
-        metaCycMets.description='Automatically generated from MetaCyc database';
+        metaCycMets.name='Automatically generated from MetaCyc database';
         
         %Preallocate memory for 50000 metabolites
         metaCycMets.mets=cell(50000,1);

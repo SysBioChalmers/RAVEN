@@ -317,7 +317,7 @@ end
 %Add the MODEL sheet
 
 %Create the header row
-headers={'#';'ID';'DESCRIPTION';'TAXONOMY';'DEFAULT LOWER';'DEFAULT UPPER';'CONTACT GIVEN NAME';'CONTACT FAMILY NAME';'CONTACT EMAIL';'ORGANIZATION';'NOTES'};
+headers={'#';'ID';'NAME';'TAXONOMY';'DEFAULT LOWER';'DEFAULT UPPER';'CONTACT GIVEN NAME';'CONTACT FAMILY NAME';'CONTACT EMAIL';'ORGANIZATION';'NOTES'};
 
 modelSheet=cell(1,numel(headers));
 
@@ -330,8 +330,8 @@ if isfield(model,'id')
 else
     modelSheet{1,2}='blankID';
 end
-if isfield(model,'description')
-    modelSheet{1,3}=model.description;
+if isfield(model,'name')
+    modelSheet{1,3}=model.name;
 else
     modelSheet{1,3}='blankName';
 end

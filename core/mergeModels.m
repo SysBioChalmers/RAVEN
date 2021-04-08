@@ -32,7 +32,7 @@ end
 %Add new functionality in the order specified in models
 model=models{1};
 model.id='MERGED';
-model.description='';
+model.name='';
 
 model.rxnFrom=cell(numel(models{1}.rxns),1);
 model.rxnFrom(:)={models{1}.id};

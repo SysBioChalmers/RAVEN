@@ -419,9 +419,9 @@ excModel=removeReactions(excModel,J,true,true);
 %Merge with the output model
 model=mergeModels({model;excModel},'metNames');
 model.id='INITModel';
-model.description=['Automatically generated model for ' tissue];
+model.name=['Automatically generated model for ' tissue];
 if any(celltype)
-    model.description=[model.description ' - ' celltype];
+    model.name=[model.name ' - ' celltype];
 end
 
 if printReport==true
