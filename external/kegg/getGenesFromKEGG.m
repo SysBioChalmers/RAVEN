@@ -16,7 +16,7 @@ function model=getGenesFromKEGG(keggPath,koList)
 %   model       a model structure generated from the database. The
 %               following fields are filled
 %       id              'KEGG'
-%       description     'Automatically generated from KEGG database'
+%       name     'Automatically generated from KEGG database'
 %       rxns            KO ids
 %       rxnNames        Name for each entry
 %       genes           IDs for all the genes. Genes are saved as organism
@@ -89,7 +89,7 @@ else
         
         %Add new functionality in the order specified in models
         model.id='KEGG';
-        model.description='Automatically generated from KEGG database';
+        model.name='Automatically generated from KEGG database';
         
         %Preallocate memory
         model.rxns=cell(numel(allKOs),1);

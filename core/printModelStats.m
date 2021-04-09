@@ -19,7 +19,7 @@ if nargin<3
     printDetails=true;
 end
 
-fprintf(['Network statistics for ' model.id ': ' model.description '\n']);
+fprintf(['Network statistics for ' model.id ': ' model.name '\n']);
 
 %Get which reactions are present in each compartment
 rxnComps=sparse(numel(model.rxns),numel(model.comps));
@@ -71,7 +71,7 @@ fprintf('** Unique reactions are defined as being biochemically unique (no compa
 
 %Also print some potential problems if there are any
 if printModelIssues==true
-    fprintf(['\nShort model quality summary for ' model.id ': ' model.description '\n']);
+    fprintf(['\nShort model quality summary for ' model.id ': ' model.name '\n']);
     
     %Check that all the metabolites are being used
     involvedMat=model.S;

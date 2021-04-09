@@ -22,7 +22,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %           email        String	with the e-mail address of the main model author
 %           organization String	with the organization of the main model author
 %           note         String	with additional comments about the model
-%       description      description of model contents
+%       name      name of model
 %       id               model ID
 %       rxns             reaction ids
 %       mets             metabolite ids
@@ -38,7 +38,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %                        surrounding each of the compartments
 %       compMiriams      structure with MIRIAM information about the
 %                        compartments
-%       rxnNames         reaction description
+%       rxnNames         reaction name
 %       rxnComps         compartments for reactions
 %       grRules          reaction to gene rules in text form
 %       rxnGeneMat       reaction-to-gene mapping in sparse matrix form
@@ -52,7 +52,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %       geneComps        compartments for genes
 %       geneMiriams      structure with MIRIAM information about the genes
 %       geneShortNames   gene alternative names (e.g. ERG10)
-%       metNames         metabolite description
+%       metNames         metabolite name
 %       metComps         compartments for metabolites
 %       inchis           InChI-codes for metabolites
 %       metFormulas      metabolite chemical formula
@@ -93,7 +93,7 @@ end
 %from SBML
 model=[];
 model.id=[];
-model.description=[];
+model.name=[];
 model.annotation=[];
 %Default bounds if not defined
 model.annotation.defaultLB=-1000;
@@ -142,7 +142,7 @@ if flag<0
         dispEM(EM,false);
     end
     model.id='UNKNOWN';
-    model.description='No model details available';
+    model.name='No model details available';
 else
     raw=cleanSheet(raw);
     
@@ -150,7 +150,8 @@ else
     %info
     raw(1,:)=upper(raw(1,:));
     raw(1,:)=strrep(raw(1,:),'MODELID','ID');
-    raw(1,:)=strrep(raw(1,:),'MODELNAME','DESCRIPTION');
+    raw(1,:)=strrep(raw(1,:),'MODELNAME','NAME');
+    raw(1,:)=strrep(raw(1,:),'DESCRIPTION','NAME');
     
     %Loop through the labels
     for i=1:numel(raw(1,:))
@@ -162,9 +163,9 @@ else
                     EM='No model ID supplied';
                     dispEM(EM);
                 end
-            case 'DESCRIPTION'
+            case 'NAME'
                 if any(raw{2,i})
-                    model.description=toStr(raw{2,i}); %Should be string already
+                    model.name=toStr(raw{2,i}); %Should be string already
                 else
                     EM='No model name supplied';
                     dispEM(EM);

@@ -12,7 +12,7 @@ function model=getMetsFromKEGG(keggPath)
 %   model       a model structure generated from the database. The
 %               following fields are filled
 %   	id              'KEGG'
-%   	description     'Automatically generated from KEGG database'
+%   	name     'Automatically generated from KEGG database'
 %   	mets            KEGG compound ids
 %   	metNames        Compound name. Only the first name will be saved if
 %                       there are several synonyms
@@ -81,7 +81,7 @@ else
         fprintf('Generating keggMets.mat file... ');
         %Add new functionality in the order specified in models
         model.id='KEGG';
-        model.description='Automatically generated from KEGG database';
+        model.name='Automatically generated from KEGG database';
         
         %Preallocate memory for 30000 metabolites
         model.mets=cell(30000,1);

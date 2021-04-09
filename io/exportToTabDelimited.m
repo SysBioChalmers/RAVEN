@@ -244,11 +244,11 @@ if isfield(model,'id')
     modelFile=fopen(fullfile(path,'excelModel.txt'),'wt');
     
     %Print header
-    fprintf(geneFile,'#\tID\tDESCRIPTION\tDEFAULT LOWER\tDEFAULT UPPER\tCONTACT GIVEN NAME\tCONTACT FAMILY NAME\tCONTACT EMAIL\tORGANIZATION\tTAXONOMY\tNOTES\n');
+    fprintf(geneFile,'#\tID\tNAME\tDEFAULT LOWER\tDEFAULT UPPER\tCONTACT GIVEN NAME\tCONTACT FAMILY NAME\tCONTACT EMAIL\tORGANIZATION\tTAXONOMY\tNOTES\n');
     
     %Print model ID and name. It is assumed that the default lower/upper
     %bound correspond to min/max of the bounds
-    toPrint=['\t' model.id '\t' model.description '\t'];
+    toPrint=['\t' model.id '\t' model.name '\t'];
     if isfield(model,'annotation')
         if isfield(model.annotation,'defaultLB')
             toPrint=[toPrint num2str(model.annotation.defaultLB) '\t'];

@@ -49,15 +49,15 @@ if ~isfield(model,'unconstrained')
     model.unconstrained=zeros(numel(model.mets),1);
 end
 
-%If model id and name (description) don't exist, make sure that default
+%If model id and name don't exist, make sure that default
 %strings are included
 if ~isfield(model,'id')
     fprintf('WARNING: The model is missing the "id" field. Uses "blankID". \n');
     model.id='blankID';
 end
-if ~isfield(model,'description')
+if ~isfield(model,'name')
     fprintf('WARNING: The model is missing the "id" field. Uses "blankName". \n');
-    model.description='blankName';
+    model.name='blankName';
 end
 
 %Check the model structure
@@ -135,7 +135,7 @@ end
 modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
 modelSBML.metaid=model.id;
 modelSBML.id=model.id;
-modelSBML.name=model.description;
+modelSBML.name=model.name;
 
 if isfield(model,'annotation')
     if isfield(model.annotation,'note')

@@ -16,7 +16,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %   Output:
 %   model
 %       id               model ID
-%       description      description of model contents
+%       name      name of model contents
 %       annotation       additional information about model
 %       rxns             reaction ids
 %       mets             metabolite ids
@@ -93,7 +93,7 @@ end
 %from Excel
 model=[];
 model.id=[];
-model.description=[];
+model.name=[];
 model.annotation=[];
 model.rxns={};
 model.mets={};
@@ -747,7 +747,7 @@ reactionLB=reactionLB(1:counter);
 reactionObjective=reactionObjective(1:counter);
 S=S(:,1:counter);
 
-model.description=modelSBML.name;
+model.name=modelSBML.name;
 model.id=regexprep(modelSBML.id,'^M_',''); % COBRA adds M_ prefix
 model.rxns=reactionIDs;
 model.mets=metaboliteIDs;
@@ -1194,7 +1194,7 @@ targetString=regexprep(targetString,midString,'/','once');
 
 counter=0;
 for i=1:numel(targetString)
-    if isempty(regexp(targetString{1,i},'inchi|ec-code', 'once'))
+    if isempty(regexp(targetString{1,i},'inchi|ec-code|sbo', 'once'))
         counter=counter+1;
         miriamStruct.name{counter,1} = regexprep(targetString{1,i},'/.+','','once');
         miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} '/'],'','once');

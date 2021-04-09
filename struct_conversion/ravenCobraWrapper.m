@@ -19,7 +19,7 @@ function newModel=ravenCobraWrapper(model)
 %   reconstructed based on lower bound reaction values
 %
 %   NOTE: During COBRA -> RAVEN -> COBRA conversion cycle the following
-%   fields are lost: description, geneEntrezID, metSmiles, modelVersion,
+%   fields are lost: geneEntrezID, metSmiles, modelVersion,
 %   proteinNames, proteins
 %
 %   NOTE: The information about mandatory RAVEN fields was taken from
@@ -113,8 +113,8 @@ if isRaven
     if isfield(model,'id')
         newModel.modelID=model.id;
     end
-    if isfield(model,'description')
-        newModel.modelName=model.description;
+    if isfield(model,'name')
+        newModel.modelName=model.name;
     end
     if isfield(model,'eccodes')
         newModel.rxnECNumbers=model.eccodes;
@@ -241,7 +241,7 @@ else
     %metComps is also mandatory, but defined later to match the order of
     %fields
     
-    %Fields 'description' and 'id' are also considered as mandatory, but
+    %Fields 'name' and 'id' are also considered as mandatory, but
     %these are added to the model during exportModel/exportToExcelFormat
     %anyway, so there is no point to add this information here
     
@@ -250,7 +250,7 @@ else
         newModel.id=model.modelID;
     end
     if isfield(model,'modelName')
-        newModel.description=model.modelName;
+        newModel.name=model.modelName;
     end
     if isfield(model,'rules')
         model.grRules        = rulesTogrrules(model);
