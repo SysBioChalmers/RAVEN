@@ -1194,7 +1194,7 @@ targetString=regexprep(targetString,midString,'/','once');
 
 counter=0;
 for i=1:numel(targetString)
-    if isempty(regexp(targetString{1,i},'inchi|ec-code', 'once'))
+    if isempty(regexp(targetString{1,i},'inchi|ec-code|sbo', 'once'))
         counter=counter+1;
         miriamStruct.name{counter,1} = regexprep(targetString{1,i},'/.+','','once');
         miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} '/'],'','once');
