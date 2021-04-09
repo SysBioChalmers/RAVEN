@@ -1,16 +1,27 @@
-function writeYaml(model,name,preserveQuotes)
+function writeYaml(model,name,preserveQuotes,sortIds)
 % writeYaml
 %   Writes a yaml file matching (roughly) the cobrapy yaml structure
 %
 %   model           a model structure
 %   name            name that the file will have
 %   preserveQuotes  if quotes should be preserved for strings
-%                   (boolean, default=true)
+%                   (logical, default=true)
+%   sortIds         if metabolites, reactions, genes and compartments
+%                   should be sorted alphabetically by their identifier,
+%                   otherwise they are kept in their original order
+%                   (logical, default=false)
 %
-%   Usage: writeYaml(model,name,preserveQuotes)
+%   Usage: writeYaml(model,name,preserveQuotes,sortIds)
 
 if nargin < 3
     preserveQuotes = true;
+end
+if nargin < 4
+    sortIds = false;
+end
+
+if ~endsWith(name,{'.yml','.yaml'})
+    name = strcat(name,'.yml');
 end
 
 %Check that model is in RAVEN format:
@@ -38,56 +49,81 @@ end
 
 %Open file:
 fid = fopen(name,'wt');
-fprintf(fid,'!!omap\n');
+fprintf(fid,'---\n!!omap\n');
+
+%Insert file header (metadata)
+writeMetadata(model,fid);
 
 %Metabolites:
 fprintf(fid,'- metabolites:\n');
-[~,pos] = sort(model.mets);
+if sortIds==true
+    [~,pos] = sort(model.mets);
+else
+    pos = 1:numel(model.mets);
+end
 for i = 1:length(model.mets)
-    fprintf(fid,'  - !!omap\n');
-    writeField(model, fid, 'mets',        'txt', pos(i), '- id',          preserveQuotes)
-    writeField(model, fid, 'metNames',    'txt', pos(i), '- name',        preserveQuotes)
-    writeField(model, fid, 'metComps',    'txt', pos(i), '- compartment', preserveQuotes)
-    writeField(model, fid, 'metFormulas', 'txt', pos(i), '- formula',     preserveQuotes)
-    writeField(model, fid, 'metCharges',  'num', pos(i), '- charge',      preserveQuotes)
-    writeField(model, fid, 'metMiriams',  'txt', pos(i), '- annotation',  preserveQuotes)
+    fprintf(fid,'    - !!omap\n');
+    writeField(model, fid, 'mets',        'txt', pos(i), '  - id',          preserveQuotes)
+    writeField(model, fid, 'metNames',    'txt', pos(i), '  - name',        preserveQuotes)
+    writeField(model, fid, 'metComps',    'txt', pos(i), '  - compartment', preserveQuotes)
+    writeField(model, fid, 'metFormulas', 'txt', pos(i), '  - formula',     preserveQuotes)
+    writeField(model, fid, 'metCharges',  'num', pos(i), '  - charge',      preserveQuotes)
+    writeField(model, fid, 'inchis',      'txt', pos(i), '  - inchis',      preserveQuotes)
+    writeField(model, fid, 'metMiriams',  'txt', pos(i), '  - annotation',  preserveQuotes)
+    writeField(model, fid, 'metFrom',     'txt', pos(i), '  - metFrom',     preserveQuotes)
 end
 
 %Reactions:
 fprintf(fid,'- reactions:\n');
-[~,pos] = sort(model.rxns);
+if sortIds==true
+    [~,pos] = sort(model.rxns);
+else
+    pos = 1:numel(model.rxns);
+end
 for i = 1:length(model.rxns)
-    fprintf(fid,'  - !!omap\n');
-    writeField(model, fid, 'rxns',                'txt', pos(i), '- id',                 preserveQuotes)
-    writeField(model, fid, 'rxnNames',            'txt', pos(i), '- name',               preserveQuotes)
-    writeField(model, fid, 'S',                   'txt', pos(i), '- metabolites',        preserveQuotes)
-    writeField(model, fid, 'lb',                  'num', pos(i), '- lower_bound',        preserveQuotes)
-    writeField(model, fid, 'ub',                  'num', pos(i), '- upper_bound',        preserveQuotes)
-    writeField(model, fid, 'grRules',             'txt', pos(i), '- gene_reaction_rule', preserveQuotes)
-    writeField(model, fid, 'subSystems',          'txt', pos(i), '- subsystem',          preserveQuotes)
-    writeField(model, fid, 'rxnMiriams',          'txt', pos(i), '- annotation',         preserveQuotes)
-    writeField(model, fid, 'rxnConfidenceScores', 'num', pos(i), '- confidence_score',   preserveQuotes)
+    fprintf(fid,'    - !!omap\n');
+    writeField(model, fid, 'rxns',                 'txt', pos(i), '  - id',                    preserveQuotes)
+    writeField(model, fid, 'rxnNames',             'txt', pos(i), '  - name',                  preserveQuotes)
+    writeField(model, fid, 'S',                    'txt', pos(i), '  - metabolites',           preserveQuotes)
+    writeField(model, fid, 'lb',                   'num', pos(i), '  - lower_bound',           preserveQuotes)
+    writeField(model, fid, 'ub',                   'num', pos(i), '  - upper_bound',           preserveQuotes)
+    writeField(model, fid, 'grRules',              'txt', pos(i), '  - gene_reaction_rule',    preserveQuotes)
+    writeField(model, fid, 'rxnFrom',              'txt', pos(i), '  - rxnFrom',               preserveQuotes)
+    if model.c(i)~=0
+        writeField(model, fid, 'c',                    'num', pos(i), '  - objective_coefficient', preserveQuotes)    
+    end
+    writeField(model, fid, 'eccodes',              'txt', pos(i), '  - eccodes',               preserveQuotes)
+    writeField(model, fid, 'rxnReferences',        'txt', pos(i), '  - references',            preserveQuotes)
+    writeField(model, fid, 'subSystems',           'txt', pos(i), '  - subsystem',             preserveQuotes)
+    writeField(model, fid, 'rxnMiriams',           'txt', pos(i), '  - annotation',            preserveQuotes)
+    writeField(model, fid, 'rxnConfidenceScores',  'num', pos(i), '  - confidence_score',      preserveQuotes)
 end
 
 %Genes:
 fprintf(fid,'- genes:\n');
-[~,pos] = sort(model.genes);
+if sortIds==true
+    [~,pos] = sort(model.genes);
+else
+    pos = 1:numel(model.genes);
+end
 for i = 1:length(model.genes)
-    fprintf(fid,'  - !!omap\n');
-    writeField(model, fid, 'genes',          'txt', pos(i), '- id',         preserveQuotes)
-    writeField(model, fid, 'geneShortNames', 'txt', pos(i), '- name',       preserveQuotes)
-    writeField(model, fid, 'geneMiriams',    'txt', pos(i), '- annotation', preserveQuotes)
+    fprintf(fid,'    - !!omap\n');
+    writeField(model, fid, 'genes',          'txt', pos(i), '  - id',         preserveQuotes)
+    writeField(model, fid, 'geneShortNames', 'txt', pos(i), '  - name',       preserveQuotes)
+    writeField(model, fid, 'geneMiriams',    'txt', pos(i), '  - annotation', preserveQuotes)
 end
 
 %Compartments:
 fprintf(fid,'- compartments: !!omap\n');
-[~,pos] = sort(model.comps);
+if sortIds==true
+    [~,pos] = sort(model.comps);
+else
+    pos = 1:numel(model.comps);
+end
 for i = 1:length(model.comps)
     writeField(model, fid, 'compNames',   'txt', pos(i), ['- ' model.comps{pos(i)}], preserveQuotes)
     writeField(model, fid, 'compMiriams', 'txt', pos(i), '- annotation',             preserveQuotes)
 end
-
-%TODO: include id, name & version (lost in RAVEN)
 
 %Close file:
 fclose(fid);
@@ -164,13 +200,12 @@ if isfield(model,fieldName)
             [model.mets,order] = sort(model.mets);
             model.coeffs       = model.coeffs(order);
             for i = 1:length(model.mets)
-                writeField(model, fid, 'coeffs',  'num', i, ['  - ' model.mets{i}], preserveQuotes)
+                writeField(model, fid, 'coeffs',  'num', i, ['      - ' model.mets{i}], preserveQuotes)
             end
         end
         
-    elseif sum(strcmp({'eccodes','subSystems','newMetMiriams','newRxnMiriams','newGeneMiriams','newCompMiriams'},fieldName)) > 0
-        %eccodes/rxnNotes/subSystems: if 1 write in 1 line, if more create
-        %header and list
+    elseif sum(strcmp({'subSystems','newMetMiriams','newRxnMiriams','newGeneMiriams','newCompMiriams'},fieldName)) > 0
+        %eccodes/rxnNotes: if 1 write in 1 line, if more create header and list
         if strcmp(fieldName,'subSystems')
             list = field{pos};  %subSystems already comes in a cell array
         elseif strcmp(fieldName,'newMetMiriams')
@@ -193,18 +228,19 @@ if isfield(model,fieldName)
             list = strrep(field{pos},' ','');     %Exception for eccodes
             list = strsplit(list,';');
         end
-        if length(list) == 1 && ~strcmp(list{1},'')
+
+        if length(list) == 1 && ~strcmp(list{1},'') && ~strcmp(fieldName,'subSystems')
             if preserveQuotes
                 list = strcat('"',list,'"');
             end
             fprintf(fid,['    ' name ': ' list{1} '\n']);
-        elseif length(list) > 1
+        elseif length(list) > 1 || strcmp(fieldName,'subSystems')
             if preserveQuotes
                 list = strcat('"',list,'"');
             end
             fprintf(fid,['    ' name ':\n']);
             for i = 1:length(list)
-                fprintf(fid,['        - ' list{i} '\n']);
+                fprintf(fid,['          - ' list{i} '\n']);
             end
         end
         
@@ -219,7 +255,7 @@ if isfield(model,fieldName)
             if isnan(field(pos))
                 value = [];
             else
-                value = num2str(field(pos));
+                value = num2str(field(pos),12);
             end
         end
         if ~isempty(value)
@@ -229,4 +265,50 @@ if isfield(model,fieldName)
 end
 
 
+end
+
+function writeMetadata(model,fid)
+% Writes model metadata to the yaml file. This information will eventually
+% be extracted entirely from the model, but for now, many of the entries
+% are hard-coded defaults for HumanGEM.
+
+fprintf(fid, '- metaData:\n');
+fprintf(fid, ['    id: "',          model.id,          '"\n']);
+fprintf(fid, ['    name: "',        model.name, '"\n']);
+if isfield(model,'version')
+    fprintf(fid, ['    version: "', model.version,     '"\n']);
+end
+fprintf(fid, ['    date: "',        datestr(now,29),   '"\n']);  % 29=YYYY-MM-DD
+if isfield(model,'annotation')
+    if isfield(model.annotation,'defaultLB')
+        fprintf(fid, ['    defaultLB: "',    num2str(model.annotation.defaultLB), '"\n']);
+    end
+    if isfield(model.annotation,'defaultUB')
+        fprintf(fid, ['    defaultUB: "',    num2str(model.annotation.defaultUB), '"\n']);
+    end
+    if isfield(model.annotation,'givenName')
+        fprintf(fid, ['    givenName: "',    model.annotation.givenName,          '"\n']);
+    end
+    if isfield(model.annotation,'familyName')
+        fprintf(fid, ['    familyName: "',   model.annotation.familyName,         '"\n']);
+    end
+    if isfield(model.annotation,'authors')
+        fprintf(fid, ['    authors: "',      model.annotation.authors,            '"\n']);
+    end
+    if isfield(model.annotation,'email')
+        fprintf(fid, ['    email: "',        model.annotation.email,              '"\n']);
+    end
+    if isfield(model.annotation,'organization')
+        fprintf(fid, ['    organization: "', model.annotation.organization,       '"\n']);
+    end
+    if isfield(model.annotation,'taxonomy')
+        fprintf(fid, ['    taxonomy: "',     model.annotation.taxonomy,           '"\n']);
+    end
+    if isfield(model.annotation,'note')
+        fprintf(fid, ['    note: "',         model.annotation.note,               '"\n']);
+    end
+    if isfield(model.annotation,'sourceUrl')
+        fprintf(fid, ['    sourceUrl: "',    model.annotation.sourceUrl,          '"\n']);
+    end
+end
 end
