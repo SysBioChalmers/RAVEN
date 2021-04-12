@@ -49,7 +49,7 @@ if ~isfield(model,'unconstrained')
     model.unconstrained=zeros(numel(model.mets),1);
 end
 
-%If model id and name don't exist, make sure that default
+%If model id and name do not exist, make sure that default
 %strings are included
 if ~isfield(model,'id')
     fprintf('WARNING: The model is missing the "id" field. Uses "blankID". \n');
@@ -65,7 +65,7 @@ if supressWarnings==false
     checkModelStruct(model,false);
 end
 
-%Add several blank fields, if they don't exist already. This is to reduce
+%Add several blank fields, if they do not exist already. This is to reduce
 %the number of conditions below
 if ~isfield(model,'compMiriams')
     model.compMiriams=cell(numel(model.comps),1);
@@ -409,8 +409,8 @@ if isfield(model,'genes')
         geneComplexes=unique(geneComplexes);
         if ~isempty(geneComplexes)
             %Then add them as genes. There is a possiblity that a complex
-            %A&B is added as separate from B&A. This isn't really an issue
-            %so I don't deal with it
+            %A&B is added as separate from B&A. This is not really an issue
+            %so this is not dealt with
             for i=1:numel(geneComplexes)
                 modelSBML.fbc_geneProduct(numel(model.genes)+i)=modelSBML.fbc_geneProduct(1);
                 if isfield(modelSBML.fbc_geneProduct,'metaid')

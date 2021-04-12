@@ -24,7 +24,7 @@ function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sort
 %                     reversibility, alternatively this is determined from
 %                     the model.ub and model.lb fields (opt, default true)
 %
-%   Outut:
+%   Output:
 %   equationStrings   a cell array with equations
 %
 %   NOTE: If useRevField is false, then reactions should be organized in
