@@ -154,7 +154,7 @@ if isfield(model,fieldName)
                     %As during the following writeField call the value of
                     %'i' would be lost, it is temporarily concatenated to
                     %'name' parameter, which will be edited later
-                    writeField(model, fid, 'newMetMiriams', 'txt', pos, ['  - ' model.newMetMiriamNames{i} '_' num2str(i)], preserveQuotes)
+                    writeField(model, fid, 'newMetMiriams', 'txt', pos, ['      - ' model.newMetMiriamNames{i} '_' num2str(i)], preserveQuotes)
                 end
             end
         end
@@ -165,7 +165,7 @@ if isfield(model,fieldName)
             writeField(model, fid, 'eccodes',  'txt', pos, '  - ec-code', preserveQuotes)
             for i=1:size(model.newRxnMiriams,2)
                 if ~isempty(model.newRxnMiriams{pos,i})
-                    writeField(model, fid, 'newRxnMiriams', 'txt', pos, ['  - ' model.newRxnMiriamNames{i} '_' num2str(i)], preserveQuotes)
+                    writeField(model, fid, 'newRxnMiriams', 'txt', pos, ['      - ' model.newRxnMiriamNames{i} '_' num2str(i)], preserveQuotes)
                 end
             end
         end
@@ -175,7 +175,7 @@ if isfield(model,fieldName)
             fprintf(fid,['    ' name ': !!omap\n']);
             for i=1:size(model.newGeneMiriams,2)
                 if ~isempty(model.newGeneMiriams{pos,i})
-                    writeField(model, fid, 'newGeneMiriams', 'txt', pos, ['  - ' model.newGeneMiriamNames{i} '_' num2str(i)], preserveQuotes)
+                    writeField(model, fid, 'newGeneMiriams', 'txt', pos, ['      - ' model.newGeneMiriamNames{i} '_' num2str(i)], preserveQuotes)
                 end
             end
         end
@@ -185,7 +185,7 @@ if isfield(model,fieldName)
             fprintf(fid,['    ' name ': !!omap\n']);
             for i=1:size(model.newCompMiriams,2)
                 if ~isempty(model.newCompMiriams{pos,i})
-                    writeField(model, fid, 'newCompMiriams', 'txt', pos, ['  - ' model.newCompMiriamNames{i} '_' num2str(i)], preserveQuotes)
+                    writeField(model, fid, 'newCompMiriams', 'txt', pos, ['      - ' model.newCompMiriamNames{i} '_' num2str(i)], preserveQuotes)
                 end
             end
         end
