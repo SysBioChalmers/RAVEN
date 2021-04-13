@@ -56,7 +56,7 @@ if ~isfield(model,'id')
     model.id='blankID';
 end
 if ~isfield(model,'name')
-    fprintf('WARNING: The model is missing the "id" field. Uses "blankName". \n');
+    fprintf('WARNING: The model is missing the "name" field. Uses "blankName". \n');
     model.name='blankName';
 end
 
@@ -142,7 +142,7 @@ if isfield(model,'annotation')
         modelSBML.notes=['<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>',regexprep(model.annotation.note,'<p>|</p>',''),'</p></body></notes>'];
     end
 else
-    modelSBML.notes='<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>This file was generated using the exportModel function in RAVEN Toolbox 2.0 and OutputSBML in libSBML </p></body></notes>';
+    modelSBML.notes='<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>This file was generated using the exportModel function in RAVEN Toolbox 2 and OutputSBML in libSBML </p></body></notes>';
 end
 
 modelSBML.annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.id '">'];
