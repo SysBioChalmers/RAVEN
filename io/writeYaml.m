@@ -154,18 +154,17 @@ if isfield(model,fieldName)
                     %As during the following writeField call the value of
                     %'i' would be lost, it is temporarily concatenated to
                     %'name' parameter, which will be edited later
-                    writeField(model, fid, 'newMetMiriams', 'txt', pos, ['  - ' model.newMetMiriamNames{i} '_' num2str(i)], preserveQuotes)
+                    writeField(model, fid, 'newMetMiriams', 'txt', pos, ['      - ' model.newMetMiriamNames{i} '_' num2str(i)], preserveQuotes)
                 end
             end
         end
         
     elseif strcmp(fieldName,'rxnMiriams')
-        if ~isempty(model.eccodes{pos}) || ~isempty(model.rxnMiriams{pos})
+        if ~isempty(model.rxnMiriams{pos})
             fprintf(fid,['    ' name ': !!omap\n']);
-            writeField(model, fid, 'eccodes',  'txt', pos, '  - ec-code', preserveQuotes)
             for i=1:size(model.newRxnMiriams,2)
                 if ~isempty(model.newRxnMiriams{pos,i})
-                    writeField(model, fid, 'newRxnMiriams', 'txt', pos, ['  - ' model.newRxnMiriamNames{i} '_' num2str(i)], preserveQuotes)
+                    writeField(model, fid, 'newRxnMiriams', 'txt', pos, ['      - ' model.newRxnMiriamNames{i} '_' num2str(i)], preserveQuotes)
                 end
             end
         end
@@ -175,7 +174,7 @@ if isfield(model,fieldName)
             fprintf(fid,['    ' name ': !!omap\n']);
             for i=1:size(model.newGeneMiriams,2)
                 if ~isempty(model.newGeneMiriams{pos,i})
-                    writeField(model, fid, 'newGeneMiriams', 'txt', pos, ['  - ' model.newGeneMiriamNames{i} '_' num2str(i)], preserveQuotes)
+                    writeField(model, fid, 'newGeneMiriams', 'txt', pos, ['      - ' model.newGeneMiriamNames{i} '_' num2str(i)], preserveQuotes)
                 end
             end
         end
@@ -185,7 +184,7 @@ if isfield(model,fieldName)
             fprintf(fid,['    ' name ': !!omap\n']);
             for i=1:size(model.newCompMiriams,2)
                 if ~isempty(model.newCompMiriams{pos,i})
-                    writeField(model, fid, 'newCompMiriams', 'txt', pos, ['  - ' model.newCompMiriamNames{i} '_' num2str(i)], preserveQuotes)
+                    writeField(model, fid, 'newCompMiriams', 'txt', pos, ['      - ' model.newCompMiriamNames{i} '_' num2str(i)], preserveQuotes)
                 end
             end
         end
@@ -204,7 +203,7 @@ if isfield(model,fieldName)
             end
         end
         
-    elseif sum(strcmp({'subSystems','newMetMiriams','newRxnMiriams','newGeneMiriams','newCompMiriams'},fieldName)) > 0
+    elseif sum(strcmp({'subSystems','newMetMiriams','newRxnMiriams','newGeneMiriams','newCompMiriams','eccodes'},fieldName)) > 0
         %eccodes/rxnNotes: if 1 write in 1 line, if more create header and list
         if strcmp(fieldName,'subSystems')
             list = field{pos};  %subSystems already comes in a cell array
@@ -240,7 +239,7 @@ if isfield(model,fieldName)
             end
             fprintf(fid,['    ' name ':\n']);
             for i = 1:length(list)
-                fprintf(fid,['          - ' list{i} '\n']);
+                fprintf(fid,[regexprep(name,'(^\s*).*','$1') '        - ' list{i} '\n']);
             end
         end
         
