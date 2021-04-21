@@ -24,7 +24,7 @@
 <div class="box"><strong>constructEquations</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID,useFormula) </strong></div>
+<div class="box"><strong>function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID,useFormula,useRevField) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> constructEquations
@@ -32,13 +32,15 @@
 
    Input:
    model             a model structure
-   rxns              either a cell array of reaction IDs, a logical vector with the
-                     same number of elements as reactions in the model, or a vector
-                     of reaction indexes (opt, default model.rxns)
-   useComps          include the compartment of each metabolite (opt, default true)
-   sortRevRxns       sort reversible reactions so that the metabolite that is first in
-                     the lexiographic order is a reactant (opt, default
-                     false)
+   rxns              either a cell array of reaction IDs, a logical vector
+                     with the same number of elements as reactions in the
+                     model, or a vector of reaction indexes (opt, default
+                     model.rxns)
+   useComps          include the compartment of each metabolite (opt,
+                     default true)
+   sortRevRxns       sort reversible reactions so that the metabolite that
+                     is first in the lexiographic order is a reactant
+                     (opt, default false)
    sortMetNames      sort the metabolite names in the equation. Uses
                      compartment even if useComps is false (opt, default
                      false)
@@ -46,16 +48,19 @@
                      default false)
    useFormula        use metabolite formula in generated equations (opt,
                      default false)
+   useRevField       use the model.rev field to indicate reaction
+                     reversibility, alternatively this is determined from
+                     the model.ub and model.lb fields (opt, default true)
 
-   Outut:
+   Output:
    equationStrings   a cell array with equations
 
-   NOTE: Reactions in a model should be organized in their forward direction
-   (e.g. ub = 1000 and lb = -1000/0) so that their equations can be correctly
-   constructed by this function.
+   NOTE: If useRevField is false, then reactions should be organized in
+   their forward direction (e.g. ub = 1000 and lb = -1000/0) for the
+   reversibility to be correctly determined.
 
    Usage: equationStrings=constructEquations(model,rxns,useComps,...
-           sortRevRxns,sortMetNames,useMetID,useFormula)</pre></div>
+           sortRevRxns,sortMetNames,useMetID,useFormula,useRevField)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -70,98 +75,110 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID,useFormula)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID,useFormula,useRevField)</a>
 0002 <span class="comment">% constructEquations</span>
 0003 <span class="comment">%   Construct equation strings for reactions</span>
 0004 <span class="comment">%</span>
 0005 <span class="comment">%   Input:</span>
 0006 <span class="comment">%   model             a model structure</span>
-0007 <span class="comment">%   rxns              either a cell array of reaction IDs, a logical vector with the</span>
-0008 <span class="comment">%                     same number of elements as reactions in the model, or a vector</span>
-0009 <span class="comment">%                     of reaction indexes (opt, default model.rxns)</span>
-0010 <span class="comment">%   useComps          include the compartment of each metabolite (opt, default true)</span>
-0011 <span class="comment">%   sortRevRxns       sort reversible reactions so that the metabolite that is first in</span>
-0012 <span class="comment">%                     the lexiographic order is a reactant (opt, default</span>
-0013 <span class="comment">%                     false)</span>
-0014 <span class="comment">%   sortMetNames      sort the metabolite names in the equation. Uses</span>
-0015 <span class="comment">%                     compartment even if useComps is false (opt, default</span>
-0016 <span class="comment">%                     false)</span>
-0017 <span class="comment">%   useMetID          use metabolite ID in generated equations (opt,</span>
-0018 <span class="comment">%                     default false)</span>
-0019 <span class="comment">%   useFormula        use metabolite formula in generated equations (opt,</span>
+0007 <span class="comment">%   rxns              either a cell array of reaction IDs, a logical vector</span>
+0008 <span class="comment">%                     with the same number of elements as reactions in the</span>
+0009 <span class="comment">%                     model, or a vector of reaction indexes (opt, default</span>
+0010 <span class="comment">%                     model.rxns)</span>
+0011 <span class="comment">%   useComps          include the compartment of each metabolite (opt,</span>
+0012 <span class="comment">%                     default true)</span>
+0013 <span class="comment">%   sortRevRxns       sort reversible reactions so that the metabolite that</span>
+0014 <span class="comment">%                     is first in the lexiographic order is a reactant</span>
+0015 <span class="comment">%                     (opt, default false)</span>
+0016 <span class="comment">%   sortMetNames      sort the metabolite names in the equation. Uses</span>
+0017 <span class="comment">%                     compartment even if useComps is false (opt, default</span>
+0018 <span class="comment">%                     false)</span>
+0019 <span class="comment">%   useMetID          use metabolite ID in generated equations (opt,</span>
 0020 <span class="comment">%                     default false)</span>
-0021 <span class="comment">%</span>
-0022 <span class="comment">%   Outut:</span>
-0023 <span class="comment">%   equationStrings   a cell array with equations</span>
-0024 <span class="comment">%</span>
-0025 <span class="comment">%   NOTE: Reactions in a model should be organized in their forward direction</span>
-0026 <span class="comment">%   (e.g. ub = 1000 and lb = -1000/0) so that their equations can be correctly</span>
-0027 <span class="comment">%   constructed by this function.</span>
-0028 <span class="comment">%</span>
-0029 <span class="comment">%   Usage: equationStrings=constructEquations(model,rxns,useComps,...</span>
-0030 <span class="comment">%           sortRevRxns,sortMetNames,useMetID,useFormula)</span>
-0031 
-0032 <span class="keyword">if</span> nargin&lt;2
-0033     rxns=model.rxns;
-0034 <span class="keyword">end</span>
-0035 <span class="keyword">if</span> nargin&lt;3
-0036     useComps=true;
-0037 <span class="keyword">end</span>
-0038 <span class="keyword">if</span> nargin&lt;4
-0039     sortRevRxns=false;
-0040 <span class="keyword">end</span>
-0041 <span class="keyword">if</span> nargin&lt;5
-0042     sortMetNames=false;
-0043 <span class="keyword">end</span>
-0044 <span class="keyword">if</span> nargin&lt;6
-0045     useMetID=false;
-0046 <span class="keyword">end</span>
-0047 <span class="keyword">if</span> nargin&lt;7
-0048     useFormula=false;
-0049 <span class="keyword">end</span>
-0050 <span class="keyword">if</span> isempty(rxns) &amp;&amp; nargin&gt;2
-0051     rxns=model.rxns;
-0052 <span class="keyword">end</span>
-0053 
-0054 <span class="comment">%Sort reversible equations</span>
-0055 <span class="keyword">if</span> sortRevRxns==true
-0056     model=<a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>(model);
+0021 <span class="comment">%   useFormula        use metabolite formula in generated equations (opt,</span>
+0022 <span class="comment">%                     default false)</span>
+0023 <span class="comment">%   useRevField       use the model.rev field to indicate reaction</span>
+0024 <span class="comment">%                     reversibility, alternatively this is determined from</span>
+0025 <span class="comment">%                     the model.ub and model.lb fields (opt, default true)</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">%   Output:</span>
+0028 <span class="comment">%   equationStrings   a cell array with equations</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">%   NOTE: If useRevField is false, then reactions should be organized in</span>
+0031 <span class="comment">%   their forward direction (e.g. ub = 1000 and lb = -1000/0) for the</span>
+0032 <span class="comment">%   reversibility to be correctly determined.</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">%   Usage: equationStrings=constructEquations(model,rxns,useComps,...</span>
+0035 <span class="comment">%           sortRevRxns,sortMetNames,useMetID,useFormula,useRevField)</span>
+0036 
+0037 <span class="keyword">if</span> nargin&lt;2
+0038     rxns=model.rxns;
+0039 <span class="keyword">end</span>
+0040 <span class="keyword">if</span> nargin&lt;3
+0041     useComps=true;
+0042 <span class="keyword">end</span>
+0043 <span class="keyword">if</span> nargin&lt;4
+0044     sortRevRxns=false;
+0045 <span class="keyword">end</span>
+0046 <span class="keyword">if</span> nargin&lt;5
+0047     sortMetNames=false;
+0048 <span class="keyword">end</span>
+0049 <span class="keyword">if</span> nargin&lt;6
+0050     useMetID=false;
+0051 <span class="keyword">end</span>
+0052 <span class="keyword">if</span> nargin&lt;7
+0053     useFormula=false;
+0054 <span class="keyword">end</span>
+0055 <span class="keyword">if</span> nargin&lt;8
+0056     useRevField=true;
 0057 <span class="keyword">end</span>
-0058 
-0059 <span class="comment">%Sort metabolite names, including compartment</span>
-0060 <span class="keyword">if</span> sortMetNames==true
-0061     model=<a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>(model,false,true);
-0062 <span class="keyword">end</span>
-0063 
-0064 Rindexes=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxns,<span class="string">'rxns'</span>);
-0065 
-0066 equationStrings=cell(numel(Rindexes),1);
-0067 
-0068 <span class="keyword">for</span> i=1:numel(Rindexes)
-0069     Mindexes=find(model.S(:,Rindexes(i)));
-0070     <span class="comment">%Define metabolites by id, formula or name, and with or without compartment:</span>
-0071     <span class="keyword">if</span> useMetID==true &amp;&amp; useFormula==false
-0072         mets = model.mets(Mindexes);
-0073     <span class="keyword">elseif</span> useMetID==false &amp;&amp; useFormula==true
-0074         mets = strcat(<span class="string">'['</span>,model.metFormulas(Mindexes),<span class="string">']'</span>);
-0075     <span class="keyword">elseif</span> useMetID==true &amp;&amp; useFormula==true
-0076         error(<span class="string">'Arguments useMetID and useFormula cannot be both TRUE!'</span>);
-0077     <span class="keyword">else</span>
-0078         mets = model.metNames(Mindexes);
-0079     <span class="keyword">end</span>
-0080     <span class="keyword">if</span> useComps==true
-0081         comps = model.comps(model.metComps(Mindexes));
-0082         mets  = strcat(mets,<span class="string">'['</span>,comps,<span class="string">']'</span>);
-0083     <span class="keyword">end</span>
-0084     <span class="comment">%Define stoich coeffs and reversibility:</span>
-0085     stoichCoeffs = model.S(Mindexes,Rindexes(i));
-0086     isrev        = model.lb(Rindexes(i))&lt;0 &amp; model.ub(Rindexes(i))&gt;0;
-0087     
-0088     <span class="comment">%Construct equation:</span>
-0089     equationStrings{i} = <a href="buildEquation.html" class="code" title="function equationString=buildEquation(mets,stoichCoeffs,isrev)">buildEquation</a>(mets,stoichCoeffs,isrev);
-0090 <span class="keyword">end</span>
-0091 
-0092 <span class="keyword">end</span></pre></div>
+0058 <span class="keyword">if</span> isempty(rxns) &amp;&amp; nargin&gt;2
+0059     rxns=model.rxns;
+0060 <span class="keyword">end</span>
+0061 
+0062 <span class="comment">%Sort reversible equations</span>
+0063 <span class="keyword">if</span> sortRevRxns==true
+0064     model=<a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>(model);
+0065 <span class="keyword">end</span>
+0066 
+0067 <span class="comment">%Sort metabolite names, including compartment</span>
+0068 <span class="keyword">if</span> sortMetNames==true
+0069     model=<a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>(model,false,true);
+0070 <span class="keyword">end</span>
+0071 
+0072 Rindexes=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxns,<span class="string">'rxns'</span>);
+0073 
+0074 equationStrings=cell(numel(Rindexes),1);
+0075 
+0076 <span class="keyword">for</span> i=1:numel(Rindexes)
+0077     Mindexes=find(model.S(:,Rindexes(i)));
+0078     <span class="comment">%Define metabolites by id, formula or name, and with or without compartment:</span>
+0079     <span class="keyword">if</span> useMetID==true &amp;&amp; useFormula==false
+0080         mets = model.mets(Mindexes);
+0081     <span class="keyword">elseif</span> useMetID==false &amp;&amp; useFormula==true
+0082         mets = strcat(<span class="string">'['</span>,model.metFormulas(Mindexes),<span class="string">']'</span>);
+0083     <span class="keyword">elseif</span> useMetID==true &amp;&amp; useFormula==true
+0084         error(<span class="string">'Arguments useMetID and useFormula cannot be both TRUE!'</span>);
+0085     <span class="keyword">else</span>
+0086         mets = model.metNames(Mindexes);
+0087     <span class="keyword">end</span>
+0088     <span class="keyword">if</span> useComps==true
+0089         comps = model.comps(model.metComps(Mindexes));
+0090         mets  = strcat(mets,<span class="string">'['</span>,comps,<span class="string">']'</span>);
+0091     <span class="keyword">end</span>
+0092     <span class="comment">%Define stoich coeffs and reversibility:</span>
+0093     stoichCoeffs = model.S(Mindexes,Rindexes(i));
+0094     <span class="keyword">if</span> useRevField == true
+0095         isrev        = model.rev(Rindexes(i))==1;
+0096     <span class="keyword">else</span>
+0097         isrev        = model.lb(Rindexes(i))&lt;0 &amp; model.ub(Rindexes(i))&gt;0;
+0098     <span class="keyword">end</span>
+0099     
+0100     <span class="comment">%Construct equation:</span>
+0101     equationStrings{i} = <a href="buildEquation.html" class="code" title="function equationString=buildEquation(mets,stoichCoeffs,isrev)">buildEquation</a>(mets,stoichCoeffs,isrev);
+0102 <span class="keyword">end</span>
+0103 
+0104 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
