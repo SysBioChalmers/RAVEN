@@ -16,7 +16,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %   Output:
 %   model
 %       id               model ID
-%       description      description of model contents
+%       name      name of model contents
 %       annotation       additional information about model
 %       rxns             reaction ids
 %       mets             metabolite ids
@@ -93,7 +93,7 @@ end
 %from Excel
 model=[];
 model.id=[];
-model.description=[];
+model.name=[];
 model.annotation=[];
 model.rxns={};
 model.mets={};
@@ -219,6 +219,9 @@ complexNames={};
 %with 'E_'
 geneSBOs = [];
 metSBOs = [];
+%Regex of compartment names, later to be used to remove from metabolite
+%names if present as suffix.
+regexCompNames = ['\s?\[((' strjoin({modelSBML.compartment.name},')|(') '))\]$'];
 for i=1:numel(modelSBML.species)
     if ~isSBML2COBRA
         if length(modelSBML.species(i).id)>=2 && strcmpi(modelSBML.species(i).id(1:2),'E_')
@@ -392,24 +395,9 @@ for i=1:numel(modelSBML.species)
     %The following lines are executed regardless isSBML2COBRA setting
     if isempty(modelSBML.species(i).id) || ~strcmpi(modelSBML.species(i).id(1:2),'E_')
         if isempty(modelSBML.species(i).id) || ~strcmpi(modelSBML.species(i).id(1:3),'Cx_')
-            %Metabolite names could be of format NAME [compartment]. First
-            %check whether metabolite name ends with square brackets, and
-            %then check if the text within these brackets is a compartment
-            %name. If so, then remove this section from the metabolite
-            %name
-            comp.match=regexp(modelSBML.species(i).name,'.* \[(.*)\]$','match');
-            if ~isempty(comp.match)
-                comp.split=strsplit(comp.match{1},{'[',']'});
-                comp.true=any(strcmpi({modelSBML.compartment.name},comp.split{2}));
-                if comp.true==1
-                    metaboliteNames{numel(metaboliteNames),1}=strtrim(comp.split{1});
-                else
-                    metaboliteNames{numel(metaboliteNames),1}=regexprep(modelSBML.species(i).name,'^M_','');
-                end
-            else
-                %Use the full name
-                metaboliteNames{i,1}=modelSBML.species(i).name;
-            end
+            %Remove trailing [compartment] from metabolite name if present
+            metaboliteNames{end,1}=regexprep(metaboliteNames{end,1},regexCompNames,'');
+            metaboliteNames{end,1}=regexprep(metaboliteNames{end,1},'^M_','');
             if isfield(modelSBML.species(i),'fbc_charge')
                 if ~isempty(modelSBML.species(i).fbc_charge) && modelSBML.species(i).isSetfbc_charge
                     metaboliteCharges(numel(metaboliteCharges)+1,1)=double(modelSBML.species(i).fbc_charge);
@@ -747,7 +735,7 @@ reactionLB=reactionLB(1:counter);
 reactionObjective=reactionObjective(1:counter);
 S=S(:,1:counter);
 
-model.description=modelSBML.name;
+model.name=modelSBML.name;
 model.id=regexprep(modelSBML.id,'^M_',''); % COBRA adds M_ prefix
 model.rxns=reactionIDs;
 model.mets=metaboliteIDs;
@@ -798,7 +786,7 @@ if isfield(modelSBML,'annotation')
         else
             J=strfind(modelSBML.annotation,'"https://identifiers.org/');
             if any(J)
-                model.annotation.taxonomy=modelSBML.annotation(J+24:I(find(I>J,1))-1);
+                model.annotation.taxonomy=modelSBML.annotation(J+25:I(find(I>J,1))-1);
             end
         end
     end
@@ -1194,7 +1182,7 @@ targetString=regexprep(targetString,midString,'/','once');
 
 counter=0;
 for i=1:numel(targetString)
-    if isempty(regexp(targetString{1,i},'inchi|ec-code', 'once'))
+    if isempty(regexp(targetString{1,i},'inchi|ec-code|sbo', 'once'))
         counter=counter+1;
         miriamStruct.name{counter,1} = regexprep(targetString{1,i},'/.+','','once');
         miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} '/'],'','once');

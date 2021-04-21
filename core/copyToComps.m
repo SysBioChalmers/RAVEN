@@ -40,7 +40,7 @@ if nargin<6
 end
 
 originalID=model.id;
-originalDescription=model.description;
+originalName=model.name;
 
 rxns=getIndexes(model,rxns,'rxns');
 
@@ -83,5 +83,5 @@ if deleteOriginal==true
 end
 
 model.id=originalID;
-model.description=originalDescription;
+model.name=originalName;
 end

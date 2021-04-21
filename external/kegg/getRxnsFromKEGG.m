@@ -13,7 +13,7 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 %   model               a model structure generated from the database. The
 %                       following fields are filled
 %       id                  'KEGG'
-%       description         'Automatically generated from KEGG database'
+%       name         'Automatically generated from KEGG database'
 %       rxns                KEGG reaction ids
 %       rxnNames            Name for each reaction entry
 %       mets                KEGG compound ids. If the equations use
@@ -89,7 +89,7 @@ else
         fprintf('Generating keggRxns.mat file... ');
         %Add new functionality in the order specified in models
         model.id='KEGG';
-        model.description='Automatically generated from KEGG database';
+        model.name='Automatically generated from KEGG database';
         
         %Preallocate memory for 15000 reactions
         model.rxns=cell(15000,1);

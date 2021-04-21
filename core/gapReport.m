@@ -47,7 +47,7 @@ if nargin<2
     addedFromTemplates=[];
 end
 
-fprintf(['Gap analysis for ' model.id ' - ' model.description '\n\n']);
+fprintf(['Gap analysis for ' model.id ' - ' model.name '\n\n']);
 if isfield(model,'unconstrained')
     calculateINOUT=true;
     closedModel=model;

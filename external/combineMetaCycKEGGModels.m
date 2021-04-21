@@ -23,7 +23,7 @@ end
 %Add MetaCyc model as template
 model=metacycModel;
 model.id='COMBINED';
-model.description='Combined model from MetaCyc and KEGG draft models';
+model.name='Combined model from MetaCyc and KEGG draft models';
 
 %Use MetaCyc model as template
 model.rxnFrom=cell(numel(model.rxns),1);

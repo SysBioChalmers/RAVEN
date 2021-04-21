@@ -22,7 +22,7 @@ if nargin<3
 end
 
 %Missing elements
-fields={'id';'description';'rxns';'mets';'S';'lb';'ub';'rev';'c';'b';'comps';'metComps'};
+fields={'id';'name';'rxns';'mets';'S';'lb';'ub';'rev';'c';'b';'comps';'metComps'};
 for i=1:numel(fields)
     if ~isfield(model,fields{i})
         EM=['The model is missing the "' fields{i} '" field'];
@@ -35,8 +35,8 @@ if ~ischar(model.id)
     EM='The "id" field must be a string';
     dispEM(EM,throwErrors);
 end
-if ~ischar(model.description)
-    EM='The "description" field must be a string';
+if ~ischar(model.name)
+    EM='The "name" field must be a string';
     dispEM(EM,throwErrors);
 end
 if ~iscellstr(model.rxns)
