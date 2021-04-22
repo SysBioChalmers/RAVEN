@@ -325,7 +325,7 @@ if nargin<14
 end
 
 if isempty(fastaFile)
-    fprintf(['\n\n*** The model reconstruction from KEGG based on the annotation available for KEGG Species <strong>' organismID '</strong> ***\n\n']);
+    fprintf(['\n\n*** The model reconstruction from KEGG based on the annotation available for KEGG Species ' organismID ' ***\n\n']);
 else
     fprintf('\n\n*** The model reconstruction from KEGG based on the protein homology search against KEGG Orthology specific HMMs ***\n\n');
     %Check if query fasta exists
@@ -369,7 +369,7 @@ if ~isempty(dataDir)
         end
     else
         if exist(dataDir,'dir') && exist(fullfile(dataDir,'hmms','K00844.hmm'),'file')
-            fprintf(['NOTE: Found <strong>' dataDir '</strong> directory with pre-trained HMMs, it will therefore be used during reconstruction\n']);
+            fprintf(['NOTE: Found ' dataDir ' directory with pre-trained HMMs, it will therefore be used during reconstruction\n']);
         elseif ~exist(dataDir,'dir') && exist([dataDir,'.zip'],'file')
             fprintf('Extracting the HMMs archive file... ');
             unzip([dataDir,'.zip']);
@@ -441,7 +441,7 @@ model.c=zeros(numel(model.rxns),1);
 %If no FASTA file is supplied, then just remove all genes which are not for
 %the given organism ID
 if isempty(fastaFile)
-    fprintf(['Pruning the model from <strong>non-' organismID '</strong> genes... ']);
+    fprintf(['Pruning the model from non-' organismID ' genes... ']);
     if ismember(organismID,{'eukaryotes','prokaryotes'})
         phylDists=getPhylDist(fullfile(dataDir,'keggdb'),maxPhylDist==-1);
         if strcmp(organismID,'eukaryotes')
@@ -874,7 +874,7 @@ end
 %Hidden Markov models should be performed
 missingOUT=setdiff(KOModel.rxns,outFiles);
 if ~isempty(missingOUT)
-    fprintf(['Querying <strong>' strrep(fastaFile,'\','/') '</strong> against the KEGG Orthology specific HMMs... ']);
+    fprintf(['Querying ' strrep(fastaFile,'\','/') ' against the KEGG Orthology specific HMMs... ']);
     missingOUT=missingOUT(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingOUT)));
     progressFlag=0;
     %Update hmmFiles. This is needed once rebuilding KEGG from FTP dump

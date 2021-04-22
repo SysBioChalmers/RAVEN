@@ -5,7 +5,7 @@ function ncores=getNcores()
     %   Usage: ncores=getNcores()
 
     if isoctave
-        ncores=nproc()
+        ncores=nproc();
     else
         ncores = evalc('feature(''numcores'')');
         ncores = strsplit(ncores, 'MATLAB was assigned: ');
