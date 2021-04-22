@@ -287,7 +287,7 @@ if isempty(outDir)
     outDir=tempdir;
     %Delete all *.out files if any exist
     delete(fullfile(outDir,'*.out'));
-elseif ~isstr(outDir)
+elseif ~ischar(outDir)
     error('outDir should be provided as string');
 end
 if nargin<5

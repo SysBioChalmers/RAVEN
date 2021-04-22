@@ -517,12 +517,12 @@ end
 if eqnType==1
     [I, J]=ismember(mets,model.mets);
     if ~all(I)
-        if allowNewMets==true | isstr(allowNewMets)
+        if allowNewMets==true | ischar(allowNewMets)
             %Add the new mets
             metsToAdd.mets=mets(~I);
             metsToAdd.metNames=metsToAdd.mets;
             metsToAdd.compartments=compartment;
-            if isstr(allowNewMets)
+            if ischar(allowNewMets)
                 newModel=addMets(newModel,metsToAdd,true,allowNewMets);
             else
                 newModel=addMets(newModel,metsToAdd,true);
@@ -552,11 +552,11 @@ if eqnType==2
     [I, J]=ismember(t1,t2);
     
     if ~all(I)
-        if allowNewMets==true | isstr(allowNewMets)
+        if allowNewMets==true | ischar(allowNewMets)
             %Add the new mets
             metsToAdd.metNames=mets(~I);
             metsToAdd.compartments=compartment;
-            if isstr(allowNewMets)
+            if ischar(allowNewMets)
                 newModel=addMets(newModel,metsToAdd,true,allowNewMets);
             else
                 newModel=addMets(newModel,metsToAdd,true);
@@ -602,11 +602,11 @@ if eqnType==3
     [I, J]=ismember(t1,t2);
     
     if ~all(I)
-        if allowNewMets==true | isstr(allowNewMets)
+        if allowNewMets==true | ischar(allowNewMets)
             %Add the new mets
             metsToAdd.metNames=metNames(~I);
             metsToAdd.compartments=compartments(~I);
-            if isstr(allowNewMets)
+            if ischar(allowNewMets)
                 newModel=addMets(newModel,metsToAdd,true,allowNewMets);
             else
                 newModel=addMets(newModel,metsToAdd,true);
