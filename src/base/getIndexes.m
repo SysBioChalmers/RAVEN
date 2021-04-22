@@ -64,7 +64,7 @@ switch type
         end
         return %None of the remaining function needs to run if metcomps
     otherwise
-        if contains(objects,{'rxns','mets','metnames','metcomps','genes'})
+        if ~isempty(strfind(objects,{'rxns','mets','metnames','metcomps','genes'}))
             error('The second and third parameter provided to run getIndexes are likely switched. Note that the second parameter is the object to find the index for, while the third parameter is the object type (''rxns'', ''mets'', ''metnames'', ''metcomps'' or ''genes'').')
         else
             error('Incorrect value of the ''type'' parameter. Allowed values are ''rxns'', ''mets'', ''metnames'', ''metcomps'' or ''genes''.');
