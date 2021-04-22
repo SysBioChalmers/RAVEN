@@ -44,6 +44,6 @@ end
 if throwErrors==false
     fprintf([errorText '\n']);
 else
-    throw(MException('',errorText));
+    error(errorText);
 end
 end
