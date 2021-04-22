@@ -129,7 +129,7 @@ elseif ispc
     binEnd='.exe';
 end
 fprintf('Checking essential binary executables:\n');
-fprintf('NOTE: Broken binary executables <strong>must be fixed</strong> before running RAVEN\n');
+fprintf('NOTE: Broken binary executables must be fixed before running RAVEN\n');
 fprintf(['\tmakeblastdb' binEnd '...\t\t\t\t\t\t\t']);
 [res,~]=system(['"' fullfile(ravenDir,'software','blast+',['makeblastdb' binEnd]) '"']);
 if res==1
