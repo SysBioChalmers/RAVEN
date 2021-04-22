@@ -370,11 +370,13 @@ if ~isempty(dataDir)
             hmmIndex=~cellfun(@isempty,hmmIndex);
             fprintf('Downloading the HMMs archive file... ');
             try
-                websave([dataDir,'.zip'],['https://chalmersuniversity.box.com/shared/static/',hmmLinks{hmmIndex},'.zip']);
-            catch ME
-                if strcmp(ME.identifier,'MATLAB:webservices:HTTP404StatusCodeError')
-                    error('Failed to download the HMMs archive file, the server returned a 404 error, try again later. If the problem persists please report it on the RAVEN GitHub Issues page: https://github.com/SysBioChalmers/RAVEN/issues')
+                if isoctave
+                    urlwrite(['https://chalmersuniversity.box.com/shared/static/',hmmLinks{hmmIndex},'.zip'],[dataDir,'.zip']);
+                else
+                    websave([dataDir,'.zip'],['https://chalmersuniversity.box.com/shared/static/',hmmLinks{hmmIndex},'.zip']);
                 end
+            catch
+                error('Failed to download the HMMs archive file, try again later. If the problem persists please report it on the RAVEN GitHub Issues page: https://github.com/SysBioChalmers/RAVEN/issues')
             end
             
             fprintf('COMPLETE\n');
@@ -385,8 +387,7 @@ if ~isempty(dataDir)
         %Check if HMMs are extracted
         if ~exist(fullfile(dataDir,'hmms','K00844.hmm'),'file')
             EM=['The HMM files seem improperly extracted and not found in ',dataDir,'/hmms. Please remove ',dataDir,' folder and rerun getKEGGModelForOrganism'];
-            disp(EM);
-            error('Fatal error occured. See the details above');
+            dispEM(EM);
         end
     end
 end
@@ -923,7 +924,7 @@ if ~isempty(missingOUT)
     end
     fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 else
-    fprintf(['Querying <strong>' fastaFile '</strong> against the KEGG Orthology specific HMMs... COMPLETE\n']);
+    fprintf(['Querying ' fastaFile ' against the KEGG Orthology specific HMMs... COMPLETE\n']);
 end
 
 
