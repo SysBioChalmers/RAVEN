@@ -324,11 +324,7 @@ else
 end
 
 %Run the external binaries multi-threaded to use all logical cores assigned
-%to MATLAB
-cores = evalc('feature(''numcores'')');
-cores = strsplit(cores, 'MATLAB was assigned: ');
-cores = regexp(cores{2},'^\d*','match');
-cores = cores{1};
+cores = getNcores();
 
 %Get the directory for RAVEN Toolbox. This is to get the path to the third
 %party software used

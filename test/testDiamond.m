@@ -60,11 +60,8 @@ else
     tmpDB=tempname;
     outFile=tempname;
     
-    %Run DIAMOND multi-threaded to use all logical cores assigned to MATLAB
-    cores = evalc('feature(''numcores'')');
-    cores = strsplit(cores, 'MATLAB was assigned: ');
-    cores = regexp(cores{2},'^\d*','match');
-    cores = cores{1};
+    %Run DIAMOND multi-threaded to use all logical cores assigned
+    cores = getNcores();
     
     %Create a temporary folder and copy multi-FASTA file there
     [~, ~]=system(['mkdir "' tmpDB '"']);
