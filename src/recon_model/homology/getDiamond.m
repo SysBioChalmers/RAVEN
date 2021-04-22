@@ -90,11 +90,8 @@ else
     return
 end
 
-%Run DIAMOND multi-threaded to use all logical cores assigned to MATLAB.
-cores = evalc('feature(''numcores'')');
-cores = strsplit(cores, 'MATLAB was assigned: ');
-cores = regexp(cores{2},'^\d*','match');
-cores = cores{1};
+cores = getNcores();
+% Run DIAMOND multi-threaded to use all logical cores assigned
 
 %Create a database for the new organism and blast each of the refFastaFiles
 %against it
