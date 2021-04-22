@@ -566,7 +566,7 @@ if ~isempty(missingFASTA)
     fastaModel=removeReactions(KOModel,setdiff(KOModel.rxns,missingFASTA),true,true);
     %Permute the order of the KOs in the model so that constructMultiFasta
     %can be run on several processors at once
-    fastaModel=permuteModel(fastaModel,randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(fastaModel.rxns)),'rxns');
+    fastaModel=permuteModel(fastaModel,randperm(numel(fastaModel.rxns)),'rxns');
     constructMultiFasta(fastaModel,fullfile(dataDir,'keggdb','genes.pep'),fullfile(dataDir,'fasta'));
 else
     fprintf('Generating the KEGG Orthology specific multi-FASTA files... COMPLETE\n');
@@ -594,7 +594,7 @@ if ~isempty(missingAligned)
     else
         fprintf('Performing clustering and multiple alignment for KEGG Orthology specific protein sets... ');
     end
-    missingAligned=missingAligned(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingAligned)));
+    missingAligned=missingAligned(randperm(numel(missingAligned)));
     progressFlag=0;
     %Update fastaFiles. This is needed once rebuilding KEGG from FTP dump
     %files for more accurate progress reporting
@@ -810,7 +810,7 @@ end
 missingHMMs=setdiff(KOModel.rxns,[hmmFiles;outFiles]);
 if ~isempty(missingHMMs)
     fprintf('Training the KEGG Orthology specific HMMs... ');
-    missingHMMs=missingHMMs(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingHMMs)));
+    missingHMMs=missingHMMs(randperm(numel(missingHMMs)));
     progressFlag=0;
     %Update alignedFiles. This is needed once rebuilding KEGG from FTP dump
     %files for more accurate progress reporting
@@ -875,7 +875,7 @@ end
 missingOUT=setdiff(KOModel.rxns,outFiles);
 if ~isempty(missingOUT)
     fprintf(['Querying ' strrep(fastaFile,'\','/') ' against the KEGG Orthology specific HMMs... ']);
-    missingOUT=missingOUT(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingOUT)));
+    missingOUT=missingOUT(randperm(numel(missingOUT)));
     progressFlag=0;
     %Update hmmFiles. This is needed once rebuilding KEGG from FTP dump
     %files for more accurate progress reporting
