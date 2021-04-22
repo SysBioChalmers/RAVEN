@@ -133,7 +133,7 @@ options = struct('verbose', 1,...
 				 'ignoredDir', {{'.svn' 'cvs'}}, ...
                  'language', 'english');
 
-if nargin == 1 & isstruct(varargin{1})
+if nargin == 1 && isstruct(varargin{1})
 	paramlist = [ fieldnames(varargin{1}) ...
 				  struct2cell(varargin{1}) ]';
 	paramlist = { paramlist{:} };
@@ -292,7 +292,7 @@ for i=1:2:length(paramlist)
 				error(sprintf(msgInvalidPair,pname));
 			end
 		case 'extension'
-			if ischar(pvalue) & pvalue(1) == '.'
+			if ischar(pvalue) && pvalue(1) == '.'
 				options.extension = pvalue;
 			else
 				error(sprintf(msgInvalidPair,pname));
@@ -558,7 +558,7 @@ end
 
 %- Link to a full dependency graph, if necessary
 tpl = set(tpl,'var','graphs','');
-if options.graph & options.globalHypertextLinks & length(mdir) > 1
+if options.graph && options.globalHypertextLinks & length(mdir) > 1
     tpl = set(tpl,'var','LGRAPH',[dotbase options.extension]);
     tpl = parse(tpl,'graphs','graph',1);
 end
@@ -882,7 +882,7 @@ if options.graph
 								datestr(now,13)]);
 	
     %- Create a full dependency graph for all directories if possible
-    if options.globalHypertextLinks & length(mdir) > 1
+    if options.globalHypertextLinks && length(mdir) > 1
         mdotfile = fullfile(options.htmlDir,[dotbase '.dot']);
         if options.verbose
 			fprintf('Creating full dependency graph %s...',mdotfile);
@@ -1079,7 +1079,7 @@ for i=1:length(mdir)
 				elseif ~isempty(strmatch('%',tline))
 					%- Hypertext links on the "See also" line
 					ind = findstr(lower(tline),'see also');
-					if ~isempty(ind) | flag_seealso
+					if ~isempty(ind) || flag_seealso
 						%- "See also" only in files in the same directory
 						indsamedir = find(strcmp(mdirs{j},mdirs));
 						hrefnames = {names{indsamedir}};
@@ -1158,7 +1158,7 @@ for i=1:length(mdir)
 			
 			%- Set subfunction template field
 			tpl = set(tpl,'var',{'subf' 'onesubf'},{'' ''});
-			if ~isempty(subroutine{j}) & options.source
+			if ~isempty(subroutine{j}) && options.source
 				for k=1:length(subroutine{j})
 					tpl = set(tpl, 'var', 'L_SUB', ['#_sub' num2str(k)]);
 					tpl = set(tpl, 'var', 'SUB',   subroutine{j}{k});
@@ -1175,7 +1175,7 @@ for i=1:length(mdir)
 			end
 			
 			%- Display source code with cross-references
-			if options.source & ~strcmpi(names{j},'contents')
+			if options.source && ~strcmpi(names{j},'contents')
 				fseek(fid2,0,-1);
 				it = 1;
 				matlabsource = '';
@@ -1224,13 +1224,13 @@ for i=1:length(mdir)
 								if isempty(t), break, end;
 								%- Highlight Matlab keywords &
 								%  cross-references on known functions
-								if options.syntaxHighlighting & ...
+								if options.syntaxHighlighting && ...
 										any(strcmp(matlabKeywords,t))
 									if strcmp('end',t)
 										rr = fliplr(deblank(fliplr(r)));
 										icomma = strmatch(',',rr);
 										isemicolon = strmatch(';',rr);
-										if ~(isempty(rr) | ~isempty([icomma isemicolon]))
+										if ~(isempty(rr) || ~isempty([icomma isemicolon]))
 											myline = [myline t];
 										else
 											myline = [myline sprintf(tpl_mfile_keyword,t)];
@@ -1322,7 +1322,7 @@ function mfiles = getmfiles(mdirs, mfiles, recursive, ignoredDir)
 			end
 		else
 			fprintf('Warning: Unprocessed file %s.\n',mdirs{i});
-			if ~isempty(strmatch('/',mdirs{i})) | findstr(':',mdirs{i})
+			if ~isempty(strmatch('/',mdirs{i})) || findstr(':',mdirs{i})
 				fprintf('         Use relative paths in ''mfiles'' option\n');
 			end 
 		end

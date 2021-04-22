@@ -68,7 +68,7 @@ for i=1:iterations
                 fseof.target(j,1)=1;
             else
                 
-                if (fseof.results(j,i) > fseof.results(j,i-1)) & fseof.target(j,1)
+                if (fseof.results(j,i) > fseof.results(j,i-1)) && fseof.target(j,1)
                     fseof.target(j,1)=1;
                 else
                     fseof.target(j,1)=0;
@@ -81,7 +81,7 @@ for i=1:iterations
                 rxnDirection(j,1)=-1;
                 fseof.target(j,1)=1;
             else
-                if (fseof.results(j,i) < fseof.results(j,i-1)) & fseof.target(j,1)
+                if (fseof.results(j,i) < fseof.results(j,i-1)) && fseof.target(j,1)
                     fseof.target(j,1)=1;
                 else
                     fseof.target(j,1)=0;

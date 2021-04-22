@@ -85,7 +85,7 @@ end
 
 %Reactions which can be involved in loops should not be optimized for.
 %Check which reactions reach an arbitary high upper bound
-if nargin<6 | isempty(goodRxns)
+if nargin<6 || isempty(goodRxns)
     goodRxns=true(numel(model.rxns),1);
     for i=1:numel(model.rxns)
         if showProgress && rem(i,100) == 0
