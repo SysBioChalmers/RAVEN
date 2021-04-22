@@ -103,7 +103,7 @@ function res = searchAgain(fid, word,res)
             statw = readString(fid);
 		    while ~isempty(statw)
 			    statidx  = readInt(fid);
-                if length(statw) >= length(word) & ...
+                if length(statw) >= length(word) && ...
                     strcmp(statw(1:length(word)),word)
 			        res{end+1,1} = statw;   % word
                     res{end,2}   = word;    % match
@@ -154,7 +154,7 @@ function docs = combineResults(result)
         for j=1:size(result{i,5},1)
             key = result{i,5}{j,5};
             rank = result{i,5}{j,3};
-            if ~isempty(docs) & ismember(key,{docs{:,1}})
+            if ~isempty(docs) && ismember(key,{docs{:,1}})
                 l = find(ismember({docs{:,1}},key));
                 docs{l,3} = docs{l,3} + rank;
                 docs{l,3} = 2 * docs{l,3};
