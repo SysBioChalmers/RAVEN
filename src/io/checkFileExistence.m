@@ -22,7 +22,7 @@ if nargin<3
     allowSpace = true;
 end
 
-if isstr(files)
+if ischar(files)
     oneFile=true;
     files={files};
 else

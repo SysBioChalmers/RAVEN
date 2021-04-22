@@ -20,11 +20,11 @@ if nargin==3
     replace=true;
 end
 
-if isstr(rxns)
+if ischar(rxns)
     rxns={rxns};
 end
 
-if isstr(grRules)
+if ischar(grRules)
     grRules={grRules};
 end
 
