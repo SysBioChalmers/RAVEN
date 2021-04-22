@@ -211,15 +211,15 @@ while ~feof(fid)
                     coeffi = str2num(metCoeffi{2});
                     if coeffi < 0
                         if strcmp(leftEquation, '')
-                            leftEquation = strcat(num2str(abs(coeffi), 12),32,metCoeffi{1});
+                            leftEquation = [num2str(abs(coeffi), 12), ' ', metCoeffi{1}];
                         else
-                            leftEquation = strcat(leftEquation,' +',32,num2str(abs(coeffi), 12),32,metCoeffi{1});
+                            leftEquation = [leftEquation, ' + ', num2str(abs(coeffi), 12), ' ', metCoeffi{1}];
                         end
                     else
                         if strcmp(rightEquation, '')
-                            rightEquation = strcat(32,num2str(coeffi, 12),32,metCoeffi{1});
+                            rightEquation = [num2str(coeffi, 12), ' ', metCoeffi{1}];
                         else
-                            rightEquation = strcat(rightEquation,' +',32,num2str(coeffi, 12),32,metCoeffi{1});
+                            rightEquation = [rightEquation, ' + ', num2str(coeffi, 12), ' ', metCoeffi{1}];
                         end
                     end
                 end
@@ -269,8 +269,11 @@ end
 equations = cell(length(model.rxns), 1);
 revInd = find(model.rev);
 irrevInd = setdiff(transpose([1: length(model.rxns)]), revInd);
-equations(revInd)   = strcat(leftEqns(revInd), ' <=>', rightEqns(revInd));
-equations(irrevInd) = strcat(leftEqns(irrevInd), ' =>', rightEqns(irrevInd));
+revArrow = cell(length(model.rxns), 1);
+revArrow(revInd) = ' <=> ';
+revArrow(irrevInd) = ' => ';
+equations(revInd)   = strcat(leftEqns(revInd), revArrow(revInd), rightEqns(revInd));
+equations(irrevInd) = strcat(leftEqns(irrevInd), revArrow(irrevInd), rightEqns(irrevInd));
 
 % regenerate S matrix
 [S, newMets, ~, ~] = constructS(equations, model.mets, model.rxns);
