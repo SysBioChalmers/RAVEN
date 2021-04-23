@@ -930,7 +930,7 @@ if ~isempty(missingOUT)
     end
     fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 else
-    fprintf(['Querying ' fastaFile ' against the KEGG Orthology specific HMMs... COMPLETE\n']);
+    disp(['Querying ' fastaFile ' against the KEGG Orthology specific HMMs... COMPLETE']);
 end
 
 
@@ -939,10 +939,7 @@ end
 fprintf('Parsing the HMM search results... ');
 %Retrieve matched genes from the HMMs
 koGeneMat=zeros(numel(KOModel.rxns),3000); %Make room for 3000 genes
-genes=cell(3000,1);
-%Store the best score for a gene in a hash list (since it will be searching
-%many times)
-hTable = java.util.Hashtable;
+genes=repmat({''},3000,1);
 
 geneCounter=0;
 for i=1:numel(KOModel.rxns)
@@ -986,13 +983,12 @@ for i=1:numel(KOModel.rxns)
                         end
                         %Check if the gene is added already and, is so, get
                         %the best score for it
-                        I=hTable.get(gene);
+                        I=strcmp(genes,gene);
                         if any(I)
                             koGeneMat(i,I)=score;
                         else
                             geneCounter=geneCounter+1;
                             %The gene was not present yet so add it
-                            hTable.put(gene,geneCounter);
                             genes{geneCounter}=gene;
                             koGeneMat(i,geneCounter)=score;
                         end
