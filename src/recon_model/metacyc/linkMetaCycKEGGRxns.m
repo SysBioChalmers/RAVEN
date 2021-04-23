@@ -101,7 +101,7 @@ rxnLinks=rmfield(rxnLinks,'check');
 [ST, I]=dbstack('-completenames');
 metaCycPath=fileparts(ST(I).file);
 rxnsFile=fullfile(metaCycPath,'metaCycRxns.mat');
-save(rxnsFile,'metaCycRxns','rxnLinks','TRANSPORT','UNBALANCED','UNDETERMINED','isSpontaneous');
+save(rxnsFile,'metaCycRxns','rxnLinks','TRANSPORT','UNBALANCED','UNDETERMINED','isSpontaneous','-v7');
 fprintf(['Reaction associations between MetaCyc and KEGG have been successfully updated!\n\n']);
 
 end

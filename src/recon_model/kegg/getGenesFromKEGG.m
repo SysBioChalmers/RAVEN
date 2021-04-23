@@ -255,7 +255,7 @@ else
         end
         
         %Save the model structure
-        save(genesFile,'model');
+        save(genesFile,'model','-v7');
     end
 end
 

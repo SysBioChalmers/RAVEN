@@ -502,7 +502,7 @@ else
         metaCycRxns.version=version;
         
         %Save the model structure
-        save(rxnsFile,'metaCycRxns','rxnLinks','TRANSPORT','UNBALANCED','UNDETERMINED','isSpontaneous');
+        save(rxnsFile,'metaCycRxns','rxnLinks','TRANSPORT','UNBALANCED','UNDETERMINED','isSpontaneous','-v7');
         fprintf(['New metaCycRxns.mat has been successfully updated!\n\n']);
     end
 end

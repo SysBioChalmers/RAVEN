@@ -273,7 +273,7 @@ else
         end
         
         %Saves the model
-        save(metsFile,'metaCycMets');
+        save(metsFile,'metaCycMets','-v7');
         fprintf(['New metaCycMets.mat has been successfully updated!\n\n']);
     end
 end

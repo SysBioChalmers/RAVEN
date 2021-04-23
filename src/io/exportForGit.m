@@ -104,7 +104,7 @@ end
 
 % Write MAT format
 if ismember('mat', formats)
-    save(fullfile(filePath{3},strcat(prefix,'.mat')),'model');
+    save(fullfile(filePath{3},strcat(prefix,'.mat')),'model','-v7');
 end
 
 % Write XLSX format

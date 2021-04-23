@@ -131,7 +131,7 @@ else
             end
         end
         %Save the structure
-        save(distFile,'phylDistStruct');
+        save(distFile,'phylDistStruct','-v7');
         fprintf('COMPLETE\n');
     end
 end
