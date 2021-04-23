@@ -21,7 +21,7 @@ function t=isoctave()
 
 if exist('OCTAVE_VERSION') > 0
   % Only Octave has this variable.
-  t='1';
+  t=1;
 else
-  t='0';
-end;
+  t=0;
+end
