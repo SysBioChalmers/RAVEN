@@ -276,7 +276,7 @@ else
             end
         end
         %Saves the model
-        save(metsFile,'model');
+        save(metsFile,'model','-v7');
     end
 end
 fprintf('COMPLETE\n');
