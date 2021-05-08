@@ -31,6 +31,6 @@ end
 modelfields = fieldnames(model);
 order = fields(ismember(fields(:,1),modelfields));
 remainingOrder = sort(setdiff(modelfields,order));
-overallOrder = [columnVector(order);columnVector(remainingOrder)];
+overallOrder = [order;remainingOrder];
 orderedModel = orderfields(model,overallOrder);
 end

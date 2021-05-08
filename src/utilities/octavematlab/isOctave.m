@@ -1,4 +1,4 @@
-function t=isoctave()
+function t=isOctave()
 %ISOCTAVE  True if the operating environment is octave.
 %   Usage: t=isoctave();
 %

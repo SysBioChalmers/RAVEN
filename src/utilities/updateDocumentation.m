@@ -17,7 +17,7 @@ ravenDirs_temp=dir(fullfile(ravenDir,'**/*.m'));
 ravenDirs=regexprep(unique({ravenDirs_temp.folder}),'^.+RAVEN.{1,1}','');
 
 %Get rid of MATLAB functions from external software
-ravenDirs(:,~isempty(strfind(ravenDirs(1,:)),'software'))=[];
+ravenDirs(:,containsOct(ravenDirs(1,:),'software'))=[];
 
 %Remove existing "doc" directory from RAVEN
 rmdir(fullfile(ravenDir,'doc'),'s');

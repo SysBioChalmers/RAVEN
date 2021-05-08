@@ -379,11 +379,9 @@ if ~isempty(dataDir)
             hmmIndex=~cellfun(@isempty,hmmIndex);
             fprintf('Downloading the HMMs archive file... ');
             try
-                if isoctave
-                    urlwrite(['https://chalmersuniversity.box.com/shared/static/',hmmLinks{hmmIndex},'.zip'],[dataDir,'.zip']);
-                else
-                    websave([dataDir,'.zip'],['https://chalmersuniversity.box.com/shared/static/',hmmLinks{hmmIndex},'.zip']);
-                end
+                url = ['https://chalmersuniversity.box.com/shared/static/',hmmLinks{hmmIndex},'.zip'];
+                fileLocation = [dataDir,'.zip'];
+                downloadFileFromHttp(url,fileLocation);
             catch
                 error('Failed to download the HMMs archive file, try again later. If the problem persists please report it on the RAVEN GitHub Issues page: https://github.com/SysBioChalmers/RAVEN/issues')
             end
