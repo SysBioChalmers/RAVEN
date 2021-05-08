@@ -30,7 +30,7 @@ else
 end
 filesOriginal = files;
 
-inCurrDir = isempty(strfind(files,'\')) & isempty(strfind(files,'/'));
+inCurrDir = ~containsOct(files,'\') & ~containsOct(files,'/');
 files(inCurrDir) = fullfile(cd,files(inCurrDir));
 
 for i=1:numel(files)

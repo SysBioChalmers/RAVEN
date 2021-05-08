@@ -4,7 +4,7 @@ function ncores=getNcores()
     %
     %   Usage: ncores=getNcores()
 
-    if isoctave
+    if isOctave
         ncores=nproc();
     else
         ncores = evalc('feature(''numcores'')');

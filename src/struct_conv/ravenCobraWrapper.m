@@ -41,7 +41,7 @@ ravenPath=fileparts(fileparts(ST(I).file));
 fid             = fopen([ravenPath filesep 'struct_conversion' filesep 'COBRA_structure_fields.csv']); % Taken from https://github.com/opencobra/cobratoolbox/blob/develop/src/base/io/definitions/COBRA_structure_fields.csv
 fieldFile       = textscan(fid,repmat('%s',1,15),'Delimiter','\t','HeaderLines',1);
 dbFields        = ~cellfun(@isempty,fieldFile{5}); % Only keep fields with database annotations that should be translated to xxxMiriams
-dbFields        = dbFields & isempty(strfind(fieldFile{1},{'metInChIString','metKEGGID','metPubChemID','rxnECNumbers','rxnReferences'}));
+dbFields        = dbFields & ~containsOct(fieldFile{1},{'metInChIString','metKEGGID','metPubChemID','rxnECNumbers','rxnReferences'});
 COBRAnamespace  = fieldFile{5}(dbFields);
 COBRAnamespace  = regexprep(COBRAnamespace,';.*',''); % Only keep first suggested namespace
 COBRAfields     = fieldFile{1}(dbFields);
@@ -52,12 +52,12 @@ fid             = fopen([ravenPath filesep 'struct_conversion' filesep 'cobraNam
 fieldFile       = textscan(fid,'%s %s','Delimiter',',','HeaderLines',0);
 COBRAfields     = [COBRAfields; fieldFile{1}];
 COBRAnamespace  = [COBRAnamespace; fieldFile{2}];
-rxnCOBRAfields  = COBRAfields(startsWith(COBRAfields,'rxn'));
-rxnNamespaces   = COBRAnamespace(startsWith(COBRAfields,'rxn'));
-metCOBRAfields  = COBRAfields(startsWith(COBRAfields,'met'));
-metNamespaces   = COBRAnamespace(startsWith(COBRAfields,'met'));
-geneCOBRAfields = COBRAfields(startsWith(COBRAfields,'gene'));
-geneNamespaces  = COBRAnamespace(startsWith(COBRAfields,'gene'));
+rxnCOBRAfields  = COBRAfields(startsWithOct(COBRAfields,'rxn'),1);
+rxnNamespaces   = COBRAnamespace(startsWithOct(COBRAfields,'rxn'));
+metCOBRAfields  = COBRAfields(startsWithOct(COBRAfields,'met'));
+metNamespaces   = COBRAnamespace(startsWithOct(COBRAfields,'met'));
+geneCOBRAfields = COBRAfields(startsWithOct(COBRAfields,'gene'));
+geneNamespaces  = COBRAnamespace(startsWithOct(COBRAfields,'gene'));
 fclose(fid);
 
 if isRaven
@@ -396,8 +396,8 @@ end
 rules = strcat({' '},model.grRules,{' '});
 for i=1:length(model.genes)
     rules=regexprep(rules,[' ' model.genes{i} ' '],[' ' replacingGenes{i} ' ']);
-    rules=regexprep(rules,['(' model.genes{i} ' '],['(' replacingGenes{i} ' ']);
-    rules=regexprep(rules,[' ' model.genes{i} ')'],[' ' replacingGenes{i} ')']);
+    rules=regexprep(rules,['\(' model.genes{i} ' '],['(' replacingGenes{i} ' ']);
+    rules=regexprep(rules,[' ' model.genes{i} '\)'],[' ' replacingGenes{i} ')']);
 end
 rules=regexprep(rules,' and ',' & ');
 rules=regexprep(rules,' or ',' | ');
@@ -415,6 +415,6 @@ for i = 1:length(model.genes)
 end
 grRules = strrep(grRules,'( ','(');
 grRules = strrep(grRules,' )',')');
-grRules = regexprep(grRules,'^(',''); %rules that start with a "("
-grRules = regexprep(grRules,')$',''); %rules that end with a ")"
+grRules = regexprep(grRules,'^\(',''); %rules that start with a "("
+grRules = regexprep(grRules,'\)$',''); %rules that end with a ")"
 end

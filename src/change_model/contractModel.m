@@ -73,7 +73,7 @@ for i=1:numel(mergedRxns)
         end
         allRules=unique(allRules);
         allRules=strrep(allRules,'__OR__',' or ');
-        andRules=~isempty(strfind(allRules,' and '));
+        andRules=containsOct(allRules,' and ');
         allRules(andRules)=strcat('(',allRules(andRules),')');
         if numel(allRules)==1
             model.grRules{mergedRxns(i)}=allRules{1};
