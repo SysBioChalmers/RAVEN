@@ -1,6 +1,7 @@
 function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns)
 % getAllowedBounds
-%   Returns the minimal and maximal fluxes through each reaction.
+%   Returns the minimal and maximal fluxes through each reaction. Also known as
+%   Flux Variability Analysis (FVA).
 %
 %   model         a model structure
 %   rxns          either a cell array of reaction IDs, a logical vector with the
