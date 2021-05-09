@@ -77,6 +77,7 @@ if ~ispref('RAVEN','solver')
     curSolv=getpref('RAVEN','solver');
 else
     curSolv=getpref('RAVEN','solver');
+    curSolv=regexprep(curSolv,'_(octave)|(matlab)$','');
     fprintf(['Solver found in preferences... ',curSolv,'\n']);
 end
 

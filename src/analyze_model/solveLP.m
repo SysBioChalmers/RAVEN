@@ -38,9 +38,6 @@ function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
 if nargin<2
     minFlux=0;
 end
-if nargin<3
-    params.relGap=0.4;
-end
 if nargin<4
     hsSol=[];
 end
@@ -58,15 +55,15 @@ if isfield(hsSol,'stat')
     end
 end
 
-% Setup the problem to feed to COBRA.
-prob=[];
-prob.c=[model.c*-1;zeros(size(model.S,1),1)];
-prob.b = zeros(size(model.S,1), 1);
-prob.lb = [model.lb; model.b(:,1)];
-prob.ub = [model.ub; model.b(:,min(size(model.b,2),2))];
-prob.osense = 1;
-prob.csense = char(zeros(size(model.S,1),1));
-prob.csense(:) = 'E';
+% Setup the linear problem for glpk
+prob        = [];
+prob.c      = [model.c*-1;zeros(size(model.S,1),1)];
+prob.b      = zeros(size(model.S,1), 1);
+prob.lb     = [model.lb; model.b(:,1)];
+prob.ub     = [model.ub; model.b(:,min(size(model.b,2),2))];
+prob.csense = repmat('E', 1, length(prob.b)); % Equality constraints
+prob.osense = 1; 
+prob.vartype = repmat('C', 1, length(prob.c)); % Fluxes are continuous values
 prob.A = [model.S -speye(size(model.S,1))];
 prob.a = model.S;
 
@@ -175,28 +172,10 @@ if minFlux~=0
                 dispEM(EM,false);
                 solution.stat=-2;
             end
-            %The square of fluxes should be minimized. This only works when
-            %there is no interval on the mass balance constraints (model.b is a
-            %vector)
+            
         case 2
-            %         if size(model.b,2)==1
-            %             qsol=solveQP(model,model.rxns,zeros(numel(model.lb),1));
-            %             %There is a problem that the solver seldom converges totally in this
-            %             %kind of minimization. Print a warning but use the fluxes
-            %             if any(qsol.x)
-            %                 solution.x=qsol.x;
-            %                 if qsol.stat==-1
-            %                     fprintf('WARNING: The quadratic fitting did not converge\n');
-            %                 end
-            %             else
-            %                 fprintf('WARNING: Could not solve the problem of minimizing the square of fluxes. Uses output from linear program\n');
-            %             end
-            %         else
-            %         	fprintf('WARNING: Cannot minimize square of fluxes when size(model.b,2)==2. Uses output from linear program\n');
-            %         end
-            EM='Quadratic solver currently not working. Uses output from original problem';
-            dispEM(EM,false);
-            solution.stat=-2;
+            error('%Minimization of square of fluxes is deprecated')
+            
             %The number of fluxes should be minimized
         case 3
             [qx,I]=getMinNrFluxes(model,model.rxns,params);
