@@ -20,7 +20,7 @@ if nargin < 4
     sortIds = false;
 end
 
-if ~endsWith(name,{'.yml','.yaml'})
+if ~endsWithOct(name,{'.yml','.yaml'})
     name = strcat(name,'.yml');
 end
 

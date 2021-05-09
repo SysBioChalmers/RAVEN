@@ -53,7 +53,7 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %
 %   Usage: model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 
-if nargin<4 & isfield(equations,'stoichCoeffs')
+if nargin<4 && isfield(equations,'stoichCoeffs')
     eqnType=1;
 end
 

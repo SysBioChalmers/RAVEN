@@ -111,7 +111,7 @@ if nargin<6
     allowNewGenes=false;
 end
 
-if allowNewGenes & isfield(rxnsToAdd,'grRules')
+if allowNewGenes && isfield(rxnsToAdd,'grRules')
     genesToAdd.genes = strjoin(rxnsToAdd.grRules);
     genesToAdd.genes = regexp(genesToAdd.genes,' |)|(|and|or','split'); % Remove all grRule punctuation
     genesToAdd.genes = genesToAdd.genes(~cellfun(@isempty,genesToAdd.genes));  % Remove spaces and empty genes
@@ -272,7 +272,7 @@ else
     end
 end
 
-if isfield(newModel,'annotation') & isfield(newModel.annotation,'defaultLB')
+if isfield(newModel,'annotation') && isfield(newModel.annotation,'defaultLB')
     newLb=newModel.annotation.defaultLB;
 else
     newLb=-inf;
@@ -298,7 +298,7 @@ else
     end
 end
 
-if isfield(newModel,'annotation') & isfield(newModel.annotation,'defaultUB')
+if isfield(newModel,'annotation') && isfield(newModel.annotation,'defaultUB')
     newUb=newModel.annotation.defaultUB;
 else
     newUb=inf;
@@ -517,12 +517,12 @@ end
 if eqnType==1
     [I, J]=ismember(mets,model.mets);
     if ~all(I)
-        if allowNewMets==true | isstr(allowNewMets)
+        if allowNewMets==true || ischar(allowNewMets)
             %Add the new mets
             metsToAdd.mets=mets(~I);
             metsToAdd.metNames=metsToAdd.mets;
             metsToAdd.compartments=compartment;
-            if isstr(allowNewMets)
+            if ischar(allowNewMets)
                 newModel=addMets(newModel,metsToAdd,true,allowNewMets);
             else
                 newModel=addMets(newModel,metsToAdd,true);
@@ -552,11 +552,11 @@ if eqnType==2
     [I, J]=ismember(t1,t2);
     
     if ~all(I)
-        if allowNewMets==true | isstr(allowNewMets)
+        if allowNewMets==true || ischar(allowNewMets)
             %Add the new mets
             metsToAdd.metNames=mets(~I);
             metsToAdd.compartments=compartment;
-            if isstr(allowNewMets)
+            if ischar(allowNewMets)
                 newModel=addMets(newModel,metsToAdd,true,allowNewMets);
             else
                 newModel=addMets(newModel,metsToAdd,true);
@@ -602,11 +602,11 @@ if eqnType==3
     [I, J]=ismember(t1,t2);
     
     if ~all(I)
-        if allowNewMets==true | isstr(allowNewMets)
+        if allowNewMets==true || ischar(allowNewMets)
             %Add the new mets
             metsToAdd.metNames=metNames(~I);
             metsToAdd.compartments=compartments(~I);
-            if isstr(allowNewMets)
+            if ischar(allowNewMets)
                 newModel=addMets(newModel,metsToAdd,true,allowNewMets);
             else
                 newModel=addMets(newModel,metsToAdd,true);

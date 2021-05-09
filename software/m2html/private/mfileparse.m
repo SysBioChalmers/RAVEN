@@ -99,7 +99,7 @@ while ischar(tline)
 	% Split code into meaningful chunks
 	splitc = splitcode(tline);
 	for j=1:length(splitc)
-		if isempty(splitc{j}) | ...
+		if isempty(splitc{j}) || ...
 			splitc{j}(1) == '''' | ...
 			~isempty(strmatch('...',splitc{j}))
 			% Forget about empty lines, char strings or conts
@@ -107,7 +107,7 @@ while ischar(tline)
 			% Cross-references are not taken into account in comments
 			% Just look for potential TODO or FIXME line
 			if options.todo
-				if ~isempty(strmatch('% TODO',splitc{j})) | ...
+				if ~isempty(strmatch('% TODO',splitc{j})) || ...
 				   ~isempty(strmatch('% FIXME',splitc{j}))
 					s.todo.line   = [s.todo.line it];
 					s.todo.comment{end+1} = splitc{j}(9:end);

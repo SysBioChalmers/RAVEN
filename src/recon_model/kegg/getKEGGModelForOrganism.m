@@ -278,7 +278,7 @@ if isempty(outDir)
     outDir=tempdir;
     %Delete all *.out files if any exist
     delete(fullfile(outDir,'*.out'));
-elseif ~isstr(outDir)
+elseif ~ischar(outDir)
     error('outDir should be provided as string');
 end
 if nargin<5
@@ -316,7 +316,7 @@ if nargin<14
 end
 
 if isempty(fastaFile)
-    fprintf(['\n\n*** The model reconstruction from KEGG based on the annotation available for KEGG Species <strong>' organismID '</strong> ***\n\n']);
+    fprintf(['\n\n*** The model reconstruction from KEGG based on the annotation available for KEGG Species ' organismID ' ***\n\n']);
 else
     fprintf('\n\n*** The model reconstruction from KEGG based on the protein homology search against KEGG Orthology specific HMMs ***\n\n');
     %Check if query fasta exists
@@ -324,11 +324,7 @@ else
 end
 
 %Run the external binaries multi-threaded to use all logical cores assigned
-%to MATLAB
-cores = evalc('feature(''numcores'')');
-cores = strsplit(cores, 'MATLAB was assigned: ');
-cores = regexp(cores{2},'^\d*','match');
-cores = cores{1};
+cores = getNcores();
 
 %Get the directory for RAVEN Toolbox. This is to get the path to the third
 %party software used
@@ -364,7 +360,7 @@ if ~isempty(dataDir)
         end
     else
         if exist(dataDir,'dir') && exist(fullfile(dataDir,'hmms','K00844.hmm'),'file')
-            fprintf(['NOTE: Found <strong>' dataDir '</strong> directory with pre-trained HMMs, it will therefore be used during reconstruction\n']);
+            fprintf(['NOTE: Found ' dataDir ' directory with pre-trained HMMs, it will therefore be used during reconstruction\n']);
         elseif ~exist(dataDir,'dir') && exist([dataDir,'.zip'],'file')
             fprintf('Extracting the HMMs archive file... ');
             unzip([dataDir,'.zip']);
@@ -374,11 +370,11 @@ if ~isempty(dataDir)
             hmmIndex=~cellfun(@isempty,hmmIndex);
             fprintf('Downloading the HMMs archive file... ');
             try
-                websave([dataDir,'.zip'],['https://chalmersuniversity.box.com/shared/static/',hmmLinks{hmmIndex},'.zip']);
-            catch ME
-                if strcmp(ME.identifier,'MATLAB:webservices:HTTP404StatusCodeError')
-                    error('Failed to download the HMMs archive file, the server returned a 404 error, try again later. If the problem persists please report it on the RAVEN GitHub Issues page: https://github.com/SysBioChalmers/RAVEN/issues')
-                end
+                url = ['https://chalmersuniversity.box.com/shared/static/',hmmLinks{hmmIndex},'.zip'];
+                fileLocation = [dataDir,'.zip'];
+                downloadFileFromHttp(url,fileLocation);
+            catch
+                error('Failed to download the HMMs archive file, try again later. If the problem persists please report it on the RAVEN GitHub Issues page: https://github.com/SysBioChalmers/RAVEN/issues')
             end
             
             fprintf('COMPLETE\n');
@@ -389,8 +385,7 @@ if ~isempty(dataDir)
         %Check if HMMs are extracted
         if ~exist(fullfile(dataDir,'hmms','K00844.hmm'),'file')
             EM=['The HMM files seem improperly extracted and not found in ',dataDir,'/hmms. Please remove ',dataDir,' folder and rerun getKEGGModelForOrganism'];
-            disp(EM);
-            error('Fatal error occured. See the details above');
+            dispEM(EM);
         end
     end
 end
@@ -432,7 +427,7 @@ model.c=zeros(numel(model.rxns),1);
 %If no FASTA file is supplied, then just remove all genes which are not for
 %the given organism ID
 if isempty(fastaFile)
-    fprintf(['Pruning the model from <strong>non-' organismID '</strong> genes... ']);
+    fprintf(['Pruning the model from non-' organismID ' genes... ']);
     if ismember(organismID,{'eukaryotes','prokaryotes'})
         phylDists=getPhylDist(fullfile(dataDir,'keggdb'),maxPhylDist==-1);
         if strcmp(organismID,'eukaryotes')
@@ -564,7 +559,7 @@ if ~isempty(missingFASTA)
     fastaModel=removeReactions(KOModel,setdiff(KOModel.rxns,missingFASTA),true,true);
     %Permute the order of the KOs in the model so that constructMultiFasta
     %can be run on several processors at once
-    fastaModel=permuteModel(fastaModel,randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(fastaModel.rxns)),'rxns');
+    fastaModel=permuteModel(fastaModel,randperm(numel(fastaModel.rxns)),'rxns');
     constructMultiFasta(fastaModel,fullfile(dataDir,'keggdb','genes.pep'),fullfile(dataDir,'fasta'));
 else
     fprintf('Generating the KEGG Orthology specific multi-FASTA files... COMPLETE\n');
@@ -592,7 +587,7 @@ if ~isempty(missingAligned)
     else
         fprintf('Performing clustering and multiple alignment for KEGG Orthology specific protein sets... ');
     end
-    missingAligned=missingAligned(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingAligned)));
+    missingAligned=missingAligned(randperm(numel(missingAligned)));
     progressFlag=0;
     %Update fastaFiles. This is needed once rebuilding KEGG from FTP dump
     %files for more accurate progress reporting
@@ -808,7 +803,7 @@ end
 missingHMMs=setdiff(KOModel.rxns,[hmmFiles;outFiles]);
 if ~isempty(missingHMMs)
     fprintf('Training the KEGG Orthology specific HMMs... ');
-    missingHMMs=missingHMMs(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingHMMs)));
+    missingHMMs=missingHMMs(randperm(numel(missingHMMs)));
     progressFlag=0;
     %Update alignedFiles. This is needed once rebuilding KEGG from FTP dump
     %files for more accurate progress reporting
@@ -872,8 +867,8 @@ end
 %Hidden Markov models should be performed
 missingOUT=setdiff(KOModel.rxns,outFiles);
 if ~isempty(missingOUT)
-    fprintf(['Querying <strong>' strrep(fastaFile,'\','/') '</strong> against the KEGG Orthology specific HMMs... ']);
-    missingOUT=missingOUT(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingOUT)));
+    fprintf(['Querying ' strrep(fastaFile,'\','/') ' against the KEGG Orthology specific HMMs... ']);
+    missingOUT=missingOUT(randperm(numel(missingOUT)));
     progressFlag=0;
     %Update hmmFiles. This is needed once rebuilding KEGG from FTP dump
     %files for more accurate progress reporting
@@ -927,7 +922,7 @@ if ~isempty(missingOUT)
     end
     fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 else
-    fprintf(['Querying <strong>' fastaFile '</strong> against the KEGG Orthology specific HMMs... COMPLETE\n']);
+    disp(['Querying ' fastaFile ' against the KEGG Orthology specific HMMs... COMPLETE']);
 end
 
 
@@ -936,10 +931,7 @@ end
 fprintf('Parsing the HMM search results... ');
 %Retrieve matched genes from the HMMs
 koGeneMat=zeros(numel(KOModel.rxns),3000); %Make room for 3000 genes
-genes=cell(3000,1);
-%Store the best score for a gene in a hash list (since it will be searching
-%many times)
-hTable = java.util.Hashtable;
+genes=repmat({''},3000,1);
 
 geneCounter=0;
 for i=1:numel(KOModel.rxns)
@@ -983,13 +975,12 @@ for i=1:numel(KOModel.rxns)
                         end
                         %Check if the gene is added already and, is so, get
                         %the best score for it
-                        I=hTable.get(gene);
+                        I=strcmp(genes,gene);
                         if any(I)
                             koGeneMat(i,I)=score;
                         else
                             geneCounter=geneCounter+1;
                             %The gene was not present yet so add it
-                            hTable.put(gene,geneCounter);
                             genes{geneCounter}=gene;
                             koGeneMat(i,geneCounter)=score;
                         end

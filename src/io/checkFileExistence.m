@@ -22,7 +22,7 @@ if nargin<3
     allowSpace = true;
 end
 
-if isstr(files)
+if ischar(files)
     oneFile=true;
     files={files};
 else
@@ -30,13 +30,13 @@ else
 end
 filesOriginal = files;
 
-inCurrDir = ~contains(files,'\') & ~contains(files,'/');
+inCurrDir = ~containsOct(files,'\') & ~containsOct(files,'/');
 files(inCurrDir) = fullfile(cd,files(inCurrDir));
 
 for i=1:numel(files)
     if ~exist(files{i},'file')
         error('File "%s" cannot be found\n',files{i});
-    elseif allowSpace == true & strfind(files{i},' ')
+    elseif allowSpace == true &&  strfind(files{i},' ')
         error('File "%s" has an invalid space in the filename or path, please remove this before running this function\n',files{i});
     end
 end

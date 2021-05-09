@@ -230,7 +230,7 @@ else
     model.metNames(I)=model.mets(I);
     
     %Save the model structure
-    save(modelFile,'model','KOModel','isGeneral','isIncomplete','isUndefinedStoich','isSpontaneous');
+    save(modelFile,'model','KOModel','isGeneral','isIncomplete','isUndefinedStoich','isSpontaneous','-v7');
     fprintf('COMPLETE\n');
 end
 

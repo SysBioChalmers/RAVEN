@@ -45,7 +45,7 @@ if isfield(model,'grRules')
         rxnGeneMat  = modifyRxnGeneMat(genesSets,genes,rxnGeneMat,i);
         %standardize the non-conflicting grRules
         if ~ismember(i,indexes2check)
-            newSTR = [];
+            newSTR = '';
             if ~isempty(genesSets)
                 %For each simple genes set in the rule
                 for j=1:length(genesSets)

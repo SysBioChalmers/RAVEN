@@ -72,11 +72,8 @@ else
     return
 end
 
-% Run BLAST multi-threaded to use all logical cores assigned to MATLAB.
-cores = evalc('feature(''numcores'')');
-cores = strsplit(cores, 'MATLAB was assigned: ');
-cores = regexp(cores{2},'^\d*','match');
-cores = cores{1};
+% Run BLAST multi-threaded to use all logical cores assigned
+cores = getNcores();
 
 [status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in "' fastaFile{1} '" -out "' tmpDB '" -dbtype prot']);
 if status~=0

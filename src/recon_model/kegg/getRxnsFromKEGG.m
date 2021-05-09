@@ -491,7 +491,7 @@ else
         end
         
         %Save the model structure
-        save(rxnsFile,'model','isGeneral','isIncomplete','isUndefinedStoich','isSpontaneous');
+        save(rxnsFile,'model','isGeneral','isIncomplete','isUndefinedStoich','isSpontaneous','-v7');
     end
 end
 fprintf('COMPLETE\n');

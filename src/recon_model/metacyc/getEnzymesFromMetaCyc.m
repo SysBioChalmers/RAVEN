@@ -275,7 +275,7 @@ else
         metaCycEnzymes.rxnEnzymeMat=metaCycEnzymes.rxnEnzymeMat(1:nRxn,:);
         
         %Save the model structure
-        save(enzymesFile,'metaCycEnzymes');
+        save(enzymesFile,'metaCycEnzymes','-v7');
         fprintf(['New metaCycEnzymes.mat has been successfully updated!\n\n']);
     end
     
