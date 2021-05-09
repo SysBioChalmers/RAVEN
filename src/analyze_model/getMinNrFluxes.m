@@ -142,7 +142,7 @@ prob=rmfield(prob,{'blx','bux','blc','buc'});
 
 % Optimize the problem
 res = optimizeProb(prob,params);
-isFeasible=checkSolution(res);
+isFeasible=(res.stat==(1|2));
 
 if ~isFeasible
     x=[];

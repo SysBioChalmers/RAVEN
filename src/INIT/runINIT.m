@@ -298,7 +298,7 @@ for i=1:numel(pmIndexes)
     prob.blc(numel(irrevModel.mets)-numel(pmIndexes)+i)=1;
     prob.lb=[prob.blx; prob.blc];
     res=optimizeProb(prob,params);
-    isFeasible=checkSolution(res);
+    isFeasible=(res.stat==(1|2));
     if ~isFeasible
         %Reset the constraint again
         prob.blc(numel(irrevModel.mets)-numel(pmIndexes)+i)=0;
@@ -319,7 +319,7 @@ res=optimizeProb(prob,params);
 
 %Problem should not be infeasible, but it is possible that the time limit
 %was reached before finding any solutions.
-if ~checkSolution(res)
+if ~(res.stat==(1|2))
     if strcmp(res.origStat, 'TIME_LIMIT')
         EM='Time limit reached without finding a solution. Try increasing the TimeLimit parameter.';
     else

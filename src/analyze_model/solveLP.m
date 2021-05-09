@@ -74,25 +74,21 @@ if ~isempty(hsSol)
 end
 
 % Parse the problem to the LP solver
-res = optimizeProb(prob,params);
-
-%Check if the problem was feasible and that the solution was optimal
-[isFeasible, isOptimal]=checkSolution(res);
+res = optimizeProb(prob);
 
 %If the problem was infeasible using hot-start it is often possible to
 %re-solve it without hot-start and get a feasible solution
-if ~isFeasible && ~isempty(hsSol)
+if ~(res.stat==(1|2)) && ~isempty(hsSol)
     prob=rmfield(prob,{'vbasis','cbasis'});
     res=optimizeProb(prob,params);
-    [isFeasible, isOptimal]=checkSolution(res);
 end
 
 %Return without solution if the problem was infeasible
-if ~isFeasible
+if ~(res.stat==(1|2))
     solution.msg='The problem is infeasible';
     return;
 end
-if ~isOptimal
+if ~(res.stat==1)
     solution.msg='The problem is feasible, but not necessarily optimal';
     solution.stat=0;
 else
