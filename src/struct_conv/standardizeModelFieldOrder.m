@@ -14,15 +14,15 @@ function orderedModel=standardizeModelFieldOrder(model)
 %   Usage: orderedModel=standardizeModelFieldOrder(model)
 
 [ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
+ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 
 if ~isfield(model,'rules') % Check if model is RAVEN
-    fid = fopen([ravenPath filesep 'struct_conversion' filesep 'orderRavenFields.csv']);
+    fid = fopen(fullfile(ravenPath,'src','struct_conv','orderRavenFields.csv'));
     fields = textscan(fid,'%s','Delimiter',',','HeaderLines',0);
     fields = fields{1};
     fclose(fid);
 else % If model is COBRA
-    fid = fopen([ravenPath filesep 'struct_conversion' filesep 'COBRA_structure_fields.csv']); % Taken from https://github.com/opencobra/cobratoolbox/blob/develop/src/base/io/definitions/COBRA_structure_fields.csv
+    fid = fopen(fullfile(ravenPath,'src','struct_conv','COBRA_structure_fields.csv')); % Taken from https://github.com/opencobra/cobratoolbox/blob/develop/src/base/io/definitions/COBRA_structure_fields.csv
     fields = textscan(fid,repmat('%s',1,15),'Delimiter','\t','HeaderLines',1);
     fields = fields{1};
     fclose(fid);

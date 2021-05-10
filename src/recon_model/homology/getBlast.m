@@ -60,7 +60,7 @@ blastReport.blastTxtOutput={};
 %Get the directory for RAVEN Toolbox. This may not be the easiest or best
 %way to do this
 [ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
+ravenPath=fileparts(fileparts(fileparts(fileparts(ST(I).file))));
 
 %Generate temporary names for BLAST databases and output files
 tmpDB=tempname;

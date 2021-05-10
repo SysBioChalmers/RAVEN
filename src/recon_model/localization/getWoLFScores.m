@@ -33,7 +33,7 @@ end
 %Get the directory for RAVEN Toolbox. This may not be the easiest or best
 %way to do this
 [ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
+ravenPath=fileparts(fileparts(fileparts(fileparts(ST(I).file))));
 
 %Temporary output name
 outFile=tempname;

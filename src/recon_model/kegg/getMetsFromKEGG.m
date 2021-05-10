@@ -67,8 +67,8 @@ if nargin<1
 end
 
 [ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-metsFile=fullfile(ravenPath,'external','kegg','keggMets.mat');
+ravenPath=fileparts(fileparts(fileparts(fileparts(ST(I).file))));
+metsFile=fullfile(ravenPath,'src','recon_model','kegg','keggMets.mat');
 if exist(metsFile, 'file')
     fprintf(['Importing KEGG metabolites from ' strrep(metsFile,'\','/') '... ']);
     load(metsFile);

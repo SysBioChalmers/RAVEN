@@ -69,14 +69,14 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 %
 
 if nargin<1
-    keggPath='RAVEN/external/kegg';
+    keggPath='RAVEN/src/recon_model/kegg';
 end
 
 %Check if the reactions have been parsed before and saved. If so, load the
 %model
 [ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-rxnsFile=fullfile(ravenPath,'external','kegg','keggRxns.mat');
+ravenPath=fileparts(fileparts(fileparts(fileparts(ST(I).file))));
+rxnsFile=fullfile(ravenPath,'src','recon_model','kegg','keggRxns.mat');
 if exist(rxnsFile, 'file')
     fprintf(['Importing KEGG reactions from ' strrep(rxnsFile,'\','/') '... ']);
     load(rxnsFile);
