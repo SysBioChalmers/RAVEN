@@ -25,7 +25,7 @@ function [genes,rxnGeneMat] = getGenesFromGrRules(grRules)
 
 
 % check if the grRules use written or symbolic boolean operators
-if any(containsOct(grRules,'&|\|'))
+if any(containsOct(grRules,{'&','|'}))
     % fix some potential missing spaces between parentheses and &/|
     grRules = regexprep(grRules,'\)&',') &');   % ")&"  ->  ") &"
     grRules = regexprep(grRules,'&\(','& (');   % "&("  ->  "& ("

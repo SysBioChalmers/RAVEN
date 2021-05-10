@@ -19,8 +19,5 @@ else
         TF(~cellfun(@isempty,regexp(STR,PAT{i}))) = 1;
     end
     TF = logical(TF);
-    if (numel(TF) == 1)
-        TF = TF {1};
-    end
 end
 end

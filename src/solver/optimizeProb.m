@@ -82,6 +82,7 @@ if endsWithOct(solver,'_octave')
         % for the alternative solver.
         solverparams.save = 1;
         solverparams.tmlim = 1;
+        fprintf('\n')
         [~, ~, errnum, ~] = glpk(prob.c, prob.A, prob.b, prob.lb, prob.ub, prob.csense, prob.vartype, prob.osense, solverparams);
         % Currently only gurobi implemented, can probably easily be expanded to
         % other solvers, as long as they can take lp file as input and sol file

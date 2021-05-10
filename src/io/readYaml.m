@@ -1,5 +1,5 @@
-function model=importHumanYaml(yamlFilename, silentMode)
-% importHumanYaml
+function model=readYaml(yamlFilename, silentMode)
+% readYaml
 %   Imports a yaml file matching (roughly) the cobrapy yaml structure
 %
 %   Input:
@@ -12,7 +12,7 @@ function model=importHumanYaml(yamlFilename, silentMode)
 %   Output:
 %   model       a model structure
 %
-%   Usage: model=importYaml(yamlFilename, silentMode)
+%   Usage: model=readYaml(yamlFilename, silentMode)
 %
 % This function is to reverse engineer the RAVEN function `writeYaml`
 %
@@ -25,9 +25,7 @@ if ~(exist(yamlFilename,'file')==2)
     error('Yaml file %s cannot be found', string(yamlFilename));
 end
 
-% Define the required fields of humanGEM
-% There are a total of 37 fields in the model so far, the non-generic ones
-% are excluded here
+% Define the model fields
 model=[];
 model.id=[];
 model.description=[];
@@ -46,8 +44,9 @@ model.grRules={};
 model.rxnGeneMat=[];
 model.subSystems={};
 model.eccodes={};
-%model.rxnNotes={}; %not sure
+model.rxnNotes={};
 model.genes={};
+model.geneShortNames={};
 model.metNames={};
 model.metComps={};
 model.inchis={};
@@ -59,6 +58,7 @@ model.metFrom={};
 model.rxnConfidenceScores={};
 model.metCharges={};
 model.version='';
+model.date='';
 model.annotation=[];
 equations={};
 leftEqns={};
@@ -229,7 +229,12 @@ while ~feof(fid)
     % import genes:
     if section == 4
         [tline_key, tline_value] = tokenizeYamlLine(tline);
-        model = readFieldValue(model, 'genes', tline_value);
+        switch tline_key
+            case 'id'
+                model = readFieldValue(model, 'genes', tline_value);
+            case 'name'
+                model = readFieldValue(model, 'geneShortNames', tline_value);
+        end
     end
 
     % import compartments:
@@ -267,21 +272,29 @@ else
 end
 % regenerate equations
 equations = cell(length(model.rxns), 1);
-revInd = find(model.rev);
-irrevInd = setdiff(transpose([1: length(model.rxns)]), revInd);
+revInd = model.rev;
+irrevInd = ~model.rev;
 revArrow = cell(length(model.rxns), 1);
-revArrow(revInd) = ' <=> ';
-revArrow(irrevInd) = ' => ';
-equations(revInd)   = strcat(leftEqns(revInd), revArrow(revInd), rightEqns(revInd));
-equations(irrevInd) = strcat(leftEqns(irrevInd), revArrow(irrevInd), rightEqns(irrevInd));
+if revInd ~= 0
+    revArrow{revInd} = ' <=> ';
+    equations(revInd)   = strcat(leftEqns(revInd), revArrow(revInd), rightEqns(revInd));
+end
+if irrevInd ~= 0
+    revArrow{irrevInd} = ' => ';
+    equations(irrevInd) = strcat(leftEqns(irrevInd), revArrow(irrevInd), rightEqns(irrevInd));
+end  
 
 % regenerate S matrix
 [S, newMets, ~, ~] = constructS(equations, model.mets, model.rxns);
 [~, metIdx] = ismember(model.mets, newMets);
 model.S = S(metIdx, :);
 
-% Now the `unconstrained` field is abandoned in HumanGEM
-%model.unconstrained = double(endsWithOct(model.mets, 'x'));
+fnames = fieldnames(model);
+for i=1:numel(fnames)
+    if isempty(model.(fnames{i}))
+        model=rmfield(model,fnames{i});
+    end
+end
 
 if ~silentMode
     fprintf(' Done!\n');
