@@ -30,8 +30,8 @@ end
 %Check if the reactions have been parsed before and saved. If so, load the
 %model
 [ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-distFile=fullfile(ravenPath,'external','kegg','keggPhylDist.mat');
+ravenPath=fileparts(fileparts(fileparts(fileparts(ST(I).file))));
+distFile=fullfile(ravenPath,'src','recon_model','kegg','keggPhylDist.mat');
 if exist(distFile, 'file')
     fprintf(['Importing the KEGG phylogenetic distance matrix from ' strrep(distFile,'\','/') '... ']);
     load(distFile);
