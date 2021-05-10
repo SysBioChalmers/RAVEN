@@ -68,8 +68,8 @@ if nargin<1
 end
 
 [ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-genesFile=fullfile(ravenPath,'external','kegg','keggGenes.mat');
+ravenPath=fileparts(fileparts(fileparts(fileparts(ST(I).file))));
+genesFile=fullfile(ravenPath,'src','recon_model','kegg','keggGenes.mat');
 if exist(genesFile, 'file')
     fprintf(['Importing KEGG genes from ' strrep(genesFile,'\','/') '... ']);
     load(genesFile);
@@ -81,7 +81,7 @@ else
     else
         fprintf('Generating keggGenes.mat file... ');
         %Get all KOs that are associated to reactions
-        allKOs=getAllKOs(keggPath);
+        allKOs=getAllKOs(keggPath,ravenPath);
         
         %Since the list of genes will be accessed many times the hash table
         %is established
@@ -265,7 +265,7 @@ model=removeReactions(model,I,true,true);
 fprintf('COMPLETE\n');
 end
 
-function allKOs=getAllKOs(keggPath)
+function allKOs=getAllKOs(keggPath,ravenPath)
 %Retrieves all KOs that are associated to reactions. This is because the
 %number of genes in KEGG is very large so without this parsing it would
 %take many hours
@@ -273,9 +273,7 @@ function allKOs=getAllKOs(keggPath)
 allKOs={};
 
 %First check if the reactions have already been parsed
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-rxnsFile=fullfile(ravenPath,'external','kegg','keggRxns.mat');
+rxnsFile=fullfile(ravenPath,'src','recon_model','kegg','keggRxns.mat');
 if exist(rxnsFile, 'file')
     fprintf(['NOTE: Importing KEGG ORTHOLOGY list from ' strrep(rxnsFile,'\','/') '.\n']);
     load(rxnsFile,'model');

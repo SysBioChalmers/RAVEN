@@ -329,7 +329,7 @@ cores = getNcores();
 %Get the directory for RAVEN Toolbox. This is to get the path to the third
 %party software used
 [ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+ravenPath=fileparts(fileparts(fileparts(fileparts(ST(I).file))));
 
 %Checking if dataDir is consistent. It must point to pre-trained HMMs set,
 %compatible with the the current RAVEN version. The user may have the
@@ -460,7 +460,7 @@ end
 %First remove all reactions without genes
 if keepSpontaneous==true
     fprintf('Removing non-spontaneous reactions without GPR rules... ');
-    load(fullfile(ravenPath,'external','kegg','keggRxns.mat'),'isSpontaneous');
+    load(fullfile(ravenPath,'src','recon_model','kegg','keggRxns.mat'),'isSpontaneous');
     I=~any(model.rxnGeneMat,2)&~ismember(model.rxns,isSpontaneous);
     spontRxnsWithGenes=model.rxns(any(model.rxnGeneMat,2)&~ismember(model.rxns,isSpontaneous));
 else

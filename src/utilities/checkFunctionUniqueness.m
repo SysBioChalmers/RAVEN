@@ -5,6 +5,12 @@ function checkFunctionUniqueness()
 %
 %   Usage: checkFunctionUniqueness()
 
+if isOctave
+    mORo = 'Octave';
+else
+    mORo = 'MATLAB';
+end
+
 %Get the RAVEN path
 [ST, I]=dbstack('-completenames');
 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
@@ -37,9 +43,9 @@ for i=1:numel(matlabPaths)
         end
         if ~isempty(pathFunctions) && ~any(ismember('Contents.m',pathFunctions))
             if any(ismember(ravenFunctions,pathFunctions))
-                fprintf('Not OK\n');
+                fprintf('Not OK.\n');
                 if sum(ismember(ravenFunctions,pathFunctions))>(numel(ravenFunctions)/4)
-                    EM='Multiple RAVEN versions detected in MATLAB path. Leave only one RAVEN version in MATLAB path and re-run checkInstallation\n';
+                    EM=['Multiple RAVEN versions detected in ' mORo ' path. Leave only one RAVEN version in ' mORo ' path and re-run checkInstallation\n'];
                     dispEM(EM);
                 else
                     disp(['WARNING: Duplicate functions in ',matlabPaths{i},': ']);
@@ -55,7 +61,7 @@ end
 if hasConflicts
     fprintf('It is strongly recommended to resolve conflicting functions as this may compromise RAVEN functionality\n');
 else
-    fprintf('OK\n');
+    fprintf('OK.\n');
 end
 
 end
