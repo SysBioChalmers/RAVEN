@@ -50,13 +50,15 @@ ymlFile=fullfile(ravenDir,'tutorial','empty.yml');
 %Check if it is possible to parse an Excel file
 fprintf('\n=== Model import and export ===\n');
 fprintf(' > Checking export of model in Excel format...  ');
+load(matFile);
 if isOctave
     fprintf('Skipped, MATLAB only.\n')
 else
     try
         %Add the required classes to the static Java path if not already added
-        %addJavaPaths();
-        importExcelModel(excelFile,false,false,true);
+        addJavaPaths();
+        exportToExcelFormat(emptyModel,'_tmp.xlsx');
+        delete('_tmp.xlsx');
         fprintf('OK.\n');
     catch
         fprintf('Not OK.\n');
@@ -115,7 +117,6 @@ solver={'gurobi','glpk','cobra'};
 
 for i=1:numel(solver)
     fprintf(' > Checking to solve an LP problem with %s...  ',solver{i});
-    load(matFile);
     try
         setRavenSolver(solver{i});
         solveLP(emptyModel);
