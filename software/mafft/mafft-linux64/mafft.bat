@@ -1,8 +1,3 @@
-#! /bin/bash
-# sh -> bash for debian. By J. R. Peterson. 2015/Jun.
-
-pushd "`dirname "$0"`" > /dev/null 2>&1; rootdir="$PWD"; popd > /dev/null 2>&1;
-MAFFT_BINARIES="$rootdir/mafftdir/libexec"; export MAFFT_BINARIES;
-
-"$rootdir/mafftdir/bin/mafft" "$@"
-# input file name can have space
+version https://git-lfs.github.com/spec/v1
+oid sha256:f5e516270c66e7b2fd71ebcb2ecc3f56a5b63a53f888a8f4112030ec272c5275
+size 284

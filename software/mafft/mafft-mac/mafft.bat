@@ -1,7 +1,3 @@
-#! /bin/sh
-
-pushd "`dirname "$0"`" > /dev/null 2>&1; rootdir="$PWD"; popd > /dev/null 2>&1;
-MAFFT_BINARIES="$rootdir/mafftdir/libexec"; export MAFFT_BINARIES;
-
-"$rootdir/mafftdir/bin/mafft" "$@"
-# $1 can have space in file name
+version https://git-lfs.github.com/spec/v1
+oid sha256:27a681328174b2a3fa20b1f66206893fba64cd1af59b075871fefb314b24538d
+size 228
