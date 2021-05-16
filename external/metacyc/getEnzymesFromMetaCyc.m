@@ -12,7 +12,7 @@ function metaCycEnzymes=getEnzymesFromMetaCyc(metacycPath)
 %	model        a model structure generated from the database. The following
 %                fields are filled
 %                id:             'MetaCyc'
-%                description:    'Automatically generated from MetaCyc database'
+%                name:    'Automatically generated from MetaCyc database'
 %                rxns:           Reaction id
 %                rxnNames:       Reaction name
 %                enzymes:        Enzyme id
@@ -77,7 +77,7 @@ else
         dispEM(EM);
     else
         metaCycEnzymes.id='MetaCyc';
-        metaCycEnzymes.description='Automatically generated from MetaCyc database';
+        metaCycEnzymes.name='Automatically generated from MetaCyc database';
         
         %Reserve space for 10000 enzyme complexs
         metaCycEnzymes.cplxs=cell(10000,1);

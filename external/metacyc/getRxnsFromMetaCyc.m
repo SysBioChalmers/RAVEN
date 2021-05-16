@@ -22,7 +22,7 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 %   model     a model structure generated from the database. The following
 %             fields are filled
 %             id:             'MetaCyc'
-%             description:    'Automatically generated from MetaCyc database'
+%             name:    'Automatically generated from MetaCyc database'
 %             rxns:           MetaCyc reaction ids
 %             rxnNames:       Name for each reaction entry
 %             mets:           MetaCyc compound ids. If the equations use
@@ -98,7 +98,7 @@ else
         dispEM(EM);
     else
         metaCycRxns.id='MetaCyc';
-        metaCycRxns.description='Automatically generated from MetaCyc database';
+        metaCycRxns.name='Automatically generated from MetaCyc database';
         
         %Get pathway names and add them to the field of subSystems
         fid = fopen(fullfile(metacycPath,metaCycPwyFile), 'r');

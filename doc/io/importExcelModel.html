@@ -50,7 +50,7 @@
            email        String    with the e-mail address of the main model author
            organization String    with the organization of the main model author
            note         String    with additional comments about the model
-       description      description of model contents
+       name      name of model
        id               model ID
        rxns             reaction ids
        mets             metabolite ids
@@ -66,7 +66,7 @@
                         surrounding each of the compartments
        compMiriams      structure with MIRIAM information about the
                         compartments
-       rxnNames         reaction description
+       rxnNames         reaction name
        rxnComps         compartments for reactions
        grRules          reaction to gene rules in text form
        rxnGeneMat       reaction-to-gene mapping in sparse matrix form
@@ -80,7 +80,7 @@
        geneComps        compartments for genes
        geneMiriams      structure with MIRIAM information about the genes
        geneShortNames   gene alternative names (e.g. ERG10)
-       metNames         metabolite description
+       metNames         metabolite name
        metComps         compartments for metabolites
        inchis           InChI-codes for metabolites
        metFormulas      metabolite chemical formula
@@ -142,7 +142,7 @@ This function is called by:
 0022 <span class="comment">%           email        String    with the e-mail address of the main model author</span>
 0023 <span class="comment">%           organization String    with the organization of the main model author</span>
 0024 <span class="comment">%           note         String    with additional comments about the model</span>
-0025 <span class="comment">%       description      description of model contents</span>
+0025 <span class="comment">%       name      name of model</span>
 0026 <span class="comment">%       id               model ID</span>
 0027 <span class="comment">%       rxns             reaction ids</span>
 0028 <span class="comment">%       mets             metabolite ids</span>
@@ -158,7 +158,7 @@ This function is called by:
 0038 <span class="comment">%                        surrounding each of the compartments</span>
 0039 <span class="comment">%       compMiriams      structure with MIRIAM information about the</span>
 0040 <span class="comment">%                        compartments</span>
-0041 <span class="comment">%       rxnNames         reaction description</span>
+0041 <span class="comment">%       rxnNames         reaction name</span>
 0042 <span class="comment">%       rxnComps         compartments for reactions</span>
 0043 <span class="comment">%       grRules          reaction to gene rules in text form</span>
 0044 <span class="comment">%       rxnGeneMat       reaction-to-gene mapping in sparse matrix form</span>
@@ -172,7 +172,7 @@ This function is called by:
 0052 <span class="comment">%       geneComps        compartments for genes</span>
 0053 <span class="comment">%       geneMiriams      structure with MIRIAM information about the genes</span>
 0054 <span class="comment">%       geneShortNames   gene alternative names (e.g. ERG10)</span>
-0055 <span class="comment">%       metNames         metabolite description</span>
+0055 <span class="comment">%       metNames         metabolite name</span>
 0056 <span class="comment">%       metComps         compartments for metabolites</span>
 0057 <span class="comment">%       inchis           InChI-codes for metabolites</span>
 0058 <span class="comment">%       metFormulas      metabolite chemical formula</span>
@@ -213,7 +213,7 @@ This function is called by:
 0093 <span class="comment">%from SBML</span>
 0094 model=[];
 0095 model.id=[];
-0096 model.description=[];
+0096 model.name=[];
 0097 model.annotation=[];
 0098 <span class="comment">%Default bounds if not defined</span>
 0099 model.annotation.defaultLB=-1000;
@@ -262,7 +262,7 @@ This function is called by:
 0142         dispEM(EM,false);
 0143     <span class="keyword">end</span>
 0144     model.id=<span class="string">'UNKNOWN'</span>;
-0145     model.description=<span class="string">'No model details available'</span>;
+0145     model.name=<span class="string">'No model details available'</span>;
 0146 <span class="keyword">else</span>
 0147     raw=<a href="cleanSheet.html" class="code" title="function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,removeNoCap,removeEmptyRows)">cleanSheet</a>(raw);
 0148     
@@ -270,780 +270,781 @@ This function is called by:
 0150     <span class="comment">%info</span>
 0151     raw(1,:)=upper(raw(1,:));
 0152     raw(1,:)=strrep(raw(1,:),<span class="string">'MODELID'</span>,<span class="string">'ID'</span>);
-0153     raw(1,:)=strrep(raw(1,:),<span class="string">'MODELNAME'</span>,<span class="string">'DESCRIPTION'</span>);
-0154     
-0155     <span class="comment">%Loop through the labels</span>
-0156     <span class="keyword">for</span> i=1:numel(raw(1,:))
-0157         <span class="keyword">switch</span> raw{1,i}
-0158             <span class="keyword">case</span> <span class="string">'ID'</span>
-0159                 <span class="keyword">if</span> any(raw{2,i})
-0160                     model.id=<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>(raw{2,i}); <span class="comment">%Should be string already</span>
-0161                 <span class="keyword">else</span>
-0162                     EM=<span class="string">'No model ID supplied'</span>;
-0163                     dispEM(EM);
-0164                 <span class="keyword">end</span>
-0165             <span class="keyword">case</span> <span class="string">'DESCRIPTION'</span>
-0166                 <span class="keyword">if</span> any(raw{2,i})
-0167                     model.description=<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>(raw{2,i}); <span class="comment">%Should be string already</span>
-0168                 <span class="keyword">else</span>
-0169                     EM=<span class="string">'No model name supplied'</span>;
-0170                     dispEM(EM);
-0171                 <span class="keyword">end</span>
-0172             <span class="keyword">case</span> <span class="string">'DEFAULT LOWER'</span>
-0173                 <span class="keyword">if</span> ~isempty(raw{2,i})
-0174                     <span class="keyword">try</span>
-0175                         model.annotation.defaultLB=<a href="#_sub3" class="code" title="subfunction y=toDouble(x,default)">toDouble</a>(raw{2,i},NaN);
-0176                     <span class="keyword">catch</span>
-0177                         EM=<span class="string">'DEFAULT LOWER must be numeric'</span>;
-0178                         dispEM(EM);
-0179                     <span class="keyword">end</span>
-0180                 <span class="keyword">else</span>
-0181                     <span class="keyword">if</span> printWarnings==true
-0182                         fprintf(<span class="string">'NOTE: DEFAULT LOWER not supplied. Uses -1000\n'</span>);
-0183                     <span class="keyword">end</span>
-0184                     model.annotation.defaultLB=-1000;
-0185                 <span class="keyword">end</span>
-0186             <span class="keyword">case</span> <span class="string">'DEFAULT UPPER'</span>
-0187                 <span class="keyword">if</span> ~isempty(raw{2,i})
-0188                     <span class="keyword">try</span>
-0189                         model.annotation.defaultUB=<a href="#_sub3" class="code" title="subfunction y=toDouble(x,default)">toDouble</a>(raw{2,i},NaN);
-0190                     <span class="keyword">catch</span>
-0191                         EM=<span class="string">'DEFAULT UPPER must be numeric'</span>;
-0192                         dispEM(EM);
-0193                     <span class="keyword">end</span>
-0194                 <span class="keyword">else</span>
-0195                     <span class="keyword">if</span> printWarnings==true
-0196                         fprintf(<span class="string">'NOTE: DEFAULT UPPER not supplied. Uses 1000\n'</span>);
-0197                     <span class="keyword">end</span>
-0198                     model.annotation.defaultUB=1000;
-0199                 <span class="keyword">end</span>
-0200             <span class="keyword">case</span> <span class="string">'TAXONOMY'</span>
-0201                 <span class="keyword">if</span> any(raw{2,i})
-0202                     model.annotation.taxonomy=<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>(raw{2,i}); <span class="comment">%Should be string already</span>
-0203                 <span class="keyword">end</span>
-0204             <span class="keyword">case</span> <span class="string">'CONTACT GIVEN NAME'</span>
-0205                 <span class="keyword">if</span> any(raw{2,i})
-0206                     model.annotation.givenName=<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>(raw{2,i}); <span class="comment">%Should be string already</span>
-0207                 <span class="keyword">end</span>
-0208             <span class="keyword">case</span> <span class="string">'CONTACT FAMILY NAME'</span>
-0209                 <span class="keyword">if</span> any(raw{2,i})
-0210                     model.annotation.familyName=<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>(raw{2,i}); <span class="comment">%Should be string already</span>
-0211                 <span class="keyword">end</span>
-0212             <span class="keyword">case</span> <span class="string">'CONTACT EMAIL'</span>
-0213                 <span class="keyword">if</span> any(raw{2,i})
-0214                     model.annotation.email=<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>(raw{2,i}); <span class="comment">%Should be string already</span>
-0215                 <span class="keyword">end</span>
-0216             <span class="keyword">case</span> <span class="string">'ORGANIZATION'</span>
-0217                 <span class="keyword">if</span> any(raw{2,i})
-0218                     model.annotation.organization=<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>(raw{2,i}); <span class="comment">%Should be string already</span>
-0219                 <span class="keyword">end</span>
-0220             <span class="keyword">case</span> <span class="string">'NOTES'</span>
-0221                 <span class="keyword">if</span> any(raw{2,i})
-0222                     model.annotation.note=<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>(raw{2,i}); <span class="comment">%Should be string already</span>
-0223                 <span class="keyword">end</span>
-0224         <span class="keyword">end</span>
-0225     <span class="keyword">end</span>
-0226 <span class="keyword">end</span>
-0227 
-0228 <span class="comment">%Get compartment information</span>
-0229 [raw, flag]=<a href="loadSheet.html" class="code" title="function [raw, flag]=loadSheet(workbook, sheet)">loadSheet</a>(workbook,<span class="string">'COMPS'</span>);
-0230 
-0231 <span class="keyword">if</span> flag&lt;0
-0232     <span class="keyword">if</span> printWarnings==true
-0233         EM=<span class="string">'Could not load the COMPS sheet. All elements will be assigned to a compartment &quot;s&quot; for &quot;System&quot;'</span>;
-0234         dispEM(EM,false);
-0235     <span class="keyword">end</span>
-0236     model.comps={<span class="string">'s'</span>};
-0237     model.compNames={<span class="string">'System'</span>};
-0238 <span class="keyword">else</span>
-0239     raw=<a href="cleanSheet.html" class="code" title="function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,removeNoCap,removeEmptyRows)">cleanSheet</a>(raw);
-0240     
-0241     <span class="comment">%Map to new captions</span>
-0242     raw(1,:)=upper(raw(1,:));
-0243     raw(1,:)=strrep(raw(1,:),<span class="string">'COMPABBREV'</span>,<span class="string">'ABBREVIATION'</span>);
-0244     raw(1,:)=strrep(raw(1,:),<span class="string">'COMPNAME'</span>,<span class="string">'NAME'</span>);
-0245         
-0246     <span class="comment">%Loop through the labels</span>
-0247     <span class="keyword">for</span> i=1:numel(raw(1,:))
-0248         <span class="keyword">switch</span> raw{1,i}
-0249             <span class="keyword">case</span> <span class="string">'ABBREVIATION'</span>
-0250                 model.comps=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0251             <span class="keyword">case</span> <span class="string">'NAME'</span>
-0252                 model.compNames=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0253             <span class="keyword">case</span> <span class="string">'INSIDE'</span>
-0254                 model.compOutside=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0255             <span class="keyword">case</span> <span class="string">'MIRIAM'</span>
-0256                 model.compMiriams=raw(2:<span class="keyword">end</span>,i);
-0257         <span class="keyword">end</span>
-0258     <span class="keyword">end</span>
-0259     
-0260     <span class="comment">%Check that necessary fields are loaded</span>
-0261     <span class="keyword">if</span> isempty(model.comps)
-0262         EM=<span class="string">'There must be a column named ABBREVIATION in the COMPS sheet'</span>;
-0263         dispEM(EM);
-0264     <span class="keyword">end</span>
-0265     <span class="keyword">if</span> isempty(model.compNames)
-0266         model.compNames=model.comps;
-0267         <span class="keyword">if</span> printWarnings==true
-0268             EM=<span class="string">'There is no column named NAME in the COMPS sheet. ABBREVIATION will be used as name'</span>;
-0269             dispEM(EM,false);
-0270         <span class="keyword">end</span>
-0271     <span class="keyword">end</span>
-0272     model.compMiriams=<a href="#_sub1" class="code" title="subfunction miriamStruct=parseMiriam(strings,miriamStruct)">parseMiriam</a>(model.compMiriams);
-0273 <span class="keyword">end</span>
-0274 
-0275 <span class="comment">%Get all the genes and info about them</span>
-0276 [raw, flag]=<a href="loadSheet.html" class="code" title="function [raw, flag]=loadSheet(workbook, sheet)">loadSheet</a>(workbook,<span class="string">'GENES'</span>);
-0277 
-0278 <span class="keyword">if</span> flag&lt;0
-0279     <span class="keyword">if</span> printWarnings==true
-0280         EM=<span class="string">'There is no spreadsheet named GENES'</span>;
-0281         dispEM(EM,false)
-0282     <span class="keyword">end</span>
-0283 <span class="keyword">else</span>
-0284     raw=<a href="cleanSheet.html" class="code" title="function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,removeNoCap,removeEmptyRows)">cleanSheet</a>(raw);
-0285     
-0286     <span class="comment">%Map to new captions</span>
-0287     raw(1,:)=upper(raw(1,:));
-0288     raw(1,:)=strrep(raw(1,:),<span class="string">'GENE NAME'</span>,<span class="string">'NAME'</span>);
-0289         
-0290     <span class="comment">%Loop through the labels</span>
-0291     foundGenes=false;
-0292     <span class="keyword">for</span> i=1:numel(raw(1,:))
-0293         <span class="keyword">switch</span> raw{1,i}
-0294             <span class="keyword">case</span> <span class="string">'NAME'</span>
-0295                 model.genes=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0296                 foundGenes=true;
-0297             <span class="keyword">case</span> <span class="string">'MIRIAM'</span>
-0298                 model.geneMiriams=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0299             <span class="keyword">case</span> <span class="string">'SHORT NAME'</span>
-0300                 model.geneShortNames=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0301             <span class="keyword">case</span> <span class="string">'COMPARTMENT'</span>
-0302                 model.geneComps=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0303         <span class="keyword">end</span>
-0304     <span class="keyword">end</span>
-0305     
-0306     <span class="keyword">if</span> foundGenes==false
-0307         EM=<span class="string">'There must be a column named NAME in the GENES sheet'</span>;
-0308         dispEM(EM);
-0309     <span class="keyword">end</span>
-0310     
-0311     <span class="comment">%Its ok if all of them are empty</span>
-0312     <span class="keyword">if</span> all(cellfun(@isempty,model.geneComps))
-0313         model.geneComps=[];
-0314     <span class="keyword">end</span>
-0315     
-0316     <span class="comment">%Check that geneName contain only strings and no empty strings</span>
-0317     <span class="keyword">if</span> ~iscellstr(model.genes)
-0318         EM=<span class="string">'All gene names have to be strings'</span>;
-0319         dispEM(EM);
-0320     <span class="keyword">else</span>
-0321         <span class="keyword">if</span> any(strcmp(<span class="string">''</span>,model.genes))
-0322             EM=<span class="string">'There can be no empty strings in gene names'</span>;
-0323             dispEM(EM);
-0324         <span class="keyword">end</span>
-0325     <span class="keyword">end</span>
-0326     
-0327     <span class="comment">%Check that geneComp contains only strings and no empty string</span>
-0328     <span class="keyword">if</span> ~isempty(model.geneComps)
-0329         <span class="keyword">if</span> ~iscellstr(model.geneComps)
-0330             EM=<span class="string">'All gene compartments have to be strings'</span>;
-0331             dispEM(EM);
-0332         <span class="keyword">else</span>
-0333             <span class="keyword">if</span> any(strcmp(<span class="string">''</span>,model.geneComps))
-0334                 EM=<span class="string">'There can be no empty strings in gene compartments'</span>;
-0335                 dispEM(EM);
-0336             <span class="keyword">end</span>
-0337         <span class="keyword">end</span>
-0338         [I, model.geneComps]=ismember(model.geneComps,model.comps);
-0339         EM=<span class="string">'The following genes have compartment abbreviations which could not be found:'</span>;
-0340         dispEM(EM,true,model.genes(~I));
-0341     <span class="keyword">end</span>
-0342 <span class="keyword">end</span>
-0343 
-0344 model.geneMiriams=<a href="#_sub1" class="code" title="subfunction miriamStruct=parseMiriam(strings,miriamStruct)">parseMiriam</a>(model.geneMiriams);
-0345 
-0346 <span class="comment">%Loads the reaction data</span>
-0347 [raw, flag]=<a href="loadSheet.html" class="code" title="function [raw, flag]=loadSheet(workbook, sheet)">loadSheet</a>(workbook,<span class="string">'RXNS'</span>);
-0348 
-0349 <span class="keyword">if</span> flag&lt;0
-0350     EM=<span class="string">'Could not load the RXNS sheet'</span>;
-0351     dispEM(EM);
-0352 <span class="keyword">end</span>
-0353 
-0354 raw=<a href="cleanSheet.html" class="code" title="function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,removeNoCap,removeEmptyRows)">cleanSheet</a>(raw);
-0355 
-0356 <span class="comment">%Map to new captions</span>
-0357 raw(1,:)=upper(raw(1,:));
-0358 raw(1,:)=strrep(raw(1,:),<span class="string">'RXNID'</span>,<span class="string">'ID'</span>);
-0359 
-0360 <span class="comment">%Loop through the labels</span>
-0361 equations={};
-0362 reactionReplacement={};
-0363 <span class="keyword">for</span> i=1:numel(raw(1,:))
-0364     <span class="keyword">switch</span> raw{1,i}
-0365         <span class="keyword">case</span> <span class="string">'ID'</span>
-0366             model.rxns=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0367         <span class="keyword">case</span> <span class="string">'NAME'</span>
-0368             model.rxnNames=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0369         <span class="keyword">case</span> <span class="string">'EQUATION'</span>
-0370             equations=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0371         <span class="keyword">case</span> <span class="string">'EC-NUMBER'</span>
-0372             model.eccodes=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0373         <span class="keyword">case</span> <span class="string">'GENE ASSOCIATION'</span>
-0374             model.grRules=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0375         <span class="keyword">case</span> <span class="string">'LOWER BOUND'</span>
-0376             <span class="keyword">try</span>
-0377                 model.lb=cellfun(@(x) <a href="#_sub3" class="code" title="subfunction y=toDouble(x,default)">toDouble</a>(x,NaN),raw(2:<span class="keyword">end</span>,i));
-0378             <span class="keyword">catch</span>
-0379                 EM=<span class="string">'The lower bounds must be numerical values'</span>;
-0380                 dispEM(EM);
-0381             <span class="keyword">end</span>
-0382         <span class="keyword">case</span> <span class="string">'UPPER BOUND'</span>
-0383             <span class="keyword">try</span>
-0384                 model.ub=cellfun(@(x) <a href="#_sub3" class="code" title="subfunction y=toDouble(x,default)">toDouble</a>(x,NaN),raw(2:<span class="keyword">end</span>,i));
-0385             <span class="keyword">catch</span>
-0386                 EM=<span class="string">'The upper bounds must be numerical values'</span>;
-0387                 dispEM(EM);
-0388             <span class="keyword">end</span>
-0389         <span class="keyword">case</span> <span class="string">'OBJECTIVE'</span>
-0390             <span class="keyword">try</span>
-0391                 model.c=cellfun(@(x) <a href="#_sub3" class="code" title="subfunction y=toDouble(x,default)">toDouble</a>(x,0),raw(2:<span class="keyword">end</span>,i));
-0392             <span class="keyword">catch</span>
-0393                 EM=<span class="string">'The objective coefficients must be numerical values'</span>;
-0394                 dispEM(EM);
-0395             <span class="keyword">end</span>
-0396         <span class="keyword">case</span> <span class="string">'COMPARTMENT'</span>
-0397             model.rxnComps=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0398         <span class="keyword">case</span> <span class="string">'SUBSYSTEM'</span>
-0399             subsystems=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0400         <span class="keyword">case</span> <span class="string">'REPLACEMENT ID'</span>
-0401             reactionReplacement=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0402         <span class="keyword">case</span> <span class="string">'MIRIAM'</span>
-0403             model.rxnMiriams=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0404         <span class="keyword">case</span> <span class="string">'NOTE'</span>
-0405             model.rxnNotes=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0406         <span class="keyword">case</span> <span class="string">'REFERENCE'</span>
-0407             model.rxnReferences=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0408         <span class="keyword">case</span> <span class="string">'CONFIDENCE SCORE'</span>
-0409             model.rxnConfidenceScores=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0410     <span class="keyword">end</span>
-0411 <span class="keyword">end</span>
-0412 
-0413 <span class="keyword">if</span> ~isempty(model.rxnConfidenceScores)
-0414     model.rxnConfidenceScores=str2double(model.rxnConfidenceScores);
-0415 <span class="keyword">end</span>
-0416 <span class="keyword">for</span> i=1:numel(subsystems)
-0417     model.subSystems{i,1}=cellstr(strsplit(subsystems{i,1},<span class="string">';'</span>));
-0418 <span class="keyword">end</span>
-0419 
-0420 <span class="comment">%Check that all necessary reaction info has been loaded</span>
-0421 <span class="keyword">if</span> isempty(equations)
-0422     EM=<span class="string">'There must be a column named EQUATION in the RXNS sheet'</span>;
-0423     dispEM(EM);
-0424 <span class="keyword">end</span>
-0425 <span class="keyword">if</span> isempty(model.rxns)
-0426     <span class="keyword">if</span> printWarnings==true
-0427         EM=<span class="string">'There is no column named ID in the RXNS sheet. The reactions will be named as &quot;r1&quot;, &quot;r2&quot;...'</span>;
-0428         dispEM(EM,false);
-0429     <span class="keyword">end</span>
-0430     I=num2cell((1:numel(equations))');
-0431     model.rxns=strcat(<span class="string">'r'</span>,cellfun(@num2str,I,<span class="string">'UniformOutput'</span>,false));
-0432 <span class="keyword">end</span>
-0433 
-0434 <span class="comment">%Check if some other stuff is loaded and populate with default values</span>
-0435 <span class="comment">%otherwise</span>
-0436 <span class="keyword">if</span> isempty(model.rxnNames)
-0437     model.rxnNames=cell(numel(model.rxns),1);
-0438     model.rxnNames(:)={<span class="string">''</span>};
-0439     <span class="keyword">if</span> printWarnings==true
-0440         EM=<span class="string">'There is no column named NAME in the RXNS sheet. Empty strings will be used as reaction names'</span>;
-0441         dispEM(EM,false);
-0442     <span class="keyword">end</span>
-0443 <span class="keyword">end</span>
-0444 <span class="keyword">if</span> isempty(model.lb)
-0445     <span class="comment">%This is not set here since the reversibility isn't known yet</span>
-0446     model.lb=nan(numel(model.rxns),1);
-0447     <span class="keyword">if</span> printWarnings==true
-0448         EM=<span class="string">'There is no column named LOWER BOUND in the RXNS sheet. Default bounds will be used'</span>;
-0449         dispEM(EM,false);
-0450     <span class="keyword">end</span>
-0451 <span class="keyword">end</span>
-0452 <span class="keyword">if</span> isempty(model.ub)
-0453     model.ub=nan(numel(model.rxns),1);
-0454     <span class="keyword">if</span> printWarnings==true
-0455         EM=<span class="string">'There is no column named UPPER BOUND in the RXNS sheet. Default bounds will be used'</span>;
-0456         dispEM(EM,false);
-0457     <span class="keyword">end</span>
-0458 <span class="keyword">end</span>
-0459 <span class="keyword">if</span> isempty(model.c)
-0460     model.c=zeros(numel(model.rxns),1);
-0461     <span class="keyword">if</span> printWarnings==true
-0462         EM=<span class="string">'There is no column named OBJECTIVE in the RXNS sheet'</span>;
-0463         dispEM(EM,false);
-0464     <span class="keyword">end</span>
-0465 <span class="keyword">end</span>
-0466 
-0467 <span class="comment">%Either all reactions must have a compartment string or none of them. Check</span>
-0468 <span class="comment">%if it's only empty and if so return it to []</span>
-0469 <span class="keyword">if</span> ~isempty(model.rxnComps)
-0470     <span class="keyword">if</span> all(cellfun(@isempty,model.rxnComps))
-0471         model.rxnComps=[];
-0472     <span class="keyword">end</span>
-0473 <span class="keyword">end</span>
-0474 
-0475 <span class="comment">%Construct the rxnMiriams structure</span>
-0476 model.rxnMiriams=<a href="#_sub1" class="code" title="subfunction miriamStruct=parseMiriam(strings,miriamStruct)">parseMiriam</a>(model.rxnMiriams);
-0477 
-0478 <span class="comment">%Replace the reaction IDs for those IDs that have a corresponding</span>
-0479 <span class="comment">%replacement name.</span>
-0480 I=cellfun(@any,reactionReplacement);
-0481 model.rxns(I)=reactionReplacement(I);
-0482 
-0483 <span class="comment">%Check that there are no empty strings in reactionIDs or equations</span>
-0484 <span class="keyword">if</span> any(strcmp(<span class="string">''</span>,model.rxns))
-0485     EM=<span class="string">'There are empty reaction IDs'</span>;
-0486     dispEM(EM);
-0487 <span class="keyword">end</span>
-0488 
-0489 <span class="keyword">if</span> any(strcmp(<span class="string">''</span>,equations))
-0490     EM=<span class="string">'There are empty equations'</span>;
-0491     dispEM(EM);
-0492 <span class="keyword">end</span>
-0493 
-0494 <span class="keyword">if</span> ~isempty(model.rxnComps)
-0495     <span class="keyword">if</span> any(strcmp(<span class="string">''</span>,model.rxnComps))
-0496         EM=<span class="string">'Either all reactions must have an associated compartment string or none of them'</span>;
-0497         dispEM(EM);
-0498     <span class="keyword">end</span>
-0499 <span class="keyword">end</span>
-0500 
-0501 <span class="keyword">if</span> ~isempty(model.grRules)
-0502     tempRules=model.grRules;
-0503     <span class="keyword">for</span> i=1:length(model.rxns)
-0504         <span class="comment">%Check that all gene associations have a match in the gene list</span>
-0505         <span class="keyword">if</span> ~isempty(model.grRules{i})
-0506             tempRules{i}=regexprep(tempRules{i},<span class="string">' and | or '</span>,<span class="string">'&gt;'</span>); <span class="comment">%New format: Genes are separated 'and' and 'or' strings with parentheses</span>
-0507             tempRules{i}=regexprep(tempRules{i},<span class="string">'('</span>,<span class="string">''</span>); <span class="comment">%New format: Genes are separated 'and' and 'or' strings with parentheses</span>
-0508             tempRules{i}=regexprep(tempRules{i},<span class="string">')'</span>,<span class="string">''</span>); <span class="comment">%New format: Genes are separated 'and' and 'or' strings with parentheses</span>
-0509             indexesNew=strfind(tempRules{i},<span class="string">'&gt;'</span>); <span class="comment">%Old format: Genes are separated by &quot;:&quot; for AND and &quot;;&quot; for OR</span>
-0510             indexes=strfind(tempRules{i},<span class="string">':'</span>); <span class="comment">%Old format: Genes are separated by &quot;:&quot; for AND and &quot;;&quot; for OR</span>
-0511             indexes=unique([indexesNew indexes strfind(tempRules{i},<span class="string">';'</span>)]);
-0512             <span class="keyword">if</span> isempty(indexes)
-0513                 <span class="comment">%See if you have a match</span>
-0514                 I=find(strcmp(tempRules{i},model.genes));
-0515                 <span class="keyword">if</span> isempty(I)
-0516                     EM=[<span class="string">'The gene association in reaction '</span> model.rxns{i} <span class="string">' ('</span> tempRules{i} <span class="string">') is not present in the gene list'</span>];
-0517                     dispEM(EM);
-0518                 <span class="keyword">end</span>
-0519             <span class="keyword">else</span>
-0520                 temp=[0 indexes numel(tempRules{i})+1];
-0521                 <span class="keyword">for</span> j=1:numel(indexes)+1
-0522                     <span class="comment">%The reaction has several associated genes</span>
-0523                     geneName=tempRules{i}(temp(j)+1:temp(j+1)-1);
-0524                     I=find(strcmp(geneName,model.genes));
-0525                     <span class="keyword">if</span> isempty(I)
-0526                         EM=[<span class="string">'The gene association in reaction '</span> model.rxns{i} <span class="string">' ('</span> geneName <span class="string">') is not present in the gene list'</span>];
-0527                         dispEM(EM);
-0528                     <span class="keyword">end</span>
-0529                 <span class="keyword">end</span>
-0530             <span class="keyword">end</span>
-0531             <span class="comment">%In order to adhere to the COBRA standards it should be like</span>
-0532             <span class="comment">%this: -If only one gene then no parentheses -If only &quot;and&quot; or</span>
-0533             <span class="comment">%only &quot;or&quot; there should only be one set of parentheses -If both</span>
-0534             <span class="comment">%&quot;and&quot; and &quot;or&quot;, then split on &quot;or&quot;. This is not complete, but</span>
-0535             <span class="comment">%it's the type of relationship supported by the Excel</span>
-0536             <span class="comment">%formulation</span>
-0537             aSign=strfind(model.grRules{i},<span class="string">':'</span>);
-0538             oSign=strfind(model.grRules{i},<span class="string">';'</span>);
-0539             <span class="keyword">if</span> isempty(aSign) &amp;&amp; isempty(oSign)
-0540                 model.grRules{i}=model.grRules{i};
-0541             <span class="keyword">else</span>
-0542                 <span class="keyword">if</span> isempty(aSign)
-0543                     model.grRules{i}=[<span class="string">'('</span> strrep(model.grRules{i},<span class="string">';'</span>,<span class="string">' or '</span>) <span class="string">')'</span>];
-0544                 <span class="keyword">else</span>
-0545                     <span class="keyword">if</span> isempty(oSign)
-0546                         model.grRules{i}=[<span class="string">'('</span> strrep(model.grRules{i},<span class="string">':'</span>,<span class="string">' and '</span>) <span class="string">')'</span>];
-0547                     <span class="keyword">else</span>
-0548                         model.grRules{i}=[<span class="string">'(('</span> strrep(model.grRules{i},<span class="string">';'</span>,<span class="string">') or ('</span>) <span class="string">'))'</span>];
-0549                         model.grRules{i}=strrep(model.grRules{i},<span class="string">':'</span>,<span class="string">' and '</span>);
-0550                     <span class="keyword">end</span>
-0551                 <span class="keyword">end</span>
-0552             <span class="keyword">end</span>
-0553         <span class="keyword">end</span>
-0554     <span class="keyword">end</span>
-0555 <span class="keyword">end</span>
-0556 
-0557 <span class="comment">%Check that the compartment for each reaction can be found</span>
-0558 <span class="keyword">if</span> ~isempty(model.rxnComps)
-0559     [I, model.rxnComps]=ismember(model.rxnComps,model.comps);
-0560     EM=<span class="string">'The following reactions have compartment abbreviations which could not be found:'</span>;
-0561     dispEM(EM,true,model.rxns(~I));
-0562 <span class="keyword">end</span>
-0563 
-0564 <span class="comment">%Get all the metabolites and info about them</span>
-0565 [raw, flag]=<a href="loadSheet.html" class="code" title="function [raw, flag]=loadSheet(workbook, sheet)">loadSheet</a>(workbook,<span class="string">'METS'</span>);
-0566 
-0567 <span class="keyword">if</span> flag&lt;0
-0568     <span class="keyword">if</span> printWarnings==true
-0569         EM=<span class="string">'There is no spreadsheet named METS. The metabolites will be named &quot;m1&quot;, &quot;m2&quot;... and assigned to the first compartment'</span>;
-0570         dispEM(EM,false);
-0571     <span class="keyword">end</span>
-0572     <span class="comment">%Parse the equations to find out how many metabolites there are</span>
-0573     metsForParsing=parseRxnEqu(equations);
-0574     I=num2cell((1:numel(metsForParsing))');
-0575     model.mets=strcat(<span class="string">'m'</span>,cellfun(@num2str,I,<span class="string">'UniformOutput'</span>,false));
-0576     model.metComps=ones(numel(model.mets),1);
-0577     model.unconstrained=zeros(numel(model.mets),1);
-0578     model.metNames=metsForParsing;
-0579 <span class="keyword">else</span>
-0580     raw=<a href="cleanSheet.html" class="code" title="function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,removeNoCap,removeEmptyRows)">cleanSheet</a>(raw);
-0581     
-0582     <span class="comment">%Map to new captions</span>
-0583     raw(1,:)=upper(raw(1,:));
-0584     raw(1,:)=strrep(raw(1,:),<span class="string">'METID'</span>,<span class="string">'ID'</span>);
-0585     raw(1,:)=strrep(raw(1,:),<span class="string">'METNAME'</span>,<span class="string">'NAME'</span>);
-0586     
-0587     <span class="comment">%Loop through the labels</span>
-0588     metReplacement={};
-0589     <span class="keyword">for</span> i=1:numel(raw(1,:))
-0590         <span class="keyword">switch</span> raw{1,i}
-0591             <span class="keyword">case</span> <span class="string">'ID'</span>
-0592                 model.mets=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0593             <span class="keyword">case</span> <span class="string">'NAME'</span>
-0594                 model.metNames=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0595             <span class="keyword">case</span> <span class="string">'UNCONSTRAINED'</span>
-0596                 model.unconstrained=cellfun(@<a href="#_sub4" class="code" title="subfunction y=boolToDouble(x)">boolToDouble</a>,raw(2:<span class="keyword">end</span>,i));
-0597                 <span class="comment">%NaN is returned if the values couldn't be parsed</span>
-0598                 EM=<span class="string">'The UNCONSTRAINED property for the following metabolites must be &quot;true&quot;/&quot;false&quot;, 1/0, TRUE/FALSE or not set:'</span>;
-0599                 dispEM(EM,true,model.mets(isnan(model.unconstrained)));
-0600             <span class="keyword">case</span> <span class="string">'MIRIAM'</span>
-0601                 model.metMiriams=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0602             <span class="keyword">case</span> <span class="string">'COMPOSITION'</span>
-0603                 model.metFormulas=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0604             <span class="keyword">case</span> <span class="string">'INCHI'</span>
-0605                 model.inchis=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0606             <span class="keyword">case</span> <span class="string">'COMPARTMENT'</span>
-0607                 model.metComps=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0608                 
-0609                 <span class="comment">%Check that all metabolites have compartments defined</span>
-0610                 <span class="keyword">if</span> any(strcmp(<span class="string">''</span>,model.metComps))
-0611                     EM=<span class="string">'All metabolites must have an associated compartment string'</span>;
-0612                     dispEM(EM);
-0613                 <span class="keyword">end</span>
-0614             <span class="keyword">case</span> <span class="string">'REPLACEMENT ID'</span>
-0615                 metReplacement=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0616             <span class="keyword">case</span> <span class="string">'CHARGE'</span>
-0617                 model.metCharges=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
-0618         <span class="keyword">end</span>
-0619     <span class="keyword">end</span>
-0620     
-0621     <span class="comment">%Check that necessary fields are loaded (METID)</span>
-0622     <span class="keyword">if</span> isempty(model.mets)
-0623         EM=<span class="string">'There must be a column named ID in the METS sheet'</span>;
-0624         dispEM(EM);
-0625     <span class="keyword">end</span>
-0626     
-0627     <span class="comment">%Check that some other stuff is loaded and use default values otherwise</span>
-0628     <span class="keyword">if</span> isempty(model.metNames)
-0629         model.metNames=cell(numel(model.mets),1);
-0630         <span class="keyword">if</span> printWarnings==true
-0631             EM=<span class="string">'There is no column named NAME in the METS sheet. ID will be used as name'</span>;
-0632             dispEM(EM,false);
-0633         <span class="keyword">end</span>
-0634     <span class="keyword">end</span>
-0635     <span class="keyword">if</span> isempty(model.unconstrained)
-0636         model.unconstrained=zeros(numel(model.mets),1);
-0637         <span class="keyword">if</span> printWarnings==true
-0638             EM=<span class="string">'There is no column named UNCONSTRAINED in the METS sheet. All metabolites will be constrained'</span>;
-0639             dispEM(EM,false);
-0640         <span class="keyword">end</span>
-0641     <span class="keyword">end</span>
-0642     
-0643     <span class="keyword">if</span> isempty(model.metComps)
-0644         model.metComps=cell(numel(model.mets),1);
-0645         model.metComps(:)=model.comps(1);
-0646         <span class="keyword">if</span> printWarnings==true
-0647             EM=<span class="string">'There is no column named COMPARTMENT in the METS sheet. All metabolites will be assigned to the first compartment in COMPS. Note that RAVEN makes extensive use of metabolite names and compartments. Some features will therefore not function correctly if metabolite compartments are not correctly assigned'</span>;
-0648             dispEM(EM,false);
-0649         <span class="keyword">end</span>
-0650     <span class="keyword">end</span>
-0651     
-0652     <span class="comment">%The composition should be loaded from InChIs when available</span>
-0653     I=find(~cellfun(@isempty,model.inchis));
-0654     <span class="keyword">for</span> i=1:numel(I)
-0655         S=regexp(model.inchis(I(i)),<span class="string">'/'</span>,<span class="string">'split'</span>);
-0656         S=S{1};
-0657         <span class="keyword">if</span> numel(S)&gt;=2
-0658             <span class="comment">%Don't copy if it doesn't look good</span>
-0659             model.metFormulas(I(i))=S(2);
-0660         <span class="keyword">end</span>
-0661     <span class="keyword">end</span>
-0662     
-0663     <span class="comment">%Check that the compartment for each metabolite can be found. Also</span>
-0664     <span class="comment">%convert from id to index</span>
-0665     [I, model.metComps]=ismember(model.metComps,model.comps);
-0666     EM=<span class="string">'The following metabolites have compartment abbreviations which could not be found:'</span>;
-0667     dispEM(EM,true,model.mets(~I));
-0668     
-0669     <span class="comment">%Check that the model.mets vector is unique. The problem is that the</span>
-0670     <span class="comment">%checkModelStruct cannot check for that since only the metReplacements</span>
-0671     <span class="comment">%(if used) end up in the model structure</span>
-0672     I=false(numel(model.mets),1);
-0673     [J, K]=unique(model.mets);
-0674     <span class="keyword">if</span> numel(J)~=numel(model.mets)
-0675         L=1:numel(model.mets);
-0676         L(K)=[];
-0677         I(L)=true;
-0678     <span class="keyword">end</span>
-0679     EM=<span class="string">'The following metabolites are duplicates:'</span>;
-0680     dispEM(EM,~ignoreErrors,model.mets(I));
-0681     
-0682     <span class="comment">%Check that there are no metabolite IDs which are numbers. This would</span>
-0683     <span class="comment">%give errors when parsing the equations</span>
-0684     I=cellfun(@str2double,model.mets);
-0685     EM=<span class="string">'The following metabolites have names which cannot be distinguished from numbers:'</span>;
-0686     dispEM(EM,~ignoreErrors,model.mets(~isnan(I)));
-0687     I=cellfun(@str2double,metReplacement);
-0688     EM=<span class="string">'The following metabolites have names which cannot be distinguished from numbers:'</span>;
-0689     dispEM(EM,~ignoreErrors,metReplacement(~isnan(I)));
-0690     
-0691     <span class="comment">%Replace the metabolite IDs for those IDs that have a corresponding</span>
-0692     <span class="comment">%replacement metabolite. This is not used for matching, but will be</span>
-0693     <span class="comment">%checked for consistency with SBML naming conventions</span>
-0694     metsForParsing=model.mets; <span class="comment">%This is because the equations are written with this</span>
-0695     I=cellfun(@any,metReplacement);
-0696     model.mets(I)=metReplacement(I);
-0697     
-0698     <span class="comment">%If the metabolite name isn't set, replace it with the metabolite id</span>
-0699     I=~cellfun(@any,model.metNames);
-0700     model.metNames(I)=model.mets(I);
-0701     
-0702     <span class="comment">%Construct the metMiriams structure</span>
-0703     model.metMiriams=<a href="#_sub1" class="code" title="subfunction miriamStruct=parseMiriam(strings,miriamStruct)">parseMiriam</a>(model.metMiriams);
-0704     
-0705     <span class="comment">%Either all metabolites have charge or none of them. Check if it's only</span>
-0706     <span class="comment">%empty and if so return it to []</span>
-0707     <span class="keyword">if</span> ~isempty(model.metCharges)
-0708         <span class="keyword">if</span> all(cellfun(@isempty,model.metCharges))
-0709             model.metCharges=[];
-0710         <span class="keyword">end</span>
-0711     <span class="keyword">end</span>
-0712     <span class="keyword">if</span> ~isempty(model.metCharges)
-0713         model.metCharges=str2double(model.metCharges);
-0714     <span class="keyword">end</span>
-0715 <span class="keyword">end</span>
-0716 
-0717 <span class="comment">%Everything seems fine with the metabolite IDs, compartments, genes, and</span>
-0718 <span class="comment">%reactions</span>
-0719 
-0720 <span class="comment">%Parse the equations</span>
-0721 [model.S, mets, badRxns, model.rev]=constructS(equations,metsForParsing,model.rxns);
-0722 model.rev=model.rev*1; <span class="comment">%Typecast to double</span>
-0723 
-0724 <span class="comment">%Add default constraints</span>
-0725 model.lb(isnan(model.lb))=model.annotation.defaultLB.*model.rev(isnan(model.lb));
-0726 model.ub(isnan(model.ub))=model.annotation.defaultUB;
-0727 
-0728 <span class="comment">%Reorder the S matrix so that it fits with the metabolite list in the</span>
-0729 <span class="comment">%structure</span>
-0730 [~, I]=ismember(mets,metsForParsing);
-0731 model.S=model.S(I,:);
-0732 
-0733 <span class="comment">%Print warnings about the reactions which contain the same metabolite as</span>
-0734 <span class="comment">%both reactants and products</span>
-0735 EM=<span class="string">'The following reactions have metabolites which are present more than once. Only the net reactions will be exported:'</span>;
-0736 dispEM(EM,false,model.rxns(badRxns));
-0737 
-0738 model.b=zeros(numel(model.mets),1);
-0739 
-0740 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
-0741 [grRules,rxnGeneMat] = standardizeGrRules(model,true);
-0742 model.grRules = grRules;
-0743 model.rxnGeneMat = rxnGeneMat;
-0744 
-0745 <span class="comment">%Remove unused fields</span>
-0746 <span class="keyword">if</span> all(cellfun(@isempty,model.compOutside))
-0747     model=rmfield(model,<span class="string">'compOutside'</span>);
-0748 <span class="keyword">end</span>
-0749 <span class="keyword">if</span> all(cellfun(@isempty,model.compMiriams))
-0750     model=rmfield(model,<span class="string">'compMiriams'</span>);
-0751 <span class="keyword">end</span>
-0752 <span class="keyword">if</span> all(cellfun(@isempty,model.rxnNames))
-0753     model=rmfield(model,<span class="string">'rxnNames'</span>);
-0754 <span class="keyword">end</span>
-0755 <span class="keyword">if</span> isempty(model.rxnComps)
-0756     model=rmfield(model,<span class="string">'rxnComps'</span>);
-0757 <span class="keyword">end</span>
-0758 <span class="keyword">if</span> all(cellfun(@isempty,model.grRules))
-0759     model=rmfield(model,<span class="string">'grRules'</span>);
-0760 <span class="keyword">end</span>
-0761 <span class="keyword">if</span> isfield(model,<span class="string">'rxnGeneMat'</span>) &amp;&amp; isempty(model.rxnGeneMat)
-0762     model=rmfield(model,<span class="string">'rxnGeneMat'</span>);
-0763 <span class="keyword">end</span>
-0764 <span class="keyword">if</span> all(cellfun(@isempty,model.subSystems))
-0765     model=rmfield(model,<span class="string">'subSystems'</span>);
-0766 <span class="keyword">end</span>
-0767 <span class="keyword">if</span> all(cellfun(@isempty,model.eccodes))
-0768     model=rmfield(model,<span class="string">'eccodes'</span>);
-0769 <span class="keyword">end</span>
-0770 <span class="keyword">if</span> all(cellfun(@isempty,model.rxnMiriams))
-0771     model=rmfield(model,<span class="string">'rxnMiriams'</span>);
-0772 <span class="keyword">end</span>
-0773 <span class="keyword">if</span> all(cellfun(@isempty,model.rxnNotes))
-0774     model=rmfield(model,<span class="string">'rxnNotes'</span>);
-0775 <span class="keyword">end</span>
-0776 <span class="keyword">if</span> all(cellfun(@isempty,model.rxnReferences))
-0777     model=rmfield(model,<span class="string">'rxnReferences'</span>);
-0778 <span class="keyword">end</span>
-0779 <span class="keyword">if</span> isempty(model.rxnConfidenceScores)
-0780     model=rmfield(model,<span class="string">'rxnConfidenceScores'</span>);
-0781 <span class="keyword">end</span>
-0782 <span class="keyword">if</span> isempty(model.genes)
-0783     model=rmfield(model,<span class="string">'genes'</span>);
-0784 <span class="keyword">end</span>
-0785 <span class="keyword">if</span> isempty(model.geneComps)
-0786     model=rmfield(model,<span class="string">'geneComps'</span>);
-0787 <span class="keyword">end</span>
-0788 <span class="keyword">if</span> isempty(model.geneMiriams)
-0789     model=rmfield(model,<span class="string">'geneMiriams'</span>);
-0790 <span class="keyword">end</span>
-0791 <span class="keyword">if</span> all(cellfun(@isempty,model.geneShortNames))
-0792     model=rmfield(model,<span class="string">'geneShortNames'</span>);
-0793 <span class="keyword">end</span>
-0794 <span class="keyword">if</span> all(cellfun(@isempty,model.inchis))
-0795     model=rmfield(model,<span class="string">'inchis'</span>);
-0796 <span class="keyword">end</span>
-0797 <span class="keyword">if</span> all(cellfun(@isempty,model.metFormulas))
-0798     model=rmfield(model,<span class="string">'metFormulas'</span>);
-0799 <span class="keyword">end</span>
-0800 <span class="keyword">if</span> all(cellfun(@isempty,model.metMiriams))
-0801     model=rmfield(model,<span class="string">'metMiriams'</span>);
-0802 <span class="keyword">end</span>
-0803 <span class="keyword">if</span> isempty(model.metCharges)
-0804     model=rmfield(model,<span class="string">'metCharges'</span>);
-0805 <span class="keyword">end</span>
-0806 
-0807 <span class="comment">%The model structure has now been reconstructed but it can still contain</span>
-0808 <span class="comment">%many types of errors. The checkModelConsistency function is used to make</span>
-0809 <span class="comment">%sure that naming and mapping of stuff looks good</span>
-0810 checkModelStruct(model,~ignoreErrors);
-0811 
-0812 <span class="keyword">if</span> removeExcMets==true
-0813     model=simplifyModel(model);
-0814 <span class="keyword">end</span>
+0153     raw(1,:)=strrep(raw(1,:),<span class="string">'MODELNAME'</span>,<span class="string">'NAME'</span>);
+0154     raw(1,:)=strrep(raw(1,:),<span class="string">'DESCRIPTION'</span>,<span class="string">'NAME'</span>);
+0155     
+0156     <span class="comment">%Loop through the labels</span>
+0157     <span class="keyword">for</span> i=1:numel(raw(1,:))
+0158         <span class="keyword">switch</span> raw{1,i}
+0159             <span class="keyword">case</span> <span class="string">'ID'</span>
+0160                 <span class="keyword">if</span> any(raw{2,i})
+0161                     model.id=<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>(raw{2,i}); <span class="comment">%Should be string already</span>
+0162                 <span class="keyword">else</span>
+0163                     EM=<span class="string">'No model ID supplied'</span>;
+0164                     dispEM(EM);
+0165                 <span class="keyword">end</span>
+0166             <span class="keyword">case</span> <span class="string">'NAME'</span>
+0167                 <span class="keyword">if</span> any(raw{2,i})
+0168                     model.name=<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>(raw{2,i}); <span class="comment">%Should be string already</span>
+0169                 <span class="keyword">else</span>
+0170                     EM=<span class="string">'No model name supplied'</span>;
+0171                     dispEM(EM);
+0172                 <span class="keyword">end</span>
+0173             <span class="keyword">case</span> <span class="string">'DEFAULT LOWER'</span>
+0174                 <span class="keyword">if</span> ~isempty(raw{2,i})
+0175                     <span class="keyword">try</span>
+0176                         model.annotation.defaultLB=<a href="#_sub3" class="code" title="subfunction y=toDouble(x,default)">toDouble</a>(raw{2,i},NaN);
+0177                     <span class="keyword">catch</span>
+0178                         EM=<span class="string">'DEFAULT LOWER must be numeric'</span>;
+0179                         dispEM(EM);
+0180                     <span class="keyword">end</span>
+0181                 <span class="keyword">else</span>
+0182                     <span class="keyword">if</span> printWarnings==true
+0183                         fprintf(<span class="string">'NOTE: DEFAULT LOWER not supplied. Uses -1000\n'</span>);
+0184                     <span class="keyword">end</span>
+0185                     model.annotation.defaultLB=-1000;
+0186                 <span class="keyword">end</span>
+0187             <span class="keyword">case</span> <span class="string">'DEFAULT UPPER'</span>
+0188                 <span class="keyword">if</span> ~isempty(raw{2,i})
+0189                     <span class="keyword">try</span>
+0190                         model.annotation.defaultUB=<a href="#_sub3" class="code" title="subfunction y=toDouble(x,default)">toDouble</a>(raw{2,i},NaN);
+0191                     <span class="keyword">catch</span>
+0192                         EM=<span class="string">'DEFAULT UPPER must be numeric'</span>;
+0193                         dispEM(EM);
+0194                     <span class="keyword">end</span>
+0195                 <span class="keyword">else</span>
+0196                     <span class="keyword">if</span> printWarnings==true
+0197                         fprintf(<span class="string">'NOTE: DEFAULT UPPER not supplied. Uses 1000\n'</span>);
+0198                     <span class="keyword">end</span>
+0199                     model.annotation.defaultUB=1000;
+0200                 <span class="keyword">end</span>
+0201             <span class="keyword">case</span> <span class="string">'TAXONOMY'</span>
+0202                 <span class="keyword">if</span> any(raw{2,i})
+0203                     model.annotation.taxonomy=<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>(raw{2,i}); <span class="comment">%Should be string already</span>
+0204                 <span class="keyword">end</span>
+0205             <span class="keyword">case</span> <span class="string">'CONTACT GIVEN NAME'</span>
+0206                 <span class="keyword">if</span> any(raw{2,i})
+0207                     model.annotation.givenName=<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>(raw{2,i}); <span class="comment">%Should be string already</span>
+0208                 <span class="keyword">end</span>
+0209             <span class="keyword">case</span> <span class="string">'CONTACT FAMILY NAME'</span>
+0210                 <span class="keyword">if</span> any(raw{2,i})
+0211                     model.annotation.familyName=<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>(raw{2,i}); <span class="comment">%Should be string already</span>
+0212                 <span class="keyword">end</span>
+0213             <span class="keyword">case</span> <span class="string">'CONTACT EMAIL'</span>
+0214                 <span class="keyword">if</span> any(raw{2,i})
+0215                     model.annotation.email=<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>(raw{2,i}); <span class="comment">%Should be string already</span>
+0216                 <span class="keyword">end</span>
+0217             <span class="keyword">case</span> <span class="string">'ORGANIZATION'</span>
+0218                 <span class="keyword">if</span> any(raw{2,i})
+0219                     model.annotation.organization=<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>(raw{2,i}); <span class="comment">%Should be string already</span>
+0220                 <span class="keyword">end</span>
+0221             <span class="keyword">case</span> <span class="string">'NOTES'</span>
+0222                 <span class="keyword">if</span> any(raw{2,i})
+0223                     model.annotation.note=<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>(raw{2,i}); <span class="comment">%Should be string already</span>
+0224                 <span class="keyword">end</span>
+0225         <span class="keyword">end</span>
+0226     <span class="keyword">end</span>
+0227 <span class="keyword">end</span>
+0228 
+0229 <span class="comment">%Get compartment information</span>
+0230 [raw, flag]=<a href="loadSheet.html" class="code" title="function [raw, flag]=loadSheet(workbook, sheet)">loadSheet</a>(workbook,<span class="string">'COMPS'</span>);
+0231 
+0232 <span class="keyword">if</span> flag&lt;0
+0233     <span class="keyword">if</span> printWarnings==true
+0234         EM=<span class="string">'Could not load the COMPS sheet. All elements will be assigned to a compartment &quot;s&quot; for &quot;System&quot;'</span>;
+0235         dispEM(EM,false);
+0236     <span class="keyword">end</span>
+0237     model.comps={<span class="string">'s'</span>};
+0238     model.compNames={<span class="string">'System'</span>};
+0239 <span class="keyword">else</span>
+0240     raw=<a href="cleanSheet.html" class="code" title="function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,removeNoCap,removeEmptyRows)">cleanSheet</a>(raw);
+0241     
+0242     <span class="comment">%Map to new captions</span>
+0243     raw(1,:)=upper(raw(1,:));
+0244     raw(1,:)=strrep(raw(1,:),<span class="string">'COMPABBREV'</span>,<span class="string">'ABBREVIATION'</span>);
+0245     raw(1,:)=strrep(raw(1,:),<span class="string">'COMPNAME'</span>,<span class="string">'NAME'</span>);
+0246         
+0247     <span class="comment">%Loop through the labels</span>
+0248     <span class="keyword">for</span> i=1:numel(raw(1,:))
+0249         <span class="keyword">switch</span> raw{1,i}
+0250             <span class="keyword">case</span> <span class="string">'ABBREVIATION'</span>
+0251                 model.comps=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0252             <span class="keyword">case</span> <span class="string">'NAME'</span>
+0253                 model.compNames=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0254             <span class="keyword">case</span> <span class="string">'INSIDE'</span>
+0255                 model.compOutside=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0256             <span class="keyword">case</span> <span class="string">'MIRIAM'</span>
+0257                 model.compMiriams=raw(2:<span class="keyword">end</span>,i);
+0258         <span class="keyword">end</span>
+0259     <span class="keyword">end</span>
+0260     
+0261     <span class="comment">%Check that necessary fields are loaded</span>
+0262     <span class="keyword">if</span> isempty(model.comps)
+0263         EM=<span class="string">'There must be a column named ABBREVIATION in the COMPS sheet'</span>;
+0264         dispEM(EM);
+0265     <span class="keyword">end</span>
+0266     <span class="keyword">if</span> isempty(model.compNames)
+0267         model.compNames=model.comps;
+0268         <span class="keyword">if</span> printWarnings==true
+0269             EM=<span class="string">'There is no column named NAME in the COMPS sheet. ABBREVIATION will be used as name'</span>;
+0270             dispEM(EM,false);
+0271         <span class="keyword">end</span>
+0272     <span class="keyword">end</span>
+0273     model.compMiriams=<a href="#_sub1" class="code" title="subfunction miriamStruct=parseMiriam(strings,miriamStruct)">parseMiriam</a>(model.compMiriams);
+0274 <span class="keyword">end</span>
+0275 
+0276 <span class="comment">%Get all the genes and info about them</span>
+0277 [raw, flag]=<a href="loadSheet.html" class="code" title="function [raw, flag]=loadSheet(workbook, sheet)">loadSheet</a>(workbook,<span class="string">'GENES'</span>);
+0278 
+0279 <span class="keyword">if</span> flag&lt;0
+0280     <span class="keyword">if</span> printWarnings==true
+0281         EM=<span class="string">'There is no spreadsheet named GENES'</span>;
+0282         dispEM(EM,false)
+0283     <span class="keyword">end</span>
+0284 <span class="keyword">else</span>
+0285     raw=<a href="cleanSheet.html" class="code" title="function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,removeNoCap,removeEmptyRows)">cleanSheet</a>(raw);
+0286     
+0287     <span class="comment">%Map to new captions</span>
+0288     raw(1,:)=upper(raw(1,:));
+0289     raw(1,:)=strrep(raw(1,:),<span class="string">'GENE NAME'</span>,<span class="string">'NAME'</span>);
+0290         
+0291     <span class="comment">%Loop through the labels</span>
+0292     foundGenes=false;
+0293     <span class="keyword">for</span> i=1:numel(raw(1,:))
+0294         <span class="keyword">switch</span> raw{1,i}
+0295             <span class="keyword">case</span> <span class="string">'NAME'</span>
+0296                 model.genes=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0297                 foundGenes=true;
+0298             <span class="keyword">case</span> <span class="string">'MIRIAM'</span>
+0299                 model.geneMiriams=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0300             <span class="keyword">case</span> <span class="string">'SHORT NAME'</span>
+0301                 model.geneShortNames=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0302             <span class="keyword">case</span> <span class="string">'COMPARTMENT'</span>
+0303                 model.geneComps=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0304         <span class="keyword">end</span>
+0305     <span class="keyword">end</span>
+0306     
+0307     <span class="keyword">if</span> foundGenes==false
+0308         EM=<span class="string">'There must be a column named NAME in the GENES sheet'</span>;
+0309         dispEM(EM);
+0310     <span class="keyword">end</span>
+0311     
+0312     <span class="comment">%Its ok if all of them are empty</span>
+0313     <span class="keyword">if</span> all(cellfun(@isempty,model.geneComps))
+0314         model.geneComps=[];
+0315     <span class="keyword">end</span>
+0316     
+0317     <span class="comment">%Check that geneName contain only strings and no empty strings</span>
+0318     <span class="keyword">if</span> ~iscellstr(model.genes)
+0319         EM=<span class="string">'All gene names have to be strings'</span>;
+0320         dispEM(EM);
+0321     <span class="keyword">else</span>
+0322         <span class="keyword">if</span> any(strcmp(<span class="string">''</span>,model.genes))
+0323             EM=<span class="string">'There can be no empty strings in gene names'</span>;
+0324             dispEM(EM);
+0325         <span class="keyword">end</span>
+0326     <span class="keyword">end</span>
+0327     
+0328     <span class="comment">%Check that geneComp contains only strings and no empty string</span>
+0329     <span class="keyword">if</span> ~isempty(model.geneComps)
+0330         <span class="keyword">if</span> ~iscellstr(model.geneComps)
+0331             EM=<span class="string">'All gene compartments have to be strings'</span>;
+0332             dispEM(EM);
+0333         <span class="keyword">else</span>
+0334             <span class="keyword">if</span> any(strcmp(<span class="string">''</span>,model.geneComps))
+0335                 EM=<span class="string">'There can be no empty strings in gene compartments'</span>;
+0336                 dispEM(EM);
+0337             <span class="keyword">end</span>
+0338         <span class="keyword">end</span>
+0339         [I, model.geneComps]=ismember(model.geneComps,model.comps);
+0340         EM=<span class="string">'The following genes have compartment abbreviations which could not be found:'</span>;
+0341         dispEM(EM,true,model.genes(~I));
+0342     <span class="keyword">end</span>
+0343 <span class="keyword">end</span>
+0344 
+0345 model.geneMiriams=<a href="#_sub1" class="code" title="subfunction miriamStruct=parseMiriam(strings,miriamStruct)">parseMiriam</a>(model.geneMiriams);
+0346 
+0347 <span class="comment">%Loads the reaction data</span>
+0348 [raw, flag]=<a href="loadSheet.html" class="code" title="function [raw, flag]=loadSheet(workbook, sheet)">loadSheet</a>(workbook,<span class="string">'RXNS'</span>);
+0349 
+0350 <span class="keyword">if</span> flag&lt;0
+0351     EM=<span class="string">'Could not load the RXNS sheet'</span>;
+0352     dispEM(EM);
+0353 <span class="keyword">end</span>
+0354 
+0355 raw=<a href="cleanSheet.html" class="code" title="function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,removeNoCap,removeEmptyRows)">cleanSheet</a>(raw);
+0356 
+0357 <span class="comment">%Map to new captions</span>
+0358 raw(1,:)=upper(raw(1,:));
+0359 raw(1,:)=strrep(raw(1,:),<span class="string">'RXNID'</span>,<span class="string">'ID'</span>);
+0360 
+0361 <span class="comment">%Loop through the labels</span>
+0362 equations={};
+0363 reactionReplacement={};
+0364 <span class="keyword">for</span> i=1:numel(raw(1,:))
+0365     <span class="keyword">switch</span> raw{1,i}
+0366         <span class="keyword">case</span> <span class="string">'ID'</span>
+0367             model.rxns=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0368         <span class="keyword">case</span> <span class="string">'NAME'</span>
+0369             model.rxnNames=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0370         <span class="keyword">case</span> <span class="string">'EQUATION'</span>
+0371             equations=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0372         <span class="keyword">case</span> <span class="string">'EC-NUMBER'</span>
+0373             model.eccodes=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0374         <span class="keyword">case</span> <span class="string">'GENE ASSOCIATION'</span>
+0375             model.grRules=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0376         <span class="keyword">case</span> <span class="string">'LOWER BOUND'</span>
+0377             <span class="keyword">try</span>
+0378                 model.lb=cellfun(@(x) <a href="#_sub3" class="code" title="subfunction y=toDouble(x,default)">toDouble</a>(x,NaN),raw(2:<span class="keyword">end</span>,i));
+0379             <span class="keyword">catch</span>
+0380                 EM=<span class="string">'The lower bounds must be numerical values'</span>;
+0381                 dispEM(EM);
+0382             <span class="keyword">end</span>
+0383         <span class="keyword">case</span> <span class="string">'UPPER BOUND'</span>
+0384             <span class="keyword">try</span>
+0385                 model.ub=cellfun(@(x) <a href="#_sub3" class="code" title="subfunction y=toDouble(x,default)">toDouble</a>(x,NaN),raw(2:<span class="keyword">end</span>,i));
+0386             <span class="keyword">catch</span>
+0387                 EM=<span class="string">'The upper bounds must be numerical values'</span>;
+0388                 dispEM(EM);
+0389             <span class="keyword">end</span>
+0390         <span class="keyword">case</span> <span class="string">'OBJECTIVE'</span>
+0391             <span class="keyword">try</span>
+0392                 model.c=cellfun(@(x) <a href="#_sub3" class="code" title="subfunction y=toDouble(x,default)">toDouble</a>(x,0),raw(2:<span class="keyword">end</span>,i));
+0393             <span class="keyword">catch</span>
+0394                 EM=<span class="string">'The objective coefficients must be numerical values'</span>;
+0395                 dispEM(EM);
+0396             <span class="keyword">end</span>
+0397         <span class="keyword">case</span> <span class="string">'COMPARTMENT'</span>
+0398             model.rxnComps=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0399         <span class="keyword">case</span> <span class="string">'SUBSYSTEM'</span>
+0400             subsystems=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0401         <span class="keyword">case</span> <span class="string">'REPLACEMENT ID'</span>
+0402             reactionReplacement=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0403         <span class="keyword">case</span> <span class="string">'MIRIAM'</span>
+0404             model.rxnMiriams=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0405         <span class="keyword">case</span> <span class="string">'NOTE'</span>
+0406             model.rxnNotes=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0407         <span class="keyword">case</span> <span class="string">'REFERENCE'</span>
+0408             model.rxnReferences=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0409         <span class="keyword">case</span> <span class="string">'CONFIDENCE SCORE'</span>
+0410             model.rxnConfidenceScores=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0411     <span class="keyword">end</span>
+0412 <span class="keyword">end</span>
+0413 
+0414 <span class="keyword">if</span> ~isempty(model.rxnConfidenceScores)
+0415     model.rxnConfidenceScores=str2double(model.rxnConfidenceScores);
+0416 <span class="keyword">end</span>
+0417 <span class="keyword">for</span> i=1:numel(subsystems)
+0418     model.subSystems{i,1}=cellstr(strsplit(subsystems{i,1},<span class="string">';'</span>));
+0419 <span class="keyword">end</span>
+0420 
+0421 <span class="comment">%Check that all necessary reaction info has been loaded</span>
+0422 <span class="keyword">if</span> isempty(equations)
+0423     EM=<span class="string">'There must be a column named EQUATION in the RXNS sheet'</span>;
+0424     dispEM(EM);
+0425 <span class="keyword">end</span>
+0426 <span class="keyword">if</span> isempty(model.rxns)
+0427     <span class="keyword">if</span> printWarnings==true
+0428         EM=<span class="string">'There is no column named ID in the RXNS sheet. The reactions will be named as &quot;r1&quot;, &quot;r2&quot;...'</span>;
+0429         dispEM(EM,false);
+0430     <span class="keyword">end</span>
+0431     I=num2cell((1:numel(equations))');
+0432     model.rxns=strcat(<span class="string">'r'</span>,cellfun(@num2str,I,<span class="string">'UniformOutput'</span>,false));
+0433 <span class="keyword">end</span>
+0434 
+0435 <span class="comment">%Check if some other stuff is loaded and populate with default values</span>
+0436 <span class="comment">%otherwise</span>
+0437 <span class="keyword">if</span> isempty(model.rxnNames)
+0438     model.rxnNames=cell(numel(model.rxns),1);
+0439     model.rxnNames(:)={<span class="string">''</span>};
+0440     <span class="keyword">if</span> printWarnings==true
+0441         EM=<span class="string">'There is no column named NAME in the RXNS sheet. Empty strings will be used as reaction names'</span>;
+0442         dispEM(EM,false);
+0443     <span class="keyword">end</span>
+0444 <span class="keyword">end</span>
+0445 <span class="keyword">if</span> isempty(model.lb)
+0446     <span class="comment">%This is not set here since the reversibility isn't known yet</span>
+0447     model.lb=nan(numel(model.rxns),1);
+0448     <span class="keyword">if</span> printWarnings==true
+0449         EM=<span class="string">'There is no column named LOWER BOUND in the RXNS sheet. Default bounds will be used'</span>;
+0450         dispEM(EM,false);
+0451     <span class="keyword">end</span>
+0452 <span class="keyword">end</span>
+0453 <span class="keyword">if</span> isempty(model.ub)
+0454     model.ub=nan(numel(model.rxns),1);
+0455     <span class="keyword">if</span> printWarnings==true
+0456         EM=<span class="string">'There is no column named UPPER BOUND in the RXNS sheet. Default bounds will be used'</span>;
+0457         dispEM(EM,false);
+0458     <span class="keyword">end</span>
+0459 <span class="keyword">end</span>
+0460 <span class="keyword">if</span> isempty(model.c)
+0461     model.c=zeros(numel(model.rxns),1);
+0462     <span class="keyword">if</span> printWarnings==true
+0463         EM=<span class="string">'There is no column named OBJECTIVE in the RXNS sheet'</span>;
+0464         dispEM(EM,false);
+0465     <span class="keyword">end</span>
+0466 <span class="keyword">end</span>
+0467 
+0468 <span class="comment">%Either all reactions must have a compartment string or none of them. Check</span>
+0469 <span class="comment">%if it's only empty and if so return it to []</span>
+0470 <span class="keyword">if</span> ~isempty(model.rxnComps)
+0471     <span class="keyword">if</span> all(cellfun(@isempty,model.rxnComps))
+0472         model.rxnComps=[];
+0473     <span class="keyword">end</span>
+0474 <span class="keyword">end</span>
+0475 
+0476 <span class="comment">%Construct the rxnMiriams structure</span>
+0477 model.rxnMiriams=<a href="#_sub1" class="code" title="subfunction miriamStruct=parseMiriam(strings,miriamStruct)">parseMiriam</a>(model.rxnMiriams);
+0478 
+0479 <span class="comment">%Replace the reaction IDs for those IDs that have a corresponding</span>
+0480 <span class="comment">%replacement name.</span>
+0481 I=cellfun(@any,reactionReplacement);
+0482 model.rxns(I)=reactionReplacement(I);
+0483 
+0484 <span class="comment">%Check that there are no empty strings in reactionIDs or equations</span>
+0485 <span class="keyword">if</span> any(strcmp(<span class="string">''</span>,model.rxns))
+0486     EM=<span class="string">'There are empty reaction IDs'</span>;
+0487     dispEM(EM);
+0488 <span class="keyword">end</span>
+0489 
+0490 <span class="keyword">if</span> any(strcmp(<span class="string">''</span>,equations))
+0491     EM=<span class="string">'There are empty equations'</span>;
+0492     dispEM(EM);
+0493 <span class="keyword">end</span>
+0494 
+0495 <span class="keyword">if</span> ~isempty(model.rxnComps)
+0496     <span class="keyword">if</span> any(strcmp(<span class="string">''</span>,model.rxnComps))
+0497         EM=<span class="string">'Either all reactions must have an associated compartment string or none of them'</span>;
+0498         dispEM(EM);
+0499     <span class="keyword">end</span>
+0500 <span class="keyword">end</span>
+0501 
+0502 <span class="keyword">if</span> ~isempty(model.grRules)
+0503     tempRules=model.grRules;
+0504     <span class="keyword">for</span> i=1:length(model.rxns)
+0505         <span class="comment">%Check that all gene associations have a match in the gene list</span>
+0506         <span class="keyword">if</span> ~isempty(model.grRules{i})
+0507             tempRules{i}=regexprep(tempRules{i},<span class="string">' and | or '</span>,<span class="string">'&gt;'</span>); <span class="comment">%New format: Genes are separated 'and' and 'or' strings with parentheses</span>
+0508             tempRules{i}=regexprep(tempRules{i},<span class="string">'('</span>,<span class="string">''</span>); <span class="comment">%New format: Genes are separated 'and' and 'or' strings with parentheses</span>
+0509             tempRules{i}=regexprep(tempRules{i},<span class="string">')'</span>,<span class="string">''</span>); <span class="comment">%New format: Genes are separated 'and' and 'or' strings with parentheses</span>
+0510             indexesNew=strfind(tempRules{i},<span class="string">'&gt;'</span>); <span class="comment">%Old format: Genes are separated by &quot;:&quot; for AND and &quot;;&quot; for OR</span>
+0511             indexes=strfind(tempRules{i},<span class="string">':'</span>); <span class="comment">%Old format: Genes are separated by &quot;:&quot; for AND and &quot;;&quot; for OR</span>
+0512             indexes=unique([indexesNew indexes strfind(tempRules{i},<span class="string">';'</span>)]);
+0513             <span class="keyword">if</span> isempty(indexes)
+0514                 <span class="comment">%See if you have a match</span>
+0515                 I=find(strcmp(tempRules{i},model.genes));
+0516                 <span class="keyword">if</span> isempty(I)
+0517                     EM=[<span class="string">'The gene association in reaction '</span> model.rxns{i} <span class="string">' ('</span> tempRules{i} <span class="string">') is not present in the gene list'</span>];
+0518                     dispEM(EM);
+0519                 <span class="keyword">end</span>
+0520             <span class="keyword">else</span>
+0521                 temp=[0 indexes numel(tempRules{i})+1];
+0522                 <span class="keyword">for</span> j=1:numel(indexes)+1
+0523                     <span class="comment">%The reaction has several associated genes</span>
+0524                     geneName=tempRules{i}(temp(j)+1:temp(j+1)-1);
+0525                     I=find(strcmp(geneName,model.genes));
+0526                     <span class="keyword">if</span> isempty(I)
+0527                         EM=[<span class="string">'The gene association in reaction '</span> model.rxns{i} <span class="string">' ('</span> geneName <span class="string">') is not present in the gene list'</span>];
+0528                         dispEM(EM);
+0529                     <span class="keyword">end</span>
+0530                 <span class="keyword">end</span>
+0531             <span class="keyword">end</span>
+0532             <span class="comment">%In order to adhere to the COBRA standards it should be like</span>
+0533             <span class="comment">%this: -If only one gene then no parentheses -If only &quot;and&quot; or</span>
+0534             <span class="comment">%only &quot;or&quot; there should only be one set of parentheses -If both</span>
+0535             <span class="comment">%&quot;and&quot; and &quot;or&quot;, then split on &quot;or&quot;. This is not complete, but</span>
+0536             <span class="comment">%it's the type of relationship supported by the Excel</span>
+0537             <span class="comment">%formulation</span>
+0538             aSign=strfind(model.grRules{i},<span class="string">':'</span>);
+0539             oSign=strfind(model.grRules{i},<span class="string">';'</span>);
+0540             <span class="keyword">if</span> isempty(aSign) &amp;&amp; isempty(oSign)
+0541                 model.grRules{i}=model.grRules{i};
+0542             <span class="keyword">else</span>
+0543                 <span class="keyword">if</span> isempty(aSign)
+0544                     model.grRules{i}=[<span class="string">'('</span> strrep(model.grRules{i},<span class="string">';'</span>,<span class="string">' or '</span>) <span class="string">')'</span>];
+0545                 <span class="keyword">else</span>
+0546                     <span class="keyword">if</span> isempty(oSign)
+0547                         model.grRules{i}=[<span class="string">'('</span> strrep(model.grRules{i},<span class="string">':'</span>,<span class="string">' and '</span>) <span class="string">')'</span>];
+0548                     <span class="keyword">else</span>
+0549                         model.grRules{i}=[<span class="string">'(('</span> strrep(model.grRules{i},<span class="string">';'</span>,<span class="string">') or ('</span>) <span class="string">'))'</span>];
+0550                         model.grRules{i}=strrep(model.grRules{i},<span class="string">':'</span>,<span class="string">' and '</span>);
+0551                     <span class="keyword">end</span>
+0552                 <span class="keyword">end</span>
+0553             <span class="keyword">end</span>
+0554         <span class="keyword">end</span>
+0555     <span class="keyword">end</span>
+0556 <span class="keyword">end</span>
+0557 
+0558 <span class="comment">%Check that the compartment for each reaction can be found</span>
+0559 <span class="keyword">if</span> ~isempty(model.rxnComps)
+0560     [I, model.rxnComps]=ismember(model.rxnComps,model.comps);
+0561     EM=<span class="string">'The following reactions have compartment abbreviations which could not be found:'</span>;
+0562     dispEM(EM,true,model.rxns(~I));
+0563 <span class="keyword">end</span>
+0564 
+0565 <span class="comment">%Get all the metabolites and info about them</span>
+0566 [raw, flag]=<a href="loadSheet.html" class="code" title="function [raw, flag]=loadSheet(workbook, sheet)">loadSheet</a>(workbook,<span class="string">'METS'</span>);
+0567 
+0568 <span class="keyword">if</span> flag&lt;0
+0569     <span class="keyword">if</span> printWarnings==true
+0570         EM=<span class="string">'There is no spreadsheet named METS. The metabolites will be named &quot;m1&quot;, &quot;m2&quot;... and assigned to the first compartment'</span>;
+0571         dispEM(EM,false);
+0572     <span class="keyword">end</span>
+0573     <span class="comment">%Parse the equations to find out how many metabolites there are</span>
+0574     metsForParsing=parseRxnEqu(equations);
+0575     I=num2cell((1:numel(metsForParsing))');
+0576     model.mets=strcat(<span class="string">'m'</span>,cellfun(@num2str,I,<span class="string">'UniformOutput'</span>,false));
+0577     model.metComps=ones(numel(model.mets),1);
+0578     model.unconstrained=zeros(numel(model.mets),1);
+0579     model.metNames=metsForParsing;
+0580 <span class="keyword">else</span>
+0581     raw=<a href="cleanSheet.html" class="code" title="function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,removeNoCap,removeEmptyRows)">cleanSheet</a>(raw);
+0582     
+0583     <span class="comment">%Map to new captions</span>
+0584     raw(1,:)=upper(raw(1,:));
+0585     raw(1,:)=strrep(raw(1,:),<span class="string">'METID'</span>,<span class="string">'ID'</span>);
+0586     raw(1,:)=strrep(raw(1,:),<span class="string">'METNAME'</span>,<span class="string">'NAME'</span>);
+0587     
+0588     <span class="comment">%Loop through the labels</span>
+0589     metReplacement={};
+0590     <span class="keyword">for</span> i=1:numel(raw(1,:))
+0591         <span class="keyword">switch</span> raw{1,i}
+0592             <span class="keyword">case</span> <span class="string">'ID'</span>
+0593                 model.mets=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0594             <span class="keyword">case</span> <span class="string">'NAME'</span>
+0595                 model.metNames=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0596             <span class="keyword">case</span> <span class="string">'UNCONSTRAINED'</span>
+0597                 model.unconstrained=cellfun(@<a href="#_sub4" class="code" title="subfunction y=boolToDouble(x)">boolToDouble</a>,raw(2:<span class="keyword">end</span>,i));
+0598                 <span class="comment">%NaN is returned if the values couldn't be parsed</span>
+0599                 EM=<span class="string">'The UNCONSTRAINED property for the following metabolites must be &quot;true&quot;/&quot;false&quot;, 1/0, TRUE/FALSE or not set:'</span>;
+0600                 dispEM(EM,true,model.mets(isnan(model.unconstrained)));
+0601             <span class="keyword">case</span> <span class="string">'MIRIAM'</span>
+0602                 model.metMiriams=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0603             <span class="keyword">case</span> <span class="string">'COMPOSITION'</span>
+0604                 model.metFormulas=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0605             <span class="keyword">case</span> <span class="string">'INCHI'</span>
+0606                 model.inchis=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0607             <span class="keyword">case</span> <span class="string">'COMPARTMENT'</span>
+0608                 model.metComps=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0609                 
+0610                 <span class="comment">%Check that all metabolites have compartments defined</span>
+0611                 <span class="keyword">if</span> any(strcmp(<span class="string">''</span>,model.metComps))
+0612                     EM=<span class="string">'All metabolites must have an associated compartment string'</span>;
+0613                     dispEM(EM);
+0614                 <span class="keyword">end</span>
+0615             <span class="keyword">case</span> <span class="string">'REPLACEMENT ID'</span>
+0616                 metReplacement=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0617             <span class="keyword">case</span> <span class="string">'CHARGE'</span>
+0618                 model.metCharges=cellfun(@<a href="#_sub2" class="code" title="subfunction y=toStr(x)">toStr</a>,raw(2:<span class="keyword">end</span>,i),<span class="string">'UniformOutput'</span>,false);
+0619         <span class="keyword">end</span>
+0620     <span class="keyword">end</span>
+0621     
+0622     <span class="comment">%Check that necessary fields are loaded (METID)</span>
+0623     <span class="keyword">if</span> isempty(model.mets)
+0624         EM=<span class="string">'There must be a column named ID in the METS sheet'</span>;
+0625         dispEM(EM);
+0626     <span class="keyword">end</span>
+0627     
+0628     <span class="comment">%Check that some other stuff is loaded and use default values otherwise</span>
+0629     <span class="keyword">if</span> isempty(model.metNames)
+0630         model.metNames=cell(numel(model.mets),1);
+0631         <span class="keyword">if</span> printWarnings==true
+0632             EM=<span class="string">'There is no column named NAME in the METS sheet. ID will be used as name'</span>;
+0633             dispEM(EM,false);
+0634         <span class="keyword">end</span>
+0635     <span class="keyword">end</span>
+0636     <span class="keyword">if</span> isempty(model.unconstrained)
+0637         model.unconstrained=zeros(numel(model.mets),1);
+0638         <span class="keyword">if</span> printWarnings==true
+0639             EM=<span class="string">'There is no column named UNCONSTRAINED in the METS sheet. All metabolites will be constrained'</span>;
+0640             dispEM(EM,false);
+0641         <span class="keyword">end</span>
+0642     <span class="keyword">end</span>
+0643     
+0644     <span class="keyword">if</span> isempty(model.metComps)
+0645         model.metComps=cell(numel(model.mets),1);
+0646         model.metComps(:)=model.comps(1);
+0647         <span class="keyword">if</span> printWarnings==true
+0648             EM=<span class="string">'There is no column named COMPARTMENT in the METS sheet. All metabolites will be assigned to the first compartment in COMPS. Note that RAVEN makes extensive use of metabolite names and compartments. Some features will therefore not function correctly if metabolite compartments are not correctly assigned'</span>;
+0649             dispEM(EM,false);
+0650         <span class="keyword">end</span>
+0651     <span class="keyword">end</span>
+0652     
+0653     <span class="comment">%The composition should be loaded from InChIs when available</span>
+0654     I=find(~cellfun(@isempty,model.inchis));
+0655     <span class="keyword">for</span> i=1:numel(I)
+0656         S=regexp(model.inchis(I(i)),<span class="string">'/'</span>,<span class="string">'split'</span>);
+0657         S=S{1};
+0658         <span class="keyword">if</span> numel(S)&gt;=2
+0659             <span class="comment">%Don't copy if it doesn't look good</span>
+0660             model.metFormulas(I(i))=S(2);
+0661         <span class="keyword">end</span>
+0662     <span class="keyword">end</span>
+0663     
+0664     <span class="comment">%Check that the compartment for each metabolite can be found. Also</span>
+0665     <span class="comment">%convert from id to index</span>
+0666     [I, model.metComps]=ismember(model.metComps,model.comps);
+0667     EM=<span class="string">'The following metabolites have compartment abbreviations which could not be found:'</span>;
+0668     dispEM(EM,true,model.mets(~I));
+0669     
+0670     <span class="comment">%Check that the model.mets vector is unique. The problem is that the</span>
+0671     <span class="comment">%checkModelStruct cannot check for that since only the metReplacements</span>
+0672     <span class="comment">%(if used) end up in the model structure</span>
+0673     I=false(numel(model.mets),1);
+0674     [J, K]=unique(model.mets);
+0675     <span class="keyword">if</span> numel(J)~=numel(model.mets)
+0676         L=1:numel(model.mets);
+0677         L(K)=[];
+0678         I(L)=true;
+0679     <span class="keyword">end</span>
+0680     EM=<span class="string">'The following metabolites are duplicates:'</span>;
+0681     dispEM(EM,~ignoreErrors,model.mets(I));
+0682     
+0683     <span class="comment">%Check that there are no metabolite IDs which are numbers. This would</span>
+0684     <span class="comment">%give errors when parsing the equations</span>
+0685     I=cellfun(@str2double,model.mets);
+0686     EM=<span class="string">'The following metabolites have names which cannot be distinguished from numbers:'</span>;
+0687     dispEM(EM,~ignoreErrors,model.mets(~isnan(I)));
+0688     I=cellfun(@str2double,metReplacement);
+0689     EM=<span class="string">'The following metabolites have names which cannot be distinguished from numbers:'</span>;
+0690     dispEM(EM,~ignoreErrors,metReplacement(~isnan(I)));
+0691     
+0692     <span class="comment">%Replace the metabolite IDs for those IDs that have a corresponding</span>
+0693     <span class="comment">%replacement metabolite. This is not used for matching, but will be</span>
+0694     <span class="comment">%checked for consistency with SBML naming conventions</span>
+0695     metsForParsing=model.mets; <span class="comment">%This is because the equations are written with this</span>
+0696     I=cellfun(@any,metReplacement);
+0697     model.mets(I)=metReplacement(I);
+0698     
+0699     <span class="comment">%If the metabolite name isn't set, replace it with the metabolite id</span>
+0700     I=~cellfun(@any,model.metNames);
+0701     model.metNames(I)=model.mets(I);
+0702     
+0703     <span class="comment">%Construct the metMiriams structure</span>
+0704     model.metMiriams=<a href="#_sub1" class="code" title="subfunction miriamStruct=parseMiriam(strings,miriamStruct)">parseMiriam</a>(model.metMiriams);
+0705     
+0706     <span class="comment">%Either all metabolites have charge or none of them. Check if it's only</span>
+0707     <span class="comment">%empty and if so return it to []</span>
+0708     <span class="keyword">if</span> ~isempty(model.metCharges)
+0709         <span class="keyword">if</span> all(cellfun(@isempty,model.metCharges))
+0710             model.metCharges=[];
+0711         <span class="keyword">end</span>
+0712     <span class="keyword">end</span>
+0713     <span class="keyword">if</span> ~isempty(model.metCharges)
+0714         model.metCharges=str2double(model.metCharges);
+0715     <span class="keyword">end</span>
+0716 <span class="keyword">end</span>
+0717 
+0718 <span class="comment">%Everything seems fine with the metabolite IDs, compartments, genes, and</span>
+0719 <span class="comment">%reactions</span>
+0720 
+0721 <span class="comment">%Parse the equations</span>
+0722 [model.S, mets, badRxns, model.rev]=constructS(equations,metsForParsing,model.rxns);
+0723 model.rev=model.rev*1; <span class="comment">%Typecast to double</span>
+0724 
+0725 <span class="comment">%Add default constraints</span>
+0726 model.lb(isnan(model.lb))=model.annotation.defaultLB.*model.rev(isnan(model.lb));
+0727 model.ub(isnan(model.ub))=model.annotation.defaultUB;
+0728 
+0729 <span class="comment">%Reorder the S matrix so that it fits with the metabolite list in the</span>
+0730 <span class="comment">%structure</span>
+0731 [~, I]=ismember(mets,metsForParsing);
+0732 model.S=model.S(I,:);
+0733 
+0734 <span class="comment">%Print warnings about the reactions which contain the same metabolite as</span>
+0735 <span class="comment">%both reactants and products</span>
+0736 EM=<span class="string">'The following reactions have metabolites which are present more than once. Only the net reactions will be exported:'</span>;
+0737 dispEM(EM,false,model.rxns(badRxns));
+0738 
+0739 model.b=zeros(numel(model.mets),1);
+0740 
+0741 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
+0742 [grRules,rxnGeneMat] = standardizeGrRules(model,true);
+0743 model.grRules = grRules;
+0744 model.rxnGeneMat = rxnGeneMat;
+0745 
+0746 <span class="comment">%Remove unused fields</span>
+0747 <span class="keyword">if</span> all(cellfun(@isempty,model.compOutside))
+0748     model=rmfield(model,<span class="string">'compOutside'</span>);
+0749 <span class="keyword">end</span>
+0750 <span class="keyword">if</span> all(cellfun(@isempty,model.compMiriams))
+0751     model=rmfield(model,<span class="string">'compMiriams'</span>);
+0752 <span class="keyword">end</span>
+0753 <span class="keyword">if</span> all(cellfun(@isempty,model.rxnNames))
+0754     model=rmfield(model,<span class="string">'rxnNames'</span>);
+0755 <span class="keyword">end</span>
+0756 <span class="keyword">if</span> isempty(model.rxnComps)
+0757     model=rmfield(model,<span class="string">'rxnComps'</span>);
+0758 <span class="keyword">end</span>
+0759 <span class="keyword">if</span> all(cellfun(@isempty,model.grRules))
+0760     model=rmfield(model,<span class="string">'grRules'</span>);
+0761 <span class="keyword">end</span>
+0762 <span class="keyword">if</span> isfield(model,<span class="string">'rxnGeneMat'</span>) &amp;&amp; isempty(model.rxnGeneMat)
+0763     model=rmfield(model,<span class="string">'rxnGeneMat'</span>);
+0764 <span class="keyword">end</span>
+0765 <span class="keyword">if</span> all(cellfun(@isempty,model.subSystems))
+0766     model=rmfield(model,<span class="string">'subSystems'</span>);
+0767 <span class="keyword">end</span>
+0768 <span class="keyword">if</span> all(cellfun(@isempty,model.eccodes))
+0769     model=rmfield(model,<span class="string">'eccodes'</span>);
+0770 <span class="keyword">end</span>
+0771 <span class="keyword">if</span> all(cellfun(@isempty,model.rxnMiriams))
+0772     model=rmfield(model,<span class="string">'rxnMiriams'</span>);
+0773 <span class="keyword">end</span>
+0774 <span class="keyword">if</span> all(cellfun(@isempty,model.rxnNotes))
+0775     model=rmfield(model,<span class="string">'rxnNotes'</span>);
+0776 <span class="keyword">end</span>
+0777 <span class="keyword">if</span> all(cellfun(@isempty,model.rxnReferences))
+0778     model=rmfield(model,<span class="string">'rxnReferences'</span>);
+0779 <span class="keyword">end</span>
+0780 <span class="keyword">if</span> isempty(model.rxnConfidenceScores)
+0781     model=rmfield(model,<span class="string">'rxnConfidenceScores'</span>);
+0782 <span class="keyword">end</span>
+0783 <span class="keyword">if</span> isempty(model.genes)
+0784     model=rmfield(model,<span class="string">'genes'</span>);
+0785 <span class="keyword">end</span>
+0786 <span class="keyword">if</span> isempty(model.geneComps)
+0787     model=rmfield(model,<span class="string">'geneComps'</span>);
+0788 <span class="keyword">end</span>
+0789 <span class="keyword">if</span> isempty(model.geneMiriams)
+0790     model=rmfield(model,<span class="string">'geneMiriams'</span>);
+0791 <span class="keyword">end</span>
+0792 <span class="keyword">if</span> all(cellfun(@isempty,model.geneShortNames))
+0793     model=rmfield(model,<span class="string">'geneShortNames'</span>);
+0794 <span class="keyword">end</span>
+0795 <span class="keyword">if</span> all(cellfun(@isempty,model.inchis))
+0796     model=rmfield(model,<span class="string">'inchis'</span>);
+0797 <span class="keyword">end</span>
+0798 <span class="keyword">if</span> all(cellfun(@isempty,model.metFormulas))
+0799     model=rmfield(model,<span class="string">'metFormulas'</span>);
+0800 <span class="keyword">end</span>
+0801 <span class="keyword">if</span> all(cellfun(@isempty,model.metMiriams))
+0802     model=rmfield(model,<span class="string">'metMiriams'</span>);
+0803 <span class="keyword">end</span>
+0804 <span class="keyword">if</span> isempty(model.metCharges)
+0805     model=rmfield(model,<span class="string">'metCharges'</span>);
+0806 <span class="keyword">end</span>
+0807 
+0808 <span class="comment">%The model structure has now been reconstructed but it can still contain</span>
+0809 <span class="comment">%many types of errors. The checkModelConsistency function is used to make</span>
+0810 <span class="comment">%sure that naming and mapping of stuff looks good</span>
+0811 checkModelStruct(model,~ignoreErrors);
+0812 
+0813 <span class="keyword">if</span> removeExcMets==true
+0814     model=simplifyModel(model);
 0815 <span class="keyword">end</span>
-0816 
-0817 <a name="_sub1" href="#_subfunctions" class="code">function miriamStruct=parseMiriam(strings,miriamStruct)</a>
-0818 <span class="comment">%Gets the names and values of Miriam-string. Nothing fancy at all, just to</span>
-0819 <span class="comment">%prevent using the same code for metabolites, genes, and reactions. The</span>
-0820 <span class="comment">%function also allows for supplying a miriamStruct and the info will then</span>
-0821 <span class="comment">%be added</span>
-0822 
-0823 <span class="keyword">if</span> nargin&lt;2
-0824     miriamStruct=cell(numel(strings),1);
-0825 <span class="keyword">end</span>
-0826 <span class="keyword">for</span> i=1:numel(strings)
-0827     <span class="keyword">if</span> any(strings{i})
-0828         <span class="comment">%A Miriam string can be several ids separated by &quot;;&quot;. Each id is</span>
-0829         <span class="comment">%&quot;name(..:..)/value&quot;; an old format when value is separated by</span>
-0830         <span class="comment">%colon is also supported</span>
-0831         I=regexp(strings{i},<span class="string">';'</span>,<span class="string">'split'</span>);
-0832         <span class="keyword">if</span> isfield(miriamStruct{i},<span class="string">'name'</span>)
-0833             startIndex=numel(miriamStruct{i}.name);
-0834             miriamStruct{i}.name=[miriamStruct{i}.name;cell(numel(I),1)];
-0835             miriamStruct{i}.value=[miriamStruct{i}.value;cell(numel(I),1)];
-0836         <span class="keyword">else</span>
-0837             startIndex=0;
-0838             miriamStruct{i}.name=cell(numel(I),1);
-0839             miriamStruct{i}.value=cell(numel(I),1);
-0840         <span class="keyword">end</span>
-0841         
-0842         <span class="keyword">for</span> j=1:numel(I)
-0843             <span class="keyword">if</span> any(strfind(I{j},<span class="string">'/'</span>))
-0844                 index=max(strfind(I{j},<span class="string">'/'</span>));
-0845             <span class="keyword">elseif</span> any(strfind(I{j},<span class="string">':'</span>))
-0846                 index=max(strfind(I{j},<span class="string">':'</span>));
-0847             <span class="keyword">end</span>
-0848             <span class="keyword">if</span> any(index)
-0849                 miriamStruct{i}.name{startIndex+j}=I{j}(1:index-1);
-0850                 miriamStruct{i}.value{startIndex+j}=I{j}(index+1:end);
-0851             <span class="keyword">else</span>
-0852                 EM=[<span class="string">'&quot;'</span> I{j} <span class="string">'&quot; is not a valid MIRIAM string. The format must be &quot;identifier/value&quot; or identifier:value'</span>];
-0853                 dispEM(EM);
-0854             <span class="keyword">end</span>
-0855         <span class="keyword">end</span>
-0856     <span class="keyword">end</span>
-0857 <span class="keyword">end</span>
+0816 <span class="keyword">end</span>
+0817 
+0818 <a name="_sub1" href="#_subfunctions" class="code">function miriamStruct=parseMiriam(strings,miriamStruct)</a>
+0819 <span class="comment">%Gets the names and values of Miriam-string. Nothing fancy at all, just to</span>
+0820 <span class="comment">%prevent using the same code for metabolites, genes, and reactions. The</span>
+0821 <span class="comment">%function also allows for supplying a miriamStruct and the info will then</span>
+0822 <span class="comment">%be added</span>
+0823 
+0824 <span class="keyword">if</span> nargin&lt;2
+0825     miriamStruct=cell(numel(strings),1);
+0826 <span class="keyword">end</span>
+0827 <span class="keyword">for</span> i=1:numel(strings)
+0828     <span class="keyword">if</span> any(strings{i})
+0829         <span class="comment">%A Miriam string can be several ids separated by &quot;;&quot;. Each id is</span>
+0830         <span class="comment">%&quot;name(..:..)/value&quot;; an old format when value is separated by</span>
+0831         <span class="comment">%colon is also supported</span>
+0832         I=regexp(strings{i},<span class="string">';'</span>,<span class="string">'split'</span>);
+0833         <span class="keyword">if</span> isfield(miriamStruct{i},<span class="string">'name'</span>)
+0834             startIndex=numel(miriamStruct{i}.name);
+0835             miriamStruct{i}.name=[miriamStruct{i}.name;cell(numel(I),1)];
+0836             miriamStruct{i}.value=[miriamStruct{i}.value;cell(numel(I),1)];
+0837         <span class="keyword">else</span>
+0838             startIndex=0;
+0839             miriamStruct{i}.name=cell(numel(I),1);
+0840             miriamStruct{i}.value=cell(numel(I),1);
+0841         <span class="keyword">end</span>
+0842         
+0843         <span class="keyword">for</span> j=1:numel(I)
+0844             <span class="keyword">if</span> any(strfind(I{j},<span class="string">'/'</span>))
+0845                 index=max(strfind(I{j},<span class="string">'/'</span>));
+0846             <span class="keyword">elseif</span> any(strfind(I{j},<span class="string">':'</span>))
+0847                 index=max(strfind(I{j},<span class="string">':'</span>));
+0848             <span class="keyword">end</span>
+0849             <span class="keyword">if</span> any(index)
+0850                 miriamStruct{i}.name{startIndex+j}=I{j}(1:index-1);
+0851                 miriamStruct{i}.value{startIndex+j}=I{j}(index+1:end);
+0852             <span class="keyword">else</span>
+0853                 EM=[<span class="string">'&quot;'</span> I{j} <span class="string">'&quot; is not a valid MIRIAM string. The format must be &quot;identifier/value&quot; or identifier:value'</span>];
+0854                 dispEM(EM);
+0855             <span class="keyword">end</span>
+0856         <span class="keyword">end</span>
+0857     <span class="keyword">end</span>
 0858 <span class="keyword">end</span>
-0859 
-0860 <span class="comment">%For converting a value to string. This is used instead of num2str because</span>
-0861 <span class="comment">%I want to convert empty cells to {''}.</span>
-0862 <a name="_sub2" href="#_subfunctions" class="code">function y=toStr(x)</a>
-0863 <span class="comment">%x can be empty, numerical, string or boolean. It cannot be NaN. Boolean</span>
-0864 <span class="comment">%values will be converted to '1'/'0'</span>
-0865 <span class="keyword">if</span> isempty(x)
-0866     y=<span class="string">''</span>;
-0867 <span class="keyword">else</span>
-0868     y=num2str(x);
-0869 <span class="keyword">end</span>
+0859 <span class="keyword">end</span>
+0860 
+0861 <span class="comment">%For converting a value to string. This is used instead of num2str because</span>
+0862 <span class="comment">%I want to convert empty cells to {''}.</span>
+0863 <a name="_sub2" href="#_subfunctions" class="code">function y=toStr(x)</a>
+0864 <span class="comment">%x can be empty, numerical, string or boolean. It cannot be NaN. Boolean</span>
+0865 <span class="comment">%values will be converted to '1'/'0'</span>
+0866 <span class="keyword">if</span> isempty(x)
+0867     y=<span class="string">''</span>;
+0868 <span class="keyword">else</span>
+0869     y=num2str(x);
 0870 <span class="keyword">end</span>
-0871 
-0872 <span class="comment">%For converting to numeric. This is used instead of str2num because I want</span>
-0873 <span class="comment">%to be able to choose what empty values should be mapped to.</span>
-0874 <span class="comment">%</span>
-0875 <span class="comment">% default the value to use for empty input</span>
-0876 <a name="_sub3" href="#_subfunctions" class="code">function y=toDouble(x,default)</a>
-0877 <span class="keyword">if</span> isempty(x) <span class="comment">%Note that this catches '' as well</span>
-0878     y=default;
-0879 <span class="keyword">else</span>
-0880     <span class="keyword">if</span> isnumeric(x)
-0881         y=x;
-0882     <span class="keyword">else</span>
-0883         y=str2double(x);
-0884         
-0885         <span class="comment">%This happens if the input couldn't be converted. Note that the</span>
-0886         <span class="comment">%input itself cannot be NaN since it was fixed in clean imported</span>
-0887         <span class="keyword">if</span> isnan(y)
-0888             EM=[<span class="string">'Cannot convert the string &quot;'</span> x <span class="string">'&quot; to double'</span>];
-0889             dispEM(EM);
-0890         <span class="keyword">end</span>
-0891     <span class="keyword">end</span>
-0892 <span class="keyword">end</span>
+0871 <span class="keyword">end</span>
+0872 
+0873 <span class="comment">%For converting to numeric. This is used instead of str2num because I want</span>
+0874 <span class="comment">%to be able to choose what empty values should be mapped to.</span>
+0875 <span class="comment">%</span>
+0876 <span class="comment">% default the value to use for empty input</span>
+0877 <a name="_sub3" href="#_subfunctions" class="code">function y=toDouble(x,default)</a>
+0878 <span class="keyword">if</span> isempty(x) <span class="comment">%Note that this catches '' as well</span>
+0879     y=default;
+0880 <span class="keyword">else</span>
+0881     <span class="keyword">if</span> isnumeric(x)
+0882         y=x;
+0883     <span class="keyword">else</span>
+0884         y=str2double(x);
+0885         
+0886         <span class="comment">%This happens if the input couldn't be converted. Note that the</span>
+0887         <span class="comment">%input itself cannot be NaN since it was fixed in clean imported</span>
+0888         <span class="keyword">if</span> isnan(y)
+0889             EM=[<span class="string">'Cannot convert the string &quot;'</span> x <span class="string">'&quot; to double'</span>];
+0890             dispEM(EM);
+0891         <span class="keyword">end</span>
+0892     <span class="keyword">end</span>
 0893 <span class="keyword">end</span>
-0894 
-0895 <span class="comment">%For converting boolean (the UNCONSTRAINED field) to double (the</span>
-0896 <span class="comment">%model.unconstrained field)</span>
-0897 <a name="_sub4" href="#_subfunctions" class="code">function y=boolToDouble(x)</a>
-0898 <span class="keyword">if</span> isempty(x)
-0899     y=0;
-0900     <span class="keyword">return</span>;
-0901 <span class="keyword">end</span>
-0902 <span class="keyword">if</span> islogical(x)
-0903     y=x*1; <span class="comment">%Typecast to double</span>
-0904     <span class="keyword">return</span>;
-0905 <span class="keyword">end</span>
-0906 <span class="keyword">if</span> isnumeric(x)
-0907     <span class="keyword">if</span> x~=0
-0908         y=1;
-0909         <span class="keyword">return</span>;
-0910     <span class="keyword">else</span>
-0911         y=0;
-0912         <span class="keyword">return</span>;
-0913     <span class="keyword">end</span>
-0914 <span class="keyword">end</span>
-0915 <span class="keyword">if</span> ischar(x)
-0916     <span class="keyword">if</span> strcmpi(x,<span class="string">'TRUE'</span>)
-0917         y=1;
-0918         <span class="keyword">return</span>;
-0919     <span class="keyword">end</span>
-0920     <span class="keyword">if</span> strcmpi(x,<span class="string">'FALSE'</span>)
-0921         y=0;
-0922         <span class="keyword">return</span>;
-0923     <span class="keyword">end</span>
-0924 <span class="keyword">end</span>
-0925 y=NaN; <span class="comment">%This means that the input couldn't be parsed</span>
-0926 <span class="keyword">end</span></pre></div>
+0894 <span class="keyword">end</span>
+0895 
+0896 <span class="comment">%For converting boolean (the UNCONSTRAINED field) to double (the</span>
+0897 <span class="comment">%model.unconstrained field)</span>
+0898 <a name="_sub4" href="#_subfunctions" class="code">function y=boolToDouble(x)</a>
+0899 <span class="keyword">if</span> isempty(x)
+0900     y=0;
+0901     <span class="keyword">return</span>;
+0902 <span class="keyword">end</span>
+0903 <span class="keyword">if</span> islogical(x)
+0904     y=x*1; <span class="comment">%Typecast to double</span>
+0905     <span class="keyword">return</span>;
+0906 <span class="keyword">end</span>
+0907 <span class="keyword">if</span> isnumeric(x)
+0908     <span class="keyword">if</span> x~=0
+0909         y=1;
+0910         <span class="keyword">return</span>;
+0911     <span class="keyword">else</span>
+0912         y=0;
+0913         <span class="keyword">return</span>;
+0914     <span class="keyword">end</span>
+0915 <span class="keyword">end</span>
+0916 <span class="keyword">if</span> ischar(x)
+0917     <span class="keyword">if</span> strcmpi(x,<span class="string">'TRUE'</span>)
+0918         y=1;
+0919         <span class="keyword">return</span>;
+0920     <span class="keyword">end</span>
+0921     <span class="keyword">if</span> strcmpi(x,<span class="string">'FALSE'</span>)
+0922         y=0;
+0923         <span class="keyword">return</span>;
+0924     <span class="keyword">end</span>
+0925 <span class="keyword">end</span>
+0926 y=NaN; <span class="comment">%This means that the input couldn't be parsed</span>
+0927 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
