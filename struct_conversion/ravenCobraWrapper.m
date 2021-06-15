@@ -131,8 +131,8 @@ if isRaven
     end
     if isfield(model,'rxnReferences') % Concatenate model.rxnReferences to those extracted from model.rxnMiriams
         if isfield(newModel,'rxnReferences')
-            newModel.rxnReferences = strcat(newModel.rxnReferences,';',model.rxnReferences);
-            newModel.rxnReferences = regexprep(newModel.rxnReferences,'^;$','');
+            newModel.rxnReferences = strcat(newModel.rxnReferences,{'; '},model.rxnReferences);
+            newModel.rxnReferences = regexprep(newModel.rxnReferences,'^; $','');
         else
             newModel.rxnReferences = model.rxnReferences;
         end
@@ -269,7 +269,7 @@ else
     if isfield(model,'rxnECNumbers')
         newModel.eccodes=regexprep(model.rxnECNumbers,'EC|EC:','');
     end
-    if any(isfield(model,[rxnCOBRAfields;'rxnReferences']))
+    if any(isfield(model,rxnCOBRAfields))
         for i=1:numel(model.rxns)
             counter=1;
             newModel.rxnMiriams{i,1}=[];
@@ -289,7 +289,7 @@ else
                     end
                 end
             end
-            for j = 1:length(rxnCOBRAfields)
+            for j = 2:length(rxnCOBRAfields) %Start from 2, as 1 is rxnReferences
                 if isfield(model,rxnCOBRAfields{j})
                     rxnAnnotation = eval(['model.' rxnCOBRAfields{j} '{i}']);
                     if ~isempty(rxnAnnotation)
