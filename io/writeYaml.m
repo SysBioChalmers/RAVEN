@@ -247,7 +247,7 @@ if isfield(model,fieldName)
         %All other fields:
         if strcmp(type,'txt')
             value = field{pos};
-            if preserveQuotes
+            if preserveQuotes && ~isempty(value)
                 value = strcat('"',value,'"');
             end
         elseif strcmp(type,'num')
