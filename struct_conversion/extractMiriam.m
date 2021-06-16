@@ -85,7 +85,7 @@ for i=1:size(tempMiriams,1)
         if j==1
             miriams{i,1}=strcat(miriamName,'/',tempMiriams{i,1});
         else
-            miriams{i,1}=strcat(miriams{i,1},';',miriamName,'/',tempMiriams{i,j});
+            miriams{i,1}=strcat(miriams{i,1},'; ',miriamName,'/',tempMiriams{i,j});
         end
     end
 end
@@ -93,9 +93,9 @@ end
 %Ensure that cell positions without miriams are blank
 miriams=regexprep(miriams,strcat(miriamName,'/;'),'');
 miriams=regexprep(miriams,strcat('^',miriamName,'/$'),'');
-miriams=regexprep(miriams,strcat(';',miriamName,'/$'),'');
+miriams=regexprep(miriams,strcat('; ',miriamName,'/$'),'');
 
 %Delete middle names:
-miriams=regexprep(miriams,strcat(';',miriamName,'/'),';');
+miriams=regexprep(miriams,strcat('; ',miriamName,'/'),'; ');
 
 end
