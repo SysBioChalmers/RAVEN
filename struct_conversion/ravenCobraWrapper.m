@@ -41,7 +41,7 @@ ravenPath=fileparts(fileparts(ST(I).file));
 fid             = fopen([ravenPath filesep 'struct_conversion' filesep 'COBRA_structure_fields.csv']); % Taken from https://github.com/opencobra/cobratoolbox/blob/develop/src/base/io/definitions/COBRA_structure_fields.csv
 fieldFile       = textscan(fid,repmat('%s',1,15),'Delimiter','\t','HeaderLines',1);
 dbFields        = ~cellfun(@isempty,fieldFile{5}); % Only keep fields with database annotations that should be translated to xxxMiriams
-dbFields        = dbFields & ~contains(fieldFile{1},{'metInChIString','metKEGGID','metPubChemID','rxnECNumbers','rxnReferences'});
+dbFields        = dbFields & ~contains(fieldFile{1},{'metInChIString','metKEGGID','metPubChemID','rxnECNumbers'});
 COBRAnamespace  = fieldFile{5}(dbFields);
 COBRAnamespace  = regexprep(COBRAnamespace,';.*',''); % Only keep first suggested namespace
 COBRAfields     = fieldFile{1}(dbFields);
@@ -71,7 +71,7 @@ newModel.lb=model.lb;
 newModel.ub=model.ub;
 newModel.c=model.c;
 newModel.rxns=model.rxns;
-optFields = {'rxnNames','subSystems','rxnReferences','rxnNotes',...
+optFields = {'rxnNames','subSystems','rxnNotes',...
     'metFormulas','comps','compNames','metCharges','genes',...
     'rxnConfidenceScores','rxnGeneMat','metNotes','rev'};
 for i=1:length(optFields)
@@ -127,6 +127,14 @@ if isRaven
             if any(j)
                 eval(['newModel.' rxnCOBRAfields{i} ' = miriams(:,j);'])
             end
+        end
+    end
+    if isfield(model,'rxnReferences') % Concatenate model.rxnReferences to those extracted from model.rxnMiriams
+        if isfield(newModel,'rxnReferences')
+            newModel.rxnReferences = strcat(newModel.rxnReferences,{'; '},model.rxnReferences);
+            newModel.rxnReferences = regexprep(newModel.rxnReferences,'^; $','');
+        else
+            newModel.rxnReferences = model.rxnReferences;
         end
     end
     if isfield(model,'metNames')
@@ -261,7 +269,7 @@ else
     if isfield(model,'rxnECNumbers')
         newModel.eccodes=regexprep(model.rxnECNumbers,'EC|EC:','');
     end
-    if any(isfield(model,[rxnCOBRAfields;'rxnReferences']))
+    if any(isfield(model,rxnCOBRAfields))
         for i=1:numel(model.rxns)
             counter=1;
             newModel.rxnMiriams{i,1}=[];
@@ -269,14 +277,19 @@ else
                 if ~isempty(model.rxnReferences{i})
                     pmids = model.rxnReferences{i};
                     pmids = strsplit(pmids,'; ');
+                    nonPmids = cellfun(@isempty,regexp(pmids,'^\d+$','match','once'));
+                    if any(nonPmids) %Not a pubmed id, keep in rxnReferences instead
+                        newModel.rxnReferences{i,1} = strjoin(pmids(nonPmids),', ');
+                        pmids(nonPmids)=[];
+                    end
                     for j = 1:length(pmids)
-                        newModel.rxnMiriams{i,1}.name{counter,1} = 'pmid';
+                        newModel.rxnMiriams{i,1}.name{counter,1} = 'pubmed';
                         newModel.rxnMiriams{i,1}.value{counter,1} = pmids{j};
                         counter=counter+1;
                     end
                 end
             end
-            for j = 1:length(rxnCOBRAfields)
+            for j = 2:length(rxnCOBRAfields) %Start from 2, as 1 is rxnReferences
                 if isfield(model,rxnCOBRAfields{j})
                     rxnAnnotation = eval(['model.' rxnCOBRAfields{j} '{i}']);
                     if ~isempty(rxnAnnotation)
@@ -290,6 +303,10 @@ else
                 end
             end
         end
+    end
+    if isfield(newModel,'rxnReferences')
+        emptyEntry = cellfun(@isempty,newModel.rxnReferences);
+        newModel.rxnReferences(emptyEntry)={''};
     end
     if any(isfield(model,geneCOBRAfields))
         for i=1:numel(model.genes)

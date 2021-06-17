@@ -210,19 +210,19 @@ if isfield(model,fieldName)
         elseif strcmp(fieldName,'newMetMiriams')
             index = str2double(regexprep(name,'^.+_',''));
             name  = regexprep(name,'_\d+$','');
-            list = strsplit(model.newMetMiriams{pos,index},';');
+            list = strsplit(model.newMetMiriams{pos,index},'; ');
         elseif strcmp(fieldName,'newRxnMiriams')
             index = str2double(regexprep(name,'^.+_',''));
             name  = regexprep(name,'_\d+$','');
-            list = strsplit(model.newRxnMiriams{pos,index},';');
+            list = strsplit(model.newRxnMiriams{pos,index},'; ');
         elseif strcmp(fieldName,'newGeneMiriams')
             index = str2double(regexprep(name,'^.+_',''));
             name  = regexprep(name,'_\d+$','');
-            list = strsplit(model.newGeneMiriams{pos,index},';');
+            list = strsplit(model.newGeneMiriams{pos,index},'; ');
         elseif strcmp(fieldName,'newCompMiriams')
             index = str2double(regexprep(name,'^.+_',''));
             name  = regexprep(name,'_\d+$','');
-            list = strsplit(model.newCompMiriams{pos,index},';');
+            list = strsplit(model.newCompMiriams{pos,index},'; ');
         else
             list = strrep(field{pos},' ','');     %Exception for eccodes
             list = strsplit(list,';');
@@ -247,7 +247,7 @@ if isfield(model,fieldName)
         %All other fields:
         if strcmp(type,'txt')
             value = field{pos};
-            if preserveQuotes
+            if preserveQuotes && ~isempty(value)
                 value = strcat('"',value,'"');
             end
         elseif strcmp(type,'num')
