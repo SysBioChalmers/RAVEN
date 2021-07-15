@@ -281,13 +281,13 @@ for i=1:numel(model.mets)
     end
     
     if isfield(modelSBML.species,'metaid')
-        modelSBML.species(i).metaid=['M_' model.mets{i}];
+        modelSBML.species(i).metaid=model.mets{i};
     end
     if isfield(modelSBML.species, 'name')
         modelSBML.species(i).name=model.metNames{i};
     end
     if isfield(modelSBML.species, 'id')
-        modelSBML.species(i).id=['M_' model.mets{i}];
+        modelSBML.species(i).id=model.mets{i};
     end
     if isfield(modelSBML.species, 'compartment')
         modelSBML.species(i).compartment=model.comps{model.metComps(i)};
@@ -329,7 +329,7 @@ for i=1:numel(model.mets)
                 end
             end
             if ~isempty(model.metMiriams{i}) || hasInchi==true
-                modelSBML.species(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_M_' model.mets{i} '">'];
+                modelSBML.species(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.mets{i} '">'];
                 modelSBML.species(i).annotation=[modelSBML.species(i).annotation '<bqbiol:is><rdf:Bag>'];
                 if ~isempty(model.metMiriams{i})
                     modelSBML.species(i).annotation=[modelSBML.species(i).annotation getMiriam(model.metMiriams{i})];
@@ -475,7 +475,7 @@ for i=1:numel(model.rxns)
     end
     
     if isfield(modelSBML.reaction,'metaid')
-        modelSBML.reaction(i).metaid=['R_' model.rxns{i}];
+        modelSBML.reaction(i).metaid=model.rxns{i};
     end
     
     %Export notes information
@@ -522,7 +522,7 @@ for i=1:numel(model.rxns)
         modelSBML.reaction(i).name=model.rxnNames{i};
     end
     if isfield(modelSBML.reaction, 'id')
-        modelSBML.reaction(i).id=['R_' model.rxns{i}];
+        modelSBML.reaction(i).id=model.rxns{i};
     end
     
     %Add the information about reactants and products
@@ -574,7 +574,7 @@ if modelHasSubsystems
     modelSBML.groups_group.sboTerm = 633;
     tmpStruct=modelSBML.groups_group;
 
-    rxns=strcat('R_',model.rxns);
+    rxns=model.rxns;
     if ~any(cellfun(@iscell,model.subSystems))
         if ~any(~cellfun(@isempty,model.subSystems))
             subSystems = {};
