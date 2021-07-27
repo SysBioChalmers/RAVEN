@@ -363,12 +363,13 @@ end
 for i=1:numel(models)
     a=ismember(models{useOrderIndexes(i)}.genes,allGenes{i+1});
     
-    %Don't remove reactions with complexes if not all genes in the complex
-    %should be deleted. NOTE: This means that not all the genes in 'a' are
-    %guaranteed to be deleted. This approach works fine for 'and'
-    %complexes, but there should be a check that it doesn't keep 'or' genes
-    %if it doesn't have to!
-    models{useOrderIndexes(i)}=removeGenes(models{useOrderIndexes(i)},~a,true,true,false);
+    %Remove reactions that are not associated to any of the genes in
+    %allGenes, thereby also keeping complexes where only for one of the
+    %genes was matched
+    b = models{useOrderIndexes(i)}.rxnGeneMat(:,~a);
+    [b,~] = unique(b); % Reactions to remove
+    
+    models{useOrderIndexes(i)}=removeReactions(models{useOrderIndexes(i)},b,true,true,true);
 end
 
 %Since mergeModels function will be used in the end, the models are
@@ -516,6 +517,7 @@ draftModel.rxnNotes=cell(length(draftModel.rxns),1);
 draftModel.rxnNotes(:)={'Included by getModelFromHomology'};
 draftModel.rxnConfidenceScores=NaN(length(draftModel.rxns),1);
 draftModel.rxnConfidenceScores(:)=2;
+draftModel=deleteUnusedGenes(draftModel,0);
 %Standardize grRules and notify if problematic grRules are found
 [draftModel.grRules,draftModel.rxnGeneMat]=standardizeGrRules(draftModel,false);
 end
