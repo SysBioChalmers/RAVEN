@@ -222,11 +222,6 @@ for i=1:numel(model.comps)
     end
     
     if isfield(modelSBML.compartment,'metaid')
-        if ~isnan(str2double(model.comps(i)))
-            EM='The compartment IDs are in numeric format. For the compliance with SBML specifications, compartment IDs will be preceded with "c_" string';
-            dispEM(EM,false);
-            model.comps(i)=strcat('c_',model.comps(i));
-        end
         modelSBML.compartment(i).metaid=model.comps{i};
     end
     %Prepare Miriam strings
@@ -507,7 +502,7 @@ for i=1:numel(model.rxns)
     
     %Export annotation information from rxnMiriams
     if (~isempty(model.rxnMiriams{i}) && isfield(modelSBML.reaction(i),'annotation')) || ~isempty(model.eccodes{i})
-        modelSBML.reaction(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_R_' model.rxns{i} '">'];
+        modelSBML.reaction(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.rxns{i} '">'];
         modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation '<bqbiol:is><rdf:Bag>'];
         if ~isempty(model.eccodes{i})
             eccodes=regexp(model.eccodes{i},';','split');
