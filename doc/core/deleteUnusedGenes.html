@@ -24,13 +24,15 @@
 <div class="box"><strong>deleteUnusedGenes</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function reducedModel=deleteUnusedGenes(model) </strong></div>
+<div class="box"><strong>function reducedModel=deleteUnusedGenes(model,verbose) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> deleteUnusedGenes
    Deletes all genes that are not associated to any reaction
 
    model           a model structure
+   verbose         0 for silent; 1 for printing number of deleted genes;
+                   2 for printing the list of deleted genes (opt, default 1)
 
    reducedModel    an updated model structure
 
@@ -43,51 +45,63 @@ This function calls:
 </ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-</ul>
+<li><a href="getModelFromHomology.html" class="code" title="function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,getModelFor,preferredOrder,strictness,onlyGenesInModels,maxE,minLen,minIde,mapNewGenesToOld)">getModelFromHomology</a>	getModelFromHomology</li></ul>
 <!-- crossreference -->
 
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function reducedModel=deleteUnusedGenes(model)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function reducedModel=deleteUnusedGenes(model,verbose)</a>
 0002 <span class="comment">% deleteUnusedGenes</span>
 0003 <span class="comment">%   Deletes all genes that are not associated to any reaction</span>
 0004 <span class="comment">%</span>
 0005 <span class="comment">%   model           a model structure</span>
-0006 <span class="comment">%</span>
-0007 <span class="comment">%   reducedModel    an updated model structure</span>
+0006 <span class="comment">%   verbose         0 for silent; 1 for printing number of deleted genes;</span>
+0007 <span class="comment">%                   2 for printing the list of deleted genes (opt, default 1)</span>
 0008 <span class="comment">%</span>
-0009 <span class="comment">%   Usage: reducedModel=deleteUnusedGenes(model)</span>
-0010 
-0011 reducedModel=model;
+0009 <span class="comment">%   reducedModel    an updated model structure</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">%   Usage: reducedModel=deleteUnusedGenes(model)</span>
 0012 
-0013 <span class="comment">%Find all genes that are not used</span>
-0014 [~, b]=find(reducedModel.rxnGeneMat);
-0015 toKeep=false(numel(reducedModel.genes),1);
-0016 toKeep(b)=true;
+0013 <span class="keyword">if</span> nargin&lt;2
+0014     verbose=1;
+0015 <span class="keyword">end</span>
+0016 reducedModel=model;
 0017 
-0018 reducedModel.genes=reducedModel.genes(toKeep);
-0019 reducedModel.rxnGeneMat=reducedModel.rxnGeneMat(:,toKeep);
-0020 
-0021 disp(<span class="string">'Number of unused genes removed from the model:'</span>)
-0022 disp(numel(toKeep(~toKeep)))
-0023 
-0024 <span class="keyword">if</span> isfield(reducedModel,<span class="string">'geneShortNames'</span>)
-0025     reducedModel.geneShortNames=reducedModel.geneShortNames(toKeep);
-0026 <span class="keyword">end</span>
-0027 
-0028 <span class="keyword">if</span> isfield(reducedModel,<span class="string">'geneMiriams'</span>)
-0029     reducedModel.geneMiriams=reducedModel.geneMiriams(toKeep);
-0030 <span class="keyword">end</span>
-0031 
-0032 <span class="keyword">if</span> isfield(reducedModel,<span class="string">'geneFrom'</span>)
-0033     reducedModel.geneFrom=reducedModel.geneFrom(toKeep);
-0034 <span class="keyword">end</span>
+0018 <span class="comment">%Find all genes that are not used</span>
+0019 [~, b]=find(reducedModel.rxnGeneMat);
+0020 toKeep=false(numel(reducedModel.genes),1);
+0021 toKeep(b)=true;
+0022 
+0023 <span class="keyword">switch</span> verbose
+0024     <span class="keyword">case</span> 1
+0025         disp(<span class="string">'Number of unused genes removed from the model:'</span>)
+0026         disp(numel(toKeep(~toKeep)))
+0027     <span class="keyword">case</span> 2
+0028         disp(<span class="string">'The following genes were removed from the model:'</span>)
+0029         disp(reducedModel.genes(~toKeep))
+0030     <span class="keyword">case</span> 0
+0031 <span class="keyword">end</span>
+0032         
+0033 reducedModel.genes=reducedModel.genes(toKeep);
+0034 reducedModel.rxnGeneMat=reducedModel.rxnGeneMat(:,toKeep);
 0035 
-0036 <span class="keyword">if</span> isfield(reducedModel,<span class="string">'geneComps'</span>)
-0037     reducedModel.geneComps=reducedModel.geneComps(toKeep);
+0036 <span class="keyword">if</span> isfield(reducedModel,<span class="string">'geneShortNames'</span>)
+0037     reducedModel.geneShortNames=reducedModel.geneShortNames(toKeep);
 0038 <span class="keyword">end</span>
-0039 <span class="keyword">end</span></pre></div>
+0039 
+0040 <span class="keyword">if</span> isfield(reducedModel,<span class="string">'geneMiriams'</span>)
+0041     reducedModel.geneMiriams=reducedModel.geneMiriams(toKeep);
+0042 <span class="keyword">end</span>
+0043 
+0044 <span class="keyword">if</span> isfield(reducedModel,<span class="string">'geneFrom'</span>)
+0045     reducedModel.geneFrom=reducedModel.geneFrom(toKeep);
+0046 <span class="keyword">end</span>
+0047 
+0048 <span class="keyword">if</span> isfield(reducedModel,<span class="string">'geneComps'</span>)
+0049     reducedModel.geneComps=reducedModel.geneComps(toKeep);
+0050 <span class="keyword">end</span>
+0051 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
