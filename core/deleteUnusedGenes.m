@@ -1,13 +1,18 @@
-function reducedModel=deleteUnusedGenes(model)
+function reducedModel=deleteUnusedGenes(model,verbose)
 % deleteUnusedGenes
 %   Deletes all genes that are not associated to any reaction
 %
 %   model           a model structure
+%   verbose         0 for silent; 1 for printing number of deleted genes;
+%                   2 for printing the list of deleted genes (opt, default 1)
 %
 %   reducedModel    an updated model structure
 %
 %   Usage: reducedModel=deleteUnusedGenes(model)
 
+if nargin<2
+    verbose=1;
+end
 reducedModel=model;
 
 %Find all genes that are not used
@@ -15,11 +20,18 @@ reducedModel=model;
 toKeep=false(numel(reducedModel.genes),1);
 toKeep(b)=true;
 
+switch verbose
+    case 1
+        disp('Number of unused genes removed from the model:')
+        disp(numel(toKeep(~toKeep)))
+    case 2
+        disp('The following genes were removed from the model:')
+        disp(reducedModel.genes(~toKeep))
+    case 0
+end
+        
 reducedModel.genes=reducedModel.genes(toKeep);
 reducedModel.rxnGeneMat=reducedModel.rxnGeneMat(:,toKeep);
-
-disp('Number of unused genes removed from the model:')
-disp(numel(toKeep(~toKeep)))
 
 if isfield(reducedModel,'geneShortNames')
     reducedModel.geneShortNames=reducedModel.geneShortNames(toKeep);
