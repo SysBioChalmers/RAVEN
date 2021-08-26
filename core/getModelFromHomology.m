@@ -366,10 +366,11 @@ for i=1:numel(models)
     %Remove reactions that are not associated to any of the genes in
     %allGenes, thereby also keeping complexes where only for one of the
     %genes was matched
-    b = models{useOrderIndexes(i)}.rxnGeneMat(:,~a);
-    [b,~] = unique(b); % Reactions to remove
-    
-    models{useOrderIndexes(i)}=removeReactions(models{useOrderIndexes(i)},b,true,true,true);
+    [rxnsToKeep,~] = find(models{useOrderIndexes(i)}.rxnGeneMat(:,a));
+    rxnsToRemove = repmat(1,numel(models{useOrderIndexes(i)}.rxns),1);
+    rxnsToRemove(rxnsToKeep) = 0;
+    rxnsToRemove = find(rxnsToRemove);
+    models{useOrderIndexes(i)}=removeReactions(models{useOrderIndexes(i)},rxnsToRemove,true,true,true);
 end
 
 %Since mergeModels function will be used in the end, the models are
