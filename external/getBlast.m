@@ -78,7 +78,7 @@ cores = strsplit(cores, 'MATLAB was assigned: ');
 cores = regexp(cores{2},'^\d*','match');
 cores = cores{1};
 
-[status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in "' fastaFile{1} '" -out "' tmpDB '" -dbtype prot']);
+[status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in "\"' fastaFile{1} '"\" -out "' tmpDB '" -dbtype prot']);
 if status~=0
     EM=['makeblastdb did not run successfully, error: ', num2str(status)];
     dispEM(EM,true);
