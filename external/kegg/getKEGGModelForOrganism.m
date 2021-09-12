@@ -477,15 +477,8 @@ fprintf('COMPLETE\n');
 
 %Clean gene names
 fprintf('Fixing gene names in the model... ');
-for i=1:numel(model.genes)
-    %First get rid of the prefix organism id
-    model.genes{i}=model.genes{i}(strfind(model.genes{i},':')+1:end);
-    %Find and remove the description in parentheses if any
-    s=strfind(model.genes{i},'(');
-    if any(s)
-        model.genes{i}=model.genes{i}(1:s-1);
-    end
-end
+%Get rid of the prefix organism id
+model.genes=regexprep(model.genes,'^\w+?:','');
 fprintf('COMPLETE\n');
 
 %If no FASTA file is supplied, then we are done here
