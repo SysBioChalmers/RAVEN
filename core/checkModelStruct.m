@@ -211,6 +211,19 @@ if isfield(model,'genes')
     end
 end
 
+
+%Validate format of ids
+fields={'rxns';'mets';'comps';'genes'};
+for i=1:numel(fields)
+    for j=1:numel(model.(fields{i}))
+        if regexp(model.(fields{i}){j},'^[^a-zA-Z_]')
+            EM=['The ' fields{i} ' ID ' model.(fields{i}){j} ' is in numeric format, should be modified to comply with SBML specifications!'];
+            dispEM(EM,throwErrors);
+        end
+    end
+end
+
+
 %Duplicates
 EM='The following reaction IDs are duplicates:';
 dispEM(EM,throwErrors,model.rxns(duplicates(model.rxns)),trimWarnings);
