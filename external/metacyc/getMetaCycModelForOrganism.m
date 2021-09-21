@@ -58,7 +58,7 @@ if isempty(fastaFile)
 else
     fprintf('\nChecking existence of query FASTA file... ');
     %Check if query fasta exists
-    fastaFile=checkFileExistence(fastaFile,true,false);
+    fastaFile=checkFileExistence(fastaFile,2); %Copy file to temp dir
     fprintf('done\n');
 end
 
