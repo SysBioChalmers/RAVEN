@@ -1108,6 +1108,8 @@ for i=1:numel(model.rxns)
         model.rxnNotes(i)={'Included by getKEGGModelForOrganism (using HMMs)'};
     end
 end
+%Remove the temp fasta file
+delete(fastaFile)
 fprintf('COMPLETE\n\n*** Model reconstruction complete ***\n');
 end
 

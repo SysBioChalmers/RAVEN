@@ -247,4 +247,6 @@ model=rmfield(model,{'proteins','bitscore','ppos'});
 [grRules,rxnGeneMat] = standardizeGrRules(model,false); %Get detailed output
 model.grRules = grRules;
 model.rxnGeneMat = rxnGeneMat;
+%Remove the temp fasta file
+delete(fastaFile)
 end

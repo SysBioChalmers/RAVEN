@@ -136,4 +136,6 @@ end
 
 %Remove the old tempfiles
 delete([outFile '*']);
+%Remove the temp fasta files
+delete(files{:})
 end
