@@ -329,7 +329,7 @@ if isempty(fastaFile)
 else
     fprintf('\n\n*** The model reconstruction from KEGG based on the protein homology search against KEGG Orthology specific HMMs ***\n\n');
     %Check if query fasta exists
-    fastaFile=checkFileExistence(fastaFile,true,false);
+    fastaFile=checkFileExistence(fastaFile,2); %Copy file to temp dir
 end
 
 %Run the external binaries multi-threaded to use all logical cores assigned
@@ -1114,6 +1114,8 @@ for i=1:numel(model.rxns)
         model.rxnNotes(i)={'Included by getKEGGModelForOrganism (using HMMs)'};
     end
 end
+%Remove the temp fasta file
+delete(fastaFile)
 fprintf('COMPLETE\n\n*** Model reconstruction complete ***\n');
 end
 
