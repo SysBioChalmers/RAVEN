@@ -217,7 +217,8 @@ fields={'rxns';'mets';'comps';'genes'};
 for i=1:numel(fields)
     for j=1:numel(model.(fields{i}))
         if regexp(model.(fields{i}){j},'^[^a-zA-Z_]')
-            EM=['The ' fields{i} ' ID ' model.(fields{i}){j} ' is in numeric format, should be modified to comply with SBML specifications!'];
+            EM=['The number ' num2str(j) ' ' fields{i} ' ID "' model.(fields{i}){j}....
+            '" is in numeric format, should be modified to comply with SBML specifications!'];
             dispEM(EM,throwErrors);
         end
     end
