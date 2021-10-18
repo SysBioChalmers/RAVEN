@@ -53,7 +53,7 @@ else
     files=vertcat(fastaFile,refFastaFiles);
 end
 
-files=checkFileExistence(files,true,false); %No whitespace allowed
+files=checkFileExistence(files,2); %Copy files to temp dir
 fastaFile = files(1);
 refFastaFiles = files(2:end);
 
@@ -136,4 +136,6 @@ end
 
 %Remove the old tempfiles
 delete([outFile '*']);
+%Remove the temp fasta files
+delete(files{:})
 end
