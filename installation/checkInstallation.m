@@ -22,6 +22,8 @@ else
     fprintf('\n*** THE RAVEN TOOLBOX - DEVELOPMENT VERSION ***\n\n');
 end
 
+fprintf(['MATLAB R' version('-release') ' detected\n\n']);
+
 fprintf('Checking if RAVEN is on the MATLAB path...\t\t\t\t\t\t\t\t\t');
 if ismember(ravenDir,paths)
     fprintf('OK\n');
@@ -118,7 +120,7 @@ else
     setRavenSolver(curSolv);
     fprintf(['WARNING: No working solver was found!\n'...
         'Install the solver, set it using setRavenSolver(''solverName'') and run checkInstallation again\n'...
-        'Available solverName options are ''mosek'', ''gurobi'' and ''cobra''\n\n']);
+        'Available solverName options are ''gurobi'' and ''cobra''\n\n']);
 end
 
 if ismac
