@@ -933,7 +933,7 @@ if ~isempty(missingOUT)
     end
     fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 else
-    fprintf(['Querying <strong>' fastaFile '</strong> against the KEGG Orthology specific HMMs... COMPLETE\n']);
+    fprintf(['Querying <strong>' strrep(fastaFile,'\','/') '</strong> against the KEGG Orthology specific HMMs... COMPLETE\n']);
 end
 
 
