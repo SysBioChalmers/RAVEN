@@ -49,15 +49,15 @@ end
 blastStructure=[];
 
 if ~fullCheck
-    fprintf(['Checking blastp' binEnd '... ']);
-    [res,~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '"']);
+    fprintf(['Checking makeblastdb' binEnd '... ']);
+    [res,~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '"']);
     if res==1
         fprintf('OK\n');
     else
         fprintf('Not OK! The binary must be recompiled from source before running RAVEN\n');
     end
-    fprintf(['Checking makeblastdb' binEnd '... ']);
-    [res,~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '"']);
+    fprintf(['Checking blastp' binEnd '... ']);
+    [res,~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '"']);
     if res==1
         fprintf('OK\n');
     else
