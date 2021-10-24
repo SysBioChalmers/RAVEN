@@ -37,7 +37,7 @@ if isunix
         binEnd='';
     end
 elseif ispc
-    binEnd='';
+    binEnd='.exe';
 else
     dispEM('Unknown OS, exiting.')
     return
