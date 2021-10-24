@@ -132,20 +132,7 @@ elseif ispc
 end
 fprintf('Checking essential binary executables:\n');
 fprintf('NOTE: Broken binary executables <strong>must be fixed</strong> before running RAVEN\n');
-fprintf(['\tmakeblastdb' binEnd '...\t\t\t\t\t\t\t']);
-[res,~]=system(['"' fullfile(ravenDir,'software','blast+',['makeblastdb' binEnd]) '"']);
-if res==1
-    fprintf('OK\n');
-else
-    fprintf('Not OK! Download/compile the binary and run checkInstallation again\n');
-end
-fprintf(['\tblastp' binEnd '...\t\t\t\t\t\t\t\t']);
-[res,~]=system(['"' fullfile(ravenDir,'software','blast+',['blastp' binEnd]) '"']);
-if res==1
-    fprintf('OK\n');
-else
-    fprintf('Not OK! Download/compile the binary and run checkInstallation again\n');
-end
+[~,~]=testBlast(false);
 fprintf(['\tdiamond' binEnd '...\t\t\t\t\t\t\t\t']);
 [res,~]=system(['"' fullfile(ravenDir,'software','diamond',['diamond' binEnd]) '"']);
 if res==1

@@ -49,19 +49,19 @@ end
 blastStructure=[];
 
 if ~fullCheck
-    fprintf(['Checking makeblastdb' binEnd '... ']);
+    fprintf(['\tmakeblastdb' binEnd '...\t\t\t\t\t\t\t']);
     [res,~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '"']);
     if res==1
         fprintf('OK\n');
     else
-        fprintf('Not OK! The binary must be recompiled from source before running RAVEN\n');
+        fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
     end
-    fprintf(['Checking blastp' binEnd '... ']);
+    fprintf(['\tblastp' binEnd '...\t\t\t\t\t\t\t\t']);
     [res,~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '"']);
     if res==1
         fprintf('OK\n');
     else
-        fprintf('Not OK! The binary must be recompiled from source before running RAVEN\n');
+        fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
     end
 else    
     %Generate temporary names for working directory and outFile
