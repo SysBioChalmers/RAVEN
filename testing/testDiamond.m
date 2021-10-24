@@ -48,12 +48,12 @@ end
 blastStructure=[];
 
 if ~fullCheck
-    fprintf(['Checking diamond' binEnd '... ']);
+    fprintf(['\tdiamond' binEnd '...\t\t\t\t\t\t\t\t']);
     [res,~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '"']);
     if res==1
         fprintf('OK\n');
     else
-        fprintf('Not OK! The binary must be recompiled from source before running RAVEN\n');
+        fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
     end
 else    
     %Generate temporary names for working directory and outFile
