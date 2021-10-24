@@ -12,11 +12,11 @@ function [success,blastStructure]=testDiamond(fullCheck)
 %   Output: 
 %   success         true if the test was successful, otherwise equal to
 %                   zero
-%   blastStructure	blastStructure resulting from the thorough BLAST+ check
+%   blastStructure	blastStructure resulting from the thorough DIAMOND check
 %
 %   NOTE: The purpose of the thorough check is to assess whether the
-%   homology search can be successfully performed using existing BLAST+
-%   binaries. This testing function is completely standalone, only
+%   homology search can be successfully performed using existing DIAMOND
+%   binary. This testing function is completely standalone, only
 %   requiring DIAMOND binary and multi-FASTA file sce.fa from tutorials
 %   directory
 %
