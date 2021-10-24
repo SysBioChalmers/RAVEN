@@ -37,7 +37,7 @@ if isunix
         binEnd='';
     end
 elseif ispc
-    binEnd='';
+    binEnd='.exe';
     setenv('BLASTDB_LMDB_MAP_SIZE','1000000');
 else
     dispEM('Unknown OS, exiting.')
