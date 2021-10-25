@@ -128,18 +128,18 @@ switch type
         end
     case 'comps'
         if isfield(newModel,'comps')
-            newModel.comps=newModel.comps(:,indexes);
+            newModel.comps=newModel.comps(indexes);
         end
         if isfield(newModel,'compNames')
-            newModel.compNames=newModel.compNames(:,indexes);
+            newModel.compNames=newModel.compNames(indexes);
         end
         if isfield(newModel,'compOutside')
-            newModel.compOutside=newModel.compOutside(:,indexes);
+            newModel.compOutside=newModel.compOutside(indexes);
         end
         if isfield(newModel,'compMiriams')
-            newModel.compMiriams=newModel.compMiriams(:,indexes);
+            newModel.compMiriams=newModel.compMiriams(indexes);
         end
-        [~,J]=sort(I); % The *index* of compartment is used in next fields
+        [~,J]=sort(indexes); % The *index* of compartment is used in next fields
         if isfield(newModel,'metComps')
             [toreplace, bywhat] = ismember(newModel.metComps,1:length(J));
             newModel.metComps(toreplace) = J(bywhat(toreplace));
