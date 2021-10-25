@@ -2,13 +2,15 @@ function newModel=permuteModel(model, indexes, type)
 % permuteModel
 %   Changes the order of the reactions or metabolites in a model
 %
+%   Input:
 %   model     a model structure
 %   indexes   a vector with the same length as the number of items in the
 %             model, which gives the new order of items
 %   type      'rxns' for reactions, 'mets' for metabolites, 'genes' for
-%             genes
+%             genes, 'comps' for compartments
 %
-% 	newModel  an updated model structure
+% 	Output:
+%   newModel  an updated model structure
 %
 % 	Usage: newModel=permuteModel(model, indexes, type)
 
@@ -123,6 +125,32 @@ switch type
         end
         if isfield(newModel,'rxnGeneMat')
             newModel.rxnGeneMat=newModel.rxnGeneMat(:,indexes);
+        end
+    case 'comps'
+        if isfield(newModel,'comps')
+            newModel.comps=newModel.comps(:,indexes);
+        end
+        if isfield(newModel,'compNames')
+            newModel.compNames=newModel.compNames(:,indexes);
+        end
+        if isfield(newModel,'compOutside')
+            newModel.compOutside=newModel.compOutside(:,indexes);
+        end
+        if isfield(newModel,'compMiriams')
+            newModel.compMiriams=newModel.compMiriams(:,indexes);
+        end
+        [~,J]=sort(I); % The *index* of compartment is used in next fields
+        if isfield(newModel,'metComps')
+            [toreplace, bywhat] = ismember(newModel.metComps,1:length(J));
+            newModel.metComps(toreplace) = J(bywhat(toreplace));
+        end
+        if isfield(model,'rxnComps')
+            [toreplace, bywhat] = ismember(model.rxnComps,1:length(J));
+            model.rxnComps(toreplace) = J(bywhat(toreplace));
+        end
+        if isfield(model,'geneComps')
+            [toreplace, bywhat] = ismember(model.geneComps,1:length(J));
+            model.geneComps(toreplace) = J(bywhat(toreplace));
         end
 end
 end
