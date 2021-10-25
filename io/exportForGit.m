@@ -47,12 +47,7 @@ if nargin<2
 end
 
 %Sort reactions, metabolites and genes alphabetically
-[~,I]=sort(model.rxns);
-model=permuteModel(model,I,'rxns');
-[~,I]=sort(model.mets);
-model=permuteModel(model,I,'mets');
-[~,I]=sort(model.genes);
-model=permuteModel(model,I,'genes');
+model=sortIdentifiers(model);
 
 %Get versions or commits of toolboxes:
 RAVENver = getToolboxVersion('RAVEN','ravenCobraWrapper.m',masterFlag);
