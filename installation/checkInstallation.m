@@ -156,7 +156,12 @@ if ismac
 elseif isunix
     [res,~]=system(['"' fullfile(ravenDir,'software','mafft','mafft-linux64','mafft.bat') '" --help ']);
 elseif ispc
-    [res,~]=system(['"' fullfile(ravenDir,'software','mafft','mafft-win','mafft.bat') '" --help ']);
+    [~,message]=system(['"' fullfile(ravenDir,'software','mafft','mafft-win','mafft.bat') '" --help ']);
+    if (contains(message, 'error'))
+        res = 0;
+    else
+        res = 1;
+    end
 end
 if res==1
     fprintf('OK\n');
