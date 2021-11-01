@@ -76,7 +76,7 @@ else
     
     %Create a temporary folder and copy multi-FASTA file there
     [~, ~]=system(['mkdir "' tmpDB '"']);
-    copyfile(fullfile(ravenPath,'tutorial','sce.fa'),tmpDB);
+    copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.fa'),tmpDB);
     
     %Construct a BLAST database
     fprintf('Testing makeblastdb... ');
@@ -87,7 +87,6 @@ else
         dispEM(EM,true);
     end
     fprintf('OK\n');
-    copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.fa'),tmpDB);
     
     %Run a homology search
     fprintf('Testing blastp... ');

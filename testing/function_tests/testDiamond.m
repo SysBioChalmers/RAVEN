@@ -68,11 +68,11 @@ else
     
     %Create a temporary folder and copy multi-FASTA file there
     [~, ~]=system(['mkdir "' tmpDB '"']);
-    copyfile(fullfile(ravenPath,'tutorial','sce.fa'),tmpDB);
+    copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.fa'),tmpDB);
     
     %Construct a DIAMOND database
     fprintf('Testing DIAMOND makedb... ');
-    [res, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" makedb --in "' fullfile(tmpDB,'sce.fa') '" --db "' tmpDB '"']);
+    [res, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" makedb --in "' fullfile(tmpDB,'yeast_galactosidases.fa') '" --db "' tmpDB '"']);
     if res~=0
         fprintf('Not OK\n');
         EM=['DIAMOND makedb did not run successfully, error: ', num2str(res)];
@@ -82,7 +82,7 @@ else
     
     %Run a homology search
     fprintf('Testing DIAMOND blastp... ');
-    [res, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' fullfile(tmpDB,'sce.fa') '" --out "' outFile '" --db "' tmpDB '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
+    [res, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' fullfile(tmpDB,'yeast_galactosidases.fa') '" --out "' outFile '" --db "' tmpDB '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
     if res~=0
         fprintf('Not OK\n');
         EM=['DIAMOND blastp did not run successfully, error: ', num2str(res)];
