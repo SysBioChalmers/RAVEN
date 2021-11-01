@@ -1,29 +1,38 @@
-function [success,blastStructure]=testBlast(fullCheck)
+function [success,blastStructure]=testBlast(testMethod,suppressWarnings)
 % testBlast
-%   Performs a check for BLAST+ functionality in RAVEN. Depending on the
-%   parameter settings the user can choose between a quick check for
-%   binaries or the thorough testing while building BLAST database and
-%   running homology search with BLASTP
+%   Performs a check for BLAST+ functionality in RAVEN. This function is
+%   automatically called by checkInstallation function.
 %
 %   Input:
-%   fullCheck       true if the thorough BLAST+ testing should be performed
-%                   (opt, default true)
+%   testMethod      method which should be tested. Available options are
+%                   'blastp', 'makeblastdb' and 'both' (opt, default
+%                   'both')
+%   supressWarnings true if warnings should be supressed (opt, default
+%                   true)
 %
-%   Output: 
-%   success         true if the test was successful, otherwise equal to
-%                   zero
-%   blastStructure	blastStructure resulting from the thorough BLAST+ check
+%   Output:
+%   success         true if the test was successful
+%   blastStructure	blastStructure resulting from the BLAST+ check. Will be
+%                   empty if test was done only for 'makeblastdb'
 %
-%   NOTE: The purpose of the thorough check is to assess whether the
+%   NOTE: The purpose of the check is to assess whether the
 %   homology search can be successfully performed using existing BLAST+
 %   binaries. This testing function is completely standalone, only
-%   requiring BLAST+ binaries and multi-FASTA file sce.fa from tutorials
+%   requiring BLAST+ binaries and multi-FASTA file from test_data
 %   directory
 %
-%   Usage: [success,blastStructure]=testBlast(fullCheck)
+%   Usage: [success,blastStructure]=testBlast(testMethod,suppressWarnings)
 
 if nargin<1
-    fullCheck=true;
+    testMethod='both';
+end
+if nargin<2
+    suppressWarnings=true;
+end
+
+if ~strcmp(testMethod,'blastp') && ~strcmp(testMethod,'makeblastdb') && ~strcmp(testMethod,'both')
+    dispEM('testMethod not recognized, exiting.')
+    return
 end
 
 %Get the directory for RAVEN Toolbox
@@ -44,62 +53,62 @@ else
     return
 end
 
-%Create an empty blastStructure. Even if a quick BLAST+ evaluation is
-%considered, blastStructure should still be in the output
+%Create an empty blastStructure
 blastStructure=[];
 
-if ~fullCheck
-    fprintf(['\tmakeblastdb' binEnd '...\t\t\t\t\t\t\t']);
-    [res,~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '"']);
-    if res==1
-        fprintf('OK\n');
-    else
-        fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
-    end
-    fprintf(['\tblastp' binEnd '...\t\t\t\t\t\t\t\t']);
-    [res,~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '"']);
-    if res==1
-        fprintf('OK\n');
-    else
-        fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
-    end
-else    
-    %Generate temporary names for working directory and outFile
-    tmpDB=tempname;
-    outFile=tempname;
-    
-    %Run BLAST multi-threaded to use all logical cores assigned to MATLAB
-    cores = evalc('feature(''numcores'')');
-    cores = strsplit(cores, 'MATLAB was assigned: ');
-    cores = regexp(cores{2},'^\d*','match');
-    cores = cores{1};
-    
-    %Create a temporary folder and copy multi-FASTA file there
-    [~, ~]=system(['mkdir "' tmpDB '"']);
-    copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.fa'),tmpDB);
-    
+%Generate temporary names for working directory and outFile
+tmpDB=tempname;
+outFile=tempname;
+
+%Run BLAST multi-threaded to use all logical cores assigned to MATLAB
+cores = evalc('feature(''numcores'')');
+cores = strsplit(cores, 'MATLAB was assigned: ');
+cores = regexp(cores{2},'^\d*','match');
+cores = cores{1};
+
+%Create a temporary folder and copy multi-FASTA file there
+[~, ~]=system(['mkdir "' tmpDB '"']);
+copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.fa'),tmpDB);
+
+if (strcmp(testMethod,'makeblastdb') || strcmp(testMethod,'both'))
     %Construct a BLAST database
-    fprintf('Testing makeblastdb... ');
-    [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in "' fullfile(tmpDB,'yeast_galactosidases.fa') '" -out "' tmpDB '" -dbtype prot']);
+    fprintf(['\tmakeblastdb' binEnd '...\t\t\t\t\t\t\t']);
+    [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in "' fullfile(tmpDB,'yeast_galactosidases.fa') '" -out "' fullfile(tmpDB) '" -dbtype prot']);
     if res~=0
-        fprintf('Not OK\n');
-        EM=['makeblastdb did not run successfully, error: ', num2str(res)];
-        dispEM(EM,true);
+        fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
+        if ~suppressWarnings
+            EM=['makeblastdb did not run successfully, error: ', num2str(res)];
+            dispEM(EM,true);
+        end
     end
     fprintf('OK\n');
-    
+end
+
+if (strcmp(testMethod,'blastp') || strcmp(testMethod,'both'))
+    if (strcmp(testMethod,'blastp') && ~strcmp(testMethod,'both'))
+        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.pdb'),tmpDB);
+        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.phr'),tmpDB);
+        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.pin'),tmpDB);
+        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.pot'),tmpDB);
+        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.psq'),tmpDB);
+        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.ptf'),tmpDB);
+        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.pto'),tmpDB);
+    end
     %Run a homology search
-    fprintf('Testing blastp... ');
-    [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query "' fullfile(tmpDB,'yeast_galactosidases.fa') '" -out "' outFile '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
+    fprintf(['\tblastp' binEnd '...\t\t\t\t\t\t\t\t']);
+    if (strcmp(testMethod,'both'))
+        [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query "' fullfile(tmpDB,'yeast_galactosidases.fa') '" -out "' outFile '" -db "' fullfile(tmpDB) '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
+    else
+        [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query "' fullfile(tmpDB,'yeast_galactosidases.fa') '" -out "' outFile '" -db "' fullfile(tmpDB,'yeast_galactosidases') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
+    end
     if res~=0
-        fprintf('Not OK\n');
-        EM=['blastp did not run successfully, error: ', num2str(res)];
-        dispEM(EM,true);
+        fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
+        if ~suppressWarnings
+            EM=['blastp did not run successfully, error: ', num2str(res)];
+            dispEM(EM,true);
+        end
     end
     fprintf('OK\n');
-    
-    %Remove temporary folder, since homology search is finished
-    [~, ~]=system(['rm "' tmpDB '" -r']);
     
     %Done with the BLAST, do the parsing of the text file
     blastStructure.fromId='sce';
@@ -117,5 +126,9 @@ else
     delete([outFile '*']);
 end
 
+%Remove temporary folder, since testing is finished
+[~, ~]=system(['rm "' tmpDB '" -r']);
+
+%If this line is reached then it is assumed that test was successful
 success=1;
 end

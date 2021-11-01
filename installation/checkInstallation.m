@@ -132,7 +132,7 @@ elseif ispc
 end
 fprintf('Checking essential binary executables:\n');
 fprintf('NOTE: Broken binary executables <strong>must be fixed</strong> before running RAVEN\n');
-[~,~]=testBlast(false);
+testBlast;
 [~,~]=testDiamond(false);
 fprintf(['\thmmsearch' binEnd '...\t\t\t\t\t\t\t']);
 [res,~]=system(['"' fullfile(ravenDir,'software','hmmer',['hmmsearch' binEnd]) '"']);
