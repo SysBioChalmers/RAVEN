@@ -28,7 +28,7 @@ end
 
 %Get the directory for RAVEN Toolbox
 [ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
+ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 
 if isunix
     if ismac

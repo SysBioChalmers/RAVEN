@@ -28,7 +28,7 @@ end
 
 %Get the directory for RAVEN Toolbox
 [ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
+ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 
 if isunix
     if ismac
@@ -80,17 +80,18 @@ else
     
     %Construct a BLAST database
     fprintf('Testing makeblastdb... ');
-    [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in "' fullfile(tmpDB,'sce.fa') '" -out "' tmpDB '" -dbtype prot']);
+    [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in "' fullfile(tmpDB,'yeast_galactosidases.fa') '" -out "' tmpDB '" -dbtype prot']);
     if res~=0
         fprintf('Not OK\n');
         EM=['makeblastdb did not run successfully, error: ', num2str(res)];
         dispEM(EM,true);
     end
     fprintf('OK\n');
+    copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.fa'),tmpDB);
     
     %Run a homology search
     fprintf('Testing blastp... ');
-    [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query "' fullfile(tmpDB,'sce.fa') '" -out "' outFile '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
+    [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query "' fullfile(tmpDB,'yeast_galactosidases.fa') '" -out "' outFile '" -db "' tmpDB '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
     if res~=0
         fprintf('Not OK\n');
         EM=['blastp did not run successfully, error: ', num2str(res)];
