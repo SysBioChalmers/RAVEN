@@ -123,13 +123,6 @@ else
         'Available solverName options are ''gurobi'' and ''cobra''\n\n']);
 end
 
-if ismac
-    binEnd='.mac';
-elseif isunix
-    binEnd='';
-elseif ispc
-    binEnd='.exe';
-end
 fprintf('Checking essential binary executables:\n');
 fprintf('NOTE: Broken binary executables <strong>must be fixed</strong> before running RAVEN\n');
 testBlast;
@@ -138,24 +131,7 @@ testHmmer('hmmsearch');
 fprintf('Checking non-essential/development binary executables:\n');
 fprintf('NOTE: Only fix these binaries if planning to use KEGG FTP dump files in getKEGGModelForOrganism\n');
 testCdhit;
-fprintf('\tmafft.bat...\t\t\t\t\t\t\t\t');
-if ismac
-    [res,~]=system(['"' fullfile(ravenDir,'software','mafft','mafft-mac','mafft.bat') '" --help ']);
-elseif isunix
-    [res,~]=system(['"' fullfile(ravenDir,'software','mafft','mafft-linux64','mafft.bat') '" --help ']);
-elseif ispc
-    [~,message]=system(['"' fullfile(ravenDir,'software','mafft','mafft-win','mafft.bat') '" --help ']);
-    if (contains(message, 'error'))
-        res = 0;
-    else
-        res = 1;
-    end
-end
-if res==1
-    fprintf('OK\n');
-else
-    fprintf('Not OK! If necessary, download/compile the binary and run checkInstallation again\n');
-end
+testMafft;
 testHmmer('hmmbuild');
 
 fprintf('Checking whether RAVEN functions are non-redundant across MATLAB path...\t');
