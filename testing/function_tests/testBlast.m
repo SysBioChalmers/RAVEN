@@ -110,6 +110,7 @@ if (strcmp(testMethod,'blastp') || strcmp(testMethod,'both'))
             EM=['blastp did not run successfully, error: ', num2str(res)];
             dispEM(EM,true);
         end
+        return;
     else
         fprintf('OK\n');
     end

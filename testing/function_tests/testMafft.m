@@ -50,7 +50,7 @@ elseif ispc
     %In Windows res is somehow insensitive for MAFFT so message is checked
     %instead
     [~, message]=system(['"' fullfile(ravenPath,'software','mafft','mafft-win','mafft.bat') '" --auto --anysymbol --thread "' num2str(cores) '" "' fullfile(tmpDIR, 'yeast_galactosidases.fa') '" > "' fullfile(tmpDIR, 'yeast_galactosidases_msa.fa') '"']);
-    if (contains(message, 'error'))
+    if (contains(message, 'error') || contains(message,'cannot find the path'))
         res = 1;
     else
         res = 0;

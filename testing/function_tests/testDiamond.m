@@ -83,6 +83,7 @@ if res~=0
         EM=['DIAMOND blastp did not run successfully, error: ', num2str(res)];
         dispEM(EM,true);
     end
+    return;
 else
     fprintf('OK\n');
 end
