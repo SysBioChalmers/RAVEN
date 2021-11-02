@@ -134,13 +134,7 @@ fprintf('Checking essential binary executables:\n');
 fprintf('NOTE: Broken binary executables <strong>must be fixed</strong> before running RAVEN\n');
 testBlast;
 testDiamond;
-fprintf(['\thmmsearch' binEnd '...\t\t\t\t\t\t\t']);
-[res,~]=system(['"' fullfile(ravenDir,'software','hmmer',['hmmsearch' binEnd]) '"']);
-if res==1
-    fprintf('OK\n');
-else
-    fprintf('Not OK! Download/compile the binary and run checkInstallation again\n');
-end
+testHmmer('hmmsearch');
 fprintf('Checking non-essential/development binary executables:\n');
 fprintf('NOTE: Only fix these binaries if planning to use KEGG FTP dump files in getKEGGModelForOrganism\n');
 fprintf(['\tcd-hit' binEnd '...\t\t\t\t\t\t\t\t']);
@@ -168,13 +162,7 @@ if res==1
 else
     fprintf('Not OK! If necessary, download/compile the binary and run checkInstallation again\n');
 end
-fprintf(['\thmmbuild' binEnd '...\t\t\t\t\t\t\t\t']);
-[res,~]=system(['"' fullfile(ravenDir,'software','hmmer',['hmmbuild' binEnd]) '"']);
-if res==1
-    fprintf('OK\n\n');
-else
-    fprintf('Not OK! If necessary, download/compile the binary and run checkInstallation again\n');
-end
+testHmmer('hmmbuild');
 
 fprintf('Checking whether RAVEN functions are non-redundant across MATLAB path...\t');
 checkFunctionUniqueness();
