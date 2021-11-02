@@ -137,13 +137,7 @@ testDiamond;
 testHmmer('hmmsearch');
 fprintf('Checking non-essential/development binary executables:\n');
 fprintf('NOTE: Only fix these binaries if planning to use KEGG FTP dump files in getKEGGModelForOrganism\n');
-fprintf(['\tcd-hit' binEnd '...\t\t\t\t\t\t\t\t']);
-[res,~]=system(['"' fullfile(ravenDir,'software','cd-hit',['cd-hit' binEnd]) '"']);
-if res==1
-    fprintf('OK\n');
-else
-    fprintf('Not OK! If necessary, download/compile the binary and run checkInstallation again\n');
-end
+testCdhit;
 fprintf('\tmafft.bat...\t\t\t\t\t\t\t\t');
 if ismac
     [res,~]=system(['"' fullfile(ravenDir,'software','mafft','mafft-mac','mafft.bat') '" --help ']);
