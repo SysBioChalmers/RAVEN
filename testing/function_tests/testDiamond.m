@@ -25,6 +25,8 @@ if nargin<1
     suppressWarnings=true;
 end
 
+success=0;
+
 %Get the directory for RAVEN Toolbox
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
@@ -60,7 +62,7 @@ cores = cores{1};
 copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.fa'),tmpDIR);
 
 %Construct a DIAMOND database
-fprintf(['\tdiamond' binEnd ': makedb...\t\t\t\t\t\t\t\t']);
+fprintf(['\tdiamond' binEnd ': makedb... ']);
 [res, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" makedb --in "' fullfile(tmpDIR,'yeast_galactosidases.fa') '" --db "' tmpDIR '"']);
 if res~=0
     fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
@@ -68,11 +70,12 @@ if res~=0
         EM=['DIAMOND makedb did not run successfully, error: ', num2str(res)];
         dispEM(EM,true);
     end
+else
+    fprintf('OK\n');
 end
-fprintf('OK\n');
 
 %Run a homology search
-fprintf(['\tdiamond' binEnd ': blastp...\t\t\t\t\t\t\t\t']);
+fprintf(['\tdiamond' binEnd ': blastp... ']);
 [res, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' fullfile(tmpDIR,'yeast_galactosidases.fa') '" --out "' outFile '" --db "' tmpDIR '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
 if res~=0
     fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
@@ -80,8 +83,9 @@ if res~=0
         EM=['DIAMOND blastp did not run successfully, error: ', num2str(res)];
         dispEM(EM,true);
     end
+else
+    fprintf('OK\n');
 end
-fprintf('OK\n');
 
 %Done with the DIAMOND blastp, do the parsing of the text file
 blastStructure.fromId='sce';

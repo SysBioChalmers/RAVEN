@@ -35,6 +35,8 @@ if ~strcmp(testMethod,'blastp') && ~strcmp(testMethod,'makeblastdb') && ~strcmp(
     return
 end
 
+success=0;
+
 %Get the directory for RAVEN Toolbox
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
@@ -72,7 +74,7 @@ copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galact
 
 if (strcmp(testMethod,'makeblastdb') || strcmp(testMethod,'both'))
     %Construct a BLAST database
-    fprintf(['\tmakeblastdb' binEnd '...\t\t\t\t\t\t\t']);
+    fprintf(['\tmakeblastdb' binEnd '... ']);
     [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in "' fullfile(tmpDIR,'yeast_galactosidases.fa') '" -out "' fullfile(tmpDIR) '" -dbtype prot']);
     if res~=0
         fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
@@ -80,8 +82,9 @@ if (strcmp(testMethod,'makeblastdb') || strcmp(testMethod,'both'))
             EM=['makeblastdb did not run successfully, error: ', num2str(res)];
             dispEM(EM,true);
         end
+    else
+        fprintf('OK\n');
     end
-    fprintf('OK\n');
 end
 
 if (strcmp(testMethod,'blastp') || strcmp(testMethod,'both'))
@@ -95,7 +98,7 @@ if (strcmp(testMethod,'blastp') || strcmp(testMethod,'both'))
         copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.pto'),tmpDIR);
     end
     %Run a homology search
-    fprintf(['\tblastp' binEnd '...\t\t\t\t\t\t\t\t']);
+    fprintf(['\tblastp' binEnd '... ']);
     if (strcmp(testMethod,'both'))
         [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query "' fullfile(tmpDIR,'yeast_galactosidases.fa') '" -out "' outFile '" -db "' fullfile(tmpDIR) '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
     else
@@ -107,8 +110,9 @@ if (strcmp(testMethod,'blastp') || strcmp(testMethod,'both'))
             EM=['blastp did not run successfully, error: ', num2str(res)];
             dispEM(EM,true);
         end
+    else
+        fprintf('OK\n');
     end
-    fprintf('OK\n');
     
     %Done with the BLAST, do the parsing of the text file
     blastStructure.fromId='sce';

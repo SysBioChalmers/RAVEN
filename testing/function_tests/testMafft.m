@@ -21,6 +21,8 @@ if nargin<1
     suppressWarnings=true;
 end
 
+success=0;
+
 %Get the directory for RAVEN Toolbox
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
@@ -39,12 +41,14 @@ cores = cores{1};
 copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.fa'),tmpDIR);
 
 %Run MAFFT
-fprintf('\tmafft.bat...\t\t\t\t\t\t\t\t');
+fprintf('\tmafft.bat... ');
 if ismac
     [res, ~]=system(['"' fullfile(ravenPath,'software','mafft','mafft-mac','mafft.bat') '" --auto --anysymbol --thread "' num2str(cores) '" "' fullfile(tmpDIR, 'yeast_galactosidases.fa') '" > "' fullfile(tmpDIR, 'yeast_galactosidases_msa.fa') '"']);
 elseif isunix
     [res, ~]=system(['"' fullfile(ravenPath,'software','mafft','mafft-linux64','mafft.bat') '" --auto --anysymbol --thread "' num2str(cores) '" "' fullfile(tmpDIR, 'yeast_galactosidases.fa') '" > "' fullfile(tmpDIR, 'yeast_galactosidases_msa.fa') '"']);
 elseif ispc
+    %In Windows res is somehow insensitive for MAFFT so message is checked
+    %instead
     [~, message]=system(['"' fullfile(ravenPath,'software','mafft','mafft-win','mafft.bat') '" --auto --anysymbol --thread "' num2str(cores) '" "' fullfile(tmpDIR, 'yeast_galactosidases.fa') '" > "' fullfile(tmpDIR, 'yeast_galactosidases_msa.fa') '"']);
     if (contains(message, 'error'))
         res = 1;
@@ -59,8 +63,9 @@ if res~=0
         EM=['mafft did not run successfully, error: ', num2str(res)];
         dispEM(EM,true);
     end
+else
+    fprintf('OK\n');
 end
-fprintf('OK\n');
 
 %Remove temporary folder, since homology search is finished
 [~, ~]=system(['rm "' tmpDIR '" -r']);

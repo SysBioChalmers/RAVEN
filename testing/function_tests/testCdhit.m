@@ -21,6 +21,8 @@ if nargin<1
     suppressWarnings=true;
 end
 
+success=0;
+
 %Get the directory for RAVEN Toolbox
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
@@ -52,7 +54,7 @@ cores = cores{1};
 copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.fa'),tmpDIR);
 
 %Run CD-HIT
-fprintf(['\tcd-hit' binEnd '...\t\t\t\t\t\t\t\t']);
+fprintf(['\tcd-hit' binEnd '... ']);
 [res,~]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' fullfile(tmpDIR, 'yeast_galactosidases.fa') '" -o "' fullfile(tmpDIR, 'cdhit_output.fa') '" -c 1.0 -n 5 -M 2000']);
 if res~=0
     fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
@@ -60,8 +62,9 @@ if res~=0
         EM=['cd-hit did not run successfully, error: ', num2str(res)];
         dispEM(EM,true);
     end
+else
+    fprintf('OK\n');
 end
-fprintf('OK\n');
 
 %Remove temporary folder, since homology search is finished
 [~, ~]=system(['rm "' tmpDIR '" -r']);

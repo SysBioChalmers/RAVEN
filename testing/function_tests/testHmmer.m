@@ -33,6 +33,8 @@ if ~strcmp(testMethod,'hmmsearch') && ~strcmp(testMethod,'hmmbuild') && ~strcmp(
     return
 end
 
+success=0;
+
 %Get the directory for RAVEN Toolbox
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
@@ -65,7 +67,7 @@ copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galact
 
 if (strcmp(testMethod,'hmmbuild') || strcmp(testMethod,'both'))
     %Train a hidden Markov model
-    fprintf(['\thmmbuild' binEnd '...\t\t\t\t\t\t\t']);
+    fprintf(['\thmmbuild' binEnd '... ']);
     [res,~]=system(['"' fullfile(ravenPath,'software','hmmer',['hmmbuild' binEnd]) '" --cpu "' num2str(cores) '" "' fullfile(tmpDIR,'yeast_galactosidases.hmm') '" "' fullfile(tmpDIR,'yeast_galactosidases.fa') '"']);
     if res~=0
         fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
@@ -73,8 +75,9 @@ if (strcmp(testMethod,'hmmbuild') || strcmp(testMethod,'both'))
             EM=['hmmbuild did not run successfully, error: ', num2str(res)];
             dispEM(EM,true);
         end
+    else
+        fprintf('OK\n');
     end
-    fprintf('OK\n');
 end
 
 if (strcmp(testMethod,'hmmsearch') || strcmp(testMethod,'both'))
@@ -82,7 +85,7 @@ if (strcmp(testMethod,'hmmsearch') || strcmp(testMethod,'both'))
         copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.hmm'),tmpDIR);
     end
     %Run a homology search
-    fprintf(['\thmmsearch' binEnd '...\t\t\t\t\t\t\t\t']);
+    fprintf(['\thmmsearch' binEnd '... ']);
     [res, ~]=system(['"' fullfile(ravenPath,'software','hmmer',['hmmsearch' binEnd]) '" --cpu "' num2str(cores) '" "' fullfile(tmpDIR,'yeast_galactosidases.hmm') '" "' fullfile(tmpDIR,'yeast_galactosidases.fa') '"']);
     if res~=0
         fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
@@ -90,8 +93,9 @@ if (strcmp(testMethod,'hmmsearch') || strcmp(testMethod,'both'))
             EM=['hmmsearch did not run successfully, error: ', num2str(res)];
             dispEM(EM,true);
         end
+    else
+        fprintf('OK\n');
     end
-    fprintf('OK\n');
 end
 
 %Remove temporary folder, since testing is finished
