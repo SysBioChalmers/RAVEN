@@ -18,8 +18,8 @@ function [success,blastStructure]=testBlast(testMethod,suppressWarnings)
 %   NOTE: The purpose of the check is to assess whether the
 %   homology search can be successfully performed using existing BLAST+
 %   binaries. This testing function is completely standalone, only
-%   requiring BLAST+ binaries and multi-FASTA file from test_data
-%   directory
+%   requiring BLAST+ binaries; multi-FASTA and BLAST database files
+%   from test_data directory
 %
 %   Usage: [success,blastStructure]=testBlast(testMethod,suppressWarnings)
 

@@ -14,7 +14,7 @@ function [success,blastStructure]=testDiamond(suppressWarnings)
 %   NOTE: The purpose of the check is to assess whether the
 %   homology search can be successfully performed using existing DIAMOND
 %   binary. This testing function is completely standalone, only
-%   requiring DIAMOND binaries and multi-FASTA file from test_data
+%   requiring DIAMOND binary and multi-FASTA file from test_data
 %   directory. Since one can build DIAMOND database and run homology search
 %   using the same binary file (unlike BLAST+), both these functionalities
 %   are tested together and it is not possible to run them separately.

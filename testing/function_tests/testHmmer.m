@@ -16,7 +16,7 @@ function success=testHmmer(testMethod,suppressWarnings)
 %   NOTE: The purpose of the check is to assess whether the
 %   homology search can be successfully performed using existing HMMER
 %   binaries. This testing function is completely standalone, only
-%   requiring HMMER binaries and multi-FASTA file from test_data
+%   requiring HMMER binaries; multi-FASTA and HMM files from test_data
 %   directory
 %
 %   Usage: success=testHmmer(testMethod,suppressWarnings)
