@@ -57,7 +57,7 @@ end
 blastStructure=[];
 
 %Generate temporary names for working directory and outFile
-tmpDB=tempname;
+tmpDIR=tempname;
 outFile=tempname;
 
 %Run BLAST multi-threaded to use all logical cores assigned to MATLAB
@@ -67,13 +67,13 @@ cores = regexp(cores{2},'^\d*','match');
 cores = cores{1};
 
 %Create a temporary folder and copy multi-FASTA file there
-[~, ~]=system(['mkdir "' tmpDB '"']);
-copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.fa'),tmpDB);
+[~, ~]=system(['mkdir "' tmpDIR '"']);
+copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.fa'),tmpDIR);
 
 if (strcmp(testMethod,'makeblastdb') || strcmp(testMethod,'both'))
     %Construct a BLAST database
     fprintf(['\tmakeblastdb' binEnd '...\t\t\t\t\t\t\t']);
-    [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in "' fullfile(tmpDB,'yeast_galactosidases.fa') '" -out "' fullfile(tmpDB) '" -dbtype prot']);
+    [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in "' fullfile(tmpDIR,'yeast_galactosidases.fa') '" -out "' fullfile(tmpDIR) '" -dbtype prot']);
     if res~=0
         fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
         if ~suppressWarnings
@@ -86,20 +86,20 @@ end
 
 if (strcmp(testMethod,'blastp') || strcmp(testMethod,'both'))
     if (strcmp(testMethod,'blastp') && ~strcmp(testMethod,'both'))
-        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.pdb'),tmpDB);
-        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.phr'),tmpDB);
-        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.pin'),tmpDB);
-        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.pot'),tmpDB);
-        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.psq'),tmpDB);
-        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.ptf'),tmpDB);
-        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.pto'),tmpDB);
+        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.pdb'),tmpDIR);
+        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.phr'),tmpDIR);
+        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.pin'),tmpDIR);
+        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.pot'),tmpDIR);
+        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.psq'),tmpDIR);
+        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.ptf'),tmpDIR);
+        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.pto'),tmpDIR);
     end
     %Run a homology search
     fprintf(['\tblastp' binEnd '...\t\t\t\t\t\t\t\t']);
     if (strcmp(testMethod,'both'))
-        [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query "' fullfile(tmpDB,'yeast_galactosidases.fa') '" -out "' outFile '" -db "' fullfile(tmpDB) '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
+        [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query "' fullfile(tmpDIR,'yeast_galactosidases.fa') '" -out "' outFile '" -db "' fullfile(tmpDIR) '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
     else
-        [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query "' fullfile(tmpDB,'yeast_galactosidases.fa') '" -out "' outFile '" -db "' fullfile(tmpDB,'yeast_galactosidases') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
+        [res, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query "' fullfile(tmpDIR,'yeast_galactosidases.fa') '" -out "' outFile '" -db "' fullfile(tmpDIR,'yeast_galactosidases') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
     end
     if res~=0
         fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
@@ -127,7 +127,7 @@ if (strcmp(testMethod,'blastp') || strcmp(testMethod,'both'))
 end
 
 %Remove temporary folder, since testing is finished
-[~, ~]=system(['rm "' tmpDB '" -r']);
+[~, ~]=system(['rm "' tmpDIR '" -r']);
 
 %If this line is reached then it is assumed that test was successful
 success=1;

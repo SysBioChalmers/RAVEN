@@ -46,7 +46,7 @@ end
 blastStructure=[];
  
 %Generate temporary names for working directory and outFile
-tmpDB=tempname;
+tmpDIR=tempname;
 outFile=tempname;
 
 %Run DIAMOND multi-threaded to use all logical cores assigned to MATLAB
@@ -56,12 +56,12 @@ cores = regexp(cores{2},'^\d*','match');
 cores = cores{1};
 
 %Create a temporary folder and copy multi-FASTA file there
-[~, ~]=system(['mkdir "' tmpDB '"']);
-copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.fa'),tmpDB);
+[~, ~]=system(['mkdir "' tmpDIR '"']);
+copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.fa'),tmpDIR);
 
 %Construct a DIAMOND database
 fprintf(['\tdiamond' binEnd ': makedb...\t\t\t\t\t\t\t\t']);
-[res, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" makedb --in "' fullfile(tmpDB,'yeast_galactosidases.fa') '" --db "' tmpDB '"']);
+[res, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" makedb --in "' fullfile(tmpDIR,'yeast_galactosidases.fa') '" --db "' tmpDIR '"']);
 if res~=0
     fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
     if ~suppressWarnings
@@ -73,7 +73,7 @@ fprintf('OK\n');
 
 %Run a homology search
 fprintf(['\tdiamond' binEnd ': blastp...\t\t\t\t\t\t\t\t']);
-[res, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' fullfile(tmpDB,'yeast_galactosidases.fa') '" --out "' outFile '" --db "' tmpDB '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
+[res, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' fullfile(tmpDIR,'yeast_galactosidases.fa') '" --out "' outFile '" --db "' tmpDIR '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
 if res~=0
     fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
     if ~suppressWarnings
@@ -98,7 +98,7 @@ blastStructure.ppos=table2array(A(:,7));
 %Remove the old tempfiles
 delete([outFile '*']);
 %Remove temporary folder, since homology search is finished
-[~, ~]=system(['rm "' tmpDB '" -r']);
+[~, ~]=system(['rm "' tmpDIR '" -r']);
 
 %If this line is reached then it is assumed that test was successful
 success=1;
