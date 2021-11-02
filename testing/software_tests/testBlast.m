@@ -70,7 +70,7 @@ cores = cores{1};
 
 %Create a temporary folder and copy multi-FASTA file there
 [~, ~]=system(['mkdir "' tmpDIR '"']);
-copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.fa'),tmpDIR);
+copyfile(fullfile(ravenPath,'testing','software_tests','test_data','yeast_galactosidases.fa'),tmpDIR);
 
 if (strcmp(testMethod,'makeblastdb') || strcmp(testMethod,'both'))
     %Construct a BLAST database
@@ -89,13 +89,13 @@ end
 
 if (strcmp(testMethod,'blastp') || strcmp(testMethod,'both'))
     if (strcmp(testMethod,'blastp') && ~strcmp(testMethod,'both'))
-        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.pdb'),tmpDIR);
-        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.phr'),tmpDIR);
-        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.pin'),tmpDIR);
-        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.pot'),tmpDIR);
-        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.psq'),tmpDIR);
-        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.ptf'),tmpDIR);
-        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.pto'),tmpDIR);
+        copyfile(fullfile(ravenPath,'testing','software_tests','test_data','yeast_galactosidases.pdb'),tmpDIR);
+        copyfile(fullfile(ravenPath,'testing','software_tests','test_data','yeast_galactosidases.phr'),tmpDIR);
+        copyfile(fullfile(ravenPath,'testing','software_tests','test_data','yeast_galactosidases.pin'),tmpDIR);
+        copyfile(fullfile(ravenPath,'testing','software_tests','test_data','yeast_galactosidases.pot'),tmpDIR);
+        copyfile(fullfile(ravenPath,'testing','software_tests','test_data','yeast_galactosidases.psq'),tmpDIR);
+        copyfile(fullfile(ravenPath,'testing','software_tests','test_data','yeast_galactosidases.ptf'),tmpDIR);
+        copyfile(fullfile(ravenPath,'testing','software_tests','test_data','yeast_galactosidases.pto'),tmpDIR);
     end
     %Run a homology search
     fprintf(['\tblastp' binEnd '... ']);

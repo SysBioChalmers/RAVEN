@@ -63,7 +63,7 @@ cores = cores{1};
 
 %Create a temporary folder and copy multi-FASTA file there
 [~, ~]=system(['mkdir "' tmpDIR '"']);
-copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.fa'),tmpDIR);
+copyfile(fullfile(ravenPath,'testing','software_tests','test_data','yeast_galactosidases.fa'),tmpDIR);
 
 if (strcmp(testMethod,'hmmbuild') || strcmp(testMethod,'both'))
     %Train a hidden Markov model
@@ -82,7 +82,7 @@ end
 
 if (strcmp(testMethod,'hmmsearch') || strcmp(testMethod,'both'))
     if (strcmp(testMethod,'hmmsearch') && ~strcmp(testMethod,'both'))
-        copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.hmm'),tmpDIR);
+        copyfile(fullfile(ravenPath,'testing','software_tests','test_data','yeast_galactosidases.hmm'),tmpDIR);
     end
     %Run a homology search
     fprintf(['\thmmsearch' binEnd '... ']);

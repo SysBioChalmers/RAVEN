@@ -38,7 +38,7 @@ cores = cores{1};
 
 %Create a temporary folder and copy multi-FASTA file there
 [~, ~]=system(['mkdir "' tmpDIR '"']);
-copyfile(fullfile(ravenPath,'testing','function_tests','test_data','yeast_galactosidases.fa'),tmpDIR);
+copyfile(fullfile(ravenPath,'testing','software_tests','test_data','yeast_galactosidases.fa'),tmpDIR);
 
 %Run MAFFT
 fprintf('\tmafft.bat... ');
