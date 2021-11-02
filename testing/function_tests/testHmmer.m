@@ -50,9 +50,8 @@ else
     return
 end
 
-%Generate temporary names for working directory and outFile
+%Generate temporary name for working directory
 tmpDIR=tempname;
-outFile=tempname;
 
 %Run BLAST multi-threaded to use all logical cores assigned to MATLAB
 cores = evalc('feature(''numcores'')');
@@ -93,9 +92,6 @@ if (strcmp(testMethod,'hmmsearch') || strcmp(testMethod,'both'))
         end
     end
     fprintf('OK\n');
-    
-    %Remove the old tempfiles
-    delete([outFile '*']);
 end
 
 %Remove temporary folder, since testing is finished
