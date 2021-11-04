@@ -126,7 +126,7 @@ end
 fprintf('Checking essential binary executables:\n');
 fprintf('NOTE: Broken binary executables <strong>must be fixed</strong> before running RAVEN\n');
 
-fprintf('\tBLAST+...');
+fprintf('\tBLAST+... ');
 res=runtests('blastPlusTests.m','OutputDetail',0);
 interpretResults(res);
 
