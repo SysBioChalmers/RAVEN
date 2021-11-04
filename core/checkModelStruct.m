@@ -251,7 +251,7 @@ if numel(find(model.c))>1
     EM='The model has multiple objective functions, which might be intended, but will not allow the model to be exported to SBML:';
     dispEM(EM,false,model.rxns(find(model.c)),trimWarnings);
 elseif ~any(model.c)
-    EM='The model no objective functions in model.c, which might be intended, but will not allow the model to be exported to SBML';
+    EM='The model has no objective function in model.c, which might be intended, but will not allow the model to be exported to SBML';
     dispEM(EM,false);
 end
     
