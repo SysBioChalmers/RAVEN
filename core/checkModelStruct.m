@@ -248,10 +248,10 @@ dispEM(EM,throwErrors,model.rxns(model.lb<0 & model.rev==0),trimWarnings);
 
 %Multiple or no objective functions not allowed in SBML L3V1 FBCv2
 if numel(find(model.c))>1
-    EM='The model has multiple objective functions, which might be intended, but will not allow the model to be exported to SBML:';
+    EM='Multiple objective functions found. This might be intended, but exportModel will fail due to SBML FBCv2 non-compliance:';
     dispEM(EM,false,model.rxns(find(model.c)),trimWarnings);
 elseif ~any(model.c)
-    EM='The model has no objective function in model.c, which might be intended, but will not allow the model to be exported to SBML';
+    EM='No objective function found. This might be intended, but exportModel will fail due to SBML FBCv2 non-compliance';
     dispEM(EM,false);
 end
     
