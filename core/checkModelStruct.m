@@ -247,7 +247,7 @@ EM='The following reactions have bounds contradicting their reversibility:';
 dispEM(EM,throwErrors,model.rxns(model.lb<0 & model.rev==0),trimWarnings);
 
 %Multiple or no objective functions not allowed in SBML L3V1 FBCv2
-if find(model.c)>1 | 
+if find(model.c)>1
     EM='The model has multiple objective functions, which might be intended, but will not allow export to SBML';
     dispEM(EM,false);
 else ~any(model.c)
