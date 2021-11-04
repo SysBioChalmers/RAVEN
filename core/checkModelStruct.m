@@ -246,6 +246,18 @@ dispEM(EM,throwErrors,model.rxns(model.lb>model.ub),trimWarnings);
 EM='The following reactions have bounds contradicting their reversibility:';
 dispEM(EM,throwErrors,model.rxns(model.lb<0 & model.rev==0),trimWarnings);
 
+%Multiple or no objective functions not allowed in SBML L3V1 FBCv2
+if find(model.c)>1 | 
+    EM='The model has multiple objective functions, which might be intended, but will not allow export to SBML';
+    dispEM(EM,false);
+else ~any(model.c)
+    EM='The model no objective functions, which might be intended, but will not allow export to SBML';
+    dispEM(EM,false);
+end
+    
+EM='The following reactions have contradicting bounds:';
+dispEM(EM,throwErrors,model.rxns(model.lb>model.ub),trimWarnings);
+
 %Mapping of compartments
 if isfield(model,'compOutside')
     EM='The following compartments are in "compOutside" but not in "comps":';
