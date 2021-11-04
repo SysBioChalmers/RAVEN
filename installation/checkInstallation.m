@@ -125,7 +125,11 @@ end
 
 fprintf('Checking essential binary executables:\n');
 fprintf('NOTE: Broken binary executables <strong>must be fixed</strong> before running RAVEN\n');
-testBlast;
+
+fprintf('\tBLAST+...');
+res=runtests('blastPlusTests.m','OutputDetail',0);
+interpretResults(res);
+
 testDiamond;
 testHmmer('hmmsearch');
 fprintf('Checking non-essential/development binary executables:\n');
@@ -138,4 +142,12 @@ fprintf('Checking whether RAVEN functions are non-redundant across MATLAB path..
 checkFunctionUniqueness();
 
 fprintf('\n*** checkInstallation complete ***\n\n');
+end
+
+function interpretResults(results)
+if results.Failed==0 && results.Incomplete==0
+    fprintf('OK\n');
+else
+    fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
+end
 end
