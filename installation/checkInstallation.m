@@ -129,8 +129,9 @@ fprintf('NOTE: Broken binary executables <strong>must be fixed</strong> before r
 fprintf('\tBLAST+... ');
 res=runtests('blastPlusTests.m','OutputDetail',0);
 interpretResults(res);
-
-testDiamond;
+fprintf('\tDIAMOND... ');
+res=runtests('diamondTests.m','OutputDetail',0);
+interpretResults(res);
 testHmmer('hmmsearch');
 fprintf('Checking non-essential/development binary executables:\n');
 fprintf('NOTE: Only fix these binaries if planning to use KEGG FTP dump files in getKEGGModelForOrganism\n');
