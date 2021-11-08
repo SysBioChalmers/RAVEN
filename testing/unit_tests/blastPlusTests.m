@@ -122,7 +122,7 @@ delete([outFile '*']);
 %Check if MD5 checksums for BLAST database are the same
 verifyEqual(testCase,actDbHashes,expDbHashes);
 
-%Change one of the MD5 checksum and check if test fails
+%Change one of the MD5 checksums and check if test fails
 actDbHashes.pdb=actDbHashes.phr;
 verifyNotEqual(testCase,actDbHashes,expDbHashes);
 

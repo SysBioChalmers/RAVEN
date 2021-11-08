@@ -23,12 +23,14 @@ else
     return
 end
 
-%Create empty structures needed for actual MD5 hashes and BLAST results
+%Create empty structures needed for actual MD5 hashes and DIAMOND BLAST
+%results
 actDiamondBlastDbHash={};
 actDiamondBlastOutputHash={};
 actDiamondBlastStructure=[];
 
-%Create structures that contain expected MD5 hashes and BLAST results
+%Create structures that contain expected MD5 hashes and DIAMOND BLAST
+%results
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/expDiamondResults.mat'],'expDiamondBlastOutputHash','expDiamondBlastStructure','expDiamondBlastDbHash');
 
@@ -36,7 +38,7 @@ load([sourceDir,'/test_data/expDiamondResults.mat'],'expDiamondBlastOutputHash',
 tmpDIR=tempname;
 outFile=tempname;
 
-%Run BLAST multi-threaded to use all logical cores assigned to MATLAB
+%Run DIAMOND multi-threaded to use all logical cores assigned to MATLAB
 cores = evalc('feature(''numcores'')');
 cores = strsplit(cores, 'MATLAB was assigned: ');
 cores = regexp(cores{2},'^\d*','match');
@@ -46,13 +48,13 @@ cores = cores{1};
 [~, ~]=system(['mkdir "' tmpDIR '"']);
 copyfile(fullfile(sourceDir,'test_data','yeast_galactosidases.fa'),tmpDIR);
 
-%Construct a BLAST database
+%Construct a DIAMOND BLAST database
 [~, actDiamondBlastDbMsg]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" makedb --in "' fullfile(tmpDIR,'yeast_galactosidases.fa') '" --db "' tmpDIR '"']);
 
 %Run a homology search
 [~, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' fullfile(tmpDIR,'yeast_galactosidases.fa') '" --out "' outFile '" --db "' tmpDIR '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
 
-%Generate actual hashing messages for BLAST+ database files
+%Generate actual hashing messages for DIAMOND BLAST database files
 switch binEnd
     case '.mac'
         [~, actOutFileHashingMsg]=system(['md5 -s "' outFile '"']);
@@ -84,24 +86,24 @@ delete([outFile '*']);
 [~, ~]=system(['rm "' tmpDIR '" -r']);
 
 
-%Check if MD5 checksums for BLAST database are the same
+%Check if MD5 checksums for DIAMOND BLAST database are the same
 verifyEqual(testCase,actDiamondBlastDbHash,expDiamondBlastDbHash);
 
 %Change one of the MD5 checksums and check if test fails
 actDiamondBlastDbHash=actDiamondBlastOutputHash;
 verifyNotEqual(testCase,actDiamondBlastDbHash,expDiamondBlastDbHash);
 
-%Check if MD5 checksums for BLAST results are the same
+%Check if MD5 checksums for DIAMOND BLAST results are the same
 verifyEqual(testCase,actDiamondBlastOutputHash,expDiamondBlastOutputHash);
 
 %Change MD5 checksum and check if test fails
 actDiamondBlastOutputHash=actDiamondBlastStructure;
 verifyNotEqual(testCase,actDiamondBlastOutputHash,expDiamondBlastOutputHash);
 
-%Check if BLAST structures are the same
+%Check if DIAMOND BLAST structures are the same
 verifyEqual(testCase,actDiamondBlastStructure,expDiamondBlastStructure);
 
-%Modify actual BLAST structure and check if test fails
+%Modify actual DIAMOND BLAST structure and check if test fails
 actDiamondBlastStructure.toId=actDiamondBlastStructure.fromId;
 verifyNotEqual(testCase,actDiamondBlastStructure,expDiamondBlastStructure);
 end
