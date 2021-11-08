@@ -27,8 +27,8 @@ actHmmResult.genes = {};
 actHmmResult.scores = [];
 
 %Create structures that contain expected HMMER results
-sourceDir = fileparts(which(mfilename));
-load([sourceDir,'/test_data/expHmmerResults.mat'],'expHmmResult');
+expHmmResult.genes = {'sp|P41947|MEL6_YEASX','sp|P41946|MEL5_YEASX', 'sp|P41945|MEL2_YEASX', 'sp|P04824|MEL1_YEASX'};
+expHmmResult.scores = [0, 0, 0, 0];
 
 %Generate temporary names for working directory and outFile
 tmpDIR=tempname;
@@ -42,6 +42,8 @@ cores = cores{1};
 
 %Create a temporary folder and copy multi-FASTA file there
 [~, ~]=system(['mkdir "' tmpDIR '"']);
+
+sourceDir = fileparts(which(mfilename));
 copyfile(fullfile(sourceDir,'test_data','yeast_galactosidases.fa'),tmpDIR);
 
 %Train a hidden Markov model
