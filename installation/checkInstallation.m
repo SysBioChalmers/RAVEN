@@ -132,12 +132,13 @@ interpretResults(res);
 fprintf('\tDIAMOND... ');
 res=runtests('diamondTests.m','OutputDetail',0);
 interpretResults(res);
-testHmmer('hmmsearch');
+fprintf('\tHMMER... ');
+res=runtests('hmmerTests.m','OutputDetail',0);
+interpretResults(res);
 fprintf('Checking non-essential/development binary executables:\n');
 fprintf('NOTE: Only fix these binaries if planning to use KEGG FTP dump files in getKEGGModelForOrganism\n');
 testCdhit;
 testMafft;
-testHmmer('hmmbuild');
 
 fprintf('Checking whether RAVEN functions are non-redundant across MATLAB path...\t');
 checkFunctionUniqueness();
