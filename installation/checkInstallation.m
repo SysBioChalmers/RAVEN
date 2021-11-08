@@ -137,7 +137,9 @@ res=runtests('hmmerTests.m','OutputDetail',0);
 interpretResults(res);
 fprintf('Checking non-essential/development binary executables:\n');
 fprintf('NOTE: Only fix these binaries if planning to use KEGG FTP dump files in getKEGGModelForOrganism\n');
-testCdhit;
+fprintf('\tCD-HIT... ');
+res=runtests('cdhitTests.m','OutputDetail',0);
+interpretResults(res);
 testMafft;
 
 fprintf('Checking whether RAVEN functions are non-redundant across MATLAB path...\t');
