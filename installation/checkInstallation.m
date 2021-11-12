@@ -140,7 +140,9 @@ fprintf('NOTE: Only fix these binaries if planning to use KEGG FTP dump files in
 fprintf('\tCD-HIT... ');
 res=runtests('cdhitTests.m','OutputDetail',0);
 interpretResults(res);
-testMafft;
+fprintf('\tMAFFT... ');
+res=runtests('mafftTests.m','OutputDetail',0);
+interpretResults(res);
 
 fprintf('Checking whether RAVEN functions are non-redundant across MATLAB path...\t');
 checkFunctionUniqueness();
