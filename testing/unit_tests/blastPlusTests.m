@@ -67,13 +67,13 @@ copyfile(fullfile(sourceDir,'test_data','yeast_galactosidases.fa'),tmpDIR);
 %to test makeblastdb functionality.
 switch binEnd
     case '.mac'
-        [~, actPdbHashingMsg]=system(['md5 -s "' fullfile(tmpDIR,'yeast_galactosidases.pdb') '"']);
-        [~, actPhrHashingMsg]=system(['md5 -s "' fullfile(tmpDIR,'yeast_galactosidases.phr') '"']);
-        [~, actPotHashingMsg]=system(['md5 -s "' fullfile(tmpDIR,'yeast_galactosidases.pot') '"']);
-        [~, actPsqHashingMsg]=system(['md5 -s "' fullfile(tmpDIR,'yeast_galactosidases.psq') '"']);
-        [~, actPtfHashingMsg]=system(['md5 -s "' fullfile(tmpDIR,'yeast_galactosidases.ptf') '"']);
-        [~, actPtoHashingMsg]=system(['md5 -s "' fullfile(tmpDIR,'yeast_galactosidases.pto') '"']);
-        [~, actOutFileHashingMsg]=system(['md5 -s "' outFile '"']);
+        [~, actPdbHashingMsg]=system(['md5 "' fullfile(tmpDIR,'yeast_galactosidases.pdb') '"']);
+        [~, actPhrHashingMsg]=system(['md5 "' fullfile(tmpDIR,'yeast_galactosidases.phr') '"']);
+        [~, actPotHashingMsg]=system(['md5 "' fullfile(tmpDIR,'yeast_galactosidases.pot') '"']);
+        [~, actPsqHashingMsg]=system(['md5 "' fullfile(tmpDIR,'yeast_galactosidases.psq') '"']);
+        [~, actPtfHashingMsg]=system(['md5 "' fullfile(tmpDIR,'yeast_galactosidases.ptf') '"']);
+        [~, actPtoHashingMsg]=system(['md5 "' fullfile(tmpDIR,'yeast_galactosidases.pto') '"']);
+        [~, actOutFileHashingMsg]=system(['md5 "' outFile '"']);
     case ''
         [~, actPdbHashingMsg]=system(['md5sum "' fullfile(tmpDIR,'yeast_galactosidases.pdb') '"']);
         [~, actPhrHashingMsg]=system(['md5sum "' fullfile(tmpDIR,'yeast_galactosidases.phr') '"']);

@@ -49,7 +49,7 @@ copyfile(fullfile(sourceDir,'test_data','yeast_galactosidases.fa'),tmpDIR);
 %Generate actual hashing messages for CD-HIT results
 switch binEnd
     case '.mac'
-        [~, actOutFileHashingMsg]=system(['md5 -s "' outFile '"']);
+        [~, actOutFileHashingMsg]=system(['md5 "' outFile '"']);
     case ''
         [~, actOutFileHashingMsg]=system(['md5sum "' outFile '"']);
     case '.exe'

@@ -55,7 +55,7 @@ end
 %Generate actual hashing messages for MAFFT results
 switch binEnd
     case '.mac'
-        [~, actOutFileHashingMsg]=system(['md5 -s "' outFile '"']);
+        [~, actOutFileHashingMsg]=system(['md5 "' outFile '"']);
     case ''
         [~, actOutFileHashingMsg]=system(['md5sum "' outFile '"']);
     case '.exe'
