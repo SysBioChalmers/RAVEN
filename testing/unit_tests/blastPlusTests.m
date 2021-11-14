@@ -10,8 +10,9 @@ function testBlastPlus(testCase)
 %    "phr", "pot", "psq" and "pto" files. The remaining files (i.e. "pdb",
 %    "pin" and "ptf") are not compared as these seem to be
 %    machine-specific.
-% 2. Raw text check for BLAST result files. MD5 checksum check is not
-%    amenable for these files since they seem to be machine-specific.
+% 2. Raw text check for BLAST result files. Although the content of the
+%    files are exactly the same, their MD5 hashes are somehow different
+%    between the operating systems.
 % 3. Check of resulting blastStructure against the expected one. This is
 %    done to test BLAST results parsing in RAVEN.
 
