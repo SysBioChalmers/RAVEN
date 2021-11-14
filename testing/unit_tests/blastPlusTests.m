@@ -43,7 +43,7 @@ actBlastStructure=[];
 
 %Create structures that contain expected MD5 hashes and BLAST results
 sourceDir = fileparts(which(mfilename));
-load([sourceDir,'/test_data/expBlastResults.mat'],'expBlastStructure','expDbHashes');
+load([sourceDir,'/test_data/expBlastResults.mat'],'expBlastOutputHash','expBlastStructure','expDbHashes');
 
 %Generate temporary names for working directory and outFile
 tmpDIR=tempname;
