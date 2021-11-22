@@ -5,19 +5,20 @@ function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
 %   set of template organisms
 %
 %   Input:
-%   organismID      the id of the organism of interest
+%   organismID      the id of the organism of interest. This should also
+%                   match with the id supplied to getModelFromHomology
 %   fastaFile       a FASTA file with the protein sequences for the
 %                   organism of interest
-%   modelIDs        a cell array of model ids. If the output is to be used
-%                   with getModelFromHomology these ids must match the
-%                   "model.id" fields in the "models" structure
+%   modelIDs        a cell array of model ids. These must match the
+%                   "model.id" fields in the "models" structure if the
+%                   output is to be used with getModelFromHomology
 %   refFastaFiles   a cell array with the paths to the corresponding FASTA
 %                   files
-%   develMode       true if blastReport should be generated that are used
-%                   in the unit testing function for BLAST+. (opt, default
+%   develMode       true if blastReport should be generated that is used
+%                   in the unit testing function for BLAST+ (opt, default
 %                   false)
-%   hideVerbose     true no status messages should be printed (opt, default
-%                   false)
+%   hideVerbose     true if no status messages should be printed (opt,
+%                   default false)
 %
 %   Output:
 %   blastStructure  structure containing the bidirectional homology
@@ -26,7 +27,7 @@ function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
 %                   files and non-parsed BLAST output data. Will be blank
 %                   if develMode is false.
 %
-%   NOTE: This function calls BLAST to perform a bidirectional homology
+%   NOTE: This function calls BLAST+ to perform a bidirectional homology
 %   test between the organism of interest and a set of other organisms
 %   using standard settings. The only filtering this function does is the
 %   removal of hits with an E-value higher than 10e-5. The other homology
