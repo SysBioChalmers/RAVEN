@@ -5,104 +5,51 @@ tests = functiontests(localfunctions);
 end
 
 function testDiamond(testCase)
+%This unit test comprises several functionality tests for DIAMOND blastp in
+%RAVEN:
+% 1. MD5 checksum check for DIAMOND database files.
+% 2. Non-parsed text check for DIAMOND result files. Although the content
+%    of the files is exactly the same, their MD5 hashes are somehow
+%    different between the operating systems.
+% 3. Check of resulting blastStructure against the expected one. This is
+%    done to test DIAMOND blastp results parsing in RAVEN.
+
 %Get the directory for RAVEN Toolbox
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 
-if isunix
-    if ismac
-        binEnd='.mac';
-    else
-        binEnd='';
-    end
-elseif ispc
-    binEnd='.exe';
-else
-    dispEM('Unknown OS, exiting.')
-    return
-end
-
-%Create empty structures needed for actual MD5 hashes and DIAMOND BLAST
-%results
-actDiamondBlastDbHash={};
-actDiamondBlastOutputHash={};
-actDiamondBlastStructure=[];
-
-%Create structures that contain expected MD5 hashes and DIAMOND BLAST
+%Import structures that contain expected MD5 hashes and DIAMOND blastp
 %results
 sourceDir = fileparts(which(mfilename));
-load([sourceDir,'/test_data/expDiamondResults.mat'],'expDiamondBlastOutputHash','expDiamondBlastStructure','expDiamondBlastDbHash');
+load([sourceDir,'/test_data/expDiamondResults.mat'],'expBlastStructure','expDiamondReport');
 
-%Generate temporary names for working directory and outFile
-tmpDIR=tempname;
-outFile=tempname;
+organismID='sce';
+fastaFile=fullfile(ravenPath,'testing','unit_tests','test_data','yeast_galactosidases.fa');
+modelIDs={'hsa' 'afv'};
+refFastaFiles={fullfile(ravenPath,'testing','unit_tests','test_data','human_galactosidases.fa') fullfile(ravenPath,'testing','unit_tests','test_data','aflavus_galactosidases.fa')};
 
-%Run DIAMOND multi-threaded to use all logical cores assigned to MATLAB
-cores = evalc('feature(''numcores'')');
-cores = strsplit(cores, 'MATLAB was assigned: ');
-cores = regexp(cores{2},'^\d*','match');
-cores = cores{1};
-
-%Create a temporary folder and copy multi-FASTA file there
-[~, ~]=system(['mkdir "' tmpDIR '"']);
-copyfile(fullfile(sourceDir,'test_data','yeast_galactosidases.fa'),tmpDIR);
-
-%Construct a DIAMOND BLAST database
-[~, actDiamondBlastDbMsg]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" makedb --in "' fullfile(tmpDIR,'yeast_galactosidases.fa') '" --db "' tmpDIR '"']);
-
-%Run a homology search
-[~, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' fullfile(tmpDIR,'yeast_galactosidases.fa') '" --out "' outFile '" --db "' tmpDIR '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
-
-%Generate actual hashing messages for DIAMOND BLAST database files
-switch binEnd
-    case '.mac'
-        [~, actOutFileHashingMsg]=system(['md5 "' outFile '"']);
-    case ''
-        [~, actOutFileHashingMsg]=system(['md5sum "' outFile '"']);
-    case '.exe'
-        [~, actOutFileHashingMsg]=system(['certutil -hashfile "' outFile '" MD5"']);
-end
-
-actDiamondBlastDbHash = char(regexp(actDiamondBlastDbMsg,'[a-f0-9]{32}','match'));
-actDiamondBlastOutputHash = char(regexp(actOutFileHashingMsg,'[a-f0-9]{32}','match'));
-
-%Do the parsing of the text file
-actDiamondBlastStructure.fromId='sce';
-actDiamondBlastStructure.toId='sco';
-A=readtable(outFile,'Delimiter','\t','Format','%s%s%f%f%f%f%f');
-actDiamondBlastStructure.fromGenes=A{:,1};
-actDiamondBlastStructure.toGenes=A{:,2};
-actDiamondBlastStructure.evalue=table2array(A(:,3));
-actDiamondBlastStructure.identity=table2array(A(:,4));
-actDiamondBlastStructure.aligLen=table2array(A(:,5));
-actDiamondBlastStructure.bitscore=table2array(A(:,6));
-actDiamondBlastStructure.ppos=table2array(A(:,7));
-
-%Remove the old tempfiles
-delete([outFile '*']);
-
-%Remove temporary folder, since testing is finished
-[~, ~]=system(['rm "' tmpDIR '" -r']);
+%Run DIAMOND blastp
+[actBlastStructure,actDiamondReport]=getDiamond(organismID,fastaFile,modelIDs,refFastaFiles,true,true);
 
 
-%Check if MD5 checksums for DIAMOND BLAST database are the same
-verifyEqual(testCase,actDiamondBlastDbHash,expDiamondBlastDbHash);
+%Test 1a: Check if MD5 checksums for DIAMOND blastp database files are the same
+verifyEqual(testCase,actDiamondReport.dbHashes,expDiamondReport.dbHashes);
 
-%Change one of the MD5 checksums and check if test fails
-actDiamondBlastDbHash=actDiamondBlastOutputHash;
-verifyNotEqual(testCase,actDiamondBlastDbHash,expDiamondBlastDbHash);
+%Test 1b: Change one of the MD5 checksums and check if test fails
+actDiamondReport.dbHashes{1,1}=actDiamondReport.dbHashes{1,2};
+verifyNotEqual(testCase,actDiamondReport.dbHashes,expDiamondReport.dbHashes);
 
-%Check if MD5 checksums for DIAMOND BLAST results are the same
-verifyEqual(testCase,actDiamondBlastOutputHash,expDiamondBlastOutputHash);
+%Test 2a: Check if DIAMOND blastp result files are the same
+verifyEqual(testCase,actDiamondReport.diamondTxtOutput,expDiamondReport.diamondTxtOutput);
 
-%Change MD5 checksum and check if test fails
-actDiamondBlastOutputHash=actDiamondBlastStructure;
-verifyNotEqual(testCase,actDiamondBlastOutputHash,expDiamondBlastOutputHash);
+%Test 2b: Change actual DIAMOND blastp result file and check if test fails
+actDiamondReport.diamondTxtOutput='empty';
+verifyNotEqual(testCase,actDiamondReport.diamondTxtOutput,expDiamondReport.diamondTxtOutput);
 
-%Check if DIAMOND BLAST structures are the same
-verifyEqual(testCase,actDiamondBlastStructure,expDiamondBlastStructure);
+%Test 3a: Check if DIAMOND blastp structures are the same
+verifyEqual(testCase,actBlastStructure,expBlastStructure);
 
-%Modify actual DIAMOND BLAST structure and check if test fails
-actDiamondBlastStructure.toId=actDiamondBlastStructure.fromId;
-verifyNotEqual(testCase,actDiamondBlastStructure,expDiamondBlastStructure);
+%Test 3b: Modify actual DIAMOND blastp structure and check if test fails
+actBlastStructure(1,1).toId=actBlastStructure(1,1).fromId;
+verifyNotEqual(testCase,actBlastStructure,expBlastStructure);
 end
