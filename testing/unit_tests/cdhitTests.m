@@ -5,10 +5,16 @@ tests = functiontests(localfunctions);
 end
 
 function testCdhit(testCase)
+%This unit test comprises the functionality test for CD-HIT in RAVEN:
+% 1. MD5 checksum check for CD-HIT results file against the expected
+%    one.
+
+%%
 %Get the directory for RAVEN Toolbox
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 
+%Identify the operating system
 if isunix
     if ismac
         binEnd='.mac';
@@ -43,20 +49,13 @@ cores = cores{1};
 sourceDir = fileparts(which(mfilename));
 copyfile(fullfile(sourceDir,'test_data','yeast_galactosidases.fa'),tmpDIR);
 
+%%
 %Run protein clustering with CD-HIT
 [~, ~]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' fullfile(tmpDIR, 'yeast_galactosidases.fa') '" -o "' outFile '" -c 1.0 -n 5 -M 2000']);
 
-%Generate actual hashing messages for CD-HIT results
-switch binEnd
-    case '.mac'
-        [~, actOutFileHashingMsg]=system(['md5 "' outFile '"']);
-    case ''
-        [~, actOutFileHashingMsg]=system(['md5sum "' outFile '"']);
-    case '.exe'
-        [~, actOutFileHashingMsg]=system(['certutil -hashfile "' outFile '" MD5"']);
-end
-
-actCdhitOutputHash = char(regexp(actOutFileHashingMsg,'[a-f0-9]{32}','match'));
+%%
+%Calculate MD5 checksum for CD-HIT results file
+actCdhitOutputHash=getMD5Hash(outFile,binEnd);
 
 %Remove the old tempfiles
 delete([outFile '*']);
@@ -64,11 +63,11 @@ delete([outFile '*']);
 %Remove temporary folder, since testing is finished
 [~, ~]=system(['rm "' tmpDIR '" -r']);
 
-
-%Check if MD5 checksums for CD-HIT results are the same
+%%
+%Check 1a: Check if MD5 checksums for CD-HIT results are the same
 verifyEqual(testCase,actCdhitOutputHash,expCdhitOutputHash);
 
-%Change MD5 checksum and check if test fails
+%Check 1b: Change MD5 checksum and check if test fails
 actCdhitOutputHash='abc';
 verifyNotEqual(testCase,actCdhitOutputHash,expCdhitOutputHash);
 end
