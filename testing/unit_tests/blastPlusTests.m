@@ -16,6 +16,7 @@ function testBlastPlus(testCase)
 % 3. Check of resulting blastStructure against the expected one. This is
 %    done to test BLAST results parsing in RAVEN.
 
+%%
 %Get the directory for RAVEN Toolbox
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
@@ -29,10 +30,11 @@ fastaFile=fullfile(ravenPath,'testing','unit_tests','test_data','yeast_galactosi
 modelIDs={'hsa' 'afv'};
 refFastaFiles={fullfile(ravenPath,'testing','unit_tests','test_data','human_galactosidases.fa') fullfile(ravenPath,'testing','unit_tests','test_data','aflavus_galactosidases.fa')};
 
+%%
 %Run BLAST
 [actBlastStructure,actBlastReport]=getBlast(organismID,fastaFile,modelIDs,refFastaFiles,true,true);
 
-
+%%
 %Test 1a: Check if MD5 checksums for BLAST database files are the same
 verifyEqual(testCase,actBlastReport.dbHashes,expBlastReport.dbHashes);
 

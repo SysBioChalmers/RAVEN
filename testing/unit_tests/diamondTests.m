@@ -14,6 +14,7 @@ function testDiamond(testCase)
 % 3. Check of resulting blastStructure against the expected one. This is
 %    done to test DIAMOND blastp results parsing in RAVEN.
 
+%%
 %Get the directory for RAVEN Toolbox
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
@@ -28,10 +29,11 @@ fastaFile=fullfile(ravenPath,'testing','unit_tests','test_data','yeast_galactosi
 modelIDs={'hsa' 'afv'};
 refFastaFiles={fullfile(ravenPath,'testing','unit_tests','test_data','human_galactosidases.fa') fullfile(ravenPath,'testing','unit_tests','test_data','aflavus_galactosidases.fa')};
 
+%%
 %Run DIAMOND blastp
 [actBlastStructure,actDiamondReport]=getDiamond(organismID,fastaFile,modelIDs,refFastaFiles,true,true);
 
-
+%%
 %Test 1a: Check if MD5 checksums for DIAMOND blastp database files are the same
 verifyEqual(testCase,actDiamondReport.dbHashes,expDiamondReport.dbHashes);
 
