@@ -13,10 +13,7 @@ function testMafft(testCase)
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 
-%Create empty structures needed for actual MD5 hashes for MAFFT results
-actMafftOutput={};
-
-%Import structures that contain expected MAFFT results
+%Import structure that contains expected MAFFT results
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/expCdhitMafftOutput.mat'],'expCdhitMafftOutput');
 
