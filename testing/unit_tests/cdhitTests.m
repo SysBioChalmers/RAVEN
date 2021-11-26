@@ -27,7 +27,7 @@ else
     return
 end
 
-%Import structure that contain expected MAFFT results
+%Import structure that contains expected MAFFT results
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/expCdhitMafftOutput.mat'],'expCdhitMafftOutput');
 
