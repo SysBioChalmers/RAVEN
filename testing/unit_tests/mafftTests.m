@@ -6,32 +6,19 @@ end
 
 function testMafft(testCase)
 %This unit test comprises the functionality test for MAFFT in RAVEN:
-% 1. MD5 checksum check for MAFFT results file against the expected
-%    one.
+% 1. Check for resulting file against the expected one.
 
 %%
 %Get the directory for RAVEN Toolbox
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 
-%Identify the operating system
-if isunix
-    if ismac
-        binEnd='.mac';
-    else
-        binEnd='';
-    end
-elseif ispc
-    binEnd='.exe';
-else
-    dispEM('Unknown OS, exiting.')
-    return
-end
-
 %Create empty structures needed for actual MD5 hashes for MAFFT results
-actMafftOutputHash={};
+actMafftOutput={};
 
-expMafftOutputHash='9682b50582529cabd7455c5da943524d';
+%Import structures that contain expected MAFFT results
+sourceDir = fileparts(which(mfilename));
+load([sourceDir,'/test_data/expCdhitMafftOutput.mat'],'expCdhitMafftOutput');
 
 %Generate temporary names for working directory and outFile
 tmpDIR=tempname;
@@ -60,8 +47,8 @@ elseif ispc
 end
 
 %%
-%Calculate MD5 checksum for MAFFT results file
-actMafftOutputHash=getMD5Hash(outFile,binEnd);
+%Open actual MAFFT results file
+actMafftOutput=importdata(fullfile(outFile));
 
 %Remove the old tempfiles
 delete([outFile '*']);
@@ -70,10 +57,10 @@ delete([outFile '*']);
 [~, ~]=system(['rm "' tmpDIR '" -r']);
 
 %%
-%Check 1a: Check if MD5 checksums for MAFFT results are the same
-verifyEqual(testCase,actMafftOutputHash,expMafftOutputHash);
+%Check 1a: Check if files for MAFFT results are the same
+verifyEqual(testCase,actMafftOutput,expCdhitMafftOutput);
 
-%Check 1b: Change MD5 checksum and check if test fails
-actMafftOutputHash='abc';
-verifyNotEqual(testCase,actMafftOutputHash,expMafftOutputHash);
+%Check 1b: Change actual MAFFT results file and check if test fails
+actMafftOutput='abc';
+verifyNotEqual(testCase,actMafftOutput,expCdhitMafftOutput);
 end
