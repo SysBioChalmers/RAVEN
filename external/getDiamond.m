@@ -146,11 +146,7 @@ for i=1:numel(refFastaFiles)
         EM=['DIAMOND blastp did not run successfully, error: ', num2str(status)];
         dispEM(EM,true);
     end
-    if ispc
-        delete([tmpDB '\tmpDB*']);
-    else
-        delete([tmpDB '/tmpDB*']);
-    end
+    delete([tmpDB filesep 'tmpDB*']);
 end
 
 %Done with the DIAMOND blastp, do the parsing of the text files
