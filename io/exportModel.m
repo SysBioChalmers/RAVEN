@@ -230,7 +230,7 @@ for i=1:numel(model.comps)
     end
     
     if isfield(modelSBML.compartment,'metaid')
-        if regexp(model.comps(i),'^[^a-zA-Z_]')
+        if regexp(model.comps{i},'^[^a-zA-Z_]')
             EM='The compartment IDs are in numeric format. For the compliance with SBML specifications, compartment IDs will be preceded with "c_" string';
             dispEM(EM,false);
             model.comps(i)=strcat('c_',model.comps(i));
