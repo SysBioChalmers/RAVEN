@@ -126,11 +126,7 @@ for i=1:numel(refFastaFiles)
         dispEM(EM,true);
     end
 end
-if ispc
-    delete([tmpDB '\tmpDB*']);
-else
-    delete([tmpDB '/tmpDB*']);
-end
+delete([tmpDB filesep 'tmpDB*']);
 
 %Then create a database for each of the reference organisms and blast the
 %new organism against them
