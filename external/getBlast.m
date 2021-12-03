@@ -155,11 +155,7 @@ for i=1:numel(refFastaFiles)
         EM=['blastp did not run successfully, error: ', num2str(status)];
         dispEM(EM,true);
     end
-    if ispc
-        delete([tmpDB '\tmpDB*']);
-    else
-        delete([tmpDB '/tmpDB*']);
-    end
+    delete([tmpDB filesep 'tmpDB*']);
 end
 
 %Done with the BLAST, do the parsing of the text files
