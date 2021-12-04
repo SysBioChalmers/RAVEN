@@ -6,47 +6,49 @@ end
 
 function sortRandomizedModelTest(testCase)
 
-% Load sorted toy model
+%Load the expected (i.e. sorted) model
 sourceDir = fileparts(which(mfilename));
-load([sourceDir,'/test_data/ecoli_textbook.mat']);
-taskStruct = parseTaskList(strcat(sourceDir, '/test_data/test_tasks.txt'));
-rndModel = model;
+load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
+expModel = model;
 
-% Randomly permutate model, do not use RAVEN functions
-rndIdx = randperm(numel(rndModel.rxns));
+%Create the actual model that will be permuted and sorted
+actModel = expModel;
+
+%Randomly permutate model, do not use RAVEN functions
+rndIdx = randperm(numel(actModel.rxns));
 fieldsToChange = {'rxns','lb','ub','rev','c','rxnNames','grRules','eccodes'};
 for i=1:numel(fieldsToChange)
-    rndModel.(fieldsToChange{i}) = rndModel.(fieldsToChange{i})(rndIdx);
+    actModel.(fieldsToChange{i}) = actModel.(fieldsToChange{i})(rndIdx);
 end
-rndModel.S          = rndModel.S(:,rndIdx);
-rndModel.rxnGeneMat = rndModel.rxnGeneMat(rndIdx,:);
+actModel.S          = actModel.S(:,rndIdx);
+actModel.rxnGeneMat = actModel.rxnGeneMat(rndIdx,:);
 
-rndIdx = randperm(numel(rndModel.mets));
+rndIdx = randperm(numel(actModel.mets));
 fieldsToChange = {'mets','metNames','metComps','metFormulas'};
 for i=1:numel(fieldsToChange)
-    rndModel.(fieldsToChange{i}) = rndModel.(fieldsToChange{i})(rndIdx);
+    actModel.(fieldsToChange{i}) = actModel.(fieldsToChange{i})(rndIdx);
 end
-rndModel.S     = rndModel.S(rndIdx,:);
+actModel.S     = actModel.S(rndIdx,:);
 
-rndIdx = randperm(numel(rndModel.genes));
+rndIdx = randperm(numel(actModel.genes));
 fieldsToChange = {'genes','geneShortNames'};
 for i=1:numel(fieldsToChange)
-    rndModel.(fieldsToChange{i}) = rndModel.(fieldsToChange{i})(rndIdx);
+    actModel.(fieldsToChange{i}) = actModel.(fieldsToChange{i})(rndIdx);
 end
-rndModel.rxnGeneMat = rndModel.rxnGeneMat(:,rndIdx);
+actModel.rxnGeneMat = actModel.rxnGeneMat(:,rndIdx);
 
-rndIdx = randperm(numel(rndModel.comps));
+rndIdx = randperm(numel(actModel.comps));
 fieldsToChange = {'comps','compNames'};
 for i=1:numel(fieldsToChange)
-    rndModel.(fieldsToChange{i}) = rndModel.(fieldsToChange{i})(rndIdx);
+    actModel.(fieldsToChange{i}) = actModel.(fieldsToChange{i})(rndIdx);
 end
 [~,J]=sort(rndIdx);
-[toreplace, bywhat] = ismember(rndModel.metComps,1:length(J));
-rndModel.metComps(toreplace) = J(bywhat(toreplace));
+[toreplace, bywhat] = ismember(actModel.metComps,1:length(J));
+actModel.metComps(toreplace) = J(bywhat(toreplace));
 
-%Sort random model
-rndModel = sortIdentifiers(rndModel);
+%Sort randomly permutated model
+actModel = sortIdentifiers(actModel);
 
-%Check that results is same as original model
-verifyEqual(testCase,rndModel,model)
+%Check that the actual model is the same as the expected model
+verifyEqual(testCase,actModel,expModel)
 end
