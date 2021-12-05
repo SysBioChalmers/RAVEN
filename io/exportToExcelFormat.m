@@ -1,4 +1,4 @@
-function exportToExcelFormat(model,filename)
+function exportToExcelFormat(model,filename,sortIds)
 % exportToExcelFormat
 %   Exports a model structure to the Microsoft Excel model format
 %
@@ -8,6 +8,9 @@ function exportToExcelFormat(model,filename)
 %               be only a path, in which case the model is exported to a set
 %               of tab-delimited text files instead. See exportToTabDelimited
 %               for details regarding that functionality
+%   sortIds     logical whether metabolites, reactions and genes should be
+%               sorted alphabetically by their identifiers (opt, default
+%               false)
 %
 %   The resulting Excel file can be used with importExcelModel/SBMLFromExcel
 %   for modelling or to generate a SBML file.
@@ -15,7 +18,13 @@ function exportToExcelFormat(model,filename)
 %   NOTE: No checks are made regarding the correctness of the model. Use
 %         checkModelStruct to identify problems in the model structure
 %
-%   Usage: exportToExcelFormat(model,filename)
+%   Usage: exportToExcelFormat(model,filename,sortIds)
+if nargin<3
+    sortIds=false;
+end
+if sortIds==true
+    model=sortIdentifiers(model);
+end
 
 [~, A, B]=fileparts(filename);
 

@@ -46,6 +46,9 @@ if nargin<2
     prefix='model';
 end
 
+%Sort reactions, metabolites and genes alphabetically
+model=sortIdentifiers(model);
+
 %Get versions or commits of toolboxes:
 RAVENver = getToolboxVersion('RAVEN','ravenCobraWrapper.m',masterFlag);
 COBRAver = getToolboxVersion('COBRA','initCobraToolbox.m',masterFlag);
