@@ -19,7 +19,6 @@ end
 if nargin < 4
     sortIds = false;
 end
-
 if ~endsWith(name,{'.yml','.yaml'})
     name = strcat(name,'.yml');
 end
@@ -27,6 +26,11 @@ end
 %Check that model is in RAVEN format:
 if isfield(model,'rules')
     model = ravenCobraWrapper(model);
+end
+
+%Sort identifiers alphabetically
+if sortIds == true
+    model = sortIdentifiers(model);
 end
 
 %Simplify Miriam fields:
@@ -56,11 +60,6 @@ writeMetadata(model,fid);
 
 %Metabolites:
 fprintf(fid,'- metabolites:\n');
-if sortIds==true
-    [~,pos] = sort(model.mets);
-else
-    pos = 1:numel(model.mets);
-end
 for i = 1:length(model.mets)
     fprintf(fid,'    - !!omap\n');
     writeField(model, fid, 'mets',        'txt', pos(i), '  - id',          preserveQuotes)
@@ -75,11 +74,6 @@ end
 
 %Reactions:
 fprintf(fid,'- reactions:\n');
-if sortIds==true
-    [~,pos] = sort(model.rxns);
-else
-    pos = 1:numel(model.rxns);
-end
 for i = 1:length(model.rxns)
     fprintf(fid,'    - !!omap\n');
     writeField(model, fid, 'rxns',                 'txt', pos(i), '  - id',                    preserveQuotes)
@@ -101,11 +95,6 @@ end
 
 %Genes:
 fprintf(fid,'- genes:\n');
-if sortIds==true
-    [~,pos] = sort(model.genes);
-else
-    pos = 1:numel(model.genes);
-end
 for i = 1:length(model.genes)
     fprintf(fid,'    - !!omap\n');
     writeField(model, fid, 'genes',          'txt', pos(i), '  - id',         preserveQuotes)
@@ -115,11 +104,6 @@ end
 
 %Compartments:
 fprintf(fid,'- compartments: !!omap\n');
-if sortIds==true
-    [~,pos] = sort(model.comps);
-else
-    pos = 1:numel(model.comps);
-end
 for i = 1:length(model.comps)
     writeField(model, fid, 'compNames',   'txt', pos(i), ['- ' model.comps{pos(i)}], preserveQuotes)
     writeField(model, fid, 'compMiriams', 'txt', pos(i), '- annotation',             preserveQuotes)
