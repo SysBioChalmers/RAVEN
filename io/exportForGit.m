@@ -1,4 +1,4 @@
-function out=exportForGit(model,prefix,path,formats,masterFlag,subDirs)
+function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs)
 % exportForGit
 %   Generates a directory structure and populates this with model files, ready
 %   to be commited to a Git(Hub) maintained model repository. Writes the model
@@ -13,8 +13,8 @@ function out=exportForGit(model,prefix,path,formats,masterFlag,subDirs)
 %   formats             cell array of strings specifying in what file formats
 %                       the model should be exported (opt, default to all
 %                       formats as {'mat', 'txt', 'xlsx', 'xml', 'yml'})
-%   masterFlag          logical, if true, function will error if RAVEN (and
-%                       COBRA if detected) is/are not on the master branch.
+%   mainBranchFlag          logical, if true, function will error if RAVEN (and
+%                       COBRA if detected) is/are not on the main branch.
 %                       (opt, default false)
 %   subDirs             logical, whether model files for each file format 
 %                       should be written in its own subdirectory, with
@@ -22,12 +22,12 @@ function out=exportForGit(model,prefix,path,formats,masterFlag,subDirs)
 %                       standard-GEM repository format. If false, all files
 %                       are stored in the same folder. (opt, default true)
 %
-%   Usage: exportForGit(model,prefix,path,formats,masterFlag)
+%   Usage: exportForGit(model,prefix,path,formats,mainBranchFlag)
 if nargin<6
     subDirs=true;
 end
 if nargin<5
-    masterFlag=false;
+    mainBranchFlag=false;
 end
 if nargin<4 || isempty(formats)
     formats={'mat', 'txt', 'xlsx', 'xml', 'yml'};
@@ -50,8 +50,8 @@ end
 model=sortIdentifiers(model);
 
 %Get versions or commits of toolboxes:
-RAVENver = getToolboxVersion('RAVEN','ravenCobraWrapper.m',masterFlag);
-COBRAver = getToolboxVersion('COBRA','initCobraToolbox.m',masterFlag);
+RAVENver = getToolboxVersion('RAVEN','ravenCobraWrapper.m',mainBranchFlag);
+COBRAver = getToolboxVersion('COBRA','initCobraToolbox.m',mainBranchFlag);
 
 %Retrieve libSBML version:
 try % 5.17.0 and newer
