@@ -45,7 +45,7 @@ if (nargout >= 2)
     remainder = string(sfinish + 1:length(string));
 end
 
-if (nargout == 3 & start > 1)
+if (nargout == 3 && start > 1)
 	quotient = string(1:start-1);
 else
 	quotient = [];

@@ -21,7 +21,7 @@ flagdoublequote = 0;
 jquote = [];
 for i=1:length(iquote)
 	if ~flagstring
-		if iquote(i) > 1 & any(quotetransp == double(code(iquote(i)-1)))
+		if iquote(i) > 1 && any(quotetransp == double(code(iquote(i)-1)))
 			% => 'transpose';
 		else
 			% => 'beginstring';
@@ -29,7 +29,7 @@ for i=1:length(iquote)
 			flagstring = 1;
 		end
 	else % if flagstring
-		if flagdoublequote | ...
+		if flagdoublequote || ...
 		   (iquote(i) < length(code) & strcmp(code(iquote(i)+1),''''))
 			% => 'midstring';
 			flagdoublequote = ~flagdoublequote;
@@ -45,7 +45,7 @@ end
 ipercent = findstr(code,'%');
 jpercent = [];
 for i=1:length(ipercent)
-	if isempty(jquote) | ...
+	if isempty(jquote) || ...
 	   ~any((ipercent(i) > jquote(:,1)) & (ipercent(i) < jquote(:,2)))
 		jpercent = [ipercent(i) length(code)];
 		break;
@@ -55,7 +55,7 @@ end
 %- Find continuation punctuation '...'
 icont = findstr(code,'...');
 for i=1:length(icont)
-	if (isempty(jquote) | ...
+	if (isempty(jquote) || ...
 		~any((icont(i) > jquote(:,1)) & (icont(i) < jquote(:,2)))) & ...
 		(isempty(jpercent) | ...
 		icont(i) < jpercent(1))
@@ -65,7 +65,7 @@ for i=1:length(icont)
 end
 
 %- Remove strings inside comments
-if ~isempty(jpercent) & ~isempty(jquote)
+if ~isempty(jpercent) && ~isempty(jquote)
 	jquote(find(jquote(:,1) > jpercent(1)),:) = [];
 end
 
@@ -79,9 +79,9 @@ elseif icode(1,1) > 1
 end
 for i=1:size(icode,1)
 	splitc{end+1} = code(icode(i,1):icode(i,2));
-	if i < size(icode,1) & icode(i+1,1) > icode(i,2) + 1
+	if i < size(icode,1) && icode(i+1,1) > icode(i,2) + 1
 		splitc{end+1} = code((icode(i,2)+1):(icode(i+1,1)-1));
-	elseif i == size(icode,1) & icode(i,2) < length(code)
+	elseif i == size(icode,1) && icode(i,2) < length(code)
 		splitc{end+1} = code(icode(i,2)+1:end);
 	end
 end
