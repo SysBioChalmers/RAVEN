@@ -76,7 +76,7 @@ switch lower(action)
 		%%%%%%%%%%%%%%%%%%%%%% WIHTOUT REGEXP %%%%%%%%%%%%%%%%%%%%%%%
 		indbegin = findstr(str,['<!-- BEGIN ' varargin{2} ' -->']);
 		indend   = findstr(str,['<!-- END ' varargin{2} ' -->']);
-		if ~isempty(indbegin) & ~isempty(indend)
+		if ~isempty(indbegin) && ~isempty(indend)
 		   blk = str(indbegin+length(['<!-- BEGIN ' varargin{2} ' -->'])+1:indend-1);
 		   str = [str(1:indbegin-1) '{' name '}' str(indend+length(['<!-- END ' varargin{2} ' -->'])+1:end)];
 		end

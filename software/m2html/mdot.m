@@ -29,7 +29,7 @@ elseif iscell(mmat)
 	if nargin == 3, mfiles = mmat{4}; end
     mdirs = cell(size(names));
     [mdirs{:}] = deal('');
-    if nargin == 2 & length(mmat) > 3, 
+    if nargin == 2 && length(mmat) > 3, 
         mdirs = mmat{4};
     end;
 else
