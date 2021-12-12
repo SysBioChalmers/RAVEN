@@ -7,6 +7,10 @@ function checkInstallation()
 %
 %   Usage: checkInstallation()
 
+
+%Get the OS specific binary ending (e.g. exe for Windows)
+binEnd = binaryEnding();
+
 %Check if RAVEN is in the path list
 paths=textscan(path,'%s','delimiter', pathsep);
 paths=paths{1};
@@ -157,21 +161,46 @@ fprintf('Checking essential binary executables:\n');
 fprintf('NOTE: Broken binary executables <strong>must be fixed</strong> before running RAVEN\n');
 
 fprintf('\tBLAST+... ');
-res=runtests('blastPlusTests.m','OutputDetail',0);
+if isOctave
+    res=runTestInOctave('blastPlusTests');
+else
+    res=runtests('blastPlusTests.m','OutputDetail',0);
+end
 interpretResults(res);
+
 fprintf('\tDIAMOND... ');
-res=runtests('diamondTests.m','OutputDetail',0);
+if isOctave
+    res=runTestInOctave('diamondTests');
+else
+    res=runtests('diamondTests.m','OutputDetail',0);
+end
 interpretResults(res);
+
 fprintf('\tHMMER... ');
-res=runtests('hmmerTests.m','OutputDetail',0);
+if isOctave
+    res=runTestInOctave('hmmerTests');
+else
+    res=runtests('hmmerTests.m','OutputDetail',0);
+end
 interpretResults(res);
+
 fprintf('Checking non-essential/development binary executables:\n');
 fprintf('NOTE: Only fix these binaries if planning to use KEGG FTP dump files in getKEGGModelForOrganism\n');
+
 fprintf('\tCD-HIT... ');
-res=runtests('cdhitTests.m','OutputDetail',0);
+if isOctave
+    res=runTestInOctave('cdhitTests');
+else
+    res=runtests('cdhitTests.m','OutputDetail',0);
+end
 interpretResults(res);
+
 fprintf('\tMAFFT... ');
-res=runtests('mafftTests.m','OutputDetail',0);
+if isOctave
+    res=runTestInOctave('mafftTests');
+else
+    res=runtests('mafftTests.m','OutputDetail',0);
+end
 interpretResults(res);
 
 fprintf('\n=== Binaries ===\n');
@@ -242,6 +271,5 @@ try
     end
 catch
     fprintf('%s\n',notOKmsg);
-end
 end
 end

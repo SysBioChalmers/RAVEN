@@ -20,7 +20,7 @@ else
         TF(~cellfun(@isempty,regexp(STR,PAT{i}))) = 1;
     end
     TF = logical(TF);
-    if (numel(TF) == 1)
+    if (numel(TF) == 1) && iscell(TF)
         TF = TF {1};
     end
 end

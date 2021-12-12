@@ -25,9 +25,9 @@ sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/expDiamondResults.mat'],'expBlastStructure','expDiamondReport');
 
 organismID='sce';
-fastaFile=fullfile(ravenPath,'testing','unit_tests','test_data','yeast_galactosidases.fa');
+fastaFile=fullfile(ravenPath,'test','unit_tests','test_data','yeast_galactosidases.fa');
 modelIDs={'hsa' 'afv'};
-refFastaFiles={fullfile(ravenPath,'testing','unit_tests','test_data','human_galactosidases.fa') fullfile(ravenPath,'testing','unit_tests','test_data','aflavus_galactosidases.fa')};
+refFastaFiles={fullfile(ravenPath,'test','unit_tests','test_data','human_galactosidases.fa') fullfile(ravenPath,'test','unit_tests','test_data','aflavus_galactosidases.fa')};
 
 %%
 %Run DIAMOND blastp

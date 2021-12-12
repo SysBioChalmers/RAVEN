@@ -22,13 +22,12 @@ function testBlastPlus(testCase)
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 
 %Import structures that contain expected MD5 hashes and BLAST results
-sourceDir = fileparts(which(mfilename));
-load([sourceDir,'/test_data/expBlastResults.mat'],'expBlastStructure','expBlastReport');
+load([ravenPath,'/test/unit_tests/test_data/expBlastResults.mat'],'expBlastStructure','expBlastReport');
 
 organismID='sce';
-fastaFile=fullfile(ravenPath,'testing','unit_tests','test_data','yeast_galactosidases.fa');
+fastaFile=fullfile(ravenPath,'test','unit_tests','test_data','yeast_galactosidases.fa');
 modelIDs={'hsa' 'afv'};
-refFastaFiles={fullfile(ravenPath,'testing','unit_tests','test_data','human_galactosidases.fa') fullfile(ravenPath,'testing','unit_tests','test_data','aflavus_galactosidases.fa')};
+refFastaFiles={fullfile(ravenPath,'test','unit_tests','test_data','human_galactosidases.fa') fullfile(ravenPath,'test','unit_tests','test_data','aflavus_galactosidases.fa')};
 
 %%
 %Run BLAST
@@ -36,23 +35,23 @@ refFastaFiles={fullfile(ravenPath,'testing','unit_tests','test_data','human_gala
 
 %%
 %Test 1a: Check if MD5 checksums for BLAST database files are the same
-verifyEqual(testCase,actBlastReport.dbHashes,expBlastReport.dbHashes);
+verifyEqualOct(testCase,actBlastReport.dbHashes,expBlastReport.dbHashes);
 
 %Test 1b: Change one of the MD5 checksums and check if test fails
 actBlastReport.dbHashes.phr{1,1}=actBlastReport.dbHashes.phr{1,2};
-verifyNotEqual(testCase,actBlastReport.dbHashes,expBlastReport.dbHashes);
+verifyNotEqualOct(testCase,actBlastReport.dbHashes,expBlastReport.dbHashes);
 
 %Test 2a: Check if BLAST result files are the same
-verifyEqual(testCase,actBlastReport.blastTxtOutput,expBlastReport.blastTxtOutput);
+verifyEqualOct(testCase,actBlastReport.blastTxtOutput,expBlastReport.blastTxtOutput);
 
 %Test 2b: Change actual BLAST result file and check if test fails
 actBlastReport.blastTxtOutput='empty';
-verifyNotEqual(testCase,actBlastReport.blastTxtOutput,expBlastReport.blastTxtOutput);
+verifyNotEqualOct(testCase,actBlastReport.blastTxtOutput,expBlastReport.blastTxtOutput);
 
 %Test 3a: Check if BLAST structures are the same
-verifyEqual(testCase,actBlastStructure,expBlastStructure);
+verifyEqualOct(testCase,actBlastStructure,expBlastStructure);
 
 %Test 3b: Modify actual BLAST structure and check if test fails
 actBlastStructure(1,1).toId=actBlastStructure(1,1).fromId;
-verifyNotEqual(testCase,actBlastStructure,expBlastStructure);
+verifyNotEqualOct(testCase,actBlastStructure,expBlastStructure);
 end
