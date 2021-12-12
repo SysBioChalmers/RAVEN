@@ -83,7 +83,7 @@ end
 %the model if so.
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-rxnsFile=fullfile(ravenPath,'external','metacyc','metaCycRxns.mat');
+rxnsFile=fullfile(ravenPath,'src','recon_model','metacyc','metaCycRxns.mat');
 metaCycRxnFile='reactions.dat';
 metaCycPwyFile='pathway-links.dat';
 

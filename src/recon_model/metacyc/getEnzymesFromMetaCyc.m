@@ -62,7 +62,7 @@ function metaCycEnzymes=getEnzymesFromMetaCyc(metacycPath)
 %load the model.
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-enzymesFile=fullfile(ravenPath,'external','metacyc','metaCycEnzymes.mat');
+enzymesFile=fullfile(ravenPath,'src','recon_model','metacyc','metaCycEnzymes.mat');
 metaCycProteinFile='proteins.dat';
 metaCycEnzrxnsFile='enzrxns.dat';
 

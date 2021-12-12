@@ -59,7 +59,7 @@ function metaCycMets=getMetsFromMetaCyc(metacycPath)
 % the model.
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-metsFile=fullfile(ravenPath,'external','metacyc','metaCycMets.mat');
+metsFile=fullfile(ravenPath,'src','recon_model','metacyc','metaCycMets.mat');
 metaCycMetFile='compounds.dat';
 
 if exist(metsFile, 'file')

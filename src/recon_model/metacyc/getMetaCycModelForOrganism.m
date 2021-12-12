@@ -81,7 +81,7 @@ model.rev=metaCycModel.rev;
 model.c=metaCycModel.c;
 model.equations=metaCycModel.equations;
 
-%Get the 'external' directory for RAVEN Toolbox.
+%Get the 'src','recon_model' directory for RAVEN Toolbox.
 [ST I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(ST(I).file));
 

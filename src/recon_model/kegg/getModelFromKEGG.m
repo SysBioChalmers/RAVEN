@@ -61,8 +61,8 @@ if nargin<5
 end
 
 [ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-modelFile=fullfile(ravenPath,'external','kegg','keggModel.mat');
+ravenPath=fileparts(fileparts(fileparts(fileparts(ST(I).file))));
+modelFile=fullfile(ravenPath,'src','recon_model','kegg','keggModel.mat');
 if exist(modelFile, 'file') && isNewestFile(ravenPath)
     fprintf(['Importing the global KEGG model from ' strrep(modelFile,'\','/') '... ']);
     load(modelFile);
@@ -255,10 +255,10 @@ end
 function output = isNewestFile(ravenPath)
 %The ad hoc function, which checks whether keggModel.mat is the more
 %recently modified than keggRxns.mat, keggGenes.mat and keggRxns.mat
-modelFile=fullfile(ravenPath,'external','kegg','keggModel.mat');
-rxnsFile=fullfile(ravenPath,'external','kegg','keggRxns.mat');
-genesFile=fullfile(ravenPath,'external','kegg','keggGenes.mat');
-metsFile=fullfile(ravenPath,'external','kegg','keggMets.mat');
+modelFile=fullfile(ravenPath,'src','recon_model','kegg','keggModel.mat');
+rxnsFile=fullfile(ravenPath,'src','recon_model','kegg','keggRxns.mat');
+genesFile=fullfile(ravenPath,'src','recon_model','kegg','keggGenes.mat');
+metsFile=fullfile(ravenPath,'src','recon_model','kegg','keggMets.mat');
 if (getFileTime(modelFile)>getFileTime(rxnsFile))&&...
         (getFileTime(modelFile)>getFileTime(genesFile))&&...
         (getFileTime(modelFile)>getFileTime(metsFile))

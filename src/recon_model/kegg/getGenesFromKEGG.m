@@ -68,8 +68,8 @@ if nargin<1
 end
 
 [ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-genesFile=fullfile(ravenPath,'external','kegg','keggGenes.mat');
+ravenPath=fileparts(fileparts(fileparts(fileparts(ST(I).file))));
+genesFile=fullfile(ravenPath,'src','recon_model','kegg','keggGenes.mat');
 if exist(genesFile, 'file')
     fprintf(['Importing KEGG genes from ' strrep(genesFile,'\','/') '... ']);
     load(genesFile);
