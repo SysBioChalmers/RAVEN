@@ -20,7 +20,7 @@ function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 %
 %   Usage: phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 
-if nargin<1
+if nargin<1 || isempty(keggPath)
     keggPath='RAVEN/external/kegg';
 end
 if nargin<2

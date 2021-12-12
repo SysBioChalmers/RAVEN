@@ -68,7 +68,7 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 % (except for '///')
 %
 
-if nargin<1
+if nargin<1 || isempty(keggPath)
     keggPath='RAVEN/external/kegg';
 end
 
