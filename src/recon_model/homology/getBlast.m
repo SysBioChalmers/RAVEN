@@ -105,10 +105,7 @@ for i=1:numel(refFastaFiles)
     if ~hideVerbose
         fprintf(['BLASTing "' modelIDs{i} '" against "' organismID{1} '"..\n']);
     end
-    [status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query ' refFastaFiles{i} ' -out "' outFile '_' num2str(i) '" -db "' fullfile(tmpDB, 'tmpDB') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
-    if develMode
-        blastReport.blastTxtOutput{numel(blastReport.blastTxtOutput)+1}=importdata([outFile '_' num2str(i)]);
-    end
+    [status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query ' refFastaFiles{i} ' -out "' outFile '_' num2str(i) '" -db "' fullfile(tmpDB, 'tmpDB') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' num2str(cores) '"']);
     if status~=0
         EM=['blastp did not run successfully, error: ', num2str(status)];
         dispEM(EM,true);
@@ -127,13 +124,12 @@ for i=1:numel(refFastaFiles)
         EM=['makeblastdb did not run successfully, error: ', num2str(status)];
         dispEM(EM,true);
     end
-    [status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query ' fastaFile{1} ' -out "' outFile '_r' num2str(i) '" -db "' fullfile(tmpDB, 'tmpDB') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
+    [status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query ' fastaFile{1} ' -out "' outFile '_r' num2str(i) '" -db "' fullfile(tmpDB, 'tmpDB') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' num2str(cores) '"']);
     if develMode
         blastReport.dbHashes.phr{numel(blastReport.dbHashes.phr)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.phr'));
         blastReport.dbHashes.pot{numel(blastReport.dbHashes.pot)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.pot'));
         blastReport.dbHashes.psq{numel(blastReport.dbHashes.psq)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.psq'));
         blastReport.dbHashes.pto{numel(blastReport.dbHashes.pto)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.pto'));
-        blastReport.blastTxtOutput{numel(blastReport.blastTxtOutput)+1}=importdata([outFile '_r' num2str(i)]);
     end    
     if status~=0
         EM=['blastp did not run successfully, error: ', num2str(status)];
@@ -148,19 +144,26 @@ for i=1:numel(refFastaFiles)*2
     if i<=numel(refFastaFiles)
         tempStruct.fromId=modelIDs{i};
         tempStruct.toId=organismID{1};
-        A=readtable([outFile '_' num2str(i)],'Delimiter',',','Format','%s%s%f%f%f%f%f');
+        fid=fopen([outFile '_' num2str(i)],'r');
+        A=textscan(fid,'%s%s%f%f%f%f%f','Delimiter',',');
+        fclose(fid);
     else
         tempStruct.fromId=organismID{1};
         tempStruct.toId=modelIDs{i-numel(refFastaFiles)};
-        A=readtable([outFile '_r' num2str(i-numel(refFastaFiles))],'Delimiter',',','Format','%s%s%f%f%f%f%f');
+        fid=fopen([outFile '_r' num2str(i-numel(refFastaFiles))],'r');
+        A=textscan(fid,'%s%s%f%f%f%f%f','Delimiter',',');
+        fclose(fid);
+    end
+    if develMode
+        blastReport.blastTxtOutput{numel(blastReport.blastTxtOutput)+1}=A;
     end
     tempStruct.fromGenes=A{:,1};
     tempStruct.toGenes=A{:,2};
-    tempStruct.evalue=table2array(A(:,3));
-    tempStruct.identity=table2array(A(:,4));
-    tempStruct.aligLen=table2array(A(:,5));
-    tempStruct.bitscore=table2array(A(:,6));
-    tempStruct.ppos=table2array(A(:,7));
+    tempStruct.evalue=A{:,3};
+    tempStruct.identity=A{:,4};
+    tempStruct.aligLen=A{:,5};
+    tempStruct.bitscore=A{:,6};
+    tempStruct.ppos=A{:,7};
     blastStructure=[blastStructure tempStruct];
 end
 

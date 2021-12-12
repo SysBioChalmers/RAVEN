@@ -98,9 +98,6 @@ for i=1:numel(refFastaFiles)
         fprintf(['Running DIAMOND blastp with "' modelIDs{i} '" against "' organismID{1} '"..\n']);
     end
     [status, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' refFastaFiles{i} '" --out "' outFile '_' num2str(i) '" --db "' fullfile(tmpDB) '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
-    if develMode
-        diamondReport.diamondTxtOutput{numel(diamondReport.diamondTxtOutput)+1}=importdata([outFile '_' num2str(i)]);
-    end
     if status~=0
         EM=['DIAMOND blastp did not run successfully, error: ', num2str(status)];
         dispEM(EM,true);
@@ -122,7 +119,6 @@ for i=1:numel(refFastaFiles)
     [status, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' fastaFile{1} '" --out "' outFile '_r' num2str(i) '" --db "' fullfile(tmpDB) '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores]);
     if develMode
         diamondReport.dbHashes{numel(diamondReport.dbHashes)+1} = char(regexp(message,'[a-f0-9]{32}','match'));
-        diamondReport.diamondTxtOutput{numel(diamondReport.diamondTxtOutput)+1}=importdata([outFile '_r' num2str(i)]);
     end
     if status~=0
         EM=['DIAMOND blastp did not run successfully, error: ', num2str(status)];
@@ -137,19 +133,26 @@ for i=1:numel(refFastaFiles)*2
     if i<=numel(refFastaFiles)
         tempStruct.fromId=modelIDs{i};
         tempStruct.toId=organismID{1};
-        A=readtable([outFile '_' num2str(i)],'Delimiter','\t','Format','%s%s%f%f%f%f%f');
+        fid=fopen([outFile '_' num2str(i)],'r');
+        A=textscan(fid,'%s%s%f%f%f%f%f','Delimiter','\t');
+        fclose(fid);
     else
         tempStruct.fromId=organismID{1};
         tempStruct.toId=modelIDs{i-numel(refFastaFiles)};
-        A=readtable([outFile '_r' num2str(i-numel(refFastaFiles))],'Delimiter','\t','Format','%s%s%f%f%f%f%f');
+        fid=fopen([outFile '_r' num2str(i-numel(refFastaFiles))],'r');
+        A=textscan(fid,'%s%s%f%f%f%f%f','Delimiter','\t');
+        fclose(fid);
     end
+    if develMode
+        diamondReport.diamondTxtOutput{numel(diamondReport.diamondTxtOutput)+1}=A;
+    end    
     tempStruct.fromGenes=A{:,1};
     tempStruct.toGenes=A{:,2};
-    tempStruct.evalue=table2array(A(:,3));
-    tempStruct.identity=table2array(A(:,4));
-    tempStruct.aligLen=table2array(A(:,5));
-    tempStruct.bitscore=table2array(A(:,6));
-    tempStruct.ppos=table2array(A(:,7));
+    tempStruct.evalue=A{:,3};
+    tempStruct.identity=A{:,4};
+    tempStruct.aligLen=A{:,5};
+    tempStruct.bitscore=A{:,6};
+    tempStruct.ppos=A{:,7};
     blastStructure=[blastStructure tempStruct];
 end
 
