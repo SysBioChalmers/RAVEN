@@ -76,19 +76,8 @@ files=checkFileExistence(files,2); %Copy files to temp dir
 fastaFile = files(1);
 refFastaFiles = files(2:end);
 
-%Identify the operating system
-if isunix
-    if ismac
-        binEnd='.mac';
-    else
-        binEnd='';
-    end
-elseif ispc
-    binEnd='.exe';
-else
-    dispEM('Unknown OS, exiting.')
-    return
-end
+%Get the OS specific binary ending (e.g. exe for Windows)
+binEnd = binaryEnding();
 
 cores = getNcores();
 % Run DIAMOND multi-threaded to use all logical cores assigned

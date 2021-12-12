@@ -21,19 +21,8 @@ function testHmmer(testCase)
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 
-%Identify the operating system
-if isunix
-    if ismac
-        binEnd='.mac';
-    else
-        binEnd='';
-    end
-elseif ispc
-    binEnd='.exe';
-else
-    dispEM('Unknown OS, exiting.')
-    return
-end
+%Get the OS specific binary ending (e.g. exe for Windows)
+binEnd = binaryEnding();
 
 %Create empty structures needed for HMMER results
 actHmmResult.genes = {};

@@ -13,19 +13,8 @@ function testCdhit(testCase)
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 
-%Identify the operating system
-if isunix
-    if ismac
-        binEnd='.mac';
-    else
-        binEnd='';
-    end
-elseif ispc
-    binEnd='.exe';
-else
-    dispEM('Unknown OS, exiting.')
-    return
-end
+%Get the OS specific binary ending (e.g. exe for Windows)
+binEnd = binaryEnding();
 
 %Import structure that contains expected MAFFT results
 sourceDir = fileparts(which(mfilename));

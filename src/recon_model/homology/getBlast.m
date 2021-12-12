@@ -78,19 +78,10 @@ files=checkFileExistence(files,2); %Copy files to temp dir
 fastaFile = files(1);
 refFastaFiles = files(2:end);
 
-%Identify the operating system
-if isunix
-    if ismac
-        binEnd='.mac';
-    else
-        binEnd='';
-    end
-elseif ispc
-    binEnd='.exe';
+%Get the OS specific binary ending (e.g. exe for Windows)
+binEnd = binaryEnding();
+if ispc
     setenv('BLASTDB_LMDB_MAP_SIZE','1000000');
-else
-    dispEM('Unknown OS, exiting.')
-    return
 end
 
 % Run BLAST multi-threaded to use all logical cores assigned

@@ -335,6 +335,9 @@ end
 %Run the external binaries multi-threaded to use all logical cores assigned
 cores = getNcores();
 
+%Get the OS specific binary ending (e.g. exe for Windows)
+binEnd = binaryEnding();
+
 %Get the directory for RAVEN Toolbox. This is to get the path to the third
 %party software used
 [ST, I]=dbstack('-completenames');
@@ -569,20 +572,6 @@ if ~isempty(missingFASTA)
     constructMultiFasta(fastaModel,fullfile(dataDir,'keggdb','genes.pep'),fullfile(dataDir,'fasta'));
 else
     fprintf('Generating the KEGG Orthology specific multi-FASTA files... COMPLETE\n');
-end
-
-if isunix
-    if ismac
-        binEnd='.mac';
-    else
-        binEnd='';
-    end
-elseif ispc
-    binEnd='';
-else
-    EM='Unknown OS, exiting.';
-    disp(EM);
-    return
 end
 
 %Check if alignment of FASTA files should be performed
