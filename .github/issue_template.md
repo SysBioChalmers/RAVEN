@@ -1,12 +1,12 @@
 ### Description of the issue:
-*Try to be as clear as possible, e.g.:
+<!-- Try to be as clear as possible, e.g.:
 - Is there a functionality missing?
 - Did an existing function fail?
 - What is the exact error message, and other output that you got?
-- What have you tried yourself to fix it?
+- What have you tried yourself to fix it? -->
 
 #### Reproducing this issue:
-*If applicable, please attach the problematic code. PLEASE DELETE THIS LINE.*
+<!-- If applicable, please attach the problematic code. -->
 ```matlab
 INSERT CODE HERE
 ```
@@ -17,8 +17,7 @@ INSERT CODE HERE
 2. Operating system (Windows/Mac/Linux; include version)
 
 **I hereby confirm that I have:**
+<!-- Note: replace [ ] with [X] to check the box -->
 - [ ] Followed the [guidelines](https://github.com/SysBioChalmers/RAVEN/wiki/Installation) to install RAVEN.
 - [ ] Checked that a similar issue does not [already exist](https://github.com/SysBioChalmers/RAVEN/issues?utf8=%E2%9C%93&q=is%3Aissue)
 - [ ] If suitable, needed, asked first in the [Gitter chat room](https://gitter.im/SysBioChalmers/RAVEN) about the issue
-
-*Note: replace [ ] with [X] to check the box. PLEASE DELETE THIS LINE*
