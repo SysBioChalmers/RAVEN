@@ -1,6 +1,6 @@
 name: Testing
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   matlab-tests:
@@ -12,5 +12,17 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Run tests
+      id: matlab-test
       run: |
-        /usr/local/bin/matlab -nodisplay -nosplash -nodesktop -r "addpath(genpath('.'));  cd('testing/unit_tests'); runtests(struct2table(dir('*.m')).name); exit;" 
+        TEST_RESULTS=$(/usr/local/bin/matlab -nodisplay -nosplash -nodesktop -r "addpath(genpath('.')); cd('testing/unit_tests'); runtests(struct2table(dir('*.m')).name); exit;")
+        PARSED_RESULTS=$(echo $TEST_RESULTS | awk -F'.com.' '{ n = split($2, v, "__________"); for (i = 0; ++i <= n;) { print v[i] } }')
+        echo ::set-output name=results::"$PARSED_RESULTS"
+
+    - name: Post comment
+      uses: NejcZdovc/comment-pr@v1
+      with:
+        file: "testing-comment.md"
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        TEST_RESULTS: ${{steps.matlab-test.outputs.results}}
+        GH_ACTION_RUN: ${{github.run_id}}
