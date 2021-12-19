@@ -19,6 +19,11 @@ ravenDirs=regexprep(unique({ravenDirs_temp.folder}),'^.+RAVEN.{1,1}','');
 %Get rid of MATLAB functions from external software
 ravenDirs(:,contains(ravenDirs(1,:),'software'))=[];
 
+%Remove keggModel.mat if it exists
+if exist(fullfile(ravenDir,'external','kegg','keggModel.mat'), 'file') == 2
+    delete(fullfile(ravenDir,'external','kegg','keggModel.mat'));
+end
+
 %Remove existing "doc" directory from RAVEN
 rmdir(fullfile(ravenDir,'doc'),'s');
 
