@@ -1,5 +1,5 @@
-function compStruct=compareModels(models,printResults)
-% compareModels
+function compStruct=compareRxnsGenesMetsComps(models,printResults)
+% compareRxnsGenesMetsComps
 %   Compares two or more models with respect to overlap in terms of genes,
 %   reactions, metabolites and compartments.
 %
@@ -23,7 +23,7 @@ function compStruct=compareModels(models,printResults)
 %           nElements   vector with the number of elements for each
 %                       comparison
 %
-%   Usage: compStruct=compareModels(models,printResults)
+%   Usage: compStruct=compareRxnsGenesMetsComps(models,printResults)
 
 if nargin<2
     printResults=true;
