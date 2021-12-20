@@ -14,12 +14,12 @@ function irrevModel=convertToIrrev(model,rxns)
 %   Usage: irrevModel=convertToIrrev(model,rxns)
 
 if nargin<2
-    rxns=model.rxns;
+    I=true(numel(model.rxns),1);
+else
+    I=getIndexes(model,rxns,'rxns',true);
 end
 
 irrevModel=model;
-
-I=getIndexes(model,rxns,'rxns',true);
 
 revIndexesBool=model.rev~=0 & I;
 revIndexes=find(revIndexesBool);
