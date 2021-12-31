@@ -439,6 +439,15 @@ model.c=zeros(numel(model.rxns),1);
 %If no FASTA file is supplied, then just remove all genes which are not for
 %the given organism ID
 if isempty(fastaFile)
+    %Check if organismID can be found in KEGG species list or is
+    %set to "eukaryotes" or "prokaryotes"
+    phylDistsFull=getPhylDist(fullfile(dataDir,'keggdb'),true);
+    if ~ismember(organismID,[phylDistsFull.ids 'eukaryotes' 'prokaryotes'])
+        EM='Provided organismID is incorrect. Only species abbreviations from KEGG Species List or "eukaryotes"/"prokaryotes" are allowed.';
+        disp(EM);
+        error('Fatal error occured. See the details above');
+    end
+    
     fprintf(['Pruning the model from <strong>non-' organismID '</strong> genes... ']);
     if ismember(organismID,{'eukaryotes','prokaryotes'})
         phylDists=getPhylDist(fullfile(dataDir,'keggdb'),maxPhylDist==-1);
