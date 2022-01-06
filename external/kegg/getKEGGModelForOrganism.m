@@ -598,6 +598,22 @@ if ~isempty(missingAligned)
     %files for more accurate progress reporting
     fastaFiles=listFiles(fullfile(dataDir,'fasta','*.fa'));
     %Align all sequences using MAFFT
+    tmpFile=tempname;
+    %On Windows, paths need to be translated to Unix before parsing it to WSL
+    if ispc
+        [~,wslPath.tmpFile]=system(['wsl wslpath ''' tmpFile '''']);
+        wslPath.tmpFile=wslPath.tmpFile(1:end-1);
+        %mafft has problems writing to terminal (/dev/stderr) when running
+        %on WSL via MATLAB, instead write and read progress file
+        mafftOutput = tempname;
+        [~,wslPath.mafftOutput]=system(['wsl wslpath ''' mafftOutput '''']);
+        wslPath.mafftOutput=wslPath.mafftOutput(1:end-1);
+        [~,wslPath.mafft]=system(['wsl wslpath ''' fullfile(ravenPath,'software','mafft','mafft-linux64','mafft.bat') '''']);
+        wslPath.mafft=wslPath.mafft(1:end-1);
+        [~,wslPath.cdhit]=system(['wsl wslpath ''' fullfile(ravenPath,'software','cd-hit','cd-hit') '''']);
+        wslPath.cdhit=wslPath.cdhit(1:end-1);
+    end
+    
     for i=1:numel(missingAligned)
         %This is checked here because it could be that it is created by a
         %parallel process. The faw-files are saved as temporary files to
@@ -662,77 +678,84 @@ if ~isempty(missingAligned)
             %Do the clustering and alignment if there are more than one
             %sequences, otherwise just save the sequence (or an empty file)
             if numel(fastaStruct)>1
-                if seqIdentity==0.9
-                    cdhitInp100=tempname;
-                    fastawrite(cdhitInp100,fastaStruct);
-                    cdhitInp90=tempname;
-                    [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -n 5 -M 2000']);
-                    if status~=0
-                        EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
-                        dispEM(EM);
-                    end
-                    %Remove the old tempfile
-                    if exist(cdhitInp100, 'file')
-                        delete([cdhitInp100 '*']);
-                    end
-                    tmpFile=tempname;
-                    [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp90 '" -o "' tmpFile '" -c 0.9 -n 5 -M 2000 -aL 0.8']);
-                    if status~=0
-                        EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
-                        dispEM(EM);
-                    end
-                    %Remove the old tempfile
-                    if exist(cdhitInp90, 'file')
-                        delete([cdhitInp90 '*']);
-                    end
-                elseif seqIdentity==0.5
-                    cdhitInp100=tempname;
-                    fastawrite(cdhitInp100,fastaStruct);
-                    cdhitInp90=tempname;
-                    [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -n 5 -M 2000']);
-                    if status~=0
-                        EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
-                        dispEM(EM);
-                    end
-                    %Remove the old tempfile
-                    if exist(cdhitInp100, 'file')
-                        delete([cdhitInp100 '*']);
-                    end
-                    cdhitInp50=tempname;
-                    [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp90 '" -o "' cdhitInp50 '" -c 0.9 -n 5 -M 2000 -aL 0.8']);
-                    if status~=0
-                        EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
-                        dispEM(EM);
-                    end
-                    %Remove the old tempfile
-                    if exist(cdhitInp90, 'file')
-                        delete([cdhitInp90 '*']);
-                    end
-                    tmpFile=tempname;
-                    [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp50 '" -o "' tmpFile '" -c 0.5 -n 3 -M 2000 -aL 0.8']);
-                    if status~=0
-                        EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
-                        dispEM(EM);
-                    end
-                    %Remove the old tempfile
-                    if exist(cdhitInp50, 'file')
-                        delete([cdhitInp50 '*']);
-                    end
-                elseif seqIdentity~=-1
+%                 if seqIdentity==0.9
+%                     cdhitInp100=tempname;
+%                     fastawrite(cdhitInp100,fastaStruct);
+%                     cdhitInp90=tempname;
+%                     [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -n 5 -M 2000']);
+%                     if status~=0
+%                         EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+%                         dispEM(EM);
+%                     end
+%                     %Remove the old tempfile
+%                     if exist(cdhitInp100, 'file')
+%                         delete([cdhitInp100 '*']);
+%                     end
+%                     tmpFile=tempname;
+%                     [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp90 '" -o "' tmpFile '" -c 0.9 -n 5 -M 2000 -aL 0.8']);
+%                     if status~=0
+%                         EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+%                         dispEM(EM);
+%                     end
+%                     %Remove the old tempfile
+%                     if exist(cdhitInp90, 'file')
+%                         delete([cdhitInp90 '*']);
+%                     end
+%                 elseif seqIdentity==0.5
+%                     cdhitInp100=tempname;
+%                     fastawrite(cdhitInp100,fastaStruct);
+%                     cdhitInp90=tempname;
+%                     [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp100 '" -o "' cdhitInp90 '" -c 1.0 -n 5 -M 2000']);
+%                     if status~=0
+%                         EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+%                         dispEM(EM);
+%                     end
+%                     %Remove the old tempfile
+%                     if exist(cdhitInp100, 'file')
+%                         delete([cdhitInp100 '*']);
+%                     end
+%                     cdhitInp50=tempname;
+%                     [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp90 '" -o "' cdhitInp50 '" -c 0.9 -n 5 -M 2000 -aL 0.8']);
+%                     if status~=0
+%                         EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+%                         dispEM(EM);
+%                     end
+%                     %Remove the old tempfile
+%                     if exist(cdhitInp90, 'file')
+%                         delete([cdhitInp90 '*']);
+%                     end
+%                     tmpFile=tempname;
+%                     [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInp50 '" -o "' tmpFile '" -c 0.5 -n 3 -M 2000 -aL 0.8']);
+%                     if status~=0
+%                         EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
+%                         dispEM(EM);
+%                     end
+%                     %Remove the old tempfile
+%                     if exist(cdhitInp50, 'file')
+%                         delete([cdhitInp50 '*']);
+%                     end
+%                 elseif seqIdentity~=-1
+                 if seqIdentity~=-1
                     cdhitInpCustom=tempname;
                     fastawrite(cdhitInpCustom,fastaStruct);
-                    tmpFile=tempname;
                     if seqIdentity<=1 && seqIdentity>0.7
-                        [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n 5 -M 2000']);
+                        nparam='5';
                     elseif seqIdentity>0.6
-                        [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n 4 -M 2000']);
+                        nparam='4';
                     elseif seqidentity>0.5
-                        [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n 3 -M 2000']);
+                        nparam='3';
                     elseif seqidentity>0.4
-                        [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n 2 -M 2000']);
+                        nparam='2';
                     else
                         EM='The provided seqIdentity must be between 0 and 1\n';
                         dispEM(EM);
+                    end
+                    if ispc
+                        [~,wslPath.cdhitInpCustom]=system(['wsl wslpath ''' cdhitInpCustom '''']);
+                        wslPath.cdhitInpCustom=wslPath.cdhitInpCustom(1:end-1);
+                        [status, output]=system(['wsl "' wslPath.cdhit '" -T "' num2str(cores) '" -i "' wslPath.cdhitInpCustom '" -o "' wslPath.tmpFile '" -c "' num2str(seqIdentity) '" -n ' nparam ' -M 2000']);
+                    elseif ismac || isunix
+                        [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n ' nparam ' -M 2000']);
                     end
                     if status~=0
                         EM=['Error when performing clustering of ' missingAligned{i} ':\n' output];
@@ -745,7 +768,6 @@ if ~isempty(missingAligned)
                 else
                     %This means that CD-HIT should be skipped since
                     %seqIdentity is equal to -1
-                    tmpFile=tempname;
                     fastawrite(tmpFile,fastaStruct);
                 end
                 %Do the alignment for this file
@@ -754,7 +776,11 @@ if ~isempty(missingAligned)
                 elseif isunix
                     [status, output]=system(['"' fullfile(ravenPath,'software','mafft','mafft-linux64','mafft.bat') '" --auto --anysymbol --thread "' num2str(cores) '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 elseif ispc
-                    [status, output]=system(['"' fullfile(ravenPath,'software','mafft','mafft-win','mafft.bat') '" --auto --anysymbol --thread "' num2str(cores) '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
+                    [~,wslPath.fawFile]=system(['wsl wslpath ''' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '''']);
+                    wslPath.fawFile=wslPath.fawFile(1:end-1);
+                    [status, output]=system(['wsl "' wslPath.mafft '" --auto --anysymbol --progress "' wslPath.mafftOutput '" --thread "' num2str(cores) '" --out "' wslPath.fawFile '" "' wslPath.tmpFile '"']);
+                    output=fileread(mafftOutput);
+                    delete(mafftOutput);
                 end
                 if status~=0
                     %It could be that alignment failed because only one
