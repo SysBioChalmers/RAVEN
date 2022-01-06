@@ -443,9 +443,7 @@ if isempty(fastaFile)
     %set to "eukaryotes" or "prokaryotes"
     phylDistsFull=getPhylDist(fullfile(dataDir,'keggdb'),true);
     if ~ismember(organismID,[phylDistsFull.ids 'eukaryotes' 'prokaryotes'])
-        EM='Provided organismID is incorrect. Only species abbreviations from KEGG Species List or "eukaryotes"/"prokaryotes" are allowed.';
-        disp(EM);
-        error('Fatal error occured. See the details above');
+        error('Provided organismID is incorrect. Only species abbreviations from KEGG Species List or "eukaryotes"/"prokaryotes" are allowed.');
     end
     
     fprintf(['Pruning the model from <strong>non-' organismID '</strong> genes... ']);
