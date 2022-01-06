@@ -588,16 +588,14 @@ end
 missingAligned=setdiff(KOModel.rxns,[alignedFiles;hmmFiles;alignedWorking;outFiles]);
 if ~isempty(missingAligned)
     if seqIdentity==-1
-        fprintf('Performing the multiple alignment for KEGG Orthology specific protein sets... ');
+        fprintf('Performing the multiple alignment for KEGG Orthology specific protein sets...  0%% complete');
     else
-        fprintf('Performing clustering and multiple alignment for KEGG Orthology specific protein sets... ');
+        fprintf('Performing clustering and multiple alignment for KEGG Orthology specific protein sets...  0%% complete');
     end
     missingAligned=missingAligned(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingAligned)));
-    progressFlag=0;
-    %Update fastaFiles. This is needed once rebuilding KEGG from FTP dump
-    %files for more accurate progress reporting
+    %Update fastaFiles for more accurate progress reporting
     fastaFiles=listFiles(fullfile(dataDir,'fasta','*.fa'));
-    %Align all sequences using MAFFT
+    partsDone=0.10;%Start reporting progress above 10%
     tmpFile=tempname;
     %On Windows, paths need to be translated to Unix before parsing it to WSL
     if ispc
@@ -742,9 +740,9 @@ if ~isempty(missingAligned)
                         nparam='5';
                     elseif seqIdentity>0.6
                         nparam='4';
-                    elseif seqidentity>0.5
+                    elseif seqIdentity>0.5
                         nparam='3';
-                    elseif seqidentity>0.4
+                    elseif seqIdentity>0.4
                         nparam='2';
                     else
                         EM='The provided seqIdentity must be between 0 and 1\n';
@@ -778,7 +776,7 @@ if ~isempty(missingAligned)
                 elseif ispc
                     [~,wslPath.fawFile]=system(['wsl wslpath ''' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '''']);
                     wslPath.fawFile=wslPath.fawFile(1:end-1);
-                    [status, output]=system(['wsl "' wslPath.mafft '" --auto --anysymbol --progress "' wslPath.mafftOutput '" --thread "' num2str(cores) '" --out "' wslPath.fawFile '" "' wslPath.tmpFile '"']);
+                    [status, ~]=system(['wsl "' wslPath.mafft '" --auto --anysymbol --progress "' wslPath.mafftOutput '" --thread "' num2str(cores) '" --out "' wslPath.fawFile '" "' wslPath.tmpFile '"']);
                     output=fileread(mafftOutput);
                     delete(mafftOutput);
                 end
@@ -804,7 +802,7 @@ if ~isempty(missingAligned)
                 %empty file was written previously so that doesn't have to
                 %be dealt with
                 if numel(fastaStruct)==1
-                    warnState = warning %Save the current warning state
+                    warnState = warning; %Save the current warning state
                     warning('off','Bioinfo:fastawrite:AppendToFile');
                     fastawrite(fullfile(dataDir,'aligned',[missingAligned{i} '.faw']),fastaStruct);
                     warning(warnState) %Reset warning state to previous settings
@@ -813,18 +811,14 @@ if ~isempty(missingAligned)
             %Move the temporary file to the real one
             movefile(fullfile(dataDir,'aligned',[missingAligned{i} '.faw']),fullfile(dataDir,'aligned',[missingAligned{i} '.fa']),'f');
             
-            %Print the progress: no need to update this for every
-            %iteration, just report once 25%, 50% and 75% are done
-            if progressFlag==0 && i>numel(missingAligned)*0.25
-                fprintf('%*.*f%% complete',5,2,(numel(listFiles(fullfile(dataDir,'*.fa')))/numel(fastaFiles))*100);
-                progressFlag=progressFlag+1;
-            elseif (progressFlag==1 && i>=numel(missingAligned)*0.5) || (progressFlag==2 && i>=numel(missingAligned)*0.75)
-                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%*.*f%% complete',5,2,(numel(listFiles(fullfile(dataDir,'*.fa')))/numel(fastaFiles))*100);
-                progressFlag=progressFlag+1;
+            %Print the progress, each 10%
+            if (i/numel(missingAligned))>partsDone && partsDone<1
+                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b%i%% complete',floor((numel(listFiles(fullfile(dataDir,'aligned','*.fa')))/numel(fastaFiles))*100));
+                partsDone=partsDone+0.1;
             end
         end
     end
-    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+    fprintf('\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 else
     if seqIdentity==-1
         fprintf('Performing the multiple alignment for KEGG Orthology specific protein sets... COMPLETE\n');
@@ -836,12 +830,11 @@ end
 %Check if training of Hidden Markov models should be performed
 missingHMMs=setdiff(KOModel.rxns,[hmmFiles;outFiles]);
 if ~isempty(missingHMMs)
-    fprintf('Training the KEGG Orthology specific HMMs... ');
+    fprintf('Training the KEGG Orthology specific HMMs...  0%% complete');
     missingHMMs=missingHMMs(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingHMMs)));
-    progressFlag=0;
-    %Update alignedFiles. This is needed once rebuilding KEGG from FTP dump
-    %files for more accurate progress reporting
+    %Update alignedFiles for more accurate progress reporting
     alignedFiles=listFiles(fullfile(dataDir,'aligned','*.fa'));
+    partsDone=0.10;%Start reporting progress above 10%
     %Train models for all missing KOs
     for i=1:numel(missingHMMs)
         %This is checked here because it could be that it is created by a
@@ -880,19 +873,15 @@ if ~isempty(missingHMMs)
             
             %Delete the temporary file
             delete(fullfile(dataDir,'hmms',[missingHMMs{i} '.hmw']));
-            
-            %Print the progress: no need to update this for every
-            %iteration, just report once 25%, 50% and 75% are done
-            if progressFlag==0 && i>numel(missingHMMs)*0.25
-                fprintf('%*.*f%% complete',5,2,(numel(listFiles(fullfile(dataDir,'*.hmm')))/numel(alignedFiles))*100);
-                progressFlag=progressFlag+1;
-            elseif (progressFlag==1 && i>=numel(missingHMMs)*0.5) || (progressFlag==2 && i>=numel(missingHMMs)*0.75)
-                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%*.*f%% complete',5,2,(numel(listFiles(fullfile(dataDir,'*.hmm')))/numel(alignedFiles))*100);
-                progressFlag=progressFlag+1;
+
+            %Print the progress
+            if (i/numel(missingHMMs))>partsDone && partsDone<1
+                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b%i%% complete',floor((numel(listFiles(fullfile(dataDir,'hmms','*.hmm')))/numel(alignedFiles))*100));
+                partsDone=partsDone+0.1;
             end
         end
     end
-    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+    fprintf('\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 else
     fprintf('Training the KEGG Orthology specific HMMs... COMPLETE\n');
 end
@@ -901,12 +890,11 @@ end
 %Hidden Markov models should be performed
 missingOUT=setdiff(KOModel.rxns,outFiles);
 if ~isempty(missingOUT)
-    fprintf(['Querying <strong>' strrep(fastaFile,'\','/') '</strong> against the KEGG Orthology specific HMMs... ']);
+    fprintf('Querying the user-specified FASTA file against the KEGG Orthology specific HMMs...  0%% complete');
     missingOUT=missingOUT(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingOUT)));
-    progressFlag=0;
-    %Update hmmFiles. This is needed once rebuilding KEGG from FTP dump
-    %files for more accurate progress reporting
+    %Update hmmFiles  for more accurate progress reporting
     hmmFiles=listFiles(fullfile(dataDir,'hmms','*.hmm'));
+    partsDone=0.10;%Start reporting progress above 10%    
     for i=1:numel(missingOUT)
         %This is checked here because it could be that it is created by a
         %parallel process
@@ -943,20 +931,16 @@ if ~isempty(missingOUT)
             fwrite(fid,output);
             fclose(fid);
             
-            %Print the progress: no need to update this for every
-            %iteration, just report once 25%, 50% and 75% are done
-            if progressFlag==0 && i>numel(missingOUT)*0.25
-                fprintf('%*.*f%% complete',5,2,(numel(listFiles(fullfile(outDir,'*.out')))/numel(hmmFiles))*100);
-                progressFlag=progressFlag+1;
-            elseif (progressFlag==1 && i>=numel(missingOUT)*0.5) || (progressFlag==2 && i>=numel(missingOUT)*0.75)
-                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%*.*f%% complete',5,2,(numel(listFiles(fullfile(outDir,'*.out')))/numel(hmmFiles))*100);
-                progressFlag=progressFlag+1;
+            %Print the progress, each 10%
+            if (i/numel(missingOUT))>partsDone && partsDone<1
+                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b%i%% complete',floor((numel(listFiles(fullfile(outDir,'*.out')))/numel(hmmFiles))*100));
+                partsDone=partsDone+0.1;
             end
         end
     end
-    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+    fprintf('\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 else
-    fprintf(['Querying <strong>' strrep(fastaFile,'\','/') '</strong> against the KEGG Orthology specific HMMs... COMPLETE\n']);
+    fprintf('Querying the user-specified FASTA file against the KEGG Orthology specific HMMs... COMPLETE\n');
 end
 
 
