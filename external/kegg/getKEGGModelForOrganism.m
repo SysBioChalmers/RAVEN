@@ -804,7 +804,10 @@ if ~isempty(missingAligned)
                 %empty file was written previously so that doesn't have to
                 %be dealt with
                 if numel(fastaStruct)==1
+                    warnState = warning %Save the current warning state
+                    warning('off','Bioinfo:fastawrite:AppendToFile');
                     fastawrite(fullfile(dataDir,'aligned',[missingAligned{i} '.faw']),fastaStruct);
+                    warning(warnState) %Reset warning state to previous settings
                 end
             end
             %Move the temporary file to the real one
