@@ -47,9 +47,21 @@ cores = cores{1};
 sourceDir = fileparts(which(mfilename));
 copyfile(fullfile(sourceDir,'test_data','yeast_galactosidases.fa'),tmpDIR);
 
+% Define WSL paths
+[~,wslPath.fastaFile]=system(['wsl wslpath ''' tmpDIR filesep 'yeast_galactosidases.fa''']);
+wslPath.fastaFile=wslPath.fastaFile(1:end-1);
+[~,wslPath.outFile]=system(['wsl wslpath ''' outFile '''']);
+wslPath.outFile=wslPath.outFile(1:end-1);
+[~,wslPath.cdhit]=system(['wsl wslpath ''' fullfile(ravenPath,'software','cd-hit','cd-hit') '''']);
+wslPath.cdhit=wslPath.cdhit(1:end-1);
+
 %%
 %Run protein clustering with CD-HIT
-[~, ~]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' fullfile(tmpDIR, 'yeast_galactosidases.fa') '" -o "' outFile '" -c 1.0 -n 5 -M 2000']);
+if ispc
+    [~, ~]=system(['wsl "' wslPath.cdhit '" -T "' num2str(cores) '" -i "' wslPath.fastaFile '" -o "' wslPath.outFile '" -c 1.0 -n 5 -M 2000']);
+else
+    [~, ~]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' fullfile(tmpDIR, 'yeast_galactosidases.fa') '" -o "' outFile '" -c 1.0 -n 5 -M 2000']);
+end
 
 %%
 %Open actual MAFFT results file

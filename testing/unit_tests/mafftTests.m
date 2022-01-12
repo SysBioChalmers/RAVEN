@@ -33,6 +33,14 @@ cores = cores{1};
 sourceDir = fileparts(which(mfilename));
 copyfile(fullfile(sourceDir,'test_data','yeast_galactosidases.fa'),tmpDIR);
 
+% Define WSL paths
+[~,wslPath.fastaFile]=system(['wsl wslpath ''' tmpDIR filesep 'yeast_galactosidases.fa''']);
+wslPath.fastaFile=wslPath.fastaFile(1:end-1);
+[~,wslPath.outFile]=system(['wsl wslpath ''' outFile '''']);
+wslPath.outFile=wslPath.outFile(1:end-1);
+[~,wslPath.mafft]=system(['wsl wslpath ''' fullfile(ravenPath,'software','mafft','mafft-linux64','mafft.bat') '''']);
+wslPath.mafft=wslPath.mafft(1:end-1);
+
 %%
 %Run protein multi-sequence alignment with MAFFT
 if ismac
@@ -40,7 +48,7 @@ if ismac
 elseif isunix
     [~, ~]=system(['"' fullfile(ravenPath,'software','mafft','mafft-linux64','mafft.bat') '" --auto --anysymbol --thread "' num2str(cores) '" "' fullfile(tmpDIR, 'yeast_galactosidases.fa') '" > "' outFile '"']);
 elseif ispc
-    [~, ~]=system(['"' fullfile(ravenPath,'software','mafft','mafft-win','mafft.bat') '" --auto --anysymbol --thread "' num2str(cores) '" "' fullfile(tmpDIR, 'yeast_galactosidases.fa') '" > "' outFile '"']);
+    [~, ~]=system(['wsl "' wslPath.mafft '" --auto --anysymbol --quiet --thread "' num2str(cores) '" --out "' wslPath.outFile '" "' wslPath.fastaFile '"']);
 end
 
 %%
