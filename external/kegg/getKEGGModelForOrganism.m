@@ -593,9 +593,6 @@ if ~isempty(missingAligned)
         fprintf('Performing clustering and multiple alignment for KEGG Orthology specific protein sets...  0%% complete');
     end
     missingAligned=missingAligned(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingAligned)));
-    %Update fastaFiles for more accurate progress reporting
-    fastaFiles=listFiles(fullfile(dataDir,'fasta','*.fa'));
-    partsDone=0.10;%Start reporting progress above 10%
     tmpFile=tempname;
     %On Windows, paths need to be translated to Unix before parsing it to WSL
     if ispc
@@ -811,14 +808,15 @@ if ~isempty(missingAligned)
             %Move the temporary file to the real one
             movefile(fullfile(dataDir,'aligned',[missingAligned{i} '.faw']),fullfile(dataDir,'aligned',[missingAligned{i} '.fa']),'f');
             
-            %Print the progress, each 10%
-            if (i/numel(missingAligned))>partsDone && partsDone<1
-                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b%i%% complete',floor((numel(listFiles(fullfile(dataDir,'aligned','*.fa')))/numel(fastaFiles))*100));
-                partsDone=partsDone+0.1;
+            %Print the progress each 50 files
+            if rem(i-1,50) == 0
+                progress=num2str(floor(100*numel(listFiles(fullfile(dataDir,'aligned','*.fa')))/numel(KOModel.rxns)));
+                progress=pad(progress,3,'left');
+                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
             end
         end
     end
-    fprintf('\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 else
     if seqIdentity==-1
         fprintf('Performing the multiple alignment for KEGG Orthology specific protein sets... COMPLETE\n');
@@ -832,9 +830,6 @@ missingHMMs=setdiff(KOModel.rxns,[hmmFiles;outFiles]);
 if ~isempty(missingHMMs)
     fprintf('Training the KEGG Orthology specific HMMs...  0%% complete');
     missingHMMs=missingHMMs(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingHMMs)));
-    %Update alignedFiles for more accurate progress reporting
-    alignedFiles=listFiles(fullfile(dataDir,'aligned','*.fa'));
-    partsDone=0.10;%Start reporting progress above 10%
     %Train models for all missing KOs
     for i=1:numel(missingHMMs)
         %This is checked here because it could be that it is created by a
@@ -875,13 +870,14 @@ if ~isempty(missingHMMs)
             delete(fullfile(dataDir,'hmms',[missingHMMs{i} '.hmw']));
 
             %Print the progress
-            if (i/numel(missingHMMs))>partsDone && partsDone<1
-                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b%i%% complete',floor((numel(listFiles(fullfile(dataDir,'hmms','*.hmm')))/numel(alignedFiles))*100));
-                partsDone=partsDone+0.1;
+            if rem(i-1,50) == 0
+                progress=num2str(floor(100*numel(listFiles(fullfile(dataDir,'hmms','*.hmm')))/numel(KOModel.rxns)));
+                progress=pad(progress,3,'left');
+                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
             end
         end
     end
-    fprintf('\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 else
     fprintf('Training the KEGG Orthology specific HMMs... COMPLETE\n');
 end
@@ -892,9 +888,6 @@ missingOUT=setdiff(KOModel.rxns,outFiles);
 if ~isempty(missingOUT)
     fprintf('Querying the user-specified FASTA file against the KEGG Orthology specific HMMs...  0%% complete');
     missingOUT=missingOUT(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingOUT)));
-    %Update hmmFiles  for more accurate progress reporting
-    hmmFiles=listFiles(fullfile(dataDir,'hmms','*.hmm'));
-    partsDone=0.10;%Start reporting progress above 10%    
     for i=1:numel(missingOUT)
         %This is checked here because it could be that it is created by a
         %parallel process
@@ -931,14 +924,15 @@ if ~isempty(missingOUT)
             fwrite(fid,output);
             fclose(fid);
             
-            %Print the progress, each 10%
-            if (i/numel(missingOUT))>partsDone && partsDone<1
-                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b%i%% complete',floor((numel(listFiles(fullfile(outDir,'*.out')))/numel(hmmFiles))*100));
-                partsDone=partsDone+0.1;
+            %Print the progress
+            if rem(i-1,50) == 0
+                progress=num2str(floor(100*numel(listFiles(fullfile(outDir,'*.out')))/numel(KOModel.rxns)));
+                progress=pad(progress,3,'left');
+                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
             end
         end
     end
-    fprintf('\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 else
     fprintf('Querying the user-specified FASTA file against the KEGG Orthology specific HMMs... COMPLETE\n');
 end

@@ -56,12 +56,11 @@ fprintf('COMPLETE\n');
 
 fprintf(['NOTICE: If Matlab is freezing and does not provide any output in 30 minutes, consider increasing Java Heap Memory\n', ...
     'in MATLAB settings and start over with the new session\n']);
-fprintf('Mapping genes to the multi-FASTA source file...  0%% complete');
+fprintf('Mapping genes to the multi-FASTA source file... ');
 %Now loop through the file to see which genes are present in the gene list
 %and save their position IN elementPositions! This is to enable a easy way
 %to get the distance to the following element
 genePositions=zeros(numel(model.genes),1);
-j=0.105;%Start reporting progress above 10%
 for i=1:numel(elementPositions)
     fseek(fid,elementPositions(i),-1);
     str=fread(fid,[1 30],'*char'); %Assumes that no ID is longer than 20 characters
@@ -90,17 +89,11 @@ for i=1:numel(elementPositions)
             genePositions(id)=i;
         end
     end
-    %Print the progress, each 10%
-    if (i/numel(elementPositions))>j
-        fprintf('\b\b\b\b\b\b\b\b\b\b\b\b%i%% complete',floor((i/numel(elementPositions))*100));
-        j=j+0.1;
-    end
 end
-fprintf('\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');    
+fprintf('COMPLETE\n');    
 
-fprintf('Generating the KEGG Orthology specific multi-FASTA files...  0%% complete');
+fprintf('Generating the KEGG Orthology specific multi-FASTA files...   0%% complete');
 %Loop through the reactions and print the corresponding sequences
-j=0.11;%Start reporting progress above 10%
 for i=1:numel(model.rxns)
 
     %Do not overwrite existing files
@@ -147,13 +140,14 @@ for i=1:numel(model.rxns)
         end
         fclose(rxnfid);
     end
-    %Print the progress, each 10%
-    if (i/numel(model.rxns))>j
-        fprintf('\b\b\b\b\b\b\b\b\b\b\b\b%i%% complete',floor((numel(listFiles(fullfile(outputDir,'*.fa')))/numel(model.rxns))*100));
-        j=j+0.1;
+    %Print the progress
+    if rem(i-1,50) == 0
+        progress=num2str(i/numel(model.rxns));
+        progress=pad(progress,3,'left');
+        fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
     end
 end
-fprintf('\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 
 %Close the source file
 fclose(fid);
