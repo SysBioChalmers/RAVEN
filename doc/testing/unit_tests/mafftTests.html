@@ -80,34 +80,42 @@ This function is called by:
 0033 sourceDir = fileparts(which(mfilename));
 0034 copyfile(fullfile(sourceDir,<span class="string">'test_data'</span>,<span class="string">'yeast_galactosidases.fa'</span>),tmpDIR);
 0035 
-0036 <span class="comment">%%</span>
-0037 <span class="comment">%Run protein multi-sequence alignment with MAFFT</span>
-0038 <span class="keyword">if</span> ismac
-0039     [~, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'mafft'</span>,<span class="string">'mafft-mac'</span>,<span class="string">'mafft.bat'</span>) <span class="string">'&quot; --auto --anysymbol --thread &quot;'</span> num2str(cores) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR, <span class="string">'yeast_galactosidases.fa'</span>) <span class="string">'&quot; &gt; &quot;'</span> outFile <span class="string">'&quot;'</span>]);
-0040 <span class="keyword">elseif</span> isunix
-0041     [~, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'mafft'</span>,<span class="string">'mafft-linux64'</span>,<span class="string">'mafft.bat'</span>) <span class="string">'&quot; --auto --anysymbol --thread &quot;'</span> num2str(cores) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR, <span class="string">'yeast_galactosidases.fa'</span>) <span class="string">'&quot; &gt; &quot;'</span> outFile <span class="string">'&quot;'</span>]);
-0042 <span class="keyword">elseif</span> ispc
-0043     [~, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'mafft'</span>,<span class="string">'mafft-win'</span>,<span class="string">'mafft.bat'</span>) <span class="string">'&quot; --auto --anysymbol --thread &quot;'</span> num2str(cores) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR, <span class="string">'yeast_galactosidases.fa'</span>) <span class="string">'&quot; &gt; &quot;'</span> outFile <span class="string">'&quot;'</span>]);
-0044 <span class="keyword">end</span>
-0045 
-0046 <span class="comment">%%</span>
-0047 <span class="comment">%Open actual MAFFT results file</span>
-0048 actMafftOutput=importdata(fullfile(outFile));
-0049 
-0050 <span class="comment">%Remove the old tempfiles</span>
-0051 delete([outFile <span class="string">'*'</span>]);
-0052 
-0053 <span class="comment">%Remove temporary folder, since testing is finished</span>
-0054 [~, ~]=system([<span class="string">'rm &quot;'</span> tmpDIR <span class="string">'&quot; -r'</span>]);
-0055 
-0056 <span class="comment">%%</span>
-0057 <span class="comment">%Check 1a: Check if files for MAFFT results are the same</span>
-0058 verifyEqual(testCase,actMafftOutput,expCdhitMafftOutput);
-0059 
-0060 <span class="comment">%Check 1b: Change actual MAFFT results file and check if test fails</span>
-0061 actMafftOutput=<span class="string">'abc'</span>;
-0062 verifyNotEqual(testCase,actMafftOutput,expCdhitMafftOutput);
-0063 <span class="keyword">end</span></pre></div>
+0036 <span class="comment">% Define WSL paths</span>
+0037 [~,wslPath.fastaFile]=system([<span class="string">'wsl wslpath '''</span> tmpDIR filesep <span class="string">'yeast_galactosidases.fa'''</span>]);
+0038 wslPath.fastaFile=wslPath.fastaFile(1:end-1);
+0039 [~,wslPath.outFile]=system([<span class="string">'wsl wslpath '''</span> outFile <span class="string">''''</span>]);
+0040 wslPath.outFile=wslPath.outFile(1:end-1);
+0041 [~,wslPath.mafft]=system([<span class="string">'wsl wslpath '''</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'mafft'</span>,<span class="string">'mafft-linux64'</span>,<span class="string">'mafft.bat'</span>) <span class="string">''''</span>]);
+0042 wslPath.mafft=wslPath.mafft(1:end-1);
+0043 
+0044 <span class="comment">%%</span>
+0045 <span class="comment">%Run protein multi-sequence alignment with MAFFT</span>
+0046 <span class="keyword">if</span> ismac
+0047     [~, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'mafft'</span>,<span class="string">'mafft-mac'</span>,<span class="string">'mafft.bat'</span>) <span class="string">'&quot; --auto --anysymbol --thread &quot;'</span> num2str(cores) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR, <span class="string">'yeast_galactosidases.fa'</span>) <span class="string">'&quot; &gt; &quot;'</span> outFile <span class="string">'&quot;'</span>]);
+0048 <span class="keyword">elseif</span> isunix
+0049     [~, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'mafft'</span>,<span class="string">'mafft-linux64'</span>,<span class="string">'mafft.bat'</span>) <span class="string">'&quot; --auto --anysymbol --thread &quot;'</span> num2str(cores) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR, <span class="string">'yeast_galactosidases.fa'</span>) <span class="string">'&quot; &gt; &quot;'</span> outFile <span class="string">'&quot;'</span>]);
+0050 <span class="keyword">elseif</span> ispc
+0051     [~, ~]=system([<span class="string">'wsl &quot;'</span> wslPath.mafft <span class="string">'&quot; --auto --anysymbol --quiet --thread &quot;'</span> num2str(cores) <span class="string">'&quot; --out &quot;'</span> wslPath.outFile <span class="string">'&quot; &quot;'</span> wslPath.fastaFile <span class="string">'&quot;'</span>]);
+0052 <span class="keyword">end</span>
+0053 
+0054 <span class="comment">%%</span>
+0055 <span class="comment">%Open actual MAFFT results file</span>
+0056 actMafftOutput=importdata(fullfile(outFile));
+0057 
+0058 <span class="comment">%Remove the old tempfiles</span>
+0059 delete([outFile <span class="string">'*'</span>]);
+0060 
+0061 <span class="comment">%Remove temporary folder, since testing is finished</span>
+0062 [~, ~]=system([<span class="string">'rm &quot;'</span> tmpDIR <span class="string">'&quot; -r'</span>]);
+0063 
+0064 <span class="comment">%%</span>
+0065 <span class="comment">%Check 1a: Check if files for MAFFT results are the same</span>
+0066 verifyEqual(testCase,actMafftOutput,expCdhitMafftOutput);
+0067 
+0068 <span class="comment">%Check 1b: Change actual MAFFT results file and check if test fails</span>
+0069 actMafftOutput=<span class="string">'abc'</span>;
+0070 verifyNotEqual(testCase,actMafftOutput,expCdhitMafftOutput);
+0071 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
