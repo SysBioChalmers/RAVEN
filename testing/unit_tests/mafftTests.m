@@ -34,12 +34,9 @@ sourceDir = fileparts(which(mfilename));
 copyfile(fullfile(sourceDir,'test_data','yeast_galactosidases.fa'),tmpDIR);
 
 % Define WSL paths
-[~,wslPath.fastaFile]=system(['wsl wslpath ''' tmpDIR filesep 'yeast_galactosidases.fa''']);
-wslPath.fastaFile=wslPath.fastaFile(1:end-1);
-[~,wslPath.outFile]=system(['wsl wslpath ''' outFile '''']);
-wslPath.outFile=wslPath.outFile(1:end-1);
-[~,wslPath.mafft]=system(['wsl wslpath ''' fullfile(ravenPath,'software','mafft','mafft-linux64','mafft.bat') '''']);
-wslPath.mafft=wslPath.mafft(1:end-1);
+wslPath.fastaFile=getWSLpath([tmpDIR filesep 'yeast_galactosidases.fa']);
+wslPath.outFile=getWSLpath(outFile);
+wslPath.mafft=getWSLpath(fullfile(ravenPath,'software','mafft','mafft-linux64','mafft.bat'));
 
 %%
 %Run protein multi-sequence alignment with MAFFT

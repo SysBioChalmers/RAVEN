@@ -572,17 +572,13 @@ if ~isempty(missingAligned)
     tmpFile=tempname;
     %On Windows, paths need to be translated to Unix before parsing it to WSL
     if ispc
-        [~,wslPath.tmpFile]=system(['wsl wslpath ''' tmpFile '''']);
-        wslPath.tmpFile=wslPath.tmpFile(1:end-1);
+        wslPath.tmpFile=getWSLpath(tmpFile);
         %mafft has problems writing to terminal (/dev/stderr) when running
         %on WSL via MATLAB, instead write and read progress file
         mafftOutput = tempname;
-        [~,wslPath.mafftOutput]=system(['wsl wslpath ''' mafftOutput '''']);
-        wslPath.mafftOutput=wslPath.mafftOutput(1:end-1);
-        [~,wslPath.mafft]=system(['wsl wslpath ''' fullfile(ravenPath,'software','mafft','mafft-linux64','mafft.bat') '''']);
-        wslPath.mafft=wslPath.mafft(1:end-1);
-        [~,wslPath.cdhit]=system(['wsl wslpath ''' fullfile(ravenPath,'software','cd-hit','cd-hit') '''']);
-        wslPath.cdhit=wslPath.cdhit(1:end-1);
+        wslPath.mafftOutput=getWSLpath(mafftOutput));
+        wslPath.mafft=getWSLpath(fullfile(ravenPath,'software','mafft','mafft-linux64','mafft.bat'));
+        wslPath.cdhit=getWSLpath(fullfile(ravenPath,'software','cd-hit','cd-hit');
     end
     
     for i=1:numel(missingAligned)
@@ -665,8 +661,7 @@ if ~isempty(missingAligned)
                         dispEM(EM);
                     end
                     if ispc
-                        [~,wslPath.cdhitInpCustom]=system(['wsl wslpath ''' cdhitInpCustom '''']);
-                        wslPath.cdhitInpCustom=wslPath.cdhitInpCustom(1:end-1);
+                        wslPath.cdhitInpCustom=getWSLpath(cdhitInpCustom);
                         [status, output]=system(['wsl "' wslPath.cdhit '" -T "' num2str(cores) '" -i "' wslPath.cdhitInpCustom '" -o "' wslPath.tmpFile '" -c "' num2str(seqIdentity) '" -n ' nparam ' -M 2000']);
                     elseif ismac || isunix
                         [status, output]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' cdhitInpCustom '" -o "' tmpFile '" -c "' num2str(seqIdentity) '" -n ' nparam ' -M 2000']);
@@ -690,8 +685,7 @@ if ~isempty(missingAligned)
                 elseif isunix
                     [status, output]=system(['"' fullfile(ravenPath,'software','mafft','mafft-linux64','mafft.bat') '" --auto --anysymbol --thread "' num2str(cores) '" "' tmpFile '" > "' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '"']);
                 elseif ispc
-                    [~,wslPath.fawFile]=system(['wsl wslpath ''' fullfile(dataDir,'aligned',[missingAligned{i} '.faw']) '''']);
-                    wslPath.fawFile=wslPath.fawFile(1:end-1);
+                    wslPath.fawFile=getWSLpath(fullfile(dataDir,'aligned',[missingAligned{i} '.faw']));
                     [status, ~]=system(['wsl "' wslPath.mafft '" --auto --anysymbol --progress "' wslPath.mafftOutput '" --thread "' num2str(cores) '" --out "' wslPath.fawFile '" "' wslPath.tmpFile '"']);
                     output=fileread(mafftOutput);
                     delete(mafftOutput);

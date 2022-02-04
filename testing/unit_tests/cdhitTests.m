@@ -48,12 +48,9 @@ sourceDir = fileparts(which(mfilename));
 copyfile(fullfile(sourceDir,'test_data','yeast_galactosidases.fa'),tmpDIR);
 
 % Define WSL paths
-[~,wslPath.fastaFile]=system(['wsl wslpath ''' tmpDIR filesep 'yeast_galactosidases.fa''']);
-wslPath.fastaFile=wslPath.fastaFile(1:end-1);
-[~,wslPath.outFile]=system(['wsl wslpath ''' outFile '''']);
-wslPath.outFile=wslPath.outFile(1:end-1);
-[~,wslPath.cdhit]=system(['wsl wslpath ''' fullfile(ravenPath,'software','cd-hit','cd-hit') '''']);
-wslPath.cdhit=wslPath.cdhit(1:end-1);
+wslPath.fastaFile=getWSLpath([tmpDIR filesep 'yeast_galactosidases.fa']);
+wslPath.outFile=getWSLpath(outFile);
+wslPath.cdhit=getWSLpath(fullfile(ravenPath,'software','cd-hit','cd-hit'));
 
 %%
 %Run protein clustering with CD-HIT
