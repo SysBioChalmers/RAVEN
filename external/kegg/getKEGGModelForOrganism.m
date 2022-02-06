@@ -576,9 +576,9 @@ if ~isempty(missingAligned)
         %mafft has problems writing to terminal (/dev/stderr) when running
         %on WSL via MATLAB, instead write and read progress file
         mafftOutput = tempname;
-        wslPath.mafftOutput=getWSLpath(mafftOutput));
+        wslPath.mafftOutput=getWSLpath(mafftOutput);
         wslPath.mafft=getWSLpath(fullfile(ravenPath,'software','mafft','mafft-linux64','mafft.bat'));
-        wslPath.cdhit=getWSLpath(fullfile(ravenPath,'software','cd-hit','cd-hit');
+        wslPath.cdhit=getWSLpath(fullfile(ravenPath,'software','cd-hit','cd-hit'));
     end
     
     for i=1:numel(missingAligned)
