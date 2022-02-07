@@ -1,5 +1,5 @@
 ### Description of the issue:
-<!-- Try to be as clear as possible, e.g.:
+<!-- Try to be as clear as possible, e.g.
 - Is there a functionality missing?
 - Did an existing function fail?
 - What is the exact error message, and other output that you got?
