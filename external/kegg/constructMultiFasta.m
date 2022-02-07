@@ -90,11 +90,10 @@ for i=1:numel(elementPositions)
         end
     end
 end
-fprintf('COMPLETE\n');
+fprintf('COMPLETE\n');    
 
-fprintf('Generating the KEGG Orthology specific multi-FASTA files... ');
+fprintf('Generating the KEGG Orthology specific multi-FASTA files...   0%% complete');
 %Loop through the reactions and print the corresponding sequences
-progressFlag=0;
 for i=1:numel(model.rxns)
 
     %Do not overwrite existing files
@@ -141,17 +140,14 @@ for i=1:numel(model.rxns)
         end
         fclose(rxnfid);
     end
-    %Print the progress: no need to update this for every
-    %iteration, just report once 25%, 50% and 75% are done
-    if progressFlag==0 && i>numel(model.rxns)*0.25
-        fprintf('%*.*f%% complete',5,2,(numel(listFiles(fullfile(outputDir,'*.fa')))/numel(model.rxns))*100);
-        progressFlag=progressFlag+1;
-    elseif (progressFlag==1 && i>=numel(model.rxns)*0.5) || (progressFlag==2 && i>=numel(model.rxns)*0.75)
-        fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%*.*f%% complete',5,2,(numel(listFiles(fullfile(outputDir,'*.fa')))/numel(model.rxns))*100);
-        progressFlag=progressFlag+1;
+    %Print the progress
+    if rem(i-1,50) == 0
+        progress=num2str(i/numel(model.rxns));
+        progress=pad(progress,3,'left');
+        fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
     end
 end
-fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 
 %Close the source file
 fclose(fid);

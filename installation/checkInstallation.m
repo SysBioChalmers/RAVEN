@@ -1,11 +1,20 @@
-function checkInstallation()
+function checkInstallation(develMode)
 % checkInstallation
 %   The purpose of this function is to check if all necessary functions are
 %   installed and working. It also checks whether there are any functions
 %   with overlapping names between RAVEN and other toolboxes or
 %   user-defined functions, which are accessible from MATLAB pathlist
 %
-%   Usage: checkInstallation()
+%   Input: 
+%   develMode       logical indicating development mode, which includes
+%                   testing of binaries that are required to update KEGG
+%                   HMMs (opt, default false)
+%
+%   Usage: checkInstallation(develMode)
+
+if nargin<1
+    develMode=false;
+end
 
 %Check if RAVEN is in the MATLAB path list
 paths=textscan(path,'%s','delimiter', pathsep);
@@ -124,7 +133,6 @@ else
 end
 
 fprintf('Checking essential binary executables:\n');
-fprintf('NOTE: Broken binary executables <strong>must be fixed</strong> before running RAVEN\n');
 
 fprintf('\tBLAST+... ');
 res=runtests('blastPlusTests.m','OutputDetail',0);
@@ -135,14 +143,16 @@ interpretResults(res);
 fprintf('\tHMMER... ');
 res=runtests('hmmerTests.m','OutputDetail',0);
 interpretResults(res);
-fprintf('Checking non-essential/development binary executables:\n');
-fprintf('NOTE: Only fix these binaries if planning to use KEGG FTP dump files in getKEGGModelForOrganism\n');
-fprintf('\tCD-HIT... ');
-res=runtests('cdhitTests.m','OutputDetail',0);
-interpretResults(res);
-fprintf('\tMAFFT... ');
-res=runtests('mafftTests.m','OutputDetail',0);
-interpretResults(res);
+
+if develMode
+    fprintf('NOTE: Only fix these binaries if planning to use KEGG FTP dump files in getKEGGModelForOrganism\n');
+    fprintf('\tCD-HIT... ');
+    res=runtests('cdhitTests.m','OutputDetail',0);
+    interpretResults(res);
+    fprintf('\tMAFFT... ');
+    res=runtests('mafftTests.m','OutputDetail',0);
+    interpretResults(res);
+end
 
 fprintf('Checking whether RAVEN functions are non-redundant across MATLAB path...\t');
 checkFunctionUniqueness();

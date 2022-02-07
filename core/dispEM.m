@@ -42,6 +42,8 @@ if ~isempty(toList)
     end
 end
 if throwErrors==false
+    %Escape special characters, required for fprintf
+    errorText=regexprep(errorText,'(\\|\%|'')','\\$0');
     fprintf([errorText '\n']);
 else
     throw(MException('',errorText));
