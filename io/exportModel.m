@@ -1,4 +1,4 @@
-function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
+function exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
 % exportModel
 %   Exports a constraint-based model to an SBML file (L3V1 FBCv2)
 %
@@ -10,14 +10,22 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
 %                       (opt, default false)
 %   supressWarnings     true if warnings should be supressed (opt, default
 %                       false)
+%   sortIds             logical whether metabolites, reactions and genes
+%                       should be sorted alphabetically by their
+%                       identifiers (opt, default false)
 %
-%
-%   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
+%   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
 if nargin<3
     exportGeneComplexes=false;
 end
 if nargin<4
     supressWarnings=false;
+end
+if nargin<5
+    sortIds=false;
+end
+if sortIds==true
+    model=sortIdentifiers(model);
 end
 
 %If no subSystems are defined, then no need to use groups package
@@ -222,7 +230,7 @@ for i=1:numel(model.comps)
     end
     
     if isfield(modelSBML.compartment,'metaid')
-        if ~isnan(str2double(model.comps(i)))
+        if regexp(model.comps{i},'^[^a-zA-Z_]')
             EM='The compartment IDs are in numeric format. For the compliance with SBML specifications, compartment IDs will be preceded with "c_" string';
             dispEM(EM,false);
             model.comps(i)=strcat('c_',model.comps(i));

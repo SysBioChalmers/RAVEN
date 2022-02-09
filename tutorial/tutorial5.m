@@ -19,10 +19,10 @@
 %are for. This process takes up to 20-35 minutes in macOS, Unix systems and
 %40-55 minutes in Windows, depending on your hardware and the size of
 %target organism proteome
-model=getKEGGModelForOrganism('sce','sce.fa','euk100_kegg94','output',false,false,false,false,10^-30,0.8,0.3,-1);
+model=getKEGGModelForOrganism('sce','sce.fa','euk90_kegg100','output',false,false,false,false,10^-30,0.8,0.3,-1);
 
-%The resulting model should contain around 1669 reactions, 1677
-%metabolites and 838 genes. Small variations are possible since it is an
+%The resulting model should contain around 1590 reactions, 1571
+%metabolites and 837 genes. Small variations are possible since it is an
 %heuristic algorithm and different KEGG versions will give slightly
 %different results.
 disp(model);

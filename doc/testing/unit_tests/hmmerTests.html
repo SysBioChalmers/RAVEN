@@ -1,0 +1,191 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of hmmerTests</title>
+  <meta name="keywords" content="hmmerTests">
+  <meta name="description" content="run this test case with the command">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">unit_tests</a> &gt; hmmerTests.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for testing\unit_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>hmmerTests
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>run this test case with the command</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function tests = hmmerTests </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment">run this test case with the command
+results = runtests('hmmerTests.m')</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function testHmmer(testCase)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">%run this test case with the command</span>
+0002 <span class="comment">%results = runtests('hmmerTests.m')</span>
+0003 <a name="_sub0" href="#_subfunctions" class="code">function tests = hmmerTests</a>
+0004 tests = functiontests(localfunctions);
+0005 <span class="keyword">end</span>
+0006 
+0007 <a name="_sub1" href="#_subfunctions" class="code">function testHmmer(testCase)</a>
+0008 <span class="comment">%This unit test comprises the functionality test for HMMER in RAVEN:</span>
+0009 <span class="comment">% 1. Check of parsed HMMER results against the expected.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% NOTE: as hmm and HMMER results files are time-specific, no checks for</span>
+0012 <span class="comment">% these files existence are done. Also, due to the way HMMER is utilized in</span>
+0013 <span class="comment">% getKEGGModelForOrganism (HMMER result files can be parsed only once all</span>
+0014 <span class="comment">% required hmm files are generated), the code segment involving HMMER</span>
+0015 <span class="comment">% results parsing is pasted in this test function. Should the parsing problems</span>
+0016 <span class="comment">% occur in the results processing, the code modifications shall be done in</span>
+0017 <span class="comment">% this function and getKEGGModelForOrganism respectively.</span>
+0018 
+0019 <span class="comment">%%</span>
+0020 <span class="comment">%Get the directory for RAVEN Toolbox</span>
+0021 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
+0022 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+0023 
+0024 <span class="comment">%Identify the operating system</span>
+0025 <span class="keyword">if</span> isunix
+0026     <span class="keyword">if</span> ismac
+0027         binEnd=<span class="string">'.mac'</span>;
+0028     <span class="keyword">else</span>
+0029         binEnd=<span class="string">''</span>;
+0030     <span class="keyword">end</span>
+0031 <span class="keyword">elseif</span> ispc
+0032     binEnd=<span class="string">'.exe'</span>;
+0033 <span class="keyword">else</span>
+0034     dispEM(<span class="string">'Unknown OS, exiting.'</span>)
+0035     <span class="keyword">return</span>
+0036 <span class="keyword">end</span>
+0037 
+0038 <span class="comment">%Create empty structures needed for HMMER results</span>
+0039 actHmmResult.genes = {};
+0040 actHmmResult.scores = [];
+0041 
+0042 <span class="comment">%Create structures that contain expected HMMER results</span>
+0043 expHmmResult.genes = {<span class="string">'sp|P41947|MEL6_YEASX'</span>,<span class="string">'sp|P41946|MEL5_YEASX'</span>, <span class="string">'sp|P41945|MEL2_YEASX'</span>, <span class="string">'sp|P04824|MEL1_YEASX'</span>};
+0044 expHmmResult.scores = [10^-250, 10^-250, 10^-250, 10^-250];
+0045 
+0046 <span class="comment">%Generate temporary names for working directory and outFile</span>
+0047 tmpDIR=tempname;
+0048 outFile=tempname;
+0049 
+0050 <span class="comment">%Run HMMER multi-threaded to use all logical cores assigned to MATLAB</span>
+0051 cores = evalc(<span class="string">'feature(''numcores'')'</span>);
+0052 cores = strsplit(cores, <span class="string">'MATLAB was assigned: '</span>);
+0053 cores = regexp(cores{2},<span class="string">'^\d*'</span>,<span class="string">'match'</span>);
+0054 cores = cores{1};
+0055 
+0056 <span class="comment">%Create a temporary folder and copy multi-FASTA file there</span>
+0057 [~, ~]=system([<span class="string">'mkdir &quot;'</span> tmpDIR <span class="string">'&quot;'</span>]);
+0058 
+0059 sourceDir = fileparts(which(mfilename));
+0060 copyfile(fullfile(sourceDir,<span class="string">'test_data'</span>,<span class="string">'yeast_galactosidases.fa'</span>),tmpDIR);
+0061 copyfile(fullfile(sourceDir,<span class="string">'test_data'</span>,<span class="string">'human_galactosidases.fa'</span>),tmpDIR);
+0062 
+0063 <span class="comment">%%</span>
+0064 <span class="comment">%Train a hidden Markov model</span>
+0065 [~, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'hmmer'</span>,[<span class="string">'hmmbuild'</span> binEnd]) <span class="string">'&quot; --cpu &quot;'</span> num2str(cores) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR,<span class="string">'human_galactosidases.hmm'</span>) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR,<span class="string">'yeast_galactosidases.fa'</span>) <span class="string">'&quot;'</span>]);
+0066 
+0067 <span class="comment">%Run a homology search against the newly-trained HMM</span>
+0068 [~, output]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'hmmer'</span>,[<span class="string">'hmmsearch'</span> binEnd]) <span class="string">'&quot; --cpu &quot;'</span> num2str(cores) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR,<span class="string">'human_galactosidases.hmm'</span>) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR,<span class="string">'yeast_galactosidases.fa'</span>) <span class="string">'&quot;'</span>]);
+0069 
+0070 <span class="comment">%Save the output to a file</span>
+0071 fid=fopen(outFile,<span class="string">'w'</span>);
+0072 fwrite(fid,output);
+0073 fclose(fid);
+0074 
+0075 <span class="comment">%%</span>
+0076 <span class="comment">%Parse the results</span>
+0077 geneCounter=0;
+0078 fid=fopen(outFile,<span class="string">'r'</span>);
+0079 beginMatches=false;
+0080 <span class="keyword">while</span> 1
+0081     <span class="comment">%Get the next line</span>
+0082     tline = fgetl(fid);
+0083     
+0084     <span class="comment">%Abort at end of file</span>
+0085     <span class="keyword">if</span> ~ischar(tline)
+0086         <span class="keyword">break</span>;
+0087     <span class="keyword">end</span>
+0088     
+0089     <span class="keyword">if</span> and(beginMatches,strcmp(tline,<span class="string">'  ------ inclusion threshold ------'</span>))
+0090         <span class="keyword">break</span>;
+0091     <span class="keyword">end</span>
+0092     
+0093     <span class="keyword">if</span> beginMatches==false
+0094         <span class="comment">%This is how the listing of matches begins</span>
+0095         <span class="keyword">if</span> any(strfind(tline,<span class="string">'E-value '</span>))
+0096             <span class="comment">%Read one more line that is only padding</span>
+0097             tline = fgetl(fid);
+0098             beginMatches=true;
+0099         <span class="keyword">end</span>
+0100     <span class="keyword">else</span>
+0101         <span class="comment">%If matches should be read</span>
+0102         <span class="keyword">if</span> ~strcmp(tline,<span class="string">'   [No hits detected that satisfy reporting thresholds]'</span>) &amp;&amp; ~isempty(tline)
+0103             elements=regexp(tline,<span class="string">' '</span>,<span class="string">'split'</span>);
+0104             elements=elements(cellfun(@any,elements));
+0105             
+0106             <span class="comment">%Check if the match is below the treshhold</span>
+0107             score=str2double(elements{1});
+0108             gene=elements{9};
+0109             <span class="keyword">if</span> score&lt;=10^-50
+0110                 <span class="comment">%If the score is exactly 0, change it to a very</span>
+0111                 <span class="comment">%small value to avoid NaN</span>
+0112                 <span class="keyword">if</span> score==0
+0113                     score=10^-250;
+0114                 <span class="keyword">end</span>
+0115                 <span class="comment">%Check if the gene is added already and, is so, get</span>
+0116                 <span class="comment">%the best score for it</span>
+0117                 geneCounter=geneCounter+1;
+0118                 actHmmResult.genes{geneCounter}=gene;
+0119                 actHmmResult.scores(geneCounter)=score;
+0120             <span class="keyword">end</span>
+0121         <span class="keyword">else</span>
+0122             <span class="keyword">break</span>;
+0123         <span class="keyword">end</span>
+0124     <span class="keyword">end</span>
+0125 <span class="keyword">end</span>
+0126 fclose(fid);
+0127 
+0128 <span class="comment">%Remove the old tempfiles</span>
+0129 delete([outFile <span class="string">'*'</span>]);
+0130 
+0131 <span class="comment">%Remove temporary folder, since testing is finished</span>
+0132 [~, ~]=system([<span class="string">'rm &quot;'</span> tmpDIR <span class="string">'&quot; -r'</span>]);
+0133 
+0134 <span class="comment">%%</span>
+0135 <span class="comment">%Test 1a: Check if HMMER results match the expected ones</span>
+0136 verifyEqual(testCase,actHmmResult,expHmmResult);
+0137 
+0138 <span class="comment">%Test 1b: Modify actual HMMER results structure and check if test fails</span>
+0139 actHmmResult.score(2)=1;
+0140 verifyNotEqual(testCase,actHmmResult,expHmmResult);
+0141 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

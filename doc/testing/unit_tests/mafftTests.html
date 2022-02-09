@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of mafftTests</title>
+  <meta name="keywords" content="mafftTests">
+  <meta name="description" content="run this test case with the command">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">unit_tests</a> &gt; mafftTests.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for testing\unit_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>mafftTests
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>run this test case with the command</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function tests = mafftTests </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment">run this test case with the command
+results = runtests('mafftTests.m')</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function testMafft(testCase)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">%run this test case with the command</span>
+0002 <span class="comment">%results = runtests('mafftTests.m')</span>
+0003 <a name="_sub0" href="#_subfunctions" class="code">function tests = mafftTests</a>
+0004 tests = functiontests(localfunctions);
+0005 <span class="keyword">end</span>
+0006 
+0007 <a name="_sub1" href="#_subfunctions" class="code">function testMafft(testCase)</a>
+0008 <span class="comment">%This unit test comprises the functionality test for MAFFT in RAVEN:</span>
+0009 <span class="comment">% 1. Check for resulting file against the expected one.</span>
+0010 
+0011 <span class="comment">%%</span>
+0012 <span class="comment">%Get the directory for RAVEN Toolbox</span>
+0013 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
+0014 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+0015 
+0016 <span class="comment">%Import structure that contains expected MAFFT results</span>
+0017 sourceDir = fileparts(which(mfilename));
+0018 load([sourceDir,<span class="string">'/test_data/expCdhitMafftOutput.mat'</span>],<span class="string">'expCdhitMafftOutput'</span>);
+0019 
+0020 <span class="comment">%Generate temporary names for working directory and outFile</span>
+0021 tmpDIR=tempname;
+0022 outFile=tempname;
+0023 
+0024 <span class="comment">%Run MAFFT multi-threaded to use all logical cores assigned to MATLAB</span>
+0025 cores = evalc(<span class="string">'feature(''numcores'')'</span>);
+0026 cores = strsplit(cores, <span class="string">'MATLAB was assigned: '</span>);
+0027 cores = regexp(cores{2},<span class="string">'^\d*'</span>,<span class="string">'match'</span>);
+0028 cores = cores{1};
+0029 
+0030 <span class="comment">%Create a temporary folder and copy multi-FASTA file there</span>
+0031 [~, ~]=system([<span class="string">'mkdir &quot;'</span> tmpDIR <span class="string">'&quot;'</span>]);
+0032 
+0033 sourceDir = fileparts(which(mfilename));
+0034 copyfile(fullfile(sourceDir,<span class="string">'test_data'</span>,<span class="string">'yeast_galactosidases.fa'</span>),tmpDIR);
+0035 
+0036 <span class="comment">% Define WSL paths</span>
+0037 wslPath.fastaFile=getWSLpath([tmpDIR filesep <span class="string">'yeast_galactosidases.fa'</span>]);
+0038 wslPath.outFile=getWSLpath(outFile);
+0039 wslPath.mafft=getWSLpath(fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'mafft'</span>,<span class="string">'mafft-linux64'</span>,<span class="string">'mafft.bat'</span>));
+0040 
+0041 <span class="comment">%%</span>
+0042 <span class="comment">%Run protein multi-sequence alignment with MAFFT</span>
+0043 <span class="keyword">if</span> ismac
+0044     [~, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'mafft'</span>,<span class="string">'mafft-mac'</span>,<span class="string">'mafft.bat'</span>) <span class="string">'&quot; --auto --anysymbol --thread &quot;'</span> num2str(cores) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR, <span class="string">'yeast_galactosidases.fa'</span>) <span class="string">'&quot; &gt; &quot;'</span> outFile <span class="string">'&quot;'</span>]);
+0045 <span class="keyword">elseif</span> isunix
+0046     [~, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'mafft'</span>,<span class="string">'mafft-linux64'</span>,<span class="string">'mafft.bat'</span>) <span class="string">'&quot; --auto --anysymbol --thread &quot;'</span> num2str(cores) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR, <span class="string">'yeast_galactosidases.fa'</span>) <span class="string">'&quot; &gt; &quot;'</span> outFile <span class="string">'&quot;'</span>]);
+0047 <span class="keyword">elseif</span> ispc
+0048     [~, ~]=system([<span class="string">'wsl &quot;'</span> wslPath.mafft <span class="string">'&quot; --auto --anysymbol --quiet --thread &quot;'</span> num2str(cores) <span class="string">'&quot; --out &quot;'</span> wslPath.outFile <span class="string">'&quot; &quot;'</span> wslPath.fastaFile <span class="string">'&quot;'</span>]);
+0049 <span class="keyword">end</span>
+0050 
+0051 <span class="comment">%%</span>
+0052 <span class="comment">%Open actual MAFFT results file</span>
+0053 actMafftOutput=importdata(fullfile(outFile));
+0054 
+0055 <span class="comment">%Remove the old tempfiles</span>
+0056 delete([outFile <span class="string">'*'</span>]);
+0057 
+0058 <span class="comment">%Remove temporary folder, since testing is finished</span>
+0059 [~, ~]=system([<span class="string">'rm &quot;'</span> tmpDIR <span class="string">'&quot; -r'</span>]);
+0060 
+0061 <span class="comment">%%</span>
+0062 <span class="comment">%Check 1a: Check if files for MAFFT results are the same</span>
+0063 verifyEqual(testCase,actMafftOutput,expCdhitMafftOutput);
+0064 
+0065 <span class="comment">%Check 1b: Change actual MAFFT results file and check if test fails</span>
+0066 actMafftOutput=<span class="string">'abc'</span>;
+0067 verifyNotEqual(testCase,actMafftOutput,expCdhitMafftOutput);
+0068 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
