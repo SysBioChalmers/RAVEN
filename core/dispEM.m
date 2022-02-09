@@ -43,7 +43,7 @@ if ~isempty(toList)
 end
 if throwErrors==false
     %Escape special characters, required for fprintf
-    errorText=regexprep(errorText,'(\\|\%|'')','\\$0');
+    errorText=regexprep(errorText,'(\\|\%|'')(\\n)$','\\$0');
     fprintf([errorText '\n']);
 else
     throw(MException('',errorText));
