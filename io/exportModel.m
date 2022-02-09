@@ -636,8 +636,6 @@ ind=find(model.c);
 
 if isempty(ind)
     modelSBML.fbc_objective.fbc_fluxObjective.fbc_coefficient=0;
-    EM='The objective function is not defined. The model will be exported as it is. Notice that having undefined objective function may produce warnings related to "fbc:coefficient" and "fbc:reaction" in SBML Validator';
-    dispEM(EM,false);
 else
     for i=1:length(ind)
         %Copy the default values to the next index as long as it is not the
