@@ -142,18 +142,20 @@ else
     for i=1:numel(model.rxns)
         if isstruct(model.rxnMiriams{i})
             I=strncmp('kegg.orthology',model.rxnMiriams{i}.name,18);
-            [J, K]=ismember(model.rxnMiriams{i}.value(I),KOModel.rxns);
-            %Find all gene indexes that correspond to any of these KOs
-            [~, L]=find(KOModel.rxnGeneMat(K(J),:));
-            if any(L)
-                %Allocate room for more elements if needed
-                if counter+numel(L)-1>=numel(r)
-                    r=[r;zeros(numel(r),1)];
-                    c=[c;zeros(numel(c),1)];
+            if any(I)
+                [J, K]=ismember(model.rxnMiriams{i}.value(I),KOModel.rxns);
+                %Find all gene indexes that correspond to any of these KOs
+                [~, L]=find(KOModel.rxnGeneMat(K(J),:));
+                if any(L)
+                    %Allocate room for more elements if needed
+                    if counter+numel(L)-1>=numel(r)
+                        r=[r;zeros(numel(r),1)];
+                        c=[c;zeros(numel(c),1)];
+                    end
+                    r(counter:counter+numel(L)-1)=ones(numel(L),1)*i;
+                    c(counter:counter+numel(L)-1)=L(:);
+                    counter=counter+numel(L);
                 end
-                r(counter:counter+numel(L)-1)=ones(numel(L),1)*i;
-                c(counter:counter+numel(L)-1)=L(:);
-                counter=counter+numel(L);
             end
         end
         if rem(i-1,100) == 0
