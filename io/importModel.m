@@ -837,7 +837,6 @@ if ~isempty(geneNames)
         geneShortNames=vertcat(geneShortNames,metaboliteNames);
         geneIDs=vertcat(geneIDs,metaboliteIDs);
         geneSystNames=extractMiriam(vertcat(geneMiriams,metaboliteMiriams),'kegg.genes');
-        geneSystNames=regexprep(geneSystNames,'^.+:','');
         geneCompartments=vertcat(geneCompartments,metaboliteCompartments);
         geneMiriams=vertcat(geneMiriams,metaboliteMiriams);
         

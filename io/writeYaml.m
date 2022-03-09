@@ -36,19 +36,15 @@ end
 %Simplify Miriam fields:
 if isfield(model,'metMiriams')
     [model.newMetMiriams,model.newMetMiriamNames]   = extractMiriam(model.metMiriams);
-    model.newMetMiriams                             = regexprep(model.newMetMiriams,'^.+/','');
 end
 if isfield(model,'rxnMiriams')
     [model.newRxnMiriams,model.newRxnMiriamNames]   = extractMiriam(model.rxnMiriams);
-    model.newRxnMiriams                             = regexprep(model.newRxnMiriams,'^.+/','');
 end
 if isfield(model,'geneMiriams')
     [model.newGeneMiriams,model.newGeneMiriamNames] = extractMiriam(model.geneMiriams);
-    model.newGeneMiriams                            = regexprep(model.newGeneMiriams,'^.+/','');
 end
 if isfield(model,'compMiriams')
     [model.newCompMiriams,model.newCompMiriamNames] = extractMiriam(model.compMiriams);
-    model.newCompMiriams                            = regexprep(model.newCompMiriams,'^.+/','');
 end
 
 %Open file:

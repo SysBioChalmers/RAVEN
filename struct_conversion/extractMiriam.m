@@ -76,26 +76,11 @@ for i=1:numel(modelMiriams)
     end
 end
 
-%Now add miriam names to the newly obtained miriam ids. Entities with
-%multiple ids per miriam name have the ids concatenated by using semicolon
-%as separator
+%Concatenate multiple ids per miriam name in one column with semicolon as
+%separator
 miriams = cell([size(tempMiriams,1) 1]);
-for i=1:size(tempMiriams,1)
-    for j=1:size(tempMiriams,2)
-        if j==1
-            miriams{i,1}=strcat(miriamName,'/',tempMiriams{i,1});
-        else
-            miriams{i,1}=strcat(miriams{i,1},'; ',miriamName,'/',tempMiriams{i,j});
-        end
-    end
+notEmpty=~cellfun(@isempty,tempMiriams);
+for i=1:size(miriams)
+    miriams{i}=strjoin(tempMiriams(i,notEmpty(i,:)),{'; '});
 end
-
-%Ensure that cell positions without miriams are blank
-miriams=regexprep(miriams,strcat(miriamName,'/;'),'');
-miriams=regexprep(miriams,strcat('^',miriamName,'/$'),'');
-miriams=regexprep(miriams,strcat('; ',miriamName,'/$'),'');
-
-%Delete middle names:
-miriams=regexprep(miriams,strcat('; ',miriamName,'/'),'; ');
-
 end
