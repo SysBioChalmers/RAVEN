@@ -62,51 +62,51 @@ writeMetadata(model,fid);
 fprintf(fid,'- metabolites:\n');
 for i = 1:length(model.mets)
     fprintf(fid,'    - !!omap\n');
-    writeField(model, fid, 'mets',        'txt', pos(i), '  - id',          preserveQuotes)
-    writeField(model, fid, 'metNames',    'txt', pos(i), '  - name',        preserveQuotes)
-    writeField(model, fid, 'metComps',    'txt', pos(i), '  - compartment', preserveQuotes)
-    writeField(model, fid, 'metFormulas', 'txt', pos(i), '  - formula',     preserveQuotes)
-    writeField(model, fid, 'metCharges',  'num', pos(i), '  - charge',      preserveQuotes)
-    writeField(model, fid, 'inchis',      'txt', pos(i), '  - inchis',      preserveQuotes)
-    writeField(model, fid, 'metMiriams',  'txt', pos(i), '  - annotation',  preserveQuotes)
-    writeField(model, fid, 'metFrom',     'txt', pos(i), '  - metFrom',     preserveQuotes)
+    writeField(model, fid, 'mets',        'txt', i, '  - id',          preserveQuotes)
+    writeField(model, fid, 'metNames',    'txt', i, '  - name',        preserveQuotes)
+    writeField(model, fid, 'metComps',    'txt', i, '  - compartment', preserveQuotes)
+    writeField(model, fid, 'metFormulas', 'txt', i, '  - formula',     preserveQuotes)
+    writeField(model, fid, 'metCharges',  'num', i, '  - charge',      preserveQuotes)
+    writeField(model, fid, 'inchis',      'txt', i, '  - inchis',      preserveQuotes)
+    writeField(model, fid, 'metMiriams',  'txt', i, '  - annotation',  preserveQuotes)
+    writeField(model, fid, 'metFrom',     'txt', i, '  - metFrom',     preserveQuotes)
 end
 
 %Reactions:
 fprintf(fid,'- reactions:\n');
 for i = 1:length(model.rxns)
     fprintf(fid,'    - !!omap\n');
-    writeField(model, fid, 'rxns',                 'txt', pos(i), '  - id',                    preserveQuotes)
-    writeField(model, fid, 'rxnNames',             'txt', pos(i), '  - name',                  preserveQuotes)
-    writeField(model, fid, 'S',                    'txt', pos(i), '  - metabolites',           preserveQuotes)
-    writeField(model, fid, 'lb',                   'num', pos(i), '  - lower_bound',           preserveQuotes)
-    writeField(model, fid, 'ub',                   'num', pos(i), '  - upper_bound',           preserveQuotes)
-    writeField(model, fid, 'grRules',              'txt', pos(i), '  - gene_reaction_rule',    preserveQuotes)
-    writeField(model, fid, 'rxnFrom',              'txt', pos(i), '  - rxnFrom',               preserveQuotes)
+    writeField(model, fid, 'rxns',                 'txt', i, '  - id',                    preserveQuotes)
+    writeField(model, fid, 'rxnNames',             'txt', i, '  - name',                  preserveQuotes)
+    writeField(model, fid, 'S',                    'txt', i, '  - metabolites',           preserveQuotes)
+    writeField(model, fid, 'lb',                   'num', i, '  - lower_bound',           preserveQuotes)
+    writeField(model, fid, 'ub',                   'num', i, '  - upper_bound',           preserveQuotes)
+    writeField(model, fid, 'grRules',              'txt', i, '  - gene_reaction_rule',    preserveQuotes)
+    writeField(model, fid, 'rxnFrom',              'txt', i, '  - rxnFrom',               preserveQuotes)
     if model.c(i)~=0
-        writeField(model, fid, 'c',                    'num', pos(i), '  - objective_coefficient', preserveQuotes)    
+        writeField(model, fid, 'c',                    'num', i, '  - objective_coefficient', preserveQuotes)    
     end
-    writeField(model, fid, 'eccodes',              'txt', pos(i), '  - eccodes',               preserveQuotes)
-    writeField(model, fid, 'rxnReferences',        'txt', pos(i), '  - references',            preserveQuotes)
-    writeField(model, fid, 'subSystems',           'txt', pos(i), '  - subsystem',             preserveQuotes)
-    writeField(model, fid, 'rxnMiriams',           'txt', pos(i), '  - annotation',            preserveQuotes)
-    writeField(model, fid, 'rxnConfidenceScores',  'num', pos(i), '  - confidence_score',      preserveQuotes)
+    writeField(model, fid, 'eccodes',              'txt', i, '  - eccodes',               preserveQuotes)
+    writeField(model, fid, 'rxnReferences',        'txt', i, '  - references',            preserveQuotes)
+    writeField(model, fid, 'subSystems',           'txt', i, '  - subsystem',             preserveQuotes)
+    writeField(model, fid, 'rxnMiriams',           'txt', i, '  - annotation',            preserveQuotes)
+    writeField(model, fid, 'rxnConfidenceScores',  'num', i, '  - confidence_score',      preserveQuotes)
 end
 
 %Genes:
 fprintf(fid,'- genes:\n');
 for i = 1:length(model.genes)
     fprintf(fid,'    - !!omap\n');
-    writeField(model, fid, 'genes',          'txt', pos(i), '  - id',         preserveQuotes)
-    writeField(model, fid, 'geneShortNames', 'txt', pos(i), '  - name',       preserveQuotes)
-    writeField(model, fid, 'geneMiriams',    'txt', pos(i), '  - annotation', preserveQuotes)
+    writeField(model, fid, 'genes',          'txt', i, '  - id',         preserveQuotes)
+    writeField(model, fid, 'geneShortNames', 'txt', i, '  - name',       preserveQuotes)
+    writeField(model, fid, 'geneMiriams',    'txt', i, '  - annotation', preserveQuotes)
 end
 
 %Compartments:
 fprintf(fid,'- compartments: !!omap\n');
 for i = 1:length(model.comps)
-    writeField(model, fid, 'compNames',   'txt', pos(i), ['- ' model.comps{pos(i)}], preserveQuotes)
-    writeField(model, fid, 'compMiriams', 'txt', pos(i), '- annotation',             preserveQuotes)
+    writeField(model, fid, 'compNames',   'txt', i, ['- ' model.comps{i}], preserveQuotes)
+    writeField(model, fid, 'compMiriams', 'txt', i, '- annotation',             preserveQuotes)
 end
 
 %Close file:
