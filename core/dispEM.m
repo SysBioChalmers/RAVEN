@@ -19,10 +19,10 @@ if nargin<2
 end
 if nargin<3
     toList=[];
-else
-    if isempty(toList)
-        return;
-    end
+elseif isempty(toList)
+    return;
+elseif ~iscell(toList)
+    toList={toList};
 end
 if nargin<4
     trimWarnings=true;
