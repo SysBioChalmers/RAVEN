@@ -24,7 +24,7 @@ actModel.S          = actModel.S(:,rndIdx);
 actModel.rxnGeneMat = actModel.rxnGeneMat(rndIdx,:);
 
 rndIdx = randperm(numel(actModel.mets));
-fieldsToChange = {'mets','metNames','metComps','metFormulas'};
+fieldsToChange = {'mets','metNames','metComps','metFormulas','metMiriams'};
 for i=1:numel(fieldsToChange)
     actModel.(fieldsToChange{i}) = actModel.(fieldsToChange{i})(rndIdx);
 end
