@@ -50,10 +50,6 @@ end
 %Check if the "unconstrained" field is still present. This shows if
 %exchange metabolites have been removed
 if ~isfield(model,'unconstrained')
-    if supressWarnings==false
-        EM='There is no unconstrained field in the model structure. This means that no metabolites are considered exchange metabolites';
-        dispEM(EM,false);
-    end
     model.unconstrained=zeros(numel(model.mets),1);
 end
 
