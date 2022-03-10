@@ -35,12 +35,16 @@ function model=editMiriam(model,type,object,miriamName,miriams,keep)
 %       model       model structure with updated MIRIAM annotation field
 %   
 %   Usage: model=editMiriam(model,type,object,miriamName,miriams,keep)
+
+%Check 'keep' input
 if ~any(strcmp(keep,{'replace','fill','add'}))
     error('Invalid ''keep'', should be ''replace'',''fill'',''add''.')
 end
+%Check 'type' input
 if ~any(strcmp(type,{'met','gene','rxn','comp'}))
     error('Invalid ''type'', should be ''met'', ''gene'', ''rxn'' or ''comp''.')
 end
+%Check 'object' input
 if islogical(object)
     idx=find(object);
 elseif isnumeric(object)
@@ -49,7 +53,7 @@ elseif ischar(object)
     if strcmp(object,'all')
         idx=1:numel(model.([type,'s']));
     else
-        idx=getIndexes(model,[type,'s'],object);
+        idx=getIndexes(model,object,[type,'s']);
         if ~all(idx)
             dispEM('The following objects cannot be found in the model: ',true,object(~idx))
         end
@@ -60,6 +64,7 @@ else
         dispEM('The following objects cannot be found in the model: ',true,object(~idx))
     end
 end
+%Check 'miriams' input
 if ischar(miriams)
     miriams={miriams};
 end
@@ -71,17 +76,30 @@ end
 
 miriamFieldName=[type,'Miriams'];
 
-[extractedMiriams,extractedMiriamNames]=extractMiriam(model.(miriamFieldName),'all');
-extractedMiriams=regexprep(extractedMiriams,'^.+\/','');
+if isfield(model,miriamFieldName)
+    [extractedMiriams,extractedMiriamNames]=extractMiriam(model.(miriamFieldName),'all');
+else
+    extractedMiriams=cell(numel(model.([type,'s'])),1);
+    extractedMiriamNames={miriamName};
+end
 
 [~, midx]=ismember(miriamName,extractedMiriamNames);
-if strcmp(keep,'replace')
+if midx==0
+    midx=numel(extractedMiriamNames)+1;
+    extractedMiriamNames(end+1)={miriamName};
+    extractedMiriams(idx,end+1)=miriams;
+elseif strcmp(keep,'replace')
     extractedMiriams(idx,midx)=miriams;
 else
     noMiriam=cellfun(@isempty,extractedMiriams(idx,midx));
     extractedMiriams(idx(noMiriam),midx)=miriams(noMiriam);
     if strcmp(keep,'add') % Skipped when only filling empty entries
-        strcat(extractedMiriams(idx(~noMiriam),midx), {'; '}, miriams(~noMiriam));
+        existingMiriams=[split(extractedMiriams(idx(~noMiriam),midx),'; '), miriams(~noMiriam)];
+        uniqueMiriams=cell(size(existingMiriams,1),1);
+        for i=1:size(existingMiriams,1)
+            uniqueMiriams{i,1}=strjoin(unique(existingMiriams(i,:)), {'; '});
+        end
+        extractedMiriams(idx(~noMiriam),midx)=uniqueMiriams;
     end
 end
 
@@ -98,6 +116,6 @@ for i=1:numel(model.([type,'s']))
     end
     miriam.name(1)=[];
     miriam.value(1)=[];
-    model.(miriamFieldName){i}=miriam;
+    model.(miriamFieldName){i,1}=miriam;
 end
 end
