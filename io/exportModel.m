@@ -149,12 +149,7 @@ if isfield(model,'annotation')
     if isfield(model.annotation,'note')
         modelSBML.notes=['<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>',regexprep(model.annotation.note,'<p>|</p>',''),'</p></body></notes>'];
     end
-else
-    modelSBML.notes='<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>This file was generated using the exportModel function in RAVEN Toolbox 2 and OutputSBML in libSBML </p></body></notes>';
-end
-
-modelSBML.annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.id '">'];
-if isfield(model,'annotation')
+    modelSBML.annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.id '">'];
     nameString='';
     if isfield(model.annotation,'familyName')
         if ~isempty(model.annotation.familyName)
@@ -185,20 +180,13 @@ if isfield(model,'annotation')
         end
         modelSBML.annotation=[modelSBML.annotation email org '</rdf:li></rdf:Bag></dc:creator>'];
     end
+    if isfield(model,'annotation')
+        if isfield(model.annotation,'taxonomy')
+            modelSBML.annotation=[modelSBML.annotation '<bqbiol:is><rdf:Bag><rdf:li rdf:resource="https://identifiers.org/taxonomy/' regexprep(model.annotation.taxonomy,'taxonomy/','') '"/></rdf:Bag></bqbiol:is>'];
+        end
+    end    
+    modelSBML.annotation=[modelSBML.annotation '</rdf:Description></rdf:RDF></annotation>'];
 end
-modelSBML.annotation=[modelSBML.annotation '<dcterms:created rdf:parseType="Resource">'...
-    '<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF>'...
-    '</dcterms:created>'...
-    '<dcterms:modified rdf:parseType="Resource">'...
-    '<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF>'...
-    '</dcterms:modified>'];
-
-if isfield(model,'annotation')
-    if isfield(model.annotation,'taxonomy')
-        modelSBML.annotation=[modelSBML.annotation '<bqbiol:is><rdf:Bag><rdf:li rdf:resource="https://identifiers.org/taxonomy/' regexprep(model.annotation.taxonomy,'taxonomy/','') '"/></rdf:Bag></bqbiol:is>'];
-    end
-end
-modelSBML.annotation=[modelSBML.annotation '</rdf:Description></rdf:RDF></annotation>'];
 
 %Prepare compartments
 for i=1:numel(model.comps)
