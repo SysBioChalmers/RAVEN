@@ -125,40 +125,40 @@ This function is called by:
 0046 <span class="keyword">end</span>
 0047 <span class="comment">%Check 'object' input</span>
 0048 <span class="keyword">if</span> islogical(object)
-0049     idx=find(object);
+0049     idxInModel=find(object);
 0050 <span class="keyword">elseif</span> isnumeric(object)
-0051     idx=object;
+0051     idxInModel=object;
 0052 <span class="keyword">elseif</span> ischar(object)
 0053     <span class="keyword">if</span> strcmp(object,<span class="string">'all'</span>)
-0054         idx=1:numel(model.([type,<span class="string">'s'</span>]));
+0054         idxInModel=1:numel(model.([type,<span class="string">'s'</span>]));
 0055     <span class="keyword">else</span>
-0056         idx=getIndexes(model,object,[type,<span class="string">'s'</span>]);
-0057         <span class="keyword">if</span> ~all(idx)
-0058             dispEM(<span class="string">'The following objects cannot be found in the model: '</span>,true,object(~idx))
+0056         idxInModel=getIndexes(model,object,[type,<span class="string">'s'</span>]);
+0057         <span class="keyword">if</span> ~all(idxInModel)
+0058             dispEM(<span class="string">'The following objects cannot be found in the model: '</span>,true,object(~idxInModel))
 0059         <span class="keyword">end</span>
 0060     <span class="keyword">end</span>
 0061 <span class="keyword">else</span>
-0062     [~,idx]=ismember(object,model.([type,<span class="string">'s'</span>]));
-0063     <span class="keyword">if</span> ~all(idx)
-0064         dispEM(<span class="string">'The following objects cannot be found in the model: '</span>,true,object(~idx))
+0062     [~,idxInModel]=ismember(object,model.([type,<span class="string">'s'</span>]));
+0063     <span class="keyword">if</span> ~all(idxInModel)
+0064         dispEM(<span class="string">'The following objects cannot be found in the model: '</span>,true,object(~idxInModel))
 0065     <span class="keyword">end</span>
 0066 <span class="keyword">end</span>
 0067 <span class="comment">%Check 'miriams' input</span>
 0068 <span class="keyword">if</span> ischar(miriams)
 0069     miriams={miriams};
 0070 <span class="keyword">end</span>
-0071 <span class="keyword">if</span> numel(miriams)==1 &amp;&amp; numel(idx)~=1
-0072     miriams=repmat(miriams,numel(idx),1);
-0073 <span class="keyword">elseif</span> numel(miriams)~=numel(idx)
+0071 <span class="keyword">if</span> numel(miriams)==1 &amp;&amp; numel(idxInModel)~=1
+0072     miriams=repmat(miriams,numel(idxInModel),1);
+0073 <span class="keyword">elseif</span> numel(miriams)~=numel(idxInModel)
 0074     error(<span class="string">'The number of annotations does not match the number of objects.'</span>)
 0075 <span class="keyword">end</span>
 0076 
 0077 miriamFieldName=[type,<span class="string">'Miriams'</span>];
 0078 
 0079 <span class="keyword">if</span> isfield(model,miriamFieldName)
-0080     [extractedMiriams,extractedMiriamNames]=<a href="extractMiriam.html" class="code" title="function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)">extractMiriam</a>(model.(miriamFieldName),<span class="string">'all'</span>);
+0080     [extractedMiriams,extractedMiriamNames]=<a href="extractMiriam.html" class="code" title="function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)">extractMiriam</a>(model.(miriamFieldName)(idxInModel),<span class="string">'all'</span>);
 0081 <span class="keyword">else</span>
-0082     extractedMiriams=cell(numel(model.([type,<span class="string">'s'</span>])),1);
+0082     extractedMiriams=cell(numel(idxInModel),1);
 0083     extractedMiriamNames={miriamName};
 0084 <span class="keyword">end</span>
 0085 
@@ -166,24 +166,24 @@ This function is called by:
 0087 <span class="keyword">if</span> midx==0
 0088     midx=numel(extractedMiriamNames)+1;
 0089     extractedMiriamNames(end+1)={miriamName};
-0090     extractedMiriams(idx,end+1)=miriams;
+0090     extractedMiriams(:,end+1)=miriams;
 0091 <span class="keyword">elseif</span> strcmp(keep,<span class="string">'replace'</span>)
-0092     extractedMiriams(idx,midx)=miriams;
+0092     extractedMiriams(:,midx)=miriams;
 0093 <span class="keyword">else</span>
-0094     noMiriam=cellfun(@isempty,extractedMiriams(idx,midx));
-0095     extractedMiriams(idx(noMiriam),midx)=miriams(noMiriam);
+0094     noMiriam=cellfun(@isempty,extractedMiriams(:,midx));
+0095     extractedMiriams(noMiriam,midx)=miriams(noMiriam);
 0096     <span class="keyword">if</span> strcmp(keep,<span class="string">'add'</span>) <span class="comment">% Skipped when only filling empty entries</span>
-0097         existingMiriams=[split(extractedMiriams(idx(~noMiriam),midx),<span class="string">'; '</span>), miriams(~noMiriam)];
+0097         existingMiriams=[split(extractedMiriams(~noMiriam,midx),<span class="string">'; '</span>), miriams(~noMiriam)];
 0098         uniqueMiriams=cell(size(existingMiriams,1),1);
 0099         <span class="keyword">for</span> i=1:size(existingMiriams,1)
 0100             uniqueMiriams{i,1}=strjoin(unique(existingMiriams(i,:)), {<span class="string">'; '</span>});
 0101         <span class="keyword">end</span>
-0102         extractedMiriams(idx(~noMiriam),midx)=uniqueMiriams;
+0102         extractedMiriams(~noMiriam,midx)=uniqueMiriams;
 0103     <span class="keyword">end</span>
 0104 <span class="keyword">end</span>
 0105 
 0106 <span class="comment">% Make Miriam field again</span>
-0107 <span class="keyword">for</span> i=1:numel(model.([type,<span class="string">'s'</span>]))
+0107 <span class="keyword">for</span> i=1:numel(idxInModel)
 0108     miriam.name=cell(1,1);
 0109     miriam.value=cell(1,1);
 0110     <span class="keyword">for</span> j=1:numel(extractedMiriamNames)
@@ -195,7 +195,7 @@ This function is called by:
 0116     <span class="keyword">end</span>
 0117     miriam.name(1)=[];
 0118     miriam.value(1)=[];
-0119     model.(miriamFieldName){i,1}=miriam;
+0119     model.(miriamFieldName){idxInModel(i),1}=miriam;
 0120 <span class="keyword">end</span>
 0121 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>

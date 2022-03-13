@@ -239,6 +239,7 @@ filler(:)={''};
 cellfiller=cellfun(@(x) cell(0,0),filler,'UniformOutput',false);
 largeFiller=cell(nOldRxns,1);
 largeFiller(:)={''};
+celllargefiller=cellfun(@(x) cell(0,0),largeFiller,'UniformOutput',false);
 
 %***Add everything to the model except for the equations.
 if numel(rxnsToAdd.equations)~=nRxns
@@ -360,9 +361,14 @@ if isfield(rxnsToAdd,'subSystems')
         EM='rxnsToAdd.subSystems must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);
     end
+    for i=1:numel(rxnsToAdd.subSystems)
+        if ischar(rxnsToAdd.subSystems{i})
+            rxnsToAdd.subSystems{i}=rxnsToAdd.subSystems(i);
+        end
+    end
     %Fill with standard if it doesn't exist
     if ~isfield(newModel,'subSystems')
-        newModel.subSystems=largeFiller;
+        newModel.subSystems=celllargefiller;
     end
     newModel.subSystems=[newModel.subSystems;rxnsToAdd.subSystems(:)];
 else
