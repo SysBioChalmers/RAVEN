@@ -46,40 +46,40 @@ if ~any(strcmp(type,{'met','gene','rxn','comp'}))
 end
 %Check 'object' input
 if islogical(object)
-    idx=find(object);
+    idxInModel=find(object);
 elseif isnumeric(object)
-    idx=object;
+    idxInModel=object;
 elseif ischar(object)
     if strcmp(object,'all')
-        idx=1:numel(model.([type,'s']));
+        idxInModel=1:numel(model.([type,'s']));
     else
-        idx=getIndexes(model,object,[type,'s']);
-        if ~all(idx)
-            dispEM('The following objects cannot be found in the model: ',true,object(~idx))
+        idxInModel=getIndexes(model,object,[type,'s']);
+        if ~all(idxInModel)
+            dispEM('The following objects cannot be found in the model: ',true,object(~idxInModel))
         end
     end
 else
-    [~,idx]=ismember(object,model.([type,'s']));
-    if ~all(idx)
-        dispEM('The following objects cannot be found in the model: ',true,object(~idx))
+    [~,idxInModel]=ismember(object,model.([type,'s']));
+    if ~all(idxInModel)
+        dispEM('The following objects cannot be found in the model: ',true,object(~idxInModel))
     end
 end
 %Check 'miriams' input
 if ischar(miriams)
     miriams={miriams};
 end
-if numel(miriams)==1 && numel(idx)~=1
-    miriams=repmat(miriams,numel(idx),1);
-elseif numel(miriams)~=numel(idx)
+if numel(miriams)==1 && numel(idxInModel)~=1
+    miriams=repmat(miriams,numel(idxInModel),1);
+elseif numel(miriams)~=numel(idxInModel)
     error('The number of annotations does not match the number of objects.')
 end
 
 miriamFieldName=[type,'Miriams'];
 
 if isfield(model,miriamFieldName)
-    [extractedMiriams,extractedMiriamNames]=extractMiriam(model.(miriamFieldName),'all');
+    [extractedMiriams,extractedMiriamNames]=extractMiriam(model.(miriamFieldName)(idxInModel),'all');
 else
-    extractedMiriams=cell(numel(model.([type,'s'])),1);
+    extractedMiriams=cell(numel(idxInModel),1);
     extractedMiriamNames={miriamName};
 end
 
@@ -87,24 +87,24 @@ end
 if midx==0
     midx=numel(extractedMiriamNames)+1;
     extractedMiriamNames(end+1)={miriamName};
-    extractedMiriams(idx,end+1)=miriams;
+    extractedMiriams(:,end+1)=miriams;
 elseif strcmp(keep,'replace')
-    extractedMiriams(idx,midx)=miriams;
+    extractedMiriams(:,midx)=miriams;
 else
-    noMiriam=cellfun(@isempty,extractedMiriams(idx,midx));
-    extractedMiriams(idx(noMiriam),midx)=miriams(noMiriam);
+    noMiriam=cellfun(@isempty,extractedMiriams(:,midx));
+    extractedMiriams(noMiriam,midx)=miriams(noMiriam);
     if strcmp(keep,'add') % Skipped when only filling empty entries
-        existingMiriams=[split(extractedMiriams(idx(~noMiriam),midx),'; '), miriams(~noMiriam)];
+        existingMiriams=[split(extractedMiriams(~noMiriam,midx),'; '), miriams(~noMiriam)];
         uniqueMiriams=cell(size(existingMiriams,1),1);
         for i=1:size(existingMiriams,1)
             uniqueMiriams{i,1}=strjoin(unique(existingMiriams(i,:)), {'; '});
         end
-        extractedMiriams(idx(~noMiriam),midx)=uniqueMiriams;
+        extractedMiriams(~noMiriam,midx)=uniqueMiriams;
     end
 end
 
 % Make Miriam field again
-for i=1:numel(model.([type,'s']))
+for i=1:numel(idxInModel)
     miriam.name=cell(1,1);
     miriam.value=cell(1,1);
     for j=1:numel(extractedMiriamNames)
@@ -116,6 +116,6 @@ for i=1:numel(model.([type,'s']))
     end
     miriam.name(1)=[];
     miriam.value(1)=[];
-    model.(miriamFieldName){i,1}=miriam;
+    model.(miriamFieldName){idxInModel(i),1}=miriam;
 end
 end
