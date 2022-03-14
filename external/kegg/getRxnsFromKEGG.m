@@ -137,7 +137,7 @@ else
                 %Add empty strings where there should be such
                 model.rxnNames{rxnCounter}='';
                 model.eccodes{rxnCounter}='';
-                model.subSystems{rxnCounter}='';
+                %model.subSystems{rxnCounter}=''; %remain empty cell
                 model.rxnNotes{rxnCounter}='';
                 equations{rxnCounter}='';
                 

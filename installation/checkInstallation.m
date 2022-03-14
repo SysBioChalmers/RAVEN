@@ -27,6 +27,7 @@ paths=paths{1};
 %Print the RAVEN version if it is not the development version
 if exist(fullfile(ravenDir,'version.txt'), 'file') == 2
     fprintf(['\n*** THE RAVEN TOOLBOX v.' fgetl(fopen(fullfile(ravenDir,'version.txt'))) ' ***\n\n']);
+    fclose('all');
 else
     fprintf('\n*** THE RAVEN TOOLBOX - DEVELOPMENT VERSION ***\n\n');
 end

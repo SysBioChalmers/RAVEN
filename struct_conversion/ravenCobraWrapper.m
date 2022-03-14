@@ -121,7 +121,6 @@ if isRaven
     end
     if isfield(model,'rxnMiriams')
         [miriams,extractedMiriamNames]=extractMiriam(model.rxnMiriams);
-        miriams=regexprep(miriams,'^[A-Za-z\.]*\/','');
         for i = 1:length(rxnCOBRAfields)
             j=ismember(extractedMiriamNames,rxnNamespaces{i});
             if any(j)
@@ -142,7 +141,6 @@ if isRaven
     end
     if isfield(model,'metMiriams')
         [miriams,extractedMiriamNames]=extractMiriam(model.metMiriams);
-        miriams=regexprep(miriams,'^[A-Za-z\.]*\/','');
         %Shorten miriam names for KEGG and PubChem. These shorter names
         %will be used later to concatenate KEGG COMPOUND/GLYCAN and PubChem
         %Compound/Substance, into corresponding COBRA model fields
@@ -185,7 +183,6 @@ if isRaven
     newModel.csense=repmat('E',size(model.mets));
     if isfield(model,'geneMiriams')
         [miriams,extractedMiriamNames]=extractMiriam(model.geneMiriams);
-        miriams=regexprep(miriams,'^[A-Za-z\.]*\/','');
         for i = 1:length(geneCOBRAfields)
             j=ismember(extractedMiriamNames,geneNamespaces{i});
             if any(j)
