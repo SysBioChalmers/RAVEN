@@ -27,6 +27,8 @@ function newModel=addMets(model,metsToAdd,copyInfo,prefix)
 %               metMiriams     cell array with MIRIAM structures (opt,
 %                              default [])
 %               metCharges     metabolite charge (opt, default NaN)
+%               metNotes       cell array with metabolite notes as strings
+%                              (opt, default '')
 %   copyInfo    when adding metabolites to a compartment where it previously
 %               doesn't exist, the function will copy any available annotation
 %               from the metabolite in another compartment (opt, default true)
@@ -246,6 +248,27 @@ else
     %Add default
     if isfield(newModel,'metCharges')
         newModel.metCharges=[newModel.metCharges;NaN(numel(filler),1)];
+    end
+end
+
+if isfield(metsToAdd,'metNotes')
+    if numel(metsToAdd.metNotes)~=nMets
+        EM='metsToAdd.metNotes must have the same number of elements as metsToAdd.mets';
+        dispEM(EM);
+    end
+    if ~iscellstr(metsToAdd.metNotes)
+        EM='metsToAdd.metNotes must be a cell array of strings';
+        dispEM(EM);
+    end
+    %Add empty field if it doesn't exist
+    if ~isfield(newModel,'metNotes')
+        newModel.metNotes=largeFiller;
+    end
+    newModel.metNotes=[newModel.inchis;metsToAdd.metNotes(:)];
+else
+    %Add empty strings if structure is in model
+    if isfield(newModel,'metNotes')
+        newModel.metNotes=[newModel.metNotes;filler];
     end
 end
 

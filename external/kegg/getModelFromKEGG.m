@@ -131,7 +131,7 @@ else
     end
     fprintf('COMPLETE\n');
     
-    fprintf('Constructing the rxnGeneMat for the global KEGG model, this will take a while... ')
+    fprintf('Constructing the rxnGeneMat for the global KEGG model...   0%% complete');
     %Create the rxnGeneMat for the reactions. This is simply done by
     %merging the gene associations for all the involved KOs
     r=zeros(10000000,1);
@@ -142,19 +142,25 @@ else
     for i=1:numel(model.rxns)
         if isstruct(model.rxnMiriams{i})
             I=strncmp('kegg.orthology',model.rxnMiriams{i}.name,18);
-            [J, K]=ismember(model.rxnMiriams{i}.value(I),KOModel.rxns);
-            %Find all gene indexes that correspond to any of these KOs
-            [~, L]=find(KOModel.rxnGeneMat(K(J),:));
-            if any(L)
-                %Allocate room for more elements if needed
-                if counter+numel(L)-1>=numel(r)
-                    r=[r;zeros(numel(r),1)];
-                    c=[c;zeros(numel(c),1)];
+            if any(I)
+                [J, K]=ismember(model.rxnMiriams{i}.value(I),KOModel.rxns);
+                %Find all gene indexes that correspond to any of these KOs
+                [~, L]=find(KOModel.rxnGeneMat(K(J),:));
+                if any(L)
+                    %Allocate room for more elements if needed
+                    if counter+numel(L)-1>=numel(r)
+                        r=[r;zeros(numel(r),1)];
+                        c=[c;zeros(numel(c),1)];
+                    end
+                    r(counter:counter+numel(L)-1)=ones(numel(L),1)*i;
+                    c(counter:counter+numel(L)-1)=L(:);
+                    counter=counter+numel(L);
                 end
-                r(counter:counter+numel(L)-1)=ones(numel(L),1)*i;
-                c(counter:counter+numel(L)-1)=L(:);
-                counter=counter+numel(L);
             end
+        end
+        if rem(i-1,100) == 0
+            progress=pad(num2str(floor(i/numel(model.rxns)*100)),3,'left');
+            fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
         end
     end
     
@@ -162,7 +168,7 @@ else
     if size(model.rxnGeneMat,1)~=numel(model.rxns) || size(model.rxnGeneMat,2)~=numel(KOModel.genes)
         model.rxnGeneMat(numel(model.rxns),numel(KOModel.genes))=0;
     end
-    fprintf('COMPLETE\n');
+    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
     
     %Then get all metabolites
     metModel=getMetsFromKEGG(keggPath);

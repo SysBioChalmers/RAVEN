@@ -55,6 +55,8 @@
                metMiriams     cell array with MIRIAM structures (opt,
                               default [])
                metCharges     metabolite charge (opt, default NaN)
+               metNotes       cell array with metabolite notes as strings
+                              (opt, default '')
    copyInfo    when adding metabolites to a compartment where it previously
                doesn't exist, the function will copy any available annotation
                from the metabolite in another compartment (opt, default true)
@@ -123,295 +125,318 @@ This function is called by:
 0027 <span class="comment">%               metMiriams     cell array with MIRIAM structures (opt,</span>
 0028 <span class="comment">%                              default [])</span>
 0029 <span class="comment">%               metCharges     metabolite charge (opt, default NaN)</span>
-0030 <span class="comment">%   copyInfo    when adding metabolites to a compartment where it previously</span>
-0031 <span class="comment">%               doesn't exist, the function will copy any available annotation</span>
-0032 <span class="comment">%               from the metabolite in another compartment (opt, default true)</span>
-0033 <span class="comment">%   prefix      when metsToAdd.mets is not specified, new metabolite IDs</span>
-0034 <span class="comment">%               are generated with the prefix specified here. If IDs with</span>
-0035 <span class="comment">%               the prefix are already used in the model then the</span>
-0036 <span class="comment">%               numbering will start from the highest existing integer+1</span>
-0037 <span class="comment">%               (opt, default 'm_')</span>
-0038 <span class="comment">%</span>
-0039 <span class="comment">%   newModel     an updated model structure</span>
+0030 <span class="comment">%               metNotes       cell array with metabolite notes as strings</span>
+0031 <span class="comment">%                              (opt, default '')</span>
+0032 <span class="comment">%   copyInfo    when adding metabolites to a compartment where it previously</span>
+0033 <span class="comment">%               doesn't exist, the function will copy any available annotation</span>
+0034 <span class="comment">%               from the metabolite in another compartment (opt, default true)</span>
+0035 <span class="comment">%   prefix      when metsToAdd.mets is not specified, new metabolite IDs</span>
+0036 <span class="comment">%               are generated with the prefix specified here. If IDs with</span>
+0037 <span class="comment">%               the prefix are already used in the model then the</span>
+0038 <span class="comment">%               numbering will start from the highest existing integer+1</span>
+0039 <span class="comment">%               (opt, default 'm_')</span>
 0040 <span class="comment">%</span>
-0041 <span class="comment">%   NOTE: This function does not make extensive checks about MIRIAM formats,</span>
-0042 <span class="comment">%   forbidden characters or such.</span>
-0043 <span class="comment">%</span>
-0044 <span class="comment">%   Example: If multiple metabolites are added at once, the metMiriams cell</span>
-0045 <span class="comment">%   array should be defined as (example with ChEBI and KEGG):</span>
-0046 <span class="comment">%</span>
-0047 <span class="comment">%   metsToAdd.metMiriams{1} = struct('name',{{'chebi';'kegg.compound'}},...</span>
-0048 <span class="comment">%       'value',{{'CHEBI:18072';'C11821'}});</span>
-0049 <span class="comment">%   metsToAdd.metMiriams{2} = struct('name',{{'chebi';'kegg.compound'}},...</span>
-0050 <span class="comment">%       'value',{{'CHEBI:31132';'C12248'}});</span>
-0051 <span class="comment">%</span>
-0052 <span class="comment">%   Usage: newModel=addMets(model,metsToAdd,copyInfo,prefix)</span>
-0053 
-0054 <span class="keyword">if</span> nargin&lt;3
-0055     copyInfo=true;
-0056 <span class="keyword">end</span>
-0057 <span class="keyword">if</span> nargin&lt;4
-0058     prefix=<span class="string">'m_'</span>;
-0059 <span class="keyword">end</span>
-0060 
-0061 newModel=model;
+0041 <span class="comment">%   newModel     an updated model structure</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">%   NOTE: This function does not make extensive checks about MIRIAM formats,</span>
+0044 <span class="comment">%   forbidden characters or such.</span>
+0045 <span class="comment">%</span>
+0046 <span class="comment">%   Example: If multiple metabolites are added at once, the metMiriams cell</span>
+0047 <span class="comment">%   array should be defined as (example with ChEBI and KEGG):</span>
+0048 <span class="comment">%</span>
+0049 <span class="comment">%   metsToAdd.metMiriams{1} = struct('name',{{'chebi';'kegg.compound'}},...</span>
+0050 <span class="comment">%       'value',{{'CHEBI:18072';'C11821'}});</span>
+0051 <span class="comment">%   metsToAdd.metMiriams{2} = struct('name',{{'chebi';'kegg.compound'}},...</span>
+0052 <span class="comment">%       'value',{{'CHEBI:31132';'C12248'}});</span>
+0053 <span class="comment">%</span>
+0054 <span class="comment">%   Usage: newModel=addMets(model,metsToAdd,copyInfo,prefix)</span>
+0055 
+0056 <span class="keyword">if</span> nargin&lt;3
+0057     copyInfo=true;
+0058 <span class="keyword">end</span>
+0059 <span class="keyword">if</span> nargin&lt;4
+0060     prefix=<span class="string">'m_'</span>;
+0061 <span class="keyword">end</span>
 0062 
-0063 <span class="keyword">if</span> isempty(metsToAdd)
-0064     <span class="keyword">return</span>;
-0065 <span class="keyword">end</span>
-0066 
-0067 <span class="comment">%Check some stuff regarding the required fields</span>
-0068 <span class="keyword">if</span> ~isfield(metsToAdd,<span class="string">'mets'</span>)
-0069     metsToAdd.mets=<a href="generateNewIds.html" class="code" title="function newIds=generateNewIds(model,type,prefix,quantity,numLength)">generateNewIds</a>(newModel,<span class="string">'mets'</span>,prefix,numel(metsToAdd.metNames));
-0070 <span class="keyword">end</span>
-0071 <span class="keyword">if</span> ~isfield(metsToAdd,<span class="string">'metNames'</span>)
-0072     metsToAdd.metNames=metsToAdd.mets;
-0073 <span class="keyword">end</span>
-0074 <span class="keyword">if</span> ~isfield(metsToAdd,<span class="string">'compartments'</span>)
-0075     EM=<span class="string">'compartments is a required field in metsToAdd'</span>;
-0076     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0077 <span class="keyword">end</span>
-0078 <span class="keyword">if</span> ischar(metsToAdd.mets)
-0079     metsToAdd.mets={metsToAdd.mets};
-0080 <span class="keyword">elseif</span> ~iscellstr(metsToAdd.mets)
-0081     EM=<span class="string">'metsToAdd.mets must be a cell array of strings'</span>;
-0082     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0083 <span class="keyword">end</span>
-0084 <span class="keyword">if</span> ischar(metsToAdd.metNames)
-0085     metsToAdd.metNames={metsToAdd.metNames};
-0086 <span class="keyword">elseif</span> ~iscellstr(metsToAdd.metNames)
-0087     EM=<span class="string">'metsToAdd.metNames must be a cell array of strings'</span>;
-0088     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0089 <span class="keyword">end</span>
-0090 <span class="keyword">if</span> ~iscellstr(metsToAdd.compartments)
-0091     <span class="keyword">if</span> ischar(metsToAdd.compartments)
-0092         temp=cell(numel(metsToAdd.mets),1);
-0093         temp(:)={metsToAdd.compartments};
-0094         metsToAdd.compartments=temp;
-0095     <span class="keyword">else</span>
-0096         EM=<span class="string">'metsToAdd.compartments must be a cell array of strings'</span>;
-0097         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0098     <span class="keyword">end</span>
-0099 <span class="keyword">end</span>
-0100 
-0101 <span class="comment">%Number of metabolites</span>
-0102 nMets=numel(metsToAdd.mets);
-0103 nOldMets=numel(model.mets);
-0104 filler=cell(nMets,1);
-0105 filler(:)={<span class="string">''</span>};
-0106 largeFiller=cell(nOldMets,1);
-0107 largeFiller(:)={<span class="string">''</span>};
-0108 
-0109 <span class="comment">%Check that no metabolite ids are already present in the model</span>
-0110 I=ismember(metsToAdd.mets,model.mets);
-0111 <span class="keyword">if</span> any(I)
-0112     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'One or more elements in metsToAdd.mets are already present in model.mets: '</span><span class="keyword">...</span>
-0113         metsToAdd.mets{I}]);
-0114 <span class="keyword">else</span>
-0115     newModel.mets=[newModel.mets;metsToAdd.mets(:)];
-0116 <span class="keyword">end</span>
-0117 
-0118 <span class="comment">%Check that all the compartments could be found</span>
-0119 [I, compMap]=ismember(metsToAdd.compartments,model.comps);
-0120 <span class="keyword">if</span> ~all(I)
-0121     EM=<span class="string">'metsToAdd.compartments must match model.comps'</span>;
-0122     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0123 <span class="keyword">end</span>
-0124 
-0125 <span class="comment">%Check that the metabolite names aren't present in the same compartment.</span>
-0126 <span class="comment">%Not the neatest way maybe..</span>
-0127 t1=strcat(metsToAdd.metNames(:),<span class="string">'***'</span>,metsToAdd.compartments(:));
-0128 t2=strcat(model.metNames,<span class="string">'***'</span>,model.comps(model.metComps));
-0129 <span class="keyword">if</span> any(ismember(t1,t2))
-0130     EM=<span class="string">'One or more elements in metsToAdd.metNames already exist in the same compartments as the one it is being added to'</span>;
-0131     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0132 <span class="keyword">end</span>
-0133 
-0134 <span class="comment">%Some more checks and if they pass then add each field to the structure</span>
-0135 <span class="keyword">if</span> numel(metsToAdd.metNames)~=nMets
-0136     EM=<span class="string">'metsToAdd.metNames must have the same number of elements as metsToAdd.mets'</span>;
-0137     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0138 <span class="keyword">else</span>
-0139     newModel.metNames=[newModel.metNames;metsToAdd.metNames(:)];
-0140 <span class="keyword">end</span>
-0141 
-0142 <span class="keyword">if</span> numel(compMap)~=nMets
-0143     EM=<span class="string">'metsToAdd.compartments must have the same number of elements as metsToAdd.mets'</span>;
-0144     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0145 <span class="keyword">else</span>
-0146     newModel.metComps=[newModel.metComps;compMap(:)];
-0147 <span class="keyword">end</span>
-0148 
-0149 <span class="keyword">if</span> isfield(metsToAdd,<span class="string">'b'</span>)
-0150     <span class="keyword">if</span> size(metsToAdd.b,1)~=nMets
-0151         EM=<span class="string">'metsToAdd.b must have the same number of elements as metsToAdd.mets'</span>;
-0152         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0153     <span class="keyword">else</span>
-0154         <span class="comment">%Add empty field if it doesn't exist</span>
-0155         <span class="keyword">if</span> ~isfield(newModel,<span class="string">'b'</span>)
-0156             newModel.b=zeros(nOldMets,1);
-0157         <span class="keyword">end</span>
-0158         
-0159         <span class="comment">%If the original is only one vector</span>
-0160         <span class="keyword">if</span> size(metsToAdd.b,2)&gt;size(newModel.b,2)
-0161             newModel.b=[newModel.b newModel.b];
-0162         <span class="keyword">end</span>
-0163         <span class="comment">%Add the new ones</span>
-0164         newModel.b=[newModel.b;metsToAdd.b];
-0165     <span class="keyword">end</span>
-0166 <span class="keyword">else</span>
-0167     <span class="keyword">if</span> isfield(newModel,<span class="string">'b'</span>)
-0168         <span class="comment">%Add the default</span>
-0169         newModel.b=[newModel.b;zeros(nMets,size(newModel.b,2))];
-0170     <span class="keyword">end</span>
-0171 <span class="keyword">end</span>
-0172 
-0173 <span class="keyword">if</span> isfield(metsToAdd,<span class="string">'unconstrained'</span>)
-0174     <span class="keyword">if</span> numel(metsToAdd.unconstrained)~=nMets
-0175         EM=<span class="string">'metsToAdd.unconstrained must have the same number of elements as metsToAdd.mets'</span>;
-0176         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0177     <span class="keyword">else</span>
-0178         <span class="comment">%Add empty field if it doesn't exist</span>
-0179         <span class="keyword">if</span> ~isfield(newModel,<span class="string">'unconstrained'</span>)
-0180             newModel.unconstrained=zeros(nOldMets,1);
-0181         <span class="keyword">end</span>
-0182         
-0183         <span class="comment">%Add the new ones</span>
-0184         newModel.unconstrained=[newModel.unconstrained;metsToAdd.unconstrained(:)];
-0185     <span class="keyword">end</span>
-0186 <span class="keyword">else</span>
-0187     <span class="keyword">if</span> isfield(newModel,<span class="string">'unconstrained'</span>)
-0188         <span class="comment">%Add the default</span>
-0189         newModel.unconstrained=[newModel.unconstrained;zeros(nMets,1)];
-0190     <span class="keyword">end</span>
-0191 <span class="keyword">end</span>
-0192 
-0193 <span class="keyword">if</span> isfield(metsToAdd,<span class="string">'inchis'</span>)
-0194     <span class="keyword">if</span> numel(metsToAdd.inchis)~=nMets
-0195         EM=<span class="string">'metsToAdd.inchis must have the same number of elements as metsToAdd.mets'</span>;
-0196         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0197     <span class="keyword">end</span>
-0198     <span class="keyword">if</span> ~iscellstr(metsToAdd.inchis)
-0199         EM=<span class="string">'metsToAdd.inchis must be a cell array of strings'</span>;
-0200         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0201     <span class="keyword">end</span>
-0202     <span class="comment">%Add empty field if it doesn't exist</span>
-0203     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'inchis'</span>)
-0204         newModel.inchis=largeFiller;
-0205     <span class="keyword">end</span>
-0206     newModel.inchis=[newModel.inchis;metsToAdd.inchis(:)];
-0207 <span class="keyword">else</span>
-0208     <span class="comment">%Add empty strings if structure is in model</span>
-0209     <span class="keyword">if</span> isfield(newModel,<span class="string">'inchis'</span>)
-0210         newModel.inchis=[newModel.inchis;filler];
-0211     <span class="keyword">end</span>
-0212 <span class="keyword">end</span>
-0213 
-0214 <span class="keyword">if</span> isfield(metsToAdd,<span class="string">'metFormulas'</span>)
-0215     <span class="keyword">if</span> numel(metsToAdd.metFormulas)~=nMets
-0216         EM=<span class="string">'metsToAdd.metFormulas must have the same number of elements as metsToAdd.mets'</span>;
-0217         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0218     <span class="keyword">end</span>
-0219     <span class="keyword">if</span> ~iscellstr(metsToAdd.metFormulas)
-0220         EM=<span class="string">'metsToAdd.metFormulas must be a cell array of strings'</span>;
-0221         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0222     <span class="keyword">end</span>
-0223     <span class="comment">%Add empty field if it doesn't exist</span>
-0224     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'metFormulas'</span>)
-0225         newModel.metFormulas=largeFiller;
-0226     <span class="keyword">end</span>
-0227     newModel.metFormulas=[newModel.metFormulas;metsToAdd.metFormulas(:)];
-0228 <span class="keyword">else</span>
-0229     <span class="comment">%Add default</span>
-0230     <span class="keyword">if</span> isfield(newModel,<span class="string">'metFormulas'</span>)
-0231         newModel.metFormulas=[newModel.metFormulas;filler];
-0232     <span class="keyword">end</span>
-0233 <span class="keyword">end</span>
-0234 
-0235 <span class="keyword">if</span> isfield(metsToAdd,<span class="string">'metCharges'</span>)
-0236     <span class="keyword">if</span> numel(metsToAdd.metCharges)~=nMets
-0237         EM=<span class="string">'metsToAdd.metCharges must have the same number of elements as metsToAdd.mets'</span>;
-0238         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0239     <span class="keyword">end</span>
-0240     <span class="keyword">if</span> ~isnumeric(metsToAdd.metCharges)
-0241         EM=<span class="string">'metsToAdd.metCharges must be of type &quot;double&quot;'</span>;
-0242         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0243     <span class="keyword">end</span>
-0244     newModel.metCharges=[newModel.metCharges;metsToAdd.metCharges(:)];
-0245 <span class="keyword">else</span>
-0246     <span class="comment">%Add default</span>
-0247     <span class="keyword">if</span> isfield(newModel,<span class="string">'metCharges'</span>)
-0248         newModel.metCharges=[newModel.metCharges;NaN(numel(filler),1)];
-0249     <span class="keyword">end</span>
-0250 <span class="keyword">end</span>
-0251 
-0252 <span class="comment">%Don't check the type of metMiriams</span>
-0253 <span class="keyword">if</span> isfield(metsToAdd,<span class="string">'metMiriams'</span>)
-0254     <span class="keyword">if</span> numel(metsToAdd.metMiriams)~=nMets
-0255         EM=<span class="string">'metsToAdd.metMiriams must have the same number of elements as metsToAdd.mets'</span>;
-0256         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0257     <span class="keyword">end</span>
-0258     <span class="comment">%Add empty field if it doesn't exist</span>
-0259     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'metMiriams'</span>)
-0260         newModel.metMiriams=cell(nOldMets,1);
-0261     <span class="keyword">end</span>
-0262     newModel.metMiriams=[newModel.metMiriams;metsToAdd.metMiriams(:)];
-0263 <span class="keyword">else</span>
-0264     <span class="keyword">if</span> isfield(newModel,<span class="string">'metMiriams'</span>)
-0265         newModel.metMiriams=[newModel.metMiriams;cell(nMets,1)];
+0063 newModel=model;
+0064 
+0065 <span class="keyword">if</span> isempty(metsToAdd)
+0066     <span class="keyword">return</span>;
+0067 <span class="keyword">end</span>
+0068 
+0069 <span class="comment">%Check some stuff regarding the required fields</span>
+0070 <span class="keyword">if</span> ~isfield(metsToAdd,<span class="string">'mets'</span>)
+0071     metsToAdd.mets=<a href="generateNewIds.html" class="code" title="function newIds=generateNewIds(model,type,prefix,quantity,numLength)">generateNewIds</a>(newModel,<span class="string">'mets'</span>,prefix,numel(metsToAdd.metNames));
+0072 <span class="keyword">end</span>
+0073 <span class="keyword">if</span> ~isfield(metsToAdd,<span class="string">'metNames'</span>)
+0074     metsToAdd.metNames=metsToAdd.mets;
+0075 <span class="keyword">end</span>
+0076 <span class="keyword">if</span> ~isfield(metsToAdd,<span class="string">'compartments'</span>)
+0077     EM=<span class="string">'compartments is a required field in metsToAdd'</span>;
+0078     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0079 <span class="keyword">end</span>
+0080 <span class="keyword">if</span> ischar(metsToAdd.mets)
+0081     metsToAdd.mets={metsToAdd.mets};
+0082 <span class="keyword">elseif</span> ~iscellstr(metsToAdd.mets)
+0083     EM=<span class="string">'metsToAdd.mets must be a cell array of strings'</span>;
+0084     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0085 <span class="keyword">end</span>
+0086 <span class="keyword">if</span> ischar(metsToAdd.metNames)
+0087     metsToAdd.metNames={metsToAdd.metNames};
+0088 <span class="keyword">elseif</span> ~iscellstr(metsToAdd.metNames)
+0089     EM=<span class="string">'metsToAdd.metNames must be a cell array of strings'</span>;
+0090     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0091 <span class="keyword">end</span>
+0092 <span class="keyword">if</span> ~iscellstr(metsToAdd.compartments)
+0093     <span class="keyword">if</span> ischar(metsToAdd.compartments)
+0094         temp=cell(numel(metsToAdd.mets),1);
+0095         temp(:)={metsToAdd.compartments};
+0096         metsToAdd.compartments=temp;
+0097     <span class="keyword">else</span>
+0098         EM=<span class="string">'metsToAdd.compartments must be a cell array of strings'</span>;
+0099         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0100     <span class="keyword">end</span>
+0101 <span class="keyword">end</span>
+0102 
+0103 <span class="comment">%Number of metabolites</span>
+0104 nMets=numel(metsToAdd.mets);
+0105 nOldMets=numel(model.mets);
+0106 filler=cell(nMets,1);
+0107 filler(:)={<span class="string">''</span>};
+0108 largeFiller=cell(nOldMets,1);
+0109 largeFiller(:)={<span class="string">''</span>};
+0110 
+0111 <span class="comment">%Check that no metabolite ids are already present in the model</span>
+0112 I=ismember(metsToAdd.mets,model.mets);
+0113 <span class="keyword">if</span> any(I)
+0114     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>([<span class="string">'One or more elements in metsToAdd.mets are already present in model.mets: '</span><span class="keyword">...</span>
+0115         metsToAdd.mets{I}]);
+0116 <span class="keyword">else</span>
+0117     newModel.mets=[newModel.mets;metsToAdd.mets(:)];
+0118 <span class="keyword">end</span>
+0119 
+0120 <span class="comment">%Check that all the compartments could be found</span>
+0121 [I, compMap]=ismember(metsToAdd.compartments,model.comps);
+0122 <span class="keyword">if</span> ~all(I)
+0123     EM=<span class="string">'metsToAdd.compartments must match model.comps'</span>;
+0124     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0125 <span class="keyword">end</span>
+0126 
+0127 <span class="comment">%Check that the metabolite names aren't present in the same compartment.</span>
+0128 <span class="comment">%Not the neatest way maybe..</span>
+0129 t1=strcat(metsToAdd.metNames(:),<span class="string">'***'</span>,metsToAdd.compartments(:));
+0130 t2=strcat(model.metNames,<span class="string">'***'</span>,model.comps(model.metComps));
+0131 <span class="keyword">if</span> any(ismember(t1,t2))
+0132     EM=<span class="string">'One or more elements in metsToAdd.metNames already exist in the same compartments as the one it is being added to'</span>;
+0133     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0134 <span class="keyword">end</span>
+0135 
+0136 <span class="comment">%Some more checks and if they pass then add each field to the structure</span>
+0137 <span class="keyword">if</span> numel(metsToAdd.metNames)~=nMets
+0138     EM=<span class="string">'metsToAdd.metNames must have the same number of elements as metsToAdd.mets'</span>;
+0139     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0140 <span class="keyword">else</span>
+0141     newModel.metNames=[newModel.metNames;metsToAdd.metNames(:)];
+0142 <span class="keyword">end</span>
+0143 
+0144 <span class="keyword">if</span> numel(compMap)~=nMets
+0145     EM=<span class="string">'metsToAdd.compartments must have the same number of elements as metsToAdd.mets'</span>;
+0146     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0147 <span class="keyword">else</span>
+0148     newModel.metComps=[newModel.metComps;compMap(:)];
+0149 <span class="keyword">end</span>
+0150 
+0151 <span class="keyword">if</span> isfield(metsToAdd,<span class="string">'b'</span>)
+0152     <span class="keyword">if</span> size(metsToAdd.b,1)~=nMets
+0153         EM=<span class="string">'metsToAdd.b must have the same number of elements as metsToAdd.mets'</span>;
+0154         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0155     <span class="keyword">else</span>
+0156         <span class="comment">%Add empty field if it doesn't exist</span>
+0157         <span class="keyword">if</span> ~isfield(newModel,<span class="string">'b'</span>)
+0158             newModel.b=zeros(nOldMets,1);
+0159         <span class="keyword">end</span>
+0160         
+0161         <span class="comment">%If the original is only one vector</span>
+0162         <span class="keyword">if</span> size(metsToAdd.b,2)&gt;size(newModel.b,2)
+0163             newModel.b=[newModel.b newModel.b];
+0164         <span class="keyword">end</span>
+0165         <span class="comment">%Add the new ones</span>
+0166         newModel.b=[newModel.b;metsToAdd.b];
+0167     <span class="keyword">end</span>
+0168 <span class="keyword">else</span>
+0169     <span class="keyword">if</span> isfield(newModel,<span class="string">'b'</span>)
+0170         <span class="comment">%Add the default</span>
+0171         newModel.b=[newModel.b;zeros(nMets,size(newModel.b,2))];
+0172     <span class="keyword">end</span>
+0173 <span class="keyword">end</span>
+0174 
+0175 <span class="keyword">if</span> isfield(metsToAdd,<span class="string">'unconstrained'</span>)
+0176     <span class="keyword">if</span> numel(metsToAdd.unconstrained)~=nMets
+0177         EM=<span class="string">'metsToAdd.unconstrained must have the same number of elements as metsToAdd.mets'</span>;
+0178         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0179     <span class="keyword">else</span>
+0180         <span class="comment">%Add empty field if it doesn't exist</span>
+0181         <span class="keyword">if</span> ~isfield(newModel,<span class="string">'unconstrained'</span>)
+0182             newModel.unconstrained=zeros(nOldMets,1);
+0183         <span class="keyword">end</span>
+0184         
+0185         <span class="comment">%Add the new ones</span>
+0186         newModel.unconstrained=[newModel.unconstrained;metsToAdd.unconstrained(:)];
+0187     <span class="keyword">end</span>
+0188 <span class="keyword">else</span>
+0189     <span class="keyword">if</span> isfield(newModel,<span class="string">'unconstrained'</span>)
+0190         <span class="comment">%Add the default</span>
+0191         newModel.unconstrained=[newModel.unconstrained;zeros(nMets,1)];
+0192     <span class="keyword">end</span>
+0193 <span class="keyword">end</span>
+0194 
+0195 <span class="keyword">if</span> isfield(metsToAdd,<span class="string">'inchis'</span>)
+0196     <span class="keyword">if</span> numel(metsToAdd.inchis)~=nMets
+0197         EM=<span class="string">'metsToAdd.inchis must have the same number of elements as metsToAdd.mets'</span>;
+0198         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0199     <span class="keyword">end</span>
+0200     <span class="keyword">if</span> ~iscellstr(metsToAdd.inchis)
+0201         EM=<span class="string">'metsToAdd.inchis must be a cell array of strings'</span>;
+0202         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0203     <span class="keyword">end</span>
+0204     <span class="comment">%Add empty field if it doesn't exist</span>
+0205     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'inchis'</span>)
+0206         newModel.inchis=largeFiller;
+0207     <span class="keyword">end</span>
+0208     newModel.inchis=[newModel.inchis;metsToAdd.inchis(:)];
+0209 <span class="keyword">else</span>
+0210     <span class="comment">%Add empty strings if structure is in model</span>
+0211     <span class="keyword">if</span> isfield(newModel,<span class="string">'inchis'</span>)
+0212         newModel.inchis=[newModel.inchis;filler];
+0213     <span class="keyword">end</span>
+0214 <span class="keyword">end</span>
+0215 
+0216 <span class="keyword">if</span> isfield(metsToAdd,<span class="string">'metFormulas'</span>)
+0217     <span class="keyword">if</span> numel(metsToAdd.metFormulas)~=nMets
+0218         EM=<span class="string">'metsToAdd.metFormulas must have the same number of elements as metsToAdd.mets'</span>;
+0219         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0220     <span class="keyword">end</span>
+0221     <span class="keyword">if</span> ~iscellstr(metsToAdd.metFormulas)
+0222         EM=<span class="string">'metsToAdd.metFormulas must be a cell array of strings'</span>;
+0223         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0224     <span class="keyword">end</span>
+0225     <span class="comment">%Add empty field if it doesn't exist</span>
+0226     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'metFormulas'</span>)
+0227         newModel.metFormulas=largeFiller;
+0228     <span class="keyword">end</span>
+0229     newModel.metFormulas=[newModel.metFormulas;metsToAdd.metFormulas(:)];
+0230 <span class="keyword">else</span>
+0231     <span class="comment">%Add default</span>
+0232     <span class="keyword">if</span> isfield(newModel,<span class="string">'metFormulas'</span>)
+0233         newModel.metFormulas=[newModel.metFormulas;filler];
+0234     <span class="keyword">end</span>
+0235 <span class="keyword">end</span>
+0236 
+0237 <span class="keyword">if</span> isfield(metsToAdd,<span class="string">'metCharges'</span>)
+0238     <span class="keyword">if</span> numel(metsToAdd.metCharges)~=nMets
+0239         EM=<span class="string">'metsToAdd.metCharges must have the same number of elements as metsToAdd.mets'</span>;
+0240         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0241     <span class="keyword">end</span>
+0242     <span class="keyword">if</span> ~isnumeric(metsToAdd.metCharges)
+0243         EM=<span class="string">'metsToAdd.metCharges must be of type &quot;double&quot;'</span>;
+0244         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0245     <span class="keyword">end</span>
+0246     newModel.metCharges=[newModel.metCharges;metsToAdd.metCharges(:)];
+0247 <span class="keyword">else</span>
+0248     <span class="comment">%Add default</span>
+0249     <span class="keyword">if</span> isfield(newModel,<span class="string">'metCharges'</span>)
+0250         newModel.metCharges=[newModel.metCharges;NaN(numel(filler),1)];
+0251     <span class="keyword">end</span>
+0252 <span class="keyword">end</span>
+0253 
+0254 <span class="keyword">if</span> isfield(metsToAdd,<span class="string">'metNotes'</span>)
+0255     <span class="keyword">if</span> numel(metsToAdd.metNotes)~=nMets
+0256         EM=<span class="string">'metsToAdd.metNotes must have the same number of elements as metsToAdd.mets'</span>;
+0257         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0258     <span class="keyword">end</span>
+0259     <span class="keyword">if</span> ~iscellstr(metsToAdd.metNotes)
+0260         EM=<span class="string">'metsToAdd.metNotes must be a cell array of strings'</span>;
+0261         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0262     <span class="keyword">end</span>
+0263     <span class="comment">%Add empty field if it doesn't exist</span>
+0264     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'metNotes'</span>)
+0265         newModel.metNotes=largeFiller;
 0266     <span class="keyword">end</span>
-0267 <span class="keyword">end</span>
-0268 
-0269 <span class="keyword">if</span> isfield(newModel,<span class="string">'metFrom'</span>)
-0270     newModel.metFrom=[newModel.metFrom;filler];
-0271 <span class="keyword">end</span>
-0272 
-0273 <span class="comment">%Expand the S matrix</span>
-0274 newModel.S=[newModel.S;sparse(nMets,size(newModel.S,2))];
-0275 
-0276 <span class="keyword">if</span> copyInfo==true
-0277     [I, J]=ismember(metsToAdd.metNames,model.metNames);
-0278     J=J(I);
-0279     <span class="comment">%I is the indexes of the new metabolites for which a metabolite with</span>
-0280     <span class="comment">%the same name existed</span>
-0281     I=find(I)+nOldMets;
-0282     <span class="comment">%Go through each of the added mets and copy annotation if it doesn't</span>
-0283     <span class="comment">%exist</span>
-0284     <span class="keyword">for</span> i=1:numel(I)
-0285         <span class="keyword">if</span> isfield(newModel,<span class="string">'inchis'</span>)
-0286             <span class="keyword">if</span> isempty(newModel.inchis{I(i)})
-0287                 newModel.inchis(I(i))=newModel.inchis(J(i));
-0288             <span class="keyword">end</span>
-0289         <span class="keyword">end</span>
-0290         <span class="keyword">if</span> isfield(newModel,<span class="string">'metFormulas'</span>)
-0291             <span class="keyword">if</span> isempty(newModel.metFormulas{I(i)})
-0292                 newModel.metFormulas(I(i))=newModel.metFormulas(J(i));
-0293             <span class="keyword">end</span>
-0294         <span class="keyword">end</span>
-0295         <span class="keyword">if</span> isfield(newModel,<span class="string">'metMiriams'</span>)
-0296             <span class="keyword">if</span> isempty(newModel.metMiriams{I(i)})
-0297                 newModel.metMiriams(I(i))=newModel.metMiriams(J(i));
-0298             <span class="keyword">end</span>
-0299         <span class="keyword">end</span>
-0300         <span class="keyword">if</span> isfield(newModel,<span class="string">'metCharges'</span>)
-0301             newModel.metCharges(I(i))=newModel.metCharges(J(i));
-0302         <span class="keyword">end</span>
-0303     <span class="keyword">end</span>
-0304 <span class="keyword">end</span>
-0305 <span class="keyword">end</span>
-0306 
-0307 <span class="comment">%For getting the numerical form of metabolite ids on the form &quot;m1&quot;.</span>
-0308 <a name="_sub1" href="#_subfunctions" class="code">function I=getInteger(s)</a>
-0309 <span class="comment">%Checks if a string is on the form &quot;m1&quot; and if so returns the value of the</span>
-0310 <span class="comment">%integer</span>
-0311 I=0;
-0312 <span class="keyword">if</span> strcmpi(s(1),<span class="string">'m'</span>)
-0313     t=str2double(s(2:end));
-0314     <span class="keyword">if</span> ~isnan(t) &amp;&amp; ~isempty(t)
-0315         I=t;
-0316     <span class="keyword">end</span>
-0317 <span class="keyword">end</span>
-0318 <span class="keyword">end</span></pre></div>
+0267     newModel.metNotes=[newModel.inchis;metsToAdd.metNotes(:)];
+0268 <span class="keyword">else</span>
+0269     <span class="comment">%Add empty strings if structure is in model</span>
+0270     <span class="keyword">if</span> isfield(newModel,<span class="string">'metNotes'</span>)
+0271         newModel.metNotes=[newModel.metNotes;filler];
+0272     <span class="keyword">end</span>
+0273 <span class="keyword">end</span>
+0274 
+0275 <span class="comment">%Don't check the type of metMiriams</span>
+0276 <span class="keyword">if</span> isfield(metsToAdd,<span class="string">'metMiriams'</span>)
+0277     <span class="keyword">if</span> numel(metsToAdd.metMiriams)~=nMets
+0278         EM=<span class="string">'metsToAdd.metMiriams must have the same number of elements as metsToAdd.mets'</span>;
+0279         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0280     <span class="keyword">end</span>
+0281     <span class="comment">%Add empty field if it doesn't exist</span>
+0282     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'metMiriams'</span>)
+0283         newModel.metMiriams=cell(nOldMets,1);
+0284     <span class="keyword">end</span>
+0285     newModel.metMiriams=[newModel.metMiriams;metsToAdd.metMiriams(:)];
+0286 <span class="keyword">else</span>
+0287     <span class="keyword">if</span> isfield(newModel,<span class="string">'metMiriams'</span>)
+0288         newModel.metMiriams=[newModel.metMiriams;cell(nMets,1)];
+0289     <span class="keyword">end</span>
+0290 <span class="keyword">end</span>
+0291 
+0292 <span class="keyword">if</span> isfield(newModel,<span class="string">'metFrom'</span>)
+0293     newModel.metFrom=[newModel.metFrom;filler];
+0294 <span class="keyword">end</span>
+0295 
+0296 <span class="comment">%Expand the S matrix</span>
+0297 newModel.S=[newModel.S;sparse(nMets,size(newModel.S,2))];
+0298 
+0299 <span class="keyword">if</span> copyInfo==true
+0300     [I, J]=ismember(metsToAdd.metNames,model.metNames);
+0301     J=J(I);
+0302     <span class="comment">%I is the indexes of the new metabolites for which a metabolite with</span>
+0303     <span class="comment">%the same name existed</span>
+0304     I=find(I)+nOldMets;
+0305     <span class="comment">%Go through each of the added mets and copy annotation if it doesn't</span>
+0306     <span class="comment">%exist</span>
+0307     <span class="keyword">for</span> i=1:numel(I)
+0308         <span class="keyword">if</span> isfield(newModel,<span class="string">'inchis'</span>)
+0309             <span class="keyword">if</span> isempty(newModel.inchis{I(i)})
+0310                 newModel.inchis(I(i))=newModel.inchis(J(i));
+0311             <span class="keyword">end</span>
+0312         <span class="keyword">end</span>
+0313         <span class="keyword">if</span> isfield(newModel,<span class="string">'metFormulas'</span>)
+0314             <span class="keyword">if</span> isempty(newModel.metFormulas{I(i)})
+0315                 newModel.metFormulas(I(i))=newModel.metFormulas(J(i));
+0316             <span class="keyword">end</span>
+0317         <span class="keyword">end</span>
+0318         <span class="keyword">if</span> isfield(newModel,<span class="string">'metMiriams'</span>)
+0319             <span class="keyword">if</span> isempty(newModel.metMiriams{I(i)})
+0320                 newModel.metMiriams(I(i))=newModel.metMiriams(J(i));
+0321             <span class="keyword">end</span>
+0322         <span class="keyword">end</span>
+0323         <span class="keyword">if</span> isfield(newModel,<span class="string">'metCharges'</span>)
+0324             newModel.metCharges(I(i))=newModel.metCharges(J(i));
+0325         <span class="keyword">end</span>
+0326     <span class="keyword">end</span>
+0327 <span class="keyword">end</span>
+0328 <span class="keyword">end</span>
+0329 
+0330 <span class="comment">%For getting the numerical form of metabolite ids on the form &quot;m1&quot;.</span>
+0331 <a name="_sub1" href="#_subfunctions" class="code">function I=getInteger(s)</a>
+0332 <span class="comment">%Checks if a string is on the form &quot;m1&quot; and if so returns the value of the</span>
+0333 <span class="comment">%integer</span>
+0334 I=0;
+0335 <span class="keyword">if</span> strcmpi(s(1),<span class="string">'m'</span>)
+0336     t=str2double(s(2:end));
+0337     <span class="keyword">if</span> ~isnan(t) &amp;&amp; ~isempty(t)
+0338         I=t;
+0339     <span class="keyword">end</span>
+0340 <span class="keyword">end</span>
+0341 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
