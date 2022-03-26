@@ -370,7 +370,7 @@ if isfield(rxnsToAdd,'subSystems')
     if ~isfield(newModel,'subSystems')
         newModel.subSystems=celllargefiller;
     end
-    newModel.subSystems=[newModel.subSystems;rxnsToAdd.subSystems(:)];
+    newModel.subSystems=[newModel.subSystems;rxnsToAdd.subSystems];
 else
     %Fill with standard if it doesn't exist
     if isfield(newModel,'subSystems')
