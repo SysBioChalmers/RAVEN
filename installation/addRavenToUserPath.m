@@ -15,8 +15,7 @@ if nargin<1
 end
 
 % Get current RAVEN directory
-[ST, I]=dbstack('-completenames');
-[ravenDir,~,~]=fileparts(fileparts(ST(I).file));
+ravenDir=findRAVENroot();
 
 % Lists all subdirectories
 subpath=regexp(genpath(ravenDir),pathsep,'split');

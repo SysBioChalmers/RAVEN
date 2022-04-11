@@ -21,8 +21,7 @@ paths=textscan(path,'%s','delimiter', pathsep);
 paths=paths{1};
 
 %Get the RAVEN path
-[ST, I]=dbstack('-completenames');
-[ravenDir,~,~]=fileparts(fileparts(ST(I).file));
+ravenDir=findRAVENroot();
 
 %Print the RAVEN version if it is not the development version
 if exist(fullfile(ravenDir,'version.txt'), 'file') == 2

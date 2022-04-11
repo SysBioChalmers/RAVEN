@@ -6,8 +6,7 @@ function checkFunctionUniqueness()
 %   Usage: checkFunctionUniqueness()
 
 %Get the RAVEN path
-[ST, I]=dbstack('-completenames');
-[ravenDir,~,~]=fileparts(fileparts(ST(I).file));
+ravenDir=findRAVENroot();
 
 %Now getting all RAVEN functions recursively;
 temp_res1=dir([ravenDir '/*/*.m']);

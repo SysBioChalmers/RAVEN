@@ -60,8 +60,7 @@ function metaCycEnzymes=getEnzymesFromMetaCyc(metacycPath)
 
 %Check if the enzymatic proteins have been parsed before and saved. If so,
 %load the model.
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+ravenPath=findRAVENroot();
 enzymesFile=fullfile(ravenPath,'external','metacyc','metaCycEnzymes.mat');
 metaCycProteinFile='proteins.dat';
 metaCycEnzrxnsFile='enzrxns.dat';

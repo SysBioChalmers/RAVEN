@@ -81,8 +81,7 @@ end
 
 %Check if the reactions have been parsed before and saved. Directly load
 %the model if so.
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+ravenPath=findRAVENroot();
 rxnsFile=fullfile(ravenPath,'external','metacyc','metaCycRxns.mat');
 metaCycRxnFile='reactions.dat';
 metaCycPwyFile='pathway-links.dat';
