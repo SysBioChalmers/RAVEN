@@ -21,7 +21,7 @@ else
     milp=false;
 end
 
-% Define default parameters, which will then be used to make solver-
+%% Define default parameters, which will then be used to make solver-
 % specific solverparams structures
 defaultparams.feasTol        = 1e-6;
 defaultparams.optTol         = 1e-6;
@@ -33,52 +33,10 @@ defaultparams.relMipGapTol   = 1e-4;
 defaultparams.absMipGapTol   = 1e-12;
 
 solver=getpref('RAVEN','solver');
+
+
 switch solver
-    case 'gurobi'
-        if milp
-            solverparams.OutputFlag = 1;
-        else
-            solverparams.OutputFlag = 0;
-        end
-        solverparams.DisplayInterval= 1; % Level of verbosity
-        solverparams.TimeLimit      = defaultparams.timeLimit;
-        solverparams.FeasibilityTol = defaultparams.feasTol;
-        solverparams.OptimalityTol  = defaultparams.optTol;
-        solverparams.Presolve       = 2;
-        solverparams = structUpdate(solverparams,params);
-        
-        % Restructering problem according to gurobi format
-        prob.csense = renameparams(prob.csense, {'L','G','E'}, {'<','>','='});
-        prob.osense = renameparams(num2str(prob.osense), {'1','-1'}, {'min','max'});
-        
-        [prob.obj, prob.rhs, prob.sense, prob.modelsense] = deal(prob.c, prob.b, prob.csense, prob.osense);
-        prob = rmfield(prob, {'c','b','csense','osense'});
-        
-        resG = gurobi(prob,solverparams);
-        
-        try
-            [res.full, res.obj, res.origStat] = deal(resG.x,  resG.objval, resG.status);
-            if milp && strcmp(resG.status, 'TIME_LIMIT')
-                % If res has the objval field, it succeeded, regardless of
-                % time_limit status
-                resG.status = 'OPTIMAL';
-            end
-            switch resG.status
-                case 'OPTIMAL'
-                    res.stat = 1;
-                case 'UNBOUNDED'
-                    res.stat = 2;
-                otherwise
-                    res.stat = 0;
-            end
-            if ~milp
-                [res.vbasis, res.cbasis] = deal(resG.vbasis, resG.cbasis);
-            end
-        catch
-            res.stat = 0;
-            res.origStat = resG.status;  % useful information to have
-        end
-        
+    %% Use whatever solver is set by COBRA Toolbox changeCobraSolver
     case 'cobra'
         if milp
             cparams=struct('timeLimit',1e9,'printLevel',0,'intTol',1e-6,'relMipGapTol',1e-9);
@@ -88,10 +46,100 @@ switch solver
             res=solveCobraLP(prob);
         end
         
+    %% Use Gurobi in a MATLAB environment
+    case 'gurobi'
+    if milp
+        solverparams.OutputFlag = 1;
+    else
+        solverparams.OutputFlag = 0;
+    end
+    solverparams.DisplayInterval= 1; % Level of verbosity
+    solverparams.TimeLimit      = defaultparams.timeLimit;
+    solverparams.FeasibilityTol = defaultparams.feasTol;
+    solverparams.OptimalityTol  = defaultparams.optTol;
+    solverparams.Presolve       = 2;
+    solverparams = structUpdate(solverparams,params);
+    
+    % Restructering problem according to gurobi format
+    prob.csense = renameparams(prob.csense, {'L','G','E'}, {'<','>','='});
+    prob.osense = renameparams(num2str(prob.osense), {'1','-1'}, {'min','max'});
+    
+    [prob.obj, prob.rhs, prob.sense, prob.modelsense] = deal(prob.c, prob.b, prob.csense, prob.osense);
+    prob = rmfield(prob, {'c','b','csense','osense'});
+    
+    resG = gurobi(prob,solverparams);
+    
+    try
+        [res.full, res.obj, res.origStat] = deal(resG.x,  resG.objval, resG.status);
+        if milp && strcmp(resG.status, 'TIME_LIMIT')
+            % If res has the objval field, it succeeded, regardless of
+            % time_limit status
+            resG.status = 'OPTIMAL';
+        end
+        switch resG.status
+            case 'OPTIMAL'
+                res.stat = 1;
+            case 'UNBOUNDED'
+                res.stat = 2;
+            otherwise
+                res.stat = 0;
+        end
+        if ~milp
+            [res.vbasis, res.cbasis] = deal(resG.vbasis, resG.cbasis);
+        end
+    catch
+        res.stat = 0;
+        res.origStat = resG.status;  % useful information to have
+    end
+    %% Use GLPK using RAVEN-provided binary
+    case 'glpk'
+        solverparams.scale   = 128; % Auto scaling
+        solverparams.tmlim   = defaultparams.timeLimit;
+        solverparams.tolbnd  = defaultparams.feasTol;
+        solverparams.toldj   = defaultparams.optTol;
+        solverparams.tolint  = defaultparams.intTol;
+        solverparams.tolobj  = defaultparams.objTol;
+        solverparams.msglev  = 0; % Level of verbosity
+        solverparams = structUpdate(solverparams,params);
+        
+        prob.csense = renameparams(prob.csense, {'L','G','E'}, {'U','L','S'});
+        
+        if milp
+            solverparams.tmlim   = solverparams.tmlim*10;
+            solverparams.msglev  = 1; % Level of verbosity
+            disp('Unreliable MILP solving via GLPK. Be advised to use an alternative solver')
+        end
+        solverparams.scale   = 1; % Auto scaling
+        [xopt, fmin, errnum, extra] = glpkMatlab(prob.c, prob.A, prob.b, prob.lb, prob.ub, prob.csense, prob.vartype, prob.osense, solverparams);
+        
+        switch errnum % Throw message for most common errors
+            case 4
+                error('GLPK error 4: Invalid bounds.')
+            case 9
+                error('GLPK error 9: Time limit exhausted.')
+            case 5
+                error('GLPK error 5: Solver failed.')
+            otherwise
+                if errnum~=0
+                    error(['GLPK error ' num2str(errnum)])
+                end
+        end
+        
+        switch extra.status % 1 = undefined; 2 = feasible; 3 = infeasible; 4 = no feasible solution; 5 = optimal; 6 = no unbounded solution
+            case 5
+                res.stat = 1; % Optimal
+            case 2
+                res.stat = 2; % Feasible, but not optimal
+            otherwise
+                res.stat = 0;
+        end
+        
+        res.origStat = extra.status;
+        res.full     = xopt;
+        res.obj      = fmin;
     otherwise
         error('RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
 end
-
 if res.stat>0
     res.full=res.full(1:size(prob.a,2));
 end
