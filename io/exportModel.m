@@ -655,7 +655,11 @@ end
 modelSBML.rule=[];
 modelSBML.constraint=[];
 
+[ravenDir,prevDir]=findRAVENroot();
+fileName=checkFileExistence(fileName,1,true,false);
+cd(fullfile(ravenDir,'software','libSBML'));
 OutputSBML(modelSBML,fileName,1,0,[1,0]);
+cd(prevDir);
 end
 
 

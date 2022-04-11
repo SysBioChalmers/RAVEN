@@ -130,7 +130,11 @@ model.metCharges=[];
 model.unconstrained=[];
 
 %Load the model using libSBML
+[ravenDir,prevDir]=findRAVENroot();
+fileName=checkFileExistence(fileName,1);
+cd(fullfile(ravenDir,'software','libSBML'));
 modelSBML = TranslateSBML(fileName,0,0,[1 1]);
+cd(prevDir);
 
 if isempty(modelSBML)
     EM='There is a problem with the SBML file. Try using the SBML Validator at http://sbml.org/Facilities/Validator';
