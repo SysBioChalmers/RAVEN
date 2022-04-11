@@ -54,59 +54,58 @@ This function is called by:
 0006 <span class="comment">%   Usage: checkFunctionUniqueness()</span>
 0007 
 0008 <span class="comment">%Get the RAVEN path</span>
-0009 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
-0010 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
-0011 
-0012 <span class="comment">%Now getting all RAVEN functions recursively;</span>
-0013 temp_res1=dir([ravenDir <span class="string">'/*/*.m'</span>]);
-0014 temp_res2=dir([ravenDir <span class="string">'/*/*/*.m'</span>]);
-0015 
-0016 ravenFunctions={temp_res1.name,temp_res2.name}';
-0017 <span class="comment">%startup.m is not a normal function, any startup.m in the path should run</span>
-0018 <span class="comment">%during startup, so duplicate use of this name is fine</span>
-0019 ravenFunctions=ravenFunctions(~ismember(ravenFunctions,<span class="string">'startup.m'</span>));
-0020 
-0021 <span class="comment">%Getting all the paths added to Matlab</span>
-0022 <span class="keyword">if</span> ispc
-0023     matlabPaths=regexp(path, <span class="string">';'</span>, <span class="string">'split'</span>)';
-0024 <span class="keyword">elseif</span> isunix
-0025     matlabPaths=regexp(path, <span class="string">':'</span>, <span class="string">'split'</span>)';
-0026 <span class="keyword">end</span>
-0027 
-0028 hasConflicts=false;
-0029 
-0030 <span class="keyword">for</span> i=1:numel(matlabPaths)
-0031     <span class="keyword">if</span> ~any(strfind(matlabPaths{i},ravenDir))
-0032         temp_res=dir([matlabPaths{i} <span class="string">'/*.m'</span>]);
-0033         <span class="keyword">if</span> ~isempty(temp_res)
-0034             pathFunctions={temp_res.name}';
-0035         <span class="keyword">else</span>
-0036             pathFunctions=<span class="string">''</span>;
-0037         <span class="keyword">end</span>
-0038         <span class="keyword">if</span> ~isempty(pathFunctions) &amp;&amp; ~any(ismember(<span class="string">'Contents.m'</span>,pathFunctions))
-0039             <span class="keyword">if</span> any(ismember(ravenFunctions,pathFunctions))
-0040                 fprintf(<span class="string">'Not OK\n'</span>);
-0041                 <span class="keyword">if</span> sum(ismember(ravenFunctions,pathFunctions))&gt;(numel(ravenFunctions)/4)
-0042                     EM=<span class="string">'Multiple RAVEN versions detected in MATLAB path. Leave only one RAVEN version in MATLAB path and re-run checkInstallation\n'</span>;
-0043                     dispEM(EM);
-0044                 <span class="keyword">else</span>
-0045                     disp([<span class="string">'WARNING: Duplicate functions in '</span>,matlabPaths{i},<span class="string">': '</span>]);
-0046                     ovrlpFunctions=ravenFunctions(ismember(ravenFunctions,pathFunctions));
-0047                     disp(ovrlpFunctions);
-0048                     hasConflicts=true;
-0049                 <span class="keyword">end</span>
-0050             <span class="keyword">end</span>
-0051         <span class="keyword">end</span>
-0052     <span class="keyword">end</span>
-0053 <span class="keyword">end</span>
-0054 
-0055 <span class="keyword">if</span> hasConflicts
-0056     fprintf(<span class="string">'It is strongly recommended to resolve conflicting functions as this may compromise RAVEN functionality\n'</span>);
-0057 <span class="keyword">else</span>
-0058     fprintf(<span class="string">'OK\n'</span>);
-0059 <span class="keyword">end</span>
-0060 
-0061 <span class="keyword">end</span></pre></div>
+0009 ravenDir=findRAVENroot();
+0010 
+0011 <span class="comment">%Now getting all RAVEN functions recursively;</span>
+0012 temp_res1=dir([ravenDir <span class="string">'/*/*.m'</span>]);
+0013 temp_res2=dir([ravenDir <span class="string">'/*/*/*.m'</span>]);
+0014 
+0015 ravenFunctions={temp_res1.name,temp_res2.name}';
+0016 <span class="comment">%startup.m is not a normal function, any startup.m in the path should run</span>
+0017 <span class="comment">%during startup, so duplicate use of this name is fine</span>
+0018 ravenFunctions=ravenFunctions(~ismember(ravenFunctions,<span class="string">'startup.m'</span>));
+0019 
+0020 <span class="comment">%Getting all the paths added to Matlab</span>
+0021 <span class="keyword">if</span> ispc
+0022     matlabPaths=regexp(path, <span class="string">';'</span>, <span class="string">'split'</span>)';
+0023 <span class="keyword">elseif</span> isunix
+0024     matlabPaths=regexp(path, <span class="string">':'</span>, <span class="string">'split'</span>)';
+0025 <span class="keyword">end</span>
+0026 
+0027 hasConflicts=false;
+0028 
+0029 <span class="keyword">for</span> i=1:numel(matlabPaths)
+0030     <span class="keyword">if</span> ~any(strfind(matlabPaths{i},ravenDir))
+0031         temp_res=dir([matlabPaths{i} <span class="string">'/*.m'</span>]);
+0032         <span class="keyword">if</span> ~isempty(temp_res)
+0033             pathFunctions={temp_res.name}';
+0034         <span class="keyword">else</span>
+0035             pathFunctions=<span class="string">''</span>;
+0036         <span class="keyword">end</span>
+0037         <span class="keyword">if</span> ~isempty(pathFunctions) &amp;&amp; ~any(ismember(<span class="string">'Contents.m'</span>,pathFunctions))
+0038             <span class="keyword">if</span> any(ismember(ravenFunctions,pathFunctions))
+0039                 fprintf(<span class="string">'Not OK\n'</span>);
+0040                 <span class="keyword">if</span> sum(ismember(ravenFunctions,pathFunctions))&gt;(numel(ravenFunctions)/4)
+0041                     EM=<span class="string">'Multiple RAVEN versions detected in MATLAB path. Leave only one RAVEN version in MATLAB path and re-run checkInstallation\n'</span>;
+0042                     dispEM(EM);
+0043                 <span class="keyword">else</span>
+0044                     disp([<span class="string">'WARNING: Duplicate functions in '</span>,matlabPaths{i},<span class="string">': '</span>]);
+0045                     ovrlpFunctions=ravenFunctions(ismember(ravenFunctions,pathFunctions));
+0046                     disp(ovrlpFunctions);
+0047                     hasConflicts=true;
+0048                 <span class="keyword">end</span>
+0049             <span class="keyword">end</span>
+0050         <span class="keyword">end</span>
+0051     <span class="keyword">end</span>
+0052 <span class="keyword">end</span>
+0053 
+0054 <span class="keyword">if</span> hasConflicts
+0055     fprintf(<span class="string">'It is strongly recommended to resolve conflicting functions as this may compromise RAVEN functionality\n'</span>);
+0056 <span class="keyword">else</span>
+0057     fprintf(<span class="string">'OK\n'</span>);
+0058 <span class="keyword">end</span>
+0059 
+0060 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

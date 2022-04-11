@@ -131,227 +131,226 @@ This function is called by:
 0057 
 0058 <span class="comment">% Check if the metabolites have been parsed before and saved. If so, load</span>
 0059 <span class="comment">% the model.</span>
-0060 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
-0061 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-0062 metsFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'metacyc'</span>,<span class="string">'metaCycMets.mat'</span>);
-0063 metaCycMetFile=<span class="string">'compounds.dat'</span>;
-0064 
-0065 <span class="keyword">if</span> exist(metsFile, <span class="string">'file'</span>)
-0066     fprintf([<span class="string">'Importing MetaCyc metabolites from '</span> strrep(metsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'... '</span>]);
-0067     load(metsFile);
-0068     fprintf(<span class="string">'done\n'</span>);
-0069 <span class="keyword">else</span>
-0070     fprintf([<span class="string">'Cannot locate '</span> strrep(metsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'\nNow try to generate it from local MetaCyc data files...\n'</span>]);
-0071     <span class="keyword">if</span> ~exist(fullfile(metacycPath,metaCycMetFile),<span class="string">'file'</span>)
-0072         EM=fprintf([<span class="string">'The file of metabolites cannot be located, and should be downloaded from MetaCyc.\n'</span>]);
-0073         dispEM(EM);
-0074     <span class="keyword">else</span>
-0075         <span class="comment">%Add new functionality in the order specified in models</span>
-0076         metaCycMets.id=<span class="string">'MetaCyc'</span>;
-0077         metaCycMets.name=<span class="string">'Automatically generated from MetaCyc database'</span>;
-0078         
-0079         <span class="comment">%Preallocate memory for 50000 metabolites</span>
-0080         metaCycMets.mets=cell(50000,1);
-0081         metaCycMets.metNames=cell(50000,1);
-0082         metaCycMets.metFormulas=cell(50000,1);
-0083         metaCycMets.inchis=cell(50000,1);
-0084         metaCycMets.metCharges=zeros(50000,1);
-0085         metaCycMets.metMiriams=cell(50000,1);
-0086         metaCycMets.keggid=cell(50000,1);
-0087         
-0088         <span class="comment">%First load information on metabolite ID, name, formula, and others</span>
-0089         fid = fopen(fullfile(metacycPath,metaCycMetFile), <span class="string">'r'</span>);
-0090         
-0091         <span class="comment">%Keeps track of how many metabolites that have been added</span>
-0092         metCounter=0;
-0093         
-0094         <span class="comment">%Loop through the file</span>
-0095         <span class="keyword">while</span> 1
-0096             <span class="comment">%Get the next line</span>
-0097             tline = fgetl(fid);
-0098             <span class="comment">%disp(tline);</span>
-0099             
-0100             <span class="comment">% Abort at end of file</span>
-0101             <span class="keyword">if</span> ~ischar(tline)
-0102                 <span class="keyword">break</span>;
-0103             <span class="keyword">end</span>
-0104             
-0105             <span class="comment">% Get the version of MetaCyc database</span>
-0106             <span class="keyword">if</span> numel(tline)&gt;11 &amp;&amp; strcmp(tline(1:11),<span class="string">'# Version: '</span>)
-0107                 metaCycMets.version=tline(12:end);
-0108             <span class="keyword">end</span>
-0109 
-0110             <span class="comment">%Check if it is a new entry</span>
-0111             <span class="keyword">if</span> numel(tline)&gt;12 &amp;&amp; strcmp(tline(1:12),<span class="string">'UNIQUE-ID - '</span>)
-0112                 metCounter=metCounter+1;
-0113                 
-0114                 <span class="comment">%Add empty strings as initial values</span>
-0115                 metaCycMets.metNames{metCounter}=<span class="string">''</span>;
-0116                 metaCycMets.metFormulas{metCounter}=<span class="string">''</span>;
-0117                 metaCycMets.inchis{metCounter}=<span class="string">''</span>;
-0118                 <span class="comment">%metaCycMets.smiles{metCounter}='';</span>
-0119                 <span class="comment">%metaCycMets.pubchem{metCounter}='';</span>
-0120                 metaCycMets.keggid{metCounter}=<span class="string">''</span>;
-0121                 nonStandardInchis = <span class="string">''</span>;
-0122                 
-0123                 <span class="comment">%Add compound ID</span>
-0124                 metaCycMets.mets{metCounter}=tline(13:end);
-0125             <span class="keyword">end</span>
+0060 ravenPath=findRAVENroot();
+0061 metsFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'metacyc'</span>,<span class="string">'metaCycMets.mat'</span>);
+0062 metaCycMetFile=<span class="string">'compounds.dat'</span>;
+0063 
+0064 <span class="keyword">if</span> exist(metsFile, <span class="string">'file'</span>)
+0065     fprintf([<span class="string">'Importing MetaCyc metabolites from '</span> strrep(metsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'... '</span>]);
+0066     load(metsFile);
+0067     fprintf(<span class="string">'done\n'</span>);
+0068 <span class="keyword">else</span>
+0069     fprintf([<span class="string">'Cannot locate '</span> strrep(metsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'\nNow try to generate it from local MetaCyc data files...\n'</span>]);
+0070     <span class="keyword">if</span> ~exist(fullfile(metacycPath,metaCycMetFile),<span class="string">'file'</span>)
+0071         EM=fprintf([<span class="string">'The file of metabolites cannot be located, and should be downloaded from MetaCyc.\n'</span>]);
+0072         dispEM(EM);
+0073     <span class="keyword">else</span>
+0074         <span class="comment">%Add new functionality in the order specified in models</span>
+0075         metaCycMets.id=<span class="string">'MetaCyc'</span>;
+0076         metaCycMets.name=<span class="string">'Automatically generated from MetaCyc database'</span>;
+0077         
+0078         <span class="comment">%Preallocate memory for 50000 metabolites</span>
+0079         metaCycMets.mets=cell(50000,1);
+0080         metaCycMets.metNames=cell(50000,1);
+0081         metaCycMets.metFormulas=cell(50000,1);
+0082         metaCycMets.inchis=cell(50000,1);
+0083         metaCycMets.metCharges=zeros(50000,1);
+0084         metaCycMets.metMiriams=cell(50000,1);
+0085         metaCycMets.keggid=cell(50000,1);
+0086         
+0087         <span class="comment">%First load information on metabolite ID, name, formula, and others</span>
+0088         fid = fopen(fullfile(metacycPath,metaCycMetFile), <span class="string">'r'</span>);
+0089         
+0090         <span class="comment">%Keeps track of how many metabolites that have been added</span>
+0091         metCounter=0;
+0092         
+0093         <span class="comment">%Loop through the file</span>
+0094         <span class="keyword">while</span> 1
+0095             <span class="comment">%Get the next line</span>
+0096             tline = fgetl(fid);
+0097             <span class="comment">%disp(tline);</span>
+0098             
+0099             <span class="comment">% Abort at end of file</span>
+0100             <span class="keyword">if</span> ~ischar(tline)
+0101                 <span class="keyword">break</span>;
+0102             <span class="keyword">end</span>
+0103             
+0104             <span class="comment">% Get the version of MetaCyc database</span>
+0105             <span class="keyword">if</span> numel(tline)&gt;11 &amp;&amp; strcmp(tline(1:11),<span class="string">'# Version: '</span>)
+0106                 metaCycMets.version=tline(12:end);
+0107             <span class="keyword">end</span>
+0108 
+0109             <span class="comment">%Check if it is a new entry</span>
+0110             <span class="keyword">if</span> numel(tline)&gt;12 &amp;&amp; strcmp(tline(1:12),<span class="string">'UNIQUE-ID - '</span>)
+0111                 metCounter=metCounter+1;
+0112                 
+0113                 <span class="comment">%Add empty strings as initial values</span>
+0114                 metaCycMets.metNames{metCounter}=<span class="string">''</span>;
+0115                 metaCycMets.metFormulas{metCounter}=<span class="string">''</span>;
+0116                 metaCycMets.inchis{metCounter}=<span class="string">''</span>;
+0117                 <span class="comment">%metaCycMets.smiles{metCounter}='';</span>
+0118                 <span class="comment">%metaCycMets.pubchem{metCounter}='';</span>
+0119                 metaCycMets.keggid{metCounter}=<span class="string">''</span>;
+0120                 nonStandardInchis = <span class="string">''</span>;
+0121                 
+0122                 <span class="comment">%Add compound ID</span>
+0123                 metaCycMets.mets{metCounter}=tline(13:end);
+0124             <span class="keyword">end</span>
+0125             
 0126             
-0127             
-0128             <span class="comment">%Add name</span>
-0129             <span class="keyword">if</span> numel(tline)&gt;14 &amp;&amp;    strcmp(tline(1:14),<span class="string">'COMMON-NAME - '</span>)
-0130                 metaCycMets.metNames{metCounter}=tline(15:end);
-0131                 
-0132                 <span class="comment">%Romve HTML symbols</span>
-0133                 metaCycMets.metNames{metCounter}=regexprep(metaCycMets.metNames{metCounter},<span class="string">'&lt;(\w+)&gt;'</span>,<span class="string">''</span>);
-0134                 metaCycMets.metNames{metCounter}=regexprep(metaCycMets.metNames{metCounter},<span class="string">'&lt;/(\w+)&gt;'</span>,<span class="string">''</span>);
-0135                 metaCycMets.metNames{metCounter}=regexprep(metaCycMets.metNames{metCounter},<span class="string">'[&amp;;]'</span>,<span class="string">''</span>);
-0136             <span class="keyword">end</span>
-0137             
-0138             <span class="comment">%Add charge</span>
-0139             <span class="keyword">if</span> numel(tline)&gt;16 &amp;&amp;    strcmp(tline(1:16),<span class="string">'ATOM-CHARGES - ('</span>)
-0140                 atomCharge=tline(17:end-1);
-0141                 
-0142                 s=strfind(atomCharge,<span class="string">' '</span>);
-0143                 <span class="keyword">if</span> any(s)
-0144                     atomCharge=atomCharge(s+1:end);
-0145                     metaCycMets.metCharges(metCounter,1)=metaCycMets.metCharges(metCounter,1)+str2num(atomCharge);
-0146                 <span class="keyword">end</span>
-0147             <span class="keyword">end</span>
-0148             
-0149             <span class="comment">%Add inchis</span>
-0150             <span class="keyword">if</span> numel(tline)&gt;14 &amp;&amp; strcmp(tline(1:14),<span class="string">'INCHI - InChI='</span>)
-0151                 metaCycMets.inchis{metCounter}=tline(15:end);
-0152             <span class="keyword">end</span>
-0153             
-0154             <span class="comment">%Add non-standard inchis</span>
-0155             <span class="keyword">if</span> numel(tline)&gt;27 &amp;&amp; strcmp(tline(1:27),<span class="string">'NON-STANDARD-INCHI - InChI='</span>)
-0156                 nonStandardInchis=tline(28:end);
-0157             <span class="keyword">end</span>
-0158             
-0159             <span class="comment">%Add SMILES</span>
-0160             <span class="keyword">if</span> numel(tline)&gt;9 &amp;&amp; strcmp(tline(1:9),<span class="string">'SMILES - '</span>)
-0161                 
-0162                 <span class="keyword">if</span> isstruct(metaCycMets.metMiriams{metCounter})
-0163                     addToIndex=numel(metaCycMets.metMiriams{metCounter}.name)+1;
-0164                 <span class="keyword">else</span>
-0165                     addToIndex=1;
-0166                 <span class="keyword">end</span>
-0167                 tempStruct=metaCycMets.metMiriams{metCounter};
-0168                 tempStruct.name{addToIndex,1}=<span class="string">'SMILES'</span>;
-0169                 tempStruct.value{addToIndex,1}=tline(10:end);
-0170                 metaCycMets.metMiriams{metCounter}=tempStruct;
-0171             <span class="keyword">end</span>
-0172             
-0173             <span class="comment">%Add formula</span>
-0174             <span class="keyword">if</span> numel(tline)&gt;20 &amp;&amp; strcmp(tline(1:20),<span class="string">'CHEMICAL-FORMULA - ('</span>)
-0175                 metaCycMets.metFormulas{metCounter}=strcat(metaCycMets.metFormulas{metCounter},tline(21:end-1));
-0176                 metaCycMets.metFormulas{metCounter}(isspace(metaCycMets.metFormulas{metCounter})) = [];
-0177             <span class="keyword">end</span>
-0178             
-0179             <span class="comment">%Add KEGG id</span>
-0180             <span class="keyword">if</span> numel(tline)&gt;23 &amp;&amp; strcmp(tline(1:23),<span class="string">'DBLINKS - (LIGAND-CPD &quot;'</span>)
-0181                 keggid=tline(24:end);
-0182                 
-0183                 s=strfind(keggid,<span class="string">'&quot;'</span>);
-0184                 <span class="keyword">if</span> any(s)
-0185                     keggid=keggid(1:s-1);
-0186                 <span class="keyword">end</span>
-0187                 
-0188                 metaCycMets.keggid{metCounter}=keggid;
-0189             <span class="keyword">end</span>
-0190             
-0191             <span class="comment">%Add CHEBI id</span>
-0192             <span class="keyword">if</span> numel(tline)&gt;18 &amp;&amp; strcmp(tline(1:18),<span class="string">'DBLINKS - (CHEBI &quot;'</span>)
-0193                 chebiID=tline(20:end); <span class="comment">%This is because there is sometimes more than one CHEBI index</span>
-0194                 
-0195                 s=strfind(chebiID,<span class="string">'&quot;'</span>);
-0196                 <span class="keyword">if</span> any(s)
-0197                     chebiID=chebiID(1:s-1);
-0198                 <span class="keyword">end</span>
-0199                 
-0200                 <span class="keyword">if</span> isstruct(metaCycMets.metMiriams{metCounter})
-0201                     addToIndex=numel(metaCycMets.metMiriams{metCounter}.name)+1;
-0202                 <span class="keyword">else</span>
-0203                     addToIndex=1;
-0204                 <span class="keyword">end</span>
-0205                 tempStruct=metaCycMets.metMiriams{metCounter};
-0206                 tempStruct.name{addToIndex,1}=<span class="string">'chebi'</span>;
-0207                 tempStruct.value{addToIndex,1}=strcat(<span class="string">'CHEBI:'</span>,chebiID);
-0208                 metaCycMets.metMiriams{metCounter}=tempStruct;
-0209             <span class="keyword">end</span>
-0210             
-0211             <span class="comment">%Add PubChem</span>
-0212             <span class="keyword">if</span> numel(tline)&gt;20 &amp;&amp; strcmp(tline(1:20),<span class="string">'DBLINKS - (PUBCHEM &quot;'</span>)
-0213                 pubchemID=tline(21:end);
-0214                 
-0215                 s=strfind(pubchemID,<span class="string">'&quot;'</span>);
-0216                 <span class="keyword">if</span> any(s)
-0217                     pubchemID=pubchemID(1:s-1);
-0218                 <span class="keyword">end</span>
-0219                 
-0220                 <span class="keyword">if</span> isstruct(metaCycMets.metMiriams{metCounter})
-0221                     addToIndex=numel(metaCycMets.metMiriams{metCounter}.name)+1;
-0222                 <span class="keyword">else</span>
-0223                     addToIndex=1;
-0224                 <span class="keyword">end</span>
-0225                 tempStruct=metaCycMets.metMiriams{metCounter};
-0226                 tempStruct.name{addToIndex,1}=<span class="string">'pubchem.compound'</span>;
-0227                 tempStruct.value{addToIndex,1}=pubchemID;
-0228                 metaCycMets.metMiriams{metCounter}=tempStruct;
-0229             <span class="keyword">end</span>
-0230             
-0231             <span class="comment">%Add non-standard inchis when standard one is unavailable</span>
-0232             <span class="keyword">if</span> strcmp(tline,<span class="string">'//'</span>) &amp;&amp; strcmp(metaCycMets.inchis{metCounter},<span class="string">''</span>)
-0233                 metaCycMets.inchis{metCounter}=nonStandardInchis;
-0234                 nonStandardInchis = <span class="string">''</span>;
-0235                 
-0236                 <span class="comment">%Refine formula from inchis</span>
-0237                 s=strfind(metaCycMets.inchis{metCounter},<span class="string">'/'</span>);
-0238                 <span class="keyword">if</span> any(s)
-0239                     inchiFormula=metaCycMets.inchis{metCounter}(s(1)+1:s(2)-1);
-0240                     
-0241                     <span class="comment">%And remove dot characters</span>
-0242                     inchiFormula(regexp(inchiFormula,<span class="string">'[.]'</span>))=[];
-0243                     <span class="keyword">if</span> ~strcmp(metaCycMets.metFormulas{metCounter},inchiFormula)
-0244                         metaCycMets.metFormulas{metCounter}=inchiFormula;
-0245                     <span class="keyword">end</span>
-0246                 <span class="keyword">end</span>
-0247                 
-0248             <span class="keyword">end</span>
-0249             
-0250         <span class="keyword">end</span>
-0251         
-0252         <span class="comment">%Close the file</span>
-0253         fclose(fid);
-0254         
-0255         <span class="comment">%If too much space was allocated, shrink the model</span>
-0256         metaCycMets.mets=metaCycMets.mets(1:metCounter);
-0257         metaCycMets.metNames=metaCycMets.metNames(1:metCounter);
-0258         metaCycMets.metFormulas=metaCycMets.metFormulas(1:metCounter);
-0259         metaCycMets.metMiriams=metaCycMets.metMiriams(1:metCounter);
-0260         metaCycMets.inchis=metaCycMets.inchis(1:metCounter);
-0261         metaCycMets.metCharges=metaCycMets.metCharges(1:metCounter,:);
-0262         <span class="comment">%metaCycMets.smiles=metaCycMets.smiles(1:metCounter);</span>
-0263         <span class="comment">%metaCycMets.pubchem=metaCycMets.pubchem(1:metCounter);</span>
-0264         metaCycMets.keggid=metaCycMets.keggid(1:metCounter);
-0265         
-0266         <span class="comment">%If the metMiriams structure is empty, use MetaCyc id as metMiriams</span>
-0267         <span class="keyword">for</span> i=1:numel(metaCycMets.mets)
-0268             <span class="keyword">if</span> ~isstruct(metaCycMets.metMiriams{i})
-0269                 miriamStruct.name{1}=<span class="string">'metacyc.compound'</span>;
-0270                 miriamStruct.value{1}=metaCycMets.mets{i};
-0271                 metaCycMets.metMiriams{i}=miriamStruct;
-0272             <span class="keyword">end</span>
-0273         <span class="keyword">end</span>
-0274         
-0275         <span class="comment">%Saves the model</span>
-0276         save(metsFile,<span class="string">'metaCycMets'</span>);
-0277         fprintf([<span class="string">'New metaCycMets.mat has been successfully updated!\n\n'</span>]);
-0278     <span class="keyword">end</span>
-0279 <span class="keyword">end</span>
-0280 <span class="keyword">end</span></pre></div>
+0127             <span class="comment">%Add name</span>
+0128             <span class="keyword">if</span> numel(tline)&gt;14 &amp;&amp;    strcmp(tline(1:14),<span class="string">'COMMON-NAME - '</span>)
+0129                 metaCycMets.metNames{metCounter}=tline(15:end);
+0130                 
+0131                 <span class="comment">%Romve HTML symbols</span>
+0132                 metaCycMets.metNames{metCounter}=regexprep(metaCycMets.metNames{metCounter},<span class="string">'&lt;(\w+)&gt;'</span>,<span class="string">''</span>);
+0133                 metaCycMets.metNames{metCounter}=regexprep(metaCycMets.metNames{metCounter},<span class="string">'&lt;/(\w+)&gt;'</span>,<span class="string">''</span>);
+0134                 metaCycMets.metNames{metCounter}=regexprep(metaCycMets.metNames{metCounter},<span class="string">'[&amp;;]'</span>,<span class="string">''</span>);
+0135             <span class="keyword">end</span>
+0136             
+0137             <span class="comment">%Add charge</span>
+0138             <span class="keyword">if</span> numel(tline)&gt;16 &amp;&amp;    strcmp(tline(1:16),<span class="string">'ATOM-CHARGES - ('</span>)
+0139                 atomCharge=tline(17:end-1);
+0140                 
+0141                 s=strfind(atomCharge,<span class="string">' '</span>);
+0142                 <span class="keyword">if</span> any(s)
+0143                     atomCharge=atomCharge(s+1:end);
+0144                     metaCycMets.metCharges(metCounter,1)=metaCycMets.metCharges(metCounter,1)+str2num(atomCharge);
+0145                 <span class="keyword">end</span>
+0146             <span class="keyword">end</span>
+0147             
+0148             <span class="comment">%Add inchis</span>
+0149             <span class="keyword">if</span> numel(tline)&gt;14 &amp;&amp; strcmp(tline(1:14),<span class="string">'INCHI - InChI='</span>)
+0150                 metaCycMets.inchis{metCounter}=tline(15:end);
+0151             <span class="keyword">end</span>
+0152             
+0153             <span class="comment">%Add non-standard inchis</span>
+0154             <span class="keyword">if</span> numel(tline)&gt;27 &amp;&amp; strcmp(tline(1:27),<span class="string">'NON-STANDARD-INCHI - InChI='</span>)
+0155                 nonStandardInchis=tline(28:end);
+0156             <span class="keyword">end</span>
+0157             
+0158             <span class="comment">%Add SMILES</span>
+0159             <span class="keyword">if</span> numel(tline)&gt;9 &amp;&amp; strcmp(tline(1:9),<span class="string">'SMILES - '</span>)
+0160                 
+0161                 <span class="keyword">if</span> isstruct(metaCycMets.metMiriams{metCounter})
+0162                     addToIndex=numel(metaCycMets.metMiriams{metCounter}.name)+1;
+0163                 <span class="keyword">else</span>
+0164                     addToIndex=1;
+0165                 <span class="keyword">end</span>
+0166                 tempStruct=metaCycMets.metMiriams{metCounter};
+0167                 tempStruct.name{addToIndex,1}=<span class="string">'SMILES'</span>;
+0168                 tempStruct.value{addToIndex,1}=tline(10:end);
+0169                 metaCycMets.metMiriams{metCounter}=tempStruct;
+0170             <span class="keyword">end</span>
+0171             
+0172             <span class="comment">%Add formula</span>
+0173             <span class="keyword">if</span> numel(tline)&gt;20 &amp;&amp; strcmp(tline(1:20),<span class="string">'CHEMICAL-FORMULA - ('</span>)
+0174                 metaCycMets.metFormulas{metCounter}=strcat(metaCycMets.metFormulas{metCounter},tline(21:end-1));
+0175                 metaCycMets.metFormulas{metCounter}(isspace(metaCycMets.metFormulas{metCounter})) = [];
+0176             <span class="keyword">end</span>
+0177             
+0178             <span class="comment">%Add KEGG id</span>
+0179             <span class="keyword">if</span> numel(tline)&gt;23 &amp;&amp; strcmp(tline(1:23),<span class="string">'DBLINKS - (LIGAND-CPD &quot;'</span>)
+0180                 keggid=tline(24:end);
+0181                 
+0182                 s=strfind(keggid,<span class="string">'&quot;'</span>);
+0183                 <span class="keyword">if</span> any(s)
+0184                     keggid=keggid(1:s-1);
+0185                 <span class="keyword">end</span>
+0186                 
+0187                 metaCycMets.keggid{metCounter}=keggid;
+0188             <span class="keyword">end</span>
+0189             
+0190             <span class="comment">%Add CHEBI id</span>
+0191             <span class="keyword">if</span> numel(tline)&gt;18 &amp;&amp; strcmp(tline(1:18),<span class="string">'DBLINKS - (CHEBI &quot;'</span>)
+0192                 chebiID=tline(20:end); <span class="comment">%This is because there is sometimes more than one CHEBI index</span>
+0193                 
+0194                 s=strfind(chebiID,<span class="string">'&quot;'</span>);
+0195                 <span class="keyword">if</span> any(s)
+0196                     chebiID=chebiID(1:s-1);
+0197                 <span class="keyword">end</span>
+0198                 
+0199                 <span class="keyword">if</span> isstruct(metaCycMets.metMiriams{metCounter})
+0200                     addToIndex=numel(metaCycMets.metMiriams{metCounter}.name)+1;
+0201                 <span class="keyword">else</span>
+0202                     addToIndex=1;
+0203                 <span class="keyword">end</span>
+0204                 tempStruct=metaCycMets.metMiriams{metCounter};
+0205                 tempStruct.name{addToIndex,1}=<span class="string">'chebi'</span>;
+0206                 tempStruct.value{addToIndex,1}=strcat(<span class="string">'CHEBI:'</span>,chebiID);
+0207                 metaCycMets.metMiriams{metCounter}=tempStruct;
+0208             <span class="keyword">end</span>
+0209             
+0210             <span class="comment">%Add PubChem</span>
+0211             <span class="keyword">if</span> numel(tline)&gt;20 &amp;&amp; strcmp(tline(1:20),<span class="string">'DBLINKS - (PUBCHEM &quot;'</span>)
+0212                 pubchemID=tline(21:end);
+0213                 
+0214                 s=strfind(pubchemID,<span class="string">'&quot;'</span>);
+0215                 <span class="keyword">if</span> any(s)
+0216                     pubchemID=pubchemID(1:s-1);
+0217                 <span class="keyword">end</span>
+0218                 
+0219                 <span class="keyword">if</span> isstruct(metaCycMets.metMiriams{metCounter})
+0220                     addToIndex=numel(metaCycMets.metMiriams{metCounter}.name)+1;
+0221                 <span class="keyword">else</span>
+0222                     addToIndex=1;
+0223                 <span class="keyword">end</span>
+0224                 tempStruct=metaCycMets.metMiriams{metCounter};
+0225                 tempStruct.name{addToIndex,1}=<span class="string">'pubchem.compound'</span>;
+0226                 tempStruct.value{addToIndex,1}=pubchemID;
+0227                 metaCycMets.metMiriams{metCounter}=tempStruct;
+0228             <span class="keyword">end</span>
+0229             
+0230             <span class="comment">%Add non-standard inchis when standard one is unavailable</span>
+0231             <span class="keyword">if</span> strcmp(tline,<span class="string">'//'</span>) &amp;&amp; strcmp(metaCycMets.inchis{metCounter},<span class="string">''</span>)
+0232                 metaCycMets.inchis{metCounter}=nonStandardInchis;
+0233                 nonStandardInchis = <span class="string">''</span>;
+0234                 
+0235                 <span class="comment">%Refine formula from inchis</span>
+0236                 s=strfind(metaCycMets.inchis{metCounter},<span class="string">'/'</span>);
+0237                 <span class="keyword">if</span> any(s)
+0238                     inchiFormula=metaCycMets.inchis{metCounter}(s(1)+1:s(2)-1);
+0239                     
+0240                     <span class="comment">%And remove dot characters</span>
+0241                     inchiFormula(regexp(inchiFormula,<span class="string">'[.]'</span>))=[];
+0242                     <span class="keyword">if</span> ~strcmp(metaCycMets.metFormulas{metCounter},inchiFormula)
+0243                         metaCycMets.metFormulas{metCounter}=inchiFormula;
+0244                     <span class="keyword">end</span>
+0245                 <span class="keyword">end</span>
+0246                 
+0247             <span class="keyword">end</span>
+0248             
+0249         <span class="keyword">end</span>
+0250         
+0251         <span class="comment">%Close the file</span>
+0252         fclose(fid);
+0253         
+0254         <span class="comment">%If too much space was allocated, shrink the model</span>
+0255         metaCycMets.mets=metaCycMets.mets(1:metCounter);
+0256         metaCycMets.metNames=metaCycMets.metNames(1:metCounter);
+0257         metaCycMets.metFormulas=metaCycMets.metFormulas(1:metCounter);
+0258         metaCycMets.metMiriams=metaCycMets.metMiriams(1:metCounter);
+0259         metaCycMets.inchis=metaCycMets.inchis(1:metCounter);
+0260         metaCycMets.metCharges=metaCycMets.metCharges(1:metCounter,:);
+0261         <span class="comment">%metaCycMets.smiles=metaCycMets.smiles(1:metCounter);</span>
+0262         <span class="comment">%metaCycMets.pubchem=metaCycMets.pubchem(1:metCounter);</span>
+0263         metaCycMets.keggid=metaCycMets.keggid(1:metCounter);
+0264         
+0265         <span class="comment">%If the metMiriams structure is empty, use MetaCyc id as metMiriams</span>
+0266         <span class="keyword">for</span> i=1:numel(metaCycMets.mets)
+0267             <span class="keyword">if</span> ~isstruct(metaCycMets.metMiriams{i})
+0268                 miriamStruct.name{1}=<span class="string">'metacyc.compound'</span>;
+0269                 miriamStruct.value{1}=metaCycMets.mets{i};
+0270                 metaCycMets.metMiriams{i}=miriamStruct;
+0271             <span class="keyword">end</span>
+0272         <span class="keyword">end</span>
+0273         
+0274         <span class="comment">%Saves the model</span>
+0275         save(metsFile,<span class="string">'metaCycMets'</span>);
+0276         fprintf([<span class="string">'New metaCycMets.mat has been successfully updated!\n\n'</span>]);
+0277     <span class="keyword">end</span>
+0278 <span class="keyword">end</span>
+0279 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

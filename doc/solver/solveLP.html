@@ -136,15 +136,15 @@ This function is called by:
 0058     <span class="keyword">end</span>
 0059 <span class="keyword">end</span>
 0060 
-0061 <span class="comment">% Setup the problem to feed to COBRA.</span>
-0062 prob=[];
-0063 prob.c=[model.c*-1;zeros(size(model.S,1),1)];
-0064 prob.b = zeros(size(model.S,1), 1);
-0065 prob.lb = [model.lb; model.b(:,1)];
-0066 prob.ub = [model.ub; model.b(:,min(size(model.b,2),2))];
-0067 prob.osense = 1;
-0068 prob.csense = char(zeros(size(model.S,1),1));
-0069 prob.csense(:) = <span class="string">'E'</span>;
+0061 <span class="comment">% Setup the linear problem for glpk</span>
+0062 prob        = [];
+0063 prob.c      = [model.c*-1;zeros(size(model.S,1),1)];
+0064 prob.b      = zeros(size(model.S,1), 1);
+0065 prob.lb     = [model.lb; model.b(:,1)];
+0066 prob.ub     = [model.ub; model.b(:,min(size(model.b,2),2))];
+0067 prob.csense = repmat(<span class="string">'E'</span>, 1, length(prob.b)); <span class="comment">% Equality constraints</span>
+0068 prob.osense = 1; 
+0069 prob.vartype = repmat(<span class="string">'C'</span>, 1, length(prob.c)); <span class="comment">% Fluxes are continuous values</span>
 0070 prob.A = [model.S -speye(size(model.S,1))];
 0071 prob.a = model.S;
 0072 
@@ -253,42 +253,24 @@ This function is called by:
 0175                 dispEM(EM,false);
 0176                 solution.stat=-2;
 0177             <span class="keyword">end</span>
-0178             <span class="comment">%The square of fluxes should be minimized. This only works when</span>
-0179             <span class="comment">%there is no interval on the mass balance constraints (model.b is a</span>
-0180             <span class="comment">%vector)</span>
-0181         <span class="keyword">case</span> 2
-0182             <span class="comment">%         if size(model.b,2)==1</span>
-0183             <span class="comment">%             qsol=solveQP(model,model.rxns,zeros(numel(model.lb),1));</span>
-0184             <span class="comment">%             %There is a problem that the solver seldom converges totally in this</span>
-0185             <span class="comment">%             %kind of minimization. Print a warning but use the fluxes</span>
-0186             <span class="comment">%             if any(qsol.x)</span>
-0187             <span class="comment">%                 solution.x=qsol.x;</span>
-0188             <span class="comment">%                 if qsol.stat==-1</span>
-0189             <span class="comment">%                     fprintf('WARNING: The quadratic fitting did not converge\n');</span>
-0190             <span class="comment">%                 end</span>
-0191             <span class="comment">%             else</span>
-0192             <span class="comment">%                 fprintf('WARNING: Could not solve the problem of minimizing the square of fluxes. Uses output from linear program\n');</span>
-0193             <span class="comment">%             end</span>
-0194             <span class="comment">%         else</span>
-0195             <span class="comment">%             fprintf('WARNING: Cannot minimize square of fluxes when size(model.b,2)==2. Uses output from linear program\n');</span>
-0196             <span class="comment">%         end</span>
-0197             EM=<span class="string">'Quadratic solver currently not working. Uses output from original problem'</span>;
-0198             dispEM(EM,false);
-0199             solution.stat=-2;
-0200             <span class="comment">%The number of fluxes should be minimized</span>
-0201         <span class="keyword">case</span> 3
-0202             [qx,I]=getMinNrFluxes(model,model.rxns,params);
-0203             qx(~I)=0;
-0204             <span class="keyword">if</span> any(I)
-0205                 solution.x=qx;
-0206             <span class="keyword">else</span>
-0207                 EM=<span class="string">'Could not solve the problem of minimizing the number of fluxes. Uses output from linear program'</span>;
-0208                 dispEM(EM,false);
-0209                 solution.stat=-2;
-0210             <span class="keyword">end</span>
-0211     <span class="keyword">end</span>
-0212 <span class="keyword">end</span>
-0213 <span class="keyword">end</span></pre></div>
+0178             
+0179         <span class="keyword">case</span> 2
+0180             error(<span class="string">'%Minimization of square of fluxes is deprecated'</span>)
+0181             
+0182             <span class="comment">%The number of fluxes should be minimized</span>
+0183         <span class="keyword">case</span> 3
+0184             [qx,I]=getMinNrFluxes(model,model.rxns,params);
+0185             qx(~I)=0;
+0186             <span class="keyword">if</span> any(I)
+0187                 solution.x=qx;
+0188             <span class="keyword">else</span>
+0189                 EM=<span class="string">'Could not solve the problem of minimizing the number of fluxes. Uses output from linear program'</span>;
+0190                 dispEM(EM,false);
+0191                 solution.stat=-2;
+0192             <span class="keyword">end</span>
+0193     <span class="keyword">end</span>
+0194 <span class="keyword">end</span>
+0195 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

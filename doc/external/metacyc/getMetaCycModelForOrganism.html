@@ -153,175 +153,174 @@ This function is called by:
 0081 model.c=metaCycModel.c;
 0082 model.equations=metaCycModel.equations;
 0083 
-0084 <span class="comment">%Get the 'external' directory for RAVEN Toolbox.</span>
-0085 [ST I]=dbstack(<span class="string">'-completenames'</span>);
-0086 ravenPath=fileparts(fileparts(ST(I).file));
-0087 
-0088 <span class="comment">%Generate blast strcture by either DIAMOND or BLASTP</span>
-0089 <span class="keyword">if</span> useDiamond
-0090     blastStruc=getDiamond(organismID,fastaFile,{<span class="string">'MetaCyc'</span>},fullfile(ravenPath,<span class="string">'metacyc'</span>,<span class="string">'protseq.fsa'</span>));
-0091 <span class="keyword">else</span>
-0092     blastStruc=getBlast(organismID,fastaFile,{<span class="string">'MetaCyc'</span>},fullfile(ravenPath,<span class="string">'metacyc'</span>,<span class="string">'protseq.fsa'</span>));
-0093 <span class="keyword">end</span>
-0094 
-0095 <span class="comment">%Only look the query</span>
-0096 blastStructure=blastStruc(2);
-0097 
-0098 <span class="comment">%Remove all blast hits that are below the cutoffs</span>
-0099 indexes=blastStructure.bitscore&gt;=minScore &amp; blastStructure.ppos&gt;=minPositives;
-0100 blastStructure.toGenes(~indexes)=[];
-0101 blastStructure.fromGenes(~indexes)=[];
-0102 blastStructure.evalue(~indexes)=[];
-0103 blastStructure.aligLen(~indexes)=[];
-0104 blastStructure.identity(~indexes)=[];
-0105 blastStructure.bitscore(~indexes)=[];
-0106 blastStructure.ppos(~indexes)=[];
-0107 fprintf(<span class="string">'Completed searching against MetaCyc protein sequences.\n'</span>);
-0108 
-0109 <span class="comment">% Get the qualified genes of query organism from blast structure</span>
-0110 model.genes=cell(10000,1);
-0111 model.proteins=cell(10000,1);
-0112 model.bitscore=zeros(10000,1);
-0113 model.ppos=zeros(10000,1);
-0114 num=1;
-0115 
-0116 <span class="comment">%Go through the strucutre and find out the hit with the best bit score</span>
-0117 <span class="keyword">for</span> i=1:numel(blastStructure.fromGenes)
-0118     <span class="keyword">if</span> num==1
-0119         model.genes(num)=blastStructure.fromGenes(i);
-0120         model.proteins(num)=strrep(blastStructure.toGenes(i), <span class="string">'gnl|META|'</span>, <span class="string">''</span>);
-0121         model.bitscore(num)=blastStructure.bitscore(i);
-0122         model.ppos(num)=blastStructure.ppos(i);
-0123         num=num+1;
-0124         lastGene=blastStructure.fromGenes(i);
-0125     <span class="keyword">else</span>
-0126         <span class="keyword">if</span> ~isequal(lastGene,blastStructure.fromGenes(i))
-0127             model.genes(num)=blastStructure.fromGenes(i);
-0128             model.proteins(num)=strrep(blastStructure.toGenes(i), <span class="string">'gnl|META|'</span>, <span class="string">''</span>);
-0129             model.bitscore(num)=blastStructure.bitscore(i);
-0130             model.ppos(num)=blastStructure.ppos(i);
-0131             num=num+1;
-0132             lastGene=blastStructure.fromGenes(i);
-0133         <span class="keyword">else</span>
-0134             <span class="keyword">if</span> model.bitscore(num)&lt;blastStructure.bitscore(i)
-0135                 model.bitscore(num)=blastStructure.bitscore(i);
-0136                 model.proteins(num)=strrep(blastStructure.toGenes(i), <span class="string">'gnl|META|'</span>, <span class="string">''</span>);
-0137                 model.ppos(num)=blastStructure.ppos(i);
-0138             <span class="keyword">end</span>
-0139         <span class="keyword">end</span>
-0140     <span class="keyword">end</span>
-0141 <span class="keyword">end</span>
-0142 model.genes=model.genes(1:num-1);
-0143 model.proteins=model.proteins(1:num-1);
-0144 model.bitscore=model.bitscore(1:num-1);
-0145 model.ppos=model.ppos(1:num-1);
-0146 
-0147 <span class="comment">% Get the indexes of matched genes in the metaCycModel</span>
-0148 <span class="comment">% because some enzymes in the FASTA file cannot be found in the dump file</span>
-0149 [hits, indexes]=ismember(model.proteins,metaCycModel.genes);
-0150 found = find(hits);
-0151 model.genes=model.genes(found);
-0152 
-0153 <span class="comment">% Restructure the rxnGeneMat matrix</span>
-0154 model.rxnGeneMat=sparse(metaCycModel.rxnGeneMat(:,indexes(found)));
-0155 
-0156 <span class="comment">%Remove all reactions without genes</span>
-0157 hasGenes=any(model.rxnGeneMat,2);
-0158 model=removeReactions(model,~hasGenes,true);
-0159 
-0160 <span class="comment">%Generate grRules, only consider the or relationship here Matched enzymes</span>
-0161 <span class="comment">%are stored in field rxnScores,</span>
-0162 rxnNum=numel(model.rxns);
-0163 model.rxnConfidenceScores=NaN(rxnNum,1);
-0164 model.rxnConfidenceScores(:)=2;
-0165 model.grRules=cell(rxnNum,1);
-0166 <span class="comment">%model.rxnScores=cell(rxnNum,1);</span>
-0167 <span class="keyword">for</span> j=1:rxnNum
-0168     model.grRules{j}=<span class="string">''</span>;
-0169     I=find(model.rxnGeneMat(j,:));
-0170     <span class="keyword">for</span> k=1:numel(I)
-0171         <span class="keyword">if</span> isempty(model.grRules{j})
-0172             model.grRules(j)=model.genes(I(k));
-0173             <span class="comment">%model.rxnScores(j)=model.proteins(I(k));</span>
-0174         <span class="keyword">else</span>
-0175             model.grRules(j)=strcat(model.grRules(j),{<span class="string">' or '</span>},model.genes(I(k)));
-0176             <span class="comment">%model.rxnScores(j)=strcat(model.rxnScores(j),{' or</span>
-0177             <span class="comment">%'},model.proteins(I(k)));</span>
-0178         <span class="keyword">end</span>
-0179     <span class="keyword">end</span>
-0180 <span class="keyword">end</span>
-0181 <span class="comment">%update genes field</span>
-0182 model.genes=model.genes(any(model.rxnGeneMat));
-0183 
-0184 <span class="comment">%Construct the S matrix and list of metabolites</span>
-0185 [S, mets, badRxns]=constructS(model.equations);
-0186 model.S=S;
-0187 model.mets=mets;
-0188 
-0189 <span class="comment">%model=removeReactions(model,badRxns,true,true);</span>
-0190 
-0191 <span class="comment">%Then match up metabolites</span>
-0192 metaCycMets=<a href="getMetsFromMetaCyc.html" class="code" title="function metaCycMets=getMetsFromMetaCyc(metacycPath)">getMetsFromMetaCyc</a>([]);
-0193 
-0194 <span class="comment">%Add information about all metabolites to the model</span>
-0195 [a, b]=ismember(model.mets,metaCycMets.mets);
-0196 a=find(a);
-0197 b=b(a);
-0198 
-0199 <span class="keyword">if</span> ~isfield(model,<span class="string">'metNames'</span>)
-0200     model.metNames=cell(numel(model.mets),1);
-0201     model.metNames(:)={<span class="string">''</span>};
-0202 <span class="keyword">end</span>
-0203 model.metNames(a)=metaCycMets.metNames(b);
-0204 
-0205 <span class="keyword">if</span> ~isfield(model,<span class="string">'metFormulas'</span>)
-0206     model.metFormulas=cell(numel(model.mets),1);
-0207     model.metFormulas(:)={<span class="string">''</span>};
-0208 <span class="keyword">end</span>
-0209 model.metFormulas(a)=metaCycMets.metFormulas(b);
-0210 
-0211 <span class="keyword">if</span> ~isfield(model,<span class="string">'metCharges'</span>)
-0212     model.metCharges=zeros(numel(model.mets),1);
-0213 <span class="keyword">end</span>
-0214 model.metCharges(a)=metaCycMets.metCharges(b);
-0215 
-0216 <span class="keyword">if</span> ~isfield(model,<span class="string">'b'</span>)
-0217     model.b=zeros(numel(model.mets),1);
-0218 <span class="keyword">end</span>
-0219 <span class="comment">%model.b(a)=metaCycMets.b(b);</span>
-0220 
-0221 <span class="keyword">if</span> ~isfield(model,<span class="string">'inchis'</span>)
-0222     model.inchis=cell(numel(model.mets),1);
-0223     model.inchis(:)={<span class="string">''</span>};
-0224 <span class="keyword">end</span>
-0225 model.inchis(a)=metaCycMets.inchis(b);
-0226 
-0227 <span class="keyword">if</span> ~isfield(model,<span class="string">'metMiriams'</span>)
-0228     model.metMiriams=cell(numel(model.mets),1);
-0229 <span class="keyword">end</span>
-0230 model.metMiriams(a)=metaCycMets.metMiriams(b);
-0231 
-0232 <span class="comment">%Put all metabolites in one compartment called 's' (for system). This is</span>
-0233 <span class="comment">%done just to be more compatible with the rest of the code</span>
-0234 model.comps={<span class="string">'s'</span>};
-0235 model.compNames={<span class="string">'System'</span>};
-0236 model.metComps=ones(numel(model.mets),1);
-0237 
-0238 <span class="comment">%It could also be that the metabolite names are empty for some reason In</span>
-0239 <span class="comment">%that case, use the ID instead</span>
-0240 I=cellfun(@isempty,model.metNames);
-0241 model.metNames(I)=model.mets(I);
-0242 
-0243 <span class="comment">%Remove additional fields</span>
-0244 model=rmfield(model,{<span class="string">'proteins'</span>,<span class="string">'bitscore'</span>,<span class="string">'ppos'</span>});
-0245 
-0246 <span class="comment">%In the end fix grRules and rxnGeneMat</span>
-0247 [grRules,rxnGeneMat] = standardizeGrRules(model,false); <span class="comment">%Get detailed output</span>
-0248 model.grRules = grRules;
-0249 model.rxnGeneMat = rxnGeneMat;
-0250 <span class="comment">%Remove the temp fasta file</span>
-0251 delete(fastaFile)
-0252 <span class="keyword">end</span></pre></div>
+0084 <span class="comment">%Get the root directory for RAVEN Toolbox.</span>
+0085 ravenPath=findRAVENroot();
+0086 
+0087 <span class="comment">%Generate blast strcture by either DIAMOND or BLASTP</span>
+0088 <span class="keyword">if</span> useDiamond
+0089     blastStruc=getDiamond(organismID,fastaFile,{<span class="string">'MetaCyc'</span>},fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'metacyc'</span>,<span class="string">'protseq.fsa'</span>));
+0090 <span class="keyword">else</span>
+0091     blastStruc=getBlast(organismID,fastaFile,{<span class="string">'MetaCyc'</span>},fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'metacyc'</span>,<span class="string">'protseq.fsa'</span>));
+0092 <span class="keyword">end</span>
+0093 
+0094 <span class="comment">%Only look the query</span>
+0095 blastStructure=blastStruc(2);
+0096 
+0097 <span class="comment">%Remove all blast hits that are below the cutoffs</span>
+0098 indexes=blastStructure.bitscore&gt;=minScore &amp; blastStructure.ppos&gt;=minPositives;
+0099 blastStructure.toGenes(~indexes)=[];
+0100 blastStructure.fromGenes(~indexes)=[];
+0101 blastStructure.evalue(~indexes)=[];
+0102 blastStructure.aligLen(~indexes)=[];
+0103 blastStructure.identity(~indexes)=[];
+0104 blastStructure.bitscore(~indexes)=[];
+0105 blastStructure.ppos(~indexes)=[];
+0106 fprintf(<span class="string">'Completed searching against MetaCyc protein sequences.\n'</span>);
+0107 
+0108 <span class="comment">% Get the qualified genes of query organism from blast structure</span>
+0109 model.genes=cell(10000,1);
+0110 model.proteins=cell(10000,1);
+0111 model.bitscore=zeros(10000,1);
+0112 model.ppos=zeros(10000,1);
+0113 num=1;
+0114 
+0115 <span class="comment">%Go through the strucutre and find out the hit with the best bit score</span>
+0116 <span class="keyword">for</span> i=1:numel(blastStructure.fromGenes)
+0117     <span class="keyword">if</span> num==1
+0118         model.genes(num)=blastStructure.fromGenes(i);
+0119         model.proteins(num)=strrep(blastStructure.toGenes(i), <span class="string">'gnl|META|'</span>, <span class="string">''</span>);
+0120         model.bitscore(num)=blastStructure.bitscore(i);
+0121         model.ppos(num)=blastStructure.ppos(i);
+0122         num=num+1;
+0123         lastGene=blastStructure.fromGenes(i);
+0124     <span class="keyword">else</span>
+0125         <span class="keyword">if</span> ~isequal(lastGene,blastStructure.fromGenes(i))
+0126             model.genes(num)=blastStructure.fromGenes(i);
+0127             model.proteins(num)=strrep(blastStructure.toGenes(i), <span class="string">'gnl|META|'</span>, <span class="string">''</span>);
+0128             model.bitscore(num)=blastStructure.bitscore(i);
+0129             model.ppos(num)=blastStructure.ppos(i);
+0130             num=num+1;
+0131             lastGene=blastStructure.fromGenes(i);
+0132         <span class="keyword">else</span>
+0133             <span class="keyword">if</span> model.bitscore(num)&lt;blastStructure.bitscore(i)
+0134                 model.bitscore(num)=blastStructure.bitscore(i);
+0135                 model.proteins(num)=strrep(blastStructure.toGenes(i), <span class="string">'gnl|META|'</span>, <span class="string">''</span>);
+0136                 model.ppos(num)=blastStructure.ppos(i);
+0137             <span class="keyword">end</span>
+0138         <span class="keyword">end</span>
+0139     <span class="keyword">end</span>
+0140 <span class="keyword">end</span>
+0141 model.genes=model.genes(1:num-1);
+0142 model.proteins=model.proteins(1:num-1);
+0143 model.bitscore=model.bitscore(1:num-1);
+0144 model.ppos=model.ppos(1:num-1);
+0145 
+0146 <span class="comment">% Get the indexes of matched genes in the metaCycModel</span>
+0147 <span class="comment">% because some enzymes in the FASTA file cannot be found in the dump file</span>
+0148 [hits, indexes]=ismember(model.proteins,metaCycModel.genes);
+0149 found = find(hits);
+0150 model.genes=model.genes(found);
+0151 
+0152 <span class="comment">% Restructure the rxnGeneMat matrix</span>
+0153 model.rxnGeneMat=sparse(metaCycModel.rxnGeneMat(:,indexes(found)));
+0154 
+0155 <span class="comment">%Remove all reactions without genes</span>
+0156 hasGenes=any(model.rxnGeneMat,2);
+0157 model=removeReactions(model,~hasGenes,true);
+0158 
+0159 <span class="comment">%Generate grRules, only consider the or relationship here Matched enzymes</span>
+0160 <span class="comment">%are stored in field rxnScores,</span>
+0161 rxnNum=numel(model.rxns);
+0162 model.rxnConfidenceScores=NaN(rxnNum,1);
+0163 model.rxnConfidenceScores(:)=2;
+0164 model.grRules=cell(rxnNum,1);
+0165 <span class="comment">%model.rxnScores=cell(rxnNum,1);</span>
+0166 <span class="keyword">for</span> j=1:rxnNum
+0167     model.grRules{j}=<span class="string">''</span>;
+0168     I=find(model.rxnGeneMat(j,:));
+0169     <span class="keyword">for</span> k=1:numel(I)
+0170         <span class="keyword">if</span> isempty(model.grRules{j})
+0171             model.grRules(j)=model.genes(I(k));
+0172             <span class="comment">%model.rxnScores(j)=model.proteins(I(k));</span>
+0173         <span class="keyword">else</span>
+0174             model.grRules(j)=strcat(model.grRules(j),{<span class="string">' or '</span>},model.genes(I(k)));
+0175             <span class="comment">%model.rxnScores(j)=strcat(model.rxnScores(j),{' or</span>
+0176             <span class="comment">%'},model.proteins(I(k)));</span>
+0177         <span class="keyword">end</span>
+0178     <span class="keyword">end</span>
+0179 <span class="keyword">end</span>
+0180 <span class="comment">%update genes field</span>
+0181 model.genes=model.genes(any(model.rxnGeneMat));
+0182 
+0183 <span class="comment">%Construct the S matrix and list of metabolites</span>
+0184 [S, mets, badRxns]=constructS(model.equations);
+0185 model.S=S;
+0186 model.mets=mets;
+0187 
+0188 <span class="comment">%model=removeReactions(model,badRxns,true,true);</span>
+0189 
+0190 <span class="comment">%Then match up metabolites</span>
+0191 metaCycMets=<a href="getMetsFromMetaCyc.html" class="code" title="function metaCycMets=getMetsFromMetaCyc(metacycPath)">getMetsFromMetaCyc</a>([]);
+0192 
+0193 <span class="comment">%Add information about all metabolites to the model</span>
+0194 [a, b]=ismember(model.mets,metaCycMets.mets);
+0195 a=find(a);
+0196 b=b(a);
+0197 
+0198 <span class="keyword">if</span> ~isfield(model,<span class="string">'metNames'</span>)
+0199     model.metNames=cell(numel(model.mets),1);
+0200     model.metNames(:)={<span class="string">''</span>};
+0201 <span class="keyword">end</span>
+0202 model.metNames(a)=metaCycMets.metNames(b);
+0203 
+0204 <span class="keyword">if</span> ~isfield(model,<span class="string">'metFormulas'</span>)
+0205     model.metFormulas=cell(numel(model.mets),1);
+0206     model.metFormulas(:)={<span class="string">''</span>};
+0207 <span class="keyword">end</span>
+0208 model.metFormulas(a)=metaCycMets.metFormulas(b);
+0209 
+0210 <span class="keyword">if</span> ~isfield(model,<span class="string">'metCharges'</span>)
+0211     model.metCharges=zeros(numel(model.mets),1);
+0212 <span class="keyword">end</span>
+0213 model.metCharges(a)=metaCycMets.metCharges(b);
+0214 
+0215 <span class="keyword">if</span> ~isfield(model,<span class="string">'b'</span>)
+0216     model.b=zeros(numel(model.mets),1);
+0217 <span class="keyword">end</span>
+0218 <span class="comment">%model.b(a)=metaCycMets.b(b);</span>
+0219 
+0220 <span class="keyword">if</span> ~isfield(model,<span class="string">'inchis'</span>)
+0221     model.inchis=cell(numel(model.mets),1);
+0222     model.inchis(:)={<span class="string">''</span>};
+0223 <span class="keyword">end</span>
+0224 model.inchis(a)=metaCycMets.inchis(b);
+0225 
+0226 <span class="keyword">if</span> ~isfield(model,<span class="string">'metMiriams'</span>)
+0227     model.metMiriams=cell(numel(model.mets),1);
+0228 <span class="keyword">end</span>
+0229 model.metMiriams(a)=metaCycMets.metMiriams(b);
+0230 
+0231 <span class="comment">%Put all metabolites in one compartment called 's' (for system). This is</span>
+0232 <span class="comment">%done just to be more compatible with the rest of the code</span>
+0233 model.comps={<span class="string">'s'</span>};
+0234 model.compNames={<span class="string">'System'</span>};
+0235 model.metComps=ones(numel(model.mets),1);
+0236 
+0237 <span class="comment">%It could also be that the metabolite names are empty for some reason In</span>
+0238 <span class="comment">%that case, use the ID instead</span>
+0239 I=cellfun(@isempty,model.metNames);
+0240 model.metNames(I)=model.mets(I);
+0241 
+0242 <span class="comment">%Remove additional fields</span>
+0243 model=rmfield(model,{<span class="string">'proteins'</span>,<span class="string">'bitscore'</span>,<span class="string">'ppos'</span>});
+0244 
+0245 <span class="comment">%In the end fix grRules and rxnGeneMat</span>
+0246 [grRules,rxnGeneMat] = standardizeGrRules(model,false); <span class="comment">%Get detailed output</span>
+0247 model.grRules = grRules;
+0248 model.rxnGeneMat = rxnGeneMat;
+0249 <span class="comment">%Remove the temp fasta file</span>
+0250 delete(fastaFile)
+0251 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
