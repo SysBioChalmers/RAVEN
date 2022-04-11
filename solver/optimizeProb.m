@@ -34,7 +34,6 @@ defaultparams.absMipGapTol   = 1e-12;
 
 solver=getpref('RAVEN','solver');
 
-
 switch solver
     %% Use whatever solver is set by COBRA Toolbox changeCobraSolver
     case 'cobra'
@@ -110,22 +109,15 @@ switch solver
             disp('Unreliable MILP solving via GLPK. Be advised to use an alternative solver')
         end
         solverparams.scale   = 1; % Auto scaling
-        [xopt, fmin, errnum, extra] = glpkMatlab(prob.c, prob.A, prob.b, prob.lb, prob.ub, prob.csense, prob.vartype, prob.osense, solverparams);
         
-        switch errnum % Throw message for most common errors
-            case 4
-                error('GLPK error 4: Invalid bounds.')
-            case 9
-                error('GLPK error 9: Time limit exhausted.')
-            case 5
-                error('GLPK error 5: Solver failed.')
-            otherwise
-                if errnum~=0
-                    error(['GLPK error ' num2str(errnum)])
-                end
-        end
+        % Ensure that RAVEN glpk binary is used, return to original
+        % directory afterwards
+        [ravenDir,currDir]=findRAVENroot();
+        cd(fullfile(ravenDir,'software','GLPKmex'))
+        [xopt, fmin, errnum, extra] = glpk(prob.c, prob.A, prob.b, prob.lb, prob.ub, prob.csense, prob.vartype, prob.osense, solverparams);
+        cd(currDir)
         
-        switch extra.status % 1 = undefined; 2 = feasible; 3 = infeasible; 4 = no feasible solution; 5 = optimal; 6 = no unbounded solution
+        switch errnum % 1 = undefined; 2 = feasible; 3 = infeasible; 4 = no feasible solution; 5 = optimal; 6 = no unbounded solution
             case 5
                 res.stat = 1; % Optimal
             case 2
@@ -133,8 +125,7 @@ switch solver
             otherwise
                 res.stat = 0;
         end
-        
-        res.origStat = extra.status;
+        res.origStat = errnum;
         res.full     = xopt;
         res.obj      = fmin;
     otherwise
