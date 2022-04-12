@@ -52,10 +52,10 @@ for i=1:numel(matlabPaths)
 end
 
 if hasConflicts
-    fprintf('Pass\n')
+    fprintf('Fail\n')
     fprintf('  It is strongly recommended to resolve conflicting functions as this may compromise RAVEN functionality\n');
 else
-    fprintf('Fail\n');
+    fprintf('Pass\n');
 end
 
 end

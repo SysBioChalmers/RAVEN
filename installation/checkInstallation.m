@@ -21,7 +21,8 @@ paths=textscan(path,'%s','delimiter', pathsep);
 paths=paths{1};
 
 %Get the RAVEN path
-ravenDir=findRAVENroot();
+[ST, I]=dbstack('-completenames');
+[ravenDir,~,~]=fileparts(fileparts(ST(I).file));
 
 fprintf('\n*** THE RAVEN TOOLBOX ***\n\n');
 %Print the RAVEN version if it is not the development version
@@ -118,7 +119,7 @@ fprintf('\n=== Model solvers ===\n');
 keepSolver=false;
 workingSolvers='';
 %Get current solver. Set it to 'none', if it is not set
-fprintf(' > Checking for functional solvers:\n');
+fprintf(' > Checking for functional LP solvers:\n');
 res=runtests('solverTests.m','OutputDetail',0);
 fprintf('   > glpk\t\t\t\t\t\t\t\t\t\t\t\t')
 if res(1).Passed == 1
@@ -138,8 +139,28 @@ if res(3).Passed == 1
 else
     fprintf('Fail\n')
 end
+fprintf(' > Checking for functional MILP solvers:\n');
+res=runtests('fillGapsSmallTests.m','OutputDetail',0);
+fprintf('   > glpk\t\t\t\t\t\t\t\t\t\t\t\t')
+if res(1).Passed == 1
+    fprintf('Pass\n')
+else
+    fprintf('Fail\n')
+end
+fprintf('   > gurobi\t\t\t\t\t\t\t\t\t\t\t\t')
+if res(2).Passed == 1
+    fprintf('Pass\n')
+else
+    fprintf('Fail\n')
+end
+fprintf('   > cobra\t\t\t\t\t\t\t\t\t\t\t\t')
+if res(3).Passed == 1
+    fprintf('Pass\n')
+else
+    fprintf('Fail\n')
+end
 
-fprintf(' > Current RAVEN solver preference:\t\t\t\t\t\t')
+fprintf(' > Existing RAVEN solver preference:\t\t\t\t\t')
 if ~ispref('RAVEN','solver')
     fprintf('None\n')
 else
@@ -150,7 +171,7 @@ end
 fprintf(' > New RAVEN solver preference:\t\t\t\t\t\t\t')
 % Order of preference: gurobi > glpk > cobra
 if exist('oldSolver','var') && res(solverIdx).Passed == 1
-    fprintf([oldSolver ' (unchanged)\n'])
+    fprintf([oldSolver '\n'])
     setRavenSolver(oldSolver);
 elseif res(2).Passed == 1
     fprintf('gurobi\n')
