@@ -26,32 +26,25 @@ paths=paths{1};
 
 fprintf('\n*** THE RAVEN TOOLBOX ***\n\n');
 %Print the RAVEN version if it is not the development version
-fprintf(' > Checking RAVEN release:\t\t\t\t\t\t\t\t');
+fprintf([myStr(' > Checking RAVEN release:',40) '%f'])
 if exist(fullfile(ravenDir,'version.txt'), 'file') == 2
     fprintf([fgetl(fopen(fullfile(ravenDir,'version.txt'))) '\n']);
     fclose('all');
 else
     fprintf('DEVELOPMENT\n');
 end
-fprintf([' > Checking MATLAB release:\t\t\t\t\t\t\t\t' version('-release') '\n']);
-fprintf(' > Ensure that RAVEN is on the MATLAB path:\t\t\t\t');
+fprintf([myStr(' > Checking MATLAB release:',40) '%f'])
+fprintf([version('-release') '\n'])
+fprintf([myStr(' > Set RAVEN in MATLAB path:',40) '%f'])
 subpath=regexp(genpath(ravenDir),pathsep,'split'); %List all subdirectories
 pathsToKeep=cellfun(@(x) isempty(strfind(x,'.git')),subpath) & cellfun(@(x) isempty(strfind(x,'doc')),subpath);
 addpath(strjoin(subpath(pathsToKeep),pathsep));
 savepath
 fprintf('Pass\n');
 
-excelFile=fullfile(ravenDir,'tutorial','empty.xlsx');
-xmlFile=fullfile(ravenDir,'tutorial','empty.xml');
-matFile=fullfile(ravenDir,'tutorial','empty.mat');
-ymlFile=fullfile(ravenDir,'tutorial','empty.yml');
-
-%Get the OS specific binary ending (e.g. exe for Windows)
-% binEnd = binaryEnding();
-
 %Check if it is possible to parse an Excel file
 fprintf('\n=== Model import and export ===\n');
-fprintf(' > Add Java paths for Excel format\t\t\t\t\t\t')
+fprintf([myStr(' > Add Java paths for Excel format:',40) '%f'])
 try
     %Add the required classes to the static Java path if not already added
     addJavaPaths();
@@ -59,7 +52,7 @@ try
 catch
     fprintf('Fail\n')
 end
-fprintf(' > Check libSBML version\t\t\t\t\t\t\t\t')
+fprintf([myStr(' > Check libSBML version:',40) '%f'])
 try
     evalc('importModel(fullfile(ravenDir,''tutorial'',''empty.xml''))');
     try
@@ -73,36 +66,36 @@ catch
     fprintf('Fail\n')
     fprintf('   Download libSBML from http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n');
 end
-
-fprintf(' > Checking model import and export:\n');
-
+fprintf(' > Checking model import and export:\n')
 res=runtests('importExportTests.m','OutputDetail',0);
-fprintf('   > Import Excel format\t\t\t\t\t\t\t\t')
+
+fprintf([myStr('   > Import Excel format:',40) '%f'])
 if res(1).Passed == 1
     fprintf('Pass\n')
 else
     fprintf('Fail\n')
 end
-fprintf('   > Export Excel format\t\t\t\t\t\t\t\t')
+
+fprintf([myStr('   > Export Excel format:',40) '%f'])
 if res(3).Passed == 1
     fprintf('Pass\n')
 else
     fprintf('Fail\n')
 end
-fprintf('   > Import SBML format\t\t\t\t\t\t\t\t\t')
+
+fprintf([myStr('   > Import SBML format:',40) '%f'])
 if res(2).Passed == 1
     fprintf('Pass\n')
 else
     fprintf('Fail\n')
 end
-fprintf('   > Export SBML format\t\t\t\t\t\t\t\t\t')
+
+fprintf([myStr('   > Export SBML format:',40) '%f'])
 if res(4).Passed == 1
     fprintf('Pass\n')
 else
     fprintf('Fail\n')
 end
-
-%Check if it is possible to import an SBML model using libSBML
 
 %Check if it is possible to import an YAML model
 % fprintf(' > Checking import of model in YAML format:\t\t\t');
@@ -114,65 +107,67 @@ end
 % end
 
 fprintf('\n=== Model solvers ===\n');
-%Define values for keepSolver and workingSolvers, needed for solver
-%functionality check
-keepSolver=false;
-workingSolvers='';
+
 %Get current solver. Set it to 'none', if it is not set
-fprintf(' > Checking for functional LP solvers:\n');
+fprintf(' > Checking for functional LP solvers:\n')
 res=runtests('solverTests.m','OutputDetail',0);
-fprintf('   > glpk\t\t\t\t\t\t\t\t\t\t\t\t')
+
+fprintf([myStr('   > glpk:',40) '%f'])
 if res(1).Passed == 1
     fprintf('Pass\n')
 else
     fprintf('Fail\n')
 end
-fprintf('   > gurobi\t\t\t\t\t\t\t\t\t\t\t\t')
+
+fprintf([myStr('   > gurobi:',40) '%f'])
 if res(2).Passed == 1
     fprintf('Pass\n')
 else
     fprintf('Fail\n')
 end
-fprintf('   > cobra\t\t\t\t\t\t\t\t\t\t\t\t')
-if res(3).Passed == 1
-    fprintf('Pass\n')
-else
-    fprintf('Fail\n')
-end
-fprintf(' > Checking for functional MILP solvers:\n');
-res=runtests('fillGapsSmallTests.m','OutputDetail',0);
-fprintf('   > glpk\t\t\t\t\t\t\t\t\t\t\t\t')
-if res(1).Passed == 1
-    fprintf('Pass\n')
-else
-    fprintf('Fail\n')
-end
-fprintf('   > gurobi\t\t\t\t\t\t\t\t\t\t\t\t')
-if res(2).Passed == 1
-    fprintf('Pass\n')
-else
-    fprintf('Fail\n')
-end
-fprintf('   > cobra\t\t\t\t\t\t\t\t\t\t\t\t')
+
+fprintf([myStr('   > cobra:',40) '%f'])
 if res(3).Passed == 1
     fprintf('Pass\n')
 else
     fprintf('Fail\n')
 end
 
-fprintf(' > Existing RAVEN solver preference:\t\t\t\t\t')
-if ~ispref('RAVEN','solver')
-    fprintf('None\n')
+fprintf(' > Checking for functional MILP solvers:\n')
+res=runtests('fillGapsSmallTests.m','OutputDetail',0);
+
+fprintf([myStr('   > glpk:',40) '%f'])
+if res(1).Passed == 1
+    fprintf('Pass\n')
 else
-    oldSolver=getpref('RAVEN','solver');
-    fprintf([oldSolver,'\n']);
-    solverIdx=strcmp(oldSolver,{'glpk','gurobi','cobra'});
+    fprintf('Fail\n')
 end
-fprintf(' > New RAVEN solver preference:\t\t\t\t\t\t\t')
-% Order of preference: gurobi > glpk > cobra
-if exist('oldSolver','var') && res(solverIdx).Passed == 1
+
+fprintf([myStr('   > gurobi:',40) '%f'])
+if res(2).Passed == 1
+    fprintf('Pass\n')
+else
+    fprintf('Fail\n')
+end
+
+fprintf([myStr('   > cobra:',40) '%f'])
+if res(3).Passed == 1
+    fprintf('Pass\n')
+else
+    fprintf('Fail\n')
+end
+
+fprintf([myStr(' > Set RAVEN solver:',40) '%f'])
+try
+    oldSolver=getpref('RAVEN','solver');
+    solverIdx=find(strcmp(oldSolver,{'glpk','gurobi','cobra'}));
+catch
+    solverIdx=0;
+end
+% Do not change old solver if functional
+if solverIdx~=0 && res(solverIdx).Passed == 1
     fprintf([oldSolver '\n'])
-    setRavenSolver(oldSolver);
+% Order of preference: gurobi > glpk > cobra
 elseif res(2).Passed == 1
     fprintf('gurobi\n')
     setRavenSolver('gurobi');
@@ -188,29 +183,33 @@ else
 end
 
 fprintf('\n=== Essential binary executables ===\n');
-fprintf(' > Checking BLAST+:\t\t\t\t\t\t\t\t\t\t');
+fprintf([myStr(' > Checking BLAST+:',40) '%f'])
 res=runtests('blastPlusTests.m','OutputDetail',0);
 interpretResults(res);
-fprintf(' > Checking DIAMOND:\t\t\t\t\t\t\t\t\t');
+
+fprintf([myStr(' > Checking DIAMOND:',40) '%f'])
 res=runtests('diamondTests.m','OutputDetail',0);
 interpretResults(res);
-fprintf(' > Checking HMMER:\t\t\t\t\t\t\t\t\t\t');
+
+fprintf([myStr(' > Checking HMMER:',40) '%f'])
 res=runtests('hmmerTests.m','OutputDetail',0);
 interpretResults(res);
 
 if develMode
     fprintf('\n=== Development binary executables ===\n');
     fprintf('NOTE: These binaries are only required when using KEGG FTP dump files in getKEGGModelForOrganism\n');
-    fprintf(' > Checking CD-HIT:\t\t\t\t\t\t\t\t\t\t');
+
+    fprintf([myStr(' > Checking CD-HIT:',40) '%f'])
     res=runtests('cdhitTests.m','OutputDetail',0);
     interpretResults(res);
-    fprintf(' > Checking MAFFT:\t\t\t\t\t\t\t\t\t\t');
+
+    fprintf([myStr(' > Checking MAFFT:',40) '%f'])
     res=runtests('mafftTests.m','OutputDetail',0);
     interpretResults(res);
 end
 
 fprintf('\n=== Compatibility ===\n');
-fprintf(' > Checking uniqueness of RAVEN functions:\t\t\t\t');
+fprintf([myStr(' > Checking function uniqueness:',40) '%f'])
 checkFunctionUniqueness();
 
 fprintf('\n*** checkInstallation complete ***\n\n');
@@ -222,5 +221,15 @@ if results.Failed==0 && results.Incomplete==0
 else
     fprintf('Fail\n')
     fprintf('   Download/compile the binary and rerun checkInstallation\n');
+end
+end
+
+function str = myStr(InputStr,len)
+str=InputStr;
+lenDiff = len - length(str);
+if lenDiff < 0
+    warning('String too long');
+else
+    str = [str blanks(lenDiff)];
 end
 end
