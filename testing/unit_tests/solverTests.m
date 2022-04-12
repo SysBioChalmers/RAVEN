@@ -21,7 +21,7 @@ catch
     catch
         rmpref('RAVEN','solver');
     end
-    return
+    error('Solver not working')
 end
 try
     setRavenSolver(oldSolver);
@@ -51,7 +51,7 @@ catch
     catch
         rmpref('RAVEN','solver');
     end
-    return
+    error('Solver not working')
 end
 try
     setRavenSolver(oldSolver);
@@ -83,7 +83,7 @@ catch
     catch
         rmpref('RAVEN','solver');
     end
-    return
+    error('Solver not working')
 end
 try
     setRavenSolver(oldSolver);
