@@ -5,8 +5,6 @@ tests = functiontests(localfunctions);
 end
 
 function testGlpk(testCase)
-%This function tests the glpk solver
-%Load the expected (i.e. sorted) model
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
 oldSolver=getpref('RAVEN','solver');
@@ -19,8 +17,6 @@ verifyEqual(testCase,sol,solGlpk,'AbsTol',1e-7)
 end
 
 function testGurobi(testCase)
-%This function tests the glpk solver
-%Load the expected (i.e. sorted) model
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
 oldSolver=getpref('RAVEN','solver');
@@ -33,8 +29,6 @@ verifyEqual(testCase,sol,solGurobi,'AbsTol',1e-7)
 end
 
 function testCobra(testCase)
-%This function tests the glpk solver
-%Load the expected (i.e. sorted) model
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
 oldSolver=getpref('RAVEN','solver');

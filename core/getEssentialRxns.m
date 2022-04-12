@@ -31,7 +31,7 @@ end
 
 %Check which reactions have flux. Only those can be essential. This is not
 %the smallest list of reactions, but it's a fast way
-rxnsToCheck=setdiff(model.rxns(abs(sol.x)>10^-8),ignoreRxns);
+rxnsToCheck=setdiff(model.rxns(abs(sol.x)>10^-12),ignoreRxns);
 nToCheck=numel(rxnsToCheck);
 minimize=true;
 while 1

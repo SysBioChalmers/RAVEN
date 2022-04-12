@@ -49,7 +49,9 @@ mixIndexes=indexes(randperm(numel(indexes)));
 %Maximize for all fluxes first in order to get fewer rxns to test
 smallModel.c=ones(numel(smallModel.c),1);
 sol=solveLP(smallModel);
-J(abs(sol.x(mixIndexes))>cutOff)=true;
+if ~isempty(sol.x)
+    J(abs(sol.x(mixIndexes))>cutOff)=true;
+end
 
 %Loop through and maximize then minimize each rxn if it doesn't already
 %have a flux
