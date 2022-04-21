@@ -52,48 +52,96 @@ This function is called by:
 0005 <span class="keyword">end</span>
 0006 
 0007 <a name="_sub1" href="#_subfunctions" class="code">function testGlpk(testCase)</a>
-0008 <span class="comment">%This function tests the glpk solver</span>
-0009 <span class="comment">%Load the expected (i.e. sorted) model</span>
-0010 sourceDir = fileparts(which(mfilename));
-0011 load([sourceDir,<span class="string">'/test_data/ecoli_textbook.mat'</span>], <span class="string">'model'</span>);
-0012 oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0013 setRavenSolver(<span class="string">'glpk'</span>);
-0014 sol=solveLP(model);
-0015 setRavenSolver(oldSolver);
-0016 load([sourceDir,<span class="string">'/test_data/solverTestOutput.mat'</span>], <span class="string">'solGlpk'</span>);
-0017 <span class="comment">%Check that the actual model is the same as the expected model</span>
-0018 verifyEqual(testCase,sol,solGlpk,<span class="string">'AbsTol'</span>,1e-7)
-0019 <span class="keyword">end</span>
-0020 
-0021 <a name="_sub2" href="#_subfunctions" class="code">function testGurobi(testCase)</a>
-0022 <span class="comment">%This function tests the glpk solver</span>
-0023 <span class="comment">%Load the expected (i.e. sorted) model</span>
-0024 sourceDir = fileparts(which(mfilename));
-0025 load([sourceDir,<span class="string">'/test_data/ecoli_textbook.mat'</span>], <span class="string">'model'</span>);
-0026 oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0027 setRavenSolver(<span class="string">'gurobi'</span>);
-0028 sol=solveLP(model);
-0029 setRavenSolver(oldSolver);
-0030 load([sourceDir,<span class="string">'/test_data/solverTestOutput.mat'</span>], <span class="string">'solGurobi'</span>);
-0031 <span class="comment">%Check that the actual model is the same as the expected model</span>
-0032 verifyEqual(testCase,sol,solGurobi,<span class="string">'AbsTol'</span>,1e-7)
-0033 <span class="keyword">end</span>
-0034 
-0035 <a name="_sub3" href="#_subfunctions" class="code">function testCobra(testCase)</a>
-0036 <span class="comment">%This function tests the glpk solver</span>
-0037 <span class="comment">%Load the expected (i.e. sorted) model</span>
+0008 sourceDir = fileparts(which(mfilename));
+0009 load([sourceDir,<span class="string">'/test_data/ecoli_textbook.mat'</span>], <span class="string">'model'</span>);
+0010 <span class="keyword">try</span>
+0011     oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0012 <span class="keyword">catch</span>
+0013 <span class="keyword">end</span>
+0014 setRavenSolver(<span class="string">'glpk'</span>);
+0015 
+0016 <span class="keyword">try</span>
+0017     sol=solveLP(model);
+0018 <span class="keyword">catch</span>
+0019     <span class="keyword">try</span>
+0020         setRavenSolver(oldSolver);
+0021     <span class="keyword">catch</span>
+0022         rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0023     <span class="keyword">end</span>
+0024     error(<span class="string">'Solver not working'</span>)
+0025 <span class="keyword">end</span>
+0026 <span class="keyword">try</span>
+0027     setRavenSolver(oldSolver);
+0028 <span class="keyword">catch</span>
+0029     rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0030 <span class="keyword">end</span>
+0031 
+0032 load([sourceDir,<span class="string">'/test_data/solverTestOutput.mat'</span>], <span class="string">'solGlpk'</span>);
+0033 <span class="comment">%Check that the actual model is the same as the expected model</span>
+0034 verifyEqual(testCase,sol,solGlpk,<span class="string">'AbsTol'</span>,1e-7)
+0035 <span class="keyword">end</span>
+0036 
+0037 <a name="_sub2" href="#_subfunctions" class="code">function testGurobi(testCase)</a>
 0038 sourceDir = fileparts(which(mfilename));
 0039 load([sourceDir,<span class="string">'/test_data/ecoli_textbook.mat'</span>], <span class="string">'model'</span>);
-0040 oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0041 <span class="keyword">global</span> CBT_LP_SOLVER
-0042 CBT_LP_SOLVER = <span class="string">'glpk'</span>;
-0043 setRavenSolver(<span class="string">'cobra'</span>);
-0044 sol=solveLP(model);
-0045 setRavenSolver(oldSolver);
-0046 load([sourceDir,<span class="string">'/test_data/solverTestOutput.mat'</span>], <span class="string">'solCobra'</span>);
-0047 <span class="comment">%Check that the actual model is the same as the expected model</span>
-0048 verifyEqual(testCase,sol,solCobra,<span class="string">'AbsTol'</span>,1e-6)
-0049 <span class="keyword">end</span></pre></div>
+0040 <span class="keyword">try</span>
+0041     oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0042 <span class="keyword">catch</span>
+0043 <span class="keyword">end</span>
+0044 setRavenSolver(<span class="string">'gurobi'</span>);
+0045 
+0046 <span class="keyword">try</span>
+0047     sol=solveLP(model);
+0048 <span class="keyword">catch</span>
+0049     <span class="keyword">try</span>
+0050         setRavenSolver(oldSolver);
+0051     <span class="keyword">catch</span>
+0052         rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0053     <span class="keyword">end</span>
+0054     error(<span class="string">'Solver not working'</span>)
+0055 <span class="keyword">end</span>
+0056 <span class="keyword">try</span>
+0057     setRavenSolver(oldSolver);
+0058 <span class="keyword">catch</span>
+0059     rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0060 <span class="keyword">end</span>
+0061 
+0062 load([sourceDir,<span class="string">'/test_data/solverTestOutput.mat'</span>], <span class="string">'solGurobi'</span>);
+0063 <span class="comment">%Check that the actual model is the same as the expected model</span>
+0064 verifyEqual(testCase,sol,solGurobi,<span class="string">'AbsTol'</span>,1e-7)
+0065 <span class="keyword">end</span>
+0066 
+0067 <a name="_sub3" href="#_subfunctions" class="code">function testCobra(testCase)</a>
+0068 sourceDir = fileparts(which(mfilename));
+0069 load([sourceDir,<span class="string">'/test_data/ecoli_textbook.mat'</span>], <span class="string">'model'</span>);
+0070 <span class="keyword">try</span>
+0071     oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0072 <span class="keyword">catch</span>
+0073 <span class="keyword">end</span>
+0074 <span class="keyword">global</span> CBT_LP_SOLVER
+0075 CBT_LP_SOLVER = <span class="string">'glpk'</span>;
+0076 setRavenSolver(<span class="string">'cobra'</span>);
+0077 
+0078 <span class="keyword">try</span>
+0079     sol=solveLP(model);
+0080 <span class="keyword">catch</span>
+0081     <span class="keyword">try</span>
+0082         setRavenSolver(oldSolver);
+0083     <span class="keyword">catch</span>
+0084         rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0085     <span class="keyword">end</span>
+0086     error(<span class="string">'Solver not working'</span>)
+0087 <span class="keyword">end</span>
+0088 <span class="keyword">try</span>
+0089     setRavenSolver(oldSolver);
+0090 <span class="keyword">catch</span>
+0091     rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0092 <span class="keyword">end</span>
+0093 
+0094 load([sourceDir,<span class="string">'/test_data/solverTestOutput.mat'</span>], <span class="string">'solCobra'</span>);
+0095 <span class="comment">%Check that the actual model is the same as the expected model</span>
+0096 verifyEqual(testCase,sol,solCobra,<span class="string">'AbsTol'</span>,1e-6)
+0097 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
