@@ -14,7 +14,6 @@ try
 catch
 end
 setRavenSolver('glpk');
-solDB=solveLP(modelDB);
 
 %Remove first 10 reactions
 model=removeReactions(modelDB,(1:10));
@@ -27,7 +26,7 @@ catch
     catch
         rmpref('RAVEN','solver');
     end
-    return
+    error('Solver not working')
 end
 sol=solveLP(model);
 try
@@ -49,7 +48,6 @@ try
 catch
 end
 setRavenSolver('gurobi');
-solDB=solveLP(modelDB);
 
 %Remove first 10 reactions
 model=removeReactions(modelDB,(1:10));
@@ -63,7 +61,7 @@ catch
     catch
         rmpref('RAVEN','solver');
     end
-    return
+    error('Solver not working')
 end
 sol=solveLP(model);
 try
@@ -85,7 +83,6 @@ try
 catch
 end
 setRavenSolver('cobra');
-solDB=solveLP(modelDB);
 
 %Remove first 10 reactions
 model=removeReactions(modelDB,(1:10));
@@ -98,7 +95,7 @@ catch
     catch
         rmpref('RAVEN','solver');
     end
-    return
+    error('Solver not working')
 end
 sol=solveLP(model);
 try
