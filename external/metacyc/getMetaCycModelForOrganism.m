@@ -81,15 +81,14 @@ model.rev=metaCycModel.rev;
 model.c=metaCycModel.c;
 model.equations=metaCycModel.equations;
 
-%Get the 'external' directory for RAVEN Toolbox.
-[ST I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
+%Get the root directory for RAVEN Toolbox.
+ravenPath=findRAVENroot();
 
 %Generate blast strcture by either DIAMOND or BLASTP
 if useDiamond
-    blastStruc=getDiamond(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'metacyc','protseq.fsa'));
+    blastStruc=getDiamond(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'external','metacyc','protseq.fsa'));
 else
-    blastStruc=getBlast(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'metacyc','protseq.fsa'));
+    blastStruc=getBlast(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'external','metacyc','protseq.fsa'));
 end
 
 %Only look the query

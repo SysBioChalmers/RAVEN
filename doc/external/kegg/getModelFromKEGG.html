@@ -148,228 +148,227 @@ This function is called by:
 0060     keepGeneral=false;
 0061 <span class="keyword">end</span>
 0062 
-0063 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
-0064 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-0065 modelFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggModel.mat'</span>);
-0066 <span class="keyword">if</span> exist(modelFile, <span class="string">'file'</span>) &amp;&amp; <a href="#_sub1" class="code" title="subfunction output = isNewestFile(ravenPath)">isNewestFile</a>(ravenPath)
-0067     fprintf([<span class="string">'Importing the global KEGG model from '</span> strrep(modelFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'... '</span>]);
-0068     load(modelFile);
-0069     fprintf(<span class="string">'COMPLETE\n'</span>);
-0070 <span class="keyword">else</span>
-0071     fprintf([<span class="string">'NOTE: The file '</span> strrep(modelFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">' does not exist or is out-of-date and therefore will be (re)generated\n'</span>]);
-0072     <span class="comment">%First get all reactions</span>
-0073     [model,isSpontaneous,isUndefinedStoich,isIncomplete,isGeneral]=<a href="getRxnsFromKEGG.html" class="code" title="function [model,isSpontaneous,isUndefinedStoich,isIncomplete,isGeneral]=getRxnsFromKEGG(keggPath)">getRxnsFromKEGG</a>(keggPath);
-0074     
-0075     <span class="comment">%Get the KO ids that are associated with any of the reactions. They</span>
-0076     <span class="comment">%will be used later on to create a rxn-gene matrix</span>
-0077     KOs=cell(numel(model.rxns)*2,1);
-0078     <span class="comment">%Make room for two KO ids per reaction</span>
-0079     
-0080     addToIndex=1;
-0081     <span class="comment">%Add all KO ids that are used</span>
-0082     <span class="keyword">for</span> i=1:numel(model.rxns)
-0083         <span class="keyword">if</span> isstruct(model.rxnMiriams{i})
-0084             <span class="keyword">for</span> j=1:numel(model.rxnMiriams{i}.name)
-0085                 <span class="keyword">if</span> strcmpi(<span class="string">'kegg.orthology'</span>,model.rxnMiriams{i}.name{j})
-0086                     <span class="comment">%Add the KO id</span>
-0087                     KOs(addToIndex)=model.rxnMiriams{i}.value(j);
-0088                     addToIndex=addToIndex+1;
-0089                 <span class="keyword">end</span>
-0090             <span class="keyword">end</span>
-0091         <span class="keyword">end</span>
-0092     <span class="keyword">end</span>
-0093     
-0094     KOs=KOs(1:addToIndex-1);
-0095     KOs=unique(KOs);
-0096     
-0097     <span class="comment">%Get all genes from any organism in KEGG that is associated with any of</span>
-0098     <span class="comment">%the KOs</span>
-0099     KOModel=<a href="getGenesFromKEGG.html" class="code" title="function model=getGenesFromKEGG(keggPath,koList)">getGenesFromKEGG</a>(keggPath,KOs);
-0100     
-0101     fprintf(<span class="string">'Pruning the global KEGG model from the partially annotated, lumped KEGG Orthology entries... '</span>)
-0102     model.genes=KOModel.genes;
-0103     
-0104     <span class="comment">%It can be that there are KOs from the reactions that have no database</span>
-0105     <span class="comment">%entry. These are (as far as I have seen) lumped versions of other KOs</span>
-0106     <span class="comment">%and should be removed</span>
-0107     KOsToRemove=setdiff(KOs, KOModel.rxns);
-0108     
-0109     <span class="comment">%Loop through all reactions and delete the KOs that were not found</span>
-0110     <span class="keyword">for</span> i=1:numel(model.rxns)
-0111         <span class="keyword">if</span> isstruct(model.rxnMiriams{i})
-0112             <span class="keyword">for</span> j=1:numel(model.rxnMiriams{i}.name)
-0113                 toDel=[];
-0114                 <span class="keyword">if</span> strcmp(model.rxnMiriams{i}.name{j},<span class="string">'kegg.orthology'</span>)
-0115                     <span class="keyword">if</span> ismember(model.rxnMiriams{i}.value{j},KOsToRemove)
-0116                         toDel=[toDel;j];
-0117                     <span class="keyword">end</span>
-0118                 <span class="keyword">end</span>
-0119             <span class="keyword">end</span>
-0120             <span class="comment">%Delete the KOs</span>
-0121             <span class="keyword">if</span> any(toDel)
-0122                 <span class="comment">%If all posts are deleted, then delete the whole structure</span>
-0123                 <span class="keyword">if</span> numel(toDel)==j
-0124                     model.rxnMiriams{i}=[];
-0125                 <span class="keyword">else</span>
-0126                     model.rxnMiriams{i}.name(toDel)=[];
-0127                     model.rxnMiriams{i}.value(toDel)=[];
-0128                 <span class="keyword">end</span>
-0129             <span class="keyword">end</span>
-0130         <span class="keyword">end</span>
-0131     <span class="keyword">end</span>
-0132     fprintf(<span class="string">'COMPLETE\n'</span>);
-0133     
-0134     fprintf(<span class="string">'Constructing the rxnGeneMat for the global KEGG model...   0%% complete'</span>);
-0135     <span class="comment">%Create the rxnGeneMat for the reactions. This is simply done by</span>
-0136     <span class="comment">%merging the gene associations for all the involved KOs</span>
-0137     r=zeros(10000000,1);
-0138     <span class="comment">%Store the positions since it's slow to write to a sparse array in a</span>
-0139     <span class="comment">%loop</span>
-0140     c=zeros(10000000,1);
-0141     counter=1;
-0142     <span class="keyword">for</span> i=1:numel(model.rxns)
-0143         <span class="keyword">if</span> isstruct(model.rxnMiriams{i})
-0144             I=strncmp(<span class="string">'kegg.orthology'</span>,model.rxnMiriams{i}.name,18);
-0145             <span class="keyword">if</span> any(I)
-0146                 [J, K]=ismember(model.rxnMiriams{i}.value(I),KOModel.rxns);
-0147                 <span class="comment">%Find all gene indexes that correspond to any of these KOs</span>
-0148                 [~, L]=find(KOModel.rxnGeneMat(K(J),:));
-0149                 <span class="keyword">if</span> any(L)
-0150                     <span class="comment">%Allocate room for more elements if needed</span>
-0151                     <span class="keyword">if</span> counter+numel(L)-1&gt;=numel(r)
-0152                         r=[r;zeros(numel(r),1)];
-0153                         c=[c;zeros(numel(c),1)];
-0154                     <span class="keyword">end</span>
-0155                     r(counter:counter+numel(L)-1)=ones(numel(L),1)*i;
-0156                     c(counter:counter+numel(L)-1)=L(:);
-0157                     counter=counter+numel(L);
-0158                 <span class="keyword">end</span>
-0159             <span class="keyword">end</span>
-0160         <span class="keyword">end</span>
-0161         <span class="keyword">if</span> rem(i-1,100) == 0
-0162             progress=pad(num2str(floor(i/numel(model.rxns)*100)),3,<span class="string">'left'</span>);
-0163             fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete'</span>,progress);
-0164         <span class="keyword">end</span>
-0165     <span class="keyword">end</span>
-0166     
-0167     model.rxnGeneMat=sparse(r(1:counter-1),c(1:counter-1),ones(counter-1,1));
-0168     <span class="keyword">if</span> size(model.rxnGeneMat,1)~=numel(model.rxns) || size(model.rxnGeneMat,2)~=numel(KOModel.genes)
-0169         model.rxnGeneMat(numel(model.rxns),numel(KOModel.genes))=0;
-0170     <span class="keyword">end</span>
-0171     fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n'</span>);
-0172     
-0173     <span class="comment">%Then get all metabolites</span>
-0174     metModel=<a href="getMetsFromKEGG.html" class="code" title="function model=getMetsFromKEGG(keggPath)">getMetsFromKEGG</a>(keggPath);
-0175     
-0176     fprintf(<span class="string">'Finalizing the global KEGG model... '</span>);
-0177     <span class="comment">%Add information about all metabolites to the model</span>
-0178     [a, b]=ismember(model.mets,metModel.mets);
-0179     a=find(a);
-0180     b=b(a);
-0181     
-0182     <span class="keyword">if</span> ~isfield(model,<span class="string">'metNames'</span>)
-0183         model.metNames=cell(numel(model.mets),1);
-0184         model.metNames(:)={<span class="string">''</span>};
-0185     <span class="keyword">end</span>
-0186     model.metNames(a)=metModel.metNames(b);
-0187     
-0188     <span class="keyword">if</span> ~isfield(model,<span class="string">'metFormulas'</span>)
-0189         model.metFormulas=cell(numel(model.mets),1);
-0190         model.metFormulas(:)={<span class="string">''</span>};
-0191     <span class="keyword">end</span>
-0192     model.metFormulas(a)=metModel.metFormulas(b);
-0193     
-0194     <span class="keyword">if</span> ~isfield(model,<span class="string">'inchis'</span>)
-0195         model.inchis=cell(numel(model.mets),1);
-0196         model.inchis(:)={<span class="string">''</span>};
-0197     <span class="keyword">end</span>
-0198     model.inchis(a)=metModel.inchis(b);
-0199     
-0200     <span class="keyword">if</span> ~isfield(model,<span class="string">'metMiriams'</span>)
-0201         model.metMiriams=cell(numel(model.mets),1);
-0202     <span class="keyword">end</span>
-0203     model.metMiriams(a)=metModel.metMiriams(b);
-0204     
-0205     <span class="comment">%The composition should be loaded from InChIs when available</span>
-0206     I=find(~cellfun(@isempty,model.inchis));
-0207     <span class="keyword">for</span> i=1:numel(I)
-0208         S=regexp(model.inchis(I(i)),<span class="string">'/'</span>,<span class="string">'split'</span>);
-0209         S=S{1};
-0210         <span class="keyword">if</span> numel(S)&gt;=2
-0211             <span class="comment">%Don't copy if it doesn't look good</span>
-0212             model.metFormulas(I(i))=S(2);
-0213         <span class="keyword">end</span>
-0214     <span class="keyword">end</span>
-0215     
-0216     <span class="comment">%Put all metabolites in one compartment called 's' (for system). This</span>
-0217     <span class="comment">%is done just to be more compatible with the rest of the code</span>
-0218     model.comps={<span class="string">'s'</span>};
-0219     model.compNames={<span class="string">'System'</span>};
-0220     model.metComps=ones(numel(model.mets),1);
-0221     
-0222     <span class="comment">%If reactions with undefined stoichiometry are kept, then the</span>
-0223     <span class="comment">%corresponding metabolites will have ids such as &quot;(n+1) C00001&quot; and</span>
-0224     <span class="comment">%their names will be empty. These ids are not valid SBML identifiers</span>
-0225     <span class="comment">%and are therefore replaced with &quot;undefined1, undefined2...&quot;. The</span>
-0226     <span class="comment">%former ids are stored as the new names</span>
-0227     I=find(cellfun(@any,strfind(model.mets,<span class="string">'n'</span>)) | cellfun(@any,strfind(model.mets,<span class="string">'m'</span>)));
-0228     model.metNames(I)=model.mets(I);
-0229     repNums=1:numel(I);
-0230     repIDs=strcat(<span class="string">'undefined_'</span>,cellfun(@num2str,num2cell(repNums(:)),<span class="string">'UniformOutput'</span>,false));
-0231     model.mets(I)=repIDs;
-0232     
-0233     <span class="comment">%It could also be that the metabolite names are empty for some other</span>
-0234     <span class="comment">%reason. In that case, use the ID instead</span>
-0235     I=cellfun(@isempty,model.metNames);
-0236     model.metNames(I)=model.mets(I);
-0237     
-0238     <span class="comment">%Save the model structure</span>
-0239     save(modelFile,<span class="string">'model'</span>,<span class="string">'KOModel'</span>,<span class="string">'isGeneral'</span>,<span class="string">'isIncomplete'</span>,<span class="string">'isUndefinedStoich'</span>,<span class="string">'isSpontaneous'</span>);
-0240     fprintf(<span class="string">'COMPLETE\n'</span>);
-0241 <span class="keyword">end</span>
-0242 
-0243 <span class="comment">%Delete reactions which are labeled as &quot;incomplete&quot;, &quot;erroneous&quot;,</span>
-0244 <span class="comment">%&quot;unclear&quot;, &quot;general reaction&quot; or having undefined stoichiometry (depending</span>
-0245 <span class="comment">%on settings)</span>
-0246 <span class="keyword">if</span> keepSpontaneous==false
-0247     model=removeReactions(model,intersect(isSpontaneous,model.rxns),true,true);
-0248 <span class="keyword">end</span>
-0249 <span class="keyword">if</span> keepUndefinedStoich==false
-0250     model=removeReactions(model,intersect(isUndefinedStoich,model.rxns),true,true);
-0251 <span class="keyword">end</span>
-0252 <span class="keyword">if</span> keepIncomplete==false
-0253     model=removeReactions(model,intersect(isIncomplete,model.rxns),true,true);
-0254 <span class="keyword">end</span>
-0255 <span class="keyword">if</span> keepGeneral==false
-0256     model=removeReactions(model,intersect(isGeneral,model.rxns),true,true);
-0257 <span class="keyword">end</span>
-0258 
-0259 <span class="keyword">end</span>
-0260 
-0261 <a name="_sub1" href="#_subfunctions" class="code">function output = isNewestFile(ravenPath)</a>
-0262 <span class="comment">%The ad hoc function, which checks whether keggModel.mat is the more</span>
-0263 <span class="comment">%recently modified than keggRxns.mat, keggGenes.mat and keggRxns.mat</span>
-0264 modelFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggModel.mat'</span>);
-0265 rxnsFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggRxns.mat'</span>);
-0266 genesFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggGenes.mat'</span>);
-0267 metsFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggMets.mat'</span>);
-0268 <span class="keyword">if</span> (<a href="#_sub2" class="code" title="subfunction modTime = getFileTime(fileName)">getFileTime</a>(modelFile)&gt;<a href="#_sub2" class="code" title="subfunction modTime = getFileTime(fileName)">getFileTime</a>(rxnsFile))&amp;&amp;<span class="keyword">...</span>
-0269         (<a href="#_sub2" class="code" title="subfunction modTime = getFileTime(fileName)">getFileTime</a>(modelFile)&gt;<a href="#_sub2" class="code" title="subfunction modTime = getFileTime(fileName)">getFileTime</a>(genesFile))&amp;&amp;<span class="keyword">...</span>
-0270         (<a href="#_sub2" class="code" title="subfunction modTime = getFileTime(fileName)">getFileTime</a>(modelFile)&gt;<a href="#_sub2" class="code" title="subfunction modTime = getFileTime(fileName)">getFileTime</a>(metsFile))
-0271     output=1;
-0272 <span class="keyword">else</span>
-0273     output=0;
+0063 ravenPath=findRAVENroot();
+0064 modelFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggModel.mat'</span>);
+0065 <span class="keyword">if</span> exist(modelFile, <span class="string">'file'</span>) &amp;&amp; <a href="#_sub1" class="code" title="subfunction output = isNewestFile(ravenPath)">isNewestFile</a>(ravenPath)
+0066     fprintf([<span class="string">'Importing the global KEGG model from '</span> strrep(modelFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'... '</span>]);
+0067     load(modelFile);
+0068     fprintf(<span class="string">'COMPLETE\n'</span>);
+0069 <span class="keyword">else</span>
+0070     fprintf([<span class="string">'NOTE: The file '</span> strrep(modelFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">' does not exist or is out-of-date and therefore will be (re)generated\n'</span>]);
+0071     <span class="comment">%First get all reactions</span>
+0072     [model,isSpontaneous,isUndefinedStoich,isIncomplete,isGeneral]=<a href="getRxnsFromKEGG.html" class="code" title="function [model,isSpontaneous,isUndefinedStoich,isIncomplete,isGeneral]=getRxnsFromKEGG(keggPath)">getRxnsFromKEGG</a>(keggPath);
+0073     
+0074     <span class="comment">%Get the KO ids that are associated with any of the reactions. They</span>
+0075     <span class="comment">%will be used later on to create a rxn-gene matrix</span>
+0076     KOs=cell(numel(model.rxns)*2,1);
+0077     <span class="comment">%Make room for two KO ids per reaction</span>
+0078     
+0079     addToIndex=1;
+0080     <span class="comment">%Add all KO ids that are used</span>
+0081     <span class="keyword">for</span> i=1:numel(model.rxns)
+0082         <span class="keyword">if</span> isstruct(model.rxnMiriams{i})
+0083             <span class="keyword">for</span> j=1:numel(model.rxnMiriams{i}.name)
+0084                 <span class="keyword">if</span> strcmpi(<span class="string">'kegg.orthology'</span>,model.rxnMiriams{i}.name{j})
+0085                     <span class="comment">%Add the KO id</span>
+0086                     KOs(addToIndex)=model.rxnMiriams{i}.value(j);
+0087                     addToIndex=addToIndex+1;
+0088                 <span class="keyword">end</span>
+0089             <span class="keyword">end</span>
+0090         <span class="keyword">end</span>
+0091     <span class="keyword">end</span>
+0092     
+0093     KOs=KOs(1:addToIndex-1);
+0094     KOs=unique(KOs);
+0095     
+0096     <span class="comment">%Get all genes from any organism in KEGG that is associated with any of</span>
+0097     <span class="comment">%the KOs</span>
+0098     KOModel=<a href="getGenesFromKEGG.html" class="code" title="function model=getGenesFromKEGG(keggPath,koList)">getGenesFromKEGG</a>(keggPath,KOs);
+0099     
+0100     fprintf(<span class="string">'Pruning the global KEGG model from the partially annotated, lumped KEGG Orthology entries... '</span>)
+0101     model.genes=KOModel.genes;
+0102     
+0103     <span class="comment">%It can be that there are KOs from the reactions that have no database</span>
+0104     <span class="comment">%entry. These are (as far as I have seen) lumped versions of other KOs</span>
+0105     <span class="comment">%and should be removed</span>
+0106     KOsToRemove=setdiff(KOs, KOModel.rxns);
+0107     
+0108     <span class="comment">%Loop through all reactions and delete the KOs that were not found</span>
+0109     <span class="keyword">for</span> i=1:numel(model.rxns)
+0110         <span class="keyword">if</span> isstruct(model.rxnMiriams{i})
+0111             <span class="keyword">for</span> j=1:numel(model.rxnMiriams{i}.name)
+0112                 toDel=[];
+0113                 <span class="keyword">if</span> strcmp(model.rxnMiriams{i}.name{j},<span class="string">'kegg.orthology'</span>)
+0114                     <span class="keyword">if</span> ismember(model.rxnMiriams{i}.value{j},KOsToRemove)
+0115                         toDel=[toDel;j];
+0116                     <span class="keyword">end</span>
+0117                 <span class="keyword">end</span>
+0118             <span class="keyword">end</span>
+0119             <span class="comment">%Delete the KOs</span>
+0120             <span class="keyword">if</span> any(toDel)
+0121                 <span class="comment">%If all posts are deleted, then delete the whole structure</span>
+0122                 <span class="keyword">if</span> numel(toDel)==j
+0123                     model.rxnMiriams{i}=[];
+0124                 <span class="keyword">else</span>
+0125                     model.rxnMiriams{i}.name(toDel)=[];
+0126                     model.rxnMiriams{i}.value(toDel)=[];
+0127                 <span class="keyword">end</span>
+0128             <span class="keyword">end</span>
+0129         <span class="keyword">end</span>
+0130     <span class="keyword">end</span>
+0131     fprintf(<span class="string">'COMPLETE\n'</span>);
+0132     
+0133     fprintf(<span class="string">'Constructing the rxnGeneMat for the global KEGG model...   0%% complete'</span>);
+0134     <span class="comment">%Create the rxnGeneMat for the reactions. This is simply done by</span>
+0135     <span class="comment">%merging the gene associations for all the involved KOs</span>
+0136     r=zeros(10000000,1);
+0137     <span class="comment">%Store the positions since it's slow to write to a sparse array in a</span>
+0138     <span class="comment">%loop</span>
+0139     c=zeros(10000000,1);
+0140     counter=1;
+0141     <span class="keyword">for</span> i=1:numel(model.rxns)
+0142         <span class="keyword">if</span> isstruct(model.rxnMiriams{i})
+0143             I=strncmp(<span class="string">'kegg.orthology'</span>,model.rxnMiriams{i}.name,18);
+0144             <span class="keyword">if</span> any(I)
+0145                 [J, K]=ismember(model.rxnMiriams{i}.value(I),KOModel.rxns);
+0146                 <span class="comment">%Find all gene indexes that correspond to any of these KOs</span>
+0147                 [~, L]=find(KOModel.rxnGeneMat(K(J),:));
+0148                 <span class="keyword">if</span> any(L)
+0149                     <span class="comment">%Allocate room for more elements if needed</span>
+0150                     <span class="keyword">if</span> counter+numel(L)-1&gt;=numel(r)
+0151                         r=[r;zeros(numel(r),1)];
+0152                         c=[c;zeros(numel(c),1)];
+0153                     <span class="keyword">end</span>
+0154                     r(counter:counter+numel(L)-1)=ones(numel(L),1)*i;
+0155                     c(counter:counter+numel(L)-1)=L(:);
+0156                     counter=counter+numel(L);
+0157                 <span class="keyword">end</span>
+0158             <span class="keyword">end</span>
+0159         <span class="keyword">end</span>
+0160         <span class="keyword">if</span> rem(i-1,100) == 0
+0161             progress=pad(num2str(floor(i/numel(model.rxns)*100)),3,<span class="string">'left'</span>);
+0162             fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete'</span>,progress);
+0163         <span class="keyword">end</span>
+0164     <span class="keyword">end</span>
+0165     
+0166     model.rxnGeneMat=sparse(r(1:counter-1),c(1:counter-1),ones(counter-1,1));
+0167     <span class="keyword">if</span> size(model.rxnGeneMat,1)~=numel(model.rxns) || size(model.rxnGeneMat,2)~=numel(KOModel.genes)
+0168         model.rxnGeneMat(numel(model.rxns),numel(KOModel.genes))=0;
+0169     <span class="keyword">end</span>
+0170     fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n'</span>);
+0171     
+0172     <span class="comment">%Then get all metabolites</span>
+0173     metModel=<a href="getMetsFromKEGG.html" class="code" title="function model=getMetsFromKEGG(keggPath)">getMetsFromKEGG</a>(keggPath);
+0174     
+0175     fprintf(<span class="string">'Finalizing the global KEGG model... '</span>);
+0176     <span class="comment">%Add information about all metabolites to the model</span>
+0177     [a, b]=ismember(model.mets,metModel.mets);
+0178     a=find(a);
+0179     b=b(a);
+0180     
+0181     <span class="keyword">if</span> ~isfield(model,<span class="string">'metNames'</span>)
+0182         model.metNames=cell(numel(model.mets),1);
+0183         model.metNames(:)={<span class="string">''</span>};
+0184     <span class="keyword">end</span>
+0185     model.metNames(a)=metModel.metNames(b);
+0186     
+0187     <span class="keyword">if</span> ~isfield(model,<span class="string">'metFormulas'</span>)
+0188         model.metFormulas=cell(numel(model.mets),1);
+0189         model.metFormulas(:)={<span class="string">''</span>};
+0190     <span class="keyword">end</span>
+0191     model.metFormulas(a)=metModel.metFormulas(b);
+0192     
+0193     <span class="keyword">if</span> ~isfield(model,<span class="string">'inchis'</span>)
+0194         model.inchis=cell(numel(model.mets),1);
+0195         model.inchis(:)={<span class="string">''</span>};
+0196     <span class="keyword">end</span>
+0197     model.inchis(a)=metModel.inchis(b);
+0198     
+0199     <span class="keyword">if</span> ~isfield(model,<span class="string">'metMiriams'</span>)
+0200         model.metMiriams=cell(numel(model.mets),1);
+0201     <span class="keyword">end</span>
+0202     model.metMiriams(a)=metModel.metMiriams(b);
+0203     
+0204     <span class="comment">%The composition should be loaded from InChIs when available</span>
+0205     I=find(~cellfun(@isempty,model.inchis));
+0206     <span class="keyword">for</span> i=1:numel(I)
+0207         S=regexp(model.inchis(I(i)),<span class="string">'/'</span>,<span class="string">'split'</span>);
+0208         S=S{1};
+0209         <span class="keyword">if</span> numel(S)&gt;=2
+0210             <span class="comment">%Don't copy if it doesn't look good</span>
+0211             model.metFormulas(I(i))=S(2);
+0212         <span class="keyword">end</span>
+0213     <span class="keyword">end</span>
+0214     
+0215     <span class="comment">%Put all metabolites in one compartment called 's' (for system). This</span>
+0216     <span class="comment">%is done just to be more compatible with the rest of the code</span>
+0217     model.comps={<span class="string">'s'</span>};
+0218     model.compNames={<span class="string">'System'</span>};
+0219     model.metComps=ones(numel(model.mets),1);
+0220     
+0221     <span class="comment">%If reactions with undefined stoichiometry are kept, then the</span>
+0222     <span class="comment">%corresponding metabolites will have ids such as &quot;(n+1) C00001&quot; and</span>
+0223     <span class="comment">%their names will be empty. These ids are not valid SBML identifiers</span>
+0224     <span class="comment">%and are therefore replaced with &quot;undefined1, undefined2...&quot;. The</span>
+0225     <span class="comment">%former ids are stored as the new names</span>
+0226     I=find(cellfun(@any,strfind(model.mets,<span class="string">'n'</span>)) | cellfun(@any,strfind(model.mets,<span class="string">'m'</span>)));
+0227     model.metNames(I)=model.mets(I);
+0228     repNums=1:numel(I);
+0229     repIDs=strcat(<span class="string">'undefined_'</span>,cellfun(@num2str,num2cell(repNums(:)),<span class="string">'UniformOutput'</span>,false));
+0230     model.mets(I)=repIDs;
+0231     
+0232     <span class="comment">%It could also be that the metabolite names are empty for some other</span>
+0233     <span class="comment">%reason. In that case, use the ID instead</span>
+0234     I=cellfun(@isempty,model.metNames);
+0235     model.metNames(I)=model.mets(I);
+0236     
+0237     <span class="comment">%Save the model structure</span>
+0238     save(modelFile,<span class="string">'model'</span>,<span class="string">'KOModel'</span>,<span class="string">'isGeneral'</span>,<span class="string">'isIncomplete'</span>,<span class="string">'isUndefinedStoich'</span>,<span class="string">'isSpontaneous'</span>);
+0239     fprintf(<span class="string">'COMPLETE\n'</span>);
+0240 <span class="keyword">end</span>
+0241 
+0242 <span class="comment">%Delete reactions which are labeled as &quot;incomplete&quot;, &quot;erroneous&quot;,</span>
+0243 <span class="comment">%&quot;unclear&quot;, &quot;general reaction&quot; or having undefined stoichiometry (depending</span>
+0244 <span class="comment">%on settings)</span>
+0245 <span class="keyword">if</span> keepSpontaneous==false
+0246     model=removeReactions(model,intersect(isSpontaneous,model.rxns),true,true);
+0247 <span class="keyword">end</span>
+0248 <span class="keyword">if</span> keepUndefinedStoich==false
+0249     model=removeReactions(model,intersect(isUndefinedStoich,model.rxns),true,true);
+0250 <span class="keyword">end</span>
+0251 <span class="keyword">if</span> keepIncomplete==false
+0252     model=removeReactions(model,intersect(isIncomplete,model.rxns),true,true);
+0253 <span class="keyword">end</span>
+0254 <span class="keyword">if</span> keepGeneral==false
+0255     model=removeReactions(model,intersect(isGeneral,model.rxns),true,true);
+0256 <span class="keyword">end</span>
+0257 
+0258 <span class="keyword">end</span>
+0259 
+0260 <a name="_sub1" href="#_subfunctions" class="code">function output = isNewestFile(ravenPath)</a>
+0261 <span class="comment">%The ad hoc function, which checks whether keggModel.mat is the more</span>
+0262 <span class="comment">%recently modified than keggRxns.mat, keggGenes.mat and keggRxns.mat</span>
+0263 modelFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggModel.mat'</span>);
+0264 rxnsFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggRxns.mat'</span>);
+0265 genesFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggGenes.mat'</span>);
+0266 metsFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggMets.mat'</span>);
+0267 <span class="keyword">if</span> (<a href="#_sub2" class="code" title="subfunction modTime = getFileTime(fileName)">getFileTime</a>(modelFile)&gt;<a href="#_sub2" class="code" title="subfunction modTime = getFileTime(fileName)">getFileTime</a>(rxnsFile))&amp;&amp;<span class="keyword">...</span>
+0268         (<a href="#_sub2" class="code" title="subfunction modTime = getFileTime(fileName)">getFileTime</a>(modelFile)&gt;<a href="#_sub2" class="code" title="subfunction modTime = getFileTime(fileName)">getFileTime</a>(genesFile))&amp;&amp;<span class="keyword">...</span>
+0269         (<a href="#_sub2" class="code" title="subfunction modTime = getFileTime(fileName)">getFileTime</a>(modelFile)&gt;<a href="#_sub2" class="code" title="subfunction modTime = getFileTime(fileName)">getFileTime</a>(metsFile))
+0270     output=1;
+0271 <span class="keyword">else</span>
+0272     output=0;
+0273 <span class="keyword">end</span>
 0274 <span class="keyword">end</span>
-0275 <span class="keyword">end</span>
-0276 
-0277 <a name="_sub2" href="#_subfunctions" class="code">function modTime = getFileTime(fileName)</a>
-0278 <span class="comment">%Gets a last modification time for a particular file in datenum format that</span>
-0279 <span class="comment">%the numbers could be easily compared for different files</span>
-0280 listing = dir(fileName);
-0281 assert(numel(listing) == 1, <span class="string">'No such file: %s'</span>, fileName);
-0282 modTime = listing.datenum;
-0283 format long;
-0284 <span class="keyword">end</span></pre></div>
+0275 
+0276 <a name="_sub2" href="#_subfunctions" class="code">function modTime = getFileTime(fileName)</a>
+0277 <span class="comment">%Gets a last modification time for a particular file in datenum format that</span>
+0278 <span class="comment">%the numbers could be easily compared for different files</span>
+0279 listing = dir(fileName);
+0280 assert(numel(listing) == 1, <span class="string">'No such file: %s'</span>, fileName);
+0281 modTime = listing.datenum;
+0282 format long;
+0283 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

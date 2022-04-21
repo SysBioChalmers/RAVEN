@@ -55,10 +55,8 @@ blastStructure=[];
 diamondReport.dbHashes={};
 diamondReport.diamondTxtOutput={};
 
-%Get the directory for RAVEN Toolbox. This may not be the easiest or best
-%way to do this
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
+%Get the directory for RAVEN Toolbox.
+ravenPath=findRAVENroot();
 
 %Generate temporary names for DIAMOND databases and output files
 tmpDB=tempname;

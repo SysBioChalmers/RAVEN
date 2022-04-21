@@ -30,10 +30,8 @@ if ispc || ismac
     dispEM(EM);
 end
 
-%Get the directory for RAVEN Toolbox. This may not be the easiest or best
-%way to do this
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
+%Get the directory for RAVEN Toolbox
+ravenPath=findRAVENroot();
 
 %Temporary output name
 outFile=tempname;

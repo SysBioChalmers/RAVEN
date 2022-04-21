@@ -313,10 +313,8 @@ cores = strsplit(cores, 'MATLAB was assigned: ');
 cores = regexp(cores{2},'^\d*','match');
 cores = cores{1};
 
-%Get the directory for RAVEN Toolbox. This is to get the path to the third
-%party software used
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+%Get the directory for RAVEN Toolbox.
+ravenPath=findRAVENroot();
 
 %Checking if dataDir is consistent. It must point to pre-trained HMMs set,
 %compatible with the the current RAVEN version. The user may have the

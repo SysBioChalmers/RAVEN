@@ -57,10 +57,8 @@ blastReport.dbHashes.psq={};
 blastReport.dbHashes.pto={};
 blastReport.blastTxtOutput={};
 
-%Get the directory for RAVEN Toolbox. This may not be the easiest or best
-%way to do this
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
+%Get the directory for RAVEN Toolbox
+ravenPath=findRAVENroot();
 
 %Generate temporary names for BLAST databases and output files
 tmpDB=tempname;

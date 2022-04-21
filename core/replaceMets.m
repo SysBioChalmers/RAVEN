@@ -68,9 +68,11 @@ metCompsN = strcat(lower(model.metNames),'[',metCompsN,']');
 idxDelete=[];
 for i = 1:length(repIdx)
     metCompsNidx=find(strcmp(metCompsN(repIdx(i)), metCompsN));
-    if gt(length(metCompsNidx),1) % If more than 1 metabolite matches
-        model.S(metCompsNidx(1),:) = model.S(metCompsNidx(1),:) + model.S(metCompsNidx(2:end),:);
-        idxDelete=[idxDelete; metCompsNidx(2:end)]; % Make list of metabolite IDs to delete
+    if length(metCompsNidx)>1
+        for j = 2:length(metCompsNidx)
+            model.S(metCompsNidx(1),:) = model.S(metCompsNidx(1),:) + model.S(metCompsNidx(j),:);
+            idxDelete=[idxDelete; metCompsNidx(j)]; % Make list of metabolite IDs to delete
+        end
     end
 end
 

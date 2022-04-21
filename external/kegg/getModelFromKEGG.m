@@ -60,8 +60,7 @@ if nargin<5
     keepGeneral=false;
 end
 
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+ravenPath=findRAVENroot();
 modelFile=fullfile(ravenPath,'external','kegg','keggModel.mat');
 if exist(modelFile, 'file') && isNewestFile(ravenPath)
     fprintf(['Importing the global KEGG model from ' strrep(modelFile,'\','/') '... ']);

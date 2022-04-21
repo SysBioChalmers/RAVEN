@@ -6,8 +6,7 @@ function updateDocumentation()
 %	Usage: updateDocumentation()
 
 %Get the RAVEN path
-[ST, I]=dbstack('-completenames');
-[ravenDir,~,~]=fileparts(fileparts(ST(I).file));
+ravenDir=findRAVENroot();
 %Make sure that RAVEN-provided m2html is used
 path(fullfile(ravenDir,'software','m2html'),path);
 %Get a non-redundant list of RAVEN subdirectories containing MATLAB
