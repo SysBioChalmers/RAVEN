@@ -54,6 +54,8 @@ RAVENver = getToolboxVersion('RAVEN','ravenCobraWrapper.m',mainBranchFlag);
 COBRAver = getToolboxVersion('COBRA','initCobraToolbox.m',mainBranchFlag);
 
 %Retrieve libSBML version:
+[ravenDir,prevDir]=findRAVENroot();
+cd(fullfile(ravenDir,'software','libSBML'));
 try % 5.17.0 and newer
     libSBMLver=OutputSBML;
     libSBMLver=libSBMLver.libSBML_version_string;
@@ -64,6 +66,7 @@ catch % before 5.17.0
     libSBMLver=libSBMLver.libSBML_version_string;
     delete('tempModelForLibSBMLversion.xml');
 end
+cd(prevDir)
 
 % Make models folder, no warnings if folder already exists
 if subDirs
