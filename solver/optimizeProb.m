@@ -31,7 +31,10 @@ defaultparams.timeLimit      = 1000;
 defaultparams.intTol         = 1e-12;
 defaultparams.relMipGapTol   = 1e-12;
 defaultparams.absMipGapTol   = 1e-12;
-
+if milp
+    defaultparams.MIPGap     = 1e-12; 
+    defaultparams.Seed       = 0
+end
 solver=getpref('RAVEN','solver');
 
 switch solver
@@ -49,6 +52,9 @@ switch solver
     case 'gurobi'
     if milp
         solverparams.OutputFlag = 1;
+        solverparams.intTol = 10^-9; %min val for gurobi
+        solverparams.MIPGap = defaultparams.MIPGap;
+        solverparams.Seed = defaultparams.Seed;
     else
         solverparams.OutputFlag = 0;
     end
@@ -60,11 +66,26 @@ switch solver
     solverparams = structUpdate(solverparams,params);
     
     % Restructering problem according to gurobi format
-    prob.csense = renameparams(prob.csense, {'L','G','E'}, {'<','>','='});
-    prob.osense = renameparams(num2str(prob.osense), {'1','-1'}, {'min','max'});
+    if isfield(prob, 'csense')
+        prob.csense = renameparams(prob.csense, {'L','G','E'}, {'<','>','='});
+        prob.sense = prob.csense;
+        prob = rmfield(prob, {'csense'});
+    end
+    if isfield(prob, 'osense')
+        prob.osense = renameparams(num2str(prob.osense), {'1','-1'}, {'min','max'});
+        prob.modelsense = prob.osense;
+        prob = rmfield(prob, {'osense'});
+    end
+    [prob.obj, prob.rhs] = deal(prob.c, prob.b);
+    prob = rmfield(prob, {'c','b'});
     
-    [prob.obj, prob.rhs, prob.sense, prob.modelsense] = deal(prob.c, prob.b, prob.csense, prob.osense);
-    prob = rmfield(prob, {'c','b','csense','osense'});
+    %Rename intTol to IntFeasTol
+    if milp
+        solverparams.IntFeasTol = solverparams.intTol;
+        solverparams  = rmfield(solverparams, {'intTol'});
+        prob.vtype = prob.vartype;
+        prob  = rmfield(prob, {'vartype'});
+    end
     
     resG = gurobi(prob,solverparams);
     
@@ -85,6 +106,8 @@ switch solver
         end
         if ~milp
             [res.vbasis, res.cbasis] = deal(resG.vbasis, resG.cbasis);
+		else
+			res.mipgap = resG.mipgap; 
         end
     catch
         res.stat = 0;
