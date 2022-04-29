@@ -1,7 +1,8 @@
-function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,noRevLoops,params)
+function [outModel, deletedRxns, metProduction, fValue]=runINIT_legacy(model,rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,noRevLoops,params)
 % runINIT
 %	Generates a model using the INIT algorithm, based on proteomics and/or
-%   transcriptomics and/or metabolomics and/or metabolic tasks
+%   transcriptomics and/or metabolomics and/or metabolic tasks. This is the 
+%   original implementation, which is now replaced with ftINIT.
 %
 %   model           a reference model structure
 %   rxnScores       a vector of scores for the reactions in the model.
