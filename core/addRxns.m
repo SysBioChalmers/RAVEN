@@ -312,7 +312,7 @@ if isfield(rxnsToAdd,'ub')
     end
     %Fill with standard if it doesn't exist
     if ~isfield(newModel,'ub')
-        newModel.ub=repmat(newUb,nOldrxns,1);
+        newModel.ub=repmat(newUb,nOldRxns,1);
     end
     newModel.ub=[newModel.ub;rxnsToAdd.ub(:)];
 else

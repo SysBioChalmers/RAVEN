@@ -27,12 +27,6 @@ function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)
 %
 %   Usage: [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params, scores)
 
-% glpk solver as implemented by COBRA does not work well for MILP.
-global CBT_MILP_SOLVER
-if strcmp(getpref('RAVEN','solver'),'cobra') && strcmp(CBT_MILP_SOLVER,'glpk')
-    dispEM('The current solver is set to ''cobra'', while in COBRA the MILP solver has been set to ''glpk''. The COBRA implementation of glpk is not well suitable for solving MILPs. Please install the Gurobi or an alternative MILP solver.',true);
-end
-
 exitFlag=1;
 
 if nargin<2

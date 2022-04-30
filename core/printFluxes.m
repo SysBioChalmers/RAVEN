@@ -32,7 +32,7 @@ function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputS
 %               hand sides are lumped
 %
 %   Usage: printFluxes(model, fluxes, onlyExchange, cutOffFlux,
-%           outputFile,outputString)
+%           outputFile,outputString,metaboliteList)
 
 if nargin<3
     onlyExchange=true;

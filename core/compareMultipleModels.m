@@ -184,10 +184,9 @@ if exist('tsne') > 0
     axis_labels = {'tSNE 1';'tSNE 2';'tSNE 3'};
     fprintf('*** Done \n\n')
 else
-    fprintf('\nWARNING: Could not complete full structural comparison because the function \n')
-    fprintf('         "tsne" does not exist in your Matlab version. \n')
+    fprintf('\nWARNING: Could not complete full structural comparison because the MATLAB\n')
+    fprintf('         stats toolbox containing the "tsne" function is absent. \n')
     fprintf('         Using MDS to project data instead of tSNE. \n')
-    fprintf('         Please upgrade to Matlab 2017b or higher for full functionality. \n\n')
     [proj_coords,stress,disparities] = mdscale(pdist(double(binary_matrix'),'hamming'),3);
     compStruct.structCompMap = proj_coords;
     axis_labels = {'MDS 1';'MDS 2';'MDS 3'};

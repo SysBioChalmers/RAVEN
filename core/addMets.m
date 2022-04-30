@@ -243,6 +243,9 @@ if isfield(metsToAdd,'metCharges')
         EM='metsToAdd.metCharges must be of type "double"';
         dispEM(EM);
     end
+    if ~isfield(newModel,'metCharges')
+        newModel.metCharges=NaN(numel(largeFiller),1);
+    end
     newModel.metCharges=[newModel.metCharges;metsToAdd.metCharges(:)];
 else
     %Add default
@@ -264,7 +267,7 @@ if isfield(metsToAdd,'metNotes')
     if ~isfield(newModel,'metNotes')
         newModel.metNotes=largeFiller;
     end
-    newModel.metNotes=[newModel.inchis;metsToAdd.metNotes(:)];
+    newModel.metNotes=[newModel.metNotes;metsToAdd.metNotes(:)];
 else
     %Add empty strings if structure is in model
     if isfield(newModel,'metNotes')
@@ -323,19 +326,6 @@ if copyInfo==true
         if isfield(newModel,'metCharges')
             newModel.metCharges(I(i))=newModel.metCharges(J(i));
         end
-    end
-end
-end
-
-%For getting the numerical form of metabolite ids on the form "m1".
-function I=getInteger(s)
-%Checks if a string is on the form "m1" and if so returns the value of the
-%integer
-I=0;
-if strcmpi(s(1),'m')
-    t=str2double(s(2:end));
-    if ~isnan(t) && ~isempty(t)
-        I=t;
     end
 end
 end
