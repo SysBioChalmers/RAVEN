@@ -20,7 +20,8 @@ if ~(exist(inputFile,'file')==2)
     error('FASTA file %s cannot be found',string(inputFile));
 end
 
-if ~strcmp(kingdom,'animal') && ~strcmp(kingdom,'fungi') && ~strcmp(kingdom,'plant')
+kingdom=char(kingdom);
+if ~any(strcmp(kingdom,{'animal','fungi','plant'}))
     EM='Allowed kingdoms are "animal", "fungi", and "plant"';
     dispEM(EM);
 end

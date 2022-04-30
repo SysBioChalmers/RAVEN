@@ -41,9 +41,13 @@ if any(~ismember(formats, {'mat', 'txt', 'xlsx', 'xml', 'yml'}))
 end
 if nargin<3
     path='.';
+else
+    path=char(path);
 end
 if nargin<2
     prefix='model';
+else
+    prefix=char(prefix);
 end
 
 %Sort reactions, metabolites and genes alphabetically

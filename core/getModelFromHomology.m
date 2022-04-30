@@ -69,6 +69,8 @@ function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
 hitGenes.oldGenes = [];  % collect the old genes from the template model (organism)
 hitGenes.newGenes = [];  % collect the new genes of the draft model (target organism)
 
+getModelFor=char(getModelFor);
+
 if nargin<4
     preferredOrder=[];
 end

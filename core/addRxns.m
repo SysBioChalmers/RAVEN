@@ -103,9 +103,13 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allow
 
 if nargin<4
     compartment=[];
+else
+    compartment=char(compartment);
 end
 if nargin<5
     allowNewMets=false;
+elseif ~islogical(allowNewMets)
+    allowNewMets=char(allowNewMets);
 end
 if nargin<6
     allowNewGenes=false;
@@ -147,10 +151,7 @@ elseif ~ismember(eqnType,[1 2 3])
 end
 
 if eqnType==2 || (eqnType==1 && allowNewMets==true)
-    if ~ischar(compartment)
-        EM='compartment must be a string';
-        dispEM(EM);
-    end
+    compartment=char(compartment);
     if ~ismember(compartment,model.comps)
         EM='compartment must match one of the compartments in model.comps';
         dispEM(EM);

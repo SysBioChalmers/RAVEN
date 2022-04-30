@@ -46,6 +46,8 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 
 if nargin<1
     keggPath='RAVEN/external/kegg';
+else
+    keggPath=char(keggPath);
 end
 if nargin<2
     keepSpontaneous=true;

@@ -58,6 +58,8 @@ if nargin<3
 end
 if nargin<4
     prefix='m_';
+else
+    prefix=char(prefix);
 end
 
 newModel=model;

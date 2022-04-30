@@ -41,14 +41,15 @@ end
 if isempty(rxnList)
     rxnList=model.rxns;
 end
-if nargin<3
+if nargin<3 || isempty(outputString)
     outputString='%rxnID (%rxnName)\n\t%eqn [%lower %upper]\n';
-end
-if isempty(outputString)
-    outputString='%rxnID (%rxnName)\n\t%eqn [%lower %upper]\n';
+else
+    outputString=char(outputString);
 end
 if nargin<4
     outputFile=[];
+else
+    outputFile=char(outputFile);
 end
 if nargin<5
     metaboliteList=[];

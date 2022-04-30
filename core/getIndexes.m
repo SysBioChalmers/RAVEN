@@ -29,6 +29,7 @@ end
 if ischar(objects)
     objects={objects};
 end
+type=char(type);
 
 indexes=[];
 

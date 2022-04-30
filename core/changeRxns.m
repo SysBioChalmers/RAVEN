@@ -70,6 +70,7 @@ end
 if ischar(equations)
     equations={equations};
 end
+compartment=char(compartment);
 
 %Find the indexes of the reactions and throw an error if they aren't all
 %found

@@ -17,6 +17,9 @@ function model=replaceMets(model,metabolite,replacement,verbose)
 %
 %   Usage: model=replaceMets(model,metabolite,replacement,verbose)
 
+metabolite=char(metabolite);
+replacement=char(replacement);
+
 if nargin<4
     verbose=false;
 end

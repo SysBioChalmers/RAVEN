@@ -47,16 +47,16 @@ if nargin<5
     fid=1;
 else
     if ~isempty(outputFile)
+        outputFile=char(outputFile);
         fid=fopen(outputFile,'w');
     else
         fid=1;
     end
 end
-if nargin<6
+if nargin<6 || isempty(outputString)
     outputString='%rxnID\t(%rxnName):\t%flux\n';
-end
-if isempty(outputString)
-    outputString='%rxnID\t(%rxnName):\t%flux\n';
+else
+    outputString=char(outputString);
 end
 if nargin<7
     metaboliteList={};

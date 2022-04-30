@@ -15,6 +15,7 @@ function md5Hash=getMD5Hash(inputFile,binEnd)
 %   md5Hash         string containing an MD5 hash for inputFile
 %   
 %   Usage: md5Hash=getMD5Hash(inputFile,binEnd)
+inputFile=char(inputFile);
 
 if nargin<2
     if isunix
@@ -28,6 +29,8 @@ if nargin<2
     else
         error('Unknown OS, exiting.')
     end
+else
+    binEnd=char(binEnd);
 end
 
 %Check if binEnd is valid

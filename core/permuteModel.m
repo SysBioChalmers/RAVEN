@@ -15,7 +15,7 @@ function newModel=permuteModel(model, indexes, type)
 % 	Usage: newModel=permuteModel(model, indexes, type)
 
 newModel=model;
-indexes=indexes(:);
+type=char(type);
 
 switch type
     case 'rxns'

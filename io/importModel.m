@@ -72,7 +72,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %         consensus network model formulation.
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
-
+fileName=char(fileName);
 if nargin<2
     removeExcMets=true;
 end

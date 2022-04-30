@@ -15,6 +15,7 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
 %                       identifiers (opt, default false)
 %
 %   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
+fileName=char(fileName);
 if nargin<3
     exportGeneComplexes=false;
 end

@@ -25,9 +25,7 @@ function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,o
 %   Usage: [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,...
 %           isRev,onlyToExisting,prefix)
 
-if iscell(fromComp)
-    fromComp=fromComp{1};
-end
+fromComp=char(fromComp);
 [I, fromID]=ismember(model.comps,fromComp);
 fromID=find(fromID);
 if sum(I)~=1
@@ -61,6 +59,8 @@ if nargin<6
 end
 if nargin<7
     prefix='tr_';
+else
+    prefix=char(prefix);
 end
 
 %Check that the names are unique

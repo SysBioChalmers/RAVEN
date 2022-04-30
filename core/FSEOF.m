@@ -23,6 +23,9 @@ function targets=FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputF
 %
 %   Usage: targets=FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile)
 
+biomassRxn=char(biomassRxn);
+targetRxn=char(targetRxn);
+
 if nargin<4
     iterations=10;
     coefficient=0.9;
@@ -96,6 +99,7 @@ end
 %Generating output
 formatSpec='%s\t%s\t%s\t%s\t%s\t%s\t%s\n';
 if output == 1    %Output to a file
+    outputFile=char(outputFile);
     fid=fopen(outputFile,'w');
     fprintf(fid,formatSpec,'Slope','rowID','Enzyme ID','Enzyme Name','Subsystems','Direction','Gr Rule');
 else              %Output to screen

@@ -18,6 +18,8 @@ function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)
 
 if nargin<2
     reactionType='both';
+else
+    reactionType=char(reactionType);
 end
 
 hasNoProducts=sparse(numel(model.rxns),1);

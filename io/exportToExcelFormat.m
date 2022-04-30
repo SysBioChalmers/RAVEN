@@ -19,6 +19,7 @@ function exportToExcelFormat(model,filename,sortIds)
 %         checkModelStruct to identify problems in the model structure
 %
 %   Usage: exportToExcelFormat(model,filename,sortIds)
+filename=char(filename);
 if nargin<3
     sortIds=false;
 end

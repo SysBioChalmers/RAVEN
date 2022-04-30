@@ -62,6 +62,8 @@ if nargin < 5 || isempty(funcCompare)
 end
 if nargin < 6
     taskFile = [];
+else
+    taskFile=char(taskFile);
 end
 if numel(models) <= 1
     EM = 'Cannot compare only one model. Use printModelStats if you want a summary of a model';

@@ -23,6 +23,8 @@ end
 
 if nargin<2
     metParam='metNames';
+else
+    metParam=char(metParam);
 end
 
 if nargin<3

@@ -35,12 +35,15 @@ function model=editMiriam(model,type,object,miriamName,miriams,keep)
 %       model       model structure with updated MIRIAM annotation field
 %   
 %   Usage: model=editMiriam(model,type,object,miriamName,miriams,keep)
+miriamName=char(miriamName);
 
 %Check 'keep' input
+keep=char(keep);
 if ~any(strcmp(keep,{'replace','fill','add'}))
     error('Invalid ''keep'', should be ''replace'',''fill'',''add''.')
 end
 %Check 'type' input
+type=char(type);
 if ~any(strcmp(type,{'met','gene','rxn','comp'}))
     error('Invalid ''type'', should be ''met'', ''gene'', ''rxn'' or ''comp''.')
 end

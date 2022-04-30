@@ -14,9 +14,11 @@ function exportModelToSIF(model,fileName,graphType,rxnLabels,metLabels)
 %                 model.mets)
 %
 %   Usage: exportModelToSIF(model,fileName,graphType,rxnLabels,metLabels)
-
+fileName=char(fileName);
 if nargin<3
     graphType='rc';
+else
+    graphType=char(graphType);
 end
 
 if nargin<4
