@@ -14,8 +14,8 @@ sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
 load(fullfile(sourceDir,'testing','unit_tests','test_data','ecoli_textbook.mat'), 'model');
 
 %Prevent writing of messages to command window
-evalc('modelCobra=ravenCobraWrapper(model);')
-evalc('modelRaven=ravenCobraWrapper(modelCobra);')
+evalc('modelCobra=ravenCobraWrapper(model);');
+evalc('modelRaven=ravenCobraWrapper(modelCobra);');
 
 %We know that the annotation field is lost
 modelNoAnnot=rmfield(model,'annotation');
