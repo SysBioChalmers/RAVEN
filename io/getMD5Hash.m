@@ -26,15 +26,13 @@ if nargin<2
     elseif ispc
         binEnd='.exe';
     else
-        dispEM('Unknown OS, exiting.')
-        return
+        error('Unknown OS, exiting.')
     end
 end
 
 %Check if binEnd is valid
-if ~strcmp(binEnd,'.mac') && ~strcmp(binEnd,'') && ~strcmp(binEnd,'.exe')
-   dispEM('Unknown OS, exiting.')
-   return
+if ~any(strcmp(binEnd,{'.mac','','.exe'}))
+   error('Unknown OS, exiting.')
 end
 
 %Check file existence

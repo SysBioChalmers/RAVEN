@@ -25,13 +25,13 @@ function blastStructure=makeFakeBlastStructure(orthologList,sourceModelID,getMod
 %                       running getModelFromHomology
 
 if nargin<3
-    throw(MException('','All three parameters should be set'));
+    error('All three parameters should be set');
 end
 
 % Check whether orthologList is a cell array, with two columns, and more
 % than 10 rows
 if (~iscell(orthologList) || ~(size(orthologList,2)==2) || ~(size(orthologList,1)>=10))
-    throw(MException('','orthologList should be a cell array with two columns'));
+    error('orthologList should be a cell array with two columns');
 end
 
 blastStructure(1).fromId=sourceModelID;

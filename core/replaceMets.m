@@ -26,15 +26,13 @@ end
 % possible.
 repIdx = find(strcmp(replacement,model.metNames));
 if isempty(repIdx)
-    EM='The replacement metabolite name cannot be found in the model.'
-    dispEM(EM,true);
+    error('The replacement metabolite name cannot be found in the model.');
 end
 
 % Change name and information from metabolite to replacement metabolite
 metIdx = find(strcmp(metabolite,model.metNames));
 if isempty(metIdx)
-    EM='The to-be-replaced metabolite name cannot be found in the model.'
-    dispEM(EM,true);
+    error('The to-be-replaced metabolite name cannot be found in the model.');
 end
 if verbose==true
     fprintf('\n\nThe following reactions contain the replaced metabolite as reactant:\n')
