@@ -61,7 +61,7 @@ else
 end
 
 %%
-%Open actual MAFFT results file
+%Open actual cdhit results file
 actCdhitOutput=importdata(fullfile(outFile));
 
 %Remove the old tempfiles
