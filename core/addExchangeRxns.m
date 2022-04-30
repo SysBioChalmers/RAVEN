@@ -23,6 +23,8 @@ function [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
 
 if nargin<3
     mets=model.mets;
+elseif ~islogical(mets) && ~isnumeric(mets)
+    mets=convertCharArray(mets);
 end
 J=getIndexes(model,mets,'mets',false);
 mets=model.mets(J);

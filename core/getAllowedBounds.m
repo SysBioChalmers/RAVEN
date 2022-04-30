@@ -18,7 +18,8 @@ function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns)
 
 if nargin<2
     rxns=1:numel(model.rxns);
-else
+elseif ~islogical(rxns) && ~isnumeric(rxns)
+    rxns=convertCharArray(rxns);
     rxns=getIndexes(model,rxns, 'rxns');
 end
 

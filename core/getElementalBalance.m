@@ -28,6 +28,8 @@ function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUn
 
 if nargin<2
     rxns=[];
+elseif ~islogical(rxns) && ~isnumeric(rxns)
+    rxns=convertCharArray(rxns);
 end
 
 if nargin<3

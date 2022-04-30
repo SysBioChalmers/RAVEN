@@ -30,6 +30,7 @@ if nargin<2 || strcmp(miriamNames,'all')
     extractAllTypes=true;
 else
     extractAllTypes=false;
+    miriamNames=convertCharArray(miriamNames);
 end
 
 %The annotation for all miriam names should be extracted
@@ -43,11 +44,6 @@ if extractAllTypes
         end
     end
     miriamNames=sort(unique(miriamNames));
-end
-
-%Ensure that the list of miriam names is in appropriate structure
-if ischar(miriamNames)
-    miriamNames={miriamNames};
 end
 
 %Aggregate the final cell array table with extracted miriam information

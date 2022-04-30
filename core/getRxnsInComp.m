@@ -13,9 +13,7 @@ function [I, rxnNames]=getRxnsInComp(model,comp,includePartial)
 %
 %   Usage: [I, rxnNames]=getRxnsInComp(model,comp,includePartial)
 
-if ischar(comp)
-    comp={comp};
-end
+comp=char(comp);
 if nargin<3
     includePartial=false;
 end

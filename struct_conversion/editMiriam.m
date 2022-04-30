@@ -36,6 +36,7 @@ function model=editMiriam(model,type,object,miriamName,miriams,keep)
 %   
 %   Usage: model=editMiriam(model,type,object,miriamName,miriams,keep)
 miriamName=char(miriamName);
+miriams=convertCharArray(miriams);
 
 %Check 'keep' input
 keep=char(keep);
@@ -52,8 +53,9 @@ if islogical(object)
     idxInModel=find(object);
 elseif isnumeric(object)
     idxInModel=object;
-elseif ischar(object)
-    if strcmp(object,'all')
+else
+    object=convertCharArray(object);
+    if numel(object)==1 && strcmp(object{1},'all')
         idxInModel=1:numel(model.([type,'s']));
     else
         idxInModel=getIndexes(model,object,[type,'s']);
@@ -61,16 +63,8 @@ elseif ischar(object)
             dispEM('The following objects cannot be found in the model: ',true,object(~idxInModel))
         end
     end
-else
-    [~,idxInModel]=ismember(object,model.([type,'s']));
-    if ~all(idxInModel)
-        dispEM('The following objects cannot be found in the model: ',true,object(~idxInModel))
-    end
 end
 %Check 'miriams' input
-if ischar(miriams)
-    miriams={miriams};
-end
 if numel(miriams)==1 && numel(idxInModel)~=1
     miriams=repmat(miriams,numel(idxInModel),1);
 elseif numel(miriams)~=numel(idxInModel)

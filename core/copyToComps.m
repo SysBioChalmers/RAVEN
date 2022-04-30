@@ -27,16 +27,22 @@ function model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutsi
 
 if nargin<3
     rxns=model.rxns;
+elseif ~islogical(rxns) && ~isnumeric(rxns)
+    rxns=convertCharArray(rxns);
 end
 if nargin<4
     deleteOriginal=false;
 end
 if nargin<5
     compNames=toComps;
+else
+    compNames=convertCharArray(compNames);
 end
 if nargin<6
     compOutside=cell(numel(toComps),1);
     compOutside(:)={''};
+else
+    compOutside=convertCharArray(compOutside);
 end
 
 originalID=model.id;
@@ -46,7 +52,7 @@ rxns=getIndexes(model,rxns,'rxns');
 
 for i=1:numel(toComps)
     %Check if the compartment exists, otherwise add it
-    [I J]=ismember(toComps(i),model.comps);
+    [I,J]=ismember(toComps(i),model.comps);
     if I==false
         model.comps=[model.comps;toComps(i)];
         model.compNames=[model.compNames;compNames(i)];
@@ -77,6 +83,10 @@ for i=1:numel(toComps)
     %Merge the models
     model=mergeModels({model;modelToAdd},'metNames');
 end
+
+model=rmfield(model,'rxnFrom');
+model=rmfield(model,'metFrom');
+model=rmfield(model,'geneFrom');
 
 if deleteOriginal==true
     model=removeReactions(model,rxns,true,true,true); %Also delete unused compartments

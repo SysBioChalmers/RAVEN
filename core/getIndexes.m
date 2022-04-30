@@ -24,10 +24,8 @@ if nargin<4
     returnLogical=false;
 end
 
-%If the supplied object is a character array, then convert it to a cell
-%array
-if ischar(objects)
-    objects={objects};
+if ~islogical(objects) && ~isnumeric(objects)
+    objects=convertCharArray(objects);
 end
 type=char(type);
 
@@ -80,7 +78,7 @@ if iscell(objects)
         elseif ~isempty(index)
             indexes(i)=index;
         else
-            error(['Could not find object ' objects{i} ' in the model']);
+            error(['Could not find object ''' objects{i} ''' in the model']);
         end
     end
 else

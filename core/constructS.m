@@ -22,6 +22,14 @@ function [S, mets, badRxns, reversible]=constructS(equations,mets,rxns)
 %
 %   Usage: [S, mets, badRxns, reversible]=constructS(equations,mets)
 
+equations=convertCharArray(equations);
+switch nargin
+    case 2
+        mets=convertCharArray(mets);
+    case 3
+        rxns=convertCharArray(rxns);
+end
+
 badRxns=false(numel(equations),1);
 
 %Check that no equations are too short to have reversibility data

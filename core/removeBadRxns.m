@@ -74,12 +74,16 @@ if nargin<2
 end
 if nargin<3
     ignoreMets=[];
+elseif ~islogical(ignoreMets) && ~isnumeric(ignoreMets)
+    ignoreMets=convertCharArray(ignoreMets);
 end
 if nargin<4
     isNames=false;
 end
 if nargin<5
     balanceElements={'C';'P';'S';'N';'O'};
+else
+    balanceElements=convertCharArray(balanceElements);
 end
 if nargin<6
     refModel=[];

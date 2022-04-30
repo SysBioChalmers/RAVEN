@@ -50,8 +50,8 @@ function [exchModel,unusedMets] = setExchangeBounds(model,mets,lb,ub,closeOthers
 % handle input arguments
 if nargin < 2
     mets = [];
-elseif ischar(mets)
-    mets = {mets};  % in case only one metabolite is provided as a string
+elseif ~islogical(mets) || ~isnumeric(mets)
+    mets=convertCharArray(mets);
 end 
 
 if nargin < 3 || isempty(lb)

@@ -14,7 +14,10 @@ end
 setRavenSolver('glpk');
 
 try
-    sol=solveLP(model);
+    % Try all three types of flux minimization
+    evalc('sol=solveLP(model,3);');    
+    evalc('sol=solveLP(model,1);');
+    evalc('sol=solveLP(model,0);');
 catch
     try
         setRavenSolver(oldSolver);
@@ -31,7 +34,7 @@ end
 
 load([sourceDir,'/test_data/solverTestOutput.mat'], 'solGlpk');
 %Check that the actual model is the same as the expected model
-verifyEqual(testCase,sol,solGlpk,'AbsTol',1e-7)
+verifyEqual(testCase,sol,solGlpk,'AbsTol',1e-5)
 end
 
 function testGurobi(testCase)
@@ -44,7 +47,10 @@ end
 setRavenSolver('gurobi');
 
 try
-    sol=solveLP(model);
+    % Try all three types of flux minimization
+    evalc('sol=solveLP(model,3);');    
+    evalc('sol=solveLP(model,1);');
+    evalc('sol=solveLP(model,0);');
 catch
     try
         setRavenSolver(oldSolver);
@@ -61,7 +67,7 @@ end
 
 load([sourceDir,'/test_data/solverTestOutput.mat'], 'solGurobi');
 %Check that the actual model is the same as the expected model
-verifyEqual(testCase,sol,solGurobi,'AbsTol',1e-7)
+verifyEqual(testCase,sol,solGurobi,'AbsTol',1e-5)
 end
 
 function testCobra(testCase)
@@ -76,7 +82,10 @@ CBT_LP_SOLVER = 'glpk';
 setRavenSolver('cobra');
 
 try
-    sol=solveLP(model);
+    % Try all three types of flux minimization
+    evalc('sol=solveLP(model,3);');    
+    evalc('sol=solveLP(model,1);');
+    evalc('sol=solveLP(model,0);');
 catch
     try
         setRavenSolver(oldSolver);
@@ -93,5 +102,5 @@ end
 
 load([sourceDir,'/test_data/solverTestOutput.mat'], 'solCobra');
 %Check that the actual model is the same as the expected model
-verifyEqual(testCase,sol,solCobra,'AbsTol',1e-6)
+verifyEqual(testCase,sol,solCobra,'AbsTol',1e-5)
 end

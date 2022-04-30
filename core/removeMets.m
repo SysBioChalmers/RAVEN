@@ -22,9 +22,8 @@ function reducedModel=removeMets(model,metsToRemove,isNames,removeUnusedRxns,rem
 %
 %   Usage: reducedModel=removeMets(model,metsToRemove,isNames,...
 %           removeUnusedRxns,removeUnusedGenes,removeUnusedComps)
-
-if ischar(metsToRemove)
-    metsToRemove={metsToRemove};
+if ~islogical(metsToRemove) && ~isnumeric(metsToRemove)
+    metsToRemove=convertCharArray(metsToRemove);
 end
 
 if nargin<3
@@ -43,16 +42,9 @@ if nargin<6
     removeUnusedComps=false;
 end
 
-if isNames==true
-    %Check that metsToRemove is a cell array
-    if iscellstr(metsToRemove)==false
-        if ischar(metsToRemove)
-            metsToRemove={metsToRemove};
-        else
-            EM='Must supply a cell array of strings if isNames=true';
-            dispEM(EM);
-        end
-    end
+%Check that metsToRemove is a cell array
+if isNames==true && ~iscell(metsToRemove)
+    error('Must supply a cell array of strings if isNames=true');
 end
 
 reducedModel=model;
