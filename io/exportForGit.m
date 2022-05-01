@@ -31,9 +31,8 @@ if nargin<5
 end
 if nargin<4 || isempty(formats)
     formats={'mat', 'txt', 'xlsx', 'xml', 'yml'};
-end
-if ischar(formats)
-    formats={formats};
+else
+    formats=convertCharArray(formats);
 end
 if any(~ismember(formats, {'mat', 'txt', 'xlsx', 'xml', 'yml'}))
     EM='Unknown file format defined. Only mat, txt, xlsx, xml and yml are allowed file formats.';

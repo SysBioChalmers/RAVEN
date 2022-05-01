@@ -60,6 +60,8 @@ else
 end
 if nargin<7
     metaboliteList={};
+else
+    metaboliteList=convertCharArray(metaboliteList);
 end
 if numel(fluxes)~=numel(model.rxns)
     EM='The number of fluxes and the number of reactions must be the same';

@@ -73,6 +73,8 @@ getModelFor=char(getModelFor);
 
 if nargin<4
     preferredOrder=[];
+else
+    preferredOrder=convertCharArray(preferredOrder);
 end
 if nargin<5
     strictness=1;
@@ -92,8 +94,6 @@ end
 if nargin<10
     mapNewGenesToOld=true;
 end
-
-preferredOrder=preferredOrder(:);
 
 if isfield(models,'S')
     models={models};

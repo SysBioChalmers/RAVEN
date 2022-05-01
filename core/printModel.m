@@ -35,11 +35,10 @@ function printModel(model,rxnList,outputString,outputFile,metaboliteList)
 %
 %   Usage: printModel(model,rxnList,outputString,outputFile,metaboliteList)
 
-if nargin<2
+if nargin<2 || isempty(rxnList)
     rxnList=model.rxns;
-end
-if isempty(rxnList)
-    rxnList=model.rxns;
+elseif ~islogical(rxnList) && ~isnumeric(rxnList)
+    rxnList=convertCharArray(rxnList);
 end
 if nargin<3 || isempty(outputString)
     outputString='%rxnID (%rxnName)\n\t%eqn [%lower %upper]\n';
@@ -53,6 +52,8 @@ else
 end
 if nargin<5
     metaboliteList=[];
+else
+    metaboliteList=convertCharArray(metaboliteList);
 end
 
 I=getIndexes(model,rxnList,'rxns',true)*1.00; %To convert it to "fluxes"
