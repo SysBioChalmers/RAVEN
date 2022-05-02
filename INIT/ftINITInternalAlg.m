@@ -1,4 +1,4 @@
-function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(model,rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,remPosRev,params)
+function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(model,rxnScores,metData,essentialRxns,prodWeight,allowExcretion,remPosRev,params)
 % ftINITInternalAlg
 %	Generates a model using the INIT algorithm, based on proteomics and/or
 %   transcriptomics and/or metabolomics and/or metabolic tasks
@@ -7,8 +7,8 @@ function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(m
 %   rxnScores       a vector of scores for the reactions in the model.
 %                   Positive scores are reactions to keep and negative
 %                   scores are reactions to exclude (opt, default all 0.0)
-%   presentMets     cell array with unique metabolite names that the model
-%                   should produce (opt, default [])
+%   metData         boolean matrix with mets as rows and rxns as columns
+%                   saying which reaction produces each detected met (opt, default [])
 %   essentialRxns   cell array of reactions that are essential and that
 %                   have to be in the resulting model. This is normally
 %                   used when fitting a model to task (see fitTasks) (opt,
@@ -59,12 +59,8 @@ if isempty(rxnScores)
     rxnScores=zeros(numel(model.rxns),1);
 end
 if nargin<3
-    presentMets={};
+    metData={};
 end
-if isempty(presentMets)
-    presentMets={};
-end
-presentMets=presentMets(:);
 if nargin<4
     essentialRxns={};
 end
@@ -90,22 +86,6 @@ if nargin<8
     params=[];
 end
 
-if numel(presentMets)~=numel(unique(presentMets))
-    EM='Duplicate metabolite names in presentMets';
-    dispEM(EM);
-end
-
-%Default is that the metabolites cannot be produced
-if ~isempty(presentMets)
-    metProduction=ones(numel(presentMets),1)*-2;
-    presentMets=upper(presentMets);
-    pmIndexes=find(ismember(presentMets,upper(model.metNames)));
-    metProduction(pmIndexes)=-1; %Then set that they are at least found
-else
-    metProduction=[];
-    pmIndexes=[];
-end
-
 %The model should be in the reversible format and all relevant exchange
 %reactions should be open
 if isfield(model,'unconstrained')
@@ -120,42 +100,6 @@ essential = ismember(model.rxns,essentialRxns);
 
 essentialIndex=find(essential);
 
-%Go through each of the presentMets (if they exist) and modify the S matrix
-%so that each reaction which produces any of them also produces a
-%corresponding fake metabolite and the opposite in the reverse direction.
-
-%This is to deal with the fact that there is no compartment info regarding
-%the presentMets. This modifies the irrevModel structure, but that is fine
-%since it's the model structure that is returned.
-%TODO: This is not yet implemented (metaboliomics support)
-if any(pmIndexes)
-    irrevModel.metNames=upper(irrevModel.metNames);
-    metsToAdd.mets=strcat({'FAKEFORPM'},num2str(pmIndexes));
-    metsToAdd.metNames=metsToAdd.mets;
-    metsToAdd.compartments=irrevModel.comps{1};
-    
-    %There is no constraints on the metabolites yet, since maybe not all of
-    %them could be produced
-    irrevModel=addMets(irrevModel,metsToAdd);
-end
-
-%Modify the matrix
-for i=1:numel(pmIndexes)
-    %Get the matching mets
-    I=ismember(irrevModel.metNames,presentMets(pmIndexes(i)));
-    
-    %Find the reactions where any of them are used.
-    [~, K, L]=find(irrevModel.S(I,:));
-    
-    %This ugly loop is to avoid problems if a metabolite occurs several
-    %times in one reaction
-    KK=unique(K);
-    LL=zeros(numel(KK),1);
-    for j=1:numel(KK)
-        LL(j)=sum(L(K==KK(j)));
-    end
-    irrevModel.S(numel(irrevModel.mets)-numel(pmIndexes)+i,KK)=LL;
-end
 
 %Some nice to have numbers
 nMets=numel(model.mets);
@@ -172,9 +116,30 @@ if remPosRev
     rxnScores(rxnScores > 0 & model.rev~=0) = 0;
 end
 
-posRxns = rxnScores > 0;
-negRxns = rxnScores < 0;
+%Handle metabolomics
+%A problem with the metabolomics is that some of the producer reactions
+%for a metabolite could be excluded from the problem. We solve this by
+%adding them with score 0. They can still be seen as positive, since they
+%either don't matter (there is another producer) or they can contribute to an 
+%increased score.
 revRxns=model.rev~=0; 
+essRevRxns = find(revRxns & essential);
+essIrrevRxns = find(~revRxns & essential);
+
+if ~isempty(metData)
+    %remove any metData rows that is connected to an essential rxn - 
+    %these will be on regardless and will cause problems below.
+    containsEssential = any(metData(:,essential),2);
+    metData = metData(~containsEssential,:);
+end
+
+if ~isempty(metData)
+    metRxns = any(metData,1).';
+    posRxns = rxnScores > 0 | ((rxnScores == 0) & metRxns); 
+else
+    posRxns = rxnScores > 0;
+end
+negRxns = rxnScores < 0;
 
 posRevRxns = find(posRxns & revRxns & ~essential);
 negRevRxns = find(negRxns & revRxns & ~essential);
@@ -184,10 +149,9 @@ nPosRev = numel(posRevRxns);
 nNegRev = numel(negRevRxns);
 nPosIrrev = numel(posIrrevRxns);
 nNegIrrev = numel(negIrrevRxns);
-essRevRxns = find(revRxns & essential);
-essIrrevRxns = find(~revRxns & essential);
 nEssRev = numel(essRevRxns);
 nEssIrrev = numel(essIrrevRxns);
+nMetabolMets = size(metData,1);
 
 milpModel = model;
 
@@ -225,41 +189,57 @@ milpModel = model;
 %    verb E {0,1}:  verp <= 100*verb (if bool is 0, verp is zero): verp - 100*verb + verv2 == 0, verv2 >= 0
 %    vern <= (1-verb)*100 (if bool is one, vern is zero): vern + 100*verb + verv3 == 0, -100 <= verv3 <= inf
 
+% Now metabolomics
+% The basic idea is that the bonus is gotten if any of the producer reactions are on. We can
+% therefore use the "on" variables directly for the reactions that are included. We therefore add one variable per met, mon, which can be 
+% continuous and between 0 and 1. We then say that mon <= v1 + v2 + ... + vn, i.e. that 
+% mon + mv1 - v1 - v2 ... - vn == 0, 0 <= mon <= 1, 0 <= mv1 <= inf
+% mon gets -prodWeight in the c vector (i.e. objective function)
+% A tricky part is that some of the reactions producing a metabolite are left outside the problem
+% This is solved by moving them into the problem, but with the score 0. They can still be treated as positive
+% reactions. In the end, we are not interested if they are on though, but they may be
+% allow for production of a metabolite, giving no benefit of turning on another producer reaction.
+
 %The total matrix then looks like this. Note that we have ordered the categories, two reactions each,
 %in the S matrix to make it easier to follow the figure. In practice, they come in random order, which
 %is why the SEye variable is used further down.
 %all categories below have two columns - the two column starts where label starts
 %since the label cannot fit in two chars, they are on multiple lines
-%                           vprb  vprv3 vnrn  vern  verv2
-% pi  ni  ei  Ypi Yni vpi vprn  vprv2 vnrp  verp  verb
+%
+%The met variables and constraints are not in this figure for practical reasons.
+%
+%                           vprb  vprv3 vnrn  vern  verv2 mv1
+% pi  ni  ei  Ypi Yni vpi vprn  vprv2 vnrp  verp  verb  mon
 %   pr  nr  er  Ypr Ynr vprp  vprv1 vni   vnrv1 verv1 verv3
-% SSSSSSSSSSSS000000000000000000000000000000000000000000
-% SSSSSSSSSSSS000000000000000000000000000000000000000000 S block
-% SSSSSSSSSSSS000000000000000000000000000000000000000000
-% 1           N       -                                  Pos irrev block
+% SSSSSSSSSSSS0000000000000000000000000000000000000000000000
+% SSSSSSSSSSSS0000000000000000000000000000000000000000000000 S block
+% SSSSSSSSSSSS0000000000000000000000000000000000000000000000
+% 1           N       -                                      Pos irrev block
 %  1           N       -
-%   1                   - 1                              Pos rev block 1
+%   1                   - 1                                  Pos rev block 1
 %    1                   - 1
-%               N       1 1   -                          Pos rev block 2
+%               N       1 1   -                              Pos rev block 2
 %                N       1 1   -
-%                       1   M   1                        Pos rev block 3
+%                       1   M   1                            Pos rev block 3
 %                        1   M   1
-%                         1 C     1                      Pos rev block 4
+%                         1 C     1                          Pos rev block 4
 %                          1 C     1
-%     1           M                 1                    Neg irrev block
+%     1           M                 1                        Neg irrev block
 %      1           M                 1
-%       1                             - 1                Neg rev block 1
+%       1                             - 1                    Neg rev block 1
 %        1                             - 1
-%                   M                 1 1 1              Neg rev block 2
+%                   M                 1 1 1                  Neg rev block 2
 %                    M                 1 1 1
-%           1                               - 1          Ess rev block 1
+%           1                               - 1              Ess rev block 1
 %            1                               - 1
-%                                           1 1 -        Ess rev block 2
+%                                           1 1 -            Ess rev block 2
 %                                            1 1 -
-%                                           1     M 1    Ess rev block 3
+%                                           1     M 1        Ess rev block 3
 %                                            1     M 1
-%                                             1   C   1  Ess rev block 4
+%                                             1   C   1      Ess rev block 4
 %                                              1   C   1
+%             --------                                  1 1  Met block - Here, we assume that all variables support each met.
+%             --------                                   1 1             In practice, fewer of the "on" variables with -1 should be included
 %
 %
 %M = -100
@@ -280,38 +260,55 @@ forceOnLim=0.0001;
     varsPerNegRev = 3;
 %end
 
-sRow = [milpModel.S sparse(nMets, nPosIrrev*2+nPosRev*7+nNegIrrev*2+nNegRev*(1+varsPerNegRev)+nEssRev*6)];
+
+%Figure out the number of variables needed for metabolomics
+nMetVars = 2*size(metData,1); %mon and mv1
+
+sRow = [milpModel.S sparse(nMets, nPosIrrev*2+nPosRev*7+nNegIrrev*2+nNegRev*(1+varsPerNegRev)+nEssRev*6 + nMetVars)];
 sEye = speye(nRxns);
 nYBlock = nPosIrrev+nPosRev+nNegIrrev+nNegRev;
-piRows = [sEye(posIrrevRxns,:) speye(nPosIrrev)*-forceOnLim sparse(nPosIrrev,nPosRev+nNegIrrev+nNegRev) speye(nPosIrrev)*-1 sparse(nPosIrrev,nPosRev*6+nNegIrrev+nNegRev*varsPerNegRev+nEssRev*6)];
+piRows = [sEye(posIrrevRxns,:) speye(nPosIrrev)*-forceOnLim sparse(nPosIrrev,nPosRev+nNegIrrev+nNegRev) speye(nPosIrrev)*-1 sparse(nPosIrrev,nPosRev*6+nNegIrrev+nNegRev*varsPerNegRev+nEssRev*6+nMetVars)];
 
-prRows1 = [sEye(posRevRxns,:) sparse(nPosRev,nYBlock + nPosIrrev) speye(nPosRev)*-1 speye(nPosRev) sparse(nPosRev,nPosRev*4+nNegIrrev+nNegRev*varsPerNegRev+nEssRev*6)];
-prRows2 = [sparse(nPosRev,nRxns + nPosIrrev) speye(nPosRev)*-forceOnLim sparse(nPosRev,nNegIrrev + nNegRev + nPosIrrev) speye(nPosRev) speye(nPosRev) sparse(nPosRev,nPosRev) speye(nPosRev)*-1 sparse(nPosRev,nPosRev*2+nNegIrrev+nNegRev*varsPerNegRev+nEssRev*6)];
-prRows3 = [sparse(nPosRev,nRxns + nYBlock + nPosIrrev) speye(nPosRev) sparse(nPosRev,nPosRev) speye(nPosRev)*-100 sparse(nPosRev,nPosRev) speye(nPosRev) sparse(nPosRev,nPosRev+nNegIrrev+nNegRev*varsPerNegRev+nEssRev*6)];
-prRows4 = [sparse(nPosRev,nRxns + nYBlock + nPosIrrev + nPosRev) speye(nPosRev) speye(nPosRev)*100 sparse(nPosRev,nPosRev*2) speye(nPosRev) sparse(nPosRev, nNegIrrev+nNegRev*varsPerNegRev+nEssRev*6)];
+prRows1 = [sEye(posRevRxns,:) sparse(nPosRev,nYBlock + nPosIrrev) speye(nPosRev)*-1 speye(nPosRev) sparse(nPosRev,nPosRev*4+nNegIrrev+nNegRev*varsPerNegRev+nEssRev*6+nMetVars)];
+prRows2 = [sparse(nPosRev,nRxns + nPosIrrev) speye(nPosRev)*-forceOnLim sparse(nPosRev,nNegIrrev + nNegRev + nPosIrrev) speye(nPosRev) speye(nPosRev) sparse(nPosRev,nPosRev) speye(nPosRev)*-1 sparse(nPosRev,nPosRev*2+nNegIrrev+nNegRev*varsPerNegRev+nEssRev*6+nMetVars)];
+prRows3 = [sparse(nPosRev,nRxns + nYBlock + nPosIrrev) speye(nPosRev) sparse(nPosRev,nPosRev) speye(nPosRev)*-100 sparse(nPosRev,nPosRev) speye(nPosRev) sparse(nPosRev,nPosRev+nNegIrrev+nNegRev*varsPerNegRev+nEssRev*6+nMetVars)];
+prRows4 = [sparse(nPosRev,nRxns + nYBlock + nPosIrrev + nPosRev) speye(nPosRev) speye(nPosRev)*100 sparse(nPosRev,nPosRev*2) speye(nPosRev) sparse(nPosRev, nNegIrrev+nNegRev*varsPerNegRev+nEssRev*6+nMetVars)];
 
-niRows = [sEye(negIrrevRxns,:) sparse(nNegIrrev,nPosIrrev + nPosRev) speye(nNegIrrev)*-100 sparse(nNegIrrev,nNegRev + nPosIrrev + nPosRev*6) speye(nNegIrrev) sparse(nNegIrrev,nNegRev*varsPerNegRev + nEssRev*6)];
+niRows = [sEye(negIrrevRxns,:) sparse(nNegIrrev,nPosIrrev + nPosRev) speye(nNegIrrev)*-100 sparse(nNegIrrev,nNegRev + nPosIrrev + nPosRev*6) speye(nNegIrrev) sparse(nNegIrrev,nNegRev*varsPerNegRev + nEssRev*6+nMetVars)];
 
 %if makeIrrev
     %flux1 + flux2 - 100 * Yi + vnrv1 == 0, vnrv1 >= 0.
 %    nrRows = [sEye(negRevRxns,:) + sEye(reversedNegRevInd,:) sparse(nNegRev,nPosIrrev + nPosRev + nNegIrrev) speye(nNegRev)*-100 sparse(nNegRev, nPosIrrev + nPosRev*6 + nNegIrrev) speye(nNegRev) sparse(nNegRev,nEssRev*6)];    
 %else
-    nrRows1 = [sEye(negRevRxns,:) sparse(nNegRev,nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev) speye(nNegRev)*-1 speye(nNegRev) sparse(nNegRev,nNegRev + nEssRev*6)];
-    nrRows2 = [sparse(nNegRev,nRxns + nPosIrrev + nPosRev + nNegIrrev) speye(nNegRev)*-100 sparse(nNegRev,nPosIrrev + nPosRev*6 + nNegIrrev) speye(nNegRev) speye(nNegRev) speye(nNegRev) sparse(nNegRev,nEssRev*6)];
+    nrRows1 = [sEye(negRevRxns,:) sparse(nNegRev,nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev) speye(nNegRev)*-1 speye(nNegRev) sparse(nNegRev,nNegRev + nEssRev*6+nMetVars)];
+    nrRows2 = [sparse(nNegRev,nRxns + nPosIrrev + nPosRev + nNegIrrev) speye(nNegRev)*-100 sparse(nNegRev,nPosIrrev + nPosRev*6 + nNegIrrev) speye(nNegRev) speye(nNegRev) speye(nNegRev) sparse(nNegRev,nEssRev*6+nMetVars)];
     nrRows = [nrRows1;nrRows2];
 %end
-erRows1 = [sEye(essRevRxns,:) sparse(nEssRev,nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev) speye(nEssRev)*-1 speye(nEssRev) sparse(nEssRev, nEssRev*4)];
-erRows2 = [sparse(nEssRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev) speye(nEssRev) speye(nEssRev) speye(nEssRev)*-1 sparse(nEssRev, nEssRev*3)];
-erRows3 = [sparse(nEssRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev) speye(nEssRev) sparse(nEssRev, nEssRev*2) speye(nEssRev)*-100 speye(nEssRev) sparse(nEssRev, nEssRev)];
-erRows4 = [sparse(nEssRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev + nEssRev) speye(nEssRev) sparse(nEssRev, nEssRev) speye(nEssRev)*100 sparse(nEssRev, nEssRev) speye(nEssRev)];
+erRows1 = [sEye(essRevRxns,:) sparse(nEssRev,nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev) speye(nEssRev)*-1 speye(nEssRev) sparse(nEssRev, nEssRev*4+nMetVars)];
+erRows2 = [sparse(nEssRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev) speye(nEssRev) speye(nEssRev) speye(nEssRev)*-1 sparse(nEssRev, nEssRev*3+nMetVars)];
+erRows3 = [sparse(nEssRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev) speye(nEssRev) sparse(nEssRev, nEssRev*2) speye(nEssRev)*-100 speye(nEssRev) sparse(nEssRev, nEssRev+nMetVars)];
+erRows4 = [sparse(nEssRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev + nEssRev) speye(nEssRev) sparse(nEssRev, nEssRev) speye(nEssRev)*100 sparse(nEssRev, nEssRev) speye(nEssRev) sparse(nEssRev, nMetVars)];
 
-prob.a = [sRow;piRows;prRows1;prRows2;prRows3;prRows4;niRows;nrRows;erRows1;erRows2;erRows3;erRows4];
+%now the mets
+if ~isempty(metData)
+    %Order of rxn "on" vars: Ypi Ypr Yni Ynr. This is a bit messy, since they are not in the
+    %same order as the reactions in the S matrix or metData. We therefore resort the vars in 
+    %metData to match the order of the vars.
+    srtMetData = sparse([metData(:,posIrrevRxns) metData(:,posRevRxns) metData(:,negIrrevRxns) metData(:,negRevRxns)]);
+    
+    %The mon vars come first followed by the mv1 vars
+    metRows = [sparse(nMetabolMets,nRxns) -srtMetData sparse(nMetabolMets,  nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev + nEssRev*6) speye(nMetabolMets) speye(nMetabolMets)];
+else
+    metRows = [];
+end
+
+prob.a = [sRow;piRows;prRows1;prRows2;prRows3;prRows4;niRows;nrRows;erRows1;erRows2;erRows3;erRows4;metRows];
 prob.A = prob.a;
 prob.b = zeros(size(prob.A,1),1);
-prob.c = [zeros(nRxns,1);rxnScores(posIrrevRxns)*-1;rxnScores(posRevRxns)*-1;rxnScores(negIrrevRxns)*-1;rxnScores(negRevRxns)*-1;zeros(nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev + nEssRev*6,1)];
-prob.lb = [milpModel.lb;zeros(nYBlock + nPosIrrev + 5*nPosRev,1);ones(nPosRev,1)*-100;zeros(nNegIrrev+nNegRev*varsPerNegRev+nEssRev*2,1);ones(nEssRev,1)*forceOnLim;zeros(nEssRev*2,1);ones(nEssRev,1)*-100];
+prob.c = [zeros(nRxns,1);rxnScores(posIrrevRxns)*-1;rxnScores(posRevRxns)*-1;rxnScores(negIrrevRxns)*-1;rxnScores(negRevRxns)*-1;zeros(nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev + nEssRev*6,1);ones(nMetabolMets,1)*-prodWeight;zeros(nMetabolMets,1)];
+prob.lb = [milpModel.lb;zeros(nYBlock + nPosIrrev + 5*nPosRev,1);ones(nPosRev,1)*-100;zeros(nNegIrrev+nNegRev*varsPerNegRev+nEssRev*2,1);ones(nEssRev,1)*forceOnLim;zeros(nEssRev*2,1);ones(nEssRev,1)*-100; zeros(nMetVars,1)];
 prob.lb(essIrrevRxns) = forceOnLim;%force flux for the ess irrev rxns - this is the only way these are handled
-prob.ub = [milpModel.ub;ones(nYBlock,1);inf(nPosIrrev+nPosRev*2,1);ones(nPosRev,1);inf(3*nPosRev+nNegIrrev+varsPerNegRev*nNegRev+3*nEssRev,1);ones(nEssRev,1);inf(2*nEssRev,1)];
+prob.ub = [milpModel.ub;ones(nYBlock,1);inf(nPosIrrev+nPosRev*2,1);ones(nPosRev,1);inf(3*nPosRev+nNegIrrev+varsPerNegRev*nNegRev+3*nEssRev,1);ones(nEssRev,1);inf(2*nEssRev,1);ones(nMetabolMets,1);inf(nMetabolMets,1)];
 
 prob.vartype = [repmat('C', 1, nRxns + nPosIrrev + nPosRev), ...
                 repmat('B', 1, nNegIrrev + nNegRev), ...
@@ -319,7 +316,7 @@ prob.vartype = [repmat('C', 1, nRxns + nPosIrrev + nPosRev), ...
                 repmat('B', 1, nPosRev), ...
                 repmat('C', 1, 3*nPosRev + nNegIrrev + varsPerNegRev*nNegRev + 3*nEssRev), ...
                 repmat('B', 1, nEssRev), ...
-                repmat('C', 1, 2*nEssRev)];
+                repmat('C', 1, 2*nEssRev + nMetVars)];
 
             
 onoffVarInd = (1:(nPosIrrev + nPosRev + nNegIrrev + nNegRev)) + nRxns;
@@ -328,6 +325,8 @@ onoffPosRev = onoffVarInd((1:nPosRev)+nPosIrrev);
 onoffNegIrrev = onoffVarInd((1:nNegIrrev)+nPosIrrev+nPosRev);
 onoffNegRev = onoffVarInd((1:nNegRev)+nPosIrrev+nPosRev+nNegIrrev);
 
+metVarInd = (1:nMetabolMets) + (length(prob.vartype) - nMetVars);
+
 if allowExcretion
     length(prob.b);
     length(milpModel.mets);
@@ -335,22 +334,6 @@ if allowExcretion
                   repmat('E', 1, length(prob.b) - length(milpModel.mets))];
 else
     prob.csense = '=';
-end
-%We still don't know which of the presentMets that can be produced. Go
-%through them, force production, and see if the problem can be solved
-%TODO: Fix this - metabolomics is currently not supported!
-for i=1:numel(pmIndexes)
-    prob.blc(numel(irrevModel.mets)-numel(pmIndexes)+i)=1;
-    prob.lb=[prob.blx; prob.blc];
-    res=optimizeProb(prob,params);
-    isFeasible=checkSolution(res);
-    if ~isFeasible
-        %Reset the constraint again
-        prob.blc(numel(irrevModel.mets)-numel(pmIndexes)+i)=0;
-    else
-        %Metabolite produced
-        metProduction(pmIndexes(i))=1;
-    end
 end
 
 params.intTol = 10^-8; %This value seems to work - making it smaller may slow the solver down.
@@ -376,6 +359,12 @@ onoff(posRevRxns) = res.full(onoffPosRev);
 onoff(negIrrevRxns) = res.full(onoffNegIrrev);
 onoff(negRevRxns) = res.full(onoffNegRev);
 
+onoff2 = zeros(nRxnsWithOnOff,1);%standard is off, i.e. all reactions not included in the problem + ess is off
+onoff2(posIrrevRxns) = res.full(onoffPosIrrev);
+onoff2(posRevRxns) = res.full(onoffPosRev);
+onoff2(negIrrevRxns) = res.full(onoffNegIrrev);
+onoff2(negRevRxns) = res.full(onoffNegRev);
+
 
 %investigate a bit
 %problematic = onoff < 0.99 & onoff > 0.01;
@@ -385,8 +374,15 @@ onoff(negRevRxns) = res.full(onoffNegRev);
 %unique(onoff(onoff < 0.99 & onoff > 0.01))
 
 %Get all reactions used in the irreversible model
-deletedRxns=(onoff < 0.5).';
-turnedOnRxns=(onoff >= 0.5).';
+%The reaction score check is for metabolomics - we add those reactions as 
+%positive even though the score is 0. And, we don't want them included in the 
+%results.
+deletedRxns=(onoff < 0.5).' & (rxnScores ~= 0).'; 
+turnedOnRxns=(onoff2 >= 0.5).' & (rxnScores ~= 0).';
 
 fluxes = res.full(1:nRxns);
+
+%extract the met data
+metProduction = logical(round(res.full(metVarInd)));
+
 end

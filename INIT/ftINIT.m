@@ -1,6 +1,6 @@
 %This is the main ftINIT function
 %Metabolomics is currently not supported, but will be when implemented into RAVEN.
-function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, taskReport, fullMipRes] = ftINIT(prepData, tissue, celltype, hpaData, transcrData, metabolomicsData, rxnsToIgnorePatternStep1, rxnsToIgnorePatternStep3, removeGenes, useScoresForTasks, milpSkipMets, allowExcretion, printReport, params, paramsFT)
+function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, taskReport, fullMipRes] = ftINIT(prepData, tissue, celltype, hpaData, transcrData, metabolomicsData, INITSteps, removeGenes, useScoresForTasks, paramsFT)
 % ftINIT
 %   Generates a model using the INIT algorithm, based on proteomics and/or
 %   transcriptomics and/or metabolomics and/or metabolic tasks.
@@ -125,224 +125,193 @@ end
 if nargin < 6
     metabolomicsData = [];
 end
-if nargin < 7 
-    rxnsToIgnorePatternStep1 = [1;1;1;1;1;1;1;0];
+if nargin < 7
+    INITSteps = getINITSteps([],'default');
 end
-if nargin < 8 
-    rxnsToIgnorePatternStep3 = [1;1;1;1;1;1;1;0];
-end
-if nargin < 9 || isempty(removeGenes)
+if nargin < 8 || isempty(removeGenes)
     removeGenes = true;
 end
-if nargin < 10 || isempty(useScoresForTasks)
+if nargin < 9 || isempty(useScoresForTasks)
     useScoresForTasks = true;
 end
-
-if nargin < 11 || isempty(milpSkipMets)
-    milpSkipMets = [];
-end
-
-if nargin < 12 || isempty(allowExcretion)
-    allowExcretion = false;
-end
-
-
-if nargin < 13 || isempty(printReport)
-    printReport = true;
-end
-if nargin < 14
-    params = [];
-end
-if nargin < 15
+if nargin < 10
     paramsFT = [];
 end
 
-if printReport == true
-    if any(celltype)
-        fprintf(['***Generating model for: ' tissue ' - ' celltype '\n']);
-    else
-        fprintf(['***Generating model for: ' tissue '\n']);
+%Handle detected mets:
+%Previously, this was handled by giving a bonus for secreting those metabolites,
+%but that doesn't work since the metabolite secretion and uptake can be lost when 
+%we merge linearly dependent reactions.
+%Instead, we need to figure out which reactions either produce or take up the mets.
+%We then give a bonus if any of them carry flux.
+%To simplify things, we focus on reactions that produce the metabolite (since there must be one such reaction). 
+%It is still a bit complicated though. In this step, we focus on identifying
+%producer reactions. We further reason that the direction doesn't matter - 
+%we can force one of these reactions in any direction - if it becomes a consumer, it will
+%automatically force another producer on as well (otherwise we'll have a net consumption).
+
+if (~isempty(metabolomicsData))
+    if length(unique(upper(metabolomicsData))) ~= length(metabolomicsData)
+        dispEM('Metabolomics contains the same metabolite multiple times');
     end
-    if ~isempty(hpaData)
-        fprintf('-Using HPA data\n');
+    metData = false(numel(metabolomicsData), length(prepData.minModel.rxns)); %one row per metabolite that is a boolean vector
+    for i=1:numel(metabolomicsData)
+        %Get the matching mets
+        metSel = ismember(upper(prepData.refModel.metNames),upper(metabolomicsData{i}));
+        prodRxnsSel = any(prepData.refModel.S(metSel,:) > 0,1) | ... %direct producers
+                     (any(prepData.refModel.S(metSel,:) < 0,1) & prepData.refModel.rev.'); %reversible reactions that are consumers
+        %convert the production rxns from refModel to minModel
+        prepData.groupIds
+        [~,ia,ib] = intersect(prepData.minModel.rxns,prepData.refModel.rxns);
+        grpIdsMerged = nan(length(prepData.minModel.rxns),1);
+        grpIdsMerged(ia) = prepData.groupIds(ib);
+        
+        groupIdsPos = unique(prepData.groupIds(prodRxnsSel));%gets all group ids which includes a production rxn
+        groupIdsPos = groupIdsPos(groupIdsPos ~= 0);%remove the 0 id, it means there is no group
+        %the other option is that there is a direct match between the rxn id in minModel and refModel:
+        posRxns = prepData.refModel.rxns(prodRxnsSel);
+        directMatch = ismember(prepData.minModel.rxns, posRxns).';
+        
+        metData(i,:) = ismember(grpIdsMerged, groupIdsPos).' | directMatch;
     end
-    if ~isempty(transcrData)
-        fprintf('-Using array data\n');
-    end
-    if ~isempty(metabolomicsData)
-        fprintf('-Using metabolomics data\n');
-    end
-    if ~isempty(taskFile) || ~isempty(taskStructure)
-        fprintf('-Using metabolic tasks\n');
-    end
-    fprintf('\n');
-    
-    printScores(refModel,'Reference model statistics',hpaData,transcrData,tissue,celltype);
+    metData = sparse(metData);
+else
+    metData = [];
 end
+%}
 
 % Get rxn scores and adapt them to the minimized model
 origRxnScores = scoreComplexModel(prepData.refModel,hpaData,transcrData,tissue,celltype);
 origRxnScores(origRxnScores > -0.1 & origRxnScores <= 0) = -0.1;%we don't want reaction scores that are exactly 0 (or close), this causes problems in the milp
 origRxnScores(origRxnScores < 0.1 & origRxnScores > 0) = 0.1;
 
-rxnsToIgnoreStep1 = getRxnsFromPattern(rxnsToIgnorePatternStep1, prepData);
+rxnsTurnedOn = false(length(prepData.minModel.rxns),1);
+fluxes = zeros(length(prepData.minModel.rxns),1);
 
-if isfield(params, 'multNegScores')
-    selNeg = origRxnScores < 0;
-    origRxnScores(selNeg) = origRxnScores(selNeg)*params.multNegScores;
-end
-rxnScores = groupRxnScores(prepData.minModel, origRxnScores, prepData.refModel.rxns, prepData.groupIds, rxnsToIgnoreStep1);
-rxnsToIgnore = rxnScores == 0;
+rxnsToIgnoreLastStep = [1;1;1;1;1;1;1;1];
 
-mm = prepData.minModel;
-
-if (~isempty(milpSkipMets))
-    if (~isempty(milpSkipMets.simpleMets))
-        %Here, we remove simple metabolites that will not really affect the milp, but that
-        %are very common in the S matrix. For example H2O, H+, etc.
-        %It is also possible to leave compartments untouched, for example the i compartment in the mitochondria (for H+).
-        metsToRem = ismember(mm.metNames,milpSkipMets.simpleMets.mets);
-        compsToKeep = find(ismember(mm.comps, milpSkipMets.simpleMets.compsToKeep));
-        metsToRem = metsToRem & ~ismember(mm.metComps, compsToKeep);
-        mm.S(metsToRem,:) = 0;
-    end    
-end
-
-
-%Run the ftINIT algorithm.
-
-%First step: run with positive irrevs always on (they will be assigned 
-% 0 in rxn score) + allow secretion of all metabolites(same as old tINIT)
-%This is to speed it up. Run for 50 s, if it cannot be solved with a good enough mip gap, run again
-mipGap = 1;
-newParams = params;
-%We use a pretty high margin. The reason why this is ok is that the margin is almost always 
-%high because the solver has not been able to prove that there is not a better solution.
-%It is unusual that the solver finds a much better solution if kept running for a long time, but it happens sometimes.
-highMipGapLim = 0.0030;
-while mipGap > highMipGapLim 
-    try
-        [deletedRxnsInINIT1, metProduction,fullMipRes,rxnsTurnedOn1,fluxes1] = ftINITInternalAlg(mm,rxnScores,metabolomicsData,prepData.essentialRxns,0,allowExcretion,true,newParams);
-        mipGap = fullMipRes.mipgap;
-    catch e
-        mipGap = Inf;
-    end
-    if isfield(newParams,'TimeLimit') && newParams.TimeLimit == 5000
-       break; 
-    end
-    newParams.TimeLimit = 5000;
-    newParams.MIPGap = min(max(0.0030, 20/abs(fullMipRes.obj)),1);
-    highMipGapLim = newParams.MIPGap;
-    newParams.seed = 1234;%use another seed, may work better
-    if (mipGap > highMipGapLim)
-        disp(['MipGap too high, trying with a longer time limit. MipGap = ' num2str(mipGap) ' New MipGap Limit = ' num2str(highMipGapLim)])
-    end
-end
-if mipGap > 0.01
-    dispEM(['MipGap very large: ' num2str(mipGap) ', increase time limit']);
-end
-%second step
-remFromProblem = rxnsTurnedOn1;
-rxnScores2 = rxnScores;
-rxnScores2(remFromProblem) = 0;
-
-mipGap = 1;
-newParams = params;
-%We use a pretty high margin. The reason why this is ok is that the margin is almost always 
-%high because the solver has not been able to prove that there is not a better solution.
-%It is unusual that the solver finds a much better solution if kept running for a long time, but it happens sometimes.
-highMipGapLim = 0.0030;
-while mipGap > highMipGapLim 
-    try
-        [deletedRxnsInINIT2, metProduction,fullMipRes,rxnsTurnedOn2,fluxes2] = ftINITInternalAlg(mm,rxnScores2,metabolomicsData,prepData.essentialRxns,0,false,false,newParams);
-        mipGap = fullMipRes.mipgap;
-    catch e
-        mipGap = Inf;
-    end
-    if isfield(newParams,'TimeLimit') && newParams.TimeLimit == 5000
-       break; 
-    end
-    newParams.TimeLimit = 5000;
-    newParams.MIPGap = min(max(0.0030, 20/abs(fullMipRes.obj)),1);
-    highMipGapLim = newParams.MIPGap;
-    newParams.seed = 1234;%use another seed, may work better
-    if (mipGap > highMipGapLim)
-        disp(['MipGap too high, trying with a longer time limit. MipGap = ' num2str(mipGap)])
-    end
-end
-if mipGap > 0.01
-    dispEM(['MipGap very large: ' num2str(mipGap) ', increase time limit']);
-end
-
-%the third step - if specified, we here allow for removal of some of the reactions that were not included in the problem earlier
-%first check that the step 3 pattern covers less rxns
-if any ((rxnsToIgnorePatternStep1 - rxnsToIgnorePatternStep3) < 0)
-    dispEM('rxnsToIgnorePatternStep3 may not cover rxns not covered in rxnsToIgnorePatternStep1, but the other way around is fine.');
-end
-
-rxnsOn = (rxnsTurnedOn1 | rxnsTurnedOn2).';
-
-
-if any(rxnsToIgnorePatternStep1 ~= rxnsToIgnorePatternStep3) %If these are the same, step 3 should not be run, it is pointless
-    rxnsToIgnoreStep3 = getRxnsFromPattern(rxnsToIgnorePatternStep3, prepData);
-    rxnScores3 = groupRxnScores(prepData.minModel, origRxnScores, prepData.refModel.rxns, prepData.groupIds, rxnsToIgnoreStep3);
-    rxnsToIgnore = rxnScores3 == 0;
-    %Make the rxns that are now on essential
-    rev = prepData.minModel.rev == 1;
+for initStep = 1:length(INITSteps)
+    disp(['ftINIT: Running step ' initStep])
+    stp = INITSteps{initStep};
     
-    %we need to make the rev irrev and flip them if needed
-    %sum(rxnsOn & rev)
+    if any ((rxnsToIgnoreLastStep - stp.RxnsToIgnoreMask) < 0)
+        dispEM('RxnsToIgnoreMask may not cover rxns not covered in previous steps, but the other way around is fine.');
+    end
+    rxnsToIgnoreLastStep = stp.RxnsToIgnoreMask;
     
-    fluxes = fluxes2;
-    fluxes(fluxes == 0) = fluxes1(fluxes == 0);
-    toRev = rxnsOn & rev & fluxes < 0;
-    minModelMod = reverseRxns(prepData.minModel, prepData.minModel.rxns(toRev));
+    mm = prepData.minModel;
+    
+    if (~isempty(stp.MetsToIgnore))
+        if (~isempty(milpSkipMets.simpleMets))
+            %Here, we remove simple metabolites that will not really affect the milp but 
+            %are very common in the S matrix. For example H2O, H+, etc.
+            %It is also possible to leave compartments untouched, for example the i compartment in the mitochondria (for H+).
+            metsToRem = ismember(mm.metNames,milpSkipMets.simpleMets.mets);
+            compsToKeep = find(ismember(mm.comps, milpSkipMets.simpleMets.compsToKeep));
+            metsToRem = metsToRem & ~ismember(mm.metComps, compsToKeep);
+            mm.S(metsToRem,:) = 0;
+        end    
+    end
 
-    %Then make them irreversible
-    minModelMod.rev(toRev) = 0;
-    minModelMod.lb(toRev) = 0;
+    %Set up the reaction scores and essential rxns
+    rxnsToIgnore = getRxnsFromPattern(stp.RxnsToIgnoreMask, prepData);
+    rxnScores = groupRxnScores(prepData.minModel, origRxnScores, prepData.refModel.rxns, prepData.groupIds, rxnsToIgnore);
 
-    newEssential = unique([prepData.essentialRxns;prepData.minModel.rxns(rxnsOn)]);
+    essentialRxns = prepData.essentialRxns;
+    
+    %Handle the results from previous steps ('ignore', 'exclude', 'essential')
+    if strcmp(stp.HowToUsePrevResults, 'exclude')
+        rxnScores(rxnsTurnedOn) = 0;
+    elseif strcmp(stp.HowToUsePrevResults, 'essential')
+        %Make all reversible reactions turned on in previous steps reversible
+        %in the direction that they were previously carrying flux
+        
+        %first reverse the reactions that need to be reversed
+        rev = mm.rev == 1;
+        toRev = rxnsTurnedOn & rev & fluxes < 0;
+        mm = reverseRxns(mm, mm.rxns(toRev));
+        
+        %Then make them irreversible
+        mm.rev(toRev) = 0;
+        mm.lb(toRev) = 0;
+
+        essentialRxns = unique([prepData.essentialRxns;mm.rxns(rxnsTurnedOn)]);
+    end
+
+    
     mipGap = 1;
-    newParams = params;
-    %We use a pretty high margin. The reason why this is ok is that the margin is almost always 
-    %high because the solver has not been able to prove that there is not a better solution.
-    %It is unusual that the solver finds a much better solution if kept running for a long time, but it happens sometimes.
-    highMipGapLim = 0.0030;
-    while mipGap > highMipGapLim 
+    first = true;
+    success = false;
+    for rn = 1:length(stp.MILPParams)
+        params = stp.MILPParams{rn};
+        if ~isfield(params, 'MIPGap')
+            params.MIPGap = 0.0004;
+        end
+        
+        if ~isfield(params, 'TimeLimit')
+            params.TimeLimit = 5000;
+        end
+        
+        if ~first 
+            %There is sometimes a problem with that the objective function becomes close to zero,
+            %which leads to that a small percentage of that (which is the MIPGap sent in) is very small
+            %and the MILP hence takes a lot of time to finish. We also therefore use an absolute MIP gap, 
+            %converted to a percentage using the last value of the objective function.
+            params.MIPGap = min(max(params.MIPGap, stp.AbsMIPGaps{rn}/abs(lastObjVal)),1);
+            params.seed = 1234;%use another seed, may work better
+
+            if mipGap <= params.MIPGap
+                success = true;
+                break; %we're done - this will not happen the first time
+            else
+                disp(['MipGap too high, trying with a different run. MipGap = ' num2str(mipGap) ' New MipGap Limit = ' num2str(params.MIPGap)])
+            end
+        end
+        
+        first = false;
+        
+        %now run the MILP
         try
-            [deletedRxnsInINIT3, metProduction,fullMipRes,rxnsTurnedOn3,fluxes3] = ftINITInternalAlg(mm,rxnScores3,metabolomicsData,newEssential,0,false,false,newParams);
+            %The prodweight for metabolomics is currently set to 5 - 0.5 was default in the old version, which I deemed very small?
+            %There could be a need to specify this somewhere in the call at some point. 
+            %This value has not been evaluated, but is assumed in the test cases - if changed, update the test case
+            [deletedRxnsInINIT1, metProduction,fullMipRes,rxnsTurnedOn1,fluxes1] = ftINITInternalAlg(mm,rxnScores,metData,essentialRxns,5,stp.AllowMetSecr,stp.PosRevOff,params);
             mipGap = fullMipRes.mipgap;
+            lastObjVal = fullMipRes.obj;
         catch e
             mipGap = Inf;
+            lastObjVal = Inf; %we need to set something here, Inf leads to that this doesn't come into play
         end
-        if isfield(newParams,'TimeLimit') && newParams.TimeLimit == 5000
-           break; 
-        end
-        newParams.TimeLimit = 5000;
-        %so, there is a problem here. Sometimes the absolute value of the optimal objective 
-        %is small - it is then a problem to define a limit as a percentage, since that becomes very small
-        %so, we also say that a gap of 30 is enough, and we calculate the relative of that
         
-        newParams.MIPGap = min(max(0.0030, 30/abs(fullMipRes.obj)),1);
-        highMipGapLim = newParams.MIPGap;
-        newParams.seed = 1234;%use another seed, may work better
-        if (mipGap > newParams.MIPGap)
-            disp(['MipGap too high, trying with a longer time limit. MipGap = ' num2str(mipGap)])
-        end
-    end
-    if mipGap > max(0.01, newParams.MIPGap)
-        dispEM(['MipGap very large: ' num2str(mipGap) ', increase time limit']);
+        success = mipGap <= params.MIPGap;
     end
     
-    rxnsOn = rxnsOn | rxnsTurnedOn3.';
+    if ~success
+        dispEM(['Failed to find good enough solution within the time frame. MIPGap: ' num2str(mipGap)]);
+    end
+    
+    %save the reactions turned on and their fluxes for the next step
+    rxnsTurnedOn = rxnsTurnedOn | rxnsTurnedOn1.';
+    %The fluxes are a bit tricky - what if they change direction between the steps?
+    %The fluxes are used to determine the direction in which reactions are forced on 
+    %(to simplify the problem it is good if they are unidirectional).
+    %We use the following strategy:
+    %1. Use the fluxes from the most recent step.
+    %2. If any flux is very low there (i.e. basically zero), use the flux from the previous steps
+    %This could in theory cause problems, but seems to work well practically
+    fluxesOld = fluxes;
+    fluxes = fluxes1;
+    fluxes(abs(fluxes1) < 10^-7) = fluxesOld(abs(fluxes1) < 10^-7);
 end
+
 
 %get the essential rxns
 essential = ismember(prepData.minModel.rxns,prepData.essentialRxns);
-
-deletedRxnsInINITSel = ~(rxnsOn | rxnsToIgnore | essential);
-deletedRxnsInINIT = mm.rxns(deletedRxnsInINITSel);
+%So, we only add reactions where the linearly merged scores are zero for all linearly dependent reactions 
+% (this cannot happen by chance, taken care of in the function groupRxnScores)
+rxnsToIgn = rxnScores == 0; 
+deletedRxnsInINITSel = ~(rxnsTurnedOn | rxnsToIgn | essential);
+deletedRxnsInINIT = prepData.minModel.rxns(deletedRxnsInINITSel);
 
 %Here we need to figure out which original reactions (before the linear merge) 
 %that were removed. These are all reactions with the same group ids as the removed reactions
@@ -356,10 +325,10 @@ initModel = removeReactions(prepData.refModel,rxnsToRem,false,true);
 unusedMets = initModel.mets(all(initModel.S == 0,2));
 initModel = removeMets(initModel, setdiff(unusedMets, prepData.essentialMetsForTasks));
 
-if printReport == true
-    printScores(initModel,'INIT model statistics',hpaData,transcrData,tissue,celltype);
-    printScores(removeReactions(cModel,setdiff(cModel.rxns,rxnsToRem),true,true),'Reactions deleted by INIT',hpaData,transcrData,tissue,celltype);
-end
+%if printReport == true
+%    printScores(initModel,'INIT model statistics',hpaData,transcrData,tissue,celltype);
+%    printScores(removeReactions(cModel,setdiff(cModel.rxns,rxnsToRem),true,true),'Reactions deleted by INIT',hpaData,transcrData,tissue,celltype);
+%end
 
 %The full model has exchange reactions in it. fitTasks calls on fillGaps,
 %which automatically removes exchange metabolites (because it assumes that
@@ -406,10 +375,10 @@ if ~isempty(prepData.taskStruct)
     else
         [outModel,addedRxnMat] = fitTasksOpt(initModelNoExc,refModelNoExc,[],true,[],prepData.taskStruct,paramsFT);
     end
-    if printReport == true
-        printScores(outModel,'Functional model statistics',hpaData,transcrData,tissue,celltype);
-        printScores(removeReactions(outModel,intersect(outModel.rxns,initModel.rxns),true,true),'Reactions added to perform the tasks',hpaData,transcrData,tissue,celltype);
-    end
+    %if printReport == true
+    %    printScores(outModel,'Functional model statistics',hpaData,transcrData,tissue,celltype);
+    %    printScores(removeReactions(outModel,intersect(outModel.rxns,initModel.rxns),true,true),'Reactions added to perform the tasks',hpaData,transcrData,tissue,celltype);
+    %end
     
     addedRxnsForTasks = refModelNoExc.rxns(any(addedRxnMat,2));
 else

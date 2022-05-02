@@ -105,7 +105,7 @@ function testModel = getTstModel()
 end
 
 function testModelRxnScores = getTstModelRxnScores()
-    testModelRxnScores = [-2;-2;-1;7;0.5;0.5;-1;-2;-1;1.5];
+    testModelRxnScores = [-2;-2;-1;7;0.5;0.5;-1;-2;-3;3.5];
 end
 
 function testModelTasks = getTstModelTasks()
@@ -191,6 +191,27 @@ function testModel4RxnScores = getTstModel4RxnScores()
     testModel4RxnScores = [-1;-1;2;-1;0.5;-2;1;1.3;-0.5;-0.4;8];
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% testModel5 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function testModel5 = getTstModel5()
+    testModel = getTstModel();
+
+    rxnsToAdd = struct();
+    rxnsToAdd.rxns = {'R11';'R12';'R13';'R14'};
+    rxnsToAdd.equations = {'a[c] <=> g[c]';...
+                           'a[c] <=> g[c]';...
+                           'g[c] <=> e[c]';...
+                           'g[c] <=> e[c]'};
+    rxnsToAdd.grRules = {'G11';'G12';'G13';'G14'};
+    testModel5 = addRxns(testModel,rxnsToAdd, 3, [], true, true);
+end
+
+function testModel5RxnScores = getTstModel5RxnScores()
+    testModel5RxnScores = [getTstModelRxnScores();-1;-1.5;-1;-1.5];
+end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %T0001: testModel without tasks
@@ -205,28 +226,30 @@ function testftINIT_T0001(testCase)
     prepDataTest1 = prepINITModel(testModel, {}, {}, false);
     %check some things in the prepData
     %1. We expect 3 rxns in origRxnsToZero:
-    verifyTrue(testCase, all(strcmp(prepDataTest1.refModel.rxns(prepDataTest1.toIgnoreExch | prepDataTest1.toIgnoreImportRxns) , {'R1';'R2';'R8'})))
+    verifyTrue(testCase, all(strcmp(prepDataTest1.refModel.rxns(prepDataTest1.toIgnoreExch) , {'R1';'R8'})))
     %note that R7 should not be there, since it has a GPR.
 
     arrayData1.genes = testModel.genes;
     arrayData1.tissues = {'a'};
     arrayData1.levels = getExprForRxnScore(getTstModelRxnScores());
     arrayData1.threshold = 1;
-    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],[1;1;1;1;1;1;1;0],[1;1;1;1;1;1;1;0],true,true,[], true,false,testParams);
+    
+    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams);
 
-    %We expect R1, R2, and R8 to be added since they have no GPRs and are exch/simple transport rxns
+    %We expect R1 and R8 to be added since they have no GPRs and are exch rxns. The transport rxn R2 without GPR will however be removed,
+    %since we in the standard setting run the third step with [1;0;0;0;1;0;0], meaning that such reactions will be removed
     %R7 however will not be added since it has a GPR
-    verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R4';'R6';'R8';'R9';'R10'})))
+    verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R8';'R9';'R10'})))
 
     %also test spontaneous
     prepDataTest1 = prepINITModel(testModel, {}, {'R7';'R10'}, false);
-    verifyTrue(testCase, all(strcmp(prepDataTest1.refModel.rxns(prepDataTest1.toIgnoreExch | prepDataTest1.toIgnoreImportRxns | prepDataTest1.toIgnoreSpont), {'R1';'R2';'R7';'R8';'R10'})))
+    verifyTrue(testCase, all(strcmp(prepDataTest1.refModel.rxns(prepDataTest1.toIgnoreExch | prepDataTest1.toIgnoreSpont), {'R1';'R7';'R8';'R10'})))
     arrayData1.genes = testModel.genes;
     arrayData1.tissues = {'a'};
     arrayData1.levels = getExprForRxnScore(getTstModelRxnScores());
     arrayData1.threshold = 1;
-    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],[1;1;1;1;1;1;1;0],[1;1;1;1;1;1;1;0],true,true,[], true,false,testParams);
-    %the model should now change to include the "correct" path and 
+    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams);
+    %the model should now change to include the "correct" path (including 'R2') and 
     %skip R9/R10:
     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R4';'R6';'R7';'R8'})), 1)
 end
@@ -251,13 +274,11 @@ function testftINIT_T0002(testCase)
     arrayData1.tissues = {'a'};
     arrayData1.levels = getExprForRxnScore(testRxnScores);
     arrayData1.threshold = 1;
-    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],[1;1;1;1;1;1;1;0],[1;1;1;1;1;1;1;0],true,true,[], true,false,testParams);
+    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams);
     %Since both R2 and R7 are now essential, we expect all rxns to be on except R3 and 
     %R5 (which have a negative total score and are not needed for the task)
     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R4';'R6';'R7';'R8';'R9';'R10'})))
 end
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %T0003: The second step - gapfilling
@@ -279,6 +300,7 @@ function testftINIT_T0003(testCase)
     [outModel,addedRxnMat] = fitTasksOpt(mTemp,mTempRef,[],true,min(tmpRxnScores,-0.1),testModelTasks);
     verifyTrue(testCase, all(strcmp(mTempRef.rxns(addedRxnMat),'R7')))%ok
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %T0004: MergeLinear and groupRxnScores
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -336,5 +358,183 @@ function testftINIT_T0007(testCase)
     verifyTrue(testCase, all(all(res.S == expRes))) %ok
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%T0008: testModel with metabolomics
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function testftINIT_T0008(testCase)
+    testParams = struct();
+
+    testModel = getTstModel();
+    prepDataTest1 = prepINITModel(testModel, {}, {}, false);
+
+    arrayData1.genes = testModel.genes;
+    arrayData1.tissues = {'a'};
+    arrayData1.levels = getExprForRxnScore(getTstModelRxnScores());
+    arrayData1.threshold = 1;
+    
+    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams);
+
+    %First the same as in T0001 (we keep them here to make the test case understandable):
+    %We expect R1 and R8 to be added since they have no GPRs and are exch rxns. The transport rxn R2 without GPR will however be removed,
+    %since we in the standard setting run the third step with [1;0;0;0;1;0;0], meaning that such reactions will be removed
+    %R7 however will not be added since it has a GPR
+    verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R8';'R9';'R10'})))
+
+    %make R7 and R10 spontaneous (also same as in T0001)
+    prepDataTest1 = prepINITModel(testModel, {}, {'R7';'R10'}, false);
+    verifyTrue(testCase, all(strcmp(prepDataTest1.refModel.rxns(prepDataTest1.toIgnoreExch | prepDataTest1.toIgnoreSpont), {'R1';'R7';'R8';'R10'})))
+    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams);
+    %the model should now change to include the "correct" path (including 'R2') and 
+    %skip R9/R10:
+    verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R4';'R6';'R7';'R8'})), 1)
+    %now, test to add the metabolite f - this should turn back the favor to R9/R10:
+    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{'f'},getINITSteps(),true,true,testParams);
+    %R2 should now be replaced by R9
+    verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R7';'R8';'R9';'R10'})), 1)
+    %now, test to add the metabolite a, e, f - this should give the same result:
+    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{'f';'a';'e'},getINITSteps(),true,true,testParams);
+    %R2 should now be replaced by R9
+    verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R7';'R8';'R9';'R10'})), 1)
+    %now, test to add the metabolite b - this should turn on R2 and R3/R5 and turn off R9:
+    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{'b'},getINITSteps(),true,true,testParams);
+    verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R3';'R4';'R5';'R6';'R7';'R8'})), 1)
+
+    %now on model 5 to test reactions that are not linearly merged (testModel has only merged rxns)
+    testModel5 = getTstModel5();
+    arrayData1.genes = testModel5.genes;
+    arrayData1.tissues = {'a'};
+    arrayData1.levels = getExprForRxnScore(getTstModel5RxnScores());
+    arrayData1.threshold = 1;
+    
+    prepDataTest5 = prepINITModel(testModel5, {}, {'R7';'R10'}, false);
+    tst1ResModel1 = ftINIT(prepDataTest5,arrayData1.tissues{1},[],[],arrayData1,{},getINITSteps(),true,true,testParams);
+    %We expect the 'true' path, i.e. through R2, not R9/R10 or R11-R14
+    verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R4';'R6';'R7';'R8'})), 1)
+
+    %now add metabolite g
+    tst1ResModel1 = ftINIT(prepDataTest5,arrayData1.tissues{1},[],[],arrayData1,{'g'},getINITSteps(),true,true,testParams);
+    %We expect R2 to be replaced with R11 and R13
+    verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R7';'R8';'R11';'R13'})), 1)
+end
+
+
+function testModelL = getTstModelL()
+
+    testModelL = struct();
+    testModelL.id = 'testModel';
+    testModelL.rxns = {};
+    testModelL.S=[];
+    testModelL.rev=[];
+    testModelL.metNames = {'e1';'e2';'e3';'e4';'e5';'e6';'e7';'e8';'e9';'e1';'e2';'e3';'e4';'e5';'e6';'e7';'e8';'e9';'x1';'x2';'x3';'x4';'x5';'x6';'x7';'x8';'x9';'x10';'x11'};
+    testModelL.comps = {'s';'c'};
+    testModelL.compNames = testModelL.comps;
+    testModelL.metComps = [1;1;1;1;1;1;1;1;1;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2];
+    testModelL.mets = strcat(testModelL.metNames, testModelL.comps(testModelL.metComps));
+
+
+    testModelL.grRules = {};
+    testModelL.rxnGeneMat = [];
+
+    testModelL.genes = {'Ge1';'Ge2';'Ge4';'Ge5';'Ge7';'Ge9'; 'Gr1';'Gr2';'Gr3';'Gr5';'Gr6';'Gr7';'Gr8';'Gr9';'Gr10';'Gr11';'Gr12';'Gr14';'Gr15'};
+
+
+    testModelL.ub = [];
+    testModelL.lb = [];
+
+    rxnsToAdd = struct();
+    rxnsToAdd.rxns = {  'S1';'S2';'S3';'S4';'S5';'S6';'S7';'S8';'S9';'E1';'E2';'E2b';'E3';'E4';'E5';'E6';'E7';'E8';'E9';'R1';'R2';'R3';'R4';'R5';'R6';'R7';'R8';'R9';'R10';'R11';'R12';'R13';'R14';'R15'};
+    rxnsToAdd.grRules = {'';  '';  '';  '';  '';  '';  '';  '';  ''; 'Ge1';'Ge2';'';'';'Ge4';'Ge5';'';'Ge7';'';'Ge9'; 'Gr1';'Gr2';'Gr3';'';'Gr5';'Gr6';'Gr7';'Gr8';'Gr9';'Gr10';'Gr11';'Gr12';'';'Gr14';'Gr15'};
+    rxnsToAdd.equations = {'e1[s] <=>';...
+                           'e2[s] <=>';...
+                           'e3[s] <=>';...
+                           'e4[s] <=>';...
+                           'e5[s] <=>';...
+                           'e6[s] <=>';...
+                           'e7[s] <=>';...
+                           'e8[s] <=>';...
+                           'e9[s] <=>';...
+                           'e1[s] <=> e1[c]';...
+                           'e2[s] <=> e2[c]';...
+                           'e2[s] <=> e2[c]';... %b variant
+                           'e3[s] <=> e3[c]';...
+                           'e4[s] <=> e4[c]';...
+                           'e5[s] <=> e5[c]';...
+                           'e6[s] <=> e6[c]';...
+                           'e7[s] <=> e7[c]';...
+                           'e8[s] <=> e8[c]';...
+                           'e9[s] <=> e9[c]';...
+                           'e1[c] + e2[c] <=> x1[c]';... %R1
+                           'e1[c] + e3[c] => x2[c] + x3[c]';... %R2
+                           'e4[c] + x3[c] => x4[c] + x5[c]';... %R3
+                           'e5[c] + e6[c] + x4[c] => 2 x2[c] + x6[c]';... %R4
+                           'x1[c] + x2[c] <=> x7[c] + 2 x8[c]';... %R5
+                           'x2[c] + x8[c] => x3[c] + x9[c]';... %R6
+                           'x4[c] <=> x9[c]';... %R7
+                           'x5[c] <=> x9[c]';... %R8
+                           'x6[c] <=> x10[c]';... %R9
+                           'x6[c] <=> x11[c]';... %R10
+                           'x10[c] + 2 x11[c] => e7[c]';... %R11
+                           'x9[c] + x10[c] <=> e8[c]';... %R12
+                           'x7[c] + x8[c] + x9[c] => e9[c]';... %R13
+                           'x6[c] => x9[c]';... %R14
+                           'x3[c] => x9[c]'... %R15
+                           };
+    testModelL = addRxns(testModelL,rxnsToAdd, 3);
+    testModelL.c = [0;0;0;0;0;0;0;1;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0];%optimize for output flux, if this is used, not sure
+    testModelL.rxnNames = testModelL.rxns;
+    testModelL.b = repmat(0,length(testModelL.mets),1);
+end
+
+function testModelLGeneScores = getTstModelLGeneScores()
+    %testModelL.genes = {'Ge1';'Ge2';'Ge4';'Ge5';'Ge7';'Ge9'; 'Gr1';'Gr2';'Gr3';'Gr5';'Gr6';'Gr7';'Gr8';'Gr9';'Gr10';'Gr11';'Gr12';'Gr14';'Gr15'};
+    testModelLGeneScores = [3; -1;   8;    6;    -5;    5;     4;    5;    2;    3;    6;    1;    3;    1;    -3;    1;     3;      1;    2];
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%T0050: Test ftINIT on a slightly larger and more complex model
+%       Specifically tests if the three-step variant and the "full" 
+%       variant gives similar results
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function testftINIT_T0050(testCase)
+    testModelL = getTstModelL();
+    testModelLGeneScores = getTstModelLGeneScores();
+    testParams = struct();
+   
+    arrayDataL = struct();
+    arrayDataL.genes = testModelL.genes;
+    arrayDataL.tissues = {'t1'};
+    arrayDataL.levels = getExprForRxnScore(testModelLGeneScores,1);
+    arrayDataL.threshold = 1;
+
+    %Run prep data
+    prepDataL = prepINITModel(testModelL, [], {}, false, {});
+
+    mres = ftINIT(prepDataL,arrayDataL.tissues{1},[],[],arrayDataL,[],getINITSteps(),true,true,testParams);
+    mres2 = ftINIT(prepDataL,arrayDataL.tissues{1},[],[],arrayDataL,[],getINITSteps([], 'full'),true,true,testParams);
+    
+    expResult = {  'S1';'S2';'S3';'S4';'S5';'S6';'S7';'S8';'S9';'E1';'E2';'E3';'E4';'E5';'E6';'E8';'E9';'R1';'R2';'R3';'R4';'R5';'R6';'R7';'R8';'R9';'R12';'R13';'R14';'R15'};
+    
+    verifyTrue(testCase, all(strcmp(mres.rxns,expResult)))
+    verifyTrue(testCase, all(strcmp(mres2.rxns,expResult)))
+
+    %run the old tINIT version (in Human-GEM)
+    %this is just to show that they become different, not really part of the test case
+    %paramsL2 = struct();
+    %paramsL2.TimeLimit = 1000;
+    %testModelL2 = addBoundaryMets(testModelL);
+    %init_modelOrig = getINITModel2(testModelL2,arrayDataL.tissues{1},[],[],arrayDataL,[],true,[],true,true,[],paramsL2);
+
+    %in this call, I have modified the code - the possibility to turn off met secretion + don't allow flux in both directions is not possible.
+    %The following line, around line 337, is changed
+    %from:
+    %[~, deletedRxnsInINIT, metProduction] = runINIT(simplifyModel(cModel),rxnScores,metabolomicsData,essentialRxnsForTasks,0,true,false,params);
+    %to:
+    %[~, deletedRxnsInINIT, metProduction] = runINIT(simplifyModel(cModel),rxnScores,metabolomicsData,essentialRxnsForTasks,0,false,true,params);
+    %init_modelOrigNoSecrOneDirOnly = getINITModel2(testModelL2,arrayDataL.tissues{1},[],[],arrayDataL,[],true,[],true,true,[],paramsL2);
+
+    %The models init_modelOrigNoSecrOneDirOnly and mres2 are very similar, (only one exch rxn differ, which is expected) 
+    %init_modelOrig is quite different, with a lot of gaps, and worse. So, the conclusion is that the new version does a pretty good job.
+end
 
 

@@ -325,7 +325,7 @@ if nargin < 6
 
 % create data structure with pre-processing results
 prepData.taskReport = taskReport;
-prepData.essentialRxns = newEssentialRxns;
+prepData.essentialRxns = newEssentialRxns; %essential rxns in the minModel
 prepData.taskStruct = taskStruct;
 prepData.refModel = cModel;
 prepData.minModel = scaledMinModel;
