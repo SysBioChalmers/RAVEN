@@ -101,7 +101,7 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="consumeSomething.html" class="code" title="function [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,minNrFluxes,params,ignoreIntBounds)">consumeSomething</a>	consumeSomething</li><li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="getElementalBalance.html" class="code" title="function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)">getElementalBalance</a>	getElementalBalance</li><li><a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)">getExchangeRxns</a>	getExchangeRxns</li><li><a href="makeSomething.html" class="code" title="function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFluxes,allowExcretion,params,ignoreIntBounds)">makeSomething</a>	makeSomething</li><li><a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>	removeReactions</li></ul>
+<li><a href="consumeSomething.html" class="code" title="function [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,minNrFluxes,params,ignoreIntBounds)">consumeSomething</a>	consumeSomething</li><li><a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>	convertCharArray</li><li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="getElementalBalance.html" class="code" title="function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)">getElementalBalance</a>	getElementalBalance</li><li><a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)">getExchangeRxns</a>	getExchangeRxns</li><li><a href="makeSomething.html" class="code" title="function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFluxes,allowExcretion,params,ignoreIntBounds)">makeSomething</a>	makeSomething</li><li><a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>	removeReactions</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -186,168 +186,172 @@ This function is called by:
 0074 <span class="keyword">end</span>
 0075 <span class="keyword">if</span> nargin&lt;3
 0076     ignoreMets=[];
-0077 <span class="keyword">end</span>
-0078 <span class="keyword">if</span> nargin&lt;4
-0079     isNames=false;
-0080 <span class="keyword">end</span>
-0081 <span class="keyword">if</span> nargin&lt;5
-0082     balanceElements={<span class="string">'C'</span>;<span class="string">'P'</span>;<span class="string">'S'</span>;<span class="string">'N'</span>;<span class="string">'O'</span>};
-0083 <span class="keyword">end</span>
-0084 <span class="keyword">if</span> nargin&lt;6
-0085     refModel=[];
-0086 <span class="keyword">else</span>
-0087     <span class="keyword">if</span> ~isempty(refModel)
-0088         EM=<span class="string">'The feature to supply a reference model is currently not supported'</span>;
-0089         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0090     <span class="keyword">end</span>
-0091 <span class="keyword">end</span>
-0092 <span class="keyword">if</span> nargin&lt;7
-0093     ignoreIntBounds=false;
-0094 <span class="keyword">end</span>
-0095 <span class="keyword">if</span> nargin&lt;8
-0096     printReport=false;
-0097 <span class="keyword">end</span>
-0098 
-0099 <span class="comment">%Check if the model has open exchange reactions and print a warning in that</span>
-0100 <span class="comment">%case</span>
-0101 <span class="keyword">if</span> ~isfield(model,<span class="string">'unconstrained'</span>)
-0102     [~, I]=<a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)">getExchangeRxns</a>(model);
-0103     <span class="keyword">if</span> any(I)
-0104         <span class="keyword">if</span> any(model.lb(I)~=0) || any(model.ub(I)~=0)
-0105             EM=<span class="string">'The model contains open exchange reactions. This is not the intended use of this function. Consider importing your model using importModel(filename,false)'</span>;
-0106             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0107         <span class="keyword">end</span>
-0108     <span class="keyword">end</span>
-0109 <span class="keyword">end</span>
-0110 
-0111 <span class="comment">%Check that the model is feasible</span>
-0112 sol=solveLP(model);
-0113 <span class="keyword">if</span> isempty(sol.f)
-0114     EM=<span class="string">'The model is not feasible. Consider removing lower bounds (such as ATP maintenance)'</span>;
-0115     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0116 <span class="keyword">end</span>
-0117 
-0118 <span class="comment">%Check that the reference model is feasible</span>
-0119 <span class="keyword">if</span> any(refModel)
-0120     sol=solveLP(refModel);
-0121     <span class="keyword">if</span> isempty(sol.f)
-0122         EM=<span class="string">'The reference model is not feasible'</span>;
-0123         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0124     <span class="keyword">end</span>
-0125 <span class="keyword">end</span>
-0126 
-0127 <span class="comment">%Initialize some stuff</span>
-0128 removedRxns={};
-0129 balanceStructure=<a href="getElementalBalance.html" class="code" title="function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)">getElementalBalance</a>(model);
+0077 <span class="keyword">elseif</span> ~islogical(ignoreMets) &amp;&amp; ~isnumeric(ignoreMets)
+0078     ignoreMets=<a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>(ignoreMets);
+0079 <span class="keyword">end</span>
+0080 <span class="keyword">if</span> nargin&lt;4
+0081     isNames=false;
+0082 <span class="keyword">end</span>
+0083 <span class="keyword">if</span> nargin&lt;5
+0084     balanceElements={<span class="string">'C'</span>;<span class="string">'P'</span>;<span class="string">'S'</span>;<span class="string">'N'</span>;<span class="string">'O'</span>};
+0085 <span class="keyword">else</span>
+0086     balanceElements=<a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>(balanceElements);
+0087 <span class="keyword">end</span>
+0088 <span class="keyword">if</span> nargin&lt;6
+0089     refModel=[];
+0090 <span class="keyword">else</span>
+0091     <span class="keyword">if</span> ~isempty(refModel)
+0092         EM=<span class="string">'The feature to supply a reference model is currently not supported'</span>;
+0093         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0094     <span class="keyword">end</span>
+0095 <span class="keyword">end</span>
+0096 <span class="keyword">if</span> nargin&lt;7
+0097     ignoreIntBounds=false;
+0098 <span class="keyword">end</span>
+0099 <span class="keyword">if</span> nargin&lt;8
+0100     printReport=false;
+0101 <span class="keyword">end</span>
+0102 
+0103 <span class="comment">%Check if the model has open exchange reactions and print a warning in that</span>
+0104 <span class="comment">%case</span>
+0105 <span class="keyword">if</span> ~isfield(model,<span class="string">'unconstrained'</span>)
+0106     [~, I]=<a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)">getExchangeRxns</a>(model);
+0107     <span class="keyword">if</span> any(I)
+0108         <span class="keyword">if</span> any(model.lb(I)~=0) || any(model.ub(I)~=0)
+0109             EM=<span class="string">'The model contains open exchange reactions. This is not the intended use of this function. Consider importing your model using importModel(filename,false)'</span>;
+0110             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0111         <span class="keyword">end</span>
+0112     <span class="keyword">end</span>
+0113 <span class="keyword">end</span>
+0114 
+0115 <span class="comment">%Check that the model is feasible</span>
+0116 sol=solveLP(model);
+0117 <span class="keyword">if</span> isempty(sol.f)
+0118     EM=<span class="string">'The model is not feasible. Consider removing lower bounds (such as ATP maintenance)'</span>;
+0119     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0120 <span class="keyword">end</span>
+0121 
+0122 <span class="comment">%Check that the reference model is feasible</span>
+0123 <span class="keyword">if</span> any(refModel)
+0124     sol=solveLP(refModel);
+0125     <span class="keyword">if</span> isempty(sol.f)
+0126         EM=<span class="string">'The reference model is not feasible'</span>;
+0127         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0128     <span class="keyword">end</span>
+0129 <span class="keyword">end</span>
 0130 
-0131 <span class="comment">%Check which elements to balance for</span>
-0132 <span class="keyword">if</span> ~isempty(setdiff(balanceElements,balanceStructure.elements.abbrevs))
-0133     EM=<span class="string">'Could not recognize all elements to balance for'</span>;
-0134     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0135 <span class="keyword">end</span>
-0136 bal=ismember(balanceStructure.elements.abbrevs,balanceElements);
-0137 
-0138 <span class="comment">%Main loop. First run for makeSomething, second for consumeSomething</span>
-0139 warned=false(2,1); <span class="comment">%This is to prevent the same warning being printed multiple times if rxnRules==3</span>
-0140 <span class="keyword">for</span> i=1:2
-0141     <span class="keyword">while</span> 1
-0142         <span class="comment">%Make some metabolite using as few reactions as possible</span>
-0143         <span class="keyword">if</span> i==1
-0144             [solution, metabolite]=<a href="makeSomething.html" class="code" title="function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFluxes,allowExcretion,params,ignoreIntBounds)">makeSomething</a>(model,ignoreMets,isNames,false,true,[],ignoreIntBounds);
-0145             <span class="keyword">if</span> ~isempty(solution)
-0146                 <span class="keyword">if</span> printReport
-0147                     fprintf([<span class="string">'Can make: '</span> model.metNames{metabolite(1)} <span class="string">'\n'</span>]);
-0148                 <span class="keyword">end</span>
-0149             <span class="keyword">else</span>
-0150                 <span class="comment">%If no solution could be found, then finish</span>
-0151                 <span class="keyword">break</span>;
-0152             <span class="keyword">end</span>
-0153         <span class="keyword">else</span>
-0154             [solution, metabolite]=<a href="consumeSomething.html" class="code" title="function [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,minNrFluxes,params,ignoreIntBounds)">consumeSomething</a>(model,ignoreMets,isNames,false,[],ignoreIntBounds);
-0155             <span class="keyword">if</span> ~isempty(solution)
-0156                 <span class="keyword">if</span> printReport
-0157                     fprintf([<span class="string">'Can consume: '</span> model.metNames{metabolite(1)} <span class="string">'\n'</span>]);
-0158                 <span class="keyword">end</span>
-0159             <span class="keyword">else</span>
-0160                 <span class="comment">%If no solution could be found, then finish</span>
-0161                 <span class="keyword">break</span>;
-0162             <span class="keyword">end</span>
-0163         <span class="keyword">end</span>
-0164         
-0165         <span class="comment">%Find all reactions that are unbalanced and still carry flux</span>
-0166         I=find(abs(solution)&gt;10^-8 &amp; balanceStructure.balanceStatus&gt;=0 &amp; ~all(balanceStructure.leftComp(:,bal)==balanceStructure.rightComp(:,bal),2));
-0167         
-0168         <span class="comment">%If there are unbalanced rxns then delete one of them and iterate</span>
-0169         <span class="keyword">if</span> any(I)
-0170             rxnToRemove=I(randsample(numel(I),1));
-0171         <span class="keyword">else</span>
-0172             <span class="comment">%If there are no unbalanced rxns in the solution</span>
-0173             <span class="keyword">if</span> rxnRules==1
-0174                 <span class="keyword">if</span> i==1
-0175                     EM=[<span class="string">'No unbalanced reactions were found in the solution, but the model can still make &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'</span>];
-0176                     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0177                 <span class="keyword">else</span>
-0178                     EM=[<span class="string">'No unbalanced reactions were found in the solution, but the model can still consume &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'</span>];
-0179                     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0180                 <span class="keyword">end</span>
-0181                 <span class="keyword">break</span>;
-0182             <span class="keyword">else</span>
-0183                 <span class="comment">%Find reactions which are not checked for mass balancing,</span>
-0184                 <span class="comment">%but that still carry flux</span>
-0185                 I=find(abs(solution)&gt;10^-8 &amp; balanceStructure.balanceStatus&lt;0);
-0186                 
-0187                 <span class="comment">%If there are any such reactions, remove one of them and</span>
-0188                 <span class="comment">%iterate</span>
-0189                 <span class="keyword">if</span> any(I)
-0190                     rxnToRemove=I(randsample(numel(I),1));
-0191                 <span class="keyword">else</span>
-0192                     <span class="keyword">if</span> rxnRules==2
-0193                         <span class="comment">%This happens when all reactions used are balanced</span>
-0194                         <span class="comment">%according to the metabolite formulas. This cannot</span>
-0195                         <span class="comment">%be, and indicates that one or more of the formulas</span>
-0196                         <span class="comment">%are wrong. Print a warning and delete any reaction</span>
-0197                         <span class="comment">%with flux</span>
-0198                         <span class="keyword">if</span> i==1
-0199                             EM=[<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still make &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'</span>];
-0200                             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0201                         <span class="keyword">else</span>
-0202                             EM=[<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still consume &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'</span>];
-0203                             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0204                         <span class="keyword">end</span>
-0205                         <span class="keyword">break</span>;
-0206                     <span class="keyword">else</span>
-0207                         <span class="keyword">if</span> i==1
-0208                             <span class="keyword">if</span> warned(1)==false
-0209                                 EM=[<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still make &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. This indicates some error in the metabolite formulas. Removing random reactions in the solution'</span>];
-0210                                 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0211                                 warned(1)=true;
-0212                             <span class="keyword">end</span>
-0213                         <span class="keyword">else</span>
-0214                             <span class="keyword">if</span> warned(2)==false
-0215                                 EM=[<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still consume &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. This indicates some error in the metabolite formulas. Removing random reactions in the solution'</span>];
-0216                                 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0217                                 warned(2)=true;
-0218                             <span class="keyword">end</span>
-0219                         <span class="keyword">end</span>
-0220                         I=find(abs(solution)&gt;10^-8);
-0221                         rxnToRemove=I(randsample(numel(I),1));
-0222                     <span class="keyword">end</span>
-0223                 <span class="keyword">end</span>
-0224             <span class="keyword">end</span>
-0225         <span class="keyword">end</span>
-0226         removedRxns=[removedRxns;model.rxns(rxnToRemove)];
-0227         <span class="keyword">if</span> printReport
-0228             fprintf([<span class="string">'\tRemoved: '</span>  model.rxns{rxnToRemove} <span class="string">'\n'</span>]);
+0131 <span class="comment">%Initialize some stuff</span>
+0132 removedRxns={};
+0133 balanceStructure=<a href="getElementalBalance.html" class="code" title="function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)">getElementalBalance</a>(model);
+0134 
+0135 <span class="comment">%Check which elements to balance for</span>
+0136 <span class="keyword">if</span> ~isempty(setdiff(balanceElements,balanceStructure.elements.abbrevs))
+0137     EM=<span class="string">'Could not recognize all elements to balance for'</span>;
+0138     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0139 <span class="keyword">end</span>
+0140 bal=ismember(balanceStructure.elements.abbrevs,balanceElements);
+0141 
+0142 <span class="comment">%Main loop. First run for makeSomething, second for consumeSomething</span>
+0143 warned=false(2,1); <span class="comment">%This is to prevent the same warning being printed multiple times if rxnRules==3</span>
+0144 <span class="keyword">for</span> i=1:2
+0145     <span class="keyword">while</span> 1
+0146         <span class="comment">%Make some metabolite using as few reactions as possible</span>
+0147         <span class="keyword">if</span> i==1
+0148             [solution, metabolite]=<a href="makeSomething.html" class="code" title="function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFluxes,allowExcretion,params,ignoreIntBounds)">makeSomething</a>(model,ignoreMets,isNames,false,true,[],ignoreIntBounds);
+0149             <span class="keyword">if</span> ~isempty(solution)
+0150                 <span class="keyword">if</span> printReport
+0151                     fprintf([<span class="string">'Can make: '</span> model.metNames{metabolite(1)} <span class="string">'\n'</span>]);
+0152                 <span class="keyword">end</span>
+0153             <span class="keyword">else</span>
+0154                 <span class="comment">%If no solution could be found, then finish</span>
+0155                 <span class="keyword">break</span>;
+0156             <span class="keyword">end</span>
+0157         <span class="keyword">else</span>
+0158             [solution, metabolite]=<a href="consumeSomething.html" class="code" title="function [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,minNrFluxes,params,ignoreIntBounds)">consumeSomething</a>(model,ignoreMets,isNames,false,[],ignoreIntBounds);
+0159             <span class="keyword">if</span> ~isempty(solution)
+0160                 <span class="keyword">if</span> printReport
+0161                     fprintf([<span class="string">'Can consume: '</span> model.metNames{metabolite(1)} <span class="string">'\n'</span>]);
+0162                 <span class="keyword">end</span>
+0163             <span class="keyword">else</span>
+0164                 <span class="comment">%If no solution could be found, then finish</span>
+0165                 <span class="keyword">break</span>;
+0166             <span class="keyword">end</span>
+0167         <span class="keyword">end</span>
+0168         
+0169         <span class="comment">%Find all reactions that are unbalanced and still carry flux</span>
+0170         I=find(abs(solution)&gt;10^-8 &amp; balanceStructure.balanceStatus&gt;=0 &amp; ~all(balanceStructure.leftComp(:,bal)==balanceStructure.rightComp(:,bal),2));
+0171         
+0172         <span class="comment">%If there are unbalanced rxns then delete one of them and iterate</span>
+0173         <span class="keyword">if</span> any(I)
+0174             rxnToRemove=I(randsample(numel(I),1));
+0175         <span class="keyword">else</span>
+0176             <span class="comment">%If there are no unbalanced rxns in the solution</span>
+0177             <span class="keyword">if</span> rxnRules==1
+0178                 <span class="keyword">if</span> i==1
+0179                     EM=[<span class="string">'No unbalanced reactions were found in the solution, but the model can still make &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'</span>];
+0180                     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0181                 <span class="keyword">else</span>
+0182                     EM=[<span class="string">'No unbalanced reactions were found in the solution, but the model can still consume &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'</span>];
+0183                     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0184                 <span class="keyword">end</span>
+0185                 <span class="keyword">break</span>;
+0186             <span class="keyword">else</span>
+0187                 <span class="comment">%Find reactions which are not checked for mass balancing,</span>
+0188                 <span class="comment">%but that still carry flux</span>
+0189                 I=find(abs(solution)&gt;10^-8 &amp; balanceStructure.balanceStatus&lt;0);
+0190                 
+0191                 <span class="comment">%If there are any such reactions, remove one of them and</span>
+0192                 <span class="comment">%iterate</span>
+0193                 <span class="keyword">if</span> any(I)
+0194                     rxnToRemove=I(randsample(numel(I),1));
+0195                 <span class="keyword">else</span>
+0196                     <span class="keyword">if</span> rxnRules==2
+0197                         <span class="comment">%This happens when all reactions used are balanced</span>
+0198                         <span class="comment">%according to the metabolite formulas. This cannot</span>
+0199                         <span class="comment">%be, and indicates that one or more of the formulas</span>
+0200                         <span class="comment">%are wrong. Print a warning and delete any reaction</span>
+0201                         <span class="comment">%with flux</span>
+0202                         <span class="keyword">if</span> i==1
+0203                             EM=[<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still make &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'</span>];
+0204                             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0205                         <span class="keyword">else</span>
+0206                             EM=[<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still consume &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'</span>];
+0207                             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0208                         <span class="keyword">end</span>
+0209                         <span class="keyword">break</span>;
+0210                     <span class="keyword">else</span>
+0211                         <span class="keyword">if</span> i==1
+0212                             <span class="keyword">if</span> warned(1)==false
+0213                                 EM=[<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still make &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. This indicates some error in the metabolite formulas. Removing random reactions in the solution'</span>];
+0214                                 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0215                                 warned(1)=true;
+0216                             <span class="keyword">end</span>
+0217                         <span class="keyword">else</span>
+0218                             <span class="keyword">if</span> warned(2)==false
+0219                                 EM=[<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still consume &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. This indicates some error in the metabolite formulas. Removing random reactions in the solution'</span>];
+0220                                 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0221                                 warned(2)=true;
+0222                             <span class="keyword">end</span>
+0223                         <span class="keyword">end</span>
+0224                         I=find(abs(solution)&gt;10^-8);
+0225                         rxnToRemove=I(randsample(numel(I),1));
+0226                     <span class="keyword">end</span>
+0227                 <span class="keyword">end</span>
+0228             <span class="keyword">end</span>
 0229         <span class="keyword">end</span>
-0230         model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,rxnToRemove);
-0231         balanceStructure.balanceStatus(rxnToRemove)=[];
-0232         balanceStructure.leftComp(rxnToRemove,:)=[];
-0233         balanceStructure.rightComp(rxnToRemove,:)=[];
-0234     <span class="keyword">end</span>
-0235 <span class="keyword">end</span>
-0236 
-0237 newModel=model;
-0238 <span class="keyword">end</span></pre></div>
+0230         removedRxns=[removedRxns;model.rxns(rxnToRemove)];
+0231         <span class="keyword">if</span> printReport
+0232             fprintf([<span class="string">'\tRemoved: '</span>  model.rxns{rxnToRemove} <span class="string">'\n'</span>]);
+0233         <span class="keyword">end</span>
+0234         model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,rxnToRemove);
+0235         balanceStructure.balanceStatus(rxnToRemove)=[];
+0236         balanceStructure.leftComp(rxnToRemove,:)=[];
+0237         balanceStructure.rightComp(rxnToRemove,:)=[];
+0238     <span class="keyword">end</span>
+0239 <span class="keyword">end</span>
+0240 
+0241 newModel=model;
+0242 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

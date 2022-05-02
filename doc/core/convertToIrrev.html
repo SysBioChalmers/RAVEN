@@ -45,7 +45,7 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>	getIndexes</li></ul>
+<li><a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>	convertCharArray</li><li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>	getIndexes</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 <li><a href="getMinNrFluxes.html" class="code" title="function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)">getMinNrFluxes</a>	getMinNrFluxes</li><li><a href="predictLocalization.html" class="code" title="function [outModel, geneLocalization, transportStruct, scores,removedRxns] = predictLocalization(model, GSS,defaultCompartment, transportCost, maxTime, plotResults)">predictLocalization</a>	predictLocalization</li><li><a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>	simplifyModel</li></ul>
@@ -72,81 +72,82 @@ This function is called by:
 0016 <span class="keyword">if</span> nargin&lt;2
 0017     I=true(numel(model.rxns),1);
 0018 <span class="keyword">else</span>
-0019     I=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxns,<span class="string">'rxns'</span>,true);
-0020 <span class="keyword">end</span>
-0021 
-0022 irrevModel=model;
-0023 
-0024 revIndexesBool=model.rev~=0 &amp; I;
-0025 revIndexes=find(revIndexesBool);
-0026 <span class="keyword">if</span> any(revIndexesBool)
-0027     irrevModel.S=[model.S,model.S(:,revIndexes)*-1];
-0028     irrevModel.rev(revIndexes)=0;
-0029     irrevModel.rev=[irrevModel.rev;zeros(numel(revIndexes),1)];
-0030     
-0031     <span class="comment">%Get the limits for all normal and reversible rxns</span>
-0032     ubNormal=irrevModel.ub;
-0033     ubNormal(revIndexes(ubNormal(revIndexes)&lt;0))=0;
-0034     lbNormal=irrevModel.lb;
-0035     lbNormal(revIndexes(lbNormal(revIndexes)&lt;0))=0;
-0036     ubRev=irrevModel.lb(revIndexes)*-1;
-0037     ubRev(ubRev&lt;0)=0;
-0038     lbRev=irrevModel.ub(revIndexes)*-1;
-0039     lbRev(lbRev&lt;0)=0;
-0040     irrevModel.ub=[ubNormal;ubRev];
-0041     irrevModel.lb=[lbNormal;lbRev];
-0042     
-0043     <span class="comment">%The objective coefficents should be zero for the backwards reversible</span>
-0044     <span class="comment">%reactions unless they were negative in the original. In that case they</span>
-0045     <span class="comment">%should be positive for the backwards reversible and deleted from the</span>
-0046     <span class="comment">%original</span>
-0047     irrevC=zeros(numel(revIndexes),1);
-0048     
-0049     <span class="keyword">if</span> any(irrevModel.c(revIndexes)&lt;0)
-0050         originalC=irrevModel.c(revIndexes);
-0051         irrevC(irrevModel.c(revIndexes)&lt;0)=originalC(originalC&lt;0)*-1;
-0052         irrevModel.c(irrevModel.c&lt;0 &amp; revIndexesBool)=0;
-0053     <span class="keyword">end</span>
-0054     irrevModel.c=[irrevModel.c;irrevC];
-0055     
-0056     irrevModel.rxns=[irrevModel.rxns;strcat(irrevModel.rxns(revIndexes),<span class="string">'_REV'</span>)];
-0057     irrevModel.rxnNames=[irrevModel.rxnNames;strcat(irrevModel.rxnNames(revIndexes),<span class="string">' (reversible)'</span>)];
-0058     
-0059     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'grRules'</span>)
-0060         irrevModel.grRules=[irrevModel.grRules;irrevModel.grRules(revIndexes,:)];
-0061     <span class="keyword">end</span>
-0062     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnMiriams'</span>)
-0063         irrevModel.rxnMiriams=[irrevModel.rxnMiriams;irrevModel.rxnMiriams(revIndexes,:)];
-0064     <span class="keyword">end</span>
-0065     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnGeneMat'</span>)
-0066         irrevModel.rxnGeneMat=[irrevModel.rxnGeneMat;irrevModel.rxnGeneMat(revIndexes,:)];
-0067     <span class="keyword">end</span>
-0068     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'subSystems'</span>)
-0069         irrevModel.subSystems=[irrevModel.subSystems;irrevModel.subSystems(revIndexes)];
-0070     <span class="keyword">end</span>
-0071     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'eccodes'</span>)
-0072         irrevModel.eccodes=[irrevModel.eccodes;irrevModel.eccodes(revIndexes)];
-0073     <span class="keyword">end</span>
-0074     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnComps'</span>)
-0075         irrevModel.rxnComps=[irrevModel.rxnComps;irrevModel.rxnComps(revIndexes)];
-0076     <span class="keyword">end</span>
-0077     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnFrom'</span>)
-0078         irrevModel.rxnFrom=[irrevModel.rxnFrom;irrevModel.rxnFrom(revIndexes)];
-0079     <span class="keyword">end</span>
-0080     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnScores'</span>)
-0081         irrevModel.rxnScores=[irrevModel.rxnScores;irrevModel.rxnScores(revIndexes)];
-0082     <span class="keyword">end</span>
-0083     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnNotes'</span>)
-0084         irrevModel.rxnNotes=[irrevModel.rxnNotes;irrevModel.rxnNotes(revIndexes)];
-0085     <span class="keyword">end</span>
-0086     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnConfidenceScores'</span>)
-0087         irrevModel.rxnConfidenceScores=[irrevModel.rxnConfidenceScores;irrevModel.rxnConfidenceScores(revIndexes)];
-0088     <span class="keyword">end</span>
-0089     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnReferences'</span>)
-0090         irrevModel.rxnReferences=[irrevModel.rxnReferences;irrevModel.rxnReferences(revIndexes)];
-0091     <span class="keyword">end</span>
-0092 <span class="keyword">end</span>
-0093 <span class="keyword">end</span></pre></div>
+0019     rxns=<a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>(rxns);
+0020     I=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxns,<span class="string">'rxns'</span>,true);
+0021 <span class="keyword">end</span>
+0022 
+0023 irrevModel=model;
+0024 
+0025 revIndexesBool=model.rev~=0 &amp; I;
+0026 revIndexes=find(revIndexesBool);
+0027 <span class="keyword">if</span> any(revIndexesBool)
+0028     irrevModel.S=[model.S,model.S(:,revIndexes)*-1];
+0029     irrevModel.rev(revIndexes)=0;
+0030     irrevModel.rev=[irrevModel.rev;zeros(numel(revIndexes),1)];
+0031     
+0032     <span class="comment">%Get the limits for all normal and reversible rxns</span>
+0033     ubNormal=irrevModel.ub;
+0034     ubNormal(revIndexes(ubNormal(revIndexes)&lt;0))=0;
+0035     lbNormal=irrevModel.lb;
+0036     lbNormal(revIndexes(lbNormal(revIndexes)&lt;0))=0;
+0037     ubRev=irrevModel.lb(revIndexes)*-1;
+0038     ubRev(ubRev&lt;0)=0;
+0039     lbRev=irrevModel.ub(revIndexes)*-1;
+0040     lbRev(lbRev&lt;0)=0;
+0041     irrevModel.ub=[ubNormal;ubRev];
+0042     irrevModel.lb=[lbNormal;lbRev];
+0043     
+0044     <span class="comment">%The objective coefficents should be zero for the backwards reversible</span>
+0045     <span class="comment">%reactions unless they were negative in the original. In that case they</span>
+0046     <span class="comment">%should be positive for the backwards reversible and deleted from the</span>
+0047     <span class="comment">%original</span>
+0048     irrevC=zeros(numel(revIndexes),1);
+0049     
+0050     <span class="keyword">if</span> any(irrevModel.c(revIndexes)&lt;0)
+0051         originalC=irrevModel.c(revIndexes);
+0052         irrevC(irrevModel.c(revIndexes)&lt;0)=originalC(originalC&lt;0)*-1;
+0053         irrevModel.c(irrevModel.c&lt;0 &amp; revIndexesBool)=0;
+0054     <span class="keyword">end</span>
+0055     irrevModel.c=[irrevModel.c;irrevC];
+0056     
+0057     irrevModel.rxns=[irrevModel.rxns;strcat(irrevModel.rxns(revIndexes),<span class="string">'_REV'</span>)];
+0058     irrevModel.rxnNames=[irrevModel.rxnNames;strcat(irrevModel.rxnNames(revIndexes),<span class="string">' (reversible)'</span>)];
+0059     
+0060     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'grRules'</span>)
+0061         irrevModel.grRules=[irrevModel.grRules;irrevModel.grRules(revIndexes,:)];
+0062     <span class="keyword">end</span>
+0063     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnMiriams'</span>)
+0064         irrevModel.rxnMiriams=[irrevModel.rxnMiriams;irrevModel.rxnMiriams(revIndexes,:)];
+0065     <span class="keyword">end</span>
+0066     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnGeneMat'</span>)
+0067         irrevModel.rxnGeneMat=[irrevModel.rxnGeneMat;irrevModel.rxnGeneMat(revIndexes,:)];
+0068     <span class="keyword">end</span>
+0069     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'subSystems'</span>)
+0070         irrevModel.subSystems=[irrevModel.subSystems;irrevModel.subSystems(revIndexes)];
+0071     <span class="keyword">end</span>
+0072     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'eccodes'</span>)
+0073         irrevModel.eccodes=[irrevModel.eccodes;irrevModel.eccodes(revIndexes)];
+0074     <span class="keyword">end</span>
+0075     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnComps'</span>)
+0076         irrevModel.rxnComps=[irrevModel.rxnComps;irrevModel.rxnComps(revIndexes)];
+0077     <span class="keyword">end</span>
+0078     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnFrom'</span>)
+0079         irrevModel.rxnFrom=[irrevModel.rxnFrom;irrevModel.rxnFrom(revIndexes)];
+0080     <span class="keyword">end</span>
+0081     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnScores'</span>)
+0082         irrevModel.rxnScores=[irrevModel.rxnScores;irrevModel.rxnScores(revIndexes)];
+0083     <span class="keyword">end</span>
+0084     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnNotes'</span>)
+0085         irrevModel.rxnNotes=[irrevModel.rxnNotes;irrevModel.rxnNotes(revIndexes)];
+0086     <span class="keyword">end</span>
+0087     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnConfidenceScores'</span>)
+0088         irrevModel.rxnConfidenceScores=[irrevModel.rxnConfidenceScores;irrevModel.rxnConfidenceScores(revIndexes)];
+0089     <span class="keyword">end</span>
+0090     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnReferences'</span>)
+0091         irrevModel.rxnReferences=[irrevModel.rxnReferences;irrevModel.rxnReferences(revIndexes)];
+0092     <span class="keyword">end</span>
+0093 <span class="keyword">end</span>
+0094 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
