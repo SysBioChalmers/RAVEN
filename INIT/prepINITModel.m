@@ -57,7 +57,7 @@ cModel = removeReactions(origRefModel,deletedDeadEndRxns,false,true);
 disp('Step 3: Check tasks (~10 min)')
 if ~isempty(taskStruct)
     bModel = addBoundaryMets(cModel);
-    [taskReport, essentialRxnMat, ~, essentialFluxes] = checkTasksExt(bModel,[],true,false,true,taskStruct);
+    [taskReport, essentialRxnMat, ~, essentialFluxes] = checkTasks(bModel,[],true,false,true,taskStruct);
 
     %extract the essential rxns:
     sel = sum(essentialRxnMat,2) > 0;
