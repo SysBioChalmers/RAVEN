@@ -107,7 +107,7 @@ testCheck.min=[-20;-20;-20;0;0;-20;0;0;-10;-20];
 testCheck.max=[0;0;0;20;20;0;166.61000;20;0;0];
 testCheck.flag=[1,1;1,1;1,1;1,1;1,1;1,1;1,1;1,1;1,1;1,1];
 
-verifyEqual(testCase,testOut,testCheck)
+verifyEqual(testCase,testOut,testCheck,'AbsTol',1e-4)
 end
 
 function getEssentialRxnsTest(testCase)
