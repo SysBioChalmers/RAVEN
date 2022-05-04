@@ -1,8 +1,8 @@
-%Part of ftINIT, optimized version of the previous function from RAVEN.
-function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params)
-% fitTasks
+function [outModel, addedRxns]=ftINITFillGapsForAllTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params)
+% ftINITFillGapsForAllTasks
 %   Fills gaps in a model by including reactions from a reference model,
 %   so that the resulting model can perform all the tasks in a task list
+%   This is similar to the old fitTasks function but optimized for ftINIT.
 %
 %   Input:
 %   model           model structure
@@ -89,16 +89,11 @@ addedRxns=false(numel(refModel.rxns),numel(taskStructure));
 supressWarnings=false;
 nAdded=0;
 
-%%%%irrevRefModel=convertToIrrev(refModel);
-%%%%rxnScoresIrrev = [rxnScores;rxnScores(refModel.rev == 1)];
-
 for i=1:numel(taskStructure)
     if ~taskStructure(i).shouldFail
         
         tRefModel = refModel;%we need to add stuff to this one as well...
-%%%%        tIrrevRefModel = irrevRefModel;
         tRxnScores = rxnScores;%these need to be extended (with zeros) when rxns are added in tasks
-%%%%        tRxnScoresIrrev = rxnScoresIrrev;
         %Set the inputs
         if ~isempty(taskStructure(i).inputs)
             [I, J]=ismember(upper(taskStructure(i).inputs),modelMets);
@@ -150,7 +145,6 @@ for i=1:numel(taskStructure)
                 %but still..
                 tModel.b(:,1)=taskStructure(i).UBin(find(K,1))*-1;
                 tRefModel.b(:,1)=taskStructure(i).UBin(find(K,1))*-1;
-%%%%                tIrrevRefModel.b(:,1)=taskStructure(i).UBin(find(K,1))*-1;
             end
             %If metabolites in a specific compartment should be used
             if any(L)
@@ -176,14 +170,6 @@ for i=1:numel(taskStructure)
                         EM=['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist'];
                         dispEM(EM);
                     end
-%%%%                    C=find(ismember(upper(tIrrevRefModel.comps),compartment));
-%%%%                    if any(C)
-%%%%                        %Match to metabolites
-%%%%                        tIrrevRefModel.b(tIrrevRefModel.metComps==C,1)=taskStructure(i).UBin(L(j))*-1;
-%%%%                    else
-%%%%                        EM=['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist'];
-%%%%                        dispEM(EM);
-%%%%                    end
                 end
             end
             %Then add the normal constraints
@@ -196,10 +182,6 @@ for i=1:numel(taskStructure)
                 tRefModel.b(J2(I2),1)=taskStructure(i).UBin(I2)*-1;
                 tRefModel.b(J2(I2),2)=taskStructure(i).LBin(I2)*-1;
             end
-%%%%            if any(J2(I2))
-%%%%                tIrrevRefModel.b(J2(I2),1)=taskStructure(i).UBin(I2)*-1;
-%%%%                tIrrevRefModel.b(J2(I2),2)=taskStructure(i).LBin(I2)*-1;
-%%%%            end
         end
         %Set the outputs
         if ~isempty(taskStructure(i).outputs)
@@ -252,7 +234,6 @@ for i=1:numel(taskStructure)
                 %but still..
                 tModel.b(:,2)=taskStructure(i).UBout(find(K,1));
                 tRefModel.b(:,2)=taskStructure(i).UBout(find(K,1));
-%%%%                tIrrevRefModel.b(:,2)=taskStructure(i).UBout(find(K,1));
             end
             %If metabolites in a specific compartment should be used
             if any(L)
@@ -278,15 +259,6 @@ for i=1:numel(taskStructure)
                         EM=['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist'];
                         dispEM(EM);
                     end
-%%%%                    C=find(ismember(upper(tIrrevRefModel.comps),compartment));
-%%%%                    if any(C)
-%%%%                        %Match to metabolites
-%%%%                        tIrrevRefModel.b(tIrrevRefModel.metComps==C,2)=taskStructure(i).UBout(L(j));
-%%%%                    else
-%%%%                        EM=['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist'];
-%%%%                        dispEM(EM);
-%%%%                    end
-                    
                 end
             end
             %Then add the normal constraints
@@ -320,11 +292,6 @@ for i=1:numel(taskStructure)
                 end
                 tRefModel.b(J2(nonzero_LBout),1)=taskStructure(i).LBout(I2(nonzero_LBout));
                 tRefModel.b(J2,2)=taskStructure(i).UBout(I2);
-                
-                %The metabolites should be identical in the reversible model
-%%%%                tIrrevRefModel.b(J2(nonzero_LBout),1)=taskStructure(i).LBout(I2(nonzero_LBout));
-%%%%                tIrrevRefModel.b(J2,2)=taskStructure(i).UBout(I2);
-
             end
         end
         
@@ -336,15 +303,7 @@ for i=1:numel(taskStructure)
             rxn.rxns=strcat({'TEMPORARY_'},num2str((1:numel(taskStructure(i).equations))'));
             tModel=addRxns(tModel,rxn,3);
             tRefModel=addRxns(tRefModel,rxn,3);
-%%%%            tIrrevRefModel=addRxns(tIrrevRefModel,rxn,3);
-            %Handle if the any of the added rxns are irreversible
-%%%%            if (any(tIrrevRefModel.rev == 1))
-%%%%                tmp = convertToIrrev(tIrrevRefModel);
-%%%%                tRxnScoresIrrev = [tRxnScoresIrrev;zeros(numel(tmp.rxns)-numel(tIrrevRefModel.rxns),1)];
-%%%%                tIrrevRefModel = tmp;
-%%%%            end
             tRxnScores = [tRxnScores;zeros(length(rxn.lb),1)];
-%%%%            tRxnScoresIrrev = [tRxnScoresIrrev;zeros(length(rxn.lb),1)];
         end
         %Add changed bounds
         if ~isempty(taskStructure(i).changed)
@@ -352,10 +311,6 @@ for i=1:numel(taskStructure)
             tModel=setParam(tModel,'ub',taskStructure(i).changed,taskStructure(i).UBrxn);
             tRefModel=setParam(tRefModel,'lb',taskStructure(i).changed,taskStructure(i).LBrxn);
             tRefModel=setParam(tRefModel,'ub',taskStructure(i).changed,taskStructure(i).UBrxn);
-            %TODO: Fix this for tIrrevRefModel. This is not used in any human-GEM tasks, so let's skip this for now.
-%%%%            error('Tasks with change on rxn bounds are currently not implemented');
-            %It gets a bit complicated here, if the bounds are changed on reversible reactions. Epecially
-            %if that makes a non-reversible reaction reversible
         end
         
         %Solve and print. Display a warning if the problem is not solveable
@@ -364,8 +319,7 @@ for i=1:numel(taskStructure)
             %Only do gap-filling if it cannot be solved
             failed=false;
             try
-%%%%                [newRxns, newModel, exitFlag]=fillGapsOpt(tModel,model,tRefModel,tIrrevRefModel,false,supressWarnings,tRxnScores,tRxnScoresIrrev,params);
-                [newRxns, newModel, exitFlag]=fillGapsOpt(tModel,model,tRefModel,false,supressWarnings,tRxnScores,params);
+                [newRxns, newModel, exitFlag]=ftINITFillGaps(tModel,model,tRefModel,false,supressWarnings,tRxnScores,params);
                 if exitFlag==-2
                     EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" was aborted before reaching optimality. Consider increasing params.maxTime\n'];
                     dispEM(EM,false);
@@ -391,7 +345,7 @@ for i=1:numel(taskStructure)
                     model = newModel;
                     
                     %Keep track of the added reactions
-                    addedRxns(ismember(refModel.rxns,newRxns),i)=true; %FIXME - some room for optimization if this is slow - we have this inside fillGapsOpt - not much of a problem, goes quickly
+                    addedRxns(ismember(refModel.rxns,newRxns),i)=true;
                 end
                 if printOutput==true
                     fprintf(['[' taskStructure(i).id '] ' taskStructure(i).description ': Added ' num2str(numel(newRxns)) ' reaction(s), ' num2str(nAdded) ' reactions added in total\n']);

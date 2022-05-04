@@ -1,7 +1,6 @@
-%Part of ftINIT, optimized version of the previous function from RAVEN.
-function [addedRxns, newModel, exitFlag]=fillGapsOpt(tModel, origModel, tRefModel,allowNetProduction,supressWarnings,rxnScores,params)
-% fillGapsOpt
-%   Variant of fillGaps specially adapted to speed up generation of ftINIT models
+function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefModel,allowNetProduction,supressWarnings,rxnScores,params)
+% ftINITFillGaps
+%   Variant of fillGaps specially adapted to speed up generation of ftINIT models.
 %
 %   tModel              model that contains the task-specific rxns.
 %   origModel           model without task-specific rxns.         
@@ -79,31 +78,11 @@ if nargin<7
     params=struct();
 end
 
-%Check if the tModel has an unconstrained field. If so, give a
-%warning - we should check if this should be here later.
-%We don't need to check this here, it is checked further up
-%if supressWarnings==false
-%    if isfield(tModel,'unconstrained')
-%        EM='This algorithm is meant to function on a tModel with exchange reactions for uptake and excretion of metabolites. The current tModel still has the "unconstrained" field';
-%        dispEM(EM,false);
-%    else
-%        if isempty(getExchangeRxns(tModel,'both'))
-%            fprintf('NOTE: This algorithm is meant to function on a tModel with exchange reactions for uptake and excretion of metabolites. The current tModel does not seem to contain any such reactions.\n');
-%        end
-%    end
-%end
-
 %Simplify the template models to remove constrained rxns. At the same time,
 %check that the id of the template models isn't the same as the tModel. That
 %would cause an error further down
 tRefModel.rxnScores=rxnScores;
 tRefModel=simplifyModel(tRefModel,false,false,true);
-%if strcmpi(tRefModel.id,tModel.id)
-%    EM='The reference tModel cannot have the same id as the tModel';
-%    dispEM(EM);
-%end
-%%%%tIrrevRefModel.rxnScores = rxnScoresIrrev;
-%%%%tIrrevRefModel=simplifyModel(tIrrevRefModel,false,false,true);
 
 %This is a rather ugly solution to the issue that it's a bit tricky to keep
 %track of which scores belong to which reactions. This requires that
@@ -113,78 +92,29 @@ tModel.rxnScores=zeros(numel(tModel.rxns),1);
 %First merge all models into one big one
 fullModel = tRefModel;%mergeModels([{tModel};models],'metNames',true);
 
-%temp for testing
-%global m1;
-%m1 = fullModel;
-
 %Add that net production is ok
 if allowNetProduction==true
     %A second column in tModel.b means that the b field is lower and upper
     %bound on the RHS.
     tModel.b=[tModel.b(:,1) inf(numel(tModel.mets),1)];
     fullModel.b=[fullModel.b(:,1) inf(numel(fullModel.mets),1)];
-%%%%    tIrrevRefModel.b=[tIrrevRefModel.b(:,1) inf(numel(tIrrevRefModel.mets),1)];
 end
 
-% if useModelConstraints == true % we only use this case, the previously exising else was removed
 
-%Check that the input tModel isn't solveable without any input
-%We have already checked this in fitTasksOpt, no need to check it again
-%sol=solveLP(tModel);
-%if ~isempty(sol.f)
-%    addedRxns={};
-%    newModel=tModel;
-%    exitFlag=1;
-%    return;
-%end
-
-%Then check that the merged tModel is solveable
-%we just assume it is - otherwise there is either an error in the original model or in the tasks.
-%If there is problems with this, instead run the ordinary checkTasks and investigate this before using these with tINIT.
-%sol=solveLP(fullModel);
-%if isempty(sol.f)
-%    EM='There are no reactions in the template tModel(s) that can make the tModel constraints satisfied';
-%    dispEM(EM);
-%end
-
-%Remove dead ends for speed reasons. This has to be done here and
-%duplicate below because there is otherwise a risk that a reaction
-%which is constrained to something relevant is removed
-%It is probably difficult to get rid of this.
-%fullModel = simplifyModel(fullModel,false,false,false,true,false,false,false,[],true);
 fullModel.c(:)=0;
-%%%%tIrrevRefModel.c(:)=0;
-%end useModelConstraints 
-
 
 %Then minimize for the number of fluxes used. The fixed rxns doesn't need
 %to participate
 templateRxns = find(~ismember(fullModel.rxns, tModel.rxns)); %Check if this is slow, in that case keep track of this in fitTasksOpt and send it in
-%templateRxns=find(~strcmp(fullModel.rxnFrom,tModel.id));
 
-%%%[~, J, exitFlag]=getMinNrFluxesOpt2(fullModel,tIrrevRefModel,templateRxns,params,fullModel.rxnScores(templateRxns));%only the scores from the template rxns are used, so the others doesn't matter
-%%%[~, J, exitFlag]=getMinNrFluxes(fullModel,templateRxns,params,fullModel.rxnScores(templateRxns));%only the scores from the template rxns are used, so the others doesn't matter
-[~, J, exitFlag]=getMinNrFluxesOpt(fullModel,templateRxns,params,fullModel.rxnScores(templateRxns));%only the scores from the template rxns are used, so the others doesn't matter
+[~, J, exitFlag]=ftINITFillGapsMILP(fullModel,templateRxns,params,fullModel.rxnScores(templateRxns));%only the scores from the template rxns are used, so the others doesn't matter
 
 %Remove everything except for the added ones
-%%I=true(numel(fullModel.rxns),1);
-%%I(templateRxns(J))=false;
-%%addedModel=removeReactions(fullModel,I,true,true,true); %check if this is slow - no, quick
-%I=true(numel(fullModel.rxns),1);
-%I(templateRxns(J))=false;
 addedRxns = fullModel.rxns(templateRxns(J));
 rxnsToAdd.rxns = addedRxns;
 rxnsToAdd.equations = constructEquations(fullModel, addedRxns);
 rxnsToAdd.ub = fullModel.ub(templateRxns(J));
 rxnsToAdd.lb = fullModel.lb(templateRxns(J));
 newModel = addRxns(origModel,rxnsToAdd, 3, [], true); %we ignore gene rules etc here, they are not needed - we regenerate the model in the end by subtracting rxns from the full model.
-%ismember(rxnsToAdd.rxns, tModel.rxns)
 
-%rxnsToRem = setdiff(tRefModel.rxns, [tModel.rxns;tRefModel.rxns(templateRxns(J))]);
-%newModel = removeReactions(origRefModel, rxnsToRem, true);%remove rxns and mets, skip genes I think for now
-%addedRxns = tRefModel.rxns(templateRxns(J));
-%%addedRxns = addedModel.rxns;
-%%newModel=mergeModels({origModel;addedModel},'metNames',true);
-%addedRxns=setdiff(newModel.rxns,origModel.rxns);
-%%newModel=rmfield(newModel,'rxnScores');
 end

@@ -297,7 +297,7 @@ function testftINIT_T0003(testCase)
     mTemp.id = 'tmp';
     tmpRxnScores = testRxnScores([2;3;4;5;6;7;9;10]);
     %now check that R7 is added back
-    [outModel,addedRxnMat] = fitTasksOpt(mTemp,mTempRef,[],true,min(tmpRxnScores,-0.1),testModelTasks);
+    [outModel,addedRxnMat] = ftINITFillGapsForAllTasks(mTemp,mTempRef,[],true,min(tmpRxnScores,-0.1),testModelTasks);
     verifyTrue(testCase, all(strcmp(mTempRef.rxns(addedRxnMat),'R7')))%ok
 end
 

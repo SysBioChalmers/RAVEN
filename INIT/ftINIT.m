@@ -178,7 +178,6 @@ if (~isempty(metabolomicsData))
 else
     metData = [];
 end
-%}
 
 % Get rxn scores and adapt them to the minimized model
 origRxnScores = scoreComplexModel(prepData.refModel,hpaData,transcrData,tissue,celltype);
@@ -330,7 +329,8 @@ initModel = removeMets(initModel, setdiff(unusedMets, prepData.essentialMetsForT
 %    printScores(removeReactions(cModel,setdiff(cModel.rxns,rxnsToRem),true,true),'Reactions deleted by INIT',hpaData,transcrData,tissue,celltype);
 %end
 
-%The full model has exchange reactions in it. fitTasks calls on fillGaps,
+%The full model has exchange reactions in it. ftINITFillGapsForAllTasks calls 
+%ftINITFillGaps,
 %which automatically removes exchange metabolites (because it assumes that
 %the reactions are constrained when appropriate). In this case the
 %uptakes/outputs are retrieved from the task sheet instead. To prevent
@@ -371,9 +371,9 @@ if ~isempty(prepData.taskStruct)
         g_refRxnScores = rxnScores2nd;
         g_taskStructure = prepData.taskStruct;
         g_paramsFT = paramsFT; 
-        [outModel,addedRxnMat] = fitTasksOpt(initModelNoExc,refModelNoExc,[],true,min(rxnScores2nd,-0.1),prepData.taskStruct,paramsFT);
+        [outModel,addedRxnMat] = ftINITFillGapsForAllTasks(initModelNoExc,refModelNoExc,[],true,min(rxnScores2nd,-0.1),prepData.taskStruct,paramsFT);
     else
-        [outModel,addedRxnMat] = fitTasksOpt(initModelNoExc,refModelNoExc,[],true,[],prepData.taskStruct,paramsFT);
+        [outModel,addedRxnMat] = ftINITFillGapsForAllTasks(initModelNoExc,refModelNoExc,[],true,[],prepData.taskStruct,paramsFT);
     end
     %if printReport == true
     %    printScores(outModel,'Functional model statistics',hpaData,transcrData,tissue,celltype);

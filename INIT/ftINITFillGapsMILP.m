@@ -1,9 +1,11 @@
-function [x,I,exitFlag]=getMinNrFluxesOpt(model, toMinimize, params,scores)
-% getMinNrFluxesopt
+function [x,I,exitFlag]=ftINITFillGapsMILP(model, toMinimize, params,scores)
+% ftINITFillGapsMILP
 %   Returns the minimal set of fluxes that satisfy the model using
-%   mixed integer linear programming. This is an optimized variant that
-%   does not need to make an irrev model, which takes time. The problem 
-%   also becomes smaller (fewer integers but larger matrix)
+%   mixed integer linear programming. This is an optimized variant of the
+%   old function "getMinNrFluxes" that is adapted to ftINIT.
+%   It does not need to make an irrev model, which takes time. The problem 
+%   also becomes smaller (fewer integers but larger matrix). Only tested with 
+%   Gurobi.
 %
 %	model         a model structure
 %   toMinimize    either a cell array of reaction IDs, a logical vector
@@ -125,24 +127,6 @@ irrevIndexesInInd = find(model.rev(indexes) == 0);
 %   amount produced in one reaction unit must be larger than the largest
 %   possible flux in the model (but not too large to avoid bad scaling)
 
-%Calculate a solution to the problem without any constraints. This is to
-%get an estimate about the magnitude of fluxes in the model and to get a
-%feasible start solution.
-%We can skip this - the starting point is not implemented for Gurobi - as for 
-%the magnitude, we just use 1000 as limit.
-%sol=solveLP(model,1);
-
-%Return an empty solution if the non-constrained problem couldn't be solved
-%if isempty(sol.x)
-%    x=[];
-%    I=[];
-%    exitFlag=-1;
-%    return;
-%end
-
-%Take the maximal times 5 to have a safe margin. If it's smaller than 1000,
-%then use 1000 instead.
-%maxFlux=max(max(abs(sol.x))*5,1000);
 maxFlux=1000;
 %we build the total matrix as blocks: [S pos neg int b var]
 
@@ -203,22 +187,19 @@ end
 prob.lb = [model.lb;zeros(numel(revIndexes)*2,1);zeros(numel(indexes),1);model.b(:,1);zeros(numel(indexes),1)];
 prob.ub = [model.ub;inf(numel(revIndexes)*2,1);ones(numel(indexes),1);bub;inf(numel(indexes),1)];
 
-%not sure what these are for
-%prob.osense=1;
-%prob.csense=char(zeros(size(prob.a,1),1));
-%prob.csense(:)='E';
 prob.b=zeros(size(prob.a,1), 1);
 
 %Use the output from the linear solution as starting point. Only the values
 %for the integer variables will be used, but all are supplied.
 intsIndexes = find(prob.c ~= 0);
-%The start point is not important (solved quickly anyway) and is not supported by Gurobi, so just skip it.
+%The start point is not important (solved quickly anyway), so just skip it.
 %prob.sol.int.xx=zeros(numel(prob.c),1);
 %prob.sol.int.xx(intsIndexes(sol.x(indexes)>10^-3))=1;%these doesn't work for gurobi anyways...
 prob.x0=[];
 prob.vartype=repmat('C', 1, size(prob.A,2));
 prob.vartype(intsIndexes) = 'B';
 prob.csense = repmat('E', 1, size(prob.A,1));
+prob.osense=1; %minimize the objective
 
 %prob=rmfield(prob,{'blx','bux','blc','buc'});
 params.intTol = 10^-9; %experment with this value
@@ -242,24 +223,10 @@ x=res.full(1:numel(model.rxns));%the fluxes
 I=res.full(intsIndexes) > 10^-3;%The margin for integers in gurobi is 10^-5, not 10^-12 that was previously used! Use 10^-3 to have some margin!
 
 tmp = res.full(intsIndexes);
-%tmp3 = prob.c(intsIndexes);
-%tmp3(I)
 sel = (tmp > 10^-12) & (tmp < 0.5);
-tmp(sel)
-%tmp2 = x(indexes);
-%tmp2(I)
-%unique(x((tmp2 > 0) & (tmp2 < 0.001)))
-%Check if Mosek aborted because it reached the time limit
-%TODO: modify for cobra/gurobi
-% if strcmp('MSK_RES_TRM_MAX_TIME',res.rcode)
-%     exitFlag=-2;
-% end
+if sum(sel) > 0
+	%This may indicate that there is a problem with the tolerances in the solver
+	disp(['ftINITFillGapsMILP: Some variables meant to be boolean in the MILP have intermediate values. Num vars: ' num2str(sum(sel))])
+end
 
-%Map back to original model from irrevModel
-%x=xx(1:numel(model.rxns));
-%if numel(irrevModel.rxns)>numel(model.rxns)
-%    x(model.rev~=0)=x(model.rev~=0)-xx(numel(model.rxns)+1:end);
-%end
-
-%I=ismember(toMinimize,strrep(irrevModel.rxns(indexes(I>10^-3)),'_REV',''));%The margin for integers in gurobi is 10^-5, not 10^-12! Use 10^-3 to have some margin!
 end
