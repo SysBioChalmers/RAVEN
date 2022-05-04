@@ -453,6 +453,3 @@ modelManual.b(end+1:end+3)=[0];
 
 verifyEqual(testCase,modelNew,modelManual)
 end
-
-
-% TODO:  addRxnsGenesMets, 

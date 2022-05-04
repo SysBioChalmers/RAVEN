@@ -171,7 +171,7 @@ for i=1:2
         
         %If there are unbalanced rxns then delete one of them and iterate
         if any(I)
-            rxnToRemove=I(randsample(numel(I),1));
+            rxnToRemove=I(randperm(numel(I),1));
         else
             %If there are no unbalanced rxns in the solution
             if rxnRules==1
@@ -191,7 +191,7 @@ for i=1:2
                 %If there are any such reactions, remove one of them and
                 %iterate
                 if any(I)
-                    rxnToRemove=I(randsample(numel(I),1));
+                    rxnToRemove=I(randperm(numel(I),1));
                 else
                     if rxnRules==2
                         %This happens when all reactions used are balanced
@@ -222,7 +222,7 @@ for i=1:2
                             end
                         end
                         I=find(abs(solution)>10^-8);
-                        rxnToRemove=I(randsample(numel(I),1));
+                        rxnToRemove=I(randperm(numel(I),1));
                     end
                 end
             end
