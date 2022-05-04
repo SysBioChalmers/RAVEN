@@ -223,7 +223,7 @@ function testftINIT_T0001(testCase)
 %    params.TimeLimit = 10;
 
     testModel = getTstModel();
-    prepDataTest1 = prepINITModel(testModel, {}, {}, false);
+    prepDataTest1 = prepINITModel(testModel, {}, {}, false, {}, 's');
     %check some things in the prepData
     %1. We expect 3 rxns in origRxnsToZero:
     verifyTrue(testCase, all(strcmp(prepDataTest1.refModel.rxns(prepDataTest1.toIgnoreExch) , {'R1';'R8'})))
@@ -242,7 +242,7 @@ function testftINIT_T0001(testCase)
     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R8';'R9';'R10'})))
 
     %also test spontaneous
-    prepDataTest1 = prepINITModel(testModel, {}, {'R7';'R10'}, false);
+    prepDataTest1 = prepINITModel(testModel, {}, {'R7';'R10'}, false, {}, 's');
     verifyTrue(testCase, all(strcmp(prepDataTest1.refModel.rxns(prepDataTest1.toIgnoreExch | prepDataTest1.toIgnoreSpont), {'R1';'R7';'R8';'R10'})))
     arrayData1.genes = testModel.genes;
     arrayData1.tissues = {'a'};
@@ -263,7 +263,7 @@ function testftINIT_T0002(testCase)
     testModelTasks = getTstModelTasks();
     testRxnScores = getTstModelRxnScores();
     testParams = struct();
-    prepDataTest1 = prepINITModel(testModel, testModelTasks, {}, false);
+    prepDataTest1 = prepINITModel(testModel, testModelTasks, {}, false, {}, 's');
     %We now expect to R2 and R7 to be essential. Note that R1 and R8 are not essential,
     %the exchange rxns are not used when checking tasks.
     %This is a bit complicated to check, because the essential rxns are expressed
@@ -365,7 +365,7 @@ function testftINIT_T0008(testCase)
     testParams = struct();
 
     testModel = getTstModel();
-    prepDataTest1 = prepINITModel(testModel, {}, {}, false);
+    prepDataTest1 = prepINITModel(testModel, {}, {}, false, {}, 's');
 
     arrayData1.genes = testModel.genes;
     arrayData1.tissues = {'a'};
@@ -381,7 +381,7 @@ function testftINIT_T0008(testCase)
     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R8';'R9';'R10'})))
 
     %make R7 and R10 spontaneous (also same as in T0001)
-    prepDataTest1 = prepINITModel(testModel, {}, {'R7';'R10'}, false);
+    prepDataTest1 = prepINITModel(testModel, {}, {'R7';'R10'}, false, {}, 's');
     verifyTrue(testCase, all(strcmp(prepDataTest1.refModel.rxns(prepDataTest1.toIgnoreExch | prepDataTest1.toIgnoreSpont), {'R1';'R7';'R8';'R10'})))
     tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams);
     %the model should now change to include the "correct" path (including 'R2') and 
@@ -406,7 +406,7 @@ function testftINIT_T0008(testCase)
     arrayData1.levels = getExprForRxnScore(getTstModel5RxnScores());
     arrayData1.threshold = 1;
     
-    prepDataTest5 = prepINITModel(testModel5, {}, {'R7';'R10'}, false);
+    prepDataTest5 = prepINITModel(testModel5, {}, {'R7';'R10'}, false, {}, 's');
     tst1ResModel1 = ftINIT(prepDataTest5,arrayData1.tissues{1},[],[],arrayData1,{},getINITSteps(),true,true,testParams);
     %We expect the 'true' path, i.e. through R2, not R9/R10 or R11-R14
     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R4';'R6';'R7';'R8'})), 1)
@@ -417,6 +417,22 @@ function testftINIT_T0008(testCase)
     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R7';'R8';'R11';'R13'})), 1)
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%T0009: getExprFromRxnScore
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function testftINIT_T0009(testCase)
+    testModel = getTstModel();
+    prepDataTest1 = prepINITModel(testModel, {}, {}, false, {}, 's');
+
+    arrayData1.genes = testModel.genes;
+    arrayData1.tissues = {'a'};
+    arrayData1.levels = getExprForRxnScore(getTstModelRxnScores());
+    arrayData1.threshold = 1;
+    
+    rxnScores = scoreComplexModel(prepDataTest1.refModel,[],arrayData1,arrayData1.tissues{1},[]);
+    expRes = getTstModelRxnScores();
+    verifyTrue(testCase, all(abs(rxnScores - expRes) < 10^-10)) %ok
+end
 
 function testModelL = getTstModelL()
 
@@ -508,7 +524,7 @@ function testftINIT_T0050(testCase)
     arrayDataL.threshold = 1;
 
     %Run prep data
-    prepDataL = prepINITModel(testModelL, [], {}, false, {});
+    prepDataL = prepINITModel(testModelL, [], {}, false, {}, 's');
 
     mres = ftINIT(prepDataL,arrayDataL.tissues{1},[],[],arrayDataL,[],getINITSteps(),true,true,testParams);
     mres2 = ftINIT(prepDataL,arrayDataL.tissues{1},[],[],arrayDataL,[],getINITSteps([], 'full'),true,true,testParams);
