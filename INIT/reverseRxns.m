@@ -1,7 +1,7 @@
 function model=reverseRxns(model, rxns)
-% model=reverseRxns(model, rxns)
-% reverses reactions
-% model     the model to change
+% reverseRxns
+% Reverses reactions
+% model     the model to change (input/output)
 % rxns      the rxns to reverse
 
 rxnInd = find(ismember(model.rxns,rxns));

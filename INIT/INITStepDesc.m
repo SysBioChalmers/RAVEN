@@ -1,11 +1,28 @@
 classdef INITStepDesc
+% Describes a step in the ftINIT algorithm. A cell array of objects of this
+% class is used as input to ftINIT to specify how the algorithm should be run.
    properties
       PosRevOff
       AllowMetSecr
       HowToUsePrevResults %'ignore', 'exclude', 'essential'
-      RxnsToIgnoreMask %[exch;import;simple transport;advanced transport;spontaneous;extracellular;custom;all]
-                       %These only refers to reactions without GPRs (except custom)
-      MetsToIgnore
+      RxnsToIgnoreMask %Specifies reactions to leave outside the problem in
+                       %the MILP.
+                       % [b1,b2,b3,b4,b5,b6,b7,b8], bx is either 0 or 1, 
+                       % where 1 means that the group is excluded.
+                       % b1 - Exchange rxns
+                       % b2 - Import rxns without GPRs (from s into the cell)
+                       % b3 - Simple transport reactions without GPRs (moves one metabolite between compartments)
+                       % b4 - Advanced transport reactions without GPRs (moves metabolites between compartments, more complex function such as antiporter)
+                       % b5 - Spontaneous reactions
+                       % b6 - Reactions in the s compartment without GPRs
+                       % b7 - Customly specified rxns (sent in when generating prepData)
+                       % b8 - All rxns without GPRs
+
+      MetsToIgnore % Structure describing mets that can be removed from the model
+                   % before running ftINIT, such as water etc.
+                   % .simpleMets
+                   %      .mets        Names of metabolites to remove
+                   %      .compsToKeep Compartments for which metabolites should be kept.
       MILPParams %Cell array of MILPparams - dictates how many iterations that will be run in this step.
                  %Typically, MIPGap and TimeLimit is specified
       AbsMIPGaps %If the objective is close to zero, a percentage of that is very small. 
@@ -53,9 +70,6 @@ classdef INITStepDesc
          else
             obj.AbsMIPGaps = 10;            
          end
-         
-         
-         
       end
    end
 end

@@ -1,19 +1,24 @@
-function prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore)
-% prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore)
+function prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore, extComp)
+% prepINITModel
 %
 % The purpose of this function is to run time-consuming calculation steps that are not
 % dependent on the RNA-Seq data.
 %
-% origRefModel      The model to use. Expected to be something such as Human-GEM, Mouse-GEM, etc.
+% origRefModel      The model to use. Expected to be something such as Human-GEM, 
+%                   Mouse-GEM, etc.
 % taskStruct        The essential tasks. Can be loaded with for example
 %                   taskStruct = parseTaskList('../data/metabolicTasks_Essential.txt');
 % spontRxnNames     The spontaneous rxns. (opt, default {})
-% convertGenes      If true the genes are converted to gene names (from ENSEMBL) (opt, default {})
-% customRxnsToIgnore These reactions can be ignored in the ignore mask (specifying b7=1) (opt, default = {})
+% convertGenes      If true the genes are converted to gene names (from 
+%                   ENSEMBL) (opt, default false)
+% customRxnsToIgnore These reactions can be ignored in the ignore mask 
+%                   (specifying b7=1) (opt, default = {})
+% extComp           Name of the external compartment, typically 's' or 'e'. This
+%                   is used for identifying exch and import rxns (opt, default = 'e')
 %
 % prepData          The resulting prepData structure which is used as input to ftINIT
 %
-% Usage: prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore)
+% Usage: prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore, extComp)
 
 
 if nargin < 3
@@ -26,6 +31,10 @@ end
 
 if nargin < 5
     customRxnsToIgnore = {}; 
+end
+
+if nargin < 6
+    extComp = 'e';
 end
 
 disp('Step 1: Gene rules')
@@ -182,15 +191,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Identify reactions that should be ignored by tINIT, i.e. tINIT will not remove these regardless of score
-%We do this for three categories:
-%1. Exchange reactions - there is simply no point in removing those.
-%2. Simple transport reactions without GPRS (transports single compound between
-%   two compartments). We currently only include transport from the s 
-%   compartment into the cell. TODO: this could perhaps be changed. Not sure about the
-%   effects, but it would speed up the optimization considerably I would think.
-%   We calculate this as well, available in the AllTransp variables.
-%3. Spontaneous reactions. Currently, only a few exist in Human-GEM, but the number will 
-%   likely increase.
 
 
 [~,exchRxnInd] = getExchangeRxns(minModel2);
@@ -208,17 +208,17 @@ toIgnoreS = false(numel(minModel2.rxns),1);
 %We really only skip the reactions with two metabolites
 %where they are the same but different compartments - only skip the transport into the cell for now
 numMets = sum(minModel2.S ~= 0, 1);
-scomp = find(strcmp(minModel2.comps,'s'));
+scomp = find(strcmp(minModel2.comps,extComp));
 for i = 1:length(minModel2.rxns)
     %check that it has no GPR and that the rxn has two metabolites
     if strcmp(minModel2.grRules(i),'') && (numMets(i) == 2)
       metsComps = minModel2.metComps(minModel2.S(:,i) ~= 0);
       metNames = minModel2.metNames(minModel2.S(:,i) ~= 0);
-      if metsComps(1) ~= metsComps(2) && (metsComps(1) == scomp || metsComps(2) == scomp) %different compartments, one is 's'
+      if metsComps(1) ~= metsComps(2) && (metsComps(1) == scomp || metsComps(2) == scomp) %different compartments, one is the extComp
           if strcmp(metNames{1}, metNames{2}) %the same metabolite, it is a transport reaction
               toIgnoreImportRxns(i) = true;
           end
-      elseif metsComps(1) ~= metsComps(2) %different compartments, no check for 's'
+      elseif metsComps(1) ~= metsComps(2) %different compartments, no check for extComp
           if strcmp(metNames{1}, metNames{2}) %the same metabolite, it is a transport reaction
               toIgnoreSimpleTransp(i) = true;
           end
@@ -263,7 +263,7 @@ end
 toIgnoreSpont = ismember(minModel2.rxns, spontRxnNames);%only 10 rxns in human-GEM
 
 %rxns without GPRs in the s compartment (outside the cell)
-sCompInd = find(strcmp(minModel2.comps,'s'));
+sCompInd = find(strcmp(minModel2.comps, extComp));
 for i = 1:length(minModel2.rxns)
     metsInd = find(minModel2.S(:,i) ~= 0);
     %check that it has more than 1 metabolite (not exch rxn) and no GPR
@@ -282,46 +282,14 @@ toIgnoreAllWithoutGPRs = cellfun(@isempty,minModel2.grRules);
 
 %Now, try to scale the model to become more favorable for the solver.
 %In general, we try to make all fluxes as similar as possible.
-%TODO: There is room for improvement here, this function is pretty simple.
+%      There is room for improvement here, this function is pretty simple.
 %      It only rescales reactions, while it would be possible to rescale
-%      metabolites as well (ROS => mROS, albumin => millialbumin, etc., but
+%      metabolites as well (ROS => kROS, albumin => millialbumin, etc., but
 %      scaled freely with a mathematical method). It could potentially open up
 %      for using less strict margins in the MILP, and make it run faster.
 scaledMinModel = rescaleModelForINIT(minModel3);
 scaledMinModel.ub(scaledMinModel.ub > 0) = 1000;
 scaledMinModel.lb(scaledMinModel.lb < 0) = -1000;
-
-finalMinModel = scaledMinModel;
-%{
-if (removeSimpleCompounds || removeCurrencyMets)
-    simpleCompounds = {'H2O';'Pi';'PPi';'H+';'O2';'CO2';'Na+'};
-    currencyMets = {'AMP';'ADP';'ATP';'GMP';'GDP';'GTP';'NAD+';'NADH';'NADP+';'NADPH';'FAD';'FADH2'};
-    ignoreComps = {'i'};
-    ignoreCompsInd = nan(length(ignoreComps),1);
-    for i = 1:length(ignoreComps)
-        ignoreCompsInd = find(strcmp(finalMinModel.comps, ignoreComps{i}));
-    end
-    
-    metsToRemove = {};
-    if (removeSimpleCompounds)
-        metsToRemove = simpleCompounds;
-    end
-    if (removeCurrencyMets)
-        metsToRemove = [metsToRemove;currencyMets];
-    end
-    
-    
-    
-    
-    finalMinModel = 
-    
-removeSimpleCompounds = false; 
-end
-
-if nargin < 6
-    removeCurrencyMets = false; 
-%}
-
 
 % create data structure with pre-processing results
 prepData.taskReport = taskReport;

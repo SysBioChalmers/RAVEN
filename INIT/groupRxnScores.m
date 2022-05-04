@@ -1,15 +1,29 @@
-function newRxnScores=groupRxnScores(model, origRxnScores, origRxnIds, groupIds, origRxnsToZero)
-%this function sums up the reaction scores for all reactions that were merged into one
-%origRxnsToZero is a logical vector saying which of the original rxns that should not
-%be part of the problem. The way this is solved is that all such reactions have
-%a rxnScore of 0. If any original rxnScore value should be zero (which is very unlikely)
-%it is changed to 0.01.
-%If the sum of the rxnScores for a merged rxn becomes zero while some of them are nonzero,
-%the new value will also be 0.01, to distinguish the rxn from rxns with only rxns to zero
-%There are two reasons why we don't want zeros in the reaction scores unless these reactions should be ignored:
-%1) we want to be able to separate those
-%2) it is difficult to handle a zero value in the MILP - the on/off of such a 
-%   reaction can be random, so better to fix it in one direction.
+function newRxnScores = groupRxnScores(model, origRxnScores, origRxnIds, groupIds, origRxnsToZero)
+% groupRxnScores
+% This function sums up the reaction scores for all reactions that were merged 
+% into one by the linear merge.
+% 
+% model          The model with linearly merged rxns.
+% origRxnScores  The rxnScores from the model before the linear merge.
+% origRxnIds     The rxn ids of the model before the linear merge.
+% groupIds       The groupIds vector output from linearMerge.
+%                There is one integer for each rxn in origRxnIds. 0 means
+%                the reaction was merged. A non-zero integer means that the
+%                reaction was merged with all other rxns having the same integer.
+% origRxnsToZero A logical vector saying which of the original rxns that should not
+%                be part of the problem. The way this is solved is that all 
+%                such reactions have a rxnScore of 0. If any original rxnScore 
+%                value should be zero (which is very unlikely) it is changed to 0.01.
+%                If the sum of the rxnScores for a merged rxn becomes zero 
+%                while some of them are nonzero, the new value will also be 0.01, 
+%                to distinguish the rxn from rxns with only rxns to zero.
+%                There are two reasons why we don't want zeros in the reaction 
+%                scores unless these reactions should be ignored:
+%                  1) we want to be able to separate those
+%                  2) it is difficult to handle a zero value in the MILP - 
+%                     the on/off of such a reaction can be random, so better 
+%                     to fix it in one direction.
+
 
 newRxnScores = zeros(length(model.rxns),1);
 [~,ia,ib] = intersect(model.rxns,origRxnIds);

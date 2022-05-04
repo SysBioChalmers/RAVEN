@@ -1,4 +1,4 @@
-function [reducedModel,origRxnIds,groupIds,reversedRxns]=mergeLinear(model, reservedRxns)
+function [reducedModel,origRxnIds,groupIds,reversedRxns]=mergeLinear(model, noMergeRxns)
 % mergeLinear
 %   Simplifies a model by merging rxns with linear dependencies. There are two
 %   differences from the function in simplifyModel:
@@ -7,14 +7,16 @@ function [reducedModel,origRxnIds,groupIds,reversedRxns]=mergeLinear(model, rese
 %      probably reduce the size of the model more.
 %
 %   model                 a model structure
-%   reservedRxns          cell array with reaction IDs that are not allowed to be
+%   noMergeRxns           Cell array with reaction IDs that are not allowed to be
+%                         merged
 %
 %   reducedModel          an updated model structure
 %   origRxnIds            Cell array: original rxn ids, used together with the groupIds variable
 %   groupIds              Vector of ids: merged rxns have the same id, same length as origRxnIds
+%                         0 means a reaction was not merged.
 %   reversedRxns          Vector of booleans, saying for each rxn if it is reversed in the combined rxns.
 %
-%   Usage: [reducedModel,origRxnIds,groupIds]=mergeLinear(model,reservedRxns)
+%   Usage: [reducedModel,origRxnIds,groupIds]=mergeLinear(model,noMergeRxns)
 
 
 reducedModel=model;
@@ -34,9 +36,6 @@ if isfield(reducedModel,'geneComps')
     reducedModel.geneComps=[];
 end
 
-%Convert the model to irreversible
-%%%irrevModel=convertToIrrev(reducedModel);
-
 nextGroupId = 1;
 origRxnIds = reducedModel.rxns;
 groupIds = zeros(numel(reducedModel.rxns),1);
@@ -47,25 +46,17 @@ while 1
     %Get the banned reaction indexes. Note that the indexes will change
     %in each iteration, but the names will not as they won't be merged
     %with any other reaction
-    %%%bannedIndexes=getIndexes(irrevModel,reservedRxns,'rxns');
-    bannedIndexes=getIndexes(reducedModel,reservedRxns,'rxns');
+    bannedIndexes=getIndexes(reducedModel,noMergeRxns,'rxns');
 
     %Select all metabolites that are only present as reactants/products
     %in one reaction
     twoNonZero = find(sum(reducedModel.S ~= 0, 2) == 2);
-    %%%singleNegative=find(sum(irrevModel.S'<0)==1);
-    %%%singlePositive=find(sum(irrevModel.S'>0)==1);
-
-    %Retrieve the common metabolites
-    %%common=intersect(singleNegative,singlePositive);
 
     mergedSome=false;
 
     %Loop through each of them and see if the reactions should be
     %merged
-    %%%for i=1:numel(common)
     for i=1:numel(twoNonZero)
-        %%%involvedRxns=find(irrevModel.S(common(i),:));
         involvedRxns=find(reducedModel.S(twoNonZero(i),:));
         %Check that we can have one positive and one negative
         pos = sum(reducedModel.S(twoNonZero(i),involvedRxns).' > 0 | reducedModel.rev(involvedRxns));
@@ -113,7 +104,6 @@ while 1
 
             %Calculate how many times the second reaction has to be
             %multiplied before being merged with the first
-            %%%stoichRatio=abs(irrevModel.S(common(i),involvedRxns(1))/irrevModel.S(common(i),involvedRxns(2)));
             stoichRatio=abs(reducedModel.S(twoNonZero(i),involvedRxns(1))/reducedModel.S(twoNonZero(i),involvedRxns(2)));
 
             %Add the second to the first

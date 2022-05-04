@@ -1,11 +1,12 @@
-%This is the main ftINIT function
-%Metabolomics is currently not supported, but will be when implemented into RAVEN.
-function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, taskReport, fullMipRes] = ftINIT(prepData, tissue, celltype, hpaData, transcrData, metabolomicsData, INITSteps, removeGenes, useScoresForTasks, paramsFT)
+function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes] = ftINIT(prepData, tissue, celltype, hpaData, transcrData, metabolomicsData, INITSteps, removeGenes, useScoresForTasks, paramsFT)
 % ftINIT
-%   Generates a model using the INIT algorithm, based on proteomics and/or
-%   transcriptomics and/or metabolomics and/or metabolic tasks.
-%   This is the newer version, which has updated handling of gene rules to
-%   differentiate between isozymes and enzyme complexes.
+%   Main function for generates a model using the ftINIT algorithm, based 
+%   on proteomics and/or transcriptomics and/or metabolomics and/or metabolic 
+%   tasks. The algorithm is not designed for running with metabolomics only.
+%   The function prepINITModel needs to be run first for the template
+%   model (such as the generic Human-GEM), but only need to be run once. This
+%   function precalculates things independent of the omics to speed up the model
+%   generation process, and outputs the prepData, which is input to this function.
 %
 %   prepData            The prepdata for the model.
 %   tissue              tissue to score for. Should exist in either
@@ -39,17 +40,9 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, taskReport
 %                       should be plotted (opt, default = false)
 %   metabolomicsData    cell array with metabolite names that the model
 %                       should produce (opt, default [])
-%   rxnsToIgnorePatternStep1 Pattern describing which reactions to ignore in step 1 and 2:
-%                       [b1,b2,b3,b4,b5,b6,b7,b8], bx is either 0 or 1, where 1 means that the group is excluded.
-%                       b1 - Exchange rxns
-%                       b2 - Import rxns without GPRs (from s into the cell)
-%                       b3 - Simple transport reactions without GPRs (moves one metabolite between compartments)
-%                       b4 - Advanced transport reactions without GPRs (moves metabolites between compartments, more complex function such as antiporter)
-%                       b5 - Spontaneous reactions
-%                       b6 - Reactions in the s compartment without GPRs
-%                       b7 - Customly specified rxns (sent in when generating prepData)
-%                       b8 - All rxns without GPRs
-%   rxnsToIgnorePatternStep3 - same as above, but for step 3. Step 3 is only run if this differs from rxnsToIgnorePatternStep1
+%   INITSteps           Specifies the steps in the algorithm. For more info,
+%                       see INITStepDesc and getINITSteps. 
+%                       (opt, default getINITSteps(), which is the standard ftINIT).
 %   removeGenes         if true, low-abundance genes will be removed from
 %                       grRules, unless they are the only gene associated 
 %                       with a reaction, or a subunit of an enzyme complex
@@ -61,14 +54,6 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, taskReport
 %   useScoresForTasks   true if the calculated reaction scored should be 
 %                       used as weights when fitting to tasks (opt, default
 %                       true)
-%   milpSkipMets        Defines metabolites that will be removed from the model before running ftINIT (for example water)
-%   allowExcretion      Allows excretion of metabolites in step 1 and 2.
-%   printReport         true if a report should be printed to the screen
-%                       (opt, default true)
-%   params              parameter structure as used by getMILPParams. This
-%                       is for the INIT algorithm. For the the MILP 
-%                       problems solved to fit tasks, see paramsFT (opt,
-%                       default [])
 %   paramsFT            parameter structure as used by getMILPParams. This
 %                       is for the fitTasks step. For the INIT algorithm,
 %                       see params (opt, default [])
@@ -83,27 +68,15 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, taskReport
 %                           -2: metabolite name not found in model
 %                           -1: metabolite found, but it could not be produced
 %                           1: metabolite could be produced
-%   essentialRxnsForTasks   cell array of the reactions which were
-%                           essential to perform the tasks
 %   addedRxnsForTasks       cell array of the reactions which were added in
 %                           order to perform the tasks
-%   deletedDeadEndRxns      cell array of reactions deleted because they
+%   deletedRxnsInINIT       cell array of reactions deleted because they
 %                           could not carry flux (INIT requires a
 %                           functional input model)
-%   taskReport              structure with the results for each task
-%   	id                  cell array with the id of the task
-%       description         cell array with the description of the task
-%       ok                  boolean array with true if the task was successful
-%       essential           cell array with cell arrays of essential
-%                           reactions for the task
-%       gapfill             cell array of cell arrays of reactions included
-%                           in the gap-filling for the task
 %   fullMipRes              The solver results from the last MILP step run
 %
 %   This is the main function for automatic reconstruction of models based
-%   on the INIT algorithm (PLoS Comput Biol. 2012;8(5):e1002518). Not all
-%   settings are possible using this function, and you may want to call the
-%   functions scoreComplexModel, runINIT and fitTasks individually instead.
+%   on the ftINIT algorithm (). 
 %
 %   NOTE: Exchange metabolites should normally not be removed from the model
 %   when using this approach, since checkTasks/fitTasks rely on putting specific
@@ -111,11 +84,11 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, taskReport
 %   if any are present. Use importModel(file,false) to import a model with
 %   exchange metabolites remaining.
 %
-%   Usage: [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks,...
-%               deletedDeadEndRxns, deletedRxnsInINIT, taskReport] = ...
-%               getINITModel2(refModel, tissue, celltype, hpaData, transcrData,...
-%               metabolomicsData, removeGenes, taskFile, useScoresForTasks, ...
-%               printReport, taskStructure, params, paramsFT);
+%   Usage: [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, ...
+%               fullMipRes] = ...
+%               ftINIT(prepData, tissue, celltype, hpaData, transcrData, ...
+%               metabolomicsData, INITSteps, removeGenes, useScoresForTasks, ...
+%               paramsFT);
 %
 
 
@@ -330,9 +303,8 @@ initModel = removeMets(initModel, setdiff(unusedMets, prepData.essentialMetsForT
 %end
 
 %The full model has exchange reactions in it. ftINITFillGapsForAllTasks calls 
-%ftINITFillGaps,
-%which automatically removes exchange metabolites (because it assumes that
-%the reactions are constrained when appropriate). In this case the
+%ftINITFillGaps, which automatically removes exchange metabolites (because it 
+%assumes that the reactions are constrained when appropriate). In this case the
 %uptakes/outputs are retrieved from the task sheet instead. To prevent
 %exchange reactions being used to fill gaps, they are deleted from the
 %reference model here.
@@ -396,23 +368,6 @@ model = outModel;
 % reactions from the reference model are added, except for those which
 % involve metabolites that are not in the model.
 
-
-
-%TODO: NOT SURE ABOUT THE TASK REPORT THINGS BELOW, INVESTIGATE WHAT THIS IS USED FOR
-% The task analysis should probably be done separately, for implementation in RAVEN, remove this part.
-% Add information about essential reactions and reactions included for
-% gap-filling and return a taskReport
-taskReport = prepData.taskReport;
-if ~isempty(prepData.taskStruct)
-    I = find(taskReport.ok); %Ignore failed tasks
-    for i = 1:numel(I)
-        taskReport.gapfill{I(i),1} = refModelNoExc.rxns(addedRxnMat(:,i));
-    end
-else
-    taskReport = [];
-end
-
-
 %Start from the original model, and just remove the reactions that are no longer there (and keep exchange rxns). The model we got out
 %from the problem is not complete, it doesn't have GRPs etc.
 %The logic below is a bit complicated. We identify the reactions that should be removed from the full model as 
@@ -440,14 +395,14 @@ end
 
 %This is for printing a summary of a model
 function [rxnS, geneS] = printScores(model,name,hpaData,transcrData,tissue,celltype)
-[a, b] = scoreComplexModel(model,hpaData,transcrData,tissue,celltype);
-rxnS = mean(a);
-geneS = mean(b,'omitnan');
-fprintf([name ':\n']);
-fprintf(['\t' num2str(numel(model.rxns)) ' reactions, ' num2str(numel(model.genes)) ' genes\n']);
-fprintf(['\tMean reaction score: ' num2str(rxnS) '\n']);
-fprintf(['\tMean gene score: ' num2str(geneS) '\n']);
-fprintf(['\tReactions with positive scores: ' num2str(100*sum(a>0)/numel(a)) '%%\n\n']);
+    [a, b] = scoreComplexModel(model,hpaData,transcrData,tissue,celltype);
+    rxnS = mean(a);
+    geneS = mean(b,'omitnan');
+    fprintf([name ':\n']);
+    fprintf(['\t' num2str(numel(model.rxns)) ' reactions, ' num2str(numel(model.genes)) ' genes\n']);
+    fprintf(['\tMean reaction score: ' num2str(rxnS) '\n']);
+    fprintf(['\tMean gene score: ' num2str(geneS) '\n']);
+    fprintf(['\tReactions with positive scores: ' num2str(100*sum(a>0)/numel(a)) '%%\n\n']);
 end
 
 function rxnsToIgnore = getRxnsFromPattern(rxnsToIgnorePattern, prepData)

@@ -1,12 +1,12 @@
 function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(model,rxnScores,metData,essentialRxns,prodWeight,allowExcretion,remPosRev,params)
 % ftINITInternalAlg
-%	Generates a model using the INIT algorithm, based on proteomics and/or
-%   transcriptomics and/or metabolomics and/or metabolic tasks
+%	This function runs the MILP for a step in ftINIT.
 %
 %   model           a reference model structure
 %   rxnScores       a vector of scores for the reactions in the model.
 %                   Positive scores are reactions to keep and negative
-%                   scores are reactions to exclude (opt, default all 0.0)
+%                   scores are reactions to exclude. Rxns set to 0 are excluded
+%                   from the problem.
 %   metData         boolean matrix with mets as rows and rxns as columns
 %                   saying which reaction produces each detected met (opt, default [])
 %   essentialRxns   cell array of reactions that are essential and that
@@ -31,33 +31,28 @@ function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(m
 %                   (opt, default false)
 %   remPosRev       If true, the positive reversible reactions are removed from the problem.
 %                   This is used in step 1 of ftINIT (opt, default false)
-%   params          parameter structure as used by getMILPParams (opt,
-%                   default [])
+%   params          parameters for the MILP, for example MIPGap and TimeLimit
+%                  (opt, default [])
 %
-%   deletedRxns     reactions which were deleted by the algorithm
+%   deletedRxns     reactions which were deleted by the algorithm (only 
+%                   rxns included in the problem)
 %   metProduction   array that indicates which of the
 %                   metabolites in presentMets that could be
 %                   produced
-%                   -2: metabolite name not found in model
-%                   -1: metabolite found, but it could not be produced
+%                   0: metabolite could not be produced
 %                   1: metabolite could be produced
 %   res             The result from the MILP
-%   turnedOnRxns    The reactions determined to be present
+%   turnedOnRxns    The reactions determined to be present (only 
+%                   rxns included in the problem) 
 %   fluxes          The fluxes from the MILP
 %
 %   This function is the actual implementation of the algorithm. See
-%   getINITModel9 for a higher-level function for model reconstruction. 
+%   ftINIT for a higher-level function for model reconstruction. 
 %
 %   Usage: [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=runINIT9(model,...
 %           rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,...
 %           remPosRev,params)
 
-if nargin<2
-    rxnScores=zeros(numel(model.rxns),1);
-end
-if isempty(rxnScores)
-    rxnScores=zeros(numel(model.rxns),1);
-end
 if nargin<3
     metData={};
 end
@@ -94,12 +89,7 @@ if isfield(model,'unconstrained')
 end
 
 
-%Get the indexes of the essential reactions and remove them from the
-%scoring vector'
 essential = ismember(model.rxns,essentialRxns);
-
-essentialIndex=find(essential);
-
 
 %Some nice to have numbers
 nMets=numel(model.mets);
@@ -150,7 +140,7 @@ nNegRev = numel(negRevRxns);
 nPosIrrev = numel(posIrrevRxns);
 nNegIrrev = numel(negIrrevRxns);
 nEssRev = numel(essRevRxns);
-nEssIrrev = numel(essIrrevRxns);
+nEssIrrev = numel(essIrrevRxns); %not used, but left for symmetry
 nMetabolMets = size(metData,1);
 
 milpModel = model;
@@ -176,7 +166,7 @@ milpModel = model;
 %A: Witout irrev model
 % 1: Split up the flux into positive and negative: flux - vnrp + vnrn == 0, 0 <= vprp,vprn <= Inf.
 % 2: Force the Yi (on/off) var on if the flux is on: vnrp + vnrn <= 0.1 * Yi, Yi E {0,1}: vnrp + vnrn - 0.1 * Yi + vnrv1 == 0, vnrv1 >= 0.
-%B: Irrev model
+%B: Irrev model (Not used for now)
 % 1. We now have two reactions, but still just boolean variable. We know that
 %    the flux can only be positive, so we just say that flux1 + flux2 <= 0.1 * Yi, Yi E {0,1}: flux1 + flux2 - 0.1 * Yi + vnrv1 == 0, vnrv1 >= 0.
 %    We don't care if there is any loop - there is just no benefit for the objective to generate one, and it doesn't matter.
@@ -197,7 +187,7 @@ milpModel = model;
 % mon gets -prodWeight in the c vector (i.e. objective function)
 % A tricky part is that some of the reactions producing a metabolite are left outside the problem
 % This is solved by moving them into the problem, but with the score 0. They can still be treated as positive
-% reactions. In the end, we are not interested if they are on though, but they may be
+% reactions. In the end, we are not interested if they are on though, but they may
 % allow for production of a metabolite, giving no benefit of turning on another producer reaction.
 
 %The total matrix then looks like this. Note that we have ordered the categories, two reactions each,
@@ -253,12 +243,7 @@ milpModel = model;
 %build the A matrix
 %S row
 forceOnLim=0.0001;
-
-%if makeIrrev
-%    varsPerNegRev = 1;
-%else
-    varsPerNegRev = 3;
-%end
+varsPerNegRev = 3;
 
 
 %Figure out the number of variables needed for metabolomics
@@ -276,14 +261,10 @@ prRows4 = [sparse(nPosRev,nRxns + nYBlock + nPosIrrev + nPosRev) speye(nPosRev) 
 
 niRows = [sEye(negIrrevRxns,:) sparse(nNegIrrev,nPosIrrev + nPosRev) speye(nNegIrrev)*-100 sparse(nNegIrrev,nNegRev + nPosIrrev + nPosRev*6) speye(nNegIrrev) sparse(nNegIrrev,nNegRev*varsPerNegRev + nEssRev*6+nMetVars)];
 
-%if makeIrrev
-    %flux1 + flux2 - 100 * Yi + vnrv1 == 0, vnrv1 >= 0.
-%    nrRows = [sEye(negRevRxns,:) + sEye(reversedNegRevInd,:) sparse(nNegRev,nPosIrrev + nPosRev + nNegIrrev) speye(nNegRev)*-100 sparse(nNegRev, nPosIrrev + nPosRev*6 + nNegIrrev) speye(nNegRev) sparse(nNegRev,nEssRev*6)];    
-%else
-    nrRows1 = [sEye(negRevRxns,:) sparse(nNegRev,nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev) speye(nNegRev)*-1 speye(nNegRev) sparse(nNegRev,nNegRev + nEssRev*6+nMetVars)];
-    nrRows2 = [sparse(nNegRev,nRxns + nPosIrrev + nPosRev + nNegIrrev) speye(nNegRev)*-100 sparse(nNegRev,nPosIrrev + nPosRev*6 + nNegIrrev) speye(nNegRev) speye(nNegRev) speye(nNegRev) sparse(nNegRev,nEssRev*6+nMetVars)];
-    nrRows = [nrRows1;nrRows2];
-%end
+nrRows1 = [sEye(negRevRxns,:) sparse(nNegRev,nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev) speye(nNegRev)*-1 speye(nNegRev) sparse(nNegRev,nNegRev + nEssRev*6+nMetVars)];
+nrRows2 = [sparse(nNegRev,nRxns + nPosIrrev + nPosRev + nNegIrrev) speye(nNegRev)*-100 sparse(nNegRev,nPosIrrev + nPosRev*6 + nNegIrrev) speye(nNegRev) speye(nNegRev) speye(nNegRev) sparse(nNegRev,nEssRev*6+nMetVars)];
+nrRows = [nrRows1;nrRows2];
+
 erRows1 = [sEye(essRevRxns,:) sparse(nEssRev,nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev) speye(nEssRev)*-1 speye(nEssRev) sparse(nEssRev, nEssRev*4+nMetVars)];
 erRows2 = [sparse(nEssRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev) speye(nEssRev) speye(nEssRev) speye(nEssRev)*-1 sparse(nEssRev, nEssRev*3+nMetVars)];
 erRows3 = [sparse(nEssRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev) speye(nEssRev) sparse(nEssRev, nEssRev*2) speye(nEssRev)*-100 speye(nEssRev) sparse(nEssRev, nEssRev+nMetVars)];
@@ -366,9 +347,14 @@ onoff2(negIrrevRxns) = res.full(onoffNegIrrev);
 onoff2(negRevRxns) = res.full(onoffNegRev);
 
 
-%investigate a bit
-%problematic = onoff < 0.99 & onoff > 0.01;
-%onoff(problematic)
+%investigate a bit - this code could be used for fault finding. We have
+%this code commented out, but it is definitely worth testing this if for example
+%the solver is changed.
+%problematic = onoff < 0.99 & onoff > 0.01 & (rxnScores ~= 0).';
+%if sum(problematic) > 0
+%    disp('There are reactions that are in between on and off in the MILP. This may be due to the MILP parameter settings, the tolerances may be too large.')
+%    disp(['No problematic reactions: ', num2str(sum(problematic))])
+%end
 
 %so, it is only positive that are problematic. Likely because the 0.1 is too large. Test to change to 0.01
 %unique(onoff(onoff < 0.99 & onoff > 0.01))

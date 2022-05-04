@@ -1,4 +1,25 @@
-function steps=getINITSteps(metsToIgnore, series)
+function steps = getINITSteps(metsToIgnore, series)
+% getINITSteps
+%   Converts a reaction score to the gene expression (CPM or TPM) required 
+%   to get that reaction score, if the GPR is only a single gene.
+%   Useful function primarily in test cases, where you want to be able to
+%   define the reaction scores of rxns, but need to send in gene expression.
+%
+%   metsToIgnore  Structure describing mets that can be removed from the model
+%                 before running ftINIT, such as water etc.
+%                 (opt, default [])
+%       simpleMets
+%           mets  Names of metabolites to remove
+%           compsToKeep Compartments for which metabolites should be kept.
+%   series        Describes the way to run ftINIT: 
+%                 'default' - the standard 3-step procedure described in the paper
+%                 'full' - 1-step run similar to the old tINIT version, but 
+%                          without simplifications. Very slow.
+%                 (opt, default 'default')
+%
+%   steps         Cell array of steps, used as input to ftINIT
+%
+%   Usage: steps = getINITSteps(metsToIgnore, series)
 if nargin < 1
     metsToIgnore = [];
 end
