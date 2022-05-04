@@ -186,8 +186,8 @@ end
 [metInd,rxnInd] = find(model_temp.S(exchMetInd,exchRxnInd) ~= 0);
 
 % check for any metabolites that are exchanged in more than one reaction
-tbl = tabulate(metInd);
-repeatedInds = tbl(:,2) > 1;
+[tbl,i,~] = unique(metInd,'first');
+repeatedInds = find(not(ismember(1:numel(tbl),i)));
 multiMetInd = exchMetInd(metInd(repeatedInds));
 if ~isempty(multiMetInd)
     fprintf('WARNING: The following metabolites are involved in more than one exchange reaction:\n');
