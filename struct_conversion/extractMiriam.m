@@ -24,7 +24,7 @@ function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)
 %                               unique miriam names per entity
 %   extractedMiriamNames        cell array with extracted miriam names
 %
-%   Usage: miriam=extractMiriam(modelMiriams,miriamName,addNull)
+%   Usage: miriam=extractMiriam(modelMiriams,miriamName)
 
 if nargin<2 || strcmp(miriamNames,'all')
     extractAllTypes=true;
@@ -35,7 +35,7 @@ end
 
 %The annotation for all miriam names should be extracted
 if extractAllTypes
-    miriamNames='';
+    miriamNames={''};
     for i=1:numel(modelMiriams)
         if ~isempty(modelMiriams{i,1})
             for j=1:numel(modelMiriams{i,1}.name)
@@ -47,7 +47,7 @@ if extractAllTypes
 end
 
 %Aggregate the final cell array table with extracted miriam information
-miriams='';
+miriams=cell(numel(modelMiriams),0);
 for i=1:numel(miriamNames)
     miriams=[miriams, extractMiriamType(modelMiriams,miriamNames{i})];
 end
