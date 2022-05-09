@@ -100,6 +100,7 @@ if ismember('txt', formats)
         grRules=regexprep(grRules,'(?<!\))\)',' )');
     else
         eqns=constructEquations(model,model.rxns);
+        grRules=model.grRules;
     end
     fprintf(fid, 'Rxn name\tFormula\tGene-reaction association\tLB\tUB\tObjective\n');
     for i = 1:numel(model.rxns)
