@@ -33,7 +33,7 @@ defaultparams.relMipGapTol   = 1e-12;
 defaultparams.absMipGapTol   = 1e-12;
 if milp
     defaultparams.MIPGap     = 1e-12; 
-    defaultparams.Seed       = 0
+    defaultparams.Seed       = 0;
 end
 solver=getpref('RAVEN','solver');
 
