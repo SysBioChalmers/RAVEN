@@ -1,4 +1,4 @@
-function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs)
+function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,cobraText)
 % exportForGit
 %   Generates a directory structure and populates this with model files, ready
 %   to be commited to a Git(Hub) maintained model repository. Writes the model
@@ -13,7 +13,7 @@ function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs)
 %   formats             cell array of strings specifying in what file formats
 %                       the model should be exported (opt, default to all
 %                       formats as {'mat', 'txt', 'xlsx', 'xml', 'yml'})
-%   mainBranchFlag          logical, if true, function will error if RAVEN (and
+%   mainBranchFlag      logical, if true, function will error if RAVEN (and
 %                       COBRA if detected) is/are not on the main branch.
 %                       (opt, default false)
 %   subDirs             logical, whether model files for each file format 
@@ -21,8 +21,15 @@ function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs)
 %                       'model' as parent directory, in accordance to the
 %                       standard-GEM repository format. If false, all files
 %                       are stored in the same folder. (opt, default true)
+%   cobraText           logical, whether the txt file should be in COBRA
+%                       Toolbox format using metabolite IDs, instead of
+%                       metabolite names and compartments. (opt, default
+%                       false)
 %
 %   Usage: exportForGit(model,prefix,path,formats,mainBranchFlag)
+if nargin<7
+    cobraText=false;
+end
 if nargin<6
     subDirs=true;
 end
@@ -84,12 +91,16 @@ end
 % Write TXT format
 if ismember('txt', formats)
     fid=fopen(fullfile(filePath{1},strcat(prefix,'.txt')),'w');
-    eqns=constructEquations(model,model.rxns,false,false,false,true);
-    eqns=strrep(eqns,' => ','  -> ');
-    eqns=strrep(eqns,' <=> ','  <=> ');
-    eqns=regexprep(eqns,'> $','>');
-    grRules=regexprep(model.grRules,'\((?!\()','( ');
-    grRules=regexprep(grRules,'(?<!\))\)',' )');
+    if cobraText==true
+        eqns=constructEquations(model,model.rxns,false,false,false);
+        eqns=strrep(eqns,' => ','  -> ');
+        eqns=strrep(eqns,' <=> ','  <=> ');
+        eqns=regexprep(eqns,'> $','>');
+        grRules=regexprep(model.grRules,'\((?!\()','( ');
+        grRules=regexprep(grRules,'(?<!\))\)',' )');
+    else
+        eqns=constructEquations(model,model.rxns);
+    end
     fprintf(fid, 'Rxn name\tFormula\tGene-reaction association\tLB\tUB\tObjective\n');
     for i = 1:numel(model.rxns)
         fprintf(fid, '%s\t', model.rxns{i});
