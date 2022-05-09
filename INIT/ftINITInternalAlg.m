@@ -1,4 +1,4 @@
-function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(model,rxnScores,metData,essentialRxns,prodWeight,allowExcretion,remPosRev,params)
+function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(model,rxnScores,metData,essentialRxns,prodWeight,allowExcretion,remPosRev,params, startVals)
 % ftINITInternalAlg
 %	This function runs the MILP for a step in ftINIT.
 %
@@ -32,7 +32,10 @@ function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(m
 %   remPosRev       If true, the positive reversible reactions are removed from the problem.
 %                   This is used in step 1 of ftINIT (opt, default false)
 %   params          parameters for the MILP, for example MIPGap and TimeLimit
-%                  (opt, default [])
+%                   (opt, default [])
+%   startVals       Start values for the MILP, typically used when rerunning
+%                   with a higher MIPGap, to use the results from the previous
+%                   run
 %
 %   deletedRxns     reactions which were deleted by the algorithm (only 
 %                   rxns included in the problem)
@@ -78,8 +81,14 @@ if nargin<7
 end
 
 if nargin<8
-    params=[];
+    params = [];
 end
+
+if nargin<9
+    startVals = [];
+end
+
+
 
 %The model should be in the reversible format and all relevant exchange
 %reactions should be open
@@ -125,7 +134,7 @@ end
 
 if ~isempty(metData)
     metRxns = any(metData,1).';
-    posRxns = rxnScores > 0 | ((rxnScores == 0) & metRxns); 
+    posRxns = rxnScores > 0 | ((rxnScores == 0) & metRxns);
 else
     posRxns = rxnScores > 0;
 end
@@ -142,6 +151,14 @@ nNegIrrev = numel(negIrrevRxns);
 nEssRev = numel(essRevRxns);
 nEssIrrev = numel(essIrrevRxns); %not used, but left for symmetry
 nMetabolMets = size(metData,1);
+
+if ~isempty(metData)
+    metNegRev = negRxns & revRxns & ~essential & metRxns;
+    metNegIrrev = negRxns & ~revRxns & ~essential & metRxns;
+    nMetNegRev = sum(metNegRev);
+    nMetNegIrrev = sum(metNegIrrev);
+end
+
 
 milpModel = model;
 
@@ -162,8 +179,8 @@ milpModel = model;
 %For negative scores, we need to use an integer, I see no way around that.
 % flux < 100*Yi, Yi E {0,1}. Flux - 100*Yi + vni == 0
 %Neg Rev:
-%To cases:
-%A: Witout irrev model
+%Two cases:
+%A: Without irrev model
 % 1: Split up the flux into positive and negative: flux - vnrp + vnrn == 0, 0 <= vprp,vprn <= Inf.
 % 2: Force the Yi (on/off) var on if the flux is on: vnrp + vnrn <= 0.1 * Yi, Yi E {0,1}: vnrp + vnrn - 0.1 * Yi + vnrv1 == 0, vnrv1 >= 0.
 %B: Irrev model (Not used for now)
@@ -189,6 +206,16 @@ milpModel = model;
 % This is solved by moving them into the problem, but with the score 0. They can still be treated as positive
 % reactions. In the end, we are not interested if they are on though, but they may
 % allow for production of a metabolite, giving no benefit of turning on another producer reaction.
+% Another tricky thing is that some metabolite producers have negative score. There is
+% no automatic mechanism for forcing flux on if the variable is on - this is simply
+% not needed for negative variables - unless they are a metabolite producer. We therefore need 
+% to add an extra constraint there, similar to the case of positive. It gets a bit complicated.
+% For reversible, we need a bool to make sure that one of vnrp and vnrn stays zero:
+%    vnrbm E {0,1}:  vnrp <= 100*vnrbm (if bool is 0, vnrp is zero): vnrp - 100*vnrbm + vnrvm1 == 0, vnrvm1 >= 0
+%    vnrn <= (1-vnrbm)*100 (if bool is one, vnrn is zero): vnrn + 100*vnrbm + vnrvm2 == 0, -100 <= vnrvm2 <= inf
+% We then also say that vnrp + vnrn >= 0.1*Yi, vnrp + vnrn - 0.1*Yi - vnrvm3 == 0, vnrvm3 >= 0
+% For irreversible, it is fairly straight-forward. We just say that flux >= 0.1*Yi, i.e. flux - 0.1*Yi - vnim == 0, 0 <= vnim <= Inf.
+
 
 %The total matrix then looks like this. Note that we have ordered the categories, two reactions each,
 %in the S matrix to make it easier to follow the figure. In practice, they come in random order, which
@@ -247,7 +274,12 @@ varsPerNegRev = 3;
 
 
 %Figure out the number of variables needed for metabolomics
-nMetVars = 2*size(metData,1); %mon and mv1
+if ~isempty(metData)
+    nMetVars = 2*size(metData,1) + 4*nMetNegRev + nMetNegIrrev; %mon,mv1; vnrbm,vnrvm1,vnrvm2,vnrvm3; vnim
+else
+    nMetVars = 0;
+end
+
 
 sRow = [milpModel.S sparse(nMets, nPosIrrev*2+nPosRev*7+nNegIrrev*2+nNegRev*(1+varsPerNegRev)+nEssRev*6 + nMetVars)];
 sEye = speye(nRxns);
@@ -277,19 +309,77 @@ if ~isempty(metData)
     %metData to match the order of the vars.
     srtMetData = sparse([metData(:,posIrrevRxns) metData(:,posRevRxns) metData(:,negIrrevRxns) metData(:,negRevRxns)]);
     
+    %First the setup for giving bonus if the met is included.
     %The mon vars come first followed by the mv1 vars
-    metRows = [sparse(nMetabolMets,nRxns) -srtMetData sparse(nMetabolMets,  nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev + nEssRev*6) speye(nMetabolMets) speye(nMetabolMets)];
+    metRows1 = [sparse(nMetabolMets,nRxns) -srtMetData sparse(nMetabolMets,  nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev + nEssRev*6) speye(nMetabolMets) speye(nMetabolMets) sparse(nMetabolMets, 4*nMetNegRev + nMetNegIrrev)];
+    %Then negative rev:
+    % Variable order: eye(vnrbm),eye(vnrvm1),eye(vnrvm2),eye(vnrvm3)
+    % vnrp,vnrn are the two first variables among the neg rev vars.
+    % For reversible, we need a bool to make sure that one of vnrp and vnrn stays zero:
+    %    vnrbm E {0,1}:  vnrp <= 100*vnrbm (if bool is 0, vnrp is zero): vnrp - 100*vnrbm + vnrvm1 == 0, vnrvm1 >= 0 (metRows2)
+    %    vnrn <= (1-vnrbm)*100 (if bool is one, vnrn is zero): vnrn + 100*vnrbm + vnrvm2 == 0, -100 <= vnrvm2 <= inf (metRows3)
+    % We then also say that vnrp + vnrn >= 0.1*Yi, -0.1*Yi + vnrp + vnrn - vnrvm3 == 0, vnrvm3 >= 0 (metRows4)
+    nrEye = speye(nNegRev);
+    %vnrp - 100*vnrbm + vnrvm1 == 0
+    metRows2 = [sparse(nMetNegRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev) ... %zeros up to vnrp
+                nrEye(metNegRev(negRevRxns),:) ... %vnrp 
+                sparse(nMetNegRev, nNegRev*(varsPerNegRev-1) + nEssRev*6 + nMetabolMets*2) ... %zeros up to vnrbm
+                speye(nMetNegRev)*-100 ... %vnrbm
+                speye(nMetNegRev) ... % vnrvm1
+                sparse(nMetNegRev, nMetNegRev*2 + nMetNegIrrev)];%fill up the rest with zeros
+    %vnrn + 100*vnrbm + vnrvm2 == 0
+    metRows3 = [sparse(nMetNegRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev) ... %zeros up to vnrn
+                nrEye(metNegRev(negRevRxns),:) ... %vnrp 
+                sparse(nMetNegRev, nNegRev*(varsPerNegRev-2) + nEssRev*6 + nMetabolMets*2) ... %zeros up to vnrbm
+                speye(nMetNegRev)*100 ... %vnrbm
+                sparse(nMetNegRev, nMetNegRev) ... %zeros up to vnrvm2
+                speye(nMetNegRev) ... % vnrvm2
+                sparse(nMetNegRev, nMetNegRev + nMetNegIrrev)];%fill up the rest with zeros
+    %-0.1*Yi + vnrp + vnrn - vnrvm3 == 0
+    metRows4 = [sparse(nMetNegRev,nRxns + nPosIrrev + nPosRev + nNegIrrev) ... %zeros up to Yi for neg rev
+                nrEye(metNegRev(negRevRxns),:)*-0.1 ... %Yi for met neg rev
+                sparse(nMetNegRev, nPosIrrev + nPosRev*6 + nNegIrrev) ... %zeros up to vnrp
+                nrEye(metNegRev(negRevRxns),:) ... %vnrp
+                nrEye(metNegRev(negRevRxns),:) ... %vnrn
+                sparse(nMetNegRev, nNegRev*(varsPerNegRev-2) + nEssRev*6 + nMetabolMets*2 + nMetNegRev*3) ...%zeros up to vnrvm3
+                speye(nMetNegRev)*-1 ... % vnrvm3
+                sparse(nMetNegRev, nMetNegIrrev)];%fill up the rest with zeros
+    
+    %Then negative irrev, i.e. flux - 0.1*Yi - vnim == 0
+    niEye = speye(nNegIrrev);
+    metRows5 = [sEye(metNegIrrev,:) ... %flux
+                sparse(nMetNegIrrev, nPosIrrev + nPosRev) ... % zeros up to Yi for neg irrev
+                niEye(metNegIrrev(negIrrevRxns),:)*-0.1 ... %Yi for met neg irrev
+                sparse(nMetNegIrrev, nNegRev + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev + nEssRev*6 + nMetabolMets*2 + 4*nMetNegRev) ... %zeros up to vnim
+                -speye(nMetNegIrrev) ]; %vnim
+    metRows = [metRows1;metRows2;metRows3;metRows4;metRows5];
+    metVarC = [ones(nMetabolMets,1)*-prodWeight;zeros(nMetVars - nMetabolMets,1)];
+    %vnrbm is boolean, so between 0 and 1
+    %vnrvm1 >= 0
+    %-100 <= vnrvm2 <= inf
+    % vnrvm3 >= 0
+    %0 <= vnim <= Inf
+    metLb = [zeros(nMetabolMets*2 + 2*nMetNegRev,1);ones(nMetNegRev,1)*-100;zeros(nMetNegRev + nMetNegIrrev,1)];
+    metUb = [ones(nMetabolMets,1);inf(nMetabolMets,1);ones(nMetNegRev,1);inf(3*nMetNegRev + nMetNegIrrev,1)];
+    metVartype = [repmat('C', 1, nMetabolMets*2), ...
+                  repmat('B', 1, nMetNegRev), ...
+                  repmat('C', 1, 3*nMetNegRev + nMetNegIrrev)];
+
 else
     metRows = [];
+    metVarC = [];
+    metLb = [];
+    metUb = [];
+    metVartype = [];
 end
 
 prob.a = [sRow;piRows;prRows1;prRows2;prRows3;prRows4;niRows;nrRows;erRows1;erRows2;erRows3;erRows4;metRows];
 prob.A = prob.a;
 prob.b = zeros(size(prob.A,1),1);
-prob.c = [zeros(nRxns,1);rxnScores(posIrrevRxns)*-1;rxnScores(posRevRxns)*-1;rxnScores(negIrrevRxns)*-1;rxnScores(negRevRxns)*-1;zeros(nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev + nEssRev*6,1);ones(nMetabolMets,1)*-prodWeight;zeros(nMetabolMets,1)];
-prob.lb = [milpModel.lb;zeros(nYBlock + nPosIrrev + 5*nPosRev,1);ones(nPosRev,1)*-100;zeros(nNegIrrev+nNegRev*varsPerNegRev+nEssRev*2,1);ones(nEssRev,1)*forceOnLim;zeros(nEssRev*2,1);ones(nEssRev,1)*-100; zeros(nMetVars,1)];
+prob.c = [zeros(nRxns,1);rxnScores(posIrrevRxns)*-1;rxnScores(posRevRxns)*-1;rxnScores(negIrrevRxns)*-1;rxnScores(negRevRxns)*-1;zeros(nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev + nEssRev*6,1);metVarC];
+prob.lb = [milpModel.lb;zeros(nYBlock + nPosIrrev + 5*nPosRev,1);ones(nPosRev,1)*-100;zeros(nNegIrrev+nNegRev*varsPerNegRev+nEssRev*2,1);ones(nEssRev,1)*forceOnLim;zeros(nEssRev*2,1);ones(nEssRev,1)*-100;metLb];
 prob.lb(essIrrevRxns) = forceOnLim;%force flux for the ess irrev rxns - this is the only way these are handled
-prob.ub = [milpModel.ub;ones(nYBlock,1);inf(nPosIrrev+nPosRev*2,1);ones(nPosRev,1);inf(3*nPosRev+nNegIrrev+varsPerNegRev*nNegRev+3*nEssRev,1);ones(nEssRev,1);inf(2*nEssRev,1);ones(nMetabolMets,1);inf(nMetabolMets,1)];
+prob.ub = [milpModel.ub;ones(nYBlock,1);inf(nPosIrrev+nPosRev*2,1);ones(nPosRev,1);inf(3*nPosRev+nNegIrrev+varsPerNegRev*nNegRev+3*nEssRev,1);ones(nEssRev,1);inf(2*nEssRev,1);metUb];
 
 prob.vartype = [repmat('C', 1, nRxns + nPosIrrev + nPosRev), ...
                 repmat('B', 1, nNegIrrev + nNegRev), ...
@@ -297,8 +387,8 @@ prob.vartype = [repmat('C', 1, nRxns + nPosIrrev + nPosRev), ...
                 repmat('B', 1, nPosRev), ...
                 repmat('C', 1, 3*nPosRev + nNegIrrev + varsPerNegRev*nNegRev + 3*nEssRev), ...
                 repmat('B', 1, nEssRev), ...
-                repmat('C', 1, 2*nEssRev + nMetVars)];
-
+                repmat('C', 1, 2*nEssRev), ...
+                metVartype];
             
 onoffVarInd = (1:(nPosIrrev + nPosRev + nNegIrrev + nNegRev)) + nRxns;
 onoffPosIrrev = onoffVarInd(1:nPosIrrev);
@@ -309,8 +399,6 @@ onoffNegRev = onoffVarInd((1:nNegRev)+nPosIrrev+nPosRev+nNegIrrev);
 metVarInd = (1:nMetabolMets) + (length(prob.vartype) - nMetVars);
 
 if allowExcretion
-    length(prob.b);
-    length(milpModel.mets);
     prob.csense = [repmat('L', 1, length(milpModel.mets)), ...
                   repmat('E', 1, length(prob.b) - length(milpModel.mets))];
 else
@@ -320,6 +408,10 @@ end
 params.intTol = 10^-8; %This value seems to work - making it smaller may slow the solver down.
 
 prob.osense = 1; %minimize
+
+if ~isempty(startVals)
+     prob.start = startVals; %This doesn't work...
+end
 
 res=optimizeProb(prob,params);
 

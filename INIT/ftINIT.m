@@ -163,7 +163,7 @@ fluxes = zeros(length(prepData.minModel.rxns),1);
 rxnsToIgnoreLastStep = [1;1;1;1;1;1;1;1];
 
 for initStep = 1:length(INITSteps)
-    disp(['ftINIT: Running step ' initStep])
+    disp(['ftINIT: Running step ' num2str(initStep)])
     stp = INITSteps{initStep};
     
     if any ((rxnsToIgnoreLastStep - stp.RxnsToIgnoreMask) < 0)
@@ -174,12 +174,12 @@ for initStep = 1:length(INITSteps)
     mm = prepData.minModel;
     
     if (~isempty(stp.MetsToIgnore))
-        if (~isempty(milpSkipMets.simpleMets))
+        if (~isempty(stp.MetsToIgnore.simpleMets))
             %Here, we remove simple metabolites that will not really affect the milp but 
             %are very common in the S matrix. For example H2O, H+, etc.
             %It is also possible to leave compartments untouched, for example the i compartment in the mitochondria (for H+).
-            metsToRem = ismember(mm.metNames,milpSkipMets.simpleMets.mets);
-            compsToKeep = find(ismember(mm.comps, milpSkipMets.simpleMets.compsToKeep));
+            metsToRem = ismember(mm.metNames,stp.MetsToIgnore.simpleMets.mets);
+            compsToKeep = find(ismember(mm.comps, stp.MetsToIgnore.simpleMets.compsToKeep));
             metsToRem = metsToRem & ~ismember(mm.metComps, compsToKeep);
             mm.S(metsToRem,:) = 0;
         end    
@@ -204,8 +204,8 @@ for initStep = 1:length(INITSteps)
         mm = reverseRxns(mm, mm.rxns(toRev));
         
         %Then make them irreversible
-        mm.rev(toRev) = 0;
-        mm.lb(toRev) = 0;
+        mm.rev(rxnsTurnedOn) = 0;
+        mm.lb(rxnsTurnedOn) = 0;
 
         essentialRxns = unique([prepData.essentialRxns;mm.rxns(rxnsTurnedOn)]);
     end
@@ -214,6 +214,7 @@ for initStep = 1:length(INITSteps)
     mipGap = 1;
     first = true;
     success = false;
+    fullMipRes = [];
     for rn = 1:length(stp.MILPParams)
         params = stp.MILPParams{rn};
         if ~isfield(params, 'MIPGap')
@@ -247,7 +248,11 @@ for initStep = 1:length(INITSteps)
             %The prodweight for metabolomics is currently set to 5 - 0.5 was default in the old version, which I deemed very small?
             %There could be a need to specify this somewhere in the call at some point. 
             %This value has not been evaluated, but is assumed in the test cases - if changed, update the test case
-            [deletedRxnsInINIT1, metProduction,fullMipRes,rxnsTurnedOn1,fluxes1] = ftINITInternalAlg(mm,rxnScores,metData,essentialRxns,5,stp.AllowMetSecr,stp.PosRevOff,params);
+            startVals = [];
+            if ~isempty(fullMipRes)
+                startVals = fullMipRes.full;
+            end
+            [deletedRxnsInINIT1, metProduction,fullMipRes,rxnsTurnedOn1,fluxes1] = ftINITInternalAlg(mm,rxnScores,metData,essentialRxns,5,stp.AllowMetSecr,stp.PosRevOff,params, startVals);
             mipGap = fullMipRes.mipgap;
             lastObjVal = fullMipRes.obj;
         catch e

@@ -74,7 +74,7 @@ function testModel = getTstModel()
     testModel.rxns = {};
     testModel.S=[];
     testModel.rev=[];
-    testModel.mets = {'a';'a2';'b';'c';'d';'e';'e2';'f'};
+    testModel.mets = {'as';'ac';'bc';'cc';'dc';'ec';'es';'fc'};
     testModel.metNames = {'a';'a';'b';'c';'d';'e';'e';'f'};
     testModel.comps = {'s';'c'};
     testModel.compNames = testModel.comps;
@@ -95,7 +95,7 @@ function testModel = getTstModel()
                            'e[s] =>';...
                            'a[c] <=> f[c]';...
                            'f[c] <=> e[c]'};
-    rxnsToAdd.grRules = {'';'';'G3';'G4';'G5';'G6';'G7';'';'G9';'G10'};;
+    rxnsToAdd.grRules = {'';'';'G3';'G4';'G5';'G6';'G7';'';'G9';'G10'};
     testModel = addRxns(testModel,rxnsToAdd, 3);
     testModel.c = [0;0;0;0;0;0;0;1;0;0];%optimize for output flux, if this is used, not sure
     testModel.ub = repmat(1000,10,1);
@@ -386,18 +386,27 @@ function testftINIT_T0008(testCase)
     tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams);
     %the model should now change to include the "correct" path (including 'R2') and 
     %skip R9/R10:
-    verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R4';'R6';'R7';'R8'})), 1)
+    verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R4';'R6';'R7';'R8'})))
     %now, test to add the metabolite f - this should turn back the favor to R9/R10:
     tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{'f'},getINITSteps(),true,true,testParams);
-    %R2 should now be replaced by R9
-    verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R7';'R8';'R9';'R10'})), 1)
+    %R9 should now be included, the presence of R2 is random
+    if length(tst1ResModel1.rxns) == 7
+        verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R7';'R8';'R9';'R10'})))
+    else
+        verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R4';'R6';'R7';'R8';'R9';'R10'})))
+    end
     %now, test to add the metabolite a, e, f - this should give the same result:
     tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{'f';'a';'e'},getINITSteps(),true,true,testParams);
-    %R2 should now be replaced by R9
-    verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R7';'R8';'R9';'R10'})), 1)
+    %Should be the same as above (R2 is random)
+    if length(tst1ResModel1.rxns) == 7
+        verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R7';'R8';'R9';'R10'})))
+    else
+        verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R4';'R6';'R7';'R8';'R9';'R10'})))
+    end
+    
     %now, test to add the metabolite b - this should turn on R2 and R3/R5 and turn off R9:
     tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{'b'},getINITSteps(),true,true,testParams);
-    verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R3';'R4';'R5';'R6';'R7';'R8'})), 1)
+    verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R3';'R4';'R5';'R6';'R7';'R8'})))
 
     %now on model 5 to test reactions that are not linearly merged (testModel has only merged rxns)
     testModel5 = getTstModel5();

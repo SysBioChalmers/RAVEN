@@ -15,7 +15,6 @@ function prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, conve
 %                   (specifying b7=1) (opt, default = {})
 % extComp           Name of the external compartment, typically 's' or 'e'. This
 %                   is used for identifying exch and import rxns (opt, default = 'e')
-%
 % prepData          The resulting prepData structure which is used as input to ftINIT
 %
 % Usage: prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore, extComp)
