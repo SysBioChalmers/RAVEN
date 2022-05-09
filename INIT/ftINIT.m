@@ -333,7 +333,7 @@ if ~isempty(prepData.taskStruct)
     exchRxns = getExchangeRxns(prepData.refModel);
     refModelNoExc = removeReactions(prepData.refModelWithBM,exchRxns,true,true);
     exchRxns = getExchangeRxns(initModel);
-    initModelNoExc = removeReactions(addBoundaryMets(initModel),exchRxns,true,true);
+    initModelNoExc = removeReactions(closeModel(initModel),exchRxns,true,true);
     
     if useScoresForTasks == true
         %map the rxn scores to the model without exchange rxns
@@ -341,13 +341,6 @@ if ~isempty(prepData.taskStruct)
         rxnScores2nd = NaN(length(refModelNoExc.rxns),1);
         rxnScores2nd(ia) = origRxnScores(ib);
         %all(rxnScores2nd == refRxnScores);%should be the same, ok!
-        %temp for testing
-        global g_initModel g_refModelNoExc g_refRxnScores g_taskStructure g_paramsFT; 
-        g_initModel = initModel;
-        g_refModelNoExc = refModelNoExc;
-        g_refRxnScores = rxnScores2nd;
-        g_taskStructure = prepData.taskStruct;
-        g_paramsFT = paramsFT; 
         [outModel,addedRxnMat] = ftINITFillGapsForAllTasks(initModelNoExc,refModelNoExc,[],true,min(rxnScores2nd,-0.1),prepData.taskStruct,paramsFT);
     else
         [outModel,addedRxnMat] = ftINITFillGapsForAllTasks(initModelNoExc,refModelNoExc,[],true,[],prepData.taskStruct,paramsFT);

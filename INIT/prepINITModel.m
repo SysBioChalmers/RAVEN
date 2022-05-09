@@ -64,7 +64,7 @@ cModel = removeReactions(origRefModel,deletedDeadEndRxns,false,true);
 % want those for further processing
 disp('Step 3: Check tasks (~10 min)')
 if ~isempty(taskStruct)
-    bModel = addBoundaryMets(cModel);
+    bModel = closeModel(cModel);
     [taskReport, essentialRxnMat, ~, essentialFluxes] = checkTasks(bModel,[],true,false,true,taskStruct);
 
     %extract the essential rxns:
@@ -296,7 +296,7 @@ prepData.essentialRxns = newEssentialRxns; %essential rxns in the minModel
 prepData.taskStruct = taskStruct;
 prepData.refModel = cModel;
 prepData.minModel = scaledMinModel;
-prepData.refModelWithBM = addBoundaryMets(cModel); %do this here so we don't have to do this for each sample
+prepData.refModelWithBM = closeModel(cModel); %do this here so we don't have to do this for each sample
 prepData.groupIds = groupIds;
 prepData.essentialMetsForTasks = essentialMetsForTasks;
 
