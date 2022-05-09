@@ -34,6 +34,9 @@ for i=1:numel(closedModel.rxns)
         if isfield(closedModel,'metMiriams')
             closedModel.metMiriams{numel(closedModel.metMiriams)+1}=closedModel.metMiriams{find(closedModel.S(:,i))};
         end;
+        if isfield(closedModel,'metFrom')
+            closedModel.metFrom{numel(closedModel.metFrom)+1}='';
+        end;
         if isfield(closedModel,'metCharges')
             closedModel.metCharges(numel(closedModel.metCharges)+1)=closedModel.metCharges(find(closedModel.S(:,i)));
         end;
