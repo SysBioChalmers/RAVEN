@@ -38,6 +38,9 @@ verifyEqual(testCase,sol,solGlpk,'AbsTol',1e-5)
 end
 
 function testGurobi(testCase)
+if exist('gurobi','file')~=3
+    error('Gurobi not installed or cannot be found in MATLAB path, test skipped')
+end
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
 try
@@ -71,6 +74,9 @@ verifyEqual(testCase,sol,solGurobi,'AbsTol',1e-5)
 end
 
 function testCobra(testCase)
+if exist('initCobraToolbox.m','file')~=2
+    error('COBRA Toolbox not installed or cannot be found in MATLAB path, test skipped')
+end
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
 try
@@ -78,7 +84,9 @@ try
 catch
 end
 global CBT_LP_SOLVER
+global CBT_MILP_SOLVER
 CBT_LP_SOLVER = 'glpk';
+CBT_MILP_SOLVER = 'glpk';
 setRavenSolver('cobra');
 
 try

@@ -85,72 +85,80 @@ This function is called by:
 0038 <span class="keyword">end</span>
 0039 
 0040 <a name="_sub2" href="#_subfunctions" class="code">function testGurobi(testCase)</a>
-0041 sourceDir = fileparts(which(mfilename));
-0042 load([sourceDir,<span class="string">'/test_data/ecoli_textbook.mat'</span>], <span class="string">'model'</span>);
-0043 <span class="keyword">try</span>
-0044     oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0045 <span class="keyword">catch</span>
-0046 <span class="keyword">end</span>
-0047 setRavenSolver(<span class="string">'gurobi'</span>);
-0048 
-0049 <span class="keyword">try</span>
-0050     <span class="comment">% Try all three types of flux minimization</span>
-0051     evalc(<span class="string">'sol=solveLP(model,3);'</span>);    
-0052     evalc(<span class="string">'sol=solveLP(model,1);'</span>);
-0053     evalc(<span class="string">'sol=solveLP(model,0);'</span>);
-0054 <span class="keyword">catch</span>
-0055     <span class="keyword">try</span>
-0056         setRavenSolver(oldSolver);
-0057     <span class="keyword">catch</span>
-0058         rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0059     <span class="keyword">end</span>
-0060     error(<span class="string">'Solver not working'</span>)
-0061 <span class="keyword">end</span>
-0062 <span class="keyword">try</span>
-0063     setRavenSolver(oldSolver);
-0064 <span class="keyword">catch</span>
-0065     rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0066 <span class="keyword">end</span>
-0067 
-0068 load([sourceDir,<span class="string">'/test_data/solverTestOutput.mat'</span>], <span class="string">'solGurobi'</span>);
-0069 <span class="comment">%Check that the actual model is the same as the expected model</span>
-0070 verifyEqual(testCase,sol,solGurobi,<span class="string">'AbsTol'</span>,1e-5)
-0071 <span class="keyword">end</span>
-0072 
-0073 <a name="_sub3" href="#_subfunctions" class="code">function testCobra(testCase)</a>
-0074 sourceDir = fileparts(which(mfilename));
-0075 load([sourceDir,<span class="string">'/test_data/ecoli_textbook.mat'</span>], <span class="string">'model'</span>);
-0076 <span class="keyword">try</span>
-0077     oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0078 <span class="keyword">catch</span>
+0041 <span class="keyword">if</span> exist(<span class="string">'gurobi'</span>,<span class="string">'file'</span>)~=3
+0042     error(<span class="string">'Gurobi not installed or cannot be found in MATLAB path, test skipped'</span>)
+0043 <span class="keyword">end</span>
+0044 sourceDir = fileparts(which(mfilename));
+0045 load([sourceDir,<span class="string">'/test_data/ecoli_textbook.mat'</span>], <span class="string">'model'</span>);
+0046 <span class="keyword">try</span>
+0047     oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0048 <span class="keyword">catch</span>
+0049 <span class="keyword">end</span>
+0050 setRavenSolver(<span class="string">'gurobi'</span>);
+0051 
+0052 <span class="keyword">try</span>
+0053     <span class="comment">% Try all three types of flux minimization</span>
+0054     evalc(<span class="string">'sol=solveLP(model,3);'</span>);    
+0055     evalc(<span class="string">'sol=solveLP(model,1);'</span>);
+0056     evalc(<span class="string">'sol=solveLP(model,0);'</span>);
+0057 <span class="keyword">catch</span>
+0058     <span class="keyword">try</span>
+0059         setRavenSolver(oldSolver);
+0060     <span class="keyword">catch</span>
+0061         rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0062     <span class="keyword">end</span>
+0063     error(<span class="string">'Solver not working'</span>)
+0064 <span class="keyword">end</span>
+0065 <span class="keyword">try</span>
+0066     setRavenSolver(oldSolver);
+0067 <span class="keyword">catch</span>
+0068     rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0069 <span class="keyword">end</span>
+0070 
+0071 load([sourceDir,<span class="string">'/test_data/solverTestOutput.mat'</span>], <span class="string">'solGurobi'</span>);
+0072 <span class="comment">%Check that the actual model is the same as the expected model</span>
+0073 verifyEqual(testCase,sol,solGurobi,<span class="string">'AbsTol'</span>,1e-5)
+0074 <span class="keyword">end</span>
+0075 
+0076 <a name="_sub3" href="#_subfunctions" class="code">function testCobra(testCase)</a>
+0077 <span class="keyword">if</span> exist(<span class="string">'initCobraToolbox.m'</span>,<span class="string">'file'</span>)~=2
+0078     error(<span class="string">'COBRA Toolbox not installed or cannot be found in MATLAB path, test skipped'</span>)
 0079 <span class="keyword">end</span>
-0080 <span class="keyword">global</span> CBT_LP_SOLVER
-0081 CBT_LP_SOLVER = <span class="string">'glpk'</span>;
-0082 setRavenSolver(<span class="string">'cobra'</span>);
-0083 
-0084 <span class="keyword">try</span>
-0085     <span class="comment">% Try all three types of flux minimization</span>
-0086     evalc(<span class="string">'sol=solveLP(model,3);'</span>);    
-0087     evalc(<span class="string">'sol=solveLP(model,1);'</span>);
-0088     evalc(<span class="string">'sol=solveLP(model,0);'</span>);
-0089 <span class="keyword">catch</span>
-0090     <span class="keyword">try</span>
-0091         setRavenSolver(oldSolver);
-0092     <span class="keyword">catch</span>
-0093         rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0094     <span class="keyword">end</span>
-0095     error(<span class="string">'Solver not working'</span>)
-0096 <span class="keyword">end</span>
-0097 <span class="keyword">try</span>
-0098     setRavenSolver(oldSolver);
-0099 <span class="keyword">catch</span>
-0100     rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0101 <span class="keyword">end</span>
-0102 
-0103 load([sourceDir,<span class="string">'/test_data/solverTestOutput.mat'</span>], <span class="string">'solCobra'</span>);
-0104 <span class="comment">%Check that the actual model is the same as the expected model</span>
-0105 verifyEqual(testCase,sol,solCobra,<span class="string">'AbsTol'</span>,1e-5)
-0106 <span class="keyword">end</span></pre></div>
+0080 sourceDir = fileparts(which(mfilename));
+0081 load([sourceDir,<span class="string">'/test_data/ecoli_textbook.mat'</span>], <span class="string">'model'</span>);
+0082 <span class="keyword">try</span>
+0083     oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0084 <span class="keyword">catch</span>
+0085 <span class="keyword">end</span>
+0086 <span class="keyword">global</span> CBT_LP_SOLVER
+0087 <span class="keyword">global</span> CBT_MILP_SOLVER
+0088 CBT_LP_SOLVER = <span class="string">'glpk'</span>;
+0089 CBT_MILP_SOLVER = <span class="string">'glpk'</span>;
+0090 setRavenSolver(<span class="string">'cobra'</span>);
+0091 
+0092 <span class="keyword">try</span>
+0093     <span class="comment">% Try all three types of flux minimization</span>
+0094     evalc(<span class="string">'sol=solveLP(model,3);'</span>);    
+0095     evalc(<span class="string">'sol=solveLP(model,1);'</span>);
+0096     evalc(<span class="string">'sol=solveLP(model,0);'</span>);
+0097 <span class="keyword">catch</span>
+0098     <span class="keyword">try</span>
+0099         setRavenSolver(oldSolver);
+0100     <span class="keyword">catch</span>
+0101         rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0102     <span class="keyword">end</span>
+0103     error(<span class="string">'Solver not working'</span>)
+0104 <span class="keyword">end</span>
+0105 <span class="keyword">try</span>
+0106     setRavenSolver(oldSolver);
+0107 <span class="keyword">catch</span>
+0108     rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0109 <span class="keyword">end</span>
+0110 
+0111 load([sourceDir,<span class="string">'/test_data/solverTestOutput.mat'</span>], <span class="string">'solCobra'</span>);
+0112 <span class="comment">%Check that the actual model is the same as the expected model</span>
+0113 verifyEqual(testCase,sol,solCobra,<span class="string">'AbsTol'</span>,1e-5)
+0114 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

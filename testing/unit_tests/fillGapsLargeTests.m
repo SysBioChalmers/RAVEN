@@ -4,7 +4,7 @@ function tests = fillGapsLargeTests
 tests = functiontests(localfunctions);
 end
 
-%Skip testLargeGlpk, fails with larger models, known issue with glpk
+%% Skip testLargeGlpk, fails with larger models, known issue with glpk
 % function testLargeGurobi(testCase)
 % sourceDir = fileparts(fileparts(fileparts(which(mfilename))));
 % evalc('model=importModel(fullfile(sourceDir,''tutorial'',''iAL1006 v1.00.xml''))');
@@ -38,8 +38,11 @@ end
 % %Expect at least 5% of the original growth
 % verifyTrue(testCase,-sol.f>0);
 % end
-
+%%
 function testLargeGurobi(testCase)
+if exist('gurobi','file')~=3
+    error('Gurobi not installed or cannot be found in MATLAB path, test skipped')
+end
 sourceDir = fileparts(fileparts(fileparts(which(mfilename))));
 evalc('model=importModel(fullfile(sourceDir,''tutorial'',''iAL1006 v1.00.xml''))');
 model.c(1484)=1;
@@ -74,6 +77,9 @@ verifyTrue(testCase,-sol.f>0);
 end
 
 function testLargeCobra(testCase)
+if exist('initCobraToolbox.m','file')~=2
+    error('COBRA Toolbox not installed or cannot be found in MATLAB path, test skipped')
+end
 sourceDir = fileparts(fileparts(fileparts(which(mfilename))));
 evalc('model=importModel(fullfile(sourceDir,''tutorial'',''iAL1006 v1.00.xml''))');
 model.c(1484)=1;

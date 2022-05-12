@@ -39,6 +39,9 @@ verifyTrue(testCase,-sol.f>0);
 end
 
 function testSmallGurobi(testCase)
+if exist('gurobi','file')~=3
+    error('Gurobi not installed or cannot be found in MATLAB path, test skipped')
+end
 %Test using small model
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
@@ -74,6 +77,9 @@ verifyTrue(testCase,-sol.f>0);
 end
 
 function testSmallCobra(testCase)
+if exist('initCobraToolbox.m','file')~=2
+    error('COBRA Toolbox not installed or cannot be found in MATLAB path, test skipped')
+end
 %Test using small model
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
