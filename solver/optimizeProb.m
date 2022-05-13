@@ -1,15 +1,19 @@
-function res = optimizeProb(prob,params)
+function res = optimizeProb(prob,params,verbose)
 % optimizeProb
 %   Optimize an LP or MILP formulated in cobra terms.
 %
 %   prob	cobra style LP/MILP problem struct to be optimised
 %   params	solver specific parameters (optional)
+%   verbose if true MILP progress is shown (opt, default true)
 %
 %   res		the output structure from the selected solver RAVENSOLVER
 %   		(cobra style)
 
 if nargin<2 || isempty(params)
     params=struct();
+end
+if nargin<3 || isempty(verbose)
+    verbose = true;
 end
 if(~ispref('RAVEN','solver'))
     dispEM('RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
@@ -33,7 +37,7 @@ defaultparams.relMipGapTol   = 1e-12;
 defaultparams.absMipGapTol   = 1e-12;
 if milp
     defaultparams.MIPGap     = 1e-12; 
-    defaultparams.Seed       = 0;
+    defaultparams.Seed       = 1;
 end
 solver=getpref('RAVEN','solver');
 
@@ -51,7 +55,11 @@ switch solver
     %% Use Gurobi in a MATLAB environment
     case 'gurobi'
     if milp
-        solverparams.OutputFlag = 1;
+        if verbose
+            solverparams.OutputFlag = 1;
+        else
+            solverparams.OutputFlag = 0;
+        end
         solverparams.intTol = 10^-9; %min val for gurobi
         solverparams.MIPGap = defaultparams.MIPGap;
         solverparams.Seed = defaultparams.Seed;

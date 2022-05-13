@@ -1,4 +1,4 @@
-function model=rescaleModelForINIT(model, maxStoichVal)
+function model=rescaleModelForINIT(model, maxStoichDiff)
 % rescaleModelForINIT
 %
 % The idea with this function is to rescale the MILP problem in ftINIT to avoid large differences
@@ -13,6 +13,33 @@ function model=rescaleModelForINIT(model, maxStoichVal)
 % maxStoichVal  all reactions with stoichiometric coefficent higher than this 
 %               will be scaled down. (opt, default 250)
 
+if (nargin < 2)
+    maxStoichDiff = 25;
+end
+
+%Define maxMinRatio to be the ratio between the largest and smallest 
+%stoichiometric coefficients in each reaction.
+%Scale all rxns with maxMinRatio > maxStoichDiff - just set all coeffs that are
+%larger than maxStoichDiff*minVal to that value, and center the mean coeff to 1 for all rxns.
+SAbs = abs(model.S);
+for i = 1:numel(model.rxns)
+    tmp = SAbs(:,i);
+    tmp = tmp(tmp ~= 0);
+    mn = min(tmp);
+    %modify matrix
+    sign = ones(numel(model.mets),1);
+    sign(model.S(:,i) < 0) = -1;
+    sel = SAbs(:,i) > maxStoichDiff*mn;
+    model.S(sel,i) = sign(sel) .* maxStoichDiff*mn;
+end
+%center around 1
+boolMat = model.S ~= 0;
+absMat = abs(model.S);
+rxnScales = sum(boolMat,1)./sum(absMat,1);
+
+model.S = model.S .* rxnScales;
+
+%{
 if (nargin < 2)
     maxStoichVal = 250;
 end
@@ -39,5 +66,5 @@ for rxnInd = rxnsToCheckInd
     scaleFactor = maxStoichVal/largestCoeff;
     model.S(:,rxnInd) = model.S(:,rxnInd) .* scaleFactor;
 end
-
+%}
 end

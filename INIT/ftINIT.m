@@ -1,4 +1,4 @@
-function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes] = ftINIT(prepData, tissue, celltype, hpaData, transcrData, metabolomicsData, INITSteps, removeGenes, useScoresForTasks, paramsFT)
+function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes] = ftINIT(prepData, tissue, celltype, hpaData, transcrData, metabolomicsData, INITSteps, removeGenes, useScoresForTasks, paramsFT, verbose)
 % ftINIT
 %   Main function for generates a model using the ftINIT algorithm, based 
 %   on proteomics and/or transcriptomics and/or metabolomics and/or metabolic 
@@ -57,6 +57,8 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes
 %   paramsFT            parameter structure as used by getMILPParams. This
 %                       is for the fitTasks step. For the INIT algorithm,
 %                       see params (opt, default [])
+%   verbose             if true, the MILP progression will be shown. 
+%                       (opt, default true)
 %
 %   model                   the resulting model structure
 %   metProduction           array that indicates which of the
@@ -111,6 +113,9 @@ if nargin < 10
     paramsFT = [];
 end
 
+if nargin < 11
+    verbose = true;
+end
 %Handle detected mets:
 %Previously, this was handled by giving a bonus for secreting those metabolites,
 %but that doesn't work since the metabolite secretion and uptake can be lost when 
@@ -162,6 +167,12 @@ fluxes = zeros(length(prepData.minModel.rxns),1);
 
 rxnsToIgnoreLastStep = [1;1;1;1;1;1;1;1];
 
+%We assume that all essential rxns are irrev - this is taken care of in
+%prepINITModel. We then use an initial flux "from last run" of 0.1 for all 
+%reactions. This is used for knowing what flux should be forced through an
+%essential rxn.
+fluxes = ones(length(prepData.minModel.rxns), 1).*0.1;
+
 for initStep = 1:length(INITSteps)
     disp(['ftINIT: Running step ' num2str(initStep)])
     stp = INITSteps{initStep};
@@ -190,10 +201,10 @@ for initStep = 1:length(INITSteps)
     rxnScores = groupRxnScores(prepData.minModel, origRxnScores, prepData.refModel.rxns, prepData.groupIds, rxnsToIgnore);
 
     essentialRxns = prepData.essentialRxns;
-    
+    toRev = false(numel(mm.rxns),1);
     %Handle the results from previous steps ('ignore', 'exclude', 'essential')
     if strcmp(stp.HowToUsePrevResults, 'exclude')
-        rxnScores(rxnsTurnedOn) = 0;
+        rxnScores(rxnsTurnedOn) = 0; %This is not used anymore in any step setup.
     elseif strcmp(stp.HowToUsePrevResults, 'essential')
         %Make all reversible reactions turned on in previous steps reversible
         %in the direction that they were previously carrying flux
@@ -252,7 +263,10 @@ for initStep = 1:length(INITSteps)
             if ~isempty(fullMipRes)
                 startVals = fullMipRes.full;
             end
-            [deletedRxnsInINIT1, metProduction,fullMipRes,rxnsTurnedOn1,fluxes1] = ftINITInternalAlg(mm,rxnScores,metData,essentialRxns,5,stp.AllowMetSecr,stp.PosRevOff,params, startVals);
+            [deletedRxnsInINIT1, metProduction,fullMipRes,rxnsTurnedOn1,fluxes1] = ftINITInternalAlg(mm,rxnScores,metData,essentialRxns,5,stp.AllowMetSecr,stp.PosRevOff,params, startVals, fluxes, verbose);
+            %This is a bit tricky - since we reversed some reactions, those fluxes also need to be reversed
+            fluxes1(toRev) = -fluxes1(toRev);
+            
             mipGap = fullMipRes.mipgap;
             lastObjVal = fullMipRes.obj;
         catch e
@@ -278,7 +292,13 @@ for initStep = 1:length(INITSteps)
     %This could in theory cause problems, but seems to work well practically
     fluxesOld = fluxes;
     fluxes = fluxes1;
-    fluxes(abs(fluxes1) < 10^-7) = fluxesOld(abs(fluxes1) < 10^-7);
+    %make sure that all reactions that are on actually has a flux - otherwise
+    %things could go bad, since the flux will be set to essential in a random direction
+    %This sometimes happens for rxns with negative score - let's just accept that.
+    %if (sum(abs(fluxes1) < 10^-7 & rxnsTurnedOn))
+    %    dispEM('There are rxns turned on without flux - this might cause problems');
+    %end
+    %fluxes(abs(fluxes1) < 10^-7) = fluxesOld(abs(fluxes1) < 10^-9);
 end
 
 
@@ -341,9 +361,9 @@ if ~isempty(prepData.taskStruct)
         rxnScores2nd = NaN(length(refModelNoExc.rxns),1);
         rxnScores2nd(ia) = origRxnScores(ib);
         %all(rxnScores2nd == refRxnScores);%should be the same, ok!
-        [outModel,addedRxnMat] = ftINITFillGapsForAllTasks(initModelNoExc,refModelNoExc,[],true,min(rxnScores2nd,-0.1),prepData.taskStruct,paramsFT);
+        [outModel,addedRxnMat] = ftINITFillGapsForAllTasks(initModelNoExc,refModelNoExc,[],true,min(rxnScores2nd,-0.1),prepData.taskStruct,paramsFT,verbose);
     else
-        [outModel,addedRxnMat] = ftINITFillGapsForAllTasks(initModelNoExc,refModelNoExc,[],true,[],prepData.taskStruct,paramsFT);
+        [outModel,addedRxnMat] = ftINITFillGapsForAllTasks(initModelNoExc,refModelNoExc,[],true,[],prepData.taskStruct,paramsFT,verbose);
     end
     %if printReport == true
     %    printScores(outModel,'Functional model statistics',hpaData,transcrData,tissue,celltype);

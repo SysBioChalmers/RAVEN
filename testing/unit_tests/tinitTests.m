@@ -352,10 +352,12 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function testftINIT_T0007(testCase)
     miniModel = struct();
-    miniModel.S = [1,1000;-1,-1000];
+    miniModel.S = [1,1000;-1,-40];
+    miniModel.rxns = {'1';'2'}
+    miniModel.mets = {'1';'2'}
     res = rescaleModelForINIT(miniModel,10);
-    expRes = [1,10;-1,-10];
-    verifyTrue(testCase, all(all(res.S == expRes))) %ok
+    verifyTrue(testCase, abs(res.S(1,2) - res.S(2,2)*-10) < 10^-6)
+    verifyTrue(testCase, abs((abs(res.S(1,2)) + abs(res.S(2,2)))/2) - 1 < 10^-6)
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

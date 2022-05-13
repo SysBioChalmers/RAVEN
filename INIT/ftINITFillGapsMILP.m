@@ -1,4 +1,4 @@
-function [x,I,exitFlag]=ftINITFillGapsMILP(model, toMinimize, params,scores)
+function [x,I,exitFlag]=ftINITFillGapsMILP(model, toMinimize, params, scores, verbose)
 % ftINITFillGapsMILP
 %   Returns the minimal set of fluxes that satisfy the model using
 %   mixed integer linear programming. This is an optimized variant of the
@@ -18,6 +18,7 @@ function [x,I,exitFlag]=ftINITFillGapsMILP(model, toMinimize, params,scores)
 %                 implementation, and they are changed to max(scores(scores<0)).
 %                 Must have the same dimension as toMinimize (find(toMinimize)
 %                 if it is a logical vector) (opt, default -1 for all reactions)
+%   verbose       if true, the MILP progression will be shown. 
 %
 %   x             the corresponding fluxes for the full model
 %   I             the indexes of the reactions in toMinimize that were used
@@ -209,7 +210,7 @@ params.Seed = 26;%This is weird - although it says "optimal solution found", we 
 %params.CSClientLog = 3;%generates a warning in gurobi, but may be of interest for other solvers
 
 % Optimize the problem
-res = optimizeProb(prob,params);
+res = optimizeProb(prob,params,verbose);
 isFeasible=checkSolution(res);
 
 if ~isFeasible

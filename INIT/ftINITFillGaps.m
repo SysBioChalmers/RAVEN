@@ -1,4 +1,4 @@
-function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefModel,allowNetProduction,supressWarnings,rxnScores,params)
+function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefModel,allowNetProduction,supressWarnings,rxnScores,params,verbose)
 % ftINITFillGaps
 %   Variant of fillGaps specially adapted to speed up generation of ftINIT models.
 %
@@ -22,9 +22,9 @@ function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefM
 %   rxnScores           scores for each of the reactions in the
 %                       reference tModel. 
 %                       The solver will try to maximize the sum of the
-%                       scores for the included reactions (opt, default
-%                       is -1 for all reactions)
-%   params              parameter structure as used by getMILPParams (opt)
+%                       scores for the included reactions
+%   params              parameter structure as used by getMILPParams
+%   verbose             if true, the MILP progression will be shown. 
 %
 %   addedRxns           the rxns added
 %   newModel            the tModel with reactions added to fill gaps
@@ -56,26 +56,11 @@ function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefM
 %           fillGaps(tModel,models,allowNetProduction,...
 %           supressWarnings,rxnScores,params)
 
-if nargin<4
-    allowNetProduction=false;
-end
-if nargin<5
-    supressWarnings=false;
-end
-if nargin<6
-    rxnScores=cell(numel(models),1);
-    for i=1:numel(models)
-        rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
-    end
-end
 if isempty(rxnScores)
     rxnScores=cell(numel(models),1);
     for i=1:numel(models)
         rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
     end
-end
-if nargin<7
-    params=struct();
 end
 
 %Simplify the template models to remove constrained rxns. At the same time,
@@ -107,7 +92,7 @@ fullModel.c(:)=0;
 %to participate
 templateRxns = find(~ismember(fullModel.rxns, tModel.rxns)); %Check if this is slow, in that case keep track of this in fitTasksOpt and send it in
 
-[~, J, exitFlag]=ftINITFillGapsMILP(fullModel,templateRxns,params,fullModel.rxnScores(templateRxns));%only the scores from the template rxns are used, so the others doesn't matter
+[~, J, exitFlag]=ftINITFillGapsMILP(fullModel,templateRxns,params,fullModel.rxnScores(templateRxns),verbose);%only the scores from the template rxns are used, so the others doesn't matter
 
 %Remove everything except for the added ones
 addedRxns = fullModel.rxns(templateRxns(J));

@@ -1,4 +1,4 @@
-function [outModel, addedRxns]=ftINITFillGapsForAllTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params)
+function [outModel, addedRxns]=ftINITFillGapsForAllTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params,verbose)
 % ftINITFillGapsForAllTasks
 %   Fills gaps in a model by including reactions from a reference model,
 %   so that the resulting model can perform all the tasks in a task list
@@ -17,8 +17,9 @@ function [outModel, addedRxns]=ftINITFillGapsForAllTasks(model,refModel,inputFil
 %                   try to maximize the sum of the scores for the included
 %                   reactions (opt, default is -1 for all reactions)
 %   taskStructure   structure with the tasks, as from parseTaskList. If
-%                   this is supplied then inputFile is ignored (opt)
-%   params          parameter structure as used by getMILPParams (opt)
+%                   this is supplied then inputFile is ignored
+%   params          parameter structure as used by getMILPParams
+%   verbose         if true, the MILP progression will be shown. 
 %
 %
 %   Output:
@@ -38,20 +39,8 @@ function [outModel, addedRxns]=ftINITFillGapsForAllTasks(model,refModel,inputFil
 %   Usage: [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...
 %           rxnScores,taskStructure,params)
 
-if nargin<4
-    printOutput=true;
-end
-if nargin<5
-    rxnScores=ones(numel(refModel.rxns),1)*-1;
-end
 if isempty(rxnScores)
     rxnScores=ones(numel(refModel.rxns),1)*-1;
-end
-if nargin<6
-    taskStructure=[];
-end
-if nargin<7
-    params=[];
 end
 
 if isempty(taskStructure) && ~(exist(inputFile,'file')==2)
@@ -319,7 +308,7 @@ for i=1:numel(taskStructure)
             %Only do gap-filling if it cannot be solved
             failed=false;
             try
-                [newRxns, newModel, exitFlag]=ftINITFillGaps(tModel,model,tRefModel,false,supressWarnings,tRxnScores,params);
+                [newRxns, newModel, exitFlag]=ftINITFillGaps(tModel,model,tRefModel,false,supressWarnings,tRxnScores,params,verbose);
                 if exitFlag==-2
                     EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" was aborted before reaching optimality. Consider increasing params.maxTime\n'];
                     dispEM(EM,false);

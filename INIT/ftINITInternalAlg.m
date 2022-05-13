@@ -1,4 +1,4 @@
-function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(model,rxnScores,metData,essentialRxns,prodWeight,allowExcretion,remPosRev,params, startVals)
+function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(model,rxnScores,metData,essentialRxns,prodWeight,allowExcretion,remPosRev,params,startVals,fluxes,verbose)
 % ftINITInternalAlg
 %	This function runs the MILP for a step in ftINIT.
 %
@@ -11,15 +11,13 @@ function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(m
 %                   saying which reaction produces each detected met (opt, default [])
 %   essentialRxns   cell array of reactions that are essential and that
 %                   have to be in the resulting model. This is normally
-%                   used when fitting a model to task (see fitTasks) (opt,
-%                   default [])
+%                   used when fitting a model to task (see fitTasks)
 %   prodWeight      a score that determines the value of having
 %                   net-production of metabolites. This is a way of having
 %                   a more functional network as it provides a reason for
 %                   including bad reactions for connectivity reasons. This
 %                   score is for each metabolite, and the sum of these weights
 %                   and the scores for the reactions is what is optimized
-%                   (opt, default 0.5)
 %   allowExcretion  true if excretion of all metabolites should be allowed.
 %                   This results in fewer reactions being considered
 %                   dead-ends, but all reactions in the resulting model may
@@ -28,14 +26,14 @@ function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(m
 %                   input model lacks exchange reactions then this should
 %                   probably be "true", or a large proportion of the model
 %                   would be excluded for connectivity reasons
-%                   (opt, default false)
 %   remPosRev       If true, the positive reversible reactions are removed from the problem.
-%                   This is used in step 1 of ftINIT (opt, default false)
+%                   This is used in step 1 of ftINIT
 %   params          parameters for the MILP, for example MIPGap and TimeLimit
-%                   (opt, default [])
 %   startVals       Start values for the MILP, typically used when rerunning
 %                   with a higher MIPGap, to use the results from the previous
 %                   run
+%   fluxes          Fluxes from the last run.
+%   verbose         If true, the MILP progression will be shown. 
 %
 %   deletedRxns     reactions which were deleted by the algorithm (only 
 %                   rxns included in the problem)
@@ -56,38 +54,13 @@ function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(m
 %           rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,...
 %           remPosRev,params)
 
-if nargin<3
-    metData={};
-end
-if nargin<4
-    essentialRxns={};
-end
 if isempty(essentialRxns)
     essentialRxns={};
 end
 essentialRxns=essentialRxns(:);
-if nargin<5
-    prodWeight=0.5;
-end
 if isempty(prodWeight)
     prodWeight=0.5;
 end
-if nargin<6
-    allowExcretion = false;
-end
-
-if nargin<7
-    remPosRev = false;
-end
-
-if nargin<8
-    params = [];
-end
-
-if nargin<9
-    startVals = [];
-end
-
 
 
 %The model should be in the reversible format and all relevant exchange
@@ -189,7 +162,7 @@ milpModel = model;
 %    We don't care if there is any loop - there is just no benefit for the objective to generate one, and it doesn't matter.
 %Ess Irrev (essential rxn, i.e. forced to carry flux, irreversible): 
 %flux >= 0.1 - solved with lb = 0.1.
-%Ess Rev: 
+%Ess Rev (these are not really used): 
 % 1: Split up the flux into positive and negative: flux - verp + vern == 0, 0 <= verp,vern <= Inf.
 % 2. Force one of the fluxes on: verp + vern >= 0.1, verp + vern - verv1 == 0. verv1 >= 0.1
 % 3. We need a bool to make sure that one of verp and vern are always zero:
@@ -269,7 +242,11 @@ milpModel = model;
 
 %build the A matrix
 %S row
-forceOnLim=0.0001;
+%When forcing on essential rxns, use the flux value of the previous run (set to 0.1 the first time)
+%Don't set it above 0.1, may starve something else out. Leave a margin of 1% from the last run.
+forceOnLim = 0.1;
+forceOnLimEss=min(abs(fluxes)*0.99,0.1);
+
 varsPerNegRev = 3;
 
 
@@ -378,7 +355,7 @@ prob.A = prob.a;
 prob.b = zeros(size(prob.A,1),1);
 prob.c = [zeros(nRxns,1);rxnScores(posIrrevRxns)*-1;rxnScores(posRevRxns)*-1;rxnScores(negIrrevRxns)*-1;rxnScores(negRevRxns)*-1;zeros(nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev + nEssRev*6,1);metVarC];
 prob.lb = [milpModel.lb;zeros(nYBlock + nPosIrrev + 5*nPosRev,1);ones(nPosRev,1)*-100;zeros(nNegIrrev+nNegRev*varsPerNegRev+nEssRev*2,1);ones(nEssRev,1)*forceOnLim;zeros(nEssRev*2,1);ones(nEssRev,1)*-100;metLb];
-prob.lb(essIrrevRxns) = forceOnLim;%force flux for the ess irrev rxns - this is the only way these are handled
+prob.lb(essIrrevRxns) = forceOnLimEss(essIrrevRxns);%force flux for the ess irrev rxns - this is the only way these are handled
 prob.ub = [milpModel.ub;ones(nYBlock,1);inf(nPosIrrev+nPosRev*2,1);ones(nPosRev,1);inf(3*nPosRev+nNegIrrev+varsPerNegRev*nNegRev+3*nEssRev,1);ones(nEssRev,1);inf(2*nEssRev,1);metUb];
 
 prob.vartype = [repmat('C', 1, nRxns + nPosIrrev + nPosRev), ...
@@ -413,7 +390,7 @@ if ~isempty(startVals)
      prob.start = startVals; %This doesn't work...
 end
 
-res=optimizeProb(prob,params);
+res=optimizeProb(prob,params,verbose);
 
 
 if ~checkSolution(res)
