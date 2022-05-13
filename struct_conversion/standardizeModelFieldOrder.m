@@ -59,3 +59,4 @@ if (m ~= 1 && n < m) || n == 1
 else
     vecT = vec;
 end
+end
