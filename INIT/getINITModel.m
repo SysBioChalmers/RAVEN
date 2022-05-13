@@ -1,4 +1,4 @@
-function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=getINITModel_legacy(refModel, tissue, celltype, hpaData, arrayData, metabolomicsData, taskFile, useScoresForTasks, printReport, taskStructure, params, paramsFT)
+function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=getINITModel(refModel, tissue, celltype, hpaData, arrayData, metabolomicsData, taskFile, useScoresForTasks, printReport, taskStructure, params, paramsFT)
 % getINITModel_legacy
 %   Generates a model using the INIT algorithm, based on proteomics and/or
 %   transcriptomics and/or metabolomics and/or metabolic tasks. This is the original 
@@ -303,7 +303,7 @@ end
 %carry flux in one direction. Runs without the constraints on reversibility
 %and with all output allowed. This is to reduce the complexity of the
 %problem.
-[~, deletedRxnsInINIT, metProduction]=runINIT_legacy(simplifyModel(cModel),rxnScores,metabolomicsData,essentialRxnsForTasks,0,true,false,params);
+[~, deletedRxnsInINIT, metProduction]=runINIT(simplifyModel(cModel),rxnScores,metabolomicsData,essentialRxnsForTasks,0,true,false,params);
 initModel=removeReactions(cModel,deletedRxnsInINIT,true,true);
 if printReport==true
     printScores(initModel,'INIT model statistics',hpaData,arrayData,tissue,celltype);
