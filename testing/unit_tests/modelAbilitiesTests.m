@@ -33,7 +33,7 @@ function checkProductionTest(testCase)
 sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
 load(fullfile(sourceDir,'testing','unit_tests','test_data','ecoli_textbook.mat'), 'model');
 
-[testOut.np, testOut.npn, testOut.nfpm,testOut.mtc,~]=checkProduction(model,true,model.comps,false)
+[testOut.np, testOut.npn, testOut.nfpm,testOut.mtc,~]=checkProduction(model,true,model.comps,false);
 
 testCheck.np=[10;13;16;17;21;30;32;37;49;50;51;52;53;64;65;71];
 testCheck.npn={'Acetyl-CoA[c]';'ADP[c]';'AMP[c]';'ATP[c]';'Coenzyme A[c]';'D-Fructose[e]';'Fumarate[e]';'L-Glutamine[e]';'L-Malate[e]';'NAD[c]';'NADH[c]';'NADP[c]';'NADPH[c]';'Ubiquinone-8[c]';'Ubiquinol-8[c]';'Succinyl-CoA[c]'};
