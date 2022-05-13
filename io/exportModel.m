@@ -15,6 +15,7 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
 %                       identifiers (opt, default false)
 %
 %   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
+fileName=char(fileName);
 if nargin<3
     exportGeneComplexes=false;
 end
@@ -655,7 +656,11 @@ end
 modelSBML.rule=[];
 modelSBML.constraint=[];
 
+[ravenDir,prevDir]=findRAVENroot();
+fileName=checkFileExistence(fileName,1,true,false);
+cd(fullfile(ravenDir,'software','libSBML'));
 OutputSBML(modelSBML,fileName,1,0,[1,0]);
+cd(prevDir);
 end
 
 

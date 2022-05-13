@@ -114,90 +114,87 @@ This function is called by:
 0035 <span class="comment">%       model       model structure with updated MIRIAM annotation field</span>
 0036 <span class="comment">%</span>
 0037 <span class="comment">%   Usage: model=editMiriam(model,type,object,miriamName,miriams,keep)</span>
-0038 
-0039 <span class="comment">%Check 'keep' input</span>
-0040 <span class="keyword">if</span> ~any(strcmp(keep,{<span class="string">'replace'</span>,<span class="string">'fill'</span>,<span class="string">'add'</span>}))
-0041     error(<span class="string">'Invalid ''keep'', should be ''replace'',''fill'',''add''.'</span>)
-0042 <span class="keyword">end</span>
-0043 <span class="comment">%Check 'type' input</span>
-0044 <span class="keyword">if</span> ~any(strcmp(type,{<span class="string">'met'</span>,<span class="string">'gene'</span>,<span class="string">'rxn'</span>,<span class="string">'comp'</span>}))
-0045     error(<span class="string">'Invalid ''type'', should be ''met'', ''gene'', ''rxn'' or ''comp''.'</span>)
-0046 <span class="keyword">end</span>
-0047 <span class="comment">%Check 'object' input</span>
-0048 <span class="keyword">if</span> islogical(object)
-0049     idxInModel=find(object);
-0050 <span class="keyword">elseif</span> isnumeric(object)
-0051     idxInModel=object;
-0052 <span class="keyword">elseif</span> ischar(object)
-0053     <span class="keyword">if</span> strcmp(object,<span class="string">'all'</span>)
-0054         idxInModel=1:numel(model.([type,<span class="string">'s'</span>]));
-0055     <span class="keyword">else</span>
-0056         idxInModel=getIndexes(model,object,[type,<span class="string">'s'</span>]);
-0057         <span class="keyword">if</span> ~all(idxInModel)
-0058             dispEM(<span class="string">'The following objects cannot be found in the model: '</span>,true,object(~idxInModel))
-0059         <span class="keyword">end</span>
-0060     <span class="keyword">end</span>
-0061 <span class="keyword">else</span>
-0062     [~,idxInModel]=ismember(object,model.([type,<span class="string">'s'</span>]));
-0063     <span class="keyword">if</span> ~all(idxInModel)
-0064         dispEM(<span class="string">'The following objects cannot be found in the model: '</span>,true,object(~idxInModel))
+0038 miriamName=char(miriamName);
+0039 miriams=convertCharArray(miriams);
+0040 
+0041 <span class="comment">%Check 'keep' input</span>
+0042 keep=char(keep);
+0043 <span class="keyword">if</span> ~any(strcmp(keep,{<span class="string">'replace'</span>,<span class="string">'fill'</span>,<span class="string">'add'</span>}))
+0044     error(<span class="string">'Invalid ''keep'', should be ''replace'',''fill'',''add''.'</span>)
+0045 <span class="keyword">end</span>
+0046 <span class="comment">%Check 'type' input</span>
+0047 type=char(type);
+0048 <span class="keyword">if</span> ~any(strcmp(type,{<span class="string">'met'</span>,<span class="string">'gene'</span>,<span class="string">'rxn'</span>,<span class="string">'comp'</span>}))
+0049     error(<span class="string">'Invalid ''type'', should be ''met'', ''gene'', ''rxn'' or ''comp''.'</span>)
+0050 <span class="keyword">end</span>
+0051 <span class="comment">%Check 'object' input</span>
+0052 <span class="keyword">if</span> islogical(object)
+0053     idxInModel=find(object);
+0054 <span class="keyword">elseif</span> isnumeric(object)
+0055     idxInModel=object;
+0056 <span class="keyword">else</span>
+0057     object=convertCharArray(object);
+0058     <span class="keyword">if</span> numel(object)==1 &amp;&amp; strcmp(object{1},<span class="string">'all'</span>)
+0059         idxInModel=1:numel(model.([type,<span class="string">'s'</span>]));
+0060     <span class="keyword">else</span>
+0061         idxInModel=getIndexes(model,object,[type,<span class="string">'s'</span>]);
+0062         <span class="keyword">if</span> ~all(idxInModel)
+0063             dispEM(<span class="string">'The following objects cannot be found in the model: '</span>,true,object(~idxInModel))
+0064         <span class="keyword">end</span>
 0065     <span class="keyword">end</span>
 0066 <span class="keyword">end</span>
 0067 <span class="comment">%Check 'miriams' input</span>
-0068 <span class="keyword">if</span> ischar(miriams)
-0069     miriams={miriams};
-0070 <span class="keyword">end</span>
-0071 <span class="keyword">if</span> numel(miriams)==1 &amp;&amp; numel(idxInModel)~=1
-0072     miriams=repmat(miriams,numel(idxInModel),1);
-0073 <span class="keyword">elseif</span> numel(miriams)~=numel(idxInModel)
-0074     error(<span class="string">'The number of annotations does not match the number of objects.'</span>)
-0075 <span class="keyword">end</span>
-0076 
-0077 miriamFieldName=[type,<span class="string">'Miriams'</span>];
-0078 
-0079 <span class="keyword">if</span> isfield(model,miriamFieldName)
-0080     [extractedMiriams,extractedMiriamNames]=<a href="extractMiriam.html" class="code" title="function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)">extractMiriam</a>(model.(miriamFieldName)(idxInModel),<span class="string">'all'</span>);
-0081 <span class="keyword">else</span>
-0082     extractedMiriams=cell(numel(idxInModel),1);
-0083     extractedMiriamNames={miriamName};
-0084 <span class="keyword">end</span>
-0085 
-0086 [~, midx]=ismember(miriamName,extractedMiriamNames);
-0087 <span class="keyword">if</span> midx==0
-0088     midx=numel(extractedMiriamNames)+1;
-0089     extractedMiriamNames(end+1)={miriamName};
-0090     extractedMiriams(:,end+1)=miriams;
-0091 <span class="keyword">elseif</span> strcmp(keep,<span class="string">'replace'</span>)
-0092     extractedMiriams(:,midx)=miriams;
-0093 <span class="keyword">else</span>
-0094     noMiriam=cellfun(@isempty,extractedMiriams(:,midx));
-0095     extractedMiriams(noMiriam,midx)=miriams(noMiriam);
-0096     <span class="keyword">if</span> strcmp(keep,<span class="string">'add'</span>) <span class="comment">% Skipped when only filling empty entries</span>
-0097         existingMiriams=[split(extractedMiriams(~noMiriam,midx),<span class="string">'; '</span>), miriams(~noMiriam)];
-0098         uniqueMiriams=cell(size(existingMiriams,1),1);
-0099         <span class="keyword">for</span> i=1:size(existingMiriams,1)
-0100             uniqueMiriams{i,1}=strjoin(unique(existingMiriams(i,:)), {<span class="string">'; '</span>});
-0101         <span class="keyword">end</span>
-0102         extractedMiriams(~noMiriam,midx)=uniqueMiriams;
-0103     <span class="keyword">end</span>
-0104 <span class="keyword">end</span>
-0105 
-0106 <span class="comment">% Make Miriam field again</span>
-0107 <span class="keyword">for</span> i=1:numel(idxInModel)
-0108     miriam.name=cell(1,1);
-0109     miriam.value=cell(1,1);
-0110     <span class="keyword">for</span> j=1:numel(extractedMiriamNames)
-0111         <span class="keyword">if</span> ~isempty(extractedMiriams{i,j})
-0112             values=strsplit(extractedMiriams{i,j},<span class="string">'; '</span>);
-0113             miriam.name(end+1:end+numel(values),1)=extractedMiriamNames(j);
-0114             miriam.value(end+1:end+numel(values),1)=values;
-0115         <span class="keyword">end</span>
-0116     <span class="keyword">end</span>
-0117     miriam.name(1)=[];
-0118     miriam.value(1)=[];
-0119     model.(miriamFieldName){idxInModel(i),1}=miriam;
-0120 <span class="keyword">end</span>
-0121 <span class="keyword">end</span></pre></div>
+0068 <span class="keyword">if</span> numel(miriams)==1 &amp;&amp; numel(idxInModel)~=1
+0069     miriams=repmat(miriams,numel(idxInModel),1);
+0070 <span class="keyword">elseif</span> numel(miriams)~=numel(idxInModel)
+0071     error(<span class="string">'The number of annotations does not match the number of objects.'</span>)
+0072 <span class="keyword">end</span>
+0073 
+0074 miriamFieldName=[type,<span class="string">'Miriams'</span>];
+0075 
+0076 <span class="keyword">if</span> isfield(model,miriamFieldName)
+0077     [extractedMiriams,extractedMiriamNames]=<a href="extractMiriam.html" class="code" title="function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)">extractMiriam</a>(model.(miriamFieldName)(idxInModel),<span class="string">'all'</span>);
+0078 <span class="keyword">else</span>
+0079     extractedMiriams=cell(numel(idxInModel),1);
+0080     extractedMiriamNames={miriamName};
+0081 <span class="keyword">end</span>
+0082 
+0083 [~, midx]=ismember(miriamName,extractedMiriamNames);
+0084 <span class="keyword">if</span> midx==0
+0085     midx=numel(extractedMiriamNames)+1;
+0086     extractedMiriamNames(end+1)={miriamName};
+0087     extractedMiriams(:,end+1)=miriams;
+0088 <span class="keyword">elseif</span> strcmp(keep,<span class="string">'replace'</span>)
+0089     extractedMiriams(:,midx)=miriams;
+0090 <span class="keyword">else</span>
+0091     noMiriam=cellfun(@isempty,extractedMiriams(:,midx));
+0092     extractedMiriams(noMiriam,midx)=miriams(noMiriam);
+0093     <span class="keyword">if</span> strcmp(keep,<span class="string">'add'</span>) <span class="comment">% Skipped when only filling empty entries</span>
+0094         existingMiriams=[split(extractedMiriams(~noMiriam,midx),<span class="string">'; '</span>), miriams(~noMiriam)];
+0095         uniqueMiriams=cell(size(existingMiriams,1),1);
+0096         <span class="keyword">for</span> i=1:size(existingMiriams,1)
+0097             uniqueMiriams{i,1}=strjoin(unique(existingMiriams(i,:)), {<span class="string">'; '</span>});
+0098         <span class="keyword">end</span>
+0099         extractedMiriams(~noMiriam,midx)=uniqueMiriams;
+0100     <span class="keyword">end</span>
+0101 <span class="keyword">end</span>
+0102 
+0103 <span class="comment">% Make Miriam field again</span>
+0104 <span class="keyword">for</span> i=1:numel(idxInModel)
+0105     miriam.name=cell(1,1);
+0106     miriam.value=cell(1,1);
+0107     <span class="keyword">for</span> j=1:numel(extractedMiriamNames)
+0108         <span class="keyword">if</span> ~isempty(extractedMiriams{i,j})
+0109             values=strsplit(extractedMiriams{i,j},<span class="string">'; '</span>);
+0110             miriam.name(end+1:end+numel(values),1)=extractedMiriamNames(j);
+0111             miriam.value(end+1:end+numel(values),1)=values;
+0112         <span class="keyword">end</span>
+0113     <span class="keyword">end</span>
+0114     miriam.name(1)=[];
+0115     miriam.value(1)=[];
+0116     model.(miriamFieldName){idxInModel(i),1}=miriam;
+0117 <span class="keyword">end</span>
+0118 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

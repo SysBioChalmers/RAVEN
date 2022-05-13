@@ -1,6 +1,9 @@
 function model=mergeModels(models,metParam,supressWarnings)
 % mergeModels
-%   Merges models into one model structure.
+%   Merges models into one model structure. Reactions are added without any
+%   checks, so duplicate reactions might appear. Metabolites are matched by
+%   their name and compartment (metaboliteName[comp]), while genes are
+%   matched by their name.
 %
 %   models          a cell array with model structures
 %   metParam        string specifying whether to refer to metabolite name
@@ -23,6 +26,8 @@ end
 
 if nargin<2
     metParam='metNames';
+else
+    metParam=char(metParam);
 end
 
 if nargin<3
@@ -41,16 +46,6 @@ model.metFrom(:)={models{1}.id};
 if isfield(models{1},'genes')
     model.geneFrom=cell(numel(models{1}.genes),1);
     model.geneFrom(:)={models{1}.id};
-end
-
-if isfield(model,'subSystems')
-    hasDeletedSubSystem=false;
-else
-    if supressWarnings==false
-        EM='Cannot add subsystems since the existing model has no subsystems info. All reactions must have a subsystem for this to be included';
-        dispEM(EM,false);
-    end
-    hasDeletedSubSystem=true;
 end
 
 if isfield(model,'equations')
@@ -93,16 +88,21 @@ for i=2:numel(models)
     model.c=[model.c;models{i}.c];
     model.rev=[model.rev;models{i}.rev];
     
-    if hasDeletedSubSystem==false
-        if isfield(models{i},'subSystems')
+    if isfield(models{i},'subSystems')
+        if isfield(model,'subSystems')
             model.subSystems=[model.subSystems;models{i}.subSystems];
         else
-            if supressWarnings==false
-                EM='Cannot add subsystems since the existing model has no subsystems info. All reactions must have a subsystem for this to be included. Deleting subSystems field';
-                dispEM(EM,false);
-            end
-            hasDeletedSubSystem=true;
-            model=rmfield(model,'subSystems');
+            emptySubSystem=cell(numel(model.rxns)-numel(models{i}.rxns),1);
+            emptySubSystem(:)={''};
+            emptySubSystem=cellfun(@(x) cell(0,0),emptySubSystem,'UniformOutput',false);
+            model.subSystems=[emptySubSystem;models{i}.subSystems];
+        end
+    else
+        if isfield(model,'subSystems')
+            emptySubSystem=cell(numel(models{i}.rxns),1);
+            emptySubSystem(:)={''};
+            emptySubSystem=cellfun(@(x) cell(0,0),emptySubSystem,'UniformOutput',false);
+            model.subSystems=[model.subSystems;emptySubSystem];
         end
     end
     

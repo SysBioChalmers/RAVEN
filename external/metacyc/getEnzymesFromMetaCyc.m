@@ -58,19 +58,24 @@ function metaCycEnzymes=getEnzymesFromMetaCyc(metacycPath)
 
 % A line that contains only '//' separates each object.
 
+if nargin<1
+    ravenPath=findRAVENroot();
+    metacycPath=fullfile(ravenPath,'external','metacyc');
+else
+    metacycPath=char(metacycPath);
+end
+
 %Check if the enzymatic proteins have been parsed before and saved. If so,
 %load the model.
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-enzymesFile=fullfile(ravenPath,'external','metacyc','metaCycEnzymes.mat');
+enzymesFile=fullfile(metacycPath,'metaCycEnzymes.mat');
 metaCycProteinFile='proteins.dat';
 metaCycEnzrxnsFile='enzrxns.dat';
 
-if exist(enzymesFile, 'file')
-    fprintf(['Importing MetaCyc enzymes and reaction-enzyme association from ' strrep(enzymesFile,'\','/') '... ']);
+try
+    (['Importing MetaCyc enzymes and reaction-enzyme association from ' strrep(enzymesFile,'\','/') '... ']);
     load(enzymesFile);
     fprintf('done\n');
-else
+catch
     fprintf(['Cannot locate ' strrep(enzymesFile,'\','/') '\nNow try to generate it from local MetaCyc data files...\n']);
     if ~exist(fullfile(metacycPath,metaCycProteinFile),'file') || ~exist(fullfile(metacycPath,metaCycEnzrxnsFile),'file')
         EM=fprintf(['The files of enzymes or proteins cannot be located, and should be downloaded from MetaCyc.\n']);

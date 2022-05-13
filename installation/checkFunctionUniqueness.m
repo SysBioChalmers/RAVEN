@@ -6,8 +6,7 @@ function checkFunctionUniqueness()
 %   Usage: checkFunctionUniqueness()
 
 %Get the RAVEN path
-[ST, I]=dbstack('-completenames');
-[ravenDir,~,~]=fileparts(fileparts(ST(I).file));
+ravenDir=findRAVENroot();
 
 %Now getting all RAVEN functions recursively;
 temp_res1=dir([ravenDir '/*/*.m']);
@@ -53,9 +52,10 @@ for i=1:numel(matlabPaths)
 end
 
 if hasConflicts
-    fprintf('It is strongly recommended to resolve conflicting functions as this may compromise RAVEN functionality\n');
+    fprintf('Fail\n')
+    fprintf('  It is strongly recommended to resolve conflicting functions as this may compromise RAVEN functionality\n');
 else
-    fprintf('OK\n');
+    fprintf('Pass\n');
 end
 
 end

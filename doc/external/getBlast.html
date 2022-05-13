@@ -122,10 +122,10 @@ This function is called by:
 0044 <span class="keyword">end</span>
 0045 
 0046 <span class="comment">%Everything should be cell arrays</span>
-0047 organismID=cellstr(organismID);
-0048 fastaFile=cellstr(fastaFile);
-0049 modelIDs=cellstr(modelIDs);
-0050 refFastaFiles=cellstr(refFastaFiles);
+0047 organismID=convertCharArray(organismID);
+0048 fastaFile=convertCharArray(fastaFile);
+0049 modelIDs=convertCharArray(modelIDs);
+0050 refFastaFiles=convertCharArray(refFastaFiles);
 0051 
 0052 <span class="comment">%Create blank structures for results</span>
 0053 blastStructure=[];
@@ -135,130 +135,128 @@ This function is called by:
 0057 blastReport.dbHashes.pto={};
 0058 blastReport.blastTxtOutput={};
 0059 
-0060 <span class="comment">%Get the directory for RAVEN Toolbox. This may not be the easiest or best</span>
-0061 <span class="comment">%way to do this</span>
-0062 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
-0063 ravenPath=fileparts(fileparts(ST(I).file));
-0064 
-0065 <span class="comment">%Generate temporary names for BLAST databases and output files</span>
-0066 tmpDB=tempname;
-0067 outFile=tempname;
-0068 
-0069 <span class="comment">%Check for existence of files. If no full path is specified for a file,</span>
-0070 <span class="comment">%assume that it is in the current folder</span>
-0071 <span class="keyword">if</span> isrow(refFastaFiles)
-0072     files=horzcat(fastaFile,refFastaFiles);
-0073 <span class="keyword">else</span>
-0074     files=vertcat(fastaFile,refFastaFiles);
-0075 <span class="keyword">end</span>
-0076 
-0077 files=checkFileExistence(files,2); <span class="comment">%Copy files to temp dir</span>
-0078 fastaFile = files(1);
-0079 refFastaFiles = files(2:end);
-0080 
-0081 <span class="comment">%Identify the operating system</span>
-0082 <span class="keyword">if</span> isunix
-0083     <span class="keyword">if</span> ismac
-0084         binEnd=<span class="string">'.mac'</span>;
-0085     <span class="keyword">else</span>
-0086         binEnd=<span class="string">''</span>;
-0087     <span class="keyword">end</span>
-0088 <span class="keyword">elseif</span> ispc
-0089     binEnd=<span class="string">'.exe'</span>;
-0090     setenv(<span class="string">'BLASTDB_LMDB_MAP_SIZE'</span>,<span class="string">'1000000'</span>);
-0091 <span class="keyword">else</span>
-0092     dispEM(<span class="string">'Unknown OS, exiting.'</span>)
-0093     <span class="keyword">return</span>
-0094 <span class="keyword">end</span>
-0095 
-0096 <span class="comment">%Run BLAST multi-threaded to use all logical cores assigned to MATLAB</span>
-0097 cores = evalc(<span class="string">'feature(''numcores'')'</span>);
-0098 cores = strsplit(cores, <span class="string">'MATLAB was assigned: '</span>);
-0099 cores = regexp(cores{2},<span class="string">'^\d*'</span>,<span class="string">'match'</span>);
-0100 cores = cores{1};
-0101 
-0102 <span class="comment">%Create a database for the new organism and blast each of the refFastaFiles</span>
-0103 <span class="comment">%against it</span>
-0104 [status, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'makeblastdb'</span> binEnd]) <span class="string">'&quot; -in '</span> fastaFile{1} <span class="string">' -out &quot;'</span> fullfile(tmpDB, <span class="string">'tmpDB'</span>) <span class="string">'&quot; -dbtype prot'</span>]);
-0105 <span class="keyword">if</span> develMode
-0106     blastReport.dbHashes.phr{numel(blastReport.dbHashes.phr)+1}=getMD5Hash(fullfile(tmpDB, <span class="string">'tmpDB.phr'</span>));
-0107     blastReport.dbHashes.pot{numel(blastReport.dbHashes.pot)+1}=getMD5Hash(fullfile(tmpDB, <span class="string">'tmpDB.pot'</span>));
-0108     blastReport.dbHashes.psq{numel(blastReport.dbHashes.psq)+1}=getMD5Hash(fullfile(tmpDB, <span class="string">'tmpDB.psq'</span>));
-0109     blastReport.dbHashes.pto{numel(blastReport.dbHashes.pto)+1}=getMD5Hash(fullfile(tmpDB, <span class="string">'tmpDB.pto'</span>));
-0110 <span class="keyword">end</span>
-0111 <span class="keyword">if</span> status~=0
-0112     EM=[<span class="string">'makeblastdb did not run successfully, error: '</span>, num2str(status)];
-0113     dispEM(EM,true);
-0114 <span class="keyword">end</span>
-0115 
-0116 <span class="keyword">for</span> i=1:numel(refFastaFiles)
-0117     <span class="keyword">if</span> ~hideVerbose
-0118         fprintf([<span class="string">'BLASTing &quot;'</span> modelIDs{i} <span class="string">'&quot; against &quot;'</span> organismID{1} <span class="string">'&quot;..\n'</span>]);
-0119     <span class="keyword">end</span>
-0120     [status, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'blastp'</span> binEnd]) <span class="string">'&quot; -query '</span> refFastaFiles{i} <span class="string">' -out &quot;'</span> outFile <span class="string">'_'</span> num2str(i) <span class="string">'&quot; -db &quot;'</span> fullfile(tmpDB, <span class="string">'tmpDB'</span>) <span class="string">'&quot; -evalue 10e-5 -outfmt &quot;10 qseqid sseqid evalue pident length bitscore ppos&quot; -num_threads &quot;'</span> cores <span class="string">'&quot;'</span>]);
-0121     <span class="keyword">if</span> develMode
-0122         blastReport.blastTxtOutput{numel(blastReport.blastTxtOutput)+1}=importdata([outFile <span class="string">'_'</span> num2str(i)]);
-0123     <span class="keyword">end</span>
-0124     <span class="keyword">if</span> status~=0
-0125         EM=[<span class="string">'blastp did not run successfully, error: '</span>, num2str(status)];
-0126         dispEM(EM,true);
-0127     <span class="keyword">end</span>
-0128 <span class="keyword">end</span>
-0129 delete([tmpDB filesep <span class="string">'tmpDB*'</span>]);
-0130 
-0131 <span class="comment">%Then create a database for each of the reference organisms and blast the</span>
-0132 <span class="comment">%new organism against them</span>
-0133 <span class="keyword">for</span> i=1:numel(refFastaFiles)
-0134     <span class="keyword">if</span> ~hideVerbose
-0135         fprintf([<span class="string">'BLASTing &quot;'</span> organismID{1} <span class="string">'&quot; against &quot;'</span> modelIDs{i} <span class="string">'&quot;..\n'</span>]);
-0136     <span class="keyword">end</span>
-0137     [status, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'makeblastdb'</span> binEnd]) <span class="string">'&quot; -in '</span> refFastaFiles{i} <span class="string">' -out &quot;'</span> fullfile(tmpDB, <span class="string">'tmpDB'</span>) <span class="string">'&quot; -dbtype prot'</span>]);
-0138     <span class="keyword">if</span> status~=0
-0139         EM=[<span class="string">'makeblastdb did not run successfully, error: '</span>, num2str(status)];
-0140         dispEM(EM,true);
-0141     <span class="keyword">end</span>
-0142     [status, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'blastp'</span> binEnd]) <span class="string">'&quot; -query '</span> fastaFile{1} <span class="string">' -out &quot;'</span> outFile <span class="string">'_r'</span> num2str(i) <span class="string">'&quot; -db &quot;'</span> fullfile(tmpDB, <span class="string">'tmpDB'</span>) <span class="string">'&quot; -evalue 10e-5 -outfmt &quot;10 qseqid sseqid evalue pident length bitscore ppos&quot; -num_threads &quot;'</span> cores <span class="string">'&quot;'</span>]);
-0143     <span class="keyword">if</span> develMode
-0144         blastReport.dbHashes.phr{numel(blastReport.dbHashes.phr)+1}=getMD5Hash(fullfile(tmpDB, <span class="string">'tmpDB.phr'</span>));
-0145         blastReport.dbHashes.pot{numel(blastReport.dbHashes.pot)+1}=getMD5Hash(fullfile(tmpDB, <span class="string">'tmpDB.pot'</span>));
-0146         blastReport.dbHashes.psq{numel(blastReport.dbHashes.psq)+1}=getMD5Hash(fullfile(tmpDB, <span class="string">'tmpDB.psq'</span>));
-0147         blastReport.dbHashes.pto{numel(blastReport.dbHashes.pto)+1}=getMD5Hash(fullfile(tmpDB, <span class="string">'tmpDB.pto'</span>));
-0148         blastReport.blastTxtOutput{numel(blastReport.blastTxtOutput)+1}=importdata([outFile <span class="string">'_r'</span> num2str(i)]);
-0149     <span class="keyword">end</span>    
-0150     <span class="keyword">if</span> status~=0
-0151         EM=[<span class="string">'blastp did not run successfully, error: '</span>, num2str(status)];
-0152         dispEM(EM,true);
-0153     <span class="keyword">end</span>
-0154     delete([tmpDB filesep <span class="string">'tmpDB*'</span>]);
-0155 <span class="keyword">end</span>
-0156 
-0157 <span class="comment">%Done with the BLAST, do the parsing of the text files</span>
-0158 <span class="keyword">for</span> i=1:numel(refFastaFiles)*2
-0159     tempStruct=[];
-0160     <span class="keyword">if</span> i&lt;=numel(refFastaFiles)
-0161         tempStruct.fromId=modelIDs{i};
-0162         tempStruct.toId=organismID{1};
-0163         A=readtable([outFile <span class="string">'_'</span> num2str(i)],<span class="string">'Delimiter'</span>,<span class="string">','</span>,<span class="string">'Format'</span>,<span class="string">'%s%s%f%f%f%f%f'</span>);
-0164     <span class="keyword">else</span>
-0165         tempStruct.fromId=organismID{1};
-0166         tempStruct.toId=modelIDs{i-numel(refFastaFiles)};
-0167         A=readtable([outFile <span class="string">'_r'</span> num2str(i-numel(refFastaFiles))],<span class="string">'Delimiter'</span>,<span class="string">','</span>,<span class="string">'Format'</span>,<span class="string">'%s%s%f%f%f%f%f'</span>);
-0168     <span class="keyword">end</span>
-0169     tempStruct.fromGenes=A{:,1};
-0170     tempStruct.toGenes=A{:,2};
-0171     tempStruct.evalue=table2array(A(:,3));
-0172     tempStruct.identity=table2array(A(:,4));
-0173     tempStruct.aligLen=table2array(A(:,5));
-0174     tempStruct.bitscore=table2array(A(:,6));
-0175     tempStruct.ppos=table2array(A(:,7));
-0176     blastStructure=[blastStructure tempStruct];
-0177 <span class="keyword">end</span>
-0178 
-0179 <span class="comment">%Remove the old tempfiles</span>
-0180 delete([outFile <span class="string">'*'</span>]);
-0181 <span class="comment">%Remove the temp fasta files</span>
-0182 delete(files{:})
-0183 <span class="keyword">end</span></pre></div>
+0060 <span class="comment">%Get the directory for RAVEN Toolbox</span>
+0061 ravenPath=findRAVENroot();
+0062 
+0063 <span class="comment">%Generate temporary names for BLAST databases and output files</span>
+0064 tmpDB=tempname;
+0065 outFile=tempname;
+0066 
+0067 <span class="comment">%Check for existence of files. If no full path is specified for a file,</span>
+0068 <span class="comment">%assume that it is in the current folder</span>
+0069 <span class="keyword">if</span> isrow(refFastaFiles)
+0070     files=horzcat(fastaFile,refFastaFiles);
+0071 <span class="keyword">else</span>
+0072     files=vertcat(fastaFile,refFastaFiles);
+0073 <span class="keyword">end</span>
+0074 
+0075 files=checkFileExistence(files,2); <span class="comment">%Copy files to temp dir</span>
+0076 fastaFile = files(1);
+0077 refFastaFiles = files(2:end);
+0078 
+0079 <span class="comment">%Identify the operating system</span>
+0080 <span class="keyword">if</span> isunix
+0081     <span class="keyword">if</span> ismac
+0082         binEnd=<span class="string">'.mac'</span>;
+0083     <span class="keyword">else</span>
+0084         binEnd=<span class="string">''</span>;
+0085     <span class="keyword">end</span>
+0086 <span class="keyword">elseif</span> ispc
+0087     binEnd=<span class="string">'.exe'</span>;
+0088     setenv(<span class="string">'BLASTDB_LMDB_MAP_SIZE'</span>,<span class="string">'1000000'</span>);
+0089 <span class="keyword">else</span>
+0090     dispEM(<span class="string">'Unknown OS, exiting.'</span>)
+0091     <span class="keyword">return</span>
+0092 <span class="keyword">end</span>
+0093 
+0094 <span class="comment">%Run BLAST multi-threaded to use all logical cores assigned to MATLAB</span>
+0095 cores = evalc(<span class="string">'feature(''numcores'')'</span>);
+0096 cores = strsplit(cores, <span class="string">'MATLAB was assigned: '</span>);
+0097 cores = regexp(cores{2},<span class="string">'^\d*'</span>,<span class="string">'match'</span>);
+0098 cores = cores{1};
+0099 
+0100 <span class="comment">%Create a database for the new organism and blast each of the refFastaFiles</span>
+0101 <span class="comment">%against it</span>
+0102 [status, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'makeblastdb'</span> binEnd]) <span class="string">'&quot; -in '</span> fastaFile{1} <span class="string">' -out &quot;'</span> fullfile(tmpDB, <span class="string">'tmpDB'</span>) <span class="string">'&quot; -dbtype prot'</span>]);
+0103 <span class="keyword">if</span> develMode
+0104     blastReport.dbHashes.phr{numel(blastReport.dbHashes.phr)+1}=getMD5Hash(fullfile(tmpDB, <span class="string">'tmpDB.phr'</span>));
+0105     blastReport.dbHashes.pot{numel(blastReport.dbHashes.pot)+1}=getMD5Hash(fullfile(tmpDB, <span class="string">'tmpDB.pot'</span>));
+0106     blastReport.dbHashes.psq{numel(blastReport.dbHashes.psq)+1}=getMD5Hash(fullfile(tmpDB, <span class="string">'tmpDB.psq'</span>));
+0107     blastReport.dbHashes.pto{numel(blastReport.dbHashes.pto)+1}=getMD5Hash(fullfile(tmpDB, <span class="string">'tmpDB.pto'</span>));
+0108 <span class="keyword">end</span>
+0109 <span class="keyword">if</span> status~=0
+0110     EM=[<span class="string">'makeblastdb did not run successfully, error: '</span>, num2str(status)];
+0111     dispEM(EM,true);
+0112 <span class="keyword">end</span>
+0113 
+0114 <span class="keyword">for</span> i=1:numel(refFastaFiles)
+0115     <span class="keyword">if</span> ~hideVerbose
+0116         fprintf([<span class="string">'BLASTing &quot;'</span> modelIDs{i} <span class="string">'&quot; against &quot;'</span> organismID{1} <span class="string">'&quot;..\n'</span>]);
+0117     <span class="keyword">end</span>
+0118     [status, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'blastp'</span> binEnd]) <span class="string">'&quot; -query '</span> refFastaFiles{i} <span class="string">' -out &quot;'</span> outFile <span class="string">'_'</span> num2str(i) <span class="string">'&quot; -db &quot;'</span> fullfile(tmpDB, <span class="string">'tmpDB'</span>) <span class="string">'&quot; -evalue 10e-5 -outfmt &quot;10 qseqid sseqid evalue pident length bitscore ppos&quot; -num_threads &quot;'</span> cores <span class="string">'&quot;'</span>]);
+0119     <span class="keyword">if</span> develMode
+0120         blastReport.blastTxtOutput{numel(blastReport.blastTxtOutput)+1}=importdata([outFile <span class="string">'_'</span> num2str(i)]);
+0121     <span class="keyword">end</span>
+0122     <span class="keyword">if</span> status~=0
+0123         EM=[<span class="string">'blastp did not run successfully, error: '</span>, num2str(status)];
+0124         dispEM(EM,true);
+0125     <span class="keyword">end</span>
+0126 <span class="keyword">end</span>
+0127 delete([tmpDB filesep <span class="string">'tmpDB*'</span>]);
+0128 
+0129 <span class="comment">%Then create a database for each of the reference organisms and blast the</span>
+0130 <span class="comment">%new organism against them</span>
+0131 <span class="keyword">for</span> i=1:numel(refFastaFiles)
+0132     <span class="keyword">if</span> ~hideVerbose
+0133         fprintf([<span class="string">'BLASTing &quot;'</span> organismID{1} <span class="string">'&quot; against &quot;'</span> modelIDs{i} <span class="string">'&quot;..\n'</span>]);
+0134     <span class="keyword">end</span>
+0135     [status, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'makeblastdb'</span> binEnd]) <span class="string">'&quot; -in '</span> refFastaFiles{i} <span class="string">' -out &quot;'</span> fullfile(tmpDB, <span class="string">'tmpDB'</span>) <span class="string">'&quot; -dbtype prot'</span>]);
+0136     <span class="keyword">if</span> status~=0
+0137         EM=[<span class="string">'makeblastdb did not run successfully, error: '</span>, num2str(status)];
+0138         dispEM(EM,true);
+0139     <span class="keyword">end</span>
+0140     [status, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'blast+'</span>,[<span class="string">'blastp'</span> binEnd]) <span class="string">'&quot; -query '</span> fastaFile{1} <span class="string">' -out &quot;'</span> outFile <span class="string">'_r'</span> num2str(i) <span class="string">'&quot; -db &quot;'</span> fullfile(tmpDB, <span class="string">'tmpDB'</span>) <span class="string">'&quot; -evalue 10e-5 -outfmt &quot;10 qseqid sseqid evalue pident length bitscore ppos&quot; -num_threads &quot;'</span> cores <span class="string">'&quot;'</span>]);
+0141     <span class="keyword">if</span> develMode
+0142         blastReport.dbHashes.phr{numel(blastReport.dbHashes.phr)+1}=getMD5Hash(fullfile(tmpDB, <span class="string">'tmpDB.phr'</span>));
+0143         blastReport.dbHashes.pot{numel(blastReport.dbHashes.pot)+1}=getMD5Hash(fullfile(tmpDB, <span class="string">'tmpDB.pot'</span>));
+0144         blastReport.dbHashes.psq{numel(blastReport.dbHashes.psq)+1}=getMD5Hash(fullfile(tmpDB, <span class="string">'tmpDB.psq'</span>));
+0145         blastReport.dbHashes.pto{numel(blastReport.dbHashes.pto)+1}=getMD5Hash(fullfile(tmpDB, <span class="string">'tmpDB.pto'</span>));
+0146         blastReport.blastTxtOutput{numel(blastReport.blastTxtOutput)+1}=importdata([outFile <span class="string">'_r'</span> num2str(i)]);
+0147     <span class="keyword">end</span>    
+0148     <span class="keyword">if</span> status~=0
+0149         EM=[<span class="string">'blastp did not run successfully, error: '</span>, num2str(status)];
+0150         dispEM(EM,true);
+0151     <span class="keyword">end</span>
+0152     delete([tmpDB filesep <span class="string">'tmpDB*'</span>]);
+0153 <span class="keyword">end</span>
+0154 
+0155 <span class="comment">%Done with the BLAST, do the parsing of the text files</span>
+0156 <span class="keyword">for</span> i=1:numel(refFastaFiles)*2
+0157     tempStruct=[];
+0158     <span class="keyword">if</span> i&lt;=numel(refFastaFiles)
+0159         tempStruct.fromId=modelIDs{i};
+0160         tempStruct.toId=organismID{1};
+0161         A=readtable([outFile <span class="string">'_'</span> num2str(i)],<span class="string">'Delimiter'</span>,<span class="string">','</span>,<span class="string">'Format'</span>,<span class="string">'%s%s%f%f%f%f%f'</span>);
+0162     <span class="keyword">else</span>
+0163         tempStruct.fromId=organismID{1};
+0164         tempStruct.toId=modelIDs{i-numel(refFastaFiles)};
+0165         A=readtable([outFile <span class="string">'_r'</span> num2str(i-numel(refFastaFiles))],<span class="string">'Delimiter'</span>,<span class="string">','</span>,<span class="string">'Format'</span>,<span class="string">'%s%s%f%f%f%f%f'</span>);
+0166     <span class="keyword">end</span>
+0167     tempStruct.fromGenes=A{:,1};
+0168     tempStruct.toGenes=A{:,2};
+0169     tempStruct.evalue=table2array(A(:,3));
+0170     tempStruct.identity=table2array(A(:,4));
+0171     tempStruct.aligLen=table2array(A(:,5));
+0172     tempStruct.bitscore=table2array(A(:,6));
+0173     tempStruct.ppos=table2array(A(:,7));
+0174     blastStructure=[blastStructure tempStruct];
+0175 <span class="keyword">end</span>
+0176 
+0177 <span class="comment">%Remove the old tempfiles</span>
+0178 delete([outFile <span class="string">'*'</span>]);
+0179 <span class="comment">%Remove the temp fasta files</span>
+0180 delete(files{:})
+0181 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

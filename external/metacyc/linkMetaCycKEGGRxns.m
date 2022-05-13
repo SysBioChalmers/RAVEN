@@ -98,9 +98,8 @@ rxnLinks.metacyc=rxnLinks.metacyc(index);
 rxnLinks=rmfield(rxnLinks,'check');
 
 %Get the MetaCyc path and update the metaCycRxns.mat
-[ST, I]=dbstack('-completenames');
-metaCycPath=fileparts(ST(I).file);
-rxnsFile=fullfile(metaCycPath,'metaCycRxns.mat');
+ravenPath=findRAVENroot();
+rxnsFile=fullfile(ravenPath,'external','metacyc','metaCycRxns.mat');
 save(rxnsFile,'metaCycRxns','rxnLinks','TRANSPORT','UNBALANCED','UNDETERMINED','isSpontaneous');
 fprintf(['Reaction associations between MetaCyc and KEGG have been successfully updated!\n\n']);
 

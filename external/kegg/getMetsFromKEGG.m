@@ -64,10 +64,11 @@ function model=getMetsFromKEGG(keggPath)
 
 if nargin<1
     keggPath='RAVEN/external/kegg';
+else
+    keggPath=char(keggPath);
 end
 
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+ravenPath=findRAVENroot();
 metsFile=fullfile(ravenPath,'external','kegg','keggMets.mat');
 if exist(metsFile, 'file')
     fprintf(['Importing KEGG metabolites from ' strrep(metsFile,'\','/') '... ']);

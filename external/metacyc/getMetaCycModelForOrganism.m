@@ -30,9 +30,12 @@ function model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %   Usage: model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond)
 
+organismID=char(organismID);
 if nargin<2
     EM='No query protein fasta file is specified';
     dispEM(EM);
+else
+    fastaFile=char(fastaFile);
 end
 if nargin<3
     keepTransportRxns=false;
@@ -81,15 +84,14 @@ model.rev=metaCycModel.rev;
 model.c=metaCycModel.c;
 model.equations=metaCycModel.equations;
 
-%Get the 'external' directory for RAVEN Toolbox.
-[ST I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
+%Get the root directory for RAVEN Toolbox.
+ravenPath=findRAVENroot();
 
 %Generate blast strcture by either DIAMOND or BLASTP
 if useDiamond
-    blastStruc=getDiamond(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'metacyc','protseq.fsa'));
+    blastStruc=getDiamond(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'external','metacyc','protseq.fsa'));
 else
-    blastStruc=getBlast(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'metacyc','protseq.fsa'));
+    blastStruc=getBlast(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'external','metacyc','protseq.fsa'));
 end
 
 %Only look the query

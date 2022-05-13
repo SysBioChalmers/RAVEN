@@ -61,15 +61,21 @@ if nargin<3
 end
 if nargin<5
     celltype=[];
+else
+    celltype=char(celltype);
 end
 if nargin<6
     noGeneScore=-2;
 end
 if nargin<7
     multipleGeneScoring='best';
+else
+    multipleGeneScoring=char(multipleGeneScoring);
 end
 if nargin<8
     multipleCellScoring='best';
+else
+    multipleCellScoring=char(multipleCellScoring);    
 end
 if nargin<9
     %The first four are for APE, the other ones for staining

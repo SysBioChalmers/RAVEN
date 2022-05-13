@@ -14,6 +14,9 @@ function path=getWSLpath(path)
 %   Uses the WSL function 'wslpath' to translate the path.
 %
 %   Usage: path=getWSLpath(path)
-[~,path]=system(['wsl wslpath ''' path '''']);
+[status,path]=system(['wsl wslpath ''' path '''']);
+if status==-1
+    error('Cannot get access to Windows Subsystem for Linux, check your WSL installation')
+end
 path=path(1:end-1);% Remove final character (line-break)
 end

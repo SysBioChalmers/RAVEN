@@ -28,6 +28,7 @@ function blastStructure=getBlastFromExcel(models,blastFile,organismId)
 if ~(exist(blastFile,'file')==2)
     error('BLAST result file %s cannot be found',string(blastFile));
 end
+organismId=char(organismId);
 
 blastStructure=[];
 

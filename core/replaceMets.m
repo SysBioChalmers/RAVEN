@@ -17,6 +17,9 @@ function model=replaceMets(model,metabolite,replacement,verbose)
 %
 %   Usage: model=replaceMets(model,metabolite,replacement,verbose)
 
+metabolite=char(metabolite);
+replacement=char(replacement);
+
 if nargin<4
     verbose=false;
 end
@@ -26,15 +29,13 @@ end
 % possible.
 repIdx = find(strcmp(replacement,model.metNames));
 if isempty(repIdx)
-    EM='The replacement metabolite name cannot be found in the model.'
-    dispEM(EM,true);
+    error('The replacement metabolite name cannot be found in the model.');
 end
 
 % Change name and information from metabolite to replacement metabolite
 metIdx = find(strcmp(metabolite,model.metNames));
 if isempty(metIdx)
-    EM='The to-be-replaced metabolite name cannot be found in the model.'
-    dispEM(EM,true);
+    error('The to-be-replaced metabolite name cannot be found in the model.');
 end
 if verbose==true
     fprintf('\n\nThe following reactions contain the replaced metabolite as reactant:\n')
@@ -68,9 +69,11 @@ metCompsN = strcat(lower(model.metNames),'[',metCompsN,']');
 idxDelete=[];
 for i = 1:length(repIdx)
     metCompsNidx=find(strcmp(metCompsN(repIdx(i)), metCompsN));
-    if gt(length(metCompsNidx),1) % If more than 1 metabolite matches
-        model.S(metCompsNidx(1),:) = model.S(metCompsNidx(1),:) + model.S(metCompsNidx(2:end),:);
-        idxDelete=[idxDelete; metCompsNidx(2:end)]; % Make list of metabolite IDs to delete
+    if length(metCompsNidx)>1
+        for j = 2:length(metCompsNidx)
+            model.S(metCompsNidx(1),:) = model.S(metCompsNidx(1),:) + model.S(metCompsNidx(j),:);
+            idxDelete=[idxDelete; metCompsNidx(j)]; % Make list of metabolite IDs to delete
+        end
     end
 end
 

@@ -249,21 +249,22 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %    nSequences,seqIdentity)
 
-if nargin<2
+if nargin<2 || isempty(fastaFile)
     fastaFile=[];
+else
+    fastaFile=char(fastaFile);
 end
 if nargin<3
     dataDir=[];
+else
+    dataDir=char(dataDir);
 end
-if nargin<4
-    outDir=[];
-end
-if isempty(outDir)
+if nargin<4 || isempty(outDir)
     outDir=tempdir;
     %Delete all *.out files if any exist
     delete(fullfile(outDir,'*.out'));
-elseif ~isstr(outDir)
-    error('outDir should be provided as string');
+else
+    outDir=char(outDir);
 end
 if nargin<5
     keepSpontaneous=true;
@@ -313,10 +314,8 @@ cores = strsplit(cores, 'MATLAB was assigned: ');
 cores = regexp(cores{2},'^\d*','match');
 cores = cores{1};
 
-%Get the directory for RAVEN Toolbox. This is to get the path to the third
-%party software used
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+%Get the directory for RAVEN Toolbox.
+ravenPath=findRAVENroot();
 
 %Checking if dataDir is consistent. It must point to pre-trained HMMs set,
 %compatible with the the current RAVEN version. The user may have the

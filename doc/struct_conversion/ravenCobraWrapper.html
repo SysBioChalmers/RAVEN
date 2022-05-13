@@ -107,404 +107,403 @@ This function is called by:
 0034     isRaven=true;
 0035 <span class="keyword">end</span>
 0036 
-0037 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
-0038 ravenPath=fileparts(fileparts(ST(I).file));
-0039 
-0040 <span class="comment">% Load COBRA field information</span>
-0041 fid             = fopen([ravenPath filesep <span class="string">'struct_conversion'</span> filesep <span class="string">'COBRA_structure_fields.csv'</span>]); <span class="comment">% Taken from https://github.com/opencobra/cobratoolbox/blob/develop/src/base/io/definitions/COBRA_structure_fields.csv</span>
-0042 fieldFile       = textscan(fid,repmat(<span class="string">'%s'</span>,1,15),<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>,<span class="string">'HeaderLines'</span>,1);
-0043 dbFields        = ~cellfun(@isempty,fieldFile{5}); <span class="comment">% Only keep fields with database annotations that should be translated to xxxMiriams</span>
-0044 dbFields        = dbFields &amp; ~contains(fieldFile{1},{<span class="string">'metInChIString'</span>,<span class="string">'metKEGGID'</span>,<span class="string">'metPubChemID'</span>,<span class="string">'rxnECNumbers'</span>});
-0045 COBRAnamespace  = fieldFile{5}(dbFields);
-0046 COBRAnamespace  = regexprep(COBRAnamespace,<span class="string">';.*'</span>,<span class="string">''</span>); <span class="comment">% Only keep first suggested namespace</span>
-0047 COBRAfields     = fieldFile{1}(dbFields);
-0048 fclose(fid);
-0049 
-0050 <span class="comment">% Load conversion between additional COBRA fields and namespaces:</span>
-0051 fid             = fopen([ravenPath filesep <span class="string">'struct_conversion'</span> filesep <span class="string">'cobraNamespaces.csv'</span>]);
-0052 fieldFile       = textscan(fid,<span class="string">'%s %s'</span>,<span class="string">'Delimiter'</span>,<span class="string">','</span>,<span class="string">'HeaderLines'</span>,0);
-0053 COBRAfields     = [COBRAfields; fieldFile{1}];
-0054 COBRAnamespace  = [COBRAnamespace; fieldFile{2}];
-0055 rxnCOBRAfields  = COBRAfields(startsWith(COBRAfields,<span class="string">'rxn'</span>));
-0056 rxnNamespaces   = COBRAnamespace(startsWith(COBRAfields,<span class="string">'rxn'</span>));
-0057 metCOBRAfields  = COBRAfields(startsWith(COBRAfields,<span class="string">'met'</span>));
-0058 metNamespaces   = COBRAnamespace(startsWith(COBRAfields,<span class="string">'met'</span>));
-0059 geneCOBRAfields = COBRAfields(startsWith(COBRAfields,<span class="string">'gene'</span>));
-0060 geneNamespaces  = COBRAnamespace(startsWith(COBRAfields,<span class="string">'gene'</span>));
-0061 fclose(fid);
-0062 
-0063 <span class="keyword">if</span> isRaven
-0064     <span class="comment">%Firstly remove boundary metabolites</span>
-0065     model=simplifyModel(model);
-0066 <span class="keyword">end</span>
-0067 
-0068 <span class="comment">% Keep fields that have identical names and content</span>
-0069 newModel.S=model.S;
-0070 newModel.lb=model.lb;
-0071 newModel.ub=model.ub;
-0072 newModel.c=model.c;
-0073 newModel.rxns=model.rxns;
-0074 optFields = {<span class="string">'rxnNames'</span>,<span class="string">'subSystems'</span>,<span class="string">'rxnNotes'</span>,<span class="keyword">...</span>
-0075     <span class="string">'metFormulas'</span>,<span class="string">'comps'</span>,<span class="string">'compNames'</span>,<span class="string">'metCharges'</span>,<span class="string">'genes'</span>,<span class="keyword">...</span>
-0076     <span class="string">'rxnConfidenceScores'</span>,<span class="string">'rxnGeneMat'</span>,<span class="string">'metNotes'</span>,<span class="string">'rev'</span>};
-0077 <span class="keyword">for</span> i=1:length(optFields)
-0078     <span class="keyword">if</span> isfield(model,optFields{i})
-0079         newModel.(optFields{i})=model.(optFields{i});
-0080     <span class="keyword">end</span>
-0081 <span class="keyword">end</span>
-0082     
-0083 <span class="comment">% Convert unique fields</span>
-0084 <span class="keyword">if</span> isRaven
-0085     fprintf(<span class="string">'Converting RAVEN structure to COBRA..\n'</span>);
-0086     <span class="comment">%Convert from RAVEN to COBRA structure</span>
-0087     
-0088     <span class="comment">%Mandatory COBRA fields</span>
-0089     newModel.rxns=model.rxns;
-0090     <span class="keyword">if</span> all(~cellfun(@isempty,regexp(model.mets,<span class="string">'\[[^\]]+\]$'</span>)))
-0091         newModel.mets=model.mets;
-0092     <span class="keyword">else</span>
-0093         <span class="comment">%Check if model has compartment info as &quot;met_c&quot; suffix in all metabolites:</span>
-0094         BiGGformat = false(size(model.mets));
-0095         <span class="keyword">for</span> i=1:numel(model.comps)
-0096             compPos=model.metComps==i;
-0097             BiGGformat(compPos)=~cellfun(@isempty,regexp(model.mets(compPos),[<span class="string">'_'</span> model.comps{i} <span class="string">'$'</span>]));
-0098         <span class="keyword">end</span>
-0099         <span class="keyword">if</span> all(BiGGformat)
-0100             newModel.mets=model.mets;
-0101             <span class="keyword">for</span> i=1:numel(model.comps)
-0102                 newModel.mets=regexprep(newModel.mets,[<span class="string">'_'</span> model.comps{i} <span class="string">'$'</span>],[<span class="string">'['</span> model.comps{i} <span class="string">']'</span>]);
-0103             <span class="keyword">end</span>
-0104         <span class="keyword">else</span>
-0105             newModel.mets=strcat(model.mets,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>);
-0106         <span class="keyword">end</span>
-0107     <span class="keyword">end</span>
-0108 
-0109     <span class="comment">%b, csense, osenseStr, genes, rules are also mandatory, but defined</span>
-0110     <span class="comment">%later to match the order of fields</span>
-0111     
-0112     <span class="comment">%Optional COBRA fields</span>
-0113     <span class="keyword">if</span> isfield(model,<span class="string">'id'</span>)
-0114         newModel.modelID=model.id;
-0115     <span class="keyword">end</span>
-0116     <span class="keyword">if</span> isfield(model,<span class="string">'name'</span>)
-0117         newModel.modelName=model.name;
-0118     <span class="keyword">end</span>
-0119     <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
-0120         newModel.rxnECNumbers=model.eccodes;
-0121     <span class="keyword">end</span>
-0122     <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
-0123         [miriams,extractedMiriamNames]=<a href="extractMiriam.html" class="code" title="function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)">extractMiriam</a>(model.rxnMiriams);
-0124         <span class="keyword">for</span> i = 1:length(rxnCOBRAfields)
-0125             j=ismember(extractedMiriamNames,rxnNamespaces{i});
-0126             <span class="keyword">if</span> any(j)
-0127                 eval([<span class="string">'newModel.'</span> rxnCOBRAfields{i} <span class="string">' = miriams(:,j);'</span>])
-0128             <span class="keyword">end</span>
-0129         <span class="keyword">end</span>
-0130     <span class="keyword">end</span>
-0131     <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>) <span class="comment">% Concatenate model.rxnReferences to those extracted from model.rxnMiriams</span>
-0132         <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnReferences'</span>)
-0133             newModel.rxnReferences = strcat(newModel.rxnReferences,{<span class="string">'; '</span>},model.rxnReferences);
-0134             newModel.rxnReferences = regexprep(newModel.rxnReferences,<span class="string">'^; $'</span>,<span class="string">''</span>);
-0135         <span class="keyword">else</span>
-0136             newModel.rxnReferences = model.rxnReferences;
-0137         <span class="keyword">end</span>
-0138     <span class="keyword">end</span>
-0139     <span class="keyword">if</span> isfield(model,<span class="string">'metNames'</span>)
-0140         newModel.metNames=strcat(model.metNames,<span class="string">' ['</span>,model.compNames(model.metComps),<span class="string">']'</span>);
-0141     <span class="keyword">end</span>
-0142     <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
-0143         [miriams,extractedMiriamNames]=<a href="extractMiriam.html" class="code" title="function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)">extractMiriam</a>(model.metMiriams);
-0144         <span class="comment">%Shorten miriam names for KEGG and PubChem. These shorter names</span>
-0145         <span class="comment">%will be used later to concatenate KEGG COMPOUND/GLYCAN and PubChem</span>
-0146         <span class="comment">%Compound/Substance, into corresponding COBRA model fields</span>
-0147         extractedMiriamNames=regexprep(extractedMiriamNames,<span class="string">'^kegg\..+'</span>,<span class="string">'kegg'</span>);
-0148         extractedMiriamNames=regexprep(extractedMiriamNames,<span class="string">'^pubchem\..+'</span>,<span class="string">'pubchem'</span>);
-0149         i=ismember(extractedMiriamNames,<span class="string">'kegg'</span>);
-0150         <span class="keyword">if</span> any(i) <span class="comment">% Combine KEGG compounds and glycans</span>
-0151             <span class="keyword">for</span> j=1:length(i)
-0152                 <span class="keyword">if</span> i(j) &amp;&amp; isfield(newModel,<span class="string">'metKEGGID'</span>)~=1
-0153                     newModel.metKEGGID=miriams(:,j);
-0154                 <span class="keyword">elseif</span> i(j)
-0155                     newModel.metKEGGID=strcat(newModel.metKEGGID,<span class="string">';'</span>,miriams(:,j));
-0156                 <span class="keyword">end</span>
-0157             <span class="keyword">end</span>
-0158             newModel.metKEGGID=regexprep(newModel.metKEGGID,<span class="string">'^;|;$'</span>,<span class="string">''</span>);
-0159         <span class="keyword">end</span>
-0160         i=ismember(extractedMiriamNames,<span class="string">'pubchem'</span>);
-0161         <span class="keyword">if</span> any(i) <span class="comment">% Combine Pubchem compounds and substances</span>
-0162             <span class="keyword">for</span> j=1:length(i)
-0163                 <span class="keyword">if</span> i(j) &amp;&amp; isfield(newModel,<span class="string">'metPubChemID'</span>)~=1
-0164                     newModel.metPubChemID=miriams(:,j);
-0165                 <span class="keyword">elseif</span> i(j)
-0166                     newModel.metPubChemID=strcat(newModel.metPubChemID,<span class="string">';'</span>,miriams(:,j));
-0167                 <span class="keyword">end</span>
-0168             <span class="keyword">end</span>
-0169             newModel.metPubChemID=regexprep(newModel.metPubChemID,<span class="string">'^;|;$'</span>,<span class="string">''</span>);
-0170         <span class="keyword">end</span>
-0171         <span class="comment">%All other Miriams can be directly parsed with no modifications:</span>
-0172         <span class="keyword">for</span> i = 1:length(metCOBRAfields)
-0173             j=ismember(extractedMiriamNames,metNamespaces{i});
-0174             <span class="keyword">if</span> any(j)
-0175                 eval([<span class="string">'newModel.'</span> metCOBRAfields{i} <span class="string">' = miriams(:,j);'</span>])
-0176             <span class="keyword">end</span>
-0177         <span class="keyword">end</span>
-0178     <span class="keyword">end</span>
-0179     <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
-0180         newModel.metInChIString=regexprep(strcat(<span class="string">'InChI='</span>, model.inchis),<span class="string">'^InChI=$'</span>,<span class="string">''</span>);
-0181     <span class="keyword">end</span>
-0182     newModel.b=zeros(numel(model.mets),1);
-0183     newModel.csense=repmat(<span class="string">'E'</span>,size(model.mets));
-0184     <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
-0185         [miriams,extractedMiriamNames]=<a href="extractMiriam.html" class="code" title="function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)">extractMiriam</a>(model.geneMiriams);
-0186         <span class="keyword">for</span> i = 1:length(geneCOBRAfields)
-0187             j=ismember(extractedMiriamNames,geneNamespaces{i});
-0188             <span class="keyword">if</span> any(j)
-0189                 eval([<span class="string">'newModel.'</span> geneCOBRAfields{i} <span class="string">' = miriams(:,j);'</span>])
-0190             <span class="keyword">end</span>
-0191         <span class="keyword">end</span>
-0192     <span class="keyword">end</span>
-0193     <span class="keyword">if</span> isfield(model,<span class="string">'geneShortNames'</span>)
-0194         newModel.geneNames=model.geneShortNames;
-0195     <span class="keyword">end</span>
-0196     <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
-0197         newModel.rules=<a href="#_sub1" class="code" title="subfunction rules=grrulesToRules(model)">grrulesToRules</a>(model);
-0198     <span class="keyword">else</span>
-0199         fprintf(<span class="string">'WARNING: no genes detected. The model therefore may not be exportable to SBML file with writeCbModel\n'</span>);
-0200     <span class="keyword">end</span>
-0201     newModel.osenseStr=<span class="string">'max'</span>;
-0202 <span class="keyword">else</span>
-0203     fprintf(<span class="string">'Converting COBRA structure to RAVEN..\n'</span>);
-0204     <span class="comment">%Convert from COBRA to RAVEN structure</span>
-0205     
-0206     <span class="comment">%Mandatory RAVEN fields</span>
-0207     newModel.mets=model.mets;
-0208     <span class="keyword">if</span> ~isfield(model,<span class="string">'comps'</span>)
-0209         model.comps = unique(regexprep(model.mets,<span class="string">'.*\[([^\]]+)\]$'</span>,<span class="string">'$1'</span>));
-0210     <span class="keyword">end</span>
-0211     <span class="keyword">for</span> i=1:numel(model.comps)
-0212         newModel.mets=regexprep(newModel.mets,[<span class="string">'\['</span>, model.comps{i}, <span class="string">'\]$'</span>],<span class="string">''</span>);
-0213         newModel.mets=regexprep(newModel.mets,[<span class="string">'\['</span>, model.compNames{i}, <span class="string">'\]$'</span>],<span class="string">''</span>);
-0214     <span class="keyword">end</span>
-0215     
-0216     <span class="comment">%In some cases (e.g. any model that uses BiGG ids as main ids), there</span>
-0217     <span class="comment">%may be overlapping mets due to removal of compartment info. To avoid</span>
-0218     <span class="comment">%this, we change compartments from e.g. [c] into _c</span>
-0219     <span class="keyword">if</span> numel(unique(newModel.mets))~=numel(model.mets)
-0220         newModel.mets=model.mets;
-0221         <span class="keyword">for</span> i=1:numel(model.comps)
-0222             newModel.mets=regexprep(newModel.mets,[<span class="string">'\['</span> model.comps{i} <span class="string">'\]$'</span>],[<span class="string">'_'</span> model.comps{i}]);
-0223         <span class="keyword">end</span>
-0224     <span class="keyword">end</span>
-0225     <span class="comment">%Since COBRA no longer contains rev field it is assumed that rxn is</span>
-0226     <span class="comment">%reversible if its lower bound is set below zero</span>
-0227     <span class="keyword">if</span> ~isfield(model,<span class="string">'rev'</span>)
-0228         <span class="keyword">for</span> i=1:numel(model.rxns)
-0229             <span class="keyword">if</span> model.lb(i)&lt;0
-0230                 newModel.rev(i,1)=1;
-0231             <span class="keyword">else</span>
-0232                 newModel.rev(i,1)=0;
-0233             <span class="keyword">end</span>
-0234         <span class="keyword">end</span>
-0235     <span class="keyword">end</span>
-0236     newModel.b=zeros(numel(model.mets),1);
-0237     <span class="keyword">if</span> ~isfield(model,<span class="string">'comps'</span>)
-0238         <span class="comment">%Since 'comps' field is not mandatory in COBRA, it may be required</span>
-0239         <span class="comment">%to obtain the non-redundant list of comps from metabolite ids, if</span>
-0240         <span class="comment">%'comps' field is not available</span>
-0241         newModel.comps=regexprep(model.mets,<span class="string">'^.+\['</span>,<span class="string">''</span>);
-0242         newModel.comps=regexprep(newModel.comps,<span class="string">'\]$'</span>,<span class="string">''</span>);
-0243         newModel.comps=unique(newModel.comps);
-0244     <span class="keyword">end</span>
-0245     
-0246     <span class="comment">%metComps is also mandatory, but defined later to match the order of</span>
-0247     <span class="comment">%fields</span>
-0248     
-0249     <span class="comment">%Fields 'name' and 'id' are also considered as mandatory, but</span>
-0250     <span class="comment">%these are added to the model during exportModel/exportToExcelFormat</span>
-0251     <span class="comment">%anyway, so there is no point to add this information here</span>
-0252     
-0253     <span class="comment">%Optional RAVEN fields</span>
-0254     <span class="keyword">if</span> isfield(model,<span class="string">'modelID'</span>)
-0255         newModel.id=model.modelID;
-0256     <span class="keyword">end</span>
-0257     <span class="keyword">if</span> isfield(model,<span class="string">'modelName'</span>)
-0258         newModel.name=model.modelName;
-0259     <span class="keyword">end</span>
-0260     <span class="keyword">if</span> isfield(model,<span class="string">'rules'</span>)
-0261         model.grRules        = <a href="#_sub2" class="code" title="subfunction grRules=rulesTogrrules(model)">rulesTogrrules</a>(model);
-0262         [grRules,rxnGeneMat] = standardizeGrRules(model,true);
-0263         newModel.grRules     = grRules;
-0264         newModel.rxnGeneMat  = rxnGeneMat;
-0265     <span class="keyword">end</span>
-0266     <span class="keyword">if</span> isfield(model,<span class="string">'rxnECNumbers'</span>)
-0267         newModel.eccodes=regexprep(model.rxnECNumbers,<span class="string">'EC|EC:'</span>,<span class="string">''</span>);
-0268     <span class="keyword">end</span>
-0269     <span class="keyword">if</span> any(isfield(model,rxnCOBRAfields))
-0270         <span class="keyword">for</span> i=1:numel(model.rxns)
-0271             counter=1;
-0272             newModel.rxnMiriams{i,1}=[];
-0273             <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
-0274                 <span class="keyword">if</span> ~isempty(model.rxnReferences{i})
-0275                     pmids = model.rxnReferences{i};
-0276                     pmids = strsplit(pmids,<span class="string">'; '</span>);
-0277                     nonPmids = cellfun(@isempty,regexp(pmids,<span class="string">'^\d+$'</span>,<span class="string">'match'</span>,<span class="string">'once'</span>));
-0278                     <span class="keyword">if</span> any(nonPmids) <span class="comment">%Not a pubmed id, keep in rxnReferences instead</span>
-0279                         newModel.rxnReferences{i,1} = strjoin(pmids(nonPmids),<span class="string">', '</span>);
-0280                         pmids(nonPmids)=[];
-0281                     <span class="keyword">end</span>
-0282                     <span class="keyword">for</span> j = 1:length(pmids)
-0283                         newModel.rxnMiriams{i,1}.name{counter,1} = <span class="string">'pubmed'</span>;
-0284                         newModel.rxnMiriams{i,1}.value{counter,1} = pmids{j};
-0285                         counter=counter+1;
-0286                     <span class="keyword">end</span>
-0287                 <span class="keyword">end</span>
-0288             <span class="keyword">end</span>
-0289             <span class="keyword">for</span> j = 2:length(rxnCOBRAfields) <span class="comment">%Start from 2, as 1 is rxnReferences</span>
-0290                 <span class="keyword">if</span> isfield(model,rxnCOBRAfields{j})
-0291                     rxnAnnotation = eval([<span class="string">'model.'</span> rxnCOBRAfields{j} <span class="string">'{i}'</span>]);
-0292                     <span class="keyword">if</span> ~isempty(rxnAnnotation)
-0293                         rxnAnnotation = strtrim(strsplit(rxnAnnotation,<span class="string">';'</span>));
-0294                         <span class="keyword">for</span> a=1:length(rxnAnnotation)
-0295                             newModel.rxnMiriams{i,1}.name{counter,1} = rxnNamespaces{j};
-0296                             newModel.rxnMiriams{i,1}.value{counter,1} = rxnAnnotation{a};
-0297                             counter=counter+1;
-0298                         <span class="keyword">end</span>
-0299                     <span class="keyword">end</span>
-0300                 <span class="keyword">end</span>
-0301             <span class="keyword">end</span>
-0302         <span class="keyword">end</span>
-0303     <span class="keyword">end</span>
-0304     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnReferences'</span>)
-0305         emptyEntry = cellfun(@isempty,newModel.rxnReferences);
-0306         newModel.rxnReferences(emptyEntry)={<span class="string">''</span>};
-0307     <span class="keyword">end</span>
-0308     <span class="keyword">if</span> any(isfield(model,geneCOBRAfields))
-0309         <span class="keyword">for</span> i=1:numel(model.genes)
-0310             counter=1;
-0311             newModel.geneMiriams{i,1}=[];
-0312             <span class="keyword">for</span> j = 1:length(geneCOBRAfields)
-0313                 <span class="keyword">if</span> isfield(model,geneCOBRAfields{j})
-0314                     geneAnnotation = eval([<span class="string">'model.'</span> geneCOBRAfields{j} <span class="string">'{i}'</span>]);
-0315                     <span class="keyword">if</span> ~isempty(geneAnnotation)
-0316                         geneAnnotation = strtrim(strsplit(geneAnnotation,<span class="string">';'</span>));
-0317                         <span class="keyword">for</span> a=1:length(geneAnnotation)
-0318                             newModel.geneMiriams{i,1}.name{counter,1} = geneNamespaces{j};
-0319                             newModel.geneMiriams{i,1}.value{counter,1} = geneAnnotation{a};
-0320                             counter=counter+1;
-0321                         <span class="keyword">end</span>
-0322                     <span class="keyword">end</span>
-0323                 <span class="keyword">end</span>
-0324             <span class="keyword">end</span>
-0325         <span class="keyword">end</span>
-0326     <span class="keyword">end</span>
-0327     <span class="keyword">if</span> isfield(model,<span class="string">'geneNames'</span>)
-0328         newModel.geneShortNames=model.geneNames;
-0329     <span class="keyword">end</span>
-0330     newModel.metNames=model.metNames;
-0331     <span class="keyword">for</span> i=1:numel(model.comps)
-0332         newModel.metNames=regexprep(newModel.metNames,[<span class="string">'\['</span>, model.comps{i}, <span class="string">'\]$'</span>],<span class="string">''</span>);
-0333         newModel.metNames=regexprep(newModel.metNames,[<span class="string">'\['</span>, model.compNames{i}, <span class="string">'\]$'</span>],<span class="string">''</span>);
-0334     <span class="keyword">end</span>
-0335     newModel.metNames=deblank(newModel.metNames);
-0336     newModel.metComps=regexprep(model.mets,<span class="string">'^.+\['</span>,<span class="string">''</span>);
-0337     newModel.metComps=regexprep(newModel.metComps,<span class="string">'\]$'</span>,<span class="string">''</span>);
-0338     [~, newModel.metComps]=ismember(newModel.metComps,newModel.comps);
-0339     <span class="keyword">if</span> isfield(model,<span class="string">'metInChIString'</span>)
-0340         newModel.inchis=regexprep(model.metInChIString,<span class="string">'^InChI='</span>,<span class="string">''</span>);
-0341     <span class="keyword">end</span>
-0342     printWarning=false;
-0343     <span class="keyword">if</span> any(isfield(model,[metCOBRAfields;<span class="string">'metKEGGID'</span>;<span class="string">'metPubChemID'</span>]))
-0344         <span class="keyword">for</span> i=1:numel(model.mets)
-0345             counter=1;
-0346             newModel.metMiriams{i,1}=[];
-0347             <span class="keyword">if</span> isfield(model,<span class="string">'metKEGGID'</span>)
-0348                 <span class="keyword">if</span> ~isempty(model.metKEGGID{i})
-0349                     <span class="keyword">if</span> strcmp(model.metKEGGID{i}(1),<span class="string">'C'</span>)
-0350                         newModel.metMiriams{i,1}.name{counter,1} = <span class="string">'kegg.compound'</span>;
-0351                         newModel.metMiriams{i,1}.value{counter,1} = model.metKEGGID{i};
-0352                         counter=counter+1;
-0353                     <span class="keyword">elseif</span> strcmp(model.metKEGGID{i}(1),<span class="string">'G'</span>)
-0354                         newModel.metMiriams{i,1}.name{counter,1} = <span class="string">'kegg.glycan'</span>;
-0355                         newModel.metMiriams{i,1}.value{counter,1} = model.metKEGGID{i};
-0356                         counter=counter+1;
-0357                     <span class="keyword">end</span>
-0358                 <span class="keyword">end</span>
-0359             <span class="keyword">end</span>
-0360             <span class="keyword">if</span> isfield(model,<span class="string">'metPubChemID'</span>)
-0361                 <span class="keyword">if</span> ~isempty(model.metPubChemID{i})
-0362                     <span class="keyword">if</span> length(model.metPubChemID{i})&gt;3 &amp;&amp; strcmp(model.metPubChemID{i}(1:4),<span class="string">'CID:'</span>)
-0363                         newModel.metMiriams{i,1}.name{counter,1} = <span class="string">'pubchem.compound'</span>;
-0364                         newModel.metMiriams{i,1}.value{counter,1} = model.metPubChemID{i};
-0365                         counter=counter+1;
-0366                     <span class="keyword">elseif</span> length(model.metPubChemID{i})&gt;3 &amp;&amp; strcmp(model.metPubChemID{i}(1:4),<span class="string">'SID:'</span>)
-0367                         newModel.metMiriams{i,1}.name{counter,1} = <span class="string">'pubchem.substance'</span>;
-0368                         newModel.metMiriams{i,1}.value{counter,1} = model.metPubChemID{i};
-0369                         counter=counter+1;
-0370                     <span class="keyword">else</span>
-0371                         newModel.metMiriams{i,1}.name{counter,1} = <span class="string">'pubchem.compound'</span>;
-0372                         newModel.metMiriams{i,1}.value{counter,1} = model.metPubChemID{i};
-0373                         counter=counter+1;
-0374                         printWarning=true;
-0375                     <span class="keyword">end</span>
-0376                 <span class="keyword">end</span>
-0377             <span class="keyword">end</span>            
-0378             <span class="keyword">for</span> j = 1:length(metCOBRAfields)
-0379                 <span class="keyword">if</span> isfield(model,metCOBRAfields{j})
-0380                     metAnnotation = eval([<span class="string">'model.'</span> metCOBRAfields{j} <span class="string">'{i}'</span>]);
-0381                     <span class="keyword">if</span> ~isempty(metAnnotation)
-0382                         metAnnotation = strtrim(strsplit(metAnnotation,<span class="string">';'</span>));
-0383                         <span class="keyword">for</span> a=1:length(metAnnotation)
-0384                             newModel.metMiriams{i,1}.name{counter,1} = metNamespaces{j};
-0385                             newModel.metMiriams{i,1}.value{counter,1} = metAnnotation{a};
-0386                             counter=counter+1;
-0387                         <span class="keyword">end</span>
-0388                     <span class="keyword">end</span>
-0389                 <span class="keyword">end</span>
-0390             <span class="keyword">end</span>
-0391         <span class="keyword">end</span>
-0392     <span class="keyword">end</span>
-0393     <span class="keyword">if</span> printWarning
-0394         fprintf(<span class="string">'Could not determine whether PubChemIDs are compounds (CID)\n or substances (SID). All annotated PubChemIDs will therefore \n be assigned as compounds (CID).\n'</span>);
-0395     <span class="keyword">end</span>
-0396 <span class="keyword">end</span>
-0397 
-0398 <span class="comment">% Order fields</span>
-0399 modelNew=<a href="standardizeModelFieldOrder.html" class="code" title="function orderedModel=standardizeModelFieldOrder(model)">standardizeModelFieldOrder</a>(newModel); <span class="comment">% Corrects for both RAVEN and COBRA models</span>
-0400 <span class="keyword">end</span>
-0401 
-0402 <a name="_sub1" href="#_subfunctions" class="code">function rules=grrulesToRules(model)</a>
-0403 <span class="comment">%This function just takes grRules, changes all gene names to</span>
-0404 <span class="comment">%'x(geneNumber)' and also changes 'or' and 'and' relations to corresponding</span>
-0405 <span class="comment">%symbols</span>
-0406 replacingGenes=cell([size(model.genes,1) 1]);
-0407 <span class="keyword">for</span> i=1:numel(replacingGenes)
-0408     replacingGenes{i}=strcat(<span class="string">'x('</span>,num2str(i),<span class="string">')'</span>);
-0409 <span class="keyword">end</span>
-0410 rules = strcat({<span class="string">' '</span>},model.grRules,{<span class="string">' '</span>});
-0411 <span class="keyword">for</span> i=1:length(model.genes)
-0412     rules=regexprep(rules,[<span class="string">' '</span> model.genes{i} <span class="string">' '</span>],[<span class="string">' '</span> replacingGenes{i} <span class="string">' '</span>]);
-0413     rules=regexprep(rules,[<span class="string">'('</span> model.genes{i} <span class="string">' '</span>],[<span class="string">'('</span> replacingGenes{i} <span class="string">' '</span>]);
-0414     rules=regexprep(rules,[<span class="string">' '</span> model.genes{i} <span class="string">')'</span>],[<span class="string">' '</span> replacingGenes{i} <span class="string">')'</span>]);
-0415 <span class="keyword">end</span>
-0416 rules=regexprep(rules,<span class="string">' and '</span>,<span class="string">' &amp; '</span>);
-0417 rules=regexprep(rules,<span class="string">' or '</span>,<span class="string">' | '</span>);
-0418 rules=strtrim(rules);
-0419 <span class="keyword">end</span>
-0420 
-0421 <a name="_sub2" href="#_subfunctions" class="code">function grRules=rulesTogrrules(model)</a>
-0422 <span class="comment">%This function takes rules, replaces &amp;/| for and/or, replaces the x(i)</span>
-0423 <span class="comment">%format with the actual gene ID, and takes out extra whitespace and</span>
-0424 <span class="comment">%redundant parenthesis introduced by COBRA, to create grRules.</span>
-0425 grRules = strrep(model.rules,<span class="string">'&amp;'</span>,<span class="string">'and'</span>);
-0426 grRules = strrep(grRules,<span class="string">'|'</span>,<span class="string">'or'</span>);
-0427 <span class="keyword">for</span> i = 1:length(model.genes)
-0428     grRules = strrep(grRules,[<span class="string">'x('</span> num2str(i) <span class="string">')'</span>],model.genes{i});
-0429 <span class="keyword">end</span>
-0430 grRules = strrep(grRules,<span class="string">'( '</span>,<span class="string">'('</span>);
-0431 grRules = strrep(grRules,<span class="string">' )'</span>,<span class="string">')'</span>);
-0432 grRules = regexprep(grRules,<span class="string">'^('</span>,<span class="string">''</span>); <span class="comment">%rules that start with a &quot;(&quot;</span>
-0433 grRules = regexprep(grRules,<span class="string">')$'</span>,<span class="string">''</span>); <span class="comment">%rules that end with a &quot;)&quot;</span>
-0434 <span class="keyword">end</span></pre></div>
+0037 ravenPath=findRAVENroot();
+0038 
+0039 <span class="comment">% Load COBRA field information</span>
+0040 fid             = fopen(fullfile(ravenPath,<span class="string">'struct_conversion'</span>,<span class="string">'COBRA_structure_fields.csv'</span>)); <span class="comment">% Taken from https://github.com/opencobra/cobratoolbox/blob/develop/src/base/io/definitions/COBRA_structure_fields.csv</span>
+0041 fieldFile       = textscan(fid,repmat(<span class="string">'%s'</span>,1,15),<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>,<span class="string">'HeaderLines'</span>,1);
+0042 dbFields        = ~cellfun(@isempty,fieldFile{5}); <span class="comment">% Only keep fields with database annotations that should be translated to xxxMiriams</span>
+0043 dbFields        = dbFields &amp; ~contains(fieldFile{1},{<span class="string">'metInChIString'</span>,<span class="string">'metKEGGID'</span>,<span class="string">'metPubChemID'</span>,<span class="string">'rxnECNumbers'</span>});
+0044 COBRAnamespace  = fieldFile{5}(dbFields);
+0045 COBRAnamespace  = regexprep(COBRAnamespace,<span class="string">';.*'</span>,<span class="string">''</span>); <span class="comment">% Only keep first suggested namespace</span>
+0046 COBRAfields     = fieldFile{1}(dbFields);
+0047 fclose(fid);
+0048 
+0049 <span class="comment">% Load conversion between additional COBRA fields and namespaces:</span>
+0050 fid             = fopen(fullfile(ravenPath,<span class="string">'struct_conversion'</span>,<span class="string">'cobraNamespaces.csv'</span>));
+0051 fieldFile       = textscan(fid,<span class="string">'%s %s'</span>,<span class="string">'Delimiter'</span>,<span class="string">','</span>,<span class="string">'HeaderLines'</span>,0);
+0052 COBRAfields     = [COBRAfields; fieldFile{1}];
+0053 COBRAnamespace  = [COBRAnamespace; fieldFile{2}];
+0054 rxnCOBRAfields  = COBRAfields(startsWith(COBRAfields,<span class="string">'rxn'</span>));
+0055 rxnNamespaces   = COBRAnamespace(startsWith(COBRAfields,<span class="string">'rxn'</span>));
+0056 metCOBRAfields  = COBRAfields(startsWith(COBRAfields,<span class="string">'met'</span>));
+0057 metNamespaces   = COBRAnamespace(startsWith(COBRAfields,<span class="string">'met'</span>));
+0058 geneCOBRAfields = COBRAfields(startsWith(COBRAfields,<span class="string">'gene'</span>));
+0059 geneNamespaces  = COBRAnamespace(startsWith(COBRAfields,<span class="string">'gene'</span>));
+0060 fclose(fid);
+0061 
+0062 <span class="keyword">if</span> isRaven
+0063     <span class="comment">%Firstly remove boundary metabolites</span>
+0064     model=simplifyModel(model);
+0065 <span class="keyword">end</span>
+0066 
+0067 <span class="comment">% Keep fields that have identical names and content</span>
+0068 newModel.S=model.S;
+0069 newModel.lb=model.lb;
+0070 newModel.ub=model.ub;
+0071 newModel.c=model.c;
+0072 newModel.rxns=model.rxns;
+0073 optFields = {<span class="string">'rxnNames'</span>,<span class="string">'subSystems'</span>,<span class="string">'rxnNotes'</span>,<span class="keyword">...</span>
+0074     <span class="string">'metFormulas'</span>,<span class="string">'comps'</span>,<span class="string">'compNames'</span>,<span class="string">'metCharges'</span>,<span class="string">'genes'</span>,<span class="keyword">...</span>
+0075     <span class="string">'rxnConfidenceScores'</span>,<span class="string">'rxnGeneMat'</span>,<span class="string">'metNotes'</span>,<span class="string">'rev'</span>};
+0076 <span class="keyword">for</span> i=1:length(optFields)
+0077     <span class="keyword">if</span> isfield(model,optFields{i})
+0078         newModel.(optFields{i})=model.(optFields{i});
+0079     <span class="keyword">end</span>
+0080 <span class="keyword">end</span>
+0081     
+0082 <span class="comment">% Convert unique fields</span>
+0083 <span class="keyword">if</span> isRaven
+0084     fprintf(<span class="string">'Converting RAVEN structure to COBRA..\n'</span>);
+0085     <span class="comment">%Convert from RAVEN to COBRA structure</span>
+0086     
+0087     <span class="comment">%Mandatory COBRA fields</span>
+0088     newModel.rxns=model.rxns;
+0089     <span class="keyword">if</span> all(~cellfun(@isempty,regexp(model.mets,<span class="string">'\[[^\]]+\]$'</span>)))
+0090         newModel.mets=model.mets;
+0091     <span class="keyword">else</span>
+0092         <span class="comment">%Check if model has compartment info as &quot;met_c&quot; suffix in all metabolites:</span>
+0093         BiGGformat = false(size(model.mets));
+0094         <span class="keyword">for</span> i=1:numel(model.comps)
+0095             compPos=model.metComps==i;
+0096             BiGGformat(compPos)=~cellfun(@isempty,regexp(model.mets(compPos),[<span class="string">'_'</span> model.comps{i} <span class="string">'$'</span>]));
+0097         <span class="keyword">end</span>
+0098         <span class="keyword">if</span> all(BiGGformat)
+0099             newModel.mets=model.mets;
+0100             <span class="keyword">for</span> i=1:numel(model.comps)
+0101                 newModel.mets=regexprep(newModel.mets,[<span class="string">'_'</span> model.comps{i} <span class="string">'$'</span>],[<span class="string">'['</span> model.comps{i} <span class="string">']'</span>]);
+0102             <span class="keyword">end</span>
+0103         <span class="keyword">else</span>
+0104             newModel.mets=strcat(model.mets,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>);
+0105         <span class="keyword">end</span>
+0106     <span class="keyword">end</span>
+0107 
+0108     <span class="comment">%b, csense, osenseStr, genes, rules are also mandatory, but defined</span>
+0109     <span class="comment">%later to match the order of fields</span>
+0110     
+0111     <span class="comment">%Optional COBRA fields</span>
+0112     <span class="keyword">if</span> isfield(model,<span class="string">'id'</span>)
+0113         newModel.modelID=model.id;
+0114     <span class="keyword">end</span>
+0115     <span class="keyword">if</span> isfield(model,<span class="string">'name'</span>)
+0116         newModel.modelName=model.name;
+0117     <span class="keyword">end</span>
+0118     <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
+0119         newModel.rxnECNumbers=model.eccodes;
+0120     <span class="keyword">end</span>
+0121     <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
+0122         [miriams,extractedMiriamNames]=<a href="extractMiriam.html" class="code" title="function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)">extractMiriam</a>(model.rxnMiriams);
+0123         <span class="keyword">for</span> i = 1:length(rxnCOBRAfields)
+0124             j=ismember(extractedMiriamNames,rxnNamespaces{i});
+0125             <span class="keyword">if</span> any(j)
+0126                 eval([<span class="string">'newModel.'</span> rxnCOBRAfields{i} <span class="string">' = miriams(:,j);'</span>])
+0127             <span class="keyword">end</span>
+0128         <span class="keyword">end</span>
+0129     <span class="keyword">end</span>
+0130     <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>) <span class="comment">% Concatenate model.rxnReferences to those extracted from model.rxnMiriams</span>
+0131         <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnReferences'</span>)
+0132             newModel.rxnReferences = strcat(newModel.rxnReferences,{<span class="string">'; '</span>},model.rxnReferences);
+0133             newModel.rxnReferences = regexprep(newModel.rxnReferences,<span class="string">'^; $'</span>,<span class="string">''</span>);
+0134         <span class="keyword">else</span>
+0135             newModel.rxnReferences = model.rxnReferences;
+0136         <span class="keyword">end</span>
+0137     <span class="keyword">end</span>
+0138     <span class="keyword">if</span> isfield(model,<span class="string">'metNames'</span>)
+0139         newModel.metNames=strcat(model.metNames,<span class="string">' ['</span>,model.compNames(model.metComps),<span class="string">']'</span>);
+0140     <span class="keyword">end</span>
+0141     <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
+0142         [miriams,extractedMiriamNames]=<a href="extractMiriam.html" class="code" title="function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)">extractMiriam</a>(model.metMiriams);
+0143         <span class="comment">%Shorten miriam names for KEGG and PubChem. These shorter names</span>
+0144         <span class="comment">%will be used later to concatenate KEGG COMPOUND/GLYCAN and PubChem</span>
+0145         <span class="comment">%Compound/Substance, into corresponding COBRA model fields</span>
+0146         extractedMiriamNames=regexprep(extractedMiriamNames,<span class="string">'^kegg\..+'</span>,<span class="string">'kegg'</span>);
+0147         extractedMiriamNames=regexprep(extractedMiriamNames,<span class="string">'^pubchem\..+'</span>,<span class="string">'pubchem'</span>);
+0148         i=ismember(extractedMiriamNames,<span class="string">'kegg'</span>);
+0149         <span class="keyword">if</span> any(i) <span class="comment">% Combine KEGG compounds and glycans</span>
+0150             <span class="keyword">for</span> j=1:length(i)
+0151                 <span class="keyword">if</span> i(j) &amp;&amp; isfield(newModel,<span class="string">'metKEGGID'</span>)~=1
+0152                     newModel.metKEGGID=miriams(:,j);
+0153                 <span class="keyword">elseif</span> i(j)
+0154                     newModel.metKEGGID=strcat(newModel.metKEGGID,<span class="string">';'</span>,miriams(:,j));
+0155                 <span class="keyword">end</span>
+0156             <span class="keyword">end</span>
+0157             newModel.metKEGGID=regexprep(newModel.metKEGGID,<span class="string">'^;|;$'</span>,<span class="string">''</span>);
+0158         <span class="keyword">end</span>
+0159         i=ismember(extractedMiriamNames,<span class="string">'pubchem'</span>);
+0160         <span class="keyword">if</span> any(i) <span class="comment">% Combine Pubchem compounds and substances</span>
+0161             <span class="keyword">for</span> j=1:length(i)
+0162                 <span class="keyword">if</span> i(j) &amp;&amp; isfield(newModel,<span class="string">'metPubChemID'</span>)~=1
+0163                     newModel.metPubChemID=miriams(:,j);
+0164                 <span class="keyword">elseif</span> i(j)
+0165                     newModel.metPubChemID=strcat(newModel.metPubChemID,<span class="string">';'</span>,miriams(:,j));
+0166                 <span class="keyword">end</span>
+0167             <span class="keyword">end</span>
+0168             newModel.metPubChemID=regexprep(newModel.metPubChemID,<span class="string">'^;|;$'</span>,<span class="string">''</span>);
+0169         <span class="keyword">end</span>
+0170         <span class="comment">%All other Miriams can be directly parsed with no modifications:</span>
+0171         <span class="keyword">for</span> i = 1:length(metCOBRAfields)
+0172             j=ismember(extractedMiriamNames,metNamespaces{i});
+0173             <span class="keyword">if</span> any(j)
+0174                 eval([<span class="string">'newModel.'</span> metCOBRAfields{i} <span class="string">' = miriams(:,j);'</span>])
+0175             <span class="keyword">end</span>
+0176         <span class="keyword">end</span>
+0177     <span class="keyword">end</span>
+0178     <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
+0179         newModel.metInChIString=regexprep(strcat(<span class="string">'InChI='</span>, model.inchis),<span class="string">'^InChI=$'</span>,<span class="string">''</span>);
+0180     <span class="keyword">end</span>
+0181     newModel.b=zeros(numel(model.mets),1);
+0182     newModel.csense=repmat(<span class="string">'E'</span>,size(model.mets));
+0183     <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
+0184         [miriams,extractedMiriamNames]=<a href="extractMiriam.html" class="code" title="function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)">extractMiriam</a>(model.geneMiriams);
+0185         <span class="keyword">for</span> i = 1:length(geneCOBRAfields)
+0186             j=ismember(extractedMiriamNames,geneNamespaces{i});
+0187             <span class="keyword">if</span> any(j)
+0188                 eval([<span class="string">'newModel.'</span> geneCOBRAfields{i} <span class="string">' = miriams(:,j);'</span>])
+0189             <span class="keyword">end</span>
+0190         <span class="keyword">end</span>
+0191     <span class="keyword">end</span>
+0192     <span class="keyword">if</span> isfield(model,<span class="string">'geneShortNames'</span>)
+0193         newModel.geneNames=model.geneShortNames;
+0194     <span class="keyword">end</span>
+0195     <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
+0196         newModel.rules=<a href="#_sub1" class="code" title="subfunction rules=grrulesToRules(model)">grrulesToRules</a>(model);
+0197     <span class="keyword">else</span>
+0198         fprintf(<span class="string">'WARNING: no genes detected. The model therefore may not be exportable to SBML file with writeCbModel\n'</span>);
+0199     <span class="keyword">end</span>
+0200     newModel.osenseStr=<span class="string">'max'</span>;
+0201 <span class="keyword">else</span>
+0202     fprintf(<span class="string">'Converting COBRA structure to RAVEN..\n'</span>);
+0203     <span class="comment">%Convert from COBRA to RAVEN structure</span>
+0204     
+0205     <span class="comment">%Mandatory RAVEN fields</span>
+0206     newModel.mets=model.mets;
+0207     <span class="keyword">if</span> ~isfield(model,<span class="string">'comps'</span>)
+0208         model.comps = unique(regexprep(model.mets,<span class="string">'.*\[([^\]]+)\]$'</span>,<span class="string">'$1'</span>));
+0209     <span class="keyword">end</span>
+0210     <span class="keyword">for</span> i=1:numel(model.comps)
+0211         newModel.mets=regexprep(newModel.mets,[<span class="string">'\['</span>, model.comps{i}, <span class="string">'\]$'</span>],<span class="string">''</span>);
+0212         newModel.mets=regexprep(newModel.mets,[<span class="string">'\['</span>, model.compNames{i}, <span class="string">'\]$'</span>],<span class="string">''</span>);
+0213     <span class="keyword">end</span>
+0214     
+0215     <span class="comment">%In some cases (e.g. any model that uses BiGG ids as main ids), there</span>
+0216     <span class="comment">%may be overlapping mets due to removal of compartment info. To avoid</span>
+0217     <span class="comment">%this, we change compartments from e.g. [c] into _c</span>
+0218     <span class="keyword">if</span> numel(unique(newModel.mets))~=numel(model.mets)
+0219         newModel.mets=model.mets;
+0220         <span class="keyword">for</span> i=1:numel(model.comps)
+0221             newModel.mets=regexprep(newModel.mets,[<span class="string">'\['</span> model.comps{i} <span class="string">'\]$'</span>],[<span class="string">'_'</span> model.comps{i}]);
+0222         <span class="keyword">end</span>
+0223     <span class="keyword">end</span>
+0224     <span class="comment">%Since COBRA no longer contains rev field it is assumed that rxn is</span>
+0225     <span class="comment">%reversible if its lower bound is set below zero</span>
+0226     <span class="keyword">if</span> ~isfield(model,<span class="string">'rev'</span>)
+0227         <span class="keyword">for</span> i=1:numel(model.rxns)
+0228             <span class="keyword">if</span> model.lb(i)&lt;0
+0229                 newModel.rev(i,1)=1;
+0230             <span class="keyword">else</span>
+0231                 newModel.rev(i,1)=0;
+0232             <span class="keyword">end</span>
+0233         <span class="keyword">end</span>
+0234     <span class="keyword">end</span>
+0235     newModel.b=zeros(numel(model.mets),1);
+0236     <span class="keyword">if</span> ~isfield(model,<span class="string">'comps'</span>)
+0237         <span class="comment">%Since 'comps' field is not mandatory in COBRA, it may be required</span>
+0238         <span class="comment">%to obtain the non-redundant list of comps from metabolite ids, if</span>
+0239         <span class="comment">%'comps' field is not available</span>
+0240         newModel.comps=regexprep(model.mets,<span class="string">'^.+\['</span>,<span class="string">''</span>);
+0241         newModel.comps=regexprep(newModel.comps,<span class="string">'\]$'</span>,<span class="string">''</span>);
+0242         newModel.comps=unique(newModel.comps);
+0243     <span class="keyword">end</span>
+0244     
+0245     <span class="comment">%metComps is also mandatory, but defined later to match the order of</span>
+0246     <span class="comment">%fields</span>
+0247     
+0248     <span class="comment">%Fields 'name' and 'id' are also considered as mandatory, but</span>
+0249     <span class="comment">%these are added to the model during exportModel/exportToExcelFormat</span>
+0250     <span class="comment">%anyway, so there is no point to add this information here</span>
+0251     
+0252     <span class="comment">%Optional RAVEN fields</span>
+0253     <span class="keyword">if</span> isfield(model,<span class="string">'modelID'</span>)
+0254         newModel.id=model.modelID;
+0255     <span class="keyword">end</span>
+0256     <span class="keyword">if</span> isfield(model,<span class="string">'modelName'</span>)
+0257         newModel.name=model.modelName;
+0258     <span class="keyword">end</span>
+0259     <span class="keyword">if</span> isfield(model,<span class="string">'rules'</span>)
+0260         model.grRules        = <a href="#_sub2" class="code" title="subfunction grRules=rulesTogrrules(model)">rulesTogrrules</a>(model);
+0261         [grRules,rxnGeneMat] = standardizeGrRules(model,true);
+0262         newModel.grRules     = grRules;
+0263         newModel.rxnGeneMat  = rxnGeneMat;
+0264     <span class="keyword">end</span>
+0265     <span class="keyword">if</span> isfield(model,<span class="string">'rxnECNumbers'</span>)
+0266         newModel.eccodes=regexprep(model.rxnECNumbers,<span class="string">'EC|EC:'</span>,<span class="string">''</span>);
+0267     <span class="keyword">end</span>
+0268     <span class="keyword">if</span> any(isfield(model,rxnCOBRAfields))
+0269         <span class="keyword">for</span> i=1:numel(model.rxns)
+0270             counter=1;
+0271             newModel.rxnMiriams{i,1}=[];
+0272             <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
+0273                 <span class="keyword">if</span> ~isempty(model.rxnReferences{i})
+0274                     pmids = model.rxnReferences{i};
+0275                     pmids = strsplit(pmids,<span class="string">'; '</span>);
+0276                     nonPmids = cellfun(@isempty,regexp(pmids,<span class="string">'^\d+$'</span>,<span class="string">'match'</span>,<span class="string">'once'</span>));
+0277                     <span class="keyword">if</span> any(nonPmids) <span class="comment">%Not a pubmed id, keep in rxnReferences instead</span>
+0278                         newModel.rxnReferences{i,1} = strjoin(pmids(nonPmids),<span class="string">', '</span>);
+0279                         pmids(nonPmids)=[];
+0280                     <span class="keyword">end</span>
+0281                     <span class="keyword">for</span> j = 1:length(pmids)
+0282                         newModel.rxnMiriams{i,1}.name{counter,1} = <span class="string">'pubmed'</span>;
+0283                         newModel.rxnMiriams{i,1}.value{counter,1} = pmids{j};
+0284                         counter=counter+1;
+0285                     <span class="keyword">end</span>
+0286                 <span class="keyword">end</span>
+0287             <span class="keyword">end</span>
+0288             <span class="keyword">for</span> j = 2:length(rxnCOBRAfields) <span class="comment">%Start from 2, as 1 is rxnReferences</span>
+0289                 <span class="keyword">if</span> isfield(model,rxnCOBRAfields{j})
+0290                     rxnAnnotation = eval([<span class="string">'model.'</span> rxnCOBRAfields{j} <span class="string">'{i}'</span>]);
+0291                     <span class="keyword">if</span> ~isempty(rxnAnnotation)
+0292                         rxnAnnotation = strtrim(strsplit(rxnAnnotation,<span class="string">';'</span>));
+0293                         <span class="keyword">for</span> a=1:length(rxnAnnotation)
+0294                             newModel.rxnMiriams{i,1}.name{counter,1} = rxnNamespaces{j};
+0295                             newModel.rxnMiriams{i,1}.value{counter,1} = rxnAnnotation{a};
+0296                             counter=counter+1;
+0297                         <span class="keyword">end</span>
+0298                     <span class="keyword">end</span>
+0299                 <span class="keyword">end</span>
+0300             <span class="keyword">end</span>
+0301         <span class="keyword">end</span>
+0302     <span class="keyword">end</span>
+0303     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnReferences'</span>)
+0304         emptyEntry = cellfun(@isempty,newModel.rxnReferences);
+0305         newModel.rxnReferences(emptyEntry)={<span class="string">''</span>};
+0306     <span class="keyword">end</span>
+0307     <span class="keyword">if</span> any(isfield(model,geneCOBRAfields))
+0308         <span class="keyword">for</span> i=1:numel(model.genes)
+0309             counter=1;
+0310             newModel.geneMiriams{i,1}=[];
+0311             <span class="keyword">for</span> j = 1:length(geneCOBRAfields)
+0312                 <span class="keyword">if</span> isfield(model,geneCOBRAfields{j})
+0313                     geneAnnotation = eval([<span class="string">'model.'</span> geneCOBRAfields{j} <span class="string">'{i}'</span>]);
+0314                     <span class="keyword">if</span> ~isempty(geneAnnotation)
+0315                         geneAnnotation = strtrim(strsplit(geneAnnotation,<span class="string">';'</span>));
+0316                         <span class="keyword">for</span> a=1:length(geneAnnotation)
+0317                             newModel.geneMiriams{i,1}.name{counter,1} = geneNamespaces{j};
+0318                             newModel.geneMiriams{i,1}.value{counter,1} = geneAnnotation{a};
+0319                             counter=counter+1;
+0320                         <span class="keyword">end</span>
+0321                     <span class="keyword">end</span>
+0322                 <span class="keyword">end</span>
+0323             <span class="keyword">end</span>
+0324         <span class="keyword">end</span>
+0325     <span class="keyword">end</span>
+0326     <span class="keyword">if</span> isfield(model,<span class="string">'geneNames'</span>)
+0327         newModel.geneShortNames=model.geneNames;
+0328     <span class="keyword">end</span>
+0329     newModel.metNames=model.metNames;
+0330     <span class="keyword">for</span> i=1:numel(model.comps)
+0331         newModel.metNames=regexprep(newModel.metNames,[<span class="string">'\['</span>, model.comps{i}, <span class="string">'\]$'</span>],<span class="string">''</span>);
+0332         newModel.metNames=regexprep(newModel.metNames,[<span class="string">'\['</span>, model.compNames{i}, <span class="string">'\]$'</span>],<span class="string">''</span>);
+0333     <span class="keyword">end</span>
+0334     newModel.metNames=deblank(newModel.metNames);
+0335     newModel.metComps=regexprep(model.mets,<span class="string">'^.+\['</span>,<span class="string">''</span>);
+0336     newModel.metComps=regexprep(newModel.metComps,<span class="string">'\]$'</span>,<span class="string">''</span>);
+0337     [~, newModel.metComps]=ismember(newModel.metComps,newModel.comps);
+0338     <span class="keyword">if</span> isfield(model,<span class="string">'metInChIString'</span>)
+0339         newModel.inchis=regexprep(model.metInChIString,<span class="string">'^InChI='</span>,<span class="string">''</span>);
+0340     <span class="keyword">end</span>
+0341     printWarning=false;
+0342     <span class="keyword">if</span> any(isfield(model,[metCOBRAfields;<span class="string">'metKEGGID'</span>;<span class="string">'metPubChemID'</span>]))
+0343         <span class="keyword">for</span> i=1:numel(model.mets)
+0344             counter=1;
+0345             newModel.metMiriams{i,1}=[];
+0346             <span class="keyword">if</span> isfield(model,<span class="string">'metKEGGID'</span>)
+0347                 <span class="keyword">if</span> ~isempty(model.metKEGGID{i})
+0348                     <span class="keyword">if</span> strcmp(model.metKEGGID{i}(1),<span class="string">'C'</span>)
+0349                         newModel.metMiriams{i,1}.name{counter,1} = <span class="string">'kegg.compound'</span>;
+0350                         newModel.metMiriams{i,1}.value{counter,1} = model.metKEGGID{i};
+0351                         counter=counter+1;
+0352                     <span class="keyword">elseif</span> strcmp(model.metKEGGID{i}(1),<span class="string">'G'</span>)
+0353                         newModel.metMiriams{i,1}.name{counter,1} = <span class="string">'kegg.glycan'</span>;
+0354                         newModel.metMiriams{i,1}.value{counter,1} = model.metKEGGID{i};
+0355                         counter=counter+1;
+0356                     <span class="keyword">end</span>
+0357                 <span class="keyword">end</span>
+0358             <span class="keyword">end</span>
+0359             <span class="keyword">if</span> isfield(model,<span class="string">'metPubChemID'</span>)
+0360                 <span class="keyword">if</span> ~isempty(model.metPubChemID{i})
+0361                     <span class="keyword">if</span> length(model.metPubChemID{i})&gt;3 &amp;&amp; strcmp(model.metPubChemID{i}(1:4),<span class="string">'CID:'</span>)
+0362                         newModel.metMiriams{i,1}.name{counter,1} = <span class="string">'pubchem.compound'</span>;
+0363                         newModel.metMiriams{i,1}.value{counter,1} = model.metPubChemID{i};
+0364                         counter=counter+1;
+0365                     <span class="keyword">elseif</span> length(model.metPubChemID{i})&gt;3 &amp;&amp; strcmp(model.metPubChemID{i}(1:4),<span class="string">'SID:'</span>)
+0366                         newModel.metMiriams{i,1}.name{counter,1} = <span class="string">'pubchem.substance'</span>;
+0367                         newModel.metMiriams{i,1}.value{counter,1} = model.metPubChemID{i};
+0368                         counter=counter+1;
+0369                     <span class="keyword">else</span>
+0370                         newModel.metMiriams{i,1}.name{counter,1} = <span class="string">'pubchem.compound'</span>;
+0371                         newModel.metMiriams{i,1}.value{counter,1} = model.metPubChemID{i};
+0372                         counter=counter+1;
+0373                         printWarning=true;
+0374                     <span class="keyword">end</span>
+0375                 <span class="keyword">end</span>
+0376             <span class="keyword">end</span>            
+0377             <span class="keyword">for</span> j = 1:length(metCOBRAfields)
+0378                 <span class="keyword">if</span> isfield(model,metCOBRAfields{j})
+0379                     metAnnotation = eval([<span class="string">'model.'</span> metCOBRAfields{j} <span class="string">'{i}'</span>]);
+0380                     <span class="keyword">if</span> ~isempty(metAnnotation)
+0381                         metAnnotation = strtrim(strsplit(metAnnotation,<span class="string">';'</span>));
+0382                         <span class="keyword">for</span> a=1:length(metAnnotation)
+0383                             newModel.metMiriams{i,1}.name{counter,1} = metNamespaces{j};
+0384                             newModel.metMiriams{i,1}.value{counter,1} = metAnnotation{a};
+0385                             counter=counter+1;
+0386                         <span class="keyword">end</span>
+0387                     <span class="keyword">end</span>
+0388                 <span class="keyword">end</span>
+0389             <span class="keyword">end</span>
+0390         <span class="keyword">end</span>
+0391     <span class="keyword">end</span>
+0392     <span class="keyword">if</span> printWarning
+0393         fprintf(<span class="string">'Could not determine whether PubChemIDs are compounds (CID)\n or substances (SID). All annotated PubChemIDs will therefore \n be assigned as compounds (CID).\n'</span>);
+0394     <span class="keyword">end</span>
+0395 <span class="keyword">end</span>
+0396 
+0397 <span class="comment">% Order fields</span>
+0398 modelNew=<a href="standardizeModelFieldOrder.html" class="code" title="function orderedModel=standardizeModelFieldOrder(model)">standardizeModelFieldOrder</a>(newModel); <span class="comment">% Corrects for both RAVEN and COBRA models</span>
+0399 <span class="keyword">end</span>
+0400 
+0401 <a name="_sub1" href="#_subfunctions" class="code">function rules=grrulesToRules(model)</a>
+0402 <span class="comment">%This function just takes grRules, changes all gene names to</span>
+0403 <span class="comment">%'x(geneNumber)' and also changes 'or' and 'and' relations to corresponding</span>
+0404 <span class="comment">%symbols</span>
+0405 replacingGenes=cell([size(model.genes,1) 1]);
+0406 <span class="keyword">for</span> i=1:numel(replacingGenes)
+0407     replacingGenes{i}=strcat(<span class="string">'x('</span>,num2str(i),<span class="string">')'</span>);
+0408 <span class="keyword">end</span>
+0409 rules = strcat({<span class="string">' '</span>},model.grRules,{<span class="string">' '</span>});
+0410 <span class="keyword">for</span> i=1:length(model.genes)
+0411     rules=regexprep(rules,[<span class="string">' '</span> model.genes{i} <span class="string">' '</span>],[<span class="string">' '</span> replacingGenes{i} <span class="string">' '</span>]);
+0412     rules=regexprep(rules,[<span class="string">'('</span> model.genes{i} <span class="string">' '</span>],[<span class="string">'('</span> replacingGenes{i} <span class="string">' '</span>]);
+0413     rules=regexprep(rules,[<span class="string">' '</span> model.genes{i} <span class="string">')'</span>],[<span class="string">' '</span> replacingGenes{i} <span class="string">')'</span>]);
+0414 <span class="keyword">end</span>
+0415 rules=regexprep(rules,<span class="string">' and '</span>,<span class="string">' &amp; '</span>);
+0416 rules=regexprep(rules,<span class="string">' or '</span>,<span class="string">' | '</span>);
+0417 rules=strtrim(rules);
+0418 <span class="keyword">end</span>
+0419 
+0420 <a name="_sub2" href="#_subfunctions" class="code">function grRules=rulesTogrrules(model)</a>
+0421 <span class="comment">%This function takes rules, replaces &amp;/| for and/or, replaces the x(i)</span>
+0422 <span class="comment">%format with the actual gene ID, and takes out extra whitespace and</span>
+0423 <span class="comment">%redundant parenthesis introduced by COBRA, to create grRules.</span>
+0424 grRules = strrep(model.rules,<span class="string">'&amp;'</span>,<span class="string">'and'</span>);
+0425 grRules = strrep(grRules,<span class="string">'|'</span>,<span class="string">'or'</span>);
+0426 <span class="keyword">for</span> i = 1:length(model.genes)
+0427     grRules = strrep(grRules,[<span class="string">'x('</span> num2str(i) <span class="string">')'</span>],model.genes{i});
+0428 <span class="keyword">end</span>
+0429 grRules = strrep(grRules,<span class="string">'( '</span>,<span class="string">'('</span>);
+0430 grRules = strrep(grRules,<span class="string">' )'</span>,<span class="string">')'</span>);
+0431 grRules = regexprep(grRules,<span class="string">'^('</span>,<span class="string">''</span>); <span class="comment">%rules that start with a &quot;(&quot;</span>
+0432 grRules = regexprep(grRules,<span class="string">')$'</span>,<span class="string">''</span>); <span class="comment">%rules that end with a &quot;)&quot;</span>
+0433 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

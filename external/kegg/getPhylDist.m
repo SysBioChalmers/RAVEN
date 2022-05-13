@@ -22,6 +22,8 @@ function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 
 if nargin<1
     keggPath='RAVEN/external/kegg';
+else
+    keggPath=char(keggPath);
 end
 if nargin<2
     onlyInKingdom=false;
@@ -29,8 +31,7 @@ end
 
 %Check if the reactions have been parsed before and saved. If so, load the
 %model
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+ravenPath=findRAVENroot();
 distFile=fullfile(ravenPath,'external','kegg','keggPhylDist.mat');
 if exist(distFile, 'file')
     fprintf(['Importing the KEGG phylogenetic distance matrix from ' strrep(distFile,'\','/') '... ']);

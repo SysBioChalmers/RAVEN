@@ -21,8 +21,8 @@ if nargin<3
     toList=[];
 elseif isempty(toList)
     return;
-elseif ~iscell(toList)
-    toList={toList};
+else
+    toList=convertCharArray(toList);
 end
 if nargin<4
     trimWarnings=true;

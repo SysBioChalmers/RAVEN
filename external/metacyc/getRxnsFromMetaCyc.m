@@ -68,7 +68,12 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 % //
 
 % A line that contains only '//' separates each object.
-
+if nargin<1
+    ravenPath=findRAVENroot();
+    metacycPath=fullfile(ravenPath,'external','metacyc');
+else
+    metacycPath=char(metacycPath);
+end
 if nargin<2
     keepTransportRxns=false;
 end
@@ -81,9 +86,7 @@ end
 
 %Check if the reactions have been parsed before and saved. Directly load
 %the model if so.
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-rxnsFile=fullfile(ravenPath,'external','metacyc','metaCycRxns.mat');
+rxnsFile=fullfile(metacycPath,'metaCycRxns.mat');
 metaCycRxnFile='reactions.dat';
 metaCycPwyFile='pathway-links.dat';
 

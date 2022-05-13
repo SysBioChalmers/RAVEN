@@ -46,6 +46,8 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 
 if nargin<1
     keggPath='RAVEN/external/kegg';
+else
+    keggPath=char(keggPath);
 end
 if nargin<2
     keepSpontaneous=true;
@@ -60,8 +62,7 @@ if nargin<5
     keepGeneral=false;
 end
 
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+ravenPath=findRAVENroot();
 modelFile=fullfile(ravenPath,'external','kegg','keggModel.mat');
 if exist(modelFile, 'file') && isNewestFile(ravenPath)
     fprintf(['Importing the global KEGG model from ' strrep(modelFile,'\','/') '... ']);

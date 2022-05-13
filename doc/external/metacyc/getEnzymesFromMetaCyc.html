@@ -133,229 +133,234 @@ This function is called by:
 0058 
 0059 <span class="comment">% A line that contains only '//' separates each object.</span>
 0060 
-0061 <span class="comment">%Check if the enzymatic proteins have been parsed before and saved. If so,</span>
-0062 <span class="comment">%load the model.</span>
-0063 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
-0064 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-0065 enzymesFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'metacyc'</span>,<span class="string">'metaCycEnzymes.mat'</span>);
-0066 metaCycProteinFile=<span class="string">'proteins.dat'</span>;
-0067 metaCycEnzrxnsFile=<span class="string">'enzrxns.dat'</span>;
-0068 
-0069 <span class="keyword">if</span> exist(enzymesFile, <span class="string">'file'</span>)
-0070     fprintf([<span class="string">'Importing MetaCyc enzymes and reaction-enzyme association from '</span> strrep(enzymesFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'... '</span>]);
-0071     load(enzymesFile);
-0072     fprintf(<span class="string">'done\n'</span>);
-0073 <span class="keyword">else</span>
-0074     fprintf([<span class="string">'Cannot locate '</span> strrep(enzymesFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'\nNow try to generate it from local MetaCyc data files...\n'</span>]);
-0075     <span class="keyword">if</span> ~exist(fullfile(metacycPath,metaCycProteinFile),<span class="string">'file'</span>) || ~exist(fullfile(metacycPath,metaCycEnzrxnsFile),<span class="string">'file'</span>)
-0076         EM=fprintf([<span class="string">'The files of enzymes or proteins cannot be located, and should be downloaded from MetaCyc.\n'</span>]);
-0077         dispEM(EM);
-0078     <span class="keyword">else</span>
-0079         metaCycEnzymes.id=<span class="string">'MetaCyc'</span>;
-0080         metaCycEnzymes.name=<span class="string">'Automatically generated from MetaCyc database'</span>;
-0081         
-0082         <span class="comment">%Reserve space for 10000 enzyme complexs</span>
-0083         metaCycEnzymes.cplxs=cell(10000,1);
-0084         metaCycEnzymes.cplxComp=cell(10000,1);
-0085         metaCycEnzymes.enzymes=cell(50000,1);
+0061 <span class="keyword">if</span> nargin&lt;1
+0062     ravenPath=findRAVENroot();
+0063     metacycPath=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'metacyc'</span>);
+0064 <span class="keyword">else</span>
+0065     metacycPath=char(metacycPath);
+0066 <span class="keyword">end</span>
+0067 
+0068 <span class="comment">%Check if the enzymatic proteins have been parsed before and saved. If so,</span>
+0069 <span class="comment">%load the model.</span>
+0070 enzymesFile=fullfile(metacycPath,<span class="string">'metaCycEnzymes.mat'</span>);
+0071 metaCycProteinFile=<span class="string">'proteins.dat'</span>;
+0072 metaCycEnzrxnsFile=<span class="string">'enzrxns.dat'</span>;
+0073 
+0074 <span class="keyword">try</span>
+0075     ([<span class="string">'Importing MetaCyc enzymes and reaction-enzyme association from '</span> strrep(enzymesFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'... '</span>]);
+0076     load(enzymesFile);
+0077     fprintf(<span class="string">'done\n'</span>);
+0078 <span class="keyword">catch</span>
+0079     fprintf([<span class="string">'Cannot locate '</span> strrep(enzymesFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'\nNow try to generate it from local MetaCyc data files...\n'</span>]);
+0080     <span class="keyword">if</span> ~exist(fullfile(metacycPath,metaCycProteinFile),<span class="string">'file'</span>) || ~exist(fullfile(metacycPath,metaCycEnzrxnsFile),<span class="string">'file'</span>)
+0081         EM=fprintf([<span class="string">'The files of enzymes or proteins cannot be located, and should be downloaded from MetaCyc.\n'</span>]);
+0082         dispEM(EM);
+0083     <span class="keyword">else</span>
+0084         metaCycEnzymes.id=<span class="string">'MetaCyc'</span>;
+0085         metaCycEnzymes.name=<span class="string">'Automatically generated from MetaCyc database'</span>;
 0086         
-0087         <span class="comment">%Get the information of protein complexes and their components</span>
-0088         nCplx=0;
-0089         enzymeCounter=0;
-0090         
-0091         fid = fopen(fullfile(metacycPath,metaCycProteinFile), <span class="string">'r'</span>);
-0092         <span class="comment">%Loop through the file</span>
-0093         <span class="keyword">while</span> 1
-0094             tline = fgetl(fid);
-0095             
-0096             <span class="comment">%Abort at end of file</span>
-0097             <span class="keyword">if</span> ~ischar(tline)
-0098                 <span class="keyword">break</span>;
-0099             <span class="keyword">end</span>
+0087         <span class="comment">%Reserve space for 10000 enzyme complexs</span>
+0088         metaCycEnzymes.cplxs=cell(10000,1);
+0089         metaCycEnzymes.cplxComp=cell(10000,1);
+0090         metaCycEnzymes.enzymes=cell(50000,1);
+0091         
+0092         <span class="comment">%Get the information of protein complexes and their components</span>
+0093         nCplx=0;
+0094         enzymeCounter=0;
+0095         
+0096         fid = fopen(fullfile(metacycPath,metaCycProteinFile), <span class="string">'r'</span>);
+0097         <span class="comment">%Loop through the file</span>
+0098         <span class="keyword">while</span> 1
+0099             tline = fgetl(fid);
 0100             
-0101             <span class="comment">%Add Enzyme id</span>
-0102             <span class="keyword">if</span> numel(tline)&gt;12 &amp;&amp; strcmp(tline(1:12),<span class="string">'UNIQUE-ID - '</span>)
-0103                 enzymeCounter=enzymeCounter+1;
-0104                 addMe=false;
-0105                 enzymeID=tline(13:end);
-0106                 metaCycEnzymes.enzymes{enzymeCounter}=enzymeID;
-0107             <span class="keyword">end</span>
-0108             
-0109             <span class="comment">%Check if enzyme complexes</span>
-0110             <span class="keyword">if</span> strcmp(tline(1:end),<span class="string">'TYPES - Protein-Complexes'</span>)
-0111                 nCplx=nCplx+1;
-0112                 nComp=0;
-0113                 
-0114                 <span class="comment">%Reserve 100 subunits for each enzyme complex</span>
-0115                 Comp.subunit=cell(100,1);
-0116                 metaCycEnzymes.cplxs{nCplx}=enzymeID;
-0117                 
-0118                 addMe=true;
-0119             <span class="keyword">end</span>
-0120             
-0121             <span class="keyword">if</span> numel(tline)&gt;13 &amp;&amp; strcmp(tline(1:13),<span class="string">'COMPONENTS - '</span>)
-0122                 <span class="keyword">if</span> addMe
-0123                     nComp=nComp+1;
-0124                     Comp.subunit{nComp}=tline(14:end);
-0125                 <span class="keyword">end</span>
-0126             <span class="keyword">end</span>
-0127             
-0128             <span class="keyword">if</span> strcmp(tline(1:end),<span class="string">'//'</span>)
-0129                 <span class="keyword">if</span> addMe
-0130                     Comp.subunit=Comp.subunit(1:nComp);
-0131                     metaCycEnzymes.cplxComp{nCplx}=Comp;
-0132                     addMe=false;
-0133                 <span class="keyword">end</span>
-0134             <span class="keyword">end</span>
-0135         <span class="keyword">end</span>
-0136         <span class="comment">%Close the file</span>
-0137         fclose(fid);
-0138         
-0139         <span class="comment">%If too much space was allocated, shrink the model</span>
-0140         metaCycEnzymes.cplxs=metaCycEnzymes.cplxs(1:nCplx);
-0141         metaCycEnzymes.cplxComp=metaCycEnzymes.cplxComp(1:nCplx);
-0142         metaCycEnzymes.enzymes=metaCycEnzymes.enzymes(1:enzymeCounter);
+0101             <span class="comment">%Abort at end of file</span>
+0102             <span class="keyword">if</span> ~ischar(tline)
+0103                 <span class="keyword">break</span>;
+0104             <span class="keyword">end</span>
+0105             
+0106             <span class="comment">%Add Enzyme id</span>
+0107             <span class="keyword">if</span> numel(tline)&gt;12 &amp;&amp; strcmp(tline(1:12),<span class="string">'UNIQUE-ID - '</span>)
+0108                 enzymeCounter=enzymeCounter+1;
+0109                 addMe=false;
+0110                 enzymeID=tline(13:end);
+0111                 metaCycEnzymes.enzymes{enzymeCounter}=enzymeID;
+0112             <span class="keyword">end</span>
+0113             
+0114             <span class="comment">%Check if enzyme complexes</span>
+0115             <span class="keyword">if</span> strcmp(tline(1:end),<span class="string">'TYPES - Protein-Complexes'</span>)
+0116                 nCplx=nCplx+1;
+0117                 nComp=0;
+0118                 
+0119                 <span class="comment">%Reserve 100 subunits for each enzyme complex</span>
+0120                 Comp.subunit=cell(100,1);
+0121                 metaCycEnzymes.cplxs{nCplx}=enzymeID;
+0122                 
+0123                 addMe=true;
+0124             <span class="keyword">end</span>
+0125             
+0126             <span class="keyword">if</span> numel(tline)&gt;13 &amp;&amp; strcmp(tline(1:13),<span class="string">'COMPONENTS - '</span>)
+0127                 <span class="keyword">if</span> addMe
+0128                     nComp=nComp+1;
+0129                     Comp.subunit{nComp}=tline(14:end);
+0130                 <span class="keyword">end</span>
+0131             <span class="keyword">end</span>
+0132             
+0133             <span class="keyword">if</span> strcmp(tline(1:end),<span class="string">'//'</span>)
+0134                 <span class="keyword">if</span> addMe
+0135                     Comp.subunit=Comp.subunit(1:nComp);
+0136                     metaCycEnzymes.cplxComp{nCplx}=Comp;
+0137                     addMe=false;
+0138                 <span class="keyword">end</span>
+0139             <span class="keyword">end</span>
+0140         <span class="keyword">end</span>
+0141         <span class="comment">%Close the file</span>
+0142         fclose(fid);
 0143         
-0144         <span class="comment">% Iteratively go through the components of each complex</span>
-0145         <span class="keyword">for</span> i=1:numel(metaCycEnzymes.cplxComp)
-0146             
-0147             <span class="comment">%replace all complex-type components with their subunits</span>
-0148             checkCplx=true;
-0149             <span class="keyword">while</span> checkCplx
-0150                 x=0;
-0151                 mat=[]; <span class="comment">%Matrix for component of protein-complexs</span>
-0152                 <span class="keyword">for</span> j=1:numel(metaCycEnzymes.cplxComp{i}.subunit)
-0153                     [a, b]=ismember(metaCycEnzymes.cplxComp{i}.subunit{j},metaCycEnzymes.cplxs);
-0154                     <span class="keyword">if</span> a
-0155                         x=x+1;   <span class="comment">%record this value j, and the cplx id b</span>
-0156                         mat(x,:)=[j b];
-0157                     <span class="keyword">end</span>
-0158                 <span class="keyword">end</span>
-0159                 
-0160                 <span class="keyword">if</span> isempty(mat)
-0161                     checkCplx=false; <span class="comment">% No complexs found among components</span>
-0162                 <span class="keyword">else</span>
-0163                     <span class="comment">%go through matrix JB</span>
-0164                     <span class="keyword">for</span> k=1:x
-0165                         <span class="comment">%disp(metaCycEnzymes.cplxComp{i}.subunit{mat(k,1)});</span>
-0166                         metaCycEnzymes.cplxComp{i}.subunit(mat(k,1))=[];
-0167                         metaCycEnzymes.cplxComp{i}.subunit=[metaCycEnzymes.cplxComp{i}.subunit; metaCycEnzymes.cplxComp{mat(k,2)}.subunit];
-0168                     <span class="keyword">end</span>
-0169                 <span class="keyword">end</span>
-0170                 
-0171             <span class="keyword">end</span>
-0172             
-0173             <span class="comment">% make sure the subunits are all included in the enzyme list</span>
-0174             <span class="comment">% since in one case subunit was not found in enzyme dump file</span>
-0175             [a, b] = ismember(metaCycEnzymes.cplxComp{i}.subunit,metaCycEnzymes.enzymes);
-0176             <span class="keyword">if</span> ~all(a)
-0177                 metaCycEnzymes.cplxComp{i}.subunit = metaCycEnzymes.enzymes(b(find(a)));
-0178             <span class="keyword">end</span>
-0179         <span class="keyword">end</span>
-0180         
-0181         <span class="comment">%Preallocate space for 500000 enzymatic reactions</span>
-0182         metaCycEnzymes.enzrxns=cell(50000,1);
-0183         metaCycEnzymes.rxns=cell(50000,1);
-0184         metaCycEnzymes.rxnNames=cell(50000,1);
-0185         metaCycEnzymes.commoname=cell(50000,1);
-0186         metaCycEnzymes.rxnEnzymeMat=sparse(50000,enzymeCounter); <span class="comment">% row: rxn, column: enzymes</span>
-0187         
-0188         <span class="comment">%Load enzyme and reaction association information</span>
-0189         fid = fopen(fullfile(metacycPath,metaCycEnzrxnsFile), <span class="string">'r'</span>);
-0190         
-0191         <span class="comment">%Keeps track of how many enzymes and reactions have been added</span>
-0192         enzrxnCounter=0;
-0193         nRxn=0;
-0194         
-0195         <span class="comment">%These contain the mapping between Reactions and Enzymes Loop</span>
-0196         <span class="comment">%through the file</span>
-0197         <span class="keyword">while</span> 1
-0198             tline = fgetl(fid);
-0199             
-0200             <span class="comment">%Abort at end of file</span>
-0201             <span class="keyword">if</span> ~ischar(tline)
-0202                 <span class="keyword">break</span>;
-0203             <span class="keyword">end</span>
-0204 
-0205             <span class="comment">% Get the version of MetaCyc database</span>
-0206             <span class="keyword">if</span> numel(tline)&gt;11 &amp;&amp; strcmp(tline(1:11),<span class="string">'# Version: '</span>)
-0207                 metaCycEnzymes.version=tline(12:end);
+0144         <span class="comment">%If too much space was allocated, shrink the model</span>
+0145         metaCycEnzymes.cplxs=metaCycEnzymes.cplxs(1:nCplx);
+0146         metaCycEnzymes.cplxComp=metaCycEnzymes.cplxComp(1:nCplx);
+0147         metaCycEnzymes.enzymes=metaCycEnzymes.enzymes(1:enzymeCounter);
+0148         
+0149         <span class="comment">% Iteratively go through the components of each complex</span>
+0150         <span class="keyword">for</span> i=1:numel(metaCycEnzymes.cplxComp)
+0151             
+0152             <span class="comment">%replace all complex-type components with their subunits</span>
+0153             checkCplx=true;
+0154             <span class="keyword">while</span> checkCplx
+0155                 x=0;
+0156                 mat=[]; <span class="comment">%Matrix for component of protein-complexs</span>
+0157                 <span class="keyword">for</span> j=1:numel(metaCycEnzymes.cplxComp{i}.subunit)
+0158                     [a, b]=ismember(metaCycEnzymes.cplxComp{i}.subunit{j},metaCycEnzymes.cplxs);
+0159                     <span class="keyword">if</span> a
+0160                         x=x+1;   <span class="comment">%record this value j, and the cplx id b</span>
+0161                         mat(x,:)=[j b];
+0162                     <span class="keyword">end</span>
+0163                 <span class="keyword">end</span>
+0164                 
+0165                 <span class="keyword">if</span> isempty(mat)
+0166                     checkCplx=false; <span class="comment">% No complexs found among components</span>
+0167                 <span class="keyword">else</span>
+0168                     <span class="comment">%go through matrix JB</span>
+0169                     <span class="keyword">for</span> k=1:x
+0170                         <span class="comment">%disp(metaCycEnzymes.cplxComp{i}.subunit{mat(k,1)});</span>
+0171                         metaCycEnzymes.cplxComp{i}.subunit(mat(k,1))=[];
+0172                         metaCycEnzymes.cplxComp{i}.subunit=[metaCycEnzymes.cplxComp{i}.subunit; metaCycEnzymes.cplxComp{mat(k,2)}.subunit];
+0173                     <span class="keyword">end</span>
+0174                 <span class="keyword">end</span>
+0175                 
+0176             <span class="keyword">end</span>
+0177             
+0178             <span class="comment">% make sure the subunits are all included in the enzyme list</span>
+0179             <span class="comment">% since in one case subunit was not found in enzyme dump file</span>
+0180             [a, b] = ismember(metaCycEnzymes.cplxComp{i}.subunit,metaCycEnzymes.enzymes);
+0181             <span class="keyword">if</span> ~all(a)
+0182                 metaCycEnzymes.cplxComp{i}.subunit = metaCycEnzymes.enzymes(b(find(a)));
+0183             <span class="keyword">end</span>
+0184         <span class="keyword">end</span>
+0185         
+0186         <span class="comment">%Preallocate space for 500000 enzymatic reactions</span>
+0187         metaCycEnzymes.enzrxns=cell(50000,1);
+0188         metaCycEnzymes.rxns=cell(50000,1);
+0189         metaCycEnzymes.rxnNames=cell(50000,1);
+0190         metaCycEnzymes.commoname=cell(50000,1);
+0191         metaCycEnzymes.rxnEnzymeMat=sparse(50000,enzymeCounter); <span class="comment">% row: rxn, column: enzymes</span>
+0192         
+0193         <span class="comment">%Load enzyme and reaction association information</span>
+0194         fid = fopen(fullfile(metacycPath,metaCycEnzrxnsFile), <span class="string">'r'</span>);
+0195         
+0196         <span class="comment">%Keeps track of how many enzymes and reactions have been added</span>
+0197         enzrxnCounter=0;
+0198         nRxn=0;
+0199         
+0200         <span class="comment">%These contain the mapping between Reactions and Enzymes Loop</span>
+0201         <span class="comment">%through the file</span>
+0202         <span class="keyword">while</span> 1
+0203             tline = fgetl(fid);
+0204             
+0205             <span class="comment">%Abort at end of file</span>
+0206             <span class="keyword">if</span> ~ischar(tline)
+0207                 <span class="keyword">break</span>;
 0208             <span class="keyword">end</span>
 0209 
-0210             <span class="comment">%Check if it is a new enzymatic reaction</span>
-0211             <span class="keyword">if</span> numel(tline)&gt;12 &amp;&amp; strcmp(tline(1:12),<span class="string">'UNIQUE-ID - '</span>)
-0212                 enzrxnCounter=enzrxnCounter+1;
-0213                 metaCycEnzymes.enzrxns{enzrxnCounter}=tline(13:end);
-0214                 metaCycEnzymes.commoname{enzrxnCounter}=<span class="string">''</span>;
-0215             <span class="keyword">end</span>
-0216             
-0217             <span class="comment">%Add common name of enzymatic reactions</span>
-0218             <span class="keyword">if</span> numel(tline)&gt;14 &amp;&amp; strcmp(tline(1:14),<span class="string">'COMMON-NAME - '</span>)
-0219                 metaCycEnzymes.commoname{enzrxnCounter}=tline(15:end);
-0220                 
-0221                 <span class="comment">%Remove HTML symobls</span>
-0222                 metaCycEnzymes.commoname{enzrxnCounter}=regexprep(metaCycEnzymes.commoname{enzrxnCounter},<span class="string">'&lt;(\w+)&gt;'</span>,<span class="string">''</span>);
-0223                 metaCycEnzymes.commoname{enzrxnCounter}=regexprep(metaCycEnzymes.commoname{enzrxnCounter},<span class="string">'&lt;/(\w+)&gt;'</span>,<span class="string">''</span>);
-0224                 metaCycEnzymes.commoname{enzrxnCounter}=regexprep(metaCycEnzymes.commoname{enzrxnCounter},<span class="string">'[&amp;;]'</span>,<span class="string">''</span>);
-0225             <span class="keyword">end</span>
-0226             
-0227             <span class="comment">% I add one cell array rxns for checking existing ones by</span>
-0228             <span class="comment">% ismember because I cannot manage field rxns in this function</span>
-0229             
-0230             <span class="comment">%Add enzyme name</span>
-0231             <span class="keyword">if</span> numel(tline)&gt;9 &amp;&amp; strcmp(tline(1:9),<span class="string">'ENZYME - '</span>)
-0232                 
-0233                 <span class="comment">%Save the index in enzymes field to nEnzyme</span>
-0234                 [x, nEnzyme]=ismember(tline(10:end),metaCycEnzymes.enzymes);
-0235                 <span class="keyword">if</span> ~x
-0236                     <span class="comment">%disp(tline(10:end));</span>
-0237                 <span class="keyword">end</span>
-0238             <span class="keyword">end</span>
-0239             
-0240             <span class="comment">%Add reaction id, and rxnNames by concatenating unique common</span>
-0241             <span class="comment">%names</span>
-0242             <span class="keyword">if</span> numel(tline)&gt;11 &amp;&amp; strcmp(tline(1:11),<span class="string">'REACTION - '</span>)
-0243                 nRxn=nRxn+1;
-0244                 rxns{nRxn}=<span class="string">''</span>;
-0245                 rxnID=tline(12:end);
-0246                 [c, d]=ismember(rxnID,rxns);
-0247                 <span class="keyword">if</span> c
-0248                     nRxn=nRxn-1;
-0249                     
-0250                     <span class="comment">%Check if this common name has been included by</span>
-0251                     <span class="comment">%rxnNames</span>
-0252                     k=strfind(metaCycEnzymes.rxnNames{d},metaCycEnzymes.commoname{enzrxnCounter});
-0253                     <span class="keyword">if</span> isempty(k)
-0254                         metaCycEnzymes.rxnNames{d}=strcat(metaCycEnzymes.rxnNames{d},<span class="string">';'</span>,metaCycEnzymes.commoname{enzrxnCounter});
-0255                     <span class="keyword">end</span>
-0256                     metaCycEnzymes.rxnEnzymeMat(d,nEnzyme)=1;
-0257                 <span class="keyword">else</span>
-0258                     metaCycEnzymes.rxns{nRxn}=rxnID;
-0259                     metaCycEnzymes.rxnNames{nRxn}=metaCycEnzymes.commoname{enzrxnCounter};
-0260                     rxns{nRxn}=rxnID;
-0261                     metaCycEnzymes.rxnEnzymeMat(nRxn,nEnzyme)=1;
-0262                 <span class="keyword">end</span>
-0263             <span class="keyword">end</span>
-0264             
-0265         <span class="keyword">end</span>
-0266         
-0267         <span class="comment">%Close the file</span>
-0268         fclose(fid);
-0269         
-0270         <span class="comment">%Shrink the sizes</span>
-0271         metaCycEnzymes.enzrxns=metaCycEnzymes.enzrxns(1:enzrxnCounter);
-0272         metaCycEnzymes.commoname=metaCycEnzymes.commoname(1:enzrxnCounter);
-0273         metaCycEnzymes.rxns=metaCycEnzymes.rxns(1:nRxn);
-0274         metaCycEnzymes.rxnNames=metaCycEnzymes.rxnNames(1:nRxn);
-0275         metaCycEnzymes.rxnEnzymeMat=metaCycEnzymes.rxnEnzymeMat(1:nRxn,:);
-0276         
-0277         <span class="comment">%Save the model structure</span>
-0278         save(enzymesFile,<span class="string">'metaCycEnzymes'</span>);
-0279         fprintf([<span class="string">'New metaCycEnzymes.mat has been successfully updated!\n\n'</span>]);
-0280     <span class="keyword">end</span>
-0281     
-0282 <span class="keyword">end</span>
-0283 <span class="keyword">end</span></pre></div>
+0210             <span class="comment">% Get the version of MetaCyc database</span>
+0211             <span class="keyword">if</span> numel(tline)&gt;11 &amp;&amp; strcmp(tline(1:11),<span class="string">'# Version: '</span>)
+0212                 metaCycEnzymes.version=tline(12:end);
+0213             <span class="keyword">end</span>
+0214 
+0215             <span class="comment">%Check if it is a new enzymatic reaction</span>
+0216             <span class="keyword">if</span> numel(tline)&gt;12 &amp;&amp; strcmp(tline(1:12),<span class="string">'UNIQUE-ID - '</span>)
+0217                 enzrxnCounter=enzrxnCounter+1;
+0218                 metaCycEnzymes.enzrxns{enzrxnCounter}=tline(13:end);
+0219                 metaCycEnzymes.commoname{enzrxnCounter}=<span class="string">''</span>;
+0220             <span class="keyword">end</span>
+0221             
+0222             <span class="comment">%Add common name of enzymatic reactions</span>
+0223             <span class="keyword">if</span> numel(tline)&gt;14 &amp;&amp; strcmp(tline(1:14),<span class="string">'COMMON-NAME - '</span>)
+0224                 metaCycEnzymes.commoname{enzrxnCounter}=tline(15:end);
+0225                 
+0226                 <span class="comment">%Remove HTML symobls</span>
+0227                 metaCycEnzymes.commoname{enzrxnCounter}=regexprep(metaCycEnzymes.commoname{enzrxnCounter},<span class="string">'&lt;(\w+)&gt;'</span>,<span class="string">''</span>);
+0228                 metaCycEnzymes.commoname{enzrxnCounter}=regexprep(metaCycEnzymes.commoname{enzrxnCounter},<span class="string">'&lt;/(\w+)&gt;'</span>,<span class="string">''</span>);
+0229                 metaCycEnzymes.commoname{enzrxnCounter}=regexprep(metaCycEnzymes.commoname{enzrxnCounter},<span class="string">'[&amp;;]'</span>,<span class="string">''</span>);
+0230             <span class="keyword">end</span>
+0231             
+0232             <span class="comment">% I add one cell array rxns for checking existing ones by</span>
+0233             <span class="comment">% ismember because I cannot manage field rxns in this function</span>
+0234             
+0235             <span class="comment">%Add enzyme name</span>
+0236             <span class="keyword">if</span> numel(tline)&gt;9 &amp;&amp; strcmp(tline(1:9),<span class="string">'ENZYME - '</span>)
+0237                 
+0238                 <span class="comment">%Save the index in enzymes field to nEnzyme</span>
+0239                 [x, nEnzyme]=ismember(tline(10:end),metaCycEnzymes.enzymes);
+0240                 <span class="keyword">if</span> ~x
+0241                     <span class="comment">%disp(tline(10:end));</span>
+0242                 <span class="keyword">end</span>
+0243             <span class="keyword">end</span>
+0244             
+0245             <span class="comment">%Add reaction id, and rxnNames by concatenating unique common</span>
+0246             <span class="comment">%names</span>
+0247             <span class="keyword">if</span> numel(tline)&gt;11 &amp;&amp; strcmp(tline(1:11),<span class="string">'REACTION - '</span>)
+0248                 nRxn=nRxn+1;
+0249                 rxns{nRxn}=<span class="string">''</span>;
+0250                 rxnID=tline(12:end);
+0251                 [c, d]=ismember(rxnID,rxns);
+0252                 <span class="keyword">if</span> c
+0253                     nRxn=nRxn-1;
+0254                     
+0255                     <span class="comment">%Check if this common name has been included by</span>
+0256                     <span class="comment">%rxnNames</span>
+0257                     k=strfind(metaCycEnzymes.rxnNames{d},metaCycEnzymes.commoname{enzrxnCounter});
+0258                     <span class="keyword">if</span> isempty(k)
+0259                         metaCycEnzymes.rxnNames{d}=strcat(metaCycEnzymes.rxnNames{d},<span class="string">';'</span>,metaCycEnzymes.commoname{enzrxnCounter});
+0260                     <span class="keyword">end</span>
+0261                     metaCycEnzymes.rxnEnzymeMat(d,nEnzyme)=1;
+0262                 <span class="keyword">else</span>
+0263                     metaCycEnzymes.rxns{nRxn}=rxnID;
+0264                     metaCycEnzymes.rxnNames{nRxn}=metaCycEnzymes.commoname{enzrxnCounter};
+0265                     rxns{nRxn}=rxnID;
+0266                     metaCycEnzymes.rxnEnzymeMat(nRxn,nEnzyme)=1;
+0267                 <span class="keyword">end</span>
+0268             <span class="keyword">end</span>
+0269             
+0270         <span class="keyword">end</span>
+0271         
+0272         <span class="comment">%Close the file</span>
+0273         fclose(fid);
+0274         
+0275         <span class="comment">%Shrink the sizes</span>
+0276         metaCycEnzymes.enzrxns=metaCycEnzymes.enzrxns(1:enzrxnCounter);
+0277         metaCycEnzymes.commoname=metaCycEnzymes.commoname(1:enzrxnCounter);
+0278         metaCycEnzymes.rxns=metaCycEnzymes.rxns(1:nRxn);
+0279         metaCycEnzymes.rxnNames=metaCycEnzymes.rxnNames(1:nRxn);
+0280         metaCycEnzymes.rxnEnzymeMat=metaCycEnzymes.rxnEnzymeMat(1:nRxn,:);
+0281         
+0282         <span class="comment">%Save the model structure</span>
+0283         save(enzymesFile,<span class="string">'metaCycEnzymes'</span>);
+0284         fprintf([<span class="string">'New metaCycEnzymes.mat has been successfully updated!\n\n'</span>]);
+0285     <span class="keyword">end</span>
+0286     
+0287 <span class="keyword">end</span>
+0288 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

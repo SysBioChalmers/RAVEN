@@ -57,9 +57,14 @@ function metaCycMets=getMetsFromMetaCyc(metacycPath)
 
 % Check if the metabolites have been parsed before and saved. If so, load
 % the model.
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-metsFile=fullfile(ravenPath,'external','metacyc','metaCycMets.mat');
+if nargin<1
+    ravenPath=findRAVENroot();
+    metacycPath=fullfile(ravenPath,'external','metacyc');
+else
+    metacycPath=char(metacycPath);
+end
+
+metsFile=fullfile(metacycPath,'metaCycMets.mat');
 metaCycMetFile='compounds.dat';
 
 if exist(metsFile, 'file')

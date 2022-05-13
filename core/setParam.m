@@ -23,29 +23,22 @@ function model=setParam(model, paramType, rxnList, params, var)
 %
 %   Usage: model=setParam(model, paramType, rxnList, params)
 
+paramType=convertCharArray(paramType);
 if ~isempty(setdiff(paramType,{'lb';'ub';'eq';'obj';'rev';'var'}))
     EM=['Incorrect parameter type: "' paramType '"'];
     dispEM(EM);
+end
+
+if isnumeric(rxnList) || islogical(rxnList)
+    rxnList=model.rxns(rxnList);
+else
+    rxnList=convertCharArray(rxnList);
 end
 
 %Allow to set several parameters to the same value
 if numel(rxnList)~=numel(params) && numel(params)~=1
     EM='The number of parameter values and the number of reactions must be the same';
     dispEM(EM);
-end
-
-if isnumeric(rxnList) || islogical(rxnList)
-    rxnList=model.rxns(rxnList);
-elseif ischar(rxnList)
-    rxnList={rxnList};
-end
-
-if ischar(paramType)
-    paramType={paramType};
-end
-
-if isnumeric(params)
-    params=[params];
 end
 
 if length(rxnList)>1

@@ -51,7 +51,7 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>	getIndexes</li><li><a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>	simplifyModel</li></ul>
+<li><a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>	convertCharArray</li><li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>	getIndexes</li><li><a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>	simplifyModel</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 <li><a href="canConsume.html" class="code" title="function consumed=canConsume(model,mets)">canConsume</a>	canConsume</li><li><a href="canProduce.html" class="code" title="function produced=canProduce(model,mets)">canProduce</a>	canProduce</li><li><a href="checkProduction.html" class="code" title="function [notProduced, notProducedNames, neededForProductionMat,minToConnect,model]=checkProduction(model,checkNeededForProduction,excretionFromCompartments,printDetails)">checkProduction</a>	checkProduction</li><li><a href="fillGaps.html" class="code" title="function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,allowNetProduction,useModelConstraints,supressWarnings,rxnScores,params)">fillGaps</a>	fillGaps</li><li><a href="gapReport.html" class="code" title="function [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnect,neededForProductionMat, canProduceWithoutInput, canConsumeWithoutOutput,connectedFromTemplates, addedFromTemplates]=gapReport(model, templateModels)">gapReport</a>	gapReport</li><li><a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>	simplifyModel</li></ul>
@@ -89,52 +89,56 @@ This function is called by:
 0027 <span class="keyword">end</span>
 0028 <span class="keyword">if</span> nargin&lt;3
 0029     rxns=model.rxns;
-0030 <span class="keyword">end</span>
-0031 
-0032 <span class="comment">%This is since we're maximizing for the sum of fluxes, which isn't possible</span>
-0033 <span class="comment">%when there are infinite bounds</span>
-0034 model.lb(model.lb==-inf)=-10000;
-0035 model.ub(model.ub==inf)=10000;
-0036 
-0037 <span class="comment">%Get the reaction IDs. A bit of an awkward way, but fine.</span>
-0038 indexes=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxns,<span class="string">'rxns'</span>);
-0039 rxns=model.rxns(indexes);
-0040 
-0041 <span class="comment">%First remove all dead-end reactions</span>
-0042 smallModel=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>(model,false,false,true,true);
-0043 
-0044 <span class="comment">%Get the indexes of the reactions in the connected model</span>
-0045 indexes=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(smallModel,intersect(smallModel.rxns,rxns),<span class="string">'rxns'</span>);
-0046 J=false(numel(indexes),1);
-0047 mixIndexes=indexes(randperm(numel(indexes)));
-0048 
-0049 <span class="comment">%Maximize for all fluxes first in order to get fewer rxns to test</span>
-0050 smallModel.c=ones(numel(smallModel.c),1);
-0051 sol=solveLP(smallModel);
-0052 J(abs(sol.x(mixIndexes))&gt;cutOff)=true;
-0053 
-0054 <span class="comment">%Loop through and maximize then minimize each rxn if it doesn't already</span>
-0055 <span class="comment">%have a flux</span>
-0056 Z=zeros(numel(smallModel.c),1);
-0057 hsSolOut=[];
-0058 <span class="keyword">for</span> i=[1 -1]
-0059     <span class="keyword">for</span> j=1:numel(J)
-0060         <span class="keyword">if</span> J(j)==false
-0061             <span class="comment">%Only minimize for reversible reactions</span>
-0062             <span class="keyword">if</span> i==1 || smallModel.rev(mixIndexes(j))~=0
-0063                 smallModel.c=Z;
-0064                 smallModel.c(mixIndexes(j))=i;
-0065                 [sol, hsSolOut]=solveLP(smallModel,0,[],hsSolOut);
-0066                 <span class="keyword">if</span> any(sol.x)
-0067                     J(abs(sol.x(mixIndexes))&gt;cutOff)=true;
-0068                 <span class="keyword">end</span>
-0069             <span class="keyword">end</span>
-0070         <span class="keyword">end</span>
-0071     <span class="keyword">end</span>
-0072 <span class="keyword">end</span>
-0073 
-0074 I=ismember(rxns,smallModel.rxns(mixIndexes(J)));
-0075 <span class="keyword">end</span></pre></div>
+0030 <span class="keyword">elseif</span> ~islogical(rxns) &amp;&amp; ~isnumeric(rxns)
+0031     rxns=<a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>(rxns);
+0032 <span class="keyword">end</span>
+0033 
+0034 <span class="comment">%This is since we're maximizing for the sum of fluxes, which isn't possible</span>
+0035 <span class="comment">%when there are infinite bounds</span>
+0036 model.lb(model.lb==-inf)=-10000;
+0037 model.ub(model.ub==inf)=10000;
+0038 
+0039 <span class="comment">%Get the reaction IDs. A bit of an awkward way, but fine.</span>
+0040 indexes=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxns,<span class="string">'rxns'</span>);
+0041 rxns=model.rxns(indexes);
+0042 
+0043 <span class="comment">%First remove all dead-end reactions</span>
+0044 smallModel=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>(model,false,false,true,true);
+0045 
+0046 <span class="comment">%Get the indexes of the reactions in the connected model</span>
+0047 indexes=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(smallModel,intersect(smallModel.rxns,rxns),<span class="string">'rxns'</span>);
+0048 J=false(numel(indexes),1);
+0049 mixIndexes=indexes(randperm(numel(indexes)));
+0050 
+0051 <span class="comment">%Maximize for all fluxes first in order to get fewer rxns to test</span>
+0052 smallModel.c=ones(numel(smallModel.c),1);
+0053 sol=solveLP(smallModel);
+0054 <span class="keyword">if</span> ~isempty(sol.x)
+0055     J(abs(sol.x(mixIndexes))&gt;cutOff)=true;
+0056 <span class="keyword">end</span>
+0057 
+0058 <span class="comment">%Loop through and maximize then minimize each rxn if it doesn't already</span>
+0059 <span class="comment">%have a flux</span>
+0060 Z=zeros(numel(smallModel.c),1);
+0061 hsSolOut=[];
+0062 <span class="keyword">for</span> i=[1 -1]
+0063     <span class="keyword">for</span> j=1:numel(J)
+0064         <span class="keyword">if</span> J(j)==false
+0065             <span class="comment">%Only minimize for reversible reactions</span>
+0066             <span class="keyword">if</span> i==1 || smallModel.rev(mixIndexes(j))~=0
+0067                 smallModel.c=Z;
+0068                 smallModel.c(mixIndexes(j))=i;
+0069                 [sol, hsSolOut]=solveLP(smallModel,0,[],hsSolOut);
+0070                 <span class="keyword">if</span> any(sol.x)
+0071                     J(abs(sol.x(mixIndexes))&gt;cutOff)=true;
+0072                 <span class="keyword">end</span>
+0073             <span class="keyword">end</span>
+0074         <span class="keyword">end</span>
+0075     <span class="keyword">end</span>
+0076 <span class="keyword">end</span>
+0077 
+0078 I=ismember(rxns,smallModel.rxns(mixIndexes(J)));
+0079 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

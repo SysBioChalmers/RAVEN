@@ -1,5 +1,5 @@
 %run this test case with the command
-%results = runtests('sortIdentifiers_and_permuteModelTests.m')
+%results = runtests('miriamTests.m')
 function tests = miriamTests
 tests = functiontests(localfunctions);
 end

@@ -34,8 +34,10 @@ function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sort
 %   Usage: equationStrings=constructEquations(model,rxns,useComps,...
 %           sortRevRxns,sortMetNames,useMetID,useFormula,useRevField)
 
-if nargin<2
+if nargin<2 || isempty(rxns)
     rxns=model.rxns;
+elseif ~islogical(rxns) && ~isnumeric(rxns)
+    rxns=convertCharArray(rxns);
 end
 if nargin<3
     useComps=true;
@@ -54,9 +56,6 @@ if nargin<7
 end
 if nargin<8
     useRevField=true;
-end
-if isempty(rxns) && nargin>2
-    rxns=model.rxns;
 end
 
 %Sort reversible equations
