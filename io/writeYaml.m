@@ -12,6 +12,7 @@ function writeYaml(model,name,preserveQuotes,sortIds)
 %                   (logical, default=false)
 %
 %   Usage: writeYaml(model,name,preserveQuotes,sortIds)
+name=char(name);
 
 if nargin < 3
     preserveQuotes = true;

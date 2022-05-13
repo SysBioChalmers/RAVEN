@@ -110,149 +110,152 @@ This function is called by:
 0034 <span class="comment">%   Usage: getModelFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)</span>
 0035 
 0036 <span class="keyword">if</span> nargin&lt;1
-0037     metacycPath=<span class="string">''</span>;
-0038 <span class="keyword">end</span>
-0039 <span class="keyword">if</span> nargin&lt;2
-0040     keepTransportRxns=false;
+0037     ravenPath=findRAVENroot();
+0038     metacycPath=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'metacyc'</span>);
+0039 <span class="keyword">else</span>
+0040     metacycPath=char(metacycPath);
 0041 <span class="keyword">end</span>
-0042 <span class="keyword">if</span> nargin&lt;3
-0043     keepUnbalanced=false;
+0042 <span class="keyword">if</span> nargin&lt;2
+0043     keepTransportRxns=false;
 0044 <span class="keyword">end</span>
-0045 <span class="keyword">if</span> nargin&lt;4
-0046     keepUndetermined=false;
+0045 <span class="keyword">if</span> nargin&lt;3
+0046     keepUnbalanced=false;
 0047 <span class="keyword">end</span>
-0048 
-0049 <span class="comment">%First get all reactions</span>
-0050 metaCycModel=<a href="getRxnsFromMetaCyc.html" class="code" title="function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)">getRxnsFromMetaCyc</a>(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined);
+0048 <span class="keyword">if</span> nargin&lt;4
+0049     keepUndetermined=false;
+0050 <span class="keyword">end</span>
 0051 
-0052 <span class="comment">%Get reaction and enzyme association</span>
-0053 metaCycEnzymes=<a href="getEnzymesFromMetaCyc.html" class="code" title="function metaCycEnzymes=getEnzymesFromMetaCyc(metacycPath)">getEnzymesFromMetaCyc</a>(metacycPath);
+0052 <span class="comment">%First get all reactions</span>
+0053 metaCycModel=<a href="getRxnsFromMetaCyc.html" class="code" title="function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)">getRxnsFromMetaCyc</a>(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined);
 0054 
-0055 <span class="comment">%Replace rxnNames with those from metaCycEnzymes</span>
-0056 [a, b]=ismember(metaCycModel.rxns,metaCycEnzymes.rxns);
-0057 a=find(a);
-0058 b=b(a);
-0059 metaCycModel.rxnNames(a)=metaCycEnzymes.rxnNames(b);
-0060 
-0061 fprintf(<span class="string">'Reorganizing reaction-enzyme associations... '</span>)
-0062 <span class="comment">%Create the rxnGeneMat for the reactions, by geting all enzymes and</span>
-0063 <span class="comment">%corresponding subunits</span>
-0064 rxnNum=numel(metaCycModel.rxns);
-0065 metaCycModel.genes=metaCycEnzymes.enzymes;
-0066 metaCycModel.rxnGeneMat=sparse(rxnNum,numel(metaCycEnzymes.enzymes));
-0067 metaCycModel.grRules=cell(rxnNum,1);
-0068 
-0069 <span class="comment">%Loop through all reactions to generate rxnGeneMat matrix and grRules This</span>
-0070 <span class="comment">%step also cross-link reactions to their catalyzing enzymes</span>
-0071 <span class="keyword">for</span> i=1:rxnNum
-0072     
-0073     metaCycModel.grRules{i}=<span class="string">''</span>;
-0074     <span class="comment">%Find out if this is an enzymatic reaction</span>
-0075     [a, b]=ismember(metaCycModel.rxns(i),metaCycEnzymes.rxns);
-0076     <span class="keyword">if</span> a
-0077         I=[];   <span class="comment">%Find out all catalyzing enzymes, which are treated as isoenzymes</span>
-0078         I=find(metaCycEnzymes.rxnEnzymeMat(b,:));
-0079         <span class="keyword">if</span> ~isempty(I)
-0080             
-0081             grRule=<span class="string">''</span>;
-0082             <span class="keyword">for</span> j=1:numel(I)
-0083                 
-0084                 subgrRule=<span class="string">''</span>; <span class="comment">%Find out if enzyme complex</span>
-0085                 [c, d]=ismember(metaCycEnzymes.enzymes(I(j)),metaCycEnzymes.cplxs);
-0086                 <span class="keyword">if</span> c   <span class="comment">%In cases of an enzyme complex</span>
-0087                     <span class="comment">%With single subunit</span>
-0088                     <span class="keyword">if</span> numel(metaCycEnzymes.cplxComp{d}.subunit)==1
-0089                         subgrRule=metaCycEnzymes.cplxComp{d}.subunit{1};
-0090                         <span class="comment">%With multiple subunits</span>
-0091                     <span class="keyword">else</span>
-0092                         subgrRule=strjoin(metaCycEnzymes.cplxComp{d}.subunit,<span class="string">' and '</span>);
-0093                         subgrRule=strcat(<span class="string">'('</span>,subgrRule,<span class="string">')'</span>);
-0094                     <span class="keyword">end</span>
-0095                     [x, geneIndex]=ismember(metaCycEnzymes.cplxComp{d}.subunit,metaCycModel.genes);
-0096                     metaCycModel.rxnGeneMat(i,geneIndex)=1;
-0097                     
-0098                 <span class="keyword">else</span>  <span class="comment">%In cases of NOT an enzyme complex</span>
-0099                     subgrRule=metaCycEnzymes.enzymes(I(j));
-0100                     metaCycModel.rxnGeneMat(i,I(j))=1;
-0101                 <span class="keyword">end</span>
-0102                 
-0103                 <span class="comment">%Generating grRules</span>
-0104                 <span class="keyword">if</span> ~strcmp(subgrRule,<span class="string">''</span>)
-0105                     <span class="keyword">if</span> ~strcmp(grRule,<span class="string">''</span>)
-0106                         grRule=strcat(grRule,{<span class="string">' or '</span>},subgrRule);
-0107                     <span class="keyword">else</span>
-0108                         grRule=subgrRule;
-0109                     <span class="keyword">end</span>
-0110                 <span class="keyword">end</span>
-0111                 
-0112             <span class="keyword">end</span>
-0113             <span class="keyword">if</span> iscell(grRule)
-0114                 metaCycModel.grRules{i}=grRule{1};
-0115             <span class="keyword">else</span>
-0116                 metaCycModel.grRules{i}=grRule;
-0117             <span class="keyword">end</span>
-0118             
-0119         <span class="keyword">end</span>
-0120         
-0121     <span class="keyword">end</span>
-0122 <span class="keyword">end</span>
-0123 fprintf(<span class="string">'done\n'</span>)
-0124 <span class="comment">%Then get all metabolites</span>
-0125 metaCycMets=<a href="getMetsFromMetaCyc.html" class="code" title="function metaCycMets=getMetsFromMetaCyc(metacycPath)">getMetsFromMetaCyc</a>(metacycPath);
-0126 
-0127 <span class="comment">%Add information about all metabolites to the model</span>
-0128 [a, b]=ismember(metaCycModel.mets,metaCycMets.mets);
-0129 a=find(a);
-0130 b=b(a);
-0131 
-0132 <span class="keyword">if</span> ~isfield(metaCycModel,<span class="string">'metNames'</span>)
-0133     metaCycModel.metNames=cell(numel(metaCycModel.mets),1);
-0134     metaCycModel.metNames(:)={<span class="string">''</span>};
-0135 <span class="keyword">end</span>
-0136 metaCycModel.metNames(a)=metaCycMets.metNames(b);
-0137 
-0138 <span class="keyword">if</span> ~isfield(metaCycModel,<span class="string">'metFormulas'</span>)
-0139     metaCycModel.metFormulas=cell(numel(metaCycModel.mets),1);
-0140     metaCycModel.metFormulas(:)={<span class="string">''</span>};
-0141 <span class="keyword">end</span>
-0142 metaCycModel.metFormulas(a)=metaCycMets.metFormulas(b);
-0143 
-0144 <span class="keyword">if</span> ~isfield(metaCycModel,<span class="string">'metCharges'</span>)
-0145     metaCycModel.metCharges=zeros(numel(metaCycModel.mets),1);
-0146 <span class="keyword">end</span>
-0147 metaCycModel.metCharges(a)=metaCycMets.metCharges(b);
-0148 
-0149 <span class="keyword">if</span> ~isfield(metaCycModel,<span class="string">'inchis'</span>)
-0150     metaCycModel.inchis=cell(numel(metaCycModel.mets),1);
-0151     metaCycModel.inchis(:)={<span class="string">''</span>};
-0152 <span class="keyword">end</span>
-0153 metaCycModel.inchis(a)=metaCycMets.inchis(b);
-0154 
-0155 <span class="keyword">if</span> ~isfield(metaCycModel,<span class="string">'metMiriams'</span>)
-0156     metaCycModel.metMiriams=cell(numel(metaCycModel.mets),1);
-0157 <span class="keyword">end</span>
-0158 metaCycModel.metMiriams(a)=metaCycMets.metMiriams(b);
-0159 
-0160 <span class="keyword">if</span> ~isfield(metaCycModel,<span class="string">'keggid'</span>)
-0161     metaCycModel.keggid=cell(numel(metaCycModel.mets),1);
-0162 <span class="keyword">end</span>
-0163 metaCycModel.keggid(a)=metaCycMets.keggid(b);
-0164 
-0165 <span class="comment">%Put all metabolites in one compartment called 's' (for system). This is</span>
-0166 <span class="comment">%done just to be more compatible with the rest of the code</span>
-0167 metaCycModel.comps={<span class="string">'s'</span>};
-0168 metaCycModel.compNames={<span class="string">'System'</span>};
-0169 metaCycModel.metComps=ones(numel(metaCycModel.mets),1);
-0170 
-0171 
-0172 <span class="comment">%It could also be that the metabolite and reaction names are empty for some</span>
-0173 <span class="comment">%reasons. In that case, use the ID instead</span>
-0174 I=cellfun(@isempty,metaCycModel.metNames);
-0175 metaCycModel.metNames(I)=metaCycModel.mets(I);
-0176 I=cellfun(@isempty,metaCycModel.rxnNames);
-0177 metaCycModel.rxnNames(I)=metaCycModel.rxns(I);
-0178 
-0179 <span class="keyword">end</span></pre></div>
+0055 <span class="comment">%Get reaction and enzyme association</span>
+0056 metaCycEnzymes=<a href="getEnzymesFromMetaCyc.html" class="code" title="function metaCycEnzymes=getEnzymesFromMetaCyc(metacycPath)">getEnzymesFromMetaCyc</a>(metacycPath);
+0057 
+0058 <span class="comment">%Replace rxnNames with those from metaCycEnzymes</span>
+0059 [a, b]=ismember(metaCycModel.rxns,metaCycEnzymes.rxns);
+0060 a=find(a);
+0061 b=b(a);
+0062 metaCycModel.rxnNames(a)=metaCycEnzymes.rxnNames(b);
+0063 
+0064 fprintf(<span class="string">'Reorganizing reaction-enzyme associations... '</span>)
+0065 <span class="comment">%Create the rxnGeneMat for the reactions, by geting all enzymes and</span>
+0066 <span class="comment">%corresponding subunits</span>
+0067 rxnNum=numel(metaCycModel.rxns);
+0068 metaCycModel.genes=metaCycEnzymes.enzymes;
+0069 metaCycModel.rxnGeneMat=sparse(rxnNum,numel(metaCycEnzymes.enzymes));
+0070 metaCycModel.grRules=cell(rxnNum,1);
+0071 
+0072 <span class="comment">%Loop through all reactions to generate rxnGeneMat matrix and grRules This</span>
+0073 <span class="comment">%step also cross-link reactions to their catalyzing enzymes</span>
+0074 <span class="keyword">for</span> i=1:rxnNum
+0075     
+0076     metaCycModel.grRules{i}=<span class="string">''</span>;
+0077     <span class="comment">%Find out if this is an enzymatic reaction</span>
+0078     [a, b]=ismember(metaCycModel.rxns(i),metaCycEnzymes.rxns);
+0079     <span class="keyword">if</span> a
+0080         I=[];   <span class="comment">%Find out all catalyzing enzymes, which are treated as isoenzymes</span>
+0081         I=find(metaCycEnzymes.rxnEnzymeMat(b,:));
+0082         <span class="keyword">if</span> ~isempty(I)
+0083             
+0084             grRule=<span class="string">''</span>;
+0085             <span class="keyword">for</span> j=1:numel(I)
+0086                 
+0087                 subgrRule=<span class="string">''</span>; <span class="comment">%Find out if enzyme complex</span>
+0088                 [c, d]=ismember(metaCycEnzymes.enzymes(I(j)),metaCycEnzymes.cplxs);
+0089                 <span class="keyword">if</span> c   <span class="comment">%In cases of an enzyme complex</span>
+0090                     <span class="comment">%With single subunit</span>
+0091                     <span class="keyword">if</span> numel(metaCycEnzymes.cplxComp{d}.subunit)==1
+0092                         subgrRule=metaCycEnzymes.cplxComp{d}.subunit{1};
+0093                         <span class="comment">%With multiple subunits</span>
+0094                     <span class="keyword">else</span>
+0095                         subgrRule=strjoin(metaCycEnzymes.cplxComp{d}.subunit,<span class="string">' and '</span>);
+0096                         subgrRule=strcat(<span class="string">'('</span>,subgrRule,<span class="string">')'</span>);
+0097                     <span class="keyword">end</span>
+0098                     [x, geneIndex]=ismember(metaCycEnzymes.cplxComp{d}.subunit,metaCycModel.genes);
+0099                     metaCycModel.rxnGeneMat(i,geneIndex)=1;
+0100                     
+0101                 <span class="keyword">else</span>  <span class="comment">%In cases of NOT an enzyme complex</span>
+0102                     subgrRule=metaCycEnzymes.enzymes(I(j));
+0103                     metaCycModel.rxnGeneMat(i,I(j))=1;
+0104                 <span class="keyword">end</span>
+0105                 
+0106                 <span class="comment">%Generating grRules</span>
+0107                 <span class="keyword">if</span> ~strcmp(subgrRule,<span class="string">''</span>)
+0108                     <span class="keyword">if</span> ~strcmp(grRule,<span class="string">''</span>)
+0109                         grRule=strcat(grRule,{<span class="string">' or '</span>},subgrRule);
+0110                     <span class="keyword">else</span>
+0111                         grRule=subgrRule;
+0112                     <span class="keyword">end</span>
+0113                 <span class="keyword">end</span>
+0114                 
+0115             <span class="keyword">end</span>
+0116             <span class="keyword">if</span> iscell(grRule)
+0117                 metaCycModel.grRules{i}=grRule{1};
+0118             <span class="keyword">else</span>
+0119                 metaCycModel.grRules{i}=grRule;
+0120             <span class="keyword">end</span>
+0121             
+0122         <span class="keyword">end</span>
+0123         
+0124     <span class="keyword">end</span>
+0125 <span class="keyword">end</span>
+0126 fprintf(<span class="string">'done\n'</span>)
+0127 <span class="comment">%Then get all metabolites</span>
+0128 metaCycMets=<a href="getMetsFromMetaCyc.html" class="code" title="function metaCycMets=getMetsFromMetaCyc(metacycPath)">getMetsFromMetaCyc</a>(metacycPath);
+0129 
+0130 <span class="comment">%Add information about all metabolites to the model</span>
+0131 [a, b]=ismember(metaCycModel.mets,metaCycMets.mets);
+0132 a=find(a);
+0133 b=b(a);
+0134 
+0135 <span class="keyword">if</span> ~isfield(metaCycModel,<span class="string">'metNames'</span>)
+0136     metaCycModel.metNames=cell(numel(metaCycModel.mets),1);
+0137     metaCycModel.metNames(:)={<span class="string">''</span>};
+0138 <span class="keyword">end</span>
+0139 metaCycModel.metNames(a)=metaCycMets.metNames(b);
+0140 
+0141 <span class="keyword">if</span> ~isfield(metaCycModel,<span class="string">'metFormulas'</span>)
+0142     metaCycModel.metFormulas=cell(numel(metaCycModel.mets),1);
+0143     metaCycModel.metFormulas(:)={<span class="string">''</span>};
+0144 <span class="keyword">end</span>
+0145 metaCycModel.metFormulas(a)=metaCycMets.metFormulas(b);
+0146 
+0147 <span class="keyword">if</span> ~isfield(metaCycModel,<span class="string">'metCharges'</span>)
+0148     metaCycModel.metCharges=zeros(numel(metaCycModel.mets),1);
+0149 <span class="keyword">end</span>
+0150 metaCycModel.metCharges(a)=metaCycMets.metCharges(b);
+0151 
+0152 <span class="keyword">if</span> ~isfield(metaCycModel,<span class="string">'inchis'</span>)
+0153     metaCycModel.inchis=cell(numel(metaCycModel.mets),1);
+0154     metaCycModel.inchis(:)={<span class="string">''</span>};
+0155 <span class="keyword">end</span>
+0156 metaCycModel.inchis(a)=metaCycMets.inchis(b);
+0157 
+0158 <span class="keyword">if</span> ~isfield(metaCycModel,<span class="string">'metMiriams'</span>)
+0159     metaCycModel.metMiriams=cell(numel(metaCycModel.mets),1);
+0160 <span class="keyword">end</span>
+0161 metaCycModel.metMiriams(a)=metaCycMets.metMiriams(b);
+0162 
+0163 <span class="keyword">if</span> ~isfield(metaCycModel,<span class="string">'keggid'</span>)
+0164     metaCycModel.keggid=cell(numel(metaCycModel.mets),1);
+0165 <span class="keyword">end</span>
+0166 metaCycModel.keggid(a)=metaCycMets.keggid(b);
+0167 
+0168 <span class="comment">%Put all metabolites in one compartment called 's' (for system). This is</span>
+0169 <span class="comment">%done just to be more compatible with the rest of the code</span>
+0170 metaCycModel.comps={<span class="string">'s'</span>};
+0171 metaCycModel.compNames={<span class="string">'System'</span>};
+0172 metaCycModel.metComps=ones(numel(metaCycModel.mets),1);
+0173 
+0174 
+0175 <span class="comment">%It could also be that the metabolite and reaction names are empty for some</span>
+0176 <span class="comment">%reasons. In that case, use the ID instead</span>
+0177 I=cellfun(@isempty,metaCycModel.metNames);
+0178 metaCycModel.metNames(I)=metaCycModel.mets(I);
+0179 I=cellfun(@isempty,metaCycModel.rxnNames);
+0180 metaCycModel.rxnNames(I)=metaCycModel.rxns(I);
+0181 
+0182 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

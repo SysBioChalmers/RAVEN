@@ -5,7 +5,6 @@ function [spontaneousRxnList, pathwayID]=addSpontaneousRxns(rxnList, metList)
 %
 %   Input:
 %   rxnList              query list of reactions in cell array
-%
 %   metList              query list of metabolites in cell array
 %
 %   spontaneousRxnList   reterieved spontaneous reactions associated to
@@ -16,11 +15,8 @@ function [spontaneousRxnList, pathwayID]=addSpontaneousRxns(rxnList, metList)
 %
 %   Usage: spontaneousRxnList=addSpontaneousRxns(rxnList, metList)
 
-if nargin<2
-    disp('Missing input arguments');
-    return;
-end
-
+metList=convertCharArray(metList);
+rxnList=convertCharArray(rxnList);
 rxnList=unique(rxnList);
 
 % Create the matrix of MetaCyc pathways and spontaneous reactions

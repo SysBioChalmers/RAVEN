@@ -58,6 +58,8 @@ if nargin<3
 end
 if nargin<4
     prefix='m_';
+else
+    prefix=char(prefix);
 end
 
 newModel=model;
@@ -69,35 +71,19 @@ end
 %Check some stuff regarding the required fields
 if ~isfield(metsToAdd,'mets')
     metsToAdd.mets=generateNewIds(newModel,'mets',prefix,numel(metsToAdd.metNames));
+else
+    metsToAdd.mets=convertCharArray(metsToAdd.mets);
 end
 if ~isfield(metsToAdd,'metNames')
     metsToAdd.metNames=metsToAdd.mets;
+else
+    metsToAdd.metNames=convertCharArray(metsToAdd.metNames);
 end
 if ~isfield(metsToAdd,'compartments')
     EM='compartments is a required field in metsToAdd';
     dispEM(EM);
-end
-if ischar(metsToAdd.mets)
-    metsToAdd.mets={metsToAdd.mets};
-elseif ~iscellstr(metsToAdd.mets)
-    EM='metsToAdd.mets must be a cell array of strings';
-    dispEM(EM);
-end
-if ischar(metsToAdd.metNames)
-    metsToAdd.metNames={metsToAdd.metNames};
-elseif ~iscellstr(metsToAdd.metNames)
-    EM='metsToAdd.metNames must be a cell array of strings';
-    dispEM(EM);
-end
-if ~iscellstr(metsToAdd.compartments)
-    if ischar(metsToAdd.compartments)
-        temp=cell(numel(metsToAdd.mets),1);
-        temp(:)={metsToAdd.compartments};
-        metsToAdd.compartments=temp;
-    else
-        EM='metsToAdd.compartments must be a cell array of strings';
-        dispEM(EM);
-    end
+else
+    metsToAdd.compartments=convertCharArray(metsToAdd.compartments);
 end
 
 %Number of metabolites
@@ -193,12 +179,9 @@ else
 end
 
 if isfield(metsToAdd,'inchis')
+    metsToAdd.inchis=convertCharArray(metsToAdd.inchis);
     if numel(metsToAdd.inchis)~=nMets
         EM='metsToAdd.inchis must have the same number of elements as metsToAdd.mets';
-        dispEM(EM);
-    end
-    if ~iscellstr(metsToAdd.inchis)
-        EM='metsToAdd.inchis must be a cell array of strings';
         dispEM(EM);
     end
     %Add empty field if it doesn't exist
@@ -214,12 +197,9 @@ else
 end
 
 if isfield(metsToAdd,'metFormulas')
+    metsToAdd.metFormulas=convertCharArray(metsToAdd.metFormulas);
     if numel(metsToAdd.metFormulas)~=nMets
         EM='metsToAdd.metFormulas must have the same number of elements as metsToAdd.mets';
-        dispEM(EM);
-    end
-    if ~iscellstr(metsToAdd.metFormulas)
-        EM='metsToAdd.metFormulas must be a cell array of strings';
         dispEM(EM);
     end
     %Add empty field if it doesn't exist
@@ -255,12 +235,9 @@ else
 end
 
 if isfield(metsToAdd,'metNotes')
+    metsToAdd.metNotes=convertCharArray(metsToAdd.metNotes);
     if numel(metsToAdd.metNotes)~=nMets
         EM='metsToAdd.metNotes must have the same number of elements as metsToAdd.mets';
-        dispEM(EM);
-    end
-    if ~iscellstr(metsToAdd.metNotes)
-        EM='metsToAdd.metNotes must be a cell array of strings';
         dispEM(EM);
     end
     %Add empty field if it doesn't exist

@@ -103,16 +103,20 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allow
 
 if nargin<4
     compartment=[];
+else
+    compartment=char(compartment);
 end
 if nargin<5
     allowNewMets=false;
+elseif ~islogical(allowNewMets)
+    allowNewMets=char(allowNewMets);
 end
 if nargin<6
     allowNewGenes=false;
 end
 
 if allowNewGenes & isfield(rxnsToAdd,'grRules')
-    genesToAdd.genes = strjoin(rxnsToAdd.grRules);
+    genesToAdd.genes = strjoin(convertCharArray(rxnsToAdd.grRules));
     genesToAdd.genes = regexp(genesToAdd.genes,' |)|(|and|or','split'); % Remove all grRule punctuation
     genesToAdd.genes = genesToAdd.genes(~cellfun(@isempty,genesToAdd.genes));  % Remove spaces and empty genes
     genesToAdd.genes = setdiff(unique(genesToAdd.genes),model.genes); % Only keep new genes
@@ -147,10 +151,7 @@ elseif ~ismember(eqnType,[1 2 3])
 end
 
 if eqnType==2 || (eqnType==1 && allowNewMets==true)
-    if ~ischar(compartment)
-        EM='compartment must be a string';
-        dispEM(EM);
-    end
+    compartment=char(compartment);
     if ~ismember(compartment,model.comps)
         EM='compartment must match one of the compartments in model.comps';
         dispEM(EM);
@@ -160,7 +161,8 @@ end
 if ~isfield(rxnsToAdd,'rxns')
     EM='rxns is a required field in rxnsToAdd';
     dispEM(EM);
-elseif iscell(rxnsToAdd.rxns)
+else
+    rxnsToAdd.rxns=convertCharArray(rxnsToAdd.rxns);
     %To fit with some later printing
     rxnsToAdd.rxns=rxnsToAdd.rxns(:);
 end
@@ -174,30 +176,16 @@ if any(ismember(rxnsToAdd.rxns,model.rxns))
     dispEM(EM);
 end
 
-if ~iscellstr(rxnsToAdd.rxns) && ~ischar(rxnsToAdd.rxns)
-    %It could also be a string, but it's not encouraged
-    EM='rxnsToAdd.rxns must be a cell array of strings';
-    dispEM(EM);
-else
-    rxnsToAdd.rxns=cellstr(rxnsToAdd.rxns);
-end
-
 %Normal case: equations provided
 if isfield(rxnsToAdd,'equations')
-    if ~iscellstr(rxnsToAdd.equations) && ~ischar(rxnsToAdd.equations)
-        %It could also be a string, but it's not encouraged
-        EM='rxnsToAdd.equations must be a cell array of strings';
-        dispEM(EM);
-    else
-        rxnsToAdd.equations=cellstr(rxnsToAdd.equations);
-    end
-    
+    rxnsToAdd.equations=convertCharArray(rxnsToAdd.equations);
+
     %Alternative case: mets+stoichiometry provided
 else
     %In the case of 1 rxn added (array of strings + vector), transform to
     %cells of length=1:
     if iscellstr(rxnsToAdd.mets)
-        rxnsToAdd.mets = {rxnsToAdd.mets};
+        rxnsToAdd.mets={rxnsToAdd.mets};
     end
     if isnumeric(rxnsToAdd.stoichCoeffs)
         rxnsToAdd.stoichCoeffs = {rxnsToAdd.stoichCoeffs};
@@ -257,6 +245,7 @@ newModel.rev=[newModel.rev;reversible];
 newModel.rxns=[newModel.rxns;rxnsToAdd.rxns(:)];
 
 if isfield(rxnsToAdd,'rxnNames')
+    rxnsToAdd.rxnNames=convertCharArray(rxnsToAdd.rxnNames);
     if numel(rxnsToAdd.rxnNames)~=nRxns
         EM='rxnsToAdd.rxnNames must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);
@@ -340,6 +329,7 @@ else
 end
 
 if isfield(rxnsToAdd,'eccodes')
+    rxnsToAdd.eccodes=convertCharArray(rxnsToAdd.eccodes);
     if numel(rxnsToAdd.eccodes)~=nRxns
         EM='rxnsToAdd.eccodes must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);
@@ -414,6 +404,7 @@ else
     end
 end
 if isfield(rxnsToAdd,'grRules')
+    rxnsToAdd.grRules=convertCharArray(rxnsToAdd.grRules);
     if numel(rxnsToAdd.grRules)~=nRxns
         EM='rxnsToAdd.grRules must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);
@@ -431,6 +422,7 @@ else
 end
 
 if isfield(rxnsToAdd,'rxnFrom')
+    rxnsToAdd.rxnFrom=convertCharArray(rxnsToAdd.rxnFrom);
     if numel(rxnsToAdd.rxnFrom)~=nRxns
         EM='rxnsToAdd.rxnFrom must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);
@@ -448,6 +440,7 @@ else
 end
 
 if isfield(rxnsToAdd,'rxnNotes')
+    rxnsToAdd.rxnNotes=convertCharArray(rxnsToAdd.rxnNotes);
     if numel(rxnsToAdd.rxnNotes)~=nRxns
         EM='rxnsToAdd.rxnNotes must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);
@@ -465,6 +458,7 @@ else
 end
 
 if isfield(rxnsToAdd,'rxnReferences')
+    rxnsToAdd.rxnReferences=convertCharArray(rxnsToAdd.rxnReferences);
     if numel(rxnsToAdd.rxnReferences)~=nRxns
         EM='rxnsToAdd.rxnReferences must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);
@@ -482,6 +476,7 @@ else
 end
 
 if isfield(rxnsToAdd,'pwys')
+    rxnsToAdd.pwys=convertCharArray(rxnsToAdd.pwys);
     if numel(rxnsToAdd.pwys)~=nRxns
         EM='rxnsToAdd.pwys must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);

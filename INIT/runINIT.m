@@ -67,24 +67,17 @@ end
 if isempty(rxnScores)
     rxnScores=zeros(numel(model.rxns),1);
 end
-if nargin<3
+if nargin<3 || isempty(presentMets)
     presentMets={};
+else
+    presentMets=convertCharArray(presentMets);
 end
-if isempty(presentMets)
-    presentMets={};
-end
-presentMets=presentMets(:);
-if nargin<4
+if nargin<4 || isempty(essentialRxns)
     essentialRxns={};
+else
+    essentialRxns=convertCharArray(essentialRxns);
 end
-if isempty(essentialRxns)
-    essentialRxns={};
-end
-essentialRxns=essentialRxns(:);
-if nargin<5
-    prodWeight=0.5;
-end
-if isempty(prodWeight)
+if nargin<5 || isempty(prodWeight)
     prodWeight=0.5;
 end
 if nargin<6

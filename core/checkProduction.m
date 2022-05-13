@@ -48,6 +48,8 @@ end
 
 if nargin<3
     excretionFromCompartments=model.comps;
+else
+    excretionFromCompartments=convertCharArray(excretionFromCompartments);
 end
 
 if nargin<4

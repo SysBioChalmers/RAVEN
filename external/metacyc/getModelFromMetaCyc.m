@@ -34,7 +34,10 @@ function metaCycModel=getModelFromMetaCyc(metacycPath,keepTransportRxns,keepUnba
 %   Usage: getModelFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
 
 if nargin<1
-    metacycPath='';
+    ravenPath=findRAVENroot();
+    metacycPath=fullfile(ravenPath,'external','metacyc');
+else
+    metacycPath=char(metacycPath);
 end
 if nargin<2
     keepTransportRxns=false;

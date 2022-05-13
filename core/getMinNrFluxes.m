@@ -31,10 +31,10 @@ exitFlag=1;
 
 if nargin<2
     toMinimize=model.rxns;
+elseif ~islogical(toMinimize) && ~isnumeric(toMinimize)
+    toMinimize=convertCharArray(toMinimize);
 else
-    if ~iscell(toMinimize)
-        toMinimize=model.rxns(toMinimize);
-    end
+    toMinimize=model.rxns(toMinimize);
 end
 
 %For passing parameters to the solver

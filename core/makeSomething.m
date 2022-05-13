@@ -44,6 +44,8 @@ function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFlux
 
 if nargin<2
     ignoreMets=[];
+elseif ~islogical(ignoreMets) && ~isnumeric(ignoreMets)
+    ignoreMets=convertCharArray(ignoreMets);
 end
 if nargin<3
     isNames=false;

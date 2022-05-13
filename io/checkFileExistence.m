@@ -35,10 +35,9 @@ end
 if nargin<4
     checkExist = true;
 end
-
-if isstr(files)
+files=convertCharArray(files);
+if numel(files)==1
     oneFile=true;
-    files={files};
 else
     oneFile=false;
 end

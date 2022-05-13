@@ -45,10 +45,10 @@ if nargin<6
 end
 
 %Everything should be cell arrays
-organismID=cellstr(organismID);
-fastaFile=cellstr(fastaFile);
-modelIDs=cellstr(modelIDs);
-refFastaFiles=cellstr(refFastaFiles);
+organismID=convertCharArray(organismID);
+fastaFile=convertCharArray(fastaFile);
+modelIDs=convertCharArray(modelIDs);
+refFastaFiles=convertCharArray(refFastaFiles);
 
 %Create blank structures for results
 blastStructure=[];

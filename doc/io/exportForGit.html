@@ -109,117 +109,120 @@ This function is called by:
 0038 <span class="keyword">end</span>
 0039 <span class="keyword">if</span> nargin&lt;4 || isempty(formats)
 0040     formats={<span class="string">'mat'</span>, <span class="string">'txt'</span>, <span class="string">'xlsx'</span>, <span class="string">'xml'</span>, <span class="string">'yml'</span>};
-0041 <span class="keyword">end</span>
-0042 <span class="keyword">if</span> ischar(formats)
-0043     formats={formats};
-0044 <span class="keyword">end</span>
-0045 <span class="keyword">if</span> any(~ismember(formats, {<span class="string">'mat'</span>, <span class="string">'txt'</span>, <span class="string">'xlsx'</span>, <span class="string">'xml'</span>, <span class="string">'yml'</span>}))
-0046     EM=<span class="string">'Unknown file format defined. Only mat, txt, xlsx, xml and yml are allowed file formats.'</span>;
-0047     error(EM)
-0048 <span class="keyword">end</span>
-0049 <span class="keyword">if</span> nargin&lt;3
-0050     path=<span class="string">'.'</span>;
-0051 <span class="keyword">end</span>
-0052 <span class="keyword">if</span> nargin&lt;2
-0053     prefix=<span class="string">'model'</span>;
-0054 <span class="keyword">end</span>
-0055 
-0056 <span class="comment">%Sort reactions, metabolites and genes alphabetically</span>
-0057 model=<a href="sortIdentifiers.html" class="code" title="function newModel = sortIdentifiers(model)">sortIdentifiers</a>(model);
+0041 <span class="keyword">else</span>
+0042     formats=convertCharArray(formats);
+0043 <span class="keyword">end</span>
+0044 <span class="keyword">if</span> any(~ismember(formats, {<span class="string">'mat'</span>, <span class="string">'txt'</span>, <span class="string">'xlsx'</span>, <span class="string">'xml'</span>, <span class="string">'yml'</span>}))
+0045     EM=<span class="string">'Unknown file format defined. Only mat, txt, xlsx, xml and yml are allowed file formats.'</span>;
+0046     error(EM)
+0047 <span class="keyword">end</span>
+0048 <span class="keyword">if</span> nargin&lt;3
+0049     path=<span class="string">'.'</span>;
+0050 <span class="keyword">else</span>
+0051     path=char(path);
+0052 <span class="keyword">end</span>
+0053 <span class="keyword">if</span> nargin&lt;2
+0054     prefix=<span class="string">'model'</span>;
+0055 <span class="keyword">else</span>
+0056     prefix=char(prefix);
+0057 <span class="keyword">end</span>
 0058 
-0059 <span class="comment">%Get versions or commits of toolboxes:</span>
-0060 RAVENver = <a href="getToolboxVersion.html" class="code" title="function version = getToolboxVersion(toolbox,fileID,mainBranchFlag)">getToolboxVersion</a>(<span class="string">'RAVEN'</span>,<span class="string">'ravenCobraWrapper.m'</span>,mainBranchFlag);
-0061 COBRAver = <a href="getToolboxVersion.html" class="code" title="function version = getToolboxVersion(toolbox,fileID,mainBranchFlag)">getToolboxVersion</a>(<span class="string">'COBRA'</span>,<span class="string">'initCobraToolbox.m'</span>,mainBranchFlag);
-0062 
-0063 <span class="comment">%Retrieve libSBML version:</span>
-0064 [ravenDir,prevDir]=findRAVENroot();
-0065 cd(fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'libSBML'</span>));
-0066 <span class="keyword">try</span> <span class="comment">% 5.17.0 and newer</span>
-0067     libSBMLver=OutputSBML;
-0068     libSBMLver=libSBMLver.libSBML_version_string;
-0069 <span class="keyword">catch</span> <span class="comment">% before 5.17.0</span>
-0070     fid = fopen(<span class="string">'tempModelForLibSBMLversion.xml'</span>,<span class="string">'w+'</span>);
-0071     fclose(fid);
-0072     evalc(<span class="string">'[~,~,libSBMLver]=TranslateSBML(''tempModelForLibSBMLversion.xml'',0,0)'</span>);
-0073     libSBMLver=libSBMLver.libSBML_version_string;
-0074     delete(<span class="string">'tempModelForLibSBMLversion.xml'</span>);
-0075 <span class="keyword">end</span>
-0076 cd(prevDir)
-0077 
-0078 <span class="comment">% Make models folder, no warnings if folder already exists</span>
-0079 <span class="keyword">if</span> subDirs
-0080     path=fullfile(path,<span class="string">'model'</span>);
-0081     filePath=strcat(path,filesep,{<span class="string">'txt'</span>,<span class="string">'yml'</span>,<span class="string">'mat'</span>,<span class="string">'xlsx'</span>,<span class="string">'xml'</span>});
-0082     [~,~,~]=mkdir(path);
-0083     <span class="keyword">for</span> i = 1:length(formats)
-0084         [~,~,~]=mkdir(fullfile(path,formats{i}));
-0085     <span class="keyword">end</span>
-0086 <span class="keyword">else</span>
-0087     filePath=cell(1,5); filePath(:)={path};
-0088 <span class="keyword">end</span>
-0089 
-0090 
-0091 <span class="comment">% Write TXT format</span>
-0092 <span class="keyword">if</span> ismember(<span class="string">'txt'</span>, formats)
-0093     fid=fopen(fullfile(filePath{1},strcat(prefix,<span class="string">'.txt'</span>)),<span class="string">'w'</span>);
-0094     <span class="keyword">if</span> cobraText==true
-0095         eqns=constructEquations(model,model.rxns,false,false,false);
-0096         eqns=strrep(eqns,<span class="string">' =&gt; '</span>,<span class="string">'  -&gt; '</span>);
-0097         eqns=strrep(eqns,<span class="string">' &lt;=&gt; '</span>,<span class="string">'  &lt;=&gt; '</span>);
-0098         eqns=regexprep(eqns,<span class="string">'&gt; $'</span>,<span class="string">'&gt;'</span>);
-0099         grRules=regexprep(model.grRules,<span class="string">'\((?!\()'</span>,<span class="string">'( '</span>);
-0100         grRules=regexprep(grRules,<span class="string">'(?&lt;!\))\)'</span>,<span class="string">' )'</span>);
-0101     <span class="keyword">else</span>
-0102         eqns=constructEquations(model,model.rxns);
-0103         grRules=model.grRules;
-0104     <span class="keyword">end</span>
-0105     fprintf(fid, <span class="string">'Rxn name\tFormula\tGene-reaction association\tLB\tUB\tObjective\n'</span>);
-0106     <span class="keyword">for</span> i = 1:numel(model.rxns)
-0107         fprintf(fid, <span class="string">'%s\t'</span>, model.rxns{i});
-0108         fprintf(fid, <span class="string">'%s \t'</span>, eqns{i});
-0109         fprintf(fid, <span class="string">'%s\t'</span>, grRules{i});
-0110         fprintf(fid, <span class="string">'%6.2f\t%6.2f\t%6.2f\n'</span>, model.lb(i), model.ub(i), model.c(i));
-0111     <span class="keyword">end</span>
-0112     fclose(fid);
-0113 <span class="keyword">end</span>
-0114 
-0115 <span class="comment">% Write YML format</span>
-0116 <span class="keyword">if</span> ismember(<span class="string">'yml'</span>, formats)
-0117     <a href="writeYaml.html" class="code" title="function writeYaml(model,name,preserveQuotes,sortIds)">writeYaml</a>(model,fullfile(filePath{2},strcat(prefix,<span class="string">'.yml'</span>)));
-0118 <span class="keyword">end</span>
-0119 
-0120 <span class="comment">% Write MAT format</span>
-0121 <span class="keyword">if</span> ismember(<span class="string">'mat'</span>, formats)
-0122     save(fullfile(filePath{3},strcat(prefix,<span class="string">'.mat'</span>)),<span class="string">'model'</span>);
-0123 <span class="keyword">end</span>
-0124 
-0125 <span class="comment">% Write XLSX format</span>
-0126 <span class="keyword">if</span> ismember(<span class="string">'xlsx'</span>, formats)
-0127     <a href="exportToExcelFormat.html" class="code" title="function exportToExcelFormat(model,filename,sortIds)">exportToExcelFormat</a>(model,fullfile(filePath{4},strcat(prefix,<span class="string">'.xlsx'</span>)));
-0128 <span class="keyword">end</span>
-0129 
-0130 <span class="comment">% Write XML format</span>
-0131 <span class="keyword">if</span> ismember(<span class="string">'xml'</span>, formats)
-0132         <a href="exportModel.html" class="code" title="function exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)">exportModel</a>(model,fullfile(filePath{5},strcat(prefix,<span class="string">'.xml'</span>)));
-0133 <span class="keyword">end</span>
-0134 
-0135 <span class="comment">%Save file with versions:</span>
-0136 fid = fopen(fullfile(path,<span class="string">'dependencies.txt'</span>),<span class="string">'wt'</span>);
-0137 fprintf(fid,[<span class="string">'MATLAB\t'</span> version <span class="string">'\n'</span>]);
-0138 fprintf(fid,[<span class="string">'libSBML\t'</span> libSBMLver <span class="string">'\n'</span>]);
-0139 fprintf(fid,[<span class="string">'RAVEN_toolbox\t'</span> RAVENver <span class="string">'\n'</span>]);
-0140 <span class="keyword">if</span> ~isempty(COBRAver)
-0141     fprintf(fid,[<span class="string">'COBRA_toolbox\t'</span> COBRAver <span class="string">'\n'</span>]);
-0142 <span class="keyword">end</span>
-0143 <span class="keyword">if</span> isfield(model,<span class="string">'modelVersion'</span>)
-0144     fields = fieldnames(model.modelVersion);
-0145     <span class="keyword">for</span> i = 1:length(fields)
-0146         value = model.modelVersion.(fields{i});
-0147         fprintf(fid,[fields{i} <span class="string">'\t'</span> num2str(value) <span class="string">'\n'</span>]);
-0148     <span class="keyword">end</span>
-0149 <span class="keyword">end</span>
-0150 fclose(fid);
-0151 <span class="keyword">end</span></pre></div>
+0059 <span class="comment">%Sort reactions, metabolites and genes alphabetically</span>
+0060 model=<a href="sortIdentifiers.html" class="code" title="function newModel = sortIdentifiers(model)">sortIdentifiers</a>(model);
+0061 
+0062 <span class="comment">%Get versions or commits of toolboxes:</span>
+0063 RAVENver = <a href="getToolboxVersion.html" class="code" title="function version = getToolboxVersion(toolbox,fileID,mainBranchFlag)">getToolboxVersion</a>(<span class="string">'RAVEN'</span>,<span class="string">'ravenCobraWrapper.m'</span>,mainBranchFlag);
+0064 COBRAver = <a href="getToolboxVersion.html" class="code" title="function version = getToolboxVersion(toolbox,fileID,mainBranchFlag)">getToolboxVersion</a>(<span class="string">'COBRA'</span>,<span class="string">'initCobraToolbox.m'</span>,mainBranchFlag);
+0065 
+0066 <span class="comment">%Retrieve libSBML version:</span>
+0067 [ravenDir,prevDir]=findRAVENroot();
+0068 cd(fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'libSBML'</span>));
+0069 <span class="keyword">try</span> <span class="comment">% 5.17.0 and newer</span>
+0070     libSBMLver=OutputSBML;
+0071     libSBMLver=libSBMLver.libSBML_version_string;
+0072 <span class="keyword">catch</span> <span class="comment">% before 5.17.0</span>
+0073     fid = fopen(<span class="string">'tempModelForLibSBMLversion.xml'</span>,<span class="string">'w+'</span>);
+0074     fclose(fid);
+0075     evalc(<span class="string">'[~,~,libSBMLver]=TranslateSBML(''tempModelForLibSBMLversion.xml'',0,0)'</span>);
+0076     libSBMLver=libSBMLver.libSBML_version_string;
+0077     delete(<span class="string">'tempModelForLibSBMLversion.xml'</span>);
+0078 <span class="keyword">end</span>
+0079 cd(prevDir)
+0080 
+0081 <span class="comment">% Make models folder, no warnings if folder already exists</span>
+0082 <span class="keyword">if</span> subDirs
+0083     path=fullfile(path,<span class="string">'model'</span>);
+0084     filePath=strcat(path,filesep,{<span class="string">'txt'</span>,<span class="string">'yml'</span>,<span class="string">'mat'</span>,<span class="string">'xlsx'</span>,<span class="string">'xml'</span>});
+0085     [~,~,~]=mkdir(path);
+0086     <span class="keyword">for</span> i = 1:length(formats)
+0087         [~,~,~]=mkdir(fullfile(path,formats{i}));
+0088     <span class="keyword">end</span>
+0089 <span class="keyword">else</span>
+0090     filePath=cell(1,5); filePath(:)={path};
+0091 <span class="keyword">end</span>
+0092 
+0093 
+0094 <span class="comment">% Write TXT format</span>
+0095 <span class="keyword">if</span> ismember(<span class="string">'txt'</span>, formats)
+0096     fid=fopen(fullfile(filePath{1},strcat(prefix,<span class="string">'.txt'</span>)),<span class="string">'w'</span>);
+0097     <span class="keyword">if</span> cobraText==true
+0098         eqns=constructEquations(model,model.rxns,false,false,false);
+0099         eqns=strrep(eqns,<span class="string">' =&gt; '</span>,<span class="string">'  -&gt; '</span>);
+0100         eqns=strrep(eqns,<span class="string">' &lt;=&gt; '</span>,<span class="string">'  &lt;=&gt; '</span>);
+0101         eqns=regexprep(eqns,<span class="string">'&gt; $'</span>,<span class="string">'&gt;'</span>);
+0102         grRules=regexprep(model.grRules,<span class="string">'\((?!\()'</span>,<span class="string">'( '</span>);
+0103         grRules=regexprep(grRules,<span class="string">'(?&lt;!\))\)'</span>,<span class="string">' )'</span>);
+0104     <span class="keyword">else</span>
+0105         eqns=constructEquations(model,model.rxns);
+0106         grRules=model.grRules;
+0107     <span class="keyword">end</span>
+0108     fprintf(fid, <span class="string">'Rxn name\tFormula\tGene-reaction association\tLB\tUB\tObjective\n'</span>);
+0109     <span class="keyword">for</span> i = 1:numel(model.rxns)
+0110         fprintf(fid, <span class="string">'%s\t'</span>, model.rxns{i});
+0111         fprintf(fid, <span class="string">'%s \t'</span>, eqns{i});
+0112         fprintf(fid, <span class="string">'%s\t'</span>, grRules{i});
+0113         fprintf(fid, <span class="string">'%6.2f\t%6.2f\t%6.2f\n'</span>, model.lb(i), model.ub(i), model.c(i));
+0114     <span class="keyword">end</span>
+0115     fclose(fid);
+0116 <span class="keyword">end</span>
+0117 
+0118 <span class="comment">% Write YML format</span>
+0119 <span class="keyword">if</span> ismember(<span class="string">'yml'</span>, formats)
+0120     <a href="writeYaml.html" class="code" title="function writeYaml(model,name,preserveQuotes,sortIds)">writeYaml</a>(model,fullfile(filePath{2},strcat(prefix,<span class="string">'.yml'</span>)));
+0121 <span class="keyword">end</span>
+0122 
+0123 <span class="comment">% Write MAT format</span>
+0124 <span class="keyword">if</span> ismember(<span class="string">'mat'</span>, formats)
+0125     save(fullfile(filePath{3},strcat(prefix,<span class="string">'.mat'</span>)),<span class="string">'model'</span>);
+0126 <span class="keyword">end</span>
+0127 
+0128 <span class="comment">% Write XLSX format</span>
+0129 <span class="keyword">if</span> ismember(<span class="string">'xlsx'</span>, formats)
+0130     <a href="exportToExcelFormat.html" class="code" title="function exportToExcelFormat(model,filename,sortIds)">exportToExcelFormat</a>(model,fullfile(filePath{4},strcat(prefix,<span class="string">'.xlsx'</span>)));
+0131 <span class="keyword">end</span>
+0132 
+0133 <span class="comment">% Write XML format</span>
+0134 <span class="keyword">if</span> ismember(<span class="string">'xml'</span>, formats)
+0135         <a href="exportModel.html" class="code" title="function exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)">exportModel</a>(model,fullfile(filePath{5},strcat(prefix,<span class="string">'.xml'</span>)));
+0136 <span class="keyword">end</span>
+0137 
+0138 <span class="comment">%Save file with versions:</span>
+0139 fid = fopen(fullfile(path,<span class="string">'dependencies.txt'</span>),<span class="string">'wt'</span>);
+0140 fprintf(fid,[<span class="string">'MATLAB\t'</span> version <span class="string">'\n'</span>]);
+0141 fprintf(fid,[<span class="string">'libSBML\t'</span> libSBMLver <span class="string">'\n'</span>]);
+0142 fprintf(fid,[<span class="string">'RAVEN_toolbox\t'</span> RAVENver <span class="string">'\n'</span>]);
+0143 <span class="keyword">if</span> ~isempty(COBRAver)
+0144     fprintf(fid,[<span class="string">'COBRA_toolbox\t'</span> COBRAver <span class="string">'\n'</span>]);
+0145 <span class="keyword">end</span>
+0146 <span class="keyword">if</span> isfield(model,<span class="string">'modelVersion'</span>)
+0147     fields = fieldnames(model.modelVersion);
+0148     <span class="keyword">for</span> i = 1:length(fields)
+0149         value = model.modelVersion.(fields{i});
+0150         fprintf(fid,[fields{i} <span class="string">'\t'</span> num2str(value) <span class="string">'\n'</span>]);
+0151     <span class="keyword">end</span>
+0152 <span class="keyword">end</span>
+0153 fclose(fid);
+0154 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

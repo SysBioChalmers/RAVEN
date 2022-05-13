@@ -22,6 +22,8 @@ function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 
 if nargin<1
     keggPath='RAVEN/external/kegg';
+else
+    keggPath=char(keggPath);
 end
 if nargin<2
     onlyInKingdom=false;

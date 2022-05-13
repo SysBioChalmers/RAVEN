@@ -27,6 +27,8 @@ function blastStructure=makeFakeBlastStructure(orthologList,sourceModelID,getMod
 if nargin<3
     error('All three parameters should be set');
 end
+sourceModelID=char(sourceModelID);
+getModelFor=char(getModelFor);
 
 % Check whether orthologList is a cell array, with two columns, and more
 % than 10 rows

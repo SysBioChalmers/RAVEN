@@ -27,9 +27,8 @@ end
 if nargin<5
     removeUnusedComps=false;
 end
-
-if ischar(rxnsToRemove)
-    rxnsToRemove={rxnsToRemove};
+if ~islogical(rxnsToRemove) && ~isnumeric(rxnsToRemove)
+    rxnsToRemove=convertCharArray(rxnsToRemove);
 end
 
 reducedModel=model;
