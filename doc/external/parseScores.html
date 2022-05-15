@@ -75,113 +75,115 @@ This function is called by:
 0017 
 0018 <span class="keyword">if</span> nargin&lt;2
 0019     predictor=<span class="string">'wolf'</span>;
-0020 <span class="keyword">end</span>
-0021 
-0022 fid=fopen(inputFile,<span class="string">'r'</span>);
+0020 <span class="keyword">else</span>
+0021     predictor=char(predictor);
+0022 <span class="keyword">end</span>
 0023 
-0024 <span class="keyword">if</span> fid&lt;1
-0025     EM=<span class="string">'Could not open file'</span>;
-0026     dispEM(EM);
-0027 <span class="keyword">end</span>
-0028 
-0029 <span class="keyword">if</span> strcmpi(predictor,<span class="string">'wolf'</span>)
-0030     A=textscan(fid,<span class="string">'%s'</span>,<span class="string">'Delimiter'</span>,<span class="string">'\n'</span>,<span class="string">'CommentStyle'</span>,<span class="string">'#'</span>);
-0031     
-0032     <span class="comment">%Each element should be for one gene, but some of them are on the form</span>
-0033     <span class="comment">%&quot;Pc20g11350: treating 9 X's as Glycines&quot;. Those should be removed</span>
-0034     I=~cellfun(@any,strfind(A{1},<span class="string">'treating'</span>));
-0035     
-0036     B=regexp(A{1}(I),<span class="string">' '</span>,<span class="string">'split'</span>);
+0024 fid=fopen(inputFile,<span class="string">'r'</span>);
+0025 
+0026 <span class="keyword">if</span> fid&lt;1
+0027     EM=<span class="string">'Could not open file'</span>;
+0028     dispEM(EM);
+0029 <span class="keyword">end</span>
+0030 
+0031 <span class="keyword">if</span> strcmpi(predictor,<span class="string">'wolf'</span>)
+0032     A=textscan(fid,<span class="string">'%s'</span>,<span class="string">'Delimiter'</span>,<span class="string">'\n'</span>,<span class="string">'CommentStyle'</span>,<span class="string">'#'</span>);
+0033     
+0034     <span class="comment">%Each element should be for one gene, but some of them are on the form</span>
+0035     <span class="comment">%&quot;Pc20g11350: treating 9 X's as Glycines&quot;. Those should be removed</span>
+0036     I=~cellfun(@any,strfind(A{1},<span class="string">'treating'</span>));
 0037     
-0038     <span class="comment">%Reserve space for stuff</span>
-0039     GSS.compartments={};
-0040     GSS.scores=[]; <span class="comment">%Do not know number of comps yet</span>
-0041     GSS.genes=cell(numel(B),1);
-0042     
-0043     <span class="comment">%Parsing is a bit cumbersome as ', ' is used as a delimiter in some</span>
-0044     <span class="comment">%cases and ' ' in others. Use strrep to get rid of ','</span>
-0045     <span class="keyword">for</span> i=1:numel(B)
-0046         b=strrep(B{i},<span class="string">','</span>,<span class="string">''</span>);
-0047         GSS.genes{i}=b{1};
-0048         
-0049         <span class="comment">%Then go through the compartments and add new ones as they are</span>
-0050         <span class="comment">%found</span>
-0051         <span class="keyword">for</span> j=2:2:numel(b)-1
-0052             [~, J]=ismember(b(j),GSS.compartments);
-0053             
-0054             <span class="comment">%Add new compartment if it does not exist</span>
-0055             <span class="keyword">if</span> J==0
-0056                 GSS.compartments=[GSS.compartments;b(j)];
-0057                 J=numel(GSS.compartments);
-0058                 GSS.scores=[GSS.scores zeros(numel(B),1)];
-0059             <span class="keyword">end</span>
-0060             
-0061             GSS.scores(i,J)=str2double(b(j+1));
-0062         <span class="keyword">end</span>
-0063     <span class="keyword">end</span>
-0064 <span class="keyword">elseif</span> strcmpi(predictor,<span class="string">'cello'</span>)
-0065     fid=fopen(inputFile,<span class="string">'r'</span>);
-0066     <span class="comment">%Read the title line and fetch the list of compartments</span>
-0067     tline = fgetl(fid);
-0068     tline=regexprep(tline,<span class="string">'^.+#Combined:\t'</span>,<span class="string">''</span>);
-0069     tline=regexprep(tline,<span class="string">'\t#Most-likely-Location.+'</span>,<span class="string">''</span>);
-0070     GSS.compartments=transpose(regexp(tline,<span class="string">'\t'</span>,<span class="string">'split'</span>));
-0071     
-0072     <span class="comment">%Now iterate through the following lines in the file. Each row</span>
-0073     <span class="comment">%corresponds to one gene and it consists of the scores for</span>
-0074     <span class="comment">%compartments. Gene name is in the end of each line</span>
-0075     row=0;
-0076     <span class="keyword">while</span> 1
-0077         row=row+1;
-0078         tline = fgetl(fid);
-0079         <span class="keyword">if</span> ~ischar(tline)
-0080             <span class="keyword">break</span>;
-0081         <span class="keyword">end</span>
-0082         tline=regexprep(tline,<span class="string">'^.+:\t'</span>,<span class="string">''</span>);
-0083         tline=regexprep(tline,<span class="string">' .+'</span>,<span class="string">''</span>);
-0084         tline=regexp(tline,<span class="string">'\t'</span>,<span class="string">'split'</span>);
-0085         GSS.scores(row,:)=str2double(tline(1:numel(GSS.compartments)));
-0086         GSS.genes{row,1}=tline{1,end};
-0087     <span class="keyword">end</span>
-0088 <span class="keyword">elseif</span> strcmpi(predictor,<span class="string">'deeploc'</span>)
-0089     fid=fopen(inputFile,<span class="string">'r'</span>);
-0090     <span class="comment">%Read the title line and fetch the list of compartments</span>
-0091     tline = fgetl(fid);
-0092     GSS.compartments=regexp(tline,<span class="string">'\t'</span>,<span class="string">'split'</span>);
-0093     GSS.compartments=GSS.compartments(3:end);
-0094     
-0095     <span class="comment">%Now iterate through the following lines in the file. Each row</span>
-0096     <span class="comment">%corresponds to one gene and it consists of the scores for</span>
-0097     <span class="comment">%compartments. Gene name is in the end of each line</span>
-0098     row=0;
-0099     <span class="keyword">while</span> 1
-0100         row=row+1;
-0101         tline = fgetl(fid);
-0102         <span class="keyword">if</span> ~ischar(tline)
-0103             <span class="keyword">break</span>;
-0104         <span class="keyword">end</span>
-0105         tline=regexp(tline,<span class="string">'\t'</span>,<span class="string">'split'</span>);
-0106         GSS.scores(row,:)=str2double(tline(3:end));
-0107         GSS.genes{row,1}=tline{1,1};
-0108     <span class="keyword">end</span>
-0109 <span class="keyword">end</span>
-0110 
-0111 <span class="comment">%Check if there are duplicate genes</span>
-0112 [~, J, K]=unique(GSS.genes);
-0113 
-0114 <span class="keyword">if</span> numel(J)~=numel(K)
-0115     EM=<span class="string">'There are duplicate genes in the input file'</span>;
-0116     dispEM(EM,false);
-0117     GSS.genes=GSS.genes(J);
-0118     GSS.scores=GSS.scores(J,:);
-0119 <span class="keyword">end</span>
-0120 
-0121 <span class="comment">%Normalize</span>
-0122 I=max(GSS.scores,[],2);
-0123 GSS.scores=bsxfun(@times, GSS.scores, 1./I);
-0124 
-0125 fclose(fid);
-0126 <span class="keyword">end</span></pre></div>
+0038     B=regexp(A{1}(I),<span class="string">' '</span>,<span class="string">'split'</span>);
+0039     
+0040     <span class="comment">%Reserve space for stuff</span>
+0041     GSS.compartments={};
+0042     GSS.scores=[]; <span class="comment">%Do not know number of comps yet</span>
+0043     GSS.genes=cell(numel(B),1);
+0044     
+0045     <span class="comment">%Parsing is a bit cumbersome as ', ' is used as a delimiter in some</span>
+0046     <span class="comment">%cases and ' ' in others. Use strrep to get rid of ','</span>
+0047     <span class="keyword">for</span> i=1:numel(B)
+0048         b=strrep(B{i},<span class="string">','</span>,<span class="string">''</span>);
+0049         GSS.genes{i}=b{1};
+0050         
+0051         <span class="comment">%Then go through the compartments and add new ones as they are</span>
+0052         <span class="comment">%found</span>
+0053         <span class="keyword">for</span> j=2:2:numel(b)-1
+0054             [~, J]=ismember(b(j),GSS.compartments);
+0055             
+0056             <span class="comment">%Add new compartment if it does not exist</span>
+0057             <span class="keyword">if</span> J==0
+0058                 GSS.compartments=[GSS.compartments;b(j)];
+0059                 J=numel(GSS.compartments);
+0060                 GSS.scores=[GSS.scores zeros(numel(B),1)];
+0061             <span class="keyword">end</span>
+0062             
+0063             GSS.scores(i,J)=str2double(b(j+1));
+0064         <span class="keyword">end</span>
+0065     <span class="keyword">end</span>
+0066 <span class="keyword">elseif</span> strcmpi(predictor,<span class="string">'cello'</span>)
+0067     fid=fopen(inputFile,<span class="string">'r'</span>);
+0068     <span class="comment">%Read the title line and fetch the list of compartments</span>
+0069     tline = fgetl(fid);
+0070     tline=regexprep(tline,<span class="string">'^.+#Combined:\t'</span>,<span class="string">''</span>);
+0071     tline=regexprep(tline,<span class="string">'\t#Most-likely-Location.+'</span>,<span class="string">''</span>);
+0072     GSS.compartments=transpose(regexp(tline,<span class="string">'\t'</span>,<span class="string">'split'</span>));
+0073     
+0074     <span class="comment">%Now iterate through the following lines in the file. Each row</span>
+0075     <span class="comment">%corresponds to one gene and it consists of the scores for</span>
+0076     <span class="comment">%compartments. Gene name is in the end of each line</span>
+0077     row=0;
+0078     <span class="keyword">while</span> 1
+0079         row=row+1;
+0080         tline = fgetl(fid);
+0081         <span class="keyword">if</span> ~ischar(tline)
+0082             <span class="keyword">break</span>;
+0083         <span class="keyword">end</span>
+0084         tline=regexprep(tline,<span class="string">'^.+:\t'</span>,<span class="string">''</span>);
+0085         tline=regexprep(tline,<span class="string">' .+'</span>,<span class="string">''</span>);
+0086         tline=regexp(tline,<span class="string">'\t'</span>,<span class="string">'split'</span>);
+0087         GSS.scores(row,:)=str2double(tline(1:numel(GSS.compartments)));
+0088         GSS.genes{row,1}=tline{1,end};
+0089     <span class="keyword">end</span>
+0090 <span class="keyword">elseif</span> strcmpi(predictor,<span class="string">'deeploc'</span>)
+0091     fid=fopen(inputFile,<span class="string">'r'</span>);
+0092     <span class="comment">%Read the title line and fetch the list of compartments</span>
+0093     tline = fgetl(fid);
+0094     GSS.compartments=regexp(tline,<span class="string">'\t'</span>,<span class="string">'split'</span>);
+0095     GSS.compartments=GSS.compartments(3:end);
+0096     
+0097     <span class="comment">%Now iterate through the following lines in the file. Each row</span>
+0098     <span class="comment">%corresponds to one gene and it consists of the scores for</span>
+0099     <span class="comment">%compartments. Gene name is in the end of each line</span>
+0100     row=0;
+0101     <span class="keyword">while</span> 1
+0102         row=row+1;
+0103         tline = fgetl(fid);
+0104         <span class="keyword">if</span> ~ischar(tline)
+0105             <span class="keyword">break</span>;
+0106         <span class="keyword">end</span>
+0107         tline=regexp(tline,<span class="string">'\t'</span>,<span class="string">'split'</span>);
+0108         GSS.scores(row,:)=str2double(tline(3:end));
+0109         GSS.genes{row,1}=tline{1,1};
+0110     <span class="keyword">end</span>
+0111 <span class="keyword">end</span>
+0112 
+0113 <span class="comment">%Check if there are duplicate genes</span>
+0114 [~, J, K]=unique(GSS.genes);
+0115 
+0116 <span class="keyword">if</span> numel(J)~=numel(K)
+0117     EM=<span class="string">'There are duplicate genes in the input file'</span>;
+0118     dispEM(EM,false);
+0119     GSS.genes=GSS.genes(J);
+0120     GSS.scores=GSS.scores(J,:);
+0121 <span class="keyword">end</span>
+0122 
+0123 <span class="comment">%Normalize</span>
+0124 I=max(GSS.scores,[],2);
+0125 GSS.scores=bsxfun(@times, GSS.scores, 1./I);
+0126 
+0127 fclose(fid);
+0128 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

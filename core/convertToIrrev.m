@@ -16,6 +16,7 @@ function irrevModel=convertToIrrev(model,rxns)
 if nargin<2
     I=true(numel(model.rxns),1);
 else
+    rxns=convertCharArray(rxns);
     I=getIndexes(model,rxns,'rxns',true);
 end
 

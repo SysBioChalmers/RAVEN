@@ -65,6 +65,8 @@ function model=getGenesFromKEGG(keggPath,koList)
 
 if nargin<1
     keggPath='RAVEN/external/kegg';
+else
+    keggPath=char(keggPath);
 end
 
 ravenPath=findRAVENroot();

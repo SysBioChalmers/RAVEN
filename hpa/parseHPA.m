@@ -40,6 +40,7 @@ if nargin<2
     version=19; %Change this and add code for more versions when the current HPA version is increased and the format is changed
 end
 
+fileName=char(fileName);
 if ~(exist(fileName,'file')==2)
     error('HPA file %s cannot be found',string(fileName));
 end

@@ -59,6 +59,8 @@ if nargin<8
 end
 if nargin<9
     reservedRxns=[];
+else
+    reservedRxns=convertCharArray(reservedRxns);
 end
 if nargin<10
     suppressWarnings=false;

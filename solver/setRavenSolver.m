@@ -11,10 +11,7 @@ function setRavenSolver(solver)
 %                   set by changeCobraSolver.
 %
 %   Usage: setRavenSolver(solver)
-
-if (~ischar(solver))
-    error('Input should be a string.');
-end
+solver=char(solver);
 switch solver
     case 'cobra'
         global CBT_LP_SOLVER;

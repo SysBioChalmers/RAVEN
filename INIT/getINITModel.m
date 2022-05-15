@@ -110,6 +110,8 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 
 if nargin<3
     celltype=[];
+else
+    celltype=char(celltype);
 end
 if nargin<4
     hpaData=[];
@@ -122,6 +124,8 @@ if nargin<6
 end
 if nargin<7
     taskFile=[];
+else
+    taskFile=char(taskFile);
 end
 if nargin<8 || isempty(useScoresForTasks)
     useScoresForTasks=true;

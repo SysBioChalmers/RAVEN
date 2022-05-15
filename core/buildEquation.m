@@ -2,7 +2,7 @@ function equationString=buildEquation(mets,stoichCoeffs,isrev)
 % buildEquation
 %   Construct single equation string for a given reaction
 %
-%   mets            string array with metabolites involved in the reaction.
+%   mets            cell array with metabolites involved in the reaction.
 %   stoichCoeffs    vector with corresponding stoichiometric coeffs.
 %   isrev           logical indicating if the reaction is or not
 %                   reversible.
@@ -11,12 +11,7 @@ function equationString=buildEquation(mets,stoichCoeffs,isrev)
 %
 %    Usage: equationString=buildEquation(mets,stoichCoeffs,isrev)
 
-if ~iscellstr(mets) && ~ischar(mets)
-    EM = 'mets must be a cell array of strings';
-    dispEM(EM);
-else
-    mets = cellstr(mets);
-end
+mets=convertCharArray(mets);
 if ~isnumeric(stoichCoeffs)
     EM = 'stoichCoeffs must be a numeric vector';
     dispEM(EM);

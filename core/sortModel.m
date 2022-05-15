@@ -73,7 +73,7 @@ if sortReactionOrder==true
         end
     end
     subsystemsUnique=unique(subsystemsUnique);
-    for i=1:numel(subsystems)
+    for i=1:numel(subsystemsUnique)
         %Get all reactions for that subsystem
         rxns=find(~cellfun(@isempty,regexp(subsystemsConcatenated,subsystemsUnique(i))));
         

@@ -70,6 +70,8 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 
 if nargin<1
     keggPath='RAVEN/external/kegg';
+else
+    keggPath=char(keggPath);
 end
 
 %Check if the reactions have been parsed before and saved. If so, load the

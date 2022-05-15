@@ -5,8 +5,8 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %
 %   model           draft model where reactions should be copied to
 %   sourceModel     model where reactions and metabolites are sourced from
-%   rxns            cell array with reaction IDs (from source model)
-%                   string allowed if only one reaction is added
+%   rxns            cell array with reaction IDs (from source model). Can also
+%                   be string if only one reaction is added
 %   addGene         three options:
 %                   false   no genes are annotated to the new reactions
 %                   true    grRules ared copied from the sourceModel and
@@ -16,10 +16,12 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %                           array, and any new genes are added when
 %                           required
 %                   (opt, default false)
-%   rxnNote         string explaining why reactions were copied to model,
-%                   is included as newModel.rxnNotes (opt, default
+%   rxnNote         cell array with strings explaining why reactions were copied
+%                   to the model, to be included as newModel.rxnNotes. Can also
+%                   be string if same rxnNotes should be added for each new
+%                   reaction, or only one reaction is to be added (opt, default
 %                   'Added via addRxnsAndMets()')
-%   confidence      double specifying confidence score for all reactions.
+%   confidence      integer specifying confidence score for all reactions.
 %                   4:  biochemical data: direct evidence from enzymes
 %                       assays
 %                   3:  genetic data: knockout/-in or overexpression
@@ -45,17 +47,19 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 if nargin<6
     confidence=0;
 end
+rxns=convertCharArray(rxns);
 if nargin<5
-    rxnNote='Added via addRxnsGenesMets()';
+    rxnNote={'Added via addRxnsGenesMets()'};
+else
+    rxnNote=convertCharArray(rxnNote);
+    if numel(rxnNote)==1 && numel(rxns)>1
+        rxnNoteArray=cell(numel(rxns),1);
+        rxnNoteArray{:}=rxnNote;
+        rxnNote=rxnNoteArray;
+    end
 end
 if nargin<4
     addGene=false;
-end
-
-%If the supplied object is a character array, then convert it to a cell
-%array
-if ischar(rxns)
-    rxns={rxns};
 end
 
 % Obtain indexes of reactions in source model
@@ -150,8 +154,7 @@ rxnToAdd.rxnNames=sourceModel.rxnNames(rxnIdx);
 rxnToAdd.rxns=sourceModel.rxns(rxnIdx);
 rxnToAdd.lb=sourceModel.lb(rxnIdx);
 rxnToAdd.ub=sourceModel.ub(rxnIdx);
-rxnToAdd.rxnNotes=cell(1,numel(rxnToAdd.rxns));
-rxnToAdd.rxnNotes(:)={rxnNote};
+rxnToAdd.rxnNotes(:)=rxnNote(~notNewRxn);
 rxnToAdd.rxnConfidenceScores=NaN(1,numel(rxnToAdd.rxns));
 if ~isnumeric(confidence)
     EM='confidence score must be numeric';

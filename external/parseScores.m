@@ -17,6 +17,8 @@ function GSS = parseScores(inputFile, predictor)
 
 if nargin<2
     predictor='wolf';
+else
+    predictor=char(predictor);
 end
 
 fid=fopen(inputFile,'r');

@@ -32,7 +32,7 @@ function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputS
 %               hand sides are lumped
 %
 %   Usage: printFluxes(model, fluxes, onlyExchange, cutOffFlux,
-%           outputFile,outputString)
+%           outputFile,outputString,metaboliteList)
 
 if nargin<3
     onlyExchange=true;
@@ -47,19 +47,21 @@ if nargin<5
     fid=1;
 else
     if ~isempty(outputFile)
+        outputFile=char(outputFile);
         fid=fopen(outputFile,'w');
     else
         fid=1;
     end
 end
-if nargin<6
+if nargin<6 || isempty(outputString)
     outputString='%rxnID\t(%rxnName):\t%flux\n';
-end
-if isempty(outputString)
-    outputString='%rxnID\t(%rxnName):\t%flux\n';
+else
+    outputString=char(outputString);
 end
 if nargin<7
     metaboliteList={};
+else
+    metaboliteList=convertCharArray(metaboliteList);
 end
 if numel(fluxes)~=numel(model.rxns)
     EM='The number of fluxes and the number of reactions must be the same';

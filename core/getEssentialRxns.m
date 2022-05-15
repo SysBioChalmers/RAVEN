@@ -16,6 +16,8 @@ function [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns
 
 if nargin<2
     ignoreRxns={};
+else
+    ignoreRxns=convertCharArray(ignoreRxns);
 end
 
 %Too make sure that it doesn't try to optimize for something
