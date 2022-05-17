@@ -47,7 +47,7 @@ filesOriginal = files;
 if ispc % full path starts like "C:\"
     inCurrDir = cellfun(@isempty,regexpi(files,'^[a-z]\:\\'));
 else %isunix full path starts like "/"
-    inCurrDir = cellfun(@isempty,regexpi(files,'\/'));
+    inCurrDir = cellfun(@isempty,regexpi(files,'^\/'));
 end
 files(inCurrDir) = fullfile(cd,files(inCurrDir));
 
