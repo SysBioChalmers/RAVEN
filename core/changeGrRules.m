@@ -20,13 +20,8 @@ if nargin==3
     replace=true;
 end
 
-if isstr(rxns)
-    rxns={rxns};
-end
-
-if isstr(grRules)
-    grRules={grRules};
-end
+rxns=convertCharArray(rxns);
+grRules=convertCharArray(grRules);
 
 if ~(numel(grRules)==numel(rxns))
     error('Number of rxns and grRules should be identical')

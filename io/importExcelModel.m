@@ -74,6 +74,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %   setting ignoreErrors to true.
 %
 %   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
+fileName=char(fileName);
 
 if nargin<2
     removeExcMets=true;

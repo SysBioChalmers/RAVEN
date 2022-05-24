@@ -249,21 +249,22 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %    nSequences,seqIdentity)
 
-if nargin<2
+if nargin<2 || isempty(fastaFile)
     fastaFile=[];
+else
+    fastaFile=char(fastaFile);
 end
 if nargin<3
     dataDir=[];
+else
+    dataDir=char(dataDir);
 end
-if nargin<4
-    outDir=[];
-end
-if isempty(outDir)
+if nargin<4 || isempty(outDir)
     outDir=tempdir;
     %Delete all *.out files if any exist
     delete(fullfile(outDir,'*.out'));
-elseif ~isstr(outDir)
-    error('outDir should be provided as string');
+else
+    outDir=char(outDir);
 end
 if nargin<5
     keepSpontaneous=true;

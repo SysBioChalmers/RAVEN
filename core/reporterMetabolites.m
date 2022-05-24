@@ -39,6 +39,7 @@ function repMets=reporterMetabolites(model,genes,genePValues,printResults,output
 %   Usage: repMets=reporterMetabolites(model,genes,genePValues,printResults,...
 %           outputFile,geneFoldChanges)
 
+genes=convertCharArray(genes);
 if nargin<4
     printResults=false;
 end

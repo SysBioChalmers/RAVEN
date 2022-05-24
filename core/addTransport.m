@@ -25,18 +25,14 @@ function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,o
 %   Usage: [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,...
 %           isRev,onlyToExisting,prefix)
 
-if iscell(fromComp)
-    fromComp=fromComp{1};
-end
+fromComp=char(fromComp);
 [I, fromID]=ismember(model.comps,fromComp);
 fromID=find(fromID);
 if sum(I)~=1
     EM='fromComps must have exactly one match in model.comps';
     dispEM(EM);
 end
-if ischar(toComps)
-    toComps={toComps};
-end
+toComps=convertCharArray(toComps);
 [I, toIDs]=ismember(toComps,model.comps);
 if ~all(I)
     EM='All compartments in toComps must have a match in model.comps';
@@ -45,12 +41,11 @@ end
 if nargin<4
     %Find all metabolites in fromComp
     metNames=model.metNames(model.metComps==fromID);
-end
-
-%If an empty set was given
-if isempty(metNames)
+elseif isempty(metNames)
     %Find all metabolites in fromComp
     metNames=model.metNames(ismember(model.metComps,model.comps(fromID)));
+else
+    metNames=convertCharArray(metNames);
 end
 
 if nargin<5
@@ -61,12 +56,11 @@ if nargin<6
 end
 if nargin<7
     prefix='tr_';
+else
+    prefix=char(prefix);
 end
 
 %Check that the names are unique
-if ischar(metNames)
-    metNames={metNames};
-end
 if numel(unique(metNames))~=numel(metNames)
     dispEM('Not all metabolite names are unique');
 end

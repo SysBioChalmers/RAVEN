@@ -50,6 +50,8 @@ originalModel=model;
 if nargin<5
     oeFactor=10;
 end
+testType=char(testType);
+analysisType=char(analysisType);
 
 %Check that the test type is correct
 if ~strcmpi(testType,'sgd') && ~strcmpi(testType,'dgd') && ~strcmpi(testType,'sgo') && ~strcmpi(testType,'dgo')

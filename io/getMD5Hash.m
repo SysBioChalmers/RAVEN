@@ -15,6 +15,7 @@ function md5Hash=getMD5Hash(inputFile,binEnd)
 %   md5Hash         string containing an MD5 hash for inputFile
 %   
 %   Usage: md5Hash=getMD5Hash(inputFile,binEnd)
+inputFile=char(inputFile);
 
 if nargin<2
     if isunix
@@ -26,15 +27,15 @@ if nargin<2
     elseif ispc
         binEnd='.exe';
     else
-        dispEM('Unknown OS, exiting.')
-        return
+        error('Unknown OS, exiting.')
     end
+else
+    binEnd=char(binEnd);
 end
 
 %Check if binEnd is valid
-if ~strcmp(binEnd,'.mac') && ~strcmp(binEnd,'') && ~strcmp(binEnd,'.exe')
-   dispEM('Unknown OS, exiting.')
-   return
+if ~any(strcmp(binEnd,{'.mac','','.exe'}))
+   error('Unknown OS, exiting.')
 end
 
 %Check file existence

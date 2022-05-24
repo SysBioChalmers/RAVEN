@@ -15,6 +15,7 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
 %                       identifiers (opt, default false)
 %
 %   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
+fileName=char(fileName);
 if nargin<3
     exportGeneComplexes=false;
 end
@@ -138,7 +139,7 @@ end
 %Generate an empty SBML structure
 modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
 modelSBML.metaid=model.id;
-modelSBML.id=model.id;
+modelSBML.id=regexprep(model.id,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 modelSBML.name=model.name;
 
 if isfield(model,'annotation')

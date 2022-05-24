@@ -155,7 +155,7 @@ function testModel2 = getTstModel2()
                            'a[s] <=> b[s]';...
                            'b[s] =>'};
     rxnsToAdd.grRules = testModel2.genes;
-    testModel2 = addRxns(testModel2,rxnsToAdd, 3,true,true);
+    testModel2 = addRxns(testModel2,rxnsToAdd,3,'',true,true);
     testModel2.c = [0;0;0;1];%optimize for output flux, if this is used, not sure
     testModel2.ub = repmat(1000,4,1);
     testModel2.lb = [-1000;0;-1000;0];
@@ -291,7 +291,7 @@ function testftINIT_T0003(testCase)
     testModelTasks = getTstModelTasks();
     testRxnScores = getTstModelRxnScores();
 
-    mTempRef = addBoundaryMets(testModel);
+    mTempRef = closeModel(testModel);
     mTempRef = removeReactions(mTempRef, {'R1';'R8'});
     mTemp = removeReactions(mTempRef, {'R7'});
     mTemp.id = 'tmp';
@@ -552,7 +552,7 @@ function testftINIT_T0050(testCase)
     %this is just to show that they become different, not really part of the test case
     %paramsL2 = struct();
     %paramsL2.TimeLimit = 1000;
-    %testModelL2 = addBoundaryMets(testModelL);
+    %testModelL2 = closeModel(testModelL);
     %init_modelOrig = getINITModel2(testModelL2,arrayDataL.tissues{1},[],[],arrayDataL,[],true,[],true,true,[],paramsL2);
 
     %in this call, I have modified the code - the possibility to turn off met secretion + don't allow flux in both directions is not possible.

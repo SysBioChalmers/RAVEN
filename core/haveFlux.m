@@ -27,6 +27,8 @@ if isempty(cutOff)
 end
 if nargin<3
     rxns=model.rxns;
+elseif ~islogical(rxns) && ~isnumeric(rxns)
+    rxns=convertCharArray(rxns);
 end
 
 %This is since we're maximizing for the sum of fluxes, which isn't possible

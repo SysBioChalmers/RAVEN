@@ -32,6 +32,8 @@ if nargin<6
 end
 if nargin<7
     metaboliteList=[];
+else
+    metaboliteList=convertCharArray(metaboliteList);
 end
 
 %If a metabolite list is to be used, then find all the reactions involving

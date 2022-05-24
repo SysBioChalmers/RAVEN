@@ -92,6 +92,7 @@ if isfield(model,'geneComps')
     dispEM(EM,false);
 end
 
+defaultCompartment=char(defaultCompartment);
 I=ismember(defaultCompartment,GSS.compartments);
 if I==false
     EM='defaultCompartment not found in GSS';
