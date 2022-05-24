@@ -423,9 +423,12 @@ function testftINIT_T0008(testCase)
     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R4';'R6';'R7';'R8'})), 1)
 
     %now add metabolite g
+    %modify the scores a bit
+    prepDataTest5 = prepINITModel(testModel5, {}, {'R10'}, false, {}, 's');
+    arrayData1.levels(7) = getExprForRxnScore(-1.1); %modify to avoid randomness
     tst1ResModel1 = ftINIT(prepDataTest5,arrayData1.tissues{1},[],[],arrayData1,{'g'},getINITSteps(),true,true,testParams);
     %We expect R2 to be replaced with R11 and R13
-    verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R7';'R8';'R11';'R13'})), 1)
+    verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R8';'R11';'R13'})), 1)
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
