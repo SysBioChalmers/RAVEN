@@ -2,7 +2,10 @@ function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,d
 % contractModel
 %   Contracts a model by grouping all identical reactions. Similar to the
 %   deleteDuplicates part in simplifyModel but more care is taken here
-%   when it comes to gene associations
+%   when it comes to gene associations. If the duplicated reactions have
+%   '_EXP_*' suffixes (where * is a digit), then the model is assumed to
+%   have been passed through expandModel, and these suffixes are removed
+%   here.
 %
 %   model                  a model structure
 %   distReverse            distinguish reactions with same metabolites
@@ -99,6 +102,11 @@ for i=1:numel(mergedRxns)
         indexedDuplicateRxns{duplRxn(1)}=model.rxns{duplRxn(2)};
     else
         indexedDuplicateRxns{duplRxn(1)}=strjoin(model.rxns(duplRxn(2:end)),';');
+    end
+    %If all reactions have _EXP_* (where * is digit) as suffix, then the
+    %model had passed through expandModel(), and these suffixes are removed.
+    if all(~cellfun(@isempty,regexp(model.rxns(duplRxn),'_EXP_\d+$')))
+        model.rxns(duplRxn(1))=regexprep(model.rxns(duplRxn(1)),'_EXP_\d+$','');
     end
 end
 
