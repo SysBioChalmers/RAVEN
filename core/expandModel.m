@@ -34,8 +34,6 @@ if any(rxnsToExpand)
         %Check that it doesn't contain nested 'and' and 'or' relations and
         %print a warning if it does
         if ~isempty(strfind(model.grRules{rxnsToExpand(i)},' and '))
-            EM=['Reaction ' model.rxns{rxnsToExpand(i)} ' contains nested and/or-relations. Large risk of errors'];
-            dispEM(EM,false);
             rxnToCheck{end+1,1}=model.rxns{rxnsToExpand(i)};
         end
         
@@ -124,6 +122,8 @@ else
     %There are no reactions to expand, return the model as is
     newModel=model;
 end
+warning(['The following reactions contain nested and/or-relations, which might not have been interpreted correctly:%s\n' ...
+    strjoin(rxnToCheck,'\n')],'');
 
 %Fix grRules and reconstruct rxnGeneMat
 [grRules,rxnGeneMat] = standardizeGrRules(newModel,true);
