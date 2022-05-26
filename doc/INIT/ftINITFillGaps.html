@@ -1,0 +1,207 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of ftINITFillGaps</title>
+  <meta name="keywords" content="ftINITFillGaps">
+  <meta name="description" content="ftINITFillGaps">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">INIT</a> &gt; ftINITFillGaps.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for INIT&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>ftINITFillGaps
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>ftINITFillGaps</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefModel,allowNetProduction,supressWarnings,rxnScores,params,verbose) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> ftINITFillGaps
+   Variant of fillGaps specially adapted to speed up generation of ftINIT models.
+
+   tModel              model that contains the task-specific rxns.
+   origModel           model without task-specific rxns.         
+   tRefModel           reference tModel - the full tModel, containing all rxns
+                       used for gap-filling of tModel + the task-specific rxns
+   allowNetProduction  true if net production of all metabolites is
+                       allowed. A reaction can be unable to carry flux because one of
+                       the reactants is unavailable or because one of the
+                       products can't be further processed. If this
+                       parameter is true, only the first type of
+                       unconnectivity is considered (opt, default false)
+   useModelConstraints true if the constraints specified in the tModel
+                       structure should be used. If false then reactions
+                       included from the template tModel(s) so that as many
+                       reactions as possible in tModel can carry flux
+                       (opt, default false)
+   supressWarnings     false if warnings should be displayed (opt, default
+                       false)
+   rxnScores           scores for each of the reactions in the
+                       reference tModel. 
+                       The solver will try to maximize the sum of the
+                       scores for the included reactions
+   params              parameter structure as used by getMILPParams
+   verbose             if true, the MILP progression will be shown. 
+
+   addedRxns           the rxns added
+   newModel            the tModel with reactions added to fill gaps
+   exitFlag            1: optimal solution found
+                      -1: no feasible solution found
+                      -2: optimization time out
+
+   This method works by merging the tModel to the reference model and
+   checking which reactions can carry flux. All reactions that can't
+   carry flux are removed.
+   If useModelConstraints is false it then solves the MILP problem of
+   minimizing the number of active reactions from the reference model
+   that are required to have flux in all the reactions in model. This
+   requires that the input tModel has exchange reactions present for the
+   nutrients that are needed for its metabolism. If useModelConstraints is
+   true then the problem is to include as few reactions as possible from
+   the reference models in order to satisfy the tModel constraints.
+   The intended use is that the user can attempt a general gap-filling using
+   useModelConstraint=false or a more targeted gap-filling by setting
+   constraints in the model structure and then use
+   useModelConstraints=true. Say that the user want to include reactions
+   so that all biomass components can be synthesized. He/she could then
+   define a biomass equation and set the lower bound to &gt;0. Running this
+   function with useModelConstraints=true would then give the smallest set
+   of reactions that have to be included in order for the tModel to produce
+   biomass.
+
+   Usage: [newModel, exitFlag]=...
+           fillGaps(tModel,models,allowNetProduction,...
+           supressWarnings,rxnScores,params)</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="ftINITFillGapsMILP.html" class="code" title="function [x,I,exitFlag]=ftINITFillGapsMILP(model, toMinimize, params, scores, verbose)">ftINITFillGapsMILP</a>	ftINITFillGapsMILP</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="ftINITFillGapsForAllTasks.html" class="code" title="function [outModel, addedRxns]=ftINITFillGapsForAllTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params,verbose)">ftINITFillGapsForAllTasks</a>	ftINITFillGapsForAllTasks</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefModel,allowNetProduction,supressWarnings,rxnScores,params,verbose)</a>
+0002 <span class="comment">% ftINITFillGaps</span>
+0003 <span class="comment">%   Variant of fillGaps specially adapted to speed up generation of ftINIT models.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%   tModel              model that contains the task-specific rxns.</span>
+0006 <span class="comment">%   origModel           model without task-specific rxns.</span>
+0007 <span class="comment">%   tRefModel           reference tModel - the full tModel, containing all rxns</span>
+0008 <span class="comment">%                       used for gap-filling of tModel + the task-specific rxns</span>
+0009 <span class="comment">%   allowNetProduction  true if net production of all metabolites is</span>
+0010 <span class="comment">%                       allowed. A reaction can be unable to carry flux because one of</span>
+0011 <span class="comment">%                       the reactants is unavailable or because one of the</span>
+0012 <span class="comment">%                       products can't be further processed. If this</span>
+0013 <span class="comment">%                       parameter is true, only the first type of</span>
+0014 <span class="comment">%                       unconnectivity is considered (opt, default false)</span>
+0015 <span class="comment">%   useModelConstraints true if the constraints specified in the tModel</span>
+0016 <span class="comment">%                       structure should be used. If false then reactions</span>
+0017 <span class="comment">%                       included from the template tModel(s) so that as many</span>
+0018 <span class="comment">%                       reactions as possible in tModel can carry flux</span>
+0019 <span class="comment">%                       (opt, default false)</span>
+0020 <span class="comment">%   supressWarnings     false if warnings should be displayed (opt, default</span>
+0021 <span class="comment">%                       false)</span>
+0022 <span class="comment">%   rxnScores           scores for each of the reactions in the</span>
+0023 <span class="comment">%                       reference tModel.</span>
+0024 <span class="comment">%                       The solver will try to maximize the sum of the</span>
+0025 <span class="comment">%                       scores for the included reactions</span>
+0026 <span class="comment">%   params              parameter structure as used by getMILPParams</span>
+0027 <span class="comment">%   verbose             if true, the MILP progression will be shown.</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">%   addedRxns           the rxns added</span>
+0030 <span class="comment">%   newModel            the tModel with reactions added to fill gaps</span>
+0031 <span class="comment">%   exitFlag            1: optimal solution found</span>
+0032 <span class="comment">%                      -1: no feasible solution found</span>
+0033 <span class="comment">%                      -2: optimization time out</span>
+0034 <span class="comment">%</span>
+0035 <span class="comment">%   This method works by merging the tModel to the reference model and</span>
+0036 <span class="comment">%   checking which reactions can carry flux. All reactions that can't</span>
+0037 <span class="comment">%   carry flux are removed.</span>
+0038 <span class="comment">%   If useModelConstraints is false it then solves the MILP problem of</span>
+0039 <span class="comment">%   minimizing the number of active reactions from the reference model</span>
+0040 <span class="comment">%   that are required to have flux in all the reactions in model. This</span>
+0041 <span class="comment">%   requires that the input tModel has exchange reactions present for the</span>
+0042 <span class="comment">%   nutrients that are needed for its metabolism. If useModelConstraints is</span>
+0043 <span class="comment">%   true then the problem is to include as few reactions as possible from</span>
+0044 <span class="comment">%   the reference models in order to satisfy the tModel constraints.</span>
+0045 <span class="comment">%   The intended use is that the user can attempt a general gap-filling using</span>
+0046 <span class="comment">%   useModelConstraint=false or a more targeted gap-filling by setting</span>
+0047 <span class="comment">%   constraints in the model structure and then use</span>
+0048 <span class="comment">%   useModelConstraints=true. Say that the user want to include reactions</span>
+0049 <span class="comment">%   so that all biomass components can be synthesized. He/she could then</span>
+0050 <span class="comment">%   define a biomass equation and set the lower bound to &gt;0. Running this</span>
+0051 <span class="comment">%   function with useModelConstraints=true would then give the smallest set</span>
+0052 <span class="comment">%   of reactions that have to be included in order for the tModel to produce</span>
+0053 <span class="comment">%   biomass.</span>
+0054 <span class="comment">%</span>
+0055 <span class="comment">%   Usage: [newModel, exitFlag]=...</span>
+0056 <span class="comment">%           fillGaps(tModel,models,allowNetProduction,...</span>
+0057 <span class="comment">%           supressWarnings,rxnScores,params)</span>
+0058 
+0059 <span class="keyword">if</span> isempty(rxnScores)
+0060     rxnScores=cell(numel(models),1);
+0061     <span class="keyword">for</span> i=1:numel(models)
+0062         rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
+0063     <span class="keyword">end</span>
+0064 <span class="keyword">end</span>
+0065 
+0066 <span class="comment">%Simplify the template models to remove constrained rxns. At the same time,</span>
+0067 <span class="comment">%check that the id of the template models isn't the same as the tModel. That</span>
+0068 <span class="comment">%would cause an error further down</span>
+0069 tRefModel.rxnScores=rxnScores;
+0070 tRefModel=simplifyModel(tRefModel,false,false,true);
+0071 
+0072 <span class="comment">%This is a rather ugly solution to the issue that it's a bit tricky to keep</span>
+0073 <span class="comment">%track of which scores belong to which reactions. This requires that</span>
+0074 <span class="comment">%removeReactions and mergeModels are modified to check for the new field.</span>
+0075 tModel.rxnScores=zeros(numel(tModel.rxns),1);
+0076 
+0077 <span class="comment">%First merge all models into one big one</span>
+0078 fullModel = tRefModel;<span class="comment">%mergeModels([{tModel};models],'metNames',true);</span>
+0079 
+0080 <span class="comment">%Add that net production is ok</span>
+0081 <span class="keyword">if</span> allowNetProduction==true
+0082     <span class="comment">%A second column in tModel.b means that the b field is lower and upper</span>
+0083     <span class="comment">%bound on the RHS.</span>
+0084     tModel.b=[tModel.b(:,1) inf(numel(tModel.mets),1)];
+0085     fullModel.b=[fullModel.b(:,1) inf(numel(fullModel.mets),1)];
+0086 <span class="keyword">end</span>
+0087 
+0088 
+0089 fullModel.c(:)=0;
+0090 
+0091 <span class="comment">%Then minimize for the number of fluxes used. The fixed rxns doesn't need</span>
+0092 <span class="comment">%to participate</span>
+0093 templateRxns = find(~ismember(fullModel.rxns, tModel.rxns)); <span class="comment">%Check if this is slow, in that case keep track of this in fitTasksOpt and send it in</span>
+0094 
+0095 [~, J, exitFlag]=<a href="ftINITFillGapsMILP.html" class="code" title="function [x,I,exitFlag]=ftINITFillGapsMILP(model, toMinimize, params, scores, verbose)">ftINITFillGapsMILP</a>(fullModel,templateRxns,params,fullModel.rxnScores(templateRxns),verbose);<span class="comment">%only the scores from the template rxns are used, so the others doesn't matter</span>
+0096 
+0097 <span class="comment">%Remove everything except for the added ones</span>
+0098 addedRxns = fullModel.rxns(templateRxns(J));
+0099 rxnsToAdd.rxns = addedRxns;
+0100 rxnsToAdd.equations = constructEquations(fullModel, addedRxns);
+0101 rxnsToAdd.ub = fullModel.ub(templateRxns(J));
+0102 rxnsToAdd.lb = fullModel.lb(templateRxns(J));
+0103 newModel = addRxns(origModel,rxnsToAdd, 3, [], true); <span class="comment">%we ignore gene rules etc here, they are not needed - we regenerate the model in the end by subtracting rxns from the full model.</span>
+0104 
+0105 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
