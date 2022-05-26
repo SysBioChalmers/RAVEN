@@ -116,6 +116,7 @@ if any(rxnsToExpand)
                 model.rxnConfidenceScores=[model.rxnConfidenceScores;model.rxnConfidenceScores(rxnsToExpand(i))];
             end
         end
+        model.rxns{rxnsToExpand(i)}=[model.rxns{rxnsToExpand(i)}, '_EXP_1'];
     end
     newModel=model;
 else
