@@ -100,8 +100,8 @@ end
 if nargin < 6
     metabolomicsData = [];
 end
-if nargin < 7
-    INITSteps = getINITSteps([],'default');
+if nargin < 7 || isempty(INITSteps)
+    INITSteps = getINITSteps([],'1+1');
 end
 if nargin < 8 || isempty(removeGenes)
     removeGenes = true;
