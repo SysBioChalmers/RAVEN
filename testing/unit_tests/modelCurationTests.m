@@ -398,15 +398,15 @@ modelManual.mets(end+1:end+7)={'ac_c_p';'actp_c_p';'adp_c_p';'atp_c_p';'actp_c_e
 modelManual.S(end+1:end+7,:)=zeros(7,numel(modelManual.rxns)-2);
 modelManual.S(:,end+1:end+2)=zeros(numel(modelManual.mets),2);
 
-modelManual.S([73,74,75,76],end-1)=[-1,1,1,-1];
-modelManual.S([7,77,78,79],end)=[-1,1,1,-1];
+modelManual.S([73,74,75,76],end-1)=[1,-1,-1,1];
+modelManual.S([7,77,78,79],end)=[1,-1,-1,1];
 
 modelManual.lb(end+1:end+2)=[-1000;-1000];
 modelManual.ub(end+1:end+2)=[1000;1000];
 modelManual.rev(end+1:end+2)=[1;1];
 modelManual.c(end+1:end+2)=[0;0];
 modelManual.rxnNames(end+1:end+2)={'acetate kinase';'acetate kinase'};
-modelManual.grRules(end+1:end+2)={'b2296 or b1849 or b3115';'b2296 or b1849 or b3115'};
+modelManual.grRules(end+1:end+2)={'b1849 or b2296 or b3115';'b1849 or b2296 or b3115'};
 modelManual.eccodes(end+1:end+2)={'2.7.2.1';'2.7.2.1'};
 
 modelManual.rxnGeneMat(end+1:end+2,:)=zeros(2,numel(modelManual.genes));
