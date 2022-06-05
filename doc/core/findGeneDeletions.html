@@ -222,65 +222,64 @@ This function is called by:
 0130     <span class="keyword">end</span>
 0131     fluxes=fluxes(:,solvable);
 0132     genes=geneMapping(solvable);
-0133 <span class="keyword">end</span>
-0134 
-0135 <span class="comment">%Now do for DGO. This is rather straight forward since it is always</span>
-0136 <span class="comment">%solvable and it doesn't matter if there are iso-enzymes</span>
-0137 <span class="keyword">if</span> strcmpi(testType,<span class="string">'dgo'</span>)
-0138     genesToModify=nchoosek(1:numel(model.genes),2);
-0139     genes=geneMapping(genesToModify);
-0140     <span class="comment">%Since I assume that this is never lethal I set the details already</span>
-0141     details(geneMapping)=1;
-0142     
-0143     fluxes=sparse(numel(model.rxns),size(genesToModify,1));
-0144     <span class="keyword">for</span> i=1:size(genesToModify,1)
-0145         I=find(model.rxnGeneMat(:,genesToModify(i,:)));
-0146         <span class="comment">%To over express a gene, the stoichiometry of the corresponding</span>
-0147         <span class="comment">%reactions are changed so that the same flux leads to a higher</span>
-0148         <span class="comment">%production</span>
-0149         tempModel=model;
-0150         tempModel.S(:,I)=tempModel.S(:,I).*oeFactor;
-0151         fluxA=qMOMA(tempModel,refModel);
-0152         fluxes(:,i)=fluxA;
-0153         grRatioMuts(i)=fluxA(logical(model.c))/growthWT;
-0154     <span class="keyword">end</span>
-0155 <span class="keyword">end</span>
-0156 
-0157 <span class="comment">%For double deletions FBA or MOMA</span>
-0158 <span class="keyword">if</span> strcmpi(testType,<span class="string">'dgd'</span>)
-0159     <span class="comment">%This is a little lazy but it's fine. Check which genes have already</span>
-0160     <span class="comment">%been deleted in 'sgd' analysis.</span>
-0161     [~, I]=ismember(originalGenes(details==1),model.genes);
-0162     genesToModify=nchoosek(I,2);
-0163     genes=geneMapping(genesToModify);
-0164     
-0165     fluxes=sparse(numel(model.rxns),size(genesToModify,1));
-0166     <span class="keyword">for</span> i=1:size(genesToModify,1)
-0167         tempModel=<a href="removeGenes.html" class="code" title="function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)">removeGenes</a>(model,genesToModify(i,:),false,false,false);
-0168         
-0169         <span class="keyword">if</span> strcmpi(analysisType,<span class="string">'fba'</span>)
-0170             sol=solveLP(tempModel);
-0171         <span class="keyword">else</span>
-0172             [fluxA, ~, flag]=qMOMA(tempModel,refModel);
-0173             sol.x=fluxA;
-0174             sol.stat=flag;
-0175         <span class="keyword">end</span>
-0176         
-0177         <span class="keyword">if</span> sol.stat==1
-0178             fluxes(:,i)=sol.x;
-0179             grRatioMuts(i)=-sol.f/growthWT;
-0180         <span class="keyword">else</span>
-0181             grRatioMuts(i)=0;
-0182         <span class="keyword">end</span>
-0183     <span class="keyword">end</span>
-0184 <span class="keyword">end</span>
-0185 
-0186 <span class="comment">%Map back to the old model</span>
-0187 [~, I]=ismember(model.rxns,originalModel.rxns);
-0188 temp=fluxes;
-0189 fluxes=sparse(numel(originalModel.rxns),size(temp,2));
-0190 fluxes(I,:)=temp;
-0191 <span class="keyword">end</span></pre></div>
+0133     grRatioMuts=grRatioMuts(solvable);
+0134 <span class="keyword">end</span>
+0135 
+0136 <span class="comment">%Now do for DGO. This is rather straight forward since it is always</span>
+0137 <span class="comment">%solvable and it doesn't matter if there are iso-enzymes</span>
+0138 <span class="keyword">if</span> strcmpi(testType,<span class="string">'dgo'</span>)
+0139     genesToModify=nchoosek(1:numel(model.genes),2);
+0140     genes=geneMapping(genesToModify);
+0141     <span class="comment">%Since I assume that this is never lethal I set the details already</span>
+0142     details(geneMapping)=1;
+0143     
+0144     fluxes=sparse(numel(model.rxns),size(genesToModify,1));
+0145     <span class="keyword">for</span> i=1:size(genesToModify,1)
+0146         I=find(model.rxnGeneMat(:,genesToModify(i,:)));
+0147         <span class="comment">%To over express a gene, the stoichiometry of the corresponding</span>
+0148         <span class="comment">%reactions are changed so that the same flux leads to a higher</span>
+0149         <span class="comment">%production</span>
+0150         tempModel=model;
+0151         tempModel.S(:,I)=tempModel.S(:,I).*oeFactor;
+0152         fluxA=qMOMA(tempModel,refModel);
+0153         fluxes(:,i)=fluxA;
+0154         grRatioMuts(i)=fluxA(logical(model.c))/growthWT;
+0155     <span class="keyword">end</span>
+0156 <span class="keyword">end</span>
+0157 
+0158 <span class="comment">%For double deletions FBA or MOMA</span>
+0159 <span class="keyword">if</span> strcmpi(testType,<span class="string">'dgd'</span>)
+0160     <span class="comment">%This is a little lazy but it's fine. Check which genes have already</span>
+0161     <span class="comment">%been deleted in 'sgd' analysis.</span>
+0162     [~, I]=ismember(originalGenes(details==1),model.genes);
+0163     genesToModify=nchoosek(I,2);
+0164     genes=geneMapping(genesToModify);
+0165     
+0166     fluxes=sparse(numel(model.rxns),size(genesToModify,1));
+0167     <span class="keyword">for</span> i=1:size(genesToModify,1)
+0168         tempModel=<a href="removeGenes.html" class="code" title="function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)">removeGenes</a>(model,genesToModify(i,:),false,false,false);
+0169         
+0170         <span class="keyword">if</span> strcmpi(analysisType,<span class="string">'fba'</span>)
+0171             sol=solveLP(tempModel);
+0172         <span class="keyword">else</span>
+0173             [fluxA, ~, flag]=qMOMA(tempModel,refModel);
+0174             sol.x=fluxA;
+0175             sol.stat=flag;
+0176         <span class="keyword">end</span>
+0177         
+0178         <span class="keyword">if</span> sol.stat==1
+0179             fluxes(:,i)=sol.x;
+0180             grRatioMuts(i)=-sol.f/growthWT;
+0181         <span class="keyword">end</span>
+0182     <span class="keyword">end</span>
+0183 <span class="keyword">end</span>
+0184 
+0185 <span class="comment">%Map back to the old model</span>
+0186 [~, I]=ismember(model.rxns,originalModel.rxns);
+0187 temp=fluxes;
+0188 fluxes=sparse(numel(originalModel.rxns),size(temp,2));
+0189 fluxes(I,:)=temp;
+0190 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
