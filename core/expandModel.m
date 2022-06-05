@@ -124,7 +124,7 @@ else
     newModel=model;
 end
 warning(['The following reactions contain nested and/or-relations, which might not have been interpreted correctly:%s\n' ...
-    strjoin(rxnToCheck,'\n')],'');
+    strjoin(rxnToCheck,', ')],'');
 
 %Fix grRules and reconstruct rxnGeneMat
 [grRules,rxnGeneMat] = standardizeGrRules(newModel,true);
