@@ -130,6 +130,7 @@ if strcmpi(testType,'sgd') || strcmpi(testType,'sgo') || strcmpi(testType,'dgd')
     end
     fluxes=fluxes(:,solvable);
     genes=geneMapping(solvable);
+    grRatioMuts=grRatioMuts(solvable);
 end
 
 %Now do for DGO. This is rather straight forward since it is always
@@ -177,8 +178,6 @@ if strcmpi(testType,'dgd')
         if sol.stat==1
             fluxes(:,i)=sol.x;
             grRatioMuts(i)=-sol.f/growthWT;
-        else
-            grRatioMuts(i)=0;
         end
     end
 end
