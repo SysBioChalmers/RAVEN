@@ -23,16 +23,21 @@ end
 
 %% Define default parameters, which will then be used to make solver-
 % specific solverparams structures
-defaultparams.feasTol        = 1e-9;
-defaultparams.optTol         = 1e-9;
-defaultparams.objTol         = 1e-9;
+defaultparams.feasTol        = 1e-6;
+defaultparams.optTol         = 1e-6;
+defaultparams.objTol         = 1e-6;
 defaultparams.timeLimit      = 1000;
 %defaultparams.iterationLimit = 1000;
 defaultparams.intTol         = 1e-12;
 defaultparams.relMipGapTol   = 1e-12;
 defaultparams.absMipGapTol   = 1e-12;
 
-solver=getpref('RAVEN','solver');
+%Set as global variable for speed improvement if optimizeProb is run many times
+global RAVENSOLVER;
+if isempty(RAVENSOLVER)
+    RAVENSOLVER = getpref('RAVEN','solver');
+end
+solver=RAVENSOLVER;
 
 switch solver
     %% Use whatever solver is set by COBRA Toolbox changeCobraSolver
