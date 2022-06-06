@@ -24,10 +24,12 @@ elseif isunix
     matlabPaths=regexp(path, ':', 'split')';
 end
 
-hasConflicts=false;
+overlapPath={};
+overlapFunctions={};
+multiRaven=false;
 
 for i=1:numel(matlabPaths)
-    if ~any(strfind(matlabPaths{i},ravenDir))
+    if ~startsWith(matlabPaths{i},ravenDir)
         temp_res=dir([matlabPaths{i} '/*.m']);
         if ~isempty(temp_res)
             pathFunctions={temp_res.name}';
@@ -36,26 +38,29 @@ for i=1:numel(matlabPaths)
         end
         if ~isempty(pathFunctions) && ~any(ismember('Contents.m',pathFunctions))
             if any(ismember(ravenFunctions,pathFunctions))
-                fprintf('Not OK\n');
                 if sum(ismember(ravenFunctions,pathFunctions))>(numel(ravenFunctions)/4)
-                    EM='Multiple RAVEN versions detected in MATLAB path. Leave only one RAVEN version in MATLAB path and re-run checkInstallation\n';
-                    dispEM(EM);
+                    multiRaven=true;
                 else
-                    disp(['WARNING: Duplicate functions in ',matlabPaths{i},': ']);
-                    ovrlpFunctions=ravenFunctions(ismember(ravenFunctions,pathFunctions));
-                    disp(ovrlpFunctions);
-                    hasConflicts=true;
+                    multiFunction=true;
+                    overlapPath = [overlapPath, matlabPaths(i)];
+                    overlapFunctions = [overlapFunctions, {ravenFunctions(ismember(ravenFunctions,pathFunctions))}];
                 end
             end
         end
     end
 end
 
-if hasConflicts
+if multiRaven==true || multiFunction == true
     fprintf('Fail\n')
-    fprintf('  It is strongly recommended to resolve conflicting functions as this may compromise RAVEN functionality\n');
+    if multiRaven==true
+        error('Multiple RAVEN versions detected in MATLAB path. Leave only one RAVEN version in MATLAB path and re-run checkInstallation');
+    elseif multiFunction == true
+        for i=1:numel(overlapPath)
+            fprintf(['   Duplicate functions in ',regexprep(overlapPath{i},'(\\)','\\$1'),'\n']);
+            fprintf(['     ' strjoin(overlapFunctions{i},'\n     ') '\n']);
+        end
+    fprintf('   Resolve conflicting functions to ensure RAVEN functionality\n');
+    end
 else
-    fprintf('Pass\n');
-end
-
+    fprintf('Pass\n')
 end
