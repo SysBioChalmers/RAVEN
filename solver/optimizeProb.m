@@ -1,15 +1,19 @@
-function res = optimizeProb(prob,params)
+function res = optimizeProb(prob,params,verbose)
 % optimizeProb
 %   Optimize an LP or MILP formulated in cobra terms.
 %
 %   prob	cobra style LP/MILP problem struct to be optimised
 %   params	solver specific parameters (optional)
+%   verbose if true MILP progress is shown (opt, default true)
 %
 %   res		the output structure from the selected solver RAVENSOLVER
 %   		(cobra style)
 
 if nargin<2 || isempty(params)
     params=struct();
+end
+if nargin<3 || isempty(verbose)
+    verbose = true;
 end
 if(~ispref('RAVEN','solver'))
     dispEM('RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
@@ -31,7 +35,10 @@ defaultparams.timeLimit      = 1000;
 defaultparams.intTol         = 1e-12;
 defaultparams.relMipGapTol   = 1e-12;
 defaultparams.absMipGapTol   = 1e-12;
-
+if milp
+    defaultparams.MIPGap     = 1e-12; 
+    defaultparams.Seed       = 1;
+end
 solver=getpref('RAVEN','solver');
 
 switch solver
@@ -48,7 +55,14 @@ switch solver
     %% Use Gurobi in a MATLAB environment
     case 'gurobi'
     if milp
-        solverparams.OutputFlag = 1;
+        if verbose
+            solverparams.OutputFlag = 1;
+        else
+            solverparams.OutputFlag = 0;
+        end
+        solverparams.intTol = 10^-9; %min val for gurobi
+        solverparams.MIPGap = defaultparams.MIPGap;
+        solverparams.Seed = defaultparams.Seed;
     else
         solverparams.OutputFlag = 0;
     end
@@ -60,11 +74,26 @@ switch solver
     solverparams = structUpdate(solverparams,params);
     
     % Restructering problem according to gurobi format
-    prob.csense = renameparams(prob.csense, {'L','G','E'}, {'<','>','='});
-    prob.osense = renameparams(num2str(prob.osense), {'1','-1'}, {'min','max'});
+    if isfield(prob, 'csense')
+        prob.csense = renameparams(prob.csense, {'L','G','E'}, {'<','>','='});
+        prob.sense = prob.csense;
+        prob = rmfield(prob, {'csense'});
+    end
+    if isfield(prob, 'osense')
+        prob.osense = renameparams(num2str(prob.osense), {'1','-1'}, {'min','max'});
+        prob.modelsense = prob.osense;
+        prob = rmfield(prob, {'osense'});
+    end
+    [prob.obj, prob.rhs] = deal(prob.c, prob.b);
+    prob = rmfield(prob, {'c','b'});
     
-    [prob.obj, prob.rhs, prob.sense, prob.modelsense] = deal(prob.c, prob.b, prob.csense, prob.osense);
-    prob = rmfield(prob, {'c','b','csense','osense'});
+    %Rename intTol to IntFeasTol
+    if milp
+        solverparams.IntFeasTol = solverparams.intTol;
+        solverparams  = rmfield(solverparams, {'intTol'});
+        prob.vtype = prob.vartype;
+        prob  = rmfield(prob, {'vartype'});
+    end
     
     resG = gurobi(prob,solverparams);
     
@@ -85,6 +114,8 @@ switch solver
         end
         if ~milp
             [res.vbasis, res.cbasis] = deal(resG.vbasis, resG.cbasis);
+		else
+			res.mipgap = resG.mipgap; 
         end
     catch
         res.stat = 0;

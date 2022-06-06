@@ -1,0 +1,577 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of ftINIT</title>
+  <meta name="keywords" content="ftINIT">
+  <meta name="description" content="ftINIT">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">INIT</a> &gt; ftINIT.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for INIT&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>ftINIT
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>ftINIT</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes] = ftINIT(prepData, tissue, celltype, hpaData, transcrData, metabolomicsData, INITSteps, removeGenes, useScoresForTasks, paramsFT, verbose) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> ftINIT
+   Main function for generates a model using the ftINIT algorithm, based 
+   on proteomics and/or transcriptomics and/or metabolomics and/or metabolic 
+   tasks. The algorithm is not designed for running with metabolomics only.
+   The function prepINITModel needs to be run first for the template
+   model (such as the generic Human-GEM), but only need to be run once. This
+   function precalculates things independent of the omics to speed up the model
+   generation process, and outputs the prepData, which is input to this function.
+
+   prepData            The prepdata for the model.
+   tissue              tissue to score for. Should exist in either
+                       hpaData.tissues or transcrData.tissues
+   celltype            cell type to score for. Should exist in either
+                       hpaData.celltypes or transcrData.celltypes for this
+                       tissue (opt, default is to use the max values
+                       among all the cell types for the tissue.
+   hpaData             HPA data structure from parseHPA (opt if transcrData
+                       is supplied, default [])
+   transcrData         gene expression data structure (opt if hpaData is
+                       supplied, default []). Used to be called arrayData.
+       genes           cell array with the unique gene names
+       tissues         cell array with the tissue names. The list may not
+                       be unique, as there can be multiple cell types per
+                       tissue.
+       celltypes       cell array with the cell type names for each tissue
+       levels          GENESxTISSUES array with the expression level for
+                       each gene in each tissue/celltype. NaN should be
+                       used when no measurement was performed
+       threshold       a single value or a vector of gene expression 
+                       thresholds, above which genes are considered to be
+                       &quot;expressed&quot;. default = 1(opt, by default, the mean expression
+                       levels of each gene across all tissues in transcrData
+                       will be used as the threshold values)
+       singleCells     binary value selecting whether to use the
+                       single-cell algorithm to identify expressed genes.
+                       If used, specify cell subpopulations in CELLTYPES
+                       (opt, default [])
+       plotResults     true if single cell probability distributions
+                       should be plotted (opt, default = false)
+   metabolomicsData    cell array with metabolite names that the model
+                       should produce (opt, default [])
+   INITSteps           Specifies the steps in the algorithm. For more info,
+                       see INITStepDesc and getINITSteps. 
+                       (opt, default getINITSteps(), which is the standard ftINIT).
+   removeGenes         if true, low-abundance genes will be removed from
+                       grRules, unless they are the only gene associated 
+                       with a reaction, or a subunit of an enzyme complex
+                       (see &quot;removeLowScoreGenes&quot; function for details).
+                       If false, grRules will not be modified; however,
+                       genes that were associated only with removed 
+                       reactions will not be present in the final model.
+                       (opt, default true).
+   useScoresForTasks   true if the calculated reaction scored should be 
+                       used as weights when fitting to tasks (opt, default
+                       true)
+   paramsFT            parameter structure as used by getMILPParams. This
+                       is for the fitTasks step. For the INIT algorithm,
+                       see params (opt, default [])
+   verbose             if true, the MILP progression will be shown. 
+                       (opt, default true)
+
+   model                   the resulting model structure
+   metProduction           array that indicates which of the
+                           metabolites in metabolomicsData that could be
+                           produced. Note that this is before the
+                           gap-filling process to enable defined tasks. To
+                           see which metabolites that can be produced in
+                           the final model, use canProduce.
+                           -2: metabolite name not found in model
+                           -1: metabolite found, but it could not be produced
+                           1: metabolite could be produced
+   addedRxnsForTasks       cell array of the reactions which were added in
+                           order to perform the tasks
+   deletedRxnsInINIT       cell array of reactions deleted because they
+                           could not carry flux (INIT requires a
+                           functional input model)
+   fullMipRes              The solver results from the last MILP step run
+
+   This is the main function for automatic reconstruction of models based
+   on the ftINIT algorithm (). 
+
+   NOTE: Exchange metabolites should normally not be removed from the model
+   when using this approach, since checkTasks/fitTasks rely on putting specific
+   constraints for each task. The INIT algorithm will remove exchange metabolites
+   if any are present. Use importModel(file,false) to import a model with
+   exchange metabolites remaining.
+
+   Usage: [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, ...
+               fullMipRes] = ...
+               ftINIT(prepData, tissue, celltype, hpaData, transcrData, ...
+               metabolomicsData, INITSteps, removeGenes, useScoresForTasks, ...
+               paramsFT);</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="ftINITFillGapsForAllTasks.html" class="code" title="function [outModel, addedRxns]=ftINITFillGapsForAllTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params,verbose)">ftINITFillGapsForAllTasks</a>	ftINITFillGapsForAllTasks</li><li><a href="ftINITInternalAlg.html" class="code" title="function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(model,rxnScores,metData,essentialRxns,prodWeight,allowExcretion,remPosRev,params,startVals,fluxes,verbose)">ftINITInternalAlg</a>	ftINITInternalAlg</li><li><a href="getINITSteps.html" class="code" title="function steps = getINITSteps(metsToIgnore, series)">getINITSteps</a>	getINITSteps</li><li><a href="groupRxnScores.html" class="code" title="function newRxnScores = groupRxnScores(model, origRxnScores, origRxnIds, groupIds, origRxnsToZero)">groupRxnScores</a>	groupRxnScores</li><li><a href="removeLowScoreGenes.html" class="code" title="function [newModel,remGenes] = removeLowScoreGenes(model,geneScores,isozymeScoring,complexScoring)">removeLowScoreGenes</a>	removeLowScoreGenes  Remove low-scoring genes from model.</li><li><a href="reverseRxns.html" class="code" title="function model=reverseRxns(model, rxns)">reverseRxns</a>	reverseRxns</li><li><a href="scoreComplexModel.html" class="code" title="function [rxnScores, geneScores, hpaScores, arrayScores] = scoreComplexModel(model,hpaData,arrayData,tissue,celltype,noGeneScore,isozymeScoring,complexScoring,multipleCellScoring,hpaLevelScores)">scoreComplexModel</a>	scoreComplexModel</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function [rxnS, geneS] = printScores(model,name,hpaData,transcrData,tissue,celltype)</a></li><li><a href="#_sub2" class="code">function rxnsToIgnore = getRxnsFromPattern(rxnsToIgnorePattern, prepData)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes] = ftINIT(prepData, tissue, celltype, hpaData, transcrData, metabolomicsData, INITSteps, removeGenes, useScoresForTasks, paramsFT, verbose)</a>
+0002 <span class="comment">% ftINIT</span>
+0003 <span class="comment">%   Main function for generates a model using the ftINIT algorithm, based</span>
+0004 <span class="comment">%   on proteomics and/or transcriptomics and/or metabolomics and/or metabolic</span>
+0005 <span class="comment">%   tasks. The algorithm is not designed for running with metabolomics only.</span>
+0006 <span class="comment">%   The function prepINITModel needs to be run first for the template</span>
+0007 <span class="comment">%   model (such as the generic Human-GEM), but only need to be run once. This</span>
+0008 <span class="comment">%   function precalculates things independent of the omics to speed up the model</span>
+0009 <span class="comment">%   generation process, and outputs the prepData, which is input to this function.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">%   prepData            The prepdata for the model.</span>
+0012 <span class="comment">%   tissue              tissue to score for. Should exist in either</span>
+0013 <span class="comment">%                       hpaData.tissues or transcrData.tissues</span>
+0014 <span class="comment">%   celltype            cell type to score for. Should exist in either</span>
+0015 <span class="comment">%                       hpaData.celltypes or transcrData.celltypes for this</span>
+0016 <span class="comment">%                       tissue (opt, default is to use the max values</span>
+0017 <span class="comment">%                       among all the cell types for the tissue.</span>
+0018 <span class="comment">%   hpaData             HPA data structure from parseHPA (opt if transcrData</span>
+0019 <span class="comment">%                       is supplied, default [])</span>
+0020 <span class="comment">%   transcrData         gene expression data structure (opt if hpaData is</span>
+0021 <span class="comment">%                       supplied, default []). Used to be called arrayData.</span>
+0022 <span class="comment">%       genes           cell array with the unique gene names</span>
+0023 <span class="comment">%       tissues         cell array with the tissue names. The list may not</span>
+0024 <span class="comment">%                       be unique, as there can be multiple cell types per</span>
+0025 <span class="comment">%                       tissue.</span>
+0026 <span class="comment">%       celltypes       cell array with the cell type names for each tissue</span>
+0027 <span class="comment">%       levels          GENESxTISSUES array with the expression level for</span>
+0028 <span class="comment">%                       each gene in each tissue/celltype. NaN should be</span>
+0029 <span class="comment">%                       used when no measurement was performed</span>
+0030 <span class="comment">%       threshold       a single value or a vector of gene expression</span>
+0031 <span class="comment">%                       thresholds, above which genes are considered to be</span>
+0032 <span class="comment">%                       &quot;expressed&quot;. default = 1(opt, by default, the mean expression</span>
+0033 <span class="comment">%                       levels of each gene across all tissues in transcrData</span>
+0034 <span class="comment">%                       will be used as the threshold values)</span>
+0035 <span class="comment">%       singleCells     binary value selecting whether to use the</span>
+0036 <span class="comment">%                       single-cell algorithm to identify expressed genes.</span>
+0037 <span class="comment">%                       If used, specify cell subpopulations in CELLTYPES</span>
+0038 <span class="comment">%                       (opt, default [])</span>
+0039 <span class="comment">%       plotResults     true if single cell probability distributions</span>
+0040 <span class="comment">%                       should be plotted (opt, default = false)</span>
+0041 <span class="comment">%   metabolomicsData    cell array with metabolite names that the model</span>
+0042 <span class="comment">%                       should produce (opt, default [])</span>
+0043 <span class="comment">%   INITSteps           Specifies the steps in the algorithm. For more info,</span>
+0044 <span class="comment">%                       see INITStepDesc and getINITSteps.</span>
+0045 <span class="comment">%                       (opt, default getINITSteps(), which is the standard ftINIT).</span>
+0046 <span class="comment">%   removeGenes         if true, low-abundance genes will be removed from</span>
+0047 <span class="comment">%                       grRules, unless they are the only gene associated</span>
+0048 <span class="comment">%                       with a reaction, or a subunit of an enzyme complex</span>
+0049 <span class="comment">%                       (see &quot;removeLowScoreGenes&quot; function for details).</span>
+0050 <span class="comment">%                       If false, grRules will not be modified; however,</span>
+0051 <span class="comment">%                       genes that were associated only with removed</span>
+0052 <span class="comment">%                       reactions will not be present in the final model.</span>
+0053 <span class="comment">%                       (opt, default true).</span>
+0054 <span class="comment">%   useScoresForTasks   true if the calculated reaction scored should be</span>
+0055 <span class="comment">%                       used as weights when fitting to tasks (opt, default</span>
+0056 <span class="comment">%                       true)</span>
+0057 <span class="comment">%   paramsFT            parameter structure as used by getMILPParams. This</span>
+0058 <span class="comment">%                       is for the fitTasks step. For the INIT algorithm,</span>
+0059 <span class="comment">%                       see params (opt, default [])</span>
+0060 <span class="comment">%   verbose             if true, the MILP progression will be shown.</span>
+0061 <span class="comment">%                       (opt, default true)</span>
+0062 <span class="comment">%</span>
+0063 <span class="comment">%   model                   the resulting model structure</span>
+0064 <span class="comment">%   metProduction           array that indicates which of the</span>
+0065 <span class="comment">%                           metabolites in metabolomicsData that could be</span>
+0066 <span class="comment">%                           produced. Note that this is before the</span>
+0067 <span class="comment">%                           gap-filling process to enable defined tasks. To</span>
+0068 <span class="comment">%                           see which metabolites that can be produced in</span>
+0069 <span class="comment">%                           the final model, use canProduce.</span>
+0070 <span class="comment">%                           -2: metabolite name not found in model</span>
+0071 <span class="comment">%                           -1: metabolite found, but it could not be produced</span>
+0072 <span class="comment">%                           1: metabolite could be produced</span>
+0073 <span class="comment">%   addedRxnsForTasks       cell array of the reactions which were added in</span>
+0074 <span class="comment">%                           order to perform the tasks</span>
+0075 <span class="comment">%   deletedRxnsInINIT       cell array of reactions deleted because they</span>
+0076 <span class="comment">%                           could not carry flux (INIT requires a</span>
+0077 <span class="comment">%                           functional input model)</span>
+0078 <span class="comment">%   fullMipRes              The solver results from the last MILP step run</span>
+0079 <span class="comment">%</span>
+0080 <span class="comment">%   This is the main function for automatic reconstruction of models based</span>
+0081 <span class="comment">%   on the ftINIT algorithm ().</span>
+0082 <span class="comment">%</span>
+0083 <span class="comment">%   NOTE: Exchange metabolites should normally not be removed from the model</span>
+0084 <span class="comment">%   when using this approach, since checkTasks/fitTasks rely on putting specific</span>
+0085 <span class="comment">%   constraints for each task. The INIT algorithm will remove exchange metabolites</span>
+0086 <span class="comment">%   if any are present. Use importModel(file,false) to import a model with</span>
+0087 <span class="comment">%   exchange metabolites remaining.</span>
+0088 <span class="comment">%</span>
+0089 <span class="comment">%   Usage: [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, ...</span>
+0090 <span class="comment">%               fullMipRes] = ...</span>
+0091 <span class="comment">%               ftINIT(prepData, tissue, celltype, hpaData, transcrData, ...</span>
+0092 <span class="comment">%               metabolomicsData, INITSteps, removeGenes, useScoresForTasks, ...</span>
+0093 <span class="comment">%               paramsFT);</span>
+0094 <span class="comment">%</span>
+0095 
+0096 
+0097 <span class="keyword">if</span> nargin &lt; 5
+0098     transcrData = [];
+0099 <span class="keyword">end</span>
+0100 <span class="keyword">if</span> nargin &lt; 6
+0101     metabolomicsData = [];
+0102 <span class="keyword">end</span>
+0103 <span class="keyword">if</span> nargin &lt; 7
+0104     INITSteps = <a href="getINITSteps.html" class="code" title="function steps = getINITSteps(metsToIgnore, series)">getINITSteps</a>([],<span class="string">'default'</span>);
+0105 <span class="keyword">end</span>
+0106 <span class="keyword">if</span> nargin &lt; 8 || isempty(removeGenes)
+0107     removeGenes = true;
+0108 <span class="keyword">end</span>
+0109 <span class="keyword">if</span> nargin &lt; 9 || isempty(useScoresForTasks)
+0110     useScoresForTasks = true;
+0111 <span class="keyword">end</span>
+0112 <span class="keyword">if</span> nargin &lt; 10
+0113     paramsFT = [];
+0114 <span class="keyword">end</span>
+0115 
+0116 <span class="keyword">if</span> nargin &lt; 11
+0117     verbose = true;
+0118 <span class="keyword">end</span>
+0119 <span class="comment">%Handle detected mets:</span>
+0120 <span class="comment">%Previously, this was handled by giving a bonus for secreting those metabolites,</span>
+0121 <span class="comment">%but that doesn't work since the metabolite secretion and uptake can be lost when</span>
+0122 <span class="comment">%we merge linearly dependent reactions.</span>
+0123 <span class="comment">%Instead, we need to figure out which reactions either produce or take up the mets.</span>
+0124 <span class="comment">%We then give a bonus if any of them carry flux.</span>
+0125 <span class="comment">%To simplify things, we focus on reactions that produce the metabolite (since there must be one such reaction).</span>
+0126 <span class="comment">%It is still a bit complicated though. In this step, we focus on identifying</span>
+0127 <span class="comment">%producer reactions. We further reason that the direction doesn't matter -</span>
+0128 <span class="comment">%we can force one of these reactions in any direction - if it becomes a consumer, it will</span>
+0129 <span class="comment">%automatically force another producer on as well (otherwise we'll have a net consumption).</span>
+0130 
+0131 <span class="keyword">if</span> (~isempty(metabolomicsData))
+0132     <span class="keyword">if</span> length(unique(upper(metabolomicsData))) ~= length(metabolomicsData)
+0133         dispEM(<span class="string">'Metabolomics contains the same metabolite multiple times'</span>);
+0134     <span class="keyword">end</span>
+0135     metData = false(numel(metabolomicsData), length(prepData.minModel.rxns)); <span class="comment">%one row per metabolite that is a boolean vector</span>
+0136     <span class="keyword">for</span> i=1:numel(metabolomicsData)
+0137         <span class="comment">%Get the matching mets</span>
+0138         metSel = ismember(upper(prepData.refModel.metNames),upper(metabolomicsData{i}));
+0139         prodRxnsSel = any(prepData.refModel.S(metSel,:) &gt; 0,1) | <span class="keyword">...</span><span class="comment"> %direct producers</span>
+0140                      (any(prepData.refModel.S(metSel,:) &lt; 0,1) &amp; prepData.refModel.rev.'); <span class="comment">%reversible reactions that are consumers</span>
+0141         <span class="comment">%convert the production rxns from refModel to minModel</span>
+0142         prepData.groupIds
+0143         [~,ia,ib] = intersect(prepData.minModel.rxns,prepData.refModel.rxns);
+0144         grpIdsMerged = nan(length(prepData.minModel.rxns),1);
+0145         grpIdsMerged(ia) = prepData.groupIds(ib);
+0146         
+0147         groupIdsPos = unique(prepData.groupIds(prodRxnsSel));<span class="comment">%gets all group ids which includes a production rxn</span>
+0148         groupIdsPos = groupIdsPos(groupIdsPos ~= 0);<span class="comment">%remove the 0 id, it means there is no group</span>
+0149         <span class="comment">%the other option is that there is a direct match between the rxn id in minModel and refModel:</span>
+0150         posRxns = prepData.refModel.rxns(prodRxnsSel);
+0151         directMatch = ismember(prepData.minModel.rxns, posRxns).';
+0152         
+0153         metData(i,:) = ismember(grpIdsMerged, groupIdsPos).' | directMatch;
+0154     <span class="keyword">end</span>
+0155     metData = sparse(metData);
+0156 <span class="keyword">else</span>
+0157     metData = [];
+0158 <span class="keyword">end</span>
+0159 
+0160 <span class="comment">% Get rxn scores and adapt them to the minimized model</span>
+0161 origRxnScores = <a href="scoreComplexModel.html" class="code" title="function [rxnScores, geneScores, hpaScores, arrayScores] = scoreComplexModel(model,hpaData,arrayData,tissue,celltype,noGeneScore,isozymeScoring,complexScoring,multipleCellScoring,hpaLevelScores)">scoreComplexModel</a>(prepData.refModel,hpaData,transcrData,tissue,celltype);
+0162 origRxnScores(origRxnScores &gt; -0.1 &amp; origRxnScores &lt;= 0) = -0.1;<span class="comment">%we don't want reaction scores that are exactly 0 (or close), this causes problems in the milp</span>
+0163 origRxnScores(origRxnScores &lt; 0.1 &amp; origRxnScores &gt; 0) = 0.1;
+0164 
+0165 rxnsTurnedOn = false(length(prepData.minModel.rxns),1);
+0166 fluxes = zeros(length(prepData.minModel.rxns),1);
+0167 
+0168 rxnsToIgnoreLastStep = [1;1;1;1;1;1;1;1];
+0169 
+0170 <span class="comment">%We assume that all essential rxns are irrev - this is taken care of in</span>
+0171 <span class="comment">%prepINITModel. We then use an initial flux &quot;from last run&quot; of 0.1 for all</span>
+0172 <span class="comment">%reactions. This is used for knowing what flux should be forced through an</span>
+0173 <span class="comment">%essential rxn.</span>
+0174 fluxes = ones(length(prepData.minModel.rxns), 1).*0.1;
+0175 
+0176 <span class="keyword">for</span> initStep = 1:length(INITSteps)
+0177     disp([<span class="string">'ftINIT: Running step '</span> num2str(initStep)])
+0178     stp = INITSteps{initStep};
+0179     
+0180     <span class="keyword">if</span> any ((rxnsToIgnoreLastStep - stp.RxnsToIgnoreMask) &lt; 0)
+0181         dispEM(<span class="string">'RxnsToIgnoreMask may not cover rxns not covered in previous steps, but the other way around is fine.'</span>);
+0182     <span class="keyword">end</span>
+0183     rxnsToIgnoreLastStep = stp.RxnsToIgnoreMask;
+0184     
+0185     mm = prepData.minModel;
+0186     
+0187     <span class="keyword">if</span> (~isempty(stp.MetsToIgnore))
+0188         <span class="keyword">if</span> (~isempty(stp.MetsToIgnore.simpleMets))
+0189             <span class="comment">%Here, we remove simple metabolites that will not really affect the milp but</span>
+0190             <span class="comment">%are very common in the S matrix. For example H2O, H+, etc.</span>
+0191             <span class="comment">%It is also possible to leave compartments untouched, for example the i compartment in the mitochondria (for H+).</span>
+0192             metsToRem = ismember(mm.metNames,stp.MetsToIgnore.simpleMets.mets);
+0193             compsToKeep = find(ismember(mm.comps, stp.MetsToIgnore.simpleMets.compsToKeep));
+0194             metsToRem = metsToRem &amp; ~ismember(mm.metComps, compsToKeep);
+0195             mm.S(metsToRem,:) = 0;
+0196         <span class="keyword">end</span>    
+0197     <span class="keyword">end</span>
+0198 
+0199     <span class="comment">%Set up the reaction scores and essential rxns</span>
+0200     rxnsToIgnore = <a href="#_sub2" class="code" title="subfunction rxnsToIgnore = getRxnsFromPattern(rxnsToIgnorePattern, prepData)">getRxnsFromPattern</a>(stp.RxnsToIgnoreMask, prepData);
+0201     rxnScores = <a href="groupRxnScores.html" class="code" title="function newRxnScores = groupRxnScores(model, origRxnScores, origRxnIds, groupIds, origRxnsToZero)">groupRxnScores</a>(prepData.minModel, origRxnScores, prepData.refModel.rxns, prepData.groupIds, rxnsToIgnore);
+0202 
+0203     essentialRxns = prepData.essentialRxns;
+0204     toRev = false(numel(mm.rxns),1);
+0205     <span class="comment">%Handle the results from previous steps ('ignore', 'exclude', 'essential')</span>
+0206     <span class="keyword">if</span> strcmp(stp.HowToUsePrevResults, <span class="string">'exclude'</span>)
+0207         rxnScores(rxnsTurnedOn) = 0; <span class="comment">%This is not used anymore in any step setup.</span>
+0208     <span class="keyword">elseif</span> strcmp(stp.HowToUsePrevResults, <span class="string">'essential'</span>)
+0209         <span class="comment">%Make all reversible reactions turned on in previous steps reversible</span>
+0210         <span class="comment">%in the direction that they were previously carrying flux</span>
+0211         
+0212         <span class="comment">%first reverse the reactions that need to be reversed</span>
+0213         rev = mm.rev == 1;
+0214         toRev = rxnsTurnedOn &amp; rev &amp; fluxes &lt; 0;
+0215         mm = <a href="reverseRxns.html" class="code" title="function model=reverseRxns(model, rxns)">reverseRxns</a>(mm, mm.rxns(toRev));
+0216         
+0217         <span class="comment">%Then make them irreversible</span>
+0218         mm.rev(rxnsTurnedOn) = 0;
+0219         mm.lb(rxnsTurnedOn) = 0;
+0220 
+0221         essentialRxns = unique([prepData.essentialRxns;mm.rxns(rxnsTurnedOn)]);
+0222     <span class="keyword">end</span>
+0223 
+0224     
+0225     mipGap = 1;
+0226     first = true;
+0227     success = false;
+0228     fullMipRes = [];
+0229     <span class="keyword">for</span> rn = 1:length(stp.MILPParams)
+0230         params = stp.MILPParams{rn};
+0231         <span class="keyword">if</span> ~isfield(params, <span class="string">'MIPGap'</span>)
+0232             params.MIPGap = 0.0004;
+0233         <span class="keyword">end</span>
+0234         
+0235         <span class="keyword">if</span> ~isfield(params, <span class="string">'TimeLimit'</span>)
+0236             params.TimeLimit = 5000;
+0237         <span class="keyword">end</span>
+0238         
+0239         <span class="keyword">if</span> ~first 
+0240             <span class="comment">%There is sometimes a problem with that the objective function becomes close to zero,</span>
+0241             <span class="comment">%which leads to that a small percentage of that (which is the MIPGap sent in) is very small</span>
+0242             <span class="comment">%and the MILP hence takes a lot of time to finish. We also therefore use an absolute MIP gap,</span>
+0243             <span class="comment">%converted to a percentage using the last value of the objective function.</span>
+0244             params.MIPGap = min(max(params.MIPGap, stp.AbsMIPGaps{rn}/abs(lastObjVal)),1);
+0245             params.seed = 1234;<span class="comment">%use another seed, may work better</span>
+0246 
+0247             <span class="keyword">if</span> mipGap &lt;= params.MIPGap
+0248                 success = true;
+0249                 <span class="keyword">break</span>; <span class="comment">%we're done - this will not happen the first time</span>
+0250             <span class="keyword">else</span>
+0251                 disp([<span class="string">'MipGap too high, trying with a different run. MipGap = '</span> num2str(mipGap) <span class="string">' New MipGap Limit = '</span> num2str(params.MIPGap)])
+0252             <span class="keyword">end</span>
+0253         <span class="keyword">end</span>
+0254         
+0255         first = false;
+0256         
+0257         <span class="comment">%now run the MILP</span>
+0258         <span class="keyword">try</span>
+0259             <span class="comment">%The prodweight for metabolomics is currently set to 5 - 0.5 was default in the old version, which I deemed very small?</span>
+0260             <span class="comment">%There could be a need to specify this somewhere in the call at some point.</span>
+0261             <span class="comment">%This value has not been evaluated, but is assumed in the test cases - if changed, update the test case</span>
+0262             startVals = [];
+0263             <span class="keyword">if</span> ~isempty(fullMipRes)
+0264                 startVals = fullMipRes.full;
+0265             <span class="keyword">end</span>
+0266             [deletedRxnsInINIT1, metProduction,fullMipRes,rxnsTurnedOn1,fluxes1] = <a href="ftINITInternalAlg.html" class="code" title="function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(model,rxnScores,metData,essentialRxns,prodWeight,allowExcretion,remPosRev,params,startVals,fluxes,verbose)">ftINITInternalAlg</a>(mm,rxnScores,metData,essentialRxns,5,stp.AllowMetSecr,stp.PosRevOff,params, startVals, fluxes, verbose);
+0267             <span class="comment">%This is a bit tricky - since we reversed some reactions, those fluxes also need to be reversed</span>
+0268             fluxes1(toRev) = -fluxes1(toRev);
+0269             
+0270             mipGap = fullMipRes.mipgap;
+0271             lastObjVal = fullMipRes.obj;
+0272         <span class="keyword">catch</span> e
+0273             mipGap = Inf;
+0274             lastObjVal = Inf; <span class="comment">%we need to set something here, Inf leads to that this doesn't come into play</span>
+0275         <span class="keyword">end</span>
+0276         
+0277         success = mipGap &lt;= params.MIPGap;
+0278     <span class="keyword">end</span>
+0279     
+0280     <span class="keyword">if</span> ~success
+0281         dispEM([<span class="string">'Failed to find good enough solution within the time frame. MIPGap: '</span> num2str(mipGap)]);
+0282     <span class="keyword">end</span>
+0283     
+0284     <span class="comment">%save the reactions turned on and their fluxes for the next step</span>
+0285     rxnsTurnedOn = rxnsTurnedOn | rxnsTurnedOn1.';
+0286     <span class="comment">%The fluxes are a bit tricky - what if they change direction between the steps?</span>
+0287     <span class="comment">%The fluxes are used to determine the direction in which reactions are forced on</span>
+0288     <span class="comment">%(to simplify the problem it is good if they are unidirectional).</span>
+0289     <span class="comment">%We use the following strategy:</span>
+0290     <span class="comment">%1. Use the fluxes from the most recent step.</span>
+0291     <span class="comment">%2. If any flux is very low there (i.e. basically zero), use the flux from the previous steps</span>
+0292     <span class="comment">%This could in theory cause problems, but seems to work well practically</span>
+0293     fluxesOld = fluxes;
+0294     fluxes = fluxes1;
+0295     <span class="comment">%make sure that all reactions that are on actually has a flux - otherwise</span>
+0296     <span class="comment">%things could go bad, since the flux will be set to essential in a random direction</span>
+0297     <span class="comment">%This sometimes happens for rxns with negative score - let's just accept that.</span>
+0298     <span class="comment">%if (sum(abs(fluxes1) &lt; 10^-7 &amp; rxnsTurnedOn))</span>
+0299     <span class="comment">%    dispEM('There are rxns turned on without flux - this might cause problems');</span>
+0300     <span class="comment">%end</span>
+0301     <span class="comment">%fluxes(abs(fluxes1) &lt; 10^-7) = fluxesOld(abs(fluxes1) &lt; 10^-9);</span>
+0302 <span class="keyword">end</span>
+0303 
+0304 
+0305 <span class="comment">%get the essential rxns</span>
+0306 essential = ismember(prepData.minModel.rxns,prepData.essentialRxns);
+0307 <span class="comment">%So, we only add reactions where the linearly merged scores are zero for all linearly dependent reactions</span>
+0308 <span class="comment">% (this cannot happen by chance, taken care of in the function groupRxnScores)</span>
+0309 rxnsToIgn = rxnScores == 0; 
+0310 deletedRxnsInINITSel = ~(rxnsTurnedOn | rxnsToIgn | essential);
+0311 deletedRxnsInINIT = prepData.minModel.rxns(deletedRxnsInINITSel);
+0312 
+0313 <span class="comment">%Here we need to figure out which original reactions (before the linear merge)</span>
+0314 <span class="comment">%that were removed. These are all reactions with the same group ids as the removed reactions</span>
+0315 groupIdsRemoved = prepData.groupIds(ismember(prepData.refModel.rxns, deletedRxnsInINIT)); <span class="comment">%can improve this slightly, use sel above</span>
+0316 groupIdsRemoved = groupIdsRemoved(groupIdsRemoved ~= 0);<span class="comment">%zero means that the reaction was not grouped, all with zeros are not a group!</span>
+0317 rxnsToRem = union(prepData.refModel.rxns(ismember(prepData.groupIds,groupIdsRemoved)), deletedRxnsInINIT);<span class="comment">%make a union here to include the ungrouped (unmerged) as well</span>
+0318 
+0319 initModel = removeReactions(prepData.refModel,rxnsToRem,false,true);
+0320 
+0321 <span class="comment">% remove metabolites separately to avoid removing those needed for tasks</span>
+0322 unusedMets = initModel.mets(all(initModel.S == 0,2));
+0323 initModel = removeMets(initModel, setdiff(unusedMets, prepData.essentialMetsForTasks));
+0324 
+0325 <span class="comment">%if printReport == true</span>
+0326 <span class="comment">%    printScores(initModel,'INIT model statistics',hpaData,transcrData,tissue,celltype);</span>
+0327 <span class="comment">%    printScores(removeReactions(cModel,setdiff(cModel.rxns,rxnsToRem),true,true),'Reactions deleted by INIT',hpaData,transcrData,tissue,celltype);</span>
+0328 <span class="comment">%end</span>
+0329 
+0330 <span class="comment">%The full model has exchange reactions in it. ftINITFillGapsForAllTasks calls</span>
+0331 <span class="comment">%ftINITFillGaps, which automatically removes exchange metabolites (because it</span>
+0332 <span class="comment">%assumes that the reactions are constrained when appropriate). In this case the</span>
+0333 <span class="comment">%uptakes/outputs are retrieved from the task sheet instead. To prevent</span>
+0334 <span class="comment">%exchange reactions being used to fill gaps, they are deleted from the</span>
+0335 <span class="comment">%reference model here.</span>
+0336 initModel.id = <span class="string">'INITModel'</span>;
+0337 
+0338 <span class="comment">%If gaps in the model should be filled using a task list</span>
+0339 <span class="keyword">if</span> ~isempty(prepData.taskStruct)
+0340     <span class="comment">%Remove exchange reactions and reactions already included in the INIT</span>
+0341     <span class="comment">%model</span>
+0342     <span class="comment">%We changed strategy and instead include all rxns except the exchange rxns in the ref model</span>
+0343     <span class="comment">%But we do keep the exchange rxns that are essential.</span>
+0344     <span class="comment">%Let's test to remove all, that should work</span>
+0345     
+0346     <span class="comment">%At this stage the model is fully connected and most of the genes with</span>
+0347     <span class="comment">%good scores should have been included. The final gap-filling should</span>
+0348     <span class="comment">%take the scores of the genes into account, so that &quot;rather bad&quot;</span>
+0349     <span class="comment">%reactions are preferred to &quot;very bad&quot; reactions. However, reactions</span>
+0350     <span class="comment">%with positive scores will be included even if they are not connected</span>
+0351     <span class="comment">%in the current formulation. Therefore, such reactions will have to be</span>
+0352     <span class="comment">%assigned a small negative score instead.</span>
+0353     exchRxns = getExchangeRxns(prepData.refModel);
+0354     refModelNoExc = removeReactions(prepData.refModelWithBM,exchRxns,true,true);
+0355     exchRxns = getExchangeRxns(initModel);
+0356     initModelNoExc = removeReactions(closeModel(initModel),exchRxns,true,true);
+0357     
+0358     <span class="keyword">if</span> useScoresForTasks == true
+0359         <span class="comment">%map the rxn scores to the model without exchange rxns</span>
+0360         [~,ia,ib] = intersect(refModelNoExc.rxns,prepData.refModel.rxns);
+0361         rxnScores2nd = NaN(length(refModelNoExc.rxns),1);
+0362         rxnScores2nd(ia) = origRxnScores(ib);
+0363         <span class="comment">%all(rxnScores2nd == refRxnScores);%should be the same, ok!</span>
+0364         [outModel,addedRxnMat] = <a href="ftINITFillGapsForAllTasks.html" class="code" title="function [outModel, addedRxns]=ftINITFillGapsForAllTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params,verbose)">ftINITFillGapsForAllTasks</a>(initModelNoExc,refModelNoExc,[],true,min(rxnScores2nd,-0.1),prepData.taskStruct,paramsFT,verbose);
+0365     <span class="keyword">else</span>
+0366         [outModel,addedRxnMat] = <a href="ftINITFillGapsForAllTasks.html" class="code" title="function [outModel, addedRxns]=ftINITFillGapsForAllTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params,verbose)">ftINITFillGapsForAllTasks</a>(initModelNoExc,refModelNoExc,[],true,[],prepData.taskStruct,paramsFT,verbose);
+0367     <span class="keyword">end</span>
+0368     <span class="comment">%if printReport == true</span>
+0369     <span class="comment">%    printScores(outModel,'Functional model statistics',hpaData,transcrData,tissue,celltype);</span>
+0370     <span class="comment">%    printScores(removeReactions(outModel,intersect(outModel.rxns,initModel.rxns),true,true),'Reactions added to perform the tasks',hpaData,transcrData,tissue,celltype);</span>
+0371     <span class="comment">%end</span>
+0372     
+0373     addedRxnsForTasks = refModelNoExc.rxns(any(addedRxnMat,2));
+0374 <span class="keyword">else</span>
+0375     outModel = initModel;
+0376     addedRxnMat = [];
+0377     addedRxnsForTasks = {};
+0378 <span class="keyword">end</span>
+0379 
+0380 <span class="comment">% The model can now perform all the tasks defined in the task list.</span>
+0381 model = outModel;
+0382 
+0383 
+0384 <span class="comment">% At this stage the model will contain some exchange reactions but probably</span>
+0385 <span class="comment">% not all (and maybe zero). This can be inconvenient, so all exchange</span>
+0386 <span class="comment">% reactions from the reference model are added, except for those which</span>
+0387 <span class="comment">% involve metabolites that are not in the model.</span>
+0388 
+0389 <span class="comment">%Start from the original model, and just remove the reactions that are no longer there (and keep exchange rxns). The model we got out</span>
+0390 <span class="comment">%from the problem is not complete, it doesn't have GRPs etc.</span>
+0391 <span class="comment">%The logic below is a bit complicated. We identify the reactions that should be removed from the full model as</span>
+0392 <span class="comment">%reactions that have been removed in the init model except the ones that were added back. In addition, we make</span>
+0393 <span class="comment">%sure that no exchange rxns are removed - they can be removed in the init model if they were linearly merged with other</span>
+0394 <span class="comment">%reactions that were decided to be removed from the model. We want to keep all exchange rxns to make sure the tasks can</span>
+0395 <span class="comment">%be performed also without manipulating the b vector in the model (which is what is done in the gap-filling).</span>
+0396 exchRxns = getExchangeRxns(prepData.refModel);
+0397 deletedRxnsInINIT = setdiff(prepData.refModel.rxns,union(union(initModel.rxns, addedRxnsForTasks), exchRxns));
+0398 outModel = removeReactions(prepData.refModel, deletedRxnsInINIT, true); <span class="comment">%we skip removing the genes for now, I'm not sure it is desirable</span>
+0399 
+0400 <span class="comment">% If requested, attempt to remove negative-score genes from the model,</span>
+0401 <span class="comment">% depending on their role (isozyme or complex subunit) in each grRule.</span>
+0402 <span class="comment">% See the &quot;removeLowScoreGenes&quot; function more more details, and to adjust</span>
+0403 <span class="comment">% any default parameters therein.</span>
+0404 <span class="keyword">if</span> ( removeGenes )
+0405     [~, geneScores] = <a href="scoreComplexModel.html" class="code" title="function [rxnScores, geneScores, hpaScores, arrayScores] = scoreComplexModel(model,hpaData,arrayData,tissue,celltype,noGeneScore,isozymeScoring,complexScoring,multipleCellScoring,hpaLevelScores)">scoreComplexModel</a>(outModel,hpaData,transcrData,tissue,celltype);
+0406     outModel = <a href="removeLowScoreGenes.html" class="code" title="function [newModel,remGenes] = removeLowScoreGenes(model,geneScores,isozymeScoring,complexScoring)">removeLowScoreGenes</a>(outModel,geneScores);
+0407 <span class="keyword">end</span>
+0408 
+0409 
+0410 model = outModel;
+0411 
+0412 <span class="keyword">end</span>
+0413 
+0414 <span class="comment">%This is for printing a summary of a model</span>
+0415 <a name="_sub1" href="#_subfunctions" class="code">function [rxnS, geneS] = printScores(model,name,hpaData,transcrData,tissue,celltype)</a>
+0416     [a, b] = <a href="scoreComplexModel.html" class="code" title="function [rxnScores, geneScores, hpaScores, arrayScores] = scoreComplexModel(model,hpaData,arrayData,tissue,celltype,noGeneScore,isozymeScoring,complexScoring,multipleCellScoring,hpaLevelScores)">scoreComplexModel</a>(model,hpaData,transcrData,tissue,celltype);
+0417     rxnS = mean(a);
+0418     geneS = mean(b,<span class="string">'omitnan'</span>);
+0419     fprintf([name <span class="string">':\n'</span>]);
+0420     fprintf([<span class="string">'\t'</span> num2str(numel(model.rxns)) <span class="string">' reactions, '</span> num2str(numel(model.genes)) <span class="string">' genes\n'</span>]);
+0421     fprintf([<span class="string">'\tMean reaction score: '</span> num2str(rxnS) <span class="string">'\n'</span>]);
+0422     fprintf([<span class="string">'\tMean gene score: '</span> num2str(geneS) <span class="string">'\n'</span>]);
+0423     fprintf([<span class="string">'\tReactions with positive scores: '</span> num2str(100*sum(a&gt;0)/numel(a)) <span class="string">'%%\n\n'</span>]);
+0424 <span class="keyword">end</span>
+0425 
+0426 <a name="_sub2" href="#_subfunctions" class="code">function rxnsToIgnore = getRxnsFromPattern(rxnsToIgnorePattern, prepData)</a>
+0427     rxnsToIgnore = false(length(prepData.toIgnoreExch),1);
+0428     <span class="keyword">if</span> rxnsToIgnorePattern(1) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreExch; <span class="keyword">end</span>;
+0429     <span class="keyword">if</span> rxnsToIgnorePattern(2) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreImportRxns; <span class="keyword">end</span>;
+0430     <span class="keyword">if</span> rxnsToIgnorePattern(3) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreSimpleTransp; <span class="keyword">end</span>;
+0431     <span class="keyword">if</span> rxnsToIgnorePattern(4) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreAdvTransp; <span class="keyword">end</span>;
+0432     <span class="keyword">if</span> rxnsToIgnorePattern(5) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreSpont; <span class="keyword">end</span>;
+0433     <span class="keyword">if</span> rxnsToIgnorePattern(6) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreS; <span class="keyword">end</span>;
+0434     <span class="keyword">if</span> rxnsToIgnorePattern(7) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreCustomRxns; <span class="keyword">end</span>;
+0435     <span class="keyword">if</span> rxnsToIgnorePattern(8) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreAllWithoutGPRs; <span class="keyword">end</span>;
+0436 <span class="keyword">end</span>
+0437</pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

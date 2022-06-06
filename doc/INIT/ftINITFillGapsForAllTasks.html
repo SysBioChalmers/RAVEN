@@ -1,0 +1,462 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of ftINITFillGapsForAllTasks</title>
+  <meta name="keywords" content="ftINITFillGapsForAllTasks">
+  <meta name="description" content="ftINITFillGapsForAllTasks">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">INIT</a> &gt; ftINITFillGapsForAllTasks.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for INIT&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>ftINITFillGapsForAllTasks
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>ftINITFillGapsForAllTasks</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [outModel, addedRxns]=ftINITFillGapsForAllTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params,verbose) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> ftINITFillGapsForAllTasks
+   Fills gaps in a model by including reactions from a reference model,
+   so that the resulting model can perform all the tasks in a task list
+   This is similar to the old fitTasks function but optimized for ftINIT.
+
+   Input:
+   model           model structure
+   refModel        reference model from which to include reactions
+   inputFile       a task list in Excel format. See the function
+                   parseTaskList for details (opt if taskStructure is
+                   supplied)
+   printOutput     true if the results of the test should be displayed
+                   (opt, default true)
+   rxnScores       scores for each of the reactions in the reference
+                   model. Only negative scores are allowed. The solver will
+                   try to maximize the sum of the scores for the included
+                   reactions (opt, default is -1 for all reactions)
+   taskStructure   structure with the tasks, as from parseTaskList. If
+                   this is supplied then inputFile is ignored
+   params          parameter structure as used by getMILPParams
+   verbose         if true, the MILP progression will be shown. 
+
+
+   Output:
+   outModel        model structure with reactions added to perform the
+                   tasks
+   addedRxns       MxN matrix with the added reactions (M) from refModel
+                   for each task (N). An element is true if the corresponding
+                   reaction is added in the corresponding task.
+                   Failed tasks and SHOULD FAIL tasks are ignored
+
+   This function fills gaps in a model by using a reference model, so
+   that the resulting model can perform a list of metabolic tasks. The
+   gap-filling is done in a task-by-task manner, rather than solving for
+   all tasks at once. This means that the order of the tasks could influence
+   the result.
+
+   Usage: [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...
+           rxnScores,taskStructure,params)</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="ftINITFillGaps.html" class="code" title="function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefModel,allowNetProduction,supressWarnings,rxnScores,params,verbose)">ftINITFillGaps</a>	ftINITFillGaps</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="ftINIT.html" class="code" title="function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes] = ftINIT(prepData, tissue, celltype, hpaData, transcrData, metabolomicsData, INITSteps, removeGenes, useScoresForTasks, paramsFT, verbose)">ftINIT</a>	ftINIT</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [outModel, addedRxns]=ftINITFillGapsForAllTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params,verbose)</a>
+0002 <span class="comment">% ftINITFillGapsForAllTasks</span>
+0003 <span class="comment">%   Fills gaps in a model by including reactions from a reference model,</span>
+0004 <span class="comment">%   so that the resulting model can perform all the tasks in a task list</span>
+0005 <span class="comment">%   This is similar to the old fitTasks function but optimized for ftINIT.</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">%   Input:</span>
+0008 <span class="comment">%   model           model structure</span>
+0009 <span class="comment">%   refModel        reference model from which to include reactions</span>
+0010 <span class="comment">%   inputFile       a task list in Excel format. See the function</span>
+0011 <span class="comment">%                   parseTaskList for details (opt if taskStructure is</span>
+0012 <span class="comment">%                   supplied)</span>
+0013 <span class="comment">%   printOutput     true if the results of the test should be displayed</span>
+0014 <span class="comment">%                   (opt, default true)</span>
+0015 <span class="comment">%   rxnScores       scores for each of the reactions in the reference</span>
+0016 <span class="comment">%                   model. Only negative scores are allowed. The solver will</span>
+0017 <span class="comment">%                   try to maximize the sum of the scores for the included</span>
+0018 <span class="comment">%                   reactions (opt, default is -1 for all reactions)</span>
+0019 <span class="comment">%   taskStructure   structure with the tasks, as from parseTaskList. If</span>
+0020 <span class="comment">%                   this is supplied then inputFile is ignored</span>
+0021 <span class="comment">%   params          parameter structure as used by getMILPParams</span>
+0022 <span class="comment">%   verbose         if true, the MILP progression will be shown.</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">%   Output:</span>
+0026 <span class="comment">%   outModel        model structure with reactions added to perform the</span>
+0027 <span class="comment">%                   tasks</span>
+0028 <span class="comment">%   addedRxns       MxN matrix with the added reactions (M) from refModel</span>
+0029 <span class="comment">%                   for each task (N). An element is true if the corresponding</span>
+0030 <span class="comment">%                   reaction is added in the corresponding task.</span>
+0031 <span class="comment">%                   Failed tasks and SHOULD FAIL tasks are ignored</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">%   This function fills gaps in a model by using a reference model, so</span>
+0034 <span class="comment">%   that the resulting model can perform a list of metabolic tasks. The</span>
+0035 <span class="comment">%   gap-filling is done in a task-by-task manner, rather than solving for</span>
+0036 <span class="comment">%   all tasks at once. This means that the order of the tasks could influence</span>
+0037 <span class="comment">%   the result.</span>
+0038 <span class="comment">%</span>
+0039 <span class="comment">%   Usage: [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...</span>
+0040 <span class="comment">%           rxnScores,taskStructure,params)</span>
+0041 
+0042 <span class="keyword">if</span> isempty(rxnScores)
+0043     rxnScores=ones(numel(refModel.rxns),1)*-1;
+0044 <span class="keyword">end</span>
+0045 
+0046 <span class="keyword">if</span> isempty(taskStructure) &amp;&amp; ~(exist(inputFile,<span class="string">'file'</span>)==2)
+0047     error(<span class="string">'Task file %s cannot be found'</span>,string(inputFile));
+0048 <span class="keyword">end</span>
+0049 
+0050 <span class="keyword">if</span> strcmpi(model.id,refModel.id)
+0051     fprintf(<span class="string">'NOTE: The model and reference model have the same IDs. The ID for the reference model was set to &quot;refModel&quot; in order to keep track of the origin of reactions.\n'</span>);
+0052     refModel.id=<span class="string">'refModel'</span>;
+0053 <span class="keyword">end</span>
+0054 
+0055 <span class="keyword">if</span> any(rxnScores&gt;=0)
+0056     EM=<span class="string">'Only negative values are allowed in rxnScores'</span>;
+0057     dispEM(EM);
+0058 <span class="keyword">end</span>
+0059 
+0060 <span class="comment">%Prepare the input models a little</span>
+0061 model.b=zeros(numel(model.mets),2);
+0062 modelMets=upper(strcat(model.metNames,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>));
+0063 <span class="comment">%This is the mets in the reference model. Used if the tasks involve</span>
+0064 <span class="comment">%metabolites that doesn't exist in the model</span>
+0065 largeModelMets=upper(strcat(refModel.metNames,<span class="string">'['</span>,refModel.comps(refModel.metComps),<span class="string">']'</span>));
+0066 
+0067 <span class="keyword">if</span> ~isfield(model,<span class="string">'unconstrained'</span>)
+0068     EM=<span class="string">'Exchange metabolites should normally not be removed from the model when using checkTasks. Inputs and outputs are defined in the task file instead. Use importModel(file,false) to import a model with exchange metabolites remaining'</span>;
+0069     dispEM(EM,false);
+0070 <span class="keyword">end</span>
+0071 
+0072 <span class="keyword">if</span> isempty(taskStructure)
+0073     taskStructure=parseTaskList(inputFile);
+0074 <span class="keyword">end</span>
+0075 
+0076 tModel=model;
+0077 addedRxns=false(numel(refModel.rxns),numel(taskStructure));
+0078 supressWarnings=false;
+0079 nAdded=0;
+0080 
+0081 <span class="keyword">for</span> i=1:numel(taskStructure)
+0082     <span class="keyword">if</span> ~taskStructure(i).shouldFail
+0083         
+0084         tRefModel = refModel;<span class="comment">%we need to add stuff to this one as well...</span>
+0085         tRxnScores = rxnScores;<span class="comment">%these need to be extended (with zeros) when rxns are added in tasks</span>
+0086         <span class="comment">%Set the inputs</span>
+0087         <span class="keyword">if</span> ~isempty(taskStructure(i).inputs)
+0088             [I, J]=ismember(upper(taskStructure(i).inputs),modelMets);
+0089             [I2, J2]=ismember(upper(taskStructure(i).inputs),largeModelMets);
+0090             K=ismember(upper(taskStructure(i).inputs),<span class="string">'ALLMETS'</span>);
+0091             L=~cellfun(<span class="string">'isempty'</span>,strfind(upper(taskStructure(i).inputs),<span class="string">'ALLMETSIN'</span>));
+0092             <span class="comment">%Check that all metabolites are either real metabolites or</span>
+0093             <span class="comment">%ALLMETS/ALLMETSIN</span>
+0094             goodMets=I|K|L;
+0095             <span class="keyword">if</span> ~all(goodMets)
+0096                 <span class="comment">%Not all of the inputs could be found in the small model.</span>
+0097                 <span class="comment">%Check if they exist in the large model</span>
+0098                 [found, metMatch]=ismember(upper(taskStructure(i).inputs(~goodMets)),largeModelMets);
+0099                 <span class="keyword">if</span> ~all(found)
+0100                     EM=[<span class="string">'Could not find all inputs in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; in either model'</span>];
+0101                     disp(EM);
+0102                 <span class="keyword">else</span>
+0103                     <span class="comment">%Otherwise add them to the model</span>
+0104                     met.metNames=refModel.metNames(metMatch);
+0105                     met.compartments=refModel.comps(refModel.metComps(metMatch));
+0106                     
+0107                     <span class="comment">%Add the metabolite both to the base model and the</span>
+0108                     <span class="comment">%model used in the current task</span>
+0109                     model=addMets(model,met);
+0110                     tModel=addMets(tModel,met);
+0111                     modelMets=[modelMets;upper(taskStructure(i).inputs(~goodMets))];
+0112                 <span class="keyword">end</span>
+0113                 
+0114                 <span class="comment">%By now the indexes might be getting a bit confusing, but</span>
+0115                 <span class="comment">%this is to update the indexes of the &quot;real&quot; metabolites to</span>
+0116                 <span class="comment">%point to the newly added ones</span>
+0117                 I(~goodMets)=true; <span class="comment">%All the bad ones are fixed at this stage</span>
+0118                 J(~goodMets)=numel(modelMets)-numel(metMatch)+1:numel(modelMets);
+0119             <span class="keyword">end</span>
+0120             <span class="keyword">if</span> numel(J(I))~=numel(unique(J(I)))
+0121                 EM=[<span class="string">'The constraints on some input(s) in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; are defined more than one time'</span>];
+0122                 dispEM(EM);
+0123             <span class="keyword">end</span>
+0124             <span class="comment">%If all metabolites should be added</span>
+0125             <span class="keyword">if</span> any(K)
+0126                 <span class="comment">%Check if ALLMETS is the first metabolite. Otherwise print</span>
+0127                 <span class="comment">%a warning since it will write over any other constraints</span>
+0128                 <span class="comment">%that are set</span>
+0129                 <span class="keyword">if</span> K(1)==0
+0130                     EM=[<span class="string">'ALLMETS is used as an input in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'</span>];
+0131                     dispEM(EM,false);
+0132                 <span class="keyword">end</span>
+0133                 <span class="comment">%Use the first match of ALLMETS. There should only be one,</span>
+0134                 <span class="comment">%but still..</span>
+0135                 tModel.b(:,1)=taskStructure(i).UBin(find(K,1))*-1;
+0136                 tRefModel.b(:,1)=taskStructure(i).UBin(find(K,1))*-1;
+0137             <span class="keyword">end</span>
+0138             <span class="comment">%If metabolites in a specific compartment should be used</span>
+0139             <span class="keyword">if</span> any(L)
+0140                 L=find(L);
+0141                 <span class="keyword">for</span> j=1:numel(L)
+0142                     <span class="comment">%The compartment defined</span>
+0143                     compartment=upper(taskStructure(i).inputs{L(j)}(11:end-1));
+0144                     <span class="comment">%Check if it exists in the model</span>
+0145                     C=find(ismember(upper(model.comps),compartment));
+0146                     <span class="keyword">if</span> any(C)
+0147                         <span class="comment">%Match to metabolites</span>
+0148                         tModel.b(model.metComps==C,1)=taskStructure(i).UBin(L(j))*-1;
+0149                     <span class="keyword">else</span>
+0150                         EM=[<span class="string">'The compartment defined for ALLMETSIN in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; does not exist'</span>];
+0151                         dispEM(EM);
+0152                     <span class="keyword">end</span>
+0153                     <span class="comment">%also need to do this for the t ref model</span>
+0154                     C=find(ismember(upper(tRefModel.comps),compartment));
+0155                     <span class="keyword">if</span> any(C)
+0156                         <span class="comment">%Match to metabolites</span>
+0157                         tRefModel.b(tRefModel.metComps==C,1)=taskStructure(i).UBin(L(j))*-1;
+0158                     <span class="keyword">else</span>
+0159                         EM=[<span class="string">'The compartment defined for ALLMETSIN in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; does not exist'</span>];
+0160                         dispEM(EM);
+0161                     <span class="keyword">end</span>
+0162                 <span class="keyword">end</span>
+0163             <span class="keyword">end</span>
+0164             <span class="comment">%Then add the normal constraints</span>
+0165             <span class="keyword">if</span> any(J(I))
+0166                 tModel.b(J(I),1)=taskStructure(i).UBin(I)*-1;
+0167                 tModel.b(J(I),2)=taskStructure(i).LBin(I)*-1;
+0168             <span class="keyword">end</span>
+0169             <span class="comment">%for the tRefModel as well</span>
+0170             <span class="keyword">if</span> any(J2(I2))
+0171                 tRefModel.b(J2(I2),1)=taskStructure(i).UBin(I2)*-1;
+0172                 tRefModel.b(J2(I2),2)=taskStructure(i).LBin(I2)*-1;
+0173             <span class="keyword">end</span>
+0174         <span class="keyword">end</span>
+0175         <span class="comment">%Set the outputs</span>
+0176         <span class="keyword">if</span> ~isempty(taskStructure(i).outputs)
+0177             [I, J]=ismember(upper(taskStructure(i).outputs),modelMets);
+0178             [I2, J2]=ismember(upper(taskStructure(i).outputs),largeModelMets);
+0179             K=ismember(upper(taskStructure(i).outputs),<span class="string">'ALLMETS'</span>);
+0180             L=~cellfun(<span class="string">'isempty'</span>,strfind(upper(taskStructure(i).outputs),<span class="string">'ALLMETSIN'</span>));
+0181             <span class="comment">%Check that all metabolites are either real metabolites or</span>
+0182             <span class="comment">%ALLMETS/ALLMETSIN</span>
+0183             goodMets=I|K|L;
+0184             <span class="keyword">if</span> ~all(goodMets)
+0185                 <span class="comment">%Not all of the outputs could be found in the small model.</span>
+0186                 <span class="comment">%Check if they exist in the large model</span>
+0187                 [found, metMatch]=ismember(upper(taskStructure(i).outputs(~goodMets)),largeModelMets);
+0188                 <span class="keyword">if</span> ~all(found)
+0189                     EM=[<span class="string">'Could not find all outputs in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; in either model'</span>];
+0190                     dispEM(EM);
+0191                 <span class="keyword">else</span>
+0192                     <span class="comment">%Otherwise add them to the model</span>
+0193                     met.metNames=refModel.metNames(metMatch);
+0194                     met.compartments=refModel.comps(refModel.metComps(metMatch));
+0195                     
+0196                     <span class="comment">%Add the metabolite both to the base model and the</span>
+0197                     <span class="comment">%model used in the current task</span>
+0198                     model=addMets(model,met);
+0199                     tModel=addMets(tModel,met);
+0200                     modelMets=[modelMets;upper(taskStructure(i).outputs(~goodMets))];
+0201                 <span class="keyword">end</span>
+0202                 
+0203                 <span class="comment">%By now the indexes might be getting a bit confusing, but</span>
+0204                 <span class="comment">%this is to update the indexes of the &quot;real&quot; metabolites to</span>
+0205                 <span class="comment">%point to the newly added ones</span>
+0206                 I(~goodMets)=true; <span class="comment">%All the bad ones are fixed at this stage</span>
+0207                 J(~goodMets)=numel(modelMets)-numel(metMatch)+1:numel(modelMets);
+0208             <span class="keyword">end</span>
+0209             <span class="keyword">if</span> numel(J(I))~=numel(unique(J(I)))
+0210                 EM=[<span class="string">'The constraints on some output(s) in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; are defined more than one time'</span>];
+0211                 dispEM(EM);
+0212             <span class="keyword">end</span>
+0213             <span class="comment">%If all metabolites should be added</span>
+0214             <span class="keyword">if</span> any(K)
+0215                 <span class="comment">%Check if ALLMETS is the first metabolite. Otherwise print</span>
+0216                 <span class="comment">%a warning since it will write over any other constraints</span>
+0217                 <span class="comment">%that are set</span>
+0218                 <span class="keyword">if</span> K(1)==0
+0219                     EM=[<span class="string">'ALLMETS is used as an output in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'</span>];
+0220                     dispEM(EM,false);
+0221                 <span class="keyword">end</span>
+0222                 <span class="comment">%Use the first match of ALLMETS. There should only be one,</span>
+0223                 <span class="comment">%but still..</span>
+0224                 tModel.b(:,2)=taskStructure(i).UBout(find(K,1));
+0225                 tRefModel.b(:,2)=taskStructure(i).UBout(find(K,1));
+0226             <span class="keyword">end</span>
+0227             <span class="comment">%If metabolites in a specific compartment should be used</span>
+0228             <span class="keyword">if</span> any(L)
+0229                 L=find(L);
+0230                 <span class="keyword">for</span> j=1:numel(L)
+0231                     <span class="comment">%The compartment defined</span>
+0232                     compartment=upper(taskStructure(i).outputs{L(j)}(11:end-1));
+0233                     <span class="comment">%Check if it exists in the model</span>
+0234                     C=find(ismember(upper(model.comps),compartment));
+0235                     <span class="keyword">if</span> any(C)
+0236                         <span class="comment">%Match to metabolites</span>
+0237                         tModel.b(model.metComps==C,2)=taskStructure(i).UBout(L(j));
+0238                     <span class="keyword">else</span>
+0239                         EM=[<span class="string">'The compartment defined for ALLMETSIN in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; does not exist'</span>];
+0240                         dispEM(EM);
+0241                     <span class="keyword">end</span>
+0242                     <span class="comment">%for the tRefModel as well</span>
+0243                     C=find(ismember(upper(tRefModel.comps),compartment));
+0244                     <span class="keyword">if</span> any(C)
+0245                         <span class="comment">%Match to metabolites</span>
+0246                         tRefModel.b(tRefModel.metComps==C,2)=taskStructure(i).UBout(L(j));
+0247                     <span class="keyword">else</span>
+0248                         EM=[<span class="string">'The compartment defined for ALLMETSIN in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; does not exist'</span>];
+0249                         dispEM(EM);
+0250                     <span class="keyword">end</span>
+0251                 <span class="keyword">end</span>
+0252             <span class="keyword">end</span>
+0253             <span class="comment">%Then add the normal constraints</span>
+0254             <span class="keyword">if</span> any(J(I))
+0255                 <span class="comment">%Verify that IN and OUT bounds are consistent. Cannot require</span>
+0256                 <span class="comment">%that a metabolite is simultaneously input AND output at some</span>
+0257                 <span class="comment">%nonzero flux.</span>
+0258                 J = J(I);
+0259                 I = find(I);  <span class="comment">% otherwise indexing becomes confusing</span>
+0260                 nonzero_LBin = tModel.b(J,2) &lt; 0;
+0261                 nonzero_LBout = taskStructure(i).LBout(I) &gt; 0;
+0262                 <span class="keyword">if</span> any(nonzero_LBin &amp; nonzero_LBout)
+0263                     EM=[<span class="string">'The IN LB and OUT LB in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; cannot be nonzero for the same metabolite'</span>];
+0264                     dispEM(EM);
+0265                 <span class="keyword">end</span>
+0266                 tModel.b(J(nonzero_LBout),1)=taskStructure(i).LBout(I(nonzero_LBout));
+0267                 tModel.b(J,2)=taskStructure(i).UBout(I);
+0268             <span class="keyword">end</span>
+0269             <span class="comment">%and for the ref model</span>
+0270             <span class="keyword">if</span> any(J2(I2))
+0271                 <span class="comment">%Verify that IN and OUT bounds are consistent. Cannot require</span>
+0272                 <span class="comment">%that a metabolite is simultaneously input AND output at some</span>
+0273                 <span class="comment">%nonzero flux.</span>
+0274                 J2 = J2(I2);
+0275                 I2 = find(I2);  <span class="comment">% otherwise indexing becomes confusing</span>
+0276                 nonzero_LBin = tRefModel.b(J2,2) &lt; 0;
+0277                 nonzero_LBout = taskStructure(i).LBout(I2) &gt; 0;
+0278                 <span class="keyword">if</span> any(nonzero_LBin &amp; nonzero_LBout)
+0279                     EM=[<span class="string">'The IN LB and OUT LB in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; cannot be nonzero for the same metabolite'</span>];
+0280                     dispEM(EM);
+0281                 <span class="keyword">end</span>
+0282                 tRefModel.b(J2(nonzero_LBout),1)=taskStructure(i).LBout(I2(nonzero_LBout));
+0283                 tRefModel.b(J2,2)=taskStructure(i).UBout(I2);
+0284             <span class="keyword">end</span>
+0285         <span class="keyword">end</span>
+0286         
+0287         <span class="comment">%Add new rxns</span>
+0288         <span class="keyword">if</span> ~isempty(taskStructure(i).equations)
+0289             rxn.equations=taskStructure(i).equations;
+0290             rxn.lb=taskStructure(i).LBequ;
+0291             rxn.ub=taskStructure(i).UBequ;
+0292             rxn.rxns=strcat({<span class="string">'TEMPORARY_'</span>},num2str((1:numel(taskStructure(i).equations))'));
+0293             tModel=addRxns(tModel,rxn,3);
+0294             tRefModel=addRxns(tRefModel,rxn,3);
+0295             tRxnScores = [tRxnScores;zeros(length(rxn.lb),1)];
+0296         <span class="keyword">end</span>
+0297         <span class="comment">%Add changed bounds</span>
+0298         <span class="keyword">if</span> ~isempty(taskStructure(i).changed)
+0299             tModel=setParam(tModel,<span class="string">'lb'</span>,taskStructure(i).changed,taskStructure(i).LBrxn);
+0300             tModel=setParam(tModel,<span class="string">'ub'</span>,taskStructure(i).changed,taskStructure(i).UBrxn);
+0301             tRefModel=setParam(tRefModel,<span class="string">'lb'</span>,taskStructure(i).changed,taskStructure(i).LBrxn);
+0302             tRefModel=setParam(tRefModel,<span class="string">'ub'</span>,taskStructure(i).changed,taskStructure(i).UBrxn);
+0303         <span class="keyword">end</span>
+0304         
+0305         <span class="comment">%Solve and print. Display a warning if the problem is not solveable</span>
+0306         sol=solveLP(tModel);
+0307         <span class="keyword">if</span> isempty(sol.x)
+0308             <span class="comment">%Only do gap-filling if it cannot be solved</span>
+0309             failed=false;
+0310             <span class="keyword">try</span>
+0311                 [newRxns, newModel, exitFlag]=<a href="ftINITFillGaps.html" class="code" title="function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefModel,allowNetProduction,supressWarnings,rxnScores,params,verbose)">ftINITFillGaps</a>(tModel,model,tRefModel,false,supressWarnings,tRxnScores,params,verbose);
+0312                 <span class="keyword">if</span> exitFlag==-2
+0313                     EM=[<span class="string">'&quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; was aborted before reaching optimality. Consider increasing params.maxTime\n'</span>];
+0314                     dispEM(EM,false);
+0315                 <span class="keyword">end</span>
+0316             <span class="keyword">catch</span> e
+0317                 EM=[<span class="string">'&quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; could not be performed for any set of reactions\n'</span>];
+0318                 dispEM(EM,false);
+0319                 failed=true;
+0320             <span class="keyword">end</span>
+0321             <span class="keyword">if</span> failed==false
+0322                 <span class="keyword">if</span> ~isempty(newRxns)
+0323                     nAdded=nAdded+numel(newRxns);
+0324                     
+0325                     disp([<span class="string">'task: '</span> num2str(i)])
+0326                     <span class="keyword">for</span> iii = 1:numel(newRxns)
+0327                         disp(newRxns{iii})
+0328                     <span class="keyword">end</span>
+0329                     
+0330                     <span class="comment">%Add the reactions to the base model. It is not correct</span>
+0331                     <span class="comment">%to use newModel directly, as it may contain</span>
+0332                     <span class="comment">%reactions/constraints that are specific to this task</span>
+0333                     <span class="comment">%model=mergeModels({model,removeReactions(newModel,setdiff(newModel.rxns,newRxns),true,true)},'metNames',true);</span>
+0334                     model = newModel;
+0335                     
+0336                     <span class="comment">%Keep track of the added reactions</span>
+0337                     addedRxns(ismember(refModel.rxns,newRxns),i)=true;
+0338                 <span class="keyword">end</span>
+0339                 <span class="keyword">if</span> printOutput==true
+0340                     fprintf([<span class="string">'['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">': Added '</span> num2str(numel(newRxns)) <span class="string">' reaction(s), '</span> num2str(nAdded) <span class="string">' reactions added in total\n'</span>]);
+0341                 <span class="keyword">end</span>
+0342             <span class="keyword">end</span>
+0343         <span class="keyword">else</span>
+0344             <span class="keyword">if</span> printOutput==true
+0345                 fprintf([<span class="string">'['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">': Added 0 reaction(s), '</span> num2str(nAdded) <span class="string">' reactions added in total\n'</span>]);
+0346             <span class="keyword">end</span>
+0347         <span class="keyword">end</span>
+0348         supressWarnings=true;
+0349         
+0350         <span class="comment">%Print the output if chosen</span>
+0351         <span class="keyword">if</span> taskStructure(i).printFluxes &amp;&amp; printOutput
+0352             <span class="keyword">if</span> ~isempty(sol.x)
+0353                 sol=solveLP(tModel,1);
+0354                 printFluxes(tModel,sol.x,false,10^-5,[],<span class="string">'%rxnID (%eqn):%flux\n'</span>);
+0355                 fprintf(<span class="string">'\n'</span>);
+0356             <span class="keyword">else</span>
+0357                 <span class="comment">%If the problem wasn't solveable then the gap-filled model</span>
+0358                 <span class="comment">%should be used</span>
+0359                 <span class="keyword">if</span> failed==false
+0360                     sol=solveLP(newModel,1);
+0361                     printFluxes(newModel,sol.x,false,10^-5,[],<span class="string">'%rxnID (%eqn):%flux\n'</span>);
+0362                     fprintf(<span class="string">'\n'</span>);
+0363                 <span class="keyword">end</span>
+0364             <span class="keyword">end</span>
+0365         <span class="keyword">end</span>
+0366         
+0367         tModel=model;
+0368         <span class="comment">%Since new mets are added by merging the new reactions and not only</span>
+0369         <span class="comment">%from the task sheet</span>
+0370         modelMets=upper(strcat(model.metNames,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>));
+0371     <span class="keyword">else</span>
+0372         EM=[<span class="string">'&quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; is set as SHOULD FAIL. Such tasks cannot be modelled using this approach and the task is therefore ignored\n'</span>];
+0373         dispEM(EM,false);
+0374     <span class="keyword">end</span>
+0375 <span class="keyword">end</span>
+0376 outModel=model;
+0377 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
