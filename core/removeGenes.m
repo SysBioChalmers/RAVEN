@@ -37,7 +37,7 @@ else
 end
 reducedModel = model;
 %Only remove genes that are actually in the model
-if ~islogical(genesToRemove) || ~isnumeric(genesToRemove)
+if ~(islogical(genesToRemove) || isnumeric(genesToRemove))
     genesToRemove=convertCharArray(genesToRemove);
     genesToRemove=genesToRemove(ismember(genesToRemove,model.genes));
 end

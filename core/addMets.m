@@ -84,6 +84,12 @@ if ~isfield(metsToAdd,'compartments')
     dispEM(EM);
 else
     metsToAdd.compartments=convertCharArray(metsToAdd.compartments);
+    %If only one compartment is given, assume it is for all metabolites
+    if numel(metsToAdd.compartments)==1 && numel(metsToAdd.mets)>1
+        temp=cell(numel(metsToAdd.mets),1);
+        temp(:)=metsToAdd.compartments;
+        metsToAdd.compartments=temp;
+    end
 end
 
 %Number of metabolites

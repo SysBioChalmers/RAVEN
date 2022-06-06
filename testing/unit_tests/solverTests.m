@@ -32,9 +32,9 @@ catch
     rmpref('RAVEN','solver');
 end
 
-load([sourceDir,'/test_data/solverTestOutput.mat'], 'solGlpk');
+load([sourceDir,'/test_data/solverTestOutput.mat'], 'solOut');
 %Check that the actual model is the same as the expected model
-verifyEqual(testCase,sol,solGlpk,'AbsTol',1e-5)
+verifyEqual(testCase,sol,solOut,'AbsTol',1e-5)
 end
 
 function testGurobi(testCase)
@@ -68,9 +68,9 @@ catch
     rmpref('RAVEN','solver');
 end
 
-load([sourceDir,'/test_data/solverTestOutput.mat'], 'solGurobi');
+load([sourceDir,'/test_data/solverTestOutput.mat'], 'solOut');
 %Check that the actual model is the same as the expected model
-verifyEqual(testCase,sol,solGurobi,'AbsTol',1e-5)
+verifyEqual(testCase,sol,solOut,'AbsTol',1e-5)
 end
 
 function testCobra(testCase)
@@ -108,7 +108,7 @@ catch
     rmpref('RAVEN','solver');
 end
 
-load([sourceDir,'/test_data/solverTestOutput.mat'], 'solCobra');
+load([sourceDir,'/test_data/solverTestOutput.mat'], 'solOut');
 %Check that the actual model is the same as the expected model
-verifyEqual(testCase,sol,solCobra,'AbsTol',1e-5)
+verifyEqual(testCase,sol,solOut,'AbsTol',1e-5)
 end

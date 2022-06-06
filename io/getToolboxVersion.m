@@ -42,7 +42,8 @@ catch
 end
 %Check if in main:
 if mainBranchFlag
-    currentBranch = git('rev-parse --abbrev-ref HEAD');
+    [~,currentBranch] = system('git rev-parse --abbrev-ref HEAD');
+    currentBranch = strtrim(currentBranch);
     if any([strcmp(currentBranch, "main"), strcmp(currentBranch, "master")])
         cd(currentPath);
         error(['ERROR: ' toolbox ' not in main (or master) branch. Check-out this branch of ' toolbox ' before submitting model for Git.'])
@@ -57,8 +58,9 @@ if isempty(version)
     catch
         %If no file available, look up the tag:
         try
-            version = git('describe --tags');
-            commit  = git('log -n 1 --format=%H');
+            [~,version] = system('git describe --tags');
+            version = strtrim(version);
+            [~,commit] = system('git log -n 1 --format=%H');
             commit = commit(1:7);
             %If no tag available or commit is part of tag, get commit instead:
             if ~isempty(strfind(version,'fatal')) || ~isempty(strfind(version,commit))

@@ -1,10 +1,10 @@
 %run this test case with the command
-%results = runtests('sortIdentifiers_and_permuteModelTests.m')
-function tests = sortIdentifiers_and_permuteModelTests
+%results = runtests('modelSortingTests.m')
+function tests = modelSortingTests
 tests = functiontests(localfunctions);
 end
 
-function sortRandomizedModelTest(testCase)
+function sortIdentifirs_and_permuteModelTest(testCase)
 
 %Load the expected (i.e. sorted) model
 sourceDir = fileparts(which(mfilename));
@@ -52,3 +52,17 @@ actModel = sortIdentifiers(actModel);
 %Check that the actual model is the same as the expected model
 verifyEqual(testCase,actModel,expModel)
 end
+
+function expandModel_and_contractModelTest(testCase)
+%Load the expected model
+sourceDir = fileparts(which(mfilename));
+load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
+
+% Note that this does not work any model, as grRules might not be properly
+% sorted (but should still be valid)
+evalc('modelNew = expandModel(model);'); % Suppress warnings about complex grRules
+modelNew = contractModel(modelNew);
+
+verifyEqual(testCase,model,modelNew)
+end
+

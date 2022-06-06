@@ -1,4 +1,4 @@
-function [genes, fluxes, originalGenes, details]=findGeneDeletions(model,testType,analysisType,refModel,oeFactor)
+function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(model,testType,analysisType,refModel,oeFactor)
 % findGeneDeletions
 %   Deletes genes, optimizes the model, and keeps track of the resulting
 %   fluxes. This is used for identifying gene deletion targets.
@@ -38,11 +38,15 @@ function [genes, fluxes, originalGenes, details]=findGeneDeletions(model,testTyp
 %                   2: Proved lethal in sgd (single gene deletion)
 %                   3: - redundant, no longer used -
 %                   4: Involved in dead-end reaction
+%   grRatioMuts     growth rate ratio between mutated strain and wild type,
+%                   matches the originalGenes(genes) mutants. Note that
+%                   this does not directly map to model.genes, as is the case
+%                   for COBRA getEssentialGenes. However, this can be 
+%                   obtained by afterwards running:
+%                       grRatio=ones(1,numel(model.rxns));
+%                       grRatio(genes)=grRatioMuts;
 %
-%   NOTE: This function disregards complexes. Any one gene can encode a
-%         reaction even if parts of the complex is deleted.
-%
-%   Usage: [genes, fluxes, originalGenes, details]=findGeneDeletions(model,testType,analysisType,...
+%   Usage: [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(model,testType,analysisType,...
 %           refModel,oeFactor)
 
 originalModel=model;
@@ -84,12 +88,15 @@ model=removeReactions(model,{},true,true); %Removes unused genes
 details(~ismember(originalGenes,model.genes))=4;
 
 [~, geneMapping]=ismember(model.genes,originalGenes);
+growthWT=solveLP(model);
+growthWT=-growthWT.f;
 
 %Do single deletion/over expression. This is done here since the double
 %deletion depends on which single deletions prove lethal (to reduce the
 %size of the system)
 if strcmpi(testType,'sgd') || strcmpi(testType,'sgo') || strcmpi(testType,'dgd')
     fluxes=zeros(numel(model.rxns),numel(model.genes));
+    grRatioMuts=zeros(1,numel(model.genes));
     solvable=true(numel(model.genes),1);
     for i=1:numel(model.genes)
         if strcmpi(testType,'sgd') || strcmpi(testType,'dgd')
@@ -114,15 +121,16 @@ if strcmpi(testType,'sgd') || strcmpi(testType,'sgo') || strcmpi(testType,'dgd')
         %If the optimization terminated successfully
         if sol.stat==1
             fluxes(:,i)=sol.x;
+            grRatioMuts(i)=-sol.f/growthWT;
             details(geneMapping(i))=1;
         else
             solvable(i)=false;
             details(geneMapping(i))=2;
         end
     end
-    
     fluxes=fluxes(:,solvable);
     genes=geneMapping(solvable);
+    grRatioMuts=grRatioMuts(solvable);
 end
 
 %Now do for DGO. This is rather straight forward since it is always
@@ -143,6 +151,7 @@ if strcmpi(testType,'dgo')
         tempModel.S(:,I)=tempModel.S(:,I).*oeFactor;
         fluxA=qMOMA(tempModel,refModel);
         fluxes(:,i)=fluxA;
+        grRatioMuts(i)=fluxA(logical(model.c))/growthWT;
     end
 end
 
@@ -168,6 +177,7 @@ if strcmpi(testType,'dgd')
         
         if sol.stat==1
             fluxes(:,i)=sol.x;
+            grRatioMuts(i)=-sol.f/growthWT;
         end
     end
 end
