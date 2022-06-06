@@ -27,6 +27,7 @@ end
 overlapPath={};
 overlapFunctions={};
 multiRaven=false;
+multiFunction=false;
 
 for i=1:numel(matlabPaths)
     if ~startsWith(matlabPaths{i},ravenDir)
