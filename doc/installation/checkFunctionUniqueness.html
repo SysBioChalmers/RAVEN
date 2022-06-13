@@ -72,41 +72,47 @@ This function is called by:
 0024     matlabPaths=regexp(path, <span class="string">':'</span>, <span class="string">'split'</span>)';
 0025 <span class="keyword">end</span>
 0026 
-0027 hasConflicts=false;
-0028 
-0029 <span class="keyword">for</span> i=1:numel(matlabPaths)
-0030     <span class="keyword">if</span> ~any(strfind(matlabPaths{i},ravenDir))
-0031         temp_res=dir([matlabPaths{i} <span class="string">'/*.m'</span>]);
-0032         <span class="keyword">if</span> ~isempty(temp_res)
-0033             pathFunctions={temp_res.name}';
-0034         <span class="keyword">else</span>
-0035             pathFunctions=<span class="string">''</span>;
-0036         <span class="keyword">end</span>
-0037         <span class="keyword">if</span> ~isempty(pathFunctions) &amp;&amp; ~any(ismember(<span class="string">'Contents.m'</span>,pathFunctions))
-0038             <span class="keyword">if</span> any(ismember(ravenFunctions,pathFunctions))
-0039                 fprintf(<span class="string">'Not OK\n'</span>);
-0040                 <span class="keyword">if</span> sum(ismember(ravenFunctions,pathFunctions))&gt;(numel(ravenFunctions)/4)
-0041                     EM=<span class="string">'Multiple RAVEN versions detected in MATLAB path. Leave only one RAVEN version in MATLAB path and re-run checkInstallation\n'</span>;
-0042                     dispEM(EM);
-0043                 <span class="keyword">else</span>
-0044                     disp([<span class="string">'WARNING: Duplicate functions in '</span>,matlabPaths{i},<span class="string">': '</span>]);
-0045                     ovrlpFunctions=ravenFunctions(ismember(ravenFunctions,pathFunctions));
-0046                     disp(ovrlpFunctions);
-0047                     hasConflicts=true;
+0027 overlapPath={};
+0028 overlapFunctions={};
+0029 multiRaven=false;
+0030 multiFunction=false;
+0031 
+0032 <span class="keyword">for</span> i=1:numel(matlabPaths)
+0033     <span class="keyword">if</span> ~startsWith(matlabPaths{i},ravenDir)
+0034         temp_res=dir([matlabPaths{i} <span class="string">'/*.m'</span>]);
+0035         <span class="keyword">if</span> ~isempty(temp_res)
+0036             pathFunctions={temp_res.name}';
+0037         <span class="keyword">else</span>
+0038             pathFunctions=<span class="string">''</span>;
+0039         <span class="keyword">end</span>
+0040         <span class="keyword">if</span> ~isempty(pathFunctions) &amp;&amp; ~any(ismember(<span class="string">'Contents.m'</span>,pathFunctions))
+0041             <span class="keyword">if</span> any(ismember(ravenFunctions,pathFunctions))
+0042                 <span class="keyword">if</span> sum(ismember(ravenFunctions,pathFunctions))&gt;(numel(ravenFunctions)/4)
+0043                     multiRaven=true;
+0044                 <span class="keyword">else</span>
+0045                     multiFunction=true;
+0046                     overlapPath = [overlapPath, matlabPaths(i)];
+0047                     overlapFunctions = [overlapFunctions, {ravenFunctions(ismember(ravenFunctions,pathFunctions))}];
 0048                 <span class="keyword">end</span>
 0049             <span class="keyword">end</span>
 0050         <span class="keyword">end</span>
 0051     <span class="keyword">end</span>
 0052 <span class="keyword">end</span>
 0053 
-0054 <span class="keyword">if</span> hasConflicts
+0054 <span class="keyword">if</span> multiRaven==true || multiFunction == true
 0055     fprintf(<span class="string">'Fail\n'</span>)
-0056     fprintf(<span class="string">'  It is strongly recommended to resolve conflicting functions as this may compromise RAVEN functionality\n'</span>);
-0057 <span class="keyword">else</span>
-0058     fprintf(<span class="string">'Pass\n'</span>);
-0059 <span class="keyword">end</span>
-0060 
-0061 <span class="keyword">end</span></pre></div>
+0056     <span class="keyword">if</span> multiRaven==true
+0057         error(<span class="string">'Multiple RAVEN versions detected in MATLAB path. Leave only one RAVEN version in MATLAB path and re-run checkInstallation'</span>);
+0058     <span class="keyword">elseif</span> multiFunction == true
+0059         <span class="keyword">for</span> i=1:numel(overlapPath)
+0060             fprintf([<span class="string">'   Duplicate functions in '</span>,regexprep(overlapPath{i},<span class="string">'(\\)'</span>,<span class="string">'\\$1'</span>),<span class="string">'\n'</span>]);
+0061             fprintf([<span class="string">'     '</span> strjoin(overlapFunctions{i},<span class="string">'\n     '</span>) <span class="string">'\n'</span>]);
+0062         <span class="keyword">end</span>
+0063     fprintf(<span class="string">'   Resolve conflicting functions to ensure RAVEN functionality\n'</span>);
+0064     <span class="keyword">end</span>
+0065 <span class="keyword">else</span>
+0066     fprintf(<span class="string">'Pass\n'</span>)
+0067 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

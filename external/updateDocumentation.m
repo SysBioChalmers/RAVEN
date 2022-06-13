@@ -24,7 +24,7 @@ if exist(fullfile(ravenDir,'external','kegg','keggModel.mat'), 'file') == 2
 end
 
 %Remove existing "doc" directory from RAVEN
-rmdir(fullfile(ravenDir,'doc'),'s');
+%rmdir(fullfile(ravenDir,'doc'),'s');
 
 %Save the current working directory and go to RAVEN root directory
 originalDir=pwd;

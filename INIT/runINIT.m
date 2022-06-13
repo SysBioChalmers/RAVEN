@@ -1,7 +1,8 @@
 function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,noRevLoops,params)
 % runINIT
 %	Generates a model using the INIT algorithm, based on proteomics and/or
-%   transcriptomics and/or metabolomics and/or metabolic tasks
+%   transcriptomics and/or metabolomics and/or metabolic tasks. This is the 
+%   original implementation, which is now replaced with ftINIT.
 %
 %   model           a reference model structure
 %   rxnScores       a vector of scores for the reactions in the model.
@@ -282,7 +283,7 @@ prob.A=[prob.a -speye(size(prob.a,1))];
 prob.b=zeros(size(prob.a,1), 1);
 prob.ub=[prob.bux; prob.buc];
 prob.osense=1;
-prob.csense=char(zeros(size(prob.a,1),1));
+prob.csense=char(1,zeros(size(prob.a,1)));
 prob.csense(:)='E';
 
 %We still don't know which of the presentMets that can be produced. Go

@@ -1,0 +1,377 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of prepINITModel</title>
+  <meta name="keywords" content="prepINITModel">
+  <meta name="description" content="prepINITModel">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">INIT</a> &gt; prepINITModel.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for INIT&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>prepINITModel
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>prepINITModel</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore, extComp) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> prepINITModel
+
+ The purpose of this function is to run time-consuming calculation steps that are not
+ dependent on the RNA-Seq data.
+
+ origRefModel      The model to use. Expected to be something such as Human-GEM, 
+                   Mouse-GEM, etc.
+ taskStruct        The essential tasks. Can be loaded with for example
+                   taskStruct = parseTaskList('../data/metabolicTasks_Essential.txt');
+ spontRxnNames     The spontaneous rxns. (opt, default {})
+ convertGenes      If true the genes are converted to gene names (from 
+                   ENSEMBL) (opt, default false)
+ customRxnsToIgnore These reactions can be ignored in the ignore mask 
+                   (specifying b7=1) (opt, default = {})
+ extComp           Name of the external compartment, typically 's' or 'e'. This
+                   is used for identifying exch and import rxns (opt, default = 'e')
+ prepData          The resulting prepData structure which is used as input to ftINIT
+
+ Usage: prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore, extComp)</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="mergeLinear.html" class="code" title="function [reducedModel,origRxnIds,groupIds,reversedRxns]=mergeLinear(model, noMergeRxns)">mergeLinear</a>	mergeLinear</li><li><a href="rescaleModelForINIT.html" class="code" title="function model=rescaleModelForINIT(model, maxStoichDiff)">rescaleModelForINIT</a>	rescaleModelForINIT</li><li><a href="reverseRxns.html" class="code" title="function model=reverseRxns(model, rxns)">reverseRxns</a>	reverseRxns</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore, extComp)</a>
+0002 <span class="comment">% prepINITModel</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% The purpose of this function is to run time-consuming calculation steps that are not</span>
+0005 <span class="comment">% dependent on the RNA-Seq data.</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% origRefModel      The model to use. Expected to be something such as Human-GEM,</span>
+0008 <span class="comment">%                   Mouse-GEM, etc.</span>
+0009 <span class="comment">% taskStruct        The essential tasks. Can be loaded with for example</span>
+0010 <span class="comment">%                   taskStruct = parseTaskList('../data/metabolicTasks_Essential.txt');</span>
+0011 <span class="comment">% spontRxnNames     The spontaneous rxns. (opt, default {})</span>
+0012 <span class="comment">% convertGenes      If true the genes are converted to gene names (from</span>
+0013 <span class="comment">%                   ENSEMBL) (opt, default false)</span>
+0014 <span class="comment">% customRxnsToIgnore These reactions can be ignored in the ignore mask</span>
+0015 <span class="comment">%                   (specifying b7=1) (opt, default = {})</span>
+0016 <span class="comment">% extComp           Name of the external compartment, typically 's' or 'e'. This</span>
+0017 <span class="comment">%                   is used for identifying exch and import rxns (opt, default = 'e')</span>
+0018 <span class="comment">% prepData          The resulting prepData structure which is used as input to ftINIT</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Usage: prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore, extComp)</span>
+0021 
+0022 
+0023 <span class="keyword">if</span> nargin &lt; 3
+0024     spontRxnNames = {}; 
+0025 <span class="keyword">end</span>
+0026 
+0027 <span class="keyword">if</span> nargin &lt; 4
+0028     convertGenes = false; 
+0029 <span class="keyword">end</span>
+0030 
+0031 <span class="keyword">if</span> nargin &lt; 5
+0032     customRxnsToIgnore = {}; 
+0033 <span class="keyword">end</span>
+0034 
+0035 <span class="keyword">if</span> nargin &lt; 6
+0036     extComp = <span class="string">'e'</span>;
+0037 <span class="keyword">end</span>
+0038 
+0039 disp(<span class="string">'Step 1: Gene rules'</span>)
+0040 [origRefModel.grRules, origRefModel.rxnGeneMat] = standardizeGrRules(origRefModel, true);
+0041 
+0042 <span class="keyword">if</span> convertGenes <span class="comment">%For mouse we might want to translate in the opposite direction - this has to be done before calling this function in that case.</span>
+0043     [origRefModel.grRules, origRefModel.genes, origRefModel.rxnGeneMat] = translateGrRules(origRefModel.grRules, <span class="string">'Name'</span>);
+0044 <span class="keyword">end</span>
+0045 
+0046 
+0047 <span class="comment">% Get list of all dead-end/inacessible/constrained reactions in the model.</span>
+0048 <span class="comment">% We don't merge linear dependent reactions here, that will happen later.</span>
+0049 <span class="comment">% We also don't remove reversibility here, we don't want that in the final</span>
+0050 <span class="comment">% models produced. Therefore, this is done as a separate step.</span>
+0051 <span class="comment">% This takes quite some time to run</span>
+0052 disp(<span class="string">'Step 2: First simplification'</span>)
+0053 [~,deletedDeadEndRxns] = simplifyModel(origRefModel,true,false,true,true,true);
+0054 
+0055 <span class="comment">% get reduced model</span>
+0056 cModel = removeReactions(origRefModel,deletedDeadEndRxns,false,true);
+0057 
+0058 
+0059 <span class="comment">%Then, run the tasks to find out which reactions are essential. These rxns</span>
+0060 <span class="comment">%will be forced to carry flux in the optimization later</span>
+0061 
+0062 <span class="comment">% determine reactions essential for tasks - takes ~10 min</span>
+0063 <span class="comment">% need to add boundary mets first - but only to a temporary model, we don't</span>
+0064 <span class="comment">% want those for further processing</span>
+0065 disp(<span class="string">'Step 3: Check tasks (~10 min)'</span>)
+0066 <span class="keyword">if</span> ~isempty(taskStruct)
+0067     bModel = closeModel(cModel);
+0068     [taskReport, essentialRxnMat, ~, essentialFluxes] = checkTasks(bModel,[],true,false,true,taskStruct);
+0069 
+0070     <span class="comment">%extract the essential rxns:</span>
+0071     sel = sum(essentialRxnMat,2) &gt; 0;
+0072     selInd = find(sel);
+0073     essentialRxns = bModel.rxns(selInd);<span class="comment">%382 rxns for human-GEM</span>
+0074 
+0075     <span class="comment">%Find metabolites present in taskStruct. We want to avoid removing</span>
+0076     <span class="comment">%these metabolites from the final model (even though they may no longer</span>
+0077     <span class="comment">%participate in any reacitons) so that the final model is still able to</span>
+0078     <span class="comment">%complete all of the tasks without any errors.</span>
+0079     taskMets = union(vertcat(taskStruct.inputs),vertcat(taskStruct.outputs));
+0080     taskMets = union(taskMets, parseRxnEqu(vertcat(taskStruct.equations)));
+0081     modelMets = strcat(cModel.metNames,<span class="string">'['</span>,cModel.comps(cModel.metComps),<span class="string">']'</span>);
+0082     [inModel,metInd] = ismember(taskMets,modelMets);
+0083     essentialMetsForTasks = cModel.mets(metInd(inModel));<span class="comment">%118 mets</span>
+0084 
+0085     <span class="comment">%Remove tasks that cannot be performed</span>
+0086     taskStruct(taskReport.ok == false) = [];
+0087 
+0088 <span class="keyword">else</span>
+0089     essentialRxns = {};
+0090     essentialMetsForTasks = {};
+0091     taskReport = {};
+0092 <span class="keyword">end</span>
+0093 
+0094 
+0095 <span class="comment">% remove metabolites separately to avoid removing those needed for tasks</span>
+0096 unusedMets = cModel.mets(all(cModel.S == 0,2));<span class="comment">%1248 in Human-GEM</span>
+0097 cModel = removeMets(cModel, setdiff(unusedMets,essentialMetsForTasks));
+0098 
+0099 <span class="keyword">if</span> ~isempty(taskStruct)
+0100 
+0101     <span class="comment">%Here, we decide on a direction in which the essential reactions should be forced.</span>
+0102     essentialRevDir = false(length(essentialRxns),1);
+0103     pp = zeros(length(essentialRxns),1);
+0104     nn = zeros(length(essentialRxns),1);
+0105     <span class="keyword">for</span> i = 1:length(selInd)
+0106         pos = sum(essentialFluxes(selInd(i),essentialRxnMat(selInd(i),:)) &gt; 0);
+0107         neg = sum(essentialFluxes(selInd(i),essentialRxnMat(selInd(i),:)) &lt; 0);
+0108         essentialRevDir(i) = pos &lt; neg;
+0109         pp(i) = pos;
+0110         nn(i) = neg;
+0111     <span class="keyword">end</span>
+0112 
+0113     <span class="comment">%sum(pp&gt;0 &amp; nn&gt;0) %0, so it is not a big problem that different tasks share essential</span>
+0114     <span class="comment">%reactions but in different directions, at least no such cases exist now, so we ignore this for now.</span>
+0115 
+0116     <span class="comment">%Now create a minimal model for the MILP - we want to make this as small as we can, but we</span>
+0117     <span class="comment">%don't want to use this later when we create the final models - just for the first MILP.</span>
+0118     <span class="comment">%We don't want boundary metabolites in here either.</span>
+0119 
+0120     <span class="comment">%We do a trick with the essential rxns here:</span>
+0121     <span class="comment">%What we want is to get rid of the reversibility of the reactions, because reversible reactions require</span>
+0122     <span class="comment">%an integer each in the MILP, and we can also get the case that it may be cheaper to force flux in the wrong direction, which</span>
+0123     <span class="comment">%will probably not give the gap-filling of reactions that we want.</span>
+0124     <span class="comment">%So, we simply change the reversible reactions to irreversible, and flip their direction if the direction</span>
+0125     <span class="comment">%to force flux in is negative. We don't need to do anything else, runINIT will then handle all essential rxns</span>
+0126     <span class="comment">%as irreversible (and will not add any integers etc. for them).</span>
+0127 
+0128     minModel1 = cModel;
+0129     <span class="comment">%for the essential rxns where we should force flux in the positive direction, just make them irreversible</span>
+0130     <span class="comment">%for the negative direction, we do the same, but also flip the direction of the reaction</span>
+0131 
+0132     <span class="comment">%first flip the reactions with negative direction</span>
+0133     <span class="comment">%constructEquations(minModel1,minModel1.rxns(selInd(essentialRevDir))) %looks good</span>
+0134     minModel1 = <a href="reverseRxns.html" class="code" title="function model=reverseRxns(model, rxns)">reverseRxns</a>(minModel1, minModel1.rxns(selInd(essentialRevDir)));
+0135     <span class="comment">%constructEquations(minModel2,minModel2.rxns(selInd(essentialRevDir))) %looks good</span>
+0136 
+0137     <span class="comment">%Then make them irreversible</span>
+0138     minModel1.rev(selInd) = 0;
+0139     minModel1.lb(selInd) = 0;
+0140 <span class="keyword">else</span>
+0141     minModel1 = cModel;
+0142 <span class="keyword">end</span>
+0143 <span class="comment">%Now, remove reversibility on any reactions that can only be run in one direction - that simplifies the problem</span>
+0144 <span class="comment">%This takes a long time to run (at least an hour or so).</span>
+0145 <span class="comment">%This is an important step, we go from 5533 to 3734 reversible rxns, which reduces the size of the MILP,</span>
+0146 <span class="comment">%since irreversible rxns are easier to handle.</span>
+0147 disp(<span class="string">'Step 4: Second simplification (~1 hour)'</span>)
+0148 minModel2 = simplifyModel(minModel1,false,false,false,false,false,false,true);
+0149 
+0150 disp(<span class="string">'Step 5: Final work'</span>)
+0151 
+0152 <span class="comment">%Now, merge all linear dependent rxns - this reduces the size of the model a lot.</span>
+0153 <span class="comment">%Size goes from 11888 rxns to 7922 rxns for human-GEM, so this is an important step</span>
+0154 [minModel3,origRxnIds,groupIds]=<a href="mergeLinear.html" class="code" title="function [reducedModel,origRxnIds,groupIds,reversedRxns]=mergeLinear(model, noMergeRxns)">mergeLinear</a>(minModel2, {});
+0155 
+0156 <span class="comment">%we now need to figure out what happened to the essential rxns in the merge step above.</span>
+0157 <span class="comment">%Note that it would be ideal to run checkTasks on the result from mergeLinear, but that doesn't work.</span>
+0158 <span class="comment">%The exchange rxns have in many cases been merged with other reactions, making it difficult to run</span>
+0159 <span class="comment">%the tasks. So, instead we run checkTasks before, and figure out which merged reactions the</span>
+0160 <span class="comment">%essential reactions belong to now</span>
+0161 
+0162 <span class="comment">%It may be possible to create a minModel2b, run mergeLinear on that (which is quick), and</span>
+0163 <span class="comment">%then run checkTasks on the minimized model. Would be good to check if this gives the</span>
+0164 <span class="comment">%same result, I'm not sure. The code would get less complicated.</span>
+0165 
+0166 
+0167 <span class="keyword">if</span> ~isempty(taskStruct)
+0168 
+0169     <span class="comment">%find all potential rxns</span>
+0170     rxnIndOrig = ismember(origRxnIds, essentialRxns);
+0171     ids = unique(groupIds(rxnIndOrig));
+0172     ids = ids(ids &gt; 0);<span class="comment">%0 means it has not been merged</span>
+0173     rxnCandidates = unique([essentialRxns;origRxnIds(ismember(groupIds, ids))]);<span class="comment">%388, essentialRxns is 382</span>
+0174     newEssentialRxns = minModel3.rxns(ismember(minModel3.rxns,rxnCandidates));<span class="comment">%196 in Human-GEM</span>
+0175     <span class="comment">%setdiff(newEssentialRxns, essentialRxns)%only 2, that is very few</span>
+0176     <span class="comment">%setdiff(essentialRxns, newEssentialRxns)%188, that is very many</span>
+0177     <span class="comment">%It is probably the case that many essential reactions are linearly dependent on one another, which makes sense.</span>
+0178 <span class="keyword">else</span>
+0179     newEssentialRxns = {};
+0180 <span class="keyword">end</span>
+0181 <span class="comment">%What is left now is to remove some rxns from the problem, such as exchange rxns and spontaneous rxns.</span>
+0182 <span class="comment">%We set the rxn scores of these to exactly 0, and make sure no other scores are zero.</span>
+0183 <span class="comment">%runINIT will then handle this, we do &gt;0 and &lt;0 to get positive and negative scores, the rest</span>
+0184 <span class="comment">%are not included in the problem.</span>
+0185 <span class="comment">%But, this has to happen in the scoring - we identify the reactions in the origrxns here, and then fix this</span>
+0186 <span class="comment">%in the scoring for each sample (the function groupRxnScores handles this and is run for each sample).</span>
+0187 
+0188 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0189 <span class="comment">%identify the reactions to ignore in the minModel2</span>
+0190 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0191 
+0192 <span class="comment">%Identify reactions that should be ignored by tINIT, i.e. tINIT will not remove these regardless of score</span>
+0193 
+0194 
+0195 [~,exchRxnInd] = getExchangeRxns(minModel2);
+0196 toIgnoreExch = false(numel(minModel2.rxns),1);
+0197 toIgnoreExch(exchRxnInd) = true;
+0198 toIgnoreImportRxns = false(numel(minModel2.rxns),1);
+0199 toIgnoreSimpleTransp = false(numel(minModel2.rxns),1);
+0200 toIgnoreAdvTransp = false(numel(minModel2.rxns),1);
+0201 toIgnoreS = false(numel(minModel2.rxns),1);
+0202 
+0203 
+0204 
+0205 <span class="comment">%sum(toIgnore) %1500 for Human-GEM</span>
+0206 <span class="comment">%find simple transport reactions with no GPRs:</span>
+0207 <span class="comment">%We really only skip the reactions with two metabolites</span>
+0208 <span class="comment">%where they are the same but different compartments - only skip the transport into the cell for now</span>
+0209 numMets = sum(minModel2.S ~= 0, 1);
+0210 scomp = find(strcmp(minModel2.comps,extComp));
+0211 <span class="keyword">for</span> i = 1:length(minModel2.rxns)
+0212     <span class="comment">%check that it has no GPR and that the rxn has two metabolites</span>
+0213     <span class="keyword">if</span> strcmp(minModel2.grRules(i),<span class="string">''</span>) &amp;&amp; (numMets(i) == 2)
+0214       metsComps = minModel2.metComps(minModel2.S(:,i) ~= 0);
+0215       metNames = minModel2.metNames(minModel2.S(:,i) ~= 0);
+0216       <span class="keyword">if</span> metsComps(1) ~= metsComps(2) &amp;&amp; (metsComps(1) == scomp || metsComps(2) == scomp) <span class="comment">%different compartments, one is the extComp</span>
+0217           <span class="keyword">if</span> strcmp(metNames{1}, metNames{2}) <span class="comment">%the same metabolite, it is a transport reaction</span>
+0218               toIgnoreImportRxns(i) = true;
+0219           <span class="keyword">end</span>
+0220       <span class="keyword">elseif</span> metsComps(1) ~= metsComps(2) <span class="comment">%different compartments, no check for extComp</span>
+0221           <span class="keyword">if</span> strcmp(metNames{1}, metNames{2}) <span class="comment">%the same metabolite, it is a transport reaction</span>
+0222               toIgnoreSimpleTransp(i) = true;
+0223           <span class="keyword">end</span>
+0224       <span class="keyword">end</span>
+0225     <span class="keyword">else</span> <span class="comment">%check for advanced</span>
+0226         metsInd = find(minModel2.S(:,i) ~= 0);
+0227         <span class="comment">%check that we have an even number of mets that is larger than 2 and that we don't have a GPR</span>
+0228         <span class="keyword">if</span> rem(length(metsInd),2) == 0 &amp;&amp; length(metsInd) &gt; 2 &amp;&amp; isempty(minModel2.grRules{i})
+0229             <span class="comment">%Now check that we have pairs of metabolites that are transported</span>
+0230             SVals = full(minModel2.S(metsInd,i));
+0231             metNames = minModel2.metNames(metsInd);
+0232             comps = minModel2.metComps(metsInd);
+0233             success = true;
+0234             <span class="keyword">while</span> ~isempty(metNames)
+0235                 <span class="keyword">if</span> length(metNames) &lt; 2 <span class="comment">%this should not happen</span>
+0236                    error(<span class="string">'We should never arrive here!'</span>);
+0237                 <span class="keyword">end</span>
+0238                 metMatch = find(strcmp(metNames(2:length(metNames)),metNames{1})) + 1;
+0239                 <span class="keyword">if</span> length(metMatch) ~= 1 <span class="comment">%we want a match, and only one (if there is some other complex transport rxn, we skip that)</span>
+0240                    success = false;
+0241                    <span class="keyword">break</span>;
+0242                 <span class="keyword">end</span>
+0243                 <span class="keyword">if</span> (SVals(1) + SVals(metMatch)) ~= 0 <span class="comment">%the stoichiometry is not right</span>
+0244                    success = false;
+0245                    <span class="keyword">break</span>;
+0246                 <span class="keyword">end</span>
+0247                 <span class="keyword">if</span> comps(1) == comps(metMatch) <span class="comment">%they must be in different compartments (maybe this need not to be checked)</span>
+0248                    success = false;
+0249                    <span class="keyword">break</span>;
+0250                 <span class="keyword">end</span>
+0251                 <span class="comment">%now remove the pair and continue with the next</span>
+0252                 SVals([1;metMatch]) = [];
+0253                 metNames([1;metMatch]) = [];
+0254                 comps([1;metMatch]) = [];
+0255             <span class="keyword">end</span>
+0256             toIgnoreAdvTransp(i) = success;
+0257         <span class="keyword">end</span>          
+0258     <span class="keyword">end</span>
+0259 <span class="keyword">end</span>
+0260 
+0261 <span class="comment">%Spontaneous reactions:</span>
+0262 toIgnoreSpont = ismember(minModel2.rxns, spontRxnNames);<span class="comment">%only 10 rxns in human-GEM</span>
+0263 
+0264 <span class="comment">%rxns without GPRs in the s compartment (outside the cell)</span>
+0265 sCompInd = find(strcmp(minModel2.comps, extComp));
+0266 <span class="keyword">for</span> i = 1:length(minModel2.rxns)
+0267     metsInd = find(minModel2.S(:,i) ~= 0);
+0268     <span class="comment">%check that it has more than 1 metabolite (not exch rxn) and no GPR</span>
+0269     <span class="keyword">if</span> length(metsInd) &gt; 1 &amp;&amp; isempty(minModel2.grRules{i})
+0270         <span class="keyword">if</span>  all(minModel2.metComps(metsInd) == sCompInd)
+0271             toIgnoreS(i) = true;
+0272         <span class="keyword">end</span>
+0273     <span class="keyword">end</span>
+0274 <span class="keyword">end</span>
+0275 
+0276 toIgnoreAllWithoutGPRs = cellfun(@isempty,minModel2.grRules);
+0277 
+0278 
+0279 <span class="comment">%sum(toIgnore)%in total 2375 rxns in human-GEM</span>
+0280 <span class="comment">%sum(toIgnoreAllTransp)%in total 3337 rxns in human-GEM, so 1,000 more</span>
+0281 
+0282 <span class="comment">%Now, try to scale the model to become more favorable for the solver.</span>
+0283 <span class="comment">%In general, we try to make all fluxes as similar as possible.</span>
+0284 <span class="comment">%      There is room for improvement here, this function is pretty simple.</span>
+0285 <span class="comment">%      It only rescales reactions, while it would be possible to rescale</span>
+0286 <span class="comment">%      metabolites as well (ROS =&gt; kROS, albumin =&gt; millialbumin, etc., but</span>
+0287 <span class="comment">%      scaled freely with a mathematical method). It could potentially open up</span>
+0288 <span class="comment">%      for using less strict margins in the MILP, and make it run faster.</span>
+0289 scaledMinModel = <a href="rescaleModelForINIT.html" class="code" title="function model=rescaleModelForINIT(model, maxStoichDiff)">rescaleModelForINIT</a>(minModel3);
+0290 scaledMinModel.ub(scaledMinModel.ub &gt; 0) = 1000;
+0291 scaledMinModel.lb(scaledMinModel.lb &lt; 0) = -1000;
+0292 
+0293 <span class="comment">% create data structure with pre-processing results</span>
+0294 prepData.taskReport = taskReport;
+0295 prepData.essentialRxns = newEssentialRxns; <span class="comment">%essential rxns in the minModel</span>
+0296 prepData.taskStruct = taskStruct;
+0297 prepData.refModel = cModel;
+0298 prepData.minModel = scaledMinModel;
+0299 prepData.refModelWithBM = closeModel(cModel); <span class="comment">%do this here so we don't have to do this for each sample</span>
+0300 prepData.groupIds = groupIds;
+0301 prepData.essentialMetsForTasks = essentialMetsForTasks;
+0302 
+0303 prepData.toIgnoreExch = toIgnoreExch;
+0304 prepData.toIgnoreImportRxns = toIgnoreImportRxns;
+0305 prepData.toIgnoreSimpleTransp = toIgnoreSimpleTransp;
+0306 prepData.toIgnoreAdvTransp = toIgnoreAdvTransp;
+0307 prepData.toIgnoreSpont = toIgnoreSpont;
+0308 prepData.toIgnoreS = toIgnoreS;
+0309 prepData.toIgnoreCustomRxns = ismember(minModel2.rxns, customRxnsToIgnore);
+0310 prepData.toIgnoreAllWithoutGPRs = toIgnoreAllWithoutGPRs;
+0311 
+0312 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

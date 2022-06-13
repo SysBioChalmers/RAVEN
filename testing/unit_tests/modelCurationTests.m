@@ -139,6 +139,39 @@ modelManual.S(end+1:end+2,:)=sparse(zeros(2,numel(modelManual.rxns)));
 verifyEqual(testCase,modelManual,modelNew)
 end
 
+
+function addMets_oneCompTest(testCase)
+sourceDir = fileparts(which(mfilename));
+load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
+
+metsToAdd.metNames={'metaboliteName','3-Phospho-D-glycerate'};
+metsToAdd.compartments={'e'};
+metsToAdd.metCharges=[2,0];
+metsToAdd.metNotes={'this is just a test','another one'};
+metsToAdd.metMiriams{1}=struct('name',{{'testDB1';'testDB2'}},'value',...
+    {{'testValue1';'testValue2'}});
+metsToAdd.metMiriams{2}=struct('name',{{'testDB1'}},'value',...
+    {{'testValue1'}});
+
+evalc('modelNew=addMets(model,metsToAdd,true);');
+
+%Perform the curation manually for comparison
+modelManual=model;
+modelManual.metNotes(1:numel(modelManual.mets),1)={''};
+modelManual.metCharges(1:numel(modelManual.mets),1)=NaN(numel(modelManual.mets),1);
+modelManual.mets(end+1:end+2)={'m_0001','m_0002'};
+modelManual.metNames(end+1:end+2)=metsToAdd.metNames;
+modelManual.metNotes(end+1:end+2)=metsToAdd.metNotes;
+modelManual.metMiriams(end+1:end+2)=metsToAdd.metMiriams;
+modelManual.metCharges(end+1:end+2)=[2,NaN];
+modelManual.b(end+1:end+2)=[0,0];
+modelManual.metFormulas(end+1:end+2)={'','C3H4O7P'};
+modelManual.metComps(end+1:end+2)=2;
+modelManual.S(end+1:end+2,:)=sparse(zeros(2,numel(modelManual.rxns)));
+
+verifyEqual(testCase,modelManual,modelNew)
+end
+
 function removeMetsTest(testCase)
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
@@ -365,15 +398,15 @@ modelManual.mets(end+1:end+7)={'ac_c_p';'actp_c_p';'adp_c_p';'atp_c_p';'actp_c_e
 modelManual.S(end+1:end+7,:)=zeros(7,numel(modelManual.rxns)-2);
 modelManual.S(:,end+1:end+2)=zeros(numel(modelManual.mets),2);
 
-modelManual.S([73,74,75,76],end-1)=[-1,1,1,-1];
-modelManual.S([7,77,78,79],end)=[-1,1,1,-1];
+modelManual.S([73,74,75,76],end-1)=[1,-1,-1,1];
+modelManual.S([7,77,78,79],end)=[1,-1,-1,1];
 
 modelManual.lb(end+1:end+2)=[-1000;-1000];
 modelManual.ub(end+1:end+2)=[1000;1000];
 modelManual.rev(end+1:end+2)=[1;1];
 modelManual.c(end+1:end+2)=[0;0];
 modelManual.rxnNames(end+1:end+2)={'acetate kinase';'acetate kinase'};
-modelManual.grRules(end+1:end+2)={'b2296 or b1849 or b3115';'b2296 or b1849 or b3115'};
+modelManual.grRules(end+1:end+2)={'b1849 or b2296 or b3115';'b1849 or b2296 or b3115'};
 modelManual.eccodes(end+1:end+2)={'2.7.2.1';'2.7.2.1'};
 
 modelManual.rxnGeneMat(end+1:end+2,:)=zeros(2,numel(modelManual.genes));
