@@ -103,8 +103,8 @@ largeFiller(:)={''};
 %Check that no metabolite ids are already present in the model
 I=ismember(metsToAdd.mets,model.mets);
 if any(I)
-    dispEM(['One or more elements in metsToAdd.mets are already present in model.mets: '...
-        metsToAdd.mets{I}]);
+    error('One or more elements in metsToAdd.mets are already present in model.mets: %s',...
+        strjoin(metsToAdd.mets(I),', '));
 else
     newModel.mets=[newModel.mets;metsToAdd.mets(:)];
 end
@@ -242,6 +242,11 @@ end
 
 if isfield(metsToAdd,'metNotes')
     metsToAdd.metNotes=convertCharArray(metsToAdd.metNotes);
+    if numel(metsToAdd.metNotes)==1 && numel(metsToAdd.mets)>1
+        temp=cell(numel(metsToAdd.mets),1);
+        temp(:)=metsToAdd.metNotes;
+        metsToAdd.metNotes=temp;
+    end
     if numel(metsToAdd.metNotes)~=nMets
         EM='metsToAdd.metNotes must have the same number of elements as metsToAdd.mets';
         dispEM(EM);
@@ -260,6 +265,11 @@ end
 
 %Don't check the type of metMiriams
 if isfield(metsToAdd,'metMiriams')
+    if numel(metsToAdd.metMiriams)==1 && numel(metsToAdd.mets)>1
+        temp=cell(numel(metsToAdd.mets),1);
+        temp(:)={metsToAdd.metMiriams};
+        metsToAdd.metMiriams=temp;
+    end
     if numel(metsToAdd.metMiriams)~=nMets
         EM='metsToAdd.metMiriams must have the same number of elements as metsToAdd.mets';
         dispEM(EM);
