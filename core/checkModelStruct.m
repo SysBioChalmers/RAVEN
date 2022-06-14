@@ -274,7 +274,7 @@ for i=1:numel(model.metNames)
         end
     end
 end
-EM='The following metabolite names begin with a number directly followed by space:';
+EM='The following metabolite IDs begin with a number directly followed by space:';
 dispEM(EM,throwErrors,model.mets(I),trimWarnings);
 
 %Non-parseable composition
