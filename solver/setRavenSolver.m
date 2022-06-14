@@ -27,4 +27,6 @@ switch solver
     otherwise
         error('Invalid solver defined')
 end
+global RAVENSOLVER
+RAVENSOLVER = solver;
 end
