@@ -117,7 +117,7 @@ This function is called by:
 0058 
 0059 fprintf([<span class="string">'NOTICE: If Matlab is freezing and does not provide any output in 30 minutes, consider increasing Java Heap Memory\n'</span>, <span class="keyword">...</span>
 0060     <span class="string">'in MATLAB settings and start over with the new session\n'</span>]);
-0061 fprintf(<span class="string">'Mapping genes to the multi-FASTA source file... '</span>);
+0061 fprintf(<span class="string">'Mapping genes to the multi-FASTA source file...   0%% complete'</span>);
 0062 <span class="comment">%Now loop through the file to see which genes are present in the gene list</span>
 0063 <span class="comment">%and save their position IN elementPositions! This is to enable a easy way</span>
 0064 <span class="comment">%to get the distance to the following element</span>
@@ -150,83 +150,89 @@ This function is called by:
 0091             genePositions(id)=i;
 0092         <span class="keyword">end</span>
 0093     <span class="keyword">end</span>
-0094 <span class="keyword">end</span>
-0095 fprintf(<span class="string">'COMPLETE\n'</span>);    
-0096 
-0097 fprintf(<span class="string">'Generating the KEGG Orthology specific multi-FASTA files...   0%% complete'</span>);
-0098 <span class="comment">%Loop through the reactions and print the corresponding sequences</span>
-0099 <span class="keyword">for</span> i=1:numel(model.rxns)
-0100 
-0101     <span class="comment">%Do not overwrite existing files</span>
-0102     <span class="keyword">if</span> ~exist(fullfile(outputDir,[model.rxns{i} <span class="string">'.fa'</span>]), <span class="string">'file'</span>)
-0103         
-0104         <span class="comment">%Get the positions in elementPositions for the involved genes</span>
-0105         genesUsed=model.rxnGeneMat(i,:);
-0106         
-0107         <span class="comment">%Open a file for this reaction. This saves empty files for KOs</span>
-0108         <span class="comment">%without genes</span>
-0109         rxnfid=fopen(fullfile(outputDir,[model.rxns{i} <span class="string">'.fa'</span>]),<span class="string">'w'</span>);
-0110         
-0111         <span class="keyword">if</span> any(genesUsed)
-0112             positions=genePositions(genesUsed~=0);
-0113             
-0114             <span class="comment">%It could be that some genes were not found. Delete those</span>
-0115             <span class="comment">%elements</span>
-0116             positions(positions==0)=[];
-0117             
-0118             <span class="comment">%Print each sequence</span>
-0119             <span class="keyword">for</span> j=1:numel(positions)
-0120                 fseek(fid,elementPositions(positions(j)),-1);
-0121                 <span class="comment">%Should check that it ends with a gene!!!! Check for eof</span>
-0122                 <span class="keyword">if</span> positions(j)&lt;numel(elementPositions)
-0123                     str=fread(fid,[1 double(elementPositions(positions(j)+1))-double(elementPositions(positions(j)))-1],<span class="string">'*char'</span>);
-0124                     
-0125                     <span class="comment">%If the string does not end with a line feed character</span>
-0126                     <span class="keyword">if</span> str(end)~=10
-0127                         str=[str fread(fid,[1 double(elementPositions(positions(j)+2))-double(elementPositions(positions(j)+1))],<span class="string">'*char'</span>)];
-0128                         
-0129                         <span class="comment">%This is if we still have not found a new gene.</span>
-0130                         <span class="comment">%Maximal unluck. This whole check should be done</span>
-0131                         <span class="comment">%when elementPositions are calculated!</span>
-0132                         <span class="keyword">if</span> str(end)~=10
-0133                             <span class="comment">%Skip this gene</span>
-0134                             <span class="keyword">continue</span>;
-0135                         <span class="keyword">end</span>
-0136                     <span class="keyword">end</span>
-0137                 <span class="keyword">else</span>
-0138                     str=fread(fid,[1 inf],<span class="string">'*char'</span>);
-0139                 <span class="keyword">end</span>
-0140                 fwrite(rxnfid,[<span class="string">'&gt;'</span> str]);
-0141             <span class="keyword">end</span>
-0142         <span class="keyword">end</span>
-0143         fclose(rxnfid);
-0144     <span class="keyword">end</span>
-0145     <span class="comment">%Print the progress</span>
-0146     <span class="keyword">if</span> rem(i-1,50) == 0
-0147         progress=num2str(i/numel(model.rxns));
-0148         progress=pad(progress,3,<span class="string">'left'</span>);
-0149         fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete'</span>,progress);
+0094     <span class="comment">%Print the progress</span>
+0095     <span class="keyword">if</span> rem(i-1,350000) == 0
+0096         progress=num2str(floor(100*i/numel(elementPositions)));
+0097         progress=pad(progress,3,<span class="string">'left'</span>);
+0098         fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete'</span>,progress);
+0099     <span class="keyword">end</span>
+0100 <span class="keyword">end</span>
+0101 fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n'</span>);   
+0102 
+0103 fprintf(<span class="string">'Generating the KEGG Orthology specific multi-FASTA files...   0%% complete'</span>);
+0104 <span class="comment">%Loop through the reactions and print the corresponding sequences</span>
+0105 <span class="keyword">for</span> i=1:numel(model.rxns)
+0106 
+0107     <span class="comment">%Do not overwrite existing files</span>
+0108     <span class="keyword">if</span> ~exist(fullfile(outputDir,[model.rxns{i} <span class="string">'.fa'</span>]), <span class="string">'file'</span>)
+0109         
+0110         <span class="comment">%Get the positions in elementPositions for the involved genes</span>
+0111         genesUsed=model.rxnGeneMat(i,:);
+0112         
+0113         <span class="comment">%Open a file for this reaction. This saves empty files for KOs</span>
+0114         <span class="comment">%without genes</span>
+0115         rxnfid=fopen(fullfile(outputDir,[model.rxns{i} <span class="string">'.fa'</span>]),<span class="string">'w'</span>);
+0116         
+0117         <span class="keyword">if</span> any(genesUsed)
+0118             positions=genePositions(genesUsed~=0);
+0119             
+0120             <span class="comment">%It could be that some genes were not found. Delete those</span>
+0121             <span class="comment">%elements</span>
+0122             positions(positions==0)=[];
+0123             
+0124             <span class="comment">%Print each sequence</span>
+0125             <span class="keyword">for</span> j=1:numel(positions)
+0126                 fseek(fid,elementPositions(positions(j)),-1);
+0127                 <span class="comment">%Should check that it ends with a gene!!!! Check for eof</span>
+0128                 <span class="keyword">if</span> positions(j)&lt;numel(elementPositions)
+0129                     str=fread(fid,[1 double(elementPositions(positions(j)+1))-double(elementPositions(positions(j)))-1],<span class="string">'*char'</span>);
+0130                     
+0131                     <span class="comment">%If the string does not end with a line feed character</span>
+0132                     <span class="keyword">if</span> str(end)~=10
+0133                         str=[str fread(fid,[1 double(elementPositions(positions(j)+2))-double(elementPositions(positions(j)+1))],<span class="string">'*char'</span>)];
+0134                         
+0135                         <span class="comment">%This is if we still have not found a new gene.</span>
+0136                         <span class="comment">%Maximal unluck. This whole check should be done</span>
+0137                         <span class="comment">%when elementPositions are calculated!</span>
+0138                         <span class="keyword">if</span> str(end)~=10
+0139                             <span class="comment">%Skip this gene</span>
+0140                             <span class="keyword">continue</span>;
+0141                         <span class="keyword">end</span>
+0142                     <span class="keyword">end</span>
+0143                 <span class="keyword">else</span>
+0144                     str=fread(fid,[1 inf],<span class="string">'*char'</span>);
+0145                 <span class="keyword">end</span>
+0146                 fwrite(rxnfid,[<span class="string">'&gt;'</span> str]);
+0147             <span class="keyword">end</span>
+0148         <span class="keyword">end</span>
+0149         fclose(rxnfid);
 0150     <span class="keyword">end</span>
-0151 <span class="keyword">end</span>
-0152 fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n'</span>);
-0153 
-0154 <span class="comment">%Close the source file</span>
-0155 fclose(fid);
-0156 <span class="keyword">end</span>
-0157 
-0158 <a name="_sub1" href="#_subfunctions" class="code">function files=listFiles(directory)</a>
-0159 <span class="comment">%Supporter function to list the files in a directory and return them as a</span>
-0160 <span class="comment">%cell array</span>
-0161 temp=dir(directory);
-0162 files=cell(numel(temp),1);
-0163 <span class="keyword">for</span> i=1:numel(temp)
-0164     files{i}=temp(i,1).name;
-0165 <span class="keyword">end</span>
-0166 files=strrep(files,<span class="string">'.fa'</span>,<span class="string">''</span>);
-0167 files=strrep(files,<span class="string">'.hmm'</span>,<span class="string">''</span>);
-0168 files=strrep(files,<span class="string">'.out'</span>,<span class="string">''</span>);
-0169 files=strrep(files,<span class="string">'.faw'</span>,<span class="string">''</span>);
-0170 <span class="keyword">end</span></pre></div>
+0151     <span class="comment">%Print the progress</span>
+0152     <span class="keyword">if</span> rem(i-1,50) == 0
+0153         progress=num2str(floor(100*i/numel(model.rxns)));
+0154         progress=pad(progress,3,<span class="string">'left'</span>);
+0155         fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete'</span>,progress);
+0156     <span class="keyword">end</span>
+0157 <span class="keyword">end</span>
+0158 fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n'</span>);
+0159 
+0160 <span class="comment">%Close the source file</span>
+0161 fclose(fid);
+0162 <span class="keyword">end</span>
+0163 
+0164 <a name="_sub1" href="#_subfunctions" class="code">function files=listFiles(directory)</a>
+0165 <span class="comment">%Supporter function to list the files in a directory and return them as a</span>
+0166 <span class="comment">%cell array</span>
+0167 temp=dir(directory);
+0168 files=cell(numel(temp),1);
+0169 <span class="keyword">for</span> i=1:numel(temp)
+0170     files{i}=temp(i,1).name;
+0171 <span class="keyword">end</span>
+0172 files=strrep(files,<span class="string">'.fa'</span>,<span class="string">''</span>);
+0173 files=strrep(files,<span class="string">'.hmm'</span>,<span class="string">''</span>);
+0174 files=strrep(files,<span class="string">'.out'</span>,<span class="string">''</span>);
+0175 files=strrep(files,<span class="string">'.faw'</span>,<span class="string">''</span>);
+0176 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
