@@ -84,11 +84,11 @@ else
         model.id='KEGG';
         model.name='Automatically generated from KEGG database';
         
-        %Preallocate memory for 30000 metabolites
-        model.mets=cell(30000,1);
-        model.metNames=cell(30000,1);
-        model.metFormulas=cell(30000,1);
-        model.metMiriams=cell(30000,1);
+        %Preallocate memory for 50000 metabolites
+        model.mets=cell(50000,1);
+        model.metNames=cell(50000,1);
+        model.metFormulas=cell(50000,1);
+        model.metMiriams=cell(50000,1);
         
         %First load information on metabolite ID, metabolite name,
         %composition, and ChEBI
