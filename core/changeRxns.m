@@ -65,7 +65,6 @@ if nargin<6
 end
 
 rxns=convertCharArray(rxns);
-equations=convertCharArray(equations);
 compartment=char(compartment);
 
 %Find the indexes of the reactions and throw an error if they aren't all
@@ -86,7 +85,7 @@ if isfield(equations,'mets') && isfield(equations,'stoichCoeffs')
     rxnsToChange.mets=equations.mets;
     rxnsToChange.stoichCoeffs=equations.stoichCoeffs;
 else
-    rxnsToChange.equations=equations;
+    rxnsToChange.equations=convertCharArray(equations);
 end
 if isfield(model,'rxnNames')
     rxnsToChange.rxnNames=model.rxnNames(J);
