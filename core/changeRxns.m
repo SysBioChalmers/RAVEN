@@ -13,7 +13,7 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %                    interpreted
 %                    1 - The metabolites are matched to model.mets. New
 %                        metabolites (if allowed) are added to
-%                        "compartment"
+%                        "compartment" (default)
 %                    2 - The metabolites are matched to model.metNames and
 %                        all metabolites are assigned to "compartment". Any
 %                        new metabolites that are added will be assigned
@@ -53,7 +53,7 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %
 %   Usage: model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 
-if nargin<4 & isfield(equations,'stoichCoeffs')
+if nargin<4
     eqnType=1;
 end
 
