@@ -195,8 +195,7 @@ else
             if strcmp(tline(1:12),'ENZYME      ')
                 model.eccodes{rxnCounter}=tline(13:end);
                 model.eccodes{rxnCounter}=deblank(model.eccodes{rxnCounter});
-                model.eccodes{rxnCounter}=strcat('ec-code/',model.eccodes{rxnCounter});
-                model.eccodes{rxnCounter}=regexprep(model.eccodes{rxnCounter},'\s+',';ec-code/');
+                model.eccodes{rxnCounter}=regexprep(model.eccodes{rxnCounter},'\s+',';');
             end
             if numel(tline)>8
                 if strcmp(tline(1:9),'REFERENCE')

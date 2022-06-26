@@ -43,7 +43,7 @@ else
         EM=fprintf(['The file ''taxonomy'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
         dispEM(EM);
     else
-        fprintf(['Generating the KEGG phylogenetic distance matrix from ' fullfile(keggPath,'taxonomy') '... ']);
+        fprintf('Generating keggPhylDist.mat file... ');
         %Open the file that describes the naming of the species
         fid = fopen(fullfile(keggPath,'taxonomy'), 'r');
         
@@ -97,16 +97,14 @@ else
                 end
             end
         end
-        
         %Generate a distance matrix (very straight forward here, not neat)
         phylDistStruct.distMat=zeros(numel(phylDistStruct.ids));
+        phylDistStructOnlyInKingdom.distMat=zeros(numel(phylDistStruct.ids));
+        phylDistStructOnlyInKingdom.ids=phylDistStruct.ids;
         for i=1:numel(phylDistStruct.ids)
             for j=1:numel(phylDistStruct.ids)
-                if onlyInKingdom==true
-                    if ~strcmp(orgCat{i}(1),orgCat{j}(1))
-                        phylDistStruct.distMat(i,j)=Inf;
-                        continue;
-                    end
+                if ~strcmp(orgCat{i}(1),orgCat{j}(1))
+                    phylDistStructOnlyInKingdom.distMat(i,j)=Inf;
                 end
                 %Calculate the distance between then
                 dist=numel(orgCat{i})-numel(orgCat{j});
@@ -132,8 +130,11 @@ else
             end
         end
         %Save the structure
-        save(distFile,'phylDistStruct');
+        save(distFile,'phylDistStruct','phylDistStructOnlyInKingdom');
         fprintf('COMPLETE\n');
     end
+end
+if onlyInKingdom==true
+    phylDistStruct=phylDistStructOnlyInKingdom;
 end
 end

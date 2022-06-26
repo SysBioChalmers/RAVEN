@@ -80,7 +80,7 @@ else
         EM=fprintf(['The files ''ko'' and ''reaction'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP\n']);
         dispEM(EM);
     else
-        fprintf('Generating keggGenes.mat file... ');
+        fprintf('Generating keggGenes.mat file...\n');
         %Get all KOs that are associated to reactions
         allKOs=getAllKOs(keggPath);
         
@@ -261,8 +261,10 @@ else
 end
 
 %Only get the KOs in koList
-I=~ismember(model.rxns,koList);
-model=removeReactions(model,I,true,true);
+if nargin>1
+    I=~ismember(model.rxns,koList);
+    model=removeReactions(model,I,true,true);
+end
 fprintf('COMPLETE\n');
 end
 

@@ -42,7 +42,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %                       the HMMs were trained on pro- or eukaryotic
 %                       sequences, using a sequence similarity threshold of
 %                       XXX %, fitting the KEGG version YY. E.g.
-%                       euk90_kegg100. (opt, see note about fastaFile. Note
+%                       euk90_kegg102. (opt, see note about fastaFile. Note
 %                       that in order to rebuild the KEGG model from a
 %                       database dump, as opposed to using the version
 %                       supplied with RAVEN, you would still need to supply
@@ -140,13 +140,9 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %       should be used for constructing Hidden Markov models (HMMs), and
 %       later for matching your sequences to.
 %       The most common alternatives here would be to use sequences from
-%       only eukaryotes, only prokaryotes or all sequences in KEGG. As
-%       explained in the README.md file, various sets of pre-trained hidden
-%       Markov models are available at <a href="matlab:
-%       web('http://biomet-toolbox.chalmers.se/index.php?page=downtools-raven')">BioMet
-%       Toolbox</a>. This is normally the most convenient way, but if you
-%       would like to use, for example, only fungal sequences for training
-%       the HMMs then you need to re-run this step.
+%       only eukaryotes, only prokaryotes or all sequences in KEGG, but you
+%       could also play around with the parameters to use e.g. only fungal
+%       sequences.
 %   2b. KO-specific protein FASTA files are re-organised into
 %       non-redundant protein sets with CD-HIT. The user can only set
 %       seqIdentity parameter, which corresponds to '-c' parameter in
@@ -300,9 +296,9 @@ if nargin<14
 end
 
 if isempty(fastaFile)
-    fprintf(['\n\n*** The model reconstruction from KEGG based on the annotation available for KEGG Species <strong>' organismID '</strong> ***\n\n']);
+    fprintf(['\n*** The model reconstruction from KEGG based on the annotation available for KEGG Species <strong>' organismID '</strong> ***\n\n']);
 else
-    fprintf('\n\n*** The model reconstruction from KEGG based on the protein homology search against KEGG Orthology specific HMMs ***\n\n');
+    fprintf('\n*** The model reconstruction from KEGG based on the protein homology search against KEGG Orthology specific HMMs ***\n\n');
     %Check if query fasta exists
     fastaFile=checkFileExistence(fastaFile,2); %Copy file to temp dir
 end
@@ -322,7 +318,7 @@ ravenPath=findRAVENroot();
 %required zip file already in working directory or have it extracted. If
 %the zip file and directory is not here, it is downloaded from the cloud
 if ~isempty(dataDir)
-    hmmOptions={'euk90_kegg100','prok90_kegg100'};
+    hmmOptions={'euk90_kegg102','prok90_kegg102'};
     if ~endsWith(dataDir,hmmOptions) %Check if dataDir ends with any of the hmmOptions.
                                      %If not, then check whether the required folders exist anyway.
         if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file') && ...
@@ -341,12 +337,12 @@ if ~isempty(dataDir)
         else
             hmmIndex=strcmp(dataDir,hmmOptions);
             if ~any(hmmIndex)
-                error(['Pre-trained HMMs are only provided with proteins clustered at 90% sequence identity (i.e. prok90_kegg100 and euk90_kegg100). ' ...
+                error(['Pre-trained HMMs are only provided with proteins clustered at 90% sequence identity (i.e. prok90_kegg102 and euk90_kegg102). ' ...
                     'Use either of these datasets, or otherwise download the relevant sequence data from KEGG to train HMMs with your desired sequence identity'])
             else
                 fprintf('Downloading the HMMs archive file... ');
                 try
-                    websave([dataDir,'.zip'],['https://github.com/SysBioChalmers/RAVEN/releases/download/v2.6.0/',hmmOptions{hmmIndex},'.zip']);
+                    websave([dataDir,'.zip'],['https://github.com/SysBioChalmers/RAVEN/releases/download/v2.7.4/',hmmOptions{hmmIndex},'.zip']);
                 catch ME
                     if strcmp(ME.identifier,'MATLAB:webservices:HTTP404StatusCodeError')
                         error('Failed to download the HMMs archive file, the server returned a 404 error, try again later. If the problem persists please report it on the RAVEN GitHub Issues page: https://github.com/SysBioChalmers/RAVEN/issues')
