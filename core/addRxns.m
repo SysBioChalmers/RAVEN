@@ -60,7 +60,7 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allow
 %                    interpreted
 %                    1 - The metabolites are matched to model.mets. New
 %                        metabolites (if allowed) are added to
-%                        "compartment"
+%                        "compartment" (default)
 %                    2 - The metabolites are matched to model.metNames and
 %                        all metabolites are assigned to "compartment". Any
 %                        new metabolites that are added will be assigned
@@ -101,6 +101,16 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allow
 %   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,...
 %                           allowNewMets,allowNewGenes)
 
+if nargin<3
+    eqnType=1;
+elseif ~isnumeric(eqnType)
+    EM='eqnType must be numeric';
+    dispEM(EM);
+elseif ~ismember(eqnType,[1 2 3])
+    EM='eqnType must be 1, 2, or 3';
+    dispEM(EM);
+end    
+
 if nargin<4
     compartment=[];
 else
@@ -137,17 +147,6 @@ end
 %If no reactions should be added
 if isempty(rxnsToAdd)
     return;
-end
-
-%Check the input
-if isfield(rxnsToAdd,'stoichCoeffs')
-    eqnType=1;
-elseif ~isnumeric(eqnType)
-    EM='eqnType must be numeric';
-    dispEM(EM);
-elseif ~ismember(eqnType,[1 2 3])
-    EM='eqnType must be 1, 2, or 3';
-    dispEM(EM);
 end
 
 if eqnType==2 || (eqnType==1 && allowNewMets==true)
@@ -518,18 +517,18 @@ end
 if eqnType==1
     [I, J]=ismember(mets,model.mets);
     if ~all(I)
-        if allowNewMets==true | isstr(allowNewMets)
+        if allowNewMets==true || ischar(allowNewMets)
             %Add the new mets
             metsToAdd.mets=mets(~I);
             metsToAdd.metNames=metsToAdd.mets;
             metsToAdd.compartments=compartment;
-            if isstr(allowNewMets)
+            if ischar(allowNewMets)
                 newModel=addMets(newModel,metsToAdd,true,allowNewMets);
             else
                 newModel=addMets(newModel,metsToAdd,true);
             end
         else
-            EM='One or more equations contain metabolites that are not in model.mets. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function';
+            EM='One or more equations contain metabolites that are not in model.mets. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function. Are you sure that eqnType=1?';
             dispEM(EM);
         end
     end
@@ -553,11 +552,11 @@ if eqnType==2
     [I, J]=ismember(t1,t2);
     
     if ~all(I)
-        if allowNewMets==true | isstr(allowNewMets)
+        if allowNewMets==true || ischar(allowNewMets)
             %Add the new mets
             metsToAdd.metNames=mets(~I);
             metsToAdd.compartments=compartment;
-            if isstr(allowNewMets)
+            if ischar(allowNewMets)
                 newModel=addMets(newModel,metsToAdd,true,allowNewMets);
             else
                 newModel=addMets(newModel,metsToAdd,true);
@@ -603,11 +602,11 @@ if eqnType==3
     [I, J]=ismember(t1,t2);
     
     if ~all(I)
-        if allowNewMets==true | isstr(allowNewMets)
+        if allowNewMets==true || ischar(allowNewMets)
             %Add the new mets
             metsToAdd.metNames=metNames(~I);
             metsToAdd.compartments=compartments(~I);
-            if isstr(allowNewMets)
+            if ischar(allowNewMets)
                 newModel=addMets(newModel,metsToAdd,true,allowNewMets);
             else
                 newModel=addMets(newModel,metsToAdd,true);

@@ -139,7 +139,6 @@ modelManual.S(end+1:end+2,:)=sparse(zeros(2,numel(modelManual.rxns)));
 verifyEqual(testCase,modelManual,modelNew)
 end
 
-
 function addMets_oneCompTest(testCase)
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
@@ -326,7 +325,12 @@ function changeRxnsTest(testCase)
 sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
 load(fullfile(sourceDir,'testing','unit_tests','test_data','ecoli_textbook.mat'), 'model');
 
-evalc('modelNew=changeRxns(model,''ACKr'',''2-Oxoglutarate => TEST'',2,''c'',true);');
+evalc('modelNew=changeRxns(model,''ACKr'',''2-Oxoglutarate <=> TEST'',2,''c'',true);');
+
+equations.mets={{'2-Oxoglutarate','TEST'}};
+equations.stoichCoeffs={[-1,1]};
+
+evalc('modelNewStruct=changeRxns(model,''ACKr'',equations,2,''c'',true);');
 
 %Perform the curation manually for comparison
 modelManual=model;
@@ -341,9 +345,10 @@ modelManual.metComps(end+1)=[1];
 modelManual.metFormulas(end+1)={''};
 modelManual.metMiriams(end+1)={[]};
 modelManual.b(end+1)=[0];
-modelManual.rev(3)=[0];
+modelManual.rev(3)=[1];
 
 verifyEqual(testCase,modelNew,modelManual)
+verifyEqual(testCase,modelNewStruct,modelManual)
 end
 
 function removeBadRxnsTest(testCase)
