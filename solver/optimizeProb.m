@@ -27,8 +27,8 @@ end
 
 %% Define default parameters, which will then be used to make solver-
 % specific solverparams structures
-defaultparams.feasTol        = 1e-6;
-defaultparams.optTol         = 1e-6;
+defaultparams.feasTol        = 1e-9;
+defaultparams.optTol         = 1e-9;
 defaultparams.objTol         = 1e-6;
 defaultparams.timeLimit      = 1000;
 %defaultparams.iterationLimit = 1000;
