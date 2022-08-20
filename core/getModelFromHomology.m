@@ -75,6 +75,10 @@ if nargin<4
     preferredOrder=[];
 else
     preferredOrder=convertCharArray(preferredOrder);
+    [row,col]=size(preferredOrder);
+    if col>row
+        preferredOrder=transpose(preferredOrder);
+    end
 end
 if nargin<5
     strictness=1;
