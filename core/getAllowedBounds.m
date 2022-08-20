@@ -30,6 +30,7 @@ exitFlags=zeros(numel(rxns),2);
 c=zeros(numel(model.rxns),1);
 hsSolMin=[];
 hsSolMax=[];
+fprintf('Getting minimal and maximal fluxes...   0%% complete');
 for i=1:numel(rxns)
     model.c=c;
     
@@ -52,5 +53,12 @@ for i=1:numel(rxns)
     else
         maxFluxes(i)=NaN;
     end
+    %Print the progress every 25 reactions
+    if rem(i-1,25) == 0
+        progress=num2str(floor(100*i/numel(rxns)));
+        progress=pad(progress,3,'left');
+        fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
+    end
 end
+fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 end
