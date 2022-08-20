@@ -15,9 +15,19 @@ end
 if nargin<3 || isempty(verbose)
     verbose = true;
 end
-if(~ispref('RAVEN','solver'))
-    dispEM('RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
+%Set as global variable for speed improvement if optimizeProb is run many times
+global RAVENSOLVER;
+if isempty(RAVENSOLVER)
+    if(~ispref('RAVEN','solver'))
+        dispEM('RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
+    else
+        RAVENSOLVER = getpref('RAVEN','solver');
+    end
 end
+solver=RAVENSOLVER;
+
+
+
 if ~all(lower(prob.vartype) == 'c')
     disp('MILP detected.');
     milp=true;
@@ -39,13 +49,6 @@ if milp
     defaultparams.MIPGap     = 1e-12; 
     defaultparams.Seed       = 1;
 end
-
-%Set as global variable for speed improvement if optimizeProb is run many times
-global RAVENSOLVER;
-if isempty(RAVENSOLVER)
-    RAVENSOLVER = getpref('RAVEN','solver');
-end
-solver=RAVENSOLVER;
 
 switch solver
     %% Use whatever solver is set by COBRA Toolbox changeCobraSolver
