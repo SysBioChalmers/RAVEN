@@ -52,11 +52,11 @@ if nargin<5
     rxnNote={'Added via addRxnsGenesMets()'};
 else
     rxnNote=convertCharArray(rxnNote);
-    if numel(rxnNote)==1 && numel(rxns)>1
-        rxnNoteArray=cell(numel(rxns),1);
-        rxnNoteArray{:}=rxnNote;
-        rxnNote=rxnNoteArray;
-    end
+end
+if numel(rxnNote)==1 && numel(rxns)>1
+    rxnNoteArray=cell(1,numel(rxns));
+    rxnNoteArray(:)=rxnNote;
+    rxnNote=rxnNoteArray;
 end
 if nargin<4
     addGene=false;

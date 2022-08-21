@@ -164,7 +164,7 @@ if minFlux~=0
             
             %Minimize all fluxes
             iModel.c(:)=-1;
-            sol=solveLP(iModel);
+            sol=solveLP(iModel,0,params);
             
             %Map back to reversible fluxes
             if sol.stat>=0
