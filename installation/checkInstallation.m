@@ -59,6 +59,8 @@ end
 
 fprintf([myStr(' > Checking MATLAB release',40) '%f'])
 fprintf([version('-release') '\n'])
+fprintf([myStr(' > Checking system architecture',40) '%f'])
+fprintf([computer('arch'),'\n'])
 fprintf([myStr(' > Set RAVEN in MATLAB path',40) '%f'])
 subpath=regexp(genpath(ravenDir),pathsep,'split'); %List all subdirectories
 pathsToKeep=cellfun(@(x) ~contains(x,'.git'),subpath) & cellfun(@(x) ~contains(x,'doc'),subpath);
@@ -139,7 +141,7 @@ end
 fprintf('\n=== Model solvers ===\n');
 
 %Get current solver. Set it to 'none', if it is not set
-fprintf(' > Checking for functional LP solvers\n')
+fprintf(' > Checking for LP solvers\n')
 res=runtests('solverTests.m','OutputDetail',0);
 
 fprintf([myStr('   > glpk',40) '%f'])
@@ -163,12 +165,14 @@ else
     fprintf('Fail\n')
 end
 
-fprintf(' > Checking for functional MILP solvers\n')
+fprintf(' > Checking for MILP solvers\n')
 res=runtests('fillGapsSmallTests.m','OutputDetail',0);
 
 fprintf([myStr('   > glpk',40) '%f'])
 if res(1).Passed == 1
     fprintf('Pass\n')
+    fprintf(['     While passing here, we do not recommended glpk\n'...
+             '     for MILPs due to occasional inconsistent results\n'])
 else
     fprintf('Fail\n')
 end

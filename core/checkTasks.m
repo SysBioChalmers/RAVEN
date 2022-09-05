@@ -213,9 +213,10 @@ for i=1:numel(taskStructure)
     
     %Solve and print
     sol=solveLP(tModel);
-    %also assign the fluxes
-    essentialFluxes(:,i) = sol.x(1:numel(model.rxns));
     if ~isempty(sol.x)
+        %assign the fluxes
+        essentialFluxes(:,i) = sol.x(1:numel(model.rxns));
+        
         if ~taskStructure(i).shouldFail
             taskReport.ok(i,1)=true;
             if printOnlyFailed==false && printOutput==true

@@ -187,7 +187,7 @@ This function is called by:
 0080         EM=fprintf([<span class="string">'The files ''ko'' and ''reaction'' cannot be located at '</span> strrep(keggPath,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'/ and should be downloaded from the KEGG FTP\n'</span>]);
 0081         dispEM(EM);
 0082     <span class="keyword">else</span>
-0083         fprintf(<span class="string">'Generating keggGenes.mat file... '</span>);
+0083         fprintf(<span class="string">'Generating keggGenes.mat file...\n'</span>);
 0084         <span class="comment">%Get all KOs that are associated to reactions</span>
 0085         allKOs=<a href="#_sub1" class="code" title="subfunction allKOs=getAllKOs(keggPath)">getAllKOs</a>(keggPath);
 0086         
@@ -368,81 +368,83 @@ This function is called by:
 0261 <span class="keyword">end</span>
 0262 
 0263 <span class="comment">%Only get the KOs in koList</span>
-0264 I=~ismember(model.rxns,koList);
-0265 model=removeReactions(model,I,true,true);
-0266 fprintf(<span class="string">'COMPLETE\n'</span>);
+0264 <span class="keyword">if</span> nargin&gt;1
+0265     I=~ismember(model.rxns,koList);
+0266     model=removeReactions(model,I,true,true);
 0267 <span class="keyword">end</span>
-0268 
-0269 <a name="_sub1" href="#_subfunctions" class="code">function allKOs=getAllKOs(keggPath)</a>
-0270 <span class="comment">%Retrieves all KOs that are associated to reactions. This is because the</span>
-0271 <span class="comment">%number of genes in KEGG is very large so without this parsing it would</span>
-0272 <span class="comment">%take many hours</span>
-0273 
-0274 allKOs={};
+0268 fprintf(<span class="string">'COMPLETE\n'</span>);
+0269 <span class="keyword">end</span>
+0270 
+0271 <a name="_sub1" href="#_subfunctions" class="code">function allKOs=getAllKOs(keggPath)</a>
+0272 <span class="comment">%Retrieves all KOs that are associated to reactions. This is because the</span>
+0273 <span class="comment">%number of genes in KEGG is very large so without this parsing it would</span>
+0274 <span class="comment">%take many hours</span>
 0275 
-0276 <span class="comment">%First check if the reactions have already been parsed</span>
-0277 ravenPath=findRAVENroot;
-0278 rxnsFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggRxns.mat'</span>);
-0279 <span class="keyword">if</span> exist(rxnsFile, <span class="string">'file'</span>)
-0280     fprintf([<span class="string">'NOTE: Importing KEGG ORTHOLOGY list from '</span> strrep(rxnsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'.\n'</span>]);
-0281     load(rxnsFile,<span class="string">'model'</span>);
-0282     
-0283     <span class="comment">%Loop through the reactions and add the corresponding genes</span>
-0284     <span class="keyword">for</span> i=1:numel(model.rxns)
-0285         <span class="keyword">if</span> isstruct(model.rxnMiriams{i})
-0286             <span class="comment">%Get all KOs</span>
-0287             allKOs=[allKOs;model.rxnMiriams{i}.value(strcmpi(model.rxnMiriams{i}.name,<span class="string">'kegg.orthology'</span>))];
-0288         <span class="keyword">end</span>
-0289     <span class="keyword">end</span>
-0290 <span class="keyword">else</span>
-0291     <span class="comment">%Parse the reaction file instead First load information on reaction ID,</span>
-0292     <span class="comment">%reaction name, KO, pathway and ec-number</span>
-0293     fid = fopen(fullfile(keggPath,<span class="string">'reaction'</span>), <span class="string">'r'</span>);
-0294     orthology=false;
-0295     <span class="keyword">while</span> 1
-0296         <span class="comment">%Get the next line</span>
-0297         tline = fgetl(fid);
-0298         
-0299         <span class="comment">%Abort at end of file</span>
-0300         <span class="keyword">if</span> ~ischar(tline)
-0301             <span class="keyword">break</span>;
-0302         <span class="keyword">end</span>
-0303         
-0304         <span class="comment">%Skip '///'</span>
-0305         <span class="keyword">if</span> numel(tline)&lt;12
-0306             <span class="keyword">continue</span>;
-0307         <span class="keyword">end</span>
-0308         
-0309         <span class="comment">%Check if it's a new reaction</span>
-0310         <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'ENTRY       '</span>)
-0311             orthology=false;
-0312         <span class="keyword">end</span>
-0313         
-0314         <span class="keyword">if</span> strcmp(tline(1:9),<span class="string">'REFERENCE'</span>)
-0315             orthology=false;
-0316         <span class="keyword">end</span>
-0317         
-0318         <span class="comment">%Add KO-ids</span>
-0319         <span class="keyword">if</span> numel(tline)&gt;16
-0320             <span class="keyword">if</span> strcmp(tline(1:16),<span class="string">'ORTHOLOGY   KO: '</span>) || strcmp(tline(1:16),<span class="string">'            KO: '</span>) || strcmp(tline(1:12),<span class="string">'ORTHOLOGY   '</span>) || orthology==true
-0321                 <span class="keyword">if</span> strcmp(tline(13:16),<span class="string">'KO:'</span>)
-0322                     <span class="comment">%This is in the old version</span>
-0323                     allKOs=[allKOs;tline(17:22)];
-0324                 <span class="keyword">elseif</span> strcmp(tline(1:12),<span class="string">'ORTHOLOGY   '</span>)
-0325                     <span class="comment">%This means that it found one KO in the new format and</span>
-0326                     <span class="comment">%that subsequent lines might be other KOs</span>
-0327                     orthology=true;
-0328                     allKOs=[allKOs;tline(13:18)];
-0329                 <span class="keyword">end</span>
-0330             <span class="keyword">end</span>
-0331         <span class="keyword">end</span>
-0332     <span class="keyword">end</span>
-0333     
-0334     <span class="comment">%Close the file</span>
-0335     fclose(fid);
-0336 <span class="keyword">end</span>
-0337 allKOs=unique(allKOs);
-0338 <span class="keyword">end</span></pre></div>
+0276 allKOs={};
+0277 
+0278 <span class="comment">%First check if the reactions have already been parsed</span>
+0279 ravenPath=findRAVENroot;
+0280 rxnsFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggRxns.mat'</span>);
+0281 <span class="keyword">if</span> exist(rxnsFile, <span class="string">'file'</span>)
+0282     fprintf([<span class="string">'NOTE: Importing KEGG ORTHOLOGY list from '</span> strrep(rxnsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'.\n'</span>]);
+0283     load(rxnsFile,<span class="string">'model'</span>);
+0284     
+0285     <span class="comment">%Loop through the reactions and add the corresponding genes</span>
+0286     <span class="keyword">for</span> i=1:numel(model.rxns)
+0287         <span class="keyword">if</span> isstruct(model.rxnMiriams{i})
+0288             <span class="comment">%Get all KOs</span>
+0289             allKOs=[allKOs;model.rxnMiriams{i}.value(strcmpi(model.rxnMiriams{i}.name,<span class="string">'kegg.orthology'</span>))];
+0290         <span class="keyword">end</span>
+0291     <span class="keyword">end</span>
+0292 <span class="keyword">else</span>
+0293     <span class="comment">%Parse the reaction file instead First load information on reaction ID,</span>
+0294     <span class="comment">%reaction name, KO, pathway and ec-number</span>
+0295     fid = fopen(fullfile(keggPath,<span class="string">'reaction'</span>), <span class="string">'r'</span>);
+0296     orthology=false;
+0297     <span class="keyword">while</span> 1
+0298         <span class="comment">%Get the next line</span>
+0299         tline = fgetl(fid);
+0300         
+0301         <span class="comment">%Abort at end of file</span>
+0302         <span class="keyword">if</span> ~ischar(tline)
+0303             <span class="keyword">break</span>;
+0304         <span class="keyword">end</span>
+0305         
+0306         <span class="comment">%Skip '///'</span>
+0307         <span class="keyword">if</span> numel(tline)&lt;12
+0308             <span class="keyword">continue</span>;
+0309         <span class="keyword">end</span>
+0310         
+0311         <span class="comment">%Check if it's a new reaction</span>
+0312         <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'ENTRY       '</span>)
+0313             orthology=false;
+0314         <span class="keyword">end</span>
+0315         
+0316         <span class="keyword">if</span> strcmp(tline(1:9),<span class="string">'REFERENCE'</span>)
+0317             orthology=false;
+0318         <span class="keyword">end</span>
+0319         
+0320         <span class="comment">%Add KO-ids</span>
+0321         <span class="keyword">if</span> numel(tline)&gt;16
+0322             <span class="keyword">if</span> strcmp(tline(1:16),<span class="string">'ORTHOLOGY   KO: '</span>) || strcmp(tline(1:16),<span class="string">'            KO: '</span>) || strcmp(tline(1:12),<span class="string">'ORTHOLOGY   '</span>) || orthology==true
+0323                 <span class="keyword">if</span> strcmp(tline(13:16),<span class="string">'KO:'</span>)
+0324                     <span class="comment">%This is in the old version</span>
+0325                     allKOs=[allKOs;tline(17:22)];
+0326                 <span class="keyword">elseif</span> strcmp(tline(1:12),<span class="string">'ORTHOLOGY   '</span>)
+0327                     <span class="comment">%This means that it found one KO in the new format and</span>
+0328                     <span class="comment">%that subsequent lines might be other KOs</span>
+0329                     orthology=true;
+0330                     allKOs=[allKOs;tline(13:18)];
+0331                 <span class="keyword">end</span>
+0332             <span class="keyword">end</span>
+0333         <span class="keyword">end</span>
+0334     <span class="keyword">end</span>
+0335     
+0336     <span class="comment">%Close the file</span>
+0337     fclose(fid);
+0338 <span class="keyword">end</span>
+0339 allKOs=unique(allKOs);
+0340 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

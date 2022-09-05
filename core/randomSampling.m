@@ -19,7 +19,7 @@ function [solutions, goodRxns]=randomSampling(model,nSamples,replaceBoundsWithIn
 %                           as unlimited glucose uptake) or too strict
 %                           (such as too many and too narrow constraints)
 %                           (opt, default false)
-%   showProgress            if true, it will display in the command window 
+%   showProgress            if true, it will display in the command window
 %                           how many iterations have been done (opt, default
 %                           false)
 %   goodRxns                double vector of indexes of those reactions
@@ -57,7 +57,7 @@ end
 if nargin<5
     showProgress=false;
 end
-if nargin<6
+if nargin<7
     minFlux=false;
 end
 
@@ -66,8 +66,10 @@ nRxns=2; %Number of reactions in the objective function in each iteration
 %First check that the model is feasible given the constraints
 sol=solveLP(model);
 if isempty(sol.x)
-    EM='The model has no feasible solution';
+    EM='The model has no feasible solution, likely due to incompatible constraints';
     dispEM(EM);
+elseif sol.f==0 && showProgress
+    warning('The model objective function cannot reach a non-zero value. This might be intended, so randomSampling will continue, but this could indicate problems with your model')
 end
 
 %Simplify the model to speed stuff up a little. Keep original mapping
@@ -85,11 +87,16 @@ end
 
 %Reactions which can be involved in loops should not be optimized for.
 %Check which reactions reach an arbitary high upper bound
-if nargin<6 | isempty(goodRxns)
+if nargin<6 || isempty(goodRxns)
     goodRxns=true(numel(model.rxns),1);
+    if showProgress
+        fprintf('Prepare goodRxns list of reactions not involved in loops...   0%% complete');
+    end
     for i=1:numel(model.rxns)
         if showProgress && rem(i,100) == 0
-            disp(['Preparing random sampling: ready with ' num2str(i) '/' num2str(numel(model.rxns)) ' rxns'])
+            progress=num2str(floor(100*i/numel(model.rxns)));
+            progress=pad(progress,3,'left');
+            fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
         end
         if goodRxns(i)==true
             testModel=setParam(model,'eq',model.rxns(i),1000);
@@ -108,6 +115,9 @@ if nargin<6 | isempty(goodRxns)
             end
         end
     end
+    if showProgress
+        fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b100%% complete\n');
+    end
     goodRxns=find(goodRxns);
 end
 
@@ -117,9 +127,13 @@ sols=zeros(numel(model.rxns),nSamples);
 %Main loop
 counter=1;
 badSolutions=0;
+if showProgress
+    itrStr=num2str(nSamples);
+    fprintf('Performing random sampling: ready with%s0/%s iterations',repmat(' ',1,length(itrStr)),itrStr);
+end
 while counter<=nSamples
     if showProgress && rem(counter,100) == 0
-        disp(['Performing random sampling: ready with ' num2str(counter) '/' num2str(nSamples) ' iterations'])
+        fprintf([repmat('\b',1,length(itrStr)*2) '\b\b\b\b\b\b\b\b\b\b\b\b%s/%s iterations'],pad(num2str(counter),length(itrStr),'left'),itrStr);
     end
     rxns=randsample(numel(goodRxns),nRxns);
     model.c=zeros(numel(model.rxns),1);
@@ -131,20 +145,20 @@ while counter<=nSamples
     else
         sol=solveLP(model);
     end
-    if any(sol.x)
-        if abs(sol.f)>10^-8
-            sols(:,counter)=sol.x;
-            counter=counter+1;
-            badSolutions=0;
-        else
-            badSolutions=badSolutions+1;
-            %If it only finds bad solutions then throw an error.
-            if badSolutions==50 && supressErrors==false
-                EM='The program is having problems finding non-zero solutions that are not involved in loops. Review the constraints on your model. Set supressErrors to true to ignore this error';
-                dispEM(EM);
-            end
+    if any(sol.x) && abs(sol.f)>10^-8
+        sols(:,counter)=sol.x;
+        counter=counter+1;
+        badSolutions=0;
+    else
+        badSolutions=badSolutions+1;
+        %If it only finds bad solutions then throw an error.
+        if badSolutions==100 && supressErrors==false
+            error('The program is having problems finding non-zero solutions (ignoring reactions that might be involved in loops). Review the constraints on your model. Set supressErrors to true to ignore this error');
         end
     end
+end
+if showProgress
+    fprintf('\n')
 end
 
 %Map to original model

@@ -283,7 +283,7 @@ prob.A=[prob.a -speye(size(prob.a,1))];
 prob.b=zeros(size(prob.a,1), 1);
 prob.ub=[prob.bux; prob.buc];
 prob.osense=1;
-prob.csense=char(1,zeros(size(prob.a,1)));
+prob.csense=char(zeros(1,size(prob.a,1)));
 prob.csense(:)='E';
 
 %We still don't know which of the presentMets that can be produced. Go

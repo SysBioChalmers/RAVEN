@@ -106,7 +106,7 @@ This function is called by:
 0043         EM=fprintf([<span class="string">'The file ''taxonomy'' cannot be located at '</span> strrep(keggPath,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'/ and should be downloaded from the KEGG FTP.\n'</span>]);
 0044         dispEM(EM);
 0045     <span class="keyword">else</span>
-0046         fprintf([<span class="string">'Generating the KEGG phylogenetic distance matrix from '</span> fullfile(keggPath,<span class="string">'taxonomy'</span>) <span class="string">'... '</span>]);
+0046         fprintf(<span class="string">'Generating keggPhylDist.mat file... '</span>);
 0047         <span class="comment">%Open the file that describes the naming of the species</span>
 0048         fid = fopen(fullfile(keggPath,<span class="string">'taxonomy'</span>), <span class="string">'r'</span>);
 0049         
@@ -160,46 +160,47 @@ This function is called by:
 0097                 <span class="keyword">end</span>
 0098             <span class="keyword">end</span>
 0099         <span class="keyword">end</span>
-0100         
-0101         <span class="comment">%Generate a distance matrix (very straight forward here, not neat)</span>
-0102         phylDistStruct.distMat=zeros(numel(phylDistStruct.ids));
-0103         <span class="keyword">for</span> i=1:numel(phylDistStruct.ids)
-0104             <span class="keyword">for</span> j=1:numel(phylDistStruct.ids)
-0105                 <span class="keyword">if</span> onlyInKingdom==true
-0106                     <span class="keyword">if</span> ~strcmp(orgCat{i}(1),orgCat{j}(1))
-0107                         phylDistStruct.distMat(i,j)=Inf;
-0108                         <span class="keyword">continue</span>;
-0109                     <span class="keyword">end</span>
-0110                 <span class="keyword">end</span>
-0111                 <span class="comment">%Calculate the distance between then</span>
-0112                 dist=numel(orgCat{i})-numel(orgCat{j});
-0113                 <span class="keyword">if</span> dist&gt;0
-0114                     aCat=orgCat{i}(1:end-dist);
-0115                 <span class="keyword">else</span>
-0116                     aCat=orgCat{i};
-0117                 <span class="keyword">end</span>
-0118                 <span class="keyword">if</span> dist&lt;0
-0119                     bCat=orgCat{j}(1:end+dist);
-0120                 <span class="keyword">else</span>
-0121                     bCat=orgCat{j};
-0122                 <span class="keyword">end</span>
-0123                 
-0124                 <span class="comment">%Loop through the categories and stop when they are the</span>
-0125                 <span class="comment">%same</span>
-0126                 <span class="keyword">for</span> k=numel(aCat):-1:1
-0127                     <span class="keyword">if</span> strcmp(aCat{k},bCat{k})
-0128                         <span class="keyword">break</span>;
-0129                     <span class="keyword">end</span>
-0130                 <span class="keyword">end</span>
-0131                 phylDistStruct.distMat(i,j)=dist+numel(aCat)-k;
-0132             <span class="keyword">end</span>
-0133         <span class="keyword">end</span>
-0134         <span class="comment">%Save the structure</span>
-0135         save(distFile,<span class="string">'phylDistStruct'</span>);
-0136         fprintf(<span class="string">'COMPLETE\n'</span>);
-0137     <span class="keyword">end</span>
-0138 <span class="keyword">end</span>
-0139 <span class="keyword">end</span></pre></div>
+0100         <span class="comment">%Generate a distance matrix (very straight forward here, not neat)</span>
+0101         phylDistStruct.distMat=zeros(numel(phylDistStruct.ids));
+0102         phylDistStructOnlyInKingdom.distMat=zeros(numel(phylDistStruct.ids));
+0103         phylDistStructOnlyInKingdom.ids=phylDistStruct.ids;
+0104         <span class="keyword">for</span> i=1:numel(phylDistStruct.ids)
+0105             <span class="keyword">for</span> j=1:numel(phylDistStruct.ids)
+0106                 <span class="keyword">if</span> ~strcmp(orgCat{i}(1),orgCat{j}(1))
+0107                     phylDistStructOnlyInKingdom.distMat(i,j)=Inf;
+0108                 <span class="keyword">end</span>
+0109                 <span class="comment">%Calculate the distance between then</span>
+0110                 dist=numel(orgCat{i})-numel(orgCat{j});
+0111                 <span class="keyword">if</span> dist&gt;0
+0112                     aCat=orgCat{i}(1:end-dist);
+0113                 <span class="keyword">else</span>
+0114                     aCat=orgCat{i};
+0115                 <span class="keyword">end</span>
+0116                 <span class="keyword">if</span> dist&lt;0
+0117                     bCat=orgCat{j}(1:end+dist);
+0118                 <span class="keyword">else</span>
+0119                     bCat=orgCat{j};
+0120                 <span class="keyword">end</span>
+0121                 
+0122                 <span class="comment">%Loop through the categories and stop when they are the</span>
+0123                 <span class="comment">%same</span>
+0124                 <span class="keyword">for</span> k=numel(aCat):-1:1
+0125                     <span class="keyword">if</span> strcmp(aCat{k},bCat{k})
+0126                         <span class="keyword">break</span>;
+0127                     <span class="keyword">end</span>
+0128                 <span class="keyword">end</span>
+0129                 phylDistStruct.distMat(i,j)=dist+numel(aCat)-k;
+0130             <span class="keyword">end</span>
+0131         <span class="keyword">end</span>
+0132         <span class="comment">%Save the structure</span>
+0133         save(distFile,<span class="string">'phylDistStruct'</span>,<span class="string">'phylDistStructOnlyInKingdom'</span>);
+0134         fprintf(<span class="string">'COMPLETE\n'</span>);
+0135     <span class="keyword">end</span>
+0136 <span class="keyword">end</span>
+0137 <span class="keyword">if</span> onlyInKingdom==true
+0138     phylDistStruct=phylDistStructOnlyInKingdom;
+0139 <span class="keyword">end</span>
+0140 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -34,7 +34,9 @@ end
 geneList=transpose(cell(unique(regexp(geneAssoc,'[)(]*|( and )*|( or )*','split')))); % Extract individual, unique genes from the geneAssoc provided
 geneList=geneList(~cellfun(@isempty, geneList));
 genesToAdd.genes=setdiff(geneList,model.genes); % Only keep the genes that are not yet part of the model.genes.
-model=addGenesRaven(model,genesToAdd); % Add genes
+if ~isempty(genesToAdd.genes)
+    model=addGenesRaven(model,genesToAdd); % Add genes
+end
 
 % Find reaction and gene indices
 idx=getIndexes(model,rxnID,'rxns');
