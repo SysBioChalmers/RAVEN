@@ -1,6 +1,6 @@
-function model=importYaml(yamlFilename, verbose)
-% importYaml
-%   Imports a yaml file matching (roughly) the cobrapy yaml structure
+function model=readYAMLmodel(yamlFilename, verbose)
+% readYAMLmodel
+%   Reads a yaml file matching (roughly) the cobrapy yaml structure
 %
 %   Input:
 %   yamlFile    a model file in yaml file format
@@ -9,7 +9,7 @@ function model=importYaml(yamlFilename, verbose)
 %   Output:
 %   model       a model structure
 %
-%   Usage: model = importYaml(yamlFilename, verbose)
+%   Usage: model = readYAMLmodel(yamlFilename, verbose)
 
 if nargin < 2
     verbose = false;
@@ -29,7 +29,7 @@ if verLessThan('matlab','9.9') %readlines introduced 2020b
     line_raw(i:end)=[];
     line_raw=string(line_raw);
 else
-    line_raw=readlines(yamlFilename');
+    line_raw=readlines(yamlFilename);
 end
 
 % If entry is broken of multiple lines, concatenate. Assumes at least 6
@@ -41,12 +41,12 @@ for i=1:numel(brokenLine)
 end
 line_raw(brokenLine)=[];
 
-line_key=regexprep(line_raw,'^ *-? ([^:]+)(:).*','$1');
-line_key=regexprep(line_key,'(.*!!omap)|(---)','');
+line_key = regexprep(line_raw,'^ *-? ([^:]+)(:).*','$1');
+line_key = regexprep(line_key,'(.*!!omap)|(---)|( {4,}.*)','');
 
-line_value = regexprep(line_raw, '[^":]+: "?(.+)"?$','$1');
-line_value = regexprep(line_value, '"','');
-
+line_value = regexprep(line_raw, '.*:$','');
+line_value = regexprep(line_value, '[^":]+: "?(.+)"?$','$1');
+line_value = regexprep(line_value, '(")|(^ {4,}- )','');
 
 modelFields =   {'id',char();...
                'name',char();...
@@ -148,7 +148,7 @@ for i=1:numel(line_key)
     end
 
     % skip over empty keys
-    if isempty(tline_key)
+    if isempty(tline_raw) || (isempty(tline_key) && contains(tline_raw,'!!omap'))
         continue;
     end
     
@@ -215,6 +215,7 @@ for i=1:numel(line_key)
                 switch readList
                     case 'annotation'
                         [metMiriams, miriamKey] = gatherAnnotation(pos,metMiriams,tline_key,tline_value,miriamKey,metMirNo);
+                        metMirNo = metMirNo + 1;
                     otherwise
                         error(['Unknown entry in yaml file: ' tline_raw])
                 end
@@ -259,14 +260,14 @@ for i=1:numel(line_key)
                 model = readFieldValue(model, 'rxnConfidenceScores', tline_value, pos);
                 readList=''; miriamKey='';
             case 'eccodes'
-                if contains(tline_value,'eccodes')
+                if isempty(tline_value)
                     readList = 'eccodes';
                 else
                     eccodes(ecCodeNo,1:2)={pos,tline_value};
                     ecCodeNo=ecCodeNo+1;
                 end
             case 'subsystem'
-                if contains(tline_value,'subsystem')
+                if isempty(tline_value)
                     readList = 'subsystem';
                 else
                     subSystems(subSysNo,1:2)={pos,tline_value};
@@ -286,7 +287,7 @@ for i=1:numel(line_key)
                         subSystems(subSysNo,1:2)={pos,regexprep(tline_value,'^ +- "?(.*)"?$','$1')};
                         subSysNo=subSysNo+1;
                     case 'annotation'
-                        [rxnMiriams, miriamKey] = gatherAnnotation(pos,rxnMiriams,tline_key,tline_value,miriamKey,rxnMirNo);
+                        [rxnMiriams, miriamKey,rxnMirNo] = gatherAnnotation(pos,rxnMiriams,tline_key,tline_value,miriamKey,rxnMirNo);
                         rxnMirNo=rxnMirNo+1;
                     case 'equation'
                         coeff = sscanf(tline_value,'%f');
@@ -307,13 +308,14 @@ for i=1:numel(line_key)
                 readList = '';
                 miriamKey = '';
             case 'name'
-                model = readFieldValue(model, 'geneShortNames', tline_value);
+                model = readFieldValue(model, 'geneShortNames', tline_value, pos);
             case 'annotation'
                 readList = 'annotation';
             otherwise
                 switch readList
                     case 'annotation'
                         [geneMiriams, miriamKey] = gatherAnnotation(pos,geneMiriams,tline_key,tline_value,miriamKey,genMirNo);
+                        genMirNo = genMirNo + 1;
                     otherwise
                         error(['Unknown entry in yaml file: ' tline_raw])
                 end
@@ -359,12 +361,14 @@ if ~isempty(subSystems)
 end
 
 %Parse ec-codes
-if ~isempty(subSystems)
+if ~isempty(eccodes)
     locs = cell2mat(eccodes(:,1));
     for i=unique(locs)'
         eccodesCat=strjoin(eccodes(locs==i,2),';');
         model.eccodes{i,1}=eccodesCat;
     end
+    emptyEc=cellfun(@isempty,model.eccodes);
+    model.eccodes(emptyEc)={''};
 end
 
 % follow-up data processing
@@ -416,8 +420,11 @@ for i={'rxnNames','grRules','eccodes','rxnNotes','rxnReferences',...
        'rxnFrom','subSystems','rxnMiriams'} % Empty strings
    model = emptyOrFill(model,i{1},{''},'rxns');
 end
-for i={'c','rxnConfidenceScores'} % Zeros
+for i={'c'} % Zeros
    model = emptyOrFill(model,i{1},0,'rxns');
+end
+for i={'rxnConfidenceScores'} % NaNs
+   model = emptyOrFill(model,i{1},NaN,'rxns');
 end
 for i={'rxnComps'} % Ones, assume first compartment
    model = emptyOrFill(model,i{1},1,'rxns');
@@ -487,11 +494,15 @@ end
 model.(fieldName)(pos,1) = {value};
 end
 
-function [miriams, miriamKey] = gatherAnnotation(pos,miriams,key,value,miriamKey,entryNumber)
+function [miriams, miriamKey,entryNumber] = gatherAnnotation(pos,miriams,key,value,miriamKey,entryNumber)
 if isempty(key)
     key=miriamKey;
 else
     miriamKey=key;
 end
-miriams(entryNumber,1:3) = {pos, key, value};
+if ~isempty(value)
+    miriams(entryNumber,1:3) = {pos, key, strip(value)};
+else
+    entryNumber = entryNumber - 1;
+end
 end
