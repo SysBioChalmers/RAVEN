@@ -291,19 +291,18 @@ end
 end
 
 function status = makeBinaryExecutable()
-if isunix
-    if ismac
-        binEnd='.mac';
-    else
-        binEnd='';
-    end
-else
+if ispc
     status = 0; % No need to run on Windows
     return;
+elseif ismac
+    binaryEnd='.mac';
+else
+    binaryEnd='';
 end
-binaryList = {'TranslateSBML','OutputSBML','blastp','makeblastdb',...
-              'diamond','glpkcc','cd-hit','hmmbuild','hmmsearch',...
-              'mafft.bat','mafft'}
+
+binaryList = {'blastp','makeblastdb','diamond','cd-hit','hmmbuild','hmmsearch'};
+binaryList = strcat(binaryList,binaryEnd);
+binaryList = [binaryList, 'TranslateSBML','OutputSBML','glpkcc','mafft.bat'];
 for i=1:numel(binaryList)
     binPath = which(binaryList{i});
     [status,cmdout] = system(['chmod +x ' binPath]);
