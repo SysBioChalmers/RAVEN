@@ -70,7 +70,6 @@ if isunix
         fprintf('Fail\n')
     end
 end
-fprintf([computer('arch'),'\n'])
 fprintf([myStr(' > Set RAVEN in MATLAB path',40) '%f'])
 subpath=regexp(genpath(ravenDir),pathsep,'split'); %List all subdirectories
 pathsToKeep=cellfun(@(x) ~contains(x,'.git'),subpath) & cellfun(@(x) ~contains(x,'doc'),subpath);
@@ -305,7 +304,7 @@ binaryList = strcat(binaryList,binaryEnd);
 binaryList = [binaryList, 'TranslateSBML','OutputSBML','glpkcc','mafft.bat'];
 for i=1:numel(binaryList)
     binPath = which(binaryList{i});
-    [status,cmdout] = system(['chmod +x ' binPath]);
+    [status,cmdout] = system(['chmod +x "' binPath '"']);
     if status ~= 0
         error('Failed to make %s executable: %s ',binaryList{i},strip(cmdout))
     end
