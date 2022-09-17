@@ -660,6 +660,9 @@ for i=1:nComps-1
     if isfield(outModel,'inchis')
         outModel.inchis=[outModel.inchis;outModel.inchis(nEM+1:nEM+nMets)];
     end
+    if isfield(outModel,'metSmiles')
+        outModel.metSmiles=[outModel.metSmiles;outModel.metSmiles(nEM+1:nEM+nMets)];
+    end
     if isfield(outModel,'unconstrained')
         outModel.unconstrained=[outModel.unconstrained;outModel.unconstrained(nEM+1:nEM+nMets)];
     end

@@ -55,6 +55,9 @@ end
 if isfield(model,'inchis')
     model.inchis(metIdx) = model.inchis(repIdx(1));
 end
+if isfield(model,'metSmiles')
+    model.metSmiles(metIdx) = model.metSmiles(repIdx(1));
+end
 % Run through replacement metabolites and their compartments. If any of the
 % to-be-replaced metabolites is already present (checked by
 % metaboliteName[compartment], then the replacement metabolite is kept and
@@ -97,6 +100,9 @@ if ~isempty(idxDelete)
     end
     if isfield(model,'inchis')
         model.inchis(idxDelete) = [];
+    end
+    if isfield(model,'metSmiles')
+        model.metSmiles(idxDelete) = [];
     end
     if isfield(model,'metFrom')
         model.metFrom(idxDelete) = [];

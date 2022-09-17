@@ -128,6 +128,9 @@ if ~isempty(metIdx)
     if isfield(sourceModel,'inchis')
         metsToAdd.inchis=sourceModel.inchis(metIdx);
     end
+    if isfield(sourceModel,'metSmiles')
+        metsToAdd.metSmiles=sourceModel.metSmiles(metIdx);
+    end
     
     metsToAdd.compartments=strtrim(cellstr(num2str(sourceModel.metComps(metIdx)))); % Convert from compartment string to compartment number
     [~,idx]=ismember(metsToAdd.compartments,strsplit(num2str(1:length(sourceModel.comps)))); % Match compartment number to compartment abbreviation
