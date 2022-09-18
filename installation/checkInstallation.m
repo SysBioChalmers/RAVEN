@@ -61,6 +61,15 @@ fprintf([myStr(' > Checking MATLAB release',40) '%f'])
 fprintf([version('-release') '\n'])
 fprintf([myStr(' > Checking system architecture',40) '%f'])
 fprintf([computer('arch'),'\n'])
+if isunix
+    fprintf([myStr('   > Make binaries executable',40) '%f'])
+    status = makeBinaryExecutable();
+    if status == 0
+        fprintf('Pass\n')
+    else
+        fprintf('Fail\n')
+    end
+end
 fprintf([myStr(' > Set RAVEN in MATLAB path',40) '%f'])
 subpath=regexp(genpath(ravenDir),pathsep,'split'); %List all subdirectories
 pathsToKeep=cellfun(@(x) ~contains(x,'.git'),subpath) & cellfun(@(x) ~contains(x,'doc'),subpath);
@@ -259,7 +268,7 @@ checkFunctionUniqueness();
 fprintf('\n*** checkInstallation complete ***\n\n');
 end
 
-function res=interpretResults(results)
+function res = interpretResults(results)
 if results.Failed==0 && results.Incomplete==0
     fprintf('Pass\n');
     res=true;
@@ -277,5 +286,27 @@ if lenDiff < 0
     warning('String too long');
 else
     str = [str blanks(lenDiff)];
+end
+end
+
+function status = makeBinaryExecutable()
+if ispc
+    status = 0; % No need to run on Windows
+    return;
+elseif ismac
+    binaryEnd='.mac';
+else
+    binaryEnd='';
+end
+
+binaryList = {'blastp','makeblastdb','diamond','cd-hit','hmmbuild','hmmsearch'};
+binaryList = strcat(binaryList,binaryEnd);
+binaryList = [binaryList, 'TranslateSBML','OutputSBML','glpkcc','mafft.bat'];
+for i=1:numel(binaryList)
+    binPath = which(binaryList{i});
+    [status,cmdout] = system(['chmod +x "' binPath '"']);
+    if status ~= 0
+        error('Failed to make %s executable: %s ',binaryList{i},strip(cmdout))
+    end
 end
 end
