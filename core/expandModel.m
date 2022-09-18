@@ -17,8 +17,6 @@ function [newModel, rxnToCheck]=expandModel(model)
 %
 %   Usage: [newModel, rxnToCheck]=expandModel(model)
 
-%Start by checking which reactions could be expanded
-%rxnsToExpand=false(numel(model.rxns),1);
 
 %Check how many reactions we will create (the number of or:s in the GPRs).
 %This way, we can preallocate all fields and save much computation time
