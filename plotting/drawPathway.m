@@ -408,8 +408,8 @@ if ~isempty( varargin )
             case 'parent',    set( handles,'parent',varargin{c*2} );
                 
                 % head properties - do nothing, since handled above already
-            case 'headwidth',
-            case 'headheight',
+            case 'headwidth'
+            case 'headheight'
                 
         end
     end

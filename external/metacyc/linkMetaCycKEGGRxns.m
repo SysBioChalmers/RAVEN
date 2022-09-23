@@ -7,7 +7,8 @@ function linkMetaCycKEGGRxns
 %
 %   Usage: linkMetaCycKEGGRxns
 
-load('metaCycRxns.mat'); %load MetaCyc reactions
+ravenPath=findRAVENroot();
+load(fullfile(ravenPath,'external','metacyc','metaCycRxns.mat')); %load MetaCyc reactions
 fprintf('NOTE: Importing MetaCyc reactions...\n');
 metaCycModel = metaCycRxns;
 metaCycModel.rxnFrom=cell(numel(metaCycModel.rxns),1);
@@ -28,7 +29,7 @@ fprintf('Mapping MetaCyc and KEGG reactions...\n');
 %Resolve the shared but unmapped reactions (through mapping the involved
 %metabolites). Replace mets information in KEGG model with the
 %corresponding ones in MetaCyc.
-load('metaCycMets.mat');
+load(fullfile(ravenPath,'external','metacyc','metaCycMets.mat'));
 for i=1:numel(shrinkedKeggModel.mets)
     [a, b]=ismember(shrinkedKeggModel.mets{i},metaCycMets.keggid);
     if a

@@ -179,7 +179,7 @@ if ~isempty(arrayData) && isfield(arrayData,'singleCells')
 
         % Bin cell_frac_counts manually
         x = 0:.01:1;
-        for(i = 1:length(x))
+        for i = 1:length(x)
             cell_frac_count(i) = sum(round(cell_frac_levels,2)==x(i));
         end
         
@@ -187,7 +187,7 @@ if ~isempty(arrayData) && isfield(arrayData,'singleCells')
         cell_frac_count(cell_frac_count==0) = NaN; % Remove zeros from optimization
         cell_frac_count(1) = NaN; % Remove non-expressed genes from optimization
         x_lim = 1; % Somewhat arbitrary parameter to fit left tail of distr.
-        myfun = @(par) nansum((cell_frac_count(1:find(x>=x_lim,1)) - ...
+        myfun = @(par) sum((cell_frac_count(1:find(x>=x_lim,1),'omitnan') - ...
             abs(par(1))*betapdf(x(1:find(x>=x_lim,1)),abs(par(2)),abs(par(3))) - ...
             abs(par(4))*betapdf(x(1:find(x>=x_lim,1)),abs(par(5)),abs(par(6))) - ...
             abs(par(7))*betapdf(x(1:find(x>=x_lim,1)),abs(par(8)),abs(par(9))) - ...
@@ -195,7 +195,7 @@ if ~isempty(arrayData) && isfield(arrayData,'singleCells')
         
         par0 = [4,2,100,7,2,30,7,5,20,5,15,20];
         opts = optimset('Display','off');
-        [par,f_val] = fminsearch(myfun,par0,opts);
+        [par,~] = fminsearch(myfun,par0,opts);
         par = abs(par);
         
         % Plot results

@@ -184,7 +184,7 @@ end
 model.genes=model.genes(any(model.rxnGeneMat));
 
 %Construct the S matrix and list of metabolites
-[S, mets, badRxns]=constructS(model.equations);
+[S, mets, ~]=constructS(model.equations);
 model.S=S;
 model.mets=mets;
 

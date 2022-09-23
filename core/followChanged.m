@@ -61,19 +61,19 @@ ineither=reactionIndexes(unique([in1 in2]));
 
 %Keep only those solutions where the difference is larger than or equal to
 %cutOffDiff
-ineither=ineither(find(abs(fluxesA(ineither)-fluxesB(ineither))>=cutOffDiff));
+ineither=ineither(abs(fluxesA(ineither)-fluxesB(ineither))>=cutOffDiff);
 
 %Finds the reactions where the fluxes differ more than cutOffChange percent
 %First check those fluxes that are non-zero in solution1.x
-nonZeroFluxes=ineither(find(fluxesA(ineither)));
+nonZeroFluxes=ineither(fluxesA(ineither));
 quota=1+cutOffChange/100;
-larger=nonZeroFluxes(find((fluxesB(nonZeroFluxes)./fluxesA(nonZeroFluxes))>=(quota)))';
-smaller=nonZeroFluxes(find((fluxesB(nonZeroFluxes)./fluxesA(nonZeroFluxes))<(1/quota)))';
+larger=nonZeroFluxes((fluxesB(nonZeroFluxes)./fluxesA(nonZeroFluxes))>=(quota))';
+smaller=nonZeroFluxes((fluxesB(nonZeroFluxes)./fluxesA(nonZeroFluxes))<(1/quota))';
 fluxIndexes=[larger smaller];
 
 %Then add those where solution1 has a zero flux
-zeroFluxes=ineither(find(fluxesA(ineither)==0));
-fluxIndexes=unique([fluxIndexes zeroFluxes(find(abs(fluxesB(zeroFluxes))>=cutOffFlux))']);
+zeroFluxes=ineither(fluxesA(ineither)==0);
+fluxIndexes=unique([fluxIndexes zeroFluxes(abs(fluxesB(zeroFluxes))>=cutOffFlux)']);
 
 formulas=constructEquations(model,model.rxns(fluxIndexes));
 

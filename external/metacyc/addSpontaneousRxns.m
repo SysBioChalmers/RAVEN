@@ -20,7 +20,8 @@ rxnList=convertCharArray(rxnList);
 rxnList=unique(rxnList);
 
 % Create the matrix of MetaCyc pathways and spontaneous reactions
-load('metaCycRxns.mat');
+ravenPath=findRAVENroot();
+load(fullfile(ravenPath,'external','metacyc','metaCycRxns.mat'));
 pathways={};
 for i=1:numel(metaCycRxns.rxns)
     if ~isempty(metaCycRxns.pwys{i})
@@ -29,12 +30,12 @@ for i=1:numel(metaCycRxns.rxns)
 end
 pathways=unique(pathways);
 
-% Genearte the matirx, row: spontaneousRxns, column: pathways
+% Generate the matrix, row: spontaneousRxns, column: pathways
 sprxnPwyMat=zeros(numel(isSpontaneous),numel(pathways));
 for i=1:numel(isSpontaneous)
-    [a, b]=ismember(isSpontaneous{i},metaCycRxns.rxns);
+    [~, b]=ismember(isSpontaneous{i},metaCycRxns.rxns);
     if ~isempty(metaCycRxns.pwys{b})
-        [crap, indexes]=ismember(strsplit(metaCycRxns.pwys{b},';'),pathways);
+        [~, indexes]=ismember(strsplit(metaCycRxns.pwys{b},';'),pathways);
         sprxnPwyMat(i,indexes)=1;
     end
 end
@@ -52,8 +53,8 @@ pwys=unique(pwys);
 % Get spontaneous reactions associated with the pathways
 hits=[];
 for i=1:numel(pwys)
-    [a, b]=ismember(pwys{i},pathways);
-    if ~isempty(find(sprxnPwyMat(:,b)))
+    [~, b]=ismember(pwys{i},pathways);
+    if ~isempty(find(sprxnPwyMat(:,b),1))
         hits=[hits;find(sprxnPwyMat(:,b))];
     end
 end
@@ -61,7 +62,7 @@ spontaneousRxnList=isSpontaneous(unique(hits));
 
 % Check if the reactants/products are included in metList
 for i=1:numel(spontaneousRxnList)
-    [a, b]=ismember(spontaneousRxnList{i},metaCycRxns.rxns);
+    [~, b]=ismember(spontaneousRxnList{i},metaCycRxns.rxns);
     
     %Obtain the reactants and products
     reactants=all(ismember(metaCycRxns.mets(find(metaCycRxns.S(:,b)==-1)),metList));
@@ -87,9 +88,9 @@ spontaneousRxnList=setdiff(spontaneousRxnList,rxnList);
 % Generate the cell array of relevant pathways
 pathwayID=cell(numel(spontaneousRxnList),1);
 for i=1:numel(spontaneousRxnList)
-    index=find(strcmp(spontaneousRxnList{i},isSpontaneous));
+    index=strcmp(spontaneousRxnList{i},isSpontaneous);
     % locate the relevant pathways
-    relevantpwys=intersect(pathways(find(sprxnPwyMat(index,:))),pwys);
+    relevantpwys=intersect(pathways(sprxnPwyMat(index,:)),pwys);
     pathwayID{i}=strjoin(relevantpwys,';');
 end
 

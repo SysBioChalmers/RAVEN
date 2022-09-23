@@ -136,8 +136,8 @@ stillCapturing = 0;
 for i=1:numel(andPos)
     searchPos = andPos(i);
     while stillCapturing == 0
-        closestOpen = brOpen(max(find(brOpen<searchPos)));
-        inbetweenClose = brClose(brClose<searchPos & brClose>closestOpen);
+        closestOpen = brOpen(find(brOpen<searchPos,1,'last'));
+        inbetweenClose = brClose(brClose<searchPos && brClose>closestOpen);
         if ~isempty(inbetweenClose)
             searchPos=max(inbetweenClose);
         else
@@ -148,8 +148,8 @@ for i=1:numel(andPos)
     stillCapturing = 0;
     searchPos = andPos(i);
     while stillCapturing == 0
-        closestClose = brClose(min(find(brClose>searchPos)));
-        inbetweenOpen = brOpen(brOpen>searchPos & brOpen<closestOpen);
+        closestClose = brClose(find(brClose>searchPos,1,'first'));
+        inbetweenOpen = brOpen(brOpen>searchPos && brOpen<closestOpen);
         if ~isempty(inbetweenOpen)
             searchPos=min(closestClose);
         else

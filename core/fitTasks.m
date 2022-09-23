@@ -93,7 +93,7 @@ for i=1:numel(taskStructure)
         if ~isempty(taskStructure(i).inputs)
             [I, J]=ismember(upper(taskStructure(i).inputs),modelMets);
             K=ismember(upper(taskStructure(i).inputs),'ALLMETS');
-            L=~cellfun('isempty',strfind(upper(taskStructure(i).inputs),'ALLMETSIN'));
+            L=contains(upper(taskStructure(i).inputs),'ALLMETSIN');
             %Check that all metabolites are either real metabolites or
             %ALLMETS/ALLMETSIN
             goodMets=I|K|L;
@@ -166,7 +166,7 @@ for i=1:numel(taskStructure)
         if ~isempty(taskStructure(i).outputs)
             [I, J]=ismember(upper(taskStructure(i).outputs),modelMets);
             K=ismember(upper(taskStructure(i).outputs),'ALLMETS');
-            L=~cellfun('isempty',strfind(upper(taskStructure(i).outputs),'ALLMETSIN'));
+            L=contains(upper(taskStructure(i).outputs),'ALLMETSIN');
             %Check that all metabolites are either real metabolites or
             %ALLMETS/ALLMETSIN
             goodMets=I|K|L;

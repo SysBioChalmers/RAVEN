@@ -179,7 +179,7 @@ catch
             % since in one case subunit was not found in enzyme dump file
             [a, b] = ismember(metaCycEnzymes.cplxComp{i}.subunit,metaCycEnzymes.enzymes);
             if ~all(a)
-                metaCycEnzymes.cplxComp{i}.subunit = metaCycEnzymes.enzymes(b(find(a)));
+                metaCycEnzymes.cplxComp{i}.subunit = metaCycEnzymes.enzymes(b(a));
             end
         end
         

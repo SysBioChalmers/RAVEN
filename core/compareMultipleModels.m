@@ -185,7 +185,7 @@ end
 % Compare overall reaction structure across all models using tSNE projection
 rng(42) % For consistency
 fprintf('\n Comparing model reaction structures \n')
-if exist('tsne') > 0
+if exist('tsne','builtin') > 0
     proj_coords = tsne(double(binary_matrix'),'Distance','hamming','NumDimensions',3); % 3D
     compStruct.structCompMap = proj_coords;
     axis_labels = {'tSNE 1';'tSNE 2';'tSNE 3'};

@@ -123,7 +123,7 @@ if isRaven
         for i = 1:length(rxnCOBRAfields)
             j=ismember(extractedMiriamNames,rxnNamespaces{i});
             if any(j)
-                eval(['newModel.' rxnCOBRAfields{i} ' = miriams(:,j);'])
+                newModel.(rxnCOBRAfields{i})=miriams(:,j);
             end
         end
     end
@@ -171,7 +171,7 @@ if isRaven
         for i = 1:length(metCOBRAfields)
             j=ismember(extractedMiriamNames,metNamespaces{i});
             if any(j)
-                eval(['newModel.' metCOBRAfields{i} ' = miriams(:,j);'])
+                newModel.(metCOBRAfields{i})=miriams(:,j);
             end
         end
     end
@@ -181,11 +181,11 @@ if isRaven
     newModel.b=zeros(numel(model.mets),1);
     newModel.csense=repmat('E',size(model.mets));
     if isfield(model,'geneMiriams')
-        [miriams,extractedMiriamNames]=extractMiriam(model.geneMiriams);
+        [~,extractedMiriamNames]=extractMiriam(model.geneMiriams);
         for i = 1:length(geneCOBRAfields)
             j=ismember(extractedMiriamNames,geneNamespaces{i});
             if any(j)
-                eval(['newModel.' geneCOBRAfields{i} ' = miriams(:,j);'])
+                newModel.(geneCOBRAfields{i})= miriams(:,j);
             end
         end
     end
@@ -395,7 +395,7 @@ else
 end
 
 % Order fields
-modelNew=standardizeModelFieldOrder(newModel); % Corrects for both RAVEN and COBRA models
+newModel=standardizeModelFieldOrder(newModel); % Corrects for both RAVEN and COBRA models
 end
 
 function rules=grrulesToRules(model)

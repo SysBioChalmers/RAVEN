@@ -513,7 +513,7 @@ if ~isempty(model.grRules)
             indexes=unique([indexesNew indexes strfind(tempRules{i},';')]);
             if isempty(indexes)
                 %See if you have a match
-                I=find(strcmp(tempRules{i},model.genes));
+                I=find(strcmp(tempRules{i},model.genes),1);
                 if isempty(I)
                     EM=['The gene association in reaction ' model.rxns{i} ' (' tempRules{i} ') is not present in the gene list'];
                     dispEM(EM);
@@ -523,7 +523,7 @@ if ~isempty(model.grRules)
                 for j=1:numel(indexes)+1
                     %The reaction has several associated genes
                     geneName=tempRules{i}(temp(j)+1:temp(j+1)-1);
-                    I=find(strcmp(geneName,model.genes));
+                    I=find(strcmp(geneName,model.genes),1);
                     if isempty(I)
                         EM=['The gene association in reaction ' model.rxns{i} ' (' geneName ') is not present in the gene list'];
                         dispEM(EM);

@@ -71,7 +71,7 @@ for i=1:iterations
                 fseof.target(j,1)=1;
             else
                 
-                if (fseof.results(j,i) > fseof.results(j,i-1)) & fseof.target(j,1)
+                if (fseof.results(j,i) > fseof.results(j,i-1)) && fseof.target(j,1)
                     fseof.target(j,1)=1;
                 else
                     fseof.target(j,1)=0;
@@ -84,7 +84,7 @@ for i=1:iterations
                 rxnDirection(j,1)=-1;
                 fseof.target(j,1)=1;
             else
-                if (fseof.results(j,i) < fseof.results(j,i-1)) & fseof.target(j,1)
+                if (fseof.results(j,i) < fseof.results(j,i-1)) && fseof.target(j,1)
                     fseof.target(j,1)=1;
                 else
                     fseof.target(j,1)=0;
@@ -112,7 +112,7 @@ for num=1:length(fseof.target)
         A1=num2str(num);                                  %row ID
         A2=char(model.rxns(num));                         %enzyme ID
         A3=char(model.rxnNames(num));                     %enzyme Name
-        if isfield(model,'subSystems') && ~isempty(model.subSystems{num});
+        if isfield(model,'subSystems') && ~isempty(model.subSystems{num})
             A4=char(strjoin(model.subSystems{num,1},';'));                   %Subsystems
         else
             A4='';

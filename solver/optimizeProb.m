@@ -154,7 +154,7 @@ switch solver
         % directory afterwards
         [ravenDir,currDir]=findRAVENroot();
         cd(fullfile(ravenDir,'software','GLPKmex'))
-        [xopt, fmin, errnum, extra] = glpk(prob.c, prob.A, prob.b, prob.lb, prob.ub, prob.csense, prob.vartype, prob.osense, solverparams);
+        [xopt, fmin, errnum, ~] = glpk(prob.c, prob.A, prob.b, prob.lb, prob.ub, prob.csense, prob.vartype, prob.osense, solverparams);
         cd(currDir)
         
         switch errnum % 1 = undefined; 2 = feasible; 3 = infeasible; 4 = no feasible solution; 5 = optimal; 6 = no unbounded solution

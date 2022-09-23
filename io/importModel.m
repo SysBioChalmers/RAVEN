@@ -516,8 +516,8 @@ for i=1:numel(modelSBML.reaction)
             lb=regexprep(lb,parameter.name(n),num2str(parameter.value{n}));
             ub=regexprep(ub,parameter.name(n),num2str(parameter.value{n}));
         end
-        reactionLB(counter)=str2num(lb);
-        reactionUB(counter)=str2num(ub);
+        reactionLB(counter)=str2double(lb);
+        reactionUB(counter)=str2double(ub);
         %The order of these parameters should not be hard coded
     elseif isfield(modelSBML.reaction(i).kineticLaw,'parameter')
         reactionLB(counter)=modelSBML.reaction(i).kineticLaw.parameter(1).value;
@@ -636,7 +636,7 @@ for i=1:numel(modelSBML.reaction)
             subsystems{counter,1}=cellstr(parseNote(modelSBML.reaction(i).notes,'SUBSYSTEM'));
             subsystems{counter,1}(cellfun('isempty',subsystems{counter,1})) = [];
             if strfind(modelSBML.reaction(i).notes,'Confidence Level')
-                rxnconfidencescores(counter)=str2num(parseNote(modelSBML.reaction(i).notes,'Confidence Level'));
+                rxnconfidencescores(counter)=str2double(parseNote(modelSBML.reaction(i).notes,'Confidence Level'));
             end
             rxnreferences{counter,1}=parseNote(modelSBML.reaction(i).notes,'AUTHORS');
             rxnnotes{counter,1}=parseNote(modelSBML.reaction(i).notes,'NOTES');
@@ -699,7 +699,7 @@ if isfield(modelSBML, 'fbc_activeObjective')
         if strcmp(obj,modelSBML.fbc_objective(i).fbc_id)
             rxn=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_reaction;
             rxn=regexprep(rxn,'^R_','');
-            idx=find(ismember(reactionIDs,rxn));
+            idx=ismember(reactionIDs,rxn);
             reactionObjective(idx)=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_coefficient;
         end
     end
@@ -1125,7 +1125,7 @@ function fieldContent=parseNote(searchString,fieldName)
 
 fieldContent='';
 
-if strfind(searchString,fieldName)
+if contains(searchString,fieldName)
     [~,targetString] = regexp(searchString,['<p>' fieldName '.*?</p>'],'tokens','match');
     targetString=regexprep(targetString,'<p>|</p>','');
     targetString=regexprep(targetString,[fieldName, ':'],'');
@@ -1161,13 +1161,13 @@ function miriamStruct=parseMiriam(searchString)
 %Generates miriam structure from annotation field
 
 %Finding whether miriams are written in the old or the new way
-if strfind(searchString,'urn:miriam:')
+if contains(searchString,'urn:miriam:')
     startString='urn:miriam:';
     midString=':';
-elseif strfind(searchString,'http://identifiers.org/')
+elseif contains(searchString,'http://identifiers.org/')
     startString='http://identifiers.org/';
     midString='/';
-elseif strfind(searchString,'https://identifiers.org/')
+elseif contains(searchString,'https://identifiers.org/')
     startString='https://identifiers.org/';
     midString='/';
 else

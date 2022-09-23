@@ -72,7 +72,8 @@ rxnsToMove=[];
 grRulesToMove={}; %Storing the grRules to be moved to MetaCyc model
 
 %Read in dbLinks, note that linkMetaCycKEGGRxns need to be run in advance
-load('metaCycRxns.mat');
+ravenPath=findRAVENroot();
+load(fullfile(ravenPath,'external','metacyc','metaCycRxns.mat'));
 num=0;
 numToMove=0;
 %Loop through the KEGG model and replace the rxn id from KEGG to MetaCyc

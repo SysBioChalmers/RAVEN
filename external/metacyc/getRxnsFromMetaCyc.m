@@ -165,7 +165,6 @@ else
         
         %Keeps track of how many reactions that have been added
         rxnCounter=0;
-        addSpont=false;
         dbLinkCounter=0;
         
         %Loop through the file
@@ -186,7 +185,6 @@ else
             %Check if it is a new reaction
             if numel(tline)>12 && strcmp(tline(1:12),'UNIQUE-ID - ')
                 rxnCounter=rxnCounter+1;
-                nPwys=0;
                 
                 %Add empty strings where there should be such
                 metaCycRxns.rxnNames{rxnCounter}='';
@@ -493,7 +491,7 @@ else
         rxnLinks=rmfield(rxnLinks,'check');
         
         %Construct the S matrix and list of metabolites
-        [S, mets, badRxns]=constructS(metaCycRxns.equations);
+        [S, mets, ~]=constructS(metaCycRxns.equations);
         metaCycRxns.S=S;
         metaCycRxns.mets=mets;
         

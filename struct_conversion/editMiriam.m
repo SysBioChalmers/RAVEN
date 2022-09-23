@@ -82,7 +82,6 @@ end
 
 [~, midx]=ismember(miriamName,extractedMiriamNames);
 if midx==0
-    midx=numel(extractedMiriamNames)+1;
     extractedMiriamNames(end+1)={miriamName};
     extractedMiriams(:,end+1)=miriams;
 elseif strcmp(keep,'replace')

@@ -241,7 +241,6 @@ for i=2:numel(models)
     if strcmpi(metParam,'mets')
     %Get the new metabolites from matching the models. Metabolites are matched by metabolite ID (model.mets).
 
-        oldMetComps=model.comps(model.metComps);
         oldMets=model.mets;
     
         if ~isempty(models{i}.mets)
@@ -525,7 +524,7 @@ for i=2:numel(models)
             %Remap the genes from the new model. The same thing as with
             %mets; this is a wasteful way to do it but I don't care right
             %now
-            [a, b]=ismember(models{i}.genes,model.genes);
+            [a,~]=ismember(models{i}.genes,model.genes);
             
             %Just a check
             if ~all(a)

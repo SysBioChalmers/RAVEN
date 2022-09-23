@@ -32,7 +32,7 @@ else
     metLabels=convertCharArray(metLabels);
 end
 
-if ~strcmpi(graphType,'rc') && ~strcmpi(graphType,'rr') && ~strcmpi(graphType,'cc')
+if ~any(strcmpi(graphType,{'rc','rr','cc'}))
     EM='The graph type is incorrect';
     dispEM(EM);
 end

@@ -440,7 +440,7 @@ listUniqueValues=unique(totalValues);
 
 for i=1:length(listUniqueValues)
     listUniqueNames{i,1}=['FB',num2str(i),'N',num2str(abs(round(listUniqueValues(i))))]; % create unique flux bound IDs.
-    ind=find(ismember(totalValues,listUniqueValues(i)));
+    ind=ismember(totalValues,listUniqueValues(i));
     totalNames(ind)=listUniqueNames(i,1);
 end
 

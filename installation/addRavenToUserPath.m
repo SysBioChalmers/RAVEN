@@ -20,7 +20,7 @@ ravenDir=findRAVENroot();
 % Lists all subdirectories
 subpath=regexp(genpath(ravenDir),pathsep,'split');
 % Remove .git and doc folders
-pathsToKeep=cellfun(@(x) isempty(strfind(x,'.git')),subpath) & cellfun(@(x) isempty(strfind(x,'doc')),subpath);
+pathsToKeep=cellfun(@(x) ~contains(x,'.git'),subpath) & cellfun(@(x) ~contains(x,'doc'),subpath);
 % Only keep useful paths
 subpath = subpath(pathsToKeep);
 subpath = subpath(1:end-1); % Remove last entry, is empty field
@@ -34,7 +34,7 @@ else
     fprintf(fid,'n%sn','%%% RAVEN path');
 end
 fprintf(fid,'%sn',strcat('addpath(''',subpath{1},''',...'));
-for i=2(length(subpath)-1)
+for i=2:(length(subpath)-1)
     fprintf(fid,'t%sn',strcat('''',subpath{i},''',...'));
 end
 fprintf(fid,'t%s',strcat('''',subpath{length(subpath)},''');'));

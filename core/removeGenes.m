@@ -123,7 +123,7 @@ function geneRule = removeGeneFromRule(geneRule,geneToRemove)
 %This function receives a standard gene rule and it returns it without the
 %chosen gene.
 geneSets = strsplit(geneRule,' or ');
-hasGene  = ~cellfun(@isempty,strfind(geneSets,geneToRemove));
+hasGene  = contains(geneSets,geneToRemove);
 geneSets = geneSets(~hasGene);
 geneRule = strjoin(geneSets,' or ');
 end

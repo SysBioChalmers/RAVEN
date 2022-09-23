@@ -1,4 +1,4 @@
-function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,cobraText)
+function exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,cobraText)
 % exportForGit
 %   Generates a directory structure and populates this with model files, ready
 %   to be commited to a Git(Hub) maintained model repository. Writes the model

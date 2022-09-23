@@ -52,7 +52,7 @@ if isfield(model,'grRules')
                     simpleSet  = genesSets{j};
                     %Enclose simpleSet in brackets
                     if length(genesSets)>1
-                        if ~isempty(strfind(simpleSet,' and '))
+                        if contains(simpleSet,' and ')
                             simpleSet = horzcat('(',simpleSet,')');
                         end
                     end
@@ -120,9 +120,9 @@ end
 %Function that gets the model field grRules and returns the indexes of the
 %rules in which the pattern ") and (" is present.
 function indexes2check = findPotentialErrors(grRules,embedded,model)
-indxs_l       = find(~cellfun(@isempty,strfind(grRules,') and (')));
-indxs_l_L     = find(~cellfun(@isempty,strfind(grRules,') and')));
-indxs_l_R     = find(~cellfun(@isempty,strfind(grRules,'and (')));
+indxs_l       = find(contains(grRules,') and ('));
+indxs_l_L     = find(contains(grRules,') and'));
+indxs_l_R     = find(contains(grRules,'and ('));
 indexes2check = vertcat(indxs_l,indxs_l_L,indxs_l_R);
 indexes2check = unique(indexes2check);
 

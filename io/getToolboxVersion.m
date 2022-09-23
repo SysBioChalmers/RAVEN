@@ -63,7 +63,7 @@ if isempty(version)
             [~,commit] = system('git log -n 1 --format=%H');
             commit = commit(1:7);
             %If no tag available or commit is part of tag, get commit instead:
-            if ~isempty(strfind(version,'fatal')) || ~isempty(strfind(version,commit))
+            if contains(version,'fatal') || contains(version,commit)
                 version = ['commit ' commit];
             else
                 version = strrep(version,'v','');

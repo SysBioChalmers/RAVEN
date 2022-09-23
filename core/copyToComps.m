@@ -52,7 +52,7 @@ rxns=getIndexes(model,rxns,'rxns');
 
 for i=1:numel(toComps)
     %Check if the compartment exists, otherwise add it
-    [I,J]=ismember(toComps(i),model.comps);
+    [I, J]=ismember(toComps(i),model.comps);
     if I==false
         model.comps=[model.comps;toComps(i)];
         model.compNames=[model.compNames;compNames(i)];

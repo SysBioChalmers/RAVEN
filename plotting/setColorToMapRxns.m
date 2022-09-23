@@ -30,7 +30,7 @@ function [modifiedMap, xmlMap, model2] = setColorToMapRxns (mapFileName, model, 
 % xmlMap                xml structure of the original map obtained from mapFileName
 % model2                model with modified subsystems
 
-if ~(exist('transformXML2Map')==2)
+if ~(exist('transformXML2Map.m','file')==2)
     error('COBRA Toolbox is required, go to https://opencobra.github.io/cobratoolbox/')
 end
 
@@ -194,7 +194,7 @@ for i = 1:nSubSystemsNoTrans
         metsFromSubSystemRxnsNoComp = cell(nMetsSubSystemRxns,1);
         for j = 1:nMetsSubSystemRxns
             str = metsSubSystemRxns{j};
-            [z, s] = size(str);
+            [~, s] = size(str);
             metsFromSubSystemRxnsNoComp{j, 1} = str(1:s-2); % erasing comp signature
         end
         [~, o, ~] = unique(metsFromSubSystemRxnsNoComp,'first');
@@ -479,7 +479,7 @@ elseif rxnLineColor == "Subsystems"
 elseif ~(rxnLineColor == "Subsystems" || rxnLineColor == "Payhways" || isempty(rxnLineColor))
     for i = 1:length(modifiedMap.rxnName)
         a = find(ismember(model2.rxns, modifiedMap.rxnName{i}));
-        if ~isempty(a) & string(model2.subSystems(a)) ~= "NonIncluded"
+        if ~isempty(a) && string(model2.subSystems(a)) ~= "NonIncluded"
             modifiedMap.rxnColor(i, 1) = {colors(rxnLineColor)};
         end
     end
@@ -489,7 +489,7 @@ if rxnLineColor == "Subsystems" || rxnLineColor == "Payhways" || isempty(rxnLine
     for i = 1:length(modifiedMap.rxnName)
         a = find(ismember(model2.rxns, modifiedMap.rxnName{i}));
         for j = 1:length(h2o)
-            if ~isempty(a) & string(modifiedMap.rxnName{i}) == string(h2o(j))...
+            if ~isempty(a) && string(modifiedMap.rxnName{i}) == string(h2o(j))...
                     & string(model2.subSystems(a)) ~= "NonIncluded"
                 modifiedMap.rxnColor(i, 1) = {colors('CYAN')};
             end
@@ -499,7 +499,7 @@ if rxnLineColor == "Subsystems" || rxnLineColor == "Payhways" || isempty(rxnLine
     for i = 1:length(modifiedMap.rxnName)
         a = find(ismember(model2.rxns, modifiedMap.rxnName{i}));
         for j = 1:length(o2)
-            if ~isempty(a) & string(modifiedMap.rxnName{i}) == string(o2(j))...
+            if ~isempty(a) && string(modifiedMap.rxnName{i}) == string(o2(j))...
                     & string(model2.subSystems(a)) ~= "NonIncluded"
                 modifiedMap.rxnColor(i, 1) = {colors('CYAN')};
             end
@@ -510,7 +510,7 @@ if rxnLineColor == "Subsystems" || rxnLineColor == "Payhways" || isempty(rxnLine
     for i = 1:length(modifiedMap.rxnName)
         a = find(ismember(model2.rxns, modifiedMap.rxnName{i}));
         for j = 1:length(Pi)
-            if ~isempty(a) & string(modifiedMap.rxnName{i}) == string(Pi(j))...
+            if ~isempty(a) && string(modifiedMap.rxnName{i}) == string(Pi(j))...
                     & string(model2.subSystems(a)) ~= "NonIncluded"
                 modifiedMap.rxnColor(i, 1) = {colors('RED')};
             end
@@ -520,7 +520,7 @@ if rxnLineColor == "Subsystems" || rxnLineColor == "Payhways" || isempty(rxnLine
     for i = 1:length(modifiedMap.rxnName)
         a = find(ismember(model2.rxns, modifiedMap.rxnName{i}));
         for j = 1:length(co2)
-            if ~isempty(a) & string(modifiedMap.rxnName{i}) == string(co2(j))...
+            if ~isempty(a) && string(modifiedMap.rxnName{i}) == string(co2(j))...
                     & string(model2.subSystems(a)) ~= "NonIncluded"
                 modifiedMap.rxnColor(i, 1) = {colors('SLATEGRAY')};
             end
@@ -530,7 +530,7 @@ if rxnLineColor == "Subsystems" || rxnLineColor == "Payhways" || isempty(rxnLine
     for i = 1:length(modifiedMap.rxnName)
         a = find(ismember(model2.rxns, modifiedMap.rxnName{i}));
         for j = 1:length(aa)
-            if ~isempty(a) & string(modifiedMap.rxnName{i}) == string(aa(j))...
+            if ~isempty(a) && string(modifiedMap.rxnName{i}) == string(aa(j))...
                     & string(model2.subSystems(a)) ~= "NonIncluded"
                 modifiedMap.rxnColor(i, 1) = {colors('ORANGE')};
             end
@@ -540,7 +540,7 @@ if rxnLineColor == "Subsystems" || rxnLineColor == "Payhways" || isempty(rxnLine
     for i = 1:length(modifiedMap.rxnName)
         a = find(ismember(model2.rxns, modifiedMap.rxnName{i}));
         for j = 1:length(cenMet)
-            if ~isempty(a) & string(modifiedMap.rxnName{i}) == string(cenMet(j))...
+            if ~isempty(a) && string(modifiedMap.rxnName{i}) == string(cenMet(j))...
                     & string(model2.subSystems(a)) ~= "NonIncluded"
                 modifiedMap.rxnColor(i, 1) = {colors('BLUE')};
             end
@@ -550,7 +550,7 @@ if rxnLineColor == "Subsystems" || rxnLineColor == "Payhways" || isempty(rxnLine
     for i = 1:length(modifiedMap.rxnName)
         a = find(ismember(model2.rxns, modifiedMap.rxnName{i}));
         for j = 1:length(lip)
-            if ~isempty(a) & string(modifiedMap.rxnName{i}) == string(lip(j))...
+            if ~isempty(a) && string(modifiedMap.rxnName{i}) == string(lip(j))...
                     & string(model2.subSystems(a)) ~= "NonIncluded"
                 modifiedMap.rxnColor(i, 1) = {colors('LIME')};
             end
@@ -564,7 +564,7 @@ if rxnsFluxTask == 5 % change color to dark-color in negative values
         valueskeys (:,2) = keys(colors)';
         a = find(ismember(valueskeys, modifiedMap.rxnColor{i, 1}));
         b = find(ismember(model2.rxns, modifiedMap.rxnName{i}));
-        if ~isempty(b) & v1(b) < 0 & string(model2.subSystems(b)) ~= "NonIncluded"
+        if ~isempty(b) && v1(b) < 0 && string(model2.subSystems(b)) ~= "NonIncluded"
             if string(valueskeys (a,2)) == 'LIME'
                 modifiedMap.rxnColor(i, 1) = {colors('GREEN')};
             else

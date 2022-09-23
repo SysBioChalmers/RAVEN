@@ -125,7 +125,7 @@ if nargin<6
     allowNewGenes=false;
 end
 
-if allowNewGenes & isfield(rxnsToAdd,'grRules')
+if allowNewGenes && isfield(rxnsToAdd,'grRules')
     genesToAdd.genes = strjoin(convertCharArray(rxnsToAdd.grRules));
     genesToAdd.genes = regexp(genesToAdd.genes,' |)|(|and|or','split'); % Remove all grRule punctuation
     genesToAdd.genes = genesToAdd.genes(~cellfun(@isempty,genesToAdd.genes));  % Remove spaces and empty genes
@@ -261,7 +261,7 @@ else
     end
 end
 
-if isfield(newModel,'annotation') & isfield(newModel.annotation,'defaultLB')
+if isfield(newModel,'annotation') && isfield(newModel.annotation,'defaultLB')
     newLb=newModel.annotation.defaultLB;
 else
     newLb=-inf;
@@ -287,7 +287,7 @@ else
     end
 end
 
-if isfield(newModel,'annotation') & isfield(newModel.annotation,'defaultUB')
+if isfield(newModel,'annotation') && isfield(newModel.annotation,'defaultUB')
     newUb=newModel.annotation.defaultUB;
 else
     newUb=inf;
@@ -602,7 +602,7 @@ if eqnType==3
     [I, J]=ismember(t1,t2);
     
     if ~all(I)
-        if allowNewMets==true | ischar(allowNewMets)
+        if allowNewMets==true || ischar(allowNewMets)
             %Add the new mets
             metsToAdd.metNames=metNames(~I);
             metsToAdd.compartments=compartments(~I);
@@ -636,7 +636,7 @@ for i=1:nRxns
         rule=strrep(rule,' or ',' ');
         rule=strrep(rule,' and ',' ');
         genes=regexp(rule,' ','split');
-        [I, J]=ismember(genes,newModel.genes);
+        [I,~]=ismember(genes,newModel.genes);
         if ~all(I) && any(rule)
             EM=['Not all genes for reaction ' rxnsToAdd.rxns{i} ' were found in model.genes. If needed, add genes with addGenesRaven before calling this function, or set the ''allowNewGenes'' flag to true'];
             dispEM(EM);

@@ -19,12 +19,13 @@ function newIds=generateNewIds(model,type,prefix,quantity,numLength)
 type=char(type);
 prefix=char(prefix);
 
-if type=='rxns'
-    existingIds=model.rxns;
-elseif type=='mets'
-    existingIds=model.mets;
-else
-    error('type should be either ''rxns'' or ''mets''.')
+switch type
+    case 'rxns'
+        existingIds=model.rxns;
+    case 'mets'
+        existingIds=model.mets;
+    otherwise
+        error('type should be either ''rxns'' or ''mets''.')
 end
 if nargin<5
     numLength=4;
@@ -40,7 +41,6 @@ if ~isempty(existingIds)
     numLength=length(lastId);
     lastId=str2double(lastId);
 else
-    lastId=0;
     fprintf(['No ' type ' ids with prefix "' prefix ...
         '" currently exist in the model. The first new id will be "' ...
         [prefix,num2str(1,['%0' num2str(numLength) 'd'])] '"\n'],'%s')

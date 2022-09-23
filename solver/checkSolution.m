@@ -10,9 +10,6 @@ function [isFeasible, isOptimal]=checkSolution(res)
 %
 %   Usage: [isFeasible, isOptimal]=checkSolution(res)
 
-isFeasible=false;
-isOptimal=false;
-
 switch res.stat
     case 1
         isOptimal=true;

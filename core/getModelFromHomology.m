@@ -373,7 +373,7 @@ for i=1:numel(models)
     %allGenes, thereby also keeping complexes where only for one of the
     %genes was matched
     [rxnsToKeep,~] = find(models{useOrderIndexes(i)}.rxnGeneMat(:,a));
-    rxnsToRemove = repmat(1,numel(models{useOrderIndexes(i)}.rxns),1);
+    rxnsToRemove = ones(numel(models{useOrderIndexes(i)}.rxns),1);
     rxnsToRemove(rxnsToKeep) = 0;
     rxnsToRemove = find(rxnsToRemove);
     models{useOrderIndexes(i)}=removeReactions(models{useOrderIndexes(i)},rxnsToRemove,true,true,true);
@@ -451,7 +451,7 @@ for i=1:numel(models)
                 hitGenes.oldGenes = [hitGenes.oldGenes, {geneName}];
                 
                 %Get the new genes for that gene
-                a=find(finalMappings{i}(:,mapIndex));
+                a=finalMappings{i}(:,mapIndex);
                 
                 %Find the positions of these genes in the final gene list
                 [~, b]=ismember(allGenes{1}(a),fullGeneList);

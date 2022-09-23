@@ -83,7 +83,7 @@ if toAdd > 0
         if (numOrs(i) > 0)
             %Check that it doesn't contain nested 'and' and 'or' relations and
             %print a warning if it does
-            if ~isempty(strfind(model.grRules{i},' and '))
+            if contains(model.grRules{i},' and ')
                 rxnToCheck{end+1,1}=model.rxns{i};
             end
 
@@ -102,7 +102,7 @@ if toAdd > 0
             %Find the gene in the gene list If ' and ' relationship, first
             %split the genes
             model.rxnGeneMat(i,:)=0;
-            if ~isempty(strfind(geneNames(1),' and '))
+            if contains(geneNames(1),' and ')
                 andGenes=regexp(geneNames{1},' and ','split');
                 model.rxnGeneMat(i,ismember(model.genes,andGenes)) = 1;
             else
@@ -118,7 +118,7 @@ if toAdd > 0
                 
                 model.grRules{ind}=['(' geneNames{j} ')'];
 
-                if ~isempty(strfind(geneNames(j),' and '))
+                if contains(geneNames(j),' and ')
                     andGenes=regexp(geneNames{j},' and ','split');
                     model.rxnGeneMat(ind,ismember(model.genes,andGenes)) = 1;
                 else

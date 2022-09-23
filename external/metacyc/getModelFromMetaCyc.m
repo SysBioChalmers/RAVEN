@@ -95,7 +95,7 @@ for i=1:rxnNum
                         subgrRule=strjoin(metaCycEnzymes.cplxComp{d}.subunit,' and ');
                         subgrRule=strcat('(',subgrRule,')');
                     end
-                    [x, geneIndex]=ismember(metaCycEnzymes.cplxComp{d}.subunit,metaCycModel.genes);
+                    [~, geneIndex]=ismember(metaCycEnzymes.cplxComp{d}.subunit,metaCycModel.genes);
                     metaCycModel.rxnGeneMat(i,geneIndex)=1;
                     
                 else  %In cases of NOT an enzyme complex
