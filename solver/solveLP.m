@@ -30,6 +30,8 @@ function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
 %                -1: no feasible solution found
 %                -2: solution found, but flux minimization failed
 %         msg     string describing the status of the optimization
+%         sPrice  shadow price (only reported if minFlux was 0)
+%         rCost   reduced cost (only reported if minFlux was 0)
 %   hsSolOut      solution to be used as hot-start solution (see the input
 %                 parameters). Only used if minFlux is 0 or 1
 %
@@ -114,6 +116,8 @@ if isfield(res,'full')
         end
     end
     solution.f=res.obj;
+    solution.sPrice=res.dual;
+    solution.rCost=res.rcost(1:numel(model.rxns));
 else
     %Interior-point. This is not used at the moment
     solution.x=res.full;
@@ -191,5 +195,6 @@ if minFlux~=0
                 solution.stat=-2;
             end
     end
+    solution=rmfield(solution,{'sPrice','rCost'});
 end
 end
