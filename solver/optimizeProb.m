@@ -60,7 +60,7 @@ switch solver
             res=solveCobraLP(prob);
         end
         global CBT_LP_SOLVER
-        if strcmp(CBT_LP_SOLVER,'glpk')
+        if strcmp(CBT_LP_SOLVER,'glpk') & isfield(res,{'dual','rcost'})
             res.dual=-res.dual;
             res.rcost=-res.rcost;
         end
@@ -93,7 +93,7 @@ switch solver
     end
     if isfield(prob, 'osense')
         osense = prob.osense;
-        prob.modelsense = renameparams(num2str(prob.osense), {'1','-1'}, {'max','min'});
+        prob.modelsense = renameparams(num2str(prob.osense), {'1','-1'}, {'min','max'});
         prob = rmfield(prob, {'osense'});
     end
     [prob.obj, prob.rhs, prob.vtype] = deal(prob.c, prob.b, prob.vartype);
@@ -106,8 +106,10 @@ switch solver
         res.full     = resG.x;
         res.obj      = resG.objval;
         res.origStat = resG.status;
-        res.dual     = resG.pi*osense;
-        res.rcost    = resG.rc*osense;
+        if isfield(resG,{'pi','rc'})
+            res.dual     = resG.pi*osense;
+            res.rcost    = resG.rc*osense;
+        end
         if milp && strcmp(resG.status, 'TIME_LIMIT')
             % If res has the objval field, it succeeded, regardless of
             % time_limit status
