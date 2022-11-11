@@ -102,7 +102,7 @@ catch
     fprintf('   Download libSBML from http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n');
 end
 fprintf(' > Checking model import and export\n')
-res=runtests('importExportTests.m','OutputDetail',0);
+[~,res]=evalc("runtests('importExportTests.m');");
 
 fprintf([myStr('   > Import Excel format',40) '%f'])
 if res(1).Passed == 1
@@ -151,7 +151,7 @@ fprintf('\n=== Model solvers ===\n');
 
 %Get current solver. Set it to 'none', if it is not set
 fprintf(' > Checking for LP solvers\n')
-res=runtests('solverTests.m','OutputDetail',0);
+[~,res]=evalc("runtests('solverTests.m');");
 
 fprintf([myStr('   > glpk',40) '%f'])
 if res(1).Passed == 1
@@ -175,7 +175,7 @@ else
 end
 
 fprintf(' > Checking for MILP solvers\n')
-res=runtests('fillGapsSmallTests.m','OutputDetail',0);
+[~,res]=evalc("runtests('fillGapsSmallTests.m');");
 
 fprintf([myStr('   > glpk',40) '%f'])
 if res(1).Passed == 1
@@ -227,21 +227,21 @@ end
 
 fprintf('\n=== Essential binary executables ===\n');
 fprintf([myStr(' > Checking BLAST+',40) '%f'])
-res=runtests('blastPlusTests.m','OutputDetail',0);
+[~,res]=evalc("runtests('blastPlusTests.m');");
 res=interpretResults(res);
 if res==false
     fprintf('   This is essential to run getBlast()\n')
 end
 
 fprintf([myStr(' > Checking DIAMOND',40) '%f'])
-res=runtests('diamondTests.m','OutputDetail',0);
+[~,res]=evalc("runtests('diamondTests.m');");
 res=interpretResults(res);
 if res==false
     fprintf('   This is essential to run the getDiamond()\n')
 end
 
 fprintf([myStr(' > Checking HMMER',40) '%f'])
-res=runtests('hmmerTests.m','OutputDetail',0);
+[~,res]=evalc("runtests('hmmerTests.m')");
 res=interpretResults(res);
 if res==false
     fprintf(['   This is essential to run getKEGGModelFromHomology()\n'...
@@ -253,11 +253,11 @@ if develMode
     fprintf('NOTE: These binaries are only required when using KEGG FTP dump files in getKEGGModelForOrganism\n');
 
     fprintf([myStr(' > Checking CD-HIT',40) '%f'])
-    res=runtests('cdhitTests.m','OutputDetail',0);
+    [~,res]=evalc("runtests('cdhitTests.m');");
     interpretResults(res);
 
     fprintf([myStr(' > Checking MAFFT',40) '%f'])
-    res=runtests('mafftTests.m','OutputDetail',0);
+    [~,res]=evalc("runtests('mafftTests.m');");
     interpretResults(res);
 end
 
