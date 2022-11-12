@@ -59,8 +59,7 @@ switch solver
         else
             res=solveCobraLP(prob);
         end
-        global CBT_LP_SOLVER
-        if strcmp(CBT_LP_SOLVER,'glpk') & isfield(res,{'dual','rcost'})
+        if isfield(res,{'dual','rcost'})
             res.dual=-res.dual;
             res.rcost=-res.rcost;
         end
@@ -107,8 +106,8 @@ switch solver
         res.obj      = resG.objval;
         res.origStat = resG.status;
         if isfield(resG,{'pi','rc'})
-            res.dual     = resG.pi*osense;
-            res.rcost    = resG.rc*osense;
+            res.dual     = -resG.pi*osense;
+            res.rcost    = -resG.rc*osense;
         end
         if milp && strcmp(resG.status, 'TIME_LIMIT')
             % If res has the objval field, it succeeded, regardless of
@@ -170,8 +169,8 @@ switch solver
         res.origStat = errnum;
         res.full     = xopt;
         res.obj      = fmin;
-        res.dual     = extra.lambda*prob.osense;
-        res.rcost    = extra.redcosts*prob.osense;
+        res.dual     = -extra.lambda*prob.osense;
+        res.rcost    = -extra.redcosts*prob.osense;
     otherwise
         error('RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
 end
