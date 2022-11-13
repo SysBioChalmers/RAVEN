@@ -313,6 +313,22 @@ for i=2:numel(models)
                 model.inchis=[model.inchis;emptyInchi];
             end
         end
+
+        if isfield(models{i},'metSmiles')
+            if isfield(model,'metSmiles')
+                model.metSmiles=[model.metSmiles;models{i}.metSmiles(metsToAdd)];
+            else
+                emptyInchi=cell(numel(model.mets)-numel(metsToAdd),1);
+                emptyInchi(:)={''};
+                model.metSmiles=[emptyInchi;models{i}.metSmiles(metsToAdd)];
+            end
+        else
+            if isfield(model,'metSmiles')
+                emptyInchi=cell(numel(metsToAdd),1);
+                emptyInchi(:)={''};
+                model.metSmiles=[model.metSmiles;emptyInchi];
+            end
+        end
         
         if isfield(models{i},'metFormulas')
             if isfield(model,'metFormulas')

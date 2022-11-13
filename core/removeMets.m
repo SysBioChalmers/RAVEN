@@ -74,6 +74,9 @@ if ~isempty(indexesToDelete)
     if isfield(reducedModel,'inchis')
         reducedModel.inchis(indexesToDelete)=[];
     end
+    if isfield(reducedModel,'metSmiles')
+        reducedModel.metSmiles(indexesToDelete)=[];
+    end
     if isfield(reducedModel,'metFormulas')
         reducedModel.metFormulas(indexesToDelete)=[];
     end
