@@ -101,6 +101,9 @@ switch type
         if isfield(newModel,'inchis')
             newModel.inchis=newModel.inchis(indexes);
         end
+        if isfield(newModel,'metSmiles')
+            newModel.metSmiles=newModel.metSmiles(indexes);
+        end
         if isfield(newModel,'metFormulas')
             newModel.metFormulas=newModel.metFormulas(indexes);
         end

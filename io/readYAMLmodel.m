@@ -76,6 +76,7 @@ modelFields =   {'id',char();...
 'rxnConfidenceScores',cell(0,0);...
            'metComps',cell(0,0);... %Changed to double in the end.
              'inchis',cell(0,0);...
+          'metSmiles',cell(0,0);...
         'metFormulas',cell(0,0);...
          'metMiriams',cell(0,0);...
          'metCharges',cell(0,0);... %Changed to double in the end.
@@ -206,6 +207,9 @@ for i=1:numel(line_key)
             case 'inchis'
                 model = readFieldValue(model, 'inchis', tline_value, pos);
                 readList=''; miriamKey='';
+            case 'smiles'
+                model = readFieldValue(model, 'metSmiles', tline_value, pos);
+                readList=''; miriamKey='';                
             case 'metFrom'
                 model = readFieldValue(model, 'metFrom', tline_value, pos);
                 readList=''; miriamKey='';
@@ -430,7 +434,7 @@ for i={'rxnComps'} % Ones, assume first compartment
    model = emptyOrFill(model,i{1},1,'rxns');
 end
 % Metabolites
-for i={'metNames','inchis','metFormulas','metMiriams','metFrom'} % Empty strings
+for i={'metNames','inchis','metFormulas','metMiriams','metFrom','metSmiles'} % Empty strings
    model = emptyOrFill(model,i{1},{''},'mets');
 end
 for i={'metCharges','unconstrained'} % Zeros

@@ -22,6 +22,8 @@ function newModel=addMets(model,metsToAdd,copyInfo,prefix)
 %                              default 0)
 %               inchis         cell array with InChI strings for each
 %                              metabolite (opt, default '')
+%               metSmiles      cell array with SMILES strings for each
+%                              metabolite (opt, default '')
 %               metFormulas    cell array with the formulas for each of
 %                              the metabolites (opt, default '')
 %               metMiriams     cell array with MIRIAM structures (opt,
@@ -202,6 +204,25 @@ else
     end
 end
 
+
+if isfield(metsToAdd,'metSmiles')
+    metsToAdd.metSmiles=convertCharArray(metsToAdd.metSmiles);
+    if numel(metsToAdd.metSmiles)~=nMets
+        EM='metsToAdd.metSmiles must have the same number of elements as metsToAdd.mets';
+        dispEM(EM);
+    end
+    %Add empty field if it doesn't exist
+    if ~isfield(newModel,'metSmiles')
+        newModel.metSmiles=largeFiller;
+    end
+    newModel.metSmiles=[newModel.metSmiles;metsToAdd.metSmiles(:)];
+else
+    %Add empty strings if structure is in model
+    if isfield(newModel,'metSmiles')
+        newModel.metSmiles=[newModel.metSmiles;filler];
+    end
+end
+
 if isfield(metsToAdd,'metFormulas')
     metsToAdd.metFormulas=convertCharArray(metsToAdd.metFormulas);
     if numel(metsToAdd.metFormulas)~=nMets
@@ -306,6 +327,11 @@ if copyInfo==true
                 newModel.inchis(I(i))=newModel.inchis(J(i));
             end
         end
+        if isfield(newModel,'metSmiles')
+            if isempty(newModel.metSmiles{I(i)})
+                newModel.metSmiles(I(i))=newModel.metSmiles(J(i));
+            end
+        end        
         if isfield(newModel,'metFormulas')
             if isempty(newModel.metFormulas{I(i)})
                 newModel.metFormulas(I(i))=newModel.metFormulas(J(i));

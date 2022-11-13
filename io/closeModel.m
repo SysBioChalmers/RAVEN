@@ -28,6 +28,9 @@ for i=1:numel(closedModel.rxns)
         if isfield(closedModel,'inchis')
             closedModel.inchis{numel(closedModel.inchis)+1}=closedModel.inchis{find(closedModel.S(:,i))};
         end;
+        if isfield(closedModel,'metSmiles')
+            closedModel.metSmiles{numel(closedModel.metSmiles)+1}=closedModel.metSmiles{find(closedModel.S(:,i))};
+        end;
         if isfield(closedModel,'metFormulas')
             closedModel.metFormulas{numel(closedModel.metFormulas)+1}=closedModel.metFormulas{find(closedModel.S(:,i))};
         end;

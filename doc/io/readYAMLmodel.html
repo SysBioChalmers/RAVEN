@@ -132,436 +132,440 @@ This function is called by:
 0076 <span class="string">'rxnConfidenceScores'</span>,cell(0,0);<span class="keyword">...</span>
 0077            <span class="string">'metComps'</span>,cell(0,0);<span class="keyword">...</span><span class="comment"> %Changed to double in the end.</span>
 0078              <span class="string">'inchis'</span>,cell(0,0);<span class="keyword">...</span>
-0079         <span class="string">'metFormulas'</span>,cell(0,0);<span class="keyword">...</span>
-0080          <span class="string">'metMiriams'</span>,cell(0,0);<span class="keyword">...</span>
-0081          <span class="string">'metCharges'</span>,cell(0,0);<span class="keyword">...</span><span class="comment"> %Changed to double in the end.</span>
-0082               <span class="string">'comps'</span>,cell(0,0);<span class="keyword">...</span>
-0083           <span class="string">'compNames'</span>,cell(0,0);<span class="keyword">...</span>
-0084         <span class="string">'compOutside'</span>,cell(0,0);<span class="keyword">...</span>
-0085           <span class="string">'geneComps'</span>,cell(0,0);<span class="keyword">...</span><span class="comment"> %Changed to double in the end.</span>
-0086         <span class="string">'geneMiriams'</span>,cell(0,0);<span class="keyword">...</span>
-0087      <span class="string">'geneShortNames'</span>,cell(0,0);<span class="keyword">...</span>
-0088       <span class="string">'unconstrained'</span>,cell(0,0);<span class="keyword">...</span><span class="comment"> %Changed to double in the end.</span>
-0089             <span class="string">'metFrom'</span>,cell(0,0);<span class="keyword">...</span>
-0090             <span class="string">'rxnFrom'</span>,cell(0,0)};
-0091 <span class="keyword">for</span> i=1:size(modelFields,1)
-0092     model.(modelFields{i,1})=modelFields{i,2};
-0093 <span class="keyword">end</span>
-0094 
-0095 section = 0;
-0096 metMiriams=cell(25000,3);   metMirNo=1;
-0097 rxnMiriams=cell(25000,3);   rxnMirNo=1;
-0098 geneMiriams=cell(25000,3);  genMirNo=1;
-0099 subSystems=cell(25000,2);   subSysNo=1;
-0100 eccodes=cell(25000,2);      ecCodeNo=1;
-0101 equations=cell(100000,3);   equatiNo=1;
-0102 <span class="comment">% metMiriams=cell(0,3);   metMirNo=1;</span>
-0103 <span class="comment">% rxnMiriams=cell(0,3);   rxnMirNo=1;</span>
-0104 <span class="comment">% geneMiriams=cell(0,3);  genMirNo=1;</span>
-0105 <span class="comment">% subSystems=cell(0,2);   subSysNo=1;</span>
-0106 <span class="comment">% eccodes=cell(0,2);      ecCodeNo=1;</span>
-0107 
-0108 <span class="keyword">for</span> i=1:numel(line_key)
-0109     tline_raw = line_raw{i};
-0110     tline_key = line_key{i};
-0111     tline_value = line_value{i};
-0112     <span class="comment">% import different sections</span>
-0113     <span class="keyword">switch</span> tline_raw
-0114         <span class="keyword">case</span> <span class="string">'- metaData:'</span>
-0115             section = 1;
-0116             <span class="keyword">if</span> verbose
-0117                 fprintf(<span class="string">'\t%d\n'</span>, section);
-0118             <span class="keyword">end</span>
-0119             <span class="keyword">continue</span> <span class="comment">% Go to next line</span>
-0120         <span class="keyword">case</span> <span class="string">'- metabolites:'</span>
-0121             section = 2;
-0122             <span class="keyword">if</span> verbose
-0123                 fprintf(<span class="string">'\t%d\n'</span>, section);
-0124             <span class="keyword">end</span>
-0125             pos=0;
-0126             <span class="keyword">continue</span>
-0127         <span class="keyword">case</span> <span class="string">'- reactions:'</span>
-0128             section = 3;
-0129             <span class="keyword">if</span> verbose
-0130                 fprintf(<span class="string">'\t%d\n'</span>, section);
-0131             <span class="keyword">end</span>
-0132             pos=0;
-0133             <span class="keyword">continue</span>
-0134         <span class="keyword">case</span> <span class="string">'- genes:'</span>
-0135             section = 4;
-0136             <span class="keyword">if</span> verbose
-0137                 fprintf(<span class="string">'\t%d\n'</span>, section);
-0138             <span class="keyword">end</span>
-0139             pos=0;
-0140             <span class="keyword">continue</span>
-0141         <span class="keyword">case</span> <span class="string">'- compartments: !!omap'</span>
-0142             section = 5;
-0143             <span class="keyword">if</span> verbose
-0144                 fprintf(<span class="string">'\t%d\n'</span>, section);
-0145             <span class="keyword">end</span>
-0146             pos=0;
-0147             <span class="keyword">continue</span>
-0148     <span class="keyword">end</span>
-0149 
-0150     <span class="comment">% skip over empty keys</span>
-0151     <span class="keyword">if</span> isempty(tline_raw) || (isempty(tline_key) &amp;&amp; contains(tline_raw,<span class="string">'!!omap'</span>))
-0152         <span class="keyword">continue</span>;
-0153     <span class="keyword">end</span>
-0154     
-0155     <span class="comment">% import metaData</span>
-0156     <span class="keyword">if</span> section == 1
-0157         <span class="keyword">switch</span> tline_key
-0158             <span class="keyword">case</span> {<span class="string">'short_name'</span>,<span class="string">'id'</span>} <span class="comment">%short_name used by human-GEM</span>
-0159                 model.id = tline_value;
-0160             <span class="keyword">case</span> <span class="string">'name'</span>
-0161                 model.name = tline_value;                
-0162             <span class="keyword">case</span> <span class="string">'full_name'</span> <span class="comment">%used by human-GEM</span>
-0163                 model.description = tline_value;
-0164             <span class="keyword">case</span> <span class="string">'version'</span>
-0165                 model.version = tline_value;
-0166             <span class="keyword">case</span> <span class="string">'date'</span>
-0167                 model.date = tline_value;                
-0168             <span class="keyword">case</span> <span class="string">'taxonomy'</span>
-0169                 model.annotation.taxonomy = tline_value;
-0170             <span class="keyword">case</span> {<span class="string">'description'</span>,<span class="string">'note'</span>} <span class="comment">%description used by human-GEM</span>
-0171                 model.annotation.note = tline_value;
-0172             <span class="keyword">case</span> <span class="string">'github'</span>
-0173                 model.annotation.sourceUrl = tline_value;
-0174             <span class="keyword">case</span> <span class="string">'givenName'</span>
-0175                 model.annotation.givenName = tline_value;
-0176             <span class="keyword">case</span> <span class="string">'familyName'</span>
-0177                 model.annotation.familyName = tline_value;
-0178             <span class="keyword">case</span> <span class="string">'authors'</span>
-0179                 model.annotation.authorList = tline_value;
-0180             <span class="keyword">case</span> <span class="string">'email'</span>
-0181                 model.annotation.email = tline_value;
-0182             <span class="keyword">case</span> <span class="string">'organization'</span>
-0183                 model.annotation.organization = tline_value;
-0184         <span class="keyword">end</span>; <span class="keyword">continue</span>
-0185     <span class="keyword">end</span>
-0186 
-0187     <span class="comment">% import metabolites:</span>
-0188     <span class="keyword">if</span> section == 2
-0189         <span class="keyword">switch</span> tline_key
-0190             <span class="keyword">case</span> <span class="string">'id'</span>
-0191                 pos = pos + 1;
-0192                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'mets'</span>, tline_value,pos);
-0193                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0194             <span class="keyword">case</span> <span class="string">'name'</span>
-0195                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'metNames'</span>, tline_value, pos);
-0196                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0197             <span class="keyword">case</span> <span class="string">'compartment'</span>
-0198                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'metComps'</span>, tline_value, pos);
-0199                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0200             <span class="keyword">case</span> <span class="string">'formula'</span>
-0201                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'metFormulas'</span>, tline_value, pos);
-0202                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0203             <span class="keyword">case</span> <span class="string">'charge'</span>
-0204                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'metCharges'</span>, tline_value, pos);
-0205                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0206             <span class="keyword">case</span> <span class="string">'inchis'</span>
-0207                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'inchis'</span>, tline_value, pos);
-0208                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0209             <span class="keyword">case</span> <span class="string">'metFrom'</span>
-0210                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'metFrom'</span>, tline_value, pos);
-0211                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0212             <span class="keyword">case</span> <span class="string">'annotation'</span>
-0213                 readList = <span class="string">'annotation'</span>;
-0214             <span class="keyword">otherwise</span>
-0215                 <span class="keyword">switch</span> readList
-0216                     <span class="keyword">case</span> <span class="string">'annotation'</span>
-0217                         [metMiriams, miriamKey] = <a href="#_sub3" class="code" title="subfunction [miriams, miriamKey,entryNumber] = gatherAnnotation(pos,miriams,key,value,miriamKey,entryNumber)">gatherAnnotation</a>(pos,metMiriams,tline_key,tline_value,miriamKey,metMirNo);
-0218                         metMirNo = metMirNo + 1;
-0219                     <span class="keyword">otherwise</span>
-0220                         error([<span class="string">'Unknown entry in yaml file: '</span> tline_raw])
-0221                 <span class="keyword">end</span>
-0222         <span class="keyword">end</span>; <span class="keyword">continue</span>
-0223     <span class="keyword">end</span>
-0224 
-0225     <span class="comment">% import reactions:</span>
-0226     <span class="keyword">if</span> section == 3
-0227         <span class="keyword">switch</span> tline_key
-0228             <span class="keyword">case</span> <span class="string">'id'</span>
-0229                 pos = pos + 1;
-0230                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'rxns'</span>, tline_value,pos);
-0231                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0232             <span class="keyword">case</span> <span class="string">'name'</span>
-0233                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'rxnNames'</span>, tline_value, pos);
-0234                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0235             <span class="keyword">case</span> <span class="string">'lower_bound'</span>
-0236                 model.lb(pos,1) = {tline_value};
-0237                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0238             <span class="keyword">case</span> <span class="string">'upper_bound'</span>
-0239                 model.ub(pos,1) = {tline_value};
-0240                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0241             <span class="keyword">case</span> <span class="string">'rev'</span>
-0242                 model.rev(pos,1) = {tline_value};
-0243                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0244             <span class="keyword">case</span> <span class="string">'gene_reaction_rule'</span>
-0245                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'grRules'</span>, tline_value, pos);
-0246                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0247             <span class="keyword">case</span> <span class="string">'rxnNotes'</span>
-0248                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'rxnNotes'</span>, tline_value, pos);
-0249                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0250             <span class="keyword">case</span> <span class="string">'rxnFrom'</span>
-0251                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'rxnFrom'</span>, tline_value, pos);
-0252                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0253             <span class="keyword">case</span> <span class="string">'objective_coefficient'</span>
-0254                 model.c(pos,1) = 1;
-0255                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0256             <span class="keyword">case</span> <span class="string">'references'</span>
-0257                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'rxnReferences'</span>, tline_value, pos);
-0258                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0259             <span class="keyword">case</span> <span class="string">'confidence_score'</span>
-0260                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'rxnConfidenceScores'</span>, tline_value, pos);
-0261                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
-0262             <span class="keyword">case</span> <span class="string">'eccodes'</span>
-0263                 <span class="keyword">if</span> isempty(tline_value)
-0264                     readList = <span class="string">'eccodes'</span>;
-0265                 <span class="keyword">else</span>
-0266                     eccodes(ecCodeNo,1:2)={pos,tline_value};
-0267                     ecCodeNo=ecCodeNo+1;
-0268                 <span class="keyword">end</span>
-0269             <span class="keyword">case</span> <span class="string">'subsystem'</span>
-0270                 <span class="keyword">if</span> isempty(tline_value)
-0271                     readList = <span class="string">'subsystem'</span>;
-0272                 <span class="keyword">else</span>
-0273                     subSystems(subSysNo,1:2)={pos,tline_value};
-0274                     subSysNo=subSysNo+1;
-0275                 <span class="keyword">end</span>
-0276             <span class="keyword">case</span> <span class="string">'metabolites'</span>
-0277                 readList = <span class="string">'equation'</span>;
-0278             <span class="keyword">case</span> <span class="string">'annotation'</span>
-0279                 readList = <span class="string">'annotation'</span>;
-0280                 
-0281             <span class="keyword">otherwise</span>
-0282                 <span class="keyword">switch</span> readList
-0283                     <span class="keyword">case</span> <span class="string">'eccodes'</span>
-0284                         eccodes(ecCodeNo,1:2)={pos,regexprep(tline_value,<span class="string">'^ +- &quot;?(.*)&quot;?$'</span>,<span class="string">'$1'</span>)};
-0285                         ecCodeNo=ecCodeNo+1;
-0286                     <span class="keyword">case</span> <span class="string">'subsystem'</span>
-0287                         subSystems(subSysNo,1:2)={pos,regexprep(tline_value,<span class="string">'^ +- &quot;?(.*)&quot;?$'</span>,<span class="string">'$1'</span>)};
-0288                         subSysNo=subSysNo+1;
-0289                     <span class="keyword">case</span> <span class="string">'annotation'</span>
-0290                         [rxnMiriams, miriamKey,rxnMirNo] = <a href="#_sub3" class="code" title="subfunction [miriams, miriamKey,entryNumber] = gatherAnnotation(pos,miriams,key,value,miriamKey,entryNumber)">gatherAnnotation</a>(pos,rxnMiriams,tline_key,tline_value,miriamKey,rxnMirNo);
-0291                         rxnMirNo=rxnMirNo+1;
-0292                     <span class="keyword">case</span> <span class="string">'equation'</span>
-0293                         coeff = sscanf(tline_value,<span class="string">'%f'</span>);
-0294                         equations(equatiNo,1:3)={pos,tline_key,coeff};
-0295                         equatiNo=equatiNo+1;
-0296                     <span class="keyword">otherwise</span>
-0297                         error([<span class="string">'Unknown entry in yaml file: '</span> tline_raw])
-0298                 <span class="keyword">end</span>                
-0299         <span class="keyword">end</span>; <span class="keyword">continue</span>
-0300     <span class="keyword">end</span>
-0301 
-0302     <span class="comment">% import genes:</span>
-0303     <span class="keyword">if</span> section == 4
-0304         <span class="keyword">switch</span> tline_key
-0305             <span class="keyword">case</span> <span class="string">'id'</span>
-0306                 pos = pos + 1;
-0307                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'genes'</span>, tline_value, pos);
-0308                 readList = <span class="string">''</span>;
-0309                 miriamKey = <span class="string">''</span>;
-0310             <span class="keyword">case</span> <span class="string">'name'</span>
-0311                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'geneShortNames'</span>, tline_value, pos);
-0312             <span class="keyword">case</span> <span class="string">'annotation'</span>
-0313                 readList = <span class="string">'annotation'</span>;
-0314             <span class="keyword">otherwise</span>
-0315                 <span class="keyword">switch</span> readList
-0316                     <span class="keyword">case</span> <span class="string">'annotation'</span>
-0317                         [geneMiriams, miriamKey] = <a href="#_sub3" class="code" title="subfunction [miriams, miriamKey,entryNumber] = gatherAnnotation(pos,miriams,key,value,miriamKey,entryNumber)">gatherAnnotation</a>(pos,geneMiriams,tline_key,tline_value,miriamKey,genMirNo);
-0318                         genMirNo = genMirNo + 1;
-0319                     <span class="keyword">otherwise</span>
-0320                         error([<span class="string">'Unknown entry in yaml file: '</span> tline_raw])
-0321                 <span class="keyword">end</span>
-0322         <span class="keyword">end</span>; <span class="keyword">continue</span>
-0323     <span class="keyword">end</span>
-0324 
-0325     <span class="comment">% import compartments:</span>
-0326     <span class="keyword">if</span> section == 5
-0327         model.comps(end+1,1) = {tline_key};
-0328         model.compNames(end+1,1) = {tline_value};
-0329     <span class="keyword">end</span>
-0330 <span class="keyword">end</span>
-0331 
-0332 <span class="comment">%Parse annotations</span>
-0333 <span class="keyword">if</span> ~isempty(metMiriams)
-0334     locs = cell2mat(metMiriams(:,1));
-0335     <span class="keyword">for</span> i=unique(locs)'
-0336         model.metMiriams{i,1}.name=metMiriams(locs==i,2);
-0337         model.metMiriams{i,1}.value=metMiriams(locs==i,3);
-0338     <span class="keyword">end</span>
-0339 <span class="keyword">end</span>
-0340 <span class="keyword">if</span> ~isempty(rxnMiriams)
-0341     locs = cell2mat(rxnMiriams(:,1));
-0342     <span class="keyword">for</span> i=unique(locs)'
-0343         model.rxnMiriams{i,1}.name=rxnMiriams(locs==i,2);
-0344         model.rxnMiriams{i,1}.value=rxnMiriams(locs==i,3);
-0345     <span class="keyword">end</span>
-0346 <span class="keyword">end</span>
-0347 <span class="keyword">if</span> ~isempty(geneMiriams)
-0348     locs = cell2mat(geneMiriams(:,1));
-0349     <span class="keyword">for</span> i=unique(locs)'
-0350         model.geneMiriams{i,1}.name=geneMiriams(locs==i,2);
-0351         model.geneMiriams{i,1}.value=geneMiriams(locs==i,3);
-0352     <span class="keyword">end</span>
-0353 <span class="keyword">end</span>
-0354 
-0355 <span class="comment">%Parse subSystems</span>
-0356 <span class="keyword">if</span> ~isempty(subSystems)
-0357     locs = cell2mat(subSystems(:,1));
-0358     <span class="keyword">for</span> i=unique(locs)'
-0359         model.subSystems{i,1}=subSystems(locs==i,2);
-0360     <span class="keyword">end</span>
-0361 <span class="keyword">end</span>
-0362 
-0363 <span class="comment">%Parse ec-codes</span>
-0364 <span class="keyword">if</span> ~isempty(eccodes)
-0365     locs = cell2mat(eccodes(:,1));
-0366     <span class="keyword">for</span> i=unique(locs)'
-0367         eccodesCat=strjoin(eccodes(locs==i,2),<span class="string">';'</span>);
-0368         model.eccodes{i,1}=eccodesCat;
-0369     <span class="keyword">end</span>
-0370     emptyEc=cellfun(@isempty,model.eccodes);
-0371     model.eccodes(emptyEc)={<span class="string">''</span>};
-0372 <span class="keyword">end</span>
-0373 
-0374 <span class="comment">% follow-up data processing</span>
-0375 <span class="keyword">if</span> verbose
-0376     fprintf(<span class="string">'\nimporting completed\nfollow-up processing...'</span>);
-0377 <span class="keyword">end</span>
-0378 [~, model.metComps] = ismember(model.metComps, model.comps);
-0379 [~, model.geneComps] = ismember(model.geneComps, model.comps);
-0380 [~, model.rxnComps] = ismember(model.rxnComps, model.comps);
-0381 
-0382 <span class="comment">% Fill S-matrix</span>
-0383 rxnIdx = cellfun(@isempty, equations(:,1));
-0384 equations(rxnIdx,:) = <span class="string">''</span>;
-0385 rxnIdx = cell2mat(equations(:,1));
-0386 [~,metIdx] = ismember(equations(:,2),model.mets);
-0387 coeffs = cell2mat(equations(:,3));
-0388 model.S=sparse(max(metIdx),max(rxnIdx));
-0389 linearIndices = sub2ind([max(metIdx), max(rxnIdx)],metIdx,rxnIdx);
-0390 model.S(linearIndices) = coeffs;
-0391 
-0392 <span class="comment">% Convert strings to numeric</span>
-0393 model.metCharges = str2double(model.metCharges);
-0394 model.lb = str2double(model.lb);
-0395 model.ub = str2double(model.ub);
-0396 model.rxnConfidenceScores = str2double(model.rxnConfidenceScores);
-0397 model.b = zeros(length(model.mets),1);
-0398 
-0399 <span class="comment">% Fill some other fields</span>
-0400 model.annotation.defaultLB = min(model.lb);
-0401 model.annotation.defaultUB = max(model.ub);
-0402 <span class="keyword">if</span> numel(model.lb)&lt;numel(model.rxns) <span class="comment">%No LB reported = min</span>
-0403     model.lb(end+1:numel(model.rxns)-numel(model.lb),1) = double(model.annotation.defaultLB);
-0404 <span class="keyword">end</span>
-0405 <span class="keyword">if</span> numel(model.ub)&lt;numel(model.rxns) <span class="comment">%No UB reported = max</span>
-0406     model.ub(end+1:numel(model.rxns)-numel(model.ub),1) = double(model.annotation.defaultUB);
-0407 <span class="keyword">end</span>
-0408 <span class="keyword">if</span> ~all(cellfun(@isempty,model.rev))
-0409     model.rev = str2double(model.rev);
-0410 <span class="keyword">else</span>
-0411     model.rev = [];
-0412 <span class="keyword">end</span>
-0413 <span class="keyword">if</span> numel(model.rev)&lt;numel(model.rxns) <span class="comment">%No rev reported, assume from LB and UB</span>
-0414     model.rev(end+1:numel(model.rxns)-numel(model.rev),1) = double(model.lb&lt;0 &amp; model.ub&gt;0);
-0415 <span class="keyword">end</span>
-0416 
-0417 <span class="comment">% Remove empty fields, otherwise fill to correct length</span>
-0418 <span class="comment">% Reactions</span>
-0419 <span class="keyword">for</span> i={<span class="string">'rxnNames'</span>,<span class="string">'grRules'</span>,<span class="string">'eccodes'</span>,<span class="string">'rxnNotes'</span>,<span class="string">'rxnReferences'</span>,<span class="keyword">...</span>
-0420        <span class="string">'rxnFrom'</span>,<span class="string">'subSystems'</span>,<span class="string">'rxnMiriams'</span>} <span class="comment">% Empty strings</span>
-0421    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},{<span class="string">''</span>},<span class="string">'rxns'</span>);
-0422 <span class="keyword">end</span>
-0423 <span class="keyword">for</span> i={<span class="string">'c'</span>} <span class="comment">% Zeros</span>
-0424    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},0,<span class="string">'rxns'</span>);
-0425 <span class="keyword">end</span>
-0426 <span class="keyword">for</span> i={<span class="string">'rxnConfidenceScores'</span>} <span class="comment">% NaNs</span>
-0427    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},NaN,<span class="string">'rxns'</span>);
-0428 <span class="keyword">end</span>
-0429 <span class="keyword">for</span> i={<span class="string">'rxnComps'</span>} <span class="comment">% Ones, assume first compartment</span>
-0430    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},1,<span class="string">'rxns'</span>);
-0431 <span class="keyword">end</span>
-0432 <span class="comment">% Metabolites</span>
-0433 <span class="keyword">for</span> i={<span class="string">'metNames'</span>,<span class="string">'inchis'</span>,<span class="string">'metFormulas'</span>,<span class="string">'metMiriams'</span>,<span class="string">'metFrom'</span>} <span class="comment">% Empty strings</span>
-0434    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},{<span class="string">''</span>},<span class="string">'mets'</span>);
+0079           <span class="string">'metSmiles'</span>,cell(0,0);<span class="keyword">...</span>
+0080         <span class="string">'metFormulas'</span>,cell(0,0);<span class="keyword">...</span>
+0081          <span class="string">'metMiriams'</span>,cell(0,0);<span class="keyword">...</span>
+0082          <span class="string">'metCharges'</span>,cell(0,0);<span class="keyword">...</span><span class="comment"> %Changed to double in the end.</span>
+0083               <span class="string">'comps'</span>,cell(0,0);<span class="keyword">...</span>
+0084           <span class="string">'compNames'</span>,cell(0,0);<span class="keyword">...</span>
+0085         <span class="string">'compOutside'</span>,cell(0,0);<span class="keyword">...</span>
+0086           <span class="string">'geneComps'</span>,cell(0,0);<span class="keyword">...</span><span class="comment"> %Changed to double in the end.</span>
+0087         <span class="string">'geneMiriams'</span>,cell(0,0);<span class="keyword">...</span>
+0088      <span class="string">'geneShortNames'</span>,cell(0,0);<span class="keyword">...</span>
+0089       <span class="string">'unconstrained'</span>,cell(0,0);<span class="keyword">...</span><span class="comment"> %Changed to double in the end.</span>
+0090             <span class="string">'metFrom'</span>,cell(0,0);<span class="keyword">...</span>
+0091             <span class="string">'rxnFrom'</span>,cell(0,0)};
+0092 <span class="keyword">for</span> i=1:size(modelFields,1)
+0093     model.(modelFields{i,1})=modelFields{i,2};
+0094 <span class="keyword">end</span>
+0095 
+0096 section = 0;
+0097 metMiriams=cell(25000,3);   metMirNo=1;
+0098 rxnMiriams=cell(25000,3);   rxnMirNo=1;
+0099 geneMiriams=cell(25000,3);  genMirNo=1;
+0100 subSystems=cell(25000,2);   subSysNo=1;
+0101 eccodes=cell(25000,2);      ecCodeNo=1;
+0102 equations=cell(100000,3);   equatiNo=1;
+0103 <span class="comment">% metMiriams=cell(0,3);   metMirNo=1;</span>
+0104 <span class="comment">% rxnMiriams=cell(0,3);   rxnMirNo=1;</span>
+0105 <span class="comment">% geneMiriams=cell(0,3);  genMirNo=1;</span>
+0106 <span class="comment">% subSystems=cell(0,2);   subSysNo=1;</span>
+0107 <span class="comment">% eccodes=cell(0,2);      ecCodeNo=1;</span>
+0108 
+0109 <span class="keyword">for</span> i=1:numel(line_key)
+0110     tline_raw = line_raw{i};
+0111     tline_key = line_key{i};
+0112     tline_value = line_value{i};
+0113     <span class="comment">% import different sections</span>
+0114     <span class="keyword">switch</span> tline_raw
+0115         <span class="keyword">case</span> <span class="string">'- metaData:'</span>
+0116             section = 1;
+0117             <span class="keyword">if</span> verbose
+0118                 fprintf(<span class="string">'\t%d\n'</span>, section);
+0119             <span class="keyword">end</span>
+0120             <span class="keyword">continue</span> <span class="comment">% Go to next line</span>
+0121         <span class="keyword">case</span> <span class="string">'- metabolites:'</span>
+0122             section = 2;
+0123             <span class="keyword">if</span> verbose
+0124                 fprintf(<span class="string">'\t%d\n'</span>, section);
+0125             <span class="keyword">end</span>
+0126             pos=0;
+0127             <span class="keyword">continue</span>
+0128         <span class="keyword">case</span> <span class="string">'- reactions:'</span>
+0129             section = 3;
+0130             <span class="keyword">if</span> verbose
+0131                 fprintf(<span class="string">'\t%d\n'</span>, section);
+0132             <span class="keyword">end</span>
+0133             pos=0;
+0134             <span class="keyword">continue</span>
+0135         <span class="keyword">case</span> <span class="string">'- genes:'</span>
+0136             section = 4;
+0137             <span class="keyword">if</span> verbose
+0138                 fprintf(<span class="string">'\t%d\n'</span>, section);
+0139             <span class="keyword">end</span>
+0140             pos=0;
+0141             <span class="keyword">continue</span>
+0142         <span class="keyword">case</span> <span class="string">'- compartments: !!omap'</span>
+0143             section = 5;
+0144             <span class="keyword">if</span> verbose
+0145                 fprintf(<span class="string">'\t%d\n'</span>, section);
+0146             <span class="keyword">end</span>
+0147             pos=0;
+0148             <span class="keyword">continue</span>
+0149     <span class="keyword">end</span>
+0150 
+0151     <span class="comment">% skip over empty keys</span>
+0152     <span class="keyword">if</span> isempty(tline_raw) || (isempty(tline_key) &amp;&amp; contains(tline_raw,<span class="string">'!!omap'</span>))
+0153         <span class="keyword">continue</span>;
+0154     <span class="keyword">end</span>
+0155     
+0156     <span class="comment">% import metaData</span>
+0157     <span class="keyword">if</span> section == 1
+0158         <span class="keyword">switch</span> tline_key
+0159             <span class="keyword">case</span> {<span class="string">'short_name'</span>,<span class="string">'id'</span>} <span class="comment">%short_name used by human-GEM</span>
+0160                 model.id = tline_value;
+0161             <span class="keyword">case</span> <span class="string">'name'</span>
+0162                 model.name = tline_value;                
+0163             <span class="keyword">case</span> <span class="string">'full_name'</span> <span class="comment">%used by human-GEM</span>
+0164                 model.description = tline_value;
+0165             <span class="keyword">case</span> <span class="string">'version'</span>
+0166                 model.version = tline_value;
+0167             <span class="keyword">case</span> <span class="string">'date'</span>
+0168                 model.date = tline_value;                
+0169             <span class="keyword">case</span> <span class="string">'taxonomy'</span>
+0170                 model.annotation.taxonomy = tline_value;
+0171             <span class="keyword">case</span> {<span class="string">'description'</span>,<span class="string">'note'</span>} <span class="comment">%description used by human-GEM</span>
+0172                 model.annotation.note = tline_value;
+0173             <span class="keyword">case</span> <span class="string">'github'</span>
+0174                 model.annotation.sourceUrl = tline_value;
+0175             <span class="keyword">case</span> <span class="string">'givenName'</span>
+0176                 model.annotation.givenName = tline_value;
+0177             <span class="keyword">case</span> <span class="string">'familyName'</span>
+0178                 model.annotation.familyName = tline_value;
+0179             <span class="keyword">case</span> <span class="string">'authors'</span>
+0180                 model.annotation.authorList = tline_value;
+0181             <span class="keyword">case</span> <span class="string">'email'</span>
+0182                 model.annotation.email = tline_value;
+0183             <span class="keyword">case</span> <span class="string">'organization'</span>
+0184                 model.annotation.organization = tline_value;
+0185         <span class="keyword">end</span>; <span class="keyword">continue</span>
+0186     <span class="keyword">end</span>
+0187 
+0188     <span class="comment">% import metabolites:</span>
+0189     <span class="keyword">if</span> section == 2
+0190         <span class="keyword">switch</span> tline_key
+0191             <span class="keyword">case</span> <span class="string">'id'</span>
+0192                 pos = pos + 1;
+0193                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'mets'</span>, tline_value,pos);
+0194                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0195             <span class="keyword">case</span> <span class="string">'name'</span>
+0196                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'metNames'</span>, tline_value, pos);
+0197                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0198             <span class="keyword">case</span> <span class="string">'compartment'</span>
+0199                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'metComps'</span>, tline_value, pos);
+0200                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0201             <span class="keyword">case</span> <span class="string">'formula'</span>
+0202                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'metFormulas'</span>, tline_value, pos);
+0203                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0204             <span class="keyword">case</span> <span class="string">'charge'</span>
+0205                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'metCharges'</span>, tline_value, pos);
+0206                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0207             <span class="keyword">case</span> <span class="string">'inchis'</span>
+0208                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'inchis'</span>, tline_value, pos);
+0209                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0210             <span class="keyword">case</span> <span class="string">'smiles'</span>
+0211                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'metSmiles'</span>, tline_value, pos);
+0212                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;                
+0213             <span class="keyword">case</span> <span class="string">'metFrom'</span>
+0214                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'metFrom'</span>, tline_value, pos);
+0215                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0216             <span class="keyword">case</span> <span class="string">'annotation'</span>
+0217                 readList = <span class="string">'annotation'</span>;
+0218             <span class="keyword">otherwise</span>
+0219                 <span class="keyword">switch</span> readList
+0220                     <span class="keyword">case</span> <span class="string">'annotation'</span>
+0221                         [metMiriams, miriamKey] = <a href="#_sub3" class="code" title="subfunction [miriams, miriamKey,entryNumber] = gatherAnnotation(pos,miriams,key,value,miriamKey,entryNumber)">gatherAnnotation</a>(pos,metMiriams,tline_key,tline_value,miriamKey,metMirNo);
+0222                         metMirNo = metMirNo + 1;
+0223                     <span class="keyword">otherwise</span>
+0224                         error([<span class="string">'Unknown entry in yaml file: '</span> tline_raw])
+0225                 <span class="keyword">end</span>
+0226         <span class="keyword">end</span>; <span class="keyword">continue</span>
+0227     <span class="keyword">end</span>
+0228 
+0229     <span class="comment">% import reactions:</span>
+0230     <span class="keyword">if</span> section == 3
+0231         <span class="keyword">switch</span> tline_key
+0232             <span class="keyword">case</span> <span class="string">'id'</span>
+0233                 pos = pos + 1;
+0234                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'rxns'</span>, tline_value,pos);
+0235                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0236             <span class="keyword">case</span> <span class="string">'name'</span>
+0237                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'rxnNames'</span>, tline_value, pos);
+0238                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0239             <span class="keyword">case</span> <span class="string">'lower_bound'</span>
+0240                 model.lb(pos,1) = {tline_value};
+0241                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0242             <span class="keyword">case</span> <span class="string">'upper_bound'</span>
+0243                 model.ub(pos,1) = {tline_value};
+0244                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0245             <span class="keyword">case</span> <span class="string">'rev'</span>
+0246                 model.rev(pos,1) = {tline_value};
+0247                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0248             <span class="keyword">case</span> <span class="string">'gene_reaction_rule'</span>
+0249                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'grRules'</span>, tline_value, pos);
+0250                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0251             <span class="keyword">case</span> <span class="string">'rxnNotes'</span>
+0252                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'rxnNotes'</span>, tline_value, pos);
+0253                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0254             <span class="keyword">case</span> <span class="string">'rxnFrom'</span>
+0255                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'rxnFrom'</span>, tline_value, pos);
+0256                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0257             <span class="keyword">case</span> <span class="string">'objective_coefficient'</span>
+0258                 model.c(pos,1) = 1;
+0259                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0260             <span class="keyword">case</span> <span class="string">'references'</span>
+0261                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'rxnReferences'</span>, tline_value, pos);
+0262                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0263             <span class="keyword">case</span> <span class="string">'confidence_score'</span>
+0264                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'rxnConfidenceScores'</span>, tline_value, pos);
+0265                 readList=<span class="string">''</span>; miriamKey=<span class="string">''</span>;
+0266             <span class="keyword">case</span> <span class="string">'eccodes'</span>
+0267                 <span class="keyword">if</span> isempty(tline_value)
+0268                     readList = <span class="string">'eccodes'</span>;
+0269                 <span class="keyword">else</span>
+0270                     eccodes(ecCodeNo,1:2)={pos,tline_value};
+0271                     ecCodeNo=ecCodeNo+1;
+0272                 <span class="keyword">end</span>
+0273             <span class="keyword">case</span> <span class="string">'subsystem'</span>
+0274                 <span class="keyword">if</span> isempty(tline_value)
+0275                     readList = <span class="string">'subsystem'</span>;
+0276                 <span class="keyword">else</span>
+0277                     subSystems(subSysNo,1:2)={pos,tline_value};
+0278                     subSysNo=subSysNo+1;
+0279                 <span class="keyword">end</span>
+0280             <span class="keyword">case</span> <span class="string">'metabolites'</span>
+0281                 readList = <span class="string">'equation'</span>;
+0282             <span class="keyword">case</span> <span class="string">'annotation'</span>
+0283                 readList = <span class="string">'annotation'</span>;
+0284                 
+0285             <span class="keyword">otherwise</span>
+0286                 <span class="keyword">switch</span> readList
+0287                     <span class="keyword">case</span> <span class="string">'eccodes'</span>
+0288                         eccodes(ecCodeNo,1:2)={pos,regexprep(tline_value,<span class="string">'^ +- &quot;?(.*)&quot;?$'</span>,<span class="string">'$1'</span>)};
+0289                         ecCodeNo=ecCodeNo+1;
+0290                     <span class="keyword">case</span> <span class="string">'subsystem'</span>
+0291                         subSystems(subSysNo,1:2)={pos,regexprep(tline_value,<span class="string">'^ +- &quot;?(.*)&quot;?$'</span>,<span class="string">'$1'</span>)};
+0292                         subSysNo=subSysNo+1;
+0293                     <span class="keyword">case</span> <span class="string">'annotation'</span>
+0294                         [rxnMiriams, miriamKey,rxnMirNo] = <a href="#_sub3" class="code" title="subfunction [miriams, miriamKey,entryNumber] = gatherAnnotation(pos,miriams,key,value,miriamKey,entryNumber)">gatherAnnotation</a>(pos,rxnMiriams,tline_key,tline_value,miriamKey,rxnMirNo);
+0295                         rxnMirNo=rxnMirNo+1;
+0296                     <span class="keyword">case</span> <span class="string">'equation'</span>
+0297                         coeff = sscanf(tline_value,<span class="string">'%f'</span>);
+0298                         equations(equatiNo,1:3)={pos,tline_key,coeff};
+0299                         equatiNo=equatiNo+1;
+0300                     <span class="keyword">otherwise</span>
+0301                         error([<span class="string">'Unknown entry in yaml file: '</span> tline_raw])
+0302                 <span class="keyword">end</span>                
+0303         <span class="keyword">end</span>; <span class="keyword">continue</span>
+0304     <span class="keyword">end</span>
+0305 
+0306     <span class="comment">% import genes:</span>
+0307     <span class="keyword">if</span> section == 4
+0308         <span class="keyword">switch</span> tline_key
+0309             <span class="keyword">case</span> <span class="string">'id'</span>
+0310                 pos = pos + 1;
+0311                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'genes'</span>, tline_value, pos);
+0312                 readList = <span class="string">''</span>;
+0313                 miriamKey = <span class="string">''</span>;
+0314             <span class="keyword">case</span> <span class="string">'name'</span>
+0315                 model = <a href="#_sub2" class="code" title="subfunction model = readFieldValue(model, fieldName, value, pos)">readFieldValue</a>(model, <span class="string">'geneShortNames'</span>, tline_value, pos);
+0316             <span class="keyword">case</span> <span class="string">'annotation'</span>
+0317                 readList = <span class="string">'annotation'</span>;
+0318             <span class="keyword">otherwise</span>
+0319                 <span class="keyword">switch</span> readList
+0320                     <span class="keyword">case</span> <span class="string">'annotation'</span>
+0321                         [geneMiriams, miriamKey] = <a href="#_sub3" class="code" title="subfunction [miriams, miriamKey,entryNumber] = gatherAnnotation(pos,miriams,key,value,miriamKey,entryNumber)">gatherAnnotation</a>(pos,geneMiriams,tline_key,tline_value,miriamKey,genMirNo);
+0322                         genMirNo = genMirNo + 1;
+0323                     <span class="keyword">otherwise</span>
+0324                         error([<span class="string">'Unknown entry in yaml file: '</span> tline_raw])
+0325                 <span class="keyword">end</span>
+0326         <span class="keyword">end</span>; <span class="keyword">continue</span>
+0327     <span class="keyword">end</span>
+0328 
+0329     <span class="comment">% import compartments:</span>
+0330     <span class="keyword">if</span> section == 5
+0331         model.comps(end+1,1) = {tline_key};
+0332         model.compNames(end+1,1) = {tline_value};
+0333     <span class="keyword">end</span>
+0334 <span class="keyword">end</span>
+0335 
+0336 <span class="comment">%Parse annotations</span>
+0337 <span class="keyword">if</span> ~isempty(metMiriams)
+0338     locs = cell2mat(metMiriams(:,1));
+0339     <span class="keyword">for</span> i=unique(locs)'
+0340         model.metMiriams{i,1}.name=metMiriams(locs==i,2);
+0341         model.metMiriams{i,1}.value=metMiriams(locs==i,3);
+0342     <span class="keyword">end</span>
+0343 <span class="keyword">end</span>
+0344 <span class="keyword">if</span> ~isempty(rxnMiriams)
+0345     locs = cell2mat(rxnMiriams(:,1));
+0346     <span class="keyword">for</span> i=unique(locs)'
+0347         model.rxnMiriams{i,1}.name=rxnMiriams(locs==i,2);
+0348         model.rxnMiriams{i,1}.value=rxnMiriams(locs==i,3);
+0349     <span class="keyword">end</span>
+0350 <span class="keyword">end</span>
+0351 <span class="keyword">if</span> ~isempty(geneMiriams)
+0352     locs = cell2mat(geneMiriams(:,1));
+0353     <span class="keyword">for</span> i=unique(locs)'
+0354         model.geneMiriams{i,1}.name=geneMiriams(locs==i,2);
+0355         model.geneMiriams{i,1}.value=geneMiriams(locs==i,3);
+0356     <span class="keyword">end</span>
+0357 <span class="keyword">end</span>
+0358 
+0359 <span class="comment">%Parse subSystems</span>
+0360 <span class="keyword">if</span> ~isempty(subSystems)
+0361     locs = cell2mat(subSystems(:,1));
+0362     <span class="keyword">for</span> i=unique(locs)'
+0363         model.subSystems{i,1}=subSystems(locs==i,2);
+0364     <span class="keyword">end</span>
+0365 <span class="keyword">end</span>
+0366 
+0367 <span class="comment">%Parse ec-codes</span>
+0368 <span class="keyword">if</span> ~isempty(eccodes)
+0369     locs = cell2mat(eccodes(:,1));
+0370     <span class="keyword">for</span> i=unique(locs)'
+0371         eccodesCat=strjoin(eccodes(locs==i,2),<span class="string">';'</span>);
+0372         model.eccodes{i,1}=eccodesCat;
+0373     <span class="keyword">end</span>
+0374     emptyEc=cellfun(@isempty,model.eccodes);
+0375     model.eccodes(emptyEc)={<span class="string">''</span>};
+0376 <span class="keyword">end</span>
+0377 
+0378 <span class="comment">% follow-up data processing</span>
+0379 <span class="keyword">if</span> verbose
+0380     fprintf(<span class="string">'\nimporting completed\nfollow-up processing...'</span>);
+0381 <span class="keyword">end</span>
+0382 [~, model.metComps] = ismember(model.metComps, model.comps);
+0383 [~, model.geneComps] = ismember(model.geneComps, model.comps);
+0384 [~, model.rxnComps] = ismember(model.rxnComps, model.comps);
+0385 
+0386 <span class="comment">% Fill S-matrix</span>
+0387 rxnIdx = cellfun(@isempty, equations(:,1));
+0388 equations(rxnIdx,:) = <span class="string">''</span>;
+0389 rxnIdx = cell2mat(equations(:,1));
+0390 [~,metIdx] = ismember(equations(:,2),model.mets);
+0391 coeffs = cell2mat(equations(:,3));
+0392 model.S=sparse(max(metIdx),max(rxnIdx));
+0393 linearIndices = sub2ind([max(metIdx), max(rxnIdx)],metIdx,rxnIdx);
+0394 model.S(linearIndices) = coeffs;
+0395 
+0396 <span class="comment">% Convert strings to numeric</span>
+0397 model.metCharges = str2double(model.metCharges);
+0398 model.lb = str2double(model.lb);
+0399 model.ub = str2double(model.ub);
+0400 model.rxnConfidenceScores = str2double(model.rxnConfidenceScores);
+0401 model.b = zeros(length(model.mets),1);
+0402 
+0403 <span class="comment">% Fill some other fields</span>
+0404 model.annotation.defaultLB = min(model.lb);
+0405 model.annotation.defaultUB = max(model.ub);
+0406 <span class="keyword">if</span> numel(model.lb)&lt;numel(model.rxns) <span class="comment">%No LB reported = min</span>
+0407     model.lb(end+1:numel(model.rxns)-numel(model.lb),1) = double(model.annotation.defaultLB);
+0408 <span class="keyword">end</span>
+0409 <span class="keyword">if</span> numel(model.ub)&lt;numel(model.rxns) <span class="comment">%No UB reported = max</span>
+0410     model.ub(end+1:numel(model.rxns)-numel(model.ub),1) = double(model.annotation.defaultUB);
+0411 <span class="keyword">end</span>
+0412 <span class="keyword">if</span> ~all(cellfun(@isempty,model.rev))
+0413     model.rev = str2double(model.rev);
+0414 <span class="keyword">else</span>
+0415     model.rev = [];
+0416 <span class="keyword">end</span>
+0417 <span class="keyword">if</span> numel(model.rev)&lt;numel(model.rxns) <span class="comment">%No rev reported, assume from LB and UB</span>
+0418     model.rev(end+1:numel(model.rxns)-numel(model.rev),1) = double(model.lb&lt;0 &amp; model.ub&gt;0);
+0419 <span class="keyword">end</span>
+0420 
+0421 <span class="comment">% Remove empty fields, otherwise fill to correct length</span>
+0422 <span class="comment">% Reactions</span>
+0423 <span class="keyword">for</span> i={<span class="string">'rxnNames'</span>,<span class="string">'grRules'</span>,<span class="string">'eccodes'</span>,<span class="string">'rxnNotes'</span>,<span class="string">'rxnReferences'</span>,<span class="keyword">...</span>
+0424        <span class="string">'rxnFrom'</span>,<span class="string">'subSystems'</span>,<span class="string">'rxnMiriams'</span>} <span class="comment">% Empty strings</span>
+0425    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},{<span class="string">''</span>},<span class="string">'rxns'</span>);
+0426 <span class="keyword">end</span>
+0427 <span class="keyword">for</span> i={<span class="string">'c'</span>} <span class="comment">% Zeros</span>
+0428    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},0,<span class="string">'rxns'</span>);
+0429 <span class="keyword">end</span>
+0430 <span class="keyword">for</span> i={<span class="string">'rxnConfidenceScores'</span>} <span class="comment">% NaNs</span>
+0431    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},NaN,<span class="string">'rxns'</span>);
+0432 <span class="keyword">end</span>
+0433 <span class="keyword">for</span> i={<span class="string">'rxnComps'</span>} <span class="comment">% Ones, assume first compartment</span>
+0434    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},1,<span class="string">'rxns'</span>);
 0435 <span class="keyword">end</span>
-0436 <span class="keyword">for</span> i={<span class="string">'metCharges'</span>,<span class="string">'unconstrained'</span>} <span class="comment">% Zeros</span>
-0437    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},0,<span class="string">'mets'</span>);
-0438 <span class="keyword">end</span>
-0439 <span class="keyword">for</span> i={<span class="string">'metComps'</span>} <span class="comment">% Ones, assume first compartment</span>
-0440    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},1,<span class="string">'mets'</span>);
-0441 <span class="keyword">end</span>
-0442 <span class="comment">% Genes</span>
-0443 <span class="keyword">for</span> i={<span class="string">'geneMiriams'</span>,<span class="string">'geneShortNames'</span>} <span class="comment">% Empty strings</span>
-0444    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},{<span class="string">''</span>},<span class="string">'genes'</span>);
+0436 <span class="comment">% Metabolites</span>
+0437 <span class="keyword">for</span> i={<span class="string">'metNames'</span>,<span class="string">'inchis'</span>,<span class="string">'metFormulas'</span>,<span class="string">'metMiriams'</span>,<span class="string">'metFrom'</span>,<span class="string">'metSmiles'</span>} <span class="comment">% Empty strings</span>
+0438    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},{<span class="string">''</span>},<span class="string">'mets'</span>);
+0439 <span class="keyword">end</span>
+0440 <span class="keyword">for</span> i={<span class="string">'metCharges'</span>,<span class="string">'unconstrained'</span>} <span class="comment">% Zeros</span>
+0441    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},0,<span class="string">'mets'</span>);
+0442 <span class="keyword">end</span>
+0443 <span class="keyword">for</span> i={<span class="string">'metComps'</span>} <span class="comment">% Ones, assume first compartment</span>
+0444    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},1,<span class="string">'mets'</span>);
 0445 <span class="keyword">end</span>
-0446 <span class="keyword">for</span> i={<span class="string">'geneComps'</span>} <span class="comment">% Ones, assume first compartment</span>
-0447    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},1,<span class="string">'genes'</span>);
-0448 <span class="keyword">end</span>
-0449 <span class="comment">% Comps</span>
-0450 <span class="keyword">for</span> i={<span class="string">'compNames'</span>} <span class="comment">% Empty strings</span>
-0451    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},{<span class="string">''</span>},<span class="string">'comps'</span>);
+0446 <span class="comment">% Genes</span>
+0447 <span class="keyword">for</span> i={<span class="string">'geneMiriams'</span>,<span class="string">'geneShortNames'</span>} <span class="comment">% Empty strings</span>
+0448    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},{<span class="string">''</span>},<span class="string">'genes'</span>);
+0449 <span class="keyword">end</span>
+0450 <span class="keyword">for</span> i={<span class="string">'geneComps'</span>} <span class="comment">% Ones, assume first compartment</span>
+0451    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},1,<span class="string">'genes'</span>);
 0452 <span class="keyword">end</span>
-0453 <span class="keyword">for</span> i={<span class="string">'compOutside'</span>} <span class="comment">% First comp</span>
-0454    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},model.comps{1},<span class="string">'comps'</span>);
-0455 <span class="keyword">end</span>
-0456 <span class="comment">% Single fields are kept, even if empty</span>
-0457 <span class="comment">% for i={'description','name','version','date','annotation'}</span>
-0458 <span class="comment">%     if isempty(model.(i{1}))</span>
-0459 <span class="comment">%         model = rmfield(model,i{1});</span>
-0460 <span class="comment">%     end</span>
-0461 <span class="comment">% end</span>
-0462 
-0463 <span class="comment">% Make rxnGeneMat fields</span>
-0464 [genes, rxnGeneMat] = getGenesFromGrRules(model.grRules, model.genes);
-0465 <span class="keyword">if</span> isequal(sort(genes), sort(model.genes))
-0466     model.rxnGeneMat = rxnGeneMat;
-0467     model.genes = genes;
-0468 <span class="keyword">else</span>
-0469     error(<span class="string">'The gene list and grRules are inconsistent.'</span>);
-0470 <span class="keyword">end</span>
-0471 
-0472 <span class="keyword">if</span> verbose
-0473     fprintf(<span class="string">' Done!\n'</span>);
+0453 <span class="comment">% Comps</span>
+0454 <span class="keyword">for</span> i={<span class="string">'compNames'</span>} <span class="comment">% Empty strings</span>
+0455    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},{<span class="string">''</span>},<span class="string">'comps'</span>);
+0456 <span class="keyword">end</span>
+0457 <span class="keyword">for</span> i={<span class="string">'compOutside'</span>} <span class="comment">% First comp</span>
+0458    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type)">emptyOrFill</a>(model,i{1},model.comps{1},<span class="string">'comps'</span>);
+0459 <span class="keyword">end</span>
+0460 <span class="comment">% Single fields are kept, even if empty</span>
+0461 <span class="comment">% for i={'description','name','version','date','annotation'}</span>
+0462 <span class="comment">%     if isempty(model.(i{1}))</span>
+0463 <span class="comment">%         model = rmfield(model,i{1});</span>
+0464 <span class="comment">%     end</span>
+0465 <span class="comment">% end</span>
+0466 
+0467 <span class="comment">% Make rxnGeneMat fields</span>
+0468 [genes, rxnGeneMat] = getGenesFromGrRules(model.grRules, model.genes);
+0469 <span class="keyword">if</span> isequal(sort(genes), sort(model.genes))
+0470     model.rxnGeneMat = rxnGeneMat;
+0471     model.genes = genes;
+0472 <span class="keyword">else</span>
+0473     error(<span class="string">'The gene list and grRules are inconsistent.'</span>);
 0474 <span class="keyword">end</span>
-0475 <span class="keyword">end</span>
-0476 
-0477 <a name="_sub1" href="#_subfunctions" class="code">function model = emptyOrFill(model,field,emptyEntry,type)</a>
-0478 <span class="keyword">if</span> isnumeric(emptyEntry)
-0479     emptyCells=isempty(model.(field));
-0480 <span class="keyword">else</span>
-0481     emptyCells=cellfun(@isempty,model.(field));
-0482 <span class="keyword">end</span>
-0483 <span class="keyword">if</span> all(emptyCells)
-0484     model = rmfield(model, field);
-0485 <span class="keyword">elseif</span> numel(model.(field))&lt;numel(model.(type))
-0486     model.(field)(end+1:numel(model.(type)),1)=emptyEntry;
-0487 <span class="keyword">end</span>
-0488 <span class="keyword">end</span>
-0489 
-0490 <a name="_sub2" href="#_subfunctions" class="code">function model = readFieldValue(model, fieldName, value, pos)</a>
-0491 <span class="keyword">if</span> numel(model.(fieldName))&lt;pos-1
-0492     model.(fieldName)(end+1:pos,1) = {<span class="string">''</span>};
-0493 <span class="keyword">end</span>
-0494 model.(fieldName)(pos,1) = {value};
-0495 <span class="keyword">end</span>
-0496 
-0497 <a name="_sub3" href="#_subfunctions" class="code">function [miriams, miriamKey,entryNumber] = gatherAnnotation(pos,miriams,key,value,miriamKey,entryNumber)</a>
-0498 <span class="keyword">if</span> isempty(key)
-0499     key=miriamKey;
-0500 <span class="keyword">else</span>
-0501     miriamKey=key;
-0502 <span class="keyword">end</span>
-0503 <span class="keyword">if</span> ~isempty(value)
-0504     miriams(entryNumber,1:3) = {pos, key, strip(value)};
-0505 <span class="keyword">else</span>
-0506     entryNumber = entryNumber - 1;
-0507 <span class="keyword">end</span>
-0508 <span class="keyword">end</span></pre></div>
+0475 
+0476 <span class="keyword">if</span> verbose
+0477     fprintf(<span class="string">' Done!\n'</span>);
+0478 <span class="keyword">end</span>
+0479 <span class="keyword">end</span>
+0480 
+0481 <a name="_sub1" href="#_subfunctions" class="code">function model = emptyOrFill(model,field,emptyEntry,type)</a>
+0482 <span class="keyword">if</span> isnumeric(emptyEntry)
+0483     emptyCells=isempty(model.(field));
+0484 <span class="keyword">else</span>
+0485     emptyCells=cellfun(@isempty,model.(field));
+0486 <span class="keyword">end</span>
+0487 <span class="keyword">if</span> all(emptyCells)
+0488     model = rmfield(model, field);
+0489 <span class="keyword">elseif</span> numel(model.(field))&lt;numel(model.(type))
+0490     model.(field)(end+1:numel(model.(type)),1)=emptyEntry;
+0491 <span class="keyword">end</span>
+0492 <span class="keyword">end</span>
+0493 
+0494 <a name="_sub2" href="#_subfunctions" class="code">function model = readFieldValue(model, fieldName, value, pos)</a>
+0495 <span class="keyword">if</span> numel(model.(fieldName))&lt;pos-1
+0496     model.(fieldName)(end+1:pos,1) = {<span class="string">''</span>};
+0497 <span class="keyword">end</span>
+0498 model.(fieldName)(pos,1) = {value};
+0499 <span class="keyword">end</span>
+0500 
+0501 <a name="_sub3" href="#_subfunctions" class="code">function [miriams, miriamKey,entryNumber] = gatherAnnotation(pos,miriams,key,value,miriamKey,entryNumber)</a>
+0502 <span class="keyword">if</span> isempty(key)
+0503     key=miriamKey;
+0504 <span class="keyword">else</span>
+0505     miriamKey=key;
+0506 <span class="keyword">end</span>
+0507 <span class="keyword">if</span> ~isempty(value)
+0508     miriams(entryNumber,1:3) = {pos, key, strip(value)};
+0509 <span class="keyword">else</span>
+0510     entryNumber = entryNumber - 1;
+0511 <span class="keyword">end</span>
+0512 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

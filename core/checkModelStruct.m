@@ -133,6 +133,12 @@ if isfield(model,'inchis')
         dispEM(EM,throwErrors);
     end
 end
+if isfield(model,'metSmiles')
+    if ~iscellstr(model.metSmiles)
+        EM='The "metSmiles" field must be a cell array of strings';
+        dispEM(EM,throwErrors);
+    end
+end
 if isfield(model,'metFormulas')
     if ~iscellstr(model.metFormulas)
         EM='The "metFormulas" field must be a cell array of strings';
@@ -356,6 +362,39 @@ if isfield(model,'inchis')
     %Print output
     EM='The following InChI strings are associated to more than one unique metabolite name:';
     dispEM(EM,false,allInchis(hasMultiple),trimWarnings);
+end
+
+%Check if there are metabolites with different names but the same SMILES
+if isfield(model,'metSmiles')
+    metSmiles=containers.Map();
+    for i=1:numel(model.mets)
+        if ~isempty(model.metSmiles{i})
+            %Get existing metabolite indexes
+            if isKey(metSmiles,model.metSmiles{i})
+                existing=metSmiles(model.metSmiles{i});
+            else
+                existing=[];
+            end
+            metSmiles(model.metSmiles{i})=[existing;i];
+        end
+    end
+    
+    %Get all keys
+    allmetSmiles=keys(metSmiles);
+    
+    hasMultiple=false(numel(metSmiles),1);
+    for i=1:numel(metSmiles)
+        if numel(metSmiles(metSmiles{i}))>1
+            %Check if they all have the same name
+            if numel(unique(model.metNames(metSmiles(allmetSmiles{i}))))>1
+                hasMultiple(i)=true;
+            end
+        end
+    end
+    
+    %Print output
+    EM='The following metSmiles strings are associated to more than one unique metabolite name:';
+    dispEM(EM,false,allmetSmiles(hasMultiple),trimWarnings);
 end
 end
 
