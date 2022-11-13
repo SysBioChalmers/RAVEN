@@ -240,7 +240,7 @@ if isfield(model,fieldName)
             if isnan(field(pos))
                 value = [];
             else
-                value = num2str(field(pos),12);
+                value = num2str(field(pos),15);
             end
         end
         if ~isempty(value)
