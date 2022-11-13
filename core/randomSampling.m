@@ -64,7 +64,7 @@ end
 nRxns=2; %Number of reactions in the objective function in each iteration
 
 %First check that the model is feasible given the constraints
-sol=solveLP(model);
+[sol,hsSol]=solveLP(model);
 if isempty(sol.x)
     EM='The model has no feasible solution, likely due to incompatible constraints';
     dispEM(EM);
@@ -100,14 +100,14 @@ if nargin<6 || isempty(goodRxns)
         end
         if goodRxns(i)==true
             testModel=setParam(model,'eq',model.rxns(i),1000);
-            sol=solveLP(testModel);
+            sol=solveLP(testModel,0,[],hsSol);
             if ~isempty(sol.f)
                 goodRxns(abs(sol.x)>999)=false;
             else
                 %If the reaction is reversible, also check in that direction
                 if model.rev(i)
                     testModel=setParam(model,'eq',model.rxns(i),-1000);
-                    sol=solveLP(testModel);
+                    sol=solveLP(testModel,0,[],hsSol);
                     if ~isempty(sol.f)
                         goodRxns(abs(sol.x)>999)=false;
                     end
@@ -141,9 +141,9 @@ while counter<=nSamples
     multipliers(model.rev(goodRxns(rxns))==0)=1;
     model.c(goodRxns(rxns))=rand(nRxns,1).*multipliers;
     if true(minFlux)
-        sol=solveLP(model,1);
+        sol=solveLP(model,1,[],hsSol);
     else
-        sol=solveLP(model);
+        sol=solveLP(model,0,[],hsSol);
     end
     if any(sol.x) && abs(sol.f)>10^-8
         sols(:,counter)=sol.x;
