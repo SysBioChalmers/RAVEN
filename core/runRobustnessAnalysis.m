@@ -16,6 +16,8 @@ function [controlFlux, objFlux] = runRobustnessAnalysis(model, controlRxn, nPoin
 %   objFlux         optimal values of objective reaction at each control
 %                   reaction flux value
 %
+% Modified from COBRA Toolbox robustnessAnalysis.m
+%
 % Usage: runRobustnessAnalysis(model, controlRxn, nPoints, objRxn)
 
 if nargin < 3
