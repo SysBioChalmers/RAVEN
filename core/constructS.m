@@ -101,7 +101,7 @@ for i=1:numel(equations)
     %reactant and 1 if it's a product
     multiplyWith=[ones(numel(reactants),1)*-1; ones(numel(products),1)];
     
-    metabolites=[reactants products];
+    metabolites=strtrim([reactants products]);
     
     %Now loop through the reactants and see if the metabolite has a
     %coefficient (it will look as 'number name')
@@ -118,9 +118,9 @@ for i=1:numel(equations)
             %If it was not a coefficiant
             if isnan(coeff)
                 coeff=1;
-                name=metabolites{j};
+                name=strtrim(metabolites{j});
             else
-                name=metabolites{j}(space+1:end);
+                name=strtrim(metabolites{j}(space+1:end));
             end
         end
         

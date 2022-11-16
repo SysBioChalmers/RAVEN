@@ -140,7 +140,7 @@ This function is called by:
 0063 <span class="keyword">else</span>
 0064     metaboliteList=<a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>(metaboliteList);
 0065 <span class="keyword">end</span>
-0066 <span class="keyword">if</span> numel(fluxes)~=numel(model.rxns)
+0066 <span class="keyword">if</span> size(fluxes,1)~=numel(model.rxns)
 0067     EM=<span class="string">'The number of fluxes and the number of reactions must be the same'</span>;
 0068     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
 0069 <span class="keyword">end</span>
@@ -154,7 +154,7 @@ This function is called by:
 0077     toDelete=true(numel(model.rxns),1);
 0078     toDelete(K)=false;
 0079     model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,toDelete);
-0080     fluxes(toDelete)=[];
+0080     fluxes(toDelete,:)=[];
 0081 <span class="keyword">end</span>
 0082 
 0083 <span class="keyword">if</span> onlyExchange==true
@@ -165,100 +165,101 @@ This function is called by:
 0088 
 0089 <span class="comment">%Remove reactions which are below the cut off</span>
 0090 toDelete=abs(fluxes)&lt;cutOffFlux;
-0091 model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,toDelete,true,true);
-0092 fluxes(toDelete)=[];
-0093 
-0094 <span class="keyword">if</span> any(strfind(outputString,<span class="string">'%eqn'</span>))
-0095     <span class="comment">%Construct the equations</span>
-0096     eqn=<a href="constructEquations.html" class="code" title="function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID,useFormula,useRevField)">constructEquations</a>(model);
-0097 <span class="keyword">else</span>
-0098     eqn=cell(numel(model.rxns),1);
-0099     eqn(:)={<span class="string">''</span>};
-0100 <span class="keyword">end</span>
-0101 <span class="keyword">if</span> any(strfind(outputString,<span class="string">'%element'</span>))
-0102     <span class="comment">%For printing equations using the composition</span>
-0103     cModel=model;
-0104     cModel.metNames=cModel.metFormulas;
-0105     cModel.metNames(cellfun(@isempty,cModel.metNames))={<span class="string">'?'</span>};
-0106     element=<a href="constructEquations.html" class="code" title="function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID,useFormula,useRevField)">constructEquations</a>(cModel);
-0107 <span class="keyword">else</span>
-0108     element=cell(numel(model.rxns),1);
-0109     element(:)={<span class="string">''</span>};
-0110 <span class="keyword">end</span>
-0111 
-0112 <span class="keyword">if</span> any(strfind(outputString,<span class="string">'%unbalanced'</span>)) || any(strfind(outputString,<span class="string">'%lumped'</span>))
-0113     balanceStructure=<a href="getElementalBalance.html" class="code" title="function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)">getElementalBalance</a>(model);
-0114 <span class="keyword">end</span>
-0115 
-0116 unbalanced=cell(numel(model.rxns),1);
-0117 unbalanced(:)={<span class="string">''</span>};
-0118 <span class="keyword">if</span> any(strfind(outputString,<span class="string">'%unbalanced'</span>))
-0119     unbalanced(balanceStructure.balanceStatus==0)={<span class="string">'(*)'</span>};
-0120     unbalanced(balanceStructure.balanceStatus&lt;0)={<span class="string">'(-)'</span>};
-0121 <span class="keyword">end</span>
-0122 
-0123 lumped=cell(numel(model.rxns),1);
-0124 lumped(:)={<span class="string">''</span>};
-0125 <span class="keyword">if</span> any(strfind(outputString,<span class="string">'%lumped'</span>))
-0126     <span class="keyword">for</span> i=1:numel(model.rxns)
-0127         leftGroup=<span class="string">''</span>;
-0128         rightGroup=<span class="string">''</span>;
-0129         <span class="keyword">for</span> j=1:numel(balanceStructure.elements.names)
-0130             I=balanceStructure.leftComp(i,j);
-0131             <span class="keyword">if</span> I~=0
-0132                 <span class="keyword">if</span> I==1
-0133                     leftGroup=[leftGroup balanceStructure.elements.abbrevs{j}];
-0134                 <span class="keyword">else</span>
-0135                     leftGroup=[leftGroup balanceStructure.elements.abbrevs{j} num2str(I)];
-0136                 <span class="keyword">end</span>
-0137             <span class="keyword">end</span>
-0138             I=balanceStructure.rightComp(i,j);
-0139             <span class="keyword">if</span> I~=0
-0140                 <span class="keyword">if</span> I==1
-0141                     rightGroup=[rightGroup balanceStructure.elements.abbrevs{j}];
-0142                 <span class="keyword">else</span>
-0143                     rightGroup=[rightGroup balanceStructure.elements.abbrevs{j} num2str(I)];
-0144                 <span class="keyword">end</span>
-0145             <span class="keyword">end</span>
-0146         <span class="keyword">end</span>
-0147         <span class="keyword">if</span> model.rev(i)
-0148             lumped{i}=[leftGroup <span class="string">' &lt;=&gt; '</span> rightGroup];
-0149         <span class="keyword">else</span>
-0150             lumped{i}=[leftGroup <span class="string">' =&gt; '</span> rightGroup];
-0151         <span class="keyword">end</span>
-0152     <span class="keyword">end</span>
-0153 <span class="keyword">end</span>
-0154 
-0155 <span class="keyword">for</span> i=1:numel(model.rxns)
-0156     <span class="comment">%Only print if it's an exchange reaction or if all reactions should be</span>
-0157     <span class="comment">%printed. Exchange reactions only have reactants or only products.</span>
-0158     reactants=model.S(:,i)&lt;0;
-0159     products=model.S(:,i)&gt;0;
-0160     
-0161     <span class="comment">%Only print if the absolute value is &gt;= cutOffFlux</span>
-0162     <span class="keyword">if</span> (onlyExchange==false || (~any(reactants) || ~any(products)))
-0163         printString=outputString;
-0164         
-0165         <span class="comment">%Produce the final string</span>
-0166         printString=strrep(printString,<span class="string">'%rxnID'</span>,model.rxns{i});
-0167         printString=strrep(printString,<span class="string">'%eqn'</span>,eqn{i});
-0168         printString=strrep(printString,<span class="string">'%rxnName'</span>,model.rxnNames{i});
-0169         printString=strrep(printString,<span class="string">'%lower'</span>,num2str(model.lb(i)));
-0170         printString=strrep(printString,<span class="string">'%upper'</span>,num2str(model.ub(i)));
-0171         printString=strrep(printString,<span class="string">'%obj'</span>,num2str(model.c(i)));
-0172         printString=strrep(printString,<span class="string">'%flux'</span>,num2str(fluxes(i)));
-0173         printString=strrep(printString,<span class="string">'%element'</span>,element{i});
-0174         printString=strrep(printString,<span class="string">'%unbalanced'</span>,unbalanced{i});
-0175         printString=strrep(printString,<span class="string">'%lumped'</span>,lumped{i});
-0176         fprintf(fid,printString);
-0177     <span class="keyword">end</span>
-0178 <span class="keyword">end</span>
-0179 
-0180 <span class="keyword">if</span> fid~=1
-0181     fprintf(<span class="string">'File successfully saved.\n'</span>);
-0182     fclose(fid);
-0183 <span class="keyword">end</span>
-0184 <span class="keyword">end</span></pre></div>
+0091 toDelete=all(toDelete,2);
+0092 model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,toDelete,true,true);
+0093 fluxes(toDelete,:)=[];
+0094 
+0095 <span class="keyword">if</span> any(strfind(outputString,<span class="string">'%eqn'</span>))
+0096     <span class="comment">%Construct the equations</span>
+0097     eqn=<a href="constructEquations.html" class="code" title="function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID,useFormula,useRevField)">constructEquations</a>(model);
+0098 <span class="keyword">else</span>
+0099     eqn=cell(numel(model.rxns),1);
+0100     eqn(:)={<span class="string">''</span>};
+0101 <span class="keyword">end</span>
+0102 <span class="keyword">if</span> any(strfind(outputString,<span class="string">'%element'</span>))
+0103     <span class="comment">%For printing equations using the composition</span>
+0104     cModel=model;
+0105     cModel.metNames=cModel.metFormulas;
+0106     cModel.metNames(cellfun(@isempty,cModel.metNames))={<span class="string">'?'</span>};
+0107     element=<a href="constructEquations.html" class="code" title="function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID,useFormula,useRevField)">constructEquations</a>(cModel);
+0108 <span class="keyword">else</span>
+0109     element=cell(numel(model.rxns),1);
+0110     element(:)={<span class="string">''</span>};
+0111 <span class="keyword">end</span>
+0112 
+0113 <span class="keyword">if</span> any(strfind(outputString,<span class="string">'%unbalanced'</span>)) || any(strfind(outputString,<span class="string">'%lumped'</span>))
+0114     balanceStructure=<a href="getElementalBalance.html" class="code" title="function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)">getElementalBalance</a>(model);
+0115 <span class="keyword">end</span>
+0116 
+0117 unbalanced=cell(numel(model.rxns),1);
+0118 unbalanced(:)={<span class="string">''</span>};
+0119 <span class="keyword">if</span> any(strfind(outputString,<span class="string">'%unbalanced'</span>))
+0120     unbalanced(balanceStructure.balanceStatus==0)={<span class="string">'(*)'</span>};
+0121     unbalanced(balanceStructure.balanceStatus&lt;0)={<span class="string">'(-)'</span>};
+0122 <span class="keyword">end</span>
+0123 
+0124 lumped=cell(numel(model.rxns),1);
+0125 lumped(:)={<span class="string">''</span>};
+0126 <span class="keyword">if</span> any(strfind(outputString,<span class="string">'%lumped'</span>))
+0127     <span class="keyword">for</span> i=1:numel(model.rxns)
+0128         leftGroup=<span class="string">''</span>;
+0129         rightGroup=<span class="string">''</span>;
+0130         <span class="keyword">for</span> j=1:numel(balanceStructure.elements.names)
+0131             I=balanceStructure.leftComp(i,j);
+0132             <span class="keyword">if</span> I~=0
+0133                 <span class="keyword">if</span> I==1
+0134                     leftGroup=[leftGroup balanceStructure.elements.abbrevs{j}];
+0135                 <span class="keyword">else</span>
+0136                     leftGroup=[leftGroup balanceStructure.elements.abbrevs{j} num2str(I)];
+0137                 <span class="keyword">end</span>
+0138             <span class="keyword">end</span>
+0139             I=balanceStructure.rightComp(i,j);
+0140             <span class="keyword">if</span> I~=0
+0141                 <span class="keyword">if</span> I==1
+0142                     rightGroup=[rightGroup balanceStructure.elements.abbrevs{j}];
+0143                 <span class="keyword">else</span>
+0144                     rightGroup=[rightGroup balanceStructure.elements.abbrevs{j} num2str(I)];
+0145                 <span class="keyword">end</span>
+0146             <span class="keyword">end</span>
+0147         <span class="keyword">end</span>
+0148         <span class="keyword">if</span> model.rev(i)
+0149             lumped{i}=[leftGroup <span class="string">' &lt;=&gt; '</span> rightGroup];
+0150         <span class="keyword">else</span>
+0151             lumped{i}=[leftGroup <span class="string">' =&gt; '</span> rightGroup];
+0152         <span class="keyword">end</span>
+0153     <span class="keyword">end</span>
+0154 <span class="keyword">end</span>
+0155 
+0156 <span class="keyword">for</span> i=1:numel(model.rxns)
+0157     <span class="comment">%Only print if it's an exchange reaction or if all reactions should be</span>
+0158     <span class="comment">%printed. Exchange reactions only have reactants or only products.</span>
+0159     reactants=model.S(:,i)&lt;0;
+0160     products=model.S(:,i)&gt;0;
+0161     
+0162     <span class="comment">%Only print if the absolute value is &gt;= cutOffFlux</span>
+0163     <span class="keyword">if</span> (onlyExchange==false || (~any(reactants) || ~any(products)))
+0164         printString=outputString;
+0165         
+0166         <span class="comment">%Produce the final string</span>
+0167         printString=strrep(printString,<span class="string">'%rxnID'</span>,model.rxns{i});
+0168         printString=strrep(printString,<span class="string">'%eqn'</span>,eqn{i});
+0169         printString=strrep(printString,<span class="string">'%rxnName'</span>,model.rxnNames{i});
+0170         printString=strrep(printString,<span class="string">'%lower'</span>,num2str(model.lb(i)));
+0171         printString=strrep(printString,<span class="string">'%upper'</span>,num2str(model.ub(i)));
+0172         printString=strrep(printString,<span class="string">'%obj'</span>,num2str(model.c(i)));
+0173         printString=strrep(printString,<span class="string">'%flux'</span>,num2str(fluxes(i,:)));
+0174         printString=strrep(printString,<span class="string">'%element'</span>,element{i});
+0175         printString=strrep(printString,<span class="string">'%unbalanced'</span>,unbalanced{i});
+0176         printString=strrep(printString,<span class="string">'%lumped'</span>,lumped{i});
+0177         fprintf(fid,printString);
+0178     <span class="keyword">end</span>
+0179 <span class="keyword">end</span>
+0180 
+0181 <span class="keyword">if</span> fid~=1
+0182     fprintf(<span class="string">'File successfully saved.\n'</span>);
+0183     fclose(fid);
+0184 <span class="keyword">end</span>
+0185 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

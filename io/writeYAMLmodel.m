@@ -1,5 +1,5 @@
-function writeYaml(model,name,preserveQuotes,sortIds)
-% writeYaml
+function writeYAMLmodel(model,name,preserveQuotes,sortIds)
+% writeYAMLmodel
 %   Writes a yaml file matching (roughly) the cobrapy yaml structure
 %
 %   model           a model structure
@@ -10,8 +10,9 @@ function writeYaml(model,name,preserveQuotes,sortIds)
 %                   should be sorted alphabetically by their identifier,
 %                   otherwise they are kept in their original order
 %                   (logical, default=false)
+%   
 %
-%   Usage: writeYaml(model,name,preserveQuotes,sortIds)
+%   Usage: writeYAMLmodel(model,name,preserveQuotes,sortIds)
 name=char(name);
 
 if nargin < 3
@@ -65,6 +66,7 @@ for i = 1:length(model.mets)
     writeField(model, fid, 'metFormulas', 'txt', i, '  - formula',     preserveQuotes)
     writeField(model, fid, 'metCharges',  'num', i, '  - charge',      preserveQuotes)
     writeField(model, fid, 'inchis',      'txt', i, '  - inchis',      preserveQuotes)
+    writeField(model, fid, 'metSmiles',   'txt', i, '  - smiles',      preserveQuotes)
     writeField(model, fid, 'metMiriams',  'txt', i, '  - annotation',  preserveQuotes)
     writeField(model, fid, 'metFrom',     'txt', i, '  - metFrom',     preserveQuotes)
 end
@@ -88,6 +90,7 @@ for i = 1:length(model.rxns)
     writeField(model, fid, 'subSystems',           'txt', i, '  - subsystem',             preserveQuotes)
     writeField(model, fid, 'rxnMiriams',           'txt', i, '  - annotation',            preserveQuotes)
     writeField(model, fid, 'rxnConfidenceScores',  'num', i, '  - confidence_score',      preserveQuotes)
+    writeField(model, fid, 'rxnNotes',             'txt', i, '  - rxnNotes',              preserveQuotes)
 end
 
 %Genes:
@@ -204,23 +207,25 @@ if isfield(model,fieldName)
             index = str2double(regexprep(name,'^.+_',''));
             name  = regexprep(name,'_\d+$','');
             list = strsplit(model.newCompMiriams{pos,index},'; ');
-        else
-            list = strrep(field{pos},' ','');     %Exception for eccodes
+        elseif ~isempty(field{pos})
+            list = strrep(field{pos},' ','');
             list = strsplit(list,';');
+        else
+            list = '';
         end
 
         if length(list) == 1 && ~strcmp(list{1},'') && ~strcmp(fieldName,'subSystems')
             if preserveQuotes
-                list = strcat('"',list,'"');
+                list = strcat('"',strip(list{1}),'"');
             end
-            fprintf(fid,['    ' name ': ' list{1} '\n']);
+            fprintf(fid,['    ' name ': ' strip(list) '\n']);
         elseif length(list) > 1 || strcmp(fieldName,'subSystems')
             if preserveQuotes
-                list = strcat('"',list,'"');
+                list = strcat('"',strip(list),'"');
             end
             fprintf(fid,['    ' name ':\n']);
             for i = 1:length(list)
-                fprintf(fid,[regexprep(name,'(^\s*).*','$1') '        - ' list{i} '\n']);
+                fprintf(fid,[regexprep(name,'(^\s*).*','$1') '        - ' strip(list{i}) '\n']);
             end
         end
         
@@ -235,11 +240,11 @@ if isfield(model,fieldName)
             if isnan(field(pos))
                 value = [];
             else
-                value = num2str(field(pos),12);
+                value = num2str(field(pos),15);
             end
         end
         if ~isempty(value)
-            fprintf(fid,['    ' name ': ' value '\n']);
+            fprintf(fid,['    ' name ': ' strip(value) '\n']);
         end
     end
 end

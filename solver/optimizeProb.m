@@ -15,6 +15,7 @@ end
 if nargin<3 || isempty(verbose)
     verbose = true;
 end
+
 %Set as global variable for speed improvement if optimizeProb is run many times
 global RAVENSOLVER;
 if isempty(RAVENSOLVER)
@@ -25,8 +26,6 @@ if isempty(RAVENSOLVER)
     end
 end
 solver=RAVENSOLVER;
-
-
 
 if ~all(lower(prob.vartype) == 'c')
     disp('MILP detected.');
@@ -60,6 +59,10 @@ switch solver
         else
             res=solveCobraLP(prob);
         end
+        if isfield(res,{'dual','rcost'})
+            res.dual=-res.dual;
+            res.rcost=-res.rcost;
+        end
         
     %% Use Gurobi in a MATLAB environment
     case 'gurobi'
@@ -69,7 +72,7 @@ switch solver
         else
             solverparams.OutputFlag = 0;
         end
-        solverparams.intTol = 10^-9; %min val for gurobi
+        solverparams.IntFeasTol = 10^-9; %min val for gurobi
         solverparams.MIPGap = defaultparams.MIPGap;
         solverparams.Seed = defaultparams.Seed;
     else
@@ -84,30 +87,28 @@ switch solver
     
     % Restructering problem according to gurobi format
     if isfield(prob, 'csense')
-        prob.csense = renameparams(prob.csense, {'L','G','E'}, {'<','>','='});
-        prob.sense = prob.csense;
+        prob.sense = renameparams(prob.csense, {'L','G','E'}, {'<','>','='});
         prob = rmfield(prob, {'csense'});
     end
     if isfield(prob, 'osense')
-        prob.osense = renameparams(num2str(prob.osense), {'1','-1'}, {'min','max'});
-        prob.modelsense = prob.osense;
+        osense = prob.osense;
+        prob.modelsense = renameparams(num2str(prob.osense), {'1','-1'}, {'min','max'});
         prob = rmfield(prob, {'osense'});
     end
-    [prob.obj, prob.rhs] = deal(prob.c, prob.b);
-    prob = rmfield(prob, {'c','b'});
-    
-    %Rename intTol to IntFeasTol
-    if milp
-        solverparams.IntFeasTol = solverparams.intTol;
-        solverparams  = rmfield(solverparams, {'intTol'});
-        prob.vtype = prob.vartype;
-        prob  = rmfield(prob, {'vartype'});
-    end
+    [prob.obj, prob.rhs, prob.vtype] = deal(prob.c, prob.b, prob.vartype);
+    prob = rmfield(prob, {'c','b','vartype'});
     
     resG = gurobi(prob,solverparams);
     
     try
-        [res.full, res.obj, res.origStat] = deal(resG.x,  resG.objval, resG.status);
+        % Name output fields the same as COBRA does
+        res.full     = resG.x;
+        res.obj      = resG.objval;
+        res.origStat = resG.status;
+        if isfield(resG,{'pi','rc'})
+            res.dual     = -resG.pi*osense;
+            res.rcost    = -resG.rc*osense;
+        end
         if milp && strcmp(resG.status, 'TIME_LIMIT')
             % If res has the objval field, it succeeded, regardless of
             % time_limit status
@@ -122,7 +123,8 @@ switch solver
                 res.stat = 0;
         end
         if ~milp
-            [res.vbasis, res.cbasis] = deal(resG.vbasis, resG.cbasis);
+            res.vbasis = resG.vbasis;
+            res.cbasis = resG.cbasis;
 		else
 			res.mipgap = resG.mipgap; 
         end
@@ -132,7 +134,7 @@ switch solver
     end
     %% Use GLPK using RAVEN-provided binary
     case 'glpk'
-        solverparams.scale   = 128; % Auto scaling
+        solverparams.scale   = 1; % Auto scaling
         solverparams.tmlim   = defaultparams.timeLimit;
         solverparams.tolbnd  = defaultparams.feasTol;
         solverparams.toldj   = defaultparams.optTol;
@@ -148,7 +150,6 @@ switch solver
             solverparams.msglev  = 1; % Level of verbosity
             disp('Issues have been observed when using GLPK for MILP solving. Be advised to carefully observe the results, or us another solver.')
         end
-        solverparams.scale   = 1; % Auto scaling
         
         % Ensure that RAVEN glpk binary is used, return to original
         % directory afterwards
@@ -168,6 +169,8 @@ switch solver
         res.origStat = errnum;
         res.full     = xopt;
         res.obj      = fmin;
+        res.dual     = -extra.lambda*prob.osense;
+        res.rcost    = -extra.redcosts*prob.osense;
     otherwise
         error('RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
 end

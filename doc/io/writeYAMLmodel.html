@@ -1,0 +1,361 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of writeYAMLmodel</title>
+  <meta name="keywords" content="writeYAMLmodel">
+  <meta name="description" content="writeYAMLmodel">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">io</a> &gt; writeYAMLmodel.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for io&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>writeYAMLmodel
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>writeYAMLmodel</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function writeYAMLmodel(model,name,preserveQuotes,sortIds) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> writeYAMLmodel
+   Writes a yaml file matching (roughly) the cobrapy yaml structure
+
+   model           a model structure
+   name            name that the file will have
+   preserveQuotes  if quotes should be preserved for strings
+                   (logical, default=true)
+   sortIds         if metabolites, reactions, genes and compartments
+                   should be sorted alphabetically by their identifier,
+                   otherwise they are kept in their original order
+                   (logical, default=false)
+   
+
+   Usage: writeYAMLmodel(model,name,preserveQuotes,sortIds)</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="sortIdentifiers.html" class="code" title="function newModel = sortIdentifiers(model)">sortIdentifiers</a>	exportModel</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="exportForGit.html" class="code" title="function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,cobraText)">exportForGit</a>	exportForGit</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function writeField(model,fid,fieldName,type,pos,name,preserveQuotes)</a></li><li><a href="#_sub2" class="code">function writeMetadata(model,fid)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function writeYAMLmodel(model,name,preserveQuotes,sortIds)</a>
+0002 <span class="comment">% writeYAMLmodel</span>
+0003 <span class="comment">%   Writes a yaml file matching (roughly) the cobrapy yaml structure</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%   model           a model structure</span>
+0006 <span class="comment">%   name            name that the file will have</span>
+0007 <span class="comment">%   preserveQuotes  if quotes should be preserved for strings</span>
+0008 <span class="comment">%                   (logical, default=true)</span>
+0009 <span class="comment">%   sortIds         if metabolites, reactions, genes and compartments</span>
+0010 <span class="comment">%                   should be sorted alphabetically by their identifier,</span>
+0011 <span class="comment">%                   otherwise they are kept in their original order</span>
+0012 <span class="comment">%                   (logical, default=false)</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">%   Usage: writeYAMLmodel(model,name,preserveQuotes,sortIds)</span>
+0016 name=char(name);
+0017 
+0018 <span class="keyword">if</span> nargin &lt; 3
+0019     preserveQuotes = true;
+0020 <span class="keyword">end</span>
+0021 <span class="keyword">if</span> nargin &lt; 4
+0022     sortIds = false;
+0023 <span class="keyword">end</span>
+0024 <span class="keyword">if</span> ~endsWith(name,{<span class="string">'.yml'</span>,<span class="string">'.yaml'</span>})
+0025     name = strcat(name,<span class="string">'.yml'</span>);
+0026 <span class="keyword">end</span>
+0027 
+0028 <span class="comment">%Check that model is in RAVEN format:</span>
+0029 <span class="keyword">if</span> isfield(model,<span class="string">'rules'</span>)
+0030     model = ravenCobraWrapper(model);
+0031 <span class="keyword">end</span>
+0032 
+0033 <span class="comment">%Sort identifiers alphabetically</span>
+0034 <span class="keyword">if</span> sortIds == true
+0035     model = <a href="sortIdentifiers.html" class="code" title="function newModel = sortIdentifiers(model)">sortIdentifiers</a>(model);
+0036 <span class="keyword">end</span>
+0037 
+0038 <span class="comment">%Simplify Miriam fields:</span>
+0039 <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
+0040     [model.newMetMiriams,model.newMetMiriamNames]   = extractMiriam(model.metMiriams);
+0041 <span class="keyword">end</span>
+0042 <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
+0043     [model.newRxnMiriams,model.newRxnMiriamNames]   = extractMiriam(model.rxnMiriams);
+0044 <span class="keyword">end</span>
+0045 <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
+0046     [model.newGeneMiriams,model.newGeneMiriamNames] = extractMiriam(model.geneMiriams);
+0047 <span class="keyword">end</span>
+0048 <span class="keyword">if</span> isfield(model,<span class="string">'compMiriams'</span>)
+0049     [model.newCompMiriams,model.newCompMiriamNames] = extractMiriam(model.compMiriams);
+0050 <span class="keyword">end</span>
+0051 
+0052 <span class="comment">%Open file:</span>
+0053 fid = fopen(name,<span class="string">'wt'</span>);
+0054 fprintf(fid,<span class="string">'---\n!!omap\n'</span>);
+0055 
+0056 <span class="comment">%Insert file header (metadata)</span>
+0057 <a href="#_sub2" class="code" title="subfunction writeMetadata(model,fid)">writeMetadata</a>(model,fid);
+0058 
+0059 <span class="comment">%Metabolites:</span>
+0060 fprintf(fid,<span class="string">'- metabolites:\n'</span>);
+0061 <span class="keyword">for</span> i = 1:length(model.mets)
+0062     fprintf(fid,<span class="string">'    - !!omap\n'</span>);
+0063     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'mets'</span>,        <span class="string">'txt'</span>, i, <span class="string">'  - id'</span>,          preserveQuotes)
+0064     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'metNames'</span>,    <span class="string">'txt'</span>, i, <span class="string">'  - name'</span>,        preserveQuotes)
+0065     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'metComps'</span>,    <span class="string">'txt'</span>, i, <span class="string">'  - compartment'</span>, preserveQuotes)
+0066     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'metFormulas'</span>, <span class="string">'txt'</span>, i, <span class="string">'  - formula'</span>,     preserveQuotes)
+0067     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'metCharges'</span>,  <span class="string">'num'</span>, i, <span class="string">'  - charge'</span>,      preserveQuotes)
+0068     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'inchis'</span>,      <span class="string">'txt'</span>, i, <span class="string">'  - inchis'</span>,      preserveQuotes)
+0069     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'metSmiles'</span>,   <span class="string">'txt'</span>, i, <span class="string">'  - smiles'</span>,      preserveQuotes)
+0070     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'metMiriams'</span>,  <span class="string">'txt'</span>, i, <span class="string">'  - annotation'</span>,  preserveQuotes)
+0071     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'metFrom'</span>,     <span class="string">'txt'</span>, i, <span class="string">'  - metFrom'</span>,     preserveQuotes)
+0072 <span class="keyword">end</span>
+0073 
+0074 <span class="comment">%Reactions:</span>
+0075 fprintf(fid,<span class="string">'- reactions:\n'</span>);
+0076 <span class="keyword">for</span> i = 1:length(model.rxns)
+0077     fprintf(fid,<span class="string">'    - !!omap\n'</span>);
+0078     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'rxns'</span>,                 <span class="string">'txt'</span>, i, <span class="string">'  - id'</span>,                    preserveQuotes)
+0079     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'rxnNames'</span>,             <span class="string">'txt'</span>, i, <span class="string">'  - name'</span>,                  preserveQuotes)
+0080     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'S'</span>,                    <span class="string">'txt'</span>, i, <span class="string">'  - metabolites'</span>,           preserveQuotes)
+0081     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'lb'</span>,                   <span class="string">'num'</span>, i, <span class="string">'  - lower_bound'</span>,           preserveQuotes)
+0082     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'ub'</span>,                   <span class="string">'num'</span>, i, <span class="string">'  - upper_bound'</span>,           preserveQuotes)
+0083     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'grRules'</span>,              <span class="string">'txt'</span>, i, <span class="string">'  - gene_reaction_rule'</span>,    preserveQuotes)
+0084     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'rxnFrom'</span>,              <span class="string">'txt'</span>, i, <span class="string">'  - rxnFrom'</span>,               preserveQuotes)
+0085     <span class="keyword">if</span> model.c(i)~=0
+0086         <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'c'</span>,                    <span class="string">'num'</span>, i, <span class="string">'  - objective_coefficient'</span>, preserveQuotes)    
+0087     <span class="keyword">end</span>
+0088     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'eccodes'</span>,              <span class="string">'txt'</span>, i, <span class="string">'  - eccodes'</span>,               preserveQuotes)
+0089     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'rxnReferences'</span>,        <span class="string">'txt'</span>, i, <span class="string">'  - references'</span>,            preserveQuotes)
+0090     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'subSystems'</span>,           <span class="string">'txt'</span>, i, <span class="string">'  - subsystem'</span>,             preserveQuotes)
+0091     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'rxnMiriams'</span>,           <span class="string">'txt'</span>, i, <span class="string">'  - annotation'</span>,            preserveQuotes)
+0092     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'rxnConfidenceScores'</span>,  <span class="string">'num'</span>, i, <span class="string">'  - confidence_score'</span>,      preserveQuotes)
+0093     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'rxnNotes'</span>,             <span class="string">'txt'</span>, i, <span class="string">'  - rxnNotes'</span>,              preserveQuotes)
+0094 <span class="keyword">end</span>
+0095 
+0096 <span class="comment">%Genes:</span>
+0097 fprintf(fid,<span class="string">'- genes:\n'</span>);
+0098 <span class="keyword">for</span> i = 1:length(model.genes)
+0099     fprintf(fid,<span class="string">'    - !!omap\n'</span>);
+0100     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'genes'</span>,          <span class="string">'txt'</span>, i, <span class="string">'  - id'</span>,         preserveQuotes)
+0101     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'geneShortNames'</span>, <span class="string">'txt'</span>, i, <span class="string">'  - name'</span>,       preserveQuotes)
+0102     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'geneMiriams'</span>,    <span class="string">'txt'</span>, i, <span class="string">'  - annotation'</span>, preserveQuotes)
+0103 <span class="keyword">end</span>
+0104 
+0105 <span class="comment">%Compartments:</span>
+0106 fprintf(fid,<span class="string">'- compartments: !!omap\n'</span>);
+0107 <span class="keyword">for</span> i = 1:length(model.comps)
+0108     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'compNames'</span>,   <span class="string">'txt'</span>, i, [<span class="string">'- '</span> model.comps{i}], preserveQuotes)
+0109     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'compMiriams'</span>, <span class="string">'txt'</span>, i, <span class="string">'- annotation'</span>,             preserveQuotes)
+0110 <span class="keyword">end</span>
+0111 
+0112 <span class="comment">%Close file:</span>
+0113 fclose(fid);
+0114 
+0115 <span class="keyword">end</span>
+0116 
+0117 <a name="_sub1" href="#_subfunctions" class="code">function writeField(model,fid,fieldName,type,pos,name,preserveQuotes)</a>
+0118 <span class="comment">%Writes a new line in the yaml file if the field exists and the field is</span>
+0119 <span class="comment">%not empty at the correspoinding position. It's recursive for some fields</span>
+0120 <span class="comment">%(metMiriams, rxnMiriams, and S)</span>
+0121 
+0122 <span class="keyword">if</span> isfield(model,fieldName)
+0123     <span class="keyword">if</span> strcmp(fieldName,<span class="string">'metComps'</span>)
+0124         <span class="comment">%metComps: write full name</span>
+0125         fieldName = <span class="string">'comps'</span>;
+0126         pos       = model.metComps(pos);
+0127     <span class="keyword">end</span>
+0128     
+0129     field = eval([<span class="string">'model.'</span> fieldName]);
+0130     
+0131     <span class="keyword">if</span> strcmp(fieldName,<span class="string">'metMiriams'</span>)
+0132         <span class="keyword">if</span> ~isempty(model.metMiriams{pos})
+0133             fprintf(fid,[<span class="string">'    '</span> name <span class="string">': !!omap\n'</span>]);
+0134             <span class="keyword">for</span> i=1:size(model.newMetMiriams,2)
+0135                 <span class="comment">%'i' represents the different miriam names, e.g.</span>
+0136                 <span class="comment">%kegg.compound or chebi</span>
+0137                 <span class="keyword">if</span> ~isempty(model.newMetMiriams{pos,i})
+0138                     <span class="comment">%As during the following writeField call the value of</span>
+0139                     <span class="comment">%'i' would be lost, it is temporarily concatenated to</span>
+0140                     <span class="comment">%'name' parameter, which will be edited later</span>
+0141                     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'newMetMiriams'</span>, <span class="string">'txt'</span>, pos, [<span class="string">'      - '</span> model.newMetMiriamNames{i} <span class="string">'_'</span> num2str(i)], preserveQuotes)
+0142                 <span class="keyword">end</span>
+0143             <span class="keyword">end</span>
+0144         <span class="keyword">end</span>
+0145         
+0146     <span class="keyword">elseif</span> strcmp(fieldName,<span class="string">'rxnMiriams'</span>)
+0147         <span class="keyword">if</span> ~isempty(model.rxnMiriams{pos})
+0148             fprintf(fid,[<span class="string">'    '</span> name <span class="string">': !!omap\n'</span>]);
+0149             <span class="keyword">for</span> i=1:size(model.newRxnMiriams,2)
+0150                 <span class="keyword">if</span> ~isempty(model.newRxnMiriams{pos,i})
+0151                     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'newRxnMiriams'</span>, <span class="string">'txt'</span>, pos, [<span class="string">'      - '</span> model.newRxnMiriamNames{i} <span class="string">'_'</span> num2str(i)], preserveQuotes)
+0152                 <span class="keyword">end</span>
+0153             <span class="keyword">end</span>
+0154         <span class="keyword">end</span>
+0155         
+0156     <span class="keyword">elseif</span> strcmp(fieldName,<span class="string">'geneMiriams'</span>)
+0157         <span class="keyword">if</span> ~isempty(model.geneMiriams{pos})
+0158             fprintf(fid,[<span class="string">'    '</span> name <span class="string">': !!omap\n'</span>]);
+0159             <span class="keyword">for</span> i=1:size(model.newGeneMiriams,2)
+0160                 <span class="keyword">if</span> ~isempty(model.newGeneMiriams{pos,i})
+0161                     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'newGeneMiriams'</span>, <span class="string">'txt'</span>, pos, [<span class="string">'      - '</span> model.newGeneMiriamNames{i} <span class="string">'_'</span> num2str(i)], preserveQuotes)
+0162                 <span class="keyword">end</span>
+0163             <span class="keyword">end</span>
+0164         <span class="keyword">end</span>
+0165         
+0166     <span class="keyword">elseif</span> strcmp(fieldName,<span class="string">'compMiriams'</span>)
+0167         <span class="keyword">if</span> ~isempty(model.compMiriams{pos})
+0168             fprintf(fid,[<span class="string">'    '</span> name <span class="string">': !!omap\n'</span>]);
+0169             <span class="keyword">for</span> i=1:size(model.newCompMiriams,2)
+0170                 <span class="keyword">if</span> ~isempty(model.newCompMiriams{pos,i})
+0171                     <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'newCompMiriams'</span>, <span class="string">'txt'</span>, pos, [<span class="string">'      - '</span> model.newCompMiriamNames{i} <span class="string">'_'</span> num2str(i)], preserveQuotes)
+0172                 <span class="keyword">end</span>
+0173             <span class="keyword">end</span>
+0174         <span class="keyword">end</span>
+0175         
+0176     <span class="keyword">elseif</span> strcmp(fieldName,<span class="string">'S'</span>)
+0177         <span class="comment">%S: create header &amp; write each metabolite in a new line</span>
+0178         fprintf(fid,[<span class="string">'    '</span> name <span class="string">': !!omap\n'</span>]);
+0179         <span class="keyword">if</span> sum(field(:,pos) ~= 0) &gt; 0
+0180             model.mets   = model.mets(field(:,pos) ~= 0);
+0181             model.coeffs = field(field(:,pos) ~= 0,pos);
+0182             <span class="comment">%Sort metabolites:</span>
+0183             [model.mets,order] = sort(model.mets);
+0184             model.coeffs       = model.coeffs(order);
+0185             <span class="keyword">for</span> i = 1:length(model.mets)
+0186                 <a href="#_sub1" class="code" title="subfunction writeField(model,fid,fieldName,type,pos,name,preserveQuotes)">writeField</a>(model, fid, <span class="string">'coeffs'</span>,  <span class="string">'num'</span>, i, [<span class="string">'      - '</span> model.mets{i}], preserveQuotes)
+0187             <span class="keyword">end</span>
+0188         <span class="keyword">end</span>
+0189         
+0190     <span class="keyword">elseif</span> sum(strcmp({<span class="string">'subSystems'</span>,<span class="string">'newMetMiriams'</span>,<span class="string">'newRxnMiriams'</span>,<span class="string">'newGeneMiriams'</span>,<span class="string">'newCompMiriams'</span>,<span class="string">'eccodes'</span>},fieldName)) &gt; 0
+0191         <span class="comment">%eccodes/rxnNotes: if 1 write in 1 line, if more create header and list</span>
+0192         <span class="keyword">if</span> strcmp(fieldName,<span class="string">'subSystems'</span>)
+0193             list = field{pos};  <span class="comment">%subSystems already comes in a cell array</span>
+0194         <span class="keyword">elseif</span> strcmp(fieldName,<span class="string">'newMetMiriams'</span>)
+0195             index = str2double(regexprep(name,<span class="string">'^.+_'</span>,<span class="string">''</span>));
+0196             name  = regexprep(name,<span class="string">'_\d+$'</span>,<span class="string">''</span>);
+0197             list = strsplit(model.newMetMiriams{pos,index},<span class="string">'; '</span>);
+0198         <span class="keyword">elseif</span> strcmp(fieldName,<span class="string">'newRxnMiriams'</span>)
+0199             index = str2double(regexprep(name,<span class="string">'^.+_'</span>,<span class="string">''</span>));
+0200             name  = regexprep(name,<span class="string">'_\d+$'</span>,<span class="string">''</span>);
+0201             list = strsplit(model.newRxnMiriams{pos,index},<span class="string">'; '</span>);
+0202         <span class="keyword">elseif</span> strcmp(fieldName,<span class="string">'newGeneMiriams'</span>)
+0203             index = str2double(regexprep(name,<span class="string">'^.+_'</span>,<span class="string">''</span>));
+0204             name  = regexprep(name,<span class="string">'_\d+$'</span>,<span class="string">''</span>);
+0205             list = strsplit(model.newGeneMiriams{pos,index},<span class="string">'; '</span>);
+0206         <span class="keyword">elseif</span> strcmp(fieldName,<span class="string">'newCompMiriams'</span>)
+0207             index = str2double(regexprep(name,<span class="string">'^.+_'</span>,<span class="string">''</span>));
+0208             name  = regexprep(name,<span class="string">'_\d+$'</span>,<span class="string">''</span>);
+0209             list = strsplit(model.newCompMiriams{pos,index},<span class="string">'; '</span>);
+0210         <span class="keyword">elseif</span> ~isempty(field{pos})
+0211             list = strrep(field{pos},<span class="string">' '</span>,<span class="string">''</span>);
+0212             list = strsplit(list,<span class="string">';'</span>);
+0213         <span class="keyword">else</span>
+0214             list = <span class="string">''</span>;
+0215         <span class="keyword">end</span>
+0216 
+0217         <span class="keyword">if</span> length(list) == 1 &amp;&amp; ~strcmp(list{1},<span class="string">''</span>) &amp;&amp; ~strcmp(fieldName,<span class="string">'subSystems'</span>)
+0218             <span class="keyword">if</span> preserveQuotes
+0219                 list = strcat(<span class="string">'&quot;'</span>,strip(list{1}),<span class="string">'&quot;'</span>);
+0220             <span class="keyword">end</span>
+0221             fprintf(fid,[<span class="string">'    '</span> name <span class="string">': '</span> strip(list) <span class="string">'\n'</span>]);
+0222         <span class="keyword">elseif</span> length(list) &gt; 1 || strcmp(fieldName,<span class="string">'subSystems'</span>)
+0223             <span class="keyword">if</span> preserveQuotes
+0224                 list = strcat(<span class="string">'&quot;'</span>,strip(list),<span class="string">'&quot;'</span>);
+0225             <span class="keyword">end</span>
+0226             fprintf(fid,[<span class="string">'    '</span> name <span class="string">':\n'</span>]);
+0227             <span class="keyword">for</span> i = 1:length(list)
+0228                 fprintf(fid,[regexprep(name,<span class="string">'(^\s*).*'</span>,<span class="string">'$1'</span>) <span class="string">'        - '</span> strip(list{i}) <span class="string">'\n'</span>]);
+0229             <span class="keyword">end</span>
+0230         <span class="keyword">end</span>
+0231         
+0232     <span class="keyword">elseif</span> sum(pos) &gt; 0
+0233         <span class="comment">%All other fields:</span>
+0234         <span class="keyword">if</span> strcmp(type,<span class="string">'txt'</span>)
+0235             value = field{pos};
+0236             <span class="keyword">if</span> preserveQuotes &amp;&amp; ~isempty(value)
+0237                 value = strcat(<span class="string">'&quot;'</span>,value,<span class="string">'&quot;'</span>);
+0238             <span class="keyword">end</span>
+0239         <span class="keyword">elseif</span> strcmp(type,<span class="string">'num'</span>)
+0240             <span class="keyword">if</span> isnan(field(pos))
+0241                 value = [];
+0242             <span class="keyword">else</span>
+0243                 value = num2str(field(pos),15);
+0244             <span class="keyword">end</span>
+0245         <span class="keyword">end</span>
+0246         <span class="keyword">if</span> ~isempty(value)
+0247             fprintf(fid,[<span class="string">'    '</span> name <span class="string">': '</span> strip(value) <span class="string">'\n'</span>]);
+0248         <span class="keyword">end</span>
+0249     <span class="keyword">end</span>
+0250 <span class="keyword">end</span>
+0251 
+0252 
+0253 <span class="keyword">end</span>
+0254 
+0255 <a name="_sub2" href="#_subfunctions" class="code">function writeMetadata(model,fid)</a>
+0256 <span class="comment">% Writes model metadata to the yaml file. This information will eventually</span>
+0257 <span class="comment">% be extracted entirely from the model, but for now, many of the entries</span>
+0258 <span class="comment">% are hard-coded defaults for HumanGEM.</span>
+0259 
+0260 fprintf(fid, <span class="string">'- metaData:\n'</span>);
+0261 fprintf(fid, [<span class="string">'    id: &quot;'</span>,          model.id,          <span class="string">'&quot;\n'</span>]);
+0262 fprintf(fid, [<span class="string">'    name: &quot;'</span>,        model.name, <span class="string">'&quot;\n'</span>]);
+0263 <span class="keyword">if</span> isfield(model,<span class="string">'version'</span>)
+0264     fprintf(fid, [<span class="string">'    version: &quot;'</span>, model.version,     <span class="string">'&quot;\n'</span>]);
+0265 <span class="keyword">end</span>
+0266 fprintf(fid, [<span class="string">'    date: &quot;'</span>,        datestr(now,29),   <span class="string">'&quot;\n'</span>]);  <span class="comment">% 29=YYYY-MM-DD</span>
+0267 <span class="keyword">if</span> isfield(model,<span class="string">'annotation'</span>)
+0268     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultLB'</span>)
+0269         fprintf(fid, [<span class="string">'    defaultLB: &quot;'</span>,    num2str(model.annotation.defaultLB), <span class="string">'&quot;\n'</span>]);
+0270     <span class="keyword">end</span>
+0271     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultUB'</span>)
+0272         fprintf(fid, [<span class="string">'    defaultUB: &quot;'</span>,    num2str(model.annotation.defaultUB), <span class="string">'&quot;\n'</span>]);
+0273     <span class="keyword">end</span>
+0274     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'givenName'</span>)
+0275         fprintf(fid, [<span class="string">'    givenName: &quot;'</span>,    model.annotation.givenName,          <span class="string">'&quot;\n'</span>]);
+0276     <span class="keyword">end</span>
+0277     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'familyName'</span>)
+0278         fprintf(fid, [<span class="string">'    familyName: &quot;'</span>,   model.annotation.familyName,         <span class="string">'&quot;\n'</span>]);
+0279     <span class="keyword">end</span>
+0280     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'authors'</span>)
+0281         fprintf(fid, [<span class="string">'    authors: &quot;'</span>,      model.annotation.authors,            <span class="string">'&quot;\n'</span>]);
+0282     <span class="keyword">end</span>
+0283     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'email'</span>)
+0284         fprintf(fid, [<span class="string">'    email: &quot;'</span>,        model.annotation.email,              <span class="string">'&quot;\n'</span>]);
+0285     <span class="keyword">end</span>
+0286     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'organization'</span>)
+0287         fprintf(fid, [<span class="string">'    organization: &quot;'</span>, model.annotation.organization,       <span class="string">'&quot;\n'</span>]);
+0288     <span class="keyword">end</span>
+0289     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'taxonomy'</span>)
+0290         fprintf(fid, [<span class="string">'    taxonomy: &quot;'</span>,     model.annotation.taxonomy,           <span class="string">'&quot;\n'</span>]);
+0291     <span class="keyword">end</span>
+0292     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'note'</span>)
+0293         fprintf(fid, [<span class="string">'    note: &quot;'</span>,         model.annotation.note,               <span class="string">'&quot;\n'</span>]);
+0294     <span class="keyword">end</span>
+0295     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'sourceUrl'</span>)
+0296         fprintf(fid, [<span class="string">'    sourceUrl: &quot;'</span>,    model.annotation.sourceUrl,          <span class="string">'&quot;\n'</span>]);
+0297     <span class="keyword">end</span>
+0298 <span class="keyword">end</span>
+0299 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

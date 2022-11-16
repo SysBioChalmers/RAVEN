@@ -34,7 +34,7 @@ end
 
 load([sourceDir,'/test_data/solverTestOutput.mat'], 'solOut');
 %Check that the actual model is the same as the expected model
-verifyEqual(testCase,sol,solOut,'AbsTol',1e-5)
+verifyEqual(testCase,sol,solOut,'AbsTol',0.1) %Quite generous tolerance, as shadow price calculations fluctuate quite a bit between solvers
 end
 
 function testGurobi(testCase)
@@ -70,7 +70,7 @@ end
 
 load([sourceDir,'/test_data/solverTestOutput.mat'], 'solOut');
 %Check that the actual model is the same as the expected model
-verifyEqual(testCase,sol,solOut,'AbsTol',1e-5)
+verifyEqual(testCase,sol,solOut,'AbsTol',0.1)
 end
 
 function testCobra(testCase)
@@ -110,5 +110,5 @@ end
 
 load([sourceDir,'/test_data/solverTestOutput.mat'], 'solOut');
 %Check that the actual model is the same as the expected model
-verifyEqual(testCase,sol,solOut,'AbsTol',1e-5)
+verifyEqual(testCase,sol,solOut,'AbsTol',0.1)
 end

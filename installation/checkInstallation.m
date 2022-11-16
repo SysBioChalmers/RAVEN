@@ -61,6 +61,15 @@ fprintf([myStr(' > Checking MATLAB release',40) '%f'])
 fprintf([version('-release') '\n'])
 fprintf([myStr(' > Checking system architecture',40) '%f'])
 fprintf([computer('arch'),'\n'])
+if isunix
+    fprintf([myStr('   > Make binaries executable',40) '%f'])
+    status = makeBinaryExecutable();
+    if status == 0
+        fprintf('Pass\n')
+    else
+        fprintf('Fail\n')
+    end
+end
 fprintf([myStr(' > Set RAVEN in MATLAB path',40) '%f'])
 subpath=regexp(genpath(ravenDir),pathsep,'split'); %List all subdirectories
 pathsToKeep=cellfun(@(x) ~contains(x,'.git'),subpath) & cellfun(@(x) ~contains(x,'doc'),subpath);
@@ -93,7 +102,7 @@ catch
     fprintf('   Download libSBML from http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n');
 end
 fprintf(' > Checking model import and export\n')
-res=runtests('importExportTests.m','OutputDetail',0);
+[~,res]=evalc("runtests('importExportTests.m');");
 
 fprintf([myStr('   > Import Excel format',40) '%f'])
 if res(1).Passed == 1
@@ -142,7 +151,7 @@ fprintf('\n=== Model solvers ===\n');
 
 %Get current solver. Set it to 'none', if it is not set
 fprintf(' > Checking for LP solvers\n')
-res=runtests('solverTests.m','OutputDetail',0);
+[~,res]=evalc("runtests('solverTests.m');");
 
 fprintf([myStr('   > glpk',40) '%f'])
 if res(1).Passed == 1
@@ -166,7 +175,7 @@ else
 end
 
 fprintf(' > Checking for MILP solvers\n')
-res=runtests('fillGapsSmallTests.m','OutputDetail',0);
+[~,res]=evalc("runtests('fillGapsSmallTests.m');");
 
 fprintf([myStr('   > glpk',40) '%f'])
 if res(1).Passed == 1
@@ -218,21 +227,21 @@ end
 
 fprintf('\n=== Essential binary executables ===\n');
 fprintf([myStr(' > Checking BLAST+',40) '%f'])
-res=runtests('blastPlusTests.m','OutputDetail',0);
+[~,res]=evalc("runtests('blastPlusTests.m');");
 res=interpretResults(res);
 if res==false
     fprintf('   This is essential to run getBlast()\n')
 end
 
 fprintf([myStr(' > Checking DIAMOND',40) '%f'])
-res=runtests('diamondTests.m','OutputDetail',0);
+[~,res]=evalc("runtests('diamondTests.m');");
 res=interpretResults(res);
 if res==false
     fprintf('   This is essential to run the getDiamond()\n')
 end
 
 fprintf([myStr(' > Checking HMMER',40) '%f'])
-res=runtests('hmmerTests.m','OutputDetail',0);
+[~,res]=evalc("runtests('hmmerTests.m')");
 res=interpretResults(res);
 if res==false
     fprintf(['   This is essential to run getKEGGModelFromHomology()\n'...
@@ -244,11 +253,11 @@ if develMode
     fprintf('NOTE: These binaries are only required when using KEGG FTP dump files in getKEGGModelForOrganism\n');
 
     fprintf([myStr(' > Checking CD-HIT',40) '%f'])
-    res=runtests('cdhitTests.m','OutputDetail',0);
+    [~,res]=evalc("runtests('cdhitTests.m');");
     interpretResults(res);
 
     fprintf([myStr(' > Checking MAFFT',40) '%f'])
-    res=runtests('mafftTests.m','OutputDetail',0);
+    [~,res]=evalc("runtests('mafftTests.m');");
     interpretResults(res);
 end
 
@@ -259,7 +268,7 @@ checkFunctionUniqueness();
 fprintf('\n*** checkInstallation complete ***\n\n');
 end
 
-function res=interpretResults(results)
+function res = interpretResults(results)
 if results.Failed==0 && results.Incomplete==0
     fprintf('Pass\n');
     res=true;
@@ -277,5 +286,27 @@ if lenDiff < 0
     warning('String too long');
 else
     str = [str blanks(lenDiff)];
+end
+end
+
+function status = makeBinaryExecutable()
+if ispc
+    status = 0; % No need to run on Windows
+    return;
+elseif ismac
+    binaryEnd='.mac';
+else
+    binaryEnd='';
+end
+
+binaryList = {'blastp','makeblastdb','diamond','cd-hit','hmmbuild','hmmsearch'};
+binaryList = strcat(binaryList,binaryEnd);
+binaryList = [binaryList, 'TranslateSBML','OutputSBML','glpkcc','mafft.bat'];
+for i=1:numel(binaryList)
+    binPath = which(binaryList{i});
+    [status,cmdout] = system(['chmod +x "' binPath '"']);
+    if status ~= 0
+        error('Failed to make %s executable: %s ',binaryList{i},strip(cmdout))
+    end
 end
 end
