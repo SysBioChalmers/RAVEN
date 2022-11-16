@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of runRobustnessAnalysis</title>
+  <meta name="keywords" content="runRobustnessAnalysis">
+  <meta name="description" content="runRobustnessAnalysis">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">core</a> &gt; runRobustnessAnalysis.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for core&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>runRobustnessAnalysis
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>runRobustnessAnalysis</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [controlFlux, objFlux] = runRobustnessAnalysis(model, controlRxn, nPoints, objRxn) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> runRobustnessAnalysis
+   Performs robustness analysis for a reaction of interest and an objective
+   of interest. Modified from the COBRA robustnessAnalysis function.
+
+ Input:
+   model           a model structure
+   controlRxn      reaction of interest whose value is to be controlled
+   nPoints         number of points to show on plot (opt, default 20)
+   objRxn          reaction identifier of objective to be maximized (opt,
+                   default it uses the objective defined in the model)
+
+ Output:
+   controlFlux     flux values of the reaction of interest, ranging from
+                   its minimum to its maximum value
+   objFlux         optimal values of objective reaction at each control
+                   reaction flux value
+
+ Modified from COBRA Toolbox robustnessAnalysis.m
+
+ Usage: runRobustnessAnalysis(model, controlRxn, nPoints, objRxn)</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>	setParam</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [controlFlux, objFlux] = runRobustnessAnalysis(model, controlRxn, nPoints, objRxn)</a>
+0002 <span class="comment">% runRobustnessAnalysis</span>
+0003 <span class="comment">%   Performs robustness analysis for a reaction of interest and an objective</span>
+0004 <span class="comment">%   of interest. Modified from the COBRA robustnessAnalysis function.</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% Input:</span>
+0007 <span class="comment">%   model           a model structure</span>
+0008 <span class="comment">%   controlRxn      reaction of interest whose value is to be controlled</span>
+0009 <span class="comment">%   nPoints         number of points to show on plot (opt, default 20)</span>
+0010 <span class="comment">%   objRxn          reaction identifier of objective to be maximized (opt,</span>
+0011 <span class="comment">%                   default it uses the objective defined in the model)</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% Output:</span>
+0014 <span class="comment">%   controlFlux     flux values of the reaction of interest, ranging from</span>
+0015 <span class="comment">%                   its minimum to its maximum value</span>
+0016 <span class="comment">%   objFlux         optimal values of objective reaction at each control</span>
+0017 <span class="comment">%                   reaction flux value</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% Modified from COBRA Toolbox robustnessAnalysis.m</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% Usage: runRobustnessAnalysis(model, controlRxn, nPoints, objRxn)</span>
+0022 
+0023 <span class="keyword">if</span> nargin &lt; 3
+0024     nPoints = 20;
+0025 <span class="keyword">end</span>
+0026 <span class="keyword">if</span> nargin &gt; 4
+0027     baseModel = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'obj'</span>,objRxn,1);
+0028 <span class="keyword">else</span>
+0029     baseModel = model;
+0030 <span class="keyword">end</span>
+0031 
+0032 <span class="keyword">if</span> any(ismember(model.rxns,controlRxn))
+0033     tmpModel = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'obj'</span>,controlRxn,1);
+0034     solMax = solveLP(tmpModel);
+0035     solMax = solMax.x(logical(tmpModel.c));
+0036     tmpModel.c = -tmpModel.c;
+0037     solMin = solveLP(tmpModel);
+0038     solMin = solMin.x(logical(tmpModel.c));
+0039 <span class="keyword">else</span>
+0040     error(<span class="string">'Control reaction does not exist!'</span>);
+0041 <span class="keyword">end</span>
+0042 
+0043 objFlux = zeros(nPoints,1);
+0044 controlFlux = linspace(solMin,solMax,nPoints)';
+0045 
+0046 fprintf(<span class="string">'Running robustness analysis...   0%% complete'</span>);
+0047 <span class="keyword">for</span> i=1:length(controlFlux)
+0048     progress=pad(num2str(floor(i/numel(controlFlux)*100)),3,<span class="string">'left'</span>);
+0049     fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete'</span>,progress);    
+0050     modelControlled = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(baseModel,<span class="string">'eq'</span>,controlRxn,controlFlux(i));
+0051     solControlled = solveLP(modelControlled);
+0052     objFlux(i) = solControlled.x(logical(modelControlled.c));
+0053 <span class="keyword">end</span>
+0054 fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n'</span>);
+0055 
+0056 plot(controlFlux,objFlux)
+0057 xlabel(strrep(controlRxn,<span class="string">'_'</span>,<span class="string">'-'</span>));
+0058 ylabel(<span class="string">'Objective'</span>);
+0059 axis tight;
+0060 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
