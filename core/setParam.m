@@ -24,11 +24,10 @@ function model=setParam(model, paramType, rxnList, params, var)
 %   Usage: model=setParam(model, paramType, rxnList, params)
 
 paramType=convertCharArray(paramType);
-if ~isempty(setdiff(paramType,{'lb';'ub';'eq';'obj';'rev';'var'}))
+if ~any(strcmpi(paramType,{'lb','ub','eq','obj','rev','var'}))
     EM=['Incorrect parameter type: "' paramType '"'];
     dispEM(EM);
 end
-
 if isnumeric(rxnList) || islogical(rxnList)
     rxnList=model.rxns(rxnList);
 else
