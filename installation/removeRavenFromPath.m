@@ -13,6 +13,10 @@ function removeRavenFromPath(verbose)
 % Get current RAVEN directory
 ravenDir=findRAVENroot();
 
+if contains(ravenDir,'MATLAB Add-Ons')
+    error('RAVEN is installed as MATLAB Add-On. You should uninstall RAVEN from the Add-On Manager instead.')
+end
+
 % Get current paths
 currPath = strsplit(path(),';');
 
