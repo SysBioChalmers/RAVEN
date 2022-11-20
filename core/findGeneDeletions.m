@@ -10,8 +10,9 @@ function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(
 %                   'dgd'   double gene deletion
 %                   'sgo'   single gene over expression
 %                   'dgo'   double gene over expression
+%                   (opt, default 'sgd')
 %   analysisType    determines whether to use FBA ('fba') or MOMA ('moma')
-%                   in the optimization
+%                   in the optimization. (opt, default 'fba')
 %   refModel        MOMA works by fitting the flux distributions of two
 %                   models to be as similar as possible. The most common
 %                   application is where you have a reference model where
@@ -43,19 +44,21 @@ function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(
 %                   this does not directly map to model.genes, as is the case
 %                   for COBRA getEssentialGenes. However, this can be 
 %                   obtained by afterwards running:
-%                       grRatio=ones(1,numel(model.rxns));
+%                       grRatio=zeros(1,numel(model.genes));
 %                       grRatio(genes)=grRatioMuts;
 %
 %   Usage: [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(model,testType,analysisType,...
 %           refModel,oeFactor)
 
 originalModel=model;
-
 if nargin<5
     oeFactor=10;
 end
-testType=char(testType);
-analysisType=char(analysisType);
+if nargin<2
+    testType='sgd';
+else
+    testType=char(testType);
+end
 
 %Check that the test type is correct
 if ~strcmpi(testType,'sgd') && ~strcmpi(testType,'dgd') && ~strcmpi(testType,'sgo') && ~strcmpi(testType,'dgo')
@@ -64,9 +67,14 @@ if ~strcmpi(testType,'sgd') && ~strcmpi(testType,'dgd') && ~strcmpi(testType,'sg
 end
 
 %Check that the analysis type is correct
-if ~strcmpi(analysisType,'fba') && ~strcmpi(analysisType,'moma')
-    EM='Incorrect analysis type';
-    dispEM(EM);
+if nargin<3
+    analysisType = 'fba';
+else
+    analysisType=char(analysisType);
+    if ~any(strcmpi(analysisType,{'fba','moma'}))
+        EM='Incorrect analysis type';
+        dispEM(EM);
+    end
 end
 
 if (strcmpi(testType,'sgo') || strcmpi(testType,'dgo')) && strcmpi(analysisType,'fba')
@@ -97,7 +105,6 @@ growthWT=-growthWT.f;
 if strcmpi(testType,'sgd') || strcmpi(testType,'sgo') || strcmpi(testType,'dgd')
     fluxes=zeros(numel(model.rxns),numel(model.genes));
     grRatioMuts=zeros(1,numel(model.genes));
-    solvable=true(numel(model.genes),1);
     for i=1:numel(model.genes)
         if strcmpi(testType,'sgd') || strcmpi(testType,'dgd')
             %Constrain all reactions involving the gene to 0
@@ -124,13 +131,12 @@ if strcmpi(testType,'sgd') || strcmpi(testType,'sgo') || strcmpi(testType,'dgd')
             grRatioMuts(i)=-sol.f/growthWT;
             details(geneMapping(i))=1;
         else
-            solvable(i)=false;
+            fluxes(:,i)=0;
+            grRatioMuts(i)=0;
             details(geneMapping(i))=2;
         end
     end
-    fluxes=fluxes(:,solvable);
-    genes=geneMapping(solvable);
-    grRatioMuts=grRatioMuts(solvable);
+    genes=geneMapping;
 end
 
 %Now do for DGO. This is rather straight forward since it is always
@@ -162,7 +168,7 @@ if strcmpi(testType,'dgd')
     [~, I]=ismember(originalGenes(details==1),model.genes);
     genesToModify=nchoosek(I,2);
     genes=geneMapping(genesToModify);
-    
+    grRatioMuts=zeros(1,numel(genes));
     fluxes=sparse(numel(model.rxns),size(genesToModify,1));
     for i=1:size(genesToModify,1)
         tempModel=removeGenes(model,genesToModify(i,:),false,false,false);
@@ -188,3 +194,4 @@ temp=fluxes;
 fluxes=sparse(numel(originalModel.rxns),size(temp,2));
 fluxes(I,:)=temp;
 end
+    

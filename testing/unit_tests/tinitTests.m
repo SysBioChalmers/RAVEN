@@ -234,7 +234,7 @@ function testftINIT_T0001(testCase)
     arrayData1.levels = getExprForRxnScore(getTstModelRxnScores());
     arrayData1.threshold = 1;
     
-    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams);
+    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams,false);
 
     %We expect R1 and R8 to be added since they have no GPRs and are exch rxns. The transport rxn R2 without GPR will however be removed,
     %since we in the standard setting run the third step with [1;0;0;0;1;0;0], meaning that such reactions will be removed
@@ -248,7 +248,7 @@ function testftINIT_T0001(testCase)
     arrayData1.tissues = {'a'};
     arrayData1.levels = getExprForRxnScore(getTstModelRxnScores());
     arrayData1.threshold = 1;
-    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams);
+    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams,false);
     %the model should now change to include the "correct" path (including 'R2') and 
     %skip R9/R10:
     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R4';'R6';'R7';'R8'})), 1)
@@ -274,7 +274,7 @@ function testftINIT_T0002(testCase)
     arrayData1.tissues = {'a'};
     arrayData1.levels = getExprForRxnScore(testRxnScores);
     arrayData1.threshold = 1;
-    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams);
+    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams,false);
     %Since both R2 and R7 are now essential, we expect all rxns to be on except R3 and 
     %R5 (which have a negative total score and are not needed for the task)
     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R4';'R6';'R7';'R8';'R9';'R10'})))
@@ -343,7 +343,7 @@ function testftINIT_T0006(testCase)
 
     tmpModel = reverseRxns(testModel, {'R1';'R3'});
     res = constructEquations(tmpModel, {'R1';'R3'});
-    expRes = {'a[s] => ';'b[c] + c[c] <=> a[c]'}
+    expRes = {'a[s] => ';'b[c] + c[c] <=> a[c]'};
     verifyTrue(testCase, all(strcmp(res,expRes)))
 end
 
@@ -353,8 +353,8 @@ end
 function testftINIT_T0007(testCase)
     miniModel = struct();
     miniModel.S = [1,1000;-1,-40];
-    miniModel.rxns = {'1';'2'}
-    miniModel.mets = {'1';'2'}
+    miniModel.rxns = {'1';'2'};
+    miniModel.mets = {'1';'2'};
     res = rescaleModelForINIT(miniModel,10);
     verifyTrue(testCase, abs(res.S(1,2) - res.S(2,2)*-10) < 10^-6)
     verifyTrue(testCase, abs((abs(res.S(1,2)) + abs(res.S(2,2)))/2) - 1 < 10^-6)
@@ -374,7 +374,7 @@ function testftINIT_T0008(testCase)
     arrayData1.levels = getExprForRxnScore(getTstModelRxnScores());
     arrayData1.threshold = 1;
     
-    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams);
+    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams,false);
 
     %First the same as in T0001 (we keep them here to make the test case understandable):
     %We expect R1 and R8 to be added since they have no GPRs and are exch rxns. The transport rxn R2 without GPR will however be removed,
@@ -385,12 +385,12 @@ function testftINIT_T0008(testCase)
     %make R7 and R10 spontaneous (also same as in T0001)
     prepDataTest1 = prepINITModel(testModel, {}, {'R7';'R10'}, false, {}, 's');
     verifyTrue(testCase, all(strcmp(prepDataTest1.refModel.rxns(prepDataTest1.toIgnoreExch | prepDataTest1.toIgnoreSpont), {'R1';'R7';'R8';'R10'})))
-    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams);
+    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams,false);
     %the model should now change to include the "correct" path (including 'R2') and 
     %skip R9/R10:
     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R4';'R6';'R7';'R8'})))
     %now, test to add the metabolite f - this should turn back the favor to R9/R10:
-    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{'f'},getINITSteps(),true,true,testParams);
+    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{'f'},getINITSteps(),true,true,testParams,false);
     %R9 should now be included, the presence of R2 is random
     if length(tst1ResModel1.rxns) == 7
         verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R7';'R8';'R9';'R10'})))
@@ -398,7 +398,7 @@ function testftINIT_T0008(testCase)
         verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R4';'R6';'R7';'R8';'R9';'R10'})))
     end
     %now, test to add the metabolite a, e, f - this should give the same result:
-    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{'f';'a';'e'},getINITSteps(),true,true,testParams);
+    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{'f';'a';'e'},getINITSteps(),true,true,testParams,false);
     %Should be the same as above (R2 is random)
     if length(tst1ResModel1.rxns) == 7
         verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R7';'R8';'R9';'R10'})))
@@ -407,7 +407,7 @@ function testftINIT_T0008(testCase)
     end
     
     %now, test to add the metabolite b - this should turn on R2 and R3/R5 and turn off R9:
-    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{'b'},getINITSteps(),true,true,testParams);
+    tst1ResModel1 = ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{'b'},getINITSteps(),true,true,testParams,false);
     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R3';'R4';'R5';'R6';'R7';'R8'})))
 
     %now on model 5 to test reactions that are not linearly merged (testModel has only merged rxns)
@@ -418,7 +418,7 @@ function testftINIT_T0008(testCase)
     arrayData1.threshold = 1;
     
     prepDataTest5 = prepINITModel(testModel5, {}, {'R7';'R10'}, false, {}, 's');
-    tst1ResModel1 = ftINIT(prepDataTest5,arrayData1.tissues{1},[],[],arrayData1,{},getINITSteps(),true,true,testParams);
+    tst1ResModel1 = ftINIT(prepDataTest5,arrayData1.tissues{1},[],[],arrayData1,{},getINITSteps(),true,true,testParams,false);
     %We expect the 'true' path, i.e. through R2, not R9/R10 or R11-R14
     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R4';'R6';'R7';'R8'})), 1)
 
@@ -426,7 +426,7 @@ function testftINIT_T0008(testCase)
     %modify the scores a bit
     prepDataTest5 = prepINITModel(testModel5, {}, {'R10'}, false, {}, 's');
     arrayData1.levels(7) = getExprForRxnScore(-1.1); %modify to avoid randomness
-    tst1ResModel1 = ftINIT(prepDataTest5,arrayData1.tissues{1},[],[],arrayData1,{'g'},getINITSteps(),true,true,testParams);
+    tst1ResModel1 = ftINIT(prepDataTest5,arrayData1.tissues{1},[],[],arrayData1,{'g'},getINITSteps(),true,true,testParams,false);
     %We expect R2 to be replaced with R11 and R13
     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R8';'R11';'R13'})), 1)
 end
@@ -540,8 +540,8 @@ function testftINIT_T0050(testCase)
     %Run prep data
     prepDataL = prepINITModel(testModelL, [], {}, false, {}, 's');
 
-    mres = ftINIT(prepDataL,arrayDataL.tissues{1},[],[],arrayDataL,[],getINITSteps(),true,true,testParams);
-    mres2 = ftINIT(prepDataL,arrayDataL.tissues{1},[],[],arrayDataL,[],getINITSteps([], 'full'),true,true,testParams);
+    mres = ftINIT(prepDataL,arrayDataL.tissues{1},[],[],arrayDataL,[],getINITSteps(),true,true,testParams,false);
+    mres2 = ftINIT(prepDataL,arrayDataL.tissues{1},[],[],arrayDataL,[],getINITSteps([], 'full'),true,true,testParams,false);
     
     expResult = {  'S1';'S2';'S3';'S4';'S5';'S6';'S7';'S8';'S9';'E1';'E2';'E3';'E4';'E5';'E6';'E8';'E9';'R1';'R2';'R3';'R4';'R5';'R6';'R7';'R8';'R9';'R12';'R13';'R14';'R15'};
     

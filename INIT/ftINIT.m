@@ -139,7 +139,7 @@ if (~isempty(metabolomicsData))
         prodRxnsSel = any(prepData.refModel.S(metSel,:) > 0,1) | ... %direct producers
                      (any(prepData.refModel.S(metSel,:) < 0,1) & prepData.refModel.rev.'); %reversible reactions that are consumers
         %convert the production rxns from refModel to minModel
-        prepData.groupIds
+        prepData.groupIds;
         [~,ia,ib] = intersect(prepData.minModel.rxns,prepData.refModel.rxns);
         grpIdsMerged = nan(length(prepData.minModel.rxns),1);
         grpIdsMerged(ia) = prepData.groupIds(ib);
