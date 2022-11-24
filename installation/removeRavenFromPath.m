@@ -6,33 +6,38 @@ function removeRavenFromPath(verbose)
 %   installations remain, a warning is given that the user might want to
 %   rerun removeRavenFromPath to remove the additional RAVEN installations.
 %
-% Input:
-%   verbose         logical, whether progress should be reported
 % Usage: removeRavenFromPath()
 
-% Get current RAVEN directory
-ravenDir=findRAVENroot();
-
-if contains(ravenDir,'MATLAB Add-Ons')
-    error('RAVEN is installed as MATLAB Add-On. You should uninstall RAVEN from the Add-On Manager instead.')
+% Check for installation as Add-On
+addList = matlab.addons.installedAddons;
+if any(strcmp(addList.Name,'RAVEN Toolbox'))
+    error(['RAVEN is installed as MATLAB Add-On. You should uninstall RAVEN via '...
+        'the Add-On Manager instead. Once uninstalled, you may attempt to run '...
+        'removeRavenFromPath again to remove any potential remaining RAVEN installations.'])
 end
 
 % Get current paths
-currPath = strsplit(path(),';');
+currPath  = transpose(strsplit(path(),';'));
+ravenPath = false(numel(currPath),1);
+for i=1:numel(currPath)
+    dirCont = ls(currPath{i});
+    dirCont = cellstr(dirCont(3:end,:));
+    if any(contains(dirCont,{'ravenCobraWrapper.m','makeFakeBlastStructure.m','setRavenSolver.m'})) % A few (hopefully) unique RAVEN functions
+        ravenPath(i)=true;
+    end
+end
 
-% Select RAVEN (sub)dirs in path
-ravenSubDirs = startsWith(currPath,ravenDir);
-ravenSubDirs = currPath(ravenSubDirs);
-
+ravenPath = unique(regexprep(currPath(ravenPath),'(\\|\/)((external)|(struct_conversion)|(solver))',''));
+addOnDir = contains(ravenPath,'MATLAB Add-Ons');
+if any(addOnDir)
+    warning(['RAVEN is installed as MATLAB Add-On at the following directory, but MATLAB '...
+        'somehow does not recognize this installation. You are advised to manually delete '...
+        'the directory to remove any RAVEN remnants: ' ravenPath{addOnDir}]);
+end
+ravenSubDirs = currPath(startsWith(currPath,ravenPath));
 % Remove from path
 if ~isempty(ravenSubDirs)
-    fprintf('Removing %s and subfolders from the MATLAB path\n',ravenDir)
     rmpath(ravenSubDirs{:});
     savepath;
 end
-try
-    findRAVENroot();
-    warning(['It appears that another RAVEN installation was present in the '...
-          'MATLAB path. To also remove that one, you should rerun removeRavenFromPath().'])
-catch
 end
