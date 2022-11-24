@@ -22,6 +22,8 @@ end
 
 fprintf('\n*** THE RAVEN TOOLBOX ***\n\n');
 %Print the RAVEN version if it is not the development version
+fprintf([myStr(' > Installing from location',40) '%f']);
+fprintf('%s\n',ravenDir)
 fprintf([myStr(' > Checking RAVEN release',40) '%f']);
 if exist(fullfile(ravenDir,'version.txt'), 'file') == 2
     currVer = fgetl(fopen(fullfile(ravenDir,'version.txt')));
