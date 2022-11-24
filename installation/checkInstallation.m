@@ -73,9 +73,21 @@ end
 fprintf([myStr(' > Set RAVEN in MATLAB path',40) '%f'])
 subpath=regexp(genpath(ravenDir),pathsep,'split'); %List all subdirectories
 pathsToKeep=cellfun(@(x) ~contains(x,'.git'),subpath) & cellfun(@(x) ~contains(x,'doc'),subpath);
-addpath(strjoin(subpath(pathsToKeep),pathsep));
-savepath
-fprintf('Pass\n');
+try
+    addpath(strjoin(subpath(pathsToKeep),pathsep));
+    fprintf('Pass\n');
+    fprintf([myStr(' > Save MATLAB path',40) '%f'])
+    try
+        savepath
+        fprintf('Pass\n')   
+    catch
+        fprintf('Fail\n')
+        fprintf(['   You might have to rerun checkInstallation again\n'...
+                 '   next time you start up MATLAB\n'])        
+    end
+catch
+    fprintf('Fail\n')
+end
 
 %Check if it is possible to parse an Excel file
 fprintf('\n=== Model import and export ===\n');
