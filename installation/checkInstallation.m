@@ -22,6 +22,8 @@ end
 
 fprintf('\n*** THE RAVEN TOOLBOX ***\n\n');
 %Print the RAVEN version if it is not the development version
+fprintf([myStr(' > Installing from location',40) '%f']);
+fprintf('%s\n',ravenDir)
 fprintf([myStr(' > Checking RAVEN release',40) '%f']);
 if exist(fullfile(ravenDir,'version.txt'), 'file') == 2
     currVer = fgetl(fopen(fullfile(ravenDir,'version.txt')));
@@ -65,9 +67,21 @@ fprintf([computer('arch'),'\n'])
 fprintf([myStr(' > Set RAVEN in MATLAB path',40) '%f'])
 subpath=regexp(genpath(ravenDir),pathsep,'split'); %List all subdirectories
 pathsToKeep=cellfun(@(x) ~contains(x,'.git'),subpath) & cellfun(@(x) ~contains(x,'doc'),subpath);
-addpath(strjoin(subpath(pathsToKeep),pathsep));
-savepath
-fprintf('Pass\n');
+try
+    addpath(strjoin(subpath(pathsToKeep),pathsep));
+    fprintf('Pass\n');
+    fprintf([myStr(' > Save MATLAB path',40) '%f'])
+    try
+        savepath
+        fprintf('Pass\n')   
+    catch
+        fprintf('Fail\n')
+        fprintf(['   You might have to rerun checkInstallation again\n'...
+                 '   next time you start up MATLAB\n'])        
+    end
+catch
+    fprintf('Fail\n')
+end
 
 if isunix
     fprintf([myStr('   > Make binaries executable',40) '%f'])

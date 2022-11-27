@@ -1,4 +1,4 @@
-function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse)
+function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse,mets)
 % contractModel
 %   Contracts a model by grouping all identical reactions. Similar to the
 %   deleteDuplicates part in simplifyModel but more care is taken here
@@ -11,6 +11,11 @@ function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,d
 %   distReverse            distinguish reactions with same metabolites
 %                          but different reversibility as different
 %                          reactions (opt, default true)
+%   mets                   string or cell array of strings with metabolite
+%                          identifiers, whose involved reactions should be
+%                          checked for duplication (opt, by default all
+%                          reactions are considered) (option is used by
+%                          replaceMets)
 %
 %   reducedModel           a model structure without duplicate reactions
 %   removedRxns            cell array for the removed duplicate reactions
@@ -36,6 +41,13 @@ if distReverse
 else
     x=modelS.S';
 end
+if nargin>2
+    toCheck = getIndexes(model,mets,'mets');
+    [~, toCheck] = find(modelS.S(toCheck,:));
+    x = [x, (1:size(x,1))']; % Make all other rxns unique by additional column 
+    x(toCheck,end) = 0;
+end
+
 [~,I,J] = unique(x,'rows','first');
 
 %Initialize cell array of indexedDuplicateRxns

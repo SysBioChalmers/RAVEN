@@ -722,6 +722,7 @@ if isfield(modelSBML,'groups_group')
         end
     end
 end
+subsystems(cellfun(@isempty,subsystems))={{''}};
 
 %Shrink the structures if complex-forming reactions had to be skipped
 reactionNames=reactionNames(1:counter);
