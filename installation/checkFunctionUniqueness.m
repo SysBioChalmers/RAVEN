@@ -54,7 +54,9 @@ end
 if multiRaven==true || multiFunction == true
     fprintf('Fail\n')
     if multiRaven==true
-        error('Multiple RAVEN versions detected in MATLAB path. Leave only one RAVEN version in MATLAB path and re-run checkInstallation');
+        error(['Multiple RAVEN versions detected in MATLAB path. Remove all ',...
+               'RAVEN directories from the MATLAB path with removeRavenFromPath(), ',...
+               'or manually remove them. Afterwards, re-run checkInstallation']);
     elseif multiFunction == true
         for i=1:numel(overlapPath)
             fprintf(['   Duplicate functions in ',regexprep(overlapPath{i},'(\\)','\\$1'),'\n']);

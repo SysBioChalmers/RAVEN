@@ -123,7 +123,13 @@ subplot(1,2,1);
 plot(timeVec,biomassVec);
 axis tight
 title('Biomass');
+xlabel('Time (h)');
+ylabel('Concentration (g/L)');
 subplot(1,2,2);
 plot(timeVec,concentrationMatrix(selPlot,:));
 axis tight
+title('Substrates and/or products');
+xlabel('Time (h)');
+ylabel('Concentration (mmol/L)');
 legend(strrep(excRxnNames(selPlot),'EX_',''));
+end

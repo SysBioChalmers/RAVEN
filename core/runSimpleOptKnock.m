@@ -52,25 +52,38 @@ end
 out.KO         = cell(0,params.maxNumKO); % The KO genes/rxns
 out.growthRate = zeros(0);
 out.prodRate   = zeros(0);
+out.score      = zeros(0);
 
 params.biomassIdx  = getIndexes(model,biomassRxn,'rxns');
 params.targetIdx   = getIndexes(model,targetRxn,'rxns');
-targetIdx   = getIndexes(model,targetRxn,'rxns');
 
 model = setParam(model,'obj',params.biomassIdx,1);
 [solWT, hsSol] = solveLP(model);
-WT.minProd = solWT.x(params.targetIdx);
+WT.minScore = solWT.x(params.targetIdx)*-solWT.f;
 
 fprintf('Running simple OptKnock analysis...   0%% complete');
 KO=zeros(1,params.maxNumKO);
 [~,~,out,~] = knockoutIteration(model,params,WT,out,params.maxNumKO,KO,[],hsSol);
 
+if size(out.KO,2)>1
+    singleKO = cellfun(@isempty,out.KO(:,1));
+    if any(singleKO)
+        singleKO = out.KO{singleKO,2};
+        singleKO = strcmp(out.KO(:,1),singleKO);
+        out.KO(singleKO,:) = [];
+        out.growthRate(singleKO,:) = [];
+        out.prodRate(singleKO,:) = [];
+        out.score(singleKO,:) = [];
+    end
+end
+
+
 fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 end
 
-function [model,iteration,out,KO,hsSol] = knockoutIteration(model,params,WT,out,iteration,KO,minProd,hsSol)
-if nargin<7 || isempty(minProd)
-    minProd = WT.minProd;
+function [model,iteration,out,KO,hsSol] = knockoutIteration(model,params,WT,out,iteration,KO,minScore,hsSol)
+if nargin<7 || isempty(minScore)
+    minScore = WT.minScore;
 end
 iteration = iteration - 1;
 for i = 1:numel(params.deletions)
@@ -89,14 +102,16 @@ for i = 1:numel(params.deletions)
     if ~isempty(-solKO.f)
         growthRate = -solKO.f;
         prodRate   = solKO.x(params.targetIdx);
+        prodRate(prodRate<1e-10)=0; % Filter out results from solver tolerance
         if growthRate > params.minGrowth
-            if prodRate > minProd*1.01
+            if growthRate*prodRate > minScore*1.01
                 out.KO(end+1,find(KO)) = transpose(params.deletions(KO(find(KO))));
                 out.growthRate(end+1,1) = growthRate;
                 out.prodRate(end+1,1)   = prodRate;
+                out.score(end+1,1)      = growthRate*prodRate;
             end
             if iteration>0
-                [~,~,out] = knockoutIteration(modelKO,params,WT,out,iteration,KO,prodRate,hsSol);
+                [~,~,out] = knockoutIteration(modelKO,params,WT,out,iteration,KO,growthRate*prodRate,hsSol);
             end
         end
     end

@@ -1,4 +1,4 @@
-function [biomassValues, targetValues, lineHandle] = runProductionEnvelope(model, deletions, lineColor, targetRxn, biomassRxn, geneDelFlag, nPts)
+function [biomassValues, targetValues] = runProductionEnvelope(model, targetRxn, biomassRxn, nPts)
 % runProductionEnvelope
 %   Calculates the byproduct secretion envelope
 %
@@ -30,6 +30,8 @@ solMin  = solMin.x(logical(model.c));
 
 % Create biomass range vector
 biomassValues = linspace(solMin,solMax,nPts);
+targetUpperBound = nan(1,numel(biomassValues));
+targetLowerBound = nan(1,numel(biomassValues));
 
 fprintf('Creating production envelope...   0%% complete');
 % Max/min for target production
@@ -55,10 +57,7 @@ end
 fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 
 % Plot results
-lineHandle=plot([biomassValues fliplr(biomassValues)],[targetUpperBound fliplr(targetLowerBound)],lineColor,'LineWidth',2);
+plot([biomassValues fliplr(biomassValues)],[targetUpperBound fliplr(targetLowerBound)],'blue','LineWidth',2);
 axis tight;
 ylabel([strrep(targetRxn,'_','-') ' (mmol/gDW h)']);
 xlabel('Growth rate (1/h)');
-
-biomassValues = biomassValues';
-targetValues = [targetLowerBound' targetUpperBound'];
