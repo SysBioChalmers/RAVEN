@@ -61,3 +61,5 @@ plot([biomassValues fliplr(biomassValues)],[targetUpperBound fliplr(targetLowerB
 axis tight;
 ylabel([strrep(targetRxn,'_','-') ' (mmol/gDW h)']);
 xlabel('Growth rate (1/h)');
+targetValues = [targetLowerBound; targetUpperBound];
+end
