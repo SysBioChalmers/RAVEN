@@ -64,7 +64,7 @@ end
 nRxns=2; %Number of reactions in the objective function in each iteration
 
 %First check that the model is feasible given the constraints
-[sol,hsSol]=solveLP(model);
+[sol,~]=solveLP(model);
 if isempty(sol.x)
     EM='The model has no feasible solution, likely due to incompatible constraints';
     dispEM(EM);
@@ -85,6 +85,7 @@ if replaceBoundsWithInf==true
     end
 end
 
+[~,hsSol]=solveLP(model);
 %Reactions which can be involved in loops should not be optimized for.
 %Check which reactions reach an arbitary high upper bound
 if nargin<6 || isempty(goodRxns)
