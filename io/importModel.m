@@ -1037,7 +1037,7 @@ end
 if isempty(model.subSystems)
     model=rmfield(model,'subSystems');
 else
-    model.subSystems(cellfun(@isempty,subSystems))={{''}};
+    model.subSystems(cellfun(@isempty,subsystems))={{''}};
 end
 if isempty(model.eccodes)
     model=rmfield(model,'eccodes');
