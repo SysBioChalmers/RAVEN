@@ -151,7 +151,7 @@ if isfield(model,fieldName)
         pos       = model.metComps(pos);
     end
     
-    field = eval(['model.' fieldName]);
+    field = model.(fieldName);
     
     if strcmp(fieldName,'metMiriams')
         if ~isempty(model.metMiriams{pos})
@@ -163,7 +163,7 @@ if isfield(model,fieldName)
                     %As during the following writeField call the value of
                     %'i' would be lost, it is temporarily concatenated to
                     %'name' parameter, which will be edited later
-                    writeField(model, fid, 'newMetMiriams', 'txt', pos, ['      - ' model.newMetMiriamNames{i} '_' num2str(i)], preserveQuotes)
+                    writeField(model, fid, 'newMetMiriams', 'txt', pos, ['      - ' model.newMetMiriamNames{i} '_' sprintf('%d',i)], preserveQuotes)
                 end
             end
         end
@@ -173,7 +173,7 @@ if isfield(model,fieldName)
             fprintf(fid,['    ' name ': !!omap\n']);
             for i=1:size(model.newRxnMiriams,2)
                 if ~isempty(model.newRxnMiriams{pos,i})
-                    writeField(model, fid, 'newRxnMiriams', 'txt', pos, ['      - ' model.newRxnMiriamNames{i} '_' num2str(i)], preserveQuotes)
+                    writeField(model, fid, 'newRxnMiriams', 'txt', pos, ['      - ' model.newRxnMiriamNames{i} '_' sprintf('%d',i)], preserveQuotes)
                 end
             end
         end
@@ -183,7 +183,7 @@ if isfield(model,fieldName)
             fprintf(fid,['    ' name ': !!omap\n']);
             for i=1:size(model.newGeneMiriams,2)
                 if ~isempty(model.newGeneMiriams{pos,i})
-                    writeField(model, fid, 'newGeneMiriams', 'txt', pos, ['      - ' model.newGeneMiriamNames{i} '_' num2str(i)], preserveQuotes)
+                    writeField(model, fid, 'newGeneMiriams', 'txt', pos, ['      - ' model.newGeneMiriamNames{i} '_' sprintf('%d',i)], preserveQuotes)
                 end
             end
         end
@@ -193,7 +193,7 @@ if isfield(model,fieldName)
             fprintf(fid,['    ' name ': !!omap\n']);
             for i=1:size(model.newCompMiriams,2)
                 if ~isempty(model.newCompMiriams{pos,i})
-                    writeField(model, fid, 'newCompMiriams', 'txt', pos, ['      - ' model.newCompMiriamNames{i} '_' num2str(i)], preserveQuotes)
+                    writeField(model, fid, 'newCompMiriams', 'txt', pos, ['      - ' model.newCompMiriamNames{i} '_' sprintf('%d',i)], preserveQuotes)
                 end
             end
         end
@@ -211,7 +211,6 @@ if isfield(model,fieldName)
                 writeField(model, fid, 'coeffs',  'num', i, ['      - ' model.mets{i}], preserveQuotes)
             end
         end
-        
 
     elseif strcmp(fieldName,'rxnEnzMat')
         %S: create header & write each enzyme in a new line
@@ -226,6 +225,7 @@ if isfield(model,fieldName)
                 writeField(model, fid, 'coeffs',  'num', i, ['    - ' model.enzymes{i}], preserveQuotes)
             end
         end        
+
     elseif sum(strcmp({'subSystems','newMetMiriams','newRxnMiriams','newGeneMiriams','newCompMiriams','eccodes'},fieldName)) > 0
         %eccodes/rxnNotes: if 1 write in 1 line, if more create header and list
         if strcmp(fieldName,'subSystems')
@@ -252,19 +252,22 @@ if isfield(model,fieldName)
         else
             list = '';
         end
+        list=strip(list);
 
         if length(list) == 1 && ~strcmp(list{1},'') && ~strcmp(fieldName,'subSystems')
             if preserveQuotes
-                list = strcat('"',strip(list{1}),'"');
+                list = ['"' list{1} '"'];
             end
-            fprintf(fid,['    ' name ': ' strip(list) '\n']);
+            fprintf(fid,['    ' name ': ' list '\n']);
         elseif length(list) > 1 || strcmp(fieldName,'subSystems')
             if preserveQuotes
-                list = strcat('"',strip(list),'"');
+                for j=1:numel(list)
+                    list{j} = ['"' list{j} '"'];
+                end
             end
             fprintf(fid,['    ' name ':\n']);
             for i = 1:length(list)
-                fprintf(fid,[regexprep(name,'(^\s*).*','$1') '        - ' strip(list{i}) '\n']);
+                fprintf(fid,[regexprep(name,'(^\s*).*','$1') '        - ' list{i} '\n']);
             end
         end
         
@@ -273,17 +276,17 @@ if isfield(model,fieldName)
         if strcmp(type,'txt')
             value = field{pos};
             if preserveQuotes && ~isempty(value)
-                value = strcat('"',value,'"');
+                value = ['"',value,'"'];
             end
         elseif strcmp(type,'num')
             if isnan(field(pos))
                 value = [];
             else
-                value = num2str(field(pos),15);
+                value = sprintf('%.15g',full(field(pos)));
             end
         end
         if ~isempty(value)
-            fprintf(fid,['    ' name ': ' strip(value) '\n']);
+            fprintf(fid,['    ' name ': ' value '\n']);
         end
     end
 end
