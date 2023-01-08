@@ -52,7 +52,7 @@ if exist(fullfile(ravenDir,'version.txt'), 'file') == 2
         end
     catch
         fprintf([myStr('   > Checking for latest RAVEN release',40) '%f'])
-        fprintf('Fail\n');
+        fprintf('[\bFail]\b\n');
         fprintf('     Cannot reach GitHub for release info\n');
     end
 else
@@ -75,12 +75,12 @@ try
         savepath
         fprintf('Pass\n')   
     catch
-        fprintf('Fail\n')
+        fprintf('[\bFail]\b\n')
         fprintf(['   You might have to rerun checkInstallation again\n'...
                  '   next time you start up MATLAB\n'])        
     end
 catch
-    fprintf('Fail\n')
+    fprintf('[\bFail]\b\n')
 end
 
 if isunix
@@ -89,7 +89,7 @@ if isunix
     if status == 0
         fprintf('Pass\n')
     else
-        fprintf('Fail\n')
+        fprintf('[\bFail]\b\n')
     end
 end
 
@@ -101,7 +101,7 @@ try
     addJavaPaths();
     fprintf('Pass\n')
 catch
-    fprintf('Fail\n')
+    fprintf('[\bFail]\b\n')
 end
 fprintf([myStr(' > Checking libSBML version',40) '%f'])
 try
@@ -110,11 +110,11 @@ try
         libSBMLver=OutputSBML; % Only works in libSBML 5.17.0+
         fprintf([libSBMLver.libSBML_version_string '\n']);
     catch
-        fprintf('Fail\n')
+        fprintf('[\bFail]\b\n')
         fprintf('   An older libSBML version was found, update to version 5.17.0 or higher for a significant improvement of model import\n');
     end
 catch
-    fprintf('Fail\n')
+    fprintf('[\bFail]\b\n')
     fprintf('   Download libSBML from http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n');
 end
 fprintf(' > Checking model import and export\n')
@@ -124,28 +124,28 @@ fprintf([myStr('   > Import Excel format',40) '%f'])
 if res(1).Passed == 1
     fprintf('Pass\n')
 else
-    fprintf('Fail\n')
+    fprintf('[\bFail]\b\n')
 end
 
 fprintf([myStr('   > Export Excel format',40) '%f'])
 if res(3).Passed == 1
     fprintf('Pass\n')
 else
-    fprintf('Fail\n')
+    fprintf('[\bFail]\b\n')
 end
 
 fprintf([myStr('   > Import SBML format',40) '%f'])
 if res(2).Passed == 1
     fprintf('Pass\n')
 else
-    fprintf('Fail\n')
+    fprintf('[\bFail]\b\n')
 end
 
 fprintf([myStr('   > Export SBML format',40) '%f'])
 if res(4).Passed == 1
     fprintf('Pass\n')
 else
-    fprintf('Fail\n')
+    fprintf('[\bFail]\b\n')
 end
 
 if res(1).Passed~=1 && res(3).Passed~=1 && exist('vaderSentimentScores.m','file')==2
@@ -160,7 +160,7 @@ end
 %     readYaml(ymlFile,true);
 %     fprintf('Pass\n');
 % catch
-%     fprintf('Fail\n');
+%     fprintf('[\bFail]\b\n');
 % end
 
 fprintf('\n=== Model solvers ===\n');
@@ -173,21 +173,21 @@ fprintf([myStr('   > glpk',40) '%f'])
 if res(1).Passed == 1
     fprintf('Pass\n')
 else
-    fprintf('Fail\n')
+    fprintf('[\bFail]\b\n')
 end
 
 fprintf([myStr('   > gurobi',40) '%f'])
 if res(2).Passed == 1
     fprintf('Pass\n')
 else
-    fprintf('Fail\n')
+    fprintf('[\bFail]\b\n')
 end
 
 fprintf([myStr('   > cobra',40) '%f'])
 if res(3).Passed == 1
     fprintf('Pass\n')
 else
-    fprintf('Fail\n')
+    fprintf('[\bFail]\b\n')
 end
 
 fprintf(' > Checking for MILP solvers\n')
@@ -199,21 +199,21 @@ if res(1).Passed == 1
     fprintf(['     While passing here, we do not recommended glpk\n'...
              '     for MILPs due to occasional inconsistent results\n'])
 else
-    fprintf('Fail\n')
+    fprintf('[\bFail]\b\n')
 end
 
 fprintf([myStr('   > gurobi',40) '%f'])
 if res(2).Passed == 1
     fprintf('Pass\n')
 else
-    fprintf('Fail\n')
+    fprintf('[\bFail]\b\n')
 end
 
 fprintf([myStr('   > cobra',40) '%f'])
 if res(3).Passed == 1
     fprintf('Pass\n')
 else
-    fprintf('Fail\n')
+    fprintf('[\bFail]\b\n')
 end
 
 fprintf([myStr(' > Set RAVEN solver',40) '%f'])
@@ -289,7 +289,7 @@ if results.Failed==0 && results.Incomplete==0
     fprintf('Pass\n');
     res=true;
 else
-    fprintf('Fail\n')
+    fprintf('[\bFail]\b\n')
     fprintf('   Download/compile the binary and rerun checkInstallation\n');
     res=false;
 end
