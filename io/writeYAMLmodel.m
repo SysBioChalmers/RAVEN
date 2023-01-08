@@ -109,6 +109,31 @@ for i = 1:length(model.comps)
     writeField(model, fid, 'compMiriams', 'txt', i, '- annotation',             preserveQuotes)
 end
 
+
+%EC-model:
+if isfield(model,'ec')
+    fprintf(fid,'- ec-rxns:\n');
+    for i = 1:length(model.ec.rxns)
+        fprintf(fid,'  - !!omap\n');
+        writeField(model.ec, fid, 'rxns',      'txt', i, '- id',      preserveQuotes)
+        writeField(model.ec, fid, 'kcat',      'num', i, '- kcat',    preserveQuotes)
+        writeField(model.ec, fid, 'source',    'txt', i, '- source',  preserveQuotes)
+        writeField(model.ec, fid, 'notes',     'txt', i, '- notes',   preserveQuotes)
+        writeField(model.ec, fid, 'eccodes',   'txt', i, '- eccodes', preserveQuotes)
+        writeField(model.ec, fid, 'rxnEnzMat', 'txt', i, '- enzymes', preserveQuotes)
+    end
+
+    fprintf(fid,'- ec-enzymes:\n');
+    for i = 1:length(model.ec.genes)
+        fprintf(fid,'  - !!omap\n');
+        writeField(model.ec, fid, 'genes',    'txt', i, '- genes',    preserveQuotes)
+        writeField(model.ec, fid, 'enzymes',  'txt', i, '- enzymes',  preserveQuotes)
+        writeField(model.ec, fid, 'mw',       'num', i, '- mw',       preserveQuotes)
+        writeField(model.ec, fid, 'sequence', 'txt', i, '- sequence', preserveQuotes)
+        writeField(model.ec, fid, 'concs',    'num', i, '- concs',    preserveQuotes)
+    end
+end
+
 %Close file:
 fclose(fid);
 
@@ -187,6 +212,20 @@ if isfield(model,fieldName)
             end
         end
         
+
+    elseif strcmp(fieldName,'rxnEnzMat')
+        %S: create header & write each enzyme in a new line
+        fprintf(fid,['    ' name ': !!omap\n']);
+        if sum(field(pos,:) ~= 0) > 0
+            model.enzymes = model.enzymes(field(pos,:) ~= 0);
+            model.coeffs  = field(pos,field(pos,:) ~= 0);
+            %Sort metabolites:
+            [model.enzymes,order] = sort(model.enzymes);
+            model.coeffs          = model.coeffs(order);
+            for i = 1:length(model.enzymes)
+                writeField(model, fid, 'coeffs',  'num', i, ['    - ' model.enzymes{i}], preserveQuotes)
+            end
+        end        
     elseif sum(strcmp({'subSystems','newMetMiriams','newRxnMiriams','newGeneMiriams','newCompMiriams','eccodes'},fieldName)) > 0
         %eccodes/rxnNotes: if 1 write in 1 line, if more create header and list
         if strcmp(fieldName,'subSystems')
@@ -296,4 +335,8 @@ if isfield(model,'annotation')
         fprintf(fid, ['    sourceUrl: "',    model.annotation.sourceUrl,          '"\n']);
     end
 end
+if isfield(model,'ec')
+    fprintf(fid,['    geckoLight: "' model.ec.geckoLight'"\n']);
 end
+end
+
