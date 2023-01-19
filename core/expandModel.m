@@ -3,20 +3,23 @@ function [newModel, rxnToCheck]=expandModel(model)
 %   Expands a model which uses several gene associations for one reaction.
 %   Each such reaction is split into several reactions, each under the control
 %   of only one gene.
+%  
+% Input:
+%   model       model structure
+% 
+% Output:
+%   newModel    model structure with separate reactions for iso-enzymes, where
+%               the reaction ids are renamed as to id_EXP_1, id_EXP_2, etc. 
+%   rxnToCheck  cell array with original reaction identifiers for those
+%               that contained nested and/or-relationships in grRules.
 %
-%   model       A model structure
-%
-%   newModel    A model structure with separate reactions for iso-enzymes
-%   rxnToCheck  Cell array with original reaction identifiers for those
-%               that contained nested and/or-relationships in grRules
-%
-%	The reaction ids are renamed according to id_EXP_1, id_EXP_2..
-%
-%   NOTE: As it is now this code might not work for advanced grRules strings
-%   that involve nested expressions of 'and' and 'or'
+%   NOTE: grRules strings that involve nested expressions of 'and' and 'or'
+%         might not be parsed correctly if they are not standardized (if the
+%         standardizeGrRules functions was not first run on the model). For
+%         those reactions, it is therefore advisable to inspect the reactions in
+%         rxnToCheck to confirm correct model expansion.
 %
 %   Usage: [newModel, rxnToCheck]=expandModel(model)
-
 
 %Check how many reactions we will create (the number of or:s in the GPRs).
 %This way, we can preallocate all fields and save much computation time
@@ -70,12 +73,9 @@ if toAdd > 0
     end
     
     %now expand the more complex fields - will be filled in later
-
     model.rxns=[model.rxns;cell(toAdd,1)];
     model.grRules=[model.grRules;cell(toAdd,1)];
     model.rxnGeneMat=[model.rxnGeneMat;sparse(toAdd,size(model.rxnGeneMat,2))];
-
-
     
     %Loop throught those reactions and fill in the expanded data
     nextIndex = prevNumRxns + 1;
@@ -135,13 +135,8 @@ else
     newModel=model;
 end
 
-
-warning(['The following reactions contain nested and/or-relations, which might not have been interpreted correctly:%s\n' ...
-    strjoin(rxnToCheck,', ')],'');
-
 %Fix grRules and reconstruct rxnGeneMat
 [grRules,rxnGeneMat] = standardizeGrRules(newModel,true);
 newModel.grRules = grRules;
 newModel.rxnGeneMat = rxnGeneMat;
-    
 end
