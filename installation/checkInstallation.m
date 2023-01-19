@@ -36,13 +36,13 @@ if exist(fullfile(ravenDir,'version.txt'), 'file') == 2
         for i=1:3
             if currVer(i)<newVerNum(i)
                 fprintf([myStr('   > Latest RAVEN release available',40) '%f'])
-                fprintf([newVer,'\n'])
+                fprintf(['[\b' newVer,']\b\n'])
                 hasGit=exist(fullfile(ravenDir,'.git'),'file');
                 if hasGit==7
-                    fprintf('     Run git pull in your favourite git client\n')
-                    fprintf('     to get the latest RAVEN release\n');
+                    fprintf('     [\bRun git pull in your favourite git client]\b\n')
+                    fprintf('     [\bto get the latest RAVEN release]\b\n');
                 else
-                    fprintf([myStr('     Instructions on how to upgrade',40) '%f'])
+                    fprintf([myStr('     [\bInstructions on how to upgrade]\b',40) '%f'])
                     fprintf('<a href="https://github.com/SysBioChalmers/RAVEN/wiki/Installation#upgrade-to-latest-raven-release">here</a>\n');
                 end
                 break
@@ -53,7 +53,7 @@ if exist(fullfile(ravenDir,'version.txt'), 'file') == 2
     catch
         fprintf([myStr('   > Checking for latest RAVEN release',40) '%f'])
         fprintf('[\bFail]\b\n');
-        fprintf('     Cannot reach GitHub for release info\n');
+        fprintf('     [\bCannot reach GitHub for release info]\b\n');
     end
 else
     fprintf('DEVELOPMENT\n');
