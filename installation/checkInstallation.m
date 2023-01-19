@@ -309,20 +309,33 @@ function status = makeBinaryExecutable()
 if ispc
     status = 0; % No need to run on Windows
     return;
-elseif ismac
-    binaryEnd='.mac';
-else
-    binaryEnd='';
 end
 
-binaryList = {'blastp','makeblastdb','diamond','cd-hit','hmmbuild','hmmsearch'};
-binaryList = strcat(binaryList,binaryEnd);
-binaryList = [binaryList, 'TranslateSBML','OutputSBML','glpkcc','mafft.bat'];
-for i=1:numel(binaryList)
-    binPath = which(binaryList{i});
+binDir = fullfile(findRAVENroot(),'software');
+
+binList = {fullfile(binDir,'blast+','blastp');
+           fullfile(binDir,'blast+','makeblastdb');
+           fullfile(binDir,'cd-hit','cd-hit');
+           fullfile(binDir,'diamond','diamond');
+           fullfile(binDir,'hmmer','hmmbuild');
+           fullfile(binDir,'hmmer','hmmsearch');
+           fullfile(binDir,'GLPKmex','glpkcc');
+           fullfile(binDir,'libSBML','TranslateSBML');
+           fullfile(binDir,'libSBML','OutputSBML');
+           fullfile(binDir,'mafft-linux64','mafft.bat');
+           fullfile(binDir,'mafft-mac','mafft.bat');};
+if ismac
+    binList(1:5) = strcat(binList(1:5),'.mac');
+    binList(10) = [];
+else
+    binList(9) = [];
+end
+
+for i=1:numel(binList)
+    binPath = which(binList{i});
     [status,cmdout] = system(['chmod +x "' binPath '"']);
     if status ~= 0
-        error('Failed to make %s executable: %s ',binaryList{i},strip(cmdout))
+        error('Failed to make %s executable: %s ',binList{i},strip(cmdout))
     end
 end
 end
