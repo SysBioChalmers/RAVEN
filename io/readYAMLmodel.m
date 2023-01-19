@@ -93,6 +93,30 @@ for i=1:size(modelFields,1)
     model.(modelFields{i,1})=modelFields{i,2};
 end
 
+% If GECKO model
+if any(contains(line_key,'geckoLight'))
+    isGECKO=true;
+    ecFields = {'geckoLight', false;...
+                      'rxns', {};...
+                      'kcat', {};...
+                    'source', cell(0,0);...
+                     'notes', cell(0,0);...
+                   'eccodes', cell(0,0);...
+                     'genes', cell(0,0);...
+                   'enzymes', cell(0,0);...
+                        'mw', cell(0,0);...
+                  'sequence', cell(0,0);...
+                     'concs', cell(0,0);...
+                 'rxnEnzMat', []};
+    for i=1:size(ecFields,1)
+        model.ec.(ecFields{i,1})=ecFields{i,2};
+    end
+    ecGecko=cell(25000,2);      ecGeckoNo=1;
+    enzStoich=cell(100000,3);   enzStoichNo=1;
+else
+    isGECKO=false;
+end
+
 section = 0;
 metMiriams=cell(25000,3);   metMirNo=1;
 rxnMiriams=cell(25000,3);   rxnMirNo=1;
@@ -146,6 +170,20 @@ for i=1:numel(line_key)
             end
             pos=0;
             continue
+        case '- ec-rxns:'
+            section = 6;
+            if verbose
+                fprintf('\t%d\n', section);
+            end
+            pos=0;
+            continue
+        case '- ec-enzymes:'
+            section = 7;
+            if verbose
+                fprintf('\t%d\n', section);
+            end
+            pos=0;
+            continue
     end
 
     % skip over empty keys
@@ -182,6 +220,10 @@ for i=1:numel(line_key)
                 model.annotation.email = tline_value;
             case 'organization'
                 model.annotation.organization = tline_value;
+            case 'geckoLight'
+                if strcmp(tline_value,'true')
+                    model.ec.geckoLight = true;
+                end
         end; continue
     end
 
@@ -331,6 +373,65 @@ for i=1:numel(line_key)
         model.comps(end+1,1) = {tline_key};
         model.compNames(end+1,1) = {tline_value};
     end
+
+    % import ec reaction info
+    if section == 6
+        switch tline_key
+            case 'id'
+                pos = pos + 1;
+                model.ec = readFieldValue(model.ec, 'rxns', tline_value, pos);
+                readList='';
+            case 'kcat'
+                model.ec = readFieldValue(model.ec, 'kcat', tline_value, pos);
+                readList='';
+            case 'source'
+                model.ec = readFieldValue(model.ec, 'source', tline_value, pos);
+                readList='';
+            case 'notes'
+                model.ec = readFieldValue(model.ec, 'notes', tline_value, pos);
+                readList='';
+            case 'eccodes'
+                if isempty(tline_value)
+                    readList = 'eccodes';
+                else
+                    ecGecko(ecGeckoNo,1:2)={pos,tline_value};
+                    ecGeckoNo=ecGeckoNo+1;
+                end
+            case 'enzymes'
+                readList = 'enzStoich';
+            otherwise
+                switch readList
+                    case 'eccodes'
+                        ecGecko(ecGeckoNo,1:2)={pos,regexprep(tline_value,'^ +- "?(.*)"?$','$1')};
+                        ecGeckoNo=ecGeckoNo+1;
+                    case 'enzStoich'
+                        coeff = sscanf(tline_value,'%f');
+                        enzStoich(enzStoichNo,1:3)={pos,tline_key,coeff};
+                        enzStoichNo=enzStoichNo+1;
+                    otherwise
+                        error(['Unknown entry in yaml file: ' tline_raw])
+                end
+        end; continue
+    end
+
+    % import ec enzyme info
+    if section == 7
+        switch tline_key
+            case 'genes'
+                pos = pos + 1;
+                model.ec = readFieldValue(model.ec, 'genes', tline_value, pos);
+            case 'enzymes'
+                model.ec = readFieldValue(model.ec, 'enzymes', tline_value, pos);
+            case 'mw'
+                model.ec = readFieldValue(model.ec, 'mw', tline_value, pos);
+            case 'sequence'
+                model.ec = readFieldValue(model.ec, 'sequence', tline_value, pos);
+            case 'concs'
+                model.ec = readFieldValue(model.ec, 'concs', tline_value, pos);
+            otherwise
+                error(['Unknown entry in yaml file: ' tline_raw])
+        end; continue
+    end
 end
 
 %Parse annotations
@@ -473,18 +574,60 @@ else
     error('The gene list and grRules are inconsistent.');
 end
 
+% Finalize GECKO model
+if isGECKO
+    % Fill in empty fields and empty entries
+    for i={'kcat','source','notes'} % Even keep empty
+        model.ec = emptyOrFill(model.ec,i{1},{''},'rxns',true);
+    end
+    for i={'enzymes','mw','sequence'}
+        model.ec = emptyOrFill(model.ec,i{1},{''},'genes');
+    end
+    % Do not keep empty fields
+    model.ec = emptyOrFill(model.ec,'kcat',{''},'rxns',false);
+    model.ec = emptyOrFill(model.ec,'concs',{''},'genes',false);
+    % Change string to double
+    for i={'kcat','mw','concs'}
+        if isfield(model.ec,i{1})
+            model.ec.(i{1}) = str2double(model.ec.(i{1}));
+        end
+    end
+    % Fill rxnEnzMat
+    rxnIdx              = cellfun(@isempty, enzStoich(:,1));
+    enzStoich(rxnIdx,:) = '';
+    rxnIdx              = cell2mat(enzStoich(:,1));
+    [~,enzIdx]          = ismember(enzStoich(:,2),model.ec.enzymes);
+    coeffs              = cell2mat(enzStoich(:,3));
+    model.ec.rxnEnzMat  = zeros(max(rxnIdx), max(enzIdx));
+    linearIndices       = sub2ind([max(rxnIdx), max(enzIdx)], rxnIdx, enzIdx);
+    model.ec.rxnEnzMat(linearIndices) = coeffs;
+    %Parse ec-codes
+    if ~isempty(ecGecko)
+        locs = cell2mat(ecGecko(:,1));
+        for i=unique(locs)'
+            ecGeckoCat=strjoin(ecGecko(locs==i,2),';');
+            model.ec.eccodes{i,1}=ecGeckoCat;
+        end
+        emptyEc=cellfun(@isempty,model.ec.eccodes);
+        model.ec.eccodes(emptyEc)={''};
+    end
+end
+
 if verbose
     fprintf(' Done!\n');
 end
 end
 
-function model = emptyOrFill(model,field,emptyEntry,type)
+function model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)
+if nargin<5
+    keepEmpty=false;
+end
 if isnumeric(emptyEntry)
     emptyCells=isempty(model.(field));
 else
     emptyCells=cellfun(@isempty,model.(field));
 end
-if all(emptyCells)
+if all(emptyCells) && ~keepEmpty
     model = rmfield(model, field);
 elseif numel(model.(field))<numel(model.(type))
     model.(field)(end+1:numel(model.(type)),1)=emptyEntry;

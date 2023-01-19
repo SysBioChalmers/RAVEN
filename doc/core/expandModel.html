@@ -31,17 +31,21 @@
    Expands a model which uses several gene associations for one reaction.
    Each such reaction is split into several reactions, each under the control
    of only one gene.
+  
+ Input:
+   model       model structure
+ 
+ Output:
+   newModel    model structure with separate reactions for iso-enzymes, where
+               the reaction ids are renamed as to id_EXP_1, id_EXP_2, etc. 
+   rxnToCheck  cell array with original reaction identifiers for those
+               that contained nested and/or-relationships in grRules.
 
-   model       A model structure
-
-   newModel    A model structure with separate reactions for iso-enzymes
-   rxnToCheck  Cell array with original reaction identifiers for those
-               that contained nested and/or-relationships in grRules
-
-    The reaction ids are renamed according to id_EXP_1, id_EXP_2..
-
-   NOTE: As it is now this code might not work for advanced grRules strings
-   that involve nested expressions of 'and' and 'or'
+   NOTE: grRules strings that involve nested expressions of 'and' and 'or'
+         might not be parsed correctly if they are not standardized (if the
+         standardizeGrRules functions was not first run on the model). For
+         those reactions, it is therefore advisable to inspect the reactions in
+         rxnToCheck to confirm correct model expansion.
 
    Usage: [newModel, rxnToCheck]=expandModel(model)</pre></div>
 
@@ -64,78 +68,78 @@ This function is called by:
 0004 <span class="comment">%   Each such reaction is split into several reactions, each under the control</span>
 0005 <span class="comment">%   of only one gene.</span>
 0006 <span class="comment">%</span>
-0007 <span class="comment">%   model       A model structure</span>
-0008 <span class="comment">%</span>
-0009 <span class="comment">%   newModel    A model structure with separate reactions for iso-enzymes</span>
-0010 <span class="comment">%   rxnToCheck  Cell array with original reaction identifiers for those</span>
-0011 <span class="comment">%               that contained nested and/or-relationships in grRules</span>
-0012 <span class="comment">%</span>
-0013 <span class="comment">%    The reaction ids are renamed according to id_EXP_1, id_EXP_2..</span>
-0014 <span class="comment">%</span>
-0015 <span class="comment">%   NOTE: As it is now this code might not work for advanced grRules strings</span>
-0016 <span class="comment">%   that involve nested expressions of 'and' and 'or'</span>
-0017 <span class="comment">%</span>
-0018 <span class="comment">%   Usage: [newModel, rxnToCheck]=expandModel(model)</span>
-0019 
-0020 
-0021 <span class="comment">%Check how many reactions we will create (the number of or:s in the GPRs).</span>
-0022 <span class="comment">%This way, we can preallocate all fields and save much computation time</span>
+0007 <span class="comment">% Input:</span>
+0008 <span class="comment">%   model       model structure</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% Output:</span>
+0011 <span class="comment">%   newModel    model structure with separate reactions for iso-enzymes, where</span>
+0012 <span class="comment">%               the reaction ids are renamed as to id_EXP_1, id_EXP_2, etc.</span>
+0013 <span class="comment">%   rxnToCheck  cell array with original reaction identifiers for those</span>
+0014 <span class="comment">%               that contained nested and/or-relationships in grRules.</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">%   NOTE: grRules strings that involve nested expressions of 'and' and 'or'</span>
+0017 <span class="comment">%         might not be parsed correctly if they are not standardized (if the</span>
+0018 <span class="comment">%         standardizeGrRules functions was not first run on the model). For</span>
+0019 <span class="comment">%         those reactions, it is therefore advisable to inspect the reactions in</span>
+0020 <span class="comment">%         rxnToCheck to confirm correct model expansion.</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">%   Usage: [newModel, rxnToCheck]=expandModel(model)</span>
 0023 
-0024 numOrs = count(model.grRules, <span class="string">' or '</span>);
-0025 toAdd = sum(numOrs);
-0026 prevNumRxns = length(model.rxns);
-0027 rxnToCheck={};
-0028 <span class="keyword">if</span> toAdd &gt; 0
-0029     <span class="comment">%Calculate indices to expand</span>
-0030     <span class="comment">%For example, if a reaction with index x has 2 or:s, meaning it has 3</span>
-0031     <span class="comment">%reactions after the split, we should add two copies of this reaction</span>
-0032     <span class="comment">%For fields that should just be copied to the new reactions, we just keep</span>
-0033     <span class="comment">%track of that there are two copies, i.e., we add x x to this vector.</span>
-0034     <span class="comment">%That is exactly what repelem does for us.</span>
-0035     cpyIndices = repelem(1:prevNumRxns, numOrs);
-0036     
-0037     <span class="comment">%Copy all fields that should just be copied</span>
-0038     model.S=[model.S model.S(:,cpyIndices)];
-0039     model.rxnNames=[model.rxnNames;model.rxnNames(cpyIndices)];
-0040     model.lb=[model.lb;model.lb(cpyIndices)];
-0041     model.ub=[model.ub;model.ub(cpyIndices)];
-0042     model.rev=[model.rev;model.rev(cpyIndices)];
-0043     model.c=[model.c;model.c(cpyIndices)];
-0044     <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
-0045         model.subSystems=[model.subSystems;model.subSystems(cpyIndices)];
-0046     <span class="keyword">end</span>
-0047     <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
-0048         model.eccodes=[model.eccodes;model.eccodes(cpyIndices)];
+0024 <span class="comment">%Check how many reactions we will create (the number of or:s in the GPRs).</span>
+0025 <span class="comment">%This way, we can preallocate all fields and save much computation time</span>
+0026 
+0027 numOrs = count(model.grRules, <span class="string">' or '</span>);
+0028 toAdd = sum(numOrs);
+0029 prevNumRxns = length(model.rxns);
+0030 rxnToCheck={};
+0031 <span class="keyword">if</span> toAdd &gt; 0
+0032     <span class="comment">%Calculate indices to expand</span>
+0033     <span class="comment">%For example, if a reaction with index x has 2 or:s, meaning it has 3</span>
+0034     <span class="comment">%reactions after the split, we should add two copies of this reaction</span>
+0035     <span class="comment">%For fields that should just be copied to the new reactions, we just keep</span>
+0036     <span class="comment">%track of that there are two copies, i.e., we add x x to this vector.</span>
+0037     <span class="comment">%That is exactly what repelem does for us.</span>
+0038     cpyIndices = repelem(1:prevNumRxns, numOrs);
+0039     
+0040     <span class="comment">%Copy all fields that should just be copied</span>
+0041     model.S=[model.S model.S(:,cpyIndices)];
+0042     model.rxnNames=[model.rxnNames;model.rxnNames(cpyIndices)];
+0043     model.lb=[model.lb;model.lb(cpyIndices)];
+0044     model.ub=[model.ub;model.ub(cpyIndices)];
+0045     model.rev=[model.rev;model.rev(cpyIndices)];
+0046     model.c=[model.c;model.c(cpyIndices)];
+0047     <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
+0048         model.subSystems=[model.subSystems;model.subSystems(cpyIndices)];
 0049     <span class="keyword">end</span>
-0050     <span class="keyword">if</span> isfield(model,<span class="string">'equations'</span>)
-0051         model.equations=[model.equations;model.equations(cpyIndices)];
+0050     <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
+0051         model.eccodes=[model.eccodes;model.eccodes(cpyIndices)];
 0052     <span class="keyword">end</span>
-0053     <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
-0054         model.rxnMiriams=[model.rxnMiriams;model.rxnMiriams(cpyIndices)];
+0053     <span class="keyword">if</span> isfield(model,<span class="string">'equations'</span>)
+0054         model.equations=[model.equations;model.equations(cpyIndices)];
 0055     <span class="keyword">end</span>
-0056     <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
-0057         model.rxnComps=[model.rxnComps;model.rxnComps(cpyIndices)];
+0056     <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
+0057         model.rxnMiriams=[model.rxnMiriams;model.rxnMiriams(cpyIndices)];
 0058     <span class="keyword">end</span>
-0059     <span class="keyword">if</span> isfield(model,<span class="string">'rxnFrom'</span>)
-0060         model.rxnFrom=[model.rxnFrom;model.rxnFrom(cpyIndices)];
+0059     <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
+0060         model.rxnComps=[model.rxnComps;model.rxnComps(cpyIndices)];
 0061     <span class="keyword">end</span>
-0062     <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
-0063         model.rxnNotes=[model.rxnNotes;model.rxnNotes(cpyIndices)];
+0062     <span class="keyword">if</span> isfield(model,<span class="string">'rxnFrom'</span>)
+0063         model.rxnFrom=[model.rxnFrom;model.rxnFrom(cpyIndices)];
 0064     <span class="keyword">end</span>
-0065     <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
-0066         model.rxnReferences=[model.rxnReferences;model.rxnReferences(cpyIndices)];
+0065     <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
+0066         model.rxnNotes=[model.rxnNotes;model.rxnNotes(cpyIndices)];
 0067     <span class="keyword">end</span>
-0068     <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
-0069         model.rxnConfidenceScores=[model.rxnConfidenceScores;model.rxnConfidenceScores(cpyIndices)];
+0068     <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
+0069         model.rxnReferences=[model.rxnReferences;model.rxnReferences(cpyIndices)];
 0070     <span class="keyword">end</span>
-0071     
-0072     <span class="comment">%now expand the more complex fields - will be filled in later</span>
-0073 
-0074     model.rxns=[model.rxns;cell(toAdd,1)];
-0075     model.grRules=[model.grRules;cell(toAdd,1)];
-0076     model.rxnGeneMat=[model.rxnGeneMat;sparse(toAdd,size(model.rxnGeneMat,2))];
-0077 
-0078 
+0071     <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
+0072         model.rxnConfidenceScores=[model.rxnConfidenceScores;model.rxnConfidenceScores(cpyIndices)];
+0073     <span class="keyword">end</span>
+0074     
+0075     <span class="comment">%now expand the more complex fields - will be filled in later</span>
+0076     model.rxns=[model.rxns;cell(toAdd,1)];
+0077     model.grRules=[model.grRules;cell(toAdd,1)];
+0078     model.rxnGeneMat=[model.rxnGeneMat;sparse(toAdd,size(model.rxnGeneMat,2))];
 0079     
 0080     <span class="comment">%Loop throught those reactions and fill in the expanded data</span>
 0081     nextIndex = prevNumRxns + 1;
@@ -195,16 +199,11 @@ This function is called by:
 0135     newModel=model;
 0136 <span class="keyword">end</span>
 0137 
-0138 
-0139 warning([<span class="string">'The following reactions contain nested and/or-relations, which might not have been interpreted correctly:%s\n'</span> <span class="keyword">...</span>
-0140     strjoin(rxnToCheck,<span class="string">', '</span>)],<span class="string">''</span>);
-0141 
-0142 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
-0143 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(newModel,true);
-0144 newModel.grRules = grRules;
-0145 newModel.rxnGeneMat = rxnGeneMat;
-0146     
-0147 <span class="keyword">end</span></pre></div>
+0138 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
+0139 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(newModel,true);
+0140 newModel.grRules = grRules;
+0141 newModel.rxnGeneMat = rxnGeneMat;
+0142 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
