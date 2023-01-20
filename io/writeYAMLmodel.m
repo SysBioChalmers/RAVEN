@@ -339,7 +339,12 @@ if isfield(model,'annotation')
     end
 end
 if isfield(model,'ec')
-    fprintf(fid,['    geckoLight: "' model.ec.geckoLight'"\n']);
+    if model.ec.geckoLight
+        geckoLight = 'true';
+    else
+        geckoLight = 'false';
+    end
+    fprintf(fid,['    geckoLight: "' geckoLight '"\n']);
 end
 end
 
