@@ -326,5 +326,6 @@ for i=1:numel(taskStructure)
         dispEM(EM,false);
     end
 end
+model.b(:,2) = [];  % resume field b
 outModel=model;
 end

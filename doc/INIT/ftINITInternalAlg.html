@@ -479,65 +479,73 @@ This function is called by:
 0382     prob.csense = <span class="string">'='</span>;
 0383 <span class="keyword">end</span>
 0384 
-0385 params.intTol = 10^-8; <span class="comment">%This value seems to work - making it smaller may slow the solver down.</span>
-0386 
-0387 prob.osense = 1; <span class="comment">%minimize</span>
-0388 
-0389 <span class="keyword">if</span> ~isempty(startVals)
-0390      prob.start = startVals; <span class="comment">%This doesn't work...</span>
-0391 <span class="keyword">end</span>
-0392 
-0393 res=optimizeProb(prob,params,verbose);
+0385 params.intTol = 10^-7; <span class="comment">%This value is very important. If set too low</span>
+0386                        <span class="comment">%there is a risk that gurobi fails due to numerical</span>
+0387                        <span class="comment">%issues - this happened for Gurobi v. 10.0 with TestModelL.</span>
+0388                        <span class="comment">%On the other hand, it shouldn't be too large</span>
+0389                        <span class="comment">%either. With this value, fluxes of 10-7 can slip</span>
+0390                        <span class="comment">%through, which should be fine. Another option if</span>
+0391                        <span class="comment">%this becomes a problem is to set NumericFocus=2,</span>
+0392                        <span class="comment">%which makes the solver slower but fixes the issue</span>
+0393                        <span class="comment">%with TestModelL.</span>
 0394 
-0395 
-0396 <span class="keyword">if</span> ~checkSolution(res)
-0397     <span class="keyword">if</span> strcmp(res.origStat, <span class="string">'TIME_LIMIT'</span>)
-0398         EM=<span class="string">'Time limit reached without finding a solution. Try increasing the TimeLimit parameter.'</span>;
-0399     <span class="keyword">else</span>
-0400         EM=<span class="string">'The problem is infeasible'</span>;
-0401     <span class="keyword">end</span>
-0402     dispEM(EM);
-0403 <span class="keyword">end</span>
-0404 
-0405 <span class="comment">%get the on/off vals</span>
-0406 onoff = ones(nRxnsWithOnOff,1);<span class="comment">%standard is on, i.e. all reactions not included in the problem + ess is on</span>
-0407 onoff(posIrrevRxns) = res.full(onoffPosIrrev);
-0408 onoff(posRevRxns) = res.full(onoffPosRev);
-0409 onoff(negIrrevRxns) = res.full(onoffNegIrrev);
-0410 onoff(negRevRxns) = res.full(onoffNegRev);
-0411 
-0412 onoff2 = zeros(nRxnsWithOnOff,1);<span class="comment">%standard is off, i.e. all reactions not included in the problem + ess is off</span>
-0413 onoff2(posIrrevRxns) = res.full(onoffPosIrrev);
-0414 onoff2(posRevRxns) = res.full(onoffPosRev);
-0415 onoff2(negIrrevRxns) = res.full(onoffNegIrrev);
-0416 onoff2(negRevRxns) = res.full(onoffNegRev);
-0417 
-0418 
-0419 <span class="comment">%investigate a bit - this code could be used for fault finding. We have</span>
-0420 <span class="comment">%this code commented out, but it is definitely worth testing this if for example</span>
-0421 <span class="comment">%the solver is changed.</span>
-0422 <span class="comment">%problematic = onoff &lt; 0.99 &amp; onoff &gt; 0.01 &amp; (rxnScores ~= 0).';</span>
-0423 <span class="comment">%if sum(problematic) &gt; 0</span>
-0424 <span class="comment">%    disp('There are reactions that are in between on and off in the MILP. This may be due to the MILP parameter settings, the tolerances may be too large.')</span>
-0425 <span class="comment">%    disp(['No problematic reactions: ', num2str(sum(problematic))])</span>
-0426 <span class="comment">%end</span>
-0427 
-0428 <span class="comment">%so, it is only positive that are problematic. Likely because the 0.1 is too large. Test to change to 0.01</span>
-0429 <span class="comment">%unique(onoff(onoff &lt; 0.99 &amp; onoff &gt; 0.01))</span>
-0430 
-0431 <span class="comment">%Get all reactions used in the irreversible model</span>
-0432 <span class="comment">%The reaction score check is for metabolomics - we add those reactions as</span>
-0433 <span class="comment">%positive even though the score is 0. And, we don't want them included in the</span>
-0434 <span class="comment">%results.</span>
-0435 deletedRxns=(onoff &lt; 0.5).' &amp; (rxnScores ~= 0).'; 
-0436 turnedOnRxns=(onoff2 &gt;= 0.5).' &amp; (rxnScores ~= 0).';
-0437 
-0438 fluxes = res.full(1:nRxns);
-0439 
-0440 <span class="comment">%extract the met data</span>
-0441 metProduction = logical(round(res.full(metVarInd)));
-0442 
-0443 <span class="keyword">end</span></pre></div>
+0395 prob.osense = 1; <span class="comment">%minimize</span>
+0396 
+0397 <span class="keyword">if</span> ~isempty(startVals)
+0398      prob.start = startVals; <span class="comment">%This doesn't work...</span>
+0399 <span class="keyword">end</span>
+0400 
+0401 res=optimizeProb(prob,params,verbose);
+0402 
+0403 
+0404 <span class="keyword">if</span> ~checkSolution(res)
+0405     <span class="keyword">if</span> strcmp(res.origStat, <span class="string">'TIME_LIMIT'</span>)
+0406         EM=<span class="string">'Time limit reached without finding a solution. Try increasing the TimeLimit parameter.'</span>;
+0407     <span class="keyword">else</span>
+0408         EM=<span class="string">'The problem is infeasible'</span>;
+0409     <span class="keyword">end</span>
+0410     dispEM(EM);
+0411 <span class="keyword">end</span>
+0412 
+0413 <span class="comment">%get the on/off vals</span>
+0414 onoff = ones(nRxnsWithOnOff,1);<span class="comment">%standard is on, i.e. all reactions not included in the problem + ess is on</span>
+0415 onoff(posIrrevRxns) = res.full(onoffPosIrrev);
+0416 onoff(posRevRxns) = res.full(onoffPosRev);
+0417 onoff(negIrrevRxns) = res.full(onoffNegIrrev);
+0418 onoff(negRevRxns) = res.full(onoffNegRev);
+0419 
+0420 onoff2 = zeros(nRxnsWithOnOff,1);<span class="comment">%standard is off, i.e. all reactions not included in the problem + ess is off</span>
+0421 onoff2(posIrrevRxns) = res.full(onoffPosIrrev);
+0422 onoff2(posRevRxns) = res.full(onoffPosRev);
+0423 onoff2(negIrrevRxns) = res.full(onoffNegIrrev);
+0424 onoff2(negRevRxns) = res.full(onoffNegRev);
+0425 
+0426 
+0427 <span class="comment">%investigate a bit - this code could be used for fault finding. We have</span>
+0428 <span class="comment">%this code commented out, but it is definitely worth testing this if for example</span>
+0429 <span class="comment">%the solver is changed.</span>
+0430 <span class="comment">%problematic = onoff &lt; 0.99 &amp; onoff &gt; 0.01 &amp; (rxnScores ~= 0).';</span>
+0431 <span class="comment">%if sum(problematic) &gt; 0</span>
+0432 <span class="comment">%    disp('There are reactions that are in between on and off in the MILP. This may be due to the MILP parameter settings, the tolerances may be too large.')</span>
+0433 <span class="comment">%    disp(['No problematic reactions: ', num2str(sum(problematic))])</span>
+0434 <span class="comment">%end</span>
+0435 
+0436 <span class="comment">%so, it is only positive that are problematic. Likely because the 0.1 is too large. Test to change to 0.01</span>
+0437 <span class="comment">%unique(onoff(onoff &lt; 0.99 &amp; onoff &gt; 0.01))</span>
+0438 
+0439 <span class="comment">%Get all reactions used in the irreversible model</span>
+0440 <span class="comment">%The reaction score check is for metabolomics - we add those reactions as</span>
+0441 <span class="comment">%positive even though the score is 0. And, we don't want them included in the</span>
+0442 <span class="comment">%results.</span>
+0443 deletedRxns=(onoff &lt; 0.5).' &amp; (rxnScores ~= 0).'; 
+0444 turnedOnRxns=(onoff2 &gt;= 0.5).' &amp; (rxnScores ~= 0).';
+0445 
+0446 fluxes = res.full(1:nRxns);
+0447 
+0448 <span class="comment">%extract the met data</span>
+0449 metProduction = logical(round(res.full(metVarInd)));
+0450 
+0451 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
