@@ -382,7 +382,15 @@ else
     prob.csense = '=';
 end
 
-params.intTol = 10^-8; %This value seems to work - making it smaller may slow the solver down.
+params.intTol = 10^-7; %This value is very important. If set too low
+                       %there is a risk that gurobi fails due to numerical
+                       %issues - this happened for Gurobi v. 10.0 with TestModelL.
+                       %On the other hand, it shouldn't be too large
+                       %either. With this value, fluxes of 10-7 can slip
+                       %through, which should be fine. Another option if
+                       %this becomes a problem is to set NumericFocus=2,
+                       %which makes the solver slower but fixes the issue
+                       %with TestModelL.
 
 prob.osense = 1; %minimize
 
