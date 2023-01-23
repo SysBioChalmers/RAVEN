@@ -17,7 +17,7 @@ if any(strcmp(addList.Name,'RAVEN Toolbox'))
 end
 
 % Get current paths
-currPath  = transpose(strsplit(path(),';'));
+currPath  = transpose(strsplit(path(),{';',':'}));
 ravenPath = false(numel(currPath),1);
 for i=1:numel(currPath)
     dirCont = ls(currPath{i});
