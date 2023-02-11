@@ -684,7 +684,7 @@ for i=1:numel(modelSBML.reaction)
         %Get the index of the metabolite in metaboliteIDs.
         metIndex=find(strcmp(modelSBML.reaction(i).product(j).species,metaboliteIDs),1);
         if isempty(metIndex)
-            EM=['Could not find metabolite ' modelSBML.reaction(i).reactant(j).species ' in reaction ' reactionIDs{counter}];
+            EM=['Could not find metabolite ' modelSBML.reaction(i).product(j).species ' in reaction ' reactionIDs{counter}];
             dispEM(EM);
         end
         S(metIndex,counter)=S(metIndex,counter)+modelSBML.reaction(i).product(j).stoichiometry;
