@@ -13,7 +13,7 @@ function writeYAMLmodel(model,fileName,preserveQuotes,sortIds)
 %                   (logical, default=false)   
 %
 %   Usage: writeYAMLmodel(model,fileName,preserveQuotes,sortIds)
-if nargin<2
+if nargin<2|| isempty(fileName)
     [fileName, pathName] = uiputfile({'*.yml;*.yaml'}, 'Select file for model export',[model.id '.yml']);
     if fileName == 0
         error('You should provide a file location')

@@ -73,7 +73,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %         consensus network model formulation.
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
-if nargin<1
+if nargin<1 || isempty(fileName)
     [fileName, pathName] = uigetfile({'*.xml;*.sbml'}, 'Please select the model file');
     if fileName == 0
         error('You should select a model file')

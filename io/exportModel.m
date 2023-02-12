@@ -16,7 +16,7 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
 %                       identifiers (opt, default false)
 %
 %   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
-if nargin<2
+if nargin<2 || isempty(fileName)
     [fileName, pathName] = uiputfile({'*.xml;*.sbml'}, 'Select file for model export',[model.id '.xml']);
     if fileName == 0
         error('You should provide a file location')

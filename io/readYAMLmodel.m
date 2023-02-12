@@ -1,34 +1,34 @@
-function model=readYAMLmodel(yamlFilename, verbose)
+function model=readYAMLmodel(fileName, verbose)
 % readYAMLmodel
 %   Reads a yaml file matching (roughly) the cobrapy yaml structure
 %
 %   Input:
-%   yamlFile    a model file in yaml file format. A dialog window will open
+%   fileName    a model file in yaml file format. A dialog window will open
 %               if no file name is specified.
 %   verbose     set as true to monitor progress (opt, default false)
 %
 %   Output:
 %   model       a model structure
 %
-%   Usage: model = readYAMLmodel(yamlFilename, verbose)
-if nargin<1
-    [yamlFilename, pathName] = uigetfile({'*.yml;*.yaml'}, 'Please select the model file');
-    if yamlFilename == 0
+%   Usage: model = readYAMLmodel(fileName, verbose)
+if nargin<1 || isempty(fileName)
+    [fileName, pathName] = uigetfile({'*.yml;*.yaml'}, 'Please select the model file');
+    if fileName == 0
         error('You should select a model file')
     else
-        yamlFilename = fullfile(pathName,yamlFilename);
+        fileName = fullfile(pathName,fileName);
     end
 end
 if nargin < 2
     verbose = false;
 end
 
-if ~(exist(yamlFilename,'file')==2)
-    error('Yaml file %s cannot be found', string(yamlFilename));
+if ~(exist(fileName,'file')==2)
+    error('Yaml file %s cannot be found', string(fileName));
 end
 
 if verLessThan('matlab','9.9') %readlines introduced 2020b
-    fid=fopen(yamlFilename);
+    fid=fopen(fileName);
     line_raw=cell(1000000,1);
     while ~feof(fid)
         line_raw{i}=fgetl(fid);
@@ -37,7 +37,7 @@ if verLessThan('matlab','9.9') %readlines introduced 2020b
     line_raw(i:end)=[];
     line_raw=string(line_raw);
 else
-    line_raw=readlines(yamlFilename);
+    line_raw=readlines(fileName);
 end
 
 % If entry is broken of multiple lines, concatenate. Assumes at least 6
