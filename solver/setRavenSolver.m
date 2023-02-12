@@ -22,7 +22,7 @@ switch solver
         end
     case 'mosek'
         error('MOSEK support has been discontinued since RAVEN 2.3.0.')
-    case {'glpk','gurobi'}
+    case {'glpk','gurobi','soplex'}
         setpref('RAVEN','solver',solver)
     otherwise
         error('Invalid solver defined')

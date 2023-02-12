@@ -60,8 +60,8 @@ switch solver
             res=solveCobraLP(prob);
         end
         if isfield(res,{'dual','rcost'})
-            res.dual=-res.dual;
-            res.rcost=-res.rcost;
+            res.dual=res.dual;
+            res.rcost=res.rcost;
         end
 
         %% Use Gurobi in a MATLAB environment
@@ -171,6 +171,56 @@ switch solver
         res.obj      = fmin;
         res.dual     = -extra.lambda*prob.osense;
         res.rcost    = -extra.redcosts*prob.osense;
+        %% Use SoPlex
+    case 'soplex'
+        solverparams.tmlim   = 1;
+        solverparams.save    = 1;
+        solverparams = structUpdate(solverparams,params);
+        prob.csense = renameparams(prob.csense, {'L','G','E'}, {'U','L','S'});
+
+        [ravenDir,currDir]=findRAVENroot();
+        cd(fullfile(ravenDir,'software','GLPKmex'))
+        glpk(prob.c, prob.A, prob.b, prob.lb, prob.ub, prob.csense, prob.vartype, prob.osense, solverparams);
+        solverparams.tmlim   = defaultparams.timeLimit;
+        runCheck = system(['soplex --solvemode=2 -t' num2str(solverparams.tmlim) ' -x outpb.lp > result.out']);
+
+        if runCheck ~= 0
+            error('SoPlex did not run')
+        end
+        if verLessThan('matlab','9.9') %readlines introduced 2020b
+            fid=fopen('result.out');
+            line_raw=cell(1000000,1);
+            while ~feof(fid)
+                line_raw{i}=fgetl(fid);
+                i=i+1;
+            end
+            line_raw(i:end)=[];
+            line_raw=string(line_raw);
+        else
+            %line_raw=readlines('result.out','EmptyLineRule','skip','WhitespaceRule','trim');
+            line_raw=readlines('result.out');
+        end
+        delete 'result.out'
+        delete 'outpb.lp'
+        cd(currDir)        
+       
+        if find(contains(line_raw,'problem is solved [optimal]'),1) > 0
+            res.full = zeros(length(prob.c),1);
+            res.stat = 1;
+            obj_line = line_raw{contains(line_raw,'Objective value')};
+            res.obj  = str2double(obj_line(strfind(obj_line,':')+2:end));
+            a        = find(contains(line_raw,'Primal solution (name, value):'));
+            z        = find(contains(line_raw,'All other variables are zero'));
+            flux     = split(line_raw(a+1:z-1));
+            rxns     = str2double(replace(flux(:,1),'x_',''));
+            flux     = str2double(flux(:,2));
+            res.full(rxns) = flux;
+        else
+            res.stat = 0;
+            res.obj  = [];
+            res.full = [];
+        end
+
     otherwise
         error('RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
 end
