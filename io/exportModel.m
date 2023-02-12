@@ -4,7 +4,8 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
 %
 %   Input:
 %   model               a model structure
-%   fileName            filename to export the model to (without file extension)
+%   fileName            filename to export the model to. A dialog window
+%                       will open if no file name is specified.
 %   exportGeneComplexes true if gene complexes (all gene sets linked with
 %                       AND relationship) should be recognised and exported
 %                       (opt, default false)
@@ -15,6 +16,14 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
 %                       identifiers (opt, default false)
 %
 %   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
+if nargin<2
+    [fileName, pathName] = uiputfile({'*.xml;*.sbml'}, 'Select file for model export',[model.id '.xml']);
+    if fileName == 0
+        error('You should provide a file location')
+    else
+        fileName = fullfile(pathName,fileName);
+    end
+end
 fileName=char(fileName);
 if nargin<3
     exportGeneComplexes=false;

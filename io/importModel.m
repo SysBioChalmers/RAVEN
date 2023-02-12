@@ -3,7 +3,8 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %   Import a constraint-based model from a SBML file
 %
 %   Input:
-%   fileName        a SBML file to import
+%   fileName        a SBML file to import. A dialog window will open if 
+%                   no file name is specified.
 %   removeExcMets   true if exchange metabolites should be removed. This is
 %                   needed to be able to run simulations, but it could also
 %                   be done using simplifyModel at a later stage (opt,
@@ -72,6 +73,14 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %         consensus network model formulation.
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
+if nargin<1
+    [fileName, pathName] = uigetfile({'*.xml;*.sbml'}, 'Please select the model file');
+    if fileName == 0
+        error('You should select a model file')
+    else
+        fileName = fullfile(pathName,fileName);
+    end
+end
 fileName=char(fileName);
 if nargin<2
     removeExcMets=true;
