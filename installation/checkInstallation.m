@@ -322,10 +322,10 @@ binList = {fullfile(binDir,'blast+','blastp');
            fullfile(binDir,'GLPKmex','glpkcc');
            fullfile(binDir,'libSBML','TranslateSBML');
            fullfile(binDir,'libSBML','OutputSBML');
-           fullfile(binDir,'mafft-linux64','mafft.bat');
-           fullfile(binDir,'mafft-mac','mafft.bat');};
+           fullfile(binDir,'mafft','mafft-linux64','mafft.bat');
+           fullfile(binDir,'mafft','mafft-mac','mafft.bat');};
 if ismac
-    binList(1:5) = strcat(binList(1:5),'.mac');
+    binList(1:6) = strcat(binList(1:6),'.mac');
     binList(10) = [];
 else
     binList(9) = [];
