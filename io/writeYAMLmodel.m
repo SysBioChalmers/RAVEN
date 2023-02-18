@@ -76,6 +76,7 @@ for i = 1:length(model.mets)
     writeField(model, fid, 'inchis',      'txt', i, '  - inchis',      preserveQuotes)
     writeField(model, fid, 'metSmiles',   'txt', i, '  - smiles',      preserveQuotes)
     writeField(model, fid, 'metMiriams',  'txt', i, '  - annotation',  preserveQuotes)
+    writeField(model, fid, 'metNotes',    'txt', i, '  - notes',       preserveQuotes)
     writeField(model, fid, 'metFrom',     'txt', i, '  - metFrom',     preserveQuotes)
 end
 

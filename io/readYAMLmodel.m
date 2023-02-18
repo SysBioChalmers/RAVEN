@@ -88,6 +88,7 @@ modelFields =   {'id',char();...
         'metFormulas',cell(0,0);...
          'metMiriams',cell(0,0);...
          'metCharges',cell(0,0);... %Changed to double in the end.
+           'metNotes',cell(0,0);...
               'comps',cell(0,0);...
           'compNames',cell(0,0);...
         'compOutside',cell(0,0);...
@@ -253,6 +254,9 @@ for i=1:numel(line_key)
                 readList=''; miriamKey='';
             case 'charge'
                 model = readFieldValue(model, 'metCharges', tline_value, pos);
+                readList=''; miriamKey='';
+            case 'notes'
+                model = readFieldValue(model, 'metNotes', tline_value, pos);
                 readList=''; miriamKey='';
             case 'inchis'
                 model = readFieldValue(model, 'inchis', tline_value, pos);
@@ -585,15 +589,14 @@ end
 % Finalize GECKO model
 if isGECKO
     % Fill in empty fields and empty entries
-    for i={'kcat','source','notes'} % Even keep empty
+    for i={'kcat','source','notes','eccodes'} % Even keep empty
         model.ec = emptyOrFill(model.ec,i{1},{''},'rxns',true);
     end
     for i={'enzymes','mw','sequence'}
-        model.ec = emptyOrFill(model.ec,i{1},{''},'genes');
+        model.ec = emptyOrFill(model.ec,i{1},{''},'genes',true);
     end
-    % Do not keep empty fields
-    model.ec = emptyOrFill(model.ec,'kcat',{''},'rxns',false);
-    model.ec = emptyOrFill(model.ec,'concs',{''},'genes',false);
+    model.ec = emptyOrFill(model.ec,'concs',{'NaN'},'genes',true);
+    model.ec = emptyOrFill(model.ec,'kcat',{'0'},'genes',true);
     % Change string to double
     for i={'kcat','mw','concs'}
         if isfield(model.ec,i{1})
