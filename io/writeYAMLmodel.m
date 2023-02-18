@@ -1,19 +1,27 @@
-function writeYAMLmodel(model,name,preserveQuotes,sortIds)
+function writeYAMLmodel(model,fileName,preserveQuotes,sortIds)
 % writeYAMLmodel
 %   Writes a yaml file matching (roughly) the cobrapy yaml structure
 %
 %   model           a model structure
-%   name            name that the file will have
+%   fileName        name that the file will have.  A dialog window will 
+%                   open if no file name is specified.
 %   preserveQuotes  if quotes should be preserved for strings
 %                   (logical, default=true)
 %   sortIds         if metabolites, reactions, genes and compartments
 %                   should be sorted alphabetically by their identifier,
 %                   otherwise they are kept in their original order
-%                   (logical, default=false)
-%   
+%                   (logical, default=false)   
 %
-%   Usage: writeYAMLmodel(model,name,preserveQuotes,sortIds)
-name=char(name);
+%   Usage: writeYAMLmodel(model,fileName,preserveQuotes,sortIds)
+if nargin<2|| isempty(fileName)
+    [fileName, pathName] = uiputfile({'*.yml;*.yaml'}, 'Select file for model export',[model.id '.yml']);
+    if fileName == 0
+        error('You should provide a file location')
+    else
+        fileName = fullfile(pathName,fileName);
+    end
+end
+fileName=char(fileName);
 
 if nargin < 3
     preserveQuotes = true;
@@ -21,8 +29,8 @@ end
 if nargin < 4
     sortIds = false;
 end
-if ~endsWith(name,{'.yml','.yaml'})
-    name = strcat(name,'.yml');
+if ~endsWith(fileName,{'.yml','.yaml'})
+    fileName = strcat(fileName,'.yml');
 end
 
 %Check that model is in RAVEN format:
@@ -50,7 +58,7 @@ if isfield(model,'compMiriams')
 end
 
 %Open file:
-fid = fopen(name,'wt');
+fid = fopen(fileName,'wt');
 fprintf(fid,'---\n!!omap\n');
 
 %Insert file header (metadata)
@@ -68,6 +76,7 @@ for i = 1:length(model.mets)
     writeField(model, fid, 'inchis',      'txt', i, '  - inchis',      preserveQuotes)
     writeField(model, fid, 'metSmiles',   'txt', i, '  - smiles',      preserveQuotes)
     writeField(model, fid, 'metMiriams',  'txt', i, '  - annotation',  preserveQuotes)
+    writeField(model, fid, 'metNotes',    'txt', i, '  - notes',       preserveQuotes)
     writeField(model, fid, 'metFrom',     'txt', i, '  - metFrom',     preserveQuotes)
 end
 

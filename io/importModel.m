@@ -3,7 +3,8 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %   Import a constraint-based model from a SBML file
 %
 %   Input:
-%   fileName        a SBML file to import
+%   fileName        a SBML file to import. A dialog window will open if 
+%                   no file name is specified.
 %   removeExcMets   true if exchange metabolites should be removed. This is
 %                   needed to be able to run simulations, but it could also
 %                   be done using simplifyModel at a later stage (opt,
@@ -72,6 +73,14 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %         consensus network model formulation.
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
+if nargin<1 || isempty(fileName)
+    [fileName, pathName] = uigetfile({'*.xml;*.sbml'}, 'Please select the model file');
+    if fileName == 0
+        error('You should select a model file')
+    else
+        fileName = fullfile(pathName,fileName);
+    end
+end
 fileName=char(fileName);
 if nargin<2
     removeExcMets=true;
@@ -684,7 +693,7 @@ for i=1:numel(modelSBML.reaction)
         %Get the index of the metabolite in metaboliteIDs.
         metIndex=find(strcmp(modelSBML.reaction(i).product(j).species,metaboliteIDs),1);
         if isempty(metIndex)
-            EM=['Could not find metabolite ' modelSBML.reaction(i).reactant(j).species ' in reaction ' reactionIDs{counter}];
+            EM=['Could not find metabolite ' modelSBML.reaction(i).product(j).species ' in reaction ' reactionIDs{counter}];
             dispEM(EM);
         end
         S(metIndex,counter)=S(metIndex,counter)+modelSBML.reaction(i).product(j).stoichiometry;

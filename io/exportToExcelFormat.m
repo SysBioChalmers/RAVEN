@@ -1,13 +1,14 @@
-function exportToExcelFormat(model,filename,sortIds)
+function exportToExcelFormat(model,fileName,sortIds)
 % exportToExcelFormat
 %   Exports a model structure to the Microsoft Excel model format
 %
 %   model       a model structure
-%   filename    file name of the Excel file. Only xlsx format is supported.
+%   fileName    file name of the Excel file. Only xlsx format is supported.
 %               In order to preserve backward compatibility this could also
 %               be only a path, in which case the model is exported to a set
 %               of tab-delimited text files instead. See exportToTabDelimited
-%               for details regarding that functionality
+%               for details regarding that functionality. A dialog window
+%               will open if no file name is specified.
 %   sortIds     logical whether metabolites, reactions and genes should be
 %               sorted alphabetically by their identifiers (opt, default
 %               false)
@@ -18,8 +19,16 @@ function exportToExcelFormat(model,filename,sortIds)
 %   NOTE: No checks are made regarding the correctness of the model. Use
 %         checkModelStruct to identify problems in the model structure
 %
-%   Usage: exportToExcelFormat(model,filename,sortIds)
-filename=char(filename);
+%   Usage: exportToExcelFormat(model,fileName,sortIds)
+if nargin<2 || isempty(fileName)
+    [fileName, pathName] = uiputfile('*.xlsx', 'Select file for model export',[model.id '.xlsx']);
+    if fileName == 0
+        error('You should provide a file location')
+    else
+        fileName = fullfile(pathName,fileName);
+    end
+end
+fileName=char(fileName);
 if nargin<3
     sortIds=false;
 end
@@ -27,11 +36,11 @@ if sortIds==true
     model=sortIdentifiers(model);
 end
 
-[~, A, B]=fileparts(filename);
+[~, A, B]=fileparts(fileName);
 
 %If a path was used call on exportToTabDelimited instead
 if ~any(A) || ~any(B)
-    exportToTabDelimited(model,filename);
+    exportToTabDelimited(model,fileName);
     return;
 end
 
@@ -45,12 +54,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 %Remove the output file if it already exists
-if exist(filename,'file')
-    delete(filename);
+if exist(fileName,'file')
+    delete(fileName);
 end
 
 %Load an empty workbook
-wb=loadWorkbook(filename,true);
+wb=loadWorkbook(fileName,true);
 
 %Construct equations
 model.equations=constructEquations(model,model.rxns,true);
@@ -377,7 +386,7 @@ else
 end
 
 %Open the output stream
-out = FileOutputStream(filename);
+out = FileOutputStream(fileName);
 wb.write(out);
 out.close();
 end

@@ -116,12 +116,15 @@ if isfield(res,'full')
         end
     end
     solution.f=res.obj;
+if isfield(res,'dual')
     solution.sPrice=res.dual;
+else
+    solution.sPrice=[];
+end
+if isfield(res,'rcost')
     solution.rCost=res.rcost(1:numel(model.rxns));
 else
-    %Interior-point. This is not used at the moment
-    solution.x=res.full;
-    solution.f=res.obj;
+    solution.rCost=[];
 end
 
 %If either the square, the number, or the sum of fluxes should be minimized
@@ -165,7 +168,6 @@ if minFlux~=0
             else
                 iModel=model;
             end
-            
             %Minimize all fluxes
             iModel.c(:)=-1;
             sol=solveLP(iModel,0,params);
