@@ -36,10 +36,10 @@ if verLessThan('matlab','9.9') %readlines introduced 2020b
     end
     line_raw(i:end)=[];
     line_raw=string(line_raw);
+    fclose(fid);
 else
     line_raw=readlines(fileName);
 end
-
 % If entry is broken of multiple lines, concatenate. Assumes at least 6
 % leading spaces to avoid metaData to be concatenated.
 newLine=regexp(line_raw,'^ {6,}([\w\(\)].*)','tokens');
