@@ -1,26 +1,34 @@
-function model=readYAMLmodel(yamlFilename, verbose)
+function model=readYAMLmodel(fileName, verbose)
 % readYAMLmodel
 %   Reads a yaml file matching (roughly) the cobrapy yaml structure
 %
 %   Input:
-%   yamlFile    a model file in yaml file format
+%   fileName    a model file in yaml file format. A dialog window will open
+%               if no file name is specified.
 %   verbose     set as true to monitor progress (opt, default false)
 %
 %   Output:
 %   model       a model structure
 %
-%   Usage: model = readYAMLmodel(yamlFilename, verbose)
-
+%   Usage: model = readYAMLmodel(fileName, verbose)
+if nargin<1 || isempty(fileName)
+    [fileName, pathName] = uigetfile({'*.yml;*.yaml'}, 'Please select the model file');
+    if fileName == 0
+        error('You should select a model file')
+    else
+        fileName = fullfile(pathName,fileName);
+    end
+end
 if nargin < 2
     verbose = false;
 end
 
-if ~(exist(yamlFilename,'file')==2)
-    error('Yaml file %s cannot be found', string(yamlFilename));
+if ~(exist(fileName,'file')==2)
+    error('Yaml file %s cannot be found', string(fileName));
 end
 
 if verLessThan('matlab','9.9') %readlines introduced 2020b
-    fid=fopen(yamlFilename);
+    fid=fopen(fileName);
     line_raw=cell(1000000,1);
     while ~feof(fid)
         line_raw{i}=fgetl(fid);
@@ -28,10 +36,10 @@ if verLessThan('matlab','9.9') %readlines introduced 2020b
     end
     line_raw(i:end)=[];
     line_raw=string(line_raw);
+    fclose(fid);
 else
-    line_raw=readlines(yamlFilename);
+    line_raw=readlines(fileName);
 end
-
 % If entry is broken of multiple lines, concatenate. Assumes at least 6
 % leading spaces to avoid metaData to be concatenated.
 newLine=regexp(line_raw,'^ {6,}([\w\(\)].*)','tokens');
@@ -80,6 +88,7 @@ modelFields =   {'id',char();...
         'metFormulas',cell(0,0);...
          'metMiriams',cell(0,0);...
          'metCharges',cell(0,0);... %Changed to double in the end.
+           'metNotes',cell(0,0);...
               'comps',cell(0,0);...
           'compNames',cell(0,0);...
         'compOutside',cell(0,0);...
@@ -245,6 +254,9 @@ for i=1:numel(line_key)
                 readList=''; miriamKey='';
             case 'charge'
                 model = readFieldValue(model, 'metCharges', tline_value, pos);
+                readList=''; miriamKey='';
+            case 'notes'
+                model = readFieldValue(model, 'metNotes', tline_value, pos);
                 readList=''; miriamKey='';
             case 'inchis'
                 model = readFieldValue(model, 'inchis', tline_value, pos);
@@ -577,15 +589,14 @@ end
 % Finalize GECKO model
 if isGECKO
     % Fill in empty fields and empty entries
-    for i={'kcat','source','notes'} % Even keep empty
+    for i={'kcat','source','notes','eccodes'} % Even keep empty
         model.ec = emptyOrFill(model.ec,i{1},{''},'rxns',true);
     end
     for i={'enzymes','mw','sequence'}
-        model.ec = emptyOrFill(model.ec,i{1},{''},'genes');
+        model.ec = emptyOrFill(model.ec,i{1},{''},'genes',true);
     end
-    % Do not keep empty fields
-    model.ec = emptyOrFill(model.ec,'kcat',{''},'rxns',false);
-    model.ec = emptyOrFill(model.ec,'concs',{''},'genes',false);
+    model.ec = emptyOrFill(model.ec,'concs',{'NaN'},'genes',true);
+    model.ec = emptyOrFill(model.ec,'kcat',{'0'},'genes',true);
     % Change string to double
     for i={'kcat','mw','concs'}
         if isfield(model.ec,i{1})
