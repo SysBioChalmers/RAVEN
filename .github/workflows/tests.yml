@@ -1,4 +1,4 @@
-name: Testing
+name: Tests
 
 on: [pull_request]
 
@@ -8,20 +8,20 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Run tests
         id: matlab-test
         run: |
-          TEST_RESULTS=$(/usr/local/bin/matlab -nodisplay -nosplash -nodesktop -r "addpath(genpath('.')); cd('testing/unit_tests'); runtests(struct2table(dir('*.m')).name); exit;")
+          TEST_RESULTS=$(/usr/local/bin/matlab -nodisplay -nosplash -nodesktop -r "warning('off', 'MATLAB:rmpath:DirNotFound'); rmpath(genpath('/home/m/ecModels-dependencies/RAVEN')); addpath(genpath('.')); cd('testing/unit_tests'); runtests(struct2table(dir('*.m')).name); exit;")
           PARSED_RESULTS=$(echo $TEST_RESULTS | awk -F'com\\.' '{ n = split($2, v, "(___+)|(===+)|(---+)"); for (i = 0; ++i <= n;) { print v[i] } }')
           PARSED_RESULTS="${PARSED_RESULTS//'%'/'%25'}"
-          PARSED_RESULTS="${PARSED_RESULTS//$'\n'/'%0A'}"
-          PARSED_RESULTS="${PARSED_RESULTS//$'\r'/'%0D'}"
-          echo "results=$PARSED_RESULTS" > $GITHUB_OUTPUT
+          PARSED_RESULTS="${PARSED_RESULTS//$'\n'/'<br>'}"
+          PARSED_RESULTS="${PARSED_RESULTS//$'\r'/'<br>'}"
+          echo "results=$PARSED_RESULTS" >> $GITHUB_OUTPUT
 
       - name: Post comment
-        uses: NejcZdovc/comment-pr@v1
+        uses: NejcZdovc/comment-pr@v2
         with:
           file: "testing-comment.md"
         env:
