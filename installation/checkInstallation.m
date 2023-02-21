@@ -315,7 +315,7 @@ else
 end
 
 for i=1:numel(binList)
-%    binPath = which(binList{i});
+    assert(exist(binList{i}, 'file' ) == 2, 'File not found.' ) 
     [status,cmdout] = system(['chmod +x "' binList{i} '"']);
     if status ~= 0
         fprintf('[\bFailed to make %s executable]\b\n%s',binList{i},blanks(40))
