@@ -5,7 +5,7 @@ function checkInstallation(develMode)
 %   with overlapping names between RAVEN and other toolboxes or
 %   user-defined functions, which are accessible from MATLAB pathlist
 %
-%   Input: 
+% Input: 
 %   develMode       logical indicating development mode, which includes
 %                   testing of binaries that are required to update KEGG
 %                   HMMs (opt, default false)
@@ -315,10 +315,10 @@ else
 end
 
 for i=1:numel(binList)
-    assert(exist(binList{i}, 'file' ) == 2, 'File not found.' ) 
+%    binPath = which(binList{i});
     [status,cmdout] = system(['chmod +x "' binList{i} '"']);
     if status ~= 0
-        error('Failed to make %s executable: %s ',binList{i},strip(cmdout))
-    end
+        fprintf('[\bFailed to make %s executable]\b\n%s',binList{i},blanks(40))
+end
 end
 end
