@@ -302,23 +302,14 @@ binList = {fullfile(binDir,'blast+','blastp');
            fullfile(binDir,'diamond','diamond');
            fullfile(binDir,'hmmer','hmmbuild');
            fullfile(binDir,'hmmer','hmmsearch');
-           fullfile(binDir,'GLPKmex','glpkcc');
-           fullfile(binDir,'libSBML','TranslateSBML');
-           fullfile(binDir,'libSBML','OutputSBML');
            fullfile(binDir,'mafft','mafft-linux64','mafft.bat');
            fullfile(binDir,'mafft','mafft-mac','mafft.bat');};
-if ismac
-    binList(1:6) = strcat(binList(1:6),'.mac');
-    binList(10) = [];
-else
-    binList(9) = [];
-end
 
 for i=1:numel(binList)
-    assert(exist(binList{i}, 'file' ) == 2, 'File not found.' ) 
-    [status,cmdout] = system(['chmod +x "' binList{i} '"']);
+    [status,cmdout] = system(['chmod +x "' binList{i} '"*']);
     if status ~= 0
-        fprintf('[\bFailed to make %s executable]\b\n%s',binList{i},blanks(40))
+        error('Failed to make %s executable: %s ',binList{i},strip(cmdout))
+    end
 end
-end
+
 end
