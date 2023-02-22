@@ -2,7 +2,8 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3689518.svg)](https://doi.org/10.5281/zenodo.3689518)
 [![GitHub release](https://img.shields.io/github/release/SysBioChalmers/RAVEN/all.svg)](https://GitHub.com/SysBioChalmers/RAVEN/releases/)
-[![Tests passing](https://github.com/SysBioChalmers/RAVEN/actions/workflows/tests.yml/badge.svg?branch=main)(https://github.com/SysBioChalmers/RAVEN/actions)
+[![Tests 
+passing](https://github.com/SysBioChalmers/RAVEN/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/SysBioChalmers/RAVEN/actions)
 [![Join the chat at https://gitter.im/SysBioChalmers/RAVEN](https://badges.gitter.im/SysBioChalmers/RAVEN.svg)](https://gitter.im/SysBioChalmers/RAVEN?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![View RAVEN Toolbox on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://se.mathworks.com/matlabcentral/fileexchange/112330-raven-toolbox)
 
