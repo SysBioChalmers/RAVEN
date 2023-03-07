@@ -26,39 +26,72 @@ end
 minFluxes=zeros(numel(rxns),1);
 maxFluxes=zeros(numel(rxns),1);
 exitFlags=zeros(numel(rxns),2);
-
 c=zeros(numel(model.rxns),1);
-hsSolMin=[];
-hsSolMax=[];
-fprintf('Getting minimal and maximal fluxes...   0%% complete');
-for i=1:numel(rxns)
-    model.c=c;
-    
-    %Get minimal flux
-    model.c(rxns(i))=-1;
-    [solution, hsSolMin]=solveLP(model,0,[],hsSolMin);
-    exitFlags(i,1)=solution.stat;
-    if ~isempty(solution.f)
-        minFluxes(i)=solution.x(rxns(i));
-    else
-        minFluxes(i)=NaN;
+
+N = numel(rxns);
+p = 1;
+h = waitbar(0, 'Please wait ...');
+
+addonList = matlab.addons.installedAddons;
+if any(strcmpi(addonList.Name,'Parallel Computing Toolbox'))
+    D = parallel.pool.DataQueue;
+    afterEach(D, @nUpdateWaitbar);
+ 
+    parfor i=1:N
+        tmpModel=model;
+        tmpModel.c=c;
+
+        %Get minimal flux
+        tmpModel.c(rxns(i))=-1;
+        solMin=solveLP(tmpModel);
+        if ~isempty(solMin.f)
+            minFluxes(i)=solMin.x(rxns(i));
+        else
+            minFluxes(i)=NaN;
+        end
+
+        %Get maximal flux
+        tmpModel.c(rxns(i))=1;
+        solMax=solveLP(tmpModel);
+        exitFlags(i,:)=[solMin.stat solMax.stat];
+        if ~isempty(solMax.f)
+            maxFluxes(i)=solMax.x(rxns(i));
+        else
+            maxFluxes(i)=NaN;
+        end
+        send(D, i);
     end
-    
-    %Get maximal flux
-    model.c(rxns(i))=1;
-    [solution, hsSolMax]=solveLP(model,0,[],hsSolMax);
-    exitFlags(i,2)=solution.stat;
-    if ~isempty(solution.f)
-        maxFluxes(i)=solution.x(rxns(i));
-    else
-        maxFluxes(i)=NaN;
-    end
-    %Print the progress every 25 reactions
-    if rem(i-1,25) == 0
-        progress=num2str(floor(100*i/numel(rxns)));
-        progress=pad(progress,3,'left');
-        fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
+else
+    for i=1:N
+        tmpModel=model;
+        tmpModel.c=c;
+
+        %Get minimal flux
+        tmpModel.c(rxns(i))=-1;
+        solMin=solveLP(tmpModel);
+        if ~isempty(solMin.f)
+            minFluxes(i)=solMin.x(rxns(i));
+        else
+            minFluxes(i)=NaN;
+        end
+
+        %Get maximal flux
+        tmpModel.c(rxns(i))=1;
+        solMax=solveLP(tmpModel);
+        exitFlags(i,:)=[solMin.stat solMax.stat];
+        if ~isempty(solMax.f)
+            maxFluxes(i)=solMax.x(rxns(i));
+        else
+            maxFluxes(i)=NaN;
+        end
+        nUpdateWaitbar;
     end
 end
-fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+
+close(h)
+
+    function nUpdateWaitbar(~)
+        waitbar(p/N, h);
+        p = p + 1;
+    end
 end
