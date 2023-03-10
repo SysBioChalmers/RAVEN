@@ -73,7 +73,7 @@ if exist(metsFile, 'file')
     fprintf('done\n');
 else
     fprintf(['Cannot locate ' strrep(metsFile,'\','/') '\nNow try to generate it from local MetaCyc data files...\n']);
-    if ~exist(fullfile(metacycPath,metaCycMetFile),'file')
+    if ~isfile(fullfile(metacycPath,metaCycMetFile))
         EM=fprintf(['The file of metabolites cannot be located, and should be downloaded from MetaCyc.\n']);
         dispEM(EM);
     else

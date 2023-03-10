@@ -16,7 +16,7 @@ function constructMultiFasta(model,sourceFile,outputDir)
 
 sourceFile=char(sourceFile);
 outputDir=char(outputDir);
-if ~(exist(sourceFile,'file')==2)
+if ~isfile(sourceFile)
     error('FASTA file %s cannot be found',string(sourceFile));
 end
 

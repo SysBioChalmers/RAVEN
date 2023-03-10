@@ -14,8 +14,8 @@ else
 end
 rootFound = 0;
 while rootFound == 0
-    isRoot = exist(fullfile(ravenPath,'RAVEN2.png'),'file');
-    if isRoot == 2
+    isRoot = isfile(fullfile(ravenPath,'RAVEN2.png'));
+    if isRoot
         rootFound = 1;
     else
         ravenPathOld = ravenPath;
