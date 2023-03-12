@@ -9,7 +9,7 @@
 
 %Start by downloading trained Hidden Markov Models for eukaryotes. This can
 %be done automatically or manually from the RAVEN Wiki in its GitHub
-%repository. In this tutorial, the archive "euk100_kegg91" is picked for
+%repository. In this tutorial, the archive "euk90_kegg105" is picked for
 %the automatic download. See the documentation in the RAVEN Wiki for more
 %information regarding preparation of such archive.
 
@@ -19,10 +19,10 @@
 %are for. This process takes up to 20-35 minutes in macOS, Unix systems and
 %40-55 minutes in Windows, depending on your hardware and the size of
 %target organism proteome
-model=getKEGGModelForOrganism('sce','sce.fa','euk90_kegg100','output',false,false,false,false,10^-30,0.8,0.3,-1);
+model=getKEGGModelForOrganism('sce','sce.fa','euk90_kegg105','output',false,false,false,false,10^-30,0.8,0.3,-1);
 
-%The resulting model should contain around 1590 reactions, 1571
-%metabolites and 837 genes. Small variations are possible since it is an
+%The resulting model should contain around 1589 reactions, 1600
+%metabolites and 836 genes. Small variations are possible since it is an
 %heuristic algorithm and different KEGG versions will give slightly
 %different results.
 disp(model);
@@ -98,7 +98,7 @@ model.metNames(metabolite)
 I=canProduce(model);
 
 fprintf('%d%%\n', round(sum(I)/numel(model.mets)*100));
-%It seems that around 30% of the metabolites could be synthesized. It is
+%It seems that around 31% of the metabolites could be synthesized. It is
 %not directly clear whether this is a high or low number, many metabolites
 %should not be possible to synthesize from those simple precursors.
 
@@ -106,7 +106,7 @@ fprintf('%d%%\n', round(sum(I)/numel(model.mets)*100));
 %significantly higher number
 keggModel=getModelFromKEGG([],false,false,false,false);
 
-%The KEGG model is associated to more than 4,000,000 genes. They will not
+%The KEGG model is associated to more than 6,400,000 genes. They will not
 %be used for the gapfilling, so they are removed to make this a little
 %faster
 keggModel=rmfield(keggModel,'genes');
@@ -126,8 +126,8 @@ params.relGap=0.6; %Lower number for a more exhaustive search
 params.printReport=true;
 [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,keggModel,true,false,false,[],params);
 
-%The results show that fillGaps could connect around 37 reactions
-%(newConnected) by including around 48 reactions from the KEGG model
+%The results show that fillGaps could connect around 29 reactions
+%(newConnected) by including around 41 reactions from the KEGG model
 %(addedRxns). Those should of course be checked manually to confirm that
 %they exist in yeast, but in this tutorial it is assumed that all these
 %reactions indeed occur in yeast.
