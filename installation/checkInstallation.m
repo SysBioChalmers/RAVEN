@@ -1,4 +1,4 @@
-function checkInstallation(develMode)
+function checkInstallation(developMode)
 % checkInstallation
 %   The purpose of this function is to check if all necessary functions are
 %   installed and working. It also checks whether there are any functions
@@ -6,14 +6,14 @@ function checkInstallation(develMode)
 %   user-defined functions, which are accessible from MATLAB pathlist
 %
 %   Input: 
-%   develMode       logical indicating development mode, which includes
+%   developMode     logical indicating development mode, which includes
 %                   testing of binaries that are required to update KEGG
 %                   HMMs (opt, default false)
 %
-%   Usage: checkInstallation(develMode)
+%   Usage: checkInstallation(developMode)
 
 if nargin<1
-    develMode=false;
+    developMode=false;
 end
 
 %Get the RAVEN path
@@ -247,7 +247,7 @@ if res==false
              '   when using a FASTA file as input\n'])
 end
 
-if develMode
+if developMode
     fprintf('\n=== Development binary executables ===\n');
     fprintf('NOTE: These binaries are only required when using KEGG FTP dump files in getKEGGModelForOrganism\n');
 

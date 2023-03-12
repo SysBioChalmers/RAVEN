@@ -1,5 +1,5 @@
 function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
-    modelIDs,refFastaFiles,develMode,hideVerbose)
+    modelIDs,refFastaFiles,developMode,hideVerbose)
 % getBlast
 %   Performs a bidirectional BLAST between the organism of interest and a
 %   set of template organisms
@@ -14,7 +14,7 @@ function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
 %                   output is to be used with getModelFromHomology
 %   refFastaFiles   a cell array with the paths to the corresponding FASTA
 %                   files
-%   develMode       true if blastReport should be generated that is used
+%   developMode     true if blastReport should be generated that is used
 %                   in the unit testing function for BLAST+ (opt, default
 %                   false)
 %   hideVerbose     true if no status messages should be printed (opt,
@@ -25,7 +25,7 @@ function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
 %                   measurements that can be used by getModelFromHomology
 %   blastReport     structure containing MD5 hashes for FASTA database
 %                   files and non-parsed BLAST output data. Will be blank
-%                   if develMode is false.
+%                   if developMode is false.
 %
 %   NOTE: This function calls BLAST+ to perform a bidirectional homology
 %   test between the organism of interest and a set of other organisms
@@ -34,10 +34,10 @@ function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
 %   measurements can be implemented using getBlastFromExcel.
 %
 %   Usage: [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
-%    modelIDs,refFastaFiles,develMode,hideVerbose)
+%    modelIDs,refFastaFiles,developMode,hideVerbose)
 
 if nargin<5
-    develMode = false;
+    developMode = false;
 end
 if nargin<6
     hideVerbose = false;
@@ -100,7 +100,7 @@ cores = cores{1};
 %Create a database for the new organism and blast each of the refFastaFiles
 %against it
 [status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in ' fastaFile{1} ' -out "' fullfile(tmpDB, 'tmpDB') '" -dbtype prot']);
-if develMode
+if developMode
     blastReport.dbHashes.phr{numel(blastReport.dbHashes.phr)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.phr'));
     blastReport.dbHashes.pot{numel(blastReport.dbHashes.pot)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.pot'));
     blastReport.dbHashes.psq{numel(blastReport.dbHashes.psq)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.psq'));
@@ -116,7 +116,7 @@ for i=1:numel(refFastaFiles)
         fprintf(['BLASTing "' modelIDs{i} '" against "' organismID{1} '"..\n']);
     end
     [status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query ' refFastaFiles{i} ' -out "' outFile '_' num2str(i) '" -db "' fullfile(tmpDB, 'tmpDB') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
-    if develMode
+    if developMode
         blastReport.blastTxtOutput{numel(blastReport.blastTxtOutput)+1}=importdata([outFile '_' num2str(i)]);
     end
     if status~=0
@@ -138,7 +138,7 @@ for i=1:numel(refFastaFiles)
         dispEM(EM,true);
     end
     [status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query ' fastaFile{1} ' -out "' outFile '_r' num2str(i) '" -db "' fullfile(tmpDB, 'tmpDB') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
-    if develMode
+    if developMode
         blastReport.dbHashes.phr{numel(blastReport.dbHashes.phr)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.phr'));
         blastReport.dbHashes.pot{numel(blastReport.dbHashes.pot)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.pot'));
         blastReport.dbHashes.psq{numel(blastReport.dbHashes.psq)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.psq'));

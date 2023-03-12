@@ -1,7 +1,7 @@
 function updateDocumentation()
 % updateDocumentation
 %	Updates HTML documentation files for all RAVEN functions. It should
-%	only be used when preparing `devel` branch for a new RAVEN release
+%	only be used when preparing `develop` branch for a new RAVEN release
 %
 %	Usage: updateDocumentation()
 
