@@ -305,20 +305,14 @@ binList = {fullfile(binDir,'blast+','blastp');
            fullfile(binDir,'GLPKmex','glpkcc');
            fullfile(binDir,'libSBML','TranslateSBML');
            fullfile(binDir,'libSBML','OutputSBML');
-           fullfile(binDir,'mafft','mafft-linux64','mafft.bat');
-           fullfile(binDir,'mafft','mafft-mac','mafft.bat');};
-if ismac
-    binList(1:6) = strcat(binList(1:6),'.mac');
-    binList(10) = [];
-else
-    binList(9) = [];
-end
+           fullfile(binDir,'mafft','mafft-linux64','mafft');
+           fullfile(binDir,'mafft','mafft-mac','mafft');};
 
 for i=1:numel(binList)
-    binPath = which(binList{i});
-    [status,cmdout] = system(['chmod +x "' binPath '"']);
+    [status,cmdout] = system(['chmod +x "' binList{i} '".(mexa64|mexglx|mexmaci64|mac|bat)']);
     if status ~= 0
         error('Failed to make %s executable: %s ',binList{i},strip(cmdout))
     end
 end
+
 end
