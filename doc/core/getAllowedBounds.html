@@ -54,7 +54,9 @@ This function is called by:
 <li><a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>	simplifyModel</li></ul>
 <!-- crossreference -->
 
-
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function nUpdateWaitbar(~)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns)</a>
@@ -85,42 +87,75 @@ This function is called by:
 0026 minFluxes=zeros(numel(rxns),1);
 0027 maxFluxes=zeros(numel(rxns),1);
 0028 exitFlags=zeros(numel(rxns),2);
-0029 
-0030 c=zeros(numel(model.rxns),1);
-0031 hsSolMin=[];
-0032 hsSolMax=[];
-0033 fprintf(<span class="string">'Getting minimal and maximal fluxes...   0%% complete'</span>);
-0034 <span class="keyword">for</span> i=1:numel(rxns)
-0035     model.c=c;
-0036     
-0037     <span class="comment">%Get minimal flux</span>
-0038     model.c(rxns(i))=-1;
-0039     [solution, hsSolMin]=solveLP(model,0,[],hsSolMin);
-0040     exitFlags(i,1)=solution.stat;
-0041     <span class="keyword">if</span> ~isempty(solution.f)
-0042         minFluxes(i)=solution.x(rxns(i));
-0043     <span class="keyword">else</span>
-0044         minFluxes(i)=NaN;
-0045     <span class="keyword">end</span>
-0046     
-0047     <span class="comment">%Get maximal flux</span>
-0048     model.c(rxns(i))=1;
-0049     [solution, hsSolMax]=solveLP(model,0,[],hsSolMax);
-0050     exitFlags(i,2)=solution.stat;
-0051     <span class="keyword">if</span> ~isempty(solution.f)
-0052         maxFluxes(i)=solution.x(rxns(i));
-0053     <span class="keyword">else</span>
-0054         maxFluxes(i)=NaN;
-0055     <span class="keyword">end</span>
-0056     <span class="comment">%Print the progress every 25 reactions</span>
-0057     <span class="keyword">if</span> rem(i-1,25) == 0
-0058         progress=num2str(floor(100*i/numel(rxns)));
-0059         progress=pad(progress,3,<span class="string">'left'</span>);
-0060         fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete'</span>,progress);
-0061     <span class="keyword">end</span>
-0062 <span class="keyword">end</span>
-0063 fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n'</span>);
-0064 <span class="keyword">end</span></pre></div>
+0029 c=zeros(numel(model.rxns),1);
+0030 
+0031 N = numel(rxns);
+0032 p = 1;
+0033 h = waitbar(0, <span class="string">'Please wait ...'</span>);
+0034 
+0035 addonList = matlab.addons.installedAddons;
+0036 <span class="keyword">if</span> any(strcmpi(addonList.Name,<span class="string">'Parallel Computing Toolbox'</span>))
+0037     D = parallel.pool.DataQueue;
+0038     afterEach(D, @<a href="#_sub1" class="code" title="subfunction nUpdateWaitbar(~)">nUpdateWaitbar</a>);
+0039  
+0040     parfor i=1:N
+0041         tmpModel=model;
+0042         tmpModel.c=c;
+0043 
+0044         <span class="comment">%Get minimal flux</span>
+0045         tmpModel.c(rxns(i))=-1;
+0046         solMin=solveLP(tmpModel);
+0047         <span class="keyword">if</span> ~isempty(solMin.f)
+0048             minFluxes(i)=solMin.x(rxns(i));
+0049         <span class="keyword">else</span>
+0050             minFluxes(i)=NaN;
+0051         <span class="keyword">end</span>
+0052 
+0053         <span class="comment">%Get maximal flux</span>
+0054         tmpModel.c(rxns(i))=1;
+0055         solMax=solveLP(tmpModel);
+0056         exitFlags(i,:)=[solMin.stat solMax.stat];
+0057         <span class="keyword">if</span> ~isempty(solMax.f)
+0058             maxFluxes(i)=solMax.x(rxns(i));
+0059         <span class="keyword">else</span>
+0060             maxFluxes(i)=NaN;
+0061         <span class="keyword">end</span>
+0062         send(D, i);
+0063     <span class="keyword">end</span>
+0064 <span class="keyword">else</span>
+0065     <span class="keyword">for</span> i=1:N
+0066         tmpModel=model;
+0067         tmpModel.c=c;
+0068 
+0069         <span class="comment">%Get minimal flux</span>
+0070         tmpModel.c(rxns(i))=-1;
+0071         solMin=solveLP(tmpModel);
+0072         <span class="keyword">if</span> ~isempty(solMin.f)
+0073             minFluxes(i)=solMin.x(rxns(i));
+0074         <span class="keyword">else</span>
+0075             minFluxes(i)=NaN;
+0076         <span class="keyword">end</span>
+0077 
+0078         <span class="comment">%Get maximal flux</span>
+0079         tmpModel.c(rxns(i))=1;
+0080         solMax=solveLP(tmpModel);
+0081         exitFlags(i,:)=[solMin.stat solMax.stat];
+0082         <span class="keyword">if</span> ~isempty(solMax.f)
+0083             maxFluxes(i)=solMax.x(rxns(i));
+0084         <span class="keyword">else</span>
+0085             maxFluxes(i)=NaN;
+0086         <span class="keyword">end</span>
+0087         <a href="#_sub1" class="code" title="subfunction nUpdateWaitbar(~)">nUpdateWaitbar</a>;
+0088     <span class="keyword">end</span>
+0089 <span class="keyword">end</span>
+0090 
+0091 close(h)
+0092 
+0093     <a name="_sub1" href="#_subfunctions" class="code">function nUpdateWaitbar(~)</a>
+0094         waitbar(p/N, h);
+0095         p = p + 1;
+0096     <span class="keyword">end</span>
+0097 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

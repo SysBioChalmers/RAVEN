@@ -53,6 +53,27 @@ solution.x=[];
 solution.f=[];
 solution.stat=-1;
 
+%Check for valid lb and ub
+if ~isnumeric([model.lb,model.ub])
+    invalidBound = true(numel(model.lb),1);
+else
+    invalidBound = false(numel(model.lb),1);
+end
+invalidBound = invalidBound | model.lb>model.ub;
+invalidBound = invalidBound | logical(sum(isnan([model.lb,model.ub]),2));
+if any(invalidBound)
+    error(['Invalid set of bounds for reaction(s): ', strjoin(model.rxns(invalidBound),', '), '.'])
+end
+%Check for valid objective
+if ~isnumeric(model.c) || any(isnan(model.c))
+    error('Invalid defintion of objective function in model.c.')
+end
+%Check for valid S-matrix
+invalidS = ~isfinite(model.S);
+if any(any(invalidS))
+    error(['Invalid coefficients defined for reaction(s): ', strjoin(model.rxns(any(invalidS)),', '), '.'])
+end
+
 %Ignore the hot-start if the previous solution wasn't feasible
 if isfield(hsSol,'stat')
     if hsSol.stat<1
