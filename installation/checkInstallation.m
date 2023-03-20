@@ -1,4 +1,4 @@
-function checkInstallation(develMode)
+function checkInstallation(developMode)
 % checkInstallation
 %   The purpose of this function is to check if all necessary functions are
 %   installed and working. It also checks whether there are any functions
@@ -6,14 +6,14 @@ function checkInstallation(develMode)
 %   user-defined functions, which are accessible from MATLAB pathlist
 %
 %   Input: 
-%   develMode       logical indicating development mode, which includes
+%   developMode     logical indicating development mode, which includes
 %                   testing of binaries that are required to update KEGG
 %                   HMMs (opt, default false)
 %
-%   Usage: checkInstallation(develMode)
+%   Usage: checkInstallation(developMode)
 
 if nargin<1
-    develMode=false;
+    developMode=false;
 end
 
 %Get the RAVEN path
@@ -37,8 +37,8 @@ if exist(fullfile(ravenDir,'version.txt'), 'file') == 2
             if currVer(i)<newVerNum(i)
                 fprintf([myStr('   > Latest RAVEN release available',40) '%f'])
                 fprintf(['[\b' newVer,']\b\n'])
-                hasGit=exist(fullfile(ravenDir,'.git'),'file');
-                if hasGit==7
+                hasGit=isfolder(fullfile(ravenDir,'.git'));
+                if hasGit
                     fprintf('     [\bRun git pull in your favourite git client]\b\n')
                     fprintf('     [\bto get the latest RAVEN release]\b\n');
                 else
@@ -247,7 +247,7 @@ if res==false
              '   when using a FASTA file as input\n'])
 end
 
-if develMode
+if developMode
     fprintf('\n=== Development binary executables ===\n');
     fprintf('NOTE: These binaries are only required when using KEGG FTP dump files in getKEGGModelForOrganism\n');
 
@@ -305,20 +305,14 @@ binList = {fullfile(binDir,'blast+','blastp');
            fullfile(binDir,'GLPKmex','glpkcc');
            fullfile(binDir,'libSBML','TranslateSBML');
            fullfile(binDir,'libSBML','OutputSBML');
-           fullfile(binDir,'mafft','mafft-linux64','mafft.bat');
-           fullfile(binDir,'mafft','mafft-mac','mafft.bat');};
-if ismac
-    binList(1:6) = strcat(binList(1:6),'.mac');
-    binList(10) = [];
-else
-    binList(9) = [];
-end
+           fullfile(binDir,'mafft','mafft-linux64','mafft');
+           fullfile(binDir,'mafft','mafft-mac','mafft');};
 
 for i=1:numel(binList)
-    binPath = which(binList{i});
-    [status,cmdout] = system(['chmod +x "' binPath '"']);
+    [status,cmdout] = system(['chmod +x "' binList{i} '".(mexa64|mexglx|mexmaci64|mac|bat)']);
     if status ~= 0
         error('Failed to make %s executable: %s ',binList{i},strip(cmdout))
     end
 end
+
 end

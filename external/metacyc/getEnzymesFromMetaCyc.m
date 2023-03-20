@@ -77,7 +77,7 @@ try
     fprintf('done\n');
 catch
     fprintf(['Cannot locate ' strrep(enzymesFile,'\','/') '\nNow try to generate it from local MetaCyc data files...\n']);
-    if ~exist(fullfile(metacycPath,metaCycProteinFile),'file') || ~exist(fullfile(metacycPath,metaCycEnzrxnsFile),'file')
+    if ~isfile(fullfile(metacycPath,metaCycProteinFile)) || ~isfile(fullfile(metacycPath,metaCycEnzrxnsFile))
         EM=fprintf(['The files of enzymes or proteins cannot be located, and should be downloaded from MetaCyc.\n']);
         dispEM(EM);
     else

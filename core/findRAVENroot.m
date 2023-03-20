@@ -7,15 +7,11 @@ function [ravenPath, prevDir] = findRAVENroot()
 
 ST=dbstack('-completenames');
 prevDir = pwd();
-if length(ST)>1
-    ravenPath=ST(2).file; % In case findRAVENroot is run via another function
-else
-    ravenPath=ST(1).file;
-end
+ravenPath = ST(strcmp({ST.name},'findRAVENroot')).file;
 rootFound = 0;
 while rootFound == 0
-    isRoot = exist(fullfile(ravenPath,'RAVEN2.png'),'file');
-    if isRoot == 2
+    isRoot = isfile(fullfile(ravenPath,'RAVEN2.png'));
+    if isRoot
         rootFound = 1;
     else
         ravenPathOld = ravenPath;
