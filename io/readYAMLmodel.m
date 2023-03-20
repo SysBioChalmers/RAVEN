@@ -23,7 +23,7 @@ if nargin < 2
     verbose = false;
 end
 
-if ~(exist(fileName,'file')==2)
+if ~isfile(fileName)
     error('Yaml file %s cannot be found', string(fileName));
 end
 

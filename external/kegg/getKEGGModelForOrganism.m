@@ -42,7 +42,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %                       the HMMs were trained on pro- or eukaryotic
 %                       sequences, using a sequence similarity threshold of
 %                       XXX %, fitting the KEGG version YY. E.g.
-%                       euk90_kegg102. (opt, see note about fastaFile. Note
+%                       euk90_kegg105. (opt, see note about fastaFile. Note
 %                       that in order to rebuild the KEGG model from a
 %                       database dump, as opposed to using the version
 %                       supplied with RAVEN, you would still need to supply
@@ -318,31 +318,31 @@ ravenPath=findRAVENroot();
 %required zip file already in working directory or have it extracted. If
 %the zip file and directory is not here, it is downloaded from the cloud
 if ~isempty(dataDir)
-    hmmOptions={'euk90_kegg102','prok90_kegg102'};
+    hmmOptions={'euk90_kegg105','prok90_kegg105'};
     if ~endsWith(dataDir,hmmOptions) %Check if dataDir ends with any of the hmmOptions.
                                      %If not, then check whether the required folders exist anyway.
-        if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file') && ...
-                ~exist(fullfile(dataDir,'fasta'),'dir') && ...
-                ~exist(fullfile(dataDir,'aligned'),'dir') && ...
-                ~exist(fullfile(dataDir,'hmms'),'dir')
+        if ~isfile(fullfile(dataDir,'keggdb','genes.pep')) && ...
+                ~isfolder(fullfile(dataDir,'fasta')) && ...
+                ~isfolder(fullfile(dataDir,'aligned')) && ...
+                ~isfolder(fullfile(dataDir,'hmms'))
             error(['Pre-trained HMMs set is not recognised. If you want download RAVEN provided sets, it should match any of the following: ' strjoin(hmmOptions,' or ')])
         end
     else
-        if exist(dataDir,'dir') && exist(fullfile(dataDir,'hmms','K00844.hmm'),'file')
+        if isfolder(dataDir) && isfile(fullfile(dataDir,'hmms','K00844.hmm'))
             fprintf(['NOTE: Found <strong>' dataDir '</strong> directory with pre-trained HMMs, it will therefore be used during reconstruction\n']);
-        elseif ~exist(dataDir,'dir') && exist([dataDir,'.zip'],'file')
+        elseif ~isfolder(dataDir) && isfile([dataDir,'.zip'])
             fprintf('Extracting the HMMs archive file... ');
             unzip([dataDir,'.zip']);
             fprintf('COMPLETE\n');
         else
             hmmIndex=strcmp(dataDir,hmmOptions);
             if ~any(hmmIndex)
-                error(['Pre-trained HMMs are only provided with proteins clustered at 90% sequence identity (i.e. prok90_kegg102 and euk90_kegg102). ' ...
+                error(['Pre-trained HMMs are only provided with proteins clustered at 90% sequence identity (i.e. prok90_kegg105 and euk90_kegg105). ' ...
                     'Use either of these datasets, or otherwise download the relevant sequence data from KEGG to train HMMs with your desired sequence identity'])
             else
                 fprintf('Downloading the HMMs archive file... ');
                 try
-                    websave([dataDir,'.zip'],['https://github.com/SysBioChalmers/RAVEN/releases/download/v2.7.4/',hmmOptions{hmmIndex},'.zip']);
+                    websave([dataDir,'.zip'],['https://github.com/SysBioChalmers/RAVEN/releases/download/v2.8.0/',hmmOptions{hmmIndex},'.zip']);
                 catch ME
                     if strcmp(ME.identifier,'MATLAB:webservices:HTTP404StatusCodeError')
                         error('Failed to download the HMMs archive file, the server returned a 404 error, try again later. If the problem persists please report it on the RAVEN GitHub Issues page: https://github.com/SysBioChalmers/RAVEN/issues')
@@ -356,7 +356,7 @@ if ~isempty(dataDir)
             fprintf('COMPLETE\n');
         end
         %Check if HMMs are extracted
-        if ~exist(fullfile(dataDir,'hmms','K00844.hmm'),'file')
+        if ~isfile(fullfile(dataDir,'hmms','K00844.hmm'))
             error(['The HMM files seem improperly extracted and not found in ',dataDir,'/hmms. Please remove ',dataDir,' folder and rerun getKEGGModelForOrganism']);
         end
     end
@@ -369,19 +369,19 @@ if any(fastaFile)
         fastaFile=which(fastaFile);
     end
     %Create the required sub-folders in dataDir if they dont exist
-    if ~exist(fullfile(dataDir,'keggdb'),'dir')
+    if ~isfolder(fullfile(dataDir,'keggdb'))
         mkdir(dataDir,'keggdb');
     end
-    if ~exist(fullfile(dataDir,'fasta'),'dir')
+    if ~isfolder(fullfile(dataDir,'fasta'))
         mkdir(dataDir,'fasta');
     end
-    if ~exist(fullfile(dataDir,'aligned'),'dir')
+    if ~isfolder(fullfile(dataDir,'aligned'))
         mkdir(dataDir,'aligned');
     end
-    if ~exist(fullfile(dataDir,'hmms'),'dir')
+    if ~isfolder(fullfile(dataDir,'hmms'))
         mkdir(dataDir,'hmms');
     end
-    if ~exist(outDir,'dir')
+    if ~isfolder(outDir)
         mkdir(outDir);
     end
 end
@@ -527,7 +527,7 @@ outFiles=listFiles(fullfile(outDir,'*.out'));
 missingFASTA=setdiff(KOModel.rxns,[fastaFiles;alignedFiles;hmmFiles;outFiles]);
 
 if ~isempty(missingFASTA)
-    if ~exist(fullfile(dataDir,'keggdb','genes.pep'),'file')
+    if ~isfile(fullfile(dataDir,'keggdb','genes.pep'))
         EM=['The file ''genes.pep'' cannot be located at ' strrep(dataDir,'\','/') '/ and should be downloaded from the KEGG FTP.\n'];
         dispEM(EM);
     end
@@ -580,12 +580,12 @@ if ~isempty(missingAligned)
         %This is checked here because it could be that it is created by a
         %parallel process. The faw-files are saved as temporary files to
         %kept track of which files are being worked on
-        if ~exist(fullfile(dataDir,'aligned',[missingAligned{i} '.faw']),'file') &&...
-                ~exist(fullfile(dataDir,'aligned',[missingAligned{i} '.fa']),'file')
+        if ~isfile(fullfile(dataDir,'aligned',[missingAligned{i} '.faw'])) &&...
+                ~isfile(fullfile(dataDir,'aligned',[missingAligned{i} '.fa']))
             %Check that the multi-FASTA file exists. It should do so since
             %we are saving empty files as well. Print a warning and
             %continue if not
-            if ~exist(fullfile(dataDir,'fasta',[missingAligned{i} '.fa']),'file')
+            if ~isfile(fullfile(dataDir,'fasta',[missingAligned{i} '.fa']))
                 EM=['WARNING: The multi-FASTA file for ' missingAligned{i} ' does not exist'];
                 dispEM(EM,false);
                 continue;
@@ -742,13 +742,13 @@ if ~isempty(missingHMMs)
     for i=1:numel(missingHMMs)
         %This is checked here because it could be that it is created by a
         %parallel process
-        if ~exist(fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']),'file') && ~exist(fullfile(dataDir,'hmms',[missingHMMs{i} '.hmw']),'file')
+        if ~isfile(fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm'])) && ~isfile(fullfile(dataDir,'hmms',[missingHMMs{i} '.hmw']))
             %Check that the aligned FASTA file exists. It could be that it
             %is still being worked on by some other instance of the program
             %(the .faw file should then exist). This should not happen on a
             %single computer. It doesn't throw an error, because it should
             %finalize the ones it can
-            if ~exist(fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']),'file')
+            if ~isfile(fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']))
                 EM=['The aligned FASTA file for ' missingHMMs{i} ' does not exist'];
                 dispEM(EM,false);
                 continue;
@@ -799,11 +799,11 @@ if ~isempty(missingOUT)
     for i=1:numel(missingOUT)
         %This is checked here because it could be that it is created by a
         %parallel process
-        if ~exist(fullfile(outDir,[missingOUT{i} '.out']),'file')
+        if ~isfile(fullfile(outDir,[missingOUT{i} '.out']))
             %Check that the HMM file exists. It should do so since %we are
             %saving empty files as well. Print a warning and continue if
             %not
-            if ~exist(fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']),'file')
+            if ~isfile(fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']))
                 EM=['The HMM file for ' missingOUT{i} ' does not exist'];
                 dispEM(EM,false);
                 continue;

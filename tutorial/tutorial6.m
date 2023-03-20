@@ -46,7 +46,7 @@ ScoKEGGAnnotation=getKEGGModelForOrganism('sco','','','',1,0,0);
 %to see the detailed instructions for the choice of different parameters.
 %The default values for homology search are used because they have been
 %optimized for the best performance.
-ScoKEGGHomology=getKEGGModelForOrganism('ScoKEGGHMMs','Sco_all_protein.faa','prok90_kegg102','',1,0,0);
+ScoKEGGHomology=getKEGGModelForOrganism('ScoKEGGHMMs','Sco_all_protein.faa','prok90_kegg105','',1,0,0);
 
 %De novo reconstruction from MetaCyc should take about 10 minutes, while
 %both reconstructions from KEGG may take up to 50-60 minutes in overall

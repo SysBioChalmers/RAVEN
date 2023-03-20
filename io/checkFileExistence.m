@@ -54,7 +54,7 @@ files(inCurrDir) = fullfile(cd,files(inCurrDir));
 %Check existence
 if checkExist
     for i=1:numel(files)
-        if ~exist(files{i},'file')
+        if ~isfile(files{i})
             error('File "%s" cannot be found\n',files{i});
         elseif allowSpace == false & strfind(files{i},' ')
             error('File "%s" has an invalid space in the filename or path, please remove this before running this function\n',files{i});

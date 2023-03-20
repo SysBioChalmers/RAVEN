@@ -16,7 +16,7 @@ function constructMultiFasta(model,sourceFile,outputDir)
 
 sourceFile=char(sourceFile);
 outputDir=char(outputDir);
-if ~(exist(sourceFile,'file')==2)
+if ~isfile(sourceFile)
     error('FASTA file %s cannot be found',string(sourceFile));
 end
 
@@ -159,18 +159,4 @@ fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 
 %Close the source file
 fclose(fid);
-end
-
-function files=listFiles(directory)
-%Supporter function to list the files in a directory and return them as a
-%cell array
-temp=dir(directory);
-files=cell(numel(temp),1);
-for i=1:numel(temp)
-    files{i}=temp(i,1).name;
-end
-files=strrep(files,'.fa','');
-files=strrep(files,'.hmm','');
-files=strrep(files,'.out','');
-files=strrep(files,'.faw','');
 end
