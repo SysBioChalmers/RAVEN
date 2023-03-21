@@ -11,7 +11,8 @@ The RAVEN (Reconstruction, Analysis and Visualization of Metabolic Networks) Too
 
 
 ## Documentation
-The information about downloading, installing and developing RAVEN is included in the [Wiki](https://github.com/SysBioChalmers/RAVEN/wiki)
+The information about downloading, installing and developing RAVEN is included in the [Wiki](https://github.com/SysBioChalmers/RAVEN/wiki). The source code documentation is also available 
+[online](http://sysbiochalmers.github.io/RAVEN/doc/).
 
 
 ## Cite Us
