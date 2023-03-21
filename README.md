@@ -1,4 +1,4 @@
-# ![The RAVEN Toolbox 2](RAVEN2.png)
+<img src="./RAVEN2.png" width="200px">
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3689518.svg)](https://doi.org/10.5281/zenodo.3689518)
 [![GitHub release](https://img.shields.io/github/release/SysBioChalmers/RAVEN/all.svg)](https://GitHub.com/SysBioChalmers/RAVEN/releases/)
