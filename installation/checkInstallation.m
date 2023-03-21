@@ -1,4 +1,4 @@
-function checkInstallation(develMode)
+function checkInstallation(developMode)
 % checkInstallation
 %   The purpose of this function is to check if all necessary functions are
 %   installed and working. It also checks whether there are any functions
@@ -6,14 +6,14 @@ function checkInstallation(develMode)
 %   user-defined functions, which are accessible from MATLAB pathlist
 %
 %   Input: 
-%   develMode       logical indicating development mode, which includes
+%   developMode     logical indicating development mode, which includes
 %                   testing of binaries that are required to update KEGG
 %                   HMMs (opt, default false)
 %
-%   Usage: checkInstallation(develMode)
+%   Usage: checkInstallation(developMode)
 
 if nargin<1
-    develMode=false;
+    developMode=false;
 end
 
 %Get the RAVEN path
@@ -36,13 +36,13 @@ if exist(fullfile(ravenDir,'version.txt'), 'file') == 2
         for i=1:3
             if currVer(i)<newVerNum(i)
                 fprintf([myStr('   > Latest RAVEN release available',40) '%f'])
-                fprintf(['[\b' newVer,']\b\n'])
-                hasGit=exist(fullfile(ravenDir,'.git'),'file');
-                if hasGit==7
-                    fprintf('     [\bRun git pull in your favourite git client]\b\n')
-                    fprintf('     [\bto get the latest RAVEN release]\b\n');
+                printOrange([newVer,'\n'])
+                hasGit=isfolder(fullfile(ravenDir,'.git'));
+                if hasGit
+                    printOrange('     Run git pull in your favourite git client\n')
+                    printOrange('     to get the latest RAVEN release\n');
                 else
-                    fprintf([myStr('     [\bInstructions on how to upgrade]\b',40) '%f'])
+                    printOrange([myStr('     Instructions on how to upgrade',40) '%f'])
                     fprintf('<a href="https://github.com/SysBioChalmers/RAVEN/wiki/Installation#upgrade-to-latest-raven-release">here</a>\n');
                 end
                 break
@@ -52,8 +52,8 @@ if exist(fullfile(ravenDir,'version.txt'), 'file') == 2
         end
     catch
         fprintf([myStr('   > Checking for latest RAVEN release',40) '%f'])
-        fprintf('[\bFail]\b\n');
-        fprintf('     [\bCannot reach GitHub for release info]\b\n');
+        printOrange('Fail\n');
+        printOrange('     Cannot reach GitHub for release info\n');
     end
 else
     fprintf('DEVELOPMENT\n');
@@ -75,12 +75,12 @@ try
         savepath
         fprintf('Pass\n')   
     catch
-        fprintf('[\bFail]\b\n')
+        printOrange('Fail\n')
         fprintf(['   You might have to rerun checkInstallation again\n'...
                  '   next time you start up MATLAB\n'])        
     end
 catch
-    fprintf('[\bFail]\b\n')
+    printOrange('Fail\n')
 end
 
 if isunix
@@ -89,7 +89,7 @@ if isunix
     if status == 0
         fprintf('Pass\n')
     else
-        fprintf('[\bFail]\b\n')
+        printOrange('Fail\n')
     end
 end
 
@@ -101,7 +101,7 @@ try
     addJavaPaths();
     fprintf('Pass\n')
 catch
-    fprintf('[\bFail]\b\n')
+    printOrange('Fail\n')
 end
 fprintf([myStr(' > Checking libSBML version',40) '%f'])
 try
@@ -110,11 +110,11 @@ try
         libSBMLver=OutputSBML; % Only works in libSBML 5.17.0+
         fprintf([libSBMLver.libSBML_version_string '\n']);
     catch
-        fprintf('[\bFail]\b\n')
+        printOrange('Fail\n')
         fprintf('   An older libSBML version was found, update to version 5.17.0 or higher for a significant improvement of model import\n');
     end
 catch
-    fprintf('[\bFail]\b\n')
+    printOrange('Fail\n')
     fprintf('   Download libSBML from http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n');
 end
 fprintf(' > Checking model import and export\n')
@@ -124,28 +124,28 @@ fprintf([myStr('   > Import Excel format',40) '%f'])
 if res(1).Passed == 1
     fprintf('Pass\n')
 else
-    fprintf('[\bFail]\b\n')
+    printOrange('Fail\n')
 end
 
 fprintf([myStr('   > Export Excel format',40) '%f'])
 if res(3).Passed == 1
     fprintf('Pass\n')
 else
-    fprintf('[\bFail]\b\n')
+    printOrange('Fail\n')
 end
 
 fprintf([myStr('   > Import SBML format',40) '%f'])
 if res(2).Passed == 1
     fprintf('Pass\n')
 else
-    fprintf('[\bFail]\b\n')
+    printOrange('Fail\n')
 end
 
 fprintf([myStr('   > Export SBML format',40) '%f'])
 if res(4).Passed == 1
     fprintf('Pass\n')
 else
-    fprintf('[\bFail]\b\n')
+    printOrange('Fail\n')
 end
 
 if res(1).Passed~=1 && res(3).Passed~=1 && exist('vaderSentimentScores.m','file')==2
@@ -160,7 +160,7 @@ end
 %     readYaml(ymlFile,true);
 %     fprintf('Pass\n');
 % catch
-%     fprintf('[\bFail]\b\n');
+%     printOrange('Fail\n');
 % end
 
 fprintf('\n=== Model solvers ===\n');
@@ -173,28 +173,28 @@ fprintf([myStr('   > glpk',40) '%f'])
 if res(1).Passed == 1
     fprintf('Pass\n')
 else
-    fprintf('[\bFail]\b\n')
+    printOrange('Fail\n')
 end
 
 fprintf([myStr('   > gurobi',40) '%f'])
 if res(2).Passed == 1
     fprintf('Pass\n')
 else
-    fprintf('[\bFail]\b\n')
+    printOrange('Fail\n')
 end
 
 fprintf([myStr('   > soplex',40) '%f'])
 if res(3).Passed == 1
     fprintf('Pass\n')
 else
-    fprintf('[\bFail]\b\n')
+    printOrange('Fail\n')
 end
 
 fprintf([myStr('   > cobra',40) '%f'])
 if res(4).Passed == 1
     fprintf('Pass\n')
 else
-    fprintf('[\bFail]\b\n')
+    printOrange('Fail\n')
 end
 fprintf([myStr(' > Set RAVEN solver',40) '%f'])
 try
@@ -247,7 +247,7 @@ if res==false
              '   when using a FASTA file as input\n'])
 end
 
-if develMode
+if developMode
     fprintf('\n=== Development binary executables ===\n');
     fprintf('NOTE: These binaries are only required when using KEGG FTP dump files in getKEGGModelForOrganism\n');
 
@@ -272,7 +272,7 @@ if results.Failed==0 && results.Incomplete==0
     fprintf('Pass\n');
     res=true;
 else
-    fprintf('[\bFail]\b\n')
+    printOrange('Fail\n')
     fprintf('   Download/compile the binary and rerun checkInstallation\n');
     res=false;
 end
@@ -305,20 +305,25 @@ binList = {fullfile(binDir,'blast+','blastp');
            fullfile(binDir,'GLPKmex','glpkcc');
            fullfile(binDir,'libSBML','TranslateSBML');
            fullfile(binDir,'libSBML','OutputSBML');
-           fullfile(binDir,'mafft','mafft-linux64','mafft.bat');
-           fullfile(binDir,'mafft','mafft-mac','mafft.bat');};
-if ismac
-    binList(1:6) = strcat(binList(1:6),'.mac');
-    binList(10) = [];
-else
-    binList(9) = [];
-end
+           fullfile(binDir,'mafft','mafft-linux64','mafft');
+           fullfile(binDir,'mafft','mafft-mac','mafft');};
 
 for i=1:numel(binList)
-    binPath = which(binList{i});
-    [status,cmdout] = system(['chmod +x "' binPath '"']);
+    [status,cmdout] = system(['chmod +x "' binList{i} '".(mexa64|mexglx|mexmaci64|mac|bat)']);
     if status ~= 0
         error('Failed to make %s executable: %s ',binList{i},strip(cmdout))
     end
+end
+
+end
+
+function printOrange(stringToPrint)
+
+try useDesktop = usejava('desktop'); catch, useDesktop = false; end
+
+if useDesktop
+    fprintf(['[\b' stringToPrint,']\b'])
+else
+    fprintf(stringToPrint)
 end
 end

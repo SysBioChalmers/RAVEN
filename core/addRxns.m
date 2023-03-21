@@ -214,7 +214,11 @@ else
     for i = 1:length(rxnsToAdd.mets)
         mets         = rxnsToAdd.mets{i};
         stoichCoeffs = rxnsToAdd.stoichCoeffs{i};
-        isrev        = rxnsToAdd.lb(i) < 0;
+        if isfield(rxnsToAdd,'ub')
+            isrev        = rxnsToAdd.lb(i) < 0 && rxnsToAdd.ub(i) > 0;
+        else
+            isrev        = rxnsToAdd.lb(i) < 0;
+        end
         rxnsToAdd.equations{i} = buildEquation(mets,stoichCoeffs,isrev);
     end
 end

@@ -27,7 +27,7 @@ if nargin<2
 end
 
 fileName=char(fileName);
-if ~(exist(fileName,'file')==2)
+if ~isfile(fileName)
     error('HPA file %s cannot be found', string(fileName));
 end
 

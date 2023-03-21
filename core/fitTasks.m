@@ -53,7 +53,7 @@ if nargin<7
     params=[];
 end
 
-if isempty(taskStructure) && ~(exist(inputFile,'file')==2)
+if isempty(taskStructure) && ~isfile(inputFile)
     error('Task file %s cannot be found',string(inputFile));
 end
 
