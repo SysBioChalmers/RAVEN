@@ -311,7 +311,7 @@ binList = {fullfile(binDir,'blast+','blastp');
 for i=1:numel(binList)
     [status,cmdout] = system(['chmod +x "' binList{i} '".(mexa64|mexglx|mexmaci64|mac|bat)']);
     if status ~= 0
-        error('Failed to make %s executable: %s ',binList{i},strip(cmdout))
+        warning('Failed to make %s executable: %s ',binList{i},strip(cmdout))
     end
 end
 
