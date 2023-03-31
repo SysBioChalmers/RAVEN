@@ -109,7 +109,7 @@ function taskStruct=parseTaskList(inputFile)
 %
 %   Usage: taskStruct=parseTaskList(inputFile)
 
-if ~isfile(inputFile)
+if ~(exist(inputFile,'file')==2)
     error('Task list %s cannot be found',string(inputFile));
 end
 

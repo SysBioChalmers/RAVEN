@@ -75,7 +75,7 @@ if exist(metsFile, 'file')
     load(metsFile);
 else
     fprintf(['NOTE: Cannot locate ' strrep(metsFile,'\','/') ', it will therefore be generated from the local KEGG database\n']);
-    if ~isfile(fullfile(keggPath,'compound')) || ~isfile(fullfile(keggPath,'compound.inchi'))
+    if ~exist(fullfile(keggPath,'compound'),'file') || ~exist(fullfile(keggPath,'compound.inchi'),'file')
         EM=fprintf(['The files ''compound'' and ''compound.inchi'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
         dispEM(EM);
     else

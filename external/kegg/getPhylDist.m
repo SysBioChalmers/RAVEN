@@ -39,7 +39,7 @@ if exist(distFile, 'file')
     fprintf('COMPLETE\n');
 else
     fprintf(['Cannot locate ' strrep(distFile,'\','/') '\n']);
-    if ~isfile(fullfile(keggPath,'taxonomy'))
+    if ~exist(fullfile(keggPath,'taxonomy'),'file')
         EM=fprintf(['The file ''taxonomy'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
         dispEM(EM);
     else

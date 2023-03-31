@@ -29,24 +29,24 @@ if sortIds==true
 end
 
 %If the folder doesn't exist then create it
-if ~isfolder(path)
+if ~exist(path,'dir')
     mkdir(path);
 end
 
 %Remove the files if they already exist
-if isfile(fullfile(path,'excelRxns.txt'))
+if exist(fullfile(path,'excelRxns.txt'),'file')
     delete(fullfile(path,'excelRxns.txt'));
 end
-if isfile(fullfile(path,'excelMets.txt'))
+if exist(fullfile(path,'excelMets.txt'),'file')
     delete(fullfile(path,'excelMets.txt'));
 end
-if isfile(fullfile(path,'excelGenes.txt'))
+if exist(fullfile(path,'excelGenes.txt'),'file')
     delete(fullfile(path,'excelGenes.txt'));
 end
-if isfile(fullfile(path,'excelModel.txt'))
+if exist(fullfile(path,'excelModel.txt'),'file')
     delete(fullfile(path,'excelModel.txt'));
 end
-if isfile(fullfile(path,'excelComps.txt'))
+if exist(fullfile(path,'excelComps.txt'),'file')
     delete(fullfile(path,'excelComps.txt'));
 end
 

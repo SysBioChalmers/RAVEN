@@ -16,7 +16,7 @@ function GSS = getWoLFScores(inputFile, kingdom)
 %
 %   Usage: GSS = getWoLFScores(inputFile, kingdom)
 
-if ~isfile(inputFile)
+if ~(exist(inputFile,'file')==2)
     error('FASTA file %s cannot be found',string(inputFile));
 end
 

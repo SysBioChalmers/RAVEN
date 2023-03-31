@@ -96,7 +96,7 @@ if exist(rxnsFile, 'file')
     fprintf('done\n');
 else
     fprintf(['Cannot locate ' strrep(rxnsFile,'\','/') '\nNow try to generate it from local MetaCyc data files...\n']);
-    if ~isfile(fullfile(metacycPath,metaCycRxnFile)) || ~isfile(fullfile(metacycPath,metaCycPwyFile))
+    if ~exist(fullfile(metacycPath,metaCycRxnFile),'file') || ~exist(fullfile(metacycPath,metaCycPwyFile),'file')
         EM=fprintf(['The files of reactions or pathways cannot be located, and should be downloaded from MetaCyc.\n']);
         dispEM(EM);
     else

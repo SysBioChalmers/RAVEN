@@ -34,7 +34,7 @@ import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.xssf.usermodel.*;
 
 %Check if the file exists
-if ~isfile(fileName)
+if ~(exist(fileName,'file')==2)
     if createEmpty==false
         EM='The Excel file could not be found';
         dispEM(EM);

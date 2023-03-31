@@ -76,7 +76,7 @@ if exist(genesFile, 'file')
     load(genesFile);
 else
     fprintf(['NOTE: Cannot locate ' strrep(genesFile,'\','/') ', it will therefore be generated from the local KEGG database\n']);
-    if ~isfile(fullfile(keggPath,'ko')) || ~isfile(fullfile(keggPath,'reaction'))
+    if ~exist(fullfile(keggPath,'ko'),'file') || ~exist(fullfile(keggPath,'reaction'),'file')
         EM=fprintf(['The files ''ko'' and ''reaction'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP\n']);
         dispEM(EM);
     else

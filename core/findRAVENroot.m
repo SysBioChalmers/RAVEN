@@ -10,8 +10,8 @@ prevDir = pwd();
 ravenPath = ST(strcmp({ST.name},'findRAVENroot')).file;
 rootFound = 0;
 while rootFound == 0
-    isRoot = isfile(fullfile(ravenPath,'RAVEN2.png'));
-    if isRoot
+    isRoot = exist(fullfile(ravenPath,'RAVEN2.png'),'file');
+    if isRoot == 2
         rootFound = 1;
     else
         ravenPathOld = ravenPath;

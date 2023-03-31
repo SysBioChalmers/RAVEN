@@ -54,7 +54,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 %Remove the output file if it already exists
-if isfile(fileName)
+if exist(fileName,'file')
     delete(fileName);
 end
 

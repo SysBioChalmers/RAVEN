@@ -37,8 +37,8 @@ if exist(fullfile(ravenDir,'version.txt'), 'file') == 2
             if currVer(i)<newVerNum(i)
                 fprintf([myStr('   > Latest RAVEN release available',40) '%f'])
                 printOrange([newVer,'\n'])
-                hasGit=isfolder(fullfile(ravenDir,'.git'));
-                if hasGit
+                hasGit=exist(fullfile(ravenDir,'.git'),'file');
+                if hasGit==7
                     printOrange('     Run git pull in your favourite git client\n')
                     printOrange('     to get the latest RAVEN release\n');
                 else
