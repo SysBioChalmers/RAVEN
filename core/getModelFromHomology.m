@@ -519,8 +519,7 @@ end
 draftModel=mergeModels(models,'metNames');
 
 %Remove unnecessary OLD_ genes, that were added with OR relationships
-draftModel.grRules=regexprep(draftModel.grRules,'')
-regexStr=['OLD_(', strjoin(modelNames(:),'|'),')_\S+'];
+regexStr=['OLD_(', strjoin(modelNames(:),'|'),')_(\S^\))+'];
 draftModel.grRules=regexprep(draftModel.grRules,[' or ' regexStr],'');
 draftModel.grRules=regexprep(draftModel.grRules,[regexStr ' or '],'');
 
