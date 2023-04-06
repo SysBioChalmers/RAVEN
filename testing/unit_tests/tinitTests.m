@@ -184,7 +184,7 @@ function testModel4 = getTstModel4()
                            'h[s] =>';
                            'e[s] => g[s]'};
     rxnsToAdd.grRules = {'G5';'G6';'G7';'G8';'G9';'G10';'G11'};
-    testModel4 = addRxns(testModel4,rxnsToAdd, 3, [], true, true);
+    [~,testModel4] = evalc("addRxns(testModel4,rxnsToAdd, 3, [], true, true);");
 end
 
 function testModel4RxnScores = getTstModel4RxnScores()
@@ -205,7 +205,7 @@ function testModel5 = getTstModel5()
                            'g[c] <=> e[c]';...
                            'g[c] <=> e[c]'};
     rxnsToAdd.grRules = {'G11';'G12';'G13';'G14'};
-    testModel5 = addRxns(testModel,rxnsToAdd, 3, [], true, true);
+    [~,testModel5] = evalc("addRxns(testModel,rxnsToAdd, 3, [], true, true);");
 end
 
 function testModel5RxnScores = getTstModel5RxnScores()
