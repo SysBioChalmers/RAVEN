@@ -182,7 +182,7 @@ switch solver
         cd(fullfile(ravenDir,'software','GLPKmex'))
         glpk(prob.c, prob.A, prob.b, prob.lb, prob.ub, prob.csense, prob.vartype, prob.osense, solverparams);
         solverparams.tmlim   = defaultparams.timeLimit;
-        runCheck = system(['soplex --solvemode=2 -t' num2str(solverparams.tmlim) ' -x outpb.lp > result.out']);
+        [runCheck, cmdOut]  = system(['soplex --solvemode=2 -t' num2str(solverparams.tmlim) ' -x outpb.lp > result.out']);
 
         if runCheck ~= 0
             error('SoPlex did not run')
@@ -216,7 +216,11 @@ switch solver
             rxns     = str2double(replace(flux(:,1),'x_',''));
             flux     = str2double(flux(:,2));
             res.full(rxns) = flux;
+        elseif ~isempty(cmdOut)
+            error(['SoPlex error: ' extractBefore(cmdOut,newline)])
         else
+            statusLine = contains(line_raw,'SoPlex status');
+            disp(line_raw(statusLine));
             res.stat = 0;
             res.obj  = [];
             res.full = [];

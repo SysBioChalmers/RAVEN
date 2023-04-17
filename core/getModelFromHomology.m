@@ -117,6 +117,15 @@ for i=1:numel(models)
     end
 end
 
+%Check that genes do not begin with ( or end with ), as this makes problematic grRules
+for i=1:numel(blastStructure)
+    problemGenes = startsWith(blastStructure(i).fromGenes,'(') | endsWith(blastStructure(i).fromGenes,')');
+    if any(problemGenes)
+        error(['One or multiple gene identifiers from ' blastStructure(i).fromId ...
+               ' starts with ''('' and/or ends with '')'', which is not allowed'])
+    end
+end
+
 %Assume for now that all information is there and that it's correct. This
 %is important to fix since no further checks are being made!
 
@@ -509,8 +518,8 @@ end
 %complexes
 draftModel=mergeModels(models,'metNames');
 
-% %Remove unnecessary OLD_ genes, that were added with OR relationships
-regexStr=['OLD_(', strjoin(modelNames(:),'|'),')_\S+'];
+%Remove unnecessary OLD_ genes, that were added with OR relationships
+regexStr=['OLD_(', strjoin(modelNames(:),'|'),')_(\S^\))+'];
 draftModel.grRules=regexprep(draftModel.grRules,[' or ' regexStr],'');
 draftModel.grRules=regexprep(draftModel.grRules,[regexStr ' or '],'');
 
