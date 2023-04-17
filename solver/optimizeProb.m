@@ -178,17 +178,6 @@ switch solver
         solverparams = structUpdate(solverparams,params);
         prob.csense = renameparams(prob.csense, {'L','G','E'}, {'U','L','S'});
 
-        if ismac
-            try
-                [~, zPath] = system("awk '/PATH=/{print}' ~/.zprofile");
-                zPath = strip(regexprep(zPath,'^PATH="?',''));
-                zPath = strsplit(regexprep(zPath,'"?',''),':');
-                zPath(strcmp(zPath,'${PATH}')) = [];
-                setenv('PATH', strcat(strjoin(zPath,':'), ':', getenv("PATH")));
-            catch
-            end
-        end
-
         [ravenDir,currDir]=findRAVENroot();
         cd(fullfile(ravenDir,'software','GLPKmex'))
         glpk(prob.c, prob.A, prob.b, prob.lb, prob.ub, prob.csense, prob.vartype, prob.osense, solverparams);
