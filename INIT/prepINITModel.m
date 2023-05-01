@@ -1,4 +1,4 @@
-function prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore, extComp)
+function prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore, extComp, skipScaling)
 % prepINITModel
 %
 % The purpose of this function is to run time-consuming calculation steps that are not
@@ -16,7 +16,19 @@ function prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, conve
 % extComp           Name of the external compartment, typically 's' or 'e'. This
 %                   is used for identifying exch and import rxns (opt, default = 'e')
 % prepData          The resulting prepData structure which is used as input to ftINIT
-%
+% skipScaling       If true the scaling step is not run on the minimal model. The 
+%                   scaling is there to remove large differences between the 
+%                   stoichiometric coefficients within a reaction, since such
+%                   differences creates numerical issues in the ftINIT algorithm 
+%                   due to limitations in solver resolution. However,
+%                   the current scaling step is also risky and may lead to that
+%                   some reactions cannot carry flux, since it changes the stoichiometry
+%                   of the reactions with large differences. If you experience problems
+%                   where the solution is infeasible, it may be worth trying to turn off
+%                   the scaling. Note that it is only the minModel that is scaled,
+%                   the scaling will not be present in the final model.
+%                   Default: (opt, default = false)
+% 
 % Usage: prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore, extComp)
 
 
@@ -36,6 +48,9 @@ if nargin < 6
     extComp = 'e';
 end
 
+if nargin < 7
+    skipScaling = false;
+end
 disp('Step 1: Gene rules')
 [origRefModel.grRules, origRefModel.rxnGeneMat] = standardizeGrRules(origRefModel, true);
 
@@ -286,10 +301,13 @@ toIgnoreAllWithoutGPRs = cellfun(@isempty,minModel2.grRules);
 %      metabolites as well (ROS => kROS, albumin => millialbumin, etc., but
 %      scaled freely with a mathematical method). It could potentially open up
 %      for using less strict margins in the MILP, and make it run faster.
-scaledMinModel = rescaleModelForINIT(minModel3);
-scaledMinModel.ub(scaledMinModel.ub > 0) = 1000;
-scaledMinModel.lb(scaledMinModel.lb < 0) = -1000;
-
+if (skipScaling)
+    scaledMinModel = minModel3;
+else
+    scaledMinModel = rescaleModelForINIT(minModel3);
+    scaledMinModel.ub(scaledMinModel.ub > 0) = 1000;
+    scaledMinModel.lb(scaledMinModel.lb < 0) = -1000;
+end
 % create data structure with pre-processing results
 prepData.taskReport = taskReport;
 prepData.essentialRxns = newEssentialRxns; %essential rxns in the minModel
