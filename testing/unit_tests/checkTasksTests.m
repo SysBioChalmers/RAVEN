@@ -76,12 +76,12 @@ function testcheckTasks(testCase)
     testModelTasks = getTaskTstModelTasks();
     
     %the task should work with the full model
-    taskReport = checkTasks(testModel,[],true,false,false,testModelTasks);
+    [~,taskReport] = evalc("checkTasks(testModel,[],true,false,false,testModelTasks);");
     verifyTrue(testCase, taskReport.ok == 1)
     
     %now remove R2, then it should fail
     testModel2 = removeReactions(testModel, {'R2'});
-    taskReport2 = checkTasks(testModel2,[],true,false,false,testModelTasks);
+    [~, taskReport2] = evalc("checkTasks(testModel2,[],true,false,false,testModelTasks);");
     verifyTrue(testCase, taskReport2.ok == 0)
 end
 
