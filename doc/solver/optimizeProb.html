@@ -236,7 +236,7 @@ This function is called by:
 0182         cd(fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'GLPKmex'</span>))
 0183         glpk(prob.c, prob.A, prob.b, prob.lb, prob.ub, prob.csense, prob.vartype, prob.osense, solverparams);
 0184         solverparams.tmlim   = defaultparams.timeLimit;
-0185         runCheck = system([<span class="string">'soplex --solvemode=2 -t'</span> num2str(solverparams.tmlim) <span class="string">' -x outpb.lp &gt; result.out'</span>]);
+0185         [runCheck, cmdOut]  = system([<span class="string">'soplex --solvemode=2 -t'</span> num2str(solverparams.tmlim) <span class="string">' -x outpb.lp &gt; result.out'</span>]);
 0186 
 0187         <span class="keyword">if</span> runCheck ~= 0
 0188             error(<span class="string">'SoPlex did not run'</span>)
@@ -270,43 +270,47 @@ This function is called by:
 0216             rxns     = str2double(replace(flux(:,1),<span class="string">'x_'</span>,<span class="string">''</span>));
 0217             flux     = str2double(flux(:,2));
 0218             res.full(rxns) = flux;
-0219         <span class="keyword">else</span>
-0220             res.stat = 0;
-0221             res.obj  = [];
-0222             res.full = [];
-0223         <span class="keyword">end</span>
-0224 
-0225     <span class="keyword">otherwise</span>
-0226         error(<span class="string">'RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').'</span>);
-0227 <span class="keyword">end</span>
-0228 <span class="keyword">if</span> res.stat&gt;0
-0229     res.full=res.full(1:size(prob.a,2));
-0230 <span class="keyword">end</span>
+0219         <span class="keyword">elseif</span> ~isempty(cmdOut)
+0220             error([<span class="string">'SoPlex error: '</span> extractBefore(cmdOut,newline)])
+0221         <span class="keyword">else</span>
+0222             statusLine = contains(line_raw,<span class="string">'SoPlex status'</span>);
+0223             disp(line_raw(statusLine));
+0224             res.stat = 0;
+0225             res.obj  = [];
+0226             res.full = [];
+0227         <span class="keyword">end</span>
+0228 
+0229     <span class="keyword">otherwise</span>
+0230         error(<span class="string">'RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').'</span>);
 0231 <span class="keyword">end</span>
-0232 
-0233 <a name="_sub1" href="#_subfunctions" class="code">function s_merged=structUpdate(s_old,s_new)</a>
-0234 <span class="comment">%Remove overlapping fields from first struct;</span>
-0235 <span class="comment">%Obtain all unique names of remaining fields;</span>
-0236 <span class="comment">%Merge both structs</span>
-0237 s_merged = rmfield(s_old, intersect(fieldnames(s_old), fieldnames(s_new)));
-0238 names = [fieldnames(s_merged); fieldnames(s_new)];
-0239 s_merged = cell2struct([struct2cell(s_merged); struct2cell(s_new)], names, 1);
-0240 <span class="keyword">end</span>
-0241 
-0242 <a name="_sub2" href="#_subfunctions" class="code">function paramlist = renameparams(paramlist,old,new)</a>
-0243 <span class="keyword">if</span> ~iscell(paramlist)
-0244     wasNoCell = true;
-0245     paramlist={paramlist};
-0246 <span class="keyword">else</span>
-0247     wasNoCell = false;
-0248 <span class="keyword">end</span>
-0249 <span class="keyword">for</span> i=1:numel(old)
-0250     paramlist = regexprep(paramlist,old{i},new{i});
-0251 <span class="keyword">end</span>
-0252 <span class="keyword">if</span> wasNoCell
-0253     paramlist=paramlist{1};
-0254 <span class="keyword">end</span>
-0255 <span class="keyword">end</span></pre></div>
+0232 <span class="keyword">if</span> res.stat&gt;0
+0233     res.full=res.full(1:size(prob.a,2));
+0234 <span class="keyword">end</span>
+0235 <span class="keyword">end</span>
+0236 
+0237 <a name="_sub1" href="#_subfunctions" class="code">function s_merged=structUpdate(s_old,s_new)</a>
+0238 <span class="comment">%Remove overlapping fields from first struct;</span>
+0239 <span class="comment">%Obtain all unique names of remaining fields;</span>
+0240 <span class="comment">%Merge both structs</span>
+0241 s_merged = rmfield(s_old, intersect(fieldnames(s_old), fieldnames(s_new)));
+0242 names = [fieldnames(s_merged); fieldnames(s_new)];
+0243 s_merged = cell2struct([struct2cell(s_merged); struct2cell(s_new)], names, 1);
+0244 <span class="keyword">end</span>
+0245 
+0246 <a name="_sub2" href="#_subfunctions" class="code">function paramlist = renameparams(paramlist,old,new)</a>
+0247 <span class="keyword">if</span> ~iscell(paramlist)
+0248     wasNoCell = true;
+0249     paramlist={paramlist};
+0250 <span class="keyword">else</span>
+0251     wasNoCell = false;
+0252 <span class="keyword">end</span>
+0253 <span class="keyword">for</span> i=1:numel(old)
+0254     paramlist = regexprep(paramlist,old{i},new{i});
+0255 <span class="keyword">end</span>
+0256 <span class="keyword">if</span> wasNoCell
+0257     paramlist=paramlist{1};
+0258 <span class="keyword">end</span>
+0259 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
