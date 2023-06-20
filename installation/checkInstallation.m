@@ -1,62 +1,81 @@
-function checkInstallation(developMode)
+function currVer = checkInstallation(developMode)
 % checkInstallation
 %   The purpose of this function is to check if all necessary functions are
 %   installed and working. It also checks whether there are any functions
 %   with overlapping names between RAVEN and other toolboxes or
 %   user-defined functions, which are accessible from MATLAB pathlist
 %
-%   Input: 
+% Input: 
 %   developMode     logical indicating development mode, which includes
 %                   testing of binaries that are required to update KEGG
-%                   HMMs (opt, default false)
+%                   HMMs (opt, default false). If 'versionOnly' is
+%                   specified, only the version is reported as currVer, no
+%                   further installation or tests are performed.
 %
-%   Usage: checkInstallation(developMode)
+% Output:
+%   currVer         current RAVEN version
+%
+%   Usage: currVer = checkInstallation(developMode)
 
 if nargin<1
     developMode=false;
+end
+if ischar(developMode) && strcmp(developMode,'versionOnly')
+    versionOnly = true;
+else
+    versionOnly = false;
 end
 
 %Get the RAVEN path
 [ST, I]=dbstack('-completenames');
 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
 
-fprintf('\n*** THE RAVEN TOOLBOX ***\n\n');
-%Print the RAVEN version if it is not the development version
-fprintf([myStr(' > Installing from location',40) '%f']);
-fprintf('%s\n',ravenDir)
-fprintf([myStr(' > Checking RAVEN release',40) '%f']);
+% Do not print first few lines if only version should be reported
+if ~versionOnly
+    fprintf('\n*** THE RAVEN TOOLBOX ***\n\n');
+    %Print the RAVEN version if it is not the development version
+    fprintf([myStr(' > Installing from location',40) '%f']);
+    fprintf('%s\n',ravenDir)
+    fprintf([myStr(' > Checking RAVEN release',40) '%f']);
+end
 if exist(fullfile(ravenDir,'version.txt'), 'file') == 2
     currVer = fgetl(fopen(fullfile(ravenDir,'version.txt')));
     fclose('all');
-    fprintf([currVer '\n']);
-    try
-        newVer=strtrim(webread('https://raw.githubusercontent.com/SysBioChalmers/RAVEN/main/version.txt'));
-        newVerNum=str2double(strsplit(newVer,'.'));
-        currVer=str2double(strsplit(currVer,'.'));
-        for i=1:3
-            if currVer(i)<newVerNum(i)
-                fprintf([myStr('   > Latest RAVEN release available',40) '%f'])
-                printOrange([newVer,'\n'])
-                hasGit=isfolder(fullfile(ravenDir,'.git'));
-                if hasGit
-                    printOrange('     Run git pull in your favourite git client\n')
-                    printOrange('     to get the latest RAVEN release\n');
-                else
-                    printOrange([myStr('     Instructions on how to upgrade',40) '%f'])
-                    fprintf('<a href="https://github.com/SysBioChalmers/RAVEN/wiki/Installation#upgrade-to-latest-raven-release">here</a>\n');
+    if ~versionOnly
+        fprintf([currVer '\n']);
+        try
+            newVer=strtrim(webread('https://raw.githubusercontent.com/SysBioChalmers/RAVEN/main/version.txt'));
+            newVerNum=str2double(strsplit(newVer,'.'));
+            currVerNum=str2double(strsplit(currVer,'.'));
+            for i=1:3
+                if currVerNum(i)<newVerNum(i)
+                    fprintf([myStr('   > Latest RAVEN release available',40) '%f'])
+                    printOrange([newVer,'\n'])
+                    hasGit=isfolder(fullfile(ravenDir,'.git'));
+                    if hasGit
+                        printOrange('     Run git pull in your favourite git client\n')
+                        printOrange('     to get the latest RAVEN release\n');
+                    else
+                        printOrange([myStr('     Instructions on how to upgrade',40) '%f'])
+                        fprintf('<a href="https://github.com/SysBioChalmers/RAVEN/wiki/Installation#upgrade-to-latest-raven-release">here</a>\n');
+                    end
+                    break
+                elseif i==3
+                    fprintf('   > You are running the latest RAVEN release\n');
                 end
-                break
-            elseif i==3
-                fprintf('   > You are running the latest RAVEN release\n');
             end
+        catch
+            fprintf([myStr('   > Checking for latest RAVEN release',40) '%f'])
+            printOrange('Fail\n');
+            printOrange('     Cannot reach GitHub for release info\n');
         end
-    catch
-        fprintf([myStr('   > Checking for latest RAVEN release',40) '%f'])
-        printOrange('Fail\n');
-        printOrange('     Cannot reach GitHub for release info\n');
     end
 else
-    fprintf('DEVELOPMENT\n');
+    currVer = 'develop';
+    if ~versionOnly; fprintf('DEVELOPMENT\n'); end
+end
+if strcmp(developMode,'versionOnly')
+    return;
 end
 
 fprintf([myStr(' > Checking MATLAB release',40) '%f'])
