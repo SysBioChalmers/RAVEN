@@ -1,18 +1,38 @@
-function checkFunctionUniqueness()
+function status = checkFunctionUniqueness(altDirs)
 % checkFunctionUniqueness
 %   Checks whether RAVEN toolbox functions are unique across other
-%   toolboxes or user-created functions accessible in Matlab pathlist
+%   toolboxes or user-created functions accessible in Matlab pathlist.
+%
+% Input:
+%   altDirs     cell array of alternative directories with functions,
+%               should only be specified if this function is used for other
+%               purposes, NOT when looking for RAVEN toolbox functions.
+%
+% Output:
+%   status      true if all functions are unique, otherwise false
 %
 %   Usage: checkFunctionUniqueness()
 
-%Get the RAVEN path
-ravenDir=findRAVENroot();
+if nargin<1
+    %Get the RAVEN path
+    ravenDir=findRAVENroot();
+    
+    %Now getting all RAVEN functions recursively;
+    temp_res1=dir([ravenDir '/*/*.m']);
+    temp_res2=dir([ravenDir '/*/*/*.m']);
+    
+    ravenFunctions={temp_res1.name,temp_res2.name}';
+else
+    altDirs = strsplit(altDirs,';')';
+    ravenFunctions={};
+    for i=1:numel(altDirs)
+        temp_res=dir(fullfile(char(altDirs(i)),'*.m'));
+        ravenFunctions = [ravenFunctions, temp_res.name];
+    end
+    ravenFunctions=ravenFunctions';
+    ravenDir=altDirs;
+end
 
-%Now getting all RAVEN functions recursively;
-temp_res1=dir([ravenDir '/*/*.m']);
-temp_res2=dir([ravenDir '/*/*/*.m']);
-
-ravenFunctions={temp_res1.name,temp_res2.name}';
 %startup.m is not a normal function, any startup.m in the path should run
 %during startup, so duplicate use of this name is fine
 ravenFunctions=ravenFunctions(~ismember(ravenFunctions,'startup.m'));
@@ -52,8 +72,12 @@ for i=1:numel(matlabPaths)
 end
 
 if multiRaven==true || multiFunction == true
-    fprintf('Fail\n')
-    if multiRaven==true
+        if nargout > 0
+            status = false;
+        else
+            fprintf('Fail\n')
+        end
+    if multiRaven==true && nargin < 1
         error(['Multiple RAVEN versions detected in MATLAB path. Remove all ',...
                'RAVEN directories from the MATLAB path with removeRavenFromPath(), ',...
                'or manually remove them. Afterwards, re-run checkInstallation']);
@@ -62,8 +86,12 @@ if multiRaven==true || multiFunction == true
             fprintf(['   Duplicate functions in ',regexprep(overlapPath{i},'(\\)','\\$1'),'\n']);
             fprintf(['     ' strjoin(overlapFunctions{i},'\n     ') '\n']);
         end
-    fprintf('   Resolve conflicting functions to ensure RAVEN functionality\n');
+    fprintf('   Resolve conflicting functions to avoid unexpected behaviour\n');
     end
 else
-    fprintf('Pass\n')
+    if nargout > 0
+        status = true;
+    else
+        fprintf('Pass\n')
+    end
 end
