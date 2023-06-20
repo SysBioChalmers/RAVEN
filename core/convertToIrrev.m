@@ -28,6 +28,12 @@ end
 
 irrevModel=model;
 
+revIds = endsWith(model.rxns,'_REV');
+if any(revIds)
+    dispEM(['The following reactions already end with ''_REV'', complicating '...
+        'identification of new irreversible reactions: '], false, model.rxns(revIds));
+end
+
 revIndexesBool=model.rev~=0 & I;
 revIndexes=find(revIndexesBool);
 numOrigRxns=numel(model.rxns);
