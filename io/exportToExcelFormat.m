@@ -36,6 +36,12 @@ if sortIds==true
     model=sortIdentifiers(model);
 end
 
+addList = matlab.addons.installedAddons;
+if any(strcmpi(addList.Name,'Text Analytics Toolbox'))
+    error(['exportToExcelFormat is incompatible with MATLAB Text Analytics Toolbox. ' ...
+           'Further instructions => https://github.com/SysBioChalmers/RAVEN/issues/55#issuecomment-1514369299'])
+end
+
 [~, A, B]=fileparts(fileName);
 
 %If a path was used call on exportToTabDelimited instead

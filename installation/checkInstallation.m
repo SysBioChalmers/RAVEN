@@ -144,6 +144,11 @@ if res(1).Passed == 1
     fprintf('Pass\n')
 else
     printOrange('Fail\n')
+    addList = matlab.addons.installedAddons;
+    if any(strcmpi(addList.Name,'Text Analytics Toolbox'))
+        fprintf(['   Excel import/export is incompatible with MATLAB Text Analytics Toolbox.\n' ...
+                 '   Further instructions => https://github.com/SysBioChalmers/RAVEN/issues/55#issuecomment-1514369299\n'])
+    end
 end
 
 fprintf([myStr('   > Export Excel format',40) '%f'])
