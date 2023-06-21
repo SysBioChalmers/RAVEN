@@ -338,16 +338,4 @@ for i=1:numel(binList)
         warning('Failed to make %s executable: %s ',binList{i},strip(cmdout))
     end
 end
-
-end
-
-function printOrange(stringToPrint)
-
-try useDesktop = usejava('desktop'); catch, useDesktop = false; end
-
-if useDesktop
-    fprintf(['[\b' stringToPrint,']\b'])
-else
-    fprintf(stringToPrint)
-end
 end
