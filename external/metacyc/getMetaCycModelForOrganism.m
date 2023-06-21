@@ -109,10 +109,10 @@ blastStructure.ppos(~indexes)=[];
 fprintf('Completed searching against MetaCyc protein sequences.\n');
 
 % Get the qualified genes of query organism from blast structure
-model.genes=cell(10000,1);
-model.proteins=cell(10000,1);
-model.bitscore=zeros(10000,1);
-model.ppos=zeros(10000,1);
+model.genes=cell(100000,1);
+model.proteins=cell(100000,1);
+model.bitscore=zeros(100000,1);
+model.ppos=zeros(100000,1);
 num=1;
 
 %Go through the strucutre and find out the hit with the best bit score

@@ -25,7 +25,7 @@ if exist(fullfile(ravenDir,'external','kegg','keggModel.mat'), 'file') == 2
 end
 
 %Remove existing "doc" directory from RAVEN
-%rmdir(fullfile(ravenDir,'doc'),'s');
+rmdir(fullfile(ravenDir,'doc'),'s');
 
 %Make relative path
 relStart = numel(ravenDir)+2;

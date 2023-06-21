@@ -548,7 +548,7 @@ for i={'rxnComps'} % Ones, assume first compartment
    model = emptyOrFill(model,i{1},1,'rxns');
 end
 % Metabolites
-for i={'metNames','inchis','metFormulas','metMiriams','metFrom','metSmiles'} % Empty strings
+for i={'metNames','inchis','metFormulas','metMiriams','metFrom','metSmiles','metNotes'} % Empty strings
    model = emptyOrFill(model,i{1},{''},'mets');
 end
 for i={'metCharges','unconstrained'} % Zeros
