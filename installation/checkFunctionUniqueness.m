@@ -23,7 +23,12 @@ if nargin<1
     
     ravenFunctions={temp_res1.name,temp_res2.name}';
 else
-    altDirs = strsplit(altDirs,';')';
+    if ispc
+        splitChar = ';';
+    else
+        splitChar = ':';
+    end
+    altDirs = strsplit(altDirs,splitChar)';
     ravenFunctions={};
     for i=1:numel(altDirs)
         temp_res=dir(fullfile(char(altDirs(i)),'*.m'));
