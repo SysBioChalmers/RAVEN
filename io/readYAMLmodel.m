@@ -578,14 +578,15 @@ end
 %     end
 % end
 
-% Make rxnGeneMat fields
-[genes, rxnGeneMat] = getGenesFromGrRules(model.grRules, model.genes);
-if isequal(sort(genes), sort(model.genes))
-    model.rxnGeneMat = rxnGeneMat;
-    model.genes = genes;
-else
-    error('The gene list and grRules are inconsistent.');
+% Make rxnGeneMat fields and map to the existing model.genes field
+[genes, rxnGeneMat] = getGenesFromGrRules(model.grRules);
+model.rxnGeneMat = sparse(numel(model.rxns),numel(model.genes));
+[~,geneOrder] = ismember(genes,model.genes);
+if any(geneOrder == 0)
+    error(['The grRules includes the following gene(s), that are not in '...
+           'the list of model genes: ', genes{~geneOrder}])
 end
+model.rxnGeneMat(:,geneOrder) = rxnGeneMat;
 
 % Finalize GECKO model
 if isGECKO
