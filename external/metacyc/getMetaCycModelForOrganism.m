@@ -34,8 +34,8 @@ function [model, metacycBlastStruct] = getMetaCycModelForOrganism(organismID,fas
 %   metacycBlastStruct  result from getBlast or getDiamond, before the
 %                       minScore and minPositives cutoffs are applied
 %
-%   Usage: model=getMetaCycModelForOrganism(organismID,fastaFile,...
-%    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond)
+%   Usage: [model, metacycBlastStruct] = getMetaCycModelForOrganism(organismID,fastaFile,...
+%    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond,metacycBlastStruct)
 
 organismID=char(organismID);
 if nargin<2
