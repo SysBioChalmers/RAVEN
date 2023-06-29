@@ -1,5 +1,5 @@
-function model=getMetaCycModelForOrganism(organismID,fastaFile,...
-    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond)
+function [model, metacycBlastStruct] = getMetaCycModelForOrganism(organismID,fastaFile,...
+    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond,metacycBlastStruct)
 % getMetaCycModelForOrganism
 %   Reconstructs a genome-scale metabolic model based on protein homology to the
 %   MetaCyc pathway database
@@ -23,9 +23,16 @@ function model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %   minPositives        minimum Positives values of BLASTp search (opt, default 45 %)
 %   useDiamond          use DIAMOND alignment tools to perform homology search
 %                       if true, otherwise the BLASTP is used (opt, default true)
+%   metacycBlastStruct  provided an earlier generated metacycBlastStruct
+%                       from getMetaCycModelForOrganism (opt, default empty).
+%                       Useful when trying different cutoffs for minScore
+%                       and minPositives without having to regenerate the
+%                       blastStructure each time.
 %
 %   Output:
 %   model               a model structure for the query organism
+%   metacycBlastStruct  result from getBlast or getDiamond, before the
+%                       minScore and minPositives cutoffs are applied
 %
 %   Usage: model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond)
@@ -54,6 +61,9 @@ if nargin<7
 end
 if nargin<8
     useDiamond=true;
+end
+if nargin<9
+    metacycBlastStruct=[];
 end
 
 if isempty(fastaFile)
@@ -88,14 +98,18 @@ model.equations=metaCycModel.equations;
 ravenPath=findRAVENroot();
 
 %Generate blast strcture by either DIAMOND or BLASTP
-if useDiamond
-    blastStruc=getDiamond(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'external','metacyc','protseq.fsa'));
+if isempty(metacycBlastStruct)
+    if useDiamond
+        blastStruc=getDiamond(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'external','metacyc','protseq.fsa'));
+    else
+        blastStruc=getBlast(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'external','metacyc','protseq.fsa'));
+    end
+    %Only look the query
+    blastStructure=blastStruc(2);
+    metacycBlastStruct=blastStructure;
 else
-    blastStruc=getBlast(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'external','metacyc','protseq.fsa'));
+    blastStructure=metacycBlastStruct;
 end
-
-%Only look the query
-blastStructure=blastStruc(2);
 
 %Remove all blast hits that are below the cutoffs
 indexes=blastStructure.bitscore>=minScore & blastStructure.ppos>=minPositives;
