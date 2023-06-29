@@ -48,6 +48,7 @@ else
         fid = fopen(fullfile(keggPath,'taxonomy'), 'r');
         
         phylDistStruct.ids={};
+        phylDistStruct.names={};
         
         %Keeps the categories for each organism
         orgCat={};
@@ -93,6 +94,7 @@ else
                     %Should always exist
                     
                     phylDistStruct.ids{orgCounter}=tline(sPos(1)+1:sPos(2)-1);
+                    phylDistStruct.names{orgCounter}=tline(sPos(3)+1:end);
                     orgCat{orgCounter}=currentCat;
                 end
             end
