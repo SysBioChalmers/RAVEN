@@ -164,7 +164,7 @@ if isfield(model,fieldName)
     
     if strcmp(fieldName,'metMiriams')
         if ~isempty(model.metMiriams{pos})
-            fprintf(fid,['    ' name ': !!omap\n']);
+            fprintf(fid,'    %s: !!omap\n',name);
             for i=1:size(model.newMetMiriams,2)
                 %'i' represents the different miriam names, e.g.
                 %kegg.compound or chebi
@@ -179,7 +179,7 @@ if isfield(model,fieldName)
         
     elseif strcmp(fieldName,'rxnMiriams')
         if ~isempty(model.rxnMiriams{pos})
-            fprintf(fid,['    ' name ': !!omap\n']);
+            fprintf(fid,'    %s: !!omap\n',name);
             for i=1:size(model.newRxnMiriams,2)
                 if ~isempty(model.newRxnMiriams{pos,i})
                     writeField(model, fid, 'newRxnMiriams', 'txt', pos, ['      - ' model.newRxnMiriamNames{i} '_' sprintf('%d',i)], preserveQuotes)
@@ -189,7 +189,7 @@ if isfield(model,fieldName)
         
     elseif strcmp(fieldName,'geneMiriams')
         if ~isempty(model.geneMiriams{pos})
-            fprintf(fid,['    ' name ': !!omap\n']);
+            fprintf(fid,'    %s: !!omap\n',name);
             for i=1:size(model.newGeneMiriams,2)
                 if ~isempty(model.newGeneMiriams{pos,i})
                     writeField(model, fid, 'newGeneMiriams', 'txt', pos, ['      - ' model.newGeneMiriamNames{i} '_' sprintf('%d',i)], preserveQuotes)
@@ -199,7 +199,7 @@ if isfield(model,fieldName)
         
     elseif strcmp(fieldName,'compMiriams')
         if ~isempty(model.compMiriams{pos})
-            fprintf(fid,['    ' name ': !!omap\n']);
+            fprintf(fid,'    %s: !!omap\n',name);
             for i=1:size(model.newCompMiriams,2)
                 if ~isempty(model.newCompMiriams{pos,i})
                     writeField(model, fid, 'newCompMiriams', 'txt', pos, ['      - ' model.newCompMiriamNames{i} '_' sprintf('%d',i)], preserveQuotes)
@@ -209,7 +209,7 @@ if isfield(model,fieldName)
         
     elseif strcmp(fieldName,'S')
         %S: create header & write each metabolite in a new line
-        fprintf(fid,['    ' name ': !!omap\n']);
+        fprintf(fid,'    %s: !!omap\n',name);
         if sum(field(:,pos) ~= 0) > 0
             model.mets   = model.mets(field(:,pos) ~= 0);
             model.coeffs = field(field(:,pos) ~= 0,pos);
@@ -223,7 +223,7 @@ if isfield(model,fieldName)
 
     elseif strcmp(fieldName,'rxnEnzMat')
         %S: create header & write each enzyme in a new line
-        fprintf(fid,['    ' name ': !!omap\n']);
+        fprintf(fid,'    %s: !!omap\n',name);
         if sum(field(pos,:) ~= 0) > 0
             model.enzymes = model.enzymes(field(pos,:) ~= 0);
             model.coeffs  = field(pos,field(pos,:) ~= 0);
@@ -267,16 +267,16 @@ if isfield(model,fieldName)
             if preserveQuotes
                 list = ['"' list{1} '"'];
             end
-            fprintf(fid,['    ' name ': ' list '\n']);
+            fprintf(fid,'    %s: %s\n',name,list);
         elseif length(list) > 1 || strcmp(fieldName,'subSystems')
             if preserveQuotes
                 for j=1:numel(list)
                     list{j} = ['"' list{j} '"'];
                 end
             end
-            fprintf(fid,['    ' name ':\n']);
+            fprintf(fid,'    %s:\n',name);
             for i = 1:length(list)
-                fprintf(fid,[regexprep(name,'(^\s*).*','$1') '        - ' list{i} '\n']);
+                fprintf(fid,'%s        - %s\n',regexprep(name,'(^\s*).*','$1'),list{i});
             end
         end
         
@@ -295,12 +295,10 @@ if isfield(model,fieldName)
             end
         end
         if ~isempty(value)
-            fprintf(fid,['    ' name ': ' value '\n']);
+            fprintf(fid,'    %s: %s\n',name,value);
         end
     end
 end
-
-
 end
 
 function writeMetadata(model,fid)
@@ -309,42 +307,42 @@ function writeMetadata(model,fid)
 % are hard-coded defaults for HumanGEM.
 
 fprintf(fid, '- metaData:\n');
-fprintf(fid, ['    id: "',          model.id,          '"\n']);
-fprintf(fid, ['    name: "',        model.name, '"\n']);
+fprintf(fid, '    id: "%s"\n',  model.id);
+fprintf(fid, '    name: "%s"\n',model.name);
 if isfield(model,'version')
-    fprintf(fid, ['    version: "', model.version,     '"\n']);
+    fprintf(fid, '    version: "%s"\n',model.version);
 end
-fprintf(fid, ['    date: "',        datestr(now,29),   '"\n']);  % 29=YYYY-MM-DD
+fprintf(fid, '    date: "%s"\n',datestr(now,29));  % 29=YYYY-MM-DD
 if isfield(model,'annotation')
     if isfield(model.annotation,'defaultLB')
-        fprintf(fid, ['    defaultLB: "',    num2str(model.annotation.defaultLB), '"\n']);
+        fprintf(fid, '    defaultLB: "%g"\n',   model.annotation.defaultLB);
     end
     if isfield(model.annotation,'defaultUB')
-        fprintf(fid, ['    defaultUB: "',    num2str(model.annotation.defaultUB), '"\n']);
+        fprintf(fid, '    defaultUB: "%g"\n',   model.annotation.defaultUB);
     end
     if isfield(model.annotation,'givenName')
-        fprintf(fid, ['    givenName: "',    model.annotation.givenName,          '"\n']);
+        fprintf(fid, '    givenName: "%s"\n',   model.annotation.givenName);
     end
     if isfield(model.annotation,'familyName')
-        fprintf(fid, ['    familyName: "',   model.annotation.familyName,         '"\n']);
+        fprintf(fid, '    familyName: "%s"\n',  model.annotation.familyName);
     end
     if isfield(model.annotation,'authors')
-        fprintf(fid, ['    authors: "',      model.annotation.authors,            '"\n']);
+        fprintf(fid, '    authors: "%s"\n',     model.annotation.authors);
     end
     if isfield(model.annotation,'email')
-        fprintf(fid, ['    email: "',        model.annotation.email,              '"\n']);
+        fprintf(fid, '    email: "%s"\n',       model.annotation.email);
     end
     if isfield(model.annotation,'organization')
-        fprintf(fid, ['    organization: "', model.annotation.organization,       '"\n']);
+        fprintf(fid, '    organization: "%s"\n',model.annotation.organization);
     end
     if isfield(model.annotation,'taxonomy')
-        fprintf(fid, ['    taxonomy: "',     model.annotation.taxonomy,           '"\n']);
+        fprintf(fid, '    taxonomy: "%s"\n',    model.annotation.taxonomy);
     end
     if isfield(model.annotation,'note')
-        fprintf(fid, ['    note: "',         model.annotation.note,               '"\n']);
+        fprintf(fid, '    note: "%s"\n',        model.annotation.note);
     end
     if isfield(model.annotation,'sourceUrl')
-        fprintf(fid, ['    sourceUrl: "',    model.annotation.sourceUrl,          '"\n']);
+        fprintf(fid, '    sourceUrl: "%s"\n',   model.annotation.sourceUrl);
     end
 end
 if isfield(model,'ec')
@@ -353,7 +351,6 @@ if isfield(model,'ec')
     else
         geckoLight = 'false';
     end
-    fprintf(fid,['    geckoLight: "' geckoLight '"\n']);
+    fprintf(fid,'    geckoLight: "%s"\n',geckoLight);
 end
 end
-
