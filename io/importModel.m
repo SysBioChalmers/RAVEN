@@ -525,6 +525,12 @@ for i=1:numel(modelSBML.reaction)
             lb=regexprep(lb,parameter.name(n),num2str(parameter.value{n}));
             ub=regexprep(ub,parameter.name(n),num2str(parameter.value{n}));
         end
+        if isempty(lb)
+            lb='-Inf';
+        end
+        if isempty(ub)
+            ub='Inf';
+        end
         reactionLB(counter)=str2num(lb);
         reactionUB(counter)=str2num(ub);
         %The order of these parameters should not be hard coded
