@@ -68,7 +68,11 @@ end
 newModel.S=model.S;
 newModel.lb=model.lb;
 newModel.ub=model.ub;
-newModel.c=model.c;
+if isfield(model,'c')
+    newModel.c=model.c;
+else
+    newModel.c=zeros(numel(model.rxns),1);
+end
 newModel.rxns=model.rxns;
 optFields = {'rxnNames','subSystems','rxnNotes',...
     'metFormulas','comps','compNames','metCharges','genes',...

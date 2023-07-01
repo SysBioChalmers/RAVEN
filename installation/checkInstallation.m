@@ -339,3 +339,15 @@ for i=1:numel(binList)
     end
 end
 end
+
+function printOrange(stringToPrint)
+% printOrange
+%   Duplicate of RAVEN/core/printOrange is also kept here, as this function
+%   should be able to run before adding RAVEN to the MATLAB path.
+try useDesktop = usejava('desktop'); catch, useDesktop = false; end
+if useDesktop
+    fprintf(['[\b' stringToPrint,']\b'])
+else
+    fprintf(stringToPrint)
+end
+end
