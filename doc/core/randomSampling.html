@@ -153,26 +153,26 @@ This function is called by:
 0063 
 0064 nRxns=2; <span class="comment">%Number of reactions in the objective function in each iteration</span>
 0065 
-0066 <span class="comment">%First check that the model is feasible given the constraints</span>
-0067 [sol,~]=solveLP(model);
-0068 <span class="keyword">if</span> isempty(sol.x)
-0069     EM=<span class="string">'The model has no feasible solution, likely due to incompatible constraints'</span>;
-0070     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0071 <span class="keyword">elseif</span> sol.f==0 &amp;&amp; showProgress
-0072     warning(<span class="string">'The model objective function cannot reach a non-zero value. This might be intended, so randomSampling will continue, but this could indicate problems with your model'</span>)
-0073 <span class="keyword">end</span>
-0074 
-0075 <span class="comment">%Simplify the model to speed stuff up a little. Keep original mapping</span>
-0076 originalRxns=model.rxns;
-0077 model=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>(model,false,false,true,true);
+0066 <span class="comment">%Simplify the model to speed stuff up a little. Keep original mapping</span>
+0067 originalRxns=model.rxns;
+0068 model=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>(model,false,false,true,true);
+0069 
+0070 <span class="comment">%Then change the bounds to +/- Inf. This is needed in order to not have</span>
+0071 <span class="comment">%loops in the solutions</span>
+0072 <span class="keyword">if</span> replaceBoundsWithInf==true
+0073     model.ub(model.ub==max(model.ub))=Inf;
+0074     <span class="keyword">if</span> min(model.lb)&lt;0 <span class="comment">% Only negative lower bounds should be set to -Inf</span>
+0075         model.lb(model.lb==min(model.lb))=-Inf;
+0076     <span class="keyword">end</span>
+0077 <span class="keyword">end</span>
 0078 
-0079 <span class="comment">%Then change the bounds to +/- Inf. This is needed in order to not have</span>
-0080 <span class="comment">%loops in the solutions</span>
-0081 <span class="keyword">if</span> replaceBoundsWithInf==true
-0082     model.ub(model.ub==max(model.ub))=Inf;
-0083     <span class="keyword">if</span> min(model.lb)&lt;0 <span class="comment">% Only negative lower bounds should be set to -Inf</span>
-0084         model.lb(model.lb==min(model.lb))=-Inf;
-0085     <span class="keyword">end</span>
+0079 <span class="comment">%Check that the model is feasible given the constraints</span>
+0080 [sol,~]=solveLP(model);
+0081 <span class="keyword">if</span> isempty(sol.x)
+0082     EM=<span class="string">'The model has no feasible solution, likely due to incompatible constraints'</span>;
+0083     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0084 <span class="keyword">elseif</span> sol.f==0 &amp;&amp; showProgress
+0085     warning(<span class="string">'The model objective function cannot reach a non-zero value. This might be intended, so randomSampling will continue, but this could indicate problems with your model'</span>)
 0086 <span class="keyword">end</span>
 0087 
 0088 [~,hsSol]=solveLP(model);
