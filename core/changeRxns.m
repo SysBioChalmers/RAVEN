@@ -129,6 +129,9 @@ end
 if isfield(model,'rxnConfidenceScores')
     rxnsToChange.rxnConfidenceScores=model.rxnConfidenceScores(J);
 end
+if isfield(model,'rxnDeltaG')
+    rxnsToChange.rxnDeltaG=model.rxnDeltaG(J);
+end
 if isfield(model,'pwys')
     rxnsToChange.pwys=model.pwys(J);
 end

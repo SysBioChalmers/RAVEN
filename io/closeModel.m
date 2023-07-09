@@ -43,6 +43,9 @@ for i=1:numel(closedModel.rxns)
         if isfield(closedModel,'metCharges')
             closedModel.metCharges(numel(closedModel.metCharges)+1)=closedModel.metCharges(find(closedModel.S(:,i)));
         end;
+        if isfield(closedModel,'metDeltaG')
+            closedModel.metDeltaG(numel(closedModel.metDeltaG)+1)=closedModel.metDeltaG(find(closedModel.S(:,i)));
+        end;
         closedModel.unconstrained(numel(closedModel.unconstrained)+1)=1;
         closedModel.b(numel(closedModel.b)+1)=0;
         closedModel.S=[closedModel.S;sparse(1,size(closedModel.S,2))];

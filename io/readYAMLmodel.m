@@ -130,17 +130,12 @@ else
 end
 
 section = 0;
-metMiriams=cell(25000,3);   metMirNo=1;
-rxnMiriams=cell(25000,3);   rxnMirNo=1;
-geneMiriams=cell(25000,3);  genMirNo=1;
-subSystems=cell(25000,2);   subSysNo=1;
-eccodes=cell(25000,2);      ecCodeNo=1;
+metMiriams=cell(100000,3);   metMirNo=1;
+rxnMiriams=cell(100000,3);   rxnMirNo=1;
+geneMiriams=cell(100000,3);  genMirNo=1;
+subSystems=cell(100000,2);   subSysNo=1;
+eccodes=cell(100000,2);      ecCodeNo=1;
 equations=cell(100000,3);   equatiNo=1;
-% metMiriams=cell(0,3);   metMirNo=1;
-% rxnMiriams=cell(0,3);   rxnMirNo=1;
-% geneMiriams=cell(0,3);  genMirNo=1;
-% subSystems=cell(0,2);   subSysNo=1;
-% eccodes=cell(0,2);      ecCodeNo=1;
 
 for i=1:numel(line_key)
     tline_raw = line_raw{i};

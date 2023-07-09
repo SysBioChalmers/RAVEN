@@ -177,6 +177,18 @@ for i=2:numel(models)
             model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(numel(models{i}.rxns),1)];
         end
     end
+
+    if isfield(models{i},'rxnDeltaG')
+        if isfield(model,'rxnDeltaG')
+            model.rxnDeltaG=[model.rxnDeltaG;models{i}.rxnDeltaG];
+        else
+            model.rxnDeltaG=[NaN(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnDeltaG];
+        end
+    else
+        if isfield(model,'rxnDeltaG')
+            model.rxnDeltaG=[model.rxnDeltaG;NaN(numel(models{i}.rxns),1)];
+        end
+    end
     
     if isfield(models{i},'rxnComps')
         if isfield(model,'rxnComps')
@@ -357,6 +369,20 @@ for i=2:numel(models)
             if isfield(model,'metCharges')
                 emptyMetCharge=nan(numel(metsToAdd),1);
                 model.metCharges=[model.metCharges;emptyMetCharge];
+            end
+        end
+
+        if isfield(models{i},'metDeltaG')
+            if isfield(model,'metDeltaG')
+                model.metDeltaG=[model.metDeltaG;models{i}.metDeltaG(metsToAdd)];
+            else
+                emptyMetCharge=nan(numel(model.mets)-numel(metsToAdd),1);
+                model.metDeltaG=[emptyMetCharge;models{i}.metDeltaG(metsToAdd)];
+            end
+        else
+            if isfield(model,'metDeltaG')
+                emptyMetCharge=nan(numel(metsToAdd),1);
+                model.metDeltaG=[model.metDeltaG;emptyMetCharge];
             end
         end
         

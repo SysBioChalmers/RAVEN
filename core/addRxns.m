@@ -52,6 +52,8 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allow
 %                               model.comps) (opt, default {})
 %            rxnNotes           cell array with reaction notes (opt,
 %                               default '')
+%            rxnDeltaG          Gibbs free energy at biochemical standard
+%                               condition in kJ/mole (opt, default NaN)
 %            rxnReferences      cell array with reaction references (opt,
 %                               default '')
 %            rxnConfidenceScores   vector with reaction confidence scores
@@ -504,14 +506,29 @@ if isfield(rxnsToAdd,'rxnConfidenceScores')
     %Fill with standard if it doesn't exist
     if ~isfield(newModel,'rxnConfidenceScores')
         newModel.rxnConfidenceScores=NaN(nOldRxns,1);
-        EM='Adding reactions with confidence scores without such information. All existing reactions will have confidence scores as NaNs';
-        dispEM(EM,false);
     end
     newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;rxnsToAdd.rxnConfidenceScores(:)];
 else
     %Fill with standard if it doesn't exist
     if isfield(newModel,'rxnConfidenceScores')
         newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;NaN(nRxns,1)];
+    end
+end
+
+if isfield(rxnsToAdd,'rxnDeltaG')
+    if numel(rxnsToAdd.rxnDeltaG)~=nRxns
+        EM='rxnsToAdd.rxnDeltaG must have the same number of elements as rxnsToAdd.rxns';
+        dispEM(EM);
+    end
+    %Fill with standard if it doesn't exist
+    if ~isfield(newModel,'rxnDeltaG')
+        newModel.rxnDeltaG=NaN(nOldRxns,1);
+    end
+    newModel.rxnDeltaG=[newModel.rxnDeltaG;rxnsToAdd.rxnDeltaG(:)];
+else
+    %Fill with standard if it doesn't exist
+    if isfield(newModel,'rxnDeltaG')
+        newModel.rxnDeltaG=[newModel.rxnDeltaG;NaN(nRxns,1)];
     end
 end
 
