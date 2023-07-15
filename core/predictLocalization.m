@@ -105,6 +105,12 @@ if numel(model.comps)>1
     model=mergeCompartments(model,true,true);
 end
 
+noGenes = ismember(model.genes,GSS.genes);
+if ~all(noGenes)
+    EM=['For ' num2str(numel(find(~noGenes))) ' of ' num2str(numel(model.genes)) ' model genes no data was found in GSS'];
+    dispEM(EM,false);
+end
+
 %***Begin formating the data structures
 
 %Expand the model so that iso-enzymes have different reactions
@@ -609,7 +615,7 @@ else
         outModel.compNames(2)=GSS.compartments(1);
     end
 end
-outModel.compNames=[outModel.compNames;GSS.compartments(2:end)];
+outModel.compNames=[outModel.compNames;GSS.compartments(2:end)'];
 
 %Ugly little loop
 for i=1:numel(GSS.compartments)-1

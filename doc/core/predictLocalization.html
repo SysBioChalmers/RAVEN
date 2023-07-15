@@ -210,900 +210,906 @@ This function is called by:
 0105     model=<a href="mergeCompartments.html" class="code" title="function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet,distReverse)">mergeCompartments</a>(model,true,true);
 0106 <span class="keyword">end</span>
 0107 
-0108 <span class="comment">%***Begin formating the data structures</span>
-0109 
-0110 <span class="comment">%Expand the model so that iso-enzymes have different reactions</span>
-0111 model=<a href="expandModel.html" class="code" title="function [newModel, rxnToCheck]=expandModel(model)">expandModel</a>(model);
-0112 
-0113 <span class="comment">%Identify reactions that have to be deleted because the involved mets are</span>
-0114 <span class="comment">%never produced. This is done in an iterative manner</span>
-0115 removedRxns={};
-0116 <span class="comment">%This is to keep track of which metabolites are removed in this step. It is</span>
-0117 <span class="comment">%needed to adjust the transport costs</span>
-0118 originalModelMets=model.mets;
-0119 <span class="keyword">while</span> 1
-0120     irrevModel=<a href="convertToIrrev.html" class="code" title="function [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns)">convertToIrrev</a>(model);
-0121     
-0122     I=sum(irrevModel.S&gt;0,2);
-0123     
-0124     <span class="comment">%Pretend that the unconstrained metabolites are made enough</span>
-0125     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'unconstrained'</span>)
-0126         I(irrevModel.unconstrained~=0)=2;
-0127     <span class="keyword">end</span>
-0128     metsToDelete=false(numel(model.mets),1);
+0108 noGenes = ismember(model.genes,GSS.genes);
+0109 <span class="keyword">if</span> ~all(noGenes)
+0110     EM=[<span class="string">'For '</span> num2str(numel(find(~noGenes))) <span class="string">' of '</span> num2str(numel(model.genes)) <span class="string">' model genes no data was found in GSS'</span>];
+0111     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0112 <span class="keyword">end</span>
+0113 
+0114 <span class="comment">%***Begin formating the data structures</span>
+0115 
+0116 <span class="comment">%Expand the model so that iso-enzymes have different reactions</span>
+0117 model=<a href="expandModel.html" class="code" title="function [newModel, rxnToCheck]=expandModel(model)">expandModel</a>(model);
+0118 
+0119 <span class="comment">%Identify reactions that have to be deleted because the involved mets are</span>
+0120 <span class="comment">%never produced. This is done in an iterative manner</span>
+0121 removedRxns={};
+0122 <span class="comment">%This is to keep track of which metabolites are removed in this step. It is</span>
+0123 <span class="comment">%needed to adjust the transport costs</span>
+0124 originalModelMets=model.mets;
+0125 <span class="keyword">while</span> 1
+0126     irrevModel=<a href="convertToIrrev.html" class="code" title="function [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns)">convertToIrrev</a>(model);
+0127     
+0128     I=sum(irrevModel.S&gt;0,2);
 0129     
-0130     <span class="comment">%This is not very neat but iterate through each metabolite and check</span>
-0131     <span class="comment">%whether it can be produced (without using only one isolated reversible</span>
-0132     <span class="comment">%reaction)</span>
-0133     <span class="keyword">for</span> i=1:numel(irrevModel.mets)
-0134         <span class="comment">%If something can be made in two reactions then everything is fine.</span>
-0135         <span class="comment">%If it can be made in one reaction it is fine unless it is through</span>
-0136         <span class="comment">%an isolated reversible reaction (which can act as a mini loop)</span>
-0137         <span class="keyword">if</span> I(i)&lt;2
-0138             <span class="keyword">if</span> I(i)==1
-0139                 <span class="comment">%Find the reaction where this metabolite is produced</span>
-0140                 [~, J]=find(irrevModel.S(i,:)&gt;0);
-0141                 
-0142                 <span class="comment">%Check the metabolites that are consumed in this reaction.</span>
-0143                 <span class="comment">%The problem is if any of them is only produced in the</span>
-0144                 <span class="comment">%opposite reversible reaction</span>
-0145                 K=irrevModel.S(:,J)&lt;0;
-0146                 check=find(K &amp; I&lt;=1);
+0130     <span class="comment">%Pretend that the unconstrained metabolites are made enough</span>
+0131     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'unconstrained'</span>)
+0132         I(irrevModel.unconstrained~=0)=2;
+0133     <span class="keyword">end</span>
+0134     metsToDelete=false(numel(model.mets),1);
+0135     
+0136     <span class="comment">%This is not very neat but iterate through each metabolite and check</span>
+0137     <span class="comment">%whether it can be produced (without using only one isolated reversible</span>
+0138     <span class="comment">%reaction)</span>
+0139     <span class="keyword">for</span> i=1:numel(irrevModel.mets)
+0140         <span class="comment">%If something can be made in two reactions then everything is fine.</span>
+0141         <span class="comment">%If it can be made in one reaction it is fine unless it is through</span>
+0142         <span class="comment">%an isolated reversible reaction (which can act as a mini loop)</span>
+0143         <span class="keyword">if</span> I(i)&lt;2
+0144             <span class="keyword">if</span> I(i)==1
+0145                 <span class="comment">%Find the reaction where this metabolite is produced</span>
+0146                 [~, J]=find(irrevModel.S(i,:)&gt;0);
 0147                 
-0148                 <span class="keyword">for</span> j=1:numel(check)
-0149                     <span class="comment">%Find the reactions where it participates</span>
-0150                     [~, L]=find(irrevModel.S(check(j),:)&gt;0);
-0151                     
-0152                     <span class="keyword">if</span> ~isempty(L)
-0153                         rxn=irrevModel.rxns(J);
-0154                         rxnRev=irrevModel.rxns(L);
-0155                         <span class="keyword">if</span> strcmp(strrep(rxn,<span class="string">'_REV'</span>,<span class="string">''</span>),strrep(rxnRev,<span class="string">'_REV'</span>,<span class="string">''</span>))
-0156                             metsToDelete(i)=true;
-0157                         <span class="keyword">end</span>
-0158                     <span class="keyword">else</span>
-0159                         <span class="comment">%If the metabolite was never produced then do</span>
-0160                         <span class="comment">%nothing and deal with it when the loop gets there</span>
-0161                         <span class="keyword">continue</span>;
-0162                     <span class="keyword">end</span>
-0163                 <span class="keyword">end</span>
-0164             <span class="keyword">else</span>
-0165                 <span class="comment">%Not made anywhere</span>
-0166                 metsToDelete(i)=true;
-0167             <span class="keyword">end</span>
-0168         <span class="keyword">end</span>
-0169     <span class="keyword">end</span>
-0170     
-0171     <span class="keyword">if</span> any(metsToDelete)
-0172         <span class="comment">%Delete any reactions involving any of the metsToDelete</span>
-0173         [~, I]=find(model.S(metsToDelete,:));
-0174         removedRxns=[removedRxns;model.rxns(I)];
-0175         model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,I,true,true);
-0176     <span class="keyword">else</span>
-0177         <span class="comment">%All bad reactions deleted</span>
-0178         <span class="keyword">break</span>;
-0179     <span class="keyword">end</span>
-0180 <span class="keyword">end</span>
-0181 
-0182 <span class="comment">%Adjust the transport costs</span>
-0183 transportCost=transportCost(ismember(originalModelMets,model.mets));
-0184 
-0185 <span class="comment">%Assign fake genes to reactions without genes. This is just to make things</span>
-0186 <span class="comment">%easier later on</span>
-0187 I=find(sum(model.rxnGeneMat,2)==0);
-0188 <span class="keyword">for</span> i=1:numel(I)
-0189     model.genes=[model.genes;[<span class="string">'&amp;&amp;FAKE&amp;&amp;'</span> num2str(i)]];
-0190     <span class="keyword">if</span> isfield(model,<span class="string">'geneShortNames'</span>)
-0191         model.geneShortNames=[model.geneShortNames;{<span class="string">''</span>}];
-0192     <span class="keyword">end</span>
-0193     <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
-0194         model.geneMiriams=[model.geneMiriams;{[]}];
-0195     <span class="keyword">end</span>
-0196     <span class="keyword">if</span> isfield(model,<span class="string">'geneFrom'</span>)
-0197         model.geneFrom=[model.geneFrom;{{<span class="string">'FAKE'</span>}}];
+0148                 <span class="comment">%Check the metabolites that are consumed in this reaction.</span>
+0149                 <span class="comment">%The problem is if any of them is only produced in the</span>
+0150                 <span class="comment">%opposite reversible reaction</span>
+0151                 K=irrevModel.S(:,J)&lt;0;
+0152                 check=find(K &amp; I&lt;=1);
+0153                 
+0154                 <span class="keyword">for</span> j=1:numel(check)
+0155                     <span class="comment">%Find the reactions where it participates</span>
+0156                     [~, L]=find(irrevModel.S(check(j),:)&gt;0);
+0157                     
+0158                     <span class="keyword">if</span> ~isempty(L)
+0159                         rxn=irrevModel.rxns(J);
+0160                         rxnRev=irrevModel.rxns(L);
+0161                         <span class="keyword">if</span> strcmp(strrep(rxn,<span class="string">'_REV'</span>,<span class="string">''</span>),strrep(rxnRev,<span class="string">'_REV'</span>,<span class="string">''</span>))
+0162                             metsToDelete(i)=true;
+0163                         <span class="keyword">end</span>
+0164                     <span class="keyword">else</span>
+0165                         <span class="comment">%If the metabolite was never produced then do</span>
+0166                         <span class="comment">%nothing and deal with it when the loop gets there</span>
+0167                         <span class="keyword">continue</span>;
+0168                     <span class="keyword">end</span>
+0169                 <span class="keyword">end</span>
+0170             <span class="keyword">else</span>
+0171                 <span class="comment">%Not made anywhere</span>
+0172                 metsToDelete(i)=true;
+0173             <span class="keyword">end</span>
+0174         <span class="keyword">end</span>
+0175     <span class="keyword">end</span>
+0176     
+0177     <span class="keyword">if</span> any(metsToDelete)
+0178         <span class="comment">%Delete any reactions involving any of the metsToDelete</span>
+0179         [~, I]=find(model.S(metsToDelete,:));
+0180         removedRxns=[removedRxns;model.rxns(I)];
+0181         model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,I,true,true);
+0182     <span class="keyword">else</span>
+0183         <span class="comment">%All bad reactions deleted</span>
+0184         <span class="keyword">break</span>;
+0185     <span class="keyword">end</span>
+0186 <span class="keyword">end</span>
+0187 
+0188 <span class="comment">%Adjust the transport costs</span>
+0189 transportCost=transportCost(ismember(originalModelMets,model.mets));
+0190 
+0191 <span class="comment">%Assign fake genes to reactions without genes. This is just to make things</span>
+0192 <span class="comment">%easier later on</span>
+0193 I=find(sum(model.rxnGeneMat,2)==0);
+0194 <span class="keyword">for</span> i=1:numel(I)
+0195     model.genes=[model.genes;[<span class="string">'&amp;&amp;FAKE&amp;&amp;'</span> num2str(i)]];
+0196     <span class="keyword">if</span> isfield(model,<span class="string">'geneShortNames'</span>)
+0197         model.geneShortNames=[model.geneShortNames;{<span class="string">''</span>}];
 0198     <span class="keyword">end</span>
-0199     model.rxnGeneMat(I(i),numel(model.genes))=1;
-0200     model.grRules{I(i)}=<span class="string">''</span>;
-0201 <span class="keyword">end</span>
-0202 
-0203 <span class="comment">%Update the GSS. All genes, fake or real, for which there is no evidence</span>
-0204 <span class="comment">%gets a score 0.5 in all compartments. Also just to make it easier further</span>
-0205 <span class="comment">%on</span>
-0206 I=setdiff(model.genes,GSS.genes);
-0207 GSS.genes=[GSS.genes;I];
-0208 GSS.scores=[GSS.scores;ones(numel(I),numel(GSS.compartments))*0.5];
-0209 
-0210 <span class="comment">%Gene complexes should be moved together in order to be biologically</span>
-0211 <span class="comment">%relevant. The average score for the genes is used for each compartment.</span>
-0212 <span class="comment">%This is done by changing the model so that gene complexes are used as a</span>
-0213 <span class="comment">%single gene name and then a score is calculated for that &quot;gene&quot;.</span>
-0214 
-0215 <span class="comment">%Only &quot;and&quot;-relationships exist after expandModel</span>
-0216 genes=unique(model.grRules);
-0217 nGenes=strrep(genes,<span class="string">'('</span>,<span class="string">''</span>);
-0218 nGenes=strrep(nGenes,<span class="string">')'</span>,<span class="string">''</span>);
-0219 <span class="comment">%nGenes=strrep(nGenes,' and ','_and_');</span>
-0220 complexes=setdiff(nGenes,model.genes);
-0221 <span class="keyword">if</span> ~isempty(complexes)
-0222     <span class="keyword">if</span> isempty(complexes{1}) <span class="comment">%Empty grRules also come up here</span>
-0223         complexes(1)=[];
-0224     <span class="keyword">end</span>
-0225 <span class="keyword">end</span>
-0226 cScores=zeros(numel(complexes),numel(GSS.compartments));
-0227 <span class="keyword">for</span> i=1:numel(complexes)
-0228     genesInComplex=regexp(complexes{i},<span class="string">' and '</span>,<span class="string">'split'</span>);
-0229     
-0230     <span class="comment">%Find these genes in GSS</span>
-0231     [I, J]=ismember(genesInComplex,GSS.genes);
-0232     
-0233     <span class="keyword">if</span> any(I)
-0234         <span class="comment">%Get the average of the genes that were found</span>
-0235         mScores=mean(GSS.scores(J(I),:));
-0236         
-0237         <span class="comment">%And add 0.5 for the genes that were not found in order to be</span>
-0238         <span class="comment">%consistent with non-complexes</span>
-0239         mScores=(mScores.*sum(I)+(numel(genesInComplex)-sum(I))*0.5)/numel(genesInComplex);
-0240     <span class="keyword">else</span>
-0241         EM=[<span class="string">'Could not parse grRule &quot;'</span> complexes{i} <span class="string">'&quot;. Assigning score 0.0 in all compartments'</span>];
-0242         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0243         mScores=ones(1,numel(genesInComplex))*0.5;
-0244     <span class="keyword">end</span>
-0245     cScores(i,:)=mScores;
-0246     
-0247     <span class="comment">%Add this complex as a new gene</span>
-0248     model.genes=[model.genes;complexes{i}];
-0249     <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
-0250         model.geneMiriams=[model.geneMiriams;{[]}];
-0251     <span class="keyword">end</span>
-0252     <span class="keyword">if</span> isfield(model,<span class="string">'geneShortNames'</span>)
-0253         model.geneShortNames=[model.geneShortNames;{<span class="string">''</span>}];
-0254     <span class="keyword">end</span>
-0255     <span class="keyword">if</span> isfield(model,<span class="string">'geneFrom'</span>)
-0256         model.geneFrom=[model.geneFrom;{<span class="string">'COMPLEX'</span>}];
+0199     <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
+0200         model.geneMiriams=[model.geneMiriams;{[]}];
+0201     <span class="keyword">end</span>
+0202     <span class="keyword">if</span> isfield(model,<span class="string">'geneFrom'</span>)
+0203         model.geneFrom=[model.geneFrom;{{<span class="string">'FAKE'</span>}}];
+0204     <span class="keyword">end</span>
+0205     model.rxnGeneMat(I(i),numel(model.genes))=1;
+0206     model.grRules{I(i)}=<span class="string">''</span>;
+0207 <span class="keyword">end</span>
+0208 
+0209 <span class="comment">%Update the GSS. All genes, fake or real, for which there is no evidence</span>
+0210 <span class="comment">%gets a score 0.5 in all compartments. Also just to make it easier further</span>
+0211 <span class="comment">%on</span>
+0212 I=setdiff(model.genes,GSS.genes);
+0213 GSS.genes=[GSS.genes;I];
+0214 GSS.scores=[GSS.scores;ones(numel(I),numel(GSS.compartments))*0.5];
+0215 
+0216 <span class="comment">%Gene complexes should be moved together in order to be biologically</span>
+0217 <span class="comment">%relevant. The average score for the genes is used for each compartment.</span>
+0218 <span class="comment">%This is done by changing the model so that gene complexes are used as a</span>
+0219 <span class="comment">%single gene name and then a score is calculated for that &quot;gene&quot;.</span>
+0220 
+0221 <span class="comment">%Only &quot;and&quot;-relationships exist after expandModel</span>
+0222 genes=unique(model.grRules);
+0223 nGenes=strrep(genes,<span class="string">'('</span>,<span class="string">''</span>);
+0224 nGenes=strrep(nGenes,<span class="string">')'</span>,<span class="string">''</span>);
+0225 <span class="comment">%nGenes=strrep(nGenes,' and ','_and_');</span>
+0226 complexes=setdiff(nGenes,model.genes);
+0227 <span class="keyword">if</span> ~isempty(complexes)
+0228     <span class="keyword">if</span> isempty(complexes{1}) <span class="comment">%Empty grRules also come up here</span>
+0229         complexes(1)=[];
+0230     <span class="keyword">end</span>
+0231 <span class="keyword">end</span>
+0232 cScores=zeros(numel(complexes),numel(GSS.compartments));
+0233 <span class="keyword">for</span> i=1:numel(complexes)
+0234     genesInComplex=regexp(complexes{i},<span class="string">' and '</span>,<span class="string">'split'</span>);
+0235     
+0236     <span class="comment">%Find these genes in GSS</span>
+0237     [I, J]=ismember(genesInComplex,GSS.genes);
+0238     
+0239     <span class="keyword">if</span> any(I)
+0240         <span class="comment">%Get the average of the genes that were found</span>
+0241         mScores=mean(GSS.scores(J(I),:));
+0242         
+0243         <span class="comment">%And add 0.5 for the genes that were not found in order to be</span>
+0244         <span class="comment">%consistent with non-complexes</span>
+0245         mScores=(mScores.*sum(I)+(numel(genesInComplex)-sum(I))*0.5)/numel(genesInComplex);
+0246     <span class="keyword">else</span>
+0247         EM=[<span class="string">'Could not parse grRule &quot;'</span> complexes{i} <span class="string">'&quot;. Assigning score 0.0 in all compartments'</span>];
+0248         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0249         mScores=ones(1,numel(genesInComplex))*0.5;
+0250     <span class="keyword">end</span>
+0251     cScores(i,:)=mScores;
+0252     
+0253     <span class="comment">%Add this complex as a new gene</span>
+0254     model.genes=[model.genes;complexes{i}];
+0255     <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
+0256         model.geneMiriams=[model.geneMiriams;{[]}];
 0257     <span class="keyword">end</span>
-0258     <span class="comment">%Find the reactions which had the original complex and change them to</span>
-0259     <span class="comment">%use the new &quot;gene&quot;</span>
-0260     I=ismember(model.grRules,[<span class="string">'('</span> complexes{i} <span class="string">')'</span>]);
-0261     
-0262     <span class="comment">%Should check more carefully if there can be an error here</span>
-0263     <span class="keyword">if</span> ~isempty(I)
-0264         model.rxnGeneMat(I,:)=0; <span class="comment">%Ok since the split on &quot;or&quot; was applied</span>
-0265         model.rxnGeneMat(I,numel(model.genes))=1;
-0266     <span class="keyword">end</span>
-0267 <span class="keyword">end</span>
-0268 
-0269 <span class="comment">%Add the new &quot;genes&quot;</span>
-0270 GSS.genes=[GSS.genes;complexes];
-0271 GSS.scores=[GSS.scores;cScores];
-0272 
-0273 <span class="comment">%After merging the complexes it could happen that there are genes that are</span>
-0274 <span class="comment">%no longer in use. Delete such genes</span>
-0275 model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,{},false,true);
-0276 
-0277 <span class="comment">%Exchange reactions, defined as involving an unconstrained metabolite, are</span>
-0278 <span class="comment">%special in that they have to stay in the defaultCompartment. This means</span>
-0279 <span class="comment">%that uptake/excretion of metabolites is always via the default</span>
-0280 <span class="comment">%compartment. This is a small simplification, but should be valid in most</span>
-0281 <span class="comment">%cases</span>
-0282 [~, I]=<a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)">getExchangeRxns</a>(model);
-0283 
-0284 <span class="comment">%It will be easier later on if the same place. Put them in the beginning</span>
-0285 J=1:numel(model.rxns);
-0286 J(I)=[];
-0287 model=<a href="permuteModel.html" class="code" title="function newModel=permuteModel(model, indexes, type)">permuteModel</a>(model,[I;J'],<span class="string">'rxns'</span>);
-0288 
-0289 <span class="comment">%Number of exchange reactions</span>
-0290 nER=numel(I);
-0291 
-0292 <span class="comment">%Also put the exchange metabolites in the beginning</span>
-0293 <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
-0294     I=find(model.unconstrained);
-0295     J=1:numel(model.mets);
-0296     J(I)=[];
-0297     model=<a href="permuteModel.html" class="code" title="function newModel=permuteModel(model, indexes, type)">permuteModel</a>(model,[I;J'],<span class="string">'mets'</span>);
-0298     <span class="comment">%Also reorder the transport costs</span>
-0299     transportCost=transportCost([I;J']);
-0300     <span class="comment">%Number of exchange metabolites</span>
-0301     nEM=numel(I);
-0302 <span class="keyword">else</span>
-0303     nEM=0;
-0304 <span class="keyword">end</span>
-0305 
-0306 <span class="comment">%There is no point of having genes for exchange reactions, so delete them.</span>
-0307 <span class="comment">%Also to make computations easier</span>
-0308 model.rxnGeneMat(1:nER,:)=0;
-0309 model.grRules(1:nER)={<span class="string">''</span>};
-0310 
-0311 <span class="comment">%Remove unused genes</span>
-0312 model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,{},false,true);
-0313 
-0314 <span class="comment">%Remove genes with no match to the model and reorder so that the genes are</span>
-0315 <span class="comment">%in the same order as model.genes. Since the fake genes are already added</span>
-0316 <span class="comment">%so that all genes in model exist in GSS it is fine to do like this</span>
-0317 [~, J]=ismember(model.genes,GSS.genes);
-0318 GSS.genes=model.genes;
-0319 GSS.scores=GSS.scores(J,:);
-0320 
-0321 <span class="comment">%Reorder the GSS so that the first index corresponds to the default</span>
-0322 <span class="comment">%compartment</span>
-0323 [~, J]=ismember(defaultCompartment,GSS.compartments);
-0324 reorder=1:numel(GSS.compartments);
-0325 reorder(J)=[];
-0326 reorder=[J reorder];
-0327 GSS.scores=GSS.scores(:,reorder);
-0328 GSS.compartments=GSS.compartments(reorder);
-0329 
-0330 <span class="comment">%Since it is only checked whether the metabolites can be synthesized, there</span>
-0331 <span class="comment">%is no need to care about the stoichiometry. Change to -1/1 to simplify</span>
-0332 <span class="comment">%later. Keep the S matrix for later though</span>
-0333 oldS=model.S;
-0334 model.S(model.S&gt;0)=1;
-0335 model.S(model.S&lt;0)=-1;
-0336 
-0337 <span class="comment">%Here is a bit of a trick. To avoid the recurring calculation which</span>
-0338 <span class="comment">%reactions are reversible, the reversible reactions have the coefficients</span>
-0339 <span class="comment">%-10/10 instead of -1/1</span>
-0340 model.S(:,model.rev==1)=model.S(:,model.rev==1).*10;
-0341 
-0342 <span class="comment">%***Begin problem formulation</span>
-0343 
-0344 <span class="comment">%Some numbers that are good to have</span>
-0345 nRxns=numel(model.rxns)-nER; <span class="comment">%Excluding exchange rxns</span>
-0346 nMets=numel(model.mets)-nEM; <span class="comment">%Excluding exchange mets</span>
-0347 nGenes=numel(model.genes);
-0348 nComps=numel(GSS.compartments);
+0258     <span class="keyword">if</span> isfield(model,<span class="string">'geneShortNames'</span>)
+0259         model.geneShortNames=[model.geneShortNames;{<span class="string">''</span>}];
+0260     <span class="keyword">end</span>
+0261     <span class="keyword">if</span> isfield(model,<span class="string">'geneFrom'</span>)
+0262         model.geneFrom=[model.geneFrom;{<span class="string">'COMPLEX'</span>}];
+0263     <span class="keyword">end</span>
+0264     <span class="comment">%Find the reactions which had the original complex and change them to</span>
+0265     <span class="comment">%use the new &quot;gene&quot;</span>
+0266     I=ismember(model.grRules,[<span class="string">'('</span> complexes{i} <span class="string">')'</span>]);
+0267     
+0268     <span class="comment">%Should check more carefully if there can be an error here</span>
+0269     <span class="keyword">if</span> ~isempty(I)
+0270         model.rxnGeneMat(I,:)=0; <span class="comment">%Ok since the split on &quot;or&quot; was applied</span>
+0271         model.rxnGeneMat(I,numel(model.genes))=1;
+0272     <span class="keyword">end</span>
+0273 <span class="keyword">end</span>
+0274 
+0275 <span class="comment">%Add the new &quot;genes&quot;</span>
+0276 GSS.genes=[GSS.genes;complexes];
+0277 GSS.scores=[GSS.scores;cScores];
+0278 
+0279 <span class="comment">%After merging the complexes it could happen that there are genes that are</span>
+0280 <span class="comment">%no longer in use. Delete such genes</span>
+0281 model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,{},false,true);
+0282 
+0283 <span class="comment">%Exchange reactions, defined as involving an unconstrained metabolite, are</span>
+0284 <span class="comment">%special in that they have to stay in the defaultCompartment. This means</span>
+0285 <span class="comment">%that uptake/excretion of metabolites is always via the default</span>
+0286 <span class="comment">%compartment. This is a small simplification, but should be valid in most</span>
+0287 <span class="comment">%cases</span>
+0288 [~, I]=<a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)">getExchangeRxns</a>(model);
+0289 
+0290 <span class="comment">%It will be easier later on if the same place. Put them in the beginning</span>
+0291 J=1:numel(model.rxns);
+0292 J(I)=[];
+0293 model=<a href="permuteModel.html" class="code" title="function newModel=permuteModel(model, indexes, type)">permuteModel</a>(model,[I;J'],<span class="string">'rxns'</span>);
+0294 
+0295 <span class="comment">%Number of exchange reactions</span>
+0296 nER=numel(I);
+0297 
+0298 <span class="comment">%Also put the exchange metabolites in the beginning</span>
+0299 <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
+0300     I=find(model.unconstrained);
+0301     J=1:numel(model.mets);
+0302     J(I)=[];
+0303     model=<a href="permuteModel.html" class="code" title="function newModel=permuteModel(model, indexes, type)">permuteModel</a>(model,[I;J'],<span class="string">'mets'</span>);
+0304     <span class="comment">%Also reorder the transport costs</span>
+0305     transportCost=transportCost([I;J']);
+0306     <span class="comment">%Number of exchange metabolites</span>
+0307     nEM=numel(I);
+0308 <span class="keyword">else</span>
+0309     nEM=0;
+0310 <span class="keyword">end</span>
+0311 
+0312 <span class="comment">%There is no point of having genes for exchange reactions, so delete them.</span>
+0313 <span class="comment">%Also to make computations easier</span>
+0314 model.rxnGeneMat(1:nER,:)=0;
+0315 model.grRules(1:nER)={<span class="string">''</span>};
+0316 
+0317 <span class="comment">%Remove unused genes</span>
+0318 model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,{},false,true);
+0319 
+0320 <span class="comment">%Remove genes with no match to the model and reorder so that the genes are</span>
+0321 <span class="comment">%in the same order as model.genes. Since the fake genes are already added</span>
+0322 <span class="comment">%so that all genes in model exist in GSS it is fine to do like this</span>
+0323 [~, J]=ismember(model.genes,GSS.genes);
+0324 GSS.genes=model.genes;
+0325 GSS.scores=GSS.scores(J,:);
+0326 
+0327 <span class="comment">%Reorder the GSS so that the first index corresponds to the default</span>
+0328 <span class="comment">%compartment</span>
+0329 [~, J]=ismember(defaultCompartment,GSS.compartments);
+0330 reorder=1:numel(GSS.compartments);
+0331 reorder(J)=[];
+0332 reorder=[J reorder];
+0333 GSS.scores=GSS.scores(:,reorder);
+0334 GSS.compartments=GSS.compartments(reorder);
+0335 
+0336 <span class="comment">%Since it is only checked whether the metabolites can be synthesized, there</span>
+0337 <span class="comment">%is no need to care about the stoichiometry. Change to -1/1 to simplify</span>
+0338 <span class="comment">%later. Keep the S matrix for later though</span>
+0339 oldS=model.S;
+0340 model.S(model.S&gt;0)=1;
+0341 model.S(model.S&lt;0)=-1;
+0342 
+0343 <span class="comment">%Here is a bit of a trick. To avoid the recurring calculation which</span>
+0344 <span class="comment">%reactions are reversible, the reversible reactions have the coefficients</span>
+0345 <span class="comment">%-10/10 instead of -1/1</span>
+0346 model.S(:,model.rev==1)=model.S(:,model.rev==1).*10;
+0347 
+0348 <span class="comment">%***Begin problem formulation</span>
 0349 
-0350 <span class="comment">%Create a big stoichiometric matrix that will be the current model. In</span>
-0351 <span class="comment">%order to have faster simulations the maximal model size is declared and</span>
-0352 <span class="comment">%reactions are then moved within it.</span>
-0353 
-0354 <span class="comment">%First the original model (with the first nE being exchange rxns), then</span>
-0355 <span class="comment">%reserve space for number of rxns minus exchange rxns for each non-default</span>
-0356 <span class="comment">%compartment, then transport reactions for all non-exchange mets between</span>
-0357 <span class="comment">%the default compartment and all others.</span>
-0358 <span class="comment">%NOTE: Kept eye()*0 since eye() can be used to include all transport from</span>
-0359 <span class="comment">%the beginning</span>
-0360 s=repmat(eye(nMets)*0,1,nComps-1);
-0361 s=[zeros(numel(model.mets)-nMets,size(s,2));s];
-0362 S=[model.S sparse(numel(model.mets),nRxns*(nComps-1)) s];
-0363 s=[sparse(nMets*(nComps-1),numel(model.rxns)+nRxns*(nComps-1)) eye(nMets*(nComps-1))*0];
-0364 S=[S;s];
-0365 
-0366 <span class="comment">%Also replicate the transport costs</span>
-0367 transportCost=[transportCost(1:nEM);repmat(transportCost(nEM+1:end),nComps,1)];
-0368 
-0369 <span class="comment">%Create a binary matrix that says where the genes are in the current</span>
-0370 <span class="comment">%solution</span>
-0371 g2c=false(nGenes,nComps);
-0372 <span class="comment">%All genes start in the default compartment</span>
-0373 g2c(:,1)=true;
+0350 <span class="comment">%Some numbers that are good to have</span>
+0351 nRxns=numel(model.rxns)-nER; <span class="comment">%Excluding exchange rxns</span>
+0352 nMets=numel(model.mets)-nEM; <span class="comment">%Excluding exchange mets</span>
+0353 nGenes=numel(model.genes);
+0354 nComps=numel(GSS.compartments);
+0355 
+0356 <span class="comment">%Create a big stoichiometric matrix that will be the current model. In</span>
+0357 <span class="comment">%order to have faster simulations the maximal model size is declared and</span>
+0358 <span class="comment">%reactions are then moved within it.</span>
+0359 
+0360 <span class="comment">%First the original model (with the first nE being exchange rxns), then</span>
+0361 <span class="comment">%reserve space for number of rxns minus exchange rxns for each non-default</span>
+0362 <span class="comment">%compartment, then transport reactions for all non-exchange mets between</span>
+0363 <span class="comment">%the default compartment and all others.</span>
+0364 <span class="comment">%NOTE: Kept eye()*0 since eye() can be used to include all transport from</span>
+0365 <span class="comment">%the beginning</span>
+0366 s=repmat(eye(nMets)*0,1,nComps-1);
+0367 s=[zeros(numel(model.mets)-nMets,size(s,2));s];
+0368 S=[model.S sparse(numel(model.mets),nRxns*(nComps-1)) s];
+0369 s=[sparse(nMets*(nComps-1),numel(model.rxns)+nRxns*(nComps-1)) eye(nMets*(nComps-1))*0];
+0370 S=[S;s];
+0371 
+0372 <span class="comment">%Also replicate the transport costs</span>
+0373 transportCost=[transportCost(1:nEM);repmat(transportCost(nEM+1:end),nComps,1)];
 0374 
-0375 <span class="comment">%Start of main optimization loop</span>
-0376 tic;
-0377 bestScore=-inf;
-0378 bestS=[];
-0379 bestg2c=[];
+0375 <span class="comment">%Create a binary matrix that says where the genes are in the current</span>
+0376 <span class="comment">%solution</span>
+0377 g2c=false(nGenes,nComps);
+0378 <span class="comment">%All genes start in the default compartment</span>
+0379 g2c(:,1)=true;
 0380 
-0381 <span class="comment">%Temp for testing</span>
-0382 plotScore=[];
-0383 nTrans=[];
-0384 totScore=[];
-0385 minScore=sum(min(GSS.scores,[],2));
-0386 maxScore=sum(max(GSS.scores,[],2));
-0387 
-0388 <span class="keyword">while</span> toc&lt;maxTime*60
-0389     <span class="comment">%Pick a random gene, weighted by it is current score minus the best</span>
-0390     <span class="comment">%score for that gene (often 1.0, but can be 0.5 for no genes or average</span>
-0391     <span class="comment">%for complexes). Genes with bad fits are more likely to be moved. This</span>
-0392     <span class="comment">%formulation never moves a gene from its best compartment. Therefore a</span>
-0393     <span class="comment">%small uniform weight is added</span>
-0394     [I, J]=find(g2c);
-0395     geneToMove=randsample(nGenes,1,true,max(GSS.scores(I,:),[],2)-GSS.scores(sub2ind(size(g2c),I,J))+0.1);
-0396     
-0397     <span class="comment">%Sample among possible compartments to move to. Add a larger weight to</span>
-0398     <span class="comment">%even out the odds a little. Also a way of getting rid of loops where</span>
-0399     <span class="comment">%the same set of genes are moved back and forth several times</span>
-0400     toComp=randsample(nComps,1,true,GSS.scores(geneToMove,:)+0.2);
-0401     
-0402     <span class="comment">%Check that it moves to a new compartment</span>
-0403     <span class="keyword">if</span> toComp==find(g2c(geneToMove,:))
-0404         <span class="keyword">continue</span>;
-0405     <span class="keyword">end</span>
-0406     
-0407     <span class="comment">%Moves the gene</span>
-0408     [newS, newg2c]=<a href="#_sub1" class="code" title="subfunction [S, g2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets)">moveGene</a>(S,model,g2c,geneToMove,toComp,nRxns,nMets);
-0409     
-0410     <span class="comment">%Tries to connect the network. If this was not possible in 10</span>
-0411     <span class="comment">%iterations, then abort. If more than 20 modifications were needed then</span>
-0412     <span class="comment">%it is unlikely that it will be a lower score</span>
-0413     wasConnected=false;
-0414     <span class="keyword">for</span> j=1:10
-0415         <span class="comment">%Find the metabolites that are now unconnected</span>
-0416         unconnected=<a href="#_sub2" class="code" title="subfunction unconnected=findUnconnected(S,nEM,metsToCheck)">findUnconnected</a>(newS,nEM);
-0417         
-0418         <span class="comment">%Continue if there are still unconnected</span>
-0419         <span class="keyword">if</span> any(unconnected)
-0420             <span class="comment">%For each gene find out how many of these could be connected if</span>
-0421             <span class="comment">%the gene was moved and how many would be disconnected by</span>
-0422             <span class="comment">%moving that gene</span>
-0423             [geneIndex, moveTo, deltaConnected, deltaScore]=<a href="#_sub3" class="code" title="subfunction [geneIndex, moveTo, deltaConnected, deltaScore]=selectGenes(S,nEM,nMets,nER,nRxns,model,unconnected,g2c,GSS)">selectGenes</a>(newS,nEM,nMets,nER,nRxns,model,unconnected,g2c,GSS);
-0424             
-0425             <span class="comment">%Score which gene would be the best to move. The highest</span>
-0426             <span class="comment">%deltaScore is 1.0. It should be possible to move a gene from</span>
-0427             <span class="comment">%worst to best compartment even if it disconnects, say, 1.5</span>
-0428             <span class="comment">%more metabolites</span>
-0429             [score, I]=max(1.5*deltaScore+deltaConnected);
+0381 <span class="comment">%Start of main optimization loop</span>
+0382 tic;
+0383 bestScore=-inf;
+0384 bestS=[];
+0385 bestg2c=[];
+0386 
+0387 <span class="comment">%Temp for testing</span>
+0388 plotScore=[];
+0389 nTrans=[];
+0390 totScore=[];
+0391 minScore=sum(min(GSS.scores,[],2));
+0392 maxScore=sum(max(GSS.scores,[],2));
+0393 
+0394 <span class="keyword">while</span> toc&lt;maxTime*60
+0395     <span class="comment">%Pick a random gene, weighted by it is current score minus the best</span>
+0396     <span class="comment">%score for that gene (often 1.0, but can be 0.5 for no genes or average</span>
+0397     <span class="comment">%for complexes). Genes with bad fits are more likely to be moved. This</span>
+0398     <span class="comment">%formulation never moves a gene from its best compartment. Therefore a</span>
+0399     <span class="comment">%small uniform weight is added</span>
+0400     [I, J]=find(g2c);
+0401     geneToMove=randsample(nGenes,1,true,max(GSS.scores(I,:),[],2)-GSS.scores(sub2ind(size(g2c),I,J))+0.1);
+0402     
+0403     <span class="comment">%Sample among possible compartments to move to. Add a larger weight to</span>
+0404     <span class="comment">%even out the odds a little. Also a way of getting rid of loops where</span>
+0405     <span class="comment">%the same set of genes are moved back and forth several times</span>
+0406     toComp=randsample(nComps,1,true,GSS.scores(geneToMove,:)+0.2);
+0407     
+0408     <span class="comment">%Check that it moves to a new compartment</span>
+0409     <span class="keyword">if</span> toComp==find(g2c(geneToMove,:))
+0410         <span class="keyword">continue</span>;
+0411     <span class="keyword">end</span>
+0412     
+0413     <span class="comment">%Moves the gene</span>
+0414     [newS, newg2c]=<a href="#_sub1" class="code" title="subfunction [S, g2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets)">moveGene</a>(S,model,g2c,geneToMove,toComp,nRxns,nMets);
+0415     
+0416     <span class="comment">%Tries to connect the network. If this was not possible in 10</span>
+0417     <span class="comment">%iterations, then abort. If more than 20 modifications were needed then</span>
+0418     <span class="comment">%it is unlikely that it will be a lower score</span>
+0419     wasConnected=false;
+0420     <span class="keyword">for</span> j=1:10
+0421         <span class="comment">%Find the metabolites that are now unconnected</span>
+0422         unconnected=<a href="#_sub2" class="code" title="subfunction unconnected=findUnconnected(S,nEM,metsToCheck)">findUnconnected</a>(newS,nEM);
+0423         
+0424         <span class="comment">%Continue if there are still unconnected</span>
+0425         <span class="keyword">if</span> any(unconnected)
+0426             <span class="comment">%For each gene find out how many of these could be connected if</span>
+0427             <span class="comment">%the gene was moved and how many would be disconnected by</span>
+0428             <span class="comment">%moving that gene</span>
+0429             [geneIndex, moveTo, deltaConnected, deltaScore]=<a href="#_sub3" class="code" title="subfunction [geneIndex, moveTo, deltaConnected, deltaScore]=selectGenes(S,nEM,nMets,nER,nRxns,model,unconnected,g2c,GSS)">selectGenes</a>(newS,nEM,nMets,nER,nRxns,model,unconnected,g2c,GSS);
 0430             
-0431             <span class="comment">%Check if it has to add a transport or if there is a gene that</span>
-0432             <span class="comment">%could be moved order to have a more connected network</span>
-0433             hasToAddTransport=true;
-0434             <span class="keyword">if</span> ~isempty(deltaConnected)
-0435                 <span class="keyword">if</span> score&gt;0
-0436                     hasToAddTransport=false;
-0437                 <span class="keyword">end</span>
-0438             <span class="keyword">end</span>
-0439             
-0440             <span class="comment">%If it is possible to move any gene in order to have a more</span>
-0441             <span class="comment">%connected network, then move the best one</span>
-0442             <span class="keyword">if</span> hasToAddTransport==false
-0443                 [newS, newg2c]=<a href="#_sub1" class="code" title="subfunction [S, g2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets)">moveGene</a>(newS,model,g2c,geneIndex(I),moveTo(I),nRxns,nMets);
-0444             <span class="keyword">else</span>
-0445                 <span class="comment">%Choose a random unconnected metabolite that should be</span>
-0446                 <span class="comment">%connected</span>
-0447                 transMet=unconnected(randsample(numel(unconnected),1));
-0448                 
-0449                 <span class="comment">%First get where the metabolite is now</span>
-0450                 comps=ceil((transMet-nEM)/((size(S,1)-nEM)/nComps));
-0451                 
-0452                 <span class="comment">%Find the corresponding metabolite index if it were in the</span>
-0453                 <span class="comment">%default compartment</span>
-0454                 dcIndex=transMet-(comps-1)*nMets;
-0455                 
-0456                 <span class="comment">%Then get the indexes of that metabolite in all</span>
-0457                 <span class="comment">%compartments</span>
-0458                 allIndexes=dcIndex;
-0459                 <span class="keyword">for</span> k=1:nComps-1
-0460                     allIndexes=[allIndexes;dcIndex+nMets*k];
-0461                 <span class="keyword">end</span>
-0462                 
-0463                 <span class="comment">%It could be that some of these are not used in any</span>
-0464                 <span class="comment">%reaction. Get only the ones which are</span>
-0465                 I=sum(newS(allIndexes,:)~=0,2)&gt;0;
-0466                 
-0467                 <span class="comment">%Then get the ones that are used but not in unconnected.</span>
-0468                 <span class="comment">%These are metabolites that could potentially be</span>
-0469                 <span class="comment">%transported to connect transMet</span>
-0470                 connectedUsed=setdiff(allIndexes(I),unconnected);
-0471                 
-0472                 <span class="comment">%This may be an error but leave it for now. It seems to</span>
-0473                 <span class="comment">%happen if nothing can be connected in one step</span>
-0474                 <span class="keyword">if</span> isempty(connectedUsed)
-0475                     <span class="keyword">break</span>;
-0476                 <span class="keyword">end</span>
+0431             <span class="comment">%Score which gene would be the best to move. The highest</span>
+0432             <span class="comment">%deltaScore is 1.0. It should be possible to move a gene from</span>
+0433             <span class="comment">%worst to best compartment even if it disconnects, say, 1.5</span>
+0434             <span class="comment">%more metabolites</span>
+0435             [score, I]=max(1.5*deltaScore+deltaConnected);
+0436             
+0437             <span class="comment">%Check if it has to add a transport or if there is a gene that</span>
+0438             <span class="comment">%could be moved order to have a more connected network</span>
+0439             hasToAddTransport=true;
+0440             <span class="keyword">if</span> ~isempty(deltaConnected)
+0441                 <span class="keyword">if</span> score&gt;0
+0442                     hasToAddTransport=false;
+0443                 <span class="keyword">end</span>
+0444             <span class="keyword">end</span>
+0445             
+0446             <span class="comment">%If it is possible to move any gene in order to have a more</span>
+0447             <span class="comment">%connected network, then move the best one</span>
+0448             <span class="keyword">if</span> hasToAddTransport==false
+0449                 [newS, newg2c]=<a href="#_sub1" class="code" title="subfunction [S, g2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets)">moveGene</a>(newS,model,g2c,geneIndex(I),moveTo(I),nRxns,nMets);
+0450             <span class="keyword">else</span>
+0451                 <span class="comment">%Choose a random unconnected metabolite that should be</span>
+0452                 <span class="comment">%connected</span>
+0453                 transMet=unconnected(randsample(numel(unconnected),1));
+0454                 
+0455                 <span class="comment">%First get where the metabolite is now</span>
+0456                 comps=ceil((transMet-nEM)/((size(S,1)-nEM)/nComps));
+0457                 
+0458                 <span class="comment">%Find the corresponding metabolite index if it were in the</span>
+0459                 <span class="comment">%default compartment</span>
+0460                 dcIndex=transMet-(comps-1)*nMets;
+0461                 
+0462                 <span class="comment">%Then get the indexes of that metabolite in all</span>
+0463                 <span class="comment">%compartments</span>
+0464                 allIndexes=dcIndex;
+0465                 <span class="keyword">for</span> k=1:nComps-1
+0466                     allIndexes=[allIndexes;dcIndex+nMets*k];
+0467                 <span class="keyword">end</span>
+0468                 
+0469                 <span class="comment">%It could be that some of these are not used in any</span>
+0470                 <span class="comment">%reaction. Get only the ones which are</span>
+0471                 I=sum(newS(allIndexes,:)~=0,2)&gt;0;
+0472                 
+0473                 <span class="comment">%Then get the ones that are used but not in unconnected.</span>
+0474                 <span class="comment">%These are metabolites that could potentially be</span>
+0475                 <span class="comment">%transported to connect transMet</span>
+0476                 connectedUsed=setdiff(allIndexes(I),unconnected);
 0477                 
-0478                 <span class="comment">%If transMet is in the default compartment then everything</span>
-0479                 <span class="comment">%is fine, just connect it to a random one</span>
-0480                 <span class="keyword">if</span> transMet==dcIndex
-0481                     newS=<a href="addTransport.html" class="code" title="function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,onlyToExisting,prefix)">addTransport</a>(newS,nRxns,nER,nMets,nEM,nComps,transMet,connectedUsed(randsample(numel(connectedUsed),1)));
-0482                 <span class="keyword">else</span>
-0483                     <span class="comment">%If one of the connectedUsed is in the default</span>
-0484                     <span class="comment">%compartment then connect to that one</span>
-0485                     I=connectedUsed(connectedUsed&lt;(nMets+nEM));
-0486                     <span class="keyword">if</span> any(I)
-0487                         newS=<a href="addTransport.html" class="code" title="function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,onlyToExisting,prefix)">addTransport</a>(newS,nRxns,nER,nMets,nEM,nComps,transMet,I(randsample(numel(I),1)));
-0488                     <span class="keyword">else</span>
-0489                         <span class="comment">%This is if the only way to connect it is by adding</span>
-0490                         <span class="comment">%two transport reactions, going via the default</span>
-0491                         <span class="comment">%compartment</span>
-0492                         <span class="keyword">break</span>;
-0493                     <span class="keyword">end</span>
-0494                 <span class="keyword">end</span>
-0495             <span class="keyword">end</span>
-0496         <span class="keyword">else</span>
-0497             wasConnected=true;
-0498             <span class="keyword">break</span>;
-0499         <span class="keyword">end</span>
-0500     <span class="keyword">end</span>
-0501     
-0502     <span class="comment">%If the network was connected in a new way, it is possible that some</span>
-0503     <span class="comment">%transport reactions are no longer needed. They should be removed</span>
-0504     <span class="keyword">if</span> wasConnected==true
-0505         <span class="comment">%These are the metabolites that are being transported</span>
-0506         activeTransport=find(sum(newS(:,nER+nRxns*nComps+1:end),2));
-0507         
-0508         <span class="comment">%Get the metabolites that are unconnected if transport was not used</span>
-0509         unconnected=<a href="#_sub2" class="code" title="subfunction unconnected=findUnconnected(S,nEM,metsToCheck)">findUnconnected</a>(newS(:,1:nER+nRxns*nComps),nEM);
-0510         
-0511         <span class="comment">%Find the transport reactions that are not needed and delete them</span>
-0512         I=setdiff(activeTransport,unconnected);
+0478                 <span class="comment">%This may be an error but leave it for now. It seems to</span>
+0479                 <span class="comment">%happen if nothing can be connected in one step</span>
+0480                 <span class="keyword">if</span> isempty(connectedUsed)
+0481                     <span class="keyword">break</span>;
+0482                 <span class="keyword">end</span>
+0483                 
+0484                 <span class="comment">%If transMet is in the default compartment then everything</span>
+0485                 <span class="comment">%is fine, just connect it to a random one</span>
+0486                 <span class="keyword">if</span> transMet==dcIndex
+0487                     newS=<a href="addTransport.html" class="code" title="function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,onlyToExisting,prefix)">addTransport</a>(newS,nRxns,nER,nMets,nEM,nComps,transMet,connectedUsed(randsample(numel(connectedUsed),1)));
+0488                 <span class="keyword">else</span>
+0489                     <span class="comment">%If one of the connectedUsed is in the default</span>
+0490                     <span class="comment">%compartment then connect to that one</span>
+0491                     I=connectedUsed(connectedUsed&lt;(nMets+nEM));
+0492                     <span class="keyword">if</span> any(I)
+0493                         newS=<a href="addTransport.html" class="code" title="function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,onlyToExisting,prefix)">addTransport</a>(newS,nRxns,nER,nMets,nEM,nComps,transMet,I(randsample(numel(I),1)));
+0494                     <span class="keyword">else</span>
+0495                         <span class="comment">%This is if the only way to connect it is by adding</span>
+0496                         <span class="comment">%two transport reactions, going via the default</span>
+0497                         <span class="comment">%compartment</span>
+0498                         <span class="keyword">break</span>;
+0499                     <span class="keyword">end</span>
+0500                 <span class="keyword">end</span>
+0501             <span class="keyword">end</span>
+0502         <span class="keyword">else</span>
+0503             wasConnected=true;
+0504             <span class="keyword">break</span>;
+0505         <span class="keyword">end</span>
+0506     <span class="keyword">end</span>
+0507     
+0508     <span class="comment">%If the network was connected in a new way, it is possible that some</span>
+0509     <span class="comment">%transport reactions are no longer needed. They should be removed</span>
+0510     <span class="keyword">if</span> wasConnected==true
+0511         <span class="comment">%These are the metabolites that are being transported</span>
+0512         activeTransport=find(sum(newS(:,nER+nRxns*nComps+1:end),2));
 0513         
-0514         <span class="comment">%Since both metabolites in a transport rxns must be connected for</span>
-0515         <span class="comment">%the reaction to be deleted, the sum over the colums should be 4</span>
-0516         newS(:,find(sum(newS(I,nER+nRxns*nComps+1:end))==4)+nER+nRxns*nComps)=0;
-0517         
-0518         <span class="comment">%Score the solution and determine whether to keep it as a new</span>
-0519         <span class="comment">%solution</span>
-0520         [score, geneScore, trCost]=<a href="#_sub5" class="code" title="subfunction [score, geneScore, transportCost]=scoreModel(S,g2c,GSS,transportCost)">scoreModel</a>(newS,newg2c,GSS,transportCost);
-0521         
-0522         <span class="comment">%If it was the best solution so far, keep it</span>
-0523         <span class="keyword">if</span> score&gt;bestScore
-0524             bestScore=score;
-0525             bestS=newS;
-0526             bestg2c=newg2c;
-0527         <span class="keyword">end</span>
-0528         
-0529         <span class="comment">%This should not be steepest descent later</span>
-0530         <span class="keyword">if</span> score&gt;=bestScore<span class="comment">% || exp((score-bestScore)*7)&gt;rand()</span>
-0531             plotScore=[plotScore;geneScore];
-0532             nTrans=[nTrans;trCost];
-0533             totScore=[totScore;score];
-0534             S=newS;
-0535             g2c=newg2c;
-0536             
-0537             <span class="keyword">if</span> plotResults==true
-0538                 subplot(3,2,1);
-0539                 spy(S);
-0540                 subplot(3,2,2);
-0541                 plot(plotScore,<span class="string">'r'</span>);
-0542                 xlabel(<span class="string">'Gene score'</span>);
-0543                 subplot(3,2,3);
-0544                 plot((plotScore-minScore)/(maxScore-minScore),<span class="string">'r'</span>);
-0545                 xlabel(<span class="string">'Gene score relative to predictions'</span>);
-0546                 subplot(3,2,4);
-0547                 plot(nTrans,<span class="string">'g'</span>);
-0548                 xlabel(<span class="string">'Transport cost'</span>);
-0549                 subplot(3,2,5);
-0550                 plot(totScore,<span class="string">'b'</span>);
-0551                 xlabel(<span class="string">'Total score'</span>);
-0552                 subplot(3,2,6);
-0553                 pause(0.2);
-0554             <span class="keyword">end</span>
-0555         <span class="keyword">end</span>
-0556     <span class="keyword">end</span>
-0557 <span class="keyword">end</span>
-0558 scores.totScore=score;
-0559 scores.geneScore=geneScore;
-0560 scores.transCost=trCost;
-0561 
-0562 <span class="comment">%Find which metabolites are transported and to where</span>
-0563 [I, J]=find(bestS(nEM+1:nEM+nMets,end-nMets*(nComps-1)+1:end));
-0564 J=ceil(J/nMets+1);
-0565 transportStruct.mets=model.metNames(I+nEM);
-0566 transportStruct.toComp=GSS.compartments(J);
+0514         <span class="comment">%Get the metabolites that are unconnected if transport was not used</span>
+0515         unconnected=<a href="#_sub2" class="code" title="subfunction unconnected=findUnconnected(S,nEM,metsToCheck)">findUnconnected</a>(newS(:,1:nER+nRxns*nComps),nEM);
+0516         
+0517         <span class="comment">%Find the transport reactions that are not needed and delete them</span>
+0518         I=setdiff(activeTransport,unconnected);
+0519         
+0520         <span class="comment">%Since both metabolites in a transport rxns must be connected for</span>
+0521         <span class="comment">%the reaction to be deleted, the sum over the colums should be 4</span>
+0522         newS(:,find(sum(newS(I,nER+nRxns*nComps+1:end))==4)+nER+nRxns*nComps)=0;
+0523         
+0524         <span class="comment">%Score the solution and determine whether to keep it as a new</span>
+0525         <span class="comment">%solution</span>
+0526         [score, geneScore, trCost]=<a href="#_sub5" class="code" title="subfunction [score, geneScore, transportCost]=scoreModel(S,g2c,GSS,transportCost)">scoreModel</a>(newS,newg2c,GSS,transportCost);
+0527         
+0528         <span class="comment">%If it was the best solution so far, keep it</span>
+0529         <span class="keyword">if</span> score&gt;bestScore
+0530             bestScore=score;
+0531             bestS=newS;
+0532             bestg2c=newg2c;
+0533         <span class="keyword">end</span>
+0534         
+0535         <span class="comment">%This should not be steepest descent later</span>
+0536         <span class="keyword">if</span> score&gt;=bestScore<span class="comment">% || exp((score-bestScore)*7)&gt;rand()</span>
+0537             plotScore=[plotScore;geneScore];
+0538             nTrans=[nTrans;trCost];
+0539             totScore=[totScore;score];
+0540             S=newS;
+0541             g2c=newg2c;
+0542             
+0543             <span class="keyword">if</span> plotResults==true
+0544                 subplot(3,2,1);
+0545                 spy(S);
+0546                 subplot(3,2,2);
+0547                 plot(plotScore,<span class="string">'r'</span>);
+0548                 xlabel(<span class="string">'Gene score'</span>);
+0549                 subplot(3,2,3);
+0550                 plot((plotScore-minScore)/(maxScore-minScore),<span class="string">'r'</span>);
+0551                 xlabel(<span class="string">'Gene score relative to predictions'</span>);
+0552                 subplot(3,2,4);
+0553                 plot(nTrans,<span class="string">'g'</span>);
+0554                 xlabel(<span class="string">'Transport cost'</span>);
+0555                 subplot(3,2,5);
+0556                 plot(totScore,<span class="string">'b'</span>);
+0557                 xlabel(<span class="string">'Total score'</span>);
+0558                 subplot(3,2,6);
+0559                 pause(0.2);
+0560             <span class="keyword">end</span>
+0561         <span class="keyword">end</span>
+0562     <span class="keyword">end</span>
+0563 <span class="keyword">end</span>
+0564 scores.totScore=score;
+0565 scores.geneScore=geneScore;
+0566 scores.transCost=trCost;
 0567 
-0568 [I, J]=find(bestg2c);
-0569 geneLocalization.genes=GSS.genes(I);
-0570 geneLocalization.comps=GSS.compartments(J);
-0571 
-0572 <span class="comment">%Resort the gene names</span>
-0573 [~, I]=sort(geneLocalization.genes);
-0574 geneLocalization.genes=geneLocalization.genes(I);
-0575 geneLocalization.comps=geneLocalization.comps(I);
-0576 
-0577 <span class="comment">%Remove the fake genes</span>
-0578 I=strncmp(<span class="string">'&amp;&amp;FAKE&amp;&amp;'</span>,geneLocalization.genes,8);
-0579 geneLocalization.genes(I)=[];
-0580 geneLocalization.comps(I)=[];
-0581 
-0582 <span class="comment">%Put together the model. This is done by first duplicating the S matrix</span>
-0583 <span class="comment">%into the different compartments. Then the transport reactions are added</span>
-0584 <span class="comment">%based on transportStruct. By now model.S should have the same size as the</span>
-0585 <span class="comment">%S matrix used in the optimization, but with conserved stoichiometry. In</span>
-0586 <span class="comment">%the final step all reactions and metabolites that are not used in the S</span>
-0587 <span class="comment">%matrix from the optimization are deleted from the model</span>
-0588 outModel=model;
-0589 outModel.S=oldS;
-0590 
-0591 <span class="comment">%This is the S matrix without exchange rxns or metabolites</span>
-0592 copyPart=outModel.S(nEM+1:<span class="keyword">end</span>,nER+1:end);
-0593 
-0594 <span class="comment">%Replicate to give the rxnGeneMat for the full system</span>
-0595 copyRxnGeneMat=outModel.rxnGeneMat(nER+1:<span class="keyword">end</span>,:);
-0596 outModel.rxnGeneMat=[outModel.rxnGeneMat;repmat(copyRxnGeneMat,nComps-1,1)];
-0597 
-0598 <span class="comment">%First fix the compartments. The model is already ordered with the exchange</span>
-0599 <span class="comment">%metabolites first. The original model may contain one or two compartments,</span>
-0600 <span class="comment">%depending on whether any exchange metabolites are defined</span>
-0601 nStartComps=numel(outModel.comps);
-0602 <span class="keyword">if</span> nStartComps==1
-0603     outModel.comps={<span class="string">'1'</span>};
-0604     outModel.compNames=GSS.compartments(1);
-0605 <span class="keyword">else</span>
-0606     <span class="keyword">if</span> model.metComps(1)==1
-0607         outModel.compNames(1)=GSS.compartments(1);
-0608     <span class="keyword">else</span>
-0609         outModel.compNames(2)=GSS.compartments(1);
-0610     <span class="keyword">end</span>
-0611 <span class="keyword">end</span>
-0612 outModel.compNames=[outModel.compNames;GSS.compartments(2:end)];
-0613 
-0614 <span class="comment">%Ugly little loop</span>
-0615 <span class="keyword">for</span> i=1:numel(GSS.compartments)-1
-0616     outModel.comps=[outModel.comps;num2str(numel(outModel.comps)+1)];
+0568 <span class="comment">%Find which metabolites are transported and to where</span>
+0569 [I, J]=find(bestS(nEM+1:nEM+nMets,end-nMets*(nComps-1)+1:end));
+0570 J=ceil(J/nMets+1);
+0571 transportStruct.mets=model.metNames(I+nEM);
+0572 transportStruct.toComp=GSS.compartments(J);
+0573 
+0574 [I, J]=find(bestg2c);
+0575 geneLocalization.genes=GSS.genes(I);
+0576 geneLocalization.comps=GSS.compartments(J);
+0577 
+0578 <span class="comment">%Resort the gene names</span>
+0579 [~, I]=sort(geneLocalization.genes);
+0580 geneLocalization.genes=geneLocalization.genes(I);
+0581 geneLocalization.comps=geneLocalization.comps(I);
+0582 
+0583 <span class="comment">%Remove the fake genes</span>
+0584 I=strncmp(<span class="string">'&amp;&amp;FAKE&amp;&amp;'</span>,geneLocalization.genes,8);
+0585 geneLocalization.genes(I)=[];
+0586 geneLocalization.comps(I)=[];
+0587 
+0588 <span class="comment">%Put together the model. This is done by first duplicating the S matrix</span>
+0589 <span class="comment">%into the different compartments. Then the transport reactions are added</span>
+0590 <span class="comment">%based on transportStruct. By now model.S should have the same size as the</span>
+0591 <span class="comment">%S matrix used in the optimization, but with conserved stoichiometry. In</span>
+0592 <span class="comment">%the final step all reactions and metabolites that are not used in the S</span>
+0593 <span class="comment">%matrix from the optimization are deleted from the model</span>
+0594 outModel=model;
+0595 outModel.S=oldS;
+0596 
+0597 <span class="comment">%This is the S matrix without exchange rxns or metabolites</span>
+0598 copyPart=outModel.S(nEM+1:<span class="keyword">end</span>,nER+1:end);
+0599 
+0600 <span class="comment">%Replicate to give the rxnGeneMat for the full system</span>
+0601 copyRxnGeneMat=outModel.rxnGeneMat(nER+1:<span class="keyword">end</span>,:);
+0602 outModel.rxnGeneMat=[outModel.rxnGeneMat;repmat(copyRxnGeneMat,nComps-1,1)];
+0603 
+0604 <span class="comment">%First fix the compartments. The model is already ordered with the exchange</span>
+0605 <span class="comment">%metabolites first. The original model may contain one or two compartments,</span>
+0606 <span class="comment">%depending on whether any exchange metabolites are defined</span>
+0607 nStartComps=numel(outModel.comps);
+0608 <span class="keyword">if</span> nStartComps==1
+0609     outModel.comps={<span class="string">'1'</span>};
+0610     outModel.compNames=GSS.compartments(1);
+0611 <span class="keyword">else</span>
+0612     <span class="keyword">if</span> model.metComps(1)==1
+0613         outModel.compNames(1)=GSS.compartments(1);
+0614     <span class="keyword">else</span>
+0615         outModel.compNames(2)=GSS.compartments(1);
+0616     <span class="keyword">end</span>
 0617 <span class="keyword">end</span>
-0618 <span class="comment">%This information is not known from the data, so empty fields are added</span>
-0619 outModel.compOutside=cell(numel(outModel.comps),1);
-0620 outModel.compOutside(:)={<span class="string">''</span>};
-0621 
-0622 <span class="keyword">for</span> i=1:nComps-1
-0623     outModel.S=[outModel.S sparse(size(outModel.S,1),nRxns)];
-0624     outModel.S=[outModel.S;[sparse(nMets,nRxns*i+nER) copyPart]];
-0625     outModel.rxns=[outModel.rxns;strcat(outModel.rxns(nER+1:nER+nRxns),<span class="string">'_'</span>,GSS.compartments{i+1})];
-0626     outModel.rxnNames=[outModel.rxnNames;strcat(outModel.rxnNames(nER+1:nER+nRxns),<span class="string">' ('</span>,GSS.compartments{i+1},<span class="string">')'</span>)];
-0627     outModel.lb=[outModel.lb;outModel.lb(nER+1:nER+nRxns)];
-0628     outModel.ub=[outModel.ub;outModel.ub(nER+1:nER+nRxns)];
-0629     outModel.rev=[outModel.rev;outModel.rev(nER+1:nER+nRxns)];
-0630     outModel.c=[outModel.c;outModel.c(nER+1:nER+nRxns)];
-0631     <span class="keyword">if</span> isfield(outModel,<span class="string">'grRules'</span>)
-0632         outModel.grRules=[outModel.grRules;outModel.grRules(nER+1:nER+nRxns)];
-0633     <span class="keyword">end</span>
-0634     <span class="keyword">if</span> isfield(outModel,<span class="string">'subSystems'</span>)
-0635         outModel.subSystems=[outModel.subSystems;outModel.subSystems(nER+1:nER+nRxns)];
-0636     <span class="keyword">end</span>
-0637     <span class="keyword">if</span> isfield(outModel,<span class="string">'eccodes'</span>)
-0638         outModel.eccodes=[outModel.eccodes;outModel.eccodes(nER+1:nER+nRxns)];
+0618 outModel.compNames=[outModel.compNames;GSS.compartments(2:end)'];
+0619 
+0620 <span class="comment">%Ugly little loop</span>
+0621 <span class="keyword">for</span> i=1:numel(GSS.compartments)-1
+0622     outModel.comps=[outModel.comps;num2str(numel(outModel.comps)+1)];
+0623 <span class="keyword">end</span>
+0624 <span class="comment">%This information is not known from the data, so empty fields are added</span>
+0625 outModel.compOutside=cell(numel(outModel.comps),1);
+0626 outModel.compOutside(:)={<span class="string">''</span>};
+0627 
+0628 <span class="keyword">for</span> i=1:nComps-1
+0629     outModel.S=[outModel.S sparse(size(outModel.S,1),nRxns)];
+0630     outModel.S=[outModel.S;[sparse(nMets,nRxns*i+nER) copyPart]];
+0631     outModel.rxns=[outModel.rxns;strcat(outModel.rxns(nER+1:nER+nRxns),<span class="string">'_'</span>,GSS.compartments{i+1})];
+0632     outModel.rxnNames=[outModel.rxnNames;strcat(outModel.rxnNames(nER+1:nER+nRxns),<span class="string">' ('</span>,GSS.compartments{i+1},<span class="string">')'</span>)];
+0633     outModel.lb=[outModel.lb;outModel.lb(nER+1:nER+nRxns)];
+0634     outModel.ub=[outModel.ub;outModel.ub(nER+1:nER+nRxns)];
+0635     outModel.rev=[outModel.rev;outModel.rev(nER+1:nER+nRxns)];
+0636     outModel.c=[outModel.c;outModel.c(nER+1:nER+nRxns)];
+0637     <span class="keyword">if</span> isfield(outModel,<span class="string">'grRules'</span>)
+0638         outModel.grRules=[outModel.grRules;outModel.grRules(nER+1:nER+nRxns)];
 0639     <span class="keyword">end</span>
-0640     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnFrom'</span>)
-0641         outModel.rxnFrom=[outModel.rxnFrom;outModel.rxnFrom(nER+1:nER+nRxns)];
+0640     <span class="keyword">if</span> isfield(outModel,<span class="string">'subSystems'</span>)
+0641         outModel.subSystems=[outModel.subSystems;outModel.subSystems(nER+1:nER+nRxns)];
 0642     <span class="keyword">end</span>
-0643     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnMiriams'</span>)
-0644         outModel.rxnMiriams=[outModel.rxnMiriams;outModel.rxnMiriams(nER+1:nER+nRxns)];
+0643     <span class="keyword">if</span> isfield(outModel,<span class="string">'eccodes'</span>)
+0644         outModel.eccodes=[outModel.eccodes;outModel.eccodes(nER+1:nER+nRxns)];
 0645     <span class="keyword">end</span>
-0646     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnNotes'</span>)
-0647         outModel.rxnNotes=[outModel.rxnNotes;outModel.rxnNotes(nER+1:nER+nRxns)];
+0646     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnFrom'</span>)
+0647         outModel.rxnFrom=[outModel.rxnFrom;outModel.rxnFrom(nER+1:nER+nRxns)];
 0648     <span class="keyword">end</span>
-0649     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnReferences'</span>)
-0650         outModel.rxnReferences=[outModel.rxnReferences;outModel.rxnReferences(nER+1:nER+nRxns)];
+0649     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnMiriams'</span>)
+0650         outModel.rxnMiriams=[outModel.rxnMiriams;outModel.rxnMiriams(nER+1:nER+nRxns)];
 0651     <span class="keyword">end</span>
-0652     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnConfidenceScores'</span>)
-0653         outModel.rxnConfidenceScores=[outModel.rxnConfidenceScores;outModel.rxnConfidenceScores(nER+1:nER+nRxns)];
+0652     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnNotes'</span>)
+0653         outModel.rxnNotes=[outModel.rxnNotes;outModel.rxnNotes(nER+1:nER+nRxns)];
 0654     <span class="keyword">end</span>
-0655     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnDeltaG'</span>)
-0656         outModel.rxnDeltaG=[outModel.rxnDeltaG;outModel.rxnDeltaG(nER+1:nER+nRxns)];
+0655     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnReferences'</span>)
+0656         outModel.rxnReferences=[outModel.rxnReferences;outModel.rxnReferences(nER+1:nER+nRxns)];
 0657     <span class="keyword">end</span>
-0658     outModel.mets=[outModel.mets;strcat(outModel.mets(nEM+1:nEM+nMets),<span class="string">'_'</span>,GSS.compartments{i+1})];
-0659     outModel.metNames=[outModel.metNames;outModel.metNames(nEM+1:nEM+nMets)];
-0660     outModel.b=[outModel.b;outModel.b(nEM+1:nEM+nMets,:)];
-0661     I=ones(nMets,1)*nStartComps+i;
-0662     outModel.metComps=[outModel.metComps;I];
-0663     <span class="keyword">if</span> isfield(outModel,<span class="string">'inchis'</span>)
-0664         outModel.inchis=[outModel.inchis;outModel.inchis(nEM+1:nEM+nMets)];
-0665     <span class="keyword">end</span>
-0666     <span class="keyword">if</span> isfield(outModel,<span class="string">'metSmiles'</span>)
-0667         outModel.metSmiles=[outModel.metSmiles;outModel.metSmiles(nEM+1:nEM+nMets)];
-0668     <span class="keyword">end</span>
-0669     <span class="keyword">if</span> isfield(outModel,<span class="string">'unconstrained'</span>)
-0670         outModel.unconstrained=[outModel.unconstrained;outModel.unconstrained(nEM+1:nEM+nMets)];
+0658     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnConfidenceScores'</span>)
+0659         outModel.rxnConfidenceScores=[outModel.rxnConfidenceScores;outModel.rxnConfidenceScores(nER+1:nER+nRxns)];
+0660     <span class="keyword">end</span>
+0661     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnDeltaG'</span>)
+0662         outModel.rxnDeltaG=[outModel.rxnDeltaG;outModel.rxnDeltaG(nER+1:nER+nRxns)];
+0663     <span class="keyword">end</span>
+0664     outModel.mets=[outModel.mets;strcat(outModel.mets(nEM+1:nEM+nMets),<span class="string">'_'</span>,GSS.compartments{i+1})];
+0665     outModel.metNames=[outModel.metNames;outModel.metNames(nEM+1:nEM+nMets)];
+0666     outModel.b=[outModel.b;outModel.b(nEM+1:nEM+nMets,:)];
+0667     I=ones(nMets,1)*nStartComps+i;
+0668     outModel.metComps=[outModel.metComps;I];
+0669     <span class="keyword">if</span> isfield(outModel,<span class="string">'inchis'</span>)
+0670         outModel.inchis=[outModel.inchis;outModel.inchis(nEM+1:nEM+nMets)];
 0671     <span class="keyword">end</span>
-0672     <span class="keyword">if</span> isfield(outModel,<span class="string">'metMiriams'</span>)
-0673         outModel.metMiriams=[outModel.metMiriams;outModel.metMiriams(nEM+1:nEM+nMets)];
+0672     <span class="keyword">if</span> isfield(outModel,<span class="string">'metSmiles'</span>)
+0673         outModel.metSmiles=[outModel.metSmiles;outModel.metSmiles(nEM+1:nEM+nMets)];
 0674     <span class="keyword">end</span>
-0675     <span class="keyword">if</span> isfield(outModel,<span class="string">'metFormulas'</span>)
-0676         outModel.metFormulas=[outModel.metFormulas;outModel.metFormulas(nEM+1:nEM+nMets)];
+0675     <span class="keyword">if</span> isfield(outModel,<span class="string">'unconstrained'</span>)
+0676         outModel.unconstrained=[outModel.unconstrained;outModel.unconstrained(nEM+1:nEM+nMets)];
 0677     <span class="keyword">end</span>
-0678     <span class="keyword">if</span> isfield(outModel,<span class="string">'metFrom'</span>)
-0679         outModel.metFrom=[outModel.metFrom;outModel.metFrom(nEM+1:nEM+nMets)];
+0678     <span class="keyword">if</span> isfield(outModel,<span class="string">'metMiriams'</span>)
+0679         outModel.metMiriams=[outModel.metMiriams;outModel.metMiriams(nEM+1:nEM+nMets)];
 0680     <span class="keyword">end</span>
-0681     <span class="keyword">if</span> isfield(outModel,<span class="string">'metCharges'</span>)
-0682         outModel.metCharges=[outModel.metCharges;outModel.metCharges(nEM+1:nEM+nMets)];
+0681     <span class="keyword">if</span> isfield(outModel,<span class="string">'metFormulas'</span>)
+0682         outModel.metFormulas=[outModel.metFormulas;outModel.metFormulas(nEM+1:nEM+nMets)];
 0683     <span class="keyword">end</span>
-0684     <span class="keyword">if</span> isfield(outModel,<span class="string">'metDeltaG'</span>)
-0685         outModel.metDeltaG=[outModel.metDeltaG;outModel.metDeltaG(nEM+1:nEM+nMets)];
+0684     <span class="keyword">if</span> isfield(outModel,<span class="string">'metFrom'</span>)
+0685         outModel.metFrom=[outModel.metFrom;outModel.metFrom(nEM+1:nEM+nMets)];
 0686     <span class="keyword">end</span>
-0687 <span class="keyword">end</span>
-0688 
-0689 <span class="comment">%Add the transport reactions</span>
-0690 transS=bestS(:,numel(outModel.rxns)+1:end);
-0691 J=sum(transS)&gt;0; <span class="comment">%Active rxns</span>
-0692 
-0693 <span class="comment">%Transport reactions are written in a different way compared to a &quot;real&quot;</span>
-0694 <span class="comment">%stoichimetric matrix. This is to fix that</span>
-0695 transS(transS~=0)=1;
-0696 transS(1:nEM+nMets,:)=transS(1:nEM+nMets,:)*-1;
-0697 I=find(sum(transS&gt;0,2));
-0698 nTransRxns=numel(I);
-0699 outModel.S=[outModel.S transS(:,J)];
-0700 filler=ones(nTransRxns,1);
-0701 outModel.lb=[outModel.lb;filler*-1000];
-0702 outModel.ub=[outModel.ub;filler*1000];
-0703 outModel.rev=[outModel.rev;filler];
-0704 outModel.c=[outModel.c;filler*0];
-0705 outModel.rxnGeneMat=[outModel.rxnGeneMat;sparse(nTransRxns,numel(outModel.genes))];
-0706 
-0707 <span class="keyword">for</span> i=1:numel(I)
-0708     outModel.rxns=[outModel.rxns;strcat(<span class="string">'transport'</span>,num2str(i))];
-0709     outModel.rxnNames=[outModel.rxnNames;[<span class="string">'Transport of '</span>,outModel.metNames{I(i)}]];
-0710     <span class="keyword">if</span> isfield(outModel,<span class="string">'grRules'</span>)
-0711         outModel.grRules=[outModel.grRules;{<span class="string">''</span>}];
-0712     <span class="keyword">end</span>
-0713     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnMiriams'</span>)
-0714         outModel.rxnMiriams=[outModel.rxnMiriams;{[]}];
-0715     <span class="keyword">end</span>
-0716     <span class="keyword">if</span> isfield(outModel,<span class="string">'subSystems'</span>)
-0717         outModel.subSystems=[outModel.subSystems;{{<span class="string">'Inferred transport reactions'</span>}}];
+0687     <span class="keyword">if</span> isfield(outModel,<span class="string">'metCharges'</span>)
+0688         outModel.metCharges=[outModel.metCharges;outModel.metCharges(nEM+1:nEM+nMets)];
+0689     <span class="keyword">end</span>
+0690     <span class="keyword">if</span> isfield(outModel,<span class="string">'metDeltaG'</span>)
+0691         outModel.metDeltaG=[outModel.metDeltaG;outModel.metDeltaG(nEM+1:nEM+nMets)];
+0692     <span class="keyword">end</span>
+0693 <span class="keyword">end</span>
+0694 
+0695 <span class="comment">%Add the transport reactions</span>
+0696 transS=bestS(:,numel(outModel.rxns)+1:end);
+0697 J=sum(transS)&gt;0; <span class="comment">%Active rxns</span>
+0698 
+0699 <span class="comment">%Transport reactions are written in a different way compared to a &quot;real&quot;</span>
+0700 <span class="comment">%stoichimetric matrix. This is to fix that</span>
+0701 transS(transS~=0)=1;
+0702 transS(1:nEM+nMets,:)=transS(1:nEM+nMets,:)*-1;
+0703 I=find(sum(transS&gt;0,2));
+0704 nTransRxns=numel(I);
+0705 outModel.S=[outModel.S transS(:,J)];
+0706 filler=ones(nTransRxns,1);
+0707 outModel.lb=[outModel.lb;filler*-1000];
+0708 outModel.ub=[outModel.ub;filler*1000];
+0709 outModel.rev=[outModel.rev;filler];
+0710 outModel.c=[outModel.c;filler*0];
+0711 outModel.rxnGeneMat=[outModel.rxnGeneMat;sparse(nTransRxns,numel(outModel.genes))];
+0712 
+0713 <span class="keyword">for</span> i=1:numel(I)
+0714     outModel.rxns=[outModel.rxns;strcat(<span class="string">'transport'</span>,num2str(i))];
+0715     outModel.rxnNames=[outModel.rxnNames;[<span class="string">'Transport of '</span>,outModel.metNames{I(i)}]];
+0716     <span class="keyword">if</span> isfield(outModel,<span class="string">'grRules'</span>)
+0717         outModel.grRules=[outModel.grRules;{<span class="string">''</span>}];
 0718     <span class="keyword">end</span>
-0719     <span class="keyword">if</span> isfield(outModel,<span class="string">'eccodes'</span>)
-0720         outModel.eccodes=[outModel.eccodes;{<span class="string">''</span>}];
+0719     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnMiriams'</span>)
+0720         outModel.rxnMiriams=[outModel.rxnMiriams;{[]}];
 0721     <span class="keyword">end</span>
-0722     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnFrom'</span>)
-0723         outModel.rxnFrom=[outModel.rxnFrom;{<span class="string">''</span>}];
+0722     <span class="keyword">if</span> isfield(outModel,<span class="string">'subSystems'</span>)
+0723         outModel.subSystems=[outModel.subSystems;{{<span class="string">'Inferred transport reactions'</span>}}];
 0724     <span class="keyword">end</span>
-0725     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnNotes'</span>)
-0726         outModel.rxnNotes=[outModel.rxnNotes;{<span class="string">''</span>}];
+0725     <span class="keyword">if</span> isfield(outModel,<span class="string">'eccodes'</span>)
+0726         outModel.eccodes=[outModel.eccodes;{<span class="string">''</span>}];
 0727     <span class="keyword">end</span>
-0728     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnReferences'</span>)
-0729         outModel.rxnReferences=[outModel.rxnReferences;{<span class="string">''</span>}];
+0728     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnFrom'</span>)
+0729         outModel.rxnFrom=[outModel.rxnFrom;{<span class="string">''</span>}];
 0730     <span class="keyword">end</span>
-0731     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnConfidenceScores'</span>)
-0732         outModel.rxnConfidenceScores=[outModel.rxnConfidenceScores;NaN];
+0731     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnNotes'</span>)
+0732         outModel.rxnNotes=[outModel.rxnNotes;{<span class="string">''</span>}];
 0733     <span class="keyword">end</span>
-0734     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnDeltaG'</span>)
-0735         outModel.rxnDeltaG=[outModel.rxnDeltaG;NaN];
+0734     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnReferences'</span>)
+0735         outModel.rxnReferences=[outModel.rxnReferences;{<span class="string">''</span>}];
 0736     <span class="keyword">end</span>
-0737 <span class="keyword">end</span>
-0738 
-0739 <span class="comment">%Then remove all reactions and metabolites that aren't used in the final</span>
-0740 <span class="comment">%solution from the optimization</span>
-0741 [~, J]=find(bestS(:,1:nER+nComps*nRxns));
-0742 K=true(numel(outModel.rxns),1);
-0743 K(J)=false;
-0744 K(end-nTransRxns+1:end)=false;
-0745 outModel=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(outModel,K,true);
-0746 
-0747 <span class="comment">%Remove all fake genes</span>
-0748 I=strncmp(<span class="string">'&amp;&amp;FAKE&amp;&amp;'</span>,outModel.genes,8);
-0749 outModel.genes(I)=[];
-0750 <span class="keyword">if</span> isfield(outModel,<span class="string">'geneMiriams'</span>)
-0751     outModel.geneMiriams(I)=[];
-0752 <span class="keyword">end</span>
-0753 <span class="keyword">if</span> isfield(outModel,<span class="string">'geneShortNames'</span>)
-0754     outModel.geneShortNames(I)=[];
-0755 <span class="keyword">end</span>
-0756 outModel.rxnGeneMat(:,I)=[];
-0757 
-0758 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
-0759 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(outModel,true);
-0760 outModel.grRules = grRules;
-0761 outModel.rxnGeneMat = rxnGeneMat;
-0762 <span class="keyword">end</span>
+0737     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnConfidenceScores'</span>)
+0738         outModel.rxnConfidenceScores=[outModel.rxnConfidenceScores;NaN];
+0739     <span class="keyword">end</span>
+0740     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnDeltaG'</span>)
+0741         outModel.rxnDeltaG=[outModel.rxnDeltaG;NaN];
+0742     <span class="keyword">end</span>
+0743 <span class="keyword">end</span>
+0744 
+0745 <span class="comment">%Then remove all reactions and metabolites that aren't used in the final</span>
+0746 <span class="comment">%solution from the optimization</span>
+0747 [~, J]=find(bestS(:,1:nER+nComps*nRxns));
+0748 K=true(numel(outModel.rxns),1);
+0749 K(J)=false;
+0750 K(end-nTransRxns+1:end)=false;
+0751 outModel=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(outModel,K,true);
+0752 
+0753 <span class="comment">%Remove all fake genes</span>
+0754 I=strncmp(<span class="string">'&amp;&amp;FAKE&amp;&amp;'</span>,outModel.genes,8);
+0755 outModel.genes(I)=[];
+0756 <span class="keyword">if</span> isfield(outModel,<span class="string">'geneMiriams'</span>)
+0757     outModel.geneMiriams(I)=[];
+0758 <span class="keyword">end</span>
+0759 <span class="keyword">if</span> isfield(outModel,<span class="string">'geneShortNames'</span>)
+0760     outModel.geneShortNames(I)=[];
+0761 <span class="keyword">end</span>
+0762 outModel.rxnGeneMat(:,I)=[];
 0763 
-0764 <span class="comment">%Moves a gene and all associated reactions from one compartment to another</span>
-0765 <a name="_sub1" href="#_subfunctions" class="code">function [S, g2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets)</a>
-0766 <span class="comment">%Find the current compartment and update to the new one</span>
-0767 currentComp=find(g2c(geneToMove,:));
-0768 g2c(geneToMove,:)=false;
-0769 g2c(geneToMove,toComp)=true;
-0770 
-0771 <span class="comment">%Find the reactions in the original model that the gene controls</span>
-0772 [I, ~]=find(model.rxnGeneMat(:,geneToMove));
-0773 
-0774 <span class="comment">%Calculate their current positions in the S matrix</span>
-0775 oldRxns=I+(currentComp-1)*nRxns;
+0764 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
+0765 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(outModel,true);
+0766 outModel.grRules = grRules;
+0767 outModel.rxnGeneMat = rxnGeneMat;
+0768 <span class="keyword">end</span>
+0769 
+0770 <span class="comment">%Moves a gene and all associated reactions from one compartment to another</span>
+0771 <a name="_sub1" href="#_subfunctions" class="code">function [S, g2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets)</a>
+0772 <span class="comment">%Find the current compartment and update to the new one</span>
+0773 currentComp=find(g2c(geneToMove,:));
+0774 g2c(geneToMove,:)=false;
+0775 g2c(geneToMove,toComp)=true;
 0776 
-0777 <span class="comment">%And their new positions</span>
-0778 newRxns=I+(toComp-1)*nRxns;
+0777 <span class="comment">%Find the reactions in the original model that the gene controls</span>
+0778 [I, ~]=find(model.rxnGeneMat(:,geneToMove));
 0779 
-0780 <span class="comment">%The metabolite ids also have to be changed in order to match the new</span>
-0781 <span class="comment">%compartment</span>
-0782 metChange=nMets*(toComp-currentComp);
-0783 
-0784 <span class="comment">%Update the reactions</span>
-0785 [I, J, K]=find(S(:,oldRxns));
-0786 I=I+metChange;
-0787 
-0788 <span class="comment">%Move the reactions</span>
-0789 S(:,oldRxns)=0;
-0790 S(sub2ind(size(S),I,newRxns(J)))=K;
-0791 <span class="keyword">end</span>
-0792 
-0793 <span class="comment">%Finds which metabolites are unconnected, in the sense that they are never</span>
-0794 <span class="comment">%a product or only a product in a reversible reaction where one reactant is</span>
-0795 <span class="comment">%only a product in the opposite direction of that reaction. This function</span>
-0796 <span class="comment">%ignores exchange metabolites. Returns a vector of metabolite indexes.</span>
-0797 <span class="comment">%metsToCheck is an array of metabolite indexes to check for connectivity.</span>
-0798 <span class="comment">%If not supplied then all metabolites are checked</span>
-0799 <a name="_sub2" href="#_subfunctions" class="code">function unconnected=findUnconnected(S,nEM,metsToCheck)</a>
-0800 <span class="keyword">if</span> nargin&gt;2
-0801     <span class="comment">%Do this by deleting everything from the network that is not in</span>
-0802     <span class="comment">%metsToCheck and that is not exchange metabolites</span>
-0803     I=false(size(S,1),1);
-0804     I(1:nEM)=true;
-0805     I(metsToCheck)=true;
-0806     S=S(I,:);
-0807 <span class="keyword">end</span>
-0808 
-0809 em=false(size(S,1),1);
-0810 em(1:nEM)=true;
-0811 
-0812 <span class="comment">%Construct a matrix in which the reversible reactions are inverted</span>
-0813 I=sum(S&gt;2,1) | sum(S&gt;2,1);
-0814 revS=S;
-0815 revS(:,I)=revS(:,I)*-1;
-0816 
-0817 <span class="comment">%First calculate the ones that are ok</span>
-0818 <span class="comment">%Produced in 2 rxns, is exchange, is not used at all, is produced in</span>
-0819 <span class="comment">%non-reversible, involved in more than 1 reversible reactions</span>
-0820 connected=sum(S&gt;0,2)&gt;1 | em | sum(S~=0,2)==0 | sum(S(:,~I)&gt;0,2)&gt;0 | sum(S(:,I)~=0,2)&gt;1;
-0821 
-0822 <span class="comment">%Then get the ones that are unconnected because they are never produced</span>
-0823 unconnected=sum(S&gt;0 | revS&gt;0,2)==0 &amp; connected==false;
-0824 
-0825 <span class="comment">%Then get the ones that are potentially unconnected</span>
-0826 maybeUnconnected=~connected &amp; ~unconnected;
-0827 <span class="comment">%maybeUnconnected=find(maybeUnconnectedS);</span>
-0828 
-0829 <span class="comment">%The metabolites in maybeUnconnected are involved in one reversible</span>
-0830 <span class="comment">%reaction and not produced in any other reaction. This means that the</span>
-0831 <span class="comment">%reactions which have at least one met in maybeUnconnected as reactant and</span>
-0832 <span class="comment">%one as product are unconnected. The metabolites in maybeUnconnected that</span>
-0833 <span class="comment">%are present in those reactions are then dead ends</span>
-0834 deadRxns=any(S(maybeUnconnected,:)&gt;0) &amp; any(S(maybeUnconnected,:)&lt;0);
-0835 
-0836 <span class="comment">%Get the mets involved in any of those reactions</span>
-0837 problematic=any(S(:,deadRxns)~=0,2);
-0838 
-0839 <span class="comment">%If any of these are in the maybeUnconnected list then the metabolite is</span>
-0840 <span class="comment">%unconnected</span>
-0841 unconnected(problematic &amp; maybeUnconnected)=true;
-0842 
-0843 <span class="comment">%Map back to metsToCheck</span>
-0844 <span class="keyword">if</span> nargin&gt;2
-0845     unconnected=metsToCheck(unconnected(nEM+1:end));
-0846 <span class="keyword">else</span>
-0847     unconnected=find(unconnected);
-0848 <span class="keyword">end</span>
-0849 <span class="keyword">end</span>
-0850 
-0851 <span class="comment">%Given a set of unconnected metabolites, this function tries to move each</span>
-0852 <span class="comment">%gene that could connect any of them, calculates the number of newly</span>
-0853 <span class="comment">%connected metabolites minus the number of newly disconnected metabolites.</span>
-0854 <span class="comment">%As some metabolites are very connected, only 25 genes are checked. Genes</span>
-0855 <span class="comment">%that have a low score in their current compartment are more likely to be</span>
-0856 <span class="comment">%moved</span>
-0857 <a name="_sub3" href="#_subfunctions" class="code">function [geneIndex, moveTo, deltaConnected, deltaScore]=selectGenes(S,nEM,nMets,nER,nRxns,model,unconnected,g2c,GSS)</a>
-0858 <span class="comment">%If moveTo is 0 then the gene cannot connect any of the metabolites</span>
-0859 moveTo=zeros(numel(model.genes),1);
-0860 deltaConnected=zeros(numel(model.genes),1);
-0861 
-0862 <span class="comment">%First get where the metabolites are now</span>
-0863 nComps=size(g2c,2);
-0864 comps=ceil((unconnected-nEM)/((size(S,1)-nEM)/nComps));
-0865 
-0866 <span class="comment">%Find the corresponding metabolite indexes if they all were in the default</span>
-0867 <span class="comment">%compartment</span>
-0868 dcIndexes=unique(unconnected-(comps-1)*nMets);
-0869 
-0870 <span class="comment">%Then find them if they were in any other compartment</span>
-0871 allIndexes=dcIndexes;
-0872 <span class="keyword">for</span> i=1:nComps-1
-0873     allIndexes=[allIndexes;dcIndexes+nMets*i];
-0874 <span class="keyword">end</span>
+0780 <span class="comment">%Calculate their current positions in the S matrix</span>
+0781 oldRxns=I+(currentComp-1)*nRxns;
+0782 
+0783 <span class="comment">%And their new positions</span>
+0784 newRxns=I+(toComp-1)*nRxns;
+0785 
+0786 <span class="comment">%The metabolite ids also have to be changed in order to match the new</span>
+0787 <span class="comment">%compartment</span>
+0788 metChange=nMets*(toComp-currentComp);
+0789 
+0790 <span class="comment">%Update the reactions</span>
+0791 [I, J, K]=find(S(:,oldRxns));
+0792 I=I+metChange;
+0793 
+0794 <span class="comment">%Move the reactions</span>
+0795 S(:,oldRxns)=0;
+0796 S(sub2ind(size(S),I,newRxns(J)))=K;
+0797 <span class="keyword">end</span>
+0798 
+0799 <span class="comment">%Finds which metabolites are unconnected, in the sense that they are never</span>
+0800 <span class="comment">%a product or only a product in a reversible reaction where one reactant is</span>
+0801 <span class="comment">%only a product in the opposite direction of that reaction. This function</span>
+0802 <span class="comment">%ignores exchange metabolites. Returns a vector of metabolite indexes.</span>
+0803 <span class="comment">%metsToCheck is an array of metabolite indexes to check for connectivity.</span>
+0804 <span class="comment">%If not supplied then all metabolites are checked</span>
+0805 <a name="_sub2" href="#_subfunctions" class="code">function unconnected=findUnconnected(S,nEM,metsToCheck)</a>
+0806 <span class="keyword">if</span> nargin&gt;2
+0807     <span class="comment">%Do this by deleting everything from the network that is not in</span>
+0808     <span class="comment">%metsToCheck and that is not exchange metabolites</span>
+0809     I=false(size(S,1),1);
+0810     I(1:nEM)=true;
+0811     I(metsToCheck)=true;
+0812     S=S(I,:);
+0813 <span class="keyword">end</span>
+0814 
+0815 em=false(size(S,1),1);
+0816 em(1:nEM)=true;
+0817 
+0818 <span class="comment">%Construct a matrix in which the reversible reactions are inverted</span>
+0819 I=sum(S&gt;2,1) | sum(S&gt;2,1);
+0820 revS=S;
+0821 revS(:,I)=revS(:,I)*-1;
+0822 
+0823 <span class="comment">%First calculate the ones that are ok</span>
+0824 <span class="comment">%Produced in 2 rxns, is exchange, is not used at all, is produced in</span>
+0825 <span class="comment">%non-reversible, involved in more than 1 reversible reactions</span>
+0826 connected=sum(S&gt;0,2)&gt;1 | em | sum(S~=0,2)==0 | sum(S(:,~I)&gt;0,2)&gt;0 | sum(S(:,I)~=0,2)&gt;1;
+0827 
+0828 <span class="comment">%Then get the ones that are unconnected because they are never produced</span>
+0829 unconnected=sum(S&gt;0 | revS&gt;0,2)==0 &amp; connected==false;
+0830 
+0831 <span class="comment">%Then get the ones that are potentially unconnected</span>
+0832 maybeUnconnected=~connected &amp; ~unconnected;
+0833 <span class="comment">%maybeUnconnected=find(maybeUnconnectedS);</span>
+0834 
+0835 <span class="comment">%The metabolites in maybeUnconnected are involved in one reversible</span>
+0836 <span class="comment">%reaction and not produced in any other reaction. This means that the</span>
+0837 <span class="comment">%reactions which have at least one met in maybeUnconnected as reactant and</span>
+0838 <span class="comment">%one as product are unconnected. The metabolites in maybeUnconnected that</span>
+0839 <span class="comment">%are present in those reactions are then dead ends</span>
+0840 deadRxns=any(S(maybeUnconnected,:)&gt;0) &amp; any(S(maybeUnconnected,:)&lt;0);
+0841 
+0842 <span class="comment">%Get the mets involved in any of those reactions</span>
+0843 problematic=any(S(:,deadRxns)~=0,2);
+0844 
+0845 <span class="comment">%If any of these are in the maybeUnconnected list then the metabolite is</span>
+0846 <span class="comment">%unconnected</span>
+0847 unconnected(problematic &amp; maybeUnconnected)=true;
+0848 
+0849 <span class="comment">%Map back to metsToCheck</span>
+0850 <span class="keyword">if</span> nargin&gt;2
+0851     unconnected=metsToCheck(unconnected(nEM+1:end));
+0852 <span class="keyword">else</span>
+0853     unconnected=find(unconnected);
+0854 <span class="keyword">end</span>
+0855 <span class="keyword">end</span>
+0856 
+0857 <span class="comment">%Given a set of unconnected metabolites, this function tries to move each</span>
+0858 <span class="comment">%gene that could connect any of them, calculates the number of newly</span>
+0859 <span class="comment">%connected metabolites minus the number of newly disconnected metabolites.</span>
+0860 <span class="comment">%As some metabolites are very connected, only 25 genes are checked. Genes</span>
+0861 <span class="comment">%that have a low score in their current compartment are more likely to be</span>
+0862 <span class="comment">%moved</span>
+0863 <a name="_sub3" href="#_subfunctions" class="code">function [geneIndex, moveTo, deltaConnected, deltaScore]=selectGenes(S,nEM,nMets,nER,nRxns,model,unconnected,g2c,GSS)</a>
+0864 <span class="comment">%If moveTo is 0 then the gene cannot connect any of the metabolites</span>
+0865 moveTo=zeros(numel(model.genes),1);
+0866 deltaConnected=zeros(numel(model.genes),1);
+0867 
+0868 <span class="comment">%First get where the metabolites are now</span>
+0869 nComps=size(g2c,2);
+0870 comps=ceil((unconnected-nEM)/((size(S,1)-nEM)/nComps));
+0871 
+0872 <span class="comment">%Find the corresponding metabolite indexes if they all were in the default</span>
+0873 <span class="comment">%compartment</span>
+0874 dcIndexes=unique(unconnected-(comps-1)*nMets);
 0875 
-0876 <span class="comment">%Also check which reversible reactions that could be used</span>
-0877 I=sum(S&gt;2,1) | sum(S&gt;2,1);
-0878 revS=S;
-0879 revS(:,I)=revS(:,I)*-1;
-0880 
-0881 <span class="comment">%Find all reactions that could make any of the unconnected metabolites in</span>
-0882 <span class="comment">%some other compartment</span>
-0883 newMets=setdiff(allIndexes,unconnected);
-0884 [~, potential]=find(S(newMets,:)&gt;0 | revS(newMets,:)&gt;0);
-0885 potential(potential&lt;=nER | potential&gt;nER+nRxns*nComps)=[]; <span class="comment">%No exchange rxns or transport rxns</span>
+0876 <span class="comment">%Then find them if they were in any other compartment</span>
+0877 allIndexes=dcIndexes;
+0878 <span class="keyword">for</span> i=1:nComps-1
+0879     allIndexes=[allIndexes;dcIndexes+nMets*i];
+0880 <span class="keyword">end</span>
+0881 
+0882 <span class="comment">%Also check which reversible reactions that could be used</span>
+0883 I=sum(S&gt;2,1) | sum(S&gt;2,1);
+0884 revS=S;
+0885 revS(:,I)=revS(:,I)*-1;
 0886 
-0887 <span class="comment">%Map J to the real metabolic reactions in model</span>
-0888 rxnComps=ceil((potential-nER)/(nRxns));
-0889 
-0890 <span class="comment">%Find the corresponding reaction indexes if they all were in the default</span>
-0891 <span class="comment">%compartment</span>
-0892 dcRxnIndexes=potential-(rxnComps-1)*nRxns;
-0893 
-0894 <span class="comment">%Get the genes for those reactions</span>
-0895 genes=find(sum(model.rxnGeneMat(dcRxnIndexes,:)&gt;0,1));
-0896 
-0897 <span class="comment">%For some cases there can be very many reactions to connect something. This</span>
-0898 <span class="comment">%is in particular true in the beginning of the optimization if, say, ATP is</span>
-0899 <span class="comment">%unconnected. Therefore limit the number of genes to be checked to 25.</span>
-0900 <span class="comment">%Weigh so that genes with bad scores in their current compartment are more</span>
-0901 <span class="comment">%likely to be moved.</span>
+0887 <span class="comment">%Find all reactions that could make any of the unconnected metabolites in</span>
+0888 <span class="comment">%some other compartment</span>
+0889 newMets=setdiff(allIndexes,unconnected);
+0890 [~, potential]=find(S(newMets,:)&gt;0 | revS(newMets,:)&gt;0);
+0891 potential(potential&lt;=nER | potential&gt;nER+nRxns*nComps)=[]; <span class="comment">%No exchange rxns or transport rxns</span>
+0892 
+0893 <span class="comment">%Map J to the real metabolic reactions in model</span>
+0894 rxnComps=ceil((potential-nER)/(nRxns));
+0895 
+0896 <span class="comment">%Find the corresponding reaction indexes if they all were in the default</span>
+0897 <span class="comment">%compartment</span>
+0898 dcRxnIndexes=potential-(rxnComps-1)*nRxns;
+0899 
+0900 <span class="comment">%Get the genes for those reactions</span>
+0901 genes=find(sum(model.rxnGeneMat(dcRxnIndexes,:)&gt;0,1));
 0902 
-0903 <span class="comment">%Get scores for these genes</span>
-0904 [~, J]=find(g2c(genes,:));
-0905 
-0906 <span class="comment">%Add a small weight so that genes in their best compartment could be moved</span>
-0907 <span class="comment">%as well</span>
-0908 geneScores=GSS.scores(sub2ind(size(g2c),genes(:),J));
-0909 modGeneScores=1.1-geneScores;
-0910 <span class="keyword">if</span> numel(genes)&gt;25
-0911     rGenes=genes(randsample(numel(genes),min(numel(genes),25),true,modGeneScores));
-0912     
-0913     <span class="comment">%The sampling with weights could give duplicates</span>
-0914     rGenes=unique(rGenes);
-0915     
-0916     <span class="comment">%Reorder the geneScores to match</span>
-0917     [~, I]=ismember(rGenes,genes);
-0918     geneScores=geneScores(I);
-0919     genes=rGenes;
-0920 <span class="keyword">end</span>
-0921 <span class="keyword">for</span> i=1:numel(genes)
-0922     <span class="comment">%Since one gene is moved at a time, only metabolites involved in any of</span>
-0923     <span class="comment">%the reactions for that gene can become unconnected. This helps to</span>
-0924     <span class="comment">%speed up the algorithm. First get all involved reactions in the</span>
-0925     <span class="comment">%default compartment</span>
-0926     rxns=find(model.rxnGeneMat(:,genes(i)));
-0927     
-0928     <span class="comment">%Then get their mets</span>
-0929     mets=find(sum(model.S(:,rxns)~=0,2)&gt;0);
-0930     
-0931     <span class="comment">%Then get their indexes in all compartments</span>
-0932     allIndexes=mets;
-0933     <span class="keyword">for</span> j=1:nComps-1
-0934         allIndexes=[allIndexes;mets+nMets*j];
-0935     <span class="keyword">end</span>
+0903 <span class="comment">%For some cases there can be very many reactions to connect something. This</span>
+0904 <span class="comment">%is in particular true in the beginning of the optimization if, say, ATP is</span>
+0905 <span class="comment">%unconnected. Therefore limit the number of genes to be checked to 25.</span>
+0906 <span class="comment">%Weigh so that genes with bad scores in their current compartment are more</span>
+0907 <span class="comment">%likely to be moved.</span>
+0908 
+0909 <span class="comment">%Get scores for these genes</span>
+0910 [~, J]=find(g2c(genes,:));
+0911 
+0912 <span class="comment">%Add a small weight so that genes in their best compartment could be moved</span>
+0913 <span class="comment">%as well</span>
+0914 geneScores=GSS.scores(sub2ind(size(g2c),genes(:),J));
+0915 modGeneScores=1.1-geneScores;
+0916 <span class="keyword">if</span> numel(genes)&gt;25
+0917     rGenes=genes(randsample(numel(genes),min(numel(genes),25),true,modGeneScores));
+0918     
+0919     <span class="comment">%The sampling with weights could give duplicates</span>
+0920     rGenes=unique(rGenes);
+0921     
+0922     <span class="comment">%Reorder the geneScores to match</span>
+0923     [~, I]=ismember(rGenes,genes);
+0924     geneScores=geneScores(I);
+0925     genes=rGenes;
+0926 <span class="keyword">end</span>
+0927 <span class="keyword">for</span> i=1:numel(genes)
+0928     <span class="comment">%Since one gene is moved at a time, only metabolites involved in any of</span>
+0929     <span class="comment">%the reactions for that gene can become unconnected. This helps to</span>
+0930     <span class="comment">%speed up the algorithm. First get all involved reactions in the</span>
+0931     <span class="comment">%default compartment</span>
+0932     rxns=find(model.rxnGeneMat(:,genes(i)));
+0933     
+0934     <span class="comment">%Then get their mets</span>
+0935     mets=find(sum(model.S(:,rxns)~=0,2)&gt;0);
 0936     
-0937     <span class="comment">%Check which of the unconnected metabolites that these reactions</span>
-0938     <span class="comment">%correspond to. This could have been done earlier, but it is fast. The</span>
-0939     <span class="comment">%reversibility check is skipped because it is unlikely to be an issue</span>
-0940     <span class="comment">%here. Worst case is that the gene is tested once to much</span>
-0941     [I, ~]=find(model.S(:,rxns));
-0942     moveToComps=unique(comps(ismember(dcIndexes,I)));
-0943     
-0944     <span class="comment">%Try to move the gene to each of the compartments</span>
-0945     bestMove=-inf;
-0946     bestComp=[];
-0947     <span class="keyword">for</span> j=1:numel(moveToComps)
-0948         newS=<a href="#_sub1" class="code" title="subfunction [S, g2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets)">moveGene</a>(S,model,g2c,genes(i),moveToComps(j),nRxns,nMets);
-0949         
-0950         <span class="comment">%Check how many metabolites that are unconnected after moving the</span>
-0951         <span class="comment">%gene</span>
-0952         dConnected=numel(unconnected)-numel(<a href="#_sub2" class="code" title="subfunction unconnected=findUnconnected(S,nEM,metsToCheck)">findUnconnected</a>(newS,nEM,[allIndexes;unconnected]));
-0953         <span class="keyword">if</span> dConnected&gt;bestMove
-0954             bestMove=dConnected;
-0955             bestComp=moveToComps(j);
-0956         <span class="keyword">end</span>
-0957     <span class="keyword">end</span>
-0958     
-0959     <span class="comment">%Add the difference in connectivity and where the genes should be moved</span>
-0960     moveTo(genes(i))=bestComp;
-0961     deltaConnected(genes(i))=bestMove;
-0962 <span class="keyword">end</span>
-0963 
-0964 <span class="comment">%Finish up</span>
-0965 geneIndex=genes(:);
-0966 moveTo=moveTo(geneIndex);
-0967 deltaConnected=deltaConnected(geneIndex);
-0968 deltaScore=GSS.scores(sub2ind(size(g2c),geneIndex(:),moveTo))-geneScores;
-0969 <span class="keyword">end</span>
-0970 
-0971 <span class="comment">%Small function to add a transport reactions between two metabolites.</span>
-0972 <span class="comment">%Transport reactions are written as having a coefficient 2.0 for both</span>
-0973 <span class="comment">%reactant and product. This is not a &quot;real&quot; reaction, but since all normal</span>
-0974 <span class="comment">%reactions have coefficient -1/1 or -10/10 it is a compact way of writing</span>
-0975 <span class="comment">%it</span>
-0976 <a name="_sub4" href="#_subfunctions" class="code">function S=addTransport(S,nRxns,nER,nMets,nEM,nComps,metA,metB)</a>
-0977 mets=[metA;metB];
-0978 <span class="comment">%Find the current compartments for the metabolites</span>
-0979 comps=ceil((mets-nEM)/((size(S,1)-nEM)/nComps));
-0980 
-0981 <span class="keyword">if</span> sum(comps==1)~=1
-0982     EM=<span class="string">'Tried to create a transport reaction from a non-default compartment'</span>;
-0983     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0984 <span class="keyword">end</span>
-0985 
-0986 <span class="comment">%Calculate the reaction index</span>
-0987 rIndex=(nER+nRxns*nComps)+mets(comps~=1)-nEM-nMets;
-0988 
-0989 S(mets,rIndex)=2;
+0937     <span class="comment">%Then get their indexes in all compartments</span>
+0938     allIndexes=mets;
+0939     <span class="keyword">for</span> j=1:nComps-1
+0940         allIndexes=[allIndexes;mets+nMets*j];
+0941     <span class="keyword">end</span>
+0942     
+0943     <span class="comment">%Check which of the unconnected metabolites that these reactions</span>
+0944     <span class="comment">%correspond to. This could have been done earlier, but it is fast. The</span>
+0945     <span class="comment">%reversibility check is skipped because it is unlikely to be an issue</span>
+0946     <span class="comment">%here. Worst case is that the gene is tested once to much</span>
+0947     [I, ~]=find(model.S(:,rxns));
+0948     moveToComps=unique(comps(ismember(dcIndexes,I)));
+0949     
+0950     <span class="comment">%Try to move the gene to each of the compartments</span>
+0951     bestMove=-inf;
+0952     bestComp=[];
+0953     <span class="keyword">for</span> j=1:numel(moveToComps)
+0954         newS=<a href="#_sub1" class="code" title="subfunction [S, g2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets)">moveGene</a>(S,model,g2c,genes(i),moveToComps(j),nRxns,nMets);
+0955         
+0956         <span class="comment">%Check how many metabolites that are unconnected after moving the</span>
+0957         <span class="comment">%gene</span>
+0958         dConnected=numel(unconnected)-numel(<a href="#_sub2" class="code" title="subfunction unconnected=findUnconnected(S,nEM,metsToCheck)">findUnconnected</a>(newS,nEM,[allIndexes;unconnected]));
+0959         <span class="keyword">if</span> dConnected&gt;bestMove
+0960             bestMove=dConnected;
+0961             bestComp=moveToComps(j);
+0962         <span class="keyword">end</span>
+0963     <span class="keyword">end</span>
+0964     
+0965     <span class="comment">%Add the difference in connectivity and where the genes should be moved</span>
+0966     moveTo(genes(i))=bestComp;
+0967     deltaConnected(genes(i))=bestMove;
+0968 <span class="keyword">end</span>
+0969 
+0970 <span class="comment">%Finish up</span>
+0971 geneIndex=genes(:);
+0972 moveTo=moveTo(geneIndex);
+0973 deltaConnected=deltaConnected(geneIndex);
+0974 deltaScore=GSS.scores(sub2ind(size(g2c),geneIndex(:),moveTo))-geneScores;
+0975 <span class="keyword">end</span>
+0976 
+0977 <span class="comment">%Small function to add a transport reactions between two metabolites.</span>
+0978 <span class="comment">%Transport reactions are written as having a coefficient 2.0 for both</span>
+0979 <span class="comment">%reactant and product. This is not a &quot;real&quot; reaction, but since all normal</span>
+0980 <span class="comment">%reactions have coefficient -1/1 or -10/10 it is a compact way of writing</span>
+0981 <span class="comment">%it</span>
+0982 <a name="_sub4" href="#_subfunctions" class="code">function S=addTransport(S,nRxns,nER,nMets,nEM,nComps,metA,metB)</a>
+0983 mets=[metA;metB];
+0984 <span class="comment">%Find the current compartments for the metabolites</span>
+0985 comps=ceil((mets-nEM)/((size(S,1)-nEM)/nComps));
+0986 
+0987 <span class="keyword">if</span> sum(comps==1)~=1
+0988     EM=<span class="string">'Tried to create a transport reaction from a non-default compartment'</span>;
+0989     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
 0990 <span class="keyword">end</span>
 0991 
-0992 <span class="comment">%Scores a network based on the localization of the genes and the number of</span>
-0993 <span class="comment">%transporter reactions used</span>
-0994 <a name="_sub5" href="#_subfunctions" class="code">function [score, geneScore, transportCost]=scoreModel(S,g2c,GSS,transportCost)</a>
-0995 [I, J]=find(g2c);
-0996 geneScore=sum(GSS.scores(sub2ind(size(g2c),I,J)));
-0997 [I, ~]=find(S==2);
-0998 I=unique(I);
-0999 transportCost=sum(transportCost(I));
-1000 score=geneScore-transportCost;
-1001 <span class="keyword">end</span></pre></div>
+0992 <span class="comment">%Calculate the reaction index</span>
+0993 rIndex=(nER+nRxns*nComps)+mets(comps~=1)-nEM-nMets;
+0994 
+0995 S(mets,rIndex)=2;
+0996 <span class="keyword">end</span>
+0997 
+0998 <span class="comment">%Scores a network based on the localization of the genes and the number of</span>
+0999 <span class="comment">%transporter reactions used</span>
+1000 <a name="_sub5" href="#_subfunctions" class="code">function [score, geneScore, transportCost]=scoreModel(S,g2c,GSS,transportCost)</a>
+1001 [I, J]=find(g2c);
+1002 geneScore=sum(GSS.scores(sub2ind(size(g2c),I,J)));
+1003 [I, ~]=find(S==2);
+1004 I=unique(I);
+1005 transportCost=sum(transportCost(I));
+1006 score=geneScore-transportCost;
+1007 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
