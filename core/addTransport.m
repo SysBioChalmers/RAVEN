@@ -167,6 +167,9 @@ for i=1:numel(toComps)
     if isfield(model,'rxnConfidenceScores')
         model.rxnConfidenceScores=[model.rxnConfidenceScores;ones(nRxns,1)];
     end
+    if isfield(model,'rxnDeltaG')
+        model.rxnDeltaG=[model.rxnDeltaG;zeros(nRxns,1)];
+    end
     addedRxns = [addedRxns; addedRxnsID];
 end
 end

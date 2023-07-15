@@ -63,15 +63,6 @@ end
 
 nRxns=2; %Number of reactions in the objective function in each iteration
 
-%First check that the model is feasible given the constraints
-[sol,~]=solveLP(model);
-if isempty(sol.x)
-    EM='The model has no feasible solution, likely due to incompatible constraints';
-    dispEM(EM);
-elseif sol.f==0 && showProgress
-    warning('The model objective function cannot reach a non-zero value. This might be intended, so randomSampling will continue, but this could indicate problems with your model')
-end
-
 %Simplify the model to speed stuff up a little. Keep original mapping
 originalRxns=model.rxns;
 model=simplifyModel(model,false,false,true,true);
@@ -83,6 +74,15 @@ if replaceBoundsWithInf==true
     if min(model.lb)<0 % Only negative lower bounds should be set to -Inf
         model.lb(model.lb==min(model.lb))=-Inf;
     end
+end
+
+%Check that the model is feasible given the constraints
+[sol,~]=solveLP(model);
+if isempty(sol.x)
+    EM='The model has no feasible solution, likely due to incompatible constraints';
+    dispEM(EM);
+elseif sol.f==0 && showProgress
+    warning('The model objective function cannot reach a non-zero value. This might be intended, so randomSampling will continue, but this could indicate problems with your model')
 end
 
 [~,hsSol]=solveLP(model);
