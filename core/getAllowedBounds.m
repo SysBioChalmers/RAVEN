@@ -1,26 +1,41 @@
-function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns)
+function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns,runParallel)
 % getAllowedBounds
 %   Returns the minimal and maximal fluxes through each reaction.
 %
-%   model         a model structure
-%   rxns          either a cell array of reaction IDs, a logical vector with the
-%                 same number of elements as reactions in the model, or a vector
-%                 of reaction indexes (opt, default model.rxns)
+% Input:
+%   model       a model structure
+%   rxns        either a cell array of reaction IDs, a logical vector with the
+%               same number of elements as reactions in the model, or a vector
+%               of reaction indexes (opt, default model.rxns)
+%   runParallel make use of MATLAB parallel pool to speed up calculations. Not
+%               beneficial if only a limited number of reactions are simulated.
+%               (opt, default true)
 %
-%   minFluxes     minimal allowed fluxes
-%   maxFluxes     maximal allowed fluxes
-%   exitFlags     exit flags for min/max for each of the reactions. True if
-%                 it was possible to calculate a flux
+% Output:
+%   minFluxes   minimal allowed fluxes
+%   maxFluxes   maximal allowed fluxes
+%   exitFlags   exit flags for min/max for each of the reactions. True if it was
+%               possible to calculate a flux
 %
 %   NOTE: In cases where no solution can be calculated, NaN is returned.
 %
-%   Usage: [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns)
+% Usage: [minFluxes, maxFluxes, exitFlags] = getAllowedBounds(model, rxns, runParallel)
 
 if nargin<2
     rxns=1:numel(model.rxns);
 elseif ~islogical(rxns) && ~isnumeric(rxns)
     rxns=convertCharArray(rxns);
     rxns=getIndexes(model,rxns, 'rxns');
+end
+if nargin<3
+    runParallel = true;
+end
+if runParallel
+    addonList = matlab.addons.installedAddons;
+    if ~any(strcmpi(addonList.Name,'Parallel Computing Toolbox'))
+        disp('Cannot find MATLAB Parallel Computing Toolbox, process is not parallelized.')
+        runParallel = false;
+    end
 end
 
 minFluxes=zeros(numel(rxns),1);
@@ -31,12 +46,9 @@ c=zeros(numel(model.rxns),1);
 N = numel(rxns);
 p = 1;
 h = waitbar(0, 'Please wait ...');
-
-addonList = matlab.addons.installedAddons;
-if any(strcmpi(addonList.Name,'Parallel Computing Toolbox'))
+if runParallel
     D = parallel.pool.DataQueue;
-    afterEach(D, @nUpdateWaitbar);
- 
+    afterEach(D, @nUpdateWaitbarParallel);
     parfor i=1:N
         tmpModel=model;
         tmpModel.c=c;
@@ -84,14 +96,18 @@ else
         else
             maxFluxes(i)=NaN;
         end
-        nUpdateWaitbar;
+        nUpdateWaitbar(p,N,h);
     end
 end
-
 close(h)
 
-    function nUpdateWaitbar(~)
-        waitbar(p/N, h);
-        p = p + 1;
-    end
+function nUpdateWaitbarParallel(~)
+waitbar(p/N, h);
+p = p + 1;
+end
+
+function nUpdateWaitbar(p,N,h)
+waitbar(p/N, h);
+p = p + 1;
+end
 end

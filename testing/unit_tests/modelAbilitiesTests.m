@@ -96,7 +96,7 @@ sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
 load(fullfile(sourceDir,'testing','unit_tests','test_data','ecoli_textbook.mat'), 'model');
 
 
-[testOut.min, testOut.max, testOut.flag]=getAllowedBounds(model,[1:10]);
+[testOut.min, testOut.max, testOut.flag]=getAllowedBounds(model,[1:10],false);
 % Simplify output for later check, no need for high precision
 % testOut.min(abs(testOut.min)<1e-10)=0;
 % testOut.min=single(testOut.min);
