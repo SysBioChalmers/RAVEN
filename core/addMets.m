@@ -29,6 +29,9 @@ function newModel=addMets(model,metsToAdd,copyInfo,prefix)
 %               metMiriams     cell array with MIRIAM structures (opt,
 %                              default [])
 %               metCharges     metabolite charge (opt, default NaN)
+%               metDeltaG      Gibbs free energy of formation at
+%                              biochemical standard condition in kJ/mole
+%                              (opt, default NaN)
 %               metNotes       cell array with metabolite notes as strings
 %                              (opt, default '')
 %   copyInfo    when adding metabolites to a compartment where it previously
@@ -261,6 +264,27 @@ else
     end
 end
 
+if isfield(metsToAdd,'metDeltaG')
+    if numel(metsToAdd.metDeltaG)~=nMets
+        EM='metsToAdd.metDeltaG must have the same number of elements as metsToAdd.mets';
+        dispEM(EM);
+    end
+    if ~isnumeric(metsToAdd.metDeltaG)
+        EM='metsToAdd.metDeltaG must be of type "double"';
+        dispEM(EM);
+    end
+    if ~isfield(newModel,'metDeltaG')
+        newModel.metDeltaG=NaN(numel(largeFiller),1);
+    end
+    newModel.metDeltaG=[newModel.metDeltaG;metsToAdd.metDeltaG(:)];
+else
+    %Add default
+    if isfield(newModel,'metDeltaG')
+        newModel.metDeltaG=[newModel.metDeltaG;NaN(numel(filler),1)];
+    end
+end
+
+
 if isfield(metsToAdd,'metNotes')
     metsToAdd.metNotes=convertCharArray(metsToAdd.metNotes);
     if numel(metsToAdd.metNotes)==1 && numel(metsToAdd.mets)>1
@@ -344,6 +368,9 @@ if copyInfo==true
         end
         if isfield(newModel,'metCharges')
             newModel.metCharges(I(i))=newModel.metCharges(J(i));
+        end
+        if isfield(newModel,'metDeltaG')
+            newModel.metDeltaG(I(i))=newModel.metDeltaG(J(i));
         end
     end
 end

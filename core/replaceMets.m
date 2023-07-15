@@ -52,6 +52,9 @@ end
 if isfield(model,'metCharges')
     model.metCharges(metIdx) = model.metCharges(repIdx(1));
 end
+if isfield(model,'metDeltaG')
+    model.metDeltaG(metIdx) = model.metDeltaG(repIdx(1));
+end
 if isfield(model,'inchis')
     model.inchis(metIdx) = model.inchis(repIdx(1));
 end
@@ -97,6 +100,9 @@ if ~isempty(idxDelete)
     end
     if isfield(model,'metCharges')
         model.metCharges(idxDelete) = [];
+    end
+    if isfield(model,'metDeltaG')
+        model.metDeltaG(idxDelete) = [];
     end
     if isfield(model,'inchis')
         model.inchis(idxDelete) = [];
