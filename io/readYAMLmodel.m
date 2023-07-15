@@ -80,6 +80,7 @@ modelFields =   {'id',char();...
          'subSystems',cell(0,0);...
             'eccodes',cell(0,0);...
          'rxnMiriams',cell(0,0);...
+          'rxnDeltaG',{};... %Changed to double in the end.
            'rxnNotes',cell(0,0);...
       'rxnReferences',cell(0,0);...
 'rxnConfidenceScores',cell(0,0);...
@@ -88,6 +89,7 @@ modelFields =   {'id',char();...
           'metSmiles',cell(0,0);...
         'metFormulas',cell(0,0);...
          'metMiriams',cell(0,0);...
+          'metDeltaG',{};... %Changed to double in the end.
          'metCharges',cell(0,0);... %Changed to double in the end.
            'metNotes',cell(0,0);...
               'comps',cell(0,0);...
@@ -128,17 +130,12 @@ else
 end
 
 section = 0;
-metMiriams=cell(25000,3);   metMirNo=1;
-rxnMiriams=cell(25000,3);   rxnMirNo=1;
-geneMiriams=cell(25000,3);  genMirNo=1;
-subSystems=cell(25000,2);   subSysNo=1;
-eccodes=cell(25000,2);      ecCodeNo=1;
+metMiriams=cell(100000,3);   metMirNo=1;
+rxnMiriams=cell(100000,3);   rxnMirNo=1;
+geneMiriams=cell(100000,3);  genMirNo=1;
+subSystems=cell(100000,2);   subSysNo=1;
+eccodes=cell(100000,2);      ecCodeNo=1;
 equations=cell(100000,3);   equatiNo=1;
-% metMiriams=cell(0,3);   metMirNo=1;
-% rxnMiriams=cell(0,3);   rxnMirNo=1;
-% geneMiriams=cell(0,3);  genMirNo=1;
-% subSystems=cell(0,2);   subSysNo=1;
-% eccodes=cell(0,2);      ecCodeNo=1;
 
 for i=1:numel(line_key)
     tline_raw = line_raw{i};
@@ -264,7 +261,10 @@ for i=1:numel(line_key)
                 readList=''; miriamKey='';
             case 'smiles'
                 model = readFieldValue(model, 'metSmiles', tline_value, pos);
-                readList=''; miriamKey='';                
+                readList=''; miriamKey='';    
+            case 'deltaG'
+                model = readFieldValue(model, 'metDeltaG', tline_value, pos);
+                readList=''; miriamKey='';                                
             case 'metFrom'
                 model = readFieldValue(model, 'metFrom', tline_value, pos);
                 readList=''; miriamKey='';
@@ -309,6 +309,9 @@ for i=1:numel(line_key)
             case 'rxnFrom'
                 model = readFieldValue(model, 'rxnFrom', tline_value, pos);
                 readList=''; miriamKey='';
+            case 'deltaG'
+                model = readFieldValue(model, 'rxnDeltaG', tline_value, pos);
+                readList=''; miriamKey='';                
             case 'objective_coefficient'
                 model.c(pos,1) = 1;
                 readList=''; miriamKey='';
@@ -513,6 +516,8 @@ model.lb = str2double(model.lb);
 model.ub = str2double(model.ub);
 model.rxnConfidenceScores = str2double(model.rxnConfidenceScores);
 model.b = zeros(length(model.mets),1);
+model.metDeltaG = str2double(model.metDeltaG);
+model.rxnDeltaG = str2double(model.rxnDeltaG);
 
 % Fill some other fields
 model.annotation.defaultLB = min(model.lb);
@@ -541,7 +546,7 @@ end
 for i={'c'} % Zeros
    model = emptyOrFill(model,i{1},0,'rxns');
 end
-for i={'rxnConfidenceScores'} % NaNs
+for i={'rxnConfidenceScores','rxnDeltaG'} % NaNs
    model = emptyOrFill(model,i{1},NaN,'rxns');
 end
 for i={'rxnComps'} % Ones, assume first compartment
@@ -554,6 +559,9 @@ end
 for i={'metCharges','unconstrained'} % Zeros
    model = emptyOrFill(model,i{1},0,'mets');
 end
+for i={'metDeltaG'} % % NaNs
+    model = emptyOrFill(model,i{1},NaN,'mets');
+ end
 for i={'metComps'} % Ones, assume first compartment
    model = emptyOrFill(model,i{1},1,'mets');
 end

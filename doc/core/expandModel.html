@@ -135,75 +135,78 @@ This function is called by:
 0071     <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
 0072         model.rxnConfidenceScores=[model.rxnConfidenceScores;model.rxnConfidenceScores(cpyIndices)];
 0073     <span class="keyword">end</span>
-0074     
-0075     <span class="comment">%now expand the more complex fields - will be filled in later</span>
-0076     model.rxns=[model.rxns;cell(toAdd,1)];
-0077     model.grRules=[model.grRules;cell(toAdd,1)];
-0078     model.rxnGeneMat=[model.rxnGeneMat;sparse(toAdd,size(model.rxnGeneMat,2))];
-0079     
-0080     <span class="comment">%Loop throught those reactions and fill in the expanded data</span>
-0081     nextIndex = prevNumRxns + 1;
-0082     <span class="keyword">for</span> i=1:prevNumRxns
-0083         <span class="keyword">if</span> (numOrs(i) &gt; 0)
-0084             <span class="comment">%Check that it doesn't contain nested 'and' and 'or' relations and</span>
-0085             <span class="comment">%print a warning if it does</span>
-0086             <span class="keyword">if</span> ~isempty(strfind(model.grRules{i},<span class="string">' and '</span>))
-0087                 rxnToCheck{end+1,1}=model.rxns{i};
-0088             <span class="keyword">end</span>
-0089 
-0090             <span class="comment">%Get rid of all '(' and ')' since I'm not looking at complex stuff</span>
-0091             <span class="comment">%anyways</span>
-0092             geneString=model.grRules{i};
-0093             geneString=strrep(geneString,<span class="string">'('</span>,<span class="string">''</span>);
-0094             geneString=strrep(geneString,<span class="string">')'</span>,<span class="string">''</span>);
-0095             geneString=strrep(geneString,<span class="string">' or '</span>,<span class="string">';'</span>);
-0096 
-0097             <span class="comment">%Split the string into gene names</span>
-0098             geneNames=regexp(geneString,<span class="string">';'</span>,<span class="string">'split'</span>);
+0074     <span class="keyword">if</span> isfield(model,<span class="string">'rxnDeltaG'</span>)
+0075         model.rxnDeltaG=[model.rxnDeltaG;model.rxnDeltaG(cpyIndices)];
+0076     <span class="keyword">end</span>
+0077     
+0078     <span class="comment">%now expand the more complex fields - will be filled in later</span>
+0079     model.rxns=[model.rxns;cell(toAdd,1)];
+0080     model.grRules=[model.grRules;cell(toAdd,1)];
+0081     model.rxnGeneMat=[model.rxnGeneMat;sparse(toAdd,size(model.rxnGeneMat,2))];
+0082     
+0083     <span class="comment">%Loop throught those reactions and fill in the expanded data</span>
+0084     nextIndex = prevNumRxns + 1;
+0085     <span class="keyword">for</span> i=1:prevNumRxns
+0086         <span class="keyword">if</span> (numOrs(i) &gt; 0)
+0087             <span class="comment">%Check that it doesn't contain nested 'and' and 'or' relations and</span>
+0088             <span class="comment">%print a warning if it does</span>
+0089             <span class="keyword">if</span> ~isempty(strfind(model.grRules{i},<span class="string">' and '</span>))
+0090                 rxnToCheck{end+1,1}=model.rxns{i};
+0091             <span class="keyword">end</span>
+0092 
+0093             <span class="comment">%Get rid of all '(' and ')' since I'm not looking at complex stuff</span>
+0094             <span class="comment">%anyways</span>
+0095             geneString=model.grRules{i};
+0096             geneString=strrep(geneString,<span class="string">'('</span>,<span class="string">''</span>);
+0097             geneString=strrep(geneString,<span class="string">')'</span>,<span class="string">''</span>);
+0098             geneString=strrep(geneString,<span class="string">' or '</span>,<span class="string">';'</span>);
 0099 
-0100             <span class="comment">%Update the reaction to only use the first gene</span>
-0101             model.grRules{i}=[<span class="string">'('</span> geneNames{1} <span class="string">')'</span>];
-0102             <span class="comment">%Find the gene in the gene list If ' and ' relationship, first</span>
-0103             <span class="comment">%split the genes</span>
-0104             model.rxnGeneMat(i,:)=0;
-0105             <span class="keyword">if</span> ~isempty(strfind(geneNames(1),<span class="string">' and '</span>))
-0106                 andGenes=regexp(geneNames{1},<span class="string">' and '</span>,<span class="string">'split'</span>);
-0107                 model.rxnGeneMat(i,ismember(model.genes,andGenes)) = 1;
-0108             <span class="keyword">else</span>
-0109                 [~, index]=ismember(geneNames(1),model.genes);
-0110                 model.rxnGeneMat(i,index)=1;
-0111             <span class="keyword">end</span>
-0112 
-0113             <span class="comment">%Insert the reactions at the end of the model and without</span>
-0114             <span class="comment">%allocating space. This is not nice, but ok for now</span>
-0115             <span class="keyword">for</span> j=2:numel(geneNames)
-0116                 ind = nextIndex+j-2;
-0117                 model.rxns{ind}=[model.rxns{i} <span class="string">'_EXP_'</span> num2str(j)];
-0118                 
-0119                 model.grRules{ind}=[<span class="string">'('</span> geneNames{j} <span class="string">')'</span>];
-0120 
-0121                 <span class="keyword">if</span> ~isempty(strfind(geneNames(j),<span class="string">' and '</span>))
-0122                     andGenes=regexp(geneNames{j},<span class="string">' and '</span>,<span class="string">'split'</span>);
-0123                     model.rxnGeneMat(ind,ismember(model.genes,andGenes)) = 1;
-0124                 <span class="keyword">else</span>
-0125                     model.rxnGeneMat(ind,ismember(model.genes,geneNames(j))) = 1;
-0126                 <span class="keyword">end</span>
-0127             <span class="keyword">end</span>
-0128             model.rxns{i}=[model.rxns{i}, <span class="string">'_EXP_1'</span>];
-0129             nextIndex = nextIndex + numOrs(i);
-0130         <span class="keyword">end</span>        
-0131     <span class="keyword">end</span>
-0132     newModel=model;
-0133 <span class="keyword">else</span>
-0134     <span class="comment">%There are no reactions to expand, return the model as is</span>
+0100             <span class="comment">%Split the string into gene names</span>
+0101             geneNames=regexp(geneString,<span class="string">';'</span>,<span class="string">'split'</span>);
+0102 
+0103             <span class="comment">%Update the reaction to only use the first gene</span>
+0104             model.grRules{i}=[<span class="string">'('</span> geneNames{1} <span class="string">')'</span>];
+0105             <span class="comment">%Find the gene in the gene list If ' and ' relationship, first</span>
+0106             <span class="comment">%split the genes</span>
+0107             model.rxnGeneMat(i,:)=0;
+0108             <span class="keyword">if</span> ~isempty(strfind(geneNames(1),<span class="string">' and '</span>))
+0109                 andGenes=regexp(geneNames{1},<span class="string">' and '</span>,<span class="string">'split'</span>);
+0110                 model.rxnGeneMat(i,ismember(model.genes,andGenes)) = 1;
+0111             <span class="keyword">else</span>
+0112                 [~, index]=ismember(geneNames(1),model.genes);
+0113                 model.rxnGeneMat(i,index)=1;
+0114             <span class="keyword">end</span>
+0115 
+0116             <span class="comment">%Insert the reactions at the end of the model and without</span>
+0117             <span class="comment">%allocating space. This is not nice, but ok for now</span>
+0118             <span class="keyword">for</span> j=2:numel(geneNames)
+0119                 ind = nextIndex+j-2;
+0120                 model.rxns{ind}=[model.rxns{i} <span class="string">'_EXP_'</span> num2str(j)];
+0121                 
+0122                 model.grRules{ind}=[<span class="string">'('</span> geneNames{j} <span class="string">')'</span>];
+0123 
+0124                 <span class="keyword">if</span> ~isempty(strfind(geneNames(j),<span class="string">' and '</span>))
+0125                     andGenes=regexp(geneNames{j},<span class="string">' and '</span>,<span class="string">'split'</span>);
+0126                     model.rxnGeneMat(ind,ismember(model.genes,andGenes)) = 1;
+0127                 <span class="keyword">else</span>
+0128                     model.rxnGeneMat(ind,ismember(model.genes,geneNames(j))) = 1;
+0129                 <span class="keyword">end</span>
+0130             <span class="keyword">end</span>
+0131             model.rxns{i}=[model.rxns{i}, <span class="string">'_EXP_1'</span>];
+0132             nextIndex = nextIndex + numOrs(i);
+0133         <span class="keyword">end</span>        
+0134     <span class="keyword">end</span>
 0135     newModel=model;
-0136 <span class="keyword">end</span>
-0137 
-0138 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
-0139 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(newModel,true);
-0140 newModel.grRules = grRules;
-0141 newModel.rxnGeneMat = rxnGeneMat;
-0142 <span class="keyword">end</span></pre></div>
+0136 <span class="keyword">else</span>
+0137     <span class="comment">%There are no reactions to expand, return the model as is</span>
+0138     newModel=model;
+0139 <span class="keyword">end</span>
+0140 
+0141 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
+0142 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(newModel,true);
+0143 newModel.grRules = grRules;
+0144 newModel.rxnGeneMat = rxnGeneMat;
+0145 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

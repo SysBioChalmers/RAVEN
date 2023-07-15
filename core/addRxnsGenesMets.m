@@ -116,20 +116,23 @@ if ~isempty(metIdx)
     if isfield(sourceModel,'metFormulas')
         metsToAdd.metFormulas=sourceModel.metFormulas(metIdx);
     end
-    if isfield(sourceModel,'metCharge')
-        metsToAdd.metCharge=sourceModel.metCharge(metIdx);
+    if isfield(sourceModel,'metCharges')
+        metsToAdd.metCharges=sourceModel.metCharges(metIdx);
     end
     if isfield(sourceModel,'metMiriams')
         metsToAdd.metMiriams=sourceModel.metMiriams(metIdx);
     end
-    if isfield(sourceModel,'metFormulas')
-        metsToAdd.metFormulas=sourceModel.metFormulas(metIdx);
+    if isfield(sourceModel,'metNotes')
+        metsToAdd.metNotes=sourceModel.metNotes(metIdx);
     end
     if isfield(sourceModel,'inchis')
         metsToAdd.inchis=sourceModel.inchis(metIdx);
     end
     if isfield(sourceModel,'metSmiles')
         metsToAdd.metSmiles=sourceModel.metSmiles(metIdx);
+    end
+    if isfield(sourceModel,'metDeltaG')
+        metsToAdd.metDeltaG=sourceModel.metDeltaG(metIdx);
     end
     
     metsToAdd.compartments=strtrim(cellstr(num2str(sourceModel.metComps(metIdx)))); % Convert from compartment string to compartment number
@@ -164,6 +167,9 @@ if ~isnumeric(confidence)
     dispEM(EM, true);
 end
 rxnToAdd.rxnConfidenceScores(:)=confidence;
+if isfield(sourceModel,'rxnDeltaG')
+    rxnToAdd.rxnDeltaG=sourceModel.rxnDeltaG(rxnIdx);
+end
 if isfield(sourceModel,'subSystems')
     rxnToAdd.subSystems=sourceModel.subSystems(rxnIdx);
 end

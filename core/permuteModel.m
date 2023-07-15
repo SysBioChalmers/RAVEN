@@ -76,6 +76,9 @@ switch type
         if isfield(newModel,'rxnConfidenceScores')
             newModel.rxnConfidenceScores=newModel.rxnConfidenceScores(indexes);
         end
+        if isfield(newModel,'rxnDeltaG')
+            newModel.rxnDeltaG=newModel.rxnDeltaG(indexes);
+        end
     case 'mets'
         if isfield(newModel,'mets')
             newModel.mets=newModel.mets(indexes);
@@ -112,6 +115,9 @@ switch type
         end
         if isfield(newModel,'metCharges')
             newModel.metCharges=newModel.metCharges(indexes);
+        end
+        if isfield(newModel,'metDeltaG')
+            newModel.metDeltaG=newModel.metDeltaG(indexes);
         end
     case 'genes'
         if isfield(newModel,'genes')

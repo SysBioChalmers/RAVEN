@@ -652,6 +652,9 @@ for i=1:nComps-1
     if isfield(outModel,'rxnConfidenceScores')
         outModel.rxnConfidenceScores=[outModel.rxnConfidenceScores;outModel.rxnConfidenceScores(nER+1:nER+nRxns)];
     end
+    if isfield(outModel,'rxnDeltaG')
+        outModel.rxnDeltaG=[outModel.rxnDeltaG;outModel.rxnDeltaG(nER+1:nER+nRxns)];
+    end
     outModel.mets=[outModel.mets;strcat(outModel.mets(nEM+1:nEM+nMets),'_',GSS.compartments{i+1})];
     outModel.metNames=[outModel.metNames;outModel.metNames(nEM+1:nEM+nMets)];
     outModel.b=[outModel.b;outModel.b(nEM+1:nEM+nMets,:)];
@@ -677,6 +680,9 @@ for i=1:nComps-1
     end
     if isfield(outModel,'metCharges')
         outModel.metCharges=[outModel.metCharges;outModel.metCharges(nEM+1:nEM+nMets)];
+    end
+    if isfield(outModel,'metDeltaG')
+        outModel.metDeltaG=[outModel.metDeltaG;outModel.metDeltaG(nEM+1:nEM+nMets)];
     end
 end
 
@@ -724,6 +730,9 @@ for i=1:numel(I)
     end
     if isfield(outModel,'rxnConfidenceScores')
         outModel.rxnConfidenceScores=[outModel.rxnConfidenceScores;NaN];
+    end
+    if isfield(outModel,'rxnDeltaG')
+        outModel.rxnDeltaG=[outModel.rxnDeltaG;NaN];
     end
 end
 

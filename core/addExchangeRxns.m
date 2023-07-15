@@ -89,4 +89,7 @@ end
 if isfield(model,'rxnConfidenceScores')
     model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(numel(J),1)];
 end
+if isfield(model,'rxnDeltaG')
+    model.rxnDeltaG=[model.rxnDeltaG;NaN(numel(J),1)];
+end
 end
