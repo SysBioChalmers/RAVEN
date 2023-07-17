@@ -71,6 +71,9 @@ if toAdd > 0
     if isfield(model,'rxnConfidenceScores')
         model.rxnConfidenceScores=[model.rxnConfidenceScores;model.rxnConfidenceScores(cpyIndices)];
     end
+    if isfield(model,'rxnDeltaG')
+        model.rxnDeltaG=[model.rxnDeltaG;model.rxnDeltaG(cpyIndices)];
+    end
     
     %now expand the more complex fields - will be filled in later
     model.rxns=[model.rxns;cell(toAdd,1)];

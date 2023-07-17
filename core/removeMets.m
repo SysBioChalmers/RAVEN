@@ -92,6 +92,9 @@ if ~isempty(indexesToDelete)
     if isfield(reducedModel,'metCharges')
         reducedModel.metCharges(indexesToDelete)=[];
     end
+    if isfield(reducedModel,'metDeltaG')
+        reducedModel.metDeltaG(indexesToDelete)=[];
+    end
 end
 
 %Remove unused reactions

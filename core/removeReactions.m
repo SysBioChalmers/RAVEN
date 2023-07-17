@@ -93,6 +93,9 @@ if ~isempty(rxnsToRemove) || removeUnusedMets || removeUnusedGenes
         if isfield(reducedModel,'rxnConfidenceScores')
             reducedModel.rxnConfidenceScores(indexesToDelete,:)=[];
         end
+        if isfield(reducedModel,'rxnDeltaG')
+            reducedModel.rxnDeltaG(indexesToDelete,:)=[];
+        end
         if isfield(reducedModel,'pwys')
             reducedModel.pwys(indexesToDelete,:)=[];
         end

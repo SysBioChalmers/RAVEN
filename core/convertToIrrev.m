@@ -96,6 +96,9 @@ if any(revIndexesBool)
     if isfield(irrevModel,'rxnConfidenceScores')
         irrevModel.rxnConfidenceScores=[irrevModel.rxnConfidenceScores;irrevModel.rxnConfidenceScores(revIndexes)];
     end
+    if isfield(irrevModel,'rxnDeltaG')
+        irrevModel.rxnDeltaG=[irrevModel.rxnDeltaG;-irrevModel.rxnDeltaG(revIndexes)]; % Invert dG for reversed rxns
+    end
     if isfield(irrevModel,'rxnReferences')
         irrevModel.rxnReferences=[irrevModel.rxnReferences;irrevModel.rxnReferences(revIndexes)];
     end
