@@ -12,7 +12,7 @@ function metaCycEnzymes=getEnzymesFromMetaCyc(metacycPath)
 %	model        a model structure generated from the database. The following
 %                fields are filled
 %                id:             'MetaCyc'
-%                description:    'Automatically generated from MetaCyc database'
+%                name:    'Automatically generated from MetaCyc database'
 %                rxns:           Reaction id
 %                rxnNames:       Reaction name
 %                enzymes:        Enzyme id
@@ -30,9 +30,6 @@ function metaCycEnzymes=getEnzymesFromMetaCyc(metacycPath)
 %
 %	Usage: model=getEnzymesFromMetaCyc(metacycPath)
 %
-%	Hao Wang, 2018-10-31
-%
-
 %NOTE: This is how one entry looks in the files
 
 %proteins.dat
@@ -61,25 +58,31 @@ function metaCycEnzymes=getEnzymesFromMetaCyc(metacycPath)
 
 % A line that contains only '//' separates each object.
 
+if nargin<1
+    ravenPath=findRAVENroot();
+    metacycPath=fullfile(ravenPath,'external','metacyc');
+else
+    metacycPath=char(metacycPath);
+end
+
 %Check if the enzymatic proteins have been parsed before and saved. If so,
 %load the model.
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-enzymesFile=fullfile(ravenPath,'external','metacyc','metaCycEnzymes.mat');
+enzymesFile=fullfile(metacycPath,'metaCycEnzymes.mat');
 metaCycProteinFile='proteins.dat';
 metaCycEnzrxnsFile='enzrxns.dat';
 
-if exist(enzymesFile, 'file')
-    fprintf(['NOTE: Importing MetaCyc enzymes and reaction-enzyme association from ' strrep(enzymesFile,'\','/') '.\n']);
+try
+    (['Importing MetaCyc enzymes and reaction-enzyme association from ' strrep(enzymesFile,'\','/') '... ']);
     load(enzymesFile);
-else
+    fprintf('done\n');
+catch
     fprintf(['Cannot locate ' strrep(enzymesFile,'\','/') '\nNow try to generate it from local MetaCyc data files...\n']);
-    if ~exist(fullfile(metacycPath,metaCycProteinFile),'file') || ~exist(fullfile(metacycPath,metaCycEnzrxnsFile),'file')
+    if ~isfile(fullfile(metacycPath,metaCycProteinFile)) || ~isfile(fullfile(metacycPath,metaCycEnzrxnsFile))
         EM=fprintf(['The files of enzymes or proteins cannot be located, and should be downloaded from MetaCyc.\n']);
         dispEM(EM);
     else
         metaCycEnzymes.id='MetaCyc';
-        metaCycEnzymes.description='Automatically generated from MetaCyc database';
+        metaCycEnzymes.name='Automatically generated from MetaCyc database';
         
         %Reserve space for 10000 enzyme complexs
         metaCycEnzymes.cplxs=cell(10000,1);

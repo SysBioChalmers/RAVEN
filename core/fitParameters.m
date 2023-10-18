@@ -3,7 +3,8 @@ function [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,xRxn
 %   Fits parameters such as maintenance ATP by quadratic programming
 %
 %   model                 a model structure
-%   xRxns                 cell array with the IDs of the reactions that will be fixed for each data point
+%   xRxns                 cell array with the IDs of the reactions that will be
+%                         fixed for each data point
 %   xValues               matrix with the corresponding values for each
 %                         xRxns (columns are reactions)
 %   rxnsToFit             cell array with the IDs of reactions that will be fitted to
@@ -33,9 +34,6 @@ function [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,xRxn
 %   Usage: [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,...
 %           xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,fitToRatio,...
 %           initialGuess,plotFitting)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
 if nargin<7
     fitToRatio=true;
@@ -49,6 +47,9 @@ end
 if nargin<9
     plotFitting=false;
 end
+
+xRxns=convertCharArray(xRxns);
+rxnsToFit=convertCharArray(rxnsToFit);
 
 %Find the indexes of reactions that will be fitted
 [I, rxnsToFitIndexes]=ismember(rxnsToFit,model.rxns);

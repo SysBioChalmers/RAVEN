@@ -13,9 +13,6 @@ function model=combineMetaCycKEGGModels(metacycModel,keggModel)
 %                   included to indicate the source.
 %
 %	Usage: model=combineMetaCycKEGGModels(metacycModel,keggModel)
-%
-%	Hao Wang, 2019-10-21
-%
 
 %Just return the model
 if nargin<2
@@ -26,7 +23,7 @@ end
 %Add MetaCyc model as template
 model=metacycModel;
 model.id='COMBINED';
-model.description='Combined model from MetaCyc and KEGG draft models';
+model.name='Combined model from MetaCyc and KEGG draft models';
 
 %Use MetaCyc model as template
 model.rxnFrom=cell(numel(model.rxns),1);

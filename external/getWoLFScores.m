@@ -15,15 +15,13 @@ function GSS = getWoLFScores(inputFile, kingdom)
 %   GSS         a gene scoring structure to be used in predictLocalization
 %
 %   Usage: GSS = getWoLFScores(inputFile, kingdom)
-%
-%   Simonas Marcisauskas, 2019-11-13
-%
 
-if ~(exist(inputFile,'file')==2)
+if ~isfile(inputFile)
     error('FASTA file %s cannot be found',string(inputFile));
 end
 
-if ~strcmp(kingdom,'animal') && ~strcmp(kingdom,'fungi') && ~strcmp(kingdom,'plant')
+kingdom=char(kingdom);
+if ~any(strcmp(kingdom,{'animal','fungi','plant'}))
     EM='Allowed kingdoms are "animal", "fungi", and "plant"';
     dispEM(EM);
 end
@@ -33,10 +31,8 @@ if ispc || ismac
     dispEM(EM);
 end
 
-%Get the directory for RAVEN Toolbox. This may not be the easiest or best
-%way to do this
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
+%Get the directory for RAVEN Toolbox
+ravenPath=findRAVENroot();
 
 %Temporary output name
 outFile=tempname;

@@ -15,9 +15,6 @@ function metabolites=parseRxnEqu(equations)
 %   '(n-1) starch' will be interpreted as one metabolite
 %
 %   Usage: metabolites=parseRxnEqu(equations)
-%
-%   Rasmus Agren, 2012-05-27
-%
 
 if ~iscell(equations)
     equations={equations};

@@ -13,19 +13,16 @@ function dispEM(string,throwErrors,toList,trimWarnings)
 %                   a given error/warning (opt, default true)
 %
 %   Usage: dispEM(string,throwErrors,toList,trimWarnings)
-%
-%   Rasmus Agren, 2013-08-01
-%
 
 if nargin<2
     throwErrors=true;
 end
 if nargin<3
     toList=[];
+elseif isempty(toList)
+    return;
 else
-    if isempty(toList)
-        return;
-    end
+    toList=convertCharArray(toList);
 end
 if nargin<4
     trimWarnings=true;
@@ -45,6 +42,8 @@ if ~isempty(toList)
     end
 end
 if throwErrors==false
+    %Escape special characters, required for fprintf
+    errorText=regexprep(errorText,'(\\|\%|'')(\\n)$','\\$0');
     fprintf([errorText '\n']);
 else
     throw(MException('',errorText));

@@ -26,9 +26,6 @@ function returnPathway = colorPathway(pathway, reactionIDs, fluxes, referenceFlu
 %
 %	Usage: returnPathway = colorPathway(pathway, reactionIDs, fluxes, referenceFluxes, ...
 %           cutOff, defaultColor, upColor, downColor)
-%
-%   Rasmus Agren, 2010-12-16
-%
 
 if nargin<8
     downColor=[1 0 0];

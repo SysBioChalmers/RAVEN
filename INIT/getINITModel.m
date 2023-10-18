@@ -1,7 +1,8 @@
 function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=getINITModel(refModel, tissue, celltype, hpaData, arrayData, metabolomicsData, taskFile, useScoresForTasks, printReport, taskStructure, params, paramsFT)
-% getINITModel
+% getINITModel_legacy
 %   Generates a model using the INIT algorithm, based on proteomics and/or
-%   transcriptomics and/or metabolomics and/or metabolic tasks.
+%   transcriptomics and/or metabolomics and/or metabolic tasks. This is the original 
+%   implementation of tINIT, which is replaced by ftINIT.
 %
 %   Input:
 %   refModel            a model structure. The model should be in the
@@ -106,12 +107,11 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %               getINITModel(refModel, tissue, celltype, hpaData, arrayData,...
 %               metabolomicsData, taskFile, useScoresForTasks, printReport,...
 %               taskStructure, params, paramsFT)
-%
-%   Daniel Cook, 2018-03-12
-%
 
 if nargin<3
     celltype=[];
+else
+    celltype=char(celltype);
 end
 if nargin<4
     hpaData=[];
@@ -124,6 +124,8 @@ if nargin<6
 end
 if nargin<7
     taskFile=[];
+else
+    taskFile=char(taskFile);
 end
 if nargin<8 || isempty(useScoresForTasks)
     useScoresForTasks=true;
@@ -422,9 +424,9 @@ excModel=removeReactions(excModel,J,true,true);
 %Merge with the output model
 model=mergeModels({model;excModel},'metNames');
 model.id='INITModel';
-model.description=['Automatically generated model for ' tissue];
+model.name=['Automatically generated model for ' tissue];
 if any(celltype)
-    model.description=[model.description ' - ' celltype];
+    model.name=[model.name ' - ' celltype];
 end
 
 if printReport==true

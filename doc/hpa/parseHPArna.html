@@ -34,7 +34,7 @@
    fileName            tab-separated database dump of HPA RNA data. For
                        details regarding the format, see
                        http://www.proteinatlas.org/about/download.
-   version             version of HPA [optional, default=18]
+   version             version of HPA [optional, default=19]
 
 
    Output:
@@ -46,9 +46,7 @@
                            rows correspond to genes, and columns
                            correspond to tissues
 
-   Usage: arrayData=parseHPArna(fileName,version)
-
-   Jonathan Robinson, 2018-11-11</pre></div>
+   Usage: arrayData=parseHPArna(fileName,version)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -71,7 +69,7 @@ This function is called by:
 0006 <span class="comment">%   fileName            tab-separated database dump of HPA RNA data. For</span>
 0007 <span class="comment">%                       details regarding the format, see</span>
 0008 <span class="comment">%                       http://www.proteinatlas.org/about/download.</span>
-0009 <span class="comment">%   version             version of HPA [optional, default=18]</span>
+0009 <span class="comment">%   version             version of HPA [optional, default=19]</span>
 0010 <span class="comment">%</span>
 0011 <span class="comment">%</span>
 0012 <span class="comment">%   Output:</span>
@@ -84,49 +82,55 @@ This function is called by:
 0019 <span class="comment">%                           correspond to tissues</span>
 0020 <span class="comment">%</span>
 0021 <span class="comment">%   Usage: arrayData=parseHPArna(fileName,version)</span>
-0022 <span class="comment">%</span>
-0023 <span class="comment">%   Jonathan Robinson, 2018-11-11</span>
-0024 <span class="comment">%</span>
-0025 
-0026 <span class="keyword">if</span> nargin&lt;2
-0027     <span class="comment">%Change this and add code for more versions when the current HPA</span>
-0028     <span class="comment">%version is increased and the format is changed</span>
-0029     version=18;
-0030 <span class="keyword">end</span>
-0031 
-0032 <span class="keyword">if</span> ~(exist(fileName,<span class="string">'file'</span>)==2)
-0033     error(<span class="string">'HPA file %s cannot be found'</span>,string(fileName));
-0034 <span class="keyword">end</span>
-0035 
-0036 <span class="keyword">if</span> (version == 18)
-0037     fid=fopen(fileName,<span class="string">'r'</span>);
-0038     hpa=textscan(fid,<span class="string">'%q %q %q %q %q'</span>,<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>);
-0039     fclose(fid);
-0040     
-0041     <span class="comment">%Go through and see if the headers match what was expected</span>
-0042     headers={<span class="string">'Gene'</span> <span class="string">'Gene name'</span> <span class="string">'Sample'</span> <span class="string">'Value'</span> <span class="string">'Unit'</span>};
-0043     <span class="keyword">for</span> i=1:numel(headers)
-0044         <span class="keyword">if</span> ~strcmpi(headers(i),hpa{i}(1))
-0045             EM=[<span class="string">'Could not find the header &quot;'</span> headers{i} <span class="string">'&quot;. Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'</span>];
-0046             dispEM(EM);
-0047         <span class="keyword">end</span>
-0048         <span class="comment">%Remove the header line here</span>
-0049         hpa{i}(1)=[];
-0050     <span class="keyword">end</span>
-0051     
-0052     <span class="comment">%Get unique gene IDs and tissue names</span>
-0053     [arrayData.genes, P, I] = unique(hpa{1});
-0054     arrayData.geneNames = hpa{2}(P);  <span class="comment">% retrieve corresponding gene names</span>
-0055     [arrayData.tissues, ~, J] = unique(hpa{3});
-0056     
-0057     <span class="comment">%Now extract the gene levels and organize into matrix</span>
-0058     arrayData.levels = NaN(max(I),max(J));
-0059     linearInd = sub2ind(size(arrayData.levels),I,J);
-0060     arrayData.levels(linearInd) = str2double(hpa{4});
-0061     
-0062 <span class="keyword">else</span>
-0063     error(<span class="string">'Previous HPA versions (before 18) not currently supported.'</span>);
-0064 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0022 
+0023 <span class="keyword">if</span> nargin&lt;2
+0024     <span class="comment">%Change this and add code for more versions when the current HPA</span>
+0025     <span class="comment">%version is increased and the format is changed</span>
+0026     version=19;
+0027 <span class="keyword">end</span>
+0028 
+0029 fileName=char(fileName);
+0030 <span class="keyword">if</span> ~isfile(fileName)
+0031     error(<span class="string">'HPA file %s cannot be found'</span>, string(fileName));
+0032 <span class="keyword">end</span>
+0033 
+0034 <span class="comment">%NOTE! This function assumes that the first 4 columns contain (in order):</span>
+0035 <span class="comment">% (1) gene ensembl ID, (2) gene abbrev, (3) tissue name,  (4) TPM value</span>
+0036 <span class="keyword">if</span> (version == 19)
+0037     headers={<span class="string">'Gene'</span> <span class="string">'Gene name'</span> <span class="string">'Tissue'</span> <span class="string">'TPM'</span> <span class="string">'pTPM'</span> <span class="string">'NX'</span>};
+0038 <span class="keyword">elseif</span> (version == 18)
+0039     headers={<span class="string">'Gene'</span> <span class="string">'Gene name'</span> <span class="string">'Sample'</span> <span class="string">'Value'</span> <span class="string">'Unit'</span>};
+0040 <span class="keyword">else</span>
+0041     error(<span class="string">'Only HPA versions 18 and 19 are currently supported.'</span>);
+0042 <span class="keyword">end</span>
+0043 
+0044 <span class="comment">%extract data from file</span>
+0045 formatSpec = strip(repmat(<span class="string">'%q '</span>, 1, numel(headers)));
+0046 fid=fopen(fileName, <span class="string">'r'</span>);
+0047 hpa=textscan(fid, formatSpec, <span class="string">'Delimiter'</span>, <span class="string">'\t'</span>);
+0048 fclose(fid);
+0049 
+0050 <span class="comment">%Go through and see if the headers match what was expected</span>
+0051 <span class="keyword">for</span> i=1:numel(headers)
+0052     <span class="keyword">if</span> ~strcmpi(headers(i),hpa{i}(1))
+0053         EM=[<span class="string">'Could not find the header &quot;'</span> headers{i} <span class="string">'&quot;. Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'</span>];
+0054         dispEM(EM);
+0055     <span class="keyword">end</span>
+0056     <span class="comment">%Remove the header line here</span>
+0057     hpa{i}(1)=[];
+0058 <span class="keyword">end</span>
+0059 
+0060 <span class="comment">%Get unique gene IDs and tissue names</span>
+0061 [arrayData.genes, P, I] = unique(hpa{1});
+0062 arrayData.geneNames = hpa{2}(P);  <span class="comment">% retrieve corresponding gene names</span>
+0063 [arrayData.tissues, ~, J] = unique(hpa{3});
+0064 
+0065 <span class="comment">%Now extract the gene levels and organize into matrix</span>
+0066 arrayData.levels = NaN(max(I),max(J));
+0067 linearInd = sub2ind(size(arrayData.levels),I,J);
+0068 arrayData.levels(linearInd) = str2double(hpa{4});
+0069     
+0070</pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

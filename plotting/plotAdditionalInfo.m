@@ -28,9 +28,6 @@ function plotAdditionalInfo(handle, pathway, additionalText, exampleBoxText,...
 %
 %   Usage:  errorFlag = plotAdditionalInfo(handle, additionalText, exampleBoxText,...
 %               maxChange, defaultColor, upColor, downColor)
-%
-%   Rasmus Agren, 2010-12-16
-%
 
 if nargin<8
     downColor=[1 0 0];

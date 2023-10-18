@@ -32,10 +32,7 @@ function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputS
 %               hand sides are lumped
 %
 %   Usage: printFluxes(model, fluxes, onlyExchange, cutOffFlux,
-%           outputFile,outputString)
-%
-%   Rasmus Agren, 2014-01-08
-%
+%           outputFile,outputString,metaboliteList)
 
 if nargin<3
     onlyExchange=true;
@@ -50,21 +47,23 @@ if nargin<5
     fid=1;
 else
     if ~isempty(outputFile)
+        outputFile=char(outputFile);
         fid=fopen(outputFile,'w');
     else
         fid=1;
     end
 end
-if nargin<6
+if nargin<6 || isempty(outputString)
     outputString='%rxnID\t(%rxnName):\t%flux\n';
-end
-if isempty(outputString)
-    outputString='%rxnID\t(%rxnName):\t%flux\n';
+else
+    outputString=char(outputString);
 end
 if nargin<7
     metaboliteList={};
+else
+    metaboliteList=convertCharArray(metaboliteList);
 end
-if numel(fluxes)~=numel(model.rxns)
+if size(fluxes,1)~=numel(model.rxns)
     EM='The number of fluxes and the number of reactions must be the same';
     dispEM(EM);
 end
@@ -78,7 +77,7 @@ if ~isempty(metaboliteList)
     toDelete=true(numel(model.rxns),1);
     toDelete(K)=false;
     model=removeReactions(model,toDelete);
-    fluxes(toDelete)=[];
+    fluxes(toDelete,:)=[];
 end
 
 if onlyExchange==true
@@ -89,8 +88,9 @@ end
 
 %Remove reactions which are below the cut off
 toDelete=abs(fluxes)<cutOffFlux;
+toDelete=all(toDelete,2);
 model=removeReactions(model,toDelete,true,true);
-fluxes(toDelete)=[];
+fluxes(toDelete,:)=[];
 
 if any(strfind(outputString,'%eqn'))
     %Construct the equations
@@ -170,7 +170,7 @@ for i=1:numel(model.rxns)
         printString=strrep(printString,'%lower',num2str(model.lb(i)));
         printString=strrep(printString,'%upper',num2str(model.ub(i)));
         printString=strrep(printString,'%obj',num2str(model.c(i)));
-        printString=strrep(printString,'%flux',num2str(fluxes(i)));
+        printString=strrep(printString,'%flux',num2str(fluxes(i,:)));
         printString=strrep(printString,'%element',element{i});
         printString=strrep(printString,'%unbalanced',unbalanced{i});
         printString=strrep(printString,'%lumped',lumped{i});

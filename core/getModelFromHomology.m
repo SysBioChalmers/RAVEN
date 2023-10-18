@@ -1,4 +1,4 @@
-function draftModel=getModelFromHomology(models,blastStructure,...
+function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
     getModelFor,preferredOrder,strictness,onlyGenesInModels,maxE,...
     minLen,minIde,mapNewGenesToOld)
 % getModelFromHomology
@@ -47,6 +47,7 @@ function draftModel=getModelFromHomology(models,blastStructure,...
 %                     (opt, default true)
 %
 %   draftModel        a model structure for the new organism
+%   hitGenes          collect the old and new genes
 %
 %   The models in the 'models' structure should have named the metabolites
 %   in the same manner, have their reversible reactions in the same
@@ -64,12 +65,20 @@ function draftModel=getModelFromHomology(models,blastStructure,...
 %   Usage: draftModel=getModelFromHomology(models,blastStructure,...
 %    getModelFor,preferredOrder,strictness,onlyGenesInModels,maxE,...
 %    minLen,minIde,mapNewGenesToOld)
-%
-%   Simonas Marcisauskas, 2018-08-09
-%
+
+hitGenes.oldGenes = [];  % collect the old genes from the template model (organism)
+hitGenes.newGenes = [];  % collect the new genes of the draft model (target organism)
+
+getModelFor=char(getModelFor);
 
 if nargin<4
     preferredOrder=[];
+else
+    preferredOrder=convertCharArray(preferredOrder);
+    [row,col]=size(preferredOrder);
+    if col>row
+        preferredOrder=transpose(preferredOrder);
+    end
 end
 if nargin<5
     strictness=1;
@@ -90,8 +99,6 @@ if nargin<10
     mapNewGenesToOld=true;
 end
 
-preferredOrder=preferredOrder(:);
-
 if isfield(models,'S')
     models={models};
 end
@@ -107,6 +114,15 @@ for i=1:numel(models)
     end
     if isfield(models{i},'geneMiriams')
         models{i}=rmfield(models{i},'geneMiriams');
+    end
+end
+
+%Check that genes do not begin with ( or end with ), as this makes problematic grRules
+for i=1:numel(blastStructure)
+    problemGenes = startsWith(blastStructure(i).fromGenes,'(') | endsWith(blastStructure(i).fromGenes,')');
+    if any(problemGenes)
+        error(['One or multiple gene identifiers from ' blastStructure(i).fromId ...
+               ' starts with ''('' and/or ends with '')'', which is not allowed'])
     end
 end
 
@@ -362,12 +378,14 @@ end
 for i=1:numel(models)
     a=ismember(models{useOrderIndexes(i)}.genes,allGenes{i+1});
     
-    %Don't remove reactions with complexes if not all genes in the complex
-    %should be deleted. NOTE: This means that not all the genes in 'a' are
-    %guaranteed to be deleted. This approach works fine for 'and'
-    %complexes, but there should be a check that it doesn't keep 'or' genes
-    %if it doesn't have to!
-    models{useOrderIndexes(i)}=removeGenes(models{useOrderIndexes(i)},~a,true,true,false);
+    %Remove reactions that are not associated to any of the genes in
+    %allGenes, thereby also keeping complexes where only for one of the
+    %genes was matched
+    [rxnsToKeep,~] = find(models{useOrderIndexes(i)}.rxnGeneMat(:,a));
+    rxnsToRemove = repmat(1,numel(models{useOrderIndexes(i)}.rxns),1);
+    rxnsToRemove(rxnsToKeep) = 0;
+    rxnsToRemove = find(rxnsToRemove);
+    models{useOrderIndexes(i)}=removeReactions(models{useOrderIndexes(i)},rxnsToRemove,true,true,true);
 end
 
 %Since mergeModels function will be used in the end, the models are
@@ -438,6 +456,9 @@ for i=1:numel(models)
             mapIndex=find(ismember(allGenes{i+1},geneName));
             
             if ~isempty(mapIndex)
+                % add the old genes
+                hitGenes.oldGenes = [hitGenes.oldGenes, {geneName}];
+                
                 %Get the new genes for that gene
                 a=find(finalMappings{i}(:,mapIndex));
                 
@@ -452,9 +473,16 @@ for i=1:numel(models)
                 %add ') or (' if there were several matches. Be sure of
                 %this!
                 repString=fullGeneList{b(1)};
-                for l=2:numel(b)
-                    repString=[repString ') or (' fullGeneList{b(l)}];
+                if numel(b)>1
+                    for l=2:numel(b)
+                        repString=[repString ' or ' fullGeneList{b(l)}];
+                    end
+                    repString=['(' repString ')'];
                 end
+                
+                % add the new matched genes
+                hitGenes.newGenes = [hitGenes.newGenes, {repString}];
+                
                 %Use regexprep instead of strrep to prevent partial matches
                 models{useOrderIndexes(i)}.grRules{j}=regexprep(models{useOrderIndexes(i)}.grRules{j},['(^|\s|\()' geneName{1} '($|\s|\))'],['$1' repString '$2']);
             else
@@ -490,21 +518,28 @@ end
 %complexes
 draftModel=mergeModels(models,'metNames');
 
-%Change description of the resulting model
+%Remove unnecessary OLD_ genes, that were added with OR relationships
+regexStr=['OLD_(', strjoin(modelNames(:),'|'),')_(\S^\))+'];
+draftModel.grRules=regexprep(draftModel.grRules,[' or ' regexStr],'');
+draftModel.grRules=regexprep(draftModel.grRules,[regexStr ' or '],'');
+
+%Change name of the resulting model
 draftModel.id=getModelFor;
-description='Generated by getModelFromHomology using ';
+name='Generated by getModelFromHomology using ';
 for i=1:numel(models)
     if i<numel(models)
-        description=[description models{i}.id ', '];
+        name=[name models{i}.id ', '];
     else
-        description=[description models{i}.id];
+        name=[name models{i}.id];
     end
 end
-draftModel.description=description;
+draftModel.name=name;
 draftModel.rxnNotes=cell(length(draftModel.rxns),1);
 draftModel.rxnNotes(:)={'Included by getModelFromHomology'};
 draftModel.rxnConfidenceScores=NaN(length(draftModel.rxns),1);
 draftModel.rxnConfidenceScores(:)=2;
+draftModel=deleteUnusedGenes(draftModel,0);
 %Standardize grRules and notify if problematic grRules are found
 [draftModel.grRules,draftModel.rxnGeneMat]=standardizeGrRules(draftModel,false);
+draftModel=deleteUnusedGenes(draftModel,false);
 end

@@ -92,125 +92,123 @@ This function is called by:
 0041 <span class="comment">%   geneScoreStructure  a structure to be used in predictLocalization</span>
 0042 <span class="comment">%</span>
 0043 <span class="comment">%   Usage: geneScoreStructure=mapCompartments(geneScoreStructure,varargin)</span>
-0044 <span class="comment">%</span>
-0045 <span class="comment">%   Rasmus Agren, 2014-01-08</span>
+0044 
+0045 varargin=upper(varargin);
 0046 
-0047 varargin=upper(varargin);
-0048 
-0049 <span class="comment">%First find the compartment that will end up in the final structure. They</span>
-0050 <span class="comment">%are the ones that stand alone or are to the left of some '='</span>
-0051 toKeep={};
-0052 toMerge={};
-0053 I=regexp(varargin,<span class="string">'='</span>,<span class="string">'split'</span>);
-0054 <span class="keyword">for</span> i=1:numel(varargin)
-0055     <span class="keyword">if</span> numel(I{i})==1
-0056         toKeep=[toKeep;I{i}];
-0057     <span class="keyword">else</span>
-0058         J=regexp(I{i}(1),<span class="string">' '</span>,<span class="string">'split'</span>);
-0059         K=regexp(I{i}(2),<span class="string">' '</span>,<span class="string">'split'</span>);
-0060         toKeep=[toKeep;J{1}(:)];
-0061         toMerge=[toMerge;K{1}(:)];
-0062     <span class="keyword">end</span>
-0063 <span class="keyword">end</span>
-0064 
-0065 <span class="comment">%Check that there are no compartment that should both be merged and kept</span>
-0066 <span class="keyword">if</span> ~isempty(intersect(toKeep,toMerge))
-0067     EM=<span class="string">'There are inconsistencies where one or more compartment(s) should be both kept and merged to another'</span>;
-0068     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0069 <span class="keyword">end</span>
-0070 
-0071 <span class="comment">%Check that there are no compartments in the rules that are not in the</span>
-0072 <span class="comment">%geneScoreStructure.</span>
-0073 uComps=upper(geneScoreStructure.compartments);
-0074 J=[uComps;{<span class="string">'OTHER'</span>}];
-0075 
-0076 <span class="keyword">if</span> ~isempty(setdiff([toKeep;toMerge],J))
-0077     EM=<span class="string">'There are compartment in the rules that are not in geneScoreStructure.compartments'</span>;
-0078     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0079 <span class="keyword">end</span>
-0080 
-0081 <span class="comment">%Loop through it again and do the mapping</span>
-0082 otherIndex=[]; <span class="comment">%This stores the rule which maps 'other'.</span>
-0083 
-0084 <span class="keyword">for</span> i=1:numel(I)
-0085     <span class="keyword">if</span> numel(I{i})&gt;1
-0086         <span class="comment">%Get the compartment indexes that should be mapped</span>
-0087         J=regexp(I{i}(2),<span class="string">' '</span>,<span class="string">'split'</span>);
-0088         <span class="keyword">if</span> strcmpi(J{1},<span class="string">'other'</span>)
-0089             otherIndex=i;
-0090             <span class="keyword">continue</span>;
-0091         <span class="keyword">end</span>
-0092         [k, K]=ismember(J{1},uComps);
-0093         
-0094         <span class="comment">%And to where they should be mapped</span>
-0095         J=regexp(I{i}(1),<span class="string">' '</span>,<span class="string">'split'</span>);
-0096         [l, L]=ismember(J{1},uComps);
-0097         
-0098         <span class="comment">%It's not allowed to have rules like A B=C D</span>
-0099         <span class="keyword">if</span> numel(K)&gt;1 &amp;&amp; numel(L)&gt;1
-0100             EM=<span class="string">'It is not allowed to have rules like &quot;A B=C D&quot; (map more than one compartment to more than one compartment)'</span>;
-0101             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0102         <span class="keyword">end</span>
-0103         
-0104         <span class="keyword">if</span> ~all(k) || ~all(l)
-0105             EM=<span class="string">'Error in mapping. This most likely means that some compartment(s) are mapped to different compartments in different rules. Use A B=C if you want to map C to several compartments'</span>;
-0106             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0107         <span class="keyword">end</span>
-0108         
-0109         <span class="comment">%Get the sum of the scores for the compartments that should be</span>
-0110         <span class="comment">%merged to something else</span>
-0111         S=max(geneScoreStructure.scores(:,K),[],2);
-0112         <span class="keyword">for</span> j=1:numel(L)
-0113             <span class="comment">%If the scores are mapped to several different compartments</span>
-0114             <span class="comment">%then split the scores between them</span>
-0115             geneScoreStructure.scores(:,L(j))=max(geneScoreStructure.scores(:,L(j)),S./numel(L));
-0116         <span class="keyword">end</span>
-0117         
-0118         <span class="comment">%Remove the comparement that were merged</span>
-0119         geneScoreStructure.compartments(K)=[];
-0120         geneScoreStructure.scores(:,K)=[];
-0121         uComps(K)=[];
-0122     <span class="keyword">end</span>
-0123 <span class="keyword">end</span>
-0124 
-0125 <span class="comment">%Then check if there are remaining compartments that should be removed or</span>
-0126 <span class="comment">%mapped as 'other'</span>
-0127 J=find(~ismember(uComps,toKeep));
-0128 <span class="keyword">if</span> any(J)
-0129     <span class="keyword">if</span> any(otherIndex)
-0130         K=regexp(I{otherIndex}(1),<span class="string">' '</span>,<span class="string">'split'</span>);
-0131         [l, L]=ismember(K{1},uComps);
-0132         <span class="keyword">if</span> l==1 &amp;&amp; numel(l)==1
-0133             S=max(geneScoreStructure.scores(:,J),[],2);
-0134             geneScoreStructure.scores(:,L)=max(geneScoreStructure.scores(:,L),S);
-0135         <span class="keyword">else</span>
-0136             EM=<span class="string">'Could not map &quot;other&quot; to more than one compartment'</span>;
-0137             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0138         <span class="keyword">end</span>
-0139     <span class="keyword">else</span>
-0140         EM=<span class="string">'There are compartments that are not defined if they should be kept or removed. Use &quot;A=other&quot; or define more rules if you do not want them to be deleted'</span>;
-0141         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0142     <span class="keyword">end</span>
-0143     
-0144     <span class="comment">%Remove the comparement that were merged</span>
-0145     geneScoreStructure.compartments(J)=[];
-0146     geneScoreStructure.scores(:,J)=[];
-0147 <span class="keyword">end</span>
-0148 
-0149 <span class="comment">%Renormalize</span>
-0150 I=max(geneScoreStructure.scores,[],2);
-0151 geneScoreStructure.scores=bsxfun(@times, geneScoreStructure.scores, 1./I);
-0152 
-0153 <span class="comment">%If there are genes that have score 0 in all compartments, remove them and</span>
-0154 <span class="comment">%print a warning.</span>
-0155 I=find(isnan(geneScoreStructure.scores(:,1))); <span class="comment">%Only looks a the first colum as it will be the same for the other ones</span>
-0156 <span class="keyword">if</span> any(I)
-0157     EM=<span class="string">'The following genes had score 0.0 in all compartments. They have been removed from the structure. Consider using more rules or &quot;A=other&quot; in order to prevent this:'</span>;
-0158     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,geneScoreStructure.genes(I));
-0159     geneScoreStructure.scores(I,:)=[];
-0160     geneScoreStructure.genes(I)=[];
-0161 <span class="keyword">end</span>
-0162 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0047 <span class="comment">%First find the compartment that will end up in the final structure. They</span>
+0048 <span class="comment">%are the ones that stand alone or are to the left of some '='</span>
+0049 toKeep={};
+0050 toMerge={};
+0051 I=regexp(varargin,<span class="string">'='</span>,<span class="string">'split'</span>);
+0052 <span class="keyword">for</span> i=1:numel(varargin)
+0053     <span class="keyword">if</span> numel(I{i})==1
+0054         toKeep=[toKeep;I{i}];
+0055     <span class="keyword">else</span>
+0056         J=regexp(I{i}(1),<span class="string">' '</span>,<span class="string">'split'</span>);
+0057         K=regexp(I{i}(2),<span class="string">' '</span>,<span class="string">'split'</span>);
+0058         toKeep=[toKeep;J{1}(:)];
+0059         toMerge=[toMerge;K{1}(:)];
+0060     <span class="keyword">end</span>
+0061 <span class="keyword">end</span>
+0062 
+0063 <span class="comment">%Check that there are no compartment that should both be merged and kept</span>
+0064 <span class="keyword">if</span> ~isempty(intersect(toKeep,toMerge))
+0065     EM=<span class="string">'There are inconsistencies where one or more compartment(s) should be both kept and merged to another'</span>;
+0066     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0067 <span class="keyword">end</span>
+0068 
+0069 <span class="comment">%Check that there are no compartments in the rules that are not in the</span>
+0070 <span class="comment">%geneScoreStructure.</span>
+0071 uComps=upper(geneScoreStructure.compartments);
+0072 J=[uComps;{<span class="string">'OTHER'</span>}];
+0073 
+0074 <span class="keyword">if</span> ~isempty(setdiff([toKeep;toMerge],J))
+0075     EM=<span class="string">'There are compartment in the rules that are not in geneScoreStructure.compartments'</span>;
+0076     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0077 <span class="keyword">end</span>
+0078 
+0079 <span class="comment">%Loop through it again and do the mapping</span>
+0080 otherIndex=[]; <span class="comment">%This stores the rule which maps 'other'.</span>
+0081 
+0082 <span class="keyword">for</span> i=1:numel(I)
+0083     <span class="keyword">if</span> numel(I{i})&gt;1
+0084         <span class="comment">%Get the compartment indexes that should be mapped</span>
+0085         J=regexp(I{i}(2),<span class="string">' '</span>,<span class="string">'split'</span>);
+0086         <span class="keyword">if</span> strcmpi(J{1},<span class="string">'other'</span>)
+0087             otherIndex=i;
+0088             <span class="keyword">continue</span>;
+0089         <span class="keyword">end</span>
+0090         [k, K]=ismember(J{1},uComps);
+0091         
+0092         <span class="comment">%And to where they should be mapped</span>
+0093         J=regexp(I{i}(1),<span class="string">' '</span>,<span class="string">'split'</span>);
+0094         [l, L]=ismember(J{1},uComps);
+0095         
+0096         <span class="comment">%It's not allowed to have rules like A B=C D</span>
+0097         <span class="keyword">if</span> numel(K)&gt;1 &amp;&amp; numel(L)&gt;1
+0098             EM=<span class="string">'It is not allowed to have rules like &quot;A B=C D&quot; (map more than one compartment to more than one compartment)'</span>;
+0099             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0100         <span class="keyword">end</span>
+0101         
+0102         <span class="keyword">if</span> ~all(k) || ~all(l)
+0103             EM=<span class="string">'Error in mapping. This most likely means that some compartment(s) are mapped to different compartments in different rules. Use A B=C if you want to map C to several compartments'</span>;
+0104             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0105         <span class="keyword">end</span>
+0106         
+0107         <span class="comment">%Get the sum of the scores for the compartments that should be</span>
+0108         <span class="comment">%merged to something else</span>
+0109         S=max(geneScoreStructure.scores(:,K),[],2);
+0110         <span class="keyword">for</span> j=1:numel(L)
+0111             <span class="comment">%If the scores are mapped to several different compartments</span>
+0112             <span class="comment">%then split the scores between them</span>
+0113             geneScoreStructure.scores(:,L(j))=max(geneScoreStructure.scores(:,L(j)),S./numel(L));
+0114         <span class="keyword">end</span>
+0115         
+0116         <span class="comment">%Remove the comparement that were merged</span>
+0117         geneScoreStructure.compartments(K)=[];
+0118         geneScoreStructure.scores(:,K)=[];
+0119         uComps(K)=[];
+0120     <span class="keyword">end</span>
+0121 <span class="keyword">end</span>
+0122 
+0123 <span class="comment">%Then check if there are remaining compartments that should be removed or</span>
+0124 <span class="comment">%mapped as 'other'</span>
+0125 J=find(~ismember(uComps,toKeep));
+0126 <span class="keyword">if</span> any(J)
+0127     <span class="keyword">if</span> any(otherIndex)
+0128         K=regexp(I{otherIndex}(1),<span class="string">' '</span>,<span class="string">'split'</span>);
+0129         [l, L]=ismember(K{1},uComps);
+0130         <span class="keyword">if</span> l==1 &amp;&amp; numel(l)==1
+0131             S=max(geneScoreStructure.scores(:,J),[],2);
+0132             geneScoreStructure.scores(:,L)=max(geneScoreStructure.scores(:,L),S);
+0133         <span class="keyword">else</span>
+0134             EM=<span class="string">'Could not map &quot;other&quot; to more than one compartment'</span>;
+0135             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0136         <span class="keyword">end</span>
+0137     <span class="keyword">else</span>
+0138         EM=<span class="string">'There are compartments that are not defined if they should be kept or removed. Use &quot;A=other&quot; or define more rules if you do not want them to be deleted'</span>;
+0139         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0140     <span class="keyword">end</span>
+0141     
+0142     <span class="comment">%Remove the comparement that were merged</span>
+0143     geneScoreStructure.compartments(J)=[];
+0144     geneScoreStructure.scores(:,J)=[];
+0145 <span class="keyword">end</span>
+0146 
+0147 <span class="comment">%Renormalize</span>
+0148 I=max(geneScoreStructure.scores,[],2);
+0149 geneScoreStructure.scores=bsxfun(@times, geneScoreStructure.scores, 1./I);
+0150 
+0151 <span class="comment">%If there are genes that have score 0 in all compartments, remove them and</span>
+0152 <span class="comment">%print a warning.</span>
+0153 I=find(isnan(geneScoreStructure.scores(:,1))); <span class="comment">%Only looks a the first colum as it will be the same for the other ones</span>
+0154 <span class="keyword">if</span> any(I)
+0155     EM=<span class="string">'The following genes had score 0.0 in all compartments. They have been removed from the structure. Consider using more rules or &quot;A=other&quot; in order to prevent this:'</span>;
+0156     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,geneScoreStructure.genes(I));
+0157     geneScoreStructure.scores(I,:)=[];
+0158     geneScoreStructure.genes(I)=[];
+0159 <span class="keyword">end</span>
+0160 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

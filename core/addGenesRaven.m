@@ -21,9 +21,6 @@ function newModel=addGenesRaven(model,genesToAdd)
 %   forbidden characters or such.
 %
 %   Usage: newModel=addGenesRaven(model,genesToAdd)
-%
-%   Simonas Marcisauskas, 2018-04-04
-%
 
 newModel=model;
 
@@ -35,11 +32,8 @@ end
 if ~isfield(genesToAdd,'genes')
     EM='genes is a required field in genesToAdd';
     dispEM(EM);
-end
-
-if ~iscellstr(genesToAdd.genes)
-    EM='genesToAdd.genes must be a cell array of strings';
-    dispEM(EM);
+else
+    genesToAdd.genes=convertCharArray(genesToAdd.genes);
 end
 
 %Number of genes
@@ -52,21 +46,28 @@ largeFiller(:)={''};
 
 %Check that no gene ids are already present in the model
 I=ismember(genesToAdd.genes,model.genes);
-if any(I)
-    EM='One or more elements in genesToAdd.genes are already present in model.genes';
-    dispEM(EM);
+if all(I)
+    warning('All genes in genesToAdd.genes are already present in model.genes');
+    return
+elseif any(I)
+    existingGenes=strjoin(genesToAdd.genes(I), ', ');
+    warning(['The following genes are already present in model.genes and will therefore not be added: ', existingGenes])
+    genesToAdd.genes(I)=[];
+    if isfield(genesToAdd,'geneShortNames')
+        genesToAdd.geneShortNames(I)=[];
+    end
+    if isfield(genesToAdd,'geneMiriams')
+        genesToAdd.geneMiriams(I)=[];
+    end
 else
     newModel.genes=[newModel.genes;genesToAdd.genes(:)];
 end
 
 %Some more checks and if they pass then add each field to the structure
 if isfield(genesToAdd,'geneShortNames')
+    genesToAdd.geneShortNames=convertCharArray(genesToAdd.geneShortNames);
     if numel(genesToAdd.geneShortNames)~=nGenes
         EM='genesToAdd.geneShortNames must have the same number of elements as genesToAdd.genes';
-        dispEM(EM);
-    end
-    if ~iscellstr(genesToAdd.geneShortNames)
-        EM='genesToAdd.geneShortNames must be a cell array of strings';
         dispEM(EM);
     end
     %Add empty field if it doesn't exist

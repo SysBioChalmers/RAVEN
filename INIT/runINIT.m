@@ -1,7 +1,8 @@
 function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,noRevLoops,params)
 % runINIT
 %	Generates a model using the INIT algorithm, based on proteomics and/or
-%   transcriptomics and/or metabolomics and/or metabolic tasks
+%   transcriptomics and/or metabolomics and/or metabolic tasks. This is the 
+%   original implementation, which is now replaced with ftINIT.
 %
 %   model           a reference model structure
 %   rxnScores       a vector of scores for the reactions in the model.
@@ -60,9 +61,6 @@ function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,
 %   Usage: [outModel deletedRxns metProduction fValue]=runINIT(model,...
 %           rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,...
 %           noRevLoops,params)
-%
-%   Rasmus Agren, 2017-02-28
-%
 
 if nargin<2
     rxnScores=zeros(numel(model.rxns),1);
@@ -70,24 +68,17 @@ end
 if isempty(rxnScores)
     rxnScores=zeros(numel(model.rxns),1);
 end
-if nargin<3
+if nargin<3 || isempty(presentMets)
     presentMets={};
+else
+    presentMets=convertCharArray(presentMets);
 end
-if isempty(presentMets)
-    presentMets={};
-end
-presentMets=presentMets(:);
-if nargin<4
+if nargin<4 || isempty(essentialRxns)
     essentialRxns={};
+else
+    essentialRxns=convertCharArray(essentialRxns);
 end
-if isempty(essentialRxns)
-    essentialRxns={};
-end
-essentialRxns=essentialRxns(:);
-if nargin<5
-    prodWeight=0.5;
-end
-if isempty(prodWeight)
+if nargin<5 || isempty(prodWeight)
     prodWeight=0.5;
 end
 if nargin<6
@@ -292,7 +283,7 @@ prob.A=[prob.a -speye(size(prob.a,1))];
 prob.b=zeros(size(prob.a,1), 1);
 prob.ub=[prob.bux; prob.buc];
 prob.osense=1;
-prob.csense=char(zeros(size(prob.a,1),1));
+prob.csense=char(zeros(1,size(prob.a,1)));
 prob.csense(:)='E';
 
 %We still don't know which of the presentMets that can be produced. Go

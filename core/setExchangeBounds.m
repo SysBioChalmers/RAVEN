@@ -45,17 +45,13 @@ function [exchModel,unusedMets] = setExchangeBounds(model,mets,lb,ub,closeOthers
 % ignored.
 %
 % Usage: exchModel = setExchangeBounds(model,mets,lb,ub,closeOthers,mediaOnly);
-%
-%
-% Jonathan Robinson, 2019-05-23
-%
 
 
 % handle input arguments
 if nargin < 2
     mets = [];
-elseif ischar(mets)
-    mets = {mets};  % in case only one metabolite is provided as a string
+elseif ~islogical(mets) || ~isnumeric(mets)
+    mets=convertCharArray(mets);
 end 
 
 if nargin < 3 || isempty(lb)
@@ -190,8 +186,8 @@ end
 [metInd,rxnInd] = find(model_temp.S(exchMetInd,exchRxnInd) ~= 0);
 
 % check for any metabolites that are exchanged in more than one reaction
-tbl = tabulate(metInd);
-repeatedInds = tbl(:,2) > 1;
+[tbl,i,~] = unique(metInd,'first');
+repeatedInds = find(not(ismember(1:numel(tbl),i)));
 multiMetInd = exchMetInd(metInd(repeatedInds));
 if ~isempty(multiMetInd)
     fprintf('WARNING: The following metabolites are involved in more than one exchange reaction:\n');

@@ -14,14 +14,9 @@ function allRxns=getAllRxnsFromGenes(model,rxns)
 %               vector of indexes, dependent on the format of rxns
 %
 %   Usage: allRxns=getAllRxnsFromGenes(model,rxns)
-%
-%   Eduard Kerkhoven, 2018-08-01
-%
 
-%If the supplied object is a character array, then convert it to a cell
-%array
-if ischar(rxns)
-    rxns={rxns};
+if ~islogical(rxns) && ~isnumeric(rxns)
+    rxns=convertCharArray(rxns);
 end
 
 rxnIdx=getIndexes(model,rxns,'rxns');

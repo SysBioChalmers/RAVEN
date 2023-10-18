@@ -1,26 +1,41 @@
-function exportModel(model,fileName,exportGeneComplexes,supressWarnings)
+function exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
 % exportModel
 %   Exports a constraint-based model to an SBML file (L3V1 FBCv2)
 %
 %   Input:
 %   model               a model structure
-%   fileName            filename to export the model to (without file extension)
+%   fileName            filename to export the model to. A dialog window
+%                       will open if no file name is specified.
 %   exportGeneComplexes true if gene complexes (all gene sets linked with
 %                       AND relationship) should be recognised and exported
 %                       (opt, default false)
 %   supressWarnings     true if warnings should be supressed (opt, default
 %                       false)
+%   sortIds             logical whether metabolites, reactions and genes
+%                       should be sorted alphabetically by their
+%                       identifiers (opt, default false)
 %
-%
-%   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings)
-%
-%   Simonas Marcisauskas, 2018-09-06
-
+%   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
+if nargin<2 || isempty(fileName)
+    [fileName, pathName] = uiputfile({'*.xml;*.sbml'}, 'Select file for model export',[model.id '.xml']);
+    if fileName == 0
+        error('You should provide a file location')
+    else
+        fileName = fullfile(pathName,fileName);
+    end
+end
+fileName=char(fileName);
 if nargin<3
     exportGeneComplexes=false;
 end
 if nargin<4
     supressWarnings=false;
+end
+if nargin<5
+    sortIds=false;
+end
+if sortIds==true
+    model=sortIdentifiers(model);
 end
 
 %If no subSystems are defined, then no need to use groups package
@@ -45,22 +60,18 @@ end
 %Check if the "unconstrained" field is still present. This shows if
 %exchange metabolites have been removed
 if ~isfield(model,'unconstrained')
-    if supressWarnings==false
-        EM='There is no unconstrained field in the model structure. This means that no metabolites are considered exchange metabolites';
-        dispEM(EM,false);
-    end
     model.unconstrained=zeros(numel(model.mets),1);
 end
 
-%If model id and name (description) don't exist, make sure that default
+%If model id and name do not exist, make sure that default
 %strings are included
 if ~isfield(model,'id')
     fprintf('WARNING: The model is missing the "id" field. Uses "blankID". \n');
     model.id='blankID';
 end
-if ~isfield(model,'description')
-    fprintf('WARNING: The model is missing the "id" field. Uses "blankName". \n');
-    model.description='blankName';
+if ~isfield(model,'name')
+    fprintf('WARNING: The model is missing the "name" field. Uses "blankName". \n');
+    model.name='blankName';
 end
 
 %Check the model structure
@@ -68,7 +79,7 @@ if supressWarnings==false
     checkModelStruct(model,false);
 end
 
-%Add several blank fields, if they don't exist already. This is to reduce
+%Add several blank fields, if they do not exist already. This is to reduce
 %the number of conditions below
 if ~isfield(model,'compMiriams')
     model.compMiriams=cell(numel(model.comps),1);
@@ -137,15 +148,15 @@ end
 %Generate an empty SBML structure
 modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
 modelSBML.metaid=model.id;
-modelSBML.id=model.id;
-modelSBML.name=model.description;
+modelSBML.id=regexprep(model.id,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
+modelSBML.name=model.name;
 
 if isfield(model,'annotation')
     if isfield(model.annotation,'note')
         modelSBML.notes=['<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>',regexprep(model.annotation.note,'<p>|</p>',''),'</p></body></notes>'];
     end
 else
-    modelSBML.notes='<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>This file was generated using the exportModel function in RAVEN Toolbox 2.0 and OutputSBML in libSBML </p></body></notes>';
+    modelSBML.notes='<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>This file was generated using the exportModel function in RAVEN Toolbox 2 and OutputSBML in libSBML </p></body></notes>';
 end
 
 modelSBML.annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.id '">'];
@@ -190,7 +201,7 @@ modelSBML.annotation=[modelSBML.annotation '<dcterms:created rdf:parseType="Reso
 
 if isfield(model,'annotation')
     if isfield(model.annotation,'taxonomy')
-        modelSBML.annotation=[modelSBML.annotation '<bqbiol:is><rdf:Bag><rdf:li rdf:resource="http://identifiers.org/taxonomy/' regexprep(model.annotation.taxonomy,'taxonomy/','') '"/></rdf:Bag></bqbiol:is>'];
+        modelSBML.annotation=[modelSBML.annotation '<bqbiol:is><rdf:Bag><rdf:li rdf:resource="https://identifiers.org/taxonomy/' regexprep(model.annotation.taxonomy,'taxonomy/','') '"/></rdf:Bag></bqbiol:is>'];
     end
 end
 modelSBML.annotation=[modelSBML.annotation '</rdf:Description></rdf:RDF></annotation>'];
@@ -225,7 +236,7 @@ for i=1:numel(model.comps)
     end
     
     if isfield(modelSBML.compartment,'metaid')
-        if ~isnan(str2double(model.comps(i)))
+        if regexp(model.comps{i},'^[^a-zA-Z_]')
             EM='The compartment IDs are in numeric format. For the compliance with SBML specifications, compartment IDs will be preceded with "c_" string';
             dispEM(EM,false);
             model.comps(i)=strcat('c_',model.comps(i));
@@ -338,7 +349,8 @@ for i=1:numel(model.mets)
                     modelSBML.species(i).annotation=[modelSBML.species(i).annotation getMiriam(model.metMiriams{i})];
                 end
                 if hasInchi==true
-                    modelSBML.species(i).annotation=[modelSBML.species(i).annotation '<rdf:li rdf:resource="http://identifiers.org/inchi/InChI=' model.inchis{i} '"/>'];
+                    modelSBML.species(i).annotation=[modelSBML.species(i).annotation '<rdf:li rdf:resource="https://identifiers.org/inchi/InChI=' regexprep(model.inchis{i},'^InChI=','') '"/>'];
+                    modelSBML.species(i).fbc_chemicalFormula=char(regexp(model.inchis{i}, '/(\w+)/', 'tokens', 'once'));
                 end
                 modelSBML.species(i).annotation=[modelSBML.species(i).annotation '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>'];
             end
@@ -412,8 +424,8 @@ if isfield(model,'genes')
         geneComplexes=unique(geneComplexes);
         if ~isempty(geneComplexes)
             %Then add them as genes. There is a possiblity that a complex
-            %A&B is added as separate from B&A. This isn't really an issue
-            %so I don't deal with it
+            %A&B is added as separate from B&A. This is not really an issue
+            %so this is not dealt with
             for i=1:numel(geneComplexes)
                 modelSBML.fbc_geneProduct(numel(model.genes)+i)=modelSBML.fbc_geneProduct(1);
                 if isfield(modelSBML.fbc_geneProduct,'metaid')
@@ -514,7 +526,7 @@ for i=1:numel(model.rxns)
         if ~isempty(model.eccodes{i})
             eccodes=regexp(model.eccodes{i},';','split');
             for j=1:numel(eccodes)
-                modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation  '<rdf:li rdf:resource="http://identifiers.org/ec-code/' regexprep(eccodes{j},'ec-code/|EC','') '"/>'];
+                modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation  '<rdf:li rdf:resource="https://identifiers.org/ec-code/' regexprep(eccodes{j},'ec-code/|EC','') '"/>'];
             end
         end
         modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation getMiriam(model.rxnMiriams{i}) '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>'];
@@ -630,8 +642,6 @@ ind=find(model.c);
 
 if isempty(ind)
     modelSBML.fbc_objective.fbc_fluxObjective.fbc_coefficient=0;
-    EM='The objective function is not defined. The model will be exported as it is. Notice that having undefined objective function may produce warnings related to "fbc:coefficient" and "fbc:reaction" in SBML Validator';
-    dispEM(EM,false);
 else
     for i=1:length(ind)
         %Copy the default values to the next index as long as it is not the
@@ -667,7 +677,11 @@ end
 modelSBML.rule=[];
 modelSBML.constraint=[];
 
+[ravenDir,prevDir]=findRAVENroot();
+fileName=checkFileExistence(fileName,1,true,false);
+cd(fullfile(ravenDir,'software','libSBML'));
 OutputSBML(modelSBML,fileName,1,0,[1,0]);
+cd(prevDir);
 end
 
 
@@ -743,14 +757,14 @@ end
 
 function miriamString=getMiriam(miriamStruct)
 %Returns a string with list elements for a miriam structure ('<rdf:li
-%rdf:resource="http://identifiers.org/go/GO:0005739"/>' for example). This
+%rdf:resource="https://identifiers.org/go/GO:0005739"/>' for example). This
 %is just to speed up things since this is done many times during the
 %exporting
 
 miriamString='';
 if isfield(miriamStruct,'name')
     for i=1:numel(miriamStruct.name)
-        miriamString=[miriamString '<rdf:li rdf:resource="http://identifiers.org/' miriamStruct.name{i} '/' miriamStruct.value{i} '"/>'];
+        miriamString=[miriamString '<rdf:li rdf:resource="https://identifiers.org/' miriamStruct.name{i} '/' miriamStruct.value{i} '"/>'];
     end
 end
 end
@@ -792,10 +806,6 @@ function vecT = columnVector(vec)
 %
 % OUTPUT:
 %   vecT:    a column vector
-%
-% .. Authors:
-%     - Original file: Markus Herrgard - Minor changes: Laurent Heirendt
-%     January 2017
 
 [n, m] = size(vec);
 

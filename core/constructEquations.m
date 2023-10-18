@@ -1,16 +1,18 @@
-function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID,useFormula)
+function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID,useFormula,useRevField)
 % constructEquations
 %   Construct equation strings for reactions
 %
 %   Input:
 %   model             a model structure
-%   rxns              either a cell array of reaction IDs, a logical vector with the
-%                     same number of elements as reactions in the model, or a vector
-%                     of reaction indexes (opt, default model.rxns)
-%   useComps          include the compartment of each metabolite (opt, default true)
-%   sortRevRxns       sort reversible reactions so that the metabolite that is first in
-%                     the lexiographic order is a reactant (opt, default
-%                     false)
+%   rxns              either a cell array of reaction IDs, a logical vector
+%                     with the same number of elements as reactions in the
+%                     model, or a vector of reaction indexes (opt, default
+%                     model.rxns)
+%   useComps          include the compartment of each metabolite (opt,
+%                     default true)
+%   sortRevRxns       sort reversible reactions so that the metabolite that
+%                     is first in the lexiographic order is a reactant
+%                     (opt, default false)
 %   sortMetNames      sort the metabolite names in the equation. Uses
 %                     compartment even if useComps is false (opt, default
 %                     false)
@@ -18,23 +20,24 @@ function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sort
 %                     default false)
 %   useFormula        use metabolite formula in generated equations (opt,
 %                     default false)
+%   useRevField       use the model.rev field to indicate reaction
+%                     reversibility, alternatively this is determined from
+%                     the model.ub and model.lb fields (opt, default true)
 %
-%   Outut:
+%   Output:
 %   equationStrings   a cell array with equations
 %
-%   NOTE: Reactions in a model should be organized in their forward direction
-%   (e.g. ub = 1000 and lb = -1000/0) so that their equations can be correctly
-%   constructed by this function.
+%   NOTE: If useRevField is false, then reactions should be organized in
+%   their forward direction (e.g. ub = 1000 and lb = -1000/0) for the
+%   reversibility to be correctly determined.
 %
 %   Usage: equationStrings=constructEquations(model,rxns,useComps,...
-%           sortRevRxns,sortMetNames,useMetID,useFormula)
-%
-%   Hao Wang, 2019-03-05
-%   Benjamin Sanchez, 2018-08-22
-%
+%           sortRevRxns,sortMetNames,useMetID,useFormula,useRevField)
 
-if nargin<2
+if nargin<2 || isempty(rxns)
     rxns=model.rxns;
+elseif ~islogical(rxns) && ~isnumeric(rxns)
+    rxns=convertCharArray(rxns);
 end
 if nargin<3
     useComps=true;
@@ -51,8 +54,8 @@ end
 if nargin<7
     useFormula=false;
 end
-if isempty(rxns) && nargin>2
-    rxns=model.rxns;
+if nargin<8
+    useRevField=true;
 end
 
 %Sort reversible equations
@@ -87,7 +90,11 @@ for i=1:numel(Rindexes)
     end
     %Define stoich coeffs and reversibility:
     stoichCoeffs = model.S(Mindexes,Rindexes(i));
-    isrev        = model.lb(Rindexes(i))<0 & model.ub(Rindexes(i))>0;
+    if useRevField == true
+        isrev        = model.rev(Rindexes(i))==1;
+    else
+        isrev        = model.lb(Rindexes(i))<0 & model.ub(Rindexes(i))>0;
+    end
     
     %Construct equation:
     equationStrings{i} = buildEquation(mets,stoichCoeffs,isrev);

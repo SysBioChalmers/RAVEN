@@ -62,9 +62,6 @@ function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(m
 %   Usage: [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=...
 %           fillGaps(model,models,allowNetProduction,useModelConstraints,...
 %           supressWarnings,rxnScores,params)
-%
-%   Eduard Kerkhoven, 2017-11-28
-%
 
 %If the user only supplied a single template model
 if ~iscell(models)

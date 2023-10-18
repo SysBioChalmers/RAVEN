@@ -26,9 +26,6 @@ function notMapped=drawMap(title,pathway,modelA,conditionA,conditionB,modelB,fil
 %
 %   Usage: notMapped=drawMap(title,pathway,modelA,conditionA,...
 %           conditionB,modelB,filename,cutOff,supressOpen)
-%
-%   Rasmus Agren, 2015-08-01
-%
 
 if nargin<4
     conditionB=conditionA;

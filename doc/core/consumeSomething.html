@@ -66,15 +66,13 @@
    minimizes for the sum of fluxes.
 
    Usage: [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,...
-               minNrFluxes,params,ignoreIntBounds)
-
-   Rasmus Agren, 2015-09-25</pre></div>
+               minNrFluxes,params,ignoreIntBounds)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)">getExchangeRxns</a>	getExchangeRxns</li><li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>	getIndexes</li><li><a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>	setParam</li></ul>
+<li><a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>	convertCharArray</li><li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)">getExchangeRxns</a>	getExchangeRxns</li><li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>	getIndexes</li><li><a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>	setParam</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 <li><a href="removeBadRxns.html" class="code" title="function [newModel, removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames,balanceElements,refModel,ignoreIntBounds,printReport)">removeBadRxns</a>	removeBadRxns</li></ul>
@@ -124,143 +122,142 @@ This function is called by:
 0039 <span class="comment">%</span>
 0040 <span class="comment">%   Usage: [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,...</span>
 0041 <span class="comment">%               minNrFluxes,params,ignoreIntBounds)</span>
-0042 <span class="comment">%</span>
-0043 <span class="comment">%   Rasmus Agren, 2015-09-25</span>
-0044 <span class="comment">%</span>
-0045 
-0046 <span class="keyword">if</span> nargin&lt;2
-0047     ignoreMets=[];
-0048 <span class="keyword">end</span>
-0049 <span class="keyword">if</span> nargin&lt;3
-0050     isNames=false;
-0051 <span class="keyword">end</span>
-0052 <span class="keyword">if</span> nargin&lt;4
-0053     minNrFluxes=false;
-0054 <span class="keyword">end</span>
-0055 <span class="keyword">if</span> nargin&lt;5
-0056     params.relGap=0.8;
-0057 <span class="keyword">end</span>
-0058 <span class="keyword">if</span> nargin&lt;6
-0059     ignoreIntBounds=false;
-0060 <span class="keyword">end</span>
-0061 
-0062 <span class="keyword">if</span> isNames==true &amp;&amp; ~isempty(ignoreMets)
-0063     <span class="comment">%Check that metsToRemove is a cell array</span>
-0064     <span class="keyword">if</span> iscellstr(ignoreMets)==false
-0065         EM=<span class="string">'Must supply a cell array of strings if isNames=true'</span>;
-0066         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0067     <span class="keyword">end</span>
-0068 <span class="keyword">end</span>
-0069 
-0070 <span class="keyword">if</span> isNames==false
-0071     indexesToIgnore=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,ignoreMets,<span class="string">'mets'</span>);
-0072 <span class="keyword">else</span>
-0073     indexesToIgnore=[];
-0074     <span class="keyword">for</span> i=1:numel(ignoreMets)
-0075         indexesToIgnore=[indexesToIgnore;find(strcmp(ignoreMets(i),model.metNames))];
-0076     <span class="keyword">end</span>
-0077 <span class="keyword">end</span>
-0078 
-0079 <span class="comment">%Change all internal reactions to be unbounded in both directions</span>
-0080 <span class="keyword">if</span> ignoreIntBounds==true
-0081     [~, I]=<a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)">getExchangeRxns</a>(model);
-0082     nonExc=true(numel(model.rxns),1);
-0083     nonExc(I)=false;
-0084     model=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'lb'</span>,nonExc,-1000);
-0085     model=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'ub'</span>,nonExc,1000);
-0086     model=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'rev'</span>,nonExc,1);
-0087 <span class="keyword">end</span>
-0088 
-0089 solution=[];
-0090 metabolite=[];
-0091 
-0092 nRxns=numel(model.rxns);
-0093 nMets=numel(model.mets);
-0094 
-0095 <span class="comment">%Add uptake reactions for all metabolites</span>
-0096 model.S=[model.S speye(nMets)];
-0097 
-0098 <span class="comment">%Add so that they all consume a fake metabolite</span>
-0099 model.S=[model.S;[sparse(1,nRxns) ones(1,nMets)*-1]];
-0100 
-0101 <span class="comment">%Change so that the ignoreMets have a coefficient 0 in their reactions.</span>
-0102 <span class="comment">%Does not remove the actual reaction to make mapping easier later</span>
-0103 model.S(:,indexesToIgnore+nRxns)=0;
-0104 
-0105 <span class="comment">%Add an uptake reaction for this last fake metabolite</span>
-0106 model.S(size(model.S,1),size(model.S,2)+1)=1;
-0107 model.b=[model.b;zeros(1,size(model.b,2))];
-0108 model.lb=[model.lb;zeros(nMets,1);1];
-0109 model.ub=[model.ub;inf(nMets+1,1)];
-0110 model.rev=[model.rev;zeros(nMets+1,1)];
-0111 model.c=zeros(size(model.S,2),1);
-0112 
-0113 <span class="comment">%Add padding to the reaction annotation to prevent an error in solveLP</span>
-0114 padding=1:numel(model.rev);
-0115 padding=num2cell(padding)';
-0116 padding=cellfun(@num2str,padding,<span class="string">'uniformoutput'</span>,false);
-0117 model.rxns=padding;
-0118 model.rxnNames=padding;
-0119 model.eccodes=padding;
-0120 model.rxnMiriams=padding;
-0121 model.grRules=padding;
-0122 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
-0123     model.rxnGeneMat=sparse(numel(model.rev),numel(model.genes));
-0124 <span class="keyword">end</span>
-0125 model.subSystems=padding;
-0126 model.rxnFrom=padding;
-0127 model.rxnComps=ones(numel(model.rev),1);
-0128 model.rxnNotes=padding;
-0129 model.rxnReferences=padding;
-0130 model.rxnConfidenceScores=NaN(numel(model.rev),1);
-0131 
-0132 sol=solveLP(model,1);
-0133 <span class="keyword">if</span> any(sol.x)
-0134     <span class="comment">%It could be that several metabolites were consumed in order to get the</span>
-0135     <span class="comment">%best solution. The setdiff is to avoid including the last fake</span>
-0136     <span class="comment">%metabolite</span>
-0137     I=setdiff(find(sol.x(nRxns+1:end)&gt;0.1),size(model.S,1));
-0138     
-0139     <span class="keyword">if</span> any(I) <span class="comment">%This should always be true</span>
-0140         <span class="comment">%Change the coefficients so that only the first is consumed. This</span>
-0141         <span class="comment">%is not always possible, but it is tested for since it it results</span>
-0142         <span class="comment">%in more easily interpretable results</span>
-0143         
-0144         oldS=model.S;
-0145         foundSingle=false;
-0146         <span class="comment">%Test if any of the metabolites could be consumed on their own</span>
-0147         <span class="keyword">for</span> i=1:numel(I)
-0148             model.S=oldS;
-0149             J=nRxns+1:numel(model.lb)-1;
-0150             J(I(i))=[];
-0151             model.S(:,J)=0;
-0152             sol=solveLP(model);
-0153             <span class="keyword">if</span> any(sol.x)
-0154                 foundSingle=true;
-0155                 <span class="keyword">break</span>;
-0156             <span class="keyword">end</span>
-0157         <span class="keyword">end</span>
-0158         <span class="comment">%This means that there was no metabolite which could be consumed on</span>
-0159         <span class="comment">%its own. Then let all the consumeable metabolites be consumed.</span>
-0160         <span class="keyword">if</span> foundSingle==false
-0161             model.S=oldS;
-0162         <span class="keyword">end</span>
-0163         <span class="keyword">if</span> minNrFluxes==true
-0164             <span class="comment">%Has to add names for the rxns to prevent an error in</span>
-0165             <span class="comment">%minNrFluxes</span>
-0166             model.rxns=cell(numel(model.lb),1);
-0167             model.rxns(:)={<span class="string">'TEMP'</span>};
-0168             model.mets=cell(size(model.b,1),1);
-0169             model.mets(:)={<span class="string">'TEMP'</span>};
-0170             sol=solveLP(model,3,params);
-0171         <span class="keyword">else</span>
-0172             sol=solveLP(model,1);
-0173         <span class="keyword">end</span>
-0174         solution=sol.x(1:nRxns);
-0175         metabolite=find(sol.x(nRxns+1:end-1)&gt;0.1);
-0176     <span class="keyword">end</span>
-0177 <span class="keyword">end</span>
-0178 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0042 
+0043 <span class="keyword">if</span> nargin&lt;2
+0044     ignoreMets=[];
+0045 <span class="keyword">elseif</span> ~islogical(ignoreMets) &amp;&amp; ~isnumeric(ignoreMets)
+0046     ignoreMets=<a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>(ignoreMets);
+0047 <span class="keyword">end</span>
+0048 <span class="keyword">if</span> nargin&lt;3
+0049     isNames=false;
+0050 <span class="keyword">end</span>
+0051 <span class="keyword">if</span> nargin&lt;4
+0052     minNrFluxes=false;
+0053 <span class="keyword">end</span>
+0054 <span class="keyword">if</span> nargin&lt;5
+0055     params.relGap=0.8;
+0056 <span class="keyword">end</span>
+0057 <span class="keyword">if</span> nargin&lt;6
+0058     ignoreIntBounds=false;
+0059 <span class="keyword">end</span>
+0060 
+0061 <span class="keyword">if</span> isNames==true &amp;&amp; ~isempty(ignoreMets)
+0062     <span class="comment">%Check that metsToRemove is a cell array</span>
+0063     <span class="keyword">if</span> iscellstr(ignoreMets)==false
+0064         EM=<span class="string">'Must supply a cell array of strings if isNames=true'</span>;
+0065         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0066     <span class="keyword">end</span>
+0067 <span class="keyword">end</span>
+0068 
+0069 <span class="keyword">if</span> isNames==false
+0070     indexesToIgnore=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,ignoreMets,<span class="string">'mets'</span>);
+0071 <span class="keyword">else</span>
+0072     indexesToIgnore=[];
+0073     <span class="keyword">for</span> i=1:numel(ignoreMets)
+0074         indexesToIgnore=[indexesToIgnore;find(strcmp(ignoreMets(i),model.metNames))];
+0075     <span class="keyword">end</span>
+0076 <span class="keyword">end</span>
+0077 
+0078 <span class="comment">%Change all internal reactions to be unbounded in both directions</span>
+0079 <span class="keyword">if</span> ignoreIntBounds==true
+0080     [~, I]=<a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)">getExchangeRxns</a>(model);
+0081     nonExc=true(numel(model.rxns),1);
+0082     nonExc(I)=false;
+0083     model=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'lb'</span>,nonExc,-1000);
+0084     model=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'ub'</span>,nonExc,1000);
+0085     model=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'rev'</span>,nonExc,1);
+0086 <span class="keyword">end</span>
+0087 
+0088 solution=[];
+0089 metabolite=[];
+0090 
+0091 nRxns=numel(model.rxns);
+0092 nMets=numel(model.mets);
+0093 
+0094 <span class="comment">%Add uptake reactions for all metabolites</span>
+0095 model.S=[model.S speye(nMets)];
+0096 
+0097 <span class="comment">%Add so that they all consume a fake metabolite</span>
+0098 model.S=[model.S;[sparse(1,nRxns) ones(1,nMets)*-1]];
+0099 
+0100 <span class="comment">%Change so that the ignoreMets have a coefficient 0 in their reactions.</span>
+0101 <span class="comment">%Does not remove the actual reaction to make mapping easier later</span>
+0102 model.S(:,indexesToIgnore+nRxns)=0;
+0103 
+0104 <span class="comment">%Add an uptake reaction for this last fake metabolite</span>
+0105 model.S(size(model.S,1),size(model.S,2)+1)=1;
+0106 model.b=[model.b;zeros(1,size(model.b,2))];
+0107 model.lb=[model.lb;zeros(nMets,1);1];
+0108 model.ub=[model.ub;inf(nMets+1,1)];
+0109 model.rev=[model.rev;zeros(nMets+1,1)];
+0110 model.c=zeros(size(model.S,2),1);
+0111 
+0112 <span class="comment">%Add padding to the reaction annotation to prevent an error in solveLP</span>
+0113 padding=1:numel(model.rev);
+0114 padding=num2cell(padding)';
+0115 padding=cellfun(@num2str,padding,<span class="string">'uniformoutput'</span>,false);
+0116 model.rxns=padding;
+0117 model.rxnNames=padding;
+0118 model.eccodes=padding;
+0119 model.rxnMiriams=padding;
+0120 model.grRules=padding;
+0121 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
+0122     model.rxnGeneMat=sparse(numel(model.rev),numel(model.genes));
+0123 <span class="keyword">end</span>
+0124 model.subSystems=padding;
+0125 model.rxnFrom=padding;
+0126 model.rxnComps=ones(numel(model.rev),1);
+0127 model.rxnNotes=padding;
+0128 model.rxnReferences=padding;
+0129 model.rxnConfidenceScores=NaN(numel(model.rev),1);
+0130 
+0131 sol=solveLP(model,1);
+0132 <span class="keyword">if</span> any(sol.x)
+0133     <span class="comment">%It could be that several metabolites were consumed in order to get the</span>
+0134     <span class="comment">%best solution. The setdiff is to avoid including the last fake</span>
+0135     <span class="comment">%metabolite</span>
+0136     I=setdiff(find(sol.x(nRxns+1:end)&gt;0.1),size(model.S,1));
+0137     
+0138     <span class="keyword">if</span> any(I) <span class="comment">%This should always be true</span>
+0139         <span class="comment">%Change the coefficients so that only the first is consumed. This</span>
+0140         <span class="comment">%is not always possible, but it is tested for since it it results</span>
+0141         <span class="comment">%in more easily interpretable results</span>
+0142         
+0143         oldS=model.S;
+0144         foundSingle=false;
+0145         <span class="comment">%Test if any of the metabolites could be consumed on their own</span>
+0146         <span class="keyword">for</span> i=1:numel(I)
+0147             model.S=oldS;
+0148             J=nRxns+1:numel(model.lb)-1;
+0149             J(I(i))=[];
+0150             model.S(:,J)=0;
+0151             sol=solveLP(model);
+0152             <span class="keyword">if</span> any(sol.x)
+0153                 foundSingle=true;
+0154                 <span class="keyword">break</span>;
+0155             <span class="keyword">end</span>
+0156         <span class="keyword">end</span>
+0157         <span class="comment">%This means that there was no metabolite which could be consumed on</span>
+0158         <span class="comment">%its own. Then let all the consumeable metabolites be consumed.</span>
+0159         <span class="keyword">if</span> foundSingle==false
+0160             model.S=oldS;
+0161         <span class="keyword">end</span>
+0162         <span class="keyword">if</span> minNrFluxes==true
+0163             <span class="comment">%Has to add names for the rxns to prevent an error in</span>
+0164             <span class="comment">%minNrFluxes</span>
+0165             model.rxns=cell(numel(model.lb),1);
+0166             model.rxns(:)={<span class="string">'TEMP'</span>};
+0167             model.mets=cell(size(model.b,1),1);
+0168             model.mets(:)={<span class="string">'TEMP'</span>};
+0169             sol=solveLP(model,3,params);
+0170         <span class="keyword">else</span>
+0171             sol=solveLP(model,1);
+0172         <span class="keyword">end</span>
+0173         solution=sol.x(1:nRxns);
+0174         metabolite=find(sol.x(nRxns+1:end-1)&gt;0.1);
+0175     <span class="keyword">end</span>
+0176 <span class="keyword">end</span>
+0177 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

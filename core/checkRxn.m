@@ -5,7 +5,7 @@ function report=checkRxn(model,rxn,cutoff,revDir,printReport)
 %   reactions which cannot have flux
 %
 %   model       a model structure
-%   rxn         the id of the reaction to check
+%   rxn         the id of one reaction to check
 %   cutoff      minimal flux for successful production/consumption (opt,
 %               default 10^-7)
 %   revDir      true if the reaction should be reversed (opt, default
@@ -21,14 +21,8 @@ function report=checkRxn(model,rxn,cutoff,revDir,printReport)
 %                   be consumed
 %
 %   Usage: report=checkRxn(model,rxn,cutoff,revDir,printReport)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
-%Convert to cell string
-if ischar(rxn)
-    rxn={rxn};
-end
+rxn=char(rxn);
 if nargin<3
     cutoff=10^-7;
 end

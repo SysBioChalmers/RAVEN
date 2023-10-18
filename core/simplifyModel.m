@@ -35,9 +35,6 @@ function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(mode
 %           deleteUnconstrained, deleteDuplicates, deleteZeroInterval,...
 %           deleteInaccessible, deleteMinMax, groupLinear,...
 %           constrainReversible, reservedRxns, suppressWarnings)
-%
-%   Rasmus Agren, 2014-05-07
-%
 
 if nargin<2
     deleteUnconstrained=true;
@@ -62,6 +59,8 @@ if nargin<8
 end
 if nargin<9
     reservedRxns=[];
+else
+    reservedRxns=convertCharArray(reservedRxns);
 end
 if nargin<10
     suppressWarnings=false;
@@ -75,7 +74,7 @@ if deleteUnconstrained==true
     if isfield(reducedModel,'unconstrained')
         %Remove unbalanced metabolites
         deletedMetabolites=reducedModel.mets(reducedModel.unconstrained~=0);
-        reducedModel=removeMets(reducedModel,reducedModel.unconstrained~=0);
+        reducedModel=removeMets(reducedModel,reducedModel.unconstrained~=0,false,false,false,true);
         reducedModel=rmfield(reducedModel,'unconstrained');
     end
 end

@@ -9,17 +9,13 @@ function addRavenToUserPath(overwrite)
 %   overwrite       logical, whether startup.m in the userpath should
 %                   overwritten (otherwise the RAVEN paths are appended)
 %                   (opt, default true)
-%
-%   Eduard Kerkhoven, 2018-07-18
-%
 
 if nargin<1
     overwrite=true;
 end
 
 % Get current RAVEN directory
-[ST, I]=dbstack('-completenames');
-[ravenDir,~,~]=fileparts(fileparts(ST(I).file));
+ravenDir=findRAVENroot();
 
 % Lists all subdirectories
 subpath=regexp(genpath(ravenDir),pathsep,'split');

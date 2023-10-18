@@ -14,25 +14,22 @@ function exportModelToSIF(model,fileName,graphType,rxnLabels,metLabels)
 %                 model.mets)
 %
 %   Usage: exportModelToSIF(model,fileName,graphType,rxnLabels,metLabels)
-%
-%   Rasmus Agren, 2014-01-08
-%
-
+fileName=char(fileName);
 if nargin<3
     graphType='rc';
+else
+    graphType=char(graphType);
 end
 
-if nargin<4
+if nargin<4 || isempty(rxnLabels)
     rxnLabels=model.rxns;
+else
+    rxnLabels=convertCharArray(rxnLabels);
 end
-if nargin<5
+if nargin<5 || isempty(metLabels)
     metLabels=model.mets;
-end
-if isempty(rxnLabels)
-    rxnLabels=model.rxns;
-end
-if isempty(metLabels)
-    metLabels=model.mets;
+else
+    metLabels=convertCharArray(metLabels);
 end
 
 if ~strcmpi(graphType,'rc') && ~strcmpi(graphType,'rr') && ~strcmpi(graphType,'cc')

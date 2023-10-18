@@ -53,15 +53,13 @@
    NOTE: Uses 1000 mmol/gDW/h as an arbitary large flux. Could possibly
    cause problems if the fluxes in the model are larger than that.
 
-   Usage: [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params, scores)
-
-   Rasmus Agren, 2017-02-28</pre></div>
+   Usage: [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params, scores)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="convertToIrrev.html" class="code" title="function irrevModel=convertToIrrev(model,rxns)">convertToIrrev</a>	convertToIrrev</li><li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li></ul>
+<li><a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>	convertCharArray</li><li><a href="convertToIrrev.html" class="code" title="function [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns)">convertToIrrev</a>	convertToIrrev</li><li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 <li><a href="fillGaps.html" class="code" title="function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,allowNetProduction,useModelConstraints,supressWarnings,rxnScores,params)">fillGaps</a>	fillGaps</li></ul>
@@ -98,133 +96,142 @@ This function is called by:
 0026 <span class="comment">%   cause problems if the fluxes in the model are larger than that.</span>
 0027 <span class="comment">%</span>
 0028 <span class="comment">%   Usage: [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params, scores)</span>
-0029 <span class="comment">%</span>
-0030 <span class="comment">%   Rasmus Agren, 2017-02-28</span>
-0031 <span class="comment">%</span>
-0032 
-0033 exitFlag=1;
-0034 
-0035 <span class="keyword">if</span> nargin&lt;2
-0036     toMinimize=model.rxns;
-0037 <span class="keyword">else</span>
-0038     <span class="keyword">if</span> ~iscell(toMinimize)
-0039         toMinimize=model.rxns(toMinimize);
-0040     <span class="keyword">end</span>
-0041 <span class="keyword">end</span>
-0042 
-0043 <span class="comment">%For passing parameters to the solver</span>
-0044 <span class="keyword">if</span> nargin&lt;3
-0045     params=struct();
-0046 <span class="keyword">end</span>
-0047 
-0048 <span class="keyword">if</span> nargin&lt;4
-0049     <span class="comment">%It says that the default is -1, but that is to fit with other code</span>
-0050     scores=ones(numel(toMinimize),1)*1;
-0051 <span class="keyword">else</span>
-0052     <span class="keyword">if</span> numel(scores)~=numel(toMinimize)
-0053         EM=<span class="string">'The number of scores must be the same as the number of reactions to minimize'</span>;
-0054         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0055     <span class="keyword">end</span>
-0056     
-0057     <span class="comment">%Change positive scores to have a small negative weight. This is a</span>
-0058     <span class="comment">%temporary solution.</span>
-0059     scores(scores&gt;=0)=max(scores(scores&lt;0));
-0060     
-0061     <span class="comment">%It says that the default is -1, but that is to fit with other code</span>
-0062     scores=scores*-1;
-0063 <span class="keyword">end</span>
-0064 
-0065 <span class="comment">%Check if the model is in irreversible format</span>
-0066 <span class="keyword">if</span> any(model.rev)
-0067     <span class="comment">%Convert the model to irreversible format</span>
-0068     irrevModel=<a href="convertToIrrev.html" class="code" title="function irrevModel=convertToIrrev(model,rxns)">convertToIrrev</a>(model);
-0069     
-0070     <span class="comment">%Find the indexes for the reactions in toMinimize</span>
-0071     [indexes, I]=ismember(strrep(irrevModel.rxns,<span class="string">'_REV'</span>,<span class="string">''</span>),toMinimize);
-0072 <span class="keyword">else</span>
-0073     irrevModel=model;
-0074     
-0075     <span class="comment">%Find the indexes for the reactions in toMinimize</span>
-0076     [indexes, I]=ismember(irrevModel.rxns,toMinimize);
-0077 <span class="keyword">end</span>
-0078 
-0079 indexes=find(indexes);
-0080 <span class="comment">%Adjust scores to fit with reversible</span>
-0081 scores=scores(I(indexes));
-0082 
-0083 <span class="comment">%Add binary constraints in the following manner: -  Add one unique</span>
-0084 <span class="comment">%&quot;metabolite&quot; for each integer reaction as a substrate.</span>
-0085 <span class="comment">%   These metabolites can have net production</span>
-0086 <span class="comment">%-  Add reactions for the production of each of those metabolites. The</span>
-0087 <span class="comment">%   amount produced in one reaction unit must be larger than the largest</span>
-0088 <span class="comment">%   possible flux in the model (but not too large to avoid bad scaling)</span>
-0089 
-0090 <span class="comment">%Calculate a solution to the problem without any constraints. This is to</span>
-0091 <span class="comment">%get an estimate about the magnitude of fluxes in the model and to get a</span>
-0092 <span class="comment">%feasible start solution.</span>
-0093 sol=solveLP(irrevModel,1);
-0094 
-0095 <span class="comment">%Return an empty solution if the non-constrained problem couldn't be solved</span>
-0096 <span class="keyword">if</span> isempty(sol.x)
-0097     x=[];
-0098     I=[];
-0099     exitFlag=-1;
-0100     <span class="keyword">return</span>;
-0101 <span class="keyword">end</span>
-0102 
-0103 <span class="comment">%Take the maximal times 5 to have a safe margin. If it's smaller than 1000,</span>
-0104 <span class="comment">%then use 1000 instead.</span>
-0105 maxFlux=max(max(sol.x)*5,1000);
-0106 
-0107 prob.c=[zeros(numel(irrevModel.rxns),1);scores(:)]; <span class="comment">%Minimize the number of fluxes</span>
-0108 prob.blc=[irrevModel.b(:,1);zeros(numel(indexes),1)];
-0109 <span class="keyword">if</span> size(irrevModel.b,2)==2
-0110     prob.buc=[irrevModel.b(:,2);inf(numel(indexes),1)];
-0111 <span class="keyword">else</span>
-0112     prob.buc=[irrevModel.b(:,1);inf(numel(indexes),1)];
-0113 <span class="keyword">end</span>
-0114 prob.blx=[irrevModel.lb;zeros(numel(indexes),1)];
-0115 prob.bux=[irrevModel.ub;ones(numel(indexes),1)];
-0116 
-0117 intArray=speye(numel(irrevModel.rxns))*-1;
-0118 intArray=intArray(indexes,:);
-0119 prob.a=[irrevModel.S;intArray];
-0120 a=[sparse(numel(irrevModel.mets),numel(indexes));speye(numel(indexes))*maxFlux];
-0121 prob.a=[prob.a a];
-0122 prob.ints.sub=numel(irrevModel.rxns)+1:numel(irrevModel.rxns)+numel(indexes);
-0123 
-0124 <span class="comment">%Use the output from the linear solution as starting point. Only the values</span>
-0125 <span class="comment">%for the integer variables will be used, but all are supplied.</span>
-0126 prob.sol.int.xx=zeros(numel(prob.c),1);
-0127 prob.sol.int.xx(prob.ints.sub(sol.x(indexes)&gt;10^-12))=1;
-0128 
-0129 <span class="comment">% Optimize the problem</span>
-0130 res = optimizeProb(prob,params);
-0131 isFeasible=checkSolution(res);
-0132 
-0133 <span class="keyword">if</span> ~isFeasible
-0134     x=[];
-0135     I=[];
-0136     exitFlag=-1;
-0137     <span class="keyword">return</span>;
-0138 <span class="keyword">end</span>
-0139 
-0140 xx=res.sol.int.xx(1:numel(irrevModel.rxns));
-0141 I=res.sol.int.xx(numel(xx)+1:end);
-0142 
-0143 <span class="comment">%Check if Mosek aborted because it reached the time limit</span>
-0144 <span class="keyword">if</span> strcmp(<span class="string">'MSK_RES_TRM_MAX_TIME'</span>,res.rcode)
-0145     exitFlag=-2;
+0029 
+0030 exitFlag=1;
+0031 
+0032 <span class="keyword">if</span> nargin&lt;2
+0033     toMinimize=model.rxns;
+0034 <span class="keyword">elseif</span> ~islogical(toMinimize) &amp;&amp; ~isnumeric(toMinimize)
+0035     toMinimize=<a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>(toMinimize);
+0036 <span class="keyword">else</span>
+0037     toMinimize=model.rxns(toMinimize);
+0038 <span class="keyword">end</span>
+0039 
+0040 <span class="comment">%For passing parameters to the solver</span>
+0041 <span class="keyword">if</span> nargin&lt;3
+0042     params=struct();
+0043 <span class="keyword">end</span>
+0044 
+0045 <span class="keyword">if</span> nargin&lt;4
+0046     <span class="comment">%It says that the default is -1, but that is to fit with other code</span>
+0047     scores=ones(numel(toMinimize),1)*1;
+0048 <span class="keyword">else</span>
+0049     <span class="keyword">if</span> numel(scores)~=numel(toMinimize)
+0050         EM=<span class="string">'The number of scores must be the same as the number of reactions to minimize'</span>;
+0051         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0052     <span class="keyword">end</span>
+0053     
+0054     <span class="comment">%Change positive scores to have a small negative weight. This is a</span>
+0055     <span class="comment">%temporary solution.</span>
+0056     scores(scores&gt;=0)=max(scores(scores&lt;0));
+0057     
+0058     <span class="comment">%It says that the default is -1, but that is to fit with other code</span>
+0059     scores=scores*-1;
+0060 <span class="keyword">end</span>
+0061 
+0062 <span class="comment">%Check if the model is in irreversible format</span>
+0063 <span class="keyword">if</span> any(model.rev)
+0064     <span class="comment">%Convert the model to irreversible format</span>
+0065     irrevModel=<a href="convertToIrrev.html" class="code" title="function [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns)">convertToIrrev</a>(model);
+0066     
+0067     <span class="comment">%Find the indexes for the reactions in toMinimize</span>
+0068     [indexes, I]=ismember(strrep(irrevModel.rxns,<span class="string">'_REV'</span>,<span class="string">''</span>),toMinimize);
+0069 <span class="keyword">else</span>
+0070     irrevModel=model;
+0071     
+0072     <span class="comment">%Find the indexes for the reactions in toMinimize</span>
+0073     [indexes, I]=ismember(irrevModel.rxns,toMinimize);
+0074 <span class="keyword">end</span>
+0075 
+0076 indexes=find(indexes);
+0077 <span class="comment">%Adjust scores to fit with reversible</span>
+0078 scores=scores(I(indexes));
+0079 
+0080 <span class="comment">%Add binary constraints in the following manner: -  Add one unique</span>
+0081 <span class="comment">%&quot;metabolite&quot; for each integer reaction as a substrate.</span>
+0082 <span class="comment">%   These metabolites can have net production</span>
+0083 <span class="comment">%-  Add reactions for the production of each of those metabolites. The</span>
+0084 <span class="comment">%   amount produced in one reaction unit must be larger than the largest</span>
+0085 <span class="comment">%   possible flux in the model (but not too large to avoid bad scaling)</span>
+0086 
+0087 <span class="comment">%Calculate a solution to the problem without any constraints. This is to</span>
+0088 <span class="comment">%get an estimate about the magnitude of fluxes in the model and to get a</span>
+0089 <span class="comment">%feasible start solution.</span>
+0090 sol=solveLP(irrevModel,1);
+0091 
+0092 <span class="comment">%Return an empty solution if the non-constrained problem couldn't be solved</span>
+0093 <span class="keyword">if</span> isempty(sol.x)
+0094     x=[];
+0095     I=[];
+0096     exitFlag=-1;
+0097     <span class="keyword">return</span>;
+0098 <span class="keyword">end</span>
+0099 
+0100 <span class="comment">%Take the maximal times 5 to have a safe margin. If it's smaller than 1000,</span>
+0101 <span class="comment">%then use 1000 instead.</span>
+0102 maxFlux=max(max(sol.x)*5,1000);
+0103 
+0104 intArray=speye(numel(irrevModel.rxns))*-1;
+0105 intArray=intArray(indexes,:);
+0106 prob.a=[irrevModel.S;intArray];
+0107 a=[sparse(numel(irrevModel.mets),numel(indexes));speye(numel(indexes))*maxFlux];
+0108 prob.a=[prob.a a];
+0109 prob.ints.sub=numel(irrevModel.rxns)+1:numel(irrevModel.rxns)+numel(indexes);
+0110 
+0111 prob.c=[zeros(numel(irrevModel.rxns),1);scores(:);zeros(size(prob.a,1),1)]; <span class="comment">%Minimize the number of fluxes</span>
+0112 prob.A=[prob.a -speye(size(prob.a,1))];
+0113 prob.blc=[irrevModel.b(:,1);zeros(numel(indexes),1)];
+0114 <span class="keyword">if</span> size(irrevModel.b,2)==2
+0115     prob.buc=[irrevModel.b(:,2);inf(numel(indexes),1)];
+0116 <span class="keyword">else</span>
+0117     prob.buc=[irrevModel.b(:,1);inf(numel(indexes),1)];
+0118 <span class="keyword">end</span>
+0119 prob.blx=[irrevModel.lb;zeros(numel(indexes),1)];
+0120 prob.bux=[irrevModel.ub;ones(numel(indexes),1)];
+0121 prob.lb = [prob.blx; prob.blc];
+0122 prob.ub = [prob.bux; prob.buc];
+0123 prob.osense=1;
+0124 prob.csense=repmat(<span class="string">'E'</span>, 1, size(prob.a,1),1);
+0125 prob.b=zeros(size(prob.a,1), 1);
+0126 
+0127 <span class="comment">%Use the output from the linear solution as starting point. Only the values</span>
+0128 <span class="comment">%for the integer variables will be used, but all are supplied.</span>
+0129 prob.sol.int.xx=zeros(numel(prob.c),1);
+0130 prob.sol.int.xx(prob.ints.sub(sol.x(indexes)&gt;10^-12))=1;
+0131 prob.x0=[];
+0132 prob.vartype=repmat(<span class="string">'C'</span>, size(prob.A,2), 1);
+0133 prob.vartype(prob.ints.sub) = <span class="string">'I'</span>; <span class="comment">% with .lb = 0 and .ub = 1, they are binary</span>
+0134 <span class="comment">% integers (glpk in octave only allows 'continuous' or '', not 'binary')</span>
+0135 prob=rmfield(prob,{<span class="string">'blx'</span>,<span class="string">'bux'</span>,<span class="string">'blc'</span>,<span class="string">'buc'</span>});
+0136 
+0137 <span class="comment">% Optimize the problem</span>
+0138 res = optimizeProb(prob,params);
+0139 isFeasible=checkSolution(res);
+0140 
+0141 <span class="keyword">if</span> ~isFeasible
+0142     x=[];
+0143     I=[];
+0144     exitFlag=-1;
+0145     <span class="keyword">return</span>;
 0146 <span class="keyword">end</span>
 0147 
-0148 <span class="comment">%Map back to original model from irrevModel</span>
-0149 x=xx(1:numel(model.rxns));
-0150 <span class="keyword">if</span> numel(irrevModel.rxns)&gt;numel(model.rxns)
-0151     x(model.rev~=0)=x(model.rev~=0)-xx(numel(model.rxns)+1:end);
-0152 <span class="keyword">end</span>
-0153 
-0154 I=ismember(toMinimize,strrep(irrevModel.rxns(indexes(I&gt;10^-12)),<span class="string">'_REV'</span>,<span class="string">''</span>));
-0155 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0148 xx=res.full(1:numel(irrevModel.rxns));
+0149 I=res.full(numel(xx)+1:end);
+0150 
+0151 <span class="comment">%Check if Mosek aborted because it reached the time limit</span>
+0152 <span class="comment">%TODO: modify for cobra/gurobi</span>
+0153 <span class="comment">% if strcmp('MSK_RES_TRM_MAX_TIME',res.rcode)</span>
+0154 <span class="comment">%     exitFlag=-2;</span>
+0155 <span class="comment">% end</span>
+0156 
+0157 <span class="comment">%Map back to original model from irrevModel</span>
+0158 x=xx(1:numel(model.rxns));
+0159 <span class="keyword">if</span> numel(irrevModel.rxns)&gt;numel(model.rxns)
+0160     x(model.rev~=0)=x(model.rev~=0)-xx(numel(model.rxns)+1:end);
+0161 <span class="keyword">end</span>
+0162 
+0163 I=ismember(toMinimize,strrep(irrevModel.rxns(indexes(I&gt;10^-12)),<span class="string">'_REV'</span>,<span class="string">''</span>));
+0164 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

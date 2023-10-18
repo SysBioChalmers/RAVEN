@@ -12,12 +12,11 @@ function consumed=canConsume(model,mets)
 %               produced
 %
 %   Usage: consumed=canConsume(model,mets)
-%
-%   Rasmus Agren, 2012-11-14
-%
 
 if nargin<2
     mets=model.mets;
+elseif ~islogical(mets) && ~isnumeric(mets)
+    mets=convertCharArray(mets);
 end
 
 [model, rxns]=addExchangeRxns(model,'in',mets);

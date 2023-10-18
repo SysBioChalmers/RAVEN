@@ -61,9 +61,6 @@ function [outModel, geneLocalization, transportStruct, scores,...
 %   Usage: [outModel, geneLocalization, transportStruct, scores,...
 %       removedRxns] = predictLocalization(model, GSS,...
 %       defaultCompartment, transportCost, maxTime, plotResults)
-%
-%	Simonas Marcisauskas, 2019-11-13
-%
 
 if nargin<4
     transportCost=ones(numel(model.mets),1)*0.5;
@@ -95,6 +92,7 @@ if isfield(model,'geneComps')
     dispEM(EM,false);
 end
 
+defaultCompartment=char(defaultCompartment);
 I=ismember(defaultCompartment,GSS.compartments);
 if I==false
     EM='defaultCompartment not found in GSS';
@@ -105,6 +103,12 @@ if numel(model.comps)>1
     EM='The model has several compartments. All compartments will be merged';
     dispEM(EM,false);
     model=mergeCompartments(model,true,true);
+end
+
+noGenes = ismember(model.genes,GSS.genes);
+if ~all(noGenes)
+    EM=['For ' num2str(numel(find(~noGenes))) ' of ' num2str(numel(model.genes)) ' model genes no data was found in GSS'];
+    dispEM(EM,false);
 end
 
 %***Begin formating the data structures
@@ -611,7 +615,7 @@ else
         outModel.compNames(2)=GSS.compartments(1);
     end
 end
-outModel.compNames=[outModel.compNames;GSS.compartments(2:end)];
+outModel.compNames=[outModel.compNames;GSS.compartments(2:end)'];
 
 %Ugly little loop
 for i=1:numel(GSS.compartments)-1
@@ -654,6 +658,9 @@ for i=1:nComps-1
     if isfield(outModel,'rxnConfidenceScores')
         outModel.rxnConfidenceScores=[outModel.rxnConfidenceScores;outModel.rxnConfidenceScores(nER+1:nER+nRxns)];
     end
+    if isfield(outModel,'rxnDeltaG')
+        outModel.rxnDeltaG=[outModel.rxnDeltaG;outModel.rxnDeltaG(nER+1:nER+nRxns)];
+    end
     outModel.mets=[outModel.mets;strcat(outModel.mets(nEM+1:nEM+nMets),'_',GSS.compartments{i+1})];
     outModel.metNames=[outModel.metNames;outModel.metNames(nEM+1:nEM+nMets)];
     outModel.b=[outModel.b;outModel.b(nEM+1:nEM+nMets,:)];
@@ -661,6 +668,9 @@ for i=1:nComps-1
     outModel.metComps=[outModel.metComps;I];
     if isfield(outModel,'inchis')
         outModel.inchis=[outModel.inchis;outModel.inchis(nEM+1:nEM+nMets)];
+    end
+    if isfield(outModel,'metSmiles')
+        outModel.metSmiles=[outModel.metSmiles;outModel.metSmiles(nEM+1:nEM+nMets)];
     end
     if isfield(outModel,'unconstrained')
         outModel.unconstrained=[outModel.unconstrained;outModel.unconstrained(nEM+1:nEM+nMets)];
@@ -676,6 +686,9 @@ for i=1:nComps-1
     end
     if isfield(outModel,'metCharges')
         outModel.metCharges=[outModel.metCharges;outModel.metCharges(nEM+1:nEM+nMets)];
+    end
+    if isfield(outModel,'metDeltaG')
+        outModel.metDeltaG=[outModel.metDeltaG;outModel.metDeltaG(nEM+1:nEM+nMets)];
     end
 end
 
@@ -723,6 +736,9 @@ for i=1:numel(I)
     end
     if isfield(outModel,'rxnConfidenceScores')
         outModel.rxnConfidenceScores=[outModel.rxnConfidenceScores;NaN];
+    end
+    if isfield(outModel,'rxnDeltaG')
+        outModel.rxnDeltaG=[outModel.rxnDeltaG;NaN];
     end
 end
 

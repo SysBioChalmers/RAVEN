@@ -55,9 +55,7 @@
                    3) changing in flux but not in expression or changing
                       in opposed directions in flux and expression.
 
-   Usage: scores=analyzeSampling(Tex, df, solutionsA, solutionsB, printResults)
-
-   Rasmus Agren, 2014-01-08</pre></div>
+   Usage: scores=analyzeSampling(Tex, df, solutionsA, solutionsB, printResults)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -69,7 +67,9 @@ This function is called by:
 </ul>
 <!-- crossreference -->
 
-
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function p = tcdf(t,v,uflag)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function scores=analyzeSampling(Tex, df, solutionsA, solutionsB, printResults)</a>
@@ -102,92 +102,149 @@ This function is called by:
 0028 <span class="comment">%                      in opposed directions in flux and expression.</span>
 0029 <span class="comment">%</span>
 0030 <span class="comment">%   Usage: scores=analyzeSampling(Tex, df, solutionsA, solutionsB, printResults)</span>
-0031 <span class="comment">%</span>
-0032 <span class="comment">%   Rasmus Agren, 2014-01-08</span>
-0033 <span class="comment">%</span>
-0034 
-0035 <span class="keyword">if</span> nargin&lt;5
-0036     printResults=false;
-0037 <span class="keyword">end</span>
-0038 
-0039 nRxns=numel(Tex);
-0040 pM=zeros(nRxns,1);
-0041 pH=zeros(nRxns,1);
-0042 pR=zeros(nRxns,1);
-0043 
-0044 <span class="comment">%Check that the number of reactions is the same in both expression and flux</span>
-0045 <span class="keyword">if</span> nRxns~=size(solutionsA,1)
-0046     EM=<span class="string">'The number of reactions must be the same in Tex as in solutionsA'</span>;
-0047     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0048 <span class="keyword">end</span>
-0049 
-0050 <span class="comment">%Get the Z-score and mean for the solutions</span>
-0051 mA=mean(solutionsA,2);
-0052 mB=mean(solutionsB,2);
-0053 Zf=<a href="getFluxZ.html" class="code" title="function Z=getFluxZ(solutionsA, solutionsB)">getFluxZ</a>(solutionsA, solutionsB);
-0054 
-0055 <span class="comment">%Clear up the tex if there are elements that are NaN or +/- Inf.</span>
-0056 I=isnan(Tex) | isinf(Tex);
-0057 <span class="keyword">if</span> any(I)
-0058     EM=<span class="string">'There are t-scores that are NaN or +/- Inf. These values are changed to 0.0'</span>;
-0059     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0060 <span class="keyword">end</span>
-0061 Tex(I)=0;
-0062 
-0063 <span class="keyword">for</span> i=1:nRxns
-0064     <span class="comment">%Check how the flux has changed. The means are needed because to</span>
-0065     <span class="comment">%differentiate between a positive flux changing to a smaller flux and a</span>
-0066     <span class="comment">%negative flux changing to a more negative flux (which is a larger</span>
-0067     <span class="comment">%flux)</span>
-0068     I=mB(i)/mA(i);
-0069     <span class="keyword">if</span> I&lt;0
-0070         pM(i)=erf(abs(Zf(i)));
-0071         pH(i)=(1-pM(i))*(2*tcdf(abs(Tex(i)),df)-1);
-0072         pR(i)=0;
-0073     <span class="keyword">else</span>
-0074         <span class="keyword">if</span> mB(i)&lt;0
-0075             Zf(i)=Zf(i)*-1;
-0076         <span class="keyword">end</span>
-0077     <span class="keyword">end</span>
-0078     
-0079     I=Zf(i)/Tex(i);
-0080     <span class="keyword">if</span> I&lt;0
-0081         pM(i)=erf(abs(Zf(i)));
-0082         pH(i)=(1-pM(i))*(2*tcdf(abs(Tex(i)),df)-1);
-0083         pR(i)=0;
-0084     <span class="keyword">else</span>
-0085         pR(i)=erf(abs(Zf(i)))*(2*tcdf(abs(Tex(i)),df)-1);
-0086         pH(i)=(2*tcdf(abs(Tex(i)),df)-1)*(1-erf(abs(Zf(i))));
-0087         pM(i)=erf(abs(Zf(i)))*(1-(2*tcdf(abs(Tex(i)),df)-1));
-0088     <span class="keyword">end</span>
-0089 <span class="keyword">end</span>
-0090 
-0091 scores=[pR pH pM];
-0092 
-0093 <span class="keyword">if</span> printResults==true
-0094     fprintf(<span class="string">'TOP SCORING REACTIONS\n\n'</span>);
-0095     <span class="comment">%The top 10 hits in the first category</span>
-0096     [I, J]=sort(pR,<span class="string">'descend'</span>);
-0097     fprintf(<span class="string">'Reactions which change both in flux and expression in the same direction\nReaction\tProbability\n'</span>);
-0098     <span class="keyword">for</span> i=1:10
-0099         fprintf([num2str(J(i)) <span class="string">'\t'</span> num2str(I(i)) <span class="string">'\n'</span>]);
-0100     <span class="keyword">end</span>
-0101     
-0102     <span class="comment">%The top 10 hits in the first category</span>
-0103     [I, J]=sort(pH,<span class="string">'descend'</span>);
-0104     fprintf(<span class="string">'\nReactions which change in expression but not in flux\nReaction\tProbability\n'</span>);
-0105     <span class="keyword">for</span> i=1:10
-0106         fprintf([num2str(J(i)) <span class="string">'\t'</span> num2str(I(i)) <span class="string">'\n'</span>]);
-0107     <span class="keyword">end</span>
-0108     
-0109     <span class="comment">%The top 10 hits in the first category</span>
-0110     [I, J]=sort(pM,<span class="string">'descend'</span>);
-0111     fprintf(<span class="string">'\nReactions which change in flux but not in expression, or in opposed directions in flux and expression\nReaction\tProbability\n'</span>);
-0112     <span class="keyword">for</span> i=1:10
-0113         fprintf([num2str(J(i)) <span class="string">'\t'</span> num2str(I(i)) <span class="string">'\n'</span>]);
-0114     <span class="keyword">end</span>
-0115 <span class="keyword">end</span>
-0116 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0031 
+0032 <span class="keyword">if</span> nargin&lt;5
+0033     printResults=false;
+0034 <span class="keyword">end</span>
+0035 
+0036 nRxns=numel(Tex);
+0037 pM=zeros(nRxns,1);
+0038 pH=zeros(nRxns,1);
+0039 pR=zeros(nRxns,1);
+0040 
+0041 <span class="comment">%Check that the number of reactions is the same in both expression and flux</span>
+0042 <span class="keyword">if</span> nRxns~=size(solutionsA,1)
+0043     EM=<span class="string">'The number of reactions must be the same in Tex as in solutionsA'</span>;
+0044     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0045 <span class="keyword">end</span>
+0046 
+0047 <span class="comment">%Get the Z-score and mean for the solutions</span>
+0048 mA=mean(solutionsA,2);
+0049 mB=mean(solutionsB,2);
+0050 Zf=<a href="getFluxZ.html" class="code" title="function Z=getFluxZ(solutionsA, solutionsB)">getFluxZ</a>(solutionsA, solutionsB);
+0051 
+0052 <span class="comment">%Clear up the tex if there are elements that are NaN or +/- Inf.</span>
+0053 I=isnan(Tex) | isinf(Tex);
+0054 <span class="keyword">if</span> any(I)
+0055     EM=<span class="string">'There are t-scores that are NaN or +/- Inf. These values are changed to 0.0'</span>;
+0056     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0057 <span class="keyword">end</span>
+0058 Tex(I)=0;
+0059 
+0060 <span class="keyword">for</span> i=1:nRxns
+0061     <span class="comment">%Check how the flux has changed. The means are needed because to</span>
+0062     <span class="comment">%differentiate between a positive flux changing to a smaller flux and a</span>
+0063     <span class="comment">%negative flux changing to a more negative flux (which is a larger</span>
+0064     <span class="comment">%flux)</span>
+0065     I=mB(i)/mA(i);
+0066     <span class="keyword">if</span> I&lt;0
+0067         pM(i)=erf(abs(Zf(i)));
+0068         pH(i)=(1-pM(i))*(2*<a href="#_sub1" class="code" title="subfunction p = tcdf(t,v,uflag)">tcdf</a>(abs(Tex(i)),df)-1);
+0069         pR(i)=0;
+0070     <span class="keyword">else</span>
+0071         <span class="keyword">if</span> mB(i)&lt;0
+0072             Zf(i)=Zf(i)*-1;
+0073         <span class="keyword">end</span>
+0074     <span class="keyword">end</span>
+0075 
+0076     I=Zf(i)/Tex(i);
+0077     <span class="keyword">if</span> I&lt;0
+0078         pM(i)=erf(abs(Zf(i)));
+0079         pH(i)=(1-pM(i))*(2*<a href="#_sub1" class="code" title="subfunction p = tcdf(t,v,uflag)">tcdf</a>(abs(Tex(i)),df)-1);
+0080         pR(i)=0;
+0081     <span class="keyword">else</span>
+0082         pR(i)=erf(abs(Zf(i)))*(2*<a href="#_sub1" class="code" title="subfunction p = tcdf(t,v,uflag)">tcdf</a>(abs(Tex(i)),df)-1);
+0083         pH(i)=(2*<a href="#_sub1" class="code" title="subfunction p = tcdf(t,v,uflag)">tcdf</a>(abs(Tex(i)),df)-1)*(1-erf(abs(Zf(i))));
+0084         pM(i)=erf(abs(Zf(i)))*(1-(2*<a href="#_sub1" class="code" title="subfunction p = tcdf(t,v,uflag)">tcdf</a>(abs(Tex(i)),df)-1));
+0085     <span class="keyword">end</span>
+0086 <span class="keyword">end</span>
+0087 
+0088 scores=[pR pH pM];
+0089 
+0090 <span class="keyword">if</span> printResults==true
+0091     fprintf(<span class="string">'TOP SCORING REACTIONS\n\n'</span>);
+0092     <span class="comment">%The top 10 hits in the first category</span>
+0093     [I, J]=sort(pR,<span class="string">'descend'</span>);
+0094     fprintf(<span class="string">'Reactions which change both in flux and expression in the same direction\nReaction\tProbability\n'</span>);
+0095     <span class="keyword">for</span> i=1:10
+0096         fprintf([num2str(J(i)) <span class="string">'\t'</span> num2str(I(i)) <span class="string">'\n'</span>]);
+0097     <span class="keyword">end</span>
+0098 
+0099     <span class="comment">%The top 10 hits in the first category</span>
+0100     [I, J]=sort(pH,<span class="string">'descend'</span>);
+0101     fprintf(<span class="string">'\nReactions which change in expression but not in flux\nReaction\tProbability\n'</span>);
+0102     <span class="keyword">for</span> i=1:10
+0103         fprintf([num2str(J(i)) <span class="string">'\t'</span> num2str(I(i)) <span class="string">'\n'</span>]);
+0104     <span class="keyword">end</span>
+0105 
+0106     <span class="comment">%The top 10 hits in the first category</span>
+0107     [I, J]=sort(pM,<span class="string">'descend'</span>);
+0108     fprintf(<span class="string">'\nReactions which change in flux but not in expression, or in opposed directions in flux and expression\nReaction\tProbability\n'</span>);
+0109     <span class="keyword">for</span> i=1:10
+0110         fprintf([num2str(J(i)) <span class="string">'\t'</span> num2str(I(i)) <span class="string">'\n'</span>]);
+0111     <span class="keyword">end</span>
+0112 <span class="keyword">end</span>
+0113 <span class="keyword">end</span>
+0114 
+0115 <a name="_sub1" href="#_subfunctions" class="code">function p = tcdf(t,v,uflag)</a>
+0116 <span class="comment">% TCDF Student's T cumulative distribution function (cdf).</span>
+0117 <span class="comment">%</span>
+0118 <span class="comment">% P = TCDF(X,V) computes the cdf for Student's T distribution</span>
+0119 <span class="comment">% with V degrees of freedom, at the values in X. V must be a</span>
+0120 <span class="comment">% scalar or have the same size as T.</span>
+0121 <span class="comment">%</span>
+0122 <span class="comment">% P = TCDF(X,V,'upper') computes it for the upper tail instead</span>
+0123 <span class="comment">% of the lower tail.</span>
+0124 <span class="comment">%</span>
+0125 <span class="comment">% This is an alternative to the TCDF function that is implemented</span>
+0126 <span class="comment">% in the Matlab statistics toolbox. This version originates from</span>
+0127 <span class="comment">% http://www.statsci.org/matlab/statbox.html and originally was called TP.</span>
+0128 <span class="comment">% It has been renamed to TCDF for drop-in compatibility with the Matlab</span>
+0129 <span class="comment">% version.</span>
+0130 <span class="comment">%</span>
+0131 <span class="comment">% Gordon Smyth, University of Queensland, gks@maths.uq.edu.au</span>
+0132 <span class="comment">% 3 Apr 97</span>
+0133 <span class="comment">%</span>
+0134 <span class="comment">% NaN compatible - Markus Bauer and Eric Maris, FCDC</span>
+0135 <span class="comment">% 27 Jan 2005</span>
+0136 <span class="comment">%</span>
+0137 <span class="comment">% fixed bug concerning NaN compatibility</span>
+0138 <span class="comment">% 21 Aug 2006, Markus Siegel</span>
+0139 <span class="comment">%</span>
+0140 <span class="comment">% added support for upper tail, see http://bugzilla.fieldtriptoolbox.org/show_bug.cgi?id=3045</span>
+0141 <span class="comment">% 13 Jan 2016, Robert Oostenveld</span>
+0142 <span class="comment">%</span>
+0143 <span class="comment">% taken from https://github.com/fieldtrip/fieldtrip/blob/master/external/stats/tcdf.m</span>
+0144 <span class="comment">% 05 May 2022</span>
+0145 
+0146 <span class="keyword">if</span> v &lt;= 0, error(<span class="string">'Degrees of freedom must be positive.'</span>); <span class="keyword">end</span>
+0147 
+0148 <span class="comment">% resize v if necessary</span>
+0149 <span class="keyword">if</span> all(size(v)==1)
+0150     v = ones(size(t))*v;
+0151 <span class="keyword">end</span>
+0152 
+0153 <span class="comment">%check for NaN's - don't do calculations on them, give those out as NaNs</span>
+0154 <span class="keyword">if</span> any( not(isfinite(t(:))) | not(isfinite(v(:))) )
+0155     sel = find(isfinite(t) &amp; isfinite(v));
+0156     x=nan(size(t));
+0157     p=nan(size(t));
+0158     x(sel) = t(sel).^2 ./ (v(sel) + t(sel).^2) ;
+0159     p(sel) = 0.5 .* ( 1 + sign(t(sel)) .* betainc( x(sel), 0.5, 0.5*v(sel) ) );
+0160 <span class="keyword">else</span>
+0161     x = t.^2 ./ (v + t.^2) ;
+0162     p = 0.5 .* ( 1 + sign(t) .* betainc( x, 0.5, 0.5*v ) );
+0163 <span class="keyword">end</span>
+0164 
+0165 <span class="keyword">if</span> nargin==3
+0166     <span class="keyword">if</span> strcmp(uflag, <span class="string">'upper'</span>)
+0167         <span class="comment">% compute it for the upper tail instead of the lower tail</span>
+0168         p = 1-p;
+0169     <span class="keyword">else</span>
+0170         error(<span class="string">'incorrect specification of uflag'</span>);
+0171     <span class="keyword">end</span>
+0172 <span class="keyword">end</span>
+0173 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -55,24 +55,27 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 %   Usage: [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,...
 %               hpaData,arrayData,tissue,celltype,noGeneScore,multipleGeneScoring,...
 %               multipleCellScoring,hpaLevelScores)
-%
-%   Jonathan Robinson, 2018-03-01
-%
 
 if nargin<3
     arrayData=[];
 end
 if nargin<5
     celltype=[];
+else
+    celltype=char(celltype);
 end
 if nargin<6
     noGeneScore=-2;
 end
 if nargin<7
     multipleGeneScoring='best';
+else
+    multipleGeneScoring=char(multipleGeneScoring);
 end
 if nargin<8
     multipleCellScoring='best';
+else
+    multipleCellScoring=char(multipleCellScoring);    
 end
 if nargin<9
     %The first four are for APE, the other ones for staining

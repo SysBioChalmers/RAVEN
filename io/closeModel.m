@@ -8,9 +8,6 @@ function closedModel=closeModel(model)
 %   closedModel           an updated closedModel structure
 %
 %   Usage: closedModel=closeModel(model)
-%
-%   Simonas Marcisauskas, 2017-09-18
-%
 
 closedModel=model;
 
@@ -31,14 +28,23 @@ for i=1:numel(closedModel.rxns)
         if isfield(closedModel,'inchis')
             closedModel.inchis{numel(closedModel.inchis)+1}=closedModel.inchis{find(closedModel.S(:,i))};
         end;
+        if isfield(closedModel,'metSmiles')
+            closedModel.metSmiles{numel(closedModel.metSmiles)+1}=closedModel.metSmiles{find(closedModel.S(:,i))};
+        end;
         if isfield(closedModel,'metFormulas')
             closedModel.metFormulas{numel(closedModel.metFormulas)+1}=closedModel.metFormulas{find(closedModel.S(:,i))};
         end;
         if isfield(closedModel,'metMiriams')
             closedModel.metMiriams{numel(closedModel.metMiriams)+1}=closedModel.metMiriams{find(closedModel.S(:,i))};
         end;
+        if isfield(closedModel,'metFrom')
+            closedModel.metFrom{numel(closedModel.metFrom)+1}='';
+        end;
         if isfield(closedModel,'metCharges')
             closedModel.metCharges(numel(closedModel.metCharges)+1)=closedModel.metCharges(find(closedModel.S(:,i)));
+        end;
+        if isfield(closedModel,'metDeltaG')
+            closedModel.metDeltaG(numel(closedModel.metDeltaG)+1)=closedModel.metDeltaG(find(closedModel.S(:,i)));
         end;
         closedModel.unconstrained(numel(closedModel.unconstrained)+1)=1;
         closedModel.b(numel(closedModel.b)+1)=0;

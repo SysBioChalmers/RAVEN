@@ -1,0 +1,278 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of mergeLinear</title>
+  <meta name="keywords" content="mergeLinear">
+  <meta name="description" content="mergeLinear">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">INIT</a> &gt; mergeLinear.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for INIT&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>mergeLinear
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>mergeLinear</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [reducedModel,origRxnIds,groupIds,reversedRxns]=mergeLinear(model, noMergeRxns) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> mergeLinear
+   Simplifies a model by merging rxns with linear dependencies. There are two
+   differences from the function in simplifyModel:
+   1) Here we return which reactions were merged
+   2) Here we allow reversible reactions to be merged as well, which will 
+      probably reduce the size of the model more.
+
+   model                 a model structure
+   noMergeRxns           Cell array with reaction IDs that are not allowed to be
+                         merged
+
+   reducedModel          an updated model structure
+   origRxnIds            Cell array: original rxn ids, used together with the groupIds variable
+   groupIds              Vector of ids: merged rxns have the same id, same length as origRxnIds
+                         0 means a reaction was not merged.
+   reversedRxns          Vector of booleans, saying for each rxn if it is reversed in the combined rxns.
+
+   Usage: [reducedModel,origRxnIds,groupIds]=mergeLinear(model,noMergeRxns)</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="prepINITModel.html" class="code" title="function prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore, extComp, skipScaling)">prepINITModel</a>	prepINITModel</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function [model1,reversedRxns1] = flipRxn(model1, rxnInd, groupIds1, reversedRxns1)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [reducedModel,origRxnIds,groupIds,reversedRxns]=mergeLinear(model, noMergeRxns)</a>
+0002 <span class="comment">% mergeLinear</span>
+0003 <span class="comment">%   Simplifies a model by merging rxns with linear dependencies. There are two</span>
+0004 <span class="comment">%   differences from the function in simplifyModel:</span>
+0005 <span class="comment">%   1) Here we return which reactions were merged</span>
+0006 <span class="comment">%   2) Here we allow reversible reactions to be merged as well, which will</span>
+0007 <span class="comment">%      probably reduce the size of the model more.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">%   model                 a model structure</span>
+0010 <span class="comment">%   noMergeRxns           Cell array with reaction IDs that are not allowed to be</span>
+0011 <span class="comment">%                         merged</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">%   reducedModel          an updated model structure</span>
+0014 <span class="comment">%   origRxnIds            Cell array: original rxn ids, used together with the groupIds variable</span>
+0015 <span class="comment">%   groupIds              Vector of ids: merged rxns have the same id, same length as origRxnIds</span>
+0016 <span class="comment">%                         0 means a reaction was not merged.</span>
+0017 <span class="comment">%   reversedRxns          Vector of booleans, saying for each rxn if it is reversed in the combined rxns.</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">%   Usage: [reducedModel,origRxnIds,groupIds]=mergeLinear(model,noMergeRxns)</span>
+0020 
+0021 
+0022 reducedModel=model;
+0023 
+0024 
+0025 reducedModel.genes={};
+0026 reducedModel.rxnGeneMat=sparse(numel(reducedModel.rxns),0);
+0027 reducedModel.grRules(:)={<span class="string">''</span>};
+0028 
+0029 <span class="keyword">if</span> isfield(reducedModel,<span class="string">'geneShortNames'</span>)
+0030     reducedModel.geneShortNames={};
+0031 <span class="keyword">end</span>
+0032 <span class="keyword">if</span> isfield(reducedModel,<span class="string">'geneMiriams'</span>)
+0033     reducedModel.geneMiriams={};
+0034 <span class="keyword">end</span>
+0035 <span class="keyword">if</span> isfield(reducedModel,<span class="string">'geneComps'</span>)
+0036     reducedModel.geneComps=[];
+0037 <span class="keyword">end</span>
+0038 
+0039 nextGroupId = 1;
+0040 origRxnIds = reducedModel.rxns;
+0041 groupIds = zeros(numel(reducedModel.rxns),1);
+0042 reversedRxns = false(numel(reducedModel.rxns),1);
+0043 
+0044 <span class="comment">%Loop through and iteratively group linear reactions</span>
+0045 <span class="keyword">while</span> 1
+0046     <span class="comment">%Get the banned reaction indexes. Note that the indexes will change</span>
+0047     <span class="comment">%in each iteration, but the names will not as they won't be merged</span>
+0048     <span class="comment">%with any other reaction</span>
+0049     bannedIndexes=getIndexes(reducedModel,noMergeRxns,<span class="string">'rxns'</span>);
+0050 
+0051     <span class="comment">%Select all metabolites that are only present as reactants/products</span>
+0052     <span class="comment">%in one reaction</span>
+0053     twoNonZero = find(sum(reducedModel.S ~= 0, 2) == 2);
+0054 
+0055     mergedSome=false;
+0056 
+0057     <span class="comment">%Loop through each of them and see if the reactions should be</span>
+0058     <span class="comment">%merged</span>
+0059     <span class="keyword">for</span> i=1:numel(twoNonZero)
+0060         involvedRxns=find(reducedModel.S(twoNonZero(i),:));
+0061         <span class="comment">%Check that we can have one positive and one negative</span>
+0062         pos = sum(reducedModel.S(twoNonZero(i),involvedRxns).' &gt; 0 | reducedModel.rev(involvedRxns));
+0063         neg = sum(reducedModel.S(twoNonZero(i),involvedRxns).' &lt; 0 | reducedModel.rev(involvedRxns));
+0064         
+0065                 
+0066         <span class="comment">%Check so that one or both of the reactions haven't been merged</span>
+0067         <span class="comment">%already</span>
+0068         <span class="keyword">if</span> numel(involvedRxns)==2 &amp;&amp; isempty(intersect(bannedIndexes,involvedRxns)) &amp;&amp; pos &gt;= 1 &amp;&amp; neg &gt;= 1
+0069             <span class="comment">%first, take care of a special case: If the first reaction is producing the metabolite and if it is reversible,</span>
+0070             <span class="comment">%and the second is also producing it and is not reversible, change the order - the code below will not work otherwise</span>
+0071             <span class="keyword">if</span> reducedModel.rev(involvedRxns(1)) &amp;&amp; (~reducedModel.rev(involvedRxns(2))) &amp;&amp; <span class="keyword">...</span>
+0072                (reducedModel.S(twoNonZero(i),involvedRxns(1)) &gt; 0) &amp;&amp; (reducedModel.S(twoNonZero(i),involvedRxns(2)) &gt; 0)
+0073                 involvedRxns = flip(involvedRxns);
+0074             <span class="keyword">end</span>
+0075             
+0076             <span class="comment">%first make sure the first reaction is producing the metabolite</span>
+0077             <span class="keyword">if</span> reducedModel.S(twoNonZero(i),involvedRxns(1)) &lt; 0
+0078                 <span class="comment">%it is not producing the metabolite - fix that</span>
+0079                 <span class="comment">%first choice: use the second reaction as producer if it is producing</span>
+0080                 <span class="keyword">if</span> reducedModel.S(twoNonZero(i),involvedRxns(2)) &gt; 0
+0081                     involvedRxns = flip(involvedRxns);<span class="comment">%make the second the first</span>
+0082                 <span class="keyword">else</span>
+0083                     <span class="comment">%now we know that the second reaction is not producing, so we can safely try to make the first a producer</span>
+0084                     <span class="keyword">if</span> reducedModel.rev(involvedRxns(1)) == 1
+0085                         [reducedModel,reversedRxns] = <a href="#_sub1" class="code" title="subfunction [model1,reversedRxns1] = flipRxn(model1, rxnInd, groupIds1, reversedRxns1)">flipRxn</a>(reducedModel, involvedRxns(1), groupIds, reversedRxns);
+0086                     <span class="keyword">else</span> <span class="comment">%ok, finally try to flip the second reaction</span>
+0087                         <span class="keyword">if</span> reducedModel.rev(involvedRxns(2)) == 1
+0088                             [reducedModel,reversedRxns] = <a href="#_sub1" class="code" title="subfunction [model1,reversedRxns1] = flipRxn(model1, rxnInd, groupIds1, reversedRxns1)">flipRxn</a>(reducedModel, involvedRxns(2), groupIds, reversedRxns);
+0089                             involvedRxns = flip(involvedRxns);<span class="comment">%make the second the first</span>
+0090                         <span class="keyword">else</span>
+0091                             error(<span class="string">'We should never end up here!'</span>);
+0092                         <span class="keyword">end</span>
+0093                     <span class="keyword">end</span>
+0094                 <span class="keyword">end</span>
+0095             <span class="keyword">end</span>
+0096             <span class="comment">%Now, make sure the second rxn is a consumer</span>
+0097             <span class="keyword">if</span> reducedModel.S(twoNonZero(i),involvedRxns(2)) &gt; 0
+0098                 <span class="keyword">if</span> reducedModel.rev(involvedRxns(2)) == 1
+0099                     [reducedModel,reversedRxns] = <a href="#_sub1" class="code" title="subfunction [model1,reversedRxns1] = flipRxn(model1, rxnInd, groupIds1, reversedRxns1)">flipRxn</a>(reducedModel, involvedRxns(2), groupIds, reversedRxns);
+0100                 <span class="keyword">else</span>
+0101                     error(<span class="string">'We should never end up here!'</span>);
+0102                 <span class="keyword">end</span>
+0103             <span class="keyword">end</span>
+0104 
+0105             <span class="comment">%Calculate how many times the second reaction has to be</span>
+0106             <span class="comment">%multiplied before being merged with the first</span>
+0107             stoichRatio=abs(reducedModel.S(twoNonZero(i),involvedRxns(1))/reducedModel.S(twoNonZero(i),involvedRxns(2)));
+0108 
+0109             <span class="comment">%Add the second to the first</span>
+0110             reducedModel.S(:,involvedRxns(1))=reducedModel.S(:,involvedRxns(1))+reducedModel.S(:,involvedRxns(2))*stoichRatio;
+0111 
+0112             <span class="comment">%Clear the second reaction</span>
+0113             reducedModel.S(:,involvedRxns(2))=0;
+0114 
+0115             <span class="comment">%This is to prevent numerical issues. It should be 0</span>
+0116             <span class="comment">%already</span>
+0117             reducedModel.S(twoNonZero(i),involvedRxns(1))=0;
+0118 
+0119             <span class="comment">%At this point the second reaction is certain to be deleted</span>
+0120             <span class="comment">%in a later step and can therefore be ignored</span>
+0121 
+0122             <span class="comment">%Recalculate the bounds for the new reaction. This can be</span>
+0123             <span class="comment">%problematic since the scale of the bounds may change</span>
+0124             <span class="comment">%dramatically. Let the most constraining reaction determine</span>
+0125             <span class="comment">%the new bound</span>
+0126             lb1=reducedModel.lb(involvedRxns(1));
+0127             lb2=reducedModel.lb(involvedRxns(2));
+0128             ub1=reducedModel.ub(involvedRxns(1));
+0129             ub2=reducedModel.ub(involvedRxns(2));
+0130 
+0131             <span class="keyword">if</span> lb2~=-inf
+0132                 reducedModel.lb(involvedRxns(1))=max(lb1,lb2/stoichRatio);
+0133             <span class="keyword">end</span>
+0134             <span class="keyword">if</span> ub2~=inf
+0135                 reducedModel.ub(involvedRxns(1))=min(ub1,ub2/stoichRatio);
+0136             <span class="keyword">end</span>
+0137             
+0138             <span class="comment">%take care of the .rev flag - it could be that the combined rxn changes from rev to irrev</span>
+0139             reducedModel.rev(involvedRxns(1)) = reducedModel.rev(involvedRxns(1))*reducedModel.rev(involvedRxns(2));<span class="comment">%this is a way to do an &quot;and&quot; operation with 0 and 1 numbers</span>
+0140 
+0141             <span class="comment">%Then recalculate the objective coefficient. The resulting</span>
+0142             <span class="comment">%coefficient is the weighted sum of the previous</span>
+0143             reducedModel.c(involvedRxns(1))=reducedModel.c(involvedRxns(1))+reducedModel.c(involvedRxns(2))*stoichRatio;
+0144 
+0145             <span class="comment">%store which reactions that have been merged</span>
+0146             rxnInd1 = find(strcmp(origRxnIds, reducedModel.rxns(involvedRxns(1))));
+0147             rxnInd2 = find(strcmp(origRxnIds, reducedModel.rxns(involvedRxns(2))));
+0148             grpId = max(groupIds(rxnInd1),groupIds(rxnInd2));
+0149             <span class="keyword">if</span> grpId == 0
+0150                grpId = nextGroupId;
+0151                nextGroupId = nextGroupId + 1;
+0152             <span class="keyword">end</span>
+0153 
+0154             <span class="keyword">if</span> groupIds(rxnInd1) ~= grpId
+0155                <span class="keyword">if</span> groupIds(rxnInd1) == 0
+0156                    <span class="comment">%not merged before, just set the group id</span>
+0157                    groupIds(rxnInd1) = grpId;
+0158                <span class="keyword">else</span>
+0159                    <span class="comment">%merged before - all rxns with the same group id should be changed</span>
+0160                    groupIds(groupIds == groupIds(rxnInd1)) = grpId;
+0161                <span class="keyword">end</span>
+0162             <span class="keyword">end</span>
+0163             <span class="keyword">if</span> groupIds(rxnInd2) ~= grpId
+0164                <span class="keyword">if</span> groupIds(rxnInd2) == 0
+0165                    <span class="comment">%not merged before, just set the group id</span>
+0166                    groupIds(rxnInd2) = grpId;
+0167                <span class="keyword">else</span>
+0168                    <span class="comment">%merged before - all rxns with the same group id should be changed</span>
+0169                    groupIds(groupIds == groupIds(rxnInd2)) = grpId;
+0170                <span class="keyword">end</span>
+0171             <span class="keyword">end</span>
+0172 
+0173             <span class="comment">%Iterate again</span>
+0174             mergedSome=true;
+0175         <span class="keyword">end</span>
+0176     <span class="keyword">end</span>
+0177 
+0178     <span class="comment">%All possible reactions merged</span>
+0179     <span class="keyword">if</span> mergedSome==false
+0180         <span class="keyword">break</span>;
+0181     <span class="keyword">end</span>
+0182 
+0183     <span class="comment">%Now delete all reactions that involve no metabolites</span>
+0184     I=find(sum(reducedModel.S~=0,1)==0);
+0185 
+0186     <span class="comment">%Remove reactions</span>
+0187     reducedModel=removeReactions(reducedModel,I);
+0188 
+0189     <span class="comment">%Remove metabolites</span>
+0190     notInUse=sum(reducedModel.S~=0,2)==0;
+0191     reducedModel=removeMets(reducedModel,notInUse);
+0192 <span class="keyword">end</span>
+0193     
+0194 <a name="_sub1" href="#_subfunctions" class="code">function [model1,reversedRxns1] = flipRxn(model1, rxnInd, groupIds1, reversedRxns1)</a>
+0195     model1.S(:,rxnInd) = model1.S(:,rxnInd)*-1;
+0196     <span class="comment">%swap the bounds</span>
+0197     ub = model1.ub(rxnInd);
+0198     model1.ub(rxnInd) = -model1.lb(rxnInd);
+0199     model1.lb(rxnInd) = -ub;
+0200     <span class="comment">%flip the objective</span>
+0201     model1.c(rxnInd) = -model1.c(rxnInd);
+0202     
+0203     <span class="comment">%now take care of the reversedRxns - if this is a group, reverse all of the</span>
+0204     <span class="comment">%reactions in the group in the reversedRxns index - they will all be reversed at the</span>
+0205     <span class="comment">%same time since they are the same rxn.</span>
+0206     rxnIndices = rxnInd;
+0207     <span class="keyword">if</span> groupIds1(rxnInd) &gt; 0
+0208         rxnIndices = find(groupIds1 == groupIds1(rxnInd));
+0209     <span class="keyword">end</span>
+0210     reversedRxns1(rxnIndices) = ~reversedRxns1(rxnIndices);
+0211 <span class="keyword">end</span>
+0212 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

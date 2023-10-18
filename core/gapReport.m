@@ -40,9 +40,6 @@ function [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnec
 %   Usage: [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnect,...
 %    neededForProductionMat, connectedFromTemplates, addedFromTemplates]=...
 %    gapReport(model, templateModels)
-%
-%   Rasmus Agren, 2013-11-22
-%
 
 if nargin<2
     templateModels=[];
@@ -50,7 +47,7 @@ if nargin<2
     addedFromTemplates=[];
 end
 
-fprintf(['Gap analysis for ' model.id ' - ' model.description '\n\n']);
+fprintf(['Gap analysis for ' model.id ' - ' model.name '\n\n']);
 if isfield(model,'unconstrained')
     calculateINOUT=true;
     closedModel=model;

@@ -15,21 +15,13 @@ function model = changeGrRules(model,rxns,grRules,replace)
 %   model       an updated model structure
 %
 %   Usage: changeGrRules(model,rxns,grRules,replace)
-%
-%   Eduard Kerkhoven, 2019-03-26
-%
 
 if nargin==3
     replace=true;
 end
 
-if isstr(rxns)
-    rxns={rxns};
-end
-
-if isstr(grRules)
-    grRules={grRules};
-end
+rxns=convertCharArray(rxns);
+grRules=convertCharArray(grRules);
 
 if ~(numel(grRules)==numel(rxns))
     error('Number of rxns and grRules should be identical')
@@ -40,7 +32,9 @@ for i=1:length(rxns)
     geneList=transpose(cell(unique(regexp(grRules{i},'[)(]*|( and )*|( or )*','split')))); % Extract individual, unique genes from the geneAssoc provided
     geneList=geneList(~cellfun(@isempty, geneList));
     genesToAdd.genes=setdiff(geneList,model.genes); % Only keep the genes that are not yet part of the model.genes.
-    model=addGenesRaven(model,genesToAdd); % Add genes
+    if ~isempty(genesToAdd.genes)
+        model=addGenesRaven(model,genesToAdd); % Add genes
+    end
     
     % Find reaction and gene indices
     idx=getIndexes(model,rxns,'rxns');

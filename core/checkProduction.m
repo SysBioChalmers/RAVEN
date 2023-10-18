@@ -41,9 +41,6 @@ function [notProduced, notProducedNames, neededForProductionMat,minToConnect,mod
 %   Usage: [notProduced, notProducedNames,neededForProductionMat,minToConnect,model]=...
 %           checkProduction(model,checkNeededForProduction,...
 %           excretionFromCompartments,printDetails)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
 if nargin<2
     checkNeededForProduction=false;
@@ -51,6 +48,8 @@ end
 
 if nargin<3
     excretionFromCompartments=model.comps;
+else
+    excretionFromCompartments=convertCharArray(excretionFromCompartments);
 end
 
 if nargin<4

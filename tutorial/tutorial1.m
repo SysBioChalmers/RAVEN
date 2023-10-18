@@ -9,9 +9,6 @@
 %   this tutorial. The model can be found in a Microsoft Excel file under
 %   the name "iAL1006 v1.00.xlsx" and in SBML file "iAL1006 v1.00.xml".
 %   See Tutorial 1 in "RAVEN tutorials.docx" for more details.
-%
-%   Simonas Marcisauskas, 2019-10-24
-%
 
 %Import the model from Excel. This function performs a number of checks
 %regarding the model structure (such as for incorrectly written equations

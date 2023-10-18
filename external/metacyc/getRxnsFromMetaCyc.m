@@ -22,7 +22,7 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 %   model     a model structure generated from the database. The following
 %             fields are filled
 %             id:             'MetaCyc'
-%             description:    'Automatically generated from MetaCyc database'
+%             name:    'Automatically generated from MetaCyc database'
 %             rxns:           MetaCyc reaction ids
 %             rxnNames:       Name for each reaction entry
 %             mets:           MetaCyc compound ids. If the equations use
@@ -46,9 +46,6 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 %   pre-prepared lists of MetaCyc transport and undetermined reactions.
 %
 %   Usage: model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
-%
-%   Hao Wang, 2018-11-01
-%
 
 %NOTE: This is how one entry looks in the file
 
@@ -71,7 +68,12 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 % //
 
 % A line that contains only '//' separates each object.
-
+if nargin<1
+    ravenPath=findRAVENroot();
+    metacycPath=fullfile(ravenPath,'external','metacyc');
+else
+    metacycPath=char(metacycPath);
+end
 if nargin<2
     keepTransportRxns=false;
 end
@@ -84,23 +86,22 @@ end
 
 %Check if the reactions have been parsed before and saved. Directly load
 %the model if so.
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-rxnsFile=fullfile(ravenPath,'external','metacyc','metaCycRxns.mat');
+rxnsFile=fullfile(metacycPath,'metaCycRxns.mat');
 metaCycRxnFile='reactions.dat';
 metaCycPwyFile='pathway-links.dat';
 
 if exist(rxnsFile, 'file')
-    fprintf(['NOTE: Importing MetaCyc reactions from ' strrep(rxnsFile,'\','/') '.\n']);
+    fprintf(['Importing MetaCyc reactions from ' strrep(rxnsFile,'\','/') '... ']);
     load(rxnsFile);
+    fprintf('done\n');
 else
     fprintf(['Cannot locate ' strrep(rxnsFile,'\','/') '\nNow try to generate it from local MetaCyc data files...\n']);
-    if ~exist(fullfile(metacycPath,metaCycRxnFile),'file') || ~exist(fullfile(metacycPath,metaCycPwyFile),'file')
+    if ~isfile(fullfile(metacycPath,metaCycRxnFile)) || ~isfile(fullfile(metacycPath,metaCycPwyFile))
         EM=fprintf(['The files of reactions or pathways cannot be located, and should be downloaded from MetaCyc.\n']);
         dispEM(EM);
     else
         metaCycRxns.id='MetaCyc';
-        metaCycRxns.description='Automatically generated from MetaCyc database';
+        metaCycRxns.name='Automatically generated from MetaCyc database';
         
         %Get pathway names and add them to the field of subSystems
         fid = fopen(fullfile(metacycPath,metaCycPwyFile), 'r');

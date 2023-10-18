@@ -17,9 +17,7 @@ function solution=solveQP(model,rxns,values,maxIter, restartIter)
 %         stat    Exit flag
 %
 %   Usage: solution=solveQP(model,rxns,values,maxIter, restartIter)
-%
-%   Rasmus Agren, 2013-02-13
-%
+rxns=char(rxns);
 
 if nargin<4
     maxIter=1000;

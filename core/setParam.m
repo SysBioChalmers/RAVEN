@@ -22,13 +22,16 @@ function model=setParam(model, paramType, rxnList, params, var)
 %   model       an updated model structure
 %
 %   Usage: model=setParam(model, paramType, rxnList, params)
-%
-%   Eduard Kerkhoven, 2019-05-03
-%
 
-if ~isempty(setdiff(paramType,{'lb';'ub';'eq';'obj';'rev';'var'}))
+paramType=convertCharArray(paramType);
+if ~any(strcmpi(paramType,{'lb','ub','eq','obj','rev','var'}))
     EM=['Incorrect parameter type: "' paramType '"'];
     dispEM(EM);
+end
+if isnumeric(rxnList) || islogical(rxnList)
+    rxnList=model.rxns(rxnList);
+else
+    rxnList=convertCharArray(rxnList);
 end
 
 %Allow to set several parameters to the same value
@@ -37,15 +40,17 @@ if numel(rxnList)~=numel(params) && numel(params)~=1
     dispEM(EM);
 end
 
-if isnumeric(rxnList) || islogical(rxnList)
-    rxnList=model.rxns(rxnList);
+if length(rxnList)>1
+    if length(paramType)==1
+        paramType(1:length(rxnList))=paramType;
+    end
+    if length(params)==1
+        params(1:length(rxnList))=params;
+    end
 end
 
-%If it's a char array
-rxnList=cellstr(rxnList);
-
-%Find the indexes for the reactions in rxnList I do not use getIndexes
-%since I don't want to throw errors if you don't get matches
+%Find the indexes for the reactions in rxnList. Do not use getIndexes
+%as we do not want to throw errors if matches fail
 indexes=zeros(numel(rxnList),1);
 
 for i=1:numel(rxnList)
@@ -59,40 +64,41 @@ for i=1:numel(rxnList)
     end
 end
 
-%Remove the reactions that weren't found
+%Remove the reactions that were not found
 params(indexes==-1)=[];
 indexes(indexes==-1)=[];
-
+paramType(indexes==-1)=[];
 %Change the parameters
+
 if ~isempty(indexes)
-    if strcmpi(paramType,'eq')
-        model.lb(indexes)=params;
-        model.ub(indexes)=params;
-    end
-    if strcmpi(paramType,'lb')
-        model.lb(indexes)=params;
-    end
-    if strcmpi(paramType,'ub')
-        model.ub(indexes)=params;
-    end
-    if strcmpi(paramType,'obj')
-        %NOTE: The objective is changed to the new parameters, they are not
-        %added
-        model.c=zeros(numel(model.c),1);
-        model.c(indexes)=params;
-    end
-    if strcmpi(paramType,'rev')
-        %Non-zero values are interpreted as reversible
-        model.rev(indexes)=params~=0;
-    end
-    if strcmpi(paramType,'var')
-        for i=1:numel(params)
-            if params(i) < 0
-                model.lb(indexes(i)) = params(i) * (1+var/200);
-                model.ub(indexes(i)) = params(i) * (1-var/200);
+    if contains(paramType,'obj')
+        model.c=zeros(numel(model.c),1); % parameter is changed, not added
+    end     
+    for j=1:length(paramType)
+        if strcmpi(paramType{j},'eq')
+            model.lb(indexes(j))=params(j);
+            model.ub(indexes(j))=params(j);
+        end
+        if strcmpi(paramType{j},'lb')
+            model.lb(indexes(j))=params(j);
+        end
+        if strcmpi(paramType{j},'ub')
+            model.ub(indexes(j))=params(j);
+        end
+        if strcmpi(paramType{j},'obj')
+            model.c(indexes(j))=params(j);
+        end
+        if strcmpi(paramType{j},'rev')
+            %Non-zero values are interpreted as reversible
+            model.rev(indexes(j))=params(j)~=0;
+        end
+        if strcmpi(paramType{j},'var')
+            if params(j) < 0
+                model.lb(indexes(j)) = params(j) * (1+var/200);
+                model.ub(indexes(j)) = params(j) * (1-var/200);
             else
-                model.lb(indexes(i)) = params(i) * (1-var/200);
-                model.ub(indexes(i)) = params(i) * (1+var/200);
+                model.lb(indexes(j)) = params(j) * (1-var/200);
+                model.ub(indexes(j)) = params(j) * (1+var/200);
             end
         end
     end

@@ -17,9 +17,6 @@ function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,remove
 %
 %   Usage: reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,...
 %           removeUnusedGenes,removeUnusedComps)
-%
-%   Simonas Marcisauskas, 2017-08-25
-%
 
 if nargin<3
     removeUnusedMets=false;
@@ -30,9 +27,8 @@ end
 if nargin<5
     removeUnusedComps=false;
 end
-
-if ischar(rxnsToRemove)
-    rxnsToRemove={rxnsToRemove};
+if ~islogical(rxnsToRemove) && ~isnumeric(rxnsToRemove)
+    rxnsToRemove=convertCharArray(rxnsToRemove);
 end
 
 reducedModel=model;
@@ -96,6 +92,9 @@ if ~isempty(rxnsToRemove) || removeUnusedMets || removeUnusedGenes
         end
         if isfield(reducedModel,'rxnConfidenceScores')
             reducedModel.rxnConfidenceScores(indexesToDelete,:)=[];
+        end
+        if isfield(reducedModel,'rxnDeltaG')
+            reducedModel.rxnDeltaG(indexesToDelete,:)=[];
         end
         if isfield(reducedModel,'pwys')
             reducedModel.pwys(indexesToDelete,:)=[];

@@ -45,9 +45,6 @@ function experiment=getExpressionStructure(fileName)
 %   good as possible.
 %
 %   Usage: experiment=getExpressionStructure(fileName)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
 [type, sheets]=xlsfinfo(fileName);
 

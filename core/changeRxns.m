@@ -13,7 +13,7 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %                    interpreted
 %                    1 - The metabolites are matched to model.mets. New
 %                        metabolites (if allowed) are added to
-%                        "compartment"
+%                        "compartment" (default)
 %                    2 - The metabolites are matched to model.metNames and
 %                        all metabolites are assigned to "compartment". Any
 %                        new metabolites that are added will be assigned
@@ -52,11 +52,8 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %   the metabolite in another compartment.
 %
 %   Usage: model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
-%
-%   Eduard Kerkhoven, 2018-10-04
-%
 
-if nargin<4 & isfield(equations,'stoichCoeffs')
+if nargin<4
     eqnType=1;
 end
 
@@ -67,12 +64,8 @@ if nargin<6
     allowNewMets=false;
 end
 
-if ischar(rxns)
-    rxns={rxns};
-end
-if ischar(equations)
-    equations={equations};
-end
+rxns=convertCharArray(rxns);
+compartment=char(compartment);
 
 %Find the indexes of the reactions and throw an error if they aren't all
 %found
@@ -92,7 +85,7 @@ if isfield(equations,'mets') && isfield(equations,'stoichCoeffs')
     rxnsToChange.mets=equations.mets;
     rxnsToChange.stoichCoeffs=equations.stoichCoeffs;
 else
-    rxnsToChange.equations=equations;
+    rxnsToChange.equations=convertCharArray(equations);
 end
 if isfield(model,'rxnNames')
     rxnsToChange.rxnNames=model.rxnNames(J);
@@ -135,6 +128,9 @@ if isfield(model,'rxnReferences')
 end
 if isfield(model,'rxnConfidenceScores')
     rxnsToChange.rxnConfidenceScores=model.rxnConfidenceScores(J);
+end
+if isfield(model,'rxnDeltaG')
+    rxnsToChange.rxnDeltaG=model.rxnDeltaG(J);
 end
 if isfield(model,'pwys')
     rxnsToChange.pwys=model.pwys(J);

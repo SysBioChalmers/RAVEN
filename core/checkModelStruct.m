@@ -13,9 +13,6 @@ function checkModelStruct(model,throwErrors,trimWarnings)
 %   attempting to export a model to SBML format.
 %
 %   Usage: checkModelStruct(model,throwErrors,trimWarnings)
-%
-%   Simonas Marcisauskas, 2018-03-18
-%
 
 if nargin<2
     throwErrors=true;
@@ -25,7 +22,7 @@ if nargin<3
 end
 
 %Missing elements
-fields={'id';'description';'rxns';'mets';'S';'lb';'ub';'rev';'c';'b';'comps';'metComps'};
+fields={'id';'name';'rxns';'mets';'S';'lb';'ub';'rev';'c';'b';'comps';'metComps'};
 for i=1:numel(fields)
     if ~isfield(model,fields{i})
         EM=['The model is missing the "' fields{i} '" field'];
@@ -38,8 +35,8 @@ if ~ischar(model.id)
     EM='The "id" field must be a string';
     dispEM(EM,throwErrors);
 end
-if ~ischar(model.description)
-    EM='The "description" field must be a string';
+if ~ischar(model.name)
+    EM='The "name" field must be a string';
     dispEM(EM,throwErrors);
 end
 if ~iscellstr(model.rxns)
@@ -136,6 +133,12 @@ if isfield(model,'inchis')
         dispEM(EM,throwErrors);
     end
 end
+if isfield(model,'metSmiles')
+    if ~iscellstr(model.metSmiles)
+        EM='The "metSmiles" field must be a cell array of strings';
+        dispEM(EM,throwErrors);
+    end
+end
 if isfield(model,'metFormulas')
     if ~iscellstr(model.metFormulas)
         EM='The "metFormulas" field must be a cell array of strings';
@@ -145,6 +148,12 @@ end
 if isfield(model,'metCharges')
     if ~isnumeric(model.metCharges)
         EM='The "metCharges" field must be a double';
+        dispEM(EM,throwErrors);
+    end
+end
+if isfield(model,'metDeltaG')
+    if ~isnumeric(model.metDeltaG)
+        EM='The "metDeltaG" field must be a double';
         dispEM(EM,throwErrors);
     end
 end
@@ -183,6 +192,12 @@ end
 if isfield(model,'rxnConfidenceScores')
     if ~isnumeric(model.rxnConfidenceScores)
         EM='The "rxnConfidenceScores" field must be a double';
+        dispEM(EM,throwErrors);
+    end
+end
+if isfield(model,'rxnDeltaG')
+    if ~isnumeric(model.rxnDeltaG)
+        EM='The "rxnDeltaG" field must be a double';
         dispEM(EM,throwErrors);
     end
 end
@@ -249,6 +264,18 @@ dispEM(EM,throwErrors,model.rxns(model.lb>model.ub),trimWarnings);
 EM='The following reactions have bounds contradicting their reversibility:';
 dispEM(EM,throwErrors,model.rxns(model.lb<0 & model.rev==0),trimWarnings);
 
+%Multiple or no objective functions not allowed in SBML L3V1 FBCv2
+if numel(find(model.c))>1
+    EM='Multiple objective functions found. This might be intended, but results in FBCv2 non-compliant SBML file when exported';
+    dispEM(EM,false,model.rxns(find(model.c)),trimWarnings);
+elseif ~any(model.c)
+    EM='No objective function found. This might be intended, but results in FBCv2 non-compliant SBML file when exported';
+    dispEM(EM,false);
+end
+    
+EM='The following reactions have contradicting bounds:';
+dispEM(EM,throwErrors,model.rxns(model.lb>model.ub),trimWarnings);
+
 %Mapping of compartments
 if isfield(model,'compOutside')
     EM='The following compartments are in "compOutside" but not in "comps":';
@@ -265,7 +292,7 @@ for i=1:numel(model.metNames)
         end
     end
 end
-EM='The following metabolite names begin with a number directly followed by space:';
+EM='The following metabolite IDs begin with a number directly followed by space:';
 dispEM(EM,throwErrors,model.mets(I),trimWarnings);
 
 %Non-parseable composition
@@ -348,6 +375,39 @@ if isfield(model,'inchis')
     EM='The following InChI strings are associated to more than one unique metabolite name:';
     dispEM(EM,false,allInchis(hasMultiple),trimWarnings);
 end
+
+% %Check if there are metabolites with different names but the same SMILES
+% if isfield(model,'metSmiles')
+%     metSmiles=containers.Map();
+%     for i=1:numel(model.mets)
+%         if ~isempty(model.metSmiles{i})
+%             %Get existing metabolite indexes
+%             if isKey(metSmiles,model.metSmiles{i})
+%                 existing=metSmiles(model.metSmiles{i});
+%             else
+%                 existing=[];
+%             end
+%             metSmiles(model.metSmiles{i})=[existing;i];
+%         end
+%     end
+%     
+%     %Get all keys
+%     allmetSmiles=keys(metSmiles);
+%     
+%     hasMultiple=false(numel(metSmiles),1);
+%     for i=1:numel(metSmiles)
+%         if numel(metSmiles(metSmiles{i}))>1
+%             %Check if they all have the same name
+%             if numel(unique(model.metNames(metSmiles(allmetSmiles{i}))))>1
+%                 hasMultiple(i)=true;
+%             end
+%         end
+%     end
+%     
+%     %Print output
+%     EM='The following metSmiles strings are associated to more than one unique metabolite name:';
+%     dispEM(EM,false,allmetSmiles(hasMultiple),trimWarnings);
+% end
 end
 
 function I=duplicates(strings)

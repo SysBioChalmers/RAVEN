@@ -2,28 +2,33 @@ function [S, mets, badRxns, reversible]=constructS(equations,mets,rxns)
 % constructS
 %   Constructs a stoichiometric matrix from a cell array of equations
 %
-%   equations   cell array of equations on the form 'A + 2 B <=> or => 3 C'
+%   equations   cell array of equations on the form 'A + 2 B <=> 3 C',
+%               where <=> indicates reversible and => irreversible reactions
 %   mets        cell array of metabolites. All metabolites in the equations
-%               must be present in the list (opt, default generated from the equations)
+%               must be present in the list (opt, default generated from
+%               the equations)
 %   rxns        cell array of reaction ids. This is only used for printing
 %               reaction ids instead of equations in warnings/errors (opt,
 %               default [])
 %
-%
-%   S           the resulting stoichiometric matrix
-%   mets        cell array with metabolites that corresponds to the order in
-%               the S matrix
+%   S           the resulting stoichiometric matrix mets cell array with
+%               metabolites that corresponds to the order in the S matrix
 %   badRxns     boolean vector with the reactions that have one or more
-%               metabolites as both substrate and product. An example would be
-%               the phosphotransferase ATP + ADP <=> ADP + ATP. In the
-%               stoichiometric matrix this equals to an empty reaction which
-%               can be problematic
+%               metabolites as both substrate and product. An example would
+%               be the phosphotransferase ATP + ADP <=> ADP + ATP. In the
+%               stoichiometric matrix this equals to an empty reaction
+%               which can be problematic
 %   reversible  boolean vector with true if the equation is reversible
 %
 %   Usage: [S, mets, badRxns, reversible]=constructS(equations,mets)
-%
-%   Rasmus Agren, 2014-01-08
-%
+
+equations=convertCharArray(equations);
+switch nargin
+    case 2
+        mets=convertCharArray(mets);
+    case 3
+        rxns=convertCharArray(rxns);
+end
 
 badRxns=false(numel(equations),1);
 
@@ -64,6 +69,11 @@ equations=strrep(equations,' + ', '€');
 %Generate the stoichiometric matrix
 S=zeros(numel(mets),numel(equations));
 
+%Keep track of coefficients to be added to S-matrix
+metsToS = cell(100000,1);
+rxnsToS = zeros(100000,1);
+coefToS = zeros(100000,1);
+newEntry = 1;
 %Loop through the equations and add the info to the S matrix
 for i=1:numel(equations)
     %Start by finding the position of the (=> or <=>)
@@ -91,7 +101,7 @@ for i=1:numel(equations)
     %reactant and 1 if it's a product
     multiplyWith=[ones(numel(reactants),1)*-1; ones(numel(products),1)];
     
-    metabolites=[reactants products];
+    metabolites=strtrim([reactants products]);
     
     %Now loop through the reactants and see if the metabolite has a
     %coefficient (it will look as 'number name')
@@ -108,32 +118,47 @@ for i=1:numel(equations)
             %If it was not a coefficiant
             if isnan(coeff)
                 coeff=1;
-                name=metabolites{j};
+                name=strtrim(metabolites{j});
             else
-                name=metabolites{j}(space+1:end);
+                name=strtrim(metabolites{j}(space+1:end));
             end
         end
         
         %Find the name in the mets list [a b]=ismember(name,mets);
-        b=find(strcmp(name,mets),1);
-        
-        if any(b)
-            %Check if the metabolite already participates in this reaction
-            if S(b,i)~=0
-                badRxns(i)=true;
-            end
-            S(b,i)=S(b,i)+coeff*multiplyWith(j);
-        else
-            if isempty(rxns)
-                EM=['Could not find metabolite ' name ' in metabolite list'];
-                dispEM(EM);
-            else
-                EM=['The metabolite "' name '" in reaction ' rxns{i} ' was not found in the metabolite list'];
-                dispEM(EM);
-            end
-        end
+        metsToS{newEntry}=name;
+        rxnsToS(newEntry)=i;
+        coefToS(newEntry)=coeff*multiplyWith(j);
+        newEntry=newEntry+1;
     end
 end
+%Remove unused fields
+metsToS(newEntry:end)=[];
+rxnsToS(newEntry:end)=[];
+coefToS(newEntry:end)=[];
+
+%Match to mets array
+[metsPresent,metsLoc]=ismember(metsToS,mets);
+
+%Find badRxns
+[~,I]=unique([rxnsToS,metsLoc],'rows','stable');
+x=1:length(rxnsToS);
+x(I)=[];
+x=unique(rxnsToS(x));
+badRxns(x)=true;
+
+if any(~metsPresent)
+    if isempty(rxns)
+        error(['Could not find the following metabolites in the metabolite list: ',...
+        strjoin(unique(metsToS(~metsPresent)),', ')],'')
+    else
+        missingMet = find(~metsPresent);
+        missingMet = char(strcat(metsToS(missingMet),' (reaction:',rxns(rxnsToS(missingMet)),')\n'));
+        error(['Could not find the following metabolites (reaction indicated) in the metabolite list: \n' ...
+            missingMet '%s'],'');
+    end
+end
+linearIndices=sub2ind(size(S),metsLoc,rxnsToS);
+S(linearIndices)=coefToS;
 S=sparse(S);
 end
 

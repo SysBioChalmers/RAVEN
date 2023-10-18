@@ -16,8 +16,9 @@ function model=replaceMets(model,metabolite,replacement,verbose)
 %   as metabolites.
 %
 %   Usage: model=replaceMets(model,metabolite,replacement,verbose)
-%
-%   Eduard Kerkhoven, 2018-03-30
+
+metabolite=char(metabolite);
+replacement=char(replacement);
 
 if nargin<4
     verbose=false;
@@ -28,15 +29,13 @@ end
 % possible.
 repIdx = find(strcmp(replacement,model.metNames));
 if isempty(repIdx)
-    EM='The replacement metabolite name cannot be found in the model.'
-    dispEM(EM,true);
+    error('The replacement metabolite name cannot be found in the model.');
 end
 
 % Change name and information from metabolite to replacement metabolite
 metIdx = find(strcmp(metabolite,model.metNames));
 if isempty(metIdx)
-    EM='The to-be-replaced metabolite name cannot be found in the model.'
-    dispEM(EM,true);
+    error('The to-be-replaced metabolite name cannot be found in the model.');
 end
 if verbose==true
     fprintf('\n\nThe following reactions contain the replaced metabolite as reactant:\n')
@@ -53,8 +52,14 @@ end
 if isfield(model,'metCharges')
     model.metCharges(metIdx) = model.metCharges(repIdx(1));
 end
+if isfield(model,'metDeltaG')
+    model.metDeltaG(metIdx) = model.metDeltaG(repIdx(1));
+end
 if isfield(model,'inchis')
     model.inchis(metIdx) = model.inchis(repIdx(1));
+end
+if isfield(model,'metSmiles')
+    model.metSmiles(metIdx) = model.metSmiles(repIdx(1));
 end
 % Run through replacement metabolites and their compartments. If any of the
 % to-be-replaced metabolites is already present (checked by
@@ -70,9 +75,11 @@ metCompsN = strcat(lower(model.metNames),'[',metCompsN,']');
 idxDelete=[];
 for i = 1:length(repIdx)
     metCompsNidx=find(strcmp(metCompsN(repIdx(i)), metCompsN));
-    if gt(length(metCompsNidx),1) % If more than 1 metabolite matches
-        model.S(metCompsNidx(1),:) = model.S(metCompsNidx(1),:) + model.S(metCompsNidx(2:end),:);
-        idxDelete=[idxDelete; metCompsNidx(2:end)]; % Make list of metabolite IDs to delete
+    if length(metCompsNidx)>1
+        for j = 2:length(metCompsNidx)
+            model.S(metCompsNidx(1),:) = model.S(metCompsNidx(1),:) + model.S(metCompsNidx(j),:);
+            idxDelete=[idxDelete; metCompsNidx(j)]; % Make list of metabolite IDs to delete
+        end
     end
 end
 
@@ -94,8 +101,14 @@ if ~isempty(idxDelete)
     if isfield(model,'metCharges')
         model.metCharges(idxDelete) = [];
     end
+    if isfield(model,'metDeltaG')
+        model.metDeltaG(idxDelete) = [];
+    end
     if isfield(model,'inchis')
         model.inchis(idxDelete) = [];
+    end
+    if isfield(model,'metSmiles')
+        model.metSmiles(idxDelete) = [];
     end
     if isfield(model,'metFrom')
         model.metFrom(idxDelete) = [];

@@ -13,12 +13,11 @@ function produced=canProduce(model,mets)
 %               produced
 %
 %   Usage: produced=canProduce(model,mets)
-%
-%   Rasmus Agren, 2012-11-14
-%
 
 if nargin<2
     mets=model.mets;
+elseif ~islogical(mets) && ~isnumeric(mets)
+    mets=convertCharArray(mets);
 end
 
 [model, rxns]=addExchangeRxns(model,'out',mets);

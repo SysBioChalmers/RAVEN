@@ -1,0 +1,166 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of tutorial3_solutions</title>
+  <meta name="keywords" content="tutorial3_solutions">
+  <meta name="description" content="tutorial3_solutions">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">tutorial</a> &gt; tutorial3_solutions.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for tutorial&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>tutorial3_solutions
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>tutorial3_solutions</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> tutorial3_solutions
+   This script contains the solutions for Tutorial 3, see Tutorial 3 in
+   &quot;RAVEN tutorials.docx&quot; for more details. All the parameters are set in
+   this script, rather than modifying the Excel model file.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">% tutorial3_solutions</span>
+0002 <span class="comment">%   This script contains the solutions for Tutorial 3, see Tutorial 3 in</span>
+0003 <span class="comment">%   &quot;RAVEN tutorials.docx&quot; for more details. All the parameters are set in</span>
+0004 <span class="comment">%   this script, rather than modifying the Excel model file.</span>
+0005 
+0006 <span class="comment">%Import the Excel model</span>
+0007 model=importExcelModel(<span class="string">'smallYeast.xlsx'</span>,true);
+0008 
+0009 <span class="comment">%Step 1</span>
+0010 <span class="comment">%Set the upper bound of glucose uptake to 1 and O2 uptake to zero</span>
+0011 model=setParam(model,<span class="string">'ub'</span>,{<span class="string">'glcIN'</span> <span class="string">'o2IN'</span>},[1 0]);
+0012 
+0013 <span class="comment">%Set the objective to be ATP hydrolysis</span>
+0014 model=setParam(model,<span class="string">'obj'</span>,{<span class="string">'ATPX'</span>},1);
+0015 
+0016 <span class="comment">%Solve the model</span>
+0017 sol=solveLP(model);
+0018 
+0019 <span class="comment">%Print the resulting fluxes. The ATP production rate should be 2.0. It was</span>
+0020 <span class="comment">%4.0 in Tutorial 2, but there sucrose was used instead of glucose.</span>
+0021 printFluxes(model,sol.x,false);
+0022 
+0023 <span class="comment">%Step 2</span>
+0024 <span class="comment">%Check the yield of different products and print the results</span>
+0025 <span class="comment">%Change to fully aerobic</span>
+0026 model=setParam(model,<span class="string">'ub'</span>,{<span class="string">'glcIN'</span> <span class="string">'o2IN'</span>},[1 1000]);
+0027 model=setParam(model,<span class="string">'obj'</span>,{<span class="string">'ethOUT'</span>},1);
+0028 sol=solveLP(model);
+0029 fprintf([<span class="string">'Yield of ethanol is '</span> num2str(sol.f*-1) <span class="string">' mol/mol\n'</span>]);
+0030 model=setParam(model,<span class="string">'obj'</span>,{<span class="string">'acOUT'</span>},1);
+0031 sol=solveLP(model);
+0032 fprintf([<span class="string">'Yield of acetate is '</span> num2str(sol.f*-1) <span class="string">' mol/mol\n'</span>]);
+0033 model=setParam(model,<span class="string">'obj'</span>,{<span class="string">'glyOUT'</span>},1);
+0034 sol=solveLP(model);
+0035 fprintf([<span class="string">'Yield of glycerol is '</span> num2str(sol.f*-1) <span class="string">' mol/mol\n'</span>]);
+0036 model=setParam(model,<span class="string">'obj'</span>,{<span class="string">'biomassOUT'</span>},1);
+0037 sol=solveLP(model);
+0038 fprintf([<span class="string">'Yield of biomass is '</span> num2str(sol.f*-1) <span class="string">'/h\n'</span>]);
+0039 
+0040 <span class="comment">%Step 3</span>
+0041 <span class="comment">%Solve for both aerobic and anaerobic growth</span>
+0042 solA=solveLP(model);
+0043 model=setParam(model,<span class="string">'ub'</span>,{<span class="string">'o2IN'</span>},0.5);
+0044 solB=solveLP(model);
+0045 
+0046 <span class="comment">%Plot the differences</span>
+0047 <span class="comment">%Load the map</span>
+0048 load <span class="string">'pathway.mat'</span> pathway;
+0049 drawMap(<span class="string">'Aerobic vs Anaerobic'</span>,pathway,model,solA.x,solB.x,[],<span class="string">'mapFBA.pdf'</span>,10^-5);
+0050 
+0051 <span class="comment">%Step 4</span>
+0052 <span class="comment">%Change to anaerobic growth and maximize for biomass</span>
+0053 model=setParam(model,<span class="string">'eq'</span>,{<span class="string">'o2IN'</span>},0);
+0054 model=setParam(model,<span class="string">'obj'</span>,{<span class="string">'biomassOUT'</span>},1);
+0055 sol=solveLP(model);
+0056 printFluxes(model,sol.x,true);
+0057 <span class="comment">%One can see that the model predicts a glycerol production of 0.23</span>
+0058 <span class="comment">%mmol/gDW/h</span>
+0059 
+0060 <span class="comment">%Run a single gene deletion</span>
+0061 [genes, fluxes, originalGenes, details]=findGeneDeletions(model,<span class="string">'sgd'</span>,<span class="string">'fba'</span>);
+0062 
+0063 <span class="comment">%Get the indexes of these reactions</span>
+0064 I=getIndexes(model,{<span class="string">'biomassOUT'</span>},<span class="string">'rxns'</span>);
+0065 J=getIndexes(model,{<span class="string">'glyOUT'</span>},<span class="string">'rxns'</span>);
+0066 
+0067 okSolutions=find(fluxes(I,:)&gt;10^-2); <span class="comment">%Only look at solutions which are still growing</span>
+0068 [maxGlycerol, J]=max(fluxes(J,okSolutions));
+0069 fprintf([<span class="string">'Glycerol production is '</span> num2str(maxGlycerol) <span class="string">' after deletion of '</span> originalGenes{genes(okSolutions(J),:)} <span class="string">'\n'</span>]);
+0070 
+0071 <span class="comment">%The best gene deletion corresponds to turning off the ZWF1 reaction</span>
+0072 <span class="comment">%(YNL241C)</span>
+0073 model2=setParam(model,<span class="string">'eq'</span>,{<span class="string">'ZWF'</span>},0);
+0074 sol2=solveLP(model2);
+0075 drawMap(<span class="string">'ZWF1 deletion vs WT'</span>,pathway,model,sol2.x,sol.x,[],<span class="string">'mapZWF.pdf'</span>,10^-5);
+0076 followChanged(model,sol2.x,sol.x, 10, 10^-2, 0,{<span class="string">'NADPH'</span> <span class="string">'NADH'</span> <span class="string">'NAD'</span> <span class="string">'NADP'</span>});
+0077 
+0078 <span class="comment">%Step 5</span>
+0079 <span class="comment">%Set the exchange rates to the recorded batch values</span>
+0080 model=setParam(model,<span class="string">'lb'</span>,{<span class="string">'acOUT'</span> <span class="string">'biomassOUT'</span> <span class="string">'co2OUT'</span> <span class="string">'ethOUT'</span> <span class="string">'glyOUT'</span> <span class="string">'glcIN'</span> <span class="string">'o2IN'</span> <span class="string">'ethIN'</span>},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*0.9999);
+0081 model=setParam(model,<span class="string">'ub'</span>,{<span class="string">'acOUT'</span> <span class="string">'biomassOUT'</span> <span class="string">'co2OUT'</span> <span class="string">'ethOUT'</span> <span class="string">'glyOUT'</span> <span class="string">'glcIN'</span> <span class="string">'o2IN'</span> <span class="string">'ethIN'</span>},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*1.0001);
+0082 
+0083 <span class="comment">%Define another model where all exchange reactions are open.</span>
+0084 model2=model;
+0085 I=getIndexes(model,getExchangeRxns(model),<span class="string">'rxns'</span>);
+0086 model2.lb(I)=0;
+0087 model2.ub(I)=1000;
+0088 
+0089 <span class="comment">%Delete ZWF gene</span>
+0090 model2=setParam(model2,<span class="string">'eq'</span>,{<span class="string">'ZWF'</span>},0);
+0091 
+0092 <span class="comment">%Run MOMA</span>
+0093 [fluxA, fluxB, flag]=qMOMA(model,model2);
+0094 drawMap(<span class="string">'ZWF deletion vs wild type'</span>,pathway,model,fluxB,fluxA,[],<span class="string">'mapMOMA.pdf'</span>,10^-5);
+0095 
+0096 <span class="comment">%As one can see, the glycerol production is higher in the deletion strain.</span>
+0097 <span class="comment">%Note that this is without any objectives, just by trying to maintain the</span>
+0098 <span class="comment">%cells original flux distribution.</span>
+0099 
+0100 <span class="comment">%Step 6</span>
+0101 <span class="comment">%Read microarray results and calculate reporter metabolites (metabolites</span>
+0102 <span class="comment">%around which there are significant transcriptional changes)</span>
+0103 [orfs, pvalues]=textread(<span class="string">'expression.txt'</span>,<span class="string">'%s%f'</span>);
+0104 repMets=reporterMetabolites(model,orfs,pvalues);
+0105 [I, J]=sort(repMets.metPValues);
+0106 
+0107 fprintf(<span class="string">'TOP 10 REPORTER METABOLITES:\n'</span>);
+0108 <span class="keyword">for</span> i=1:min(numel(J),10)
+0109     fprintf([repMets.mets{J(i)} <span class="string">'\t'</span> num2str(I(i)) <span class="string">'\n'</span>]);
+0110 <span class="keyword">end</span>
+0111 
+0112 <span class="comment">%Get all reactions involving those metabolites and display them on a map</span>
+0113 mets=ismember(model.mets,repMets.mets(J(1:10)));
+0114 [~, I]=find(model.S(mets,:));
+0115 pathway=trimPathway(pathway, model.rxns(I), true);
+0116 drawMap(<span class="string">'Reactions involving the top 10 Reporter Metabolites'</span>,pathway,model,ones(numel(model.rxns),1),zeros(numel(model.rxns),1),[],<span class="string">'mapRM.pdf'</span>,10^-5);</pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

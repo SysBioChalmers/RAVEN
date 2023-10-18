@@ -1,13 +1,17 @@
-function exportToExcelFormat(model,filename)
+function exportToExcelFormat(model,fileName,sortIds)
 % exportToExcelFormat
 %   Exports a model structure to the Microsoft Excel model format
 %
 %   model       a model structure
-%   filename    file name of the Excel file. Only xlsx format is supported.
+%   fileName    file name of the Excel file. Only xlsx format is supported.
 %               In order to preserve backward compatibility this could also
 %               be only a path, in which case the model is exported to a set
 %               of tab-delimited text files instead. See exportToTabDelimited
-%               for details regarding that functionality
+%               for details regarding that functionality. A dialog window
+%               will open if no file name is specified.
+%   sortIds     logical whether metabolites, reactions and genes should be
+%               sorted alphabetically by their identifiers (opt, default
+%               false)
 %
 %   The resulting Excel file can be used with importExcelModel/SBMLFromExcel
 %   for modelling or to generate a SBML file.
@@ -15,17 +19,34 @@ function exportToExcelFormat(model,filename)
 %   NOTE: No checks are made regarding the correctness of the model. Use
 %         checkModelStruct to identify problems in the model structure
 %
-%   Usage: exportToExcelFormat(model,filename)
-%
-%   Simonas Marcisauskas, 2018-03-18
-%   Benjamin Sanchez,     2018-09-20
-%
+%   Usage: exportToExcelFormat(model,fileName,sortIds)
+if nargin<2 || isempty(fileName)
+    [fileName, pathName] = uiputfile('*.xlsx', 'Select file for model export',[model.id '.xlsx']);
+    if fileName == 0
+        error('You should provide a file location')
+    else
+        fileName = fullfile(pathName,fileName);
+    end
+end
+fileName=char(fileName);
+if nargin<3
+    sortIds=false;
+end
+if sortIds==true
+    model=sortIdentifiers(model);
+end
 
-[~, A, B]=fileparts(filename);
+addList = matlab.addons.installedAddons;
+if any(strcmpi(addList.Name,'Text Analytics Toolbox'))
+    error(['exportToExcelFormat is incompatible with MATLAB Text Analytics Toolbox. ' ...
+           'Further instructions => https://github.com/SysBioChalmers/RAVEN/issues/55#issuecomment-1514369299'])
+end
+
+[~, A, B]=fileparts(fileName);
 
 %If a path was used call on exportToTabDelimited instead
 if ~any(A) || ~any(B)
-    exportToTabDelimited(model,filename);
+    exportToTabDelimited(model,fileName);
     return;
 end
 
@@ -39,12 +60,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 %Remove the output file if it already exists
-if exist(filename,'file')
-    delete(filename);
+if isfile(fileName)
+    delete(fileName);
 end
 
 %Load an empty workbook
-wb=loadWorkbook(filename,true);
+wb=loadWorkbook(fileName,true);
 
 %Construct equations
 model.equations=constructEquations(model,model.rxns,true);
@@ -321,7 +342,7 @@ end
 %Add the MODEL sheet
 
 %Create the header row
-headers={'#';'ID';'DESCRIPTION';'TAXONOMY';'DEFAULT LOWER';'DEFAULT UPPER';'CONTACT GIVEN NAME';'CONTACT FAMILY NAME';'CONTACT EMAIL';'ORGANIZATION';'NOTES'};
+headers={'#';'ID';'NAME';'TAXONOMY';'DEFAULT LOWER';'DEFAULT UPPER';'CONTACT GIVEN NAME';'CONTACT FAMILY NAME';'CONTACT EMAIL';'ORGANIZATION';'NOTES'};
 
 modelSheet=cell(1,numel(headers));
 
@@ -334,8 +355,8 @@ if isfield(model,'id')
 else
     modelSheet{1,2}='blankID';
 end
-if isfield(model,'description')
-    modelSheet{1,3}=model.description;
+if isfield(model,'name')
+    modelSheet{1,3}=model.name;
 else
     modelSheet{1,3}='blankName';
 end
@@ -371,7 +392,7 @@ else
 end
 
 %Open the output stream
-out = FileOutputStream(filename);
+out = FileOutputStream(fileName);
 wb.write(out);
 out.close();
 end

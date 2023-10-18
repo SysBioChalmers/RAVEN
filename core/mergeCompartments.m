@@ -31,13 +31,6 @@ function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconst
 %   the IDs may no longer be representative.
 %
 %   Usage: [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet,distReverse)
-%
-%   Rasmus Agren, 2014-01-08
-%   Hao Wang,     2018-03-07  Add parameter distReverse to enable overlooking
-%                             reaction reversibility when merging duplicated
-%                             reactions; Add optional output of duplicated
-%                             reactions that have been removed after merging
-%
 
 if nargin<2
     keepUnconstrained=false;

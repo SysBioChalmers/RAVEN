@@ -1,0 +1,29 @@
+name: Tests
+
+on: [pull_request]
+
+jobs:
+  matlab-tests:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Run tests
+        id: matlab-test
+        run: |
+          TEST_RESULTS=$(/usr/local/bin/matlab -nodisplay -nosplash -nodesktop -r "warning('off', 'MATLAB:rmpath:DirNotFound'); rmpath(genpath('/home/m/ecModels-dependencies/RAVEN')); rmpath(genpath('/home/m/actions-runner')); addpath(genpath('.')); checkInstallation; cd('testing/unit_tests'); runtests(struct2table(dir('*.m')).name); exit;" | awk 'NR>13 && !/^(___|===|---)/')
+          PARSED_RESULTS="${TEST_RESULTS//'%'/'%25'}"
+          PARSED_RESULTS="${PARSED_RESULTS//$'\n'/'<br>'}"
+          PARSED_RESULTS="${PARSED_RESULTS//$'\r'/'<br>'}"
+          echo "results=$PARSED_RESULTS" >> $GITHUB_OUTPUT
+
+      - name: Post comment
+        uses: NejcZdovc/comment-pr@v2
+        with:
+          file: "commentsFromTests.md"
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          TEST_RESULTS: ${{steps.matlab-test.outputs.results}}
+          GH_ACTION_RUN: ${{github.run_id}}

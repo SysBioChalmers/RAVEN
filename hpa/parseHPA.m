@@ -6,14 +6,14 @@ function hpaData=parseHPA(fileName, version)
 %   fileName            comma- or tab-separated database dump of HPA. For details
 %                       regarding the format, see
 %                       http://www.proteinatlas.org/about/download.
-%   version             version of HPA [optional, default=18]
+%   version             version of HPA [optional, default=19]
 %
 %
 %   Output:
 %   hpaData
 %       genes               cell array with the unique gene names. In
-%                           version 18 this is the ensemble name, see
-%                           geneNames below for the names in ver 18
+%                           version >=18 this is the ensemble name, see
+%                           geneNames below for the names in ver >=18
 %       geneNames           cell array with the gene names, indexed the
 %                           same way as genes.
 %       tissues             cell array with the tissue names. The list may not be
@@ -29,21 +29,19 @@ function hpaData=parseHPA(fileName, version)
 %       gene2Type           gene-to-evidence type mapping in sparse matrix form.
 %                           The value for element i,j is the index in
 %                           hpaData.types of gene i in cell type j. Doesn't
-%                           exist in version 18.
+%                           exist in version >=18.
 %       gene2Reliability    gene-to-reliability level mapping in sparse matrix form.
 %                           The value for element i,j is the index in
 %                           hpaData.reliabilities of gene i in cell type j
 %
 %   Usage: hpaData=parseHPA(fileName,version)
-%
-%   Eduard Kerkhoven, 2018-05-18
-%
 
 if nargin<2
-    version=18; %Change this and add code for more versions when the current HPA version is increased and the format is changed
+    version=19; %Change this and add code for more versions when the current HPA version is increased and the format is changed
 end
 
-if ~(exist(fileName,'file')==2)
+fileName=char(fileName);
+if ~isfile(fileName)
     error('HPA file %s cannot be found',string(fileName));
 end
 

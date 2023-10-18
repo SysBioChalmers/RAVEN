@@ -24,12 +24,12 @@
 <div class="box"><strong>getDiamond</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function blastStructure=getDiamond(organismID,fastaFile,modelIDs,refFastaFiles) </strong></div>
+<div class="box"><strong>function [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,modelIDs,refFastaFiles,developMode,hideVerbose) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> getDiamond
-   Uses DIAMOND to performs a bidirectional BLASTP between the organism
-   of interest and a set of template organisms.
+   Uses DIAMOND to perform a bidirectional BLAST between the organism
+   of interest and a set of template organisms
 
    Input:
    organismID      the id of the organism of interest. This should also
@@ -41,22 +41,28 @@
                    output is to be used with getModelFromHomology
    refFastaFiles   a cell array with the paths to the corresponding FASTA
                    files
+   developMode     true if blastReport should be generated that is used
+                   in the unit testing function for DIAMOND (opt, default
+                   false)
+   hideVerbose     true if no status messages should be printed (opt,
+                   default false)
 
    Output:
    blastStructure  structure containing the bidirectional homology
                    measurements which are used by getModelFromHomology
+   diamondReport   structure containing MD5 hashes for FASTA database
+                   files and non-parsed BLAST output data. Will be blank
+                   if developMode is false.
 
    NOTE: This function calls DIAMOND to perform a bidirectional homology
-   test between the organism of interest and a set of other organisms
+   search between the organism of interest and a set of other organisms
    using the '--more-sensitive' setting from DIAMOND. For the most
    sensitive results, the use of getBlast() is adviced, however,
    getDiamond() is a fast alternative (&gt;15x faster). The blastStructure
    generated is in the same format as those obtained from getBlast().
 
-   Usage: blastStructure=getDiamond(organismID,fastaFile,modelIDs,...
-           refFastaFiles)
-
-   Simonas Marcisauskas, 2019-08-17</pre></div>
+   Usage: [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
+    modelIDs,refFastaFiles,developMode,hideVerbose)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -71,148 +77,178 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function blastStructure=getDiamond(organismID,fastaFile,modelIDs,refFastaFiles)</a>
-0002 <span class="comment">% getDiamond</span>
-0003 <span class="comment">%   Uses DIAMOND to performs a bidirectional BLASTP between the organism</span>
-0004 <span class="comment">%   of interest and a set of template organisms.</span>
-0005 <span class="comment">%</span>
-0006 <span class="comment">%   Input:</span>
-0007 <span class="comment">%   organismID      the id of the organism of interest. This should also</span>
-0008 <span class="comment">%                   match with the id supplied to getModelFromHomology</span>
-0009 <span class="comment">%   fastaFile       a FASTA file with the protein sequences for the</span>
-0010 <span class="comment">%                   organism of interest</span>
-0011 <span class="comment">%   modelIDs        a cell array of model ids. These must match the</span>
-0012 <span class="comment">%                   &quot;model.id&quot; fields in the &quot;models&quot; structure if the</span>
-0013 <span class="comment">%                   output is to be used with getModelFromHomology</span>
-0014 <span class="comment">%   refFastaFiles   a cell array with the paths to the corresponding FASTA</span>
-0015 <span class="comment">%                   files</span>
-0016 <span class="comment">%</span>
-0017 <span class="comment">%   Output:</span>
-0018 <span class="comment">%   blastStructure  structure containing the bidirectional homology</span>
-0019 <span class="comment">%                   measurements which are used by getModelFromHomology</span>
-0020 <span class="comment">%</span>
-0021 <span class="comment">%   NOTE: This function calls DIAMOND to perform a bidirectional homology</span>
-0022 <span class="comment">%   test between the organism of interest and a set of other organisms</span>
-0023 <span class="comment">%   using the '--more-sensitive' setting from DIAMOND. For the most</span>
-0024 <span class="comment">%   sensitive results, the use of getBlast() is adviced, however,</span>
-0025 <span class="comment">%   getDiamond() is a fast alternative (&gt;15x faster). The blastStructure</span>
-0026 <span class="comment">%   generated is in the same format as those obtained from getBlast().</span>
-0027 <span class="comment">%</span>
-0028 <span class="comment">%   Usage: blastStructure=getDiamond(organismID,fastaFile,modelIDs,...</span>
-0029 <span class="comment">%           refFastaFiles)</span>
-0030 <span class="comment">%</span>
-0031 <span class="comment">%   Simonas Marcisauskas, 2019-08-17</span>
-0032 <span class="comment">%</span>
-0033 
-0034 <span class="comment">%Everything should be cell arrays</span>
-0035 organismID=cellstr(organismID);
-0036 fastaFile=cellstr(fastaFile);
-0037 modelIDs=cellstr(modelIDs);
-0038 refFastaFiles=cellstr(refFastaFiles);
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,</a><span class="keyword">...</span>
+0002     modelIDs,refFastaFiles,developMode,hideVerbose)
+0003 <span class="comment">% getDiamond</span>
+0004 <span class="comment">%   Uses DIAMOND to perform a bidirectional BLAST between the organism</span>
+0005 <span class="comment">%   of interest and a set of template organisms</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">%   Input:</span>
+0008 <span class="comment">%   organismID      the id of the organism of interest. This should also</span>
+0009 <span class="comment">%                   match with the id supplied to getModelFromHomology</span>
+0010 <span class="comment">%   fastaFile       a FASTA file with the protein sequences for the</span>
+0011 <span class="comment">%                   organism of interest</span>
+0012 <span class="comment">%   modelIDs        a cell array of model ids. These must match the</span>
+0013 <span class="comment">%                   &quot;model.id&quot; fields in the &quot;models&quot; structure if the</span>
+0014 <span class="comment">%                   output is to be used with getModelFromHomology</span>
+0015 <span class="comment">%   refFastaFiles   a cell array with the paths to the corresponding FASTA</span>
+0016 <span class="comment">%                   files</span>
+0017 <span class="comment">%   developMode     true if blastReport should be generated that is used</span>
+0018 <span class="comment">%                   in the unit testing function for DIAMOND (opt, default</span>
+0019 <span class="comment">%                   false)</span>
+0020 <span class="comment">%   hideVerbose     true if no status messages should be printed (opt,</span>
+0021 <span class="comment">%                   default false)</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">%   Output:</span>
+0024 <span class="comment">%   blastStructure  structure containing the bidirectional homology</span>
+0025 <span class="comment">%                   measurements which are used by getModelFromHomology</span>
+0026 <span class="comment">%   diamondReport   structure containing MD5 hashes for FASTA database</span>
+0027 <span class="comment">%                   files and non-parsed BLAST output data. Will be blank</span>
+0028 <span class="comment">%                   if developMode is false.</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">%   NOTE: This function calls DIAMOND to perform a bidirectional homology</span>
+0031 <span class="comment">%   search between the organism of interest and a set of other organisms</span>
+0032 <span class="comment">%   using the '--more-sensitive' setting from DIAMOND. For the most</span>
+0033 <span class="comment">%   sensitive results, the use of getBlast() is adviced, however,</span>
+0034 <span class="comment">%   getDiamond() is a fast alternative (&gt;15x faster). The blastStructure</span>
+0035 <span class="comment">%   generated is in the same format as those obtained from getBlast().</span>
+0036 <span class="comment">%</span>
+0037 <span class="comment">%   Usage: [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...</span>
+0038 <span class="comment">%    modelIDs,refFastaFiles,developMode,hideVerbose)</span>
 0039 
-0040 blastStructure=[];
-0041 
-0042 <span class="comment">%Get the directory for RAVEN Toolbox. This may not be the easiest or best</span>
-0043 <span class="comment">%way to do this</span>
-0044 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
-0045 ravenPath=fileparts(fileparts(ST(I).file));
+0040 <span class="keyword">if</span> nargin&lt;5
+0041     developMode = false;
+0042 <span class="keyword">end</span>
+0043 <span class="keyword">if</span> nargin&lt;6
+0044     hideVerbose = false;
+0045 <span class="keyword">end</span>
 0046 
-0047 <span class="comment">%Construct databases and output file</span>
-0048 tmpDB=tempname;
-0049 outFile=tempname;
-0050 
-0051 <span class="comment">%Check for existence of files. If no full path is specified for a file,</span>
-0052 <span class="comment">%assume that it is in the current folder</span>
-0053 <span class="keyword">if</span> isrow(refFastaFiles)
-0054     files=horzcat(fastaFile,refFastaFiles);
-0055 <span class="keyword">else</span>
-0056     files=vertcat(fastaFile,refFastaFiles);
-0057 <span class="keyword">end</span>
-0058 
-0059 files=checkFileExistence(files,true,false); <span class="comment">%No whitespace allowed</span>
-0060 fastaFile = files(1);
-0061 refFastaFiles = files(2:end);
-0062 
-0063 <span class="comment">%Create a database for the new organism and blast each of the refFastaFiles</span>
-0064 <span class="comment">%against it</span>
-0065 
-0066 <span class="keyword">if</span> isunix
-0067     <span class="keyword">if</span> ismac
-0068         binEnd=<span class="string">'.mac'</span>;
-0069     <span class="keyword">else</span>
-0070         binEnd=<span class="string">''</span>;
-0071     <span class="keyword">end</span>
-0072 <span class="keyword">elseif</span> ispc
-0073     binEnd=<span class="string">''</span>;
-0074 <span class="keyword">else</span>
-0075     dispEM(<span class="string">'Unknown OS, exiting.'</span>)
-0076     <span class="keyword">return</span>
-0077 <span class="keyword">end</span>
-0078 
-0079 <span class="comment">% Run BLAST multi-threaded to use all logical cores assigned to MATLAB.</span>
-0080 cores = evalc(<span class="string">'feature(''numcores'')'</span>);
-0081 cores = strsplit(cores, <span class="string">'MATLAB was assigned: '</span>);
-0082 cores = regexp(cores{2},<span class="string">'^\d*'</span>,<span class="string">'match'</span>);
-0083 cores = cores{1};
-0084 
-0085 [status, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'diamond'</span>,[<span class="string">'diamond'</span> binEnd]) <span class="string">'&quot; makedb --in &quot;'</span> fastaFile{1} <span class="string">'&quot; --db &quot;'</span> tmpDB <span class="string">'&quot;'</span>]);
-0086 <span class="keyword">if</span> status~=0
-0087     EM=[<span class="string">'DIAMOND makedb did not run successfully, error: '</span>, num2str(status)];
-0088     dispEM(EM,true);
+0047 <span class="comment">%Everything should be cell arrays</span>
+0048 organismID=convertCharArray(organismID);
+0049 fastaFile=convertCharArray(fastaFile);
+0050 modelIDs=convertCharArray(modelIDs);
+0051 refFastaFiles=convertCharArray(refFastaFiles);
+0052 
+0053 <span class="comment">%Create blank structures for results</span>
+0054 blastStructure=[];
+0055 diamondReport.dbHashes={};
+0056 diamondReport.diamondTxtOutput={};
+0057 
+0058 <span class="comment">%Get the directory for RAVEN Toolbox.</span>
+0059 ravenPath=findRAVENroot();
+0060 
+0061 <span class="comment">%Generate temporary names for DIAMOND databases and output files</span>
+0062 tmpDB=tempname;
+0063 outFile=tempname;
+0064 
+0065 <span class="comment">%Check for existence of files. If no full path is specified for a file,</span>
+0066 <span class="comment">%assume that it is in the current folder</span>
+0067 <span class="keyword">if</span> isrow(refFastaFiles)
+0068     files=horzcat(fastaFile,refFastaFiles);
+0069 <span class="keyword">else</span>
+0070     files=vertcat(fastaFile,refFastaFiles);
+0071 <span class="keyword">end</span>
+0072 
+0073 files=checkFileExistence(files,2); <span class="comment">%Copy files to temp dir</span>
+0074 fastaFile = files(1);
+0075 refFastaFiles = files(2:end);
+0076 
+0077 <span class="comment">%Identify the operating system</span>
+0078 <span class="keyword">if</span> isunix
+0079     <span class="keyword">if</span> ismac
+0080         binEnd=<span class="string">'.mac'</span>;
+0081     <span class="keyword">else</span>
+0082         binEnd=<span class="string">''</span>;
+0083     <span class="keyword">end</span>
+0084 <span class="keyword">elseif</span> ispc
+0085     binEnd=<span class="string">'.exe'</span>;
+0086 <span class="keyword">else</span>
+0087     dispEM(<span class="string">'Unknown OS, exiting.'</span>)
+0088     <span class="keyword">return</span>
 0089 <span class="keyword">end</span>
 0090 
-0091 <span class="keyword">for</span> i=1:numel(refFastaFiles)
-0092     fprintf([<span class="string">'Running DIAMOND blastp with &quot;'</span> modelIDs{i} <span class="string">'&quot; against &quot;'</span> organismID{1} <span class="string">'&quot;..\n'</span>]);
-0093     [status, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'diamond'</span>,[<span class="string">'diamond'</span> binEnd]) <span class="string">'&quot; blastp --query &quot;'</span> refFastaFiles{i} <span class="string">'&quot; --out &quot;'</span> outFile <span class="string">'_'</span> num2str(i) <span class="string">'&quot; --db &quot;'</span> tmpDB <span class="string">'&quot; --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads '</span> cores ]);
-0094     <span class="keyword">if</span> status~=0
-0095         EM=[<span class="string">'DIAMOND blastp did not run successfully, error: '</span>, num2str(status)];
-0096         dispEM(EM,true);
-0097     <span class="keyword">end</span>
-0098 <span class="keyword">end</span>
-0099 delete([tmpDB <span class="string">'*'</span>]);
-0100 
-0101 <span class="comment">%Then create a database for each of the reference organisms and blast the</span>
-0102 <span class="comment">%new organism against them</span>
-0103 <span class="keyword">for</span> i=1:numel(refFastaFiles)
-0104     fprintf([<span class="string">'Running DIAMOND blastp with &quot;'</span> organismID{1} <span class="string">'&quot; against &quot;'</span> modelIDs{i} <span class="string">'&quot;..\n'</span>]);
-0105     [status, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'diamond'</span>,[<span class="string">'diamond'</span> binEnd]) <span class="string">'&quot; makedb --in &quot;'</span> refFastaFiles{i} <span class="string">'&quot; --db &quot;'</span> tmpDB <span class="string">'&quot;'</span>]);
-0106     <span class="keyword">if</span> status~=0
-0107         EM=[<span class="string">'DIAMOND makedb did not run successfully, error: '</span>, num2str(status)];
-0108         dispEM(EM,true);
-0109     <span class="keyword">end</span>
-0110     [status, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'diamond'</span>,[<span class="string">'diamond'</span> binEnd]) <span class="string">'&quot; blastp --query &quot;'</span> fastaFile{1} <span class="string">'&quot; --out &quot;'</span> outFile <span class="string">'_r'</span> num2str(i) <span class="string">'&quot; --db &quot;'</span> tmpDB <span class="string">'&quot; --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads '</span> cores]);
-0111     delete([tmpDB <span class="string">'*'</span>]);
-0112     <span class="keyword">if</span> status~=0
-0113         EM=[<span class="string">'DIAMOND blastp did not run successfully, error: '</span>, num2str(status)];
-0114         dispEM(EM,true);
+0091 <span class="comment">%Run DIAMOND multi-threaded to use all logical cores assigned to MATLAB.</span>
+0092 cores = evalc(<span class="string">'feature(''numcores'')'</span>);
+0093 cores = strsplit(cores, <span class="string">'MATLAB was assigned: '</span>);
+0094 cores = regexp(cores{2},<span class="string">'^\d*'</span>,<span class="string">'match'</span>);
+0095 cores = cores{1};
+0096 
+0097 <span class="comment">%Create a database for the new organism and blast each of the refFastaFiles</span>
+0098 <span class="comment">%against it</span>
+0099 [status, message]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'diamond'</span>,[<span class="string">'diamond'</span> binEnd]) <span class="string">'&quot; makedb --in &quot;'</span> fastaFile{1} <span class="string">'&quot; --db &quot;'</span> fullfile(tmpDB) <span class="string">'&quot;'</span>]);
+0100 <span class="keyword">if</span> developMode
+0101     diamondReport.dbHashes{numel(diamondReport.dbHashes)+1} = char(regexp(message,<span class="string">'[a-f0-9]{32}'</span>,<span class="string">'match'</span>));
+0102 <span class="keyword">end</span>
+0103 <span class="keyword">if</span> status~=0
+0104     EM=[<span class="string">'DIAMOND makedb did not run successfully, error: '</span>, num2str(status)];
+0105     dispEM(EM,true);
+0106 <span class="keyword">end</span>
+0107 
+0108 <span class="keyword">for</span> i=1:numel(refFastaFiles)
+0109     <span class="keyword">if</span> ~hideVerbose
+0110         fprintf([<span class="string">'Running DIAMOND blastp with &quot;'</span> modelIDs{i} <span class="string">'&quot; against &quot;'</span> organismID{1} <span class="string">'&quot;..\n'</span>]);
+0111     <span class="keyword">end</span>
+0112     [status, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'diamond'</span>,[<span class="string">'diamond'</span> binEnd]) <span class="string">'&quot; blastp --query &quot;'</span> refFastaFiles{i} <span class="string">'&quot; --out &quot;'</span> outFile <span class="string">'_'</span> num2str(i) <span class="string">'&quot; --db &quot;'</span> fullfile(tmpDB) <span class="string">'&quot; --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads '</span> cores ]);
+0113     <span class="keyword">if</span> developMode
+0114         diamondReport.diamondTxtOutput{numel(diamondReport.diamondTxtOutput)+1}=importdata([outFile <span class="string">'_'</span> num2str(i)]);
 0115     <span class="keyword">end</span>
-0116 <span class="keyword">end</span>
-0117 
-0118 <span class="comment">%Done with the DIAMOND blastp, do the parsing of the text files</span>
-0119 <span class="keyword">for</span> i=1:numel(refFastaFiles)*2
-0120     tempStruct=[];
-0121     <span class="keyword">if</span> i&lt;=numel(refFastaFiles)
-0122         tempStruct.fromId=modelIDs{i};
-0123         tempStruct.toId=organismID{1};
-0124         A=readtable([outFile <span class="string">'_'</span> num2str(i)],<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>,<span class="string">'Format'</span>,<span class="string">'%s%s%f%f%f%f%f'</span>);
-0125     <span class="keyword">else</span>
-0126         tempStruct.fromId=organismID{1};
-0127         tempStruct.toId=modelIDs{i-numel(refFastaFiles)};
-0128         A=readtable([outFile <span class="string">'_r'</span> num2str(i-numel(refFastaFiles))],<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>,<span class="string">'Format'</span>,<span class="string">'%s%s%f%f%f%f%f'</span>);
-0129     <span class="keyword">end</span>
-0130     tempStruct.fromGenes=A{:,1};
-0131     tempStruct.toGenes=A{:,2};
-0132     tempStruct.evalue=table2array(A(:,3));
-0133     tempStruct.identity=table2array(A(:,4));
-0134     tempStruct.aligLen=table2array(A(:,5));
-0135     tempStruct.bitscore=table2array(A(:,6));
-0136     tempStruct.ppos=table2array(A(:,7));
-0137     blastStructure=[blastStructure tempStruct];
-0138 <span class="keyword">end</span>
-0139 
-0140 <span class="comment">%Remove the old tempfiles</span>
-0141 delete([outFile <span class="string">'*'</span>]);
-0142 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0116     <span class="keyword">if</span> status~=0
+0117         EM=[<span class="string">'DIAMOND blastp did not run successfully, error: '</span>, num2str(status)];
+0118         dispEM(EM,true);
+0119     <span class="keyword">end</span>
+0120 <span class="keyword">end</span>
+0121 delete([tmpDB filesep <span class="string">'tmpDB*'</span>]);
+0122 
+0123 <span class="comment">%Then create a database for each of the reference organisms and blast the</span>
+0124 <span class="comment">%new organism against them</span>
+0125 <span class="keyword">for</span> i=1:numel(refFastaFiles)
+0126     <span class="keyword">if</span> ~hideVerbose
+0127         fprintf([<span class="string">'Running DIAMOND blastp with &quot;'</span> organismID{1} <span class="string">'&quot; against &quot;'</span> modelIDs{i} <span class="string">'&quot;..\n'</span>]);
+0128     <span class="keyword">end</span>
+0129     [status, message]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'diamond'</span>,[<span class="string">'diamond'</span> binEnd]) <span class="string">'&quot; makedb --in &quot;'</span> refFastaFiles{i} <span class="string">'&quot; --db &quot;'</span> fullfile(tmpDB) <span class="string">'&quot;'</span>]);
+0130     <span class="keyword">if</span> status~=0
+0131         EM=[<span class="string">'DIAMOND makedb did not run successfully, error: '</span>, num2str(status)];
+0132         dispEM(EM,true);
+0133     <span class="keyword">end</span>
+0134     [status, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'diamond'</span>,[<span class="string">'diamond'</span> binEnd]) <span class="string">'&quot; blastp --query &quot;'</span> fastaFile{1} <span class="string">'&quot; --out &quot;'</span> outFile <span class="string">'_r'</span> num2str(i) <span class="string">'&quot; --db &quot;'</span> fullfile(tmpDB) <span class="string">'&quot; --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads '</span> cores]);
+0135     <span class="keyword">if</span> developMode
+0136         diamondReport.dbHashes{numel(diamondReport.dbHashes)+1} = char(regexp(message,<span class="string">'[a-f0-9]{32}'</span>,<span class="string">'match'</span>));
+0137         diamondReport.diamondTxtOutput{numel(diamondReport.diamondTxtOutput)+1}=importdata([outFile <span class="string">'_r'</span> num2str(i)]);
+0138     <span class="keyword">end</span>
+0139     <span class="keyword">if</span> status~=0
+0140         EM=[<span class="string">'DIAMOND blastp did not run successfully, error: '</span>, num2str(status)];
+0141         dispEM(EM,true);
+0142     <span class="keyword">end</span>
+0143     delete([tmpDB filesep <span class="string">'tmpDB*'</span>]);
+0144 <span class="keyword">end</span>
+0145 
+0146 <span class="comment">%Done with the DIAMOND blastp, do the parsing of the text files</span>
+0147 <span class="keyword">for</span> i=1:numel(refFastaFiles)*2
+0148     tempStruct=[];
+0149     <span class="keyword">if</span> i&lt;=numel(refFastaFiles)
+0150         tempStruct.fromId=modelIDs{i};
+0151         tempStruct.toId=organismID{1};
+0152         A=readtable([outFile <span class="string">'_'</span> num2str(i)],<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>,<span class="string">'Format'</span>,<span class="string">'%s%s%f%f%f%f%f'</span>);
+0153     <span class="keyword">else</span>
+0154         tempStruct.fromId=organismID{1};
+0155         tempStruct.toId=modelIDs{i-numel(refFastaFiles)};
+0156         A=readtable([outFile <span class="string">'_r'</span> num2str(i-numel(refFastaFiles))],<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>,<span class="string">'Format'</span>,<span class="string">'%s%s%f%f%f%f%f'</span>);
+0157     <span class="keyword">end</span>
+0158     tempStruct.fromGenes=A{:,1};
+0159     tempStruct.toGenes=A{:,2};
+0160     tempStruct.evalue=table2array(A(:,3));
+0161     tempStruct.identity=table2array(A(:,4));
+0162     tempStruct.aligLen=table2array(A(:,5));
+0163     tempStruct.bitscore=table2array(A(:,6));
+0164     tempStruct.ppos=table2array(A(:,7));
+0165     blastStructure=[blastStructure tempStruct];
+0166 <span class="keyword">end</span>
+0167 
+0168 <span class="comment">%Remove the old tempfiles</span>
+0169 delete([outFile <span class="string">'*'</span>]);
+0170 <span class="comment">%Remove the temp fasta files</span>
+0171 delete(files{:})
+0172 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -4,9 +4,6 @@
 %   stoichiometric modelling. It is shown how to build a simple model from
 %   scratch, set parameters and perform simple simulations.
 %   See Tutorial 2 in "RAVEN tutorials.docx" for more details.
-%
-%   Simonas Marcisauskas, 2019-10-24
-%
 
 %Import the Excel model into a RAVEN model structure
 smallModel=importExcelModel('empty.xlsx');

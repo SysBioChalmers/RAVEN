@@ -36,9 +36,6 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxn
 %
 %   Usage: [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...
 %           rxnScores,taskStructure,params)
-%
-%   Eduard Kerkhoven, 2018-05-18
-%
 
 if nargin<4
     printOutput=true;
@@ -56,7 +53,7 @@ if nargin<7
     params=[];
 end
 
-if isempty(taskStructure) && ~(exist(inputFile,'file')==2)
+if isempty(taskStructure) && ~isfile(inputFile)
     error('Task file %s cannot be found',string(inputFile));
 end
 
@@ -329,5 +326,6 @@ for i=1:numel(taskStructure)
         dispEM(EM,false);
     end
 end
+model.b(:,2) = [];  % resume field b
 outModel=model;
 end

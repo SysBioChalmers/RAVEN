@@ -52,6 +52,8 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allow
 %                               model.comps) (opt, default {})
 %            rxnNotes           cell array with reaction notes (opt,
 %                               default '')
+%            rxnDeltaG          Gibbs free energy at biochemical standard
+%                               condition in kJ/mole (opt, default NaN)
 %            rxnReferences      cell array with reaction references (opt,
 %                               default '')
 %            rxnConfidenceScores   vector with reaction confidence scores
@@ -60,7 +62,7 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allow
 %                    interpreted
 %                    1 - The metabolites are matched to model.mets. New
 %                        metabolites (if allowed) are added to
-%                        "compartment"
+%                        "compartment" (default)
 %                    2 - The metabolites are matched to model.metNames and
 %                        all metabolites are assigned to "compartment". Any
 %                        new metabolites that are added will be assigned
@@ -100,22 +102,33 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allow
 %
 %   Usage: newModel=addRxns(model,rxnsToAdd,eqnType,compartment,...
 %                           allowNewMets,allowNewGenes)
-%
-%   Eduard Kerkhoven, 2018-09-26
-%
+
+if nargin<3
+    eqnType=1;
+elseif ~isnumeric(eqnType)
+    EM='eqnType must be numeric';
+    dispEM(EM);
+elseif ~ismember(eqnType,[1 2 3])
+    EM='eqnType must be 1, 2, or 3';
+    dispEM(EM);
+end    
 
 if nargin<4
     compartment=[];
+else
+    compartment=char(compartment);
 end
 if nargin<5
     allowNewMets=false;
+elseif ~islogical(allowNewMets)
+    allowNewMets=char(allowNewMets);
 end
 if nargin<6
     allowNewGenes=false;
 end
 
 if allowNewGenes & isfield(rxnsToAdd,'grRules')
-    genesToAdd.genes = strjoin(rxnsToAdd.grRules);
+    genesToAdd.genes = strjoin(convertCharArray(rxnsToAdd.grRules));
     genesToAdd.genes = regexp(genesToAdd.genes,' |)|(|and|or','split'); % Remove all grRule punctuation
     genesToAdd.genes = genesToAdd.genes(~cellfun(@isempty,genesToAdd.genes));  % Remove spaces and empty genes
     genesToAdd.genes = setdiff(unique(genesToAdd.genes),model.genes); % Only keep new genes
@@ -138,22 +151,8 @@ if isempty(rxnsToAdd)
     return;
 end
 
-%Check the input
-if isfield(rxnsToAdd,'stoichCoeffs')
-    eqnType=1;
-elseif ~isnumeric(eqnType)
-    EM='eqnType must be numeric';
-    dispEM(EM);
-elseif ~ismember(eqnType,[1 2 3])
-    EM='eqnType must be 1, 2, or 3';
-    dispEM(EM);
-end
-
 if eqnType==2 || (eqnType==1 && allowNewMets==true)
-    if ~ischar(compartment)
-        EM='compartment must be a string';
-        dispEM(EM);
-    end
+    compartment=char(compartment);
     if ~ismember(compartment,model.comps)
         EM='compartment must match one of the compartments in model.comps';
         dispEM(EM);
@@ -163,7 +162,8 @@ end
 if ~isfield(rxnsToAdd,'rxns')
     EM='rxns is a required field in rxnsToAdd';
     dispEM(EM);
-elseif iscell(rxnsToAdd.rxns)
+else
+    rxnsToAdd.rxns=convertCharArray(rxnsToAdd.rxns);
     %To fit with some later printing
     rxnsToAdd.rxns=rxnsToAdd.rxns(:);
 end
@@ -177,30 +177,16 @@ if any(ismember(rxnsToAdd.rxns,model.rxns))
     dispEM(EM);
 end
 
-if ~iscellstr(rxnsToAdd.rxns) && ~ischar(rxnsToAdd.rxns)
-    %It could also be a string, but it's not encouraged
-    EM='rxnsToAdd.rxns must be a cell array of strings';
-    dispEM(EM);
-else
-    rxnsToAdd.rxns=cellstr(rxnsToAdd.rxns);
-end
-
 %Normal case: equations provided
 if isfield(rxnsToAdd,'equations')
-    if ~iscellstr(rxnsToAdd.equations) && ~ischar(rxnsToAdd.equations)
-        %It could also be a string, but it's not encouraged
-        EM='rxnsToAdd.equations must be a cell array of strings';
-        dispEM(EM);
-    else
-        rxnsToAdd.equations=cellstr(rxnsToAdd.equations);
-    end
-    
+    rxnsToAdd.equations=convertCharArray(rxnsToAdd.equations);
+
     %Alternative case: mets+stoichiometry provided
 else
     %In the case of 1 rxn added (array of strings + vector), transform to
     %cells of length=1:
     if iscellstr(rxnsToAdd.mets)
-        rxnsToAdd.mets = {rxnsToAdd.mets};
+        rxnsToAdd.mets={rxnsToAdd.mets};
     end
     if isnumeric(rxnsToAdd.stoichCoeffs)
         rxnsToAdd.stoichCoeffs = {rxnsToAdd.stoichCoeffs};
@@ -230,7 +216,11 @@ else
     for i = 1:length(rxnsToAdd.mets)
         mets         = rxnsToAdd.mets{i};
         stoichCoeffs = rxnsToAdd.stoichCoeffs{i};
-        isrev        = rxnsToAdd.lb(i) < 0;
+        if isfield(rxnsToAdd,'ub')
+            isrev        = rxnsToAdd.lb(i) < 0 && rxnsToAdd.ub(i) > 0;
+        else
+            isrev        = rxnsToAdd.lb(i) < 0;
+        end
         rxnsToAdd.equations{i} = buildEquation(mets,stoichCoeffs,isrev);
     end
 end
@@ -242,6 +232,7 @@ filler(:)={''};
 cellfiller=cellfun(@(x) cell(0,0),filler,'UniformOutput',false);
 largeFiller=cell(nOldRxns,1);
 largeFiller(:)={''};
+celllargefiller=cellfun(@(x) cell(0,0),largeFiller,'UniformOutput',false);
 
 %***Add everything to the model except for the equations.
 if numel(rxnsToAdd.equations)~=nRxns
@@ -259,6 +250,7 @@ newModel.rev=[newModel.rev;reversible];
 newModel.rxns=[newModel.rxns;rxnsToAdd.rxns(:)];
 
 if isfield(rxnsToAdd,'rxnNames')
+    rxnsToAdd.rxnNames=convertCharArray(rxnsToAdd.rxnNames);
     if numel(rxnsToAdd.rxnNames)~=nRxns
         EM='rxnsToAdd.rxnNames must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);
@@ -314,7 +306,7 @@ if isfield(rxnsToAdd,'ub')
     end
     %Fill with standard if it doesn't exist
     if ~isfield(newModel,'ub')
-        newModel.ub=repmat(newUb,nOldrxns,1);
+        newModel.ub=repmat(newUb,nOldRxns,1);
     end
     newModel.ub=[newModel.ub;rxnsToAdd.ub(:)];
 else
@@ -342,6 +334,7 @@ else
 end
 
 if isfield(rxnsToAdd,'eccodes')
+    rxnsToAdd.eccodes=convertCharArray(rxnsToAdd.eccodes);
     if numel(rxnsToAdd.eccodes)~=nRxns
         EM='rxnsToAdd.eccodes must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);
@@ -363,11 +356,16 @@ if isfield(rxnsToAdd,'subSystems')
         EM='rxnsToAdd.subSystems must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);
     end
+    for i=1:numel(rxnsToAdd.subSystems)
+        if ischar(rxnsToAdd.subSystems{i})
+            rxnsToAdd.subSystems{i}=rxnsToAdd.subSystems(i);
+        end
+    end
     %Fill with standard if it doesn't exist
     if ~isfield(newModel,'subSystems')
-        newModel.subSystems=largeFiller;
+        newModel.subSystems=celllargefiller;
     end
-    newModel.subSystems=[newModel.subSystems;rxnsToAdd.subSystems(:)];
+    newModel.subSystems=[newModel.subSystems;rxnsToAdd.subSystems];
 else
     %Fill with standard if it doesn't exist
     if isfield(newModel,'subSystems')
@@ -411,6 +409,7 @@ else
     end
 end
 if isfield(rxnsToAdd,'grRules')
+    rxnsToAdd.grRules=convertCharArray(rxnsToAdd.grRules);
     if numel(rxnsToAdd.grRules)~=nRxns
         EM='rxnsToAdd.grRules must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);
@@ -428,6 +427,7 @@ else
 end
 
 if isfield(rxnsToAdd,'rxnFrom')
+    rxnsToAdd.rxnFrom=convertCharArray(rxnsToAdd.rxnFrom);
     if numel(rxnsToAdd.rxnFrom)~=nRxns
         EM='rxnsToAdd.rxnFrom must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);
@@ -445,6 +445,7 @@ else
 end
 
 if isfield(rxnsToAdd,'rxnNotes')
+    rxnsToAdd.rxnNotes=convertCharArray(rxnsToAdd.rxnNotes);
     if numel(rxnsToAdd.rxnNotes)~=nRxns
         EM='rxnsToAdd.rxnNotes must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);
@@ -462,6 +463,7 @@ else
 end
 
 if isfield(rxnsToAdd,'rxnReferences')
+    rxnsToAdd.rxnReferences=convertCharArray(rxnsToAdd.rxnReferences);
     if numel(rxnsToAdd.rxnReferences)~=nRxns
         EM='rxnsToAdd.rxnReferences must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);
@@ -479,6 +481,7 @@ else
 end
 
 if isfield(rxnsToAdd,'pwys')
+    rxnsToAdd.pwys=convertCharArray(rxnsToAdd.pwys);
     if numel(rxnsToAdd.pwys)~=nRxns
         EM='rxnsToAdd.pwys must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);
@@ -503,8 +506,6 @@ if isfield(rxnsToAdd,'rxnConfidenceScores')
     %Fill with standard if it doesn't exist
     if ~isfield(newModel,'rxnConfidenceScores')
         newModel.rxnConfidenceScores=NaN(nOldRxns,1);
-        EM='Adding reactions with confidence scores without such information. All existing reactions will have confidence scores as NaNs';
-        dispEM(EM,false);
     end
     newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;rxnsToAdd.rxnConfidenceScores(:)];
 else
@@ -514,24 +515,41 @@ else
     end
 end
 
+if isfield(rxnsToAdd,'rxnDeltaG')
+    if numel(rxnsToAdd.rxnDeltaG)~=nRxns
+        EM='rxnsToAdd.rxnDeltaG must have the same number of elements as rxnsToAdd.rxns';
+        dispEM(EM);
+    end
+    %Fill with standard if it doesn't exist
+    if ~isfield(newModel,'rxnDeltaG')
+        newModel.rxnDeltaG=NaN(nOldRxns,1);
+    end
+    newModel.rxnDeltaG=[newModel.rxnDeltaG;rxnsToAdd.rxnDeltaG(:)];
+else
+    %Fill with standard if it doesn't exist
+    if isfield(newModel,'rxnDeltaG')
+        newModel.rxnDeltaG=[newModel.rxnDeltaG;NaN(nRxns,1)];
+    end
+end
+
 
 %***Start parsing the equations and adding the info to the S matrix The
 %mets are matched to model.mets
 if eqnType==1
     [I, J]=ismember(mets,model.mets);
     if ~all(I)
-        if allowNewMets==true | isstr(allowNewMets)
+        if allowNewMets==true || ischar(allowNewMets)
             %Add the new mets
             metsToAdd.mets=mets(~I);
             metsToAdd.metNames=metsToAdd.mets;
             metsToAdd.compartments=compartment;
-            if isstr(allowNewMets)
+            if ischar(allowNewMets)
                 newModel=addMets(newModel,metsToAdd,true,allowNewMets);
             else
                 newModel=addMets(newModel,metsToAdd,true);
             end
         else
-            EM='One or more equations contain metabolites that are not in model.mets. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function';
+            EM='One or more equations contain metabolites that are not in model.mets. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function. Are you sure that eqnType=1?';
             dispEM(EM);
         end
     end
@@ -555,11 +573,11 @@ if eqnType==2
     [I, J]=ismember(t1,t2);
     
     if ~all(I)
-        if allowNewMets==true | isstr(allowNewMets)
+        if allowNewMets==true || ischar(allowNewMets)
             %Add the new mets
             metsToAdd.metNames=mets(~I);
             metsToAdd.compartments=compartment;
-            if isstr(allowNewMets)
+            if ischar(allowNewMets)
                 newModel=addMets(newModel,metsToAdd,true,allowNewMets);
             else
                 newModel=addMets(newModel,metsToAdd,true);
@@ -605,11 +623,11 @@ if eqnType==3
     [I, J]=ismember(t1,t2);
     
     if ~all(I)
-        if allowNewMets==true | isstr(allowNewMets)
+        if allowNewMets==true | ischar(allowNewMets)
             %Add the new mets
             metsToAdd.metNames=metNames(~I);
             metsToAdd.compartments=compartments(~I);
-            if isstr(allowNewMets)
+            if ischar(allowNewMets)
                 newModel=addMets(newModel,metsToAdd,true,allowNewMets);
             else
                 newModel=addMets(newModel,metsToAdd,true);

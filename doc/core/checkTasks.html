@@ -24,7 +24,7 @@
 <div class="box"><strong>checkTasks</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [taskReport, essentialRxns, taskStructure]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure) </strong></div>
+<div class="box"><strong>function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> checkTasks
@@ -59,6 +59,8 @@
                        are supplied). If getEssential=false then
                        essentialRxns=false(nRxns,nTasks)
    taskStructure       structure with the tasks, as from parseTaskList
+   essentialFluxes     The fluxes of the essential rxns - same structure as essentialRxns
+   
 
    This function is used for defining a set of tasks for a model to
    perform. The tasks are defined by defining constraints on the model,
@@ -69,9 +71,7 @@
    can be used for each task.
 
    Usage: [taskReport, essentialReactions, taskStructure]=checkTasks(model,inputFile,...
-           printOutput,printOnlyFailed,getEssential,taskStructure)
-
-   Rasmus Agren, 2014-01-08</pre></div>
+           printOutput,printOnlyFailed,getEssential,taskStructure)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -86,7 +86,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [taskReport, essentialRxns, taskStructure]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure)</a>
 0002 <span class="comment">% checkTasks</span>
 0003 <span class="comment">%   Performs a set of simulations as defined in a task file.</span>
 0004 <span class="comment">%</span>
@@ -119,46 +119,46 @@ This function is called by:
 0031 <span class="comment">%                       are supplied). If getEssential=false then</span>
 0032 <span class="comment">%                       essentialRxns=false(nRxns,nTasks)</span>
 0033 <span class="comment">%   taskStructure       structure with the tasks, as from parseTaskList</span>
-0034 <span class="comment">%</span>
-0035 <span class="comment">%   This function is used for defining a set of tasks for a model to</span>
-0036 <span class="comment">%   perform. The tasks are defined by defining constraints on the model,</span>
-0037 <span class="comment">%   and if the problem is feasible, then the task is considered successful.</span>
-0038 <span class="comment">%   In general, each row can contain one constraint on uptakes, one</span>
-0039 <span class="comment">%   constraint on outputs, one new equation, and one change of reaction</span>
-0040 <span class="comment">%   bounds. If more bounds are needed to define the task, then several rows</span>
-0041 <span class="comment">%   can be used for each task.</span>
-0042 <span class="comment">%</span>
-0043 <span class="comment">%   Usage: [taskReport, essentialReactions, taskStructure]=checkTasks(model,inputFile,...</span>
-0044 <span class="comment">%           printOutput,printOnlyFailed,getEssential,taskStructure)</span>
-0045 <span class="comment">%</span>
-0046 <span class="comment">%   Rasmus Agren, 2014-01-08</span>
-0047 <span class="comment">%</span>
-0048 
-0049 <span class="keyword">if</span> nargin&lt;3 || isempty(printOutput)
-0050     printOutput=true;
-0051 <span class="keyword">end</span>
-0052 <span class="keyword">if</span> nargin&lt;4 || isempty(printOnlyFailed)
-0053     printOnlyFailed=false;
-0054 <span class="keyword">end</span>
-0055 <span class="keyword">if</span> nargin&lt;5 || isempty(getEssential)
-0056     getEssential=false;
-0057 <span class="keyword">end</span>
-0058 
-0059 <span class="comment">%Prepare the input model a little</span>
-0060 model.b=zeros(numel(model.mets),2);
-0061 
-0062 modelMets=upper(strcat(model.metNames,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>));
-0063 <span class="keyword">if</span> ~isfield(model,<span class="string">'unconstrained'</span>)
-0064     EM=<span class="string">'Exchange metabolites should normally not be removed from the model when using checkTasks. Inputs and outputs are defined in the task file instead. Use importModel(file,false) to import a model with exchange metabolites remaining'</span>;
-0065     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0066 <span class="keyword">end</span>
-0067 
-0068 <span class="comment">%Parse the task file</span>
-0069 <span class="keyword">if</span> nargin&lt;6
-0070     taskStructure=<a href="parseTaskList.html" class="code" title="function taskStruct=parseTaskList(inputFile)">parseTaskList</a>(inputFile);
-0071 <span class="keyword">end</span>
-0072 
-0073 essentialRxns=false(numel(model.rxns),numel(taskStructure));
+0034 <span class="comment">%   essentialFluxes     The fluxes of the essential rxns - same structure as essentialRxns</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">%</span>
+0037 <span class="comment">%   This function is used for defining a set of tasks for a model to</span>
+0038 <span class="comment">%   perform. The tasks are defined by defining constraints on the model,</span>
+0039 <span class="comment">%   and if the problem is feasible, then the task is considered successful.</span>
+0040 <span class="comment">%   In general, each row can contain one constraint on uptakes, one</span>
+0041 <span class="comment">%   constraint on outputs, one new equation, and one change of reaction</span>
+0042 <span class="comment">%   bounds. If more bounds are needed to define the task, then several rows</span>
+0043 <span class="comment">%   can be used for each task.</span>
+0044 <span class="comment">%</span>
+0045 <span class="comment">%   Usage: [taskReport, essentialReactions, taskStructure]=checkTasks(model,inputFile,...</span>
+0046 <span class="comment">%           printOutput,printOnlyFailed,getEssential,taskStructure)</span>
+0047 
+0048 <span class="keyword">if</span> nargin&lt;3 || isempty(printOutput)
+0049     printOutput=true;
+0050 <span class="keyword">end</span>
+0051 <span class="keyword">if</span> nargin&lt;4 || isempty(printOnlyFailed)
+0052     printOnlyFailed=false;
+0053 <span class="keyword">end</span>
+0054 <span class="keyword">if</span> nargin&lt;5 || isempty(getEssential)
+0055     getEssential=false;
+0056 <span class="keyword">end</span>
+0057 
+0058 <span class="comment">%Prepare the input model a little</span>
+0059 model.b=zeros(numel(model.mets),2);
+0060 
+0061 modelMets=upper(strcat(model.metNames,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>));
+0062 <span class="keyword">if</span> ~isfield(model,<span class="string">'unconstrained'</span>)
+0063     EM=<span class="string">'Exchange metabolites should normally not be removed from the model when using checkTasks. Inputs and outputs are defined in the task file instead. Use importModel(file,false) to import a model with exchange metabolites remaining'</span>;
+0064     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0065 <span class="keyword">end</span>
+0066 
+0067 <span class="comment">%Parse the task file</span>
+0068 <span class="keyword">if</span> nargin&lt;6
+0069     taskStructure=<a href="parseTaskList.html" class="code" title="function taskStruct=parseTaskList(inputFile)">parseTaskList</a>(inputFile);
+0070 <span class="keyword">end</span>
+0071 
+0072 essentialRxns=false(numel(model.rxns),numel(taskStructure));
+0073 essentialFluxes = NaN(numel(model.rxns),numel(taskStructure));
 0074 
 0075 tModel=model;
 0076 taskReport=[];
@@ -269,70 +269,83 @@ This function is called by:
 0181         <span class="keyword">end</span>
 0182         <span class="comment">%Then add the normal constraints</span>
 0183         <span class="keyword">if</span> any(J)
-0184             tModel.b(J,1)=taskStructure(i).LBout(I);
-0185             tModel.b(J,2)=taskStructure(i).UBout(I);
-0186         <span class="keyword">end</span>
-0187     <span class="keyword">end</span>
-0188     <span class="comment">%Add new rxns</span>
-0189     <span class="keyword">if</span> ~isempty(taskStructure(i).equations)
-0190         rxn.equations=taskStructure(i).equations;
-0191         rxn.lb=taskStructure(i).LBequ;
-0192         rxn.ub=taskStructure(i).UBequ;
-0193         rxn.rxns=strcat({<span class="string">'TEMPORARY_'</span>},num2str((1:numel(taskStructure(i).equations))'));
-0194         <span class="comment">%Allow for new metabolites to be added. This is because it should</span>
-0195         <span class="comment">%be possible to add, say, a whole new pathway</span>
-0196         tModel=<a href="addRxns.html" class="code" title="function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allowNewGenes)">addRxns</a>(tModel,rxn,3,[],true);
+0184             <span class="comment">%Verify that IN and OUT bounds are consistent. Cannot require</span>
+0185             <span class="comment">%that a metabolite is simultaneously input AND output at some</span>
+0186             <span class="comment">%nonzero flux.</span>
+0187             I = find(I);  <span class="comment">% otherwise indexing becomes confusing</span>
+0188             nonzero_LBin = tModel.b(J,2) &lt; 0;
+0189             nonzero_LBout = taskStructure(i).LBout(I) &gt; 0;
+0190             <span class="keyword">if</span> any(nonzero_LBin &amp; nonzero_LBout)
+0191                 EM=[<span class="string">'The IN LB and OUT LB in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; cannot be nonzero for the same metabolite'</span>];
+0192                 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0193             <span class="keyword">end</span>
+0194             tModel.b(J(nonzero_LBout),1)=taskStructure(i).LBout(I(nonzero_LBout));
+0195             tModel.b(J,2)=taskStructure(i).UBout(I);
+0196         <span class="keyword">end</span>
 0197     <span class="keyword">end</span>
-0198     <span class="comment">%Add changed bounds</span>
-0199     <span class="keyword">if</span> ~isempty(taskStructure(i).changed)
-0200         tModel=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(tModel,<span class="string">'lb'</span>,taskStructure(i).changed,taskStructure(i).LBrxn);
-0201         tModel=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(tModel,<span class="string">'ub'</span>,taskStructure(i).changed,taskStructure(i).UBrxn);
-0202     <span class="keyword">end</span>
-0203     
-0204     <span class="comment">%Solve and print</span>
-0205     sol=solveLP(tModel);
-0206     <span class="keyword">if</span> ~isempty(sol.x)
-0207         <span class="keyword">if</span> ~taskStructure(i).shouldFail
-0208             taskReport.ok(i,1)=true;
-0209             <span class="keyword">if</span> printOnlyFailed==false &amp;&amp; printOutput==true
-0210                 fprintf([<span class="string">'PASS: ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
-0211             <span class="keyword">end</span>
-0212             <span class="comment">%Calculate the essential reactions</span>
-0213             <span class="keyword">if</span> getEssential==true
-0214                 [~, taskEssential]=<a href="getEssentialRxns.html" class="code" title="function [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns)">getEssentialRxns</a>(tModel);
-0215                 <span class="comment">%This is because there could be more reactions in tModel</span>
-0216                 <span class="comment">%than in model</span>
-0217                 essentialRxns(taskEssential(taskEssential&lt;=numel(model.rxns)),i)=true;
-0218             <span class="keyword">end</span>
-0219         <span class="keyword">else</span>
-0220             taskReport.ok(i,1)=false;
-0221             <span class="keyword">if</span> printOutput==true
-0222                 fprintf([<span class="string">'PASS (should fail): ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
-0223             <span class="keyword">end</span>
-0224         <span class="keyword">end</span>
-0225     <span class="keyword">else</span>
-0226         <span class="keyword">if</span> ~taskStructure(i).shouldFail
-0227             taskReport.ok(i,1)=false;
-0228             <span class="keyword">if</span> printOutput==true
-0229                 fprintf([<span class="string">'FAIL: ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
-0230             <span class="keyword">end</span>
-0231         <span class="keyword">else</span>
-0232             taskReport.ok(i,1)=true;
-0233             <span class="keyword">if</span> printOnlyFailed==false &amp;&amp; printOutput==true
-0234                 fprintf([<span class="string">'FAIL (should fail): ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
-0235             <span class="keyword">end</span>
-0236         <span class="keyword">end</span>
-0237     <span class="keyword">end</span>
-0238     <span class="keyword">if</span> taskStructure(i).printFluxes &amp;&amp; ~isempty(sol.x)
-0239         sol=solveLP(tModel,1);
-0240         <span class="keyword">if</span> ~isempty(sol.x)
-0241             <a href="printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>(tModel,sol.x,false,10^-6,[],<span class="string">'%rxnID (%eqn):%flux\n'</span>);
-0242             fprintf(<span class="string">'\n'</span>);
-0243         <span class="keyword">end</span>
-0244     <span class="keyword">end</span>
-0245     tModel=model;
-0246 <span class="keyword">end</span>
-0247 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0198     <span class="comment">%Add new rxns</span>
+0199     <span class="keyword">if</span> ~isempty(taskStructure(i).equations)
+0200         rxn.equations=taskStructure(i).equations;
+0201         rxn.lb=taskStructure(i).LBequ;
+0202         rxn.ub=taskStructure(i).UBequ;
+0203         rxn.rxns=strcat({<span class="string">'TEMPORARY_'</span>},num2str((1:numel(taskStructure(i).equations))'));
+0204         <span class="comment">%Allow for new metabolites to be added. This is because it should</span>
+0205         <span class="comment">%be possible to add, say, a whole new pathway</span>
+0206         tModel=<a href="addRxns.html" class="code" title="function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allowNewGenes)">addRxns</a>(tModel,rxn,3,[],true);
+0207     <span class="keyword">end</span>
+0208     <span class="comment">%Add changed bounds</span>
+0209     <span class="keyword">if</span> ~isempty(taskStructure(i).changed)
+0210         tModel=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(tModel,<span class="string">'lb'</span>,taskStructure(i).changed,taskStructure(i).LBrxn);
+0211         tModel=<a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(tModel,<span class="string">'ub'</span>,taskStructure(i).changed,taskStructure(i).UBrxn);
+0212     <span class="keyword">end</span>
+0213     
+0214     <span class="comment">%Solve and print</span>
+0215     sol=solveLP(tModel);
+0216     <span class="keyword">if</span> ~isempty(sol.x)
+0217         <span class="comment">%assign the fluxes</span>
+0218         essentialFluxes(:,i) = sol.x(1:numel(model.rxns));
+0219         
+0220         <span class="keyword">if</span> ~taskStructure(i).shouldFail
+0221             taskReport.ok(i,1)=true;
+0222             <span class="keyword">if</span> printOnlyFailed==false &amp;&amp; printOutput==true
+0223                 fprintf([<span class="string">'PASS: ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
+0224             <span class="keyword">end</span>
+0225             <span class="comment">%Calculate the essential reactions</span>
+0226             <span class="keyword">if</span> getEssential==true
+0227                 [~, taskEssential]=<a href="getEssentialRxns.html" class="code" title="function [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns)">getEssentialRxns</a>(tModel);
+0228                 <span class="comment">%This is because there could be more reactions in tModel</span>
+0229                 <span class="comment">%than in model</span>
+0230                 essentialRxns(taskEssential(taskEssential&lt;=numel(model.rxns)),i)=true;
+0231             <span class="keyword">end</span>
+0232         <span class="keyword">else</span>
+0233             taskReport.ok(i,1)=false;
+0234             <span class="keyword">if</span> printOutput==true
+0235                 fprintf([<span class="string">'PASS (should fail): ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
+0236             <span class="keyword">end</span>
+0237         <span class="keyword">end</span>
+0238     <span class="keyword">else</span>
+0239         <span class="keyword">if</span> ~taskStructure(i).shouldFail
+0240             taskReport.ok(i,1)=false;
+0241             <span class="keyword">if</span> printOutput==true
+0242                 fprintf([<span class="string">'FAIL: ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
+0243             <span class="keyword">end</span>
+0244         <span class="keyword">else</span>
+0245             taskReport.ok(i,1)=true;
+0246             <span class="keyword">if</span> printOnlyFailed==false &amp;&amp; printOutput==true
+0247                 fprintf([<span class="string">'FAIL (should fail): ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
+0248             <span class="keyword">end</span>
+0249         <span class="keyword">end</span>
+0250     <span class="keyword">end</span>
+0251     <span class="keyword">if</span> taskStructure(i).printFluxes &amp;&amp; ~isempty(sol.x)
+0252         sol=solveLP(tModel,1);
+0253         <span class="keyword">if</span> ~isempty(sol.x)
+0254             <a href="printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>(tModel,sol.x,false,10^-6,[],<span class="string">'%rxnID (%eqn):%flux\n'</span>);
+0255             fprintf(<span class="string">'\n'</span>);
+0256         <span class="keyword">end</span>
+0257     <span class="keyword">end</span>
+0258     tModel=model;
+0259 <span class="keyword">end</span>
+0260 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

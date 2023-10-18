@@ -14,12 +14,11 @@ function GSS = parseScores(inputFile, predictor)
 %	is 1.0.
 %
 %	Usage: GSS = parseScores(inputFile, predictor)
-%
-%	Simonas Marcisauskas, 2019-11-13
-%
 
 if nargin<2
     predictor='wolf';
+else
+    predictor=char(predictor);
 end
 
 fid=fopen(inputFile,'r');
@@ -92,8 +91,8 @@ elseif strcmpi(predictor,'deeploc')
     fid=fopen(inputFile,'r');
     %Read the title line and fetch the list of compartments
     tline = fgetl(fid);
-    GSS.compartments=regexp(tline,'\t','split');
-    GSS.compartments=GSS.compartments(3:end);
+    GSS.compartments=regexp(tline,',','split');
+    GSS.compartments=GSS.compartments(4:end);
     
     %Now iterate through the following lines in the file. Each row
     %corresponds to one gene and it consists of the scores for
@@ -105,8 +104,8 @@ elseif strcmpi(predictor,'deeploc')
         if ~ischar(tline)
             break;
         end
-        tline=regexp(tline,'\t','split');
-        GSS.scores(row,:)=str2double(tline(3:end));
+        tline=regexp(tline,',','split');
+        GSS.scores(row,:)=str2double(tline(4:end));
         GSS.genes{row,1}=tline{1,1};
     end
 end

@@ -12,9 +12,6 @@ function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)
 %                   true)
 %
 %   Usage: wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw)
-%
-%   Simonas Marcisauskas, 2017-06-02
-%
 
 if nargin<7
     isIntegers=true;

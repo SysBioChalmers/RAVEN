@@ -18,9 +18,6 @@ function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)
 %   model             an updated model structure
 %
 %   Usage: model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)
-%
-%   Simonas Marcisauskas, 2018-03-19
-%
 
 if nargin<2
     sortReversible=true;
@@ -76,7 +73,7 @@ if sortReactionOrder==true
         end
     end
     subsystemsUnique=unique(subsystemsUnique);
-    for i=1:numel(subsystems)
+    for i=1:numel(subsystemsUnique)
         %Get all reactions for that subsystem
         rxns=find(~cellfun(@isempty,regexp(subsystemsConcatenated,subsystemsUnique(i))));
         

@@ -11,9 +11,6 @@ function pathway=markPathwayWithExpression(pathway,model,experiment,experimentOr
 %   pathway           updated pathway object
 %
 %   Usage: pathway=markPathwayWithExpression(pathway,model,experiment,experimentOrder)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
 if numel(experimentOrder)~=2
     EM='This can only be done for two cases at the moment (experimentOrder must be two elements)';

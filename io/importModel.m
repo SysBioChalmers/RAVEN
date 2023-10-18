@@ -3,7 +3,8 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %   Import a constraint-based model from a SBML file
 %
 %   Input:
-%   fileName        a SBML file to import
+%   fileName        a SBML file to import. A dialog window will open if 
+%                   no file name is specified.
 %   removeExcMets   true if exchange metabolites should be removed. This is
 %                   needed to be able to run simulations, but it could also
 %                   be done using simplifyModel at a later stage (opt,
@@ -16,7 +17,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %   Output:
 %   model
 %       id               model ID
-%       description      description of model contents
+%       name      name of model contents
 %       annotation       additional information about model
 %       rxns             reaction ids
 %       mets             metabolite ids
@@ -72,10 +73,15 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %         consensus network model formulation.
 %
 %   Usage: model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
-%
-%   Eduard Kerkhoven, 2018-07-19
-%
-
+if nargin<1 || isempty(fileName)
+    [fileName, pathName] = uigetfile({'*.xml;*.sbml'}, 'Please select the model file');
+    if fileName == 0
+        error('You should select a model file')
+    else
+        fileName = fullfile(pathName,fileName);
+    end
+end
+fileName=char(fileName);
 if nargin<2
     removeExcMets=true;
 end
@@ -88,7 +94,7 @@ if nargin<4
     supressWarnings=false;
 end
 
-if ~(exist(fileName,'file')==2)
+if ~isfile(fileName)
     error('SBML file %s cannot be found',string(fileName));
 end
 
@@ -96,7 +102,7 @@ end
 %from Excel
 model=[];
 model.id=[];
-model.description=[];
+model.name=[];
 model.annotation=[];
 model.rxns={};
 model.mets={};
@@ -133,7 +139,11 @@ model.metCharges=[];
 model.unconstrained=[];
 
 %Load the model using libSBML
+[ravenDir,prevDir]=findRAVENroot();
+fileName=checkFileExistence(fileName,1);
+cd(fullfile(ravenDir,'software','libSBML'));
 modelSBML = TranslateSBML(fileName,0,0,[1 1]);
+cd(prevDir);
 
 if isempty(modelSBML)
     EM='There is a problem with the SBML file. Try using the SBML Validator at http://sbml.org/Facilities/Validator';
@@ -222,6 +232,9 @@ complexNames={};
 %with 'E_'
 geneSBOs = [];
 metSBOs = [];
+%Regex of compartment names, later to be used to remove from metabolite
+%names if present as suffix.
+regexCompNames = ['\s?\[((' strjoin({modelSBML.compartment.name},')|(') '))\]$'];
 for i=1:numel(modelSBML.species)
     if ~isSBML2COBRA
         if length(modelSBML.species(i).id)>=2 && strcmpi(modelSBML.species(i).id(1:2),'E_')
@@ -395,24 +408,9 @@ for i=1:numel(modelSBML.species)
     %The following lines are executed regardless isSBML2COBRA setting
     if isempty(modelSBML.species(i).id) || ~strcmpi(modelSBML.species(i).id(1:2),'E_')
         if isempty(modelSBML.species(i).id) || ~strcmpi(modelSBML.species(i).id(1:3),'Cx_')
-            %Metabolite names could be of format NAME [compartment]. First
-            %check whether metabolite name ends with square brackets, and
-            %then check if the text within these brackets is a compartment
-            %name. If so, then remove this section from the metabolite
-            %name
-            comp.match=regexp(modelSBML.species(i).name,'.* \[(.*)\]$','match');
-            if ~isempty(comp.match)
-                comp.split=strsplit(comp.match{1},{'[',']'});
-                comp.true=any(strcmpi({modelSBML.compartment.name},comp.split{2}));
-                if comp.true==1
-                    metaboliteNames{numel(metaboliteNames),1}=strtrim(comp.split{1});
-                else
-                    metaboliteNames{numel(metaboliteNames),1}=regexprep(modelSBML.species(i).name,'^M_','');
-                end
-            else
-                %Use the full name
-                metaboliteNames{i,1}=modelSBML.species(i).name;
-            end
+            %Remove trailing [compartment] from metabolite name if present
+            metaboliteNames{end,1}=regexprep(metaboliteNames{end,1},regexCompNames,'');
+            metaboliteNames{end,1}=regexprep(metaboliteNames{end,1},'^M_','');
             if isfield(modelSBML.species(i),'fbc_charge')
                 if ~isempty(modelSBML.species(i).fbc_charge) && modelSBML.species(i).isSetfbc_charge
                     metaboliteCharges(numel(metaboliteCharges)+1,1)=double(modelSBML.species(i).fbc_charge);
@@ -526,6 +524,12 @@ for i=1:numel(modelSBML.reaction)
         for n=1:numel(parameter.value)
             lb=regexprep(lb,parameter.name(n),num2str(parameter.value{n}));
             ub=regexprep(ub,parameter.name(n),num2str(parameter.value{n}));
+        end
+        if isempty(lb)
+            lb='-Inf';
+        end
+        if isempty(ub)
+            ub='Inf';
         end
         reactionLB(counter)=str2num(lb);
         reactionUB(counter)=str2num(ub);
@@ -666,6 +670,8 @@ for i=1:numel(modelSBML.reaction)
             eccode=parseAnnotation(modelSBML.reaction(i).annotation,'urn:miriam:',':','ec-code');
         elseif strfind(modelSBML.reaction(i).annotation,'http://identifiers.org/ec-code')
             eccode=parseAnnotation(modelSBML.reaction(i).annotation,'http://identifiers.org/','/','ec-code');
+        elseif strfind(modelSBML.reaction(i).annotation,'https://identifiers.org/ec-code')
+            eccode=parseAnnotation(modelSBML.reaction(i).annotation,'https://identifiers.org/','/','ec-code');
         end
     elseif isfield(modelSBML.reaction(i),'notes')
         if strfind(modelSBML.reaction(i).notes,'EC Number')
@@ -693,7 +699,7 @@ for i=1:numel(modelSBML.reaction)
         %Get the index of the metabolite in metaboliteIDs.
         metIndex=find(strcmp(modelSBML.reaction(i).product(j).species,metaboliteIDs),1);
         if isempty(metIndex)
-            EM=['Could not find metabolite ' modelSBML.reaction(i).reactant(j).species ' in reaction ' reactionIDs{counter}];
+            EM=['Could not find metabolite ' modelSBML.reaction(i).product(j).species ' in reaction ' reactionIDs{counter}];
             dispEM(EM);
         end
         S(metIndex,counter)=S(metIndex,counter)+modelSBML.reaction(i).product(j).stoichiometry;
@@ -748,8 +754,8 @@ reactionLB=reactionLB(1:counter);
 reactionObjective=reactionObjective(1:counter);
 S=S(:,1:counter);
 
-model.description=modelSBML.name;
-model.id=modelSBML.id;
+model.name=modelSBML.name;
+model.id=regexprep(modelSBML.id,'^M_',''); % COBRA adds M_ prefix
 model.rxns=reactionIDs;
 model.mets=metaboliteIDs;
 model.S=sparse(S);
@@ -796,6 +802,11 @@ if isfield(modelSBML,'annotation')
         J=strfind(modelSBML.annotation,'"http://identifiers.org/');
         if any(J)
             model.annotation.taxonomy=modelSBML.annotation(J+24:I(find(I>J,1))-1);
+        else
+            J=strfind(modelSBML.annotation,'"https://identifiers.org/');
+            if any(J)
+                model.annotation.taxonomy=modelSBML.annotation(J+25:I(find(I>J,1))-1);
+            end
         end
     end
 end
@@ -845,7 +856,6 @@ if ~isempty(geneNames)
         geneShortNames=vertcat(geneShortNames,metaboliteNames);
         geneIDs=vertcat(geneIDs,metaboliteIDs);
         geneSystNames=extractMiriam(vertcat(geneMiriams,metaboliteMiriams),'kegg.genes');
-        geneSystNames=regexprep(geneSystNames,'^.+:','');
         geneCompartments=vertcat(geneCompartments,metaboliteCompartments);
         geneMiriams=vertcat(geneMiriams,metaboliteMiriams);
         
@@ -1018,6 +1028,7 @@ model.mets=regexprep(model.mets,'__([0-9]+)__','${char(str2num($1))}');
 model.comps=regexprep(model.comps,'__([0-9]+)__','${char(str2num($1))}');
 model.grRules=regexprep(model.grRules,'__([0-9]+)__','${char(str2num($1))}');
 model.genes=regexprep(model.genes,'__([0-9]+)__','${char(str2num($1))}');
+model.id=regexprep(model.id,'__([0-9]+)__','${char(str2num($1))}');
 
 %Remove unused fields
 if isempty(model.annotation)
@@ -1040,6 +1051,8 @@ if isempty(model.rxnGeneMat)
 end
 if isempty(model.subSystems)
     model=rmfield(model,'subSystems');
+else
+    model.subSystems(cellfun(@isempty,subsystems))={{''}};
 end
 if isempty(model.eccodes)
     model=rmfield(model,'eccodes');
@@ -1171,6 +1184,9 @@ if strfind(searchString,'urn:miriam:')
 elseif strfind(searchString,'http://identifiers.org/')
     startString='http://identifiers.org/';
     midString='/';
+elseif strfind(searchString,'https://identifiers.org/')
+    startString='https://identifiers.org/';
+    midString='/';
 else
     miriamStruct=[];
     return;
@@ -1186,7 +1202,7 @@ targetString=regexprep(targetString,midString,'/','once');
 
 counter=0;
 for i=1:numel(targetString)
-    if isempty(regexp(targetString{1,i},'inchi|ec-code', 'once'))
+    if isempty(regexp(targetString{1,i},'inchi|ec-code|sbo', 'once'))
         counter=counter+1;
         miriamStruct.name{counter,1} = regexprep(targetString{1,i},'/.+','','once');
         miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} '/'],'','once');

@@ -32,9 +32,6 @@ function [model, guessedFor, couldNotGuess]=guessComposition(model, printResults
 %   compositions were wrong)
 %
 %   Usage: [newModel, guessedFor, couldNotGuess]=guessComposition(model, printResults)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
 if nargin<2
     printResults=true;

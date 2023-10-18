@@ -12,13 +12,8 @@ function [I, rxnNames]=getRxnsInComp(model,comp,includePartial)
 %   rxnNames        the names of the reactions
 %
 %   Usage: [I, rxnNames]=getRxnsInComp(model,comp,includePartial)
-%
-%   Rasmus Agren, 2014-01-08
-%
 
-if ischar(comp)
-    comp={comp};
-end
+comp=char(comp);
 if nargin<3
     includePartial=false;
 end

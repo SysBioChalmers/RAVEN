@@ -135,9 +135,7 @@
    constraints for the general metabolites overwrite those of the real
    ones.
 
-   Usage: taskStruct=parseTaskList(inputFile)
-
-   Eduard Kerkhoven, 2018-05-18</pre></div>
+   Usage: taskStruct=parseTaskList(inputFile)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -146,7 +144,7 @@ This function calls:
 <li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="checkTasks.html" class="code" title="function [taskReport, essentialRxns, taskStructure]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure)">checkTasks</a>	checkTasks</li><li><a href="compareMultipleModels.html" class="code" title="function compStruct = compareMultipleModels(models,printResults,plotResults,groupVector,funcCompare,taskFile)">compareMultipleModels</a>	compareMultipleModels</li><li><a href="fitTasks.html" class="code" title="function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params)">fitTasks</a>	fitTasks</li></ul>
+<li><a href="checkTasks.html" class="code" title="function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure)">checkTasks</a>	checkTasks</li><li><a href="compareMultipleModels.html" class="code" title="function compStruct = compareMultipleModels(models,printResults,plotResults,groupVector,funcCompare,taskFile)">compareMultipleModels</a>	compareMultipleModels</li><li><a href="fitTasks.html" class="code" title="function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params)">fitTasks</a>	fitTasks</li></ul>
 <!-- crossreference -->
 
 
@@ -262,157 +260,180 @@ This function is called by:
 0108 <span class="comment">%   ones.</span>
 0109 <span class="comment">%</span>
 0110 <span class="comment">%   Usage: taskStruct=parseTaskList(inputFile)</span>
-0111 <span class="comment">%</span>
-0112 <span class="comment">%   Eduard Kerkhoven, 2018-05-18</span>
-0113 <span class="comment">%</span>
-0114 
-0115 <span class="keyword">if</span> ~(exist(inputFile,<span class="string">'file'</span>)==2)
-0116     error(<span class="string">'Task list %s cannot be found'</span>,string(inputFile));
-0117 <span class="keyword">end</span>
-0118 
-0119 <span class="comment">%Load the tasks file</span>
-0120 [raw,flag]=loadSheet(loadWorkbook(inputFile), <span class="string">'TASKS'</span>);
-0121 <span class="keyword">if</span> flag~=0
-0122     EM=[<span class="string">'Could not load sheet &quot;TASKS&quot; from '</span> inputFile];
-0123     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0124 <span class="keyword">end</span>
-0125 
-0126 <span class="comment">%Remove all lines starting with &quot;#&quot; (or actually any character) and all</span>
-0127 <span class="comment">%empty columns</span>
-0128 raw=cleanSheet(raw);
-0129 
-0130 <span class="comment">%Captions</span>
-0131 columns={<span class="string">'ID'</span>;<span class="string">'DESCRIPTION'</span>;<span class="string">'IN'</span>;<span class="string">'IN LB'</span>;<span class="string">'IN UB'</span>;<span class="string">'OUT'</span>;<span class="string">'OUT LB'</span>;<span class="string">'OUT UB'</span>;<span class="string">'EQU'</span>;<span class="string">'EQU LB'</span>;<span class="string">'EQU UB'</span>;<span class="string">'CHANGED RXN'</span>;<span class="string">'CHANGED LB'</span>;<span class="string">'CHANGED UB'</span>;<span class="string">'SHOULD FAIL'</span>;<span class="string">'PRINT FLUX'</span>;<span class="string">'COMMENTS'</span>};
-0132 
-0133 <span class="comment">%Match the columns</span>
-0134 [I, colI]=ismember(columns,raw(1,:));
-0135 
-0136 <span class="comment">%Check that the ID field is present</span>
-0137 <span class="keyword">if</span> I(1)==0
-0138     EM=<span class="string">'The TASKS sheet must have a column named ID'</span>;
-0139     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0140 <span class="keyword">end</span>
-0141 
-0142 <span class="comment">%Add default bounds where needed</span>
-0143 <span class="keyword">for</span> i=[4 5 7 8]
-0144     I=cellfun(@isempty,raw(:,colI(i)));
-0145     <span class="keyword">if</span> i==5 || i==8
-0146         raw(I,colI(i))={1000};
-0147     <span class="keyword">else</span>
-0148         raw(I,colI(i))={0};
-0149     <span class="keyword">end</span>
-0150 <span class="keyword">end</span>
-0151 
-0152 <span class="comment">%Create an empty task structure</span>
-0153 eTask.id=<span class="string">''</span>;
-0154 eTask.description=<span class="string">''</span>;
-0155 eTask.shouldFail=false;
-0156 eTask.printFluxes=false;
-0157 eTask.comments=<span class="string">''</span>;
-0158 eTask.inputs={};
-0159 eTask.LBin=[];
-0160 eTask.UBin=[];
-0161 eTask.outputs={};
-0162 eTask.LBout=[];
-0163 eTask.UBout=[];
-0164 eTask.equations={};
-0165 eTask.LBequ=[];
-0166 eTask.UBequ=[];
-0167 eTask.changed={};
-0168 eTask.LBrxn=[];
-0169 eTask.UBrxn=[];
-0170 
-0171 <span class="comment">%Main loop</span>
-0172 taskStruct=[];
-0173 task=eTask;
-0174 <span class="keyword">if</span> isnumeric(raw{2,colI(1)})
-0175     task.id=num2str(raw{2,colI(1)});
-0176 <span class="keyword">else</span>
-0177     task.id=raw{2,colI(1)};
-0178 <span class="keyword">end</span>
-0179 task.description=raw{2,colI(2)};
-0180 <span class="keyword">if</span> ~isempty(raw{2,colI(15)})
-0181     task.shouldFail=true;
-0182 <span class="keyword">end</span>
-0183 <span class="keyword">if</span> ~isempty(raw{2,colI(16)})
-0184     task.printFluxes=true;
-0185 <span class="keyword">end</span>
-0186 <span class="keyword">if</span> ~isempty(raw{2,colI(17)})
-0187     task.comments=raw{2,colI(17)};
-0188 <span class="keyword">end</span>
-0189 
-0190 <span class="keyword">for</span> i=2:size(raw,1)
-0191     <span class="comment">%Set the inputs</span>
-0192     <span class="keyword">if</span> ischar(raw{i,colI(3)})
-0193         inputs=regexp(raw{i,colI(3)},<span class="string">';'</span>,<span class="string">'split'</span>);
-0194         task.inputs=[task.inputs;inputs(:)];
-0195         task.LBin=[task.LBin;ones(numel(inputs),1)*raw{i,colI(4)}];
-0196         task.UBin=[task.UBin;ones(numel(inputs),1)*raw{i,colI(5)}];
-0197     <span class="keyword">end</span>
-0198     <span class="comment">%Set the outputs</span>
-0199     <span class="keyword">if</span> ischar(raw{i,colI(6)})
-0200         outputs=regexp(raw{i,colI(6)},<span class="string">';'</span>,<span class="string">'split'</span>);
-0201         task.outputs=[task.outputs;outputs(:)];
-0202         task.LBout=[task.LBout;ones(numel(outputs),1)*raw{i,colI(7)}];
-0203         task.UBout=[task.UBout;ones(numel(outputs),1)*raw{i,colI(8)}];
-0204     <span class="keyword">end</span>
-0205     <span class="comment">%Add new rxns</span>
-0206     <span class="keyword">if</span> ischar(raw{i,colI(9)})
-0207         task.equations=[task.equations;raw{i,colI(9)}];
-0208         <span class="keyword">if</span> ~isempty(raw{i,colI(10)})
-0209             task.LBequ=[task.LBequ;raw{i,colI(10)}];
-0210         <span class="keyword">else</span>
-0211             <span class="keyword">if</span> any(strfind(raw{i,colI(9)},<span class="string">'&lt;=&gt;'</span>))
-0212                 task.LBequ=[task.LBequ;-1000];
-0213             <span class="keyword">else</span>
-0214                 task.LBequ=[task.LBequ;0];
-0215             <span class="keyword">end</span>
-0216         <span class="keyword">end</span>
-0217         <span class="keyword">if</span> ~isempty(raw{i,colI(11)})
-0218             task.UBequ=[task.UBequ;raw{i,colI(11)}];
-0219         <span class="keyword">else</span>
-0220             task.UBequ=[task.UBequ;1000];
-0221         <span class="keyword">end</span>
-0222     <span class="keyword">end</span>
-0223     <span class="comment">%Add changed bounds</span>
-0224     <span class="keyword">if</span> ischar(raw{i,colI(12)})
-0225         changed=regexp(raw{i,colI(12)},<span class="string">';'</span>,<span class="string">'split'</span>);
-0226         task.changed=[task.changed;changed(:)];
-0227         task.LBrxn=[task.LBrxn;ones(numel(changed),1)*raw{i,colI(13)}];
-0228         task.UBrxn=[task.UBrxn;ones(numel(changed),1)*raw{i,colI(14)}];
-0229     <span class="keyword">end</span>
-0230     
-0231     <span class="comment">%Check if it should add more constraints</span>
-0232     <span class="keyword">if</span> i&lt;size(raw,1)
-0233         <span class="keyword">if</span> isempty(raw{i+1,colI(1)})
-0234             <span class="keyword">continue</span>;
-0235         <span class="keyword">end</span>
-0236     <span class="keyword">end</span>
-0237     
-0238     taskStruct=[taskStruct;task];
-0239     task=eTask;
-0240     <span class="keyword">if</span> i&lt;size(raw,1)
-0241         <span class="keyword">if</span> isnumeric(raw{i+1,colI(1)})
-0242             task.id=num2str(raw{i+1,colI(1)});
-0243         <span class="keyword">else</span>
-0244             task.id=raw{i+1,colI(1)};
-0245         <span class="keyword">end</span>
-0246         task.description=raw{i+1,colI(2)};
-0247         <span class="keyword">if</span> ~isempty(raw{i+1,colI(15)})
-0248             task.shouldFail=true;
-0249         <span class="keyword">end</span>
-0250         <span class="keyword">if</span> ~isempty(raw{i+1,colI(16)})
-0251             task.printFluxes=true;
-0252         <span class="keyword">end</span>
-0253         <span class="keyword">if</span> ~isempty(raw{i+1,colI(17)})
-0254             task.comments=raw{i+1,colI(17)};
-0255         <span class="keyword">end</span>
-0256     <span class="keyword">end</span>
-0257 <span class="keyword">end</span>
-0258 
-0259 <span class="comment">%Should add more checks, such as unique IDs and missing headers</span>
-0260 
-0261 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0111 
+0112 <span class="keyword">if</span> ~isfile(inputFile)
+0113     error(<span class="string">'Task list %s cannot be found'</span>,string(inputFile));
+0114 <span class="keyword">end</span>
+0115 
+0116 <span class="comment">%Load the tasks file</span>
+0117 convNumeric = false;
+0118 <span class="keyword">if</span> strcmp(extractAfter(inputFile,strlength(inputFile) - 4), <span class="string">'.txt'</span>)
+0119     <span class="comment">%load from tab delimited text file</span>
+0120     fid = fopen(inputFile);
+0121     <span class="comment">%Need to read numeric columns as strings, this is converted further</span>
+0122     <span class="comment">%down. If not, the titles would be lost.</span>
+0123     convNumeric = true;
+0124     C = textscan(fid,<span class="string">'%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%*[^\n]'</span>, <span class="string">'Delimiter'</span>, <span class="string">'\t'</span>);
+0125     fclose(fid);
+0126     raw = [C{:}];<span class="comment">%unnest the cell array of cell arrays into a 2-dim cell array</span>
+0127 <span class="keyword">else</span>
+0128     [raw,flag]=loadSheet(loadWorkbook(inputFile), <span class="string">'TASKS'</span>);
+0129     <span class="keyword">if</span> flag~=0
+0130         EM=[<span class="string">'Could not load sheet &quot;TASKS&quot; from '</span> inputFile];
+0131         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0132     <span class="keyword">end</span>
+0133 <span class="keyword">end</span>
+0134 
+0135 <span class="comment">%Remove all lines starting with &quot;#&quot; (or actually any character) and all</span>
+0136 <span class="comment">%empty columns</span>
+0137 raw=cleanSheet(raw);
+0138 
+0139 <span class="comment">%Captions</span>
+0140 columns={<span class="string">'ID'</span>;<span class="string">'DESCRIPTION'</span>;<span class="string">'IN'</span>;<span class="string">'IN LB'</span>;<span class="string">'IN UB'</span>;<span class="string">'OUT'</span>;<span class="string">'OUT LB'</span>;<span class="string">'OUT UB'</span>;<span class="string">'EQU'</span>;<span class="string">'EQU LB'</span>;<span class="string">'EQU UB'</span>;<span class="string">'CHANGED RXN'</span>;<span class="string">'CHANGED LB'</span>;<span class="string">'CHANGED UB'</span>;<span class="string">'SHOULD FAIL'</span>;<span class="string">'PRINT FLUX'</span>;<span class="string">'COMMENTS'</span>};
+0141 <span class="comment">%Match the columns</span>
+0142 [I, colI]=ismember(columns,raw(1,:));
+0143 
+0144 <span class="comment">%If read from  a text file, the numbers will be strings - fix that</span>
+0145 <span class="keyword">if</span> convNumeric <span class="comment">% in theory, this if should not be needed, the code should do nothing if all are already numeric. But it is kept as a safeguard.</span>
+0146     numericColumns = [0 0 0 1 1 0 1 1 0 1 1 0 1 1 0 0 0] == 1;
+0147     cols = colI(numericColumns);
+0148     numeric = cellfun(@isnumeric,raw(:,cols));
+0149     <span class="comment">%trick to avoid messing up the title row:</span>
+0150     numeric(1,:) = 1;
+0151     <span class="keyword">for</span> colind = 1:numel(cols)
+0152         col = cols(colind);
+0153         raw(~numeric(:,colind),col) = cellfun(@str2num, raw(~numeric(:,colind),col), <span class="string">'UniformOutput'</span>, false);
+0154     <span class="keyword">end</span>
+0155 <span class="keyword">end</span>
+0156 
+0157 <span class="comment">%Check that the ID field is present</span>
+0158 <span class="keyword">if</span> I(1)==0
+0159     EM=<span class="string">'The TASKS sheet must have a column named ID'</span>;
+0160     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0161 <span class="keyword">end</span>
+0162 
+0163 <span class="comment">%make sure numerical fields are converted from strings</span>
+0164 
+0165 <span class="comment">%Add default bounds where needed</span>
+0166 <span class="keyword">for</span> i=[4 5 7 8]
+0167     I=cellfun(@isempty,raw(:,colI(i)));
+0168     <span class="keyword">if</span> i==5 || i==8
+0169         raw(I,colI(i))={1000};
+0170     <span class="keyword">else</span>
+0171         raw(I,colI(i))={0};
+0172     <span class="keyword">end</span>
+0173 <span class="keyword">end</span>
+0174 
+0175 <span class="comment">%Create an empty task structure</span>
+0176 eTask.id=<span class="string">''</span>;
+0177 eTask.description=<span class="string">''</span>;
+0178 eTask.shouldFail=false;
+0179 eTask.printFluxes=false;
+0180 eTask.comments=<span class="string">''</span>;
+0181 eTask.inputs={};
+0182 eTask.LBin=[];
+0183 eTask.UBin=[];
+0184 eTask.outputs={};
+0185 eTask.LBout=[];
+0186 eTask.UBout=[];
+0187 eTask.equations={};
+0188 eTask.LBequ=[];
+0189 eTask.UBequ=[];
+0190 eTask.changed={};
+0191 eTask.LBrxn=[];
+0192 eTask.UBrxn=[];
+0193 
+0194 <span class="comment">%Main loop</span>
+0195 taskStruct=[];
+0196 task=eTask;
+0197 <span class="keyword">if</span> isnumeric(raw{2,colI(1)})
+0198     task.id=num2str(raw{2,colI(1)});
+0199 <span class="keyword">else</span>
+0200     task.id=raw{2,colI(1)};
+0201 <span class="keyword">end</span>
+0202 task.description=raw{2,colI(2)};
+0203 <span class="keyword">if</span> ~isempty(raw{2,colI(15)})
+0204     task.shouldFail=true;
+0205 <span class="keyword">end</span>
+0206 <span class="keyword">if</span> ~isempty(raw{2,colI(16)})
+0207     task.printFluxes=true;
+0208 <span class="keyword">end</span>
+0209 <span class="keyword">if</span> ~isempty(raw{2,colI(17)})
+0210     task.comments=raw{2,colI(17)};
+0211 <span class="keyword">end</span>
+0212 
+0213 <span class="keyword">for</span> i=2:size(raw,1)
+0214     <span class="comment">%Set the inputs</span>
+0215     <span class="keyword">if</span> ischar(raw{i,colI(3)})
+0216         inputs=regexp(raw{i,colI(3)},<span class="string">';'</span>,<span class="string">'split'</span>);
+0217         task.inputs=[task.inputs;inputs(:)];
+0218         task.LBin=[task.LBin;ones(numel(inputs),1)*raw{i,colI(4)}];
+0219         task.UBin=[task.UBin;ones(numel(inputs),1)*raw{i,colI(5)}];
+0220     <span class="keyword">end</span>
+0221     <span class="comment">%Set the outputs</span>
+0222     <span class="keyword">if</span> ischar(raw{i,colI(6)})
+0223         outputs=regexp(raw{i,colI(6)},<span class="string">';'</span>,<span class="string">'split'</span>);
+0224         task.outputs=[task.outputs;outputs(:)];
+0225         task.LBout=[task.LBout;ones(numel(outputs),1)*raw{i,colI(7)}];
+0226         task.UBout=[task.UBout;ones(numel(outputs),1)*raw{i,colI(8)}];
+0227     <span class="keyword">end</span>
+0228     <span class="comment">%Add new rxns</span>
+0229     <span class="keyword">if</span> ischar(raw{i,colI(9)})
+0230         task.equations=[task.equations;raw{i,colI(9)}];
+0231         <span class="keyword">if</span> ~isempty(raw{i,colI(10)})
+0232             task.LBequ=[task.LBequ;raw{i,colI(10)}];
+0233         <span class="keyword">else</span>
+0234             <span class="keyword">if</span> any(strfind(raw{i,colI(9)},<span class="string">'&lt;=&gt;'</span>))
+0235                 task.LBequ=[task.LBequ;-1000];
+0236             <span class="keyword">else</span>
+0237                 task.LBequ=[task.LBequ;0];
+0238             <span class="keyword">end</span>
+0239         <span class="keyword">end</span>
+0240         <span class="keyword">if</span> ~isempty(raw{i,colI(11)})
+0241             task.UBequ=[task.UBequ;raw{i,colI(11)}];
+0242         <span class="keyword">else</span>
+0243             task.UBequ=[task.UBequ;1000];
+0244         <span class="keyword">end</span>
+0245     <span class="keyword">end</span>
+0246     <span class="comment">%Add changed bounds</span>
+0247     <span class="keyword">if</span> ischar(raw{i,colI(12)})
+0248         changed=regexp(raw{i,colI(12)},<span class="string">';'</span>,<span class="string">'split'</span>);
+0249         task.changed=[task.changed;changed(:)];
+0250         task.LBrxn=[task.LBrxn;ones(numel(changed),1)*raw{i,colI(13)}];
+0251         task.UBrxn=[task.UBrxn;ones(numel(changed),1)*raw{i,colI(14)}];
+0252     <span class="keyword">end</span>
+0253     
+0254     <span class="comment">%Check if it should add more constraints</span>
+0255     <span class="keyword">if</span> i&lt;size(raw,1)
+0256         <span class="keyword">if</span> isempty(raw{i+1,colI(1)})
+0257             <span class="keyword">continue</span>;
+0258         <span class="keyword">end</span>
+0259     <span class="keyword">end</span>
+0260     
+0261     taskStruct=[taskStruct;task];
+0262     task=eTask;
+0263     <span class="keyword">if</span> i&lt;size(raw,1)
+0264         <span class="keyword">if</span> isnumeric(raw{i+1,colI(1)})
+0265             task.id=num2str(raw{i+1,colI(1)});
+0266         <span class="keyword">else</span>
+0267             task.id=raw{i+1,colI(1)};
+0268         <span class="keyword">end</span>
+0269         task.description=raw{i+1,colI(2)};
+0270         <span class="keyword">if</span> ~isempty(raw{i+1,colI(15)})
+0271             task.shouldFail=true;
+0272         <span class="keyword">end</span>
+0273         <span class="keyword">if</span> ~isempty(raw{i+1,colI(16)})
+0274             task.printFluxes=true;
+0275         <span class="keyword">end</span>
+0276         <span class="keyword">if</span> ~isempty(raw{i+1,colI(17)})
+0277             task.comments=raw{i+1,colI(17)};
+0278         <span class="keyword">end</span>
+0279     <span class="keyword">end</span>
+0280 <span class="keyword">end</span>
+0281 
+0282 <span class="comment">%Should add more checks, such as unique IDs and missing headers</span>
+0283 
+0284 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

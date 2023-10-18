@@ -13,9 +13,6 @@ function errorFlag=followFluxes(model, fluxesA, lowerFlux, upperFlux, fluxesB)
 %
 %   Usage: errorFlag=followFluxes(model, fluxesA, lowerFlux, upperFlux,
 %           fluxesB)
-%
-%   Rasmus Agren, 2010-12-16
-%
 
 %Checks that the upper flux is larger than the lower flux
 if nargin>3

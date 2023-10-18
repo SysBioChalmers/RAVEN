@@ -24,7 +24,7 @@
 <div class="box"><strong>exportToTabDelimited</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function exportToTabDelimited(model,path) </strong></div>
+<div class="box"><strong>function exportToTabDelimited(model,path,sortIds) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> exportToTabDelimited
@@ -34,6 +34,8 @@
    path    the path to export to. The resulting text files will be saved
            under the names excelRxns.txt, excelMets.txt, excelGenes.txt,
            excelModel.txt, and excelComps.txt
+   sortIds logical whether metabolites, reactions and genes should be
+           sorted alphabetically by their identifiers (opt, default false)
 
    NOTE: This functionality was previously a part of exportToExcelFormat.
          The naming of the resulting text files is to preserve backward
@@ -42,24 +44,22 @@
    NOTE: No checks are made regarding the correctness of the model. Use
          checkModelStruct to identify problems in the model structure
 
-   Usage: exportToTabDelimited(model,path)
-
-   Cheewin Kittikunapong, 2019-04-02</pre></div>
+   Usage: exportToTabDelimited(model,path,sortIds)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-</ul>
+<li><a href="sortIdentifiers.html" class="code" title="function newModel = sortIdentifiers(model)">sortIdentifiers</a>	exportModel</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="exportToExcelFormat.html" class="code" title="function exportToExcelFormat(model,filename)">exportToExcelFormat</a>	exportToExcelFormat</li></ul>
+<li><a href="exportToExcelFormat.html" class="code" title="function exportToExcelFormat(model,fileName,sortIds)">exportToExcelFormat</a>	exportToExcelFormat</li></ul>
 <!-- crossreference -->
 
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function exportToTabDelimited(model,path)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function exportToTabDelimited(model,path,sortIds)</a>
 0002 <span class="comment">% exportToTabDelimited</span>
 0003 <span class="comment">%   Exports a model structure to a set of tab-delimited text files</span>
 0004 <span class="comment">%</span>
@@ -67,332 +67,338 @@ This function is called by:
 0006 <span class="comment">%   path    the path to export to. The resulting text files will be saved</span>
 0007 <span class="comment">%           under the names excelRxns.txt, excelMets.txt, excelGenes.txt,</span>
 0008 <span class="comment">%           excelModel.txt, and excelComps.txt</span>
-0009 <span class="comment">%</span>
-0010 <span class="comment">%   NOTE: This functionality was previously a part of exportToExcelFormat.</span>
-0011 <span class="comment">%         The naming of the resulting text files is to preserve backward</span>
-0012 <span class="comment">%         compatibility</span>
-0013 <span class="comment">%</span>
-0014 <span class="comment">%   NOTE: No checks are made regarding the correctness of the model. Use</span>
-0015 <span class="comment">%         checkModelStruct to identify problems in the model structure</span>
-0016 <span class="comment">%</span>
-0017 <span class="comment">%   Usage: exportToTabDelimited(model,path)</span>
+0009 <span class="comment">%   sortIds logical whether metabolites, reactions and genes should be</span>
+0010 <span class="comment">%           sorted alphabetically by their identifiers (opt, default false)</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">%   NOTE: This functionality was previously a part of exportToExcelFormat.</span>
+0013 <span class="comment">%         The naming of the resulting text files is to preserve backward</span>
+0014 <span class="comment">%         compatibility</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">%   NOTE: No checks are made regarding the correctness of the model. Use</span>
+0017 <span class="comment">%         checkModelStruct to identify problems in the model structure</span>
 0018 <span class="comment">%</span>
-0019 <span class="comment">%   Cheewin Kittikunapong, 2019-04-02</span>
+0019 <span class="comment">%   Usage: exportToTabDelimited(model,path,sortIds)</span>
 0020 
 0021 <span class="keyword">if</span> nargin&lt;2
 0022     path=<span class="string">'./'</span>;
 0023 <span class="keyword">end</span>
-0024 
-0025 <span class="comment">%If the folder doesn't exist then create it</span>
-0026 <span class="keyword">if</span> ~exist(path,<span class="string">'dir'</span>)
-0027     mkdir(path);
-0028 <span class="keyword">end</span>
-0029 
-0030 <span class="comment">%Remove the files if they already exist</span>
-0031 <span class="keyword">if</span> exist(fullfile(path,<span class="string">'excelRxns.txt'</span>),<span class="string">'file'</span>)
-0032     delete(fullfile(path,<span class="string">'excelRxns.txt'</span>));
-0033 <span class="keyword">end</span>
-0034 <span class="keyword">if</span> exist(fullfile(path,<span class="string">'excelMets.txt'</span>),<span class="string">'file'</span>)
-0035     delete(fullfile(path,<span class="string">'excelMets.txt'</span>));
-0036 <span class="keyword">end</span>
-0037 <span class="keyword">if</span> exist(fullfile(path,<span class="string">'excelGenes.txt'</span>),<span class="string">'file'</span>)
-0038     delete(fullfile(path,<span class="string">'excelGenes.txt'</span>));
+0024 <span class="keyword">if</span> nargin&lt;3
+0025     sortIds=false;
+0026 <span class="keyword">end</span>
+0027 <span class="keyword">if</span> sortIds==true
+0028     model=<a href="sortIdentifiers.html" class="code" title="function newModel = sortIdentifiers(model)">sortIdentifiers</a>(model);
+0029 <span class="keyword">end</span>
+0030 
+0031 <span class="comment">%If the folder doesn't exist then create it</span>
+0032 <span class="keyword">if</span> ~isfolder(path)
+0033     mkdir(path);
+0034 <span class="keyword">end</span>
+0035 
+0036 <span class="comment">%Remove the files if they already exist</span>
+0037 <span class="keyword">if</span> isfile(fullfile(path,<span class="string">'excelRxns.txt'</span>))
+0038     delete(fullfile(path,<span class="string">'excelRxns.txt'</span>));
 0039 <span class="keyword">end</span>
-0040 <span class="keyword">if</span> exist(fullfile(path,<span class="string">'excelModel.txt'</span>),<span class="string">'file'</span>)
-0041     delete(fullfile(path,<span class="string">'excelModel.txt'</span>));
+0040 <span class="keyword">if</span> isfile(fullfile(path,<span class="string">'excelMets.txt'</span>))
+0041     delete(fullfile(path,<span class="string">'excelMets.txt'</span>));
 0042 <span class="keyword">end</span>
-0043 <span class="keyword">if</span> exist(fullfile(path,<span class="string">'excelComps.txt'</span>),<span class="string">'file'</span>)
-0044     delete(fullfile(path,<span class="string">'excelComps.txt'</span>));
+0043 <span class="keyword">if</span> isfile(fullfile(path,<span class="string">'excelGenes.txt'</span>))
+0044     delete(fullfile(path,<span class="string">'excelGenes.txt'</span>));
 0045 <span class="keyword">end</span>
-0046 
-0047 <span class="comment">%Construct equations</span>
-0048 model.equations=constructEquations(model,model.rxns,true);
-0049 
-0050 <span class="comment">%Open for printing the rxn sheet</span>
-0051 rxnFile=fopen(fullfile(path,<span class="string">'excelRxns.txt'</span>),<span class="string">'wt'</span>);
+0046 <span class="keyword">if</span> isfile(fullfile(path,<span class="string">'excelModel.txt'</span>))
+0047     delete(fullfile(path,<span class="string">'excelModel.txt'</span>));
+0048 <span class="keyword">end</span>
+0049 <span class="keyword">if</span> isfile(fullfile(path,<span class="string">'excelComps.txt'</span>))
+0050     delete(fullfile(path,<span class="string">'excelComps.txt'</span>));
+0051 <span class="keyword">end</span>
 0052 
-0053 <span class="comment">%Print header</span>
-0054 fprintf(rxnFile,<span class="string">'#\tID\tNAME\tEQUATION\tEC-NUMBER\tGENE ASSOCIATION\tLOWER BOUND\tUPPER BOUND\tOBJECTIVE\tCOMPARTMENT\tMIRIAM\tSUBSYSTEM\tREPLACEMENT ID\tNOTE\tREFERENCE\tCONFIDENCE SCORE\n'</span>);
+0053 <span class="comment">%Construct equations</span>
+0054 model.equations=constructEquations(model,model.rxns,true);
 0055 
-0056 <span class="comment">%Loop through the reactions</span>
-0057 <span class="keyword">for</span> i=1:numel(model.rxns)
-0058     fprintf(rxnFile,[<span class="string">'\t'</span> model.rxns{i} <span class="string">'\t'</span> model.rxnNames{i} <span class="string">'\t'</span> model.equations{i} <span class="string">'\t'</span>]);
-0059     
-0060     <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
-0061         fprintf(rxnFile,[model.eccodes{i} <span class="string">'\t'</span>]);
-0062     <span class="keyword">else</span>
-0063         fprintf(rxnFile,<span class="string">'\t'</span>);
-0064     <span class="keyword">end</span>
+0056 <span class="comment">%Open for printing the rxn sheet</span>
+0057 rxnFile=fopen(fullfile(path,<span class="string">'excelRxns.txt'</span>),<span class="string">'wt'</span>);
+0058 
+0059 <span class="comment">%Print header</span>
+0060 fprintf(rxnFile,<span class="string">'#\tID\tNAME\tEQUATION\tEC-NUMBER\tGENE ASSOCIATION\tLOWER BOUND\tUPPER BOUND\tOBJECTIVE\tCOMPARTMENT\tMIRIAM\tSUBSYSTEM\tREPLACEMENT ID\tNOTE\tREFERENCE\tCONFIDENCE SCORE\n'</span>);
+0061 
+0062 <span class="comment">%Loop through the reactions</span>
+0063 <span class="keyword">for</span> i=1:numel(model.rxns)
+0064     fprintf(rxnFile,[<span class="string">'\t'</span> model.rxns{i} <span class="string">'\t'</span> model.rxnNames{i} <span class="string">'\t'</span> model.equations{i} <span class="string">'\t'</span>]);
 0065     
-0066     <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
-0067         fprintf(rxnFile,[model.grRules{i} <span class="string">'\t'</span>]);
+0066     <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
+0067         fprintf(rxnFile,[model.eccodes{i} <span class="string">'\t'</span>]);
 0068     <span class="keyword">else</span>
 0069         fprintf(rxnFile,<span class="string">'\t'</span>);
 0070     <span class="keyword">end</span>
 0071     
-0072     <span class="comment">%Print bounds and objectives</span>
-0073     fprintf(rxnFile,[num2str(model.lb(i)) <span class="string">'\t'</span> num2str(model.ub(i)) <span class="string">'\t'</span>]);
-0074     
-0075     <span class="keyword">if</span> model.c(i)~=0
-0076         fprintf(rxnFile,[num2str(model.c(i)) <span class="string">'\t'</span> ]);
-0077     <span class="keyword">else</span>
-0078         fprintf(rxnFile,<span class="string">'\t'</span>);
-0079     <span class="keyword">end</span>
+0072     <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
+0073         fprintf(rxnFile,[model.grRules{i} <span class="string">'\t'</span>]);
+0074     <span class="keyword">else</span>
+0075         fprintf(rxnFile,<span class="string">'\t'</span>);
+0076     <span class="keyword">end</span>
+0077     
+0078     <span class="comment">%Print bounds and objectives</span>
+0079     fprintf(rxnFile,[num2str(model.lb(i)) <span class="string">'\t'</span> num2str(model.ub(i)) <span class="string">'\t'</span>]);
 0080     
-0081     <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
-0082         fprintf(rxnFile,[model.comps{model.rxnComps(i)} <span class="string">'\t'</span>]);
+0081     <span class="keyword">if</span> model.c(i)~=0
+0082         fprintf(rxnFile,[num2str(model.c(i)) <span class="string">'\t'</span> ]);
 0083     <span class="keyword">else</span>
 0084         fprintf(rxnFile,<span class="string">'\t'</span>);
 0085     <span class="keyword">end</span>
 0086     
-0087     <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
-0088         <span class="keyword">if</span> ~isempty(model.rxnMiriams{i})
-0089             toPrint=[];
-0090             <span class="keyword">for</span> j=1:numel(model.rxnMiriams{i}.name)
-0091                 toPrint=[toPrint strtrim(model.rxnMiriams{i}.name{j}) <span class="string">'/'</span> strtrim(model.rxnMiriams{i}.value{j}) <span class="string">';'</span>];
-0092             <span class="keyword">end</span>
-0093             fprintf(rxnFile,[toPrint(1:end-1) <span class="string">'\t'</span>]);
-0094         <span class="keyword">else</span>
-0095             fprintf(rxnFile,<span class="string">'\t'</span>);
-0096         <span class="keyword">end</span>
-0097     <span class="keyword">else</span>
-0098         fprintf(rxnFile,<span class="string">'\t'</span>);
-0099     <span class="keyword">end</span>
-0100     
-0101     <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
-0102         <span class="keyword">if</span> ~isempty(model.subSystems{i})
-0103             fprintf(rxnFile,[strjoin(model.subSystems{i,1},<span class="string">';'</span>) <span class="string">'\t'</span>]);
-0104         <span class="keyword">else</span>
-0105             fprintf(rxnFile,<span class="string">'\t'</span>);
-0106         <span class="keyword">end</span>
-0107     <span class="keyword">end</span>
-0108     
-0109     <span class="comment">%Print replacement IDs</span>
-0110     fprintf(rxnFile,<span class="string">'\t'</span>);
-0111     
-0112     <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
-0113         fprintf(rxnFile,[model.rxnNotes{i} <span class="string">'\t'</span>]);
-0114     <span class="keyword">else</span>
-0115         fprintf(rxnFile,<span class="string">'\t'</span>);
-0116     <span class="keyword">end</span>
+0087     <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
+0088         fprintf(rxnFile,[model.comps{model.rxnComps(i)} <span class="string">'\t'</span>]);
+0089     <span class="keyword">else</span>
+0090         fprintf(rxnFile,<span class="string">'\t'</span>);
+0091     <span class="keyword">end</span>
+0092     
+0093     <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
+0094         <span class="keyword">if</span> ~isempty(model.rxnMiriams{i})
+0095             toPrint=[];
+0096             <span class="keyword">for</span> j=1:numel(model.rxnMiriams{i}.name)
+0097                 toPrint=[toPrint strtrim(model.rxnMiriams{i}.name{j}) <span class="string">'/'</span> strtrim(model.rxnMiriams{i}.value{j}) <span class="string">';'</span>];
+0098             <span class="keyword">end</span>
+0099             fprintf(rxnFile,[toPrint(1:end-1) <span class="string">'\t'</span>]);
+0100         <span class="keyword">else</span>
+0101             fprintf(rxnFile,<span class="string">'\t'</span>);
+0102         <span class="keyword">end</span>
+0103     <span class="keyword">else</span>
+0104         fprintf(rxnFile,<span class="string">'\t'</span>);
+0105     <span class="keyword">end</span>
+0106     
+0107     <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
+0108         <span class="keyword">if</span> ~isempty(model.subSystems{i})
+0109             fprintf(rxnFile,[strjoin(model.subSystems{i,1},<span class="string">';'</span>) <span class="string">'\t'</span>]);
+0110         <span class="keyword">else</span>
+0111             fprintf(rxnFile,<span class="string">'\t'</span>);
+0112         <span class="keyword">end</span>
+0113     <span class="keyword">end</span>
+0114     
+0115     <span class="comment">%Print replacement IDs</span>
+0116     fprintf(rxnFile,<span class="string">'\t'</span>);
 0117     
-0118     <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
-0119         fprintf(rxnFile,[model.rxnReferences{i} <span class="string">'\t'</span>]);
+0118     <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
+0119         fprintf(rxnFile,[model.rxnNotes{i} <span class="string">'\t'</span>]);
 0120     <span class="keyword">else</span>
 0121         fprintf(rxnFile,<span class="string">'\t'</span>);
 0122     <span class="keyword">end</span>
 0123     
-0124     <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
-0125         fprintf(rxnFile,[num2str(model.rxnConfidenceScores(i)) <span class="string">'\t'</span> ]);
+0124     <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
+0125         fprintf(rxnFile,[model.rxnReferences{i} <span class="string">'\t'</span>]);
 0126     <span class="keyword">else</span>
 0127         fprintf(rxnFile,<span class="string">'\t'</span>);
 0128     <span class="keyword">end</span>
 0129     
-0130     fprintf(rxnFile,<span class="string">'\n'</span>);
-0131 <span class="keyword">end</span>
-0132 
-0133 fclose(rxnFile);
-0134 
-0135 <span class="comment">%Open for printing the metabolites sheet</span>
-0136 metFile=fopen(fullfile(path,<span class="string">'excelMets.txt'</span>),<span class="string">'wt'</span>);
-0137 
-0138 <span class="comment">%Print header</span>
-0139 fprintf(metFile,<span class="string">'#\tID\tNAME\tUNCONSTRAINED\tMIRIAM\tCOMPOSITION\tInChI\tCOMPARTMENT\tREPLACEMENT ID\tMETS FIELD\tCHARGE\n'</span>);
+0130     <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
+0131         fprintf(rxnFile,[num2str(model.rxnConfidenceScores(i)) <span class="string">'\t'</span> ]);
+0132     <span class="keyword">else</span>
+0133         fprintf(rxnFile,<span class="string">'\t'</span>);
+0134     <span class="keyword">end</span>
+0135     
+0136     fprintf(rxnFile,<span class="string">'\n'</span>);
+0137 <span class="keyword">end</span>
+0138 
+0139 fclose(rxnFile);
 0140 
-0141 <span class="comment">%Loop through the metabolites</span>
-0142 <span class="keyword">for</span> i=1:numel(model.mets)
-0143     fprintf(metFile,[<span class="string">'\t'</span> model.metNames{i} <span class="string">'['</span> model.comps{model.metComps(i)} <span class="string">']\t'</span> model.metNames{i} <span class="string">'\t'</span>]);
-0144     
-0145     <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
-0146         <span class="keyword">if</span> model.unconstrained(i)~=0
-0147             fprintf(metFile,<span class="string">'TRUE\t'</span>);
-0148         <span class="keyword">else</span>
-0149             fprintf(metFile,<span class="string">'\t'</span>);
-0150         <span class="keyword">end</span>
-0151     <span class="keyword">else</span>
-0152         fprintf(metFile,<span class="string">'\t'</span>);
-0153     <span class="keyword">end</span>
-0154     
-0155     <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
-0156         <span class="keyword">if</span> ~isempty(model.metMiriams{i})
-0157             toPrint=[];
-0158             <span class="keyword">for</span> j=1:numel(model.metMiriams{i}.name)
-0159                 toPrint=[toPrint strtrim(model.metMiriams{i}.name{j}) <span class="string">'/'</span> strtrim(model.metMiriams{i}.value{j}) <span class="string">';'</span>];
-0160             <span class="keyword">end</span>
-0161             fprintf(rxnFile,[toPrint(1:end-1) <span class="string">'\t'</span>]);
-0162         <span class="keyword">else</span>
-0163             fprintf(metFile,<span class="string">'\t'</span>);
-0164         <span class="keyword">end</span>
-0165     <span class="keyword">else</span>
-0166         fprintf(metFile,<span class="string">'\t'</span>);
-0167     <span class="keyword">end</span>
-0168     
-0169     <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
-0170         fprintf(metFile,[model.metFormulas{i} <span class="string">'\t'</span>]);
+0141 <span class="comment">%Open for printing the metabolites sheet</span>
+0142 metFile=fopen(fullfile(path,<span class="string">'excelMets.txt'</span>),<span class="string">'wt'</span>);
+0143 
+0144 <span class="comment">%Print header</span>
+0145 fprintf(metFile,<span class="string">'#\tID\tNAME\tUNCONSTRAINED\tMIRIAM\tCOMPOSITION\tInChI\tCOMPARTMENT\tREPLACEMENT ID\tMETS FIELD\tCHARGE\n'</span>);
+0146 
+0147 <span class="comment">%Loop through the metabolites</span>
+0148 <span class="keyword">for</span> i=1:numel(model.mets)
+0149     fprintf(metFile,[<span class="string">'\t'</span> model.metNames{i} <span class="string">'['</span> model.comps{model.metComps(i)} <span class="string">']\t'</span> model.metNames{i} <span class="string">'\t'</span>]);
+0150     
+0151     <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
+0152         <span class="keyword">if</span> model.unconstrained(i)~=0
+0153             fprintf(metFile,<span class="string">'TRUE\t'</span>);
+0154         <span class="keyword">else</span>
+0155             fprintf(metFile,<span class="string">'\t'</span>);
+0156         <span class="keyword">end</span>
+0157     <span class="keyword">else</span>
+0158         fprintf(metFile,<span class="string">'\t'</span>);
+0159     <span class="keyword">end</span>
+0160     
+0161     <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
+0162         <span class="keyword">if</span> ~isempty(model.metMiriams{i})
+0163             toPrint=[];
+0164             <span class="keyword">for</span> j=1:numel(model.metMiriams{i}.name)
+0165                 toPrint=[toPrint strtrim(model.metMiriams{i}.name{j}) <span class="string">'/'</span> strtrim(model.metMiriams{i}.value{j}) <span class="string">';'</span>];
+0166             <span class="keyword">end</span>
+0167             fprintf(rxnFile,[toPrint(1:end-1) <span class="string">'\t'</span>]);
+0168         <span class="keyword">else</span>
+0169             fprintf(metFile,<span class="string">'\t'</span>);
+0170         <span class="keyword">end</span>
 0171     <span class="keyword">else</span>
 0172         fprintf(metFile,<span class="string">'\t'</span>);
 0173     <span class="keyword">end</span>
 0174     
-0175     <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
-0176         fprintf(metFile,[model.inchis{i} <span class="string">'\t'</span>]);
+0175     <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
+0176         fprintf(metFile,[model.metFormulas{i} <span class="string">'\t'</span>]);
 0177     <span class="keyword">else</span>
 0178         fprintf(metFile,<span class="string">'\t'</span>);
 0179     <span class="keyword">end</span>
 0180     
-0181     fprintf(metFile,[model.comps{model.metComps(i)} <span class="string">'\t'</span>]);
-0182     
-0183     <span class="comment">%There can be no replacement IDs in the structure, but it has to be</span>
-0184     <span class="comment">%something to give working met IDs.</span>
-0185     fprintf(metFile,[<span class="string">'m'</span> int2str(i) <span class="string">'\t'</span>]);
+0181     <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
+0182         fprintf(metFile,[model.inchis{i} <span class="string">'\t'</span>]);
+0183     <span class="keyword">else</span>
+0184         fprintf(metFile,<span class="string">'\t'</span>);
+0185     <span class="keyword">end</span>
 0186     
-0187     <span class="comment">%Print the model.mets field. The reason for not putting this as</span>
-0188     <span class="comment">%replacement ID is that it's not guaranteed to be a valid SBML id.</span>
-0189     fprintf(metFile,[model.mets{i} <span class="string">'\t'</span>]);
-0190     
-0191     <span class="keyword">if</span> isfield(model,<span class="string">'metCharges'</span>)
-0192         fprintf(metFile,[num2str(model.metCharges(i)) <span class="string">'\t'</span>]);
-0193     <span class="keyword">else</span>
-0194         fprintf(metFile,<span class="string">'\t'</span>);
-0195     <span class="keyword">end</span>
+0187     fprintf(metFile,[model.comps{model.metComps(i)} <span class="string">'\t'</span>]);
+0188     
+0189     <span class="comment">%There can be no replacement IDs in the structure, but it has to be</span>
+0190     <span class="comment">%something to give working met IDs.</span>
+0191     fprintf(metFile,[<span class="string">'m'</span> int2str(i) <span class="string">'\t'</span>]);
+0192     
+0193     <span class="comment">%Print the model.mets field. The reason for not putting this as</span>
+0194     <span class="comment">%replacement ID is that it's not guaranteed to be a valid SBML id.</span>
+0195     fprintf(metFile,[model.mets{i} <span class="string">'\t'</span>]);
 0196     
-0197     fprintf(metFile,<span class="string">'\n'</span>);
-0198 <span class="keyword">end</span>
-0199 
-0200 fclose(metFile);
-0201 
-0202 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
-0203     <span class="comment">%Open for printing the genes sheet</span>
-0204     geneFile=fopen(fullfile(path,<span class="string">'excelGenes.txt'</span>),<span class="string">'wt'</span>);
-0205     
-0206     <span class="comment">%Print header</span>
-0207     fprintf(geneFile,<span class="string">'#\tNAME\tMIRIAM\tSHORT NAME\tCOMPARTMENT\n'</span>);
-0208     
-0209     <span class="comment">%Loop through the genes</span>
-0210     <span class="keyword">for</span> i=1:numel(model.genes)
-0211         fprintf(geneFile,[<span class="string">'\t'</span> model.genes{i} <span class="string">'\t'</span>]);
-0212         
-0213         <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
-0214             <span class="keyword">if</span> ~isempty(model.geneMiriams{i})
-0215                 toPrint=[];
-0216                 <span class="keyword">for</span> j=1:numel(model.geneMiriams{i}.name)
-0217                     toPrint=[toPrint strtrim(model.geneMiriams{i}.name{j}) <span class="string">'/'</span> strtrim(model.geneMiriams{i}.value{j}) <span class="string">';'</span>];
-0218                 <span class="keyword">end</span>
-0219                 fprintf(geneFile,[toPrint(1:end-1) <span class="string">'\t'</span>]);
-0220             <span class="keyword">else</span>
-0221                 fprintf(geneFile,<span class="string">'\t'</span>);
-0222             <span class="keyword">end</span>
-0223         <span class="keyword">else</span>
-0224             fprintf(geneFile,<span class="string">'\t'</span>);
-0225         <span class="keyword">end</span>
-0226         
-0227         <span class="keyword">if</span> isfield(model,<span class="string">'geneShortNames'</span>)
-0228             fprintf(geneFile,[model.geneShortNames{i} <span class="string">'\t'</span>]);
+0197     <span class="keyword">if</span> isfield(model,<span class="string">'metCharges'</span>)
+0198         fprintf(metFile,[num2str(model.metCharges(i)) <span class="string">'\t'</span>]);
+0199     <span class="keyword">else</span>
+0200         fprintf(metFile,<span class="string">'\t'</span>);
+0201     <span class="keyword">end</span>
+0202     
+0203     fprintf(metFile,<span class="string">'\n'</span>);
+0204 <span class="keyword">end</span>
+0205 
+0206 fclose(metFile);
+0207 
+0208 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
+0209     <span class="comment">%Open for printing the genes sheet</span>
+0210     geneFile=fopen(fullfile(path,<span class="string">'excelGenes.txt'</span>),<span class="string">'wt'</span>);
+0211     
+0212     <span class="comment">%Print header</span>
+0213     fprintf(geneFile,<span class="string">'#\tNAME\tMIRIAM\tSHORT NAME\tCOMPARTMENT\n'</span>);
+0214     
+0215     <span class="comment">%Loop through the genes</span>
+0216     <span class="keyword">for</span> i=1:numel(model.genes)
+0217         fprintf(geneFile,[<span class="string">'\t'</span> model.genes{i} <span class="string">'\t'</span>]);
+0218         
+0219         <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
+0220             <span class="keyword">if</span> ~isempty(model.geneMiriams{i})
+0221                 toPrint=[];
+0222                 <span class="keyword">for</span> j=1:numel(model.geneMiriams{i}.name)
+0223                     toPrint=[toPrint strtrim(model.geneMiriams{i}.name{j}) <span class="string">'/'</span> strtrim(model.geneMiriams{i}.value{j}) <span class="string">';'</span>];
+0224                 <span class="keyword">end</span>
+0225                 fprintf(geneFile,[toPrint(1:end-1) <span class="string">'\t'</span>]);
+0226             <span class="keyword">else</span>
+0227                 fprintf(geneFile,<span class="string">'\t'</span>);
+0228             <span class="keyword">end</span>
 0229         <span class="keyword">else</span>
 0230             fprintf(geneFile,<span class="string">'\t'</span>);
 0231         <span class="keyword">end</span>
 0232         
-0233         <span class="keyword">if</span> isfield(model,<span class="string">'geneComps'</span>)
-0234             fprintf(geneFile,[model.comps{model.geneComps(i)} <span class="string">'\t'</span>]);
+0233         <span class="keyword">if</span> isfield(model,<span class="string">'geneShortNames'</span>)
+0234             fprintf(geneFile,[model.geneShortNames{i} <span class="string">'\t'</span>]);
 0235         <span class="keyword">else</span>
 0236             fprintf(geneFile,<span class="string">'\t'</span>);
 0237         <span class="keyword">end</span>
 0238         
-0239         fprintf(geneFile,<span class="string">'\n'</span>);
-0240     <span class="keyword">end</span>
-0241     fclose(geneFile);
-0242 <span class="keyword">end</span>
-0243 
-0244 <span class="keyword">if</span> isfield(model,<span class="string">'id'</span>)
-0245     <span class="comment">%Open for printing the model sheet</span>
-0246     modelFile=fopen(fullfile(path,<span class="string">'excelModel.txt'</span>),<span class="string">'wt'</span>);
-0247     
-0248     <span class="comment">%Print header</span>
-0249     fprintf(geneFile,<span class="string">'#\tID\tDESCRIPTION\tDEFAULT LOWER\tDEFAULT UPPER\tCONTACT GIVEN NAME\tCONTACT FAMILY NAME\tCONTACT EMAIL\tORGANIZATION\tTAXONOMY\tNOTES\n'</span>);
-0250     
-0251     <span class="comment">%Print model ID and name. It is assumed that the default lower/upper</span>
-0252     <span class="comment">%bound correspond to min/max of the bounds</span>
-0253     toPrint=[<span class="string">'\t'</span> model.id <span class="string">'\t'</span> model.description <span class="string">'\t'</span>];
-0254     <span class="keyword">if</span> isfield(model,<span class="string">'annotation'</span>)
-0255         <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultLB'</span>)
-0256             toPrint=[toPrint num2str(model.annotation.defaultLB) <span class="string">'\t'</span>];
-0257         <span class="keyword">else</span>
-0258             toPrint=[toPrint num2str(min(model.lb)) <span class="string">'\t'</span>];
-0259         <span class="keyword">end</span>
-0260         <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultUB'</span>)
-0261             toPrint=[toPrint num2str(model.annotation.defaultUB) <span class="string">'\t'</span>];
-0262         <span class="keyword">else</span>
-0263             toPrint=[toPrint num2str(max(model.ub)) <span class="string">'\t'</span>];
-0264         <span class="keyword">end</span>
-0265         <span class="keyword">if</span> isfield(model.annotation,<span class="string">'givenName'</span>)
-0266             toPrint=[toPrint model.annotation.givenName <span class="string">'\t'</span>];
-0267         <span class="keyword">else</span>
-0268             toPrint=[toPrint <span class="string">'\t'</span>];
-0269         <span class="keyword">end</span>
-0270         <span class="keyword">if</span> isfield(model.annotation,<span class="string">'familyName'</span>)
-0271             toPrint=[toPrint model.annotation.familyName <span class="string">'\t'</span>];
-0272         <span class="keyword">else</span>
-0273             toPrint=[toPrint <span class="string">'\t'</span>];
-0274         <span class="keyword">end</span>
-0275         <span class="keyword">if</span> isfield(model.annotation,<span class="string">'email'</span>)
-0276             toPrint=[toPrint model.annotation.email <span class="string">'\t'</span>];
-0277         <span class="keyword">else</span>
-0278             toPrint=[toPrint <span class="string">'\t'</span>];
-0279         <span class="keyword">end</span>
-0280         <span class="keyword">if</span> isfield(model.annotation,<span class="string">'organization'</span>)
-0281             toPrint=[toPrint model.annotation.organization <span class="string">'\t'</span>];
-0282         <span class="keyword">else</span>
-0283             toPrint=[toPrint <span class="string">'\t'</span>];
-0284         <span class="keyword">end</span>
-0285         <span class="keyword">if</span> isfield(model.annotation,<span class="string">'taxonomy'</span>)
-0286             toPrint=[toPrint model.annotation.taxonomy <span class="string">'\t'</span>];
-0287         <span class="keyword">else</span>
-0288             toPrint=[toPrint <span class="string">'\t'</span>];
-0289         <span class="keyword">end</span>
-0290         <span class="keyword">if</span> isfield(model.annotation,<span class="string">'note'</span>)
-0291             toPrint=[toPrint model.annotation.note <span class="string">'\t'</span>];
-0292         <span class="keyword">else</span>
-0293             toPrint=[toPrint <span class="string">'\t'</span>];
-0294         <span class="keyword">end</span>
-0295     <span class="keyword">else</span>
-0296         toPrint=[toPrint num2str(min(model.lb)) <span class="string">'\t'</span> num2str(max(model.ub)) <span class="string">'\tRasmus\tAgren\trasmus.agren@scilifelab.se\tChalmers University of Technology\t\t\n'</span>];
-0297     <span class="keyword">end</span>
-0298     fprintf(modelFile,toPrint);
-0299     fclose(modelFile);
-0300 <span class="keyword">end</span>
-0301 
-0302 <span class="keyword">if</span> isfield(model,<span class="string">'comps'</span>)
-0303     <span class="comment">%Open for printing the model sheet</span>
-0304     compsFile=fopen(fullfile(path,<span class="string">'excelComps.txt'</span>),<span class="string">'wt'</span>);
-0305     
-0306     <span class="comment">%Print header</span>
-0307     fprintf(compsFile,<span class="string">'#\tABBREVIATION\tNAME\tINSIDE\tMIRIAM\n'</span>);
-0308     
-0309     <span class="keyword">for</span> i=1:numel(model.comps)
-0310         toPrint=[<span class="string">'\t'</span> model.comps{i} <span class="string">'\t'</span> model.compNames{i} <span class="string">'\t'</span>];
-0311         <span class="keyword">if</span> isfield(model,<span class="string">'compOutside'</span>)
-0312             toPrint=[toPrint model.compOutside{i} <span class="string">'\t'</span>];
-0313         <span class="keyword">else</span>
-0314             toPrint=[toPrint <span class="string">'\t'</span>];
-0315         <span class="keyword">end</span>
-0316         <span class="keyword">if</span> isfield(model,<span class="string">'compMiriams'</span>)
-0317             <span class="keyword">if</span> ~isempty(model.compMiriams{i})
-0318                 <span class="keyword">for</span> j=1:numel(model.compMiriams{i}.name)
-0319                     toPrint=[toPrint strtrim(model.compMiriams{i}.name{j}) <span class="string">'/'</span> strtrim(model.compMiriams{i}.value{j}) <span class="string">';'</span>];
-0320                 <span class="keyword">end</span>
-0321                 toPrint(end)=[];
-0322                 toPrint=[toPrint <span class="string">'\t'</span>];
-0323             <span class="keyword">else</span>
-0324                 toPrint=[toPrint <span class="string">'\t'</span>];
-0325             <span class="keyword">end</span>
-0326         <span class="keyword">else</span>
-0327             toPrint=[toPrint <span class="string">'\t'</span>];
-0328         <span class="keyword">end</span>
-0329         toPrint=[toPrint <span class="string">'\n'</span>];
-0330         fprintf(compsFile,toPrint);
-0331     <span class="keyword">end</span>
-0332     fclose(compsFile);
-0333 <span class="keyword">end</span>
-0334 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0239         <span class="keyword">if</span> isfield(model,<span class="string">'geneComps'</span>)
+0240             fprintf(geneFile,[model.comps{model.geneComps(i)} <span class="string">'\t'</span>]);
+0241         <span class="keyword">else</span>
+0242             fprintf(geneFile,<span class="string">'\t'</span>);
+0243         <span class="keyword">end</span>
+0244         
+0245         fprintf(geneFile,<span class="string">'\n'</span>);
+0246     <span class="keyword">end</span>
+0247     fclose(geneFile);
+0248 <span class="keyword">end</span>
+0249 
+0250 <span class="keyword">if</span> isfield(model,<span class="string">'id'</span>)
+0251     <span class="comment">%Open for printing the model sheet</span>
+0252     modelFile=fopen(fullfile(path,<span class="string">'excelModel.txt'</span>),<span class="string">'wt'</span>);
+0253     
+0254     <span class="comment">%Print header</span>
+0255     fprintf(geneFile,<span class="string">'#\tID\tNAME\tDEFAULT LOWER\tDEFAULT UPPER\tCONTACT GIVEN NAME\tCONTACT FAMILY NAME\tCONTACT EMAIL\tORGANIZATION\tTAXONOMY\tNOTES\n'</span>);
+0256     
+0257     <span class="comment">%Print model ID and name. It is assumed that the default lower/upper</span>
+0258     <span class="comment">%bound correspond to min/max of the bounds</span>
+0259     toPrint=[<span class="string">'\t'</span> model.id <span class="string">'\t'</span> model.name <span class="string">'\t'</span>];
+0260     <span class="keyword">if</span> isfield(model,<span class="string">'annotation'</span>)
+0261         <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultLB'</span>)
+0262             toPrint=[toPrint num2str(model.annotation.defaultLB) <span class="string">'\t'</span>];
+0263         <span class="keyword">else</span>
+0264             toPrint=[toPrint num2str(min(model.lb)) <span class="string">'\t'</span>];
+0265         <span class="keyword">end</span>
+0266         <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultUB'</span>)
+0267             toPrint=[toPrint num2str(model.annotation.defaultUB) <span class="string">'\t'</span>];
+0268         <span class="keyword">else</span>
+0269             toPrint=[toPrint num2str(max(model.ub)) <span class="string">'\t'</span>];
+0270         <span class="keyword">end</span>
+0271         <span class="keyword">if</span> isfield(model.annotation,<span class="string">'givenName'</span>)
+0272             toPrint=[toPrint model.annotation.givenName <span class="string">'\t'</span>];
+0273         <span class="keyword">else</span>
+0274             toPrint=[toPrint <span class="string">'\t'</span>];
+0275         <span class="keyword">end</span>
+0276         <span class="keyword">if</span> isfield(model.annotation,<span class="string">'familyName'</span>)
+0277             toPrint=[toPrint model.annotation.familyName <span class="string">'\t'</span>];
+0278         <span class="keyword">else</span>
+0279             toPrint=[toPrint <span class="string">'\t'</span>];
+0280         <span class="keyword">end</span>
+0281         <span class="keyword">if</span> isfield(model.annotation,<span class="string">'email'</span>)
+0282             toPrint=[toPrint model.annotation.email <span class="string">'\t'</span>];
+0283         <span class="keyword">else</span>
+0284             toPrint=[toPrint <span class="string">'\t'</span>];
+0285         <span class="keyword">end</span>
+0286         <span class="keyword">if</span> isfield(model.annotation,<span class="string">'organization'</span>)
+0287             toPrint=[toPrint model.annotation.organization <span class="string">'\t'</span>];
+0288         <span class="keyword">else</span>
+0289             toPrint=[toPrint <span class="string">'\t'</span>];
+0290         <span class="keyword">end</span>
+0291         <span class="keyword">if</span> isfield(model.annotation,<span class="string">'taxonomy'</span>)
+0292             toPrint=[toPrint model.annotation.taxonomy <span class="string">'\t'</span>];
+0293         <span class="keyword">else</span>
+0294             toPrint=[toPrint <span class="string">'\t'</span>];
+0295         <span class="keyword">end</span>
+0296         <span class="keyword">if</span> isfield(model.annotation,<span class="string">'note'</span>)
+0297             toPrint=[toPrint model.annotation.note <span class="string">'\t'</span>];
+0298         <span class="keyword">else</span>
+0299             toPrint=[toPrint <span class="string">'\t'</span>];
+0300         <span class="keyword">end</span>
+0301     <span class="keyword">else</span>
+0302         toPrint=[toPrint num2str(min(model.lb)) <span class="string">'\t'</span> num2str(max(model.ub)) <span class="string">'\t\t\t\t\t\t\n'</span>];
+0303     <span class="keyword">end</span>
+0304     fprintf(modelFile,toPrint);
+0305     fclose(modelFile);
+0306 <span class="keyword">end</span>
+0307 
+0308 <span class="keyword">if</span> isfield(model,<span class="string">'comps'</span>)
+0309     <span class="comment">%Open for printing the model sheet</span>
+0310     compsFile=fopen(fullfile(path,<span class="string">'excelComps.txt'</span>),<span class="string">'wt'</span>);
+0311     
+0312     <span class="comment">%Print header</span>
+0313     fprintf(compsFile,<span class="string">'#\tABBREVIATION\tNAME\tINSIDE\tMIRIAM\n'</span>);
+0314     
+0315     <span class="keyword">for</span> i=1:numel(model.comps)
+0316         toPrint=[<span class="string">'\t'</span> model.comps{i} <span class="string">'\t'</span> model.compNames{i} <span class="string">'\t'</span>];
+0317         <span class="keyword">if</span> isfield(model,<span class="string">'compOutside'</span>)
+0318             toPrint=[toPrint model.compOutside{i} <span class="string">'\t'</span>];
+0319         <span class="keyword">else</span>
+0320             toPrint=[toPrint <span class="string">'\t'</span>];
+0321         <span class="keyword">end</span>
+0322         <span class="keyword">if</span> isfield(model,<span class="string">'compMiriams'</span>)
+0323             <span class="keyword">if</span> ~isempty(model.compMiriams{i})
+0324                 <span class="keyword">for</span> j=1:numel(model.compMiriams{i}.name)
+0325                     toPrint=[toPrint strtrim(model.compMiriams{i}.name{j}) <span class="string">'/'</span> strtrim(model.compMiriams{i}.value{j}) <span class="string">';'</span>];
+0326                 <span class="keyword">end</span>
+0327                 toPrint(end)=[];
+0328                 toPrint=[toPrint <span class="string">'\t'</span>];
+0329             <span class="keyword">else</span>
+0330                 toPrint=[toPrint <span class="string">'\t'</span>];
+0331             <span class="keyword">end</span>
+0332         <span class="keyword">else</span>
+0333             toPrint=[toPrint <span class="string">'\t'</span>];
+0334         <span class="keyword">end</span>
+0335         toPrint=[toPrint <span class="string">'\n'</span>];
+0336         fprintf(compsFile,toPrint);
+0337     <span class="keyword">end</span>
+0338     fclose(compsFile);
+0339 <span class="keyword">end</span>
+0340 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

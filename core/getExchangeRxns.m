@@ -15,12 +15,11 @@ function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)
 %   used instead.
 %
 %   Usage: [exchangeRxns,exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)
-%
-%   Rasmus Agren, 2011-05-17
-%
 
 if nargin<2
     reactionType='both';
+else
+    reactionType=char(reactionType);
 end
 
 hasNoProducts=sparse(numel(model.rxns),1);

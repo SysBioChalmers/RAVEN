@@ -24,18 +24,22 @@
 <div class="box"><strong>exportToExcelFormat</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function exportToExcelFormat(model,filename) </strong></div>
+<div class="box"><strong>function exportToExcelFormat(model,fileName,sortIds) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> exportToExcelFormat
    Exports a model structure to the Microsoft Excel model format
 
    model       a model structure
-   filename    file name of the Excel file. Only xlsx format is supported.
+   fileName    file name of the Excel file. Only xlsx format is supported.
                In order to preserve backward compatibility this could also
                be only a path, in which case the model is exported to a set
                of tab-delimited text files instead. See exportToTabDelimited
-               for details regarding that functionality
+               for details regarding that functionality. A dialog window
+               will open if no file name is specified.
+   sortIds     logical whether metabolites, reactions and genes should be
+               sorted alphabetically by their identifiers (opt, default
+               false)
 
    The resulting Excel file can be used with importExcelModel/SBMLFromExcel
    for modelling or to generate a SBML file.
@@ -43,401 +47,419 @@
    NOTE: No checks are made regarding the correctness of the model. Use
          checkModelStruct to identify problems in the model structure
 
-   Usage: exportToExcelFormat(model,filename)
-
-   Simonas Marcisauskas, 2018-03-18
-   Benjamin Sanchez,     2018-09-20</pre></div>
+   Usage: exportToExcelFormat(model,fileName,sortIds)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="exportToTabDelimited.html" class="code" title="function exportToTabDelimited(model,path)">exportToTabDelimited</a>	exportToTabDelimited</li><li><a href="loadWorkbook.html" class="code" title="function workbook=loadWorkbook(fileName,createEmpty)">loadWorkbook</a>	loadWorkbook</li><li><a href="writeSheet.html" class="code" title="function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)">writeSheet</a>	writeSheet</li></ul>
+<li><a href="exportToTabDelimited.html" class="code" title="function exportToTabDelimited(model,path,sortIds)">exportToTabDelimited</a>	exportToTabDelimited</li><li><a href="loadWorkbook.html" class="code" title="function workbook=loadWorkbook(fileName,createEmpty)">loadWorkbook</a>	loadWorkbook</li><li><a href="sortIdentifiers.html" class="code" title="function newModel = sortIdentifiers(model)">sortIdentifiers</a>	exportModel</li><li><a href="writeSheet.html" class="code" title="function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)">writeSheet</a>	writeSheet</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="exportForGit.html" class="code" title="function out=exportForGit(model,prefix,path,formats,masterFlag)">exportForGit</a>	exportForGit</li></ul>
+<li><a href="exportForGit.html" class="code" title="function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,cobraText)">exportForGit</a>	exportForGit</li></ul>
 <!-- crossreference -->
 
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function exportToExcelFormat(model,filename)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function exportToExcelFormat(model,fileName,sortIds)</a>
 0002 <span class="comment">% exportToExcelFormat</span>
 0003 <span class="comment">%   Exports a model structure to the Microsoft Excel model format</span>
 0004 <span class="comment">%</span>
 0005 <span class="comment">%   model       a model structure</span>
-0006 <span class="comment">%   filename    file name of the Excel file. Only xlsx format is supported.</span>
+0006 <span class="comment">%   fileName    file name of the Excel file. Only xlsx format is supported.</span>
 0007 <span class="comment">%               In order to preserve backward compatibility this could also</span>
 0008 <span class="comment">%               be only a path, in which case the model is exported to a set</span>
 0009 <span class="comment">%               of tab-delimited text files instead. See exportToTabDelimited</span>
-0010 <span class="comment">%               for details regarding that functionality</span>
-0011 <span class="comment">%</span>
-0012 <span class="comment">%   The resulting Excel file can be used with importExcelModel/SBMLFromExcel</span>
-0013 <span class="comment">%   for modelling or to generate a SBML file.</span>
-0014 <span class="comment">%</span>
-0015 <span class="comment">%   NOTE: No checks are made regarding the correctness of the model. Use</span>
-0016 <span class="comment">%         checkModelStruct to identify problems in the model structure</span>
-0017 <span class="comment">%</span>
-0018 <span class="comment">%   Usage: exportToExcelFormat(model,filename)</span>
-0019 <span class="comment">%</span>
-0020 <span class="comment">%   Simonas Marcisauskas, 2018-03-18</span>
-0021 <span class="comment">%   Benjamin Sanchez,     2018-09-20</span>
-0022 <span class="comment">%</span>
-0023 
-0024 [~, A, B]=fileparts(filename);
-0025 
-0026 <span class="comment">%If a path was used call on exportToTabDelimited instead</span>
-0027 <span class="keyword">if</span> ~any(A) || ~any(B)
-0028     <a href="exportToTabDelimited.html" class="code" title="function exportToTabDelimited(model,path)">exportToTabDelimited</a>(model,filename);
-0029     <span class="keyword">return</span>;
+0010 <span class="comment">%               for details regarding that functionality. A dialog window</span>
+0011 <span class="comment">%               will open if no file name is specified.</span>
+0012 <span class="comment">%   sortIds     logical whether metabolites, reactions and genes should be</span>
+0013 <span class="comment">%               sorted alphabetically by their identifiers (opt, default</span>
+0014 <span class="comment">%               false)</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">%   The resulting Excel file can be used with importExcelModel/SBMLFromExcel</span>
+0017 <span class="comment">%   for modelling or to generate a SBML file.</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">%   NOTE: No checks are made regarding the correctness of the model. Use</span>
+0020 <span class="comment">%         checkModelStruct to identify problems in the model structure</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">%   Usage: exportToExcelFormat(model,fileName,sortIds)</span>
+0023 <span class="keyword">if</span> nargin&lt;2 || isempty(fileName)
+0024     [fileName, pathName] = uiputfile(<span class="string">'*.xlsx'</span>, <span class="string">'Select file for model export'</span>,[model.id <span class="string">'.xlsx'</span>]);
+0025     <span class="keyword">if</span> fileName == 0
+0026         error(<span class="string">'You should provide a file location'</span>)
+0027     <span class="keyword">else</span>
+0028         fileName = fullfile(pathName,fileName);
+0029     <span class="keyword">end</span>
 0030 <span class="keyword">end</span>
-0031 
-0032 <span class="keyword">if</span> ~strcmpi(B,<span class="string">'.xlsx'</span>)
-0033     EM=<span class="string">'As of RAVEN version 1.9, only export to xlsx format is supported'</span>;
-0034     dispEM(EM);
-0035 <span class="keyword">end</span>
-0036 
-0037 import java.io.File;
-0038 import java.io.FileOutputStream;
-0039 import java.io.IOException;
-0040 
-0041 <span class="comment">%Remove the output file if it already exists</span>
-0042 <span class="keyword">if</span> exist(filename,<span class="string">'file'</span>)
-0043     delete(filename);
-0044 <span class="keyword">end</span>
-0045 
-0046 <span class="comment">%Load an empty workbook</span>
-0047 wb=<a href="loadWorkbook.html" class="code" title="function workbook=loadWorkbook(fileName,createEmpty)">loadWorkbook</a>(filename,true);
-0048 
-0049 <span class="comment">%Construct equations</span>
-0050 model.equations=constructEquations(model,model.rxns,true);
-0051 
-0052 <span class="comment">%Check if it should print genes</span>
-0053 <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
-0054     rules=model.grRules;
-0055 <span class="keyword">else</span>
-0056     rules=[];
-0057 <span class="keyword">end</span>
-0058 
-0059 <span class="comment">%Check if the model has default upper/lower bounds. This determines if</span>
-0060 <span class="comment">%those values should be printed or not</span>
-0061 hasDefaultLB=false;
-0062 hasDefaultUB=false;
-0063 <span class="keyword">if</span> isfield(model,<span class="string">'annotation'</span>)
-0064     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultLB'</span>)
-0065         hasDefaultLB=true;
-0066     <span class="keyword">end</span>
-0067     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultUB'</span>)
-0068         hasDefaultUB=true;
-0069     <span class="keyword">end</span>
-0070 <span class="keyword">end</span>
-0071 
-0072 <span class="comment">%Add the RXNS sheet</span>
-0073 
-0074 <span class="comment">%Create the header row</span>
-0075 headers={<span class="string">'#'</span>;<span class="string">'ID'</span>;<span class="string">'NAME'</span>;<span class="string">'EQUATION'</span>;<span class="string">'EC-NUMBER'</span>;<span class="string">'GENE ASSOCIATION'</span>;<span class="string">'LOWER BOUND'</span>;<span class="string">'UPPER BOUND'</span>;<span class="string">'OBJECTIVE'</span>;<span class="string">'COMPARTMENT'</span>;<span class="string">'MIRIAM'</span>;<span class="string">'SUBSYSTEM'</span>;<span class="string">'REPLACEMENT ID'</span>;<span class="string">'NOTE'</span>;<span class="string">'REFERENCE'</span>;<span class="string">'CONFIDENCE SCORE'</span>};
-0076 
-0077 <span class="comment">%Add empty comments</span>
-0078 emptyColumn=cell(numel(model.rxns),1);
-0079 rxnSheet=emptyColumn;
-0080 
-0081 <span class="comment">%Add the model fields</span>
-0082 rxnSheet=[rxnSheet model.rxns];
-0083 
-0084 <span class="keyword">if</span> isfield(model,<span class="string">'rxnNames'</span>)
-0085     rxnSheet=[rxnSheet model.rxnNames];
-0086 <span class="keyword">else</span>
-0087     rxnSheet=[rxnSheet emptyColumn];
-0088 <span class="keyword">end</span>
-0089 
-0090 rxnSheet=[rxnSheet model.equations];
-0091 
-0092 <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
-0093     rxnSheet=[rxnSheet model.eccodes];
-0094 <span class="keyword">else</span>
-0095     rxnSheet=[rxnSheet emptyColumn];
-0096 <span class="keyword">end</span>
+0031 fileName=char(fileName);
+0032 <span class="keyword">if</span> nargin&lt;3
+0033     sortIds=false;
+0034 <span class="keyword">end</span>
+0035 <span class="keyword">if</span> sortIds==true
+0036     model=<a href="sortIdentifiers.html" class="code" title="function newModel = sortIdentifiers(model)">sortIdentifiers</a>(model);
+0037 <span class="keyword">end</span>
+0038 
+0039 addList = matlab.addons.installedAddons;
+0040 <span class="keyword">if</span> any(strcmpi(addList.Name,<span class="string">'Text Analytics Toolbox'</span>))
+0041     error([<span class="string">'exportToExcelFormat is incompatible with MATLAB Text Analytics Toolbox. '</span> <span class="keyword">...</span>
+0042            <span class="string">'Further instructions =&gt; https://github.com/SysBioChalmers/RAVEN/issues/55#issuecomment-1514369299'</span>])
+0043 <span class="keyword">end</span>
+0044 
+0045 [~, A, B]=fileparts(fileName);
+0046 
+0047 <span class="comment">%If a path was used call on exportToTabDelimited instead</span>
+0048 <span class="keyword">if</span> ~any(A) || ~any(B)
+0049     <a href="exportToTabDelimited.html" class="code" title="function exportToTabDelimited(model,path,sortIds)">exportToTabDelimited</a>(model,fileName);
+0050     <span class="keyword">return</span>;
+0051 <span class="keyword">end</span>
+0052 
+0053 <span class="keyword">if</span> ~strcmpi(B,<span class="string">'.xlsx'</span>)
+0054     EM=<span class="string">'As of RAVEN version 1.9, only export to xlsx format is supported'</span>;
+0055     dispEM(EM);
+0056 <span class="keyword">end</span>
+0057 
+0058 import java.io.File;
+0059 import java.io.FileOutputStream;
+0060 import java.io.IOException;
+0061 
+0062 <span class="comment">%Remove the output file if it already exists</span>
+0063 <span class="keyword">if</span> isfile(fileName)
+0064     delete(fileName);
+0065 <span class="keyword">end</span>
+0066 
+0067 <span class="comment">%Load an empty workbook</span>
+0068 wb=<a href="loadWorkbook.html" class="code" title="function workbook=loadWorkbook(fileName,createEmpty)">loadWorkbook</a>(fileName,true);
+0069 
+0070 <span class="comment">%Construct equations</span>
+0071 model.equations=constructEquations(model,model.rxns,true);
+0072 
+0073 <span class="comment">%Check if it should print genes</span>
+0074 <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
+0075     rules=model.grRules;
+0076 <span class="keyword">else</span>
+0077     rules=[];
+0078 <span class="keyword">end</span>
+0079 
+0080 <span class="comment">%Check if the model has default upper/lower bounds. This determines if</span>
+0081 <span class="comment">%those values should be printed or not</span>
+0082 hasDefaultLB=false;
+0083 hasDefaultUB=false;
+0084 <span class="keyword">if</span> isfield(model,<span class="string">'annotation'</span>)
+0085     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultLB'</span>)
+0086         hasDefaultLB=true;
+0087     <span class="keyword">end</span>
+0088     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultUB'</span>)
+0089         hasDefaultUB=true;
+0090     <span class="keyword">end</span>
+0091 <span class="keyword">end</span>
+0092 
+0093 <span class="comment">%Add the RXNS sheet</span>
+0094 
+0095 <span class="comment">%Create the header row</span>
+0096 headers={<span class="string">'#'</span>;<span class="string">'ID'</span>;<span class="string">'NAME'</span>;<span class="string">'EQUATION'</span>;<span class="string">'EC-NUMBER'</span>;<span class="string">'GENE ASSOCIATION'</span>;<span class="string">'LOWER BOUND'</span>;<span class="string">'UPPER BOUND'</span>;<span class="string">'OBJECTIVE'</span>;<span class="string">'COMPARTMENT'</span>;<span class="string">'MIRIAM'</span>;<span class="string">'SUBSYSTEM'</span>;<span class="string">'REPLACEMENT ID'</span>;<span class="string">'NOTE'</span>;<span class="string">'REFERENCE'</span>;<span class="string">'CONFIDENCE SCORE'</span>};
 0097 
-0098 <span class="keyword">if</span> ~isempty(rules)
-0099     rxnSheet=[rxnSheet rules];
-0100 <span class="keyword">else</span>
-0101     rxnSheet=[rxnSheet emptyColumn];
-0102 <span class="keyword">end</span>
-0103 
-0104 lb=emptyColumn;
-0105 ub=emptyColumn;
-0106 objective=emptyColumn;
-0107 rxnMiriams=emptyColumn;
-0108 
-0109 <span class="keyword">for</span> i=1:numel(model.rxns)
-0110     <span class="keyword">if</span> isfield(model,<span class="string">'lb'</span>)
-0111         <span class="keyword">if</span> hasDefaultLB==true
-0112             <span class="keyword">if</span> model.rev(i)==1
-0113                 <span class="comment">%If reversible, print only if different than defaultLB</span>
-0114                 <span class="keyword">if</span> model.lb(i) ~= model.annotation.defaultLB
-0115                     lb{i}=model.lb(i);
-0116                 <span class="keyword">end</span>
-0117             <span class="keyword">else</span>
-0118                 <span class="comment">%If irreversible, print only for non-zero values</span>
-0119                 <span class="keyword">if</span> model.lb(i)~=0
-0120                     lb{i}=model.lb(i);
-0121                 <span class="keyword">end</span>
-0122             <span class="keyword">end</span>
-0123         <span class="keyword">else</span>
-0124             lb{i}=model.lb(i);
-0125         <span class="keyword">end</span>
-0126     <span class="keyword">end</span>
-0127     
-0128     <span class="keyword">if</span> isfield(model,<span class="string">'ub'</span>)
-0129         <span class="keyword">if</span> hasDefaultUB==true
-0130             <span class="keyword">if</span> model.ub(i) ~= model.annotation.defaultUB
-0131                 ub{i}=model.ub(i);
-0132             <span class="keyword">end</span>
-0133         <span class="keyword">else</span>
-0134             ub{i}=model.ub(i);
-0135         <span class="keyword">end</span>
-0136     <span class="keyword">end</span>
-0137     
-0138     <span class="keyword">if</span> isfield(model,<span class="string">'c'</span>)
-0139         <span class="keyword">if</span> model.c(i)~=0
-0140             objective{i}=model.c(i);
-0141         <span class="keyword">end</span>
-0142     <span class="keyword">end</span>
-0143     
-0144     <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
-0145         <span class="keyword">if</span> ~isempty(model.rxnMiriams{i})
-0146             toPrint=[];
-0147             <span class="keyword">for</span> j=1:numel(model.rxnMiriams{i}.name)
-0148                 toPrint=[toPrint strtrim(model.rxnMiriams{i}.name{j}) <span class="string">'/'</span> strtrim(model.rxnMiriams{i}.value{j}) <span class="string">';'</span>];
-0149             <span class="keyword">end</span>
-0150             rxnMiriams{i}=toPrint(1:end-1);
-0151         <span class="keyword">end</span>
-0152     <span class="keyword">end</span>
-0153 <span class="keyword">end</span>
-0154 
-0155 rxnSheet=[rxnSheet lb];
-0156 rxnSheet=[rxnSheet ub];
-0157 rxnSheet=[rxnSheet objective];
-0158 
-0159 <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
-0160     rxnSheet=[rxnSheet model.comps(model.rxnComps)];
-0161 <span class="keyword">else</span>
-0162     rxnSheet=[rxnSheet emptyColumn];
-0163 <span class="keyword">end</span>
-0164 
-0165 rxnSheet=[rxnSheet rxnMiriams];
-0166 
-0167 subsystems=<span class="string">''</span>;
-0168 <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
-0169     <span class="keyword">for</span> i=1:numel(model.subSystems)
-0170         <span class="keyword">if</span> ~isempty(model.subSystems{i,1})
-0171             subsystems{i,1}=strjoin(model.subSystems{i,1},<span class="string">';'</span>);
-0172         <span class="keyword">else</span>
-0173             subsystems{i,1}=<span class="string">''</span>;
-0174         <span class="keyword">end</span>
-0175     <span class="keyword">end</span>
-0176     rxnSheet=[rxnSheet subsystems];
-0177 <span class="keyword">else</span>
-0178     rxnSheet=[rxnSheet emptyColumn];
-0179 <span class="keyword">end</span>
-0180 
-0181 <span class="comment">%For REPLACEMENT ID which isn't in the model</span>
-0182 rxnSheet=[rxnSheet emptyColumn];
-0183 
-0184 <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
-0185     rxnSheet=[rxnSheet model.rxnNotes];
-0186 <span class="keyword">else</span>
-0187     rxnSheet=[rxnSheet emptyColumn];
-0188 <span class="keyword">end</span>
-0189 
-0190 <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
-0191     rxnSheet=[rxnSheet model.rxnReferences];
-0192 <span class="keyword">else</span>
-0193     rxnSheet=[rxnSheet emptyColumn];
-0194 <span class="keyword">end</span>
-0195 
-0196 <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
-0197     rxnSheet=[rxnSheet num2cell(model.rxnConfidenceScores)];
+0098 <span class="comment">%Add empty comments</span>
+0099 emptyColumn=cell(numel(model.rxns),1);
+0100 rxnSheet=emptyColumn;
+0101 
+0102 <span class="comment">%Add the model fields</span>
+0103 rxnSheet=[rxnSheet model.rxns];
+0104 
+0105 <span class="keyword">if</span> isfield(model,<span class="string">'rxnNames'</span>)
+0106     rxnSheet=[rxnSheet model.rxnNames];
+0107 <span class="keyword">else</span>
+0108     rxnSheet=[rxnSheet emptyColumn];
+0109 <span class="keyword">end</span>
+0110 
+0111 rxnSheet=[rxnSheet model.equations];
+0112 
+0113 <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
+0114     rxnSheet=[rxnSheet model.eccodes];
+0115 <span class="keyword">else</span>
+0116     rxnSheet=[rxnSheet emptyColumn];
+0117 <span class="keyword">end</span>
+0118 
+0119 <span class="keyword">if</span> ~isempty(rules)
+0120     rxnSheet=[rxnSheet rules];
+0121 <span class="keyword">else</span>
+0122     rxnSheet=[rxnSheet emptyColumn];
+0123 <span class="keyword">end</span>
+0124 
+0125 lb=emptyColumn;
+0126 ub=emptyColumn;
+0127 objective=emptyColumn;
+0128 rxnMiriams=emptyColumn;
+0129 
+0130 <span class="keyword">for</span> i=1:numel(model.rxns)
+0131     <span class="keyword">if</span> isfield(model,<span class="string">'lb'</span>)
+0132         <span class="keyword">if</span> hasDefaultLB==true
+0133             <span class="keyword">if</span> model.rev(i)==1
+0134                 <span class="comment">%If reversible, print only if different than defaultLB</span>
+0135                 <span class="keyword">if</span> model.lb(i) ~= model.annotation.defaultLB
+0136                     lb{i}=model.lb(i);
+0137                 <span class="keyword">end</span>
+0138             <span class="keyword">else</span>
+0139                 <span class="comment">%If irreversible, print only for non-zero values</span>
+0140                 <span class="keyword">if</span> model.lb(i)~=0
+0141                     lb{i}=model.lb(i);
+0142                 <span class="keyword">end</span>
+0143             <span class="keyword">end</span>
+0144         <span class="keyword">else</span>
+0145             lb{i}=model.lb(i);
+0146         <span class="keyword">end</span>
+0147     <span class="keyword">end</span>
+0148     
+0149     <span class="keyword">if</span> isfield(model,<span class="string">'ub'</span>)
+0150         <span class="keyword">if</span> hasDefaultUB==true
+0151             <span class="keyword">if</span> model.ub(i) ~= model.annotation.defaultUB
+0152                 ub{i}=model.ub(i);
+0153             <span class="keyword">end</span>
+0154         <span class="keyword">else</span>
+0155             ub{i}=model.ub(i);
+0156         <span class="keyword">end</span>
+0157     <span class="keyword">end</span>
+0158     
+0159     <span class="keyword">if</span> isfield(model,<span class="string">'c'</span>)
+0160         <span class="keyword">if</span> model.c(i)~=0
+0161             objective{i}=model.c(i);
+0162         <span class="keyword">end</span>
+0163     <span class="keyword">end</span>
+0164     
+0165     <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
+0166         <span class="keyword">if</span> ~isempty(model.rxnMiriams{i})
+0167             toPrint=[];
+0168             <span class="keyword">for</span> j=1:numel(model.rxnMiriams{i}.name)
+0169                 toPrint=[toPrint strtrim(model.rxnMiriams{i}.name{j}) <span class="string">'/'</span> strtrim(model.rxnMiriams{i}.value{j}) <span class="string">';'</span>];
+0170             <span class="keyword">end</span>
+0171             rxnMiriams{i}=toPrint(1:end-1);
+0172         <span class="keyword">end</span>
+0173     <span class="keyword">end</span>
+0174 <span class="keyword">end</span>
+0175 
+0176 rxnSheet=[rxnSheet lb];
+0177 rxnSheet=[rxnSheet ub];
+0178 rxnSheet=[rxnSheet objective];
+0179 
+0180 <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
+0181     rxnSheet=[rxnSheet model.comps(model.rxnComps)];
+0182 <span class="keyword">else</span>
+0183     rxnSheet=[rxnSheet emptyColumn];
+0184 <span class="keyword">end</span>
+0185 
+0186 rxnSheet=[rxnSheet rxnMiriams];
+0187 
+0188 subsystems=<span class="string">''</span>;
+0189 <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
+0190     <span class="keyword">for</span> i=1:numel(model.subSystems)
+0191         <span class="keyword">if</span> ~isempty(model.subSystems{i,1})
+0192             subsystems{i,1}=strjoin(model.subSystems{i,1},<span class="string">';'</span>);
+0193         <span class="keyword">else</span>
+0194             subsystems{i,1}=<span class="string">''</span>;
+0195         <span class="keyword">end</span>
+0196     <span class="keyword">end</span>
+0197     rxnSheet=[rxnSheet subsystems];
 0198 <span class="keyword">else</span>
 0199     rxnSheet=[rxnSheet emptyColumn];
 0200 <span class="keyword">end</span>
 0201 
-0202 wb=<a href="writeSheet.html" class="code" title="function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)">writeSheet</a>(wb,<span class="string">'RXNS'</span>,0,headers,[],rxnSheet);
-0203 
-0204 headers={<span class="string">'#'</span>;<span class="string">'ID'</span>;<span class="string">'NAME'</span>;<span class="string">'UNCONSTRAINED'</span>;<span class="string">'MIRIAM'</span>;<span class="string">'COMPOSITION'</span>;<span class="string">'InChI'</span>;<span class="string">'COMPARTMENT'</span>;<span class="string">'REPLACEMENT ID'</span>;<span class="string">'CHARGE'</span>};
-0205 
-0206 metSheet=cell(numel(model.mets),numel(headers));
-0207 
-0208 <span class="keyword">for</span> i=1:numel(model.mets)
-0209     metSheet{i,2}=[model.metNames{i} <span class="string">'['</span> model.comps{model.metComps(i)} <span class="string">']'</span>];
-0210     
-0211     <span class="keyword">if</span> isfield(model,<span class="string">'metNames'</span>)
-0212         metSheet(i,3)=model.metNames(i);
-0213     <span class="keyword">end</span>
-0214     
-0215     <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
-0216         <span class="keyword">if</span> model.unconstrained(i)~=0
-0217             metSheet{i,4}=true;
-0218         <span class="keyword">end</span>
-0219     <span class="keyword">end</span>
-0220     
-0221     <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
-0222         <span class="keyword">if</span> ~isempty(model.metMiriams{i})
-0223             toPrint=[];
-0224             <span class="keyword">for</span> j=1:numel(model.metMiriams{i}.name)
-0225                 toPrint=[toPrint strtrim(model.metMiriams{i}.name{j}) <span class="string">'/'</span> strtrim(model.metMiriams{i}.value{j}) <span class="string">';'</span>];
-0226             <span class="keyword">end</span>
-0227             metSheet{i,5}=toPrint(1:end-1);
-0228         <span class="keyword">end</span>
-0229     <span class="keyword">end</span>
-0230     
-0231     <span class="comment">% Making sure that only these metFormulas are exported, which don't</span>
-0232     <span class="comment">% have InChI strings</span>
-0233     <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
-0234         <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
-0235             <span class="keyword">if</span> isempty(model.inchis{i})
-0236                 metSheet(i,6)=model.metFormulas(i);
-0237             <span class="keyword">end</span>
-0238         <span class="keyword">else</span>
-0239             metSheet(i,6)=model.metFormulas(i);
-0240         <span class="keyword">end</span>
-0241     <span class="keyword">end</span>
-0242     
-0243     <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
-0244         metSheet(i,7)=model.inchis(i);
-0245     <span class="keyword">end</span>
-0246     
-0247     <span class="keyword">if</span> isfield(model,<span class="string">'metComps'</span>)
-0248         metSheet(i,8)=model.comps(model.metComps(i));
-0249     <span class="keyword">end</span>
-0250     
-0251     metSheet(i,9)=model.mets(i);
-0252     
-0253     <span class="keyword">if</span> isfield(model,<span class="string">'metCharges'</span>)
-0254         metSheet{i,10}=model.metCharges(i);
-0255     <span class="keyword">end</span>
-0256 <span class="keyword">end</span>
-0257 
-0258 wb=<a href="writeSheet.html" class="code" title="function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)">writeSheet</a>(wb,<span class="string">'METS'</span>,1,headers,[],metSheet);
-0259 
-0260 <span class="comment">%Add the COMPS sheet</span>
-0261 
-0262 <span class="comment">%Create the header row</span>
-0263 headers={<span class="string">'#'</span>;<span class="string">'ABBREVIATION'</span>;<span class="string">'NAME'</span>;<span class="string">'INSIDE'</span>;<span class="string">'MIRIAM'</span>};
-0264 
-0265 compSheet=cell(numel(model.comps),numel(headers));
-0266 
-0267 <span class="keyword">for</span> i=1:numel(model.comps)
-0268     compSheet(i,2)=model.comps(i);
-0269     
-0270     <span class="keyword">if</span> isfield(model,<span class="string">'compNames'</span>)
-0271         compSheet(i,3)=model.compNames(i);
-0272     <span class="keyword">end</span>
+0202 <span class="comment">%For REPLACEMENT ID which isn't in the model</span>
+0203 rxnSheet=[rxnSheet emptyColumn];
+0204 
+0205 <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
+0206     rxnSheet=[rxnSheet model.rxnNotes];
+0207 <span class="keyword">else</span>
+0208     rxnSheet=[rxnSheet emptyColumn];
+0209 <span class="keyword">end</span>
+0210 
+0211 <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
+0212     rxnSheet=[rxnSheet model.rxnReferences];
+0213 <span class="keyword">else</span>
+0214     rxnSheet=[rxnSheet emptyColumn];
+0215 <span class="keyword">end</span>
+0216 
+0217 <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
+0218     rxnSheet=[rxnSheet num2cell(model.rxnConfidenceScores)];
+0219 <span class="keyword">else</span>
+0220     rxnSheet=[rxnSheet emptyColumn];
+0221 <span class="keyword">end</span>
+0222 
+0223 wb=<a href="writeSheet.html" class="code" title="function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)">writeSheet</a>(wb,<span class="string">'RXNS'</span>,0,headers,[],rxnSheet);
+0224 
+0225 headers={<span class="string">'#'</span>;<span class="string">'ID'</span>;<span class="string">'NAME'</span>;<span class="string">'UNCONSTRAINED'</span>;<span class="string">'MIRIAM'</span>;<span class="string">'COMPOSITION'</span>;<span class="string">'InChI'</span>;<span class="string">'COMPARTMENT'</span>;<span class="string">'REPLACEMENT ID'</span>;<span class="string">'CHARGE'</span>};
+0226 
+0227 metSheet=cell(numel(model.mets),numel(headers));
+0228 
+0229 <span class="keyword">for</span> i=1:numel(model.mets)
+0230     metSheet{i,2}=[model.metNames{i} <span class="string">'['</span> model.comps{model.metComps(i)} <span class="string">']'</span>];
+0231     
+0232     <span class="keyword">if</span> isfield(model,<span class="string">'metNames'</span>)
+0233         metSheet(i,3)=model.metNames(i);
+0234     <span class="keyword">end</span>
+0235     
+0236     <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
+0237         <span class="keyword">if</span> model.unconstrained(i)~=0
+0238             metSheet{i,4}=true;
+0239         <span class="keyword">end</span>
+0240     <span class="keyword">end</span>
+0241     
+0242     <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
+0243         <span class="keyword">if</span> ~isempty(model.metMiriams{i})
+0244             toPrint=[];
+0245             <span class="keyword">for</span> j=1:numel(model.metMiriams{i}.name)
+0246                 toPrint=[toPrint strtrim(model.metMiriams{i}.name{j}) <span class="string">'/'</span> strtrim(model.metMiriams{i}.value{j}) <span class="string">';'</span>];
+0247             <span class="keyword">end</span>
+0248             metSheet{i,5}=toPrint(1:end-1);
+0249         <span class="keyword">end</span>
+0250     <span class="keyword">end</span>
+0251     
+0252     <span class="comment">% Making sure that only these metFormulas are exported, which don't</span>
+0253     <span class="comment">% have InChI strings</span>
+0254     <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
+0255         <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
+0256             <span class="keyword">if</span> isempty(model.inchis{i})
+0257                 metSheet(i,6)=model.metFormulas(i);
+0258             <span class="keyword">end</span>
+0259         <span class="keyword">else</span>
+0260             metSheet(i,6)=model.metFormulas(i);
+0261         <span class="keyword">end</span>
+0262     <span class="keyword">end</span>
+0263     
+0264     <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
+0265         metSheet(i,7)=model.inchis(i);
+0266     <span class="keyword">end</span>
+0267     
+0268     <span class="keyword">if</span> isfield(model,<span class="string">'metComps'</span>)
+0269         metSheet(i,8)=model.comps(model.metComps(i));
+0270     <span class="keyword">end</span>
+0271     
+0272     metSheet(i,9)=model.mets(i);
 0273     
-0274     <span class="keyword">if</span> isfield(model,<span class="string">'compOutside'</span>)
-0275         compSheet(i,4)=model.compOutside(i);
+0274     <span class="keyword">if</span> isfield(model,<span class="string">'metCharges'</span>)
+0275         metSheet{i,10}=model.metCharges(i);
 0276     <span class="keyword">end</span>
-0277     
-0278     <span class="keyword">if</span> isfield(model,<span class="string">'compMiriams'</span>)
-0279         <span class="keyword">if</span> ~isempty(model.compMiriams{i})
-0280             toPrint=[];
-0281             <span class="keyword">for</span> j=1:numel(model.compMiriams{i}.name)
-0282                 toPrint=[toPrint strtrim(model.compMiriams{i}.name{j}) <span class="string">'/'</span> strtrim(model.compMiriams{i}.value{j}) <span class="string">';'</span>];
-0283             <span class="keyword">end</span>
-0284             compSheet{i,5}=toPrint(1:end-1);
-0285         <span class="keyword">end</span>
-0286     <span class="keyword">end</span>
-0287 <span class="keyword">end</span>
-0288 
-0289 wb=<a href="writeSheet.html" class="code" title="function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)">writeSheet</a>(wb,<span class="string">'COMPS'</span>,2,headers,[],compSheet);
-0290 
-0291 <span class="comment">%Add the GENES sheet</span>
-0292 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
-0293     <span class="comment">%Create the header row</span>
-0294     headers={<span class="string">'#'</span>;<span class="string">'NAME'</span>;<span class="string">'MIRIAM'</span>;<span class="string">'SHORT NAME'</span>;<span class="string">'COMPARTMENT'</span>};
-0295     
-0296     geneSheet=cell(numel(model.genes),numel(headers));
-0297     
-0298     <span class="keyword">for</span> i=1:numel(model.genes)
-0299         geneSheet(i,2)=model.genes(i);
-0300         
-0301         <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
-0302             <span class="keyword">if</span> ~isempty(model.geneMiriams{i})
-0303                 toPrint=[];
-0304                 <span class="keyword">for</span> j=1:numel(model.geneMiriams{i}.name)
-0305                     toPrint=[toPrint strtrim(model.geneMiriams{i}.name{j}) <span class="string">'/'</span> strtrim(model.geneMiriams{i}.value{j}) <span class="string">';'</span>];
-0306                 <span class="keyword">end</span>
-0307                 geneSheet{i,3}=toPrint(1:end-1);
-0308             <span class="keyword">end</span>
-0309         <span class="keyword">end</span>
-0310         <span class="keyword">if</span> isfield(model,<span class="string">'geneShortNames'</span>)
-0311             geneSheet(i,4)=model.geneShortNames(i);
-0312         <span class="keyword">end</span>
-0313         <span class="keyword">if</span> isfield(model,<span class="string">'geneComps'</span>)
-0314             geneSheet(i,5)=model.comps(model.geneComps(i));
-0315         <span class="keyword">end</span>
-0316     <span class="keyword">end</span>
-0317     
-0318     wb=<a href="writeSheet.html" class="code" title="function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)">writeSheet</a>(wb,<span class="string">'GENES'</span>,3,headers,[],geneSheet);
-0319 <span class="keyword">end</span>
-0320 
-0321 <span class="comment">%Add the MODEL sheet</span>
-0322 
-0323 <span class="comment">%Create the header row</span>
-0324 headers={<span class="string">'#'</span>;<span class="string">'ID'</span>;<span class="string">'DESCRIPTION'</span>;<span class="string">'TAXONOMY'</span>;<span class="string">'DEFAULT LOWER'</span>;<span class="string">'DEFAULT UPPER'</span>;<span class="string">'CONTACT GIVEN NAME'</span>;<span class="string">'CONTACT FAMILY NAME'</span>;<span class="string">'CONTACT EMAIL'</span>;<span class="string">'ORGANIZATION'</span>;<span class="string">'NOTES'</span>};
-0325 
-0326 modelSheet=cell(1,numel(headers));
-0327 
-0328 <span class="keyword">if</span> ~isfield(model,<span class="string">'annotation'</span>)
-0329     model.annotation = [];
-0330 <span class="keyword">end</span>
-0331 
-0332 <span class="keyword">if</span> isfield(model,<span class="string">'id'</span>)
-0333     modelSheet{1,2}=model.id;
-0334 <span class="keyword">else</span>
-0335     modelSheet{1,2}=<span class="string">'blankID'</span>;
-0336 <span class="keyword">end</span>
-0337 <span class="keyword">if</span> isfield(model,<span class="string">'description'</span>)
-0338     modelSheet{1,3}=model.description;
-0339 <span class="keyword">else</span>
-0340     modelSheet{1,3}=<span class="string">'blankName'</span>;
-0341 <span class="keyword">end</span>
-0342 <span class="keyword">if</span> isfield(model.annotation,<span class="string">'taxonomy'</span>)
-0343     modelSheet{1,4}=model.annotation.taxonomy;
-0344 <span class="keyword">end</span>
-0345 <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultLB'</span>)
-0346     modelSheet{1,5}=model.annotation.defaultLB;
-0347 <span class="keyword">end</span>
-0348 <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultUB'</span>)
-0349     modelSheet{1,6}=model.annotation.defaultUB;
-0350 <span class="keyword">end</span>
-0351 <span class="keyword">if</span> isfield(model.annotation,<span class="string">'givenName'</span>)
-0352     modelSheet{1,7}=model.annotation.givenName;
-0353 <span class="keyword">end</span>
-0354 <span class="keyword">if</span> isfield(model.annotation,<span class="string">'familyName'</span>)
-0355     modelSheet{1,8}=model.annotation.familyName;
-0356 <span class="keyword">end</span>
-0357 <span class="keyword">if</span> isfield(model.annotation,<span class="string">'email'</span>)
-0358     modelSheet{1,9}=model.annotation.email;
-0359 <span class="keyword">end</span>
-0360 <span class="keyword">if</span> isfield(model.annotation,<span class="string">'organization'</span>)
-0361     modelSheet{1,10}=model.annotation.organization;
+0277 <span class="keyword">end</span>
+0278 
+0279 wb=<a href="writeSheet.html" class="code" title="function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)">writeSheet</a>(wb,<span class="string">'METS'</span>,1,headers,[],metSheet);
+0280 
+0281 <span class="comment">%Add the COMPS sheet</span>
+0282 
+0283 <span class="comment">%Create the header row</span>
+0284 headers={<span class="string">'#'</span>;<span class="string">'ABBREVIATION'</span>;<span class="string">'NAME'</span>;<span class="string">'INSIDE'</span>;<span class="string">'MIRIAM'</span>};
+0285 
+0286 compSheet=cell(numel(model.comps),numel(headers));
+0287 
+0288 <span class="keyword">for</span> i=1:numel(model.comps)
+0289     compSheet(i,2)=model.comps(i);
+0290     
+0291     <span class="keyword">if</span> isfield(model,<span class="string">'compNames'</span>)
+0292         compSheet(i,3)=model.compNames(i);
+0293     <span class="keyword">end</span>
+0294     
+0295     <span class="keyword">if</span> isfield(model,<span class="string">'compOutside'</span>)
+0296         compSheet(i,4)=model.compOutside(i);
+0297     <span class="keyword">end</span>
+0298     
+0299     <span class="keyword">if</span> isfield(model,<span class="string">'compMiriams'</span>)
+0300         <span class="keyword">if</span> ~isempty(model.compMiriams{i})
+0301             toPrint=[];
+0302             <span class="keyword">for</span> j=1:numel(model.compMiriams{i}.name)
+0303                 toPrint=[toPrint strtrim(model.compMiriams{i}.name{j}) <span class="string">'/'</span> strtrim(model.compMiriams{i}.value{j}) <span class="string">';'</span>];
+0304             <span class="keyword">end</span>
+0305             compSheet{i,5}=toPrint(1:end-1);
+0306         <span class="keyword">end</span>
+0307     <span class="keyword">end</span>
+0308 <span class="keyword">end</span>
+0309 
+0310 wb=<a href="writeSheet.html" class="code" title="function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)">writeSheet</a>(wb,<span class="string">'COMPS'</span>,2,headers,[],compSheet);
+0311 
+0312 <span class="comment">%Add the GENES sheet</span>
+0313 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
+0314     <span class="comment">%Create the header row</span>
+0315     headers={<span class="string">'#'</span>;<span class="string">'NAME'</span>;<span class="string">'MIRIAM'</span>;<span class="string">'SHORT NAME'</span>;<span class="string">'COMPARTMENT'</span>};
+0316     
+0317     geneSheet=cell(numel(model.genes),numel(headers));
+0318     
+0319     <span class="keyword">for</span> i=1:numel(model.genes)
+0320         geneSheet(i,2)=model.genes(i);
+0321         
+0322         <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
+0323             <span class="keyword">if</span> ~isempty(model.geneMiriams{i})
+0324                 toPrint=[];
+0325                 <span class="keyword">for</span> j=1:numel(model.geneMiriams{i}.name)
+0326                     toPrint=[toPrint strtrim(model.geneMiriams{i}.name{j}) <span class="string">'/'</span> strtrim(model.geneMiriams{i}.value{j}) <span class="string">';'</span>];
+0327                 <span class="keyword">end</span>
+0328                 geneSheet{i,3}=toPrint(1:end-1);
+0329             <span class="keyword">end</span>
+0330         <span class="keyword">end</span>
+0331         <span class="keyword">if</span> isfield(model,<span class="string">'geneShortNames'</span>)
+0332             geneSheet(i,4)=model.geneShortNames(i);
+0333         <span class="keyword">end</span>
+0334         <span class="keyword">if</span> isfield(model,<span class="string">'geneComps'</span>)
+0335             geneSheet(i,5)=model.comps(model.geneComps(i));
+0336         <span class="keyword">end</span>
+0337     <span class="keyword">end</span>
+0338     
+0339     wb=<a href="writeSheet.html" class="code" title="function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)">writeSheet</a>(wb,<span class="string">'GENES'</span>,3,headers,[],geneSheet);
+0340 <span class="keyword">end</span>
+0341 
+0342 <span class="comment">%Add the MODEL sheet</span>
+0343 
+0344 <span class="comment">%Create the header row</span>
+0345 headers={<span class="string">'#'</span>;<span class="string">'ID'</span>;<span class="string">'NAME'</span>;<span class="string">'TAXONOMY'</span>;<span class="string">'DEFAULT LOWER'</span>;<span class="string">'DEFAULT UPPER'</span>;<span class="string">'CONTACT GIVEN NAME'</span>;<span class="string">'CONTACT FAMILY NAME'</span>;<span class="string">'CONTACT EMAIL'</span>;<span class="string">'ORGANIZATION'</span>;<span class="string">'NOTES'</span>};
+0346 
+0347 modelSheet=cell(1,numel(headers));
+0348 
+0349 <span class="keyword">if</span> ~isfield(model,<span class="string">'annotation'</span>)
+0350     model.annotation = [];
+0351 <span class="keyword">end</span>
+0352 
+0353 <span class="keyword">if</span> isfield(model,<span class="string">'id'</span>)
+0354     modelSheet{1,2}=model.id;
+0355 <span class="keyword">else</span>
+0356     modelSheet{1,2}=<span class="string">'blankID'</span>;
+0357 <span class="keyword">end</span>
+0358 <span class="keyword">if</span> isfield(model,<span class="string">'name'</span>)
+0359     modelSheet{1,3}=model.name;
+0360 <span class="keyword">else</span>
+0361     modelSheet{1,3}=<span class="string">'blankName'</span>;
 0362 <span class="keyword">end</span>
-0363 <span class="keyword">if</span> isfield(model.annotation,<span class="string">'note'</span>)
-0364     modelSheet{1,11}=model.annotation.note;
+0363 <span class="keyword">if</span> isfield(model.annotation,<span class="string">'taxonomy'</span>)
+0364     modelSheet{1,4}=model.annotation.taxonomy;
 0365 <span class="keyword">end</span>
-0366 
-0367 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
-0368     wb=<a href="writeSheet.html" class="code" title="function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)">writeSheet</a>(wb,<span class="string">'MODEL'</span>,4,headers,[],modelSheet);
-0369 <span class="keyword">else</span>
-0370     wb=<a href="writeSheet.html" class="code" title="function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)">writeSheet</a>(wb,<span class="string">'MODEL'</span>,3,headers,[],modelSheet);
+0366 <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultLB'</span>)
+0367     modelSheet{1,5}=model.annotation.defaultLB;
+0368 <span class="keyword">end</span>
+0369 <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultUB'</span>)
+0370     modelSheet{1,6}=model.annotation.defaultUB;
 0371 <span class="keyword">end</span>
-0372 
-0373 <span class="comment">%Open the output stream</span>
-0374 out = FileOutputStream(filename);
-0375 wb.write(out);
-0376 out.close();
-0377 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0372 <span class="keyword">if</span> isfield(model.annotation,<span class="string">'givenName'</span>)
+0373     modelSheet{1,7}=model.annotation.givenName;
+0374 <span class="keyword">end</span>
+0375 <span class="keyword">if</span> isfield(model.annotation,<span class="string">'familyName'</span>)
+0376     modelSheet{1,8}=model.annotation.familyName;
+0377 <span class="keyword">end</span>
+0378 <span class="keyword">if</span> isfield(model.annotation,<span class="string">'email'</span>)
+0379     modelSheet{1,9}=model.annotation.email;
+0380 <span class="keyword">end</span>
+0381 <span class="keyword">if</span> isfield(model.annotation,<span class="string">'organization'</span>)
+0382     modelSheet{1,10}=model.annotation.organization;
+0383 <span class="keyword">end</span>
+0384 <span class="keyword">if</span> isfield(model.annotation,<span class="string">'note'</span>)
+0385     modelSheet{1,11}=model.annotation.note;
+0386 <span class="keyword">end</span>
+0387 
+0388 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
+0389     wb=<a href="writeSheet.html" class="code" title="function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)">writeSheet</a>(wb,<span class="string">'MODEL'</span>,4,headers,[],modelSheet);
+0390 <span class="keyword">else</span>
+0391     wb=<a href="writeSheet.html" class="code" title="function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)">writeSheet</a>(wb,<span class="string">'MODEL'</span>,3,headers,[],modelSheet);
+0392 <span class="keyword">end</span>
+0393 
+0394 <span class="comment">%Open the output stream</span>
+0395 out = FileOutputStream(fileName);
+0396 wb.write(out);
+0397 out.close();
+0398 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

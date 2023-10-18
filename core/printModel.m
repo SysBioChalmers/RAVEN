@@ -34,27 +34,26 @@ function printModel(model,rxnList,outputString,outputFile,metaboliteList)
 %           intended to be used when there is no flux distribution.
 %
 %   Usage: printModel(model,rxnList,outputString,outputFile,metaboliteList)
-%
-%   Rasmus Agren, 2013-02-20
-%
 
-if nargin<2
+if nargin<2 || isempty(rxnList)
     rxnList=model.rxns;
+elseif ~islogical(rxnList) && ~isnumeric(rxnList)
+    rxnList=convertCharArray(rxnList);
 end
-if isempty(rxnList)
-    rxnList=model.rxns;
-end
-if nargin<3
+if nargin<3 || isempty(outputString)
     outputString='%rxnID (%rxnName)\n\t%eqn [%lower %upper]\n';
-end
-if isempty(outputString)
-    outputString='%rxnID (%rxnName)\n\t%eqn [%lower %upper]\n';
+else
+    outputString=char(outputString);
 end
 if nargin<4
     outputFile=[];
+else
+    outputFile=char(outputFile);
 end
 if nargin<5
     metaboliteList=[];
+else
+    metaboliteList=convertCharArray(metaboliteList);
 end
 
 I=getIndexes(model,rxnList,'rxns',true)*1.00; %To convert it to "fluxes"

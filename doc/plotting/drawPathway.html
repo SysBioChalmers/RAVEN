@@ -42,9 +42,7 @@
    NOTE:   At the moment all text sizes and some positions are hard coded.
            This means that this code is not appliable for any map
 
-   Usage: drawPathway(pathway, handle, cutOff, defaultColor)
-
-   Rasmus Agren, 2015-08-01</pre></div>
+   Usage: drawPathway(pathway, handle, cutOff, defaultColor)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -78,409 +76,406 @@ This function is called by:
 0015 <span class="comment">%           This means that this code is not appliable for any map</span>
 0016 <span class="comment">%</span>
 0017 <span class="comment">%   Usage: drawPathway(pathway, handle, cutOff, defaultColor)</span>
-0018 <span class="comment">%</span>
-0019 <span class="comment">%   Rasmus Agren, 2015-08-01</span>
-0020 <span class="comment">%</span>
-0021 
-0022 <span class="keyword">if</span> nargin&lt;4
-0023     defaultColor=[1 1 1];
+0018 
+0019 <span class="keyword">if</span> nargin&lt;4
+0020     defaultColor=[1 1 1];
+0021 <span class="keyword">end</span>
+0022 <span class="keyword">if</span> nargin&lt;3
+0023     cutOff=0;
 0024 <span class="keyword">end</span>
-0025 <span class="keyword">if</span> nargin&lt;3
-0026     cutOff=0;
-0027 <span class="keyword">end</span>
-0028 <span class="keyword">if</span> nargin&lt;2
-0029     <span class="keyword">if</span> ishandle(gcf)
-0030         h=gcf;
-0031     <span class="keyword">else</span>
-0032         h=figure();
-0033     <span class="keyword">end</span>
-0034 <span class="keyword">end</span>
-0035 
-0036 <span class="comment">%Will contain all metabolite info and where to print them</span>
-0037 metText={};
-0038 metX=[];
-0039 metY=[];
-0040 metRec=[];
-0041 
-0042 <span class="comment">%Same for reaction text (names, fluxes and maybe other)</span>
-0043 rxnText={};
-0044 rxnX=[];
-0045 rxnY=[];
-0046 rxnLinesX=[];
-0047 rxnLinesY=[];
-0048 rxnRec=[];
-0049 rxnFace=[];
-0050 rxnEdge=[];
-0051 rxnArrows=[];
-0052 rxnArrowsColor=[];
-0053 
-0054 <span class="comment">%Expression boxes</span>
-0055 expRec=[];
-0056 expFace=[];
-0057 
-0058 <span class="comment">%Lines to enzymes</span>
-0059 enzLinesX=[];
-0060 enzLinesY=[];
-0061 
-0062 <span class="comment">%Same for compartments</span>
-0063 compText={};
-0064 compX=[];
-0065 compY=[];
-0066 compRec=[];
-0067 
-0068 <span class="comment">%Check if it should plot expression data</span>
-0069 <span class="keyword">if</span> isfield(pathway.listOfSpecies(1),<span class="string">'orfs'</span>)
-0070     drawExpression=true;
-0071 <span class="keyword">else</span>
-0072     drawExpression=false;
-0073 <span class="keyword">end</span>
+0025 <span class="keyword">if</span> nargin&lt;2
+0026     <span class="keyword">if</span> ishandle(gcf)
+0027         h=gcf;
+0028     <span class="keyword">else</span>
+0029         h=figure();
+0030     <span class="keyword">end</span>
+0031 <span class="keyword">end</span>
+0032 
+0033 <span class="comment">%Will contain all metabolite info and where to print them</span>
+0034 metText={};
+0035 metX=[];
+0036 metY=[];
+0037 metRec=[];
+0038 
+0039 <span class="comment">%Same for reaction text (names, fluxes and maybe other)</span>
+0040 rxnText={};
+0041 rxnX=[];
+0042 rxnY=[];
+0043 rxnLinesX=[];
+0044 rxnLinesY=[];
+0045 rxnRec=[];
+0046 rxnFace=[];
+0047 rxnEdge=[];
+0048 rxnArrows=[];
+0049 rxnArrowsColor=[];
+0050 
+0051 <span class="comment">%Expression boxes</span>
+0052 expRec=[];
+0053 expFace=[];
+0054 
+0055 <span class="comment">%Lines to enzymes</span>
+0056 enzLinesX=[];
+0057 enzLinesY=[];
+0058 
+0059 <span class="comment">%Same for compartments</span>
+0060 compText={};
+0061 compX=[];
+0062 compY=[];
+0063 compRec=[];
+0064 
+0065 <span class="comment">%Check if it should plot expression data</span>
+0066 <span class="keyword">if</span> isfield(pathway.listOfSpecies(1),<span class="string">'orfs'</span>)
+0067     drawExpression=true;
+0068 <span class="keyword">else</span>
+0069     drawExpression=false;
+0070 <span class="keyword">end</span>
+0071 
+0072 <span class="comment">%Get the dimensions of the network</span>
+0073 dimension=getPathwayDimensions(pathway);
 0074 
-0075 <span class="comment">%Get the dimensions of the network</span>
-0076 dimension=getPathwayDimensions(pathway);
-0077 
-0078 <span class="comment">%Specify the properties of the figure</span>
-0079 set(h, <span class="string">'PaperOrientation'</span>, <span class="string">'landscape'</span>);
-0080 set(h, <span class="string">'Color'</span>, [1 1 1]);
-0081 xmargin=0.83;
-0082 ymargin=1.32;
-0083 set(h, <span class="string">'PaperPosition'</span>, [xmargin ymargin 29.67743169791-2*xmargin 20.98404194812-2*ymargin]);
-0084 set(h, <span class="string">'Renderer'</span>, <span class="string">'painters'</span>);
-0085 set(h, <span class="string">'Position'</span>, [10 10 1000 700]);
-0086 
-0087 <span class="comment">%The height has to be at least the height of the information panel</span>
-0088 <span class="comment">%(approximately 3000)</span>
-0089 height=dimension(2)+dimension(4)+200;
-0090 height=max(height,3000);
-0091 
-0092 axes(<span class="string">'ytick'</span>,[],<span class="string">'ydir'</span>,<span class="string">'reverse'</span>,<span class="string">'xtick'</span>,[],<span class="string">'ycolor'</span>,[1 1 1], <span class="string">'xcolor'</span>,<span class="keyword">...</span>
-0093     [1 1 1],<span class="string">'position'</span>,[0 0 1 1], <span class="string">'xLim'</span>,[dimension(1)-40 dimension(1)+dimension(3)+800],<span class="keyword">...</span>
-0094     <span class="string">'yLim'</span>, [dimension(2)-200 height]);
-0095 daspect([1,1,1]);
-0096 
-0097 <span class="comment">%Loops through the compartments.</span>
-0098 <span class="keyword">for</span> i=1:length(pathway.listOfCompartments)
-0099     position=[pathway.listOfCompartments(1,i).x pathway.listOfCompartments(1,i).y<span class="keyword">...</span>
-0100         pathway.listOfCompartments(1,i).w pathway.listOfCompartments(1,i).h];
-0101     compRec=[compRec;position];
-0102     compText=[compText;upper(pathway.listOfCompartments(i).name)];
-0103     compX=[compX;position(1)+0.5*position(3)];
-0104     compY=[compY;position(2)+position(4)-70];
-0105 <span class="keyword">end</span>
-0106 
-0107 <span class="comment">%Get positions of lines</span>
-0108 <span class="keyword">for</span> i=1:length(pathway.listOfReactions)
-0109     <span class="keyword">for</span> j=1:length(pathway.listOfReactions(i).componentList)
-0110         <span class="comment">%The line is always drawn from the middle to the component</span>
-0111         middle=pathway.listOfReactions(i).middlePoint;
-0112         x(1)=middle(1);
-0113         y(1)=middle(2);
-0114         x(2)=pathway.listOfReactions(i).componentList(j).anchor(1);
-0115         y(2)=pathway.listOfReactions(i).componentList(j).anchor(2);
-0116         
-0117         <span class="comment">%Check to see if a line or an arrow should be drawn</span>
-0118         <span class="keyword">if</span> strcmpi(pathway.listOfReactions(i).componentList(j).toArrow,<span class="string">'true'</span>)
-0119             rxnArrows=[rxnArrows;x(1) y(1) x(2) y(2)];
-0120             
-0121             <span class="comment">%Draw a red arrow if it's a base product</span>
-0122             <span class="keyword">if</span> strcmpi(pathway.listOfReactions(i).componentList(j).baseProduct,<span class="string">'true'</span>)
-0123                 rxnArrowsColor=[rxnArrowsColor;1 0 0];
-0124             <span class="keyword">else</span>
-0125                 rxnArrowsColor=[rxnArrowsColor;0 0 0];
-0126             <span class="keyword">end</span>
-0127         <span class="keyword">else</span>
-0128             <span class="comment">%If the component is an enzyme then a different line should be</span>
-0129             <span class="comment">%used</span>
-0130             <span class="keyword">if</span> strcmpi(pathway.listOfReactions(i).componentList(j).type,<span class="string">'ENZYME'</span>)
-0131                 enzLinesX=[enzLinesX;x(1) x(2)];
-0132                 enzLinesY=[enzLinesY;y(1) y(2)];
-0133             <span class="keyword">else</span>
-0134                 rxnLinesX=[rxnLinesX;x(1) x(2)];
-0135                 rxnLinesY=[rxnLinesY;y(1) y(2)];
-0136             <span class="keyword">end</span>
-0137         <span class="keyword">end</span>
-0138     <span class="keyword">end</span>
-0139 <span class="keyword">end</span>
-0140 
-0141 <span class="comment">%Loops through the species</span>
-0142 <span class="keyword">for</span> i=1:length(pathway.listOfSpecies)
-0143     <span class="comment">%Species should be represented with ellipses and enzymes with</span>
-0144     <span class="comment">%rectangles</span>
-0145     position=[pathway.listOfSpecies(i).x pathway.listOfSpecies(i).y<span class="keyword">...</span>
-0146         pathway.listOfSpecies(i).w pathway.listOfSpecies(i).h];
-0147     <span class="keyword">if</span> strcmpi(pathway.listOfSpecies(i).type, <span class="string">'SIMPLE_MOLECULE'</span>)
-0148         metRec=[metRec;position];
-0149         metText=[metText;pathway.listOfSpecies(i).name];
-0150         metX=[metX;position(1)+0.3*position(3)];
-0151         metY=[metY;position(2)+0.5*position(4)];
-0152     <span class="keyword">end</span>
-0153     <span class="keyword">if</span> strcmpi(pathway.listOfSpecies(i).type, <span class="string">'PROTEIN'</span>)
-0154         <span class="comment">%The color of the enzyme can be specified in the pathway object.</span>
-0155         <span class="comment">%The default color is used if there is no 'color' field present.</span>
-0156         <span class="comment">%If neither of the fluxes are above the cutoff value, then use the</span>
-0157         <span class="comment">%default color</span>
-0158         faceColor=defaultColor;
-0159         <span class="keyword">if</span> isfield(pathway.listOfSpecies(i),<span class="string">'color'</span>)
-0160             <span class="keyword">if</span> any(pathway.listOfSpecies(i).color)
-0161                 <span class="comment">%Check that the fluxes are specified</span>
-0162                 <span class="keyword">if</span> isfield(pathway.listOfSpecies(i),<span class="string">'flux'</span>) &amp;&amp; isfield(pathway.listOfSpecies(i),<span class="string">'referenceFlux'</span>)
-0163                     <span class="comment">%Check that the value of one of the fluxes is above the cutoff value</span>
-0164                     <span class="keyword">if</span> abs(pathway.listOfSpecies(i).referenceFlux)&gt;=cutOff || abs(pathway.listOfSpecies(i).flux)&gt;=cutOff
-0165                         faceColor=pathway.listOfSpecies(i).color;
-0166                     <span class="keyword">end</span>
-0167                 <span class="keyword">end</span>
-0168             <span class="keyword">end</span>
-0169         <span class="keyword">end</span>
-0170         
-0171         <span class="comment">%If the reaction is associated with a sign change and either of the</span>
-0172         <span class="comment">%fluxes are larger than the cutoff value, then use a different frame</span>
-0173         edgeColor=[0 0 0];
-0174         <span class="keyword">if</span> isfield(pathway.listOfSpecies(i),<span class="string">'signChange'</span>)
-0175             <span class="keyword">if</span> any(pathway.listOfSpecies(i).signChange)
-0176                 <span class="keyword">if</span> (pathway.listOfSpecies(i).signChange==true) &amp;&amp; (abs(pathway.listOfSpecies(i).referenceFlux)&gt;=cutOff || abs(pathway.listOfSpecies(i).flux)&gt;=cutOff)
-0177                     edgeColor=[1 0.6 0.2];
-0178                 <span class="keyword">end</span>
-0179             <span class="keyword">end</span>
-0180         <span class="keyword">end</span>
+0075 <span class="comment">%Specify the properties of the figure</span>
+0076 set(h, <span class="string">'PaperOrientation'</span>, <span class="string">'landscape'</span>);
+0077 set(h, <span class="string">'Color'</span>, [1 1 1]);
+0078 xmargin=0.83;
+0079 ymargin=1.32;
+0080 set(h, <span class="string">'PaperPosition'</span>, [xmargin ymargin 29.67743169791-2*xmargin 20.98404194812-2*ymargin]);
+0081 set(h, <span class="string">'Renderer'</span>, <span class="string">'painters'</span>);
+0082 set(h, <span class="string">'Position'</span>, [10 10 1000 700]);
+0083 
+0084 <span class="comment">%The height has to be at least the height of the information panel</span>
+0085 <span class="comment">%(approximately 3000)</span>
+0086 height=dimension(2)+dimension(4)+200;
+0087 height=max(height,3000);
+0088 
+0089 axes(<span class="string">'ytick'</span>,[],<span class="string">'ydir'</span>,<span class="string">'reverse'</span>,<span class="string">'xtick'</span>,[],<span class="string">'ycolor'</span>,[1 1 1], <span class="string">'xcolor'</span>,<span class="keyword">...</span>
+0090     [1 1 1],<span class="string">'position'</span>,[0 0 1 1], <span class="string">'xLim'</span>,[dimension(1)-40 dimension(1)+dimension(3)+800],<span class="keyword">...</span>
+0091     <span class="string">'yLim'</span>, [dimension(2)-200 height]);
+0092 daspect([1,1,1]);
+0093 
+0094 <span class="comment">%Loops through the compartments.</span>
+0095 <span class="keyword">for</span> i=1:length(pathway.listOfCompartments)
+0096     position=[pathway.listOfCompartments(1,i).x pathway.listOfCompartments(1,i).y<span class="keyword">...</span>
+0097         pathway.listOfCompartments(1,i).w pathway.listOfCompartments(1,i).h];
+0098     compRec=[compRec;position];
+0099     compText=[compText;upper(pathway.listOfCompartments(i).name)];
+0100     compX=[compX;position(1)+0.5*position(3)];
+0101     compY=[compY;position(2)+position(4)-70];
+0102 <span class="keyword">end</span>
+0103 
+0104 <span class="comment">%Get positions of lines</span>
+0105 <span class="keyword">for</span> i=1:length(pathway.listOfReactions)
+0106     <span class="keyword">for</span> j=1:length(pathway.listOfReactions(i).componentList)
+0107         <span class="comment">%The line is always drawn from the middle to the component</span>
+0108         middle=pathway.listOfReactions(i).middlePoint;
+0109         x(1)=middle(1);
+0110         y(1)=middle(2);
+0111         x(2)=pathway.listOfReactions(i).componentList(j).anchor(1);
+0112         y(2)=pathway.listOfReactions(i).componentList(j).anchor(2);
+0113         
+0114         <span class="comment">%Check to see if a line or an arrow should be drawn</span>
+0115         <span class="keyword">if</span> strcmpi(pathway.listOfReactions(i).componentList(j).toArrow,<span class="string">'true'</span>)
+0116             rxnArrows=[rxnArrows;x(1) y(1) x(2) y(2)];
+0117             
+0118             <span class="comment">%Draw a red arrow if it's a base product</span>
+0119             <span class="keyword">if</span> strcmpi(pathway.listOfReactions(i).componentList(j).baseProduct,<span class="string">'true'</span>)
+0120                 rxnArrowsColor=[rxnArrowsColor;1 0 0];
+0121             <span class="keyword">else</span>
+0122                 rxnArrowsColor=[rxnArrowsColor;0 0 0];
+0123             <span class="keyword">end</span>
+0124         <span class="keyword">else</span>
+0125             <span class="comment">%If the component is an enzyme then a different line should be</span>
+0126             <span class="comment">%used</span>
+0127             <span class="keyword">if</span> strcmpi(pathway.listOfReactions(i).componentList(j).type,<span class="string">'ENZYME'</span>)
+0128                 enzLinesX=[enzLinesX;x(1) x(2)];
+0129                 enzLinesY=[enzLinesY;y(1) y(2)];
+0130             <span class="keyword">else</span>
+0131                 rxnLinesX=[rxnLinesX;x(1) x(2)];
+0132                 rxnLinesY=[rxnLinesY;y(1) y(2)];
+0133             <span class="keyword">end</span>
+0134         <span class="keyword">end</span>
+0135     <span class="keyword">end</span>
+0136 <span class="keyword">end</span>
+0137 
+0138 <span class="comment">%Loops through the species</span>
+0139 <span class="keyword">for</span> i=1:length(pathway.listOfSpecies)
+0140     <span class="comment">%Species should be represented with ellipses and enzymes with</span>
+0141     <span class="comment">%rectangles</span>
+0142     position=[pathway.listOfSpecies(i).x pathway.listOfSpecies(i).y<span class="keyword">...</span>
+0143         pathway.listOfSpecies(i).w pathway.listOfSpecies(i).h];
+0144     <span class="keyword">if</span> strcmpi(pathway.listOfSpecies(i).type, <span class="string">'SIMPLE_MOLECULE'</span>)
+0145         metRec=[metRec;position];
+0146         metText=[metText;pathway.listOfSpecies(i).name];
+0147         metX=[metX;position(1)+0.3*position(3)];
+0148         metY=[metY;position(2)+0.5*position(4)];
+0149     <span class="keyword">end</span>
+0150     <span class="keyword">if</span> strcmpi(pathway.listOfSpecies(i).type, <span class="string">'PROTEIN'</span>)
+0151         <span class="comment">%The color of the enzyme can be specified in the pathway object.</span>
+0152         <span class="comment">%The default color is used if there is no 'color' field present.</span>
+0153         <span class="comment">%If neither of the fluxes are above the cutoff value, then use the</span>
+0154         <span class="comment">%default color</span>
+0155         faceColor=defaultColor;
+0156         <span class="keyword">if</span> isfield(pathway.listOfSpecies(i),<span class="string">'color'</span>)
+0157             <span class="keyword">if</span> any(pathway.listOfSpecies(i).color)
+0158                 <span class="comment">%Check that the fluxes are specified</span>
+0159                 <span class="keyword">if</span> isfield(pathway.listOfSpecies(i),<span class="string">'flux'</span>) &amp;&amp; isfield(pathway.listOfSpecies(i),<span class="string">'referenceFlux'</span>)
+0160                     <span class="comment">%Check that the value of one of the fluxes is above the cutoff value</span>
+0161                     <span class="keyword">if</span> abs(pathway.listOfSpecies(i).referenceFlux)&gt;=cutOff || abs(pathway.listOfSpecies(i).flux)&gt;=cutOff
+0162                         faceColor=pathway.listOfSpecies(i).color;
+0163                     <span class="keyword">end</span>
+0164                 <span class="keyword">end</span>
+0165             <span class="keyword">end</span>
+0166         <span class="keyword">end</span>
+0167         
+0168         <span class="comment">%If the reaction is associated with a sign change and either of the</span>
+0169         <span class="comment">%fluxes are larger than the cutoff value, then use a different frame</span>
+0170         edgeColor=[0 0 0];
+0171         <span class="keyword">if</span> isfield(pathway.listOfSpecies(i),<span class="string">'signChange'</span>)
+0172             <span class="keyword">if</span> any(pathway.listOfSpecies(i).signChange)
+0173                 <span class="keyword">if</span> (pathway.listOfSpecies(i).signChange==true) &amp;&amp; (abs(pathway.listOfSpecies(i).referenceFlux)&gt;=cutOff || abs(pathway.listOfSpecies(i).flux)&gt;=cutOff)
+0174                     edgeColor=[1 0.6 0.2];
+0175                 <span class="keyword">end</span>
+0176             <span class="keyword">end</span>
+0177         <span class="keyword">end</span>
+0178         
+0179         rxnFace=[rxnFace;faceColor];
+0180         rxnEdge=[rxnEdge;edgeColor];
 0181         
-0182         rxnFace=[rxnFace;faceColor];
-0183         rxnEdge=[rxnEdge;edgeColor];
-0184         
-0185         <span class="comment">%Draw smaller boxes if expression data should also be printed</span>
-0186         <span class="keyword">if</span> drawExpression==true
-0187             rxnRec=[rxnRec;position-[0 0 40 0]];
-0188             
-0189             <span class="comment">%Draw rectangles representing each gene. Max 8 circles are used.</span>
-0190             <span class="comment">%Their width is hardcoded and so is the width of the area where</span>
-0191             <span class="comment">%they are printed (40)</span>
-0192             <span class="keyword">if</span> any(pathway.listOfSpecies(i).expA)
-0193                 <span class="comment">%Calculate the position of the dots. 4 in each column.</span>
-0194                 firstFourX=pathway.listOfSpecies(i).x+pathway.listOfSpecies(i).w-34;
-0195                 fourY=pathway.listOfSpecies(i).y:pathway.listOfSpecies(i).h/4:pathway.listOfSpecies(i).y+pathway.listOfSpecies(i).h;
-0196                 
-0197                 nExp=numel(pathway.listOfSpecies(i).expA);
+0182         <span class="comment">%Draw smaller boxes if expression data should also be printed</span>
+0183         <span class="keyword">if</span> drawExpression==true
+0184             rxnRec=[rxnRec;position-[0 0 40 0]];
+0185             
+0186             <span class="comment">%Draw rectangles representing each gene. Max 8 circles are used.</span>
+0187             <span class="comment">%Their width is hardcoded and so is the width of the area where</span>
+0188             <span class="comment">%they are printed (40)</span>
+0189             <span class="keyword">if</span> any(pathway.listOfSpecies(i).expA)
+0190                 <span class="comment">%Calculate the position of the dots. 4 in each column.</span>
+0191                 firstFourX=pathway.listOfSpecies(i).x+pathway.listOfSpecies(i).w-34;
+0192                 fourY=pathway.listOfSpecies(i).y:pathway.listOfSpecies(i).h/4:pathway.listOfSpecies(i).y+pathway.listOfSpecies(i).h;
+0193                 
+0194                 nExp=numel(pathway.listOfSpecies(i).expA);
+0195                 
+0196                 <span class="comment">%One log10-fold change is total up or down</span>
+0197                 colorCodes=<a href="getColorCodes.html" class="code" title="function [colorCodes, signChange, errorFlag]= getColorCodes(referenceFluxes, fluxes, maxChange, defaultColor, upColor, downColor)">getColorCodes</a>(pathway.listOfSpecies(i).expA, pathway.listOfSpecies(i).expB);
 0198                 
-0199                 <span class="comment">%One log10-fold change is total up or down</span>
-0200                 colorCodes=<a href="getColorCodes.html" class="code" title="function [colorCodes, signChange, errorFlag]= getColorCodes(referenceFluxes, fluxes, maxChange, defaultColor, upColor, downColor)">getColorCodes</a>(pathway.listOfSpecies(i).expA, pathway.listOfSpecies(i).expB);
-0201                 
-0202                 <span class="comment">%Plot the circles</span>
-0203                 <span class="keyword">for</span> j=1:min(nExp,4)
-0204                     expRec=[expRec;firstFourX fourY(j) 16 pathway.listOfSpecies(i).h/4];
-0205                     expFace=[expFace;colorCodes{j}];
-0206                 <span class="keyword">end</span>
-0207                 
-0208                 <span class="comment">%If a second row is needed</span>
-0209                 <span class="keyword">if</span> nExp&gt;4
-0210                     secondFourX=pathway.listOfSpecies(i).x+pathway.listOfSpecies(i).w-16;
-0211                     <span class="keyword">for</span> j=5:min(nExp,8)
-0212                         expRec=[expRec;secondFourX fourY(j-4) 16 pathway.listOfSpecies(i).h/4];
-0213                         expFace=[expFace;colorCodes{j}];
-0214                     <span class="keyword">end</span>
-0215                 <span class="keyword">end</span>
-0216             <span class="keyword">end</span>
-0217         <span class="keyword">else</span>
-0218             rxnRec=[rxnRec;position];
-0219         <span class="keyword">end</span>
-0220         
-0221         <span class="comment">%If no fluxes are specified then should only the name be printed.</span>
-0222         <span class="comment">%Flux values should only be printed if at least one of the fluxes</span>
-0223         <span class="comment">%is above the cutoff value</span>
-0224         textToPrint={};
+0199                 <span class="comment">%Plot the circles</span>
+0200                 <span class="keyword">for</span> j=1:min(nExp,4)
+0201                     expRec=[expRec;firstFourX fourY(j) 16 pathway.listOfSpecies(i).h/4];
+0202                     expFace=[expFace;colorCodes{j}];
+0203                 <span class="keyword">end</span>
+0204                 
+0205                 <span class="comment">%If a second row is needed</span>
+0206                 <span class="keyword">if</span> nExp&gt;4
+0207                     secondFourX=pathway.listOfSpecies(i).x+pathway.listOfSpecies(i).w-16;
+0208                     <span class="keyword">for</span> j=5:min(nExp,8)
+0209                         expRec=[expRec;secondFourX fourY(j-4) 16 pathway.listOfSpecies(i).h/4];
+0210                         expFace=[expFace;colorCodes{j}];
+0211                     <span class="keyword">end</span>
+0212                 <span class="keyword">end</span>
+0213             <span class="keyword">end</span>
+0214         <span class="keyword">else</span>
+0215             rxnRec=[rxnRec;position];
+0216         <span class="keyword">end</span>
+0217         
+0218         <span class="comment">%If no fluxes are specified then should only the name be printed.</span>
+0219         <span class="comment">%Flux values should only be printed if at least one of the fluxes</span>
+0220         <span class="comment">%is above the cutoff value</span>
+0221         textToPrint={};
+0222         
+0223         <span class="comment">%NOTE:  This is done since I know that I have names including '_' which is a reserved</span>
+0224         <span class="comment">%       character in LaTeX. This should be done more systematically</span>
 0225         
-0226         <span class="comment">%NOTE:  This is done since I know that I have names including '_' which is a reserved</span>
-0227         <span class="comment">%       character in LaTeX. This should be done more systematically</span>
+0226         <span class="comment">%NOTE:  The notation used means that only flux values with with less than</span>
+0227         <span class="comment">%       nine characters can be used</span>
 0228         
-0229         <span class="comment">%NOTE:  The notation used means that only flux values with with less than</span>
-0230         <span class="comment">%       nine characters can be used</span>
-0231         
-0232         textToPrint{1,1}=strrep(pathway.listOfSpecies(i).name,<span class="string">'_'</span>,<span class="string">'\_'</span>);
-0233         
-0234         <span class="comment">%Check that the fluxes are specified</span>
-0235         <span class="comment">%NOTE: Should you only print if there are two fluxes?</span>
-0236         <span class="keyword">if</span> isfield(pathway.listOfSpecies(i),<span class="string">'flux'</span>) &amp;&amp; isfield(pathway.listOfSpecies(i),<span class="string">'referenceFlux'</span>)
-0237             <span class="comment">%Check that the value of one of the fluxes is above the cutoff value</span>
-0238             <span class="keyword">if</span> ~isempty(pathway.listOfSpecies(i).flux) &amp;&amp; ~isempty(pathway.listOfSpecies(i).referenceFlux)
-0239                 <span class="keyword">if</span> abs(pathway.listOfSpecies(i).referenceFlux)&gt;=cutOff || abs(pathway.listOfSpecies(i).flux)&gt;=cutOff
-0240                     textToPrint{2,1}=num2str(pathway.listOfSpecies(i).flux,<span class="string">'%0.4g'</span>);
-0241                     textToPrint{3,1}=num2str(pathway.listOfSpecies(i).referenceFlux,<span class="string">'%0.4g'</span>);
-0242                 <span class="keyword">end</span>
-0243             <span class="keyword">end</span>
-0244         <span class="keyword">end</span>
-0245         
-0246         xPos=ones(numel(textToPrint),1)*(position(1)+3);
-0247         distance=position(4)/(numel(textToPrint)+1);
-0248         yPos=position(2)+distance:distance:(position(2)+position(4)-distance);
-0249         
-0250         rxnText=[rxnText;textToPrint];
-0251         rxnX=[rxnX;xPos];
-0252         rxnY=[rxnY;yPos'];
-0253     <span class="keyword">end</span>
-0254 <span class="keyword">end</span>
-0255 
-0256 <span class="comment">%*** Print everything ***</span>
-0257 
-0258 <span class="comment">%Compartment rectangles</span>
-0259 <span class="keyword">for</span> i=1:size(compRec,1)
-0260     rectangle(<span class="string">'edgecolor'</span>,[1 0.8 0.2], <span class="string">'facecolor'</span>, [1 0.91 0.55], <span class="string">'linewidth'</span>, 2, <span class="string">'curvature'</span>, [0.05 0.05],<span class="keyword">...</span>
-0261         <span class="string">'position'</span>,compRec(i,:));
-0262     rectangle(<span class="string">'edgecolor'</span>,[1 0.8 0.2], <span class="string">'facecolor'</span>, [1 1 1], <span class="string">'linewidth'</span>, 1, <span class="string">'curvature'</span>, [0.05 0.05],<span class="keyword">...</span>
-0263         <span class="string">'position'</span>,compRec(i,:)+[12 12 -24 -24]);
-0264 <span class="keyword">end</span>
+0229         textToPrint{1,1}=strrep(pathway.listOfSpecies(i).name,<span class="string">'_'</span>,<span class="string">'\_'</span>);
+0230         
+0231         <span class="comment">%Check that the fluxes are specified</span>
+0232         <span class="comment">%NOTE: Should you only print if there are two fluxes?</span>
+0233         <span class="keyword">if</span> isfield(pathway.listOfSpecies(i),<span class="string">'flux'</span>) &amp;&amp; isfield(pathway.listOfSpecies(i),<span class="string">'referenceFlux'</span>)
+0234             <span class="comment">%Check that the value of one of the fluxes is above the cutoff value</span>
+0235             <span class="keyword">if</span> ~isempty(pathway.listOfSpecies(i).flux) &amp;&amp; ~isempty(pathway.listOfSpecies(i).referenceFlux)
+0236                 <span class="keyword">if</span> abs(pathway.listOfSpecies(i).referenceFlux)&gt;=cutOff || abs(pathway.listOfSpecies(i).flux)&gt;=cutOff
+0237                     textToPrint{2,1}=num2str(pathway.listOfSpecies(i).flux,<span class="string">'%0.4g'</span>);
+0238                     textToPrint{3,1}=num2str(pathway.listOfSpecies(i).referenceFlux,<span class="string">'%0.4g'</span>);
+0239                 <span class="keyword">end</span>
+0240             <span class="keyword">end</span>
+0241         <span class="keyword">end</span>
+0242         
+0243         xPos=ones(numel(textToPrint),1)*(position(1)+3);
+0244         distance=position(4)/(numel(textToPrint)+1);
+0245         yPos=position(2)+distance:distance:(position(2)+position(4)-distance);
+0246         
+0247         rxnText=[rxnText;textToPrint];
+0248         rxnX=[rxnX;xPos];
+0249         rxnY=[rxnY;yPos'];
+0250     <span class="keyword">end</span>
+0251 <span class="keyword">end</span>
+0252 
+0253 <span class="comment">%*** Print everything ***</span>
+0254 
+0255 <span class="comment">%Compartment rectangles</span>
+0256 <span class="keyword">for</span> i=1:size(compRec,1)
+0257     rectangle(<span class="string">'edgecolor'</span>,[1 0.8 0.2], <span class="string">'facecolor'</span>, [1 0.91 0.55], <span class="string">'linewidth'</span>, 2, <span class="string">'curvature'</span>, [0.05 0.05],<span class="keyword">...</span>
+0258         <span class="string">'position'</span>,compRec(i,:));
+0259     rectangle(<span class="string">'edgecolor'</span>,[1 0.8 0.2], <span class="string">'facecolor'</span>, [1 1 1], <span class="string">'linewidth'</span>, 1, <span class="string">'curvature'</span>, [0.05 0.05],<span class="keyword">...</span>
+0260         <span class="string">'position'</span>,compRec(i,:)+[12 12 -24 -24]);
+0261 <span class="keyword">end</span>
+0262 
+0263 <span class="comment">%Reaction lines</span>
+0264 line(rxnLinesX',rxnLinesY',<span class="string">'linewidth'</span>,0.1,<span class="string">'color'</span>,[0 0 0]);
 0265 
-0266 <span class="comment">%Reaction lines</span>
-0267 line(rxnLinesX',rxnLinesY',<span class="string">'linewidth'</span>,0.1,<span class="string">'color'</span>,[0 0 0]);
-0268 
-0269 <span class="comment">%Arrow lines</span>
-0270 hold on;
-0271 <span class="keyword">for</span> i=1:size(rxnArrows,1)
-0272     <a href="#_sub1" class="code" title="subfunction handles = plotArrow( x1,y1,x2,y2,varargin )">plotArrow</a>(rxnArrows(i,1),rxnArrows(i,2),rxnArrows(i,3),rxnArrows(i,4),<span class="string">'linewidth'</span>,0.1,<span class="string">'edgecolor'</span>,rxnArrowsColor(i,:),<span class="string">'facecolor'</span>,rxnArrowsColor(i,:));
-0273 <span class="keyword">end</span>
-0274 hold off;
-0275 
-0276 <span class="comment">%Enzyme lines</span>
-0277 line(enzLinesX',enzLinesY',<span class="string">'marker'</span>,<span class="string">'o'</span>,<span class="string">'markeredgecolor'</span>,[0 0 0],<span class="string">'markersize'</span>,0.5,<span class="keyword">...</span>
-0278     <span class="string">'markerfacecolor'</span>,[1 0.969 0.922],<span class="string">'linewidth'</span>,0.1,<span class="string">'color'</span>,[0 0 0]);
-0279 
-0280 <span class="comment">%Metabolite rectangles</span>
-0281 <span class="keyword">for</span> i=1:size(metRec,1)
-0282     rectangle(<span class="string">'edgecolor'</span>, [0 0 0], <span class="string">'facecolor'</span>, [1 1 0.78], <span class="string">'curvature'</span>, [0.8 0.8],<span class="keyword">...</span>
-0283         <span class="string">'position'</span>,metRec(i,:),<span class="string">'linewidth'</span>,0.1);
-0284 <span class="keyword">end</span>
-0285 
-0286 <span class="comment">%Reaction rectangles</span>
-0287 <span class="keyword">for</span> i=1:size(rxnRec,1)
-0288     rectangle(<span class="string">'edgecolor'</span>, rxnEdge(i,:), <span class="string">'facecolor'</span>, rxnFace(i,:), <span class="string">'linewidth'</span>,0.1,<span class="keyword">...</span>
-0289         <span class="string">'curvature'</span>, [0.1 0.1], <span class="string">'position'</span>,rxnRec(i,:));
-0290 <span class="keyword">end</span>
-0291 
-0292 <span class="comment">%Expression rectangles</span>
-0293 <span class="keyword">for</span> i=1:size(expRec,1)
-0294     rectangle(<span class="string">'facecolor'</span>, expFace(i,:), <span class="string">'linewidth'</span>,0.1, <span class="string">'curvature'</span>, [0.1 0.1],<span class="keyword">...</span>
-0295         <span class="string">'position'</span>,expRec(i,:));
-0296 <span class="keyword">end</span>
-0297 
-0298 <span class="comment">%Metabolite text</span>
-0299 <span class="comment">%Temporary thing to get it right for small networks as well. Should be</span>
-0300 <span class="comment">%calculated better!</span>
-0301 <span class="keyword">if</span> dimension(3)&lt;5000
-0302     textSize=3;
-0303 <span class="keyword">else</span>
-0304     textSize=0.5;
-0305 <span class="keyword">end</span>
+0266 <span class="comment">%Arrow lines</span>
+0267 hold on;
+0268 <span class="keyword">for</span> i=1:size(rxnArrows,1)
+0269     <a href="#_sub1" class="code" title="subfunction handles = plotArrow( x1,y1,x2,y2,varargin )">plotArrow</a>(rxnArrows(i,1),rxnArrows(i,2),rxnArrows(i,3),rxnArrows(i,4),<span class="string">'linewidth'</span>,0.1,<span class="string">'edgecolor'</span>,rxnArrowsColor(i,:),<span class="string">'facecolor'</span>,rxnArrowsColor(i,:));
+0270 <span class="keyword">end</span>
+0271 hold off;
+0272 
+0273 <span class="comment">%Enzyme lines</span>
+0274 line(enzLinesX',enzLinesY',<span class="string">'marker'</span>,<span class="string">'o'</span>,<span class="string">'markeredgecolor'</span>,[0 0 0],<span class="string">'markersize'</span>,0.5,<span class="keyword">...</span>
+0275     <span class="string">'markerfacecolor'</span>,[1 0.969 0.922],<span class="string">'linewidth'</span>,0.1,<span class="string">'color'</span>,[0 0 0]);
+0276 
+0277 <span class="comment">%Metabolite rectangles</span>
+0278 <span class="keyword">for</span> i=1:size(metRec,1)
+0279     rectangle(<span class="string">'edgecolor'</span>, [0 0 0], <span class="string">'facecolor'</span>, [1 1 0.78], <span class="string">'curvature'</span>, [0.8 0.8],<span class="keyword">...</span>
+0280         <span class="string">'position'</span>,metRec(i,:),<span class="string">'linewidth'</span>,0.1);
+0281 <span class="keyword">end</span>
+0282 
+0283 <span class="comment">%Reaction rectangles</span>
+0284 <span class="keyword">for</span> i=1:size(rxnRec,1)
+0285     rectangle(<span class="string">'edgecolor'</span>, rxnEdge(i,:), <span class="string">'facecolor'</span>, rxnFace(i,:), <span class="string">'linewidth'</span>,0.1,<span class="keyword">...</span>
+0286         <span class="string">'curvature'</span>, [0.1 0.1], <span class="string">'position'</span>,rxnRec(i,:));
+0287 <span class="keyword">end</span>
+0288 
+0289 <span class="comment">%Expression rectangles</span>
+0290 <span class="keyword">for</span> i=1:size(expRec,1)
+0291     rectangle(<span class="string">'facecolor'</span>, expFace(i,:), <span class="string">'linewidth'</span>,0.1, <span class="string">'curvature'</span>, [0.1 0.1],<span class="keyword">...</span>
+0292         <span class="string">'position'</span>,expRec(i,:));
+0293 <span class="keyword">end</span>
+0294 
+0295 <span class="comment">%Metabolite text</span>
+0296 <span class="comment">%Temporary thing to get it right for small networks as well. Should be</span>
+0297 <span class="comment">%calculated better!</span>
+0298 <span class="keyword">if</span> dimension(3)&lt;5000
+0299     textSize=3;
+0300 <span class="keyword">else</span>
+0301     textSize=0.5;
+0302 <span class="keyword">end</span>
+0303 
+0304 text(metX,metY,metText,<span class="string">'fontname'</span>,<span class="string">'Small Fonts'</span>,<span class="string">'fontsize'</span>,textSize,<span class="string">'interpreter'</span>,<span class="string">'tex'</span>,<span class="keyword">...</span>
+0305     <span class="string">'HorizontalAlignment'</span>,<span class="string">'center'</span>,<span class="string">'verticalalignment'</span>,<span class="string">'middle'</span>);
 0306 
-0307 text(metX,metY,metText,<span class="string">'fontname'</span>,<span class="string">'Small Fonts'</span>,<span class="string">'fontsize'</span>,textSize,<span class="string">'interpreter'</span>,<span class="string">'tex'</span>,<span class="keyword">...</span>
-0308     <span class="string">'HorizontalAlignment'</span>,<span class="string">'center'</span>,<span class="string">'verticalalignment'</span>,<span class="string">'middle'</span>);
-0309 
-0310 <span class="comment">%Reaction text</span>
-0311 text(rxnX,rxnY,rxnText,<span class="string">'fontname'</span>,<span class="string">'Small Fonts'</span>,<span class="string">'fontsize'</span>,textSize,<span class="string">'interpreter'</span>,<span class="string">'tex'</span>,<span class="keyword">...</span>
-0312     <span class="string">'verticalalignment'</span>,<span class="string">'middle'</span>,<span class="string">'HorizontalAlignment'</span>,<span class="string">'left'</span>);
-0313 
-0314 <span class="comment">%Compartment text. The text is centered and at the bottom of the compartment</span>
-0315 text(compX, compY,compText,<span class="string">'fontname'</span>,<span class="string">'Small Fonts'</span>,<span class="string">'fontsize'</span>,7,<span class="string">'interpreter'</span>,<span class="string">'none'</span>,<span class="keyword">...</span>
-0316     <span class="string">'HorizontalAlignment'</span>,<span class="string">'center'</span>,<span class="string">'verticalalignment'</span>,<span class="string">'middle'</span>);
-0317 <span class="keyword">end</span>
-0318 
-0319 <a name="_sub1" href="#_subfunctions" class="code">function handles = plotArrow( x1,y1,x2,y2,varargin )</a>
-0320 <span class="comment">%</span>
-0321 <span class="comment">% plotArrow - plots an arrow to the current plot</span>
-0322 <span class="comment">%</span>
-0323 <span class="comment">% format:   handles = plotArrow( x1,y1,x2,y2 [,options...] )</span>
-0324 <span class="comment">%</span>
-0325 <span class="comment">% input:    x1,y1   - starting point</span>
-0326 <span class="comment">%           x2,y2   - end point</span>
-0327 <span class="comment">%           options - come as pairs of &quot;property&quot;,&quot;value&quot; as defined for &quot;line&quot; and &quot;patch&quot;</span>
-0328 <span class="comment">%                     controls, see matlab help for listing of these properties.</span>
-0329 <span class="comment">%                     note that not all properties where added, one might add them at the end of this file.</span>
-0330 <span class="comment">%</span>
-0331 <span class="comment">%                     additional options are:</span>
-0332 <span class="comment">%                     'headwidth':  relative to complete arrow size, default value is 0.07</span>
-0333 <span class="comment">%                     'headheight': relative to complete arrow size, default value is 0.15</span>
-0334 <span class="comment">%                     (encoded are maximal values if pixels, for the case that the arrow is very long)</span>
-0335 <span class="comment">%</span>
-0336 <span class="comment">% output:   handles - handles of the graphical elements building the arrow</span>
-0337 <span class="comment">%</span>
-0338 <span class="comment">% Example:  plotArrow( -1,-1,15,12,'linewidth',2,'color',[0.5 0.5 0.5],'facecolor',[0.5 0.5 0.5] );</span>
-0339 <span class="comment">%           plotArrow( 0,0,5,4,'linewidth',2,'headwidth',0.25,'headheight',0.33 );</span>
-0340 <span class="comment">%           plotArrow;   % will launch demo</span>
-0341 
-0342 <span class="comment">% =============================================</span>
-0343 <span class="comment">% constants (can be edited)</span>
-0344 <span class="comment">% =============================================</span>
-0345 <span class="comment">%NOTE: These should be 100 times smaller</span>
-0346 alpha       = 15;   <span class="comment">% head length</span>
-0347 beta        = 7;   <span class="comment">% head width</span>
-0348 max_length  = 11;
-0349 <span class="comment">%max_width   = 7;</span>
-0350 
-0351 <span class="comment">% =============================================</span>
-0352 <span class="comment">% check if head properties are given</span>
-0353 <span class="comment">% =============================================</span>
-0354 <span class="comment">% if ratio is always fixed, this section can be removed!</span>
-0355 <span class="keyword">if</span> ~isempty( varargin )
-0356     <span class="keyword">for</span> c = 1:floor(length(varargin)/2)
-0357         <span class="keyword">switch</span> lower(varargin{c*2-1})
-0358             <span class="comment">% head properties - do nothing, since handled above already</span>
-0359             <span class="keyword">case</span> <span class="string">'headheight'</span>,alpha = max( min( varargin{c*2},1 ),0.01 );
-0360             <span class="keyword">case</span> <span class="string">'headwidth'</span>, beta = max( min( varargin{c*2},1 ),0.01 );
-0361         <span class="keyword">end</span>
-0362     <span class="keyword">end</span>
-0363 <span class="keyword">end</span>
-0364 
-0365 <span class="comment">% =============================================</span>
-0366 <span class="comment">% calculate the arrow head coordinates</span>
-0367 <span class="comment">% =============================================</span>
-0368 den         = x2 - x1 + eps;                                <span class="comment">% make sure no devision by zero occurs</span>
-0369 teta        = atan( (y2-y1)/den ) + pi*(x2&lt;x1) - pi/2;      <span class="comment">% angle of arrow</span>
-0370 cs          = cos(teta);                                    <span class="comment">% rotation matrix</span>
-0371 ss          = sin(teta);
-0372 R           = [cs -ss;ss cs];
-0373 line_length = sqrt( (y2-y1)^2 + (x2-x1)^2 );                <span class="comment">% sizes</span>
-0374 head_length = min( line_length*alpha,max_length );
-0375 head_width  = min( line_length*beta,max_length );
-0376 x0          = x2*cs + y2*ss;                                <span class="comment">% build head coordinats</span>
-0377 y0          = -x2*ss + y2*cs;
-0378 coords      = R*[x0 x0+head_width/2 x0-head_width/2; y0 y0-head_length y0-head_length];
-0379 
-0380 <span class="comment">% =============================================</span>
-0381 <span class="comment">% plot arrow  (= line + patch of a triangle)</span>
-0382 <span class="comment">% =============================================</span>
-0383 h1          = plot( [x1,x2],[y1,y2],<span class="string">'k'</span> );
-0384 h2          = patch( coords(1,:),coords(2,:),[0 0 0] );
-0385 
-0386 <span class="comment">% =============================================</span>
-0387 <span class="comment">% return handles</span>
+0307 <span class="comment">%Reaction text</span>
+0308 text(rxnX,rxnY,rxnText,<span class="string">'fontname'</span>,<span class="string">'Small Fonts'</span>,<span class="string">'fontsize'</span>,textSize,<span class="string">'interpreter'</span>,<span class="string">'tex'</span>,<span class="keyword">...</span>
+0309     <span class="string">'verticalalignment'</span>,<span class="string">'middle'</span>,<span class="string">'HorizontalAlignment'</span>,<span class="string">'left'</span>);
+0310 
+0311 <span class="comment">%Compartment text. The text is centered and at the bottom of the compartment</span>
+0312 text(compX, compY,compText,<span class="string">'fontname'</span>,<span class="string">'Small Fonts'</span>,<span class="string">'fontsize'</span>,7,<span class="string">'interpreter'</span>,<span class="string">'none'</span>,<span class="keyword">...</span>
+0313     <span class="string">'HorizontalAlignment'</span>,<span class="string">'center'</span>,<span class="string">'verticalalignment'</span>,<span class="string">'middle'</span>);
+0314 <span class="keyword">end</span>
+0315 
+0316 <a name="_sub1" href="#_subfunctions" class="code">function handles = plotArrow( x1,y1,x2,y2,varargin )</a>
+0317 <span class="comment">%</span>
+0318 <span class="comment">% plotArrow - plots an arrow to the current plot</span>
+0319 <span class="comment">%</span>
+0320 <span class="comment">% format:   handles = plotArrow( x1,y1,x2,y2 [,options...] )</span>
+0321 <span class="comment">%</span>
+0322 <span class="comment">% input:    x1,y1   - starting point</span>
+0323 <span class="comment">%           x2,y2   - end point</span>
+0324 <span class="comment">%           options - come as pairs of &quot;property&quot;,&quot;value&quot; as defined for &quot;line&quot; and &quot;patch&quot;</span>
+0325 <span class="comment">%                     controls, see matlab help for listing of these properties.</span>
+0326 <span class="comment">%                     note that not all properties where added, one might add them at the end of this file.</span>
+0327 <span class="comment">%</span>
+0328 <span class="comment">%                     additional options are:</span>
+0329 <span class="comment">%                     'headwidth':  relative to complete arrow size, default value is 0.07</span>
+0330 <span class="comment">%                     'headheight': relative to complete arrow size, default value is 0.15</span>
+0331 <span class="comment">%                     (encoded are maximal values if pixels, for the case that the arrow is very long)</span>
+0332 <span class="comment">%</span>
+0333 <span class="comment">% output:   handles - handles of the graphical elements building the arrow</span>
+0334 <span class="comment">%</span>
+0335 <span class="comment">% Example:  plotArrow( -1,-1,15,12,'linewidth',2,'color',[0.5 0.5 0.5],'facecolor',[0.5 0.5 0.5] );</span>
+0336 <span class="comment">%           plotArrow( 0,0,5,4,'linewidth',2,'headwidth',0.25,'headheight',0.33 );</span>
+0337 <span class="comment">%           plotArrow;   % will launch demo</span>
+0338 
+0339 <span class="comment">% =============================================</span>
+0340 <span class="comment">% constants (can be edited)</span>
+0341 <span class="comment">% =============================================</span>
+0342 <span class="comment">%NOTE: These should be 100 times smaller</span>
+0343 alpha       = 15;   <span class="comment">% head length</span>
+0344 beta        = 7;   <span class="comment">% head width</span>
+0345 max_length  = 11;
+0346 <span class="comment">%max_width   = 7;</span>
+0347 
+0348 <span class="comment">% =============================================</span>
+0349 <span class="comment">% check if head properties are given</span>
+0350 <span class="comment">% =============================================</span>
+0351 <span class="comment">% if ratio is always fixed, this section can be removed!</span>
+0352 <span class="keyword">if</span> ~isempty( varargin )
+0353     <span class="keyword">for</span> c = 1:floor(length(varargin)/2)
+0354         <span class="keyword">switch</span> lower(varargin{c*2-1})
+0355             <span class="comment">% head properties - do nothing, since handled above already</span>
+0356             <span class="keyword">case</span> <span class="string">'headheight'</span>,alpha = max( min( varargin{c*2},1 ),0.01 );
+0357             <span class="keyword">case</span> <span class="string">'headwidth'</span>, beta = max( min( varargin{c*2},1 ),0.01 );
+0358         <span class="keyword">end</span>
+0359     <span class="keyword">end</span>
+0360 <span class="keyword">end</span>
+0361 
+0362 <span class="comment">% =============================================</span>
+0363 <span class="comment">% calculate the arrow head coordinates</span>
+0364 <span class="comment">% =============================================</span>
+0365 den         = x2 - x1 + eps;                                <span class="comment">% make sure no devision by zero occurs</span>
+0366 teta        = atan( (y2-y1)/den ) + pi*(x2&lt;x1) - pi/2;      <span class="comment">% angle of arrow</span>
+0367 cs          = cos(teta);                                    <span class="comment">% rotation matrix</span>
+0368 ss          = sin(teta);
+0369 R           = [cs -ss;ss cs];
+0370 line_length = sqrt( (y2-y1)^2 + (x2-x1)^2 );                <span class="comment">% sizes</span>
+0371 head_length = min( line_length*alpha,max_length );
+0372 head_width  = min( line_length*beta,max_length );
+0373 x0          = x2*cs + y2*ss;                                <span class="comment">% build head coordinats</span>
+0374 y0          = -x2*ss + y2*cs;
+0375 coords      = R*[x0 x0+head_width/2 x0-head_width/2; y0 y0-head_length y0-head_length];
+0376 
+0377 <span class="comment">% =============================================</span>
+0378 <span class="comment">% plot arrow  (= line + patch of a triangle)</span>
+0379 <span class="comment">% =============================================</span>
+0380 h1          = plot( [x1,x2],[y1,y2],<span class="string">'k'</span> );
+0381 h2          = patch( coords(1,:),coords(2,:),[0 0 0] );
+0382 
+0383 <span class="comment">% =============================================</span>
+0384 <span class="comment">% return handles</span>
+0385 <span class="comment">% =============================================</span>
+0386 handles = [h1 h2];
+0387 
 0388 <span class="comment">% =============================================</span>
-0389 handles = [h1 h2];
-0390 
-0391 <span class="comment">% =============================================</span>
-0392 <span class="comment">% check if styling is required</span>
-0393 <span class="comment">% =============================================</span>
-0394 <span class="comment">% if no styling, this section can be removed!</span>
-0395 <span class="keyword">if</span> ~isempty( varargin )
-0396     <span class="keyword">for</span> c = 1:floor(length(varargin)/2)
-0397         <span class="keyword">switch</span> lower(varargin{c*2-1})
-0398             
-0399             <span class="comment">% only patch properties</span>
-0400             <span class="keyword">case</span> <span class="string">'edgecolor'</span>,   set( h2,<span class="string">'EdgeColor'</span>,varargin{c*2} );
-0401             <span class="keyword">case</span> <span class="string">'facecolor'</span>,   set( h2,<span class="string">'FaceColor'</span>,varargin{c*2} );
-0402             <span class="keyword">case</span> <span class="string">'facelighting'</span>,set( h2,<span class="string">'FaceLighting'</span>,varargin{c*2} );
-0403             <span class="keyword">case</span> <span class="string">'edgelighting'</span>,set( h2,<span class="string">'EdgeLighting'</span>,varargin{c*2} );
+0389 <span class="comment">% check if styling is required</span>
+0390 <span class="comment">% =============================================</span>
+0391 <span class="comment">% if no styling, this section can be removed!</span>
+0392 <span class="keyword">if</span> ~isempty( varargin )
+0393     <span class="keyword">for</span> c = 1:floor(length(varargin)/2)
+0394         <span class="keyword">switch</span> lower(varargin{c*2-1})
+0395             
+0396             <span class="comment">% only patch properties</span>
+0397             <span class="keyword">case</span> <span class="string">'edgecolor'</span>,   set( h2,<span class="string">'EdgeColor'</span>,varargin{c*2} );
+0398             <span class="keyword">case</span> <span class="string">'facecolor'</span>,   set( h2,<span class="string">'FaceColor'</span>,varargin{c*2} );
+0399             <span class="keyword">case</span> <span class="string">'facelighting'</span>,set( h2,<span class="string">'FaceLighting'</span>,varargin{c*2} );
+0400             <span class="keyword">case</span> <span class="string">'edgelighting'</span>,set( h2,<span class="string">'EdgeLighting'</span>,varargin{c*2} );
+0401                 
+0402                 <span class="comment">% only line properties</span>
+0403             <span class="keyword">case</span> <span class="string">'color'</span>    , set( h1,<span class="string">'Color'</span>,varargin{c*2} );
 0404                 
-0405                 <span class="comment">% only line properties</span>
-0406             <span class="keyword">case</span> <span class="string">'color'</span>    , set( h1,<span class="string">'Color'</span>,varargin{c*2} );
-0407                 
-0408                 <span class="comment">% shared properties</span>
-0409             <span class="keyword">case</span> <span class="string">'linestyle'</span>, set( handles,<span class="string">'LineStyle'</span>,varargin{c*2} );
-0410             <span class="keyword">case</span> <span class="string">'linewidth'</span>, set( handles,<span class="string">'LineWidth'</span>,varargin{c*2} );
-0411             <span class="keyword">case</span> <span class="string">'parent'</span>,    set( handles,<span class="string">'parent'</span>,varargin{c*2} );
-0412                 
-0413                 <span class="comment">% head properties - do nothing, since handled above already</span>
-0414             <span class="keyword">case</span> <span class="string">'headwidth'</span>,
-0415             <span class="keyword">case</span> <span class="string">'headheight'</span>,
-0416                 
-0417         <span class="keyword">end</span>
-0418     <span class="keyword">end</span>
-0419 <span class="keyword">end</span>
-0420 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0405                 <span class="comment">% shared properties</span>
+0406             <span class="keyword">case</span> <span class="string">'linestyle'</span>, set( handles,<span class="string">'LineStyle'</span>,varargin{c*2} );
+0407             <span class="keyword">case</span> <span class="string">'linewidth'</span>, set( handles,<span class="string">'LineWidth'</span>,varargin{c*2} );
+0408             <span class="keyword">case</span> <span class="string">'parent'</span>,    set( handles,<span class="string">'parent'</span>,varargin{c*2} );
+0409                 
+0410                 <span class="comment">% head properties - do nothing, since handled above already</span>
+0411             <span class="keyword">case</span> <span class="string">'headwidth'</span>,
+0412             <span class="keyword">case</span> <span class="string">'headheight'</span>,
+0413                 
+0414         <span class="keyword">end</span>
+0415     <span class="keyword">end</span>
+0416 <span class="keyword">end</span>
+0417 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

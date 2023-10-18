@@ -1,4 +1,4 @@
-function version = getToolboxVersion(toolbox,fileID,masterFlag)
+function version = getToolboxVersion(toolbox,fileID,mainBranchFlag)
 % getToolboxVersion
 %   Returns the version of a given toolbox, or if not available the latest
 %   commit hash (7 characters).
@@ -6,19 +6,18 @@ function version = getToolboxVersion(toolbox,fileID,masterFlag)
 %   toolbox         string with the toolbox name (e.g. "RAVEN")
 %   fileID          string with the name of a file that is only found in
 %                   the corresponding toolbox (e.g. "ravenCobraWrapper.m").
-%   masterFlag      logical, if true, function will error if the toolbox is
-%                   not on the master branch (opt, default false).
+%   mainBranchFlag  logical, if true, function will error if the toolbox is
+%                   not on the main branch (opt, default false).
 %
 %   version         string containing either the toolbox version or latest
 %                   commit hash (7 characters).
 %
-%   Usage: version = getToolboxVersion(toolbox,fileID,masterFlag)
-%
-%   Benjamin J. Sanchez, 2018-10-19
-%
+%   Usage: version = getToolboxVersion(toolbox,fileID,mainBranchFlag)
+toolbox=char(toolbox);
+fileID=char(fileID);
 
 if nargin<3
-    masterFlag = false;
+    mainBranchFlag = false;
 end
 
 currentPath = pwd;
@@ -41,12 +40,13 @@ catch
     disp([toolbox ' toolbox cannot be found'])
     version = 'unknown';
 end
-%Check if in master:
-if masterFlag
-    currentBranch = git('rev-parse --abbrev-ref HEAD');
-    if ~strcmp(currentBranch,'master')
+%Check if in main:
+if mainBranchFlag
+    [~,currentBranch] = system('git rev-parse --abbrev-ref HEAD');
+    currentBranch = strtrim(currentBranch);
+    if any([strcmp(currentBranch, "main"), strcmp(currentBranch, "master")])
         cd(currentPath);
-        error(['ERROR: ' toolbox ' not in master. Check-out the master branch of ' toolbox ' before submitting model for Git.'])
+        error(['ERROR: ' toolbox ' not in main (or master) branch. Check-out this branch of ' toolbox ' before submitting model for Git.'])
     end
 end
 %Try to find version file of the toolbox:
@@ -58,8 +58,9 @@ if isempty(version)
     catch
         %If no file available, look up the tag:
         try
-            version = git('describe --tags');
-            commit  = git('log -n 1 --format=%H');
+            [~,version] = system('git describe --tags');
+            version = strtrim(version);
+            [~,commit] = system('git log -n 1 --format=%H');
             commit = commit(1:7);
             %If no tag available or commit is part of tag, get commit instead:
             if ~isempty(strfind(version,'fatal')) || ~isempty(strfind(version,commit))

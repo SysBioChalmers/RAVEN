@@ -20,16 +20,16 @@ function [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
 %   ids are formatted as "EXC_OUT/IN/BOTH_METID".
 %
 %   Usage: [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
-%
-%   Simonas Marcisauskas, 2018-03-17
-%
 
 if nargin<3
     mets=model.mets;
+elseif ~islogical(mets) && ~isnumeric(mets)
+    mets=convertCharArray(mets);
 end
-reactionType=upper(reactionType);
 J=getIndexes(model,mets,'mets',false);
 mets=model.mets(J);
+
+reactionType=char(upper(reactionType));
 
 %Production is positive for OUT and BOTH
 if strcmp(reactionType,'IN')
@@ -88,5 +88,8 @@ if isfield(model,'rxnReferences')
 end
 if isfield(model,'rxnConfidenceScores')
     model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(numel(J),1)];
+end
+if isfield(model,'rxnDeltaG')
+    model.rxnDeltaG=[model.rxnDeltaG;NaN(numel(J),1)];
 end
 end

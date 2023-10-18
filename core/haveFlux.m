@@ -18,9 +18,6 @@ function I=haveFlux(model,cutOff,rxns)
 %   arbitary large value of +/- 10000 prior to solving
 %
 %   Usage: I=haveFlux(model,cutOff, rxns)
-%
-%   Rasmus Agren, 2014-05-06
-%
 
 if nargin<2
     cutOff=10^-6;
@@ -30,6 +27,8 @@ if isempty(cutOff)
 end
 if nargin<3
     rxns=model.rxns;
+elseif ~islogical(rxns) && ~isnumeric(rxns)
+    rxns=convertCharArray(rxns);
 end
 
 %This is since we're maximizing for the sum of fluxes, which isn't possible
@@ -52,7 +51,9 @@ mixIndexes=indexes(randperm(numel(indexes)));
 %Maximize for all fluxes first in order to get fewer rxns to test
 smallModel.c=ones(numel(smallModel.c),1);
 sol=solveLP(smallModel);
-J(abs(sol.x(mixIndexes))>cutOff)=true;
+if ~isempty(sol.x)
+    J(abs(sol.x(mixIndexes))>cutOff)=true;
+end
 
 %Loop through and maximize then minimize each rxn if it doesn't already
 %have a flux

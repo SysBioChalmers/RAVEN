@@ -1,6 +1,9 @@
 function model=mergeModels(models,metParam,supressWarnings)
 % mergeModels
-%   Merges models into one model structure.
+%   Merges models into one model structure. Reactions are added without any
+%   checks, so duplicate reactions might appear. Metabolites are matched by
+%   their name and compartment (metaboliteName[comp]), while genes are
+%   matched by their name.
 %
 %   models          a cell array with model structures
 %   metParam        string specifying whether to refer to metabolite name
@@ -14,9 +17,6 @@ function model=mergeModels(models,metParam,supressWarnings)
 %             taken
 %
 %   Usage: model=mergeModels(models)
-%
-%   Cheewin Kittikunapong 2019-05-20
-%
 
 %Just return the model
 if numel(models)<=1
@@ -26,6 +26,8 @@ end
 
 if nargin<2
     metParam='metNames';
+else
+    metParam=char(metParam);
 end
 
 if nargin<3
@@ -35,7 +37,7 @@ end
 %Add new functionality in the order specified in models
 model=models{1};
 model.id='MERGED';
-model.description='';
+model.name='';
 
 model.rxnFrom=cell(numel(models{1}.rxns),1);
 model.rxnFrom(:)={models{1}.id};
@@ -44,16 +46,6 @@ model.metFrom(:)={models{1}.id};
 if isfield(models{1},'genes')
     model.geneFrom=cell(numel(models{1}.genes),1);
     model.geneFrom(:)={models{1}.id};
-end
-
-if isfield(model,'subSystems')
-    hasDeletedSubSystem=false;
-else
-    if supressWarnings==false
-        EM='Cannot add subsystems since the existing model has no subsystems info. All reactions must have a subsystem for this to be included';
-        dispEM(EM,false);
-    end
-    hasDeletedSubSystem=true;
 end
 
 if isfield(model,'equations')
@@ -96,16 +88,21 @@ for i=2:numel(models)
     model.c=[model.c;models{i}.c];
     model.rev=[model.rev;models{i}.rev];
     
-    if hasDeletedSubSystem==false
-        if isfield(models{i},'subSystems')
+    if isfield(models{i},'subSystems')
+        if isfield(model,'subSystems')
             model.subSystems=[model.subSystems;models{i}.subSystems];
         else
-            if supressWarnings==false
-                EM='Cannot add subsystems since the existing model has no subsystems info. All reactions must have a subsystem for this to be included. Deleting subSystems field';
-                dispEM(EM,false);
-            end
-            hasDeletedSubSystem=true;
-            model=rmfield(model,'subSystems');
+            emptySubSystem=cell(numel(model.rxns)-numel(models{i}.rxns),1);
+            emptySubSystem(:)={''};
+            emptySubSystem=cellfun(@(x) cell(0,0),emptySubSystem,'UniformOutput',false);
+            model.subSystems=[emptySubSystem;models{i}.subSystems];
+        end
+    else
+        if isfield(model,'subSystems')
+            emptySubSystem=cell(numel(models{i}.rxns),1);
+            emptySubSystem(:)={''};
+            emptySubSystem=cellfun(@(x) cell(0,0),emptySubSystem,'UniformOutput',false);
+            model.subSystems=[model.subSystems;emptySubSystem];
         end
     end
     
@@ -178,6 +175,18 @@ for i=2:numel(models)
     else
         if isfield(model,'rxnConfidenceScores')
             model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(numel(models{i}.rxns),1)];
+        end
+    end
+
+    if isfield(models{i},'rxnDeltaG')
+        if isfield(model,'rxnDeltaG')
+            model.rxnDeltaG=[model.rxnDeltaG;models{i}.rxnDeltaG];
+        else
+            model.rxnDeltaG=[NaN(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnDeltaG];
+        end
+    else
+        if isfield(model,'rxnDeltaG')
+            model.rxnDeltaG=[model.rxnDeltaG;NaN(numel(models{i}.rxns),1)];
         end
     end
     
@@ -316,6 +325,22 @@ for i=2:numel(models)
                 model.inchis=[model.inchis;emptyInchi];
             end
         end
+
+        if isfield(models{i},'metSmiles')
+            if isfield(model,'metSmiles')
+                model.metSmiles=[model.metSmiles;models{i}.metSmiles(metsToAdd)];
+            else
+                emptyInchi=cell(numel(model.mets)-numel(metsToAdd),1);
+                emptyInchi(:)={''};
+                model.metSmiles=[emptyInchi;models{i}.metSmiles(metsToAdd)];
+            end
+        else
+            if isfield(model,'metSmiles')
+                emptyInchi=cell(numel(metsToAdd),1);
+                emptyInchi(:)={''};
+                model.metSmiles=[model.metSmiles;emptyInchi];
+            end
+        end
         
         if isfield(models{i},'metFormulas')
             if isfield(model,'metFormulas')
@@ -344,6 +369,20 @@ for i=2:numel(models)
             if isfield(model,'metCharges')
                 emptyMetCharge=nan(numel(metsToAdd),1);
                 model.metCharges=[model.metCharges;emptyMetCharge];
+            end
+        end
+
+        if isfield(models{i},'metDeltaG')
+            if isfield(model,'metDeltaG')
+                model.metDeltaG=[model.metDeltaG;models{i}.metDeltaG(metsToAdd)];
+            else
+                emptyMetCharge=nan(numel(model.mets)-numel(metsToAdd),1);
+                model.metDeltaG=[emptyMetCharge;models{i}.metDeltaG(metsToAdd)];
+            end
+        else
+            if isfield(model,'metDeltaG')
+                emptyMetCharge=nan(numel(metsToAdd),1);
+                model.metDeltaG=[model.metDeltaG;emptyMetCharge];
             end
         end
         

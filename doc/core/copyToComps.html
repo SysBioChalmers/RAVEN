@@ -51,15 +51,13 @@
 
    NOTE: New reactions and metabolites will be named as &quot;id_toComps(i)&quot;.
 
-   Usage: model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutside)
-
-   Rasmus Agren, 2013-07-25</pre></div>
+   Usage: model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutside)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>	getIndexes</li><li><a href="mergeModels.html" class="code" title="function model=mergeModels(models,metParam,supressWarnings)">mergeModels</a>	mergeModels</li><li><a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>	removeReactions</li></ul>
+<li><a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>	convertCharArray</li><li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>	getIndexes</li><li><a href="mergeModels.html" class="code" title="function model=mergeModels(models,metParam,supressWarnings)">mergeModels</a>	mergeModels</li><li><a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>	removeReactions</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -94,70 +92,77 @@ This function is called by:
 0024 <span class="comment">%   NOTE: New reactions and metabolites will be named as &quot;id_toComps(i)&quot;.</span>
 0025 <span class="comment">%</span>
 0026 <span class="comment">%   Usage: model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutside)</span>
-0027 <span class="comment">%</span>
-0028 <span class="comment">%   Rasmus Agren, 2013-07-25</span>
-0029 <span class="comment">%</span>
-0030 
-0031 <span class="keyword">if</span> nargin&lt;3
-0032     rxns=model.rxns;
-0033 <span class="keyword">end</span>
-0034 <span class="keyword">if</span> nargin&lt;4
-0035     deleteOriginal=false;
-0036 <span class="keyword">end</span>
-0037 <span class="keyword">if</span> nargin&lt;5
-0038     compNames=toComps;
-0039 <span class="keyword">end</span>
-0040 <span class="keyword">if</span> nargin&lt;6
-0041     compOutside=cell(numel(toComps),1);
-0042     compOutside(:)={<span class="string">''</span>};
-0043 <span class="keyword">end</span>
-0044 
-0045 originalID=model.id;
-0046 originalDescription=model.description;
+0027 
+0028 <span class="keyword">if</span> nargin&lt;3
+0029     rxns=model.rxns;
+0030 <span class="keyword">elseif</span> ~islogical(rxns) &amp;&amp; ~isnumeric(rxns)
+0031     rxns=<a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>(rxns);
+0032 <span class="keyword">end</span>
+0033 <span class="keyword">if</span> nargin&lt;4
+0034     deleteOriginal=false;
+0035 <span class="keyword">end</span>
+0036 <span class="keyword">if</span> nargin&lt;5
+0037     compNames=toComps;
+0038 <span class="keyword">else</span>
+0039     compNames=<a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>(compNames);
+0040 <span class="keyword">end</span>
+0041 <span class="keyword">if</span> nargin&lt;6
+0042     compOutside=cell(numel(toComps),1);
+0043     compOutside(:)={<span class="string">''</span>};
+0044 <span class="keyword">else</span>
+0045     compOutside=<a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>(compOutside);
+0046 <span class="keyword">end</span>
 0047 
-0048 rxns=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxns,<span class="string">'rxns'</span>);
-0049 
-0050 <span class="keyword">for</span> i=1:numel(toComps)
-0051     <span class="comment">%Check if the compartment exists, otherwise add it</span>
-0052     [I J]=ismember(toComps(i),model.comps);
-0053     <span class="keyword">if</span> I==false
-0054         model.comps=[model.comps;toComps(i)];
-0055         model.compNames=[model.compNames;compNames(i)];
-0056         <span class="keyword">if</span> isfield(model,<span class="string">'compOutside'</span>)
-0057             model.compOutside=[model.compOutside;compOutside(i)];
-0058         <span class="keyword">end</span>
-0059         <span class="keyword">if</span> isfield(model,<span class="string">'compMiriams'</span>)
-0060             model.compMiriams=[model.compMiriams;cell(1,1)];
+0048 originalID=model.id;
+0049 originalName=model.name;
+0050 
+0051 rxns=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxns,<span class="string">'rxns'</span>);
+0052 
+0053 <span class="keyword">for</span> i=1:numel(toComps)
+0054     <span class="comment">%Check if the compartment exists, otherwise add it</span>
+0055     [I,J]=ismember(toComps(i),model.comps);
+0056     <span class="keyword">if</span> I==false
+0057         model.comps=[model.comps;toComps(i)];
+0058         model.compNames=[model.compNames;compNames(i)];
+0059         <span class="keyword">if</span> isfield(model,<span class="string">'compOutside'</span>)
+0060             model.compOutside=[model.compOutside;compOutside(i)];
 0061         <span class="keyword">end</span>
-0062         J=numel(model.comps);
-0063     <span class="keyword">end</span>
-0064     <span class="comment">%Copy the reactions by making a model structure with only them, then</span>
-0065     <span class="comment">%change the localization, and finally merge with the original model</span>
-0066     modelToAdd=model;
-0067     modelToAdd=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(modelToAdd,setdiff(1:numel(model.rxns),rxns),true,true);
-0068     modelToAdd.rxns=strcat(modelToAdd.rxns,<span class="string">'_'</span>,toComps(i));
-0069     modelToAdd.mets=strcat(modelToAdd.mets,<span class="string">'_'</span>,toComps(i));
-0070     modelToAdd.comps=modelToAdd.comps(J);
-0071     modelToAdd.compNames=modelToAdd.compNames(J);
-0072     <span class="keyword">if</span> isfield(modelToAdd,<span class="string">'compOutside'</span>)
-0073         modelToAdd.compOutside=modelToAdd.compOutside(J);
-0074     <span class="keyword">end</span>
-0075     <span class="keyword">if</span> isfield(modelToAdd,<span class="string">'compMiriams'</span>)
-0076         modelToAdd.compMiriams=modelToAdd.compMiriams(J);
+0062         <span class="keyword">if</span> isfield(model,<span class="string">'compMiriams'</span>)
+0063             model.compMiriams=[model.compMiriams;cell(1,1)];
+0064         <span class="keyword">end</span>
+0065         J=numel(model.comps);
+0066     <span class="keyword">end</span>
+0067     <span class="comment">%Copy the reactions by making a model structure with only them, then</span>
+0068     <span class="comment">%change the localization, and finally merge with the original model</span>
+0069     modelToAdd=model;
+0070     modelToAdd=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(modelToAdd,setdiff(1:numel(model.rxns),rxns),true,true);
+0071     modelToAdd.rxns=strcat(modelToAdd.rxns,<span class="string">'_'</span>,toComps(i));
+0072     modelToAdd.mets=strcat(modelToAdd.mets,<span class="string">'_'</span>,toComps(i));
+0073     modelToAdd.comps=modelToAdd.comps(J);
+0074     modelToAdd.compNames=modelToAdd.compNames(J);
+0075     <span class="keyword">if</span> isfield(modelToAdd,<span class="string">'compOutside'</span>)
+0076         modelToAdd.compOutside=modelToAdd.compOutside(J);
 0077     <span class="keyword">end</span>
-0078     modelToAdd.metComps=ones(numel(modelToAdd.mets),1);
-0079     
-0080     <span class="comment">%Merge the models</span>
-0081     model=<a href="mergeModels.html" class="code" title="function model=mergeModels(models,metParam,supressWarnings)">mergeModels</a>({model;modelToAdd},<span class="string">'metNames'</span>);
-0082 <span class="keyword">end</span>
-0083 
-0084 <span class="keyword">if</span> deleteOriginal==true
-0085     model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,rxns,true,true,true); <span class="comment">%Also delete unused compartments</span>
-0086 <span class="keyword">end</span>
-0087 
-0088 model.id=originalID;
-0089 model.description=originalDescription;
-0090 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 17-Feb-2020 11:12:32 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0078     <span class="keyword">if</span> isfield(modelToAdd,<span class="string">'compMiriams'</span>)
+0079         modelToAdd.compMiriams=modelToAdd.compMiriams(J);
+0080     <span class="keyword">end</span>
+0081     modelToAdd.metComps=ones(numel(modelToAdd.mets),1);
+0082     
+0083     <span class="comment">%Merge the models</span>
+0084     model=<a href="mergeModels.html" class="code" title="function model=mergeModels(models,metParam,supressWarnings)">mergeModels</a>({model;modelToAdd},<span class="string">'metNames'</span>);
+0085 <span class="keyword">end</span>
+0086 
+0087 model=rmfield(model,<span class="string">'rxnFrom'</span>);
+0088 model=rmfield(model,<span class="string">'metFrom'</span>);
+0089 model=rmfield(model,<span class="string">'geneFrom'</span>);
+0090 
+0091 <span class="keyword">if</span> deleteOriginal==true
+0092     model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,rxns,true,true,true); <span class="comment">%Also delete unused compartments</span>
+0093 <span class="keyword">end</span>
+0094 
+0095 model.id=originalID;
+0096 model.name=originalName;
+0097 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

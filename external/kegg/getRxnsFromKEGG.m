@@ -13,7 +13,7 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 %   model               a model structure generated from the database. The
 %                       following fields are filled
 %       id                  'KEGG'
-%       description         'Automatically generated from KEGG database'
+%       name         'Automatically generated from KEGG database'
 %       rxns                KEGG reaction ids
 %       rxnNames            Name for each reaction entry
 %       mets                KEGG compound ids. If the equations use
@@ -49,9 +49,6 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 %   Usage: [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 %    isGeneral]=getRxnsFromKEGG(keggPath)
 %
-%   Simonas Marcisauskas, 2019-07-21
-%
-%
 % NOTE: This is how one entry looks in the file
 %
 % ENTRY       R00010                      Reaction
@@ -73,26 +70,27 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 
 if nargin<1
     keggPath='RAVEN/external/kegg';
+else
+    keggPath=char(keggPath);
 end
 
 %Check if the reactions have been parsed before and saved. If so, load the
 %model
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+ravenPath=findRAVENroot();
 rxnsFile=fullfile(ravenPath,'external','kegg','keggRxns.mat');
 if exist(rxnsFile, 'file')
     fprintf(['Importing KEGG reactions from ' strrep(rxnsFile,'\','/') '... ']);
     load(rxnsFile);
 else
     fprintf(['NOTE: Cannot locate ' strrep(rxnsFile,'\','/') ', it will therefore be generated from the local KEGG database\n']);
-    if ~exist(fullfile(keggPath,'reaction'),'file') || ~exist(fullfile(keggPath,'reaction.lst'),'file') || ~exist(fullfile(keggPath,'reaction_mapformula.lst'),'file')
+    if ~isfile(fullfile(keggPath,'reaction')) || ~isfile(fullfile(keggPath,'reaction.lst')) || ~isfile(fullfile(keggPath,'reaction_mapformula.lst'))
         EM=fprintf(['The files ''reaction'', ''reaction.lst'' and ''reaction_mapformula.lst'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP\n']);
         dispEM(EM);
     else
         fprintf('Generating keggRxns.mat file... ');
         %Add new functionality in the order specified in models
         model.id='KEGG';
-        model.description='Automatically generated from KEGG database';
+        model.name='Automatically generated from KEGG database';
         
         %Preallocate memory for 15000 reactions
         model.rxns=cell(15000,1);
@@ -140,7 +138,7 @@ else
                 %Add empty strings where there should be such
                 model.rxnNames{rxnCounter}='';
                 model.eccodes{rxnCounter}='';
-                model.subSystems{rxnCounter}='';
+                %model.subSystems{rxnCounter}=''; %remain empty cell
                 model.rxnNotes{rxnCounter}='';
                 equations{rxnCounter}='';
                 
@@ -197,8 +195,7 @@ else
             if strcmp(tline(1:12),'ENZYME      ')
                 model.eccodes{rxnCounter}=tline(13:end);
                 model.eccodes{rxnCounter}=deblank(model.eccodes{rxnCounter});
-                model.eccodes{rxnCounter}=strcat('ec-code/',model.eccodes{rxnCounter});
-                model.eccodes{rxnCounter}=regexprep(model.eccodes{rxnCounter},'\s+',';ec-code/');
+                model.eccodes{rxnCounter}=regexprep(model.eccodes{rxnCounter},'\s+',';');
             end
             if numel(tline)>8
                 if strcmp(tline(1:9),'REFERENCE')
