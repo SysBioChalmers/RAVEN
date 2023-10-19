@@ -61,7 +61,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function nUpdateWaitbarParallel(~)</a></li><li><a href="#_sub2" class="code">function nUpdateWaitbar(p,N,h)</a></li></ul>
+<li><a href="#_sub1" class="code">function updateProgressParallel(~)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns,runParallel)</a>
@@ -88,10 +88,10 @@ This function is called by:
 0022 <span class="comment">% Usage: [minFluxes, maxFluxes, exitFlags] = getAllowedBounds(model, rxns, runParallel)</span>
 0023 
 0024 <span class="keyword">if</span> nargin&lt;2
-0025     rxns=1:numel(model.rxns);
+0025     rxns = 1:numel(model.rxns);
 0026 <span class="keyword">elseif</span> ~islogical(rxns) &amp;&amp; ~isnumeric(rxns)
-0027     rxns=<a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>(rxns);
-0028     rxns=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxns, <span class="string">'rxns'</span>);
+0027     rxns = <a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>(rxns);
+0028     rxns = <a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxns, <span class="string">'rxns'</span>);
 0029 <span class="keyword">end</span>
 0030 <span class="keyword">if</span> nargin&lt;3
 0031     runParallel = true;
@@ -104,79 +104,73 @@ This function is called by:
 0038     <span class="keyword">end</span>
 0039 <span class="keyword">end</span>
 0040 
-0041 minFluxes=zeros(numel(rxns),1);
-0042 maxFluxes=zeros(numel(rxns),1);
-0043 exitFlags=zeros(numel(rxns),2);
-0044 c=zeros(numel(model.rxns),1);
+0041 minFluxes = zeros(numel(rxns),1);
+0042 maxFluxes = zeros(numel(rxns),1);
+0043 exitFlags = zeros(numel(rxns),2);
+0044 c = zeros(numel(model.rxns),1);
 0045 
-0046 N = numel(rxns);
-0047 p = 1;
-0048 h = waitbar(0, <span class="string">'Please wait ...'</span>);
-0049 <span class="keyword">if</span> runParallel
-0050     D = parallel.pool.DataQueue;
-0051     afterEach(D, @<a href="#_sub1" class="code" title="subfunction nUpdateWaitbarParallel(~)">nUpdateWaitbarParallel</a>);
-0052     parfor i=1:N
-0053         tmpModel=model;
-0054         tmpModel.c=c;
-0055 
-0056         <span class="comment">%Get minimal flux</span>
-0057         tmpModel.c(rxns(i))=-1;
-0058         solMin=solveLP(tmpModel);
-0059         <span class="keyword">if</span> ~isempty(solMin.f)
-0060             minFluxes(i)=solMin.x(rxns(i));
-0061         <span class="keyword">else</span>
-0062             minFluxes(i)=NaN;
-0063         <span class="keyword">end</span>
-0064 
-0065         <span class="comment">%Get maximal flux</span>
-0066         tmpModel.c(rxns(i))=1;
-0067         solMax=solveLP(tmpModel);
-0068         exitFlags(i,:)=[solMin.stat solMax.stat];
-0069         <span class="keyword">if</span> ~isempty(solMax.f)
-0070             maxFluxes(i)=solMax.x(rxns(i));
-0071         <span class="keyword">else</span>
-0072             maxFluxes(i)=NaN;
-0073         <span class="keyword">end</span>
-0074         send(D, i);
-0075     <span class="keyword">end</span>
-0076 <span class="keyword">else</span>
-0077     <span class="keyword">for</span> i=1:N
-0078         tmpModel=model;
-0079         tmpModel.c=c;
-0080 
-0081         <span class="comment">%Get minimal flux</span>
-0082         tmpModel.c(rxns(i))=-1;
-0083         solMin=solveLP(tmpModel);
-0084         <span class="keyword">if</span> ~isempty(solMin.f)
-0085             minFluxes(i)=solMin.x(rxns(i));
-0086         <span class="keyword">else</span>
-0087             minFluxes(i)=NaN;
-0088         <span class="keyword">end</span>
-0089 
-0090         <span class="comment">%Get maximal flux</span>
-0091         tmpModel.c(rxns(i))=1;
-0092         solMax=solveLP(tmpModel);
-0093         exitFlags(i,:)=[solMin.stat solMax.stat];
-0094         <span class="keyword">if</span> ~isempty(solMax.f)
-0095             maxFluxes(i)=solMax.x(rxns(i));
-0096         <span class="keyword">else</span>
-0097             maxFluxes(i)=NaN;
-0098         <span class="keyword">end</span>
-0099         <a href="#_sub2" class="code" title="subfunction nUpdateWaitbar(p,N,h)">nUpdateWaitbar</a>(p,N,h);
-0100     <span class="keyword">end</span>
-0101 <span class="keyword">end</span>
-0102 close(h)
-0103 
-0104 <a name="_sub1" href="#_subfunctions" class="code">function nUpdateWaitbarParallel(~)</a>
-0105 waitbar(p/N, h);
-0106 p = p + 1;
-0107 <span class="keyword">end</span>
-0108 
-0109 <a name="_sub2" href="#_subfunctions" class="code">function nUpdateWaitbar(p,N,h)</a>
-0110 waitbar(p/N, h);
-0111 p = p + 1;
-0112 <span class="keyword">end</span>
-0113 <span class="keyword">end</span></pre></div>
+0046 p = 1;
+0047 progressbar(<span class="string">'Calculating the minimal and maximal fluxes'</span>)
+0048 <span class="keyword">if</span> runParallel
+0049     D = parallel.pool.DataQueue;
+0050     afterEach(D, @<a href="#_sub1" class="code" title="subfunction updateProgressParallel(~)">updateProgressParallel</a>);
+0051     parfor i = 1:numel(rxns)
+0052         tmpModel = model;
+0053         tmpModel.c = c;
+0054 
+0055         <span class="comment">% Get minimal flux</span>
+0056         tmpModel.c(rxns(i)) = -1;
+0057         solMin = solveLP(tmpModel);
+0058         <span class="keyword">if</span> ~isempty(solMin.f)
+0059             minFluxes(i) = solMin.x(rxns(i));
+0060         <span class="keyword">else</span>
+0061             minFluxes(i) = NaN;
+0062         <span class="keyword">end</span>
+0063 
+0064         <span class="comment">% Get maximal flux</span>
+0065         tmpModel.c(rxns(i)) = 1;
+0066         solMax=solveLP(tmpModel);
+0067         exitFlags(i,:) = [solMin.stat solMax.stat];
+0068         <span class="keyword">if</span> ~isempty(solMax.f)
+0069             maxFluxes(i) = solMax.x(rxns(i));
+0070         <span class="keyword">else</span>
+0071             maxFluxes(i) = NaN;
+0072         <span class="keyword">end</span>
+0073         send(D, i);
+0074     <span class="keyword">end</span>
+0075 <span class="keyword">else</span>
+0076     <span class="keyword">for</span> i = 1:numel(rxns)
+0077         tmpModel = model;
+0078         tmpModel.c = c;
+0079 
+0080         <span class="comment">% Get minimal flux</span>
+0081         tmpModel.c(rxns(i)) = -1;
+0082         solMin=solveLP(tmpModel);
+0083         <span class="keyword">if</span> ~isempty(solMin.f)
+0084             minFluxes(i) = solMin.x(rxns(i));
+0085         <span class="keyword">else</span>
+0086             minFluxes(i) = NaN;
+0087         <span class="keyword">end</span>
+0088 
+0089         <span class="comment">% Get maximal flux</span>
+0090         tmpModel.c(rxns(i)) = 1;
+0091         solMax = solveLP(tmpModel);
+0092         exitFlags(i,:) = [solMin.stat solMax.stat];
+0093         <span class="keyword">if</span> ~isempty(solMax.f)
+0094             maxFluxes(i) = solMax.x(rxns(i));
+0095         <span class="keyword">else</span>
+0096             maxFluxes(i) = NaN;
+0097         <span class="keyword">end</span>
+0098         progressbar(i/numel(rxns))
+0099     <span class="keyword">end</span>
+0100 <span class="keyword">end</span>
+0101 progressbar(1) <span class="comment">% Make sure it closes</span>
+0102 
+0103     <a name="_sub1" href="#_subfunctions" class="code">function updateProgressParallel(~)</a>
+0104         progressbar(p/numel(rxns))
+0105         p = p + 1;
+0106     <span class="keyword">end</span>
+0107 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

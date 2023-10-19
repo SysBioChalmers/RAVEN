@@ -70,6 +70,8 @@ if isfield(model,'grRules')
             end
         end
     end
+else
+    error('The model does not have a grRules field.')
 end
 
 end
