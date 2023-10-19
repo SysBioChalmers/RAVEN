@@ -544,7 +544,7 @@ for i={'rxnNames','grRules','eccodes','rxnNotes','rxnReferences',...
    model = emptyOrFill(model,i{1},{''},'rxns');
 end
 for i={'c'} % Zeros
-   model = emptyOrFill(model,i{1},0,'rxns');
+   model = emptyOrFill(model,i{1},0,'rxns',true);
 end
 for i={'rxnConfidenceScores','rxnDeltaG'} % NaNs
    model = emptyOrFill(model,i{1},NaN,'rxns');
