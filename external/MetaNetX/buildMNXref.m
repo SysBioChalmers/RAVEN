@@ -78,30 +78,46 @@ model=[];
 %% Load reaction properties
 if ismember(type,{'rxns','both'})
     fprintf('Loading reaction data files...');
-    opts=detectImportOptions(fullfile(mnxPath,'reac_prop.txt'),...
-        'Delimiter','\t','NumHeaderLines',385);
-    opts.VariableNames(1)=regexprep(opts.VariableNames(1),'^x_','');
-    mnx = readtable(fullfile(mnxPath,'reac_prop.txt'),opts);
-    
-    opts=detectImportOptions(fullfile(mnxPath,'reac_xref.txt'),...
-        'Delimiter','\t','NumHeaderLines',385);
-    opts.VariableNames(1)=regexprep(opts.VariableNames(1),'^x_','');
-    mnx_xref = readtable(fullfile(mnxPath,'reac_xref.txt'),opts);
-    
+    reacFiles = {'reac_prop','reac_xref'};
+    reacData = {};
+    for i = 1:2
+        filePath = fullfile(mnxPath,[reacFiles{i},'.txt']);
+        firstLine = findFirstLine(filePath);
+        opts=detectImportOptions(filePath,'Delimiter','\t','NumHeaderLines',firstLine-1);
+        opts.VariableNames(1)=regexprep(opts.VariableNames(1),'^x_','');
+        reacData{i} = readtable(filePath,opts);
+    end
+    mnx = reacData{1};
+    mnx_xref = reacData{2};
+
+
     % add a field that contains a list of mets that participate in each reaction
-    rxnMets = cellfun(@(r) regexp(r,'(\w+)@\w+','tokens'),mnx.Equation,'UniformOutput',false);
+    rxnMets = cellfun(@(r) regexp(r,'(\w+)@\w+','tokens'),mnx.x_,'UniformOutput',false);
     model.rxnMets = cellfun(@(r) unique([r{:}]),rxnMets,'UniformOutput',false);
     
     % extract reaction MNX IDs and other information
-    model.rxns = mnx.MNX_ID;
-    model.rxnBalanced = mnx.Balance;
-    model.eccodes = mnx.EC;
-    model.rxnEqnMNX = mnx.Equation;
-    model.rxnEqnNames = mnx.Description;
+    model.rxns = mnx.EMPTY;
+    model.rxnBalanced = mnx.B;
+    model.eccodes = mnx.Var4;
     
     % get other rxn IDs
-    %remove deprecated and other lines
-    mnx_xref(~contains(mnx_xref.XREF,':') | contains(mnx_xref.XREF,'deprecated:'),:) = [];
+    % Remove no-link-to-metanetx
+    mnx_xref(contains(mnx_xref.EMPTY_1,'EMPTY'),:) = [];
+    % Keep old identifiers separate
+    oldref = mnx_xref(contains(mnx_xref.EmptyEquation,'obsolete'),:);
+    mnx_xref(contains(mnx_xref.EmptyEquation,'obsolete'),:) = [];
+    % Remove self-reference
+    mnx_xref(contains(mnx_xref.EMPTY,'MNXR'),:) = [];
+    % Remove unused information
+    mnx_xref(:,3) = [];
+    % Rename columns
+    mnx_xref.Properties.VariableNames = {'IDs', 'MNXR'};
+    % Further clean-up
+    mnx_xref.IDs = regexprep(mnx_xref.IDs,'(R|(\.reaction))\:',':');
+    mnx_xref=unique(mnx_xref);
+    mnx_xref.DB = regexprep(mnx_xref.IDs,'(.*)\:.*','$1');
+    mnx_xref.IDs = regexprep(mnx_xref.IDs,'.*\:(.*)','$1');
+
     
     % extract source and ID information from MNX data
     if strcmp(allIDs,'pref')
@@ -164,30 +180,56 @@ end
 
 %% Load metabolite properties
 if ismember(type,{'mets','both'})
-    fprintf('Loading metabolite data... ');
-    opts=detectImportOptions(fullfile(mnxPath,'chem_prop.txt'),...
-        'Delimiter','\t','NumHeaderLines',385);
-    opts.VariableNames(1)=regexprep(opts.VariableNames(1),'^x_','');
-    mnx = readtable(fullfile(mnxPath,'chem_prop.txt'),opts);  % ~45 sec load time
-    opts=detectImportOptions(fullfile(mnxPath,'chem_xref.txt'),...
-        'Delimiter','\t','NumHeaderLines',385);
-    opts.VariableNames(1)=regexprep(opts.VariableNames(1),'^x_','');
-    mnx_xref = readtable(fullfile(mnxPath,'chem_xref.txt'),opts);
+    fprintf('Loading metabolite data files...');
+    metFiles = {'chem_prop','chem_xref'};
+    metData = {};
+    for i = 1:2
+        filePath = fullfile(mnxPath,[metFiles{i},'.txt']);
+        firstLine = findFirstLine(filePath);
+        opts=detectImportOptions(filePath,'Delimiter','\t','NumHeaderLines',firstLine-2);
+        opts.VariableNames(1)=regexprep(opts.VariableNames(1),'^x_','');
+        metData{i} = readtable(filePath,opts);
+    end
+    mnx = metData{1};
+    mnx_xref = metData{2};
     fprintf('done.\n');
-    
+
     fprintf('Processing metabolite data...');
-    model.mets = mnx.MNX_ID;
-    model.metMetaNetXID = mnx.MNX_ID;
+    model.mets = mnx.ID;
+    model.metMetaNetXID = mnx.ID;
     
     % extract information and add to model
-    model.metNames = mnx.Description;
-    model.metFormulas = mnx.Formula;
-    model.metCharges = mnx.Charge;
+    model.metNames = mnx.name;
+    model.metFormulas = mnx.formula;
+    model.metCharges = mnx.charge;
     model.inchis = mnx.InChI;
     model.metSMILES = mnx.SMILES;
     
-    % remove rows of mnx_xref that don't contain external IDs
-    mnx_xref(~contains(mnx_xref.XREF,':') | contains(mnx_xref.XREF,'deprecated:'),:) = [];
+    % Remove no-link-to-metanetx
+    %mnx_xref(contains(mnx_xref.EMPTY_1,'EMPTY'),:) = [];
+    % Keep old identifiers separate
+    oldref = mnx_xref(contains(mnx_xref.description,'obsolete'),:);
+    mnx_xref(contains(mnx_xref.description,'obsolete'),:) = [];
+    % Rename columns
+    mnx_xref.Properties.VariableNames = {'IDs', 'MNXM', 'name'};
+    % Further clean-up
+    mnx_xref.IDs = regexprep(mnx_xref.IDs,'(R|(\.reaction))\:',':');
+    mnx_xref.IDs = regexprep(mnx_xref.IDs,'^SLM\:','slm\:');
+    mnx_xref.IDs = regexprep(mnx_xref.IDs,'^CHEBI\:','chebi\:');  
+    mnx_xref.IDs = regexprep(mnx_xref.IDs,'^reactomeM\:','reactome\:');
+    mnx_xref.IDs = regexprep(mnx_xref.IDs,'^bigg.*\:','bigg\:');
+    mnx_xref.IDs = regexprep(mnx_xref.IDs,'^kegg.*\:','kegg\:');
+    mnx_xref.IDs = regexprep(mnx_xref.IDs,'^sabiork.*\:','sabiork\:');
+    mnx_xref.IDs = regexprep(mnx_xref.IDs,'^seed.*\:','seed\:');
+    mnx_xref.IDs = regexprep(mnx_xref.IDs,'^metacyc.*\:','metacyc\:');    
+    mnx_xref.IDs = regexprep(mnx_xref.IDs,'^lipidmaps.*\:','lipidmaps\:');    
+    mnx_xref.IDs = regexprep(mnx_xref.IDs,'^envipath.*\:','envipath\:');    
+    mnx_xref(1:6,:) = [];
+    mnx_xref=unique(mnx_xref);
+    mnx_xref.DB = regexprep(mnx_xref.IDs,'(.*)\:.*','$1');
+    mnx_xref.IDs = regexprep(mnx_xref.IDs,'.*\:(.*)','$1');
+
+    
     
     % extract source and ID information from MNX data
     if strcmp(allIDs,'pref')
@@ -364,4 +406,20 @@ end
 [extractedID,idx] = sort(extractedID);
 refID = refID(idx);
 
+
+
 end
+
+function line = findFirstLine(filepath)
+line = 0;
+fID = fopen(filepath);
+    while true
+        textline = fgetl(fID);
+        line = line + 1;
+        if ~strcmp(textline(1),'#')
+            break
+        end
+    end
+fclose(fID);
+end
+
