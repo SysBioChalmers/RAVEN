@@ -236,81 +236,83 @@ This function is called by:
 0182         cd(fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'GLPKmex'</span>))
 0183         glpk(prob.c, prob.A, prob.b, prob.lb, prob.ub, prob.csense, prob.vartype, prob.osense, solverparams);
 0184         solverparams.tmlim   = defaultparams.timeLimit;
-0185         [runCheck, cmdOut]  = system([<span class="string">'soplex --solvemode=2 -t'</span> num2str(solverparams.tmlim) <span class="string">' -x outpb.lp &gt; result.out'</span>]);
-0186 
-0187         <span class="keyword">if</span> runCheck ~= 0
-0188             error(<span class="string">'SoPlex did not run'</span>)
-0189         <span class="keyword">end</span>
-0190         <span class="keyword">if</span> verLessThan(<span class="string">'matlab'</span>,<span class="string">'9.9'</span>) <span class="comment">%readlines introduced 2020b</span>
-0191             fid=fopen(<span class="string">'result.out'</span>);
-0192             line_raw=cell(1000000,1);
-0193             i=1;
-0194             <span class="keyword">while</span> ~feof(fid)
-0195                 line_raw{i}=fgetl(fid);
-0196                 i=i+1;
-0197             <span class="keyword">end</span>
-0198             line_raw(i:end)=[];
-0199             line_raw=string(line_raw);
-0200         <span class="keyword">else</span>
-0201             <span class="comment">%line_raw=readlines('result.out','EmptyLineRule','skip','WhitespaceRule','trim');</span>
-0202             line_raw=readlines(<span class="string">'result.out'</span>);
-0203         <span class="keyword">end</span>
-0204         delete <span class="string">'result.out'</span>
-0205         delete <span class="string">'outpb.lp'</span>
-0206         cd(currDir)        
-0207        
-0208         <span class="keyword">if</span> find(contains(line_raw,<span class="string">'problem is solved [optimal]'</span>),1) &gt; 0
-0209             res.full = zeros(length(prob.c),1);
-0210             res.stat = 1;
-0211             obj_line = line_raw{contains(line_raw,<span class="string">'Objective value'</span>)};
-0212             res.obj  = str2double(obj_line(strfind(obj_line,<span class="string">':'</span>)+2:end));
-0213             a        = find(contains(line_raw,<span class="string">'Primal solution (name, value):'</span>));
-0214             z        = find(contains(line_raw,<span class="string">'All other variables are zero'</span>));
-0215             flux     = split(line_raw(a+1:z-1));
-0216             rxns     = str2double(replace(flux(:,1),<span class="string">'x_'</span>,<span class="string">''</span>));
-0217             flux     = str2double(flux(:,2));
-0218             res.full(rxns) = flux;
-0219         <span class="keyword">elseif</span> ~isempty(cmdOut)
-0220             error([<span class="string">'SoPlex error: '</span> extractBefore(cmdOut,newline)])
-0221         <span class="keyword">else</span>
-0222             statusLine = contains(line_raw,<span class="string">'SoPlex status'</span>);
-0223             disp(line_raw(statusLine));
-0224             res.stat = 0;
-0225             res.obj  = [];
-0226             res.full = [];
-0227         <span class="keyword">end</span>
-0228 
-0229     <span class="keyword">otherwise</span>
-0230         error(<span class="string">'RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').'</span>);
-0231 <span class="keyword">end</span>
-0232 <span class="keyword">if</span> res.stat&gt;0
-0233     res.full=res.full(1:size(prob.a,2));
-0234 <span class="keyword">end</span>
-0235 <span class="keyword">end</span>
-0236 
-0237 <a name="_sub1" href="#_subfunctions" class="code">function s_merged=structUpdate(s_old,s_new)</a>
-0238 <span class="comment">%Remove overlapping fields from first struct;</span>
-0239 <span class="comment">%Obtain all unique names of remaining fields;</span>
-0240 <span class="comment">%Merge both structs</span>
-0241 s_merged = rmfield(s_old, intersect(fieldnames(s_old), fieldnames(s_new)));
-0242 names = [fieldnames(s_merged); fieldnames(s_new)];
-0243 s_merged = cell2struct([struct2cell(s_merged); struct2cell(s_new)], names, 1);
-0244 <span class="keyword">end</span>
-0245 
-0246 <a name="_sub2" href="#_subfunctions" class="code">function paramlist = renameparams(paramlist,old,new)</a>
-0247 <span class="keyword">if</span> ~iscell(paramlist)
-0248     wasNoCell = true;
-0249     paramlist={paramlist};
-0250 <span class="keyword">else</span>
-0251     wasNoCell = false;
-0252 <span class="keyword">end</span>
-0253 <span class="keyword">for</span> i=1:numel(old)
-0254     paramlist = regexprep(paramlist,old{i},new{i});
-0255 <span class="keyword">end</span>
-0256 <span class="keyword">if</span> wasNoCell
-0257     paramlist=paramlist{1};
-0258 <span class="keyword">end</span>
-0259 <span class="keyword">end</span></pre></div>
+0185         cd(fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'soplex'</span>))
+0186         movefile(fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'GLPKmex'</span>,<span class="string">'outpb.lp'</span>),<span class="string">'outpb.lp'</span>)
+0187         [runCheck, cmdOut]  = system([<span class="string">'soplex --solvemode=2 -t'</span> num2str(solverparams.tmlim) <span class="string">' -x outpb.lp &gt; result.out'</span>]);
+0188 
+0189         <span class="keyword">if</span> runCheck ~= 0
+0190             error(<span class="string">'SoPlex did not run'</span>)
+0191         <span class="keyword">end</span>
+0192         <span class="keyword">if</span> verLessThan(<span class="string">'matlab'</span>,<span class="string">'9.9'</span>) <span class="comment">%readlines introduced 2020b</span>
+0193             fid=fopen(<span class="string">'result.out'</span>);
+0194             line_raw=cell(1000000,1);
+0195             i=1;
+0196             <span class="keyword">while</span> ~feof(fid)
+0197                 line_raw{i}=fgetl(fid);
+0198                 i=i+1;
+0199             <span class="keyword">end</span>
+0200             line_raw(i:end)=[];
+0201             line_raw=string(line_raw);
+0202         <span class="keyword">else</span>
+0203             <span class="comment">%line_raw=readlines('result.out','EmptyLineRule','skip','WhitespaceRule','trim');</span>
+0204             line_raw=readlines(<span class="string">'result.out'</span>);
+0205         <span class="keyword">end</span>
+0206         delete <span class="string">'result.out'</span>
+0207         delete <span class="string">'outpb.lp'</span>
+0208         cd(currDir)        
+0209        
+0210         <span class="keyword">if</span> find(contains(line_raw,<span class="string">'problem is solved [optimal]'</span>),1) &gt; 0
+0211             res.full = zeros(length(prob.c),1);
+0212             res.stat = 1;
+0213             obj_line = line_raw{contains(line_raw,<span class="string">'Objective value'</span>)};
+0214             res.obj  = str2double(obj_line(strfind(obj_line,<span class="string">':'</span>)+2:end));
+0215             a        = find(contains(line_raw,<span class="string">'Primal solution (name, value):'</span>));
+0216             z        = find(contains(line_raw,<span class="string">'All other variables are zero'</span>));
+0217             flux     = split(line_raw(a+1:z-1));
+0218             rxns     = str2double(replace(flux(:,1),<span class="string">'x_'</span>,<span class="string">''</span>));
+0219             flux     = str2double(flux(:,2));
+0220             res.full(rxns) = flux;
+0221         <span class="keyword">elseif</span> ~isempty(cmdOut)
+0222             error([<span class="string">'SoPlex error: '</span> extractBefore(cmdOut,newline)])
+0223         <span class="keyword">else</span>
+0224             statusLine = contains(line_raw,<span class="string">'SoPlex status'</span>);
+0225             disp(line_raw(statusLine));
+0226             res.stat = 0;
+0227             res.obj  = [];
+0228             res.full = [];
+0229         <span class="keyword">end</span>
+0230 
+0231     <span class="keyword">otherwise</span>
+0232         error(<span class="string">'RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').'</span>);
+0233 <span class="keyword">end</span>
+0234 <span class="keyword">if</span> res.stat&gt;0
+0235     res.full=res.full(1:size(prob.a,2));
+0236 <span class="keyword">end</span>
+0237 <span class="keyword">end</span>
+0238 
+0239 <a name="_sub1" href="#_subfunctions" class="code">function s_merged=structUpdate(s_old,s_new)</a>
+0240 <span class="comment">%Remove overlapping fields from first struct;</span>
+0241 <span class="comment">%Obtain all unique names of remaining fields;</span>
+0242 <span class="comment">%Merge both structs</span>
+0243 s_merged = rmfield(s_old, intersect(fieldnames(s_old), fieldnames(s_new)));
+0244 names = [fieldnames(s_merged); fieldnames(s_new)];
+0245 s_merged = cell2struct([struct2cell(s_merged); struct2cell(s_new)], names, 1);
+0246 <span class="keyword">end</span>
+0247 
+0248 <a name="_sub2" href="#_subfunctions" class="code">function paramlist = renameparams(paramlist,old,new)</a>
+0249 <span class="keyword">if</span> ~iscell(paramlist)
+0250     wasNoCell = true;
+0251     paramlist={paramlist};
+0252 <span class="keyword">else</span>
+0253     wasNoCell = false;
+0254 <span class="keyword">end</span>
+0255 <span class="keyword">for</span> i=1:numel(old)
+0256     paramlist = regexprep(paramlist,old{i},new{i});
+0257 <span class="keyword">end</span>
+0258 <span class="keyword">if</span> wasNoCell
+0259     paramlist=paramlist{1};
+0260 <span class="keyword">end</span>
+0261 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

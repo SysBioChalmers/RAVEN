@@ -22,10 +22,10 @@ function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns,runParall
 % Usage: [minFluxes, maxFluxes, exitFlags] = getAllowedBounds(model, rxns, runParallel)
 
 if nargin<2
-    rxns=1:numel(model.rxns);
+    rxns = 1:numel(model.rxns);
 elseif ~islogical(rxns) && ~isnumeric(rxns)
-    rxns=convertCharArray(rxns);
-    rxns=getIndexes(model,rxns, 'rxns');
+    rxns = convertCharArray(rxns);
+    rxns = getIndexes(model,rxns, 'rxns');
 end
 if nargin<3
     runParallel = true;
@@ -38,76 +38,70 @@ if runParallel
     end
 end
 
-minFluxes=zeros(numel(rxns),1);
-maxFluxes=zeros(numel(rxns),1);
-exitFlags=zeros(numel(rxns),2);
-c=zeros(numel(model.rxns),1);
+minFluxes = zeros(numel(rxns),1);
+maxFluxes = zeros(numel(rxns),1);
+exitFlags = zeros(numel(rxns),2);
+c = zeros(numel(model.rxns),1);
 
-N = numel(rxns);
 p = 1;
-h = waitbar(0, 'Please wait ...');
+progressbar('Calculating the minimal and maximal fluxes')
 if runParallel
     D = parallel.pool.DataQueue;
-    afterEach(D, @nUpdateWaitbarParallel);
-    parfor i=1:N
-        tmpModel=model;
-        tmpModel.c=c;
+    afterEach(D, @updateProgressParallel);
+    parfor i = 1:numel(rxns)
+        tmpModel = model;
+        tmpModel.c = c;
 
-        %Get minimal flux
-        tmpModel.c(rxns(i))=-1;
-        solMin=solveLP(tmpModel);
+        % Get minimal flux
+        tmpModel.c(rxns(i)) = -1;
+        solMin = solveLP(tmpModel);
         if ~isempty(solMin.f)
-            minFluxes(i)=solMin.x(rxns(i));
+            minFluxes(i) = solMin.x(rxns(i));
         else
-            minFluxes(i)=NaN;
+            minFluxes(i) = NaN;
         end
 
-        %Get maximal flux
-        tmpModel.c(rxns(i))=1;
+        % Get maximal flux
+        tmpModel.c(rxns(i)) = 1;
         solMax=solveLP(tmpModel);
-        exitFlags(i,:)=[solMin.stat solMax.stat];
+        exitFlags(i,:) = [solMin.stat solMax.stat];
         if ~isempty(solMax.f)
-            maxFluxes(i)=solMax.x(rxns(i));
+            maxFluxes(i) = solMax.x(rxns(i));
         else
-            maxFluxes(i)=NaN;
+            maxFluxes(i) = NaN;
         end
         send(D, i);
     end
 else
-    for i=1:N
-        tmpModel=model;
-        tmpModel.c=c;
+    for i = 1:numel(rxns)
+        tmpModel = model;
+        tmpModel.c = c;
 
-        %Get minimal flux
-        tmpModel.c(rxns(i))=-1;
+        % Get minimal flux
+        tmpModel.c(rxns(i)) = -1;
         solMin=solveLP(tmpModel);
         if ~isempty(solMin.f)
-            minFluxes(i)=solMin.x(rxns(i));
+            minFluxes(i) = solMin.x(rxns(i));
         else
-            minFluxes(i)=NaN;
+            minFluxes(i) = NaN;
         end
 
-        %Get maximal flux
-        tmpModel.c(rxns(i))=1;
-        solMax=solveLP(tmpModel);
-        exitFlags(i,:)=[solMin.stat solMax.stat];
+        % Get maximal flux
+        tmpModel.c(rxns(i)) = 1;
+        solMax = solveLP(tmpModel);
+        exitFlags(i,:) = [solMin.stat solMax.stat];
         if ~isempty(solMax.f)
-            maxFluxes(i)=solMax.x(rxns(i));
+            maxFluxes(i) = solMax.x(rxns(i));
         else
-            maxFluxes(i)=NaN;
+            maxFluxes(i) = NaN;
         end
-        nUpdateWaitbar(p,N,h);
+        progressbar(i/numel(rxns))
     end
 end
-close(h)
+progressbar(1) % Make sure it closes
 
-function nUpdateWaitbarParallel(~)
-waitbar(p/N, h);
-p = p + 1;
-end
-
-function nUpdateWaitbar(p,N,h)
-waitbar(p/N, h);
-p = p + 1;
-end
+    function updateProgressParallel(~)
+        progressbar(p/numel(rxns))
+        p = p + 1;
+    end
 end

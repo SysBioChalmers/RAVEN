@@ -74,7 +74,8 @@ end
 
 [~, rxnIdx]=ismember(rxns,sourceModel.rxns); % Get rxnIDs
 if any(rxnIdx==0)
-    error('Not all reaction IDs could be found in the source model')
+    dispEM('The following reaction IDs could not be found in the source model:',true,...
+        rxns(rxnIdx==0));
 end
 
 % Add new metabolites
