@@ -74,7 +74,10 @@ verifyEqual(testCase,sol,solOut,'AbsTol',0.1)
 end
 
 function testSoplex(testCase)
+currDir = pwd;
+cd(fullfile(findRAVENroot,'software','soplex'))
 [a,~] = system('soplex --help');
+cd(currDir)
 if ~(a == 0)
     error('SoPlex not installed or cannot be found, test skipped')
 end
