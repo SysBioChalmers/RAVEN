@@ -712,10 +712,12 @@ if isfield(modelSBML, 'fbc_activeObjective')
     obj=modelSBML.fbc_activeObjective;
     for i=1:numel(modelSBML.fbc_objective)
         if strcmp(obj,modelSBML.fbc_objective(i).fbc_id)
-            rxn=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_reaction;
-            rxn=regexprep(rxn,'^R_','');
-            idx=find(ismember(reactionIDs,rxn));
-            reactionObjective(idx)=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_coefficient;
+            if ~isempty(modelSBML.fbc_objective(i).fbc_fluxObjective)
+                rxn=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_reaction;
+                rxn=regexprep(rxn,'^R_','');
+                idx=find(ismember(reactionIDs,rxn));
+                reactionObjective(idx)=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_coefficient;
+            end
         end
     end
 end
