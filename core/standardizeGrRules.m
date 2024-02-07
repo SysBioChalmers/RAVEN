@@ -130,10 +130,7 @@ indexes2check = unique(indexes2check);
 
 if ~isempty(indexes2check)
     
-    if embedded
-        EM = 'Potentially problematic ") AND (" in the grRules for reaction(s): ';
-        dispEM(EM,false,model.rxns(indexes2check),true)
-    else
+    if ~embedded
         STR = 'Potentially problematic ") AND (", ") AND" or "AND ("relat';
         STR = [STR,'ionships found in\n\n'];
         for i=1:length(indexes2check)

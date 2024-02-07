@@ -28,7 +28,6 @@ end
 solver=RAVENSOLVER;
 
 if ~all(lower(prob.vartype) == 'c')
-    disp('MILP detected.');
     milp=true;
 else
     milp=false;

@@ -58,7 +58,7 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes
 %                       is for the fitTasks step. For the INIT algorithm,
 %                       see params (opt, default [])
 %   verbose             if true, the MILP progression will be shown. 
-%                       (opt, default true)
+%                       (opt, default false)
 %
 %   model                   the resulting model structure
 %   metProduction           array that indicates which of the
@@ -114,7 +114,7 @@ if nargin < 10
 end
 
 if nargin < 11
-    verbose = true;
+    verbose = false;
 end
 %Handle detected mets:
 %Previously, this was handled by giving a bonus for secreting those metabolites,
