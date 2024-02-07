@@ -351,9 +351,9 @@ if ~isempty(prepData.taskStruct)
     %in the current formulation. Therefore, such reactions will have to be
     %assigned a small negative score instead.
     exchRxns = getExchangeRxns(prepData.refModel);
-    refModelNoExc = removeReactions(prepData.refModelWithBM,exchRxns,true,true);
+    refModelNoExc = removeReactions(prepData.refModelWithBM,exchRxns,false,true);
     exchRxns = getExchangeRxns(initModel);
-    initModelNoExc = removeReactions(closeModel(initModel),exchRxns,true,true);
+    initModelNoExc = removeReactions(closeModel(initModel),exchRxns,false,true);
     
     if useScoresForTasks == true
         %map the rxn scores to the model without exchange rxns
