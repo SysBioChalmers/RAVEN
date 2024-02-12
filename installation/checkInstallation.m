@@ -207,7 +207,7 @@ else
     printOrange('Fail\n')
 end
 
-fprintf([myStr('   > soplex',40) '%f'])
+fprintf([myStr('   > scip',40) '%f'])
 if res(3).Passed == 1
     fprintf('Pass\n')
 else
@@ -223,7 +223,7 @@ end
 fprintf([myStr(' > Set RAVEN solver',40) '%f'])
 try
     oldSolver=getpref('RAVEN','solver');
-    solverIdx=find(strcmp(oldSolver,{'glpk','gurobi','soplex','cobra'}));
+    solverIdx=find(strcmp(oldSolver,{'glpk','gurobi','scip','cobra'}));
 catch
     solverIdx=0;
 end

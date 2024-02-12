@@ -171,62 +171,71 @@ switch solver
         res.dual     = -extra.lambda*prob.osense;
         res.rcost    = -extra.redcosts*prob.osense;
         %% Use SoPlex
-    case 'soplex'
-        solverparams.tmlim   = 1;
-        solverparams.save    = 1;
-        solverparams = structUpdate(solverparams,params);
-        prob.csense = renameparams(prob.csense, {'L','G','E'}, {'U','L','S'});
+    case {'soplex','scip'} % Old 'soplex' option also allowed
+        [xopt,fval,exitflag] = scip([], prob.c, prob.A,-prob.b, prob.b, prob.lb, prob.ub, prob.vartype);
 
-        [ravenDir,currDir]=findRAVENroot();
-        cd(fullfile(ravenDir,'software','GLPKmex'))
-        glpk(prob.c, prob.A, prob.b, prob.lb, prob.ub, prob.csense, prob.vartype, prob.osense, solverparams);
-        solverparams.tmlim   = defaultparams.timeLimit;
-        cd(fullfile(ravenDir,'software','soplex'))
-        movefile(fullfile(ravenDir,'software','GLPKmex','outpb.lp'),'outpb.lp')
-        [runCheck, cmdOut]  = system(['soplex --solvemode=2 -t' num2str(solverparams.tmlim) ' -x outpb.lp > result.out']);
+        %   [x,fval,exitflag,stats] = scip(H, f, A, rl, ru, lb, ub, xtype, sos, qc, nl, x0, opts)
+        %
+        %   Input arguments*:
+        %       H - quadratic objective matrix (sparse, optional [NOT TRIL / TRIU])
+        %       f - linear objective vector
+        %       A - linear constraint matrix (sparse)
+        %       rl - linear constraint lhs
+        %       ru - linear constraint rhs
+        %       lb - decision variable lower bounds
+        %       ub - decision variable upper bounds
+        %       xtype - string of variable integrality ('c' continuous, 'i' integer, 'b' binary)
+        %       sos - SOS structure with fields type, index and weight (see below)
+        %       qc - Quadratic Constraints structure with fields Q, l, qrl and qru (see below)
+        %       nl - Nonlinear Objective and Constraints structure (see below)
+        %       x0 - primal solution
+        %       opts - solver options (see below)
+        %
+        %   Return arguments:
+        %       x - solution vector
+        %       fval - objective value at the solution
+        %       exitflag - exit status (see below)
+        %       stats - statistics structure
+        %
+        %   Option Fields (all optional, see also optiset for a list):
+        %       solverOpts - specific SCIP options (list of pairs of parameter names and values)
+        %       maxiter - maximum LP solver iterations
+        %       maxnodes - maximum nodes to explore
+        %       maxtime - maximum execution time [s]
+        %       tolrfun - primal feasibility tolerance
+        %       display - solver display level [0-5]
+        %       probfile - write problem to given file
+        %       presolvedfile - write presolved problem to file
+        %
+        %   Return Status:
+        %       0 - Unknown
+        %       1 - User Interrupted
+        %       2 - Node Limit Reached
+        %       3 - Total Node Limit Reached
+        %       4 - Stall Node Limit Reached
+        %       5 - Time Limit Reached
+        %       6 - Memory Limit Reached
+        %       7 - Gap Limit Reached
+        %       8 - Solution Limit Reached
+        %       9 - Solution Improvement Limit Reached
+        %      10 - Restart Limit Reached
+        %      11 - Problem Solved to Optimality
+        %      12 - Problem is Infeasible
+        %      13 - Problem is Unbounded
+        %      14 - Problem is Either Infeasible or Unbounded
+        
+        res.origStat = exitflag;
+        res.full = xopt;
+        res.obj  = fval;
 
-        if runCheck ~= 0
-            error('SoPlex did not run')
+        switch exitflag
+            case 11
+                res.stat = 1;
+            case [5, 6, 7, 8, 9, 10, 13]
+                res.stat = 2;
+            otherwise
+                res.stat = 0;
         end
-        if verLessThan('matlab','9.9') %readlines introduced 2020b
-            fid=fopen('result.out');
-            line_raw=cell(1000000,1);
-            i=1;
-            while ~feof(fid)
-                line_raw{i}=fgetl(fid);
-                i=i+1;
-            end
-            line_raw(i:end)=[];
-            line_raw=string(line_raw);
-        else
-            %line_raw=readlines('result.out','EmptyLineRule','skip','WhitespaceRule','trim');
-            line_raw=readlines('result.out');
-        end
-        delete 'result.out'
-        delete 'outpb.lp'
-        cd(currDir)        
-       
-        if find(contains(line_raw,'problem is solved [optimal]'),1) > 0
-            res.full = zeros(length(prob.c),1);
-            res.stat = 1;
-            obj_line = line_raw{contains(line_raw,'Objective value')};
-            res.obj  = str2double(obj_line(strfind(obj_line,':')+2:end));
-            a        = find(contains(line_raw,'Primal solution (name, value):'));
-            z        = find(contains(line_raw,'All other variables are zero'));
-            flux     = split(line_raw(a+1:z-1));
-            rxns     = str2double(replace(flux(:,1),'x_',''));
-            flux     = str2double(flux(:,2));
-            res.full(rxns) = flux;
-        elseif ~isempty(cmdOut)
-            error(['SoPlex error: ' extractBefore(cmdOut,newline)])
-        else
-            statusLine = contains(line_raw,'SoPlex status');
-            disp(line_raw(statusLine));
-            res.stat = 0;
-            res.obj  = [];
-            res.full = [];
-        end
-
     otherwise
         error('RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
 end
