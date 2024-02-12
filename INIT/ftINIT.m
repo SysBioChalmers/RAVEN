@@ -58,7 +58,7 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes
 %                       is for the fitTasks step. For the INIT algorithm,
 %                       see params (opt, default [])
 %   verbose             if true, the MILP progression will be shown. 
-%                       (opt, default true)
+%                       (opt, default false)
 %
 %   model                   the resulting model structure
 %   metProduction           array that indicates which of the
@@ -114,7 +114,7 @@ if nargin < 10
 end
 
 if nargin < 11
-    verbose = true;
+    verbose = false;
 end
 %Handle detected mets:
 %Previously, this was handled by giving a bonus for secreting those metabolites,
@@ -351,9 +351,9 @@ if ~isempty(prepData.taskStruct)
     %in the current formulation. Therefore, such reactions will have to be
     %assigned a small negative score instead.
     exchRxns = getExchangeRxns(prepData.refModel);
-    refModelNoExc = removeReactions(prepData.refModelWithBM,exchRxns,true,true);
+    refModelNoExc = removeReactions(prepData.refModelWithBM,exchRxns,false,true);
     exchRxns = getExchangeRxns(initModel);
-    initModelNoExc = removeReactions(closeModel(initModel),exchRxns,true,true);
+    initModelNoExc = removeReactions(closeModel(initModel),exchRxns,false,true);
     
     if useScoresForTasks == true
         %map the rxn scores to the model without exchange rxns
