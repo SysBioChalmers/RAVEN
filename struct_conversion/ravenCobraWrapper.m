@@ -209,11 +209,15 @@ else
     %Mandatory RAVEN fields
     newModel.mets=model.mets;
     if ~isfield(model,'comps')
-        model.comps = unique(regexprep(model.mets,'.*\[([^\]]+)\]$','$1'));
+        %Since 'comps' field is not mandatory in COBRA, it may be required
+        %to obtain the non-redundant list of comps from metabolite ids, if
+        %'comps' field is not available
+        newModel.comps = unique(regexprep(model.mets,'.*\[([^\]]+)\]$','$1'));
+        newModel.compNames = newModel.comps;
     end
-    for i=1:numel(model.comps)
-        newModel.mets=regexprep(newModel.mets,['\[', model.comps{i}, '\]$'],'');
-        newModel.mets=regexprep(newModel.mets,['\[', model.compNames{i}, '\]$'],'');
+    for i=1:numel(newModel.comps)
+        newModel.mets=regexprep(newModel.mets,['\[', newModel.comps{i}, '\]$'],'');
+        newModel.mets=regexprep(newModel.mets,['\[', newModel.compNames{i}, '\]$'],'');
     end
     
     %In some cases (e.g. any model that uses BiGG ids as main ids), there
@@ -221,8 +225,8 @@ else
     %this, we change compartments from e.g. [c] into _c
     if numel(unique(newModel.mets))~=numel(model.mets)
         newModel.mets=model.mets;
-        for i=1:numel(model.comps)
-            newModel.mets=regexprep(newModel.mets,['\[' model.comps{i} '\]$'],['_' model.comps{i}]);
+        for i=1:numel(newModel.comps)
+            newModel.mets=regexprep(newModel.mets,['\[' newModel.comps{i} '\]$'],['_' newModel.comps{i}]);
         end
     end
     %Since COBRA no longer contains rev field it is assumed that rxn is
@@ -237,15 +241,7 @@ else
         end
     end
     newModel.b=zeros(numel(model.mets),1);
-    if ~isfield(model,'comps')
-        %Since 'comps' field is not mandatory in COBRA, it may be required
-        %to obtain the non-redundant list of comps from metabolite ids, if
-        %'comps' field is not available
-        newModel.comps=regexprep(model.mets,'^.+\[','');
-        newModel.comps=regexprep(newModel.comps,'\]$','');
-        newModel.comps=unique(newModel.comps);
-    end
-    
+   
     %metComps is also mandatory, but defined later to match the order of
     %fields
     
@@ -331,9 +327,9 @@ else
         newModel.geneShortNames=model.geneNames;
     end
     newModel.metNames=model.metNames;
-    for i=1:numel(model.comps)
-        newModel.metNames=regexprep(newModel.metNames,['\[', model.comps{i}, '\]$'],'');
-        newModel.metNames=regexprep(newModel.metNames,['\[', model.compNames{i}, '\]$'],'');
+    for i=1:numel(newModel.comps)
+        newModel.metNames=regexprep(newModel.metNames,['\[', newModel.comps{i}, '\]$'],'');
+        newModel.metNames=regexprep(newModel.metNames,['\[', newModel.compNames{i}, '\]$'],'');
     end
     newModel.metNames=deblank(newModel.metNames);
     newModel.metComps=regexprep(model.mets,'^.+\[','');
