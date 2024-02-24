@@ -329,92 +329,97 @@ This function is called by:
 0270                 list = [<span class="string">'&quot;'</span> list{1} <span class="string">'&quot;'</span>];
 0271             <span class="keyword">end</span>
 0272             fprintf(fid,<span class="string">'    %s: %s\n'</span>,name,list);
-0273         <span class="keyword">elseif</span> length(list) &gt; 1 || strcmp(fieldName,<span class="string">'subSystems'</span>)
+0273         <span class="keyword">elseif</span> ischar(list) &amp;&amp; strcmp(fieldName,<span class="string">'subSystems'</span>)
 0274             <span class="keyword">if</span> preserveQuotes
-0275                 <span class="keyword">for</span> j=1:numel(list)
-0276                     list{j} = [<span class="string">'&quot;'</span> list{j} <span class="string">'&quot;'</span>];
-0277                 <span class="keyword">end</span>
-0278             <span class="keyword">end</span>
-0279             fprintf(fid,<span class="string">'    %s:\n'</span>,name);
-0280             <span class="keyword">for</span> i = 1:length(list)
-0281                 fprintf(fid,<span class="string">'%s        - %s\n'</span>,regexprep(name,<span class="string">'(^\s*).*'</span>,<span class="string">'$1'</span>),list{i});
-0282             <span class="keyword">end</span>
-0283         <span class="keyword">end</span>
-0284         
-0285     <span class="keyword">elseif</span> sum(pos) &gt; 0
-0286         <span class="comment">%All other fields:</span>
-0287         <span class="keyword">if</span> strcmp(type,<span class="string">'txt'</span>)
-0288             value = field{pos};
-0289             <span class="keyword">if</span> preserveQuotes &amp;&amp; ~isempty(value)
-0290                 value = [<span class="string">'&quot;'</span>,value,<span class="string">'&quot;'</span>];
-0291             <span class="keyword">end</span>
-0292         <span class="keyword">elseif</span> strcmp(type,<span class="string">'num'</span>)
-0293             <span class="keyword">if</span> isnan(field(pos))
-0294                 value = [];
-0295             <span class="keyword">else</span>
-0296                 value = sprintf(<span class="string">'%.15g'</span>,full(field(pos)));
-0297             <span class="keyword">end</span>
-0298         <span class="keyword">end</span>
-0299         <span class="keyword">if</span> ~isempty(value)
-0300             fprintf(fid,<span class="string">'    %s: %s\n'</span>,name,value);
-0301         <span class="keyword">end</span>
-0302     <span class="keyword">end</span>
-0303 <span class="keyword">end</span>
-0304 <span class="keyword">end</span>
-0305 
-0306 <a name="_sub2" href="#_subfunctions" class="code">function writeMetadata(model,fid)</a>
-0307 <span class="comment">% Writes model metadata to the yaml file. This information will eventually</span>
-0308 <span class="comment">% be extracted entirely from the model, but for now, many of the entries</span>
-0309 <span class="comment">% are hard-coded defaults for HumanGEM.</span>
+0275                 list = [<span class="string">'&quot;'</span> list <span class="string">'&quot;'</span>];
+0276             <span class="keyword">end</span>
+0277             fprintf(fid,<span class="string">'    %s: %s\n'</span>,name,list);            
+0278         <span class="keyword">elseif</span> length(list) &gt; 1 || strcmp(fieldName,<span class="string">'subSystems'</span>)
+0279             <span class="keyword">if</span> preserveQuotes
+0280                 <span class="keyword">for</span> j=1:numel(list)
+0281                     list{j} = [<span class="string">'&quot;'</span> list{j} <span class="string">'&quot;'</span>];
+0282                 <span class="keyword">end</span>
+0283             <span class="keyword">end</span>
+0284             fprintf(fid,<span class="string">'    %s:\n'</span>,name);
+0285             <span class="keyword">for</span> i = 1:length(list)
+0286                 fprintf(fid,<span class="string">'%s        - %s\n'</span>,regexprep(name,<span class="string">'(^\s*).*'</span>,<span class="string">'$1'</span>),list{i});
+0287             <span class="keyword">end</span>
+0288         <span class="keyword">end</span>
+0289         
+0290     <span class="keyword">elseif</span> sum(pos) &gt; 0
+0291         <span class="comment">%All other fields:</span>
+0292         <span class="keyword">if</span> strcmp(type,<span class="string">'txt'</span>)
+0293             value = field{pos};
+0294             <span class="keyword">if</span> preserveQuotes &amp;&amp; ~isempty(value)
+0295                 value = [<span class="string">'&quot;'</span>,value,<span class="string">'&quot;'</span>];
+0296             <span class="keyword">end</span>
+0297         <span class="keyword">elseif</span> strcmp(type,<span class="string">'num'</span>)
+0298             <span class="keyword">if</span> isnan(field(pos))
+0299                 value = [];
+0300             <span class="keyword">else</span>
+0301                 value = sprintf(<span class="string">'%.15g'</span>,full(field(pos)));
+0302             <span class="keyword">end</span>
+0303         <span class="keyword">end</span>
+0304         <span class="keyword">if</span> ~isempty(value)
+0305             fprintf(fid,<span class="string">'    %s: %s\n'</span>,name,value);
+0306         <span class="keyword">end</span>
+0307     <span class="keyword">end</span>
+0308 <span class="keyword">end</span>
+0309 <span class="keyword">end</span>
 0310 
-0311 fprintf(fid, <span class="string">'- metaData:\n'</span>);
-0312 fprintf(fid, <span class="string">'    id: &quot;%s&quot;\n'</span>,  model.id);
-0313 fprintf(fid, <span class="string">'    name: &quot;%s&quot;\n'</span>,model.name);
-0314 <span class="keyword">if</span> isfield(model,<span class="string">'version'</span>)
-0315     fprintf(fid, <span class="string">'    version: &quot;%s&quot;\n'</span>,model.version);
-0316 <span class="keyword">end</span>
-0317 fprintf(fid, <span class="string">'    date: &quot;%s&quot;\n'</span>,datestr(now,29));  <span class="comment">% 29=YYYY-MM-DD</span>
-0318 <span class="keyword">if</span> isfield(model,<span class="string">'annotation'</span>)
-0319     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultLB'</span>)
-0320         fprintf(fid, <span class="string">'    defaultLB: &quot;%g&quot;\n'</span>,   model.annotation.defaultLB);
-0321     <span class="keyword">end</span>
-0322     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultUB'</span>)
-0323         fprintf(fid, <span class="string">'    defaultUB: &quot;%g&quot;\n'</span>,   model.annotation.defaultUB);
-0324     <span class="keyword">end</span>
-0325     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'givenName'</span>)
-0326         fprintf(fid, <span class="string">'    givenName: &quot;%s&quot;\n'</span>,   model.annotation.givenName);
-0327     <span class="keyword">end</span>
-0328     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'familyName'</span>)
-0329         fprintf(fid, <span class="string">'    familyName: &quot;%s&quot;\n'</span>,  model.annotation.familyName);
-0330     <span class="keyword">end</span>
-0331     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'authors'</span>)
-0332         fprintf(fid, <span class="string">'    authors: &quot;%s&quot;\n'</span>,     model.annotation.authors);
-0333     <span class="keyword">end</span>
-0334     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'email'</span>)
-0335         fprintf(fid, <span class="string">'    email: &quot;%s&quot;\n'</span>,       model.annotation.email);
-0336     <span class="keyword">end</span>
-0337     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'organization'</span>)
-0338         fprintf(fid, <span class="string">'    organization: &quot;%s&quot;\n'</span>,model.annotation.organization);
-0339     <span class="keyword">end</span>
-0340     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'taxonomy'</span>)
-0341         fprintf(fid, <span class="string">'    taxonomy: &quot;%s&quot;\n'</span>,    model.annotation.taxonomy);
-0342     <span class="keyword">end</span>
-0343     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'note'</span>)
-0344         fprintf(fid, <span class="string">'    note: &quot;%s&quot;\n'</span>,        model.annotation.note);
-0345     <span class="keyword">end</span>
-0346     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'sourceUrl'</span>)
-0347         fprintf(fid, <span class="string">'    sourceUrl: &quot;%s&quot;\n'</span>,   model.annotation.sourceUrl);
-0348     <span class="keyword">end</span>
-0349 <span class="keyword">end</span>
-0350 <span class="keyword">if</span> isfield(model,<span class="string">'ec'</span>)
-0351     <span class="keyword">if</span> model.ec.geckoLight
-0352         geckoLight = <span class="string">'true'</span>;
-0353     <span class="keyword">else</span>
-0354         geckoLight = <span class="string">'false'</span>;
-0355     <span class="keyword">end</span>
-0356     fprintf(fid,<span class="string">'    geckoLight: &quot;%s&quot;\n'</span>,geckoLight);
-0357 <span class="keyword">end</span>
-0358 <span class="keyword">end</span></pre></div>
+0311 <a name="_sub2" href="#_subfunctions" class="code">function writeMetadata(model,fid)</a>
+0312 <span class="comment">% Writes model metadata to the yaml file. This information will eventually</span>
+0313 <span class="comment">% be extracted entirely from the model, but for now, many of the entries</span>
+0314 <span class="comment">% are hard-coded defaults for HumanGEM.</span>
+0315 
+0316 fprintf(fid, <span class="string">'- metaData:\n'</span>);
+0317 fprintf(fid, <span class="string">'    id: &quot;%s&quot;\n'</span>,  model.id);
+0318 fprintf(fid, <span class="string">'    name: &quot;%s&quot;\n'</span>,model.name);
+0319 <span class="keyword">if</span> isfield(model,<span class="string">'version'</span>)
+0320     fprintf(fid, <span class="string">'    version: &quot;%s&quot;\n'</span>,model.version);
+0321 <span class="keyword">end</span>
+0322 fprintf(fid, <span class="string">'    date: &quot;%s&quot;\n'</span>,datestr(now,29));  <span class="comment">% 29=YYYY-MM-DD</span>
+0323 <span class="keyword">if</span> isfield(model,<span class="string">'annotation'</span>)
+0324     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultLB'</span>)
+0325         fprintf(fid, <span class="string">'    defaultLB: &quot;%g&quot;\n'</span>,   model.annotation.defaultLB);
+0326     <span class="keyword">end</span>
+0327     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultUB'</span>)
+0328         fprintf(fid, <span class="string">'    defaultUB: &quot;%g&quot;\n'</span>,   model.annotation.defaultUB);
+0329     <span class="keyword">end</span>
+0330     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'givenName'</span>)
+0331         fprintf(fid, <span class="string">'    givenName: &quot;%s&quot;\n'</span>,   model.annotation.givenName);
+0332     <span class="keyword">end</span>
+0333     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'familyName'</span>)
+0334         fprintf(fid, <span class="string">'    familyName: &quot;%s&quot;\n'</span>,  model.annotation.familyName);
+0335     <span class="keyword">end</span>
+0336     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'authors'</span>)
+0337         fprintf(fid, <span class="string">'    authors: &quot;%s&quot;\n'</span>,     model.annotation.authors);
+0338     <span class="keyword">end</span>
+0339     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'email'</span>)
+0340         fprintf(fid, <span class="string">'    email: &quot;%s&quot;\n'</span>,       model.annotation.email);
+0341     <span class="keyword">end</span>
+0342     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'organization'</span>)
+0343         fprintf(fid, <span class="string">'    organization: &quot;%s&quot;\n'</span>,model.annotation.organization);
+0344     <span class="keyword">end</span>
+0345     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'taxonomy'</span>)
+0346         fprintf(fid, <span class="string">'    taxonomy: &quot;%s&quot;\n'</span>,    model.annotation.taxonomy);
+0347     <span class="keyword">end</span>
+0348     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'note'</span>)
+0349         fprintf(fid, <span class="string">'    note: &quot;%s&quot;\n'</span>,        model.annotation.note);
+0350     <span class="keyword">end</span>
+0351     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'sourceUrl'</span>)
+0352         fprintf(fid, <span class="string">'    sourceUrl: &quot;%s&quot;\n'</span>,   model.annotation.sourceUrl);
+0353     <span class="keyword">end</span>
+0354 <span class="keyword">end</span>
+0355 <span class="keyword">if</span> isfield(model,<span class="string">'ec'</span>)
+0356     <span class="keyword">if</span> model.ec.geckoLight
+0357         geckoLight = <span class="string">'true'</span>;
+0358     <span class="keyword">else</span>
+0359         geckoLight = <span class="string">'false'</span>;
+0360     <span class="keyword">end</span>
+0361     fprintf(fid,<span class="string">'    geckoLight: &quot;%s&quot;\n'</span>,geckoLight);
+0362 <span class="keyword">end</span>
+0363 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

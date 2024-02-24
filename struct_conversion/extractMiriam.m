@@ -26,7 +26,7 @@ function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)
 %
 %   Usage: miriam=extractMiriam(modelMiriams,miriamName)
 
-if nargin<2 || strcmp(miriamNames,'all')
+if nargin<2 || (ischar(miriamNames) && strcmp(miriamNames,'all'))
     extractAllTypes=true;
 else
     extractAllTypes=false;

@@ -218,10 +218,10 @@ end
 % each genes from its fold change between the tissue/celltype(s) in question
 % and all other celltypes, or the threshold if supplied. This is a lower 
 % quality data than protein abundance, since gene abundance is an indirect 
-% estimate of protiein level. These scores are therefore only used for genes
+% estimate of protein level. These scores are therefore only used for genes
 % for which there is no HPA data available. The fold changes are transformed
 % as min(5*log(x),10) for x > 1 and max(5*log(x),-5) for x < 1 in order to 
-% have negative scores for lower expressed genes and to scale the scrores
+% have negative scores for lower expressed genes and to scale the scores
 % to have somewhat lower weights than the HPA scores
 tempArrayLevels = arrayData.levels;
 tempArrayLevels(isnan(tempArrayLevels)) = 0;

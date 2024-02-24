@@ -270,6 +270,11 @@ if isfield(model,fieldName)
                 list = ['"' list{1} '"'];
             end
             fprintf(fid,'    %s: %s\n',name,list);
+        elseif ischar(list) && strcmp(fieldName,'subSystems')
+            if preserveQuotes
+                list = ['"' list '"'];
+            end
+            fprintf(fid,'    %s: %s\n',name,list);            
         elseif length(list) > 1 || strcmp(fieldName,'subSystems')
             if preserveQuotes
                 for j=1:numel(list)

@@ -29,6 +29,7 @@ end
 %Get the RAVEN path
 [ST, I]=dbstack('-completenames');
 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
+    status = makeBinaryExecutable();
 
 % Do not print first few lines if only version should be reported
 if ~versionOnly
@@ -207,7 +208,7 @@ else
     printOrange('Fail\n')
 end
 
-fprintf([myStr('   > soplex',40) '%f'])
+fprintf([myStr('   > scip',40) '%f'])
 if res(3).Passed == 1
     fprintf('Pass\n')
 else
@@ -223,7 +224,7 @@ end
 fprintf([myStr(' > Set RAVEN solver',40) '%f'])
 try
     oldSolver=getpref('RAVEN','solver');
-    solverIdx=find(strcmp(oldSolver,{'glpk','gurobi','soplex','cobra'}));
+    solverIdx=find(strcmp(oldSolver,{'glpk','gurobi','scip','cobra'}));
 catch
     solverIdx=0;
 end
@@ -317,23 +318,22 @@ if ispc
     status = 0; % No need to run on Windows
     return;
 end
-
 binDir = fullfile(findRAVENroot(),'software');
 
-binList = {fullfile(binDir,'blast+','blastp');
-           fullfile(binDir,'blast+','makeblastdb');
-           fullfile(binDir,'cd-hit','cd-hit');
-           fullfile(binDir,'diamond','diamond');
-           fullfile(binDir,'hmmer','hmmbuild');
-           fullfile(binDir,'hmmer','hmmsearch');
-           fullfile(binDir,'GLPKmex','glpkcc');
-           fullfile(binDir,'libSBML','TranslateSBML');
-           fullfile(binDir,'libSBML','OutputSBML');
-           fullfile(binDir,'mafft','mafft-linux64','mafft');
-           fullfile(binDir,'mafft','mafft-mac','mafft');};
+binList = {fullfile(binDir,'blast+','blastp');                  fullfile(binDir,'blast+','blastp.mac');
+           fullfile(binDir,'blast+','makeblastdb');             fullfile(binDir,'blast+','makeblastdb.mac');
+           fullfile(binDir,'cd-hit','cd-hit');                  fullfile(binDir,'cd-hit','cd-hit.mac');
+           fullfile(binDir,'diamond','diamond');                fullfile(binDir,'diamond','diamond.mac');
+           fullfile(binDir,'hmmer','hmmbuild');                 fullfile(binDir,'hmmer','hmmbuild.mac');
+           fullfile(binDir,'hmmer','hmmsearch');                fullfile(binDir,'hmmer','hmmsearch.mac');
+           fullfile(binDir,'GLPKmex','glpkcc.mexa64');          fullfile(binDir,'GLPKmex','glpkcc.mexglx');         fullfile(binDir,'GLPKmex','glpkcc.mexmaci64');
+           fullfile(binDir,'libSBML','TranslateSBML.mexa64');   fullfile(binDir,'libSBML','TranslateSBML.mexglx');  fullfile(binDir,'libSBML','TranslateSBML.mexmaci64');
+           fullfile(binDir,'libSBML','OutputSBML.mexa64');      fullfile(binDir,'libSBML','OutputSBML.mexglx');     fullfile(binDir,'libSBML','OutputSBML.mexmaci64');
+           fullfile(binDir,'mafft','mafft-linux64','mafft.bat');
+           fullfile(binDir,'mafft','mafft-mac','mafft.bat');};
 
 for i=1:numel(binList)
-    [status,cmdout] = system(['chmod +x "' binList{i} '".(mexa64|mexglx|mexmaci64|mac|bat)']);
+    [status,cmdout] = system(['chmod +x "' binList{i} '"']);
     if status ~= 0
         warning('Failed to make %s executable: %s ',binList{i},strip(cmdout))
     end

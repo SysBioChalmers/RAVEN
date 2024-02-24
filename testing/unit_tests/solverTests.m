@@ -73,13 +73,11 @@ load([sourceDir,'/test_data/solverTestOutput.mat'], 'solOut');
 verifyEqual(testCase,sol,solOut,'AbsTol',0.1)
 end
 
-function testSoplex(testCase)
-currDir = pwd;
-cd(fullfile(findRAVENroot,'software','soplex'))
-[a,~] = system('soplex --help');
-cd(currDir)
-if ~(a == 0)
-    error('SoPlex not installed or cannot be found, test skipped')
+function testSCIP(testCase)
+try
+    scip;
+catch
+    error('SCIP MEX binary not installed or not functional, test skipped')
 end
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
@@ -87,8 +85,7 @@ try
     oldSolver=getpref('RAVEN','solver');
 catch
 end
-setRavenSolver('soplex');
-
+setRavenSolver('scip');
 try
     % Try all three types of flux minimization
     evalc('sol=solveLP(model,3);');    
@@ -108,9 +105,9 @@ catch
     rmpref('RAVEN','solver');
 end
 
-load([sourceDir,'/test_data/solverTestOutput.mat'], 'solOutSoplex');
+load([sourceDir,'/test_data/solverTestOutput.mat'], 'solOutSCIP');
 %Check that the actual model is the same as the expected model
-verifyEqual(testCase,sol,solOutSoplex,'AbsTol',0.1)
+verifyEqual(testCase,sol,solOutSCIP,'AbsTol',0.1)
 end
 
 function testCobra(testCase)
