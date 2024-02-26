@@ -126,7 +126,7 @@ if deleteInaccessible==true
         in=any(reducedModel.b<0,2);
         out=any(reducedModel.b>0,2);
         I=speye(numel(reducedModel.mets));
-        revS=[reducedModel.S,reducedModel.S(:,reducedModel.rev~=0)*-1 I(:,in) I(:,out)*-1];
+        revS=[reducedModel.S,reducedModel.S(:,reducedModel.lb<0)*-1 I(:,in) I(:,out)*-1];
         
         metUsage=sum(abs(revS')>0);
         onlyProducts=sum(revS'>0) == metUsage;
