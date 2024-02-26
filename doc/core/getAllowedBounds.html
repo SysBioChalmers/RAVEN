@@ -31,19 +31,24 @@
    Returns the minimal and maximal fluxes through each reaction.
 
  Input:
-   model       a model structure
-   rxns        either a cell array of reaction IDs, a logical vector with the
-               same number of elements as reactions in the model, or a vector
-               of reaction indexes (opt, default model.rxns)
-   runParallel make use of MATLAB parallel pool to speed up calculations. Not
-               beneficial if only a limited number of reactions are simulated.
-               (opt, default true)
+   model           a model structure
+   rxns            either a cell array of reaction IDs, a logical vector
+                   with the same number of elements as reactions in the
+                   model, or a vector of reaction indexes (opt, default
+                   model.rxns)
+   runParallel     speed up calculations by parallel processing. This is
+                   not beneficial if allowed bounds are calculated for
+                   only a few reactions, as the overhead of parallel
+                   processing will take longer. It requires MATLAB
+                   Parallel Computing Toolbox. If this is not installed,
+                   the calculations will not be parallelized, regardless
+                   what is indicated as runParallel. (opt, default true)
 
  Output:
-   minFluxes   minimal allowed fluxes
-   maxFluxes   maximal allowed fluxes
-   exitFlags   exit flags for min/max for each of the reactions. True if it was
-               possible to calculate a flux
+   minFluxes       minimal allowed fluxes
+   maxFluxes       maximal allowed fluxes
+   exitFlags       exit flags for min/max for each of the reactions. True
+                   if it was possible to calculate a flux
 
    NOTE: In cases where no solution can be calculated, NaN is returned.
 
@@ -53,15 +58,13 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>	convertCharArray</li><li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>	getIndexes</li></ul>
+<li><a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>	convertCharArray</li><li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>	getIndexes</li><li><a href="parallelPoolRAVEN.html" class="code" title="function [ps, oldPoolAutoCreate] = parallelPoolRAVEN(runParallel)">parallelPoolRAVEN</a>	handleParallelRAVEN</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 <li><a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>	simplifyModel</li></ul>
 <!-- crossreference -->
 
-<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function updateProgressParallel(~)</a></li></ul>
+
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns,runParallel)</a>
@@ -69,108 +72,74 @@ This function is called by:
 0003 <span class="comment">%   Returns the minimal and maximal fluxes through each reaction.</span>
 0004 <span class="comment">%</span>
 0005 <span class="comment">% Input:</span>
-0006 <span class="comment">%   model       a model structure</span>
-0007 <span class="comment">%   rxns        either a cell array of reaction IDs, a logical vector with the</span>
-0008 <span class="comment">%               same number of elements as reactions in the model, or a vector</span>
-0009 <span class="comment">%               of reaction indexes (opt, default model.rxns)</span>
-0010 <span class="comment">%   runParallel make use of MATLAB parallel pool to speed up calculations. Not</span>
-0011 <span class="comment">%               beneficial if only a limited number of reactions are simulated.</span>
-0012 <span class="comment">%               (opt, default true)</span>
-0013 <span class="comment">%</span>
-0014 <span class="comment">% Output:</span>
-0015 <span class="comment">%   minFluxes   minimal allowed fluxes</span>
-0016 <span class="comment">%   maxFluxes   maximal allowed fluxes</span>
-0017 <span class="comment">%   exitFlags   exit flags for min/max for each of the reactions. True if it was</span>
-0018 <span class="comment">%               possible to calculate a flux</span>
-0019 <span class="comment">%</span>
-0020 <span class="comment">%   NOTE: In cases where no solution can be calculated, NaN is returned.</span>
-0021 <span class="comment">%</span>
-0022 <span class="comment">% Usage: [minFluxes, maxFluxes, exitFlags] = getAllowedBounds(model, rxns, runParallel)</span>
-0023 
-0024 <span class="keyword">if</span> nargin&lt;2
-0025     rxns = 1:numel(model.rxns);
-0026 <span class="keyword">elseif</span> ~islogical(rxns) &amp;&amp; ~isnumeric(rxns)
-0027     rxns = <a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>(rxns);
-0028     rxns = <a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxns, <span class="string">'rxns'</span>);
-0029 <span class="keyword">end</span>
-0030 <span class="keyword">if</span> nargin&lt;3
-0031     runParallel = true;
-0032 <span class="keyword">end</span>
-0033 <span class="keyword">if</span> runParallel
-0034     addonList = matlab.addons.installedAddons;
-0035     <span class="keyword">if</span> ~any(strcmpi(addonList.Name,<span class="string">'Parallel Computing Toolbox'</span>))
-0036         disp(<span class="string">'Cannot find MATLAB Parallel Computing Toolbox, process is not parallelized.'</span>)
-0037         runParallel = false;
-0038     <span class="keyword">end</span>
-0039 <span class="keyword">end</span>
+0006 <span class="comment">%   model           a model structure</span>
+0007 <span class="comment">%   rxns            either a cell array of reaction IDs, a logical vector</span>
+0008 <span class="comment">%                   with the same number of elements as reactions in the</span>
+0009 <span class="comment">%                   model, or a vector of reaction indexes (opt, default</span>
+0010 <span class="comment">%                   model.rxns)</span>
+0011 <span class="comment">%   runParallel     speed up calculations by parallel processing. This is</span>
+0012 <span class="comment">%                   not beneficial if allowed bounds are calculated for</span>
+0013 <span class="comment">%                   only a few reactions, as the overhead of parallel</span>
+0014 <span class="comment">%                   processing will take longer. It requires MATLAB</span>
+0015 <span class="comment">%                   Parallel Computing Toolbox. If this is not installed,</span>
+0016 <span class="comment">%                   the calculations will not be parallelized, regardless</span>
+0017 <span class="comment">%                   what is indicated as runParallel. (opt, default true)</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% Output:</span>
+0020 <span class="comment">%   minFluxes       minimal allowed fluxes</span>
+0021 <span class="comment">%   maxFluxes       maximal allowed fluxes</span>
+0022 <span class="comment">%   exitFlags       exit flags for min/max for each of the reactions. True</span>
+0023 <span class="comment">%                   if it was possible to calculate a flux</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">%   NOTE: In cases where no solution can be calculated, NaN is returned.</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Usage: [minFluxes, maxFluxes, exitFlags] = getAllowedBounds(model, rxns, runParallel)</span>
+0028 
+0029 <span class="keyword">if</span> nargin&lt;2 || isempty(rxns)
+0030     rxns = 1:numel(model.rxns);
+0031 <span class="keyword">elseif</span> ~islogical(rxns) &amp;&amp; ~isnumeric(rxns)
+0032     rxns = <a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>(rxns);
+0033     rxns = <a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxns, <span class="string">'rxns'</span>);
+0034 <span class="keyword">end</span>
+0035 <span class="keyword">if</span> nargin&lt;3
+0036     runParallel = true;
+0037 <span class="keyword">end</span>
+0038 
+0039 [ps, oldPoolAutoCreateSetting] = <a href="parallelPoolRAVEN.html" class="code" title="function [ps, oldPoolAutoCreate] = parallelPoolRAVEN(runParallel)">parallelPoolRAVEN</a>(runParallel);
 0040 
 0041 minFluxes = zeros(numel(rxns),1);
 0042 maxFluxes = zeros(numel(rxns),1);
 0043 exitFlags = zeros(numel(rxns),2);
 0044 c = zeros(numel(model.rxns),1);
 0045 
-0046 p = 1;
-0047 progressbar(<span class="string">'Calculating the minimal and maximal fluxes'</span>)
-0048 <span class="keyword">if</span> runParallel
-0049     D = parallel.pool.DataQueue;
-0050     afterEach(D, @<a href="#_sub1" class="code" title="subfunction updateProgressParallel(~)">updateProgressParallel</a>);
-0051     parfor i = 1:numel(rxns)
-0052         tmpModel = model;
-0053         tmpModel.c = c;
-0054 
-0055         <span class="comment">% Get minimal flux</span>
-0056         tmpModel.c(rxns(i)) = -1;
-0057         solMin = solveLP(tmpModel);
-0058         <span class="keyword">if</span> ~isempty(solMin.f)
-0059             minFluxes(i) = solMin.x(rxns(i));
-0060         <span class="keyword">else</span>
-0061             minFluxes(i) = NaN;
-0062         <span class="keyword">end</span>
-0063 
-0064         <span class="comment">% Get maximal flux</span>
-0065         tmpModel.c(rxns(i)) = 1;
-0066         solMax=solveLP(tmpModel);
-0067         exitFlags(i,:) = [solMin.stat solMax.stat];
-0068         <span class="keyword">if</span> ~isempty(solMax.f)
-0069             maxFluxes(i) = solMax.x(rxns(i));
-0070         <span class="keyword">else</span>
-0071             maxFluxes(i) = NaN;
-0072         <span class="keyword">end</span>
-0073         send(D, i);
-0074     <span class="keyword">end</span>
-0075 <span class="keyword">else</span>
-0076     <span class="keyword">for</span> i = 1:numel(rxns)
-0077         tmpModel = model;
-0078         tmpModel.c = c;
-0079 
-0080         <span class="comment">% Get minimal flux</span>
-0081         tmpModel.c(rxns(i)) = -1;
-0082         solMin=solveLP(tmpModel);
-0083         <span class="keyword">if</span> ~isempty(solMin.f)
-0084             minFluxes(i) = solMin.x(rxns(i));
-0085         <span class="keyword">else</span>
-0086             minFluxes(i) = NaN;
-0087         <span class="keyword">end</span>
-0088 
-0089         <span class="comment">% Get maximal flux</span>
-0090         tmpModel.c(rxns(i)) = 1;
-0091         solMax = solveLP(tmpModel);
-0092         exitFlags(i,:) = [solMin.stat solMax.stat];
-0093         <span class="keyword">if</span> ~isempty(solMax.f)
-0094             maxFluxes(i) = solMax.x(rxns(i));
-0095         <span class="keyword">else</span>
-0096             maxFluxes(i) = NaN;
-0097         <span class="keyword">end</span>
-0098         progressbar(i/numel(rxns))
-0099     <span class="keyword">end</span>
-0100 <span class="keyword">end</span>
-0101 progressbar(1) <span class="comment">% Make sure it closes</span>
-0102 
-0103     <a name="_sub1" href="#_subfunctions" class="code">function updateProgressParallel(~)</a>
-0104         progressbar(p/numel(rxns))
-0105         p = p + 1;
-0106     <span class="keyword">end</span>
-0107 <span class="keyword">end</span></pre></div>
+0046 PB = ProgressBar2(numel(rxns),<span class="string">'Running getAllowedBounds'</span>,<span class="string">'cli'</span>);
+0047 parfor i = 1:numel(rxns)
+0048     count(PB)
+0049     tmpModel = model;
+0050     tmpModel.c = c;
+0051 
+0052     <span class="comment">% Get minimal flux</span>
+0053     tmpModel.c(rxns(i)) = -1;
+0054     solMin = solveLP(tmpModel);
+0055     <span class="keyword">if</span> ~isempty(solMin.f)
+0056         minFluxes(i) = solMin.x(rxns(i));
+0057     <span class="keyword">else</span>
+0058         minFluxes(i) = NaN;
+0059     <span class="keyword">end</span>
+0060 
+0061     <span class="comment">% Get maximal flux</span>
+0062     tmpModel.c(rxns(i)) = 1;
+0063     solMax=solveLP(tmpModel);
+0064     exitFlags(i,:) = [solMin.stat solMax.stat];
+0065     <span class="keyword">if</span> ~isempty(solMax.f)
+0066         maxFluxes(i) = solMax.x(rxns(i));
+0067     <span class="keyword">else</span>
+0068         maxFluxes(i) = NaN;
+0069     <span class="keyword">end</span>
+0070 <span class="keyword">end</span>
+0071 <span class="comment">% Reset original Parallel setting</span>
+0072 ps.Pool.AutoCreate = oldPoolAutoCreateSetting;
+0073 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

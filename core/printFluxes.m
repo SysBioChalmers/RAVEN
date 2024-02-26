@@ -63,7 +63,10 @@ if nargin<7
 else
     metaboliteList=convertCharArray(metaboliteList);
 end
-if size(fluxes,1)~=numel(model.rxns)
+if isempty(fluxes)
+    EM='Empty vector of fluxes, solveLP possibly returned infeasible';
+    dispEM(EM);
+elseif size(fluxes,1)~=numel(model.rxns)
     EM='The number of fluxes and the number of reactions must be the same';
     dispEM(EM);
 end
