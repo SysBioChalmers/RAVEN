@@ -241,6 +241,9 @@ if isfield(model,fieldName)
         %eccodes/rxnNotes: if 1 write in 1 line, if more create header and list
         if strcmp(fieldName,'subSystems')
             list = field{pos};  %subSystems already comes in a cell array
+            if isempty(list)
+                return
+            end
         elseif strcmp(fieldName,'newMetMiriams')
             index = str2double(regexprep(name,'^.+_',''));
             name  = regexprep(name,'_\d+$','');
@@ -261,7 +264,7 @@ if isfield(model,fieldName)
             list = strrep(field{pos},' ','');
             list = strsplit(list,';');
         else
-            list = '';
+            return % empty, needs no line in file
         end
         list=strip(list);
 
