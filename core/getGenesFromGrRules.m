@@ -50,7 +50,7 @@ else
 end
 
 % extract list of genes from each reaction
-rxnGenes = cellfun(@(r) unique(strsplit(r,{' | ',' & '})),grRules,'UniformOutput',false);
+rxnGenes = cellfun(@(r) regexprep(unique(strsplit(r,{' | ',' & '})),'[\(\) ]+',''),grRules,'UniformOutput',false);
 
 % construct new gene list
 nonEmpty = ~cellfun(@isempty,rxnGenes);
