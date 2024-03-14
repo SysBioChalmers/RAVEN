@@ -136,6 +136,14 @@ model.rxns=regexprep(model.rxns,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 model.mets=regexprep(model.mets,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 model.comps=regexprep(model.comps,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 if isfield(model,'genes')
+    % Add "G_" prefix to genes. This is to ensure SBML file compatibility
+    % with MEMOTE
+    rawGenes = model.genes;
+    model.genes = strcat('G_',model.genes);
+    for i=1:numel(rawGenes)
+        model.grRules = regexprep(model.grRules, ['(^|\s|\()' rawGenes{i} '($|\s|\))'], ['$1' model.genes{i} '$2']);
+    end
+
     problemGenes=find(~cellfun('isempty',regexp(model.genes,'([^0-9_a-zA-Z])')));
     originalGenes=model.genes(problemGenes);
     replacedGenes=regexprep(model.genes(problemGenes),'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
