@@ -317,8 +317,16 @@ function writeMetadata(model,fid)
 % are hard-coded defaults for HumanGEM.
 
 fprintf(fid, '- metaData:\n');
-fprintf(fid, '    id: "%s"\n',  model.id);
-fprintf(fid, '    name: "%s"\n',model.name);
+if isfield(model,'id')
+    fprintf(fid, '    id: "%s"\n',  model.id);
+else
+    fprintf(fid, '    id: "blankID"\n');
+end
+if isfield(model,'name')
+    fprintf(fid, '    name: "%s"\n',model.name);
+else
+    fprintf(fid, '    name: "blankName"\n');
+end
 if isfield(model,'version')
     fprintf(fid, '    version: "%s"\n',model.version);
 end
