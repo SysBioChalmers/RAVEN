@@ -59,6 +59,9 @@ end
 
 %Open file:
 fid = fopen(fileName,'wt');
+if fid == -1
+    error(['Cannot write to ' fileName ', does the directory exist?'])
+end
 fprintf(fid,'---\n!!omap\n');
 
 %Insert file header (metadata)
