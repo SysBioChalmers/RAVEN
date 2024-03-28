@@ -8,7 +8,9 @@ function newModel=ravenCobraWrapper(model)
 %   
 %   This function is a bidirectional tool to convert between RAVEN and
 %   COBRA structures. It recognises COBRA structure by checking field
-%   'rules' existense, which is only found in COBRA Toolbox structure.
+%   'rules' existense, which is only found in COBRA Toolbox structure. If
+%   the COBRA model also has a grRules field, then this will be used
+%   instead of parsing the rules field.
 %
 %   NOTE: During RAVEN -> COBRA -> RAVEN conversion cycle the following
 %   fields are lost: annotation, compOutside, compMiriams, rxnComps,
@@ -256,8 +258,10 @@ else
     if isfield(model,'modelName')
         newModel.name=model.modelName;
     end
-    if isfield(model,'rules')
+    if isfield(model,'rules') && ~isfield(model,'grRules')
         model.grRules        = rulesTogrrules(model);
+    end
+    if isfield(model,'grRules')
         [grRules,rxnGeneMat] = standardizeGrRules(model,true);
         newModel.grRules     = grRules;
         newModel.rxnGeneMat  = rxnGeneMat;
@@ -395,7 +399,7 @@ else
 end
 
 % Order fields
-modelNew=standardizeModelFieldOrder(newModel); % Corrects for both RAVEN and COBRA models
+newModel=standardizeModelFieldOrder(newModel); % Corrects for both RAVEN and COBRA models
 end
 
 function rules=grrulesToRules(model)

@@ -235,6 +235,10 @@ else
     %reason. In that case, use the ID instead
     I=cellfun(@isempty,model.metNames);
     model.metNames(I)=model.mets(I);
+
+    %Deafult LB and UB
+    model.annotation.defaultLB = -1000;
+    model.annotation.defaultUB = 1000;
     
     %Save the model structure
     save(modelFile,'model','KOModel','isGeneral','isIncomplete','isUndefinedStoich','isSpontaneous');

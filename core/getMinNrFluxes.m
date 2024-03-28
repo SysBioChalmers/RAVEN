@@ -135,7 +135,7 @@ prob.vartype(prob.ints.sub) = 'I'; % with .lb = 0 and .ub = 1, they are binary
 prob=rmfield(prob,{'blx','bux','blc','buc'});
 
 % Optimize the problem
-res = optimizeProb(prob,params);
+res = optimizeProb(prob,params,false);
 isFeasible=checkSolution(res);
 
 if ~isFeasible

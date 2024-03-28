@@ -26,9 +26,17 @@ if isempty(RAVENSOLVER)
     end
 end
 solver=RAVENSOLVER;
-
 if ~all(lower(prob.vartype) == 'c')
     milp=true;
+    errorText = 'glpk is not suitable for solving MILPs, ';
+    switch solver
+        case 'glpk'
+            error([errorText 'select a different solver with setRavenSolver().'])
+        case 'cobra'
+            if strcmp(CBT_MILP_SOLVER,'glpk')
+                error([errorText 'select a different solver with changeCobraSolver() or setRavenSolver().'])
+            end
+    end
 else
     milp=false;
 end

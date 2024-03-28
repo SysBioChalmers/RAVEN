@@ -31,7 +31,7 @@ if nargin < 2
 end
 
 % check if the grRules use written or symbolic boolean operators
-if any(contains(grRules,{'&','|'}))
+if any(contains(grRules,{' & ',' | '}))
     % fix some potential missing spaces between parentheses and &/|
     grRules = regexprep(grRules,'\)&',') &');   % ")&"  ->  ") &"
     grRules = regexprep(grRules,'&\(','& (');   % "&("  ->  "& ("
@@ -50,11 +50,12 @@ else
 end
 
 % extract list of genes from each reaction
-rxnGenes = cellfun(@(r) unique(regexp(r,'[^&|\(\) ]+','match')),grRules,'UniformOutput',false);
+rxnGenes = cellfun(@(r) regexprep(unique(strsplit(r,{' | ',' & '})),'[\(\) ]+',''),grRules,'UniformOutput',false);
 
 % construct new gene list
 nonEmpty = ~cellfun(@isempty,rxnGenes);
 genes = unique([rxnGenes{nonEmpty}]');
+genes(cellfun(@isempty,genes)) = [];
 
 if ~isempty(originalGenes)
     if ~isequal(sort(originalGenes), sort(genes))

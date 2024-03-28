@@ -14,9 +14,6 @@ end
 setRavenSolver('glpk');
 
 try
-    % Try all three types of flux minimization
-    evalc('sol=solveLP(model,3);');    
-    evalc('sol=solveLP(model,1);');
     evalc('sol=solveLP(model,0);');
 catch
     try
@@ -87,9 +84,6 @@ catch
 end
 setRavenSolver('scip');
 try
-    % Try all three types of flux minimization
-    evalc('sol=solveLP(model,3);');    
-    evalc('sol=solveLP(model,1);');
     evalc('sol=solveLP(model,0);');
 catch
     try
@@ -127,9 +121,6 @@ CBT_MILP_SOLVER = 'glpk';
 setRavenSolver('cobra');
 
 try
-    % Try all three types of flux minimization
-    evalc('sol=solveLP(model,3);');    
-    evalc('sol=solveLP(model,1);');
     evalc('sol=solveLP(model,0);');
 catch
     try
