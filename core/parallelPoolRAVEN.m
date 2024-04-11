@@ -46,7 +46,7 @@ else
     else
         pool = gcp('nocreate');
         if isempty(pool)
-            parpool(IdleTimeout=120);
+            parpool('IdleTimeout',120)
         end
     end
 end

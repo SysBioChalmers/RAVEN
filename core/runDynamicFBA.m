@@ -76,7 +76,7 @@ concentrationMatrix = concentrations;
 biomassVec = biomass;
 timeVec(1) = 0;
 [~,hsSol]=solveLP(model,1);
-fprintf('Running dynamic FBA analysis...   0%% complete');
+PB = ProgressBar2(nSteps,'Running dynamic FBA analysis','cli');
 for stepNo = 1:nSteps
     % Run FBA
     [sol,hsSol] = solveLP(model,1,[],hsSol);
@@ -107,10 +107,8 @@ for stepNo = 1:nSteps
     model.lb(excInd) = -uptakeBound;
     timeVec(stepNo+1) = stepNo*timeStep;
 
-    progress=pad(num2str(floor(stepNo/nSteps*100)),3,'left');
-    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
+    count(PB);
 end
-fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 
 selNonZero = any(concentrationMatrix>0,2);
 concentrationMatrix = concentrationMatrix(selNonZero,:);

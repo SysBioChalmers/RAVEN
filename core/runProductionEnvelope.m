@@ -33,12 +33,10 @@ biomassValues = linspace(solMin,solMax,nPts);
 targetUpperBound = nan(1,numel(biomassValues));
 targetLowerBound = nan(1,numel(biomassValues));
 
-fprintf('Creating production envelope...   0%% complete');
+PB = ProgressBar2(length(biomassValues),'Creating production envelope','cli');
 % Max/min for target production
 model = setParam(model,'obj',targetRxn,1);
 for i = 1:length(biomassValues)
-    progress=pad(num2str(floor(i/numel(biomassValues)*100)),3,'left');
-    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);       
     model1 = setParam(model,'eq',biomassRxn,biomassValues(i));
     sol = solveLP(model1,0,[],hsSol);
     if (sol.stat > 0)
@@ -53,8 +51,8 @@ for i = 1:length(biomassValues)
     else
         targetLowerBound(i) = NaN;
     end
+    count(PB);
 end
-fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 
 % Plot results
 plot([biomassValues fliplr(biomassValues)],[targetUpperBound fliplr(targetLowerBound)],'blue','LineWidth',2);
