@@ -26,6 +26,10 @@ function [ps, oldPoolAutoCreate] = parallelPoolRAVEN(runParallel)
 %
 % Use: [ps, oldPoolAutoCreate] = parallelPoolRAVEN(runParallel)
 
+if nargin<1 || isempty(runParallel)
+    runParallel = true;
+end
+
 addonList = matlab.addons.installedAddons;
 ps = []; oldPoolAutoCreate = [];
 if ~any(strcmpi(addonList.Name,'Parallel Computing Toolbox'))
@@ -42,7 +46,7 @@ else
     else
         pool = gcp('nocreate');
         if isempty(pool)
-            parpool;
+            parpool(IdleTimeout=120);
         end
     end
 end

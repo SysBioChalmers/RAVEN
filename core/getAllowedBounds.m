@@ -43,7 +43,7 @@ maxFluxes = zeros(numel(rxns),1);
 exitFlags = zeros(numel(rxns),2);
 c = zeros(numel(model.rxns),1);
 
-PB = ProgressBar(numel(rxns),'Running getAllowedBounds','cli');
+PB = ProgressBar2(numel(rxns),'Running getAllowedBounds','cli');
 parfor i = 1:numel(rxns)
     count(PB)
     tmpModel = model;

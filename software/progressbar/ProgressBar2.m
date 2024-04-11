@@ -384,6 +384,5 @@ end
 function task_name = check_task_name_cli(obj, task_name)
 if length(task_name) >= (obj.terminal_width - obj.minimal_terminal_width)
     task_name = task_name(1:obj.terminal_width-obj.minimal_terminal_width-1);
-    warning('The task name has been truncated due to its length!')
 end
 end
