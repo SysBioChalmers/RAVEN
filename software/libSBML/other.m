@@ -1,0 +1,2 @@
+
+OutputSBML(m, 'other.xml');
