@@ -198,7 +198,7 @@ for i=1:numel(modelSBML.compartment)
         compartmentMiriams{i}=[];
     end
     
-    if isfield(modelSBML.compartment(i),'sboTerm')
+    if isfield(modelSBML.compartment(i),'sboTerm') && ~(modelSBML.compartment(i).sboTerm==-1)
         compartmentMiriams{i} = addSBOtoMiriam(compartmentMiriams{i},modelSBML.compartment(i).sboTerm);
     end
 end
@@ -267,7 +267,7 @@ for i=1:numel(modelSBML.species)
             end
             
             %Get SBO term
-            if isfield(modelSBML.species(i),'sboTerm')
+            if isfield(modelSBML.species(i),'sboTerm') && ~(modelSBML.species(i).sboTerm==-1)
                 geneSBOs(end+1,1) = modelSBML.species(i).sboTerm;
             end
         elseif length(modelSBML.species(i).id)>=2 && strcmpi(modelSBML.species(i).id(1:3),'Cx_')
@@ -353,7 +353,7 @@ for i=1:numel(modelSBML.species)
                 metaboliteFormula{numel(metaboliteFormula)+1,1}='';
             end
             %Get SBO term
-            if isfield(modelSBML.species(i),'sboTerm')
+            if isfield(modelSBML.species(i),'sboTerm') && ~(modelSBML.species(i).sboTerm==-1)
                 metSBOs(end+1,1) = modelSBML.species(i).sboTerm;
             end
         end
@@ -401,7 +401,7 @@ for i=1:numel(modelSBML.species)
         metaboliteMiriams{numel(metaboliteMiriams)+1,1}=metMiriam;
         
         %Get SBO term
-        if isfield(modelSBML.species(i),'sboTerm')
+        if isfield(modelSBML.species(i),'sboTerm') && ~(modelSBML.species(i).sboTerm==-1)
             metSBOs(end+1,1) = modelSBML.species(i).sboTerm;
         end
     end
@@ -659,7 +659,7 @@ for i=1:numel(modelSBML.reaction)
     end
     
     %Get SBO terms
-    if isfield(modelSBML.reaction(i),'sboTerm')
+    if isfield(modelSBML.reaction(i),'sboTerm') && ~(modelSBML.reaction(i).sboTerm==-1)
         rxnMiriams{counter} = addSBOtoMiriam(rxnMiriams{counter}, modelSBML.reaction(i).sboTerm);
     end
     
@@ -925,7 +925,7 @@ else
                 end
                 for i = 1:numel(genes)
                     geneMiriams{i}=parseMiriam(modelSBML.fbc_geneProduct(i).annotation);
-                    if isfield(modelSBML.fbc_geneProduct(i),'sboTerm')
+                    if isfield(modelSBML.fbc_geneProduct(i),'sboTerm') && ~(modelSBML.fbc_geneProduct(i).sboTerm==-1)
                         geneMiriams{i} = addSBOtoMiriam(geneMiriams{i},modelSBML.fbc_geneProduct(i).sboTerm);
                     end
                 end
