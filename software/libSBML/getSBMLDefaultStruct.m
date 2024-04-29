@@ -47,28 +47,26 @@ function sbmlStruct = getSBMLDefaultStruct(varargin)
 % http://sbml.org/software/libsbml/license.html
 %----------------------------------------------------------------------- -->
 
-pkgCount = 0;
-
 if (nargin < 3)
     error('not enough input arguments');
 else
     element_name = varargin{1};
     level = varargin{2};
     version = varargin{3};
-end;
+end
 packages = {};
 packageVersion = 1;
 if (nargin > 3)
     if (nargin < 5)
         error('not enough input arguments');
-    end;
+    end
     pkgCount = length(varargin{4});
     packages = varargin{4};
     if (length(varargin{5}) ~= pkgCount)
         error('need a version number for each package');
-    end;            
+    end            
     packageVersion = varargin{5};
-end;
+end
 
 fieldData = [getStructureFieldnames(element_name, level, version, ...
 packages, packageVersion) ; getDefaultValues(element_name, level, ...
@@ -79,5 +77,5 @@ if ~isempty(fieldData)
     sbmlStruct = struct(fieldData{:});
 else
     sbmlStruct = struct();
-end;
+end
 end

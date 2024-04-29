@@ -29,7 +29,6 @@ end
 %Get the RAVEN path
 [ST, I]=dbstack('-completenames');
 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
-    status = makeBinaryExecutable();
 
 % Do not print first few lines if only version should be reported
 if ~versionOnly
@@ -105,7 +104,7 @@ end
 
 if isunix
     fprintf([myStr('   > Make binaries executable',40) '%f'])
-    status = makeBinaryExecutable();
+    status = makeBinaryExecutable(ravenDir);
     if status == 0
         fprintf('Pass\n')
     else
@@ -313,12 +312,12 @@ else
 end
 end
 
-function status = makeBinaryExecutable()
+function status = makeBinaryExecutable(ravenDir)
 if ispc
     status = 0; % No need to run on Windows
     return;
 end
-binDir = fullfile(findRAVENroot(),'software');
+binDir = fullfile(ravenDir,'software');
 
 binList = {fullfile(binDir,'blast+','blastp');                  fullfile(binDir,'blast+','blastp.mac');
            fullfile(binDir,'blast+','makeblastdb');             fullfile(binDir,'blast+','makeblastdb.mac');
