@@ -230,7 +230,7 @@ end
 % Do not change old solver if functional
 if solverIdx~=0 && res(solverIdx).Passed == 1
     fprintf([oldSolver '\n'])
-% Order of preference: gurobi > glpk > soplex > cobra
+% Order of preference: gurobi > glpk > scip > cobra
 elseif res(2).Passed == 1
     fprintf('gurobi\n')
     setRavenSolver('gurobi');
@@ -238,8 +238,8 @@ elseif res(1).Passed == 1
     fprintf('glpk\n')
     setRavenSolver('glpk');
 elseif res(3).Passed == 1
-    fprintf('soplex\n')
-    setRavenSolver('soplex');    
+    fprintf('scip\n')
+    setRavenSolver('scip');    
 elseif res(4).Passed == 1
     fprintf('cobra\n')
     setRavenSolver('cobra');
