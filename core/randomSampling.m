@@ -129,41 +129,46 @@ sols = zeros(numel(model.rxns),nSamples);
 sols = num2cell(sols,1);
 
 %Main loop
-PB = ProgressBar2(nSamples,'Performing random sampling','cli');
-parfor i=1:nSamples
-    badSolutions = 1;
-    tmpModel = model;
-    while lt(0,badSolutions)
-        rxns = randsample(numel(goodRxns),nObjRxns);
-        tmpModel.c = zeros(numel(tmpModel.rxns),1);
-        multipliers = randsample([-1 1],nObjRxns,true);
-        multipliers(tmpModel.rev(goodRxns(rxns))==0) = 1;
-        tmpModel.c(goodRxns(rxns)) = rand(nObjRxns,1).*multipliers;
-        if true(minFlux)
-            sol=solveLP(tmpModel,1,[],hsSol);
-        else
-            sol=solveLP(tmpModel,0,[],hsSol);
-        end
-        if any(sol.x) && abs(sol.f)>10^-8
-            sols{i} = sol.x;
-            badSolutions = 0;
-        else
-            badSolutions = badSolutions+1;
-            %If it only finds bad solutions then throw an error.
-            if badSolutions == 100 && supressErrors==false
-                error('The program is having problems finding non-zero solutions (ignoring reactions that might be involved in loops). Review the constraints on your model. Set supressErrors to true to ignore this error');
+if nSamples > 0
+
+    PB = ProgressBar2(nSamples,'Performing random sampling','cli');
+    parfor i=1:nSamples
+        badSolutions = 1;
+        tmpModel = model;
+        while lt(0,badSolutions)
+            rxns = randsample(numel(goodRxns),nObjRxns);
+            tmpModel.c = zeros(numel(tmpModel.rxns),1);
+            multipliers = randsample([-1 1],nObjRxns,true);
+            multipliers(tmpModel.rev(goodRxns(rxns))==0) = 1;
+            tmpModel.c(goodRxns(rxns)) = rand(nObjRxns,1).*multipliers;
+            if true(minFlux)
+                sol=solveLP(tmpModel,1,[],hsSol);
+            else
+                sol=solveLP(tmpModel,0,[],hsSol);
+            end
+            if any(sol.x) && abs(sol.f)>10^-8
+                sols{i} = sol.x;
+                badSolutions = 0;
+            else
+                badSolutions = badSolutions+1;
+                %If it only finds bad solutions then throw an error.
+                if badSolutions == 100 && supressErrors==false
+                    error('The program is having problems finding non-zero solutions (ignoring reactions that might be involved in loops). Review the constraints on your model. Set supressErrors to true to ignore this error');
+                end
             end
         end
+        count(PB);
     end
-    count(PB);
-end
 
-%Map to original model
-sols = cell2mat(sols);
-[~, I]=ismember(model.rxns,originalRxns);
-solutions=zeros(numel(originalRxns),nSamples);
-solutions(I,:)=sols;
-solutions=sparse(solutions);
+    %Map to original model
+    sols = cell2mat(sols);
+    [~, I]=ismember(model.rxns,originalRxns);
+    solutions=zeros(numel(originalRxns),nSamples);
+    solutions(I,:)=sols;
+    solutions=sparse(solutions);
+else
+    solutions=[];
+end
 % Reset original Parallel setting
 ps.Pool.AutoCreate = oldPoolAutoCreateSetting;
 end
