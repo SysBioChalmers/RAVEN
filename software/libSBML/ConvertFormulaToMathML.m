@@ -119,7 +119,7 @@ for i = 1:length(Index)
     j = j+1;
     x = SubFormula(j:length(SubFormula)-1);
 
-    if (exist('OCTAVE_VERSION', 'var'))
+    if (exist('OCTAVE_VERSION'))
       ReplaceFormula = myRegexprep(SubFormula, n, x, 'once');
       ReplaceFormula = myRegexprep(ReplaceFormula,regexptranslate('escape',x),n,2);
       ReplaceFormula = myRegexprep(ReplaceFormula, 'nthroot', 'root', 'once');
