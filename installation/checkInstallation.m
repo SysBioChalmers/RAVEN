@@ -29,7 +29,6 @@ end
 %Get the RAVEN path
 [ST, I]=dbstack('-completenames');
 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
-    status = makeBinaryExecutable();
 
 % Do not print first few lines if only version should be reported
 if ~versionOnly
@@ -105,7 +104,7 @@ end
 
 if isunix
     fprintf([myStr('   > Make binaries executable',40) '%f'])
-    status = makeBinaryExecutable();
+    status = makeBinaryExecutable(ravenDir);
     if status == 0
         fprintf('Pass\n')
     else
@@ -231,7 +230,7 @@ end
 % Do not change old solver if functional
 if solverIdx~=0 && res(solverIdx).Passed == 1
     fprintf([oldSolver '\n'])
-% Order of preference: gurobi > glpk > soplex > cobra
+% Order of preference: gurobi > glpk > scip > cobra
 elseif res(2).Passed == 1
     fprintf('gurobi\n')
     setRavenSolver('gurobi');
@@ -239,8 +238,8 @@ elseif res(1).Passed == 1
     fprintf('glpk\n')
     setRavenSolver('glpk');
 elseif res(3).Passed == 1
-    fprintf('soplex\n')
-    setRavenSolver('soplex');    
+    fprintf('scip\n')
+    setRavenSolver('scip');    
 elseif res(4).Passed == 1
     fprintf('cobra\n')
     setRavenSolver('cobra');
@@ -313,12 +312,12 @@ else
 end
 end
 
-function status = makeBinaryExecutable()
+function status = makeBinaryExecutable(ravenDir)
 if ispc
     status = 0; % No need to run on Windows
     return;
 end
-binDir = fullfile(findRAVENroot(),'software');
+binDir = fullfile(ravenDir,'software');
 
 binList = {fullfile(binDir,'blast+','blastp');                  fullfile(binDir,'blast+','blastp.mac');
            fullfile(binDir,'blast+','makeblastdb');             fullfile(binDir,'blast+','makeblastdb.mac');

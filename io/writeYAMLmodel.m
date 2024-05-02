@@ -59,6 +59,9 @@ end
 
 %Open file:
 fid = fopen(fileName,'wt');
+if fid == -1
+    error(['Cannot write to ' fileName ', does the directory exist?'])
+end
 fprintf(fid,'---\n!!omap\n');
 
 %Insert file header (metadata)
@@ -241,6 +244,9 @@ if isfield(model,fieldName)
         %eccodes/rxnNotes: if 1 write in 1 line, if more create header and list
         if strcmp(fieldName,'subSystems')
             list = field{pos};  %subSystems already comes in a cell array
+            if isempty(list)
+                return
+            end
         elseif strcmp(fieldName,'newMetMiriams')
             index = str2double(regexprep(name,'^.+_',''));
             name  = regexprep(name,'_\d+$','');
@@ -261,7 +267,7 @@ if isfield(model,fieldName)
             list = strrep(field{pos},' ','');
             list = strsplit(list,';');
         else
-            list = '';
+            return % empty, needs no line in file
         end
         list=strip(list);
 
@@ -314,8 +320,16 @@ function writeMetadata(model,fid)
 % are hard-coded defaults for HumanGEM.
 
 fprintf(fid, '- metaData:\n');
-fprintf(fid, '    id: "%s"\n',  model.id);
-fprintf(fid, '    name: "%s"\n',model.name);
+if isfield(model,'id')
+    fprintf(fid, '    id: "%s"\n',  model.id);
+else
+    fprintf(fid, '    id: "blankID"\n');
+end
+if isfield(model,'name')
+    fprintf(fid, '    name: "%s"\n',model.name);
+else
+    fprintf(fid, '    name: "blankName"\n');
+end
 if isfield(model,'version')
     fprintf(fid, '    version: "%s"\n',model.version);
 end

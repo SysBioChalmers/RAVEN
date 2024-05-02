@@ -118,45 +118,44 @@ This function is called by:
 0049 shadowPrices2 = zeros(nPts);
 0050 [~,hsSol] = solveLP(model);
 0051 <span class="comment">% Calulate points</span>
-0052 fprintf(<span class="string">'Running PhPP analysis...   0%% complete'</span>);
+0052 PB = ProgressBar2(nPts,<span class="string">'Running PhPP analysis'</span>,<span class="string">'cli'</span>);
 0053 <span class="keyword">for</span> i = 1:nPts <span class="comment">%ind1</span>
-0054     progress=pad(num2str(floor(i/nPts*100)),3,<span class="string">'left'</span>);
-0055     fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete'</span>,progress);
-0056     <span class="keyword">for</span> j = 1:nPts <span class="comment">%ind2</span>
-0057         model1 = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'eq'</span>,controlRxn1,-1*ind1(i));
-0058         model1 = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model1,<span class="string">'eq'</span>,controlRxn2,-1*ind2(j));
-0059         [fbasol,hsSol] = solveLP(model1,0,[],hsSol);
-0060         <span class="keyword">try</span>
-0061             growthRates(j,i) = fbasol.x(logical(model1.c));
-0062             shadowPrices1(j,i) = fbasol.sPrice(metID1);
-0063             shadowPrices2(j,i) = fbasol.sPrice(metID2);   
-0064         <span class="keyword">end</span>
-0065     <span class="keyword">end</span>
-0066 <span class="keyword">end</span>
-0067 fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n'</span>);
-0068 
-0069 <span class="comment">% Plot the points</span>
-0070 figure(2);
-0071 pcolor(ind1,ind2,shadowPrices1);
-0072 xlabel(strrep(strcat(controlRxn1,<span class="string">' (mmol/g DW-hr)'</span>),<span class="string">'_'</span>,<span class="string">'\_'</span>)), ylabel(strrep(strcat(controlRxn2,<span class="string">' (mmol/g DW-hr)'</span>),<span class="string">'_'</span>,<span class="string">'\_'</span>)), zlabel(<span class="string">'growth rate (1/hr)'</span>);
-0073 title([<span class="string">'Shadow price '</span> strrep(model.mets{metID1},<span class="string">'_'</span>,<span class="string">'-'</span>)]);
-0074 colorbar();
-0075 xticklabels(sprintfc(<span class="string">'%d'</span>, -xticks))
-0076 yticklabels(sprintfc(<span class="string">'%d'</span>, -yticks))
-0077 figure(3);
-0078 pcolor(ind1,ind2,shadowPrices2);
-0079 xlabel(strrep(strcat(controlRxn1,<span class="string">' (mmol/g DW-hr)'</span>),<span class="string">'_'</span>,<span class="string">'\_'</span>)), ylabel(strrep(strcat(controlRxn2,<span class="string">' (mmol/g DW-hr)'</span>),<span class="string">'_'</span>,<span class="string">'\_'</span>)), zlabel(<span class="string">'growth rate (1/hr)'</span>);
-0080 title([<span class="string">'Shadow price '</span> strrep(model.mets{metID2},<span class="string">'_'</span>,<span class="string">'-'</span>)]);
-0081 colorbar();
-0082 xticklabels(sprintfc(<span class="string">'%d'</span>, -xticks))
-0083 yticklabels(sprintfc(<span class="string">'%d'</span>, -yticks))
-0084 figure(1);
-0085 surfl(ind1,ind2,growthRates);
-0086 xlabel(strrep(strcat(controlRxn1,<span class="string">' (mmol/g DW-hr)'</span>),<span class="string">'_'</span>,<span class="string">'\_'</span>)), ylabel(strrep(strcat(controlRxn2,<span class="string">' (mmol/g DW-hr)'</span>),<span class="string">'_'</span>,<span class="string">'\_'</span>)), zlabel(<span class="string">'growth rate (1/hr)'</span>);
-0087 colormap(hsv(17));
-0088 xticklabels(sprintfc(<span class="string">'%d'</span>, -xticks))
-0089 yticklabels(sprintfc(<span class="string">'%d'</span>, -yticks))
-0090 <span class="keyword">end</span></pre></div>
+0054     <span class="keyword">for</span> j = 1:nPts <span class="comment">%ind2</span>
+0055         model1 = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'eq'</span>,controlRxn1,-1*ind1(i));
+0056         model1 = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model1,<span class="string">'eq'</span>,controlRxn2,-1*ind2(j));
+0057         [fbasol,hsSol] = solveLP(model1,0,[],hsSol);
+0058         <span class="keyword">try</span>
+0059             growthRates(j,i) = fbasol.x(logical(model1.c));
+0060             shadowPrices1(j,i) = fbasol.sPrice(metID1);
+0061             shadowPrices2(j,i) = fbasol.sPrice(metID2);   
+0062         <span class="keyword">end</span>
+0063     <span class="keyword">end</span>
+0064     count(PB);
+0065 <span class="keyword">end</span>
+0066 fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n'</span>);
+0067 
+0068 <span class="comment">% Plot the points</span>
+0069 figure(2);
+0070 pcolor(ind1,ind2,shadowPrices1);
+0071 xlabel(strrep(strcat(controlRxn1,<span class="string">' (mmol/g DW-hr)'</span>),<span class="string">'_'</span>,<span class="string">'\_'</span>)), ylabel(strrep(strcat(controlRxn2,<span class="string">' (mmol/g DW-hr)'</span>),<span class="string">'_'</span>,<span class="string">'\_'</span>)), zlabel(<span class="string">'growth rate (1/hr)'</span>);
+0072 title([<span class="string">'Shadow price '</span> strrep(model.mets{metID1},<span class="string">'_'</span>,<span class="string">'-'</span>)]);
+0073 colorbar();
+0074 xticklabels(sprintfc(<span class="string">'%d'</span>, -xticks))
+0075 yticklabels(sprintfc(<span class="string">'%d'</span>, -yticks))
+0076 figure(3);
+0077 pcolor(ind1,ind2,shadowPrices2);
+0078 xlabel(strrep(strcat(controlRxn1,<span class="string">' (mmol/g DW-hr)'</span>),<span class="string">'_'</span>,<span class="string">'\_'</span>)), ylabel(strrep(strcat(controlRxn2,<span class="string">' (mmol/g DW-hr)'</span>),<span class="string">'_'</span>,<span class="string">'\_'</span>)), zlabel(<span class="string">'growth rate (1/hr)'</span>);
+0079 title([<span class="string">'Shadow price '</span> strrep(model.mets{metID2},<span class="string">'_'</span>,<span class="string">'-'</span>)]);
+0080 colorbar();
+0081 xticklabels(sprintfc(<span class="string">'%d'</span>, -xticks))
+0082 yticklabels(sprintfc(<span class="string">'%d'</span>, -yticks))
+0083 figure(1);
+0084 surfl(ind1,ind2,growthRates);
+0085 xlabel(strrep(strcat(controlRxn1,<span class="string">' (mmol/g DW-hr)'</span>),<span class="string">'_'</span>,<span class="string">'\_'</span>)), ylabel(strrep(strcat(controlRxn2,<span class="string">' (mmol/g DW-hr)'</span>),<span class="string">'_'</span>,<span class="string">'\_'</span>)), zlabel(<span class="string">'growth rate (1/hr)'</span>);
+0086 colormap(hsv(17));
+0087 xticklabels(sprintfc(<span class="string">'%d'</span>, -xticks))
+0088 yticklabels(sprintfc(<span class="string">'%d'</span>, -yticks))
+0089 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

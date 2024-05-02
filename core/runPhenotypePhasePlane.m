@@ -49,10 +49,8 @@ shadowPrices1 = zeros(nPts);
 shadowPrices2 = zeros(nPts);
 [~,hsSol] = solveLP(model);
 % Calulate points
-fprintf('Running PhPP analysis...   0%% complete');
+PB = ProgressBar2(nPts,'Running PhPP analysis','cli');
 for i = 1:nPts %ind1
-    progress=pad(num2str(floor(i/nPts*100)),3,'left');
-    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
     for j = 1:nPts %ind2
         model1 = setParam(model,'eq',controlRxn1,-1*ind1(i));
         model1 = setParam(model1,'eq',controlRxn2,-1*ind2(j));
@@ -63,6 +61,7 @@ for i = 1:nPts %ind1
             shadowPrices2(j,i) = fbasol.sPrice(metID2);   
         end
     end
+    count(PB);
 end
 fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 

@@ -6,11 +6,15 @@ function model=setParam(model, paramType, rxnList, params, var)
 %   paramType   the type of parameter to set:
 %               'lb'    Lower bound
 %               'ub'    Upper bound
-%               'eq'    Both upper and lower bound (equality
-%                       constraint)
+%               'eq'    Both upper and lower bound (equality constraint)
 %               'obj'   Objective coefficient
-%               'rev'   Reversibility
+%               'rev'   Reversibility (only changes the model.rev fields,
+%                       does not affect model.lb and model.ub) 
 %               'var'   Variance around measured bound
+%               'unc'   Unconstrained, set lower and upper bound to the
+%                       default values (-1000 and 1000, or any other values
+%                       that are defined in model.annotation.defaultLB and
+%                       .defaultUB)
 %   rxnList     a cell array of reaction IDs or a vector with their
 %               corresponding indexes
 %   params      a vector of the corresponding values
@@ -24,7 +28,7 @@ function model=setParam(model, paramType, rxnList, params, var)
 %   Usage: model=setParam(model, paramType, rxnList, params)
 
 paramType=convertCharArray(paramType);
-if ~any(strcmpi(paramType,{'lb','ub','eq','obj','rev','var'}))
+if ~any(strcmpi(paramType,{'lb','ub','eq','obj','rev','var','unc'}))
     EM=['Incorrect parameter type: "' paramType '"'];
     dispEM(EM);
 end
@@ -73,7 +77,7 @@ paramType(indexes==-1)=[];
 if ~isempty(indexes)
     if contains(paramType,'obj')
         model.c=zeros(numel(model.c),1); % parameter is changed, not added
-    end     
+    end
     for j=1:length(paramType)
         if strcmpi(paramType{j},'eq')
             model.lb(indexes(j))=params(j);
@@ -100,6 +104,20 @@ if ~isempty(indexes)
                 model.lb(indexes(j)) = params(j) * (1-var/200);
                 model.ub(indexes(j)) = params(j) * (1+var/200);
             end
+        end
+        if strcmpi(paramType{j},'unc')
+            if isfield(model.annotation,'defaultLB')
+                lb = model.annotation.defaultLB;
+            else
+                lb = -1000;
+            end
+            if isfield(model.annotation,'defaultUB')
+                ub = model.annotation.defaultUB;
+            else
+                ub = 1000;
+            end
+            model.lb(indexes(j)) = lb;
+            model.ub(indexes(j)) = ub;
         end
     end
 end

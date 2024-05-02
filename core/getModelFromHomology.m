@@ -115,6 +115,11 @@ for i=1:numel(models)
     if isfield(models{i},'geneMiriams')
         models{i}=rmfield(models{i},'geneMiriams');
     end
+    %The geneFrom field also loses meaning if the genes are replaced by
+    %orthologs
+    if isfield(models{i},'geneFrom')
+        models{i}=rmfield(models{i},'geneFrom');
+    end
 end
 
 %Check that genes do not begin with ( or end with ), as this makes problematic grRules

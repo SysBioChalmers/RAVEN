@@ -50,16 +50,15 @@ objFlux = zeros(nPoints,1);
 redCost = zeros(nPoints,1);
 controlFlux = linspace(solMin,solMax,nPoints)';
 
-fprintf('Running robustness analysis...   0%% complete');
+
+PB = ProgressBar2(length(controlFlux),'Running robustness analysis','cli');
 for i=1:length(controlFlux)
-    progress=pad(num2str(floor(i/numel(controlFlux)*100)),3,'left');
-    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);    
     modelControlled = setParam(baseModel,'eq',controlRxnIdx,controlFlux(i));
     solControlled = solveLP(modelControlled);
     objFlux(i) = solControlled.x(logical(modelControlled.c));
     redCost(i) = solControlled.rCost(controlRxnIdx);
+    count(PB);
 end
-fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 
 if plotRedCost
     yyaxis right
