@@ -2,6 +2,16 @@
 %results = runtests('fillGapsSmallTests.m')
 function tests = fillGapsSmallTests
 tests = functiontests(localfunctions);
+if exist('gurobi','file')~=3
+    disp('Gurobi not installed or cannot be found in MATLAB path, test skipped.')
+    skipTests = contains({tests.Name},'gurobi','IgnoreCase',true);
+    tests(skipTests) = [];
+end
+if exist('scip','file')~=3
+    disp('SCIP MEX binary not installed or not functional, test skipped.')
+    skipTests = contains({tests.Name},'scip','IgnoreCase',true);
+    tests(skipTests) = [];
+end
 end
 
 function testSmallSCIP(testCase)
@@ -39,9 +49,6 @@ verifyTrue(testCase,-sol.f>0);
 end
 
 function testSmallGurobi(testCase)
-if exist('gurobi','file')~=3
-    error('Gurobi not installed or cannot be found in MATLAB path, test skipped')
-end
 %Test using small model
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');

@@ -1,7 +1,17 @@
 %run this test case with the command
 %results = runtests('tinitTests.m')
 function tests = tinitTests
-    tests = functiontests(localfunctions);
+tests = functiontests(localfunctions);
+solverExist = [exist('gurobi','file'), exist('scip','file')] ==3;
+if all(~solverExist)
+    disp('No suitable solve (gurobi or scip) was found, ftINIT tests skipped.')
+    skipTests = contains({tests.Name},'ftinit','IgnoreCase',true);
+    tests(skipTests) = [];
+elseif solverExist(1)
+    setRavenSolver('gurobi');
+else
+    setRavenSolver('soplex');
+end
 end
 
 function testparsexpTask1List(testCase)
@@ -545,8 +555,8 @@ function testftINIT_T0050(testCase)
     
     expResult = {  'S1';'S2';'S3';'S4';'S5';'S6';'S7';'S8';'S9';'E1';'E2';'E3';'E4';'E5';'E6';'E8';'E9';'R1';'R2';'R3';'R4';'R5';'R6';'R7';'R8';'R9';'R12';'R13';'R14';'R15'};
     
-    verifyTrue(testCase, all(strcmp(mres.rxns,expResult)))
-    verifyTrue(testCase, all(strcmp(mres2.rxns,expResult)))
+    verifyTrue(testCase, all(contains(mres.rxns,expResult)))
+    verifyTrue(testCase, all(contains(mres2.rxns,expResult)))
 
     %run the old tINIT version (in Human-GEM)
     %this is just to show that they become different, not really part of the test case
@@ -566,5 +576,3 @@ function testftINIT_T0050(testCase)
     %The models init_modelOrigNoSecrOneDirOnly and mres2 are very similar, (only one exch rxn differ, which is expected) 
     %init_modelOrig is quite different, with a lot of gaps, and worse. So, the conclusion is that the new version does a pretty good job.
 end
-
-

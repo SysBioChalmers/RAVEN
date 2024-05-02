@@ -2,12 +2,19 @@
 %results = runtests('fillGapsLargeTests.m')
 function tests = fillGapsLargeTests
 tests = functiontests(localfunctions);
+if exist('gurobi','file')~=3
+    disp('Gurobi not installed or cannot be found in MATLAB path, test skipped.')
+    skipTests = contains({tests.Name},'gurobi','IgnoreCase',true);
+    tests(skipTests) = [];
+end
+if exist('scip','file')~=3
+    disp('SCIP MEX binary not installed or not functional, test skipped.')
+    skipTests = contains({tests.Name},'scip','IgnoreCase',true);
+    tests(skipTests) = [];
+end
 end
 
 function testLargeGurobi(testCase)
-if exist('gurobi','file')~=3
-    error('Gurobi not installed or cannot be found in MATLAB path, test skipped')
-end
 sourceDir = fileparts(fileparts(fileparts(which(mfilename))));
 evalc('model=importModel(fullfile(sourceDir,''tutorial'',''iAL1006 v1.00.xml''))');
 model.c(1484)=1;
