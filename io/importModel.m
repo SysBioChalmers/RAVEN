@@ -1220,9 +1220,11 @@ sboTerm = {['SBO:' sprintf('%07u',sboTerm)]};  % convert to proper format
 if isempty(miriam)
     miriam.name = {'sbo'};
     miriam.value = sboTerm;
+elseif any(strcmp('sbo',miriam.name))
+    currSbo = strcmp('sbo',miriam.name);
+    miriam.value(currSbo) = sboTerm;
 else
     miriam.name(end+1) = {'sbo'};
     miriam.value(end+1) = sboTerm;
 end
-
 end
