@@ -178,7 +178,7 @@ switch solver
         res.obj      = fmin;
         res.dual     = -extra.lambda*prob.osense;
         res.rcost    = -extra.redcosts*prob.osense;
-        %% Use SoPlex
+        %% Use scip
     case {'soplex','scip'} % Old 'soplex' option also allowed
         [xopt,fval,exitflag] = scip([], prob.c, prob.A,-prob.b, prob.b, prob.lb, prob.ub, prob.vartype);
 
