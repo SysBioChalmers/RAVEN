@@ -2,8 +2,16 @@
 %results = runtests('fillGapsSmallTests.m')
 function tests = fillGapsSmallTests
 tests = functiontests(localfunctions);
-if exist('gurobi','file')~=3
-    disp('Gurobi not installed or cannot be found in MATLAB path, test skipped.')
+testGurobi = exist('gurobi','file')==3;
+if testGurobi
+    try
+        gurobi_read('test');
+    catch ME
+        testGurobi = false;
+    end
+end
+if ~testGurobi
+    disp('Gurobi not installed or cannot be found in MATLAB path, some fillGapsLargeTests skipped.')
     skipTests = contains({tests.Name},'gurobi','IgnoreCase',true);
     tests(skipTests) = [];
 end

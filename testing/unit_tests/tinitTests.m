@@ -2,15 +2,18 @@
 %results = runtests('tinitTests.m')
 function tests = tinitTests
 tests = functiontests(localfunctions);
-solverExist = [exist('gurobi','file'), exist('scip','file')] ==3;
+solverExist = [exist('gurobi','file'), exist('scip.mexw64','file')] ==3;
+if solverExist(1)
+    try
+        gurobi_read('test');
+    catch ME
+        solverExist(1) = false;
+    end
+end
 if all(~solverExist)
-    disp('No suitable solve (gurobi or scip) was found, ftINIT tests skipped.')
+    disp('No suitable solver (gurobi or scip) was found, ftINIT tests skipped.')
     skipTests = contains({tests.Name},'ftinit','IgnoreCase',true);
     tests(skipTests) = [];
-elseif solverExist(1)
-    setRavenSolver('gurobi');
-else
-    setRavenSolver('soplex');
 end
 end
 
@@ -223,6 +226,15 @@ end
 %T0001: testModel without tasks
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function testftINIT_T0001(testCase)
+solverExist = [exist('gurobi','file'), exist('scip.mexw64','file')] == 3;
+currSolver = getpref('RAVEN','solver');
+if solverExist(1)
+    setRavenSolver('gurobi');
+elseif solverExist(2)
+    setRavenSolver('scip');
+else
+    error('No compatible solvers found');
+end
 %    detectedMets = {};
 testParams = struct();
 
@@ -265,6 +277,15 @@ end
 %T0002: Create a task that wants to generate e[s] from a[s] for testModel
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function testftINIT_T0002(testCase)
+solverExist = [exist('gurobi','file'), exist('scip.mexw64','file')] ==3;
+currSolver = getpref('RAVEN','solver');
+if solverExist(1)
+    setRavenSolver('gurobi');
+elseif solverExist(2)
+    setRavenSolver('scip');
+else
+    error('No compatible solvers found');
+end
 testModel = getTstModel();
 testModelTasks = getTstModelTasks();
 testRxnScores = getTstModelRxnScores();
@@ -284,6 +305,7 @@ arrayData1.threshold = 1;
 %Since both R2 and R7 are now essential, we expect all rxns to be on except R3 and
 %R5 (which have a negative total score and are not needed for the task)
 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R2';'R4';'R6';'R7';'R8';'R9';'R10'})))
+setRavenSolver(currSolver);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -368,6 +390,16 @@ end
 %T0008: testModel with metabolomics
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function testftINIT_T0008(testCase)
+solverExist = [exist('gurobi','file'), exist('scip.mexw64','file')] ==3;
+currSolver = getpref('RAVEN','solver');
+if solverExist(1)
+    setRavenSolver('gurobi');
+elseif solverExist(2)
+    setRavenSolver('scip');
+else
+    error('No compatible solvers found');
+end
+
 testParams = struct();
 
 testModel = getTstModel();
@@ -433,6 +465,7 @@ arrayData1.levels(7) = getExprForRxnScore(-1.1); %modify to avoid randomness
 [~,tst1ResModel1] = evalc('ftINIT(prepDataTest5,arrayData1.tissues{1},[],[],arrayData1,{''g''},getINITSteps(),true,true,testParams,false);');
 %We expect R2 to be replaced with R11 and R13
 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{'R1';'R4';'R6';'R8';'R11';'R13'})), 1)
+setRavenSolver(currSolver);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -528,6 +561,16 @@ end
 %       variant gives similar results
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function testftINIT_T0050(testCase)
+solverExist = [exist('gurobi','file'), exist('scip.mexw64','file')] ==3;
+currSolver = getpref('RAVEN','solver');
+if solverExist(1)
+    setRavenSolver('gurobi');
+elseif solverExist(2)
+    setRavenSolver('scip');
+else
+    error('No compatible solvers found');
+end
+
 testModelL = getTstModelL();
 testModelLGeneScores = getTstModelLGeneScores();
 testParams = struct();
@@ -566,4 +609,5 @@ verifyTrue(testCase, all(contains(mres2.rxns,expResult)))
 
 %The models init_modelOrigNoSecrOneDirOnly and mres2 are very similar, (only one exch rxn differ, which is expected)
 %init_modelOrig is quite different, with a lot of gaps, and worse. So, the conclusion is that the new version does a pretty good job.
+setRavenSolver(currSolver);
 end

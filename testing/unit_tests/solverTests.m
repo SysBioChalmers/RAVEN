@@ -37,6 +37,12 @@ end
 function testGurobi(testCase)
 if exist('gurobi','file')~=3
     error('Gurobi not installed or cannot be found in MATLAB path.')
+else
+    try
+        gurobi_read('test');
+    catch ME
+        error(ME.message);
+    end
 end
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
