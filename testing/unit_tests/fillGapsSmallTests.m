@@ -16,7 +16,7 @@ if ~testGurobi
     tests(skipTests) = [];
 end
 if exist('scip','file')~=3
-    disp('SCIP MEX binary not installed or not functional, test skipped.')
+    disp('SCIP MEX binary not installed or not functional, some fillGapsSmallTests skipped.')
     skipTests = contains({tests.Name},'scip','IgnoreCase',true);
     tests(skipTests) = [];
 end
