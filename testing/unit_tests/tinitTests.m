@@ -5,8 +5,8 @@ tests = functiontests(localfunctions);
 solverExist = [exist('gurobi','file'), exist('scip.mexw64','file')] ==3;
 if solverExist(1)
     try
-        gurobi_read('test');
-    catch ME
+        gurobi_read('solverTests.m');
+    catch
         solverExist(1) = false;
     end
 end

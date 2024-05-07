@@ -5,8 +5,8 @@ tests = functiontests(localfunctions);
 testGurobi = exist('gurobi','file')==3;
 if testGurobi
     try
-        gurobi_read('test');
-    catch ME
+        gurobi_read('solverTests.m');
+    catch
         testGurobi = false;
     end
 end
