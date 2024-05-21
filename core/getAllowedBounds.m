@@ -49,24 +49,25 @@ parfor i = 1:numel(rxns)
     tmpModel = model;
     tmpModel.c = c;
 
-    % Get minimal flux
-    tmpModel.c(rxns(i)) = -1;
-    solMin = solveLP(tmpModel);
-    if ~isempty(solMin.f)
-        minFluxes(i) = solMin.x(rxns(i));
-    else
-        minFluxes(i) = NaN;
-    end
-
     % Get maximal flux
     tmpModel.c(rxns(i)) = 1;
-    solMax=solveLP(tmpModel);
-    exitFlags(i,:) = [solMin.stat solMax.stat];
+    [solMax,hsSol]=solveLP(tmpModel);
     if ~isempty(solMax.f)
         maxFluxes(i) = solMax.x(rxns(i));
     else
         maxFluxes(i) = NaN;
     end
+
+    % Get minimal flux
+    tmpModel.c(rxns(i)) = -1;
+    solMin = solveLP(tmpModel,[],[],hsSol);
+    if ~isempty(solMin.f)
+        minFluxes(i) = solMin.x(rxns(i));
+    else
+        minFluxes(i) = NaN;
+    end
+    exitFlags(i,:) = [solMin.stat solMax.stat];
+
 end
 % Reset original Parallel setting
 ps.Pool.AutoCreate = oldPoolAutoCreateSetting;

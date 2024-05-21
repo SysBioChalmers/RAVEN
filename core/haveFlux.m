@@ -58,7 +58,10 @@ end
 %Loop through and maximize then minimize each rxn if it does not already
 %have a flux
 Z=zeros(numel(smallModel.c),1);
-hsSolOut=[];
+tryMin = find(J == false);
+isRev = smallModel.rev
+
+parfor 
 for i=[1 -1]
     for j=1:numel(J)
         if J(j)==false
@@ -66,7 +69,7 @@ for i=[1 -1]
             if i==1 || smallModel.rev(mixIndexes(j))~=0
                 smallModel.c=Z;
                 smallModel.c(mixIndexes(j))=i;
-                [sol, hsSolOut]=solveLP(smallModel,0,[],hsSolOut);
+                sol=solveLP(smallModel,0);
                 if any(sol.x)
                     J(abs(sol.x(mixIndexes))>cutOff)=true;
                 end
