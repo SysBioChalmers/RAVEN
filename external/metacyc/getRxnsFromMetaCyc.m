@@ -9,14 +9,14 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 %                       metacycPath is the path to the MetaCyc data files
 %   keepTransportRxns   include transportation reactions, which often have identical
 %                       reactants and products that turn to be all-zero columns in
-%                       the S matrix (opt, default false)
+%                       the S matrix (optional, default false)
 %   keepUnbalanced      include reactions cannot be balanced, usually
 %                       because they are polymeric reactions or with
 %                       specific difficulty in balancing class structures
-%                       (opt, default false)
+%                       (optional, default false)
 %   keepUndetermined    include reactions that have substrates lack chemical
 %                       structures or with non-numerical coefficients (e.g. n+1)
-%                       (opt, default false)
+%                       (optional, default false)
 %
 %   Output:
 %   model     a model structure generated from the database. The following
@@ -45,7 +45,7 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 %   will be directly loaded instead of parsing the MetaCyc data files and
 %   pre-prepared lists of MetaCyc transport and undetermined reactions.
 %
-%   Usage: model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
+% Usage: model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
 
 %NOTE: This is how one entry looks in the file
 

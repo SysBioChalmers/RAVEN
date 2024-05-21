@@ -11,12 +11,12 @@ function files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)
 %                   1: return full path to file(s)
 %                   2: copy file(s) to system default temporary folder and
 %                      return full path
-%                   (opt, default 0)
+%                   (optional, default 0)
 %   allowSpace      logical, whether 'space' character is allowed in the
-%                   path (opt, default true)
+%                   path (optional, default true)
 %   checkExist      logical, whether file existence should really be
 %                   checked, as this function can also be used to return
-%                   the full path to a new file (opt, default true). Can
+%                   the full path to a new file (optional, default true). Can
 %                   only be set to false if fullOrTemp is set to 1.
 %
 %   Output:
@@ -24,7 +24,7 @@ function files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)
 %                   fullOrTemp was set as 1 or 2, otherwise original paths
 %                   are returned
 %   
-%   Usage: files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)
+% Usage: files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)
 
 if nargin<2
     fullOrTemp = 0;

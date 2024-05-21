@@ -6,11 +6,11 @@ function report=checkRxn(model,rxn,cutoff,revDir,printReport)
 %
 %   model       a model structure
 %   rxn         the id of one reaction to check
-%   cutoff      minimal flux for successful production/consumption (opt,
+%   cutoff      minimal flux for successful production/consumption (optional,
 %               default 10^-7)
-%   revDir      true if the reaction should be reversed (opt, default
+%   revDir      true if the reaction should be reversed (optional, default
 %               false)
-%   printReport print a report (opt, default true)
+%   printReport print a report (optional, default true)
 %
 %   report
 %       reactants   array with reactant indexes
@@ -20,7 +20,7 @@ function report=checkRxn(model,rxn,cutoff,revDir,printReport)
 %       canConsume  boolean array, true if the corresponding reactant can
 %                   be consumed
 %
-%   Usage: report=checkRxn(model,rxn,cutoff,revDir,printReport)
+% Usage: report=checkRxn(model,rxn,cutoff,revDir,printReport)
 
 rxn=char(rxn);
 if nargin<3

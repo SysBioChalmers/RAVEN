@@ -7,12 +7,12 @@ function produced=canProduce(model,mets)
 %   model       a model structure
 %   mets        either a cell array of metabolite IDs, a logical vector 
 %               with the same number of elements as metabolites in the model,
-%               or a vector of indexes to check for (opt, default model.mets)
+%               or a vector of indexes to check for (optional, default model.mets)
 %
 %   produced    vector with true if the corresponding metabolite could be
 %               produced
 %
-%   Usage: produced=canProduce(model,mets)
+% Usage: produced=canProduce(model,mets)
 
 if nargin<2
     mets=model.mets;

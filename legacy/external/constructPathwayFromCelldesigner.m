@@ -314,7 +314,7 @@ function [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)
 %
 %   [x, y]          The position of the binding site for the species
 %
-%   Usage: [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)
+% Usage: [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)
 
 %Find the species
 for i=1:length(pathway.listOfSpecies)

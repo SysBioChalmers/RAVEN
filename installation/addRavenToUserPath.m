@@ -8,7 +8,7 @@ function addRavenToUserPath(overwrite)
 %
 %   overwrite       logical, whether startup.m in the userpath should
 %                   overwritten (otherwise the RAVEN paths are appended)
-%                   (opt, default true)
+%                   (optional, default true)
 
 if nargin<1
     overwrite=true;

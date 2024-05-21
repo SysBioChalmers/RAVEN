@@ -44,7 +44,7 @@ function experiment=getExpressionStructure(fileName)
 %   conditions. The model(s) can later be fitted to match these values as
 %   good as possible.
 %
-%   Usage: experiment=getExpressionStructure(fileName)
+% Usage: experiment=getExpressionStructure(fileName)
 
 [type, sheets]=xlsfinfo(fileName);
 

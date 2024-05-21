@@ -24,7 +24,7 @@ function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)
 %                               unique miriam names per entity
 %   extractedMiriamNames        cell array with extracted miriam names
 %
-%   Usage: miriam=extractMiriam(modelMiriams,miriamName)
+% Usage: miriam=extractMiriam(modelMiriams,miriamName)
 
 if nargin<2 || (ischar(miriamNames) && strcmp(miriamNames,'all'))
     extractAllTypes=true;

@@ -29,7 +29,7 @@ function metaCycMets=getMetsFromMetaCyc(metacycPath)
 %   the MetaCyc database files. In general, this metaCycMets.mat file should
 %   be removed and rebuilt when a newer version of MetaCyc is released.
 %               
-%   Usage: model=getMetsFromMetaCyc(metacycPath)
+% Usage: model=getMetsFromMetaCyc(metacycPath)
 
 % NOTE: This is how one entry looks in the file
 

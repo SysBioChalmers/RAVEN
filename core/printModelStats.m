@@ -5,12 +5,12 @@ function printModelStats(model, printModelIssues, printDetails)
 %   model               a model structure
 %   printModelIssues    true if information about unconnected
 %                       reactions/metabolites and elemental balancing
-%                       should be printed (opt, default false)
+%                       should be printed (optional, default false)
 %   printDetails        true if detailed information should be printed
 %                       about model issues. Only used if printModelIssues
-%                       is true (opt, default true)
+%                       is true (optional, default true)
 %
-%   Usage: printModelStats(model,printModelIssues, printDetails)
+% Usage: printModelStats(model,printModelIssues, printDetails)
 
 if nargin<2
     printModelIssues=false;

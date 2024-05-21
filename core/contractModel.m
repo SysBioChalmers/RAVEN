@@ -10,10 +10,10 @@ function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,d
 %   model                  a model structure
 %   distReverse            distinguish reactions with same metabolites
 %                          but different reversibility as different
-%                          reactions (opt, default true)
+%                          reactions (optional, default true)
 %   mets                   string or cell array of strings with metabolite
 %                          identifiers, whose involved reactions should be
-%                          checked for duplication (opt, by default all
+%                          checked for duplication (optional, by default all
 %                          reactions are considered) (option is used by
 %                          replaceMets)
 %
@@ -25,7 +25,7 @@ function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,d
 %   NOTE: This code might not work for advanced grRules strings
 %         that involve nested expressions of 'and' and 'or'.
 %
-%   Usage: [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse)
+% Usage: [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse)
 
 if nargin<2
     distReverse=true;

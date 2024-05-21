@@ -9,21 +9,21 @@ function [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,minNrF
 %   ignoreMets      either a cell array of metabolite IDs, a logical vector
 %                   with the same number of elements as metabolites in the model,
 %                   of a vector of indexes for metabolites to exclude from
-%                   this analysis (opt, default [])
+%                   this analysis (optional, default [])
 %   isNames         true if the supplied mets represent metabolite names
 %                   (as opposed to IDs). This is a way to delete
 %                   metabolites in several compartments at once without
 %                   knowing the exact IDs. This only works if ignoreMets
-%                   is a cell array (opt, default false)
+%                   is a cell array (optional, default false)
 %   minNrFluxes     solves the MILP problem of minimizing the number of
 %                   fluxes instead of the sum. Slower, but can be
-%                   used if the sum gives too many fluxes (opt, default
+%                   used if the sum gives too many fluxes (optional, default
 %                   false)
-%   params          parameter structure as used by getMILPParams (opt)
+%   params          parameter structure as used by getMILPParams (optional)
 %   ignoreIntBounds	true if internal bounds (including reversibility)
 %                   should be ignored. Exchange reactions are not affected.
 %                   This can be used to find unbalanced solutions which are
-%                   not possible using the default constraints (opt,
+%                   not possible using the default constraints (optional,
 %                   default false)
 %
 %   solution        flux vector for the solution
@@ -37,7 +37,7 @@ function [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,minNrF
 %   metabolite is consumed, it picks one of them to be consumed and then
 %   minimizes for the sum of fluxes.
 %
-%   Usage: [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,...
+% Usage: [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,...
 %               minNrFluxes,params,ignoreIntBounds)
 
 if nargin<2

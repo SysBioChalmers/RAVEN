@@ -11,7 +11,7 @@ function model=rescaleModelForINIT(model, maxStoichDiff)
 %
 % model         the model to be modified (input and output)
 % maxStoichVal  all reactions with stoichiometric coefficent higher than this 
-%               will be scaled down. (opt, default 250)
+%               will be scaled down. (optional, default 250)
 
 if (nargin < 2)
     maxStoichDiff = 25;

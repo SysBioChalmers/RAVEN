@@ -8,14 +8,14 @@ function currVer = checkInstallation(developMode)
 % Input: 
 %   developMode     logical indicating development mode, which includes
 %                   testing of binaries that are required to update KEGG
-%                   HMMs (opt, default false). If 'versionOnly' is
+%                   HMMs (optional, default false). If 'versionOnly' is
 %                   specified, only the version is reported as currVer, no
 %                   further installation or tests are performed.
 %
 % Output:
 %   currVer         current RAVEN version
 %
-%   Usage: currVer = checkInstallation(developMode)
+% Usage: currVer = checkInstallation(developMode)
 
 if nargin<1
     developMode=false;

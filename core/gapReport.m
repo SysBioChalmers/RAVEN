@@ -6,7 +6,7 @@ function [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnec
 %
 %   model                       a model structure
 %   templateModels              a cell array of template models to use for
-%                               gap filling (opt)
+%                               gap filling (optional)
 %
 %   noFluxRxns                  cell array with reactions that cannot carry
 %                               flux
@@ -37,7 +37,7 @@ function [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnec
 %                               added from the template models and which 
 %                               model they were added from
 %
-%   Usage: [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnect,...
+% Usage: [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnect,...
 %    neededForProductionMat, connectedFromTemplates, addedFromTemplates]=...
 %    gapReport(model, templateModels)
 

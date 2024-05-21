@@ -2,25 +2,26 @@ function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
 % solveLP
 %   Solves a linear programming problem
 %
+% Input:
 %   model         a model structure
 %   minFlux       determines if a second optimization should be performed
 %                 in order to get rid of loops in the flux distribution
-%                 0: no such optimization is performed
-%                 1: the sum of abs(fluxes) is minimized. This is the
-%                 fastest way of getting rid of loops
-%                 2: the square of fluxes is minimized. This tends to
-%                 distribute fluxes across iso-enzymes, which results in a
-%                 larger number of reactions being used
-%                 3: the number of fluxes is minimized. This can result
-%                 in the flux distributions that are the easiest to
-%                 interpret. Note that this optimization can be very slow
-%                 (opt, default 0)
-%   params        parameter structure as used by getMILPParams (opt)
+%                 0:    no such optimization is performed
+%                 1:    the sum of abs(fluxes) is minimized. This is the
+%                       fastest way of getting rid of loops
+%                 2:    *option is deprecated*
+%                 3:    the number of fluxes is minimized. This can result
+%                       in the flux distributions that are the easiest to
+%                       interpret. Note that this optimization can be very
+%                       slow
+%                 (optional, default 0)
+%   params        parameter structure as used by getMILPParams (optional)
 %   hsSol         hot-start solution for the LP solver. This can
 %                 significantly speed up the process if many similar
-%                 optimization problems are solved iteratively. Only used if
-%                 minFlux is 0 or 1 (opt)
+%                 optimization problems are solved iteratively. Only used
+%                 if minFlux is 0 or 1 (optional)
 %
+% Output:
 %   solution
 %         f       objective value
 %         x       primal (flux distribution)
@@ -35,7 +36,7 @@ function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
 %   hsSolOut      solution to be used as hot-start solution (see the input
 %                 parameters). Only used if minFlux is 0 or 1
 %
-%   Usage: [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
+% Usage: [solution, hsSolOut] = solveLP(model, minFlux, params, hsSol)
 
 if nargin<2
     minFlux=0;

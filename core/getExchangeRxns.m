@@ -4,7 +4,7 @@ function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)
 %
 %   model               a model structure
 %   reactionType        retrieve all reactions ('both'), only production
-%                       ('out'), or only consumption ('in') (opt, default
+%                       ('out'), or only consumption ('in') (optional, default
 %                       'both')
 %
 %   exchangeRxns        cell array with the IDs of the exchange reactions
@@ -14,7 +14,7 @@ function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)
 %   or only reactants. If the unconstrained field is present, then that is
 %   used instead.
 %
-%   Usage: [exchangeRxns,exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)
+% Usage: [exchangeRxns,exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)
 
 if nargin<2
     reactionType='both';

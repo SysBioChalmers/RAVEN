@@ -1,7 +1,7 @@
 % addJavaPaths
 %   Adds the Apache POI classes to the static Java paths
 %
-%   Usage: addJavaPaths()
+% Usage: addJavaPaths()
 
 function addJavaPaths()
 %Get the path to Apache POI

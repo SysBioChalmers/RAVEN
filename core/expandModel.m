@@ -19,7 +19,7 @@ function [newModel, rxnToCheck]=expandModel(model)
 %         those reactions, it is therefore advisable to inspect the reactions in
 %         rxnToCheck to confirm correct model expansion.
 %
-%   Usage: [newModel, rxnToCheck]=expandModel(model)
+% Usage: [newModel, rxnToCheck]=expandModel(model)
 
 %Check how many reactions we will create (the number of or:s in the GPRs).
 %This way, we can preallocate all fields and save much computation time

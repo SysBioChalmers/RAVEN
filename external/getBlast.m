@@ -15,9 +15,9 @@ function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
 %   refFastaFiles   a cell array with the paths to the corresponding FASTA
 %                   files
 %   developMode     true if blastReport should be generated that is used
-%                   in the unit testing function for BLAST+ (opt, default
+%                   in the unit testing function for BLAST+ (optional, default
 %                   false)
-%   hideVerbose     true if no status messages should be printed (opt,
+%   hideVerbose     true if no status messages should be printed (optional,
 %                   default false)
 %
 %   Output:
@@ -33,7 +33,7 @@ function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
 %   removal of hits with an E-value higher than 10e-5. The other homology
 %   measurements can be implemented using getBlastFromExcel.
 %
-%   Usage: [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
+% Usage: [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
 %    modelIDs,refFastaFiles,developMode,hideVerbose)
 
 if nargin<5

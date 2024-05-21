@@ -7,13 +7,13 @@ function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)
 %   toMinimize    either a cell array of reaction IDs, a logical vector
 %                 with the same number of elements as reactions in the model,
 %                 of a vector of indexes for the reactions that should be
-%                 minimized (opt, default model.rxns)
-%   params        parameter structure as used by getMILPParams (opt)
+%                 minimized (optional, default model.rxns)
+%   params        parameter structure as used by getMILPParams (optional)
 %   scores        vector of weights for the reactions. Negative scores
 %                 should not have flux. Positive scores are not possible in this
 %                 implementation, and they are changed to max(scores(scores<0)).
 %                 Must have the same dimension as toMinimize (find(toMinimize)
-%                 if it is a logical vector) (opt, default -1 for all reactions)
+%                 if it is a logical vector) (optional, default -1 for all reactions)
 %
 %   x             the corresponding fluxes for the full model
 %   I             the indexes of the reactions in toMinimize that were used
@@ -25,7 +25,7 @@ function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)
 %   NOTE: Uses 1000 mmol/gDW/h as an arbitary large flux. Could possibly
 %   cause problems if the fluxes in the model are larger than that.
 %
-%   Usage: [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params, scores)
+% Usage: [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params, scores)
 
 exitFlag=1;
 

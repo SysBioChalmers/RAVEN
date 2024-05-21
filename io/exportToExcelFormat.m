@@ -2,24 +2,22 @@ function exportToExcelFormat(model,fileName,sortIds)
 % exportToExcelFormat
 %   Exports a model structure to the Microsoft Excel model format
 %
+% Input:
 %   model       a model structure
 %   fileName    file name of the Excel file. Only xlsx format is supported.
 %               In order to preserve backward compatibility this could also
-%               be only a path, in which case the model is exported to a set
-%               of tab-delimited text files instead. See exportToTabDelimited
-%               for details regarding that functionality. A dialog window
-%               will open if no file name is specified.
+%               be only a path, in which case the model is exported to a
+%               set of tab-delimited text files via exportToTabDelimited.
+%               A dialog window will open if fileName is empty.
 %   sortIds     logical whether metabolites, reactions and genes should be
-%               sorted alphabetically by their identifiers (opt, default
-%               false)
+%               sorted alphabetically by their identifiers (optional,
+%               default false)
 %
-%   The resulting Excel file can be used with importExcelModel/SBMLFromExcel
-%   for modelling or to generate a SBML file.
+% No checks are made regarding the correctness of the model. Use
+% checkModelStruct to identify problems in the model structure.
 %
-%   NOTE: No checks are made regarding the correctness of the model. Use
-%         checkModelStruct to identify problems in the model structure
-%
-%   Usage: exportToExcelFormat(model,fileName,sortIds)
+% Usage: exportToExcelFormat(model, fileName, sortIds)
+
 if nargin<2 || isempty(fileName)
     [fileName, pathName] = uiputfile('*.xlsx', 'Select file for model export',[model.id '.xlsx']);
     if fileName == 0

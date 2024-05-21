@@ -11,7 +11,7 @@ function [pathway, notMapped]=mapPathwayRxnNames(pathway,originalLabels,newLabel
 %   notMapped       a cell array with labels that could not be found in the
 %                   pathway object
 %
-%   Usage: [pathway, notMapped]=mapPathwayRxnNames(pathway,originalLabels,newLabels)
+% Usage: [pathway, notMapped]=mapPathwayRxnNames(pathway,originalLabels,newLabels)
 
 if numel(originalLabels)~=numel(newLabels)
     EM='The new label cell array must have the same length as the old label cell array';

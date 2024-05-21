@@ -10,7 +10,7 @@ function transportRxns=getTransportRxns(model)
 %   Transport reactions are defined as reactions involving (at least) one
 %   metabolite name in more than one compartment.
 %
-%   Usage: transportRxns=getTransportRxns(model)
+% Usage: transportRxns=getTransportRxns(model)
 
 transportRxns=false(numel(model.rxns),1);
 

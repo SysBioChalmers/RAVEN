@@ -5,12 +5,12 @@ function model=readYAMLmodel(fileName, verbose)
 %   Input:
 %   fileName    a model file in yaml file format. A dialog window will open
 %               if no file name is specified.
-%   verbose     set as true to monitor progress (opt, default false)
+%   verbose     set as true to monitor progress (optional, default false)
 %
 %   Output:
 %   model       a model structure
 %
-%   Usage: model = readYAMLmodel(fileName, verbose)
+% Usage: model = readYAMLmodel(fileName, verbose)
 if nargin<1 || isempty(fileName)
     [fileName, pathName] = uigetfile({'*.yml;*.yaml'}, 'Please select the model file');
     if fileName == 0

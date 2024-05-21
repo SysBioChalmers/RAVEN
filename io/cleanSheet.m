@@ -4,17 +4,17 @@
 %
 %   raw             cell array with the data in the sheet
 %   removeComments  true if commented lines (non-empty first cell in each
-%                   row) should be removed (opt, default true)
-%   removeOnlyCap   remove columns with captions but no other values (opt,
+%                   row) should be removed (optional, default true)
+%   removeOnlyCap   remove columns with captions but no other values (optional,
 %                   default false)
-%   removeNoCap     remove columns without captions (opt, default true)
-%   removeEmptyRows remove rows with no non-empty cells (opt, default true)
+%   removeNoCap     remove columns without captions (optional, default true)
+%   removeEmptyRows remove rows with no non-empty cells (optional, default true)
 %   
 %   raw             cleaned version
 %   keptRows        indexes of the kept rows in the original structure
 %   keptCols        indexes of the kept columns in the original structure
 %
-%   Usage: [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,...
+% Usage: [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,...
 %               removeNoCap,removeEmptyRows)
 
 function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,removeNoCap,removeEmptyRows)

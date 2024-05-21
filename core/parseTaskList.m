@@ -23,32 +23,32 @@ function taskStruct=parseTaskList(inputFile)
 %                       wanted, then use several rows for the task
 %                   IN LB
 %                       lower bound for the uptake of the metabolites in
-%                       the row (opt, default 0 which corresponds to a
+%                       the row (optional, default 0 which corresponds to a
 %                       minimal uptake of 0 units)
 %                   IN UB
 %                       upper bound for the uptake of the metabolites in
-%                       the row (opt, default 1000 which corresponds to a
+%                       the row (optional, default 1000 which corresponds to a
 %                       maximal uptake of 1000 units)
 %                   OUT
 %                       allowed output(s) for the task (see IN)
 %                   OUT LB
 %                       lower bound for the production of the metabolites in
-%                       the row (opt, default 0 which corresponds to a
+%                       the row (optional, default 0 which corresponds to a
 %                       minimal production of 0 units)
 %                   OUT UB
 %                       upper bound for the production of the metabolites in
-%                       the row (opt, default 1000 which corresponds to a
+%                       the row (optional, default 1000 which corresponds to a
 %                       maximal production of 1000 units)
 %                   EQU
 %                       equation to add. The equation should be on the form
 %                       "0.4 A + 2 B <=> (or =>) C" and the metabolites
 %                       should be on the form
-%                       "model.metName[model.comps]" (opt)
+%                       "model.metName[model.comps]" (optional)
 %                   EQU LB
-%                       lower bound for the equation (opt, default -1000
+%                       lower bound for the equation (optional, default -1000
 %                       for reversible and 0 for irreversible)
 %                   EQU UB
-%                       upper bound for the equation (opt, default 1000)
+%                       upper bound for the equation (optional, default 1000)
 %                   CHANGED RXN
 %                       reaction ID for which to change the bounds for.
 %                       Several IDs can be delimited by ";". If so,
@@ -61,11 +61,11 @@ function taskStruct=parseTaskList(inputFile)
 %                   SHOULD FAIL
 %                       true if the correct behavior of the model is to
 %                       not have a feasible solution given the constraints
-%                       (opt, default false)
+%                       (optional, default false)
 %                   PRINT FLUX
 %                       true if the function should print the corresponding
 %                       flux distribution for a task. Can be useful for
-%                       testing (opt, default false)
+%                       testing (optional, default false)
 %
 %   taskStruct      array of structures with the following fields
 %       id          the id of the task
@@ -107,7 +107,7 @@ function taskStruct=parseTaskList(inputFile)
 %   constraints for the general metabolites overwrite those of the real
 %   ones.
 %
-%   Usage: taskStruct=parseTaskList(inputFile)
+% Usage: taskStruct=parseTaskList(inputFile)
 
 if ~isfile(inputFile)
     error('Task list %s cannot be found',string(inputFile));

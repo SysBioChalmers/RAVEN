@@ -5,11 +5,11 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %   fileName      a Microsoft Excel file to import
 %   removeExcMets true if exchange metabolites should be removed. This is
 %                 needed to be able to run simulations, but it could also
-%                 be done using simplifyModel at a later stage (opt,
+%                 be done using simplifyModel at a later stage (optional,
 %                 default true)
-%   printWarnings true if warnings should be printed (opt, default true)
+%   printWarnings true if warnings should be printed (optional, default true)
 %   ignoreErrors  true if errors should be ignored. See below for details
-%                 (opt, default false)
+%                 (optional, default false)
 %
 %   model
 %       annotation       
@@ -73,7 +73,7 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 %   to construct the model structure. Those errors cannot be ignored by
 %   setting ignoreErrors to true.
 %
-%   Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
+% Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
 fileName=char(fileName);
 
 if nargin<2

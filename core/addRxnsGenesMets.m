@@ -15,11 +15,11 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %                           new grRules are specified as string or cell
 %                           array, and any new genes are added when
 %                           required
-%                   (opt, default false)
+%                   (optional, default false)
 %   rxnNote         cell array with strings explaining why reactions were copied
 %                   to the model, to be included as newModel.rxnNotes. Can also
 %                   be string if same rxnNotes should be added for each new
-%                   reaction, or only one reaction is to be added (opt, default
+%                   reaction, or only one reaction is to be added (optional, default
 %                   'Added via addRxnsAndMets()')
 %   confidence      integer specifying confidence score for all reactions.
 %                   4:  biochemical data: direct evidence from enzymes
@@ -32,7 +32,7 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %                   1:  modeling data: required for functional model,
 %                       hypothetical reaction
 %                   0:  no evidence
-%                   following doi:10.1038/nprot.2009.203 (opt, default 0)
+%                   following doi:10.1038/nprot.2009.203 (optional, default 0)
 %
 %   newModel        an updated model structure
 %
@@ -42,7 +42,7 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %	additional reactions from source to draft after getModelFromHomology was
 %	used involving the same models.
 %
-%   Usage: newModel=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)
+% Usage: newModel=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)
 
 if nargin<6
     confidence=0;

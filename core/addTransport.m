@@ -7,14 +7,14 @@ function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,o
 %                   match model.comps)
 %   toComps         a cell array of compartment names to transport to (should
 %                   match model.comps)
-%   metNames        the metabolite names to add transport for (opt, all
+%   metNames        the metabolite names to add transport for (optional, all
 %                   metabolites in fromComp)
 %   isRev           true if the transport reactions should be reversible
-%                   (opt, default true)
+%                   (optional, default true)
 %   onlyToExisting  true if transport of a metabolite should only be added
 %                   if it already exists in toComp. If false, then new metabolites
-%                   are added with addMets first (opt, default true)
-%   prefix          string specifying prefix to reaction IDs (opt, default
+%                   are added with addMets first (optional, default true)
+%   prefix          string specifying prefix to reaction IDs (optional, default
 %                   'tr_')
 %
 %   This is a faster version than addRxns when adding transport reactions.
@@ -22,7 +22,7 @@ function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,o
 %   while new reaction IDs are sequentially counted with a tr_ prefix:
 %   e.g. tr_0001, tr_0002, etc.
 %
-%   Usage: [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,...
+% Usage: [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,...
 %           isRev,onlyToExisting,prefix)
 
 fromComp=char(fromComp);

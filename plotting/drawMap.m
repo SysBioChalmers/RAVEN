@@ -9,12 +9,12 @@ function notMapped=drawMap(title,pathway,modelA,conditionA,conditionB,modelB,fil
 %                   constructPathwayFromCelldesigner
 %   modelA        	model structure for condition A
 %   conditionA      flux vector for condition A
-%   conditionB    	flux vector for condition B (opt)
-%   modelB        	model structure for condition B (opt, default modelA)
-%   filename        exports the map as a pdf (opt)
+%   conditionB    	flux vector for condition B (optional)
+%   modelB        	model structure for condition B (optional, default modelA)
+%   filename        exports the map as a pdf (optional)
 %   cutOff          only print fluxes where one of the fluxes are above this
-%                   value (opt, default 10^-7)
-%   supressOpen     true if the pdf file should not be opened (opt, default
+%                   value (optional, default 10^-7)
+%   supressOpen     true if the pdf file should not be opened (optional, default
 %                   false)
 %
 %   notMapped     	the reaction ids that carried a flux in either of the
@@ -24,7 +24,7 @@ function notMapped=drawMap(title,pathway,modelA,conditionA,conditionB,modelB,fil
 %   in both cases. If only one flux is supplied then that flux is printed two
 %   times in each box.
 %
-%   Usage: notMapped=drawMap(title,pathway,modelA,conditionA,...
+% Usage: notMapped=drawMap(title,pathway,modelA,conditionA,...
 %           conditionB,modelB,filename,cutOff,supressOpen)
 
 if nargin<4

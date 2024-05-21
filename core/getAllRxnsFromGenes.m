@@ -13,7 +13,7 @@ function allRxns=getAllRxnsFromGenes(model,rxns)
 %               same number of elements as reactions in the model, or a
 %               vector of indexes, dependent on the format of rxns
 %
-%   Usage: allRxns=getAllRxnsFromGenes(model,rxns)
+% Usage: allRxns=getAllRxnsFromGenes(model,rxns)
 
 if ~islogical(rxns) && ~isnumeric(rxns)
     rxns=convertCharArray(rxns);

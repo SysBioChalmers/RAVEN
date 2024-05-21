@@ -9,7 +9,7 @@ function objectiveString = getObjectiveString(max, objectiveNames, objectiveValu
 %
 %   objectiveString     the calculated objective function
 %
-%   Usage: objectiveString = getObjectiveString(max, objectiveNames,
+% Usage: objectiveString = getObjectiveString(max, objectiveNames,
 %           objectiveValues)
 
 objectiveString='';

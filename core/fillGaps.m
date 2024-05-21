@@ -10,21 +10,21 @@ function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(m
 %                       the reactants is unavailable or because one of the
 %                       products can't be further processed. If this
 %                       parameter is true, only the first type of
-%                       unconnectivity is considered (opt, default false)
+%                       unconnectivity is considered (optional, default false)
 %   useModelConstraints true if the constraints specified in the model
 %                       structure should be used. If false then reactions
 %                       included from the template model(s) so that as many
 %                       reactions as possible in model can carry flux
-%                       (opt, default false)
-%   supressWarnings     false if warnings should be displayed (opt, default
+%                       (optional, default false)
+%   supressWarnings     false if warnings should be displayed (optional, default
 %                       false)
 %   rxnScores           array with scores for each of the reactions in the
 %                       reference model(s). If more than one model is supplied,
 %                       then rxnScores should be a cell array of vectors.
 %                       The solver will try to maximize the sum of the
-%                       scores for the included reactions (opt, default
+%                       scores for the included reactions (optional, default
 %                       is -1 for all reactions)
-%   params              parameter structure as used by getMILPParams (opt)
+%   params              parameter structure as used by getMILPParams (optional)
 %
 %   newConnected        cell array with the reactions that could be
 %                       connected. This is not calulated if
@@ -59,7 +59,7 @@ function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(m
 %   of reactions that have to be included in order for the model to produce
 %   biomass.
 %
-%   Usage: [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=...
+% Usage: [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=...
 %           fillGaps(model,models,allowNetProduction,useModelConstraints,...
 %           supressWarnings,rxnScores,params)
 

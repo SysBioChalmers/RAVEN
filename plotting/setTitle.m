@@ -6,7 +6,7 @@ function setTitle(handle, pathway, title)
 %   pathway     pathway structure representing the pathway to be drawn
 %   title       the title
 %
-%   Usage: setTitle(handle, pathway, title)
+% Usage: setTitle(handle, pathway, title)
 
 dimension=getPathwayDimensions(pathway);
 

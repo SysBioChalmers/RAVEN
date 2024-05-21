@@ -10,7 +10,7 @@ function [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
 %                   direction corresponds to output
 %   mets            either a cell array of metabolite IDs, a logical vector
 %                   with the same number of elements as metabolites in the model,
-%                   or a vector of indexes to add for (opt, default model.mets)
+%                   or a vector of indexes to add for (optional, default model.mets)
 %
 %   model           updated model structure
 %   addedRxns       ids of the added reactions
@@ -19,7 +19,7 @@ function [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
 %   New reactions are named "metName exchange (OUT/IN/BOTH)" while reaction
 %   ids are formatted as "EXC_OUT/IN/BOTH_METID".
 %
-%   Usage: [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
+% Usage: [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
 
 if nargin<3
     mets=model.mets;

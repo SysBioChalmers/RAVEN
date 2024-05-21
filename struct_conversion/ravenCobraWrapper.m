@@ -28,7 +28,7 @@ function newModel=ravenCobraWrapper(model)
 %   checkModelStruct function, whereas the corresponding information about
 %   COBRA fields was fetched from verifyModel function
 %
-%   Usage: newModel=ravenCobraWrapper(model)
+% Usage: newModel=ravenCobraWrapper(model)
 
 if isfield(model,'rules')
     isRaven=false;

@@ -18,7 +18,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %                       Only applicable if fastaFile is empty, i.e. no
 %                       homology search should be performed
 %   fastaFile           a FASTA file that contains the protein sequences of
-%                       the organism for which to reconstruct a model (opt,
+%                       the organism for which to reconstruct a model (optional,
 %                       if no FASTA file is supplied then a model is
 %                       reconstructed based only on the organism
 %                       abbreviation. This option ignores all settings
@@ -42,7 +42,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %                       the HMMs were trained on pro- or eukaryotic
 %                       sequences, using a sequence similarity threshold of
 %                       XXX %, fitting the KEGG version YY. E.g.
-%                       euk90_kegg105. (opt, see note about fastaFile. Note
+%                       euk90_kegg105. (optional, see note about fastaFile. Note
 %                       that in order to rebuild the KEGG model from a
 %                       database dump, as opposed to using the version
 %                       supplied with RAVEN, you would still need to supply
@@ -55,16 +55,16 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %                       parallel. Be careful not to leave output files from
 %                       different organisms or runs with different settings
 %                       in the same folder. They will not be overwritten
-%                       (opt, default is a temporary dir where all *.out
+%                       (optional, default is a temporary dir where all *.out
 %                       files are deleted before and after doing the
 %                       reconstruction)
-%   keepSpontaneous     include reactions labeled as "spontaneous". (opt,
+%   keepSpontaneous     include reactions labeled as "spontaneous". (optional,
 %                       default true)
 %   keepUndefinedStoich	include reactions in the form n A <=> n+1 A. These
 %                       will be dealt with as two separate metabolites
-%                       (opt, default true)
+%                       (optional, default true)
 %   keepIncomplete      include reactions which have been labelled as
-%                       "incomplete", "erroneous" or "unclear" (opt,
+%                       "incomplete", "erroneous" or "unclear" (optional,
 %                       default true)
 %   keepGeneral         include reactions which have been labelled as
 %                       "general reaction". These are reactions on the form
@@ -72,34 +72,34 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %                       unsuited for modelling purposes. Note that not all
 %                       reactions have this type of annotation, and the
 %                       script will therefore not be able to remove all
-%                       such reactions (opt, default false)
+%                       such reactions (optional, default false)
 %   cutOff              significance score from HMMer needed to assign
-%                       genes to a KO (opt, default 10^-50)
+%                       genes to a KO (optional, default 10^-50)
 %   minScoreRatioG      a gene is only assigned to KOs for which the score
 %                       is >=log(score)/log(best score) for that gene. This
 %                       is to prevent that a gene which clearly belongs to
 %                       one KO is assigned also to KOs with much lower
-%                       scores (opt, default 0.8 (lower is less strict))
+%                       scores (optional, default 0.8 (lower is less strict))
 %   minScoreRatioKO     ignore genes in a KO if their score is
 %                       <log(score)/log(best score in KO). This is to
 %                       "prune" KOs which have many genes and where some are
-%                       clearly a better fit (opt, default 0.3 (lower is
+%                       clearly a better fit (optional, default 0.3 (lower is
 %                       less strict))
 %   maxPhylDist         -1: only use sequences from the same domain
 %                       (Prokaryota, Eukaryota)
 %                       other (positive) value: only use sequences for
 %                       organisms where the phylogenetic distance is at the
 %                       most this large (as calculated in getPhylDist)
-%                       (opt, default Inf, which means that all sequences
+%                       (optional, default Inf, which means that all sequences
 %                       will be used)
 %   nSequences          for each KO, use up to this many sequences from the
 %                       most closely related species. This is mainly to
 %                       speed up the alignment process for KOs with very
 %                       many genes. This subsampling is performed before
-%                       running CD-HIT (opt, default inf)
+%                       running CD-HIT (optional, default inf)
 %   seqIdentity         sequence identity threshold in CD-HIT, referred as
 %                       "global sequence identity" in CD-HIT User's Guide.
-%                       If -1 is provided, CD-HIT is skipped (opt, default 0.9)
+%                       If -1 is provided, CD-HIT is skipped (optional, default 0.9)
 %   globalModel         structure containing both model and KOModel
 %                       structures as generated by getModelFromKEGG. These
 %                       will otherwise be loaded by via getModelFromKEGG. 
@@ -107,7 +107,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %                       generation if getKEGGModelForOrganism is run
 %                       multiple times for different strains. Example:
 %                       [globalModel.model,globalModel.KOModel] = getModelFromKEGG;
-%                       (opt, default empty, global model is loaded by 
+%                       (optional, default empty, global model is loaded by 
 %                       getModelFromKEGG)
 %
 %   Output:
@@ -240,7 +240,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %   in the local KEGG database. In such case, the program just fetches all
 %   the reactions, which are associated with given 'organismID'.
 %
-%   Usage: model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
+% Usage: model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %    outDir,keepSpontaneous,keepUndefinedStoich,keepIncomplete,...
 %    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %    nSequences,seqIdentity)

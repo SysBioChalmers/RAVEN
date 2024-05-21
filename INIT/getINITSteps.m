@@ -9,7 +9,7 @@ function steps = getINITSteps(metsToIgnore, series)
 %
 %   metsToIgnore  Structure describing mets that can be removed from the model
 %                 before running ftINIT, such as water etc.
-%                 (opt, default [])
+%                 (optional, default [])
 %       simpleMets
 %           mets  Names of metabolites to remove
 %           compsToKeep Compartments for which metabolites should be kept.
@@ -31,11 +31,11 @@ function steps = getINITSteps(metsToIgnore, series)
 %                 'full'         1-step run - similar to the old tINIT version but 
 %                                without simplifications. Accurate, but very slow.
 %                                This is mainly used for testing purposes.
-%                 (opt, default '1+1')
+%                 (optional, default '1+1')
 %
 %   steps         Cell array of steps, used as input to ftINIT
 %
-%   Usage: steps = getINITSteps(metsToIgnore, series)
+% Usage: steps = getINITSteps(metsToIgnore, series)
 if nargin < 1
     metsToIgnore = [];
 end

@@ -7,12 +7,12 @@ function version = getToolboxVersion(toolbox,fileID,mainBranchFlag)
 %   fileID          string with the name of a file that is only found in
 %                   the corresponding toolbox (e.g. "ravenCobraWrapper.m").
 %   mainBranchFlag  logical, if true, function will error if the toolbox is
-%                   not on the main branch (opt, default false).
+%                   not on the main branch (optional, default false).
 %
 %   version         string containing either the toolbox version or latest
 %                   commit hash (7 characters).
 %
-%   Usage: version = getToolboxVersion(toolbox,fileID,mainBranchFlag)
+% Usage: version = getToolboxVersion(toolbox,fileID,mainBranchFlag)
 toolbox=char(toolbox);
 fileID=char(fileID);
 

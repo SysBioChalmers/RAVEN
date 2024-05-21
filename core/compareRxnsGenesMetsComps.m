@@ -5,7 +5,7 @@ function compStruct=compareRxnsGenesMetsComps(models,printResults)
 %
 %   models              cell array of two or more models
 %   printResults        true if the results should be printed on the screen
-%                       (opt, default false)
+%                       (optional, default false)
 %
 %   compStruct          structure that contains the comparison
 %       modelIDs        cell array of model ids
@@ -23,7 +23,7 @@ function compStruct=compareRxnsGenesMetsComps(models,printResults)
 %           nElements   vector with the number of elements for each
 %                       comparison
 %
-%   Usage: compStruct=compareRxnsGenesMetsComps(models,printResults)
+% Usage: compStruct=compareRxnsGenesMetsComps(models,printResults)
 
 if nargin<2
     printResults=true;
