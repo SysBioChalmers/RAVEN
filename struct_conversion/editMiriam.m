@@ -34,7 +34,7 @@ function model=editMiriam(model,type,object,miriamName,miriams,keep)
 %   Ouput:
 %       model       model structure with updated MIRIAM annotation field
 %   
-%   Usage: model=editMiriam(model,type,object,miriamName,miriams,keep)
+% Usage: model=editMiriam(model,type,object,miriamName,miriams,keep)
 miriamName=char(miriamName);
 miriams=convertCharArray(miriams);
 

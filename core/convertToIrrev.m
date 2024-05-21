@@ -5,7 +5,7 @@ function [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns)
 % Input:
 %   model         a model structure
 %   rxns          cell array with the reactions so split (if reversible)
-%                 (opt, default model.rxns)
+%                 (optional, default model.rxns)
 %
 % Output:
 %   irrevModel    a model structure where reversible reactions have
@@ -17,7 +17,7 @@ function [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns)
 %   The reverse reactions are saved as 'rxnID_REV'. A warning is shown if
 %   some reaction identifiers already end with '_REV'.
 %
-%   Usage: [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns)
+% Usage: [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns)
 
 if nargin<2
     I=true(numel(model.rxns),1);

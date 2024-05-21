@@ -12,7 +12,7 @@ function constructMultiFasta(model,sourceFile,outputDir)
 %   to be compatible with the rest of the code that retrieves information
 %   from KEGG.
 %
-%   Usage: constructMultiFasta(model,sourceFile,outputDir)
+% Usage: constructMultiFasta(model,sourceFile,outputDir)
 
 sourceFile=char(sourceFile);
 outputDir=char(outputDir);

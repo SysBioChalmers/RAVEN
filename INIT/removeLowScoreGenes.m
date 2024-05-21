@@ -43,11 +43,11 @@ function [newModel,remGenes] = removeLowScoreGenes(model,geneScores,isozymeScori
 %
 %   isozymeScoring  Method used to combine the scores of multiple isozymes;
 %                   'min', 'max', 'median', or 'average'. 
-%                   (Opt, default 'max')
+%                   (optional, default 'max')
 %
 %   complexScoring  Method used to combine the scores of enzyme complex
 %                   subunits: 'min', 'max', 'median', or 'average'. 
-%                   (Opt, default 'min')
+%                   (optional, default 'min')
 %
 % Outputs:
 %

@@ -5,11 +5,11 @@ function workbook=loadWorkbook(fileName,createEmpty)
 %   fileName    name of the Excel file. If it doesn't exist it will be
 %               created
 %   createEmpty true if an empty workbook should be created if the file
-%               didn't exist (opt, default false)
+%               didn't exist (optional, default false)
 %
 %   workbook    Workbook object representing the Excel file
 %
-%   Usage: workbook=loadWorkbook(fileName,createEmpty)
+% Usage: workbook=loadWorkbook(fileName,createEmpty)
 
 if nargin<2
     createEmpty=false;

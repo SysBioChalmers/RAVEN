@@ -19,7 +19,7 @@ function scores=analyzeSampling(Tex, df, solutionsA, solutionsB, printResults)
 %   solutionsB      random solutions for the test condition (as generated
 %                   by randomSampling)
 %   printResults    prints the most significant reactions in each category
-%                   (opt, default false)
+%                   (optional, default false)
 %
 %   scores          a Nx3 column matrix with the probabilities of a reaction:
 %                   1) changing both in flux and expression in the same direction
@@ -27,7 +27,7 @@ function scores=analyzeSampling(Tex, df, solutionsA, solutionsB, printResults)
 %                   3) changing in flux but not in expression or changing
 %                      in opposed directions in flux and expression.
 %
-%   Usage: scores=analyzeSampling(Tex, df, solutionsA, solutionsB, printResults)
+% Usage: scores=analyzeSampling(Tex, df, solutionsA, solutionsB, printResults)
 
 if nargin<5
     printResults=false;

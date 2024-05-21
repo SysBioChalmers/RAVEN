@@ -15,7 +15,7 @@ function [ps, oldPoolAutoCreate] = parallelPoolRAVEN(runParallel)
 %
 % Input:
 %   runParallel         logical, whether the target function (which calls
-%                       parallelPoolRAVEN) should be run in parallel (opt,
+%                       parallelPoolRAVEN) should be run in parallel (optional,
 %                       default true)
 %
 % Output:

@@ -5,10 +5,10 @@ function [S, mets, badRxns, reversible]=constructS(equations,mets,rxns)
 %   equations   cell array of equations on the form 'A + 2 B <=> 3 C',
 %               where <=> indicates reversible and => irreversible reactions
 %   mets        cell array of metabolites. All metabolites in the equations
-%               must be present in the list (opt, default generated from
+%               must be present in the list (optional, default generated from
 %               the equations)
 %   rxns        cell array of reaction ids. This is only used for printing
-%               reaction ids instead of equations in warnings/errors (opt,
+%               reaction ids instead of equations in warnings/errors (optional,
 %               default [])
 %
 %   S           the resulting stoichiometric matrix mets cell array with
@@ -20,7 +20,7 @@ function [S, mets, badRxns, reversible]=constructS(equations,mets,rxns)
 %               which can be problematic
 %   reversible  boolean vector with true if the equation is reversible
 %
-%   Usage: [S, mets, badRxns, reversible]=constructS(equations,mets)
+% Usage: [S, mets, badRxns, reversible]=constructS(equations,mets)
 
 equations=convertCharArray(equations);
 switch nargin

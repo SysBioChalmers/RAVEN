@@ -7,17 +7,17 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxn
 %   model           model structure
 %   refModel        reference model from which to include reactions
 %   inputFile       a task list in Excel format. See the function
-%                   parseTaskList for details (opt if taskStructure is
+%                   parseTaskList for details (optional if taskStructure is
 %                   supplied)
 %   printOutput     true if the results of the test should be displayed
-%                   (opt, default true)
+%                   (optional, default true)
 %   rxnScores       scores for each of the reactions in the reference
 %                   model. Only negative scores are allowed. The solver will
 %                   try to maximize the sum of the scores for the included
-%                   reactions (opt, default is -1 for all reactions)
+%                   reactions (optional, default is -1 for all reactions)
 %   taskStructure   structure with the tasks, as from parseTaskList. If
-%                   this is supplied then inputFile is ignored (opt)
-%   params          parameter structure as used by getMILPParams (opt)
+%                   this is supplied then inputFile is ignored (optional)
+%   params          parameter structure as used by getMILPParams (optional)
 %
 %
 %   Output:
@@ -34,7 +34,7 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxn
 %   all tasks at once. This means that the order of the tasks could influence
 %   the result.
 %
-%   Usage: [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...
+% Usage: [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...
 %           rxnScores,taskStructure,params)
 
 if nargin<4

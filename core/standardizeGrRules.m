@@ -9,7 +9,7 @@ function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)
 %
 %   model        a model structure
 %   embedded     true if this function is called inside of another 
-%                RAVEN function (opt, default false)
+%                RAVEN function (optional, default false)
 %
 %   grRules      [nRxns x 1] cell array with the standardized grRules
 %   rxnGeneMat   [nRxns x nGenes]Sparse matrix consitent with the
@@ -19,7 +19,7 @@ function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)
 %   modification pipeline it is recommended to run this function just
 %   at the beginning of the process.
 %
-%   Usage: [grRules,rxnGeneMat,indexes2check]=standardizeGrRules(model,embedded)
+% Usage: [grRules,rxnGeneMat,indexes2check]=standardizeGrRules(model,embedded)
 
 %Preallocate fields
 n          = length(model.rxns);

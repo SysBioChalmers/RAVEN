@@ -10,16 +10,16 @@ function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(
 %                   'dgd'   double gene deletion
 %                   'sgo'   single gene over expression
 %                   'dgo'   double gene over expression
-%                   (opt, default 'sgd')
+%                   (optional, default 'sgd')
 %   analysisType    determines whether to use FBA ('fba') or MOMA ('moma')
-%                   in the optimization. (opt, default 'fba')
+%                   in the optimization. (optional, default 'fba')
 %   refModel        MOMA works by fitting the flux distributions of two
 %                   models to be as similar as possible. The most common
 %                   application is where you have a reference model where
 %                   some of the fluxes are constrained from experimental
 %                   data. This model is required when using MOMA
 %   oeFactor        a factor by which the fluxes should be increased if a
-%                   gene is overexpressed (opt, default 10)
+%                   gene is overexpressed (optional, default 10)
 %
 %   genes           a matrix with the genes that were deleted in each
 %                   optimization (the gene indexes in originalGenes). Each
@@ -47,7 +47,7 @@ function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(
 %                       grRatio=zeros(1,numel(model.genes));
 %                       grRatio(genes)=grRatioMuts;
 %
-%   Usage: [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(model,testType,analysisType,...
+% Usage: [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(model,testType,analysisType,...
 %           refModel,oeFactor)
 
 originalModel=model;

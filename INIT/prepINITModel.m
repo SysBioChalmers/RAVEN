@@ -8,13 +8,13 @@ function prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, conve
 %                   Mouse-GEM, etc.
 % taskStruct        The essential tasks. Can be loaded with for example
 %                   taskStruct = parseTaskList('../data/metabolicTasks_Essential.txt');
-% spontRxnNames     The spontaneous rxns. (opt, default {})
+% spontRxnNames     The spontaneous rxns. (optional, default {})
 % convertGenes      If true the genes are converted to gene names (from 
-%                   ENSEMBL) (opt, default false)
+%                   ENSEMBL) (optional, default false)
 % customRxnsToIgnore These reactions can be ignored in the ignore mask 
-%                   (specifying b7=1) (opt, default = {})
+%                   (specifying b7=1) (optional, default = {})
 % extComp           Name of the external compartment, typically 's' or 'e'. This
-%                   is used for identifying exch and import rxns (opt, default = 'e')
+%                   is used for identifying exch and import rxns (optional, default = 'e')
 % prepData          The resulting prepData structure which is used as input to ftINIT
 % skipScaling       If true the scaling step is not run on the minimal model. The 
 %                   scaling is there to remove large differences between the 
@@ -27,7 +27,7 @@ function prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, conve
 %                   where the solution is infeasible, it may be worth trying to turn off
 %                   the scaling. Note that it is only the minModel that is scaled,
 %                   the scaling will not be present in the final model.
-%                   Default: (opt, default = false)
+%                   Default: (optional, default = false)
 % 
 % Usage: prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore, extComp)
 

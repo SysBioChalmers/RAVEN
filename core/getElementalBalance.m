@@ -6,11 +6,11 @@ function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUn
 %   rxns              either a cell array of reaction IDs, a logical vector
 %                     with the same number of elements as reactions in the model,
 %                     of a vector of indexes. Only these reactions will be
-%                     checked (opt, default model.rxns)
+%                     checked (optional, default model.rxns)
 %   printUnbalanced   print warnings about the reactions that were
-%                     unbalanced (opt, default false)
+%                     unbalanced (optional, default false)
 %   printUnparsable   print warnings about the reactions that cannot be
-%                     parsed (opt, default false)
+%                     parsed (optional, default false)
 %
 %   balanceStructure
 %       balanceStatus   1 if the reaction is balanced, 0 if it's unbalanced,
@@ -24,7 +24,7 @@ function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUn
 %                       reactions (M)
 %       rightComp       the corresponding matrix for the right side
 %
-%   Usage: balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)
+% Usage: balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)
 
 if nargin<2
     rxns=[];

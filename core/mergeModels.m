@@ -8,7 +8,7 @@ function model=mergeModels(models,metParam,supressWarnings)
 %   models          a cell array with model structures
 %   metParam        string specifying whether to refer to metabolite name
 %                   (metNames) or ID (mets) for matching (default, metNames)
-%   supressWarnings true if warnings should be supressed (opt, default
+%   supressWarnings true if warnings should be supressed (optional, default
 %                   false)
 %
 %   model     a model structure with the merged model. Follows the structure
@@ -16,7 +16,7 @@ function model=mergeModels(models,metParam,supressWarnings)
 %             to indicate from which model each reaction/metabolite/gene was
 %             taken
 %
-%   Usage: model=mergeModels(models)
+% Usage: model=mergeModels(models)
 
 %Just return the model
 if numel(models)<=1

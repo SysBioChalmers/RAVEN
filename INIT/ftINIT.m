@@ -13,11 +13,11 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes
 %                       hpaData.tissues or transcrData.tissues
 %   celltype            cell type to score for. Should exist in either
 %                       hpaData.celltypes or transcrData.celltypes for this
-%                       tissue (opt, default is to use the max values
+%                       tissue (optional, default is to use the max values
 %                       among all the cell types for the tissue.
-%   hpaData             HPA data structure from parseHPA (opt if transcrData
+%   hpaData             HPA data structure from parseHPA (optional if transcrData
 %                       is supplied, default [])
-%   transcrData         gene expression data structure (opt if hpaData is
+%   transcrData         gene expression data structure (optional if hpaData is
 %                       supplied, default []). Used to be called arrayData.
 %       genes           cell array with the unique gene names
 %       tissues         cell array with the tissue names. The list may not
@@ -29,20 +29,20 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes
 %                       used when no measurement was performed
 %       threshold       a single value or a vector of gene expression 
 %                       thresholds, above which genes are considered to be
-%                       "expressed". default = 1(opt, by default, the mean expression
+%                       "expressed". default = 1(optional, by default, the mean expression
 %                       levels of each gene across all tissues in transcrData
 %                       will be used as the threshold values)
 %       singleCells     binary value selecting whether to use the
 %                       single-cell algorithm to identify expressed genes.
 %                       If used, specify cell subpopulations in CELLTYPES
-%                       (opt, default [])
+%                       (optional, default [])
 %       plotResults     true if single cell probability distributions
-%                       should be plotted (opt, default = false)
+%                       should be plotted (optional, default = false)
 %   metabolomicsData    cell array with metabolite names that the model
-%                       should produce (opt, default [])
+%                       should produce (optional, default [])
 %   INITSteps           Specifies the steps in the algorithm. For more info,
 %                       see INITStepDesc and getINITSteps. 
-%                       (opt, default getINITSteps(), which is the standard ftINIT).
+%                       (optional, default getINITSteps(), which is the standard ftINIT).
 %   removeGenes         if true, low-abundance genes will be removed from
 %                       grRules, unless they are the only gene associated 
 %                       with a reaction, or a subunit of an enzyme complex
@@ -50,15 +50,15 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes
 %                       If false, grRules will not be modified; however,
 %                       genes that were associated only with removed 
 %                       reactions will not be present in the final model.
-%                       (opt, default true).
+%                       (optional, default true).
 %   useScoresForTasks   true if the calculated reaction scored should be 
-%                       used as weights when fitting to tasks (opt, default
+%                       used as weights when fitting to tasks (optional, default
 %                       true)
 %   paramsFT            parameter structure as used by getMILPParams. This
 %                       is for the fitTasks step. For the INIT algorithm,
-%                       see params (opt, default [])
+%                       see params (optional, default [])
 %   verbose             if true, the MILP progression will be shown. 
-%                       (opt, default false)
+%                       (optional, default false)
 %
 %   model                   the resulting model structure
 %   metProduction           array that indicates which of the
@@ -86,7 +86,7 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes
 %   if any are present. Use importModel(file,false) to import a model with
 %   exchange metabolites remaining.
 %
-%   Usage: [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, ...
+% Usage: [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, ...
 %               fullMipRes] = ...
 %               ftINIT(prepData, tissue, celltype, hpaData, transcrData, ...
 %               metabolomicsData, INITSteps, removeGenes, useScoresForTasks, ...

@@ -11,20 +11,20 @@ function [newModel, removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames
 %                           2: also remove reactions which couldn't be checked for
 %                           mass balancing
 %                           3: all reactions can be removed
-%                           (opt, default 1)
+%                           (optional, default 1)
 %   ignoreMets              either a cell array of metabolite IDs, a logical vector
 %                           with the same number of elements as metabolites in the model,
 %                           of a vector of indexes for metabolites to exclude from
-%                           this analysis (opt, default [])
+%                           this analysis (optional, default [])
 %   isNames                 true if the supplied mets represent metabolite names
 %                           (as opposed to IDs). This is a way to delete
 %                           metabolites in several compartments at once without
 %                           knowing the exact IDs. This only works if ignoreMets
-%                           is a cell array (opt, default false)
+%                           is a cell array (optional, default false)
 %   balanceElements         a cell array with the elements for which to
 %                           balance the reactions. May contain any
 %                           combination of the elements defined in parseFormulas
-%                           (opt, default {'C';'P';'S';'N';'O'})
+%                           (optional, default {'C';'P';'S';'N';'O'})
 %   refModel                a reference model which can be used to ensure
 %                           that the resulting model is still functional.
 %                           The intended use is that the reference model is
@@ -33,13 +33,13 @@ function [newModel, removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames
 %                           constrained to a non-zero flux. Before a
 %                           reaction is removed from "model" the function first
 %                           checks that the same deletion in "refModel"
-%                           doesn't render the problem unfeasible (opt)
+%                           doesn't render the problem unfeasible (optional)
 %   ignoreIntBounds         true if internal bounds (including reversibility)
 %                           should be ignored. Exchange reactions are not affected.
 %                           This can be used to find unbalanced solutions which are
-%                           not possible using the default constraints (opt,
+%                           not possible using the default constraints (optional,
 %                           default false)
-%   printReport             true if a report should be printed (opt,
+%   printReport             true if a report should be printed (optional,
 %                           default false)
 %
 %   newModel               	a model structure after the problematic
@@ -66,7 +66,7 @@ function [newModel, removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames
 %   and then iterating until no metabolites can be produced/consumed.
 %   makeSomething is called before consumeSomething.
 %
-%   Usage: [newModel, removedRxns]=removeBadRxns(model,rxnRules,...
+% Usage: [newModel, removedRxns]=removeBadRxns(model,rxnRules,...
 %       ignoreMets,isNames,refModel,ignoreIntBounds,printReport)
 
 if nargin<2

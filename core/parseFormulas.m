@@ -7,11 +7,11 @@ function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, noPolymers,isI
 %                 Corresponds to counting everything between (...)n as
 %                 n being equal to one. Only one set of parentheses
 %                 is allowed. If this is false then polymers are returned as
-%                 "Could not parse formula" (opt, default false)
-%   isInchi       true if the formulas are in the InChI format (opt,
+%                 "Could not parse formula" (optional, default false)
+%   isInchi       true if the formulas are in the InChI format (optional,
 %                 default false)
 %   ignoreRX      ignore R-groups and bound protein. This can be useful since they
-%                 are often used only as intermediates (opt, default false)
+%                 are often used only as intermediates (optional, default false)
 %
 %   elements
 %       abbrevs   cell array with abbreviations for all used elements
@@ -27,7 +27,7 @@ function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, noPolymers,isI
 %                 calculation doesn't affect the exitFlag variable. NaN is
 %                 returned if the weight couldn't be calculated
 %   
-%   Usage: [elements, useMat, exitFlag, MW]=
+% Usage: [elements, useMat, exitFlag, MW]=
 %               parseFormulas(formulas, noPolymers,isInchi,ignoreRX)
 
 if nargin<2

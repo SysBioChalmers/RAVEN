@@ -5,14 +5,14 @@ function compStruct = compareMultipleModels(models,printResults,plotResults,grou
 %
 %   models              cell array of two or more models
 %   printResults        true if the results should be printed on the screen
-%                       (opt, default false)
+%                       (optional, default false)
 %   plotResults         true if the results should be plotted
-%                       (opt, default false)
+%                       (optional, default false)
 %   groupVector         numeric vector or cell array for grouping similar 
-%                       models, i.e. by tissue (opt, default, all models
+%                       models, i.e. by tissue (optional, default, all models
 %                       ungrouped)
 %   funcCompare         logical, should a functional comparison be run
-%                       (opt,default, false)
+%                       (optional,default, false)
 %   taskFile            string containing the name of the task file to use
 %                       for the functional comparison (should be an .xls or 
 %                       .xlsx file, required for functional comparison)
@@ -38,7 +38,7 @@ function compStruct = compareMultipleModels(models,printResults,plotResults,grou
 %                           task
 %           tasks           vector containing names of all tasks
 %
-%   Usage: compStruct=compareMultipleModels(models,printResults,...
+% Usage: compStruct=compareMultipleModels(models,printResults,...
 %                       plotResults,groupVector,funcCompare,taskFile);
 
 %% Stats toolbox required

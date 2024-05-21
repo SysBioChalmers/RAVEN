@@ -1,15 +1,15 @@
 function I=haveFlux(model,cutOff,rxns)
 % haveFlux
 %   Checks which reactions can carry a (positive or negative) flux.
-%   Is used as a faster version of getAllowedBounds if it's only interesting
+%   Is used as a faster version of getAllowedBounds if it is only interesting
 %   whether the reactions can carry a flux or not
 %
 %   model       a model structure
 %   cutOff      the flux value that a reaction has to carry to be
-%               identified as positive (opt, default 10^-8)
+%               identified as positive (optional, default 10^-8)
 %   rxns        either a cell array of IDs, a logical vector with the
 %               same number of elements as metabolites in the model,
-%               of a vector of indexes (opt, default model.rxns)
+%               of a vector of indexes (optional, default model.rxns)
 %
 %   I           logical array with true if the corresponding
 %               reaction can carry a flux
@@ -17,7 +17,7 @@ function I=haveFlux(model,cutOff,rxns)
 %   NOTE: If a model has +/- Inf bounds then those are replaced with an
 %   arbitary large value of +/- 10000 prior to solving
 %
-%   Usage: I=haveFlux(model,cutOff, rxns)
+% Usage: I=haveFlux(model,cutOff, rxns)
 
 if nargin<2
     cutOff=10^-6;
@@ -55,7 +55,7 @@ if ~isempty(sol.x)
     J(abs(sol.x(mixIndexes))>cutOff)=true;
 end
 
-%Loop through and maximize then minimize each rxn if it doesn't already
+%Loop through and maximize then minimize each rxn if it does not already
 %have a flux
 Z=zeros(numel(smallModel.c),1);
 hsSolOut=[];

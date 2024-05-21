@@ -13,7 +13,7 @@ function [spontaneousRxnList, pathwayID]=addSpontaneousRxns(rxnList, metList)
 %   Output:
 %   pathwayID            the cell array of relevant pathways
 %
-%   Usage: spontaneousRxnList=addSpontaneousRxns(rxnList, metList)
+% Usage: spontaneousRxnList=addSpontaneousRxns(rxnList, metList)
 
 metList=convertCharArray(metList);
 rxnList=convertCharArray(rxnList);

@@ -8,22 +8,22 @@ function model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutsi
 %                   (see below for details)
 %   rxns            either a cell array of reaction IDs, a logical vector 
 %                   with the same number of elements as reactions in the model,
-%                   or a vector of indexes to remove (opt, default
+%                   or a vector of indexes to remove (optional, default
 %                   model.rxns)
 %   deleteOriginal  true if the original reactions should be removed
-%                   (making it move the reactions instead) (opt, default
+%                   (making it move the reactions instead) (optional, default
 %                   false)
 %   compNames       cell array of compartment names. This is used if new
-%                   compartments should be added (opt, default toComps)
+%                   compartments should be added (optional, default toComps)
 %   compOutside     cell array of the id (as in comps) for the compartment
 %                   surrounding each of the compartments. This is used if
-%                   new compartments should be added (opt, default all {''})
+%                   new compartments should be added (optional, default all {''})
 %
 %   model           an updated model structure
 %
 %   NOTE: New reactions and metabolites will be named as "id_toComps(i)".
 %
-%   Usage: model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutside)
+% Usage: model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutside)
 
 if nargin<3
     rxns=model.rxns;

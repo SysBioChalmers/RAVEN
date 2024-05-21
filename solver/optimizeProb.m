@@ -4,7 +4,7 @@ function res = optimizeProb(prob,params,verbose)
 %
 %   prob	cobra style LP/MILP problem struct to be optimised
 %   params	solver specific parameters (optional)
-%   verbose if true MILP progress is shown (opt, default true)
+%   verbose if true MILP progress is shown (optional, default true)
 %
 %   res		the output structure from the selected solver RAVENSOLVER
 %   		(cobra style)

@@ -28,7 +28,7 @@ function model=getMetsFromKEGG(keggPath)
 %   should remove the keggMets.mat file if you want to rebuild the model
 %   structure from a newer version of KEGG.
 %               
-%   Usage: model=getMetsFromKEGG(keggPath)
+% Usage: model=getMetsFromKEGG(keggPath)
 %
 % NOTE: This is how one entry looks in the file
 %

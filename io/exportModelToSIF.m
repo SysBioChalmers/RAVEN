@@ -4,16 +4,16 @@ function exportModelToSIF(model,fileName,graphType,rxnLabels,metLabels)
 %
 %   model         a model structure
 %   fileName      the filename  to export the model to
-%   graphType     the type of graph to export to (opt, default 'rc')
+%   graphType     the type of graph to export to (optional, default 'rc')
 %                 'rc'  reaction-compound
 %                 'rr'  reaction-reaction
 %                 'cc'  compound-compound
-%   rxnLabels     cell array with labels for reactions (opt, default
+%   rxnLabels     cell array with labels for reactions (optional, default
 %                 model.rxns)
-%   metLabels     cell array with labels for metabolites (opt, default
+%   metLabels     cell array with labels for metabolites (optional, default
 %                 model.mets)
 %
-%   Usage: exportModelToSIF(model,fileName,graphType,rxnLabels,metLabels)
+% Usage: exportModelToSIF(model,fileName,graphType,rxnLabels,metLabels)
 fileName=char(fileName);
 if nargin<3
     graphType='rc';

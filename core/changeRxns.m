@@ -29,14 +29,14 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %                        start from the highest used integer+1
 %   compartment      a string with the compartment the metabolites should
 %                    be placed in when using eqnType=2. Must match
-%                    model.compNames (opt when eqnType=1 or eqnType=3)
+%                    model.compNames (optional when eqnType=1 or eqnType=3)
 %   allowNewMets     true if the function is allowed to add new
 %                    metabolites. It is highly recommended to first add
 %                    any new metabolites with addMets rather than
 %                    automatically through this function. addMets supports
 %                    more annotation of metabolites, allows for the use of
 %                    exchange metabolites, and using it reduces the risk
-%                    of parsing errors (opt, default false)
+%                    of parsing errors (optional, default false)
 %
 %   model            an updated model structure
 %
@@ -51,7 +51,7 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %   doesn't exist, the function will copy any available information from
 %   the metabolite in another compartment.
 %
-%   Usage: model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
+% Usage: model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 
 if nargin<4
     eqnType=1;

@@ -7,11 +7,11 @@ function pathway=trimPathway(pathway, rxnsToKeep, deleteUnconnectedMets)
 %   rxnsToKeep                cell array with the IDs of the reactions to
 %                             keep
 %   deleteUnconnectedMets     delete metabolites that are no longer connected
-%                             by any reactions (opt, default true)
+%                             by any reactions (optional, default true)
 %
 % 	pathway                   an updated pathway object
 %
-%   Usage: pathway=trimPathway(pathway, rxnsToKeep, deleteUnconnectedMets)
+% Usage: pathway=trimPathway(pathway, rxnsToKeep, deleteUnconnectedMets)
 
 if nargin<3
     deleteUnconnectedMets=true;

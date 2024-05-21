@@ -9,7 +9,7 @@ function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 %                   path to the root of this database
 %   onlyInKingdom   if true, it generates a distance matrix with distance
 %                   Inf for organisms from another domains (Prokaryota,
-%                   Eukaryota) (opt, default false)
+%                   Eukaryota) (optional, default false)
 %
 %   Output:
 %   phylDistStruct  a structure with a list of organism ids and a matrix
@@ -18,7 +18,7 @@ function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 %   NOTE: This simple metric is based on the number of nodes two organisms
 %   are away from each other in KEGG
 %
-%   Usage: phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
+% Usage: phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 
 if nargin<1
     keggPath='RAVEN/external/kegg';

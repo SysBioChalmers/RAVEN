@@ -5,19 +5,19 @@ function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)
 %   model             a model structure
 %   sortReversible    sorts the reversible reactions so the the metabolite
 %                     that is first in lexiographical order is a reactant
-%                     (opt, default true)
+%                     (optional, default true)
 %   sortMetName       sort the metabolite names in the equation, also uses
-%                     compartment abbreviation (opt, default false)
+%                     compartment abbreviation (optional, default false)
 %   sortReactionOrder sorts the reaction order within each subsystem so that
 %                     reactions consuming some metabolite comes efter
 %                     reactions producing it. This overrides the
 %                     sortReversible option and reactions are sorted so that
 %                     the production direction matches the consumption
-%                     direction (opt, default false)
+%                     direction (optional, default false)
 %
 %   model             an updated model structure
 %
-%   Usage: model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)
+% Usage: model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)
 
 if nargin<2
     sortReversible=true;

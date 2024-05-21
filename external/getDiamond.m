@@ -15,9 +15,9 @@ function [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
 %   refFastaFiles   a cell array with the paths to the corresponding FASTA
 %                   files
 %   developMode     true if blastReport should be generated that is used
-%                   in the unit testing function for DIAMOND (opt, default
+%                   in the unit testing function for DIAMOND (optional, default
 %                   false)
-%   hideVerbose     true if no status messages should be printed (opt,
+%   hideVerbose     true if no status messages should be printed (optional,
 %                   default false)
 %
 %   Output:
@@ -34,7 +34,7 @@ function [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
 %   getDiamond() is a fast alternative (>15x faster). The blastStructure
 %   generated is in the same format as those obtained from getBlast().
 %
-%   Usage: [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
+% Usage: [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
 %    modelIDs,refFastaFiles,developMode,hideVerbose)
 
 if nargin<5

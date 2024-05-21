@@ -10,11 +10,11 @@ function model = changeGeneAssoc(model,rxnID,geneAssoc,replace)
 %               different instances
 %   replace     true if old gene association should be replaced with new
 %               association. False if new gene association should be
-%               concatenated to the old association (opt, default true)
+%               concatenated to the old association (optional, default true)
 %
 %   model       an updated model structure
 %
-%   Usage: changeGeneAssoc(model,rxnID,geneAssoc,replace)
+% Usage: changeGeneAssoc(model,rxnID,geneAssoc,replace)
 
 if nargin==3
     replace=true;

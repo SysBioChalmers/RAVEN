@@ -4,7 +4,7 @@ function [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns
 %
 %   model                   a model structure
 %   ignoreRxns              cell array of reaction IDs which should not be
-%                           checked (opt, default {})
+%                           checked (optional, default {})
 %
 %   essentialRxns           cell array with the IDs of the essential reactions
 %   essentialRxnsIndexes    vector with the indexes of the essential reactions
@@ -12,7 +12,7 @@ function [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns
 %   Essential reactions are those which, when constrained to 0, result in an
 %   infeasible problem.
 %
-%   Usage: [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns)
+% Usage: [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns)
 
 if nargin<2
     ignoreRxns={};

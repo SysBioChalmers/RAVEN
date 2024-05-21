@@ -10,7 +10,7 @@ function newModel = sortIdentifiers(model)
 %   newModel    an updated model structure with alphabetically sorted
 %               identifiers
 %
-%   Usage: newModel=sortIdentifiers(model)
+% Usage: newModel=sortIdentifiers(model)
 
 [~,I]=sort(model.rxns);
 newModel=permuteModel(model,I,'rxns');

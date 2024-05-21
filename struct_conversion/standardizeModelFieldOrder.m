@@ -11,7 +11,7 @@ function orderedModel=standardizeModelFieldOrder(model)
 %   modified. For changing model fields between RAVEN and COBRA format, use
 %   ravenCobraWrapper().
 %
-%   Usage: orderedModel=standardizeModelFieldOrder(model)
+% Usage: orderedModel=standardizeModelFieldOrder(model)
 
 ravenPath=findRAVENroot();
 

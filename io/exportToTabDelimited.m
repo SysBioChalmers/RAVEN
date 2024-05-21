@@ -7,7 +7,7 @@ function exportToTabDelimited(model,path,sortIds)
 %           under the names excelRxns.txt, excelMets.txt, excelGenes.txt,
 %           excelModel.txt, and excelComps.txt
 %   sortIds logical whether metabolites, reactions and genes should be
-%           sorted alphabetically by their identifiers (opt, default false)
+%           sorted alphabetically by their identifiers (optional, default false)
 %
 %   NOTE: This functionality was previously a part of exportToExcelFormat.
 %         The naming of the resulting text files is to preserve backward
@@ -16,7 +16,7 @@ function exportToTabDelimited(model,path,sortIds)
 %   NOTE: No checks are made regarding the correctness of the model. Use
 %         checkModelStruct to identify problems in the model structure
 %
-%   Usage: exportToTabDelimited(model,path,sortIds)
+% Usage: exportToTabDelimited(model,path,sortIds)
 
 if nargin<2
     path='./';

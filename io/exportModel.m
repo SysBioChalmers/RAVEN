@@ -8,14 +8,14 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
 %                       will open if no file name is specified.
 %   exportGeneComplexes true if gene complexes (all gene sets linked with
 %                       AND relationship) should be recognised and exported
-%                       (opt, default false)
-%   supressWarnings     true if warnings should be supressed (opt, default
+%                       (optional, default false)
+%   supressWarnings     true if warnings should be supressed (optional, default
 %                       false)
 %   sortIds             logical whether metabolites, reactions and genes
 %                       should be sorted alphabetically by their
-%                       identifiers (opt, default false)
+%                       identifiers (optional, default false)
 %
-%   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
+% Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
 if nargin<2 || isempty(fileName)
     [fileName, pathName] = uiputfile({'*.xml;*.sbml'}, 'Select file for model export',[model.id '.xml']);
     if fileName == 0

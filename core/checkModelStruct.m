@@ -5,14 +5,14 @@ function checkModelStruct(model,throwErrors,trimWarnings)
 %   model           a model structure
 %   throwErrors     true if the function should throw errors if
 %                   inconsistencies are found. The alternative is to
-%                   print warnings for all types of issues (opt, default true)
+%                   print warnings for all types of issues (optional, default true)
 %   trimWarnings    true if only a maximal of 10 items should be displayed in
-%                   a given error/warning (opt, default true)
+%                   a given error/warning (optional, default true)
 %
 %   NOTE: This is performed after importing a model from Excel or before
 %   attempting to export a model to SBML format.
 %
-%   Usage: checkModelStruct(model,throwErrors,trimWarnings)
+% Usage: checkModelStruct(model,throwErrors,trimWarnings)
 
 if nargin<2
     throwErrors=true;

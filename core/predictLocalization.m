@@ -19,12 +19,12 @@ function [outModel, geneLocalization, transportStruct, scores,...
 %                           all metabolites. It can also be a vector of
 %                           costs with the same dimension as model.mets.
 %                           Note that negative costs will result in that
-%                           transport of the metabolite is encouraged (opt,
+%                           transport of the metabolite is encouraged (optional,
 %                           default 0.5)
-%	maxTime                 maximum optimization time in minutes (opt,
+%	maxTime                 maximum optimization time in minutes (optional,
 %                           default 15)
 %	plotResults             true if the results should be plotted during the
-%                           optimization (opt, default false)
+%                           optimization (optional, default false)
 %
 %   Output:
 %	outModel                the resulting model structure
@@ -58,7 +58,7 @@ function [outModel, geneLocalization, transportStruct, scores,...
 %	a simplification to keep the problem size down. The problem is solved
 %	using simulated annealing.
 %
-%   Usage: [outModel, geneLocalization, transportStruct, scores,...
+% Usage: [outModel, geneLocalization, transportStruct, scores,...
 %       removedRxns] = predictLocalization(model, GSS,...
 %       defaultCompartment, transportCost, maxTime, plotResults)
 
