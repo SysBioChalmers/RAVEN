@@ -37,17 +37,15 @@ if ~any(strcmpi(addonList.Name,'Parallel Computing Toolbox'))
         disp('Cannot find MATLAB Parallel Computing Toolbox, process is not parallelized.')
     end
 else
+    pool = gcp('nocreate');
     if ~runParallel % User has Parallel toolbox, but does not want pool to start.
-        % If pool is already running, then it will use the max workers
-        % anyway, but this is probably okay.
+        % If pool is already running, delete it
         ps = parallel.Settings;
         oldPoolAutoCreate = ps.Pool.AutoCreate;
         ps.Pool.AutoCreate = false;
-    else
-        pool = gcp('nocreate');
-        if isempty(pool)
-            parpool('IdleTimeout',120);
-        end
+        delete(pool);
+    elseif isempty(pool)
+        parpool('IdleTimeout',120);
     end
 end
 end

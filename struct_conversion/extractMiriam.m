@@ -76,7 +76,7 @@ end
 %separator
 miriams = cell([size(tempMiriams,1) 1]);
 notEmpty=~cellfun(@isempty,tempMiriams);
-for i=1:size(miriams)
+for i=1:size(miriams,1)
     miriams{i}=strjoin(tempMiriams(i,notEmpty(i,:)),{'; '});
 end
 end

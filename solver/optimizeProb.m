@@ -142,7 +142,7 @@ switch solver
         %% Use GLPK using RAVEN-provided binary
     case 'glpk'
         solverparams.scale   = 1; % Auto scaling
-        solverparams.tmlim   = defaultparams.timeLimit;
+        %solverparams.tmlim   = defaultparams.timeLimit;
         solverparams.tolbnd  = defaultparams.feasTol;
         solverparams.toldj   = defaultparams.optTol;
         solverparams.tolint  = defaultparams.intTol;

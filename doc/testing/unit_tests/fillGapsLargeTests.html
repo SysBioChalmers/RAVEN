@@ -49,81 +49,96 @@ This function is called by:
 0002 <span class="comment">%results = runtests('fillGapsLargeTests.m')</span>
 0003 <a name="_sub0" href="#_subfunctions" class="code">function tests = fillGapsLargeTests</a>
 0004 tests = functiontests(localfunctions);
-0005 <span class="keyword">end</span>
-0006 
-0007 <a name="_sub1" href="#_subfunctions" class="code">function testLargeGurobi(testCase)</a>
-0008 <span class="keyword">if</span> exist(<span class="string">'gurobi'</span>,<span class="string">'file'</span>)~=3
-0009     error(<span class="string">'Gurobi not installed or cannot be found in MATLAB path, test skipped'</span>)
-0010 <span class="keyword">end</span>
-0011 sourceDir = fileparts(fileparts(fileparts(which(mfilename))));
-0012 evalc(<span class="string">'model=importModel(fullfile(sourceDir,''tutorial'',''iAL1006 v1.00.xml''))'</span>);
-0013 model.c(1484)=1;
-0014 modelDB=model; <span class="comment">% Keep as database with reactions</span>
-0015 <span class="keyword">try</span>
-0016     oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0017 <span class="keyword">catch</span>
-0018 <span class="keyword">end</span>
-0019 setRavenSolver(<span class="string">'gurobi'</span>);
-0020 
-0021 <span class="comment">%Remove first 10 reactions</span>
-0022 model=removeReactions(modelDB,(1:10));
-0023 modelDB.id=<span class="string">'DB'</span>;
-0024 <span class="keyword">try</span>
-0025     evalc(<span class="string">'[newConnected,cannotConnect,addedRxns,model,exitFlag]=fillGaps(model,modelDB,false,false)'</span>);
-0026 <span class="keyword">catch</span>
-0027     <span class="keyword">try</span>
-0028         setRavenSolver(oldSolver);
-0029     <span class="keyword">catch</span>
-0030         rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0031     <span class="keyword">end</span>
-0032     error(<span class="string">'Solver not working'</span>)
+0005 testGurobi = exist(<span class="string">'gurobi'</span>,<span class="string">'file'</span>)==3;
+0006 <span class="keyword">if</span> testGurobi
+0007     <span class="keyword">try</span>
+0008         gurobi_read(<span class="string">'solverTests.m'</span>);
+0009     <span class="keyword">catch</span>
+0010         testGurobi = false;
+0011     <span class="keyword">end</span>
+0012 <span class="keyword">end</span>
+0013 <span class="keyword">if</span> ~testGurobi
+0014     disp(<span class="string">'Gurobi not installed or cannot be found in MATLAB path, some fillGapsLargeTests skipped.'</span>)
+0015     skipTests = contains({tests.Name},<span class="string">'gurobi'</span>,<span class="string">'IgnoreCase'</span>,true);
+0016     tests(skipTests) = [];
+0017 <span class="keyword">end</span>
+0018 <span class="keyword">if</span> exist(<span class="string">'scip'</span>,<span class="string">'file'</span>)~=3
+0019     disp(<span class="string">'SCIP MEX binary not installed or not functional, some fillGapsLargeTests skipped.'</span>)
+0020     skipTests = contains({tests.Name},<span class="string">'scip'</span>,<span class="string">'IgnoreCase'</span>,true);
+0021     tests(skipTests) = [];
+0022 <span class="keyword">end</span>
+0023 <span class="keyword">end</span>
+0024 
+0025 <a name="_sub1" href="#_subfunctions" class="code">function testLargeGurobi(testCase)</a>
+0026 sourceDir = fileparts(fileparts(fileparts(which(mfilename))));
+0027 evalc(<span class="string">'model=importModel(fullfile(sourceDir,''tutorial'',''iAL1006 v1.00.xml''))'</span>);
+0028 model.c(1484)=1;
+0029 modelDB=model; <span class="comment">% Keep as database with reactions</span>
+0030 <span class="keyword">try</span>
+0031     oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0032 <span class="keyword">catch</span>
 0033 <span class="keyword">end</span>
-0034 sol=solveLP(model);
-0035 <span class="keyword">try</span>
-0036     setRavenSolver(oldSolver);
-0037 <span class="keyword">catch</span>
-0038     rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0039 <span class="keyword">end</span>
-0040 <span class="comment">%Expect at least 5% of the original growth</span>
-0041 verifyTrue(testCase,-sol.f&gt;0);
-0042 <span class="keyword">end</span>
-0043 
-0044 <a name="_sub2" href="#_subfunctions" class="code">function testLargeSCIP(testCase)</a>
-0045 sourceDir = fileparts(fileparts(fileparts(which(mfilename))));
-0046 evalc(<span class="string">'model=importModel(fullfile(sourceDir,''tutorial'',''iAL1006 v1.00.xml''))'</span>);
-0047 model.c(1484)=1;
-0048 modelDB=model; <span class="comment">% Keep as database with reactions</span>
-0049 <span class="comment">% Force growth in gapped model</span>
-0050 sol=solveLP(model);
-0051 model.lb(1484)=abs(sol.f*0.1);
-0052 <span class="keyword">try</span>
-0053     oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0054 <span class="keyword">catch</span>
-0055 <span class="keyword">end</span>
-0056 setRavenSolver(<span class="string">'scip'</span>);
-0057 
-0058 <span class="comment">%Remove first 10 reactions</span>
-0059 model=removeReactions(model,(1:10));
-0060 modelDB.id=<span class="string">'DB'</span>;
-0061 <span class="keyword">try</span>
-0062     evalc(<span class="string">'[newConnected,cannotConnect,addedRxns,model,exitFlag]=fillGaps(model,modelDB,false,true)'</span>);
-0063 <span class="keyword">catch</span>
-0064     <span class="keyword">try</span>
-0065         setRavenSolver(oldSolver);
-0066     <span class="keyword">catch</span>
-0067         rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0068     <span class="keyword">end</span>
-0069     error(<span class="string">'Solver not working'</span>)
+0034 setRavenSolver(<span class="string">'gurobi'</span>);
+0035 
+0036 <span class="comment">%Remove first 10 reactions</span>
+0037 model=removeReactions(modelDB,(1:10));
+0038 modelDB.id=<span class="string">'DB'</span>;
+0039 <span class="keyword">try</span>
+0040     evalc(<span class="string">'[newConnected,cannotConnect,addedRxns,model,exitFlag]=fillGaps(model,modelDB,false,false)'</span>);
+0041 <span class="keyword">catch</span>
+0042     <span class="keyword">try</span>
+0043         setRavenSolver(oldSolver);
+0044     <span class="keyword">catch</span>
+0045         rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0046     <span class="keyword">end</span>
+0047     error(<span class="string">'Solver not working'</span>)
+0048 <span class="keyword">end</span>
+0049 sol=solveLP(model);
+0050 <span class="keyword">try</span>
+0051     setRavenSolver(oldSolver);
+0052 <span class="keyword">catch</span>
+0053     rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0054 <span class="keyword">end</span>
+0055 <span class="comment">%Expect at least 5% of the original growth</span>
+0056 verifyTrue(testCase,-sol.f&gt;0);
+0057 <span class="keyword">end</span>
+0058 
+0059 <a name="_sub2" href="#_subfunctions" class="code">function testLargeSCIP(testCase)</a>
+0060 sourceDir = fileparts(fileparts(fileparts(which(mfilename))));
+0061 evalc(<span class="string">'model=importModel(fullfile(sourceDir,''tutorial'',''iAL1006 v1.00.xml''))'</span>);
+0062 model.c(1484)=1;
+0063 modelDB=model; <span class="comment">% Keep as database with reactions</span>
+0064 <span class="comment">% Force growth in gapped model</span>
+0065 sol=solveLP(model);
+0066 model.lb(1484)=abs(sol.f*0.1);
+0067 <span class="keyword">try</span>
+0068     oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0069 <span class="keyword">catch</span>
 0070 <span class="keyword">end</span>
-0071 sol=solveLP(model);
-0072 <span class="keyword">try</span>
-0073     setRavenSolver(oldSolver);
-0074 <span class="keyword">catch</span>
-0075     rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0076 <span class="keyword">end</span>
-0077 <span class="comment">%Expect at least 5% of the original growth</span>
-0078 verifyTrue(testCase,-sol.f&gt;0);
-0079 <span class="keyword">end</span></pre></div>
+0071 setRavenSolver(<span class="string">'scip'</span>);
+0072 
+0073 <span class="comment">%Remove first 10 reactions</span>
+0074 model=removeReactions(model,(1:10));
+0075 modelDB.id=<span class="string">'DB'</span>;
+0076 <span class="keyword">try</span>
+0077     evalc(<span class="string">'[newConnected,cannotConnect,addedRxns,model,exitFlag]=fillGaps(model,modelDB,false,true)'</span>);
+0078 <span class="keyword">catch</span>
+0079     <span class="keyword">try</span>
+0080         setRavenSolver(oldSolver);
+0081     <span class="keyword">catch</span>
+0082         rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0083     <span class="keyword">end</span>
+0084     error(<span class="string">'Solver not working'</span>)
+0085 <span class="keyword">end</span>
+0086 sol=solveLP(model);
+0087 <span class="keyword">try</span>
+0088     setRavenSolver(oldSolver);
+0089 <span class="keyword">catch</span>
+0090     rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0091 <span class="keyword">end</span>
+0092 <span class="comment">%Expect at least 5% of the original growth</span>
+0093 verifyTrue(testCase,-sol.f&gt;0);
+0094 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
