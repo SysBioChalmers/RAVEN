@@ -129,9 +129,7 @@ model.unconstrained=[];
 %Load the model using libSBML
 [ravenDir,prevDir]=findRAVENroot();
 fileName=checkFileExistence(fileName,1);
-cd(fullfile(ravenDir,'software','libSBML'));
-modelSBML = TranslateSBML(fileName,0,0,[1 1]);
-cd(prevDir);
+modelSBML = TranslateSBML_RAVEN(fileName,0,0,[1 1]);
 
 if isempty(modelSBML)
     EM='There is a problem with the SBML file. Try using the SBML Validator at http://sbml.org/Facilities/Validator';
@@ -807,6 +805,9 @@ if isfield(modelSBML,'notes')
         model.annotation.note=modelSBML.notes(startString+7:endString-1);
         model.annotation.note=regexprep(model.annotation.note,'<p>|</p>','');
         model.annotation.note=strtrim(model.annotation.note);
+        if regexp(model.annotation.note,'This file was generated using the exportModel function in RAVEN Toolbox \d\.\d and OutputSBML in libSBML')
+            model.annotation=rmfield(model.annotation,'note'); % Default note added when running exportModel
+        end
     end
 end
 

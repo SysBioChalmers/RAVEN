@@ -666,6 +666,7 @@ end
 
 if sbmlPackageVersions(1) == 2
     modelSBML.fbc_strict=1;
+    modelSBML.isSetfbc_strict = 1;
 end
 
 modelSBML.rule=[];
@@ -673,9 +674,8 @@ modelSBML.constraint=[];
 
 [ravenDir,prevDir]=findRAVENroot();
 fileName=checkFileExistence(fileName,1,true,false);
-cd(fullfile(ravenDir,'software','libSBML'));
-OutputSBML(modelSBML,fileName,1,0,[1,0]);
-cd(prevDir);
+
+OutputSBML_RAVEN(modelSBML,fileName,1,0,[1,0]);
 end
 
 
