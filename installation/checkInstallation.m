@@ -126,7 +126,7 @@ fprintf([myStr(' > Checking libSBML version',40) '%f'])
 try
     evalc('importModel(fullfile(ravenDir,''tutorial'',''empty.xml''))');
     try
-        libSBMLver=OutputSBML; % Only works in libSBML 5.17.0+
+        libSBMLver=OutputSBML_RAVEN; % Only works in libSBML 5.17.0+
         fprintf([libSBMLver.libSBML_version_string '\n']);
     catch
         printOrange('Fail\n')
@@ -313,21 +313,23 @@ end
 end
 
 function status = makeBinaryExecutable(ravenDir)
+% This function is required to run when RAVEN is downloaded as MATLAB
+% Add-On, in which case the file permissions are not correctly set
 if ispc
     status = 0; % No need to run on Windows
     return;
 end
 binDir = fullfile(ravenDir,'software');
 
-binList = {fullfile(binDir,'blast+','blastp');                  fullfile(binDir,'blast+','blastp.mac');
-           fullfile(binDir,'blast+','makeblastdb');             fullfile(binDir,'blast+','makeblastdb.mac');
-           fullfile(binDir,'cd-hit','cd-hit');                  fullfile(binDir,'cd-hit','cd-hit.mac');
-           fullfile(binDir,'diamond','diamond');                fullfile(binDir,'diamond','diamond.mac');
-           fullfile(binDir,'hmmer','hmmbuild');                 fullfile(binDir,'hmmer','hmmbuild.mac');
-           fullfile(binDir,'hmmer','hmmsearch');                fullfile(binDir,'hmmer','hmmsearch.mac');
-           fullfile(binDir,'GLPKmex','glpkcc.mexa64');          fullfile(binDir,'GLPKmex','glpkcc.mexglx');         fullfile(binDir,'GLPKmex','glpkcc.mexmaci64');
-           fullfile(binDir,'libSBML','TranslateSBML.mexa64');   fullfile(binDir,'libSBML','TranslateSBML.mexglx');  fullfile(binDir,'libSBML','TranslateSBML.mexmaci64');
-           fullfile(binDir,'libSBML','OutputSBML.mexa64');      fullfile(binDir,'libSBML','OutputSBML.mexglx');     fullfile(binDir,'libSBML','OutputSBML.mexmaci64');
+binList = {fullfile(binDir,'blast+','blastp');                      fullfile(binDir,'blast+','blastp.mac');
+           fullfile(binDir,'blast+','makeblastdb');                 fullfile(binDir,'blast+','makeblastdb.mac');
+           fullfile(binDir,'cd-hit','cd-hit');                      fullfile(binDir,'cd-hit','cd-hit.mac');
+           fullfile(binDir,'diamond','diamond');                    fullfile(binDir,'diamond','diamond.mac');
+           fullfile(binDir,'hmmer','hmmbuild');                     fullfile(binDir,'hmmer','hmmbuild.mac');
+           fullfile(binDir,'hmmer','hmmsearch');                    fullfile(binDir,'hmmer','hmmsearch.mac');
+           fullfile(binDir,'GLPKmex','glpkcc.mexa64');              fullfile(binDir,'GLPKmex','glpkcc.mexglx');                 fullfile(binDir,'GLPKmex','glpkcc.mexmaci64');              fullfile(binDir,'GLPKmex','glpkcc.mexmaca64');
+           fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexa64'); fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexglx');    fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexmaci64');  fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexmaca64');
+           fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexa64');    fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexglx');       fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexmaci64');     fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexmaca64');
            fullfile(binDir,'mafft','mafft-linux64','mafft.bat');
            fullfile(binDir,'mafft','mafft-mac','mafft.bat');};
 
