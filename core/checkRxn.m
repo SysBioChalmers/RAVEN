@@ -64,7 +64,7 @@ for i=1:numel(report.reactants)
     [tempModel, testRxn]=addExchangeRxns(model,'out',report.reactants(i));
     tempModel=setParam(tempModel,'obj',testRxn,1);
     sol=solveLP(tempModel);
-    if sol.f*-1>cutoff
+    if sol.f>cutoff
         report.canMake(i)=true;
     else
         if printReport==true
@@ -77,7 +77,7 @@ for i=1:numel(report.products)
     [tempModel, testRxn]=addExchangeRxns(model,'in',report.products(i));
     tempModel=setParam(tempModel,'obj',testRxn,1);
     sol=solveLP(tempModel);
-    if sol.f*-1>cutoff
+    if sol.f>cutoff
         report.canConsume(i)=true;
     else
         if printReport==true

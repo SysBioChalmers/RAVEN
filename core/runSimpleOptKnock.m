@@ -61,7 +61,7 @@ params.targetIdx   = getIndexes(model,targetRxn,'rxns');
 
 model = setParam(model,'obj',params.biomassIdx,1);
 [solWT, hsSol] = solveLP(model);
-WT.minScore = solWT.x(params.targetIdx)*-solWT.f;
+WT.minScore = solWT.x(params.targetIdx)*solWT.f;
 
 fprintf('Running simple OptKnock analysis...   0%% complete');
 KO=zeros(1,params.maxNumKO);
@@ -101,8 +101,8 @@ for i = 1:numel(params.deletions)
             modelKO = removeGenes(model,params.deletions{i},false,false,false);
     end
     solKO = solveLP(modelKO,0,[],hsSol);
-    if ~isempty(-solKO.f)
-        growthRate = -solKO.f;
+    if ~isempty(solKO.f)
+        growthRate = solKO.f;
         prodRate   = solKO.x(params.targetIdx);
         prodRate(prodRate<1e-10)=0; % Filter out results from solver tolerance
         if growthRate > params.minGrowth
