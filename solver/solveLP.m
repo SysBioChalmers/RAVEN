@@ -163,7 +163,7 @@ end
 %"fake metabolite" is then set to be at least as good as the objective
 %function value.
 if minFlux~=0
-    model.S=[model.S;(model.c*-1)'];
+    model.S=[model.S;model.c'];
     model.mets=[model.mets;'TEMP'];
     
     %If the constraint on the objective function value is exact there is a
@@ -173,10 +173,10 @@ if minFlux~=0
         if size(model.b,2)==1
             model.b=[model.b model.b];
         end
-        if solution.f<0
-            model.b=[model.b;[-inf solution.f*0.999999]];
+        if solution.f>0
+            model.b=[model.b;[solution.f*0.999999 inf]];
         else
-            model.b=[model.b;[-inf solution.f*1.000001]];
+            model.b=[model.b;[solution.f*1.000001 inf]];
         end
     else
         model.b=[model.b;ones(1,size(model.b,2))*solution.f];

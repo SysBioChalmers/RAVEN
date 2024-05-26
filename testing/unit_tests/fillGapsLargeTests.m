@@ -65,7 +65,7 @@ model.c(1484)=1;
 modelDB=model; % Keep as database with reactions
 % Force growth in gapped model
 sol=solveLP(model);
-model.lb(1484)=abs(sol.f*0.1);
+model.lb(1484)=sol.f*0.1;
 try
     oldSolver=getpref('RAVEN','solver');
 catch

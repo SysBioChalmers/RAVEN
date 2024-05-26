@@ -50,7 +50,7 @@ end
 %Find out the maximum theoretical yield of target reaction
 model=setParam(model,'obj',targetRxn,1);
 sol=solveLP(model,1);
-targetMax=abs(sol.f*coefficient);   % 90 percent of the theoretical yield
+targetMax=sol.f*coefficient;   % 90 percent of the theoretical yield
 
 model=setParam(model,'obj',biomassRxn,1);
 

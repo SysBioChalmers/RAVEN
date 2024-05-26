@@ -97,7 +97,7 @@ details(~ismember(originalGenes,model.genes))=4;
 
 [~, geneMapping]=ismember(model.genes,originalGenes);
 growthWT=solveLP(model);
-growthWT=-growthWT.f;
+growthWT=growthWT.f;
 
 %Do single deletion/over expression. This is done here since the double
 %deletion depends on which single deletions prove lethal (to reduce the
@@ -128,7 +128,7 @@ if strcmpi(testType,'sgd') || strcmpi(testType,'sgo') || strcmpi(testType,'dgd')
         %If the optimization terminated successfully
         if sol.stat==1
             fluxes(:,i)=sol.x;
-            grRatioMuts(i)=-sol.f/growthWT;
+            grRatioMuts(i)=sol.f/growthWT;
             details(geneMapping(i))=1;
         else
             fluxes(:,i)=0;
@@ -183,7 +183,7 @@ if strcmpi(testType,'dgd')
         
         if sol.stat==1
             fluxes(:,i)=sol.x;
-            grRatioMuts(i)=-sol.f/growthWT;
+            grRatioMuts(i)=sol.f/growthWT;
         end
     end
 end
