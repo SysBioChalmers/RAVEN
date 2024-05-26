@@ -102,6 +102,8 @@ end
 
 % Parse the problem to the LP solver
 res = optimizeProb(prob,params);
+% Swap the sign of the obj-value
+res.obj = -res.obj;
 
 %Check if the problem was feasible and that the solution was optimal
 [isFeasible, isOptimal]=checkSolution(res);

@@ -6,12 +6,14 @@ testGurobi = exist('gurobi','file')==3;
 if testGurobi
     try
         gurobi_read('solverTests.m');
-    catch
-        testGurobi = false;
+    catch ME
+        if ~startsWith(ME.message,'Gurobi error 10012') % Expected error code, others may indicate problems with license
+           testGurobi = false;
+        end
     end
 end
 if ~testGurobi
-    disp('Gurobi not installed or cannot be found in MATLAB path, some fillGapsLargeTests skipped.')
+    disp('Gurobi not installed or not functional, some fillGapsLargeTests skipped.')
     skipTests = contains({tests.Name},'gurobi','IgnoreCase',true);
     tests(skipTests) = [];
 end
@@ -53,7 +55,7 @@ catch
     rmpref('RAVEN','solver');
 end
 %Expect at least 5% of the original growth
-verifyTrue(testCase,-sol.f>0);
+verifyTrue(testCase,sol.f>0);
 end
 
 function testLargeSCIP(testCase)
@@ -90,5 +92,5 @@ catch
     rmpref('RAVEN','solver');
 end
 %Expect at least 5% of the original growth
-verifyTrue(testCase,-sol.f>0);
+verifyTrue(testCase,sol.f>0);
 end

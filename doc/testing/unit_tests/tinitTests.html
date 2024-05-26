@@ -52,612 +52,614 @@ This function is called by:
 0005 solverExist = [exist(<span class="string">'gurobi'</span>,<span class="string">'file'</span>), exist(<span class="string">'scip.mexw64'</span>,<span class="string">'file'</span>)] ==3;
 0006 <span class="keyword">if</span> solverExist(1)
 0007     <span class="keyword">try</span>
-0008         gurobi_read(<span class="string">'solverTests.m'</span>);
-0009     <span class="keyword">catch</span>
-0010         solverExist(1) = false;
-0011     <span class="keyword">end</span>
-0012 <span class="keyword">end</span>
-0013 <span class="keyword">if</span> all(~solverExist)
-0014     disp(<span class="string">'No suitable solver (gurobi or scip) was found, ftINIT tests skipped.'</span>)
-0015     skipTests = contains({tests.Name},<span class="string">'ftinit'</span>,<span class="string">'IgnoreCase'</span>,true);
-0016     tests(skipTests) = [];
-0017 <span class="keyword">end</span>
-0018 <span class="keyword">end</span>
-0019 
-0020 <a name="_sub1" href="#_subfunctions" class="code">function testparsexpTask1List(testCase)</a>
-0021 sourceDir = fileparts(which(mfilename));
-0022 taskStruct = parseTaskList(strcat(sourceDir, <span class="string">'/test_data/test_tasks.txt'</span>));
-0023 taskStructExcel = parseTaskList(strcat(sourceDir, <span class="string">'/test_data/test_tasks.xls'</span>));
-0024 <span class="comment">%check that all fields in the first line are what we expect</span>
-0025 
-0026 expTask1.id=<span class="string">'ER'</span>;
-0027 expTask1.description=<span class="string">'Aerobic rephosphorylation of ATP from glucose'</span>;
-0028 expTask1.shouldFail=true;
-0029 expTask1.printFluxes=true;
-0030 expTask1.comments=<span class="string">'Messed up reaction'</span>;
-0031 expTask1.inputs={<span class="string">'O2[s]'</span>;<span class="string">'glucose[s]'</span>};
-0032 expTask1.LBin=[23.6;23.6];
-0033 expTask1.UBin=[23.8;23.8];
-0034 expTask1.outputs={<span class="string">'H2O[s]'</span>;<span class="string">'CO2[s]'</span>};
-0035 expTask1.LBout=[26.1;26.1];
-0036 expTask1.UBout=[26.2;26.2];
-0037 expTask1.equations={<span class="string">'ATP[c] + H2O[c] =&gt; ADP[c] + Pi[c] + H+[c]'</span>};
-0038 expTask1.LBequ=30.2;
-0039 expTask1.UBequ=30.6;
-0040 expTask1.changed={<span class="string">'ATP[a] + H2O[a] =&gt; ADP[a] + Pi[a] + H+[a]'</span>};
-0041 expTask1.LBrxn=56.2;
-0042 <span class="comment">%check that the check works as expected</span>
-0043 verifyNotEqual(testCase,taskStruct(1),expTask1)
-0044 expTask1.UBrxn=60;<span class="comment">%now add the last</span>
-0045 
-0046 
-0047 verifyEqual(testCase,taskStruct(1),expTask1)
-0048 verifyEqual(testCase,taskStructExcel(1),expTask1)
-0049 
-0050 <span class="comment">%check that we have 2 tasks in total</span>
-0051 verifyEqual(testCase,length(taskStruct),2)
-0052 verifyEqual(testCase,length(taskStructExcel),2)
-0053 
-0054 expTask2.id=<span class="string">'BS'</span>;
-0055 expTask2.description=<span class="string">'ATP de novo synthesis'</span>;
-0056 expTask2.shouldFail=false;
-0057 expTask2.printFluxes=false;
-0058 expTask2.comments=<span class="string">''</span>;
-0059 expTask2.inputs={<span class="string">'O2[s]'</span>;<span class="string">'glucose[s]'</span>;<span class="string">'NH3[s]'</span>;<span class="string">'Pi[s]'</span>};
-0060 expTask2.LBin=[0;0;0;0];
-0061 expTask2.UBin=[1000;1000;1000;1000];
-0062 expTask2.outputs={<span class="string">'H2O[s]'</span>;<span class="string">'CO2[s]'</span>;<span class="string">'ATP[c]'</span>};
-0063 expTask2.LBout=[0;0;1];
-0064 expTask2.UBout=[1.1;1.1;1.3];
-0065 expTask2.equations={<span class="string">'ATP[c] + H2O[c] &lt;=&gt; ADP[c] + Pi[c] + H+[c]'</span>};
-0066 expTask2.LBequ=-1000;
-0067 expTask2.UBequ=1000;
-0068 expTask2.changed={};
-0069 expTask2.LBrxn=[];
-0070 expTask2.UBrxn=[];
-0071 
-0072 verifyEqual(testCase,taskStruct(2),expTask2)
-0073 verifyEqual(testCase,taskStructExcel(2),expTask2)
-0074 
-0075 <span class="comment">%and, check that the two formats produce the same</span>
-0076 verifyEqual(testCase,taskStruct,taskStructExcel)
-0077 <span class="keyword">end</span>
-0078 
-0079 
-0080 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0081 <span class="comment">% testModel</span>
+0008         gurobi_read(<span class="string">'solverTests.m'</span>); <span class="comment">% Random function call</span>
+0009     <span class="keyword">catch</span> ME
+0010         <span class="keyword">if</span> ~startsWith(ME.message,<span class="string">'Gurobi error 10012'</span>) <span class="comment">% Expected error code, others may indicate problems with license</span>
+0011             solverExist(1) = false;
+0012         <span class="keyword">end</span>
+0013     <span class="keyword">end</span>
+0014 <span class="keyword">end</span>
+0015 <span class="keyword">if</span> all(~solverExist)
+0016     disp(<span class="string">'No suitable solver (gurobi or scip) was found, ftINIT tests skipped.'</span>)
+0017     skipTests = contains({tests.Name},<span class="string">'ftinit'</span>,<span class="string">'IgnoreCase'</span>,true);
+0018     tests(skipTests) = [];
+0019 <span class="keyword">end</span>
+0020 <span class="keyword">end</span>
+0021 
+0022 <a name="_sub1" href="#_subfunctions" class="code">function testparsexpTask1List(testCase)</a>
+0023 sourceDir = fileparts(which(mfilename));
+0024 taskStruct = parseTaskList(strcat(sourceDir, <span class="string">'/test_data/test_tasks.txt'</span>));
+0025 taskStructExcel = parseTaskList(strcat(sourceDir, <span class="string">'/test_data/test_tasks.xls'</span>));
+0026 <span class="comment">%check that all fields in the first line are what we expect</span>
+0027 
+0028 expTask1.id=<span class="string">'ER'</span>;
+0029 expTask1.description=<span class="string">'Aerobic rephosphorylation of ATP from glucose'</span>;
+0030 expTask1.shouldFail=true;
+0031 expTask1.printFluxes=true;
+0032 expTask1.comments=<span class="string">'Messed up reaction'</span>;
+0033 expTask1.inputs={<span class="string">'O2[s]'</span>;<span class="string">'glucose[s]'</span>};
+0034 expTask1.LBin=[23.6;23.6];
+0035 expTask1.UBin=[23.8;23.8];
+0036 expTask1.outputs={<span class="string">'H2O[s]'</span>;<span class="string">'CO2[s]'</span>};
+0037 expTask1.LBout=[26.1;26.1];
+0038 expTask1.UBout=[26.2;26.2];
+0039 expTask1.equations={<span class="string">'ATP[c] + H2O[c] =&gt; ADP[c] + Pi[c] + H+[c]'</span>};
+0040 expTask1.LBequ=30.2;
+0041 expTask1.UBequ=30.6;
+0042 expTask1.changed={<span class="string">'ATP[a] + H2O[a] =&gt; ADP[a] + Pi[a] + H+[a]'</span>};
+0043 expTask1.LBrxn=56.2;
+0044 <span class="comment">%check that the check works as expected</span>
+0045 verifyNotEqual(testCase,taskStruct(1),expTask1)
+0046 expTask1.UBrxn=60;<span class="comment">%now add the last</span>
+0047 
+0048 
+0049 verifyEqual(testCase,taskStruct(1),expTask1)
+0050 verifyEqual(testCase,taskStructExcel(1),expTask1)
+0051 
+0052 <span class="comment">%check that we have 2 tasks in total</span>
+0053 verifyEqual(testCase,length(taskStruct),2)
+0054 verifyEqual(testCase,length(taskStructExcel),2)
+0055 
+0056 expTask2.id=<span class="string">'BS'</span>;
+0057 expTask2.description=<span class="string">'ATP de novo synthesis'</span>;
+0058 expTask2.shouldFail=false;
+0059 expTask2.printFluxes=false;
+0060 expTask2.comments=<span class="string">''</span>;
+0061 expTask2.inputs={<span class="string">'O2[s]'</span>;<span class="string">'glucose[s]'</span>;<span class="string">'NH3[s]'</span>;<span class="string">'Pi[s]'</span>};
+0062 expTask2.LBin=[0;0;0;0];
+0063 expTask2.UBin=[1000;1000;1000;1000];
+0064 expTask2.outputs={<span class="string">'H2O[s]'</span>;<span class="string">'CO2[s]'</span>;<span class="string">'ATP[c]'</span>};
+0065 expTask2.LBout=[0;0;1];
+0066 expTask2.UBout=[1.1;1.1;1.3];
+0067 expTask2.equations={<span class="string">'ATP[c] + H2O[c] &lt;=&gt; ADP[c] + Pi[c] + H+[c]'</span>};
+0068 expTask2.LBequ=-1000;
+0069 expTask2.UBequ=1000;
+0070 expTask2.changed={};
+0071 expTask2.LBrxn=[];
+0072 expTask2.UBrxn=[];
+0073 
+0074 verifyEqual(testCase,taskStruct(2),expTask2)
+0075 verifyEqual(testCase,taskStructExcel(2),expTask2)
+0076 
+0077 <span class="comment">%and, check that the two formats produce the same</span>
+0078 verifyEqual(testCase,taskStruct,taskStructExcel)
+0079 <span class="keyword">end</span>
+0080 
+0081 
 0082 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0083 
-0084 <a name="_sub2" href="#_subfunctions" class="code">function testModel = getTstModel()</a>
-0085 testModel = struct();
-0086 testModel.id = <span class="string">'testModel'</span>;
-0087 testModel.rxns = {};
-0088 testModel.S=[];
-0089 testModel.rev=[];
-0090 testModel.mets = {<span class="string">'as'</span>;<span class="string">'ac'</span>;<span class="string">'bc'</span>;<span class="string">'cc'</span>;<span class="string">'dc'</span>;<span class="string">'ec'</span>;<span class="string">'es'</span>;<span class="string">'fc'</span>};
-0091 testModel.metNames = {<span class="string">'a'</span>;<span class="string">'a'</span>;<span class="string">'b'</span>;<span class="string">'c'</span>;<span class="string">'d'</span>;<span class="string">'e'</span>;<span class="string">'e'</span>;<span class="string">'f'</span>};
-0092 testModel.comps = {<span class="string">'s'</span>;<span class="string">'c'</span>};
-0093 testModel.compNames = testModel.comps;
-0094 testModel.metComps = [1;2;2;2;2;2;1;2];
-0095 testModel.genes = {<span class="string">'G1'</span>;<span class="string">'G2'</span>;<span class="string">'G3'</span>;<span class="string">'G4'</span>;<span class="string">'G5'</span>;<span class="string">'G6'</span>;<span class="string">'G7'</span>;<span class="string">'G8'</span>;<span class="string">'G9'</span>;<span class="string">'G10'</span>};
-0096 testModel.grRules = {};
-0097 testModel.rxnGeneMat = [];
-0098 
-0099 rxnsToAdd = struct();
-0100 rxnsToAdd.rxns = {<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R3'</span>;<span class="string">'R4'</span>;<span class="string">'R5'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>};
-0101 rxnsToAdd.equations = {<span class="string">'=&gt; a[s]'</span>;<span class="keyword">...</span>
-0102     <span class="string">'a[s] &lt;=&gt; a[c]'</span>;<span class="keyword">...</span>
-0103     <span class="string">'a[c] &lt;=&gt; b[c] + c[c]'</span>;<span class="keyword">...</span>
-0104     <span class="string">'a[c] &lt;=&gt; 2 d[c]'</span>;<span class="keyword">...</span>
-0105     <span class="string">'b[c] + c[c] =&gt; e[c]'</span>;<span class="keyword">...</span>
-0106     <span class="string">'2 d[c] =&gt; e[c]'</span>;<span class="keyword">...</span>
-0107     <span class="string">'e[c] =&gt; e[s]'</span>;<span class="keyword">...</span>
-0108     <span class="string">'e[s] =&gt;'</span>;<span class="keyword">...</span>
-0109     <span class="string">'a[c] &lt;=&gt; f[c]'</span>;<span class="keyword">...</span>
-0110     <span class="string">'f[c] &lt;=&gt; e[c]'</span>};
-0111 rxnsToAdd.grRules = {<span class="string">''</span>;<span class="string">''</span>;<span class="string">'G3'</span>;<span class="string">'G4'</span>;<span class="string">'G5'</span>;<span class="string">'G6'</span>;<span class="string">'G7'</span>;<span class="string">''</span>;<span class="string">'G9'</span>;<span class="string">'G10'</span>};
-0112 testModel = addRxns(testModel,rxnsToAdd, 3);
-0113 testModel.c = [0;0;0;0;0;0;0;1;0;0];<span class="comment">%optimize for output flux, if this is used, not sure</span>
-0114 testModel.ub = repmat(1000,10,1);
-0115 testModel.lb = [0;-1000;-1000;-1000;0;0;0;0;-1000;-1000];
-0116 testModel.rxnNames = testModel.rxns;
-0117 testModel.b = repmat(0,8,1);
-0118 <span class="keyword">end</span>
-0119 
-0120 <a name="_sub3" href="#_subfunctions" class="code">function testModelRxnScores = getTstModelRxnScores()</a>
-0121 testModelRxnScores = [-2;-2;-1;7;0.5;0.5;-1;-2;-3;3.5];
-0122 <span class="keyword">end</span>
-0123 
-0124 <a name="_sub4" href="#_subfunctions" class="code">function testModelTasks = getTstModelTasks()</a>
-0125 testModelTasks = struct();
-0126 testModelTasks.id = <span class="string">'Gen e[s] from a[s]'</span>;
-0127 testModelTasks.description = <span class="string">'Gen e[s] from a[s]'</span>;
-0128 testModelTasks.shouldFail = false;
-0129 testModelTasks.printFluxes = false;
-0130 testModelTasks.comments = <span class="string">''</span>;
-0131 testModelTasks.inputs = {<span class="string">'a[s]'</span>};
-0132 testModelTasks.LBin = 0;
-0133 testModelTasks.UBin = inf;
-0134 testModelTasks.outputs = {<span class="string">'e[s]'</span>};
-0135 testModelTasks.LBout = 1;
-0136 testModelTasks.UBout = 1;
-0137 testModelTasks.equations = {};
-0138 testModelTasks.LBequ = [];
-0139 testModelTasks.UBequ = [];
-0140 testModelTasks.changed = {};
-0141 testModelTasks.LBrxn = {};
-0142 testModelTasks.UBrxn = {};
-0143 <span class="keyword">end</span>
-0144 
-0145 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0146 <span class="comment">% testModel2 - not used directly for now, but indirectly</span>
+0083 <span class="comment">% testModel</span>
+0084 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0085 
+0086 <a name="_sub2" href="#_subfunctions" class="code">function testModel = getTstModel()</a>
+0087 testModel = struct();
+0088 testModel.id = <span class="string">'testModel'</span>;
+0089 testModel.rxns = {};
+0090 testModel.S=[];
+0091 testModel.rev=[];
+0092 testModel.mets = {<span class="string">'as'</span>;<span class="string">'ac'</span>;<span class="string">'bc'</span>;<span class="string">'cc'</span>;<span class="string">'dc'</span>;<span class="string">'ec'</span>;<span class="string">'es'</span>;<span class="string">'fc'</span>};
+0093 testModel.metNames = {<span class="string">'a'</span>;<span class="string">'a'</span>;<span class="string">'b'</span>;<span class="string">'c'</span>;<span class="string">'d'</span>;<span class="string">'e'</span>;<span class="string">'e'</span>;<span class="string">'f'</span>};
+0094 testModel.comps = {<span class="string">'s'</span>;<span class="string">'c'</span>};
+0095 testModel.compNames = testModel.comps;
+0096 testModel.metComps = [1;2;2;2;2;2;1;2];
+0097 testModel.genes = {<span class="string">'G1'</span>;<span class="string">'G2'</span>;<span class="string">'G3'</span>;<span class="string">'G4'</span>;<span class="string">'G5'</span>;<span class="string">'G6'</span>;<span class="string">'G7'</span>;<span class="string">'G8'</span>;<span class="string">'G9'</span>;<span class="string">'G10'</span>};
+0098 testModel.grRules = {};
+0099 testModel.rxnGeneMat = [];
+0100 
+0101 rxnsToAdd = struct();
+0102 rxnsToAdd.rxns = {<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R3'</span>;<span class="string">'R4'</span>;<span class="string">'R5'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>};
+0103 rxnsToAdd.equations = {<span class="string">'=&gt; a[s]'</span>;<span class="keyword">...</span>
+0104     <span class="string">'a[s] &lt;=&gt; a[c]'</span>;<span class="keyword">...</span>
+0105     <span class="string">'a[c] &lt;=&gt; b[c] + c[c]'</span>;<span class="keyword">...</span>
+0106     <span class="string">'a[c] &lt;=&gt; 2 d[c]'</span>;<span class="keyword">...</span>
+0107     <span class="string">'b[c] + c[c] =&gt; e[c]'</span>;<span class="keyword">...</span>
+0108     <span class="string">'2 d[c] =&gt; e[c]'</span>;<span class="keyword">...</span>
+0109     <span class="string">'e[c] =&gt; e[s]'</span>;<span class="keyword">...</span>
+0110     <span class="string">'e[s] =&gt;'</span>;<span class="keyword">...</span>
+0111     <span class="string">'a[c] &lt;=&gt; f[c]'</span>;<span class="keyword">...</span>
+0112     <span class="string">'f[c] &lt;=&gt; e[c]'</span>};
+0113 rxnsToAdd.grRules = {<span class="string">''</span>;<span class="string">''</span>;<span class="string">'G3'</span>;<span class="string">'G4'</span>;<span class="string">'G5'</span>;<span class="string">'G6'</span>;<span class="string">'G7'</span>;<span class="string">''</span>;<span class="string">'G9'</span>;<span class="string">'G10'</span>};
+0114 testModel = addRxns(testModel,rxnsToAdd, 3);
+0115 testModel.c = [0;0;0;0;0;0;0;1;0;0];<span class="comment">%optimize for output flux, if this is used, not sure</span>
+0116 testModel.ub = repmat(1000,10,1);
+0117 testModel.lb = [0;-1000;-1000;-1000;0;0;0;0;-1000;-1000];
+0118 testModel.rxnNames = testModel.rxns;
+0119 testModel.b = repmat(0,8,1);
+0120 <span class="keyword">end</span>
+0121 
+0122 <a name="_sub3" href="#_subfunctions" class="code">function testModelRxnScores = getTstModelRxnScores()</a>
+0123 testModelRxnScores = [-2;-2;-1;7;0.5;0.5;-1;-2;-3;3.5];
+0124 <span class="keyword">end</span>
+0125 
+0126 <a name="_sub4" href="#_subfunctions" class="code">function testModelTasks = getTstModelTasks()</a>
+0127 testModelTasks = struct();
+0128 testModelTasks.id = <span class="string">'Gen e[s] from a[s]'</span>;
+0129 testModelTasks.description = <span class="string">'Gen e[s] from a[s]'</span>;
+0130 testModelTasks.shouldFail = false;
+0131 testModelTasks.printFluxes = false;
+0132 testModelTasks.comments = <span class="string">''</span>;
+0133 testModelTasks.inputs = {<span class="string">'a[s]'</span>};
+0134 testModelTasks.LBin = 0;
+0135 testModelTasks.UBin = inf;
+0136 testModelTasks.outputs = {<span class="string">'e[s]'</span>};
+0137 testModelTasks.LBout = 1;
+0138 testModelTasks.UBout = 1;
+0139 testModelTasks.equations = {};
+0140 testModelTasks.LBequ = [];
+0141 testModelTasks.UBequ = [];
+0142 testModelTasks.changed = {};
+0143 testModelTasks.LBrxn = {};
+0144 testModelTasks.UBrxn = {};
+0145 <span class="keyword">end</span>
+0146 
 0147 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0148 
-0149 <a name="_sub5" href="#_subfunctions" class="code">function testModel2 = getTstModel2()</a>
-0150 testModel2 = struct();
-0151 testModel2.id = <span class="string">'testModel2'</span>;
-0152 testModel2.rxns = {};
-0153 testModel2.S=[];
-0154 testModel2.rev=[];
-0155 testModel2.mets = {<span class="string">'a'</span>;<span class="string">'b'</span>};
-0156 testModel2.metNames = {<span class="string">'a'</span>;<span class="string">'b'</span>};
-0157 testModel2.comps = {<span class="string">'s'</span>};
-0158 testModel2.compNames = testModel2.comps;
-0159 testModel2.metComps = [1;1];
-0160 testModel2.genes = {<span class="string">'G1'</span>;<span class="string">'G2'</span>;<span class="string">'G3'</span>;<span class="string">'G4'</span>};
-0161 testModel2.grRules = {};
-0162 testModel2.rxnGeneMat = [];
-0163 
-0164 rxnsToAdd = struct();
-0165 rxnsToAdd.rxns = {<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R3'</span>;<span class="string">'R4'</span>};
-0166 rxnsToAdd.equations = {<span class="string">'a[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
-0167     <span class="string">'a[s] =&gt; b[s]'</span>;<span class="keyword">...</span>
-0168     <span class="string">'a[s] &lt;=&gt; b[s]'</span>;<span class="keyword">...</span>
-0169     <span class="string">'b[s] =&gt;'</span>};
-0170 rxnsToAdd.grRules = testModel2.genes;
-0171 testModel2 = addRxns(testModel2,rxnsToAdd,3,<span class="string">''</span>,true,true);
-0172 testModel2.c = [0;0;0;1];<span class="comment">%optimize for output flux, if this is used, not sure</span>
-0173 testModel2.ub = repmat(1000,4,1);
-0174 testModel2.lb = [-1000;0;-1000;0];
-0175 testModel2.rxnNames = testModel2.rxns;
-0176 testModel2.b = zeros(2,1);
-0177 <span class="keyword">end</span>
-0178 
-0179 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0180 <span class="comment">% testModel4</span>
+0148 <span class="comment">% testModel2 - not used directly for now, but indirectly</span>
+0149 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0150 
+0151 <a name="_sub5" href="#_subfunctions" class="code">function testModel2 = getTstModel2()</a>
+0152 testModel2 = struct();
+0153 testModel2.id = <span class="string">'testModel2'</span>;
+0154 testModel2.rxns = {};
+0155 testModel2.S=[];
+0156 testModel2.rev=[];
+0157 testModel2.mets = {<span class="string">'a'</span>;<span class="string">'b'</span>};
+0158 testModel2.metNames = {<span class="string">'a'</span>;<span class="string">'b'</span>};
+0159 testModel2.comps = {<span class="string">'s'</span>};
+0160 testModel2.compNames = testModel2.comps;
+0161 testModel2.metComps = [1;1];
+0162 testModel2.genes = {<span class="string">'G1'</span>;<span class="string">'G2'</span>;<span class="string">'G3'</span>;<span class="string">'G4'</span>};
+0163 testModel2.grRules = {};
+0164 testModel2.rxnGeneMat = [];
+0165 
+0166 rxnsToAdd = struct();
+0167 rxnsToAdd.rxns = {<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R3'</span>;<span class="string">'R4'</span>};
+0168 rxnsToAdd.equations = {<span class="string">'a[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
+0169     <span class="string">'a[s] =&gt; b[s]'</span>;<span class="keyword">...</span>
+0170     <span class="string">'a[s] &lt;=&gt; b[s]'</span>;<span class="keyword">...</span>
+0171     <span class="string">'b[s] =&gt;'</span>};
+0172 rxnsToAdd.grRules = testModel2.genes;
+0173 testModel2 = addRxns(testModel2,rxnsToAdd,3,<span class="string">''</span>,true,true);
+0174 testModel2.c = [0;0;0;1];<span class="comment">%optimize for output flux, if this is used, not sure</span>
+0175 testModel2.ub = repmat(1000,4,1);
+0176 testModel2.lb = [-1000;0;-1000;0];
+0177 testModel2.rxnNames = testModel2.rxns;
+0178 testModel2.b = zeros(2,1);
+0179 <span class="keyword">end</span>
+0180 
 0181 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0182 
-0183 <a name="_sub6" href="#_subfunctions" class="code">function testModel4 = getTstModel4()</a>
-0184 testModel2 = <a href="#_sub5" class="code" title="subfunction testModel2 = getTstModel2()">getTstModel2</a>();
-0185 testModel4 = testModel2;
-0186 
-0187 rxnsToAdd = struct();
-0188 rxnsToAdd.rxns = {<span class="string">'R5'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>;<span class="string">'R11'</span>};
-0189 rxnsToAdd.equations = {<span class="string">'5 a[s] &lt;=&gt; 5 d[s]'</span>;<span class="keyword">...</span>
-0190     <span class="string">'e[s] &lt;=&gt; d[s]'</span>;
-0191     <span class="string">'f[s] + g[s] &lt;=&gt; e[s]'</span>;
-0192     <span class="string">'b[s] &lt;=&gt; f[s]'</span>;
-0193     <span class="string">'h[s] &lt;=&gt; g[s]'</span>;
-0194     <span class="string">'h[s] =&gt;'</span>;
-0195     <span class="string">'e[s] =&gt; g[s]'</span>};
-0196 rxnsToAdd.grRules = {<span class="string">'G5'</span>;<span class="string">'G6'</span>;<span class="string">'G7'</span>;<span class="string">'G8'</span>;<span class="string">'G9'</span>;<span class="string">'G10'</span>;<span class="string">'G11'</span>};
-0197 [~,testModel4] = evalc(&quot;addRxns(testModel4,rxnsToAdd, 3, [], true, true);&quot;);
-0198 <span class="keyword">end</span>
-0199 
-0200 <a name="_sub7" href="#_subfunctions" class="code">function testModel4RxnScores = getTstModel4RxnScores()</a>
-0201 testModel4RxnScores = [-1;-1;2;-1;0.5;-2;1;1.3;-0.5;-0.4;8];
-0202 <span class="keyword">end</span>
-0203 
-0204 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0205 <span class="comment">% testModel5</span>
+0182 <span class="comment">% testModel4</span>
+0183 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0184 
+0185 <a name="_sub6" href="#_subfunctions" class="code">function testModel4 = getTstModel4()</a>
+0186 testModel2 = <a href="#_sub5" class="code" title="subfunction testModel2 = getTstModel2()">getTstModel2</a>();
+0187 testModel4 = testModel2;
+0188 
+0189 rxnsToAdd = struct();
+0190 rxnsToAdd.rxns = {<span class="string">'R5'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>;<span class="string">'R11'</span>};
+0191 rxnsToAdd.equations = {<span class="string">'5 a[s] &lt;=&gt; 5 d[s]'</span>;<span class="keyword">...</span>
+0192     <span class="string">'e[s] &lt;=&gt; d[s]'</span>;
+0193     <span class="string">'f[s] + g[s] &lt;=&gt; e[s]'</span>;
+0194     <span class="string">'b[s] &lt;=&gt; f[s]'</span>;
+0195     <span class="string">'h[s] &lt;=&gt; g[s]'</span>;
+0196     <span class="string">'h[s] =&gt;'</span>;
+0197     <span class="string">'e[s] =&gt; g[s]'</span>};
+0198 rxnsToAdd.grRules = {<span class="string">'G5'</span>;<span class="string">'G6'</span>;<span class="string">'G7'</span>;<span class="string">'G8'</span>;<span class="string">'G9'</span>;<span class="string">'G10'</span>;<span class="string">'G11'</span>};
+0199 [~,testModel4] = evalc(&quot;addRxns(testModel4,rxnsToAdd, 3, [], true, true);&quot;);
+0200 <span class="keyword">end</span>
+0201 
+0202 <a name="_sub7" href="#_subfunctions" class="code">function testModel4RxnScores = getTstModel4RxnScores()</a>
+0203 testModel4RxnScores = [-1;-1;2;-1;0.5;-2;1;1.3;-0.5;-0.4;8];
+0204 <span class="keyword">end</span>
+0205 
 0206 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0207 
-0208 <a name="_sub8" href="#_subfunctions" class="code">function testModel5 = getTstModel5()</a>
-0209 testModel = <a href="#_sub2" class="code" title="subfunction testModel = getTstModel()">getTstModel</a>();
-0210 
-0211 rxnsToAdd = struct();
-0212 rxnsToAdd.rxns = {<span class="string">'R11'</span>;<span class="string">'R12'</span>;<span class="string">'R13'</span>;<span class="string">'R14'</span>};
-0213 rxnsToAdd.equations = {<span class="string">'a[c] &lt;=&gt; g[c]'</span>;<span class="keyword">...</span>
-0214     <span class="string">'a[c] &lt;=&gt; g[c]'</span>;<span class="keyword">...</span>
-0215     <span class="string">'g[c] &lt;=&gt; e[c]'</span>;<span class="keyword">...</span>
-0216     <span class="string">'g[c] &lt;=&gt; e[c]'</span>};
-0217 rxnsToAdd.grRules = {<span class="string">'G11'</span>;<span class="string">'G12'</span>;<span class="string">'G13'</span>;<span class="string">'G14'</span>};
-0218 [~,testModel5] = evalc(&quot;addRxns(testModel,rxnsToAdd, 3, [], true, true);&quot;);
-0219 <span class="keyword">end</span>
-0220 
-0221 <a name="_sub9" href="#_subfunctions" class="code">function testModel5RxnScores = getTstModel5RxnScores()</a>
-0222 testModel5RxnScores = [<a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>();-1;-1.5;-1;-1.5];
-0223 <span class="keyword">end</span>
-0224 
-0225 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0226 <span class="comment">%T0001: testModel without tasks</span>
+0207 <span class="comment">% testModel5</span>
+0208 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0209 
+0210 <a name="_sub8" href="#_subfunctions" class="code">function testModel5 = getTstModel5()</a>
+0211 testModel = <a href="#_sub2" class="code" title="subfunction testModel = getTstModel()">getTstModel</a>();
+0212 
+0213 rxnsToAdd = struct();
+0214 rxnsToAdd.rxns = {<span class="string">'R11'</span>;<span class="string">'R12'</span>;<span class="string">'R13'</span>;<span class="string">'R14'</span>};
+0215 rxnsToAdd.equations = {<span class="string">'a[c] &lt;=&gt; g[c]'</span>;<span class="keyword">...</span>
+0216     <span class="string">'a[c] &lt;=&gt; g[c]'</span>;<span class="keyword">...</span>
+0217     <span class="string">'g[c] &lt;=&gt; e[c]'</span>;<span class="keyword">...</span>
+0218     <span class="string">'g[c] &lt;=&gt; e[c]'</span>};
+0219 rxnsToAdd.grRules = {<span class="string">'G11'</span>;<span class="string">'G12'</span>;<span class="string">'G13'</span>;<span class="string">'G14'</span>};
+0220 [~,testModel5] = evalc(&quot;addRxns(testModel,rxnsToAdd, 3, [], true, true);&quot;);
+0221 <span class="keyword">end</span>
+0222 
+0223 <a name="_sub9" href="#_subfunctions" class="code">function testModel5RxnScores = getTstModel5RxnScores()</a>
+0224 testModel5RxnScores = [<a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>();-1;-1.5;-1;-1.5];
+0225 <span class="keyword">end</span>
+0226 
 0227 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0228 <a name="_sub10" href="#_subfunctions" class="code">function testftINIT_T0001(testCase)</a>
-0229 solverExist = [exist(<span class="string">'gurobi'</span>,<span class="string">'file'</span>), exist(<span class="string">'scip.mexw64'</span>,<span class="string">'file'</span>)] == 3;
-0230 currSolver = getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0231 <span class="keyword">if</span> solverExist(1)
-0232     setRavenSolver(<span class="string">'gurobi'</span>);
-0233 <span class="keyword">elseif</span> solverExist(2)
-0234     setRavenSolver(<span class="string">'scip'</span>);
-0235 <span class="keyword">else</span>
-0236     error(<span class="string">'No compatible solvers found'</span>);
-0237 <span class="keyword">end</span>
-0238 <span class="comment">%    detectedMets = {};</span>
-0239 testParams = struct();
-0240 
-0241 <span class="comment">%    params.TimeLimit = 10;</span>
+0228 <span class="comment">%T0001: testModel without tasks</span>
+0229 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0230 <a name="_sub10" href="#_subfunctions" class="code">function testftINIT_T0001(testCase)</a>
+0231 solverExist = [exist(<span class="string">'gurobi'</span>,<span class="string">'file'</span>), exist(<span class="string">'scip.mexw64'</span>,<span class="string">'file'</span>)] == 3;
+0232 currSolver = getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0233 <span class="keyword">if</span> solverExist(1)
+0234     setRavenSolver(<span class="string">'gurobi'</span>);
+0235 <span class="keyword">elseif</span> solverExist(2)
+0236     setRavenSolver(<span class="string">'scip'</span>);
+0237 <span class="keyword">else</span>
+0238     error(<span class="string">'No compatible solvers found'</span>);
+0239 <span class="keyword">end</span>
+0240 <span class="comment">%    detectedMets = {};</span>
+0241 testParams = struct();
 0242 
-0243 testModel = <a href="#_sub2" class="code" title="subfunction testModel = getTstModel()">getTstModel</a>();
-0244 [~, prepDataTest1] = evalc(<span class="string">'prepINITModel(testModel, {}, {}, false, {}, ''s'');'</span>);
-0245 <span class="comment">%check some things in the prepData</span>
-0246 <span class="comment">%1. We expect 3 rxns in origRxnsToZero:</span>
-0247 verifyTrue(testCase, all(strcmp(prepDataTest1.refModel.rxns(prepDataTest1.toIgnoreExch) , {<span class="string">'R1'</span>;<span class="string">'R8'</span>})))
-0248 <span class="comment">%note that R7 should not be there, since it has a GPR.</span>
-0249 
-0250 arrayData1.genes = testModel.genes;
-0251 arrayData1.tissues = {<span class="string">'a'</span>};
-0252 arrayData1.levels = getExprForRxnScore(<a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>());
-0253 arrayData1.threshold = 1;
-0254 
-0255 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams,false);'</span>);
+0243 <span class="comment">%    params.TimeLimit = 10;</span>
+0244 
+0245 testModel = <a href="#_sub2" class="code" title="subfunction testModel = getTstModel()">getTstModel</a>();
+0246 [~, prepDataTest1] = evalc(<span class="string">'prepINITModel(testModel, {}, {}, false, {}, ''s'');'</span>);
+0247 <span class="comment">%check some things in the prepData</span>
+0248 <span class="comment">%1. We expect 3 rxns in origRxnsToZero:</span>
+0249 verifyTrue(testCase, all(strcmp(prepDataTest1.refModel.rxns(prepDataTest1.toIgnoreExch) , {<span class="string">'R1'</span>;<span class="string">'R8'</span>})))
+0250 <span class="comment">%note that R7 should not be there, since it has a GPR.</span>
+0251 
+0252 arrayData1.genes = testModel.genes;
+0253 arrayData1.tissues = {<span class="string">'a'</span>};
+0254 arrayData1.levels = getExprForRxnScore(<a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>());
+0255 arrayData1.threshold = 1;
 0256 
-0257 <span class="comment">%We expect R1 and R8 to be added since they have no GPRs and are exch rxns. The transport rxn R2 without GPR will however be removed,</span>
-0258 <span class="comment">%since we in the standard setting run the third step with [1;0;0;0;1;0;0], meaning that such reactions will be removed</span>
-0259 <span class="comment">%R7 however will not be added since it has a GPR</span>
-0260 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>})))
-0261 
-0262 <span class="comment">%also test spontaneous</span>
-0263 [~, prepDataTest1] = evalc(<span class="string">'prepINITModel(testModel, {}, {''R7'';''R10''}, false, {}, ''s'');'</span>);
-0264 verifyTrue(testCase, all(strcmp(prepDataTest1.refModel.rxns(prepDataTest1.toIgnoreExch | prepDataTest1.toIgnoreSpont), {<span class="string">'R1'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R10'</span>})))
-0265 arrayData1.genes = testModel.genes;
-0266 arrayData1.tissues = {<span class="string">'a'</span>};
-0267 arrayData1.levels = getExprForRxnScore(<a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>());
-0268 arrayData1.threshold = 1;
-0269 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams,false);'</span>);
-0270 <span class="comment">%the model should now change to include the &quot;correct&quot; path (including 'R2') and</span>
-0271 <span class="comment">%skip R9/R10:</span>
-0272 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>})), 1)
-0273 setRavenSolver(currSolver);
-0274 <span class="keyword">end</span>
-0275 
-0276 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0277 <span class="comment">%T0002: Create a task that wants to generate e[s] from a[s] for testModel</span>
+0257 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams,false);'</span>);
+0258 
+0259 <span class="comment">%We expect R1 and R8 to be added since they have no GPRs and are exch rxns. The transport rxn R2 without GPR will however be removed,</span>
+0260 <span class="comment">%since we in the standard setting run the third step with [1;0;0;0;1;0;0], meaning that such reactions will be removed</span>
+0261 <span class="comment">%R7 however will not be added since it has a GPR</span>
+0262 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>})))
+0263 
+0264 <span class="comment">%also test spontaneous</span>
+0265 [~, prepDataTest1] = evalc(<span class="string">'prepINITModel(testModel, {}, {''R7'';''R10''}, false, {}, ''s'');'</span>);
+0266 verifyTrue(testCase, all(strcmp(prepDataTest1.refModel.rxns(prepDataTest1.toIgnoreExch | prepDataTest1.toIgnoreSpont), {<span class="string">'R1'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R10'</span>})))
+0267 arrayData1.genes = testModel.genes;
+0268 arrayData1.tissues = {<span class="string">'a'</span>};
+0269 arrayData1.levels = getExprForRxnScore(<a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>());
+0270 arrayData1.threshold = 1;
+0271 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams,false);'</span>);
+0272 <span class="comment">%the model should now change to include the &quot;correct&quot; path (including 'R2') and</span>
+0273 <span class="comment">%skip R9/R10:</span>
+0274 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>})), 1)
+0275 setRavenSolver(currSolver);
+0276 <span class="keyword">end</span>
+0277 
 0278 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0279 <a name="_sub11" href="#_subfunctions" class="code">function testftINIT_T0002(testCase)</a>
-0280 solverExist = [exist(<span class="string">'gurobi'</span>,<span class="string">'file'</span>), exist(<span class="string">'scip.mexw64'</span>,<span class="string">'file'</span>)] ==3;
-0281 currSolver = getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0282 <span class="keyword">if</span> solverExist(1)
-0283     setRavenSolver(<span class="string">'gurobi'</span>);
-0284 <span class="keyword">elseif</span> solverExist(2)
-0285     setRavenSolver(<span class="string">'scip'</span>);
-0286 <span class="keyword">else</span>
-0287     error(<span class="string">'No compatible solvers found'</span>);
-0288 <span class="keyword">end</span>
-0289 testModel = <a href="#_sub2" class="code" title="subfunction testModel = getTstModel()">getTstModel</a>();
-0290 testModelTasks = <a href="#_sub4" class="code" title="subfunction testModelTasks = getTstModelTasks()">getTstModelTasks</a>();
-0291 testRxnScores = <a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>();
-0292 testParams = struct();
-0293 [~, prepDataTest1] = evalc(<span class="string">'prepINITModel(testModel, testModelTasks, {}, false, {}, ''s'');'</span>);
-0294 <span class="comment">%We now expect to R2 and R7 to be essential. Note that R1 and R8 are not essential,</span>
-0295 <span class="comment">%the exchange rxns are not used when checking tasks.</span>
-0296 <span class="comment">%This is a bit complicated to check, because the essential rxns are expressed</span>
-0297 <span class="comment">%as rxn ids of the linearly merged model. We expect those to be called R1 and R7:</span>
-0298 verifyTrue(testCase, all(strcmp(prepDataTest1.essentialRxns,{<span class="string">'R1'</span>;<span class="string">'R7'</span>})))
-0299 
-0300 arrayData1.genes = testModel.genes;
-0301 arrayData1.tissues = {<span class="string">'a'</span>};
-0302 arrayData1.levels = getExprForRxnScore(testRxnScores);
-0303 arrayData1.threshold = 1;
-0304 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams,false);'</span>);
-0305 <span class="comment">%Since both R2 and R7 are now essential, we expect all rxns to be on except R3 and</span>
-0306 <span class="comment">%R5 (which have a negative total score and are not needed for the task)</span>
-0307 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>})))
-0308 setRavenSolver(currSolver);
-0309 <span class="keyword">end</span>
-0310 
-0311 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0312 <span class="comment">%T0003: The second step - gapfilling</span>
+0279 <span class="comment">%T0002: Create a task that wants to generate e[s] from a[s] for testModel</span>
+0280 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0281 <a name="_sub11" href="#_subfunctions" class="code">function testftINIT_T0002(testCase)</a>
+0282 solverExist = [exist(<span class="string">'gurobi'</span>,<span class="string">'file'</span>), exist(<span class="string">'scip.mexw64'</span>,<span class="string">'file'</span>)] ==3;
+0283 currSolver = getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0284 <span class="keyword">if</span> solverExist(1)
+0285     setRavenSolver(<span class="string">'gurobi'</span>);
+0286 <span class="keyword">elseif</span> solverExist(2)
+0287     setRavenSolver(<span class="string">'scip'</span>);
+0288 <span class="keyword">else</span>
+0289     error(<span class="string">'No compatible solvers found'</span>);
+0290 <span class="keyword">end</span>
+0291 testModel = <a href="#_sub2" class="code" title="subfunction testModel = getTstModel()">getTstModel</a>();
+0292 testModelTasks = <a href="#_sub4" class="code" title="subfunction testModelTasks = getTstModelTasks()">getTstModelTasks</a>();
+0293 testRxnScores = <a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>();
+0294 testParams = struct();
+0295 [~, prepDataTest1] = evalc(<span class="string">'prepINITModel(testModel, testModelTasks, {}, false, {}, ''s'');'</span>);
+0296 <span class="comment">%We now expect to R2 and R7 to be essential. Note that R1 and R8 are not essential,</span>
+0297 <span class="comment">%the exchange rxns are not used when checking tasks.</span>
+0298 <span class="comment">%This is a bit complicated to check, because the essential rxns are expressed</span>
+0299 <span class="comment">%as rxn ids of the linearly merged model. We expect those to be called R1 and R7:</span>
+0300 verifyTrue(testCase, all(strcmp(prepDataTest1.essentialRxns,{<span class="string">'R1'</span>;<span class="string">'R7'</span>})))
+0301 
+0302 arrayData1.genes = testModel.genes;
+0303 arrayData1.tissues = {<span class="string">'a'</span>};
+0304 arrayData1.levels = getExprForRxnScore(testRxnScores);
+0305 arrayData1.threshold = 1;
+0306 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams,false);'</span>);
+0307 <span class="comment">%Since both R2 and R7 are now essential, we expect all rxns to be on except R3 and</span>
+0308 <span class="comment">%R5 (which have a negative total score and are not needed for the task)</span>
+0309 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>})))
+0310 setRavenSolver(currSolver);
+0311 <span class="keyword">end</span>
+0312 
 0313 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0314 <a name="_sub12" href="#_subfunctions" class="code">function testftINIT_T0003(testCase)</a>
-0315 <span class="comment">%First generate a model with gaps. We can use testModel. First we add</span>
-0316 <span class="comment">%boundary mets. Then we remove the exchange reactions</span>
-0317 <span class="comment">%(which is required for filling gaps) and create a gap by removing the R7 reaction.</span>
-0318 testModel = <a href="#_sub2" class="code" title="subfunction testModel = getTstModel()">getTstModel</a>();
-0319 testModelTasks = <a href="#_sub4" class="code" title="subfunction testModelTasks = getTstModelTasks()">getTstModelTasks</a>();
-0320 testRxnScores = <a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>();
-0321 
-0322 mTempRef = closeModel(testModel);
-0323 mTempRef = removeReactions(mTempRef, {<span class="string">'R1'</span>;<span class="string">'R8'</span>});
-0324 mTemp = removeReactions(mTempRef, {<span class="string">'R7'</span>});
-0325 mTemp.id = <span class="string">'tmp'</span>;
-0326 tmpRxnScores = testRxnScores([2;3;4;5;6;7;9;10]);
-0327 <span class="comment">%now check that R7 is added back</span>
-0328 [~,outModel,addedRxnMat] = evalc(<span class="string">'ftINITFillGapsForAllTasks(mTemp,mTempRef,[],false,min(tmpRxnScores,-0.1),testModelTasks);'</span>);
-0329 verifyTrue(testCase, all(strcmp(mTempRef.rxns(addedRxnMat),<span class="string">'R7'</span>)))<span class="comment">%ok</span>
-0330 <span class="keyword">end</span>
-0331 
-0332 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0333 <span class="comment">%T0004: MergeLinear and groupRxnScores</span>
+0314 <span class="comment">%T0003: The second step - gapfilling</span>
+0315 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0316 <a name="_sub12" href="#_subfunctions" class="code">function testftINIT_T0003(testCase)</a>
+0317 <span class="comment">%First generate a model with gaps. We can use testModel. First we add</span>
+0318 <span class="comment">%boundary mets. Then we remove the exchange reactions</span>
+0319 <span class="comment">%(which is required for filling gaps) and create a gap by removing the R7 reaction.</span>
+0320 testModel = <a href="#_sub2" class="code" title="subfunction testModel = getTstModel()">getTstModel</a>();
+0321 testModelTasks = <a href="#_sub4" class="code" title="subfunction testModelTasks = getTstModelTasks()">getTstModelTasks</a>();
+0322 testRxnScores = <a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>();
+0323 
+0324 mTempRef = closeModel(testModel);
+0325 mTempRef = removeReactions(mTempRef, {<span class="string">'R1'</span>;<span class="string">'R8'</span>});
+0326 mTemp = removeReactions(mTempRef, {<span class="string">'R7'</span>});
+0327 mTemp.id = <span class="string">'tmp'</span>;
+0328 tmpRxnScores = testRxnScores([2;3;4;5;6;7;9;10]);
+0329 <span class="comment">%now check that R7 is added back</span>
+0330 [~,outModel,addedRxnMat] = evalc(<span class="string">'ftINITFillGapsForAllTasks(mTemp,mTempRef,[],false,min(tmpRxnScores,-0.1),testModelTasks);'</span>);
+0331 verifyTrue(testCase, all(strcmp(mTempRef.rxns(addedRxnMat),<span class="string">'R7'</span>)))<span class="comment">%ok</span>
+0332 <span class="keyword">end</span>
+0333 
 0334 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0335 <a name="_sub13" href="#_subfunctions" class="code">function testftINIT_T0004(testCase)</a>
-0336 <span class="comment">%first testModel</span>
-0337 testModel = <a href="#_sub2" class="code" title="subfunction testModel = getTstModel()">getTstModel</a>();
-0338 testRxnScores = <a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>();
-0339 [reducedModel,origRxnIds,groupIds,reversedRxns]=mergeLinear(testModel, {});
-0340 <span class="comment">%We expect mergeLinear to merge {R1,R2}, {R3,R5}, {R4,R6}, {R7,R8}, {R9,R10}</span>
-0341 verifyTrue(testCase, all(groupIds == [1;1;2;3;2;3;4;4;5;5]))
-0342 <span class="comment">%we expect R1, R3, R4, R7 to be irreversible, R9 to be reversible</span>
-0343 verifyTrue(testCase, all(reducedModel.rev == [0;0;0;0;1]))
-0344 verifyTrue(testCase, all(reducedModel.lb == [0;0;0;0;-1000]))
-0345 
-0346 newRxnScores=groupRxnScores(reducedModel, testRxnScores, origRxnIds, groupIds, ismember(origRxnIds, {<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R8'</span>}));
-0347 verifyTrue(testCase, all(newRxnScores == [0;-0.5;7.5;-1;0.5]))
-0348 
-0349 <span class="comment">%then testModel4</span>
-0350 testModel4 = <a href="#_sub6" class="code" title="subfunction testModel4 = getTstModel4()">getTstModel4</a>();
-0351 [reducedModel,origRxnIds,groupIds,reversedRxns]=mergeLinear(testModel4, {});
-0352 <span class="comment">%we expect {R5,R6},{R7,R8}, and{R9,R10} to be merged</span>
-0353 verifyTrue(testCase, all(groupIds == [0;0;0;0;1;1;2;2;3;3;0]))
-0354 <span class="comment">%check reversibility</span>
-0355 verifyTrue(testCase, all(reducedModel.rev == [1;0;1;0;1;1;0;0]))
-0356 <span class="comment">%check that some reactions have flipped direction when turned to irrev</span>
-0357 verifyTrue(testCase, strcmp(constructEquations(reducedModel, <span class="string">'R9'</span>),<span class="string">'g[s] =&gt; '</span>))
-0358 verifyTrue(testCase, all(find(reversedRxns) == [6;9]))
-0359 <span class="keyword">end</span>
-0360 
-0361 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0362 <span class="comment">%T0006: reverseRxns</span>
+0335 <span class="comment">%T0004: MergeLinear and groupRxnScores</span>
+0336 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0337 <a name="_sub13" href="#_subfunctions" class="code">function testftINIT_T0004(testCase)</a>
+0338 <span class="comment">%first testModel</span>
+0339 testModel = <a href="#_sub2" class="code" title="subfunction testModel = getTstModel()">getTstModel</a>();
+0340 testRxnScores = <a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>();
+0341 [reducedModel,origRxnIds,groupIds,reversedRxns]=mergeLinear(testModel, {});
+0342 <span class="comment">%We expect mergeLinear to merge {R1,R2}, {R3,R5}, {R4,R6}, {R7,R8}, {R9,R10}</span>
+0343 verifyTrue(testCase, all(groupIds == [1;1;2;3;2;3;4;4;5;5]))
+0344 <span class="comment">%we expect R1, R3, R4, R7 to be irreversible, R9 to be reversible</span>
+0345 verifyTrue(testCase, all(reducedModel.rev == [0;0;0;0;1]))
+0346 verifyTrue(testCase, all(reducedModel.lb == [0;0;0;0;-1000]))
+0347 
+0348 newRxnScores=groupRxnScores(reducedModel, testRxnScores, origRxnIds, groupIds, ismember(origRxnIds, {<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R8'</span>}));
+0349 verifyTrue(testCase, all(newRxnScores == [0;-0.5;7.5;-1;0.5]))
+0350 
+0351 <span class="comment">%then testModel4</span>
+0352 testModel4 = <a href="#_sub6" class="code" title="subfunction testModel4 = getTstModel4()">getTstModel4</a>();
+0353 [reducedModel,origRxnIds,groupIds,reversedRxns]=mergeLinear(testModel4, {});
+0354 <span class="comment">%we expect {R5,R6},{R7,R8}, and{R9,R10} to be merged</span>
+0355 verifyTrue(testCase, all(groupIds == [0;0;0;0;1;1;2;2;3;3;0]))
+0356 <span class="comment">%check reversibility</span>
+0357 verifyTrue(testCase, all(reducedModel.rev == [1;0;1;0;1;1;0;0]))
+0358 <span class="comment">%check that some reactions have flipped direction when turned to irrev</span>
+0359 verifyTrue(testCase, strcmp(constructEquations(reducedModel, <span class="string">'R9'</span>),<span class="string">'g[s] =&gt; '</span>))
+0360 verifyTrue(testCase, all(find(reversedRxns) == [6;9]))
+0361 <span class="keyword">end</span>
+0362 
 0363 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0364 
-0365 <a name="_sub14" href="#_subfunctions" class="code">function testftINIT_T0006(testCase)</a>
-0366 <span class="comment">%R1 = '=&gt; a[s]';...</span>
-0367 <span class="comment">%R3 = 'a[c] &lt;=&gt; b[c] + c[c]';...</span>
-0368 testModel = <a href="#_sub2" class="code" title="subfunction testModel = getTstModel()">getTstModel</a>();
-0369 
-0370 tmpModel = reverseRxns(testModel, {<span class="string">'R1'</span>;<span class="string">'R3'</span>});
-0371 res = constructEquations(tmpModel, {<span class="string">'R1'</span>;<span class="string">'R3'</span>});
-0372 expRes = {<span class="string">'a[s] =&gt; '</span>;<span class="string">'b[c] + c[c] &lt;=&gt; a[c]'</span>};
-0373 verifyTrue(testCase, all(strcmp(res,expRes)))
-0374 <span class="keyword">end</span>
-0375 
-0376 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0377 <span class="comment">%T0007: rescaleModelForINIT</span>
+0364 <span class="comment">%T0006: reverseRxns</span>
+0365 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0366 
+0367 <a name="_sub14" href="#_subfunctions" class="code">function testftINIT_T0006(testCase)</a>
+0368 <span class="comment">%R1 = '=&gt; a[s]';...</span>
+0369 <span class="comment">%R3 = 'a[c] &lt;=&gt; b[c] + c[c]';...</span>
+0370 testModel = <a href="#_sub2" class="code" title="subfunction testModel = getTstModel()">getTstModel</a>();
+0371 
+0372 tmpModel = reverseRxns(testModel, {<span class="string">'R1'</span>;<span class="string">'R3'</span>});
+0373 res = constructEquations(tmpModel, {<span class="string">'R1'</span>;<span class="string">'R3'</span>});
+0374 expRes = {<span class="string">'a[s] =&gt; '</span>;<span class="string">'b[c] + c[c] &lt;=&gt; a[c]'</span>};
+0375 verifyTrue(testCase, all(strcmp(res,expRes)))
+0376 <span class="keyword">end</span>
+0377 
 0378 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0379 <a name="_sub15" href="#_subfunctions" class="code">function testftINIT_T0007(testCase)</a>
-0380 miniModel = struct();
-0381 miniModel.S = [1,1000;-1,-40];
-0382 miniModel.rxns = {<span class="string">'1'</span>;<span class="string">'2'</span>};
-0383 miniModel.mets = {<span class="string">'1'</span>;<span class="string">'2'</span>};
-0384 res = rescaleModelForINIT(miniModel,10);
-0385 verifyTrue(testCase, abs(res.S(1,2) - res.S(2,2)*-10) &lt; 10^-6)
-0386 verifyTrue(testCase, abs((abs(res.S(1,2)) + abs(res.S(2,2)))/2) - 1 &lt; 10^-6)
-0387 <span class="keyword">end</span>
-0388 
-0389 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0390 <span class="comment">%T0008: testModel with metabolomics</span>
+0379 <span class="comment">%T0007: rescaleModelForINIT</span>
+0380 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0381 <a name="_sub15" href="#_subfunctions" class="code">function testftINIT_T0007(testCase)</a>
+0382 miniModel = struct();
+0383 miniModel.S = [1,1000;-1,-40];
+0384 miniModel.rxns = {<span class="string">'1'</span>;<span class="string">'2'</span>};
+0385 miniModel.mets = {<span class="string">'1'</span>;<span class="string">'2'</span>};
+0386 res = rescaleModelForINIT(miniModel,10);
+0387 verifyTrue(testCase, abs(res.S(1,2) - res.S(2,2)*-10) &lt; 10^-6)
+0388 verifyTrue(testCase, abs((abs(res.S(1,2)) + abs(res.S(2,2)))/2) - 1 &lt; 10^-6)
+0389 <span class="keyword">end</span>
+0390 
 0391 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0392 <a name="_sub16" href="#_subfunctions" class="code">function testftINIT_T0008(testCase)</a>
-0393 solverExist = [exist(<span class="string">'gurobi'</span>,<span class="string">'file'</span>), exist(<span class="string">'scip.mexw64'</span>,<span class="string">'file'</span>)] ==3;
-0394 currSolver = getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0395 <span class="keyword">if</span> solverExist(1)
-0396     setRavenSolver(<span class="string">'gurobi'</span>);
-0397 <span class="keyword">elseif</span> solverExist(2)
-0398     setRavenSolver(<span class="string">'scip'</span>);
-0399 <span class="keyword">else</span>
-0400     error(<span class="string">'No compatible solvers found'</span>);
-0401 <span class="keyword">end</span>
-0402 
-0403 testParams = struct();
+0392 <span class="comment">%T0008: testModel with metabolomics</span>
+0393 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0394 <a name="_sub16" href="#_subfunctions" class="code">function testftINIT_T0008(testCase)</a>
+0395 solverExist = [exist(<span class="string">'gurobi'</span>,<span class="string">'file'</span>), exist(<span class="string">'scip.mexw64'</span>,<span class="string">'file'</span>)] ==3;
+0396 currSolver = getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0397 <span class="keyword">if</span> solverExist(1)
+0398     setRavenSolver(<span class="string">'gurobi'</span>);
+0399 <span class="keyword">elseif</span> solverExist(2)
+0400     setRavenSolver(<span class="string">'scip'</span>);
+0401 <span class="keyword">else</span>
+0402     error(<span class="string">'No compatible solvers found'</span>);
+0403 <span class="keyword">end</span>
 0404 
-0405 testModel = <a href="#_sub2" class="code" title="subfunction testModel = getTstModel()">getTstModel</a>();
-0406 [~, prepDataTest1] = evalc(<span class="string">'prepINITModel(testModel, {}, {}, false, {}, ''s'');'</span>);
-0407 
-0408 arrayData1.genes = testModel.genes;
-0409 arrayData1.tissues = {<span class="string">'a'</span>};
-0410 arrayData1.levels = getExprForRxnScore(<a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>());
-0411 arrayData1.threshold = 1;
-0412 
-0413 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams,false);'</span>);
+0405 testParams = struct();
+0406 
+0407 testModel = <a href="#_sub2" class="code" title="subfunction testModel = getTstModel()">getTstModel</a>();
+0408 [~, prepDataTest1] = evalc(<span class="string">'prepINITModel(testModel, {}, {}, false, {}, ''s'');'</span>);
+0409 
+0410 arrayData1.genes = testModel.genes;
+0411 arrayData1.tissues = {<span class="string">'a'</span>};
+0412 arrayData1.levels = getExprForRxnScore(<a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>());
+0413 arrayData1.threshold = 1;
 0414 
-0415 <span class="comment">%First the same as in T0001 (we keep them here to make the test case understandable):</span>
-0416 <span class="comment">%We expect R1 and R8 to be added since they have no GPRs and are exch rxns. The transport rxn R2 without GPR will however be removed,</span>
-0417 <span class="comment">%since we in the standard setting run the third step with [1;0;0;0;1;0;0], meaning that such reactions will be removed</span>
-0418 <span class="comment">%R7 however will not be added since it has a GPR</span>
-0419 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>})))
-0420 
-0421 <span class="comment">%make R7 and R10 spontaneous (also same as in T0001)</span>
-0422 [~, prepDataTest1] = evalc(<span class="string">'prepINITModel(testModel, {}, {''R7'';''R10''}, false, {}, ''s'');'</span>);
-0423 verifyTrue(testCase, all(strcmp(prepDataTest1.refModel.rxns(prepDataTest1.toIgnoreExch | prepDataTest1.toIgnoreSpont), {<span class="string">'R1'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R10'</span>})))
-0424 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams,false);'</span>);
-0425 <span class="comment">%the model should now change to include the &quot;correct&quot; path (including 'R2') and</span>
-0426 <span class="comment">%skip R9/R10:</span>
-0427 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>})))
-0428 <span class="comment">%now, test to add the metabolite f - this should turn back the favor to R9/R10:</span>
-0429 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{''f''},getINITSteps(),true,true,testParams,false);'</span>);
-0430 <span class="comment">%R9 should now be included, the presence of R2 is random</span>
-0431 <span class="keyword">if</span> length(tst1ResModel1.rxns) == 7
-0432     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>})))
-0433 <span class="keyword">else</span>
-0434     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>})))
-0435 <span class="keyword">end</span>
-0436 <span class="comment">%now, test to add the metabolite a, e, f - this should give the same result:</span>
-0437 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{''f'';''a'';''e''},getINITSteps(),true,true,testParams,false);'</span>);
-0438 <span class="comment">%Should be the same as above (R2 is random)</span>
-0439 <span class="keyword">if</span> length(tst1ResModel1.rxns) == 7
-0440     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>})))
-0441 <span class="keyword">else</span>
-0442     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>})))
-0443 <span class="keyword">end</span>
-0444 
-0445 <span class="comment">%now, test to add the metabolite b - this should turn on R2 and R3/R5 and turn off R9:</span>
-0446 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{''b''},getINITSteps(),true,true,testParams,false);'</span>);
-0447 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R3'</span>;<span class="string">'R4'</span>;<span class="string">'R5'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>})))
-0448 
-0449 <span class="comment">%now on model 5 to test reactions that are not linearly merged (testModel has only merged rxns)</span>
-0450 testModel5 = <a href="#_sub8" class="code" title="subfunction testModel5 = getTstModel5()">getTstModel5</a>();
-0451 arrayData1.genes = testModel5.genes;
-0452 arrayData1.tissues = {<span class="string">'a'</span>};
-0453 arrayData1.levels = getExprForRxnScore(<a href="#_sub9" class="code" title="subfunction testModel5RxnScores = getTstModel5RxnScores()">getTstModel5RxnScores</a>());
-0454 arrayData1.threshold = 1;
-0455 
-0456 [~, prepDataTest5] = evalc(<span class="string">'prepINITModel(testModel5, {}, {''R7'';''R10''}, false, {}, ''s'');'</span>);
-0457 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest5,arrayData1.tissues{1},[],[],arrayData1,{},getINITSteps(),true,true,testParams,false);'</span>);
-0458 <span class="comment">%We expect the 'true' path, i.e. through R2, not R9/R10 or R11-R14</span>
-0459 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>})), 1)
-0460 
-0461 <span class="comment">%now add metabolite g</span>
-0462 <span class="comment">%modify the scores a bit</span>
-0463 [~, prepDataTest5] = evalc(<span class="string">'prepINITModel(testModel5, {}, {''R10''}, false, {}, ''s'');'</span>);
-0464 arrayData1.levels(7) = getExprForRxnScore(-1.1); <span class="comment">%modify to avoid randomness</span>
-0465 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest5,arrayData1.tissues{1},[],[],arrayData1,{''g''},getINITSteps(),true,true,testParams,false);'</span>);
-0466 <span class="comment">%We expect R2 to be replaced with R11 and R13</span>
-0467 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R8'</span>;<span class="string">'R11'</span>;<span class="string">'R13'</span>})), 1)
-0468 setRavenSolver(currSolver);
-0469 <span class="keyword">end</span>
-0470 
-0471 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0472 <span class="comment">%T0009: getExprFromRxnScore</span>
+0415 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams,false);'</span>);
+0416 
+0417 <span class="comment">%First the same as in T0001 (we keep them here to make the test case understandable):</span>
+0418 <span class="comment">%We expect R1 and R8 to be added since they have no GPRs and are exch rxns. The transport rxn R2 without GPR will however be removed,</span>
+0419 <span class="comment">%since we in the standard setting run the third step with [1;0;0;0;1;0;0], meaning that such reactions will be removed</span>
+0420 <span class="comment">%R7 however will not be added since it has a GPR</span>
+0421 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>})))
+0422 
+0423 <span class="comment">%make R7 and R10 spontaneous (also same as in T0001)</span>
+0424 [~, prepDataTest1] = evalc(<span class="string">'prepINITModel(testModel, {}, {''R7'';''R10''}, false, {}, ''s'');'</span>);
+0425 verifyTrue(testCase, all(strcmp(prepDataTest1.refModel.rxns(prepDataTest1.toIgnoreExch | prepDataTest1.toIgnoreSpont), {<span class="string">'R1'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R10'</span>})))
+0426 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,[],getINITSteps(),true,true,testParams,false);'</span>);
+0427 <span class="comment">%the model should now change to include the &quot;correct&quot; path (including 'R2') and</span>
+0428 <span class="comment">%skip R9/R10:</span>
+0429 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>})))
+0430 <span class="comment">%now, test to add the metabolite f - this should turn back the favor to R9/R10:</span>
+0431 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{''f''},getINITSteps(),true,true,testParams,false);'</span>);
+0432 <span class="comment">%R9 should now be included, the presence of R2 is random</span>
+0433 <span class="keyword">if</span> length(tst1ResModel1.rxns) == 7
+0434     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>})))
+0435 <span class="keyword">else</span>
+0436     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>})))
+0437 <span class="keyword">end</span>
+0438 <span class="comment">%now, test to add the metabolite a, e, f - this should give the same result:</span>
+0439 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{''f'';''a'';''e''},getINITSteps(),true,true,testParams,false);'</span>);
+0440 <span class="comment">%Should be the same as above (R2 is random)</span>
+0441 <span class="keyword">if</span> length(tst1ResModel1.rxns) == 7
+0442     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>})))
+0443 <span class="keyword">else</span>
+0444     verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>})))
+0445 <span class="keyword">end</span>
+0446 
+0447 <span class="comment">%now, test to add the metabolite b - this should turn on R2 and R3/R5 and turn off R9:</span>
+0448 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest1,arrayData1.tissues{1},[],[],arrayData1,{''b''},getINITSteps(),true,true,testParams,false);'</span>);
+0449 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R3'</span>;<span class="string">'R4'</span>;<span class="string">'R5'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>})))
+0450 
+0451 <span class="comment">%now on model 5 to test reactions that are not linearly merged (testModel has only merged rxns)</span>
+0452 testModel5 = <a href="#_sub8" class="code" title="subfunction testModel5 = getTstModel5()">getTstModel5</a>();
+0453 arrayData1.genes = testModel5.genes;
+0454 arrayData1.tissues = {<span class="string">'a'</span>};
+0455 arrayData1.levels = getExprForRxnScore(<a href="#_sub9" class="code" title="subfunction testModel5RxnScores = getTstModel5RxnScores()">getTstModel5RxnScores</a>());
+0456 arrayData1.threshold = 1;
+0457 
+0458 [~, prepDataTest5] = evalc(<span class="string">'prepINITModel(testModel5, {}, {''R7'';''R10''}, false, {}, ''s'');'</span>);
+0459 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest5,arrayData1.tissues{1},[],[],arrayData1,{},getINITSteps(),true,true,testParams,false);'</span>);
+0460 <span class="comment">%We expect the 'true' path, i.e. through R2, not R9/R10 or R11-R14</span>
+0461 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>})), 1)
+0462 
+0463 <span class="comment">%now add metabolite g</span>
+0464 <span class="comment">%modify the scores a bit</span>
+0465 [~, prepDataTest5] = evalc(<span class="string">'prepINITModel(testModel5, {}, {''R10''}, false, {}, ''s'');'</span>);
+0466 arrayData1.levels(7) = getExprForRxnScore(-1.1); <span class="comment">%modify to avoid randomness</span>
+0467 [~,tst1ResModel1] = evalc(<span class="string">'ftINIT(prepDataTest5,arrayData1.tissues{1},[],[],arrayData1,{''g''},getINITSteps(),true,true,testParams,false);'</span>);
+0468 <span class="comment">%We expect R2 to be replaced with R11 and R13</span>
+0469 verifyTrue(testCase, all(strcmp(tst1ResModel1.rxns,{<span class="string">'R1'</span>;<span class="string">'R4'</span>;<span class="string">'R6'</span>;<span class="string">'R8'</span>;<span class="string">'R11'</span>;<span class="string">'R13'</span>})), 1)
+0470 setRavenSolver(currSolver);
+0471 <span class="keyword">end</span>
+0472 
 0473 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0474 <a name="_sub17" href="#_subfunctions" class="code">function testftINIT_T0009(testCase)</a>
-0475 testModel = <a href="#_sub2" class="code" title="subfunction testModel = getTstModel()">getTstModel</a>();
-0476 [~, prepDataTest1] = evalc(<span class="string">'prepINITModel(testModel, {}, {}, false, {}, ''s'');'</span>);
-0477 
-0478 arrayData1.genes = testModel.genes;
-0479 arrayData1.tissues = {<span class="string">'a'</span>};
-0480 arrayData1.levels = getExprForRxnScore(<a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>());
-0481 arrayData1.threshold = 1;
-0482 
-0483 rxnScores = scoreComplexModel(prepDataTest1.refModel,[],arrayData1,arrayData1.tissues{1},[]);
-0484 expRes = <a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>();
-0485 verifyTrue(testCase, all(abs(rxnScores - expRes) &lt; 10^-10)) <span class="comment">%ok</span>
-0486 <span class="keyword">end</span>
-0487 
-0488 <a name="_sub18" href="#_subfunctions" class="code">function testModelL = getTstModelL()</a>
-0489 testModelL = struct();
-0490 testModelL.id = <span class="string">'testModel'</span>;
-0491 testModelL.rxns = {};
-0492 testModelL.S=[];
-0493 testModelL.rev=[];
-0494 testModelL.metNames = {<span class="string">'e1'</span>;<span class="string">'e2'</span>;<span class="string">'e3'</span>;<span class="string">'e4'</span>;<span class="string">'e5'</span>;<span class="string">'e6'</span>;<span class="string">'e7'</span>;<span class="string">'e8'</span>;<span class="string">'e9'</span>;<span class="string">'e1'</span>;<span class="string">'e2'</span>;<span class="string">'e3'</span>;<span class="string">'e4'</span>;<span class="string">'e5'</span>;<span class="string">'e6'</span>;<span class="string">'e7'</span>;<span class="string">'e8'</span>;<span class="string">'e9'</span>;<span class="string">'x1'</span>;<span class="string">'x2'</span>;<span class="string">'x3'</span>;<span class="string">'x4'</span>;<span class="string">'x5'</span>;<span class="string">'x6'</span>;<span class="string">'x7'</span>;<span class="string">'x8'</span>;<span class="string">'x9'</span>;<span class="string">'x10'</span>;<span class="string">'x11'</span>};
-0495 testModelL.comps = {<span class="string">'s'</span>;<span class="string">'c'</span>};
-0496 testModelL.compNames = testModelL.comps;
-0497 testModelL.metComps = [1;1;1;1;1;1;1;1;1;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2];
-0498 testModelL.mets = strcat(testModelL.metNames, testModelL.comps(testModelL.metComps));
-0499 
-0500 testModelL.grRules = {};
-0501 testModelL.rxnGeneMat = [];
-0502 
-0503 testModelL.genes = {<span class="string">'Ge1'</span>;<span class="string">'Ge2'</span>;<span class="string">'Ge4'</span>;<span class="string">'Ge5'</span>;<span class="string">'Ge7'</span>;<span class="string">'Ge9'</span>; <span class="string">'Gr1'</span>;<span class="string">'Gr2'</span>;<span class="string">'Gr3'</span>;<span class="string">'Gr5'</span>;<span class="string">'Gr6'</span>;<span class="string">'Gr7'</span>;<span class="string">'Gr8'</span>;<span class="string">'Gr9'</span>;<span class="string">'Gr10'</span>;<span class="string">'Gr11'</span>;<span class="string">'Gr12'</span>;<span class="string">'Gr14'</span>;<span class="string">'Gr15'</span>};
+0474 <span class="comment">%T0009: getExprFromRxnScore</span>
+0475 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0476 <a name="_sub17" href="#_subfunctions" class="code">function testftINIT_T0009(testCase)</a>
+0477 testModel = <a href="#_sub2" class="code" title="subfunction testModel = getTstModel()">getTstModel</a>();
+0478 [~, prepDataTest1] = evalc(<span class="string">'prepINITModel(testModel, {}, {}, false, {}, ''s'');'</span>);
+0479 
+0480 arrayData1.genes = testModel.genes;
+0481 arrayData1.tissues = {<span class="string">'a'</span>};
+0482 arrayData1.levels = getExprForRxnScore(<a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>());
+0483 arrayData1.threshold = 1;
+0484 
+0485 rxnScores = scoreComplexModel(prepDataTest1.refModel,[],arrayData1,arrayData1.tissues{1},[]);
+0486 expRes = <a href="#_sub3" class="code" title="subfunction testModelRxnScores = getTstModelRxnScores()">getTstModelRxnScores</a>();
+0487 verifyTrue(testCase, all(abs(rxnScores - expRes) &lt; 10^-10)) <span class="comment">%ok</span>
+0488 <span class="keyword">end</span>
+0489 
+0490 <a name="_sub18" href="#_subfunctions" class="code">function testModelL = getTstModelL()</a>
+0491 testModelL = struct();
+0492 testModelL.id = <span class="string">'testModel'</span>;
+0493 testModelL.rxns = {};
+0494 testModelL.S=[];
+0495 testModelL.rev=[];
+0496 testModelL.metNames = {<span class="string">'e1'</span>;<span class="string">'e2'</span>;<span class="string">'e3'</span>;<span class="string">'e4'</span>;<span class="string">'e5'</span>;<span class="string">'e6'</span>;<span class="string">'e7'</span>;<span class="string">'e8'</span>;<span class="string">'e9'</span>;<span class="string">'e1'</span>;<span class="string">'e2'</span>;<span class="string">'e3'</span>;<span class="string">'e4'</span>;<span class="string">'e5'</span>;<span class="string">'e6'</span>;<span class="string">'e7'</span>;<span class="string">'e8'</span>;<span class="string">'e9'</span>;<span class="string">'x1'</span>;<span class="string">'x2'</span>;<span class="string">'x3'</span>;<span class="string">'x4'</span>;<span class="string">'x5'</span>;<span class="string">'x6'</span>;<span class="string">'x7'</span>;<span class="string">'x8'</span>;<span class="string">'x9'</span>;<span class="string">'x10'</span>;<span class="string">'x11'</span>};
+0497 testModelL.comps = {<span class="string">'s'</span>;<span class="string">'c'</span>};
+0498 testModelL.compNames = testModelL.comps;
+0499 testModelL.metComps = [1;1;1;1;1;1;1;1;1;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2];
+0500 testModelL.mets = strcat(testModelL.metNames, testModelL.comps(testModelL.metComps));
+0501 
+0502 testModelL.grRules = {};
+0503 testModelL.rxnGeneMat = [];
 0504 
-0505 testModelL.ub = [];
-0506 testModelL.lb = [];
-0507 
-0508 rxnsToAdd = struct();
-0509 rxnsToAdd.rxns = {  <span class="string">'S1'</span>;<span class="string">'S2'</span>;<span class="string">'S3'</span>;<span class="string">'S4'</span>;<span class="string">'S5'</span>;<span class="string">'S6'</span>;<span class="string">'S7'</span>;<span class="string">'S8'</span>;<span class="string">'S9'</span>;<span class="string">'E1'</span>;<span class="string">'E2'</span>;<span class="string">'E2b'</span>;<span class="string">'E3'</span>;<span class="string">'E4'</span>;<span class="string">'E5'</span>;<span class="string">'E6'</span>;<span class="string">'E7'</span>;<span class="string">'E8'</span>;<span class="string">'E9'</span>;<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R3'</span>;<span class="string">'R4'</span>;<span class="string">'R5'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>;<span class="string">'R11'</span>;<span class="string">'R12'</span>;<span class="string">'R13'</span>;<span class="string">'R14'</span>;<span class="string">'R15'</span>};
-0510 rxnsToAdd.grRules = {<span class="string">''</span>;  <span class="string">''</span>;  <span class="string">''</span>;  <span class="string">''</span>;  <span class="string">''</span>;  <span class="string">''</span>;  <span class="string">''</span>;  <span class="string">''</span>;  <span class="string">''</span>; <span class="string">'Ge1'</span>;<span class="string">'Ge2'</span>;<span class="string">''</span>;<span class="string">''</span>;<span class="string">'Ge4'</span>;<span class="string">'Ge5'</span>;<span class="string">''</span>;<span class="string">'Ge7'</span>;<span class="string">''</span>;<span class="string">'Ge9'</span>; <span class="string">'Gr1'</span>;<span class="string">'Gr2'</span>;<span class="string">'Gr3'</span>;<span class="string">''</span>;<span class="string">'Gr5'</span>;<span class="string">'Gr6'</span>;<span class="string">'Gr7'</span>;<span class="string">'Gr8'</span>;<span class="string">'Gr9'</span>;<span class="string">'Gr10'</span>;<span class="string">'Gr11'</span>;<span class="string">'Gr12'</span>;<span class="string">''</span>;<span class="string">'Gr14'</span>;<span class="string">'Gr15'</span>};
-0511 rxnsToAdd.equations = {<span class="string">'e1[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
-0512     <span class="string">'e2[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
-0513     <span class="string">'e3[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
-0514     <span class="string">'e4[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
-0515     <span class="string">'e5[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
-0516     <span class="string">'e6[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
-0517     <span class="string">'e7[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
-0518     <span class="string">'e8[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
-0519     <span class="string">'e9[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
-0520     <span class="string">'e1[s] &lt;=&gt; e1[c]'</span>;<span class="keyword">...</span>
-0521     <span class="string">'e2[s] &lt;=&gt; e2[c]'</span>;<span class="keyword">...</span>
-0522     <span class="string">'e2[s] &lt;=&gt; e2[c]'</span>;<span class="keyword">...</span><span class="comment"> %b variant</span>
-0523     <span class="string">'e3[s] &lt;=&gt; e3[c]'</span>;<span class="keyword">...</span>
-0524     <span class="string">'e4[s] &lt;=&gt; e4[c]'</span>;<span class="keyword">...</span>
-0525     <span class="string">'e5[s] &lt;=&gt; e5[c]'</span>;<span class="keyword">...</span>
-0526     <span class="string">'e6[s] &lt;=&gt; e6[c]'</span>;<span class="keyword">...</span>
-0527     <span class="string">'e7[s] &lt;=&gt; e7[c]'</span>;<span class="keyword">...</span>
-0528     <span class="string">'e8[s] &lt;=&gt; e8[c]'</span>;<span class="keyword">...</span>
-0529     <span class="string">'e9[s] &lt;=&gt; e9[c]'</span>;<span class="keyword">...</span>
-0530     <span class="string">'e1[c] + e2[c] &lt;=&gt; x1[c]'</span>;<span class="keyword">...</span><span class="comment"> %R1</span>
-0531     <span class="string">'e1[c] + e3[c] =&gt; x2[c] + x3[c]'</span>;<span class="keyword">...</span><span class="comment"> %R2</span>
-0532     <span class="string">'e4[c] + x3[c] =&gt; x4[c] + x5[c]'</span>;<span class="keyword">...</span><span class="comment"> %R3</span>
-0533     <span class="string">'e5[c] + e6[c] + x4[c] =&gt; 2 x2[c] + x6[c]'</span>;<span class="keyword">...</span><span class="comment"> %R4</span>
-0534     <span class="string">'x1[c] + x2[c] &lt;=&gt; x7[c] + 2 x8[c]'</span>;<span class="keyword">...</span><span class="comment"> %R5</span>
-0535     <span class="string">'x2[c] + x8[c] =&gt; x3[c] + x9[c]'</span>;<span class="keyword">...</span><span class="comment"> %R6</span>
-0536     <span class="string">'x4[c] &lt;=&gt; x9[c]'</span>;<span class="keyword">...</span><span class="comment"> %R7</span>
-0537     <span class="string">'x5[c] &lt;=&gt; x9[c]'</span>;<span class="keyword">...</span><span class="comment"> %R8</span>
-0538     <span class="string">'x6[c] &lt;=&gt; x10[c]'</span>;<span class="keyword">...</span><span class="comment"> %R9</span>
-0539     <span class="string">'x6[c] &lt;=&gt; x11[c]'</span>;<span class="keyword">...</span><span class="comment"> %R10</span>
-0540     <span class="string">'x10[c] + 2 x11[c] =&gt; e7[c]'</span>;<span class="keyword">...</span><span class="comment"> %R11</span>
-0541     <span class="string">'x9[c] + x10[c] &lt;=&gt; e8[c]'</span>;<span class="keyword">...</span><span class="comment"> %R12</span>
-0542     <span class="string">'x7[c] + x8[c] + x9[c] =&gt; e9[c]'</span>;<span class="keyword">...</span><span class="comment"> %R13</span>
-0543     <span class="string">'x6[c] =&gt; x9[c]'</span>;<span class="keyword">...</span><span class="comment"> %R14</span>
-0544     <span class="string">'x3[c] =&gt; x9[c]'</span><span class="keyword">...</span><span class="comment"> %R15</span>
-0545     };
-0546 testModelL = addRxns(testModelL,rxnsToAdd, 3);
-0547 testModelL.c = [0;0;0;0;0;0;0;1;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0];<span class="comment">%optimize for output flux, if this is used, not sure</span>
-0548 testModelL.rxnNames = testModelL.rxns;
-0549 testModelL.b = repmat(0,length(testModelL.mets),1);
-0550 <span class="keyword">end</span>
-0551 
-0552 <a name="_sub19" href="#_subfunctions" class="code">function testModelLGeneScores = getTstModelLGeneScores()</a>
-0553 <span class="comment">%testModelL.genes = {'Ge1';'Ge2';'Ge4';'Ge5';'Ge7';'Ge9'; 'Gr1';'Gr2';'Gr3';'Gr5';'Gr6';'Gr7';'Gr8';'Gr9';'Gr10';'Gr11';'Gr12';'Gr14';'Gr15'};</span>
-0554 testModelLGeneScores = [3; -1;   8;    6;    -5;    5;     4;    5;    2;    3;    6;    1;    3;    1;    -3;    1;     3;      1;    2];
-0555 <span class="keyword">end</span>
-0556 
-0557 
-0558 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0559 <span class="comment">%T0050: Test ftINIT on a slightly larger and more complex model</span>
-0560 <span class="comment">%       Specifically tests if the three-step variant and the &quot;full&quot;</span>
-0561 <span class="comment">%       variant gives similar results</span>
-0562 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
-0563 <a name="_sub20" href="#_subfunctions" class="code">function testftINIT_T0050(testCase)</a>
-0564 solverExist = [exist(<span class="string">'gurobi'</span>,<span class="string">'file'</span>), exist(<span class="string">'scip.mexw64'</span>,<span class="string">'file'</span>)] ==3;
-0565 currSolver = getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0566 <span class="keyword">if</span> solverExist(1)
-0567     setRavenSolver(<span class="string">'gurobi'</span>);
-0568 <span class="keyword">elseif</span> solverExist(2)
-0569     setRavenSolver(<span class="string">'scip'</span>);
-0570 <span class="keyword">else</span>
-0571     error(<span class="string">'No compatible solvers found'</span>);
-0572 <span class="keyword">end</span>
-0573 
-0574 testModelL = <a href="#_sub18" class="code" title="subfunction testModelL = getTstModelL()">getTstModelL</a>();
-0575 testModelLGeneScores = <a href="#_sub19" class="code" title="subfunction testModelLGeneScores = getTstModelLGeneScores()">getTstModelLGeneScores</a>();
-0576 testParams = struct();
-0577 
-0578 arrayDataL = struct();
-0579 arrayDataL.genes = testModelL.genes;
-0580 arrayDataL.tissues = {<span class="string">'t1'</span>};
-0581 arrayDataL.levels = getExprForRxnScore(testModelLGeneScores,1);
-0582 arrayDataL.threshold = 1;
-0583 
-0584 <span class="comment">%Run prep data</span>
-0585 [~, prepDataL] = evalc(<span class="string">'prepINITModel(testModelL, [], {}, false, {}, ''s'');'</span>);
-0586 
-0587 [~,mres] = evalc(<span class="string">'ftINIT(prepDataL,arrayDataL.tissues{1},[],[],arrayDataL,[],getINITSteps(),true,true,testParams,false);'</span>);
-0588 [~,mres2] = evalc(<span class="string">'ftINIT(prepDataL,arrayDataL.tissues{1},[],[],arrayDataL,[],getINITSteps([], ''full''),true,true,testParams,false);'</span>);
-0589 
-0590 expResult = {  <span class="string">'S1'</span>;<span class="string">'S2'</span>;<span class="string">'S3'</span>;<span class="string">'S4'</span>;<span class="string">'S5'</span>;<span class="string">'S6'</span>;<span class="string">'S7'</span>;<span class="string">'S8'</span>;<span class="string">'S9'</span>;<span class="string">'E1'</span>;<span class="string">'E2'</span>;<span class="string">'E3'</span>;<span class="string">'E4'</span>;<span class="string">'E5'</span>;<span class="string">'E6'</span>;<span class="string">'E8'</span>;<span class="string">'E9'</span>;<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R3'</span>;<span class="string">'R4'</span>;<span class="string">'R5'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R12'</span>;<span class="string">'R13'</span>;<span class="string">'R14'</span>;<span class="string">'R15'</span>};
+0505 testModelL.genes = {<span class="string">'Ge1'</span>;<span class="string">'Ge2'</span>;<span class="string">'Ge4'</span>;<span class="string">'Ge5'</span>;<span class="string">'Ge7'</span>;<span class="string">'Ge9'</span>; <span class="string">'Gr1'</span>;<span class="string">'Gr2'</span>;<span class="string">'Gr3'</span>;<span class="string">'Gr5'</span>;<span class="string">'Gr6'</span>;<span class="string">'Gr7'</span>;<span class="string">'Gr8'</span>;<span class="string">'Gr9'</span>;<span class="string">'Gr10'</span>;<span class="string">'Gr11'</span>;<span class="string">'Gr12'</span>;<span class="string">'Gr14'</span>;<span class="string">'Gr15'</span>};
+0506 
+0507 testModelL.ub = [];
+0508 testModelL.lb = [];
+0509 
+0510 rxnsToAdd = struct();
+0511 rxnsToAdd.rxns = {  <span class="string">'S1'</span>;<span class="string">'S2'</span>;<span class="string">'S3'</span>;<span class="string">'S4'</span>;<span class="string">'S5'</span>;<span class="string">'S6'</span>;<span class="string">'S7'</span>;<span class="string">'S8'</span>;<span class="string">'S9'</span>;<span class="string">'E1'</span>;<span class="string">'E2'</span>;<span class="string">'E2b'</span>;<span class="string">'E3'</span>;<span class="string">'E4'</span>;<span class="string">'E5'</span>;<span class="string">'E6'</span>;<span class="string">'E7'</span>;<span class="string">'E8'</span>;<span class="string">'E9'</span>;<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R3'</span>;<span class="string">'R4'</span>;<span class="string">'R5'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R10'</span>;<span class="string">'R11'</span>;<span class="string">'R12'</span>;<span class="string">'R13'</span>;<span class="string">'R14'</span>;<span class="string">'R15'</span>};
+0512 rxnsToAdd.grRules = {<span class="string">''</span>;  <span class="string">''</span>;  <span class="string">''</span>;  <span class="string">''</span>;  <span class="string">''</span>;  <span class="string">''</span>;  <span class="string">''</span>;  <span class="string">''</span>;  <span class="string">''</span>; <span class="string">'Ge1'</span>;<span class="string">'Ge2'</span>;<span class="string">''</span>;<span class="string">''</span>;<span class="string">'Ge4'</span>;<span class="string">'Ge5'</span>;<span class="string">''</span>;<span class="string">'Ge7'</span>;<span class="string">''</span>;<span class="string">'Ge9'</span>; <span class="string">'Gr1'</span>;<span class="string">'Gr2'</span>;<span class="string">'Gr3'</span>;<span class="string">''</span>;<span class="string">'Gr5'</span>;<span class="string">'Gr6'</span>;<span class="string">'Gr7'</span>;<span class="string">'Gr8'</span>;<span class="string">'Gr9'</span>;<span class="string">'Gr10'</span>;<span class="string">'Gr11'</span>;<span class="string">'Gr12'</span>;<span class="string">''</span>;<span class="string">'Gr14'</span>;<span class="string">'Gr15'</span>};
+0513 rxnsToAdd.equations = {<span class="string">'e1[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
+0514     <span class="string">'e2[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
+0515     <span class="string">'e3[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
+0516     <span class="string">'e4[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
+0517     <span class="string">'e5[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
+0518     <span class="string">'e6[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
+0519     <span class="string">'e7[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
+0520     <span class="string">'e8[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
+0521     <span class="string">'e9[s] &lt;=&gt;'</span>;<span class="keyword">...</span>
+0522     <span class="string">'e1[s] &lt;=&gt; e1[c]'</span>;<span class="keyword">...</span>
+0523     <span class="string">'e2[s] &lt;=&gt; e2[c]'</span>;<span class="keyword">...</span>
+0524     <span class="string">'e2[s] &lt;=&gt; e2[c]'</span>;<span class="keyword">...</span><span class="comment"> %b variant</span>
+0525     <span class="string">'e3[s] &lt;=&gt; e3[c]'</span>;<span class="keyword">...</span>
+0526     <span class="string">'e4[s] &lt;=&gt; e4[c]'</span>;<span class="keyword">...</span>
+0527     <span class="string">'e5[s] &lt;=&gt; e5[c]'</span>;<span class="keyword">...</span>
+0528     <span class="string">'e6[s] &lt;=&gt; e6[c]'</span>;<span class="keyword">...</span>
+0529     <span class="string">'e7[s] &lt;=&gt; e7[c]'</span>;<span class="keyword">...</span>
+0530     <span class="string">'e8[s] &lt;=&gt; e8[c]'</span>;<span class="keyword">...</span>
+0531     <span class="string">'e9[s] &lt;=&gt; e9[c]'</span>;<span class="keyword">...</span>
+0532     <span class="string">'e1[c] + e2[c] &lt;=&gt; x1[c]'</span>;<span class="keyword">...</span><span class="comment"> %R1</span>
+0533     <span class="string">'e1[c] + e3[c] =&gt; x2[c] + x3[c]'</span>;<span class="keyword">...</span><span class="comment"> %R2</span>
+0534     <span class="string">'e4[c] + x3[c] =&gt; x4[c] + x5[c]'</span>;<span class="keyword">...</span><span class="comment"> %R3</span>
+0535     <span class="string">'e5[c] + e6[c] + x4[c] =&gt; 2 x2[c] + x6[c]'</span>;<span class="keyword">...</span><span class="comment"> %R4</span>
+0536     <span class="string">'x1[c] + x2[c] &lt;=&gt; x7[c] + 2 x8[c]'</span>;<span class="keyword">...</span><span class="comment"> %R5</span>
+0537     <span class="string">'x2[c] + x8[c] =&gt; x3[c] + x9[c]'</span>;<span class="keyword">...</span><span class="comment"> %R6</span>
+0538     <span class="string">'x4[c] &lt;=&gt; x9[c]'</span>;<span class="keyword">...</span><span class="comment"> %R7</span>
+0539     <span class="string">'x5[c] &lt;=&gt; x9[c]'</span>;<span class="keyword">...</span><span class="comment"> %R8</span>
+0540     <span class="string">'x6[c] &lt;=&gt; x10[c]'</span>;<span class="keyword">...</span><span class="comment"> %R9</span>
+0541     <span class="string">'x6[c] &lt;=&gt; x11[c]'</span>;<span class="keyword">...</span><span class="comment"> %R10</span>
+0542     <span class="string">'x10[c] + 2 x11[c] =&gt; e7[c]'</span>;<span class="keyword">...</span><span class="comment"> %R11</span>
+0543     <span class="string">'x9[c] + x10[c] &lt;=&gt; e8[c]'</span>;<span class="keyword">...</span><span class="comment"> %R12</span>
+0544     <span class="string">'x7[c] + x8[c] + x9[c] =&gt; e9[c]'</span>;<span class="keyword">...</span><span class="comment"> %R13</span>
+0545     <span class="string">'x6[c] =&gt; x9[c]'</span>;<span class="keyword">...</span><span class="comment"> %R14</span>
+0546     <span class="string">'x3[c] =&gt; x9[c]'</span><span class="keyword">...</span><span class="comment"> %R15</span>
+0547     };
+0548 testModelL = addRxns(testModelL,rxnsToAdd, 3);
+0549 testModelL.c = [0;0;0;0;0;0;0;1;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0];<span class="comment">%optimize for output flux, if this is used, not sure</span>
+0550 testModelL.rxnNames = testModelL.rxns;
+0551 testModelL.b = repmat(0,length(testModelL.mets),1);
+0552 <span class="keyword">end</span>
+0553 
+0554 <a name="_sub19" href="#_subfunctions" class="code">function testModelLGeneScores = getTstModelLGeneScores()</a>
+0555 <span class="comment">%testModelL.genes = {'Ge1';'Ge2';'Ge4';'Ge5';'Ge7';'Ge9'; 'Gr1';'Gr2';'Gr3';'Gr5';'Gr6';'Gr7';'Gr8';'Gr9';'Gr10';'Gr11';'Gr12';'Gr14';'Gr15'};</span>
+0556 testModelLGeneScores = [3; -1;   8;    6;    -5;    5;     4;    5;    2;    3;    6;    1;    3;    1;    -3;    1;     3;      1;    2];
+0557 <span class="keyword">end</span>
+0558 
+0559 
+0560 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0561 <span class="comment">%T0050: Test ftINIT on a slightly larger and more complex model</span>
+0562 <span class="comment">%       Specifically tests if the three-step variant and the &quot;full&quot;</span>
+0563 <span class="comment">%       variant gives similar results</span>
+0564 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0565 <a name="_sub20" href="#_subfunctions" class="code">function testftINIT_T0050(testCase)</a>
+0566 solverExist = [exist(<span class="string">'gurobi'</span>,<span class="string">'file'</span>), exist(<span class="string">'scip.mexw64'</span>,<span class="string">'file'</span>)] ==3;
+0567 currSolver = getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0568 <span class="keyword">if</span> solverExist(1)
+0569     setRavenSolver(<span class="string">'gurobi'</span>);
+0570 <span class="keyword">elseif</span> solverExist(2)
+0571     setRavenSolver(<span class="string">'scip'</span>);
+0572 <span class="keyword">else</span>
+0573     error(<span class="string">'No compatible solvers found'</span>);
+0574 <span class="keyword">end</span>
+0575 
+0576 testModelL = <a href="#_sub18" class="code" title="subfunction testModelL = getTstModelL()">getTstModelL</a>();
+0577 testModelLGeneScores = <a href="#_sub19" class="code" title="subfunction testModelLGeneScores = getTstModelLGeneScores()">getTstModelLGeneScores</a>();
+0578 testParams = struct();
+0579 
+0580 arrayDataL = struct();
+0581 arrayDataL.genes = testModelL.genes;
+0582 arrayDataL.tissues = {<span class="string">'t1'</span>};
+0583 arrayDataL.levels = getExprForRxnScore(testModelLGeneScores,1);
+0584 arrayDataL.threshold = 1;
+0585 
+0586 <span class="comment">%Run prep data</span>
+0587 [~, prepDataL] = evalc(<span class="string">'prepINITModel(testModelL, [], {}, false, {}, ''s'');'</span>);
+0588 
+0589 [~,mres] = evalc(<span class="string">'ftINIT(prepDataL,arrayDataL.tissues{1},[],[],arrayDataL,[],getINITSteps(),true,true,testParams,false);'</span>);
+0590 [~,mres2] = evalc(<span class="string">'ftINIT(prepDataL,arrayDataL.tissues{1},[],[],arrayDataL,[],getINITSteps([], ''full''),true,true,testParams,false);'</span>);
 0591 
-0592 verifyTrue(testCase, all(contains(mres.rxns,expResult)))
-0593 verifyTrue(testCase, all(contains(mres2.rxns,expResult)))
-0594 
-0595 <span class="comment">%run the old tINIT version (in Human-GEM)</span>
-0596 <span class="comment">%this is just to show that they become different, not really part of the test case</span>
-0597 <span class="comment">%paramsL2 = struct();</span>
-0598 <span class="comment">%paramsL2.TimeLimit = 1000;</span>
-0599 <span class="comment">%testModelL2 = closeModel(testModelL);</span>
-0600 <span class="comment">%init_modelOrig = getINITModel2(testModelL2,arrayDataL.tissues{1},[],[],arrayDataL,[],true,[],true,true,[],paramsL2);</span>
-0601 
-0602 <span class="comment">%in this call, I have modified the code - the possibility to turn off met secretion + don't allow flux in both directions is not possible.</span>
-0603 <span class="comment">%The following line, around line 337, is changed</span>
-0604 <span class="comment">%from:</span>
-0605 <span class="comment">%[~, deletedRxnsInINIT, metProduction] = runINIT(simplifyModel(cModel),rxnScores,metabolomicsData,essentialRxnsForTasks,0,true,false,params);</span>
-0606 <span class="comment">%to:</span>
-0607 <span class="comment">%[~, deletedRxnsInINIT, metProduction] = runINIT(simplifyModel(cModel),rxnScores,metabolomicsData,essentialRxnsForTasks,0,false,true,params);</span>
-0608 <span class="comment">%init_modelOrigNoSecrOneDirOnly = getINITModel2(testModelL2,arrayDataL.tissues{1},[],[],arrayDataL,[],true,[],true,true,[],paramsL2);</span>
-0609 
-0610 <span class="comment">%The models init_modelOrigNoSecrOneDirOnly and mres2 are very similar, (only one exch rxn differ, which is expected)</span>
-0611 <span class="comment">%init_modelOrig is quite different, with a lot of gaps, and worse. So, the conclusion is that the new version does a pretty good job.</span>
-0612 setRavenSolver(currSolver);
-0613 <span class="keyword">end</span></pre></div>
+0592 expResult = {  <span class="string">'S1'</span>;<span class="string">'S2'</span>;<span class="string">'S3'</span>;<span class="string">'S4'</span>;<span class="string">'S5'</span>;<span class="string">'S6'</span>;<span class="string">'S7'</span>;<span class="string">'S8'</span>;<span class="string">'S9'</span>;<span class="string">'E1'</span>;<span class="string">'E2'</span>;<span class="string">'E3'</span>;<span class="string">'E4'</span>;<span class="string">'E5'</span>;<span class="string">'E6'</span>;<span class="string">'E8'</span>;<span class="string">'E9'</span>;<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R3'</span>;<span class="string">'R4'</span>;<span class="string">'R5'</span>;<span class="string">'R6'</span>;<span class="string">'R7'</span>;<span class="string">'R8'</span>;<span class="string">'R9'</span>;<span class="string">'R12'</span>;<span class="string">'R13'</span>;<span class="string">'R14'</span>;<span class="string">'R15'</span>};
+0593 
+0594 verifyTrue(testCase, all(contains(mres.rxns,expResult)))
+0595 verifyTrue(testCase, all(contains(mres2.rxns,expResult)))
+0596 
+0597 <span class="comment">%run the old tINIT version (in Human-GEM)</span>
+0598 <span class="comment">%this is just to show that they become different, not really part of the test case</span>
+0599 <span class="comment">%paramsL2 = struct();</span>
+0600 <span class="comment">%paramsL2.TimeLimit = 1000;</span>
+0601 <span class="comment">%testModelL2 = closeModel(testModelL);</span>
+0602 <span class="comment">%init_modelOrig = getINITModel2(testModelL2,arrayDataL.tissues{1},[],[],arrayDataL,[],true,[],true,true,[],paramsL2);</span>
+0603 
+0604 <span class="comment">%in this call, I have modified the code - the possibility to turn off met secretion + don't allow flux in both directions is not possible.</span>
+0605 <span class="comment">%The following line, around line 337, is changed</span>
+0606 <span class="comment">%from:</span>
+0607 <span class="comment">%[~, deletedRxnsInINIT, metProduction] = runINIT(simplifyModel(cModel),rxnScores,metabolomicsData,essentialRxnsForTasks,0,true,false,params);</span>
+0608 <span class="comment">%to:</span>
+0609 <span class="comment">%[~, deletedRxnsInINIT, metProduction] = runINIT(simplifyModel(cModel),rxnScores,metabolomicsData,essentialRxnsForTasks,0,false,true,params);</span>
+0610 <span class="comment">%init_modelOrigNoSecrOneDirOnly = getINITModel2(testModelL2,arrayDataL.tissues{1},[],[],arrayDataL,[],true,[],true,true,[],paramsL2);</span>
+0611 
+0612 <span class="comment">%The models init_modelOrigNoSecrOneDirOnly and mres2 are very similar, (only one exch rxn differ, which is expected)</span>
+0613 <span class="comment">%init_modelOrig is quite different, with a lot of gaps, and worse. So, the conclusion is that the new version does a pretty good job.</span>
+0614 setRavenSolver(currSolver);
+0615 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

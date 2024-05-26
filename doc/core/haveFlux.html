@@ -28,24 +28,26 @@
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> haveFlux
-   Checks which reactions can carry a (positive or negative) flux.
-   Is used as a faster version of getAllowedBounds if it is only interesting
+   Checks which reactions can carry a (positive or negative) flux. Is used
+   as a faster version of getAllowedBounds if it is only interesting
    whether the reactions can carry a flux or not
 
+ Input:
    model       a model structure
    cutOff      the flux value that a reaction has to carry to be
                identified as positive (optional, default 10^-8)
    rxns        either a cell array of IDs, a logical vector with the
-               same number of elements as metabolites in the model,
-               of a vector of indexes (optional, default model.rxns)
+               same number of elements as metabolites in the model, or a
+               vector of indexes (optional, default model.rxns)
 
-   I           logical array with true if the corresponding
-               reaction can carry a flux
+ Output:
+   I           logical array with true if the corresponding reaction can
+               carry a flux
 
-   NOTE: If a model has +/- Inf bounds then those are replaced with an
-   arbitary large value of +/- 10000 prior to solving
+ If a model has +/- Inf bounds then those are replaced with an arbitary
+ large value of +/- 10000 prior to solving
 
- Usage: I=haveFlux(model,cutOff, rxns)</pre></div>
+ Usage: I = haveFlux(model, cutOff, rxns)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -62,83 +64,85 @@ This function is called by:
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function I=haveFlux(model,cutOff,rxns)</a>
 0002 <span class="comment">% haveFlux</span>
-0003 <span class="comment">%   Checks which reactions can carry a (positive or negative) flux.</span>
-0004 <span class="comment">%   Is used as a faster version of getAllowedBounds if it is only interesting</span>
+0003 <span class="comment">%   Checks which reactions can carry a (positive or negative) flux. Is used</span>
+0004 <span class="comment">%   as a faster version of getAllowedBounds if it is only interesting</span>
 0005 <span class="comment">%   whether the reactions can carry a flux or not</span>
 0006 <span class="comment">%</span>
-0007 <span class="comment">%   model       a model structure</span>
-0008 <span class="comment">%   cutOff      the flux value that a reaction has to carry to be</span>
-0009 <span class="comment">%               identified as positive (optional, default 10^-8)</span>
-0010 <span class="comment">%   rxns        either a cell array of IDs, a logical vector with the</span>
-0011 <span class="comment">%               same number of elements as metabolites in the model,</span>
-0012 <span class="comment">%               of a vector of indexes (optional, default model.rxns)</span>
-0013 <span class="comment">%</span>
-0014 <span class="comment">%   I           logical array with true if the corresponding</span>
-0015 <span class="comment">%               reaction can carry a flux</span>
-0016 <span class="comment">%</span>
-0017 <span class="comment">%   NOTE: If a model has +/- Inf bounds then those are replaced with an</span>
-0018 <span class="comment">%   arbitary large value of +/- 10000 prior to solving</span>
-0019 <span class="comment">%</span>
-0020 <span class="comment">% Usage: I=haveFlux(model,cutOff, rxns)</span>
-0021 
-0022 <span class="keyword">if</span> nargin&lt;2
-0023     cutOff=10^-6;
-0024 <span class="keyword">end</span>
-0025 <span class="keyword">if</span> isempty(cutOff)
-0026     cutOff=10^-6;
-0027 <span class="keyword">end</span>
-0028 <span class="keyword">if</span> nargin&lt;3
-0029     rxns=model.rxns;
-0030 <span class="keyword">elseif</span> ~islogical(rxns) &amp;&amp; ~isnumeric(rxns)
-0031     rxns=<a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>(rxns);
-0032 <span class="keyword">end</span>
-0033 
-0034 <span class="comment">%This is since we're maximizing for the sum of fluxes, which isn't possible</span>
-0035 <span class="comment">%when there are infinite bounds</span>
-0036 model.lb(model.lb==-inf)=-10000;
-0037 model.ub(model.ub==inf)=10000;
-0038 
-0039 <span class="comment">%Get the reaction IDs. A bit of an awkward way, but fine.</span>
-0040 indexes=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxns,<span class="string">'rxns'</span>);
-0041 rxns=model.rxns(indexes);
-0042 
-0043 <span class="comment">%First remove all dead-end reactions</span>
-0044 smallModel=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>(model,false,false,true,true);
-0045 
-0046 <span class="comment">%Get the indexes of the reactions in the connected model</span>
-0047 indexes=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(smallModel,intersect(smallModel.rxns,rxns),<span class="string">'rxns'</span>);
-0048 J=false(numel(indexes),1);
-0049 mixIndexes=indexes(randperm(numel(indexes)));
-0050 
-0051 <span class="comment">%Maximize for all fluxes first in order to get fewer rxns to test</span>
-0052 smallModel.c=ones(numel(smallModel.c),1);
-0053 sol=solveLP(smallModel);
-0054 <span class="keyword">if</span> ~isempty(sol.x)
-0055     J(abs(sol.x(mixIndexes))&gt;cutOff)=true;
-0056 <span class="keyword">end</span>
-0057 
-0058 <span class="comment">%Loop through and maximize then minimize each rxn if it does not already</span>
-0059 <span class="comment">%have a flux</span>
-0060 Z=zeros(numel(smallModel.c),1);
-0061 hsSolOut=[];
-0062 <span class="keyword">for</span> i=[1 -1]
-0063     <span class="keyword">for</span> j=1:numel(J)
-0064         <span class="keyword">if</span> J(j)==false
-0065             <span class="comment">%Only minimize for reversible reactions</span>
-0066             <span class="keyword">if</span> i==1 || smallModel.rev(mixIndexes(j))~=0
-0067                 smallModel.c=Z;
-0068                 smallModel.c(mixIndexes(j))=i;
-0069                 [sol, hsSolOut]=solveLP(smallModel,0,[],hsSolOut);
-0070                 <span class="keyword">if</span> any(sol.x)
-0071                     J(abs(sol.x(mixIndexes))&gt;cutOff)=true;
-0072                 <span class="keyword">end</span>
-0073             <span class="keyword">end</span>
-0074         <span class="keyword">end</span>
-0075     <span class="keyword">end</span>
-0076 <span class="keyword">end</span>
-0077 
-0078 I=ismember(rxns,smallModel.rxns(mixIndexes(J)));
-0079 <span class="keyword">end</span></pre></div>
+0007 <span class="comment">% Input:</span>
+0008 <span class="comment">%   model       a model structure</span>
+0009 <span class="comment">%   cutOff      the flux value that a reaction has to carry to be</span>
+0010 <span class="comment">%               identified as positive (optional, default 10^-8)</span>
+0011 <span class="comment">%   rxns        either a cell array of IDs, a logical vector with the</span>
+0012 <span class="comment">%               same number of elements as metabolites in the model, or a</span>
+0013 <span class="comment">%               vector of indexes (optional, default model.rxns)</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% Output:</span>
+0016 <span class="comment">%   I           logical array with true if the corresponding reaction can</span>
+0017 <span class="comment">%               carry a flux</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% If a model has +/- Inf bounds then those are replaced with an arbitary</span>
+0020 <span class="comment">% large value of +/- 10000 prior to solving</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Usage: I = haveFlux(model, cutOff, rxns)</span>
+0023 
+0024 <span class="keyword">if</span> nargin&lt;2
+0025     cutOff=10^-6;
+0026 <span class="keyword">end</span>
+0027 <span class="keyword">if</span> isempty(cutOff)
+0028     cutOff=10^-6;
+0029 <span class="keyword">end</span>
+0030 <span class="keyword">if</span> nargin&lt;3
+0031     rxns=model.rxns;
+0032 <span class="keyword">elseif</span> ~islogical(rxns) &amp;&amp; ~isnumeric(rxns)
+0033     rxns=<a href="convertCharArray.html" class="code" title="function inputConverted = convertCharArray(funcInput)">convertCharArray</a>(rxns);
+0034 <span class="keyword">end</span>
+0035 
+0036 <span class="comment">%This is since we're maximizing for the sum of fluxes, which isn't possible</span>
+0037 <span class="comment">%when there are infinite bounds</span>
+0038 model.lb(model.lb==-inf)=-10000;
+0039 model.ub(model.ub==inf)=10000;
+0040 
+0041 <span class="comment">%Get the reaction IDs. A bit of an awkward way, but fine.</span>
+0042 indexes=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxns,<span class="string">'rxns'</span>);
+0043 rxns=model.rxns(indexes);
+0044 
+0045 <span class="comment">%First remove all dead-end reactions</span>
+0046 smallModel=<a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>(model,false,false,true,true);
+0047 
+0048 <span class="comment">%Get the indexes of the reactions in the connected model</span>
+0049 indexes=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(smallModel,intersect(smallModel.rxns,rxns),<span class="string">'rxns'</span>);
+0050 J=false(numel(indexes),1);
+0051 mixIndexes=indexes(randperm(numel(indexes)));
+0052 
+0053 <span class="comment">%Maximize for all fluxes first in order to get fewer rxns to test</span>
+0054 smallModel.c=ones(numel(smallModel.c),1);
+0055 sol=solveLP(smallModel);
+0056 <span class="keyword">if</span> ~isempty(sol.x)
+0057     J(abs(sol.x(mixIndexes))&gt;cutOff)=true;
+0058 <span class="keyword">end</span>
+0059 
+0060 <span class="comment">%Loop through and maximize then minimize each rxn if it does not already</span>
+0061 <span class="comment">%have a flux</span>
+0062 Z=zeros(numel(smallModel.c),1);
+0063 hsSolOut=[];
+0064 <span class="keyword">for</span> i=[1 -1]
+0065     <span class="keyword">for</span> j=1:numel(J)
+0066         <span class="keyword">if</span> J(j)==false
+0067             <span class="comment">%Only minimize for reversible reactions</span>
+0068             <span class="keyword">if</span> i==1 || smallModel.rev(mixIndexes(j))~=0
+0069                 smallModel.c=Z;
+0070                 smallModel.c(mixIndexes(j))=i;
+0071                 [sol, hsSolOut]=solveLP(smallModel,0,[],hsSolOut);
+0072                 <span class="keyword">if</span> any(sol.x)
+0073                     J(abs(sol.x(mixIndexes))&gt;cutOff)=true;
+0074                 <span class="keyword">end</span>
+0075             <span class="keyword">end</span>
+0076         <span class="keyword">end</span>
+0077     <span class="keyword">end</span>
+0078 <span class="keyword">end</span>
+0079 
+0080 I=ismember(rxns,smallModel.rxns(mixIndexes(J)));
+0081 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

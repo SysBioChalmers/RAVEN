@@ -55,7 +55,7 @@ if milp
     defaultparams.MIPGap     = 1e-12;
     defaultparams.Seed       = 1;
 end
-
+res.obj=[];
 switch solver
     %% Use whatever solver is set by COBRA Toolbox changeCobraSolver
     case 'cobra'

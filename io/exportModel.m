@@ -159,7 +159,6 @@ else
     modelSBML.notes='<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>This file was generated using the exportModel function in RAVEN Toolbox 2 and OutputSBML in libSBML </p></body></notes>';
 end
 
-modelSBML.annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.id '">'];
 if isfield(model,'annotation')
     nameString='';
     if isfield(model.annotation,'familyName')
@@ -184,27 +183,22 @@ if isfield(model,'annotation')
             org=['<vCard:ORG rdf:parseType="Resource"><vCard:Orgname>' model.annotation.organization '</vCard:Orgname></vCard:ORG>'];
         end
     end
-    if ~isempty(nameString) || ~isempty(email) || ~isempty(org)
+    if ~isempty(nameString) || ~isempty(email) || ~isempty(org) % Only fill .annotation if ownership data is provided
+        modelSBML.annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.id '">'];
         modelSBML.annotation=[modelSBML.annotation '<dc:creator><rdf:Bag><rdf:li rdf:parseType="Resource">'];
         if ~isempty(nameString)
             modelSBML.annotation=[modelSBML.annotation '<vCard:N rdf:parseType="Resource">' nameString '</vCard:N>'];
         end
         modelSBML.annotation=[modelSBML.annotation email org '</rdf:li></rdf:Bag></dc:creator>'];
+        modelSBML.annotation=[modelSBML.annotation '<dcterms:created rdf:parseType="Resource">'...
+            '<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF></dcterms:created><dcterms:modified rdf:parseType="Resource">'...
+            '<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF></dcterms:modified>'];
+        if isfield(model.annotation,'taxonomy')
+            modelSBML.annotation=[modelSBML.annotation '<bqbiol:is><rdf:Bag><rdf:li rdf:resource="https://identifiers.org/taxonomy/' regexprep(model.annotation.taxonomy,'taxonomy/','') '"/></rdf:Bag></bqbiol:is>'];
+        end
+        modelSBML.annotation=[modelSBML.annotation '</rdf:Description></rdf:RDF></annotation>'];
     end
 end
-modelSBML.annotation=[modelSBML.annotation '<dcterms:created rdf:parseType="Resource">'...
-    '<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF>'...
-    '</dcterms:created>'...
-    '<dcterms:modified rdf:parseType="Resource">'...
-    '<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF>'...
-    '</dcterms:modified>'];
-
-if isfield(model,'annotation')
-    if isfield(model.annotation,'taxonomy')
-        modelSBML.annotation=[modelSBML.annotation '<bqbiol:is><rdf:Bag><rdf:li rdf:resource="https://identifiers.org/taxonomy/' regexprep(model.annotation.taxonomy,'taxonomy/','') '"/></rdf:Bag></bqbiol:is>'];
-    end
-end
-modelSBML.annotation=[modelSBML.annotation '</rdf:Description></rdf:RDF></annotation>'];
 
 %Prepare compartments
 for i=1:numel(model.comps)
@@ -672,6 +666,7 @@ end
 
 if sbmlPackageVersions(1) == 2
     modelSBML.fbc_strict=1;
+    modelSBML.isSetfbc_strict = 1;
 end
 
 modelSBML.rule=[];
@@ -679,9 +674,8 @@ modelSBML.constraint=[];
 
 [ravenDir,prevDir]=findRAVENroot();
 fileName=checkFileExistence(fileName,1,true,false);
-cd(fullfile(ravenDir,'software','libSBML'));
-OutputSBML(modelSBML,fileName,1,0,[1,0]);
-cd(prevDir);
+
+OutputSBML_RAVEN(modelSBML,fileName,1,0,[1,0]);
 end
 
 
