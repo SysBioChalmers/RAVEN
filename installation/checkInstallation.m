@@ -1,4 +1,4 @@
-function currVer = checkInstallation(developMode)
+function [currVer, installType] = checkInstallation(developMode)
 % checkInstallation
 %   The purpose of this function is to check if all necessary functions are
 %   installed and working. It also checks whether there are any functions
@@ -14,8 +14,15 @@ function currVer = checkInstallation(developMode)
 %
 % Output:
 %   currVer         current RAVEN version
+%   installType     how RAVEN is installed
+%                   0:  via git (as .git folder is found)
+%                   1:  as MATLAB Add-On
+%                   2:  neither of the above, direct download of ZIP file
+%                   This matches the installations mentioned in the wiki:
+%                   https://github.com/SysBioChalmers/RAVEN/wiki/Installation
+%                   0 = advanced / 1 = easy / 2 = medium
 %
-% Usage: currVer = checkInstallation(developMode)
+% Usage: [currVer, installType] = checkInstallation(developMode)
 
 if nargin<1
     developMode=false;
@@ -30,14 +37,31 @@ end
 [ST, I]=dbstack('-completenames');
 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
 
+installType = 2; % If neither git nor add-on, then ZIP was downloaded
+if isfolder(fullfile(ravenDir,'.git'))
+    installType = 0;
+elseif any(strcmp(addList.Name,'RAVEN Toolbox'))
+    installType = 1;
+end
+
 % Do not print first few lines if only version should be reported
 if ~versionOnly
     fprintf('\n*** THE RAVEN TOOLBOX ***\n\n');
     %Print the RAVEN version if it is not the development version
-    fprintf([myStr(' > Installing from location',40) '%f']);
+    fprintf(myStr(' > Installation type',40));
+    switch installType
+        case 0
+            fprintf('Advanced (via git)\n');
+        case 1
+            fprintf('Easy (as MATLAB Add-On)\n');
+        case 2
+            fprintf('Medium (as downloaded ZIP file)\n');
+    end
+    fprintf(myStr(' > Installing from location',40));
     fprintf('%s\n',ravenDir)
-    fprintf([myStr(' > Checking RAVEN release',40) '%f']);
+    fprintf(myStr(' > Checking RAVEN release',40));
 end
+                       
 if exist(fullfile(ravenDir,'version.txt'), 'file') == 2
     currVer = fgetl(fopen(fullfile(ravenDir,'version.txt')));
     fclose('all');
@@ -49,15 +73,18 @@ if exist(fullfile(ravenDir,'version.txt'), 'file') == 2
             currVerNum=str2double(strsplit(currVer,'.'));
             for i=1:3
                 if currVerNum(i)<newVerNum(i)
-                    fprintf([myStr('   > Latest RAVEN release available',40) '%f'])
+                    fprintf(myStr('   > Latest RAVEN release available',40))
                     printOrange([newVer,'\n'])
-                    hasGit=isfolder(fullfile(ravenDir,'.git'));
-                    if hasGit
-                        printOrange('     Run git pull in your favourite git client\n')
-                        printOrange('     to get the latest RAVEN release\n');
-                    else
-                        printOrange([myStr('     Instructions on how to upgrade',40) '%f'])
-                        fprintf('<a href="https://github.com/SysBioChalmers/RAVEN/wiki/Installation#upgrade-to-latest-raven-release">here</a>\n');
+                    switch installType
+                        case 0
+                            printOrange('     Run git pull in your favourite git client\n')
+                            printOrange('     to get the latest RAVEN release\n');
+                        case 1
+                            printOrange(myStr('     Instructions on how to upgrade',40))
+                            fprintf('<a href="https://github.com/SysBioChalmers/RAVEN/wiki/Installation#upgrade-raven-after-easy-installation">here</a>\n');
+                        case 2
+                            printOrange(myStr('     Instructions on how to upgrade',40))
+                            fprintf('<a href="https://github.com/SysBioChalmers/RAVEN/wiki/Installation#upgrade-raven-after-medium-installation">here</a>\n');                            
                     end
                     break
                 elseif i==3
@@ -65,7 +92,7 @@ if exist(fullfile(ravenDir,'version.txt'), 'file') == 2
                 end
             end
         catch
-            fprintf([myStr('   > Checking for latest RAVEN release',40) '%f'])
+            fprintf(myStr('   > Checking for latest RAVEN release',40))
             printOrange('Fail\n');
             printOrange('     Cannot reach GitHub for release info\n');
         end
@@ -78,18 +105,18 @@ if strcmp(developMode,'versionOnly')
     return;
 end
 
-fprintf([myStr(' > Checking MATLAB release',40) '%f'])
+fprintf(myStr(' > Checking MATLAB release',40))
 fprintf([version('-release') '\n'])
-fprintf([myStr(' > Checking system architecture',40) '%f'])
+fprintf(myStr(' > Checking system architecture',40))
 fprintf([computer('arch'),'\n'])
 
-fprintf([myStr(' > Set RAVEN in MATLAB path',40) '%f'])
+fprintf(myStr(' > Set RAVEN in MATLAB path',40))
 subpath=regexp(genpath(ravenDir),pathsep,'split'); %List all subdirectories
 pathsToKeep=cellfun(@(x) ~contains(x,'.git'),subpath) & cellfun(@(x) ~contains(x,'doc'),subpath);
 try
     addpath(strjoin(subpath(pathsToKeep),pathsep));
     fprintf('Pass\n');
-    fprintf([myStr(' > Save MATLAB path',40) '%f'])
+    fprintf(myStr(' > Save MATLAB path',40))
     try
         savepath
         fprintf('Pass\n')   
@@ -103,7 +130,7 @@ catch
 end
 
 if isunix
-    fprintf([myStr('   > Make binaries executable',40) '%f'])
+    fprintf(myStr('   > Make binaries executable',40))
     status = makeBinaryExecutable(ravenDir);
     if status == 0
         fprintf('Pass\n')
@@ -114,7 +141,7 @@ end
 
 %Check if it is possible to parse an Excel file
 fprintf('\n=== Model import and export ===\n');
-fprintf([myStr(' > Add Java paths for Excel format',40) '%f'])
+fprintf(myStr(' > Add Java paths for Excel format',40))
 try
     %Add the required classes to the static Java path if not already added
     addJavaPaths();
@@ -122,7 +149,7 @@ try
 catch
     printOrange('Fail\n')
 end
-fprintf([myStr(' > Checking libSBML version',40) '%f'])
+fprintf(myStr(' > Checking libSBML version',40))
 try
     evalc('importModel(fullfile(ravenDir,''tutorial'',''empty.xml''))');
     try
@@ -139,7 +166,7 @@ end
 fprintf(' > Checking model import and export\n')
 [~,res]=evalc("runtests('importExportTests.m');");
 
-fprintf([myStr('   > Import Excel format',40) '%f'])
+fprintf(myStr('   > Import Excel format',40))
 if res(1).Passed == 1
     fprintf('Pass\n')
 else
@@ -151,21 +178,21 @@ else
     end
 end
 
-fprintf([myStr('   > Export Excel format',40) '%f'])
+fprintf(myStr('   > Export Excel format',40))
 if res(3).Passed == 1
     fprintf('Pass\n')
 else
     printOrange('Fail\n')
 end
 
-fprintf([myStr('   > Import SBML format',40) '%f'])
+fprintf(myStr('   > Import SBML format',40))
 if res(2).Passed == 1
     fprintf('Pass\n')
 else
     printOrange('Fail\n')
 end
 
-fprintf([myStr('   > Export SBML format',40) '%f'])
+fprintf(myStr('   > Export SBML format',40))
 if res(4).Passed == 1
     fprintf('Pass\n')
 else
@@ -193,34 +220,34 @@ fprintf('\n=== Model solvers ===\n');
 fprintf(' > Checking for LP solvers\n')
 [~,res]=evalc("runtests('solverTests.m');");
 
-fprintf([myStr('   > glpk',40) '%f'])
+fprintf(myStr('   > glpk',40))
 if res(1).Passed == 1
     fprintf('Pass\n')
 else
     printOrange('Fail\n')
 end
 
-fprintf([myStr('   > gurobi',40) '%f'])
+fprintf(myStr('   > gurobi',40))
 if res(2).Passed == 1
     fprintf('Pass\n')
 else
     printOrange('Fail\n')
 end
 
-fprintf([myStr('   > scip',40) '%f'])
+fprintf(myStr('   > scip',40))
 if res(3).Passed == 1
     fprintf('Pass\n')
 else
     printOrange('Fail\n')
 end
 
-fprintf([myStr('   > cobra',40) '%f'])
+fprintf(myStr('   > cobra',40))
 if res(4).Passed == 1
     fprintf('Pass\n')
 else
     printOrange('Fail\n')
 end
-fprintf([myStr(' > Set RAVEN solver',40) '%f'])
+fprintf(myStr(' > Set RAVEN solver',40))
 try
     oldSolver=getpref('RAVEN','solver');
     solverIdx=find(strcmp(oldSolver,{'glpk','gurobi','scip','cobra'}));
@@ -249,21 +276,21 @@ else
 end
 
 fprintf('\n=== Essential binary executables ===\n');
-fprintf([myStr(' > Checking BLAST+',40) '%f'])
+fprintf(myStr(' > Checking BLAST+',40))
 [~,res]=evalc("runtests('blastPlusTests.m');");
 res=interpretResults(res);
 if res==false
     fprintf('   This is essential to run getBlast()\n')
 end
 
-fprintf([myStr(' > Checking DIAMOND',40) '%f'])
+fprintf(myStr(' > Checking DIAMOND',40))
 [~,res]=evalc("runtests('diamondTests.m');");
 res=interpretResults(res);
 if res==false
     fprintf('   This is essential to run the getDiamond()\n')
 end
 
-fprintf([myStr(' > Checking HMMER',40) '%f'])
+fprintf(myStr(' > Checking HMMER',40))
 [~,res]=evalc("runtests('hmmerTests.m')");
 res=interpretResults(res);
 if res==false
@@ -275,17 +302,17 @@ if developMode
     fprintf('\n=== Development binary executables ===\n');
     fprintf('NOTE: These binaries are only required when using KEGG FTP dump files in getKEGGModelForOrganism\n');
 
-    fprintf([myStr(' > Checking CD-HIT',40) '%f'])
+    fprintf(myStr(' > Checking CD-HIT',40))
     [~,res]=evalc("runtests('cdhitTests.m');");
     interpretResults(res);
 
-    fprintf([myStr(' > Checking MAFFT',40) '%f'])
+    fprintf(myStr(' > Checking MAFFT',40))
     [~,res]=evalc("runtests('mafftTests.m');");
     interpretResults(res);
 end
 
 fprintf('\n=== Compatibility ===\n');
-fprintf([myStr(' > Checking function uniqueness',40) '%f'])
+fprintf(myStr(' > Checking function uniqueness',40))
 checkFunctionUniqueness();
 
 fprintf('\n*** checkInstallation complete ***\n\n');
