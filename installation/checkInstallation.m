@@ -38,6 +38,7 @@ end
 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
 
 installType = 2; % If neither git nor add-on, then ZIP was downloaded
+addList = matlab.addons.installedAddons;
 if isfolder(fullfile(ravenDir,'.git'))
     installType = 0;
 elseif any(strcmp(addList.Name,'RAVEN Toolbox'))
@@ -171,7 +172,6 @@ if res(1).Passed == 1
     fprintf('Pass\n')
 else
     printOrange('Fail\n')
-    addList = matlab.addons.installedAddons;
     if any(strcmpi(addList.Name,'Text Analytics Toolbox'))
         fprintf(['   Excel import/export is incompatible with MATLAB Text Analytics Toolbox.\n' ...
                  '   Further instructions => https://github.com/SysBioChalmers/RAVEN/issues/55#issuecomment-1514369299\n'])
