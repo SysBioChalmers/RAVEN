@@ -11,12 +11,13 @@ function out = runSimpleOptKnock(model, targetRxn, biomassRxn, deletions, genesO
 %    biomassRxn     identifier of biomass reaction
 %    deletions      cell array with gene or reaction identifiers that
 %                   should be considered for knockout
-%                   (opt, default = model.rxns)
+%                   (optional, default = model.rxns)
 %    genesOrRxns    string indicating whether deletions parameter is given
-%                   with 'genes' or 'rxns' identifiers (opt, default 'rxns')
+%                   with 'genes' or 'rxns' identifiers (optional, default
+%                   'rxns')
 %    maxNumKO       numeric with maximum number of simulatenous knockout
-%                   (opt, default 1)
-%    minGrowth      numeric of minimum growth rate (opt, default 0.05)
+%                   (optional, default 1)
+%    minGrowth      numeric of minimum growth rate (optional, default 0.05)
 %
 % Output:
 %    out            structure with deletions strategies that result in
@@ -25,7 +26,8 @@ function out = runSimpleOptKnock(model, targetRxn, biomassRxn, deletions, genesO
 %       growthRate  vector with growth rates after deletion
 %       prodRate    vector with production rates after deletion
 %
-% Usage: out = runSimpleOptKnock(model, targetRxn, biomassRxn, deletions, genesOrRxns, maxNumKO, minGrowth)
+% Usage: out = runSimpleOptKnock(model, targetRxn, biomassRxn, deletions,...
+%                   genesOrRxns, maxNumKO, minGrowth)
 
 if nargin < 4
     params.deletions = model.rxns;
@@ -59,7 +61,7 @@ params.targetIdx   = getIndexes(model,targetRxn,'rxns');
 
 model = setParam(model,'obj',params.biomassIdx,1);
 [solWT, hsSol] = solveLP(model);
-WT.minScore = solWT.x(params.targetIdx)*-solWT.f;
+WT.minScore = solWT.x(params.targetIdx)*solWT.f;
 
 fprintf('Running simple OptKnock analysis...   0%% complete');
 KO=zeros(1,params.maxNumKO);
@@ -99,8 +101,8 @@ for i = 1:numel(params.deletions)
             modelKO = removeGenes(model,params.deletions{i},false,false,false);
     end
     solKO = solveLP(modelKO,0,[],hsSol);
-    if ~isempty(-solKO.f)
-        growthRate = -solKO.f;
+    if ~isempty(solKO.f)
+        growthRate = solKO.f;
         prodRate   = solKO.x(params.targetIdx);
         prodRate(prodRate<1e-10)=0; % Filter out results from solver tolerance
         if growthRate > params.minGrowth

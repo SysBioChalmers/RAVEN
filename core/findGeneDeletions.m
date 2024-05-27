@@ -10,16 +10,16 @@ function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(
 %                   'dgd'   double gene deletion
 %                   'sgo'   single gene over expression
 %                   'dgo'   double gene over expression
-%                   (opt, default 'sgd')
+%                   (optional, default 'sgd')
 %   analysisType    determines whether to use FBA ('fba') or MOMA ('moma')
-%                   in the optimization. (opt, default 'fba')
+%                   in the optimization. (optional, default 'fba')
 %   refModel        MOMA works by fitting the flux distributions of two
 %                   models to be as similar as possible. The most common
 %                   application is where you have a reference model where
 %                   some of the fluxes are constrained from experimental
 %                   data. This model is required when using MOMA
 %   oeFactor        a factor by which the fluxes should be increased if a
-%                   gene is overexpressed (opt, default 10)
+%                   gene is overexpressed (optional, default 10)
 %
 %   genes           a matrix with the genes that were deleted in each
 %                   optimization (the gene indexes in originalGenes). Each
@@ -47,7 +47,7 @@ function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(
 %                       grRatio=zeros(1,numel(model.genes));
 %                       grRatio(genes)=grRatioMuts;
 %
-%   Usage: [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(model,testType,analysisType,...
+% Usage: [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(model,testType,analysisType,...
 %           refModel,oeFactor)
 
 originalModel=model;
@@ -97,7 +97,7 @@ details(~ismember(originalGenes,model.genes))=4;
 
 [~, geneMapping]=ismember(model.genes,originalGenes);
 growthWT=solveLP(model);
-growthWT=-growthWT.f;
+growthWT=growthWT.f;
 
 %Do single deletion/over expression. This is done here since the double
 %deletion depends on which single deletions prove lethal (to reduce the
@@ -128,7 +128,7 @@ if strcmpi(testType,'sgd') || strcmpi(testType,'sgo') || strcmpi(testType,'dgd')
         %If the optimization terminated successfully
         if sol.stat==1
             fluxes(:,i)=sol.x;
-            grRatioMuts(i)=-sol.f/growthWT;
+            grRatioMuts(i)=sol.f/growthWT;
             details(geneMapping(i))=1;
         else
             fluxes(:,i)=0;
@@ -183,7 +183,7 @@ if strcmpi(testType,'dgd')
         
         if sol.stat==1
             fluxes(:,i)=sol.x;
-            grRatioMuts(i)=-sol.f/growthWT;
+            grRatioMuts(i)=sol.f/growthWT;
         end
     end
 end

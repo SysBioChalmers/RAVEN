@@ -16,7 +16,7 @@ function [reducedModel,origRxnIds,groupIds,reversedRxns]=mergeLinear(model, noMe
 %                         0 means a reaction was not merged.
 %   reversedRxns          Vector of booleans, saying for each rxn if it is reversed in the combined rxns.
 %
-%   Usage: [reducedModel,origRxnIds,groupIds]=mergeLinear(model,noMergeRxns)
+% Usage: [reducedModel,origRxnIds,groupIds]=mergeLinear(model,noMergeRxns)
 
 
 reducedModel=model;

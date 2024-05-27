@@ -2,16 +2,17 @@ function model=setParam(model, paramType, rxnList, params, var)
 % setParam
 %   Sets parameters for reactions
 %
+% Input:
 %   model       a model structure
 %   paramType   the type of parameter to set:
-%               'lb'    Lower bound
-%               'ub'    Upper bound
-%               'eq'    Both upper and lower bound (equality constraint)
-%               'obj'   Objective coefficient
-%               'rev'   Reversibility (only changes the model.rev fields,
+%               'lb'    lower bound
+%               'ub'    upper bound
+%               'eq'    both upper and lower bound (equality constraint)
+%               'obj'   objective coefficient
+%               'rev'   reversibility (only changes the model.rev fields,
 %                       does not affect model.lb and model.ub) 
-%               'var'   Variance around measured bound
-%               'unc'   Unconstrained, set lower and upper bound to the
+%               'var'   variance around measured bound
+%               'unc'   unconstrained, set lower and upper bound to the
 %                       default values (-1000 and 1000, or any other values
 %                       that are defined in model.annotation.defaultLB and
 %                       .defaultUB)
@@ -23,13 +24,14 @@ function model=setParam(model, paramType, rxnList, params, var)
 %               at 97.5% and 102.5% of the provide params value (if params
 %               value is negative, then lb and ub are 102.5% and 97.5%).
 %
+% Output:
 %   model       an updated model structure
 %
-%   Usage: model=setParam(model, paramType, rxnList, params)
+% Usage: model = setParam(model, paramType, rxnList, params, var)
 
 paramType=convertCharArray(paramType);
 if ~any(strcmpi(paramType,{'lb','ub','eq','obj','rev','var','unc'}))
-    EM=['Incorrect parameter type: "' paramType '"'];
+    EM=['Incorrect parameter type: "' paramType{1} '"'];
     dispEM(EM);
 end
 if isnumeric(rxnList) || islogical(rxnList)

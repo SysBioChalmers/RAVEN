@@ -11,20 +11,20 @@ function [model, metacycBlastStruct] = getMetaCycModelForOrganism(organismID,fas
 %                       the organism for which to reconstruct a model
 %   keepTransportRxns   include transportation reactions, which often have identical
 %                       reactants and products that turn to be all-zero columns in
-%                       the S matrix (opt, default false)
+%                       the S matrix (optional, default false)
 %   keepUnbalanced      include reactions cannot be unbalanced reactions, usually
 %                       because they are polymeric reactions or because of a
 %                       specific difficulty in balancing class structures
-%                       (opt, default false)
+%                       (optional, default false)
 %   keepUndetermined    include reactions that have substrates lack chemical
 %                       structures or with non-numerical coefficients (e.g. n+1)
-%                       (opt, default false)
-%   minScore            minimum Bit scores of BLASTp search (opt, default 100)
-%   minPositives        minimum Positives values of BLASTp search (opt, default 45 %)
+%                       (optional, default false)
+%   minScore            minimum Bit scores of BLASTp search (optional, default 100)
+%   minPositives        minimum Positives values of BLASTp search (optional, default 45 %)
 %   useDiamond          use DIAMOND alignment tools to perform homology search
-%                       if true, otherwise the BLASTP is used (opt, default true)
+%                       if true, otherwise the BLASTP is used (optional, default true)
 %   metacycBlastStruct  provided an earlier generated metacycBlastStruct
-%                       from getMetaCycModelForOrganism (opt, default empty).
+%                       from getMetaCycModelForOrganism (optional, default empty).
 %                       Useful when trying different cutoffs for minScore
 %                       and minPositives without having to regenerate the
 %                       blastStructure each time.
@@ -34,7 +34,7 @@ function [model, metacycBlastStruct] = getMetaCycModelForOrganism(organismID,fas
 %   metacycBlastStruct  result from getBlast or getDiamond, before the
 %                       minScore and minPositives cutoffs are applied
 %
-%   Usage: [model, metacycBlastStruct] = getMetaCycModelForOrganism(organismID,fastaFile,...
+% Usage: [model, metacycBlastStruct] = getMetaCycModelForOrganism(organismID,fastaFile,...
 %    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond,metacycBlastStruct)
 
 organismID=char(organismID);

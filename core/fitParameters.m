@@ -20,18 +20,18 @@ function [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,xRxn
 %                         production/consumption)
 %	fitToRatio            if the ratio of simulated to measured values should
 %                         be fitted instead of the absolute value. Used to prevent
-%                         large fluxes from having too large impact (opt,
+%                         large fluxes from having too large impact (optional,
 %                         default true)
-%   initialGuess          initial guess of the parameters (opt)
+%   initialGuess          initial guess of the parameters (optional)
 %   plotFitting           true if the resulting fitting should be plotted
-%                         (opt, default false)
+%                         (optional, default false)
 %
 %   parameters            fitted parameters in the same order as in
 %                         parameterPositions
 %   fitnessScore          the correponding residual sum of squares
 %   newModel              updated model structure with the fitted parameters
 %
-%   Usage: [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,...
+% Usage: [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,...
 %           xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,fitToRatio,...
 %           initialGuess,plotFitting)
 

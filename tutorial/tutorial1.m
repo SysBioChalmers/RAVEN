@@ -69,13 +69,13 @@ model=setParam(model,'obj',{'co2OUT'},1);
 sol=solveLP(model);
 
 %If everything worked fine one should see a structure that contains the
-%fields .f which is the negative of the objective value, .stat which is 1
-%if the optimization terminated successfully and .x which contains the
-%fluxes through each of the reactions in this particular solution of the
-%problem. sol.x contains 1305 values which makes it rather difficult to
-%interpret. A first approach is to look at only the reactions that
-%transports metabolites in to or out from the system. The printFluxes
-%function prints (parts of) the flux distribution to the console.
+%fields .f which is the objective value, .stat which is 1 if the
+%optimization terminated successfully and .x which contains the fluxes
+%through each of the reactions in this particular solution of the problem.
+%sol.x contains 1305 values which makes it rather difficult to interpret. A
+%first approach is to look at only the reactions that transports
+%metabolites in to or out from the system. The printFluxes function prints
+%(parts of) the flux distribution to the console.
 printFluxes(model, sol.x, true, 10^-7); %true means only print exchange fluxes
 
 %One can see that the system took up one unit of glucose and 6 units of O2

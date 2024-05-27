@@ -8,9 +8,9 @@ function [rxnScores, geneScores, hpaScores, arrayScores] = scoreComplexModel(mod
 %   model with scoreComplexModel.
 %
 %   model               a model structure
-%   hpaData             HPA data structure from parseHPA (opt if arrayData is
+%   hpaData             HPA data structure from parseHPA (optional if arrayData is
 %                       supplied, default [])
-%   arrayData           gene expression data structure (opt if hpaData is
+%   arrayData           gene expression data structure (optional if hpaData is
 %                       supplied, default [])
 %       genes           cell array with the unique gene names
 %       tissues         cell array with the tissue names. The list may not be
@@ -21,31 +21,31 @@ function [rxnScores, geneScores, hpaScores, arrayScores] = scoreComplexModel(mod
 %                       used when no measurement was performed
 %       threshold       a single value or a vector of gene expression 
 %                       thresholds, above which genes are considered to be
-%                       "expressed". (opt, by default, the mean expression
+%                       "expressed". (optional, by default, the mean expression
 %                       levels of each gene across all tissues in arrayData
 %                       will be used as the threshold values)
 %   tissue              tissue to score for. Should exist in either
 %                       hpaData.tissues or arrayData.tissues
 %   celltype            cell type to score for. Should exist in either
 %                       hpaData.celltypes or arrayData.celltypes for this
-%                       tissue (opt, default is to use the max values
+%                       tissue (optional, default is to use the max values
 %                       among all the cell types for the tissue. Use [] if
 %                       you want to supply more arguments)
-%   noGeneScore         score for reactions without genes (opt, default -2)
+%   noGeneScore         score for reactions without genes (optional, default -2)
 %   isozymeScoring      determines how scores are calculated for reactions
 %                       with multiple genes joined by "OR" expression(s)
 %                       ('min', 'max', 'median', 'average')
-%                       (opt, default 'max')
+%                       (optional, default 'max')
 %   complexScoring      determines how scores are calculated for reactions
 %                       with multiple genes joined by "AND" expression(s)
 %                       ('min', 'max', 'median', 'average')
-%                       (opt, default 'min')
+%                       (optional, default 'min')
 %   multipleCellScoring determines how scores are calculated when several
 %                       cell types are used ('max' or 'average')
-%                       (opt, default 'max')
+%                       (optional, default 'max')
 %   hpaLevelScores      structure with numerical scores for the expression
 %                       level categories from HPA. The structure should have a
-%                       "names" and a "scores" field (opt, see code for
+%                       "names" and a "scores" field (optional, see code for
 %                       default scores)
 %
 %   rxnScores       scores for each of the reactions in model
@@ -58,7 +58,7 @@ function [rxnScores, geneScores, hpaScores, arrayScores] = scoreComplexModel(mod
 %                   into account. Genes which are not in the dataset(s)
 %                   have -Inf as scores
 %
-%   Usage: [rxnScores, geneScores, hpaScores, arrayScores]=scoreComplexModel(...
+% Usage: [rxnScores, geneScores, hpaScores, arrayScores]=scoreComplexModel(...
 %               model,hpaData,arrayData,tissue,celltype,noGeneScore,isozymeScoring,
 %               complexScoring,multipleCellScoring,hpaLevelScores)
 %

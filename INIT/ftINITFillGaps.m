@@ -11,13 +11,13 @@ function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefM
 %                       the reactants is unavailable or because one of the
 %                       products can't be further processed. If this
 %                       parameter is true, only the first type of
-%                       unconnectivity is considered (opt, default false)
+%                       unconnectivity is considered (optional, default false)
 %   useModelConstraints true if the constraints specified in the tModel
 %                       structure should be used. If false then reactions
 %                       included from the template tModel(s) so that as many
 %                       reactions as possible in tModel can carry flux
-%                       (opt, default false)
-%   supressWarnings     false if warnings should be displayed (opt, default
+%                       (optional, default false)
+%   supressWarnings     false if warnings should be displayed (optional, default
 %                       false)
 %   rxnScores           scores for each of the reactions in the
 %                       reference tModel. 
@@ -52,7 +52,7 @@ function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefM
 %   of reactions that have to be included in order for the tModel to produce
 %   biomass.
 %
-%   Usage: [newModel, exitFlag]=...
+% Usage: [newModel, exitFlag]=...
 %           fillGaps(tModel,models,allowNetProduction,...
 %           supressWarnings,rxnScores,params)
 

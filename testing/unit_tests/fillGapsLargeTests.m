@@ -2,12 +2,29 @@
 %results = runtests('fillGapsLargeTests.m')
 function tests = fillGapsLargeTests
 tests = functiontests(localfunctions);
+testGurobi = exist('gurobi','file')==3;
+if testGurobi
+    try
+        gurobi_read('solverTests.m');
+    catch ME
+        if ~startsWith(ME.message,'Gurobi error 10012') % Expected error code, others may indicate problems with license
+           testGurobi = false;
+        end
+    end
+end
+if ~testGurobi
+    disp('Gurobi not installed or not functional, some fillGapsLargeTests skipped.')
+    skipTests = contains({tests.Name},'gurobi','IgnoreCase',true);
+    tests(skipTests) = [];
+end
+if exist('scip','file')~=3
+    disp('SCIP MEX binary not installed or not functional, some fillGapsLargeTests skipped.')
+    skipTests = contains({tests.Name},'scip','IgnoreCase',true);
+    tests(skipTests) = [];
+end
 end
 
 function testLargeGurobi(testCase)
-if exist('gurobi','file')~=3
-    error('Gurobi not installed or cannot be found in MATLAB path, test skipped')
-end
 sourceDir = fileparts(fileparts(fileparts(which(mfilename))));
 evalc('model=importModel(fullfile(sourceDir,''tutorial'',''iAL1006 v1.00.xml''))');
 model.c(1484)=1;
@@ -38,7 +55,7 @@ catch
     rmpref('RAVEN','solver');
 end
 %Expect at least 5% of the original growth
-verifyTrue(testCase,-sol.f>0);
+verifyTrue(testCase,sol.f>0);
 end
 
 function testLargeSCIP(testCase)
@@ -48,7 +65,7 @@ model.c(1484)=1;
 modelDB=model; % Keep as database with reactions
 % Force growth in gapped model
 sol=solveLP(model);
-model.lb(1484)=abs(sol.f*0.1);
+model.lb(1484)=sol.f*0.1;
 try
     oldSolver=getpref('RAVEN','solver');
 catch
@@ -75,5 +92,5 @@ catch
     rmpref('RAVEN','solver');
 end
 %Expect at least 5% of the original growth
-verifyTrue(testCase,-sol.f>0);
+verifyTrue(testCase,sol.f>0);
 end

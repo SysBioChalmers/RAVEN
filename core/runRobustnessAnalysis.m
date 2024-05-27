@@ -6,11 +6,11 @@ function [controlFlux, objFlux] = runRobustnessAnalysis(model, controlRxn, nPoin
 % Input:
 %   model           a model structure
 %   controlRxn      reaction of interest whose value is to be controlled
-%   nPoints         number of points to show on plot (opt, default 20)
-%   objRxn          reaction identifier of objective to be maximized (opt,
+%   nPoints         number of points to show on plot (optional, default 20)
+%   objRxn          reaction identifier of objective to be maximized (optional,
 %                   default it uses the objective defined in the model)
 %   plotRedCost     logical whether reduced cost should also be plotted
-%                   (opt, default false)
+%                   (optional, default false)
 %
 % Output:
 %   controlFlux     flux values of the reaction of interest, ranging from

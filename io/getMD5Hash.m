@@ -7,14 +7,14 @@ function md5Hash=getMD5Hash(inputFile,binEnd)
 %                   be calculated
 %   binEnd          string that shows the operating system running in the
 %                   client's computer. Use ".exe" for Windows, ".mac" for
-%                   macOS or leave it blank for Linux (""). (opt, by
+%                   macOS or leave it blank for Linux (""). (optional, by
 %                   default the function automatically detects the client's
 %                   operating system)
 %
 %   Output:
 %   md5Hash         string containing an MD5 hash for inputFile
 %   
-%   Usage: md5Hash=getMD5Hash(inputFile,binEnd)
+% Usage: md5Hash=getMD5Hash(inputFile,binEnd)
 inputFile=char(inputFile);
 
 if nargin<2

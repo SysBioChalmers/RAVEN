@@ -8,7 +8,7 @@ function dimensions=getPathwayDimensions(pathway)
 %   dimension       a 1x4 vector with x and y for the upper left corner,
 %                   height and width
 %
-%   Usage: dimensions=getPathwayDimensions(pathway)
+% Usage: dimensions=getPathwayDimensions(pathway)
 
 right=0;
 left=inf;

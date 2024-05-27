@@ -10,9 +10,9 @@ function newModel=addGenesRaven(model,genesToAdd)
 %                               0-9 and '_'). However, there is no check
 %                               for this performed, as it only matters if
 %                               the model should be exported to SBML
-%                geneShortNames cell array of gene abbreviations (opt,
+%                geneShortNames cell array of gene abbreviations (optional,
 %                               default '')
-%                geneMiriams    cell array with MIRIAM structures (opt,
+%                geneMiriams    cell array with MIRIAM structures (optional,
 %                               default [])
 %
 %   newModel     an updated model structure
@@ -20,7 +20,7 @@ function newModel=addGenesRaven(model,genesToAdd)
 %   NOTE: This function does not make extensive checks about MIRIAM formats,
 %   forbidden characters or such.
 %
-%   Usage: newModel=addGenesRaven(model,genesToAdd)
+% Usage: newModel=addGenesRaven(model,genesToAdd)
 
 newModel=model;
 

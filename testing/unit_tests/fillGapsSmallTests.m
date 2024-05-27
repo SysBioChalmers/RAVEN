@@ -2,6 +2,26 @@
 %results = runtests('fillGapsSmallTests.m')
 function tests = fillGapsSmallTests
 tests = functiontests(localfunctions);
+testGurobi = exist('gurobi','file')==3;
+if testGurobi
+    try
+        gurobi_read('solverTests.m');
+    catch ME
+        if ~startsWith(ME.message,'Gurobi error 10012') % Expected error code, others may indicate problems with license
+           testGurobi = false;
+        end
+    end
+end
+if ~testGurobi
+    disp('Gurobi not installed or not functional, some fillGapsSmallTests skipped.')
+    skipTests = contains({tests.Name},'gurobi','IgnoreCase',true);
+    tests(skipTests) = [];
+end
+if exist('scip','file')~=3
+    disp('SCIP MEX binary not installed or not functional, some fillGapsSmallTests skipped.')
+    skipTests = contains({tests.Name},'scip','IgnoreCase',true);
+    tests(skipTests) = [];
+end
 end
 
 function testSmallSCIP(testCase)
@@ -35,13 +55,10 @@ catch
     rmpref('RAVEN','solver');
 end
 %Should give non-zero flux
-verifyTrue(testCase,-sol.f>0);
+verifyTrue(testCase,sol.f>0);
 end
 
 function testSmallGurobi(testCase)
-if exist('gurobi','file')~=3
-    error('Gurobi not installed or cannot be found in MATLAB path, test skipped')
-end
 %Test using small model
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
@@ -73,5 +90,5 @@ catch
     rmpref('RAVEN','solver');
 end
 %Expect at least 5% of the original growth
-verifyTrue(testCase,-sol.f>0);
+verifyTrue(testCase,sol.f>0);
 end

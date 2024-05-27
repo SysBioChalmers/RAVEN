@@ -5,7 +5,7 @@ function linkMetaCycKEGGRxns
 %
 %   NOTE: No arguments are required
 %
-%   Usage: linkMetaCycKEGGRxns
+% Usage: linkMetaCycKEGGRxns
 
 load('metaCycRxns.mat'); %load MetaCyc reactions
 fprintf('NOTE: Importing MetaCyc reactions...\n');

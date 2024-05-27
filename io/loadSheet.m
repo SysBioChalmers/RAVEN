@@ -2,12 +2,12 @@
 %   Loads an Excel sheet into a cell matrix using the Java library Apache POI
 %
 %   workbook    Workbook object representing the Excel file
-%   sheet       name of the sheet (opt, default first sheet)
+%   sheet       name of the sheet (optional, default first sheet)
 %
 %   raw         cell array with the data in the sheet
 %   flag        0 if everything worked, -1 if it didn't
 %
-%   Usage: [raw, flag]=loadSheet(workbook, sheet)
+% Usage: [raw, flag]=loadSheet(workbook, sheet)
 
 function [raw, flag]=loadSheet(workbook, sheet)
 if nargin<2

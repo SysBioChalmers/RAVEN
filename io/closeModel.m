@@ -7,7 +7,7 @@ function closedModel=closeModel(model)
 %
 %   closedModel           an updated closedModel structure
 %
-%   Usage: closedModel=closeModel(model)
+% Usage: closedModel=closeModel(model)
 
 closedModel=model;
 

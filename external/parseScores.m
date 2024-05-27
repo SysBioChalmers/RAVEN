@@ -5,7 +5,7 @@ function GSS = parseScores(inputFile, predictor)
 %	Input:
 %	inputFile	a file with the output from the predictor
 %	predictor	the predictor that was used. 'wolf' for WoLF PSORT, 'cello'
-%               for CELLO, 'deeploc' for DeepLoc (opt, default 'wolf')
+%               for CELLO, 'deeploc' for DeepLoc (optional, default 'wolf')
 %
 %	Output:
 %	GSS         a gene scoring structure to be used in predictLocalization

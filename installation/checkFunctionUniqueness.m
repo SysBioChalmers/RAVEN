@@ -11,7 +11,7 @@ function status = checkFunctionUniqueness(altDirs)
 % Output:
 %   status      true if all functions are unique, otherwise false
 %
-%   Usage: checkFunctionUniqueness()
+% Usage: checkFunctionUniqueness()
 
 if nargin<1
     %Get the RAVEN path

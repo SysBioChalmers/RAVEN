@@ -80,7 +80,7 @@ PB = ProgressBar2(nSteps,'Running dynamic FBA analysis','cli');
 for stepNo = 1:nSteps
     % Run FBA
     [sol,hsSol] = solveLP(model,1,[],hsSol);
-    mu = -sol.f;
+    mu = sol.f;
     if (sol.stat ~= 1 || mu == 0)
         fprintf('\nNo feasible solution - nutrients exhausted. Biomass:\t %f\n', biomass);
         break;

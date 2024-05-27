@@ -10,11 +10,11 @@ function model = changeGrRules(model,rxns,grRules,replace)
 %               different instances
 %   replace     true if old gene association should be replaced with new
 %               association. False if new gene association should be
-%               concatenated to the old association (opt, default true)
+%               concatenated to the old association (optional, default true)
 %
 %   model       an updated model structure
 %
-%   Usage: changeGrRules(model,rxns,grRules,replace)
+% Usage: changeGrRules(model,rxns,grRules,replace)
 
 if nargin==3
     replace=true;

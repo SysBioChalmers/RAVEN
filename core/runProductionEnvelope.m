@@ -6,7 +6,7 @@ function [biomassValues, targetValues] = runProductionEnvelope(model, targetRxn,
 %   model            a model structure
 %   targetRxn        identifier of target metabolite production reaction
 %   biomassRxn       identifier of biomass reaction
-%   nPts             number of points in the plot (opt, default 20)
+%   nPts             number of points in the plot (optional, default 20)
 %
 % Output:
 %   biomassValues    Biomass values for plotting
@@ -14,7 +14,8 @@ function [biomassValues, targetValues] = runProductionEnvelope(model, targetRxn,
 %
 % Modified from COBRA Toolbox productionEnvelope.m
 %
-% Usage: [biomassValues, targetValues] = runProductionEnvelope(model, targetRxn, biomassRxn, nPts)
+% Usage: [biomassValues, targetValues] = runProductionEnvelope(model,...
+%               targetRxn, biomassRxn, nPts)
 
 if nargin < 4
     nPts = 20;

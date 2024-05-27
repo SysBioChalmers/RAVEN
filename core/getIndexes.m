@@ -12,7 +12,7 @@ function indexes=getIndexes(model, objects, type, returnLogical)
 %                   allows to provide specific metabolites and their
 %                   compartments in the format metaboliteName[comp]
 %   returnLogical   Sets whether to return a logical array or an array with
-%                   the indexes (opt, default false)
+%                   the indexes (optional, default false)
 %
 %   Output:
 %   indexes         can be a logical array or a double array depending on

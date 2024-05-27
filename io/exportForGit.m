@@ -6,27 +6,27 @@ function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,cobra
 %   orthologies in KEGG
 %
 %   model               model structure in RAVEN format that should be exported
-%   prefix              prefix for all filenames (opt, default 'model')
+%   prefix              prefix for all filenames (optional, default 'model')
 %   path                path where the directory structure should be generated
-%                       and populated with all files (opt, default to current
+%                       and populated with all files (optional, default to current
 %                       working directory)
 %   formats             cell array of strings specifying in what file formats
-%                       the model should be exported (opt, default to all
+%                       the model should be exported (optional, default to all
 %                       formats as {'mat', 'txt', 'xlsx', 'xml', 'yml'})
 %   mainBranchFlag      logical, if true, function will error if RAVEN (and
 %                       COBRA if detected) is/are not on the main branch.
-%                       (opt, default false)
+%                       (optional, default false)
 %   subDirs             logical, whether model files for each file format 
 %                       should be written in its own subdirectory, with
 %                       'model' as parent directory, in accordance to the
 %                       standard-GEM repository format. If false, all files
-%                       are stored in the same folder. (opt, default true)
+%                       are stored in the same folder. (optional, default true)
 %   cobraText           logical, whether the txt file should be in COBRA
 %                       Toolbox format using metabolite IDs, instead of
-%                       metabolite names and compartments. (opt, default
+%                       metabolite names and compartments. (optional, default
 %                       false)
 %
-%   Usage: exportForGit(model,prefix,path,formats,mainBranchFlag)
+% Usage: exportForGit(model,prefix,path,formats,mainBranchFlag)
 if nargin<7
     cobraText=false;
 end
@@ -65,18 +65,16 @@ COBRAver = getToolboxVersion('COBRA','initCobraToolbox.m',mainBranchFlag);
 
 %Retrieve libSBML version:
 [ravenDir,prevDir]=findRAVENroot();
-cd(fullfile(ravenDir,'software','libSBML'));
 try % 5.17.0 and newer
-    libSBMLver=OutputSBML;
+    libSBMLver=OutputSBML_RAVEN;
     libSBMLver=libSBMLver.libSBML_version_string;
 catch % before 5.17.0
     fid = fopen('tempModelForLibSBMLversion.xml','w+');
     fclose(fid);
-    evalc('[~,~,libSBMLver]=TranslateSBML(''tempModelForLibSBMLversion.xml'',0,0)');
+    evalc('[~,~,libSBMLver]=TranslateSBML_RAVEN(''tempModelForLibSBMLversion.xml'',0,0)');
     libSBMLver=libSBMLver.libSBML_version_string;
     delete('tempModelForLibSBMLversion.xml');
 end
-cd(prevDir)
 
 % Make models folder, no warnings if folder already exists
 if subDirs

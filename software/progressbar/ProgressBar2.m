@@ -122,8 +122,8 @@ classdef ProgressBar2 < handle
     end
     properties (SetAccess = immutable, GetAccess = private, Transient)
         bar_N
-        terminal_width = 40
-        minimal_terminal_width = 20;
+        terminal_width = 75
+        minimal_terminal_width = 30;
         char_set = {' ','█',' ','|'}; % <----- Character set
     end
 

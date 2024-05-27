@@ -10,7 +10,7 @@ function setRavenSolver(solver)
 %                   parses the problem to COBRA and uses the solver that is
 %                   set by changeCobraSolver.
 %
-%   Usage: setRavenSolver(solver)
+% Usage: setRavenSolver(solver)
 solver=char(solver);
 switch solver
     case 'cobra'

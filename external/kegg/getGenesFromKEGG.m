@@ -10,7 +10,7 @@ function model=getGenesFromKEGG(keggPath,koList)
 %   koList      the number of genes in KEGG is very large. koList can be a
 %               cell array with KO identifiers, in which case only genes
 %               belonging to one of those KEGG orthologies are retrieved
-%               (opt, default all KOs with associated reactions)
+%               (optional, default all KOs with associated reactions)
 %
 %   Output:
 %   model       a model structure generated from the database. The
@@ -31,7 +31,7 @@ function model=getGenesFromKEGG(keggPath,koList)
 %   should remove the keggGenes.mat file if you want to rebuild the model
 %   structure from a newer version of KEGG.
 %
-%   Usage: model=getGenesFromKEGG(keggPath,koList)
+% Usage: model=getGenesFromKEGG(keggPath,koList)
 %
 % NOTE: This is how one entry looks in the file
 %

@@ -14,7 +14,7 @@ function GSS = getWoLFScores(inputFile, kingdom)
 %   Output:
 %   GSS         a gene scoring structure to be used in predictLocalization
 %
-%   Usage: GSS = getWoLFScores(inputFile, kingdom)
+% Usage: GSS = getWoLFScores(inputFile, kingdom)
 
 if ~isfile(inputFile)
     error('FASTA file %s cannot be found',string(inputFile));

@@ -6,11 +6,11 @@ function expr = getExprForRxnScore(scores, threshold)
 %   define the reaction scores of rxns, but need to send in gene expression.
 %
 %   scores        Vector of scores to convert
-%   threshold     Gene threshold (opt, default 1)
+%   threshold     Gene threshold (optional, default 1)
 %
 %   expr          The resulting gene expression vector.
 %
-%   Usage: expr = getExprForRxnScore(scores, threshold)
+% Usage: expr = getExprForRxnScore(scores, threshold)
 
 if nargin < 2
     threshold = 1;

@@ -1,6 +1,6 @@
 function t=isoctave()
 %ISOCTAVE  True if the operating environment is octave.
-%   Usage: t=isoctave();
+% Usage: t=isoctave();
 %
 %   Returns 1 if the operating environment is octave, otherwise
 %   0 (Matlab)

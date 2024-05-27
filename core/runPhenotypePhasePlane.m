@@ -10,12 +10,12 @@ function [growthRates, shadowPrices1, shadowPrices2] = runPhenotypePhasePlane(mo
 %   model           a model structure
 %   controlRxn1     reaction identifier of the first reaction to be plotted
 %   controlRxn2     reaction identifier of the second reaction to be plotted
-%   nPts            the number of points to plot in each dimension (opt,
+%   nPts            the number of points to plot in each dimension (optional,
 %                   default 50)
 %   range1          the range [from 0 to range1] of reaction 1 to plot
-%                   (opt, default 20)
+%                   (optional, default 20)
 %   range2          the range [from 0 to range2] of reaction 2 to plot
-%                   (opt, default 20)
+%                   (optional, default 20)
 %
 % Output:
 %   growthRates1    a matrix of maximum growth rates

@@ -54,7 +54,7 @@ rxnGenes = cellfun(@(r) regexprep(unique(strsplit(r,{' | ',' & '})),'[\(\) ]+','
 
 % construct new gene list
 nonEmpty = ~cellfun(@isempty,rxnGenes);
-genes = unique([rxnGenes{nonEmpty}]');
+genes = unique(transpose([rxnGenes{nonEmpty}]));
 genes(cellfun(@isempty,genes)) = [];
 
 if ~isempty(originalGenes)

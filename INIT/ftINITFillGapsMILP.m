@@ -11,13 +11,13 @@ function [x,I,exitFlag]=ftINITFillGapsMILP(model, toMinimize, params, scores, ve
 %   toMinimize    either a cell array of reaction IDs, a logical vector
 %                 with the same number of elements as reactions in the model,
 %                 of a vector of indexes for the reactions that should be
-%                 minimized (opt, default model.rxns)
-%   params        parameter structure as used by getMILPParams (opt)
+%                 minimized (optional, default model.rxns)
+%   params        parameter structure as used by getMILPParams (optional)
 %   scores        vector of weights for the reactions. Negative scores
 %                 should not have flux. Positive scores are not possible in this
 %                 implementation, and they are changed to max(scores(scores<0)).
 %                 Must have the same dimension as toMinimize (find(toMinimize)
-%                 if it is a logical vector) (opt, default -1 for all reactions)
+%                 if it is a logical vector) (optional, default -1 for all reactions)
 %   verbose       if true, the MILP progression will be shown. 
 %
 %   x             the corresponding fluxes for the full model
@@ -30,7 +30,7 @@ function [x,I,exitFlag]=ftINITFillGapsMILP(model, toMinimize, params, scores, ve
 %   NOTE: Uses 1000 mmol/gDW/h as an arbitary large flux. Could possibly
 %   cause problems if the fluxes in the model are larger than that.
 %
-%   Usage: [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params, scores)
+% Usage: [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params, scores)
 
 % glpk solver as implemented by COBRA does not work well for MILP.
 global CBT_MILP_SOLVER

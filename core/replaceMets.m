@@ -9,13 +9,13 @@ function model=replaceMets(model,metabolite,replacement,verbose)
 %   metabolite          string with name of metabolite to be replace
 %   replacement         string with name of replacement metabolite
 %   verbose             logical whether to print the ids of reactions that
-%                       involve the replaced metabolite (opt, default
+%                       involve the replaced metabolite (optional, default
 %                       false)
 %
 %   This function is useful when the model contains both 'oxygen' and 'o2'
 %   as metabolites.
 %
-%   Usage: model=replaceMets(model,metabolite,replacement,verbose)
+% Usage: model=replaceMets(model,metabolite,replacement,verbose)
 
 metabolite=char(metabolite);
 replacement=char(replacement);

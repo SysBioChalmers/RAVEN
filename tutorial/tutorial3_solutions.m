@@ -26,16 +26,16 @@ printFluxes(model,sol.x,false);
 model=setParam(model,'ub',{'glcIN' 'o2IN'},[1 1000]);
 model=setParam(model,'obj',{'ethOUT'},1);
 sol=solveLP(model);
-fprintf(['Yield of ethanol is ' num2str(sol.f*-1) ' mol/mol\n']);
+fprintf(['Yield of ethanol is ' num2str(sol.f) ' mol/mol\n']);
 model=setParam(model,'obj',{'acOUT'},1);
 sol=solveLP(model);
-fprintf(['Yield of acetate is ' num2str(sol.f*-1) ' mol/mol\n']);
+fprintf(['Yield of acetate is ' num2str(sol.f) ' mol/mol\n']);
 model=setParam(model,'obj',{'glyOUT'},1);
 sol=solveLP(model);
-fprintf(['Yield of glycerol is ' num2str(sol.f*-1) ' mol/mol\n']);
+fprintf(['Yield of glycerol is ' num2str(sol.f) ' mol/mol\n']);
 model=setParam(model,'obj',{'biomassOUT'},1);
 sol=solveLP(model);
-fprintf(['Yield of biomass is ' num2str(sol.f*-1) '/h\n']);
+fprintf(['Yield of biomass is ' num2str(sol.f) '/h\n']);
 
 %Step 3
 %Solve for both aerobic and anaerobic growth

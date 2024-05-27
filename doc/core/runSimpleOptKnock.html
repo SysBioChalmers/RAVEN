@@ -39,12 +39,13 @@
     biomassRxn     identifier of biomass reaction
     deletions      cell array with gene or reaction identifiers that
                    should be considered for knockout
-                   (opt, default = model.rxns)
+                   (optional, default = model.rxns)
     genesOrRxns    string indicating whether deletions parameter is given
-                   with 'genes' or 'rxns' identifiers (opt, default 'rxns')
+                   with 'genes' or 'rxns' identifiers (optional, default
+                   'rxns')
     maxNumKO       numeric with maximum number of simulatenous knockout
-                   (opt, default 1)
-    minGrowth      numeric of minimum growth rate (opt, default 0.05)
+                   (optional, default 1)
+    minGrowth      numeric of minimum growth rate (optional, default 0.05)
 
  Output:
     out            structure with deletions strategies that result in
@@ -53,7 +54,8 @@
        growthRate  vector with growth rates after deletion
        prodRate    vector with production rates after deletion
 
- Usage: out = runSimpleOptKnock(model, targetRxn, biomassRxn, deletions, genesOrRxns, maxNumKO, minGrowth)</pre></div>
+ Usage: out = runSimpleOptKnock(model, targetRxn, biomassRxn, deletions,...
+                   genesOrRxns, maxNumKO, minGrowth)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -83,112 +85,114 @@ This function is called by:
 0011 <span class="comment">%    biomassRxn     identifier of biomass reaction</span>
 0012 <span class="comment">%    deletions      cell array with gene or reaction identifiers that</span>
 0013 <span class="comment">%                   should be considered for knockout</span>
-0014 <span class="comment">%                   (opt, default = model.rxns)</span>
+0014 <span class="comment">%                   (optional, default = model.rxns)</span>
 0015 <span class="comment">%    genesOrRxns    string indicating whether deletions parameter is given</span>
-0016 <span class="comment">%                   with 'genes' or 'rxns' identifiers (opt, default 'rxns')</span>
-0017 <span class="comment">%    maxNumKO       numeric with maximum number of simulatenous knockout</span>
-0018 <span class="comment">%                   (opt, default 1)</span>
-0019 <span class="comment">%    minGrowth      numeric of minimum growth rate (opt, default 0.05)</span>
-0020 <span class="comment">%</span>
-0021 <span class="comment">% Output:</span>
-0022 <span class="comment">%    out            structure with deletions strategies that result in</span>
-0023 <span class="comment">%                   growth-coupled production</span>
-0024 <span class="comment">%       KO          cell array with gene(s) or reaction(s) to be deleted</span>
-0025 <span class="comment">%       growthRate  vector with growth rates after deletion</span>
-0026 <span class="comment">%       prodRate    vector with production rates after deletion</span>
-0027 <span class="comment">%</span>
-0028 <span class="comment">% Usage: out = runSimpleOptKnock(model, targetRxn, biomassRxn, deletions, genesOrRxns, maxNumKO, minGrowth)</span>
-0029 
-0030 <span class="keyword">if</span> nargin &lt; 4
-0031     params.deletions = model.rxns;
-0032 <span class="keyword">else</span>
-0033     params.deletions = deletions;
-0034 <span class="keyword">end</span>
-0035 <span class="keyword">if</span> nargin &lt; 5
-0036     params.genesOrRxns = <span class="string">'rxns'</span>;
-0037 <span class="keyword">else</span>
-0038     params.genesOrRxns = genesOrRxns;
-0039 <span class="keyword">end</span>
-0040 <span class="keyword">if</span> nargin &lt; 6
-0041     params.maxNumKO = 1;
-0042 <span class="keyword">else</span>
-0043     params.maxNumKO = maxNumKO;
-0044 <span class="keyword">end</span>
-0045 <span class="keyword">if</span> nargin &lt; 7
-0046     params.minGrowth = 0.05;
-0047 <span class="keyword">else</span>
-0048     params.minGrowth = minGrowth;
-0049 <span class="keyword">end</span>
-0050 
-0051 <span class="comment">% Number of deletions</span>
-0052 out.KO         = cell(0,params.maxNumKO); <span class="comment">% The KO genes/rxns</span>
-0053 out.growthRate = zeros(0);
-0054 out.prodRate   = zeros(0);
-0055 out.score      = zeros(0);
-0056 
-0057 params.biomassIdx  = <a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,biomassRxn,<span class="string">'rxns'</span>);
-0058 params.targetIdx   = <a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,targetRxn,<span class="string">'rxns'</span>);
-0059 
-0060 model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'obj'</span>,params.biomassIdx,1);
-0061 [solWT, hsSol] = solveLP(model);
-0062 WT.minScore = solWT.x(params.targetIdx)*-solWT.f;
-0063 
-0064 fprintf(<span class="string">'Running simple OptKnock analysis...   0%% complete'</span>);
-0065 KO=zeros(1,params.maxNumKO);
-0066 [~,~,out,~] = <a href="#_sub1" class="code" title="subfunction [model,iteration,out,KO,hsSol] = knockoutIteration(model,params,WT,out,iteration,KO,minScore,hsSol)">knockoutIteration</a>(model,params,WT,out,params.maxNumKO,KO,[],hsSol);
-0067 
-0068 <span class="keyword">if</span> size(out.KO,2)&gt;1
-0069     singleKO = cellfun(@isempty,out.KO(:,1));
-0070     <span class="keyword">if</span> any(singleKO)
-0071         singleKO = out.KO{singleKO,2};
-0072         singleKO = strcmp(out.KO(:,1),singleKO);
-0073         out.KO(singleKO,:) = [];
-0074         out.growthRate(singleKO,:) = [];
-0075         out.prodRate(singleKO,:) = [];
-0076         out.score(singleKO,:) = [];
-0077     <span class="keyword">end</span>
-0078 <span class="keyword">end</span>
-0079 
-0080 
-0081 fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n'</span>);
-0082 <span class="keyword">end</span>
-0083 
-0084 <a name="_sub1" href="#_subfunctions" class="code">function [model,iteration,out,KO,hsSol] = knockoutIteration(model,params,WT,out,iteration,KO,minScore,hsSol)</a>
-0085 <span class="keyword">if</span> nargin&lt;7 || isempty(minScore)
-0086     minScore = WT.minScore;
-0087 <span class="keyword">end</span>
-0088 iteration = iteration - 1;
-0089 <span class="keyword">for</span> i = 1:numel(params.deletions)
-0090     <span class="keyword">if</span> iteration+1==params.maxNumKO
-0091         progress=pad(num2str(floor(i/numel(params.deletions)*100)),3,<span class="string">'left'</span>);
-0092         fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete'</span>,progress);
-0093     <span class="keyword">end</span>
-0094     KO(iteration+1)=i;
-0095     <span class="keyword">switch</span> params.genesOrRxns
-0096         <span class="keyword">case</span> <span class="string">'rxns'</span>
-0097             modelKO = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'eq'</span>,params.deletions{i},0);
-0098         <span class="keyword">case</span> <span class="string">'genes'</span>
-0099             modelKO = <a href="removeGenes.html" class="code" title="function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)">removeGenes</a>(model,params.deletions{i},false,false,false);
-0100     <span class="keyword">end</span>
-0101     solKO = solveLP(modelKO,0,[],hsSol);
-0102     <span class="keyword">if</span> ~isempty(-solKO.f)
-0103         growthRate = -solKO.f;
-0104         prodRate   = solKO.x(params.targetIdx);
-0105         prodRate(prodRate&lt;1e-10)=0; <span class="comment">% Filter out results from solver tolerance</span>
-0106         <span class="keyword">if</span> growthRate &gt; params.minGrowth
-0107             <span class="keyword">if</span> growthRate*prodRate &gt; minScore*1.01
-0108                 out.KO(end+1,find(KO)) = transpose(params.deletions(KO(find(KO))));
-0109                 out.growthRate(end+1,1) = growthRate;
-0110                 out.prodRate(end+1,1)   = prodRate;
-0111                 out.score(end+1,1)      = growthRate*prodRate;
-0112             <span class="keyword">end</span>
-0113             <span class="keyword">if</span> iteration&gt;0
-0114                 [~,~,out] = <a href="#_sub1" class="code" title="subfunction [model,iteration,out,KO,hsSol] = knockoutIteration(model,params,WT,out,iteration,KO,minScore,hsSol)">knockoutIteration</a>(modelKO,params,WT,out,iteration,KO,growthRate*prodRate,hsSol);
-0115             <span class="keyword">end</span>
-0116         <span class="keyword">end</span>
-0117     <span class="keyword">end</span>
-0118 <span class="keyword">end</span>
-0119 <span class="keyword">end</span></pre></div>
+0016 <span class="comment">%                   with 'genes' or 'rxns' identifiers (optional, default</span>
+0017 <span class="comment">%                   'rxns')</span>
+0018 <span class="comment">%    maxNumKO       numeric with maximum number of simulatenous knockout</span>
+0019 <span class="comment">%                   (optional, default 1)</span>
+0020 <span class="comment">%    minGrowth      numeric of minimum growth rate (optional, default 0.05)</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Output:</span>
+0023 <span class="comment">%    out            structure with deletions strategies that result in</span>
+0024 <span class="comment">%                   growth-coupled production</span>
+0025 <span class="comment">%       KO          cell array with gene(s) or reaction(s) to be deleted</span>
+0026 <span class="comment">%       growthRate  vector with growth rates after deletion</span>
+0027 <span class="comment">%       prodRate    vector with production rates after deletion</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Usage: out = runSimpleOptKnock(model, targetRxn, biomassRxn, deletions,...</span>
+0030 <span class="comment">%                   genesOrRxns, maxNumKO, minGrowth)</span>
+0031 
+0032 <span class="keyword">if</span> nargin &lt; 4
+0033     params.deletions = model.rxns;
+0034 <span class="keyword">else</span>
+0035     params.deletions = deletions;
+0036 <span class="keyword">end</span>
+0037 <span class="keyword">if</span> nargin &lt; 5
+0038     params.genesOrRxns = <span class="string">'rxns'</span>;
+0039 <span class="keyword">else</span>
+0040     params.genesOrRxns = genesOrRxns;
+0041 <span class="keyword">end</span>
+0042 <span class="keyword">if</span> nargin &lt; 6
+0043     params.maxNumKO = 1;
+0044 <span class="keyword">else</span>
+0045     params.maxNumKO = maxNumKO;
+0046 <span class="keyword">end</span>
+0047 <span class="keyword">if</span> nargin &lt; 7
+0048     params.minGrowth = 0.05;
+0049 <span class="keyword">else</span>
+0050     params.minGrowth = minGrowth;
+0051 <span class="keyword">end</span>
+0052 
+0053 <span class="comment">% Number of deletions</span>
+0054 out.KO         = cell(0,params.maxNumKO); <span class="comment">% The KO genes/rxns</span>
+0055 out.growthRate = zeros(0);
+0056 out.prodRate   = zeros(0);
+0057 out.score      = zeros(0);
+0058 
+0059 params.biomassIdx  = <a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,biomassRxn,<span class="string">'rxns'</span>);
+0060 params.targetIdx   = <a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,targetRxn,<span class="string">'rxns'</span>);
+0061 
+0062 model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'obj'</span>,params.biomassIdx,1);
+0063 [solWT, hsSol] = solveLP(model);
+0064 WT.minScore = solWT.x(params.targetIdx)*solWT.f;
+0065 
+0066 fprintf(<span class="string">'Running simple OptKnock analysis...   0%% complete'</span>);
+0067 KO=zeros(1,params.maxNumKO);
+0068 [~,~,out,~] = <a href="#_sub1" class="code" title="subfunction [model,iteration,out,KO,hsSol] = knockoutIteration(model,params,WT,out,iteration,KO,minScore,hsSol)">knockoutIteration</a>(model,params,WT,out,params.maxNumKO,KO,[],hsSol);
+0069 
+0070 <span class="keyword">if</span> size(out.KO,2)&gt;1
+0071     singleKO = cellfun(@isempty,out.KO(:,1));
+0072     <span class="keyword">if</span> any(singleKO)
+0073         singleKO = out.KO{singleKO,2};
+0074         singleKO = strcmp(out.KO(:,1),singleKO);
+0075         out.KO(singleKO,:) = [];
+0076         out.growthRate(singleKO,:) = [];
+0077         out.prodRate(singleKO,:) = [];
+0078         out.score(singleKO,:) = [];
+0079     <span class="keyword">end</span>
+0080 <span class="keyword">end</span>
+0081 
+0082 
+0083 fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n'</span>);
+0084 <span class="keyword">end</span>
+0085 
+0086 <a name="_sub1" href="#_subfunctions" class="code">function [model,iteration,out,KO,hsSol] = knockoutIteration(model,params,WT,out,iteration,KO,minScore,hsSol)</a>
+0087 <span class="keyword">if</span> nargin&lt;7 || isempty(minScore)
+0088     minScore = WT.minScore;
+0089 <span class="keyword">end</span>
+0090 iteration = iteration - 1;
+0091 <span class="keyword">for</span> i = 1:numel(params.deletions)
+0092     <span class="keyword">if</span> iteration+1==params.maxNumKO
+0093         progress=pad(num2str(floor(i/numel(params.deletions)*100)),3,<span class="string">'left'</span>);
+0094         fprintf(<span class="string">'\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete'</span>,progress);
+0095     <span class="keyword">end</span>
+0096     KO(iteration+1)=i;
+0097     <span class="keyword">switch</span> params.genesOrRxns
+0098         <span class="keyword">case</span> <span class="string">'rxns'</span>
+0099             modelKO = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'eq'</span>,params.deletions{i},0);
+0100         <span class="keyword">case</span> <span class="string">'genes'</span>
+0101             modelKO = <a href="removeGenes.html" class="code" title="function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)">removeGenes</a>(model,params.deletions{i},false,false,false);
+0102     <span class="keyword">end</span>
+0103     solKO = solveLP(modelKO,0,[],hsSol);
+0104     <span class="keyword">if</span> ~isempty(solKO.f)
+0105         growthRate = solKO.f;
+0106         prodRate   = solKO.x(params.targetIdx);
+0107         prodRate(prodRate&lt;1e-10)=0; <span class="comment">% Filter out results from solver tolerance</span>
+0108         <span class="keyword">if</span> growthRate &gt; params.minGrowth
+0109             <span class="keyword">if</span> growthRate*prodRate &gt; minScore*1.01
+0110                 out.KO(end+1,find(KO)) = transpose(params.deletions(KO(find(KO))));
+0111                 out.growthRate(end+1,1) = growthRate;
+0112                 out.prodRate(end+1,1)   = prodRate;
+0113                 out.score(end+1,1)      = growthRate*prodRate;
+0114             <span class="keyword">end</span>
+0115             <span class="keyword">if</span> iteration&gt;0
+0116                 [~,~,out] = <a href="#_sub1" class="code" title="subfunction [model,iteration,out,KO,hsSol] = knockoutIteration(model,params,WT,out,iteration,KO,minScore,hsSol)">knockoutIteration</a>(modelKO,params,WT,out,iteration,KO,growthRate*prodRate,hsSol);
+0117             <span class="keyword">end</span>
+0118         <span class="keyword">end</span>
+0119     <span class="keyword">end</span>
+0120 <span class="keyword">end</span>
+0121 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

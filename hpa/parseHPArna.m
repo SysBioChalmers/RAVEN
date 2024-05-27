@@ -18,7 +18,7 @@ function arrayData=parseHPArna(fileName, version)
 %                           rows correspond to genes, and columns
 %                           correspond to tissues
 %
-%   Usage: arrayData=parseHPArna(fileName,version)
+% Usage: arrayData=parseHPArna(fileName,version)
 
 if nargin<2
     %Change this and add code for more versions when the current HPA

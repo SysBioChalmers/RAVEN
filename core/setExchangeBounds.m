@@ -6,22 +6,22 @@ function [exchModel,unusedMets] = setExchangeBounds(model,mets,lb,ub,closeOthers
 %   model         a model structure
 %   mets          a cell array of metabolite names (case insensitive) or 
 %                 metabolite IDs, or a vector of metabolite indices
-%                 (opt, default all exchanged metabolites)
+%                 (optional, default all exchanged metabolites)
 %   lb            lower bound of exchange flux. Can be either a vector of
 %                 bounds corresponding to each of the provided metabolites,
 %                 or a single value that will be applied to all.
-%                 (opt, default to model.annotation.defaultLB if it exists,
+%                 (optional, default to model.annotation.defaultLB if it exists,
 %                 otherwise -1000)
 %   ub            upper bound of exchange flux. Can be either a vector of
 %                 bounds corresponding to each of the provided metabolites,
 %                 or a single value that will be applied to all.
-%                 (opt, default to model.annotation.defaultUB if it exists,
+%                 (optional, default to model.annotation.defaultUB if it exists,
 %                 otherwise 1000)
 %   closeOthers   close exchange reactions for all other exchanged 
 %                 metabolites not present in the provided list. This will
 %                 prevent IMPORT of the metabolites, but their EXPORT will
 %                 not be modified.
-%                 (opt, default true)
+%                 (optional, default true)
 %   mediaOnly     only consider exchange reactions involving exchange to or
 %                 from the extracellular (media) compartment. Reactions
 %                 such as "sink" reactions that exchange metabolites
@@ -32,7 +32,7 @@ function [exchModel,unusedMets] = setExchangeBounds(model,mets,lb,ub,closeOthers
 %                 extracellular compartment by the "compNames" field, and
 %                 also requires the "metComps" field to be present,
 %                 otherwise the mediaOnly flag will be ignored.
-%                 (opt, default false)
+%                 (optional, default false)
 %
 % Output:
 %   exchModel     a model structure with updated exchange flux bounds for

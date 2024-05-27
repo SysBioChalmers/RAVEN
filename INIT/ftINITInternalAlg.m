@@ -8,7 +8,7 @@ function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(m
 %                   scores are reactions to exclude. Rxns set to 0 are excluded
 %                   from the problem.
 %   metData         boolean matrix with mets as rows and rxns as columns
-%                   saying which reaction produces each detected met (opt, default [])
+%                   saying which reaction produces each detected met (optional, default [])
 %   essentialRxns   cell array of reactions that are essential and that
 %                   have to be in the resulting model. This is normally
 %                   used when fitting a model to task (see fitTasks)
@@ -50,7 +50,7 @@ function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(m
 %   This function is the actual implementation of the algorithm. See
 %   ftINIT for a higher-level function for model reconstruction. 
 %
-%   Usage: [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=runINIT9(model,...
+% Usage: [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=runINIT9(model,...
 %           rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,...
 %           remPosRev,params)
 

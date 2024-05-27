@@ -7,16 +7,16 @@ function solution=solveQP(model,rxns,values,maxIter, restartIter)
 %                 with the same number of elements as reactions in the model,
 %                 of a vector of indexes to fit to
 %   values        the values to fit the fluxes to
-%   maxIter       maximal number of iterations (opt, default 1000)
+%   maxIter       maximal number of iterations (optional, default 1000)
 %   restartIter   run the fitting up to this many times in case it does
-%                 not converge (opt, default 1)
+%                 not converge (optional, default 1)
 %
 %   solution
 %         f       Objective value
 %         x       Primal
 %         stat    Exit flag
 %
-%   Usage: solution=solveQP(model,rxns,values,maxIter, restartIter)
+% Usage: solution=solveQP(model,rxns,values,maxIter, restartIter)
 rxns=char(rxns);
 
 if nargin<4

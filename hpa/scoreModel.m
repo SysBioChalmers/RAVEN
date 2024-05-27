@@ -5,9 +5,9 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 %
 %   Input:
 %   model               a model structure
-%   hpaData             HPA data structure from parseHPA (opt if arrayData is
+%   hpaData             HPA data structure from parseHPA (optional if arrayData is
 %                       supplied, default [])
-%   arrayData           gene expression data structure (opt if hpaData is
+%   arrayData           gene expression data structure (optional if hpaData is
 %                       supplied, default [])
 %       genes           cell array with the unique gene names
 %       tissues         cell array with the tissue names. The list may not be
@@ -18,26 +18,26 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 %                       used when no measurement was performed
 %       threshold       a single value or a vector of gene expression 
 %                       thresholds, above which genes are considered to be
-%                       "expressed". (opt, by default, the mean expression
+%                       "expressed". (optional, by default, the mean expression
 %                       levels of each gene across all tissues in arrayData
 %                       will be used as the threshold values)
 %   tissue              tissue to score for. Should exist in either
 %                       hpaData.tissues or arrayData.tissues
 %   celltype            cell type to score for. Should exist in either
 %                       hpaData.celltypes or arrayData.celltypes for this
-%                       tissue (opt, default is to use the best values
+%                       tissue (optional, default is to use the best values
 %                       among all the cell types for the tissue. Use [] if
 %                       you want to supply more arguments)
-%   noGeneScore         score for reactions without genes (opt, default -2)
+%   noGeneScore         score for reactions without genes (optional, default -2)
 %   multipleGeneScoring determines how scores are calculated for reactions
 %                       with several genes ('best' or 'average')
-%                       (opt, default 'best')
+%                       (optional, default 'best')
 %   multipleCellScoring determines how scores are calculated when several
 %                       cell types are used ('best' or 'average')
-%                       (opt, default 'best')
+%                       (optional, default 'best')
 %   hpaLevelScores      structure with numerical scores for the expression
 %                       level categories from HPA. The structure should have a
-%                       "names" and a "scores" field (opt, see code for
+%                       "names" and a "scores" field (optional, see code for
 %                       default scores)
 %
 %
@@ -52,7 +52,7 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 %                   into account. Genes which are not in the dataset(s)
 %                   have -Inf as scores
 %
-%   Usage: [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,...
+% Usage: [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,...
 %               hpaData,arrayData,tissue,celltype,noGeneScore,multipleGeneScoring,...
 %               multipleCellScoring,hpaLevelScores)
 

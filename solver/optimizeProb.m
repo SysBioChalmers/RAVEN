@@ -4,7 +4,7 @@ function res = optimizeProb(prob,params,verbose)
 %
 %   prob	cobra style LP/MILP problem struct to be optimised
 %   params	solver specific parameters (optional)
-%   verbose if true MILP progress is shown (opt, default true)
+%   verbose if true MILP progress is shown (optional, default true)
 %
 %   res		the output structure from the selected solver RAVENSOLVER
 %   		(cobra style)
@@ -55,7 +55,7 @@ if milp
     defaultparams.MIPGap     = 1e-12;
     defaultparams.Seed       = 1;
 end
-
+res.obj=[];
 switch solver
     %% Use whatever solver is set by COBRA Toolbox changeCobraSolver
     case 'cobra'
@@ -142,7 +142,7 @@ switch solver
         %% Use GLPK using RAVEN-provided binary
     case 'glpk'
         solverparams.scale   = 1; % Auto scaling
-        solverparams.tmlim   = defaultparams.timeLimit;
+        %solverparams.tmlim   = defaultparams.timeLimit;
         solverparams.tolbnd  = defaultparams.feasTol;
         solverparams.toldj   = defaultparams.optTol;
         solverparams.tolint  = defaultparams.intTol;

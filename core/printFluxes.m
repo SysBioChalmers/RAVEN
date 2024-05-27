@@ -2,37 +2,38 @@ function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputS
 % printFluxes
 %   Prints reactions and fluxes to the screen or to a file
 %
+% Input:
 %   model           a model structure
 %   fluxes          a vector with fluxes
-%   onlyExchange    only print exchange fluxes (opt, default true)
-%   cutOffFlux      only print fluxes with absolute values above or equal to this
-%                   value (opt, default 10^-8)
-%   outputFile      a file to save the print-out to (opt, default is output to
-%                   the command window)
-%   outputString    a string that specifies the output of each reaction (opt,
-%                   default '%rxnID\t(%rxnName):\t%flux\n')
+%   onlyExchange    only print exchange fluxes (optional, default true)
+%   cutOffFlux      only print fluxes with absolute values above or equal
+%                   to this value (optional, default 10^-8)
+%   outputFile      a file to save the print-out to (optional, default is
+%                   output to the command window)
+%   outputString    a string that specifies the output of each reaction
+%                   (optional, default '%rxnID\t(%rxnName):\t%flux\n')
 %   metaboliteList  cell array of metabolite names. Only reactions
 %                   involving any of these metabolites will be
-%                   printed (opt)
+%                   printed (optional)
 %
-%   The following codes are available for user-defined output strings:
+% The following codes are available for user-defined output strings:
 %
-%   %rxnID      reaction ID
-%   %rxnName    reaction name
-%   %lower      lower bound
-%   %upper      upper bound
-%   %obj        objective coefficient
-%   %eqn        equation
-%   %flux       flux
-%   %element    equation using the metabolite formulas rather than
-%               metabolite names
-%   %unbalanced "(*)" if the reaction is unbalanced and "(-)" if it could not
-%               be parsed
-%   %lumped     equation where the elemental compositions for the left/right
-%               hand sides are lumped
+% %rxnID      reaction ID
+% %rxnName    reaction name
+% %lower      lower bound
+% %upper      upper bound
+% %obj        objective coefficient
+% %eqn        equation
+% %flux       flux
+% %element    equation using the metabolite formulas rather than
+%             metabolite names
+% %unbalanced "(*)" if the reaction is unbalanced and "(-)" if it could
+%             not be parsed
+% %lumped     equation where the elemental compositions for the left/right
+%             hand sides are lumped
 %
-%   Usage: printFluxes(model, fluxes, onlyExchange, cutOffFlux,
-%           outputFile,outputString,metaboliteList)
+% Usage: printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,...
+%                    outputString, metaboliteList)
 
 if nargin<3
     onlyExchange=true;

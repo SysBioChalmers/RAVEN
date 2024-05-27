@@ -9,17 +9,17 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %                       directory, this function will attempt to read data
 %                       from a local FTP dump of the KEGG database.
 %                       keggPath is the path to the root of this database
-%                       (opt, default 'RAVEN/external/kegg'). If
+%                       (optional, default 'RAVEN/external/kegg'). If
 %                       keggModel.mat is present in the same directory, the
 %                       function reads the data from this file and ignores
 %                       keggGenes.mat, keggMets.mat and keggRxns.mat
-%   keepSpontaneous     include reactions labeled as "spontaneous" (opt,
+%   keepSpontaneous     include reactions labeled as "spontaneous" (optional,
 %                       default true)
 %   keepUndefinedStoich include reactions in the form n A <=> n+1 A. These
 %                       will be dealt with as two separate metabolites
-%                       (opt, default true)
+%                       (optional, default true)
 %   keepIncomplete      include reactions which have been labelled as
-%                       "incomplete", "erroneous" or "unclear" (opt,
+%                       "incomplete", "erroneous" or "unclear" (optional,
 %                       default true)
 %   keepGeneral         include reactions which have been labelled as
 %                       "general reaction". These are reactions on the form
@@ -27,7 +27,7 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %                       unsuited for modelling purposes. Note that not all
 %                       reactions have this type of annotation, and the
 %                       script will therefore not be able to remove all
-%                       such reactions (opt, default false)
+%                       such reactions (optional, default false)
 %
 %   Output:
 %   model               a model structure generated from the database. All
@@ -41,7 +41,7 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %   for fillGaps. In that case, ensure that the genes and rxnGeneMat fields
 %   are removed before parsing: model=rmfield(model,'genes'), etc.
 %
-%   Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
+% Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral)
 
 if nargin<1

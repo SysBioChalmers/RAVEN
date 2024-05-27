@@ -1,27 +1,33 @@
 function targets=FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile)
-% FSEOF: implements the algorithm of Flux Scanning based on Enforced Objective Flux.
+% FSEOF
+%   Implements the Flux Scanning based on Enforced Objective Flux algorithm.
 %
+% Input:
 %   model           a model structure
 %   biomassRxn      string with reaction ID of the biomass formation or
 %                   growth reaction
 %   targetRxn       string with reaction ID of target reaction
-%   iterations      double indicating number of iterations (opt, default 10)
-%   coefficient     double indicating ratio of optimal target reaction
-%                   flux, must be less than 1 (opt, default 0.9)
-%   outputFile      string with output filename (opt, default prints to
-%                   command window)
+%   iterations      numeric indicating number of iterations (optional,
+%                   default 10)
+%   coefficient     numeric indicating ratio of optimal target reaction
+%                   flux, must be less than 1 (optional, default 0.9)
+%   outputFile      string with output filename (optional, default prints
+%                   to command window)
 %
-%   targets         structure with target identifying information for each reaction
-%       logical     logical array indicating FSEOF identified target reaction
-%       slope       double array with FSEOF calculated slopes for each reaction
-
-%OUTPUTS
-%   This function writes an tab-delimited file or prints to command window. If an output
-%   has been specified (targets), it will also generate a structure indicating for
-%   each reaction whether it is identified by FSEOF as a target and the slope of the
-%   reaction when switching from biomass formation to product formation.
+% Output:
+%   targets         structure with information for identified targets
+%       logical     logical array indicating whether a model reaction was
+%                   identified as target by FSEOF
+%       slope       numeric array with FSEOF slopes for target reactions
 %
-%   Usage: targets=FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile)
+% This function writes an tab-delimited file or prints to command window.
+% If an output has been specified (targets), it will also generate a
+% structure indicating for each model reaction whether it is identified by
+% FSEOF as a target and the slope of the reaction when switching from
+% biomass formation to product formation.
+%
+% Usage: targets = FSEOF(model, biomassRxn, targetRxn, iterations,...
+%                   coefficient, outputFile)
 
 biomassRxn=char(biomassRxn);
 targetRxn=char(targetRxn);
@@ -44,7 +50,7 @@ end
 %Find out the maximum theoretical yield of target reaction
 model=setParam(model,'obj',targetRxn,1);
 sol=solveLP(model,1);
-targetMax=abs(sol.f*coefficient);   % 90 percent of the theoretical yield
+targetMax=sol.f*coefficient;   % 90 percent of the theoretical yield
 
 model=setParam(model,'obj',biomassRxn,1);
 

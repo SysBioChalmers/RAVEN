@@ -5,17 +5,17 @@ function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(
 %   Input:
 %   model           a model structure
 %   inputFile       a task list in Excel format. See the function
-%                   parseTaskList for details (opt if taskStructure is
+%                   parseTaskList for details (optional if taskStructure is
 %                   supplied)
 %   printOutput     true if the results of the test should be displayed
-%                   (opt, default true)
+%                   (optional, default true)
 %   printOnlyFailed true if only tasks that failed should be displayed
-%                   (opt, default false)
+%                   (optional, default false)
 %   getEssential    true if the essential reactions should be calculated for
-%                   all the tasks. This option is used with runINIT (opt,
+%                   all the tasks. This option is used with runINIT (optional,
 %                   default false)
 %   taskStructure   structure with the tasks, as from parseTaskList. If
-%                   this is supplied then inputFile is ignored (opt)
+%                   this is supplied then inputFile is ignored (optional)
 %
 %
 %   Output:
@@ -42,7 +42,7 @@ function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(
 %   bounds. If more bounds are needed to define the task, then several rows
 %   can be used for each task.
 %
-%   Usage: [taskReport, essentialReactions, taskStructure]=checkTasks(model,inputFile,...
+% Usage: [taskReport, essentialReactions, taskStructure]=checkTasks(model,inputFile,...
 %           printOutput,printOnlyFailed,getEssential,taskStructure)
 
 if nargin<3 || isempty(printOutput)

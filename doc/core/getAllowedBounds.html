@@ -34,7 +34,7 @@
    model           a model structure
    rxns            either a cell array of reaction IDs, a logical vector
                    with the same number of elements as reactions in the
-                   model, or a vector of reaction indexes (opt, default
+                   model, or a vector of reaction indexes (optional, default
                    model.rxns)
    runParallel     speed up calculations by parallel processing. This is
                    not beneficial if allowed bounds are calculated for
@@ -42,7 +42,7 @@
                    processing will take longer. It requires MATLAB
                    Parallel Computing Toolbox. If this is not installed,
                    the calculations will not be parallelized, regardless
-                   what is indicated as runParallel. (opt, default true)
+                   what is indicated as runParallel. (optional, default true)
 
  Output:
    minFluxes       minimal allowed fluxes
@@ -50,7 +50,7 @@
    exitFlags       exit flags for min/max for each of the reactions. True
                    if it was possible to calculate a flux
 
-   NOTE: In cases where no solution can be calculated, NaN is returned.
+ In cases where no solution can be calculated, NaN is returned.
 
  Usage: [minFluxes, maxFluxes, exitFlags] = getAllowedBounds(model, rxns, runParallel)</pre></div>
 
@@ -75,7 +75,7 @@ This function is called by:
 0006 <span class="comment">%   model           a model structure</span>
 0007 <span class="comment">%   rxns            either a cell array of reaction IDs, a logical vector</span>
 0008 <span class="comment">%                   with the same number of elements as reactions in the</span>
-0009 <span class="comment">%                   model, or a vector of reaction indexes (opt, default</span>
+0009 <span class="comment">%                   model, or a vector of reaction indexes (optional, default</span>
 0010 <span class="comment">%                   model.rxns)</span>
 0011 <span class="comment">%   runParallel     speed up calculations by parallel processing. This is</span>
 0012 <span class="comment">%                   not beneficial if allowed bounds are calculated for</span>
@@ -83,7 +83,7 @@ This function is called by:
 0014 <span class="comment">%                   processing will take longer. It requires MATLAB</span>
 0015 <span class="comment">%                   Parallel Computing Toolbox. If this is not installed,</span>
 0016 <span class="comment">%                   the calculations will not be parallelized, regardless</span>
-0017 <span class="comment">%                   what is indicated as runParallel. (opt, default true)</span>
+0017 <span class="comment">%                   what is indicated as runParallel. (optional, default true)</span>
 0018 <span class="comment">%</span>
 0019 <span class="comment">% Output:</span>
 0020 <span class="comment">%   minFluxes       minimal allowed fluxes</span>
@@ -91,7 +91,7 @@ This function is called by:
 0022 <span class="comment">%   exitFlags       exit flags for min/max for each of the reactions. True</span>
 0023 <span class="comment">%                   if it was possible to calculate a flux</span>
 0024 <span class="comment">%</span>
-0025 <span class="comment">%   NOTE: In cases where no solution can be calculated, NaN is returned.</span>
+0025 <span class="comment">% In cases where no solution can be calculated, NaN is returned.</span>
 0026 <span class="comment">%</span>
 0027 <span class="comment">% Usage: [minFluxes, maxFluxes, exitFlags] = getAllowedBounds(model, rxns, runParallel)</span>
 0028 
@@ -118,28 +118,29 @@ This function is called by:
 0049     tmpModel = model;
 0050     tmpModel.c = c;
 0051 
-0052     <span class="comment">% Get minimal flux</span>
-0053     tmpModel.c(rxns(i)) = -1;
-0054     solMin = solveLP(tmpModel);
-0055     <span class="keyword">if</span> ~isempty(solMin.f)
-0056         minFluxes(i) = solMin.x(rxns(i));
+0052     <span class="comment">% Get maximal flux</span>
+0053     tmpModel.c(rxns(i)) = 1;
+0054     [solMax,hsSol]=solveLP(tmpModel);
+0055     <span class="keyword">if</span> ~isempty(solMax.f)
+0056         maxFluxes(i) = solMax.x(rxns(i));
 0057     <span class="keyword">else</span>
-0058         minFluxes(i) = NaN;
+0058         maxFluxes(i) = NaN;
 0059     <span class="keyword">end</span>
 0060 
-0061     <span class="comment">% Get maximal flux</span>
-0062     tmpModel.c(rxns(i)) = 1;
-0063     solMax=solveLP(tmpModel);
-0064     exitFlags(i,:) = [solMin.stat solMax.stat];
-0065     <span class="keyword">if</span> ~isempty(solMax.f)
-0066         maxFluxes(i) = solMax.x(rxns(i));
-0067     <span class="keyword">else</span>
-0068         maxFluxes(i) = NaN;
-0069     <span class="keyword">end</span>
-0070 <span class="keyword">end</span>
-0071 <span class="comment">% Reset original Parallel setting</span>
-0072 ps.Pool.AutoCreate = oldPoolAutoCreateSetting;
-0073 <span class="keyword">end</span></pre></div>
+0061     <span class="comment">% Get minimal flux</span>
+0062     tmpModel.c(rxns(i)) = -1;
+0063     solMin = solveLP(tmpModel,[],[],hsSol);
+0064     <span class="keyword">if</span> ~isempty(solMin.f)
+0065         minFluxes(i) = solMin.x(rxns(i));
+0066     <span class="keyword">else</span>
+0067         minFluxes(i) = NaN;
+0068     <span class="keyword">end</span>
+0069     exitFlags(i,:) = [solMin.stat solMax.stat];
+0070 
+0071 <span class="keyword">end</span>
+0072 <span class="comment">% Reset original Parallel setting</span>
+0073 ps.Pool.AutoCreate = oldPoolAutoCreateSetting;
+0074 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

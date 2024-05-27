@@ -35,29 +35,31 @@ verifyEqual(testCase,sol,solOut,'AbsTol',0.1) %Quite generous tolerance, as shad
 end
 
 function testGurobi(testCase)
-if exist('gurobi','file')~=3
-    error('Gurobi not installed or cannot be found in MATLAB path, test skipped')
-end
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
 try
     oldSolver=getpref('RAVEN','solver');
 catch
 end
+
 setRavenSolver('gurobi');
 
-try
-    % Try all three types of flux minimization
-    evalc('sol=solveLP(model,3);');    
-    evalc('sol=solveLP(model,1);');
-    evalc('sol=solveLP(model,0);');
-catch
+if exist('gurobi','file')~=3
+    error('Gurobi not installed or cannot be found in MATLAB path.')
+else
     try
-        setRavenSolver(oldSolver);
-    catch
-        rmpref('RAVEN','solver');
+        % Try all three types of flux minimization
+        evalc('sol=solveLP(model,3);');
+        evalc('sol=solveLP(model,1);');
+        evalc('sol=solveLP(model,0);');
+    catch ME
+        try
+            setRavenSolver(oldSolver);
+        catch
+            rmpref('RAVEN','solver');
+        end
+        error(ME.message)
     end
-    error('Solver not working')
 end
 try
     setRavenSolver(oldSolver);
@@ -71,10 +73,8 @@ verifyEqual(testCase,sol,solOut,'AbsTol',0.1)
 end
 
 function testSCIP(testCase)
-try
-    scip;
-catch
-    error('SCIP MEX binary not installed or not functional, test skipped')
+if exist('scip','file')~=3
+    error('SCIP MEX binary not installed or not functional.')
 end
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
@@ -106,7 +106,7 @@ end
 
 function testCobra(testCase)
 if exist('initCobraToolbox.m','file')~=2
-    error('COBRA Toolbox not installed or cannot be found in MATLAB path, test skipped')
+    error('COBRA Toolbox not installed or cannot be found in MATLAB path.')
 end
 sourceDir = fileparts(which(mfilename));
 load([sourceDir,'/test_data/ecoli_textbook.mat'], 'model');
