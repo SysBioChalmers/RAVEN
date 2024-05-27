@@ -31,7 +31,7 @@ function model=setParam(model, paramType, rxnList, params, var)
 
 paramType=convertCharArray(paramType);
 if ~any(strcmpi(paramType,{'lb','ub','eq','obj','rev','var','unc'}))
-    EM=['Incorrect parameter type: "' paramType '"'];
+    EM=['Incorrect parameter type: "' paramType{1} '"'];
     dispEM(EM);
 end
 if isnumeric(rxnList) || islogical(rxnList)
