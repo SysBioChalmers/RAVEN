@@ -307,6 +307,10 @@ else
     if isfield(newModel,'rxnReferences')
         emptyEntry = cellfun(@isempty,newModel.rxnReferences);
         newModel.rxnReferences(emptyEntry)={''};
+        diffNumel = numel(newModel.rxns) - numel(newModel.rxnReferences);
+        if diffNumel > 0
+            newModel.rxnReferences(end+1:end+diffNumel) = {''};
+        end
     end
     if any(isfield(model,geneCOBRAfields))
         for i=1:numel(model.genes)
