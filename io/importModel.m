@@ -637,7 +637,11 @@ for i=1:numel(modelSBML.reaction)
             subsystems{counter,1}=cellstr(parseNote(modelSBML.reaction(i).notes,'SUBSYSTEM'));
             subsystems{counter,1}(cellfun('isempty',subsystems{counter,1})) = [];
             if strfind(modelSBML.reaction(i).notes,'Confidence Level')
-                rxnconfidencescores(counter)=str2num(parseNote(modelSBML.reaction(i).notes,'Confidence Level'));
+                confScore = parseNote(modelSBML.reaction(i).notes,'Confidence Level');
+                if isempty(confScore)
+                    confScore = 0;
+                end
+                rxnconfidencescores(counter)=str2double(confScore);
             end
             rxnreferences{counter,1}=parseNote(modelSBML.reaction(i).notes,'AUTHORS');
             rxnnotes{counter,1}=parseNote(modelSBML.reaction(i).notes,'NOTES');
