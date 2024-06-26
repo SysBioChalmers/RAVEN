@@ -43,10 +43,12 @@ else
 end
 % If entry is broken of multiple lines, concatenate. Assumes at least 6
 % leading spaces to avoid metaData to be concatenated.
-newLine=regexp(line_raw,'^ {6,}([\w\(\)].*)','tokens');
-brokenLine=find(~cellfun(@isempty,newLine));
+newLine=regexp(line_raw,'^ {6,}([\w\(\)].*)','tokenExtents');
+brokenLine=find(~cellfun('isempty',newLine));
 for i=1:numel(brokenLine)
-    line_raw{brokenLine(i)-1} = strjoin({line_raw{brokenLine(i)-1},char(newLine{brokenLine(i)}{1})},' ');
+    extraLine = char(line_raw(brokenLine(i)));
+    extraLine = extraLine(newLine{brokenLine(i)}{1}(1):end);
+    line_raw{brokenLine(i)-1} = strjoin({line_raw{brokenLine(i)-1},extraLine},' ');
 end
 line_raw(brokenLine)=[];
 
@@ -488,7 +490,7 @@ if ~isempty(eccodes)
         eccodesCat=strjoin(eccodes(locs==i,2),';');
         model.eccodes{i,1}=eccodesCat;
     end
-    emptyEc=cellfun(@isempty,model.eccodes);
+    emptyEc=cellfun('isempty',model.eccodes);
     model.eccodes(emptyEc)={''};
 end
 
@@ -501,7 +503,7 @@ end
 [~, model.rxnComps] = ismember(model.rxnComps, model.comps);
 
 % Fill S-matrix
-rxnIdx = cellfun(@isempty, equations(:,1));
+rxnIdx = cellfun('isempty', equations(:,1));
 equations(rxnIdx,:) = '';
 rxnIdx = cell2mat(equations(:,1));
 [~,metIdx] = ismember(equations(:,2),model.mets);
@@ -528,7 +530,7 @@ end
 if numel(model.ub)<numel(model.rxns) %No UB reported = max
     model.ub(end+1:numel(model.rxns)-numel(model.ub),1) = double(model.annotation.defaultUB);
 end
-if ~all(cellfun(@isempty,model.rev))
+if ~all(cellfun('isempty',model.rev))
     model.rev = str2double(model.rev);
 else
     model.rev = [];
@@ -614,7 +616,7 @@ if isGECKO
         end
     end
     % Fill rxnEnzMat
-    rxnIdx              = cellfun(@isempty, enzStoich(:,1));
+    rxnIdx              = cellfun('isempty', enzStoich(:,1));
     enzStoich(rxnIdx,:) = '';
     rxnIdx              = cell2mat(enzStoich(:,1));
     [~,enzIdx]          = ismember(enzStoich(:,2),model.ec.enzymes);
@@ -629,7 +631,7 @@ if isGECKO
             ecGeckoCat=strjoin(ecGecko(locs==i,2),';');
             model.ec.eccodes{i,1}=ecGeckoCat;
         end
-        emptyEc=cellfun(@isempty,model.ec.eccodes);
+        emptyEc=cellfun('isempty',model.ec.eccodes);
         model.ec.eccodes(emptyEc)={''};
     end
 end
@@ -646,7 +648,7 @@ end
 if isnumeric(emptyEntry)
     emptyCells=isempty(model.(field));
 else
-    emptyCells=cellfun(@isempty,model.(field));
+    emptyCells=cellfun('isempty',model.(field));
 end
 if all(emptyCells) && ~keepEmpty
     model = rmfield(model, field);

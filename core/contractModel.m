@@ -25,7 +25,7 @@ function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,d
 %   NOTE: This code might not work for advanced grRules strings
 %         that involve nested expressions of 'and' and 'or'.
 %
-% Usage: [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse)
+% Usage: [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse,mets)
 
 if nargin<2
     distReverse=true;
