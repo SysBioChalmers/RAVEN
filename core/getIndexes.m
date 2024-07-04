@@ -92,6 +92,9 @@ if iscell(objects)
         if strcmpi(type,'metnames')
             indexes{i}=index;
         elseif ~isempty(index)
+            if length(index) > 1
+                error('There are multiple instances of object "%s" in the model, while "%s" type should be unique', objects{i}, type)
+            end
             indexes(i)=index;
         else
             error(['Could not find object ''' objects{i} ''' in the model']);
