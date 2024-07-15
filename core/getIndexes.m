@@ -37,10 +37,6 @@ type=char(type);
 
 indexes=[];
 
-if startsWith(type,'ec') && ~isfield(model,'ec')
-    error('Type %s cannot be used if no model.ec structure is present.',type)
-end
-
 switch type
     case 'rxns'
         searchIn=model.rxns;
@@ -73,10 +69,19 @@ switch type
         end
         return %None of the remaining function needs to run if metcomps
     case 'ecrxns'
+        if ~isfield(model,'ec')
+            error('Type %s cannot be used if no model.ec structure is present.',type)
+        end
         searchIn=model.ec.rxns;
     case 'ecenzymes'
+        if ~isfield(model,'ec')
+            error('Type %s cannot be used if no model.ec structure is present.',type)
+        end
         searchIn=model.ec.enzymes;
     case 'ecgenes'
+        if ~isfield(model,'ec')
+            error('Type %s cannot be used if no model.ec structure is present.',type)
+        end
         searchIn=model.ec.genes;
     otherwise
         if contains(objects,{'rxns','mets','metnames','metcomps','genes','ecgenes','ecenzymes','ecrxns'})
