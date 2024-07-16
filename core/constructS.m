@@ -120,7 +120,7 @@ for i=1:numel(equations)
                 coeff=1;
                 name=strtrim(metabolites{j});
             else
-                name=strtrim(metabolites{j}(space+1:end));
+                name=strtrim(metabolites{j}(space(1)+1:end));
             end
         end
         
