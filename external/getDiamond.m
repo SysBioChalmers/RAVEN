@@ -101,21 +101,19 @@ if developMode
     diamondReport.dbHashes{numel(diamondReport.dbHashes)+1} = char(regexp(message,'[a-f0-9]{32}','match'));
 end
 if status~=0
-    EM=['DIAMOND makedb did not run successfully, error: ', num2str(status)];
-    dispEM(EM,true);
+    error('DIAMOND makedb did not run successfully, error:\n%s',strip(message))
 end
 
 for i=1:numel(refFastaFiles)
     if ~hideVerbose
         fprintf(['Running DIAMOND blastp with "' modelIDs{i} '" against "' organismID{1} '"..\n']);
     end
-    [status, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' refFastaFiles{i} '" --out "' outFile '_' num2str(i) '" --db "' fullfile(tmpDB) '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
+    [status, message]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' refFastaFiles{i} '" --out "' outFile '_' num2str(i) '" --db "' fullfile(tmpDB) '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
     if developMode
         diamondReport.diamondTxtOutput{numel(diamondReport.diamondTxtOutput)+1}=importdata([outFile '_' num2str(i)]);
     end
     if status~=0
-        EM=['DIAMOND blastp did not run successfully, error: ', num2str(status)];
-        dispEM(EM,true);
+        error('DIAMOND blastp did not run successfully, error:\n%s',strip(message))
     end
 end
 delete([tmpDB filesep 'tmpDB*']);
@@ -126,19 +124,17 @@ for i=1:numel(refFastaFiles)
     if ~hideVerbose
         fprintf(['Running DIAMOND blastp with "' organismID{1} '" against "' modelIDs{i} '"..\n']);
     end
-    [status, message]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" makedb --in "' refFastaFiles{i} '" --db "' fullfile(tmpDB) '"']);
+    [status, message1]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" makedb --in "' refFastaFiles{i} '" --db "' fullfile(tmpDB) '"']);
     if status~=0
-        EM=['DIAMOND makedb did not run successfully, error: ', num2str(status)];
-        dispEM(EM,true);
+        error('DIAMOND makedb did not run successfully, error:\n%s',strip(message1))
     end
-    [status, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' fastaFile{1} '" --out "' outFile '_r' num2str(i) '" --db "' fullfile(tmpDB) '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores]);
+    [status, message]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' fastaFile{1} '" --out "' outFile '_r' num2str(i) '" --db "' fullfile(tmpDB) '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores]);
     if developMode
-        diamondReport.dbHashes{numel(diamondReport.dbHashes)+1} = char(regexp(message,'[a-f0-9]{32}','match'));
+        diamondReport.dbHashes{numel(diamondReport.dbHashes)+1} = char(regexp(message1,'[a-f0-9]{32}','match'));
         diamondReport.diamondTxtOutput{numel(diamondReport.diamondTxtOutput)+1}=importdata([outFile '_r' num2str(i)]);
     end
     if status~=0
-        EM=['DIAMOND blastp did not run successfully, error: ', num2str(status)];
-        dispEM(EM,true);
+        error('DIAMOND blastp did not run successfully, error:\n%s',strip(message))
     end
     delete([tmpDB filesep 'tmpDB*']);
 end

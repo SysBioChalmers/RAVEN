@@ -166,7 +166,6 @@ if nSamples > 0
     [~, I]=ismember(model.rxns,originalRxns);
     solutions=zeros(numel(originalRxns),nSamples);
     solutions(I,:)=sols;
-    solutions=sparse(solutions);
 else
     solutions=[];
 end

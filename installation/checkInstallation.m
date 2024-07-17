@@ -199,12 +199,6 @@ else
     printOrange('Fail\n')
 end
 
-if res(1).Passed~=1 && res(3).Passed~=1 && exist('vaderSentimentScores.m','file')==2
-    fprintf(['   > MATLAB Text Analytics Toolbox found. This should be\n'...
-             '     uninstalled if you want to read/write Excel files.\n'...
-             '     See RAVEN GitHub Issues page for instructions.\n'])
-end
-
 %Check if it is possible to import an YAML model
 % fprintf(' > Checking import of model in YAML format:\t\t\t');
 % try

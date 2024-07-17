@@ -1014,6 +1014,10 @@ end
 model.grRules = grRules;
 model.rxnGeneMat = rxnGeneMat;
 
+%Fix subsystems
+emptySubSystems=cellfun(@isempty, model.subSystems);
+model.subSystems(emptySubSystems)={{''}};
+
 %Add the description to the reactions
 for i=1:numel(model.rxns)
     if ~isempty(model.rxnNotes{i})
