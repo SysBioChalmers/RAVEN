@@ -63,6 +63,15 @@ ravenPath=findRAVENroot();
 %Generate temporary names for BLAST databases and output files
 tmpDB=tempname;
 outFile=tempname;
+if ispc && contains(tmpDB,' ')
+    warning(['MATLAB assigned ''%s'' as temporary file path, but it '...
+             'contains a space character, which is not compatible with '...
+             'BLAST. Instead, a temporary folder will be initiated at '...
+             '''C:\\tempRAVEN\\'' which should manually be removed when '...
+             'finished.'],tmpDB)
+    tmpDB=tempname('C:\tempRAVEN');
+    outFile=tempname('C:\tempRAVEN');
+end
 
 %Check for existence of files. If no full path is specified for a file,
 %assume that it is in the current folder
