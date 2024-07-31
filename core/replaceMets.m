@@ -1,21 +1,28 @@
-function model=replaceMets(model,metabolite,replacement,verbose)
+function [model, removedRxns, idxDuplRxns]=replaceMets(model,metabolite,replacement,verbose)
 % replaceMets
 %   Replaces metabolite names and annotation with replacement metabolite
 %   that is already in the model. If this results in duplicate metabolites,
 %   the replacement metabolite will be kept, while the S matrix is updated
-%   to use the replacement metabolite instead.
+%   to use the replacement metabolite instead. At the end, contractModel is
+%   run to remove any duplicate reactions that might have occured.
 %
-%   model               a model structure
-%   metabolite          string with name of metabolite to be replace
-%   replacement         string with name of replacement metabolite
-%   verbose             logical whether to print the ids of reactions that
-%                       involve the replaced metabolite (optional, default
-%                       false)
+% Input:
+%   model           a model structure
+%   metabolite      string with name of metabolite to be replace
+%   replacement     string with name of replacement metabolite
+%   verbose         logical whether to print the ids of reactions that
+%                   involve the replaced metabolite (optional, default
+%                   false)
+% 
+% Output:
+%   model           model structure with selected metabolites replaced
+%   removedRxns     identifiers of duplicate reactions that were removed
+%   idxDuplRxns     index of removedRxns in original model
 %
-%   This function is useful when the model contains both 'oxygen' and 'o2'
-%   as metabolites.
+% Note: This function is useful when the model contains both 'oxygen' and
+% 'o2' as metabolites. 
 %
-% Usage: model=replaceMets(model,metabolite,replacement,verbose)
+% Usage: [model, removedRxns, idxDuplRxns] = replaceMets(model, metabolite, replacement, verbose)
 
 metabolite=char(metabolite);
 replacement=char(replacement);
@@ -116,5 +123,5 @@ if ~isempty(idxDelete)
 end
 
 % This could now have created duplicate reactions. Contract model.
-model=contractModel(model);
+model=contractModel(model,[],repIdx);
 end
