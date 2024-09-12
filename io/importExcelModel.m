@@ -847,7 +847,7 @@ for i=1:numel(strings)
             elseif any(strfind(I{j},':'))
                 index=max(strfind(I{j},':'));
             end
-            if any(index)
+            if exist('index','var') & any(index)
                 miriamStruct{i}.name{startIndex+j}=I{j}(1:index-1);
                 miriamStruct{i}.value{startIndex+j}=I{j}(index+1:end);
             else
