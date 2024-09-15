@@ -120,6 +120,21 @@ if isfield(model,'grRules')
         EM='The "grRules" field must be a cell array of strings';
         dispEM(EM,throwErrors);
     end
+    if ~isfield(model,'genes')
+        EM='If "grRules" field exists, the model should also contain a "genes" field';
+        dispEM(EM,throwErrors);
+    else
+        geneList = strjoin(model.grRules);
+        geneList = regexp(geneList,' |)|(|and|or','split'); % Remove all grRule punctuation
+        geneList = geneList(~cellfun(@isempty,geneList));  % Remove spaces and empty genes
+        geneList = setdiff(unique(geneList),model.genes);
+        if ~isempty(geneList)
+            problemGrRules = model.rxns(contains(model.grRules,geneList));
+            problemGrRules = strjoin(problemGrRules(:),'; ');
+            EM=['The reaction(s) "' problemGrRules '" contain the following genes in its "grRules" field, but these are not in the "genes" field:'];
+            dispEM(EM,throwErrors,geneList);
+        end
+    end
 end
 if isfield(model,'rxnComps')
     if ~isnumeric(model.rxnComps)
