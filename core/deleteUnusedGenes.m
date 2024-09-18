@@ -4,11 +4,11 @@ function reducedModel=deleteUnusedGenes(model,verbose)
 %
 %   model           a model structure
 %   verbose         0 for silent; 1 for printing number of deleted genes;
-%                   2 for printing the list of deleted genes (opt, default 1)
+%                   2 for printing the list of deleted genes (optional, default 1)
 %
 %   reducedModel    an updated model structure
 %
-%   Usage: reducedModel=deleteUnusedGenes(model)
+% Usage: reducedModel=deleteUnusedGenes(model)
 
 if nargin<2
     verbose=1;

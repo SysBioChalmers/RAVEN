@@ -7,17 +7,17 @@ function followChanged(model,fluxesA,fluxesB, cutOffChange, cutOffFlux, cutOffDi
 %   fluxesA         flux vector for the test case
 %   fluxesB         flux vector for the reference test
 %   cutOffChange	reactions where the fluxes differ by less than
-%                   this many percent won't be printed (opt, default 10^-8)
+%                   this many percent won't be printed (optional, default 10^-8)
 %   cutOffFlux      reactions where the absolute value of both fluxes
-%                   are below this value won't be printed (opt,
+%                   are below this value won't be printed (optional,
 %                   default 10^-8)
 %   cutOffDiff      reactions where the fluxes differ by less than
-%                   cutOffDiff won't be printed (opt, default 10^-8)
+%                   cutOffDiff won't be printed (optional, default 10^-8)
 %   metaboliteList  cell array of metabolite names. Only reactions
 %                   involving any of these metabolites will be
-%                   printed (opt)
+%                   printed (optional)
 %
-%   Usage: followChanged(model,fluxesA,fluxesB, cutOffChange, cutOffFlux,
+% Usage: followChanged(model,fluxesA,fluxesB, cutOffChange, cutOffFlux,
 %           cutOffDiff, metaboliteList)
 
 %Checks if a cut off flux has been set
@@ -32,6 +32,8 @@ if nargin<6
 end
 if nargin<7
     metaboliteList=[];
+else
+    metaboliteList=convertCharArray(metaboliteList);
 end
 
 %If a metabolite list is to be used, then find all the reactions involving

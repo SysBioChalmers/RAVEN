@@ -5,14 +5,14 @@ function compStruct = compareMultipleModels(models,printResults,plotResults,grou
 %
 %   models              cell array of two or more models
 %   printResults        true if the results should be printed on the screen
-%                       (opt, default false)
+%                       (optional, default false)
 %   plotResults         true if the results should be plotted
-%                       (opt, default false)
+%                       (optional, default false)
 %   groupVector         numeric vector or cell array for grouping similar 
-%                       models, i.e. by tissue (opt, default, all models
+%                       models, i.e. by tissue (optional, default, all models
 %                       ungrouped)
 %   funcCompare         logical, should a functional comparison be run
-%                       (opt,default, false)
+%                       (optional,default, false)
 %   taskFile            string containing the name of the task file to use
 %                       for the functional comparison (should be an .xls or 
 %                       .xlsx file, required for functional comparison)
@@ -38,8 +38,13 @@ function compStruct = compareMultipleModels(models,printResults,plotResults,grou
 %                           task
 %           tasks           vector containing names of all tasks
 %
-%   Usage: compStruct=compareMultipleModels(models,printResults,...
+% Usage: compStruct=compareMultipleModels(models,printResults,...
 %                       plotResults,groupVector,funcCompare,taskFile);
+
+%% Stats toolbox required
+if ~(exist('mdscale.m','file') && exist('pdist.m','file') && exist('squareform.m','file') && exist('tsne.m','file'))
+    error('The MATLAB Statistics and Machine Learning Toolbox is required for this function')
+end
 
 %% Set up input defaults
 if nargin < 2 || isempty(printResults)
@@ -62,6 +67,8 @@ if nargin < 5 || isempty(funcCompare)
 end
 if nargin < 6
     taskFile = [];
+else
+    taskFile=char(taskFile);
 end
 if numel(models) <= 1
     EM = 'Cannot compare only one model. Use printModelStats if you want a summary of a model';
@@ -182,16 +189,14 @@ if exist('tsne') > 0
     proj_coords = tsne(double(binary_matrix'),'Distance','hamming','NumDimensions',3); % 3D
     compStruct.structCompMap = proj_coords;
     axis_labels = {'tSNE 1';'tSNE 2';'tSNE 3'};
-    fprintf('*** Done \n\n')
-else
-    fprintf('\nWARNING: Could not complete full structural comparison because the function \n')
-    fprintf('         "tsne" does not exist in your Matlab version. \n')
-    fprintf('         Using MDS to project data instead of tSNE. \n')
-    fprintf('         Please upgrade to Matlab 2017b or higher for full functionality. \n\n')
+else % Seems odd to use mdscale if tsne is not found, as both are
+     % distributed with stats toolbox. If tsne is not present, then also
+     % mdscale is missing. Anyway, will leave this for now.
     [proj_coords,stress,disparities] = mdscale(pdist(double(binary_matrix'),'hamming'),3);
     compStruct.structCompMap = proj_coords;
     axis_labels = {'MDS 1';'MDS 2';'MDS 3'};
 end
+fprintf('*** Done \n\n')
 
 % plot structure comparison results
 if plotResults == true

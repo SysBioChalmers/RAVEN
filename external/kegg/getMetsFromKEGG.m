@@ -28,7 +28,7 @@ function model=getMetsFromKEGG(keggPath)
 %   should remove the keggMets.mat file if you want to rebuild the model
 %   structure from a newer version of KEGG.
 %               
-%   Usage: model=getMetsFromKEGG(keggPath)
+% Usage: model=getMetsFromKEGG(keggPath)
 %
 % NOTE: This is how one entry looks in the file
 %
@@ -64,17 +64,18 @@ function model=getMetsFromKEGG(keggPath)
 
 if nargin<1
     keggPath='RAVEN/external/kegg';
+else
+    keggPath=char(keggPath);
 end
 
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+ravenPath=findRAVENroot();
 metsFile=fullfile(ravenPath,'external','kegg','keggMets.mat');
 if exist(metsFile, 'file')
     fprintf(['Importing KEGG metabolites from ' strrep(metsFile,'\','/') '... ']);
     load(metsFile);
 else
     fprintf(['NOTE: Cannot locate ' strrep(metsFile,'\','/') ', it will therefore be generated from the local KEGG database\n']);
-    if ~exist(fullfile(keggPath,'compound'),'file') || ~exist(fullfile(keggPath,'compound.inchi'),'file')
+    if ~isfile(fullfile(keggPath,'compound')) || ~isfile(fullfile(keggPath,'compound.inchi'))
         EM=fprintf(['The files ''compound'' and ''compound.inchi'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
         dispEM(EM);
     else
@@ -83,11 +84,11 @@ else
         model.id='KEGG';
         model.name='Automatically generated from KEGG database';
         
-        %Preallocate memory for 30000 metabolites
-        model.mets=cell(30000,1);
-        model.metNames=cell(30000,1);
-        model.metFormulas=cell(30000,1);
-        model.metMiriams=cell(30000,1);
+        %Preallocate memory for 50000 metabolites
+        model.mets=cell(50000,1);
+        model.metNames=cell(50000,1);
+        model.metFormulas=cell(50000,1);
+        model.metMiriams=cell(50000,1);
         
         %First load information on metabolite ID, metabolite name,
         %composition, and ChEBI

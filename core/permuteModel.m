@@ -15,7 +15,7 @@ function newModel=permuteModel(model, indexes, type)
 % 	Usage: newModel=permuteModel(model, indexes, type)
 
 newModel=model;
-indexes=indexes(:);
+type=char(type);
 
 switch type
     case 'rxns'
@@ -76,6 +76,9 @@ switch type
         if isfield(newModel,'rxnConfidenceScores')
             newModel.rxnConfidenceScores=newModel.rxnConfidenceScores(indexes);
         end
+        if isfield(newModel,'rxnDeltaG')
+            newModel.rxnDeltaG=newModel.rxnDeltaG(indexes);
+        end
     case 'mets'
         if isfield(newModel,'mets')
             newModel.mets=newModel.mets(indexes);
@@ -101,6 +104,9 @@ switch type
         if isfield(newModel,'inchis')
             newModel.inchis=newModel.inchis(indexes);
         end
+        if isfield(newModel,'metSmiles')
+            newModel.metSmiles=newModel.metSmiles(indexes);
+        end
         if isfield(newModel,'metFormulas')
             newModel.metFormulas=newModel.metFormulas(indexes);
         end
@@ -109,6 +115,9 @@ switch type
         end
         if isfield(newModel,'metCharges')
             newModel.metCharges=newModel.metCharges(indexes);
+        end
+        if isfield(newModel,'metDeltaG')
+            newModel.metDeltaG=newModel.metDeltaG(indexes);
         end
     case 'genes'
         if isfield(newModel,'genes')

@@ -2,21 +2,23 @@ function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,remove
 % removeReactions
 %   Deletes a set of reactions from a model
 %
+% Input:
 %   model             a model structure
 %   rxnsToRemove      either a cell array of reaction IDs, a logical vector
-%                     with the same number of elements as reactions in the model,
-%                     or a vector of indexes to remove
-%   removeUnusedMets  remove metabolites that are no longer in use (opt,
+%                     with the same number of elements as reactions in the
+%                     model, or a vector of indexes to remove
+%   removeUnusedMets  remove metabolites that are no longer in use
+%                     (optional, default false)
+%   removeUnusedGenes remove genes that are no longer in use (optional,
 %                     default false)
-%   removeUnusedGenes remove genes that are no longer in use (opt, default
-%                     false)
-%   removeUnusedComps remove compartments that are no longer in use (opt,
-%                     default false)
+%   removeUnusedComps remove compartments that are no longer in use
+%                     (optional, default false)
 %
+% Output:
 %   reducedModel      an updated model structure
 %
-%   Usage: reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,...
-%           removeUnusedGenes,removeUnusedComps)
+% Usage: reducedModel = removeReactions(model, rxnsToRemove, removeUnusedMets,...
+%                           removeUnusedGenes, removeUnusedComps)
 
 if nargin<3
     removeUnusedMets=false;
@@ -27,9 +29,8 @@ end
 if nargin<5
     removeUnusedComps=false;
 end
-
-if ischar(rxnsToRemove)
-    rxnsToRemove={rxnsToRemove};
+if ~islogical(rxnsToRemove) && ~isnumeric(rxnsToRemove)
+    rxnsToRemove=convertCharArray(rxnsToRemove);
 end
 
 reducedModel=model;
@@ -93,6 +94,9 @@ if ~isempty(rxnsToRemove) || removeUnusedMets || removeUnusedGenes
         end
         if isfield(reducedModel,'rxnConfidenceScores')
             reducedModel.rxnConfidenceScores(indexesToDelete,:)=[];
+        end
+        if isfield(reducedModel,'rxnDeltaG')
+            reducedModel.rxnDeltaG(indexesToDelete,:)=[];
         end
         if isfield(reducedModel,'pwys')
             reducedModel.pwys(indexesToDelete,:)=[];

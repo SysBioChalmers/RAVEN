@@ -40,7 +40,7 @@ function geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
 %
 %   geneScoreStructure  a structure to be used in predictLocalization
 %
-%   Usage: geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
+% Usage: geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
 
 varargin=upper(varargin);
 
@@ -69,7 +69,7 @@ end
 %Check that there are no compartments in the rules that are not in the
 %geneScoreStructure.
 uComps=upper(geneScoreStructure.compartments);
-J=[uComps;{'OTHER'}];
+J=[uComps,{'OTHER'}];
 
 if ~isempty(setdiff([toKeep;toMerge],J))
     EM='There are compartment in the rules that are not in geneScoreStructure.compartments';

@@ -24,18 +24,26 @@
 <div class="box"><strong>contractModel</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse) </strong></div>
+<div class="box"><strong>function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse,mets) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> contractModel
    Contracts a model by grouping all identical reactions. Similar to the
    deleteDuplicates part in simplifyModel but more care is taken here
-   when it comes to gene associations
+   when it comes to gene associations. If the duplicated reactions have
+   '_EXP_*' suffixes (where * is a digit), then the model is assumed to
+   have been passed through expandModel, and these suffixes are removed
+   here.
 
    model                  a model structure
    distReverse            distinguish reactions with same metabolites
                           but different reversibility as different
-                          reactions (opt, default true)
+                          reactions (optional, default true)
+   mets                   string or cell array of strings with metabolite
+                          identifiers, whose involved reactions should be
+                          checked for duplication (optional, by default all
+                          reactions are considered) (option is used by
+                          replaceMets)
 
    reducedModel           a model structure without duplicate reactions
    removedRxns            cell array for the removed duplicate reactions
@@ -45,16 +53,16 @@
    NOTE: This code might not work for advanced grRules strings
          that involve nested expressions of 'and' and 'or'.
 
-   Usage: [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse)</pre></div>
+ Usage: [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse,mets)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>	removeReactions</li><li><a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>	sortModel</li><li><a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>	standardizeGrRules</li></ul>
+<li><a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>	dispEM</li><li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>	getIndexes</li><li><a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>	removeReactions</li><li><a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>	sortModel</li><li><a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>	standardizeGrRules</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="mergeCompartments.html" class="code" title="function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet,distReverse)">mergeCompartments</a>	mergeCompartments</li><li><a href="replaceMets.html" class="code" title="function model=replaceMets(model,metabolite,replacement,verbose)">replaceMets</a>	replaceMets</li><li><a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>	simplifyModel</li></ul>
+<li><a href="mergeCompartments.html" class="code" title="function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet,distReverse)">mergeCompartments</a>	mergeCompartments</li><li><a href="replaceMets.html" class="code" title="function [model, removedRxns, idxDuplRxns]=replaceMets(model,metabolite,replacement,verbose)">replaceMets</a>	replaceMets</li><li><a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>	simplifyModel</li></ul>
 <!-- crossreference -->
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -62,162 +70,182 @@ This function is called by:
 <li><a href="#_sub1" class="code">function grRule = ignoreORinComplex(grRule)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse,mets)</a>
 0002 <span class="comment">% contractModel</span>
 0003 <span class="comment">%   Contracts a model by grouping all identical reactions. Similar to the</span>
 0004 <span class="comment">%   deleteDuplicates part in simplifyModel but more care is taken here</span>
-0005 <span class="comment">%   when it comes to gene associations</span>
-0006 <span class="comment">%</span>
-0007 <span class="comment">%   model                  a model structure</span>
-0008 <span class="comment">%   distReverse            distinguish reactions with same metabolites</span>
-0009 <span class="comment">%                          but different reversibility as different</span>
-0010 <span class="comment">%                          reactions (opt, default true)</span>
-0011 <span class="comment">%</span>
-0012 <span class="comment">%   reducedModel           a model structure without duplicate reactions</span>
-0013 <span class="comment">%   removedRxns            cell array for the removed duplicate reactions</span>
-0014 <span class="comment">%   indexedDuplicateRxns   indexed cell array for the removed duplicate</span>
-0015 <span class="comment">%                          reactions (multiple valuess separated by semicolon)</span>
-0016 <span class="comment">%</span>
-0017 <span class="comment">%   NOTE: This code might not work for advanced grRules strings</span>
-0018 <span class="comment">%         that involve nested expressions of 'and' and 'or'.</span>
+0005 <span class="comment">%   when it comes to gene associations. If the duplicated reactions have</span>
+0006 <span class="comment">%   '_EXP_*' suffixes (where * is a digit), then the model is assumed to</span>
+0007 <span class="comment">%   have been passed through expandModel, and these suffixes are removed</span>
+0008 <span class="comment">%   here.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">%   model                  a model structure</span>
+0011 <span class="comment">%   distReverse            distinguish reactions with same metabolites</span>
+0012 <span class="comment">%                          but different reversibility as different</span>
+0013 <span class="comment">%                          reactions (optional, default true)</span>
+0014 <span class="comment">%   mets                   string or cell array of strings with metabolite</span>
+0015 <span class="comment">%                          identifiers, whose involved reactions should be</span>
+0016 <span class="comment">%                          checked for duplication (optional, by default all</span>
+0017 <span class="comment">%                          reactions are considered) (option is used by</span>
+0018 <span class="comment">%                          replaceMets)</span>
 0019 <span class="comment">%</span>
-0020 <span class="comment">%   Usage: [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse)</span>
-0021 
-0022 <span class="keyword">if</span> nargin&lt;2
-0023     distReverse=true;
-0024 <span class="keyword">end</span>
-0025 
-0026 <span class="comment">%First sort the model so that reversible reactions are in the same</span>
-0027 <span class="comment">%direction</span>
-0028 modelS=<a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>(model);
+0020 <span class="comment">%   reducedModel           a model structure without duplicate reactions</span>
+0021 <span class="comment">%   removedRxns            cell array for the removed duplicate reactions</span>
+0022 <span class="comment">%   indexedDuplicateRxns   indexed cell array for the removed duplicate</span>
+0023 <span class="comment">%                          reactions (multiple valuess separated by semicolon)</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">%   NOTE: This code might not work for advanced grRules strings</span>
+0026 <span class="comment">%         that involve nested expressions of 'and' and 'or'.</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% Usage: [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse,mets)</span>
 0029 
-0030 <span class="comment">%Get a list of duplicate reactions</span>
-0031 <span class="keyword">if</span> distReverse
-0032     x=[modelS.S; model.rev']';
-0033 <span class="keyword">else</span>
-0034     x=modelS.S';
-0035 <span class="keyword">end</span>
-0036 [~,I,J] = unique(x,<span class="string">'rows'</span>,<span class="string">'first'</span>);
+0030 <span class="keyword">if</span> nargin&lt;2
+0031     distReverse=true;
+0032 <span class="keyword">end</span>
+0033 
+0034 <span class="comment">%First sort the model so that reversible reactions are in the same</span>
+0035 <span class="comment">%direction</span>
+0036 modelS=<a href="sortModel.html" class="code" title="function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)">sortModel</a>(model);
 0037 
-0038 <span class="comment">%Initialize cell array of indexedDuplicateRxns</span>
-0039 indexedDuplicateRxns=cell(numel(model.rxns),1);
-0040 indexedDuplicateRxns(:)={<span class="string">''</span>};
-0041 
-0042 duplicateRxns=setdiff(1:numel(model.rxns),I);
-0043 mergeTo=I(J(duplicateRxns));
-0044 
-0045 mergedRxns=unique(mergeTo);
-0046 
-0047 <span class="comment">%Now add all the info from this one. Print a warning if they have different</span>
-0048 <span class="comment">%bounds or objective function coefficients. Uses the widest bounds and</span>
-0049 <span class="comment">%largest magnitude of objective coefficient</span>
-0050 <span class="keyword">for</span> i=1:numel(mergedRxns)
-0051     duplRxn=transpose([mergedRxns(i),duplicateRxns(mergeTo==mergedRxns(i))]);
-0052     <span class="keyword">if</span> numel(unique(model.lb(duplRxn)))&gt;1
-0053         EM=[<span class="string">'Duplicates of reaction '</span> model.rxns{mergedRxns(i)} <span class="string">' have different lower bound. Uses the most negative/smallest lower bound'</span>];
-0054         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0055         model.lb(mergedRxns(i))=min(model.lb(duplRxn));
-0056     <span class="keyword">end</span>
-0057     <span class="keyword">if</span> numel(unique(model.ub(duplRxn)))&gt;1
-0058         EM=[<span class="string">'Duplicates of reaction '</span> model.rxns{mergedRxns(i)} <span class="string">' have different upper bound. Uses the most positive/largest upper bound'</span>];
-0059         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0060         model.ub(mergedRxns(i))=max(model.ub(duplRxn));
-0061     <span class="keyword">end</span>
-0062     <span class="keyword">if</span> numel(unique(model.c(duplRxn)))&gt;1
-0063         EM=[<span class="string">'Duplicates of reaction '</span> model.rxns{mergedRxns(i)} <span class="string">' has a different objective function coefficient. Uses the largest coefficient'</span>];
-0064         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0065         model.c(mergedRxns(i))=max(model.c(duplRxn));
-0066     <span class="keyword">end</span>
-0067     <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>) &amp;&amp; any(~isempty(model.grRules(duplRxn)))
-0068         rules=model.grRules(duplRxn);
-0069         allRules={};
-0070         <span class="keyword">for</span> j=1:numel(rules)
-0071             rules{j}=<a href="#_sub1" class="code" title="subfunction grRule = ignoreORinComplex(grRule)">ignoreORinComplex</a>(rules{j});
-0072             allRules=[allRules regexp(rules{j},<span class="string">' or '</span>,<span class="string">'split'</span>)];
-0073         <span class="keyword">end</span>
-0074         allRules=unique(allRules);
-0075         allRules=strrep(allRules,<span class="string">'__OR__'</span>,<span class="string">' or '</span>);
-0076         andRules=contains(allRules,<span class="string">' and '</span>);
-0077         allRules(andRules)=strcat(<span class="string">'('</span>,allRules(andRules),<span class="string">')'</span>);
-0078         <span class="keyword">if</span> numel(allRules)==1
-0079             model.grRules{mergedRxns(i)}=allRules{1};
-0080         <span class="keyword">else</span>
-0081             model.grRules{mergedRxns(i)}=strjoin(allRules,<span class="string">' or '</span>);
-0082         <span class="keyword">end</span>
-0083     <span class="keyword">end</span>    
-0084     <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>) &amp;&amp; any(~isempty(model.eccodes(duplRxn)))
-0085         codes=model.eccodes(duplRxn);
-0086         allCodes={};
-0087         <span class="keyword">for</span> j=1:numel(codes)
-0088             allCodes=[allCodes regexp(codes{j},<span class="string">';'</span>,<span class="string">'split'</span>)];
-0089         <span class="keyword">end</span>
-0090         allCodes=unique(allCodes);
-0091         <span class="keyword">if</span> numel(allCodes)==1
-0092             model.eccodes{mergedRxns(i)}=allCodes{1};
-0093         <span class="keyword">else</span>
-0094             model.eccodes{mergedRxns(i)}=strjoin(allCodes,<span class="string">';'</span>);
-0095         <span class="keyword">end</span>
-0096     <span class="keyword">end</span>
-0097     <span class="comment">%Generate indexedDuplicateRxns cell array</span>
-0098     <span class="keyword">if</span> numel(duplRxn)==2
-0099         indexedDuplicateRxns{duplRxn(1)}=model.rxns{duplRxn(2)};
-0100     <span class="keyword">else</span>
-0101         indexedDuplicateRxns{duplRxn(1)}=strjoin(model.rxns(duplRxn(2:end)),<span class="string">';'</span>);
-0102     <span class="keyword">end</span>
-0103 <span class="keyword">end</span>
-0104 
-0105 <span class="comment">%Delete the duplicate reactions</span>
-0106 reducedModel=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,duplicateRxns);
-0107 removedRxns=model.rxns(duplicateRxns);
-0108 [~, index]=ismember(reducedModel.rxns,model.rxns);
-0109 indexedDuplicateRxns=indexedDuplicateRxns(index);
-0110 
-0111 <span class="keyword">if</span> isfield(reducedModel,<span class="string">'rxnGeneMat'</span>)
-0112     <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
-0113     [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(reducedModel,true);
-0114     reducedModel.grRules = grRules;
-0115     reducedModel.rxnGeneMat = rxnGeneMat;
-0116 <span class="keyword">end</span>
-0117 <span class="keyword">end</span>
-0118 
-0119 <a name="_sub1" href="#_subfunctions" class="code">function grRule = ignoreORinComplex(grRule)</a>
-0120 <span class="comment">%In a grRule, if OR relationship is nested in an AND relationship, then</span>
-0121 <span class="comment">%obfuscate the OR before splitting isoenzymes</span>
-0122 grRule=[<span class="string">'('</span> grRule <span class="string">')'</span>];
-0123 brOpen=strfind(grRule,<span class="string">'('</span>);
-0124 brClose=strfind(grRule,<span class="string">')'</span>);
-0125 andPos=strfind(grRule,<span class="string">' and '</span>);
-0126 <span class="comment">%Find opening bracket closest before AND</span>
-0127 stillCapturing = 0;
-0128 <span class="keyword">for</span> i=1:numel(andPos)
-0129     searchPos = andPos(i);
-0130     <span class="keyword">while</span> stillCapturing == 0
-0131         closestOpen = brOpen(max(find(brOpen&lt;searchPos)));
-0132         inbetweenClose = brClose(brClose&lt;searchPos &amp; brClose&gt;closestOpen);
-0133         <span class="keyword">if</span> ~isempty(inbetweenClose)
-0134             searchPos=max(inbetweenClose);
-0135         <span class="keyword">else</span>
-0136             stillCapturing = 1;
-0137             beginPos = closestOpen;
-0138         <span class="keyword">end</span>
-0139     <span class="keyword">end</span>
-0140     stillCapturing = 0;
-0141     searchPos = andPos(i);
-0142     <span class="keyword">while</span> stillCapturing == 0
-0143         closestClose = brClose(min(find(brClose&gt;searchPos)));
-0144         inbetweenOpen = brOpen(brOpen&gt;searchPos &amp; brOpen&lt;closestOpen);
-0145         <span class="keyword">if</span> ~isempty(inbetweenOpen)
-0146             searchPos=min(closestClose);
-0147         <span class="keyword">else</span>
-0148             stillCapturing = 1;
-0149             endPos = closestClose;
-0150         <span class="keyword">end</span>
-0151     <span class="keyword">end</span>
-0152     replacePart=regexprep(grRule(beginPos:endPos),<span class="string">' or '</span>,<span class="string">'__OR__'</span>);
-0153     grRule=strrep(grRule,grRule(beginPos:endPos),replacePart);
-0154 <span class="keyword">end</span>
-0155 grRule=grRule(2:end-1);
-0156 <span class="keyword">end</span></pre></div>
+0038 <span class="comment">%Get a list of duplicate reactions</span>
+0039 <span class="keyword">if</span> distReverse
+0040     x=[modelS.S; model.rev']';
+0041 <span class="keyword">else</span>
+0042     x=modelS.S';
+0043 <span class="keyword">end</span>
+0044 <span class="keyword">if</span> nargin&gt;2
+0045     toCheck = <a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,mets,<span class="string">'mets'</span>);
+0046     [~, toCheck] = find(modelS.S(toCheck,:));
+0047     x = [x, (1:size(x,1))']; <span class="comment">% Make all other rxns unique by additional column</span>
+0048     x(toCheck,end) = 0;
+0049 <span class="keyword">end</span>
+0050 
+0051 [~,I,J] = unique(x,<span class="string">'rows'</span>,<span class="string">'first'</span>);
+0052 
+0053 <span class="comment">%Initialize cell array of indexedDuplicateRxns</span>
+0054 indexedDuplicateRxns=cell(numel(model.rxns),1);
+0055 indexedDuplicateRxns(:)={<span class="string">''</span>};
+0056 
+0057 duplicateRxns=setdiff(1:numel(model.rxns),I);
+0058 mergeTo=I(J(duplicateRxns));
+0059 
+0060 mergedRxns=unique(mergeTo);
+0061 
+0062 <span class="comment">%Now add all the info from this one. Print a warning if they have different</span>
+0063 <span class="comment">%bounds or objective function coefficients. Uses the widest bounds and</span>
+0064 <span class="comment">%largest magnitude of objective coefficient</span>
+0065 <span class="keyword">for</span> i=1:numel(mergedRxns)
+0066     duplRxn=transpose([mergedRxns(i),duplicateRxns(mergeTo==mergedRxns(i))]);
+0067     <span class="keyword">if</span> numel(unique(model.lb(duplRxn)))&gt;1
+0068         EM=[<span class="string">'Duplicates of reaction '</span> model.rxns{mergedRxns(i)} <span class="string">' have different lower bound. Uses the most negative/smallest lower bound'</span>];
+0069         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0070         model.lb(mergedRxns(i))=min(model.lb(duplRxn));
+0071     <span class="keyword">end</span>
+0072     <span class="keyword">if</span> numel(unique(model.ub(duplRxn)))&gt;1
+0073         EM=[<span class="string">'Duplicates of reaction '</span> model.rxns{mergedRxns(i)} <span class="string">' have different upper bound. Uses the most positive/largest upper bound'</span>];
+0074         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0075         model.ub(mergedRxns(i))=max(model.ub(duplRxn));
+0076     <span class="keyword">end</span>
+0077     <span class="keyword">if</span> numel(unique(model.c(duplRxn)))&gt;1
+0078         EM=[<span class="string">'Duplicates of reaction '</span> model.rxns{mergedRxns(i)} <span class="string">' has a different objective function coefficient. Uses the largest coefficient'</span>];
+0079         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0080         model.c(mergedRxns(i))=max(model.c(duplRxn));
+0081     <span class="keyword">end</span>
+0082     <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>) &amp;&amp; any(~isempty(model.grRules(duplRxn)))
+0083         rules=model.grRules(duplRxn);
+0084         allRules={};
+0085         <span class="keyword">for</span> j=1:numel(rules)
+0086             rules{j}=<a href="#_sub1" class="code" title="subfunction grRule = ignoreORinComplex(grRule)">ignoreORinComplex</a>(rules{j});
+0087             allRules=[allRules regexp(rules{j},<span class="string">' or '</span>,<span class="string">'split'</span>)];
+0088         <span class="keyword">end</span>
+0089         allRules=unique(allRules);
+0090         allRules=strrep(allRules,<span class="string">'__OR__'</span>,<span class="string">' or '</span>);
+0091         andRules=contains(allRules,<span class="string">' and '</span>);
+0092         allRules(andRules)=strcat(<span class="string">'('</span>,allRules(andRules),<span class="string">')'</span>);
+0093         <span class="keyword">if</span> numel(allRules)==1
+0094             model.grRules{mergedRxns(i)}=allRules{1};
+0095         <span class="keyword">else</span>
+0096             model.grRules{mergedRxns(i)}=strjoin(allRules,<span class="string">' or '</span>);
+0097         <span class="keyword">end</span>
+0098     <span class="keyword">end</span>    
+0099     <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>) &amp;&amp; any(~isempty(model.eccodes(duplRxn)))
+0100         codes=model.eccodes(duplRxn);
+0101         allCodes={};
+0102         <span class="keyword">for</span> j=1:numel(codes)
+0103             allCodes=[allCodes regexp(codes{j},<span class="string">';'</span>,<span class="string">'split'</span>)];
+0104         <span class="keyword">end</span>
+0105         allCodes=unique(allCodes);
+0106         <span class="keyword">if</span> numel(allCodes)==1
+0107             model.eccodes{mergedRxns(i)}=allCodes{1};
+0108         <span class="keyword">else</span>
+0109             model.eccodes{mergedRxns(i)}=strjoin(allCodes,<span class="string">';'</span>);
+0110         <span class="keyword">end</span>
+0111     <span class="keyword">end</span>
+0112     <span class="comment">%Generate indexedDuplicateRxns cell array</span>
+0113     <span class="keyword">if</span> numel(duplRxn)==2
+0114         indexedDuplicateRxns{duplRxn(1)}=model.rxns{duplRxn(2)};
+0115     <span class="keyword">else</span>
+0116         indexedDuplicateRxns{duplRxn(1)}=strjoin(model.rxns(duplRxn(2:end)),<span class="string">';'</span>);
+0117     <span class="keyword">end</span>
+0118     <span class="comment">%If all reactions have _EXP_* (where * is digit) as suffix, then the</span>
+0119     <span class="comment">%model had passed through expandModel(), and these suffixes are removed.</span>
+0120     <span class="keyword">if</span> all(~cellfun(@isempty,regexp(model.rxns(duplRxn),<span class="string">'_EXP_\d+$'</span>)))
+0121         model.rxns(duplRxn(1))=regexprep(model.rxns(duplRxn(1)),<span class="string">'_EXP_\d+$'</span>,<span class="string">''</span>);
+0122     <span class="keyword">end</span>
+0123 <span class="keyword">end</span>
+0124 
+0125 <span class="comment">%Delete the duplicate reactions</span>
+0126 reducedModel=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,duplicateRxns);
+0127 removedRxns=model.rxns(duplicateRxns);
+0128 [~, index]=ismember(reducedModel.rxns,model.rxns);
+0129 indexedDuplicateRxns=indexedDuplicateRxns(index);
+0130 
+0131 <span class="keyword">if</span> isfield(reducedModel,<span class="string">'rxnGeneMat'</span>)
+0132     <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
+0133     [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(reducedModel,true);
+0134     reducedModel.grRules = grRules;
+0135     reducedModel.rxnGeneMat = rxnGeneMat;
+0136 <span class="keyword">end</span>
+0137 <span class="keyword">end</span>
+0138 
+0139 <a name="_sub1" href="#_subfunctions" class="code">function grRule = ignoreORinComplex(grRule)</a>
+0140 <span class="comment">%In a grRule, if OR relationship is nested in an AND relationship, then</span>
+0141 <span class="comment">%obfuscate the OR before splitting isoenzymes</span>
+0142 grRule=[<span class="string">'('</span> grRule <span class="string">')'</span>];
+0143 brOpen=strfind(grRule,<span class="string">'('</span>);
+0144 brClose=strfind(grRule,<span class="string">')'</span>);
+0145 andPos=strfind(grRule,<span class="string">' and '</span>);
+0146 <span class="comment">%Find opening bracket closest before AND</span>
+0147 stillCapturing = 0;
+0148 <span class="keyword">for</span> i=1:numel(andPos)
+0149     searchPos = andPos(i);
+0150     <span class="keyword">while</span> stillCapturing == 0
+0151         closestOpen = brOpen(max(find(brOpen&lt;searchPos)));
+0152         inbetweenClose = brClose(brClose&lt;searchPos &amp; brClose&gt;closestOpen);
+0153         <span class="keyword">if</span> ~isempty(inbetweenClose)
+0154             searchPos=max(inbetweenClose);
+0155         <span class="keyword">else</span>
+0156             stillCapturing = 1;
+0157             beginPos = closestOpen;
+0158         <span class="keyword">end</span>
+0159     <span class="keyword">end</span>
+0160     stillCapturing = 0;
+0161     searchPos = andPos(i);
+0162     <span class="keyword">while</span> stillCapturing == 0
+0163         closestClose = brClose(min(find(brClose&gt;searchPos)));
+0164         inbetweenOpen = brOpen(brOpen&gt;searchPos &amp; brOpen&lt;closestOpen);
+0165         <span class="keyword">if</span> ~isempty(inbetweenOpen)
+0166             searchPos=min(closestClose);
+0167         <span class="keyword">else</span>
+0168             stillCapturing = 1;
+0169             endPos = closestClose;
+0170         <span class="keyword">end</span>
+0171     <span class="keyword">end</span>
+0172     replacePart=regexprep(grRule(beginPos:endPos),<span class="string">' or '</span>,<span class="string">'__OR__'</span>);
+0173     grRule=strrep(grRule,grRule(beginPos:endPos),replacePart);
+0174 <span class="keyword">end</span>
+0175 grRule=grRule(2:end-1);
+0176 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

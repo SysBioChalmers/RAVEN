@@ -6,15 +6,17 @@ function consumed=canConsume(model,mets)
 %   model       a model structure
 %   mets        either a cell array of metabolite IDs, a logical vector 
 %               with the same number of elements as metabolites in the model,
-%               or a vector of indexes to check for (opt, default model.mets)
+%               or a vector of indexes to check for (optional, default model.mets)
 %
 %   consumed    vector with true if the corresponding metabolite could be
 %               produced
 %
-%   Usage: consumed=canConsume(model,mets)
+% Usage: consumed=canConsume(model,mets)
 
 if nargin<2
     mets=model.mets;
+elseif ~islogical(mets) && ~isnumeric(mets)
+    mets=convertCharArray(mets);
 end
 
 [model, rxns]=addExchangeRxns(model,'in',mets);

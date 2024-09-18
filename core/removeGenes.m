@@ -6,16 +6,16 @@ function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeB
 %   genesToRemove           either a cell array of gene IDs, a logical vector
 %                           with the same number of elements as genes in the model,
 %                           or a vector of indexes to remove
-%   removeUnusedMets        remove metabolites that are no longer in use (opt, default
+%   removeUnusedMets        remove metabolites that are no longer in use (optional, default
 %                           false)
 %   removeBlockedRxns       remove reactions that get blocked after deleting the genes
-%                           (opt, default false)
+%                           (optional, default false)
 %   standardizeRules        format gene rules to be compliant with standard format
-%                           (opt, default true)
+%                           (optional, default true)
 %
 %   reducedModel            an updated model structure
 %
-%   Usage: reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns)
+% Usage: reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns)
 
 if nargin<3
     removeUnusedMets = false;
@@ -37,8 +37,8 @@ else
 end
 reducedModel = model;
 %Only remove genes that are actually in the model
-try
-    ischar(genesToRemove{1});
+if ~(islogical(genesToRemove) || isnumeric(genesToRemove))
+    genesToRemove=convertCharArray(genesToRemove);
     genesToRemove=genesToRemove(ismember(genesToRemove,model.genes));
 end
 if ~isempty(genesToRemove)

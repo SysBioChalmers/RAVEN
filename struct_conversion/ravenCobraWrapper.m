@@ -8,7 +8,9 @@ function newModel=ravenCobraWrapper(model)
 %   
 %   This function is a bidirectional tool to convert between RAVEN and
 %   COBRA structures. It recognises COBRA structure by checking field
-%   'rules' existense, which is only found in COBRA Toolbox structure.
+%   'rules' existense, which is only found in COBRA Toolbox structure. If
+%   the COBRA model also has a grRules field, then this will be used
+%   instead of parsing the rules field.
 %
 %   NOTE: During RAVEN -> COBRA -> RAVEN conversion cycle the following
 %   fields are lost: annotation, compOutside, compMiriams, rxnComps,
@@ -26,7 +28,7 @@ function newModel=ravenCobraWrapper(model)
 %   checkModelStruct function, whereas the corresponding information about
 %   COBRA fields was fetched from verifyModel function
 %
-%   Usage: newModel=ravenCobraWrapper(model)
+% Usage: newModel=ravenCobraWrapper(model)
 
 if isfield(model,'rules')
     isRaven=false;
@@ -34,11 +36,10 @@ else
     isRaven=true;
 end
 
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
+ravenPath=findRAVENroot();
 
 % Load COBRA field information
-fid             = fopen([ravenPath filesep 'struct_conversion' filesep 'COBRA_structure_fields.csv']); % Taken from https://github.com/opencobra/cobratoolbox/blob/develop/src/base/io/definitions/COBRA_structure_fields.csv
+fid             = fopen(fullfile(ravenPath,'struct_conversion','COBRA_structure_fields.csv')); % Taken from https://github.com/opencobra/cobratoolbox/blob/develop/src/base/io/definitions/COBRA_structure_fields.csv
 fieldFile       = textscan(fid,repmat('%s',1,15),'Delimiter','\t','HeaderLines',1);
 dbFields        = ~cellfun(@isempty,fieldFile{5}); % Only keep fields with database annotations that should be translated to xxxMiriams
 dbFields        = dbFields & ~contains(fieldFile{1},{'metInChIString','metKEGGID','metPubChemID','rxnECNumbers'});
@@ -48,7 +49,7 @@ COBRAfields     = fieldFile{1}(dbFields);
 fclose(fid);
 
 % Load conversion between additional COBRA fields and namespaces:
-fid             = fopen([ravenPath filesep 'struct_conversion' filesep 'cobraNamespaces.csv']);
+fid             = fopen(fullfile(ravenPath,'struct_conversion','cobraNamespaces.csv'));
 fieldFile       = textscan(fid,'%s %s','Delimiter',',','HeaderLines',0);
 COBRAfields     = [COBRAfields; fieldFile{1}];
 COBRAnamespace  = [COBRAnamespace; fieldFile{2}];
@@ -69,9 +70,13 @@ end
 newModel.S=model.S;
 newModel.lb=model.lb;
 newModel.ub=model.ub;
-newModel.c=model.c;
+if isfield(model,'c')
+    newModel.c=model.c;
+else
+    newModel.c=zeros(numel(model.rxns),1);
+end
 newModel.rxns=model.rxns;
-optFields = {'rxnNames','subSystems','rxnNotes',...
+optFields = {'rxnNames','subSystems','rxnNotes','metDeltaG','rxnDeltaG',...
     'metFormulas','comps','compNames','metCharges','genes',...
     'rxnConfidenceScores','rxnGeneMat','metNotes','rev'};
 for i=1:length(optFields)
@@ -121,7 +126,6 @@ if isRaven
     end
     if isfield(model,'rxnMiriams')
         [miriams,extractedMiriamNames]=extractMiriam(model.rxnMiriams);
-        miriams=regexprep(miriams,'^[A-Za-z\.]*\/','');
         for i = 1:length(rxnCOBRAfields)
             j=ismember(extractedMiriamNames,rxnNamespaces{i});
             if any(j)
@@ -142,7 +146,6 @@ if isRaven
     end
     if isfield(model,'metMiriams')
         [miriams,extractedMiriamNames]=extractMiriam(model.metMiriams);
-        miriams=regexprep(miriams,'^[A-Za-z\.]*\/','');
         %Shorten miriam names for KEGG and PubChem. These shorter names
         %will be used later to concatenate KEGG COMPOUND/GLYCAN and PubChem
         %Compound/Substance, into corresponding COBRA model fields
@@ -185,7 +188,6 @@ if isRaven
     newModel.csense=repmat('E',size(model.mets));
     if isfield(model,'geneMiriams')
         [miriams,extractedMiriamNames]=extractMiriam(model.geneMiriams);
-        miriams=regexprep(miriams,'^[A-Za-z\.]*\/','');
         for i = 1:length(geneCOBRAfields)
             j=ismember(extractedMiriamNames,geneNamespaces{i});
             if any(j)
@@ -209,11 +211,15 @@ else
     %Mandatory RAVEN fields
     newModel.mets=model.mets;
     if ~isfield(model,'comps')
-        model.comps = unique(regexprep(model.mets,'.*\[([^\]]+)\]$','$1'));
+        %Since 'comps' field is not mandatory in COBRA, it may be required
+        %to obtain the non-redundant list of comps from metabolite ids, if
+        %'comps' field is not available
+        newModel.comps = unique(regexprep(model.mets,'.*\[([^\]]+)\]$','$1'));
+        newModel.compNames = newModel.comps;
     end
-    for i=1:numel(model.comps)
-        newModel.mets=regexprep(newModel.mets,['\[', model.comps{i}, '\]$'],'');
-        newModel.mets=regexprep(newModel.mets,['\[', model.compNames{i}, '\]$'],'');
+    for i=1:numel(newModel.comps)
+        newModel.mets=regexprep(newModel.mets,['\[', newModel.comps{i}, '\]$'],'');
+        newModel.mets=regexprep(newModel.mets,['\[', newModel.compNames{i}, '\]$'],'');
     end
     
     %In some cases (e.g. any model that uses BiGG ids as main ids), there
@@ -221,8 +227,8 @@ else
     %this, we change compartments from e.g. [c] into _c
     if numel(unique(newModel.mets))~=numel(model.mets)
         newModel.mets=model.mets;
-        for i=1:numel(model.comps)
-            newModel.mets=regexprep(newModel.mets,['\[' model.comps{i} '\]$'],['_' model.comps{i}]);
+        for i=1:numel(newModel.comps)
+            newModel.mets=regexprep(newModel.mets,['\[' newModel.comps{i} '\]$'],['_' newModel.comps{i}]);
         end
     end
     %Since COBRA no longer contains rev field it is assumed that rxn is
@@ -237,15 +243,7 @@ else
         end
     end
     newModel.b=zeros(numel(model.mets),1);
-    if ~isfield(model,'comps')
-        %Since 'comps' field is not mandatory in COBRA, it may be required
-        %to obtain the non-redundant list of comps from metabolite ids, if
-        %'comps' field is not available
-        newModel.comps=regexprep(model.mets,'^.+\[','');
-        newModel.comps=regexprep(newModel.comps,'\]$','');
-        newModel.comps=unique(newModel.comps);
-    end
-    
+   
     %metComps is also mandatory, but defined later to match the order of
     %fields
     
@@ -260,8 +258,10 @@ else
     if isfield(model,'modelName')
         newModel.name=model.modelName;
     end
-    if isfield(model,'rules')
+    if isfield(model,'rules') && ~isfield(model,'grRules')
         model.grRules        = rulesTogrrules(model);
+    end
+    if isfield(model,'grRules')
         [grRules,rxnGeneMat] = standardizeGrRules(model,true);
         newModel.grRules     = grRules;
         newModel.rxnGeneMat  = rxnGeneMat;
@@ -307,6 +307,10 @@ else
     if isfield(newModel,'rxnReferences')
         emptyEntry = cellfun(@isempty,newModel.rxnReferences);
         newModel.rxnReferences(emptyEntry)={''};
+        diffNumel = numel(newModel.rxns) - numel(newModel.rxnReferences);
+        if diffNumel > 0
+            newModel.rxnReferences(end+1:end+diffNumel) = {''};
+        end
     end
     if any(isfield(model,geneCOBRAfields))
         for i=1:numel(model.genes)
@@ -331,9 +335,9 @@ else
         newModel.geneShortNames=model.geneNames;
     end
     newModel.metNames=model.metNames;
-    for i=1:numel(model.comps)
-        newModel.metNames=regexprep(newModel.metNames,['\[', model.comps{i}, '\]$'],'');
-        newModel.metNames=regexprep(newModel.metNames,['\[', model.compNames{i}, '\]$'],'');
+    for i=1:numel(newModel.comps)
+        newModel.metNames=regexprep(newModel.metNames,['\[', newModel.comps{i}, '\]$'],'');
+        newModel.metNames=regexprep(newModel.metNames,['\[', newModel.compNames{i}, '\]$'],'');
     end
     newModel.metNames=deblank(newModel.metNames);
     newModel.metComps=regexprep(model.mets,'^.+\[','');
@@ -399,7 +403,7 @@ else
 end
 
 % Order fields
-modelNew=standardizeModelFieldOrder(newModel); % Corrects for both RAVEN and COBRA models
+newModel=standardizeModelFieldOrder(newModel); % Corrects for both RAVEN and COBRA models
 end
 
 function rules=grrulesToRules(model)

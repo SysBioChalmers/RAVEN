@@ -9,14 +9,14 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 %                       metacycPath is the path to the MetaCyc data files
 %   keepTransportRxns   include transportation reactions, which often have identical
 %                       reactants and products that turn to be all-zero columns in
-%                       the S matrix (opt, default false)
+%                       the S matrix (optional, default false)
 %   keepUnbalanced      include reactions cannot be balanced, usually
 %                       because they are polymeric reactions or with
 %                       specific difficulty in balancing class structures
-%                       (opt, default false)
+%                       (optional, default false)
 %   keepUndetermined    include reactions that have substrates lack chemical
 %                       structures or with non-numerical coefficients (e.g. n+1)
-%                       (opt, default false)
+%                       (optional, default false)
 %
 %   Output:
 %   model     a model structure generated from the database. The following
@@ -45,7 +45,7 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 %   will be directly loaded instead of parsing the MetaCyc data files and
 %   pre-prepared lists of MetaCyc transport and undetermined reactions.
 %
-%   Usage: model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
+% Usage: model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
 
 %NOTE: This is how one entry looks in the file
 
@@ -68,7 +68,12 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 % //
 
 % A line that contains only '//' separates each object.
-
+if nargin<1
+    ravenPath=findRAVENroot();
+    metacycPath=fullfile(ravenPath,'external','metacyc');
+else
+    metacycPath=char(metacycPath);
+end
 if nargin<2
     keepTransportRxns=false;
 end
@@ -81,9 +86,7 @@ end
 
 %Check if the reactions have been parsed before and saved. Directly load
 %the model if so.
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-rxnsFile=fullfile(ravenPath,'external','metacyc','metaCycRxns.mat');
+rxnsFile=fullfile(metacycPath,'metaCycRxns.mat');
 metaCycRxnFile='reactions.dat';
 metaCycPwyFile='pathway-links.dat';
 
@@ -93,7 +96,7 @@ if exist(rxnsFile, 'file')
     fprintf('done\n');
 else
     fprintf(['Cannot locate ' strrep(rxnsFile,'\','/') '\nNow try to generate it from local MetaCyc data files...\n']);
-    if ~exist(fullfile(metacycPath,metaCycRxnFile),'file') || ~exist(fullfile(metacycPath,metaCycPwyFile),'file')
+    if ~isfile(fullfile(metacycPath,metaCycRxnFile)) || ~isfile(fullfile(metacycPath,metaCycPwyFile))
         EM=fprintf(['The files of reactions or pathways cannot be located, and should be downloaded from MetaCyc.\n']);
         dispEM(EM);
     else

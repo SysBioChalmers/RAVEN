@@ -5,17 +5,24 @@ function workbook=loadWorkbook(fileName,createEmpty)
 %   fileName    name of the Excel file. If it doesn't exist it will be
 %               created
 %   createEmpty true if an empty workbook should be created if the file
-%               didn't exist (opt, default false)
+%               didn't exist (optional, default false)
 %
 %   workbook    Workbook object representing the Excel file
 %
-%   Usage: workbook=loadWorkbook(fileName,createEmpty)
+% Usage: workbook=loadWorkbook(fileName,createEmpty)
 
 if nargin<2
     createEmpty=false;
 end
 
-
+%Check if the user has MATLAB Text Analytics Toolbox installed, as it comes
+%with its own conflicting version of the required Apache POI files
+if exist('vaderSentimentScores.m')== 2
+    error(['MATLAB Text Analytics Toolbox found. This should be uninstalled ' ...
+           'if you want to read/write Excel files. See RAVEN GitHub Issues '...
+           'page for instructions.'])    
+end
+    
 %Adds the required classes to the static Java path if not already added
 addJavaPaths();
 
@@ -27,7 +34,7 @@ import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.xssf.usermodel.*;
 
 %Check if the file exists
-if ~(exist(fileName,'file')==2)
+if ~isfile(fileName)
     if createEmpty==false
         EM='The Excel file could not be found';
         dispEM(EM);

@@ -4,17 +4,27 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
 %
 %   Input:
 %   model               a model structure
-%   fileName            filename to export the model to (without file extension)
+%   fileName            filename to export the model to. A dialog window
+%                       will open if no file name is specified.
 %   exportGeneComplexes true if gene complexes (all gene sets linked with
 %                       AND relationship) should be recognised and exported
-%                       (opt, default false)
-%   supressWarnings     true if warnings should be supressed (opt, default
+%                       (optional, default false)
+%   supressWarnings     true if warnings should be supressed (optional, default
 %                       false)
 %   sortIds             logical whether metabolites, reactions and genes
 %                       should be sorted alphabetically by their
-%                       identifiers (opt, default false)
+%                       identifiers (optional, default false)
 %
-%   Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
+% Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
+if nargin<2 || isempty(fileName)
+    [fileName, pathName] = uiputfile({'*.xml;*.sbml'}, 'Select file for model export',[model.id '.xml']);
+    if fileName == 0
+        error('You should provide a file location')
+    else
+        fileName = fullfile(pathName,fileName);
+    end
+end
+fileName=char(fileName);
 if nargin<3
     exportGeneComplexes=false;
 end
@@ -50,10 +60,6 @@ end
 %Check if the "unconstrained" field is still present. This shows if
 %exchange metabolites have been removed
 if ~isfield(model,'unconstrained')
-    if supressWarnings==false
-        EM='There is no unconstrained field in the model structure. This means that no metabolites are considered exchange metabolites';
-        dispEM(EM,false);
-    end
     model.unconstrained=zeros(numel(model.mets),1);
 end
 
@@ -142,7 +148,7 @@ end
 %Generate an empty SBML structure
 modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
 modelSBML.metaid=model.id;
-modelSBML.id=model.id;
+modelSBML.id=regexprep(model.id,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 modelSBML.name=model.name;
 
 if isfield(model,'annotation')
@@ -153,7 +159,6 @@ else
     modelSBML.notes='<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>This file was generated using the exportModel function in RAVEN Toolbox 2 and OutputSBML in libSBML </p></body></notes>';
 end
 
-modelSBML.annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.id '">'];
 if isfield(model,'annotation')
     nameString='';
     if isfield(model.annotation,'familyName')
@@ -178,27 +183,22 @@ if isfield(model,'annotation')
             org=['<vCard:ORG rdf:parseType="Resource"><vCard:Orgname>' model.annotation.organization '</vCard:Orgname></vCard:ORG>'];
         end
     end
-    if ~isempty(nameString) || ~isempty(email) || ~isempty(org)
+    if ~isempty(nameString) || ~isempty(email) || ~isempty(org) % Only fill .annotation if ownership data is provided
+        modelSBML.annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.id '">'];
         modelSBML.annotation=[modelSBML.annotation '<dc:creator><rdf:Bag><rdf:li rdf:parseType="Resource">'];
         if ~isempty(nameString)
             modelSBML.annotation=[modelSBML.annotation '<vCard:N rdf:parseType="Resource">' nameString '</vCard:N>'];
         end
         modelSBML.annotation=[modelSBML.annotation email org '</rdf:li></rdf:Bag></dc:creator>'];
+        modelSBML.annotation=[modelSBML.annotation '<dcterms:created rdf:parseType="Resource">'...
+            '<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF></dcterms:created><dcterms:modified rdf:parseType="Resource">'...
+            '<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF></dcterms:modified>'];
+        if isfield(model.annotation,'taxonomy')
+            modelSBML.annotation=[modelSBML.annotation '<bqbiol:is><rdf:Bag><rdf:li rdf:resource="https://identifiers.org/taxonomy/' regexprep(model.annotation.taxonomy,'taxonomy/','') '"/></rdf:Bag></bqbiol:is>'];
+        end
+        modelSBML.annotation=[modelSBML.annotation '</rdf:Description></rdf:RDF></annotation>'];
     end
 end
-modelSBML.annotation=[modelSBML.annotation '<dcterms:created rdf:parseType="Resource">'...
-    '<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF>'...
-    '</dcterms:created>'...
-    '<dcterms:modified rdf:parseType="Resource">'...
-    '<dcterms:W3CDTF>' datestr(now,'yyyy-mm-ddTHH:MM:SSZ') '</dcterms:W3CDTF>'...
-    '</dcterms:modified>'];
-
-if isfield(model,'annotation')
-    if isfield(model.annotation,'taxonomy')
-        modelSBML.annotation=[modelSBML.annotation '<bqbiol:is><rdf:Bag><rdf:li rdf:resource="https://identifiers.org/taxonomy/' regexprep(model.annotation.taxonomy,'taxonomy/','') '"/></rdf:Bag></bqbiol:is>'];
-    end
-end
-modelSBML.annotation=[modelSBML.annotation '</rdf:Description></rdf:RDF></annotation>'];
 
 %Prepare compartments
 for i=1:numel(model.comps)
@@ -631,8 +631,6 @@ ind=find(model.c);
 
 if isempty(ind)
     modelSBML.fbc_objective.fbc_fluxObjective.fbc_coefficient=0;
-    EM='The objective function is not defined. The model will be exported as it is. Notice that having undefined objective function may produce warnings related to "fbc:coefficient" and "fbc:reaction" in SBML Validator';
-    dispEM(EM,false);
 else
     for i=1:length(ind)
         %Copy the default values to the next index as long as it is not the
@@ -663,12 +661,16 @@ end
 
 if sbmlPackageVersions(1) == 2
     modelSBML.fbc_strict=1;
+    modelSBML.isSetfbc_strict = 1;
 end
 
 modelSBML.rule=[];
 modelSBML.constraint=[];
 
-OutputSBML(modelSBML,fileName,1,0,[1,0]);
+[ravenDir,prevDir]=findRAVENroot();
+fileName=checkFileExistence(fileName,1,true,false);
+
+OutputSBML_RAVEN(modelSBML,fileName,1,0,[1,0]);
 end
 
 

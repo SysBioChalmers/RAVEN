@@ -1,5 +1,5 @@
 function [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
-    modelIDs,refFastaFiles,develMode,hideVerbose)
+    modelIDs,refFastaFiles,developMode,hideVerbose)
 % getDiamond
 %   Uses DIAMOND to perform a bidirectional BLAST between the organism
 %   of interest and a set of template organisms
@@ -14,10 +14,10 @@ function [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
 %                   output is to be used with getModelFromHomology
 %   refFastaFiles   a cell array with the paths to the corresponding FASTA
 %                   files
-%   develMode       true if blastReport should be generated that is used
-%                   in the unit testing function for DIAMOND (opt, default
+%   developMode     true if blastReport should be generated that is used
+%                   in the unit testing function for DIAMOND (optional, default
 %                   false)
-%   hideVerbose     true if no status messages should be printed (opt,
+%   hideVerbose     true if no status messages should be printed (optional,
 %                   default false)
 %
 %   Output:
@@ -25,7 +25,7 @@ function [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
 %                   measurements which are used by getModelFromHomology
 %   diamondReport   structure containing MD5 hashes for FASTA database
 %                   files and non-parsed BLAST output data. Will be blank
-%                   if develMode is false.
+%                   if developMode is false.
 %
 %   NOTE: This function calls DIAMOND to perform a bidirectional homology
 %   search between the organism of interest and a set of other organisms
@@ -34,31 +34,29 @@ function [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
 %   getDiamond() is a fast alternative (>15x faster). The blastStructure
 %   generated is in the same format as those obtained from getBlast().
 %
-%   Usage: [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
-%    modelIDs,refFastaFiles,develMode,hideVerbose)
+% Usage: [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
+%    modelIDs,refFastaFiles,developMode,hideVerbose)
 
 if nargin<5
-    develMode = false;
+    developMode = false;
 end
 if nargin<6
     hideVerbose = false;
 end
 
 %Everything should be cell arrays
-organismID=cellstr(organismID);
-fastaFile=cellstr(fastaFile);
-modelIDs=cellstr(modelIDs);
-refFastaFiles=cellstr(refFastaFiles);
+organismID=convertCharArray(organismID);
+fastaFile=convertCharArray(fastaFile);
+modelIDs=convertCharArray(modelIDs);
+refFastaFiles=convertCharArray(refFastaFiles);
 
 %Create blank structures for results
 blastStructure=[];
 diamondReport.dbHashes={};
 diamondReport.diamondTxtOutput={};
 
-%Get the directory for RAVEN Toolbox. This may not be the easiest or best
-%way to do this
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
+%Get the directory for RAVEN Toolbox.
+ravenPath=findRAVENroot();
 
 %Generate temporary names for DIAMOND databases and output files
 tmpDB=tempname;
@@ -99,25 +97,23 @@ cores = cores{1};
 %Create a database for the new organism and blast each of the refFastaFiles
 %against it
 [status, message]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" makedb --in "' fastaFile{1} '" --db "' fullfile(tmpDB) '"']);
-if develMode
+if developMode
     diamondReport.dbHashes{numel(diamondReport.dbHashes)+1} = char(regexp(message,'[a-f0-9]{32}','match'));
 end
 if status~=0
-    EM=['DIAMOND makedb did not run successfully, error: ', num2str(status)];
-    dispEM(EM,true);
+    error('DIAMOND makedb did not run successfully, error:\n%s',strip(message))
 end
 
 for i=1:numel(refFastaFiles)
     if ~hideVerbose
         fprintf(['Running DIAMOND blastp with "' modelIDs{i} '" against "' organismID{1} '"..\n']);
     end
-    [status, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' refFastaFiles{i} '" --out "' outFile '_' num2str(i) '" --db "' fullfile(tmpDB) '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
-    if develMode
+    [status, message]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' refFastaFiles{i} '" --out "' outFile '_' num2str(i) '" --db "' fullfile(tmpDB) '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
+    if developMode
         diamondReport.diamondTxtOutput{numel(diamondReport.diamondTxtOutput)+1}=importdata([outFile '_' num2str(i)]);
     end
     if status~=0
-        EM=['DIAMOND blastp did not run successfully, error: ', num2str(status)];
-        dispEM(EM,true);
+        error('DIAMOND blastp did not run successfully, error:\n%s',strip(message))
     end
 end
 delete([tmpDB filesep 'tmpDB*']);
@@ -128,19 +124,17 @@ for i=1:numel(refFastaFiles)
     if ~hideVerbose
         fprintf(['Running DIAMOND blastp with "' organismID{1} '" against "' modelIDs{i} '"..\n']);
     end
-    [status, message]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" makedb --in "' refFastaFiles{i} '" --db "' fullfile(tmpDB) '"']);
+    [status, message1]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" makedb --in "' refFastaFiles{i} '" --db "' fullfile(tmpDB) '"']);
     if status~=0
-        EM=['DIAMOND makedb did not run successfully, error: ', num2str(status)];
-        dispEM(EM,true);
+        error('DIAMOND makedb did not run successfully, error:\n%s',strip(message1))
     end
-    [status, ~]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' fastaFile{1} '" --out "' outFile '_r' num2str(i) '" --db "' fullfile(tmpDB) '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores]);
-    if develMode
-        diamondReport.dbHashes{numel(diamondReport.dbHashes)+1} = char(regexp(message,'[a-f0-9]{32}','match'));
+    [status, message]=system(['"' fullfile(ravenPath,'software','diamond',['diamond' binEnd]) '" blastp --query "' fastaFile{1} '" --out "' outFile '_r' num2str(i) '" --db "' fullfile(tmpDB) '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores]);
+    if developMode
+        diamondReport.dbHashes{numel(diamondReport.dbHashes)+1} = char(regexp(message1,'[a-f0-9]{32}','match'));
         diamondReport.diamondTxtOutput{numel(diamondReport.diamondTxtOutput)+1}=importdata([outFile '_r' num2str(i)]);
     end
     if status~=0
-        EM=['DIAMOND blastp did not run successfully, error: ', num2str(status)];
-        dispEM(EM,true);
+        error('DIAMOND blastp did not run successfully, error:\n%s',strip(message))
     end
     delete([tmpDB filesep 'tmpDB*']);
 end

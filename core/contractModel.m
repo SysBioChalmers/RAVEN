@@ -1,13 +1,21 @@
-function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse)
+function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse,mets)
 % contractModel
 %   Contracts a model by grouping all identical reactions. Similar to the
 %   deleteDuplicates part in simplifyModel but more care is taken here
-%   when it comes to gene associations
+%   when it comes to gene associations. If the duplicated reactions have
+%   '_EXP_*' suffixes (where * is a digit), then the model is assumed to
+%   have been passed through expandModel, and these suffixes are removed
+%   here.
 %
 %   model                  a model structure
 %   distReverse            distinguish reactions with same metabolites
 %                          but different reversibility as different
-%                          reactions (opt, default true)
+%                          reactions (optional, default true)
+%   mets                   string or cell array of strings with metabolite
+%                          identifiers, whose involved reactions should be
+%                          checked for duplication (optional, by default all
+%                          reactions are considered) (option is used by
+%                          replaceMets)
 %
 %   reducedModel           a model structure without duplicate reactions
 %   removedRxns            cell array for the removed duplicate reactions
@@ -17,7 +25,7 @@ function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,d
 %   NOTE: This code might not work for advanced grRules strings
 %         that involve nested expressions of 'and' and 'or'.
 %
-%   Usage: [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse)
+% Usage: [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse,mets)
 
 if nargin<2
     distReverse=true;
@@ -33,6 +41,13 @@ if distReverse
 else
     x=modelS.S';
 end
+if nargin>2
+    toCheck = getIndexes(model,mets,'mets');
+    [~, toCheck] = find(modelS.S(toCheck,:));
+    x = [x, (1:size(x,1))']; % Make all other rxns unique by additional column 
+    x(toCheck,end) = 0;
+end
+
 [~,I,J] = unique(x,'rows','first');
 
 %Initialize cell array of indexedDuplicateRxns
@@ -99,6 +114,11 @@ for i=1:numel(mergedRxns)
         indexedDuplicateRxns{duplRxn(1)}=model.rxns{duplRxn(2)};
     else
         indexedDuplicateRxns{duplRxn(1)}=strjoin(model.rxns(duplRxn(2:end)),';');
+    end
+    %If all reactions have _EXP_* (where * is digit) as suffix, then the
+    %model had passed through expandModel(), and these suffixes are removed.
+    if all(~cellfun(@isempty,regexp(model.rxns(duplRxn),'_EXP_\d+$')))
+        model.rxns(duplRxn(1))=regexprep(model.rxns(duplRxn(1)),'_EXP_\d+$','');
     end
 end
 

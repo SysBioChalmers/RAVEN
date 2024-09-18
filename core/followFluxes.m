@@ -8,10 +8,10 @@ function errorFlag=followFluxes(model, fluxesA, lowerFlux, upperFlux, fluxesB)
 %   lowerFlux	only reactions with fluxes above this cutoff
 %               value are displayed
 %   upperFlux   only reactions with fluxes below this cutoff
-%               value are displayed (opt, default Inf)
-%   fluxesB     flux vector for the reference case(opt)
+%               value are displayed (optional, default Inf)
+%   fluxesB     flux vector for the reference case(optional)
 %
-%   Usage: errorFlag=followFluxes(model, fluxesA, lowerFlux, upperFlux,
+% Usage: errorFlag=followFluxes(model, fluxesA, lowerFlux, upperFlux,
 %           fluxesB)
 
 %Checks that the upper flux is larger than the lower flux

@@ -5,13 +5,13 @@ function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)
 %   workbook        Workbook object representing the Excel file
 %   sheetName       name of the sheet
 %   sheetPosition   0-based position of the sheet
-%   captions        cell array of captions (opt)
+%   captions        cell array of captions (optional)
 %   units           WRITE INFO
 %   raw             cell array with the data in the sheet
-%   isIntegers      true if numeric values should be integers (opt, default
+%   isIntegers      true if numeric values should be integers (optional, default
 %                   true)
 %
-%   Usage: wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw)
+% Usage: wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw)
 
 if nargin<7
     isIntegers=true;

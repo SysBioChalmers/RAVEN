@@ -29,7 +29,7 @@ function metaCycMets=getMetsFromMetaCyc(metacycPath)
 %   the MetaCyc database files. In general, this metaCycMets.mat file should
 %   be removed and rebuilt when a newer version of MetaCyc is released.
 %               
-%   Usage: model=getMetsFromMetaCyc(metacycPath)
+% Usage: model=getMetsFromMetaCyc(metacycPath)
 
 % NOTE: This is how one entry looks in the file
 
@@ -57,9 +57,14 @@ function metaCycMets=getMetsFromMetaCyc(metacycPath)
 
 % Check if the metabolites have been parsed before and saved. If so, load
 % the model.
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-metsFile=fullfile(ravenPath,'external','metacyc','metaCycMets.mat');
+if nargin<1
+    ravenPath=findRAVENroot();
+    metacycPath=fullfile(ravenPath,'external','metacyc');
+else
+    metacycPath=char(metacycPath);
+end
+
+metsFile=fullfile(metacycPath,'metaCycMets.mat');
 metaCycMetFile='compounds.dat';
 
 if exist(metsFile, 'file')
@@ -68,7 +73,7 @@ if exist(metsFile, 'file')
     fprintf('done\n');
 else
     fprintf(['Cannot locate ' strrep(metsFile,'\','/') '\nNow try to generate it from local MetaCyc data files...\n']);
-    if ~exist(fullfile(metacycPath,metaCycMetFile),'file')
+    if ~isfile(fullfile(metacycPath,metaCycMetFile))
         EM=fprintf(['The file of metabolites cannot be located, and should be downloaded from MetaCyc.\n']);
         dispEM(EM);
     else

@@ -1,0 +1,362 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of removeLowScoreGenes</title>
+  <meta name="keywords" content="removeLowScoreGenes">
+  <meta name="description" content="removeLowScoreGenes  Remove low-scoring genes from model.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">INIT</a> &gt; removeLowScoreGenes.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for INIT&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>removeLowScoreGenes
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>removeLowScoreGenes  Remove low-scoring genes from model.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [newModel,remGenes] = removeLowScoreGenes(model,geneScores,isozymeScoring,complexScoring) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">removeLowScoreGenes  Remove low-scoring genes from model.
+
+   This function removes genes from a model based on their scores, a step
+   used by the tINIT package. The function recognizes and differentiates
+   between isozymes and subunits of an enzyme complex. Genes are removed
+   from each grRule, subject to the following conditions:
+       1) At least one gene must remain associated with the reaction
+       2) Genes involved in a complex (joined by ANDs) are not removed
+
+ Usage:
+
+   [newModel,remGenes] = removeLowScoreGenes(model,geneScores,complexScoring);
+
+ Inputs:
+
+   model           Model structure from which genes are to be removed.
+
+   geneScores      A vector of scores associated with the model genes.
+                   Genes with a positive score will remain in the model,
+                   whereas genes with a negative score will try to be
+                   removed.
+                   
+                   If all genes associated with a reaction have a negative
+                   score, then the least-negative gene will remain; if 
+                   there is a tie, one will be selected at random.
+
+                   If a negative-scoring gene is a subunit in a complex, 
+                   it will not be removed; however, the entire complex may
+                   be removed. See the following example cases:
+
+                    Original: G1 or (G2 and G3 and G4)
+                    Negative: G1, G2
+                         New: G2 and G3 and G4
+
+                    Original: G1 or (G2 and G3) or (G4 and G5)
+                    Negative: G1, G2
+                         New: G4 and G5     [using default complexScoring]
+
+                    Original: (G1 and (G2 or G3) and G4)
+                    Negative: G2
+                         New: (G1 and G3 and G4)
+
+   isozymeScoring  Method used to combine the scores of multiple isozymes;
+                   'min', 'max', 'median', or 'average'. 
+                   (optional, default 'max')
+
+   complexScoring  Method used to combine the scores of enzyme complex
+                   subunits: 'min', 'max', 'median', or 'average'. 
+                   (optional, default 'min')
+
+ Outputs:
+
+   newModel        Model with updated gene, grRules, and rxnGeneMat fields
+                   after attemping to remove negative-score genes.
+
+   remGenes        A list of negative-score genes that were fully removed
+                   from the model. Negative-score genes that were removed
+                   from some grRules but not all will not be included in
+                   this list.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="ftINIT.html" class="code" title="function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes] = ftINIT(prepData, tissue, celltype, hpaData, transcrData, metabolomicsData, INITSteps, removeGenes, useScoresForTasks, paramsFT, verbose)">ftINIT</a>	ftINIT</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function [updatedRule,rScore] = processSimpleRule(rule,genes,gScores,isozymeScoring,complexScoring)</a></li><li><a href="#_sub2" class="code">function updatedRule = processComplexRule(rule,genes,gScores,isozymeScoring,complexScoring)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [newModel,remGenes] = removeLowScoreGenes(model,geneScores,isozymeScoring,complexScoring)</a>
+0002 <span class="comment">%removeLowScoreGenes  Remove low-scoring genes from model.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">%   This function removes genes from a model based on their scores, a step</span>
+0005 <span class="comment">%   used by the tINIT package. The function recognizes and differentiates</span>
+0006 <span class="comment">%   between isozymes and subunits of an enzyme complex. Genes are removed</span>
+0007 <span class="comment">%   from each grRule, subject to the following conditions:</span>
+0008 <span class="comment">%       1) At least one gene must remain associated with the reaction</span>
+0009 <span class="comment">%       2) Genes involved in a complex (joined by ANDs) are not removed</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% Usage:</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">%   [newModel,remGenes] = removeLowScoreGenes(model,geneScores,complexScoring);</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% Inputs:</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">%   model           Model structure from which genes are to be removed.</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">%   geneScores      A vector of scores associated with the model genes.</span>
+0020 <span class="comment">%                   Genes with a positive score will remain in the model,</span>
+0021 <span class="comment">%                   whereas genes with a negative score will try to be</span>
+0022 <span class="comment">%                   removed.</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">%                   If all genes associated with a reaction have a negative</span>
+0025 <span class="comment">%                   score, then the least-negative gene will remain; if</span>
+0026 <span class="comment">%                   there is a tie, one will be selected at random.</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">%                   If a negative-scoring gene is a subunit in a complex,</span>
+0029 <span class="comment">%                   it will not be removed; however, the entire complex may</span>
+0030 <span class="comment">%                   be removed. See the following example cases:</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">%                    Original: G1 or (G2 and G3 and G4)</span>
+0033 <span class="comment">%                    Negative: G1, G2</span>
+0034 <span class="comment">%                         New: G2 and G3 and G4</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">%                    Original: G1 or (G2 and G3) or (G4 and G5)</span>
+0037 <span class="comment">%                    Negative: G1, G2</span>
+0038 <span class="comment">%                         New: G4 and G5     [using default complexScoring]</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">%                    Original: (G1 and (G2 or G3) and G4)</span>
+0041 <span class="comment">%                    Negative: G2</span>
+0042 <span class="comment">%                         New: (G1 and G3 and G4)</span>
+0043 <span class="comment">%</span>
+0044 <span class="comment">%   isozymeScoring  Method used to combine the scores of multiple isozymes;</span>
+0045 <span class="comment">%                   'min', 'max', 'median', or 'average'.</span>
+0046 <span class="comment">%                   (optional, default 'max')</span>
+0047 <span class="comment">%</span>
+0048 <span class="comment">%   complexScoring  Method used to combine the scores of enzyme complex</span>
+0049 <span class="comment">%                   subunits: 'min', 'max', 'median', or 'average'.</span>
+0050 <span class="comment">%                   (optional, default 'min')</span>
+0051 <span class="comment">%</span>
+0052 <span class="comment">% Outputs:</span>
+0053 <span class="comment">%</span>
+0054 <span class="comment">%   newModel        Model with updated gene, grRules, and rxnGeneMat fields</span>
+0055 <span class="comment">%                   after attemping to remove negative-score genes.</span>
+0056 <span class="comment">%</span>
+0057 <span class="comment">%   remGenes        A list of negative-score genes that were fully removed</span>
+0058 <span class="comment">%                   from the model. Negative-score genes that were removed</span>
+0059 <span class="comment">%                   from some grRules but not all will not be included in</span>
+0060 <span class="comment">%                   this list.</span>
+0061 <span class="comment">%</span>
+0062 
+0063 
+0064 <span class="keyword">if</span> nargin &lt; 3 || isempty(isozymeScoring)
+0065     isozymeScoring = <span class="string">'max'</span>;
+0066 <span class="keyword">end</span>
+0067 <span class="keyword">if</span> nargin &lt; 4
+0068     complexScoring = <span class="string">'min'</span>;
+0069 <span class="keyword">end</span>
+0070 
+0071 <span class="keyword">if</span> ~isequal(size(model.genes),size(geneScores))
+0072     error(<span class="string">'The dimensions of model genes and geneScores do not match.'</span>);
+0073 <span class="keyword">end</span>
+0074 
+0075 <span class="comment">% convert logical operators to symbols</span>
+0076 grRules = model.grRules;
+0077 <span class="keyword">if</span> any(contains(grRules,{<span class="string">'&amp;'</span>,<span class="string">'|'</span>}))
+0078     symbolicRules = true;
+0079 <span class="keyword">else</span>
+0080     symbolicRules = false;
+0081 <span class="keyword">end</span>
+0082 grRules = regexprep(grRules,<span class="string">' and '</span>,<span class="string">' &amp; '</span>);
+0083 grRules = regexprep(grRules,<span class="string">' or '</span>,<span class="string">' | '</span>);
+0084 
+0085 <span class="comment">% get unique list of grRules</span>
+0086 [uRules,~,rule_ind] = unique(grRules);
+0087 
+0088 <span class="comment">% iterate through each rule</span>
+0089 newRules = uRules;  <span class="comment">%initialize newRules</span>
+0090 <span class="keyword">for</span> i = 1:numel(uRules)
+0091     <span class="keyword">if</span> isempty(uRules{i}) || ~contains(uRules{i},<span class="string">'|'</span>)
+0092         <span class="keyword">continue</span>
+0093     <span class="keyword">elseif</span> contains(uRules{i},<span class="string">'&amp;'</span>)
+0094         newRules{i} = <a href="#_sub2" class="code" title="subfunction updatedRule = processComplexRule(rule,genes,gScores,isozymeScoring,complexScoring)">processComplexRule</a>(uRules{i},model.genes,geneScores,isozymeScoring,complexScoring);
+0095     <span class="keyword">else</span>
+0096         newRules{i} = <a href="#_sub1" class="code" title="subfunction [updatedRule,rScore] = processSimpleRule(rule,genes,gScores,isozymeScoring,complexScoring)">processSimpleRule</a>(uRules{i},model.genes,geneScores,isozymeScoring,complexScoring);
+0097     <span class="keyword">end</span>
+0098 <span class="keyword">end</span>
+0099 
+0100 <span class="comment">% re-map unique rules to model</span>
+0101 newModel = model;
+0102 newModel.grRules = newRules(rule_ind);
+0103 
+0104 <span class="comment">% restore original logical operator formatting if it was changed</span>
+0105 <span class="keyword">if</span> ~symbolicRules
+0106     newModel.grRules = regexprep(newModel.grRules, <span class="string">' \| '</span>, <span class="string">' or '</span>);
+0107     newModel.grRules = regexprep(newModel.grRules, <span class="string">' &amp; '</span>, <span class="string">' and '</span>);
+0108 <span class="keyword">end</span>
+0109 
+0110 <span class="comment">% regenerate &quot;genes&quot; and &quot;rxnGeneMat&quot; model fields</span>
+0111 [genes,rxnGeneMat] = getGenesFromGrRules(newModel.grRules);
+0112 newModel.genes = genes;
+0113 newModel.rxnGeneMat = rxnGeneMat;
+0114 
+0115 <span class="comment">% update other gene-related fields</span>
+0116 remInd = ~ismember(model.genes,newModel.genes);
+0117 remGenes = model.genes(remInd);
+0118 
+0119 <span class="keyword">if</span> isfield(newModel,<span class="string">'geneShortNames'</span>)
+0120     newModel.geneShortNames(remInd) = [];
+0121 <span class="keyword">end</span>
+0122 <span class="keyword">if</span> isfield(newModel,<span class="string">'geneMiriams'</span>)
+0123     newModel.geneMiriams(remInd) = [];
+0124 <span class="keyword">end</span>
+0125 <span class="keyword">if</span> isfield(newModel,<span class="string">'geneFrom'</span>)
+0126     newModel.geneFrom(remInd) = [];
+0127 <span class="keyword">end</span>
+0128 <span class="keyword">if</span> isfield(newModel,<span class="string">'geneComps'</span>)
+0129     newModel.geneComps(remInd) = [];
+0130 <span class="keyword">end</span>
+0131 
+0132 
+0133 <span class="keyword">end</span>
+0134 
+0135 
+0136 
+0137 <a name="_sub1" href="#_subfunctions" class="code">function [updatedRule,rScore] = processSimpleRule(rule,genes,gScores,isozymeScoring,complexScoring)</a>
+0138 <span class="comment">% Either score or modify a reaction gene rule containig only ANDs or ORs.</span>
+0139 <span class="comment">%</span>
+0140 <span class="comment">% If the rule contains an enzyme complex (all ANDs), the complex will be</span>
+0141 <span class="comment">% scored based on the score of its subunits. Subunits without a score (NaN)</span>
+0142 <span class="comment">% will be excluded from the score calculation.</span>
+0143 <span class="comment">%</span>
+0144 <span class="comment">% If the rule contains only isozymes (all ORs), the negative-score genes</span>
+0145 <span class="comment">% will be removed from the rule. Isozymes without a score (NaN) will not be</span>
+0146 <span class="comment">% removed from the rule. The resuling rule will then be scored.</span>
+0147 
+0148 
+0149 <span class="comment">% get IDs and indices of genes involved in rule</span>
+0150 ruleGenes = unique(regexp(rule,<span class="string">'[^&amp;|\(\) ]+'</span>,<span class="string">'match'</span>));
+0151 [~,geneInd] = ismember(ruleGenes,genes);
+0152 
+0153 <span class="comment">% rules with one or no genes remain unchanged</span>
+0154 <span class="keyword">if</span> numel(ruleGenes) &lt; 2
+0155     rScore = gScores(geneInd);
+0156     updatedRule = rule;
+0157     <span class="keyword">return</span>
+0158 <span class="keyword">end</span>
+0159 
+0160 <span class="keyword">if</span> ~contains(rule,<span class="string">'&amp;'</span>)  <span class="comment">% rule contains isozymes</span>
+0161     
+0162     scoreMethod = isozymeScoring;
+0163     negInd = gScores(geneInd) &lt; 0;  <span class="comment">% NaNs will return false here</span>
+0164     <span class="keyword">if</span> all(negInd)
+0165         <span class="comment">% get the least negative gene, adding a small random value to avoid a tie</span>
+0166         [~,maxInd] = max(gScores(geneInd) + rand(size(geneInd))*(1e-8));
+0167         updatedRule = ruleGenes{maxInd};
+0168     <span class="keyword">elseif</span> sum(~negInd) == 1
+0169         updatedRule = ruleGenes{~negInd};
+0170     <span class="keyword">else</span>
+0171         updatedRule = strjoin(ruleGenes(~negInd),<span class="string">' | '</span>);
+0172         <span class="keyword">if</span> startsWith(rule,<span class="string">'('</span>)
+0173             updatedRule = [<span class="string">'('</span>,updatedRule,<span class="string">')'</span>];
+0174         <span class="keyword">end</span>
+0175     <span class="keyword">end</span>
+0176     
+0177     <span class="comment">% update ruleGenes and their indices</span>
+0178     ruleGenes = unique(regexp(updatedRule,<span class="string">'[^&amp;|\(\) ]+'</span>,<span class="string">'match'</span>));
+0179     [~,geneInd] = ismember(ruleGenes,genes);
+0180     
+0181 <span class="keyword">elseif</span> ~contains(rule,<span class="string">'|'</span>)  <span class="comment">% rule contains enzyme complex</span>
+0182     scoreMethod = complexScoring;
+0183     updatedRule = rule;
+0184 <span class="keyword">else</span>
+0185     error(<span class="string">'This function cannot handle rules with both &quot;OR&quot; and &quot;AND&quot; expressions.'</span>);
+0186 <span class="keyword">end</span>
+0187 
+0188 <span class="comment">% score rule</span>
+0189 <span class="keyword">switch</span> lower(scoreMethod)
+0190     <span class="keyword">case</span> <span class="string">'min'</span>
+0191         rScore = min(gScores(geneInd),[],<span class="string">'omitnan'</span>);
+0192     <span class="keyword">case</span> <span class="string">'max'</span>
+0193         rScore = max(gScores(geneInd),[],<span class="string">'omitnan'</span>);
+0194     <span class="keyword">case</span> <span class="string">'median'</span>
+0195         rScore = median(gScores(geneInd),<span class="string">'omitnan'</span>);
+0196     <span class="keyword">case</span> <span class="string">'average'</span>
+0197         rScore = mean(gScores(geneInd),<span class="string">'omitnan'</span>);
+0198 <span class="keyword">end</span>
+0199 
+0200 <span class="keyword">end</span>
+0201 
+0202 
+0203 
+0204 <a name="_sub2" href="#_subfunctions" class="code">function updatedRule = processComplexRule(rule,genes,gScores,isozymeScoring,complexScoring)</a>
+0205 <span class="comment">% Update reactions containing both AND and OR expressions.</span>
+0206 <span class="comment">%</span>
+0207 <span class="comment">% Negative-score genes will be removed if they are isozymic, whereas they</span>
+0208 <span class="comment">% will not be removed if they are part of an enzyme complex. However, if</span>
+0209 <span class="comment">% the enzyme complex has a negative score, the entire complex will be</span>
+0210 <span class="comment">% removed, as long as it is not the only remaining element in the rule.</span>
+0211 
+0212 
+0213 <span class="comment">% Specify phrases to search for in the grRule. These phrases will find</span>
+0214 <span class="comment">% genes grouped by all ANDs (first phrase) or all ORs (second phrase).</span>
+0215 search_phrases = {<span class="string">'\([^&amp;|\(\) ]+( &amp; [^&amp;|\(\) ]+)+\)'</span>, <span class="string">'\([^&amp;|\(\) ]+( \| [^&amp;|\(\) ]+)+\)'</span>};
+0216 
+0217 <span class="comment">% initialize some variables</span>
+0218 subsets = {};  <span class="comment">% subsets are groups of genes grouped by all ANDs or all ORs</span>
+0219 c = 1;  <span class="comment">% counter to keep track of the group (subset) number</span>
+0220 r_orig = rule;  <span class="comment">% record original rule to determine when it stops changing</span>
+0221 <span class="keyword">for</span> k = 1:100  <span class="comment">% iterate some arbitrarily high number of times</span>
+0222     <span class="keyword">for</span> j = 1:length(search_phrases)
+0223         new_subset = regexp(rule,search_phrases{j},<span class="string">'match'</span>)';  <span class="comment">% extract subsets</span>
+0224         <span class="keyword">if</span> ~isempty(new_subset)
+0225             subsets = [subsets; new_subset];  <span class="comment">% append to list of subsets</span>
+0226             subset_nums = arrayfun(@num2str,(c:length(subsets))',<span class="string">'UniformOutput'</span>,false);  <span class="comment">% get group numbers to be assigned to the new subsets, and convert to strings</span>
+0227             rule = regexprep(rule,search_phrases{j},strcat(<span class="string">'#'</span>,subset_nums,<span class="string">'#'</span>),<span class="string">'once'</span>);  <span class="comment">% replace the subsets in the expression with their group numbers (enclosed by &quot;#&quot;s)</span>
+0228             c = c + length(new_subset);
+0229         <span class="keyword">end</span>
+0230     <span class="keyword">end</span>
+0231     <span class="keyword">if</span> isequal(rule,r_orig)
+0232         <span class="keyword">break</span>;  <span class="comment">% stop iterating when rule stops changing</span>
+0233     <span class="keyword">else</span>
+0234         r_orig = rule;
+0235     <span class="keyword">end</span>
+0236 <span class="keyword">end</span>
+0237 subsets{end+1} = rule;  <span class="comment">% add final state of rule as the last subset</span>
+0238 
+0239 <span class="comment">% score and update each subset, and append to gene list and gene scores</span>
+0240 <span class="keyword">for</span> i = 1:numel(subsets)
+0241     [subsets{i},subset_score] = <a href="#_sub1" class="code" title="subfunction [updatedRule,rScore] = processSimpleRule(rule,genes,gScores,isozymeScoring,complexScoring)">processSimpleRule</a>(subsets{i},genes,gScores,isozymeScoring,complexScoring);
+0242     gScores = [gScores; subset_score];
+0243     genes = [genes; {strcat(<span class="string">'#'</span>,num2str(i),<span class="string">'#'</span>)}];
+0244 <span class="keyword">end</span>
+0245 
+0246 <span class="comment">% reconstruct the rule from its updated subsets</span>
+0247 updatedRule = subsets{end};
+0248 <span class="keyword">for</span> i = c-1:-1:1
+0249     updatedRule = regexprep(updatedRule,strcat(<span class="string">'#'</span>,num2str(i),<span class="string">'#'</span>),subsets{i});
+0250 <span class="keyword">end</span>
+0251 
+0252 <span class="keyword">end</span>
+0253 
+0254 
+0255</pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

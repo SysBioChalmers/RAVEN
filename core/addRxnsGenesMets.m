@@ -5,8 +5,8 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %
 %   model           draft model where reactions should be copied to
 %   sourceModel     model where reactions and metabolites are sourced from
-%   rxns            cell array with reaction IDs (from source model)
-%                   string allowed if only one reaction is added
+%   rxns            cell array with reaction IDs (from source model). Can also
+%                   be string if only one reaction is added
 %   addGene         three options:
 %                   false   no genes are annotated to the new reactions
 %                   true    grRules ared copied from the sourceModel and
@@ -15,11 +15,13 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %                           new grRules are specified as string or cell
 %                           array, and any new genes are added when
 %                           required
-%                   (opt, default false)
-%   rxnNote         string explaining why reactions were copied to model,
-%                   is included as newModel.rxnNotes (opt, default
+%                   (optional, default false)
+%   rxnNote         cell array with strings explaining why reactions were copied
+%                   to the model, to be included as newModel.rxnNotes. Can also
+%                   be string if same rxnNotes should be added for each new
+%                   reaction, or only one reaction is to be added (optional, default
 %                   'Added via addRxnsAndMets()')
-%   confidence      double specifying confidence score for all reactions.
+%   confidence      integer specifying confidence score for all reactions.
 %                   4:  biochemical data: direct evidence from enzymes
 %                       assays
 %                   3:  genetic data: knockout/-in or overexpression
@@ -30,7 +32,7 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %                   1:  modeling data: required for functional model,
 %                       hypothetical reaction
 %                   0:  no evidence
-%                   following doi:10.1038/nprot.2009.203 (opt, default 0)
+%                   following doi:10.1038/nprot.2009.203 (optional, default 0)
 %
 %   newModel        an updated model structure
 %
@@ -40,22 +42,24 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %	additional reactions from source to draft after getModelFromHomology was
 %	used involving the same models.
 %
-%   Usage: newModel=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)
+% Usage: newModel=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)
 
 if nargin<6
     confidence=0;
 end
+rxns=convertCharArray(rxns);
 if nargin<5
-    rxnNote='Added via addRxnsGenesMets()';
+    rxnNote={'Added via addRxnsGenesMets()'};
+else
+    rxnNote=convertCharArray(rxnNote);
+end
+if numel(rxnNote)==1 && numel(rxns)>1
+    rxnNoteArray=cell(1,numel(rxns));
+    rxnNoteArray(:)=rxnNote;
+    rxnNote=rxnNoteArray;
 end
 if nargin<4
     addGene=false;
-end
-
-%If the supplied object is a character array, then convert it to a cell
-%array
-if ischar(rxns)
-    rxns={rxns};
 end
 
 % Obtain indexes of reactions in source model
@@ -70,7 +74,8 @@ end
 
 [~, rxnIdx]=ismember(rxns,sourceModel.rxns); % Get rxnIDs
 if any(rxnIdx==0)
-    error('Not all reaction IDs could be found in the source model')
+    dispEM('The following reaction IDs could not be found in the source model:',true,...
+        rxns(rxnIdx==0));
 end
 
 % Add new metabolites
@@ -112,17 +117,23 @@ if ~isempty(metIdx)
     if isfield(sourceModel,'metFormulas')
         metsToAdd.metFormulas=sourceModel.metFormulas(metIdx);
     end
-    if isfield(sourceModel,'metCharge')
-        metsToAdd.metCharge=sourceModel.metCharge(metIdx);
+    if isfield(sourceModel,'metCharges')
+        metsToAdd.metCharges=sourceModel.metCharges(metIdx);
     end
     if isfield(sourceModel,'metMiriams')
         metsToAdd.metMiriams=sourceModel.metMiriams(metIdx);
     end
-    if isfield(sourceModel,'metFormulas')
-        metsToAdd.metFormulas=sourceModel.metFormulas(metIdx);
+    if isfield(sourceModel,'metNotes')
+        metsToAdd.metNotes=sourceModel.metNotes(metIdx);
     end
     if isfield(sourceModel,'inchis')
         metsToAdd.inchis=sourceModel.inchis(metIdx);
+    end
+    if isfield(sourceModel,'metSmiles')
+        metsToAdd.metSmiles=sourceModel.metSmiles(metIdx);
+    end
+    if isfield(sourceModel,'metDeltaG')
+        metsToAdd.metDeltaG=sourceModel.metDeltaG(metIdx);
     end
     
     metsToAdd.compartments=strtrim(cellstr(num2str(sourceModel.metComps(metIdx)))); % Convert from compartment string to compartment number
@@ -150,14 +161,16 @@ rxnToAdd.rxnNames=sourceModel.rxnNames(rxnIdx);
 rxnToAdd.rxns=sourceModel.rxns(rxnIdx);
 rxnToAdd.lb=sourceModel.lb(rxnIdx);
 rxnToAdd.ub=sourceModel.ub(rxnIdx);
-rxnToAdd.rxnNotes=cell(1,numel(rxnToAdd.rxns));
-rxnToAdd.rxnNotes(:)={rxnNote};
+rxnToAdd.rxnNotes(:)=rxnNote(~notNewRxn);
 rxnToAdd.rxnConfidenceScores=NaN(1,numel(rxnToAdd.rxns));
 if ~isnumeric(confidence)
     EM='confidence score must be numeric';
     dispEM(EM, true);
 end
 rxnToAdd.rxnConfidenceScores(:)=confidence;
+if isfield(sourceModel,'rxnDeltaG')
+    rxnToAdd.rxnDeltaG=sourceModel.rxnDeltaG(rxnIdx);
+end
 if isfield(sourceModel,'subSystems')
     rxnToAdd.subSystems=sourceModel.subSystems(rxnIdx);
 end

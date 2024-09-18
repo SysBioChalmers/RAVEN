@@ -12,7 +12,7 @@ function Z=getFluxZ(solutionsA, solutionsB)
 %                   or decreased (negative sign) in the second condition with
 %                   respect to the first.
 %
-%   Usage: Z=getFluxZ(solutionsA, solutionsB)
+% Usage: Z=getFluxZ(solutionsA, solutionsB)
 
 nRxns=size(solutionsA,1);
 

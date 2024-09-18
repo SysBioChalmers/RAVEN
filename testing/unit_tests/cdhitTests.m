@@ -49,10 +49,18 @@ copyfile(fullfile(sourceDir,'test_data','yeast_galactosidases.fa'),tmpDIR);
 
 %%
 %Run protein clustering with CD-HIT
-[~, ~]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' fullfile(tmpDIR, 'yeast_galactosidases.fa') '" -o "' outFile '" -c 1.0 -n 5 -M 2000']);
+if ispc
+    % Define WSL paths
+    wslPath.fastaFile=getWSLpath([tmpDIR filesep 'yeast_galactosidases.fa']);
+    wslPath.outFile=getWSLpath(outFile);
+    wslPath.cdhit=getWSLpath(fullfile(ravenPath,'software','cd-hit','cd-hit'));
+    [~, ~]=system(['wsl "' wslPath.cdhit '" -T "' num2str(cores) '" -i "' wslPath.fastaFile '" -o "' wslPath.outFile '" -c 1.0 -n 5 -M 2000']);
+else
+    [~, ~]=system(['"' fullfile(ravenPath,'software','cd-hit',['cd-hit' binEnd]) '" -T "' num2str(cores) '" -i "' fullfile(tmpDIR, 'yeast_galactosidases.fa') '" -o "' outFile '" -c 1.0 -n 5 -M 2000']);
+end
 
 %%
-%Open actual MAFFT results file
+%Open actual cdhit results file
 actCdhitOutput=importdata(fullfile(outFile));
 
 %Remove the old tempfiles

@@ -1,0 +1,146 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of fillGapsLargeTests</title>
+  <meta name="keywords" content="fillGapsLargeTests">
+  <meta name="description" content="run this test case with the command">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">unit_tests</a> &gt; fillGapsLargeTests.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for testing\unit_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>fillGapsLargeTests
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>run this test case with the command</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function tests = fillGapsLargeTests </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment">run this test case with the command
+results = runtests('fillGapsLargeTests.m')</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function testLargeGurobi(testCase)</a></li><li><a href="#_sub2" class="code">function testLargeSCIP(testCase)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">%run this test case with the command</span>
+0002 <span class="comment">%results = runtests('fillGapsLargeTests.m')</span>
+0003 <a name="_sub0" href="#_subfunctions" class="code">function tests = fillGapsLargeTests</a>
+0004 tests = functiontests(localfunctions);
+0005 testGurobi = exist(<span class="string">'gurobi'</span>,<span class="string">'file'</span>)==3;
+0006 <span class="keyword">if</span> testGurobi
+0007     <span class="keyword">try</span>
+0008         gurobi_read(<span class="string">'solverTests.m'</span>);
+0009     <span class="keyword">catch</span> ME
+0010         <span class="keyword">if</span> ~startsWith(ME.message,<span class="string">'Gurobi error 10012'</span>) <span class="comment">% Expected error code, others may indicate problems with license</span>
+0011            testGurobi = false;
+0012         <span class="keyword">end</span>
+0013     <span class="keyword">end</span>
+0014 <span class="keyword">end</span>
+0015 <span class="keyword">if</span> ~testGurobi
+0016     disp(<span class="string">'Gurobi not installed or not functional, some fillGapsLargeTests skipped.'</span>)
+0017     skipTests = contains({tests.Name},<span class="string">'gurobi'</span>,<span class="string">'IgnoreCase'</span>,true);
+0018     tests(skipTests) = [];
+0019 <span class="keyword">end</span>
+0020 <span class="keyword">if</span> exist(<span class="string">'scip'</span>,<span class="string">'file'</span>)~=3
+0021     disp(<span class="string">'SCIP MEX binary not installed or not functional, some fillGapsLargeTests skipped.'</span>)
+0022     skipTests = contains({tests.Name},<span class="string">'scip'</span>,<span class="string">'IgnoreCase'</span>,true);
+0023     tests(skipTests) = [];
+0024 <span class="keyword">end</span>
+0025 <span class="keyword">end</span>
+0026 
+0027 <a name="_sub1" href="#_subfunctions" class="code">function testLargeGurobi(testCase)</a>
+0028 sourceDir = fileparts(fileparts(fileparts(which(mfilename))));
+0029 evalc(<span class="string">'model=importModel(fullfile(sourceDir,''tutorial'',''iAL1006 v1.00.xml''))'</span>);
+0030 model.c(1484)=1;
+0031 modelDB=model; <span class="comment">% Keep as database with reactions</span>
+0032 <span class="keyword">try</span>
+0033     oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0034 <span class="keyword">catch</span>
+0035 <span class="keyword">end</span>
+0036 setRavenSolver(<span class="string">'gurobi'</span>);
+0037 
+0038 <span class="comment">%Remove first 10 reactions</span>
+0039 model=removeReactions(modelDB,(1:10));
+0040 modelDB.id=<span class="string">'DB'</span>;
+0041 <span class="keyword">try</span>
+0042     evalc(<span class="string">'[newConnected,cannotConnect,addedRxns,model,exitFlag]=fillGaps(model,modelDB,false,false)'</span>);
+0043 <span class="keyword">catch</span>
+0044     <span class="keyword">try</span>
+0045         setRavenSolver(oldSolver);
+0046     <span class="keyword">catch</span>
+0047         rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0048     <span class="keyword">end</span>
+0049     error(<span class="string">'Solver not working'</span>)
+0050 <span class="keyword">end</span>
+0051 sol=solveLP(model);
+0052 <span class="keyword">try</span>
+0053     setRavenSolver(oldSolver);
+0054 <span class="keyword">catch</span>
+0055     rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0056 <span class="keyword">end</span>
+0057 <span class="comment">%Expect at least 5% of the original growth</span>
+0058 verifyTrue(testCase,sol.f&gt;0);
+0059 <span class="keyword">end</span>
+0060 
+0061 <a name="_sub2" href="#_subfunctions" class="code">function testLargeSCIP(testCase)</a>
+0062 sourceDir = fileparts(fileparts(fileparts(which(mfilename))));
+0063 evalc(<span class="string">'model=importModel(fullfile(sourceDir,''tutorial'',''iAL1006 v1.00.xml''))'</span>);
+0064 model.c(1484)=1;
+0065 modelDB=model; <span class="comment">% Keep as database with reactions</span>
+0066 <span class="comment">% Force growth in gapped model</span>
+0067 sol=solveLP(model);
+0068 model.lb(1484)=sol.f*0.1;
+0069 <span class="keyword">try</span>
+0070     oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0071 <span class="keyword">catch</span>
+0072 <span class="keyword">end</span>
+0073 setRavenSolver(<span class="string">'scip'</span>);
+0074 
+0075 <span class="comment">%Remove first 10 reactions</span>
+0076 model=removeReactions(model,(1:10));
+0077 modelDB.id=<span class="string">'DB'</span>;
+0078 <span class="keyword">try</span>
+0079     evalc(<span class="string">'[newConnected,cannotConnect,addedRxns,model,exitFlag]=fillGaps(model,modelDB,false,true)'</span>);
+0080 <span class="keyword">catch</span>
+0081     <span class="keyword">try</span>
+0082         setRavenSolver(oldSolver);
+0083     <span class="keyword">catch</span>
+0084         rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0085     <span class="keyword">end</span>
+0086     error(<span class="string">'Solver not working'</span>)
+0087 <span class="keyword">end</span>
+0088 sol=solveLP(model);
+0089 <span class="keyword">try</span>
+0090     setRavenSolver(oldSolver);
+0091 <span class="keyword">catch</span>
+0092     rmpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0093 <span class="keyword">end</span>
+0094 <span class="comment">%Expect at least 5% of the original growth</span>
+0095 verifyTrue(testCase,sol.f&gt;0);
+0096 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

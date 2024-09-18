@@ -8,11 +8,9 @@ function [I, metNames]=getMetsInComp(model,comp)
 %   I           boolean vector of the metabolites
 %   metNames    the names of the metabolites
 %
-%   Usage: [I, metNames]=getMetsInComp(model,comp)
+% Usage: [I, metNames]=getMetsInComp(model,comp)
 
-if ischar(comp)
-    comp={comp};
-end
+comp=char(comp);
 
 J=find(ismember(upper(model.comps),upper(comp)));
 

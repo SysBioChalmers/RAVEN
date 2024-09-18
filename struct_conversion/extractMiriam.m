@@ -24,17 +24,18 @@ function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)
 %                               unique miriam names per entity
 %   extractedMiriamNames        cell array with extracted miriam names
 %
-%   Usage: miriam=extractMiriam(modelMiriams,miriamName,addNull)
+% Usage: miriam=extractMiriam(modelMiriams,miriamName)
 
-if nargin<2 || strcmp(miriamNames,'all')
+if nargin<2 || (ischar(miriamNames) && strcmp(miriamNames,'all'))
     extractAllTypes=true;
 else
     extractAllTypes=false;
+    miriamNames=convertCharArray(miriamNames);
 end
 
 %The annotation for all miriam names should be extracted
 if extractAllTypes
-    miriamNames='';
+    miriamNames={''};
     for i=1:numel(modelMiriams)
         if ~isempty(modelMiriams{i,1})
             for j=1:numel(modelMiriams{i,1}.name)
@@ -45,13 +46,8 @@ if extractAllTypes
     miriamNames=sort(unique(miriamNames));
 end
 
-%Ensure that the list of miriam names is in appropriate structure
-if ischar(miriamNames)
-    miriamNames={miriamNames};
-end
-
 %Aggregate the final cell array table with extracted miriam information
-miriams='';
+miriams=cell(numel(modelMiriams),0);
 for i=1:numel(miriamNames)
     miriams=[miriams, extractMiriamType(modelMiriams,miriamNames{i})];
 end
@@ -76,26 +72,11 @@ for i=1:numel(modelMiriams)
     end
 end
 
-%Now add miriam names to the newly obtained miriam ids. Entities with
-%multiple ids per miriam name have the ids concatenated by using semicolon
-%as separator
+%Concatenate multiple ids per miriam name in one column with semicolon as
+%separator
 miriams = cell([size(tempMiriams,1) 1]);
-for i=1:size(tempMiriams,1)
-    for j=1:size(tempMiriams,2)
-        if j==1
-            miriams{i,1}=strcat(miriamName,'/',tempMiriams{i,1});
-        else
-            miriams{i,1}=strcat(miriams{i,1},'; ',miriamName,'/',tempMiriams{i,j});
-        end
-    end
+notEmpty=~cellfun(@isempty,tempMiriams);
+for i=1:size(miriams,1)
+    miriams{i}=strjoin(tempMiriams(i,notEmpty(i,:)),{'; '});
 end
-
-%Ensure that cell positions without miriams are blank
-miriams=regexprep(miriams,strcat(miriamName,'/;'),'');
-miriams=regexprep(miriams,strcat('^',miriamName,'/$'),'');
-miriams=regexprep(miriams,strcat('; ',miriamName,'/$'),'');
-
-%Delete middle names:
-miriams=regexprep(miriams,strcat('; ',miriamName,'/'),'; ');
-
 end

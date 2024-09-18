@@ -9,17 +9,17 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %                       directory, this function will attempt to read data
 %                       from a local FTP dump of the KEGG database.
 %                       keggPath is the path to the root of this database
-%                       (opt, default 'RAVEN/external/kegg'). If
+%                       (optional, default 'RAVEN/external/kegg'). If
 %                       keggModel.mat is present in the same directory, the
 %                       function reads the data from this file and ignores
 %                       keggGenes.mat, keggMets.mat and keggRxns.mat
-%   keepSpontaneous     include reactions labeled as "spontaneous" (opt,
+%   keepSpontaneous     include reactions labeled as "spontaneous" (optional,
 %                       default true)
 %   keepUndefinedStoich include reactions in the form n A <=> n+1 A. These
 %                       will be dealt with as two separate metabolites
-%                       (opt, default true)
+%                       (optional, default true)
 %   keepIncomplete      include reactions which have been labelled as
-%                       "incomplete", "erroneous" or "unclear" (opt,
+%                       "incomplete", "erroneous" or "unclear" (optional,
 %                       default true)
 %   keepGeneral         include reactions which have been labelled as
 %                       "general reaction". These are reactions on the form
@@ -27,7 +27,7 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %                       unsuited for modelling purposes. Note that not all
 %                       reactions have this type of annotation, and the
 %                       script will therefore not be able to remove all
-%                       such reactions (opt, default false)
+%                       such reactions (optional, default false)
 %
 %   Output:
 %   model               a model structure generated from the database. All
@@ -41,11 +41,13 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %   for fillGaps. In that case, ensure that the genes and rxnGeneMat fields
 %   are removed before parsing: model=rmfield(model,'genes'), etc.
 %
-%   Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
+% Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %    keepUndefinedStoich,keepIncomplete,keepGeneral)
 
 if nargin<1
     keggPath='RAVEN/external/kegg';
+else
+    keggPath=char(keggPath);
 end
 if nargin<2
     keepSpontaneous=true;
@@ -60,8 +62,7 @@ if nargin<5
     keepGeneral=false;
 end
 
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+ravenPath=findRAVENroot();
 modelFile=fullfile(ravenPath,'external','kegg','keggModel.mat');
 if exist(modelFile, 'file') && isNewestFile(ravenPath)
     fprintf(['Importing the global KEGG model from ' strrep(modelFile,'\','/') '... ']);
@@ -131,7 +132,7 @@ else
     end
     fprintf('COMPLETE\n');
     
-    fprintf('Constructing the rxnGeneMat for the global KEGG model, this will take a while... ')
+    fprintf('Constructing the rxnGeneMat for the global KEGG model...   0%% complete');
     %Create the rxnGeneMat for the reactions. This is simply done by
     %merging the gene associations for all the involved KOs
     r=zeros(10000000,1);
@@ -142,19 +143,25 @@ else
     for i=1:numel(model.rxns)
         if isstruct(model.rxnMiriams{i})
             I=strncmp('kegg.orthology',model.rxnMiriams{i}.name,18);
-            [J, K]=ismember(model.rxnMiriams{i}.value(I),KOModel.rxns);
-            %Find all gene indexes that correspond to any of these KOs
-            [~, L]=find(KOModel.rxnGeneMat(K(J),:));
-            if any(L)
-                %Allocate room for more elements if needed
-                if counter+numel(L)-1>=numel(r)
-                    r=[r;zeros(numel(r),1)];
-                    c=[c;zeros(numel(c),1)];
+            if any(I)
+                [J, K]=ismember(model.rxnMiriams{i}.value(I),KOModel.rxns);
+                %Find all gene indexes that correspond to any of these KOs
+                [~, L]=find(KOModel.rxnGeneMat(K(J),:));
+                if any(L)
+                    %Allocate room for more elements if needed
+                    if counter+numel(L)-1>=numel(r)
+                        r=[r;zeros(numel(r),1)];
+                        c=[c;zeros(numel(c),1)];
+                    end
+                    r(counter:counter+numel(L)-1)=ones(numel(L),1)*i;
+                    c(counter:counter+numel(L)-1)=L(:);
+                    counter=counter+numel(L);
                 end
-                r(counter:counter+numel(L)-1)=ones(numel(L),1)*i;
-                c(counter:counter+numel(L)-1)=L(:);
-                counter=counter+numel(L);
             end
+        end
+        if rem(i-1,100) == 0
+            progress=pad(num2str(floor(i/numel(model.rxns)*100)),3,'left');
+            fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
         end
     end
     
@@ -162,7 +169,7 @@ else
     if size(model.rxnGeneMat,1)~=numel(model.rxns) || size(model.rxnGeneMat,2)~=numel(KOModel.genes)
         model.rxnGeneMat(numel(model.rxns),numel(KOModel.genes))=0;
     end
-    fprintf('COMPLETE\n');
+    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
     
     %Then get all metabolites
     metModel=getMetsFromKEGG(keggPath);
@@ -228,6 +235,10 @@ else
     %reason. In that case, use the ID instead
     I=cellfun(@isempty,model.metNames);
     model.metNames(I)=model.mets(I);
+
+    %Deafult LB and UB
+    model.annotation.defaultLB = -1000;
+    model.annotation.defaultUB = 1000;
     
     %Save the model structure
     save(modelFile,'model','KOModel','isGeneral','isIncomplete','isUndefinedStoich','isSpontaneous');

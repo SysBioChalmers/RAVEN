@@ -8,15 +8,15 @@ function [colorCodes, signChange, errorFlag]= getColorCodes(referenceFluxes, flu
 %                       and referenceFluxes must be equal
 %   maxChange           the logfold increase or decrease that corresponds
 %                       to full negative or full positive coloring. Must
-%                       be a positive value (opt, default 1)
+%                       be a positive value (optional, default 1)
 %   defaultColor        a color in Matlab format to be used if there are no
 %                       changes between the fluxes. This color is also used to
 %                       calculate the transition between the colors for up and
-%                       down regulated fluxes (opt, default [1 1 1])
+%                       down regulated fluxes (optional, default [1 1 1])
 %   upColor             a color in Matlab format to be used if the flux is
-%                       larger than the reference flux (opt, default [0 1 0])
+%                       larger than the reference flux (optional, default [0 1 0])
 %   downColor           a color in Matlab format to be used if the flux is
-%                       smaller than the reference flux (opt, default [1 0 0])
+%                       smaller than the reference flux (optional, default [1 0 0])
 
 %   colorCodes          array list of colors in Matlab format in the same
 %                       order as the fluxes
@@ -27,7 +27,7 @@ function [colorCodes, signChange, errorFlag]= getColorCodes(referenceFluxes, flu
 %                       order correspondes to the order of the fluxes
 %   errorFlag           true if there has been an error
 %
-%   Usage: [colorCodes, signChange, errorFlag]=getColorCodes(referenceFluxes,...
+% Usage: [colorCodes, signChange, errorFlag]=getColorCodes(referenceFluxes,...
 %           fluxes, maxChange, defaultColor, upColor, downColor)
 
 if nargin<6
@@ -111,7 +111,7 @@ function colorValue=getColor(logvalue, defaultColor, upColor, downColor, maxChan
 %
 %   colorValue          vector with the calculated color
 %
-%   Usage: colorValue=getColor(logvalue, defaultColor, upColor,
+% Usage: colorValue=getColor(logvalue, defaultColor, upColor,
 %   downColor, maxChange)
 
 %If the flux has decreased

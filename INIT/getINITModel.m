@@ -1,7 +1,8 @@
 function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=getINITModel(refModel, tissue, celltype, hpaData, arrayData, metabolomicsData, taskFile, useScoresForTasks, printReport, taskStructure, params, paramsFT)
-% getINITModel
+% getINITModel_legacy
 %   Generates a model using the INIT algorithm, based on proteomics and/or
-%   transcriptomics and/or metabolomics and/or metabolic tasks.
+%   transcriptomics and/or metabolomics and/or metabolic tasks. This is the original 
+%   implementation of tINIT, which is replaced by ftINIT.
 %
 %   Input:
 %   refModel            a model structure. The model should be in the
@@ -15,12 +16,12 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %                       hpaData.tissues or arrayData.tissues
 %   celltype            cell type to score for. Should exist in either
 %                       hpaData.celltypes or arrayData.celltypes for this
-%                       tissue (opt, default is to use the best values
+%                       tissue (optional, default is to use the best values
 %                       among all the cell types for the tissue. Use [] if
 %                       you want to supply more arguments)
-%   hpaData             HPA data structure from parseHPA (opt if arrayData is
+%   hpaData             HPA data structure from parseHPA (optional if arrayData is
 %                       supplied, default [])
-%   arrayData           gene expression data structure (opt if hpaData is
+%   arrayData           gene expression data structure (optional if hpaData is
 %                       supplied, default [])
 %       genes           cell array with the unique gene names
 %       tissues         cell array with the tissue names. The list may not be
@@ -31,33 +32,33 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %                       used when no measurement was performed
 %       threshold       a single value or a vector of gene expression 
 %                       thresholds, above which genes are considered to be
-%                       "expressed". (opt, by default, the mean expression
+%                       "expressed". (optional, by default, the mean expression
 %                       levels of each gene across all tissues in arrayData
 %                       will be used as the threshold values)
 %       singleCells     binary value selecting whether to use the
 %                       single-cell algorithm to identify expressed genes.
 %                       If used, specify cell subpopulations in CELLTYPES
-%                       (opt, default [])
+%                       (optional, default [])
 %       plotResults     true if single cell probability distributions
-%                       should be plotted (opt, default = False)
+%                       should be plotted (optional, default = False)
 %   metabolomicsData    cell array with metabolite names that the model
-%                       should produce (opt, default [])
+%                       should produce (optional, default [])
 %   taskFile            a task list in Excel format. See parseTaskList for
-%                       details (opt, default [])
+%                       details (optional, default [])
 %   useScoresForTasks   true if the calculated reaction scored should be used as
-%                       weights in the fitting to tasks (opt, default true)
+%                       weights in the fitting to tasks (optional, default true)
 %   printReport         true if a report should be printed to the screen
-%                       (opt, default true)
+%                       (optional, default true)
 %   taskStructure       task structure as from parseTaskList. Can be used
 %                       as an alternative way to define tasks when Excel
-%                       sheets are not suitable. Overrides taskFile (opt,
+%                       sheets are not suitable. Overrides taskFile (optional,
 %                       default [])
 %   params              parameter structure as used by getMILPParams. This is
 %                       for the INIT algorithm. For the the MILP problems
-%                       solved to fit tasks, see paramsFT (opt, default [])
+%                       solved to fit tasks, see paramsFT (optional, default [])
 %   paramsFT            parameter structure as used by getMILPParams. This is
 %                       for the fitTasks step. For the INIT algorithm, see
-%                       params (opt, default [])
+%                       params (optional, default [])
 %
 %
 %   Output:
@@ -101,7 +102,7 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %   if any are present. Use importModel(file,false) to import a model with
 %   exchange metabolites remaining.
 %
-%   Usage: [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks,...
+% Usage: [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks,...
 %               deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=...
 %               getINITModel(refModel, tissue, celltype, hpaData, arrayData,...
 %               metabolomicsData, taskFile, useScoresForTasks, printReport,...
@@ -109,6 +110,8 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 
 if nargin<3
     celltype=[];
+else
+    celltype=char(celltype);
 end
 if nargin<4
     hpaData=[];
@@ -121,6 +124,8 @@ if nargin<6
 end
 if nargin<7
     taskFile=[];
+else
+    taskFile=char(taskFile);
 end
 if nargin<8 || isempty(useScoresForTasks)
     useScoresForTasks=true;

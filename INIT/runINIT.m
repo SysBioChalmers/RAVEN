@@ -1,17 +1,18 @@
 function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,noRevLoops,params)
 % runINIT
 %	Generates a model using the INIT algorithm, based on proteomics and/or
-%   transcriptomics and/or metabolomics and/or metabolic tasks
+%   transcriptomics and/or metabolomics and/or metabolic tasks. This is the 
+%   original implementation, which is now replaced with ftINIT.
 %
 %   model           a reference model structure
 %   rxnScores       a vector of scores for the reactions in the model.
 %                   Positive scores are reactions to keep and negative
-%                   scores are reactions to exclude (opt, default all 0.0)
+%                   scores are reactions to exclude (optional, default all 0.0)
 %   presentMets     cell array with unique metabolite names that the model
-%                   should produce (opt, default [])
+%                   should produce (optional, default [])
 %   essentialRxns   cell array of reactions that are essential and that
 %                   have to be in the resulting model. This is normally
-%                   used when fitting a model to task (see fitTasks) (opt,
+%                   used when fitting a model to task (see fitTasks) (optional,
 %                   default [])
 %   prodWeight      a score that determines the value of having
 %                   net-production of metabolites. This is a way of having
@@ -19,7 +20,7 @@ function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,
 %                   including bad reactions for connectivity reasons. This
 %                   score is for each metabolite, and the sum of these weights
 %                   and the scores for the reactions is what is optimized
-%                   (opt, default 0.5)
+%                   (optional, default 0.5)
 %   allowExcretion  true if excretion of all metabolites should be allowed.
 %                   This results in fewer reactions being considered
 %                   dead-ends, but all reactions in the resulting model may
@@ -28,7 +29,7 @@ function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,
 %                   input model lacks exchange reactions then this should
 %                   probably be "true", or a large proportion of the model
 %                   would be excluded for connectivity reasons
-%                   (opt, default false)
+%                   (optional, default false)
 %   noRevLoops      true if reversible reactions should be constrained to
 %                   only carry flux in one direction. This prevents
 %                   reversible reactions from being wrongly assigned as
@@ -36,8 +37,8 @@ function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,
 %                   loop and therefore appear connected), but it makes the
 %                   problem significantly more computationally intensive to
 %                   solve (two more integer constraints per reversible reaction)
-%                   (opt, default false)
-%   params          parameter structure as used by getMILPParams (opt,
+%                   (optional, default false)
+%   params          parameter structure as used by getMILPParams (optional,
 %                   default [])
 %
 %   outModel        the resulting model structure
@@ -57,7 +58,7 @@ function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,
 %   PLoS Comput Biol. 2012;8(5):e1002518 for details regarding the
 %   implementation.
 %
-%   Usage: [outModel deletedRxns metProduction fValue]=runINIT(model,...
+% Usage: [outModel deletedRxns metProduction fValue]=runINIT(model,...
 %           rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,...
 %           noRevLoops,params)
 
@@ -67,24 +68,17 @@ end
 if isempty(rxnScores)
     rxnScores=zeros(numel(model.rxns),1);
 end
-if nargin<3
+if nargin<3 || isempty(presentMets)
     presentMets={};
+else
+    presentMets=convertCharArray(presentMets);
 end
-if isempty(presentMets)
-    presentMets={};
-end
-presentMets=presentMets(:);
-if nargin<4
+if nargin<4 || isempty(essentialRxns)
     essentialRxns={};
+else
+    essentialRxns=convertCharArray(essentialRxns);
 end
-if isempty(essentialRxns)
-    essentialRxns={};
-end
-essentialRxns=essentialRxns(:);
-if nargin<5
-    prodWeight=0.5;
-end
-if isempty(prodWeight)
+if nargin<5 || isempty(prodWeight)
     prodWeight=0.5;
 end
 if nargin<6
@@ -289,7 +283,7 @@ prob.A=[prob.a -speye(size(prob.a,1))];
 prob.b=zeros(size(prob.a,1), 1);
 prob.ub=[prob.bux; prob.buc];
 prob.osense=1;
-prob.csense=char(zeros(size(prob.a,1),1));
+prob.csense=char(zeros(1,size(prob.a,1)));
 prob.csense(:)='E';
 
 %We still don't know which of the presentMets that can be produced. Go

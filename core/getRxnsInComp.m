@@ -6,16 +6,14 @@ function [I, rxnNames]=getRxnsInComp(model,comp,includePartial)
 %   comp            string with the compartment id
 %   includePartial  true if reactions with metabolites in several
 %                   compartments (normally transport reactions) should
-%                   be included (opt, default false)
+%                   be included (optional, default false)
 %
 %   I               boolean vector of the reactions
 %   rxnNames        the names of the reactions
 %
-%   Usage: [I, rxnNames]=getRxnsInComp(model,comp,includePartial)
+% Usage: [I, rxnNames]=getRxnsInComp(model,comp,includePartial)
 
-if ischar(comp)
-    comp={comp};
-end
+comp=char(comp);
 if nargin<3
     includePartial=false;
 end

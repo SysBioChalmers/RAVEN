@@ -10,7 +10,7 @@ function model=getGenesFromKEGG(keggPath,koList)
 %   koList      the number of genes in KEGG is very large. koList can be a
 %               cell array with KO identifiers, in which case only genes
 %               belonging to one of those KEGG orthologies are retrieved
-%               (opt, default all KOs with associated reactions)
+%               (optional, default all KOs with associated reactions)
 %
 %   Output:
 %   model       a model structure generated from the database. The
@@ -31,7 +31,7 @@ function model=getGenesFromKEGG(keggPath,koList)
 %   should remove the keggGenes.mat file if you want to rebuild the model
 %   structure from a newer version of KEGG.
 %
-%   Usage: model=getGenesFromKEGG(keggPath,koList)
+% Usage: model=getGenesFromKEGG(keggPath,koList)
 %
 % NOTE: This is how one entry looks in the file
 %
@@ -65,21 +65,22 @@ function model=getGenesFromKEGG(keggPath,koList)
 
 if nargin<1
     keggPath='RAVEN/external/kegg';
+else
+    keggPath=char(keggPath);
 end
 
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+ravenPath=findRAVENroot();
 genesFile=fullfile(ravenPath,'external','kegg','keggGenes.mat');
 if exist(genesFile, 'file')
     fprintf(['Importing KEGG genes from ' strrep(genesFile,'\','/') '... ']);
     load(genesFile);
 else
     fprintf(['NOTE: Cannot locate ' strrep(genesFile,'\','/') ', it will therefore be generated from the local KEGG database\n']);
-    if ~exist(fullfile(keggPath,'ko'),'file') || ~exist(fullfile(keggPath,'reaction'),'file')
+    if ~isfile(fullfile(keggPath,'ko')) || ~isfile(fullfile(keggPath,'reaction'))
         EM=fprintf(['The files ''ko'' and ''reaction'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP\n']);
         dispEM(EM);
     else
-        fprintf('Generating keggGenes.mat file... ');
+        fprintf('Generating keggGenes.mat file...\n');
         %Get all KOs that are associated to reactions
         allKOs=getAllKOs(keggPath);
         
@@ -260,8 +261,10 @@ else
 end
 
 %Only get the KOs in koList
-I=~ismember(model.rxns,koList);
-model=removeReactions(model,I,true,true);
+if nargin>1
+    I=~ismember(model.rxns,koList);
+    model=removeReactions(model,I,true,true);
+end
 fprintf('COMPLETE\n');
 end
 
@@ -273,8 +276,7 @@ function allKOs=getAllKOs(keggPath)
 allKOs={};
 
 %First check if the reactions have already been parsed
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+ravenPath=findRAVENroot;
 rxnsFile=fullfile(ravenPath,'external','kegg','keggRxns.mat');
 if exist(rxnsFile, 'file')
     fprintf(['NOTE: Importing KEGG ORTHOLOGY list from ' strrep(rxnsFile,'\','/') '.\n']);

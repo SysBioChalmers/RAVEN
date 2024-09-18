@@ -8,14 +8,16 @@ function newIds=generateNewIds(model,type,prefix,quantity,numLength)
 %   type        string specifying type of id, 'rxns' or 'mets'
 %   prefix      string specifying prefix to be used in all ids. E.g. 's_'
 %               or 'r_'.
-%   quantity    number of new ids that should be generated (opt, default 1)
+%   quantity    number of new ids that should be generated (optional, default 1)
 %   numLength   length of numerical part of id. E.g. 4 gives ids like
 %               r_0001 and 6 gives ids like r_000001. If the prefix is
 %               already used in the model, then the model-defined length
-%               will be used instead. (opt, default 4)
+%               will be used instead. (optional, default 4)
 %
-%   Usage: newIds=generateNewIds(model,type,prefix,quantity,numLength)
+% Usage: newIds=generateNewIds(model,type,prefix,quantity,numLength)
 %   
+type=char(type);
+prefix=char(prefix);
 
 if type=='rxns'
     existingIds=model.rxns;

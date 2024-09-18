@@ -4,22 +4,22 @@ function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(mode
 %   Simplifies a model by deleting reactions/metabolites
 %
 %   model                 a model structure
-%   deleteUnconstrained   delete metabolites marked as unconstrained (opt, default true)
-%   deleteDuplicates      delete all but one of duplicate reactions (opt, default false)
-%   deleteZeroInterval    delete reactions that are constrained to zero flux (opt, default false)
-%   deleteInaccessible    delete dead end reactions (opt, default false)
+%   deleteUnconstrained   delete metabolites marked as unconstrained (optional, default true)
+%   deleteDuplicates      delete all but one of duplicate reactions (optional, default false)
+%   deleteZeroInterval    delete reactions that are constrained to zero flux (optional, default false)
+%   deleteInaccessible    delete dead end reactions (optional, default false)
 %   deleteMinMax          delete reactions that cannot carry a flux by trying
 %                         to minimize/maximize the flux through that
-%                         reaction. May be time consuming (opt, default false)
-%   groupLinear           group linearly dependent pathways (opt, default false)
+%                         reaction. May be time consuming (optional, default false)
+%   groupLinear           group linearly dependent pathways (optional, default false)
 %   constrainReversible   check if there are reversible reactions which can
 %                         only carry flux in one direction, and if so
 %                         constrain them to be irreversible. This tends to
 %                         allow for more reactions grouped when using
-%                         groupLinear (opt, default false)
+%                         groupLinear (optional, default false)
 %   reservedRxns          cell array with reaction IDs that are not allowed to be
-%                         removed (opt)
-%   suppressWarnings      true if warnings should be suppressed (opt,
+%                         removed (optional)
+%   suppressWarnings      true if warnings should be suppressed (optional,
 %                         default false)
 %
 %   reducedModel          an updated model structure
@@ -31,7 +31,7 @@ function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(mode
 %   reactions and associated metabolites that cannot carry flux. It can also
 %   be used for identifying different types of gaps.
 %
-%   Usage: [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,...
+% Usage: [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,...
 %           deleteUnconstrained, deleteDuplicates, deleteZeroInterval,...
 %           deleteInaccessible, deleteMinMax, groupLinear,...
 %           constrainReversible, reservedRxns, suppressWarnings)
@@ -59,6 +59,8 @@ if nargin<8
 end
 if nargin<9
     reservedRxns=[];
+else
+    reservedRxns=convertCharArray(reservedRxns);
 end
 if nargin<10
     suppressWarnings=false;
@@ -124,7 +126,7 @@ if deleteInaccessible==true
         in=any(reducedModel.b<0,2);
         out=any(reducedModel.b>0,2);
         I=speye(numel(reducedModel.mets));
-        revS=[reducedModel.S,reducedModel.S(:,reducedModel.rev~=0)*-1 I(:,in) I(:,out)*-1];
+        revS=[reducedModel.S,reducedModel.S(:,reducedModel.lb<0)*-1 I(:,in) I(:,out)*-1];
         
         metUsage=sum(abs(revS')>0);
         onlyProducts=sum(revS'>0) == metUsage;

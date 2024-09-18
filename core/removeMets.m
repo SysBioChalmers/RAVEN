@@ -10,21 +10,20 @@ function reducedModel=removeMets(model,metsToRemove,isNames,removeUnusedRxns,rem
 %                     (as opposed to IDs). This is a way to delete
 %                     metabolites in several compartments at once without
 %                     knowing the exact IDs. This only works if metsToRemove
-%                     is a cell array (opt, default false)
-%   removeUnusedRxns  remove reactions that are no longer in use (opt,
+%                     is a cell array (optional, default false)
+%   removeUnusedRxns  remove reactions that are no longer in use (optional,
 %                     default false)
-%   removeUnusedGenes remove genes that are no longer in use (opt,
+%   removeUnusedGenes remove genes that are no longer in use (optional,
 %                     default false)
-%   removeUnusedComps remove compartments that are no longer in use (opt,
+%   removeUnusedComps remove compartments that are no longer in use (optional,
 %                     default false)
 %
 %   reducedModel      an updated model structure
 %
-%   Usage: reducedModel=removeMets(model,metsToRemove,isNames,...
+% Usage: reducedModel=removeMets(model,metsToRemove,isNames,...
 %           removeUnusedRxns,removeUnusedGenes,removeUnusedComps)
-
-if ischar(metsToRemove)
-    metsToRemove={metsToRemove};
+if ~islogical(metsToRemove) && ~isnumeric(metsToRemove)
+    metsToRemove=convertCharArray(metsToRemove);
 end
 
 if nargin<3
@@ -43,16 +42,9 @@ if nargin<6
     removeUnusedComps=false;
 end
 
-if isNames==true
-    %Check that metsToRemove is a cell array
-    if iscellstr(metsToRemove)==false
-        if ischar(metsToRemove)
-            metsToRemove={metsToRemove};
-        else
-            EM='Must supply a cell array of strings if isNames=true';
-            dispEM(EM);
-        end
-    end
+%Check that metsToRemove is a cell array
+if isNames==true && ~iscell(metsToRemove)
+    error('Must supply a cell array of strings if isNames=true');
 end
 
 reducedModel=model;
@@ -82,6 +74,9 @@ if ~isempty(indexesToDelete)
     if isfield(reducedModel,'inchis')
         reducedModel.inchis(indexesToDelete)=[];
     end
+    if isfield(reducedModel,'metSmiles')
+        reducedModel.metSmiles(indexesToDelete)=[];
+    end
     if isfield(reducedModel,'metFormulas')
         reducedModel.metFormulas(indexesToDelete)=[];
     end
@@ -97,6 +92,12 @@ if ~isempty(indexesToDelete)
     if isfield(reducedModel,'metCharges')
         reducedModel.metCharges(indexesToDelete)=[];
     end
+    if isfield(reducedModel,'metDeltaG')
+        reducedModel.metDeltaG(indexesToDelete)=[];
+    end
+    if isfield(reducedModel,'metNotes')
+        reducedModel.metNotes(indexesToDelete)=[];
+    end    
 end
 
 %Remove unused reactions

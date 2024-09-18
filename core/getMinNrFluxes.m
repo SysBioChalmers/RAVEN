@@ -7,13 +7,13 @@ function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)
 %   toMinimize    either a cell array of reaction IDs, a logical vector
 %                 with the same number of elements as reactions in the model,
 %                 of a vector of indexes for the reactions that should be
-%                 minimized (opt, default model.rxns)
-%   params        parameter structure as used by getMILPParams (opt)
+%                 minimized (optional, default model.rxns)
+%   params        parameter structure as used by getMILPParams (optional)
 %   scores        vector of weights for the reactions. Negative scores
 %                 should not have flux. Positive scores are not possible in this
 %                 implementation, and they are changed to max(scores(scores<0)).
 %                 Must have the same dimension as toMinimize (find(toMinimize)
-%                 if it is a logical vector) (opt, default -1 for all reactions)
+%                 if it is a logical vector) (optional, default -1 for all reactions)
 %
 %   x             the corresponding fluxes for the full model
 %   I             the indexes of the reactions in toMinimize that were used
@@ -25,22 +25,16 @@ function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)
 %   NOTE: Uses 1000 mmol/gDW/h as an arbitary large flux. Could possibly
 %   cause problems if the fluxes in the model are larger than that.
 %
-%   Usage: [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params, scores)
-
-% glpk solver as implemented by COBRA does not work well for MILP.
-global CBT_MILP_SOLVER
-if strcmp(getpref('RAVEN','solver'),'cobra') && strcmp(CBT_MILP_SOLVER,'glpk')
-    dispEM('The current solver is set to ''cobra'', while in COBRA the MILP solver has been set to ''glpk''. The COBRA implementation of glpk is not well suitable for solving MILPs. Please install the Gurobi or an alternative MILP solver.',true);
-end
+% Usage: [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params, scores)
 
 exitFlag=1;
 
 if nargin<2
     toMinimize=model.rxns;
+elseif ~islogical(toMinimize) && ~isnumeric(toMinimize)
+    toMinimize=convertCharArray(toMinimize);
 else
-    if ~iscell(toMinimize)
-        toMinimize=model.rxns(toMinimize);
-    end
+    toMinimize=model.rxns(toMinimize);
 end
 
 %For passing parameters to the solver
@@ -127,8 +121,7 @@ prob.bux=[irrevModel.ub;ones(numel(indexes),1)];
 prob.lb = [prob.blx; prob.blc];
 prob.ub = [prob.bux; prob.buc];
 prob.osense=1;
-prob.csense=char(zeros(size(prob.a,1),1));
-prob.csense(:)='E';
+prob.csense=repmat('E', 1, size(prob.a,1),1);
 prob.b=zeros(size(prob.a,1), 1);
 
 %Use the output from the linear solution as starting point. Only the values
@@ -136,12 +129,13 @@ prob.b=zeros(size(prob.a,1), 1);
 prob.sol.int.xx=zeros(numel(prob.c),1);
 prob.sol.int.xx(prob.ints.sub(sol.x(indexes)>10^-12))=1;
 prob.x0=[];
-prob.vartype=repmat('C', 1, size(prob.A,2));
-prob.vartype(prob.ints.sub) = 'B';
+prob.vartype=repmat('C', size(prob.A,2), 1);
+prob.vartype(prob.ints.sub) = 'I'; % with .lb = 0 and .ub = 1, they are binary
+% integers (glpk in octave only allows 'continuous' or '', not 'binary')
 prob=rmfield(prob,{'blx','bux','blc','buc'});
 
 % Optimize the problem
-res = optimizeProb(prob,params);
+res = optimizeProb(prob,params,false);
 isFeasible=checkSolution(res);
 
 if ~isFeasible

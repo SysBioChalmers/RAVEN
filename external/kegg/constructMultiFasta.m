@@ -12,9 +12,11 @@ function constructMultiFasta(model,sourceFile,outputDir)
 %   to be compatible with the rest of the code that retrieves information
 %   from KEGG.
 %
-%   Usage: constructMultiFasta(model,sourceFile,outputDir)
+% Usage: constructMultiFasta(model,sourceFile,outputDir)
 
-if ~(exist(sourceFile,'file')==2)
+sourceFile=char(sourceFile);
+outputDir=char(outputDir);
+if ~isfile(sourceFile)
     error('FASTA file %s cannot be found',string(sourceFile));
 end
 
@@ -56,7 +58,7 @@ fprintf('COMPLETE\n');
 
 fprintf(['NOTICE: If Matlab is freezing and does not provide any output in 30 minutes, consider increasing Java Heap Memory\n', ...
     'in MATLAB settings and start over with the new session\n']);
-fprintf('Mapping genes to the multi-FASTA source file... ');
+fprintf('Mapping genes to the multi-FASTA source file...   0%% complete');
 %Now loop through the file to see which genes are present in the gene list
 %and save their position IN elementPositions! This is to enable a easy way
 %to get the distance to the following element
@@ -89,12 +91,17 @@ for i=1:numel(elementPositions)
             genePositions(id)=i;
         end
     end
+    %Print the progress
+    if rem(i-1,350000) == 0
+        progress=num2str(floor(100*i/numel(elementPositions)));
+        progress=pad(progress,3,'left');
+        fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
+    end
 end
-fprintf('COMPLETE\n');
+fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');   
 
-fprintf('Generating the KEGG Orthology specific multi-FASTA files... ');
+fprintf('Generating the KEGG Orthology specific multi-FASTA files...   0%% complete');
 %Loop through the reactions and print the corresponding sequences
-progressFlag=0;
 for i=1:numel(model.rxns)
 
     %Do not overwrite existing files
@@ -141,32 +148,15 @@ for i=1:numel(model.rxns)
         end
         fclose(rxnfid);
     end
-    %Print the progress: no need to update this for every
-    %iteration, just report once 25%, 50% and 75% are done
-    if progressFlag==0 && i>numel(model.rxns)*0.25
-        fprintf('%*.*f%% complete',5,2,(numel(listFiles(fullfile(outputDir,'*.fa')))/numel(model.rxns))*100);
-        progressFlag=progressFlag+1;
-    elseif (progressFlag==1 && i>=numel(model.rxns)*0.5) || (progressFlag==2 && i>=numel(model.rxns)*0.75)
-        fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%*.*f%% complete',5,2,(numel(listFiles(fullfile(outputDir,'*.fa')))/numel(model.rxns))*100);
-        progressFlag=progressFlag+1;
+    %Print the progress
+    if rem(i-1,50) == 0
+        progress=num2str(floor(100*i/numel(model.rxns)));
+        progress=pad(progress,3,'left');
+        fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
     end
 end
-fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 
 %Close the source file
 fclose(fid);
-end
-
-function files=listFiles(directory)
-%Supporter function to list the files in a directory and return them as a
-%cell array
-temp=dir(directory);
-files=cell(numel(temp),1);
-for i=1:numel(temp)
-    files{i}=temp(i,1).name;
-end
-files=strrep(files,'.fa','');
-files=strrep(files,'.hmm','');
-files=strrep(files,'.out','');
-files=strrep(files,'.faw','');
 end

@@ -8,11 +8,11 @@ function [notProduced, notProducedNames, neededForProductionMat,minToConnect,mod
 %                               be produced, include an artificial
 %                               production reaction and calculate which new
 %                               metabolites that could be produced as en
-%                               effect of this (opt, default false)
+%                               effect of this (optional, default false)
 %   excretionFromCompartments   cell array with compartment ids from which
-%                               metabolites can be excreted (opt, default
+%                               metabolites can be excreted (optional, default
 %                               model.comps)
-%   printDetails                print details to the screen (opt, default
+%   printDetails                print details to the screen (optional, default
 %                               true)
 %
 %   notProduced                 cell array with metabolites that could not
@@ -38,7 +38,7 @@ function [notProduced, notProducedNames, neededForProductionMat,minToConnect,mod
 %   C->D, and D->E it will identify that production of C will connect
 %   the metabolites D and E.
 %
-%   Usage: [notProduced, notProducedNames,neededForProductionMat,minToConnect,model]=...
+% Usage: [notProduced, notProducedNames,neededForProductionMat,minToConnect,model]=...
 %           checkProduction(model,checkNeededForProduction,...
 %           excretionFromCompartments,printDetails)
 
@@ -48,6 +48,8 @@ end
 
 if nargin<3
     excretionFromCompartments=model.comps;
+else
+    excretionFromCompartments=convertCharArray(excretionFromCompartments);
 end
 
 if nargin<4

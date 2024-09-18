@@ -7,7 +7,7 @@ function exportToTabDelimited(model,path,sortIds)
 %           under the names excelRxns.txt, excelMets.txt, excelGenes.txt,
 %           excelModel.txt, and excelComps.txt
 %   sortIds logical whether metabolites, reactions and genes should be
-%           sorted alphabetically by their identifiers (opt, default false)
+%           sorted alphabetically by their identifiers (optional, default false)
 %
 %   NOTE: This functionality was previously a part of exportToExcelFormat.
 %         The naming of the resulting text files is to preserve backward
@@ -16,7 +16,7 @@ function exportToTabDelimited(model,path,sortIds)
 %   NOTE: No checks are made regarding the correctness of the model. Use
 %         checkModelStruct to identify problems in the model structure
 %
-%   Usage: exportToTabDelimited(model,path,sortIds)
+% Usage: exportToTabDelimited(model,path,sortIds)
 
 if nargin<2
     path='./';
@@ -29,24 +29,24 @@ if sortIds==true
 end
 
 %If the folder doesn't exist then create it
-if ~exist(path,'dir')
+if ~isfolder(path)
     mkdir(path);
 end
 
 %Remove the files if they already exist
-if exist(fullfile(path,'excelRxns.txt'),'file')
+if isfile(fullfile(path,'excelRxns.txt'))
     delete(fullfile(path,'excelRxns.txt'));
 end
-if exist(fullfile(path,'excelMets.txt'),'file')
+if isfile(fullfile(path,'excelMets.txt'))
     delete(fullfile(path,'excelMets.txt'));
 end
-if exist(fullfile(path,'excelGenes.txt'),'file')
+if isfile(fullfile(path,'excelGenes.txt'))
     delete(fullfile(path,'excelGenes.txt'));
 end
-if exist(fullfile(path,'excelModel.txt'),'file')
+if isfile(fullfile(path,'excelModel.txt'))
     delete(fullfile(path,'excelModel.txt'));
 end
-if exist(fullfile(path,'excelComps.txt'),'file')
+if isfile(fullfile(path,'excelComps.txt'))
     delete(fullfile(path,'excelComps.txt'));
 end
 

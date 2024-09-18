@@ -1,12 +1,11 @@
 % addJavaPaths
 %   Adds the Apache POI classes to the static Java paths
 %
-%   Usage: addJavaPaths()
+% Usage: addJavaPaths()
 
 function addJavaPaths()
 %Get the path to Apache POI
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
+ravenPath=findRAVENroot();
 poiPATH=fullfile(ravenPath,'software','apache-poi');
 
 toAdd={fullfile(poiPATH,'dom4j-1.6.1.jar');

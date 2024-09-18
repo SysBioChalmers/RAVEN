@@ -1,5 +1,5 @@
-function model=getMetaCycModelForOrganism(organismID,fastaFile,...
-    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond)
+function [model, metacycBlastStruct] = getMetaCycModelForOrganism(organismID,fastaFile,...
+    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond,metacycBlastStruct)
 % getMetaCycModelForOrganism
 %   Reconstructs a genome-scale metabolic model based on protein homology to the
 %   MetaCyc pathway database
@@ -11,28 +11,38 @@ function model=getMetaCycModelForOrganism(organismID,fastaFile,...
 %                       the organism for which to reconstruct a model
 %   keepTransportRxns   include transportation reactions, which often have identical
 %                       reactants and products that turn to be all-zero columns in
-%                       the S matrix (opt, default false)
+%                       the S matrix (optional, default false)
 %   keepUnbalanced      include reactions cannot be unbalanced reactions, usually
 %                       because they are polymeric reactions or because of a
 %                       specific difficulty in balancing class structures
-%                       (opt, default false)
+%                       (optional, default false)
 %   keepUndetermined    include reactions that have substrates lack chemical
 %                       structures or with non-numerical coefficients (e.g. n+1)
-%                       (opt, default false)
-%   minScore            minimum Bit scores of BLASTp search (opt, default 100)
-%   minPositives        minimum Positives values of BLASTp search (opt, default 45 %)
+%                       (optional, default false)
+%   minScore            minimum Bit scores of BLASTp search (optional, default 100)
+%   minPositives        minimum Positives values of BLASTp search (optional, default 45 %)
 %   useDiamond          use DIAMOND alignment tools to perform homology search
-%                       if true, otherwise the BLASTP is used (opt, default true)
+%                       if true, otherwise the BLASTP is used (optional, default true)
+%   metacycBlastStruct  provided an earlier generated metacycBlastStruct
+%                       from getMetaCycModelForOrganism (optional, default empty).
+%                       Useful when trying different cutoffs for minScore
+%                       and minPositives without having to regenerate the
+%                       blastStructure each time.
 %
 %   Output:
 %   model               a model structure for the query organism
+%   metacycBlastStruct  result from getBlast or getDiamond, before the
+%                       minScore and minPositives cutoffs are applied
 %
-%   Usage: model=getMetaCycModelForOrganism(organismID,fastaFile,...
-%    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond)
+% Usage: [model, metacycBlastStruct] = getMetaCycModelForOrganism(organismID,fastaFile,...
+%    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond,metacycBlastStruct)
 
+organismID=char(organismID);
 if nargin<2
     EM='No query protein fasta file is specified';
     dispEM(EM);
+else
+    fastaFile=char(fastaFile);
 end
 if nargin<3
     keepTransportRxns=false;
@@ -51,6 +61,9 @@ if nargin<7
 end
 if nargin<8
     useDiamond=true;
+end
+if nargin<9
+    metacycBlastStruct=[];
 end
 
 if isempty(fastaFile)
@@ -81,19 +94,22 @@ model.rev=metaCycModel.rev;
 model.c=metaCycModel.c;
 model.equations=metaCycModel.equations;
 
-%Get the 'external' directory for RAVEN Toolbox.
-[ST I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
+%Get the root directory for RAVEN Toolbox.
+ravenPath=findRAVENroot();
 
 %Generate blast strcture by either DIAMOND or BLASTP
-if useDiamond
-    blastStruc=getDiamond(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'metacyc','protseq.fsa'));
+if isempty(metacycBlastStruct)
+    if useDiamond
+        blastStruc=getDiamond(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'external','metacyc','protseq.fsa'));
+    else
+        blastStruc=getBlast(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'external','metacyc','protseq.fsa'));
+    end
+    %Only look the query
+    blastStructure=blastStruc(2);
+    metacycBlastStruct=blastStructure;
 else
-    blastStruc=getBlast(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'metacyc','protseq.fsa'));
+    blastStructure=metacycBlastStruct;
 end
-
-%Only look the query
-blastStructure=blastStruc(2);
 
 %Remove all blast hits that are below the cutoffs
 indexes=blastStructure.bitscore>=minScore & blastStructure.ppos>=minPositives;
@@ -107,10 +123,10 @@ blastStructure.ppos(~indexes)=[];
 fprintf('Completed searching against MetaCyc protein sequences.\n');
 
 % Get the qualified genes of query organism from blast structure
-model.genes=cell(10000,1);
-model.proteins=cell(10000,1);
-model.bitscore=zeros(10000,1);
-model.ppos=zeros(10000,1);
+model.genes=cell(100000,1);
+model.proteins=cell(100000,1);
+model.bitscore=zeros(100000,1);
+model.ppos=zeros(100000,1);
 num=1;
 
 %Go through the strucutre and find out the hit with the best bit score

@@ -1,21 +1,21 @@
-function [taskReport, essentialRxns, taskStructure]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure)
+function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure)
 % checkTasks
 %   Performs a set of simulations as defined in a task file.
 %
 %   Input:
 %   model           a model structure
 %   inputFile       a task list in Excel format. See the function
-%                   parseTaskList for details (opt if taskStructure is
+%                   parseTaskList for details (optional if taskStructure is
 %                   supplied)
 %   printOutput     true if the results of the test should be displayed
-%                   (opt, default true)
+%                   (optional, default true)
 %   printOnlyFailed true if only tasks that failed should be displayed
-%                   (opt, default false)
+%                   (optional, default false)
 %   getEssential    true if the essential reactions should be calculated for
-%                   all the tasks. This option is used with runINIT (opt,
+%                   all the tasks. This option is used with runINIT (optional,
 %                   default false)
 %   taskStructure   structure with the tasks, as from parseTaskList. If
-%                   this is supplied then inputFile is ignored (opt)
+%                   this is supplied then inputFile is ignored (optional)
 %
 %
 %   Output:
@@ -31,6 +31,8 @@ function [taskReport, essentialRxns, taskStructure]=checkTasks(model,inputFile,p
 %                       are supplied). If getEssential=false then
 %                       essentialRxns=false(nRxns,nTasks)
 %   taskStructure       structure with the tasks, as from parseTaskList
+%   essentialFluxes     The fluxes of the essential rxns - same structure as essentialRxns
+%   
 %
 %   This function is used for defining a set of tasks for a model to
 %   perform. The tasks are defined by defining constraints on the model,
@@ -40,7 +42,7 @@ function [taskReport, essentialRxns, taskStructure]=checkTasks(model,inputFile,p
 %   bounds. If more bounds are needed to define the task, then several rows
 %   can be used for each task.
 %
-%   Usage: [taskReport, essentialReactions, taskStructure]=checkTasks(model,inputFile,...
+% Usage: [taskReport, essentialReactions, taskStructure]=checkTasks(model,inputFile,...
 %           printOutput,printOnlyFailed,getEssential,taskStructure)
 
 if nargin<3 || isempty(printOutput)
@@ -68,6 +70,7 @@ if nargin<6
 end
 
 essentialRxns=false(numel(model.rxns),numel(taskStructure));
+essentialFluxes = NaN(numel(model.rxns),numel(taskStructure));
 
 tModel=model;
 taskReport=[];
@@ -211,6 +214,9 @@ for i=1:numel(taskStructure)
     %Solve and print
     sol=solveLP(tModel);
     if ~isempty(sol.x)
+        %assign the fluxes
+        essentialFluxes(:,i) = sol.x(1:numel(model.rxns));
+        
         if ~taskStructure(i).shouldFail
             taskReport.ok(i,1)=true;
             if printOnlyFailed==false && printOutput==true

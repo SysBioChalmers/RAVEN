@@ -3,18 +3,18 @@ function drawPathway(pathway, h, cutOff, defaultColor)
 %	Draws a metabolic network to a figure.
 %
 %   pathway         pathway structure representing the pathway to be drawn
-%   handle          handle to a figure (opt)
+%   handle          handle to a figure (optional)
 %   cutOff          the fluxes are only printed if the absolute value of
 %                   at least one of the fluxes is above the cutoff value
-%                   (opt, default 0)
+%                   (optional, default 0)
 %   defaultColor    color in Matlab format to be used as the background
 %                   color for enzymes if no color is specified in the
-%                   pathway structure (opt, default [1 1 1])
+%                   pathway structure (optional, default [1 1 1])
 %
 %   NOTE:   At the moment all text sizes and some positions are hard coded.
 %           This means that this code is not appliable for any map
 %
-%   Usage: drawPathway(pathway, handle, cutOff, defaultColor)
+% Usage: drawPathway(pathway, handle, cutOff, defaultColor)
 
 if nargin<4
     defaultColor=[1 1 1];

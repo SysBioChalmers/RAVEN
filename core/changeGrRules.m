@@ -10,23 +10,18 @@ function model = changeGrRules(model,rxns,grRules,replace)
 %               different instances
 %   replace     true if old gene association should be replaced with new
 %               association. False if new gene association should be
-%               concatenated to the old association (opt, default true)
+%               concatenated to the old association (optional, default true)
 %
 %   model       an updated model structure
 %
-%   Usage: changeGrRules(model,rxns,grRules,replace)
+% Usage: changeGrRules(model,rxns,grRules,replace)
 
 if nargin==3
     replace=true;
 end
 
-if isstr(rxns)
-    rxns={rxns};
-end
-
-if isstr(grRules)
-    grRules={grRules};
-end
+rxns=convertCharArray(rxns);
+grRules=convertCharArray(grRules);
 
 if ~(numel(grRules)==numel(rxns))
     error('Number of rxns and grRules should be identical')
@@ -37,7 +32,9 @@ for i=1:length(rxns)
     geneList=transpose(cell(unique(regexp(grRules{i},'[)(]*|( and )*|( or )*','split')))); % Extract individual, unique genes from the geneAssoc provided
     geneList=geneList(~cellfun(@isempty, geneList));
     genesToAdd.genes=setdiff(geneList,model.genes); % Only keep the genes that are not yet part of the model.genes.
-    model=addGenesRaven(model,genesToAdd); % Add genes
+    if ~isempty(genesToAdd.genes)
+        model=addGenesRaven(model,genesToAdd); % Add genes
+    end
     
     % Find reaction and gene indices
     idx=getIndexes(model,rxns,'rxns');

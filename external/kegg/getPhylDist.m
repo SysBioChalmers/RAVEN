@@ -9,7 +9,7 @@ function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 %                   path to the root of this database
 %   onlyInKingdom   if true, it generates a distance matrix with distance
 %                   Inf for organisms from another domains (Prokaryota,
-%                   Eukaryota) (opt, default false)
+%                   Eukaryota) (optional, default false)
 %
 %   Output:
 %   phylDistStruct  a structure with a list of organism ids and a matrix
@@ -18,10 +18,12 @@ function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 %   NOTE: This simple metric is based on the number of nodes two organisms
 %   are away from each other in KEGG
 %
-%   Usage: phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
+% Usage: phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 
 if nargin<1
     keggPath='RAVEN/external/kegg';
+else
+    keggPath=char(keggPath);
 end
 if nargin<2
     onlyInKingdom=false;
@@ -29,8 +31,7 @@ end
 
 %Check if the reactions have been parsed before and saved. If so, load the
 %model
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
+ravenPath=findRAVENroot();
 distFile=fullfile(ravenPath,'external','kegg','keggPhylDist.mat');
 if exist(distFile, 'file')
     fprintf(['Importing the KEGG phylogenetic distance matrix from ' strrep(distFile,'\','/') '... ']);
@@ -38,15 +39,16 @@ if exist(distFile, 'file')
     fprintf('COMPLETE\n');
 else
     fprintf(['Cannot locate ' strrep(distFile,'\','/') '\n']);
-    if ~exist(fullfile(keggPath,'taxonomy'),'file')
+    if ~isfile(fullfile(keggPath,'taxonomy'))
         EM=fprintf(['The file ''taxonomy'' cannot be located at ' strrep(keggPath,'\','/') '/ and should be downloaded from the KEGG FTP.\n']);
         dispEM(EM);
     else
-        fprintf(['Generating the KEGG phylogenetic distance matrix from ' fullfile(keggPath,'taxonomy') '... ']);
+        fprintf('Generating keggPhylDist.mat file... ');
         %Open the file that describes the naming of the species
         fid = fopen(fullfile(keggPath,'taxonomy'), 'r');
         
         phylDistStruct.ids={};
+        phylDistStruct.names={};
         
         %Keeps the categories for each organism
         orgCat={};
@@ -92,20 +94,19 @@ else
                     %Should always exist
                     
                     phylDistStruct.ids{orgCounter}=tline(sPos(1)+1:sPos(2)-1);
+                    phylDistStruct.names{orgCounter}=tline(sPos(3)+1:end);
                     orgCat{orgCounter}=currentCat;
                 end
             end
         end
-        
         %Generate a distance matrix (very straight forward here, not neat)
         phylDistStruct.distMat=zeros(numel(phylDistStruct.ids));
+        phylDistStructOnlyInKingdom.distMat=zeros(numel(phylDistStruct.ids));
+        phylDistStructOnlyInKingdom.ids=phylDistStruct.ids;
         for i=1:numel(phylDistStruct.ids)
             for j=1:numel(phylDistStruct.ids)
-                if onlyInKingdom==true
-                    if ~strcmp(orgCat{i}(1),orgCat{j}(1))
-                        phylDistStruct.distMat(i,j)=Inf;
-                        continue;
-                    end
+                if ~strcmp(orgCat{i}(1),orgCat{j}(1))
+                    phylDistStructOnlyInKingdom.distMat(i,j)=Inf;
                 end
                 %Calculate the distance between then
                 dist=numel(orgCat{i})-numel(orgCat{j});
@@ -131,8 +132,11 @@ else
             end
         end
         %Save the structure
-        save(distFile,'phylDistStruct');
+        save(distFile,'phylDistStruct','phylDistStructOnlyInKingdom');
         fprintf('COMPLETE\n');
     end
+end
+if onlyInKingdom==true
+    phylDistStruct=phylDistStructOnlyInKingdom;
 end
 end

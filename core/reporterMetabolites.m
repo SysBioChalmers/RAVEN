@@ -8,11 +8,11 @@ function repMets=reporterMetabolites(model,genes,genePValues,printResults,output
 %                   model.genes)
 %   genePValues     P-values for differential expression of the genes
 %   printResults    true if the top 20 Reporter Metabolites should be
-%                   printed to the screen (opt, default false)
-%   outputFile      the results are printed to this file (opt)
+%                   printed to the screen (optional, default false)
+%   outputFile      the results are printed to this file (optional)
 %   geneFoldChanges log-fold changes for the genes. If supplied, then
 %                   Reporter Metabolites are calculated for only up/down-
-%                   regulated genes in addition to the full test (opt)
+%                   regulated genes in addition to the full test (optional)
 %
 %   repMets         an array of structures with the following fields.
 %       test            a string the describes the genes that were used to
@@ -36,9 +36,10 @@ function repMets=reporterMetabolites(model,genes,genePValues,printResults,output
 %   Uncovering transcriptional regulation of metabolism by using metabolic
 %   network topology. Proc. Natl Acad. Sci. USA 2005;102:2685-2689.
 %
-%   Usage: repMets=reporterMetabolites(model,genes,genePValues,printResults,...
+% Usage: repMets=reporterMetabolites(model,genes,genePValues,printResults,...
 %           outputFile,geneFoldChanges)
 
+genes=convertCharArray(genes);
 if nargin<4
     printResults=false;
 end

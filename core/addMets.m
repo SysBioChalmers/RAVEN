@@ -2,60 +2,64 @@ function newModel=addMets(model,metsToAdd,copyInfo,prefix)
 % addMets
 %   Adds metabolites to a model
 %
+% Input:
 %   model       a model structure
 %   metsToAdd   the metabolite structure can have the following fields:
-%               mets           cell array with unique strings that
-%                              identifies each metabolite (opt, default IDs
-%                              of new metabolites are numbered with the
-%                              prefix defined below)
-%               metNames       cell array with the names of each
-%                              metabolite
-%               compartments   cell array with the compartment of each
-%                              metabolite. Should match model.comps.
-%                              If this is a string rather than a cell
-%                              array it is assumed that all mets are in
-%                              that compartment
-%               b              Nx1 or Nx2 matrix with equality constraints
-%                              for each metabolite (opt, default 0)
-%               unconstrained  vector describing if each metabolite is an
-%                              exchange metabolite (1) or not (0) (opt,
-%                              default 0)
-%               inchis         cell array with InChI strings for each
-%                              metabolite (opt, default '')
-%               metFormulas    cell array with the formulas for each of
-%                              the metabolites (opt, default '')
-%               metMiriams     cell array with MIRIAM structures (opt,
-%                              default [])
-%               metCharges     metabolite charge (opt, default NaN)
-%   copyInfo    when adding metabolites to a compartment where it previously
-%               doesn't exist, the function will copy any available annotation
-%               from the metabolite in another compartment (opt, default true)
+%       mets            cell array with unique strings that identifies each
+%                       metabolite (optional, default IDs of new
+%                       metabolites are numbered with the prefix defined
+%                       below)
+%       metNames        cell array with the names of each metabolite
+%       compartments    cell array with the compartment of each
+%                       metabolite. Should match model.comps. If this is a
+%                       string rather than a cell array it is assumed that
+%                       all mets are in that compartment
+%       b               Nx1 or Nx2 matrix with equality constraints for
+%                       each metabolite (optional, default 0)
+%       unconstrained   vector describing if each metabolite is an exchange
+%                       metabolite (1) or not (0) (optional, default 0)
+%       inchis          cell array with InChI strings (optional, default '')
+%       metSmiles       cell array with SMILES strings (optional, default '')
+%       metFormulas     cell array with the formulas  (optional, default '')
+%       metMiriams      cell array with MIRIAM structures (optional, default [])
+%       metCharges      metabolite charge (optional, default NaN)
+%       metDeltaG       Gibbs free energy of formation at biochemical
+%                       standard condition in kJ/mole (optional, default NaN)
+%       metNotes        cell array with metabolite notes as strings
+%                       (optional, default '')
+%   copyInfo    when adding metabolites to a compartment where it
+%               previously did not exist, the function will copy any
+%               available annotation from the metabolite in another
+%               compartment (optional, default true)
 %   prefix      when metsToAdd.mets is not specified, new metabolite IDs
 %               are generated with the prefix specified here. If IDs with
 %               the prefix are already used in the model then the
 %               numbering will start from the highest existing integer+1
-%               (opt, default 'm_')
+%               (optional, default 'm_')
 %
+% Output:
 %   newModel     an updated model structure
 %
-%   NOTE: This function does not make extensive checks about MIRIAM formats,
-%   forbidden characters or such.
+% This function does not make extensive checks about MIRIAM formats,
+% forbidden characters or such.
 %
-%   Example: If multiple metabolites are added at once, the metMiriams cell
-%   array should be defined as (example with ChEBI and KEGG):
+% If multiple metabolites are added at once, the metMiriams cell array
+% should be defined as (example with ChEBI and KEGG):
 %
-%   metsToAdd.metMiriams{1} = struct('name',{{'chebi';'kegg.compound'}},...
-%       'value',{{'CHEBI:18072';'C11821'}});
-%   metsToAdd.metMiriams{2} = struct('name',{{'chebi';'kegg.compound'}},...
-%       'value',{{'CHEBI:31132';'C12248'}});
+% metsToAdd.metMiriams{1} = struct('name',{{'chebi';'kegg.compound'}},...
+%     'value',{{'CHEBI:18072';'C11821'}});
+% metsToAdd.metMiriams{2} = struct('name',{{'chebi';'kegg.compound'}},...
+%     'value',{{'CHEBI:31132';'C12248'}});
 %
-%   Usage: newModel=addMets(model,metsToAdd,copyInfo,prefix)
+% Usage: newModel = addMets(model, metsToAdd, copyInfo, prefix)
 
 if nargin<3
     copyInfo=true;
 end
 if nargin<4
     prefix='m_';
+else
+    prefix=char(prefix);
 end
 
 newModel=model;
@@ -67,34 +71,24 @@ end
 %Check some stuff regarding the required fields
 if ~isfield(metsToAdd,'mets')
     metsToAdd.mets=generateNewIds(newModel,'mets',prefix,numel(metsToAdd.metNames));
+else
+    metsToAdd.mets=convertCharArray(metsToAdd.mets);
 end
 if ~isfield(metsToAdd,'metNames')
     metsToAdd.metNames=metsToAdd.mets;
+else
+    metsToAdd.metNames=convertCharArray(metsToAdd.metNames);
 end
 if ~isfield(metsToAdd,'compartments')
     EM='compartments is a required field in metsToAdd';
     dispEM(EM);
-end
-if ischar(metsToAdd.mets)
-    metsToAdd.mets={metsToAdd.mets};
-elseif ~iscellstr(metsToAdd.mets)
-    EM='metsToAdd.mets must be a cell array of strings';
-    dispEM(EM);
-end
-if ischar(metsToAdd.metNames)
-    metsToAdd.metNames={metsToAdd.metNames};
-elseif ~iscellstr(metsToAdd.metNames)
-    EM='metsToAdd.metNames must be a cell array of strings';
-    dispEM(EM);
-end
-if ~iscellstr(metsToAdd.compartments)
-    if ischar(metsToAdd.compartments)
+else
+    metsToAdd.compartments=convertCharArray(metsToAdd.compartments);
+    %If only one compartment is given, assume it is for all metabolites
+    if numel(metsToAdd.compartments)==1 && numel(metsToAdd.mets)>1
         temp=cell(numel(metsToAdd.mets),1);
-        temp(:)={metsToAdd.compartments};
+        temp(:)=metsToAdd.compartments;
         metsToAdd.compartments=temp;
-    else
-        EM='metsToAdd.compartments must be a cell array of strings';
-        dispEM(EM);
     end
 end
 
@@ -109,8 +103,8 @@ largeFiller(:)={''};
 %Check that no metabolite ids are already present in the model
 I=ismember(metsToAdd.mets,model.mets);
 if any(I)
-    dispEM(['One or more elements in metsToAdd.mets are already present in model.mets: '...
-        metsToAdd.mets{I}]);
+    error('One or more elements in metsToAdd.mets are already present in model.mets: %s',...
+        strjoin(metsToAdd.mets(I),', '));
 else
     newModel.mets=[newModel.mets;metsToAdd.mets(:)];
 end
@@ -191,12 +185,9 @@ else
 end
 
 if isfield(metsToAdd,'inchis')
+    metsToAdd.inchis=convertCharArray(metsToAdd.inchis);
     if numel(metsToAdd.inchis)~=nMets
         EM='metsToAdd.inchis must have the same number of elements as metsToAdd.mets';
-        dispEM(EM);
-    end
-    if ~iscellstr(metsToAdd.inchis)
-        EM='metsToAdd.inchis must be a cell array of strings';
         dispEM(EM);
     end
     %Add empty field if it doesn't exist
@@ -211,13 +202,29 @@ else
     end
 end
 
-if isfield(metsToAdd,'metFormulas')
-    if numel(metsToAdd.metFormulas)~=nMets
-        EM='metsToAdd.metFormulas must have the same number of elements as metsToAdd.mets';
+
+if isfield(metsToAdd,'metSmiles')
+    metsToAdd.metSmiles=convertCharArray(metsToAdd.metSmiles);
+    if numel(metsToAdd.metSmiles)~=nMets
+        EM='metsToAdd.metSmiles must have the same number of elements as metsToAdd.mets';
         dispEM(EM);
     end
-    if ~iscellstr(metsToAdd.metFormulas)
-        EM='metsToAdd.metFormulas must be a cell array of strings';
+    %Add empty field if it doesn't exist
+    if ~isfield(newModel,'metSmiles')
+        newModel.metSmiles=largeFiller;
+    end
+    newModel.metSmiles=[newModel.metSmiles;metsToAdd.metSmiles(:)];
+else
+    %Add empty strings if structure is in model
+    if isfield(newModel,'metSmiles')
+        newModel.metSmiles=[newModel.metSmiles;filler];
+    end
+end
+
+if isfield(metsToAdd,'metFormulas')
+    metsToAdd.metFormulas=convertCharArray(metsToAdd.metFormulas);
+    if numel(metsToAdd.metFormulas)~=nMets
+        EM='metsToAdd.metFormulas must have the same number of elements as metsToAdd.mets';
         dispEM(EM);
     end
     %Add empty field if it doesn't exist
@@ -241,6 +248,9 @@ if isfield(metsToAdd,'metCharges')
         EM='metsToAdd.metCharges must be of type "double"';
         dispEM(EM);
     end
+    if ~isfield(newModel,'metCharges')
+        newModel.metCharges=NaN(numel(largeFiller),1);
+    end
     newModel.metCharges=[newModel.metCharges;metsToAdd.metCharges(:)];
 else
     %Add default
@@ -249,8 +259,57 @@ else
     end
 end
 
+if isfield(metsToAdd,'metDeltaG')
+    if numel(metsToAdd.metDeltaG)~=nMets
+        EM='metsToAdd.metDeltaG must have the same number of elements as metsToAdd.mets';
+        dispEM(EM);
+    end
+    if ~isnumeric(metsToAdd.metDeltaG)
+        EM='metsToAdd.metDeltaG must be of type "double"';
+        dispEM(EM);
+    end
+    if ~isfield(newModel,'metDeltaG')
+        newModel.metDeltaG=NaN(numel(largeFiller),1);
+    end
+    newModel.metDeltaG=[newModel.metDeltaG;metsToAdd.metDeltaG(:)];
+else
+    %Add default
+    if isfield(newModel,'metDeltaG')
+        newModel.metDeltaG=[newModel.metDeltaG;NaN(numel(filler),1)];
+    end
+end
+
+
+if isfield(metsToAdd,'metNotes')
+    metsToAdd.metNotes=convertCharArray(metsToAdd.metNotes);
+    if numel(metsToAdd.metNotes)==1 && numel(metsToAdd.mets)>1
+        temp=cell(numel(metsToAdd.mets),1);
+        temp(:)=metsToAdd.metNotes;
+        metsToAdd.metNotes=temp;
+    end
+    if numel(metsToAdd.metNotes)~=nMets
+        EM='metsToAdd.metNotes must have the same number of elements as metsToAdd.mets';
+        dispEM(EM);
+    end
+    %Add empty field if it doesn't exist
+    if ~isfield(newModel,'metNotes')
+        newModel.metNotes=largeFiller;
+    end
+    newModel.metNotes=[newModel.metNotes;metsToAdd.metNotes(:)];
+else
+    %Add empty strings if structure is in model
+    if isfield(newModel,'metNotes')
+        newModel.metNotes=[newModel.metNotes;filler];
+    end
+end
+
 %Don't check the type of metMiriams
 if isfield(metsToAdd,'metMiriams')
+    if numel(metsToAdd.metMiriams)==1 && numel(metsToAdd.mets)>1
+        temp=cell(numel(metsToAdd.mets),1);
+        temp(:)={metsToAdd.metMiriams};
+        metsToAdd.metMiriams=temp;
+    end
     if numel(metsToAdd.metMiriams)~=nMets
         EM='metsToAdd.metMiriams must have the same number of elements as metsToAdd.mets';
         dispEM(EM);
@@ -287,6 +346,11 @@ if copyInfo==true
                 newModel.inchis(I(i))=newModel.inchis(J(i));
             end
         end
+        if isfield(newModel,'metSmiles')
+            if isempty(newModel.metSmiles{I(i)})
+                newModel.metSmiles(I(i))=newModel.metSmiles(J(i));
+            end
+        end        
         if isfield(newModel,'metFormulas')
             if isempty(newModel.metFormulas{I(i)})
                 newModel.metFormulas(I(i))=newModel.metFormulas(J(i));
@@ -300,19 +364,9 @@ if copyInfo==true
         if isfield(newModel,'metCharges')
             newModel.metCharges(I(i))=newModel.metCharges(J(i));
         end
-    end
-end
-end
-
-%For getting the numerical form of metabolite ids on the form "m1".
-function I=getInteger(s)
-%Checks if a string is on the form "m1" and if so returns the value of the
-%integer
-I=0;
-if strcmpi(s(1),'m')
-    t=str2double(s(2:end));
-    if ~isnan(t) && ~isempty(t)
-        I=t;
+        if isfield(newModel,'metDeltaG')
+            newModel.metDeltaG(I(i))=newModel.metDeltaG(J(i));
+        end
     end
 end
 end

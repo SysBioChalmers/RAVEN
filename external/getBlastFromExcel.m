@@ -23,11 +23,12 @@ function blastStructure=getBlastFromExcel(models,blastFile,organismId)
 %   each measurement (captions should be "E-value", "Alignment length",
 %   "Identity", "Bitscore" and "PPOS").
 %
-%   Usage: blastStructure=getBlastFromExcel(models,blastFile,organismId)
+% Usage: blastStructure=getBlastFromExcel(models,blastFile,organismId)
 
-if ~(exist(blastFile,'file')==2)
+if ~isfile(blastFile)
     error('BLAST result file %s cannot be found',string(blastFile));
 end
+organismId=char(organismId);
 
 blastStructure=[];
 

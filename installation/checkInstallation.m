@@ -1,159 +1,375 @@
-function checkInstallation()
+function [currVer, installType] = checkInstallation(developMode)
 % checkInstallation
 %   The purpose of this function is to check if all necessary functions are
 %   installed and working. It also checks whether there are any functions
 %   with overlapping names between RAVEN and other toolboxes or
 %   user-defined functions, which are accessible from MATLAB pathlist
 %
-%   Usage: checkInstallation()
+% Input: 
+%   developMode     logical indicating development mode, which includes
+%                   testing of binaries that are required to update KEGG
+%                   HMMs (optional, default false). If 'versionOnly' is
+%                   specified, only the version is reported as currVer, no
+%                   further installation or tests are performed.
+%
+% Output:
+%   currVer         current RAVEN version
+%   installType     how RAVEN is installed
+%                   0:  via git (as .git folder is found)
+%                   1:  as MATLAB Add-On
+%                   2:  neither of the above, direct download of ZIP file
+%                   This matches the installations mentioned in the wiki:
+%                   https://github.com/SysBioChalmers/RAVEN/wiki/Installation
+%                   0 = advanced / 1 = easy / 2 = medium
+%
+% Usage: [currVer, installType] = checkInstallation(developMode)
 
-%Check if RAVEN is in the MATLAB path list
-paths=textscan(path,'%s','delimiter', pathsep);
-paths=paths{1};
+if nargin<1
+    developMode=false;
+end
+if ischar(developMode) && strcmp(developMode,'versionOnly')
+    versionOnly = true;
+else
+    versionOnly = false;
+end
 
 %Get the RAVEN path
 [ST, I]=dbstack('-completenames');
 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
 
-%Print the RAVEN version if it is not the development version
+installType = 2; % If neither git nor add-on, then ZIP was downloaded
+addList = matlab.addons.installedAddons;
+if isfolder(fullfile(ravenDir,'.git'))
+    installType = 0;
+elseif any(strcmp(addList.Name,'RAVEN Toolbox'))
+    installType = 1;
+end
+
+% Do not print first few lines if only version should be reported
+if ~versionOnly
+    fprintf('\n*** THE RAVEN TOOLBOX ***\n\n');
+    %Print the RAVEN version if it is not the development version
+    fprintf(myStr(' > Installation type',40));
+    switch installType
+        case 0
+            fprintf('Advanced (via git)\n');
+        case 1
+            fprintf('Easy (as MATLAB Add-On)\n');
+        case 2
+            fprintf('Medium (as downloaded ZIP file)\n');
+    end
+    fprintf(myStr(' > Installing from location',40));
+    fprintf('%s\n',ravenDir)
+    fprintf(myStr(' > Checking RAVEN release',40));
+end
+                       
 if exist(fullfile(ravenDir,'version.txt'), 'file') == 2
-    fprintf(['\n*** THE RAVEN TOOLBOX v.' fgetl(fopen(fullfile(ravenDir,'version.txt'))) ' ***\n\n']);
+    currVer = fgetl(fopen(fullfile(ravenDir,'version.txt')));
+    fclose('all');
+    if ~versionOnly
+        fprintf([currVer '\n']);
+        try
+            newVer=strtrim(webread('https://raw.githubusercontent.com/SysBioChalmers/RAVEN/main/version.txt'));
+            newVerNum=str2double(strsplit(newVer,'.'));
+            currVerNum=str2double(strsplit(currVer,'.'));
+            for i=1:3
+                if currVerNum(i)<newVerNum(i)
+                    fprintf(myStr('   > Latest RAVEN release available',40))
+                    printOrange([newVer,'\n'])
+                    switch installType
+                        case 0
+                            printOrange('     Run git pull in your favourite git client\n')
+                            printOrange('     to get the latest RAVEN release\n');
+                        case 1
+                            printOrange(myStr('     Instructions on how to upgrade',40))
+                            fprintf('<a href="https://github.com/SysBioChalmers/RAVEN/wiki/Installation#upgrade-raven-after-easy-installation">here</a>\n');
+                        case 2
+                            printOrange(myStr('     Instructions on how to upgrade',40))
+                            fprintf('<a href="https://github.com/SysBioChalmers/RAVEN/wiki/Installation#upgrade-raven-after-medium-installation">here</a>\n');                            
+                    end
+                    break
+                elseif i==3
+                    fprintf('   > You are running the latest RAVEN release\n');
+                end
+            end
+        catch
+            fprintf(myStr('   > Checking for latest RAVEN release',40))
+            printOrange('Fail\n');
+            printOrange('     Cannot reach GitHub for release info\n');
+        end
+    end
 else
-    fprintf('\n*** THE RAVEN TOOLBOX - DEVELOPMENT VERSION ***\n\n');
+    currVer = 'develop';
+    if ~versionOnly; fprintf('DEVELOPMENT\n'); end
+end
+if strcmp(developMode,'versionOnly')
+    return;
 end
 
-fprintf(['MATLAB R' version('-release') ' detected\n\n']);
+fprintf(myStr(' > Checking MATLAB release',40))
+fprintf([version('-release') '\n'])
+fprintf(myStr(' > Checking system architecture',40))
+fprintf([computer('arch'),'\n'])
 
-fprintf('Checking if RAVEN is on the MATLAB path...\t\t\t\t\t\t\t\t\t');
-if ismember(ravenDir,paths)
-    fprintf('OK\n');
-else
-    fprintf('OK (just added)\n');
-    subpath=regexp(genpath(ravenDir),pathsep,'split'); %List all subdirectories
-    pathsToKeep=cellfun(@(x) isempty(strfind(x,'.git')),subpath) & cellfun(@(x) isempty(strfind(x,'doc')),subpath);
+fprintf(myStr(' > Set RAVEN in MATLAB path',40))
+subpath=regexp(genpath(ravenDir),pathsep,'split'); %List all subdirectories
+pathsToKeep=cellfun(@(x) ~contains(x,'.git'),subpath) & cellfun(@(x) ~contains(x,'doc'),subpath);
+try
     addpath(strjoin(subpath(pathsToKeep),pathsep));
-    savepath
+    fprintf('Pass\n');
+    fprintf(myStr(' > Save MATLAB path',40))
+    try
+        savepath
+        fprintf('Pass\n')   
+    catch
+        printOrange('Fail\n')
+        fprintf(['   You might have to rerun checkInstallation again\n'...
+                 '   next time you start up MATLAB\n'])        
+    end
+catch
+    printOrange('Fail\n')
 end
 
-%Add the required classes to the static Java path if not already added
-addJavaPaths();
-
-excelFile=fullfile(ravenDir,'tutorial','empty.xlsx');
-xmlFile=fullfile(ravenDir,'tutorial','empty.xml');
-matFile=fullfile(ravenDir,'tutorial','empty.mat');
+if isunix
+    fprintf(myStr('   > Make binaries executable',40))
+    status = makeBinaryExecutable(ravenDir);
+    if status == 0
+        fprintf('Pass\n')
+    else
+        printOrange('Fail\n')
+    end
+end
 
 %Check if it is possible to parse an Excel file
-fprintf('Checking if it is possible to parse a model in Microsoft Excel format...\t');
+fprintf('\n=== Model import and export ===\n');
+fprintf(myStr(' > Add Java paths for Excel format',40))
 try
-    importExcelModel(excelFile,false,false,true);
-    fprintf('OK\n');
+    %Add the required classes to the static Java path if not already added
+    addJavaPaths();
+    fprintf('Pass\n')
 catch
-    fprintf('Not OK\n');
+    printOrange('Fail\n')
 end
-
-%Check if it is possible to import an SBML model using libSBML
-fprintf('Checking if it is possible to import an SBML model using libSBML...\t\t\t');
+fprintf(myStr(' > Checking libSBML version',40))
 try
-    importModel(xmlFile);
+    evalc('importModel(fullfile(ravenDir,''tutorial'',''empty.xml''))');
     try
-        libSBMLver=OutputSBML; % Only works in libSBML 5.17.0+
-        fprintf('OK\n');
+        libSBMLver=OutputSBML_RAVEN; % Only works in libSBML 5.17.0+
+        fprintf([libSBMLver.libSBML_version_string '\n']);
     catch
-        fprintf(['Not OK\n\n'...
-            'An older libSBML version was found, update to version 5.17.0 or higher\n'...
-            'for a significant improvement of model import\n\n']);
+        printOrange('Fail\n')
+        fprintf('   An older libSBML version was found, update to version 5.17.0 or higher for a significant improvement of model import\n');
     end
 catch
-    fprintf(['Not OK\nTo import SBML models, download libSBML from\n'...
-        'http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n']);
+    printOrange('Fail\n')
+    fprintf('   Download libSBML from http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n');
+end
+fprintf(' > Checking model import and export\n')
+[~,res]=evalc("runtests('importExportTests.m');");
+
+fprintf(myStr('   > Import Excel format',40))
+if res(1).Passed == 1
+    fprintf('Pass\n')
+else
+    printOrange('Fail\n')
+    if any(strcmpi(addList.Name,'Text Analytics Toolbox'))
+        fprintf(['   Excel import/export is incompatible with MATLAB Text Analytics Toolbox.\n' ...
+                 '   Further instructions => https://github.com/SysBioChalmers/RAVEN/issues/55#issuecomment-1514369299\n'])
+    end
 end
 
-%Define values for keepSolver and workingSolvers, needed for solver
-%functionality check
-keepSolver=false;
-workingSolvers='';
+fprintf(myStr('   > Export Excel format',40))
+if res(3).Passed == 1
+    fprintf('Pass\n')
+else
+    printOrange('Fail\n')
+end
+
+fprintf(myStr('   > Import SBML format',40))
+if res(2).Passed == 1
+    fprintf('Pass\n')
+else
+    printOrange('Fail\n')
+end
+
+fprintf(myStr('   > Export SBML format',40))
+if res(4).Passed == 1
+    fprintf('Pass\n')
+else
+    printOrange('Fail\n')
+end
+
+%Check if it is possible to import an YAML model
+% fprintf(' > Checking import of model in YAML format:\t\t\t');
+% try
+%     readYaml(ymlFile,true);
+%     fprintf('Pass\n');
+% catch
+%     printOrange('Fail\n');
+% end
+
+fprintf('\n=== Model solvers ===\n');
+
 %Get current solver. Set it to 'none', if it is not set
-if ~ispref('RAVEN','solver')
-    fprintf('Solver found in preferences... NONE\n');
-    setRavenSolver('none');
-    curSolv=getpref('RAVEN','solver');
+fprintf(' > Checking for LP solvers\n')
+[~,res]=evalc("runtests('solverTests.m');");
+
+fprintf(myStr('   > glpk',40))
+if res(1).Passed == 1
+    fprintf('Pass\n')
 else
-    curSolv=getpref('RAVEN','solver');
-    fprintf(['Solver found in preferences... ',curSolv,'\n']);
+    printOrange('Fail\n')
 end
 
-%Check if it is possible to solve an LP problem using different solvers
-solver={'gurobi','cobra'};
-
-for i=1:numel(solver)
-    fprintf(['Checking if it is possible to solve an LP problem using ',solver{i},'...\t\t\t']);
-    try
-        setRavenSolver(solver{i});
-        load(matFile);
-        solveLP(emptyModel);
-        workingSolvers=strcat(workingSolvers,';',solver{i});
-        fprintf('OK\n');
-        if strcmp(curSolv,solver{i})
-            keepSolver=true;
-        end
-    catch
-        fprintf('Not OK\n');
-    end
-end
-
-if keepSolver
-    %The solver set in curSolv is functional, so the settings are restored
-    %to the ones which were set before running checkInstallation
-    setRavenSolver(curSolv);
-    fprintf(['Preferred solver... KEPT\nSolver saved as preference... ',curSolv,'\n\n']);
-elseif ~isempty(workingSolvers)
-    %There are working solvers, but the none of them is the solver defined
-    %by curSolv. The first working solver is therefore set as RAVEN solver
-    workingSolvers=regexprep(workingSolvers,'^;','');
-    workingSolvers=regexprep(workingSolvers,';.+$','');
-    %Only one working solver should be left by now in workingSolvers
-    setRavenSolver(workingSolvers);
-    fprintf(['Preferred solver... NEW\nSolver saved as preference... ',workingSolvers,'\n\n']);
+fprintf(myStr('   > gurobi',40))
+if res(2).Passed == 1
+    fprintf('Pass\n')
 else
-    %No functional solvers were found, so the setting is restored back to
-    %original
-    setRavenSolver(curSolv);
-    fprintf(['WARNING: No working solver was found!\n'...
-        'Install the solver, set it using setRavenSolver(''solverName'') and run checkInstallation again\n'...
-        'Available solverName options are ''gurobi'' and ''cobra''\n\n']);
+    printOrange('Fail\n')
 end
 
-fprintf('Checking essential binary executables:\n');
-fprintf('NOTE: Broken binary executables <strong>must be fixed</strong> before running RAVEN\n');
+fprintf(myStr('   > scip',40))
+if res(3).Passed == 1
+    fprintf('Pass\n')
+else
+    printOrange('Fail\n')
+end
 
-fprintf('\tBLAST+... ');
-res=runtests('blastPlusTests.m','OutputDetail',0);
-interpretResults(res);
-fprintf('\tDIAMOND... ');
-res=runtests('diamondTests.m','OutputDetail',0);
-interpretResults(res);
-fprintf('\tHMMER... ');
-res=runtests('hmmerTests.m','OutputDetail',0);
-interpretResults(res);
-fprintf('Checking non-essential/development binary executables:\n');
-fprintf('NOTE: Only fix these binaries if planning to use KEGG FTP dump files in getKEGGModelForOrganism\n');
-fprintf('\tCD-HIT... ');
-res=runtests('cdhitTests.m','OutputDetail',0);
-interpretResults(res);
-fprintf('\tMAFFT... ');
-res=runtests('mafftTests.m','OutputDetail',0);
-interpretResults(res);
+fprintf(myStr('   > cobra',40))
+if res(4).Passed == 1
+    fprintf('Pass\n')
+else
+    printOrange('Fail\n')
+end
+fprintf(myStr(' > Set RAVEN solver',40))
+try
+    oldSolver=getpref('RAVEN','solver');
+    solverIdx=find(strcmp(oldSolver,{'glpk','gurobi','scip','cobra'}));
+catch
+    solverIdx=0;
+end
+% Do not change old solver if functional
+if solverIdx~=0 && res(solverIdx).Passed == 1
+    fprintf([oldSolver '\n'])
+% Order of preference: gurobi > glpk > scip > cobra
+elseif res(2).Passed == 1
+    fprintf('gurobi\n')
+    setRavenSolver('gurobi');
+elseif res(1).Passed == 1
+    fprintf('glpk\n')
+    setRavenSolver('glpk');
+elseif res(3).Passed == 1
+    fprintf('scip\n')
+    setRavenSolver('scip');    
+elseif res(4).Passed == 1
+    fprintf('cobra\n')
+    setRavenSolver('cobra');
+else
+    fprintf('None, no functional solvers\n')
+    fprintf('    The glpk should always be working, check your RAVEN installation to make sure all files are present\n')
+end
 
-fprintf('Checking whether RAVEN functions are non-redundant across MATLAB path...\t');
+fprintf('\n=== Essential binary executables ===\n');
+fprintf(myStr(' > Checking BLAST+',40))
+[~,res]=evalc("runtests('blastPlusTests.m');");
+res=interpretResults(res);
+if res==false
+    fprintf('   This is essential to run getBlast()\n')
+end
+
+fprintf(myStr(' > Checking DIAMOND',40))
+[~,res]=evalc("runtests('diamondTests.m');");
+res=interpretResults(res);
+if res==false
+    fprintf('   This is essential to run the getDiamond()\n')
+end
+
+fprintf(myStr(' > Checking HMMER',40))
+[~,res]=evalc("runtests('hmmerTests.m')");
+res=interpretResults(res);
+if res==false
+    fprintf(['   This is essential to run getKEGGModelFromHomology()\n'...
+             '   when using a FASTA file as input\n'])
+end
+
+if developMode
+    fprintf('\n=== Development binary executables ===\n');
+    fprintf('NOTE: These binaries are only required when using KEGG FTP dump files in getKEGGModelForOrganism\n');
+
+    fprintf(myStr(' > Checking CD-HIT',40))
+    [~,res]=evalc("runtests('cdhitTests.m');");
+    interpretResults(res);
+
+    fprintf(myStr(' > Checking MAFFT',40))
+    [~,res]=evalc("runtests('mafftTests.m');");
+    interpretResults(res);
+end
+
+fprintf('\n=== Compatibility ===\n');
+fprintf(myStr(' > Checking function uniqueness',40))
 checkFunctionUniqueness();
 
 fprintf('\n*** checkInstallation complete ***\n\n');
 end
 
-function interpretResults(results)
+function res = interpretResults(results)
 if results.Failed==0 && results.Incomplete==0
-    fprintf('OK\n');
+    fprintf('Pass\n');
+    res=true;
 else
-    fprintf('Not OK! Download/compile the binary and rerun checkInstallation\n');
+    printOrange('Fail\n')
+    fprintf('   Download/compile the binary and rerun checkInstallation\n');
+    res=false;
+end
+end
+
+function str = myStr(InputStr,len)
+str=InputStr;
+lenDiff = len - length(str);
+if lenDiff < 0
+    warning('String too long');
+else
+    str = [str blanks(lenDiff)];
+end
+end
+
+function status = makeBinaryExecutable(ravenDir)
+% This function is required to run when RAVEN is downloaded as MATLAB
+% Add-On, in which case the file permissions are not correctly set
+if ispc
+    status = 0; % No need to run on Windows
+    return;
+end
+binDir = fullfile(ravenDir,'software');
+
+binList = {fullfile(binDir,'blast+','blastp');                      fullfile(binDir,'blast+','blastp.mac');
+           fullfile(binDir,'blast+','makeblastdb');                 fullfile(binDir,'blast+','makeblastdb.mac');
+           fullfile(binDir,'cd-hit','cd-hit');                      fullfile(binDir,'cd-hit','cd-hit.mac');
+           fullfile(binDir,'diamond','diamond');                    fullfile(binDir,'diamond','diamond.mac');
+           fullfile(binDir,'hmmer','hmmbuild');                     fullfile(binDir,'hmmer','hmmbuild.mac');
+           fullfile(binDir,'hmmer','hmmsearch');                    fullfile(binDir,'hmmer','hmmsearch.mac');
+           fullfile(binDir,'GLPKmex','glpkcc.mexa64');              fullfile(binDir,'GLPKmex','glpkcc.mexglx');                 fullfile(binDir,'GLPKmex','glpkcc.mexmaci64');              fullfile(binDir,'GLPKmex','glpkcc.mexmaca64');
+           fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexa64'); fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexglx');    fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexmaci64');  fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexmaca64');
+           fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexa64');    fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexglx');       fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexmaci64');     fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexmaca64');
+           fullfile(binDir,'mafft','mafft-linux64','mafft.bat');
+           fullfile(binDir,'mafft','mafft-mac','mafft.bat');};
+
+for i=1:numel(binList)
+    [status,cmdout] = system(['chmod +x "' binList{i} '"']);
+    if status ~= 0
+        warning('Failed to make %s executable: %s ',binList{i},strip(cmdout))
+    end
+end
+end
+
+function printOrange(stringToPrint)
+% printOrange
+%   Duplicate of RAVEN/core/printOrange is also kept here, as this function
+%   should be able to run before adding RAVEN to the MATLAB path.
+try useDesktop = usejava('desktop'); catch, useDesktop = false; end
+if useDesktop
+    fprintf(['[\b' stringToPrint,']\b'])
+else
+    fprintf(stringToPrint)
 end
 end

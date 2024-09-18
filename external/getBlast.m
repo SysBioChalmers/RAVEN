@@ -1,5 +1,5 @@
 function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
-    modelIDs,refFastaFiles,develMode,hideVerbose)
+    modelIDs,refFastaFiles,developMode,hideVerbose)
 % getBlast
 %   Performs a bidirectional BLAST between the organism of interest and a
 %   set of template organisms
@@ -14,10 +14,10 @@ function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
 %                   output is to be used with getModelFromHomology
 %   refFastaFiles   a cell array with the paths to the corresponding FASTA
 %                   files
-%   develMode       true if blastReport should be generated that is used
-%                   in the unit testing function for BLAST+ (opt, default
+%   developMode     true if blastReport should be generated that is used
+%                   in the unit testing function for BLAST+ (optional, default
 %                   false)
-%   hideVerbose     true if no status messages should be printed (opt,
+%   hideVerbose     true if no status messages should be printed (optional,
 %                   default false)
 %
 %   Output:
@@ -25,7 +25,7 @@ function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
 %                   measurements that can be used by getModelFromHomology
 %   blastReport     structure containing MD5 hashes for FASTA database
 %                   files and non-parsed BLAST output data. Will be blank
-%                   if develMode is false.
+%                   if developMode is false.
 %
 %   NOTE: This function calls BLAST+ to perform a bidirectional homology
 %   test between the organism of interest and a set of other organisms
@@ -33,21 +33,21 @@ function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
 %   removal of hits with an E-value higher than 10e-5. The other homology
 %   measurements can be implemented using getBlastFromExcel.
 %
-%   Usage: [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
-%    modelIDs,refFastaFiles,develMode,hideVerbose)
+% Usage: [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
+%    modelIDs,refFastaFiles,developMode,hideVerbose)
 
 if nargin<5
-    develMode = false;
+    developMode = false;
 end
 if nargin<6
     hideVerbose = false;
 end
 
 %Everything should be cell arrays
-organismID=cellstr(organismID);
-fastaFile=cellstr(fastaFile);
-modelIDs=cellstr(modelIDs);
-refFastaFiles=cellstr(refFastaFiles);
+organismID=convertCharArray(organismID);
+fastaFile=convertCharArray(fastaFile);
+modelIDs=convertCharArray(modelIDs);
+refFastaFiles=convertCharArray(refFastaFiles);
 
 %Create blank structures for results
 blastStructure=[];
@@ -57,14 +57,21 @@ blastReport.dbHashes.psq={};
 blastReport.dbHashes.pto={};
 blastReport.blastTxtOutput={};
 
-%Get the directory for RAVEN Toolbox. This may not be the easiest or best
-%way to do this
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
+%Get the directory for RAVEN Toolbox
+ravenPath=findRAVENroot();
 
 %Generate temporary names for BLAST databases and output files
 tmpDB=tempname;
 outFile=tempname;
+if ispc && contains(tmpDB,' ')
+    warning(['MATLAB assigned ''%s'' as temporary file path, but it '...
+             'contains a space character, which is not compatible with '...
+             'BLAST. Instead, a temporary folder will be initiated at '...
+             '''C:\\tempRAVEN\\'' which should manually be removed when '...
+             'finished.'],tmpDB)
+    tmpDB=tempname('C:\tempRAVEN');
+    outFile=tempname('C:\tempRAVEN');
+end
 
 %Check for existence of files. If no full path is specified for a file,
 %assume that it is in the current folder
@@ -101,29 +108,27 @@ cores = cores{1};
 
 %Create a database for the new organism and blast each of the refFastaFiles
 %against it
-[status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in ' fastaFile{1} ' -out "' fullfile(tmpDB, 'tmpDB') '" -dbtype prot']);
-if develMode
+[status, message]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in "' fastaFile{1} '" -out "' fullfile(tmpDB, 'tmpDB') '" -dbtype prot']);
+if developMode
     blastReport.dbHashes.phr{numel(blastReport.dbHashes.phr)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.phr'));
     blastReport.dbHashes.pot{numel(blastReport.dbHashes.pot)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.pot'));
     blastReport.dbHashes.psq{numel(blastReport.dbHashes.psq)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.psq'));
     blastReport.dbHashes.pto{numel(blastReport.dbHashes.pto)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.pto'));
 end
 if status~=0
-    EM=['makeblastdb did not run successfully, error: ', num2str(status)];
-    dispEM(EM,true);
+    error('makeblastdb did not run successfully, error:\n%s',strip(message))
 end
 
 for i=1:numel(refFastaFiles)
     if ~hideVerbose
         fprintf(['BLASTing "' modelIDs{i} '" against "' organismID{1} '"..\n']);
     end
-    [status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query ' refFastaFiles{i} ' -out "' outFile '_' num2str(i) '" -db "' fullfile(tmpDB, 'tmpDB') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
-    if develMode
+    [status, message]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query "' refFastaFiles{i} '" -out "' outFile '_' num2str(i) '" -db "' fullfile(tmpDB, 'tmpDB') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
+    if developMode
         blastReport.blastTxtOutput{numel(blastReport.blastTxtOutput)+1}=importdata([outFile '_' num2str(i)]);
     end
     if status~=0
-        EM=['blastp did not run successfully, error: ', num2str(status)];
-        dispEM(EM,true);
+        error('blastp did not run successfully, error:\n%s',strip(message))
     end
 end
 delete([tmpDB filesep 'tmpDB*']);
@@ -134,13 +139,12 @@ for i=1:numel(refFastaFiles)
     if ~hideVerbose
         fprintf(['BLASTing "' organismID{1} '" against "' modelIDs{i} '"..\n']);
     end
-    [status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in ' refFastaFiles{i} ' -out "' fullfile(tmpDB, 'tmpDB') '" -dbtype prot']);
+    [status, message]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in "' refFastaFiles{i} '" -out "' fullfile(tmpDB, 'tmpDB') '" -dbtype prot']);
     if status~=0
-        EM=['makeblastdb did not run successfully, error: ', num2str(status)];
-        dispEM(EM,true);
+        error('makeblastdb did not run successfully, error:\n%s',strip(message))
     end
-    [status, ~]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query ' fastaFile{1} ' -out "' outFile '_r' num2str(i) '" -db "' fullfile(tmpDB, 'tmpDB') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
-    if develMode
+    [status, message]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query "' fastaFile{1} '" -out "' outFile '_r' num2str(i) '" -db "' fullfile(tmpDB, 'tmpDB') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
+    if developMode
         blastReport.dbHashes.phr{numel(blastReport.dbHashes.phr)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.phr'));
         blastReport.dbHashes.pot{numel(blastReport.dbHashes.pot)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.pot'));
         blastReport.dbHashes.psq{numel(blastReport.dbHashes.psq)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.psq'));
@@ -148,8 +152,7 @@ for i=1:numel(refFastaFiles)
         blastReport.blastTxtOutput{numel(blastReport.blastTxtOutput)+1}=importdata([outFile '_r' num2str(i)]);
     end    
     if status~=0
-        EM=['blastp did not run successfully, error: ', num2str(status)];
-        dispEM(EM,true);
+        error('blastp did not run successfully, error:\n%s',strip(message))
     end
     delete([tmpDB filesep 'tmpDB*']);
 end

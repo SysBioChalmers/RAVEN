@@ -66,8 +66,7 @@ function pathway = constructPathwayFromCelldesigner(inputFile)
 %	Usage: pathway = constructPathwayFromCelldesigner(inputFile)
 
 %Loads the specified xml file using XML Toolbox
-[ST, I]=dbstack('-completenames');
-ravenPath=fileparts(fileparts(ST(I).file));
+ravenPath=findRAVENroot();
 
 %Current path and xml toolbox path
 cp=pwd;
@@ -315,7 +314,7 @@ function [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)
 %
 %   [x, y]          The position of the binding site for the species
 %
-%   Usage: [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)
+% Usage: [x,y]=getBindingPos(pathway,speciesAlias,bindingSite)
 
 %Find the species
 for i=1:length(pathway.listOfSpecies)

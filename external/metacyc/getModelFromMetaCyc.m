@@ -13,14 +13,14 @@ function metaCycModel=getModelFromMetaCyc(metacycPath,keepTransportRxns,keepUnba
 %                       to which the path should be defined by this parameter
 %   keepTransportRxns   include transportation reactions, which often have identical
 %                       reactants and products that turn to be all-zero columns in
-%                       the S matrix (opt, default false)
+%                       the S matrix (optional, default false)
 %   keepUnbalanced      include reactions cannot be unbalanced reactions, usually
 %                       because they are polymeric reactions or because of a
 %                       specific difficulty in balancing class structures
-%                       (opt, default false)
+%                       (optional, default false)
 %   keepUndetermined    include reactions that have substrates lack chemical
 %                       structures or with non-numerical coefficients (e.g. n+1)
-%                       (opt, default false)
+%                       (optional, default false)
 %
 %   Output:
 %   metaCycModel        a model structure generated from MetaCyc database
@@ -31,10 +31,13 @@ function metaCycModel=getModelFromMetaCyc(metacycPath,keepTransportRxns,keepUnba
 %   a local dump of data files, which can be obtained through subscribing to
 %   the database (https://metacyc.org/download.shtml).
 %
-%   Usage: getModelFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
+% Usage: getModelFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
 
 if nargin<1
-    metacycPath='';
+    ravenPath=findRAVENroot();
+    metacycPath=fullfile(ravenPath,'external','metacyc');
+else
+    metacycPath=char(metacycPath);
 end
 if nargin<2
     keepTransportRxns=false;

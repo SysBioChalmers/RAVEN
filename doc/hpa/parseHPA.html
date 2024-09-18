@@ -62,7 +62,7 @@
                            The value for element i,j is the index in
                            hpaData.reliabilities of gene i in cell type j
 
-   Usage: hpaData=parseHPA(fileName,version)</pre></div>
+ Usage: hpaData=parseHPA(fileName,version)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -113,75 +113,76 @@ This function is called by:
 0034 <span class="comment">%                           The value for element i,j is the index in</span>
 0035 <span class="comment">%                           hpaData.reliabilities of gene i in cell type j</span>
 0036 <span class="comment">%</span>
-0037 <span class="comment">%   Usage: hpaData=parseHPA(fileName,version)</span>
+0037 <span class="comment">% Usage: hpaData=parseHPA(fileName,version)</span>
 0038 
 0039 <span class="keyword">if</span> nargin&lt;2
 0040     version=19; <span class="comment">%Change this and add code for more versions when the current HPA version is increased and the format is changed</span>
 0041 <span class="keyword">end</span>
 0042 
-0043 <span class="keyword">if</span> ~(exist(fileName,<span class="string">'file'</span>)==2)
-0044     error(<span class="string">'HPA file %s cannot be found'</span>,string(fileName));
-0045 <span class="keyword">end</span>
-0046 
-0047 <span class="keyword">if</span> (version &gt;= 17)
-0048     fid=fopen(fileName,<span class="string">'r'</span>);
-0049     hpa=textscan(fid,<span class="string">'%q %q %q %q %q %q'</span>,<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>);
-0050     fclose(fid);
-0051     
-0052     <span class="comment">%Go through and see if the headers match what was expected</span>
-0053     headers={<span class="string">'Gene'</span> <span class="string">'Gene name'</span> <span class="string">'Tissue'</span> <span class="string">'Cell type'</span> <span class="string">'Level'</span> <span class="string">'Reliability'</span>};
-0054     <span class="keyword">for</span> i=1:numel(headers)
-0055         <span class="keyword">if</span> ~strcmpi(headers(i),hpa{i}(1))
-0056             EM=[<span class="string">'Could not find the header &quot;'</span> headers{i} <span class="string">'&quot;. Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'</span>];
-0057             dispEM(EM);
-0058         <span class="keyword">end</span>
-0059         <span class="comment">%Remove the header line here</span>
-0060         hpa{i}(1)=[];
-0061     <span class="keyword">end</span>
-0062     
-0063     <span class="comment">%Get the unique values of each data type</span>
-0064     [hpaData.genes, P, I]=unique(hpa{1});
-0065     hpaData.geneNames=hpa{2}(P); <span class="comment">%make this vector use the index as genes</span>
-0066     [~, J, K]=unique(strcat(hpa{3},<span class="string">'€'</span>,hpa{4}));
-0067     hpaData.tissues=hpa{3}(J);
-0068     hpaData.celltypes=hpa{4}(J);
-0069     [hpaData.levels, ~, L]=unique(hpa{5});
-0070     [hpaData.reliabilities, ~, N]=unique(hpa{6});
-0071     
-0072     <span class="comment">%Map the data to be sparse matrises instead</span>
-0073     hpaData.gene2Level=sparse(I,K,L,numel(hpaData.genes),numel(hpaData.tissues));
-0074     hpaData.gene2Reliability=sparse(I,K,N,numel(hpaData.genes),numel(hpaData.tissues));
-0075 <span class="keyword">else</span>
-0076     fid=fopen(fileName,<span class="string">'r'</span>);
-0077     hpa=textscan(fid,<span class="string">'%q %q %q %q %q %q'</span>,<span class="string">'Delimiter'</span>,<span class="string">','</span>);
-0078     fclose(fid);
-0079     
-0080     <span class="comment">%Go through and see if the headers match what was expected</span>
-0081     headers={<span class="string">'Gene'</span> <span class="string">'Tissue'</span> <span class="string">'Cell type'</span> <span class="string">'Level'</span> <span class="string">'Expression type'</span> <span class="string">'Reliability'</span>};
-0082     <span class="keyword">for</span> i=1:numel(headers)
-0083         <span class="keyword">if</span> ~strcmpi(headers(i),hpa{i}(1))
-0084             EM=[<span class="string">'Could not find the header &quot;'</span> headers{i} <span class="string">'&quot;. Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'</span>];
-0085             dispEM(EM);
-0086         <span class="keyword">end</span>
-0087         <span class="comment">%Remove the header line here</span>
-0088         hpa{i}(1)=[];
-0089     <span class="keyword">end</span>
-0090     
-0091     <span class="comment">%Get the unique values of each data type</span>
-0092     [hpaData.genes, ~, I]=unique(hpa{1});
-0093     [~, J, K]=unique(strcat(hpa{2},<span class="string">'€'</span>,hpa{3}));
-0094     hpaData.tissues=hpa{2}(J);
-0095     hpaData.celltypes=hpa{3}(J);
-0096     [hpaData.levels, ~, L]=unique(hpa{4});
-0097     [hpaData.types, ~, M]=unique(hpa{5});
-0098     [hpaData.reliabilities, ~, N]=unique(hpa{6});
-0099     
-0100     <span class="comment">%Map the data to be sparse matrises instead</span>
-0101     hpaData.gene2Level=sparse(I,K,L,numel(hpaData.genes),numel(hpaData.tissues));
-0102     hpaData.gene2Type=sparse(I,K,M,numel(hpaData.genes),numel(hpaData.tissues));
-0103     hpaData.gene2Reliability=sparse(I,K,N,numel(hpaData.genes),numel(hpaData.tissues));
-0104 <span class="keyword">end</span>
-0105 <span class="keyword">end</span></pre></div>
+0043 fileName=char(fileName);
+0044 <span class="keyword">if</span> ~isfile(fileName)
+0045     error(<span class="string">'HPA file %s cannot be found'</span>,string(fileName));
+0046 <span class="keyword">end</span>
+0047 
+0048 <span class="keyword">if</span> (version &gt;= 17)
+0049     fid=fopen(fileName,<span class="string">'r'</span>);
+0050     hpa=textscan(fid,<span class="string">'%q %q %q %q %q %q'</span>,<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>);
+0051     fclose(fid);
+0052     
+0053     <span class="comment">%Go through and see if the headers match what was expected</span>
+0054     headers={<span class="string">'Gene'</span> <span class="string">'Gene name'</span> <span class="string">'Tissue'</span> <span class="string">'Cell type'</span> <span class="string">'Level'</span> <span class="string">'Reliability'</span>};
+0055     <span class="keyword">for</span> i=1:numel(headers)
+0056         <span class="keyword">if</span> ~strcmpi(headers(i),hpa{i}(1))
+0057             EM=[<span class="string">'Could not find the header &quot;'</span> headers{i} <span class="string">'&quot;. Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'</span>];
+0058             dispEM(EM);
+0059         <span class="keyword">end</span>
+0060         <span class="comment">%Remove the header line here</span>
+0061         hpa{i}(1)=[];
+0062     <span class="keyword">end</span>
+0063     
+0064     <span class="comment">%Get the unique values of each data type</span>
+0065     [hpaData.genes, P, I]=unique(hpa{1});
+0066     hpaData.geneNames=hpa{2}(P); <span class="comment">%make this vector use the index as genes</span>
+0067     [~, J, K]=unique(strcat(hpa{3},<span class="string">'€'</span>,hpa{4}));
+0068     hpaData.tissues=hpa{3}(J);
+0069     hpaData.celltypes=hpa{4}(J);
+0070     [hpaData.levels, ~, L]=unique(hpa{5});
+0071     [hpaData.reliabilities, ~, N]=unique(hpa{6});
+0072     
+0073     <span class="comment">%Map the data to be sparse matrises instead</span>
+0074     hpaData.gene2Level=sparse(I,K,L,numel(hpaData.genes),numel(hpaData.tissues));
+0075     hpaData.gene2Reliability=sparse(I,K,N,numel(hpaData.genes),numel(hpaData.tissues));
+0076 <span class="keyword">else</span>
+0077     fid=fopen(fileName,<span class="string">'r'</span>);
+0078     hpa=textscan(fid,<span class="string">'%q %q %q %q %q %q'</span>,<span class="string">'Delimiter'</span>,<span class="string">','</span>);
+0079     fclose(fid);
+0080     
+0081     <span class="comment">%Go through and see if the headers match what was expected</span>
+0082     headers={<span class="string">'Gene'</span> <span class="string">'Tissue'</span> <span class="string">'Cell type'</span> <span class="string">'Level'</span> <span class="string">'Expression type'</span> <span class="string">'Reliability'</span>};
+0083     <span class="keyword">for</span> i=1:numel(headers)
+0084         <span class="keyword">if</span> ~strcmpi(headers(i),hpa{i}(1))
+0085             EM=[<span class="string">'Could not find the header &quot;'</span> headers{i} <span class="string">'&quot;. Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'</span>];
+0086             dispEM(EM);
+0087         <span class="keyword">end</span>
+0088         <span class="comment">%Remove the header line here</span>
+0089         hpa{i}(1)=[];
+0090     <span class="keyword">end</span>
+0091     
+0092     <span class="comment">%Get the unique values of each data type</span>
+0093     [hpaData.genes, ~, I]=unique(hpa{1});
+0094     [~, J, K]=unique(strcat(hpa{2},<span class="string">'€'</span>,hpa{3}));
+0095     hpaData.tissues=hpa{2}(J);
+0096     hpaData.celltypes=hpa{3}(J);
+0097     [hpaData.levels, ~, L]=unique(hpa{4});
+0098     [hpaData.types, ~, M]=unique(hpa{5});
+0099     [hpaData.reliabilities, ~, N]=unique(hpa{6});
+0100     
+0101     <span class="comment">%Map the data to be sparse matrises instead</span>
+0102     hpaData.gene2Level=sparse(I,K,L,numel(hpaData.genes),numel(hpaData.tissues));
+0103     hpaData.gene2Type=sparse(I,K,M,numel(hpaData.genes),numel(hpaData.tissues));
+0104     hpaData.gene2Reliability=sparse(I,K,N,numel(hpaData.genes),numel(hpaData.tissues));
+0105 <span class="keyword">end</span>
+0106 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

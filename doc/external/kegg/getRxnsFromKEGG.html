@@ -73,7 +73,7 @@
    the keggRxns.mat file along with other KEGG mat files if you want to
    rebuild the model structure from a newer version of KEGG.
 
-   Usage: [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
+ Usage: [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
     isGeneral]=getRxnsFromKEGG(keggPath)
 
  NOTE: This is how one entry looks in the file
@@ -155,7 +155,7 @@ This function is called by:
 0046 <span class="comment">%   the keggRxns.mat file along with other KEGG mat files if you want to</span>
 0047 <span class="comment">%   rebuild the model structure from a newer version of KEGG.</span>
 0048 <span class="comment">%</span>
-0049 <span class="comment">%   Usage: [model,isSpontaneous,isUndefinedStoich,isIncomplete,...</span>
+0049 <span class="comment">% Usage: [model,isSpontaneous,isUndefinedStoich,isIncomplete,...</span>
 0050 <span class="comment">%    isGeneral]=getRxnsFromKEGG(keggPath)</span>
 0051 <span class="comment">%</span>
 0052 <span class="comment">% NOTE: This is how one entry looks in the file</span>
@@ -179,132 +179,132 @@ This function is called by:
 0070 
 0071 <span class="keyword">if</span> nargin&lt;1
 0072     keggPath=<span class="string">'RAVEN/external/kegg'</span>;
-0073 <span class="keyword">end</span>
-0074 
-0075 <span class="comment">%Check if the reactions have been parsed before and saved. If so, load the</span>
-0076 <span class="comment">%model</span>
-0077 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
-0078 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
-0079 rxnsFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggRxns.mat'</span>);
-0080 <span class="keyword">if</span> exist(rxnsFile, <span class="string">'file'</span>)
-0081     fprintf([<span class="string">'Importing KEGG reactions from '</span> strrep(rxnsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'... '</span>]);
-0082     load(rxnsFile);
-0083 <span class="keyword">else</span>
-0084     fprintf([<span class="string">'NOTE: Cannot locate '</span> strrep(rxnsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">', it will therefore be generated from the local KEGG database\n'</span>]);
-0085     <span class="keyword">if</span> ~exist(fullfile(keggPath,<span class="string">'reaction'</span>),<span class="string">'file'</span>) || ~exist(fullfile(keggPath,<span class="string">'reaction.lst'</span>),<span class="string">'file'</span>) || ~exist(fullfile(keggPath,<span class="string">'reaction_mapformula.lst'</span>),<span class="string">'file'</span>)
-0086         EM=fprintf([<span class="string">'The files ''reaction'', ''reaction.lst'' and ''reaction_mapformula.lst'' cannot be located at '</span> strrep(keggPath,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'/ and should be downloaded from the KEGG FTP\n'</span>]);
-0087         dispEM(EM);
-0088     <span class="keyword">else</span>
-0089         fprintf(<span class="string">'Generating keggRxns.mat file... '</span>);
-0090         <span class="comment">%Add new functionality in the order specified in models</span>
-0091         model.id=<span class="string">'KEGG'</span>;
-0092         model.name=<span class="string">'Automatically generated from KEGG database'</span>;
-0093         
-0094         <span class="comment">%Preallocate memory for 15000 reactions</span>
-0095         model.rxns=cell(15000,1);
-0096         model.rxnNames=cell(15000,1);
-0097         model.eccodes=cell(15000,1);
-0098         model.subSystems=cell(15000,1);
-0099         model.rxnMiriams=cell(15000,1);
-0100         model.rxnNotes=cell(15000,1);
-0101         equations=cell(15000,1);
-0102         <span class="comment">%Temporarily store the equations</span>
-0103         
-0104         isSpontaneous=false(15000,1);
-0105         isIncomplete=false(15000,1);
-0106         isGeneral=false(15000,1);
-0107 
-0108         <span class="comment">%First load information on reaction ID, reaction name, KO, pathway,</span>
-0109         <span class="comment">%and ec-number</span>
-0110         fid = fopen(fullfile(keggPath,<span class="string">'reaction'</span>), <span class="string">'r'</span>);
-0111         
-0112         <span class="comment">%Keep track of how many reactions have been added</span>
-0113         rxnCounter=0;
-0114         
-0115         <span class="comment">%Loop through the file</span>
-0116         orthology=false;
-0117         pathway=false;
-0118         module=false;
-0119         <span class="keyword">while</span> 1
-0120             <span class="comment">%Get the next line</span>
-0121             tline = fgetl(fid);
-0122             
-0123             <span class="comment">%Abort at end of file</span>
-0124             <span class="keyword">if</span> ~ischar(tline)
-0125                 <span class="keyword">break</span>;
-0126             <span class="keyword">end</span>
-0127             
-0128             <span class="comment">%Skip '///'</span>
-0129             <span class="keyword">if</span> numel(tline)&lt;12
-0130                 <span class="keyword">continue</span>;
-0131             <span class="keyword">end</span>
-0132             
-0133             <span class="comment">%Check if it's a new reaction</span>
-0134             <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'ENTRY       '</span>)
-0135                 rxnCounter=rxnCounter+1;
-0136                 
-0137                 <span class="comment">%Add empty strings where there should be such</span>
-0138                 model.rxnNames{rxnCounter}=<span class="string">''</span>;
-0139                 model.eccodes{rxnCounter}=<span class="string">''</span>;
-0140                 model.subSystems{rxnCounter}=<span class="string">''</span>;
-0141                 model.rxnNotes{rxnCounter}=<span class="string">''</span>;
-0142                 equations{rxnCounter}=<span class="string">''</span>;
-0143                 
-0144                 <span class="comment">%Add reaction ID (always 6 characters)</span>
-0145                 model.rxns{rxnCounter}=tline(13:18);
-0146                 orthology=false;
-0147                 pathway=false;
-0148                 module=false;
-0149                 
-0150                 <span class="comment">%Add KEGG reaction ID miriam</span>
-0151                 tempStruct=model.rxnMiriams{rxnCounter};
-0152                 tempStruct.name{1,1}=<span class="string">'kegg.reaction'</span>;
-0153                 tempStruct.value{1,1}=tline(13:18);
-0154                 model.rxnMiriams{rxnCounter}=tempStruct;
-0155             <span class="keyword">end</span>
-0156             
-0157             <span class="comment">%Add name</span>
-0158             <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'NAME        '</span>)
-0159                 model.rxnNames{rxnCounter}=tline(13:end);
-0160             <span class="keyword">end</span>
-0161             
-0162             <span class="comment">%Add whether the comment includes &quot;incomplete&quot;, &quot;erroneous&quot; or</span>
-0163             <span class="comment">%&quot;unclear&quot;</span>
-0164             <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'COMMENT     '</span>)
-0165                 <span class="comment">%Read all text until '///', 'RPAIR', 'ENZYME', 'PATHWAY' or 'RCLASS'</span>
-0166                 commentText=tline(13:end);
-0167                 <span class="keyword">while</span> 1
-0168                     tline = fgetl(fid);
-0169                     <span class="keyword">if</span> ~strcmp(tline(1:3),<span class="string">'///'</span>) &amp;&amp; ~strcmp(tline(1:3),<span class="string">'RPA'</span>) &amp;&amp; ~strcmp(tline(1:3),<span class="string">'ENZ'</span>) &amp;&amp; ~strcmp(tline(1:3),<span class="string">'PAT'</span>) &amp;&amp; ~strcmp(tline(1:3),<span class="string">'RCL'</span>)
-0170                         commentText=[commentText <span class="string">' '</span> strtrim(tline)];
-0171                     <span class="keyword">else</span>
-0172                         <span class="keyword">break</span>;
-0173                     <span class="keyword">end</span>
-0174                 <span class="keyword">end</span>
-0175                 <span class="keyword">if</span> any(regexpi(commentText,<span class="string">'SPONTANEOUS'</span>))
-0176                     <span class="comment">%It should start this way</span>
-0177                     isSpontaneous(rxnCounter)=true;
-0178                 <span class="keyword">end</span>
-0179                 <span class="keyword">if</span> any(regexpi(commentText,<span class="string">'INCOMPLETE'</span>)) || any(regexpi(commentText,<span class="string">'ERRONEOUS'</span>)) || any(regexpi(commentText,<span class="string">'UNCLEAR'</span>))
-0180                     isIncomplete(rxnCounter)=true;
-0181                 <span class="keyword">end</span>
-0182                 <span class="keyword">if</span> any(regexpi(commentText,<span class="string">'GENERAL REACTION'</span>))
-0183                     <span class="comment">%It should start this way</span>
-0184                     isGeneral(rxnCounter)=true;
-0185                 <span class="keyword">end</span>
-0186                 
-0187                 <span class="comment">%Go to next iteration if it is '///'</span>
-0188                 <span class="keyword">if</span> numel(tline)&lt;12
-0189                     <span class="keyword">continue</span>;
-0190                 <span class="keyword">end</span>
-0191             <span class="keyword">end</span>
-0192             
-0193             <span class="comment">%Add ec-number</span>
-0194             <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'ENZYME      '</span>)
-0195                 model.eccodes{rxnCounter}=tline(13:end);
-0196                 model.eccodes{rxnCounter}=deblank(model.eccodes{rxnCounter});
-0197                 model.eccodes{rxnCounter}=strcat(<span class="string">'ec-code/'</span>,model.eccodes{rxnCounter});
-0198                 model.eccodes{rxnCounter}=regexprep(model.eccodes{rxnCounter},<span class="string">'\s+'</span>,<span class="string">';ec-code/'</span>);
+0073 <span class="keyword">else</span>
+0074     keggPath=char(keggPath);
+0075 <span class="keyword">end</span>
+0076 
+0077 <span class="comment">%Check if the reactions have been parsed before and saved. If so, load the</span>
+0078 <span class="comment">%model</span>
+0079 ravenPath=findRAVENroot();
+0080 rxnsFile=fullfile(ravenPath,<span class="string">'external'</span>,<span class="string">'kegg'</span>,<span class="string">'keggRxns.mat'</span>);
+0081 <span class="keyword">if</span> exist(rxnsFile, <span class="string">'file'</span>)
+0082     fprintf([<span class="string">'Importing KEGG reactions from '</span> strrep(rxnsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'... '</span>]);
+0083     load(rxnsFile);
+0084 <span class="keyword">else</span>
+0085     fprintf([<span class="string">'NOTE: Cannot locate '</span> strrep(rxnsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">', it will therefore be generated from the local KEGG database\n'</span>]);
+0086     <span class="keyword">if</span> ~isfile(fullfile(keggPath,<span class="string">'reaction'</span>)) || ~isfile(fullfile(keggPath,<span class="string">'reaction.lst'</span>)) || ~isfile(fullfile(keggPath,<span class="string">'reaction_mapformula.lst'</span>))
+0087         EM=fprintf([<span class="string">'The files ''reaction'', ''reaction.lst'' and ''reaction_mapformula.lst'' cannot be located at '</span> strrep(keggPath,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'/ and should be downloaded from the KEGG FTP\n'</span>]);
+0088         dispEM(EM);
+0089     <span class="keyword">else</span>
+0090         fprintf(<span class="string">'Generating keggRxns.mat file... '</span>);
+0091         <span class="comment">%Add new functionality in the order specified in models</span>
+0092         model.id=<span class="string">'KEGG'</span>;
+0093         model.name=<span class="string">'Automatically generated from KEGG database'</span>;
+0094         
+0095         <span class="comment">%Preallocate memory for 15000 reactions</span>
+0096         model.rxns=cell(15000,1);
+0097         model.rxnNames=cell(15000,1);
+0098         model.eccodes=cell(15000,1);
+0099         model.subSystems=cell(15000,1);
+0100         model.rxnMiriams=cell(15000,1);
+0101         model.rxnNotes=cell(15000,1);
+0102         equations=cell(15000,1);
+0103         <span class="comment">%Temporarily store the equations</span>
+0104         
+0105         isSpontaneous=false(15000,1);
+0106         isIncomplete=false(15000,1);
+0107         isGeneral=false(15000,1);
+0108 
+0109         <span class="comment">%First load information on reaction ID, reaction name, KO, pathway,</span>
+0110         <span class="comment">%and ec-number</span>
+0111         fid = fopen(fullfile(keggPath,<span class="string">'reaction'</span>), <span class="string">'r'</span>);
+0112         
+0113         <span class="comment">%Keep track of how many reactions have been added</span>
+0114         rxnCounter=0;
+0115         
+0116         <span class="comment">%Loop through the file</span>
+0117         orthology=false;
+0118         pathway=false;
+0119         module=false;
+0120         <span class="keyword">while</span> 1
+0121             <span class="comment">%Get the next line</span>
+0122             tline = fgetl(fid);
+0123             
+0124             <span class="comment">%Abort at end of file</span>
+0125             <span class="keyword">if</span> ~ischar(tline)
+0126                 <span class="keyword">break</span>;
+0127             <span class="keyword">end</span>
+0128             
+0129             <span class="comment">%Skip '///'</span>
+0130             <span class="keyword">if</span> numel(tline)&lt;12
+0131                 <span class="keyword">continue</span>;
+0132             <span class="keyword">end</span>
+0133             
+0134             <span class="comment">%Check if it's a new reaction</span>
+0135             <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'ENTRY       '</span>)
+0136                 rxnCounter=rxnCounter+1;
+0137                 
+0138                 <span class="comment">%Add empty strings where there should be such</span>
+0139                 model.rxnNames{rxnCounter}=<span class="string">''</span>;
+0140                 model.eccodes{rxnCounter}=<span class="string">''</span>;
+0141                 <span class="comment">%model.subSystems{rxnCounter}=''; %remain empty cell</span>
+0142                 model.rxnNotes{rxnCounter}=<span class="string">''</span>;
+0143                 equations{rxnCounter}=<span class="string">''</span>;
+0144                 
+0145                 <span class="comment">%Add reaction ID (always 6 characters)</span>
+0146                 model.rxns{rxnCounter}=tline(13:18);
+0147                 orthology=false;
+0148                 pathway=false;
+0149                 module=false;
+0150                 
+0151                 <span class="comment">%Add KEGG reaction ID miriam</span>
+0152                 tempStruct=model.rxnMiriams{rxnCounter};
+0153                 tempStruct.name{1,1}=<span class="string">'kegg.reaction'</span>;
+0154                 tempStruct.value{1,1}=tline(13:18);
+0155                 model.rxnMiriams{rxnCounter}=tempStruct;
+0156             <span class="keyword">end</span>
+0157             
+0158             <span class="comment">%Add name</span>
+0159             <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'NAME        '</span>)
+0160                 model.rxnNames{rxnCounter}=tline(13:end);
+0161             <span class="keyword">end</span>
+0162             
+0163             <span class="comment">%Add whether the comment includes &quot;incomplete&quot;, &quot;erroneous&quot; or</span>
+0164             <span class="comment">%&quot;unclear&quot;</span>
+0165             <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'COMMENT     '</span>)
+0166                 <span class="comment">%Read all text until '///', 'RPAIR', 'ENZYME', 'PATHWAY' or 'RCLASS'</span>
+0167                 commentText=tline(13:end);
+0168                 <span class="keyword">while</span> 1
+0169                     tline = fgetl(fid);
+0170                     <span class="keyword">if</span> ~strcmp(tline(1:3),<span class="string">'///'</span>) &amp;&amp; ~strcmp(tline(1:3),<span class="string">'RPA'</span>) &amp;&amp; ~strcmp(tline(1:3),<span class="string">'ENZ'</span>) &amp;&amp; ~strcmp(tline(1:3),<span class="string">'PAT'</span>) &amp;&amp; ~strcmp(tline(1:3),<span class="string">'RCL'</span>)
+0171                         commentText=[commentText <span class="string">' '</span> strtrim(tline)];
+0172                     <span class="keyword">else</span>
+0173                         <span class="keyword">break</span>;
+0174                     <span class="keyword">end</span>
+0175                 <span class="keyword">end</span>
+0176                 <span class="keyword">if</span> any(regexpi(commentText,<span class="string">'SPONTANEOUS'</span>))
+0177                     <span class="comment">%It should start this way</span>
+0178                     isSpontaneous(rxnCounter)=true;
+0179                 <span class="keyword">end</span>
+0180                 <span class="keyword">if</span> any(regexpi(commentText,<span class="string">'INCOMPLETE'</span>)) || any(regexpi(commentText,<span class="string">'ERRONEOUS'</span>)) || any(regexpi(commentText,<span class="string">'UNCLEAR'</span>))
+0181                     isIncomplete(rxnCounter)=true;
+0182                 <span class="keyword">end</span>
+0183                 <span class="keyword">if</span> any(regexpi(commentText,<span class="string">'GENERAL REACTION'</span>))
+0184                     <span class="comment">%It should start this way</span>
+0185                     isGeneral(rxnCounter)=true;
+0186                 <span class="keyword">end</span>
+0187                 
+0188                 <span class="comment">%Go to next iteration if it is '///'</span>
+0189                 <span class="keyword">if</span> numel(tline)&lt;12
+0190                     <span class="keyword">continue</span>;
+0191                 <span class="keyword">end</span>
+0192             <span class="keyword">end</span>
+0193             
+0194             <span class="comment">%Add ec-number</span>
+0195             <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'ENZYME      '</span>)
+0196                 model.eccodes{rxnCounter}=tline(13:end);
+0197                 model.eccodes{rxnCounter}=deblank(model.eccodes{rxnCounter});
+0198                 model.eccodes{rxnCounter}=regexprep(model.eccodes{rxnCounter},<span class="string">'\s+'</span>,<span class="string">';'</span>);
 0199             <span class="keyword">end</span>
 0200             <span class="keyword">if</span> numel(tline)&gt;8
 0201                 <span class="keyword">if</span> strcmp(tline(1:9),<span class="string">'REFERENCE'</span>)

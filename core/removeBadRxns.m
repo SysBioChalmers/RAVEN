@@ -11,20 +11,20 @@ function [newModel, removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames
 %                           2: also remove reactions which couldn't be checked for
 %                           mass balancing
 %                           3: all reactions can be removed
-%                           (opt, default 1)
+%                           (optional, default 1)
 %   ignoreMets              either a cell array of metabolite IDs, a logical vector
 %                           with the same number of elements as metabolites in the model,
 %                           of a vector of indexes for metabolites to exclude from
-%                           this analysis (opt, default [])
+%                           this analysis (optional, default [])
 %   isNames                 true if the supplied mets represent metabolite names
 %                           (as opposed to IDs). This is a way to delete
 %                           metabolites in several compartments at once without
 %                           knowing the exact IDs. This only works if ignoreMets
-%                           is a cell array (opt, default false)
+%                           is a cell array (optional, default false)
 %   balanceElements         a cell array with the elements for which to
 %                           balance the reactions. May contain any
 %                           combination of the elements defined in parseFormulas
-%                           (opt, default {'C';'P';'S';'N';'O'})
+%                           (optional, default {'C';'P';'S';'N';'O'})
 %   refModel                a reference model which can be used to ensure
 %                           that the resulting model is still functional.
 %                           The intended use is that the reference model is
@@ -33,13 +33,13 @@ function [newModel, removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames
 %                           constrained to a non-zero flux. Before a
 %                           reaction is removed from "model" the function first
 %                           checks that the same deletion in "refModel"
-%                           doesn't render the problem unfeasible (opt)
+%                           doesn't render the problem unfeasible (optional)
 %   ignoreIntBounds         true if internal bounds (including reversibility)
 %                           should be ignored. Exchange reactions are not affected.
 %                           This can be used to find unbalanced solutions which are
-%                           not possible using the default constraints (opt,
+%                           not possible using the default constraints (optional,
 %                           default false)
-%   printReport             true if a report should be printed (opt,
+%   printReport             true if a report should be printed (optional,
 %                           default false)
 %
 %   newModel               	a model structure after the problematic
@@ -66,7 +66,7 @@ function [newModel, removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames
 %   and then iterating until no metabolites can be produced/consumed.
 %   makeSomething is called before consumeSomething.
 %
-%   Usage: [newModel, removedRxns]=removeBadRxns(model,rxnRules,...
+% Usage: [newModel, removedRxns]=removeBadRxns(model,rxnRules,...
 %       ignoreMets,isNames,refModel,ignoreIntBounds,printReport)
 
 if nargin<2
@@ -74,12 +74,16 @@ if nargin<2
 end
 if nargin<3
     ignoreMets=[];
+elseif ~islogical(ignoreMets) && ~isnumeric(ignoreMets)
+    ignoreMets=convertCharArray(ignoreMets);
 end
 if nargin<4
     isNames=false;
 end
 if nargin<5
     balanceElements={'C';'P';'S';'N';'O'};
+else
+    balanceElements=convertCharArray(balanceElements);
 end
 if nargin<6
     refModel=[];
@@ -167,7 +171,7 @@ for i=1:2
         
         %If there are unbalanced rxns then delete one of them and iterate
         if any(I)
-            rxnToRemove=I(randsample(numel(I),1));
+            rxnToRemove=I(randperm(numel(I),1));
         else
             %If there are no unbalanced rxns in the solution
             if rxnRules==1
@@ -187,7 +191,7 @@ for i=1:2
                 %If there are any such reactions, remove one of them and
                 %iterate
                 if any(I)
-                    rxnToRemove=I(randsample(numel(I),1));
+                    rxnToRemove=I(randperm(numel(I),1));
                 else
                     if rxnRules==2
                         %This happens when all reactions used are balanced
@@ -218,7 +222,7 @@ for i=1:2
                             end
                         end
                         I=find(abs(solution)>10^-8);
-                        rxnToRemove=I(randsample(numel(I),1));
+                        rxnToRemove=I(randperm(numel(I),1));
                     end
                 end
             end

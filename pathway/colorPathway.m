@@ -10,15 +10,15 @@ function returnPathway = colorPathway(pathway, reactionIDs, fluxes, referenceFlu
 %   referenceFluxes vector with fluxes for the reference simulation
 %   cutOff          a reaction is only colored if the absolute value of 
 %                   at least one of the fluxes is above the cutoff value
-%                   (opt, default 0)
+%                   (optional, default 0)
 %   defaultColor    a color in Matlab format to be used if there are no
 %                   changes between the fluxes. This color is also used to 
 %                   calculate the transition between the colors for up and
-%                   down regulated fluxes (opt, default [1 1 1])
+%                   down regulated fluxes (optional, default [1 1 1])
 %   upColor         a color in Matlab format to be used if the flux is 
-%                   larger than the reference flux (opt, default [0 1 0])
+%                   larger than the reference flux (optional, default [0 1 0])
 %   downColor       a color in Matlab format to be used if the flux is 
-%                   smaller than the reference flux (opt, default [1 0 0])
+%                   smaller than the reference flux (optional, default [1 0 0])
 %
 %   returnPathway   updated pathway structure which contains coloring data
 %       color       array indicating the coloring of the enzyme

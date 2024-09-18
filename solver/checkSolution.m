@@ -8,7 +8,7 @@ function [isFeasible, isOptimal]=checkSolution(res)
 %
 %   This function also throws an error if the license has expired.
 %
-%   Usage: [isFeasible, isOptimal]=checkSolution(res)
+% Usage: [isFeasible, isOptimal]=checkSolution(res)
 
 isFeasible=false;
 isOptimal=false;

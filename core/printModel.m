@@ -5,15 +5,15 @@ function printModel(model,rxnList,outputString,outputFile,metaboliteList)
 %   model           a model structure
 %   rxnList         either a cell array of reaction IDs, a logical vector 
 %                   with the same number of elements as reactions in the model,
-%                   or a vector of indexes to remove (opt, default
+%                   or a vector of indexes to remove (optional, default
 %                   model.rxns)
-%   outputString    a string that specifies the output of each reaction (opt,
+%   outputString    a string that specifies the output of each reaction (optional,
 %                   default '%rxnID (%rxnName)\n\t%eqn [%lower %upper]\n')
-%   outputFile      a file to save the print-out to (opt, default is output to
+%   outputFile      a file to save the print-out to (optional, default is output to
 %                   the command window)
 %   metaboliteList  cell array of metabolite names. Only reactions
 %                   involving any of these metabolites will be 
-%                   printed (opt)
+%                   printed (optional)
 %
 %   The following codes are available for user-defined output strings:
 %
@@ -33,25 +33,27 @@ function printModel(model,rxnList,outputString,outputFile,metaboliteList)
 %   NOTE: This is just a wrapper function around printFluxes. It is
 %           intended to be used when there is no flux distribution.
 %
-%   Usage: printModel(model,rxnList,outputString,outputFile,metaboliteList)
+% Usage: printModel(model,rxnList,outputString,outputFile,metaboliteList)
 
-if nargin<2
+if nargin<2 || isempty(rxnList)
     rxnList=model.rxns;
+elseif ~islogical(rxnList) && ~isnumeric(rxnList)
+    rxnList=convertCharArray(rxnList);
 end
-if isempty(rxnList)
-    rxnList=model.rxns;
-end
-if nargin<3
+if nargin<3 || isempty(outputString)
     outputString='%rxnID (%rxnName)\n\t%eqn [%lower %upper]\n';
-end
-if isempty(outputString)
-    outputString='%rxnID (%rxnName)\n\t%eqn [%lower %upper]\n';
+else
+    outputString=char(outputString);
 end
 if nargin<4
     outputFile=[];
+else
+    outputFile=char(outputFile);
 end
 if nargin<5
     metaboliteList=[];
+else
+    metaboliteList=convertCharArray(metaboliteList);
 end
 
 I=getIndexes(model,rxnList,'rxns',true)*1.00; %To convert it to "fluxes"

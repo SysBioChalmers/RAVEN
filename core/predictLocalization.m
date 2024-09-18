@@ -19,12 +19,12 @@ function [outModel, geneLocalization, transportStruct, scores,...
 %                           all metabolites. It can also be a vector of
 %                           costs with the same dimension as model.mets.
 %                           Note that negative costs will result in that
-%                           transport of the metabolite is encouraged (opt,
+%                           transport of the metabolite is encouraged (optional,
 %                           default 0.5)
-%	maxTime                 maximum optimization time in minutes (opt,
+%	maxTime                 maximum optimization time in minutes (optional,
 %                           default 15)
 %	plotResults             true if the results should be plotted during the
-%                           optimization (opt, default false)
+%                           optimization (optional, default false)
 %
 %   Output:
 %	outModel                the resulting model structure
@@ -58,7 +58,7 @@ function [outModel, geneLocalization, transportStruct, scores,...
 %	a simplification to keep the problem size down. The problem is solved
 %	using simulated annealing.
 %
-%   Usage: [outModel, geneLocalization, transportStruct, scores,...
+% Usage: [outModel, geneLocalization, transportStruct, scores,...
 %       removedRxns] = predictLocalization(model, GSS,...
 %       defaultCompartment, transportCost, maxTime, plotResults)
 
@@ -92,6 +92,7 @@ if isfield(model,'geneComps')
     dispEM(EM,false);
 end
 
+defaultCompartment=char(defaultCompartment);
 I=ismember(defaultCompartment,GSS.compartments);
 if I==false
     EM='defaultCompartment not found in GSS';
@@ -102,6 +103,12 @@ if numel(model.comps)>1
     EM='The model has several compartments. All compartments will be merged';
     dispEM(EM,false);
     model=mergeCompartments(model,true,true);
+end
+
+noGenes = ismember(model.genes,GSS.genes);
+if ~all(noGenes)
+    EM=['For ' num2str(numel(find(~noGenes))) ' of ' num2str(numel(model.genes)) ' model genes no data was found in GSS'];
+    dispEM(EM,false);
 end
 
 %***Begin formating the data structures
@@ -608,7 +615,7 @@ else
         outModel.compNames(2)=GSS.compartments(1);
     end
 end
-outModel.compNames=[outModel.compNames;GSS.compartments(2:end)];
+outModel.compNames=[outModel.compNames;GSS.compartments(2:end)'];
 
 %Ugly little loop
 for i=1:numel(GSS.compartments)-1
@@ -651,6 +658,9 @@ for i=1:nComps-1
     if isfield(outModel,'rxnConfidenceScores')
         outModel.rxnConfidenceScores=[outModel.rxnConfidenceScores;outModel.rxnConfidenceScores(nER+1:nER+nRxns)];
     end
+    if isfield(outModel,'rxnDeltaG')
+        outModel.rxnDeltaG=[outModel.rxnDeltaG;outModel.rxnDeltaG(nER+1:nER+nRxns)];
+    end
     outModel.mets=[outModel.mets;strcat(outModel.mets(nEM+1:nEM+nMets),'_',GSS.compartments{i+1})];
     outModel.metNames=[outModel.metNames;outModel.metNames(nEM+1:nEM+nMets)];
     outModel.b=[outModel.b;outModel.b(nEM+1:nEM+nMets,:)];
@@ -658,6 +668,9 @@ for i=1:nComps-1
     outModel.metComps=[outModel.metComps;I];
     if isfield(outModel,'inchis')
         outModel.inchis=[outModel.inchis;outModel.inchis(nEM+1:nEM+nMets)];
+    end
+    if isfield(outModel,'metSmiles')
+        outModel.metSmiles=[outModel.metSmiles;outModel.metSmiles(nEM+1:nEM+nMets)];
     end
     if isfield(outModel,'unconstrained')
         outModel.unconstrained=[outModel.unconstrained;outModel.unconstrained(nEM+1:nEM+nMets)];
@@ -673,6 +686,9 @@ for i=1:nComps-1
     end
     if isfield(outModel,'metCharges')
         outModel.metCharges=[outModel.metCharges;outModel.metCharges(nEM+1:nEM+nMets)];
+    end
+    if isfield(outModel,'metDeltaG')
+        outModel.metDeltaG=[outModel.metDeltaG;outModel.metDeltaG(nEM+1:nEM+nMets)];
     end
 end
 
@@ -720,6 +736,9 @@ for i=1:numel(I)
     end
     if isfield(outModel,'rxnConfidenceScores')
         outModel.rxnConfidenceScores=[outModel.rxnConfidenceScores;NaN];
+    end
+    if isfield(outModel,'rxnDeltaG')
+        outModel.rxnDeltaG=[outModel.rxnDeltaG;NaN];
     end
 end
 
@@ -985,4 +1004,123 @@ geneScore=sum(GSS.scores(sub2ind(size(g2c),I,J)));
 I=unique(I);
 transportCost=sum(transportCost(I));
 score=geneScore-transportCost;
+end
+
+% To avoid dependency on stats toolbox, use this alternative implementation
+% of randsample, source:
+% https://github.com/gpeyre/numerical-tours/blob/dacee30081c04ef5f67b26b387ead85f2b193af9/matlab/toolbox_signal/randsample.m
+function y = randsample(n, k, replace, w)
+%RANDSAMPLE Random sample, with or without replacement.
+%   Y = RANDSAMPLE(N,K) returns Y as a vector of K values sampled uniformly
+%   at random, without replacement, from the integers 1:N.
+%
+%   Y = RANDSAMPLE(POPULATION,K) returns K values sampled uniformly at
+%   random, without replacement, from the values in the vector POPULATION.
+%
+%   Y = RANDSAMPLE(...,REPLACE) returns a sample taken with replacement if
+%   REPLACE is true, or without replacement if REPLACE is false (the default).
+%
+%   Y = RANDSAMPLE(...,true,W) returns a weighted sample, using positive
+%   weights W, taken with replacement.  W is often a vector of probabilities.
+%   This function does not support weighted sampling without replacement.
+%
+%   Example:  Generate a random sequence of the characters ACGT, with
+%   replacement, according to specified probabilities.
+%
+%      R = randsample('ACGT',48,true,[0.15 0.35 0.35 0.15])
+%
+%   See also RAND, RANDPERM.
+
+%   Copyright 1993-2008 The MathWorks, Inc.
+%   $Revision: 1.1.4.3 $  $Date: 2008/12/01 08:09:34 $
+
+if nargin < 2
+    error('stats:randsample:TooFewInputs','Requires two input arguments.');
+elseif numel(n) == 1
+    population = [];
+else
+    population = n;
+    n = numel(population);
+    if length(population)~=n
+       error('stats:randsample:BadPopulation','POPULATION must be a vector.');
+    end
+end
+
+if nargin < 3
+    replace = false;
+end
+
+if nargin < 4
+    w = [];
+elseif ~isempty(w)
+    if length(w) ~= n
+        if isempty(population)
+            error('stats:randsample:InputSizeMismatch',...
+                  'W must have length equal to N.');
+        else
+            error('stats:randsample:InputSizeMismatch',...
+                  'W must have the same length as the population.');
+        end
+    else
+        p = w(:)' / sum(w);
+    end
+end
+
+switch replace
+
+% Sample with replacement
+case {true, 'true', 1}
+    if isempty(w)
+        y = ceil(n .* rand(k,1));
+    else
+        [dum, y] = histc(rand(k,1),[0 cumsum(p)]);
+    end
+
+% Sample without replacement
+case {false, 'false', 0}
+    if k > n
+        if isempty(population)
+            error('stats:randsample:SampleTooLarge',...
+        'K must be less than or equal to N for sampling without replacement.');
+        else
+            error('stats:randsample:SampleTooLarge',...
+                  'K must be less than or equal to the population size.');
+        end
+    end
+
+    if isempty(w)
+        % If the sample is a sizeable fraction of the population,
+        % just randomize the whole population (which involves a full
+        % sort of n random values), and take the first k.
+        if 4*k > n
+            rp = randperm(n);
+            y = rp(1:k);
+
+        % If the sample is a small fraction of the population, a full sort
+        % is wasteful.  Repeatedly sample with replacement until there are
+        % k unique values.
+        else
+            x = zeros(1,n); % flags
+            sumx = 0;
+            while sumx < k
+                x(ceil(n * rand(1,k-sumx))) = 1; % sample w/replacement
+                sumx = sum(x); % count how many unique elements so far
+            end
+            y = find(x > 0);
+            y = y(randperm(k));
+        end
+    else
+        error('stats:randsample:NoWeighting',...
+              'Weighted sampling without replacement is not supported.');
+    end
+otherwise
+    error('stats:randsample:BadReplaceValue',...
+          'REPLACE must be either true or false.');
+end
+
+if ~isempty(population)
+    y = population(y);
+else
+    y = y(:);
+end
 end

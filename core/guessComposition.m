@@ -4,7 +4,7 @@ function [model, guessedFor, couldNotGuess]=guessComposition(model, printResults
 %   about elemental composition
 %
 %   model               a model structure
-%   printResults        true if the output should be printed (opt, default true)
+%   printResults        true if the output should be printed (optional, default true)
 %
 %   model               a model structure with information about elemental
 %                       composition added
@@ -31,7 +31,7 @@ function [model, guessedFor, couldNotGuess]=guessComposition(model, printResults
 %   calculated compositions could still be wrong (in case that the existing
 %   compositions were wrong)
 %
-%   Usage: [newModel, guessedFor, couldNotGuess]=guessComposition(model, printResults)
+% Usage: [newModel, guessedFor, couldNotGuess]=guessComposition(model, printResults)
 
 if nargin<2
     printResults=true;

@@ -24,7 +24,7 @@
 <div class="box"><strong>checkFileExistence</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function files=checkFileExistence(files,fullOrTemp,allowSpace) </strong></div>
+<div class="box"><strong>function files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> checkFileExistence
@@ -39,16 +39,20 @@
                    1: return full path to file(s)
                    2: copy file(s) to system default temporary folder and
                       return full path
-                   (opt, default 0)
+                   (optional, default 0)
    allowSpace      logical, whether 'space' character is allowed in the
-                   path (opt, default true)
+                   path (optional, default true)
+   checkExist      logical, whether file existence should really be
+                   checked, as this function can also be used to return
+                   the full path to a new file (optional, default true). Can
+                   only be set to false if fullOrTemp is set to 1.
 
    Output:
    files           string or cell array of strings with updated paths if
                    fullOrTemp was set as 1 or 2, otherwise original paths
                    are returned
    
-   Usage: files=checkFileExistence(files,fullOrTemp,allowSpace)</pre></div>
+ Usage: files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -57,13 +61,13 @@ This function calls:
 </ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="getMD5Hash.html" class="code" title="function md5Hash=getMD5Hash(inputFile,binEnd)">getMD5Hash</a>	getMD5Hash</li></ul>
+<li><a href="exportModel.html" class="code" title="function exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)">exportModel</a>	exportModel</li><li><a href="getMD5Hash.html" class="code" title="function md5Hash=getMD5Hash(inputFile,binEnd)">getMD5Hash</a>	getMD5Hash</li><li><a href="importModel.html" class="code" title="function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)">importModel</a>	importModel</li></ul>
 <!-- crossreference -->
 
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function files=checkFileExistence(files,fullOrTemp,allowSpace)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)</a>
 0002 <span class="comment">% checkFileExistence</span>
 0003 <span class="comment">%   Check whether files exist. If no full path is given a file should be</span>
 0004 <span class="comment">%   located in the current folder, which by default is appended to the</span>
@@ -76,65 +80,73 @@ This function is called by:
 0011 <span class="comment">%                   1: return full path to file(s)</span>
 0012 <span class="comment">%                   2: copy file(s) to system default temporary folder and</span>
 0013 <span class="comment">%                      return full path</span>
-0014 <span class="comment">%                   (opt, default 0)</span>
+0014 <span class="comment">%                   (optional, default 0)</span>
 0015 <span class="comment">%   allowSpace      logical, whether 'space' character is allowed in the</span>
-0016 <span class="comment">%                   path (opt, default true)</span>
-0017 <span class="comment">%</span>
-0018 <span class="comment">%   Output:</span>
-0019 <span class="comment">%   files           string or cell array of strings with updated paths if</span>
-0020 <span class="comment">%                   fullOrTemp was set as 1 or 2, otherwise original paths</span>
-0021 <span class="comment">%                   are returned</span>
-0022 <span class="comment">%</span>
-0023 <span class="comment">%   Usage: files=checkFileExistence(files,fullOrTemp,allowSpace)</span>
-0024 
-0025 <span class="keyword">if</span> nargin&lt;2
-0026     fullOrTemp = 0;
-0027 <span class="keyword">end</span>
-0028 <span class="keyword">if</span> nargin&lt;3
-0029     allowSpace = true;
-0030 <span class="keyword">end</span>
-0031 
-0032 <span class="keyword">if</span> isstr(files)
-0033     oneFile=true;
-0034     files={files};
-0035 <span class="keyword">else</span>
-0036     oneFile=false;
+0016 <span class="comment">%                   path (optional, default true)</span>
+0017 <span class="comment">%   checkExist      logical, whether file existence should really be</span>
+0018 <span class="comment">%                   checked, as this function can also be used to return</span>
+0019 <span class="comment">%                   the full path to a new file (optional, default true). Can</span>
+0020 <span class="comment">%                   only be set to false if fullOrTemp is set to 1.</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">%   Output:</span>
+0023 <span class="comment">%   files           string or cell array of strings with updated paths if</span>
+0024 <span class="comment">%                   fullOrTemp was set as 1 or 2, otherwise original paths</span>
+0025 <span class="comment">%                   are returned</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Usage: files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)</span>
+0028 
+0029 <span class="keyword">if</span> nargin&lt;2
+0030     fullOrTemp = 0;
+0031 <span class="keyword">end</span>
+0032 <span class="keyword">if</span> nargin&lt;3
+0033     allowSpace = true;
+0034 <span class="keyword">end</span>
+0035 <span class="keyword">if</span> nargin&lt;4
+0036     checkExist = true;
 0037 <span class="keyword">end</span>
-0038 filesOriginal = files;
-0039 
-0040 <span class="comment">%Make all full paths before check of file existence</span>
-0041 <span class="keyword">if</span> ispc <span class="comment">% full path starts like &quot;C:\&quot;</span>
-0042     inCurrDir = cellfun(@isempty,regexpi(files,<span class="string">'^[a-z]\:\\'</span>));
-0043 <span class="keyword">else</span> <span class="comment">%isunix full path starts like &quot;/&quot;</span>
-0044     inCurrDir = cellfun(@isempty,regexpi(files,<span class="string">'\/'</span>));
-0045 <span class="keyword">end</span>
-0046 files(inCurrDir) = fullfile(cd,files(inCurrDir));
-0047 
-0048 <span class="comment">%Check existence</span>
-0049 <span class="keyword">for</span> i=1:numel(files)
-0050     <span class="keyword">if</span> ~exist(files{i},<span class="string">'file'</span>)
-0051         error(<span class="string">'File &quot;%s&quot; cannot be found\n'</span>,files{i});
-0052     <span class="keyword">elseif</span> allowSpace == false &amp; strfind(files{i},<span class="string">' '</span>)
-0053         error(<span class="string">'File &quot;%s&quot; has an invalid space in the filename or path, please remove this before running this function\n'</span>,files{i});
-0054     <span class="keyword">end</span>
-0055 <span class="keyword">end</span>
-0056 
-0057 <span class="keyword">switch</span> fullOrTemp
-0058     <span class="keyword">case</span> 0
-0059         files = filesOriginal;
-0060     <span class="keyword">case</span> 1
-0061         <span class="comment">% files already contains full path</span>
-0062     <span class="keyword">case</span> 2
-0063         <span class="keyword">for</span> i=1:numel(files)
-0064             tmpFile=tempname;
-0065             copyfile(files{i},tmpFile);
-0066             files{i}=tmpFile;
-0067         <span class="keyword">end</span>
-0068 <span class="keyword">end</span>
-0069 
-0070 <span class="keyword">if</span> oneFile == true
-0071     files = files{1};
-0072 <span class="keyword">end</span></pre></div>
+0038 files=convertCharArray(files);
+0039 <span class="keyword">if</span> numel(files)==1
+0040     oneFile=true;
+0041 <span class="keyword">else</span>
+0042     oneFile=false;
+0043 <span class="keyword">end</span>
+0044 filesOriginal = files;
+0045 
+0046 <span class="comment">%Make all full paths before check of file existence</span>
+0047 <span class="keyword">if</span> ispc <span class="comment">% full path starts like &quot;C:\&quot;</span>
+0048     inCurrDir = cellfun(@isempty,regexpi(files,<span class="string">'^[a-z]\:\\'</span>));
+0049 <span class="keyword">else</span> <span class="comment">%isunix full path starts like &quot;/&quot;</span>
+0050     inCurrDir = cellfun(@isempty,regexpi(files,<span class="string">'^\/'</span>));
+0051 <span class="keyword">end</span>
+0052 files(inCurrDir) = fullfile(cd,files(inCurrDir));
+0053 
+0054 <span class="comment">%Check existence</span>
+0055 <span class="keyword">if</span> checkExist
+0056     <span class="keyword">for</span> i=1:numel(files)
+0057         <span class="keyword">if</span> ~isfile(files{i})
+0058             error(<span class="string">'File &quot;%s&quot; cannot be found\n'</span>,files{i});
+0059         <span class="keyword">elseif</span> allowSpace == false &amp; strfind(files{i},<span class="string">' '</span>)
+0060             error(<span class="string">'File &quot;%s&quot; has an invalid space in the filename or path, please remove this before running this function\n'</span>,files{i});
+0061         <span class="keyword">end</span>
+0062     <span class="keyword">end</span>
+0063 <span class="keyword">end</span>
+0064 
+0065 <span class="keyword">switch</span> fullOrTemp
+0066     <span class="keyword">case</span> 0
+0067         files = filesOriginal;
+0068     <span class="keyword">case</span> 1
+0069         <span class="comment">% files already contains full path</span>
+0070     <span class="keyword">case</span> 2
+0071         <span class="keyword">for</span> i=1:numel(files)
+0072             tmpFile=tempname;
+0073             copyfile(files{i},tmpFile);
+0074             files{i}=tmpFile;
+0075         <span class="keyword">end</span>
+0076 <span class="keyword">end</span>
+0077 
+0078 <span class="keyword">if</span> oneFile == true
+0079     files = files{1};
+0080 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

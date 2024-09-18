@@ -14,7 +14,7 @@ function [returnPathway, errorFlag]= markPathwayWithFluxes(pathway, reactionIDs,
 %                   fields flux and referenceFlux for each marked reaction
 %   errorFlag       true if there has been an error
 %
-%   Usage: [returnPathway, errorFlag] = markPathwayWithFluxes(pathway, reactionIDs,
+% Usage: [returnPathway, errorFlag] = markPathwayWithFluxes(pathway, reactionIDs,
 %   fluxes, referenceFluxes)
 
 %Check if all variables are of the correct dimension

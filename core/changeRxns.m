@@ -13,7 +13,7 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %                    interpreted
 %                    1 - The metabolites are matched to model.mets. New
 %                        metabolites (if allowed) are added to
-%                        "compartment"
+%                        "compartment" (default)
 %                    2 - The metabolites are matched to model.metNames and
 %                        all metabolites are assigned to "compartment". Any
 %                        new metabolites that are added will be assigned
@@ -29,14 +29,14 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %                        start from the highest used integer+1
 %   compartment      a string with the compartment the metabolites should
 %                    be placed in when using eqnType=2. Must match
-%                    model.compNames (opt when eqnType=1 or eqnType=3)
+%                    model.compNames (optional when eqnType=1 or eqnType=3)
 %   allowNewMets     true if the function is allowed to add new
 %                    metabolites. It is highly recommended to first add
 %                    any new metabolites with addMets rather than
 %                    automatically through this function. addMets supports
 %                    more annotation of metabolites, allows for the use of
 %                    exchange metabolites, and using it reduces the risk
-%                    of parsing errors (opt, default false)
+%                    of parsing errors (optional, default false)
 %
 %   model            an updated model structure
 %
@@ -51,9 +51,9 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %   doesn't exist, the function will copy any available information from
 %   the metabolite in another compartment.
 %
-%   Usage: model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
+% Usage: model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 
-if nargin<4 & isfield(equations,'stoichCoeffs')
+if nargin<4
     eqnType=1;
 end
 
@@ -64,12 +64,8 @@ if nargin<6
     allowNewMets=false;
 end
 
-if ischar(rxns)
-    rxns={rxns};
-end
-if ischar(equations)
-    equations={equations};
-end
+rxns=convertCharArray(rxns);
+compartment=char(compartment);
 
 %Find the indexes of the reactions and throw an error if they aren't all
 %found
@@ -89,7 +85,7 @@ if isfield(equations,'mets') && isfield(equations,'stoichCoeffs')
     rxnsToChange.mets=equations.mets;
     rxnsToChange.stoichCoeffs=equations.stoichCoeffs;
 else
-    rxnsToChange.equations=equations;
+    rxnsToChange.equations=convertCharArray(equations);
 end
 if isfield(model,'rxnNames')
     rxnsToChange.rxnNames=model.rxnNames(J);
@@ -132,6 +128,9 @@ if isfield(model,'rxnReferences')
 end
 if isfield(model,'rxnConfidenceScores')
     rxnsToChange.rxnConfidenceScores=model.rxnConfidenceScores(J);
+end
+if isfield(model,'rxnDeltaG')
+    rxnsToChange.rxnDeltaG=model.rxnDeltaG(J);
 end
 if isfield(model,'pwys')
     rxnsToChange.pwys=model.pwys(J);

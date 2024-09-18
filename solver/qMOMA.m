@@ -10,13 +10,13 @@ function [fluxA,fluxB, flag]=qMOMA(modelA,modelB,fluxMinWeight)
 %                 optimization. A value of 2.0 means that sum(fluxAi)^2 +
 %                 sum(fluxBi)^2 has equal weight as sum((fluxAi - fluxBi)^2).
 %                 Values of around 1.01 should be enough to get rid of loops
-%                 (opt, default 1)
+%                 (optional, default 1)
 %
 %   fluxA         the resulting flux distribution in the test model
 %   fluxB         the resulting flux distribution in the reference model
 %   flag          1 if the optimization terminated successfully
 %
-%   Usage: [fluxA,fluxB, flag]=qMOMA(modelA,modelB,fluxMinWeight)
+% Usage: [fluxA,fluxB, flag]=qMOMA(modelA,modelB,fluxMinWeight)
 
 if nargin<3
     fluxMinWeight=1;
