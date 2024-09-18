@@ -1,13 +1,16 @@
-function exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
+function exportModel(model,fileName,COBRAstyle,supressWarnings,sortIds)
 % exportModel
 %   Exports a constraint-based model to an SBML file (L3V1 FBCv2)
 %
-%   Input:
+% Input:
 %   model               a model structure
 %   fileName            filename to export the model to. A dialog window
 %                       will open if no file name is specified.
-%   exportGeneComplexes true if gene complexes (all gene sets linked with
-%                       AND relationship) should be recognised and exported
+%   COBRAstyle          true if COBRA-style prefixes should be added to all
+%                       identifiers: R_ for reactions, M_ for metabolites,
+%                       G_ for genes and C_ for compartments. If all
+%                       identifiers of a particular field already have the
+%                       prefix, then no additional prefixes are added.
 %                       (optional, default false)
 %   supressWarnings     true if warnings should be supressed (optional, default
 %                       false)
@@ -15,7 +18,8 @@ function exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
 %                       should be sorted alphabetically by their
 %                       identifiers (optional, default false)
 %
-% Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
+% Usage: exportModel(model,fileName,COBRAstyle,supressWarnings,sortIds)
+
 if nargin<2 || isempty(fileName)
     [fileName, pathName] = uiputfile({'*.xml;*.sbml'}, 'Select file for model export',[model.id '.xml']);
     if fileName == 0
@@ -26,7 +30,7 @@ if nargin<2 || isempty(fileName)
 end
 fileName=char(fileName);
 if nargin<3
-    exportGeneComplexes=false;
+    COBRAstyle=false;
 end
 if nargin<4
     supressWarnings=false;
@@ -135,6 +139,20 @@ end
 model.rxns=regexprep(model.rxns,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 model.mets=regexprep(model.mets,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 model.comps=regexprep(model.comps,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
+if COBRAstyle
+    if isfield(model,'ec')
+        error('ecModels cannot be exported with COBRAstyle flag, manually correct any non-compliant identifiers if needed.')
+    end
+    if ~all(startsWith(model.rxns,'R_'))
+        model.rxns  = strcat('R_',model.rxns);
+    end
+    if ~all(startsWith(model.mets,'M_'))
+        model.mets  = strcat('M_',model.mets);
+    end
+    if ~all(startsWith(model.comps,'C_'))
+        model.comps  = strcat('C_',model.comps);
+    end
+end
 if isfield(model,'genes')
     problemGenes=find(~cellfun('isempty',regexp(model.genes,'([^0-9_a-zA-Z])')));
     originalGenes=model.genes(problemGenes);
@@ -142,6 +160,12 @@ if isfield(model,'genes')
     model.genes(problemGenes)=replacedGenes;
     for i=1:numel(problemGenes)
         model.grRules = regexprep(model.grRules, ['(^|\s|\()' originalGenes{i} '($|\s|\))'], ['$1' replacedGenes{i} '$2']);
+    end
+    if COBRAstyle
+        model.genes = strcat('G_',model.genes);
+        model.grRules = regexprep(model.grRules, '(\<[0-9_a-zA-Z])', 'G_$1');
+        model.grRules = regexprep(model.grRules, ' G_or ', ' or ');
+        model.grRules = regexprep(model.grRules, ' G_and ', ' and ');
     end
 end
 
@@ -387,44 +411,6 @@ if isfield(model,'genes')
                 modelSBML.fbc_geneProduct(i).fbc_label=model.genes{i};
             else
                 modelSBML.fbc_geneProduct(i).fbc_label=model.geneShortNames{i};
-            end
-        end
-    end
-    if exportGeneComplexes==true
-        %Also add the complexes as genes. This is done by splitting grRules
-        %on "or" and adding the ones which contain several genes
-        geneComplexes={};
-        if isfield(model,'grRules')
-            %Only grRules which contain " and " can be complexes
-            uniqueRules=unique(model.grRules);
-            I=cellfun(@any,strfind(uniqueRules,' and '));
-            uniqueRules(~I)=[];
-            uniqueRules=strrep(uniqueRules,'(','');
-            uniqueRules=strrep(uniqueRules,')','');
-            uniqueRules=strrep(uniqueRules,' and ',':');
-            for i=1:numel(uniqueRules)
-                genes=regexp(uniqueRules(i),' or ','split');
-                genes=genes{1}(:);
-                %Check which ones are complexes
-                I=cellfun(@any,strfind(genes,':'));
-                geneComplexes=[geneComplexes;genes(I)];
-            end
-        end
-        geneComplexes=unique(geneComplexes);
-        if ~isempty(geneComplexes)
-            %Then add them as genes. There is a possiblity that a complex
-            %A&B is added as separate from B&A. This is not really an issue
-            %so this is not dealt with
-            for i=1:numel(geneComplexes)
-                modelSBML.fbc_geneProduct(numel(model.genes)+i)=modelSBML.fbc_geneProduct(1);
-                if isfield(modelSBML.fbc_geneProduct,'metaid')
-                    modelSBML.fbc_geneProduct(numel(model.genes)+i).metaid=geneComplexes{i};
-                end
-                if isfield(modelSBML.fbc_geneProduct,'fbc_id')
-                    modelSBML.fbc_geneProduct(numel(model.genes)+i).fbc_id=geneComplexes{i};
-                else
-                    modelSBML.fbc_geneProduct(i).fbc_label=modelSBML.fbc_geneProduct(i).fbc_id;
-                end
             end
         end
     end
