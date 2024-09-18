@@ -229,19 +229,23 @@ if isfield(model,'genes')
     end
 end
 
-
 %Validate format of ids
 fields={'rxns';'mets';'comps';'genes'};
+fieldNames = {'reaction';'metabolite';'compartment';'gene'};
 for i=1:numel(fields)
-    for j=1:numel(model.(fields{i}))
-        if regexp(model.(fields{i}){j},'^[^a-zA-Z_]')
-            EM=['The number ' num2str(j) ' ' fields{i} ' ID "' model.(fields{i}){j}....
-            '" is in numeric format, should be modified to comply with SBML specifications!'];
-            dispEM(EM,throwErrors);
+    try
+        numIDs = startsWith(model.(fields{i}),digitsPattern(1));
+        if any(numIDs)
+            EM = ['The following ' fieldNames{i} ' IDs start with a digit, which ' ...
+                'does not comply with SBML specifications. You should either ' ...
+                'correct this before exporting the model to SBML, or you can ' ...
+                ' run exportModel with COBRAstyle set as true, example: ' ...
+                '"exportModel(model,''filename.xml'',true)"'];
+            dispEM(EM,throwErrors,{model.(fields{i}){numIDs}},trimWarnings);
         end
+    catch
     end
 end
-
 
 %Duplicates
 EM='The following reaction IDs are duplicates:';
