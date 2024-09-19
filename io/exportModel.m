@@ -31,6 +31,8 @@ end
 fileName=char(fileName);
 if nargin<3
     COBRAstyle=false;
+elseif ~islogical(COBRAstyle)
+    error("COBRAstyle should be either true or false")
 end
 if nargin<4
     supressWarnings=false;
@@ -40,6 +42,10 @@ if nargin<5
 end
 if sortIds==true
     model=sortIdentifiers(model);
+end
+
+if isfield(model,'ec')
+    warning("exportModel does not store information from the 'model.ec' structure. Use 'writeYAMLmodel(model)' to export all content from a GECKO model.")
 end
 
 %If no subSystems are defined, then no need to use groups package
@@ -162,10 +168,12 @@ if isfield(model,'genes')
         model.grRules = regexprep(model.grRules, ['(^|\s|\()' originalGenes{i} '($|\s|\))'], ['$1' replacedGenes{i} '$2']);
     end
     if COBRAstyle
-        model.genes = strcat('G_',model.genes);
-        model.grRules = regexprep(model.grRules, '(\<[0-9_a-zA-Z])', 'G_$1');
-        model.grRules = regexprep(model.grRules, ' G_or ', ' or ');
-        model.grRules = regexprep(model.grRules, ' G_and ', ' and ');
+        if ~all(startsWith(model.genes,'G_'))
+            model.genes = strcat('G_',model.genes);
+            model.grRules = regexprep(model.grRules, '(\<[0-9_a-zA-Z])', 'G_$1');
+            model.grRules = regexprep(model.grRules, ' G_or ', ' or ');
+            model.grRules = regexprep(model.grRules, ' G_and ', ' and ');
+        end
     end
 end
 
