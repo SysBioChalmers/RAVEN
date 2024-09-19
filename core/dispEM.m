@@ -36,6 +36,8 @@ if throwErrors==false
 else
     errorText=[string '\n'];
 end
+sz = get(0, 'CommandWindowSize');
+errorText = regexprep(errorText,['.{1,' num2str(sz(1)) '}\s'],'$0\n');
 if ~isempty(toList)
     for i=1:numel(toList)
         errorText=[errorText '\t' toList{i} '\n'];
