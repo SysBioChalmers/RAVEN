@@ -33,11 +33,13 @@ if numel(toList)>10 && trimWarnings==true
 end
 if throwErrors==false
     errorText=['WARNING: ' string '\n'];
+    % Wrap text to command window size
+    sz = get(0, 'CommandWindowSize');
+    errorText = textwrap({errorText},sz(1));
+    errorText = strjoin(errorText,'\n');
 else
     errorText=[string '\n'];
 end
-sz = get(0, 'CommandWindowSize');
-errorText = regexprep(errorText,['.{1,' num2str(sz(1)) '}\s'],'$0\n');
 if ~isempty(toList)
     for i=1:numel(toList)
         errorText=[errorText '\t' toList{i} '\n'];
