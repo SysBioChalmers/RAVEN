@@ -72,11 +72,11 @@ if nargin<1 || isempty(fileName)
     end
 end
 fileName=char(fileName);
-if nargin<2
+if nargin<2 || isempty(removeExcMets)
     removeExcMets=true;
 end
 
-if nargin<3
+if nargin<3 || isempty(COBRAstyle)
     COBRAstyle=false;
 end
 
