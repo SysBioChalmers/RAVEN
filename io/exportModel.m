@@ -12,8 +12,9 @@ function exportModel(model,fileName,COBRAstyle,supressWarnings,sortIds)
 %                       identifiers of a particular field already have the
 %                       prefix, then no additional prefixes are added.
 %                       (optional, default false)
-%   supressWarnings     true if warnings should be supressed (optional, default
-%                       false)
+%   supressWarnings     true if warnings should be supressed. This might
+%                       results in invalid SBML files, as no checks are
+%                       performed (optional, default false)
 %   sortIds             logical whether metabolites, reactions and genes
 %                       should be sorted alphabetically by their
 %                       identifiers (optional, default false)
