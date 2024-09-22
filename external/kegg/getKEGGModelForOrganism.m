@@ -38,15 +38,12 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %                           The hidden Markov models as generated in 2b or
 %                           downloaded from BioMet Toolbox (see below)
 %                       The final directory in dataDir should be styled as
-%                       proXXX_keggYY or eukXXX_keggYY, indicating whether
+%                       prok90_kegg105 or euk90_kegg105, indicating whether
 %                       the HMMs were trained on pro- or eukaryotic
-%                       sequences, using a sequence similarity threshold of
-%                       XXX %, fitting the KEGG version YY. E.g.
-%                       euk90_kegg105. (optional, see note about fastaFile. Note
-%                       that in order to rebuild the KEGG model from a
-%                       database dump, as opposed to using the version
-%                       supplied with RAVEN, you would still need to supply
-%                       this)
+%                       sequences; using which sequence similarity treshold
+%                       (first set of digits); using which KEGG version
+%                       (second set of digits). (this parameter should
+%                       ALWAYS be provided)
 %   outDir              directory to save the results from the quering of
 %                       the hidden Markov models. The output is specific
 %                       for the input sequences and the settings used. It

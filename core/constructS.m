@@ -152,7 +152,8 @@ if any(~metsPresent)
         strjoin(unique(metsToS(~metsPresent)),', ')],'')
     else
         missingMet = find(~metsPresent);
-        missingMet = char(strcat(metsToS(missingMet),' (reaction:',rxns(rxnsToS(missingMet)),')\n'));
+        missingMet = strcat(metsToS(missingMet),' (reaction:',rxns(rxnsToS(missingMet)),')\n');
+        missingMet = strjoin(missingMet,'');
         error(['Could not find the following metabolites (reaction indicated) in the metabolite list: \n' ...
             missingMet '%s'],'');
     end
