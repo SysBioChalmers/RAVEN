@@ -293,13 +293,10 @@ EM='The following compartments contain no metabolites:';
 dispEM(EM,false,model.comps(I),trimWarnings);
 
 %Contradicting bounds
-EM='The following reactions have contradicting bounds:';
+EM='The following reactions have contradicting bounds (lower bound is higher than upper bound):';
 dispEM(EM,throwErrors,model.rxns(model.lb>model.ub),trimWarnings);
-EM='The following reactions have bounds contradicting their reversibility:';
-contradictBound = (model.lb < 0 & model.ub > 0 & model.rev==0) | ... % Reversible bounds, irreversible label
-                  (model.lb < 0 & model.ub <= 0 & model.rev==1) | ... % Negative bounds, reversible label
-                  (model.lb >= 0 & model.ub > 0 & model.rev==1); % Positive bounds, reversible label
-dispEM(EM,throwErrors,model.rxns(contradictBound),trimWarnings);
+EM='The following reactions have lower and upper bounds that indicate reversibility, but are indicated as irreversible in model.rev:';
+dispEM(EM,false,model.rxns(model.lb < 0 & model.ub > 0 & model.rev==0),trimWarnings);
 
 %Multiple or no objective functions not allowed in SBML L3V1 FBCv2
 if numel(find(model.c))>1
