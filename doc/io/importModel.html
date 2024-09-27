@@ -1194,149 +1194,152 @@ This function is called by:
 1087 <span class="keyword">if</span> isempty(model.geneShortNames)
 1088     model=rmfield(model,<span class="string">'geneShortNames'</span>);
 1089 <span class="keyword">end</span>
-1090 <span class="keyword">if</span> isempty(model.inchis)
-1091     model=rmfield(model,<span class="string">'inchis'</span>);
+1090 <span class="keyword">if</span> isempty(model.proteinNames)
+1091     model=rmfield(model,<span class="string">'proteinNames'</span>);
 1092 <span class="keyword">end</span>
-1093 <span class="keyword">if</span> isempty(model.metFormulas)
-1094     model=rmfield(model,<span class="string">'metFormulas'</span>);
+1093 <span class="keyword">if</span> isempty(model.inchis)
+1094     model=rmfield(model,<span class="string">'inchis'</span>);
 1095 <span class="keyword">end</span>
-1096 <span class="keyword">if</span> isempty(model.metMiriams)
-1097     model=rmfield(model,<span class="string">'metMiriams'</span>);
+1096 <span class="keyword">if</span> isempty(model.metFormulas)
+1097     model=rmfield(model,<span class="string">'metFormulas'</span>);
 1098 <span class="keyword">end</span>
-1099 <span class="keyword">if</span> ~any(model.metCharges)
-1100     model=rmfield(model,<span class="string">'metCharges'</span>);
+1099 <span class="keyword">if</span> isempty(model.metMiriams)
+1100     model=rmfield(model,<span class="string">'metMiriams'</span>);
 1101 <span class="keyword">end</span>
-1102 
-1103 <span class="comment">%This just removes the grRules if no genes have been loaded</span>
-1104 <span class="keyword">if</span> ~isfield(model,<span class="string">'genes'</span>) &amp;&amp; isfield(model,<span class="string">'grRules'</span>)
-1105     model=rmfield(model,<span class="string">'grRules'</span>);
-1106 <span class="keyword">end</span>
-1107 
-1108 <span class="comment">%Print warnings about bad structure</span>
-1109 <span class="keyword">if</span> supressWarnings==false
-1110     checkModelStruct(model,false);
-1111 <span class="keyword">end</span>
-1112 
-1113 <span class="keyword">if</span> removeExcMets==true
-1114     model=simplifyModel(model);
-1115 <span class="keyword">end</span>
-1116 <span class="keyword">end</span>
-1117 
-1118 <a name="_sub1" href="#_subfunctions" class="code">function matchGenes=getGeneList(grRules)</a>
-1119 <span class="comment">%Constructs the list of unique genes from grRules</span>
+1102 <span class="keyword">if</span> ~any(model.metCharges)
+1103     model=rmfield(model,<span class="string">'metCharges'</span>);
+1104 <span class="keyword">end</span>
+1105 
+1106 <span class="comment">%This just removes the grRules if no genes have been loaded</span>
+1107 <span class="keyword">if</span> ~isfield(model,<span class="string">'genes'</span>) &amp;&amp; isfield(model,<span class="string">'grRules'</span>)
+1108     model=rmfield(model,<span class="string">'grRules'</span>);
+1109 <span class="keyword">end</span>
+1110 
+1111 <span class="comment">%Print warnings about bad structure</span>
+1112 <span class="keyword">if</span> supressWarnings==false
+1113     checkModelStruct(model,false);
+1114 <span class="keyword">end</span>
+1115 
+1116 <span class="keyword">if</span> removeExcMets==true
+1117     model=simplifyModel(model);
+1118 <span class="keyword">end</span>
+1119 <span class="keyword">end</span>
 1120 
-1121 <span class="comment">%Assumes that everything that isn't a paranthesis, &quot; AND &quot; or &quot; or &quot; is a</span>
-1122 <span class="comment">%gene name</span>
-1123 genes=strrep(grRules,<span class="string">'('</span>,<span class="string">''</span>);
-1124 genes=strrep(genes,<span class="string">')'</span>,<span class="string">''</span>);
-1125 genes=strrep(genes,<span class="string">' or '</span>,<span class="string">' '</span>);
-1126 genes=strrep(genes,<span class="string">' and '</span>,<span class="string">' '</span>);
-1127 genes=strrep(genes,<span class="string">' OR '</span>,<span class="string">' '</span>);
-1128 genes=strrep(genes,<span class="string">' AND '</span>,<span class="string">' '</span>);
-1129 genes=regexp(genes,<span class="string">' '</span>,<span class="string">'split'</span>);
-1130 
-1131 allNames={};
-1132 <span class="keyword">for</span> i=1:numel(genes)
-1133     allNames=[allNames genes{i}];
-1134 <span class="keyword">end</span>
-1135 matchGenes=unique(allNames)';
-1136 
-1137 <span class="comment">%Remove the empty element if present</span>
-1138 <span class="keyword">if</span> isempty(matchGenes{1})
-1139     matchGenes(1)=[];
-1140 <span class="keyword">end</span>
-1141 <span class="keyword">end</span>
-1142 
-1143 <a name="_sub2" href="#_subfunctions" class="code">function fieldContent=parseNote(searchString,fieldName)</a>
-1144 <span class="comment">%The function obtains the particular information from 'notes' field, using</span>
-1145 <span class="comment">%fieldName as the dummy string</span>
-1146 
-1147 fieldContent=<span class="string">''</span>;
-1148 
-1149 <span class="keyword">if</span> strfind(searchString,fieldName)
-1150     [~,targetString] = regexp(searchString,[<span class="string">'&lt;p&gt;'</span> fieldName <span class="string">'.*?&lt;/p&gt;'</span>],<span class="string">'tokens'</span>,<span class="string">'match'</span>);
-1151     targetString=regexprep(targetString,<span class="string">'&lt;p&gt;|&lt;/p&gt;'</span>,<span class="string">''</span>);
-1152     targetString=regexprep(targetString,[fieldName, <span class="string">':'</span>],<span class="string">''</span>);
-1153     <span class="keyword">for</span> i=1:numel(targetString)
-1154         fieldContent=[fieldContent <span class="string">';'</span> strtrim(targetString{1,i})];
-1155     <span class="keyword">end</span>
-1156     fieldContent=regexprep(fieldContent,<span class="string">'^;|;$'</span>,<span class="string">''</span>);
-1157 <span class="keyword">else</span>
-1158     fieldContent=<span class="string">''</span>;
-1159 <span class="keyword">end</span>
-1160 <span class="keyword">end</span>
-1161 
-1162 <a name="_sub3" href="#_subfunctions" class="code">function fieldContent=parseAnnotation(searchString,startString,midString,fieldName)</a>
-1163 
-1164 fieldContent=<span class="string">''</span>;
-1165 
-1166 <span class="comment">%Removing whitespace characters from the ending strings, which may occur in</span>
-1167 <span class="comment">%several cases</span>
-1168 searchString=regexprep(searchString,<span class="string">'&quot; /&gt;'</span>,<span class="string">'&quot;/&gt;'</span>);
-1169 [~,targetString] = regexp(searchString,[<span class="string">'&lt;rdf:li rdf:resource=&quot;'</span> startString fieldName midString <span class="string">'.*?&quot;/&gt;'</span>],<span class="string">'tokens'</span>,<span class="string">'match'</span>);
-1170 targetString=regexprep(targetString,<span class="string">'&lt;rdf:li rdf:resource=&quot;|&quot;/&gt;'</span>,<span class="string">''</span>);
-1171 targetString=regexprep(targetString,startString,<span class="string">''</span>);
-1172 targetString=regexprep(targetString,[fieldName midString],<span class="string">''</span>);
-1173 
-1174 <span class="keyword">for</span> i=1:numel(targetString)
-1175     fieldContent=[fieldContent <span class="string">';'</span> strtrim(targetString{1,i})];
-1176 <span class="keyword">end</span>
-1177 
-1178 fieldContent=regexprep(fieldContent,<span class="string">'^;|;$'</span>,<span class="string">''</span>);
+1121 <a name="_sub1" href="#_subfunctions" class="code">function matchGenes=getGeneList(grRules)</a>
+1122 <span class="comment">%Constructs the list of unique genes from grRules</span>
+1123 
+1124 <span class="comment">%Assumes that everything that isn't a paranthesis, &quot; AND &quot; or &quot; or &quot; is a</span>
+1125 <span class="comment">%gene name</span>
+1126 genes=strrep(grRules,<span class="string">'('</span>,<span class="string">''</span>);
+1127 genes=strrep(genes,<span class="string">')'</span>,<span class="string">''</span>);
+1128 genes=strrep(genes,<span class="string">' or '</span>,<span class="string">' '</span>);
+1129 genes=strrep(genes,<span class="string">' and '</span>,<span class="string">' '</span>);
+1130 genes=strrep(genes,<span class="string">' OR '</span>,<span class="string">' '</span>);
+1131 genes=strrep(genes,<span class="string">' AND '</span>,<span class="string">' '</span>);
+1132 genes=regexp(genes,<span class="string">' '</span>,<span class="string">'split'</span>);
+1133 
+1134 allNames={};
+1135 <span class="keyword">for</span> i=1:numel(genes)
+1136     allNames=[allNames genes{i}];
+1137 <span class="keyword">end</span>
+1138 matchGenes=unique(allNames)';
+1139 
+1140 <span class="comment">%Remove the empty element if present</span>
+1141 <span class="keyword">if</span> isempty(matchGenes{1})
+1142     matchGenes(1)=[];
+1143 <span class="keyword">end</span>
+1144 <span class="keyword">end</span>
+1145 
+1146 <a name="_sub2" href="#_subfunctions" class="code">function fieldContent=parseNote(searchString,fieldName)</a>
+1147 <span class="comment">%The function obtains the particular information from 'notes' field, using</span>
+1148 <span class="comment">%fieldName as the dummy string</span>
+1149 
+1150 fieldContent=<span class="string">''</span>;
+1151 
+1152 <span class="keyword">if</span> strfind(searchString,fieldName)
+1153     [~,targetString] = regexp(searchString,[<span class="string">'&lt;p&gt;'</span> fieldName <span class="string">'.*?&lt;/p&gt;'</span>],<span class="string">'tokens'</span>,<span class="string">'match'</span>);
+1154     targetString=regexprep(targetString,<span class="string">'&lt;p&gt;|&lt;/p&gt;'</span>,<span class="string">''</span>);
+1155     targetString=regexprep(targetString,[fieldName, <span class="string">':'</span>],<span class="string">''</span>);
+1156     <span class="keyword">for</span> i=1:numel(targetString)
+1157         fieldContent=[fieldContent <span class="string">';'</span> strtrim(targetString{1,i})];
+1158     <span class="keyword">end</span>
+1159     fieldContent=regexprep(fieldContent,<span class="string">'^;|;$'</span>,<span class="string">''</span>);
+1160 <span class="keyword">else</span>
+1161     fieldContent=<span class="string">''</span>;
+1162 <span class="keyword">end</span>
+1163 <span class="keyword">end</span>
+1164 
+1165 <a name="_sub3" href="#_subfunctions" class="code">function fieldContent=parseAnnotation(searchString,startString,midString,fieldName)</a>
+1166 
+1167 fieldContent=<span class="string">''</span>;
+1168 
+1169 <span class="comment">%Removing whitespace characters from the ending strings, which may occur in</span>
+1170 <span class="comment">%several cases</span>
+1171 searchString=regexprep(searchString,<span class="string">'&quot; /&gt;'</span>,<span class="string">'&quot;/&gt;'</span>);
+1172 [~,targetString] = regexp(searchString,[<span class="string">'&lt;rdf:li rdf:resource=&quot;'</span> startString fieldName midString <span class="string">'.*?&quot;/&gt;'</span>],<span class="string">'tokens'</span>,<span class="string">'match'</span>);
+1173 targetString=regexprep(targetString,<span class="string">'&lt;rdf:li rdf:resource=&quot;|&quot;/&gt;'</span>,<span class="string">''</span>);
+1174 targetString=regexprep(targetString,startString,<span class="string">''</span>);
+1175 targetString=regexprep(targetString,[fieldName midString],<span class="string">''</span>);
+1176 
+1177 <span class="keyword">for</span> i=1:numel(targetString)
+1178     fieldContent=[fieldContent <span class="string">';'</span> strtrim(targetString{1,i})];
 1179 <span class="keyword">end</span>
 1180 
-1181 <a name="_sub4" href="#_subfunctions" class="code">function miriamStruct=parseMiriam(searchString)</a>
-1182 <span class="comment">%Generates miriam structure from annotation field</span>
+1181 fieldContent=regexprep(fieldContent,<span class="string">'^;|;$'</span>,<span class="string">''</span>);
+1182 <span class="keyword">end</span>
 1183 
-1184 <span class="comment">%Finding whether miriams are written in the old or the new way</span>
-1185 <span class="keyword">if</span> strfind(searchString,<span class="string">'urn:miriam:'</span>)
-1186     startString=<span class="string">'urn:miriam:'</span>;
-1187     midString=<span class="string">':'</span>;
-1188 <span class="keyword">elseif</span> strfind(searchString,<span class="string">'http://identifiers.org/'</span>)
-1189     startString=<span class="string">'http://identifiers.org/'</span>;
-1190     midString=<span class="string">'/'</span>;
-1191 <span class="keyword">elseif</span> strfind(searchString,<span class="string">'https://identifiers.org/'</span>)
-1192     startString=<span class="string">'https://identifiers.org/'</span>;
+1184 <a name="_sub4" href="#_subfunctions" class="code">function miriamStruct=parseMiriam(searchString)</a>
+1185 <span class="comment">%Generates miriam structure from annotation field</span>
+1186 
+1187 <span class="comment">%Finding whether miriams are written in the old or the new way</span>
+1188 <span class="keyword">if</span> strfind(searchString,<span class="string">'urn:miriam:'</span>)
+1189     startString=<span class="string">'urn:miriam:'</span>;
+1190     midString=<span class="string">':'</span>;
+1191 <span class="keyword">elseif</span> strfind(searchString,<span class="string">'http://identifiers.org/'</span>)
+1192     startString=<span class="string">'http://identifiers.org/'</span>;
 1193     midString=<span class="string">'/'</span>;
-1194 <span class="keyword">else</span>
-1195     miriamStruct=[];
-1196     <span class="keyword">return</span>;
-1197 <span class="keyword">end</span>
-1198 
-1199 miriamStruct=[];
-1200 
-1201 searchString=regexprep(searchString,<span class="string">'&quot; /&gt;'</span>,<span class="string">'&quot;/&gt;'</span>);
-1202 [~,targetString] = regexp(searchString,<span class="string">'&lt;rdf:li rdf:resource=&quot;.*?&quot;/&gt;'</span>,<span class="string">'tokens'</span>,<span class="string">'match'</span>);
-1203 targetString=regexprep(targetString,<span class="string">'&lt;rdf:li rdf:resource=&quot;|&quot;/&gt;'</span>,<span class="string">''</span>);
-1204 targetString=regexprep(targetString,startString,<span class="string">''</span>);
-1205 targetString=regexprep(targetString,midString,<span class="string">'/'</span>,<span class="string">'once'</span>);
-1206 
-1207 counter=0;
-1208 <span class="keyword">for</span> i=1:numel(targetString)
-1209     <span class="keyword">if</span> isempty(regexp(targetString{1,i},<span class="string">'inchi|ec-code'</span>, <span class="string">'once'</span>))
-1210         counter=counter+1;
-1211         miriamStruct.name{counter,1} = regexprep(targetString{1,i},<span class="string">'/.+'</span>,<span class="string">''</span>,<span class="string">'once'</span>);
-1212         miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} <span class="string">'/'</span>],<span class="string">''</span>,<span class="string">'once'</span>);
-1213         miriamStruct.name{counter,1} = regexprep(miriamStruct.name{counter,1},<span class="string">'^obo\.'</span>,<span class="string">''</span>);
-1214     <span class="keyword">end</span>
-1215 <span class="keyword">end</span>
-1216 <span class="keyword">end</span>
-1217 
-1218 <a name="_sub5" href="#_subfunctions" class="code">function miriam = addSBOtoMiriam(miriam,sboTerm)</a>
-1219 <span class="comment">%Appends SBO term to miriam structure</span>
+1194 <span class="keyword">elseif</span> strfind(searchString,<span class="string">'https://identifiers.org/'</span>)
+1195     startString=<span class="string">'https://identifiers.org/'</span>;
+1196     midString=<span class="string">'/'</span>;
+1197 <span class="keyword">else</span>
+1198     miriamStruct=[];
+1199     <span class="keyword">return</span>;
+1200 <span class="keyword">end</span>
+1201 
+1202 miriamStruct=[];
+1203 
+1204 searchString=regexprep(searchString,<span class="string">'&quot; /&gt;'</span>,<span class="string">'&quot;/&gt;'</span>);
+1205 [~,targetString] = regexp(searchString,<span class="string">'&lt;rdf:li rdf:resource=&quot;.*?&quot;/&gt;'</span>,<span class="string">'tokens'</span>,<span class="string">'match'</span>);
+1206 targetString=regexprep(targetString,<span class="string">'&lt;rdf:li rdf:resource=&quot;|&quot;/&gt;'</span>,<span class="string">''</span>);
+1207 targetString=regexprep(targetString,startString,<span class="string">''</span>);
+1208 targetString=regexprep(targetString,midString,<span class="string">'/'</span>,<span class="string">'once'</span>);
+1209 
+1210 counter=0;
+1211 <span class="keyword">for</span> i=1:numel(targetString)
+1212     <span class="keyword">if</span> isempty(regexp(targetString{1,i},<span class="string">'inchi|ec-code'</span>, <span class="string">'once'</span>))
+1213         counter=counter+1;
+1214         miriamStruct.name{counter,1} = regexprep(targetString{1,i},<span class="string">'/.+'</span>,<span class="string">''</span>,<span class="string">'once'</span>);
+1215         miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} <span class="string">'/'</span>],<span class="string">''</span>,<span class="string">'once'</span>);
+1216         miriamStruct.name{counter,1} = regexprep(miriamStruct.name{counter,1},<span class="string">'^obo\.'</span>,<span class="string">''</span>);
+1217     <span class="keyword">end</span>
+1218 <span class="keyword">end</span>
+1219 <span class="keyword">end</span>
 1220 
-1221 sboTerm = {[<span class="string">'SBO:'</span> sprintf(<span class="string">'%07u'</span>,sboTerm)]};  <span class="comment">% convert to proper format</span>
-1222 <span class="keyword">if</span> isempty(miriam)
-1223     miriam.name = {<span class="string">'sbo'</span>};
-1224     miriam.value = sboTerm;
-1225 <span class="keyword">elseif</span> any(strcmp(<span class="string">'sbo'</span>,miriam.name))
-1226     currSbo = strcmp(<span class="string">'sbo'</span>,miriam.name);
-1227     miriam.value(currSbo) = sboTerm;
-1228 <span class="keyword">else</span>
-1229     miriam.name(end+1) = {<span class="string">'sbo'</span>};
-1230     miriam.value(end+1) = sboTerm;
-1231 <span class="keyword">end</span>
-1232 <span class="keyword">end</span></pre></div>
+1221 <a name="_sub5" href="#_subfunctions" class="code">function miriam = addSBOtoMiriam(miriam,sboTerm)</a>
+1222 <span class="comment">%Appends SBO term to miriam structure</span>
+1223 
+1224 sboTerm = {[<span class="string">'SBO:'</span> sprintf(<span class="string">'%07u'</span>,sboTerm)]};  <span class="comment">% convert to proper format</span>
+1225 <span class="keyword">if</span> isempty(miriam)
+1226     miriam.name = {<span class="string">'sbo'</span>};
+1227     miriam.value = sboTerm;
+1228 <span class="keyword">elseif</span> any(strcmp(<span class="string">'sbo'</span>,miriam.name))
+1229     currSbo = strcmp(<span class="string">'sbo'</span>,miriam.name);
+1230     miriam.value(currSbo) = sboTerm;
+1231 <span class="keyword">else</span>
+1232     miriam.name(end+1) = {<span class="string">'sbo'</span>};
+1233     miriam.value(end+1) = sboTerm;
+1234 <span class="keyword">end</span>
+1235 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

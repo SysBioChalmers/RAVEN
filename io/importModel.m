@@ -1087,6 +1087,9 @@ end
 if isempty(model.geneShortNames)
     model=rmfield(model,'geneShortNames');
 end
+if isempty(model.proteinNames)
+    model=rmfield(model,'proteinNames');
+end
 if isempty(model.inchis)
     model=rmfield(model,'inchis');
 end

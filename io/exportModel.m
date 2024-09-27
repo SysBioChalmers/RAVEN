@@ -398,7 +398,9 @@ if isfield(model,'genes')
             end
         end
         if isfield(modelSBML.fbc_geneProduct, 'fbc_name') && isfield(model,'proteinNames')
-            modelSBML.fbc_geneProduct(i).fbc_name=model.proteinNames{i};
+            if ~isempty(model.proteinNames{i})
+                modelSBML.fbc_geneProduct(i).fbc_name=model.proteinNames{i};
+            end
         end
     end
     if exportGeneComplexes==true
