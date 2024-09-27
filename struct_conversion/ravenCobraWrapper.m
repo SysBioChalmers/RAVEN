@@ -21,8 +21,7 @@ function newModel=ravenCobraWrapper(model)
 %   reconstructed based on lower bound reaction values
 %
 %   NOTE: During COBRA -> RAVEN -> COBRA conversion cycle the following
-%   fields are lost: geneEntrezID, metSmiles, modelVersion,
-%   proteinNames, proteins
+%   fields are lost: geneEntrezID, modelVersion, proteins
 %
 %   NOTE: The information about mandatory RAVEN fields was taken from
 %   checkModelStruct function, whereas the corresponding information about
@@ -76,9 +75,9 @@ else
     newModel.c=zeros(numel(model.rxns),1);
 end
 newModel.rxns=model.rxns;
-optFields = {'rxnNames','subSystems','rxnNotes','metDeltaG','rxnDeltaG',...
-    'metFormulas','comps','compNames','metCharges','genes',...
-    'rxnConfidenceScores','rxnGeneMat','metNotes','rev'};
+optFields = {'rxnNames','rxnNotes','rxnConfidenceScores','rxnDeltaG',...
+    'rxnGeneMat','rev','subSystems','comps','compNames','metCharges',...
+    'metDeltaG','metFormulas','metNotes','metSmiles','genes','proteinNames'};
 for i=1:length(optFields)
     if isfield(model,optFields{i})
         newModel.(optFields{i})=model.(optFields{i});
