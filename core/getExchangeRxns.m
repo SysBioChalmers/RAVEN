@@ -70,13 +70,15 @@ switch reactionType
     case 'reverse'
         exchangeRxnsIndexes = allExch(model.lb(allExch) < 0 & model.ub(allExch) > 0);
     case 'uptake'
-        exchangeRxnsIndexes = allExch([(model.lb(hasNoSubs) >= 0 & model.ub(hasNoSubs) > 0); ...
-                              (model.lb(hasNoProd) < 0 & model.ub(hasNoProd) <= 0)]);
+        
+        exchangeRxnsIndexes = allExch([(model.lb(hasNoProd) < 0 & model.ub(hasNoProd) <= 0); ...
+                              (model.lb(hasNoSubs) >= 0 & model.ub(hasNoSubs) > 0)]);
     case 'excrete'
-        exchangeRxnsIndexes = allExch([(model.lb(hasNoSubs) < 0 & model.ub(hasNoSubs) <= 0); ...
-                              (model.lb(hasNoProd) >= 0 & model.ub(hasNoProd) > 0)]);
+        exchangeRxnsIndexes = allExch([(model.lb(hasNoProd) >= 0 & model.ub(hasNoProd) > 0); ...
+                              (model.lb(hasNoSubs) < 0 & model.ub(hasNoSubs) <= 0)]);
     otherwise
         error('Invalid reactionType specified')
 end
+exchangeRxnsIndexes = sort(exchangeRxnsIndexes);
 exchangeRxns = model.rxns(exchangeRxnsIndexes);
 end
