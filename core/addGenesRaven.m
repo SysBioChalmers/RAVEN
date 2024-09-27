@@ -14,6 +14,8 @@ function newModel=addGenesRaven(model,genesToAdd)
 %                               default '')
 %                geneMiriams    cell array with MIRIAM structures (optional,
 %                               default [])
+%                proteinNames   cell array of protein names associated to
+%                               each gene (optional, default '')
 %
 %   newModel     an updated model structure
 %
@@ -56,6 +58,9 @@ elseif any(I)
     if isfield(genesToAdd,'geneShortNames')
         genesToAdd.geneShortNames(I)=[];
     end
+    if isfield(genesToAdd,'proteinNames')
+        genesToAdd.proteinNames(I)=[];
+    end
     if isfield(genesToAdd,'geneMiriams')
         genesToAdd.geneMiriams(I)=[];
     end
@@ -81,6 +86,24 @@ else
         newModel.geneShortNames=[newModel.geneShortNames;filler];
     end
 end
+if isfield(genesToAdd,'proteinNames')
+    genesToAdd.proteinNames=convertCharArray(genesToAdd.proteinNames);
+    if numel(genesToAdd.proteinNames)~=nGenes
+        EM='genesToAdd.proteinNames must have the same number of elements as genesToAdd.genes';
+        dispEM(EM);
+    end
+    %Add empty field if it doesn't exist
+    if ~isfield(newModel,'proteinNames')
+        newModel.proteinNames=largeFiller;
+    end
+    newModel.proteinNames=[newModel.proteinNames;genesToAdd.proteinNames(:)];
+else
+    %Add empty strings if structure is in model
+    if isfield(newModel,'proteinNames')
+        newModel.proteinNames=[newModel.proteinNames;filler];
+    end
+end
+
 
 %Don't check the type of geneMiriams
 if isfield(genesToAdd,'geneMiriams')

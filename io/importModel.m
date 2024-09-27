@@ -47,6 +47,7 @@ function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)
 %       geneComps        compartments for genes
 %       geneMiriams      structure with MIRIAM information about the genes
 %       geneShortNames   gene alternative names (e.g. ERG10)
+%       proteinNames     protein associated to each gene
 %       metNames         metabolite description
 %       metComps         compartments for metabolites
 %       inchis           InChI-codes for metabolites
@@ -118,6 +119,7 @@ model.genes={};
 model.geneComps=[];
 model.geneMiriams={};
 model.geneShortNames={};
+model.proteinNames={};
 model.metNames={};
 model.metComps=[];
 model.inchis={};
@@ -208,6 +210,7 @@ geneNames={};
 geneIDs={};
 geneMiriams={};
 geneShortNames={};
+proteinNames={};
 geneCompartments={};
 complexIDs={};
 complexNames={};
@@ -923,6 +926,7 @@ else
                     end
                 end
             end
+            proteinNames={modelSBML.fbc_geneProduct.fbc_name};
         else
             genes=getGeneList(grRules);
         end
@@ -1012,6 +1016,11 @@ end
 %If any Miriam strings for genes have been loaded
 if any(~cellfun(@isempty,geneMiriams))
     model.geneMiriams=geneMiriams;
+end
+
+%If any protein strings have been loaded
+if any(~cellfun(@isempty,proteinNames))
+    model.proteinNames=proteinNames;
 end
 
 model.unconstrained=metaboliteUnconstrained;

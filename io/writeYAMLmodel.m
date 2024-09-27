@@ -113,6 +113,7 @@ for i = 1:length(model.genes)
     fprintf(fid,'    - !!omap\n');
     writeField(model, fid, 'genes',          'txt', i, '  - id',         preserveQuotes)
     writeField(model, fid, 'geneShortNames', 'txt', i, '  - name',       preserveQuotes)
+    writeField(model, fid, 'proteinNames',   'txt', i, '  - protein',    preserveQuotes)
     writeField(model, fid, 'geneMiriams',    'txt', i, '  - annotation', preserveQuotes)
 end
 

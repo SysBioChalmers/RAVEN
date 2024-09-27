@@ -100,6 +100,7 @@ modelFields =   {'id',char();...
           'geneComps',cell(0,0);... %Changed to double in the end.
         'geneMiriams',cell(0,0);...
      'geneShortNames',cell(0,0);...
+       'proteinNames',cell(0,0);...
       'unconstrained',cell(0,0);... %Changed to double in the end.
             'metFrom',cell(0,0);...
             'rxnFrom',cell(0,0)};
@@ -373,6 +374,8 @@ for i=1:numel(line_key)
                 miriamKey = '';
             case 'name'
                 model = readFieldValue(model, 'geneShortNames', tline_value, pos);
+            case 'protein'
+                model = readFieldValue(model, 'proteinNames', tline_value, pos);
             case 'annotation'
                 readList = 'annotation';
             otherwise
@@ -568,7 +571,7 @@ for i={'metComps'} % Ones, assume first compartment
    model = emptyOrFill(model,i{1},1,'mets');
 end
 % Genes
-for i={'geneMiriams','geneShortNames'} % Empty strings
+for i={'geneMiriams','geneShortNames','proteinNames'} % Empty strings
    model = emptyOrFill(model,i{1},{''},'genes');
 end
 for i={'geneComps'} % Ones, assume first compartment

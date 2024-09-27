@@ -129,6 +129,10 @@ if ~isempty(rxnsToRemove) || removeUnusedMets || removeUnusedGenes
         if isfield(reducedModel,'geneShortNames')
             reducedModel.geneShortNames=reducedModel.geneShortNames(toKeep);
         end
+
+        if isfield(reducedModel,'proteinNames')
+            reducedModel.proteinNames=reducedModel.proteinNames(toKeep);
+        end
         
         if isfield(reducedModel,'geneMiriams')
             reducedModel.geneMiriams=reducedModel.geneMiriams(toKeep);
