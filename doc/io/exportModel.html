@@ -151,96 +151,96 @@ This function is called by:
 0085     model.name=<span class="string">'blankName'</span>;
 0086 <span class="keyword">end</span>
 0087 
-0088 <span class="comment">%Check the model structure</span>
-0089 <span class="keyword">if</span> supressWarnings==false
-0090     checkModelStruct(model);
-0091 <span class="keyword">end</span>
-0092 
-0093 <span class="comment">%Add several blank fields, if they do not exist already. This is to reduce</span>
-0094 <span class="comment">%the number of conditions below</span>
-0095 <span class="keyword">if</span> ~isfield(model,<span class="string">'compMiriams'</span>)
-0096     model.compMiriams=cell(numel(model.comps),1);
-0097 <span class="keyword">end</span>
-0098 <span class="keyword">if</span> ~isfield(model,<span class="string">'inchis'</span>)
-0099     model.inchis=cell(numel(model.mets),1);
-0100 <span class="keyword">end</span>
-0101 <span class="keyword">if</span> ~isfield(model,<span class="string">'metFormulas'</span>)
-0102     model.metFormulas=cell(numel(model.mets),1);
-0103 <span class="keyword">end</span>
-0104 <span class="keyword">if</span> ~isfield(model,<span class="string">'metMiriams'</span>)
-0105     model.metMiriams=cell(numel(model.mets),1);
-0106 <span class="keyword">end</span>
-0107 <span class="keyword">if</span> ~isfield(model,<span class="string">'geneMiriams'</span>) &amp;&amp; isfield(model,<span class="string">'genes'</span>)
-0108     model.geneMiriams=cell(numel(model.genes),1);
-0109 <span class="keyword">end</span>
-0110 <span class="keyword">if</span> ~isfield(model,<span class="string">'geneShortNames'</span>) &amp;&amp; isfield(model,<span class="string">'genes'</span>)
-0111     model.geneShortNames=cell(numel(model.genes),1);
-0112 <span class="keyword">end</span>
-0113 <span class="keyword">if</span> ~isfield(model,<span class="string">'subSystems'</span>)
-0114     model.subSystems=cell(numel(model.rxns),1);
-0115 <span class="keyword">end</span>
-0116 <span class="keyword">if</span> ~isfield(model,<span class="string">'eccodes'</span>)
-0117     model.eccodes=cell(numel(model.rxns),1);
-0118 <span class="keyword">end</span>
-0119 <span class="keyword">if</span> ~isfield(model,<span class="string">'rxnReferences'</span>)
-0120     model.rxnReferences=cell(numel(model.rxns),1);
-0121 <span class="keyword">end</span>
-0122 <span class="keyword">if</span> ~isfield(model,<span class="string">'rxnConfidenceScores'</span>)
-0123     model.rxnConfidenceScores=NaN(numel(model.rxns),1);
-0124 <span class="keyword">end</span>
-0125 <span class="keyword">if</span> ~isfield(model,<span class="string">'rxnNotes'</span>)
-0126     model.rxnNotes=cell(numel(model.rxns),1);
-0127 <span class="keyword">end</span>
-0128 <span class="keyword">if</span> ~isfield(model,<span class="string">'rxnMiriams'</span>)
-0129     model.rxnMiriams=cell(numel(model.rxns),1);
-0130 <span class="keyword">end</span>
-0131 
-0132 <span class="keyword">if</span> sbmlLevel&lt;3
-0133     <span class="comment">%Check if genes have associated compartments</span>
-0134     <span class="keyword">if</span> ~isfield(model,<span class="string">'geneComps'</span>) &amp;&amp; isfield(model,<span class="string">'genes'</span>)
-0135         <span class="keyword">if</span> supressWarnings==false
-0136             EM=<span class="string">'There are no compartments specified for genes. All genes will be assigned to the first compartment. This is because the SBML structure requires all elements to be assigned to a compartment'</span>;
-0137             dispEM(EM,false);
-0138         <span class="keyword">end</span>
-0139         model.geneComps=ones(numel(model.genes),1);
-0140     <span class="keyword">end</span>
-0141 <span class="keyword">end</span>
-0142 
-0143 <span class="comment">%Convert ids to SBML-convenient format. This is to avoid the data loss when</span>
-0144 <span class="comment">%unsupported characters are included in ids. Here we are using part from</span>
-0145 <span class="comment">%convertSBMLID, originating from the COBRA Toolbox</span>
-0146 model.rxns=regexprep(model.rxns,<span class="string">'([^0-9_a-zA-Z])'</span>,<span class="string">'__${num2str($1+0)}__'</span>);
-0147 model.mets=regexprep(model.mets,<span class="string">'([^0-9_a-zA-Z])'</span>,<span class="string">'__${num2str($1+0)}__'</span>);
-0148 model.comps=regexprep(model.comps,<span class="string">'([^0-9_a-zA-Z])'</span>,<span class="string">'__${num2str($1+0)}__'</span>);
-0149 <span class="keyword">if</span> COBRAstyle
-0150     <span class="keyword">if</span> isfield(model,<span class="string">'ec'</span>)
-0151         error(<span class="string">'ecModels cannot be exported with COBRAstyle flag, manually correct any non-compliant identifiers if needed.'</span>)
-0152     <span class="keyword">end</span>
-0153     <span class="keyword">if</span> ~all(startsWith(model.rxns,<span class="string">'R_'</span>))
-0154         model.rxns  = strcat(<span class="string">'R_'</span>,model.rxns);
-0155     <span class="keyword">end</span>
-0156     <span class="keyword">if</span> ~all(startsWith(model.mets,<span class="string">'M_'</span>))
-0157         model.mets  = strcat(<span class="string">'M_'</span>,model.mets);
-0158     <span class="keyword">end</span>
-0159     <span class="keyword">if</span> ~all(startsWith(model.comps,<span class="string">'C_'</span>))
-0160         model.comps  = strcat(<span class="string">'C_'</span>,model.comps);
-0161     <span class="keyword">end</span>
-0162 <span class="keyword">end</span>
-0163 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
-0164     problemGenes=find(~cellfun(<span class="string">'isempty'</span>,regexp(model.genes,<span class="string">'([^0-9_a-zA-Z])'</span>)));
-0165     originalGenes=model.genes(problemGenes);
-0166     replacedGenes=regexprep(model.genes(problemGenes),<span class="string">'([^0-9_a-zA-Z])'</span>,<span class="string">'__${num2str($1+0)}__'</span>);
-0167     model.genes(problemGenes)=replacedGenes;
-0168     <span class="keyword">for</span> i=1:numel(problemGenes)
-0169         model.grRules = regexprep(model.grRules, [<span class="string">'(^|\s|\()'</span> originalGenes{i} <span class="string">'($|\s|\))'</span>], [<span class="string">'$1'</span> replacedGenes{i} <span class="string">'$2'</span>]);
-0170     <span class="keyword">end</span>
-0171     <span class="keyword">if</span> COBRAstyle
-0172         <span class="keyword">if</span> ~all(startsWith(model.genes,<span class="string">'G_'</span>))
-0173             model.genes = strcat(<span class="string">'G_'</span>,model.genes);
-0174             model.grRules = regexprep(model.grRules, <span class="string">'(\&lt;[0-9_a-zA-Z])'</span>, <span class="string">'G_$1'</span>);
-0175             model.grRules = regexprep(model.grRules, <span class="string">' G_or '</span>, <span class="string">' or '</span>);
-0176             model.grRules = regexprep(model.grRules, <span class="string">' G_and '</span>, <span class="string">' and '</span>);
-0177         <span class="keyword">end</span>
+0088 <span class="comment">% Add prefixes if desired</span>
+0089 <span class="keyword">if</span> COBRAstyle
+0090     <span class="keyword">if</span> isfield(model,<span class="string">'ec'</span>)
+0091         error(<span class="string">'ecModels cannot be exported with COBRAstyle flag, manually correct any non-compliant identifiers if needed.'</span>)
+0092     <span class="keyword">end</span>
+0093     <span class="keyword">if</span> ~all(startsWith(model.rxns,<span class="string">'R_'</span>))
+0094         model.rxns  = strcat(<span class="string">'R_'</span>,model.rxns);
+0095     <span class="keyword">end</span>
+0096     <span class="keyword">if</span> ~all(startsWith(model.mets,<span class="string">'M_'</span>))
+0097         model.mets  = strcat(<span class="string">'M_'</span>,model.mets);
+0098     <span class="keyword">end</span>
+0099     <span class="keyword">if</span> ~all(startsWith(model.comps,<span class="string">'C_'</span>))
+0100         model.comps  = strcat(<span class="string">'C_'</span>,model.comps);
+0101     <span class="keyword">end</span>
+0102     <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>) &amp;&amp; ~all(startsWith(model.genes,<span class="string">'G_'</span>))
+0103         model.genes = strcat(<span class="string">'G_'</span>,model.genes);
+0104         model.grRules = regexprep(model.grRules, <span class="string">'(\&lt;[0-9_a-zA-Z])'</span>, <span class="string">'G_$1'</span>);
+0105         model.grRules = regexprep(model.grRules, <span class="string">' G_or '</span>, <span class="string">' or '</span>);
+0106         model.grRules = regexprep(model.grRules, <span class="string">' G_and '</span>, <span class="string">' and '</span>);
+0107     <span class="keyword">end</span>
+0108 <span class="keyword">end</span>
+0109 
+0110 <span class="comment">%Check the model structure</span>
+0111 <span class="keyword">if</span> supressWarnings==false
+0112     checkModelStruct(model);
+0113 <span class="keyword">end</span>
+0114 
+0115 <span class="comment">%Add several blank fields, if they do not exist already. This is to reduce</span>
+0116 <span class="comment">%the number of conditions below</span>
+0117 <span class="keyword">if</span> ~isfield(model,<span class="string">'compMiriams'</span>)
+0118     model.compMiriams=cell(numel(model.comps),1);
+0119 <span class="keyword">end</span>
+0120 <span class="keyword">if</span> ~isfield(model,<span class="string">'inchis'</span>)
+0121     model.inchis=cell(numel(model.mets),1);
+0122 <span class="keyword">end</span>
+0123 <span class="keyword">if</span> ~isfield(model,<span class="string">'metFormulas'</span>)
+0124     model.metFormulas=cell(numel(model.mets),1);
+0125 <span class="keyword">end</span>
+0126 <span class="keyword">if</span> ~isfield(model,<span class="string">'metMiriams'</span>)
+0127     model.metMiriams=cell(numel(model.mets),1);
+0128 <span class="keyword">end</span>
+0129 <span class="keyword">if</span> ~isfield(model,<span class="string">'geneMiriams'</span>) &amp;&amp; isfield(model,<span class="string">'genes'</span>)
+0130     model.geneMiriams=cell(numel(model.genes),1);
+0131 <span class="keyword">end</span>
+0132 <span class="keyword">if</span> ~isfield(model,<span class="string">'geneShortNames'</span>) &amp;&amp; isfield(model,<span class="string">'genes'</span>)
+0133     model.geneShortNames=cell(numel(model.genes),1);
+0134 <span class="keyword">end</span>
+0135 <span class="keyword">if</span> ~isfield(model,<span class="string">'subSystems'</span>)
+0136     model.subSystems=cell(numel(model.rxns),1);
+0137 <span class="keyword">end</span>
+0138 <span class="keyword">if</span> ~isfield(model,<span class="string">'eccodes'</span>)
+0139     model.eccodes=cell(numel(model.rxns),1);
+0140 <span class="keyword">end</span>
+0141 <span class="keyword">if</span> ~isfield(model,<span class="string">'rxnReferences'</span>)
+0142     model.rxnReferences=cell(numel(model.rxns),1);
+0143 <span class="keyword">end</span>
+0144 <span class="keyword">if</span> ~isfield(model,<span class="string">'rxnConfidenceScores'</span>)
+0145     model.rxnConfidenceScores=NaN(numel(model.rxns),1);
+0146 <span class="keyword">end</span>
+0147 <span class="keyword">if</span> ~isfield(model,<span class="string">'rxnNotes'</span>)
+0148     model.rxnNotes=cell(numel(model.rxns),1);
+0149 <span class="keyword">end</span>
+0150 <span class="keyword">if</span> ~isfield(model,<span class="string">'rxnMiriams'</span>)
+0151     model.rxnMiriams=cell(numel(model.rxns),1);
+0152 <span class="keyword">end</span>
+0153 
+0154 <span class="keyword">if</span> sbmlLevel&lt;3
+0155     <span class="comment">%Check if genes have associated compartments</span>
+0156     <span class="keyword">if</span> ~isfield(model,<span class="string">'geneComps'</span>) &amp;&amp; isfield(model,<span class="string">'genes'</span>)
+0157         <span class="keyword">if</span> supressWarnings==false
+0158             EM=<span class="string">'There are no compartments specified for genes. All genes will be assigned to the first compartment. This is because the SBML structure requires all elements to be assigned to a compartment'</span>;
+0159             dispEM(EM,false);
+0160         <span class="keyword">end</span>
+0161         model.geneComps=ones(numel(model.genes),1);
+0162     <span class="keyword">end</span>
+0163 <span class="keyword">end</span>
+0164 
+0165 <span class="comment">%Convert ids to SBML-convenient format. This is to avoid the data loss when</span>
+0166 <span class="comment">%unsupported characters are included in ids. Here we are using part from</span>
+0167 <span class="comment">%convertSBMLID, originating from the COBRA Toolbox</span>
+0168 model.rxns=regexprep(model.rxns,<span class="string">'([^0-9_a-zA-Z])'</span>,<span class="string">'__${num2str($1+0)}__'</span>);
+0169 model.mets=regexprep(model.mets,<span class="string">'([^0-9_a-zA-Z])'</span>,<span class="string">'__${num2str($1+0)}__'</span>);
+0170 model.comps=regexprep(model.comps,<span class="string">'([^0-9_a-zA-Z])'</span>,<span class="string">'__${num2str($1+0)}__'</span>);
+0171 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
+0172     problemGenes=find(~cellfun(<span class="string">'isempty'</span>,regexp(model.genes,<span class="string">'([^0-9_a-zA-Z])'</span>)));
+0173     originalGenes=model.genes(problemGenes);
+0174     replacedGenes=regexprep(model.genes(problemGenes),<span class="string">'([^0-9_a-zA-Z])'</span>,<span class="string">'__${num2str($1+0)}__'</span>);
+0175     model.genes(problemGenes)=replacedGenes;
+0176     <span class="keyword">for</span> i=1:numel(problemGenes)
+0177         model.grRules = regexprep(model.grRules, [<span class="string">'(^|\s|\()'</span> originalGenes{i} <span class="string">'($|\s|\))'</span>], [<span class="string">'$1'</span> replacedGenes{i} <span class="string">'$2'</span>]);
 0178     <span class="keyword">end</span>
 0179 <span class="keyword">end</span>
 0180 

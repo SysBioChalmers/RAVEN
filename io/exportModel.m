@@ -85,6 +85,28 @@ if ~isfield(model,'name')
     model.name='blankName';
 end
 
+% Add prefixes if desired
+if COBRAstyle
+    if isfield(model,'ec')
+        error('ecModels cannot be exported with COBRAstyle flag, manually correct any non-compliant identifiers if needed.')
+    end
+    if ~all(startsWith(model.rxns,'R_'))
+        model.rxns  = strcat('R_',model.rxns);
+    end
+    if ~all(startsWith(model.mets,'M_'))
+        model.mets  = strcat('M_',model.mets);
+    end
+    if ~all(startsWith(model.comps,'C_'))
+        model.comps  = strcat('C_',model.comps);
+    end
+    if isfield(model,'genes') && ~all(startsWith(model.genes,'G_'))
+        model.genes = strcat('G_',model.genes);
+        model.grRules = regexprep(model.grRules, '(\<[0-9_a-zA-Z])', 'G_$1');
+        model.grRules = regexprep(model.grRules, ' G_or ', ' or ');
+        model.grRules = regexprep(model.grRules, ' G_and ', ' and ');
+    end
+end
+
 %Check the model structure
 if supressWarnings==false
     checkModelStruct(model);
@@ -146,20 +168,6 @@ end
 model.rxns=regexprep(model.rxns,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 model.mets=regexprep(model.mets,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
 model.comps=regexprep(model.comps,'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
-if COBRAstyle
-    if isfield(model,'ec')
-        error('ecModels cannot be exported with COBRAstyle flag, manually correct any non-compliant identifiers if needed.')
-    end
-    if ~all(startsWith(model.rxns,'R_'))
-        model.rxns  = strcat('R_',model.rxns);
-    end
-    if ~all(startsWith(model.mets,'M_'))
-        model.mets  = strcat('M_',model.mets);
-    end
-    if ~all(startsWith(model.comps,'C_'))
-        model.comps  = strcat('C_',model.comps);
-    end
-end
 if isfield(model,'genes')
     problemGenes=find(~cellfun('isempty',regexp(model.genes,'([^0-9_a-zA-Z])')));
     originalGenes=model.genes(problemGenes);
@@ -167,14 +175,6 @@ if isfield(model,'genes')
     model.genes(problemGenes)=replacedGenes;
     for i=1:numel(problemGenes)
         model.grRules = regexprep(model.grRules, ['(^|\s|\()' originalGenes{i} '($|\s|\))'], ['$1' replacedGenes{i} '$2']);
-    end
-    if COBRAstyle
-        if ~all(startsWith(model.genes,'G_'))
-            model.genes = strcat('G_',model.genes);
-            model.grRules = regexprep(model.grRules, '(\<[0-9_a-zA-Z])', 'G_$1');
-            model.grRules = regexprep(model.grRules, ' G_or ', ' or ');
-            model.grRules = regexprep(model.grRules, ' G_and ', ' and ');
-        end
     end
 end
 
