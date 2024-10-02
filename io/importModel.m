@@ -130,10 +130,10 @@ model.unconstrained=[];
 
 %Load the model using libSBML
 fileName=checkFileExistence(fileName,1);
-modelSBML = TranslateSBML_RAVEN(fileName,0,0,[1 1]);
+[modelSBML,errorMsg] = TranslateSBML_RAVEN(fileName,0,0,[1 1]);
 
 if isempty(modelSBML)
-    EM='There is a problem with the SBML file. Try using the SBML Validator at http://sbml.org/Facilities/Validator';
+    EM=['There is a problem with the SBML file. Try using the SBML Validator at http://sbml.org/Facilities/Validator.\nlibSBML reports: ', errorMsg.message];
     dispEM(EM);
 end
 
@@ -984,7 +984,7 @@ if COBRAstyle
         model.id        = model.id(3:end);
     end
 elseif any(hasCOBRAids)
-    dispEM('COBRA style identifier prefixes (like R_ for reactions) found in the model. To remove those, run importModel with COBRAstyle as true: importModel(''filename.xml'', [], true);',false)
+    printOrange('COBRA style identifier prefixes (like R_ for reactions) found in the model. To remove those, run importModel with COBRAstyle as true: importModel(''filename.xml'', [], true);\n');
 end
 
 %Remove unused fields
