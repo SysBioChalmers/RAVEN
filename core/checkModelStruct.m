@@ -306,9 +306,6 @@ elseif ~any(model.c)
     EM='No objective function found. This might be intended, but results in FBCv2 non-compliant SBML file when exported';
     dispEM(EM,false);
 end
-    
-EM='The following reactions have contradicting bounds:';
-dispEM(EM,throwErrors,model.rxns(model.lb>model.ub),trimWarnings);
 
 %Mapping of compartments
 if isfield(model,'compOutside')
@@ -326,8 +323,8 @@ for i=1:numel(model.metNames)
         end
     end
 end
-EM='The following metabolite IDs have metabolite names that begin with a number directly followed by space:';
-dispEM(EM,throwErrors,model.mets(I),trimWarnings);
+EM='The following metabolite names begin with a number directly followed by space, which could potentially cause problems:';
+dispEM(EM,throwErrors,model.metNames(I),trimWarnings);
 
 %Non-parseable composition
 if isfield(model,'metFormulas')
