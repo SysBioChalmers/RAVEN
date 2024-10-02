@@ -324,7 +324,7 @@ for i=1:numel(model.metNames)
     end
 end
 EM='The following metabolite names begin with a number directly followed by space, which could potentially cause problems:';
-dispEM(EM,throwErrors,model.metNames(I),trimWarnings);
+dispEM(EM,false,model.metNames(I),trimWarnings);
 
 %Non-parseable composition
 if isfield(model,'metFormulas')
