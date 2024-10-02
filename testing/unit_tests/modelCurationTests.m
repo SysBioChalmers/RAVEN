@@ -451,7 +451,7 @@ sourceDir = fileparts(which(mfilename));
 load(fullfile(sourceDir,'test_data','ecoli_textbook.mat'), 'model');
 
 sbmlFile=fullfile(sourceDir,'..','..','tutorial','empty.xml');
-evalc('modelEmpty=importModel(sbmlFile)'); % Repress warnings
+evalc('modelEmpty=importModel(sbmlFile,[],true)'); % Repress warnings
 
 evalc('modelNew=addRxnsGenesMets(model,modelEmpty,''r1'',true);');
 
