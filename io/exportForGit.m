@@ -1,39 +1,51 @@
-function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,cobraText)
+function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,COBRAtext,COBRAstyle)
 % exportForGit
 %   Generates a directory structure and populates this with model files, ready
 %   to be commited to a Git(Hub) maintained model repository. Writes the model
 %   as SBML L3V1 FBCv2 (both XML and YAML), COBRA text, Matlab MAT-file
 %   orthologies in KEGG
 %
-%   model               model structure in RAVEN format that should be exported
+%   model               model structure in RAVEN format that should be
+%   exported
 %   prefix              prefix for all filenames (optional, default 'model')
-%   path                path where the directory structure should be generated
-%                       and populated with all files (optional, default to current
-%                       working directory)
-%   formats             cell array of strings specifying in what file formats
-%                       the model should be exported (optional, default to all
-%                       formats as {'mat', 'txt', 'xlsx', 'xml', 'yml'})
+%   path                path where the directory structure should be
+%                       generated and populated with all files (optional,
+%                       default to current working directory)
+%   formats             cell array of strings specifying in what file
+%                       formats the model should be exported (optional,
+%                       default to all formats as {'mat', 'txt', 'xlsx',
+%                       'xml', 'yml'})
 %   mainBranchFlag      logical, if true, function will error if RAVEN (and
 %                       COBRA if detected) is/are not on the main branch.
 %                       (optional, default false)
-%   subDirs             logical, whether model files for each file format 
+%   subDirs             logical, whether model files for each file format
 %                       should be written in its own subdirectory, with
 %                       'model' as parent directory, in accordance to the
 %                       standard-GEM repository format. If false, all files
-%                       are stored in the same folder. (optional, default true)
-%   cobraText           logical, whether the txt file should be in COBRA
+%                       are stored in the same folder. (optional, default
+%                       true)
+%   COBRAtext           logical, whether the txt file should be in COBRA
 %                       Toolbox format using metabolite IDs, instead of
-%                       metabolite names and compartments. (optional, default
-%                       false)
+%                       metabolite names and compartments. (optional,
+%                       default false)
+%   COBRAstyle          true if COBRA-style prefixes should be added to all
+%                       identifiers in the SBML file: R_ for reactions, M_
+%                       for metabolites, G_ for genes and C_ for
+%                       compartments. If all identifiers of a particular
+%                       field already have the prefix, then no additional
+%                       prefixes are added. (optional, default false)
 %
-% Usage: exportForGit(model,prefix,path,formats,mainBranchFlag)
-if nargin<7
-    cobraText=false;
+% Usage: exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,COBRAtext,COBRAstyle)
+if nargin<8
+    COBRAstyle=false;
 end
-if nargin<6
+if nargin<7 || isempty(COBRAtext)
+    COBRAtext=false;
+end
+if nargin<6 || isempty(subDirs)
     subDirs=true;
 end
-if nargin<5
+if nargin<5 || isempty(mainBranchFlag)
     mainBranchFlag=false;
 end
 if nargin<4 || isempty(formats)
@@ -45,12 +57,12 @@ if any(~ismember(formats, {'mat', 'txt', 'xlsx', 'xml', 'yml'}))
     EM='Unknown file format defined. Only mat, txt, xlsx, xml and yml are allowed file formats.';
     error(EM)
 end
-if nargin<3
+if nargin<3 || isempty(path)
     path='.';
 else
     path=char(path);
 end
-if nargin<2
+if nargin<2 || isempty(prefix)
     prefix='model';
 else
     prefix=char(prefix);
@@ -92,7 +104,7 @@ end
 % Write TXT format
 if ismember('txt', formats)
     fid=fopen(fullfile(filePath{1},strcat(prefix,'.txt')),'w');
-    if cobraText==true
+    if COBRAtext==true
         eqns=constructEquations(model,model.rxns,false,false,false);
         eqns=strrep(eqns,' => ','  -> ');
         eqns=strrep(eqns,' <=> ','  <=> ');
@@ -130,7 +142,7 @@ end
 
 % Write XML format
 if ismember('xml', formats)
-        exportModel(model,fullfile(filePath{5},strcat(prefix,'.xml')));
+        exportModel(model,fullfile(filePath{5},strcat(prefix,'.xml')),COBRAstyle);
 end
 
 %Save file with versions:
