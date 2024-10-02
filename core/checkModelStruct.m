@@ -244,6 +244,25 @@ if isfield(model,'genes')
     end
 end
 
+%Validate format of ids
+fields={'rxns';'mets';'comps';'genes'};
+fieldNames = {'reaction';'metabolite';'compartment';'gene'};
+for i=1:numel(fields)
+    try
+        numIDs = startsWith(model.(fields{i}),digitsPattern(1));
+        if any(numIDs)
+            EM = ['The following ' fieldNames{i} ' IDs start with a digit, ' ...
+                  'which does not comply with SBML specifications. This does '...
+                  'not impact RAVEN functionality, but before exporting the ' ...
+                  'model to SBML you should either correct these ' ...
+                  'incompatibilities, or you can run exportModel with ' ...
+                  'COBRAstyle as true: exportModel(model, ''filename.xml'', true); '];
+            dispEM(EM,throwErrors,{model.(fields{i}){numIDs}},trimWarnings);
+        end
+    catch
+    end
+end
+
 %Duplicates
 EM='The following reaction IDs are duplicates:';
 dispEM(EM,throwErrors,model.rxns(duplicates(model.rxns)),trimWarnings);
@@ -274,13 +293,10 @@ EM='The following compartments contain no metabolites:';
 dispEM(EM,false,model.comps(I),trimWarnings);
 
 %Contradicting bounds
-EM='The following reactions have contradicting bounds:';
+EM='The following reactions have contradicting bounds (lower bound is higher than upper bound):';
 dispEM(EM,throwErrors,model.rxns(model.lb>model.ub),trimWarnings);
-EM='The following reactions have bounds contradicting their reversibility:';
-contradictBound = (model.lb < 0 & model.ub > 0 & model.rev==0) | ... % Reversible bounds, irreversible label
-                  (model.lb < 0 & model.ub <= 0 & model.rev==1) | ... % Negative bounds, reversible label
-                  (model.lb >= 0 & model.ub > 0 & model.rev==1); % Positive bounds, reversible label
-dispEM(EM,throwErrors,model.rxns(contradictBound),trimWarnings);
+EM='The following reactions have lower and upper bounds that indicate reversibility, but are indicated as irreversible in model.rev:';
+dispEM(EM,false,model.rxns(model.lb < 0 & model.ub > 0 & model.rev==0),trimWarnings);
 
 %Multiple or no objective functions not allowed in SBML L3V1 FBCv2
 if numel(find(model.c))>1
@@ -290,9 +306,6 @@ elseif ~any(model.c)
     EM='No objective function found. This might be intended, but results in FBCv2 non-compliant SBML file when exported';
     dispEM(EM,false);
 end
-    
-EM='The following reactions have contradicting bounds:';
-dispEM(EM,throwErrors,model.rxns(model.lb>model.ub),trimWarnings);
 
 %Mapping of compartments
 if isfield(model,'compOutside')
@@ -310,8 +323,8 @@ for i=1:numel(model.metNames)
         end
     end
 end
-EM='The following metabolite IDs begin with a number directly followed by space:';
-dispEM(EM,throwErrors,model.mets(I),trimWarnings);
+EM='The following metabolite names begin with a number directly followed by space, which could potentially cause problems:';
+dispEM(EM,false,model.metNames(I),trimWarnings);
 
 %Non-parseable composition
 if isfield(model,'metFormulas')
