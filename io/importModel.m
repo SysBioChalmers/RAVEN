@@ -85,8 +85,15 @@ if nargin<4
     supressWarnings=false;
 end
 
-if ~isfile(fileName)
-    error('SBML file %s cannot be found',string(fileName));
+fileName=checkFileExistence(fileName,1);
+% If path contains non-ASCII characters, copy file to tempdir first, as
+% libSBML is known to have problems with this on Windows:
+% https://sbml.org/software/libsbml/libsbml-docs/known-pitfalls/#matlab-on-windows-has-issues-with-unicode-filenames
+if ispc && any(double(fileName)>128)
+    [~,originalFile,ext] = fileparts(fileName);
+    tempFile = fullfile(tempdir,[originalFile ext]);
+    copyfile(fileName,tempFile);
+    fileName = tempFile;
 end
 
 %This is to match the order of the fields to those you get from importing
@@ -131,8 +138,10 @@ model.metCharges=[];
 model.unconstrained=[];
 
 %Load the model using libSBML
-fileName=checkFileExistence(fileName,1);
 [modelSBML,errorMsg] = TranslateSBML_RAVEN(fileName,0,0,[1 1]);
+if exist('tempFile','var')
+    delete(tempFile)
+end
 
 if isempty(modelSBML)
     EM=['There is a problem with the SBML file. Try using the SBML Validator at http://sbml.org/Facilities/Validator.\nlibSBML reports: ', errorMsg.message];
