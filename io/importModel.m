@@ -49,7 +49,7 @@ function model=importModel(fileName,removeExcMets,COBRAstyle,supressWarnings)
 %       geneComps        compartments for genes
 %       geneMiriams      structure with MIRIAM information about the genes
 %       geneShortNames   gene alternative names (e.g. ERG10)
-%       proteinNames     protein associated to each gene
+%       proteins     protein associated to each gene
 %       metNames         metabolite description
 %       metComps         compartments for metabolites
 %       inchis           InChI-codes for metabolites
@@ -128,7 +128,7 @@ model.genes={};
 model.geneComps=[];
 model.geneMiriams={};
 model.geneShortNames={};
-model.proteinNames={};
+model.proteins={};
 model.metNames={};
 model.metComps=[];
 model.inchis={};
@@ -202,7 +202,7 @@ geneNames={};
 geneIDs={};
 geneMiriams={};
 geneShortNames={};
-proteinNames={};
+proteins={};
 geneCompartments={};
 complexIDs={};
 complexNames={};
@@ -864,7 +864,7 @@ else
                     end
                 end
             end
-            proteinNames={modelSBML.fbc_geneProduct.fbc_name};
+            proteins={modelSBML.fbc_geneProduct.fbc_name};
         else
             genes=getGeneList(grRules);
         end
@@ -951,8 +951,8 @@ if any(~cellfun(@isempty,geneMiriams))
 end
 
 %If any protein strings have been loaded
-if any(~cellfun(@isempty,proteinNames))
-    model.proteinNames=proteinNames;
+if any(~cellfun(@isempty,proteins))
+    model.proteins=proteins;
 end
 
 model.unconstrained=metaboliteUnconstrained;
@@ -1058,8 +1058,8 @@ end
 if isempty(model.geneShortNames)
     model=rmfield(model,'geneShortNames');
 end
-if isempty(model.proteinNames)
-    model=rmfield(model,'proteinNames');
+if isempty(model.proteins)
+    model=rmfield(model,'proteins');
 end
 if isempty(model.inchis)
     model=rmfield(model,'inchis');

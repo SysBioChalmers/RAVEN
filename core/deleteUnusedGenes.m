@@ -37,8 +37,8 @@ if isfield(reducedModel,'geneShortNames')
     reducedModel.geneShortNames=reducedModel.geneShortNames(toKeep);
 end
 
-if isfield(reducedModel,'proteinNames')
-    reducedModel.proteinNames=reducedModel.proteinNames(toKeep);
+if isfield(reducedModel,'proteins')
+    reducedModel.proteins=reducedModel.proteins(toKeep);
 end
 
 if isfield(reducedModel,'geneMiriams')

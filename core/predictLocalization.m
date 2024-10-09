@@ -199,8 +199,8 @@ for i=1:numel(I)
     if isfield(model,'geneMiriams')
         model.geneMiriams=[model.geneMiriams;{[]}];
     end
-    if isfield(model,'proteinNames')
-        model.proteinNames=[model.proteinNames;{[]}];
+    if isfield(model,'proteins')
+        model.proteins=[model.proteins;{[]}];
     end
     if isfield(model,'geneFrom')
         model.geneFrom=[model.geneFrom;{{'FAKE'}}];
@@ -261,8 +261,8 @@ for i=1:numel(complexes)
     if isfield(model,'geneShortNames')
         model.geneShortNames=[model.geneShortNames;{''}];
     end
-    if isfield(model,'proteinNames')
-        model.proteinNames=[model.proteinNames;{''}];
+    if isfield(model,'proteins')
+        model.proteins=[model.proteins;{''}];
     end
     if isfield(model,'geneFrom')
         model.geneFrom=[model.geneFrom;{'COMPLEX'}];
@@ -765,8 +765,8 @@ end
 if isfield(outModel,'geneShortNames')
     outModel.geneShortNames(I)=[];
 end
-if isfield(outModel,'proteinNames')
-    outModel.proteinNames(I)=[];
+if isfield(outModel,'proteins')
+    outModel.proteins(I)=[];
 end
 outModel.rxnGeneMat(:,I)=[];
 
