@@ -132,6 +132,9 @@ end
 if ~isfield(model,'geneShortNames') && isfield(model,'genes')
     model.geneShortNames=cell(numel(model.genes),1);
 end
+if ~isfield(model,'proteinNames') && isfield(model,'genes')
+    model.proteinNames=cell(numel(model.genes),1);
+end
 if ~isfield(model,'subSystems')
     model.subSystems=cell(numel(model.rxns),1);
 end
@@ -420,6 +423,11 @@ if isfield(model,'genes')
                 modelSBML.fbc_geneProduct(i).fbc_label=model.genes{i};
             else
                 modelSBML.fbc_geneProduct(i).fbc_label=model.geneShortNames{i};
+            end
+        end
+        if isfield(modelSBML.fbc_geneProduct, 'fbc_name') && isfield(model,'proteinNames')
+            if ~isempty(model.proteinNames{i})
+                modelSBML.fbc_geneProduct(i).fbc_name=model.proteinNames{i};
             end
         end
     end

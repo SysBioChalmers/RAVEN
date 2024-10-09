@@ -221,6 +221,9 @@ if groupLinear==true
     if isfield(reducedModel,'geneShortNames')
         reducedModel.geneShortNames={};
     end
+    if isfield(reducedModel,'proteinNames')
+        reducedModel.proteinNames={};
+    end
     if isfield(reducedModel,'geneMiriams')
         reducedModel.geneMiriams={};
     end

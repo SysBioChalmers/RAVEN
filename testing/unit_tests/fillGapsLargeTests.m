@@ -7,7 +7,7 @@ if testGurobi
     try
         gurobi_read('solverTests.m');
     catch ME
-        if ~startsWith(ME.message,'Gurobi error 10012') % Expected error code, others may indicate problems with license
+        if ~startsWith(ME.message,{'Gurobi error 10012','Gurobi error 10003'}) % Expected error codes, others may indicate problems with license
            testGurobi = false;
         end
     end

@@ -49,6 +49,7 @@ function model=importModel(fileName,removeExcMets,COBRAstyle,supressWarnings)
 %       geneComps        compartments for genes
 %       geneMiriams      structure with MIRIAM information about the genes
 %       geneShortNames   gene alternative names (e.g. ERG10)
+%       proteinNames     protein associated to each gene
 %       metNames         metabolite description
 %       metComps         compartments for metabolites
 %       inchis           InChI-codes for metabolites
@@ -84,8 +85,15 @@ if nargin<4
     supressWarnings=false;
 end
 
-if ~isfile(fileName)
-    error('SBML file %s cannot be found',string(fileName));
+fileName=checkFileExistence(fileName,1);
+% If path contains non-ASCII characters, copy file to tempdir first, as
+% libSBML is known to have problems with this on Windows:
+% https://sbml.org/software/libsbml/libsbml-docs/known-pitfalls/#matlab-on-windows-has-issues-with-unicode-filenames
+if ispc && any(double(fileName)>128)
+    [~,originalFile,ext] = fileparts(fileName);
+    tempFile = fullfile(tempdir,[originalFile ext]);
+    copyfile(fileName,tempFile);
+    fileName = tempFile;
 end
 
 %This is to match the order of the fields to those you get from importing
@@ -120,6 +128,7 @@ model.genes={};
 model.geneComps=[];
 model.geneMiriams={};
 model.geneShortNames={};
+model.proteinNames={};
 model.metNames={};
 model.metComps=[];
 model.inchis={};
@@ -129,8 +138,10 @@ model.metCharges=[];
 model.unconstrained=[];
 
 %Load the model using libSBML
-fileName=checkFileExistence(fileName,1);
 [modelSBML,errorMsg] = TranslateSBML_RAVEN(fileName,0,0,[1 1]);
+if exist('tempFile','var')
+    delete(tempFile)
+end
 
 if isempty(modelSBML)
     EM=['There is a problem with the SBML file. Try using the SBML Validator at http://sbml.org/Facilities/Validator.\nlibSBML reports: ', errorMsg.message];
@@ -191,6 +202,7 @@ geneNames={};
 geneIDs={};
 geneMiriams={};
 geneShortNames={};
+proteinNames={};
 geneCompartments={};
 complexIDs={};
 complexNames={};
@@ -852,6 +864,7 @@ else
                     end
                 end
             end
+            proteinNames={modelSBML.fbc_geneProduct.fbc_name};
         else
             genes=getGeneList(grRules);
         end
@@ -935,6 +948,11 @@ end
 %If any Miriam strings for genes have been loaded
 if any(~cellfun(@isempty,geneMiriams))
     model.geneMiriams=geneMiriams;
+end
+
+%If any protein strings have been loaded
+if any(~cellfun(@isempty,proteinNames))
+    model.proteinNames=proteinNames;
 end
 
 model.unconstrained=metaboliteUnconstrained;
@@ -1039,6 +1057,9 @@ if isempty(model.geneMiriams)
 end
 if isempty(model.geneShortNames)
     model=rmfield(model,'geneShortNames');
+end
+if isempty(model.proteinNames)
+    model=rmfield(model,'proteinNames');
 end
 if isempty(model.inchis)
     model=rmfield(model,'inchis');
