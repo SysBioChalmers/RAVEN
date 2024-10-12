@@ -221,8 +221,8 @@ if groupLinear==true
     if isfield(reducedModel,'geneShortNames')
         reducedModel.geneShortNames={};
     end
-    if isfield(reducedModel,'proteinNames')
-        reducedModel.proteinNames={};
+    if isfield(reducedModel,'proteins')
+        reducedModel.proteins={};
     end
     if isfield(reducedModel,'geneMiriams')
         reducedModel.geneMiriams={};

@@ -49,7 +49,7 @@ function model=importModel(fileName,removeExcMets,COBRAstyle,supressWarnings)
 %       geneComps        compartments for genes
 %       geneMiriams      structure with MIRIAM information about the genes
 %       geneShortNames   gene alternative names (e.g. ERG10)
-%       proteinNames     protein associated to each gene
+%       proteins     protein associated to each gene
 %       metNames         metabolite description
 %       metComps         compartments for metabolites
 %       inchis           InChI-codes for metabolites
@@ -128,7 +128,7 @@ model.genes={};
 model.geneComps=[];
 model.geneMiriams={};
 model.geneShortNames={};
-model.proteinNames={};
+model.proteins={};
 model.metNames={};
 model.metComps=[];
 model.inchis={};
@@ -202,7 +202,7 @@ geneNames={};
 geneIDs={};
 geneMiriams={};
 geneShortNames={};
-proteinNames={};
+proteins={};
 geneCompartments={};
 complexIDs={};
 complexNames={};
@@ -864,7 +864,7 @@ else
                     end
                 end
             end
-            proteinNames={modelSBML.fbc_geneProduct.fbc_name};
+            proteins={modelSBML.fbc_geneProduct.fbc_name};
         else
             genes=getGeneList(grRules);
         end
@@ -951,8 +951,9 @@ if any(~cellfun(@isempty,geneMiriams))
 end
 
 %If any protein strings have been loaded
-if any(~cellfun(@isempty,proteinNames))
-    model.proteinNames=proteinNames;
+if any(~cellfun(@isempty,proteins))
+    proteins = reshape(proteins,[],1);
+    model.proteins=proteins;
 end
 
 model.unconstrained=metaboliteUnconstrained;
@@ -1002,7 +1003,19 @@ if COBRAstyle
         model.id        = model.id(3:end);
     end
 elseif any(hasCOBRAids)
-    printOrange('COBRA style identifier prefixes (like R_ for reactions) found in the model. To remove those, run importModel with COBRAstyle as true: importModel(''filename.xml'', [], true);\n');
+    hasCOBRAidsMsg = {'model.rxns (R_ prefix)',...
+                      'model.mets (M_ prefix)',...
+                      'model.comps (C_ prefix)',...
+                      'model.genes (G_ prefix)',...
+                      'model.metNames (M_ prefix)',...
+                      'model.rxnNames (R_ prefix)',...
+                      'model.id (M_ prefix)'};
+    hasCOBRAidsMsg(~hasCOBRAids) = [];
+    printOrange(['COBRA style identifier prefixes are found in: "' ...
+        strjoin(hasCOBRAidsMsg,'"; "') '". Since RAVEN 2.10.0, identifiers ' ...
+        'are by default imported "as-is". If you do prefer to remove these ' ...
+        'identifier prefixes, run importModel with COBRAstyle as true. ' ...
+        'Example:   importModel(''filename.xml'', [], true);\n']);
 end
 
 %Remove unused fields
@@ -1058,8 +1071,8 @@ end
 if isempty(model.geneShortNames)
     model=rmfield(model,'geneShortNames');
 end
-if isempty(model.proteinNames)
-    model=rmfield(model,'proteinNames');
+if isempty(model.proteins)
+    model=rmfield(model,'proteins');
 end
 if isempty(model.inchis)
     model=rmfield(model,'inchis');

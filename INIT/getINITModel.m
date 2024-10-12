@@ -391,8 +391,8 @@ model.rxnGeneMat(:,I)=[];
 if isfield(model,'geneShortNames')
     model.geneShortNames(I)=[];
 end
-if isfield(model,'proteinNames')
-    model.proteinNames(I)=[];
+if isfield(model,'proteins')
+    model.proteins(I)=[];
 end
 if isfield(model,'geneMiriams')
     model.geneMiriams(I)=[];

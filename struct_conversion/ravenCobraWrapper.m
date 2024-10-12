@@ -77,7 +77,7 @@ end
 newModel.rxns=model.rxns;
 optFields = {'rxnNames','rxnNotes','rxnConfidenceScores','rxnDeltaG',...
     'rxnGeneMat','rev','subSystems','comps','compNames','metCharges',...
-    'metDeltaG','metFormulas','metNotes','metSmiles','genes','proteinNames'};
+    'metDeltaG','metFormulas','metNotes','metSmiles','genes','proteins'};
 for i=1:length(optFields)
     if isfield(model,optFields{i})
         newModel.(optFields{i})=model.(optFields{i});

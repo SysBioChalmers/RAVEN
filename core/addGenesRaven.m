@@ -14,7 +14,7 @@ function newModel=addGenesRaven(model,genesToAdd)
 %                               default '')
 %                geneMiriams    cell array with MIRIAM structures (optional,
 %                               default [])
-%                proteinNames   cell array of protein names associated to
+%                proteins   cell array of protein names associated to
 %                               each gene (optional, default '')
 %
 %   newModel     an updated model structure
@@ -58,8 +58,8 @@ elseif any(I)
     if isfield(genesToAdd,'geneShortNames')
         genesToAdd.geneShortNames(I)=[];
     end
-    if isfield(genesToAdd,'proteinNames')
-        genesToAdd.proteinNames(I)=[];
+    if isfield(genesToAdd,'proteins')
+        genesToAdd.proteins(I)=[];
     end
     if isfield(genesToAdd,'geneMiriams')
         genesToAdd.geneMiriams(I)=[];
@@ -86,21 +86,21 @@ else
         newModel.geneShortNames=[newModel.geneShortNames;filler];
     end
 end
-if isfield(genesToAdd,'proteinNames')
-    genesToAdd.proteinNames=convertCharArray(genesToAdd.proteinNames);
-    if numel(genesToAdd.proteinNames)~=nGenes
-        EM='genesToAdd.proteinNames must have the same number of elements as genesToAdd.genes';
+if isfield(genesToAdd,'proteins')
+    genesToAdd.proteins=convertCharArray(genesToAdd.proteins);
+    if numel(genesToAdd.proteins)~=nGenes
+        EM='genesToAdd.proteins must have the same number of elements as genesToAdd.genes';
         dispEM(EM);
     end
     %Add empty field if it doesn't exist
-    if ~isfield(newModel,'proteinNames')
-        newModel.proteinNames=largeFiller;
+    if ~isfield(newModel,'proteins')
+        newModel.proteins=largeFiller;
     end
-    newModel.proteinNames=[newModel.proteinNames;genesToAdd.proteinNames(:)];
+    newModel.proteins=[newModel.proteins;genesToAdd.proteins(:)];
 else
     %Add empty strings if structure is in model
-    if isfield(newModel,'proteinNames')
-        newModel.proteinNames=[newModel.proteinNames;filler];
+    if isfield(newModel,'proteins')
+        newModel.proteins=[newModel.proteins;filler];
     end
 end
 

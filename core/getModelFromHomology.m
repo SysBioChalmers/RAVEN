@@ -115,8 +115,8 @@ for i=1:numel(models)
     if isfield(models{i},'geneMiriams')
         models{i}=rmfield(models{i},'geneMiriams');
     end
-    if isfield(models{i},'proteinNames')
-        models{i}=rmfield(models{i},'proteinNames');
+    if isfield(models{i},'proteins')
+        models{i}=rmfield(models{i},'proteins');
     end
     %The geneFrom field also loses meaning if the genes are replaced by
     %orthologs

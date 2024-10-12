@@ -132,8 +132,8 @@ switch type
         if isfield(newModel,'geneShortNames')
             newModel.geneShortNames=newModel.geneShortNames(indexes);
         end
-        if isfield(newModel,'proteinNames')
-            newModel.proteinNames=newModel.proteinNames(indexes);
+        if isfield(newModel,'proteins')
+            newModel.proteins=newModel.proteins(indexes);
         end
         if isfield(newModel,'rxnGeneMat')
             newModel.rxnGeneMat=newModel.rxnGeneMat(:,indexes);
