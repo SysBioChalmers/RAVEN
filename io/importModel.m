@@ -952,6 +952,7 @@ end
 
 %If any protein strings have been loaded
 if any(~cellfun(@isempty,proteins))
+    proteins = reshape(proteins,[],1);
     model.proteins=proteins;
 end
 
