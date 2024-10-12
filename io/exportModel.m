@@ -109,7 +109,7 @@ end
 
 %Check the model structure
 if supressWarnings==false
-    checkModelStruct(model);
+    checkModelStruct(model,false);
 end
 
 %Add several blank fields, if they do not exist already. This is to reduce

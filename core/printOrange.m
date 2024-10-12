@@ -19,6 +19,6 @@ if nargout < 1
     sz = get(0, 'CommandWindowSize');
     orangeString = textwrap({orangeString},sz(1));
     orangeString = strjoin(orangeString,'\n');
-    fprintf(orangeString)
+    fprintf(orangeString);
 end
 end
