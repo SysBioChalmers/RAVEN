@@ -967,55 +967,26 @@ model.grRules=regexprep(model.grRules,'__([0-9]+)__','${char(str2num($1))}');
 model.genes=regexprep(model.genes,'__([0-9]+)__','${char(str2num($1))}');
 model.id=regexprep(model.id,'__([0-9]+)__','${char(str2num($1))}');
 
-
-hasCOBRAids(1) = all(startsWith(model.rxns,'R_'));
-hasCOBRAids(2) = all(startsWith(model.mets,'M_'));
-hasCOBRAids(3) = all(startsWith(model.comps,'C_'));
-hasCOBRAids(4) = all(startsWith(model.genes,'G_'));
-hasCOBRAids(5) = all(startsWith(model.metNames,'M_'));
-hasCOBRAids(6) = all(startsWith(model.rxnNames,'R_'));
-hasCOBRAids(7) = all(startsWith(model.id,'M_'));
-
 if COBRAstyle
-    if hasCOBRAids(1)
-        model.rxns  = cellfun(@(x) x(3:end), model.rxns,'un',0);
+    model=removeCOBRAstylePrefixes(model);
+else
+    hasCOBRAids(1) = all(startsWith(model.rxns,'R_'));
+    hasCOBRAids(2) = all(startsWith(model.mets,'M_'));
+    hasCOBRAids(3) = all(startsWith(model.comps,'C_'));
+    hasCOBRAids(4) = all(startsWith(model.genes,'G_'));
+    if any(hasCOBRAids)
+        hasCOBRAidsMsg = {'model.rxns (R_ prefix)',...
+            'model.mets (M_ prefix)',...
+            'model.comps (C_ prefix)',...
+            'model.genes (G_ prefix)'};
+        hasCOBRAidsMsg(~hasCOBRAids) = [];
+        printOrange(['COBRA style identifier prefixes are found in: "' ...
+            strjoin(hasCOBRAidsMsg,'"; "') '". Since RAVEN 2.10.0, identifiers ' ...
+            'are by default imported "as-is". If you do prefer to remove these ' ...
+            'identifier prefixes, run "removeCOBRAstylePrefixes" on the ' ...
+            'imported model, or directly run importModel with COBRAstyle as true ' ...
+            'Example:   importModel(''filename.xml'', [], true);\n']);
     end
-    if hasCOBRAids(2)
-        model.mets  = cellfun(@(x) x(3:end), model.mets,'un',0);
-    end
-    if hasCOBRAids(3)
-        model.comps = cellfun(@(x) x(3:end), model.comps,'un',0);
-    end
-    if hasCOBRAids(4)
-        model.genes = cellfun(@(x) x(3:end), model.genes,'un',0);
-        model.grRules=regexprep(model.grRules,'^G_','');
-        model.grRules=regexprep(model.grRules,'\(G_','(');
-        model.grRules=regexprep(model.grRules,' G_',' ');
-    end
-    % Not strictly identifier, but also remove from metNames and rxnNames if present
-    if hasCOBRAids(5)
-        model.metNames  = cellfun(@(x) x(3:end), model.metNames,'un',0);
-    end
-    if hasCOBRAids(6)
-        model.rxnNames  = cellfun(@(x) x(3:end), model.rxnNames,'un',0);
-    end
-    if hasCOBRAids(6)
-        model.id        = model.id(3:end);
-    end
-elseif any(hasCOBRAids)
-    hasCOBRAidsMsg = {'model.rxns (R_ prefix)',...
-                      'model.mets (M_ prefix)',...
-                      'model.comps (C_ prefix)',...
-                      'model.genes (G_ prefix)',...
-                      'model.metNames (M_ prefix)',...
-                      'model.rxnNames (R_ prefix)',...
-                      'model.id (M_ prefix)'};
-    hasCOBRAidsMsg(~hasCOBRAids) = [];
-    printOrange(['COBRA style identifier prefixes are found in: "' ...
-        strjoin(hasCOBRAidsMsg,'"; "') '". Since RAVEN 2.10.0, identifiers ' ...
-        'are by default imported "as-is". If you do prefer to remove these ' ...
-        'identifier prefixes, run importModel with COBRAstyle as true. ' ...
-        'Example:   importModel(''filename.xml'', [], true);\n']);
 end
 
 %Remove unused fields
