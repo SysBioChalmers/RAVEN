@@ -304,211 +304,217 @@ This function is called by:
 0245 <span class="keyword">end</span>
 0246 
 0247 <span class="comment">%Validate format of ids</span>
-0248 fields={<span class="string">'rxns'</span>;<span class="string">'mets'</span>;<span class="string">'comps'</span>;<span class="string">'genes'</span>};
-0249 fieldNames = {<span class="string">'reaction'</span>;<span class="string">'metabolite'</span>;<span class="string">'compartment'</span>;<span class="string">'gene'</span>};
-0250 <span class="keyword">for</span> i=1:numel(fields)
-0251     <span class="keyword">try</span>
-0252         numIDs = startsWith(model.(fields{i}),digitsPattern(1));
-0253         <span class="keyword">if</span> any(numIDs)
-0254             EM = [<span class="string">'The following '</span> fieldNames{i} <span class="string">' IDs start with a digit, '</span> <span class="keyword">...</span>
-0255                   <span class="string">'which does not comply with SBML specifications. This does '</span><span class="keyword">...</span>
-0256                   <span class="string">'not impact RAVEN functionality, but before exporting the '</span> <span class="keyword">...</span>
-0257                   <span class="string">'model to SBML you should either correct these '</span> <span class="keyword">...</span>
-0258                   <span class="string">'incompatibilities, or you can run exportModel with '</span> <span class="keyword">...</span>
-0259                   <span class="string">'COBRAstyle as true: exportModel(model, ''filename.xml'', true); '</span>];
-0260             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,throwErrors,{model.(fields{i}){numIDs}},trimWarnings);
-0261         <span class="keyword">end</span>
-0262     <span class="keyword">catch</span>
-0263     <span class="keyword">end</span>
-0264 <span class="keyword">end</span>
-0265 
-0266 <span class="comment">%Duplicates</span>
-0267 EM=<span class="string">'The following reaction IDs are duplicates:'</span>;
-0268 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,throwErrors,model.rxns(<a href="#_sub1" class="code" title="subfunction I=duplicates(strings)">duplicates</a>(model.rxns)),trimWarnings);
-0269 EM=<span class="string">'The following metabolite IDs are duplicates:'</span>;
-0270 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,throwErrors,model.mets(<a href="#_sub1" class="code" title="subfunction I=duplicates(strings)">duplicates</a>(model.mets)),trimWarnings);
-0271 EM=<span class="string">'The following compartment IDs are duplicates:'</span>;
-0272 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,throwErrors,model.comps(<a href="#_sub1" class="code" title="subfunction I=duplicates(strings)">duplicates</a>(model.comps)),trimWarnings);
-0273 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
-0274     EM=<span class="string">'The following genes are duplicates:'</span>;
-0275     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,throwErrors,model.genes(<a href="#_sub1" class="code" title="subfunction I=duplicates(strings)">duplicates</a>(model.genes)),trimWarnings);
-0276 <span class="keyword">end</span>
-0277 metInComp=strcat(model.metNames,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>);
-0278 EM=<span class="string">'The following metabolites already exist in the same compartment:'</span>;
-0279 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,throwErrors,metInComp(<a href="#_sub1" class="code" title="subfunction I=duplicates(strings)">duplicates</a>(metInComp)),trimWarnings);
-0280 
-0281 <span class="comment">%Elements never used (print only as warnings</span>
-0282 EM=<span class="string">'The following reactions are empty (no involved metabolites):'</span>;
-0283 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.rxns(~any(model.S,1)),trimWarnings);
-0284 EM=<span class="string">'The following metabolites are never used in a reaction:'</span>;
-0285 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.mets(~any(model.S,2)),trimWarnings);
-0286 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
-0287     EM=<span class="string">'The following genes are not associated to a reaction:'</span>;
-0288     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.genes(~any(model.rxnGeneMat,1)),trimWarnings);
-0289 <span class="keyword">end</span>
-0290 I=true(numel(model.comps),1);
-0291 I(model.metComps)=false;
-0292 EM=<span class="string">'The following compartments contain no metabolites:'</span>;
-0293 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.comps(I),trimWarnings);
-0294 
-0295 <span class="comment">%Contradicting bounds</span>
-0296 EM=<span class="string">'The following reactions have contradicting bounds (lower bound is higher than upper bound):'</span>;
-0297 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,throwErrors,model.rxns(model.lb&gt;model.ub),trimWarnings);
-0298 EM=<span class="string">'The following reactions have lower and upper bounds that indicate reversibility, but are indicated as irreversible in model.rev:'</span>;
-0299 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.rxns(model.lb &lt; 0 &amp; model.ub &gt; 0 &amp; model.rev==0),trimWarnings);
+0248 fields      = {<span class="string">'rxns'</span>;<span class="string">'mets'</span>;<span class="string">'comps'</span>;<span class="string">'genes'</span>};
+0249 fieldNames  = {<span class="string">'reaction'</span>;<span class="string">'metabolite'</span>;<span class="string">'compartment'</span>;<span class="string">'gene'</span>};
+0250 fieldPrefix = {<span class="string">'R_'</span>;<span class="string">'M_'</span>;<span class="string">'C_'</span>;<span class="string">'G_'</span>};
+0251 <span class="keyword">for</span> i=1:numel(fields)
+0252     <span class="keyword">try</span>
+0253         numIDs = startsWith(model.(fields{i}),digitsPattern(1));
+0254     <span class="keyword">catch</span>
+0255         numIDs = [];
+0256     <span class="keyword">end</span>
+0257     <span class="keyword">if</span> any(numIDs)
+0258         EM = [<span class="string">'The following '</span> fieldNames{i} <span class="string">' identifiers start with a '</span> <span class="keyword">...</span>
+0259             <span class="string">'digit, which does not comply with SBML specifications. This '</span> <span class="keyword">...</span>
+0260             <span class="string">'does not impact RAVEN functionality, but before exporting '</span> <span class="keyword">...</span>
+0261             <span class="string">'the model to SBML you should either (a) correct these '</span> <span class="keyword">...</span>
+0262             <span class="string">'identifiers directly; or (b) run &quot;model = addCOBRAstylePrefixes '</span> <span class="keyword">...</span>
+0263             <span class="string">'(model,'''</span> fields{i} <span class="string">''');&quot; to have COBRA style &quot;'</span> fieldPrefix{i} <span class="keyword">...</span>
+0264             <span class="string">'&quot; prefixes added to all '</span> fieldNames{i} <span class="string">' identifiers; or (c) '</span> <span class="keyword">...</span>
+0265             <span class="string">'let exportModel add COBRA style prefixes to all identifiers '</span> <span class="keyword">...</span>
+0266             <span class="string">'in the model by setting COBRAstyle as true. Example:   '</span> <span class="keyword">...</span>
+0267             <span class="string">'&quot;exportModel(model, ''filename.xml'', true);&quot;'</span>];
+0268         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,throwErrors,{model.(fields{i}){numIDs}},trimWarnings);
+0269     <span class="keyword">end</span>
+0270 <span class="keyword">end</span>
+0271 
+0272 <span class="comment">%Duplicates</span>
+0273 EM=<span class="string">'The following reaction IDs are duplicates:'</span>;
+0274 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,throwErrors,model.rxns(<a href="#_sub1" class="code" title="subfunction I=duplicates(strings)">duplicates</a>(model.rxns)),trimWarnings);
+0275 EM=<span class="string">'The following metabolite IDs are duplicates:'</span>;
+0276 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,throwErrors,model.mets(<a href="#_sub1" class="code" title="subfunction I=duplicates(strings)">duplicates</a>(model.mets)),trimWarnings);
+0277 EM=<span class="string">'The following compartment IDs are duplicates:'</span>;
+0278 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,throwErrors,model.comps(<a href="#_sub1" class="code" title="subfunction I=duplicates(strings)">duplicates</a>(model.comps)),trimWarnings);
+0279 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
+0280     EM=<span class="string">'The following genes are duplicates:'</span>;
+0281     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,throwErrors,model.genes(<a href="#_sub1" class="code" title="subfunction I=duplicates(strings)">duplicates</a>(model.genes)),trimWarnings);
+0282 <span class="keyword">end</span>
+0283 metInComp=strcat(model.metNames,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>);
+0284 EM=<span class="string">'The following metabolites already exist in the same compartment:'</span>;
+0285 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,throwErrors,metInComp(<a href="#_sub1" class="code" title="subfunction I=duplicates(strings)">duplicates</a>(metInComp)),trimWarnings);
+0286 
+0287 <span class="comment">%Elements never used (print only as warnings</span>
+0288 EM=<span class="string">'The following reactions are empty (no involved metabolites):'</span>;
+0289 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.rxns(~any(model.S,1)),trimWarnings);
+0290 EM=<span class="string">'The following metabolites are never used in a reaction:'</span>;
+0291 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.mets(~any(model.S,2)),trimWarnings);
+0292 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
+0293     EM=<span class="string">'The following genes are not associated to a reaction:'</span>;
+0294     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.genes(~any(model.rxnGeneMat,1)),trimWarnings);
+0295 <span class="keyword">end</span>
+0296 I=true(numel(model.comps),1);
+0297 I(model.metComps)=false;
+0298 EM=<span class="string">'The following compartments contain no metabolites:'</span>;
+0299 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.comps(I),trimWarnings);
 0300 
-0301 <span class="comment">%Multiple or no objective functions not allowed in SBML L3V1 FBCv2</span>
-0302 <span class="keyword">if</span> numel(find(model.c))&gt;1
-0303     EM=<span class="string">'Multiple objective functions found. This might be intended, but results in FBCv2 non-compliant SBML file when exported'</span>;
-0304     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.rxns(find(model.c)),trimWarnings);
-0305 <span class="keyword">elseif</span> ~any(model.c)
-0306     EM=<span class="string">'No objective function found. This might be intended, but results in FBCv2 non-compliant SBML file when exported'</span>;
-0307     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0308 <span class="keyword">end</span>
-0309 
-0310 <span class="comment">%Mapping of compartments</span>
-0311 <span class="keyword">if</span> isfield(model,<span class="string">'compOutside'</span>)
-0312     EM=<span class="string">'The following compartments are in &quot;compOutside&quot; but not in &quot;comps&quot;:'</span>;
-0313     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,throwErrors,setdiff(model.compOutside,[{<span class="string">''</span>};model.comps]),trimWarnings);
+0301 <span class="comment">%Contradicting bounds</span>
+0302 EM=<span class="string">'The following reactions have contradicting bounds (lower bound is higher than upper bound):'</span>;
+0303 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,throwErrors,model.rxns(model.lb&gt;model.ub),trimWarnings);
+0304 EM=<span class="string">'The following reactions have lower and upper bounds that indicate reversibility, but are indicated as irreversible in model.rev:'</span>;
+0305 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.rxns(model.lb &lt; 0 &amp; model.ub &gt; 0 &amp; model.rev==0),trimWarnings);
+0306 
+0307 <span class="comment">%Multiple or no objective functions not allowed in SBML L3V1 FBCv2</span>
+0308 <span class="keyword">if</span> numel(find(model.c))&gt;1
+0309     EM=<span class="string">'Multiple objective functions found. This might be intended, but results in FBCv2 non-compliant SBML file when exported'</span>;
+0310     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.rxns(find(model.c)),trimWarnings);
+0311 <span class="keyword">elseif</span> ~any(model.c)
+0312     EM=<span class="string">'No objective function found. This might be intended, but results in FBCv2 non-compliant SBML file when exported'</span>;
+0313     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
 0314 <span class="keyword">end</span>
 0315 
-0316 <span class="comment">%Met names which start with number</span>
-0317 I=false(numel(model.metNames),1);
-0318 <span class="keyword">for</span> i=1:numel(model.metNames)
-0319     index=strfind(model.metNames{i},<span class="string">' '</span>);
-0320     <span class="keyword">if</span> any(index)
-0321         <span class="keyword">if</span> any(str2double(model.metNames{i}(1:index(1)-1)))
-0322             I(i)=true;
-0323         <span class="keyword">end</span>
-0324     <span class="keyword">end</span>
-0325 <span class="keyword">end</span>
-0326 EM=<span class="string">'The following metabolite names begin with a number directly followed by space, which could potentially cause problems:'</span>;
-0327 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.metNames(I),trimWarnings);
-0328 
-0329 <span class="comment">%Non-parseable composition</span>
-0330 <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
-0331     [~, ~, exitFlag]=<a href="parseFormulas.html" class="code" title="function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, noPolymers,isInchi,ignoreRX)">parseFormulas</a>(model.metFormulas,true,false);
-0332     EM=<span class="string">'The composition for the following metabolites could not be parsed:'</span>;
-0333     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.mets(exitFlag==-1),trimWarnings);
-0334 <span class="keyword">end</span>
-0335 
-0336 <span class="comment">%Check if there are metabolites with different names but the same MIRIAM</span>
-0337 <span class="comment">%codes</span>
-0338 <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
-0339     miriams=containers.Map();
-0340     <span class="keyword">for</span> i=1:numel(model.mets)
-0341         <span class="keyword">if</span> ~isempty(model.metMiriams{i})
-0342             <span class="comment">%Loop through and add for each miriam</span>
-0343             <span class="keyword">for</span> j=1:numel(model.metMiriams{i}.name)
-0344                 <span class="comment">%Get existing metabolite indexes</span>
-0345                 current=strcat(model.metMiriams{i}.name{j},<span class="string">'/'</span>,model.metMiriams{i}.value{j});
-0346                 <span class="keyword">if</span> isKey(miriams,current)
-0347                     existing=miriams(current);
-0348                 <span class="keyword">else</span>
-0349                     existing=[];
-0350                 <span class="keyword">end</span>
-0351                 miriams(current)=[existing;i];
-0352             <span class="keyword">end</span>
-0353         <span class="keyword">end</span>
-0354     <span class="keyword">end</span>
-0355     
-0356     <span class="comment">%Get all keys</span>
-0357     allMiriams=keys(miriams);
-0358     
-0359     hasMultiple=false(numel(allMiriams),1);
-0360     <span class="keyword">for</span> i=1:numel(allMiriams)
-0361         <span class="keyword">if</span> numel(miriams(allMiriams{i}))&gt;1
-0362             <span class="comment">%Check if they all have the same name</span>
-0363             <span class="keyword">if</span> numel(unique(model.metNames(miriams(allMiriams{i}))))&gt;1
-0364                 <span class="keyword">if</span> ~regexp(allMiriams{i},<span class="string">'^sbo\/SBO:'</span>) <span class="comment">% SBO terms are expected to be multiple</span>
-0365                     hasMultiple(i)=true;
-0366                 <span class="keyword">end</span>                
-0367             <span class="keyword">end</span>
-0368         <span class="keyword">end</span>
-0369     <span class="keyword">end</span>
-0370     
-0371     <span class="comment">%Print output</span>
-0372     EM=<span class="string">'The following MIRIAM strings are associated to more than one unique metabolite name:'</span>;
-0373     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,allMiriams(hasMultiple),trimWarnings);
-0374 <span class="keyword">end</span>
-0375 
-0376 <span class="comment">%Check if there are metabolites with different names but the same InChI</span>
-0377 <span class="comment">%codes</span>
-0378 <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
-0379     inchis=containers.Map();
-0380     <span class="keyword">for</span> i=1:numel(model.mets)
-0381         <span class="keyword">if</span> ~isempty(model.inchis{i})
-0382             <span class="comment">%Get existing metabolite indexes</span>
-0383             <span class="keyword">if</span> isKey(inchis,model.inchis{i})
-0384                 existing=inchis(model.inchis{i});
-0385             <span class="keyword">else</span>
-0386                 existing=[];
-0387             <span class="keyword">end</span>
-0388             inchis(model.inchis{i})=[existing;i];
-0389         <span class="keyword">end</span>
-0390     <span class="keyword">end</span>
-0391     
-0392     <span class="comment">%Get all keys</span>
-0393     allInchis=keys(inchis);
-0394     
-0395     hasMultiple=false(numel(allInchis),1);
-0396     <span class="keyword">for</span> i=1:numel(allInchis)
-0397         <span class="keyword">if</span> numel(inchis(allInchis{i}))&gt;1
-0398             <span class="comment">%Check if they all have the same name</span>
-0399             <span class="keyword">if</span> numel(unique(model.metNames(inchis(allInchis{i}))))&gt;1
-0400                 hasMultiple(i)=true;
-0401             <span class="keyword">end</span>
-0402         <span class="keyword">end</span>
-0403     <span class="keyword">end</span>
-0404     
-0405     <span class="comment">%Print output</span>
-0406     EM=<span class="string">'The following InChI strings are associated to more than one unique metabolite name:'</span>;
-0407     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,allInchis(hasMultiple),trimWarnings);
-0408 <span class="keyword">end</span>
-0409 
-0410 <span class="comment">% %Check if there are metabolites with different names but the same SMILES</span>
-0411 <span class="comment">% if isfield(model,'metSmiles')</span>
-0412 <span class="comment">%     metSmiles=containers.Map();</span>
-0413 <span class="comment">%     for i=1:numel(model.mets)</span>
-0414 <span class="comment">%         if ~isempty(model.metSmiles{i})</span>
-0415 <span class="comment">%             %Get existing metabolite indexes</span>
-0416 <span class="comment">%             if isKey(metSmiles,model.metSmiles{i})</span>
-0417 <span class="comment">%                 existing=metSmiles(model.metSmiles{i});</span>
-0418 <span class="comment">%             else</span>
-0419 <span class="comment">%                 existing=[];</span>
-0420 <span class="comment">%             end</span>
-0421 <span class="comment">%             metSmiles(model.metSmiles{i})=[existing;i];</span>
-0422 <span class="comment">%         end</span>
-0423 <span class="comment">%     end</span>
-0424 <span class="comment">%</span>
-0425 <span class="comment">%     %Get all keys</span>
-0426 <span class="comment">%     allmetSmiles=keys(metSmiles);</span>
-0427 <span class="comment">%</span>
-0428 <span class="comment">%     hasMultiple=false(numel(metSmiles),1);</span>
-0429 <span class="comment">%     for i=1:numel(metSmiles)</span>
-0430 <span class="comment">%         if numel(metSmiles(metSmiles{i}))&gt;1</span>
-0431 <span class="comment">%             %Check if they all have the same name</span>
-0432 <span class="comment">%             if numel(unique(model.metNames(metSmiles(allmetSmiles{i}))))&gt;1</span>
-0433 <span class="comment">%                 hasMultiple(i)=true;</span>
-0434 <span class="comment">%             end</span>
-0435 <span class="comment">%         end</span>
-0436 <span class="comment">%     end</span>
-0437 <span class="comment">%</span>
-0438 <span class="comment">%     %Print output</span>
-0439 <span class="comment">%     EM='The following metSmiles strings are associated to more than one unique metabolite name:';</span>
-0440 <span class="comment">%     dispEM(EM,false,allmetSmiles(hasMultiple),trimWarnings);</span>
-0441 <span class="comment">% end</span>
-0442 <span class="keyword">end</span>
-0443 
-0444 <a name="_sub1" href="#_subfunctions" class="code">function I=duplicates(strings)</a>
-0445 I=false(numel(strings),1);
-0446 [J, K]=unique(strings);
-0447 <span class="keyword">if</span> numel(J)~=numel(strings)
-0448     L=1:numel(strings);
-0449     L(K)=[];
-0450     I(L)=true;
-0451 <span class="keyword">end</span>
-0452 <span class="keyword">end</span></pre></div>
+0316 <span class="comment">%Mapping of compartments</span>
+0317 <span class="keyword">if</span> isfield(model,<span class="string">'compOutside'</span>)
+0318     EM=<span class="string">'The following compartments are in &quot;compOutside&quot; but not in &quot;comps&quot;:'</span>;
+0319     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,throwErrors,setdiff(model.compOutside,[{<span class="string">''</span>};model.comps]),trimWarnings);
+0320 <span class="keyword">end</span>
+0321 
+0322 <span class="comment">%Met names which start with number</span>
+0323 I=false(numel(model.metNames),1);
+0324 <span class="keyword">for</span> i=1:numel(model.metNames)
+0325     index=strfind(model.metNames{i},<span class="string">' '</span>);
+0326     <span class="keyword">if</span> any(index)
+0327         <span class="keyword">if</span> any(str2double(model.metNames{i}(1:index(1)-1)))
+0328             I(i)=true;
+0329         <span class="keyword">end</span>
+0330     <span class="keyword">end</span>
+0331 <span class="keyword">end</span>
+0332 EM=<span class="string">'The following metabolite names begin with a number directly followed by space, which could potentially cause problems:'</span>;
+0333 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.metNames(I),trimWarnings);
+0334 
+0335 <span class="comment">%Non-parseable composition</span>
+0336 <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
+0337     [~, ~, exitFlag]=<a href="parseFormulas.html" class="code" title="function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, noPolymers,isInchi,ignoreRX)">parseFormulas</a>(model.metFormulas,true,false);
+0338     EM=<span class="string">'The composition for the following metabolites could not be parsed:'</span>;
+0339     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,model.mets(exitFlag==-1),trimWarnings);
+0340 <span class="keyword">end</span>
+0341 
+0342 <span class="comment">%Check if there are metabolites with different names but the same MIRIAM</span>
+0343 <span class="comment">%codes</span>
+0344 <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
+0345     miriams=containers.Map();
+0346     <span class="keyword">for</span> i=1:numel(model.mets)
+0347         <span class="keyword">if</span> ~isempty(model.metMiriams{i})
+0348             <span class="comment">%Loop through and add for each miriam</span>
+0349             <span class="keyword">for</span> j=1:numel(model.metMiriams{i}.name)
+0350                 <span class="comment">%Get existing metabolite indexes</span>
+0351                 current=strcat(model.metMiriams{i}.name{j},<span class="string">'/'</span>,model.metMiriams{i}.value{j});
+0352                 <span class="keyword">if</span> isKey(miriams,current)
+0353                     existing=miriams(current);
+0354                 <span class="keyword">else</span>
+0355                     existing=[];
+0356                 <span class="keyword">end</span>
+0357                 miriams(current)=[existing;i];
+0358             <span class="keyword">end</span>
+0359         <span class="keyword">end</span>
+0360     <span class="keyword">end</span>
+0361     
+0362     <span class="comment">%Get all keys</span>
+0363     allMiriams=keys(miriams);
+0364     
+0365     hasMultiple=false(numel(allMiriams),1);
+0366     <span class="keyword">for</span> i=1:numel(allMiriams)
+0367         <span class="keyword">if</span> numel(miriams(allMiriams{i}))&gt;1
+0368             <span class="comment">%Check if they all have the same name</span>
+0369             <span class="keyword">if</span> numel(unique(model.metNames(miriams(allMiriams{i}))))&gt;1
+0370                 <span class="keyword">if</span> ~regexp(allMiriams{i},<span class="string">'^sbo\/SBO:'</span>) <span class="comment">% SBO terms are expected to be multiple</span>
+0371                     hasMultiple(i)=true;
+0372                 <span class="keyword">end</span>                
+0373             <span class="keyword">end</span>
+0374         <span class="keyword">end</span>
+0375     <span class="keyword">end</span>
+0376     
+0377     <span class="comment">%Print output</span>
+0378     EM=<span class="string">'The following MIRIAM strings are associated to more than one unique metabolite name:'</span>;
+0379     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,allMiriams(hasMultiple),trimWarnings);
+0380 <span class="keyword">end</span>
+0381 
+0382 <span class="comment">%Check if there are metabolites with different names but the same InChI</span>
+0383 <span class="comment">%codes</span>
+0384 <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
+0385     inchis=containers.Map();
+0386     <span class="keyword">for</span> i=1:numel(model.mets)
+0387         <span class="keyword">if</span> ~isempty(model.inchis{i})
+0388             <span class="comment">%Get existing metabolite indexes</span>
+0389             <span class="keyword">if</span> isKey(inchis,model.inchis{i})
+0390                 existing=inchis(model.inchis{i});
+0391             <span class="keyword">else</span>
+0392                 existing=[];
+0393             <span class="keyword">end</span>
+0394             inchis(model.inchis{i})=[existing;i];
+0395         <span class="keyword">end</span>
+0396     <span class="keyword">end</span>
+0397     
+0398     <span class="comment">%Get all keys</span>
+0399     allInchis=keys(inchis);
+0400     
+0401     hasMultiple=false(numel(allInchis),1);
+0402     <span class="keyword">for</span> i=1:numel(allInchis)
+0403         <span class="keyword">if</span> numel(inchis(allInchis{i}))&gt;1
+0404             <span class="comment">%Check if they all have the same name</span>
+0405             <span class="keyword">if</span> numel(unique(model.metNames(inchis(allInchis{i}))))&gt;1
+0406                 hasMultiple(i)=true;
+0407             <span class="keyword">end</span>
+0408         <span class="keyword">end</span>
+0409     <span class="keyword">end</span>
+0410     
+0411     <span class="comment">%Print output</span>
+0412     EM=<span class="string">'The following InChI strings are associated to more than one unique metabolite name:'</span>;
+0413     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,allInchis(hasMultiple),trimWarnings);
+0414 <span class="keyword">end</span>
+0415 
+0416 <span class="comment">% %Check if there are metabolites with different names but the same SMILES</span>
+0417 <span class="comment">% if isfield(model,'metSmiles')</span>
+0418 <span class="comment">%     metSmiles=containers.Map();</span>
+0419 <span class="comment">%     for i=1:numel(model.mets)</span>
+0420 <span class="comment">%         if ~isempty(model.metSmiles{i})</span>
+0421 <span class="comment">%             %Get existing metabolite indexes</span>
+0422 <span class="comment">%             if isKey(metSmiles,model.metSmiles{i})</span>
+0423 <span class="comment">%                 existing=metSmiles(model.metSmiles{i});</span>
+0424 <span class="comment">%             else</span>
+0425 <span class="comment">%                 existing=[];</span>
+0426 <span class="comment">%             end</span>
+0427 <span class="comment">%             metSmiles(model.metSmiles{i})=[existing;i];</span>
+0428 <span class="comment">%         end</span>
+0429 <span class="comment">%     end</span>
+0430 <span class="comment">%</span>
+0431 <span class="comment">%     %Get all keys</span>
+0432 <span class="comment">%     allmetSmiles=keys(metSmiles);</span>
+0433 <span class="comment">%</span>
+0434 <span class="comment">%     hasMultiple=false(numel(metSmiles),1);</span>
+0435 <span class="comment">%     for i=1:numel(metSmiles)</span>
+0436 <span class="comment">%         if numel(metSmiles(metSmiles{i}))&gt;1</span>
+0437 <span class="comment">%             %Check if they all have the same name</span>
+0438 <span class="comment">%             if numel(unique(model.metNames(metSmiles(allmetSmiles{i}))))&gt;1</span>
+0439 <span class="comment">%                 hasMultiple(i)=true;</span>
+0440 <span class="comment">%             end</span>
+0441 <span class="comment">%         end</span>
+0442 <span class="comment">%     end</span>
+0443 <span class="comment">%</span>
+0444 <span class="comment">%     %Print output</span>
+0445 <span class="comment">%     EM='The following metSmiles strings are associated to more than one unique metabolite name:';</span>
+0446 <span class="comment">%     dispEM(EM,false,allmetSmiles(hasMultiple),trimWarnings);</span>
+0447 <span class="comment">% end</span>
+0448 <span class="keyword">end</span>
+0449 
+0450 <a name="_sub1" href="#_subfunctions" class="code">function I=duplicates(strings)</a>
+0451 I=false(numel(strings),1);
+0452 [J, K]=unique(strings);
+0453 <span class="keyword">if</span> numel(J)~=numel(strings)
+0454     L=1:numel(strings);
+0455     L(K)=[];
+0456     I(L)=true;
+0457 <span class="keyword">end</span>
+0458 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
