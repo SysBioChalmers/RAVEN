@@ -1,6 +1,6 @@
-function model=importModel(fileName,removeExcMets,COBRAstyle,supressWarnings)
+function model=importModel(fileName,removeExcMets,removePrefix,supressWarnings)
 % importModel
-%   Import a constraint-based model from a SBML file
+%   Import a constraint-based model from an SBML file.
 %
 % Input:
 %   fileName        a SBML file to import. A dialog window will open if
@@ -9,10 +9,11 @@ function model=importModel(fileName,removeExcMets,COBRAstyle,supressWarnings)
 %                   needed to be able to run simulations, but it could also
 %                   be done using simplifyModel at a later stage (optional,
 %                   default true)
-%   COBRAstyle      true if the model uses COBRA style identifier prefixes
-%                   that should be removed when loading the model: G_ for
-%                   genes, R_ for reactions, M_ for metabolites, and C_ for
-%                   compartments. (optional, default false)
+%   removePrefix    true if identifier prefixes should be removed when
+%                   loading the model: G_ for genes, R_ for reactions,
+%                   M_ for metabolites, and C_ for compartments. These are
+%                   only removed if all identifiers of a certain type
+%                   contain the prefix. (optional, default true)
 %   supressWarnings true if warnings regarding the model structure should
 %                   be supressed (optional, default false)
 %
@@ -49,7 +50,7 @@ function model=importModel(fileName,removeExcMets,COBRAstyle,supressWarnings)
 %       geneComps        compartments for genes
 %       geneMiriams      structure with MIRIAM information about the genes
 %       geneShortNames   gene alternative names (e.g. ERG10)
-%       proteins     protein associated to each gene
+%       proteins         protein associated to each gene
 %       metNames         metabolite description
 %       metComps         compartments for metabolites
 %       inchis           InChI-codes for metabolites
@@ -58,11 +59,11 @@ function model=importModel(fileName,removeExcMets,COBRAstyle,supressWarnings)
 %       metCharges       metabolite charge
 %       unconstrained    true if the metabolite is an exchange metabolite
 %
-% A number of consistency checks are performed in order to ensure that the
+% Note: A number of consistency checks are performed in order to ensure that the
 % model is valid. Take these warnings seriously and modify the model
 % structure to solve them.
 %
-% Usage: model = importModel(fileName, removeExcMets, COBRAstyle, supressWarnings)
+% Usage: model = importModel(fileName, removeExcMets, removePrefix, supressWarnings)
 
 if nargin<1 || isempty(fileName)
     [fileName, pathName] = uigetfile({'*.xml;*.sbml'}, 'Please select the model file');
@@ -77,8 +78,8 @@ if nargin<2 || isempty(removeExcMets)
     removeExcMets=true;
 end
 
-if nargin<3 || isempty(COBRAstyle)
-    COBRAstyle=false;
+if nargin<3 || isempty(removePrefix)
+    removePrefix=true;
 end
 
 if nargin<4
@@ -967,26 +968,11 @@ model.grRules=regexprep(model.grRules,'__([0-9]+)__','${char(str2num($1))}');
 model.genes=regexprep(model.genes,'__([0-9]+)__','${char(str2num($1))}');
 model.id=regexprep(model.id,'__([0-9]+)__','${char(str2num($1))}');
 
-if COBRAstyle
-    model=removeCOBRAstylePrefixes(model);
-else
-    hasCOBRAids(1) = all(startsWith(model.rxns,'R_'));
-    hasCOBRAids(2) = all(startsWith(model.mets,'M_'));
-    hasCOBRAids(3) = all(startsWith(model.comps,'C_'));
-    hasCOBRAids(4) = all(startsWith(model.genes,'G_'));
-    if any(hasCOBRAids)
-        hasCOBRAidsMsg = {'model.rxns (R_ prefix)',...
-            'model.mets (M_ prefix)',...
-            'model.comps (C_ prefix)',...
-            'model.genes (G_ prefix)'};
-        hasCOBRAidsMsg(~hasCOBRAids) = [];
-        printOrange(['COBRA style identifier prefixes are found in: "' ...
-            strjoin(hasCOBRAidsMsg,'"; "') '". Since RAVEN 2.10.0, identifiers ' ...
-            'are by default imported "as-is". If you do prefer to remove these ' ...
-            'identifier prefixes, run "removeCOBRAstylePrefixes" on the ' ...
-            'imported model, or directly run importModel with COBRAstyle as true ' ...
-            'Example:   importModel(''filename.xml'', [], true);\n']);
-    end
+if removePrefix
+    [model, hasChanged]=removeIdentifierPrefix(model);
+    dispEM(['The following fields have prefixes removed from all entries. '...
+    'If this is undesired, run importModel with removePrefix as false. Example: '...
+    'importModel(''filename.xml'',[],false);'],false,hasChanged)
 end
 
 %Remove unused fields
