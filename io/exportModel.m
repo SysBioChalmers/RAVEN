@@ -1,4 +1,4 @@
-function exportModel(model,fileName,COBRAstyle,supressWarnings,sortIds)
+function exportModel(model,fileName,neverPrefix,supressWarnings,sortIds)
 % exportModel
 %   Exports a constraint-based model to an SBML file (L3V1 FBCv2)
 %
@@ -6,12 +6,9 @@ function exportModel(model,fileName,COBRAstyle,supressWarnings,sortIds)
 %   model               a model structure
 %   fileName            filename to export the model to. A dialog window
 %                       will open if no file name is specified.
-%   COBRAstyle          true if COBRA-style prefixes should be added to all
-%                       identifiers: R_ for reactions, M_ for metabolites,
-%                       G_ for genes and C_ for compartments. If all
-%                       identifiers of a particular field already have the
-%                       prefix, then no additional prefixes are added.
-%                       (optional, default false)
+%   neverPrefix         true if prefixes are never added to identifiers,
+%                       even if start with e.g. digits. This might result
+%                       in invalid SBML files (optional, default false)
 %   supressWarnings     true if warnings should be supressed. This might
 %                       results in invalid SBML files, as no checks are
 %                       performed (optional, default false)
@@ -19,7 +16,7 @@ function exportModel(model,fileName,COBRAstyle,supressWarnings,sortIds)
 %                       should be sorted alphabetically by their
 %                       identifiers (optional, default false)
 %
-% Usage: exportModel(model,fileName,COBRAstyle,supressWarnings,sortIds)
+% Usage: exportModel(model,fileName,neverPrefix,supressWarnings,sortIds)
 
 if nargin<2 || isempty(fileName)
     [fileName, pathName] = uiputfile({'*.xml;*.sbml'}, 'Select file for model export',[model.id '.xml']);
@@ -30,15 +27,13 @@ if nargin<2 || isempty(fileName)
     end
 end
 fileName=char(fileName);
-if nargin<3
-    COBRAstyle=false;
-elseif ~islogical(COBRAstyle)
-    error("COBRAstyle should be either true or false")
+if nargin<3 || isempty(neverPrefix)
+    neverPrefix=false;
 end
-if nargin<4
+if nargin<4 || isempty(supressWarnings)
     supressWarnings=false;
 end
-if nargin<5
+if nargin<5 || isempty(sortIds)
     sortIds=false;
 end
 if sortIds==true
@@ -85,17 +80,17 @@ if ~isfield(model,'name')
     model.name='blankName';
 end
 
-% Add prefixes if desired
-if COBRAstyle
-    if isfield(model,'ec')
-        error('ecModels cannot be exported with COBRAstyle flag, manually correct any non-compliant identifiers if needed.')
-    end
-    model = addCOBRAstylePrefixes(model,[],false);
+% Add prefixes if required
+if ~neverPrefix
+    [model,hasChanged] = addIdentifierPrefix(model);
+    dispEM(['The following fields have one or more entries that do not start '...
+        'with a letter or _ (conflicting with SBML specifications). Prefixes '...
+        'are added to all entries in those fields:'],false,hasChanged)
 end
 
 %Check the model structure
 if supressWarnings==false
-    checkModelStruct(model,false);
+    checkModelStruct(model);
 end
 
 %Add several blank fields, if they do not exist already. This is to reduce
