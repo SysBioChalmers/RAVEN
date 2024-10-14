@@ -107,13 +107,16 @@ end
 modelNames=cell(numel(models),1);
 for i=1:numel(models)
     modelNames{i}=models{i}.id;
-    %Gene short names and geneMiriams are often different between species,
-    %safer not to include them
+    %Gene short names, geneMiriams and proteins are often different
+    %between species, safer not to include them
     if isfield(models{i},'geneShortNames')
         models{i}=rmfield(models{i},'geneShortNames');
     end
     if isfield(models{i},'geneMiriams')
         models{i}=rmfield(models{i},'geneMiriams');
+    end
+    if isfield(models{i},'proteins')
+        models{i}=rmfield(models{i},'proteins');
     end
     %The geneFrom field also loses meaning if the genes are replaced by
     %orthologs

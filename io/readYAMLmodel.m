@@ -100,6 +100,7 @@ modelFields =   {'id',char();...
           'geneComps',cell(0,0);... %Changed to double in the end.
         'geneMiriams',cell(0,0);...
      'geneShortNames',cell(0,0);...
+       'proteins',cell(0,0);...
       'unconstrained',cell(0,0);... %Changed to double in the end.
             'metFrom',cell(0,0);...
             'rxnFrom',cell(0,0)};
@@ -373,6 +374,8 @@ for i=1:numel(line_key)
                 miriamKey = '';
             case 'name'
                 model = readFieldValue(model, 'geneShortNames', tline_value, pos);
+            case 'protein'
+                model = readFieldValue(model, 'proteins', tline_value, pos);
             case 'annotation'
                 readList = 'annotation';
             otherwise
@@ -568,7 +571,7 @@ for i={'metComps'} % Ones, assume first compartment
    model = emptyOrFill(model,i{1},1,'mets');
 end
 % Genes
-for i={'geneMiriams','geneShortNames'} % Empty strings
+for i={'geneMiriams','geneShortNames','proteins'} % Empty strings
    model = emptyOrFill(model,i{1},{''},'genes');
 end
 for i={'geneComps'} % Ones, assume first compartment
@@ -621,7 +624,7 @@ if isGECKO
     rxnIdx              = cell2mat(enzStoich(:,1));
     [~,enzIdx]          = ismember(enzStoich(:,2),model.ec.enzymes);
     coeffs              = cell2mat(enzStoich(:,3));
-    model.ec.rxnEnzMat  = zeros(max(rxnIdx), max(enzIdx));
+    model.ec.rxnEnzMat  = zeros(numel(model.ec.rxns), numel(model.ec.genes));
     linearIndices       = sub2ind([max(rxnIdx), max(enzIdx)], rxnIdx, enzIdx);
     model.ec.rxnEnzMat(linearIndices) = coeffs;
     %Parse ec-codes

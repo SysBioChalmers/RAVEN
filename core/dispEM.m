@@ -33,6 +33,10 @@ if numel(toList)>10 && trimWarnings==true
 end
 if throwErrors==false
     errorText=['WARNING: ' string '\n'];
+    % Wrap text to command window size
+    sz = get(0, 'CommandWindowSize');
+    errorText = textwrap({errorText},sz(1));
+    errorText = strjoin(errorText,'\n');
 else
     errorText=[string '\n'];
 end

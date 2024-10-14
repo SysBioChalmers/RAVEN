@@ -119,6 +119,9 @@ remGenes = model.genes(remInd);
 if isfield(newModel,'geneShortNames')
     newModel.geneShortNames(remInd) = [];
 end
+if isfield(newModel,'proteins')
+    newModel.proteins(remInd) = [];
+end
 if isfield(newModel,'geneMiriams')
     newModel.geneMiriams(remInd) = [];
 end

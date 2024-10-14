@@ -492,7 +492,11 @@ for i=2:numel(models)
             if isfield(models{i},'geneShortNames')
                 model.geneShortNames=models{i}.geneShortNames;
             end
-            
+
+            if isfield(models{i},'proteins')
+                model.proteins=models{i}.proteins;
+            end
+
             if isfield(models{i},'geneMiriams')
                 model.geneMiriams=models{i}.geneMiriams;
             end
@@ -530,7 +534,23 @@ for i=2:numel(models)
                         model.geneShortNames=[model.geneShortNames;emptyGeneSN];
                     end
                 end
-                
+
+                if isfield(models{i},'proteins')
+                    if isfield(model,'proteins')
+                        model.proteins=[model.proteins;models{i}.proteins(genesToAdd)];
+                    else
+                        emptyGeneSN=cell(numel(model.genes)-numel(genesToAdd),1);
+                        emptyGeneSN(:)={''};
+                        model.proteins=[emptyGeneSN;models{i}.proteins(genesToAdd)];
+                    end
+                else
+                    if isfield(model,'proteins')
+                        emptyGeneSN=cell(numel(genesToAdd),1);
+                        emptyGeneSN(:)={''};
+                        model.proteins=[model.proteins;emptyGeneSN];
+                    end
+                end
+
                 if isfield(models{i},'geneMiriams')
                     if isfield(model,'geneMiriams')
                         model.geneMiriams=[model.geneMiriams;models{i}.geneMiriams(genesToAdd)];

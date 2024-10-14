@@ -214,447 +214,450 @@ This function is called by:
 0107 modelNames=cell(numel(models),1);
 0108 <span class="keyword">for</span> i=1:numel(models)
 0109     modelNames{i}=models{i}.id;
-0110     <span class="comment">%Gene short names and geneMiriams are often different between species,</span>
-0111     <span class="comment">%safer not to include them</span>
+0110     <span class="comment">%Gene short names, geneMiriams and proteins are often different</span>
+0111     <span class="comment">%between species, safer not to include them</span>
 0112     <span class="keyword">if</span> isfield(models{i},<span class="string">'geneShortNames'</span>)
 0113         models{i}=rmfield(models{i},<span class="string">'geneShortNames'</span>);
 0114     <span class="keyword">end</span>
 0115     <span class="keyword">if</span> isfield(models{i},<span class="string">'geneMiriams'</span>)
 0116         models{i}=rmfield(models{i},<span class="string">'geneMiriams'</span>);
 0117     <span class="keyword">end</span>
-0118     <span class="comment">%The geneFrom field also loses meaning if the genes are replaced by</span>
-0119     <span class="comment">%orthologs</span>
-0120     <span class="keyword">if</span> isfield(models{i},<span class="string">'geneFrom'</span>)
-0121         models{i}=rmfield(models{i},<span class="string">'geneFrom'</span>);
-0122     <span class="keyword">end</span>
-0123 <span class="keyword">end</span>
-0124 
-0125 <span class="comment">%Check that genes do not begin with ( or end with ), as this makes problematic grRules</span>
-0126 <span class="keyword">for</span> i=1:numel(blastStructure)
-0127     problemGenes = startsWith(blastStructure(i).fromGenes,<span class="string">'('</span>) | endsWith(blastStructure(i).fromGenes,<span class="string">')'</span>);
-0128     <span class="keyword">if</span> any(problemGenes)
-0129         error([<span class="string">'One or multiple gene identifiers from '</span> blastStructure(i).fromId <span class="keyword">...</span>
-0130                <span class="string">' starts with ''('' and/or ends with '')'', which is not allowed'</span>])
-0131     <span class="keyword">end</span>
-0132 <span class="keyword">end</span>
-0133 
-0134 <span class="comment">%Assume for now that all information is there and that it's correct. This</span>
-0135 <span class="comment">%is important to fix since no further checks are being made!</span>
+0118     <span class="keyword">if</span> isfield(models{i},<span class="string">'proteins'</span>)
+0119         models{i}=rmfield(models{i},<span class="string">'proteins'</span>);
+0120     <span class="keyword">end</span>
+0121     <span class="comment">%The geneFrom field also loses meaning if the genes are replaced by</span>
+0122     <span class="comment">%orthologs</span>
+0123     <span class="keyword">if</span> isfield(models{i},<span class="string">'geneFrom'</span>)
+0124         models{i}=rmfield(models{i},<span class="string">'geneFrom'</span>);
+0125     <span class="keyword">end</span>
+0126 <span class="keyword">end</span>
+0127 
+0128 <span class="comment">%Check that genes do not begin with ( or end with ), as this makes problematic grRules</span>
+0129 <span class="keyword">for</span> i=1:numel(blastStructure)
+0130     problemGenes = startsWith(blastStructure(i).fromGenes,<span class="string">'('</span>) | endsWith(blastStructure(i).fromGenes,<span class="string">')'</span>);
+0131     <span class="keyword">if</span> any(problemGenes)
+0132         error([<span class="string">'One or multiple gene identifiers from '</span> blastStructure(i).fromId <span class="keyword">...</span>
+0133                <span class="string">' starts with ''('' and/or ends with '')'', which is not allowed'</span>])
+0134     <span class="keyword">end</span>
+0135 <span class="keyword">end</span>
 0136 
-0137 <span class="comment">%Check whether provided fasta files use the same gene identifiers as</span>
-0138 <span class="comment">%provided template models</span>
-0139 <span class="keyword">for</span> i=1:numel(blastStructure)
-0140     <span class="keyword">if</span> ~strcmp(blastStructure(i).fromId,getModelFor)
-0141         j=strcmpi(blastStructure(i).fromId,modelNames);
-0142         <span class="keyword">if</span> j==0
-0143             error([<span class="string">'While the blastStructure contains sequences from '</span><span class="keyword">...</span>
-0144                 <span class="string">'organismID &quot;%s&quot; (as\nprovided in getBlast), none of '</span><span class="keyword">...</span>
-0145                 <span class="string">'template models have this id (as model.id)'</span>],<span class="keyword">...</span>
-0146                 string(blastStructure(i).fromId));
-0147         <span class="keyword">end</span>
-0148         k=sum(ismember(blastStructure(i).fromGenes,models{j}.genes));
-0149         <span class="keyword">if</span> k&lt;(numel(models{j}.genes)*0.05)
-0150             error([<span class="string">'Less than 5%% of the genes in the template model '</span><span class="keyword">...</span>
-0151                 <span class="string">'with model.id &quot;%s&quot;\ncan be found in the blastStructure. '</span><span class="keyword">...</span>
-0152                 <span class="string">'Ensure that the protein FASTA\nused in getBlast and '</span><span class="keyword">...</span>
-0153                 <span class="string">'the template model used in getModelFromHomology\nuse '</span><span class="keyword">...</span>
-0154                 <span class="string">'the same style of gene identifiers'</span>],models{j}.id)
-0155         <span class="keyword">end</span>
-0156     <span class="keyword">end</span>
-0157 <span class="keyword">end</span>
-0158 
-0159 <span class="comment">%Standardize grRules of template models</span>
-0160 <span class="keyword">for</span> i=1:length(models)
-0161     fprintf(<span class="string">'\nStandardizing grRules of template model with ID &quot;%s&quot; ...'</span>,models{i}.id);
-0162     [models{i}.grRules,models{i}.rxnGeneMat]=<a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(models{i},false);
-0163 <span class="keyword">end</span>
-0164 fprintf(<span class="string">' done\n'</span>);
-0165 
-0166 <span class="comment">%Remove all gene matches that are below the cutoffs</span>
-0167 <span class="keyword">for</span> i=1:numel(blastStructure)
-0168     indexes=blastStructure(i).evalue&lt;maxE &amp; blastStructure(i).aligLen&gt;=minLen &amp; blastStructure(i).identity&gt;=minIde; <span class="comment">%Do it in this direction to lose NaNs</span>
-0169     blastStructure(i).fromGenes(~indexes)=[];
-0170     blastStructure(i).toGenes(~indexes)=[];
-0171     blastStructure(i).evalue(~indexes)=[];
-0172     blastStructure(i).identity(~indexes)=[];
-0173     blastStructure(i).aligLen(~indexes)=[];
-0174     blastStructure(i).bitscore(~indexes)=[];
-0175     blastStructure(i).ppos(~indexes)=[];
-0176 <span class="keyword">end</span>
-0177 
-0178 <span class="comment">%Remove all reactions from the models that have no genes encoding for them.</span>
-0179 <span class="comment">%Also remove all genes that encode for no reactions. There shouldn't be any</span>
-0180 <span class="comment">%but there might be mistakes</span>
-0181 <span class="keyword">for</span> i=1:numel(models)
-0182     [hasGenes, ~]=find(models{i}.rxnGeneMat);
-0183     hasNoGenes=1:numel(models{i}.rxns);
-0184     hasNoGenes(hasGenes)=[];
-0185     models{i}=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(models{i},hasNoGenes,true,true);
-0186 <span class="keyword">end</span>
-0187 
-0188 <span class="comment">%Create a structure that contains all genes used in the blasts in any</span>
-0189 <span class="comment">%direction for each of the models in 'models' and for the new organism. The</span>
-0190 <span class="comment">%first cell is for the new organism and then according to the preferred</span>
-0191 <span class="comment">%order. If no such order is supplied, then according to the order in</span>
-0192 <span class="comment">%'models'</span>
-0193 allGenes=cell(numel(models)+1,1);
-0194 <span class="keyword">if</span> isempty(preferredOrder)
-0195     useOrder=modelNames;
-0196 <span class="keyword">else</span>
-0197     useOrder=preferredOrder;
-0198 <span class="keyword">end</span>
-0199 
-0200 <span class="comment">%Get the corresponding indexes for those models in the 'models' structure</span>
-0201 useOrderIndexes=zeros(numel(models),1);
-0202 <span class="keyword">for</span> i=1:numel(models)
-0203     [~, index]=ismember(models{i}.id,useOrder);
-0204     useOrderIndexes(index)=i;
-0205 <span class="keyword">end</span>
-0206 
-0207 <span class="comment">%Remove all genes from the blast structure that have no genes in the models</span>
-0208 <span class="keyword">if</span> onlyGenesInModels==true
-0209     modelGenes={};
-0210     <span class="keyword">for</span> i=1:numel(models)
-0211         modelGenes=[modelGenes;models{i}.genes];
-0212     <span class="keyword">end</span>
-0213     <span class="keyword">for</span> i=1:numel(blastStructure)
-0214         <span class="comment">%Check to see if it should match the toId or fromId</span>
-0215         <span class="keyword">if</span> strcmpi(blastStructure(i).fromId,getModelFor)
-0216             I=ismember(blastStructure(i).toGenes,modelGenes);
-0217         <span class="keyword">else</span>
-0218             I=ismember(blastStructure(i).fromGenes,modelGenes);
-0219         <span class="keyword">end</span>
-0220         blastStructure(i).fromGenes(~I)=[];
-0221         blastStructure(i).toGenes(~I)=[];
-0222         blastStructure(i).evalue(~I)=[];
-0223         blastStructure(i).identity(~I)=[];
-0224         blastStructure(i).aligLen(~I)=[];
-0225         blastStructure(i).bitscore(~I)=[];
-0226         blastStructure(i).ppos(~I)=[];
-0227         
-0228         <span class="comment">%Check that no matching in blastStructure is empty. This happens if</span>
-0229         <span class="comment">%no genes in the models are present in the corresponding sheet</span>
-0230         <span class="keyword">if</span> isempty(blastStructure(i).fromGenes)
-0231             EM=[<span class="string">'No genes in matching from '</span> blastStructure(i).fromId <span class="string">' to '</span> blastStructure(i).toId <span class="string">' are present in the corresponding model'</span>];
-0232             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0233         <span class="keyword">end</span>
-0234     <span class="keyword">end</span>
-0235 <span class="keyword">end</span>
-0236 
-0237 <span class="comment">%If only best orthologs are to be used then all other measurements are</span>
-0238 <span class="comment">%deleted from the blastStructure. All code after this stays the same. This</span>
-0239 <span class="comment">%means that preferred order can still matter. The best ortholog scoring is</span>
-0240 <span class="comment">%based only on the E-value</span>
-0241 <span class="keyword">if</span> strictness==3
-0242     <span class="keyword">for</span> i=1:numel(blastStructure)
-0243         keep=false(numel(blastStructure(i).toGenes),1);
-0244         [allFromGenes, ~, I]=unique(blastStructure(i).fromGenes);
-0245         
-0246         <span class="comment">%It would be nice to get rid of this loop</span>
-0247         <span class="keyword">for</span> j=1:numel(allFromGenes)
-0248             allMatches=find(I==j);
-0249             bestMatches=allMatches(blastStructure(i).evalue(allMatches)==min(blastStructure(i).evalue(allMatches)));
-0250             
-0251             <span class="comment">%Keep the best matches</span>
-0252             keep(bestMatches)=true;
-0253         <span class="keyword">end</span>
-0254         
-0255         <span class="comment">%Delete all matches that were not best matches</span>
-0256         blastStructure(i).fromGenes(~keep)=[];
-0257         blastStructure(i).toGenes(~keep)=[];
-0258         blastStructure(i).evalue(~keep)=[];
-0259         blastStructure(i).identity(~keep)=[];
-0260         blastStructure(i).aligLen(~keep)=[];
-0261         blastStructure(i).bitscore(~keep)=[];
-0262         blastStructure(i).ppos(~keep)=[];
-0263     <span class="keyword">end</span>
-0264 <span class="keyword">end</span>
-0265 
-0266 useOrder=[{getModelFor};useOrder];
-0267 
-0268 <span class="keyword">for</span> i=1:numel(blastStructure)
-0269     [~, toIndex]=ismember(blastStructure(i).toId,useOrder);
-0270     [~, fromIndex]=ismember(blastStructure(i).fromId,useOrder);
-0271     
-0272     <span class="comment">%Add all genes to the corresponding list in allGenes</span>
-0273     allGenes{toIndex}=[allGenes{toIndex};blastStructure(i).toGenes];
-0274     allGenes{fromIndex}=[allGenes{fromIndex};blastStructure(i).fromGenes];
-0275 <span class="keyword">end</span>
-0276 
-0277 <span class="comment">%Keep only the unique gene names</span>
-0278 maxOtherGeneNr=0; <span class="comment">%Determines the dimension of the connectivity matrixes</span>
-0279 <span class="keyword">for</span> i=1:numel(allGenes)
-0280     allGenes{i}=unique(allGenes{i});
-0281     <span class="keyword">if</span> i&gt;1
-0282         <span class="keyword">if</span> numel(allGenes{i})&gt;maxOtherGeneNr
-0283             maxOtherGeneNr=numel(allGenes{i});
-0284         <span class="keyword">end</span>
-0285     <span class="keyword">end</span>
-0286 <span class="keyword">end</span>
-0287 
-0288 <span class="comment">%Generate a cell array of matrixes that describes how the genes in the new</span>
-0289 <span class="comment">%organism map to the models. Each cell matches to the corresponding model</span>
-0290 <span class="comment">%in useOrder (starting at 2 of course). First dimension is gene in new</span>
-0291 <span class="comment">%organism, second which gene it is in the other organism. The second matrix</span>
-0292 <span class="comment">%describes how they map back.</span>
-0293 
-0294 <span class="comment">%As it is now, a significant match is indicated by a 1. This could be</span>
-0295 <span class="comment">%expanded to contain some kind of significance level. The first dimension</span>
-0296 <span class="comment">%is still the genes in the new model.</span>
-0297 
-0298 allTo=cell(numel(useOrder)-1,1);
-0299 allFrom=cell(numel(useOrder)-1,1);
+0137 <span class="comment">%Assume for now that all information is there and that it's correct. This</span>
+0138 <span class="comment">%is important to fix since no further checks are being made!</span>
+0139 
+0140 <span class="comment">%Check whether provided fasta files use the same gene identifiers as</span>
+0141 <span class="comment">%provided template models</span>
+0142 <span class="keyword">for</span> i=1:numel(blastStructure)
+0143     <span class="keyword">if</span> ~strcmp(blastStructure(i).fromId,getModelFor)
+0144         j=strcmpi(blastStructure(i).fromId,modelNames);
+0145         <span class="keyword">if</span> j==0
+0146             error([<span class="string">'While the blastStructure contains sequences from '</span><span class="keyword">...</span>
+0147                 <span class="string">'organismID &quot;%s&quot; (as\nprovided in getBlast), none of '</span><span class="keyword">...</span>
+0148                 <span class="string">'template models have this id (as model.id)'</span>],<span class="keyword">...</span>
+0149                 string(blastStructure(i).fromId));
+0150         <span class="keyword">end</span>
+0151         k=sum(ismember(blastStructure(i).fromGenes,models{j}.genes));
+0152         <span class="keyword">if</span> k&lt;(numel(models{j}.genes)*0.05)
+0153             error([<span class="string">'Less than 5%% of the genes in the template model '</span><span class="keyword">...</span>
+0154                 <span class="string">'with model.id &quot;%s&quot;\ncan be found in the blastStructure. '</span><span class="keyword">...</span>
+0155                 <span class="string">'Ensure that the protein FASTA\nused in getBlast and '</span><span class="keyword">...</span>
+0156                 <span class="string">'the template model used in getModelFromHomology\nuse '</span><span class="keyword">...</span>
+0157                 <span class="string">'the same style of gene identifiers'</span>],models{j}.id)
+0158         <span class="keyword">end</span>
+0159     <span class="keyword">end</span>
+0160 <span class="keyword">end</span>
+0161 
+0162 <span class="comment">%Standardize grRules of template models</span>
+0163 <span class="keyword">for</span> i=1:length(models)
+0164     fprintf(<span class="string">'\nStandardizing grRules of template model with ID &quot;%s&quot; ...'</span>,models{i}.id);
+0165     [models{i}.grRules,models{i}.rxnGeneMat]=<a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(models{i},false);
+0166 <span class="keyword">end</span>
+0167 fprintf(<span class="string">' done\n'</span>);
+0168 
+0169 <span class="comment">%Remove all gene matches that are below the cutoffs</span>
+0170 <span class="keyword">for</span> i=1:numel(blastStructure)
+0171     indexes=blastStructure(i).evalue&lt;maxE &amp; blastStructure(i).aligLen&gt;=minLen &amp; blastStructure(i).identity&gt;=minIde; <span class="comment">%Do it in this direction to lose NaNs</span>
+0172     blastStructure(i).fromGenes(~indexes)=[];
+0173     blastStructure(i).toGenes(~indexes)=[];
+0174     blastStructure(i).evalue(~indexes)=[];
+0175     blastStructure(i).identity(~indexes)=[];
+0176     blastStructure(i).aligLen(~indexes)=[];
+0177     blastStructure(i).bitscore(~indexes)=[];
+0178     blastStructure(i).ppos(~indexes)=[];
+0179 <span class="keyword">end</span>
+0180 
+0181 <span class="comment">%Remove all reactions from the models that have no genes encoding for them.</span>
+0182 <span class="comment">%Also remove all genes that encode for no reactions. There shouldn't be any</span>
+0183 <span class="comment">%but there might be mistakes</span>
+0184 <span class="keyword">for</span> i=1:numel(models)
+0185     [hasGenes, ~]=find(models{i}.rxnGeneMat);
+0186     hasNoGenes=1:numel(models{i}.rxns);
+0187     hasNoGenes(hasGenes)=[];
+0188     models{i}=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(models{i},hasNoGenes,true,true);
+0189 <span class="keyword">end</span>
+0190 
+0191 <span class="comment">%Create a structure that contains all genes used in the blasts in any</span>
+0192 <span class="comment">%direction for each of the models in 'models' and for the new organism. The</span>
+0193 <span class="comment">%first cell is for the new organism and then according to the preferred</span>
+0194 <span class="comment">%order. If no such order is supplied, then according to the order in</span>
+0195 <span class="comment">%'models'</span>
+0196 allGenes=cell(numel(models)+1,1);
+0197 <span class="keyword">if</span> isempty(preferredOrder)
+0198     useOrder=modelNames;
+0199 <span class="keyword">else</span>
+0200     useOrder=preferredOrder;
+0201 <span class="keyword">end</span>
+0202 
+0203 <span class="comment">%Get the corresponding indexes for those models in the 'models' structure</span>
+0204 useOrderIndexes=zeros(numel(models),1);
+0205 <span class="keyword">for</span> i=1:numel(models)
+0206     [~, index]=ismember(models{i}.id,useOrder);
+0207     useOrderIndexes(index)=i;
+0208 <span class="keyword">end</span>
+0209 
+0210 <span class="comment">%Remove all genes from the blast structure that have no genes in the models</span>
+0211 <span class="keyword">if</span> onlyGenesInModels==true
+0212     modelGenes={};
+0213     <span class="keyword">for</span> i=1:numel(models)
+0214         modelGenes=[modelGenes;models{i}.genes];
+0215     <span class="keyword">end</span>
+0216     <span class="keyword">for</span> i=1:numel(blastStructure)
+0217         <span class="comment">%Check to see if it should match the toId or fromId</span>
+0218         <span class="keyword">if</span> strcmpi(blastStructure(i).fromId,getModelFor)
+0219             I=ismember(blastStructure(i).toGenes,modelGenes);
+0220         <span class="keyword">else</span>
+0221             I=ismember(blastStructure(i).fromGenes,modelGenes);
+0222         <span class="keyword">end</span>
+0223         blastStructure(i).fromGenes(~I)=[];
+0224         blastStructure(i).toGenes(~I)=[];
+0225         blastStructure(i).evalue(~I)=[];
+0226         blastStructure(i).identity(~I)=[];
+0227         blastStructure(i).aligLen(~I)=[];
+0228         blastStructure(i).bitscore(~I)=[];
+0229         blastStructure(i).ppos(~I)=[];
+0230         
+0231         <span class="comment">%Check that no matching in blastStructure is empty. This happens if</span>
+0232         <span class="comment">%no genes in the models are present in the corresponding sheet</span>
+0233         <span class="keyword">if</span> isempty(blastStructure(i).fromGenes)
+0234             EM=[<span class="string">'No genes in matching from '</span> blastStructure(i).fromId <span class="string">' to '</span> blastStructure(i).toId <span class="string">' are present in the corresponding model'</span>];
+0235             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0236         <span class="keyword">end</span>
+0237     <span class="keyword">end</span>
+0238 <span class="keyword">end</span>
+0239 
+0240 <span class="comment">%If only best orthologs are to be used then all other measurements are</span>
+0241 <span class="comment">%deleted from the blastStructure. All code after this stays the same. This</span>
+0242 <span class="comment">%means that preferred order can still matter. The best ortholog scoring is</span>
+0243 <span class="comment">%based only on the E-value</span>
+0244 <span class="keyword">if</span> strictness==3
+0245     <span class="keyword">for</span> i=1:numel(blastStructure)
+0246         keep=false(numel(blastStructure(i).toGenes),1);
+0247         [allFromGenes, ~, I]=unique(blastStructure(i).fromGenes);
+0248         
+0249         <span class="comment">%It would be nice to get rid of this loop</span>
+0250         <span class="keyword">for</span> j=1:numel(allFromGenes)
+0251             allMatches=find(I==j);
+0252             bestMatches=allMatches(blastStructure(i).evalue(allMatches)==min(blastStructure(i).evalue(allMatches)));
+0253             
+0254             <span class="comment">%Keep the best matches</span>
+0255             keep(bestMatches)=true;
+0256         <span class="keyword">end</span>
+0257         
+0258         <span class="comment">%Delete all matches that were not best matches</span>
+0259         blastStructure(i).fromGenes(~keep)=[];
+0260         blastStructure(i).toGenes(~keep)=[];
+0261         blastStructure(i).evalue(~keep)=[];
+0262         blastStructure(i).identity(~keep)=[];
+0263         blastStructure(i).aligLen(~keep)=[];
+0264         blastStructure(i).bitscore(~keep)=[];
+0265         blastStructure(i).ppos(~keep)=[];
+0266     <span class="keyword">end</span>
+0267 <span class="keyword">end</span>
+0268 
+0269 useOrder=[{getModelFor};useOrder];
+0270 
+0271 <span class="keyword">for</span> i=1:numel(blastStructure)
+0272     [~, toIndex]=ismember(blastStructure(i).toId,useOrder);
+0273     [~, fromIndex]=ismember(blastStructure(i).fromId,useOrder);
+0274     
+0275     <span class="comment">%Add all genes to the corresponding list in allGenes</span>
+0276     allGenes{toIndex}=[allGenes{toIndex};blastStructure(i).toGenes];
+0277     allGenes{fromIndex}=[allGenes{fromIndex};blastStructure(i).fromGenes];
+0278 <span class="keyword">end</span>
+0279 
+0280 <span class="comment">%Keep only the unique gene names</span>
+0281 maxOtherGeneNr=0; <span class="comment">%Determines the dimension of the connectivity matrixes</span>
+0282 <span class="keyword">for</span> i=1:numel(allGenes)
+0283     allGenes{i}=unique(allGenes{i});
+0284     <span class="keyword">if</span> i&gt;1
+0285         <span class="keyword">if</span> numel(allGenes{i})&gt;maxOtherGeneNr
+0286             maxOtherGeneNr=numel(allGenes{i});
+0287         <span class="keyword">end</span>
+0288     <span class="keyword">end</span>
+0289 <span class="keyword">end</span>
+0290 
+0291 <span class="comment">%Generate a cell array of matrixes that describes how the genes in the new</span>
+0292 <span class="comment">%organism map to the models. Each cell matches to the corresponding model</span>
+0293 <span class="comment">%in useOrder (starting at 2 of course). First dimension is gene in new</span>
+0294 <span class="comment">%organism, second which gene it is in the other organism. The second matrix</span>
+0295 <span class="comment">%describes how they map back.</span>
+0296 
+0297 <span class="comment">%As it is now, a significant match is indicated by a 1. This could be</span>
+0298 <span class="comment">%expanded to contain some kind of significance level. The first dimension</span>
+0299 <span class="comment">%is still the genes in the new model.</span>
 0300 
-0301 <span class="keyword">for</span> i=1:numel(useOrder)-1
-0302     allTo{i}=sparse(numel(allGenes{1}),numel(allGenes{i+1}));
-0303     allFrom{i}=sparse(numel(allGenes{1}),numel(allGenes{i+1}));
-0304 <span class="keyword">end</span>
-0305 
-0306 <span class="comment">%Fill the matches to other species</span>
-0307 <span class="keyword">for</span> i=1:numel(blastStructure)
-0308     <span class="keyword">if</span> strcmp(blastStructure(i).toId,getModelFor)
-0309         <span class="comment">%This was 'to' the new organism. They should all match so no checks</span>
-0310         <span class="comment">%are being made</span>
-0311         [~, a]=ismember(blastStructure(i).toGenes,allGenes{1});
-0312         [~, fromModel]=ismember(blastStructure(i).fromId,useOrder);
-0313         [~, b]=ismember(blastStructure(i).fromGenes,allGenes{fromModel});
-0314         idx = sub2ind(size(allTo{fromModel-1}), a, b);
-0315         allTo{fromModel-1}(idx)=1;
-0316     <span class="keyword">else</span>
-0317         <span class="comment">%This was 'from' the new organism</span>
-0318         [~, a]=ismember(blastStructure(i).fromGenes,allGenes{1});
-0319         [~, toModel]=ismember(blastStructure(i).toId,useOrder);
-0320         [~, b]=ismember(blastStructure(i).toGenes,allGenes{toModel});
-0321         idx = sub2ind(size(allFrom{toModel-1}), a, b);
-0322         allFrom{toModel-1}(idx)=1;
-0323     <span class="keyword">end</span>
-0324 <span class="keyword">end</span>
-0325 
-0326 <span class="comment">%Now we have all the gene matches in a convenient way. For all the genes in</span>
-0327 <span class="comment">%the new organism get the genes that should be included from other</span>
-0328 <span class="comment">%organisms. If all genes should be included this simply means keep the</span>
-0329 <span class="comment">%allFrom matrix as it is. If only orthologs which could be mapped in both</span>
-0330 <span class="comment">%BLAST directions are to be included then only those elements are kept.</span>
-0331 
-0332 finalMappings=cell(numel(useOrder)-1,1);
-0333 <span class="keyword">if</span> strictness==1 || strictness==3
-0334     <span class="keyword">for</span> j=1:numel(allFrom)
-0335         finalMappings{j}=allTo{j}~=0 &amp; allFrom{j}~=0;
-0336     <span class="keyword">end</span>
-0337 <span class="keyword">else</span>
-0338     <span class="keyword">if</span> mapNewGenesToOld==true
-0339         finalMappings=allFrom;
-0340     <span class="keyword">else</span>
-0341         finalMappings=allTo;
-0342     <span class="keyword">end</span>
-0343 <span class="keyword">end</span>
-0344 
-0345 <span class="comment">%Remove all genes from the mapping that are not in the models. This doesn't</span>
-0346 <span class="comment">%do much if only genes in the models were used for the original mapping.</span>
-0347 <span class="comment">%Also simplify the finalMapping and allGenes structures so that they only</span>
-0348 <span class="comment">%contain mappings that exist</span>
-0349 usedNewGenes=false(numel(allGenes{1}),1);
-0350 
-0351 <span class="keyword">for</span> i=1:numel(allGenes)-1
-0352     <span class="comment">%First remove mappings for those genes that are not in the model</span>
-0353     <span class="keyword">if</span> onlyGenesInModels==false
-0354         a=ismember(allGenes{i+1},models{useOrderIndexes(i)}.genes);
-0355         finalMappings{i}(:,~a)=false;
-0356     <span class="keyword">end</span>
-0357     
-0358     <span class="comment">%Then remove unused ones and simplify</span>
-0359     [a, b]=find(finalMappings{i});
-0360     usedGenes=false(numel(allGenes{i+1}),1);
-0361     usedNewGenes(a)=true;
-0362     usedGenes(b)=true;
-0363     finalMappings{i}=finalMappings{i}(:,usedGenes);
-0364     allGenes{i+1}=allGenes{i+1}(usedGenes);
-0365 <span class="keyword">end</span>
-0366 
-0367 <span class="comment">%Remove all new genes that have not been mapped to anything</span>
-0368 allGenes{1}=allGenes{1}(usedNewGenes);
-0369 <span class="keyword">for</span> i=1:numel(finalMappings)
-0370     finalMappings{i}=finalMappings{i}(usedNewGenes,:);
-0371 <span class="keyword">end</span>
-0372 
-0373 <span class="comment">%Now is it time to choose which reactions should be included from which</span>
-0374 <span class="comment">%models. If there is a preferred order specified then each gene can only</span>
-0375 <span class="comment">%result in reactions from one model, otherwise they should all be included</span>
-0376 
-0377 <span class="comment">%Start by simplifying the models by removing genes/reactions that are not</span>
-0378 <span class="comment">%used. This is where it gets weird with complexes, especially &quot;or&quot;</span>
-0379 <span class="comment">%complexes. In this step only reactions which are encoded by one single</span>
-0380 <span class="comment">%gene, or where all genes should be deleted, are deleted. The info on the</span>
-0381 <span class="comment">%full complex is still present in the grRules</span>
-0382 
-0383 <span class="keyword">for</span> i=1:numel(models)
-0384     a=ismember(models{useOrderIndexes(i)}.genes,allGenes{i+1});
-0385     
-0386     <span class="comment">%Remove reactions that are not associated to any of the genes in</span>
-0387     <span class="comment">%allGenes, thereby also keeping complexes where only for one of the</span>
-0388     <span class="comment">%genes was matched</span>
-0389     [rxnsToKeep,~] = find(models{useOrderIndexes(i)}.rxnGeneMat(:,a));
-0390     rxnsToRemove = repmat(1,numel(models{useOrderIndexes(i)}.rxns),1);
-0391     rxnsToRemove(rxnsToKeep) = 0;
-0392     rxnsToRemove = find(rxnsToRemove);
-0393     models{useOrderIndexes(i)}=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(models{useOrderIndexes(i)},rxnsToRemove,true,true,true);
-0394 <span class="keyword">end</span>
-0395 
-0396 <span class="comment">%Since mergeModels function will be used in the end, the models are</span>
-0397 <span class="comment">%simplified further by deleting genes/reactions in the order specified by</span>
-0398 <span class="comment">%preferredOrder. This means that the last model will only contain reactions</span>
-0399 <span class="comment">%for genes that mapped only to that model</span>
-0400 
-0401 allUsedGenes=false(numel(allGenes{1}),1);
-0402 
-0403 <span class="keyword">if</span> ~isempty(preferredOrder) &amp;&amp; numel(models)&gt;1
-0404     [usedGenes, ~]=find(finalMappings{1}); <span class="comment">%All that are used in the first model in preferredOrder</span>
-0405     allUsedGenes(usedGenes)=true;
-0406     <span class="keyword">for</span> i=2:numel(finalMappings)
-0407         [usedGenes, ~]=find(finalMappings{i});
-0408         usedGenes=unique(usedGenes);
-0409         a=ismember(usedGenes,find(allUsedGenes));
-0410         
-0411         [~, genesToDelete]=find(finalMappings{i}(usedGenes(a),:)); <span class="comment">%IMPORTANT! IS it really correct to remove all genes that map?</span>
-0412         genesToDelete=unique(genesToDelete); <span class="comment">%Maybe not needed, but for clarity if nothing else</span>
+0301 allTo=cell(numel(useOrder)-1,1);
+0302 allFrom=cell(numel(useOrder)-1,1);
+0303 
+0304 <span class="keyword">for</span> i=1:numel(useOrder)-1
+0305     allTo{i}=sparse(numel(allGenes{1}),numel(allGenes{i+1}));
+0306     allFrom{i}=sparse(numel(allGenes{1}),numel(allGenes{i+1}));
+0307 <span class="keyword">end</span>
+0308 
+0309 <span class="comment">%Fill the matches to other species</span>
+0310 <span class="keyword">for</span> i=1:numel(blastStructure)
+0311     <span class="keyword">if</span> strcmp(blastStructure(i).toId,getModelFor)
+0312         <span class="comment">%This was 'to' the new organism. They should all match so no checks</span>
+0313         <span class="comment">%are being made</span>
+0314         [~, a]=ismember(blastStructure(i).toGenes,allGenes{1});
+0315         [~, fromModel]=ismember(blastStructure(i).fromId,useOrder);
+0316         [~, b]=ismember(blastStructure(i).fromGenes,allGenes{fromModel});
+0317         idx = sub2ind(size(allTo{fromModel-1}), a, b);
+0318         allTo{fromModel-1}(idx)=1;
+0319     <span class="keyword">else</span>
+0320         <span class="comment">%This was 'from' the new organism</span>
+0321         [~, a]=ismember(blastStructure(i).fromGenes,allGenes{1});
+0322         [~, toModel]=ismember(blastStructure(i).toId,useOrder);
+0323         [~, b]=ismember(blastStructure(i).toGenes,allGenes{toModel});
+0324         idx = sub2ind(size(allFrom{toModel-1}), a, b);
+0325         allFrom{toModel-1}(idx)=1;
+0326     <span class="keyword">end</span>
+0327 <span class="keyword">end</span>
+0328 
+0329 <span class="comment">%Now we have all the gene matches in a convenient way. For all the genes in</span>
+0330 <span class="comment">%the new organism get the genes that should be included from other</span>
+0331 <span class="comment">%organisms. If all genes should be included this simply means keep the</span>
+0332 <span class="comment">%allFrom matrix as it is. If only orthologs which could be mapped in both</span>
+0333 <span class="comment">%BLAST directions are to be included then only those elements are kept.</span>
+0334 
+0335 finalMappings=cell(numel(useOrder)-1,1);
+0336 <span class="keyword">if</span> strictness==1 || strictness==3
+0337     <span class="keyword">for</span> j=1:numel(allFrom)
+0338         finalMappings{j}=allTo{j}~=0 &amp; allFrom{j}~=0;
+0339     <span class="keyword">end</span>
+0340 <span class="keyword">else</span>
+0341     <span class="keyword">if</span> mapNewGenesToOld==true
+0342         finalMappings=allFrom;
+0343     <span class="keyword">else</span>
+0344         finalMappings=allTo;
+0345     <span class="keyword">end</span>
+0346 <span class="keyword">end</span>
+0347 
+0348 <span class="comment">%Remove all genes from the mapping that are not in the models. This doesn't</span>
+0349 <span class="comment">%do much if only genes in the models were used for the original mapping.</span>
+0350 <span class="comment">%Also simplify the finalMapping and allGenes structures so that they only</span>
+0351 <span class="comment">%contain mappings that exist</span>
+0352 usedNewGenes=false(numel(allGenes{1}),1);
+0353 
+0354 <span class="keyword">for</span> i=1:numel(allGenes)-1
+0355     <span class="comment">%First remove mappings for those genes that are not in the model</span>
+0356     <span class="keyword">if</span> onlyGenesInModels==false
+0357         a=ismember(allGenes{i+1},models{useOrderIndexes(i)}.genes);
+0358         finalMappings{i}(:,~a)=false;
+0359     <span class="keyword">end</span>
+0360     
+0361     <span class="comment">%Then remove unused ones and simplify</span>
+0362     [a, b]=find(finalMappings{i});
+0363     usedGenes=false(numel(allGenes{i+1}),1);
+0364     usedNewGenes(a)=true;
+0365     usedGenes(b)=true;
+0366     finalMappings{i}=finalMappings{i}(:,usedGenes);
+0367     allGenes{i+1}=allGenes{i+1}(usedGenes);
+0368 <span class="keyword">end</span>
+0369 
+0370 <span class="comment">%Remove all new genes that have not been mapped to anything</span>
+0371 allGenes{1}=allGenes{1}(usedNewGenes);
+0372 <span class="keyword">for</span> i=1:numel(finalMappings)
+0373     finalMappings{i}=finalMappings{i}(usedNewGenes,:);
+0374 <span class="keyword">end</span>
+0375 
+0376 <span class="comment">%Now is it time to choose which reactions should be included from which</span>
+0377 <span class="comment">%models. If there is a preferred order specified then each gene can only</span>
+0378 <span class="comment">%result in reactions from one model, otherwise they should all be included</span>
+0379 
+0380 <span class="comment">%Start by simplifying the models by removing genes/reactions that are not</span>
+0381 <span class="comment">%used. This is where it gets weird with complexes, especially &quot;or&quot;</span>
+0382 <span class="comment">%complexes. In this step only reactions which are encoded by one single</span>
+0383 <span class="comment">%gene, or where all genes should be deleted, are deleted. The info on the</span>
+0384 <span class="comment">%full complex is still present in the grRules</span>
+0385 
+0386 <span class="keyword">for</span> i=1:numel(models)
+0387     a=ismember(models{useOrderIndexes(i)}.genes,allGenes{i+1});
+0388     
+0389     <span class="comment">%Remove reactions that are not associated to any of the genes in</span>
+0390     <span class="comment">%allGenes, thereby also keeping complexes where only for one of the</span>
+0391     <span class="comment">%genes was matched</span>
+0392     [rxnsToKeep,~] = find(models{useOrderIndexes(i)}.rxnGeneMat(:,a));
+0393     rxnsToRemove = repmat(1,numel(models{useOrderIndexes(i)}.rxns),1);
+0394     rxnsToRemove(rxnsToKeep) = 0;
+0395     rxnsToRemove = find(rxnsToRemove);
+0396     models{useOrderIndexes(i)}=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(models{useOrderIndexes(i)},rxnsToRemove,true,true,true);
+0397 <span class="keyword">end</span>
+0398 
+0399 <span class="comment">%Since mergeModels function will be used in the end, the models are</span>
+0400 <span class="comment">%simplified further by deleting genes/reactions in the order specified by</span>
+0401 <span class="comment">%preferredOrder. This means that the last model will only contain reactions</span>
+0402 <span class="comment">%for genes that mapped only to that model</span>
+0403 
+0404 allUsedGenes=false(numel(allGenes{1}),1);
+0405 
+0406 <span class="keyword">if</span> ~isempty(preferredOrder) &amp;&amp; numel(models)&gt;1
+0407     [usedGenes, ~]=find(finalMappings{1}); <span class="comment">%All that are used in the first model in preferredOrder</span>
+0408     allUsedGenes(usedGenes)=true;
+0409     <span class="keyword">for</span> i=2:numel(finalMappings)
+0410         [usedGenes, ~]=find(finalMappings{i});
+0411         usedGenes=unique(usedGenes);
+0412         a=ismember(usedGenes,find(allUsedGenes));
 0413         
-0414         <span class="comment">%Remove all the genes that were already found and add the other</span>
-0415         <span class="comment">%ones to allUsedGenes</span>
-0416         models{useOrderIndexes(i)}=<a href="removeGenes.html" class="code" title="function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)">removeGenes</a>(models{useOrderIndexes(i)},allGenes{i+1}(genesToDelete),true,true,false);
-0417         allUsedGenes(usedGenes)=true;
-0418         
-0419         <span class="comment">%Remove the deleted genes from finalMappings and allGenes.</span>
-0420         finalMappings{i}(:,genesToDelete)=[];
-0421         allGenes{i+1}(genesToDelete)=[];
-0422     <span class="keyword">end</span>
-0423 <span class="keyword">end</span>
-0424 
-0425 <span class="comment">%Now loop through the models and update the gene associations. Genes not</span>
-0426 <span class="comment">%belonging to the new organism will be renamed as 'OLD_MODELID_gene'</span>
-0427 <span class="keyword">for</span> i=1:numel(models)
-0428     <span class="comment">%Find all the new genes that should be used for this model</span>
-0429     [newGenes, oldGenes]=find(finalMappings{i});
-0430     
-0431     <span class="comment">%Create a new gene list with the genes from the new organism and those</span>
-0432     <span class="comment">%genes that could not be removed</span>
-0433     replaceableGenes=allGenes{i+1}(unique(oldGenes));
-0434     nonReplaceableGenes=setdiff(models{useOrderIndexes(i)}.genes,replaceableGenes);
-0435     fullGeneList=[allGenes{1}(unique(newGenes));nonReplaceableGenes];
-0436     
-0437     <span class="comment">%Just to save some indexing later. This is the LAST index of</span>
-0438     <span class="comment">%replaceable ones</span>
-0439     nonRepStartIndex=numel(unique(newGenes));
-0440     
-0441     <span class="comment">%Construct a new rxnGeneMat</span>
-0442     newRxnGeneMat=sparse(numel(models{useOrderIndexes(i)}.rxns),numel(fullGeneList));
+0414         [~, genesToDelete]=find(finalMappings{i}(usedGenes(a),:)); <span class="comment">%IMPORTANT! IS it really correct to remove all genes that map?</span>
+0415         genesToDelete=unique(genesToDelete); <span class="comment">%Maybe not needed, but for clarity if nothing else</span>
+0416         
+0417         <span class="comment">%Remove all the genes that were already found and add the other</span>
+0418         <span class="comment">%ones to allUsedGenes</span>
+0419         models{useOrderIndexes(i)}=<a href="removeGenes.html" class="code" title="function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)">removeGenes</a>(models{useOrderIndexes(i)},allGenes{i+1}(genesToDelete),true,true,false);
+0420         allUsedGenes(usedGenes)=true;
+0421         
+0422         <span class="comment">%Remove the deleted genes from finalMappings and allGenes.</span>
+0423         finalMappings{i}(:,genesToDelete)=[];
+0424         allGenes{i+1}(genesToDelete)=[];
+0425     <span class="keyword">end</span>
+0426 <span class="keyword">end</span>
+0427 
+0428 <span class="comment">%Now loop through the models and update the gene associations. Genes not</span>
+0429 <span class="comment">%belonging to the new organism will be renamed as 'OLD_MODELID_gene'</span>
+0430 <span class="keyword">for</span> i=1:numel(models)
+0431     <span class="comment">%Find all the new genes that should be used for this model</span>
+0432     [newGenes, oldGenes]=find(finalMappings{i});
+0433     
+0434     <span class="comment">%Create a new gene list with the genes from the new organism and those</span>
+0435     <span class="comment">%genes that could not be removed</span>
+0436     replaceableGenes=allGenes{i+1}(unique(oldGenes));
+0437     nonReplaceableGenes=setdiff(models{useOrderIndexes(i)}.genes,replaceableGenes);
+0438     fullGeneList=[allGenes{1}(unique(newGenes));nonReplaceableGenes];
+0439     
+0440     <span class="comment">%Just to save some indexing later. This is the LAST index of</span>
+0441     <span class="comment">%replaceable ones</span>
+0442     nonRepStartIndex=numel(unique(newGenes));
 0443     
-0444     <span class="comment">%Now update the rxnGeneMat. This is a little tricky and could</span>
-0445     <span class="comment">%probably be done in a more efficient way, but I just loop through the</span>
-0446     <span class="comment">%reactions and add them one by one</span>
-0447     <span class="keyword">for</span> j=1:numel(models{useOrderIndexes(i)}.rxns)
-0448         <span class="comment">%Get the old genes encoding for this reaction</span>
-0449         [~, oldGeneIds]=find(models{useOrderIndexes(i)}.rxnGeneMat(j,:));
-0450         
-0451         <span class="comment">%Update the matrix for each gene. This includes replacing one gene</span>
-0452         <span class="comment">%with several new ones if there were several matches</span>
-0453         <span class="keyword">for</span> k=1:numel(oldGeneIds)
-0454             <span class="comment">%Match the gene to one in the gene list. This is done as a text</span>
-0455             <span class="comment">%match. Could probably be done better, but I'm a little lost in</span>
-0456             <span class="comment">%the indexing</span>
-0457             
-0458             geneName=models{useOrderIndexes(i)}.genes(oldGeneIds(k));
-0459             
-0460             <span class="comment">%First search in the mappable genes</span>
-0461             mapIndex=find(ismember(allGenes{i+1},geneName));
+0444     <span class="comment">%Construct a new rxnGeneMat</span>
+0445     newRxnGeneMat=sparse(numel(models{useOrderIndexes(i)}.rxns),numel(fullGeneList));
+0446     
+0447     <span class="comment">%Now update the rxnGeneMat. This is a little tricky and could</span>
+0448     <span class="comment">%probably be done in a more efficient way, but I just loop through the</span>
+0449     <span class="comment">%reactions and add them one by one</span>
+0450     <span class="keyword">for</span> j=1:numel(models{useOrderIndexes(i)}.rxns)
+0451         <span class="comment">%Get the old genes encoding for this reaction</span>
+0452         [~, oldGeneIds]=find(models{useOrderIndexes(i)}.rxnGeneMat(j,:));
+0453         
+0454         <span class="comment">%Update the matrix for each gene. This includes replacing one gene</span>
+0455         <span class="comment">%with several new ones if there were several matches</span>
+0456         <span class="keyword">for</span> k=1:numel(oldGeneIds)
+0457             <span class="comment">%Match the gene to one in the gene list. This is done as a text</span>
+0458             <span class="comment">%match. Could probably be done better, but I'm a little lost in</span>
+0459             <span class="comment">%the indexing</span>
+0460             
+0461             geneName=models{useOrderIndexes(i)}.genes(oldGeneIds(k));
 0462             
-0463             <span class="keyword">if</span> ~isempty(mapIndex)
-0464                 <span class="comment">% add the old genes</span>
-0465                 hitGenes.oldGenes = [hitGenes.oldGenes, {geneName}];
-0466                 
-0467                 <span class="comment">%Get the new genes for that gene</span>
-0468                 a=find(finalMappings{i}(:,mapIndex));
+0463             <span class="comment">%First search in the mappable genes</span>
+0464             mapIndex=find(ismember(allGenes{i+1},geneName));
+0465             
+0466             <span class="keyword">if</span> ~isempty(mapIndex)
+0467                 <span class="comment">% add the old genes</span>
+0468                 hitGenes.oldGenes = [hitGenes.oldGenes, {geneName}];
 0469                 
-0470                 <span class="comment">%Find the positions of these genes in the final gene list</span>
-0471                 [~, b]=ismember(allGenes{1}(a),fullGeneList);
+0470                 <span class="comment">%Get the new genes for that gene</span>
+0471                 a=find(finalMappings{i}(:,mapIndex));
 0472                 
-0473                 <span class="comment">%Update the matrix</span>
-0474                 newRxnGeneMat(j,b)=1;
+0473                 <span class="comment">%Find the positions of these genes in the final gene list</span>
+0474                 [~, b]=ismember(allGenes{1}(a),fullGeneList);
 0475                 
-0476                 <span class="comment">%Update the grRules string. This is tricky, but I hope that</span>
-0477                 <span class="comment">%it's ok to replace the old gene name with the new one and</span>
-0478                 <span class="comment">%add ') or (' if there were several matches. Be sure of</span>
-0479                 <span class="comment">%this!</span>
-0480                 repString=fullGeneList{b(1)};
-0481                 <span class="keyword">if</span> numel(b)&gt;1
-0482                     <span class="keyword">for</span> l=2:numel(b)
-0483                         repString=[repString <span class="string">' or '</span> fullGeneList{b(l)}];
-0484                     <span class="keyword">end</span>
-0485                     repString=[<span class="string">'('</span> repString <span class="string">')'</span>];
-0486                 <span class="keyword">end</span>
-0487                 
-0488                 <span class="comment">% add the new matched genes</span>
-0489                 hitGenes.newGenes = [hitGenes.newGenes, {repString}];
+0476                 <span class="comment">%Update the matrix</span>
+0477                 newRxnGeneMat(j,b)=1;
+0478                 
+0479                 <span class="comment">%Update the grRules string. This is tricky, but I hope that</span>
+0480                 <span class="comment">%it's ok to replace the old gene name with the new one and</span>
+0481                 <span class="comment">%add ') or (' if there were several matches. Be sure of</span>
+0482                 <span class="comment">%this!</span>
+0483                 repString=fullGeneList{b(1)};
+0484                 <span class="keyword">if</span> numel(b)&gt;1
+0485                     <span class="keyword">for</span> l=2:numel(b)
+0486                         repString=[repString <span class="string">' or '</span> fullGeneList{b(l)}];
+0487                     <span class="keyword">end</span>
+0488                     repString=[<span class="string">'('</span> repString <span class="string">')'</span>];
+0489                 <span class="keyword">end</span>
 0490                 
-0491                 <span class="comment">%Use regexprep instead of strrep to prevent partial matches</span>
-0492                 models{useOrderIndexes(i)}.grRules{j}=regexprep(models{useOrderIndexes(i)}.grRules{j},[<span class="string">'(^|\s|\()'</span> geneName{1} <span class="string">'($|\s|\))'</span>],[<span class="string">'$1'</span> repString <span class="string">'$2'</span>]);
-0493             <span class="keyword">else</span>
-0494                 <span class="comment">%Then search in the non-replaceable genes. There could only</span>
-0495                 <span class="comment">%be one match here</span>
-0496                 index=find(ismember(nonReplaceableGenes,geneName));
-0497                 
-0498                 <span class="comment">%Update the matrix</span>
-0499                 newRxnGeneMat(j,nonRepStartIndex+index)=1;
+0491                 <span class="comment">% add the new matched genes</span>
+0492                 hitGenes.newGenes = [hitGenes.newGenes, {repString}];
+0493                 
+0494                 <span class="comment">%Use regexprep instead of strrep to prevent partial matches</span>
+0495                 models{useOrderIndexes(i)}.grRules{j}=regexprep(models{useOrderIndexes(i)}.grRules{j},[<span class="string">'(^|\s|\()'</span> geneName{1} <span class="string">'($|\s|\))'</span>],[<span class="string">'$1'</span> repString <span class="string">'$2'</span>]);
+0496             <span class="keyword">else</span>
+0497                 <span class="comment">%Then search in the non-replaceable genes. There could only</span>
+0498                 <span class="comment">%be one match here</span>
+0499                 index=find(ismember(nonReplaceableGenes,geneName));
 0500                 
-0501                 models{useOrderIndexes(i)}.grRules{j}=strrep(models{useOrderIndexes(i)}.grRules{j},geneName{1},strcat(<span class="string">'OLD_'</span>,models{useOrderIndexes(i)}.id,<span class="string">'_'</span>,geneName{1}));
-0502             <span class="keyword">end</span>
-0503         <span class="keyword">end</span>
-0504     <span class="keyword">end</span>
-0505     
-0506     <span class="comment">%Add the new list of genes</span>
-0507     models{useOrderIndexes(i)}.rxnGeneMat=newRxnGeneMat;
-0508     <span class="keyword">if</span> ~isempty(nonReplaceableGenes)
-0509         models{useOrderIndexes(i)}.genes=[allGenes{1}(unique(newGenes));strcat(<span class="string">'OLD_'</span>,models{useOrderIndexes(i)}.id,<span class="string">'_'</span>,nonReplaceableGenes)];
-0510     <span class="keyword">else</span>
-0511         models{useOrderIndexes(i)}.genes=allGenes{1}(unique(newGenes));
-0512     <span class="keyword">end</span>
-0513     <span class="keyword">if</span> isfield(models{useOrderIndexes(i)},<span class="string">'geneComps'</span>)
-0514         geneComps=models{useOrderIndexes(i)}.geneComps(1);
-0515         models{useOrderIndexes(i)}.geneComps=zeros(numel(models{useOrderIndexes(i)}.genes),1);
-0516         <span class="comment">%Assume that all genes are in the same compartment, and this</span>
-0517         <span class="comment">%compartment is specified for the first gene</span>
-0518         models{useOrderIndexes(i)}.geneComps(:)=geneComps;
-0519     <span class="keyword">end</span>
-0520 <span class="keyword">end</span>
-0521 
-0522 <span class="comment">%Now merge the models. All information should be correct except for 'or'</span>
-0523 <span class="comment">%complexes</span>
-0524 draftModel=<a href="mergeModels.html" class="code" title="function model=mergeModels(models,metParam,supressWarnings)">mergeModels</a>(models,<span class="string">'metNames'</span>);
-0525 
-0526 <span class="comment">%Remove unnecessary OLD_ genes, that were added with OR relationships</span>
-0527 regexStr=[<span class="string">'OLD_('</span>, strjoin(modelNames(:),<span class="string">'|'</span>),<span class="string">')_(\S^\))+'</span>];
-0528 draftModel.grRules=regexprep(draftModel.grRules,[<span class="string">' or '</span> regexStr],<span class="string">''</span>);
-0529 draftModel.grRules=regexprep(draftModel.grRules,[regexStr <span class="string">' or '</span>],<span class="string">''</span>);
-0530 
-0531 <span class="comment">%Change name of the resulting model</span>
-0532 draftModel.id=getModelFor;
-0533 name=<span class="string">'Generated by getModelFromHomology using '</span>;
-0534 <span class="keyword">for</span> i=1:numel(models)
-0535     <span class="keyword">if</span> i&lt;numel(models)
-0536         name=[name models{i}.id <span class="string">', '</span>];
-0537     <span class="keyword">else</span>
-0538         name=[name models{i}.id];
-0539     <span class="keyword">end</span>
-0540 <span class="keyword">end</span>
-0541 draftModel.name=name;
-0542 draftModel.rxnNotes=cell(length(draftModel.rxns),1);
-0543 draftModel.rxnNotes(:)={<span class="string">'Included by getModelFromHomology'</span>};
-0544 draftModel.rxnConfidenceScores=NaN(length(draftModel.rxns),1);
-0545 draftModel.rxnConfidenceScores(:)=2;
-0546 draftModel=<a href="deleteUnusedGenes.html" class="code" title="function reducedModel=deleteUnusedGenes(model,verbose)">deleteUnusedGenes</a>(draftModel,0);
-0547 <span class="comment">%Standardize grRules and notify if problematic grRules are found</span>
-0548 [draftModel.grRules,draftModel.rxnGeneMat]=<a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(draftModel,false);
-0549 draftModel=<a href="deleteUnusedGenes.html" class="code" title="function reducedModel=deleteUnusedGenes(model,verbose)">deleteUnusedGenes</a>(draftModel,false);
-0550 <span class="keyword">end</span></pre></div>
+0501                 <span class="comment">%Update the matrix</span>
+0502                 newRxnGeneMat(j,nonRepStartIndex+index)=1;
+0503                 
+0504                 models{useOrderIndexes(i)}.grRules{j}=strrep(models{useOrderIndexes(i)}.grRules{j},geneName{1},strcat(<span class="string">'OLD_'</span>,models{useOrderIndexes(i)}.id,<span class="string">'_'</span>,geneName{1}));
+0505             <span class="keyword">end</span>
+0506         <span class="keyword">end</span>
+0507     <span class="keyword">end</span>
+0508     
+0509     <span class="comment">%Add the new list of genes</span>
+0510     models{useOrderIndexes(i)}.rxnGeneMat=newRxnGeneMat;
+0511     <span class="keyword">if</span> ~isempty(nonReplaceableGenes)
+0512         models{useOrderIndexes(i)}.genes=[allGenes{1}(unique(newGenes));strcat(<span class="string">'OLD_'</span>,models{useOrderIndexes(i)}.id,<span class="string">'_'</span>,nonReplaceableGenes)];
+0513     <span class="keyword">else</span>
+0514         models{useOrderIndexes(i)}.genes=allGenes{1}(unique(newGenes));
+0515     <span class="keyword">end</span>
+0516     <span class="keyword">if</span> isfield(models{useOrderIndexes(i)},<span class="string">'geneComps'</span>)
+0517         geneComps=models{useOrderIndexes(i)}.geneComps(1);
+0518         models{useOrderIndexes(i)}.geneComps=zeros(numel(models{useOrderIndexes(i)}.genes),1);
+0519         <span class="comment">%Assume that all genes are in the same compartment, and this</span>
+0520         <span class="comment">%compartment is specified for the first gene</span>
+0521         models{useOrderIndexes(i)}.geneComps(:)=geneComps;
+0522     <span class="keyword">end</span>
+0523 <span class="keyword">end</span>
+0524 
+0525 <span class="comment">%Now merge the models. All information should be correct except for 'or'</span>
+0526 <span class="comment">%complexes</span>
+0527 draftModel=<a href="mergeModels.html" class="code" title="function model=mergeModels(models,metParam,supressWarnings)">mergeModels</a>(models,<span class="string">'metNames'</span>);
+0528 
+0529 <span class="comment">%Remove unnecessary OLD_ genes, that were added with OR relationships</span>
+0530 regexStr=[<span class="string">'OLD_('</span>, strjoin(modelNames(:),<span class="string">'|'</span>),<span class="string">')_(\S^\))+'</span>];
+0531 draftModel.grRules=regexprep(draftModel.grRules,[<span class="string">' or '</span> regexStr],<span class="string">''</span>);
+0532 draftModel.grRules=regexprep(draftModel.grRules,[regexStr <span class="string">' or '</span>],<span class="string">''</span>);
+0533 
+0534 <span class="comment">%Change name of the resulting model</span>
+0535 draftModel.id=getModelFor;
+0536 name=<span class="string">'Generated by getModelFromHomology using '</span>;
+0537 <span class="keyword">for</span> i=1:numel(models)
+0538     <span class="keyword">if</span> i&lt;numel(models)
+0539         name=[name models{i}.id <span class="string">', '</span>];
+0540     <span class="keyword">else</span>
+0541         name=[name models{i}.id];
+0542     <span class="keyword">end</span>
+0543 <span class="keyword">end</span>
+0544 draftModel.name=name;
+0545 draftModel.rxnNotes=cell(length(draftModel.rxns),1);
+0546 draftModel.rxnNotes(:)={<span class="string">'Included by getModelFromHomology'</span>};
+0547 draftModel.rxnConfidenceScores=NaN(length(draftModel.rxns),1);
+0548 draftModel.rxnConfidenceScores(:)=2;
+0549 draftModel=<a href="deleteUnusedGenes.html" class="code" title="function reducedModel=deleteUnusedGenes(model,verbose)">deleteUnusedGenes</a>(draftModel,0);
+0550 <span class="comment">%Standardize grRules and notify if problematic grRules are found</span>
+0551 [draftModel.grRules,draftModel.rxnGeneMat]=<a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(draftModel,false);
+0552 draftModel=<a href="deleteUnusedGenes.html" class="code" title="function reducedModel=deleteUnusedGenes(model,verbose)">deleteUnusedGenes</a>(draftModel,false);
+0553 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

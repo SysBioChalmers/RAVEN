@@ -1,21 +1,23 @@
-function exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
+function exportModel(model,fileName,neverPrefix,supressWarnings,sortIds)
 % exportModel
 %   Exports a constraint-based model to an SBML file (L3V1 FBCv2)
 %
-%   Input:
+% Input:
 %   model               a model structure
 %   fileName            filename to export the model to. A dialog window
 %                       will open if no file name is specified.
-%   exportGeneComplexes true if gene complexes (all gene sets linked with
-%                       AND relationship) should be recognised and exported
-%                       (optional, default false)
-%   supressWarnings     true if warnings should be supressed (optional, default
-%                       false)
+%   neverPrefix         true if prefixes are never added to identifiers,
+%                       even if start with e.g. digits. This might result
+%                       in invalid SBML files (optional, default false)
+%   supressWarnings     true if warnings should be supressed. This might
+%                       results in invalid SBML files, as no checks are
+%                       performed (optional, default false)
 %   sortIds             logical whether metabolites, reactions and genes
 %                       should be sorted alphabetically by their
 %                       identifiers (optional, default false)
 %
-% Usage: exportModel(model,fileName,exportGeneComplexes,supressWarnings,sortIds)
+% Usage: exportModel(model,fileName,neverPrefix,supressWarnings,sortIds)
+
 if nargin<2 || isempty(fileName)
     [fileName, pathName] = uiputfile({'*.xml;*.sbml'}, 'Select file for model export',[model.id '.xml']);
     if fileName == 0
@@ -25,17 +27,21 @@ if nargin<2 || isempty(fileName)
     end
 end
 fileName=char(fileName);
-if nargin<3
-    exportGeneComplexes=false;
+if nargin<3 || isempty(neverPrefix)
+    neverPrefix=false;
 end
-if nargin<4
+if nargin<4 || isempty(supressWarnings)
     supressWarnings=false;
 end
-if nargin<5
+if nargin<5 || isempty(sortIds)
     sortIds=false;
 end
 if sortIds==true
     model=sortIdentifiers(model);
+end
+
+if isfield(model,'ec')
+    warning("exportModel does not store information from the 'model.ec' structure. Use 'writeYAMLmodel(model)' to export all content from a GECKO model.")
 end
 
 %If no subSystems are defined, then no need to use groups package
@@ -74,9 +80,17 @@ if ~isfield(model,'name')
     model.name='blankName';
 end
 
+% Add prefixes if required
+if ~neverPrefix
+    [model,hasChanged] = addIdentifierPrefix(model);
+    dispEM(['The following fields have one or more entries that do not start '...
+        'with a letter or _ (conflicting with SBML specifications). Prefixes '...
+        'are added to all entries in those fields:'],false,hasChanged)
+end
+
 %Check the model structure
 if supressWarnings==false
-    checkModelStruct(model,false);
+    checkModelStruct(model);
 end
 
 %Add several blank fields, if they do not exist already. This is to reduce
@@ -98,6 +112,9 @@ if ~isfield(model,'geneMiriams') && isfield(model,'genes')
 end
 if ~isfield(model,'geneShortNames') && isfield(model,'genes')
     model.geneShortNames=cell(numel(model.genes),1);
+end
+if ~isfield(model,'proteins') && isfield(model,'genes')
+    model.proteins=cell(numel(model.genes),1);
 end
 if ~isfield(model,'subSystems')
     model.subSystems=cell(numel(model.rxns),1);
@@ -230,11 +247,6 @@ for i=1:numel(model.comps)
     end
     
     if isfield(modelSBML.compartment,'metaid')
-        if regexp(model.comps{i},'^[^a-zA-Z_]')
-            EM='The compartment IDs are in numeric format. For the compliance with SBML specifications, compartment IDs will be preceded with "c_" string';
-            dispEM(EM,false);
-            model.comps(i)=strcat('c_',model.comps(i));
-        end
         modelSBML.compartment(i).metaid=model.comps{i};
     end
     %Prepare Miriam strings
@@ -289,13 +301,13 @@ for i=1:numel(model.mets)
     end
     
     if isfield(modelSBML.species,'metaid')
-        modelSBML.species(i).metaid=['M_' model.mets{i}];
+        modelSBML.species(i).metaid=model.mets{i};
     end
     if isfield(modelSBML.species, 'name')
         modelSBML.species(i).name=model.metNames{i};
     end
     if isfield(modelSBML.species, 'id')
-        modelSBML.species(i).id=['M_' model.mets{i}];
+        modelSBML.species(i).id=model.mets{i};
     end
     if isfield(modelSBML.species, 'compartment')
         modelSBML.species(i).compartment=model.comps{model.metComps(i)};
@@ -337,7 +349,7 @@ for i=1:numel(model.mets)
                 end
             end
             if ~isempty(model.metMiriams{i}) || hasInchi==true
-                modelSBML.species(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_M_' model.mets{i} '">'];
+                modelSBML.species(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.mets{i} '">'];
                 modelSBML.species(i).annotation=[modelSBML.species(i).annotation '<bqbiol:is><rdf:Bag>'];
                 if ~isempty(model.metMiriams{i})
                     modelSBML.species(i).annotation=[modelSBML.species(i).annotation getMiriam(model.metMiriams{i})];
@@ -394,42 +406,9 @@ if isfield(model,'genes')
                 modelSBML.fbc_geneProduct(i).fbc_label=model.geneShortNames{i};
             end
         end
-    end
-    if exportGeneComplexes==true
-        %Also add the complexes as genes. This is done by splitting grRules
-        %on "or" and adding the ones which contain several genes
-        geneComplexes={};
-        if isfield(model,'grRules')
-            %Only grRules which contain " and " can be complexes
-            uniqueRules=unique(model.grRules);
-            I=cellfun(@any,strfind(uniqueRules,' and '));
-            uniqueRules(~I)=[];
-            uniqueRules=strrep(uniqueRules,'(','');
-            uniqueRules=strrep(uniqueRules,')','');
-            uniqueRules=strrep(uniqueRules,' and ',':');
-            for i=1:numel(uniqueRules)
-                genes=regexp(uniqueRules(i),' or ','split');
-                genes=genes{1}(:);
-                %Check which ones are complexes
-                I=cellfun(@any,strfind(genes,':'));
-                geneComplexes=[geneComplexes;genes(I)];
-            end
-        end
-        geneComplexes=unique(geneComplexes);
-        if ~isempty(geneComplexes)
-            %Then add them as genes. There is a possiblity that a complex
-            %A&B is added as separate from B&A. This is not really an issue
-            %so this is not dealt with
-            for i=1:numel(geneComplexes)
-                modelSBML.fbc_geneProduct(numel(model.genes)+i)=modelSBML.fbc_geneProduct(1);
-                if isfield(modelSBML.fbc_geneProduct,'metaid')
-                    modelSBML.fbc_geneProduct(numel(model.genes)+i).metaid=geneComplexes{i};
-                end
-                if isfield(modelSBML.fbc_geneProduct,'fbc_id')
-                    modelSBML.fbc_geneProduct(numel(model.genes)+i).fbc_id=geneComplexes{i};
-                else
-                    modelSBML.fbc_geneProduct(i).fbc_label=modelSBML.fbc_geneProduct(i).fbc_id;
-                end
+        if isfield(modelSBML.fbc_geneProduct, 'fbc_name') && isfield(model,'proteins')
+            if ~isempty(model.proteins{i})
+                modelSBML.fbc_geneProduct(i).fbc_name=model.proteins{i};
             end
         end
     end
@@ -483,7 +462,7 @@ for i=1:numel(model.rxns)
     end
     
     if isfield(modelSBML.reaction,'metaid')
-        modelSBML.reaction(i).metaid=['R_' model.rxns{i}];
+        modelSBML.reaction(i).metaid=model.rxns{i};
     end
     
     %Export notes information
@@ -515,7 +494,7 @@ for i=1:numel(model.rxns)
     
     %Export annotation information from rxnMiriams
     if (~isempty(model.rxnMiriams{i}) && isfield(modelSBML.reaction(i),'annotation')) || ~isempty(model.eccodes{i})
-        modelSBML.reaction(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_R_' model.rxns{i} '">'];
+        modelSBML.reaction(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.rxns{i} '">'];
         modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation '<bqbiol:is><rdf:Bag>'];
         if ~isempty(model.eccodes{i})
             eccodes=regexp(model.eccodes{i},';','split');
@@ -530,7 +509,7 @@ for i=1:numel(model.rxns)
         modelSBML.reaction(i).name=model.rxnNames{i};
     end
     if isfield(modelSBML.reaction, 'id')
-        modelSBML.reaction(i).id=['R_' model.rxns{i}];
+        modelSBML.reaction(i).id=model.rxns{i};
     end
     
     %Add the information about reactants and products
@@ -582,7 +561,7 @@ if modelHasSubsystems
     modelSBML.groups_group.sboTerm = 633;
     tmpStruct=modelSBML.groups_group;
 
-    rxns=strcat('R_',model.rxns);
+    rxns=model.rxns;
     if ~any(cellfun(@iscell,model.subSystems))
         if ~any(~cellfun(@isempty,model.subSystems))
             subSystems = {};

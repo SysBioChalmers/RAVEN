@@ -223,140 +223,143 @@ This function is called by:
 0119 <span class="keyword">if</span> isfield(newModel,<span class="string">'geneShortNames'</span>)
 0120     newModel.geneShortNames(remInd) = [];
 0121 <span class="keyword">end</span>
-0122 <span class="keyword">if</span> isfield(newModel,<span class="string">'geneMiriams'</span>)
-0123     newModel.geneMiriams(remInd) = [];
+0122 <span class="keyword">if</span> isfield(newModel,<span class="string">'proteins'</span>)
+0123     newModel.proteins(remInd) = [];
 0124 <span class="keyword">end</span>
-0125 <span class="keyword">if</span> isfield(newModel,<span class="string">'geneFrom'</span>)
-0126     newModel.geneFrom(remInd) = [];
+0125 <span class="keyword">if</span> isfield(newModel,<span class="string">'geneMiriams'</span>)
+0126     newModel.geneMiriams(remInd) = [];
 0127 <span class="keyword">end</span>
-0128 <span class="keyword">if</span> isfield(newModel,<span class="string">'geneComps'</span>)
-0129     newModel.geneComps(remInd) = [];
+0128 <span class="keyword">if</span> isfield(newModel,<span class="string">'geneFrom'</span>)
+0129     newModel.geneFrom(remInd) = [];
 0130 <span class="keyword">end</span>
-0131 
-0132 
+0131 <span class="keyword">if</span> isfield(newModel,<span class="string">'geneComps'</span>)
+0132     newModel.geneComps(remInd) = [];
 0133 <span class="keyword">end</span>
 0134 
 0135 
-0136 
-0137 <a name="_sub1" href="#_subfunctions" class="code">function [updatedRule,rScore] = processSimpleRule(rule,genes,gScores,isozymeScoring,complexScoring)</a>
-0138 <span class="comment">% Either score or modify a reaction gene rule containig only ANDs or ORs.</span>
-0139 <span class="comment">%</span>
-0140 <span class="comment">% If the rule contains an enzyme complex (all ANDs), the complex will be</span>
-0141 <span class="comment">% scored based on the score of its subunits. Subunits without a score (NaN)</span>
-0142 <span class="comment">% will be excluded from the score calculation.</span>
-0143 <span class="comment">%</span>
-0144 <span class="comment">% If the rule contains only isozymes (all ORs), the negative-score genes</span>
-0145 <span class="comment">% will be removed from the rule. Isozymes without a score (NaN) will not be</span>
-0146 <span class="comment">% removed from the rule. The resuling rule will then be scored.</span>
-0147 
-0148 
-0149 <span class="comment">% get IDs and indices of genes involved in rule</span>
-0150 ruleGenes = unique(regexp(rule,<span class="string">'[^&amp;|\(\) ]+'</span>,<span class="string">'match'</span>));
-0151 [~,geneInd] = ismember(ruleGenes,genes);
-0152 
-0153 <span class="comment">% rules with one or no genes remain unchanged</span>
-0154 <span class="keyword">if</span> numel(ruleGenes) &lt; 2
-0155     rScore = gScores(geneInd);
-0156     updatedRule = rule;
-0157     <span class="keyword">return</span>
-0158 <span class="keyword">end</span>
-0159 
-0160 <span class="keyword">if</span> ~contains(rule,<span class="string">'&amp;'</span>)  <span class="comment">% rule contains isozymes</span>
-0161     
-0162     scoreMethod = isozymeScoring;
-0163     negInd = gScores(geneInd) &lt; 0;  <span class="comment">% NaNs will return false here</span>
-0164     <span class="keyword">if</span> all(negInd)
-0165         <span class="comment">% get the least negative gene, adding a small random value to avoid a tie</span>
-0166         [~,maxInd] = max(gScores(geneInd) + rand(size(geneInd))*(1e-8));
-0167         updatedRule = ruleGenes{maxInd};
-0168     <span class="keyword">elseif</span> sum(~negInd) == 1
-0169         updatedRule = ruleGenes{~negInd};
-0170     <span class="keyword">else</span>
-0171         updatedRule = strjoin(ruleGenes(~negInd),<span class="string">' | '</span>);
-0172         <span class="keyword">if</span> startsWith(rule,<span class="string">'('</span>)
-0173             updatedRule = [<span class="string">'('</span>,updatedRule,<span class="string">')'</span>];
-0174         <span class="keyword">end</span>
-0175     <span class="keyword">end</span>
-0176     
-0177     <span class="comment">% update ruleGenes and their indices</span>
-0178     ruleGenes = unique(regexp(updatedRule,<span class="string">'[^&amp;|\(\) ]+'</span>,<span class="string">'match'</span>));
-0179     [~,geneInd] = ismember(ruleGenes,genes);
-0180     
-0181 <span class="keyword">elseif</span> ~contains(rule,<span class="string">'|'</span>)  <span class="comment">% rule contains enzyme complex</span>
-0182     scoreMethod = complexScoring;
-0183     updatedRule = rule;
-0184 <span class="keyword">else</span>
-0185     error(<span class="string">'This function cannot handle rules with both &quot;OR&quot; and &quot;AND&quot; expressions.'</span>);
-0186 <span class="keyword">end</span>
-0187 
-0188 <span class="comment">% score rule</span>
-0189 <span class="keyword">switch</span> lower(scoreMethod)
-0190     <span class="keyword">case</span> <span class="string">'min'</span>
-0191         rScore = min(gScores(geneInd),[],<span class="string">'omitnan'</span>);
-0192     <span class="keyword">case</span> <span class="string">'max'</span>
-0193         rScore = max(gScores(geneInd),[],<span class="string">'omitnan'</span>);
-0194     <span class="keyword">case</span> <span class="string">'median'</span>
-0195         rScore = median(gScores(geneInd),<span class="string">'omitnan'</span>);
-0196     <span class="keyword">case</span> <span class="string">'average'</span>
-0197         rScore = mean(gScores(geneInd),<span class="string">'omitnan'</span>);
-0198 <span class="keyword">end</span>
-0199 
-0200 <span class="keyword">end</span>
-0201 
+0136 <span class="keyword">end</span>
+0137 
+0138 
+0139 
+0140 <a name="_sub1" href="#_subfunctions" class="code">function [updatedRule,rScore] = processSimpleRule(rule,genes,gScores,isozymeScoring,complexScoring)</a>
+0141 <span class="comment">% Either score or modify a reaction gene rule containig only ANDs or ORs.</span>
+0142 <span class="comment">%</span>
+0143 <span class="comment">% If the rule contains an enzyme complex (all ANDs), the complex will be</span>
+0144 <span class="comment">% scored based on the score of its subunits. Subunits without a score (NaN)</span>
+0145 <span class="comment">% will be excluded from the score calculation.</span>
+0146 <span class="comment">%</span>
+0147 <span class="comment">% If the rule contains only isozymes (all ORs), the negative-score genes</span>
+0148 <span class="comment">% will be removed from the rule. Isozymes without a score (NaN) will not be</span>
+0149 <span class="comment">% removed from the rule. The resuling rule will then be scored.</span>
+0150 
+0151 
+0152 <span class="comment">% get IDs and indices of genes involved in rule</span>
+0153 ruleGenes = unique(regexp(rule,<span class="string">'[^&amp;|\(\) ]+'</span>,<span class="string">'match'</span>));
+0154 [~,geneInd] = ismember(ruleGenes,genes);
+0155 
+0156 <span class="comment">% rules with one or no genes remain unchanged</span>
+0157 <span class="keyword">if</span> numel(ruleGenes) &lt; 2
+0158     rScore = gScores(geneInd);
+0159     updatedRule = rule;
+0160     <span class="keyword">return</span>
+0161 <span class="keyword">end</span>
+0162 
+0163 <span class="keyword">if</span> ~contains(rule,<span class="string">'&amp;'</span>)  <span class="comment">% rule contains isozymes</span>
+0164     
+0165     scoreMethod = isozymeScoring;
+0166     negInd = gScores(geneInd) &lt; 0;  <span class="comment">% NaNs will return false here</span>
+0167     <span class="keyword">if</span> all(negInd)
+0168         <span class="comment">% get the least negative gene, adding a small random value to avoid a tie</span>
+0169         [~,maxInd] = max(gScores(geneInd) + rand(size(geneInd))*(1e-8));
+0170         updatedRule = ruleGenes{maxInd};
+0171     <span class="keyword">elseif</span> sum(~negInd) == 1
+0172         updatedRule = ruleGenes{~negInd};
+0173     <span class="keyword">else</span>
+0174         updatedRule = strjoin(ruleGenes(~negInd),<span class="string">' | '</span>);
+0175         <span class="keyword">if</span> startsWith(rule,<span class="string">'('</span>)
+0176             updatedRule = [<span class="string">'('</span>,updatedRule,<span class="string">')'</span>];
+0177         <span class="keyword">end</span>
+0178     <span class="keyword">end</span>
+0179     
+0180     <span class="comment">% update ruleGenes and their indices</span>
+0181     ruleGenes = unique(regexp(updatedRule,<span class="string">'[^&amp;|\(\) ]+'</span>,<span class="string">'match'</span>));
+0182     [~,geneInd] = ismember(ruleGenes,genes);
+0183     
+0184 <span class="keyword">elseif</span> ~contains(rule,<span class="string">'|'</span>)  <span class="comment">% rule contains enzyme complex</span>
+0185     scoreMethod = complexScoring;
+0186     updatedRule = rule;
+0187 <span class="keyword">else</span>
+0188     error(<span class="string">'This function cannot handle rules with both &quot;OR&quot; and &quot;AND&quot; expressions.'</span>);
+0189 <span class="keyword">end</span>
+0190 
+0191 <span class="comment">% score rule</span>
+0192 <span class="keyword">switch</span> lower(scoreMethod)
+0193     <span class="keyword">case</span> <span class="string">'min'</span>
+0194         rScore = min(gScores(geneInd),[],<span class="string">'omitnan'</span>);
+0195     <span class="keyword">case</span> <span class="string">'max'</span>
+0196         rScore = max(gScores(geneInd),[],<span class="string">'omitnan'</span>);
+0197     <span class="keyword">case</span> <span class="string">'median'</span>
+0198         rScore = median(gScores(geneInd),<span class="string">'omitnan'</span>);
+0199     <span class="keyword">case</span> <span class="string">'average'</span>
+0200         rScore = mean(gScores(geneInd),<span class="string">'omitnan'</span>);
+0201 <span class="keyword">end</span>
 0202 
-0203 
-0204 <a name="_sub2" href="#_subfunctions" class="code">function updatedRule = processComplexRule(rule,genes,gScores,isozymeScoring,complexScoring)</a>
-0205 <span class="comment">% Update reactions containing both AND and OR expressions.</span>
-0206 <span class="comment">%</span>
-0207 <span class="comment">% Negative-score genes will be removed if they are isozymic, whereas they</span>
-0208 <span class="comment">% will not be removed if they are part of an enzyme complex. However, if</span>
-0209 <span class="comment">% the enzyme complex has a negative score, the entire complex will be</span>
-0210 <span class="comment">% removed, as long as it is not the only remaining element in the rule.</span>
-0211 
-0212 
-0213 <span class="comment">% Specify phrases to search for in the grRule. These phrases will find</span>
-0214 <span class="comment">% genes grouped by all ANDs (first phrase) or all ORs (second phrase).</span>
-0215 search_phrases = {<span class="string">'\([^&amp;|\(\) ]+( &amp; [^&amp;|\(\) ]+)+\)'</span>, <span class="string">'\([^&amp;|\(\) ]+( \| [^&amp;|\(\) ]+)+\)'</span>};
-0216 
-0217 <span class="comment">% initialize some variables</span>
-0218 subsets = {};  <span class="comment">% subsets are groups of genes grouped by all ANDs or all ORs</span>
-0219 c = 1;  <span class="comment">% counter to keep track of the group (subset) number</span>
-0220 r_orig = rule;  <span class="comment">% record original rule to determine when it stops changing</span>
-0221 <span class="keyword">for</span> k = 1:100  <span class="comment">% iterate some arbitrarily high number of times</span>
-0222     <span class="keyword">for</span> j = 1:length(search_phrases)
-0223         new_subset = regexp(rule,search_phrases{j},<span class="string">'match'</span>)';  <span class="comment">% extract subsets</span>
-0224         <span class="keyword">if</span> ~isempty(new_subset)
-0225             subsets = [subsets; new_subset];  <span class="comment">% append to list of subsets</span>
-0226             subset_nums = arrayfun(@num2str,(c:length(subsets))',<span class="string">'UniformOutput'</span>,false);  <span class="comment">% get group numbers to be assigned to the new subsets, and convert to strings</span>
-0227             rule = regexprep(rule,search_phrases{j},strcat(<span class="string">'#'</span>,subset_nums,<span class="string">'#'</span>),<span class="string">'once'</span>);  <span class="comment">% replace the subsets in the expression with their group numbers (enclosed by &quot;#&quot;s)</span>
-0228             c = c + length(new_subset);
-0229         <span class="keyword">end</span>
-0230     <span class="keyword">end</span>
-0231     <span class="keyword">if</span> isequal(rule,r_orig)
-0232         <span class="keyword">break</span>;  <span class="comment">% stop iterating when rule stops changing</span>
-0233     <span class="keyword">else</span>
-0234         r_orig = rule;
-0235     <span class="keyword">end</span>
-0236 <span class="keyword">end</span>
-0237 subsets{end+1} = rule;  <span class="comment">% add final state of rule as the last subset</span>
-0238 
-0239 <span class="comment">% score and update each subset, and append to gene list and gene scores</span>
-0240 <span class="keyword">for</span> i = 1:numel(subsets)
-0241     [subsets{i},subset_score] = <a href="#_sub1" class="code" title="subfunction [updatedRule,rScore] = processSimpleRule(rule,genes,gScores,isozymeScoring,complexScoring)">processSimpleRule</a>(subsets{i},genes,gScores,isozymeScoring,complexScoring);
-0242     gScores = [gScores; subset_score];
-0243     genes = [genes; {strcat(<span class="string">'#'</span>,num2str(i),<span class="string">'#'</span>)}];
-0244 <span class="keyword">end</span>
-0245 
-0246 <span class="comment">% reconstruct the rule from its updated subsets</span>
-0247 updatedRule = subsets{end};
-0248 <span class="keyword">for</span> i = c-1:-1:1
-0249     updatedRule = regexprep(updatedRule,strcat(<span class="string">'#'</span>,num2str(i),<span class="string">'#'</span>),subsets{i});
-0250 <span class="keyword">end</span>
-0251 
-0252 <span class="keyword">end</span>
-0253 
+0203 <span class="keyword">end</span>
+0204 
+0205 
+0206 
+0207 <a name="_sub2" href="#_subfunctions" class="code">function updatedRule = processComplexRule(rule,genes,gScores,isozymeScoring,complexScoring)</a>
+0208 <span class="comment">% Update reactions containing both AND and OR expressions.</span>
+0209 <span class="comment">%</span>
+0210 <span class="comment">% Negative-score genes will be removed if they are isozymic, whereas they</span>
+0211 <span class="comment">% will not be removed if they are part of an enzyme complex. However, if</span>
+0212 <span class="comment">% the enzyme complex has a negative score, the entire complex will be</span>
+0213 <span class="comment">% removed, as long as it is not the only remaining element in the rule.</span>
+0214 
+0215 
+0216 <span class="comment">% Specify phrases to search for in the grRule. These phrases will find</span>
+0217 <span class="comment">% genes grouped by all ANDs (first phrase) or all ORs (second phrase).</span>
+0218 search_phrases = {<span class="string">'\([^&amp;|\(\) ]+( &amp; [^&amp;|\(\) ]+)+\)'</span>, <span class="string">'\([^&amp;|\(\) ]+( \| [^&amp;|\(\) ]+)+\)'</span>};
+0219 
+0220 <span class="comment">% initialize some variables</span>
+0221 subsets = {};  <span class="comment">% subsets are groups of genes grouped by all ANDs or all ORs</span>
+0222 c = 1;  <span class="comment">% counter to keep track of the group (subset) number</span>
+0223 r_orig = rule;  <span class="comment">% record original rule to determine when it stops changing</span>
+0224 <span class="keyword">for</span> k = 1:100  <span class="comment">% iterate some arbitrarily high number of times</span>
+0225     <span class="keyword">for</span> j = 1:length(search_phrases)
+0226         new_subset = regexp(rule,search_phrases{j},<span class="string">'match'</span>)';  <span class="comment">% extract subsets</span>
+0227         <span class="keyword">if</span> ~isempty(new_subset)
+0228             subsets = [subsets; new_subset];  <span class="comment">% append to list of subsets</span>
+0229             subset_nums = arrayfun(@num2str,(c:length(subsets))',<span class="string">'UniformOutput'</span>,false);  <span class="comment">% get group numbers to be assigned to the new subsets, and convert to strings</span>
+0230             rule = regexprep(rule,search_phrases{j},strcat(<span class="string">'#'</span>,subset_nums,<span class="string">'#'</span>),<span class="string">'once'</span>);  <span class="comment">% replace the subsets in the expression with their group numbers (enclosed by &quot;#&quot;s)</span>
+0231             c = c + length(new_subset);
+0232         <span class="keyword">end</span>
+0233     <span class="keyword">end</span>
+0234     <span class="keyword">if</span> isequal(rule,r_orig)
+0235         <span class="keyword">break</span>;  <span class="comment">% stop iterating when rule stops changing</span>
+0236     <span class="keyword">else</span>
+0237         r_orig = rule;
+0238     <span class="keyword">end</span>
+0239 <span class="keyword">end</span>
+0240 subsets{end+1} = rule;  <span class="comment">% add final state of rule as the last subset</span>
+0241 
+0242 <span class="comment">% score and update each subset, and append to gene list and gene scores</span>
+0243 <span class="keyword">for</span> i = 1:numel(subsets)
+0244     [subsets{i},subset_score] = <a href="#_sub1" class="code" title="subfunction [updatedRule,rScore] = processSimpleRule(rule,genes,gScores,isozymeScoring,complexScoring)">processSimpleRule</a>(subsets{i},genes,gScores,isozymeScoring,complexScoring);
+0245     gScores = [gScores; subset_score];
+0246     genes = [genes; {strcat(<span class="string">'#'</span>,num2str(i),<span class="string">'#'</span>)}];
+0247 <span class="keyword">end</span>
+0248 
+0249 <span class="comment">% reconstruct the rule from its updated subsets</span>
+0250 updatedRule = subsets{end};
+0251 <span class="keyword">for</span> i = c-1:-1:1
+0252     updatedRule = regexprep(updatedRule,strcat(<span class="string">'#'</span>,num2str(i),<span class="string">'#'</span>),subsets{i});
+0253 <span class="keyword">end</span>
 0254 
-0255</pre></div>
+0255 <span class="keyword">end</span>
+0256 
+0257 
+0258</pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

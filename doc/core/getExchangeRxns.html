@@ -28,19 +28,43 @@
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> getExchangeRxns
-   Retrieves the exchange reactions from a model
+   Retrieves the exchange reactions from a model. Exchange reactions are
+   identified by having either no substrates or products.
 
+ Input:
    model               a model structure
-   reactionType        retrieve all reactions ('both'), only production
-                       ('out'), or only consumption ('in') (optional, default
-                       'both')
+   reactionType        which exchange reactions should be returned
+                       'all'     all reactions, irrespective of reaction
+                                 bounds
+                       'uptake'  reactions with bounds that imply that
+                                 only uptake are allowed. Reaction
+                                 direction, upper and lower bounds are
+                                 all considered
+                       'excrete' reactions with bounds that imply that
+                                 only excretion are allowed. Reaction
+                                 direction, upper and lower bounds are
+                                 all considered
+                       'reverse' reactions with non-zero upper and lower
+                                 bounds that imply that both uptake and
+                                 excretion are allowed
+                       'blocked' reactions that have zero upper and lower
+                                 bounds, not allowing any flux
+                       'in'      reactions where the boundary metabolite
+                                 is the substrate of the reaction, a
+                                 positive flux value would imply uptake,
+                                 but reaction bounds are not considered
+                       'out'     reactions where the boundary metabolite
+                                 is the substrate of the reaction, a
+                                 positive flux value would imply uptake,
+                                 but reaction bounds are not considered.
 
+ Output:
    exchangeRxns        cell array with the IDs of the exchange reactions
    exchangeRxnsIndexes vector with the indexes of the exchange reactions
 
-   Exchange reactions are defined as reactions which involve only products
-   or only reactants. If the unconstrained field is present, then that is
-   used instead.
+ Note:
+   The union of 'in' and 'out' equals 'all'. Also, the union of 'uptake',
+   'excrete', 'reverse' and 'blocked' equals all.
 
  Usage: [exchangeRxns,exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)</pre></div>
 
@@ -59,51 +83,88 @@ This function is called by:
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)</a>
 0002 <span class="comment">% getExchangeRxns</span>
-0003 <span class="comment">%   Retrieves the exchange reactions from a model</span>
-0004 <span class="comment">%</span>
-0005 <span class="comment">%   model               a model structure</span>
-0006 <span class="comment">%   reactionType        retrieve all reactions ('both'), only production</span>
-0007 <span class="comment">%                       ('out'), or only consumption ('in') (optional, default</span>
-0008 <span class="comment">%                       'both')</span>
-0009 <span class="comment">%</span>
-0010 <span class="comment">%   exchangeRxns        cell array with the IDs of the exchange reactions</span>
-0011 <span class="comment">%   exchangeRxnsIndexes vector with the indexes of the exchange reactions</span>
-0012 <span class="comment">%</span>
-0013 <span class="comment">%   Exchange reactions are defined as reactions which involve only products</span>
-0014 <span class="comment">%   or only reactants. If the unconstrained field is present, then that is</span>
-0015 <span class="comment">%   used instead.</span>
-0016 <span class="comment">%</span>
-0017 <span class="comment">% Usage: [exchangeRxns,exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)</span>
-0018 
-0019 <span class="keyword">if</span> nargin&lt;2
-0020     reactionType=<span class="string">'both'</span>;
-0021 <span class="keyword">else</span>
-0022     reactionType=char(reactionType);
-0023 <span class="keyword">end</span>
-0024 
-0025 hasNoProducts=sparse(numel(model.rxns),1);
-0026 hasNoReactants=sparse(numel(model.rxns),1);
-0027 
-0028 <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
-0029     <span class="keyword">if</span> strcmpi(reactionType,<span class="string">'both'</span>) || strcmpi(reactionType,<span class="string">'out'</span>)
-0030         [~, I]=find(model.S(model.unconstrained~=0,:)&gt;0);
-0031         hasNoProducts(I)=true;
-0032     <span class="keyword">end</span>
-0033     <span class="keyword">if</span> strcmpi(reactionType,<span class="string">'both'</span>) || strcmpi(reactionType,<span class="string">'in'</span>)
-0034         [~, I]=find(model.S(model.unconstrained~=0,:)&lt;0);
-0035         hasNoReactants(I)=true;
-0036     <span class="keyword">end</span>
-0037 <span class="keyword">else</span>
-0038     <span class="keyword">if</span> strcmpi(reactionType,<span class="string">'both'</span>) || strcmpi(reactionType,<span class="string">'out'</span>)
-0039         hasNoProducts=sum((model.S&gt;0))==0;
-0040     <span class="keyword">end</span>
-0041     <span class="keyword">if</span> strcmpi(reactionType,<span class="string">'both'</span>) || strcmpi(reactionType,<span class="string">'in'</span>)
-0042         hasNoReactants=sum((model.S&lt;0))==0;
-0043     <span class="keyword">end</span>
-0044 <span class="keyword">end</span>
-0045 exchangeRxnsIndexes=find(hasNoProducts(:) | hasNoReactants(:));
-0046 exchangeRxns=model.rxns(exchangeRxnsIndexes);
-0047 <span class="keyword">end</span></pre></div>
+0003 <span class="comment">%   Retrieves the exchange reactions from a model. Exchange reactions are</span>
+0004 <span class="comment">%   identified by having either no substrates or products.</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% Input:</span>
+0007 <span class="comment">%   model               a model structure</span>
+0008 <span class="comment">%   reactionType        which exchange reactions should be returned</span>
+0009 <span class="comment">%                       'all'     all reactions, irrespective of reaction</span>
+0010 <span class="comment">%                                 bounds</span>
+0011 <span class="comment">%                       'uptake'  reactions with bounds that imply that</span>
+0012 <span class="comment">%                                 only uptake are allowed. Reaction</span>
+0013 <span class="comment">%                                 direction, upper and lower bounds are</span>
+0014 <span class="comment">%                                 all considered</span>
+0015 <span class="comment">%                       'excrete' reactions with bounds that imply that</span>
+0016 <span class="comment">%                                 only excretion are allowed. Reaction</span>
+0017 <span class="comment">%                                 direction, upper and lower bounds are</span>
+0018 <span class="comment">%                                 all considered</span>
+0019 <span class="comment">%                       'reverse' reactions with non-zero upper and lower</span>
+0020 <span class="comment">%                                 bounds that imply that both uptake and</span>
+0021 <span class="comment">%                                 excretion are allowed</span>
+0022 <span class="comment">%                       'blocked' reactions that have zero upper and lower</span>
+0023 <span class="comment">%                                 bounds, not allowing any flux</span>
+0024 <span class="comment">%                       'in'      reactions where the boundary metabolite</span>
+0025 <span class="comment">%                                 is the substrate of the reaction, a</span>
+0026 <span class="comment">%                                 positive flux value would imply uptake,</span>
+0027 <span class="comment">%                                 but reaction bounds are not considered</span>
+0028 <span class="comment">%                       'out'     reactions where the boundary metabolite</span>
+0029 <span class="comment">%                                 is the substrate of the reaction, a</span>
+0030 <span class="comment">%                                 positive flux value would imply uptake,</span>
+0031 <span class="comment">%                                 but reaction bounds are not considered.</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">% Output:</span>
+0034 <span class="comment">%   exchangeRxns        cell array with the IDs of the exchange reactions</span>
+0035 <span class="comment">%   exchangeRxnsIndexes vector with the indexes of the exchange reactions</span>
+0036 <span class="comment">%</span>
+0037 <span class="comment">% Note:</span>
+0038 <span class="comment">%   The union of 'in' and 'out' equals 'all'. Also, the union of 'uptake',</span>
+0039 <span class="comment">%   'excrete', 'reverse' and 'blocked' equals all.</span>
+0040 <span class="comment">%</span>
+0041 <span class="comment">% Usage: [exchangeRxns,exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)</span>
+0042 
+0043 <span class="keyword">if</span> nargin&lt;2
+0044     reactionType=<span class="string">'all'</span>;
+0045 <span class="keyword">else</span>
+0046     reactionType=char(reactionType);
+0047 <span class="keyword">end</span>
+0048 
+0049 <span class="comment">% Find exchange reactions</span>
+0050 <span class="keyword">if</span> isfield(model, <span class="string">'unconstrained'</span>)
+0051     [~, I]=find(model.S(model.unconstrained~=0,:)&gt;0);
+0052     hasNoProd(I)=true;
+0053     [~, I]=find(model.S(model.unconstrained~=0,:)&lt;0);
+0054     hasNoSubs(I)=true;
+0055 <span class="keyword">else</span>
+0056     hasNoProd = transpose(find(sum(model.S&gt;0)==0));
+0057     hasNoSubs = transpose(find(sum(model.S&lt;0)==0));
+0058 <span class="keyword">end</span>
+0059 allExch   = [hasNoProd; hasNoSubs];
+0060 
+0061 <span class="keyword">switch</span> reactionType
+0062     <span class="keyword">case</span> {<span class="string">'both'</span>,<span class="string">'all'</span>} <span class="comment">% For legacy reasons, 'both' is also allowed</span>
+0063         exchangeRxnsIndexes = allExch;
+0064     <span class="keyword">case</span> <span class="string">'in'</span>
+0065         exchangeRxnsIndexes = hasNoSubs;
+0066     <span class="keyword">case</span> <span class="string">'out'</span>
+0067         exchangeRxnsIndexes = hasNoProd;
+0068     <span class="keyword">case</span> <span class="string">'blocked'</span>
+0069         exchangeRxnsIndexes = allExch(model.lb(allExch) == 0 &amp; model.ub(allExch) == 0);
+0070     <span class="keyword">case</span> <span class="string">'reverse'</span>
+0071         exchangeRxnsIndexes = allExch(model.lb(allExch) &lt; 0 &amp; model.ub(allExch) &gt; 0);
+0072     <span class="keyword">case</span> <span class="string">'uptake'</span>
+0073         
+0074         exchangeRxnsIndexes = allExch([(model.lb(hasNoProd) &lt; 0 &amp; model.ub(hasNoProd) &lt;= 0); <span class="keyword">...</span>
+0075                               (model.lb(hasNoSubs) &gt;= 0 &amp; model.ub(hasNoSubs) &gt; 0)]);
+0076     <span class="keyword">case</span> <span class="string">'excrete'</span>
+0077         exchangeRxnsIndexes = allExch([(model.lb(hasNoProd) &gt;= 0 &amp; model.ub(hasNoProd) &gt; 0); <span class="keyword">...</span>
+0078                               (model.lb(hasNoSubs) &lt; 0 &amp; model.ub(hasNoSubs) &lt;= 0)]);
+0079     <span class="keyword">otherwise</span>
+0080         error(<span class="string">'Invalid reactionType specified'</span>)
+0081 <span class="keyword">end</span>
+0082 exchangeRxnsIndexes = sort(exchangeRxnsIndexes);
+0083 exchangeRxns = model.rxns(exchangeRxnsIndexes);
+0084 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

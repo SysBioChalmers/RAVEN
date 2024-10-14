@@ -544,77 +544,80 @@ This function is called by:
 0391 <span class="keyword">if</span> isfield(model,<span class="string">'geneShortNames'</span>)
 0392     model.geneShortNames(I)=[];
 0393 <span class="keyword">end</span>
-0394 <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
-0395     model.geneMiriams(I)=[];
+0394 <span class="keyword">if</span> isfield(model,<span class="string">'proteins'</span>)
+0395     model.proteins(I)=[];
 0396 <span class="keyword">end</span>
-0397 <span class="keyword">if</span> isfield(model,<span class="string">'geneFrom'</span>)
-0398     model.geneFrom(I)=[];
+0397 <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
+0398     model.geneMiriams(I)=[];
 0399 <span class="keyword">end</span>
-0400 <span class="keyword">if</span> isfield(model,<span class="string">'geneComps'</span>)
-0401     model.geneComps(I)=[];
+0400 <span class="keyword">if</span> isfield(model,<span class="string">'geneFrom'</span>)
+0401     model.geneFrom(I)=[];
 0402 <span class="keyword">end</span>
-0403 
-0404 <span class="comment">%At this stage the model will contain some exchange reactions but probably</span>
-0405 <span class="comment">%not all (and maybe zero). This can be inconvenient, so all exchange</span>
-0406 <span class="comment">%reactions from the reference model are added, except for those which</span>
-0407 <span class="comment">%involve metabolites that are not in the model.</span>
-0408 
-0409 <span class="comment">%First delete and included exchange reactions in order to prevent the order</span>
-0410 <span class="comment">%from changing</span>
-0411 model=removeReactions(model,getExchangeRxns(model));
-0412 
-0413 <span class="comment">%Create a model with only the exchange reactions in refModel</span>
-0414 excModel=removeReactions(refModel,setdiff(refModel.rxns,getExchangeRxns(refModel)),true,true);
+0403 <span class="keyword">if</span> isfield(model,<span class="string">'geneComps'</span>)
+0404     model.geneComps(I)=[];
+0405 <span class="keyword">end</span>
+0406 
+0407 <span class="comment">%At this stage the model will contain some exchange reactions but probably</span>
+0408 <span class="comment">%not all (and maybe zero). This can be inconvenient, so all exchange</span>
+0409 <span class="comment">%reactions from the reference model are added, except for those which</span>
+0410 <span class="comment">%involve metabolites that are not in the model.</span>
+0411 
+0412 <span class="comment">%First delete and included exchange reactions in order to prevent the order</span>
+0413 <span class="comment">%from changing</span>
+0414 model=removeReactions(model,getExchangeRxns(model));
 0415 
-0416 <span class="comment">%Find the metabolites there which are not exchange metabolites and which do</span>
-0417 <span class="comment">%not exist in the output model</span>
-0418 I=~ismember(excModel.mets,model.mets) &amp; excModel.unconstrained==0;
-0419 
-0420 <span class="comment">%Then find those reactions and delete them</span>
-0421 [~, J]=find(excModel.S(I,:));
-0422 excModel=removeReactions(excModel,J,true,true);
-0423 
-0424 <span class="comment">%Merge with the output model</span>
-0425 model=mergeModels({model;excModel},<span class="string">'metNames'</span>);
-0426 model.id=<span class="string">'INITModel'</span>;
-0427 model.name=[<span class="string">'Automatically generated model for '</span> tissue];
-0428 <span class="keyword">if</span> any(celltype)
-0429     model.name=[model.name <span class="string">' - '</span> celltype];
-0430 <span class="keyword">end</span>
-0431 
-0432 <span class="keyword">if</span> printReport==true
-0433     <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(model,<span class="string">'Final model statistics'</span>,hpaData,arrayData,tissue,celltype);
-0434 <span class="keyword">end</span>
-0435 
-0436 <span class="comment">%Add information about essential reactions and reactions included for</span>
-0437 <span class="comment">%gap-filling and return a taskReport</span>
-0438 <span class="keyword">if</span> ~isempty(taskStructure)
-0439     I=find(taskReport.ok); <span class="comment">%Ignore failed tasks</span>
-0440     <span class="keyword">for</span> i=1:numel(I)
-0441         taskReport.essential{I(i),1}=cModel.rxns(essentialRxnMat(:,I(i)));
-0442         taskReport.gapfill{I(i),1}=refModelNoExc.rxns(addedRxnMat(:,i));
-0443     <span class="keyword">end</span>
-0444 <span class="keyword">else</span>
-0445     taskReport=[];
-0446 <span class="keyword">end</span>
-0447 
-0448 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
-0449 [grRules,rxnGeneMat] = standardizeGrRules(model,true);
-0450 model.grRules = grRules;
-0451 model.rxnGeneMat = rxnGeneMat;
-0452 <span class="keyword">end</span>
-0453 
-0454 <span class="comment">%This is for printing a summary of a model</span>
-0455 <a name="_sub1" href="#_subfunctions" class="code">function [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)</a>
-0456 [a, b]=scoreModel(model,hpaData,arrayData,tissue,celltype);
-0457 rxnS=mean(a);
-0458 geneS=mean(b(~isinf(b)));
-0459 fprintf([name <span class="string">':\n'</span>]);
-0460 fprintf([<span class="string">'\t'</span> num2str(numel(model.rxns)) <span class="string">' reactions, '</span> num2str(numel(model.genes)) <span class="string">' genes\n'</span>]);
-0461 fprintf([<span class="string">'\tMean reaction score: '</span> num2str(rxnS) <span class="string">'\n'</span>]);
-0462 fprintf([<span class="string">'\tMean gene score: '</span> num2str(geneS) <span class="string">'\n'</span>]);
-0463 fprintf([<span class="string">'\tReactions with positive scores: '</span> num2str(100*sum(a&gt;0)/numel(a)) <span class="string">'%%\n\n'</span>]);
-0464 <span class="keyword">end</span></pre></div>
+0416 <span class="comment">%Create a model with only the exchange reactions in refModel</span>
+0417 excModel=removeReactions(refModel,setdiff(refModel.rxns,getExchangeRxns(refModel)),true,true);
+0418 
+0419 <span class="comment">%Find the metabolites there which are not exchange metabolites and which do</span>
+0420 <span class="comment">%not exist in the output model</span>
+0421 I=~ismember(excModel.mets,model.mets) &amp; excModel.unconstrained==0;
+0422 
+0423 <span class="comment">%Then find those reactions and delete them</span>
+0424 [~, J]=find(excModel.S(I,:));
+0425 excModel=removeReactions(excModel,J,true,true);
+0426 
+0427 <span class="comment">%Merge with the output model</span>
+0428 model=mergeModels({model;excModel},<span class="string">'metNames'</span>);
+0429 model.id=<span class="string">'INITModel'</span>;
+0430 model.name=[<span class="string">'Automatically generated model for '</span> tissue];
+0431 <span class="keyword">if</span> any(celltype)
+0432     model.name=[model.name <span class="string">' - '</span> celltype];
+0433 <span class="keyword">end</span>
+0434 
+0435 <span class="keyword">if</span> printReport==true
+0436     <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(model,<span class="string">'Final model statistics'</span>,hpaData,arrayData,tissue,celltype);
+0437 <span class="keyword">end</span>
+0438 
+0439 <span class="comment">%Add information about essential reactions and reactions included for</span>
+0440 <span class="comment">%gap-filling and return a taskReport</span>
+0441 <span class="keyword">if</span> ~isempty(taskStructure)
+0442     I=find(taskReport.ok); <span class="comment">%Ignore failed tasks</span>
+0443     <span class="keyword">for</span> i=1:numel(I)
+0444         taskReport.essential{I(i),1}=cModel.rxns(essentialRxnMat(:,I(i)));
+0445         taskReport.gapfill{I(i),1}=refModelNoExc.rxns(addedRxnMat(:,i));
+0446     <span class="keyword">end</span>
+0447 <span class="keyword">else</span>
+0448     taskReport=[];
+0449 <span class="keyword">end</span>
+0450 
+0451 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
+0452 [grRules,rxnGeneMat] = standardizeGrRules(model,true);
+0453 model.grRules = grRules;
+0454 model.rxnGeneMat = rxnGeneMat;
+0455 <span class="keyword">end</span>
+0456 
+0457 <span class="comment">%This is for printing a summary of a model</span>
+0458 <a name="_sub1" href="#_subfunctions" class="code">function [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)</a>
+0459 [a, b]=scoreModel(model,hpaData,arrayData,tissue,celltype);
+0460 rxnS=mean(a);
+0461 geneS=mean(b(~isinf(b)));
+0462 fprintf([name <span class="string">':\n'</span>]);
+0463 fprintf([<span class="string">'\t'</span> num2str(numel(model.rxns)) <span class="string">' reactions, '</span> num2str(numel(model.genes)) <span class="string">' genes\n'</span>]);
+0464 fprintf([<span class="string">'\tMean reaction score: '</span> num2str(rxnS) <span class="string">'\n'</span>]);
+0465 fprintf([<span class="string">'\tMean gene score: '</span> num2str(geneS) <span class="string">'\n'</span>]);
+0466 fprintf([<span class="string">'\tReactions with positive scores: '</span> num2str(100*sum(a&gt;0)/numel(a)) <span class="string">'%%\n\n'</span>]);
+0467 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

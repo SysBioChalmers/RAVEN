@@ -24,21 +24,24 @@
 <div class="box"><strong>importModel</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings) </strong></div>
+<div class="box"><strong>function model=importModel(fileName,removeExcMets,removePrefix,supressWarnings) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> importModel
-   Import a constraint-based model from a SBML file
+   Import a constraint-based model from an SBML file.
 
  Input:
-   fileName        a SBML file to import. A dialog window will open if 
+   fileName        a SBML file to import. A dialog window will open if
                    no file name is specified.
    removeExcMets   true if exchange metabolites should be removed. This is
                    needed to be able to run simulations, but it could also
                    be done using simplifyModel at a later stage (optional,
                    default true)
-   isSBML2COBRA    true if the SBML file is in the old COBRA Toolbox
-                   format (SBML Level 2) (optional, default false)
+   removePrefix    true if identifier prefixes should be removed when
+                   loading the model: G_ for genes, R_ for reactions,
+                   M_ for metabolites, and C_ for compartments. These are
+                   only removed if all identifiers of a certain type
+                   contain the prefix. (optional, default true)
    supressWarnings true if warnings regarding the model structure should
                    be supressed (optional, default false)
 
@@ -75,6 +78,7 @@
        geneComps        compartments for genes
        geneMiriams      structure with MIRIAM information about the genes
        geneShortNames   gene alternative names (e.g. ERG10)
+       proteins         protein associated to each gene
        metNames         metabolite description
        metComps         compartments for metabolites
        inchis           InChI-codes for metabolites
@@ -83,11 +87,11 @@
        metCharges       metabolite charge
        unconstrained    true if the metabolite is an exchange metabolite
 
- A number of consistency checks are performed in order to ensure that the
+ Note: A number of consistency checks are performed in order to ensure that the
  model is valid. Take these warnings seriously and modify the model
  structure to solve them.
 
- Usage: model = importModel(fileName, removeExcMets, isSBML2COBRA, supressWarnings)</pre></div>
+ Usage: model = importModel(fileName, removeExcMets, removePrefix, supressWarnings)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -104,9 +108,9 @@ This function is called by:
 <li><a href="#_sub1" class="code">function matchGenes=getGeneList(grRules)</a></li><li><a href="#_sub2" class="code">function fieldContent=parseNote(searchString,fieldName)</a></li><li><a href="#_sub3" class="code">function fieldContent=parseAnnotation(searchString,startString,midString,fieldName)</a></li><li><a href="#_sub4" class="code">function miriamStruct=parseMiriam(searchString)</a></li><li><a href="#_sub5" class="code">function miriam = addSBOtoMiriam(miriam,sboTerm)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function model=importModel(fileName,removeExcMets,isSBML2COBRA,supressWarnings)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function model=importModel(fileName,removeExcMets,removePrefix,supressWarnings)</a>
 0002 <span class="comment">% importModel</span>
-0003 <span class="comment">%   Import a constraint-based model from a SBML file</span>
+0003 <span class="comment">%   Import a constraint-based model from an SBML file.</span>
 0004 <span class="comment">%</span>
 0005 <span class="comment">% Input:</span>
 0006 <span class="comment">%   fileName        a SBML file to import. A dialog window will open if</span>
@@ -115,1218 +119,1171 @@ This function is called by:
 0009 <span class="comment">%                   needed to be able to run simulations, but it could also</span>
 0010 <span class="comment">%                   be done using simplifyModel at a later stage (optional,</span>
 0011 <span class="comment">%                   default true)</span>
-0012 <span class="comment">%   isSBML2COBRA    true if the SBML file is in the old COBRA Toolbox</span>
-0013 <span class="comment">%                   format (SBML Level 2) (optional, default false)</span>
-0014 <span class="comment">%   supressWarnings true if warnings regarding the model structure should</span>
-0015 <span class="comment">%                   be supressed (optional, default false)</span>
-0016 <span class="comment">%</span>
-0017 <span class="comment">% Output:</span>
-0018 <span class="comment">%   model</span>
-0019 <span class="comment">%       id               model ID</span>
-0020 <span class="comment">%       name             name of model contents</span>
-0021 <span class="comment">%       annotation       additional information about model</span>
-0022 <span class="comment">%       rxns             reaction ids</span>
-0023 <span class="comment">%       mets             metabolite ids</span>
-0024 <span class="comment">%       S                stoichiometric matrix</span>
-0025 <span class="comment">%       lb               lower bounds</span>
-0026 <span class="comment">%       ub               upper bounds</span>
-0027 <span class="comment">%       rev              reversibility vector</span>
-0028 <span class="comment">%       c                objective coefficients</span>
-0029 <span class="comment">%       b                equality constraints for the metabolite equations</span>
-0030 <span class="comment">%       comps            compartment ids</span>
-0031 <span class="comment">%       compNames        compartment names</span>
-0032 <span class="comment">%       compOutside      the id (as in comps) for the compartment</span>
-0033 <span class="comment">%                        surrounding each of the compartments</span>
-0034 <span class="comment">%       compMiriams      structure with MIRIAM information about the</span>
-0035 <span class="comment">%                        compartments</span>
-0036 <span class="comment">%       rxnNames         reaction description</span>
-0037 <span class="comment">%       rxnComps         compartments for reactions</span>
-0038 <span class="comment">%       grRules          reaction to gene rules in text form</span>
-0039 <span class="comment">%       rxnGeneMat       reaction-to-gene mapping in sparse matrix form</span>
-0040 <span class="comment">%       subSystems       subsystem name for each reaction</span>
-0041 <span class="comment">%       eccodes          EC-codes for the reactions</span>
-0042 <span class="comment">%       rxnMiriams       structure with MIRIAM information about the reactions</span>
-0043 <span class="comment">%       rxnNotes         reaction notes</span>
-0044 <span class="comment">%       rxnReferences    reaction references</span>
-0045 <span class="comment">%       rxnConfidenceScores reaction confidence scores</span>
-0046 <span class="comment">%       genes            list of all genes</span>
-0047 <span class="comment">%       geneComps        compartments for genes</span>
-0048 <span class="comment">%       geneMiriams      structure with MIRIAM information about the genes</span>
-0049 <span class="comment">%       geneShortNames   gene alternative names (e.g. ERG10)</span>
-0050 <span class="comment">%       metNames         metabolite description</span>
-0051 <span class="comment">%       metComps         compartments for metabolites</span>
-0052 <span class="comment">%       inchis           InChI-codes for metabolites</span>
-0053 <span class="comment">%       metFormulas      metabolite chemical formula</span>
-0054 <span class="comment">%       metMiriams       structure with MIRIAM information about the metabolites</span>
-0055 <span class="comment">%       metCharges       metabolite charge</span>
-0056 <span class="comment">%       unconstrained    true if the metabolite is an exchange metabolite</span>
-0057 <span class="comment">%</span>
-0058 <span class="comment">% A number of consistency checks are performed in order to ensure that the</span>
-0059 <span class="comment">% model is valid. Take these warnings seriously and modify the model</span>
-0060 <span class="comment">% structure to solve them.</span>
+0012 <span class="comment">%   removePrefix    true if identifier prefixes should be removed when</span>
+0013 <span class="comment">%                   loading the model: G_ for genes, R_ for reactions,</span>
+0014 <span class="comment">%                   M_ for metabolites, and C_ for compartments. These are</span>
+0015 <span class="comment">%                   only removed if all identifiers of a certain type</span>
+0016 <span class="comment">%                   contain the prefix. (optional, default true)</span>
+0017 <span class="comment">%   supressWarnings true if warnings regarding the model structure should</span>
+0018 <span class="comment">%                   be supressed (optional, default false)</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Output:</span>
+0021 <span class="comment">%   model</span>
+0022 <span class="comment">%       id               model ID</span>
+0023 <span class="comment">%       name             name of model contents</span>
+0024 <span class="comment">%       annotation       additional information about model</span>
+0025 <span class="comment">%       rxns             reaction ids</span>
+0026 <span class="comment">%       mets             metabolite ids</span>
+0027 <span class="comment">%       S                stoichiometric matrix</span>
+0028 <span class="comment">%       lb               lower bounds</span>
+0029 <span class="comment">%       ub               upper bounds</span>
+0030 <span class="comment">%       rev              reversibility vector</span>
+0031 <span class="comment">%       c                objective coefficients</span>
+0032 <span class="comment">%       b                equality constraints for the metabolite equations</span>
+0033 <span class="comment">%       comps            compartment ids</span>
+0034 <span class="comment">%       compNames        compartment names</span>
+0035 <span class="comment">%       compOutside      the id (as in comps) for the compartment</span>
+0036 <span class="comment">%                        surrounding each of the compartments</span>
+0037 <span class="comment">%       compMiriams      structure with MIRIAM information about the</span>
+0038 <span class="comment">%                        compartments</span>
+0039 <span class="comment">%       rxnNames         reaction description</span>
+0040 <span class="comment">%       rxnComps         compartments for reactions</span>
+0041 <span class="comment">%       grRules          reaction to gene rules in text form</span>
+0042 <span class="comment">%       rxnGeneMat       reaction-to-gene mapping in sparse matrix form</span>
+0043 <span class="comment">%       subSystems       subsystem name for each reaction</span>
+0044 <span class="comment">%       eccodes          EC-codes for the reactions</span>
+0045 <span class="comment">%       rxnMiriams       structure with MIRIAM information about the reactions</span>
+0046 <span class="comment">%       rxnNotes         reaction notes</span>
+0047 <span class="comment">%       rxnReferences    reaction references</span>
+0048 <span class="comment">%       rxnConfidenceScores reaction confidence scores</span>
+0049 <span class="comment">%       genes            list of all genes</span>
+0050 <span class="comment">%       geneComps        compartments for genes</span>
+0051 <span class="comment">%       geneMiriams      structure with MIRIAM information about the genes</span>
+0052 <span class="comment">%       geneShortNames   gene alternative names (e.g. ERG10)</span>
+0053 <span class="comment">%       proteins         protein associated to each gene</span>
+0054 <span class="comment">%       metNames         metabolite description</span>
+0055 <span class="comment">%       metComps         compartments for metabolites</span>
+0056 <span class="comment">%       inchis           InChI-codes for metabolites</span>
+0057 <span class="comment">%       metFormulas      metabolite chemical formula</span>
+0058 <span class="comment">%       metMiriams       structure with MIRIAM information about the metabolites</span>
+0059 <span class="comment">%       metCharges       metabolite charge</span>
+0060 <span class="comment">%       unconstrained    true if the metabolite is an exchange metabolite</span>
 0061 <span class="comment">%</span>
-0062 <span class="comment">% Usage: model = importModel(fileName, removeExcMets, isSBML2COBRA, supressWarnings)</span>
-0063 
-0064 <span class="keyword">if</span> nargin&lt;1 || isempty(fileName)
-0065     [fileName, pathName] = uigetfile({<span class="string">'*.xml;*.sbml'</span>}, <span class="string">'Please select the model file'</span>);
-0066     <span class="keyword">if</span> fileName == 0
-0067         error(<span class="string">'You should select a model file'</span>)
-0068     <span class="keyword">else</span>
-0069         fileName = fullfile(pathName,fileName);
-0070     <span class="keyword">end</span>
-0071 <span class="keyword">end</span>
-0072 fileName=char(fileName);
-0073 <span class="keyword">if</span> nargin&lt;2
-0074     removeExcMets=true;
+0062 <span class="comment">% Note: A number of consistency checks are performed in order to ensure that the</span>
+0063 <span class="comment">% model is valid. Take these warnings seriously and modify the model</span>
+0064 <span class="comment">% structure to solve them.</span>
+0065 <span class="comment">%</span>
+0066 <span class="comment">% Usage: model = importModel(fileName, removeExcMets, removePrefix, supressWarnings)</span>
+0067 
+0068 <span class="keyword">if</span> nargin&lt;1 || isempty(fileName)
+0069     [fileName, pathName] = uigetfile({<span class="string">'*.xml;*.sbml'</span>}, <span class="string">'Please select the model file'</span>);
+0070     <span class="keyword">if</span> fileName == 0
+0071         error(<span class="string">'You should select a model file'</span>)
+0072     <span class="keyword">else</span>
+0073         fileName = fullfile(pathName,fileName);
+0074     <span class="keyword">end</span>
 0075 <span class="keyword">end</span>
-0076 
-0077 <span class="keyword">if</span> nargin&lt;3
-0078     isSBML2COBRA=false;
+0076 fileName=char(fileName);
+0077 <span class="keyword">if</span> nargin&lt;2 || isempty(removeExcMets)
+0078     removeExcMets=true;
 0079 <span class="keyword">end</span>
 0080 
-0081 <span class="keyword">if</span> nargin&lt;4
-0082     supressWarnings=false;
+0081 <span class="keyword">if</span> nargin&lt;3 || isempty(removePrefix)
+0082     removePrefix=true;
 0083 <span class="keyword">end</span>
 0084 
-0085 <span class="keyword">if</span> ~isfile(fileName)
-0086     error(<span class="string">'SBML file %s cannot be found'</span>,string(fileName));
+0085 <span class="keyword">if</span> nargin&lt;4
+0086     supressWarnings=false;
 0087 <span class="keyword">end</span>
 0088 
-0089 <span class="comment">%This is to match the order of the fields to those you get from importing</span>
-0090 <span class="comment">%from Excel</span>
-0091 model=[];
-0092 model.id=[];
-0093 model.name=[];
-0094 model.annotation=[];
-0095 model.rxns={};
-0096 model.mets={};
-0097 model.S=[];
-0098 model.lb=[];
-0099 model.ub=[];
-0100 model.rev=[];
-0101 model.c=[];
-0102 model.b=[];
-0103 model.comps={};
-0104 model.compNames={};
-0105 model.compOutside={};
-0106 model.compMiriams={};
-0107 model.rxnNames={};
-0108 model.rxnComps=[];
-0109 model.grRules={};
-0110 model.rxnGeneMat=[];
-0111 model.subSystems={};
-0112 model.eccodes={};
-0113 model.rxnMiriams={};
-0114 model.rxnNotes={};
-0115 model.rxnReferences={};
-0116 model.rxnConfidenceScores=[];
-0117 model.genes={};
-0118 model.geneComps=[];
-0119 model.geneMiriams={};
-0120 model.geneShortNames={};
-0121 model.metNames={};
-0122 model.metComps=[];
-0123 model.inchis={};
-0124 model.metFormulas={};
-0125 model.metMiriams={};
-0126 model.metCharges=[];
-0127 model.unconstrained=[];
-0128 
-0129 <span class="comment">%Load the model using libSBML</span>
-0130 [ravenDir,prevDir]=findRAVENroot();
-0131 fileName=<a href="checkFileExistence.html" class="code" title="function files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)">checkFileExistence</a>(fileName,1);
-0132 modelSBML = TranslateSBML_RAVEN(fileName,0,0,[1 1]);
-0133 
-0134 <span class="keyword">if</span> isempty(modelSBML)
-0135     EM=<span class="string">'There is a problem with the SBML file. Try using the SBML Validator at http://sbml.org/Facilities/Validator'</span>;
-0136     dispEM(EM);
-0137 <span class="keyword">end</span>
-0138 
-0139 <span class="comment">%Remove the preceding strings for reactions, compartments and</span>
-0140 <span class="comment">%reactants/products in 'reaction' field. The strings for metabolites, genes</span>
-0141 <span class="comment">%and complexes are not removed, as we will need them later to identify them</span>
-0142 <span class="comment">%from 'species' field</span>
-0143 <span class="keyword">for</span> i=1:numel(modelSBML.reaction)
-0144     modelSBML.reaction(i).name=regexprep(modelSBML.reaction(i).name,<span class="string">'^R_'</span>,<span class="string">''</span>);
-0145     modelSBML.reaction(i).id=regexprep(modelSBML.reaction(i).id,<span class="string">'^R_'</span>,<span class="string">''</span>);
-0146     <span class="keyword">if</span> isfield(modelSBML.reaction(i),<span class="string">'compartment'</span>)
-0147         modelSBML.reaction(i).compartment=regexprep(modelSBML.reaction(i).compartment,<span class="string">'^C_'</span>,<span class="string">''</span>);
-0148     <span class="keyword">end</span>
-0149     <span class="keyword">for</span> j=1:numel(modelSBML.reaction(i).reactant)
-0150         modelSBML.reaction(i).reactant(j).species=regexprep(modelSBML.reaction(i).reactant(j).species,<span class="string">'^M_'</span>,<span class="string">''</span>);
-0151     <span class="keyword">end</span>
-0152     <span class="keyword">for</span> j=1:numel(modelSBML.reaction(i).product)
-0153         modelSBML.reaction(i).product(j).species=regexprep(modelSBML.reaction(i).product(j).species,<span class="string">'^M_'</span>,<span class="string">''</span>);
-0154     <span class="keyword">end</span>
-0155 <span class="keyword">end</span>
-0156 
-0157 <span class="comment">%Retrieve compartment names and IDs</span>
-0158 compartmentNames=cell(numel(modelSBML.compartment),1);
-0159 compartmentIDs=cell(numel(modelSBML.compartment),1);
-0160 compartmentOutside=cell(numel(modelSBML.compartment),1);
-0161 compartmentMiriams=cell(numel(modelSBML.compartment),1);
+0089 fileName=<a href="checkFileExistence.html" class="code" title="function files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)">checkFileExistence</a>(fileName,1);
+0090 <span class="comment">% If path contains non-ASCII characters, copy file to tempdir first, as</span>
+0091 <span class="comment">% libSBML is known to have problems with this on Windows:</span>
+0092 <span class="comment">% https://sbml.org/software/libsbml/libsbml-docs/known-pitfalls/#matlab-on-windows-has-issues-with-unicode-filenames</span>
+0093 <span class="keyword">if</span> ispc &amp;&amp; any(double(fileName)&gt;128)
+0094     [~,originalFile,ext] = fileparts(fileName);
+0095     tempFile = fullfile(tempdir,[originalFile ext]);
+0096     copyfile(fileName,tempFile);
+0097     fileName = tempFile;
+0098 <span class="keyword">end</span>
+0099 
+0100 <span class="comment">%This is to match the order of the fields to those you get from importing</span>
+0101 <span class="comment">%from Excel</span>
+0102 model=[];
+0103 model.id=[];
+0104 model.name=[];
+0105 model.annotation=[];
+0106 model.rxns={};
+0107 model.mets={};
+0108 model.S=[];
+0109 model.lb=[];
+0110 model.ub=[];
+0111 model.rev=[];
+0112 model.c=[];
+0113 model.b=[];
+0114 model.comps={};
+0115 model.compNames={};
+0116 model.compOutside={};
+0117 model.compMiriams={};
+0118 model.rxnNames={};
+0119 model.rxnComps=[];
+0120 model.grRules={};
+0121 model.rxnGeneMat=[];
+0122 model.subSystems={};
+0123 model.eccodes={};
+0124 model.rxnMiriams={};
+0125 model.rxnNotes={};
+0126 model.rxnReferences={};
+0127 model.rxnConfidenceScores=[];
+0128 model.genes={};
+0129 model.geneComps=[];
+0130 model.geneMiriams={};
+0131 model.geneShortNames={};
+0132 model.proteins={};
+0133 model.metNames={};
+0134 model.metComps=[];
+0135 model.inchis={};
+0136 model.metFormulas={};
+0137 model.metMiriams={};
+0138 model.metCharges=[];
+0139 model.unconstrained=[];
+0140 
+0141 <span class="comment">%Load the model using libSBML</span>
+0142 [modelSBML,errorMsg] = TranslateSBML_RAVEN(fileName,0,0,[1 1]);
+0143 <span class="keyword">if</span> exist(<span class="string">'tempFile'</span>,<span class="string">'var'</span>)
+0144     delete(tempFile)
+0145 <span class="keyword">end</span>
+0146 
+0147 <span class="keyword">if</span> isempty(modelSBML)
+0148     EM=[<span class="string">'There is a problem with the SBML file. Try using the SBML Validator at http://sbml.org/Facilities/Validator.\nlibSBML reports: '</span>, errorMsg.message];
+0149     dispEM(EM);
+0150 <span class="keyword">end</span>
+0151 
+0152 <span class="comment">%Retrieve compartment names and IDs</span>
+0153 compartmentNames=cell(numel(modelSBML.compartment),1);
+0154 compartmentIDs=cell(numel(modelSBML.compartment),1);
+0155 compartmentOutside=cell(numel(modelSBML.compartment),1);
+0156 compartmentMiriams=cell(numel(modelSBML.compartment),1);
+0157 
+0158 <span class="keyword">if</span> isfield(modelSBML.compartment,<span class="string">'sboTerm'</span>) &amp;&amp; numel(unique([modelSBML.compartment.sboTerm])) == 1
+0159     <span class="comment">%If all the SBO terms are identical, don't add them to compMiriams</span>
+0160     modelSBML.compartment = rmfield(modelSBML.compartment,<span class="string">'sboTerm'</span>);
+0161 <span class="keyword">end</span>
 0162 
-0163 <span class="keyword">if</span> isfield(modelSBML.compartment,<span class="string">'sboTerm'</span>) &amp;&amp; numel(unique([modelSBML.compartment.sboTerm])) == 1
-0164     <span class="comment">%If all the SBO terms are identical, don't add them to compMiriams</span>
-0165     modelSBML.compartment = rmfield(modelSBML.compartment,<span class="string">'sboTerm'</span>);
-0166 <span class="keyword">end</span>
-0167     
-0168 <span class="keyword">for</span> i=1:numel(modelSBML.compartment)
-0169     compartmentNames{i}=modelSBML.compartment(i).name;
-0170     compartmentIDs{i}=regexprep(modelSBML.compartment(i).id,<span class="string">'^C_'</span>,<span class="string">''</span>);
-0171     <span class="keyword">if</span> isfield(modelSBML.compartment(i),<span class="string">'outside'</span>)
-0172         <span class="keyword">if</span> ~isempty(modelSBML.compartment(i).outside)
-0173             compartmentOutside{i}=regexprep(modelSBML.compartment(i).outside,<span class="string">'^C_'</span>,<span class="string">''</span>);
-0174         <span class="keyword">else</span>
-0175             compartmentOutside{i}=<span class="string">''</span>;
-0176         <span class="keyword">end</span>
-0177     <span class="keyword">else</span>
-0178         compartmentOutside{i}=[];
-0179     <span class="keyword">end</span>
-0180     
-0181     <span class="keyword">if</span> isfield(modelSBML.compartment(i),<span class="string">'annotation'</span>)
-0182         compartmentMiriams{i}=<a href="#_sub4" class="code" title="subfunction miriamStruct=parseMiriam(searchString)">parseMiriam</a>(modelSBML.compartment(i).annotation);
-0183     <span class="keyword">else</span>
-0184         compartmentMiriams{i}=[];
-0185     <span class="keyword">end</span>
-0186     
-0187     <span class="keyword">if</span> isfield(modelSBML.compartment(i),<span class="string">'sboTerm'</span>) &amp;&amp; ~(modelSBML.compartment(i).sboTerm==-1)
-0188         compartmentMiriams{i} = <a href="#_sub5" class="code" title="subfunction miriam = addSBOtoMiriam(miriam,sboTerm)">addSBOtoMiriam</a>(compartmentMiriams{i},modelSBML.compartment(i).sboTerm);
-0189     <span class="keyword">end</span>
+0163 <span class="keyword">for</span> i=1:numel(modelSBML.compartment)
+0164     compartmentNames{i}=modelSBML.compartment(i).name;
+0165     compartmentIDs{i}=modelSBML.compartment(i).id;
+0166     <span class="keyword">if</span> isfield(modelSBML.compartment(i),<span class="string">'outside'</span>)
+0167         <span class="keyword">if</span> ~isempty(modelSBML.compartment(i).outside)
+0168             compartmentOutside{i}=modelSBML.compartment(i).outside;
+0169         <span class="keyword">else</span>
+0170             compartmentOutside{i}=<span class="string">''</span>;
+0171         <span class="keyword">end</span>
+0172     <span class="keyword">else</span>
+0173         compartmentOutside{i}=[];
+0174     <span class="keyword">end</span>
+0175 
+0176     <span class="keyword">if</span> isfield(modelSBML.compartment(i),<span class="string">'annotation'</span>)
+0177         compartmentMiriams{i}=<a href="#_sub4" class="code" title="subfunction miriamStruct=parseMiriam(searchString)">parseMiriam</a>(modelSBML.compartment(i).annotation);
+0178     <span class="keyword">else</span>
+0179         compartmentMiriams{i}=[];
+0180     <span class="keyword">end</span>
+0181 
+0182     <span class="keyword">if</span> isfield(modelSBML.compartment(i),<span class="string">'sboTerm'</span>) &amp;&amp; ~(modelSBML.compartment(i).sboTerm==-1)
+0183         compartmentMiriams{i} = <a href="#_sub5" class="code" title="subfunction miriam = addSBOtoMiriam(miriam,sboTerm)">addSBOtoMiriam</a>(compartmentMiriams{i},modelSBML.compartment(i).sboTerm);
+0184     <span class="keyword">end</span>
+0185 <span class="keyword">end</span>
+0186 
+0187 <span class="comment">%If there are no compartment names then use compartment id as name</span>
+0188 <span class="keyword">if</span> all(cellfun(@isempty,compartmentNames))
+0189     compartmentNames=compartmentIDs;
 0190 <span class="keyword">end</span>
 0191 
-0192 <span class="comment">%If there are no compartment names then use compartment id as name</span>
-0193 <span class="keyword">if</span> all(cellfun(@isempty,compartmentNames))
-0194     compartmentNames=compartmentIDs;
-0195 <span class="keyword">end</span>
-0196 
-0197 <span class="comment">%Retrieve info on metabolites, genes, complexes</span>
-0198 metaboliteNames={};
-0199 metaboliteIDs={};
-0200 metaboliteCompartments={};
-0201 metaboliteUnconstrained=[];
-0202 metaboliteFormula={};
-0203 metaboliteInChI={};
-0204 metaboliteMiriams={};
-0205 metaboliteCharges=[];
-0206 
-0207 geneNames={};
-0208 geneIDs={};
-0209 geneMiriams={};
-0210 geneShortNames={};
-0211 geneCompartments={};
-0212 complexIDs={};
-0213 complexNames={};
-0214 
-0215 <span class="comment">%If the file is not a COBRA Toolbox model. According to the format</span>
-0216 <span class="comment">%specified in the yeast consensus model both metabolites and genes are a</span>
-0217 <span class="comment">%type of 'species'. The metabolites have names starting with 'M_' and genes</span>
-0218 <span class="comment">%with 'E_'</span>
-0219 geneSBOs = [];
-0220 metSBOs = [];
-0221 <span class="comment">%Regex of compartment names, later to be used to remove from metabolite</span>
-0222 <span class="comment">%names if present as suffix.</span>
-0223 regexCompNames = [<span class="string">'\s?\[(('</span> strjoin({modelSBML.compartment.name},<span class="string">')|('</span>) <span class="string">'))\]$'</span>];
-0224 <span class="keyword">for</span> i=1:numel(modelSBML.species)
-0225     <span class="keyword">if</span> ~isSBML2COBRA
-0226         <span class="keyword">if</span> length(modelSBML.species(i).id)&gt;=2 &amp;&amp; strcmpi(modelSBML.species(i).id(1:2),<span class="string">'E_'</span>)
-0227             geneNames{numel(geneNames)+1,1}=modelSBML.species(i).name;
-0228             
-0229             <span class="comment">%The &quot;E_&quot; is included in the ID. This is because it's only used</span>
-0230             <span class="comment">%internally in this file and it makes the matching a little</span>
-0231             <span class="comment">%smoother</span>
-0232             geneIDs{numel(geneIDs)+1,1}=modelSBML.species(i).id;
-0233             geneCompartments{numel(geneCompartments)+1,1}=regexprep(modelSBML.species(i).compartment,<span class="string">'^C_'</span>,<span class="string">''</span>);
-0234             
-0235             <span class="comment">%Get Miriam structure</span>
-0236             <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'annotation'</span>)
-0237                 <span class="comment">%Get Miriam info</span>
-0238                 geneMiriam=<a href="#_sub4" class="code" title="subfunction miriamStruct=parseMiriam(searchString)">parseMiriam</a>(modelSBML.species(i).annotation);
-0239                 geneMiriams{numel(geneMiriams)+1,1}=geneMiriam;
-0240             <span class="keyword">else</span>
-0241                 geneMiriams{numel(geneMiriams)+1,1}=[];
-0242             <span class="keyword">end</span>
-0243             
-0244             <span class="comment">%Protein short names (for example ERG10) are saved as SHORT</span>
-0245             <span class="comment">%NAME: NAME in the notes-section of metabolites for SBML Level</span>
-0246             <span class="comment">%2 and as PROTEIN_ASSOCIATION for each reaction in SBML Level 2</span>
-0247             <span class="comment">%COBRA Toolbox format. For now only the SHORT NAME is loaded</span>
-0248             <span class="comment">%and no mapping takes place</span>
-0249             <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'notes'</span>)
-0250                 geneShortNames{numel(geneShortNames)+1,1}=<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.species(i).notes,<span class="string">'SHORT NAME'</span>);
-0251             <span class="keyword">else</span>
-0252                 geneShortNames{numel(geneShortNames)+1,1}=<span class="string">''</span>;
-0253             <span class="keyword">end</span>
-0254             
-0255             <span class="comment">%Get SBO term</span>
-0256             <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'sboTerm'</span>) &amp;&amp; ~(modelSBML.species(i).sboTerm==-1)
-0257                 geneSBOs(end+1,1) = modelSBML.species(i).sboTerm;
-0258             <span class="keyword">end</span>
-0259         <span class="keyword">elseif</span> length(modelSBML.species(i).id)&gt;=2 &amp;&amp; strcmpi(modelSBML.species(i).id(1:3),<span class="string">'Cx_'</span>)
-0260             <span class="comment">%If it's a complex keep the ID and name</span>
-0261             complexIDs=[complexIDs;modelSBML.species(i).id];
-0262             complexNames=[complexNames;modelSBML.species(i).name];
-0263         <span class="keyword">else</span>
-0264             <span class="comment">%If it is not gene or complex, then it must be a metabolite</span>
-0265             metaboliteNames{numel(metaboliteNames)+1,1}=modelSBML.species(i).name;
-0266             metaboliteIDs{numel(metaboliteIDs)+1,1}=regexprep(modelSBML.species(i).id,<span class="string">'^M_'</span>,<span class="string">''</span>);
-0267             metaboliteCompartments{numel(metaboliteCompartments)+1,1}=regexprep(modelSBML.species(i).compartment,<span class="string">'^C_'</span>,<span class="string">''</span>);
-0268             metaboliteUnconstrained(numel(metaboliteUnconstrained)+1,1)=modelSBML.species(i).boundaryCondition;
-0269             
-0270             <span class="comment">%For each metabolite retrieve the formula and the InChI code if</span>
-0271             <span class="comment">%available First add the InChI code and the formula from the</span>
-0272             <span class="comment">%InChI. This allows for overwriting the formula by setting the</span>
-0273             <span class="comment">%actual formula field</span>
-0274             <span class="keyword">if</span> ~isempty(modelSBML.species(i).annotation)
-0275                 <span class="comment">%Get the formula if available</span>
-0276                 startString=<span class="string">'&gt;InChI='</span>;
-0277                 endString=<span class="string">'&lt;/in:inchi&gt;'</span>;
-0278                 formStart=strfind(modelSBML.species(i).annotation,startString);
-0279                 <span class="keyword">if</span> isempty(formStart)
-0280                     startString=<span class="string">'InChI='</span>;
-0281                     endString=<span class="string">'&quot;/&gt;'</span>;
-0282                 <span class="keyword">end</span>
-0283                 formStart=strfind(modelSBML.species(i).annotation,startString);
-0284                 <span class="keyword">if</span> ~isempty(formStart)
-0285                     formEnd=strfind(modelSBML.species(i).annotation,endString);
-0286                     formEndIndex=find(formEnd&gt;formStart, 1 );
-0287                     formula=modelSBML.species(i).annotation(formStart+numel(startString):formEnd(formEndIndex)-1);
-0288                     metaboliteInChI{numel(metaboliteInChI)+1,1}=formula;
-0289                     
-0290                     <span class="comment">%The composition is most often present between the</span>
-0291                     <span class="comment">%first and second &quot;/&quot; in the model. In some simple</span>
-0292                     <span class="comment">%molecules, such as salts, there is no second &quot;/&quot;. The</span>
-0293                     <span class="comment">%formula is then assumed to be to the end of the string</span>
-0294                     compositionIndexes=strfind(formula,<span class="string">'/'</span>);
-0295                     <span class="keyword">if</span> numel(compositionIndexes)&gt;1
-0296                         metaboliteFormula{numel(metaboliteFormula)+1,1}=<span class="keyword">...</span>
-0297                             formula(compositionIndexes(1)+1:compositionIndexes(2)-1);
-0298                     <span class="keyword">else</span>
-0299                         <span class="keyword">if</span> numel(compositionIndexes)==1
-0300                             <span class="comment">%Probably a simple molecule which can have only</span>
-0301                             <span class="comment">%one conformation</span>
-0302                             metaboliteFormula{numel(metaboliteFormula)+1,1}=<span class="keyword">...</span>
-0303                                 formula(compositionIndexes(1)+1:numel(formula));
-0304                         <span class="keyword">else</span>
-0305                             metaboliteFormula{numel(metaboliteFormula)+1,1}=<span class="string">''</span>;
-0306                         <span class="keyword">end</span>
-0307                     <span class="keyword">end</span>
-0308                 <span class="keyword">elseif</span> isfield(modelSBML.species(i),<span class="string">'fbc_chemicalFormula'</span>)
-0309                     metaboliteInChI{numel(metaboliteInChI)+1,1}=<span class="string">''</span>;
-0310                     <span class="keyword">if</span> ~isempty(modelSBML.species(i).fbc_chemicalFormula)
-0311                         <span class="comment">%Cannot extract InChi from formula, so remains</span>
-0312                         <span class="comment">%empty</span>
-0313                         metaboliteFormula{numel(metaboliteFormula)+1,1}=modelSBML.species(i).fbc_chemicalFormula;
-0314                     <span class="keyword">else</span>
-0315                         metaboliteFormula{numel(metaboliteFormula)+1,1}=<span class="string">''</span>;
-0316                     <span class="keyword">end</span>
-0317                 <span class="keyword">else</span>
-0318                     metaboliteInChI{numel(metaboliteInChI)+1,1}=<span class="string">''</span>;
-0319                     metaboliteFormula{numel(metaboliteFormula)+1,1}=<span class="string">''</span>;
-0320                 <span class="keyword">end</span>
-0321                 
-0322                 <span class="comment">%Get Miriam info</span>
-0323                 metMiriam=<a href="#_sub4" class="code" title="subfunction miriamStruct=parseMiriam(searchString)">parseMiriam</a>(modelSBML.species(i).annotation);
-0324                 metaboliteMiriams{numel(metaboliteMiriams)+1,1}=metMiriam;
-0325             <span class="keyword">else</span>
-0326                 metaboliteInChI{numel(metaboliteInChI)+1,1}=<span class="string">''</span>;
-0327                 <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'notes'</span>)
-0328                     metaboliteFormula{numel(metaboliteFormula)+1,1}=<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.species(i).notes,<span class="string">'FORMULA'</span>);
-0329                 <span class="keyword">else</span>
-0330                     metaboliteFormula{numel(metaboliteFormula)+1,1}=<span class="string">''</span>;
-0331                 <span class="keyword">end</span>
-0332                 metaboliteMiriams{numel(metaboliteMiriams)+1,1}=[];
-0333             <span class="keyword">end</span>
-0334             <span class="keyword">if</span> ~isempty(modelSBML.species(i).notes)
-0335                 <span class="keyword">if</span> ~isfield(modelSBML.species(i),<span class="string">'annotation'</span>)
-0336                     metaboliteFormula{numel(metaboliteFormula)+1,1}=<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.species(i).notes,<span class="string">'FORMULA'</span>);
-0337                 <span class="keyword">end</span>
-0338             <span class="keyword">elseif</span> ~isfield(modelSBML.species(i),<span class="string">'annotation'</span>)
-0339                 metaboliteFormula{numel(metaboliteFormula)+1,1}=<span class="string">''</span>;
-0340             <span class="keyword">end</span>
-0341             <span class="comment">%Get SBO term</span>
-0342             <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'sboTerm'</span>) &amp;&amp; ~(modelSBML.species(i).sboTerm==-1)
-0343                 metSBOs(end+1,1) = modelSBML.species(i).sboTerm;
-0344             <span class="keyword">end</span>
-0345         <span class="keyword">end</span>
-0346         
-0347     <span class="keyword">elseif</span> isSBML2COBRA
-0348         <span class="comment">%The metabolite names are assumed to be M_NAME_COMPOSITION or</span>
-0349         <span class="comment">%_NAME_COMPOSITION or NAME_COMPOSITION or NAME. Regular expressions</span>
-0350         <span class="comment">%are used that only NAME_COMPOSITION or NAME would be possible</span>
-0351         
-0352         modelSBML.species(i).name=regexprep(modelSBML.species(i).name,<span class="string">'^M_'</span>,<span class="string">''</span>);
-0353         modelSBML.species(i).name=regexprep(modelSBML.species(i).name,<span class="string">'^_'</span>,<span class="string">''</span>);
-0354         underscoreIndex=strfind(modelSBML.species(i).name,<span class="string">'_'</span>);
-0355         
-0356         metaboliteNames{numel(metaboliteNames)+1,1}=modelSBML.species(i).name;
-0357         
-0358         metaboliteIDs{numel(metaboliteIDs)+1,1}=regexprep(modelSBML.species(i).id,<span class="string">'^M_'</span>,<span class="string">''</span>);
-0359         metaboliteCompartments{numel(metaboliteCompartments)+1,1}=regexprep(modelSBML.species(i).compartment,<span class="string">'^C_'</span>,<span class="string">''</span>);
-0360         
-0361         <span class="comment">%I think that COBRA doesn't set the boundary condition, but rather</span>
-0362         <span class="comment">%uses name_b. Check for either</span>
-0363         metaboliteUnconstrained(numel(metaboliteUnconstrained)+1,1)=modelSBML.species(i).boundaryCondition;
-0364         <span class="keyword">if</span> strcmp(metaboliteIDs{end}(max(end-1,1):end),<span class="string">'_b'</span>)
-0365             metaboliteUnconstrained(end)=1;
-0366         <span class="keyword">end</span>
-0367         
-0368         <span class="comment">%Get the formula</span>
-0369         <span class="keyword">if</span> max(underscoreIndex)&lt;length(modelSBML.species(i).name)
-0370             metaboliteFormula{numel(metaboliteFormula)+1,1}=modelSBML.species(i).name(max(underscoreIndex)+1:length(modelSBML.species(i).name));
-0371         <span class="keyword">else</span>
-0372             metaboliteFormula{numel(metaboliteFormula)+1,1}=<span class="string">''</span>;
-0373         <span class="keyword">end</span>
-0374         
-0375         <span class="comment">%The old COBRA version sometimes has composition information in the</span>
-0376         <span class="comment">%notes instead</span>
-0377         <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'notes'</span>) &amp;&amp; ~isempty(<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.species(i).notes,<span class="string">'FORMULA'</span>))
-0378             metaboliteFormula{numel(metaboliteFormula)+1,1}=<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.species(i).notes,<span class="string">'FORMULA'</span>);
-0379         <span class="keyword">end</span>
-0380         
-0381         <span class="comment">%Get Miriam info</span>
-0382         <span class="keyword">if</span> ~isempty(modelSBML.species(i).annotation)
-0383             metMiriam=<a href="#_sub4" class="code" title="subfunction miriamStruct=parseMiriam(searchString)">parseMiriam</a>(modelSBML.species(i).annotation);    
-0384         <span class="keyword">else</span>
-0385             metMiriam=[];
-0386         <span class="keyword">end</span>
-0387         metaboliteMiriams{numel(metaboliteMiriams)+1,1}=metMiriam;
-0388         
-0389         <span class="comment">%Get SBO term</span>
-0390         <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'sboTerm'</span>) &amp;&amp; ~(modelSBML.species(i).sboTerm==-1)
-0391             metSBOs(end+1,1) = modelSBML.species(i).sboTerm;
-0392         <span class="keyword">end</span>
-0393     <span class="keyword">end</span>
-0394     <span class="comment">%The following lines are executed regardless isSBML2COBRA setting</span>
-0395     <span class="keyword">if</span> isempty(modelSBML.species(i).id) || ~strcmpi(modelSBML.species(i).id(1:2),<span class="string">'E_'</span>)
-0396         <span class="keyword">if</span> isempty(modelSBML.species(i).id) || ~strcmpi(modelSBML.species(i).id(1:3),<span class="string">'Cx_'</span>)
-0397             <span class="comment">%Remove trailing [compartment] from metabolite name if present</span>
-0398             metaboliteNames{<span class="keyword">end</span>,1}=regexprep(metaboliteNames{<span class="keyword">end</span>,1},regexCompNames,<span class="string">''</span>);
-0399             metaboliteNames{<span class="keyword">end</span>,1}=regexprep(metaboliteNames{<span class="keyword">end</span>,1},<span class="string">'^M_'</span>,<span class="string">''</span>);
-0400             <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'fbc_charge'</span>)
-0401                 <span class="keyword">if</span> ~isempty(modelSBML.species(i).fbc_charge) &amp;&amp; modelSBML.species(i).isSetfbc_charge
-0402                     metaboliteCharges(numel(metaboliteCharges)+1,1)=double(modelSBML.species(i).fbc_charge);
-0403                 <span class="keyword">else</span>
-0404                     <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'notes'</span>)
-0405                         <span class="keyword">if</span> strfind(modelSBML.species(i).notes,<span class="string">'CHARGE'</span>)
-0406                             metaboliteCharges(numel(metaboliteCharges)+1,1)=str2double(<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.species(i).notes,<span class="string">'CHARGE'</span>));
-0407                         <span class="keyword">else</span>
-0408                             metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
-0409                         <span class="keyword">end</span>
-0410                     <span class="keyword">else</span>
-0411                         metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
-0412                     <span class="keyword">end</span>
-0413                 <span class="keyword">end</span>
-0414             <span class="keyword">elseif</span> isfield(modelSBML.species(i),<span class="string">'notes'</span>)
-0415                 <span class="keyword">if</span> strfind(modelSBML.species(i).notes,<span class="string">'CHARGE'</span>)
-0416                     metaboliteCharges(numel(metaboliteCharges)+1,1)=str2double(<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.species(i).notes,<span class="string">'CHARGE'</span>));
-0417                 <span class="keyword">else</span>
-0418                     metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
-0419                 <span class="keyword">end</span>
-0420             <span class="keyword">else</span>
-0421                 metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
-0422             <span class="keyword">end</span>
-0423             <span class="comment">%Additional information from FBC format Chemical formula</span>
-0424             <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'fbc_chemicalFormula'</span>)
-0425                 <span class="keyword">if</span> ~isempty(modelSBML.species(i).fbc_chemicalFormula)
-0426                     metaboliteFormula{numel(metaboliteFormula),1}=modelSBML.species(i).fbc_chemicalFormula;
-0427                 <span class="keyword">end</span>
-0428             <span class="keyword">end</span>
-0429         <span class="keyword">end</span>
-0430     <span class="keyword">end</span>
-0431 <span class="keyword">end</span>
-0432 
-0433 <span class="comment">%Add SBO terms to gene and metabolite miriam fields</span>
-0434 <span class="keyword">if</span> numel(unique(geneSBOs)) &gt; 1  <span class="comment">% don't add if they're all identical</span>
-0435     <span class="keyword">for</span> i = 1:numel(geneNames)
-0436         geneMiriams{i} = <a href="#_sub5" class="code" title="subfunction miriam = addSBOtoMiriam(miriam,sboTerm)">addSBOtoMiriam</a>(geneMiriams{i},geneSBOs(i));
-0437     <span class="keyword">end</span>
-0438 <span class="keyword">end</span>
-0439 <span class="keyword">if</span> numel(unique(metSBOs)) &gt; 1
-0440     <span class="keyword">for</span> i = 1:numel(metaboliteNames)
-0441         metaboliteMiriams{i} = <a href="#_sub5" class="code" title="subfunction miriam = addSBOtoMiriam(miriam,sboTerm)">addSBOtoMiriam</a>(metaboliteMiriams{i},metSBOs(i));
+0192 <span class="comment">%Retrieve info on metabolites, genes, complexes</span>
+0193 metaboliteNames={};
+0194 metaboliteIDs={};
+0195 metaboliteCompartments={};
+0196 metaboliteUnconstrained=[];
+0197 metaboliteFormula={};
+0198 metaboliteInChI={};
+0199 metaboliteMiriams={};
+0200 metaboliteCharges=[];
+0201 
+0202 geneNames={};
+0203 geneIDs={};
+0204 geneMiriams={};
+0205 geneShortNames={};
+0206 proteins={};
+0207 geneCompartments={};
+0208 complexIDs={};
+0209 complexNames={};
+0210 
+0211 <span class="comment">%If the file is not a COBRA Toolbox model. According to the format</span>
+0212 <span class="comment">%specified in the yeast consensus model both metabolites and genes are a</span>
+0213 <span class="comment">%type of 'species'. The metabolites have names starting with 'M_' and genes</span>
+0214 <span class="comment">%with 'E_'</span>
+0215 geneSBOs = [];
+0216 metSBOs = [];
+0217 <span class="comment">%Regex of compartment names, later to be used to remove from metabolite</span>
+0218 <span class="comment">%names if present as suffix.</span>
+0219 regexCompNames = [<span class="string">'\s?\[(('</span> strjoin({modelSBML.compartment.name},<span class="string">')|('</span>) <span class="string">'))\]$'</span>];
+0220 <span class="keyword">for</span> i=1:numel(modelSBML.species)
+0221     <span class="keyword">if</span> length(modelSBML.species(i).id)&gt;=2 &amp;&amp; strcmpi(modelSBML.species(i).id(1:2),<span class="string">'E_'</span>)
+0222         geneNames{numel(geneNames)+1,1}=modelSBML.species(i).name;
+0223 
+0224         <span class="comment">%The &quot;E_&quot; is included in the ID. This is because it's only used</span>
+0225         <span class="comment">%internally in this file and it makes the matching a little</span>
+0226         <span class="comment">%smoother</span>
+0227         geneIDs{numel(geneIDs)+1,1}=modelSBML.species(i).id;
+0228         geneCompartments{numel(geneCompartments)+1,1}=modelSBML.species(i).compartment;
+0229 
+0230         <span class="comment">%Get Miriam structure</span>
+0231         <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'annotation'</span>)
+0232             <span class="comment">%Get Miriam info</span>
+0233             geneMiriam=<a href="#_sub4" class="code" title="subfunction miriamStruct=parseMiriam(searchString)">parseMiriam</a>(modelSBML.species(i).annotation);
+0234             geneMiriams{numel(geneMiriams)+1,1}=geneMiriam;
+0235         <span class="keyword">else</span>
+0236             geneMiriams{numel(geneMiriams)+1,1}=[];
+0237         <span class="keyword">end</span>
+0238 
+0239         <span class="comment">%Protein short names (for example ERG10) are saved as SHORT</span>
+0240         <span class="comment">%NAME: NAME in the notes-section of metabolites for SBML Level</span>
+0241         <span class="comment">%2 and as PROTEIN_ASSOCIATION for each reaction in SBML Level 2</span>
+0242         <span class="comment">%COBRA Toolbox format. For now only the SHORT NAME is loaded</span>
+0243         <span class="comment">%and no mapping takes place</span>
+0244         <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'notes'</span>)
+0245             geneShortNames{numel(geneShortNames)+1,1}=<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.species(i).notes,<span class="string">'SHORT NAME'</span>);
+0246         <span class="keyword">else</span>
+0247             geneShortNames{numel(geneShortNames)+1,1}=<span class="string">''</span>;
+0248         <span class="keyword">end</span>
+0249 
+0250         <span class="comment">%Get SBO term</span>
+0251         <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'sboTerm'</span>) &amp;&amp; ~(modelSBML.species(i).sboTerm==-1)
+0252             geneSBOs(end+1,1) = modelSBML.species(i).sboTerm;
+0253         <span class="keyword">end</span>
+0254     <span class="keyword">elseif</span> length(modelSBML.species(i).id)&gt;=2 &amp;&amp; strcmpi(modelSBML.species(i).id(1:3),<span class="string">'Cx_'</span>)
+0255         <span class="comment">%If it's a complex keep the ID and name</span>
+0256         complexIDs=[complexIDs;modelSBML.species(i).id];
+0257         complexNames=[complexNames;modelSBML.species(i).name];
+0258     <span class="keyword">else</span>
+0259         <span class="comment">%If it is not gene or complex, then it must be a metabolite</span>
+0260         metaboliteNames{numel(metaboliteNames)+1,1}=modelSBML.species(i).name;
+0261         metaboliteIDs{numel(metaboliteIDs)+1,1}=modelSBML.species(i).id;
+0262         metaboliteCompartments{numel(metaboliteCompartments)+1,1}=modelSBML.species(i).compartment;
+0263         metaboliteUnconstrained(numel(metaboliteUnconstrained)+1,1)=modelSBML.species(i).boundaryCondition;
+0264 
+0265         <span class="comment">%For each metabolite retrieve the formula and the InChI code if</span>
+0266         <span class="comment">%available First add the InChI code and the formula from the</span>
+0267         <span class="comment">%InChI. This allows for overwriting the formula by setting the</span>
+0268         <span class="comment">%actual formula field</span>
+0269         <span class="keyword">if</span> ~isempty(modelSBML.species(i).annotation)
+0270             <span class="comment">%Get the formula if available</span>
+0271             startString=<span class="string">'&gt;InChI='</span>;
+0272             endString=<span class="string">'&lt;/in:inchi&gt;'</span>;
+0273             formStart=strfind(modelSBML.species(i).annotation,startString);
+0274             <span class="keyword">if</span> isempty(formStart)
+0275                 startString=<span class="string">'InChI='</span>;
+0276                 endString=<span class="string">'&quot;/&gt;'</span>;
+0277             <span class="keyword">end</span>
+0278             formStart=strfind(modelSBML.species(i).annotation,startString);
+0279             <span class="keyword">if</span> ~isempty(formStart)
+0280                 formEnd=strfind(modelSBML.species(i).annotation,endString);
+0281                 formEndIndex=find(formEnd&gt;formStart, 1 );
+0282                 formula=modelSBML.species(i).annotation(formStart+numel(startString):formEnd(formEndIndex)-1);
+0283                 metaboliteInChI{numel(metaboliteInChI)+1,1}=formula;
+0284 
+0285                 <span class="comment">%The composition is most often present between the</span>
+0286                 <span class="comment">%first and second &quot;/&quot; in the model. In some simple</span>
+0287                 <span class="comment">%molecules, such as salts, there is no second &quot;/&quot;. The</span>
+0288                 <span class="comment">%formula is then assumed to be to the end of the string</span>
+0289                 compositionIndexes=strfind(formula,<span class="string">'/'</span>);
+0290                 <span class="keyword">if</span> numel(compositionIndexes)&gt;1
+0291                     metaboliteFormula{numel(metaboliteFormula)+1,1}=<span class="keyword">...</span>
+0292                         formula(compositionIndexes(1)+1:compositionIndexes(2)-1);
+0293                 <span class="keyword">else</span>
+0294                     <span class="keyword">if</span> numel(compositionIndexes)==1
+0295                         <span class="comment">%Probably a simple molecule which can have only</span>
+0296                         <span class="comment">%one conformation</span>
+0297                         metaboliteFormula{numel(metaboliteFormula)+1,1}=<span class="keyword">...</span>
+0298                             formula(compositionIndexes(1)+1:numel(formula));
+0299                     <span class="keyword">else</span>
+0300                         metaboliteFormula{numel(metaboliteFormula)+1,1}=<span class="string">''</span>;
+0301                     <span class="keyword">end</span>
+0302                 <span class="keyword">end</span>
+0303             <span class="keyword">elseif</span> isfield(modelSBML.species(i),<span class="string">'fbc_chemicalFormula'</span>)
+0304                 metaboliteInChI{numel(metaboliteInChI)+1,1}=<span class="string">''</span>;
+0305                 <span class="keyword">if</span> ~isempty(modelSBML.species(i).fbc_chemicalFormula)
+0306                     <span class="comment">%Cannot extract InChi from formula, so remains</span>
+0307                     <span class="comment">%empty</span>
+0308                     metaboliteFormula{numel(metaboliteFormula)+1,1}=modelSBML.species(i).fbc_chemicalFormula;
+0309                 <span class="keyword">else</span>
+0310                     metaboliteFormula{numel(metaboliteFormula)+1,1}=<span class="string">''</span>;
+0311                 <span class="keyword">end</span>
+0312             <span class="keyword">else</span>
+0313                 metaboliteInChI{numel(metaboliteInChI)+1,1}=<span class="string">''</span>;
+0314                 metaboliteFormula{numel(metaboliteFormula)+1,1}=<span class="string">''</span>;
+0315             <span class="keyword">end</span>
+0316 
+0317             <span class="comment">%Get Miriam info</span>
+0318             metMiriam=<a href="#_sub4" class="code" title="subfunction miriamStruct=parseMiriam(searchString)">parseMiriam</a>(modelSBML.species(i).annotation);
+0319             metaboliteMiriams{numel(metaboliteMiriams)+1,1}=metMiriam;
+0320         <span class="keyword">else</span>
+0321             metaboliteInChI{numel(metaboliteInChI)+1,1}=<span class="string">''</span>;
+0322             <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'notes'</span>)
+0323                 metaboliteFormula{numel(metaboliteFormula)+1,1}=<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.species(i).notes,<span class="string">'FORMULA'</span>);
+0324             <span class="keyword">else</span>
+0325                 metaboliteFormula{numel(metaboliteFormula)+1,1}=<span class="string">''</span>;
+0326             <span class="keyword">end</span>
+0327             metaboliteMiriams{numel(metaboliteMiriams)+1,1}=[];
+0328         <span class="keyword">end</span>
+0329         <span class="keyword">if</span> ~isempty(modelSBML.species(i).notes)
+0330             <span class="keyword">if</span> ~isfield(modelSBML.species(i),<span class="string">'annotation'</span>)
+0331                 metaboliteFormula{numel(metaboliteFormula)+1,1}=<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.species(i).notes,<span class="string">'FORMULA'</span>);
+0332             <span class="keyword">end</span>
+0333         <span class="keyword">elseif</span> ~isfield(modelSBML.species(i),<span class="string">'annotation'</span>)
+0334             metaboliteFormula{numel(metaboliteFormula)+1,1}=<span class="string">''</span>;
+0335         <span class="keyword">end</span>
+0336         <span class="comment">%Get SBO term</span>
+0337         <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'sboTerm'</span>) &amp;&amp; ~(modelSBML.species(i).sboTerm==-1)
+0338             metSBOs(end+1,1) = modelSBML.species(i).sboTerm;
+0339         <span class="keyword">end</span>
+0340     <span class="keyword">end</span>
+0341 
+0342     <span class="comment">%The following lines are executed regardless isSBML2COBRA setting</span>
+0343     <span class="keyword">if</span> isempty(modelSBML.species(i).id) || ~strcmpi(modelSBML.species(i).id(1:2),<span class="string">'E_'</span>)
+0344         <span class="keyword">if</span> isempty(modelSBML.species(i).id) || ~strcmpi(modelSBML.species(i).id(1:3),<span class="string">'Cx_'</span>)
+0345             <span class="comment">%Remove trailing [compartment] from metabolite name if present</span>
+0346             metaboliteNames{<span class="keyword">end</span>,1}=regexprep(metaboliteNames{<span class="keyword">end</span>,1},regexCompNames,<span class="string">''</span>);
+0347             metaboliteNames{<span class="keyword">end</span>,1}=metaboliteNames{<span class="keyword">end</span>,1};
+0348             <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'fbc_charge'</span>)
+0349                 <span class="keyword">if</span> ~isempty(modelSBML.species(i).fbc_charge) &amp;&amp; modelSBML.species(i).isSetfbc_charge
+0350                     metaboliteCharges(numel(metaboliteCharges)+1,1)=double(modelSBML.species(i).fbc_charge);
+0351                 <span class="keyword">else</span>
+0352                     <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'notes'</span>)
+0353                         <span class="keyword">if</span> strfind(modelSBML.species(i).notes,<span class="string">'CHARGE'</span>)
+0354                             metaboliteCharges(numel(metaboliteCharges)+1,1)=str2double(<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.species(i).notes,<span class="string">'CHARGE'</span>));
+0355                         <span class="keyword">else</span>
+0356                             metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
+0357                         <span class="keyword">end</span>
+0358                     <span class="keyword">else</span>
+0359                         metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
+0360                     <span class="keyword">end</span>
+0361                 <span class="keyword">end</span>
+0362             <span class="keyword">elseif</span> isfield(modelSBML.species(i),<span class="string">'notes'</span>)
+0363                 <span class="keyword">if</span> strfind(modelSBML.species(i).notes,<span class="string">'CHARGE'</span>)
+0364                     metaboliteCharges(numel(metaboliteCharges)+1,1)=str2double(<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.species(i).notes,<span class="string">'CHARGE'</span>));
+0365                 <span class="keyword">else</span>
+0366                     metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
+0367                 <span class="keyword">end</span>
+0368             <span class="keyword">else</span>
+0369                 metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
+0370             <span class="keyword">end</span>
+0371             <span class="comment">%Additional information from FBC format Chemical formula</span>
+0372             <span class="keyword">if</span> isfield(modelSBML.species(i),<span class="string">'fbc_chemicalFormula'</span>)
+0373                 <span class="keyword">if</span> ~isempty(modelSBML.species(i).fbc_chemicalFormula)
+0374                     metaboliteFormula{numel(metaboliteFormula),1}=modelSBML.species(i).fbc_chemicalFormula;
+0375                 <span class="keyword">end</span>
+0376             <span class="keyword">end</span>
+0377         <span class="keyword">end</span>
+0378     <span class="keyword">end</span>
+0379 <span class="keyword">end</span>
+0380 
+0381 <span class="comment">%Add SBO terms to gene and metabolite miriam fields</span>
+0382 <span class="keyword">if</span> numel(unique(geneSBOs)) &gt; 1  <span class="comment">% don't add if they're all identical</span>
+0383     <span class="keyword">for</span> i = 1:numel(geneNames)
+0384         geneMiriams{i} = <a href="#_sub5" class="code" title="subfunction miriam = addSBOtoMiriam(miriam,sboTerm)">addSBOtoMiriam</a>(geneMiriams{i},geneSBOs(i));
+0385     <span class="keyword">end</span>
+0386 <span class="keyword">end</span>
+0387 <span class="keyword">if</span> numel(unique(metSBOs)) &gt; 1
+0388     <span class="keyword">for</span> i = 1:numel(metaboliteNames)
+0389         metaboliteMiriams{i} = <a href="#_sub5" class="code" title="subfunction miriam = addSBOtoMiriam(miriam,sboTerm)">addSBOtoMiriam</a>(metaboliteMiriams{i},metSBOs(i));
+0390     <span class="keyword">end</span>
+0391 <span class="keyword">end</span>
+0392 
+0393 <span class="comment">%Retrieve info on reactions</span>
+0394 reactionNames=cell(numel(modelSBML.reaction),1);
+0395 reactionIDs=cell(numel(modelSBML.reaction),1);
+0396 subsystems=cell(numel(modelSBML.reaction),1);
+0397 eccodes=cell(numel(modelSBML.reaction),1);
+0398 eccodes(:,:)=cellstr(<span class="string">''</span>);
+0399 rxnconfidencescores=NaN(numel(modelSBML.reaction),1);
+0400 rxnreferences=cell(numel(modelSBML.reaction),1);
+0401 rxnreferences(:,:)=cellstr(<span class="string">''</span>);
+0402 rxnnotes=cell(numel(modelSBML.reaction),1);
+0403 rxnnotes(:,:)=cellstr(<span class="string">''</span>);
+0404 grRules=cell(numel(modelSBML.reaction),1);
+0405 grRules(:,:)=cellstr(<span class="string">''</span>);
+0406 grRulesFromModifier=grRules;
+0407 rxnComps=zeros(numel(modelSBML.reaction),1);
+0408 rxnMiriams=cell(numel(modelSBML.reaction),1);
+0409 reactionReversibility=zeros(numel(modelSBML.reaction),1);
+0410 reactionUB=zeros(numel(modelSBML.reaction),1);
+0411 reactionLB=zeros(numel(modelSBML.reaction),1);
+0412 reactionObjective=zeros(numel(modelSBML.reaction),1);
+0413 
+0414 <span class="comment">%Construct the stoichiometric matrix while the reaction info is read</span>
+0415 S=zeros(numel(metaboliteIDs),numel(modelSBML.reaction));
+0416 
+0417 counter=0;
+0418 <span class="comment">%If FBC, then bounds have parameter ids defined for the whole model</span>
+0419 <span class="keyword">if</span> isfield(modelSBML,<span class="string">'parameter'</span>)
+0420     parameter.name=cell(numel(modelSBML.parameter),1);
+0421     parameter.name={modelSBML.parameter(:).id}';
+0422     parameter.value={modelSBML.parameter(:).value}';
+0423 <span class="keyword">end</span>
+0424 
+0425 <span class="keyword">if</span> isfield(modelSBML.reaction,<span class="string">'sboTerm'</span>) &amp;&amp; numel(unique([modelSBML.reaction.sboTerm])) == 1
+0426     <span class="comment">%If all the SBO terms are identical, don't add them to rxnMiriams</span>
+0427     modelSBML.reaction = rmfield(modelSBML.reaction,<span class="string">'sboTerm'</span>);
+0428 <span class="keyword">end</span>
+0429 
+0430 <span class="keyword">for</span> i=1:numel(modelSBML.reaction)
+0431 
+0432     <span class="comment">%Check that the reaction doesn't produce a complex and nothing else. If</span>
+0433     <span class="comment">%so, then jump to the next reaction. This is because I get the genes</span>
+0434     <span class="comment">%for complexes from the names and not from the reactions that create</span>
+0435     <span class="comment">%them. This only applies to the non-COBRA format</span>
+0436     <span class="keyword">if</span> numel(modelSBML.reaction(i).product)==1
+0437         <span class="keyword">if</span> length(modelSBML.reaction(i).product(1).species)&gt;=3
+0438             <span class="keyword">if</span> strcmp(modelSBML.reaction(i).product(1).species(1:3),<span class="string">'Cx_'</span>)==true
+0439                 <span class="keyword">continue</span>;
+0440             <span class="keyword">end</span>
+0441         <span class="keyword">end</span>
 0442     <span class="keyword">end</span>
-0443 <span class="keyword">end</span>
-0444 
-0445 <span class="comment">%Retrieve info on reactions</span>
-0446 reactionNames=cell(numel(modelSBML.reaction),1);
-0447 reactionIDs=cell(numel(modelSBML.reaction),1);
-0448 subsystems=cell(numel(modelSBML.reaction),1);
-0449 eccodes=cell(numel(modelSBML.reaction),1);
-0450 eccodes(:,:)=cellstr(<span class="string">''</span>);
-0451 rxnconfidencescores=NaN(numel(modelSBML.reaction),1);
-0452 rxnreferences=cell(numel(modelSBML.reaction),1);
-0453 rxnreferences(:,:)=cellstr(<span class="string">''</span>);
-0454 rxnnotes=cell(numel(modelSBML.reaction),1);
-0455 rxnnotes(:,:)=cellstr(<span class="string">''</span>);
-0456 grRules=cell(numel(modelSBML.reaction),1);
-0457 grRules(:,:)=cellstr(<span class="string">''</span>);
-0458 grRulesFromModifier=grRules;
-0459 rxnComps=zeros(numel(modelSBML.reaction),1);
-0460 rxnMiriams=cell(numel(modelSBML.reaction),1);
-0461 reactionReversibility=zeros(numel(modelSBML.reaction),1);
-0462 reactionUB=zeros(numel(modelSBML.reaction),1);
-0463 reactionLB=zeros(numel(modelSBML.reaction),1);
-0464 reactionObjective=zeros(numel(modelSBML.reaction),1);
-0465 
-0466 <span class="comment">%Construct the stoichiometric matrix while the reaction info is read</span>
-0467 S=zeros(numel(metaboliteIDs),numel(modelSBML.reaction));
-0468 
-0469 counter=0;
-0470 <span class="comment">%If FBC, then bounds have parameter ids defined for the whole model</span>
-0471 <span class="keyword">if</span> isfield(modelSBML,<span class="string">'parameter'</span>)
-0472     parameter.name=cell(numel(modelSBML.parameter),1);
-0473     parameter.name={modelSBML.parameter(:).id}';
-0474     parameter.value={modelSBML.parameter(:).value}';
-0475 <span class="keyword">end</span>
-0476 
-0477 <span class="keyword">if</span> isfield(modelSBML.reaction,<span class="string">'sboTerm'</span>) &amp;&amp; numel(unique([modelSBML.reaction.sboTerm])) == 1
-0478     <span class="comment">%If all the SBO terms are identical, don't add them to rxnMiriams</span>
-0479     modelSBML.reaction = rmfield(modelSBML.reaction,<span class="string">'sboTerm'</span>);
-0480 <span class="keyword">end</span>
-0481 
-0482 <span class="keyword">for</span> i=1:numel(modelSBML.reaction)
-0483     
-0484     <span class="comment">%Check that the reaction doesn't produce a complex and nothing else. If</span>
-0485     <span class="comment">%so, then jump to the next reaction. This is because I get the genes</span>
-0486     <span class="comment">%for complexes from the names and not from the reactions that create</span>
-0487     <span class="comment">%them. This only applies to the non-COBRA format</span>
-0488     <span class="keyword">if</span> numel(modelSBML.reaction(i).product)==1
-0489         <span class="keyword">if</span> length(modelSBML.reaction(i).product(1).species)&gt;=3
-0490             <span class="keyword">if</span> strcmp(modelSBML.reaction(i).product(1).species(1:3),<span class="string">'Cx_'</span>)==true
-0491                 <span class="keyword">continue</span>;
-0492             <span class="keyword">end</span>
-0493         <span class="keyword">end</span>
-0494     <span class="keyword">end</span>
-0495     
-0496     <span class="comment">%It didn't look like a gene complex-forming reaction</span>
-0497     counter=counter+1;
-0498     
-0499     reactionNames{counter}=modelSBML.reaction(i).name;
-0500     
-0501     reactionIDs{counter}=modelSBML.reaction(i).id;
-0502     reactionReversibility(counter)=modelSBML.reaction(i).reversible;
-0503     
-0504     <span class="comment">%If model is FBC, first get parameter of bound and then replace it with</span>
-0505     <span class="comment">%the correct value. Probably faster with replace(), but this was only</span>
-0506     <span class="comment">%introduced in Matlab R2016b</span>
-0507     <span class="keyword">if</span> isfield(modelSBML.reaction(i),<span class="string">'fbc_lowerFluxBound'</span>)
-0508         lb=modelSBML.reaction(i).fbc_lowerFluxBound;
-0509         ub=modelSBML.reaction(i).fbc_upperFluxBound;
-0510         <span class="keyword">for</span> n=1:numel(parameter.value)
-0511             lb=regexprep(lb,parameter.name(n),num2str(parameter.value{n}));
-0512             ub=regexprep(ub,parameter.name(n),num2str(parameter.value{n}));
-0513         <span class="keyword">end</span>
-0514         <span class="keyword">if</span> isempty(lb)
-0515             lb=<span class="string">'-Inf'</span>;
-0516         <span class="keyword">end</span>
-0517         <span class="keyword">if</span> isempty(ub)
-0518             ub=<span class="string">'Inf'</span>;
-0519         <span class="keyword">end</span>
-0520         reactionLB(counter)=str2num(lb);
-0521         reactionUB(counter)=str2num(ub);
-0522         <span class="comment">%The order of these parameters should not be hard coded</span>
-0523     <span class="keyword">elseif</span> isfield(modelSBML.reaction(i).kineticLaw,<span class="string">'parameter'</span>)
-0524         reactionLB(counter)=modelSBML.reaction(i).kineticLaw.parameter(1).value;
-0525         reactionUB(counter)=modelSBML.reaction(i).kineticLaw.parameter(2).value;
-0526         reactionObjective(counter)=modelSBML.reaction(i).kineticLaw.parameter(3).value;
-0527     <span class="keyword">else</span>
-0528         <span class="keyword">if</span> reactionReversibility(counter)==true
-0529             reactionLB(counter)=-inf;
-0530         <span class="keyword">else</span>
-0531             reactionLB(counter)=0;
-0532         <span class="keyword">end</span>
-0533         reactionUB(counter)=inf;
-0534         reactionObjective(counter)=0;
-0535     <span class="keyword">end</span>
-0536     
-0537     <span class="comment">%Find the associated gene if available</span>
-0538     <span class="comment">%If FBC, get gene association data from corresponding fields</span>
-0539     <span class="keyword">if</span> isfield(modelSBML.reaction(i),<span class="string">'fbc_geneProductAssociation'</span>)
-0540         <span class="keyword">if</span> ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation) &amp;&amp; ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association)
-0541             grRules{counter}=modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association.fbc_association;
-0542         <span class="keyword">end</span>
-0543     <span class="keyword">elseif</span> isfield(modelSBML.reaction(i),<span class="string">'notes'</span>)
-0544         <span class="comment">%This section was previously executed only if isSBML2COBRA is true. Now</span>
-0545         <span class="comment">%it will be executed, if 'GENE_ASSOCIATION' is found in</span>
-0546         <span class="comment">%modelSBML.reaction(i).notes</span>
-0547         <span class="keyword">if</span> strfind(modelSBML.reaction(i).notes,<span class="string">'GENE_ASSOCIATION'</span>)
-0548             geneAssociation=<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'GENE_ASSOCIATION'</span>);
-0549         <span class="keyword">elseif</span> strfind(modelSBML.reaction(i).notes,<span class="string">'GENE ASSOCIATION'</span>)
-0550             geneAssociation=<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'GENE ASSOCIATION'</span>);
-0551         <span class="keyword">else</span>
-0552             geneAssociation=<span class="string">''</span>;
-0553         <span class="keyword">end</span>
-0554         <span class="keyword">if</span> ~isempty(geneAssociation)
-0555             <span class="comment">%This adds the grRules. The gene list and rxnGeneMat are created</span>
-0556             <span class="comment">%later</span>
-0557             grRules{counter}=geneAssociation;
-0558         <span class="keyword">end</span>
-0559     <span class="keyword">end</span>
-0560     <span class="keyword">if</span> isempty(grRules{counter}) &amp;&amp; ~isempty(modelSBML.reaction(i).modifier)
-0561         rules=<span class="string">''</span>;
-0562         <span class="keyword">for</span> j=1:numel(modelSBML.reaction(i).modifier)
-0563             modifier=modelSBML.reaction(i).modifier(j).species;
-0564             <span class="keyword">if</span> ~isempty(modifier)
-0565                 <span class="keyword">if</span> strcmpi(modifier(1:2),<span class="string">'E_'</span>)
-0566                     index=find(strcmp(modifier,geneIDs));
-0567                     <span class="comment">%This should be unique and in the geneIDs list,</span>
-0568                     <span class="comment">%otherwise something is wrong</span>
-0569                     <span class="keyword">if</span> numel(index)~=1
-0570                         EM=[<span class="string">'Could not get the gene association data from reaction '</span> reactionIDs{i}];
-0571                         dispEM(EM);
-0572                     <span class="keyword">end</span>
-0573                     <span class="keyword">if</span> ~isempty(rules)
-0574                         rules=[rules <span class="string">' or ('</span> geneNames{index} <span class="string">')'</span>];
-0575                     <span class="keyword">else</span>
-0576                         rules=[<span class="string">'('</span> geneNames{index} <span class="string">')'</span>];
-0577                     <span class="keyword">end</span>
-0578                 <span class="keyword">elseif</span> strcmp(modifier(1:2),<span class="string">'s_'</span>)
-0579                     index=find(strcmp(modifier,metaboliteIDs));
-0580                     <span class="comment">%This should be unique and in the geneIDs list,</span>
-0581                     <span class="comment">%otherwise something is wrong</span>
-0582                     <span class="keyword">if</span> numel(index)~=1
-0583                         EM=[<span class="string">'Could not get the gene association data from reaction '</span> reactionIDs{i}];
-0584                         dispEM(EM);
-0585                     <span class="keyword">end</span>
-0586                     <span class="keyword">if</span> ~isempty(rules)
-0587                         rules=[rules <span class="string">' or ('</span> metaboliteIDs{index} <span class="string">')'</span>];
-0588                     <span class="keyword">else</span>
-0589                         rules=[<span class="string">'('</span> metaboliteIDs{index} <span class="string">')'</span>];
-0590                     <span class="keyword">end</span>
-0591                 <span class="keyword">else</span>
-0592                     <span class="comment">%It seems to be a complex. Add the corresponding</span>
-0593                     <span class="comment">%genes from the name of the complex (not the</span>
-0594                     <span class="comment">%reaction that creates it)</span>
-0595                     index=find(strcmp(modifier,complexIDs));
-0596                     <span class="keyword">if</span> numel(index)==1
-0597                         <span class="keyword">if</span> ~isempty(rules)
-0598                             rules=[rules <span class="string">' or ('</span> strrep(complexNames{index},<span class="string">':'</span>,<span class="string">' and '</span>) <span class="string">')'</span>];
-0599                         <span class="keyword">else</span>
-0600                             rules=[<span class="string">'('</span> strrep(complexNames{index},<span class="string">':'</span>,<span class="string">' and '</span>) <span class="string">')'</span>];
-0601                         <span class="keyword">end</span>
-0602                     <span class="keyword">else</span>
-0603                         <span class="comment">%Could not find a complex</span>
-0604                         EM=[<span class="string">'Could not get the gene association data from reaction '</span> reactionIDs{i}];
-0605                         dispEM(EM);
-0606                     <span class="keyword">end</span>
-0607                 <span class="keyword">end</span>
-0608             <span class="keyword">end</span>
+0443 
+0444     <span class="comment">%It didn't look like a gene complex-forming reaction</span>
+0445     counter=counter+1;
+0446 
+0447     reactionNames{counter}=modelSBML.reaction(i).name;
+0448 
+0449     reactionIDs{counter}=modelSBML.reaction(i).id;
+0450     reactionReversibility(counter)=modelSBML.reaction(i).reversible;
+0451 
+0452     <span class="comment">%If model is FBC, first get parameter of bound and then replace it with</span>
+0453     <span class="comment">%the correct value. Probably faster with replace(), but this was only</span>
+0454     <span class="comment">%introduced in Matlab R2016b</span>
+0455     <span class="keyword">if</span> isfield(modelSBML.reaction(i),<span class="string">'fbc_lowerFluxBound'</span>)
+0456         lb=modelSBML.reaction(i).fbc_lowerFluxBound;
+0457         ub=modelSBML.reaction(i).fbc_upperFluxBound;
+0458         <span class="keyword">for</span> n=1:numel(parameter.value)
+0459             lb=regexprep(lb,parameter.name(n),num2str(parameter.value{n}));
+0460             ub=regexprep(ub,parameter.name(n),num2str(parameter.value{n}));
+0461         <span class="keyword">end</span>
+0462         <span class="keyword">if</span> isempty(lb)
+0463             lb=<span class="string">'-Inf'</span>;
+0464         <span class="keyword">end</span>
+0465         <span class="keyword">if</span> isempty(ub)
+0466             ub=<span class="string">'Inf'</span>;
+0467         <span class="keyword">end</span>
+0468         reactionLB(counter)=str2num(lb);
+0469         reactionUB(counter)=str2num(ub);
+0470         <span class="comment">%The order of these parameters should not be hard coded</span>
+0471     <span class="keyword">elseif</span> isfield(modelSBML.reaction(i).kineticLaw,<span class="string">'parameter'</span>)
+0472         reactionLB(counter)=modelSBML.reaction(i).kineticLaw.parameter(1).value;
+0473         reactionUB(counter)=modelSBML.reaction(i).kineticLaw.parameter(2).value;
+0474         reactionObjective(counter)=modelSBML.reaction(i).kineticLaw.parameter(3).value;
+0475     <span class="keyword">else</span>
+0476         <span class="keyword">if</span> reactionReversibility(counter)==true
+0477             reactionLB(counter)=-inf;
+0478         <span class="keyword">else</span>
+0479             reactionLB(counter)=0;
+0480         <span class="keyword">end</span>
+0481         reactionUB(counter)=inf;
+0482         reactionObjective(counter)=0;
+0483     <span class="keyword">end</span>
+0484 
+0485     <span class="comment">%Find the associated gene if available</span>
+0486     <span class="comment">%If FBC, get gene association data from corresponding fields</span>
+0487     <span class="keyword">if</span> isfield(modelSBML.reaction(i),<span class="string">'fbc_geneProductAssociation'</span>)
+0488         <span class="keyword">if</span> ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation) &amp;&amp; ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association)
+0489             grRules{counter}=modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association.fbc_association;
+0490         <span class="keyword">end</span>
+0491     <span class="keyword">elseif</span> isfield(modelSBML.reaction(i),<span class="string">'notes'</span>)
+0492         <span class="comment">%This section was previously executed only if isSBML2COBRA is true. Now</span>
+0493         <span class="comment">%it will be executed, if 'GENE_ASSOCIATION' is found in</span>
+0494         <span class="comment">%modelSBML.reaction(i).notes</span>
+0495         <span class="keyword">if</span> strfind(modelSBML.reaction(i).notes,<span class="string">'GENE_ASSOCIATION'</span>)
+0496             geneAssociation=<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'GENE_ASSOCIATION'</span>);
+0497         <span class="keyword">elseif</span> strfind(modelSBML.reaction(i).notes,<span class="string">'GENE ASSOCIATION'</span>)
+0498             geneAssociation=<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'GENE ASSOCIATION'</span>);
+0499         <span class="keyword">else</span>
+0500             geneAssociation=<span class="string">''</span>;
+0501         <span class="keyword">end</span>
+0502         <span class="keyword">if</span> ~isempty(geneAssociation)
+0503             <span class="comment">%This adds the grRules. The gene list and rxnGeneMat are created</span>
+0504             <span class="comment">%later</span>
+0505             grRules{counter}=geneAssociation;
+0506         <span class="keyword">end</span>
+0507     <span class="keyword">end</span>
+0508     <span class="keyword">if</span> isempty(grRules{counter}) &amp;&amp; ~isempty(modelSBML.reaction(i).modifier)
+0509         rules=<span class="string">''</span>;
+0510         <span class="keyword">for</span> j=1:numel(modelSBML.reaction(i).modifier)
+0511             modifier=modelSBML.reaction(i).modifier(j).species;
+0512             <span class="keyword">if</span> ~isempty(modifier)
+0513                 <span class="keyword">if</span> strcmpi(modifier(1:2),<span class="string">'E_'</span>)
+0514                     index=find(strcmp(modifier,geneIDs));
+0515                     <span class="comment">%This should be unique and in the geneIDs list,</span>
+0516                     <span class="comment">%otherwise something is wrong</span>
+0517                     <span class="keyword">if</span> numel(index)~=1
+0518                         EM=[<span class="string">'Could not get the gene association data from reaction '</span> reactionIDs{i}];
+0519                         dispEM(EM);
+0520                     <span class="keyword">end</span>
+0521                     <span class="keyword">if</span> ~isempty(rules)
+0522                         rules=[rules <span class="string">' or ('</span> geneNames{index} <span class="string">')'</span>];
+0523                     <span class="keyword">else</span>
+0524                         rules=[<span class="string">'('</span> geneNames{index} <span class="string">')'</span>];
+0525                     <span class="keyword">end</span>
+0526                 <span class="keyword">elseif</span> strcmp(modifier(1:2),<span class="string">'s_'</span>)
+0527                     index=find(strcmp(modifier,metaboliteIDs));
+0528                     <span class="comment">%This should be unique and in the geneIDs list,</span>
+0529                     <span class="comment">%otherwise something is wrong</span>
+0530                     <span class="keyword">if</span> numel(index)~=1
+0531                         EM=[<span class="string">'Could not get the gene association data from reaction '</span> reactionIDs{i}];
+0532                         dispEM(EM);
+0533                     <span class="keyword">end</span>
+0534                     <span class="keyword">if</span> ~isempty(rules)
+0535                         rules=[rules <span class="string">' or ('</span> metaboliteIDs{index} <span class="string">')'</span>];
+0536                     <span class="keyword">else</span>
+0537                         rules=[<span class="string">'('</span> metaboliteIDs{index} <span class="string">')'</span>];
+0538                     <span class="keyword">end</span>
+0539                 <span class="keyword">else</span>
+0540                     <span class="comment">%It seems to be a complex. Add the corresponding</span>
+0541                     <span class="comment">%genes from the name of the complex (not the</span>
+0542                     <span class="comment">%reaction that creates it)</span>
+0543                     index=find(strcmp(modifier,complexIDs));
+0544                     <span class="keyword">if</span> numel(index)==1
+0545                         <span class="keyword">if</span> ~isempty(rules)
+0546                             rules=[rules <span class="string">' or ('</span> strrep(complexNames{index},<span class="string">':'</span>,<span class="string">' and '</span>) <span class="string">')'</span>];
+0547                         <span class="keyword">else</span>
+0548                             rules=[<span class="string">'('</span> strrep(complexNames{index},<span class="string">':'</span>,<span class="string">' and '</span>) <span class="string">')'</span>];
+0549                         <span class="keyword">end</span>
+0550                     <span class="keyword">else</span>
+0551                         <span class="comment">%Could not find a complex</span>
+0552                         EM=[<span class="string">'Could not get the gene association data from reaction '</span> reactionIDs{i}];
+0553                         dispEM(EM);
+0554                     <span class="keyword">end</span>
+0555                 <span class="keyword">end</span>
+0556             <span class="keyword">end</span>
+0557         <span class="keyword">end</span>
+0558         grRules{counter}=rules;
+0559         grRulesFromModifier{counter}=rules;<span class="comment">%Backup copy for grRules, useful to parse Yeast 7.6</span>
+0560     <span class="keyword">end</span>
+0561 
+0562     <span class="comment">%Add reaction compartment</span>
+0563     <span class="keyword">if</span> isfield(modelSBML.reaction(i),<span class="string">'compartment'</span>)
+0564         <span class="keyword">if</span> ~isempty(modelSBML.reaction(i).compartment)
+0565             rxnComp=modelSBML.reaction(i).compartment;
+0566         <span class="keyword">else</span>
+0567             rxnComp=<span class="string">''</span>;
+0568         <span class="keyword">end</span>
+0569     <span class="keyword">elseif</span> isfield(modelSBML.reaction(i),<span class="string">'notes'</span>)
+0570         rxnComp=<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'COMPARTMENT'</span>);
+0571     <span class="keyword">end</span>
+0572     <span class="keyword">if</span> ~isempty(rxnComp)
+0573         <span class="comment">%Find it in the compartment list</span>
+0574         [~, J]=ismember(rxnComp,compartmentIDs);
+0575         rxnComps(counter)=J;
+0576     <span class="keyword">end</span>
+0577 
+0578 
+0579     miriamStruct=<a href="#_sub4" class="code" title="subfunction miriamStruct=parseMiriam(searchString)">parseMiriam</a>(modelSBML.reaction(i).annotation);
+0580     rxnMiriams{counter}=miriamStruct;
+0581     <span class="keyword">if</span> isfield(modelSBML.reaction(i),<span class="string">'notes'</span>)
+0582         subsystems{counter,1}=cellstr(<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'SUBSYSTEM'</span>));
+0583         subsystems{counter,1}(cellfun(<span class="string">'isempty'</span>,subsystems{counter,1})) = [];
+0584         <span class="keyword">if</span> strfind(modelSBML.reaction(i).notes,<span class="string">'Confidence Level'</span>)
+0585             confScore = <a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'Confidence Level'</span>);
+0586             <span class="keyword">if</span> isempty(confScore)
+0587                 confScore = 0;
+0588             <span class="keyword">end</span>
+0589             rxnconfidencescores(counter)=str2double(confScore);
+0590         <span class="keyword">end</span>
+0591         rxnreferences{counter,1}=<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'AUTHORS'</span>);
+0592         rxnnotes{counter,1}=<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'NOTES'</span>);
+0593     <span class="keyword">end</span>
+0594 
+0595     <span class="comment">%Get SBO terms</span>
+0596     <span class="keyword">if</span> isfield(modelSBML.reaction(i),<span class="string">'sboTerm'</span>) &amp;&amp; ~(modelSBML.reaction(i).sboTerm==-1)
+0597         rxnMiriams{counter} = <a href="#_sub5" class="code" title="subfunction miriam = addSBOtoMiriam(miriam,sboTerm)">addSBOtoMiriam</a>(rxnMiriams{counter}, modelSBML.reaction(i).sboTerm);
+0598     <span class="keyword">end</span>
+0599 
+0600     <span class="comment">%Get ec-codes</span>
+0601     eccode=<span class="string">''</span>;
+0602     <span class="keyword">if</span> ~isempty(modelSBML.reaction(i).annotation)
+0603         <span class="keyword">if</span> strfind(modelSBML.reaction(i).annotation,<span class="string">'urn:miriam:ec-code'</span>)
+0604             eccode=<a href="#_sub3" class="code" title="subfunction fieldContent=parseAnnotation(searchString,startString,midString,fieldName)">parseAnnotation</a>(modelSBML.reaction(i).annotation,<span class="string">'urn:miriam:'</span>,<span class="string">':'</span>,<span class="string">'ec-code'</span>);
+0605         <span class="keyword">elseif</span> strfind(modelSBML.reaction(i).annotation,<span class="string">'http://identifiers.org/ec-code'</span>)
+0606             eccode=<a href="#_sub3" class="code" title="subfunction fieldContent=parseAnnotation(searchString,startString,midString,fieldName)">parseAnnotation</a>(modelSBML.reaction(i).annotation,<span class="string">'http://identifiers.org/'</span>,<span class="string">'/'</span>,<span class="string">'ec-code'</span>);
+0607         <span class="keyword">elseif</span> strfind(modelSBML.reaction(i).annotation,<span class="string">'https://identifiers.org/ec-code'</span>)
+0608             eccode=<a href="#_sub3" class="code" title="subfunction fieldContent=parseAnnotation(searchString,startString,midString,fieldName)">parseAnnotation</a>(modelSBML.reaction(i).annotation,<span class="string">'https://identifiers.org/'</span>,<span class="string">'/'</span>,<span class="string">'ec-code'</span>);
 0609         <span class="keyword">end</span>
-0610         grRules{counter}=rules;
-0611         grRulesFromModifier{counter}=rules;<span class="comment">%Backup copy for grRules, useful to parse Yeast 7.6</span>
-0612     <span class="keyword">end</span>
-0613     
-0614     <span class="comment">%Add reaction compartment</span>
-0615     <span class="keyword">if</span> isfield(modelSBML.reaction(i),<span class="string">'compartment'</span>)
-0616         <span class="keyword">if</span> ~isempty(modelSBML.reaction(i).compartment)
-0617             rxnComp=modelSBML.reaction(i).compartment;
-0618         <span class="keyword">else</span>
-0619             rxnComp=<span class="string">''</span>;
-0620         <span class="keyword">end</span>
-0621     <span class="keyword">elseif</span> isfield(modelSBML.reaction(i),<span class="string">'notes'</span>)
-0622         rxnComp=<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'COMPARTMENT'</span>);
-0623     <span class="keyword">end</span>
-0624     <span class="keyword">if</span> ~isempty(rxnComp)
-0625         <span class="comment">%Find it in the compartment list</span>
-0626         [~, J]=ismember(rxnComp,compartmentIDs);
-0627         rxnComps(counter)=J;
-0628     <span class="keyword">end</span>
-0629     
-0630     <span class="comment">%Get other Miriam fields. This may include for example database indexes</span>
-0631     <span class="comment">%to organism-specific databases. EC-codes are supported by the COBRA</span>
-0632     <span class="comment">%Toolbox format and are therefore loaded separately</span>
-0633     <span class="keyword">if</span> isSBML2COBRA==false
-0634         miriamStruct=<a href="#_sub4" class="code" title="subfunction miriamStruct=parseMiriam(searchString)">parseMiriam</a>(modelSBML.reaction(i).annotation);
-0635         rxnMiriams{counter}=miriamStruct;
-0636         <span class="keyword">if</span> isfield(modelSBML.reaction(i),<span class="string">'notes'</span>)
-0637             subsystems{counter,1}=cellstr(<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'SUBSYSTEM'</span>));
-0638             subsystems{counter,1}(cellfun(<span class="string">'isempty'</span>,subsystems{counter,1})) = [];
-0639             <span class="keyword">if</span> strfind(modelSBML.reaction(i).notes,<span class="string">'Confidence Level'</span>)
-0640                 confScore = <a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'Confidence Level'</span>);
-0641                 <span class="keyword">if</span> isempty(confScore)
-0642                     confScore = 0;
-0643                 <span class="keyword">end</span>
-0644                 rxnconfidencescores(counter)=str2double(confScore);
-0645             <span class="keyword">end</span>
-0646             rxnreferences{counter,1}=<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'AUTHORS'</span>);
-0647             rxnnotes{counter,1}=<a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'NOTES'</span>);
-0648         <span class="keyword">end</span>
-0649     <span class="keyword">end</span>
-0650     
-0651     <span class="comment">%Get SBO terms</span>
-0652     <span class="keyword">if</span> isfield(modelSBML.reaction(i),<span class="string">'sboTerm'</span>) &amp;&amp; ~(modelSBML.reaction(i).sboTerm==-1)
-0653         rxnMiriams{counter} = <a href="#_sub5" class="code" title="subfunction miriam = addSBOtoMiriam(miriam,sboTerm)">addSBOtoMiriam</a>(rxnMiriams{counter}, modelSBML.reaction(i).sboTerm);
-0654     <span class="keyword">end</span>
-0655     
-0656     <span class="comment">%Get ec-codes</span>
-0657     eccode=<span class="string">''</span>;
-0658     <span class="keyword">if</span> ~isempty(modelSBML.reaction(i).annotation)
-0659         <span class="keyword">if</span> strfind(modelSBML.reaction(i).annotation,<span class="string">'urn:miriam:ec-code'</span>)
-0660             eccode=<a href="#_sub3" class="code" title="subfunction fieldContent=parseAnnotation(searchString,startString,midString,fieldName)">parseAnnotation</a>(modelSBML.reaction(i).annotation,<span class="string">'urn:miriam:'</span>,<span class="string">':'</span>,<span class="string">'ec-code'</span>);
-0661         <span class="keyword">elseif</span> strfind(modelSBML.reaction(i).annotation,<span class="string">'http://identifiers.org/ec-code'</span>)
-0662             eccode=<a href="#_sub3" class="code" title="subfunction fieldContent=parseAnnotation(searchString,startString,midString,fieldName)">parseAnnotation</a>(modelSBML.reaction(i).annotation,<span class="string">'http://identifiers.org/'</span>,<span class="string">'/'</span>,<span class="string">'ec-code'</span>);
-0663         <span class="keyword">elseif</span> strfind(modelSBML.reaction(i).annotation,<span class="string">'https://identifiers.org/ec-code'</span>)
-0664             eccode=<a href="#_sub3" class="code" title="subfunction fieldContent=parseAnnotation(searchString,startString,midString,fieldName)">parseAnnotation</a>(modelSBML.reaction(i).annotation,<span class="string">'https://identifiers.org/'</span>,<span class="string">'/'</span>,<span class="string">'ec-code'</span>);
-0665         <span class="keyword">end</span>
-0666     <span class="keyword">elseif</span> isfield(modelSBML.reaction(i),<span class="string">'notes'</span>)
-0667         <span class="keyword">if</span> strfind(modelSBML.reaction(i).notes,<span class="string">'EC Number'</span>)
-0668             eccode=[eccode <a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'EC Number'</span>)];
-0669         <span class="keyword">elseif</span> strfind(modelSBML.reaction(i).notes,<span class="string">'PROTEIN_CLASS'</span>)
-0670             eccode=[eccode <a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'PROTEIN_CLASS'</span>)];
+0610     <span class="keyword">elseif</span> isfield(modelSBML.reaction(i),<span class="string">'notes'</span>)
+0611         <span class="keyword">if</span> strfind(modelSBML.reaction(i).notes,<span class="string">'EC Number'</span>)
+0612             eccode=[eccode <a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'EC Number'</span>)];
+0613         <span class="keyword">elseif</span> strfind(modelSBML.reaction(i).notes,<span class="string">'PROTEIN_CLASS'</span>)
+0614             eccode=[eccode <a href="#_sub2" class="code" title="subfunction fieldContent=parseNote(searchString,fieldName)">parseNote</a>(modelSBML.reaction(i).notes,<span class="string">'PROTEIN_CLASS'</span>)];
+0615         <span class="keyword">end</span>
+0616     <span class="keyword">end</span>
+0617     eccodes{counter}=eccode;
+0618 
+0619     <span class="comment">%Add all reactants</span>
+0620     <span class="keyword">for</span> j=1:numel(modelSBML.reaction(i).reactant)
+0621         <span class="comment">%Get the index of the metabolite in metaboliteIDs. External</span>
+0622         <span class="comment">%metabolites will be removed at a later stage</span>
+0623         metIndex=find(strcmp(modelSBML.reaction(i).reactant(j).species,metaboliteIDs),1);
+0624         <span class="keyword">if</span> isempty(metIndex)
+0625             EM=[<span class="string">'Could not find metabolite '</span> modelSBML.reaction(i).reactant(j).species <span class="string">' in reaction '</span> reactionIDs{counter}];
+0626             dispEM(EM);
+0627         <span class="keyword">end</span>
+0628         S(metIndex,counter)=S(metIndex,counter)+modelSBML.reaction(i).reactant(j).stoichiometry*-1;
+0629     <span class="keyword">end</span>
+0630 
+0631     <span class="comment">%Add all products</span>
+0632     <span class="keyword">for</span> j=1:numel(modelSBML.reaction(i).product)
+0633         <span class="comment">%Get the index of the metabolite in metaboliteIDs.</span>
+0634         metIndex=find(strcmp(modelSBML.reaction(i).product(j).species,metaboliteIDs),1);
+0635         <span class="keyword">if</span> isempty(metIndex)
+0636             EM=[<span class="string">'Could not find metabolite '</span> modelSBML.reaction(i).product(j).species <span class="string">' in reaction '</span> reactionIDs{counter}];
+0637             dispEM(EM);
+0638         <span class="keyword">end</span>
+0639         S(metIndex,counter)=S(metIndex,counter)+modelSBML.reaction(i).product(j).stoichiometry;
+0640     <span class="keyword">end</span>
+0641 <span class="keyword">end</span>
+0642 
+0643 <span class="comment">%if FBC, objective function is separately defined. Multiple objective</span>
+0644 <span class="comment">%functions can be defined, one is set as active</span>
+0645 <span class="keyword">if</span> isfield(modelSBML, <span class="string">'fbc_activeObjective'</span>)
+0646     obj=modelSBML.fbc_activeObjective;
+0647     <span class="keyword">for</span> i=1:numel(modelSBML.fbc_objective)
+0648         <span class="keyword">if</span> strcmp(obj,modelSBML.fbc_objective(i).fbc_id)
+0649             <span class="keyword">if</span> ~isempty(modelSBML.fbc_objective(i).fbc_fluxObjective)
+0650                 rxn=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_reaction;
+0651                 idx=find(ismember(reactionIDs,rxn));
+0652                 reactionObjective(idx)=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_coefficient;
+0653             <span class="keyword">end</span>
+0654         <span class="keyword">end</span>
+0655     <span class="keyword">end</span>
+0656 <span class="keyword">end</span>
+0657 
+0658 <span class="comment">%subSystems can be stored as groups instead of in annotations</span>
+0659 <span class="keyword">if</span> isfield(modelSBML,<span class="string">'groups_group'</span>)
+0660     <span class="keyword">for</span> i=1:numel(modelSBML.groups_group)
+0661         groupreactions={modelSBML.groups_group(i).groups_member(:).groups_idRef};
+0662         [~, idx] = ismember(groupreactions, reactionIDs);
+0663         <span class="keyword">if</span> any(idx)
+0664             <span class="keyword">for</span> j=1:numel(idx)
+0665                 <span class="keyword">if</span> isempty(subsystems{idx(j)}) <span class="comment">% First subsystem</span>
+0666                     subsystems{idx(j)} = {modelSBML.groups_group(i).groups_name};
+0667                 <span class="keyword">else</span> <span class="comment">% Consecutive subsystems: concatenate</span>
+0668                     subsystems{idx(j)} = horzcat(subsystems{idx(j)}, modelSBML.groups_group(i).groups_name);
+0669                 <span class="keyword">end</span>
+0670             <span class="keyword">end</span>
 0671         <span class="keyword">end</span>
 0672     <span class="keyword">end</span>
-0673     eccodes{counter}=eccode;
-0674     
-0675     <span class="comment">%Add all reactants</span>
-0676     <span class="keyword">for</span> j=1:numel(modelSBML.reaction(i).reactant)
-0677         <span class="comment">%Get the index of the metabolite in metaboliteIDs. External</span>
-0678         <span class="comment">%metabolites will be removed at a later stage</span>
-0679         metIndex=find(strcmp(modelSBML.reaction(i).reactant(j).species,metaboliteIDs),1);
-0680         <span class="keyword">if</span> isempty(metIndex)
-0681             EM=[<span class="string">'Could not find metabolite '</span> modelSBML.reaction(i).reactant(j).species <span class="string">' in reaction '</span> reactionIDs{counter}];
-0682             dispEM(EM);
-0683         <span class="keyword">end</span>
-0684         S(metIndex,counter)=S(metIndex,counter)+modelSBML.reaction(i).reactant(j).stoichiometry*-1;
-0685     <span class="keyword">end</span>
-0686     
-0687     <span class="comment">%Add all products</span>
-0688     <span class="keyword">for</span> j=1:numel(modelSBML.reaction(i).product)
-0689         <span class="comment">%Get the index of the metabolite in metaboliteIDs.</span>
-0690         metIndex=find(strcmp(modelSBML.reaction(i).product(j).species,metaboliteIDs),1);
-0691         <span class="keyword">if</span> isempty(metIndex)
-0692             EM=[<span class="string">'Could not find metabolite '</span> modelSBML.reaction(i).product(j).species <span class="string">' in reaction '</span> reactionIDs{counter}];
-0693             dispEM(EM);
-0694         <span class="keyword">end</span>
-0695         S(metIndex,counter)=S(metIndex,counter)+modelSBML.reaction(i).product(j).stoichiometry;
-0696     <span class="keyword">end</span>
-0697 <span class="keyword">end</span>
-0698 
-0699 <span class="comment">%if FBC, objective function is separately defined. Multiple objective</span>
-0700 <span class="comment">%functions can be defined, one is set as active</span>
-0701 <span class="keyword">if</span> isfield(modelSBML, <span class="string">'fbc_activeObjective'</span>)
-0702     obj=modelSBML.fbc_activeObjective;
-0703     <span class="keyword">for</span> i=1:numel(modelSBML.fbc_objective)
-0704         <span class="keyword">if</span> strcmp(obj,modelSBML.fbc_objective(i).fbc_id)
-0705             <span class="keyword">if</span> ~isempty(modelSBML.fbc_objective(i).fbc_fluxObjective)
-0706                 rxn=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_reaction;
-0707                 rxn=regexprep(rxn,<span class="string">'^R_'</span>,<span class="string">''</span>);
-0708                 idx=find(ismember(reactionIDs,rxn));
-0709                 reactionObjective(idx)=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_coefficient;
-0710             <span class="keyword">end</span>
-0711         <span class="keyword">end</span>
-0712     <span class="keyword">end</span>
-0713 <span class="keyword">end</span>
-0714 
-0715 <span class="comment">%subSystems can be stored as groups instead of in annotations</span>
-0716 <span class="keyword">if</span> isfield(modelSBML,<span class="string">'groups_group'</span>)
-0717     <span class="keyword">for</span> i=1:numel(modelSBML.groups_group)
-0718         groupreactions={modelSBML.groups_group(i).groups_member(:).groups_idRef};
-0719         groupreactions=regexprep(groupreactions,<span class="string">'^R_'</span>,<span class="string">''</span>);
-0720         [~, idx] = ismember(groupreactions, reactionIDs);
-0721         <span class="keyword">if</span> any(idx)
-0722             <span class="keyword">for</span> j=1:numel(idx)
-0723                 <span class="keyword">if</span> isempty(subsystems{idx(j)}) <span class="comment">% First subsystem</span>
-0724                     subsystems{idx(j)} = {modelSBML.groups_group(i).groups_name};
-0725                 <span class="keyword">else</span> <span class="comment">% Consecutive subsystems: concatenate</span>
-0726                     subsystems{idx(j)} = horzcat(subsystems{idx(j)}, modelSBML.groups_group(i).groups_name);
-0727                 <span class="keyword">end</span>
-0728             <span class="keyword">end</span>
-0729         <span class="keyword">end</span>
-0730     <span class="keyword">end</span>
-0731 <span class="keyword">end</span>
-0732 
-0733 <span class="comment">%Shrink the structures if complex-forming reactions had to be skipped</span>
-0734 reactionNames=reactionNames(1:counter);
-0735 reactionIDs=reactionIDs(1:counter);
-0736 subsystems=subsystems(1:counter);
-0737 eccodes=eccodes(1:counter);
-0738 rxnconfidencescores=rxnconfidencescores(1:counter);
-0739 rxnreferences=rxnreferences(1:counter);
-0740 rxnnotes=rxnnotes(1:counter);
-0741 grRules=grRules(1:counter);
-0742 rxnMiriams=rxnMiriams(1:counter);
-0743 reactionReversibility=reactionReversibility(1:counter);
-0744 reactionUB=reactionUB(1:counter);
-0745 reactionLB=reactionLB(1:counter);
-0746 reactionObjective=reactionObjective(1:counter);
-0747 S=S(:,1:counter);
-0748 
-0749 model.name=modelSBML.name;
-0750 model.id=regexprep(modelSBML.id,<span class="string">'^M_'</span>,<span class="string">''</span>); <span class="comment">% COBRA adds M_ prefix</span>
-0751 model.rxns=reactionIDs;
-0752 model.mets=metaboliteIDs;
-0753 model.S=sparse(S);
-0754 model.lb=reactionLB;
-0755 model.ub=reactionUB;
-0756 model.rev=reactionReversibility;
-0757 model.c=reactionObjective;
-0758 model.b=zeros(numel(metaboliteIDs),1);
-0759 model.comps=compartmentIDs;
-0760 model.compNames=compartmentNames;
-0761 model.rxnConfidenceScores=rxnconfidencescores;
-0762 model.rxnReferences=rxnreferences;
-0763 model.rxnNotes=rxnnotes;
-0764 
-0765 <span class="comment">%Load annotation if available. If there are several authors, only the first</span>
-0766 <span class="comment">%author credentials are imported</span>
-0767 <span class="keyword">if</span> isfield(modelSBML,<span class="string">'annotation'</span>)
-0768     endString=<span class="string">'&lt;/'</span>;
-0769     I=strfind(modelSBML.annotation,endString);
-0770     J=strfind(modelSBML.annotation,<span class="string">'&lt;vCard:Family&gt;'</span>);
-0771     <span class="keyword">if</span> any(J)
-0772         model.annotation.familyName=modelSBML.annotation(J(1)+14:I(find(I&gt;J(1),1))-1);
-0773     <span class="keyword">end</span>
-0774     J=strfind(modelSBML.annotation,<span class="string">'&lt;vCard:Given&gt;'</span>);
-0775     <span class="keyword">if</span> any(J)
-0776         model.annotation.givenName=modelSBML.annotation(J(1)+13:I(find(I&gt;J(1),1))-1);
-0777     <span class="keyword">end</span>
-0778     J=strfind(modelSBML.annotation,<span class="string">'&lt;vCard:EMAIL&gt;'</span>);
-0779     <span class="keyword">if</span> any(J)
-0780         model.annotation.email=modelSBML.annotation(J(1)+13:I(find(I&gt;J(1),1))-1);
-0781     <span class="keyword">end</span>
-0782     J=strfind(modelSBML.annotation,<span class="string">'&lt;vCard:Orgname&gt;'</span>);
-0783     <span class="keyword">if</span> any(J)
-0784         model.annotation.organization=modelSBML.annotation(J(1)+15:I(find(I&gt;J(1),1))-1);
-0785     <span class="keyword">end</span>
-0786     endString=<span class="string">'&quot;/&gt;'</span>;
-0787     I=strfind(modelSBML.annotation,endString);
-0788     <span class="keyword">if</span> strfind(modelSBML.annotation,<span class="string">'&quot;urn:miriam:'</span>)
-0789         J=strfind(modelSBML.annotation,<span class="string">'&quot;urn:miriam:'</span>);
-0790         <span class="keyword">if</span> any(J)
-0791             model.annotation.taxonomy=modelSBML.annotation(J+12:I(find(I&gt;J,1))-1);
-0792         <span class="keyword">end</span>
-0793     <span class="keyword">else</span>
-0794         J=strfind(modelSBML.annotation,<span class="string">'&quot;http://identifiers.org/'</span>);
-0795         <span class="keyword">if</span> any(J)
-0796             model.annotation.taxonomy=modelSBML.annotation(J+24:I(find(I&gt;J,1))-1);
-0797         <span class="keyword">else</span>
-0798             J=strfind(modelSBML.annotation,<span class="string">'&quot;https://identifiers.org/'</span>);
-0799             <span class="keyword">if</span> any(J)
-0800                 model.annotation.taxonomy=modelSBML.annotation(J+25:I(find(I&gt;J,1))-1);
-0801             <span class="keyword">end</span>
-0802         <span class="keyword">end</span>
-0803     <span class="keyword">end</span>
-0804 <span class="keyword">end</span>
-0805 <span class="keyword">if</span> isfield(modelSBML,<span class="string">'notes'</span>)
-0806     startString=strfind(modelSBML.notes,<span class="string">'xhtml&quot;&gt;'</span>);
-0807     endString=strfind(modelSBML.notes,<span class="string">'&lt;/body&gt;'</span>);
-0808     <span class="keyword">if</span> any(startString) &amp;&amp; any(endString)
-0809         model.annotation.note=modelSBML.notes(startString+7:endString-1);
-0810         model.annotation.note=regexprep(model.annotation.note,<span class="string">'&lt;p&gt;|&lt;/p&gt;'</span>,<span class="string">''</span>);
-0811         model.annotation.note=strtrim(model.annotation.note);
-0812         <span class="keyword">if</span> regexp(model.annotation.note,<span class="string">'This file was generated using the exportModel function in RAVEN Toolbox \d\.\d and OutputSBML in libSBML'</span>)
-0813             model.annotation=rmfield(model.annotation,<span class="string">'note'</span>); <span class="comment">% Default note added when running exportModel</span>
-0814         <span class="keyword">end</span>
-0815     <span class="keyword">end</span>
-0816 <span class="keyword">end</span>
-0817 
-0818 <span class="keyword">if</span> any(~cellfun(@isempty,compartmentOutside))
-0819     model.compOutside=compartmentOutside;
-0820 <span class="keyword">end</span>
-0821 
-0822 model.rxnNames=reactionNames;
-0823 model.metNames=metaboliteNames;
-0824 
-0825 <span class="comment">%Match the compartments for metabolites</span>
-0826 [~, J]=ismember(metaboliteCompartments,model.comps);
-0827 model.metComps=J;
-0828 
-0829 <span class="comment">%If any genes have been loaded (only for the new format)</span>
-0830 <span class="keyword">if</span> ~isempty(geneNames)
-0831     <span class="comment">%In some rare cases geneNames may not necessarily be used in grRules.</span>
-0832     <span class="comment">%That is true for Yeast 7.6. It's therefore important to change gene</span>
-0833     <span class="comment">%systematic names to geneIDs in sophisticated way. Gene systematic</span>
-0834     <span class="comment">%names are not unique, since exactly the same name may be in different</span>
-0835     <span class="comment">%compartments</span>
-0836     <span class="keyword">if</span> all(cellfun(@isempty,strfind(grRules,geneNames{1})))
-0837         geneShortNames=geneNames;
-0838         <span class="comment">%geneShortNames contain compartments as well, so these are removed</span>
-0839         geneShortNames=regexprep(geneShortNames,<span class="string">' \[.+$'</span>,<span class="string">''</span>);
-0840         <span class="comment">%grRules obtained from modifier fields contain geneNames. These are</span>
-0841         <span class="comment">%changed into geneIDs. grRulesFromModifier is a good way to have</span>
-0842         <span class="comment">%geneIDs and rxns association when it's important to resolve</span>
-0843         <span class="comment">%systematic name ambiguities</span>
-0844         grRulesFromModifier=regexprep(regexprep(grRulesFromModifier,<span class="string">'\[|\]'</span>,<span class="string">'_'</span>),regexprep(geneNames,<span class="string">'\[|\]'</span>,<span class="string">'_'</span>),geneIDs);
-0845         grRules=regexprep(regexprep(grRules,<span class="string">'\[|\]'</span>,<span class="string">'_'</span>),regexprep(geneNames,<span class="string">'\[|\]'</span>,<span class="string">'_'</span>),geneIDs);
-0846         
-0847         <span class="comment">%Yeast 7.6 contains several metabolites, which were used in gene</span>
-0848         <span class="comment">%associations. For that reason, the list of species ID is created</span>
-0849         <span class="comment">%and we then check whether any of them have kegg.genes annotation</span>
-0850         <span class="comment">%thereby obtaining systematic gene names</span>
-0851         geneShortNames=vertcat(geneShortNames,metaboliteNames);
-0852         geneIDs=vertcat(geneIDs,metaboliteIDs);
-0853         geneSystNames=extractMiriam(vertcat(geneMiriams,metaboliteMiriams),<span class="string">'kegg.genes'</span>);
-0854         geneCompartments=vertcat(geneCompartments,metaboliteCompartments);
-0855         geneMiriams=vertcat(geneMiriams,metaboliteMiriams);
-0856         
-0857         <span class="comment">%Now we retain information for only these entries, which have</span>
-0858         <span class="comment">%kegg.genes annotation</span>
-0859         geneShortNames=geneShortNames(~cellfun(<span class="string">'isempty'</span>,geneSystNames));
-0860         geneIDs=geneIDs(~cellfun(<span class="string">'isempty'</span>,geneSystNames));
-0861         geneSystNames=geneSystNames(~cellfun(<span class="string">'isempty'</span>,geneSystNames));
-0862         geneCompartments=geneCompartments(~cellfun(<span class="string">'isempty'</span>,geneSystNames));
-0863         geneMiriams=geneMiriams(~cellfun(<span class="string">'isempty'</span>,geneSystNames));
-0864         <span class="comment">%Now we reorder geneIDs and geneSystNames by geneSystNames string</span>
-0865         <span class="comment">%length</span>
-0866         geneNames=geneIDs;<span class="comment">%Backuping geneIDs, since we need unsorted order for later</span>
-0867         [~, Indx] = sort(cellfun(<span class="string">'size'</span>, geneSystNames, 2), <span class="string">'descend'</span>);
-0868         geneIDs = geneIDs(Indx);
-0869         geneSystNames = geneSystNames(Indx);
-0870         <span class="keyword">for</span> i=1:numel(geneSystNames)
-0871             <span class="keyword">for</span> j=1:numel(grRules)
-0872                 <span class="keyword">if</span> strfind(grRules{j},geneSystNames{i})
-0873                     <span class="keyword">if</span> ~isempty(grRules{j})
-0874                         <span class="keyword">if</span> sum(ismember(geneSystNames,geneSystNames{i}))==1
-0875                             grRules{j}=regexprep(grRules{j},geneSystNames{i},geneIDs{i});
-0876                         <span class="keyword">elseif</span> sum(ismember(geneSystNames,geneSystNames{i}))&gt;1
-0877                             counter=0;
-0878                             ovrlpIDs=geneIDs(ismember(geneSystNames,geneSystNames{i}));
-0879                             <span class="keyword">for</span> k=1:numel(ovrlpIDs)
-0880                                 <span class="keyword">if</span> strfind(grRulesFromModifier{j},ovrlpIDs{k})
-0881                                     counter=counter+1;
-0882                                     grRules{j}=regexprep(grRules{j},geneSystNames{i},ovrlpIDs{k});
-0883                                 <span class="keyword">end</span>
-0884                                 <span class="keyword">if</span> counter&gt;1
-0885                                     EM=[<span class="string">'Gene association is ambiguous for reaction '</span> modelSBML.reaction(j).id];
-0886                                     dispEM(EM);
-0887                                 <span class="keyword">end</span>
-0888                             <span class="keyword">end</span>
-0889                         <span class="keyword">end</span>
-0890                     <span class="keyword">end</span>
-0891                 <span class="keyword">end</span>
-0892             <span class="keyword">end</span>
-0893         <span class="keyword">end</span>
-0894     <span class="keyword">end</span>
-0895     model.genes=geneNames;
-0896     model.grRules=grRules;
-0897     [grRules,rxnGeneMat] = standardizeGrRules(model,true);
-0898     model.grRules = grRules;
-0899     model.rxnGeneMat = rxnGeneMat;
-0900     
-0901     <span class="comment">%Match the compartments for genes</span>
-0902     [~, J]=ismember(geneCompartments,model.comps);
-0903     model.geneComps=J;
-0904 <span class="keyword">else</span>
-0905     <span class="keyword">if</span> ~all(cellfun(@isempty,grRules))
-0906         <span class="comment">%If fbc_geneProduct exists, follow the specified gene order, such</span>
-0907         <span class="comment">%that matching geneShortNames in function below will work</span>
-0908         <span class="keyword">if</span> isfield(modelSBML,<span class="string">'fbc_geneProduct'</span>)
-0909             genes={modelSBML.fbc_geneProduct.fbc_id};
-0910             
-0911             <span class="comment">%Get gene Miriams if they were not retrieved above (this occurs</span>
-0912             <span class="comment">%when genes are stored as fbc_geneProduct instead of species)</span>
-0913             <span class="keyword">if</span> isempty(geneMiriams)
-0914                 geneMiriams = cell(numel(genes),1);
-0915                 <span class="keyword">if</span> isfield(modelSBML.fbc_geneProduct,<span class="string">'sboTerm'</span>) &amp;&amp; numel(unique([modelSBML.fbc_geneProduct.sboTerm])) == 1
-0916                     <span class="comment">%If all the SBO terms are identical, don't add them to geneMiriams</span>
-0917                     modelSBML.fbc_geneProduct = rmfield(modelSBML.fbc_geneProduct,<span class="string">'sboTerm'</span>);
-0918                 <span class="keyword">end</span>
-0919                 <span class="keyword">for</span> i = 1:numel(genes)
-0920                     geneMiriams{i}=<a href="#_sub4" class="code" title="subfunction miriamStruct=parseMiriam(searchString)">parseMiriam</a>(modelSBML.fbc_geneProduct(i).annotation);
-0921                     <span class="keyword">if</span> isfield(modelSBML.fbc_geneProduct(i),<span class="string">'sboTerm'</span>) &amp;&amp; ~(modelSBML.fbc_geneProduct(i).sboTerm==-1)
-0922                         geneMiriams{i} = <a href="#_sub5" class="code" title="subfunction miriam = addSBOtoMiriam(miriam,sboTerm)">addSBOtoMiriam</a>(geneMiriams{i},modelSBML.fbc_geneProduct(i).sboTerm);
-0923                     <span class="keyword">end</span>
-0924                 <span class="keyword">end</span>
-0925             <span class="keyword">end</span>
-0926         <span class="keyword">else</span>
-0927             genes=<a href="#_sub1" class="code" title="subfunction matchGenes=getGeneList(grRules)">getGeneList</a>(grRules);
-0928         <span class="keyword">end</span>
-0929         <span class="keyword">if</span> strcmpi(genes{1}(1:2),<span class="string">'G_'</span>)
-0930             genes=regexprep(genes,<span class="string">'^G_'</span>,<span class="string">''</span>);
-0931             grRules=regexprep(grRules,<span class="string">'^G_'</span>,<span class="string">''</span>);
-0932             grRules=regexprep(grRules,<span class="string">'\(G_'</span>,<span class="string">'('</span>);
-0933             grRules=regexprep(grRules,<span class="string">' G_'</span>,<span class="string">' '</span>);
-0934         <span class="keyword">end</span>
-0935         model.genes=genes;
-0936         model.grRules=grRules;
-0937         [grRules,rxnGeneMat] = standardizeGrRules(model,true);
-0938         model.grRules = grRules;
-0939         model.rxnGeneMat = rxnGeneMat;
-0940     <span class="keyword">end</span>
-0941 <span class="keyword">end</span>
-0942 
-0943 <span class="keyword">if</span> all(cellfun(@isempty,geneShortNames))
-0944     <span class="keyword">if</span> isfield(modelSBML,<span class="string">'fbc_geneProduct'</span>)
-0945         <span class="keyword">for</span> i=1:numel(genes)
-0946             <span class="keyword">if</span> ~isempty(modelSBML.fbc_geneProduct(i).fbc_label)
-0947                 geneShortNames{i,1}=modelSBML.fbc_geneProduct(i).fbc_label;
-0948             <span class="keyword">elseif</span> ~isempty(modelSBML.fbc_geneProduct(i).fbc_name)
-0949                 geneShortNames{i,1}=modelSBML.fbc_geneProduct(i).fbc_name;
-0950             <span class="keyword">else</span>
-0951                 geneShortNames{i,1}=<span class="string">''</span>;
-0952             <span class="keyword">end</span>
-0953         <span class="keyword">end</span>
-0954     <span class="keyword">end</span>
-0955 <span class="keyword">end</span>
-0956 
-0957 <span class="comment">%If any InChIs have been loaded</span>
-0958 <span class="keyword">if</span> any(~cellfun(@isempty,metaboliteInChI))
-0959     model.inchis=metaboliteInChI;
-0960 <span class="keyword">end</span>
+0673 <span class="keyword">end</span>
+0674 
+0675 <span class="comment">%Shrink the structures if complex-forming reactions had to be skipped</span>
+0676 reactionNames=reactionNames(1:counter);
+0677 reactionIDs=reactionIDs(1:counter);
+0678 subsystems=subsystems(1:counter);
+0679 eccodes=eccodes(1:counter);
+0680 rxnconfidencescores=rxnconfidencescores(1:counter);
+0681 rxnreferences=rxnreferences(1:counter);
+0682 rxnnotes=rxnnotes(1:counter);
+0683 grRules=grRules(1:counter);
+0684 rxnMiriams=rxnMiriams(1:counter);
+0685 reactionReversibility=reactionReversibility(1:counter);
+0686 reactionUB=reactionUB(1:counter);
+0687 reactionLB=reactionLB(1:counter);
+0688 reactionObjective=reactionObjective(1:counter);
+0689 S=S(:,1:counter);
+0690 
+0691 model.name=modelSBML.name;
+0692 model.id=modelSBML.id;
+0693 model.rxns=reactionIDs;
+0694 model.mets=metaboliteIDs;
+0695 model.S=sparse(S);
+0696 model.lb=reactionLB;
+0697 model.ub=reactionUB;
+0698 model.rev=reactionReversibility;
+0699 model.c=reactionObjective;
+0700 model.b=zeros(numel(metaboliteIDs),1);
+0701 model.comps=compartmentIDs;
+0702 model.compNames=compartmentNames;
+0703 model.rxnConfidenceScores=rxnconfidencescores;
+0704 model.rxnReferences=rxnreferences;
+0705 model.rxnNotes=rxnnotes;
+0706 
+0707 <span class="comment">%Load annotation if available. If there are several authors, only the first</span>
+0708 <span class="comment">%author credentials are imported</span>
+0709 <span class="keyword">if</span> isfield(modelSBML,<span class="string">'annotation'</span>)
+0710     endString=<span class="string">'&lt;/'</span>;
+0711     I=strfind(modelSBML.annotation,endString);
+0712     J=strfind(modelSBML.annotation,<span class="string">'&lt;vCard:Family&gt;'</span>);
+0713     <span class="keyword">if</span> any(J)
+0714         model.annotation.familyName=modelSBML.annotation(J(1)+14:I(find(I&gt;J(1),1))-1);
+0715     <span class="keyword">end</span>
+0716     J=strfind(modelSBML.annotation,<span class="string">'&lt;vCard:Given&gt;'</span>);
+0717     <span class="keyword">if</span> any(J)
+0718         model.annotation.givenName=modelSBML.annotation(J(1)+13:I(find(I&gt;J(1),1))-1);
+0719     <span class="keyword">end</span>
+0720     J=strfind(modelSBML.annotation,<span class="string">'&lt;vCard:EMAIL&gt;'</span>);
+0721     <span class="keyword">if</span> any(J)
+0722         model.annotation.email=modelSBML.annotation(J(1)+13:I(find(I&gt;J(1),1))-1);
+0723     <span class="keyword">end</span>
+0724     J=strfind(modelSBML.annotation,<span class="string">'&lt;vCard:Orgname&gt;'</span>);
+0725     <span class="keyword">if</span> any(J)
+0726         model.annotation.organization=modelSBML.annotation(J(1)+15:I(find(I&gt;J(1),1))-1);
+0727     <span class="keyword">end</span>
+0728     endString=<span class="string">'&quot;/&gt;'</span>;
+0729     I=strfind(modelSBML.annotation,endString);
+0730     <span class="keyword">if</span> strfind(modelSBML.annotation,<span class="string">'&quot;urn:miriam:'</span>)
+0731         J=strfind(modelSBML.annotation,<span class="string">'&quot;urn:miriam:'</span>);
+0732         <span class="keyword">if</span> any(J)
+0733             model.annotation.taxonomy=modelSBML.annotation(J+12:I(find(I&gt;J,1))-1);
+0734         <span class="keyword">end</span>
+0735     <span class="keyword">else</span>
+0736         J=strfind(modelSBML.annotation,<span class="string">'&quot;http://identifiers.org/'</span>);
+0737         <span class="keyword">if</span> any(J)
+0738             model.annotation.taxonomy=modelSBML.annotation(J+24:I(find(I&gt;J,1))-1);
+0739         <span class="keyword">else</span>
+0740             J=strfind(modelSBML.annotation,<span class="string">'&quot;https://identifiers.org/'</span>);
+0741             <span class="keyword">if</span> any(J)
+0742                 model.annotation.taxonomy=modelSBML.annotation(J+25:I(find(I&gt;J,1))-1);
+0743             <span class="keyword">end</span>
+0744         <span class="keyword">end</span>
+0745     <span class="keyword">end</span>
+0746 <span class="keyword">end</span>
+0747 <span class="keyword">if</span> isfield(modelSBML,<span class="string">'notes'</span>)
+0748     startString=strfind(modelSBML.notes,<span class="string">'xhtml&quot;&gt;'</span>);
+0749     endString=strfind(modelSBML.notes,<span class="string">'&lt;/body&gt;'</span>);
+0750     <span class="keyword">if</span> any(startString) &amp;&amp; any(endString)
+0751         model.annotation.note=modelSBML.notes(startString+7:endString-1);
+0752         model.annotation.note=regexprep(model.annotation.note,<span class="string">'&lt;p&gt;|&lt;/p&gt;'</span>,<span class="string">''</span>);
+0753         model.annotation.note=strtrim(model.annotation.note);
+0754         <span class="keyword">if</span> regexp(model.annotation.note,<span class="string">'This file was generated using the exportModel function in RAVEN Toolbox \d\.\d and OutputSBML in libSBML'</span>)
+0755             model.annotation=rmfield(model.annotation,<span class="string">'note'</span>); <span class="comment">% Default note added when running exportModel</span>
+0756         <span class="keyword">end</span>
+0757     <span class="keyword">end</span>
+0758 <span class="keyword">end</span>
+0759 
+0760 <span class="keyword">if</span> any(~cellfun(@isempty,compartmentOutside))
+0761     model.compOutside=compartmentOutside;
+0762 <span class="keyword">end</span>
+0763 
+0764 model.rxnNames=reactionNames;
+0765 model.metNames=metaboliteNames;
+0766 
+0767 <span class="comment">%Match the compartments for metabolites</span>
+0768 [~, J]=ismember(metaboliteCompartments,model.comps);
+0769 model.metComps=J;
+0770 
+0771 <span class="comment">%If any genes have been loaded (only for the new format)</span>
+0772 <span class="keyword">if</span> ~isempty(geneNames)
+0773     <span class="comment">%In some rare cases geneNames may not necessarily be used in grRules.</span>
+0774     <span class="comment">%That is true for Yeast 7.6. It's therefore important to change gene</span>
+0775     <span class="comment">%systematic names to geneIDs in sophisticated way. Gene systematic</span>
+0776     <span class="comment">%names are not unique, since exactly the same name may be in different</span>
+0777     <span class="comment">%compartments</span>
+0778     <span class="keyword">if</span> all(cellfun(@isempty,strfind(grRules,geneNames{1})))
+0779         geneShortNames=geneNames;
+0780         <span class="comment">%geneShortNames contain compartments as well, so these are removed</span>
+0781         geneShortNames=regexprep(geneShortNames,<span class="string">' \[.+$'</span>,<span class="string">''</span>);
+0782         <span class="comment">%grRules obtained from modifier fields contain geneNames. These are</span>
+0783         <span class="comment">%changed into geneIDs. grRulesFromModifier is a good way to have</span>
+0784         <span class="comment">%geneIDs and rxns association when it's important to resolve</span>
+0785         <span class="comment">%systematic name ambiguities</span>
+0786         grRulesFromModifier=regexprep(regexprep(grRulesFromModifier,<span class="string">'\[|\]'</span>,<span class="string">'_'</span>),regexprep(geneNames,<span class="string">'\[|\]'</span>,<span class="string">'_'</span>),geneIDs);
+0787         grRules=regexprep(regexprep(grRules,<span class="string">'\[|\]'</span>,<span class="string">'_'</span>),regexprep(geneNames,<span class="string">'\[|\]'</span>,<span class="string">'_'</span>),geneIDs);
+0788 
+0789         <span class="comment">%Yeast 7.6 contains several metabolites, which were used in gene</span>
+0790         <span class="comment">%associations. For that reason, the list of species ID is created</span>
+0791         <span class="comment">%and we then check whether any of them have kegg.genes annotation</span>
+0792         <span class="comment">%thereby obtaining systematic gene names</span>
+0793         geneShortNames=vertcat(geneShortNames,metaboliteNames);
+0794         geneIDs=vertcat(geneIDs,metaboliteIDs);
+0795         geneSystNames=extractMiriam(vertcat(geneMiriams,metaboliteMiriams),<span class="string">'kegg.genes'</span>);
+0796         geneCompartments=vertcat(geneCompartments,metaboliteCompartments);
+0797         geneMiriams=vertcat(geneMiriams,metaboliteMiriams);
+0798 
+0799         <span class="comment">%Now we retain information for only these entries, which have</span>
+0800         <span class="comment">%kegg.genes annotation</span>
+0801         geneShortNames=geneShortNames(~cellfun(<span class="string">'isempty'</span>,geneSystNames));
+0802         geneIDs=geneIDs(~cellfun(<span class="string">'isempty'</span>,geneSystNames));
+0803         geneSystNames=geneSystNames(~cellfun(<span class="string">'isempty'</span>,geneSystNames));
+0804         geneCompartments=geneCompartments(~cellfun(<span class="string">'isempty'</span>,geneSystNames));
+0805         geneMiriams=geneMiriams(~cellfun(<span class="string">'isempty'</span>,geneSystNames));
+0806         <span class="comment">%Now we reorder geneIDs and geneSystNames by geneSystNames string</span>
+0807         <span class="comment">%length</span>
+0808         geneNames=geneIDs;<span class="comment">%Backuping geneIDs, since we need unsorted order for later</span>
+0809         [~, Indx] = sort(cellfun(<span class="string">'size'</span>, geneSystNames, 2), <span class="string">'descend'</span>);
+0810         geneIDs = geneIDs(Indx);
+0811         geneSystNames = geneSystNames(Indx);
+0812         <span class="keyword">for</span> i=1:numel(geneSystNames)
+0813             <span class="keyword">for</span> j=1:numel(grRules)
+0814                 <span class="keyword">if</span> strfind(grRules{j},geneSystNames{i})
+0815                     <span class="keyword">if</span> ~isempty(grRules{j})
+0816                         <span class="keyword">if</span> sum(ismember(geneSystNames,geneSystNames{i}))==1
+0817                             grRules{j}=regexprep(grRules{j},geneSystNames{i},geneIDs{i});
+0818                         <span class="keyword">elseif</span> sum(ismember(geneSystNames,geneSystNames{i}))&gt;1
+0819                             counter=0;
+0820                             ovrlpIDs=geneIDs(ismember(geneSystNames,geneSystNames{i}));
+0821                             <span class="keyword">for</span> k=1:numel(ovrlpIDs)
+0822                                 <span class="keyword">if</span> strfind(grRulesFromModifier{j},ovrlpIDs{k})
+0823                                     counter=counter+1;
+0824                                     grRules{j}=regexprep(grRules{j},geneSystNames{i},ovrlpIDs{k});
+0825                                 <span class="keyword">end</span>
+0826                                 <span class="keyword">if</span> counter&gt;1
+0827                                     EM=[<span class="string">'Gene association is ambiguous for reaction '</span> modelSBML.reaction(j).id];
+0828                                     dispEM(EM);
+0829                                 <span class="keyword">end</span>
+0830                             <span class="keyword">end</span>
+0831                         <span class="keyword">end</span>
+0832                     <span class="keyword">end</span>
+0833                 <span class="keyword">end</span>
+0834             <span class="keyword">end</span>
+0835         <span class="keyword">end</span>
+0836     <span class="keyword">end</span>
+0837     model.genes=geneNames;
+0838     model.grRules=grRules;
+0839     [grRules,rxnGeneMat] = standardizeGrRules(model,true);
+0840     model.grRules = grRules;
+0841     model.rxnGeneMat = rxnGeneMat;
+0842 
+0843     <span class="comment">%Match the compartments for genes</span>
+0844     [~, J]=ismember(geneCompartments,model.comps);
+0845     model.geneComps=J;
+0846 <span class="keyword">else</span>
+0847     <span class="keyword">if</span> ~all(cellfun(@isempty,grRules))
+0848         <span class="comment">%If fbc_geneProduct exists, follow the specified gene order, such</span>
+0849         <span class="comment">%that matching geneShortNames in function below will work</span>
+0850         <span class="keyword">if</span> isfield(modelSBML,<span class="string">'fbc_geneProduct'</span>)
+0851             genes={modelSBML.fbc_geneProduct.fbc_id};
+0852 
+0853             <span class="comment">%Get gene Miriams if they were not retrieved above (this occurs</span>
+0854             <span class="comment">%when genes are stored as fbc_geneProduct instead of species)</span>
+0855             <span class="keyword">if</span> isempty(geneMiriams)
+0856                 geneMiriams = cell(numel(genes),1);
+0857                 <span class="keyword">if</span> isfield(modelSBML.fbc_geneProduct,<span class="string">'sboTerm'</span>) &amp;&amp; numel(unique([modelSBML.fbc_geneProduct.sboTerm])) == 1
+0858                     <span class="comment">%If all the SBO terms are identical, don't add them to geneMiriams</span>
+0859                     modelSBML.fbc_geneProduct = rmfield(modelSBML.fbc_geneProduct,<span class="string">'sboTerm'</span>);
+0860                 <span class="keyword">end</span>
+0861                 <span class="keyword">for</span> i = 1:numel(genes)
+0862                     geneMiriams{i}=<a href="#_sub4" class="code" title="subfunction miriamStruct=parseMiriam(searchString)">parseMiriam</a>(modelSBML.fbc_geneProduct(i).annotation);
+0863                     <span class="keyword">if</span> isfield(modelSBML.fbc_geneProduct(i),<span class="string">'sboTerm'</span>) &amp;&amp; ~(modelSBML.fbc_geneProduct(i).sboTerm==-1)
+0864                         geneMiriams{i} = <a href="#_sub5" class="code" title="subfunction miriam = addSBOtoMiriam(miriam,sboTerm)">addSBOtoMiriam</a>(geneMiriams{i},modelSBML.fbc_geneProduct(i).sboTerm);
+0865                     <span class="keyword">end</span>
+0866                 <span class="keyword">end</span>
+0867             <span class="keyword">end</span>
+0868             proteins={modelSBML.fbc_geneProduct.fbc_name};
+0869         <span class="keyword">else</span>
+0870             genes=<a href="#_sub1" class="code" title="subfunction matchGenes=getGeneList(grRules)">getGeneList</a>(grRules);
+0871         <span class="keyword">end</span>
+0872         model.genes=genes;
+0873         model.grRules=grRules;
+0874         [grRules,rxnGeneMat] = standardizeGrRules(model,true);
+0875         model.grRules = grRules;
+0876         model.rxnGeneMat = rxnGeneMat;
+0877     <span class="keyword">end</span>
+0878 <span class="keyword">end</span>
+0879 
+0880 <span class="keyword">if</span> all(cellfun(@isempty,geneShortNames))
+0881     <span class="keyword">if</span> isfield(modelSBML,<span class="string">'fbc_geneProduct'</span>)
+0882         <span class="keyword">for</span> i=1:numel(genes)
+0883             <span class="keyword">if</span> ~isempty(modelSBML.fbc_geneProduct(i).fbc_label)
+0884                 geneShortNames{i,1}=modelSBML.fbc_geneProduct(i).fbc_label;
+0885             <span class="keyword">elseif</span> ~isempty(modelSBML.fbc_geneProduct(i).fbc_name)
+0886                 geneShortNames{i,1}=modelSBML.fbc_geneProduct(i).fbc_name;
+0887             <span class="keyword">else</span>
+0888                 geneShortNames{i,1}=<span class="string">''</span>;
+0889             <span class="keyword">end</span>
+0890         <span class="keyword">end</span>
+0891     <span class="keyword">end</span>
+0892 <span class="keyword">end</span>
+0893 
+0894 <span class="comment">%If any InChIs have been loaded</span>
+0895 <span class="keyword">if</span> any(~cellfun(@isempty,metaboliteInChI))
+0896     model.inchis=metaboliteInChI;
+0897 <span class="keyword">end</span>
+0898 
+0899 <span class="comment">%If any formulas have been loaded</span>
+0900 <span class="keyword">if</span> any(~cellfun(@isempty,metaboliteFormula))
+0901     model.metFormulas=metaboliteFormula;
+0902 <span class="keyword">end</span>
+0903 
+0904 <span class="comment">%If any charges have been loaded</span>
+0905 <span class="keyword">if</span> ~isempty(metaboliteCharges)
+0906     model.metCharges=metaboliteCharges;
+0907 <span class="keyword">end</span>
+0908 
+0909 <span class="comment">%If any gene short names have been loaded</span>
+0910 <span class="keyword">if</span> any(~cellfun(@isempty,geneShortNames))
+0911     model.geneShortNames=geneShortNames;
+0912 <span class="keyword">end</span>
+0913 
+0914 <span class="comment">%If any Miriam strings for compartments have been loaded</span>
+0915 <span class="keyword">if</span> any(~cellfun(@isempty,compartmentMiriams))
+0916     model.compMiriams=compartmentMiriams;
+0917 <span class="keyword">end</span>
+0918 
+0919 <span class="comment">%If any Miriam strings for metabolites have been loaded</span>
+0920 <span class="keyword">if</span> any(~cellfun(@isempty,metaboliteMiriams))
+0921     model.metMiriams=metaboliteMiriams;
+0922 <span class="keyword">end</span>
+0923 
+0924 <span class="comment">%If any subsystems have been loaded</span>
+0925 <span class="keyword">if</span> any(~cellfun(@isempty,subsystems))
+0926     model.subSystems=subsystems;
+0927 <span class="keyword">end</span>
+0928 <span class="keyword">if</span> any(rxnComps)
+0929     <span class="keyword">if</span> all(rxnComps)
+0930         model.rxnComps=rxnComps;
+0931     <span class="keyword">else</span>
+0932         <span class="keyword">if</span> supressWarnings==false
+0933             EM=<span class="string">'The compartments for the following reactions could not be matched. Ignoring reaction compartment information'</span>;
+0934             dispEM(EM,false,model.rxns(rxnComps==0));
+0935         <span class="keyword">end</span>
+0936     <span class="keyword">end</span>
+0937 <span class="keyword">end</span>
+0938 
+0939 <span class="comment">%If any ec-codes have been loaded</span>
+0940 <span class="keyword">if</span> any(~cellfun(@isempty,eccodes))
+0941     model.eccodes=eccodes;
+0942 <span class="keyword">end</span>
+0943 
+0944 <span class="comment">%If any Miriam strings for reactions have been loaded</span>
+0945 <span class="keyword">if</span> any(~cellfun(@isempty,rxnMiriams))
+0946     model.rxnMiriams=rxnMiriams;
+0947 <span class="keyword">end</span>
+0948 
+0949 <span class="comment">%If any Miriam strings for genes have been loaded</span>
+0950 <span class="keyword">if</span> any(~cellfun(@isempty,geneMiriams))
+0951     model.geneMiriams=geneMiriams;
+0952 <span class="keyword">end</span>
+0953 
+0954 <span class="comment">%If any protein strings have been loaded</span>
+0955 <span class="keyword">if</span> any(~cellfun(@isempty,proteins))
+0956     proteins = reshape(proteins,[],1);
+0957     model.proteins=proteins;
+0958 <span class="keyword">end</span>
+0959 
+0960 model.unconstrained=metaboliteUnconstrained;
 0961 
-0962 <span class="comment">%If any formulas have been loaded</span>
-0963 <span class="keyword">if</span> any(~cellfun(@isempty,metaboliteFormula))
-0964     model.metFormulas=metaboliteFormula;
-0965 <span class="keyword">end</span>
-0966 
-0967 <span class="comment">%If any charges have been loaded</span>
-0968 <span class="keyword">if</span> ~isempty(metaboliteCharges)
-0969     model.metCharges=metaboliteCharges;
-0970 <span class="keyword">end</span>
-0971 
-0972 <span class="comment">%If any gene short names have been loaded</span>
-0973 <span class="keyword">if</span> any(~cellfun(@isempty,geneShortNames))
-0974     model.geneShortNames=geneShortNames;
-0975 <span class="keyword">end</span>
-0976 
-0977 <span class="comment">%If any Miriam strings for compartments have been loaded</span>
-0978 <span class="keyword">if</span> any(~cellfun(@isempty,compartmentMiriams))
-0979     model.compMiriams=compartmentMiriams;
-0980 <span class="keyword">end</span>
-0981 
-0982 <span class="comment">%If any Miriam strings for metabolites have been loaded</span>
-0983 <span class="keyword">if</span> any(~cellfun(@isempty,metaboliteMiriams))
-0984     model.metMiriams=metaboliteMiriams;
-0985 <span class="keyword">end</span>
-0986 
-0987 <span class="comment">%If any subsystems have been loaded</span>
-0988 <span class="keyword">if</span> any(~cellfun(@isempty,subsystems))
-0989     model.subSystems=subsystems;
+0962 <span class="comment">%Convert SBML IDs back into their original strings. Here we are using part</span>
+0963 <span class="comment">%from convertSBMLID, originating from the COBRA Toolbox</span>
+0964 model.rxns=regexprep(model.rxns,<span class="string">'__([0-9]+)__'</span>,<span class="string">'${char(str2num($1))}'</span>);
+0965 model.mets=regexprep(model.mets,<span class="string">'__([0-9]+)__'</span>,<span class="string">'${char(str2num($1))}'</span>);
+0966 model.comps=regexprep(model.comps,<span class="string">'__([0-9]+)__'</span>,<span class="string">'${char(str2num($1))}'</span>);
+0967 model.grRules=regexprep(model.grRules,<span class="string">'__([0-9]+)__'</span>,<span class="string">'${char(str2num($1))}'</span>);
+0968 model.genes=regexprep(model.genes,<span class="string">'__([0-9]+)__'</span>,<span class="string">'${char(str2num($1))}'</span>);
+0969 model.id=regexprep(model.id,<span class="string">'__([0-9]+)__'</span>,<span class="string">'${char(str2num($1))}'</span>);
+0970 
+0971 <span class="keyword">if</span> removePrefix
+0972     [model, hasChanged]=removeIdentifierPrefix(model);
+0973     dispEM([<span class="string">'The following fields have prefixes removed from all entries. '</span><span class="keyword">...</span>
+0974     <span class="string">'If this is undesired, run importModel with removePrefix as false. Example: '</span><span class="keyword">...</span>
+0975     <span class="string">'importModel(''filename.xml'',[],false);'</span>],false,hasChanged)
+0976 <span class="keyword">end</span>
+0977 
+0978 <span class="comment">%Remove unused fields</span>
+0979 <span class="keyword">if</span> isempty(model.annotation)
+0980     model=rmfield(model,<span class="string">'annotation'</span>);
+0981 <span class="keyword">end</span>
+0982 <span class="keyword">if</span> isempty(model.compOutside)
+0983     model=rmfield(model,<span class="string">'compOutside'</span>);
+0984 <span class="keyword">end</span>
+0985 <span class="keyword">if</span> isempty(model.compMiriams)
+0986     model=rmfield(model,<span class="string">'compMiriams'</span>);
+0987 <span class="keyword">end</span>
+0988 <span class="keyword">if</span> isempty(model.rxnComps)
+0989     model=rmfield(model,<span class="string">'rxnComps'</span>);
 0990 <span class="keyword">end</span>
-0991 <span class="keyword">if</span> any(rxnComps)
-0992     <span class="keyword">if</span> all(rxnComps)
-0993         model.rxnComps=rxnComps;
-0994     <span class="keyword">else</span>
-0995         <span class="keyword">if</span> supressWarnings==false
-0996             EM=<span class="string">'The compartments for the following reactions could not be matched. Ignoring reaction compartment information'</span>;
-0997             dispEM(EM,false,model.rxns(rxnComps==0));
-0998         <span class="keyword">end</span>
-0999     <span class="keyword">end</span>
-1000 <span class="keyword">end</span>
-1001 
-1002 <span class="comment">%If any ec-codes have been loaded</span>
-1003 <span class="keyword">if</span> any(~cellfun(@isempty,eccodes))
-1004     model.eccodes=eccodes;
-1005 <span class="keyword">end</span>
-1006 
-1007 <span class="comment">%If any Miriam strings for reactions have been loaded</span>
-1008 <span class="keyword">if</span> any(~cellfun(@isempty,rxnMiriams))
-1009     model.rxnMiriams=rxnMiriams;
+0991 <span class="keyword">if</span> isempty(model.grRules)
+0992     model=rmfield(model,<span class="string">'grRules'</span>);
+0993 <span class="keyword">end</span>
+0994 <span class="keyword">if</span> isempty(model.rxnGeneMat)
+0995     model=rmfield(model,<span class="string">'rxnGeneMat'</span>);
+0996 <span class="keyword">end</span>
+0997 <span class="keyword">if</span> isempty(model.subSystems)
+0998     model=rmfield(model,<span class="string">'subSystems'</span>);
+0999 <span class="keyword">else</span>
+1000     model.subSystems(cellfun(@isempty,subsystems))={{<span class="string">''</span>}};
+1001 <span class="keyword">end</span>
+1002 <span class="keyword">if</span> isempty(model.eccodes)
+1003     model=rmfield(model,<span class="string">'eccodes'</span>);
+1004 <span class="keyword">end</span>
+1005 <span class="keyword">if</span> isempty(model.rxnMiriams)
+1006     model=rmfield(model,<span class="string">'rxnMiriams'</span>);
+1007 <span class="keyword">end</span>
+1008 <span class="keyword">if</span> cellfun(@isempty,model.rxnNotes)
+1009     model=rmfield(model,<span class="string">'rxnNotes'</span>);
 1010 <span class="keyword">end</span>
-1011 
-1012 <span class="comment">%If any Miriam strings for genes have been loaded</span>
-1013 <span class="keyword">if</span> any(~cellfun(@isempty,geneMiriams))
-1014     model.geneMiriams=geneMiriams;
-1015 <span class="keyword">end</span>
-1016 
-1017 model.unconstrained=metaboliteUnconstrained;
-1018 
-1019 <span class="comment">%Convert SBML IDs back into their original strings. Here we are using part</span>
-1020 <span class="comment">%from convertSBMLID, originating from the COBRA Toolbox</span>
-1021 model.rxns=regexprep(model.rxns,<span class="string">'__([0-9]+)__'</span>,<span class="string">'${char(str2num($1))}'</span>);
-1022 model.mets=regexprep(model.mets,<span class="string">'__([0-9]+)__'</span>,<span class="string">'${char(str2num($1))}'</span>);
-1023 model.comps=regexprep(model.comps,<span class="string">'__([0-9]+)__'</span>,<span class="string">'${char(str2num($1))}'</span>);
-1024 model.grRules=regexprep(model.grRules,<span class="string">'__([0-9]+)__'</span>,<span class="string">'${char(str2num($1))}'</span>);
-1025 model.genes=regexprep(model.genes,<span class="string">'__([0-9]+)__'</span>,<span class="string">'${char(str2num($1))}'</span>);
-1026 model.id=regexprep(model.id,<span class="string">'__([0-9]+)__'</span>,<span class="string">'${char(str2num($1))}'</span>);
-1027 
-1028 <span class="comment">%Remove unused fields</span>
-1029 <span class="keyword">if</span> isempty(model.annotation)
-1030     model=rmfield(model,<span class="string">'annotation'</span>);
-1031 <span class="keyword">end</span>
-1032 <span class="keyword">if</span> isempty(model.compOutside)
-1033     model=rmfield(model,<span class="string">'compOutside'</span>);
-1034 <span class="keyword">end</span>
-1035 <span class="keyword">if</span> isempty(model.compMiriams)
-1036     model=rmfield(model,<span class="string">'compMiriams'</span>);
-1037 <span class="keyword">end</span>
-1038 <span class="keyword">if</span> isempty(model.rxnComps)
-1039     model=rmfield(model,<span class="string">'rxnComps'</span>);
-1040 <span class="keyword">end</span>
-1041 <span class="keyword">if</span> isempty(model.grRules)
-1042     model=rmfield(model,<span class="string">'grRules'</span>);
-1043 <span class="keyword">end</span>
-1044 <span class="keyword">if</span> isempty(model.rxnGeneMat)
-1045     model=rmfield(model,<span class="string">'rxnGeneMat'</span>);
-1046 <span class="keyword">end</span>
-1047 <span class="keyword">if</span> isempty(model.subSystems)
-1048     model=rmfield(model,<span class="string">'subSystems'</span>);
-1049 <span class="keyword">else</span>
-1050     model.subSystems(cellfun(@isempty,subsystems))={{<span class="string">''</span>}};
-1051 <span class="keyword">end</span>
-1052 <span class="keyword">if</span> isempty(model.eccodes)
-1053     model=rmfield(model,<span class="string">'eccodes'</span>);
-1054 <span class="keyword">end</span>
-1055 <span class="keyword">if</span> isempty(model.rxnMiriams)
-1056     model=rmfield(model,<span class="string">'rxnMiriams'</span>);
-1057 <span class="keyword">end</span>
-1058 <span class="keyword">if</span> cellfun(@isempty,model.rxnNotes)
-1059     model=rmfield(model,<span class="string">'rxnNotes'</span>);
+1011 <span class="keyword">if</span> cellfun(@isempty,model.rxnReferences)
+1012     model=rmfield(model,<span class="string">'rxnReferences'</span>);
+1013 <span class="keyword">end</span>
+1014 <span class="keyword">if</span> isempty(model.rxnConfidenceScores) || all(isnan(model.rxnConfidenceScores))
+1015     model=rmfield(model,<span class="string">'rxnConfidenceScores'</span>);
+1016 <span class="keyword">end</span>
+1017 <span class="keyword">if</span> isempty(model.genes)
+1018     model=rmfield(model,<span class="string">'genes'</span>);
+1019 <span class="keyword">elseif</span> isrow(model.genes)
+1020     model.genes=transpose(model.genes);
+1021 <span class="keyword">end</span>
+1022 <span class="keyword">if</span> isempty(model.geneComps)
+1023     model=rmfield(model,<span class="string">'geneComps'</span>);
+1024 <span class="keyword">end</span>
+1025 <span class="keyword">if</span> isempty(model.geneMiriams)
+1026     model=rmfield(model,<span class="string">'geneMiriams'</span>);
+1027 <span class="keyword">end</span>
+1028 <span class="keyword">if</span> isempty(model.geneShortNames)
+1029     model=rmfield(model,<span class="string">'geneShortNames'</span>);
+1030 <span class="keyword">end</span>
+1031 <span class="keyword">if</span> isempty(model.proteins)
+1032     model=rmfield(model,<span class="string">'proteins'</span>);
+1033 <span class="keyword">end</span>
+1034 <span class="keyword">if</span> isempty(model.inchis)
+1035     model=rmfield(model,<span class="string">'inchis'</span>);
+1036 <span class="keyword">end</span>
+1037 <span class="keyword">if</span> isempty(model.metFormulas)
+1038     model=rmfield(model,<span class="string">'metFormulas'</span>);
+1039 <span class="keyword">end</span>
+1040 <span class="keyword">if</span> isempty(model.metMiriams)
+1041     model=rmfield(model,<span class="string">'metMiriams'</span>);
+1042 <span class="keyword">end</span>
+1043 <span class="keyword">if</span> ~any(model.metCharges)
+1044     model=rmfield(model,<span class="string">'metCharges'</span>);
+1045 <span class="keyword">end</span>
+1046 
+1047 <span class="comment">%This just removes the grRules if no genes have been loaded</span>
+1048 <span class="keyword">if</span> ~isfield(model,<span class="string">'genes'</span>) &amp;&amp; isfield(model,<span class="string">'grRules'</span>)
+1049     model=rmfield(model,<span class="string">'grRules'</span>);
+1050 <span class="keyword">end</span>
+1051 
+1052 <span class="comment">%Print warnings about bad structure</span>
+1053 <span class="keyword">if</span> supressWarnings==false
+1054     checkModelStruct(model,false);
+1055 <span class="keyword">end</span>
+1056 
+1057 <span class="keyword">if</span> removeExcMets==true
+1058     model=simplifyModel(model);
+1059 <span class="keyword">end</span>
 1060 <span class="keyword">end</span>
-1061 <span class="keyword">if</span> cellfun(@isempty,model.rxnReferences)
-1062     model=rmfield(model,<span class="string">'rxnReferences'</span>);
-1063 <span class="keyword">end</span>
-1064 <span class="keyword">if</span> isempty(model.rxnConfidenceScores) || all(isnan(model.rxnConfidenceScores))
-1065     model=rmfield(model,<span class="string">'rxnConfidenceScores'</span>);
-1066 <span class="keyword">end</span>
-1067 <span class="keyword">if</span> isempty(model.genes)
-1068     model=rmfield(model,<span class="string">'genes'</span>);
-1069 <span class="keyword">elseif</span> isrow(model.genes)
-1070     model.genes=transpose(model.genes);
-1071 <span class="keyword">end</span>
-1072 <span class="keyword">if</span> isempty(model.geneComps)
-1073     model=rmfield(model,<span class="string">'geneComps'</span>);
-1074 <span class="keyword">end</span>
-1075 <span class="keyword">if</span> isempty(model.geneMiriams)
-1076     model=rmfield(model,<span class="string">'geneMiriams'</span>);
-1077 <span class="keyword">end</span>
-1078 <span class="keyword">if</span> isempty(model.geneShortNames)
-1079     model=rmfield(model,<span class="string">'geneShortNames'</span>);
-1080 <span class="keyword">end</span>
-1081 <span class="keyword">if</span> isempty(model.inchis)
-1082     model=rmfield(model,<span class="string">'inchis'</span>);
-1083 <span class="keyword">end</span>
-1084 <span class="keyword">if</span> isempty(model.metFormulas)
-1085     model=rmfield(model,<span class="string">'metFormulas'</span>);
-1086 <span class="keyword">end</span>
-1087 <span class="keyword">if</span> isempty(model.metMiriams)
-1088     model=rmfield(model,<span class="string">'metMiriams'</span>);
-1089 <span class="keyword">end</span>
-1090 <span class="keyword">if</span> ~any(model.metCharges)
-1091     model=rmfield(model,<span class="string">'metCharges'</span>);
-1092 <span class="keyword">end</span>
-1093 
-1094 <span class="comment">%This just removes the grRules if no genes have been loaded</span>
-1095 <span class="keyword">if</span> ~isfield(model,<span class="string">'genes'</span>) &amp;&amp; isfield(model,<span class="string">'grRules'</span>)
-1096     model=rmfield(model,<span class="string">'grRules'</span>);
-1097 <span class="keyword">end</span>
-1098 
-1099 <span class="comment">%Print warnings about bad structure</span>
-1100 <span class="keyword">if</span> supressWarnings==false
-1101     checkModelStruct(model,false);
-1102 <span class="keyword">end</span>
-1103 
-1104 <span class="keyword">if</span> removeExcMets==true
-1105     model=simplifyModel(model);
-1106 <span class="keyword">end</span>
-1107 <span class="keyword">end</span>
-1108 
-1109 <a name="_sub1" href="#_subfunctions" class="code">function matchGenes=getGeneList(grRules)</a>
-1110 <span class="comment">%Constructs the list of unique genes from grRules</span>
-1111 
-1112 <span class="comment">%Assumes that everything that isn't a paranthesis, &quot; AND &quot; or &quot; or &quot; is a</span>
-1113 <span class="comment">%gene name</span>
-1114 genes=strrep(grRules,<span class="string">'('</span>,<span class="string">''</span>);
-1115 genes=strrep(genes,<span class="string">')'</span>,<span class="string">''</span>);
-1116 genes=strrep(genes,<span class="string">' or '</span>,<span class="string">' '</span>);
-1117 genes=strrep(genes,<span class="string">' and '</span>,<span class="string">' '</span>);
-1118 genes=strrep(genes,<span class="string">' OR '</span>,<span class="string">' '</span>);
-1119 genes=strrep(genes,<span class="string">' AND '</span>,<span class="string">' '</span>);
-1120 genes=regexp(genes,<span class="string">' '</span>,<span class="string">'split'</span>);
+1061 
+1062 <a name="_sub1" href="#_subfunctions" class="code">function matchGenes=getGeneList(grRules)</a>
+1063 <span class="comment">%Constructs the list of unique genes from grRules</span>
+1064 
+1065 <span class="comment">%Assumes that everything that isn't a paranthesis, &quot; AND &quot; or &quot; or &quot; is a</span>
+1066 <span class="comment">%gene name</span>
+1067 genes=strrep(grRules,<span class="string">'('</span>,<span class="string">''</span>);
+1068 genes=strrep(genes,<span class="string">')'</span>,<span class="string">''</span>);
+1069 genes=strrep(genes,<span class="string">' or '</span>,<span class="string">' '</span>);
+1070 genes=strrep(genes,<span class="string">' and '</span>,<span class="string">' '</span>);
+1071 genes=strrep(genes,<span class="string">' OR '</span>,<span class="string">' '</span>);
+1072 genes=strrep(genes,<span class="string">' AND '</span>,<span class="string">' '</span>);
+1073 genes=regexp(genes,<span class="string">' '</span>,<span class="string">'split'</span>);
+1074 
+1075 allNames={};
+1076 <span class="keyword">for</span> i=1:numel(genes)
+1077     allNames=[allNames genes{i}];
+1078 <span class="keyword">end</span>
+1079 matchGenes=unique(allNames)';
+1080 
+1081 <span class="comment">%Remove the empty element if present</span>
+1082 <span class="keyword">if</span> isempty(matchGenes{1})
+1083     matchGenes(1)=[];
+1084 <span class="keyword">end</span>
+1085 <span class="keyword">end</span>
+1086 
+1087 <a name="_sub2" href="#_subfunctions" class="code">function fieldContent=parseNote(searchString,fieldName)</a>
+1088 <span class="comment">%The function obtains the particular information from 'notes' field, using</span>
+1089 <span class="comment">%fieldName as the dummy string</span>
+1090 
+1091 fieldContent=<span class="string">''</span>;
+1092 
+1093 <span class="keyword">if</span> strfind(searchString,fieldName)
+1094     [~,targetString] = regexp(searchString,[<span class="string">'&lt;p&gt;'</span> fieldName <span class="string">'.*?&lt;/p&gt;'</span>],<span class="string">'tokens'</span>,<span class="string">'match'</span>);
+1095     targetString=regexprep(targetString,<span class="string">'&lt;p&gt;|&lt;/p&gt;'</span>,<span class="string">''</span>);
+1096     targetString=regexprep(targetString,[fieldName, <span class="string">':'</span>],<span class="string">''</span>);
+1097     <span class="keyword">for</span> i=1:numel(targetString)
+1098         fieldContent=[fieldContent <span class="string">';'</span> strtrim(targetString{1,i})];
+1099     <span class="keyword">end</span>
+1100     fieldContent=regexprep(fieldContent,<span class="string">'^;|;$'</span>,<span class="string">''</span>);
+1101 <span class="keyword">else</span>
+1102     fieldContent=<span class="string">''</span>;
+1103 <span class="keyword">end</span>
+1104 <span class="keyword">end</span>
+1105 
+1106 <a name="_sub3" href="#_subfunctions" class="code">function fieldContent=parseAnnotation(searchString,startString,midString,fieldName)</a>
+1107 
+1108 fieldContent=<span class="string">''</span>;
+1109 
+1110 <span class="comment">%Removing whitespace characters from the ending strings, which may occur in</span>
+1111 <span class="comment">%several cases</span>
+1112 searchString=regexprep(searchString,<span class="string">'&quot; /&gt;'</span>,<span class="string">'&quot;/&gt;'</span>);
+1113 [~,targetString] = regexp(searchString,[<span class="string">'&lt;rdf:li rdf:resource=&quot;'</span> startString fieldName midString <span class="string">'.*?&quot;/&gt;'</span>],<span class="string">'tokens'</span>,<span class="string">'match'</span>);
+1114 targetString=regexprep(targetString,<span class="string">'&lt;rdf:li rdf:resource=&quot;|&quot;/&gt;'</span>,<span class="string">''</span>);
+1115 targetString=regexprep(targetString,startString,<span class="string">''</span>);
+1116 targetString=regexprep(targetString,[fieldName midString],<span class="string">''</span>);
+1117 
+1118 <span class="keyword">for</span> i=1:numel(targetString)
+1119     fieldContent=[fieldContent <span class="string">';'</span> strtrim(targetString{1,i})];
+1120 <span class="keyword">end</span>
 1121 
-1122 allNames={};
-1123 <span class="keyword">for</span> i=1:numel(genes)
-1124     allNames=[allNames genes{i}];
-1125 <span class="keyword">end</span>
-1126 matchGenes=unique(allNames)';
+1122 fieldContent=regexprep(fieldContent,<span class="string">'^;|;$'</span>,<span class="string">''</span>);
+1123 <span class="keyword">end</span>
+1124 
+1125 <a name="_sub4" href="#_subfunctions" class="code">function miriamStruct=parseMiriam(searchString)</a>
+1126 <span class="comment">%Generates miriam structure from annotation field</span>
 1127 
-1128 <span class="comment">%Remove the empty element if present</span>
-1129 <span class="keyword">if</span> isempty(matchGenes{1})
-1130     matchGenes(1)=[];
-1131 <span class="keyword">end</span>
-1132 <span class="keyword">end</span>
-1133 
-1134 <a name="_sub2" href="#_subfunctions" class="code">function fieldContent=parseNote(searchString,fieldName)</a>
-1135 <span class="comment">%The function obtains the particular information from 'notes' field, using</span>
-1136 <span class="comment">%fieldName as the dummy string</span>
-1137 
-1138 fieldContent=<span class="string">''</span>;
-1139 
-1140 <span class="keyword">if</span> strfind(searchString,fieldName)
-1141     [~,targetString] = regexp(searchString,[<span class="string">'&lt;p&gt;'</span> fieldName <span class="string">'.*?&lt;/p&gt;'</span>],<span class="string">'tokens'</span>,<span class="string">'match'</span>);
-1142     targetString=regexprep(targetString,<span class="string">'&lt;p&gt;|&lt;/p&gt;'</span>,<span class="string">''</span>);
-1143     targetString=regexprep(targetString,[fieldName, <span class="string">':'</span>],<span class="string">''</span>);
-1144     <span class="keyword">for</span> i=1:numel(targetString)
-1145         fieldContent=[fieldContent <span class="string">';'</span> strtrim(targetString{1,i})];
-1146     <span class="keyword">end</span>
-1147     fieldContent=regexprep(fieldContent,<span class="string">'^;|;$'</span>,<span class="string">''</span>);
-1148 <span class="keyword">else</span>
-1149     fieldContent=<span class="string">''</span>;
-1150 <span class="keyword">end</span>
-1151 <span class="keyword">end</span>
-1152 
-1153 <a name="_sub3" href="#_subfunctions" class="code">function fieldContent=parseAnnotation(searchString,startString,midString,fieldName)</a>
-1154 
-1155 fieldContent=<span class="string">''</span>;
-1156 
-1157 <span class="comment">%Removing whitespace characters from the ending strings, which may occur in</span>
-1158 <span class="comment">%several cases</span>
-1159 searchString=regexprep(searchString,<span class="string">'&quot; /&gt;'</span>,<span class="string">'&quot;/&gt;'</span>);
-1160 [~,targetString] = regexp(searchString,[<span class="string">'&lt;rdf:li rdf:resource=&quot;'</span> startString fieldName midString <span class="string">'.*?&quot;/&gt;'</span>],<span class="string">'tokens'</span>,<span class="string">'match'</span>);
-1161 targetString=regexprep(targetString,<span class="string">'&lt;rdf:li rdf:resource=&quot;|&quot;/&gt;'</span>,<span class="string">''</span>);
-1162 targetString=regexprep(targetString,startString,<span class="string">''</span>);
-1163 targetString=regexprep(targetString,[fieldName midString],<span class="string">''</span>);
+1128 <span class="comment">%Finding whether miriams are written in the old or the new way</span>
+1129 <span class="keyword">if</span> strfind(searchString,<span class="string">'urn:miriam:'</span>)
+1130     startString=<span class="string">'urn:miriam:'</span>;
+1131     midString=<span class="string">':'</span>;
+1132 <span class="keyword">elseif</span> strfind(searchString,<span class="string">'http://identifiers.org/'</span>)
+1133     startString=<span class="string">'http://identifiers.org/'</span>;
+1134     midString=<span class="string">'/'</span>;
+1135 <span class="keyword">elseif</span> strfind(searchString,<span class="string">'https://identifiers.org/'</span>)
+1136     startString=<span class="string">'https://identifiers.org/'</span>;
+1137     midString=<span class="string">'/'</span>;
+1138 <span class="keyword">else</span>
+1139     miriamStruct=[];
+1140     <span class="keyword">return</span>;
+1141 <span class="keyword">end</span>
+1142 
+1143 miriamStruct=[];
+1144 
+1145 searchString=regexprep(searchString,<span class="string">'&quot; /&gt;'</span>,<span class="string">'&quot;/&gt;'</span>);
+1146 [~,targetString] = regexp(searchString,<span class="string">'&lt;rdf:li rdf:resource=&quot;.*?&quot;/&gt;'</span>,<span class="string">'tokens'</span>,<span class="string">'match'</span>);
+1147 targetString=regexprep(targetString,<span class="string">'&lt;rdf:li rdf:resource=&quot;|&quot;/&gt;'</span>,<span class="string">''</span>);
+1148 targetString=regexprep(targetString,startString,<span class="string">''</span>);
+1149 targetString=regexprep(targetString,midString,<span class="string">'/'</span>,<span class="string">'once'</span>);
+1150 
+1151 counter=0;
+1152 <span class="keyword">for</span> i=1:numel(targetString)
+1153     <span class="keyword">if</span> isempty(regexp(targetString{1,i},<span class="string">'inchi|ec-code'</span>, <span class="string">'once'</span>))
+1154         counter=counter+1;
+1155         miriamStruct.name{counter,1} = regexprep(targetString{1,i},<span class="string">'/.+'</span>,<span class="string">''</span>,<span class="string">'once'</span>);
+1156         miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} <span class="string">'/'</span>],<span class="string">''</span>,<span class="string">'once'</span>);
+1157         miriamStruct.name{counter,1} = regexprep(miriamStruct.name{counter,1},<span class="string">'^obo\.'</span>,<span class="string">''</span>);
+1158     <span class="keyword">end</span>
+1159 <span class="keyword">end</span>
+1160 <span class="keyword">end</span>
+1161 
+1162 <a name="_sub5" href="#_subfunctions" class="code">function miriam = addSBOtoMiriam(miriam,sboTerm)</a>
+1163 <span class="comment">%Appends SBO term to miriam structure</span>
 1164 
-1165 <span class="keyword">for</span> i=1:numel(targetString)
-1166     fieldContent=[fieldContent <span class="string">';'</span> strtrim(targetString{1,i})];
-1167 <span class="keyword">end</span>
-1168 
-1169 fieldContent=regexprep(fieldContent,<span class="string">'^;|;$'</span>,<span class="string">''</span>);
-1170 <span class="keyword">end</span>
-1171 
-1172 <a name="_sub4" href="#_subfunctions" class="code">function miriamStruct=parseMiriam(searchString)</a>
-1173 <span class="comment">%Generates miriam structure from annotation field</span>
-1174 
-1175 <span class="comment">%Finding whether miriams are written in the old or the new way</span>
-1176 <span class="keyword">if</span> strfind(searchString,<span class="string">'urn:miriam:'</span>)
-1177     startString=<span class="string">'urn:miriam:'</span>;
-1178     midString=<span class="string">':'</span>;
-1179 <span class="keyword">elseif</span> strfind(searchString,<span class="string">'http://identifiers.org/'</span>)
-1180     startString=<span class="string">'http://identifiers.org/'</span>;
-1181     midString=<span class="string">'/'</span>;
-1182 <span class="keyword">elseif</span> strfind(searchString,<span class="string">'https://identifiers.org/'</span>)
-1183     startString=<span class="string">'https://identifiers.org/'</span>;
-1184     midString=<span class="string">'/'</span>;
-1185 <span class="keyword">else</span>
-1186     miriamStruct=[];
-1187     <span class="keyword">return</span>;
-1188 <span class="keyword">end</span>
-1189 
-1190 miriamStruct=[];
-1191 
-1192 searchString=regexprep(searchString,<span class="string">'&quot; /&gt;'</span>,<span class="string">'&quot;/&gt;'</span>);
-1193 [~,targetString] = regexp(searchString,<span class="string">'&lt;rdf:li rdf:resource=&quot;.*?&quot;/&gt;'</span>,<span class="string">'tokens'</span>,<span class="string">'match'</span>);
-1194 targetString=regexprep(targetString,<span class="string">'&lt;rdf:li rdf:resource=&quot;|&quot;/&gt;'</span>,<span class="string">''</span>);
-1195 targetString=regexprep(targetString,startString,<span class="string">''</span>);
-1196 targetString=regexprep(targetString,midString,<span class="string">'/'</span>,<span class="string">'once'</span>);
-1197 
-1198 counter=0;
-1199 <span class="keyword">for</span> i=1:numel(targetString)
-1200     <span class="keyword">if</span> isempty(regexp(targetString{1,i},<span class="string">'inchi|ec-code'</span>, <span class="string">'once'</span>))
-1201         counter=counter+1;
-1202         miriamStruct.name{counter,1} = regexprep(targetString{1,i},<span class="string">'/.+'</span>,<span class="string">''</span>,<span class="string">'once'</span>);
-1203         miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} <span class="string">'/'</span>],<span class="string">''</span>,<span class="string">'once'</span>);
-1204         miriamStruct.name{counter,1} = regexprep(miriamStruct.name{counter,1},<span class="string">'^obo\.'</span>,<span class="string">''</span>);
-1205     <span class="keyword">end</span>
-1206 <span class="keyword">end</span>
-1207 <span class="keyword">end</span>
-1208 
-1209 <a name="_sub5" href="#_subfunctions" class="code">function miriam = addSBOtoMiriam(miriam,sboTerm)</a>
-1210 <span class="comment">%Appends SBO term to miriam structure</span>
-1211 
-1212 sboTerm = {[<span class="string">'SBO:'</span> sprintf(<span class="string">'%07u'</span>,sboTerm)]};  <span class="comment">% convert to proper format</span>
-1213 <span class="keyword">if</span> isempty(miriam)
-1214     miriam.name = {<span class="string">'sbo'</span>};
-1215     miriam.value = sboTerm;
-1216 <span class="keyword">elseif</span> any(strcmp(<span class="string">'sbo'</span>,miriam.name))
-1217     currSbo = strcmp(<span class="string">'sbo'</span>,miriam.name);
-1218     miriam.value(currSbo) = sboTerm;
-1219 <span class="keyword">else</span>
-1220     miriam.name(end+1) = {<span class="string">'sbo'</span>};
-1221     miriam.value(end+1) = sboTerm;
-1222 <span class="keyword">end</span>
-1223 <span class="keyword">end</span></pre></div>
+1165 sboTerm = {[<span class="string">'SBO:'</span> sprintf(<span class="string">'%07u'</span>,sboTerm)]};  <span class="comment">% convert to proper format</span>
+1166 <span class="keyword">if</span> isempty(miriam)
+1167     miriam.name = {<span class="string">'sbo'</span>};
+1168     miriam.value = sboTerm;
+1169 <span class="keyword">elseif</span> any(strcmp(<span class="string">'sbo'</span>,miriam.name))
+1170     currSbo = strcmp(<span class="string">'sbo'</span>,miriam.name);
+1171     miriam.value(currSbo) = sboTerm;
+1172 <span class="keyword">else</span>
+1173     miriam.name(end+1) = {<span class="string">'sbo'</span>};
+1174     miriam.value(end+1) = sboTerm;
+1175 <span class="keyword">end</span>
+1176 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

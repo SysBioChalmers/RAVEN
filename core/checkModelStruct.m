@@ -120,6 +120,21 @@ if isfield(model,'grRules')
         EM='The "grRules" field must be a cell array of strings';
         dispEM(EM,throwErrors);
     end
+    if ~isfield(model,'genes')
+        EM='If "grRules" field exists, the model should also contain a "genes" field';
+        dispEM(EM,throwErrors);
+    else
+        geneList = strjoin(model.grRules);
+        geneList = regexp(geneList,' |)|(|and|or','split'); % Remove all grRule punctuation
+        geneList = geneList(~cellfun(@isempty,geneList));  % Remove spaces and empty genes
+        geneList = setdiff(unique(geneList),model.genes);
+        if ~isempty(geneList)
+            problemGrRules = model.rxns(contains(model.grRules,geneList));
+            problemGrRules = strjoin(problemGrRules(:),'; ');
+            EM=['The reaction(s) "' problemGrRules '" contain the following genes in its "grRules" field, but these are not in the "genes" field:'];
+            dispEM(EM,throwErrors,geneList);
+        end
+    end
 end
 if isfield(model,'rxnComps')
     if ~isnumeric(model.rxnComps)
@@ -229,6 +244,26 @@ if isfield(model,'genes')
     end
 end
 
+%Validate format of ids
+fields      = {'rxns';'mets';'comps';'genes'};
+fieldNames  = {'reaction';'metabolite';'compartment';'gene'};
+fieldPrefix = {'R_';'M_';'C_';'G_'};
+for i=1:numel(fields)
+    try
+        numIDs = ~startsWith(model.(fields{i}),regexpPattern('^[a-zA-Z_]'));
+    catch
+        numIDs = [];
+    end
+    if any(numIDs)
+        EM = ['The following ' fieldNames{i} ' identifiers do not start '...
+            'with a letter or _ (conflicting with SBML specifications). '...
+            'This does not impact RAVEN functionality, but be aware that '...
+            'exportModel will automatically add ' fieldPrefix{i} ...
+            ' prefixes to all ' fieldNames{i} ' identifiers:'];
+        dispEM(EM,false,{model.(fields{i}){numIDs}},trimWarnings);
+    end
+end
+
 %Duplicates
 EM='The following reaction IDs are duplicates:';
 dispEM(EM,throwErrors,model.rxns(duplicates(model.rxns)),trimWarnings);
@@ -259,10 +294,10 @@ EM='The following compartments contain no metabolites:';
 dispEM(EM,false,model.comps(I),trimWarnings);
 
 %Contradicting bounds
-EM='The following reactions have contradicting bounds:';
+EM='The following reactions have contradicting bounds (lower bound is higher than upper bound):';
 dispEM(EM,throwErrors,model.rxns(model.lb>model.ub),trimWarnings);
-EM='The following reactions have bounds contradicting their reversibility:';
-dispEM(EM,throwErrors,model.rxns(model.lb<0 & model.rev==0),trimWarnings);
+EM='The following reactions have lower and upper bounds that indicate reversibility, but are indicated as irreversible in model.rev:';
+dispEM(EM,false,model.rxns(model.lb < 0 & model.ub > 0 & model.rev==0),trimWarnings);
 
 %Multiple or no objective functions not allowed in SBML L3V1 FBCv2
 if numel(find(model.c))>1
@@ -272,9 +307,6 @@ elseif ~any(model.c)
     EM='No objective function found. This might be intended, but results in FBCv2 non-compliant SBML file when exported';
     dispEM(EM,false);
 end
-    
-EM='The following reactions have contradicting bounds:';
-dispEM(EM,throwErrors,model.rxns(model.lb>model.ub),trimWarnings);
 
 %Mapping of compartments
 if isfield(model,'compOutside')
@@ -292,8 +324,8 @@ for i=1:numel(model.metNames)
         end
     end
 end
-EM='The following metabolite IDs begin with a number directly followed by space:';
-dispEM(EM,throwErrors,model.mets(I),trimWarnings);
+EM='The following metabolite names begin with a number directly followed by space, which could potentially cause problems:';
+dispEM(EM,false,model.metNames(I),trimWarnings);
 
 %Non-parseable composition
 if isfield(model,'metFormulas')
