@@ -1,4 +1,4 @@
-function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,COBRAtext,COBRAstyle)
+function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,COBRAtext,neverPrefixIDs)
 % exportForGit
 %   Generates a directory structure and populates this with model files, ready
 %   to be commited to a Git(Hub) maintained model repository. Writes the model
@@ -28,16 +28,13 @@ function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,COBRA
 %                       Toolbox format using metabolite IDs, instead of
 %                       metabolite names and compartments. (optional,
 %                       default false)
-%   COBRAstyle          true if COBRA-style prefixes should be added to all
-%                       identifiers in the SBML file: R_ for reactions, M_
-%                       for metabolites, G_ for genes and C_ for
-%                       compartments. If all identifiers of a particular
-%                       field already have the prefix, then no additional
-%                       prefixes are added. (optional, default false)
+%   neverPrefixIDs      true if prefixes are never added to identifiers,
+%                       even if start with e.g. digits. This might result
+%                       in invalid SBML files (optional, default false)
 %
 % Usage: exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,COBRAtext,COBRAstyle)
 if nargin<8
-    COBRAstyle=false;
+    neverPrefixIDs=false;
 end
 if nargin<7 || isempty(COBRAtext)
     COBRAtext=false;
@@ -142,7 +139,7 @@ end
 
 % Write XML format
 if ismember('xml', formats)
-        exportModel(model,fullfile(filePath{5},strcat(prefix,'.xml')),COBRAstyle);
+        exportModel(model,fullfile(filePath{5},strcat(prefix,'.xml')),neverPrefixIDs);
 end
 
 %Save file with versions:
