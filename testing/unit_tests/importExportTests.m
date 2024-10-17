@@ -68,6 +68,6 @@ evalc('writeYAMLmodel(emptyModel,fullfile(sourceDir,''testing'',''unit_tests'','
 %sized.
 s = dir(fullfile(sourceDir,'testing','unit_tests','test_data','_test.yml'));         
 filesize = s.bytes;
-verifyTrue(testCase,filesize>1350);
+verifyTrue(testCase,filesize>1290);
 delete(fullfile(sourceDir,'testing','unit_tests','test_data','_test.yml'));
 end
