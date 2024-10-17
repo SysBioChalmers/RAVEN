@@ -70,7 +70,9 @@ model=sortIdentifiers(model);
 
 %Get versions or commits of toolboxes:
 RAVENver = getToolboxVersion('RAVEN','ravenCobraWrapper.m',mainBranchFlag);
-COBRAver = getToolboxVersion('COBRA','initCobraToolbox.m',mainBranchFlag);
+if exist('initCobraToolbox.m','file')
+    COBRAver = getToolboxVersion('COBRA','initCobraToolbox.m',mainBranchFlag);
+end
 
 %Retrieve libSBML version:
 [ravenDir,prevDir]=findRAVENroot();
