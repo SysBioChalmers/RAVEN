@@ -625,7 +625,7 @@ if isGECKO
     [~,enzIdx]          = ismember(enzStoich(:,2),model.ec.enzymes);
     coeffs              = cell2mat(enzStoich(:,3));
     model.ec.rxnEnzMat  = zeros(numel(model.ec.rxns), numel(model.ec.genes));
-    linearIndices       = sub2ind([max(rxnIdx), max(enzIdx)], rxnIdx, enzIdx);
+    linearIndices       = sub2ind([numel(model.ec.rxns), numel(model.ec.genes)], rxnIdx, enzIdx);
     model.ec.rxnEnzMat(linearIndices) = coeffs;
     %Parse ec-codes
     if ~isempty(ecGecko)

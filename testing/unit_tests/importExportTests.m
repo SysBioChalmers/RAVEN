@@ -25,6 +25,14 @@ load(fullfile(sourceDir,'testing','unit_tests','test_data','importExportResults.
 verifyEqual(testCase,model,modelSBML)
 end
 
+function testYAMLimport(testCase)
+sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
+yamlFile=fullfile(sourceDir,'tutorial','empty.yml');
+evalc('model=readYAMLmodel(yamlFile)'); % Repress warnings
+load(fullfile(sourceDir,'testing','unit_tests','test_data','importExportResults.mat'), 'modelYAML');
+verifyEqual(testCase,model,modelYAML)
+end
+
 function testExcelExport(testCase)
 sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
 load(fullfile(sourceDir,'testing','unit_tests','test_data','ecoli_textbook.mat'), 'model');
@@ -49,4 +57,17 @@ s = dir(fullfile(sourceDir,'testing','unit_tests','test_data','_test.xml'));
 filesize = s.bytes;
 verifyTrue(testCase,filesize>18500);
 delete(fullfile(sourceDir,'testing','unit_tests','test_data','_test.xml'));
+end
+
+function testYAMLexport(testCase)
+sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
+load(fullfile(sourceDir,'tutorial','empty.mat'), 'emptyModel');
+evalc('writeYAMLmodel(emptyModel,fullfile(sourceDir,''testing'',''unit_tests'',''test_data'',''_test.yml''))');
+%File will not be exactly equal as it contains the current date and time,
+%so md5 or similar would not work. Just check whether file is reasonably
+%sized.
+s = dir(fullfile(sourceDir,'testing','unit_tests','test_data','_test.yml'));         
+filesize = s.bytes;
+verifyTrue(testCase,filesize>1290);
+delete(fullfile(sourceDir,'testing','unit_tests','test_data','_test.yml'));
 end
