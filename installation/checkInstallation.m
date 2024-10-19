@@ -179,7 +179,7 @@ else
 end
 
 fprintf(myStr('   > Export Excel format',40))
-if res(3).Passed == 1
+if res(4).Passed == 1
     fprintf('Pass\n')
 else
     printOrange('Fail\n')
@@ -193,20 +193,25 @@ else
 end
 
 fprintf(myStr('   > Export SBML format',40))
-if res(4).Passed == 1
+if res(5).Passed == 1
     fprintf('Pass\n')
 else
     printOrange('Fail\n')
 end
 
-%Check if it is possible to import an YAML model
-% fprintf(' > Checking import of model in YAML format:\t\t\t');
-% try
-%     readYaml(ymlFile,true);
-%     fprintf('Pass\n');
-% catch
-%     printOrange('Fail\n');
-% end
+fprintf(myStr('   > Import YAML format',40))
+if res(3).Passed == 1
+    fprintf('Pass\n')
+else
+    printOrange('Fail\n')
+end
+
+fprintf(myStr('   > Export YAML format',40))
+if res(6).Passed == 1
+    fprintf('Pass\n')
+else
+    printOrange('Fail\n')
+end
 
 fprintf('\n=== Model solvers ===\n');
 
