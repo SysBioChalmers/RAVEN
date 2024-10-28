@@ -23,6 +23,9 @@ end
 rxns=convertCharArray(rxns);
 grRules=convertCharArray(grRules);
 
+if isscalar(grRules) && ~isscalar(rxns)
+    grRules = repmat(grRules,1,numel(rxns));
+end
 if ~(numel(grRules)==numel(rxns))
     error('Number of rxns and grRules should be identical')
 end
