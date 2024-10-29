@@ -1238,52 +1238,53 @@ This function is called by:
 1128 <span class="comment">%Finding whether miriams are written in the old or the new way</span>
 1129 <span class="keyword">if</span> strfind(searchString,<span class="string">'urn:miriam:'</span>)
 1130     startString=<span class="string">'urn:miriam:'</span>;
-1131     midString=<span class="string">':'</span>;
-1132 <span class="keyword">elseif</span> strfind(searchString,<span class="string">'http://identifiers.org/'</span>)
-1133     startString=<span class="string">'http://identifiers.org/'</span>;
-1134     midString=<span class="string">'/'</span>;
-1135 <span class="keyword">elseif</span> strfind(searchString,<span class="string">'https://identifiers.org/'</span>)
-1136     startString=<span class="string">'https://identifiers.org/'</span>;
-1137     midString=<span class="string">'/'</span>;
-1138 <span class="keyword">else</span>
-1139     miriamStruct=[];
-1140     <span class="keyword">return</span>;
-1141 <span class="keyword">end</span>
-1142 
-1143 miriamStruct=[];
-1144 
-1145 searchString=regexprep(searchString,<span class="string">'&quot; /&gt;'</span>,<span class="string">'&quot;/&gt;'</span>);
-1146 [~,targetString] = regexp(searchString,<span class="string">'&lt;rdf:li rdf:resource=&quot;.*?&quot;/&gt;'</span>,<span class="string">'tokens'</span>,<span class="string">'match'</span>);
-1147 targetString=regexprep(targetString,<span class="string">'&lt;rdf:li rdf:resource=&quot;|&quot;/&gt;'</span>,<span class="string">''</span>);
-1148 targetString=regexprep(targetString,startString,<span class="string">''</span>);
-1149 targetString=regexprep(targetString,midString,<span class="string">'/'</span>,<span class="string">'once'</span>);
-1150 
-1151 counter=0;
-1152 <span class="keyword">for</span> i=1:numel(targetString)
-1153     <span class="keyword">if</span> isempty(regexp(targetString{1,i},<span class="string">'inchi|ec-code'</span>, <span class="string">'once'</span>))
-1154         counter=counter+1;
-1155         miriamStruct.name{counter,1} = regexprep(targetString{1,i},<span class="string">'/.+'</span>,<span class="string">''</span>,<span class="string">'once'</span>);
-1156         miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} <span class="string">'/'</span>],<span class="string">''</span>,<span class="string">'once'</span>);
-1157         miriamStruct.name{counter,1} = regexprep(miriamStruct.name{counter,1},<span class="string">'^obo\.'</span>,<span class="string">''</span>);
-1158     <span class="keyword">end</span>
-1159 <span class="keyword">end</span>
+1131 <span class="keyword">elseif</span> strfind(searchString,<span class="string">'http://identifiers.org/'</span>)
+1132     startString=<span class="string">'http://identifiers.org/'</span>;
+1133 <span class="keyword">elseif</span> strfind(searchString,<span class="string">'https://identifiers.org/'</span>)
+1134     startString=<span class="string">'https://identifiers.org/'</span>;
+1135 <span class="keyword">else</span>
+1136     miriamStruct=[];
+1137     <span class="keyword">return</span>;
+1138 <span class="keyword">end</span>
+1139 
+1140 miriamStruct=[];
+1141 
+1142 searchString=regexprep(searchString,<span class="string">'&quot; /&gt;'</span>,<span class="string">'&quot;/&gt;'</span>);
+1143 [~,targetString] = regexp(searchString,<span class="string">'&lt;rdf:li rdf:resource=&quot;.*?&quot;/&gt;'</span>,<span class="string">'tokens'</span>,<span class="string">'match'</span>);
+1144 targetString=regexprep(targetString,<span class="string">'&lt;rdf:li rdf:resource=&quot;|&quot;/&gt;'</span>,<span class="string">''</span>);
+1145 targetString=regexprep(targetString,startString,<span class="string">''</span>);
+1146 
+1147 fwdslash  = contains(targetString,<span class="string">'/'</span>);
+1148 midString = cell(numel(targetString),1);
+1149 midString(fwdslash) = {<span class="string">'/'</span>};
+1150 midString(~fwdslash) = {<span class="string">':'</span>};
+1151 
+1152 counter=0;
+1153 <span class="keyword">for</span> i=1:numel(targetString)
+1154     <span class="keyword">if</span> isempty(regexp(targetString{1,i},<span class="string">'inchi|ec-code'</span>, <span class="string">'once'</span>))
+1155         counter=counter+1;
+1156         miriamStruct.name{counter,1} = regexprep(targetString{1,i},[midString{i} <span class="string">'.+'</span>],<span class="string">''</span>,<span class="string">'once'</span>);
+1157         miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} midString{i}],<span class="string">''</span>,<span class="string">'once'</span>);
+1158         miriamStruct.name{counter,1} = regexprep(miriamStruct.name{counter,1},<span class="string">'^obo\.'</span>,<span class="string">''</span>);
+1159     <span class="keyword">end</span>
 1160 <span class="keyword">end</span>
-1161 
-1162 <a name="_sub5" href="#_subfunctions" class="code">function miriam = addSBOtoMiriam(miriam,sboTerm)</a>
-1163 <span class="comment">%Appends SBO term to miriam structure</span>
-1164 
-1165 sboTerm = {[<span class="string">'SBO:'</span> sprintf(<span class="string">'%07u'</span>,sboTerm)]};  <span class="comment">% convert to proper format</span>
-1166 <span class="keyword">if</span> isempty(miriam)
-1167     miriam.name = {<span class="string">'sbo'</span>};
-1168     miriam.value = sboTerm;
-1169 <span class="keyword">elseif</span> any(strcmp(<span class="string">'sbo'</span>,miriam.name))
-1170     currSbo = strcmp(<span class="string">'sbo'</span>,miriam.name);
-1171     miriam.value(currSbo) = sboTerm;
-1172 <span class="keyword">else</span>
-1173     miriam.name(end+1) = {<span class="string">'sbo'</span>};
-1174     miriam.value(end+1) = sboTerm;
-1175 <span class="keyword">end</span>
-1176 <span class="keyword">end</span></pre></div>
+1161 <span class="keyword">end</span>
+1162 
+1163 <a name="_sub5" href="#_subfunctions" class="code">function miriam = addSBOtoMiriam(miriam,sboTerm)</a>
+1164 <span class="comment">%Appends SBO term to miriam structure</span>
+1165 
+1166 sboTerm = {[<span class="string">'SBO:'</span> sprintf(<span class="string">'%07u'</span>,sboTerm)]};  <span class="comment">% convert to proper format</span>
+1167 <span class="keyword">if</span> isempty(miriam)
+1168     miriam.name = {<span class="string">'sbo'</span>};
+1169     miriam.value = sboTerm;
+1170 <span class="keyword">elseif</span> any(strcmp(<span class="string">'sbo'</span>,miriam.name))
+1171     currSbo = strcmp(<span class="string">'sbo'</span>,miriam.name);
+1172     miriam.value(currSbo) = sboTerm;
+1173 <span class="keyword">else</span>
+1174     miriam.name(end+1) = {<span class="string">'sbo'</span>};
+1175     miriam.value(end+1) = sboTerm;
+1176 <span class="keyword">end</span>
+1177 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
