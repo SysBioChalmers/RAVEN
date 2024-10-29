@@ -867,7 +867,7 @@ else
             end
             proteins={modelSBML.fbc_geneProduct.fbc_name};
         else
-            genes=getGeneList(grRules);
+            genes=getGenesFromGrRules(grRules);
         end
         model.genes=genes;
         model.grRules=grRules;
@@ -1056,31 +1056,6 @@ end
 
 if removeExcMets==true
     model=simplifyModel(model);
-end
-end
-
-function matchGenes=getGeneList(grRules)
-%Constructs the list of unique genes from grRules
-
-%Assumes that everything that isn't a paranthesis, " AND " or " or " is a
-%gene name
-genes=strrep(grRules,'(','');
-genes=strrep(genes,')','');
-genes=strrep(genes,' or ',' ');
-genes=strrep(genes,' and ',' ');
-genes=strrep(genes,' OR ',' ');
-genes=strrep(genes,' AND ',' ');
-genes=regexp(genes,' ','split');
-
-allNames={};
-for i=1:numel(genes)
-    allNames=[allNames genes{i}];
-end
-matchGenes=unique(allNames)';
-
-%Remove the empty element if present
-if isempty(matchGenes{1})
-    matchGenes(1)=[];
 end
 end
 
