@@ -1,4 +1,4 @@
-function [model, removedRxns, idxDuplRxns]=replaceMets(model,metabolite,replacement,verbose)
+function [model, removedRxns, idxDuplRxns]=replaceMets(model,metabolite,replacement,verbose,identifiers)
 % replaceMets
 %   Replaces metabolite names and annotation with replacement metabolite
 %   that is already in the model. If this results in duplicate metabolites,
@@ -13,6 +13,9 @@ function [model, removedRxns, idxDuplRxns]=replaceMets(model,metabolite,replacem
 %   verbose         logical whether to print the ids of reactions that
 %                   involve the replaced metabolite (optional, default
 %                   false)
+%   identifiers     true if 'metabolite' and 'replacement' refer to
+%                   metabolite identifiers instead of metabolite names
+%                   (optional, default false)
 % 
 % Output:
 %   model           model structure with selected metabolites replaced
@@ -20,35 +23,49 @@ function [model, removedRxns, idxDuplRxns]=replaceMets(model,metabolite,replacem
 %   idxDuplRxns     index of removedRxns in original model
 %
 % Note: This function is useful when the model contains both 'oxygen' and
-% 'o2' as metabolites. 
+% 'o2' as metabolite names. If 'oxygen' and 'o2' are identifiers instead,
+% then the 'identifiers' flag should be set to true.
 %
 % Usage: [model, removedRxns, idxDuplRxns] = replaceMets(model, metabolite, replacement, verbose)
 
 metabolite=char(metabolite);
 replacement=char(replacement);
 
-if nargin<4
+if nargin<4 || isempty(verbose)
     verbose=false;
+end
+if nargin<5
+    identifiers = false;
 end
 
 % Find occurence of replacement metabolites. Annotation will be taken from
-% first metabolite found. Metabolite ID from replacement will be used where
-% possible.
-repIdx = find(strcmp(replacement,model.metNames));
+% first metabolite found.
+if identifiers
+    repIdx = find(strcmp(replacement,model.mets));
+else
+    repIdx = find(strcmp(replacement,model.metNames));
+end
 if isempty(repIdx)
-    error('The replacement metabolite name cannot be found in the model.');
+    error('The replacement metabolite cannot be found in the model.');
 end
 
 % Change name and information from metabolite to replacement metabolite
-metIdx = find(strcmp(metabolite,model.metNames));
-if isempty(metIdx)
-    error('The to-be-replaced metabolite name cannot be found in the model.');
+if identifiers
+    metIdx = find(strcmp(metabolite,model.mets));
+else
+    metIdx = find(strcmp(metabolite,model.metNames));
 end
+if isempty(metIdx)
+    error('The to-be-replaced metabolite cannot be found in the model.');
+end
+
+rxnsWithMet = find(model.S(metIdx,:));
 if verbose==true
-    fprintf('\n\nThe following reactions contain the replaced metabolite as reactant:\n')
-    fprintf(strjoin(model.rxns(find(model.S(metIdx,:))),'\n'))
+    fprintf('\n\nThe following reactions contain the to-be-replaced metabolite as reactant:\n')
+    fprintf(strjoin(model.rxns(rxnsWithMet),'\n'))
     fprintf('\n')
 end
+
 model.metNames(metIdx) = model.metNames(repIdx(1));
 if isfield(model,'metFormulas')
     model.metFormulas(metIdx) = model.metFormulas(repIdx(1));
@@ -68,24 +85,32 @@ end
 if isfield(model,'metSmiles')
     model.metSmiles(metIdx) = model.metSmiles(repIdx(1));
 end
-% Run through replacement metabolites and their compartments. If any of the
-% to-be-replaced metabolites is already present (checked by
-% metaboliteName[compartment], then the replacement metabolite is kept and
-% the to-be-replace metabolite ID deleted.
-
-% Build list of metaboliteName[compartment]
-metCompsN =cellstr(num2str(model.metComps));
-map = containers.Map(cellstr(num2str(transpose(1:length(model.comps)))),model.comps);
-metCompsN = map.values(metCompsN);
-metCompsN = strcat(lower(model.metNames),'[',metCompsN,']');
 
 idxDelete=[];
-for i = 1:length(repIdx)
-    metCompsNidx=find(strcmp(metCompsN(repIdx(i)), metCompsN));
-    if length(metCompsNidx)>1
-        for j = 2:length(metCompsNidx)
-            model.S(metCompsNidx(1),:) = model.S(metCompsNidx(1),:) + model.S(metCompsNidx(j),:);
-            idxDelete=[idxDelete; metCompsNidx(j)]; % Make list of metabolite IDs to delete
+if identifiers
+    originalStoch = model.S(metIdx,rxnsWithMet);
+    model.S(repIdx,rxnsWithMet) = originalStoch;
+    model.S(metIdx,rxnsWithMet) = 0;
+    idxDelete = metIdx;
+else
+    % Run through replacement metabolites and their compartments. If any of the
+    % to-be-replaced metabolites is already present (checked by
+    % metaboliteName[compartment], then the replacement metabolite is kept and
+    % the to-be-replace metabolite ID deleted.
+    
+    % Build list of metaboliteName[compartment]
+    metCompsN =cellstr(num2str(model.metComps));
+    map = containers.Map(cellstr(num2str(transpose(1:length(model.comps)))),model.comps);
+    metCompsN = map.values(metCompsN);
+    metCompsN = strcat(lower(model.metNames),'[',metCompsN,']');
+    
+    for i = 1:length(repIdx)
+        metCompsNidx=find(strcmp(metCompsN(repIdx(i)), metCompsN));
+        if length(metCompsNidx)>1
+            for j = 2:length(metCompsNidx)
+                model.S(metCompsNidx(1),:) = model.S(metCompsNidx(1),:) + model.S(metCompsNidx(j),:);
+                idxDelete=[idxDelete; metCompsNidx(j)]; % Make list of metabolite IDs to delete
+            end
         end
     end
 end

@@ -124,9 +124,7 @@ if isfield(model,'grRules')
         EM='If "grRules" field exists, the model should also contain a "genes" field';
         dispEM(EM,throwErrors);
     else
-        geneList = strjoin(model.grRules);
-        geneList = regexp(geneList,' |)|(|and|or','split'); % Remove all grRule punctuation
-        geneList = geneList(~cellfun(@isempty,geneList));  % Remove spaces and empty genes
+        geneList = getGenesFromGrRules(model.grRules);
         geneList = setdiff(unique(geneList),model.genes);
         if ~isempty(geneList)
             problemGrRules = model.rxns(contains(model.grRules,geneList));
