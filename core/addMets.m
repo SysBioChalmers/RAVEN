@@ -70,6 +70,7 @@ end
 
 %Check some stuff regarding the required fields
 if ~isfield(metsToAdd,'mets')
+    metsToAdd.metNames=convertCharArray(metsToAdd.metNames);
     metsToAdd.mets=generateNewIds(newModel,'mets',prefix,numel(metsToAdd.metNames));
 else
     metsToAdd.mets=convertCharArray(metsToAdd.mets);

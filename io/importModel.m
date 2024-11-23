@@ -867,7 +867,7 @@ else
             end
             proteins={modelSBML.fbc_geneProduct.fbc_name};
         else
-            genes=getGeneList(grRules);
+            genes=getGenesFromGrRules(grRules);
         end
         model.genes=genes;
         model.grRules=grRules;
@@ -1059,31 +1059,6 @@ if removeExcMets==true
 end
 end
 
-function matchGenes=getGeneList(grRules)
-%Constructs the list of unique genes from grRules
-
-%Assumes that everything that isn't a paranthesis, " AND " or " or " is a
-%gene name
-genes=strrep(grRules,'(','');
-genes=strrep(genes,')','');
-genes=strrep(genes,' or ',' ');
-genes=strrep(genes,' and ',' ');
-genes=strrep(genes,' OR ',' ');
-genes=strrep(genes,' AND ',' ');
-genes=regexp(genes,' ','split');
-
-allNames={};
-for i=1:numel(genes)
-    allNames=[allNames genes{i}];
-end
-matchGenes=unique(allNames)';
-
-%Remove the empty element if present
-if isempty(matchGenes{1})
-    matchGenes(1)=[];
-end
-end
-
 function fieldContent=parseNote(searchString,fieldName)
 %The function obtains the particular information from 'notes' field, using
 %fieldName as the dummy string
@@ -1128,13 +1103,10 @@ function miriamStruct=parseMiriam(searchString)
 %Finding whether miriams are written in the old or the new way
 if strfind(searchString,'urn:miriam:')
     startString='urn:miriam:';
-    midString=':';
 elseif strfind(searchString,'http://identifiers.org/')
     startString='http://identifiers.org/';
-    midString='/';
 elseif strfind(searchString,'https://identifiers.org/')
     startString='https://identifiers.org/';
-    midString='/';
 else
     miriamStruct=[];
     return;
@@ -1146,14 +1118,18 @@ searchString=regexprep(searchString,'" />','"/>');
 [~,targetString] = regexp(searchString,'<rdf:li rdf:resource=".*?"/>','tokens','match');
 targetString=regexprep(targetString,'<rdf:li rdf:resource="|"/>','');
 targetString=regexprep(targetString,startString,'');
-targetString=regexprep(targetString,midString,'/','once');
+
+fwdslash  = contains(targetString,'/');
+midString = cell(numel(targetString),1);
+midString(fwdslash) = {'/'};
+midString(~fwdslash) = {':'};
 
 counter=0;
 for i=1:numel(targetString)
     if isempty(regexp(targetString{1,i},'inchi|ec-code', 'once'))
         counter=counter+1;
-        miriamStruct.name{counter,1} = regexprep(targetString{1,i},'/.+','','once');
-        miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} '/'],'','once');
+        miriamStruct.name{counter,1} = regexprep(targetString{1,i},[midString{i} '.+'],'','once');
+        miriamStruct.value{counter,1} = regexprep(targetString{1,i},[miriamStruct.name{counter,1} midString{i}],'','once');
         miriamStruct.name{counter,1} = regexprep(miriamStruct.name{counter,1},'^obo\.','');
     end
 end

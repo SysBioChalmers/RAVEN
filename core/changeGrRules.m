@@ -23,22 +23,22 @@ end
 rxns=convertCharArray(rxns);
 grRules=convertCharArray(grRules);
 
+if isscalar(grRules) && ~isscalar(rxns)
+    grRules = repmat(grRules,1,numel(rxns));
+end
 if ~(numel(grRules)==numel(rxns))
     error('Number of rxns and grRules should be identical')
 end
 
-for i=1:length(rxns)
-    % Add genes to model
-    geneList=transpose(cell(unique(regexp(grRules{i},'[)(]*|( and )*|( or )*','split')))); % Extract individual, unique genes from the geneAssoc provided
-    geneList=geneList(~cellfun(@isempty, geneList));
-    genesToAdd.genes=setdiff(geneList,model.genes); % Only keep the genes that are not yet part of the model.genes.
-    if ~isempty(genesToAdd.genes)
-        model=addGenesRaven(model,genesToAdd); % Add genes
-    end
-    
-    % Find reaction and gene indices
-    idx=getIndexes(model,rxns,'rxns');
+% Add genes to model
+geneList = getGenesFromGrRules(grRules);
+genesToAdd.genes=setdiff(geneList,model.genes); % Only keep the genes that are not yet part of the model.genes.
+if ~isempty(genesToAdd.genes)
+    model=addGenesRaven(model,genesToAdd); % Add genes
 end
+    
+% Find reaction and gene indices
+idx=getIndexes(model,rxns,'rxns');
 
 % Change gene associations
 if replace==true % Replace old gene associations

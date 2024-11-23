@@ -62,7 +62,11 @@ if isfield(model,'eccodes')
     model.eccodes=[model.eccodes;filler];
 end
 if isfield(model,'subSystems')
-    model.subSystems=[model.subSystems;filler];
+    fillerSub = filler;
+    if iscell(model.subSystems(1,1))
+        fillerSub = repmat({fillerSub},numel(J),1);
+    end
+    model.subSystems=[model.subSystems;fillerSub];
 end
 if isfield(model,'grRules')
     model.grRules=[model.grRules;filler];

@@ -24,7 +24,7 @@
 <div class="box"><strong>replaceMets</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [model, removedRxns, idxDuplRxns]=replaceMets(model,metabolite,replacement,verbose) </strong></div>
+<div class="box"><strong>function [model, removedRxns, idxDuplRxns]=replaceMets(model,metabolite,replacement,verbose,identifiers) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> replaceMets
@@ -41,6 +41,9 @@
    verbose         logical whether to print the ids of reactions that
                    involve the replaced metabolite (optional, default
                    false)
+   identifiers     true if 'metabolite' and 'replacement' refer to
+                   metabolite identifiers instead of metabolite names
+                   (optional, default false)
  
  Output:
    model           model structure with selected metabolites replaced
@@ -48,7 +51,8 @@
    idxDuplRxns     index of removedRxns in original model
 
  Note: This function is useful when the model contains both 'oxygen' and
- 'o2' as metabolites. 
+ 'o2' as metabolite names. If 'oxygen' and 'o2' are identifiers instead,
+ then the 'identifiers' flag should be set to true.
 
  Usage: [model, removedRxns, idxDuplRxns] = replaceMets(model, metabolite, replacement, verbose)</pre></div>
 
@@ -65,7 +69,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [model, removedRxns, idxDuplRxns]=replaceMets(model,metabolite,replacement,verbose)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [model, removedRxns, idxDuplRxns]=replaceMets(model,metabolite,replacement,verbose,identifiers)</a>
 0002 <span class="comment">% replaceMets</span>
 0003 <span class="comment">%   Replaces metabolite names and annotation with replacement metabolite</span>
 0004 <span class="comment">%   that is already in the model. If this results in duplicate metabolites,</span>
@@ -80,118 +84,143 @@ This function is called by:
 0013 <span class="comment">%   verbose         logical whether to print the ids of reactions that</span>
 0014 <span class="comment">%                   involve the replaced metabolite (optional, default</span>
 0015 <span class="comment">%                   false)</span>
-0016 <span class="comment">%</span>
-0017 <span class="comment">% Output:</span>
-0018 <span class="comment">%   model           model structure with selected metabolites replaced</span>
-0019 <span class="comment">%   removedRxns     identifiers of duplicate reactions that were removed</span>
-0020 <span class="comment">%   idxDuplRxns     index of removedRxns in original model</span>
-0021 <span class="comment">%</span>
-0022 <span class="comment">% Note: This function is useful when the model contains both 'oxygen' and</span>
-0023 <span class="comment">% 'o2' as metabolites.</span>
+0016 <span class="comment">%   identifiers     true if 'metabolite' and 'replacement' refer to</span>
+0017 <span class="comment">%                   metabolite identifiers instead of metabolite names</span>
+0018 <span class="comment">%                   (optional, default false)</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Output:</span>
+0021 <span class="comment">%   model           model structure with selected metabolites replaced</span>
+0022 <span class="comment">%   removedRxns     identifiers of duplicate reactions that were removed</span>
+0023 <span class="comment">%   idxDuplRxns     index of removedRxns in original model</span>
 0024 <span class="comment">%</span>
-0025 <span class="comment">% Usage: [model, removedRxns, idxDuplRxns] = replaceMets(model, metabolite, replacement, verbose)</span>
-0026 
-0027 metabolite=char(metabolite);
-0028 replacement=char(replacement);
-0029 
-0030 <span class="keyword">if</span> nargin&lt;4
-0031     verbose=false;
-0032 <span class="keyword">end</span>
+0025 <span class="comment">% Note: This function is useful when the model contains both 'oxygen' and</span>
+0026 <span class="comment">% 'o2' as metabolite names. If 'oxygen' and 'o2' are identifiers instead,</span>
+0027 <span class="comment">% then the 'identifiers' flag should be set to true.</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Usage: [model, removedRxns, idxDuplRxns] = replaceMets(model, metabolite, replacement, verbose)</span>
+0030 
+0031 metabolite=char(metabolite);
+0032 replacement=char(replacement);
 0033 
-0034 <span class="comment">% Find occurence of replacement metabolites. Annotation will be taken from</span>
-0035 <span class="comment">% first metabolite found. Metabolite ID from replacement will be used where</span>
-0036 <span class="comment">% possible.</span>
-0037 repIdx = find(strcmp(replacement,model.metNames));
-0038 <span class="keyword">if</span> isempty(repIdx)
-0039     error(<span class="string">'The replacement metabolite name cannot be found in the model.'</span>);
-0040 <span class="keyword">end</span>
-0041 
-0042 <span class="comment">% Change name and information from metabolite to replacement metabolite</span>
-0043 metIdx = find(strcmp(metabolite,model.metNames));
-0044 <span class="keyword">if</span> isempty(metIdx)
-0045     error(<span class="string">'The to-be-replaced metabolite name cannot be found in the model.'</span>);
-0046 <span class="keyword">end</span>
-0047 <span class="keyword">if</span> verbose==true
-0048     fprintf(<span class="string">'\n\nThe following reactions contain the replaced metabolite as reactant:\n'</span>)
-0049     fprintf(strjoin(model.rxns(find(model.S(metIdx,:))),<span class="string">'\n'</span>))
-0050     fprintf(<span class="string">'\n'</span>)
-0051 <span class="keyword">end</span>
-0052 model.metNames(metIdx) = model.metNames(repIdx(1));
-0053 <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
-0054     model.metFormulas(metIdx) = model.metFormulas(repIdx(1));
-0055 <span class="keyword">end</span>
-0056 <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
-0057     model.metMiriams(metIdx) = model.metMiriams(repIdx(1));
-0058 <span class="keyword">end</span>
-0059 <span class="keyword">if</span> isfield(model,<span class="string">'metCharges'</span>)
-0060     model.metCharges(metIdx) = model.metCharges(repIdx(1));
-0061 <span class="keyword">end</span>
-0062 <span class="keyword">if</span> isfield(model,<span class="string">'metDeltaG'</span>)
-0063     model.metDeltaG(metIdx) = model.metDeltaG(repIdx(1));
-0064 <span class="keyword">end</span>
-0065 <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
-0066     model.inchis(metIdx) = model.inchis(repIdx(1));
+0034 <span class="keyword">if</span> nargin&lt;4 || isempty(verbose)
+0035     verbose=false;
+0036 <span class="keyword">end</span>
+0037 <span class="keyword">if</span> nargin&lt;5
+0038     identifiers = false;
+0039 <span class="keyword">end</span>
+0040 
+0041 <span class="comment">% Find occurence of replacement metabolites. Annotation will be taken from</span>
+0042 <span class="comment">% first metabolite found.</span>
+0043 <span class="keyword">if</span> identifiers
+0044     repIdx = find(strcmp(replacement,model.mets));
+0045 <span class="keyword">else</span>
+0046     repIdx = find(strcmp(replacement,model.metNames));
+0047 <span class="keyword">end</span>
+0048 <span class="keyword">if</span> isempty(repIdx)
+0049     error(<span class="string">'The replacement metabolite cannot be found in the model.'</span>);
+0050 <span class="keyword">end</span>
+0051 
+0052 <span class="comment">% Change name and information from metabolite to replacement metabolite</span>
+0053 <span class="keyword">if</span> identifiers
+0054     metIdx = find(strcmp(metabolite,model.mets));
+0055 <span class="keyword">else</span>
+0056     metIdx = find(strcmp(metabolite,model.metNames));
+0057 <span class="keyword">end</span>
+0058 <span class="keyword">if</span> isempty(metIdx)
+0059     error(<span class="string">'The to-be-replaced metabolite cannot be found in the model.'</span>);
+0060 <span class="keyword">end</span>
+0061 
+0062 rxnsWithMet = find(model.S(metIdx,:));
+0063 <span class="keyword">if</span> verbose==true
+0064     fprintf(<span class="string">'\n\nThe following reactions contain the to-be-replaced metabolite as reactant:\n'</span>)
+0065     fprintf(strjoin(model.rxns(rxnsWithMet),<span class="string">'\n'</span>))
+0066     fprintf(<span class="string">'\n'</span>)
 0067 <span class="keyword">end</span>
-0068 <span class="keyword">if</span> isfield(model,<span class="string">'metSmiles'</span>)
-0069     model.metSmiles(metIdx) = model.metSmiles(repIdx(1));
-0070 <span class="keyword">end</span>
-0071 <span class="comment">% Run through replacement metabolites and their compartments. If any of the</span>
-0072 <span class="comment">% to-be-replaced metabolites is already present (checked by</span>
-0073 <span class="comment">% metaboliteName[compartment], then the replacement metabolite is kept and</span>
-0074 <span class="comment">% the to-be-replace metabolite ID deleted.</span>
-0075 
-0076 <span class="comment">% Build list of metaboliteName[compartment]</span>
-0077 metCompsN =cellstr(num2str(model.metComps));
-0078 map = containers.Map(cellstr(num2str(transpose(1:length(model.comps)))),model.comps);
-0079 metCompsN = map.values(metCompsN);
-0080 metCompsN = strcat(lower(model.metNames),<span class="string">'['</span>,metCompsN,<span class="string">']'</span>);
-0081 
-0082 idxDelete=[];
-0083 <span class="keyword">for</span> i = 1:length(repIdx)
-0084     metCompsNidx=find(strcmp(metCompsN(repIdx(i)), metCompsN));
-0085     <span class="keyword">if</span> length(metCompsNidx)&gt;1
-0086         <span class="keyword">for</span> j = 2:length(metCompsNidx)
-0087             model.S(metCompsNidx(1),:) = model.S(metCompsNidx(1),:) + model.S(metCompsNidx(j),:);
-0088             idxDelete=[idxDelete; metCompsNidx(j)]; <span class="comment">% Make list of metabolite IDs to delete</span>
-0089         <span class="keyword">end</span>
-0090     <span class="keyword">end</span>
-0091 <span class="keyword">end</span>
-0092 
-0093 <span class="keyword">if</span> ~isempty(idxDelete)
-0094     model.S(idxDelete,:) =[];
-0095     model.mets(idxDelete) = [];
-0096     model.metNames(idxDelete) = [];
-0097     model.metComps(idxDelete) = [];
-0098     model.b(idxDelete) = [];
-0099     <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
-0100         model.metFormulas(idxDelete) = [];
-0101     <span class="keyword">end</span>
-0102     <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
-0103         model.unconstrained(idxDelete) = [];
-0104     <span class="keyword">end</span>
-0105     <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
-0106         model.metMiriams(idxDelete) = [];
-0107     <span class="keyword">end</span>
-0108     <span class="keyword">if</span> isfield(model,<span class="string">'metCharges'</span>)
-0109         model.metCharges(idxDelete) = [];
-0110     <span class="keyword">end</span>
-0111     <span class="keyword">if</span> isfield(model,<span class="string">'metDeltaG'</span>)
-0112         model.metDeltaG(idxDelete) = [];
-0113     <span class="keyword">end</span>
-0114     <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
-0115         model.inchis(idxDelete) = [];
-0116     <span class="keyword">end</span>
-0117     <span class="keyword">if</span> isfield(model,<span class="string">'metSmiles'</span>)
-0118         model.metSmiles(idxDelete) = [];
-0119     <span class="keyword">end</span>
-0120     <span class="keyword">if</span> isfield(model,<span class="string">'metFrom'</span>)
-0121         model.metFrom(idxDelete) = [];
-0122     <span class="keyword">end</span>
-0123 <span class="keyword">end</span>
-0124 
-0125 <span class="comment">% This could now have created duplicate reactions. Contract model.</span>
-0126 model=<a href="contractModel.html" class="code" title="function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse,mets)">contractModel</a>(model,[],repIdx);
-0127 <span class="keyword">end</span></pre></div>
+0068 
+0069 model.metNames(metIdx) = model.metNames(repIdx(1));
+0070 <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
+0071     model.metFormulas(metIdx) = model.metFormulas(repIdx(1));
+0072 <span class="keyword">end</span>
+0073 <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
+0074     model.metMiriams(metIdx) = model.metMiriams(repIdx(1));
+0075 <span class="keyword">end</span>
+0076 <span class="keyword">if</span> isfield(model,<span class="string">'metCharges'</span>)
+0077     model.metCharges(metIdx) = model.metCharges(repIdx(1));
+0078 <span class="keyword">end</span>
+0079 <span class="keyword">if</span> isfield(model,<span class="string">'metDeltaG'</span>)
+0080     model.metDeltaG(metIdx) = model.metDeltaG(repIdx(1));
+0081 <span class="keyword">end</span>
+0082 <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
+0083     model.inchis(metIdx) = model.inchis(repIdx(1));
+0084 <span class="keyword">end</span>
+0085 <span class="keyword">if</span> isfield(model,<span class="string">'metSmiles'</span>)
+0086     model.metSmiles(metIdx) = model.metSmiles(repIdx(1));
+0087 <span class="keyword">end</span>
+0088 
+0089 idxDelete=[];
+0090 <span class="keyword">if</span> identifiers
+0091     originalStoch = model.S(metIdx,rxnsWithMet);
+0092     model.S(repIdx,rxnsWithMet) = originalStoch;
+0093     model.S(metIdx,rxnsWithMet) = 0;
+0094     idxDelete = metIdx;
+0095 <span class="keyword">else</span>
+0096     <span class="comment">% Run through replacement metabolites and their compartments. If any of the</span>
+0097     <span class="comment">% to-be-replaced metabolites is already present (checked by</span>
+0098     <span class="comment">% metaboliteName[compartment], then the replacement metabolite is kept and</span>
+0099     <span class="comment">% the to-be-replace metabolite ID deleted.</span>
+0100     
+0101     <span class="comment">% Build list of metaboliteName[compartment]</span>
+0102     metCompsN =cellstr(num2str(model.metComps));
+0103     map = containers.Map(cellstr(num2str(transpose(1:length(model.comps)))),model.comps);
+0104     metCompsN = map.values(metCompsN);
+0105     metCompsN = strcat(lower(model.metNames),<span class="string">'['</span>,metCompsN,<span class="string">']'</span>);
+0106     
+0107     <span class="keyword">for</span> i = 1:length(repIdx)
+0108         metCompsNidx=find(strcmp(metCompsN(repIdx(i)), metCompsN));
+0109         <span class="keyword">if</span> length(metCompsNidx)&gt;1
+0110             <span class="keyword">for</span> j = 2:length(metCompsNidx)
+0111                 model.S(metCompsNidx(1),:) = model.S(metCompsNidx(1),:) + model.S(metCompsNidx(j),:);
+0112                 idxDelete=[idxDelete; metCompsNidx(j)]; <span class="comment">% Make list of metabolite IDs to delete</span>
+0113             <span class="keyword">end</span>
+0114         <span class="keyword">end</span>
+0115     <span class="keyword">end</span>
+0116 <span class="keyword">end</span>
+0117 
+0118 <span class="keyword">if</span> ~isempty(idxDelete)
+0119     model.S(idxDelete,:) =[];
+0120     model.mets(idxDelete) = [];
+0121     model.metNames(idxDelete) = [];
+0122     model.metComps(idxDelete) = [];
+0123     model.b(idxDelete) = [];
+0124     <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
+0125         model.metFormulas(idxDelete) = [];
+0126     <span class="keyword">end</span>
+0127     <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
+0128         model.unconstrained(idxDelete) = [];
+0129     <span class="keyword">end</span>
+0130     <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
+0131         model.metMiriams(idxDelete) = [];
+0132     <span class="keyword">end</span>
+0133     <span class="keyword">if</span> isfield(model,<span class="string">'metCharges'</span>)
+0134         model.metCharges(idxDelete) = [];
+0135     <span class="keyword">end</span>
+0136     <span class="keyword">if</span> isfield(model,<span class="string">'metDeltaG'</span>)
+0137         model.metDeltaG(idxDelete) = [];
+0138     <span class="keyword">end</span>
+0139     <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
+0140         model.inchis(idxDelete) = [];
+0141     <span class="keyword">end</span>
+0142     <span class="keyword">if</span> isfield(model,<span class="string">'metSmiles'</span>)
+0143         model.metSmiles(idxDelete) = [];
+0144     <span class="keyword">end</span>
+0145     <span class="keyword">if</span> isfield(model,<span class="string">'metFrom'</span>)
+0146         model.metFrom(idxDelete) = [];
+0147     <span class="keyword">end</span>
+0148 <span class="keyword">end</span>
+0149 
+0150 <span class="comment">% This could now have created duplicate reactions. Contract model.</span>
+0151 model=<a href="contractModel.html" class="code" title="function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse,mets)">contractModel</a>(model,[],repIdx);
+0152 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

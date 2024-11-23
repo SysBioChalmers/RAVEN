@@ -14,11 +14,11 @@ function report=checkRxn(model,rxn,cutoff,revDir,printReport)
 %
 %   report
 %       reactants   array with reactant indexes
-%       canMake     boolean array, true if the corresponding reactant can be
-%                   synthesized
+%       canMake     boolean array, true if the corresponding reactant can
+%                   be synthesized by the rest of the metabolic network
 %       products    array with product indexes
-%       canConsume  boolean array, true if the corresponding reactant can
-%                   be consumed
+%       canConsume  boolean array, true if the corresponding product can
+%                   be consumed by the rest of the metabolic network
 %
 % Usage: report=checkRxn(model,rxn,cutoff,revDir,printReport)
 
