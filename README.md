@@ -30,4 +30,4 @@ Use [GitHub Discussions](https://github.com/SysBioChalmers/RAVEN/discussions) fo
 
 ## Contributing
 
-Contributions are always welcome! Please read the [contributing guidelines](https://github.com/SysBioChalmers/GECKO/blob/main/.github/CONTRIBUTING.md) to get started.
+Contributions are always welcome! Please read the [Contributor guidelines](https://github.com/SysBioChalmers/RAVEN/blob/main/.github/CONTRIBUTING.md) to get started.
