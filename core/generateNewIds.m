@@ -26,6 +26,9 @@ elseif type=='mets'
 else
     error('type should be either ''rxns'' or ''mets''.')
 end
+if nargin<4
+    quantity=1;
+end
 if nargin<5
     numLength=4;
 end
