@@ -52,7 +52,7 @@ for i=1:numel(brokenLine)
 end
 line_raw(brokenLine)=[];
 
-line_key = regexprep(line_raw,'^ *-? ([^:]+)(:).*','$1');
+line_key = regexprep(line_raw,'^ *-? ([^:]+)(:)($| .*)','$1');
 line_key = regexprep(line_key,'(.*!!omap)|(---)|( {4,}.*)','');
 
 line_value = regexprep(line_raw, '.*:$','');
@@ -276,8 +276,7 @@ for i=1:numel(line_key)
             otherwise
                 switch readList
                     case 'annotation'
-                        [metMiriams, miriamKey] = gatherAnnotation(pos,metMiriams,tline_key,tline_value,miriamKey,metMirNo);
-                        metMirNo = metMirNo + 1;
+                        [metMiriams, miriamKey, metMirNo] = gatherAnnotation(pos,metMiriams,tline_key,tline_value,miriamKey,metMirNo);
                     otherwise
                         error(['Unknown entry in yaml file: ' tline_raw])
                 end
@@ -353,7 +352,6 @@ for i=1:numel(line_key)
                         subSysNo=subSysNo+1;
                     case 'annotation'
                         [rxnMiriams, miriamKey,rxnMirNo] = gatherAnnotation(pos,rxnMiriams,tline_key,tline_value,miriamKey,rxnMirNo);
-                        rxnMirNo=rxnMirNo+1;
                     case 'equation'
                         coeff = sscanf(tline_value,'%f');
                         equations(equatiNo,1:3)={pos,tline_key,coeff};
@@ -381,8 +379,7 @@ for i=1:numel(line_key)
             otherwise
                 switch readList
                     case 'annotation'
-                        [geneMiriams, miriamKey] = gatherAnnotation(pos,geneMiriams,tline_key,tline_value,miriamKey,genMirNo);
-                        genMirNo = genMirNo + 1;
+                        [geneMiriams, miriamKey,genMirNo] = gatherAnnotation(pos,geneMiriams,tline_key,tline_value,miriamKey,genMirNo);
                     otherwise
                         error(['Unknown entry in yaml file: ' tline_raw])
                 end
@@ -667,7 +664,7 @@ end
 model.(fieldName)(pos,1) = {value};
 end
 
-function [miriams, miriamKey,entryNumber] = gatherAnnotation(pos,miriams,key,value,miriamKey,entryNumber)
+function [miriams,miriamKey,entryNumber] = gatherAnnotation(pos,miriams,key,value,miriamKey,entryNumber)
 if isempty(key)
     key=miriamKey;
 else
@@ -675,7 +672,6 @@ else
 end
 if ~isempty(value)
     miriams(entryNumber,1:3) = {pos, key, strip(value)};
-else
-    entryNumber = entryNumber - 1;
+    entryNumber = entryNumber + 1;
 end
 end
