@@ -59,6 +59,8 @@ line_value = regexprep(line_raw, '.*:$','');
 line_value = regexprep(line_value, '[^":]+: "?(.+)"?$','$1');
 line_value = regexprep(line_value, '(")|(^ {4,}- )','');
 
+line_value(strcmp(line_value,line_raw)) = {''};
+
 modelFields =   {'id',char();...
                'name',char();...
         'description',char();...
@@ -220,6 +222,8 @@ for i=1:numel(line_key)
                 model.annotation.note = tline_value;
             case 'github'
                 model.annotation.sourceUrl = tline_value;
+            case 'sourceUrl'
+                model.annotation.sourceUrl = tline_value;                
             case 'givenName'
                 model.annotation.givenName = tline_value;
             case 'familyName'
