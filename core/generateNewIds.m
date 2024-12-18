@@ -47,7 +47,10 @@ else
     fprintf(['No ' type ' ids with prefix "' prefix ...
         '" currently exist in the model. The first new id will be "' ...
         [prefix,num2str(1,['%0' num2str(numLength) 'd'])] '"\n'],'%s')
-    lastId=0;
+end
+
+if isnan(lastId)
+    lastId = 0;
 end
 
 newIds=cell(quantity,1);
