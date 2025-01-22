@@ -455,19 +455,9 @@ for i=1:numel(modelSBML.reaction)
     if isfield(modelSBML.reaction(i),'fbc_lowerFluxBound')
         lb=modelSBML.reaction(i).fbc_lowerFluxBound;
         ub=modelSBML.reaction(i).fbc_upperFluxBound;
-        for n=1:numel(parameter.value)
-            lb=regexprep(lb,parameter.name(n),num2str(parameter.value{n}));
-            ub=regexprep(ub,parameter.name(n),num2str(parameter.value{n}));
-        end
-        if isempty(lb)
-            lb='-Inf';
-        end
-        if isempty(ub)
-            ub='Inf';
-        end
-        reactionLB(counter)=str2num(lb);
-        reactionUB(counter)=str2num(ub);
-        %The order of these parameters should not be hard coded
+        [~,fluxBoundIdx] = ismember({lb,ub},parameter.name);
+        reactionLB(counter) = parameter.value{fluxBoundIdx(1)};
+        reactionUB(counter) = parameter.value{fluxBoundIdx(2)};
     elseif isfield(modelSBML.reaction(i).kineticLaw,'parameter')
         reactionLB(counter)=modelSBML.reaction(i).kineticLaw.parameter(1).value;
         reactionUB(counter)=modelSBML.reaction(i).kineticLaw.parameter(2).value;
