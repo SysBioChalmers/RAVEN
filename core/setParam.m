@@ -123,4 +123,9 @@ if ~isempty(indexes)
         end
     end
 end
+if any(ismember(paramType,{'lb','ub','unc'}))
+    invalidBound = model.lb(indexes) > model.ub(indexes);
+    if any(invalidBound)
+        error(['Invalid set of bounds for reaction(s): ', strjoin(model.rxns(indexes(invalidBound)),', '), '.'])
+    end
 end
