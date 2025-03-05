@@ -50,6 +50,10 @@ function [solutions, goodRxns]=randomSampling(model,nSamples,replaceBoundsWithIn
 % a random set of three reactions. For reversible reactions it randomly
 % chooses between maximizing and minimizing.
 %
+% If the model is a GECKO v3+ ecModel, then usage_prot reactions are not
+% selected for sampling, instead focusing on sampling from the metabolic
+% aspects that form the solution space.
+%
 % Usage: solutions = randomSampling(model, nSamples, replaceBoundsWithInf,...
 %                       supressErrors, runParallel, goodRxns, minFlux)
 
@@ -122,6 +126,11 @@ if nargin<6 || isempty(goodRxns)
     testSol(revRxns) = testSol(revRxns) + testSol(numel(fwdRxns)+1:end);
     % Filter out reactions that cannot carry flux
     goodRxns(testSol(1:nRxns) == 0) = false;
+    % In ecModels do not sample from usage_prot reactions
+    if isfield(model,'ec')
+        usageRxns = startsWith(model.rxns,'usage_prot_');
+        goodRxns(usageRxns) = false;
+    end
     goodRxns = find(goodRxns);
 end
 
