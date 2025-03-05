@@ -119,6 +119,9 @@ if nargin<6 || isempty(goodRxns)
     % Filter out reactions that can reach (-)1000 (= involved in loop)
     goodRxns(fwdRxns(testSol(1:numel(fwdRxns)) > 999)) = false;
     goodRxns(revRxns(testSol(numel(fwdRxns)+1:end) > 999)) = false;
+    testSol(revRxns) = testSol(revRxns) + testSol(numel(fwdRxns)+1:end);
+    % Filter out reactions that cannot carry flux
+    goodRxns(testSol(1:nRxns) == 0) = false;
     goodRxns = find(goodRxns);
 end
 
