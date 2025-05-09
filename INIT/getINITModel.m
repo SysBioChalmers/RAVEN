@@ -1,10 +1,10 @@
-function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=getINITModel(refModel, tissue, celltype, hpaData, arrayData, metabolomicsData, taskFile, useScoresForTasks, printReport, taskStructure, params, paramsFT)
+function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=getINITModel(refModel, tissue, celltype, hpaData, arrayData, metabolomicsData, taskFile, useScoresForTasks, printReport, taskStructure)
 % getINITModel_legacy
 %   Generates a model using the INIT algorithm, based on proteomics and/or
 %   transcriptomics and/or metabolomics and/or metabolic tasks. This is the original 
 %   implementation of tINIT, which is replaced by ftINIT.
 %
-%   Input:
+% Input:
 %   refModel            a model structure. The model should be in the
 %                       closed form (no exchange reactions open). Import
 %                       using import(filename,false). If the model is not
@@ -53,15 +53,8 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %                       as an alternative way to define tasks when Excel
 %                       sheets are not suitable. Overrides taskFile (optional,
 %                       default [])
-%   params              parameter structure as used by getMILPParams. This is
-%                       for the INIT algorithm. For the the MILP problems
-%                       solved to fit tasks, see paramsFT (optional, default [])
-%   paramsFT            parameter structure as used by getMILPParams. This is
-%                       for the fitTasks step. For the INIT algorithm, see
-%                       params (optional, default [])
 %
-%
-%   Output:
+% Output:
 %   model                   the resulting model structure
 %   metProduction           array that indicates which of the
 %                           metabolites in metabolomicsData that could be

@@ -23,7 +23,7 @@ function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefM
 %                       reference tModel. 
 %                       The solver will try to maximize the sum of the
 %                       scores for the included reactions
-%   params              parameter structure as used by getMILPParams
+%   params              *obsolete option*
 %   verbose             if true, the MILP progression will be shown. 
 %
 %   addedRxns           the rxns added

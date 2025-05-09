@@ -1,4 +1,4 @@
-function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,allowNetProduction,useModelConstraints,supressWarnings,rxnScores,params)
+function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,allowNetProduction,useModelConstraints,supressWarnings,rxnScores)
 % fillGaps
 %   Uses template model(s) to fill gaps in a model
 %
@@ -24,7 +24,6 @@ function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(m
 %                       The solver will try to maximize the sum of the
 %                       scores for the included reactions (optional, default
 %                       is -1 for all reactions)
-%   params              parameter structure as used by getMILPParams (optional)
 %
 %   newConnected        cell array with the reactions that could be
 %                       connected. This is not calulated if

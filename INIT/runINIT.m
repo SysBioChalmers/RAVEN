@@ -1,4 +1,4 @@
-function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,noRevLoops,params)
+function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,noRevLoops)
 % runINIT
 %	Generates a model using the INIT algorithm, based on proteomics and/or
 %   transcriptomics and/or metabolomics and/or metabolic tasks. This is the 
@@ -38,8 +38,6 @@ function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,
 %                   problem significantly more computationally intensive to
 %                   solve (two more integer constraints per reversible reaction)
 %                   (optional, default false)
-%   params          parameter structure as used by getMILPParams (optional,
-%                   default [])
 %
 %   outModel        the resulting model structure
 %   deletedRxns     reactions which were deleted by the algorithm

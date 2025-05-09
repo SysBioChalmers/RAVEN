@@ -24,7 +24,7 @@
 <div class="box"><strong>getINITModel_legacy</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=getINITModel(refModel, tissue, celltype, hpaData, arrayData, metabolomicsData, taskFile, useScoresForTasks, printReport, taskStructure, params, paramsFT) </strong></div>
+<div class="box"><strong>function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=getINITModel(refModel, tissue, celltype, hpaData, arrayData, metabolomicsData, taskFile, useScoresForTasks, printReport, taskStructure) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> getINITModel_legacy
@@ -32,7 +32,7 @@
    transcriptomics and/or metabolomics and/or metabolic tasks. This is the original 
    implementation of tINIT, which is replaced by ftINIT.
 
-   Input:
+ Input:
    refModel            a model structure. The model should be in the
                        closed form (no exchange reactions open). Import
                        using import(filename,false). If the model is not
@@ -81,15 +81,8 @@
                        as an alternative way to define tasks when Excel
                        sheets are not suitable. Overrides taskFile (optional,
                        default [])
-   params              parameter structure as used by getMILPParams. This is
-                       for the INIT algorithm. For the the MILP problems
-                       solved to fit tasks, see paramsFT (optional, default [])
-   paramsFT            parameter structure as used by getMILPParams. This is
-                       for the fitTasks step. For the INIT algorithm, see
-                       params (optional, default [])
 
-
-   Output:
+ Output:
    model                   the resulting model structure
    metProduction           array that indicates which of the
                            metabolites in metabolomicsData that could be
@@ -140,7 +133,7 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="runINIT.html" class="code" title="function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,noRevLoops,params)">runINIT</a>	runINIT</li></ul>
+<li><a href="runINIT.html" class="code" title="function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,noRevLoops)">runINIT</a>	runINIT</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -151,13 +144,13 @@ This function is called by:
 <li><a href="#_sub1" class="code">function [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=getINITModel(refModel, tissue, celltype, hpaData, arrayData, metabolomicsData, taskFile, useScoresForTasks, printReport, taskStructure, params, paramsFT)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=getINITModel(refModel, tissue, celltype, hpaData, arrayData, metabolomicsData, taskFile, useScoresForTasks, printReport, taskStructure)</a>
 0002 <span class="comment">% getINITModel_legacy</span>
 0003 <span class="comment">%   Generates a model using the INIT algorithm, based on proteomics and/or</span>
 0004 <span class="comment">%   transcriptomics and/or metabolomics and/or metabolic tasks. This is the original</span>
 0005 <span class="comment">%   implementation of tINIT, which is replaced by ftINIT.</span>
 0006 <span class="comment">%</span>
-0007 <span class="comment">%   Input:</span>
+0007 <span class="comment">% Input:</span>
 0008 <span class="comment">%   refModel            a model structure. The model should be in the</span>
 0009 <span class="comment">%                       closed form (no exchange reactions open). Import</span>
 0010 <span class="comment">%                       using import(filename,false). If the model is not</span>
@@ -206,418 +199,411 @@ This function is called by:
 0053 <span class="comment">%                       as an alternative way to define tasks when Excel</span>
 0054 <span class="comment">%                       sheets are not suitable. Overrides taskFile (optional,</span>
 0055 <span class="comment">%                       default [])</span>
-0056 <span class="comment">%   params              parameter structure as used by getMILPParams. This is</span>
-0057 <span class="comment">%                       for the INIT algorithm. For the the MILP problems</span>
-0058 <span class="comment">%                       solved to fit tasks, see paramsFT (optional, default [])</span>
-0059 <span class="comment">%   paramsFT            parameter structure as used by getMILPParams. This is</span>
-0060 <span class="comment">%                       for the fitTasks step. For the INIT algorithm, see</span>
-0061 <span class="comment">%                       params (optional, default [])</span>
-0062 <span class="comment">%</span>
-0063 <span class="comment">%</span>
-0064 <span class="comment">%   Output:</span>
-0065 <span class="comment">%   model                   the resulting model structure</span>
-0066 <span class="comment">%   metProduction           array that indicates which of the</span>
-0067 <span class="comment">%                           metabolites in metabolomicsData that could be</span>
-0068 <span class="comment">%                           produced. Note that this is before the</span>
-0069 <span class="comment">%                           gap-filling process to enable defined tasks. To</span>
-0070 <span class="comment">%                           see which metabolites that can be produced in</span>
-0071 <span class="comment">%                           the final model, use canProduce.</span>
-0072 <span class="comment">%                           -2: metabolite name not found in model</span>
-0073 <span class="comment">%                           -1: metabolite found, but it could not be produced</span>
-0074 <span class="comment">%                           1: metabolite could be produced</span>
-0075 <span class="comment">%   essentialRxnsForTasks   cell array of the reactions which were</span>
-0076 <span class="comment">%                           essential to perform the tasks</span>
-0077 <span class="comment">%   addedRxnsForTasks       cell array of the reactions which were added in</span>
-0078 <span class="comment">%                           order to perform the tasks</span>
-0079 <span class="comment">%   deletedDeadEndRxns      cell array of reactions deleted because they</span>
-0080 <span class="comment">%                           could not carry flux (INIT requires a</span>
-0081 <span class="comment">%                           functional input model)</span>
-0082 <span class="comment">%   deletedRxnsInINIT       cell array of the reactions which were deleted by</span>
-0083 <span class="comment">%                           the INIT algorithm</span>
-0084 <span class="comment">%   taskReport              structure with the results for each task</span>
-0085 <span class="comment">%       id                  cell array with the id of the task</span>
-0086 <span class="comment">%       description         cell array with the description of the task</span>
-0087 <span class="comment">%       ok                  boolean array with true if the task was successful</span>
-0088 <span class="comment">%       essential           cell array with cell arrays of essential</span>
-0089 <span class="comment">%                           reactions for the task</span>
-0090 <span class="comment">%       gapfill             cell array of cell arrays of reactions included</span>
-0091 <span class="comment">%                           in the gap-filling for the task</span>
-0092 <span class="comment">%</span>
-0093 <span class="comment">%   This is the main function for automatic reconstruction of models based</span>
-0094 <span class="comment">%   on the (t)INIT algorithm (PLoS Comput Biol. 2012;8(5):e1002518,</span>
-0095 <span class="comment">%   Mol Syst Biol. 2014;10:721). Not all settings are possible using this</span>
-0096 <span class="comment">%   function, and you may want to call the functions scoreModel, runINIT</span>
-0097 <span class="comment">%   and fitTasks individually instead.</span>
-0098 <span class="comment">%</span>
-0099 <span class="comment">%   NOTE: Exchange metabolites should normally not be removed from the model</span>
-0100 <span class="comment">%   when using this approach, since checkTasks/fitTasks rely on putting specific</span>
-0101 <span class="comment">%   constraints for each task. The INIT algorithm will remove exchange metabolites</span>
-0102 <span class="comment">%   if any are present. Use importModel(file,false) to import a model with</span>
-0103 <span class="comment">%   exchange metabolites remaining.</span>
-0104 <span class="comment">%</span>
-0105 <span class="comment">% Usage: [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks,...</span>
-0106 <span class="comment">%               deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=...</span>
-0107 <span class="comment">%               getINITModel(refModel, tissue, celltype, hpaData, arrayData,...</span>
-0108 <span class="comment">%               metabolomicsData, taskFile, useScoresForTasks, printReport,...</span>
-0109 <span class="comment">%               taskStructure, params, paramsFT)</span>
-0110 
-0111 <span class="keyword">if</span> nargin&lt;3
-0112     celltype=[];
-0113 <span class="keyword">else</span>
-0114     celltype=char(celltype);
-0115 <span class="keyword">end</span>
-0116 <span class="keyword">if</span> nargin&lt;4
-0117     hpaData=[];
-0118 <span class="keyword">end</span>
-0119 <span class="keyword">if</span> nargin&lt;5
-0120     arrayData=[];
-0121 <span class="keyword">end</span>
-0122 <span class="keyword">if</span> nargin&lt;6
-0123     metabolomicsData=[];
-0124 <span class="keyword">end</span>
-0125 <span class="keyword">if</span> nargin&lt;7
-0126     taskFile=[];
-0127 <span class="keyword">else</span>
-0128     taskFile=char(taskFile);
-0129 <span class="keyword">end</span>
-0130 <span class="keyword">if</span> nargin&lt;8 || isempty(useScoresForTasks)
-0131     useScoresForTasks=true;
-0132 <span class="keyword">end</span>
-0133 <span class="keyword">if</span> nargin&lt;9 || isempty(printReport)
-0134     printReport=true;
-0135 <span class="keyword">end</span>
-0136 <span class="keyword">if</span> nargin&lt;10
-0137     taskStructure=[];
-0138 <span class="keyword">end</span>
-0139 <span class="keyword">if</span> nargin&lt;11
-0140     params=[];
-0141 <span class="keyword">end</span>
-0142 <span class="keyword">if</span> nargin&lt;12
-0143     paramsFT=[];
-0144 <span class="keyword">end</span>
-0145 
-0146 <span class="comment">%Check that the model is in the closed form</span>
-0147 <span class="keyword">if</span> ~isfield(refModel,<span class="string">'unconstrained'</span>)
-0148     EM=<span class="string">'Exchange metabolites should normally not be removed from the model when using getINITModel. Use importModel(file,false) to import a model with exchange metabolites remaining (see the documentation for details)'</span>;
-0149     dispEM(EM);
-0150 <span class="keyword">end</span>
-0151 
-0152 <span class="comment">%Create the task structure if not supplied</span>
-0153 <span class="keyword">if</span> any(taskFile) &amp;&amp; isempty(taskStructure)
-0154     taskStructure=parseTaskList(taskFile);
-0155 <span class="keyword">end</span>
-0156 
-0157 
-0158 <span class="comment">% sc-tINIT to identify confidence levels of gene expression</span>
-0159 <span class="keyword">if</span> ~isempty(arrayData) &amp;&amp; isfield(arrayData,<span class="string">'singleCells'</span>)
-0160     <span class="keyword">if</span> arrayData.singleCells == 1
-0161         <span class="comment">% Check to ensure cell type is defined</span>
-0162         <span class="keyword">if</span> ~isfield(arrayData,<span class="string">'celltypes'</span>)
-0163             dispEM(<span class="string">'arrayData must contain cell type information if sc-tINIT is to be used'</span>,<span class="string">'false'</span>);   
-0164         <span class="keyword">end</span>
-0165         <span class="keyword">if</span> ~ismember(upper(celltype),upper(arrayData.celltypes))
-0166             dispEM(<span class="string">'The cell type name does not match'</span>);   
-0167         <span class="keyword">end</span>
-0168         
-0169         <span class="comment">% Analyze only cell type of interest</span>
-0170         J= strcmpi(arrayData.celltypes,celltype);
-0171         
-0172         <span class="comment">% Analyze only genes included in the reference model</span>
-0173         I=ismember(arrayData.genes,refModel.genes);
-0174         
-0175         <span class="comment">% Convert expression data to population fractions</span>
-0176         binary_levels = arrayData.levels(I,J)~=0; <span class="comment">% Classify each gene as detected (1) or not (0) in each cell</span>
-0177         cell_count_levels = sum(binary_levels,2); <span class="comment">% Number of cells expressing each transcript</span>
-0178         cell_frac_levels = cell_count_levels/size(binary_levels,2); <span class="comment">% Number of cells expressing each transcript</span>
-0179 
-0180         <span class="comment">% Bin cell_frac_counts manually</span>
-0181         x = 0:.01:1;
-0182         <span class="keyword">for</span>(i = 1:length(x))
-0183             cell_frac_count(i) = sum(round(cell_frac_levels,2)==x(i));
-0184         <span class="keyword">end</span>
-0185         
-0186         <span class="comment">% Fit four beta distributions</span>
-0187         cell_frac_count(cell_frac_count==0) = NaN; <span class="comment">% Remove zeros from optimization</span>
-0188         cell_frac_count(1) = NaN; <span class="comment">% Remove non-expressed genes from optimization</span>
-0189         x_lim = 1; <span class="comment">% Somewhat arbitrary parameter to fit left tail of distr.</span>
-0190         myfun = @(par) nansum((cell_frac_count(1:find(x&gt;=x_lim,1)) - <span class="keyword">...</span>
-0191             abs(par(1))*betapdf(x(1:find(x&gt;=x_lim,1)),abs(par(2)),abs(par(3))) - <span class="keyword">...</span>
-0192             abs(par(4))*betapdf(x(1:find(x&gt;=x_lim,1)),abs(par(5)),abs(par(6))) - <span class="keyword">...</span>
-0193             abs(par(7))*betapdf(x(1:find(x&gt;=x_lim,1)),abs(par(8)),abs(par(9))) - <span class="keyword">...</span>
-0194             abs(par(10))*betapdf(x(1:find(x&gt;=x_lim,1)),abs(par(11)),abs(par(12)))).^2);
-0195         
-0196         par0 = [4,2,100,7,2,30,7,5,20,5,15,20];
-0197         opts = optimset(<span class="string">'Display'</span>,<span class="string">'off'</span>);
-0198         [par,f_val] = fminsearch(myfun,par0,opts);
-0199         par = abs(par);
-0200         
-0201         <span class="comment">% Plot results</span>
-0202         <span class="keyword">if</span> (isfield(arrayData,<span class="string">'plotResults'</span>))
-0203             <span class="keyword">if</span> arrayData.plotResults == true
-0204                 figure(); hold on; plot(x,cell_frac_count,<span class="string">'ko'</span>,<span class="string">'MarkerSize'</span>,5);
-0205                 plot(x,abs(par(1))*betapdf(x,abs(par(2)),abs(par(3))),<span class="string">'b-'</span>,<span class="string">'LineWidth'</span>,1)
-0206                 plot(x,abs(par(4))*betapdf(x,abs(par(5)),abs(par(6))),<span class="string">'b-'</span>,<span class="string">'LineWidth'</span>,1)
-0207                 plot(x,abs(par(7))*betapdf(x,abs(par(8)),abs(par(9))),<span class="string">'b-'</span>,<span class="string">'LineWidth'</span>,1)
-0208                 plot(x,abs(par(10))*betapdf(x,abs(par(11)),abs(par(12))),<span class="string">'b-'</span>,<span class="string">'LineWidth'</span>,1)
-0209                 plot(x,abs(par(1))*betapdf(x,abs(par(2)),abs(par(3))) + <span class="keyword">...</span>
-0210                     abs(par(4))*betapdf(x,abs(par(5)),abs(par(6))) + <span class="keyword">...</span>
-0211                     abs(par(7))*betapdf(x,abs(par(8)),abs(par(9))) + <span class="keyword">...</span>
-0212                     abs(par(10))*betapdf(x,abs(par(11)),abs(par(12))),<span class="string">'-'</span>,<span class="string">'Color'</span>,[.5 .5 .5],<span class="string">'LineWidth'</span>,2)
-0213                 xlabel(<span class="string">'Expression Probability'</span>);ylabel(<span class="string">'# of genes'</span>);set(gca,<span class="string">'FontSize'</span>,14,<span class="string">'LineWidth'</span>,1.25);
-0214                 title(<span class="string">'Expression prediction'</span>,<span class="string">'FontSize'</span>,18,<span class="string">'FontWeight'</span>,<span class="string">'bold'</span>)
-0215             <span class="keyword">end</span>
-0216         <span class="keyword">end</span>
-0217         
-0218         <span class="comment">% Score genes based on population expression (p = .05)</span>
-0219         exprs_cutoff_1 = find(cdf(<span class="string">'beta'</span>,x,par(2),par(3)) &gt;.95,1)-1; <span class="comment">% Find index of no confidence genes</span>
-0220         exprs_cutoff_2 = find(cdf(<span class="string">'beta'</span>,x,par(5),par(6)) &gt;.95,1)-1; <span class="comment">% Find index of low confidence genes</span>
-0221         exprs_cutoff_3 = find(cdf(<span class="string">'beta'</span>,x,par(8),par(9)) &gt;.95,1)-1; <span class="comment">% Find index of low confidence genes</span>
-0222         exprs_cutoffs = sort([exprs_cutoff_1,exprs_cutoff_2,exprs_cutoff_3]);
-0223         gene_scores = cell_frac_levels*0;
-0224         gene_scores(cell_frac_levels &lt;= x(exprs_cutoffs(1))) = 4; <span class="comment">% Not detected</span>
-0225         gene_scores(logical((cell_frac_levels &gt;= x(exprs_cutoffs(1))).*(cell_frac_levels &lt; x(exprs_cutoffs(2))))) = 3; <span class="comment">% Low detection</span>
-0226         gene_scores(logical((cell_frac_levels &gt;= x(exprs_cutoffs(2))).*(cell_frac_levels &lt; x(exprs_cutoffs(3))))) = 2; <span class="comment">% Medium detection</span>
-0227         gene_scores(cell_frac_levels &gt; x(exprs_cutoffs(3))) = 1; <span class="comment">% High detection</span>
-0228 
-0229         <span class="comment">% Replace hpaData with singleCellData</span>
-0230         <span class="keyword">if</span> printReport==true
-0231             dispEM(<span class="string">'Single cell data is not currently compatible with HPA data. \n         Replacing hpaData with single cell-based scoring.'</span>,false);
-0232         <span class="keyword">end</span>
-0233         hpaData.genes = arrayData.genes;
-0234         hpaData.tissues = arrayData.tissues;
-0235         hpaData.celltypes = arrayData.celltypes;
-0236         hpaData.levels = [{<span class="string">'High'</span>},{<span class="string">'Medium'</span>},{<span class="string">'Low'</span>},{<span class="string">'None'</span>}];
-0237         hpaData.gene2Level = zeros(length(arrayData.genes),length(arrayData.celltypes));
-0238         <span class="keyword">for</span> i = 1:length(find(J))
-0239             find_var = find(J,i);
-0240             hpaData.gene2Level(I,find_var(end)) = gene_scores;
-0241         <span class="keyword">end</span>
-0242         
-0243         <span class="comment">% Remove arrayData from the analysis (Might be a bad idea)</span>
-0244         clear arrayData
-0245         arrayData=[];
-0246     <span class="keyword">end</span>
-0247 <span class="keyword">end</span>
-0248 
-0249 
-0250 <span class="keyword">if</span> printReport==true
-0251     <span class="keyword">if</span> any(celltype)
-0252         fprintf([<span class="string">'***Generating model for: '</span> tissue <span class="string">' - '</span> celltype <span class="string">'\n'</span>]);
-0253     <span class="keyword">else</span>
-0254         fprintf([<span class="string">'***Generating model for: '</span> tissue <span class="string">'\n'</span>]);
-0255     <span class="keyword">end</span>
-0256     <span class="keyword">if</span> ~isempty(hpaData)
-0257         fprintf(<span class="string">'-Using HPA data\n'</span>);
-0258     <span class="keyword">end</span>
-0259     <span class="keyword">if</span> ~isempty(arrayData)
-0260         fprintf(<span class="string">'-Using array data\n'</span>);
-0261     <span class="keyword">end</span>
-0262     <span class="keyword">if</span> ~isempty(metabolomicsData)
-0263         fprintf(<span class="string">'-Using metabolomics data\n'</span>);
-0264     <span class="keyword">end</span>
-0265     <span class="keyword">if</span> ~isempty(taskFile) || ~isempty(taskStructure)
-0266         fprintf(<span class="string">'-Using metabolic tasks\n'</span>);
-0267     <span class="keyword">end</span>
-0268     fprintf(<span class="string">'\n'</span>);
-0269     
-0270     <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(refModel,<span class="string">'Reference model statistics'</span>,hpaData,arrayData,tissue,celltype);
-0271 <span class="keyword">end</span>
-0272 
-0273 <span class="comment">%Remove dead-end reactions to speed up the optimization and to</span>
-0274 <span class="comment">%differentiate between reactions removed by INIT and those that are</span>
-0275 <span class="comment">%dead-end</span>
-0276 [~, deletedDeadEndRxns]=simplifyModel(refModel,true,false,true,true,true);
-0277 cModel=removeReactions(refModel,deletedDeadEndRxns,false,true);
-0278 
-0279 <span class="comment">%Store the connected model like this to keep track of stuff</span>
-0280 <span class="keyword">if</span> printReport==true
-0281     <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(cModel,<span class="string">'Pruned model statistics'</span>,hpaData,arrayData,tissue,celltype);
-0282 <span class="keyword">end</span>
-0283 
-0284 <span class="comment">%If tasks have been defined, then go through them and get essential</span>
-0285 <span class="comment">%reactions</span>
-0286 <span class="keyword">if</span> ~isempty(taskStructure)
-0287     [taskReport, essentialRxnMat]=checkTasks(cModel,[],printReport,true,true,taskStructure);
-0288     
-0289     essentialRxnsForTasks=cModel.rxns(any(essentialRxnMat,2));
-0290     
-0291     <span class="comment">%Remove tasks that cannot be performed</span>
-0292     taskStructure(taskReport.ok==false)=[];
-0293     <span class="keyword">if</span> printReport==true
-0294         <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(removeReactions(cModel,setdiff(cModel.rxns,essentialRxnsForTasks),true,true),<span class="string">'Reactions essential for tasks'</span>,hpaData,arrayData,tissue,celltype);
-0295     <span class="keyword">end</span>
-0296 <span class="keyword">else</span>
-0297     essentialRxnsForTasks={};
-0298 <span class="keyword">end</span>
-0299 
-0300 <span class="comment">%Score the connected model</span>
-0301 [rxnScores, geneScores]=scoreModel(cModel,hpaData,arrayData,tissue,celltype);
-0302 
-0303 <span class="comment">%Run the INIT algorithm. The exchange reactions that are used in the final</span>
-0304 <span class="comment">%reactions will be open, which doesn't fit with the last step. Therefore</span>
-0305 <span class="comment">%delete reactions from the original model instead of taking the output. The</span>
-0306 <span class="comment">%default implementation does not constrain reversible reactions to only</span>
-0307 <span class="comment">%carry flux in one direction. Runs without the constraints on reversibility</span>
-0308 <span class="comment">%and with all output allowed. This is to reduce the complexity of the</span>
-0309 <span class="comment">%problem.</span>
-0310 [~, deletedRxnsInINIT, metProduction]=<a href="runINIT.html" class="code" title="function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,noRevLoops,params)">runINIT</a>(simplifyModel(cModel),rxnScores,metabolomicsData,essentialRxnsForTasks,0,true,false,params);
-0311 initModel=removeReactions(cModel,deletedRxnsInINIT,true,true);
-0312 <span class="keyword">if</span> printReport==true
-0313     <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(initModel,<span class="string">'INIT model statistics'</span>,hpaData,arrayData,tissue,celltype);
-0314     <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(removeReactions(cModel,setdiff(cModel.rxns,deletedRxnsInINIT),true,true),<span class="string">'Reactions deleted by INIT'</span>,hpaData,arrayData,tissue,celltype);
-0315 <span class="keyword">end</span>
-0316 
-0317 <span class="comment">%The full model has exchange reactions in it. fitTasks calls on fillGaps,</span>
-0318 <span class="comment">%which automatically removes exchange metabolites (because it assumes that</span>
-0319 <span class="comment">%the reactions are constrained when appropriate). In this case the</span>
-0320 <span class="comment">%uptakes/outputs are retrieved from the task sheet instead. To prevent</span>
-0321 <span class="comment">%exchange reactions being used to fill gaps, they are delete from the</span>
-0322 <span class="comment">%reference model here.</span>
-0323 initModel.id=<span class="string">'INITModel'</span>;
-0324 
-0325 <span class="comment">%If gaps in the model should be filled using a task list</span>
-0326 <span class="keyword">if</span> ~isempty(taskStructure)
-0327     <span class="comment">%Remove exchange reactions and reactions already included in the INIT</span>
-0328     <span class="comment">%model</span>
-0329     refModelNoExc=removeReactions(refModel,union(initModel.rxns,getExchangeRxns(refModel)),true,true);
-0330     
-0331     <span class="comment">%At this stage the model is fully connected and most of the genes with</span>
-0332     <span class="comment">%good scores should have been included. The final gap-filling should</span>
-0333     <span class="comment">%take the scores of the genes into account, so that &quot;rather bad&quot;</span>
-0334     <span class="comment">%reactions are preferred to &quot;very bad&quot; reactions. However, reactions</span>
-0335     <span class="comment">%with positive scores will be included even if they are not connected</span>
-0336     <span class="comment">%in the current formulation. Therefore, such reactions will have to be</span>
-0337     <span class="comment">%assigned a small negative score instead.</span>
-0338     <span class="keyword">if</span> useScoresForTasks==true
-0339         refRxnScores=scoreModel(refModelNoExc,hpaData,arrayData,tissue,celltype);
-0340         [outModel, addedRxnMat]=fitTasks(initModel,refModelNoExc,[],true,min(refRxnScores,-0.1),taskStructure,paramsFT);
-0341     <span class="keyword">else</span>
-0342         [outModel, addedRxnMat]=fitTasks(initModel,refModelNoExc,[],true,[],taskStructure,paramsFT);
-0343     <span class="keyword">end</span>
-0344     <span class="keyword">if</span> printReport==true
-0345         <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(outModel,<span class="string">'Functional model statistics'</span>,hpaData,arrayData,tissue,celltype);
-0346         <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(removeReactions(outModel,intersect(outModel.rxns,initModel.rxns),true,true),<span class="string">'Reactions added to perform the tasks'</span>,hpaData,arrayData,tissue,celltype);
-0347     <span class="keyword">end</span>
-0348     
-0349     addedRxnsForTasks=refModelNoExc.rxns(any(addedRxnMat,2));
-0350 <span class="keyword">else</span>
-0351     outModel=initModel;
-0352     addedRxnMat=[];
-0353     addedRxnsForTasks={};
-0354 <span class="keyword">end</span>
-0355 
-0356 <span class="comment">%The model can now perform all the tasks defined in the task list. The</span>
-0357 <span class="comment">%algorithm cannot deal with gene-complexes at the moment. It is therefore</span>
-0358 <span class="comment">%ok to remove bad genes from a reaction (as long as at least one gene is</span>
-0359 <span class="comment">%kept)</span>
-0360 model=outModel;
-0361 
-0362 [~, I]=ismember(model.genes,cModel.genes); <span class="comment">%All should be found</span>
-0363 <span class="comment">%This is a little weird way to make sure that only one bad gene is included</span>
-0364 <span class="comment">%if there are no good ones (since all -Inf==max(-Inf))</span>
-0365 geneScores(isinf(geneScores))=-1000+rand(sum(isinf(geneScores)),1);
-0366 
-0367 model.grRules(:)={<span class="string">''</span>};
-0368 <span class="keyword">for</span> i=1:numel(model.rxns)
-0369     ids=find(model.rxnGeneMat(i,:));
-0370     <span class="keyword">if</span> numel(ids)&gt;1
-0371         scores=geneScores(I(ids));
-0372         <span class="comment">%Only keep the positive ones if possible</span>
-0373         model.rxnGeneMat(i,ids(~(scores&gt;0 | scores==max(scores))))=0;
-0374     <span class="keyword">end</span>
-0375     <span class="comment">%Rewrite the grRules to be only OR</span>
-0376     <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
-0377         J=find(model.rxnGeneMat(i,:));
-0378         <span class="keyword">for</span> j=1:numel(J)
-0379             model.grRules{i}=[model.grRules{i} <span class="string">'('</span> model.genes{J(j)} <span class="string">')'</span>];
-0380             <span class="keyword">if</span> j&lt;numel(J)
-0381                 model.grRules{i}=[model.grRules{i} <span class="string">' or '</span>];
-0382             <span class="keyword">end</span>
-0383         <span class="keyword">end</span>
-0384     <span class="keyword">end</span>
-0385 <span class="keyword">end</span>
-0386 
-0387 <span class="comment">%Find all genes that are not used and delete them</span>
-0388 I=sum(model.rxnGeneMat)==0;
-0389 model.genes(I)=[];
-0390 model.rxnGeneMat(:,I)=[];
-0391 <span class="keyword">if</span> isfield(model,<span class="string">'geneShortNames'</span>)
-0392     model.geneShortNames(I)=[];
-0393 <span class="keyword">end</span>
-0394 <span class="keyword">if</span> isfield(model,<span class="string">'proteins'</span>)
-0395     model.proteins(I)=[];
-0396 <span class="keyword">end</span>
-0397 <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
-0398     model.geneMiriams(I)=[];
-0399 <span class="keyword">end</span>
-0400 <span class="keyword">if</span> isfield(model,<span class="string">'geneFrom'</span>)
-0401     model.geneFrom(I)=[];
-0402 <span class="keyword">end</span>
-0403 <span class="keyword">if</span> isfield(model,<span class="string">'geneComps'</span>)
-0404     model.geneComps(I)=[];
-0405 <span class="keyword">end</span>
-0406 
-0407 <span class="comment">%At this stage the model will contain some exchange reactions but probably</span>
-0408 <span class="comment">%not all (and maybe zero). This can be inconvenient, so all exchange</span>
-0409 <span class="comment">%reactions from the reference model are added, except for those which</span>
-0410 <span class="comment">%involve metabolites that are not in the model.</span>
+0056 <span class="comment">%</span>
+0057 <span class="comment">% Output:</span>
+0058 <span class="comment">%   model                   the resulting model structure</span>
+0059 <span class="comment">%   metProduction           array that indicates which of the</span>
+0060 <span class="comment">%                           metabolites in metabolomicsData that could be</span>
+0061 <span class="comment">%                           produced. Note that this is before the</span>
+0062 <span class="comment">%                           gap-filling process to enable defined tasks. To</span>
+0063 <span class="comment">%                           see which metabolites that can be produced in</span>
+0064 <span class="comment">%                           the final model, use canProduce.</span>
+0065 <span class="comment">%                           -2: metabolite name not found in model</span>
+0066 <span class="comment">%                           -1: metabolite found, but it could not be produced</span>
+0067 <span class="comment">%                           1: metabolite could be produced</span>
+0068 <span class="comment">%   essentialRxnsForTasks   cell array of the reactions which were</span>
+0069 <span class="comment">%                           essential to perform the tasks</span>
+0070 <span class="comment">%   addedRxnsForTasks       cell array of the reactions which were added in</span>
+0071 <span class="comment">%                           order to perform the tasks</span>
+0072 <span class="comment">%   deletedDeadEndRxns      cell array of reactions deleted because they</span>
+0073 <span class="comment">%                           could not carry flux (INIT requires a</span>
+0074 <span class="comment">%                           functional input model)</span>
+0075 <span class="comment">%   deletedRxnsInINIT       cell array of the reactions which were deleted by</span>
+0076 <span class="comment">%                           the INIT algorithm</span>
+0077 <span class="comment">%   taskReport              structure with the results for each task</span>
+0078 <span class="comment">%       id                  cell array with the id of the task</span>
+0079 <span class="comment">%       description         cell array with the description of the task</span>
+0080 <span class="comment">%       ok                  boolean array with true if the task was successful</span>
+0081 <span class="comment">%       essential           cell array with cell arrays of essential</span>
+0082 <span class="comment">%                           reactions for the task</span>
+0083 <span class="comment">%       gapfill             cell array of cell arrays of reactions included</span>
+0084 <span class="comment">%                           in the gap-filling for the task</span>
+0085 <span class="comment">%</span>
+0086 <span class="comment">%   This is the main function for automatic reconstruction of models based</span>
+0087 <span class="comment">%   on the (t)INIT algorithm (PLoS Comput Biol. 2012;8(5):e1002518,</span>
+0088 <span class="comment">%   Mol Syst Biol. 2014;10:721). Not all settings are possible using this</span>
+0089 <span class="comment">%   function, and you may want to call the functions scoreModel, runINIT</span>
+0090 <span class="comment">%   and fitTasks individually instead.</span>
+0091 <span class="comment">%</span>
+0092 <span class="comment">%   NOTE: Exchange metabolites should normally not be removed from the model</span>
+0093 <span class="comment">%   when using this approach, since checkTasks/fitTasks rely on putting specific</span>
+0094 <span class="comment">%   constraints for each task. The INIT algorithm will remove exchange metabolites</span>
+0095 <span class="comment">%   if any are present. Use importModel(file,false) to import a model with</span>
+0096 <span class="comment">%   exchange metabolites remaining.</span>
+0097 <span class="comment">%</span>
+0098 <span class="comment">% Usage: [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks,...</span>
+0099 <span class="comment">%               deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=...</span>
+0100 <span class="comment">%               getINITModel(refModel, tissue, celltype, hpaData, arrayData,...</span>
+0101 <span class="comment">%               metabolomicsData, taskFile, useScoresForTasks, printReport,...</span>
+0102 <span class="comment">%               taskStructure, params, paramsFT)</span>
+0103 
+0104 <span class="keyword">if</span> nargin&lt;3
+0105     celltype=[];
+0106 <span class="keyword">else</span>
+0107     celltype=char(celltype);
+0108 <span class="keyword">end</span>
+0109 <span class="keyword">if</span> nargin&lt;4
+0110     hpaData=[];
+0111 <span class="keyword">end</span>
+0112 <span class="keyword">if</span> nargin&lt;5
+0113     arrayData=[];
+0114 <span class="keyword">end</span>
+0115 <span class="keyword">if</span> nargin&lt;6
+0116     metabolomicsData=[];
+0117 <span class="keyword">end</span>
+0118 <span class="keyword">if</span> nargin&lt;7
+0119     taskFile=[];
+0120 <span class="keyword">else</span>
+0121     taskFile=char(taskFile);
+0122 <span class="keyword">end</span>
+0123 <span class="keyword">if</span> nargin&lt;8 || isempty(useScoresForTasks)
+0124     useScoresForTasks=true;
+0125 <span class="keyword">end</span>
+0126 <span class="keyword">if</span> nargin&lt;9 || isempty(printReport)
+0127     printReport=true;
+0128 <span class="keyword">end</span>
+0129 <span class="keyword">if</span> nargin&lt;10
+0130     taskStructure=[];
+0131 <span class="keyword">end</span>
+0132 <span class="keyword">if</span> nargin&lt;11
+0133     params=[];
+0134 <span class="keyword">end</span>
+0135 <span class="keyword">if</span> nargin&lt;12
+0136     paramsFT=[];
+0137 <span class="keyword">end</span>
+0138 
+0139 <span class="comment">%Check that the model is in the closed form</span>
+0140 <span class="keyword">if</span> ~isfield(refModel,<span class="string">'unconstrained'</span>)
+0141     EM=<span class="string">'Exchange metabolites should normally not be removed from the model when using getINITModel. Use importModel(file,false) to import a model with exchange metabolites remaining (see the documentation for details)'</span>;
+0142     dispEM(EM);
+0143 <span class="keyword">end</span>
+0144 
+0145 <span class="comment">%Create the task structure if not supplied</span>
+0146 <span class="keyword">if</span> any(taskFile) &amp;&amp; isempty(taskStructure)
+0147     taskStructure=parseTaskList(taskFile);
+0148 <span class="keyword">end</span>
+0149 
+0150 
+0151 <span class="comment">% sc-tINIT to identify confidence levels of gene expression</span>
+0152 <span class="keyword">if</span> ~isempty(arrayData) &amp;&amp; isfield(arrayData,<span class="string">'singleCells'</span>)
+0153     <span class="keyword">if</span> arrayData.singleCells == 1
+0154         <span class="comment">% Check to ensure cell type is defined</span>
+0155         <span class="keyword">if</span> ~isfield(arrayData,<span class="string">'celltypes'</span>)
+0156             dispEM(<span class="string">'arrayData must contain cell type information if sc-tINIT is to be used'</span>,<span class="string">'false'</span>);   
+0157         <span class="keyword">end</span>
+0158         <span class="keyword">if</span> ~ismember(upper(celltype),upper(arrayData.celltypes))
+0159             dispEM(<span class="string">'The cell type name does not match'</span>);   
+0160         <span class="keyword">end</span>
+0161         
+0162         <span class="comment">% Analyze only cell type of interest</span>
+0163         J= strcmpi(arrayData.celltypes,celltype);
+0164         
+0165         <span class="comment">% Analyze only genes included in the reference model</span>
+0166         I=ismember(arrayData.genes,refModel.genes);
+0167         
+0168         <span class="comment">% Convert expression data to population fractions</span>
+0169         binary_levels = arrayData.levels(I,J)~=0; <span class="comment">% Classify each gene as detected (1) or not (0) in each cell</span>
+0170         cell_count_levels = sum(binary_levels,2); <span class="comment">% Number of cells expressing each transcript</span>
+0171         cell_frac_levels = cell_count_levels/size(binary_levels,2); <span class="comment">% Number of cells expressing each transcript</span>
+0172 
+0173         <span class="comment">% Bin cell_frac_counts manually</span>
+0174         x = 0:.01:1;
+0175         <span class="keyword">for</span>(i = 1:length(x))
+0176             cell_frac_count(i) = sum(round(cell_frac_levels,2)==x(i));
+0177         <span class="keyword">end</span>
+0178         
+0179         <span class="comment">% Fit four beta distributions</span>
+0180         cell_frac_count(cell_frac_count==0) = NaN; <span class="comment">% Remove zeros from optimization</span>
+0181         cell_frac_count(1) = NaN; <span class="comment">% Remove non-expressed genes from optimization</span>
+0182         x_lim = 1; <span class="comment">% Somewhat arbitrary parameter to fit left tail of distr.</span>
+0183         myfun = @(par) nansum((cell_frac_count(1:find(x&gt;=x_lim,1)) - <span class="keyword">...</span>
+0184             abs(par(1))*betapdf(x(1:find(x&gt;=x_lim,1)),abs(par(2)),abs(par(3))) - <span class="keyword">...</span>
+0185             abs(par(4))*betapdf(x(1:find(x&gt;=x_lim,1)),abs(par(5)),abs(par(6))) - <span class="keyword">...</span>
+0186             abs(par(7))*betapdf(x(1:find(x&gt;=x_lim,1)),abs(par(8)),abs(par(9))) - <span class="keyword">...</span>
+0187             abs(par(10))*betapdf(x(1:find(x&gt;=x_lim,1)),abs(par(11)),abs(par(12)))).^2);
+0188         
+0189         par0 = [4,2,100,7,2,30,7,5,20,5,15,20];
+0190         opts = optimset(<span class="string">'Display'</span>,<span class="string">'off'</span>);
+0191         [par,f_val] = fminsearch(myfun,par0,opts);
+0192         par = abs(par);
+0193         
+0194         <span class="comment">% Plot results</span>
+0195         <span class="keyword">if</span> (isfield(arrayData,<span class="string">'plotResults'</span>))
+0196             <span class="keyword">if</span> arrayData.plotResults == true
+0197                 figure(); hold on; plot(x,cell_frac_count,<span class="string">'ko'</span>,<span class="string">'MarkerSize'</span>,5);
+0198                 plot(x,abs(par(1))*betapdf(x,abs(par(2)),abs(par(3))),<span class="string">'b-'</span>,<span class="string">'LineWidth'</span>,1)
+0199                 plot(x,abs(par(4))*betapdf(x,abs(par(5)),abs(par(6))),<span class="string">'b-'</span>,<span class="string">'LineWidth'</span>,1)
+0200                 plot(x,abs(par(7))*betapdf(x,abs(par(8)),abs(par(9))),<span class="string">'b-'</span>,<span class="string">'LineWidth'</span>,1)
+0201                 plot(x,abs(par(10))*betapdf(x,abs(par(11)),abs(par(12))),<span class="string">'b-'</span>,<span class="string">'LineWidth'</span>,1)
+0202                 plot(x,abs(par(1))*betapdf(x,abs(par(2)),abs(par(3))) + <span class="keyword">...</span>
+0203                     abs(par(4))*betapdf(x,abs(par(5)),abs(par(6))) + <span class="keyword">...</span>
+0204                     abs(par(7))*betapdf(x,abs(par(8)),abs(par(9))) + <span class="keyword">...</span>
+0205                     abs(par(10))*betapdf(x,abs(par(11)),abs(par(12))),<span class="string">'-'</span>,<span class="string">'Color'</span>,[.5 .5 .5],<span class="string">'LineWidth'</span>,2)
+0206                 xlabel(<span class="string">'Expression Probability'</span>);ylabel(<span class="string">'# of genes'</span>);set(gca,<span class="string">'FontSize'</span>,14,<span class="string">'LineWidth'</span>,1.25);
+0207                 title(<span class="string">'Expression prediction'</span>,<span class="string">'FontSize'</span>,18,<span class="string">'FontWeight'</span>,<span class="string">'bold'</span>)
+0208             <span class="keyword">end</span>
+0209         <span class="keyword">end</span>
+0210         
+0211         <span class="comment">% Score genes based on population expression (p = .05)</span>
+0212         exprs_cutoff_1 = find(cdf(<span class="string">'beta'</span>,x,par(2),par(3)) &gt;.95,1)-1; <span class="comment">% Find index of no confidence genes</span>
+0213         exprs_cutoff_2 = find(cdf(<span class="string">'beta'</span>,x,par(5),par(6)) &gt;.95,1)-1; <span class="comment">% Find index of low confidence genes</span>
+0214         exprs_cutoff_3 = find(cdf(<span class="string">'beta'</span>,x,par(8),par(9)) &gt;.95,1)-1; <span class="comment">% Find index of low confidence genes</span>
+0215         exprs_cutoffs = sort([exprs_cutoff_1,exprs_cutoff_2,exprs_cutoff_3]);
+0216         gene_scores = cell_frac_levels*0;
+0217         gene_scores(cell_frac_levels &lt;= x(exprs_cutoffs(1))) = 4; <span class="comment">% Not detected</span>
+0218         gene_scores(logical((cell_frac_levels &gt;= x(exprs_cutoffs(1))).*(cell_frac_levels &lt; x(exprs_cutoffs(2))))) = 3; <span class="comment">% Low detection</span>
+0219         gene_scores(logical((cell_frac_levels &gt;= x(exprs_cutoffs(2))).*(cell_frac_levels &lt; x(exprs_cutoffs(3))))) = 2; <span class="comment">% Medium detection</span>
+0220         gene_scores(cell_frac_levels &gt; x(exprs_cutoffs(3))) = 1; <span class="comment">% High detection</span>
+0221 
+0222         <span class="comment">% Replace hpaData with singleCellData</span>
+0223         <span class="keyword">if</span> printReport==true
+0224             dispEM(<span class="string">'Single cell data is not currently compatible with HPA data. \n         Replacing hpaData with single cell-based scoring.'</span>,false);
+0225         <span class="keyword">end</span>
+0226         hpaData.genes = arrayData.genes;
+0227         hpaData.tissues = arrayData.tissues;
+0228         hpaData.celltypes = arrayData.celltypes;
+0229         hpaData.levels = [{<span class="string">'High'</span>},{<span class="string">'Medium'</span>},{<span class="string">'Low'</span>},{<span class="string">'None'</span>}];
+0230         hpaData.gene2Level = zeros(length(arrayData.genes),length(arrayData.celltypes));
+0231         <span class="keyword">for</span> i = 1:length(find(J))
+0232             find_var = find(J,i);
+0233             hpaData.gene2Level(I,find_var(end)) = gene_scores;
+0234         <span class="keyword">end</span>
+0235         
+0236         <span class="comment">% Remove arrayData from the analysis (Might be a bad idea)</span>
+0237         clear arrayData
+0238         arrayData=[];
+0239     <span class="keyword">end</span>
+0240 <span class="keyword">end</span>
+0241 
+0242 
+0243 <span class="keyword">if</span> printReport==true
+0244     <span class="keyword">if</span> any(celltype)
+0245         fprintf([<span class="string">'***Generating model for: '</span> tissue <span class="string">' - '</span> celltype <span class="string">'\n'</span>]);
+0246     <span class="keyword">else</span>
+0247         fprintf([<span class="string">'***Generating model for: '</span> tissue <span class="string">'\n'</span>]);
+0248     <span class="keyword">end</span>
+0249     <span class="keyword">if</span> ~isempty(hpaData)
+0250         fprintf(<span class="string">'-Using HPA data\n'</span>);
+0251     <span class="keyword">end</span>
+0252     <span class="keyword">if</span> ~isempty(arrayData)
+0253         fprintf(<span class="string">'-Using array data\n'</span>);
+0254     <span class="keyword">end</span>
+0255     <span class="keyword">if</span> ~isempty(metabolomicsData)
+0256         fprintf(<span class="string">'-Using metabolomics data\n'</span>);
+0257     <span class="keyword">end</span>
+0258     <span class="keyword">if</span> ~isempty(taskFile) || ~isempty(taskStructure)
+0259         fprintf(<span class="string">'-Using metabolic tasks\n'</span>);
+0260     <span class="keyword">end</span>
+0261     fprintf(<span class="string">'\n'</span>);
+0262     
+0263     <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(refModel,<span class="string">'Reference model statistics'</span>,hpaData,arrayData,tissue,celltype);
+0264 <span class="keyword">end</span>
+0265 
+0266 <span class="comment">%Remove dead-end reactions to speed up the optimization and to</span>
+0267 <span class="comment">%differentiate between reactions removed by INIT and those that are</span>
+0268 <span class="comment">%dead-end</span>
+0269 [~, deletedDeadEndRxns]=simplifyModel(refModel,true,false,true,true,true);
+0270 cModel=removeReactions(refModel,deletedDeadEndRxns,false,true);
+0271 
+0272 <span class="comment">%Store the connected model like this to keep track of stuff</span>
+0273 <span class="keyword">if</span> printReport==true
+0274     <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(cModel,<span class="string">'Pruned model statistics'</span>,hpaData,arrayData,tissue,celltype);
+0275 <span class="keyword">end</span>
+0276 
+0277 <span class="comment">%If tasks have been defined, then go through them and get essential</span>
+0278 <span class="comment">%reactions</span>
+0279 <span class="keyword">if</span> ~isempty(taskStructure)
+0280     [taskReport, essentialRxnMat]=checkTasks(cModel,[],printReport,true,true,taskStructure);
+0281     
+0282     essentialRxnsForTasks=cModel.rxns(any(essentialRxnMat,2));
+0283     
+0284     <span class="comment">%Remove tasks that cannot be performed</span>
+0285     taskStructure(taskReport.ok==false)=[];
+0286     <span class="keyword">if</span> printReport==true
+0287         <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(removeReactions(cModel,setdiff(cModel.rxns,essentialRxnsForTasks),true,true),<span class="string">'Reactions essential for tasks'</span>,hpaData,arrayData,tissue,celltype);
+0288     <span class="keyword">end</span>
+0289 <span class="keyword">else</span>
+0290     essentialRxnsForTasks={};
+0291 <span class="keyword">end</span>
+0292 
+0293 <span class="comment">%Score the connected model</span>
+0294 [rxnScores, geneScores]=scoreModel(cModel,hpaData,arrayData,tissue,celltype);
+0295 
+0296 <span class="comment">%Run the INIT algorithm. The exchange reactions that are used in the final</span>
+0297 <span class="comment">%reactions will be open, which doesn't fit with the last step. Therefore</span>
+0298 <span class="comment">%delete reactions from the original model instead of taking the output. The</span>
+0299 <span class="comment">%default implementation does not constrain reversible reactions to only</span>
+0300 <span class="comment">%carry flux in one direction. Runs without the constraints on reversibility</span>
+0301 <span class="comment">%and with all output allowed. This is to reduce the complexity of the</span>
+0302 <span class="comment">%problem.</span>
+0303 [~, deletedRxnsInINIT, metProduction]=<a href="runINIT.html" class="code" title="function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,noRevLoops)">runINIT</a>(simplifyModel(cModel),rxnScores,metabolomicsData,essentialRxnsForTasks,0,true,false,params);
+0304 initModel=removeReactions(cModel,deletedRxnsInINIT,true,true);
+0305 <span class="keyword">if</span> printReport==true
+0306     <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(initModel,<span class="string">'INIT model statistics'</span>,hpaData,arrayData,tissue,celltype);
+0307     <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(removeReactions(cModel,setdiff(cModel.rxns,deletedRxnsInINIT),true,true),<span class="string">'Reactions deleted by INIT'</span>,hpaData,arrayData,tissue,celltype);
+0308 <span class="keyword">end</span>
+0309 
+0310 <span class="comment">%The full model has exchange reactions in it. fitTasks calls on fillGaps,</span>
+0311 <span class="comment">%which automatically removes exchange metabolites (because it assumes that</span>
+0312 <span class="comment">%the reactions are constrained when appropriate). In this case the</span>
+0313 <span class="comment">%uptakes/outputs are retrieved from the task sheet instead. To prevent</span>
+0314 <span class="comment">%exchange reactions being used to fill gaps, they are delete from the</span>
+0315 <span class="comment">%reference model here.</span>
+0316 initModel.id=<span class="string">'INITModel'</span>;
+0317 
+0318 <span class="comment">%If gaps in the model should be filled using a task list</span>
+0319 <span class="keyword">if</span> ~isempty(taskStructure)
+0320     <span class="comment">%Remove exchange reactions and reactions already included in the INIT</span>
+0321     <span class="comment">%model</span>
+0322     refModelNoExc=removeReactions(refModel,union(initModel.rxns,getExchangeRxns(refModel)),true,true);
+0323     
+0324     <span class="comment">%At this stage the model is fully connected and most of the genes with</span>
+0325     <span class="comment">%good scores should have been included. The final gap-filling should</span>
+0326     <span class="comment">%take the scores of the genes into account, so that &quot;rather bad&quot;</span>
+0327     <span class="comment">%reactions are preferred to &quot;very bad&quot; reactions. However, reactions</span>
+0328     <span class="comment">%with positive scores will be included even if they are not connected</span>
+0329     <span class="comment">%in the current formulation. Therefore, such reactions will have to be</span>
+0330     <span class="comment">%assigned a small negative score instead.</span>
+0331     <span class="keyword">if</span> useScoresForTasks==true
+0332         refRxnScores=scoreModel(refModelNoExc,hpaData,arrayData,tissue,celltype);
+0333         [outModel, addedRxnMat]=fitTasks(initModel,refModelNoExc,[],true,min(refRxnScores,-0.1),taskStructure,paramsFT);
+0334     <span class="keyword">else</span>
+0335         [outModel, addedRxnMat]=fitTasks(initModel,refModelNoExc,[],true,[],taskStructure,paramsFT);
+0336     <span class="keyword">end</span>
+0337     <span class="keyword">if</span> printReport==true
+0338         <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(outModel,<span class="string">'Functional model statistics'</span>,hpaData,arrayData,tissue,celltype);
+0339         <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(removeReactions(outModel,intersect(outModel.rxns,initModel.rxns),true,true),<span class="string">'Reactions added to perform the tasks'</span>,hpaData,arrayData,tissue,celltype);
+0340     <span class="keyword">end</span>
+0341     
+0342     addedRxnsForTasks=refModelNoExc.rxns(any(addedRxnMat,2));
+0343 <span class="keyword">else</span>
+0344     outModel=initModel;
+0345     addedRxnMat=[];
+0346     addedRxnsForTasks={};
+0347 <span class="keyword">end</span>
+0348 
+0349 <span class="comment">%The model can now perform all the tasks defined in the task list. The</span>
+0350 <span class="comment">%algorithm cannot deal with gene-complexes at the moment. It is therefore</span>
+0351 <span class="comment">%ok to remove bad genes from a reaction (as long as at least one gene is</span>
+0352 <span class="comment">%kept)</span>
+0353 model=outModel;
+0354 
+0355 [~, I]=ismember(model.genes,cModel.genes); <span class="comment">%All should be found</span>
+0356 <span class="comment">%This is a little weird way to make sure that only one bad gene is included</span>
+0357 <span class="comment">%if there are no good ones (since all -Inf==max(-Inf))</span>
+0358 geneScores(isinf(geneScores))=-1000+rand(sum(isinf(geneScores)),1);
+0359 
+0360 model.grRules(:)={<span class="string">''</span>};
+0361 <span class="keyword">for</span> i=1:numel(model.rxns)
+0362     ids=find(model.rxnGeneMat(i,:));
+0363     <span class="keyword">if</span> numel(ids)&gt;1
+0364         scores=geneScores(I(ids));
+0365         <span class="comment">%Only keep the positive ones if possible</span>
+0366         model.rxnGeneMat(i,ids(~(scores&gt;0 | scores==max(scores))))=0;
+0367     <span class="keyword">end</span>
+0368     <span class="comment">%Rewrite the grRules to be only OR</span>
+0369     <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
+0370         J=find(model.rxnGeneMat(i,:));
+0371         <span class="keyword">for</span> j=1:numel(J)
+0372             model.grRules{i}=[model.grRules{i} <span class="string">'('</span> model.genes{J(j)} <span class="string">')'</span>];
+0373             <span class="keyword">if</span> j&lt;numel(J)
+0374                 model.grRules{i}=[model.grRules{i} <span class="string">' or '</span>];
+0375             <span class="keyword">end</span>
+0376         <span class="keyword">end</span>
+0377     <span class="keyword">end</span>
+0378 <span class="keyword">end</span>
+0379 
+0380 <span class="comment">%Find all genes that are not used and delete them</span>
+0381 I=sum(model.rxnGeneMat)==0;
+0382 model.genes(I)=[];
+0383 model.rxnGeneMat(:,I)=[];
+0384 <span class="keyword">if</span> isfield(model,<span class="string">'geneShortNames'</span>)
+0385     model.geneShortNames(I)=[];
+0386 <span class="keyword">end</span>
+0387 <span class="keyword">if</span> isfield(model,<span class="string">'proteins'</span>)
+0388     model.proteins(I)=[];
+0389 <span class="keyword">end</span>
+0390 <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
+0391     model.geneMiriams(I)=[];
+0392 <span class="keyword">end</span>
+0393 <span class="keyword">if</span> isfield(model,<span class="string">'geneFrom'</span>)
+0394     model.geneFrom(I)=[];
+0395 <span class="keyword">end</span>
+0396 <span class="keyword">if</span> isfield(model,<span class="string">'geneComps'</span>)
+0397     model.geneComps(I)=[];
+0398 <span class="keyword">end</span>
+0399 
+0400 <span class="comment">%At this stage the model will contain some exchange reactions but probably</span>
+0401 <span class="comment">%not all (and maybe zero). This can be inconvenient, so all exchange</span>
+0402 <span class="comment">%reactions from the reference model are added, except for those which</span>
+0403 <span class="comment">%involve metabolites that are not in the model.</span>
+0404 
+0405 <span class="comment">%First delete and included exchange reactions in order to prevent the order</span>
+0406 <span class="comment">%from changing</span>
+0407 model=removeReactions(model,getExchangeRxns(model));
+0408 
+0409 <span class="comment">%Create a model with only the exchange reactions in refModel</span>
+0410 excModel=removeReactions(refModel,setdiff(refModel.rxns,getExchangeRxns(refModel)),true,true);
 0411 
-0412 <span class="comment">%First delete and included exchange reactions in order to prevent the order</span>
-0413 <span class="comment">%from changing</span>
-0414 model=removeReactions(model,getExchangeRxns(model));
+0412 <span class="comment">%Find the metabolites there which are not exchange metabolites and which do</span>
+0413 <span class="comment">%not exist in the output model</span>
+0414 I=~ismember(excModel.mets,model.mets) &amp; excModel.unconstrained==0;
 0415 
-0416 <span class="comment">%Create a model with only the exchange reactions in refModel</span>
-0417 excModel=removeReactions(refModel,setdiff(refModel.rxns,getExchangeRxns(refModel)),true,true);
-0418 
-0419 <span class="comment">%Find the metabolites there which are not exchange metabolites and which do</span>
-0420 <span class="comment">%not exist in the output model</span>
-0421 I=~ismember(excModel.mets,model.mets) &amp; excModel.unconstrained==0;
-0422 
-0423 <span class="comment">%Then find those reactions and delete them</span>
-0424 [~, J]=find(excModel.S(I,:));
-0425 excModel=removeReactions(excModel,J,true,true);
-0426 
-0427 <span class="comment">%Merge with the output model</span>
-0428 model=mergeModels({model;excModel},<span class="string">'metNames'</span>);
-0429 model.id=<span class="string">'INITModel'</span>;
-0430 model.name=[<span class="string">'Automatically generated model for '</span> tissue];
-0431 <span class="keyword">if</span> any(celltype)
-0432     model.name=[model.name <span class="string">' - '</span> celltype];
-0433 <span class="keyword">end</span>
-0434 
-0435 <span class="keyword">if</span> printReport==true
-0436     <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(model,<span class="string">'Final model statistics'</span>,hpaData,arrayData,tissue,celltype);
-0437 <span class="keyword">end</span>
-0438 
-0439 <span class="comment">%Add information about essential reactions and reactions included for</span>
-0440 <span class="comment">%gap-filling and return a taskReport</span>
-0441 <span class="keyword">if</span> ~isempty(taskStructure)
-0442     I=find(taskReport.ok); <span class="comment">%Ignore failed tasks</span>
-0443     <span class="keyword">for</span> i=1:numel(I)
-0444         taskReport.essential{I(i),1}=cModel.rxns(essentialRxnMat(:,I(i)));
-0445         taskReport.gapfill{I(i),1}=refModelNoExc.rxns(addedRxnMat(:,i));
-0446     <span class="keyword">end</span>
-0447 <span class="keyword">else</span>
-0448     taskReport=[];
-0449 <span class="keyword">end</span>
-0450 
-0451 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
-0452 [grRules,rxnGeneMat] = standardizeGrRules(model,true);
-0453 model.grRules = grRules;
-0454 model.rxnGeneMat = rxnGeneMat;
-0455 <span class="keyword">end</span>
-0456 
-0457 <span class="comment">%This is for printing a summary of a model</span>
-0458 <a name="_sub1" href="#_subfunctions" class="code">function [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)</a>
-0459 [a, b]=scoreModel(model,hpaData,arrayData,tissue,celltype);
-0460 rxnS=mean(a);
-0461 geneS=mean(b(~isinf(b)));
-0462 fprintf([name <span class="string">':\n'</span>]);
-0463 fprintf([<span class="string">'\t'</span> num2str(numel(model.rxns)) <span class="string">' reactions, '</span> num2str(numel(model.genes)) <span class="string">' genes\n'</span>]);
-0464 fprintf([<span class="string">'\tMean reaction score: '</span> num2str(rxnS) <span class="string">'\n'</span>]);
-0465 fprintf([<span class="string">'\tMean gene score: '</span> num2str(geneS) <span class="string">'\n'</span>]);
-0466 fprintf([<span class="string">'\tReactions with positive scores: '</span> num2str(100*sum(a&gt;0)/numel(a)) <span class="string">'%%\n\n'</span>]);
-0467 <span class="keyword">end</span></pre></div>
+0416 <span class="comment">%Then find those reactions and delete them</span>
+0417 [~, J]=find(excModel.S(I,:));
+0418 excModel=removeReactions(excModel,J,true,true);
+0419 
+0420 <span class="comment">%Merge with the output model</span>
+0421 model=mergeModels({model;excModel},<span class="string">'metNames'</span>);
+0422 model.id=<span class="string">'INITModel'</span>;
+0423 model.name=[<span class="string">'Automatically generated model for '</span> tissue];
+0424 <span class="keyword">if</span> any(celltype)
+0425     model.name=[model.name <span class="string">' - '</span> celltype];
+0426 <span class="keyword">end</span>
+0427 
+0428 <span class="keyword">if</span> printReport==true
+0429     <a href="#_sub1" class="code" title="subfunction [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)">printScores</a>(model,<span class="string">'Final model statistics'</span>,hpaData,arrayData,tissue,celltype);
+0430 <span class="keyword">end</span>
+0431 
+0432 <span class="comment">%Add information about essential reactions and reactions included for</span>
+0433 <span class="comment">%gap-filling and return a taskReport</span>
+0434 <span class="keyword">if</span> ~isempty(taskStructure)
+0435     I=find(taskReport.ok); <span class="comment">%Ignore failed tasks</span>
+0436     <span class="keyword">for</span> i=1:numel(I)
+0437         taskReport.essential{I(i),1}=cModel.rxns(essentialRxnMat(:,I(i)));
+0438         taskReport.gapfill{I(i),1}=refModelNoExc.rxns(addedRxnMat(:,i));
+0439     <span class="keyword">end</span>
+0440 <span class="keyword">else</span>
+0441     taskReport=[];
+0442 <span class="keyword">end</span>
+0443 
+0444 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
+0445 [grRules,rxnGeneMat] = standardizeGrRules(model,true);
+0446 model.grRules = grRules;
+0447 model.rxnGeneMat = rxnGeneMat;
+0448 <span class="keyword">end</span>
+0449 
+0450 <span class="comment">%This is for printing a summary of a model</span>
+0451 <a name="_sub1" href="#_subfunctions" class="code">function [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)</a>
+0452 [a, b]=scoreModel(model,hpaData,arrayData,tissue,celltype);
+0453 rxnS=mean(a);
+0454 geneS=mean(b(~isinf(b)));
+0455 fprintf([name <span class="string">':\n'</span>]);
+0456 fprintf([<span class="string">'\t'</span> num2str(numel(model.rxns)) <span class="string">' reactions, '</span> num2str(numel(model.genes)) <span class="string">' genes\n'</span>]);
+0457 fprintf([<span class="string">'\tMean reaction score: '</span> num2str(rxnS) <span class="string">'\n'</span>]);
+0458 fprintf([<span class="string">'\tMean gene score: '</span> num2str(geneS) <span class="string">'\n'</span>]);
+0459 fprintf([<span class="string">'\tReactions with positive scores: '</span> num2str(100*sum(a&gt;0)/numel(a)) <span class="string">'%%\n\n'</span>]);
+0460 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

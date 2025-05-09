@@ -18,7 +18,7 @@ function [outModel, addedRxns]=ftINITFillGapsForAllTasks(model,refModel,inputFil
 %                   reactions (optional, default is -1 for all reactions)
 %   taskStructure   structure with the tasks, as from parseTaskList. If
 %                   this is supplied then inputFile is ignored
-%   params          parameter structure as used by getMILPParams
+%   params          *obsolete option*
 %   verbose         if true, the MILP progression will be shown. 
 %
 %

@@ -54,9 +54,7 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes
 %   useScoresForTasks   true if the calculated reaction scored should be 
 %                       used as weights when fitting to tasks (optional, default
 %                       true)
-%   paramsFT            parameter structure as used by getMILPParams. This
-%                       is for the fitTasks step. For the INIT algorithm,
-%                       see params (optional, default [])
+%   paramsFT            *obsolete option*
 %   verbose             if true, the MILP progression will be shown. 
 %                       (optional, default false)
 %
