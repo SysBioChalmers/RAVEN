@@ -21,7 +21,7 @@ function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFlux
 %                   false)
 %   allowExcretion  allow for excretion of all other metabolites (optional,
 %                   default true)
-%   params          parameter structure as used by getMILPParams (optional)
+%   params          *obsolete option*
 %   ignoreIntBounds	true if internal bounds (including reversibility)
 %                   should be ignored. Exchange reactions are not affected.
 %                   This can be used to find unbalanced solutions which are
