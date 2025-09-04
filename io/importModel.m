@@ -742,8 +742,8 @@ if isfield(modelSBML,'notes')
     startString=strfind(modelSBML.notes,'xhtml">');
     endString=strfind(modelSBML.notes,'</body>');
     if any(startString) && any(endString)
-        model.annotation.note=modelSBML.notes(startString+7:endString-1);
-        model.annotation.note=regexprep(model.annotation.note,'<p>|</p>','');
+        model.annotation.note=modelSBML.notes(startString(1)+7:endString-1);
+        model.annotation.note=regexprep(model.annotation.note,'<p.*?>|</p.*?>','');
         model.annotation.note=strtrim(model.annotation.note);
         if regexp(model.annotation.note,'This file was generated using the exportModel function in RAVEN Toolbox \d\.\d and OutputSBML in libSBML')
             model.annotation=rmfield(model.annotation,'note'); % Default note added when running exportModel
