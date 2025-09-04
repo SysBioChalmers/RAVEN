@@ -15,7 +15,7 @@ function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
 %                       interpret. Note that this optimization can be very
 %                       slow
 %                 (optional, default 0)
-%   params        parameter structure as used by getMILPParams (optional)
+%   params        *obsolete option*
 %   hsSol         hot-start solution for the LP solver. This can
 %                 significantly speed up the process if many similar
 %                 optimization problems are solved iteratively. Only used

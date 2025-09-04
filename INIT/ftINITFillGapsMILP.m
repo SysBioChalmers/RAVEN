@@ -12,7 +12,7 @@ function [x,I,exitFlag]=ftINITFillGapsMILP(model, toMinimize, params, scores, ve
 %                 with the same number of elements as reactions in the model,
 %                 of a vector of indexes for the reactions that should be
 %                 minimized (optional, default model.rxns)
-%   params        parameter structure as used by getMILPParams (optional)
+%   params        *obsolete option*
 %   scores        vector of weights for the reactions. Negative scores
 %                 should not have flux. Positive scores are not possible in this
 %                 implementation, and they are changed to max(scores(scores<0)).

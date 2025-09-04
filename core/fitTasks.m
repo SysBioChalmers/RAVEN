@@ -1,4 +1,4 @@
-function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params)
+function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure)
 % fitTasks
 %   Fills gaps in a model by including reactions from a reference model,
 %   so that the resulting model can perform all the tasks in a task list
@@ -17,7 +17,6 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxn
 %                   reactions (optional, default is -1 for all reactions)
 %   taskStructure   structure with the tasks, as from parseTaskList. If
 %                   this is supplied then inputFile is ignored (optional)
-%   params          parameter structure as used by getMILPParams (optional)
 %
 %
 %   Output:

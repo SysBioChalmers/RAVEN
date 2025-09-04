@@ -155,7 +155,7 @@ compartmentIDs=cell(numel(modelSBML.compartment),1);
 compartmentOutside=cell(numel(modelSBML.compartment),1);
 compartmentMiriams=cell(numel(modelSBML.compartment),1);
 
-if isfield(modelSBML.compartment,'sboTerm') && numel(unique([modelSBML.compartment.sboTerm])) == 1
+if isfield(modelSBML.compartment,'sboTerm') && isscalar(unique([modelSBML.compartment.sboTerm]))
     %If all the SBO terms are identical, don't add them to compMiriams
     modelSBML.compartment = rmfield(modelSBML.compartment,'sboTerm');
 end
@@ -291,7 +291,7 @@ for i=1:numel(modelSBML.species)
                     metaboliteFormula{numel(metaboliteFormula)+1,1}=...
                         formula(compositionIndexes(1)+1:compositionIndexes(2)-1);
                 else
-                    if numel(compositionIndexes)==1
+                    if isscalar(compositionIndexes)
                         %Probably a simple molecule which can have only
                         %one conformation
                         metaboliteFormula{numel(metaboliteFormula)+1,1}=...
@@ -422,7 +422,7 @@ if isfield(modelSBML,'parameter')
     parameter.value={modelSBML.parameter(:).value}';
 end
 
-if isfield(modelSBML.reaction,'sboTerm') && numel(unique([modelSBML.reaction.sboTerm])) == 1
+if isfield(modelSBML.reaction,'sboTerm') && isscalar(unique([modelSBML.reaction.sboTerm]))
     %If all the SBO terms are identical, don't add them to rxnMiriams
     modelSBML.reaction = rmfield(modelSBML.reaction,'sboTerm');
 end
@@ -433,7 +433,7 @@ for i=1:numel(modelSBML.reaction)
     %so, then jump to the next reaction. This is because I get the genes
     %for complexes from the names and not from the reactions that create
     %them. This only applies to the non-COBRA format
-    if numel(modelSBML.reaction(i).product)==1
+    if isscalar(modelSBML.reaction(i).product)
         if length(modelSBML.reaction(i).product(1).species)>=3
             if strcmp(modelSBML.reaction(i).product(1).species(1:3),'Cx_')==true
                 continue;
@@ -455,19 +455,9 @@ for i=1:numel(modelSBML.reaction)
     if isfield(modelSBML.reaction(i),'fbc_lowerFluxBound')
         lb=modelSBML.reaction(i).fbc_lowerFluxBound;
         ub=modelSBML.reaction(i).fbc_upperFluxBound;
-        for n=1:numel(parameter.value)
-            lb=regexprep(lb,parameter.name(n),num2str(parameter.value{n}));
-            ub=regexprep(ub,parameter.name(n),num2str(parameter.value{n}));
-        end
-        if isempty(lb)
-            lb='-Inf';
-        end
-        if isempty(ub)
-            ub='Inf';
-        end
-        reactionLB(counter)=str2num(lb);
-        reactionUB(counter)=str2num(ub);
-        %The order of these parameters should not be hard coded
+        [~,fluxBoundIdx] = ismember({lb,ub},parameter.name);
+        reactionLB(counter) = parameter.value{fluxBoundIdx(1)};
+        reactionUB(counter) = parameter.value{fluxBoundIdx(2)};
     elseif isfield(modelSBML.reaction(i).kineticLaw,'parameter')
         reactionLB(counter)=modelSBML.reaction(i).kineticLaw.parameter(1).value;
         reactionUB(counter)=modelSBML.reaction(i).kineticLaw.parameter(2).value;
@@ -541,7 +531,7 @@ for i=1:numel(modelSBML.reaction)
                     %genes from the name of the complex (not the
                     %reaction that creates it)
                     index=find(strcmp(modifier,complexIDs));
-                    if numel(index)==1
+                    if isscalar(index)
                         if ~isempty(rules)
                             rules=[rules ' or (' strrep(complexNames{index},':',' and ') ')'];
                         else
@@ -648,7 +638,7 @@ if isfield(modelSBML, 'fbc_activeObjective')
         if strcmp(obj,modelSBML.fbc_objective(i).fbc_id)
             if ~isempty(modelSBML.fbc_objective(i).fbc_fluxObjective)
                 rxn=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_reaction;
-                idx=find(ismember(reactionIDs,rxn));
+                idx=ismember(reactionIDs,rxn);
                 reactionObjective(idx)=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_coefficient;
             end
         end
@@ -735,11 +725,15 @@ if isfield(modelSBML,'annotation')
     else
         J=strfind(modelSBML.annotation,'"http://identifiers.org/');
         if any(J)
-            model.annotation.taxonomy=modelSBML.annotation(J+24:I(find(I>J,1))-1);
+            I = I(find(I>J,1))-1;
+            J = J(find(J<I,1))+24;
+            model.annotation.taxonomy=modelSBML.annotation(J:I);
         else
             J=strfind(modelSBML.annotation,'"https://identifiers.org/');
             if any(J)
-                model.annotation.taxonomy=modelSBML.annotation(J+25:I(find(I>J,1))-1);
+                I = I(find(I>J,1))-1;
+                J = J(find(J<I,1))+25;
+                model.annotation.taxonomy=modelSBML.annotation(J:I);
             end
         end
     end
@@ -748,8 +742,8 @@ if isfield(modelSBML,'notes')
     startString=strfind(modelSBML.notes,'xhtml">');
     endString=strfind(modelSBML.notes,'</body>');
     if any(startString) && any(endString)
-        model.annotation.note=modelSBML.notes(startString+7:endString-1);
-        model.annotation.note=regexprep(model.annotation.note,'<p>|</p>','');
+        model.annotation.note=modelSBML.notes(startString(1)+7:endString-1);
+        model.annotation.note=regexprep(model.annotation.note,'<p.*?>|</p.*?>','');
         model.annotation.note=strtrim(model.annotation.note);
         if regexp(model.annotation.note,'This file was generated using the exportModel function in RAVEN Toolbox \d\.\d and OutputSBML in libSBML')
             model.annotation=rmfield(model.annotation,'note'); % Default note added when running exportModel
@@ -854,7 +848,7 @@ else
             %when genes are stored as fbc_geneProduct instead of species)
             if isempty(geneMiriams)
                 geneMiriams = cell(numel(genes),1);
-                if isfield(modelSBML.fbc_geneProduct,'sboTerm') && numel(unique([modelSBML.fbc_geneProduct.sboTerm])) == 1
+                if isfield(modelSBML.fbc_geneProduct,'sboTerm') && isscalar(unique([modelSBML.fbc_geneProduct.sboTerm]))
                     %If all the SBO terms are identical, don't add them to geneMiriams
                     modelSBML.fbc_geneProduct = rmfield(modelSBML.fbc_geneProduct,'sboTerm');
                 end

@@ -19,7 +19,7 @@ function [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,minNrF
 %                   fluxes instead of the sum. Slower, but can be
 %                   used if the sum gives too many fluxes (optional, default
 %                   false)
-%   params          parameter structure as used by getMILPParams (optional)
+%   params          *obsolete option*
 %   ignoreIntBounds	true if internal bounds (including reversibility)
 %                   should be ignored. Exchange reactions are not affected.
 %                   This can be used to find unbalanced solutions which are
