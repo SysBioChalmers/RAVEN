@@ -45,7 +45,7 @@ end
 % leading spaces to avoid metaData to be concatenated.
 newLine=regexp(line_raw,'^ {6,}([\w\(\)].*)','tokenExtents');
 brokenLine=find(~cellfun('isempty',newLine));
-for i=1:numel(brokenLine)
+for i=flip(1:numel(brokenLine))
     extraLine = char(line_raw(brokenLine(i)));
     extraLine = extraLine(newLine{brokenLine(i)}{1}(1):end);
     line_raw{brokenLine(i)-1} = strjoin({line_raw{brokenLine(i)-1},extraLine},' ');
