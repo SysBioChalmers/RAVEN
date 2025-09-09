@@ -140,7 +140,7 @@ rxnMiriams=cell(100000,3);   rxnMirNo=1;
 geneMiriams=cell(100000,3);  genMirNo=1;
 subSystems=cell(100000,2);   subSysNo=1;
 eccodes=cell(100000,2);      ecCodeNo=1;
-equations=cell(100000,3);   equatiNo=1;
+equations=cell(100000,3);    equatiNo=1;
 
 for i=1:numel(line_key)
     tline_raw = line_raw{i};
