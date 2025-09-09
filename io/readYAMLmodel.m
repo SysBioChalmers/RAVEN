@@ -58,7 +58,7 @@ line_key = regexprep(line_key,'(.*!!omap)|(---)|( {4,}.*)','');
 line_value = regexprep(line_raw, '.*:$','');
 line_value = regexprep(line_value, '[^":]+: "?(.+)"?$','$1');
 line_value = regexprep(line_value, '(")|(^ {4,}- )','');
-
+line_value(strcmp(line_value,'''''')) = {''};
 line_value(strcmp(line_value,line_raw)) = {''};
 
 modelFields =   {'id',char();...
