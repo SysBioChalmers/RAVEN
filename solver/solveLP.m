@@ -70,8 +70,8 @@ if ~isnumeric(model.c) || any(isnan(model.c))
     error('Invalid defintion of objective function in model.c.')
 end
 %Check for valid S-matrix
-invalidS = ~isfinite(model.S);
-if any(any(invalidS))
+if ~allfinite(model.S)
+    invalidS = ~isfinite(model.S);
     error(['Invalid coefficients defined for reaction(s): ', strjoin(model.rxns(any(invalidS)),', '), '.'])
 end
 

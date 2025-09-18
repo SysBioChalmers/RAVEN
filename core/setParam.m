@@ -39,6 +39,9 @@ if isnumeric(rxnList) || islogical(rxnList)
 else
     rxnList=convertCharArray(rxnList);
 end
+if isempty(rxnList)
+    return;
+end
 
 %Allow to set several parameters to the same value
 if numel(rxnList)~=numel(params) && numel(params)~=1
@@ -59,23 +62,16 @@ end
 %as we do not want to throw errors if matches fail
 indexes=zeros(numel(rxnList),1);
 
-for i=1:numel(rxnList)
-    index=find(strcmp(rxnList{i},model.rxns),1);
-    if ~isempty(index)
-        indexes(i)=index;
-    else
-        indexes(i)=-1;
-        EM=['Reaction ' rxnList{i} ' is not present in the reaction list'];
-        dispEM(EM,false);
-    end
+[Lia,Locb] = ismember(rxnList,model.rxns);
+indexes(Lia) = Locb;
+if any(~Lia)
+    params(~Lia)=[];
+    indexes(~Lia)=[];
+    paramType(~Lia)=[];
+    dispEM('Reactions not present in model, will be ignored:',false,rxnLise(~Lia));
 end
 
-%Remove the reactions that were not found
-params(indexes==-1)=[];
-indexes(indexes==-1)=[];
-paramType(indexes==-1)=[];
 %Change the parameters
-
 if ~isempty(indexes)
     if contains(paramType,'obj')
         model.c=zeros(numel(model.c),1); % parameter is changed, not added
