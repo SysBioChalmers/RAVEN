@@ -124,6 +124,10 @@ if isfield(model,'grRules')
         EM='If "grRules" field exists, the model should also contain a "genes" field';
         dispEM(EM,throwErrors);
     else
+        %Erroneous grRules that start/end with OR/AND
+        EM='The following reaction(s) have grRules that start or end with ''OR'' or ''AND'':';
+        dispEM(EM,throwErrors,model.rxns(startsWith(model.grRules,{'or ','and '}) | endsWith(model.grRules,{' or',' and'})),trimWarnings);
+        %grRules that are not in genes field
         geneList = getGenesFromGrRules(model.grRules);
         geneList = setdiff(unique(geneList),model.genes);
         if ~isempty(geneList)

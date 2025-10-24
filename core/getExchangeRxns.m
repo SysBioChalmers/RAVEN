@@ -26,8 +26,8 @@ function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)
 %                                 positive flux value would imply uptake,
 %                                 but reaction bounds are not considered
 %                       'out'     reactions where the boundary metabolite
-%                                 is the substrate of the reaction, a
-%                                 positive flux value would imply uptake,
+%                                 is the product of the reaction, a
+%                                 negative flux value would imply uptake,
 %                                 but reaction bounds are not considered.
 %
 % Output:

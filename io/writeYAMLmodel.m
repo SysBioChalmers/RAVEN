@@ -38,6 +38,9 @@ if isfield(model,'rules')
     model = ravenCobraWrapper(model);
 end
 
+%Check that the model structure has no problems
+checkModelStruct(model);
+
 %Sort identifiers alphabetically
 if sortIds == true
     model = sortIdentifiers(model);

@@ -13,9 +13,6 @@ function exportToExcelFormat(model,fileName,sortIds)
 %               sorted alphabetically by their identifiers (optional,
 %               default false)
 %
-% No checks are made regarding the correctness of the model. Use
-% checkModelStruct to identify problems in the model structure.
-%
 % Usage: exportToExcelFormat(model, fileName, sortIds)
 
 if nargin<2 || isempty(fileName)
@@ -33,6 +30,8 @@ end
 if sortIds==true
     model=sortIdentifiers(model);
 end
+
+checkModelStruct(model);
 
 addList = matlab.addons.installedAddons;
 if any(strcmpi(addList.Name,'Text Analytics Toolbox'))
