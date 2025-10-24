@@ -45,7 +45,7 @@ end
 % leading spaces to avoid metaData to be concatenated.
 newLine=regexp(line_raw,'^ {6,}([\w\(\)].*)','tokenExtents');
 brokenLine=find(~cellfun('isempty',newLine));
-for i=1:numel(brokenLine)
+for i=flip(1:numel(brokenLine))
     extraLine = char(line_raw(brokenLine(i)));
     extraLine = extraLine(newLine{brokenLine(i)}{1}(1):end);
     line_raw{brokenLine(i)-1} = strjoin({line_raw{brokenLine(i)-1},extraLine},' ');
@@ -58,7 +58,7 @@ line_key = regexprep(line_key,'(.*!!omap)|(---)|( {4,}.*)','');
 line_value = regexprep(line_raw, '.*:$','');
 line_value = regexprep(line_value, '[^":]+: "?(.+)"?$','$1');
 line_value = regexprep(line_value, '(")|(^ {4,}- )','');
-
+line_value(strcmp(line_value,'''''')) = {''};
 line_value(strcmp(line_value,line_raw)) = {''};
 
 modelFields =   {'id',char();...
@@ -140,7 +140,7 @@ rxnMiriams=cell(100000,3);   rxnMirNo=1;
 geneMiriams=cell(100000,3);  genMirNo=1;
 subSystems=cell(100000,2);   subSysNo=1;
 eccodes=cell(100000,2);      ecCodeNo=1;
-equations=cell(100000,3);   equatiNo=1;
+equations=cell(100000,3);    equatiNo=1;
 
 for i=1:numel(line_key)
     tline_raw = line_raw{i};
