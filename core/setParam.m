@@ -68,7 +68,7 @@ if any(~Lia)
     params(~Lia)=[];
     indexes(~Lia)=[];
     paramType(~Lia)=[];
-    dispEM('Reactions not present in model, will be ignored:',false,rxnLise(~Lia));
+    dispEM('Reactions not present in model, will be ignored:',false,rxnList(~Lia));
 end
 
 %Change the parameters
