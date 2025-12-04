@@ -5,16 +5,20 @@ function model=mergeModels(models,metParam,supressWarnings)
 %   their name and compartment (metaboliteName[comp]), while genes are
 %   matched by their name.
 %
+% Input:
 %   models          a cell array with model structures
-%   metParam        string specifying whether to refer to metabolite name
-%                   (metNames) or ID (mets) for matching (default, metNames)
-%   supressWarnings true if warnings should be supressed (optional, default
-%                   false)
+%   metParam        string metabolite name ('metNames') or ID ('mets') are
+%                   used for matching (default, metNames)
+%   supressWarnings logical whether warnings should be supressed (optional,
+%                   default false)
 %
-%   model     a model structure with the merged model. Follows the structure
-%             of normal models but also has 'rxnFrom/metFrom/geneFrom' fields
-%             to indicate from which model each reaction/metabolite/gene was
-%             taken
+% Output:
+%   model           a model structure with the merged model. Follows the
+%                   structure of normal models but also has 'rxnFrom/
+%                   metFrom/geneFrom' fields to indicate from which model
+%                   each reaction/metabolite/gene was taken. If the model
+%                   already has 'rxnFrom/metFrom/geneFrom' fields, then
+%                   these fields are not modified.
 %
 % Usage: model=mergeModels(models)
 
@@ -34,11 +38,16 @@ if nargin<3
     supressWarnings=false;
 end
 
+hasMetFrom = cellfun(@(s) isfield(s,'metFrom'), models);hasMetFrom = cellfun(@(s) isfield(s,'metFrom'), models);
+hasGeneFrom = cellfun(@(s) isfield(s,'geneFrom'), models);
+hasRxnsFrom = cellfun(@(s) isfield(s,'rxnsFrom'), models);
+
 %Add new functionality in the order specified in models
 model=models{1};
 model.id='MERGED';
 model.name='';
 
+if ~any(hasRxnsFrom)
 model.rxnFrom=cell(numel(models{1}.rxns),1);
 model.rxnFrom(:)={models{1}.id};
 model.metFrom=cell(numel(models{1}.mets),1);

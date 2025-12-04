@@ -80,13 +80,19 @@ for i=1:numel(toComps)
     end
     modelToAdd.metComps=ones(numel(modelToAdd.mets),1);
     
+    if isfield(modelToAdd,'rxnFrom')
+        modelToAdd=rmfield(modelToAdd,'rxnFrom');
+    end
+    if isfield(modelToAdd,'metFrom')
+        modelToAdd=rmfield(modelToAdd,'metFrom');
+    end
+    if isfield(modelToAdd,'geneFrom')
+        modelToAdd=rmfield(modelToAdd,'geneFrom');
+    end
+
     %Merge the models
     model=mergeModels({model;modelToAdd},'metNames');
 end
-
-model=rmfield(model,'rxnFrom');
-model=rmfield(model,'metFrom');
-model=rmfield(model,'geneFrom');
 
 if deleteOriginal==true
     model=removeReactions(model,rxns,true,true,true); %Also delete unused compartments
