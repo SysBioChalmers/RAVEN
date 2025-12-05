@@ -33,16 +33,20 @@
    their name and compartment (metaboliteName[comp]), while genes are
    matched by their name.
 
+ Input:
    models          a cell array with model structures
-   metParam        string specifying whether to refer to metabolite name
-                   (metNames) or ID (mets) for matching (default, metNames)
-   supressWarnings true if warnings should be supressed (optional, default
-                   false)
+   metParam        string metabolite name ('metNames') or ID ('mets') are
+                   used for matching (default, metNames)
+   supressWarnings logical whether warnings should be supressed (optional,
+                   default false)
 
-   model     a model structure with the merged model. Follows the structure
-             of normal models but also has 'rxnFrom/metFrom/geneFrom' fields
-             to indicate from which model each reaction/metabolite/gene was
-             taken
+ Output:
+   model           a model structure with the merged model. Follows the
+                   structure of normal models but also has 'rxnFrom/
+                   metFrom/geneFrom' fields to indicate from which model
+                   each reaction/metabolite/gene was taken. If the model
+                   already has 'rxnFrom/metFrom/geneFrom' fields, then
+                   these fields are not modified.
 
  Usage: model=mergeModels(models)</pre></div>
 
@@ -66,611 +70,620 @@ This function is called by:
 0005 <span class="comment">%   their name and compartment (metaboliteName[comp]), while genes are</span>
 0006 <span class="comment">%   matched by their name.</span>
 0007 <span class="comment">%</span>
-0008 <span class="comment">%   models          a cell array with model structures</span>
-0009 <span class="comment">%   metParam        string specifying whether to refer to metabolite name</span>
-0010 <span class="comment">%                   (metNames) or ID (mets) for matching (default, metNames)</span>
-0011 <span class="comment">%   supressWarnings true if warnings should be supressed (optional, default</span>
-0012 <span class="comment">%                   false)</span>
-0013 <span class="comment">%</span>
-0014 <span class="comment">%   model     a model structure with the merged model. Follows the structure</span>
-0015 <span class="comment">%             of normal models but also has 'rxnFrom/metFrom/geneFrom' fields</span>
-0016 <span class="comment">%             to indicate from which model each reaction/metabolite/gene was</span>
-0017 <span class="comment">%             taken</span>
-0018 <span class="comment">%</span>
-0019 <span class="comment">% Usage: model=mergeModels(models)</span>
-0020 
-0021 <span class="comment">%Just return the model</span>
-0022 <span class="keyword">if</span> numel(models)&lt;=1
-0023     model=models{1};
-0024     <span class="keyword">return</span>;
-0025 <span class="keyword">end</span>
-0026 
-0027 <span class="keyword">if</span> nargin&lt;2
-0028     metParam=<span class="string">'metNames'</span>;
-0029 <span class="keyword">else</span>
-0030     metParam=char(metParam);
-0031 <span class="keyword">end</span>
-0032 
-0033 <span class="keyword">if</span> nargin&lt;3
-0034     supressWarnings=false;
+0008 <span class="comment">% Input:</span>
+0009 <span class="comment">%   models          a cell array with model structures</span>
+0010 <span class="comment">%   metParam        string metabolite name ('metNames') or ID ('mets') are</span>
+0011 <span class="comment">%                   used for matching (default, metNames)</span>
+0012 <span class="comment">%   supressWarnings logical whether warnings should be supressed (optional,</span>
+0013 <span class="comment">%                   default false)</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% Output:</span>
+0016 <span class="comment">%   model           a model structure with the merged model. Follows the</span>
+0017 <span class="comment">%                   structure of normal models but also has 'rxnFrom/</span>
+0018 <span class="comment">%                   metFrom/geneFrom' fields to indicate from which model</span>
+0019 <span class="comment">%                   each reaction/metabolite/gene was taken. If the model</span>
+0020 <span class="comment">%                   already has 'rxnFrom/metFrom/geneFrom' fields, then</span>
+0021 <span class="comment">%                   these fields are not modified.</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% Usage: model=mergeModels(models)</span>
+0024 
+0025 <span class="comment">%Just return the model</span>
+0026 <span class="keyword">if</span> numel(models)&lt;=1
+0027     model=models{1};
+0028     <span class="keyword">return</span>;
+0029 <span class="keyword">end</span>
+0030 
+0031 <span class="keyword">if</span> nargin&lt;2
+0032     metParam=<span class="string">'metNames'</span>;
+0033 <span class="keyword">else</span>
+0034     metParam=char(metParam);
 0035 <span class="keyword">end</span>
 0036 
-0037 <span class="comment">%Add new functionality in the order specified in models</span>
-0038 model=models{1};
-0039 model.id=<span class="string">'MERGED'</span>;
-0040 model.name=<span class="string">''</span>;
-0041 
-0042 model.rxnFrom=cell(numel(models{1}.rxns),1);
-0043 model.rxnFrom(:)={models{1}.id};
-0044 model.metFrom=cell(numel(models{1}.mets),1);
-0045 model.metFrom(:)={models{1}.id};
-0046 <span class="keyword">if</span> isfield(models{1},<span class="string">'genes'</span>)
-0047     model.geneFrom=cell(numel(models{1}.genes),1);
-0048     model.geneFrom(:)={models{1}.id};
-0049 <span class="keyword">end</span>
-0050 
-0051 <span class="keyword">if</span> isfield(model,<span class="string">'equations'</span>)
-0052     model=rmfield(model,<span class="string">'equations'</span>);
-0053 <span class="keyword">end</span>
-0054 
-0055 <span class="keyword">for</span> i=2:numel(models)
-0056     <span class="comment">%Add the model id to the rxn id id it already exists in the model (id</span>
-0057     <span class="comment">%have to be unique) This is because it makes a '[]' string if no new</span>
-0058     <span class="comment">%reactions</span>
-0059     <span class="keyword">if</span> ~isempty(models{i}.rxns)
-0060         I=ismember(models{i}.rxns,model.rxns);
-0061         models{i}.rxns(I)=strcat(models{i}.rxns(I),[<span class="string">'_'</span> models{i}.id]);
-0062     <span class="keyword">end</span>
-0063     
-0064     <span class="comment">%Make sure that there are no conflicting reaction ids</span>
-0065     [~, ~, conflicting]=intersect(model.rxns,models{i}.rxns);
-0066     
-0067     <span class="keyword">if</span> ~isempty(conflicting)
-0068         printString=cell(numel(conflicting),1);
-0069         <span class="keyword">for</span> j=1:numel(conflicting)
-0070             printString{j}=[<span class="string">'Old: '</span> models{i}.rxns{conflicting(j)} <span class="string">' New: '</span> models{i}.rxns{conflicting(j)} <span class="string">'_'</span> models{i}.id];
-0071             models{i}.rxns{conflicting(j)}=[models{i}.rxns{conflicting(j)} <span class="string">'_'</span> models{i}.id];
-0072         <span class="keyword">end</span>
-0073         <span class="keyword">if</span> supressWarnings==false
-0074             EM=[<span class="string">'The following reaction IDs in '</span> models{i}.id <span class="string">' are already present in the model and were renamed:'</span>];
-0075             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,printString);
-0076             fprintf(<span class="string">'\n'</span>);
-0077         <span class="keyword">end</span>
-0078     <span class="keyword">end</span>
-0079     
-0080     <span class="comment">%Add all static stuff</span>
-0081     rxnFrom=cell(numel(models{i}.rxns),1);
-0082     rxnFrom(:)={models{i}.id};
-0083     model.rxnFrom=[model.rxnFrom;rxnFrom];
-0084     model.rxns=[model.rxns;models{i}.rxns];
-0085     model.rxnNames=[model.rxnNames;models{i}.rxnNames];
-0086     model.lb=[model.lb;models{i}.lb];
-0087     model.ub=[model.ub;models{i}.ub];
-0088     model.c=[model.c;models{i}.c];
-0089     model.rev=[model.rev;models{i}.rev];
-0090     
-0091     <span class="keyword">if</span> isfield(models{i},<span class="string">'subSystems'</span>)
-0092         <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
-0093             model.subSystems=[model.subSystems;models{i}.subSystems];
-0094         <span class="keyword">else</span>
-0095             emptySubSystem=cell(numel(model.rxns)-numel(models{i}.rxns),1);
-0096             emptySubSystem(:)={<span class="string">''</span>};
-0097             emptySubSystem=cellfun(@(x) cell(0,0),emptySubSystem,<span class="string">'UniformOutput'</span>,false);
-0098             model.subSystems=[emptySubSystem;models{i}.subSystems];
-0099         <span class="keyword">end</span>
-0100     <span class="keyword">else</span>
-0101         <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
-0102             emptySubSystem=cell(numel(models{i}.rxns),1);
-0103             emptySubSystem(:)={<span class="string">''</span>};
-0104             emptySubSystem=cellfun(@(x) cell(0,0),emptySubSystem,<span class="string">'UniformOutput'</span>,false);
-0105             model.subSystems=[model.subSystems;emptySubSystem];
-0106         <span class="keyword">end</span>
-0107     <span class="keyword">end</span>
-0108     
-0109     <span class="keyword">if</span> isfield(models{i},<span class="string">'eccodes'</span>)
-0110         <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
-0111             model.eccodes=[model.eccodes;models{i}.eccodes];
-0112         <span class="keyword">else</span>
-0113             emptyEC=cell(numel(model.rxns)-numel(models{i}.rxns),1);
-0114             emptyEC(:)={<span class="string">''</span>};
-0115             model.eccodes=[emptyEC;models{i}.eccodes];
-0116         <span class="keyword">end</span>
-0117     <span class="keyword">else</span>
-0118         <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
-0119             emptyEC=cell(numel(models{i}.rxns),1);
-0120             emptyEC(:)={<span class="string">''</span>};
-0121             model.eccodes=[model.eccodes;emptyEC];
-0122         <span class="keyword">end</span>
-0123     <span class="keyword">end</span>
-0124     
-0125     <span class="keyword">if</span> isfield(models{i},<span class="string">'rxnMiriams'</span>)
-0126         <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
-0127             model.rxnMiriams=[model.rxnMiriams;models{i}.rxnMiriams];
-0128         <span class="keyword">else</span>
-0129             model.rxnMiriams=[cell(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnMiriams];
-0130         <span class="keyword">end</span>
-0131     <span class="keyword">else</span>
-0132         <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
-0133             model.rxnMiriams=[model.rxnMiriams;cell(numel(models{i}.rxns),1)];
-0134         <span class="keyword">end</span>
-0135     <span class="keyword">end</span>
-0136     
-0137     <span class="keyword">if</span> isfield(models{i},<span class="string">'rxnNotes'</span>)
-0138         <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
-0139             model.rxnNotes=[model.rxnNotes;models{i}.rxnNotes];
-0140         <span class="keyword">else</span>
-0141             emptyNotes=cell(numel(model.rxns)-numel(models{i}.rxns),1);
-0142             emptyNotes(:)={<span class="string">''</span>};
-0143             model.rxnNotes=[emptyNotes;models{i}.rxnNotes];
-0144         <span class="keyword">end</span>
-0145     <span class="keyword">else</span>
-0146         <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
-0147             emptyNotes=cell(numel(models{i}.rxns),1);
-0148             emptyNotes(:)={<span class="string">''</span>};
-0149             model.rxnNotes=[model.rxnNotes;emptyNotes];
-0150         <span class="keyword">end</span>
-0151     <span class="keyword">end</span>
-0152     
-0153     <span class="keyword">if</span> isfield(models{i},<span class="string">'rxnReferences'</span>)
-0154         <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
-0155             model.rxnReferences=[model.rxnReferences;models{i}.rxnReferences];
-0156         <span class="keyword">else</span>
-0157             emptyReferences=cell(numel(model.rxns)-numel(models{i}.rxns),1);
-0158             emptyReferences(:)={<span class="string">''</span>};
-0159             model.rxnReferences=[emptyReferences;models{i}.rxnReferences];
-0160         <span class="keyword">end</span>
-0161     <span class="keyword">else</span>
-0162         <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
-0163             emptyReferences=cell(numel(models{i}.rxns),1);
-0164             emptyReferences(:)={<span class="string">''</span>};
-0165             model.rxnReferences=[model.rxnReferences;emptyReferences];
-0166         <span class="keyword">end</span>
-0167     <span class="keyword">end</span>
-0168     
-0169     <span class="keyword">if</span> isfield(models{i},<span class="string">'rxnConfidenceScores'</span>)
-0170         <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
-0171             model.rxnConfidenceScores=[model.rxnConfidenceScores;models{i}.rxnConfidenceScores];
-0172         <span class="keyword">else</span>
-0173             model.rxnConfidenceScores=[NaN(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnConfidenceScores];
-0174         <span class="keyword">end</span>
-0175     <span class="keyword">else</span>
-0176         <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
-0177             model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(numel(models{i}.rxns),1)];
-0178         <span class="keyword">end</span>
-0179     <span class="keyword">end</span>
-0180 
-0181     <span class="keyword">if</span> isfield(models{i},<span class="string">'rxnDeltaG'</span>)
-0182         <span class="keyword">if</span> isfield(model,<span class="string">'rxnDeltaG'</span>)
-0183             model.rxnDeltaG=[model.rxnDeltaG;models{i}.rxnDeltaG];
-0184         <span class="keyword">else</span>
-0185             model.rxnDeltaG=[NaN(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnDeltaG];
-0186         <span class="keyword">end</span>
-0187     <span class="keyword">else</span>
-0188         <span class="keyword">if</span> isfield(model,<span class="string">'rxnDeltaG'</span>)
-0189             model.rxnDeltaG=[model.rxnDeltaG;NaN(numel(models{i}.rxns),1)];
-0190         <span class="keyword">end</span>
-0191     <span class="keyword">end</span>
-0192     
-0193     <span class="keyword">if</span> isfield(models{i},<span class="string">'rxnComps'</span>)
-0194         <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
-0195             model.rxnComps=[model.rxnComps;models{i}.rxnComps];
-0196         <span class="keyword">else</span>
-0197             model.rxnComps=[ones(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnComps];
-0198             fprintf(<span class="string">'NOTE: One of the models does not contain compartment information for its reactions. All reactions in that model has been assigned to the first compartment\n'</span>);
-0199         <span class="keyword">end</span>
-0200     <span class="keyword">else</span>
-0201         <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
-0202             model.rxnComps=[model.rxnComps;ones(numel(models{i}.rxns),1)];
-0203             fprintf(<span class="string">'NOTE: One of the models does not contain compartment information for its reactions. All reactions in that model has been assigned to the first compartment\n'</span>);
-0204         <span class="keyword">end</span>
-0205     <span class="keyword">end</span>
-0206     
-0207     <span class="keyword">if</span> isfield(models{i},<span class="string">'rxnScores'</span>)
-0208         <span class="keyword">if</span> isfield(model,<span class="string">'rxnScores'</span>)
-0209             model.rxnScores=[model.rxnScores;models{i}.rxnScores];
-0210         <span class="keyword">else</span>
-0211             emptyRS=zeros(numel(model.rxns)-numel(models{i}.rxns),1);
-0212             model.rxnScores=[emptyRS;models{i}.rxnScores];
-0213         <span class="keyword">end</span>
-0214     <span class="keyword">else</span>
-0215         <span class="keyword">if</span> isfield(model,<span class="string">'rxnScores'</span>)
-0216             emptyRS=zeros(numel(models{i}.rxns),1);
-0217             model.rxnScores=[model.rxnScores;emptyRS];
-0218         <span class="keyword">end</span>
-0219     <span class="keyword">end</span>
-0220     
-0221     <span class="keyword">if</span> isfield(models{i},<span class="string">'pwys'</span>)
-0222         <span class="keyword">if</span> isfield(model,<span class="string">'pwys'</span>)
-0223             model.pwys=[model.pwys;models{i}.pwys];
-0224         <span class="keyword">else</span>
-0225             model.pwys=[cell(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.pwys];
-0226         <span class="keyword">end</span>
-0227     <span class="keyword">else</span>
-0228         <span class="keyword">if</span> isfield(model,<span class="string">'pwys'</span>)
-0229             model.pwys=[model.pwys;cell(numel(models{i}.rxns),1)];
-0230         <span class="keyword">end</span>
-0231     <span class="keyword">end</span>
-0232 
-0233     <span class="keyword">if</span> strcmpi(metParam,<span class="string">'metNames'</span>)
-0234     <span class="comment">%Get the new metabolites from matching the models. Metabolites are said</span>
-0235     <span class="comment">%to be the same if they share name and compartment id. This means that</span>
-0236     <span class="comment">%metabolite IDs are not taken into account.</span>
-0237         
-0238         oldMetComps=model.comps(model.metComps);
-0239         oldMets=strcat(model.metNames,<span class="string">'['</span>,oldMetComps,<span class="string">']'</span>);
-0240         <span class="comment">%This is because it makes a '[]' string if no new metabolites</span>
-0241         <span class="keyword">if</span> ~isempty(models{i}.metNames)
-0242             newMetComps=models{i}.comps(models{i}.metComps);
-0243             newMets=strcat(models{i}.metNames,<span class="string">'['</span>,newMetComps,<span class="string">']'</span>);
-0244         <span class="keyword">else</span>
-0245             newMets={};
-0246             newMetComps={};
-0247         <span class="keyword">end</span>
-0248         tf=ismember(newMets,oldMets);
-0249         metsToAdd=find(~tf);
-0250 
-0251     <span class="keyword">end</span>
-0252 
-0253     <span class="keyword">if</span> strcmpi(metParam,<span class="string">'mets'</span>)
-0254     <span class="comment">%Get the new metabolites from matching the models. Metabolites are matched by metabolite ID (model.mets).</span>
-0255 
-0256         oldMetComps=model.comps(model.metComps);
-0257         oldMets=model.mets;
-0258     
-0259         <span class="keyword">if</span> ~isempty(models{i}.mets)
-0260             newMetComps=models{i}.comps(models{i}.metComps);
-0261             newMets=models{i}.mets;
-0262         <span class="keyword">else</span>
-0263             newMets={};
-0264             newMetComps={};
-0265         <span class="keyword">end</span>
-0266         tf=ismember(newMets,oldMets);
-0267         metsToAdd=find(~tf);
-0268 
-0269     <span class="keyword">end</span>
-0270     
-0271     <span class="comment">%First add the new metabolites Make sure that there are no conflicting</span>
-0272     <span class="comment">%metabolite ids</span>
-0273     conflicting=ismember(models{i}.mets(metsToAdd),model.mets);
-0274     
-0275     conflicting=find(conflicting);
-0276     
-0277     <span class="keyword">if</span> ~isempty(conflicting)
-0278         printString=cell(numel(conflicting),1);
-0279         <span class="keyword">for</span> j=1:numel(conflicting)
-0280             printString{j}=[<span class="string">'Old: '</span> models{i}.mets{metsToAdd(conflicting(j))} <span class="string">' New: '</span> models{i}.mets{metsToAdd(conflicting(j))} <span class="string">'_'</span> models{i}.id];
-0281             models{i}.mets{metsToAdd(conflicting(j))}=[models{i}.mets{metsToAdd(conflicting(j))} <span class="string">'_'</span> models{i}.id];
-0282         <span class="keyword">end</span>
-0283         <span class="keyword">if</span> supressWarnings==false
-0284             EM=[<span class="string">'The following metabolite IDs in '</span> models{i}.id <span class="string">' are already present in the model and were renamed:'</span>];
-0285             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,printString);
-0286         <span class="keyword">end</span>
-0287     <span class="keyword">end</span>
-0288     
-0289     <span class="comment">%Add static info on the metabolites</span>
-0290     metFrom=cell(numel(metsToAdd),1);
-0291     metFrom(:)={models{i}.id};
-0292     model.metFrom=[model.metFrom;metFrom];
-0293     model.mets=[model.mets;models{i}.mets(metsToAdd)];
-0294     model.metNames=[model.metNames;models{i}.metNames(metsToAdd)];
-0295     model.b=[model.b;zeros(numel(metsToAdd),size(model.b,2))];
-0296     
-0297     <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
-0298         <span class="keyword">if</span> isfield(models{i},<span class="string">'unconstrained'</span>)
-0299             model.unconstrained=[model.unconstrained;models{i}.unconstrained(metsToAdd)];
-0300         <span class="keyword">else</span>
-0301             model.unconstrained=[model.unconstrained;zeros(numel(metsToAdd),1)];
-0302         <span class="keyword">end</span>
-0303     <span class="keyword">else</span>
-0304         <span class="keyword">if</span> isfield(models{i},<span class="string">'unconstrained'</span>)
-0305             model.unconstrained=[zeros(numel(model.mets),1);models{i}.unconstrained(metsToAdd)];
-0306         <span class="keyword">end</span>
-0307     <span class="keyword">end</span>
-0308     
-0309     <span class="comment">%Only add extra info on new metabolites since it's a little tricky to</span>
-0310     <span class="comment">%chose what to keep otherwise. Should change in the future</span>
-0311 
-0312     <span class="keyword">if</span> ~isempty(metsToAdd)
-0313         <span class="keyword">if</span> isfield(models{i},<span class="string">'inchis'</span>)
-0314             <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
-0315                 model.inchis=[model.inchis;models{i}.inchis(metsToAdd)];
-0316             <span class="keyword">else</span>
-0317                 emptyInchi=cell(numel(model.mets)-numel(metsToAdd),1);
-0318                 emptyInchi(:)={<span class="string">''</span>};
-0319                 model.inchis=[emptyInchi;models{i}.inchis(metsToAdd)];
-0320             <span class="keyword">end</span>
-0321         <span class="keyword">else</span>
-0322             <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
-0323                 emptyInchi=cell(numel(metsToAdd),1);
-0324                 emptyInchi(:)={<span class="string">''</span>};
-0325                 model.inchis=[model.inchis;emptyInchi];
-0326             <span class="keyword">end</span>
-0327         <span class="keyword">end</span>
-0328 
-0329         <span class="keyword">if</span> isfield(models{i},<span class="string">'metSmiles'</span>)
-0330             <span class="keyword">if</span> isfield(model,<span class="string">'metSmiles'</span>)
-0331                 model.metSmiles=[model.metSmiles;models{i}.metSmiles(metsToAdd)];
-0332             <span class="keyword">else</span>
-0333                 emptyInchi=cell(numel(model.mets)-numel(metsToAdd),1);
-0334                 emptyInchi(:)={<span class="string">''</span>};
-0335                 model.metSmiles=[emptyInchi;models{i}.metSmiles(metsToAdd)];
-0336             <span class="keyword">end</span>
-0337         <span class="keyword">else</span>
-0338             <span class="keyword">if</span> isfield(model,<span class="string">'metSmiles'</span>)
-0339                 emptyInchi=cell(numel(metsToAdd),1);
-0340                 emptyInchi(:)={<span class="string">''</span>};
-0341                 model.metSmiles=[model.metSmiles;emptyInchi];
-0342             <span class="keyword">end</span>
-0343         <span class="keyword">end</span>
-0344         
-0345         <span class="keyword">if</span> isfield(models{i},<span class="string">'metFormulas'</span>)
-0346             <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
-0347                 model.metFormulas=[model.metFormulas;models{i}.metFormulas(metsToAdd)];
-0348             <span class="keyword">else</span>
-0349                 emptyMetFormulas=cell(numel(model.mets)-numel(metsToAdd),1);
-0350                 emptyMetFormulas(:)={<span class="string">''</span>};
-0351                 model.metFormulas=[emptyMetFormulas;models{i}.metFormulas(metsToAdd)];
-0352             <span class="keyword">end</span>
-0353         <span class="keyword">else</span>
-0354             <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
-0355                 emptyMetFormulas=cell(numel(metsToAdd),1);
-0356                 emptyMetFormulas(:)={<span class="string">''</span>};
-0357                 model.metFormulas=[model.metFormulas;emptyMetFormulas];
-0358             <span class="keyword">end</span>
-0359         <span class="keyword">end</span>
-0360         
-0361         <span class="keyword">if</span> isfield(models{i},<span class="string">'metCharges'</span>)
-0362             <span class="keyword">if</span> isfield(model,<span class="string">'metCharges'</span>)
-0363                 model.metCharges=[model.metCharges;models{i}.metCharges(metsToAdd)];
-0364             <span class="keyword">else</span>
-0365                 emptyMetCharge=nan(numel(model.mets)-numel(metsToAdd),1);
-0366                 model.metCharges=[emptyMetCharge;models{i}.metCharges(metsToAdd)];
-0367             <span class="keyword">end</span>
-0368         <span class="keyword">else</span>
-0369             <span class="keyword">if</span> isfield(model,<span class="string">'metCharges'</span>)
-0370                 emptyMetCharge=nan(numel(metsToAdd),1);
-0371                 model.metCharges=[model.metCharges;emptyMetCharge];
-0372             <span class="keyword">end</span>
-0373         <span class="keyword">end</span>
-0374 
-0375         <span class="keyword">if</span> isfield(models{i},<span class="string">'metDeltaG'</span>)
-0376             <span class="keyword">if</span> isfield(model,<span class="string">'metDeltaG'</span>)
-0377                 model.metDeltaG=[model.metDeltaG;models{i}.metDeltaG(metsToAdd)];
-0378             <span class="keyword">else</span>
-0379                 emptyMetCharge=nan(numel(model.mets)-numel(metsToAdd),1);
-0380                 model.metDeltaG=[emptyMetCharge;models{i}.metDeltaG(metsToAdd)];
-0381             <span class="keyword">end</span>
-0382         <span class="keyword">else</span>
-0383             <span class="keyword">if</span> isfield(model,<span class="string">'metDeltaG'</span>)
-0384                 emptyMetCharge=nan(numel(metsToAdd),1);
-0385                 model.metDeltaG=[model.metDeltaG;emptyMetCharge];
-0386             <span class="keyword">end</span>
-0387         <span class="keyword">end</span>
-0388         
-0389         <span class="keyword">if</span> isfield(models{i},<span class="string">'metMiriams'</span>)
-0390             <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
-0391                 model.metMiriams=[model.metMiriams;models{i}.metMiriams(metsToAdd)];
-0392             <span class="keyword">else</span>
-0393                 emptyMetMiriam=cell(numel(model.mets)-numel(metsToAdd),1);
-0394                 model.metMiriams=[emptyMetMiriam;models{i}.metMiriams(metsToAdd)];
-0395             <span class="keyword">end</span>
-0396         <span class="keyword">else</span>
-0397             <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
-0398                 emptyMetMiriam=cell(numel(metsToAdd),1);
-0399                 model.metMiriams=[model.metMiriams;emptyMetMiriam];
-0400             <span class="keyword">end</span>
-0401         <span class="keyword">end</span>
-0402     <span class="keyword">end</span>
-0403     
-0404     <span class="comment">%Add if there are any new compartments and add those. This can change</span>
-0405     <span class="comment">%the order of compartments and the corresponding indexes in</span>
-0406     <span class="comment">%model.metComps.</span>
-0407     
-0408     <span class="comment">%Find overlapping and new compartments</span>
-0409     [overlap, oldIDs]=ismember(models{i}.comps,model.comps);
-0410     overlap=find(overlap);
-0411     
-0412     <span class="comment">%Add the new compartments if any</span>
-0413     <span class="keyword">if</span> numel(overlap)~=numel(models{i}.compNames)
-0414         compIndexes=oldIDs==0;
-0415         
-0416         <span class="comment">%Make sure that there are no conflicting compartment ids</span>
-0417         [~, conflicting]=ismember(models{i}.compNames(compIndexes),model.compNames);
-0418         <span class="keyword">if</span> any(conflicting)
-0419             EM=[<span class="string">'The following compartment IDs in '</span> models{i}.id <span class="string">' are already present in the model but with another name. They have to be renamed'</span>];
-0420             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,true,model.comps(conflicting));
-0421         <span class="keyword">end</span>
-0422         
-0423         <span class="comment">%It's ok to add duplicate name, but not duplicate IDs</span>
-0424         model.compNames=[model.compNames; models{i}.compNames(compIndexes)];
-0425         model.comps=[model.comps; models{i}.comps(compIndexes)];
-0426         <span class="keyword">if</span> isfield(model,<span class="string">'compOutside'</span>)
-0427             <span class="keyword">if</span> isfield(models{i},<span class="string">'compOutside'</span>)
-0428                 model.compOutside=[model.compOutside; models{i}.compOutside(compIndexes)];
-0429             <span class="keyword">else</span>
-0430                 <span class="comment">%This is if not all models have the field</span>
-0431                 padding=cell(sum(compIndexes),1);
-0432                 padding(:)={<span class="string">''</span>};
-0433                 model.compOutside=[model.compOutside;padding];
-0434             <span class="keyword">end</span>
-0435         <span class="keyword">end</span>
-0436         <span class="keyword">if</span> isfield(model,<span class="string">'compMiriams'</span>)
-0437             <span class="keyword">if</span> isfield(models{i},<span class="string">'compMiriams'</span>)
-0438                 model.compMiriams=[model.compMiriams; models{i}.compMiriams(compIndexes)];
-0439             <span class="keyword">else</span>
-0440                 <span class="comment">%This is if not all models have the field</span>
-0441                 model.compMiriams=[model.compMiriams;cell(sum(compIndexes),1)];
-0442             <span class="keyword">end</span>
-0443         <span class="keyword">end</span>
-0444     <span class="keyword">end</span>
-0445     
-0446     <span class="comment">%Only add new comp info on the un-matched metabolites since the old</span>
-0447     <span class="comment">%ones will be mapped to the existing list anyways</span>
-0448     [I, J]=ismember(newMetComps(metsToAdd),model.comps);
-0449     <span class="comment">%Just a check</span>
-0450     <span class="keyword">if</span> ~all(I)
-0451         EM=<span class="string">'There was an unexpected error in matching compartments'</span>;
-0452         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0453     <span class="keyword">end</span>
-0454     model.metComps=[model.metComps;J];
-0455      
-0456     <span class="comment">%Create the new stoichiometric matrix</span>
-0457     model.S=[model.S;sparse(numel(metsToAdd),size(model.S,2))];
+0037 <span class="keyword">if</span> nargin&lt;3
+0038     supressWarnings=false;
+0039 <span class="keyword">end</span>
+0040 
+0041 hasMetFrom  = cellfun(@(s) isfield(s,<span class="string">'metFrom'</span>), models);
+0042 hasGeneFrom = cellfun(@(s) isfield(s,<span class="string">'geneFrom'</span>), models);
+0043 hasRxnFrom  = cellfun(@(s) isfield(s,<span class="string">'rxnFrom'</span>), models);
+0044 
+0045 <span class="keyword">for</span> i = 1:numel(models)
+0046     <span class="keyword">if</span> ~any(hasMetFrom)
+0047         models{i}.metFrom = repmat({models{i}.id},numel(models{i}.mets),1);
+0048     <span class="keyword">elseif</span> ~hasMetFrom(i)
+0049         models{i}.metFrom = repmat({<span class="string">''</span>},numel(models{i}.mets),1);
+0050     <span class="keyword">end</span>
+0051     <span class="keyword">if</span> ~any(hasRxnFrom)
+0052         models{i}.rxnFrom = repmat({models{i}.id},numel(models{i}.rxns),1);
+0053     <span class="keyword">elseif</span> ~hasRxnFrom(i)
+0054         models{i}.rxnFrom = repmat({<span class="string">''</span>},numel(models{i}.rxns),1);
+0055     <span class="keyword">end</span>
+0056     <span class="keyword">if</span> ~any(hasGeneFrom) &amp;&amp; any(cellfun(@(s) isfield(s,<span class="string">'genes'</span>), models))
+0057         models{i}.geneFrom = repmat({models{i}.id},numel(models{i}.genes),1);
+0058     <span class="keyword">elseif</span> ~hasGeneFrom(i)
+0059         models{i}.geneFrom = repmat({<span class="string">''</span>},numel(models{i}.genes),1);
+0060     <span class="keyword">end</span>
+0061 <span class="keyword">end</span>
+0062 
+0063 <span class="comment">%Add new functionality in the order specified in models</span>
+0064 model=models{1};
+0065 model.id=<span class="string">'MERGED'</span>;
+0066 model.name=<span class="string">''</span>;
+0067 
+0068 <span class="keyword">if</span> isfield(model,<span class="string">'equations'</span>)
+0069     model=rmfield(model,<span class="string">'equations'</span>);
+0070 <span class="keyword">end</span>
+0071 
+0072 <span class="keyword">for</span> i=2:numel(models)
+0073     <span class="comment">%Add the model id to the rxn id id it already exists in the model (id</span>
+0074     <span class="comment">%have to be unique) This is because it makes a '[]' string if no new</span>
+0075     <span class="comment">%reactions</span>
+0076     <span class="keyword">if</span> ~isempty(models{i}.rxns)
+0077         I=ismember(models{i}.rxns,model.rxns);
+0078         models{i}.rxns(I)=strcat(models{i}.rxns(I),[<span class="string">'_'</span> models{i}.id]);
+0079     <span class="keyword">end</span>
+0080     
+0081     <span class="comment">%Make sure that there are no conflicting reaction ids</span>
+0082     [~, ~, conflicting]=intersect(model.rxns,models{i}.rxns);
+0083     
+0084     <span class="keyword">if</span> ~isempty(conflicting)
+0085         printString=cell(numel(conflicting),1);
+0086         <span class="keyword">for</span> j=1:numel(conflicting)
+0087             printString{j}=[<span class="string">'Old: '</span> models{i}.rxns{conflicting(j)} <span class="string">' New: '</span> models{i}.rxns{conflicting(j)} <span class="string">'_'</span> models{i}.id];
+0088             models{i}.rxns{conflicting(j)}=[models{i}.rxns{conflicting(j)} <span class="string">'_'</span> models{i}.id];
+0089         <span class="keyword">end</span>
+0090         <span class="keyword">if</span> supressWarnings==false
+0091             EM=[<span class="string">'The following reaction IDs in '</span> models{i}.id <span class="string">' are already present in the model and were renamed:'</span>];
+0092             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,printString);
+0093             fprintf(<span class="string">'\n'</span>);
+0094         <span class="keyword">end</span>
+0095     <span class="keyword">end</span>
+0096     
+0097     <span class="comment">%Add all static stuff</span>
+0098     model.rxnFrom  = [model.rxnFrom;  models{i}.rxnFrom];
+0099     model.rxns     = [model.rxns;     models{i}.rxns];
+0100     model.rxnNames = [model.rxnNames; models{i}.rxnNames];
+0101     model.lb       = [model.lb;       models{i}.lb];
+0102     model.ub       = [model.ub;       models{i}.ub];
+0103     model.c        = [model.c;        models{i}.c];
+0104     model.rev      = [model.rev;      models{i}.rev];
+0105     
+0106     <span class="keyword">if</span> isfield(models{i},<span class="string">'subSystems'</span>)
+0107         <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
+0108             model.subSystems=[model.subSystems;models{i}.subSystems];
+0109         <span class="keyword">else</span>
+0110             emptySubSystem=cell(numel(model.rxns)-numel(models{i}.rxns),1);
+0111             emptySubSystem(:)={<span class="string">''</span>};
+0112             emptySubSystem=cellfun(@(x) cell(0,0),emptySubSystem,<span class="string">'UniformOutput'</span>,false);
+0113             model.subSystems=[emptySubSystem;models{i}.subSystems];
+0114         <span class="keyword">end</span>
+0115     <span class="keyword">else</span>
+0116         <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
+0117             emptySubSystem=cell(numel(models{i}.rxns),1);
+0118             emptySubSystem(:)={<span class="string">''</span>};
+0119             emptySubSystem=cellfun(@(x) cell(0,0),emptySubSystem,<span class="string">'UniformOutput'</span>,false);
+0120             model.subSystems=[model.subSystems;emptySubSystem];
+0121         <span class="keyword">end</span>
+0122     <span class="keyword">end</span>
+0123     
+0124     <span class="keyword">if</span> isfield(models{i},<span class="string">'eccodes'</span>)
+0125         <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
+0126             model.eccodes=[model.eccodes;models{i}.eccodes];
+0127         <span class="keyword">else</span>
+0128             emptyEC=cell(numel(model.rxns)-numel(models{i}.rxns),1);
+0129             emptyEC(:)={<span class="string">''</span>};
+0130             model.eccodes=[emptyEC;models{i}.eccodes];
+0131         <span class="keyword">end</span>
+0132     <span class="keyword">else</span>
+0133         <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
+0134             emptyEC=cell(numel(models{i}.rxns),1);
+0135             emptyEC(:)={<span class="string">''</span>};
+0136             model.eccodes=[model.eccodes;emptyEC];
+0137         <span class="keyword">end</span>
+0138     <span class="keyword">end</span>
+0139     
+0140     <span class="keyword">if</span> isfield(models{i},<span class="string">'rxnMiriams'</span>)
+0141         <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
+0142             model.rxnMiriams=[model.rxnMiriams;models{i}.rxnMiriams];
+0143         <span class="keyword">else</span>
+0144             model.rxnMiriams=[cell(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnMiriams];
+0145         <span class="keyword">end</span>
+0146     <span class="keyword">else</span>
+0147         <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
+0148             model.rxnMiriams=[model.rxnMiriams;cell(numel(models{i}.rxns),1)];
+0149         <span class="keyword">end</span>
+0150     <span class="keyword">end</span>
+0151     
+0152     <span class="keyword">if</span> isfield(models{i},<span class="string">'rxnNotes'</span>)
+0153         <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
+0154             model.rxnNotes=[model.rxnNotes;models{i}.rxnNotes];
+0155         <span class="keyword">else</span>
+0156             emptyNotes=cell(numel(model.rxns)-numel(models{i}.rxns),1);
+0157             emptyNotes(:)={<span class="string">''</span>};
+0158             model.rxnNotes=[emptyNotes;models{i}.rxnNotes];
+0159         <span class="keyword">end</span>
+0160     <span class="keyword">else</span>
+0161         <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
+0162             emptyNotes=cell(numel(models{i}.rxns),1);
+0163             emptyNotes(:)={<span class="string">''</span>};
+0164             model.rxnNotes=[model.rxnNotes;emptyNotes];
+0165         <span class="keyword">end</span>
+0166     <span class="keyword">end</span>
+0167     
+0168     <span class="keyword">if</span> isfield(models{i},<span class="string">'rxnReferences'</span>)
+0169         <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
+0170             model.rxnReferences=[model.rxnReferences;models{i}.rxnReferences];
+0171         <span class="keyword">else</span>
+0172             emptyReferences=cell(numel(model.rxns)-numel(models{i}.rxns),1);
+0173             emptyReferences(:)={<span class="string">''</span>};
+0174             model.rxnReferences=[emptyReferences;models{i}.rxnReferences];
+0175         <span class="keyword">end</span>
+0176     <span class="keyword">else</span>
+0177         <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
+0178             emptyReferences=cell(numel(models{i}.rxns),1);
+0179             emptyReferences(:)={<span class="string">''</span>};
+0180             model.rxnReferences=[model.rxnReferences;emptyReferences];
+0181         <span class="keyword">end</span>
+0182     <span class="keyword">end</span>
+0183     
+0184     <span class="keyword">if</span> isfield(models{i},<span class="string">'rxnConfidenceScores'</span>)
+0185         <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
+0186             model.rxnConfidenceScores=[model.rxnConfidenceScores;models{i}.rxnConfidenceScores];
+0187         <span class="keyword">else</span>
+0188             model.rxnConfidenceScores=[NaN(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnConfidenceScores];
+0189         <span class="keyword">end</span>
+0190     <span class="keyword">else</span>
+0191         <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
+0192             model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(numel(models{i}.rxns),1)];
+0193         <span class="keyword">end</span>
+0194     <span class="keyword">end</span>
+0195 
+0196     <span class="keyword">if</span> isfield(models{i},<span class="string">'rxnDeltaG'</span>)
+0197         <span class="keyword">if</span> isfield(model,<span class="string">'rxnDeltaG'</span>)
+0198             model.rxnDeltaG=[model.rxnDeltaG;models{i}.rxnDeltaG];
+0199         <span class="keyword">else</span>
+0200             model.rxnDeltaG=[NaN(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnDeltaG];
+0201         <span class="keyword">end</span>
+0202     <span class="keyword">else</span>
+0203         <span class="keyword">if</span> isfield(model,<span class="string">'rxnDeltaG'</span>)
+0204             model.rxnDeltaG=[model.rxnDeltaG;NaN(numel(models{i}.rxns),1)];
+0205         <span class="keyword">end</span>
+0206     <span class="keyword">end</span>
+0207     
+0208     <span class="keyword">if</span> isfield(models{i},<span class="string">'rxnComps'</span>)
+0209         <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
+0210             model.rxnComps=[model.rxnComps;models{i}.rxnComps];
+0211         <span class="keyword">else</span>
+0212             model.rxnComps=[ones(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.rxnComps];
+0213             fprintf(<span class="string">'NOTE: One of the models does not contain compartment information for its reactions. All reactions in that model has been assigned to the first compartment\n'</span>);
+0214         <span class="keyword">end</span>
+0215     <span class="keyword">else</span>
+0216         <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
+0217             model.rxnComps=[model.rxnComps;ones(numel(models{i}.rxns),1)];
+0218             fprintf(<span class="string">'NOTE: One of the models does not contain compartment information for its reactions. All reactions in that model has been assigned to the first compartment\n'</span>);
+0219         <span class="keyword">end</span>
+0220     <span class="keyword">end</span>
+0221     
+0222     <span class="keyword">if</span> isfield(models{i},<span class="string">'rxnScores'</span>)
+0223         <span class="keyword">if</span> isfield(model,<span class="string">'rxnScores'</span>)
+0224             model.rxnScores=[model.rxnScores;models{i}.rxnScores];
+0225         <span class="keyword">else</span>
+0226             emptyRS=zeros(numel(model.rxns)-numel(models{i}.rxns),1);
+0227             model.rxnScores=[emptyRS;models{i}.rxnScores];
+0228         <span class="keyword">end</span>
+0229     <span class="keyword">else</span>
+0230         <span class="keyword">if</span> isfield(model,<span class="string">'rxnScores'</span>)
+0231             emptyRS=zeros(numel(models{i}.rxns),1);
+0232             model.rxnScores=[model.rxnScores;emptyRS];
+0233         <span class="keyword">end</span>
+0234     <span class="keyword">end</span>
+0235     
+0236     <span class="keyword">if</span> isfield(models{i},<span class="string">'pwys'</span>)
+0237         <span class="keyword">if</span> isfield(model,<span class="string">'pwys'</span>)
+0238             model.pwys=[model.pwys;models{i}.pwys];
+0239         <span class="keyword">else</span>
+0240             model.pwys=[cell(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.pwys];
+0241         <span class="keyword">end</span>
+0242     <span class="keyword">else</span>
+0243         <span class="keyword">if</span> isfield(model,<span class="string">'pwys'</span>)
+0244             model.pwys=[model.pwys;cell(numel(models{i}.rxns),1)];
+0245         <span class="keyword">end</span>
+0246     <span class="keyword">end</span>
+0247 
+0248     <span class="keyword">if</span> strcmpi(metParam,<span class="string">'metNames'</span>)
+0249     <span class="comment">%Get the new metabolites from matching the models. Metabolites are said</span>
+0250     <span class="comment">%to be the same if they share name and compartment id. This means that</span>
+0251     <span class="comment">%metabolite IDs are not taken into account.</span>
+0252         
+0253         oldMetComps=model.comps(model.metComps);
+0254         oldMets=strcat(model.metNames,<span class="string">'['</span>,oldMetComps,<span class="string">']'</span>);
+0255         <span class="comment">%This is because it makes a '[]' string if no new metabolites</span>
+0256         <span class="keyword">if</span> ~isempty(models{i}.metNames)
+0257             newMetComps=models{i}.comps(models{i}.metComps);
+0258             newMets=strcat(models{i}.metNames,<span class="string">'['</span>,newMetComps,<span class="string">']'</span>);
+0259         <span class="keyword">else</span>
+0260             newMets={};
+0261             newMetComps={};
+0262         <span class="keyword">end</span>
+0263         tf=ismember(newMets,oldMets);
+0264         metsToAdd=find(~tf);
+0265 
+0266     <span class="keyword">end</span>
+0267 
+0268     <span class="keyword">if</span> strcmpi(metParam,<span class="string">'mets'</span>)
+0269     <span class="comment">%Get the new metabolites from matching the models. Metabolites are matched by metabolite ID (model.mets).</span>
+0270 
+0271         oldMetComps=model.comps(model.metComps);
+0272         oldMets=model.mets;
+0273     
+0274         <span class="keyword">if</span> ~isempty(models{i}.mets)
+0275             newMetComps=models{i}.comps(models{i}.metComps);
+0276             newMets=models{i}.mets;
+0277         <span class="keyword">else</span>
+0278             newMets={};
+0279             newMetComps={};
+0280         <span class="keyword">end</span>
+0281         tf=ismember(newMets,oldMets);
+0282         metsToAdd=find(~tf);
+0283 
+0284     <span class="keyword">end</span>
+0285     
+0286     <span class="comment">%First add the new metabolites Make sure that there are no conflicting</span>
+0287     <span class="comment">%metabolite ids</span>
+0288     conflicting=ismember(models{i}.mets(metsToAdd),model.mets);
+0289     
+0290     conflicting=find(conflicting);
+0291     
+0292     <span class="keyword">if</span> ~isempty(conflicting)
+0293         printString=cell(numel(conflicting),1);
+0294         <span class="keyword">for</span> j=1:numel(conflicting)
+0295             printString{j}=[<span class="string">'Old: '</span> models{i}.mets{metsToAdd(conflicting(j))} <span class="string">' New: '</span> models{i}.mets{metsToAdd(conflicting(j))} <span class="string">'_'</span> models{i}.id];
+0296             models{i}.mets{metsToAdd(conflicting(j))}=[models{i}.mets{metsToAdd(conflicting(j))} <span class="string">'_'</span> models{i}.id];
+0297         <span class="keyword">end</span>
+0298         <span class="keyword">if</span> supressWarnings==false
+0299             EM=[<span class="string">'The following metabolite IDs in '</span> models{i}.id <span class="string">' are already present in the model and were renamed:'</span>];
+0300             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false,printString);
+0301         <span class="keyword">end</span>
+0302     <span class="keyword">end</span>
+0303     
+0304     <span class="comment">%Add static info on the metabolites</span>
+0305     model.metFrom  = [model.metFrom;  models{i}.metFrom(metsToAdd)];
+0306     model.mets     = [model.mets;     models{i}.mets(metsToAdd)];
+0307     model.metNames = [model.metNames; models{i}.metNames(metsToAdd)];
+0308     model.b        = [model.b;        zeros(numel(metsToAdd),size(model.b,2))];
+0309     
+0310     <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
+0311         <span class="keyword">if</span> isfield(models{i},<span class="string">'unconstrained'</span>)
+0312             model.unconstrained=[model.unconstrained;models{i}.unconstrained(metsToAdd)];
+0313         <span class="keyword">else</span>
+0314             model.unconstrained=[model.unconstrained;zeros(numel(metsToAdd),1)];
+0315         <span class="keyword">end</span>
+0316     <span class="keyword">else</span>
+0317         <span class="keyword">if</span> isfield(models{i},<span class="string">'unconstrained'</span>)
+0318             model.unconstrained=[zeros(numel(model.mets),1);models{i}.unconstrained(metsToAdd)];
+0319         <span class="keyword">end</span>
+0320     <span class="keyword">end</span>
+0321     
+0322     <span class="comment">%Only add extra info on new metabolites since it's a little tricky to</span>
+0323     <span class="comment">%chose what to keep otherwise. Should change in the future</span>
+0324 
+0325     <span class="keyword">if</span> ~isempty(metsToAdd)
+0326         <span class="keyword">if</span> isfield(models{i},<span class="string">'inchis'</span>)
+0327             <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
+0328                 model.inchis=[model.inchis;models{i}.inchis(metsToAdd)];
+0329             <span class="keyword">else</span>
+0330                 emptyInchi=cell(numel(model.mets)-numel(metsToAdd),1);
+0331                 emptyInchi(:)={<span class="string">''</span>};
+0332                 model.inchis=[emptyInchi;models{i}.inchis(metsToAdd)];
+0333             <span class="keyword">end</span>
+0334         <span class="keyword">else</span>
+0335             <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
+0336                 emptyInchi=cell(numel(metsToAdd),1);
+0337                 emptyInchi(:)={<span class="string">''</span>};
+0338                 model.inchis=[model.inchis;emptyInchi];
+0339             <span class="keyword">end</span>
+0340         <span class="keyword">end</span>
+0341 
+0342         <span class="keyword">if</span> isfield(models{i},<span class="string">'metSmiles'</span>)
+0343             <span class="keyword">if</span> isfield(model,<span class="string">'metSmiles'</span>)
+0344                 model.metSmiles=[model.metSmiles;models{i}.metSmiles(metsToAdd)];
+0345             <span class="keyword">else</span>
+0346                 emptyInchi=cell(numel(model.mets)-numel(metsToAdd),1);
+0347                 emptyInchi(:)={<span class="string">''</span>};
+0348                 model.metSmiles=[emptyInchi;models{i}.metSmiles(metsToAdd)];
+0349             <span class="keyword">end</span>
+0350         <span class="keyword">else</span>
+0351             <span class="keyword">if</span> isfield(model,<span class="string">'metSmiles'</span>)
+0352                 emptyInchi=cell(numel(metsToAdd),1);
+0353                 emptyInchi(:)={<span class="string">''</span>};
+0354                 model.metSmiles=[model.metSmiles;emptyInchi];
+0355             <span class="keyword">end</span>
+0356         <span class="keyword">end</span>
+0357         
+0358         <span class="keyword">if</span> isfield(models{i},<span class="string">'metFormulas'</span>)
+0359             <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
+0360                 model.metFormulas=[model.metFormulas;models{i}.metFormulas(metsToAdd)];
+0361             <span class="keyword">else</span>
+0362                 emptyMetFormulas=cell(numel(model.mets)-numel(metsToAdd),1);
+0363                 emptyMetFormulas(:)={<span class="string">''</span>};
+0364                 model.metFormulas=[emptyMetFormulas;models{i}.metFormulas(metsToAdd)];
+0365             <span class="keyword">end</span>
+0366         <span class="keyword">else</span>
+0367             <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
+0368                 emptyMetFormulas=cell(numel(metsToAdd),1);
+0369                 emptyMetFormulas(:)={<span class="string">''</span>};
+0370                 model.metFormulas=[model.metFormulas;emptyMetFormulas];
+0371             <span class="keyword">end</span>
+0372         <span class="keyword">end</span>
+0373         
+0374         <span class="keyword">if</span> isfield(models{i},<span class="string">'metCharges'</span>)
+0375             <span class="keyword">if</span> isfield(model,<span class="string">'metCharges'</span>)
+0376                 model.metCharges=[model.metCharges;models{i}.metCharges(metsToAdd)];
+0377             <span class="keyword">else</span>
+0378                 emptyMetCharge=nan(numel(model.mets)-numel(metsToAdd),1);
+0379                 model.metCharges=[emptyMetCharge;models{i}.metCharges(metsToAdd)];
+0380             <span class="keyword">end</span>
+0381         <span class="keyword">else</span>
+0382             <span class="keyword">if</span> isfield(model,<span class="string">'metCharges'</span>)
+0383                 emptyMetCharge=nan(numel(metsToAdd),1);
+0384                 model.metCharges=[model.metCharges;emptyMetCharge];
+0385             <span class="keyword">end</span>
+0386         <span class="keyword">end</span>
+0387 
+0388         <span class="keyword">if</span> isfield(models{i},<span class="string">'metDeltaG'</span>)
+0389             <span class="keyword">if</span> isfield(model,<span class="string">'metDeltaG'</span>)
+0390                 model.metDeltaG=[model.metDeltaG;models{i}.metDeltaG(metsToAdd)];
+0391             <span class="keyword">else</span>
+0392                 emptyMetCharge=nan(numel(model.mets)-numel(metsToAdd),1);
+0393                 model.metDeltaG=[emptyMetCharge;models{i}.metDeltaG(metsToAdd)];
+0394             <span class="keyword">end</span>
+0395         <span class="keyword">else</span>
+0396             <span class="keyword">if</span> isfield(model,<span class="string">'metDeltaG'</span>)
+0397                 emptyMetCharge=nan(numel(metsToAdd),1);
+0398                 model.metDeltaG=[model.metDeltaG;emptyMetCharge];
+0399             <span class="keyword">end</span>
+0400         <span class="keyword">end</span>
+0401         
+0402         <span class="keyword">if</span> isfield(models{i},<span class="string">'metMiriams'</span>)
+0403             <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
+0404                 model.metMiriams=[model.metMiriams;models{i}.metMiriams(metsToAdd)];
+0405             <span class="keyword">else</span>
+0406                 emptyMetMiriam=cell(numel(model.mets)-numel(metsToAdd),1);
+0407                 model.metMiriams=[emptyMetMiriam;models{i}.metMiriams(metsToAdd)];
+0408             <span class="keyword">end</span>
+0409         <span class="keyword">else</span>
+0410             <span class="keyword">if</span> isfield(model,<span class="string">'metMiriams'</span>)
+0411                 emptyMetMiriam=cell(numel(metsToAdd),1);
+0412                 model.metMiriams=[model.metMiriams;emptyMetMiriam];
+0413             <span class="keyword">end</span>
+0414         <span class="keyword">end</span>
+0415     <span class="keyword">end</span>
+0416     
+0417     <span class="comment">%Add if there are any new compartments and add those. This can change</span>
+0418     <span class="comment">%the order of compartments and the corresponding indexes in</span>
+0419     <span class="comment">%model.metComps.</span>
+0420     
+0421     <span class="comment">%Find overlapping and new compartments</span>
+0422     [overlap, oldIDs]=ismember(models{i}.comps,model.comps);
+0423     overlap=find(overlap);
+0424     
+0425     <span class="comment">%Add the new compartments if any</span>
+0426     <span class="keyword">if</span> numel(overlap)~=numel(models{i}.compNames)
+0427         compIndexes=oldIDs==0;
+0428         
+0429         <span class="comment">%Make sure that there are no conflicting compartment ids</span>
+0430         [~, conflicting]=ismember(models{i}.compNames(compIndexes),model.compNames);
+0431         <span class="keyword">if</span> any(conflicting)
+0432             EM=[<span class="string">'The following compartment IDs in '</span> models{i}.id <span class="string">' are already present in the model but with another name. They have to be renamed'</span>];
+0433             <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,true,model.comps(conflicting));
+0434         <span class="keyword">end</span>
+0435         
+0436         <span class="comment">%It's ok to add duplicate name, but not duplicate IDs</span>
+0437         model.compNames=[model.compNames; models{i}.compNames(compIndexes)];
+0438         model.comps=[model.comps; models{i}.comps(compIndexes)];
+0439         <span class="keyword">if</span> isfield(model,<span class="string">'compOutside'</span>)
+0440             <span class="keyword">if</span> isfield(models{i},<span class="string">'compOutside'</span>)
+0441                 model.compOutside=[model.compOutside; models{i}.compOutside(compIndexes)];
+0442             <span class="keyword">else</span>
+0443                 <span class="comment">%This is if not all models have the field</span>
+0444                 padding=cell(sum(compIndexes),1);
+0445                 padding(:)={<span class="string">''</span>};
+0446                 model.compOutside=[model.compOutside;padding];
+0447             <span class="keyword">end</span>
+0448         <span class="keyword">end</span>
+0449         <span class="keyword">if</span> isfield(model,<span class="string">'compMiriams'</span>)
+0450             <span class="keyword">if</span> isfield(models{i},<span class="string">'compMiriams'</span>)
+0451                 model.compMiriams=[model.compMiriams; models{i}.compMiriams(compIndexes)];
+0452             <span class="keyword">else</span>
+0453                 <span class="comment">%This is if not all models have the field</span>
+0454                 model.compMiriams=[model.compMiriams;cell(sum(compIndexes),1)];
+0455             <span class="keyword">end</span>
+0456         <span class="keyword">end</span>
+0457     <span class="keyword">end</span>
 0458     
-0459 
-0460     <span class="keyword">if</span> strcmpi(metParam,<span class="string">'metNames'</span>)
-0461         <span class="comment">%Rematch metabolite names. Not the most clever way to do it maybe</span>
-0462         allMets=strcat(model.metNames,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>);
-0463         [~, J]=ismember(newMets,allMets);
-0464     <span class="keyword">end</span>
-0465 
-0466     <span class="keyword">if</span> strcmpi(metParam,<span class="string">'mets'</span>)
-0467         <span class="comment">%Rematch metabolite by IDs and add unique new metabolites</span>
-0468         allMets=model.mets;
-0469         uniqueNewMets = setdiff(newMets,oldMets);
-0470         allMets(end+1:end+numel(uniqueNewMets)) = uniqueNewMets;
-0471         [~, J]=ismember(newMets,allMets);
-0472     <span class="keyword">end</span>
-0473 
-0474     <span class="comment">%Update the stoichiometric matrix for the model to add</span>
-0475     newS=sparse(numel(model.mets),numel(models{i}.rxns));
-0476     newS(J,:)=models{i}.S;
-0477     model.S=[model.S newS];
+0459     <span class="comment">%Only add new comp info on the un-matched metabolites since the old</span>
+0460     <span class="comment">%ones will be mapped to the existing list anyways</span>
+0461     [I, J]=ismember(newMetComps(metsToAdd),model.comps);
+0462     <span class="comment">%Just a check</span>
+0463     <span class="keyword">if</span> ~all(I)
+0464         EM=<span class="string">'There was an unexpected error in matching compartments'</span>;
+0465         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0466     <span class="keyword">end</span>
+0467     model.metComps=[model.metComps;J];
+0468      
+0469     <span class="comment">%Create the new stoichiometric matrix</span>
+0470     model.S=[model.S;sparse(numel(metsToAdd),size(model.S,2))];
+0471     
+0472 
+0473     <span class="keyword">if</span> strcmpi(metParam,<span class="string">'metNames'</span>)
+0474         <span class="comment">%Rematch metabolite names. Not the most clever way to do it maybe</span>
+0475         allMets=strcat(model.metNames,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>);
+0476         [~, J]=ismember(newMets,allMets);
+0477     <span class="keyword">end</span>
 0478 
-0479     
-0480     <span class="comment">%Now add new genes</span>
-0481     <span class="keyword">if</span> isfield(models{i},<span class="string">'genes'</span>)
-0482         <span class="keyword">if</span> ~isfield(model,<span class="string">'genes'</span>)
-0483             <span class="comment">%If there was no gene info before</span>
-0484             model.genes=models{i}.genes;
-0485             model.rxnGeneMat=[sparse(numel(model.rxns),numel(models{i}.genes));models{i}.rxnGeneMat];
-0486             emptyGene=cell(numel(model.rxns),1);
-0487             emptyGene(:)={<span class="string">''</span>};
-0488             model.grRules=[emptyGene;models{i}.grRules];
-0489             model.geneFrom=cell(numel(models{i}.genes),1);
-0490             model.geneFrom(:)={models{i}.id};
-0491             
-0492             <span class="keyword">if</span> isfield(models{i},<span class="string">'geneShortNames'</span>)
-0493                 model.geneShortNames=models{i}.geneShortNames;
-0494             <span class="keyword">end</span>
-0495 
-0496             <span class="keyword">if</span> isfield(models{i},<span class="string">'proteins'</span>)
-0497                 model.proteins=models{i}.proteins;
-0498             <span class="keyword">end</span>
-0499 
-0500             <span class="keyword">if</span> isfield(models{i},<span class="string">'geneMiriams'</span>)
-0501                 model.geneMiriams=models{i}.geneMiriams;
-0502             <span class="keyword">end</span>
-0503             
-0504             <span class="keyword">if</span> isfield(models{i},<span class="string">'geneComps'</span>)
-0505                 model.geneComps=models{i}.geneComps;
-0506             <span class="keyword">end</span>
-0507         <span class="keyword">else</span>
-0508             <span class="comment">%If gene info should be merged</span>
-0509             a=ismember(models{i}.genes,model.genes);
-0510             
-0511             genesToAdd=find(~a);
-0512             
-0513             <span class="comment">%Only add extra gene info on new genes. This might not be</span>
-0514             <span class="comment">%correct and should be changed later...</span>
-0515             <span class="keyword">if</span> ~isempty(genesToAdd)
-0516                 model.genes=[model.genes;models{i}.genes(genesToAdd)];
-0517                 emptyGene=cell(numel(genesToAdd),1);
-0518                 emptyGene(:)={models{i}.id};
-0519                 model.geneFrom=[model.geneFrom;emptyGene];
-0520                 model.rxnGeneMat=[model.rxnGeneMat sparse(size(model.rxnGeneMat,1),numel(genesToAdd))];
-0521                 
-0522                 <span class="keyword">if</span> isfield(models{i},<span class="string">'geneShortNames'</span>)
-0523                     <span class="keyword">if</span> isfield(model,<span class="string">'geneShortNames'</span>)
-0524                         model.geneShortNames=[model.geneShortNames;models{i}.geneShortNames(genesToAdd)];
-0525                     <span class="keyword">else</span>
-0526                         emptyGeneSN=cell(numel(model.genes)-numel(genesToAdd),1);
-0527                         emptyGeneSN(:)={<span class="string">''</span>};
-0528                         model.geneShortNames=[emptyGeneSN;models{i}.geneShortNames(genesToAdd)];
-0529                     <span class="keyword">end</span>
-0530                 <span class="keyword">else</span>
-0531                     <span class="keyword">if</span> isfield(model,<span class="string">'geneShortNames'</span>)
-0532                         emptyGeneSN=cell(numel(genesToAdd),1);
-0533                         emptyGeneSN(:)={<span class="string">''</span>};
-0534                         model.geneShortNames=[model.geneShortNames;emptyGeneSN];
-0535                     <span class="keyword">end</span>
-0536                 <span class="keyword">end</span>
-0537 
-0538                 <span class="keyword">if</span> isfield(models{i},<span class="string">'proteins'</span>)
-0539                     <span class="keyword">if</span> isfield(model,<span class="string">'proteins'</span>)
-0540                         model.proteins=[model.proteins;models{i}.proteins(genesToAdd)];
-0541                     <span class="keyword">else</span>
-0542                         emptyGeneSN=cell(numel(model.genes)-numel(genesToAdd),1);
-0543                         emptyGeneSN(:)={<span class="string">''</span>};
-0544                         model.proteins=[emptyGeneSN;models{i}.proteins(genesToAdd)];
-0545                     <span class="keyword">end</span>
-0546                 <span class="keyword">else</span>
-0547                     <span class="keyword">if</span> isfield(model,<span class="string">'proteins'</span>)
-0548                         emptyGeneSN=cell(numel(genesToAdd),1);
-0549                         emptyGeneSN(:)={<span class="string">''</span>};
-0550                         model.proteins=[model.proteins;emptyGeneSN];
-0551                     <span class="keyword">end</span>
-0552                 <span class="keyword">end</span>
-0553 
-0554                 <span class="keyword">if</span> isfield(models{i},<span class="string">'geneMiriams'</span>)
-0555                     <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
-0556                         model.geneMiriams=[model.geneMiriams;models{i}.geneMiriams(genesToAdd)];
-0557                     <span class="keyword">else</span>
-0558                         emptyGeneMir=cell(numel(model.genes)-numel(genesToAdd),1);
-0559                         model.geneMiriams=[emptyGeneMir;models{i}.geneMiriams(genesToAdd)];
+0479     <span class="keyword">if</span> strcmpi(metParam,<span class="string">'mets'</span>)
+0480         <span class="comment">%Rematch metabolite by IDs and add unique new metabolites</span>
+0481         allMets=model.mets;
+0482         uniqueNewMets = setdiff(newMets,oldMets);
+0483         allMets(end+1:end+numel(uniqueNewMets)) = uniqueNewMets;
+0484         [~, J]=ismember(newMets,allMets);
+0485     <span class="keyword">end</span>
+0486 
+0487     <span class="comment">%Update the stoichiometric matrix for the model to add</span>
+0488     newS=sparse(numel(model.mets),numel(models{i}.rxns));
+0489     newS(J,:)=models{i}.S;
+0490     model.S=[model.S newS];
+0491 
+0492     
+0493     <span class="comment">%Now add new genes</span>
+0494     <span class="keyword">if</span> isfield(models{i},<span class="string">'genes'</span>)
+0495         <span class="keyword">if</span> ~isfield(model,<span class="string">'genes'</span>)
+0496             <span class="comment">%If there was no gene info before</span>
+0497             model.genes      = models{i}.genes;
+0498             model.rxnGeneMat = [sparse(numel(model.rxns),numel(models{i}.genes));models{i}.rxnGeneMat];
+0499             emptyGene        = repmat({<span class="string">''</span>},numel(model.rxns),1);
+0500             model.grRules    = [emptyGene;models{i}.grRules];
+0501             model.geneFrom   = models{i}.geneFrom;
+0502             
+0503             <span class="keyword">if</span> isfield(models{i},<span class="string">'geneShortNames'</span>)
+0504                 model.geneShortNames=models{i}.geneShortNames;
+0505             <span class="keyword">end</span>
+0506 
+0507             <span class="keyword">if</span> isfield(models{i},<span class="string">'proteins'</span>)
+0508                 model.proteins=models{i}.proteins;
+0509             <span class="keyword">end</span>
+0510 
+0511             <span class="keyword">if</span> isfield(models{i},<span class="string">'geneMiriams'</span>)
+0512                 model.geneMiriams=models{i}.geneMiriams;
+0513             <span class="keyword">end</span>
+0514             
+0515             <span class="keyword">if</span> isfield(models{i},<span class="string">'geneComps'</span>)
+0516                 model.geneComps=models{i}.geneComps;
+0517             <span class="keyword">end</span>
+0518         <span class="keyword">else</span>
+0519             <span class="comment">%If gene info should be merged</span>
+0520             a=ismember(models{i}.genes,model.genes);
+0521             
+0522             genesToAdd=find(~a);
+0523             
+0524             <span class="comment">%Only add extra gene info on new genes. This might not be</span>
+0525             <span class="comment">%correct and should be changed later...</span>
+0526             <span class="keyword">if</span> ~isempty(genesToAdd)
+0527                 model.genes      = [model.genes;        models{i}.genes(genesToAdd)];
+0528                 model.geneFrom   = [model.geneFrom;     models{i}.geneFrom(genesToAdd)];
+0529                 model.rxnGeneMat = [model.rxnGeneMat    sparse(size(model.rxnGeneMat,1),numel(genesToAdd))];
+0530                 
+0531                 <span class="keyword">if</span> isfield(models{i},<span class="string">'geneShortNames'</span>)
+0532                     <span class="keyword">if</span> isfield(model,<span class="string">'geneShortNames'</span>)
+0533                         model.geneShortNames=[model.geneShortNames;models{i}.geneShortNames(genesToAdd)];
+0534                     <span class="keyword">else</span>
+0535                         emptyGeneSN=cell(numel(model.genes)-numel(genesToAdd),1);
+0536                         emptyGeneSN(:)={<span class="string">''</span>};
+0537                         model.geneShortNames=[emptyGeneSN;models{i}.geneShortNames(genesToAdd)];
+0538                     <span class="keyword">end</span>
+0539                 <span class="keyword">else</span>
+0540                     <span class="keyword">if</span> isfield(model,<span class="string">'geneShortNames'</span>)
+0541                         emptyGeneSN=cell(numel(genesToAdd),1);
+0542                         emptyGeneSN(:)={<span class="string">''</span>};
+0543                         model.geneShortNames=[model.geneShortNames;emptyGeneSN];
+0544                     <span class="keyword">end</span>
+0545                 <span class="keyword">end</span>
+0546 
+0547                 <span class="keyword">if</span> isfield(models{i},<span class="string">'proteins'</span>)
+0548                     <span class="keyword">if</span> isfield(model,<span class="string">'proteins'</span>)
+0549                         model.proteins=[model.proteins;models{i}.proteins(genesToAdd)];
+0550                     <span class="keyword">else</span>
+0551                         emptyGeneSN=cell(numel(model.genes)-numel(genesToAdd),1);
+0552                         emptyGeneSN(:)={<span class="string">''</span>};
+0553                         model.proteins=[emptyGeneSN;models{i}.proteins(genesToAdd)];
+0554                     <span class="keyword">end</span>
+0555                 <span class="keyword">else</span>
+0556                     <span class="keyword">if</span> isfield(model,<span class="string">'proteins'</span>)
+0557                         emptyGeneSN=cell(numel(genesToAdd),1);
+0558                         emptyGeneSN(:)={<span class="string">''</span>};
+0559                         model.proteins=[model.proteins;emptyGeneSN];
 0560                     <span class="keyword">end</span>
-0561                 <span class="keyword">else</span>
-0562                     <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
-0563                         emptyGeneMir=cell(numel(genesToAdd),1);
-0564                         model.geneMiriams=[model.geneMiriams;emptyGeneMir];
-0565                     <span class="keyword">end</span>
-0566                 <span class="keyword">end</span>
-0567                 
-0568                 <span class="keyword">if</span> isfield(models{i},<span class="string">'geneComps'</span>)
-0569                     <span class="keyword">if</span> isfield(model,<span class="string">'geneComps'</span>)
-0570                         model.geneComps=[model.geneComps;models{i}.geneComps(genesToAdd)];
-0571                     <span class="keyword">else</span>
-0572                         emptyGeneMir=ones(numel(model.genes)-numel(genesToAdd),1);
-0573                         model.geneComps=[emptyGeneMir;models{i}.geneComps(genesToAdd)];
-0574                         EM=<span class="string">'Adding genes with compartment information to a model without such information. All existing genes will be assigned to the first compartment'</span>;
-0575                         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0576                     <span class="keyword">end</span>
-0577                 <span class="keyword">else</span>
+0561                 <span class="keyword">end</span>
+0562 
+0563                 <span class="keyword">if</span> isfield(models{i},<span class="string">'geneMiriams'</span>)
+0564                     <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
+0565                         model.geneMiriams=[model.geneMiriams;models{i}.geneMiriams(genesToAdd)];
+0566                     <span class="keyword">else</span>
+0567                         emptyGeneMir=cell(numel(model.genes)-numel(genesToAdd),1);
+0568                         model.geneMiriams=[emptyGeneMir;models{i}.geneMiriams(genesToAdd)];
+0569                     <span class="keyword">end</span>
+0570                 <span class="keyword">else</span>
+0571                     <span class="keyword">if</span> isfield(model,<span class="string">'geneMiriams'</span>)
+0572                         emptyGeneMir=cell(numel(genesToAdd),1);
+0573                         model.geneMiriams=[model.geneMiriams;emptyGeneMir];
+0574                     <span class="keyword">end</span>
+0575                 <span class="keyword">end</span>
+0576                 
+0577                 <span class="keyword">if</span> isfield(models{i},<span class="string">'geneComps'</span>)
 0578                     <span class="keyword">if</span> isfield(model,<span class="string">'geneComps'</span>)
-0579                         emptyGeneMir=ones(numel(genesToAdd),1);
-0580                         model.geneComps=[model.geneComps;emptyGeneMir];
-0581                         EM=<span class="string">'Adding genes with compartment information to a model without such information. All existing genes will be assigned to the first compartment'</span>;
-0582                         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
-0583                     <span class="keyword">end</span>
-0584                 <span class="keyword">end</span>
-0585             <span class="keyword">end</span>
-0586             
-0587             <span class="comment">%Remap the genes from the new model. The same thing as with</span>
-0588             <span class="comment">%mets; this is a wasteful way to do it but I don't care right</span>
-0589             <span class="comment">%now</span>
-0590             [a, b]=ismember(models{i}.genes,model.genes);
-0591             
-0592             <span class="comment">%Just a check</span>
-0593             <span class="keyword">if</span> ~all(a)
-0594                 EM=<span class="string">'There was an unexpected error in matching genes'</span>;
-0595                 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0596             <span class="keyword">end</span>
-0597             model.grRules=[model.grRules;models{i}.grRules];
-0598         <span class="keyword">end</span>
-0599     <span class="keyword">else</span>
-0600         <span class="comment">%Add empty gene associations</span>
-0601         <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
-0602             emptyGene=cell(numel(models{i}.rxns),1);
-0603             emptyGene(:)={<span class="string">''</span>};
-0604             model.grRules=[model.grRules;emptyGene];
-0605         <span class="keyword">end</span>
-0606     <span class="keyword">end</span>
-0607 <span class="keyword">end</span>
-0608 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
-0609 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(model,true);
-0610 model.grRules = grRules;
-0611 model.rxnGeneMat = rxnGeneMat;
-0612 <span class="keyword">end</span></pre></div>
+0579                         model.geneComps=[model.geneComps;models{i}.geneComps(genesToAdd)];
+0580                     <span class="keyword">else</span>
+0581                         emptyGeneMir=ones(numel(model.genes)-numel(genesToAdd),1);
+0582                         model.geneComps=[emptyGeneMir;models{i}.geneComps(genesToAdd)];
+0583                         EM=<span class="string">'Adding genes with compartment information to a model without such information. All existing genes will be assigned to the first compartment'</span>;
+0584                         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0585                     <span class="keyword">end</span>
+0586                 <span class="keyword">else</span>
+0587                     <span class="keyword">if</span> isfield(model,<span class="string">'geneComps'</span>)
+0588                         emptyGeneMir=ones(numel(genesToAdd),1);
+0589                         model.geneComps=[model.geneComps;emptyGeneMir];
+0590                         EM=<span class="string">'Adding genes with compartment information to a model without such information. All existing genes will be assigned to the first compartment'</span>;
+0591                         <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM,false);
+0592                     <span class="keyword">end</span>
+0593                 <span class="keyword">end</span>
+0594             <span class="keyword">end</span>
+0595             
+0596             <span class="comment">%Remap the genes from the new model. The same thing as with</span>
+0597             <span class="comment">%mets; this is a wasteful way to do it but I don't care right</span>
+0598             <span class="comment">%now</span>
+0599             a = ismember(models{i}.genes,model.genes);
+0600             
+0601             <span class="comment">%Just a check</span>
+0602             <span class="keyword">if</span> ~all(a)
+0603                 EM=<span class="string">'There was an unexpected error in matching genes'</span>;
+0604                 <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+0605             <span class="keyword">end</span>
+0606             model.grRules=[model.grRules;models{i}.grRules];
+0607         <span class="keyword">end</span>
+0608     <span class="keyword">else</span>
+0609         <span class="comment">%Add empty gene associations</span>
+0610         <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
+0611             emptyGene=cell(numel(models{i}.rxns),1);
+0612             emptyGene(:)={<span class="string">''</span>};
+0613             model.grRules=[model.grRules;emptyGene];
+0614         <span class="keyword">end</span>
+0615     <span class="keyword">end</span>
+0616 <span class="keyword">end</span>
+0617 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
+0618 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(model,true);
+0619 model.grRules = grRules;
+0620 model.rxnGeneMat = rxnGeneMat;
+0621 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -79,19 +79,28 @@ for i=1:numel(toComps)
         modelToAdd.compMiriams=modelToAdd.compMiriams(J);
     end
     modelToAdd.metComps=ones(numel(modelToAdd.mets),1);
-    
-    if isfield(modelToAdd,'rxnFrom')
-        modelToAdd=rmfield(modelToAdd,'rxnFrom');
-    end
     if isfield(modelToAdd,'metFrom')
-        modelToAdd=rmfield(modelToAdd,'metFrom');
+        modelToAdd = rmfield(modelToAdd,'metFrom');
+    end
+    if isfield(modelToAdd,'rxnFrom')
+        modelToAdd = rmfield(modelToAdd,'rxnFrom');
     end
     if isfield(modelToAdd,'geneFrom')
-        modelToAdd=rmfield(modelToAdd,'geneFrom');
+        modelToAdd = rmfield(modelToAdd,'geneFrom');
     end
-
+  
     %Merge the models
     model=mergeModels({model;modelToAdd},'metNames');
+end
+
+if all(strcmp(model.rxnFrom,originalID))
+    model = rmfield(model,'rxnFrom');
+end
+if all(strcmp(model.metFrom,originalID))
+    model = rmfield(model,'metFrom');
+end
+if all(strcmp(model.geneFrom,originalID))
+    model = rmfield(model,'geneFrom');
 end
 
 if deleteOriginal==true
