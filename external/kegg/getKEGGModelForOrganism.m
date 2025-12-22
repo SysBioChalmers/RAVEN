@@ -770,7 +770,9 @@ if ~isempty(missingHMMs)
             if ismac || isunix
                 [status, output]=system(['"' fullfile(ravenPath,'software','hmmer',['hmmbuild' binEnd]) '" --cpu "' num2str(cores) '" "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
             else
-                [status, output]=system(['wsl "' wslPath.hmmbuild '" --cpu "' num2str(cores) '" "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
+                wslPath.hmmFile   = getWSLpath(fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']));
+                wslPath.alignFile = getWSLpath(fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']));
+                [status, output]  = system(['wsl "' wslPath.hmmbuild '" --cpu "' num2str(cores) '" "' wslPath.hmmFile '" "' wslPath.alignFile '"']);
             end
             if status~=0
                 EM=['Error when training HMM for ' missingHMMs{i} ':\n' output];
@@ -827,7 +829,9 @@ if ~isempty(missingOUT)
             if ismac || isunix
                 [status, output]=system(['"' fullfile(ravenPath,'software','hmmer',['hmmsearch' binEnd]) '" --cpu "' num2str(cores) '" "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
             else
-                [status, output]=system(['wsl "' wslPath.hmmsearch '" --cpu "' num2str(cores) '" "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
+                wslPath.hmmFile   = getWSLpath(fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']));
+                wslPath.fastaFile = getWSLpath(fastaFile);
+                [status, output]=system(['wsl "' wslPath.hmmsearch '" --cpu "' num2str(cores) '" "' wslPath.hmmFile '" "' wslPath.fastaFile '"']);
             end
             if status~=0
                 EM=['Error when querying HMM for ' missingOUT{i} ':\n' output];

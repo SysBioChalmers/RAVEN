@@ -21,6 +21,18 @@ function testHmmer(testCase)
 [ST, I]=dbstack('-completenames');
 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 
+%Generate temporary names for working directory and outFile
+tmpDIR=tempname;
+outFile=tempname;
+
+%Create a temporary folder and copy multi-FASTA file there
+[~, ~]=system(['mkdir "' tmpDIR '"']);
+
+sourceDir = fileparts(which(mfilename));
+copyfile(fullfile(sourceDir,'test_data','yeast_galactosidases.fa'),tmpDIR);
+copyfile(fullfile(sourceDir,'test_data','human_galactosidases.fa'),tmpDIR);
+
+
 %Identify the operating system
 if isunix
     if ismac
@@ -29,7 +41,10 @@ if isunix
         binEnd='';
     end
 elseif ispc
-    binEnd='.exe';
+    wslPath.tmpDIR    = getWSLpath(tmpDIR);
+    wslPath.hmmbuild  = getWSLpath(fullfile(ravenPath,'software','hmmer','hmmbuild'));
+    wslPath.hmmsearch = getWSLpath(fullfile(ravenPath,'software','hmmer','hmmsearch'));
+    filesep='/';
 else
     dispEM('Unknown OS, exiting.')
     return
@@ -43,29 +58,26 @@ actHmmResult.scores = [];
 expHmmResult.genes = {'sp|P41947|MEL6_YEASX','sp|P41946|MEL5_YEASX', 'sp|P41945|MEL2_YEASX', 'sp|P04824|MEL1_YEASX'};
 expHmmResult.scores = [10^-250, 10^-250, 10^-250, 10^-250];
 
-%Generate temporary names for working directory and outFile
-tmpDIR=tempname;
-outFile=tempname;
-
 %Run HMMER multi-threaded to use all logical cores assigned to MATLAB
 cores = evalc('feature(''numcores'')');
 cores = strsplit(cores, 'MATLAB was assigned: ');
 cores = regexp(cores{2},'^\d*','match');
 cores = cores{1};
 
-%Create a temporary folder and copy multi-FASTA file there
-[~, ~]=system(['mkdir "' tmpDIR '"']);
-
-sourceDir = fileparts(which(mfilename));
-copyfile(fullfile(sourceDir,'test_data','yeast_galactosidases.fa'),tmpDIR);
-copyfile(fullfile(sourceDir,'test_data','human_galactosidases.fa'),tmpDIR);
-
 %%
 %Train a hidden Markov model
-[~, ~]=system(['"' fullfile(ravenPath,'software','hmmer',['hmmbuild' binEnd]) '" --cpu "' num2str(cores) '" "' fullfile(tmpDIR,'human_galactosidases.hmm') '" "' fullfile(tmpDIR,'yeast_galactosidases.fa') '"']);
+if ismac || isunix
+    [~, ~]=system(['"' fullfile(ravenPath,'software','hmmer',['hmmbuild' binEnd]) '" --cpu "' num2str(cores) '" "' fullfile(tmpDIR,'human_galactosidases.hmm') '" "' fullfile(tmpDIR,'yeast_galactosidases.fa') '"']);
+else
+    [~, ~]=system(['wsl "' wslPath.hmmbuild '" --cpu "' num2str(cores) '" "' wslPath.tmpDIR '/human_galactosidases.hmm" "' wslPath.tmpDIR '/yeast_galactosidases.fa"']);
+end
 
 %Run a homology search against the newly-trained HMM
-[~, output]=system(['"' fullfile(ravenPath,'software','hmmer',['hmmsearch' binEnd]) '" --cpu "' num2str(cores) '" "' fullfile(tmpDIR,'human_galactosidases.hmm') '" "' fullfile(tmpDIR,'yeast_galactosidases.fa') '"']);
+if ismac || isunix
+    [~, output]=system(['"' fullfile(ravenPath,'software','hmmer',['hmmsearch' binEnd]) '" --cpu "' num2str(cores) '" "' fullfile(tmpDIR,'human_galactosidases.hmm') '" "' fullfile(tmpDIR,'yeast_galactosidases.fa') '"']);
+else
+    [~, output]=system(['wsl "' wslPath.hmmsearch '" --cpu "' num2str(cores) '" "' wslPath.tmpDIR '/human_galactosidases.hmm" "' wslPath.tmpDIR '/yeast_galactosidases.fa"']);
+end
 
 %Save the output to a file
 fid=fopen(outFile,'w');
