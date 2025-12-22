@@ -570,6 +570,8 @@ if ~isempty(missingAligned)
         mafftOutput = tempname;
         wslPath.mafftOutput=getWSLpath(mafftOutput);
         wslPath.mafft=getWSLpath(fullfile(ravenPath,'software','mafft','mafft-linux64','mafft.bat'));
+        wslPath.hmmbuild=getWSLpath(fullfile(ravenPath,'software','hmmer','hmmbuild'));
+        wslPath.hmmsearch=getWSLpath(fullfile(ravenPath,'software','hmmer','hmmsearch'));
         wslPath.cdhit=getWSLpath(fullfile(ravenPath,'software','cd-hit','cd-hit'));
     end
     
@@ -765,7 +767,11 @@ if ~isempty(missingHMMs)
             fclose(fid);
             
             %Create HMM
-            [status, output]=system(['"' fullfile(ravenPath,'software','hmmer',['hmmbuild' binEnd]) '" --cpu "' num2str(cores) '" "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
+            if ismac || isunix
+                [status, output]=system(['"' fullfile(ravenPath,'software','hmmer',['hmmbuild' binEnd]) '" --cpu "' num2str(cores) '" "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
+            else
+                [status, output]=system(['wsl "' wslPath.hmmbuild '" --cpu "' num2str(cores) '" "' fullfile(dataDir,'hmms',[missingHMMs{i} '.hmm']) '" "' fullfile(dataDir,'aligned',[missingHMMs{i} '.fa']) '"']);
+            end
             if status~=0
                 EM=['Error when training HMM for ' missingHMMs{i} ':\n' output];
                 dispEM(EM);
@@ -818,7 +824,11 @@ if ~isempty(missingOUT)
             end
             
             %Check each gene in the input file against this model
-            [status, output]=system(['"' fullfile(ravenPath,'software','hmmer',['hmmsearch' binEnd]) '" --cpu "' num2str(cores) '" "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
+            if ismac || isunix
+                [status, output]=system(['"' fullfile(ravenPath,'software','hmmer',['hmmsearch' binEnd]) '" --cpu "' num2str(cores) '" "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
+            else
+                [status, output]=system(['wsl "' wslPath.hmmsearch '" --cpu "' num2str(cores) '" "' fullfile(dataDir,'hmms',[missingOUT{i} '.hmm']) '" "' fastaFile '"']);
+            end
             if status~=0
                 EM=['Error when querying HMM for ' missingOUT{i} ':\n' output];
                 dispEM(EM);
