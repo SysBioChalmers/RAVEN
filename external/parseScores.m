@@ -92,7 +92,7 @@ elseif strcmpi(predictor,'deeploc')
     %Read the title line and fetch the list of compartments
     tline = fgetl(fid);
     GSS.compartments=regexp(tline,',','split');
-    GSS.compartments=GSS.compartments(4:end);
+    GSS.compartments=transpose(GSS.compartments(4:end));
     
     %Now iterate through the following lines in the file. Each row
     %corresponds to one gene and it consists of the scores for

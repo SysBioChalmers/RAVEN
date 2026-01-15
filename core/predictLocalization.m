@@ -621,7 +621,7 @@ else
         outModel.compNames(2)=GSS.compartments(1);
     end
 end
-outModel.compNames=[outModel.compNames;GSS.compartments(2:end)'];
+outModel.compNames=[outModel.compNames;GSS.compartments(2:end)];
 
 %Ugly little loop
 for i=1:numel(GSS.compartments)-1

@@ -1,22 +1,37 @@
-function model=mergeModels(models,metParam,supressWarnings)
+function model=mergeModels(models,metParam,supressWarnings,copyToComps)
 % mergeModels
 %   Merges models into one model structure. Reactions are added without any
 %   checks, so duplicate reactions might appear. Metabolites are matched by
 %   their name and compartment (metaboliteName[comp]), while genes are
 %   matched by their name.
 %
+% Input:
 %   models          a cell array with model structures
-%   metParam        string specifying whether to refer to metabolite name
-%                   (metNames) or ID (mets) for matching (default, metNames)
-%   supressWarnings true if warnings should be supressed (optional, default
-%                   false)
+%   metParam        string metabolite name ('metNames') or ID ('mets') are
+%                   used for matching (optional, default 'metNames')
+%   supressWarnings logical whether warnings should be supressed (optional,
+%                   default false)
+%   copyToComps     logical whether mergeModels is run via copyToComps
+%                   (optional, default false)
 %
-%   model     a model structure with the merged model. Follows the structure
-%             of normal models but also has 'rxnFrom/metFrom/geneFrom' fields
-%             to indicate from which model each reaction/metabolite/gene was
-%             taken
+% Output:
+%   model           a model structure with the merged model. Follows the
+%                   structure of normal models but also has 'rxnFrom/
+%                   metFrom/geneFrom' fields to indicate from which model
+%                   each reaction/metabolite/gene was taken. If the model
+%                   already has 'rxnFrom/metFrom/geneFrom' fields, then
+%                   these fields are not modified.
 %
 % Usage: model=mergeModels(models)
+
+arguments
+    models;
+    metParam {emptyOrTextScalar} = "metNames"
+    supressWarnings {emptyOrLogicalScalar} = false
+    copyToComps {emptyOrLogicalScalar} = false
+end
+
+metParam = char(metParam);
 
 %Just return the model
 if numel(models)<=1
@@ -24,29 +39,44 @@ if numel(models)<=1
     return;
 end
 
-if nargin<2
-    metParam='metNames';
-else
-    metParam=char(metParam);
-end
+hasMetFrom  = cellfun(@(s) isfield(s,'metFrom'), models);
+hasGeneFrom = cellfun(@(s) isfield(s,'geneFrom'), models);
+hasRxnFrom  = cellfun(@(s) isfield(s,'rxnFrom'), models);
 
-if nargin<3
-    supressWarnings=false;
+for i = 1:numel(models)
+    if copyToComps
+        if hasMetFrom(1)
+            models{2}.metFrom = repmat({''},numel(models{i}.mets),1);
+        end
+    elseif ~any(hasMetFrom)
+        models{i}.metFrom = repmat({models{i}.id},numel(models{i}.mets),1);
+    elseif ~hasMetFrom(i)
+        models{i}.metFrom = repmat({''},numel(models{i}.mets),1);
+    end
+    if copyToComps
+        if hasRxnFrom(1)
+            models{2}.rxnFrom = repmat({''},numel(models{i}.rxns),1);
+        end
+    elseif ~any(hasRxnFrom)
+        models{i}.rxnFrom = repmat({models{i}.id},numel(models{i}.rxns),1);
+    elseif ~hasRxnFrom(i)
+        models{i}.rxnFrom = repmat({''},numel(models{i}.rxns),1);
+    end
+    if copyToComps
+        if hasGeneFrom(1)
+            models{2}.geneFrom = repmat({''},numel(models{i}.genes),1);
+        end
+    elseif ~any(hasGeneFrom) && any(cellfun(@(s) isfield(s,'genes'), models))
+        models{i}.geneFrom = repmat({models{i}.id},numel(models{i}.genes),1);
+    elseif ~hasGeneFrom(i)
+        models{i}.geneFrom = repmat({''},numel(models{i}.genes),1);
+    end
 end
 
 %Add new functionality in the order specified in models
 model=models{1};
 model.id='MERGED';
 model.name='';
-
-model.rxnFrom=cell(numel(models{1}.rxns),1);
-model.rxnFrom(:)={models{1}.id};
-model.metFrom=cell(numel(models{1}.mets),1);
-model.metFrom(:)={models{1}.id};
-if isfield(models{1},'genes')
-    model.geneFrom=cell(numel(models{1}.genes),1);
-    model.geneFrom(:)={models{1}.id};
-end
 
 if isfield(model,'equations')
     model=rmfield(model,'equations');
@@ -78,15 +108,15 @@ for i=2:numel(models)
     end
     
     %Add all static stuff
-    rxnFrom=cell(numel(models{i}.rxns),1);
-    rxnFrom(:)={models{i}.id};
-    model.rxnFrom=[model.rxnFrom;rxnFrom];
-    model.rxns=[model.rxns;models{i}.rxns];
-    model.rxnNames=[model.rxnNames;models{i}.rxnNames];
-    model.lb=[model.lb;models{i}.lb];
-    model.ub=[model.ub;models{i}.ub];
-    model.c=[model.c;models{i}.c];
-    model.rev=[model.rev;models{i}.rev];
+    if any(hasRxnFrom) || (~copyToComps && ~any(hasRxnFrom))
+        model.rxnFrom  = [model.rxnFrom;  models{i}.rxnFrom];
+    end
+    model.rxns     = [model.rxns;     models{i}.rxns];
+    model.rxnNames = [model.rxnNames; models{i}.rxnNames];
+    model.lb       = [model.lb;       models{i}.lb];
+    model.ub       = [model.ub;       models{i}.ub];
+    model.c        = [model.c;        models{i}.c];
+    model.rev      = [model.rev;      models{i}.rev];
     
     if isfield(models{i},'subSystems')
         if isfield(model,'subSystems')
@@ -287,12 +317,12 @@ for i=2:numel(models)
     end
     
     %Add static info on the metabolites
-    metFrom=cell(numel(metsToAdd),1);
-    metFrom(:)={models{i}.id};
-    model.metFrom=[model.metFrom;metFrom];
-    model.mets=[model.mets;models{i}.mets(metsToAdd)];
-    model.metNames=[model.metNames;models{i}.metNames(metsToAdd)];
-    model.b=[model.b;zeros(numel(metsToAdd),size(model.b,2))];
+    if any(hasMetFrom)
+        model.metFrom  = [model.metFrom;  models{i}.metFrom(metsToAdd)];
+    end
+    model.mets     = [model.mets;     models{i}.mets(metsToAdd)];
+    model.metNames = [model.metNames; models{i}.metNames(metsToAdd)];
+    model.b        = [model.b;        zeros(numel(metsToAdd),size(model.b,2))];
     
     if isfield(model,'unconstrained')
         if isfield(models{i},'unconstrained')
@@ -481,13 +511,13 @@ for i=2:numel(models)
     if isfield(models{i},'genes')
         if ~isfield(model,'genes')
             %If there was no gene info before
-            model.genes=models{i}.genes;
-            model.rxnGeneMat=[sparse(numel(model.rxns),numel(models{i}.genes));models{i}.rxnGeneMat];
-            emptyGene=cell(numel(model.rxns),1);
-            emptyGene(:)={''};
-            model.grRules=[emptyGene;models{i}.grRules];
-            model.geneFrom=cell(numel(models{i}.genes),1);
-            model.geneFrom(:)={models{i}.id};
+            model.genes      = models{i}.genes;
+            model.rxnGeneMat = [sparse(numel(model.rxns),numel(models{i}.genes));models{i}.rxnGeneMat];
+            emptyGene        = repmat({''},numel(model.rxns),1);
+            model.grRules    = [emptyGene;models{i}.grRules];
+            if any(hasGeneFrom)
+                model.geneFrom   = models{i}.geneFrom;
+            end
             
             if isfield(models{i},'geneShortNames')
                 model.geneShortNames=models{i}.geneShortNames;
@@ -513,11 +543,9 @@ for i=2:numel(models)
             %Only add extra gene info on new genes. This might not be
             %correct and should be changed later...
             if ~isempty(genesToAdd)
-                model.genes=[model.genes;models{i}.genes(genesToAdd)];
-                emptyGene=cell(numel(genesToAdd),1);
-                emptyGene(:)={models{i}.id};
-                model.geneFrom=[model.geneFrom;emptyGene];
-                model.rxnGeneMat=[model.rxnGeneMat sparse(size(model.rxnGeneMat,1),numel(genesToAdd))];
+                model.genes      = [model.genes;        models{i}.genes(genesToAdd)];
+                model.geneFrom   = [model.geneFrom;     models{i}.geneFrom(genesToAdd)];
+                model.rxnGeneMat = [model.rxnGeneMat    sparse(size(model.rxnGeneMat,1),numel(genesToAdd))];
                 
                 if isfield(models{i},'geneShortNames')
                     if isfield(model,'geneShortNames')
@@ -587,7 +615,7 @@ for i=2:numel(models)
             %Remap the genes from the new model. The same thing as with
             %mets; this is a wasteful way to do it but I don't care right
             %now
-            [a, b]=ismember(models{i}.genes,model.genes);
+            a = ismember(models{i}.genes,model.genes);
             
             %Just a check
             if ~all(a)

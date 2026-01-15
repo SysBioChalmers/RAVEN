@@ -350,14 +350,18 @@ else
 end
 
 if isfield(rxnsToAdd,'subSystems')
+    if ischar(rxnsToAdd.subSystems)
+        rxnsToAdd.subSystems = {{rxnsToAdd.subSystems}};
+    else
+        for i=1:numel(rxnsToAdd.subSystems)
+            if ischar(rxnsToAdd.subSystems{i})
+                rxnsToAdd.subSystems{i}=rxnsToAdd.subSystems(i);
+            end
+        end
+    end
     if numel(rxnsToAdd.subSystems)~=nRxns
         EM='rxnsToAdd.subSystems must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);
-    end
-    for i=1:numel(rxnsToAdd.subSystems)
-        if ischar(rxnsToAdd.subSystems{i})
-            rxnsToAdd.subSystems{i}=rxnsToAdd.subSystems(i);
-        end
     end
     %Fill with standard if it doesn't exist
     if ~isfield(newModel,'subSystems')
