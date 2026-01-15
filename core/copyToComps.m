@@ -25,24 +25,26 @@ function model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutsi
 %
 % Usage: model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutside)
 
-if nargin<3
-    rxns=model.rxns;
-elseif ~islogical(rxns) && ~isnumeric(rxns)
-    rxns=convertCharArray(rxns);
+arguments
+    model (1,1) struct
+    toComps {emptyOrTextOrCellOfText}
+    rxns = model.rxns
+    deleteOriginal {emptyOrLogicalScalar} = false
+    compNames {emptyOrTextOrCellOfText} = toComps
+    compOutside {emptyOrTextOrCellOfText} = '';
 end
-if nargin<4
-    deleteOriginal=false;
+
+if nargin >= 3 && ~islogical(rxns) && ~isnumeric(rxns)
+    rxns = convertCharArray(rxns);
 end
-if nargin<5
-    compNames=toComps;
-else
+if nargin >= 5
     compNames=convertCharArray(compNames);
 end
-if nargin<6
-    compOutside=cell(numel(toComps),1);
-    compOutside(:)={''};
-else
+if nargin >= 6
     compOutside=convertCharArray(compOutside);
+    if length(compOutside) ~= length(compNames)
+        error('compOutside and compNames should be of equal size.');
+    end
 end
 
 originalID=model.id;
@@ -90,17 +92,7 @@ for i=1:numel(toComps)
     end
   
     %Merge the models
-    model=mergeModels({model;modelToAdd},'metNames');
-end
-
-if all(strcmp(model.rxnFrom,originalID))
-    model = rmfield(model,'rxnFrom');
-end
-if all(strcmp(model.metFrom,originalID))
-    model = rmfield(model,'metFrom');
-end
-if all(strcmp(model.geneFrom,originalID))
-    model = rmfield(model,'geneFrom');
+    model=mergeModels({model;modelToAdd},'metNames',[],true);
 end
 
 if deleteOriginal==true

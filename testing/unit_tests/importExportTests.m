@@ -36,7 +36,7 @@ end
 function testExcelExport(testCase)
 sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
 load(fullfile(sourceDir,'testing','unit_tests','test_data','ecoli_textbook.mat'), 'model');
-exportToExcelFormat(model,fullfile(sourceDir,'testing','unit_tests','test_data','_test.xlsx'));
+evalc('exportToExcelFormat(model,fullfile(sourceDir,''testing'',''unit_tests'',''test_data'',''_test.xlsx''))');
 %File will not be exactly equal as it contains the current date and time,
 %so md5 or similar would not work. Just check whether file is reasonably
 %sized.

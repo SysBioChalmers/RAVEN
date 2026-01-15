@@ -1,4 +1,4 @@
-function model=mergeModels(models,metParam,supressWarnings)
+function model=mergeModels(models,metParam,supressWarnings,copyToComps)
 % mergeModels
 %   Merges models into one model structure. Reactions are added without any
 %   checks, so duplicate reactions might appear. Metabolites are matched by
@@ -8,9 +8,11 @@ function model=mergeModels(models,metParam,supressWarnings)
 % Input:
 %   models          a cell array with model structures
 %   metParam        string metabolite name ('metNames') or ID ('mets') are
-%                   used for matching (default, metNames)
+%                   used for matching (optional, default 'metNames')
 %   supressWarnings logical whether warnings should be supressed (optional,
 %                   default false)
+%   copyToComps     logical whether mergeModels is run via copyToComps
+%                   (optional, default false)
 %
 % Output:
 %   model           a model structure with the merged model. Follows the
@@ -22,20 +24,19 @@ function model=mergeModels(models,metParam,supressWarnings)
 %
 % Usage: model=mergeModels(models)
 
+arguments
+    models;
+    metParam {emptyOrTextScalar} = "metNames"
+    supressWarnings {emptyOrLogicalScalar} = false
+    copyToComps {emptyOrLogicalScalar} = false
+end
+
+metParam = char(metParam);
+
 %Just return the model
 if numel(models)<=1
     model=models{1};
     return;
-end
-
-if nargin<2
-    metParam='metNames';
-else
-    metParam=char(metParam);
-end
-
-if nargin<3
-    supressWarnings=false;
 end
 
 hasMetFrom  = cellfun(@(s) isfield(s,'metFrom'), models);
@@ -43,17 +44,29 @@ hasGeneFrom = cellfun(@(s) isfield(s,'geneFrom'), models);
 hasRxnFrom  = cellfun(@(s) isfield(s,'rxnFrom'), models);
 
 for i = 1:numel(models)
-    if ~any(hasMetFrom)
+    if copyToComps
+        if hasMetFrom(1)
+            models{2}.metFrom = repmat({''},numel(models{i}.mets),1);
+        end
+    elseif ~any(hasMetFrom)
         models{i}.metFrom = repmat({models{i}.id},numel(models{i}.mets),1);
     elseif ~hasMetFrom(i)
         models{i}.metFrom = repmat({''},numel(models{i}.mets),1);
     end
-    if ~any(hasRxnFrom)
+    if copyToComps
+        if hasRxnFrom(1)
+            models{2}.rxnFrom = repmat({''},numel(models{i}.rxns),1);
+        end
+    elseif ~any(hasRxnFrom)
         models{i}.rxnFrom = repmat({models{i}.id},numel(models{i}.rxns),1);
     elseif ~hasRxnFrom(i)
         models{i}.rxnFrom = repmat({''},numel(models{i}.rxns),1);
     end
-    if ~any(hasGeneFrom) && any(cellfun(@(s) isfield(s,'genes'), models))
+    if copyToComps
+        if hasGeneFrom(1)
+            models{2}.geneFrom = repmat({''},numel(models{i}.genes),1);
+        end
+    elseif ~any(hasGeneFrom) && any(cellfun(@(s) isfield(s,'genes'), models))
         models{i}.geneFrom = repmat({models{i}.id},numel(models{i}.genes),1);
     elseif ~hasGeneFrom(i)
         models{i}.geneFrom = repmat({''},numel(models{i}.genes),1);
@@ -95,7 +108,9 @@ for i=2:numel(models)
     end
     
     %Add all static stuff
-    model.rxnFrom  = [model.rxnFrom;  models{i}.rxnFrom];
+    if any(hasRxnFrom) || (~copyToComps && ~any(hasRxnFrom))
+        model.rxnFrom  = [model.rxnFrom;  models{i}.rxnFrom];
+    end
     model.rxns     = [model.rxns;     models{i}.rxns];
     model.rxnNames = [model.rxnNames; models{i}.rxnNames];
     model.lb       = [model.lb;       models{i}.lb];
@@ -302,7 +317,9 @@ for i=2:numel(models)
     end
     
     %Add static info on the metabolites
-    model.metFrom  = [model.metFrom;  models{i}.metFrom(metsToAdd)];
+    if any(hasMetFrom)
+        model.metFrom  = [model.metFrom;  models{i}.metFrom(metsToAdd)];
+    end
     model.mets     = [model.mets;     models{i}.mets(metsToAdd)];
     model.metNames = [model.metNames; models{i}.metNames(metsToAdd)];
     model.b        = [model.b;        zeros(numel(metsToAdd),size(model.b,2))];
@@ -498,7 +515,9 @@ for i=2:numel(models)
             model.rxnGeneMat = [sparse(numel(model.rxns),numel(models{i}.genes));models{i}.rxnGeneMat];
             emptyGene        = repmat({''},numel(model.rxns),1);
             model.grRules    = [emptyGene;models{i}.grRules];
-            model.geneFrom   = models{i}.geneFrom;
+            if any(hasGeneFrom)
+                model.geneFrom   = models{i}.geneFrom;
+            end
             
             if isfield(models{i},'geneShortNames')
                 model.geneShortNames=models{i}.geneShortNames;
