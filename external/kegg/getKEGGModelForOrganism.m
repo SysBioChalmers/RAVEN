@@ -38,7 +38,7 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %                           The hidden Markov models as generated in 2b or
 %                           downloaded from BioMet Toolbox (see below)
 %                       The final directory in dataDir should be styled as
-%                       prok90_kegg105 or euk90_kegg105, indicating whether
+%                       prok90_kegg116 or euk90_kegg116, indicating whether
 %                       the HMMs were trained on pro- or eukaryotic
 %                       sequences; using which sequence similarity treshold
 %                       (first set of digits); using which KEGG version
@@ -339,7 +339,7 @@ if ~isempty(dataDir)
             else
                 fprintf('Downloading the HMMs archive file... ');
                 try
-                    websave([dataDir,'.zip'],['https://github.com/SysBioChalmers/RAVEN/releases/download/v2.8.0/',hmmOptions{hmmIndex},'.zip']);
+                    websave([dataDir,'.zip'],['https://github.com/SysBioChalmers/RAVEN/releases/download/v2.11.0/',hmmOptions{hmmIndex},'.zip']);
                 catch ME
                     if strcmp(ME.identifier,'MATLAB:webservices:HTTP404StatusCodeError')
                         error('Failed to download the HMMs archive file, the server returned a 404 error, try again later. If the problem persists please report it on the RAVEN GitHub Issues page: https://github.com/SysBioChalmers/RAVEN/issues')
