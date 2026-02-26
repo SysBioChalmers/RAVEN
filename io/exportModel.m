@@ -568,7 +568,7 @@ if modelHasSubsystems
     model.subSystems = cellfun(@(c) cellfun(@char, c, 'UniformOutput', false), model.subSystems, 'UniformOutput', false);
 
     % === 2) Flatten once: names and their reaction indices (vectorized) ===
-    flatNames = [model.subSystems{:}];                    % 1×M cellstr of all subsystem labels
+    flatNames = vertcat(model.subSystems{:});                    % 1×M cellstr of all subsystem labels
     if isempty(flatNames)
         % Nothing to do: no subsystems present
         return
