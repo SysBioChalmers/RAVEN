@@ -106,6 +106,9 @@ for i=1:numel(model.rxns)
     
     if isfield(model,'subSystems')
         if ~isempty(model.subSystems{i})
+            if ~iscell(model.subSystems{i})
+                model.subSystems{i} = {model.subSystems{i}};
+            end    
             fprintf(rxnFile,[strjoin(model.subSystems{i,1},';') '\t']);
         else
             fprintf(rxnFile,'\t');

@@ -178,7 +178,7 @@ if isfield(model,'subSystems')
     isNested  = any(cellfun(@(x) iscell(x), model.subSystems));
     isCellStr = any(cellfun(@(x) ischar(x), model.subSystems));
     if ~xor(isNested,isCellStr)
-        EM='The "subSystems" field must be a cell array, or a cell array of cell arrays';
+        EM='The "subSystems" field must be a cell array of chars, *or* a cell array of cell arrays of chars';
             dispEM(EM,throwErrors);
     end
 end

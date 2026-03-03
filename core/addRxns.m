@@ -352,12 +352,15 @@ else
 end
 
 if isfield(rxnsToAdd,'subSystems')
+    % Has to be cell array
     if ischar(rxnsToAdd.subSystems)
         rxnsToAdd.subSystems = {rxnsToAdd.subSystems};
     end
-    if all(cellfun(@(x) numel(x) <= 1, rxnsToAdd.subSystems))
+    % If all nested cells are 1x1, then unnest
+    if all(cellfun(@(x) iscell(x) && isscalar(x), rxnsToAdd.subSystems))
         rxnsToAdd.subSystems = transpose([rxnsToAdd.subSystems{:}]);
     end
+    % Cell array should now be as simple as possible. Check if it is nested
     subSysRxnsNested = any(cellfun(@(x) iscell(x), rxnsToAdd.subSystems));
     if isfield(newModel,'subSystems')
         subSysModelNested = any(cellfun(@(x) iscell(x), newModel.subSystems));
@@ -381,7 +384,7 @@ if isfield(rxnsToAdd,'subSystems')
     end
     newModel.subSystems=[newModel.subSystems;rxnsToAdd.subSystems(:)];
 else
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if isfield(newModel,'subSystems')
         if any(cellfun(@(x) iscell(x), newModel.subSystems))
             newModel.subSystems=[newModel.subSystems;cellfiller];

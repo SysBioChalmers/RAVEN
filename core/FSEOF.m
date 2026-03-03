@@ -119,7 +119,12 @@ for num=1:length(fseof.target)
         A2=char(model.rxns(num));                         %enzyme ID
         A3=char(model.rxnNames(num));                     %enzyme Name
         if isfield(model,'subSystems') && ~isempty(model.subSystems{num});
-            A4=char(strjoin(model.subSystems{num,1},';'));                   %Subsystems
+            if ~any(cellfun(@(x) iscell(x), model.subSystems));
+                subSys = cellfun(@(x) {x}, model.subSystems, 'uni', 0);
+            else
+                subSys = model.subSystems;
+            end
+            A4=char(strjoin(subSys{num},';'));                   %Subsystems
         else
             A4='';
         end

@@ -993,6 +993,10 @@ if isempty(model.subSystems)
 else
     model.subSystems(cellfun(@isempty,subsystems))={{''}};
 end
+% If all subSystems have single entries, then unnest them
+if all(cellfun(@(x) iscell(x) && isscalar(x), model.subSystems))
+    model.subSystems = transpose([model.subSystems{:}]);
+end
 if isempty(model.eccodes)
     model=rmfield(model,'eccodes');
 end

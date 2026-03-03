@@ -82,6 +82,12 @@ if isfield(model,'equations')
     model=rmfield(model,'equations');
 end
 
+subSys = zeros(1,numel(models))
+for i=1:numel(models)
+    if isfield(models{i},'subSystems')
+        models{i}.subSystems = cellfun(@(x) {x}, models{i}.subSystems, 'uni', 0);
+    end
+end
 for i=2:numel(models)
     %Add the model id to the rxn id id it already exists in the model (id
     %have to be unique) This is because it makes a '[]' string if no new
@@ -613,7 +619,7 @@ for i=2:numel(models)
             end
             
             %Remap the genes from the new model. The same thing as with
-            %mets; this is a wasteful way to do it but I don't care right
+            %mets; this is a wasteful way to do it but I do not care right
             %now
             a = ismember(models{i}.genes,model.genes);
             
@@ -637,4 +643,8 @@ end
 [grRules,rxnGeneMat] = standardizeGrRules(model,true);
 model.grRules = grRules;
 model.rxnGeneMat = rxnGeneMat;
+%Flatten subSystems if possible
+if all(cellfun(@(x) iscell(x) && isscalar(x), model.subSystems))
+    model.subSystems = transpose([model.subSystems{:}]);
+end
 end
