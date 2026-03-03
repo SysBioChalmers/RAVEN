@@ -600,14 +600,16 @@ if isfield(model,'subSystems')
 end
 
 % Make rxnGeneMat fields and map to the existing model.genes field
-[genes, rxnGeneMat] = getGenesFromGrRules(model.grRules);
-model.rxnGeneMat = sparse(numel(model.rxns),numel(model.genes));
-[~,geneOrder] = ismember(genes,model.genes);
-if any(geneOrder == 0)
-    error(['The grRules includes the following gene(s), that are not in '...
-           'the list of model genes: ', genes{~geneOrder}])
+if isfield(model,'grRules')
+    [genes, rxnGeneMat] = getGenesFromGrRules(model.grRules);
+    model.rxnGeneMat = sparse(numel(model.rxns),numel(model.genes));
+    [~,geneOrder] = ismember(genes,model.genes);
+    if any(geneOrder == 0)
+        error(['The grRules includes the following gene(s), that are not in '...
+            'the list of model genes: ', genes{~geneOrder}])
+    end
+    model.rxnGeneMat(:,geneOrder) = rxnGeneMat;
 end
-model.rxnGeneMat(:,geneOrder) = rxnGeneMat;
 
 % Finalize GECKO model
 if isGECKO
