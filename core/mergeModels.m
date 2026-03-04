@@ -644,7 +644,9 @@ end
 model.grRules = grRules;
 model.rxnGeneMat = rxnGeneMat;
 %Flatten subSystems if possible
-if all(cellfun(@(x) iscell(x) && isscalar(x), model.subSystems))
-    model.subSystems = transpose([model.subSystems{:}]);
+if isfield(model,'subSystems')
+    if all(cellfun(@(x) iscell(x) && isscalar(x), model.subSystems))
+        model.subSystems = transpose([model.subSystems{:}]);
+    end
 end
 end

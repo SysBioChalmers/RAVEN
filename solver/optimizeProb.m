@@ -242,7 +242,7 @@ switch solver
         switch exitflag
             case 11
                 res.stat = 1;
-            case [5, 6, 7, 8, 9, 10, 13]
+            case {1, 5, 6, 7, 8, 9, 10, 13} % If user-interrupted, not sure if optimal
                 res.stat = 2;
             otherwise
                 res.stat = 0;
