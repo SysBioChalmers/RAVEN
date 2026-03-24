@@ -244,7 +244,7 @@ else
                 
                 [x, y]=ismember(tline(14:end),pwys);
                 if x
-                    metaCycRxns.subSystems{rxnCounter,1}{1,numel(metaCycRxns.subSystems{rxnCounter,1})+1}=pwyNames{y};
+                    metaCycRxns.subSystems{rxnCounter,1}{numel(metaCycRxns.subSystems{rxnCounter,1})+1,1}=pwyNames{y};
                 end
             end
             

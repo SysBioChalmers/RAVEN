@@ -1,4 +1,4 @@
-function [currVer, installType] = checkInstallation(developMode)
+function [currVer, installType] = checkInstallation(developMode,checkBinaries)
 % checkInstallation
 %   The purpose of this function is to check if all necessary functions are
 %   installed and working. It also checks whether there are any functions
@@ -11,6 +11,9 @@ function [currVer, installType] = checkInstallation(developMode)
 %                   HMMs (optional, default false). If 'versionOnly' is
 %                   specified, only the version is reported as currVer, no
 %                   further installation or tests are performed.
+%   checkBinaries   logical whether non-developMode binaries should be
+%                   checked for functionality. If false, it overwrites
+%                   developMode. Default true.
 %
 % Output:
 %   currVer         current RAVEN version
@@ -26,6 +29,9 @@ function [currVer, installType] = checkInstallation(developMode)
 
 if nargin<1
     developMode=false;
+end
+if nargin<2
+    checkBinaries=true;
 end
 if ischar(developMode) && strcmp(developMode,'versionOnly')
     versionOnly = true;
@@ -126,6 +132,13 @@ try
         fprintf(['   You might have to rerun checkInstallation again\n'...
                  '   next time you start up MATLAB\n'])        
     end
+catch
+    printOrange('Fail\n')
+end
+fprintf(myStr(' > Store RAVEN path as MATLAB pref',40))
+try
+    setpref('RAVEN','ravenPath',ravenDir);
+    fprintf('Pass\n');
 catch
     printOrange('Fail\n')
 end
@@ -275,46 +288,50 @@ else
 end
 
 fprintf('\n=== Essential binary executables ===\n');
-fprintf(myStr(' > Checking BLAST+',40))
-[~,res]=evalc("runtests('blastPlusTests.m');");
-res=interpretResults(res);
-if res==false
-    fprintf('   This is essential to run getBlast()\n')
-end
+if ~checkBinaries
+    printOrange('    Skipping check of binary executables\n')
+else
+    fprintf(myStr(' > Checking BLAST+',40))
+    [~,res]=evalc("runtests('blastPlusTests.m');");
+    res=interpretResults(res);
+    if res==false
+        fprintf('   This is essential to run getBlast()\n')
+    end
 
-fprintf(myStr(' > Checking DIAMOND',40))
-[~,res]=evalc("runtests('diamondTests.m');");
-res=interpretResults(res);
-if res==false
-    fprintf('   This is essential to run the getDiamond()\n')
-end
+    fprintf(myStr(' > Checking DIAMOND',40))
+    [~,res]=evalc("runtests('diamondTests.m');");
+    res=interpretResults(res);
+    if res==false
+        fprintf('   This is essential to run the getDiamond()\n')
+    end
 
-fprintf(myStr(' > Checking HMMER',40))
-[~,res]=evalc("runtests('hmmerTests.m')");
-res=interpretResults(res);
-if res==false
-    fprintf(['   This is essential to run getKEGGModelFromHomology()\n'...
-             '   when using a FASTA file as input\n'])
-end
+    fprintf(myStr(' > Checking HMMER',40))
+    [~,res]=evalc("runtests('hmmerTests.m')");
+    res=interpretResults(res);
+    if res==false
+        fprintf(['   This is essential to run getKEGGModelFromHomology()\n'...
+            '   when using a FASTA file as input\n'])
+    end
 
-if developMode
-    fprintf('\n=== Development binary executables ===\n');
-    fprintf('NOTE: These binaries are only required when using KEGG FTP dump files in getKEGGModelForOrganism\n');
+    if developMode
+        fprintf('\n=== Development binary executables ===\n');
+        fprintf('NOTE: These binaries are only required when using KEGG FTP dump files in getKEGGModelForOrganism\n');
 
-    fprintf(myStr(' > Checking CD-HIT',40))
-    [~,res]=evalc("runtests('cdhitTests.m');");
-    interpretResults(res);
+        fprintf(myStr(' > Checking CD-HIT',40))
+        [~,res]=evalc("runtests('cdhitTests.m');");
+        interpretResults(res);
 
-    fprintf(myStr(' > Checking MAFFT',40))
-    [~,res]=evalc("runtests('mafftTests.m');");
-    interpretResults(res);
+        fprintf(myStr(' > Checking MAFFT',40))
+        [~,res]=evalc("runtests('mafftTests.m');");
+        interpretResults(res);
+    end
 end
 
 fprintf('\n=== Compatibility ===\n');
 fprintf(myStr(' > Checking function uniqueness',40))
 checkFunctionUniqueness();
 
-fprintf('\n*** checkInstallation complete ***\n\n');
+fprintf('\n*** checkInstallation complete ***\n');
 end
 
 function res = interpretResults(results)

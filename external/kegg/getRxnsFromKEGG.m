@@ -131,7 +131,12 @@ else
             if numel(tline)<12
                 continue;
             end
-            
+            % Skip other lines with unused information
+            if strcmp(tline(1:5),'BRITE')
+                pathway = false;
+                continue;
+            end
+
             %Check if it's a new reaction
             if strcmp(tline(1:12),'ENTRY       ')
                 rxnCounter=rxnCounter+1;
@@ -139,7 +144,7 @@ else
                 %Add empty strings where there should be such
                 model.rxnNames{rxnCounter}='';
                 model.eccodes{rxnCounter}='';
-                %model.subSystems{rxnCounter}=''; %remain empty cell
+                %model.subSystems{rxnCounter}={''}; %remain empty cell
                 model.rxnNotes{rxnCounter}='';
                 equations{rxnCounter}='';
                 
@@ -305,7 +310,7 @@ else
                             model.subSystems{rxnCounter}=tline(28:end);
                         else
                             %The new format
-                            model.subSystems{rxnCounter,1}{1,numel(model.subSystems{rxnCounter,1})+1}=tline(22:end);
+                            model.subSystems{rxnCounter,1}{numel(model.subSystems{rxnCounter,1})+1,1}=tline(22:end);
                         end
                     end
                 end
@@ -330,6 +335,9 @@ else
         model.rxnNotes=model.rxnNotes(1:rxnCounter);
         model.subSystems=model.subSystems(1:rxnCounter);
         
+        emptySubSys = cellfun(@isempty,model.subSystems);
+        model.subSystems(emptySubSys) = {{''}};
+
         %Then load the equations from another file. This is because the
         %equations are easier to retrieve from there
         

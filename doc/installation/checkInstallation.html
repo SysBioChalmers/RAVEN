@@ -24,7 +24,7 @@
 <div class="box"><strong>checkInstallation</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [currVer, installType] = checkInstallation(developMode) </strong></div>
+<div class="box"><strong>function [currVer, installType] = checkInstallation(developMode,checkBinaries) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> checkInstallation
@@ -39,6 +39,9 @@
                    HMMs (optional, default false). If 'versionOnly' is
                    specified, only the version is reported as currVer, no
                    further installation or tests are performed.
+   checkBinaries   logical whether non-developMode binaries should be
+                   checked for functionality. If false, it overwrites
+                   developMode. Default true.
 
  Output:
    currVer         current RAVEN version
@@ -67,7 +70,7 @@ This function is called by:
 <li><a href="#_sub1" class="code">function res = interpretResults(results)</a></li><li><a href="#_sub2" class="code">function str = myStr(InputStr,len)</a></li><li><a href="#_sub3" class="code">function status = makeBinaryExecutable(ravenDir)</a></li><li><a href="#_sub4" class="code">function printOrange(stringToPrint)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [currVer, installType] = checkInstallation(developMode)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [currVer, installType] = checkInstallation(developMode,checkBinaries)</a>
 0002 <span class="comment">% checkInstallation</span>
 0003 <span class="comment">%   The purpose of this function is to check if all necessary functions are</span>
 0004 <span class="comment">%   installed and working. It also checks whether there are any functions</span>
@@ -80,373 +83,390 @@ This function is called by:
 0011 <span class="comment">%                   HMMs (optional, default false). If 'versionOnly' is</span>
 0012 <span class="comment">%                   specified, only the version is reported as currVer, no</span>
 0013 <span class="comment">%                   further installation or tests are performed.</span>
-0014 <span class="comment">%</span>
-0015 <span class="comment">% Output:</span>
-0016 <span class="comment">%   currVer         current RAVEN version</span>
-0017 <span class="comment">%   installType     how RAVEN is installed</span>
-0018 <span class="comment">%                   0:  via git (as .git folder is found)</span>
-0019 <span class="comment">%                   1:  as MATLAB Add-On</span>
-0020 <span class="comment">%                   2:  neither of the above, direct download of ZIP file</span>
-0021 <span class="comment">%                   This matches the installations mentioned in the wiki:</span>
-0022 <span class="comment">%                   https://github.com/SysBioChalmers/RAVEN/wiki/Installation</span>
-0023 <span class="comment">%                   0 = advanced / 1 = easy / 2 = medium</span>
-0024 <span class="comment">%</span>
-0025 <span class="comment">% Usage: [currVer, installType] = checkInstallation(developMode)</span>
-0026 
-0027 <span class="keyword">if</span> nargin&lt;1
-0028     developMode=false;
-0029 <span class="keyword">end</span>
-0030 <span class="keyword">if</span> ischar(developMode) &amp;&amp; strcmp(developMode,<span class="string">'versionOnly'</span>)
-0031     versionOnly = true;
-0032 <span class="keyword">else</span>
-0033     versionOnly = false;
-0034 <span class="keyword">end</span>
-0035 
-0036 <span class="comment">%Get the RAVEN path</span>
-0037 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
-0038 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
-0039 
-0040 installType = 2; <span class="comment">% If neither git nor add-on, then ZIP was downloaded</span>
-0041 addList = matlab.addons.installedAddons;
-0042 <span class="keyword">if</span> isfolder(fullfile(ravenDir,<span class="string">'.git'</span>))
-0043     installType = 0;
-0044 <span class="keyword">elseif</span> any(strcmp(addList.Name,<span class="string">'RAVEN Toolbox'</span>))
-0045     installType = 1;
-0046 <span class="keyword">end</span>
-0047 
-0048 <span class="comment">% Do not print first few lines if only version should be reported</span>
-0049 <span class="keyword">if</span> ~versionOnly
-0050     fprintf(<span class="string">'\n*** THE RAVEN TOOLBOX ***\n\n'</span>);
-0051     <span class="comment">%Print the RAVEN version if it is not the development version</span>
-0052     fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Installation type'</span>,40));
-0053     <span class="keyword">switch</span> installType
-0054         <span class="keyword">case</span> 0
-0055             fprintf(<span class="string">'Advanced (via git)\n'</span>);
-0056         <span class="keyword">case</span> 1
-0057             fprintf(<span class="string">'Easy (as MATLAB Add-On)\n'</span>);
-0058         <span class="keyword">case</span> 2
-0059             fprintf(<span class="string">'Medium (as downloaded ZIP file)\n'</span>);
-0060     <span class="keyword">end</span>
-0061     fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Installing from location'</span>,40));
-0062     fprintf(<span class="string">'%s\n'</span>,ravenDir)
-0063     fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking RAVEN release'</span>,40));
-0064 <span class="keyword">end</span>
-0065                        
-0066 <span class="keyword">if</span> exist(fullfile(ravenDir,<span class="string">'version.txt'</span>), <span class="string">'file'</span>) == 2
-0067     currVer = fgetl(fopen(fullfile(ravenDir,<span class="string">'version.txt'</span>)));
-0068     fclose(<span class="string">'all'</span>);
-0069     <span class="keyword">if</span> ~versionOnly
-0070         fprintf([currVer <span class="string">'\n'</span>]);
-0071         <span class="keyword">try</span>
-0072             newVer=strtrim(webread(<span class="string">'https://raw.githubusercontent.com/SysBioChalmers/RAVEN/main/version.txt'</span>));
-0073             newVerNum=str2double(strsplit(newVer,<span class="string">'.'</span>));
-0074             currVerNum=str2double(strsplit(currVer,<span class="string">'.'</span>));
-0075             <span class="keyword">for</span> i=1:3
-0076                 <span class="keyword">if</span> currVerNum(i)&lt;newVerNum(i)
-0077                     fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Latest RAVEN release available'</span>,40))
-0078                     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>([newVer,<span class="string">'\n'</span>])
-0079                     <span class="keyword">switch</span> installType
-0080                         <span class="keyword">case</span> 0
-0081                             <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'     Run git pull in your favourite git client\n'</span>)
-0082                             <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'     to get the latest RAVEN release\n'</span>);
-0083                         <span class="keyword">case</span> 1
-0084                             <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'     Instructions on how to upgrade'</span>,40))
-0085                             fprintf(<span class="string">'&lt;a href=&quot;https://github.com/SysBioChalmers/RAVEN/wiki/Installation#upgrade-raven-after-easy-installation&quot;&gt;here&lt;/a&gt;\n'</span>);
-0086                         <span class="keyword">case</span> 2
-0087                             <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'     Instructions on how to upgrade'</span>,40))
-0088                             fprintf(<span class="string">'&lt;a href=&quot;https://github.com/SysBioChalmers/RAVEN/wiki/Installation#upgrade-raven-after-medium-installation&quot;&gt;here&lt;/a&gt;\n'</span>);                            
-0089                     <span class="keyword">end</span>
-0090                     <span class="keyword">break</span>
-0091                 <span class="keyword">elseif</span> i==3
-0092                     fprintf(<span class="string">'   &gt; You are running the latest RAVEN release\n'</span>);
-0093                 <span class="keyword">end</span>
-0094             <span class="keyword">end</span>
-0095         <span class="keyword">catch</span>
-0096             fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Checking for latest RAVEN release'</span>,40))
-0097             <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>);
-0098             <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'     Cannot reach GitHub for release info\n'</span>);
-0099         <span class="keyword">end</span>
-0100     <span class="keyword">end</span>
-0101 <span class="keyword">else</span>
-0102     currVer = <span class="string">'develop'</span>;
-0103     <span class="keyword">if</span> ~versionOnly; fprintf(<span class="string">'DEVELOPMENT\n'</span>); <span class="keyword">end</span>
-0104 <span class="keyword">end</span>
-0105 <span class="keyword">if</span> strcmp(developMode,<span class="string">'versionOnly'</span>)
-0106     <span class="keyword">return</span>;
-0107 <span class="keyword">end</span>
-0108 
-0109 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking MATLAB release'</span>,40))
-0110 fprintf([version(<span class="string">'-release'</span>) <span class="string">'\n'</span>])
-0111 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking system architecture'</span>,40))
-0112 fprintf([computer(<span class="string">'arch'</span>),<span class="string">'\n'</span>])
-0113 
-0114 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Set RAVEN in MATLAB path'</span>,40))
-0115 subpath=regexp(genpath(ravenDir),pathsep,<span class="string">'split'</span>); <span class="comment">%List all subdirectories</span>
-0116 pathsToKeep=cellfun(@(x) ~contains(x,<span class="string">'.git'</span>),subpath) &amp; cellfun(@(x) ~contains(x,<span class="string">'doc'</span>),subpath);
-0117 <span class="keyword">try</span>
-0118     addpath(strjoin(subpath(pathsToKeep),pathsep));
-0119     fprintf(<span class="string">'Pass\n'</span>);
-0120     fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Save MATLAB path'</span>,40))
-0121     <span class="keyword">try</span>
-0122         savepath
-0123         fprintf(<span class="string">'Pass\n'</span>)   
-0124     <span class="keyword">catch</span>
-0125         <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
-0126         fprintf([<span class="string">'   You might have to rerun checkInstallation again\n'</span><span class="keyword">...</span>
-0127                  <span class="string">'   next time you start up MATLAB\n'</span>])        
-0128     <span class="keyword">end</span>
-0129 <span class="keyword">catch</span>
-0130     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
-0131 <span class="keyword">end</span>
-0132 
-0133 <span class="keyword">if</span> isunix
-0134     fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Make binaries executable'</span>,40))
-0135     status = <a href="#_sub3" class="code" title="subfunction status = makeBinaryExecutable(ravenDir)">makeBinaryExecutable</a>(ravenDir);
-0136     <span class="keyword">if</span> status == 0
-0137         fprintf(<span class="string">'Pass\n'</span>)
-0138     <span class="keyword">else</span>
-0139         <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
-0140     <span class="keyword">end</span>
-0141 <span class="keyword">end</span>
-0142 
-0143 <span class="comment">%Check if it is possible to parse an Excel file</span>
-0144 fprintf(<span class="string">'\n=== Model import and export ===\n'</span>);
-0145 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Add Java paths for Excel format'</span>,40))
-0146 <span class="keyword">try</span>
-0147     <span class="comment">%Add the required classes to the static Java path if not already added</span>
-0148     addJavaPaths();
-0149     fprintf(<span class="string">'Pass\n'</span>)
-0150 <span class="keyword">catch</span>
-0151     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
-0152 <span class="keyword">end</span>
-0153 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking libSBML version'</span>,40))
-0154 <span class="keyword">try</span>
-0155     evalc(<span class="string">'importModel(fullfile(ravenDir,''tutorial'',''empty.xml''))'</span>);
-0156     <span class="keyword">try</span>
-0157         libSBMLver=OutputSBML_RAVEN; <span class="comment">% Only works in libSBML 5.17.0+</span>
-0158         fprintf([libSBMLver.libSBML_version_string <span class="string">'\n'</span>]);
-0159     <span class="keyword">catch</span>
-0160         <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
-0161         fprintf(<span class="string">'   An older libSBML version was found, update to version 5.17.0 or higher for a significant improvement of model import\n'</span>);
-0162     <span class="keyword">end</span>
+0014 <span class="comment">%   checkBinaries   logical whether non-developMode binaries should be</span>
+0015 <span class="comment">%                   checked for functionality. If false, it overwrites</span>
+0016 <span class="comment">%                   developMode. Default true.</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% Output:</span>
+0019 <span class="comment">%   currVer         current RAVEN version</span>
+0020 <span class="comment">%   installType     how RAVEN is installed</span>
+0021 <span class="comment">%                   0:  via git (as .git folder is found)</span>
+0022 <span class="comment">%                   1:  as MATLAB Add-On</span>
+0023 <span class="comment">%                   2:  neither of the above, direct download of ZIP file</span>
+0024 <span class="comment">%                   This matches the installations mentioned in the wiki:</span>
+0025 <span class="comment">%                   https://github.com/SysBioChalmers/RAVEN/wiki/Installation</span>
+0026 <span class="comment">%                   0 = advanced / 1 = easy / 2 = medium</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% Usage: [currVer, installType] = checkInstallation(developMode)</span>
+0029 
+0030 <span class="keyword">if</span> nargin&lt;1
+0031     developMode=false;
+0032 <span class="keyword">end</span>
+0033 <span class="keyword">if</span> nargin&lt;2
+0034     checkBinaries=true;
+0035 <span class="keyword">end</span>
+0036 <span class="keyword">if</span> ischar(developMode) &amp;&amp; strcmp(developMode,<span class="string">'versionOnly'</span>)
+0037     versionOnly = true;
+0038 <span class="keyword">else</span>
+0039     versionOnly = false;
+0040 <span class="keyword">end</span>
+0041 
+0042 <span class="comment">%Get the RAVEN path</span>
+0043 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
+0044 [ravenDir,~,~]=fileparts(fileparts(ST(I).file));
+0045 
+0046 installType = 2; <span class="comment">% If neither git nor add-on, then ZIP was downloaded</span>
+0047 addList = matlab.addons.installedAddons;
+0048 <span class="keyword">if</span> isfolder(fullfile(ravenDir,<span class="string">'.git'</span>))
+0049     installType = 0;
+0050 <span class="keyword">elseif</span> any(strcmp(addList.Name,<span class="string">'RAVEN Toolbox'</span>))
+0051     installType = 1;
+0052 <span class="keyword">end</span>
+0053 
+0054 <span class="comment">% Do not print first few lines if only version should be reported</span>
+0055 <span class="keyword">if</span> ~versionOnly
+0056     fprintf(<span class="string">'\n*** THE RAVEN TOOLBOX ***\n\n'</span>);
+0057     <span class="comment">%Print the RAVEN version if it is not the development version</span>
+0058     fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Installation type'</span>,40));
+0059     <span class="keyword">switch</span> installType
+0060         <span class="keyword">case</span> 0
+0061             fprintf(<span class="string">'Advanced (via git)\n'</span>);
+0062         <span class="keyword">case</span> 1
+0063             fprintf(<span class="string">'Easy (as MATLAB Add-On)\n'</span>);
+0064         <span class="keyword">case</span> 2
+0065             fprintf(<span class="string">'Medium (as downloaded ZIP file)\n'</span>);
+0066     <span class="keyword">end</span>
+0067     fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Installing from location'</span>,40));
+0068     fprintf(<span class="string">'%s\n'</span>,ravenDir)
+0069     fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking RAVEN release'</span>,40));
+0070 <span class="keyword">end</span>
+0071                        
+0072 <span class="keyword">if</span> exist(fullfile(ravenDir,<span class="string">'version.txt'</span>), <span class="string">'file'</span>) == 2
+0073     currVer = fgetl(fopen(fullfile(ravenDir,<span class="string">'version.txt'</span>)));
+0074     fclose(<span class="string">'all'</span>);
+0075     <span class="keyword">if</span> ~versionOnly
+0076         fprintf([currVer <span class="string">'\n'</span>]);
+0077         <span class="keyword">try</span>
+0078             newVer=strtrim(webread(<span class="string">'https://raw.githubusercontent.com/SysBioChalmers/RAVEN/main/version.txt'</span>));
+0079             newVerNum=str2double(strsplit(newVer,<span class="string">'.'</span>));
+0080             currVerNum=str2double(strsplit(currVer,<span class="string">'.'</span>));
+0081             <span class="keyword">for</span> i=1:3
+0082                 <span class="keyword">if</span> currVerNum(i)&lt;newVerNum(i)
+0083                     fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Latest RAVEN release available'</span>,40))
+0084                     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>([newVer,<span class="string">'\n'</span>])
+0085                     <span class="keyword">switch</span> installType
+0086                         <span class="keyword">case</span> 0
+0087                             <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'     Run git pull in your favourite git client\n'</span>)
+0088                             <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'     to get the latest RAVEN release\n'</span>);
+0089                         <span class="keyword">case</span> 1
+0090                             <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'     Instructions on how to upgrade'</span>,40))
+0091                             fprintf(<span class="string">'&lt;a href=&quot;https://github.com/SysBioChalmers/RAVEN/wiki/Installation#upgrade-raven-after-easy-installation&quot;&gt;here&lt;/a&gt;\n'</span>);
+0092                         <span class="keyword">case</span> 2
+0093                             <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'     Instructions on how to upgrade'</span>,40))
+0094                             fprintf(<span class="string">'&lt;a href=&quot;https://github.com/SysBioChalmers/RAVEN/wiki/Installation#upgrade-raven-after-medium-installation&quot;&gt;here&lt;/a&gt;\n'</span>);                            
+0095                     <span class="keyword">end</span>
+0096                     <span class="keyword">break</span>
+0097                 <span class="keyword">elseif</span> i==3
+0098                     fprintf(<span class="string">'   &gt; You are running the latest RAVEN release\n'</span>);
+0099                 <span class="keyword">end</span>
+0100             <span class="keyword">end</span>
+0101         <span class="keyword">catch</span>
+0102             fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Checking for latest RAVEN release'</span>,40))
+0103             <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>);
+0104             <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'     Cannot reach GitHub for release info\n'</span>);
+0105         <span class="keyword">end</span>
+0106     <span class="keyword">end</span>
+0107 <span class="keyword">else</span>
+0108     currVer = <span class="string">'develop'</span>;
+0109     <span class="keyword">if</span> ~versionOnly; fprintf(<span class="string">'DEVELOPMENT\n'</span>); <span class="keyword">end</span>
+0110 <span class="keyword">end</span>
+0111 <span class="keyword">if</span> strcmp(developMode,<span class="string">'versionOnly'</span>)
+0112     <span class="keyword">return</span>;
+0113 <span class="keyword">end</span>
+0114 
+0115 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking MATLAB release'</span>,40))
+0116 fprintf([version(<span class="string">'-release'</span>) <span class="string">'\n'</span>])
+0117 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking system architecture'</span>,40))
+0118 fprintf([computer(<span class="string">'arch'</span>),<span class="string">'\n'</span>])
+0119 
+0120 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Set RAVEN in MATLAB path'</span>,40))
+0121 subpath=regexp(genpath(ravenDir),pathsep,<span class="string">'split'</span>); <span class="comment">%List all subdirectories</span>
+0122 pathsToKeep=cellfun(@(x) ~contains(x,<span class="string">'.git'</span>),subpath) &amp; cellfun(@(x) ~contains(x,<span class="string">'doc'</span>),subpath);
+0123 <span class="keyword">try</span>
+0124     addpath(strjoin(subpath(pathsToKeep),pathsep));
+0125     fprintf(<span class="string">'Pass\n'</span>);
+0126     fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Save MATLAB path'</span>,40))
+0127     <span class="keyword">try</span>
+0128         savepath
+0129         fprintf(<span class="string">'Pass\n'</span>)   
+0130     <span class="keyword">catch</span>
+0131         <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
+0132         fprintf([<span class="string">'   You might have to rerun checkInstallation again\n'</span><span class="keyword">...</span>
+0133                  <span class="string">'   next time you start up MATLAB\n'</span>])        
+0134     <span class="keyword">end</span>
+0135 <span class="keyword">catch</span>
+0136     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
+0137 <span class="keyword">end</span>
+0138 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Store RAVEN path as MATLAB pref'</span>,40))
+0139 <span class="keyword">try</span>
+0140     setpref(<span class="string">'RAVEN'</span>,<span class="string">'ravenPath'</span>,ravenDir);
+0141     fprintf(<span class="string">'Pass\n'</span>);
+0142 <span class="keyword">catch</span>
+0143     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
+0144 <span class="keyword">end</span>
+0145 
+0146 <span class="keyword">if</span> isunix
+0147     fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Make binaries executable'</span>,40))
+0148     status = <a href="#_sub3" class="code" title="subfunction status = makeBinaryExecutable(ravenDir)">makeBinaryExecutable</a>(ravenDir);
+0149     <span class="keyword">if</span> status == 0
+0150         fprintf(<span class="string">'Pass\n'</span>)
+0151     <span class="keyword">else</span>
+0152         <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
+0153     <span class="keyword">end</span>
+0154 <span class="keyword">end</span>
+0155 
+0156 <span class="comment">%Check if it is possible to parse an Excel file</span>
+0157 fprintf(<span class="string">'\n=== Model import and export ===\n'</span>);
+0158 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Add Java paths for Excel format'</span>,40))
+0159 <span class="keyword">try</span>
+0160     <span class="comment">%Add the required classes to the static Java path if not already added</span>
+0161     addJavaPaths();
+0162     fprintf(<span class="string">'Pass\n'</span>)
 0163 <span class="keyword">catch</span>
 0164     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
-0165     fprintf(<span class="string">'   Download libSBML from http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n'</span>);
-0166 <span class="keyword">end</span>
-0167 fprintf(<span class="string">' &gt; Checking model import and export\n'</span>)
-0168 [~,res]=evalc(&quot;runtests(<span class="string">'importExportTests.m'</span>);&quot;);
-0169 
-0170 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Import Excel format'</span>,40))
-0171 <span class="keyword">if</span> res(1).Passed == 1
-0172     fprintf(<span class="string">'Pass\n'</span>)
-0173 <span class="keyword">else</span>
-0174     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
-0175     <span class="keyword">if</span> any(strcmpi(addList.Name,<span class="string">'Text Analytics Toolbox'</span>))
-0176         fprintf([<span class="string">'   Excel import/export is incompatible with MATLAB Text Analytics Toolbox.\n'</span> <span class="keyword">...</span>
-0177                  <span class="string">'   Further instructions =&gt; https://github.com/SysBioChalmers/RAVEN/issues/55#issuecomment-1514369299\n'</span>])
-0178     <span class="keyword">end</span>
+0165 <span class="keyword">end</span>
+0166 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking libSBML version'</span>,40))
+0167 <span class="keyword">try</span>
+0168     evalc(<span class="string">'importModel(fullfile(ravenDir,''tutorial'',''empty.xml''))'</span>);
+0169     <span class="keyword">try</span>
+0170         libSBMLver=OutputSBML_RAVEN; <span class="comment">% Only works in libSBML 5.17.0+</span>
+0171         fprintf([libSBMLver.libSBML_version_string <span class="string">'\n'</span>]);
+0172     <span class="keyword">catch</span>
+0173         <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
+0174         fprintf(<span class="string">'   An older libSBML version was found, update to version 5.17.0 or higher for a significant improvement of model import\n'</span>);
+0175     <span class="keyword">end</span>
+0176 <span class="keyword">catch</span>
+0177     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
+0178     fprintf(<span class="string">'   Download libSBML from http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n'</span>);
 0179 <span class="keyword">end</span>
-0180 
-0181 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Export Excel format'</span>,40))
-0182 <span class="keyword">if</span> res(4).Passed == 1
-0183     fprintf(<span class="string">'Pass\n'</span>)
-0184 <span class="keyword">else</span>
-0185     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
-0186 <span class="keyword">end</span>
-0187 
-0188 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Import SBML format'</span>,40))
-0189 <span class="keyword">if</span> res(2).Passed == 1
-0190     fprintf(<span class="string">'Pass\n'</span>)
-0191 <span class="keyword">else</span>
-0192     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
-0193 <span class="keyword">end</span>
-0194 
-0195 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Export SBML format'</span>,40))
-0196 <span class="keyword">if</span> res(5).Passed == 1
-0197     fprintf(<span class="string">'Pass\n'</span>)
-0198 <span class="keyword">else</span>
-0199     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
-0200 <span class="keyword">end</span>
-0201 
-0202 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Import YAML format'</span>,40))
-0203 <span class="keyword">if</span> res(3).Passed == 1
-0204     fprintf(<span class="string">'Pass\n'</span>)
-0205 <span class="keyword">else</span>
-0206     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
-0207 <span class="keyword">end</span>
-0208 
-0209 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Export YAML format'</span>,40))
-0210 <span class="keyword">if</span> res(6).Passed == 1
-0211     fprintf(<span class="string">'Pass\n'</span>)
-0212 <span class="keyword">else</span>
-0213     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
-0214 <span class="keyword">end</span>
-0215 
-0216 fprintf(<span class="string">'\n=== Model solvers ===\n'</span>);
-0217 
-0218 <span class="comment">%Get current solver. Set it to 'none', if it is not set</span>
-0219 fprintf(<span class="string">' &gt; Checking for LP solvers\n'</span>)
-0220 [~,res]=evalc(&quot;runtests(<span class="string">'solverTests.m'</span>);&quot;);
+0180 fprintf(<span class="string">' &gt; Checking model import and export\n'</span>)
+0181 [~,res]=evalc(&quot;runtests(<span class="string">'importExportTests.m'</span>);&quot;);
+0182 
+0183 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Import Excel format'</span>,40))
+0184 <span class="keyword">if</span> res(1).Passed == 1
+0185     fprintf(<span class="string">'Pass\n'</span>)
+0186 <span class="keyword">else</span>
+0187     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
+0188     <span class="keyword">if</span> any(strcmpi(addList.Name,<span class="string">'Text Analytics Toolbox'</span>))
+0189         fprintf([<span class="string">'   Excel import/export is incompatible with MATLAB Text Analytics Toolbox.\n'</span> <span class="keyword">...</span>
+0190                  <span class="string">'   Further instructions =&gt; https://github.com/SysBioChalmers/RAVEN/issues/55#issuecomment-1514369299\n'</span>])
+0191     <span class="keyword">end</span>
+0192 <span class="keyword">end</span>
+0193 
+0194 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Export Excel format'</span>,40))
+0195 <span class="keyword">if</span> res(4).Passed == 1
+0196     fprintf(<span class="string">'Pass\n'</span>)
+0197 <span class="keyword">else</span>
+0198     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
+0199 <span class="keyword">end</span>
+0200 
+0201 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Import SBML format'</span>,40))
+0202 <span class="keyword">if</span> res(2).Passed == 1
+0203     fprintf(<span class="string">'Pass\n'</span>)
+0204 <span class="keyword">else</span>
+0205     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
+0206 <span class="keyword">end</span>
+0207 
+0208 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Export SBML format'</span>,40))
+0209 <span class="keyword">if</span> res(5).Passed == 1
+0210     fprintf(<span class="string">'Pass\n'</span>)
+0211 <span class="keyword">else</span>
+0212     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
+0213 <span class="keyword">end</span>
+0214 
+0215 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Import YAML format'</span>,40))
+0216 <span class="keyword">if</span> res(3).Passed == 1
+0217     fprintf(<span class="string">'Pass\n'</span>)
+0218 <span class="keyword">else</span>
+0219     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
+0220 <span class="keyword">end</span>
 0221 
-0222 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; glpk'</span>,40))
-0223 <span class="keyword">if</span> res(1).Passed == 1
+0222 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; Export YAML format'</span>,40))
+0223 <span class="keyword">if</span> res(6).Passed == 1
 0224     fprintf(<span class="string">'Pass\n'</span>)
 0225 <span class="keyword">else</span>
 0226     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
 0227 <span class="keyword">end</span>
 0228 
-0229 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; gurobi'</span>,40))
-0230 <span class="keyword">if</span> res(2).Passed == 1
-0231     fprintf(<span class="string">'Pass\n'</span>)
-0232 <span class="keyword">else</span>
-0233     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
-0234 <span class="keyword">end</span>
-0235 
-0236 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; scip'</span>,40))
-0237 <span class="keyword">if</span> res(3).Passed == 1
-0238     fprintf(<span class="string">'Pass\n'</span>)
-0239 <span class="keyword">else</span>
-0240     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
-0241 <span class="keyword">end</span>
-0242 
-0243 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; cobra'</span>,40))
-0244 <span class="keyword">if</span> res(4).Passed == 1
-0245     fprintf(<span class="string">'Pass\n'</span>)
-0246 <span class="keyword">else</span>
-0247     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
-0248 <span class="keyword">end</span>
-0249 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Set RAVEN solver'</span>,40))
-0250 <span class="keyword">try</span>
-0251     oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0252     solverIdx=find(strcmp(oldSolver,{<span class="string">'glpk'</span>,<span class="string">'gurobi'</span>,<span class="string">'scip'</span>,<span class="string">'cobra'</span>}));
-0253 <span class="keyword">catch</span>
-0254     solverIdx=0;
-0255 <span class="keyword">end</span>
-0256 <span class="comment">% Do not change old solver if functional</span>
-0257 <span class="keyword">if</span> solverIdx~=0 &amp;&amp; res(solverIdx).Passed == 1
-0258     fprintf([oldSolver <span class="string">'\n'</span>])
-0259 <span class="comment">% Order of preference: gurobi &gt; glpk &gt; scip &gt; cobra</span>
-0260 <span class="keyword">elseif</span> res(2).Passed == 1
-0261     fprintf(<span class="string">'gurobi\n'</span>)
-0262     setRavenSolver(<span class="string">'gurobi'</span>);
-0263 <span class="keyword">elseif</span> res(1).Passed == 1
-0264     fprintf(<span class="string">'glpk\n'</span>)
-0265     setRavenSolver(<span class="string">'glpk'</span>);
-0266 <span class="keyword">elseif</span> res(3).Passed == 1
-0267     fprintf(<span class="string">'scip\n'</span>)
-0268     setRavenSolver(<span class="string">'scip'</span>);    
-0269 <span class="keyword">elseif</span> res(4).Passed == 1
-0270     fprintf(<span class="string">'cobra\n'</span>)
-0271     setRavenSolver(<span class="string">'cobra'</span>);
-0272 <span class="keyword">else</span>
-0273     fprintf(<span class="string">'None, no functional solvers\n'</span>)
-0274     fprintf(<span class="string">'    The glpk should always be working, check your RAVEN installation to make sure all files are present\n'</span>)
-0275 <span class="keyword">end</span>
-0276 
-0277 fprintf(<span class="string">'\n=== Essential binary executables ===\n'</span>);
-0278 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking BLAST+'</span>,40))
-0279 [~,res]=evalc(&quot;runtests(<span class="string">'blastPlusTests.m'</span>);&quot;);
-0280 res=<a href="#_sub1" class="code" title="subfunction res = interpretResults(results)">interpretResults</a>(res);
-0281 <span class="keyword">if</span> res==false
-0282     fprintf(<span class="string">'   This is essential to run getBlast()\n'</span>)
-0283 <span class="keyword">end</span>
-0284 
-0285 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking DIAMOND'</span>,40))
-0286 [~,res]=evalc(&quot;runtests(<span class="string">'diamondTests.m'</span>);&quot;);
-0287 res=<a href="#_sub1" class="code" title="subfunction res = interpretResults(results)">interpretResults</a>(res);
-0288 <span class="keyword">if</span> res==false
-0289     fprintf(<span class="string">'   This is essential to run the getDiamond()\n'</span>)
-0290 <span class="keyword">end</span>
-0291 
-0292 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking HMMER'</span>,40))
-0293 [~,res]=evalc(&quot;runtests(<span class="string">'hmmerTests.m'</span>)&quot;);
-0294 res=<a href="#_sub1" class="code" title="subfunction res = interpretResults(results)">interpretResults</a>(res);
-0295 <span class="keyword">if</span> res==false
-0296     fprintf([<span class="string">'   This is essential to run getKEGGModelFromHomology()\n'</span><span class="keyword">...</span>
-0297              <span class="string">'   when using a FASTA file as input\n'</span>])
-0298 <span class="keyword">end</span>
-0299 
-0300 <span class="keyword">if</span> developMode
-0301     fprintf(<span class="string">'\n=== Development binary executables ===\n'</span>);
-0302     fprintf(<span class="string">'NOTE: These binaries are only required when using KEGG FTP dump files in getKEGGModelForOrganism\n'</span>);
-0303 
-0304     fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking CD-HIT'</span>,40))
-0305     [~,res]=evalc(&quot;runtests(<span class="string">'cdhitTests.m'</span>);&quot;);
-0306     <a href="#_sub1" class="code" title="subfunction res = interpretResults(results)">interpretResults</a>(res);
+0229 fprintf(<span class="string">'\n=== Model solvers ===\n'</span>);
+0230 
+0231 <span class="comment">%Get current solver. Set it to 'none', if it is not set</span>
+0232 fprintf(<span class="string">' &gt; Checking for LP solvers\n'</span>)
+0233 [~,res]=evalc(&quot;runtests(<span class="string">'solverTests.m'</span>);&quot;);
+0234 
+0235 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; glpk'</span>,40))
+0236 <span class="keyword">if</span> res(1).Passed == 1
+0237     fprintf(<span class="string">'Pass\n'</span>)
+0238 <span class="keyword">else</span>
+0239     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
+0240 <span class="keyword">end</span>
+0241 
+0242 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; gurobi'</span>,40))
+0243 <span class="keyword">if</span> res(2).Passed == 1
+0244     fprintf(<span class="string">'Pass\n'</span>)
+0245 <span class="keyword">else</span>
+0246     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
+0247 <span class="keyword">end</span>
+0248 
+0249 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; scip'</span>,40))
+0250 <span class="keyword">if</span> res(3).Passed == 1
+0251     fprintf(<span class="string">'Pass\n'</span>)
+0252 <span class="keyword">else</span>
+0253     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
+0254 <span class="keyword">end</span>
+0255 
+0256 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">'   &gt; cobra'</span>,40))
+0257 <span class="keyword">if</span> res(4).Passed == 1
+0258     fprintf(<span class="string">'Pass\n'</span>)
+0259 <span class="keyword">else</span>
+0260     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
+0261 <span class="keyword">end</span>
+0262 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Set RAVEN solver'</span>,40))
+0263 <span class="keyword">try</span>
+0264     oldSolver=getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0265     solverIdx=find(strcmp(oldSolver,{<span class="string">'glpk'</span>,<span class="string">'gurobi'</span>,<span class="string">'scip'</span>,<span class="string">'cobra'</span>}));
+0266 <span class="keyword">catch</span>
+0267     solverIdx=0;
+0268 <span class="keyword">end</span>
+0269 <span class="comment">% Do not change old solver if functional</span>
+0270 <span class="keyword">if</span> solverIdx~=0 &amp;&amp; res(solverIdx).Passed == 1
+0271     fprintf([oldSolver <span class="string">'\n'</span>])
+0272 <span class="comment">% Order of preference: gurobi &gt; glpk &gt; scip &gt; cobra</span>
+0273 <span class="keyword">elseif</span> res(2).Passed == 1
+0274     fprintf(<span class="string">'gurobi\n'</span>)
+0275     setRavenSolver(<span class="string">'gurobi'</span>);
+0276 <span class="keyword">elseif</span> res(1).Passed == 1
+0277     fprintf(<span class="string">'glpk\n'</span>)
+0278     setRavenSolver(<span class="string">'glpk'</span>);
+0279 <span class="keyword">elseif</span> res(3).Passed == 1
+0280     fprintf(<span class="string">'scip\n'</span>)
+0281     setRavenSolver(<span class="string">'scip'</span>);    
+0282 <span class="keyword">elseif</span> res(4).Passed == 1
+0283     fprintf(<span class="string">'cobra\n'</span>)
+0284     setRavenSolver(<span class="string">'cobra'</span>);
+0285 <span class="keyword">else</span>
+0286     fprintf(<span class="string">'None, no functional solvers\n'</span>)
+0287     fprintf(<span class="string">'    The glpk should always be working, check your RAVEN installation to make sure all files are present\n'</span>)
+0288 <span class="keyword">end</span>
+0289 
+0290 fprintf(<span class="string">'\n=== Essential binary executables ===\n'</span>);
+0291 <span class="keyword">if</span> ~checkBinaries
+0292     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'    Skipping check of binary executables\n'</span>)
+0293 <span class="keyword">else</span>
+0294     fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking BLAST+'</span>,40))
+0295     [~,res]=evalc(&quot;runtests(<span class="string">'blastPlusTests.m'</span>);&quot;);
+0296     res=<a href="#_sub1" class="code" title="subfunction res = interpretResults(results)">interpretResults</a>(res);
+0297     <span class="keyword">if</span> res==false
+0298         fprintf(<span class="string">'   This is essential to run getBlast()\n'</span>)
+0299     <span class="keyword">end</span>
+0300 
+0301     fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking DIAMOND'</span>,40))
+0302     [~,res]=evalc(&quot;runtests(<span class="string">'diamondTests.m'</span>);&quot;);
+0303     res=<a href="#_sub1" class="code" title="subfunction res = interpretResults(results)">interpretResults</a>(res);
+0304     <span class="keyword">if</span> res==false
+0305         fprintf(<span class="string">'   This is essential to run the getDiamond()\n'</span>)
+0306     <span class="keyword">end</span>
 0307 
-0308     fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking MAFFT'</span>,40))
-0309     [~,res]=evalc(&quot;runtests(<span class="string">'mafftTests.m'</span>);&quot;);
-0310     <a href="#_sub1" class="code" title="subfunction res = interpretResults(results)">interpretResults</a>(res);
-0311 <span class="keyword">end</span>
-0312 
-0313 fprintf(<span class="string">'\n=== Compatibility ===\n'</span>);
-0314 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking function uniqueness'</span>,40))
-0315 <a href="checkFunctionUniqueness.html" class="code" title="function status = checkFunctionUniqueness(altDirs)">checkFunctionUniqueness</a>();
-0316 
-0317 fprintf(<span class="string">'\n*** checkInstallation complete ***\n\n'</span>);
-0318 <span class="keyword">end</span>
+0308     fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking HMMER'</span>,40))
+0309     [~,res]=evalc(&quot;runtests(<span class="string">'hmmerTests.m'</span>)&quot;);
+0310     res=<a href="#_sub1" class="code" title="subfunction res = interpretResults(results)">interpretResults</a>(res);
+0311     <span class="keyword">if</span> res==false
+0312         fprintf([<span class="string">'   This is essential to run getKEGGModelFromHomology()\n'</span><span class="keyword">...</span>
+0313             <span class="string">'   when using a FASTA file as input\n'</span>])
+0314     <span class="keyword">end</span>
+0315 
+0316     <span class="keyword">if</span> developMode
+0317         fprintf(<span class="string">'\n=== Development binary executables ===\n'</span>);
+0318         fprintf(<span class="string">'NOTE: These binaries are only required when using KEGG FTP dump files in getKEGGModelForOrganism\n'</span>);
 0319 
-0320 <a name="_sub1" href="#_subfunctions" class="code">function res = interpretResults(results)</a>
-0321 <span class="keyword">if</span> results.Failed==0 &amp;&amp; results.Incomplete==0
-0322     fprintf(<span class="string">'Pass\n'</span>);
-0323     res=true;
-0324 <span class="keyword">else</span>
-0325     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
-0326     fprintf(<span class="string">'   Download/compile the binary and rerun checkInstallation\n'</span>);
-0327     res=false;
+0320         fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking CD-HIT'</span>,40))
+0321         [~,res]=evalc(&quot;runtests(<span class="string">'cdhitTests.m'</span>);&quot;);
+0322         <a href="#_sub1" class="code" title="subfunction res = interpretResults(results)">interpretResults</a>(res);
+0323 
+0324         fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking MAFFT'</span>,40))
+0325         [~,res]=evalc(&quot;runtests(<span class="string">'mafftTests.m'</span>);&quot;);
+0326         <a href="#_sub1" class="code" title="subfunction res = interpretResults(results)">interpretResults</a>(res);
+0327     <span class="keyword">end</span>
 0328 <span class="keyword">end</span>
-0329 <span class="keyword">end</span>
-0330 
-0331 <a name="_sub2" href="#_subfunctions" class="code">function str = myStr(InputStr,len)</a>
-0332 str=InputStr;
-0333 lenDiff = len - length(str);
-0334 <span class="keyword">if</span> lenDiff &lt; 0
-0335     warning(<span class="string">'String too long'</span>);
-0336 <span class="keyword">else</span>
-0337     str = [str blanks(lenDiff)];
-0338 <span class="keyword">end</span>
-0339 <span class="keyword">end</span>
-0340 
-0341 <a name="_sub3" href="#_subfunctions" class="code">function status = makeBinaryExecutable(ravenDir)</a>
-0342 <span class="comment">% This function is required to run when RAVEN is downloaded as MATLAB</span>
-0343 <span class="comment">% Add-On, in which case the file permissions are not correctly set</span>
-0344 <span class="keyword">if</span> ispc
-0345     status = 0; <span class="comment">% No need to run on Windows</span>
-0346     <span class="keyword">return</span>;
-0347 <span class="keyword">end</span>
-0348 binDir = fullfile(ravenDir,<span class="string">'software'</span>);
-0349 
-0350 binList = {fullfile(binDir,<span class="string">'blast+'</span>,<span class="string">'blastp'</span>);                      fullfile(binDir,<span class="string">'blast+'</span>,<span class="string">'blastp.mac'</span>);
-0351            fullfile(binDir,<span class="string">'blast+'</span>,<span class="string">'makeblastdb'</span>);                 fullfile(binDir,<span class="string">'blast+'</span>,<span class="string">'makeblastdb.mac'</span>);
-0352            fullfile(binDir,<span class="string">'cd-hit'</span>,<span class="string">'cd-hit'</span>);                      fullfile(binDir,<span class="string">'cd-hit'</span>,<span class="string">'cd-hit.mac'</span>);
-0353            fullfile(binDir,<span class="string">'diamond'</span>,<span class="string">'diamond'</span>);                    fullfile(binDir,<span class="string">'diamond'</span>,<span class="string">'diamond.mac'</span>);
-0354            fullfile(binDir,<span class="string">'hmmer'</span>,<span class="string">'hmmbuild'</span>);                     fullfile(binDir,<span class="string">'hmmer'</span>,<span class="string">'hmmbuild.mac'</span>);
-0355            fullfile(binDir,<span class="string">'hmmer'</span>,<span class="string">'hmmsearch'</span>);                    fullfile(binDir,<span class="string">'hmmer'</span>,<span class="string">'hmmsearch.mac'</span>);
-0356            fullfile(binDir,<span class="string">'GLPKmex'</span>,<span class="string">'glpkcc.mexa64'</span>);              fullfile(binDir,<span class="string">'GLPKmex'</span>,<span class="string">'glpkcc.mexglx'</span>);                 fullfile(binDir,<span class="string">'GLPKmex'</span>,<span class="string">'glpkcc.mexmaci64'</span>);              fullfile(binDir,<span class="string">'GLPKmex'</span>,<span class="string">'glpkcc.mexmaca64'</span>);
-0357            fullfile(binDir,<span class="string">'libSBML'</span>,<span class="string">'TranslateSBML_RAVEN.mexa64'</span>); fullfile(binDir,<span class="string">'libSBML'</span>,<span class="string">'TranslateSBML_RAVEN.mexglx'</span>);    fullfile(binDir,<span class="string">'libSBML'</span>,<span class="string">'TranslateSBML_RAVEN.mexmaci64'</span>);  fullfile(binDir,<span class="string">'libSBML'</span>,<span class="string">'TranslateSBML_RAVEN.mexmaca64'</span>);
-0358            fullfile(binDir,<span class="string">'libSBML'</span>,<span class="string">'OutputSBML_RAVEN.mexa64'</span>);    fullfile(binDir,<span class="string">'libSBML'</span>,<span class="string">'OutputSBML_RAVEN.mexglx'</span>);       fullfile(binDir,<span class="string">'libSBML'</span>,<span class="string">'OutputSBML_RAVEN.mexmaci64'</span>);     fullfile(binDir,<span class="string">'libSBML'</span>,<span class="string">'OutputSBML_RAVEN.mexmaca64'</span>);
-0359            fullfile(binDir,<span class="string">'mafft'</span>,<span class="string">'mafft-linux64'</span>,<span class="string">'mafft.bat'</span>);
-0360            fullfile(binDir,<span class="string">'mafft'</span>,<span class="string">'mafft-mac'</span>,<span class="string">'mafft.bat'</span>);};
-0361 
-0362 <span class="keyword">for</span> i=1:numel(binList)
-0363     [status,cmdout] = system([<span class="string">'chmod +x &quot;'</span> binList{i} <span class="string">'&quot;'</span>]);
-0364     <span class="keyword">if</span> status ~= 0
-0365         warning(<span class="string">'Failed to make %s executable: %s '</span>,binList{i},strip(cmdout))
-0366     <span class="keyword">end</span>
-0367 <span class="keyword">end</span>
-0368 <span class="keyword">end</span>
-0369 
-0370 <a name="_sub4" href="#_subfunctions" class="code">function printOrange(stringToPrint)</a>
-0371 <span class="comment">% printOrange</span>
-0372 <span class="comment">%   Duplicate of RAVEN/core/printOrange is also kept here, as this function</span>
-0373 <span class="comment">%   should be able to run before adding RAVEN to the MATLAB path.</span>
-0374 <span class="keyword">try</span> useDesktop = usejava(<span class="string">'desktop'</span>); <span class="keyword">catch</span>, useDesktop = false; <span class="keyword">end</span>
-0375 <span class="keyword">if</span> useDesktop
-0376     fprintf([<span class="string">'[\b'</span> stringToPrint,<span class="string">']\b'</span>])
-0377 <span class="keyword">else</span>
-0378     fprintf(stringToPrint)
-0379 <span class="keyword">end</span>
-0380 <span class="keyword">end</span></pre></div>
+0329 
+0330 fprintf(<span class="string">'\n=== Compatibility ===\n'</span>);
+0331 fprintf(<a href="#_sub2" class="code" title="subfunction str = myStr(InputStr,len)">myStr</a>(<span class="string">' &gt; Checking function uniqueness'</span>,40))
+0332 <a href="checkFunctionUniqueness.html" class="code" title="function status = checkFunctionUniqueness(altDirs)">checkFunctionUniqueness</a>();
+0333 
+0334 fprintf(<span class="string">'\n*** checkInstallation complete ***\n'</span>);
+0335 <span class="keyword">end</span>
+0336 
+0337 <a name="_sub1" href="#_subfunctions" class="code">function res = interpretResults(results)</a>
+0338 <span class="keyword">if</span> results.Failed==0 &amp;&amp; results.Incomplete==0
+0339     fprintf(<span class="string">'Pass\n'</span>);
+0340     res=true;
+0341 <span class="keyword">else</span>
+0342     <a href="#_sub4" class="code" title="subfunction printOrange(stringToPrint)">printOrange</a>(<span class="string">'Fail\n'</span>)
+0343     fprintf(<span class="string">'   Download/compile the binary and rerun checkInstallation\n'</span>);
+0344     res=false;
+0345 <span class="keyword">end</span>
+0346 <span class="keyword">end</span>
+0347 
+0348 <a name="_sub2" href="#_subfunctions" class="code">function str = myStr(InputStr,len)</a>
+0349 str=InputStr;
+0350 lenDiff = len - length(str);
+0351 <span class="keyword">if</span> lenDiff &lt; 0
+0352     warning(<span class="string">'String too long'</span>);
+0353 <span class="keyword">else</span>
+0354     str = [str blanks(lenDiff)];
+0355 <span class="keyword">end</span>
+0356 <span class="keyword">end</span>
+0357 
+0358 <a name="_sub3" href="#_subfunctions" class="code">function status = makeBinaryExecutable(ravenDir)</a>
+0359 <span class="comment">% This function is required to run when RAVEN is downloaded as MATLAB</span>
+0360 <span class="comment">% Add-On, in which case the file permissions are not correctly set</span>
+0361 <span class="keyword">if</span> ispc
+0362     status = 0; <span class="comment">% No need to run on Windows</span>
+0363     <span class="keyword">return</span>;
+0364 <span class="keyword">end</span>
+0365 binDir = fullfile(ravenDir,<span class="string">'software'</span>);
+0366 
+0367 binList = {fullfile(binDir,<span class="string">'blast+'</span>,<span class="string">'blastp'</span>);                      fullfile(binDir,<span class="string">'blast+'</span>,<span class="string">'blastp.mac'</span>);
+0368            fullfile(binDir,<span class="string">'blast+'</span>,<span class="string">'makeblastdb'</span>);                 fullfile(binDir,<span class="string">'blast+'</span>,<span class="string">'makeblastdb.mac'</span>);
+0369            fullfile(binDir,<span class="string">'cd-hit'</span>,<span class="string">'cd-hit'</span>);                      fullfile(binDir,<span class="string">'cd-hit'</span>,<span class="string">'cd-hit.mac'</span>);
+0370            fullfile(binDir,<span class="string">'diamond'</span>,<span class="string">'diamond'</span>);                    fullfile(binDir,<span class="string">'diamond'</span>,<span class="string">'diamond.mac'</span>);
+0371            fullfile(binDir,<span class="string">'hmmer'</span>,<span class="string">'hmmbuild'</span>);                     fullfile(binDir,<span class="string">'hmmer'</span>,<span class="string">'hmmbuild.mac'</span>);
+0372            fullfile(binDir,<span class="string">'hmmer'</span>,<span class="string">'hmmsearch'</span>);                    fullfile(binDir,<span class="string">'hmmer'</span>,<span class="string">'hmmsearch.mac'</span>);
+0373            fullfile(binDir,<span class="string">'GLPKmex'</span>,<span class="string">'glpkcc.mexa64'</span>);              fullfile(binDir,<span class="string">'GLPKmex'</span>,<span class="string">'glpkcc.mexglx'</span>);                 fullfile(binDir,<span class="string">'GLPKmex'</span>,<span class="string">'glpkcc.mexmaci64'</span>);              fullfile(binDir,<span class="string">'GLPKmex'</span>,<span class="string">'glpkcc.mexmaca64'</span>);
+0374            fullfile(binDir,<span class="string">'libSBML'</span>,<span class="string">'TranslateSBML_RAVEN.mexa64'</span>); fullfile(binDir,<span class="string">'libSBML'</span>,<span class="string">'TranslateSBML_RAVEN.mexglx'</span>);    fullfile(binDir,<span class="string">'libSBML'</span>,<span class="string">'TranslateSBML_RAVEN.mexmaci64'</span>);  fullfile(binDir,<span class="string">'libSBML'</span>,<span class="string">'TranslateSBML_RAVEN.mexmaca64'</span>);
+0375            fullfile(binDir,<span class="string">'libSBML'</span>,<span class="string">'OutputSBML_RAVEN.mexa64'</span>);    fullfile(binDir,<span class="string">'libSBML'</span>,<span class="string">'OutputSBML_RAVEN.mexglx'</span>);       fullfile(binDir,<span class="string">'libSBML'</span>,<span class="string">'OutputSBML_RAVEN.mexmaci64'</span>);     fullfile(binDir,<span class="string">'libSBML'</span>,<span class="string">'OutputSBML_RAVEN.mexmaca64'</span>);
+0376            fullfile(binDir,<span class="string">'mafft'</span>,<span class="string">'mafft-linux64'</span>,<span class="string">'mafft.bat'</span>);
+0377            fullfile(binDir,<span class="string">'mafft'</span>,<span class="string">'mafft-mac'</span>,<span class="string">'mafft.bat'</span>);};
+0378 
+0379 <span class="keyword">for</span> i=1:numel(binList)
+0380     [status,cmdout] = system([<span class="string">'chmod +x &quot;'</span> binList{i} <span class="string">'&quot;'</span>]);
+0381     <span class="keyword">if</span> status ~= 0
+0382         warning(<span class="string">'Failed to make %s executable: %s '</span>,binList{i},strip(cmdout))
+0383     <span class="keyword">end</span>
+0384 <span class="keyword">end</span>
+0385 <span class="keyword">end</span>
+0386 
+0387 <a name="_sub4" href="#_subfunctions" class="code">function printOrange(stringToPrint)</a>
+0388 <span class="comment">% printOrange</span>
+0389 <span class="comment">%   Duplicate of RAVEN/core/printOrange is also kept here, as this function</span>
+0390 <span class="comment">%   should be able to run before adding RAVEN to the MATLAB path.</span>
+0391 <span class="keyword">try</span> useDesktop = usejava(<span class="string">'desktop'</span>); <span class="keyword">catch</span>, useDesktop = false; <span class="keyword">end</span>
+0392 <span class="keyword">if</span> useDesktop
+0393     fprintf([<span class="string">'[\b'</span> stringToPrint,<span class="string">']\b'</span>])
+0394 <span class="keyword">else</span>
+0395     fprintf(stringToPrint)
+0396 <span class="keyword">end</span>
+0397 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

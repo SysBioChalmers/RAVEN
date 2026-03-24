@@ -134,11 +134,15 @@ for i=1:numel(toComps)
         model.eccodes=[model.eccodes;filler];
     end
     if isfield(model,'subSystems')
-        ssFiller=filler;
+        isNested = any(cellfun(@(x) iscell(x), model.subSystems));
+        ssFiller = filler;
         if isRev==1
-            ssFiller(:)={{['Transport between ' fromComp ' and ' toComps{i}]}};
+            ssFiller(:) = {['Transport between ' fromComp ' and ' toComps{i}]};
         else
-            ssFiller(:)={{['Transport from ' fromComp ' to ' toComps{i}]}};
+            ssFiller(:) = {['Transport from ' fromComp ' to ' toComps{i}]};
+        end
+        if isNested
+            ssFiller = cellfun(@(x) {x}, ssFiller, 'uni', 0);
         end
         model.subSystems=[model.subSystems;ssFiller];
     end

@@ -92,16 +92,6 @@ end
 fprintf('*** Done \n\n')
 
 
-%% Flatten models' subSystems field
-% Convert from cell array of cells to cell array of strings
-% NOTE: this function currently only recognizes one subSystem per reaction;
-%       additional subSystems will be ignored!
-for i = 1:numel(models)
-    cells = cellfun(@iscell,models{i}.subSystems);
-    models{i}.subSystems(cells) = cellfun(@(s) s{1}, models{i}.subSystems(cells), 'UniformOutput', false);
-end
-
-
 %% Compare models structure & function based on high-dimensional methods
 % Compare number of reactions in each subsystem in each model using a heatmap
 field = 'subSystems';
@@ -110,6 +100,16 @@ if any(~cellfun(@(m) isfield(m,field),models))
     fprintf('\nWARNING: At least one model does not contain the field "subSystems". \n')
     fprintf('         Skipping subsystem comparison. \n\n')
 else
+    %% Flatten model subSystems field
+    % Convert from cell array of cells to cell array of strings
+    % NOTE: this function currently only recognizes one subSystem per reaction;
+    %       additional subSystems will be ignored!
+    for i = 1:numel(models)
+        if any(cellfun(@(x) iscell(x), models{i}.subSystems));
+            cells = cellfun(@iscell,models{i}.subSystems);
+            models{i}.subSystems(cells) = cellfun(@(s) s{1}, models{i}.subSystems(cells), 'UniformOutput', false);
+        end
+    end
     [id,compMat] = compareModelField(models,field);
     compStruct.subsystems.ID = id;
     compStruct.subsystems.matrix = compMat;
