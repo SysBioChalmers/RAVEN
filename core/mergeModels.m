@@ -82,7 +82,6 @@ if isfield(model,'equations')
     model=rmfield(model,'equations');
 end
 
-subSys = zeros(1,numel(models))
 for i=1:numel(models)
     if isfield(models{i},'subSystems')
         models{i}.subSystems = cellfun(@(x) {x}, models{i}.subSystems, 'uni', 0);
@@ -289,7 +288,6 @@ for i=2:numel(models)
     if strcmpi(metParam,'mets')
     %Get the new metabolites from matching the models. Metabolites are matched by metabolite ID (model.mets).
 
-        oldMetComps=model.comps(model.metComps);
         oldMets=model.mets;
     
         if ~isempty(models{i}.mets)

@@ -1,4 +1,4 @@
-function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params)
+function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure)
 % fitTasks
 %   Fills gaps in a model by including reactions from a reference model,
 %   so that the resulting model can perform all the tasks in a task list
@@ -34,7 +34,7 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxn
 %   the result.
 %
 % Usage: [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...
-%           rxnScores,taskStructure,params)
+%           rxnScores,taskStructure)
 
 if nargin<4
     printOutput=true;
@@ -47,9 +47,6 @@ if isempty(rxnScores)
 end
 if nargin<6
     taskStructure=[];
-end
-if nargin<7
-    params=[];
 end
 
 if isempty(taskStructure) && ~isfile(inputFile)
@@ -268,7 +265,7 @@ for i=1:numel(taskStructure)
             try
                 [~, ~, newRxns, newModel, exitFlag]=fillGaps(tModel,refModel,false,true,supressWarnings,rxnScores);
                 if exitFlag==-2
-                    EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" was aborted before reaching optimality. Consider increasing params.maxTime\n'];
+                    EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" was aborted before reaching optimality.\n'];
                     dispEM(EM,false);
                 end
             catch
