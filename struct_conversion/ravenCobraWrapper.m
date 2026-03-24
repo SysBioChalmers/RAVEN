@@ -186,7 +186,7 @@ if isRaven
     newModel.b=zeros(numel(model.mets),1);
     newModel.csense=repmat('E',size(model.mets));
     if isfield(model,'geneMiriams')
-        [miriams,extractedMiriamNames]=extractMiriam(model.geneMiriams);
+        [~,extractedMiriamNames]=extractMiriam(model.geneMiriams);
         for i = 1:length(geneCOBRAfields)
             j=ismember(extractedMiriamNames,geneNamespaces{i});
             if any(j)
@@ -201,20 +201,6 @@ if isRaven
         newModel.rules=grrulesToRules(model);
     else
         fprintf('WARNING: no genes detected. The model therefore may not be exportable to SBML file with writeCbModel\n');
-    end
-    objDir = model.c(model.c);
-    if objDir<0
-        newModel.osenseStr='min';        
-        case {0,1}
-            newModel.osenseStr='max';
-        case -1
-            newModel.osenseStr='min';
-    end
-    switch objDir
-        case {0,1}
-            newModel.osenseStr='max';
-        case -1
-            newModel.osenseStr='min';
     end
     % If needed, normalise subSystems to cell-of-cells format
     if isfield(newModel,'subSystems') && ~isempty(newModel.subSystems)
