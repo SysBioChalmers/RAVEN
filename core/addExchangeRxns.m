@@ -63,8 +63,8 @@ if isfield(model,'eccodes')
 end
 if isfield(model,'subSystems')
     fillerSub = filler;
-    if iscell(model.subSystems(1,1))
-        fillerSub = repmat({fillerSub},numel(J),1);
+    if any(cellfun(@(x) iscell(x), model.subSystems))
+        fillerSub(:)={{''}};
     end
     model.subSystems=[model.subSystems;fillerSub];
 end

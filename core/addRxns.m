@@ -227,10 +227,12 @@ nRxns=numel(rxnsToAdd.rxns);
 nOldRxns=numel(model.rxns);
 filler=cell(nRxns,1);
 filler(:)={''};
-cellfiller=cellfun(@(x) cell(0,0),filler,'UniformOutput',false);
+cellfiller=cell(nRxns,1);
+cellfiller(:)={{''}};
 largeFiller=cell(nOldRxns,1);
 largeFiller(:)={''};
-celllargefiller=cellfun(@(x) cell(0,0),largeFiller,'UniformOutput',false);
+largeCellFiller=cell(nOldRxns,1);
+largeCellFiller(:)={{''}};
 
 %***Add everything to the model except for the equations.
 if numel(rxnsToAdd.equations)~=nRxns
@@ -350,24 +352,45 @@ else
 end
 
 if isfield(rxnsToAdd,'subSystems')
+    % Has to be cell array
+    if ischar(rxnsToAdd.subSystems)
+        rxnsToAdd.subSystems = {rxnsToAdd.subSystems};
+    end
+    % If all nested cells are 1x1, then unnest
+    if all(cellfun(@(x) iscell(x) && isscalar(x), rxnsToAdd.subSystems))
+        rxnsToAdd.subSystems = transpose([rxnsToAdd.subSystems{:}]);
+    end
+    % Cell array should now be as simple as possible. Check if it is nested
+    subSysRxnsNested = any(cellfun(@(x) iscell(x), rxnsToAdd.subSystems));
+    if isfield(newModel,'subSystems')
+        subSysModelNested = any(cellfun(@(x) iscell(x), newModel.subSystems));
+    else
+        subSysModelNested = subSysRxnsNested;
+        if subSysRxnsNested
+            newModel.subSystems=largeCellFiller;
+        else
+            newModel.subSystems=largeFiller;
+        end
+    end
+    if subSysRxnsNested && ~subSysModelNested
+        % Make all existing subSystems nested
+        newModel.subSystems = cellfun(@(x) {x}, newModel.subSystems, 'uni', 0);
+    elseif ~subSysRxnsNested && subSysModelNested
+        rxnsToAdd.subSystems = cellfun(@(x) {x}, rxnsToAdd.subSystems, 'uni', 0);
+    end
     if numel(rxnsToAdd.subSystems)~=nRxns
         EM='rxnsToAdd.subSystems must have the same number of elements as rxnsToAdd.rxns';
         dispEM(EM);
     end
-    for i=1:numel(rxnsToAdd.subSystems)
-        if ischar(rxnsToAdd.subSystems{i})
-            rxnsToAdd.subSystems{i}=rxnsToAdd.subSystems(i);
-        end
-    end
-    %Fill with standard if it doesn't exist
-    if ~isfield(newModel,'subSystems')
-        newModel.subSystems=celllargefiller;
-    end
     newModel.subSystems=[newModel.subSystems;rxnsToAdd.subSystems(:)];
 else
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if isfield(newModel,'subSystems')
-        newModel.subSystems=[newModel.subSystems;cellfiller];
+        if any(cellfun(@(x) iscell(x), newModel.subSystems))
+            newModel.subSystems=[newModel.subSystems;cellfiller];
+        else
+            newModel.subSystems=[newModel.subSystems;filler];
+        end
     end
 end
 if isfield(rxnsToAdd,'rxnMiriams')

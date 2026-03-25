@@ -186,7 +186,7 @@ if isRaven
     newModel.b=zeros(numel(model.mets),1);
     newModel.csense=repmat('E',size(model.mets));
     if isfield(model,'geneMiriams')
-        [miriams,extractedMiriamNames]=extractMiriam(model.geneMiriams);
+        [~,extractedMiriamNames]=extractMiriam(model.geneMiriams);
         for i = 1:length(geneCOBRAfields)
             j=ismember(extractedMiriamNames,geneNamespaces{i});
             if any(j)
@@ -202,11 +202,16 @@ if isRaven
     else
         fprintf('WARNING: no genes detected. The model therefore may not be exportable to SBML file with writeCbModel\n');
     end
-    newModel.osenseStr='max';
+    % If needed, normalise subSystems to cell-of-cells format
+    if isfield(newModel,'subSystems') && ~isempty(newModel.subSystems)
+        if ~iscell(newModel.subSystems{1})
+            newModel.subSystems = cellfun(@(x) {x}, newModel.subSystems, 'UniformOutput', false);
+        end
+    end
 else
     fprintf('Converting COBRA structure to RAVEN..\n');
     %Convert from COBRA to RAVEN structure
-    
+
     %Mandatory RAVEN fields
     newModel.mets=model.mets;
     if ~isfield(model,'comps')
@@ -394,6 +399,12 @@ else
                     end
                 end
             end
+        end
+    end
+    % Flatten subSystems if every reaction has exactly one subsystem.
+    if isfield(newModel,'subSystems') && ~isempty(newModel.subSystems)
+        if all(cellfun(@(x) iscell(x) && isscalar(x), newModel.subSystems))
+            newModel.subSystems = transpose([newModel.subSystems{:}]);
         end
     end
     if printWarning

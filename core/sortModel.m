@@ -65,6 +65,9 @@ if sortReactionOrder==true
     subsystemsUnique='';
     subsystemsConcatenated='';
     for i=1:numel(model.subSystems)
+        if ~iscell(model.subSystems{i})
+            model.subSystems{i} = {model.subSystems{i}};
+        end    
         subsystemsConcatenated{i,1}=strjoin(model.subSystems{i,1},';');
         if ~isempty(model.subSystems{i,1})
             for j=1:numel(model.subSystems{i,1})

@@ -68,124 +68,136 @@ This function is called by:
 0021 [ST, I]=dbstack(<span class="string">'-completenames'</span>);
 0022 ravenPath=fileparts(fileparts(fileparts(ST(I).file)));
 0023 
-0024 <span class="comment">%Identify the operating system</span>
-0025 <span class="keyword">if</span> isunix
-0026     <span class="keyword">if</span> ismac
-0027         binEnd=<span class="string">'.mac'</span>;
-0028     <span class="keyword">else</span>
-0029         binEnd=<span class="string">''</span>;
-0030     <span class="keyword">end</span>
-0031 <span class="keyword">elseif</span> ispc
-0032     binEnd=<span class="string">'.exe'</span>;
-0033 <span class="keyword">else</span>
-0034     dispEM(<span class="string">'Unknown OS, exiting.'</span>)
-0035     <span class="keyword">return</span>
-0036 <span class="keyword">end</span>
-0037 
-0038 <span class="comment">%Create empty structures needed for HMMER results</span>
-0039 actHmmResult.genes = {};
-0040 actHmmResult.scores = [];
-0041 
-0042 <span class="comment">%Create structures that contain expected HMMER results</span>
-0043 expHmmResult.genes = {<span class="string">'sp|P41947|MEL6_YEASX'</span>,<span class="string">'sp|P41946|MEL5_YEASX'</span>, <span class="string">'sp|P41945|MEL2_YEASX'</span>, <span class="string">'sp|P04824|MEL1_YEASX'</span>};
-0044 expHmmResult.scores = [10^-250, 10^-250, 10^-250, 10^-250];
-0045 
-0046 <span class="comment">%Generate temporary names for working directory and outFile</span>
-0047 tmpDIR=tempname;
-0048 outFile=tempname;
-0049 
-0050 <span class="comment">%Run HMMER multi-threaded to use all logical cores assigned to MATLAB</span>
-0051 cores = evalc(<span class="string">'feature(''numcores'')'</span>);
-0052 cores = strsplit(cores, <span class="string">'MATLAB was assigned: '</span>);
-0053 cores = regexp(cores{2},<span class="string">'^\d*'</span>,<span class="string">'match'</span>);
-0054 cores = cores{1};
-0055 
-0056 <span class="comment">%Create a temporary folder and copy multi-FASTA file there</span>
-0057 [~, ~]=system([<span class="string">'mkdir &quot;'</span> tmpDIR <span class="string">'&quot;'</span>]);
-0058 
-0059 sourceDir = fileparts(which(mfilename));
-0060 copyfile(fullfile(sourceDir,<span class="string">'test_data'</span>,<span class="string">'yeast_galactosidases.fa'</span>),tmpDIR);
-0061 copyfile(fullfile(sourceDir,<span class="string">'test_data'</span>,<span class="string">'human_galactosidases.fa'</span>),tmpDIR);
-0062 
-0063 <span class="comment">%%</span>
-0064 <span class="comment">%Train a hidden Markov model</span>
-0065 [~, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'hmmer'</span>,[<span class="string">'hmmbuild'</span> binEnd]) <span class="string">'&quot; --cpu &quot;'</span> num2str(cores) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR,<span class="string">'human_galactosidases.hmm'</span>) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR,<span class="string">'yeast_galactosidases.fa'</span>) <span class="string">'&quot;'</span>]);
+0024 <span class="comment">%Generate temporary names for working directory and outFile</span>
+0025 tmpDIR=tempname;
+0026 outFile=tempname;
+0027 
+0028 <span class="comment">%Create a temporary folder and copy multi-FASTA file there</span>
+0029 [~, ~]=system([<span class="string">'mkdir &quot;'</span> tmpDIR <span class="string">'&quot;'</span>]);
+0030 
+0031 sourceDir = fileparts(which(mfilename));
+0032 copyfile(fullfile(sourceDir,<span class="string">'test_data'</span>,<span class="string">'yeast_galactosidases.fa'</span>),tmpDIR);
+0033 copyfile(fullfile(sourceDir,<span class="string">'test_data'</span>,<span class="string">'human_galactosidases.fa'</span>),tmpDIR);
+0034 
+0035 
+0036 <span class="comment">%Identify the operating system</span>
+0037 <span class="keyword">if</span> isunix
+0038     <span class="keyword">if</span> ismac
+0039         binEnd=<span class="string">'.mac'</span>;
+0040     <span class="keyword">else</span>
+0041         binEnd=<span class="string">''</span>;
+0042     <span class="keyword">end</span>
+0043 <span class="keyword">elseif</span> ispc
+0044     wslPath.tmpDIR    = getWSLpath(tmpDIR);
+0045     wslPath.hmmbuild  = getWSLpath(fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'hmmer'</span>,<span class="string">'hmmbuild'</span>));
+0046     wslPath.hmmsearch = getWSLpath(fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'hmmer'</span>,<span class="string">'hmmsearch'</span>));
+0047     filesep=<span class="string">'/'</span>;
+0048 <span class="keyword">else</span>
+0049     dispEM(<span class="string">'Unknown OS, exiting.'</span>)
+0050     <span class="keyword">return</span>
+0051 <span class="keyword">end</span>
+0052 
+0053 <span class="comment">%Create empty structures needed for HMMER results</span>
+0054 actHmmResult.genes = {};
+0055 actHmmResult.scores = [];
+0056 
+0057 <span class="comment">%Create structures that contain expected HMMER results</span>
+0058 expHmmResult.genes = {<span class="string">'sp|P41947|MEL6_YEASX'</span>,<span class="string">'sp|P41946|MEL5_YEASX'</span>, <span class="string">'sp|P41945|MEL2_YEASX'</span>, <span class="string">'sp|P04824|MEL1_YEASX'</span>};
+0059 expHmmResult.scores = [10^-250, 10^-250, 10^-250, 10^-250];
+0060 
+0061 <span class="comment">%Run HMMER multi-threaded to use all logical cores assigned to MATLAB</span>
+0062 cores = evalc(<span class="string">'feature(''numcores'')'</span>);
+0063 cores = strsplit(cores, <span class="string">'MATLAB was assigned: '</span>);
+0064 cores = regexp(cores{2},<span class="string">'^\d*'</span>,<span class="string">'match'</span>);
+0065 cores = cores{1};
 0066 
-0067 <span class="comment">%Run a homology search against the newly-trained HMM</span>
-0068 [~, output]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'hmmer'</span>,[<span class="string">'hmmsearch'</span> binEnd]) <span class="string">'&quot; --cpu &quot;'</span> num2str(cores) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR,<span class="string">'human_galactosidases.hmm'</span>) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR,<span class="string">'yeast_galactosidases.fa'</span>) <span class="string">'&quot;'</span>]);
-0069 
-0070 <span class="comment">%Save the output to a file</span>
-0071 fid=fopen(outFile,<span class="string">'w'</span>);
-0072 fwrite(fid,output);
-0073 fclose(fid);
+0067 <span class="comment">%%</span>
+0068 <span class="comment">%Train a hidden Markov model</span>
+0069 <span class="keyword">if</span> ismac || isunix
+0070     [~, ~]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'hmmer'</span>,[<span class="string">'hmmbuild'</span> binEnd]) <span class="string">'&quot; --cpu &quot;'</span> num2str(cores) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR,<span class="string">'human_galactosidases.hmm'</span>) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR,<span class="string">'yeast_galactosidases.fa'</span>) <span class="string">'&quot;'</span>]);
+0071 <span class="keyword">else</span>
+0072     [~, ~]=system([<span class="string">'wsl &quot;'</span> wslPath.hmmbuild <span class="string">'&quot; --cpu &quot;'</span> num2str(cores) <span class="string">'&quot; &quot;'</span> wslPath.tmpDIR <span class="string">'/human_galactosidases.hmm&quot; &quot;'</span> wslPath.tmpDIR <span class="string">'/yeast_galactosidases.fa&quot;'</span>]);
+0073 <span class="keyword">end</span>
 0074 
-0075 <span class="comment">%%</span>
-0076 <span class="comment">%Parse the results</span>
-0077 geneCounter=0;
-0078 fid=fopen(outFile,<span class="string">'r'</span>);
-0079 beginMatches=false;
-0080 <span class="keyword">while</span> 1
-0081     <span class="comment">%Get the next line</span>
-0082     tline = fgetl(fid);
-0083     
-0084     <span class="comment">%Abort at end of file</span>
-0085     <span class="keyword">if</span> ~ischar(tline)
-0086         <span class="keyword">break</span>;
-0087     <span class="keyword">end</span>
-0088     
-0089     <span class="keyword">if</span> and(beginMatches,strcmp(tline,<span class="string">'  ------ inclusion threshold ------'</span>))
-0090         <span class="keyword">break</span>;
-0091     <span class="keyword">end</span>
-0092     
-0093     <span class="keyword">if</span> beginMatches==false
-0094         <span class="comment">%This is how the listing of matches begins</span>
-0095         <span class="keyword">if</span> any(strfind(tline,<span class="string">'E-value '</span>))
-0096             <span class="comment">%Read one more line that is only padding</span>
-0097             tline = fgetl(fid);
-0098             beginMatches=true;
-0099         <span class="keyword">end</span>
-0100     <span class="keyword">else</span>
-0101         <span class="comment">%If matches should be read</span>
-0102         <span class="keyword">if</span> ~strcmp(tline,<span class="string">'   [No hits detected that satisfy reporting thresholds]'</span>) &amp;&amp; ~isempty(tline)
-0103             elements=regexp(tline,<span class="string">' '</span>,<span class="string">'split'</span>);
-0104             elements=elements(cellfun(@any,elements));
-0105             
-0106             <span class="comment">%Check if the match is below the treshhold</span>
-0107             score=str2double(elements{1});
-0108             gene=elements{9};
-0109             <span class="keyword">if</span> score&lt;=10^-50
-0110                 <span class="comment">%If the score is exactly 0, change it to a very</span>
-0111                 <span class="comment">%small value to avoid NaN</span>
-0112                 <span class="keyword">if</span> score==0
-0113                     score=10^-250;
-0114                 <span class="keyword">end</span>
-0115                 <span class="comment">%Check if the gene is added already and, is so, get</span>
-0116                 <span class="comment">%the best score for it</span>
-0117                 geneCounter=geneCounter+1;
-0118                 actHmmResult.genes{geneCounter}=gene;
-0119                 actHmmResult.scores(geneCounter)=score;
-0120             <span class="keyword">end</span>
-0121         <span class="keyword">else</span>
-0122             <span class="keyword">break</span>;
-0123         <span class="keyword">end</span>
-0124     <span class="keyword">end</span>
-0125 <span class="keyword">end</span>
-0126 fclose(fid);
-0127 
-0128 <span class="comment">%Remove the old tempfiles</span>
-0129 delete([outFile <span class="string">'*'</span>]);
-0130 
-0131 <span class="comment">%Remove temporary folder, since testing is finished</span>
-0132 [~, ~]=system([<span class="string">'rm &quot;'</span> tmpDIR <span class="string">'&quot; -r'</span>]);
-0133 
-0134 <span class="comment">%%</span>
-0135 <span class="comment">%Test 1a: Check if HMMER results match the expected ones</span>
-0136 verifyEqual(testCase,actHmmResult,expHmmResult);
-0137 
-0138 <span class="comment">%Test 1b: Modify actual HMMER results structure and check if test fails</span>
-0139 actHmmResult.score(2)=1;
-0140 verifyNotEqual(testCase,actHmmResult,expHmmResult);
-0141 <span class="keyword">end</span></pre></div>
+0075 <span class="comment">%Run a homology search against the newly-trained HMM</span>
+0076 <span class="keyword">if</span> ismac || isunix
+0077     [~, output]=system([<span class="string">'&quot;'</span> fullfile(ravenPath,<span class="string">'software'</span>,<span class="string">'hmmer'</span>,[<span class="string">'hmmsearch'</span> binEnd]) <span class="string">'&quot; --cpu &quot;'</span> num2str(cores) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR,<span class="string">'human_galactosidases.hmm'</span>) <span class="string">'&quot; &quot;'</span> fullfile(tmpDIR,<span class="string">'yeast_galactosidases.fa'</span>) <span class="string">'&quot;'</span>]);
+0078 <span class="keyword">else</span>
+0079     [~, output]=system([<span class="string">'wsl &quot;'</span> wslPath.hmmsearch <span class="string">'&quot; --cpu &quot;'</span> num2str(cores) <span class="string">'&quot; &quot;'</span> wslPath.tmpDIR <span class="string">'/human_galactosidases.hmm&quot; &quot;'</span> wslPath.tmpDIR <span class="string">'/yeast_galactosidases.fa&quot;'</span>]);
+0080 <span class="keyword">end</span>
+0081 
+0082 <span class="comment">%Save the output to a file</span>
+0083 fid=fopen(outFile,<span class="string">'w'</span>);
+0084 fwrite(fid,output);
+0085 fclose(fid);
+0086 
+0087 <span class="comment">%%</span>
+0088 <span class="comment">%Parse the results</span>
+0089 geneCounter=0;
+0090 fid=fopen(outFile,<span class="string">'r'</span>);
+0091 beginMatches=false;
+0092 <span class="keyword">while</span> 1
+0093     <span class="comment">%Get the next line</span>
+0094     tline = fgetl(fid);
+0095     
+0096     <span class="comment">%Abort at end of file</span>
+0097     <span class="keyword">if</span> ~ischar(tline)
+0098         <span class="keyword">break</span>;
+0099     <span class="keyword">end</span>
+0100     
+0101     <span class="keyword">if</span> and(beginMatches,strcmp(tline,<span class="string">'  ------ inclusion threshold ------'</span>))
+0102         <span class="keyword">break</span>;
+0103     <span class="keyword">end</span>
+0104     
+0105     <span class="keyword">if</span> beginMatches==false
+0106         <span class="comment">%This is how the listing of matches begins</span>
+0107         <span class="keyword">if</span> any(strfind(tline,<span class="string">'E-value '</span>))
+0108             <span class="comment">%Read one more line that is only padding</span>
+0109             tline = fgetl(fid);
+0110             beginMatches=true;
+0111         <span class="keyword">end</span>
+0112     <span class="keyword">else</span>
+0113         <span class="comment">%If matches should be read</span>
+0114         <span class="keyword">if</span> ~strcmp(tline,<span class="string">'   [No hits detected that satisfy reporting thresholds]'</span>) &amp;&amp; ~isempty(tline)
+0115             elements=regexp(tline,<span class="string">' '</span>,<span class="string">'split'</span>);
+0116             elements=elements(cellfun(@any,elements));
+0117             
+0118             <span class="comment">%Check if the match is below the treshhold</span>
+0119             score=str2double(elements{1});
+0120             gene=elements{9};
+0121             <span class="keyword">if</span> score&lt;=10^-50
+0122                 <span class="comment">%If the score is exactly 0, change it to a very</span>
+0123                 <span class="comment">%small value to avoid NaN</span>
+0124                 <span class="keyword">if</span> score==0
+0125                     score=10^-250;
+0126                 <span class="keyword">end</span>
+0127                 <span class="comment">%Check if the gene is added already and, is so, get</span>
+0128                 <span class="comment">%the best score for it</span>
+0129                 geneCounter=geneCounter+1;
+0130                 actHmmResult.genes{geneCounter}=gene;
+0131                 actHmmResult.scores(geneCounter)=score;
+0132             <span class="keyword">end</span>
+0133         <span class="keyword">else</span>
+0134             <span class="keyword">break</span>;
+0135         <span class="keyword">end</span>
+0136     <span class="keyword">end</span>
+0137 <span class="keyword">end</span>
+0138 fclose(fid);
+0139 
+0140 <span class="comment">%Remove the old tempfiles</span>
+0141 delete([outFile <span class="string">'*'</span>]);
+0142 
+0143 <span class="comment">%Remove temporary folder, since testing is finished</span>
+0144 [~, ~]=system([<span class="string">'rm &quot;'</span> tmpDIR <span class="string">'&quot; -r'</span>]);
+0145 
+0146 <span class="comment">%%</span>
+0147 <span class="comment">%Test 1a: Check if HMMER results match the expected ones</span>
+0148 verifyEqual(testCase,actHmmResult,expHmmResult);
+0149 
+0150 <span class="comment">%Test 1b: Modify actual HMMER results structure and check if test fails</span>
+0151 actHmmResult.score(2)=1;
+0152 verifyNotEqual(testCase,actHmmResult,expHmmResult);
+0153 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

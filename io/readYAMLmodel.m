@@ -592,15 +592,24 @@ end
 %     end
 % end
 
-% Make rxnGeneMat fields and map to the existing model.genes field
-[genes, rxnGeneMat] = getGenesFromGrRules(model.grRules);
-model.rxnGeneMat = sparse(numel(model.rxns),numel(model.genes));
-[~,geneOrder] = ismember(genes,model.genes);
-if any(geneOrder == 0)
-    error(['The grRules includes the following gene(s), that are not in '...
-           'the list of model genes: ', genes{~geneOrder}])
+if isfield(model,'subSystems')
+% If all entries are 1x1, then flatten
+    if all(cellfun(@(x) numel(x) <= 1, model.subSystems))
+        model.subSystems = transpose([model.subSystems{:}]);
+    end
 end
-model.rxnGeneMat(:,geneOrder) = rxnGeneMat;
+
+% Make rxnGeneMat fields and map to the existing model.genes field
+if isfield(model,'grRules')
+    [genes, rxnGeneMat] = getGenesFromGrRules(model.grRules);
+    model.rxnGeneMat = sparse(numel(model.rxns),numel(model.genes));
+    [~,geneOrder] = ismember(genes,model.genes);
+    if any(geneOrder == 0)
+        error(['The grRules includes the following gene(s), that are not in '...
+            'the list of model genes: ', genes{~geneOrder}])
+    end
+    model.rxnGeneMat(:,geneOrder) = rxnGeneMat;
+end
 
 % Finalize GECKO model
 if isGECKO

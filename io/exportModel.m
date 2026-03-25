@@ -245,7 +245,7 @@ for i=1:numel(model.comps)
     if i<numel(model.comps)
         modelSBML.compartment(i+1)=modelSBML.compartment(i);
     end
-    
+
     if isfield(modelSBML.compartment,'metaid')
         modelSBML.compartment(i).metaid=model.comps{i};
     end
@@ -271,7 +271,7 @@ for i=1:numel(model.comps)
     if isfield(modelSBML.compartment, 'id')
         modelSBML.compartment(i).id=model.comps{i};
     end
-    
+
 end
 
 %Begin writing species
@@ -299,7 +299,7 @@ for i=1:numel(model.mets)
     if i<numel(model.mets)
         modelSBML.species(i+1)=modelSBML.species(i);
     end
-    
+
     if isfield(modelSBML.species,'metaid')
         modelSBML.species(i).metaid=model.mets{i};
     end
@@ -377,7 +377,7 @@ if isfield(model,'genes')
         if i<numel(model.genes)
             modelSBML.fbc_geneProduct(i+1)=modelSBML.fbc_geneProduct(i);
         end
-        
+
         if isfield(modelSBML.fbc_geneProduct,'metaid')
             modelSBML.fbc_geneProduct(i).metaid=model.genes{i};
         end
@@ -460,11 +460,11 @@ for i=1:numel(model.rxns)
     if i<numel(model.rxns)
         modelSBML.reaction(i+1)=modelSBML.reaction(i);
     end
-    
+
     if isfield(modelSBML.reaction,'metaid')
         modelSBML.reaction(i).metaid=model.rxns{i};
     end
-    
+
     %Export notes information
     if (~isnan(model.rxnConfidenceScores(i)) || ~isempty(model.rxnReferences{i}) || ~isempty(model.rxnNotes{i}))
         modelSBML.reaction(i).notes='<notes><body xmlns="http://www.w3.org/1999/xhtml">';
@@ -479,7 +479,7 @@ for i=1:numel(model.rxns)
         end
         modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '</body></notes>'];
     end
-    
+
     % Export SBO terms from rxnMiriams
     if ~isempty(model.rxnMiriams{i})
         [~,sbo_ind] = ismember('sbo',model.rxnMiriams{i}.name);
@@ -491,7 +491,7 @@ for i=1:numel(model.rxns)
             model.rxnMiriams{i}.value(sbo_ind) = [];
         end
     end
-    
+
     %Export annotation information from rxnMiriams
     if (~isempty(model.rxnMiriams{i}) && isfield(modelSBML.reaction(i),'annotation')) || ~isempty(model.eccodes{i})
         modelSBML.reaction(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.rxns{i} '">'];
@@ -504,14 +504,14 @@ for i=1:numel(model.rxns)
         end
         modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation getMiriam(model.rxnMiriams{i}) '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>'];
     end
-    
+
     if isfield(modelSBML.reaction, 'name')
         modelSBML.reaction(i).name=model.rxnNames{i};
     end
     if isfield(modelSBML.reaction, 'id')
         modelSBML.reaction(i).id=model.rxns{i};
     end
-    
+
     %Add the information about reactants and products
     involvedMets=addReactantsProducts(model,modelSBML,i);
     for j=1:numel(involvedMets.reactant)
@@ -553,58 +553,67 @@ for i=1:numel(model.rxns)
     modelSBML.reaction(i).fbc_upperFluxBound=totalNames{length(model.lb)+i};
 end
 
-%Prepare subSystems Code taken from COBRA functions getModelSubSystems,
-%writeSBML, findRxnsFromSubSystem under GNU General Public License v3.0,
-%license file in readme/GPL.MD. Code modified for RAVEN
+%Prepare subSystems
 if modelHasSubsystems
     modelSBML.groups_group.groups_kind = 'partonomy';
-    modelSBML.groups_group.sboTerm = 633;
-    tmpStruct=modelSBML.groups_group;
+    modelSBML.groups_group.sboTerm     = 633;
+    grpTemplate = modelSBML.groups_group;
 
-    rxns=model.rxns;
-    if ~any(cellfun(@iscell,model.subSystems))
-        if ~any(~cellfun(@isempty,model.subSystems))
-            subSystems = {};
-        else
-            subSystems = setdiff(model.subSystems,'');
-        end
+    % === 1) Normalize: make every entry a cell array of chars (vectorized) ===
+    isChar = cellfun(@ischar, model.subSystems);
+    model.subSystems(isChar)  = cellfun(@(s){s}, model.subSystems(isChar),  'UniformOutput', false);
+    model.subSystems(cellfun(@isempty, model.subSystems)) = {{}};
+
+    % If some entries contain string scalars by mistake, coerce them:
+    model.subSystems = cellfun(@(c) cellfun(@char, c, 'UniformOutput', false), model.subSystems, 'UniformOutput', false);
+
+    % === 2) Flatten once: names and their reaction indices (vectorized) ===
+    flatNames = vertcat(model.subSystems{:});                    % 1×M cellstr of all subsystem labels
+    if isempty(flatNames)
+        % Nothing to do: no subsystems present
+        return
+    end
+
+    counts   = cellfun(@numel, model.subSystems);         % reactions -> how many subsystems
+    % For each reaction r, repeat r exactly counts(r) times
+    flatIdx  = arrayfun(@(r,c) repmat(r, c, 1), (1:numel(model.subSystems)).', counts, 'UniformOutput', false);
+    flatIdx  = vertcat(flatIdx{:});           % M×1 vector of reaction indices
+
+    % === 3) Group in one shot: unique subsystems + members per subsystem ===
+    [subSystems, ~, g] = unique(flatNames, 'stable');          % stable preserves first appearance
+    membersIdx = accumarray(g, flatIdx, [], @(v){v});          % cell: one vector of r-idx per group
+    nSubs = numel(subSystems);
+
+    % === 4) Preallocate and build SBML groups (single simple loop) ===
+    modelSBML.groups_group(1:nSubs) = grpTemplate;
+    groupIDs = "group" + (1:nSubs);
+
+    if isfield(grpTemplate,'groups_member')
+        memTemplate = grpTemplate.groups_member;
     else
-        orderedSubs = cellfun(@(x) columnVector(x),model.subSystems,'UniformOUtput',false);
-        subSystems = setdiff(vertcat(orderedSubs{:}),'');
+        memTemplate = struct('groups_idRef','');
     end
-    if isempty(subSystems)
-        subSystems = {};
-    end
-    if ~isempty(subSystems)
-        %Build the groups for the group package
-        groupIDs = strcat('group',cellfun(@num2str, num2cell(1:length(subSystems)),'UniformOutput',false));
-        for i = 1:length(subSystems)
-            cgroup = tmpStruct;
-            if ~any(cellfun(@iscell,model.subSystems))
-                present = ismember(model.subSystems,subSystems{i});
-            else
-                present = cellfun(@(x) any(ismember(x,subSystems{i})),model.subSystems);
-            end
-            groupMembers = rxns(present);
-            for j = 1:numel(groupMembers)
-                cMember = tmpStruct.groups_member;
-                cMember.groups_idRef = groupMembers{j};
-                if j == 1
-                    cgroup.groups_member = cMember;
-                else
-                    cgroup.groups_member(j) = cMember;
-                end
-            end
-            cgroup.groups_id = groupIDs{i};
-            cgroup.groups_name = subSystems{i};
-            if i == 1
-                modelSBML.groups_group = cgroup;
-            else
-                modelSBML.groups_group(i) = cgroup;
-            end
+
+    for i = 1:nSubs
+        rIdx       = membersIdx{i};
+        groupRXNs  = model.rxns(rIdx);
+        cgroup     = grpTemplate;
+
+        % Preallocate and fill members
+        nM = numel(groupRXNs);
+        if nM > 0
+            cgroup.groups_member(1:nM) = memTemplate;
+            [cgroup.groups_member.groups_idRef] = deal(groupRXNs{:});
+        else
+            cgroup.groups_member = repmat(memTemplate, 0, 1);
         end
+
+        cgroup.groups_id   = char(groupIDs(i));     % keep as char for SBML compatibility
+        cgroup.groups_name = subSystems{i};
+        modelSBML.groups_group(i) = cgroup;
     end
 end
+
 
 %Prepare fbc_objective subfield
 
@@ -635,12 +644,12 @@ fbcStr=['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2st
 if modelHasSubsystems
     groupStr=['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/groups/version',num2str(sbmlPackageVersions(2))];
     modelSBML.namespaces=struct('prefix',{'','fbc','groups'},...
-    'uri',{['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/core'],...
-    fbcStr,groupStr});
+        'uri',{['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/core'],...
+        fbcStr,groupStr});
 else
     modelSBML.namespaces=struct('prefix',{'','fbc'},...
-    'uri',{['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/core'],...
-    fbcStr});
+        'uri',{['http://www.sbml.org/sbml/level', num2str(sbmlLevel), '/version', num2str(sbmlVersion), '/core'],...
+        fbcStr});
 end
 
 if sbmlPackageVersions(1) == 2

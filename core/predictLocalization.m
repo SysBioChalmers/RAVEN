@@ -621,7 +621,7 @@ else
         outModel.compNames(2)=GSS.compartments(1);
     end
 end
-outModel.compNames=[outModel.compNames;GSS.compartments(2:end)'];
+outModel.compNames=[outModel.compNames;GSS.compartments(2:end)];
 
 %Ugly little loop
 for i=1:numel(GSS.compartments)-1
@@ -726,7 +726,11 @@ for i=1:numel(I)
         outModel.rxnMiriams=[outModel.rxnMiriams;{[]}];
     end
     if isfield(outModel,'subSystems')
-        outModel.subSystems=[outModel.subSystems;{{'Inferred transport reactions'}}];
+        if any(cellfun(@(x) iscell(x), outModel.subSystems))
+            outModel.subSystems=[outModel.subSystems;{{'Inferred transport reactions'}}];
+        else
+            outModel.subSystems=[outModel.subSystems;{'Inferred transport reactions'}];
+        end
     end
     if isfield(outModel,'eccodes')
         outModel.eccodes=[outModel.eccodes;{''}];

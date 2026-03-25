@@ -726,7 +726,7 @@ This function is called by:
 0621         outModel.compNames(2)=GSS.compartments(1);
 0622     <span class="keyword">end</span>
 0623 <span class="keyword">end</span>
-0624 outModel.compNames=[outModel.compNames;GSS.compartments(2:end)'];
+0624 outModel.compNames=[outModel.compNames;GSS.compartments(2:end)];
 0625 
 0626 <span class="comment">%Ugly little loop</span>
 0627 <span class="keyword">for</span> i=1:numel(GSS.compartments)-1
@@ -831,413 +831,417 @@ This function is called by:
 0726         outModel.rxnMiriams=[outModel.rxnMiriams;{[]}];
 0727     <span class="keyword">end</span>
 0728     <span class="keyword">if</span> isfield(outModel,<span class="string">'subSystems'</span>)
-0729         outModel.subSystems=[outModel.subSystems;{{<span class="string">'Inferred transport reactions'</span>}}];
-0730     <span class="keyword">end</span>
-0731     <span class="keyword">if</span> isfield(outModel,<span class="string">'eccodes'</span>)
-0732         outModel.eccodes=[outModel.eccodes;{<span class="string">''</span>}];
-0733     <span class="keyword">end</span>
-0734     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnFrom'</span>)
-0735         outModel.rxnFrom=[outModel.rxnFrom;{<span class="string">''</span>}];
-0736     <span class="keyword">end</span>
-0737     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnNotes'</span>)
-0738         outModel.rxnNotes=[outModel.rxnNotes;{<span class="string">''</span>}];
-0739     <span class="keyword">end</span>
-0740     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnReferences'</span>)
-0741         outModel.rxnReferences=[outModel.rxnReferences;{<span class="string">''</span>}];
-0742     <span class="keyword">end</span>
-0743     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnConfidenceScores'</span>)
-0744         outModel.rxnConfidenceScores=[outModel.rxnConfidenceScores;NaN];
-0745     <span class="keyword">end</span>
-0746     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnDeltaG'</span>)
-0747         outModel.rxnDeltaG=[outModel.rxnDeltaG;NaN];
-0748     <span class="keyword">end</span>
-0749 <span class="keyword">end</span>
-0750 
-0751 <span class="comment">%Then remove all reactions and metabolites that aren't used in the final</span>
-0752 <span class="comment">%solution from the optimization</span>
-0753 [~, J]=find(bestS(:,1:nER+nComps*nRxns));
-0754 K=true(numel(outModel.rxns),1);
-0755 K(J)=false;
-0756 K(end-nTransRxns+1:end)=false;
-0757 outModel=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(outModel,K,true);
-0758 
-0759 <span class="comment">%Remove all fake genes</span>
-0760 I=strncmp(<span class="string">'&amp;&amp;FAKE&amp;&amp;'</span>,outModel.genes,8);
-0761 outModel.genes(I)=[];
-0762 <span class="keyword">if</span> isfield(outModel,<span class="string">'geneMiriams'</span>)
-0763     outModel.geneMiriams(I)=[];
-0764 <span class="keyword">end</span>
-0765 <span class="keyword">if</span> isfield(outModel,<span class="string">'geneShortNames'</span>)
-0766     outModel.geneShortNames(I)=[];
-0767 <span class="keyword">end</span>
-0768 <span class="keyword">if</span> isfield(outModel,<span class="string">'proteins'</span>)
-0769     outModel.proteins(I)=[];
-0770 <span class="keyword">end</span>
-0771 outModel.rxnGeneMat(:,I)=[];
-0772 
-0773 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
-0774 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(outModel,true);
-0775 outModel.grRules = grRules;
-0776 outModel.rxnGeneMat = rxnGeneMat;
-0777 <span class="keyword">end</span>
-0778 
-0779 <span class="comment">%Moves a gene and all associated reactions from one compartment to another</span>
-0780 <a name="_sub1" href="#_subfunctions" class="code">function [S, g2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets)</a>
-0781 <span class="comment">%Find the current compartment and update to the new one</span>
-0782 currentComp=find(g2c(geneToMove,:));
-0783 g2c(geneToMove,:)=false;
-0784 g2c(geneToMove,toComp)=true;
-0785 
-0786 <span class="comment">%Find the reactions in the original model that the gene controls</span>
-0787 [I, ~]=find(model.rxnGeneMat(:,geneToMove));
-0788 
-0789 <span class="comment">%Calculate their current positions in the S matrix</span>
-0790 oldRxns=I+(currentComp-1)*nRxns;
-0791 
-0792 <span class="comment">%And their new positions</span>
-0793 newRxns=I+(toComp-1)*nRxns;
-0794 
-0795 <span class="comment">%The metabolite ids also have to be changed in order to match the new</span>
-0796 <span class="comment">%compartment</span>
-0797 metChange=nMets*(toComp-currentComp);
+0729         <span class="keyword">if</span> any(cellfun(@(x) iscell(x), outModel.subSystems))
+0730             outModel.subSystems=[outModel.subSystems;{{<span class="string">'Inferred transport reactions'</span>}}];
+0731         <span class="keyword">else</span>
+0732             outModel.subSystems=[outModel.subSystems;{<span class="string">'Inferred transport reactions'</span>}];
+0733         <span class="keyword">end</span>
+0734     <span class="keyword">end</span>
+0735     <span class="keyword">if</span> isfield(outModel,<span class="string">'eccodes'</span>)
+0736         outModel.eccodes=[outModel.eccodes;{<span class="string">''</span>}];
+0737     <span class="keyword">end</span>
+0738     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnFrom'</span>)
+0739         outModel.rxnFrom=[outModel.rxnFrom;{<span class="string">''</span>}];
+0740     <span class="keyword">end</span>
+0741     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnNotes'</span>)
+0742         outModel.rxnNotes=[outModel.rxnNotes;{<span class="string">''</span>}];
+0743     <span class="keyword">end</span>
+0744     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnReferences'</span>)
+0745         outModel.rxnReferences=[outModel.rxnReferences;{<span class="string">''</span>}];
+0746     <span class="keyword">end</span>
+0747     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnConfidenceScores'</span>)
+0748         outModel.rxnConfidenceScores=[outModel.rxnConfidenceScores;NaN];
+0749     <span class="keyword">end</span>
+0750     <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnDeltaG'</span>)
+0751         outModel.rxnDeltaG=[outModel.rxnDeltaG;NaN];
+0752     <span class="keyword">end</span>
+0753 <span class="keyword">end</span>
+0754 
+0755 <span class="comment">%Then remove all reactions and metabolites that aren't used in the final</span>
+0756 <span class="comment">%solution from the optimization</span>
+0757 [~, J]=find(bestS(:,1:nER+nComps*nRxns));
+0758 K=true(numel(outModel.rxns),1);
+0759 K(J)=false;
+0760 K(end-nTransRxns+1:end)=false;
+0761 outModel=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(outModel,K,true);
+0762 
+0763 <span class="comment">%Remove all fake genes</span>
+0764 I=strncmp(<span class="string">'&amp;&amp;FAKE&amp;&amp;'</span>,outModel.genes,8);
+0765 outModel.genes(I)=[];
+0766 <span class="keyword">if</span> isfield(outModel,<span class="string">'geneMiriams'</span>)
+0767     outModel.geneMiriams(I)=[];
+0768 <span class="keyword">end</span>
+0769 <span class="keyword">if</span> isfield(outModel,<span class="string">'geneShortNames'</span>)
+0770     outModel.geneShortNames(I)=[];
+0771 <span class="keyword">end</span>
+0772 <span class="keyword">if</span> isfield(outModel,<span class="string">'proteins'</span>)
+0773     outModel.proteins(I)=[];
+0774 <span class="keyword">end</span>
+0775 outModel.rxnGeneMat(:,I)=[];
+0776 
+0777 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
+0778 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)">standardizeGrRules</a>(outModel,true);
+0779 outModel.grRules = grRules;
+0780 outModel.rxnGeneMat = rxnGeneMat;
+0781 <span class="keyword">end</span>
+0782 
+0783 <span class="comment">%Moves a gene and all associated reactions from one compartment to another</span>
+0784 <a name="_sub1" href="#_subfunctions" class="code">function [S, g2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets)</a>
+0785 <span class="comment">%Find the current compartment and update to the new one</span>
+0786 currentComp=find(g2c(geneToMove,:));
+0787 g2c(geneToMove,:)=false;
+0788 g2c(geneToMove,toComp)=true;
+0789 
+0790 <span class="comment">%Find the reactions in the original model that the gene controls</span>
+0791 [I, ~]=find(model.rxnGeneMat(:,geneToMove));
+0792 
+0793 <span class="comment">%Calculate their current positions in the S matrix</span>
+0794 oldRxns=I+(currentComp-1)*nRxns;
+0795 
+0796 <span class="comment">%And their new positions</span>
+0797 newRxns=I+(toComp-1)*nRxns;
 0798 
-0799 <span class="comment">%Update the reactions</span>
-0800 [I, J, K]=find(S(:,oldRxns));
-0801 I=I+metChange;
+0799 <span class="comment">%The metabolite ids also have to be changed in order to match the new</span>
+0800 <span class="comment">%compartment</span>
+0801 metChange=nMets*(toComp-currentComp);
 0802 
-0803 <span class="comment">%Move the reactions</span>
-0804 S(:,oldRxns)=0;
-0805 S(sub2ind(size(S),I,newRxns(J)))=K;
-0806 <span class="keyword">end</span>
-0807 
-0808 <span class="comment">%Finds which metabolites are unconnected, in the sense that they are never</span>
-0809 <span class="comment">%a product or only a product in a reversible reaction where one reactant is</span>
-0810 <span class="comment">%only a product in the opposite direction of that reaction. This function</span>
-0811 <span class="comment">%ignores exchange metabolites. Returns a vector of metabolite indexes.</span>
-0812 <span class="comment">%metsToCheck is an array of metabolite indexes to check for connectivity.</span>
-0813 <span class="comment">%If not supplied then all metabolites are checked</span>
-0814 <a name="_sub2" href="#_subfunctions" class="code">function unconnected=findUnconnected(S,nEM,metsToCheck)</a>
-0815 <span class="keyword">if</span> nargin&gt;2
-0816     <span class="comment">%Do this by deleting everything from the network that is not in</span>
-0817     <span class="comment">%metsToCheck and that is not exchange metabolites</span>
-0818     I=false(size(S,1),1);
-0819     I(1:nEM)=true;
-0820     I(metsToCheck)=true;
-0821     S=S(I,:);
-0822 <span class="keyword">end</span>
-0823 
-0824 em=false(size(S,1),1);
-0825 em(1:nEM)=true;
-0826 
-0827 <span class="comment">%Construct a matrix in which the reversible reactions are inverted</span>
-0828 I=sum(S&gt;2,1) | sum(S&gt;2,1);
-0829 revS=S;
-0830 revS(:,I)=revS(:,I)*-1;
-0831 
-0832 <span class="comment">%First calculate the ones that are ok</span>
-0833 <span class="comment">%Produced in 2 rxns, is exchange, is not used at all, is produced in</span>
-0834 <span class="comment">%non-reversible, involved in more than 1 reversible reactions</span>
-0835 connected=sum(S&gt;0,2)&gt;1 | em | sum(S~=0,2)==0 | sum(S(:,~I)&gt;0,2)&gt;0 | sum(S(:,I)~=0,2)&gt;1;
-0836 
-0837 <span class="comment">%Then get the ones that are unconnected because they are never produced</span>
-0838 unconnected=sum(S&gt;0 | revS&gt;0,2)==0 &amp; connected==false;
-0839 
-0840 <span class="comment">%Then get the ones that are potentially unconnected</span>
-0841 maybeUnconnected=~connected &amp; ~unconnected;
-0842 <span class="comment">%maybeUnconnected=find(maybeUnconnectedS);</span>
+0803 <span class="comment">%Update the reactions</span>
+0804 [I, J, K]=find(S(:,oldRxns));
+0805 I=I+metChange;
+0806 
+0807 <span class="comment">%Move the reactions</span>
+0808 S(:,oldRxns)=0;
+0809 S(sub2ind(size(S),I,newRxns(J)))=K;
+0810 <span class="keyword">end</span>
+0811 
+0812 <span class="comment">%Finds which metabolites are unconnected, in the sense that they are never</span>
+0813 <span class="comment">%a product or only a product in a reversible reaction where one reactant is</span>
+0814 <span class="comment">%only a product in the opposite direction of that reaction. This function</span>
+0815 <span class="comment">%ignores exchange metabolites. Returns a vector of metabolite indexes.</span>
+0816 <span class="comment">%metsToCheck is an array of metabolite indexes to check for connectivity.</span>
+0817 <span class="comment">%If not supplied then all metabolites are checked</span>
+0818 <a name="_sub2" href="#_subfunctions" class="code">function unconnected=findUnconnected(S,nEM,metsToCheck)</a>
+0819 <span class="keyword">if</span> nargin&gt;2
+0820     <span class="comment">%Do this by deleting everything from the network that is not in</span>
+0821     <span class="comment">%metsToCheck and that is not exchange metabolites</span>
+0822     I=false(size(S,1),1);
+0823     I(1:nEM)=true;
+0824     I(metsToCheck)=true;
+0825     S=S(I,:);
+0826 <span class="keyword">end</span>
+0827 
+0828 em=false(size(S,1),1);
+0829 em(1:nEM)=true;
+0830 
+0831 <span class="comment">%Construct a matrix in which the reversible reactions are inverted</span>
+0832 I=sum(S&gt;2,1) | sum(S&gt;2,1);
+0833 revS=S;
+0834 revS(:,I)=revS(:,I)*-1;
+0835 
+0836 <span class="comment">%First calculate the ones that are ok</span>
+0837 <span class="comment">%Produced in 2 rxns, is exchange, is not used at all, is produced in</span>
+0838 <span class="comment">%non-reversible, involved in more than 1 reversible reactions</span>
+0839 connected=sum(S&gt;0,2)&gt;1 | em | sum(S~=0,2)==0 | sum(S(:,~I)&gt;0,2)&gt;0 | sum(S(:,I)~=0,2)&gt;1;
+0840 
+0841 <span class="comment">%Then get the ones that are unconnected because they are never produced</span>
+0842 unconnected=sum(S&gt;0 | revS&gt;0,2)==0 &amp; connected==false;
 0843 
-0844 <span class="comment">%The metabolites in maybeUnconnected are involved in one reversible</span>
-0845 <span class="comment">%reaction and not produced in any other reaction. This means that the</span>
-0846 <span class="comment">%reactions which have at least one met in maybeUnconnected as reactant and</span>
-0847 <span class="comment">%one as product are unconnected. The metabolites in maybeUnconnected that</span>
-0848 <span class="comment">%are present in those reactions are then dead ends</span>
-0849 deadRxns=any(S(maybeUnconnected,:)&gt;0) &amp; any(S(maybeUnconnected,:)&lt;0);
-0850 
-0851 <span class="comment">%Get the mets involved in any of those reactions</span>
-0852 problematic=any(S(:,deadRxns)~=0,2);
-0853 
-0854 <span class="comment">%If any of these are in the maybeUnconnected list then the metabolite is</span>
-0855 <span class="comment">%unconnected</span>
-0856 unconnected(problematic &amp; maybeUnconnected)=true;
+0844 <span class="comment">%Then get the ones that are potentially unconnected</span>
+0845 maybeUnconnected=~connected &amp; ~unconnected;
+0846 <span class="comment">%maybeUnconnected=find(maybeUnconnectedS);</span>
+0847 
+0848 <span class="comment">%The metabolites in maybeUnconnected are involved in one reversible</span>
+0849 <span class="comment">%reaction and not produced in any other reaction. This means that the</span>
+0850 <span class="comment">%reactions which have at least one met in maybeUnconnected as reactant and</span>
+0851 <span class="comment">%one as product are unconnected. The metabolites in maybeUnconnected that</span>
+0852 <span class="comment">%are present in those reactions are then dead ends</span>
+0853 deadRxns=any(S(maybeUnconnected,:)&gt;0) &amp; any(S(maybeUnconnected,:)&lt;0);
+0854 
+0855 <span class="comment">%Get the mets involved in any of those reactions</span>
+0856 problematic=any(S(:,deadRxns)~=0,2);
 0857 
-0858 <span class="comment">%Map back to metsToCheck</span>
-0859 <span class="keyword">if</span> nargin&gt;2
-0860     unconnected=metsToCheck(unconnected(nEM+1:end));
-0861 <span class="keyword">else</span>
-0862     unconnected=find(unconnected);
-0863 <span class="keyword">end</span>
-0864 <span class="keyword">end</span>
-0865 
-0866 <span class="comment">%Given a set of unconnected metabolites, this function tries to move each</span>
-0867 <span class="comment">%gene that could connect any of them, calculates the number of newly</span>
-0868 <span class="comment">%connected metabolites minus the number of newly disconnected metabolites.</span>
-0869 <span class="comment">%As some metabolites are very connected, only 25 genes are checked. Genes</span>
-0870 <span class="comment">%that have a low score in their current compartment are more likely to be</span>
-0871 <span class="comment">%moved</span>
-0872 <a name="_sub3" href="#_subfunctions" class="code">function [geneIndex, moveTo, deltaConnected, deltaScore]=selectGenes(S,nEM,nMets,nER,nRxns,model,unconnected,g2c,GSS)</a>
-0873 <span class="comment">%If moveTo is 0 then the gene cannot connect any of the metabolites</span>
-0874 moveTo=zeros(numel(model.genes),1);
-0875 deltaConnected=zeros(numel(model.genes),1);
-0876 
-0877 <span class="comment">%First get where the metabolites are now</span>
-0878 nComps=size(g2c,2);
-0879 comps=ceil((unconnected-nEM)/((size(S,1)-nEM)/nComps));
+0858 <span class="comment">%If any of these are in the maybeUnconnected list then the metabolite is</span>
+0859 <span class="comment">%unconnected</span>
+0860 unconnected(problematic &amp; maybeUnconnected)=true;
+0861 
+0862 <span class="comment">%Map back to metsToCheck</span>
+0863 <span class="keyword">if</span> nargin&gt;2
+0864     unconnected=metsToCheck(unconnected(nEM+1:end));
+0865 <span class="keyword">else</span>
+0866     unconnected=find(unconnected);
+0867 <span class="keyword">end</span>
+0868 <span class="keyword">end</span>
+0869 
+0870 <span class="comment">%Given a set of unconnected metabolites, this function tries to move each</span>
+0871 <span class="comment">%gene that could connect any of them, calculates the number of newly</span>
+0872 <span class="comment">%connected metabolites minus the number of newly disconnected metabolites.</span>
+0873 <span class="comment">%As some metabolites are very connected, only 25 genes are checked. Genes</span>
+0874 <span class="comment">%that have a low score in their current compartment are more likely to be</span>
+0875 <span class="comment">%moved</span>
+0876 <a name="_sub3" href="#_subfunctions" class="code">function [geneIndex, moveTo, deltaConnected, deltaScore]=selectGenes(S,nEM,nMets,nER,nRxns,model,unconnected,g2c,GSS)</a>
+0877 <span class="comment">%If moveTo is 0 then the gene cannot connect any of the metabolites</span>
+0878 moveTo=zeros(numel(model.genes),1);
+0879 deltaConnected=zeros(numel(model.genes),1);
 0880 
-0881 <span class="comment">%Find the corresponding metabolite indexes if they all were in the default</span>
-0882 <span class="comment">%compartment</span>
-0883 dcIndexes=unique(unconnected-(comps-1)*nMets);
+0881 <span class="comment">%First get where the metabolites are now</span>
+0882 nComps=size(g2c,2);
+0883 comps=ceil((unconnected-nEM)/((size(S,1)-nEM)/nComps));
 0884 
-0885 <span class="comment">%Then find them if they were in any other compartment</span>
-0886 allIndexes=dcIndexes;
-0887 <span class="keyword">for</span> i=1:nComps-1
-0888     allIndexes=[allIndexes;dcIndexes+nMets*i];
-0889 <span class="keyword">end</span>
-0890 
-0891 <span class="comment">%Also check which reversible reactions that could be used</span>
-0892 I=sum(S&gt;2,1) | sum(S&gt;2,1);
-0893 revS=S;
-0894 revS(:,I)=revS(:,I)*-1;
-0895 
-0896 <span class="comment">%Find all reactions that could make any of the unconnected metabolites in</span>
-0897 <span class="comment">%some other compartment</span>
-0898 newMets=setdiff(allIndexes,unconnected);
-0899 [~, potential]=find(S(newMets,:)&gt;0 | revS(newMets,:)&gt;0);
-0900 potential(potential&lt;=nER | potential&gt;nER+nRxns*nComps)=[]; <span class="comment">%No exchange rxns or transport rxns</span>
-0901 
-0902 <span class="comment">%Map J to the real metabolic reactions in model</span>
-0903 rxnComps=ceil((potential-nER)/(nRxns));
-0904 
-0905 <span class="comment">%Find the corresponding reaction indexes if they all were in the default</span>
-0906 <span class="comment">%compartment</span>
-0907 dcRxnIndexes=potential-(rxnComps-1)*nRxns;
+0885 <span class="comment">%Find the corresponding metabolite indexes if they all were in the default</span>
+0886 <span class="comment">%compartment</span>
+0887 dcIndexes=unique(unconnected-(comps-1)*nMets);
+0888 
+0889 <span class="comment">%Then find them if they were in any other compartment</span>
+0890 allIndexes=dcIndexes;
+0891 <span class="keyword">for</span> i=1:nComps-1
+0892     allIndexes=[allIndexes;dcIndexes+nMets*i];
+0893 <span class="keyword">end</span>
+0894 
+0895 <span class="comment">%Also check which reversible reactions that could be used</span>
+0896 I=sum(S&gt;2,1) | sum(S&gt;2,1);
+0897 revS=S;
+0898 revS(:,I)=revS(:,I)*-1;
+0899 
+0900 <span class="comment">%Find all reactions that could make any of the unconnected metabolites in</span>
+0901 <span class="comment">%some other compartment</span>
+0902 newMets=setdiff(allIndexes,unconnected);
+0903 [~, potential]=find(S(newMets,:)&gt;0 | revS(newMets,:)&gt;0);
+0904 potential(potential&lt;=nER | potential&gt;nER+nRxns*nComps)=[]; <span class="comment">%No exchange rxns or transport rxns</span>
+0905 
+0906 <span class="comment">%Map J to the real metabolic reactions in model</span>
+0907 rxnComps=ceil((potential-nER)/(nRxns));
 0908 
-0909 <span class="comment">%Get the genes for those reactions</span>
-0910 genes=find(sum(model.rxnGeneMat(dcRxnIndexes,:)&gt;0,1));
-0911 
-0912 <span class="comment">%For some cases there can be very many reactions to connect something. This</span>
-0913 <span class="comment">%is in particular true in the beginning of the optimization if, say, ATP is</span>
-0914 <span class="comment">%unconnected. Therefore limit the number of genes to be checked to 25.</span>
-0915 <span class="comment">%Weigh so that genes with bad scores in their current compartment are more</span>
-0916 <span class="comment">%likely to be moved.</span>
-0917 
-0918 <span class="comment">%Get scores for these genes</span>
-0919 [~, J]=find(g2c(genes,:));
-0920 
-0921 <span class="comment">%Add a small weight so that genes in their best compartment could be moved</span>
-0922 <span class="comment">%as well</span>
-0923 geneScores=GSS.scores(sub2ind(size(g2c),genes(:),J));
-0924 modGeneScores=1.1-geneScores;
-0925 <span class="keyword">if</span> numel(genes)&gt;25
-0926     rGenes=genes(<a href="#_sub6" class="code" title="subfunction y = randsample(n, k, replace, w)">randsample</a>(numel(genes),min(numel(genes),25),true,modGeneScores));
-0927     
-0928     <span class="comment">%The sampling with weights could give duplicates</span>
-0929     rGenes=unique(rGenes);
-0930     
-0931     <span class="comment">%Reorder the geneScores to match</span>
-0932     [~, I]=ismember(rGenes,genes);
-0933     geneScores=geneScores(I);
-0934     genes=rGenes;
-0935 <span class="keyword">end</span>
-0936 <span class="keyword">for</span> i=1:numel(genes)
-0937     <span class="comment">%Since one gene is moved at a time, only metabolites involved in any of</span>
-0938     <span class="comment">%the reactions for that gene can become unconnected. This helps to</span>
-0939     <span class="comment">%speed up the algorithm. First get all involved reactions in the</span>
-0940     <span class="comment">%default compartment</span>
-0941     rxns=find(model.rxnGeneMat(:,genes(i)));
-0942     
-0943     <span class="comment">%Then get their mets</span>
-0944     mets=find(sum(model.S(:,rxns)~=0,2)&gt;0);
-0945     
-0946     <span class="comment">%Then get their indexes in all compartments</span>
-0947     allIndexes=mets;
-0948     <span class="keyword">for</span> j=1:nComps-1
-0949         allIndexes=[allIndexes;mets+nMets*j];
-0950     <span class="keyword">end</span>
-0951     
-0952     <span class="comment">%Check which of the unconnected metabolites that these reactions</span>
-0953     <span class="comment">%correspond to. This could have been done earlier, but it is fast. The</span>
-0954     <span class="comment">%reversibility check is skipped because it is unlikely to be an issue</span>
-0955     <span class="comment">%here. Worst case is that the gene is tested once to much</span>
-0956     [I, ~]=find(model.S(:,rxns));
-0957     moveToComps=unique(comps(ismember(dcIndexes,I)));
-0958     
-0959     <span class="comment">%Try to move the gene to each of the compartments</span>
-0960     bestMove=-inf;
-0961     bestComp=[];
-0962     <span class="keyword">for</span> j=1:numel(moveToComps)
-0963         newS=<a href="#_sub1" class="code" title="subfunction [S, g2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets)">moveGene</a>(S,model,g2c,genes(i),moveToComps(j),nRxns,nMets);
-0964         
-0965         <span class="comment">%Check how many metabolites that are unconnected after moving the</span>
-0966         <span class="comment">%gene</span>
-0967         dConnected=numel(unconnected)-numel(<a href="#_sub2" class="code" title="subfunction unconnected=findUnconnected(S,nEM,metsToCheck)">findUnconnected</a>(newS,nEM,[allIndexes;unconnected]));
-0968         <span class="keyword">if</span> dConnected&gt;bestMove
-0969             bestMove=dConnected;
-0970             bestComp=moveToComps(j);
-0971         <span class="keyword">end</span>
-0972     <span class="keyword">end</span>
-0973     
-0974     <span class="comment">%Add the difference in connectivity and where the genes should be moved</span>
-0975     moveTo(genes(i))=bestComp;
-0976     deltaConnected(genes(i))=bestMove;
-0977 <span class="keyword">end</span>
-0978 
-0979 <span class="comment">%Finish up</span>
-0980 geneIndex=genes(:);
-0981 moveTo=moveTo(geneIndex);
-0982 deltaConnected=deltaConnected(geneIndex);
-0983 deltaScore=GSS.scores(sub2ind(size(g2c),geneIndex(:),moveTo))-geneScores;
-0984 <span class="keyword">end</span>
-0985 
-0986 <span class="comment">%Small function to add a transport reactions between two metabolites.</span>
-0987 <span class="comment">%Transport reactions are written as having a coefficient 2.0 for both</span>
-0988 <span class="comment">%reactant and product. This is not a &quot;real&quot; reaction, but since all normal</span>
-0989 <span class="comment">%reactions have coefficient -1/1 or -10/10 it is a compact way of writing</span>
-0990 <span class="comment">%it</span>
-0991 <a name="_sub4" href="#_subfunctions" class="code">function S=addTransport(S,nRxns,nER,nMets,nEM,nComps,metA,metB)</a>
-0992 mets=[metA;metB];
-0993 <span class="comment">%Find the current compartments for the metabolites</span>
-0994 comps=ceil((mets-nEM)/((size(S,1)-nEM)/nComps));
-0995 
-0996 <span class="keyword">if</span> sum(comps==1)~=1
-0997     EM=<span class="string">'Tried to create a transport reaction from a non-default compartment'</span>;
-0998     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
-0999 <span class="keyword">end</span>
-1000 
-1001 <span class="comment">%Calculate the reaction index</span>
-1002 rIndex=(nER+nRxns*nComps)+mets(comps~=1)-nEM-nMets;
-1003 
-1004 S(mets,rIndex)=2;
-1005 <span class="keyword">end</span>
-1006 
-1007 <span class="comment">%Scores a network based on the localization of the genes and the number of</span>
-1008 <span class="comment">%transporter reactions used</span>
-1009 <a name="_sub5" href="#_subfunctions" class="code">function [score, geneScore, transportCost]=scoreModel(S,g2c,GSS,transportCost)</a>
-1010 [I, J]=find(g2c);
-1011 geneScore=sum(GSS.scores(sub2ind(size(g2c),I,J)));
-1012 [I, ~]=find(S==2);
-1013 I=unique(I);
-1014 transportCost=sum(transportCost(I));
-1015 score=geneScore-transportCost;
-1016 <span class="keyword">end</span>
-1017 
-1018 <span class="comment">% To avoid dependency on stats toolbox, use this alternative implementation</span>
-1019 <span class="comment">% of randsample, source:</span>
-1020 <span class="comment">% https://github.com/gpeyre/numerical-tours/blob/dacee30081c04ef5f67b26b387ead85f2b193af9/matlab/toolbox_signal/randsample.m</span>
-1021 <a name="_sub6" href="#_subfunctions" class="code">function y = randsample(n, k, replace, w)</a>
-1022 <span class="comment">%RANDSAMPLE Random sample, with or without replacement.</span>
-1023 <span class="comment">%   Y = RANDSAMPLE(N,K) returns Y as a vector of K values sampled uniformly</span>
-1024 <span class="comment">%   at random, without replacement, from the integers 1:N.</span>
-1025 <span class="comment">%</span>
-1026 <span class="comment">%   Y = RANDSAMPLE(POPULATION,K) returns K values sampled uniformly at</span>
-1027 <span class="comment">%   random, without replacement, from the values in the vector POPULATION.</span>
-1028 <span class="comment">%</span>
-1029 <span class="comment">%   Y = RANDSAMPLE(...,REPLACE) returns a sample taken with replacement if</span>
-1030 <span class="comment">%   REPLACE is true, or without replacement if REPLACE is false (the default).</span>
-1031 <span class="comment">%</span>
-1032 <span class="comment">%   Y = RANDSAMPLE(...,true,W) returns a weighted sample, using positive</span>
-1033 <span class="comment">%   weights W, taken with replacement.  W is often a vector of probabilities.</span>
-1034 <span class="comment">%   This function does not support weighted sampling without replacement.</span>
+0909 <span class="comment">%Find the corresponding reaction indexes if they all were in the default</span>
+0910 <span class="comment">%compartment</span>
+0911 dcRxnIndexes=potential-(rxnComps-1)*nRxns;
+0912 
+0913 <span class="comment">%Get the genes for those reactions</span>
+0914 genes=find(sum(model.rxnGeneMat(dcRxnIndexes,:)&gt;0,1));
+0915 
+0916 <span class="comment">%For some cases there can be very many reactions to connect something. This</span>
+0917 <span class="comment">%is in particular true in the beginning of the optimization if, say, ATP is</span>
+0918 <span class="comment">%unconnected. Therefore limit the number of genes to be checked to 25.</span>
+0919 <span class="comment">%Weigh so that genes with bad scores in their current compartment are more</span>
+0920 <span class="comment">%likely to be moved.</span>
+0921 
+0922 <span class="comment">%Get scores for these genes</span>
+0923 [~, J]=find(g2c(genes,:));
+0924 
+0925 <span class="comment">%Add a small weight so that genes in their best compartment could be moved</span>
+0926 <span class="comment">%as well</span>
+0927 geneScores=GSS.scores(sub2ind(size(g2c),genes(:),J));
+0928 modGeneScores=1.1-geneScores;
+0929 <span class="keyword">if</span> numel(genes)&gt;25
+0930     rGenes=genes(<a href="#_sub6" class="code" title="subfunction y = randsample(n, k, replace, w)">randsample</a>(numel(genes),min(numel(genes),25),true,modGeneScores));
+0931     
+0932     <span class="comment">%The sampling with weights could give duplicates</span>
+0933     rGenes=unique(rGenes);
+0934     
+0935     <span class="comment">%Reorder the geneScores to match</span>
+0936     [~, I]=ismember(rGenes,genes);
+0937     geneScores=geneScores(I);
+0938     genes=rGenes;
+0939 <span class="keyword">end</span>
+0940 <span class="keyword">for</span> i=1:numel(genes)
+0941     <span class="comment">%Since one gene is moved at a time, only metabolites involved in any of</span>
+0942     <span class="comment">%the reactions for that gene can become unconnected. This helps to</span>
+0943     <span class="comment">%speed up the algorithm. First get all involved reactions in the</span>
+0944     <span class="comment">%default compartment</span>
+0945     rxns=find(model.rxnGeneMat(:,genes(i)));
+0946     
+0947     <span class="comment">%Then get their mets</span>
+0948     mets=find(sum(model.S(:,rxns)~=0,2)&gt;0);
+0949     
+0950     <span class="comment">%Then get their indexes in all compartments</span>
+0951     allIndexes=mets;
+0952     <span class="keyword">for</span> j=1:nComps-1
+0953         allIndexes=[allIndexes;mets+nMets*j];
+0954     <span class="keyword">end</span>
+0955     
+0956     <span class="comment">%Check which of the unconnected metabolites that these reactions</span>
+0957     <span class="comment">%correspond to. This could have been done earlier, but it is fast. The</span>
+0958     <span class="comment">%reversibility check is skipped because it is unlikely to be an issue</span>
+0959     <span class="comment">%here. Worst case is that the gene is tested once to much</span>
+0960     [I, ~]=find(model.S(:,rxns));
+0961     moveToComps=unique(comps(ismember(dcIndexes,I)));
+0962     
+0963     <span class="comment">%Try to move the gene to each of the compartments</span>
+0964     bestMove=-inf;
+0965     bestComp=[];
+0966     <span class="keyword">for</span> j=1:numel(moveToComps)
+0967         newS=<a href="#_sub1" class="code" title="subfunction [S, g2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets)">moveGene</a>(S,model,g2c,genes(i),moveToComps(j),nRxns,nMets);
+0968         
+0969         <span class="comment">%Check how many metabolites that are unconnected after moving the</span>
+0970         <span class="comment">%gene</span>
+0971         dConnected=numel(unconnected)-numel(<a href="#_sub2" class="code" title="subfunction unconnected=findUnconnected(S,nEM,metsToCheck)">findUnconnected</a>(newS,nEM,[allIndexes;unconnected]));
+0972         <span class="keyword">if</span> dConnected&gt;bestMove
+0973             bestMove=dConnected;
+0974             bestComp=moveToComps(j);
+0975         <span class="keyword">end</span>
+0976     <span class="keyword">end</span>
+0977     
+0978     <span class="comment">%Add the difference in connectivity and where the genes should be moved</span>
+0979     moveTo(genes(i))=bestComp;
+0980     deltaConnected(genes(i))=bestMove;
+0981 <span class="keyword">end</span>
+0982 
+0983 <span class="comment">%Finish up</span>
+0984 geneIndex=genes(:);
+0985 moveTo=moveTo(geneIndex);
+0986 deltaConnected=deltaConnected(geneIndex);
+0987 deltaScore=GSS.scores(sub2ind(size(g2c),geneIndex(:),moveTo))-geneScores;
+0988 <span class="keyword">end</span>
+0989 
+0990 <span class="comment">%Small function to add a transport reactions between two metabolites.</span>
+0991 <span class="comment">%Transport reactions are written as having a coefficient 2.0 for both</span>
+0992 <span class="comment">%reactant and product. This is not a &quot;real&quot; reaction, but since all normal</span>
+0993 <span class="comment">%reactions have coefficient -1/1 or -10/10 it is a compact way of writing</span>
+0994 <span class="comment">%it</span>
+0995 <a name="_sub4" href="#_subfunctions" class="code">function S=addTransport(S,nRxns,nER,nMets,nEM,nComps,metA,metB)</a>
+0996 mets=[metA;metB];
+0997 <span class="comment">%Find the current compartments for the metabolites</span>
+0998 comps=ceil((mets-nEM)/((size(S,1)-nEM)/nComps));
+0999 
+1000 <span class="keyword">if</span> sum(comps==1)~=1
+1001     EM=<span class="string">'Tried to create a transport reaction from a non-default compartment'</span>;
+1002     <a href="dispEM.html" class="code" title="function dispEM(string,throwErrors,toList,trimWarnings)">dispEM</a>(EM);
+1003 <span class="keyword">end</span>
+1004 
+1005 <span class="comment">%Calculate the reaction index</span>
+1006 rIndex=(nER+nRxns*nComps)+mets(comps~=1)-nEM-nMets;
+1007 
+1008 S(mets,rIndex)=2;
+1009 <span class="keyword">end</span>
+1010 
+1011 <span class="comment">%Scores a network based on the localization of the genes and the number of</span>
+1012 <span class="comment">%transporter reactions used</span>
+1013 <a name="_sub5" href="#_subfunctions" class="code">function [score, geneScore, transportCost]=scoreModel(S,g2c,GSS,transportCost)</a>
+1014 [I, J]=find(g2c);
+1015 geneScore=sum(GSS.scores(sub2ind(size(g2c),I,J)));
+1016 [I, ~]=find(S==2);
+1017 I=unique(I);
+1018 transportCost=sum(transportCost(I));
+1019 score=geneScore-transportCost;
+1020 <span class="keyword">end</span>
+1021 
+1022 <span class="comment">% To avoid dependency on stats toolbox, use this alternative implementation</span>
+1023 <span class="comment">% of randsample, source:</span>
+1024 <span class="comment">% https://github.com/gpeyre/numerical-tours/blob/dacee30081c04ef5f67b26b387ead85f2b193af9/matlab/toolbox_signal/randsample.m</span>
+1025 <a name="_sub6" href="#_subfunctions" class="code">function y = randsample(n, k, replace, w)</a>
+1026 <span class="comment">%RANDSAMPLE Random sample, with or without replacement.</span>
+1027 <span class="comment">%   Y = RANDSAMPLE(N,K) returns Y as a vector of K values sampled uniformly</span>
+1028 <span class="comment">%   at random, without replacement, from the integers 1:N.</span>
+1029 <span class="comment">%</span>
+1030 <span class="comment">%   Y = RANDSAMPLE(POPULATION,K) returns K values sampled uniformly at</span>
+1031 <span class="comment">%   random, without replacement, from the values in the vector POPULATION.</span>
+1032 <span class="comment">%</span>
+1033 <span class="comment">%   Y = RANDSAMPLE(...,REPLACE) returns a sample taken with replacement if</span>
+1034 <span class="comment">%   REPLACE is true, or without replacement if REPLACE is false (the default).</span>
 1035 <span class="comment">%</span>
-1036 <span class="comment">%   Example:  Generate a random sequence of the characters ACGT, with</span>
-1037 <span class="comment">%   replacement, according to specified probabilities.</span>
-1038 <span class="comment">%</span>
-1039 <span class="comment">%      R = randsample('ACGT',48,true,[0.15 0.35 0.35 0.15])</span>
-1040 <span class="comment">%</span>
-1041 <span class="comment">%   See also RAND, RANDPERM.</span>
-1042 
-1043 <span class="comment">%   Copyright 1993-2008 The MathWorks, Inc.</span>
-1044 <span class="comment">%   $Revision: 1.1.4.3 $  $Date: 2008/12/01 08:09:34 $</span>
-1045 
-1046 <span class="keyword">if</span> nargin &lt; 2
-1047     error(<span class="string">'stats:randsample:TooFewInputs'</span>,<span class="string">'Requires two input arguments.'</span>);
-1048 <span class="keyword">elseif</span> numel(n) == 1
-1049     population = [];
-1050 <span class="keyword">else</span>
-1051     population = n;
-1052     n = numel(population);
-1053     <span class="keyword">if</span> length(population)~=n
-1054        error(<span class="string">'stats:randsample:BadPopulation'</span>,<span class="string">'POPULATION must be a vector.'</span>);
-1055     <span class="keyword">end</span>
-1056 <span class="keyword">end</span>
-1057 
-1058 <span class="keyword">if</span> nargin &lt; 3
-1059     replace = false;
+1036 <span class="comment">%   Y = RANDSAMPLE(...,true,W) returns a weighted sample, using positive</span>
+1037 <span class="comment">%   weights W, taken with replacement.  W is often a vector of probabilities.</span>
+1038 <span class="comment">%   This function does not support weighted sampling without replacement.</span>
+1039 <span class="comment">%</span>
+1040 <span class="comment">%   Example:  Generate a random sequence of the characters ACGT, with</span>
+1041 <span class="comment">%   replacement, according to specified probabilities.</span>
+1042 <span class="comment">%</span>
+1043 <span class="comment">%      R = randsample('ACGT',48,true,[0.15 0.35 0.35 0.15])</span>
+1044 <span class="comment">%</span>
+1045 <span class="comment">%   See also RAND, RANDPERM.</span>
+1046 
+1047 <span class="comment">%   Copyright 1993-2008 The MathWorks, Inc.</span>
+1048 <span class="comment">%   $Revision: 1.1.4.3 $  $Date: 2008/12/01 08:09:34 $</span>
+1049 
+1050 <span class="keyword">if</span> nargin &lt; 2
+1051     error(<span class="string">'stats:randsample:TooFewInputs'</span>,<span class="string">'Requires two input arguments.'</span>);
+1052 <span class="keyword">elseif</span> numel(n) == 1
+1053     population = [];
+1054 <span class="keyword">else</span>
+1055     population = n;
+1056     n = numel(population);
+1057     <span class="keyword">if</span> length(population)~=n
+1058        error(<span class="string">'stats:randsample:BadPopulation'</span>,<span class="string">'POPULATION must be a vector.'</span>);
+1059     <span class="keyword">end</span>
 1060 <span class="keyword">end</span>
 1061 
-1062 <span class="keyword">if</span> nargin &lt; 4
-1063     w = [];
-1064 <span class="keyword">elseif</span> ~isempty(w)
-1065     <span class="keyword">if</span> length(w) ~= n
-1066         <span class="keyword">if</span> isempty(population)
-1067             error(<span class="string">'stats:randsample:InputSizeMismatch'</span>,<span class="keyword">...</span>
-1068                   <span class="string">'W must have length equal to N.'</span>);
-1069         <span class="keyword">else</span>
-1070             error(<span class="string">'stats:randsample:InputSizeMismatch'</span>,<span class="keyword">...</span>
-1071                   <span class="string">'W must have the same length as the population.'</span>);
-1072         <span class="keyword">end</span>
-1073     <span class="keyword">else</span>
-1074         p = w(:)' / sum(w);
-1075     <span class="keyword">end</span>
-1076 <span class="keyword">end</span>
-1077 
-1078 <span class="keyword">switch</span> replace
-1079 
-1080 <span class="comment">% Sample with replacement</span>
-1081 <span class="keyword">case</span> {true, <span class="string">'true'</span>, 1}
-1082     <span class="keyword">if</span> isempty(w)
-1083         y = ceil(n .* rand(k,1));
-1084     <span class="keyword">else</span>
-1085         [dum, y] = histc(rand(k,1),[0 cumsum(p)]);
-1086     <span class="keyword">end</span>
-1087 
-1088 <span class="comment">% Sample without replacement</span>
-1089 <span class="keyword">case</span> {false, <span class="string">'false'</span>, 0}
-1090     <span class="keyword">if</span> k &gt; n
-1091         <span class="keyword">if</span> isempty(population)
-1092             error(<span class="string">'stats:randsample:SampleTooLarge'</span>,<span class="keyword">...</span>
-1093         <span class="string">'K must be less than or equal to N for sampling without replacement.'</span>);
-1094         <span class="keyword">else</span>
-1095             error(<span class="string">'stats:randsample:SampleTooLarge'</span>,<span class="keyword">...</span>
-1096                   <span class="string">'K must be less than or equal to the population size.'</span>);
-1097         <span class="keyword">end</span>
-1098     <span class="keyword">end</span>
-1099 
-1100     <span class="keyword">if</span> isempty(w)
-1101         <span class="comment">% If the sample is a sizeable fraction of the population,</span>
-1102         <span class="comment">% just randomize the whole population (which involves a full</span>
-1103         <span class="comment">% sort of n random values), and take the first k.</span>
-1104         <span class="keyword">if</span> 4*k &gt; n
-1105             rp = randperm(n);
-1106             y = rp(1:k);
-1107 
-1108         <span class="comment">% If the sample is a small fraction of the population, a full sort</span>
-1109         <span class="comment">% is wasteful.  Repeatedly sample with replacement until there are</span>
-1110         <span class="comment">% k unique values.</span>
-1111         <span class="keyword">else</span>
-1112             x = zeros(1,n); <span class="comment">% flags</span>
-1113             sumx = 0;
-1114             <span class="keyword">while</span> sumx &lt; k
-1115                 x(ceil(n * rand(1,k-sumx))) = 1; <span class="comment">% sample w/replacement</span>
-1116                 sumx = sum(x); <span class="comment">% count how many unique elements so far</span>
-1117             <span class="keyword">end</span>
-1118             y = find(x &gt; 0);
-1119             y = y(randperm(k));
-1120         <span class="keyword">end</span>
-1121     <span class="keyword">else</span>
-1122         error(<span class="string">'stats:randsample:NoWeighting'</span>,<span class="keyword">...</span>
-1123               <span class="string">'Weighted sampling without replacement is not supported.'</span>);
-1124     <span class="keyword">end</span>
-1125 <span class="keyword">otherwise</span>
-1126     error(<span class="string">'stats:randsample:BadReplaceValue'</span>,<span class="keyword">...</span>
-1127           <span class="string">'REPLACE must be either true or false.'</span>);
-1128 <span class="keyword">end</span>
-1129 
-1130 <span class="keyword">if</span> ~isempty(population)
-1131     y = population(y);
-1132 <span class="keyword">else</span>
-1133     y = y(:);
-1134 <span class="keyword">end</span>
-1135 <span class="keyword">end</span></pre></div>
+1062 <span class="keyword">if</span> nargin &lt; 3
+1063     replace = false;
+1064 <span class="keyword">end</span>
+1065 
+1066 <span class="keyword">if</span> nargin &lt; 4
+1067     w = [];
+1068 <span class="keyword">elseif</span> ~isempty(w)
+1069     <span class="keyword">if</span> length(w) ~= n
+1070         <span class="keyword">if</span> isempty(population)
+1071             error(<span class="string">'stats:randsample:InputSizeMismatch'</span>,<span class="keyword">...</span>
+1072                   <span class="string">'W must have length equal to N.'</span>);
+1073         <span class="keyword">else</span>
+1074             error(<span class="string">'stats:randsample:InputSizeMismatch'</span>,<span class="keyword">...</span>
+1075                   <span class="string">'W must have the same length as the population.'</span>);
+1076         <span class="keyword">end</span>
+1077     <span class="keyword">else</span>
+1078         p = w(:)' / sum(w);
+1079     <span class="keyword">end</span>
+1080 <span class="keyword">end</span>
+1081 
+1082 <span class="keyword">switch</span> replace
+1083 
+1084 <span class="comment">% Sample with replacement</span>
+1085 <span class="keyword">case</span> {true, <span class="string">'true'</span>, 1}
+1086     <span class="keyword">if</span> isempty(w)
+1087         y = ceil(n .* rand(k,1));
+1088     <span class="keyword">else</span>
+1089         [dum, y] = histc(rand(k,1),[0 cumsum(p)]);
+1090     <span class="keyword">end</span>
+1091 
+1092 <span class="comment">% Sample without replacement</span>
+1093 <span class="keyword">case</span> {false, <span class="string">'false'</span>, 0}
+1094     <span class="keyword">if</span> k &gt; n
+1095         <span class="keyword">if</span> isempty(population)
+1096             error(<span class="string">'stats:randsample:SampleTooLarge'</span>,<span class="keyword">...</span>
+1097         <span class="string">'K must be less than or equal to N for sampling without replacement.'</span>);
+1098         <span class="keyword">else</span>
+1099             error(<span class="string">'stats:randsample:SampleTooLarge'</span>,<span class="keyword">...</span>
+1100                   <span class="string">'K must be less than or equal to the population size.'</span>);
+1101         <span class="keyword">end</span>
+1102     <span class="keyword">end</span>
+1103 
+1104     <span class="keyword">if</span> isempty(w)
+1105         <span class="comment">% If the sample is a sizeable fraction of the population,</span>
+1106         <span class="comment">% just randomize the whole population (which involves a full</span>
+1107         <span class="comment">% sort of n random values), and take the first k.</span>
+1108         <span class="keyword">if</span> 4*k &gt; n
+1109             rp = randperm(n);
+1110             y = rp(1:k);
+1111 
+1112         <span class="comment">% If the sample is a small fraction of the population, a full sort</span>
+1113         <span class="comment">% is wasteful.  Repeatedly sample with replacement until there are</span>
+1114         <span class="comment">% k unique values.</span>
+1115         <span class="keyword">else</span>
+1116             x = zeros(1,n); <span class="comment">% flags</span>
+1117             sumx = 0;
+1118             <span class="keyword">while</span> sumx &lt; k
+1119                 x(ceil(n * rand(1,k-sumx))) = 1; <span class="comment">% sample w/replacement</span>
+1120                 sumx = sum(x); <span class="comment">% count how many unique elements so far</span>
+1121             <span class="keyword">end</span>
+1122             y = find(x &gt; 0);
+1123             y = y(randperm(k));
+1124         <span class="keyword">end</span>
+1125     <span class="keyword">else</span>
+1126         error(<span class="string">'stats:randsample:NoWeighting'</span>,<span class="keyword">...</span>
+1127               <span class="string">'Weighted sampling without replacement is not supported.'</span>);
+1128     <span class="keyword">end</span>
+1129 <span class="keyword">otherwise</span>
+1130     error(<span class="string">'stats:randsample:BadReplaceValue'</span>,<span class="keyword">...</span>
+1131           <span class="string">'REPLACE must be either true or false.'</span>);
+1132 <span class="keyword">end</span>
+1133 
+1134 <span class="keyword">if</span> ~isempty(population)
+1135     y = population(y);
+1136 <span class="keyword">else</span>
+1137     y = y(:);
+1138 <span class="keyword">end</span>
+1139 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

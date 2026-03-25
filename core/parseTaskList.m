@@ -2,10 +2,11 @@ function taskStruct=parseTaskList(inputFile)
 % parseTaskList
 %   Parses a task list file.
 %
-%   inputFile       a task list in Excel format. The file must contain a
-%                   sheet named TASKS, which in turn may contain the
-%                   following column headers (note, all rows starting with
-%                   a non-empty cell are removed. The first row after that
+%   inputFile       a task list in either Excel (*.xlsx, with a sheet named
+%                   TASKS with all relevant content) or tab-delimited
+%                   (*.txt) format. The file may contain the following
+%                   column headers (note, all rows starting with a
+%                   non-empty cell are removed. The first row after that
 %                   is considered the headers):
 %                   ID
 %                       the only required header. Each task must have a
