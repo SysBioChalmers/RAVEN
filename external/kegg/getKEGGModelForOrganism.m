@@ -334,7 +334,7 @@ if ~isempty(dataDir)
         else
             hmmIndex=strcmp(dataDir,hmmOptions);
             if ~any(hmmIndex)
-                error(['Pre-trained HMMs are only provided with proteins clustered at 90% sequence identity (i.e. prok90_kegg105 and euk90_kegg105). ' ...
+                error(['Pre-trained HMMs are only provided with proteins clustered at 90% sequence identity (i.e. prok90_kegg116 and euk90_kegg116). ' ...
                     'Use either of these datasets, or otherwise download the relevant sequence data from KEGG to train HMMs with your desired sequence identity'])
             else
                 fprintf('Downloading the HMMs archive file... ');
