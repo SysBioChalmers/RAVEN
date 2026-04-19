@@ -71,6 +71,13 @@ end
 
 ravenPath=findRAVENroot();
 genesFile=fullfile(ravenPath,'external','kegg','keggGenes.mat');
+if ~exist(genesFile, 'file')
+    try
+        downloadKEGGgenes();
+    catch
+        %Download failed; fall through to local regeneration below
+    end
+end
 if exist(genesFile, 'file')
     fprintf(['Importing KEGG genes from ' strrep(genesFile,'\','/') '... ']);
     load(genesFile);
@@ -337,4 +344,63 @@ else
     fclose(fid);
 end
 allKOs=unique(allKOs);
+end
+
+function downloadKEGGgenes()
+% downloadKEGGgenes
+%   Downloads keggGenes.mat from the RAVEN GitHub release into
+%   external/kegg/. This file is distributed as a release asset rather
+%   than shipped in the repository because it exceeds GitHub's 100 MB
+%   file-size limit.
+%
+%   The following asset is expected on the release tag defined below:
+%       keggGenes.zip   containing keggGenes.mat
+%
+%   To force a refresh (for example, after a new KEGG snapshot has been
+%   published with a new RAVEN release), delete
+%   external/kegg/keggGenes.mat and call getGenesFromKEGG again.
+%
+%   Usage: downloadKEGGgenes()
+
+% Release tag that hosts the data archive. Bump this for any RAVEN
+% release that ships an updated keggGenes.mat.
+releaseTag = 'v2.11.1';
+
+archiveName = 'keggGenes.zip';
+targetDir   = fullfile(findRAVENroot(),'external','kegg');
+targetFile  = fullfile(targetDir,'keggGenes.mat');
+url         = ['https://github.com/SysBioChalmers/RAVEN/releases/download/',...
+               releaseTag,'/',archiveName];
+zipPath     = fullfile(targetDir,archiveName);
+
+fprintf(['Downloading ' archiveName ' from RAVEN ' releaseTag ' release... ']);
+try
+    websave(zipPath,url);
+catch ME
+    if strcmp(ME.identifier,'MATLAB:webservices:HTTP404StatusCodeError')
+        error(['Failed to download ' archiveName ': the server returned ' ...
+               'a 404 error. If this persists, please report it at ' ...
+               'https://github.com/SysBioChalmers/RAVEN/issues']);
+    else
+        rethrow(ME);
+    end
+end
+fprintf('COMPLETE\n');
+
+fprintf(['Extracting ' archiveName ' to ' strrep(targetDir,'\','/') '... ']);
+try
+    unzip(zipPath,targetDir);
+catch ME
+    if isfile(zipPath); delete(zipPath); end
+    error(['Failed to extract ' archiveName '. The downloaded archive ' ...
+           'may be corrupted.\nOriginal error: %s'],ME.message);
+end
+fprintf('COMPLETE\n');
+
+if isfile(zipPath); delete(zipPath); end
+
+if ~isfile(targetFile)
+    error(['keggGenes.mat was not found in ' archiveName ...
+           '. Please verify the release asset contents.']);
+end
 end
