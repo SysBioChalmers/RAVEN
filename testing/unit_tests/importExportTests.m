@@ -66,8 +66,30 @@ evalc('writeYAMLmodel(emptyModel,fullfile(sourceDir,''testing'',''unit_tests'','
 %File will not be exactly equal as it contains the current date and time,
 %so md5 or similar would not work. Just check whether file is reasonably
 %sized.
-s = dir(fullfile(sourceDir,'testing','unit_tests','test_data','_test.yml'));         
+s = dir(fullfile(sourceDir,'testing','unit_tests','test_data','_test.yml'));
 filesize = s.bytes;
 verifyTrue(testCase,filesize>1290);
 delete(fullfile(sourceDir,'testing','unit_tests','test_data','_test.yml'));
+end
+
+function testYAMLroundtrip(testCase)
+%Write a model to canonical YAML and read it back. The reconstructed
+%model should match the original on its load-bearing fields (ids,
+%stoichiometry, bounds, GPRs, compartments). Date/version stamps and
+%cell-array layout details may differ legitimately, so this test is
+%narrower than verifyEqual on the whole struct.
+sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
+load(fullfile(sourceDir,'tutorial','empty.mat'), 'emptyModel');
+tmpFile = fullfile(sourceDir,'testing','unit_tests','test_data','_roundtrip.yml');
+evalc('writeYAMLmodel(emptyModel,tmpFile)');
+evalc('roundtripped = readYAMLmodel(tmpFile)');
+delete(tmpFile);
+verifyEqual(testCase,roundtripped.rxns,emptyModel.rxns);
+verifyEqual(testCase,roundtripped.mets,emptyModel.mets);
+verifyEqual(testCase,roundtripped.comps,emptyModel.comps);
+verifyEqual(testCase,roundtripped.genes,emptyModel.genes);
+verifyEqual(testCase,full(roundtripped.S),full(emptyModel.S));
+verifyEqual(testCase,roundtripped.lb,emptyModel.lb);
+verifyEqual(testCase,roundtripped.ub,emptyModel.ub);
+verifyEqual(testCase,roundtripped.grRules,emptyModel.grRules);
 end

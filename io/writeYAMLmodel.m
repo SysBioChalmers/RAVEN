@@ -1,16 +1,27 @@
 function writeYAMLmodel(model,fileName,preserveQuotes,sortIds)
 % writeYAMLmodel
-%   Writes a yaml file matching (roughly) the cobrapy yaml structure
+%   Writes a model to a YAML file using the canonical geckopy schema
+%   (https://github.com/SysBioChalmers/geckopy, docs/yaml_format.md). The
+%   cobra-shaped portion matches cobrapy's model_to_dict output, so any
+%   cobrapy-aware tool (escher, memote, etc.) can load the cobra portion
+%   of a geckopy file and silently ignore the GECKO-specific keys
+%   (`ec-rxns`, `ec-enzymes`, `gecko_light`, `metaData`).
+%
+%   The previous RAVEN-style YAML format (outer `---\n!!omap` wrapper,
+%   `!!omap` tags throughout, scalar annotation values, top-level
+%   `id`/`name` nested under `metaData`) is no longer written. The
+%   companion reader, readYAMLmodel, still accepts both the new and
+%   the legacy formats so existing YAML files keep loading.
 %
 %   model           a model structure
-%   fileName        name that the file will have.  A dialog window will 
+%   fileName        name that the file will have. A dialog window will
 %                   open if no file name is specified.
-%   preserveQuotes  if quotes should be preserved for strings
+%   preserveQuotes  if quoted strings should be emitted for string values
 %                   (logical, default=true)
 %   sortIds         if metabolites, reactions, genes and compartments
 %                   should be sorted alphabetically by their identifier,
 %                   otherwise they are kept in their original order
-%                   (logical, default=false)   
+%                   (logical, default=false)
 %
 % Usage: writeYAMLmodel(model,fileName,preserveQuotes,sortIds)
 if nargin<2|| isempty(fileName)
@@ -46,7 +57,7 @@ if sortIds == true
     model = sortIdentifiers(model);
 end
 
-%Simplify Miriam fields:
+%Pre-compute simplified miriam annotation tables (namespace -> values):
 if isfield(model,'metMiriams')
     [model.newMetMiriams,model.newMetMiriamNames]   = extractMiriam(model.metMiriams);
 end
@@ -65,92 +76,112 @@ fid = fopen(fileName,'wt');
 if fid == -1
     error(['Cannot write to ' fileName ', does the directory exist?'])
 end
-fprintf(fid,'---\n!!omap\n');
 
-%Insert file header (metadata)
-writeMetadata(model,fid);
+%Top-level id and name (lifted out of metaData per canonical schema):
+if isfield(model,'id') && ~isempty(model.id)
+    fprintf(fid,'id: %s\n',quoteIfNeeded(model.id,preserveQuotes));
+else
+    fprintf(fid,'id: %s\n',quoteIfNeeded('blankID',preserveQuotes));
+end
+if isfield(model,'name') && ~isempty(model.name)
+    fprintf(fid,'name: %s\n',quoteIfNeeded(model.name,preserveQuotes));
+end
+if isfield(model,'version') && ~isempty(model.version)
+    fprintf(fid,'version: %s\n',quoteIfNeeded(model.version,preserveQuotes));
+end
+
+%Optional metaData block (provenance, ignored by cobrapy):
+writeMetadata(model,fid,preserveQuotes);
+
+%Top-level gecko_light flag (native boolean):
+if isfield(model,'ec')
+    if isfield(model.ec,'geckoLight') && model.ec.geckoLight
+        fprintf(fid,'gecko_light: true\n');
+    else
+        fprintf(fid,'gecko_light: false\n');
+    end
+end
+
+%Compartments (flat mapping):
+if isfield(model,'comps') && ~isempty(model.comps)
+    fprintf(fid,'compartments:\n');
+    for i = 1:length(model.comps)
+        compName = '';
+        if isfield(model,'compNames') && i <= numel(model.compNames) && ~isempty(model.compNames{i})
+            compName = model.compNames{i};
+        end
+        fprintf(fid,'  %s: %s\n',model.comps{i},quoteIfNeeded(compName,preserveQuotes));
+    end
+end
 
 %Metabolites:
-fprintf(fid,'- metabolites:\n');
+fprintf(fid,'metabolites:\n');
 for i = 1:length(model.mets)
-    fprintf(fid,'    - !!omap\n');
-    writeField(model, fid, 'mets',        'txt', i, '  - id',          preserveQuotes)
-    writeField(model, fid, 'metNames',    'txt', i, '  - name',        preserveQuotes)
-    writeField(model, fid, 'metComps',    'txt', i, '  - compartment', preserveQuotes)
-    writeField(model, fid, 'metFormulas', 'txt', i, '  - formula',     preserveQuotes)
-    writeField(model, fid, 'metCharges',  'num', i, '  - charge',      preserveQuotes)
-    writeField(model, fid, 'inchis',      'txt', i, '  - inchis',      preserveQuotes)
-    writeField(model, fid, 'metSmiles',   'txt', i, '  - smiles',      preserveQuotes)
-    writeField(model, fid, 'metMiriams',  'txt', i, '  - annotation',  preserveQuotes)
-    writeField(model, fid, 'metDeltaG',   'num', i, '  - deltaG',      preserveQuotes)
-    writeField(model, fid, 'metNotes',    'txt', i, '  - notes',       preserveQuotes)
-    writeField(model, fid, 'metFrom',     'txt', i, '  - metFrom',     preserveQuotes)
+    writeListItemField(model, fid, 'mets',        'txt', i, 'id',          preserveQuotes, true)
+    writeListItemField(model, fid, 'metNames',    'txt', i, 'name',        preserveQuotes, false)
+    writeListItemField(model, fid, 'metComps',    'txt', i, 'compartment', preserveQuotes, false)
+    writeListItemField(model, fid, 'metFormulas', 'txt', i, 'formula',     preserveQuotes, false)
+    writeListItemField(model, fid, 'metCharges',  'num', i, 'charge',      preserveQuotes, false)
+    writeListItemField(model, fid, 'inchis',      'txt', i, 'inchis',      preserveQuotes, false)
+    writeListItemField(model, fid, 'metDeltaG',   'num', i, 'deltaG',      preserveQuotes, false)
+    writeListItemField(model, fid, 'metNotes',    'txt', i, 'notes',       preserveQuotes, false)
+    writeListItemField(model, fid, 'metFrom',     'txt', i, 'metFrom',     preserveQuotes, false)
+    %smiles + miriam namespace fields land inside the annotation block:
+    writeAnnotation(model, fid, 'metabolite', i, preserveQuotes)
 end
 
 %Reactions:
-fprintf(fid,'- reactions:\n');
+fprintf(fid,'reactions:\n');
 for i = 1:length(model.rxns)
-    fprintf(fid,'    - !!omap\n');
-    writeField(model, fid, 'rxns',                 'txt', i, '  - id',                    preserveQuotes)
-    writeField(model, fid, 'rxnNames',             'txt', i, '  - name',                  preserveQuotes)
-    writeField(model, fid, 'S',                    'txt', i, '  - metabolites',           preserveQuotes)
-    writeField(model, fid, 'lb',                   'num', i, '  - lower_bound',           preserveQuotes)
-    writeField(model, fid, 'ub',                   'num', i, '  - upper_bound',           preserveQuotes)
-    writeField(model, fid, 'grRules',              'txt', i, '  - gene_reaction_rule',    preserveQuotes)
-    writeField(model, fid, 'rxnFrom',              'txt', i, '  - rxnFrom',               preserveQuotes)
-    if model.c(i)~=0
-        writeField(model, fid, 'c',                    'num', i, '  - objective_coefficient', preserveQuotes)    
+    writeListItemField(model, fid, 'rxns',                 'txt', i, 'id',                    preserveQuotes, true)
+    writeListItemField(model, fid, 'rxnNames',             'txt', i, 'name',                  preserveQuotes, false)
+    writeStoichMapping(model, fid, i)
+    writeListItemField(model, fid, 'lb',                   'num', i, 'lower_bound',           preserveQuotes, false)
+    writeListItemField(model, fid, 'ub',                   'num', i, 'upper_bound',           preserveQuotes, false)
+    writeListItemField(model, fid, 'grRules',              'txt', i, 'gene_reaction_rule',    preserveQuotes, false)
+    if isfield(model,'c') && i <= numel(model.c) && model.c(i) ~= 0
+        writeListItemField(model, fid, 'c',                'num', i, 'objective_coefficient', preserveQuotes, false)
     end
-    writeField(model, fid, 'eccodes',              'txt', i, '  - eccodes',               preserveQuotes)
-    writeField(model, fid, 'rxnReferences',        'txt', i, '  - references',            preserveQuotes)
-    writeField(model, fid, 'subSystems',           'txt', i, '  - subsystem',             preserveQuotes)
-    writeField(model, fid, 'rxnMiriams',           'txt', i, '  - annotation',            preserveQuotes)
-    writeField(model, fid, 'rxnDeltaG',            'num', i, '  - deltaG',                preserveQuotes)
-    writeField(model, fid, 'rxnConfidenceScores',  'num', i, '  - confidence_score',      preserveQuotes)
-    writeField(model, fid, 'rxnNotes',             'txt', i, '  - rxnNotes',              preserveQuotes)
+    writeSubsystem(model, fid, i, preserveQuotes)
+    writeListItemField(model, fid, 'rxnConfidenceScores',  'num', i, 'confidence_score',      preserveQuotes, false)
+    writeListItemField(model, fid, 'rxnReferences',        'txt', i, 'references',            preserveQuotes, false)
+    writeListItemField(model, fid, 'rxnFrom',              'txt', i, 'rxnFrom',               preserveQuotes, false)
+    writeListItemField(model, fid, 'rxnNotes',             'txt', i, 'notes',                 preserveQuotes, false)
+    writeListItemField(model, fid, 'rxnDeltaG',            'num', i, 'deltaG',                preserveQuotes, false)
+    %ec-code + miriam namespace fields land inside the annotation block:
+    writeAnnotation(model, fid, 'reaction', i, preserveQuotes)
 end
 
 %Genes:
 if isfield(model,'genes')
-    fprintf(fid,'- genes:\n');
+    fprintf(fid,'genes:\n');
     for i = 1:length(model.genes)
-        fprintf(fid,'    - !!omap\n');
-        writeField(model, fid, 'genes',          'txt', i, '  - id',         preserveQuotes)
-        writeField(model, fid, 'geneShortNames', 'txt', i, '  - name',       preserveQuotes)
-        writeField(model, fid, 'proteins',   'txt', i, '  - protein',    preserveQuotes)
-        writeField(model, fid, 'geneMiriams',    'txt', i, '  - annotation', preserveQuotes)
+        writeListItemField(model, fid, 'genes',          'txt', i, 'id',      preserveQuotes, true)
+        writeListItemField(model, fid, 'geneShortNames', 'txt', i, 'name',    preserveQuotes, false)
+        writeListItemField(model, fid, 'proteins',       'txt', i, 'protein', preserveQuotes, false)
+        writeAnnotation(model, fid, 'gene', i, preserveQuotes)
     end
 end
-
-%Compartments:
-fprintf(fid,'- compartments: !!omap\n');
-for i = 1:length(model.comps)
-    writeField(model, fid, 'compNames',   'txt', i, ['- ' model.comps{i}], preserveQuotes)
-    writeField(model, fid, 'compMiriams', 'txt', i, '- annotation',             preserveQuotes)
-end
-
 
 %EC-model:
 if isfield(model,'ec')
-    fprintf(fid,'- ec-rxns:\n');
+    fprintf(fid,'ec-rxns:\n');
     for i = 1:length(model.ec.rxns)
-        fprintf(fid,'  - !!omap\n');
-        writeField(model.ec, fid, 'rxns',      'txt', i, '- id',      preserveQuotes)
-        writeField(model.ec, fid, 'kcat',      'num', i, '- kcat',    preserveQuotes)
-        writeField(model.ec, fid, 'source',    'txt', i, '- source',  preserveQuotes)
-        writeField(model.ec, fid, 'notes',     'txt', i, '- notes',   preserveQuotes)
-        writeField(model.ec, fid, 'eccodes',   'txt', i, '- eccodes', preserveQuotes)
-        writeField(model.ec, fid, 'rxnEnzMat', 'txt', i, '- enzymes', preserveQuotes)
+        writeListItemField(model.ec, fid, 'rxns',    'txt', i, 'id',      preserveQuotes, true)
+        writeListItemField(model.ec, fid, 'kcat',    'num', i, 'kcat',    preserveQuotes, false)
+        writeListItemField(model.ec, fid, 'source',  'txt', i, 'source',  preserveQuotes, false)
+        writeListItemField(model.ec, fid, 'notes',   'txt', i, 'notes',   preserveQuotes, false)
+        writeEcEccodes(model.ec, fid, i, preserveQuotes)
+        writeEnzymeMapping(model.ec, fid, i)
     end
 
-    fprintf(fid,'- ec-enzymes:\n');
+    fprintf(fid,'ec-enzymes:\n');
     for i = 1:length(model.ec.genes)
-        fprintf(fid,'  - !!omap\n');
-        writeField(model.ec, fid, 'genes',    'txt', i, '- genes',    preserveQuotes)
-        writeField(model.ec, fid, 'enzymes',  'txt', i, '- enzymes',  preserveQuotes)
-        writeField(model.ec, fid, 'mw',       'num', i, '- mw',       preserveQuotes)
-        writeField(model.ec, fid, 'sequence', 'txt', i, '- sequence', preserveQuotes)
-        writeField(model.ec, fid, 'concs',    'num', i, '- concs',    preserveQuotes)
+        writeListItemField(model.ec, fid, 'genes',    'txt', i, 'genes',    preserveQuotes, true)
+        writeListItemField(model.ec, fid, 'enzymes',  'txt', i, 'enzymes',  preserveQuotes, false)
+        writeListItemField(model.ec, fid, 'mw',       'num', i, 'mw',       preserveQuotes, false)
+        writeListItemField(model.ec, fid, 'sequence', 'txt', i, 'sequence', preserveQuotes, false)
+        writeListItemField(model.ec, fid, 'concs',    'num', i, 'concs',    preserveQuotes, false)
     end
 end
 
@@ -159,228 +190,285 @@ fclose(fid);
 
 end
 
-function writeField(model,fid,fieldName,type,pos,name,preserveQuotes)
-%Writes a new line in the yaml file if the field exists and the field is
-%not empty at the correspoinding position. It's recursive for some fields
-%(metMiriams, rxnMiriams, and S)
+% --- Helpers -----------------------------------------------------------
 
+function s = quoteIfNeeded(value,preserveQuotes)
+%Returns a YAML scalar representation of a string. Empty -> '""'.
+if isempty(value)
+    s = '""';
+    return
+end
+if ~ischar(value) && ~isstring(value)
+    value = char(value);
+end
+if preserveQuotes
+    s = ['"' char(value) '"'];
+else
+    s = char(value);
+end
+end
+
+function writeListItemField(model,fid,fieldName,type,pos,name,preserveQuotes,isFirst)
+%Emit one `  field: value` line under the current `-` list item. When
+%isFirst is true, the `-` bullet is emitted in place of the first space
+%of the two-space indent.
+%
+%Skipped silently if the field is missing/empty, except when isFirst is
+%true (in which case the bullet must still be drawn -- the caller passes
+%isFirst=true only for the always-present id field).
 if isfield(model,fieldName)
     if strcmp(fieldName,'metComps')
-        %metComps: write full name
-        fieldName = 'comps';
-        pos       = model.metComps(pos);
-    end
-    
-    field = model.(fieldName);
-    
-    if strcmp(fieldName,'metMiriams')
-        if ~isempty(model.metMiriams{pos})
-            fprintf(fid,'    %s: !!omap\n',name);
-            for i=1:size(model.newMetMiriams,2)
-                %'i' represents the different miriam names, e.g.
-                %kegg.compound or chebi
-                if ~isempty(model.newMetMiriams{pos,i})
-                    %As during the following writeField call the value of
-                    %'i' would be lost, it is temporarily concatenated to
-                    %'name' parameter, which will be edited later
-                    writeField(model, fid, 'newMetMiriams', 'txt', pos, ['      - ' model.newMetMiriamNames{i} '_' sprintf('%d',i)], preserveQuotes)
-                end
-            end
-        end
-        
-    elseif strcmp(fieldName,'rxnMiriams')
-        if ~isempty(model.rxnMiriams{pos})
-            fprintf(fid,'    %s: !!omap\n',name);
-            for i=1:size(model.newRxnMiriams,2)
-                if ~isempty(model.newRxnMiriams{pos,i})
-                    writeField(model, fid, 'newRxnMiriams', 'txt', pos, ['      - ' model.newRxnMiriamNames{i} '_' sprintf('%d',i)], preserveQuotes)
-                end
-            end
-        end
-        
-    elseif strcmp(fieldName,'geneMiriams')
-        if ~isempty(model.geneMiriams{pos})
-            fprintf(fid,'    %s: !!omap\n',name);
-            for i=1:size(model.newGeneMiriams,2)
-                if ~isempty(model.newGeneMiriams{pos,i})
-                    writeField(model, fid, 'newGeneMiriams', 'txt', pos, ['      - ' model.newGeneMiriamNames{i} '_' sprintf('%d',i)], preserveQuotes)
-                end
-            end
-        end
-        
-    elseif strcmp(fieldName,'compMiriams')
-        if ~isempty(model.compMiriams{pos})
-            fprintf(fid,'    %s: !!omap\n',name);
-            for i=1:size(model.newCompMiriams,2)
-                if ~isempty(model.newCompMiriams{pos,i})
-                    writeField(model, fid, 'newCompMiriams', 'txt', pos, ['      - ' model.newCompMiriamNames{i} '_' sprintf('%d',i)], preserveQuotes)
-                end
-            end
-        end
-        
-    elseif strcmp(fieldName,'S')
-        %S: create header & write each metabolite in a new line
-        fprintf(fid,'    %s: !!omap\n',name);
-        if sum(field(:,pos) ~= 0) > 0
-            model.mets   = model.mets(field(:,pos) ~= 0);
-            model.coeffs = field(field(:,pos) ~= 0,pos);
-            %Sort metabolites:
-            [model.mets,order] = sort(model.mets);
-            model.coeffs       = model.coeffs(order);
-            for i = 1:length(model.mets)
-                writeField(model, fid, 'coeffs',  'num', i, ['      - ' model.mets{i}], preserveQuotes)
-            end
-        end
-
-    elseif strcmp(fieldName,'rxnEnzMat')
-        %S: create header & write each enzyme in a new line
-        fprintf(fid,'    %s: !!omap\n',name);
-        if sum(field(pos,:) ~= 0) > 0
-            model.enzymes = model.enzymes(field(pos,:) ~= 0);
-            model.coeffs  = field(pos,field(pos,:) ~= 0);
-            %Sort metabolites:
-            [model.enzymes,order] = sort(model.enzymes);
-            model.coeffs          = model.coeffs(order);
-            for i = 1:length(model.enzymes)
-                writeField(model, fid, 'coeffs',  'num', i, ['    - ' model.enzymes{i}], preserveQuotes)
-            end
-        end        
-
-    elseif sum(strcmp({'subSystems','newMetMiriams','newRxnMiriams','newGeneMiriams','newCompMiriams','eccodes'},fieldName)) > 0
-        %eccodes/rxnNotes: if 1 write in 1 line, if more create header and list
-        if strcmp(fieldName,'subSystems')
-            list = field{pos};  %subSystems already comes in a cell array
-            if isempty(list)
-                return
-            end
-        elseif strcmp(fieldName,'newMetMiriams')
-            index = str2double(regexprep(name,'^.+_',''));
-            name  = regexprep(name,'_\d+$','');
-            list = strsplit(model.newMetMiriams{pos,index},'; ');
-        elseif strcmp(fieldName,'newRxnMiriams')
-            index = str2double(regexprep(name,'^.+_',''));
-            name  = regexprep(name,'_\d+$','');
-            list = strsplit(model.newRxnMiriams{pos,index},'; ');
-        elseif strcmp(fieldName,'newGeneMiriams')
-            index = str2double(regexprep(name,'^.+_',''));
-            name  = regexprep(name,'_\d+$','');
-            list = strsplit(model.newGeneMiriams{pos,index},'; ');
-        elseif strcmp(fieldName,'newCompMiriams')
-            index = str2double(regexprep(name,'^.+_',''));
-            name  = regexprep(name,'_\d+$','');
-            list = strsplit(model.newCompMiriams{pos,index},'; ');
-        elseif ~isempty(field{pos})
-            list = strrep(field{pos},' ','');
-            list = strsplit(list,';');
+        %metComps stores compartment indices; canonical schema wants the
+        %compartment id string instead.
+        if pos > numel(model.metComps) || model.metComps(pos) == 0
+            value = '';
         else
-            return % empty, needs no line in file
+            value = model.comps{model.metComps(pos)};
         end
-        list=strip(list);
+        if isempty(value)
+            return
+        end
+        emitLine(fid,name,quoteIfNeeded(value,preserveQuotes),isFirst);
+        return
+    end
 
-        if length(list) == 1 && ~strcmp(list{1},'') && ~strcmp(fieldName,'subSystems')
-            if preserveQuotes
-                list = ['"' list{1} '"'];
-            end
-            if iscell(list)
-                list=list{1};
-            end
-            fprintf(fid,'    %s: %s\n',name,list);
-        elseif ischar(list) && strcmp(fieldName,'subSystems')
-            if preserveQuotes
-                list = ['"' list '"'];
-            end
-            fprintf(fid,'    %s: %s\n',name,list);            
-        elseif length(list) > 1 || strcmp(fieldName,'subSystems')
-            if preserveQuotes
-                for j=1:numel(list)
-                    list{j} = ['"' list{j} '"'];
-                end
-            end
-            fprintf(fid,'    %s:\n',name);
-            for i = 1:length(list)
-                fprintf(fid,'%s        - %s\n',regexprep(name,'(^\s*).*','$1'),list{i});
-            end
+    field = model.(fieldName);
+    if strcmp(type,'txt')
+        if pos > numel(field)
+            return
         end
-        
-    elseif sum(pos) > 0
-        %All other fields:
-        if strcmp(type,'txt')
-            value = field{pos};
-            if preserveQuotes && ~isempty(value)
-                value = ['"',value,'"'];
-            end
-        elseif strcmp(type,'num')
-            if isnan(field(pos))
-                value = [];
-            else
-                value = sprintf('%.15g',full(field(pos)));
-            end
+        value = field{pos};
+        if isempty(value)
+            return
         end
-        if ~isempty(value)
-            fprintf(fid,'    %s: %s\n',name,value);
+        emitLine(fid,name,quoteIfNeeded(value,preserveQuotes),isFirst);
+    elseif strcmp(type,'num')
+        if pos > numel(field)
+            return
         end
+        v = full(field(pos));
+        if isnan(v)
+            %For ec fields (kcat, mw, concs) the canonical schema preserves
+            %explicit NaN as `.nan`; for other numeric fields NaN is treated
+            %as "missing" and the line is omitted (the reader fills in the
+            %documented default).
+            if ismember(fieldName,{'kcat','mw','concs'})
+                emitLine(fid,name,'.nan',isFirst);
+            end
+            return
+        end
+        emitLine(fid,name,sprintf('%.15g',v),isFirst);
     end
 end
 end
 
-function writeMetadata(model,fid)
-% Writes model metadata to the yaml file. This information will eventually
-% be extracted entirely from the model, but for now, many of the entries
-% are hard-coded defaults for HumanGEM.
+function emitLine(fid,name,value,isFirst)
+if isFirst
+    fprintf(fid,'- %s: %s\n',name,value);
+else
+    fprintf(fid,'  %s: %s\n',name,value);
+end
+end
 
-fprintf(fid, '- metaData:\n');
-if isfield(model,'id')
-    fprintf(fid, '    id: "%s"\n',  model.id);
+function writeStoichMapping(model,fid,rxnPos)
+%Emit a reaction's metabolites as a flat mapping:
+%    metabolites:
+%      met_id_1: coeff
+%      met_id_2: coeff
+if ~isfield(model,'S')
+    return
+end
+col = model.S(:,rxnPos);
+mask = col ~= 0;
+if ~any(mask)
+    return
+end
+mets   = model.mets(mask);
+coeffs = full(col(mask));
+[mets,order] = sort(mets);
+coeffs       = coeffs(order);
+fprintf(fid,'  metabolites:\n');
+for i = 1:numel(mets)
+    fprintf(fid,'    %s: %.15g\n',mets{i},coeffs(i));
+end
+end
+
+function writeEnzymeMapping(ec,fid,rxnPos)
+%Emit an ec-rxn's enzymes as a flat mapping:
+%    enzymes:
+%      enzyme_id_1: stoich
+%      enzyme_id_2: stoich
+if ~isfield(ec,'rxnEnzMat') || isempty(ec.rxnEnzMat)
+    return
+end
+row = ec.rxnEnzMat(rxnPos,:);
+mask = row ~= 0;
+if ~any(mask)
+    return
+end
+enzymes = ec.enzymes(mask);
+coeffs  = row(mask);
+[enzymes,order] = sort(enzymes);
+coeffs          = coeffs(order);
+fprintf(fid,'  enzymes:\n');
+for i = 1:numel(enzymes)
+    fprintf(fid,'    %s: %.15g\n',enzymes{i},coeffs(i));
+end
+end
+
+function writeEcEccodes(ec,fid,pos,preserveQuotes)
+%ec-rxns[].eccodes: write as a single quoted string when there is exactly
+%one code, otherwise as a list.
+if ~isfield(ec,'eccodes') || pos > numel(ec.eccodes) || isempty(ec.eccodes{pos})
+    return
+end
+codes = strsplit(strrep(ec.eccodes{pos},' ',''),';');
+codes = strip(codes);
+codes = codes(~cellfun('isempty',codes));
+if isempty(codes)
+    return
+end
+if numel(codes) == 1
+    fprintf(fid,'  eccodes: %s\n',quoteIfNeeded(codes{1},preserveQuotes));
 else
-    fprintf(fid, '    id: "blankID"\n');
+    fprintf(fid,'  eccodes:\n');
+    for i = 1:numel(codes)
+        fprintf(fid,'  - %s\n',quoteIfNeeded(codes{i},preserveQuotes));
+    end
 end
-if isfield(model,'name')
-    fprintf(fid, '    name: "%s"\n',model.name);
+end
+
+function writeAnnotation(model,fid,kind,pos,preserveQuotes)
+%Emit the per-entry `annotation:` mapping. Only miriam-namespace data
+%(plus per-metabolite smiles and per-reaction ec-code) lives here -- the
+%other RAVEN-extra fields are emitted at the top level of the entry.
+miriam = struct('names',{{}},'values',{{}});
+switch kind
+    case 'metabolite'
+        if isfield(model,'newMetMiriams') && size(model.newMetMiriams,1) >= pos
+            miriam = harvestMiriam(model.newMetMiriams,model.newMetMiriamNames,pos);
+        end
+    case 'reaction'
+        if isfield(model,'newRxnMiriams') && size(model.newRxnMiriams,1) >= pos
+            miriam = harvestMiriam(model.newRxnMiriams,model.newRxnMiriamNames,pos);
+        end
+    case 'gene'
+        if isfield(model,'newGeneMiriams') && size(model.newGeneMiriams,1) >= pos
+            miriam = harvestMiriam(model.newGeneMiriams,model.newGeneMiriamNames,pos);
+        end
+end
+
+extras = {};
+switch kind
+    case 'metabolite'
+        if isfield(model,'metSmiles') && pos <= numel(model.metSmiles) && ~isempty(model.metSmiles{pos})
+            extras(end+1,:) = {'smiles',{model.metSmiles{pos}}};
+        end
+    case 'reaction'
+        if isfield(model,'eccodes') && pos <= numel(model.eccodes) && ~isempty(model.eccodes{pos})
+            codes = strsplit(strrep(model.eccodes{pos},' ',''),';');
+            codes = strip(codes);
+            codes = codes(~cellfun('isempty',codes));
+            if ~isempty(codes)
+                extras(end+1,:) = {'ec-code',codes};
+            end
+        end
+end
+
+if isempty(miriam.names) && isempty(extras)
+    return
+end
+
+fprintf(fid,'  annotation:\n');
+%Miriam entries first (sorted by namespace for reproducibility):
+[sortedNames,order] = sort(miriam.names);
+for i = 1:numel(sortedNames)
+    values = miriam.values{order(i)};
+    writeAnnotationValues(fid,sortedNames{i},values,preserveQuotes);
+end
+%Then the extras, in the order added above:
+for i = 1:size(extras,1)
+    writeAnnotationValues(fid,extras{i,1},extras{i,2},preserveQuotes);
+end
+end
+
+function writeSubsystem(model,fid,pos,preserveQuotes)
+%Emit a reaction's subsystem as a top-level key. A single-element cell
+%collapses to a quoted scalar; multi-element cells go out as a YAML list.
+if ~isfield(model,'subSystems') || pos > numel(model.subSystems)
+    return
+end
+sub = model.subSystems{pos};
+if isempty(sub)
+    return
+end
+if ischar(sub) || isstring(sub)
+    sub = {char(sub)};
+end
+if ~iscell(sub)
+    return
+end
+sub = sub(~cellfun('isempty',sub));
+if isempty(sub)
+    return
+end
+if numel(sub) == 1
+    fprintf(fid,'  subsystem: %s\n',quoteIfNeeded(sub{1},preserveQuotes));
 else
-    fprintf(fid, '    name: "blankName"\n');
+    fprintf(fid,'  subsystem:\n');
+    for i = 1:numel(sub)
+        fprintf(fid,'  - %s\n',quoteIfNeeded(sub{i},preserveQuotes));
+    end
 end
-if isfield(model,'version')
-    fprintf(fid, '    version: "%s"\n',model.version);
 end
-fprintf(fid, '    date: "%s"\n',datestr(now,29));  % 29=YYYY-MM-DD
+
+function out = harvestMiriam(matrix,names,pos)
+out = struct('names',{{}},'values',{{}});
+for j = 1:size(matrix,2)
+    cell_ij = matrix{pos,j};
+    if isempty(cell_ij)
+        continue
+    end
+    vals = strsplit(cell_ij,'; ');
+    vals = strip(vals);
+    vals = vals(~cellfun('isempty',vals));
+    if isempty(vals)
+        continue
+    end
+    out.names{end+1,1}  = names{j};
+    out.values{end+1,1} = vals;
+end
+end
+
+function writeAnnotationValues(fid,key,values,preserveQuotes)
+%annotation values are always written as a YAML list (one element per
+%line) so the cobrapy reader picks them up as lists of strings.
+fprintf(fid,'    %s:\n',key);
+for i = 1:numel(values)
+    fprintf(fid,'    - %s\n',quoteIfNeeded(values{i},preserveQuotes));
+end
+end
+
+function writeMetadata(model,fid,preserveQuotes)
+%Emit the optional `metaData:` block. Contains provenance fields only
+%(version, date, taxonomy, ...); id, name and geckoLight are written
+%separately at the top level per the canonical schema.
+fprintf(fid,'metaData:\n');
+fprintf(fid, '  date: %s\n', quoteIfNeeded(datestr(now,29),preserveQuotes));  % 29=YYYY-MM-DD
 if isfield(model,'annotation')
-    if isfield(model.annotation,'defaultLB')
-        fprintf(fid, '    defaultLB: "%g"\n',   model.annotation.defaultLB);
+    a = model.annotation;
+    fields = {'defaultLB','defaultUB','givenName','familyName', ...
+              'authors','email','organization','taxonomy','note','sourceUrl'};
+    for k = 1:numel(fields)
+        f = fields{k};
+        if isfield(a,f) && ~isempty(a.(f))
+            v = a.(f);
+            if ischar(v) || isstring(v)
+                fprintf(fid,'  %s: %s\n',f,quoteIfNeeded(char(v),preserveQuotes));
+            else
+                fprintf(fid,'  %s: %g\n',f,v);
+            end
+        end
     end
-    if isfield(model.annotation,'defaultUB')
-        fprintf(fid, '    defaultUB: "%g"\n',   model.annotation.defaultUB);
-    end
-    if isfield(model.annotation,'givenName')
-        fprintf(fid, '    givenName: "%s"\n',   model.annotation.givenName);
-    end
-    if isfield(model.annotation,'familyName')
-        fprintf(fid, '    familyName: "%s"\n',  model.annotation.familyName);
-    end
-    if isfield(model.annotation,'authors')
-        fprintf(fid, '    authors: "%s"\n',     model.annotation.authors);
-    end
-    if isfield(model.annotation,'email')
-        fprintf(fid, '    email: "%s"\n',       model.annotation.email);
-    end
-    if isfield(model.annotation,'organization')
-        fprintf(fid, '    organization: "%s"\n',model.annotation.organization);
-    end
-    if isfield(model.annotation,'taxonomy')
-        fprintf(fid, '    taxonomy: "%s"\n',    model.annotation.taxonomy);
-    end
-    if isfield(model.annotation,'note')
-        fprintf(fid, '    note: "%s"\n',        model.annotation.note);
-    end
-    if isfield(model.annotation,'sourceUrl')
-        fprintf(fid, '    sourceUrl: "%s"\n',   model.annotation.sourceUrl);
-    end
-end
-if isfield(model,'ec')
-    if model.ec.geckoLight
-        geckoLight = 'true';
-    else
-        geckoLight = 'false';
-    end
-    fprintf(fid,'    geckoLight: "%s"\n',geckoLight);
 end
 end
