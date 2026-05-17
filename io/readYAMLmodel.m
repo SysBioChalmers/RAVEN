@@ -211,74 +211,81 @@ while idx <= numel(lines)
             idx = idx + 1;
         else
             %The element is a mapping; its first key sits inline with the
-            %`-`. Capture this first key, then if there are more keys
-            %indented further, parse them as the remainder of the mapping.
+            %`-`. Capture that first key (either as an inline scalar, or
+            %as a nested block when the value comes on the following
+            %lines), then run the continuation loop to pick up any
+            %remaining keys of the same element.
             element = struct();
             safeKey = sanitiseKey(key);
             if hasInline
                 element.(safeKey) = parseScalar(value);
                 idx = idx + 1;
-                %Continuation: subsequent lines indented at (baseIndent + 2)
-                %belong to the same element.
-                while idx <= numel(lines)
-                    raw2 = lines{idx};
-                    [i2, c2] = splitIndent(raw2);
-                    if i2 < baseIndent + 2
-                        break
-                    end
-                    if i2 > baseIndent + 2
-                        idx = idx + 1;
-                        continue
-                    end
-                    if startsWith(c2,'-')
-                        %Reached the next list element belonging to a
-                        %parent list (e.g. annotation values). Stop here.
-                        break
-                    end
-                    [k2, v2, has2] = splitKeyValue(c2);
-                    if isempty(k2)
-                        idx = idx + 1;
-                        continue
-                    end
-                    sk2 = sanitiseKey(k2);
-                    if has2
-                        element.(sk2) = parseScalar(v2);
-                        idx = idx + 1;
-                    else
-                        nxt = idx + 1;
-                        if nxt > numel(lines)
-                            element.(sk2) = '';
-                            idx = nxt;
-                            break
-                        end
-                        [ni, nc] = splitIndent(lines{nxt});
-                        if ni <= i2
-                            element.(sk2) = '';
-                            idx = nxt;
-                            continue
-                        end
-                        if startsWith(nc,'-')
-                            [grand, idx] = parseList(lines, nxt, ni);
-                        else
-                            [grand, idx] = parseMapping(lines, nxt, ni);
-                        end
-                        element.(sk2) = grand;
-                    end
-                end
             else
-                %Inline key with no value -> nested block on following lines.
                 nextIdx = idx + 1;
                 if nextIdx > numel(lines)
                     element.(safeKey) = '';
                     idx = nextIdx;
                 else
                     [nIndent, nContent] = splitIndent(lines{nextIdx});
-                    if startsWith(nContent,'-')
-                        [grand, idx] = parseList(lines, nextIdx, nIndent);
+                    if nIndent <= baseIndent + 1
+                        %No nested block; key has an empty value.
+                        element.(safeKey) = '';
+                        idx = nextIdx;
                     else
-                        [grand, idx] = parseMapping(lines, nextIdx, nIndent);
+                        if startsWith(nContent,'-')
+                            [grand, idx] = parseList(lines, nextIdx, nIndent);
+                        else
+                            [grand, idx] = parseMapping(lines, nextIdx, nIndent);
+                        end
+                        element.(safeKey) = grand;
                     end
-                    element.(safeKey) = grand;
+                end
+            end
+            %Continuation: subsequent lines indented at (baseIndent + 2)
+            %belong to this same element (its remaining keys).
+            while idx <= numel(lines)
+                raw2 = lines{idx};
+                [i2, c2] = splitIndent(raw2);
+                if i2 < baseIndent + 2
+                    break
+                end
+                if i2 > baseIndent + 2
+                    idx = idx + 1;
+                    continue
+                end
+                if startsWith(c2,'-')
+                    %Reached the next list element belonging to a parent
+                    %list (e.g. annotation values). Stop here.
+                    break
+                end
+                [k2, v2, has2] = splitKeyValue(c2);
+                if isempty(k2)
+                    idx = idx + 1;
+                    continue
+                end
+                sk2 = sanitiseKey(k2);
+                if has2
+                    element.(sk2) = parseScalar(v2);
+                    idx = idx + 1;
+                else
+                    nxt = idx + 1;
+                    if nxt > numel(lines)
+                        element.(sk2) = '';
+                        idx = nxt;
+                        break
+                    end
+                    [ni, nc] = splitIndent(lines{nxt});
+                    if ni <= i2
+                        element.(sk2) = '';
+                        idx = nxt;
+                        continue
+                    end
+                    if startsWith(nc,'-')
+                        [grand, idx] = parseList(lines, nxt, ni);
+                    else
+                        [grand, idx] = parseMapping(lines, nxt, ni);
+                    end
+                    element.(sk2) = grand;
                 end
             end
             out{end+1,1} = element; %#ok<AGROW>
@@ -341,14 +348,15 @@ if isempty(s)
 end
 %Strip an inline `# ...` comment (only when `#` is preceded by whitespace
 %and we're not inside a quoted string).
-if s(1) ~= '"'
+if s(1) ~= '"' && s(1) ~= ''''
     commentStart = regexp(s,'\s#','once');
     if ~isempty(commentStart)
         s = strtrim(s(1:commentStart));
     end
 end
-%Strip surrounding double quotes.
-if numel(s) >= 2 && s(1) == '"' && s(end) == '"'
+%Strip surrounding quotes (either ".." or '..'). YAML uses both, and
+%cobrapy/geckopy emit single quotes for empty strings via PyYAML.
+if numel(s) >= 2 && ((s(1) == '"' && s(end) == '"') || (s(1) == '''' && s(end) == ''''))
     v = s(2:end-1);
     return
 end
