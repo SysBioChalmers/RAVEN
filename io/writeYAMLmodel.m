@@ -1,25 +1,26 @@
 function writeYAMLmodel(model,fileName,preserveQuotes,sortIds)
 % writeYAMLmodel
-%   Writes a model to a YAML file using the canonical geckopy schema
-%   (https://github.com/SysBioChalmers/geckopy, docs/yaml_format.md). The
-%   cobra-shaped portion matches cobrapy's model_to_dict output, so any
-%   cobrapy-aware tool (escher, memote, etc.) can load the cobra portion
-%   of a geckopy file and silently ignore the GECKO-specific keys
-%   (`ec-rxns`, `ec-enzymes`, `gecko_light`, `metaData`).
+%   Writes a model to a YAML file.
 %
-%   The previous RAVEN-style YAML format (outer `---\n!!omap` wrapper,
-%   `!!omap` tags throughout, scalar annotation values, top-level
-%   `id`/`name` nested under `metaData`) is no longer written. The
-%   companion reader, readYAMLmodel, still accepts both the new and
-%   the legacy formats so existing YAML files keep loading.
+%   The format follows the same layout used by cobrapy (the Python
+%   COBRA toolbox), so the resulting file can also be opened by
+%   cobrapy and any tool built on top of it (e.g. Escher, Memote).
+%   Enzyme-constrained extras (the `ec-rxns`, `ec-enzymes`,
+%   `gecko_light` and `metaData` sections) sit alongside the regular
+%   model content; cobrapy ignores them, while readYAMLmodel reads
+%   them back in full.
+%
+%   Older RAVEN YAML files (the ones with `---` / `!!omap` headers)
+%   are no longer produced, but the companion reader readYAMLmodel
+%   still loads them, so existing files keep working.
 %
 %   model           a model structure
 %   fileName        name that the file will have. A dialog window will
 %                   open if no file name is specified.
-%   preserveQuotes  if quoted strings should be emitted for string values
-%                   (logical, default=true)
-%   sortIds         if metabolites, reactions, genes and compartments
-%                   should be sorted alphabetically by their identifier,
+%   preserveQuotes  if true, string values are written with surrounding
+%                   double quotes (logical, default=true)
+%   sortIds         if true, metabolites, reactions, genes and
+%                   compartments are written in alphabetical order;
 %                   otherwise they are kept in their original order
 %                   (logical, default=false)
 %
@@ -77,7 +78,8 @@ if fid == -1
     error(['Cannot write to ' fileName ', does the directory exist?'])
 end
 
-%Top-level id and name (lifted out of metaData per canonical schema):
+%Model id and name go at the top level, alongside cobrapy's other
+%top-level keys:
 if isfield(model,'id') && ~isempty(model.id)
     fprintf(fid,'id: %s\n',quoteIfNeeded(model.id,preserveQuotes));
 else
@@ -90,7 +92,8 @@ if isfield(model,'version') && ~isempty(model.version)
     fprintf(fid,'version: %s\n',quoteIfNeeded(model.version,preserveQuotes));
 end
 
-%Optional metaData block (provenance, ignored by cobrapy):
+%Optional metaData block (provenance such as date, author, taxonomy;
+%cobrapy ignores it but it is preserved on round-trip):
 writeMetadata(model,fid,preserveQuotes);
 
 %Top-level gecko_light flag (native boolean):
@@ -209,17 +212,14 @@ end
 end
 
 function writeListItemField(model,fid,fieldName,type,pos,name,preserveQuotes,isFirst)
-%Emit one `  field: value` line under the current `-` list item. When
-%isFirst is true, the `-` bullet is emitted in place of the first space
-%of the two-space indent.
-%
-%Skipped silently if the field is missing/empty, except when isFirst is
-%true (in which case the bullet must still be drawn -- the caller passes
-%isFirst=true only for the always-present id field).
+%Write one "field: value" line for the current list item. When isFirst
+%is true the leading "- " bullet of the item is emitted as well.
+%Missing or empty values are silently skipped; the caller only sets
+%isFirst=true for the id field, which is always present.
 if isfield(model,fieldName)
     if strcmp(fieldName,'metComps')
-        %metComps stores compartment indices; canonical schema wants the
-        %compartment id string instead.
+        %metComps stores the compartment as a numeric index into
+        %model.comps; the YAML file uses the compartment id string.
         if pos > numel(model.metComps) || model.metComps(pos) == 0
             value = '';
         else
@@ -248,10 +248,11 @@ if isfield(model,fieldName)
         end
         v = full(field(pos));
         if isnan(v)
-            %For ec fields (kcat, mw, concs) the canonical schema preserves
-            %explicit NaN as `.nan`; for other numeric fields NaN is treated
-            %as "missing" and the line is omitted (the reader fills in the
-            %documented default).
+            %For the enzyme-specific fields (kcat, mw, concs) we write
+            %NaN explicitly as `.nan` so the value survives the round
+            %trip. For ordinary numeric fields a NaN means "no value":
+            %we skip the line and let the reader fall back to its
+            %default when loading.
             if ismember(fieldName,{'kcat','mw','concs'})
                 emitLine(fid,name,'.nan',isFirst);
             end
@@ -339,9 +340,11 @@ end
 end
 
 function writeAnnotation(model,fid,kind,pos,preserveQuotes)
-%Emit the per-entry `annotation:` mapping. Only miriam-namespace data
-%(plus per-metabolite smiles and per-reaction ec-code) lives here -- the
-%other RAVEN-extra fields are emitted at the top level of the entry.
+%Write the `annotation:` block for a metabolite, reaction or gene.
+%It only contains identifier annotations (MIRIAM cross-references,
+%plus SMILES for metabolites and EC numbers for reactions); other
+%per-entry fields (notes, references, subsystem, ...) are written
+%as top-level keys on the entry itself.
 miriam = struct('names',{{}},'values',{{}});
 switch kind
     case 'metabolite'
@@ -441,8 +444,8 @@ end
 end
 
 function writeAnnotationValues(fid,key,values,preserveQuotes)
-%annotation values are always written as a YAML list (one element per
-%line) so the cobrapy reader picks them up as lists of strings.
+%Write each annotation value on its own line, so the resulting block
+%is a YAML list of strings (which is how cobrapy expects annotations).
 fprintf(fid,'    %s:\n',key);
 for i = 1:numel(values)
     fprintf(fid,'    - %s\n',quoteIfNeeded(values{i},preserveQuotes));
@@ -450,9 +453,9 @@ end
 end
 
 function writeMetadata(model,fid,preserveQuotes)
-%Emit the optional `metaData:` block. Contains provenance fields only
-%(version, date, taxonomy, ...); id, name and geckoLight are written
-%separately at the top level per the canonical schema.
+%Write the optional `metaData:` block. It collects provenance fields
+%(date, taxonomy, author, ...); the model id, name and gecko_light
+%flag live as top-level keys, not inside this block.
 fprintf(fid,'metaData:\n');
 fprintf(fid, '  date: %s\n', quoteIfNeeded(datestr(now,29),preserveQuotes));  % 29=YYYY-MM-DD
 if isfield(model,'annotation')

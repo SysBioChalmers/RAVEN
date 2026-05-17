@@ -1,30 +1,28 @@
 function model=readYAMLmodel(fileName, verbose)
 % readYAMLmodel
-%   Reads a model from a YAML file. Two on-disk shapes are accepted:
+%   Reads a model from a YAML file.
 %
-%   1. The canonical geckopy schema (docs/yaml_format.md in geckopy):
-%      top-level mapping with `id`, `name`, optional `metaData`,
-%      optional `gecko_light`, `compartments` as a flat mapping,
-%      `metabolites`/`reactions`/`genes` as lists of plain mappings,
-%      reaction `metabolites` and ec-rxn `enzymes` as flat mappings,
-%      and `annotation` blocks as namespace-keyed lists of strings.
-%      This is what the current writeYAMLmodel emits.
+%   Two YAML layouts are recognised and handled automatically:
 %
-%   2. The legacy RAVEN format (outer `---`/`!!omap` wrapper, `!!omap`
-%      tags throughout, `id`/`name`/`geckoLight` nested under
-%      `metaData`, scalar annotation values). Older YAML files written
-%      by past RAVEN/GECKO releases use this shape.
+%   1. The cobrapy-style layout that writeYAMLmodel now produces.
+%      This is what cobrapy and any tools built on top of it (e.g.
+%      Escher, Memote) read and write.
 %
-%   Format detection is automatic; both shapes yield the same model
-%   struct on the MATLAB side.
+%   2. The older RAVEN layout (files starting with `---` followed by
+%      `!!omap`). These are still accepted so that YAML files written
+%      by earlier RAVEN/GECKO releases keep loading without manual
+%      conversion.
+%
+%   In both cases the function returns a regular RAVEN model struct.
 %
 %   Input:
-%   fileName    a model file in yaml file format. A dialog window will open
-%               if no file name is specified.
-%   verbose     set as true to monitor progress (optional, default false)
+%   fileName    path to the YAML file. If empty, a dialog window opens
+%               so the user can pick the file.
+%   verbose     if true, print progress messages while reading
+%               (optional, default false).
 %
 %   Output:
-%   model       a model structure
+%   model       a RAVEN model structure.
 %
 % Usage: model = readYAMLmodel(fileName, verbose)
 if nargin<1 || isempty(fileName)
@@ -58,8 +56,8 @@ else
     line_raw=readlines(fileName);
 end
 
-% Dispatch on detected format. Legacy files open with `---` and use
-% `!!omap` tags; canonical files do not.
+% Pick which parser to use. The older RAVEN files start with `---`
+% and use `!!omap` tags; the newer cobrapy-style files do not.
 if isLegacyFormat(line_raw)
     model = parseLegacy(line_raw, verbose);
 else
@@ -91,13 +89,12 @@ end
 % --- Canonical-format parser -------------------------------------------
 
 function model = parseCanonical(line_raw, verbose)
-%Indent-based parser for the canonical geckopy YAML schema. Strategy: a
-%small recursive-descent parser that walks the line stream, tracking the
-%current indentation context. We materialise the YAML as a nested
-%struct/cell tree, then translate it to a RAVEN model struct.
+%Parser for the cobrapy-style YAML layout. The file is read into a
+%nested struct/cell tree first, then translated into a standard RAVEN
+%model struct.
 
 if verbose
-    fprintf('Parsing YAML (canonical schema)...\n');
+    fprintf('Parsing YAML (cobrapy layout)...\n');
 end
 
 %Strip blank lines and full-line comments so the parser only sees real
