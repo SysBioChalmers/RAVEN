@@ -68,7 +68,9 @@ evalc('writeYAMLmodel(emptyModel,fullfile(sourceDir,''testing'',''unit_tests'','
 %sized.
 s = dir(fullfile(sourceDir,'testing','unit_tests','test_data','_test.yml'));
 filesize = s.bytes;
-verifyTrue(testCase,filesize>1290);
+%Canonical (cobrapy-style) YAML is more compact than the legacy
+%!!omap layout, hence the lower threshold than the older fixture.
+verifyTrue(testCase,filesize>800);
 delete(fullfile(sourceDir,'testing','unit_tests','test_data','_test.yml'));
 end
 
