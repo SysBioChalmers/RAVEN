@@ -476,18 +476,22 @@ if isfield(doc,'compartments') && isstruct(doc.compartments)
     end
 end
 
-%Metabolites.
+%Metabolites. String-cell fields are seeded with '' so unset entries
+%end up char-empty (matching the legacy pipeline), not [] empty-double.
+%Numeric-cell fields (metCharges, metDeltaG) stay as cell(nm,1) so that
+%after str2double their unset entries become NaN, which finaliseModel
+%treats as "all empty" and drops the field entirely.
 if isfield(doc,'metabolites') && iscell(doc.metabolites)
     nm = numel(doc.metabolites);
-    model.mets        = cell(nm,1);
-    model.metNames    = cell(nm,1);
-    model.metComps    = cell(nm,1);
-    model.metFormulas = cell(nm,1);
+    model.mets        = repmat({''},nm,1);
+    model.metNames    = repmat({''},nm,1);
+    model.metComps    = repmat({''},nm,1);
+    model.metFormulas = repmat({''},nm,1);
     model.metCharges  = cell(nm,1);
-    model.inchis      = cell(nm,1);
-    model.metSmiles   = cell(nm,1);
-    model.metNotes    = cell(nm,1);
-    model.metFrom     = cell(nm,1);
+    model.inchis      = repmat({''},nm,1);
+    model.metSmiles   = repmat({''},nm,1);
+    model.metNotes    = repmat({''},nm,1);
+    model.metFrom     = repmat({''},nm,1);
     model.metDeltaG   = cell(nm,1);
     model.metMiriams  = cell(nm,1);
     for k = 1:nm
@@ -539,17 +543,17 @@ end
 equations = {};
 if isfield(doc,'reactions') && iscell(doc.reactions)
     nr = numel(doc.reactions);
-    model.rxns                = cell(nr,1);
-    model.rxnNames            = cell(nr,1);
+    model.rxns                = repmat({''},nr,1);
+    model.rxnNames            = repmat({''},nr,1);
     model.lb                  = cell(nr,1);
     model.ub                  = cell(nr,1);
     model.rev                 = cell(nr,1);
-    model.grRules             = cell(nr,1);
-    model.eccodes             = cell(nr,1);
+    model.grRules             = repmat({''},nr,1);
+    model.eccodes             = repmat({''},nr,1);
     model.subSystems          = cell(nr,1);
-    model.rxnReferences       = cell(nr,1);
-    model.rxnNotes            = cell(nr,1);
-    model.rxnFrom             = cell(nr,1);
+    model.rxnReferences       = repmat({''},nr,1);
+    model.rxnNotes            = repmat({''},nr,1);
+    model.rxnFrom             = repmat({''},nr,1);
     model.rxnConfidenceScores = cell(nr,1);
     model.rxnDeltaG           = cell(nr,1);
     model.rxnMiriams          = cell(nr,1);
@@ -639,9 +643,9 @@ end
 %Genes.
 if isfield(doc,'genes') && iscell(doc.genes)
     ng = numel(doc.genes);
-    model.genes          = cell(ng,1);
-    model.geneShortNames = cell(ng,1);
-    model.proteins       = cell(ng,1);
+    model.genes          = repmat({''},ng,1);
+    model.geneShortNames = repmat({''},ng,1);
+    model.proteins       = repmat({''},ng,1);
     model.geneMiriams    = cell(ng,1);
     for k = 1:ng
         g = doc.genes{k};
@@ -670,11 +674,14 @@ if isfield(doc,'ec_dash_rxns') && iscell(doc.ec_dash_rxns)
         model.ec.geckoLight = false;
     end
     ne = numel(doc.ec_dash_rxns);
-    model.ec.rxns    = cell(ne,1);
+    %String fields pre-seeded with '' so any unset entries match the
+    %char-empty convention the legacy pipeline produces (cell(N,1)
+    %would have left them as the [] empty-double default).
+    model.ec.rxns    = repmat({''},ne,1);
     model.ec.kcat    = cell(ne,1);
-    model.ec.source  = cell(ne,1);
-    model.ec.notes   = cell(ne,1);
-    model.ec.eccodes = cell(ne,1);
+    model.ec.source  = repmat({''},ne,1);
+    model.ec.notes   = repmat({''},ne,1);
+    model.ec.eccodes = repmat({''},ne,1);
     for k = 1:ne
         e = doc.ec_dash_rxns{k};
         if ~isstruct(e), continue, end
@@ -703,10 +710,10 @@ if isfield(doc,'ec_dash_enzymes') && iscell(doc.ec_dash_enzymes)
         model.ec.geckoLight = false;
     end
     nEnz = numel(doc.ec_dash_enzymes);
-    model.ec.genes    = cell(nEnz,1);
-    model.ec.enzymes  = cell(nEnz,1);
+    model.ec.genes    = repmat({''},nEnz,1);
+    model.ec.enzymes  = repmat({''},nEnz,1);
     model.ec.mw       = cell(nEnz,1);
-    model.ec.sequence = cell(nEnz,1);
+    model.ec.sequence = repmat({''},nEnz,1);
     model.ec.concs    = cell(nEnz,1);
     for k = 1:nEnz
         e = doc.ec_dash_enzymes{k};
@@ -1481,7 +1488,12 @@ if nargin<5
     keepEmpty=false;
 end
 if isnumeric(emptyEntry)
-    emptyCells=isempty(model.(field));
+    %A numeric field counts as "effectively empty" when it has no
+    %elements at all, or when every element is NaN (matches the legacy
+    %parser, which never allocated the field in the first place if no
+    %row supplied a value).
+    v = model.(field);
+    emptyCells = isempty(v) || (isnumeric(v) && all(isnan(v(:))));
 else
     emptyCells=cellfun('isempty',model.(field));
 end
