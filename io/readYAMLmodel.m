@@ -109,9 +109,9 @@ model = canonicalToModel(doc, verbose);
 end
 
 function [out, idx] = parseMapping(lines, idx, baseIndent)
-%Parse a YAML mapping whose keys live at column == baseIndent. Stops as
-%soon as we hit a line with less indentation than baseIndent or the EOF.
-out = struct();
+%Parse a YAML mapping whose keys live at column == baseIndent. Returns
+%an Nx2 cell `{key, value; ...}` (verbatim YAML keys, no escaping).
+out = cell(0, 2);
 while idx <= numel(lines)
     raw = lines{idx};
     [indent, content] = splitIndent(raw);
@@ -134,9 +134,8 @@ while idx <= numel(lines)
         idx = idx + 1;
         continue
     end
-    safeKey = sanitiseKey(key);
     if hasInline
-        out.(safeKey) = parseScalar(value);
+        out(end+1, :) = {key, parseScalar(value)}; %#ok<AGROW>
         idx = idx + 1;
     else
         %Look ahead at the value block. Cases:
@@ -148,22 +147,22 @@ while idx <= numel(lines)
         %  anything else => empty value
         nextIdx = idx + 1;
         if nextIdx > numel(lines)
-            out.(safeKey) = '';
+            out(end+1, :) = {key, ''}; %#ok<AGROW>
             return
         end
         [nIndent, nContent] = splitIndent(lines{nextIdx});
         if nIndent == baseIndent && startsWith(nContent,'-')
             [child, idx] = parseList(lines, nextIdx, baseIndent);
-            out.(safeKey) = child;
+            out(end+1, :) = {key, child}; %#ok<AGROW>
         elseif nIndent > baseIndent
             if startsWith(nContent,'-')
                 [child, idx] = parseList(lines, nextIdx, nIndent);
             else
                 [child, idx] = parseMapping(lines, nextIdx, nIndent);
             end
-            out.(safeKey) = child;
+            out(end+1, :) = {key, child}; %#ok<AGROW>
         else
-            out.(safeKey) = '';
+            out(end+1, :) = {key, ''}; %#ok<AGROW>
             idx = nextIdx;
         end
     end
@@ -215,21 +214,20 @@ while idx <= numel(lines)
             %as a nested block when the value comes on the following
             %lines), then run the continuation loop to pick up any
             %remaining keys of the same element.
-            element = struct();
-            safeKey = sanitiseKey(key);
+            element = cell(0, 2);
             if hasInline
-                element.(safeKey) = parseScalar(value);
+                element(end+1, :) = {key, parseScalar(value)}; %#ok<AGROW>
                 idx = idx + 1;
             else
                 nextIdx = idx + 1;
                 if nextIdx > numel(lines)
-                    element.(safeKey) = '';
+                    element(end+1, :) = {key, ''}; %#ok<AGROW>
                     idx = nextIdx;
                 else
                     [nIndent, nContent] = splitIndent(lines{nextIdx});
                     if nIndent <= baseIndent + 1
                         %No nested block; key has an empty value.
-                        element.(safeKey) = '';
+                        element(end+1, :) = {key, ''}; %#ok<AGROW>
                         idx = nextIdx;
                     else
                         if startsWith(nContent,'-')
@@ -237,7 +235,7 @@ while idx <= numel(lines)
                         else
                             [grand, idx] = parseMapping(lines, nextIdx, nIndent);
                         end
-                        element.(safeKey) = grand;
+                        element(end+1, :) = {key, grand}; %#ok<AGROW>
                     end
                 end
             end
@@ -263,20 +261,19 @@ while idx <= numel(lines)
                     idx = idx + 1;
                     continue
                 end
-                sk2 = sanitiseKey(k2);
                 if has2
-                    element.(sk2) = parseScalar(v2);
+                    element(end+1, :) = {k2, parseScalar(v2)}; %#ok<AGROW>
                     idx = idx + 1;
                 else
                     nxt = idx + 1;
                     if nxt > numel(lines)
-                        element.(sk2) = '';
+                        element(end+1, :) = {k2, ''}; %#ok<AGROW>
                         idx = nxt;
                         break
                     end
                     [ni, nc] = splitIndent(lines{nxt});
                     if ni <= i2
-                        element.(sk2) = '';
+                        element(end+1, :) = {k2, ''}; %#ok<AGROW>
                         idx = nxt;
                         continue
                     end
@@ -285,7 +282,7 @@ while idx <= numel(lines)
                     else
                         [grand, idx] = parseMapping(lines, nxt, ni);
                     end
-                    element.(sk2) = grand;
+                    element(end+1, :) = {k2, grand}; %#ok<AGROW>
                 end
             end
             out{end+1,1} = element; %#ok<AGROW>
@@ -369,115 +366,90 @@ end
 v = s;
 end
 
-function s = sanitiseKey(key)
-%Encode YAML keys as legal MATLAB field names. We escape just `.` and
-%`-` (the two character classes that show up in cobra-style namespace
-%keys like `bigg.metabolite` and `ec-code`) and prefix a leading-digit
-%guard so BiGG-style ids like `2agpe120` round-trip cleanly. Literal
-%`_dot_`/`_dash_`/`kbeg_` substrings in original keys are not protected
-%against; they're vanishingly rare in practice.
-s = strrep(key,'.','_dot_');
-s = strrep(s,'-','_dash_');
-s = regexprep(s,'[^A-Za-z0-9_]','_');
-if isempty(s) || ~isstrprop(s(1),'alpha')
-    s = ['kbeg_' s];
+function tf = mapHas(pairs, key)
+%True if `pairs` (Nx2 cell {key, value; ...} from parseMapping) contains key.
+tf = ~isempty(pairs) && any(strcmp(pairs(:,1), key));
 end
+
+function v = mapGet(pairs, key, default)
+%Return the value for `key` in `pairs`, or `default` if absent.
+if nargin < 3
+    default = '';
+end
+if isempty(pairs)
+    v = default;
+    return
+end
+hit = find(strcmp(pairs(:,1), key), 1, 'first');
+if isempty(hit)
+    v = default;
+else
+    v = pairs{hit, 2};
+end
+end
+
+function pairs = mapDelete(pairs, key)
+%Remove the entry whose key equals `key`.
+if isempty(pairs)
+    return
+end
+keep = ~strcmp(pairs(:,1), key);
+pairs = pairs(keep, :);
 end
 
 % --- Canonical YAML tree -> RAVEN model struct -------------------------
 
 function model = canonicalToModel(doc, verbose)
-%Translate the intermediate struct/cell tree produced by parseMapping
-%into the standard RAVEN model struct, applying the same defaults and
-%post-processing the legacy parser does.
+%Translate the (cell{N,2}) pair tree produced by parseMapping into the
+%standard RAVEN model struct, applying the same defaults and post-
+%processing the legacy parser does.
 
 modelFields = legacyYAMLmodelFields();
 model = initYAMLmodel(modelFields);
 
-%Top-level scalar fields. The canonical schema lifts id/name to the top
+%Top-level scalar fields. The cobrapy schema lifts id/name to the top
 %level; legacy callers sometimes wrote `version` at the top too. metaData
 %(if present) carries provenance and defaultLB/defaultUB.
-if isfield(doc,'id')
-    model.id = stringify(doc.id);
-end
-if isfield(doc,'name')
-    model.name = stringify(doc.name);
-end
-if isfield(doc,'version')
-    model.version = stringify(doc.version);
-end
-if isfield(doc,'description')
-    model.description = stringify(doc.description);
-end
+model.id          = getField(doc, 'id', '');
+model.name        = getField(doc, 'name', '');
+model.version     = getField(doc, 'version', '');
+model.description = getField(doc, 'description', '');
 
-if isfield(doc,'metaData') && isstruct(doc.metaData)
-    md = doc.metaData;
+md = mapGet(doc, 'metaData', cell(0,2));
+if iscell(md) && ~isempty(md)
     %id/name in metaData take a back seat to top-level values (canonical)
     %but are still accepted (forward compat with legacy on-disk leakage).
-    if isempty(model.id) && isfield(md,'id')
-        model.id = stringify(md.id);
+    if isempty(model.id);          model.id = getField(md, 'id', ''); end
+    if isempty(model.id);          model.id = getField(md, 'short_name', ''); end
+    if isempty(model.name);        model.name = getField(md, 'name', ''); end
+    if isempty(model.description); model.description = getField(md, 'full_name', ''); end
+    if isempty(model.version);     model.version = getField(md, 'version', ''); end
+    model.date = getField(md, 'date', '');
+    if mapHas(md, 'taxonomy');     model.annotation.taxonomy = getField(md, 'taxonomy', ''); end
+    if mapHas(md, 'note');         model.annotation.note = getField(md, 'note', ''); end
+    if mapHas(md, 'description');  model.annotation.note = getField(md, 'description', ''); end
+    if mapHas(md, 'sourceUrl');    model.annotation.sourceUrl = getField(md, 'sourceUrl', ''); end
+    if mapHas(md, 'github') && ~isfield(model.annotation, 'sourceUrl')
+        model.annotation.sourceUrl = getField(md, 'github', '');
     end
-    if isfield(md,'short_name') && isempty(model.id)
-        model.id = stringify(md.short_name);
-    end
-    if isempty(model.name) && isfield(md,'name')
-        model.name = stringify(md.name);
-    end
-    if isfield(md,'full_name') && isempty(model.description)
-        model.description = stringify(md.full_name);
-    end
-    if isfield(md,'version') && isempty(model.version)
-        model.version = stringify(md.version);
-    end
-    if isfield(md,'date')
-        model.date = stringify(md.date);
-    end
-    if isfield(md,'taxonomy')
-        model.annotation.taxonomy = stringify(md.taxonomy);
-    end
-    if isfield(md,'note')
-        model.annotation.note = stringify(md.note);
-    end
-    if isfield(md,'description')
-        model.annotation.note = stringify(md.description);
-    end
-    if isfield(md,'sourceUrl')
-        model.annotation.sourceUrl = stringify(md.sourceUrl);
-    end
-    if isfield(md,'github') && ~isfield(model.annotation,'sourceUrl')
-        model.annotation.sourceUrl = stringify(md.github);
-    end
-    if isfield(md,'givenName')
-        model.annotation.givenName = stringify(md.givenName);
-    end
-    if isfield(md,'familyName')
-        model.annotation.familyName = stringify(md.familyName);
-    end
-    if isfield(md,'authors')
-        model.annotation.authorList = stringify(md.authors);
-    end
-    if isfield(md,'email')
-        model.annotation.email = stringify(md.email);
-    end
-    if isfield(md,'organization')
-        model.annotation.organization = stringify(md.organization);
-    end
-    if isfield(md,'defaultLB')
-        model.annotation.defaultLB = str2double(stringify(md.defaultLB));
-    end
-    if isfield(md,'defaultUB')
-        model.annotation.defaultUB = str2double(stringify(md.defaultUB));
-    end
+    if mapHas(md, 'givenName');    model.annotation.givenName = getField(md, 'givenName', ''); end
+    if mapHas(md, 'familyName');   model.annotation.familyName = getField(md, 'familyName', ''); end
+    if mapHas(md, 'authors');      model.annotation.authorList = getField(md, 'authors', ''); end
+    if mapHas(md, 'email');        model.annotation.email = getField(md, 'email', ''); end
+    if mapHas(md, 'organization'); model.annotation.organization = getField(md, 'organization', ''); end
+    if mapHas(md, 'defaultLB');    model.annotation.defaultLB = str2double(getField(md, 'defaultLB', 'NaN')); end
+    if mapHas(md, 'defaultUB');    model.annotation.defaultUB = str2double(getField(md, 'defaultUB', 'NaN')); end
 end
 
-%Compartments (canonical: flat mapping `id -> name`).
-if isfield(doc,'compartments') && isstruct(doc.compartments)
-    cfields = fieldnames(doc.compartments);
-    model.comps     = cell(numel(cfields),1);
-    model.compNames = cell(numel(cfields),1);
-    for k = 1:numel(cfields)
-        model.comps{k,1}     = recoverKey(cfields{k});
-        model.compNames{k,1} = stringify(doc.compartments.(cfields{k}));
+%Compartments (flat mapping `id -> name`).
+comps = mapGet(doc, 'compartments', cell(0,2));
+if iscell(comps) && ~isempty(comps)
+    n = size(comps, 1);
+    model.comps     = cell(n, 1);
+    model.compNames = cell(n, 1);
+    for k = 1:n
+        model.comps{k,1}     = comps{k, 1};
+        model.compNames{k,1} = stringify(comps{k, 2});
     end
 end
 
@@ -486,8 +458,9 @@ end
 %Numeric-cell fields (metCharges, metDeltaG) stay as cell(nm,1) so that
 %after str2double their unset entries become NaN, which finaliseYAMLmodel
 %treats as "all empty" and drops the field entirely.
-if isfield(doc,'metabolites') && iscell(doc.metabolites)
-    nm = numel(doc.metabolites);
+mets = mapGet(doc, 'metabolites', {});
+if iscell(mets) && size(mets, 2) ~= 2  % a list (Mx1), not a key/value map
+    nm = numel(mets);
     model.mets        = repmat({''},nm,1);
     model.metNames    = repmat({''},nm,1);
     model.metComps    = repmat({''},nm,1);
@@ -500,54 +473,55 @@ if isfield(doc,'metabolites') && iscell(doc.metabolites)
     model.metDeltaG   = cell(nm,1);
     model.metMiriams  = cell(nm,1);
     for k = 1:nm
-        m = doc.metabolites{k};
-        if ~isstruct(m), continue, end
+        m = mets{k};
+        if ~iscell(m) || size(m,2) ~= 2, continue, end
         model.mets{k}        = getField(m,'id','');
         model.metNames{k}    = getField(m,'name','');
         model.metComps{k}    = getField(m,'compartment','');
         model.metFormulas{k} = getField(m,'formula','');
         model.metCharges{k}  = getField(m,'charge','');
         model.inchis{k}      = getField(m,'inchis','');
-        if isfield(m,'annotation') && isstruct(m.annotation)
-            ann = m.annotation;
-            if isfield(ann,'smiles')
-                model.metSmiles{k} = collapseList(ann.smiles);
-                ann = rmfield(ann,'smiles');
+        ann = mapGet(m, 'annotation', cell(0,2));
+        if iscell(ann) && size(ann, 2) == 2
+            if mapHas(ann, 'smiles')
+                model.metSmiles{k} = collapseList(mapGet(ann, 'smiles'));
+                ann = mapDelete(ann, 'smiles');
             end
-            if isfield(ann,'notes')
-                model.metNotes{k} = collapseList(ann.notes);
-                ann = rmfield(ann,'notes');
+            if mapHas(ann, 'notes')
+                model.metNotes{k} = collapseList(mapGet(ann, 'notes'));
+                ann = mapDelete(ann, 'notes');
             end
-            if isfield(ann,'metFrom')
-                model.metFrom{k} = collapseList(ann.metFrom);
-                ann = rmfield(ann,'metFrom');
+            if mapHas(ann, 'metFrom')
+                model.metFrom{k} = collapseList(mapGet(ann, 'metFrom'));
+                ann = mapDelete(ann, 'metFrom');
             end
-            if isfield(ann,'deltaG')
-                model.metDeltaG{k} = collapseList(ann.deltaG);
-                ann = rmfield(ann,'deltaG');
+            if mapHas(ann, 'deltaG')
+                model.metDeltaG{k} = collapseList(mapGet(ann, 'deltaG'));
+                ann = mapDelete(ann, 'deltaG');
             end
             model.metMiriams{k} = annotationToMiriam(ann);
         end
         %Legacy callers placed these as top-level keys; honour both:
-        if isempty(model.metSmiles{k}) && isfield(m,'smiles')
-            model.metSmiles{k} = stringify(m.smiles);
+        if isempty(model.metSmiles{k}) && mapHas(m, 'smiles')
+            model.metSmiles{k} = getField(m, 'smiles', '');
         end
-        if isempty(model.metNotes{k}) && isfield(m,'notes')
-            model.metNotes{k} = stringify(m.notes);
+        if isempty(model.metNotes{k}) && mapHas(m, 'notes')
+            model.metNotes{k} = getField(m, 'notes', '');
         end
-        if isempty(model.metFrom{k}) && isfield(m,'metFrom')
-            model.metFrom{k} = stringify(m.metFrom);
+        if isempty(model.metFrom{k}) && mapHas(m, 'metFrom')
+            model.metFrom{k} = getField(m, 'metFrom', '');
         end
-        if isempty(model.metDeltaG{k}) && isfield(m,'deltaG')
-            model.metDeltaG{k} = stringify(m.deltaG);
+        if isempty(model.metDeltaG{k}) && mapHas(m, 'deltaG')
+            model.metDeltaG{k} = getField(m, 'deltaG', '');
         end
     end
 end
 
 %Reactions.
 equations = {};
-if isfield(doc,'reactions') && iscell(doc.reactions)
-    nr = numel(doc.reactions);
+rxns = mapGet(doc, 'reactions', {});
+if iscell(rxns) && size(rxns, 2) ~= 2
+    nr = numel(rxns);
     model.rxns                = repmat({''},nr,1);
     model.rxnNames            = repmat({''},nr,1);
     model.lb                  = cell(nr,1);
@@ -564,8 +538,8 @@ if isfield(doc,'reactions') && iscell(doc.reactions)
     model.rxnMiriams          = cell(nr,1);
     model.c                   = zeros(nr,1);
     for k = 1:nr
-        r = doc.reactions{k};
-        if ~isstruct(r), continue, end
+        r = rxns{k};
+        if ~iscell(r) || size(r,2) ~= 2, continue, end
         model.rxns{k}                = getField(r,'id','');
         model.rxnNames{k}            = getField(r,'name','');
         model.lb{k}                  = getField(r,'lower_bound','');
@@ -573,112 +547,114 @@ if isfield(doc,'reactions') && iscell(doc.reactions)
         model.rev{k}                 = getField(r,'rev','');
         model.grRules{k}             = getField(r,'gene_reaction_rule','');
         model.rxnConfidenceScores{k} = getField(r,'confidence_score','');
-        if isfield(r,'objective_coefficient')
-            model.c(k) = str2double(stringify(r.objective_coefficient));
+        if mapHas(r, 'objective_coefficient')
+            model.c(k) = str2double(getField(r, 'objective_coefficient', '0'));
         end
-        %Stoich (canonical: flat mapping; legacy: list of single-key maps
-        %already flattened to a struct by parseMapping).
-        if isfield(r,'metabolites') && isstruct(r.metabolites)
-            stoichFields = fieldnames(r.metabolites);
-            for s = 1:numel(stoichFields)
-                metId = recoverKey(stoichFields{s});
-                coeff = str2double(stringify(r.metabolites.(stoichFields{s})));
+        %Stoich: flat mapping `metId -> coeff` (preserved as Nx2 pairs).
+        stoich = mapGet(r, 'metabolites', cell(0,2));
+        if iscell(stoich) && size(stoich, 2) == 2
+            for s = 1:size(stoich, 1)
+                metId = stoich{s, 1};
+                coeff = str2double(stringify(stoich{s, 2}));
                 equations(end+1,1:3) = {k, metId, coeff}; %#ok<AGROW>
             end
         end
         %Annotation block: ec-code, subsystem, references, notes, rxnFrom,
         %deltaG go to RAVEN's dedicated fields; everything else becomes
         %a miriam entry.
-        if isfield(r,'annotation') && isstruct(r.annotation)
-            ann = r.annotation;
-            if isfield(ann,'ec_dash_code')
-                model.eccodes{k} = strjoin(toCellList(ann.ec_dash_code),';');
-                ann = rmfield(ann,'ec_dash_code');
+        ann = mapGet(r, 'annotation', cell(0,2));
+        if iscell(ann) && size(ann, 2) == 2
+            if mapHas(ann, 'ec-code')
+                model.eccodes{k} = strjoin(toCellList(mapGet(ann, 'ec-code')), ';');
+                ann = mapDelete(ann, 'ec-code');
             end
-            if isfield(ann,'subsystem')
-                model.subSystems{k} = toCellList(ann.subsystem);
-                ann = rmfield(ann,'subsystem');
+            if mapHas(ann, 'subsystem')
+                model.subSystems{k} = toCellList(mapGet(ann, 'subsystem'));
+                ann = mapDelete(ann, 'subsystem');
             end
-            if isfield(ann,'references')
-                model.rxnReferences{k} = collapseList(ann.references);
-                ann = rmfield(ann,'references');
+            if mapHas(ann, 'references')
+                model.rxnReferences{k} = collapseList(mapGet(ann, 'references'));
+                ann = mapDelete(ann, 'references');
             end
-            if isfield(ann,'notes')
-                model.rxnNotes{k} = collapseList(ann.notes);
-                ann = rmfield(ann,'notes');
+            if mapHas(ann, 'notes')
+                model.rxnNotes{k} = collapseList(mapGet(ann, 'notes'));
+                ann = mapDelete(ann, 'notes');
             end
-            if isfield(ann,'rxnFrom')
-                model.rxnFrom{k} = collapseList(ann.rxnFrom);
-                ann = rmfield(ann,'rxnFrom');
+            if mapHas(ann, 'rxnFrom')
+                model.rxnFrom{k} = collapseList(mapGet(ann, 'rxnFrom'));
+                ann = mapDelete(ann, 'rxnFrom');
             end
-            if isfield(ann,'deltaG')
-                model.rxnDeltaG{k} = collapseList(ann.deltaG);
-                ann = rmfield(ann,'deltaG');
+            if mapHas(ann, 'deltaG')
+                model.rxnDeltaG{k} = collapseList(mapGet(ann, 'deltaG'));
+                ann = mapDelete(ann, 'deltaG');
             end
             model.rxnMiriams{k} = annotationToMiriam(ann);
         end
         %Top-level fields per the canonical schema. (Annotation rescue
         %above already covered the legacy-inside-annotation layout.)
-        if isempty(model.eccodes{k}) && isfield(r,'eccodes')
-            model.eccodes{k} = stringify(r.eccodes);
+        if isempty(model.eccodes{k}) && mapHas(r, 'eccodes')
+            model.eccodes{k} = getField(r, 'eccodes', '');
         end
-        if isempty(model.rxnReferences{k}) && isfield(r,'references')
-            model.rxnReferences{k} = stringify(r.references);
+        if isempty(model.rxnReferences{k}) && mapHas(r, 'references')
+            model.rxnReferences{k} = getField(r, 'references', '');
         end
-        if (isempty(model.subSystems{k}) || (iscell(model.subSystems{k}) && isempty(model.subSystems{k}))) && isfield(r,'subsystem')
-            sub = r.subsystem;
+        if (isempty(model.subSystems{k}) || (iscell(model.subSystems{k}) && isempty(model.subSystems{k}))) && mapHas(r, 'subsystem')
+            sub = mapGet(r, 'subsystem');
             if ischar(sub) || isstring(sub)
                 model.subSystems{k} = {char(sub)};
             elseif iscell(sub)
                 model.subSystems{k} = sub(:);
             end
         end
-        if isempty(model.rxnNotes{k}) && isfield(r,'notes')
-            model.rxnNotes{k} = stringify(r.notes);
+        if isempty(model.rxnNotes{k}) && mapHas(r, 'notes')
+            model.rxnNotes{k} = getField(r, 'notes', '');
         end
-        if isempty(model.rxnFrom{k}) && isfield(r,'rxnFrom')
-            model.rxnFrom{k} = stringify(r.rxnFrom);
+        if isempty(model.rxnFrom{k}) && mapHas(r, 'rxnFrom')
+            model.rxnFrom{k} = getField(r, 'rxnFrom', '');
         end
-        if isempty(model.rxnDeltaG{k}) && isfield(r,'deltaG')
-            model.rxnDeltaG{k} = stringify(r.deltaG);
+        if isempty(model.rxnDeltaG{k}) && mapHas(r, 'deltaG')
+            model.rxnDeltaG{k} = getField(r, 'deltaG', '');
         end
     end
 end
 
 %Genes.
-if isfield(doc,'genes') && iscell(doc.genes)
-    ng = numel(doc.genes);
+genes = mapGet(doc, 'genes', {});
+if iscell(genes) && size(genes, 2) ~= 2
+    ng = numel(genes);
     model.genes          = repmat({''},ng,1);
     model.geneShortNames = repmat({''},ng,1);
     model.proteins       = repmat({''},ng,1);
     model.geneMiriams    = cell(ng,1);
     for k = 1:ng
-        g = doc.genes{k};
-        if ~isstruct(g), continue, end
+        g = genes{k};
+        if ~iscell(g) || size(g, 2) ~= 2, continue, end
         model.genes{k}          = getField(g,'id','');
         model.geneShortNames{k} = getField(g,'name','');
         model.proteins{k}       = getField(g,'protein','');
-        if isfield(g,'annotation') && isstruct(g.annotation)
-            model.geneMiriams{k} = annotationToMiriam(g.annotation);
+        ann = mapGet(g, 'annotation', cell(0,2));
+        if iscell(ann) && size(ann, 2) == 2
+            model.geneMiriams{k} = annotationToMiriam(ann);
         end
     end
 end
 
 %Gecko-light flag.
 isGECKO = false;
-if isfield(doc,'gecko_light')
+if mapHas(doc, 'gecko_light')
     isGECKO = true;
-    model.ec.geckoLight = isTruthy(doc.gecko_light);
+    model.ec.geckoLight = isTruthy(mapGet(doc, 'gecko_light'));
 end
 
 %ec-rxns.
 enzStoich = {};
-if isfield(doc,'ec_dash_rxns') && iscell(doc.ec_dash_rxns)
+ecRxns = mapGet(doc, 'ec-rxns', {});
+if iscell(ecRxns) && size(ecRxns, 2) ~= 2 && ~isempty(ecRxns)
     isGECKO = true;
     if ~isfield(model,'ec') || ~isfield(model.ec,'geckoLight')
         model.ec.geckoLight = false;
     end
-    ne = numel(doc.ec_dash_rxns);
+    ne = numel(ecRxns);
     %String fields pre-seeded with '' so any unset entries match the
     %char-empty convention the legacy pipeline produces (cell(N,1)
     %would have left them as the [] empty-double default).
@@ -688,20 +664,20 @@ if isfield(doc,'ec_dash_rxns') && iscell(doc.ec_dash_rxns)
     model.ec.notes   = repmat({''},ne,1);
     model.ec.eccodes = repmat({''},ne,1);
     for k = 1:ne
-        e = doc.ec_dash_rxns{k};
-        if ~isstruct(e), continue, end
+        e = ecRxns{k};
+        if ~iscell(e) || size(e, 2) ~= 2, continue, end
         model.ec.rxns{k}   = getField(e,'id','');
         model.ec.kcat{k}   = getField(e,'kcat','');
         model.ec.source{k} = getField(e,'source','');
         model.ec.notes{k}  = getField(e,'notes','');
-        if isfield(e,'eccodes')
-            model.ec.eccodes{k} = stringify(joinList(e.eccodes,';'));
+        if mapHas(e, 'eccodes')
+            model.ec.eccodes{k} = joinList(mapGet(e, 'eccodes'), ';');
         end
-        if isfield(e,'enzymes') && isstruct(e.enzymes)
-            sf = fieldnames(e.enzymes);
-            for s = 1:numel(sf)
-                enzId = recoverKey(sf{s});
-                coeff = str2double(stringify(e.enzymes.(sf{s})));
+        enzMap = mapGet(e, 'enzymes', cell(0,2));
+        if iscell(enzMap) && size(enzMap, 2) == 2
+            for s = 1:size(enzMap, 1)
+                enzId = enzMap{s, 1};
+                coeff = str2double(stringify(enzMap{s, 2}));
                 enzStoich(end+1,1:3) = {k, enzId, coeff}; %#ok<AGROW>
             end
         end
@@ -709,20 +685,21 @@ if isfield(doc,'ec_dash_rxns') && iscell(doc.ec_dash_rxns)
 end
 
 %ec-enzymes.
-if isfield(doc,'ec_dash_enzymes') && iscell(doc.ec_dash_enzymes)
+ecEnz = mapGet(doc, 'ec-enzymes', {});
+if iscell(ecEnz) && size(ecEnz, 2) ~= 2 && ~isempty(ecEnz)
     isGECKO = true;
     if ~isfield(model,'ec') || ~isfield(model.ec,'geckoLight')
         model.ec.geckoLight = false;
     end
-    nEnz = numel(doc.ec_dash_enzymes);
+    nEnz = numel(ecEnz);
     model.ec.genes    = repmat({''},nEnz,1);
     model.ec.enzymes  = repmat({''},nEnz,1);
     model.ec.mw       = cell(nEnz,1);
     model.ec.sequence = repmat({''},nEnz,1);
     model.ec.concs    = cell(nEnz,1);
     for k = 1:nEnz
-        e = doc.ec_dash_enzymes{k};
-        if ~isstruct(e), continue, end
+        e = ecEnz{k};
+        if ~iscell(e) || size(e, 2) ~= 2, continue, end
         model.ec.genes{k}    = getField(e,'genes','');
         model.ec.enzymes{k}  = getField(e,'enzymes','');
         model.ec.mw{k}       = getField(e,'mw','');
@@ -736,9 +713,11 @@ end
 model = finaliseYAMLmodel(model, equations, enzStoich, isGECKO, verbose);
 end
 
-function out = getField(s,name,default)
-if isfield(s,name)
-    out = stringify(s.(name));
+function out = getField(pairs, name, default)
+%Lookup `name` in `pairs` (Nx2 cell from parseMapping) and stringify the
+%value. Returns `default` if `name` is absent.
+if mapHas(pairs, name)
+    out = stringify(mapGet(pairs, name));
 else
     out = default;
 end
@@ -805,35 +784,23 @@ s = stringify(v);
 tf = any(strcmpi(s,{'true','yes','1'}));
 end
 
-function key = recoverKey(safeKey)
-%Reverse of sanitiseKey: strip the leading-digit guard, decode dots and
-%dashes.
-key = safeKey;
-if startsWith(key,'kbeg_')
-    key = key(6:end);
-end
-key = strrep(key,'_dot_','.');
-key = strrep(key,'_dash_','-');
-end
-
 function miriam = annotationToMiriam(ann)
+%Convert an `annotation:` block (Nx2 pairs of namespace -> values) into
+%RAVEN's miriam struct ({name, value} parallel cell arrays).
 miriam = [];
-if ~isstruct(ann)
+if ~iscell(ann) || size(ann, 2) ~= 2
     return
 end
 names  = {};
 values = {};
-fnames = fieldnames(ann);
-for i = 1:numel(fnames)
-    v = ann.(fnames{i});
-    vals = toCellList(v);
+for i = 1:size(ann, 1)
+    vals = toCellList(ann{i, 2});
     if isempty(vals)
         continue
     end
-    displayName = recoverKey(fnames{i});
     for j = 1:numel(vals)
-        names{end+1,1}  = displayName; %#ok<AGROW>
-        values{end+1,1} = vals{j};     %#ok<AGROW>
+        names{end+1,1}  = ann{i, 1}; %#ok<AGROW>
+        values{end+1,1} = vals{j};   %#ok<AGROW>
     end
 end
 if isempty(names)
