@@ -1,0 +1,281 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of finaliseYAMLmodel</title>
+  <meta name="keywords" content="finaliseYAMLmodel">
+  <meta name="description" content="finaliseYAMLmodel">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="../index.html">io</a> &gt; <a href="index.html">legacySupport</a> &gt; finaliseYAMLmodel.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for io\legacySupport&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>finaliseYAMLmodel
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>finaliseYAMLmodel</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function model = finaliseYAMLmodel(model, equations, enzStoich, isGECKO, verbose, ecGecko) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> finaliseYAMLmodel
+   Post-processing shared by both readYAMLmodel parsers (the
+   cobrapy-style canonical path in readYAMLmodel.m and the older
+   `!!omap` path in private/parseYAMLLegacy.m).
+
+   Fills the S-matrix from the per-rxn stoichiometry pairs, coerces
+   the cell-of-string numeric fields to numeric arrays, supplies
+   defaults for missing per-rxn / per-met / per-gene fields, drops
+   fields that ended up entirely empty, derives rxnGeneMat from
+   grRules, and runs the GECKO-specific finalisation when isGECKO
+   is true.
+
+ Input:
+   model       the partially-built RAVEN model struct (lists and
+               cell-of-string fields populated by the parser).
+   equations   N x 3 cell array of (rxnIdx, metId, coeff) triples
+               that defines the stoichiometry matrix.
+   enzStoich   N x 3 cell array of (ecRxnIdx, enzymeId, coeff)
+               triples for ec.rxnEnzMat (only used when isGECKO).
+   isGECKO     true to apply ec.* finalisation.
+   verbose     true to print progress messages.
+   ecGecko     N x 2 cell array of (ecRxnIdx, ec-code) pairs from
+               the legacy multi-line eccodes path. Optional; not
+               used by the canonical parser.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="parseYAMLLegacy.html" class="code" title="function model = parseYAMLLegacy(line_raw, verbose)">parseYAMLLegacy</a>	parseYAMLLegacy</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function model = finaliseYAMLmodel(model, equations, enzStoich, isGECKO, verbose, ecGecko)</a>
+0002 <span class="comment">% finaliseYAMLmodel</span>
+0003 <span class="comment">%   Post-processing shared by both readYAMLmodel parsers (the</span>
+0004 <span class="comment">%   cobrapy-style canonical path in readYAMLmodel.m and the older</span>
+0005 <span class="comment">%   `!!omap` path in private/parseYAMLLegacy.m).</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">%   Fills the S-matrix from the per-rxn stoichiometry pairs, coerces</span>
+0008 <span class="comment">%   the cell-of-string numeric fields to numeric arrays, supplies</span>
+0009 <span class="comment">%   defaults for missing per-rxn / per-met / per-gene fields, drops</span>
+0010 <span class="comment">%   fields that ended up entirely empty, derives rxnGeneMat from</span>
+0011 <span class="comment">%   grRules, and runs the GECKO-specific finalisation when isGECKO</span>
+0012 <span class="comment">%   is true.</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% Input:</span>
+0015 <span class="comment">%   model       the partially-built RAVEN model struct (lists and</span>
+0016 <span class="comment">%               cell-of-string fields populated by the parser).</span>
+0017 <span class="comment">%   equations   N x 3 cell array of (rxnIdx, metId, coeff) triples</span>
+0018 <span class="comment">%               that defines the stoichiometry matrix.</span>
+0019 <span class="comment">%   enzStoich   N x 3 cell array of (ecRxnIdx, enzymeId, coeff)</span>
+0020 <span class="comment">%               triples for ec.rxnEnzMat (only used when isGECKO).</span>
+0021 <span class="comment">%   isGECKO     true to apply ec.* finalisation.</span>
+0022 <span class="comment">%   verbose     true to print progress messages.</span>
+0023 <span class="comment">%   ecGecko     N x 2 cell array of (ecRxnIdx, ec-code) pairs from</span>
+0024 <span class="comment">%               the legacy multi-line eccodes path. Optional; not</span>
+0025 <span class="comment">%               used by the canonical parser.</span>
+0026 
+0027 <span class="keyword">if</span> nargin &lt; 6
+0028     ecGecko = {};
+0029 <span class="keyword">end</span>
+0030 
+0031 <span class="keyword">if</span> verbose
+0032     fprintf(<span class="string">'\nimporting completed\nfollow-up processing...'</span>);
+0033 <span class="keyword">end</span>
+0034 [~, model.metComps] = ismember(model.metComps, model.comps);
+0035 [~, model.geneComps] = ismember(model.geneComps, model.comps);
+0036 [~, model.rxnComps] = ismember(model.rxnComps, model.comps);
+0037 
+0038 <span class="comment">% Fill S-matrix</span>
+0039 <span class="keyword">if</span> ~isempty(equations)
+0040     rxnIdx = cellfun(<span class="string">'isempty'</span>, equations(:,1));
+0041     equations(rxnIdx,:) = <span class="string">''</span>;
+0042     <span class="keyword">if</span> ~isempty(equations)
+0043         rxnIdx = cell2mat(equations(:,1));
+0044         [~,metIdx] = ismember(equations(:,2),model.mets);
+0045         coeffs = cell2mat(equations(:,3));
+0046         model.S=sparse(max(metIdx),max(rxnIdx));
+0047         linearIndices = sub2ind([max(metIdx), max(rxnIdx)],metIdx,rxnIdx);
+0048         model.S(linearIndices) = coeffs;
+0049     <span class="keyword">end</span>
+0050 <span class="keyword">end</span>
+0051 
+0052 <span class="comment">% Convert strings to numeric</span>
+0053 model.metCharges = str2double(model.metCharges);
+0054 model.lb = str2double(model.lb);
+0055 model.ub = str2double(model.ub);
+0056 model.rxnConfidenceScores = str2double(model.rxnConfidenceScores);
+0057 model.b = zeros(length(model.mets),1);
+0058 model.metDeltaG = str2double(model.metDeltaG);
+0059 model.rxnDeltaG = str2double(model.rxnDeltaG);
+0060 
+0061 <span class="comment">% Fill some other fields</span>
+0062 model.annotation.defaultLB = min(model.lb);
+0063 model.annotation.defaultUB = max(model.ub);
+0064 <span class="keyword">if</span> numel(model.lb)&lt;numel(model.rxns) <span class="comment">%No LB reported = min</span>
+0065     model.lb(end+1:numel(model.rxns)-numel(model.lb),1) = double(model.annotation.defaultLB);
+0066 <span class="keyword">end</span>
+0067 <span class="keyword">if</span> numel(model.ub)&lt;numel(model.rxns) <span class="comment">%No UB reported = max</span>
+0068     model.ub(end+1:numel(model.rxns)-numel(model.ub),1) = double(model.annotation.defaultUB);
+0069 <span class="keyword">end</span>
+0070 <span class="keyword">if</span> ~all(cellfun(<span class="string">'isempty'</span>,model.rev))
+0071     model.rev = str2double(model.rev);
+0072 <span class="keyword">else</span>
+0073     model.rev = [];
+0074 <span class="keyword">end</span>
+0075 <span class="keyword">if</span> numel(model.rev)&lt;numel(model.rxns) <span class="comment">%No rev reported, assume from LB and UB</span>
+0076     model.rev(end+1:numel(model.rxns)-numel(model.rev),1) = double(model.lb&lt;0 &amp; model.ub&gt;0);
+0077 <span class="keyword">end</span>
+0078 
+0079 <span class="comment">% Remove empty fields, otherwise fill to correct length</span>
+0080 <span class="comment">% Reactions</span>
+0081 <span class="keyword">for</span> i={<span class="string">'rxnNames'</span>,<span class="string">'grRules'</span>,<span class="string">'eccodes'</span>,<span class="string">'rxnNotes'</span>,<span class="string">'rxnReferences'</span>,<span class="keyword">...</span>
+0082        <span class="string">'rxnFrom'</span>,<span class="string">'subSystems'</span>,<span class="string">'rxnMiriams'</span>} <span class="comment">% Empty strings</span>
+0083    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)">emptyOrFill</a>(model,i{1},{<span class="string">''</span>},<span class="string">'rxns'</span>);
+0084 <span class="keyword">end</span>
+0085 <span class="keyword">for</span> i={<span class="string">'c'</span>} <span class="comment">% Zeros</span>
+0086    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)">emptyOrFill</a>(model,i{1},0,<span class="string">'rxns'</span>,true);
+0087 <span class="keyword">end</span>
+0088 <span class="keyword">for</span> i={<span class="string">'rxnConfidenceScores'</span>,<span class="string">'rxnDeltaG'</span>} <span class="comment">% NaNs</span>
+0089    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)">emptyOrFill</a>(model,i{1},NaN,<span class="string">'rxns'</span>);
+0090 <span class="keyword">end</span>
+0091 <span class="keyword">for</span> i={<span class="string">'rxnComps'</span>} <span class="comment">% Ones, assume first compartment</span>
+0092    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)">emptyOrFill</a>(model,i{1},1,<span class="string">'rxns'</span>);
+0093 <span class="keyword">end</span>
+0094 <span class="comment">% Metabolites</span>
+0095 <span class="keyword">for</span> i={<span class="string">'metNames'</span>,<span class="string">'inchis'</span>,<span class="string">'metFormulas'</span>,<span class="string">'metMiriams'</span>,<span class="string">'metFrom'</span>,<span class="string">'metSmiles'</span>,<span class="string">'metNotes'</span>} <span class="comment">% Empty strings</span>
+0096    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)">emptyOrFill</a>(model,i{1},{<span class="string">''</span>},<span class="string">'mets'</span>);
+0097 <span class="keyword">end</span>
+0098 <span class="keyword">for</span> i={<span class="string">'metCharges'</span>,<span class="string">'unconstrained'</span>} <span class="comment">% Zeros</span>
+0099    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)">emptyOrFill</a>(model,i{1},0,<span class="string">'mets'</span>);
+0100 <span class="keyword">end</span>
+0101 <span class="keyword">for</span> i={<span class="string">'metDeltaG'</span>} <span class="comment">% NaNs</span>
+0102     model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)">emptyOrFill</a>(model,i{1},NaN,<span class="string">'mets'</span>);
+0103  <span class="keyword">end</span>
+0104 <span class="keyword">for</span> i={<span class="string">'metComps'</span>} <span class="comment">% Ones, assume first compartment</span>
+0105    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)">emptyOrFill</a>(model,i{1},1,<span class="string">'mets'</span>);
+0106 <span class="keyword">end</span>
+0107 <span class="comment">% Genes</span>
+0108 <span class="keyword">for</span> i={<span class="string">'geneMiriams'</span>,<span class="string">'geneShortNames'</span>,<span class="string">'proteins'</span>} <span class="comment">% Empty strings</span>
+0109    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)">emptyOrFill</a>(model,i{1},{<span class="string">''</span>},<span class="string">'genes'</span>);
+0110 <span class="keyword">end</span>
+0111 <span class="keyword">for</span> i={<span class="string">'geneComps'</span>} <span class="comment">% Ones, assume first compartment</span>
+0112    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)">emptyOrFill</a>(model,i{1},1,<span class="string">'genes'</span>);
+0113 <span class="keyword">end</span>
+0114 <span class="comment">% Comps</span>
+0115 <span class="keyword">for</span> i={<span class="string">'compNames'</span>} <span class="comment">% Empty strings</span>
+0116    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)">emptyOrFill</a>(model,i{1},{<span class="string">''</span>},<span class="string">'comps'</span>);
+0117 <span class="keyword">end</span>
+0118 <span class="keyword">for</span> i={<span class="string">'compOutside'</span>} <span class="comment">% First comp</span>
+0119    model = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)">emptyOrFill</a>(model,i{1},model.comps{1},<span class="string">'comps'</span>);
+0120 <span class="keyword">end</span>
+0121 
+0122 <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
+0123 <span class="comment">% If all entries are 1x1, then flatten</span>
+0124     <span class="keyword">if</span> all(cellfun(@(x) numel(x) &lt;= 1, model.subSystems))
+0125         model.subSystems = transpose([model.subSystems{:}]);
+0126     <span class="keyword">end</span>
+0127 <span class="keyword">end</span>
+0128 
+0129 <span class="comment">% Make rxnGeneMat fields and map to the existing model.genes field</span>
+0130 <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
+0131     [genes, rxnGeneMat] = getGenesFromGrRules(model.grRules);
+0132     model.rxnGeneMat = sparse(numel(model.rxns),numel(model.genes));
+0133     [~,geneOrder] = ismember(genes,model.genes);
+0134     <span class="keyword">if</span> any(geneOrder == 0)
+0135         error([<span class="string">'The grRules includes the following gene(s), that are not in '</span><span class="keyword">...</span>
+0136             <span class="string">'the list of model genes: '</span>, genes{~geneOrder}])
+0137     <span class="keyword">end</span>
+0138     model.rxnGeneMat(:,geneOrder) = rxnGeneMat;
+0139 <span class="keyword">end</span>
+0140 
+0141 <span class="comment">% Finalize GECKO model</span>
+0142 <span class="keyword">if</span> isGECKO
+0143     <span class="comment">% Fill in empty fields and empty entries</span>
+0144     <span class="keyword">for</span> i={<span class="string">'kcat'</span>,<span class="string">'source'</span>,<span class="string">'notes'</span>,<span class="string">'eccodes'</span>} <span class="comment">% Even keep empty</span>
+0145         model.ec = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)">emptyOrFill</a>(model.ec,i{1},{<span class="string">''</span>},<span class="string">'rxns'</span>,true);
+0146     <span class="keyword">end</span>
+0147     <span class="keyword">for</span> i={<span class="string">'enzymes'</span>,<span class="string">'mw'</span>,<span class="string">'sequence'</span>}
+0148         model.ec = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)">emptyOrFill</a>(model.ec,i{1},{<span class="string">''</span>},<span class="string">'genes'</span>,true);
+0149     <span class="keyword">end</span>
+0150     model.ec = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)">emptyOrFill</a>(model.ec,<span class="string">'concs'</span>,{<span class="string">'NaN'</span>},<span class="string">'genes'</span>,true);
+0151     model.ec = <a href="#_sub1" class="code" title="subfunction model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)">emptyOrFill</a>(model.ec,<span class="string">'kcat'</span>,{<span class="string">'0'</span>},<span class="string">'genes'</span>,true);
+0152     <span class="comment">% Change string to double</span>
+0153     <span class="keyword">for</span> i={<span class="string">'kcat'</span>,<span class="string">'mw'</span>,<span class="string">'concs'</span>}
+0154         <span class="keyword">if</span> isfield(model.ec,i{1})
+0155             model.ec.(i{1}) = str2double(model.ec.(i{1}));
+0156         <span class="keyword">end</span>
+0157     <span class="keyword">end</span>
+0158     <span class="comment">% Fill rxnEnzMat</span>
+0159     <span class="keyword">if</span> ~isempty(enzStoich)
+0160         rxnIdx              = cellfun(<span class="string">'isempty'</span>, enzStoich(:,1));
+0161         enzStoich(rxnIdx,:) = <span class="string">''</span>;
+0162         <span class="keyword">if</span> ~isempty(enzStoich)
+0163             rxnIdx              = cell2mat(enzStoich(:,1));
+0164             [~,enzIdx]          = ismember(enzStoich(:,2),model.ec.enzymes);
+0165             coeffs              = cell2mat(enzStoich(:,3));
+0166             model.ec.rxnEnzMat  = zeros(numel(model.ec.rxns), numel(model.ec.genes));
+0167             linearIndices       = sub2ind([numel(model.ec.rxns), numel(model.ec.genes)], rxnIdx, enzIdx);
+0168             model.ec.rxnEnzMat(linearIndices) = coeffs;
+0169         <span class="keyword">end</span>
+0170     <span class="keyword">end</span>
+0171     <span class="comment">%Parse ec-codes (legacy multi-line eccodes path).</span>
+0172     <span class="keyword">if</span> ~isempty(ecGecko)
+0173         locs = cell2mat(ecGecko(:,1));
+0174         <span class="keyword">for</span> i=unique(locs)'
+0175             ecGeckoCat=strjoin(ecGecko(locs==i,2),<span class="string">';'</span>);
+0176             model.ec.eccodes{i,1}=ecGeckoCat;
+0177         <span class="keyword">end</span>
+0178         emptyEc=cellfun(<span class="string">'isempty'</span>,model.ec.eccodes);
+0179         model.ec.eccodes(emptyEc)={<span class="string">''</span>};
+0180     <span class="keyword">end</span>
+0181 <span class="keyword">end</span>
+0182 
+0183 <span class="keyword">if</span> verbose
+0184     fprintf(<span class="string">' Done!\n'</span>);
+0185 <span class="keyword">end</span>
+0186 <span class="keyword">end</span>
+0187 
+0188 <span class="comment">% --- Shared helpers ----------------------------------------------------</span>
+0189 
+0190 <a name="_sub1" href="#_subfunctions" class="code">function model = emptyOrFill(model,field,emptyEntry,type,keepEmpty)</a>
+0191 <span class="keyword">if</span> nargin&lt;5
+0192     keepEmpty=false;
+0193 <span class="keyword">end</span>
+0194 <span class="keyword">if</span> isnumeric(emptyEntry)
+0195     <span class="comment">%A numeric field counts as &quot;effectively empty&quot; when it has no</span>
+0196     <span class="comment">%elements at all, or when every element is NaN (matches the legacy</span>
+0197     <span class="comment">%parser, which never allocated the field in the first place if no</span>
+0198     <span class="comment">%row supplied a value).</span>
+0199     v = model.(field);
+0200     emptyCells = isempty(v) || (isnumeric(v) &amp;&amp; all(isnan(v(:))));
+0201 <span class="keyword">else</span>
+0202     emptyCells=cellfun(<span class="string">'isempty'</span>,model.(field));
+0203 <span class="keyword">end</span>
+0204 <span class="keyword">if</span> all(emptyCells) &amp;&amp; ~keepEmpty
+0205     model = rmfield(model, field);
+0206 <span class="keyword">elseif</span> numel(model.(field))&lt;numel(model.(type))
+0207     model.(field)(end+1:numel(model.(type)),1)=emptyEntry;
+0208 <span class="keyword">end</span>
+0209 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

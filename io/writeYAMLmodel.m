@@ -2,16 +2,13 @@ function writeYAMLmodel(model,fileName,preserveQuotes,sortIds)
 % writeYAMLmodel
 %   Writes a model to a YAML file.
 %
-%   The format follows the same layout used by cobrapy (the Python
-%   COBRA toolbox), so the resulting file can also be opened by
-%   cobrapy and any tool built on top of it (e.g. Escher, Memote).
-%   Enzyme-constrained extras (the `ec-rxns`, `ec-enzymes`,
-%   `gecko_light` and `metaData` sections) sit alongside the regular
-%   model content; cobrapy ignores them, while readYAMLmodel reads
-%   them back in full.
+%   The format follows the same layout used by cobrapy. Enzyme-
+%   constrained sections (ec-rxns, ec-enzymes, gecko_light and
+%   metaData) sit alongside the regular model content; cobrapy
+%   ignores them, while readYAMLmodel reads them back in full.
 %
-%   Older RAVEN YAML files (the ones with `---` / `!!omap` headers)
-%   are no longer produced, but the companion reader readYAMLmodel
+%   Older RAVEN (pre-2.12.0) YAML files (with --- / !!omap
+%   headers) are no longer produced, but readYAMLmodel
 %   still loads them, so existing files keep working.
 %
 %   model           a model structure
