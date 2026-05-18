@@ -248,12 +248,12 @@ if isfield(model,fieldName)
         end
         v = full(field(pos));
         if isnan(v)
-            %For the enzyme-specific fields (kcat, mw, concs) we write
-            %NaN explicitly as `.nan` so the value survives the round
-            %trip. For ordinary numeric fields a NaN means "no value":
-            %we skip the line and let the reader fall back to its
-            %default when loading.
-            if ismember(fieldName,{'kcat','mw','concs'})
+            %For mw/concs we write NaN explicitly as `.nan` so the value
+            %survives the round trip (NaN is their natural "no value"
+            %marker). For other numeric fields NaN just means "no
+            %value": skip the line and let the reader fall back to its
+            %default.
+            if ismember(fieldName,{'mw','concs'})
                 emitLine(fid,name,'.nan',isFirst);
             end
             return
