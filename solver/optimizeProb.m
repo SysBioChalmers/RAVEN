@@ -3,7 +3,13 @@ function res = optimizeProb(prob,params,verbose)
 %   Optimize an LP or MILP formulated in cobra terms.
 %
 %   prob	cobra style LP/MILP problem struct to be optimised
-%   params	solver specific parameters (optional)
+%   params	solver specific parameters (optional). In addition to solver
+%   		parameters, the field "maxRatio" can be set to a number > 1 to
+%   		improve numerical conditioning: before solving (LP only) any
+%   		column whose coefficients span more than maxRatio is split via
+%   		auxiliary metabolites/variables, preserving the feasible region.
+%   		See splitProbForConditioning. The field is consumed here and not
+%   		forwarded to the solver.
 %   verbose if true MILP progress is shown (optional, default true)
 %
 %   res		the output structure from the selected solver RAVENSOLVER
@@ -55,6 +61,22 @@ if milp
     defaultparams.MIPGap     = 1e-12;
     defaultparams.Seed       = 1;
 end
+
+%% Optionally improve numerical conditioning before solving. This is opt-in
+% through params.maxRatio and only applied to LPs. Columns whose coefficients
+% span more than maxRatio are split via auxiliary metabolites/variables, which
+% preserves the feasible region but reduces the spread within each column. The
+% added rows/columns are stripped from the result further down.
+condApplied = false;
+if isfield(params,'maxRatio')
+    maxRatio = params.maxRatio;
+    params   = rmfield(params,'maxRatio');
+    if ~milp && isnumeric(maxRatio) && isscalar(maxRatio) && isfinite(maxRatio) && maxRatio>1
+        [prob, condInfo] = splitProbForConditioning(prob, maxRatio);
+        condApplied = condInfo.applied;
+    end
+end
+
 res.obj=[];
 switch solver
     %% Use whatever solver is set by COBRA Toolbox changeCobraSolver
@@ -252,6 +274,17 @@ switch solver
 end
 if res.stat>0
     res.full=res.full(1:size(prob.a,2));
+end
+%Strip the auxiliary rows/columns that were added for conditioning, so that
+%the result matches the dimensions of the original problem. res.full is
+%already truncated to the original variables above (prob.a is left untouched).
+if condApplied
+    if isfield(res,'dual') && numel(res.dual)>condInfo.nOrigRows
+        res.dual=res.dual(1:condInfo.nOrigRows);
+    end
+    if isfield(res,'rcost') && numel(res.rcost)>condInfo.nOrigCols
+        res.rcost=res.rcost(1:condInfo.nOrigCols);
+    end
 end
 end
 
