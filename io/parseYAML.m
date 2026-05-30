@@ -1,5 +1,5 @@
-function out = readYAML(filename)
-% readYAML
+function out = parseYAML(filename)
+% parseYAML
 %   Read an arbitrary YAML file into a MATLAB struct / cell tree.
 %
 %   Use this for parsing arbitrary YAML configuration / data files
@@ -27,16 +27,16 @@ function out = readYAML(filename)
 %                       py.bool   -> logical
 %                       py.None   -> []
 %
-% Usage: cfg = readYAML('data/conditions/anaerobic.yml')
+% Usage: cfg = parseYAML('data/conditions/anaerobic.yml')
 
 if ~isfile(filename)
-    error('readYAML:fileNotFound', 'File not found: %s', filename);
+    error('parseYAML:fileNotFound', 'File not found: %s', filename);
 end
 
 try
     py.importlib.import_module('yaml');
 catch ME
-    error('readYAML:pyyamlMissing', ...
+    error('parseYAML:pyyamlMissing', ...
         ['pyyaml is required to read arbitrary YAML files. Install it ' ...
          'in your MATLAB-linked Python environment (`pip install pyyaml`).' ...
          '\nUnderlying error: %s'], ME.message);

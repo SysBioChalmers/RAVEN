@@ -16,7 +16,7 @@ function model = applyCondition(model, condition)
 %   Inputs:
 %       model       RAVEN model struct.
 %       condition   Either a path to a YAML condition file or a struct
-%                   already produced by readYAML. The expected schema
+%                   already produced by parseYAML. The expected schema
 %                   (all keys optional):
 %
 %                       prelude:
@@ -46,10 +46,10 @@ function model = applyCondition(model, condition)
 %       model       Modified model.
 %
 % Usage: model = applyCondition(model, 'data/conditions/anaerobic.yml')
-%        model = applyCondition(model, readYAML('data/conditions/anaerobic.yml'))
+%        model = applyCondition(model, parseYAML('data/conditions/anaerobic.yml'))
 
 if ischar(condition) || isstring(condition)
-    cond = readYAML(char(condition));
+    cond = parseYAML(char(condition));
 elseif isstruct(condition)
     cond = condition;
 else
