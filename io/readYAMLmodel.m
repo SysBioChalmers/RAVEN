@@ -110,8 +110,9 @@ for i=1:size(modelFields,1)
     model.(modelFields{i,1})=modelFields{i,2};
 end
 
-% If GECKO model
-if any(contains(line_key,'geckoLight'))
+% If GECKO model — accept both the legacy `geckoLight` (inside metaData)
+% and the cobrapy / raven_python style top-level `gecko_light` key.
+if any(contains(line_key,'geckoLight')) || any(contains(line_key,'gecko_light'))
     isGECKO=true;
     ecFields = {'geckoLight', false;...
                       'rxns', {};...
@@ -146,9 +147,10 @@ for i=1:numel(line_key)
     tline_raw = line_raw{i};
     tline_key = line_key{i};
     tline_value = line_value{i};
-    % import different sections
+    % import different sections — accept the !!omap-tagged variant as
+    % well so cobrapy / raven_python output is recognized.
     switch tline_raw
-        case '- metaData:'
+        case {'- metaData:', '- metaData: !!omap'}
             section = 1;
             if verbose
                 fprintf('\t%d\n', section);
@@ -198,6 +200,31 @@ for i=1:numel(line_key)
             continue
     end
 
+    % cobrapy-style root-level keys (id, name, version, gecko_light).
+    % Cobra writes these at the top level (no metaData section); RAVEN's
+    % own writer normally puts them inside metaData, but we accept both
+    % so a cobra-written YAML can be ingested directly.
+    if isempty(regexp(tline_raw, '^ {2,}', 'once'))
+        switch tline_key
+            case 'id'
+                if isempty(model.id), model.id = tline_value; end
+                continue
+            case 'name'
+                if isempty(model.name), model.name = tline_value; end
+                continue
+            case 'version'
+                if ~isfield(model,'version') || isempty(model.version)
+                    model.version = tline_value;
+                end
+                continue
+            case 'gecko_light'
+                if isGECKO && strcmp(tline_value,'true')
+                    model.ec.geckoLight = true;
+                end
+                continue
+        end
+    end
+
     % skip over empty keys
     if isempty(tline_raw) || (isempty(tline_key) && contains(tline_raw,'!!omap'))
         continue;
@@ -234,7 +261,7 @@ for i=1:numel(line_key)
                 model.annotation.email = tline_value;
             case 'organization'
                 model.annotation.organization = tline_value;
-            case 'geckoLight'
+            case {'geckoLight','gecko_light'}
                 if strcmp(tline_value,'true')
                     model.ec.geckoLight = true;
                 end
@@ -267,8 +294,12 @@ for i=1:numel(line_key)
                 model = readFieldValue(model, 'inchis', tline_value, pos);
                 readList=''; miriamKey='';
             case 'smiles'
+                % Top-level (legacy MATLAB) and inside-annotation
+                % (cobrapy / current writer) layouts both land here.
+                % Don't reset readList — preserves the annotation
+                % gathering state if SMILES is nested inside the
+                % annotation block alongside other entries.
                 model = readFieldValue(model, 'metSmiles', tline_value, pos);
-                readList=''; miriamKey='';    
             case 'deltaG'
                 model = readFieldValue(model, 'metDeltaG', tline_value, pos);
                 readList=''; miriamKey='';                                
@@ -309,7 +340,11 @@ for i=1:numel(line_key)
             case 'gene_reaction_rule'
                 model = readFieldValue(model, 'grRules', tline_value, pos);
                 readList=''; miriamKey='';
-            case 'rxnNotes'
+            case {'notes','rxnNotes'}
+                % `notes` is the canonical reaction-side key (matches
+                % cobrapy and raven_python); `rxnNotes` is the legacy
+                % RAVEN MATLAB key, kept here for backward-compatible
+                % reads.
                 model = readFieldValue(model, 'rxnNotes', tline_value, pos);
                 readList=''; miriamKey='';
             case 'rxnFrom'
