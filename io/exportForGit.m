@@ -72,8 +72,9 @@ model=sortIdentifiers(model);
 RAVENver = getToolboxVersion('RAVEN','ravenCobraWrapper.m',mainBranchFlag);
 if exist('initCobraToolbox.m','file')
     COBRAver = getToolboxVersion('COBRA','initCobraToolbox.m',mainBranchFlag);
+else
+    COBRAver = [];
 end
-
 %Retrieve libSBML version:
 [ravenDir,prevDir]=findRAVENroot();
 try % 5.17.0 and newer
