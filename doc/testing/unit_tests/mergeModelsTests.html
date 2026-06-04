@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of mergeModelsTests</title>
+  <meta name="keywords" content="mergeModelsTests">
+  <meta name="description" content="run this test case with the command">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">unit_tests</a> &gt; mergeModelsTests.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for testing\unit_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>mergeModelsTests
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>run this test case with the command</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function tests = mergeModelsTests </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment">run this test case with the command
+results = runtests('mergeModelsTests.m')</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function mergeModelsBasicTest(testCase)</a></li><li><a href="#_sub2" class="code">function mergeModelsKeepExistingFromTest(testCase)</a></li><li><a href="#_sub3" class="code">function mergeModelsViaCopyToCompsTest(testCase)</a></li><li><a href="#_sub4" class="code">function mergeModelsViaCopyToCompsKeepFromTest(testCase)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">%run this test case with the command</span>
+0002 <span class="comment">%results = runtests('mergeModelsTests.m')</span>
+0003 <a name="_sub0" href="#_subfunctions" class="code">function tests = mergeModelsTests</a>
+0004 tests = functiontests(localfunctions);
+0005 <span class="keyword">end</span>
+0006 
+0007 <a name="_sub1" href="#_subfunctions" class="code">function mergeModelsBasicTest(testCase)</a>
+0008 <span class="comment">%Merging plain models (without rxnFrom/metFrom/geneFrom) should create these</span>
+0009 <span class="comment">%fields and trace each reaction/metabolite/gene back to the model it came from</span>
+0010 sourceDir = fileparts(which(mfilename));
+0011 load([sourceDir,<span class="string">'/test_data/ecoli_textbook.mat'</span>], <span class="string">'model'</span>);
+0012 
+0013 modelA    = model;
+0014 modelA.id = <span class="string">'modelA'</span>;
+0015 
+0016 <span class="comment">%Make all reactions and metabolites in modelB unique so that they are all</span>
+0017 <span class="comment">%added as new entities when merging (metabolites are matched by name)</span>
+0018 modelB          = model;
+0019 modelB.id       = <span class="string">'modelB'</span>;
+0020 modelB.rxns     = strcat(modelB.rxns,<span class="string">'_B'</span>);
+0021 modelB.mets     = strcat(modelB.mets,<span class="string">'_B'</span>);
+0022 modelB.metNames = strcat(modelB.metNames,<span class="string">'_B'</span>);
+0023 
+0024 evalc(<span class="string">'modelMerged=mergeModels({modelA;modelB})'</span>);
+0025 
+0026 <span class="comment">%The From fields should exist and have the same size as their entities. Before</span>
+0027 <span class="comment">%the fix, metFrom was not extended and ended up shorter than mets</span>
+0028 verifyTrue(testCase,isfield(modelMerged,<span class="string">'rxnFrom'</span>));
+0029 verifyTrue(testCase,isfield(modelMerged,<span class="string">'metFrom'</span>));
+0030 verifyTrue(testCase,isfield(modelMerged,<span class="string">'geneFrom'</span>));
+0031 verifyEqual(testCase,numel(modelMerged.rxnFrom),numel(modelMerged.rxns));
+0032 verifyEqual(testCase,numel(modelMerged.metFrom),numel(modelMerged.mets));
+0033 verifyEqual(testCase,numel(modelMerged.geneFrom),numel(modelMerged.genes));
+0034 
+0035 <span class="comment">%Each reaction and metabolite should be traced back to its source model</span>
+0036 verifyEqual(testCase,modelMerged.rxnFrom,[repmat({<span class="string">'modelA'</span>},numel(modelA.rxns),1);repmat({<span class="string">'modelB'</span>},numel(modelB.rxns),1)]);
+0037 verifyEqual(testCase,modelMerged.metFrom,[repmat({<span class="string">'modelA'</span>},numel(modelA.mets),1);repmat({<span class="string">'modelB'</span>},numel(modelB.mets),1)]);
+0038 <span class="comment">%Genes are shared between the models, so all are traced to the first model</span>
+0039 verifyTrue(testCase,all(ismember(modelMerged.geneFrom,{<span class="string">'modelA'</span>,<span class="string">'modelB'</span>})));
+0040 <span class="keyword">end</span>
+0041 
+0042 <a name="_sub2" href="#_subfunctions" class="code">function mergeModelsKeepExistingFromTest(testCase)</a>
+0043 <span class="comment">%If the input models already have rxnFrom/metFrom/geneFrom fields, mergeModels</span>
+0044 <span class="comment">%should keep those values instead of overwriting them with the model ids</span>
+0045 sourceDir = fileparts(which(mfilename));
+0046 load([sourceDir,<span class="string">'/test_data/ecoli_textbook.mat'</span>], <span class="string">'model'</span>);
+0047 
+0048 modelA          = model;
+0049 modelA.id       = <span class="string">'modelA'</span>;
+0050 modelA.rxnFrom  = repmat({<span class="string">'origA'</span>},numel(modelA.rxns),1);
+0051 modelA.metFrom  = repmat({<span class="string">'origA'</span>},numel(modelA.mets),1);
+0052 
+0053 modelB          = model;
+0054 modelB.id       = <span class="string">'modelB'</span>;
+0055 modelB.rxns     = strcat(modelB.rxns,<span class="string">'_B'</span>);
+0056 modelB.mets     = strcat(modelB.mets,<span class="string">'_B'</span>);
+0057 modelB.metNames = strcat(modelB.metNames,<span class="string">'_B'</span>);
+0058 modelB.rxnFrom  = repmat({<span class="string">'origB'</span>},numel(modelB.rxns),1);
+0059 modelB.metFrom  = repmat({<span class="string">'origB'</span>},numel(modelB.mets),1);
+0060 
+0061 evalc(<span class="string">'modelMerged=mergeModels({modelA;modelB})'</span>);
+0062 
+0063 <span class="comment">%The pre-existing labels should be preserved, not replaced by the model ids</span>
+0064 verifyEqual(testCase,modelMerged.rxnFrom,[repmat({<span class="string">'origA'</span>},numel(modelA.rxns),1);repmat({<span class="string">'origB'</span>},numel(modelB.rxns),1)]);
+0065 verifyEqual(testCase,modelMerged.metFrom,[repmat({<span class="string">'origA'</span>},numel(modelA.mets),1);repmat({<span class="string">'origB'</span>},numel(modelB.mets),1)]);
+0066 <span class="keyword">end</span>
+0067 
+0068 <a name="_sub3" href="#_subfunctions" class="code">function mergeModelsViaCopyToCompsTest(testCase)</a>
+0069 <span class="comment">%copyToComps runs mergeModels with the copyToComps flag set. When the input</span>
+0070 <span class="comment">%model has no rxnFrom/metFrom/geneFrom fields, the output should not gain any</span>
+0071 sourceDir = fileparts(which(mfilename));
+0072 load([sourceDir,<span class="string">'/test_data/ecoli_textbook.mat'</span>], <span class="string">'model'</span>);
+0073 
+0074 evalc(<span class="string">'modelNew=copyToComps(model,{''p''},''ACKr'')'</span>);
+0075 
+0076 verifyFalse(testCase,isfield(modelNew,<span class="string">'rxnFrom'</span>));
+0077 verifyFalse(testCase,isfield(modelNew,<span class="string">'metFrom'</span>));
+0078 verifyFalse(testCase,isfield(modelNew,<span class="string">'geneFrom'</span>));
+0079 <span class="comment">%The reaction should still have been copied to the new compartment</span>
+0080 verifyTrue(testCase,ismember(<span class="string">'ACKr_p'</span>,modelNew.rxns));
+0081 <span class="keyword">end</span>
+0082 
+0083 <a name="_sub4" href="#_subfunctions" class="code">function mergeModelsViaCopyToCompsKeepFromTest(testCase)</a>
+0084 <span class="comment">%When the input model already has the From fields, copyToComps should keep</span>
+0085 <span class="comment">%them and assign empty labels ('') to the newly created reactions/metabolites</span>
+0086 sourceDir = fileparts(which(mfilename));
+0087 load([sourceDir,<span class="string">'/test_data/ecoli_textbook.mat'</span>], <span class="string">'model'</span>);
+0088 
+0089 model.rxnFrom  = repmat({<span class="string">'orig'</span>},numel(model.rxns),1);
+0090 model.metFrom  = repmat({<span class="string">'orig'</span>},numel(model.mets),1);
+0091 model.geneFrom = repmat({<span class="string">'orig'</span>},numel(model.genes),1);
+0092 
+0093 nRxns = numel(model.rxns);
+0094 nMets = numel(model.mets);
+0095 
+0096 evalc(<span class="string">'modelNew=copyToComps(model,{''p''},''ACKr'')'</span>);
+0097 
+0098 <span class="comment">%The fields should still be present and consistent in size</span>
+0099 verifyEqual(testCase,numel(modelNew.rxnFrom),numel(modelNew.rxns));
+0100 verifyEqual(testCase,numel(modelNew.metFrom),numel(modelNew.mets));
+0101 <span class="comment">%The original labels are kept, the new reactions/metabolites are labelled ''</span>
+0102 verifyEqual(testCase,modelNew.rxnFrom(1:nRxns),model.rxnFrom);
+0103 verifyEqual(testCase,modelNew.metFrom(1:nMets),model.metFrom);
+0104 verifyTrue(testCase,all(strcmp(modelNew.rxnFrom(nRxns+1:end),<span class="string">''</span>)));
+0105 verifyTrue(testCase,all(strcmp(modelNew.metFrom(nMets+1:end),<span class="string">''</span>)));
+0106 <span class="comment">%No new genes are introduced, so geneFrom is left untouched</span>
+0107 verifyEqual(testCase,modelNew.geneFrom,model.geneFrom);
+0108 <span class="keyword">end</span>
+0109</pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

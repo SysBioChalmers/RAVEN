@@ -321,7 +321,7 @@ for i=2:numel(models)
     end
     
     %Add static info on the metabolites
-    if any(hasMetFrom)
+    if any(hasMetFrom) || (~copyToComps && ~any(hasMetFrom))
         model.metFrom  = [model.metFrom;  models{i}.metFrom(metsToAdd)];
     end
     model.mets     = [model.mets;     models{i}.mets(metsToAdd)];
@@ -519,7 +519,7 @@ for i=2:numel(models)
             model.rxnGeneMat = [sparse(numel(model.rxns),numel(models{i}.genes));models{i}.rxnGeneMat];
             emptyGene        = repmat({''},numel(model.rxns),1);
             model.grRules    = [emptyGene;models{i}.grRules];
-            if any(hasGeneFrom)
+            if any(hasGeneFrom) || (~copyToComps && ~any(hasGeneFrom))
                 model.geneFrom   = models{i}.geneFrom;
             end
             
