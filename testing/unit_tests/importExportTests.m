@@ -61,13 +61,38 @@ end
 
 function testYAMLexport(testCase)
 sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
+testFile=fullfile(sourceDir,'testing','unit_tests','test_data','_test.yml');
 load(fullfile(sourceDir,'tutorial','empty.mat'), 'emptyModel');
-evalc('writeYAMLmodel(emptyModel,fullfile(sourceDir,''testing'',''unit_tests'',''test_data'',''_test.yml''))');
+evalc('writeYAMLmodel(emptyModel,testFile)');
 %File will not be exactly equal as it contains the current date and time,
-%so md5 or similar would not work. Just check whether file is reasonably
-%sized.
-s = dir(fullfile(sourceDir,'testing','unit_tests','test_data','_test.yml'));         
-filesize = s.bytes;
-verifyTrue(testCase,filesize>1290);
-delete(fullfile(sourceDir,'testing','unit_tests','test_data','_test.yml'));
+%so md5 or similar would not work. Sanity-check the size and verify the
+%output round-trips back through readYAMLmodel — that's a stronger check
+%than a byte-count threshold and isn't tied to quoting / float-format
+%decisions in the writer.
+s = dir(testFile);
+verifyTrue(testCase,s.bytes>1000);
+evalc('roundTrip=readYAMLmodel(testFile)');
+verifyEqual(testCase,numel(roundTrip.mets),numel(emptyModel.mets));
+verifyEqual(testCase,numel(roundTrip.rxns),numel(emptyModel.rxns));
+verifyEqual(testCase,roundTrip.id,emptyModel.id);
+delete(testFile);
+end
+
+function testYAMLpreShimRoundTrip(testCase)
+%Regression: the pre-shim ("legacy") RAVEN YAML format — geckoLight
+%inside metaData, top-level metabolite SMILES, rxnNotes reaction key,
+%integer bounds, double-quoted strings, --- document marker — must
+%continue to load via readYAMLmodel even after the writer was aligned
+%with cobrapy. The current empty.yml fixture is in the legacy format,
+%so we test against it directly.
+sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
+yamlFile=fullfile(sourceDir,'tutorial','empty.yml');
+evalc('model=readYAMLmodel(yamlFile)');
+verifyTrue(testCase,~isempty(model.id));
+verifyTrue(testCase,numel(model.mets)>=4);
+verifyTrue(testCase,numel(model.rxns)>=1);
+%geckoLight inside metaData populates model.ec when present.
+if isfield(model,'ec')
+    verifyClass(testCase,model.ec.geckoLight,'logical');
+end
 end
