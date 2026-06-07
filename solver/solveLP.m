@@ -15,7 +15,14 @@ function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
 %                       interpret. Note that this optimization can be very
 %                       slow
 %                 (optional, default 0)
-%   params        *obsolete option*
+%   params        solver parameters, forwarded to optimizeProb. Mostly
+%                 obsolete, but the field "maxRatio" (a number > 1) can be set
+%                 to improve numerical conditioning of ill-scaled models: any
+%                 reaction whose stoichiometric coefficients span more than
+%                 maxRatio is transiently split via auxiliary metabolites
+%                 before solving, which preserves the feasible region (and
+%                 thus the flux distribution of the original reactions). A
+%                 common value is 1e6 (optional, no splitting by default)
 %   hsSol         hot-start solution for the LP solver. This can
 %                 significantly speed up the process if many similar
 %                 optimization problems are solved iteratively. Only used
