@@ -69,7 +69,7 @@ else
 end
 
 ravenPath=findRAVENroot();
-metsFile=fullfile(ravenPath,'external','kegg','keggMets.mat');
+metsFile=fullfile(ravenPath,'reconstruction','kegg','keggMets.mat');
 if exist(metsFile, 'file')
     fprintf(['Importing KEGG metabolites from ' strrep(metsFile,'\','/') '... ']);
     load(metsFile);

@@ -70,7 +70,7 @@ function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,k
 % A line that contains only '//' separates each object.
 if nargin<1
     ravenPath=findRAVENroot();
-    metacycPath=fullfile(ravenPath,'external','metacyc');
+    metacycPath=fullfile(ravenPath,'reconstruction','metacyc');
 else
     metacycPath=char(metacycPath);
 end

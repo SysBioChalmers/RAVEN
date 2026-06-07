@@ -70,7 +70,7 @@ else
 end
 
 ravenPath=findRAVENroot();
-genesFile=fullfile(ravenPath,'external','kegg','keggGenes.mat');
+genesFile=fullfile(ravenPath,'reconstruction','kegg','keggGenes.mat');
 if ~exist(genesFile, 'file')
     try
         downloadKEGGgenes();
@@ -284,7 +284,7 @@ allKOs={};
 
 %First check if the reactions have already been parsed
 ravenPath=findRAVENroot;
-rxnsFile=fullfile(ravenPath,'external','kegg','keggRxns.mat');
+rxnsFile=fullfile(ravenPath,'reconstruction','kegg','keggRxns.mat');
 if exist(rxnsFile, 'file')
     fprintf(['NOTE: Importing KEGG ORTHOLOGY list from ' strrep(rxnsFile,'\','/') '.\n']);
     load(rxnsFile,'model');
@@ -367,7 +367,7 @@ function downloadKEGGgenes()
 releaseTag = 'v2.11.1';
 
 archiveName = 'keggGenes.zip';
-targetDir   = fullfile(findRAVENroot(),'external','kegg');
+targetDir   = fullfile(findRAVENroot(),'reconstruction','kegg');
 targetFile  = fullfile(targetDir,'keggGenes.mat');
 url         = ['https://github.com/SysBioChalmers/RAVEN/releases/download/',...
                releaseTag,'/',archiveName];

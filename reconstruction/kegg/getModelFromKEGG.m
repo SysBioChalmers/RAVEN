@@ -47,7 +47,7 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 ravenPath=findRAVENroot();
 
 if nargin<1
-    keggPath=fullfile(ravenPath,'external','kegg');
+    keggPath=fullfile(ravenPath,'reconstruction','kegg');
 else
     keggPath=char(keggPath);
 end
@@ -64,7 +64,7 @@ if nargin<5
     keepGeneral=false;
 end
 
-modelFile=fullfile(ravenPath,'external','kegg','keggModel.mat');
+modelFile=fullfile(ravenPath,'reconstruction','kegg','keggModel.mat');
 if exist(modelFile, 'file') && isNewestFile(ravenPath)
     fprintf(['Importing the global KEGG model from ' strrep(modelFile,'\','/') '... ']);
     load(modelFile);
@@ -267,10 +267,10 @@ end
 function output = isNewestFile(ravenPath)
 %The ad hoc function, which checks whether keggModel.mat is the more
 %recently modified than keggRxns.mat, keggGenes.mat and keggRxns.mat
-modelFile=fullfile(ravenPath,'external','kegg','keggModel.mat');
-rxnsFile=fullfile(ravenPath,'external','kegg','keggRxns.mat');
-genesFile=fullfile(ravenPath,'external','kegg','keggGenes.mat');
-metsFile=fullfile(ravenPath,'external','kegg','keggMets.mat');
+modelFile=fullfile(ravenPath,'reconstruction','kegg','keggModel.mat');
+rxnsFile=fullfile(ravenPath,'reconstruction','kegg','keggRxns.mat');
+genesFile=fullfile(ravenPath,'reconstruction','kegg','keggGenes.mat');
+metsFile=fullfile(ravenPath,'reconstruction','kegg','keggMets.mat');
 if (getFileTime(modelFile)>getFileTime(rxnsFile))&&...
         (getFileTime(modelFile)>getFileTime(genesFile))&&...
         (getFileTime(modelFile)>getFileTime(metsFile))

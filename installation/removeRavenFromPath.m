@@ -27,7 +27,7 @@ for i=1:numel(currPath)
     end
 end
 
-ravenPath = unique(regexprep(currPath(ravenPath),'(\\|\/)((external)|(struct_conversion)|(solver))',''));
+ravenPath = unique(regexprep(currPath(ravenPath),'(\\|\/)((reconstruction)|(conversion)|(solver))',''));
 addOnDir = contains(ravenPath,'MATLAB Add-Ons');
 if any(addOnDir)
     warning(['RAVEN is installed as MATLAB Add-On at the following directory, but MATLAB '...

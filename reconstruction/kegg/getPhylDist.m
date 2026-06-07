@@ -32,7 +32,7 @@ end
 %Check if the reactions have been parsed before and saved. If so, load the
 %model
 ravenPath=findRAVENroot();
-distFile=fullfile(ravenPath,'external','kegg','keggPhylDist.mat');
+distFile=fullfile(ravenPath,'reconstruction','kegg','keggPhylDist.mat');
 if exist(distFile, 'file')
     fprintf(['Importing the KEGG phylogenetic distance matrix from ' strrep(distFile,'\','/') '... ']);
     load(distFile);

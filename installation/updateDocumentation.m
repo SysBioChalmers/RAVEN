@@ -20,8 +20,8 @@ ravenDirs(startsWith(ravenDirs,strcat(ravenDir,filesep,'software')))=[];
 ravenDirs(startsWith(ravenDirs,strcat(ravenDir,filesep,'legacy',filesep,'software')))=[];
 
 %Remove keggModel.mat if it exists
-if exist(fullfile(ravenDir,'external','kegg','keggModel.mat'), 'file') == 2
-    delete(fullfile(ravenDir,'external','kegg','keggModel.mat'));
+if exist(fullfile(ravenDir,'reconstruction','kegg','keggModel.mat'), 'file') == 2
+    delete(fullfile(ravenDir,'reconstruction','kegg','keggModel.mat'));
 end
 
 %Remove existing "doc" directory from RAVEN
