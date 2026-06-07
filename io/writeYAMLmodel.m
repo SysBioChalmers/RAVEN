@@ -1,16 +1,24 @@
 function writeYAMLmodel(model,fileName,preserveQuotes,sortIds)
 % writeYAMLmodel
-%   Writes a yaml file matching (roughly) the cobrapy yaml structure
+%   Writes a yaml file matching cobrapy's YAML structure. The format is
+%   cobrapy's native !!omap layout, extended with RAVEN-only top-level
+%   per-entry keys (inchis, deltaG, metFrom, eccodes, rxnFrom,
+%   references, confidence_score, protein) and the GECKO ec-rxns /
+%   ec-enzymes sections. Output is byte-stable with raven_python's
+%   io.yaml.write_yaml_model when called with the same model.
 %
 %   model           a model structure
-%   fileName        name that the file will have.  A dialog window will 
+%   fileName        name that the file will have.  A dialog window will
 %                   open if no file name is specified.
-%   preserveQuotes  if quotes should be preserved for strings
-%                   (logical, default=true)
+%   preserveQuotes  if all string values should be wrapped in double
+%                   quotes. cobrapy emits quotes only where YAML
+%                   requires them, so the default is false (matches
+%                   cobrapy / raven-python).
+%                   (logical, default=false)
 %   sortIds         if metabolites, reactions, genes and compartments
 %                   should be sorted alphabetically by their identifier,
 %                   otherwise they are kept in their original order
-%                   (logical, default=false)   
+%                   (logical, default=false)
 %
 % Usage: writeYAMLmodel(model,fileName,preserveQuotes,sortIds)
 if nargin<2|| isempty(fileName)
@@ -24,7 +32,7 @@ end
 fileName=char(fileName);
 
 if nargin < 3
-    preserveQuotes = true;
+    preserveQuotes = false;
 end
 if nargin < 4
     sortIds = false;
@@ -65,29 +73,42 @@ fid = fopen(fileName,'wt');
 if fid == -1
     error(['Cannot write to ' fileName ', does the directory exist?'])
 end
-fprintf(fid,'---\n!!omap\n');
+% cobrapy emits a bare `!!omap` root with no document-start marker;
+% match that for byte-stable round-tripping.
+fprintf(fid,'!!omap\n');
 
 %Insert file header (metadata)
-writeMetadata(model,fid);
+writeMetadata(model,fid,preserveQuotes);
 
 %Metabolites:
+% Field order matches cobrapy + raven_python.io.yaml:
+%   id, name, compartment, charge, formula, notes, annotation,
+%   then RAVEN-only extras (inchis, deltaG, metFrom).
+% SMILES goes inside the annotation block (cobrapy convention), not at
+% metabolite top level — the reader still accepts top-level `smiles:`
+% for backward compatibility with older yeast-GEM files.
 fprintf(fid,'- metabolites:\n');
 for i = 1:length(model.mets)
     fprintf(fid,'    - !!omap\n');
     writeField(model, fid, 'mets',        'txt', i, '  - id',          preserveQuotes)
     writeField(model, fid, 'metNames',    'txt', i, '  - name',        preserveQuotes)
     writeField(model, fid, 'metComps',    'txt', i, '  - compartment', preserveQuotes)
-    writeField(model, fid, 'metFormulas', 'txt', i, '  - formula',     preserveQuotes)
     writeField(model, fid, 'metCharges',  'num', i, '  - charge',      preserveQuotes)
-    writeField(model, fid, 'inchis',      'txt', i, '  - inchis',      preserveQuotes)
-    writeField(model, fid, 'metSmiles',   'txt', i, '  - smiles',      preserveQuotes)
-    writeField(model, fid, 'metMiriams',  'txt', i, '  - annotation',  preserveQuotes)
-    writeField(model, fid, 'metDeltaG',   'num', i, '  - deltaG',      preserveQuotes)
+    writeField(model, fid, 'metFormulas', 'txt', i, '  - formula',     preserveQuotes)
     writeField(model, fid, 'metNotes',    'txt', i, '  - notes',       preserveQuotes)
+    writeAnnotation(model, fid, 'met',    i,      preserveQuotes)
+    writeField(model, fid, 'inchis',      'txt', i, '  - inchis',      preserveQuotes)
+    writeField(model, fid, 'metDeltaG',   'num', i, '  - deltaG',      preserveQuotes)
     writeField(model, fid, 'metFrom',     'txt', i, '  - metFrom',     preserveQuotes)
 end
 
 %Reactions:
+% Field order matches cobrapy + raven_python.io.yaml:
+%   id, name, metabolites, lower_bound, upper_bound, gene_reaction_rule,
+%   objective_coefficient, subsystem, notes, annotation,
+%   then RAVEN-only extras (eccodes, references, rxnFrom, deltaG,
+%   confidence_score). The notes key is the canonical `notes` (no
+%   longer `rxnNotes`); the reader still accepts the legacy key.
 fprintf(fid,'- reactions:\n');
 for i = 1:length(model.rxns)
     fprintf(fid,'    - !!omap\n');
@@ -97,17 +118,17 @@ for i = 1:length(model.rxns)
     writeField(model, fid, 'lb',                   'num', i, '  - lower_bound',           preserveQuotes)
     writeField(model, fid, 'ub',                   'num', i, '  - upper_bound',           preserveQuotes)
     writeField(model, fid, 'grRules',              'txt', i, '  - gene_reaction_rule',    preserveQuotes)
-    writeField(model, fid, 'rxnFrom',              'txt', i, '  - rxnFrom',               preserveQuotes)
     if model.c(i)~=0
-        writeField(model, fid, 'c',                    'num', i, '  - objective_coefficient', preserveQuotes)    
+        writeField(model, fid, 'c',                'num', i, '  - objective_coefficient', preserveQuotes)
     end
+    writeField(model, fid, 'subSystems',           'txt', i, '  - subsystem',             preserveQuotes)
+    writeField(model, fid, 'rxnNotes',             'txt', i, '  - notes',                 preserveQuotes)
+    writeField(model, fid, 'rxnMiriams',           'txt', i, '  - annotation',            preserveQuotes)
     writeField(model, fid, 'eccodes',              'txt', i, '  - eccodes',               preserveQuotes)
     writeField(model, fid, 'rxnReferences',        'txt', i, '  - references',            preserveQuotes)
-    writeField(model, fid, 'subSystems',           'txt', i, '  - subsystem',             preserveQuotes)
-    writeField(model, fid, 'rxnMiriams',           'txt', i, '  - annotation',            preserveQuotes)
+    writeField(model, fid, 'rxnFrom',              'txt', i, '  - rxnFrom',               preserveQuotes)
     writeField(model, fid, 'rxnDeltaG',            'num', i, '  - deltaG',                preserveQuotes)
     writeField(model, fid, 'rxnConfidenceScores',  'num', i, '  - confidence_score',      preserveQuotes)
-    writeField(model, fid, 'rxnNotes',             'txt', i, '  - rxnNotes',              preserveQuotes)
 end
 
 %Genes:
@@ -132,6 +153,12 @@ end
 
 %EC-model:
 if isfield(model,'ec')
+    % gecko_light flag at the top level (matches
+    % raven_python.io.yaml — keeps the metaData block a pure provenance
+    % container). The reader accepts both this key and the legacy
+    % geckoLight key inside metaData.
+    if model.ec.geckoLight; geckoLightStr = 'true'; else; geckoLightStr = 'false'; end
+    fprintf(fid,'- gecko_light: %s\n', geckoLightStr);
     fprintf(fid,'- ec-rxns:\n');
     for i = 1:length(model.ec.rxns)
         fprintf(fid,'  - !!omap\n');
@@ -219,9 +246,12 @@ if isfield(model,fieldName)
         end
         
     elseif strcmp(fieldName,'S')
-        %S: create header & write each metabolite in a new line
-        fprintf(fid,'    %s: !!omap\n',name);
+        %S: create header & write each metabolite in a new line. Reactions
+        %with no metabolites emit `metabolites: !!omap []` (the flow-style
+        %empty omap cobrapy uses) so the file remains a valid YAML 1.2
+        %document.
         if sum(field(:,pos) ~= 0) > 0
+            fprintf(fid,'    %s: !!omap\n',name);
             model.mets   = model.mets(field(:,pos) ~= 0);
             model.coeffs = field(field(:,pos) ~= 0,pos);
             %Sort metabolites:
@@ -230,6 +260,8 @@ if isfield(model,fieldName)
             for i = 1:length(model.mets)
                 writeField(model, fid, 'coeffs',  'num', i, ['      - ' model.mets{i}], preserveQuotes)
             end
+        else
+            fprintf(fid,'    %s: !!omap []\n',name);
         end
 
     elseif strcmp(fieldName,'rxnEnzMat')
@@ -249,7 +281,17 @@ if isfield(model,fieldName)
     elseif sum(strcmp({'subSystems','newMetMiriams','newRxnMiriams','newGeneMiriams','newCompMiriams','eccodes'},fieldName)) > 0
         %eccodes/rxnNotes: if 1 write in 1 line, if more create header and list
         if strcmp(fieldName,'subSystems')
-            list = field{pos};  %subSystems already comes in a cell array
+            % The reader collapses an all-singleton subSystems field to
+            % a char column; defend against that (and against length
+            % mismatches caused by partial subsystem coverage) so the
+            % writer doesn't crash on shorter-than-rxns subsystem lists.
+            if iscell(field)
+                if pos > numel(field); return; end
+                list = field{pos};
+            else
+                if pos > size(field, 1); return; end
+                list = field(pos, :);
+            end
             if isempty(list)
                 return
             end
@@ -306,14 +348,16 @@ if isfield(model,fieldName)
         %All other fields:
         if strcmp(type,'txt')
             value = field{pos};
-            if preserveQuotes && ~isempty(value)
-                value = ['"',value,'"'];
+            if ~isempty(value)
+                if preserveQuotes || needsYamlQuoting(value)
+                    value = ['"', escapeForDoubleQuoted(value), '"'];
+                end
             end
         elseif strcmp(type,'num')
             if isnan(field(pos))
                 value = [];
             else
-                value = sprintf('%.15g',full(field(pos)));
+                value = formatNumber(full(field(pos)));
             end
         end
         if ~isempty(value)
@@ -323,64 +367,185 @@ if isfield(model,fieldName)
 end
 end
 
-function writeMetadata(model,fid)
-% Writes model metadata to the yaml file. This information will eventually
-% be extracted entirely from the model, but for now, many of the entries
-% are hard-coded defaults for HumanGEM.
+function writeMetadata(model, fid, preserveQuotes)
+% Writes the metaData block. Honors preserveQuotes so the rest of the
+% file (which defaults to no surrounding quotes for cobra parity) stays
+% consistent. The `date` field is preserved when the model carries one
+% (model.date), so round-trips don't churn on every write; if absent
+% it's filled with the current date.
 
-fprintf(fid, '- metaData:\n');
-if isfield(model,'id')
-    fprintf(fid, '    id: "%s"\n',  model.id);
-else
-    fprintf(fid, '    id: "blankID"\n');
-end
-if isfield(model,'name')
-    fprintf(fid, '    name: "%s"\n',model.name);
-else
-    fprintf(fid, '    name: "blankName"\n');
-end
+fprintf(fid, '- metaData: !!omap\n');
+emitMetaField(fid, 'id',           valueOrDefault(model,'id','blankID'),    preserveQuotes);
+emitMetaField(fid, 'name',         valueOrDefault(model,'name','blankName'),preserveQuotes);
 if isfield(model,'version')
-    fprintf(fid, '    version: "%s"\n',model.version);
+    emitMetaField(fid, 'version', model.version, preserveQuotes);
 end
-fprintf(fid, '    date: "%s"\n',datestr(now,29));  % 29=YYYY-MM-DD
+if isfield(model,'date') && ~isempty(model.date)
+    dateValue = model.date;
+else
+    dateValue = datestr(now, 29); %#ok<DATST>  % 29 = yyyy-mm-dd
+end
+emitMetaField(fid, 'date', dateValue, preserveQuotes);
 if isfield(model,'annotation')
-    if isfield(model.annotation,'defaultLB')
-        fprintf(fid, '    defaultLB: "%g"\n',   model.annotation.defaultLB);
-    end
-    if isfield(model.annotation,'defaultUB')
-        fprintf(fid, '    defaultUB: "%g"\n',   model.annotation.defaultUB);
-    end
-    if isfield(model.annotation,'givenName')
-        fprintf(fid, '    givenName: "%s"\n',   model.annotation.givenName);
-    end
-    if isfield(model.annotation,'familyName')
-        fprintf(fid, '    familyName: "%s"\n',  model.annotation.familyName);
-    end
-    if isfield(model.annotation,'authors')
-        fprintf(fid, '    authors: "%s"\n',     model.annotation.authors);
-    end
-    if isfield(model.annotation,'email')
-        fprintf(fid, '    email: "%s"\n',       model.annotation.email);
-    end
-    if isfield(model.annotation,'organization')
-        fprintf(fid, '    organization: "%s"\n',model.annotation.organization);
-    end
-    if isfield(model.annotation,'taxonomy')
-        fprintf(fid, '    taxonomy: "%s"\n',    model.annotation.taxonomy);
-    end
-    if isfield(model.annotation,'note')
-        fprintf(fid, '    note: "%s"\n',        model.annotation.note);
-    end
-    if isfield(model.annotation,'sourceUrl')
-        fprintf(fid, '    sourceUrl: "%s"\n',   model.annotation.sourceUrl);
+    annoFields = {'defaultLB','defaultUB','givenName','familyName', ...
+                  'authors','email','organization','taxonomy','note','sourceUrl'};
+    for k = 1:numel(annoFields)
+        f = annoFields{k};
+        if isfield(model.annotation, f)
+            emitMetaField(fid, f, model.annotation.(f), preserveQuotes);
+        end
     end
 end
-if isfield(model,'ec')
-    if model.ec.geckoLight
-        geckoLight = 'true';
+% gecko_light is emitted at the top level (see geckoLight emission near
+% the GECKO ec-* sections) to match raven_python.io.yaml; keeping it
+% out of metaData lets cobrapy/ruamel keep the section a pure
+% provenance block.
+end
+
+function v = valueOrDefault(model, field, defaultVal)
+if isfield(model, field) && ~isempty(model.(field))
+    v = model.(field);
+else
+    v = defaultVal;
+end
+end
+
+function emitMetaField(fid, key, value, preserveQuotes)
+% Emit one `  - key: value` line inside the metaData omap block.
+if islogical(value)
+    if value; value = 'true'; else; value = 'false'; end
+end
+if isnumeric(value)
+    value = formatNumber(double(value));
+elseif ~ischar(value) && ~isstring(value)
+    value = char(value);
+end
+if preserveQuotes
+    fprintf(fid, '  - %s: "%s"\n', key, value);
+else
+    fprintf(fid, '  - %s: %s\n', key, value);
+end
+end
+
+function tf = needsYamlQuoting(s)
+% A defensive subset of when a plain (unquoted) YAML scalar would be
+% misparsed: leading YAML indicator chars, or any character that
+% triggers flow-style collection / mapping parsing. Matches what
+% ruamel.yaml's "round-trip" emitter quotes automatically.
+if isempty(s)
+    tf = false;
+    return;
+end
+% Leading-character cases that turn into a flow indicator / tag / etc.
+first = s(1);
+if any(first == '[]{},&*!|>%@`#')
+    tf = true; return;
+end
+if first == '-' || first == '?' || first == ':'
+    tf = true; return;
+end
+% In-string cases: ': ' (key/value confusion), ' #' (comment), any flow
+% bracket, leading or trailing whitespace, or anything outside ASCII
+% printable.
+if contains(s, ': ') || contains(s, ' #') || any(ismember(s, '[]{},'))
+    tf = true; return;
+end
+if ~strcmp(strip(string(s)), string(s))
+    tf = true; return;
+end
+% YAML reserves certain tokens (true, false, null, …) as bare scalars
+% reading as booleans / nulls. Quote when the entire value matches.
+if any(strcmpi(s, {'true','false','null','yes','no','on','off','~'}))
+    tf = true; return;
+end
+tf = false;
+end
+
+function out = escapeForDoubleQuoted(s)
+% Escape backslashes and double quotes for emission inside YAML's
+% double-quoted style. Conservative — full YAML escapes (Unicode etc.)
+% are out of scope for the strings model curators normally use.
+out = strrep(s, '\', '\\');
+out = strrep(out, '"', '\"');
+end
+
+function s = formatNumber(x)
+% Format a finite number the way cobrapy / Python's float repr would —
+% so whole-number floats round-trip as "1000.0", not "1000". Matches the
+% ruamel.yaml output used by raven_python.io.yaml.write_yaml_model.
+if isinf(x)
+    if x > 0
+        s = '.inf';
     else
-        geckoLight = 'false';
+        s = '-.inf';
     end
-    fprintf(fid,'    geckoLight: "%s"\n',geckoLight);
+    return;
+end
+if x == floor(x) && abs(x) < 1e16
+    s = sprintf('%.1f', x);   % e.g. 1000 -> "1000.0"
+else
+    s = sprintf('%.15g', x);
+end
+end
+
+function writeAnnotation(model, fid, kind, pos, preserveQuotes)
+% Emit the per-entry `annotation` block, fusing MIRIAM cross-references
+% with non-MIRIAM cobrapy-style annotation keys (currently: SMILES for
+% metabolites). cobrapy expects SMILES inside `annotation.smiles`, not
+% as a top-level metabolite key; this helper keeps the YAML aligned.
+switch kind
+    case 'met'
+        miriamsField  = 'metMiriams';
+        extraName     = 'smiles';
+        extraField    = 'metSmiles';
+    otherwise
+        error('writeAnnotation:unsupportedKind', 'Unsupported kind: %s', kind);
+end
+
+hasMiriams = isfield(model, miriamsField) && ~isempty(model.(miriamsField){pos});
+hasExtra   = isfield(model, extraField)   && ~isempty(model.(extraField){pos});
+
+if ~hasMiriams && ~hasExtra
+    return;
+end
+
+fprintf(fid, '      - annotation: !!omap\n');
+if hasMiriams
+    % Re-use the writeField MIRIAM path but suppress the block header
+    % it would emit (we already wrote it above). Tap into the same
+    % extractMiriam intermediate via a flat fprintf loop.
+    miriamNames  = model.newMetMiriamNames;
+    miriamValues = model.newMetMiriams;
+    for j = 1:size(miriamValues, 2)
+        v = miriamValues{pos, j};
+        if isempty(v); continue; end
+        list = strsplit(strrep(v, ' ', ''), ';');
+        list = strip(list);
+        if numel(list) == 1
+            valueOut = quoteIfNeeded(list{1}, preserveQuotes);
+            fprintf(fid, '          - %s: %s\n', miriamNames{j}, valueOut);
+        else
+            fprintf(fid, '          - %s:\n', miriamNames{j});
+            for k = 1:numel(list)
+                fprintf(fid, '              - %s\n', ...
+                    quoteIfNeeded(list{k}, preserveQuotes));
+            end
+        end
+    end
+end
+if hasExtra
+    extraVal = quoteIfNeeded(model.(extraField){pos}, preserveQuotes);
+    fprintf(fid, '          - %s: %s\n', extraName, extraVal);
+end
+end
+
+function out = quoteIfNeeded(value, preserveQuotes)
+% Quote a YAML scalar exactly when the surrounding writer would have
+% lost it as a flow sequence / boolean / null otherwise. Conservative
+% wrapper around needsYamlQuoting that respects preserveQuotes=true.
+if preserveQuotes || needsYamlQuoting(value)
+    out = ['"', escapeForDoubleQuoted(value), '"'];
+else
+    out = value;
 end
 end
