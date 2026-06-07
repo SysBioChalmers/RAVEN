@@ -100,9 +100,9 @@ ravenPath=findRAVENroot();
 %Generate blast strcture by either DIAMOND or BLASTP
 if isempty(metacycBlastStruct)
     if useDiamond
-        blastStruc=getDiamond(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'external','metacyc','protseq.fsa'));
+        blastStruc=getDiamond(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'reconstruction','metacyc','protseq.fsa'));
     else
-        blastStruc=getBlast(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'external','metacyc','protseq.fsa'));
+        blastStruc=getBlast(organismID,fastaFile,{'MetaCyc'},fullfile(ravenPath,'reconstruction','metacyc','protseq.fsa'));
     end
     %Only look the query
     blastStructure=blastStruc(2);

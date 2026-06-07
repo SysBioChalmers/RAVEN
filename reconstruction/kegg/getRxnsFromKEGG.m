@@ -71,14 +71,14 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 ravenPath=findRAVENroot();
 
 if nargin<1
-    keggPath=fullfile(ravenPath,'external','kegg');
+    keggPath=fullfile(ravenPath,'reconstruction','kegg');
 else
     keggPath=char(keggPath);
 end
 
 %Check if the reactions have been parsed before and saved. If so, load the
 %model
-rxnsFile=fullfile(ravenPath,'external','kegg','keggRxns.mat');
+rxnsFile=fullfile(ravenPath,'reconstruction','kegg','keggRxns.mat');
 if exist(rxnsFile, 'file')
     fprintf(['Importing KEGG reactions from ' strrep(rxnsFile,'\','/') '... ']);
     load(rxnsFile);

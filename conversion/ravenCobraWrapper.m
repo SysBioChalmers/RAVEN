@@ -38,7 +38,7 @@ end
 ravenPath=findRAVENroot();
 
 % Load COBRA field information
-fid             = fopen(fullfile(ravenPath,'struct_conversion','COBRA_structure_fields.csv')); % Taken from https://github.com/opencobra/cobratoolbox/blob/develop/src/base/io/definitions/COBRA_structure_fields.csv
+fid             = fopen(fullfile(ravenPath,'conversion','COBRA_structure_fields.csv')); % Taken from https://github.com/opencobra/cobratoolbox/blob/develop/src/base/io/definitions/COBRA_structure_fields.csv
 fieldFile       = textscan(fid,repmat('%s',1,15),'Delimiter','\t','HeaderLines',1);
 dbFields        = ~cellfun(@isempty,fieldFile{5}); % Only keep fields with database annotations that should be translated to xxxMiriams
 dbFields        = dbFields & ~contains(fieldFile{1},{'metInChIString','metKEGGID','metPubChemID','rxnECNumbers'});
@@ -48,7 +48,7 @@ COBRAfields     = fieldFile{1}(dbFields);
 fclose(fid);
 
 % Load conversion between additional COBRA fields and namespaces:
-fid             = fopen(fullfile(ravenPath,'struct_conversion','cobraNamespaces.csv'));
+fid             = fopen(fullfile(ravenPath,'conversion','cobraNamespaces.csv'));
 fieldFile       = textscan(fid,'%s %s','Delimiter',',','HeaderLines',0);
 COBRAfields     = [COBRAfields; fieldFile{1}];
 COBRAnamespace  = [COBRAnamespace; fieldFile{2}];

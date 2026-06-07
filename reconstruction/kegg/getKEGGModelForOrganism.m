@@ -440,7 +440,7 @@ end
 %First remove all reactions without genes
 if keepSpontaneous==true
     fprintf('Removing non-spontaneous reactions without GPR rules... ');
-    load(fullfile(ravenPath,'external','kegg','keggRxns.mat'),'isSpontaneous');
+    load(fullfile(ravenPath,'reconstruction','kegg','keggRxns.mat'),'isSpontaneous');
     I=~any(model.rxnGeneMat,2)&~ismember(model.rxns,isSpontaneous);
     spontRxnsWithGenes=model.rxns(any(model.rxnGeneMat,2)&~ismember(model.rxns,isSpontaneous));
 else

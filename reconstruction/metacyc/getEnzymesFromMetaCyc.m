@@ -60,7 +60,7 @@ function metaCycEnzymes=getEnzymesFromMetaCyc(metacycPath)
 
 if nargin<1
     ravenPath=findRAVENroot();
-    metacycPath=fullfile(ravenPath,'external','metacyc');
+    metacycPath=fullfile(ravenPath,'reconstruction','metacyc');
 else
     metacycPath=char(metacycPath);
 end
