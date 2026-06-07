@@ -369,6 +369,19 @@ for i=1:numel(line_key)
                     eccodes(ecCodeNo,1:2)={pos,tline_value};
                     ecCodeNo=ecCodeNo+1;
                 end
+            case 'ec-code'
+                % EC numbers emitted inside the cobra `annotation` block
+                % (current writer). Captured into model.eccodes the same
+                % way metabolite `smiles` is pulled out of the annotation
+                % block; the legacy top-level `eccodes` key above is still
+                % accepted for older files. A block list of codes follows
+                % when the value is empty (read via readList='eccodes').
+                if isempty(tline_value)
+                    readList = 'eccodes';
+                else
+                    eccodes(ecCodeNo,1:2)={pos,tline_value};
+                    ecCodeNo=ecCodeNo+1;
+                end
             case 'subsystem'
                 if isempty(tline_value)
                     readList = 'subsystem';

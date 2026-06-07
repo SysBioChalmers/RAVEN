@@ -2,9 +2,11 @@ function writeYAMLmodel(model,fileName,preserveQuotes,sortIds)
 % writeYAMLmodel
 %   Writes a yaml file matching cobrapy's YAML structure. The format is
 %   cobrapy's native !!omap layout, extended with RAVEN-only top-level
-%   per-entry keys (inchis, deltaG, metFrom, eccodes, rxnFrom,
-%   references, confidence_score, protein) and the GECKO ec-rxns /
-%   ec-enzymes sections. Output is byte-stable with raven_python's
+%   per-entry keys (inchis, deltaG, metFrom, rxnFrom, references,
+%   confidence_score, protein) and the GECKO ec-rxns / ec-enzymes
+%   sections. Reaction EC numbers are written inside the `annotation`
+%   block as `ec-code` (the cobrapy/geckopy convention), not as a
+%   top-level reaction key. Output is byte-stable with raven_python's
 %   io.yaml.write_yaml_model when called with the same model.
 %
 %   model           a model structure
@@ -105,8 +107,9 @@ end
 %Reactions:
 % Field order matches cobrapy + raven_python.io.yaml:
 %   id, name, metabolites, lower_bound, upper_bound, gene_reaction_rule,
-%   objective_coefficient, subsystem, notes, annotation,
-%   then RAVEN-only extras (eccodes, references, rxnFrom, deltaG,
+%   objective_coefficient, subsystem, notes, annotation (which carries
+%   the EC numbers under `ec-code`, the cobrapy/geckopy convention),
+%   then RAVEN-only extras (references, rxnFrom, deltaG,
 %   confidence_score). The notes key is the canonical `notes` (no
 %   longer `rxnNotes`); the reader still accepts the legacy key.
 fprintf(fid,'- reactions:\n');
@@ -123,8 +126,7 @@ for i = 1:length(model.rxns)
     end
     writeField(model, fid, 'subSystems',           'txt', i, '  - subsystem',             preserveQuotes)
     writeField(model, fid, 'rxnNotes',             'txt', i, '  - notes',                 preserveQuotes)
-    writeField(model, fid, 'rxnMiriams',           'txt', i, '  - annotation',            preserveQuotes)
-    writeField(model, fid, 'eccodes',              'txt', i, '  - eccodes',               preserveQuotes)
+    writeAnnotation(model, fid, 'rxn',             i,                                     preserveQuotes)
     writeField(model, fid, 'rxnReferences',        'txt', i, '  - references',            preserveQuotes)
     writeField(model, fid, 'rxnFrom',              'txt', i, '  - rxnFrom',               preserveQuotes)
     writeField(model, fid, 'rxnDeltaG',            'num', i, '  - deltaG',                preserveQuotes)
@@ -490,20 +492,34 @@ end
 
 function writeAnnotation(model, fid, kind, pos, preserveQuotes)
 % Emit the per-entry `annotation` block, fusing MIRIAM cross-references
-% with non-MIRIAM cobrapy-style annotation keys (currently: SMILES for
-% metabolites). cobrapy expects SMILES inside `annotation.smiles`, not
-% as a top-level metabolite key; this helper keeps the YAML aligned.
+% with the non-MIRIAM cobrapy-style annotation keys: `smiles` for
+% metabolites and `ec-code` (EC numbers) for reactions. cobrapy and
+% geckopy read both from inside `annotation` (not as top-level entry
+% keys), so this helper keeps the YAML aligned. `ec-code` is emitted as a
+% list — matching cobrapy / raven-python and geckopy, which read it as
+% list[str] — even when there is a single code.
 switch kind
     case 'met'
-        miriamsField  = 'metMiriams';
-        extraName     = 'smiles';
-        extraField    = 'metSmiles';
+        miriamsField     = 'metMiriams';
+        miriamNamesField = 'newMetMiriamNames';
+        miriamValsField  = 'newMetMiriams';
+        extraName        = 'smiles';
+        extraField       = 'metSmiles';
+        extraIsList      = false;
+    case 'rxn'
+        miriamsField     = 'rxnMiriams';
+        miriamNamesField = 'newRxnMiriamNames';
+        miriamValsField  = 'newRxnMiriams';
+        extraName        = 'ec-code';
+        extraField       = 'eccodes';
+        extraIsList      = true;
     otherwise
         error('writeAnnotation:unsupportedKind', 'Unsupported kind: %s', kind);
 end
 
 hasMiriams = isfield(model, miriamsField) && ~isempty(model.(miriamsField){pos});
-hasExtra   = isfield(model, extraField)   && ~isempty(model.(extraField){pos});
+hasExtra   = isfield(model, extraField) && pos <= numel(model.(extraField)) ...
+             && ~isempty(model.(extraField){pos});
 
 if ~hasMiriams && ~hasExtra
     return;
@@ -511,19 +527,17 @@ end
 
 fprintf(fid, '      - annotation: !!omap\n');
 if hasMiriams
-    % Re-use the writeField MIRIAM path but suppress the block header
-    % it would emit (we already wrote it above). Tap into the same
-    % extractMiriam intermediate via a flat fprintf loop.
-    miriamNames  = model.newMetMiriamNames;
-    miriamValues = model.newMetMiriams;
+    % Flat fprintf over the extractMiriam intermediate (the block header
+    % is already written above).
+    miriamNames  = model.(miriamNamesField);
+    miriamValues = model.(miriamValsField);
     for j = 1:size(miriamValues, 2)
         v = miriamValues{pos, j};
         if isempty(v); continue; end
-        list = strsplit(strrep(v, ' ', ''), ';');
-        list = strip(list);
+        list = strip(strsplit(strrep(v, ' ', ''), ';'));
         if numel(list) == 1
-            valueOut = quoteIfNeeded(list{1}, preserveQuotes);
-            fprintf(fid, '          - %s: %s\n', miriamNames{j}, valueOut);
+            fprintf(fid, '          - %s: %s\n', miriamNames{j}, ...
+                quoteIfNeeded(list{1}, preserveQuotes));
         else
             fprintf(fid, '          - %s:\n', miriamNames{j});
             for k = 1:numel(list)
@@ -534,8 +548,22 @@ if hasMiriams
     end
 end
 if hasExtra
-    extraVal = quoteIfNeeded(model.(extraField){pos}, preserveQuotes);
-    fprintf(fid, '          - %s: %s\n', extraName, extraVal);
+    if extraIsList
+        % EC numbers: a ;-joined string -> a block list under `ec-code`
+        % (always a list, matching cobrapy/raven-python/geckopy).
+        codes = strip(strsplit(strrep(model.(extraField){pos}, ' ', ''), ';'));
+        codes = codes(~cellfun('isempty', codes));
+        if ~isempty(codes)
+            fprintf(fid, '          - %s:\n', extraName);
+            for k = 1:numel(codes)
+                fprintf(fid, '              - %s\n', ...
+                    quoteIfNeeded(codes{k}, preserveQuotes));
+            end
+        end
+    else
+        fprintf(fid, '          - %s: %s\n', extraName, ...
+            quoteIfNeeded(model.(extraField){pos}, preserveQuotes));
+    end
 end
 end
 
