@@ -207,6 +207,7 @@ params.intTol = 10^-9; %experment with this value
 params.TimeLimit = 300;
 params.Seed = 26;%This is weird - although it says "optimal solution found", we can get different results with different
                  %values of the objective function, where one is more optimal than the other (pretty big difference...)
+params.Threads = 1; %single-threaded Gurobi MILP for determinism, see issue #607
 %params.CSClientLog = 3;%generates a warning in gurobi, but may be of interest for other solvers
 
 % Optimize the problem

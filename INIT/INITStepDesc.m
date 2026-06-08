@@ -24,7 +24,9 @@ classdef INITStepDesc
                    %      .mets        Names of metabolites to remove
                    %      .compsToKeep Compartments for which metabolites should be kept.
       MILPParams %Cell array of MILPparams - dictates how many iterations that will be run in this step.
-                 %Typically, MIPGap and TimeLimit is specified
+                 %Typically, MIPGap and TimeLimit is specified. ftINIT additionally
+                 %defaults Threads to 1 (single-threaded Gurobi) for determinism;
+                 %set Threads here to override (0 = use all cores).
       AbsMIPGaps %If the objective is close to zero, a percentage of that is very small. 
                  %Therefore, also set an absolut value for this (typically 10 or 20). 
                  %For practical reasons, the first number is not used
