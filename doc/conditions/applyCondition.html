@@ -1,0 +1,246 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of applyCondition</title>
+  <meta name="keywords" content="applyCondition">
+  <meta name="description" content="applyCondition  Apply a deterministic condition to a model.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">conditions</a> &gt; applyCondition.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for conditions&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>applyCondition
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>applyCondition  Apply a deterministic condition to a model.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function model = applyCondition(model, condition) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> applyCondition  Apply a deterministic condition to a model.
+
+ Apply a deterministic &quot;condition&quot; to a model: a prelude that resets
+ exchange bounds, optional metabolite removals + automatic charge
+ rebalancing of a pseudoreaction, optional biomass-stoichiometry delta,
+ and a per-reaction bounds diff. The schema is intentionally narrow so a
+ condition can be reviewed as data.
+
+ Yeast-GEM was the first consumer; the same schema works for any GEM that
+ keeps its condition presets as data rather than as code.
+ Project-specific extensions (e.g. yeast-GEM's amino_acid_ratio step that
+ rewrites a protein pseudoreaction's stoichiometry from a side-car TSV)
+ are handled by the caller before / after this function — kept
+ upstream-narrow on purpose.
+
+ Parameters
+ ----------
+ model : struct
+     RAVEN model struct.
+ condition : char or struct
+     Either a path to a YAML condition file or a struct already produced
+     by parseYAML. The expected schema (all keys optional):
+
+         prelude:
+           reset_exchanges: out      % truthy -&gt; reset all
+
+         cofactor_pseudoreaction:
+           rxn_id: r_4598
+           remove_mets:
+             - { met: s_3714 }
+           charge_balance_met: s_0794
+
+         biomass_stoichiometry_delta:
+           rxn_id: r_4041
+           add:
+             - { met: s_0689, coef:  0.08 }
+             - { met: s_0687, coef: -0.08 }
+             - { met: s_0794, coef: -0.16 }
+
+         bounds:
+           - { rxn: r_1654, lb: -1000 }
+           - { rxn: r_1992, lb: 0 }
+           - { rxn: r_1663, lb: 0, ub: 0 }
+
+         expected_uptake_count: 15
+
+ Returns
+ -------
+ model : struct
+     Modified model.
+
+ Examples
+ --------
+     model = applyCondition(model, 'data/conditions/anaerobic.yml');
+     model = applyCondition(model, parseYAML('data/conditions/anaerobic.yml'));
+
+ See also
+ --------
+ parseYAML</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function model = applyCondition(model, condition)</a>
+0002 <span class="comment">% applyCondition  Apply a deterministic condition to a model.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Apply a deterministic &quot;condition&quot; to a model: a prelude that resets</span>
+0005 <span class="comment">% exchange bounds, optional metabolite removals + automatic charge</span>
+0006 <span class="comment">% rebalancing of a pseudoreaction, optional biomass-stoichiometry delta,</span>
+0007 <span class="comment">% and a per-reaction bounds diff. The schema is intentionally narrow so a</span>
+0008 <span class="comment">% condition can be reviewed as data.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% Yeast-GEM was the first consumer; the same schema works for any GEM that</span>
+0011 <span class="comment">% keeps its condition presets as data rather than as code.</span>
+0012 <span class="comment">% Project-specific extensions (e.g. yeast-GEM's amino_acid_ratio step that</span>
+0013 <span class="comment">% rewrites a protein pseudoreaction's stoichiometry from a side-car TSV)</span>
+0014 <span class="comment">% are handled by the caller before / after this function — kept</span>
+0015 <span class="comment">% upstream-narrow on purpose.</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% Parameters</span>
+0018 <span class="comment">% ----------</span>
+0019 <span class="comment">% model : struct</span>
+0020 <span class="comment">%     RAVEN model struct.</span>
+0021 <span class="comment">% condition : char or struct</span>
+0022 <span class="comment">%     Either a path to a YAML condition file or a struct already produced</span>
+0023 <span class="comment">%     by parseYAML. The expected schema (all keys optional):</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">%         prelude:</span>
+0026 <span class="comment">%           reset_exchanges: out      % truthy -&gt; reset all</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">%         cofactor_pseudoreaction:</span>
+0029 <span class="comment">%           rxn_id: r_4598</span>
+0030 <span class="comment">%           remove_mets:</span>
+0031 <span class="comment">%             - { met: s_3714 }</span>
+0032 <span class="comment">%           charge_balance_met: s_0794</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">%         biomass_stoichiometry_delta:</span>
+0035 <span class="comment">%           rxn_id: r_4041</span>
+0036 <span class="comment">%           add:</span>
+0037 <span class="comment">%             - { met: s_0689, coef:  0.08 }</span>
+0038 <span class="comment">%             - { met: s_0687, coef: -0.08 }</span>
+0039 <span class="comment">%             - { met: s_0794, coef: -0.16 }</span>
+0040 <span class="comment">%</span>
+0041 <span class="comment">%         bounds:</span>
+0042 <span class="comment">%           - { rxn: r_1654, lb: -1000 }</span>
+0043 <span class="comment">%           - { rxn: r_1992, lb: 0 }</span>
+0044 <span class="comment">%           - { rxn: r_1663, lb: 0, ub: 0 }</span>
+0045 <span class="comment">%</span>
+0046 <span class="comment">%         expected_uptake_count: 15</span>
+0047 <span class="comment">%</span>
+0048 <span class="comment">% Returns</span>
+0049 <span class="comment">% -------</span>
+0050 <span class="comment">% model : struct</span>
+0051 <span class="comment">%     Modified model.</span>
+0052 <span class="comment">%</span>
+0053 <span class="comment">% Examples</span>
+0054 <span class="comment">% --------</span>
+0055 <span class="comment">%     model = applyCondition(model, 'data/conditions/anaerobic.yml');</span>
+0056 <span class="comment">%     model = applyCondition(model, parseYAML('data/conditions/anaerobic.yml'));</span>
+0057 <span class="comment">%</span>
+0058 <span class="comment">% See also</span>
+0059 <span class="comment">% --------</span>
+0060 <span class="comment">% parseYAML</span>
+0061 
+0062 <span class="keyword">if</span> ischar(condition) || isstring(condition)
+0063     cond = parseYAML(char(condition));
+0064 <span class="keyword">elseif</span> isstruct(condition)
+0065     cond = condition;
+0066 <span class="keyword">else</span>
+0067     error(<span class="string">'applyCondition:invalidCondition'</span>, <span class="keyword">...</span>
+0068         <span class="string">'condition must be a YAML file path or a struct.'</span>);
+0069 <span class="keyword">end</span>
+0070 
+0071 <span class="comment">% --- Step 1: prelude ---------------------------------------------------</span>
+0072 <span class="keyword">if</span> isfield(cond, <span class="string">'prelude'</span>) &amp;&amp; isfield(cond.prelude, <span class="string">'reset_exchanges'</span>)
+0073     [~, exchangeRxns] = getExchangeRxns(model, cond.prelude.reset_exchanges);
+0074     model.lb(exchangeRxns) = 0;
+0075     model.ub(exchangeRxns) = 1000;
+0076 <span class="keyword">end</span>
+0077 
+0078 <span class="comment">% --- Step 2: cofactor pseudoreaction edits ----------------------------</span>
+0079 <span class="keyword">if</span> isfield(cond, <span class="string">'cofactor_pseudoreaction'</span>)
+0080     cp = cond.cofactor_pseudoreaction;
+0081     cofacIdx = getIndexes(model, cp.rxn_id, <span class="string">'rxns'</span>);
+0082     <span class="keyword">if</span> isfield(cp, <span class="string">'remove_mets'</span>)
+0083         <span class="keyword">for</span> i = 1:numel(cp.remove_mets)
+0084             metIdx = getIndexes(model, cp.remove_mets{i}.met, <span class="string">'mets'</span>);
+0085             model.S(metIdx, cofacIdx) = 0;
+0086         <span class="keyword">end</span>
+0087     <span class="keyword">end</span>
+0088     <span class="keyword">if</span> isfield(cp, <span class="string">'charge_balance_met'</span>)
+0089         balanceIdx = find(strcmp(model.mets, cp.charge_balance_met));
+0090         model.S(balanceIdx, cofacIdx) = 0;
+0091         model.S(balanceIdx, cofacIdx) = <span class="keyword">...</span>
+0092             -sum(model.S(:, cofacIdx) .* model.metCharges, <span class="string">'omitnan'</span>);
+0093     <span class="keyword">end</span>
+0094 <span class="keyword">end</span>
+0095 
+0096 <span class="comment">% --- Step 3: biomass stoichiometry delta ------------------------------</span>
+0097 <span class="keyword">if</span> isfield(cond, <span class="string">'biomass_stoichiometry_delta'</span>)
+0098     delta = cond.biomass_stoichiometry_delta;
+0099     bioIdx = getIndexes(model, delta.rxn_id, <span class="string">'rxns'</span>);
+0100     <span class="keyword">if</span> isfield(delta, <span class="string">'add'</span>)
+0101         <span class="keyword">for</span> i = 1:numel(delta.add)
+0102             entry = delta.add{i};
+0103             metIdx = getIndexes(model, entry.met, <span class="string">'mets'</span>);
+0104             model.S(metIdx, bioIdx) = full(model.S(metIdx, bioIdx)) + entry.coef;
+0105         <span class="keyword">end</span>
+0106     <span class="keyword">end</span>
+0107 <span class="keyword">end</span>
+0108 
+0109 <span class="comment">% --- Step 4: bounds ---------------------------------------------------</span>
+0110 nUptake = 0;
+0111 <span class="keyword">if</span> isfield(cond, <span class="string">'bounds'</span>)
+0112     <span class="keyword">for</span> i = 1:numel(cond.bounds)
+0113         b = cond.bounds{i};
+0114         rxnIdx = find(strcmp(model.rxns, b.rxn));
+0115         <span class="keyword">if</span> isempty(rxnIdx)
+0116             warning(<span class="string">'applyCondition:missingRxn'</span>, <span class="keyword">...</span>
+0117                 <span class="string">'Reaction %s not found in model; skipping.'</span>, b.rxn);
+0118             <span class="keyword">continue</span>;
+0119         <span class="keyword">end</span>
+0120         <span class="keyword">if</span> isfield(b, <span class="string">'lb'</span>)
+0121             model.lb(rxnIdx) = b.lb;
+0122             <span class="keyword">if</span> b.lb == -1000
+0123                 nUptake = nUptake + 1;
+0124             <span class="keyword">end</span>
+0125         <span class="keyword">end</span>
+0126         <span class="keyword">if</span> isfield(b, <span class="string">'ub'</span>)
+0127             model.ub(rxnIdx) = b.ub;
+0128         <span class="keyword">end</span>
+0129     <span class="keyword">end</span>
+0130 <span class="keyword">end</span>
+0131 
+0132 <span class="comment">% --- Step 5: uptake sanity check --------------------------------------</span>
+0133 <span class="keyword">if</span> isfield(cond, <span class="string">'expected_uptake_count'</span>)
+0134     <span class="keyword">if</span> nUptake ~= cond.expected_uptake_count
+0135         warning(<span class="string">'applyCondition:uptakeCountMismatch'</span>, <span class="keyword">...</span>
+0136             <span class="string">'Expected %d uptake reactions, applied %d. Some may be missing from the model.'</span>, <span class="keyword">...</span>
+0137             cond.expected_uptake_count, nUptake);
+0138     <span class="keyword">end</span>
+0139 <span class="keyword">end</span>
+0140 
+0141 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

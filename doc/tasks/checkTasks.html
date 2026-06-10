@@ -1,0 +1,361 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of checkTasks</title>
+  <meta name="keywords" content="checkTasks">
+  <meta name="description" content="checkTasks  Perform a set of simulations as defined in a task file.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">tasks</a> &gt; checkTasks.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for tasks&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>checkTasks
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>checkTasks  Perform a set of simulations as defined in a task file.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> checkTasks  Perform a set of simulations as defined in a task file.
+
+ This function is used for defining a set of tasks for a model to perform.
+ The tasks are defined by defining constraints on the model, and if the
+ problem is feasible, then the task is considered successful. In general,
+ each row can contain one constraint on uptakes, one constraint on outputs,
+ one new equation, and one change of reaction bounds. If more bounds are
+ needed to define the task, then several rows can be used for each task.
+
+ Parameters
+ ----------
+ model : struct
+     a model structure.
+ inputFile : char
+     a task list in Excel format. See the function parseTaskList for
+     details (optional if taskStructure is supplied).
+ printOutput : logical, optional
+     true if the results of the test should be displayed (default true).
+ printOnlyFailed : logical, optional
+     true if only tasks that failed should be displayed (default false).
+ getEssential : logical, optional
+     true if the essential reactions should be calculated for all the
+     tasks. This option is used with runINIT (default false).
+ taskStructure : struct, optional
+     structure with the tasks, as from parseTaskList. If this is supplied
+     then inputFile is ignored.
+
+ Returns
+ -------
+ taskReport : struct
+     structure with the results, with fields:
+
+     - id : cell array with the id of the task
+     - description : cell array with the description of the task
+     - ok : boolean array with true if the task was successful
+ essentialRxns : logical
+     MxN matrix with the essential reactions (M) for each task (N). An
+     element is true if the corresponding reaction is essential in the
+     corresponding task. Failed tasks and SHOULD FAIL tasks are ignored.
+     This is used by the INIT algorithm (if tasks are supplied). If
+     getEssential=false then essentialRxns=false(nRxns,nTasks).
+ taskStructure : struct
+     structure with the tasks, as from parseTaskList.
+ essentialFluxes : double
+     the fluxes of the essential rxns - same structure as essentialRxns.
+
+ Examples
+ --------
+     [taskReport, essentialRxns, taskStructure] = checkTasks(model, inputFile, ...
+         printOutput, printOnlyFailed, getEssential, taskStructure);</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="parseTaskList.html" class="code" title="function taskStruct=parseTaskList(inputFile)">parseTaskList</a>	parseTaskList  Parse a task list file.</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure)</a>
+0002 <span class="comment">% checkTasks  Perform a set of simulations as defined in a task file.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% This function is used for defining a set of tasks for a model to perform.</span>
+0005 <span class="comment">% The tasks are defined by defining constraints on the model, and if the</span>
+0006 <span class="comment">% problem is feasible, then the task is considered successful. In general,</span>
+0007 <span class="comment">% each row can contain one constraint on uptakes, one constraint on outputs,</span>
+0008 <span class="comment">% one new equation, and one change of reaction bounds. If more bounds are</span>
+0009 <span class="comment">% needed to define the task, then several rows can be used for each task.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% Parameters</span>
+0012 <span class="comment">% ----------</span>
+0013 <span class="comment">% model : struct</span>
+0014 <span class="comment">%     a model structure.</span>
+0015 <span class="comment">% inputFile : char</span>
+0016 <span class="comment">%     a task list in Excel format. See the function parseTaskList for</span>
+0017 <span class="comment">%     details (optional if taskStructure is supplied).</span>
+0018 <span class="comment">% printOutput : logical, optional</span>
+0019 <span class="comment">%     true if the results of the test should be displayed (default true).</span>
+0020 <span class="comment">% printOnlyFailed : logical, optional</span>
+0021 <span class="comment">%     true if only tasks that failed should be displayed (default false).</span>
+0022 <span class="comment">% getEssential : logical, optional</span>
+0023 <span class="comment">%     true if the essential reactions should be calculated for all the</span>
+0024 <span class="comment">%     tasks. This option is used with runINIT (default false).</span>
+0025 <span class="comment">% taskStructure : struct, optional</span>
+0026 <span class="comment">%     structure with the tasks, as from parseTaskList. If this is supplied</span>
+0027 <span class="comment">%     then inputFile is ignored.</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Returns</span>
+0030 <span class="comment">% -------</span>
+0031 <span class="comment">% taskReport : struct</span>
+0032 <span class="comment">%     structure with the results, with fields:</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">%     - id : cell array with the id of the task</span>
+0035 <span class="comment">%     - description : cell array with the description of the task</span>
+0036 <span class="comment">%     - ok : boolean array with true if the task was successful</span>
+0037 <span class="comment">% essentialRxns : logical</span>
+0038 <span class="comment">%     MxN matrix with the essential reactions (M) for each task (N). An</span>
+0039 <span class="comment">%     element is true if the corresponding reaction is essential in the</span>
+0040 <span class="comment">%     corresponding task. Failed tasks and SHOULD FAIL tasks are ignored.</span>
+0041 <span class="comment">%     This is used by the INIT algorithm (if tasks are supplied). If</span>
+0042 <span class="comment">%     getEssential=false then essentialRxns=false(nRxns,nTasks).</span>
+0043 <span class="comment">% taskStructure : struct</span>
+0044 <span class="comment">%     structure with the tasks, as from parseTaskList.</span>
+0045 <span class="comment">% essentialFluxes : double</span>
+0046 <span class="comment">%     the fluxes of the essential rxns - same structure as essentialRxns.</span>
+0047 <span class="comment">%</span>
+0048 <span class="comment">% Examples</span>
+0049 <span class="comment">% --------</span>
+0050 <span class="comment">%     [taskReport, essentialRxns, taskStructure] = checkTasks(model, inputFile, ...</span>
+0051 <span class="comment">%         printOutput, printOnlyFailed, getEssential, taskStructure);</span>
+0052 
+0053 <span class="keyword">if</span> nargin&lt;3 || isempty(printOutput)
+0054     printOutput=true;
+0055 <span class="keyword">end</span>
+0056 <span class="keyword">if</span> nargin&lt;4 || isempty(printOnlyFailed)
+0057     printOnlyFailed=false;
+0058 <span class="keyword">end</span>
+0059 <span class="keyword">if</span> nargin&lt;5 || isempty(getEssential)
+0060     getEssential=false;
+0061 <span class="keyword">end</span>
+0062 
+0063 <span class="comment">%Prepare the input model a little</span>
+0064 model.b=zeros(numel(model.mets),2);
+0065 
+0066 modelMets=upper(strcat(model.metNames,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>));
+0067 <span class="keyword">if</span> ~isfield(model,<span class="string">'unconstrained'</span>)
+0068     EM=<span class="string">'Exchange metabolites should normally not be removed from the model when using checkTasks. Inputs and outputs are defined in the task file instead. Use importModel(file,false) to import a model with exchange metabolites remaining'</span>;
+0069     dispEM(EM,false);
+0070 <span class="keyword">end</span>
+0071 
+0072 <span class="comment">%Parse the task file</span>
+0073 <span class="keyword">if</span> nargin&lt;6
+0074     taskStructure=<a href="parseTaskList.html" class="code" title="function taskStruct=parseTaskList(inputFile)">parseTaskList</a>(inputFile);
+0075 <span class="keyword">end</span>
+0076 
+0077 essentialRxns=false(numel(model.rxns),numel(taskStructure));
+0078 essentialFluxes = NaN(numel(model.rxns),numel(taskStructure));
+0079 
+0080 tModel=model;
+0081 taskReport=[];
+0082 <span class="keyword">for</span> i=1:numel(taskStructure)
+0083     taskReport.id{i,1}=taskStructure(i).id;
+0084     taskReport.description{i,1}=taskStructure(i).description;
+0085     <span class="comment">%Set the inputs</span>
+0086     <span class="keyword">if</span> ~isempty(taskStructure(i).inputs)
+0087         [I, J]=ismember(upper(taskStructure(i).inputs),modelMets);
+0088         J=J(I); <span class="comment">%Only keep the ones with matches</span>
+0089         K=ismember(upper(taskStructure(i).inputs),<span class="string">'ALLMETS'</span>);
+0090         L=~cellfun(<span class="string">'isempty'</span>,strfind(upper(taskStructure(i).inputs),<span class="string">'ALLMETSIN'</span>));
+0091         <span class="comment">%Check that all metabolites are either real metabolites or</span>
+0092         <span class="comment">%ALLMETS/ALLMETSIN</span>
+0093         <span class="keyword">if</span> ~all(I|K|L)
+0094             fprintf([<span class="string">'ERROR: Could not find all inputs in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot;\n'</span>]);
+0095             taskReport.ok(i,1)=false;
+0096             tModel=model;
+0097             <span class="keyword">continue</span>;
+0098         <span class="keyword">end</span>
+0099         <span class="keyword">if</span> numel(J)~=numel(unique(J))
+0100             EM=[<span class="string">'The constraints on some input(s) in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; are defined more than one time'</span>];
+0101             dispEM(EM);
+0102         <span class="keyword">end</span>
+0103         <span class="comment">%If all metabolites should be added</span>
+0104         <span class="keyword">if</span> any(K)
+0105             <span class="comment">%Check if ALLMETS is the first metabolite. Otherwise print a</span>
+0106             <span class="comment">%warning since it will write over any other constraints that</span>
+0107             <span class="comment">%are set</span>
+0108             <span class="keyword">if</span> K(1)==0
+0109                 EM=[<span class="string">'ALLMETS is used as an input in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'</span>];
+0110                 dispEM(EM,false);
+0111             <span class="keyword">end</span>
+0112             <span class="comment">%Use the first match of ALLMETS. There should only be one, but</span>
+0113             <span class="comment">%still..</span>
+0114             tModel.b(:,1)=taskStructure(i).UBin(find(K,1))*-1;
+0115         <span class="keyword">end</span>
+0116         <span class="comment">%If metabolites in a specific compartment should be used</span>
+0117         <span class="keyword">if</span> any(L)
+0118             L=find(L);
+0119             <span class="keyword">for</span> j=1:numel(L)
+0120                 <span class="comment">%The compartment defined</span>
+0121                 compartment=upper(taskStructure(i).inputs{L(j)}(11:end-1));
+0122                 <span class="comment">%Check if it exists in the model</span>
+0123                 C=find(ismember(upper(model.comps),compartment));
+0124                 <span class="keyword">if</span> any(C)
+0125                     <span class="comment">%Match to metabolites</span>
+0126                     tModel.b(model.metComps==C,1)=taskStructure(i).UBin(L(j))*-1;
+0127                 <span class="keyword">else</span>
+0128                     EM=[<span class="string">'The compartment defined for ALLMETSIN in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; does not exist'</span>];
+0129                     dispEM(EM);
+0130                 <span class="keyword">end</span>
+0131             <span class="keyword">end</span>
+0132         <span class="keyword">end</span>
+0133         <span class="comment">%Then add the normal constraints</span>
+0134         <span class="keyword">if</span> any(J)
+0135             tModel.b(J,1)=taskStructure(i).UBin(I)*-1;
+0136             tModel.b(J,2)=taskStructure(i).LBin(I)*-1;
+0137         <span class="keyword">end</span>
+0138     <span class="keyword">end</span>
+0139     <span class="comment">%Set the outputs</span>
+0140     <span class="keyword">if</span> ~isempty(taskStructure(i).outputs)
+0141         [I, J]=ismember(upper(taskStructure(i).outputs),modelMets);
+0142         J=J(I); <span class="comment">%Only keep the ones with matches</span>
+0143         K=ismember(upper(taskStructure(i).outputs),<span class="string">'ALLMETS'</span>);
+0144         L=~cellfun(<span class="string">'isempty'</span>,strfind(upper(taskStructure(i).outputs),<span class="string">'ALLMETSIN'</span>));
+0145         <span class="comment">%Check that all metabolites are either real metabolites or</span>
+0146         <span class="comment">%ALLMETS/ALLMETSIN</span>
+0147         <span class="keyword">if</span> ~all(I|K|L)
+0148             fprintf([<span class="string">'ERROR: Could not find all outputs in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot;\n'</span>]);
+0149             taskReport.ok(i,1)=false;
+0150             tModel=model;
+0151             <span class="keyword">continue</span>;
+0152         <span class="keyword">end</span>
+0153         <span class="keyword">if</span> numel(J)~=numel(unique(J))
+0154             EM=[<span class="string">'The constraints on some output(s) in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; are defined more than one time'</span>];
+0155             dispEM(EM);
+0156         <span class="keyword">end</span>
+0157         <span class="comment">%If all metabolites should be added</span>
+0158         <span class="keyword">if</span> any(K)
+0159             <span class="comment">%Check if ALLMETS is the first metabolite. Otherwise print a</span>
+0160             <span class="comment">%warning since it will write over any other constraints that</span>
+0161             <span class="comment">%are set</span>
+0162             <span class="keyword">if</span> K(1)==0
+0163                 EM=[<span class="string">'ALLMETS is used as an output in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'</span>];
+0164                 dispEM(EM,false);
+0165             <span class="keyword">end</span>
+0166             <span class="comment">%Use the first match of ALLMETS. There should only be one, but</span>
+0167             <span class="comment">%still..</span>
+0168             tModel.b(:,2)=taskStructure(i).UBout(find(K,1));
+0169         <span class="keyword">end</span>
+0170         <span class="comment">%If metabolites in a specific compartment should be used</span>
+0171         <span class="keyword">if</span> any(L)
+0172             L=find(L);
+0173             <span class="keyword">for</span> j=1:numel(L)
+0174                 <span class="comment">%The compartment defined</span>
+0175                 compartment=upper(taskStructure(i).outputs{L(j)}(11:end-1));
+0176                 <span class="comment">%Check if it exists in the model</span>
+0177                 C=find(ismember(upper(model.comps),compartment));
+0178                 <span class="keyword">if</span> any(C)
+0179                     <span class="comment">%Match to metabolites</span>
+0180                     tModel.b(model.metComps==C,2)=taskStructure(i).UBout(L(j));
+0181                 <span class="keyword">else</span>
+0182                     EM=[<span class="string">'The compartment defined for ALLMETSIN in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; does not exist'</span>];
+0183                     dispEM(EM);
+0184                 <span class="keyword">end</span>
+0185             <span class="keyword">end</span>
+0186         <span class="keyword">end</span>
+0187         <span class="comment">%Then add the normal constraints</span>
+0188         <span class="keyword">if</span> any(J)
+0189             <span class="comment">%Verify that IN and OUT bounds are consistent. Cannot require</span>
+0190             <span class="comment">%that a metabolite is simultaneously input AND output at some</span>
+0191             <span class="comment">%nonzero flux.</span>
+0192             I = find(I);  <span class="comment">% otherwise indexing becomes confusing</span>
+0193             nonzero_LBin = tModel.b(J,2) &lt; 0;
+0194             nonzero_LBout = taskStructure(i).LBout(I) &gt; 0;
+0195             <span class="keyword">if</span> any(nonzero_LBin &amp; nonzero_LBout)
+0196                 EM=[<span class="string">'The IN LB and OUT LB in &quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; cannot be nonzero for the same metabolite'</span>];
+0197                 dispEM(EM);
+0198             <span class="keyword">end</span>
+0199             tModel.b(J(nonzero_LBout),1)=taskStructure(i).LBout(I(nonzero_LBout));
+0200             tModel.b(J,2)=taskStructure(i).UBout(I);
+0201         <span class="keyword">end</span>
+0202     <span class="keyword">end</span>
+0203     <span class="comment">%Add new rxns</span>
+0204     <span class="keyword">if</span> ~isempty(taskStructure(i).equations)
+0205         rxn.equations=taskStructure(i).equations;
+0206         rxn.lb=taskStructure(i).LBequ;
+0207         rxn.ub=taskStructure(i).UBequ;
+0208         rxn.rxns=strcat({<span class="string">'TEMPORARY_'</span>},num2str((1:numel(taskStructure(i).equations))'));
+0209         <span class="comment">%Allow for new metabolites to be added. This is because it should</span>
+0210         <span class="comment">%be possible to add, say, a whole new pathway</span>
+0211         tModel=addRxns(tModel,rxn,3,[],true);
+0212     <span class="keyword">end</span>
+0213     <span class="comment">%Add changed bounds</span>
+0214     <span class="keyword">if</span> ~isempty(taskStructure(i).changed)
+0215         tModel=setParam(tModel,<span class="string">'lb'</span>,taskStructure(i).changed,taskStructure(i).LBrxn);
+0216         tModel=setParam(tModel,<span class="string">'ub'</span>,taskStructure(i).changed,taskStructure(i).UBrxn);
+0217     <span class="keyword">end</span>
+0218     
+0219     <span class="comment">%Solve and print</span>
+0220     sol=solveLP(tModel);
+0221     <span class="keyword">if</span> ~isempty(sol.x)
+0222         <span class="comment">%assign the fluxes</span>
+0223         essentialFluxes(:,i) = sol.x(1:numel(model.rxns));
+0224         
+0225         <span class="keyword">if</span> ~taskStructure(i).shouldFail
+0226             taskReport.ok(i,1)=true;
+0227             <span class="keyword">if</span> printOnlyFailed==false &amp;&amp; printOutput==true
+0228                 fprintf([<span class="string">'PASS: ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
+0229             <span class="keyword">end</span>
+0230             <span class="comment">%Calculate the essential reactions</span>
+0231             <span class="keyword">if</span> getEssential==true
+0232                 [~, taskEssential]=getEssentialRxns(tModel);
+0233                 <span class="comment">%This is because there could be more reactions in tModel</span>
+0234                 <span class="comment">%than in model</span>
+0235                 essentialRxns(taskEssential(taskEssential&lt;=numel(model.rxns)),i)=true;
+0236             <span class="keyword">end</span>
+0237         <span class="keyword">else</span>
+0238             taskReport.ok(i,1)=false;
+0239             <span class="keyword">if</span> printOutput==true
+0240                 fprintf([<span class="string">'PASS (should fail): ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
+0241             <span class="keyword">end</span>
+0242         <span class="keyword">end</span>
+0243     <span class="keyword">else</span>
+0244         <span class="keyword">if</span> ~taskStructure(i).shouldFail
+0245             taskReport.ok(i,1)=false;
+0246             <span class="keyword">if</span> printOutput==true
+0247                 fprintf([<span class="string">'FAIL: ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
+0248             <span class="keyword">end</span>
+0249         <span class="keyword">else</span>
+0250             taskReport.ok(i,1)=true;
+0251             <span class="keyword">if</span> printOnlyFailed==false &amp;&amp; printOutput==true
+0252                 fprintf([<span class="string">'FAIL (should fail): ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
+0253             <span class="keyword">end</span>
+0254         <span class="keyword">end</span>
+0255     <span class="keyword">end</span>
+0256     <span class="keyword">if</span> taskStructure(i).printFluxes &amp;&amp; ~isempty(sol.x)
+0257         sol=solveLP(tModel,1);
+0258         <span class="keyword">if</span> ~isempty(sol.x)
+0259             printFluxes(tModel,sol.x,false,10^-6,[],<span class="string">'%rxnID (%eqn):%flux\n'</span>);
+0260             fprintf(<span class="string">'\n'</span>);
+0261         <span class="keyword">end</span>
+0262     <span class="keyword">end</span>
+0263     tModel=model;
+0264 <span class="keyword">end</span>
+0265 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

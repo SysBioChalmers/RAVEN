@@ -4,7 +4,7 @@
 <head>
   <title>Description of optimizeProb</title>
   <meta name="keywords" content="optimizeProb">
-  <meta name="description" content="optimizeProb">
+  <meta name="description" content="optimizeProb  Optimize an LP or MILP formulated in COBRA terms.">
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
   <meta name="robots" content="index, follow">
@@ -21,30 +21,46 @@
 </h1>
 
 <h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>optimizeProb</strong></div>
+<div class="box"><strong>optimizeProb  Optimize an LP or MILP formulated in COBRA terms.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="box"><strong>function res = optimizeProb(prob,params,verbose) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre class="comment"> optimizeProb
-   Optimize an LP or MILP formulated in cobra terms.
+<div class="fragment"><pre class="comment"> optimizeProb  Optimize an LP or MILP formulated in COBRA terms.
 
-   prob    cobra style LP/MILP problem struct to be optimised
-   params    solver specific parameters (optional)
-   verbose if true MILP progress is shown (optional, default true)
+ Parameters
+ ----------
+ prob : struct
+     COBRA-style LP/MILP problem struct to be optimised.
+ params : struct, optional
+     solver-specific parameters. In addition to solver parameters, the
+     field &quot;maxRatio&quot; can be set to a number &gt; 1 to improve numerical
+     conditioning: before solving (LP only) any column whose coefficients
+     span more than maxRatio is split via auxiliary metabolites/variables,
+     preserving the feasible region. See splitProbForConditioning. The
+     field is consumed here and not forwarded to the solver.
+ verbose : logical, optional
+     if true MILP progress is shown (default true).
 
-   res        the output structure from the selected solver RAVENSOLVER
-           (cobra style)</pre></div>
+ Returns
+ -------
+ res : struct
+     the output structure from the selected solver RAVENSOLVER (COBRA
+     style).
+
+ See also
+ --------
+ <a href="splitProbForConditioning.html" class="code" title="function [prob, condInfo] = splitProbForConditioning(prob, maxRatio)">splitProbForConditioning</a></pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-</ul>
+<li><a href="splitProbForConditioning.html" class="code" title="function [prob, condInfo] = splitProbForConditioning(prob, maxRatio)">splitProbForConditioning</a>	splitProbForConditioning  Improve LP conditioning by splitting wide columns.</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="solveLP.html" class="code" title="function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)">solveLP</a>	solveLP</li></ul>
+<li><a href="solveLP.html" class="code" title="function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)">solveLP</a>	solveLP  Solve a linear programming problem.</li></ul>
 <!-- crossreference -->
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -53,285 +69,328 @@ This function is called by:
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function res = optimizeProb(prob,params,verbose)</a>
-0002 <span class="comment">% optimizeProb</span>
-0003 <span class="comment">%   Optimize an LP or MILP formulated in cobra terms.</span>
-0004 <span class="comment">%</span>
-0005 <span class="comment">%   prob    cobra style LP/MILP problem struct to be optimised</span>
-0006 <span class="comment">%   params    solver specific parameters (optional)</span>
-0007 <span class="comment">%   verbose if true MILP progress is shown (optional, default true)</span>
-0008 <span class="comment">%</span>
-0009 <span class="comment">%   res        the output structure from the selected solver RAVENSOLVER</span>
-0010 <span class="comment">%           (cobra style)</span>
-0011 
-0012 <span class="keyword">if</span> nargin&lt;2 || isempty(params)
-0013     params=struct();
-0014 <span class="keyword">end</span>
-0015 <span class="keyword">if</span> nargin&lt;3 || isempty(verbose)
-0016     verbose = true;
-0017 <span class="keyword">end</span>
-0018 
-0019 <span class="comment">%Set as global variable for speed improvement if optimizeProb is run many times</span>
-0020 <span class="keyword">global</span> RAVENSOLVER;
-0021 <span class="keyword">if</span> isempty(RAVENSOLVER)
-0022     <span class="keyword">if</span>(~ispref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>))
-0023         dispEM(<span class="string">'RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').'</span>);
-0024     <span class="keyword">else</span>
-0025         RAVENSOLVER = getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
-0026     <span class="keyword">end</span>
-0027 <span class="keyword">end</span>
-0028 solver=RAVENSOLVER;
-0029 <span class="keyword">if</span> ~all(lower(prob.vartype) == <span class="string">'c'</span>)
-0030     milp=true;
-0031     errorText = <span class="string">'glpk is not suitable for solving MILPs, '</span>;
-0032     <span class="keyword">switch</span> solver
-0033         <span class="keyword">case</span> <span class="string">'glpk'</span>
-0034             error([errorText <span class="string">'select a different solver with setRavenSolver().'</span>])
-0035         <span class="keyword">case</span> <span class="string">'cobra'</span>
-0036             <span class="keyword">if</span> strcmp(CBT_MILP_SOLVER,<span class="string">'glpk'</span>)
-0037                 error([errorText <span class="string">'select a different solver with changeCobraSolver() or setRavenSolver().'</span>])
-0038             <span class="keyword">end</span>
-0039     <span class="keyword">end</span>
-0040 <span class="keyword">else</span>
-0041     milp=false;
-0042 <span class="keyword">end</span>
-0043 
-0044 <span class="comment">%% Define default parameters, which will then be used to make solver-</span>
-0045 <span class="comment">% specific solverparams structures</span>
-0046 defaultparams.feasTol        = 1e-9;
-0047 defaultparams.optTol         = 1e-9;
-0048 defaultparams.objTol         = 1e-6;
-0049 defaultparams.timeLimit      = 1000;
-0050 <span class="comment">%defaultparams.iterationLimit = 1000;</span>
-0051 defaultparams.intTol         = 1e-12;
-0052 defaultparams.relMipGapTol   = 1e-12;
-0053 defaultparams.absMipGapTol   = 1e-12;
-0054 <span class="keyword">if</span> milp
-0055     defaultparams.MIPGap     = 1e-12;
-0056     defaultparams.Seed       = 1;
-0057 <span class="keyword">end</span>
-0058 res.obj=[];
-0059 <span class="keyword">switch</span> solver
-0060     <span class="comment">%% Use whatever solver is set by COBRA Toolbox changeCobraSolver</span>
-0061     <span class="keyword">case</span> <span class="string">'cobra'</span>
-0062         <span class="keyword">if</span> milp
-0063             cparams=struct(<span class="string">'timeLimit'</span>,1e9,<span class="string">'printLevel'</span>,0,<span class="string">'intTol'</span>,1e-6,<span class="string">'relMipGapTol'</span>,1e-9);
-0064             cparams=<a href="#_sub1" class="code" title="subfunction s_merged=structUpdate(s_old,s_new)">structUpdate</a>(cparams,params);
-0065             res=solveCobraMILP(prob,cparams);
-0066         <span class="keyword">else</span>
-0067             res=solveCobraLP(prob);
-0068         <span class="keyword">end</span>
-0069         <span class="keyword">if</span> isfield(res,{<span class="string">'dual'</span>,<span class="string">'rcost'</span>})
-0070             res.dual=res.dual;
-0071             res.rcost=res.rcost;
-0072         <span class="keyword">end</span>
-0073 
-0074         <span class="comment">%% Use Gurobi in a MATLAB environment</span>
-0075     <span class="keyword">case</span> <span class="string">'gurobi'</span>
-0076         <span class="keyword">if</span> milp
-0077             <span class="keyword">if</span> verbose
-0078                 solverparams.OutputFlag = 1;
-0079             <span class="keyword">else</span>
-0080                 solverparams.OutputFlag = 0;
-0081             <span class="keyword">end</span>
-0082             solverparams.IntFeasTol = 10^-9; <span class="comment">%min val for gurobi</span>
-0083             solverparams.MIPGap = defaultparams.MIPGap;
-0084             solverparams.Seed = defaultparams.Seed;
-0085         <span class="keyword">else</span>
-0086             solverparams.OutputFlag = 0;
-0087         <span class="keyword">end</span>
-0088         solverparams.DisplayInterval= 1; <span class="comment">% Level of verbosity</span>
-0089         solverparams.TimeLimit      = defaultparams.timeLimit;
-0090         solverparams.FeasibilityTol = defaultparams.feasTol;
-0091         solverparams.OptimalityTol  = defaultparams.optTol;
-0092         solverparams.Presolve       = 2;
-0093         <span class="keyword">if</span> ~isempty(getCurrentTask) <span class="comment">% If run in parallel, then one thread per gurobi</span>
-0094             solverparams.Threads=1;
-0095         <span class="keyword">end</span>
-0096         solverparams = <a href="#_sub1" class="code" title="subfunction s_merged=structUpdate(s_old,s_new)">structUpdate</a>(solverparams,params);
-0097 
-0098         <span class="comment">% Restructering problem according to gurobi format</span>
-0099         <span class="keyword">if</span> isfield(prob, <span class="string">'csense'</span>)
-0100             prob.sense = <a href="#_sub2" class="code" title="subfunction paramlist = renameparams(paramlist,old,new)">renameparams</a>(prob.csense, {<span class="string">'L'</span>,<span class="string">'G'</span>,<span class="string">'E'</span>}, {<span class="string">'&lt;'</span>,<span class="string">'&gt;'</span>,<span class="string">'='</span>});
-0101             prob = rmfield(prob, {<span class="string">'csense'</span>});
-0102         <span class="keyword">end</span>
-0103         <span class="keyword">if</span> isfield(prob, <span class="string">'osense'</span>)
-0104             osense = prob.osense;
-0105             prob.modelsense = <a href="#_sub2" class="code" title="subfunction paramlist = renameparams(paramlist,old,new)">renameparams</a>(num2str(prob.osense), {<span class="string">'1'</span>,<span class="string">'-1'</span>}, {<span class="string">'min'</span>,<span class="string">'max'</span>});
-0106             prob = rmfield(prob, {<span class="string">'osense'</span>});
-0107         <span class="keyword">end</span>
-0108         [prob.obj, prob.rhs, prob.vtype] = deal(prob.c, prob.b, prob.vartype);
-0109         prob = rmfield(prob, {<span class="string">'c'</span>,<span class="string">'b'</span>,<span class="string">'vartype'</span>});
-0110 
-0111         resG = gurobi(prob,solverparams);
-0112 
-0113         <span class="keyword">try</span>
-0114             <span class="comment">% Name output fields the same as COBRA does</span>
-0115             res.full     = resG.x;
-0116             res.obj      = resG.objval;
-0117             res.origStat = resG.status;
-0118             <span class="keyword">if</span> isfield(resG,{<span class="string">'pi'</span>,<span class="string">'rc'</span>})
-0119                 res.dual     = -resG.pi*osense;
-0120                 res.rcost    = -resG.rc*osense;
-0121             <span class="keyword">end</span>
-0122             <span class="keyword">if</span> milp &amp;&amp; strcmp(resG.status, <span class="string">'TIME_LIMIT'</span>)
-0123                 <span class="comment">% If res has the objval field, it succeeded, regardless of</span>
-0124                 <span class="comment">% time_limit status</span>
-0125                 resG.status = <span class="string">'OPTIMAL'</span>;
-0126             <span class="keyword">end</span>
-0127             <span class="keyword">switch</span> resG.status
-0128                 <span class="keyword">case</span> <span class="string">'OPTIMAL'</span>
-0129                     res.stat = 1;
-0130                 <span class="keyword">case</span> <span class="string">'UNBOUNDED'</span>
-0131                     res.stat = 2;
-0132                 <span class="keyword">otherwise</span>
-0133                     res.stat = 0;
-0134             <span class="keyword">end</span>
-0135             <span class="keyword">if</span> ~milp
-0136                 res.vbasis = resG.vbasis;
-0137                 res.cbasis = resG.cbasis;
-0138             <span class="keyword">else</span>
-0139                 res.mipgap = resG.mipgap;
-0140             <span class="keyword">end</span>
-0141         <span class="keyword">catch</span>
-0142             res.stat = 0;
-0143             res.origStat = resG.status;  <span class="comment">% useful information to have</span>
-0144         <span class="keyword">end</span>
-0145         <span class="comment">%% Use GLPK using RAVEN-provided binary</span>
-0146     <span class="keyword">case</span> <span class="string">'glpk'</span>
-0147         solverparams.scale   = 1; <span class="comment">% Auto scaling</span>
-0148         <span class="comment">%solverparams.tmlim   = defaultparams.timeLimit;</span>
-0149         solverparams.tolbnd  = defaultparams.feasTol;
-0150         solverparams.toldj   = defaultparams.optTol;
-0151         solverparams.tolint  = defaultparams.intTol;
-0152         solverparams.tolobj  = defaultparams.objTol;
-0153         solverparams.msglev  = 0; <span class="comment">% Level of verbosity</span>
-0154         solverparams = <a href="#_sub1" class="code" title="subfunction s_merged=structUpdate(s_old,s_new)">structUpdate</a>(solverparams,params);
-0155 
-0156         prob.csense = <a href="#_sub2" class="code" title="subfunction paramlist = renameparams(paramlist,old,new)">renameparams</a>(prob.csense, {<span class="string">'L'</span>,<span class="string">'G'</span>,<span class="string">'E'</span>}, {<span class="string">'U'</span>,<span class="string">'L'</span>,<span class="string">'S'</span>});
-0157 
-0158         <span class="keyword">if</span> milp
-0159             solverparams.tmlim   = solverparams.tmlim*10;
-0160             solverparams.msglev  = 1; <span class="comment">% Level of verbosity</span>
-0161             disp(<span class="string">'Issues have been observed when using GLPK for MILP solving. Be advised to carefully observe the results, or us another solver.'</span>)
-0162         <span class="keyword">end</span>
-0163 
-0164         <span class="comment">% Ensure that RAVEN glpk binary is used, return to original</span>
-0165         <span class="comment">% directory afterwards</span>
-0166         [ravenDir,currDir]=findRAVENroot();
-0167         cd(fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'GLPKmex'</span>))
-0168         [xopt, fmin, errnum, extra] = glpk(prob.c, prob.A, prob.b, prob.lb, prob.ub, prob.csense, prob.vartype, prob.osense, solverparams);
-0169         cd(currDir)
-0170 
-0171         <span class="keyword">switch</span> errnum <span class="comment">% 1 = undefined; 2 = feasible; 3 = infeasible; 4 = no feasible solution; 5 = optimal; 6 = no unbounded solution</span>
-0172             <span class="keyword">case</span> 5
-0173                 res.stat = 1; <span class="comment">% Optimal</span>
-0174             <span class="keyword">case</span> 2
-0175                 res.stat = 2; <span class="comment">% Feasible, but not optimal</span>
-0176             <span class="keyword">otherwise</span>
-0177                 res.stat = 0;
-0178         <span class="keyword">end</span>
-0179         res.origStat = errnum;
-0180         res.full     = xopt;
-0181         res.obj      = fmin;
-0182         res.dual     = -extra.lambda*prob.osense;
-0183         res.rcost    = -extra.redcosts*prob.osense;
-0184         <span class="comment">%% Use scip</span>
-0185     <span class="keyword">case</span> {<span class="string">'soplex'</span>,<span class="string">'scip'</span>} <span class="comment">% Old 'soplex' option also allowed</span>
-0186         [xopt,fval,exitflag] = scip([], prob.c, prob.A,-prob.b, prob.b, prob.lb, prob.ub, prob.vartype);
+0002 <span class="comment">% optimizeProb  Optimize an LP or MILP formulated in COBRA terms.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Parameters</span>
+0005 <span class="comment">% ----------</span>
+0006 <span class="comment">% prob : struct</span>
+0007 <span class="comment">%     COBRA-style LP/MILP problem struct to be optimised.</span>
+0008 <span class="comment">% params : struct, optional</span>
+0009 <span class="comment">%     solver-specific parameters. In addition to solver parameters, the</span>
+0010 <span class="comment">%     field &quot;maxRatio&quot; can be set to a number &gt; 1 to improve numerical</span>
+0011 <span class="comment">%     conditioning: before solving (LP only) any column whose coefficients</span>
+0012 <span class="comment">%     span more than maxRatio is split via auxiliary metabolites/variables,</span>
+0013 <span class="comment">%     preserving the feasible region. See splitProbForConditioning. The</span>
+0014 <span class="comment">%     field is consumed here and not forwarded to the solver.</span>
+0015 <span class="comment">% verbose : logical, optional</span>
+0016 <span class="comment">%     if true MILP progress is shown (default true).</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% Returns</span>
+0019 <span class="comment">% -------</span>
+0020 <span class="comment">% res : struct</span>
+0021 <span class="comment">%     the output structure from the selected solver RAVENSOLVER (COBRA</span>
+0022 <span class="comment">%     style).</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% See also</span>
+0025 <span class="comment">% --------</span>
+0026 <span class="comment">% splitProbForConditioning</span>
+0027 
+0028 <span class="keyword">if</span> nargin&lt;2 || isempty(params)
+0029     params=struct();
+0030 <span class="keyword">end</span>
+0031 <span class="keyword">if</span> nargin&lt;3 || isempty(verbose)
+0032     verbose = true;
+0033 <span class="keyword">end</span>
+0034 
+0035 <span class="comment">%Set as global variable for speed improvement if optimizeProb is run many times</span>
+0036 <span class="keyword">global</span> RAVENSOLVER;
+0037 <span class="keyword">if</span> isempty(RAVENSOLVER)
+0038     <span class="keyword">if</span>(~ispref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>))
+0039         dispEM(<span class="string">'RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').'</span>);
+0040     <span class="keyword">else</span>
+0041         RAVENSOLVER = getpref(<span class="string">'RAVEN'</span>,<span class="string">'solver'</span>);
+0042     <span class="keyword">end</span>
+0043 <span class="keyword">end</span>
+0044 solver=RAVENSOLVER;
+0045 <span class="keyword">if</span> ~all(lower(prob.vartype) == <span class="string">'c'</span>)
+0046     milp=true;
+0047     errorText = <span class="string">'glpk is not suitable for solving MILPs, '</span>;
+0048     <span class="keyword">switch</span> solver
+0049         <span class="keyword">case</span> <span class="string">'glpk'</span>
+0050             error([errorText <span class="string">'select a different solver with setRavenSolver().'</span>])
+0051         <span class="keyword">case</span> <span class="string">'cobra'</span>
+0052             <span class="keyword">if</span> strcmp(CBT_MILP_SOLVER,<span class="string">'glpk'</span>)
+0053                 error([errorText <span class="string">'select a different solver with changeCobraSolver() or setRavenSolver().'</span>])
+0054             <span class="keyword">end</span>
+0055     <span class="keyword">end</span>
+0056 <span class="keyword">else</span>
+0057     milp=false;
+0058 <span class="keyword">end</span>
+0059 
+0060 <span class="comment">%% Define default parameters, which will then be used to make solver-</span>
+0061 <span class="comment">% specific solverparams structures</span>
+0062 defaultparams.feasTol        = 1e-9;
+0063 defaultparams.optTol         = 1e-9;
+0064 defaultparams.objTol         = 1e-6;
+0065 defaultparams.timeLimit      = 1000;
+0066 <span class="comment">%defaultparams.iterationLimit = 1000;</span>
+0067 defaultparams.intTol         = 1e-12;
+0068 defaultparams.relMipGapTol   = 1e-12;
+0069 defaultparams.absMipGapTol   = 1e-12;
+0070 <span class="keyword">if</span> milp
+0071     defaultparams.MIPGap     = 1e-12;
+0072     defaultparams.Seed       = 1;
+0073 <span class="keyword">end</span>
+0074 
+0075 <span class="comment">%% Optionally improve numerical conditioning before solving. This is opt-in</span>
+0076 <span class="comment">% through params.maxRatio and only applied to LPs. Columns whose coefficients</span>
+0077 <span class="comment">% span more than maxRatio are split via auxiliary metabolites/variables, which</span>
+0078 <span class="comment">% preserves the feasible region but reduces the spread within each column. The</span>
+0079 <span class="comment">% added rows/columns are stripped from the result further down.</span>
+0080 condApplied = false;
+0081 <span class="keyword">if</span> isfield(params,<span class="string">'maxRatio'</span>)
+0082     maxRatio = params.maxRatio;
+0083     params   = rmfield(params,<span class="string">'maxRatio'</span>);
+0084     <span class="keyword">if</span> ~milp &amp;&amp; isnumeric(maxRatio) &amp;&amp; isscalar(maxRatio) &amp;&amp; isfinite(maxRatio) &amp;&amp; maxRatio&gt;1
+0085         [prob, condInfo] = <a href="splitProbForConditioning.html" class="code" title="function [prob, condInfo] = splitProbForConditioning(prob, maxRatio)">splitProbForConditioning</a>(prob, maxRatio);
+0086         condApplied = condInfo.applied;
+0087     <span class="keyword">end</span>
+0088 <span class="keyword">end</span>
+0089 
+0090 res.obj=[];
+0091 <span class="keyword">switch</span> solver
+0092     <span class="comment">%% Use whatever solver is set by COBRA Toolbox changeCobraSolver</span>
+0093     <span class="keyword">case</span> <span class="string">'cobra'</span>
+0094         <span class="keyword">if</span> milp
+0095             cparams=struct(<span class="string">'timeLimit'</span>,1e9,<span class="string">'printLevel'</span>,0,<span class="string">'intTol'</span>,1e-6,<span class="string">'relMipGapTol'</span>,1e-9);
+0096             cparams=<a href="#_sub1" class="code" title="subfunction s_merged=structUpdate(s_old,s_new)">structUpdate</a>(cparams,params);
+0097             res=solveCobraMILP(prob,cparams);
+0098         <span class="keyword">else</span>
+0099             res=solveCobraLP(prob);
+0100         <span class="keyword">end</span>
+0101         <span class="keyword">if</span> isfield(res,{<span class="string">'dual'</span>,<span class="string">'rcost'</span>})
+0102             res.dual=res.dual;
+0103             res.rcost=res.rcost;
+0104         <span class="keyword">end</span>
+0105 
+0106         <span class="comment">%% Use Gurobi in a MATLAB environment</span>
+0107     <span class="keyword">case</span> <span class="string">'gurobi'</span>
+0108         <span class="keyword">if</span> milp
+0109             <span class="keyword">if</span> verbose
+0110                 solverparams.OutputFlag = 1;
+0111             <span class="keyword">else</span>
+0112                 solverparams.OutputFlag = 0;
+0113             <span class="keyword">end</span>
+0114             solverparams.IntFeasTol = 10^-9; <span class="comment">%min val for gurobi</span>
+0115             solverparams.MIPGap = defaultparams.MIPGap;
+0116             solverparams.Seed = defaultparams.Seed;
+0117         <span class="keyword">else</span>
+0118             solverparams.OutputFlag = 0;
+0119         <span class="keyword">end</span>
+0120         solverparams.DisplayInterval= 1; <span class="comment">% Level of verbosity</span>
+0121         solverparams.TimeLimit      = defaultparams.timeLimit;
+0122         solverparams.FeasibilityTol = defaultparams.feasTol;
+0123         solverparams.OptimalityTol  = defaultparams.optTol;
+0124         solverparams.Presolve       = 2;
+0125         <span class="keyword">if</span> ~isempty(getCurrentTask) <span class="comment">% If run in parallel, then one thread per gurobi</span>
+0126             solverparams.Threads=1;
+0127         <span class="keyword">end</span>
+0128         solverparams = <a href="#_sub1" class="code" title="subfunction s_merged=structUpdate(s_old,s_new)">structUpdate</a>(solverparams,params);
+0129 
+0130         <span class="comment">% Restructering problem according to gurobi format</span>
+0131         <span class="keyword">if</span> isfield(prob, <span class="string">'csense'</span>)
+0132             prob.sense = <a href="#_sub2" class="code" title="subfunction paramlist = renameparams(paramlist,old,new)">renameparams</a>(prob.csense, {<span class="string">'L'</span>,<span class="string">'G'</span>,<span class="string">'E'</span>}, {<span class="string">'&lt;'</span>,<span class="string">'&gt;'</span>,<span class="string">'='</span>});
+0133             prob = rmfield(prob, {<span class="string">'csense'</span>});
+0134         <span class="keyword">end</span>
+0135         <span class="keyword">if</span> isfield(prob, <span class="string">'osense'</span>)
+0136             osense = prob.osense;
+0137             prob.modelsense = <a href="#_sub2" class="code" title="subfunction paramlist = renameparams(paramlist,old,new)">renameparams</a>(num2str(prob.osense), {<span class="string">'1'</span>,<span class="string">'-1'</span>}, {<span class="string">'min'</span>,<span class="string">'max'</span>});
+0138             prob = rmfield(prob, {<span class="string">'osense'</span>});
+0139         <span class="keyword">end</span>
+0140         [prob.obj, prob.rhs, prob.vtype] = deal(prob.c, prob.b, prob.vartype);
+0141         prob = rmfield(prob, {<span class="string">'c'</span>,<span class="string">'b'</span>,<span class="string">'vartype'</span>});
+0142 
+0143         resG = gurobi(prob,solverparams);
+0144 
+0145         <span class="keyword">try</span>
+0146             <span class="comment">% Name output fields the same as COBRA does</span>
+0147             res.full     = resG.x;
+0148             res.obj      = resG.objval;
+0149             res.origStat = resG.status;
+0150             <span class="keyword">if</span> isfield(resG,{<span class="string">'pi'</span>,<span class="string">'rc'</span>})
+0151                 res.dual     = -resG.pi*osense;
+0152                 res.rcost    = -resG.rc*osense;
+0153             <span class="keyword">end</span>
+0154             <span class="keyword">if</span> milp &amp;&amp; strcmp(resG.status, <span class="string">'TIME_LIMIT'</span>)
+0155                 <span class="comment">% If res has the objval field, it succeeded, regardless of</span>
+0156                 <span class="comment">% time_limit status</span>
+0157                 resG.status = <span class="string">'OPTIMAL'</span>;
+0158             <span class="keyword">end</span>
+0159             <span class="keyword">switch</span> resG.status
+0160                 <span class="keyword">case</span> <span class="string">'OPTIMAL'</span>
+0161                     res.stat = 1;
+0162                 <span class="keyword">case</span> <span class="string">'UNBOUNDED'</span>
+0163                     res.stat = 2;
+0164                 <span class="keyword">otherwise</span>
+0165                     res.stat = 0;
+0166             <span class="keyword">end</span>
+0167             <span class="keyword">if</span> ~milp
+0168                 res.vbasis = resG.vbasis;
+0169                 res.cbasis = resG.cbasis;
+0170             <span class="keyword">else</span>
+0171                 res.mipgap = resG.mipgap;
+0172             <span class="keyword">end</span>
+0173         <span class="keyword">catch</span>
+0174             res.stat = 0;
+0175             res.origStat = resG.status;  <span class="comment">% useful information to have</span>
+0176         <span class="keyword">end</span>
+0177         <span class="comment">%% Use GLPK using RAVEN-provided binary</span>
+0178     <span class="keyword">case</span> <span class="string">'glpk'</span>
+0179         solverparams.scale   = 1; <span class="comment">% Auto scaling</span>
+0180         <span class="comment">%solverparams.tmlim   = defaultparams.timeLimit;</span>
+0181         solverparams.tolbnd  = defaultparams.feasTol;
+0182         solverparams.toldj   = defaultparams.optTol;
+0183         solverparams.tolint  = defaultparams.intTol;
+0184         solverparams.tolobj  = defaultparams.objTol;
+0185         solverparams.msglev  = 0; <span class="comment">% Level of verbosity</span>
+0186         solverparams = <a href="#_sub1" class="code" title="subfunction s_merged=structUpdate(s_old,s_new)">structUpdate</a>(solverparams,params);
 0187 
-0188         <span class="comment">%   [x,fval,exitflag,stats] = scip(H, f, A, rl, ru, lb, ub, xtype, sos, qc, nl, x0, opts)</span>
-0189         <span class="comment">%</span>
-0190         <span class="comment">%   Input arguments*:</span>
-0191         <span class="comment">%       H - quadratic objective matrix (sparse, optional [NOT TRIL / TRIU])</span>
-0192         <span class="comment">%       f - linear objective vector</span>
-0193         <span class="comment">%       A - linear constraint matrix (sparse)</span>
-0194         <span class="comment">%       rl - linear constraint lhs</span>
-0195         <span class="comment">%       ru - linear constraint rhs</span>
-0196         <span class="comment">%       lb - decision variable lower bounds</span>
-0197         <span class="comment">%       ub - decision variable upper bounds</span>
-0198         <span class="comment">%       xtype - string of variable integrality ('c' continuous, 'i' integer, 'b' binary)</span>
-0199         <span class="comment">%       sos - SOS structure with fields type, index and weight (see below)</span>
-0200         <span class="comment">%       qc - Quadratic Constraints structure with fields Q, l, qrl and qru (see below)</span>
-0201         <span class="comment">%       nl - Nonlinear Objective and Constraints structure (see below)</span>
-0202         <span class="comment">%       x0 - primal solution</span>
-0203         <span class="comment">%       opts - solver options (see below)</span>
-0204         <span class="comment">%</span>
-0205         <span class="comment">%   Return arguments:</span>
-0206         <span class="comment">%       x - solution vector</span>
-0207         <span class="comment">%       fval - objective value at the solution</span>
-0208         <span class="comment">%       exitflag - exit status (see below)</span>
-0209         <span class="comment">%       stats - statistics structure</span>
-0210         <span class="comment">%</span>
-0211         <span class="comment">%   Option Fields (all optional, see also optiset for a list):</span>
-0212         <span class="comment">%       solverOpts - specific SCIP options (list of pairs of parameter names and values)</span>
-0213         <span class="comment">%       maxiter - maximum LP solver iterations</span>
-0214         <span class="comment">%       maxnodes - maximum nodes to explore</span>
-0215         <span class="comment">%       maxtime - maximum execution time [s]</span>
-0216         <span class="comment">%       tolrfun - primal feasibility tolerance</span>
-0217         <span class="comment">%       display - solver display level [0-5]</span>
-0218         <span class="comment">%       probfile - write problem to given file</span>
-0219         <span class="comment">%       presolvedfile - write presolved problem to file</span>
-0220         <span class="comment">%</span>
-0221         <span class="comment">%   Return Status:</span>
-0222         <span class="comment">%       0 - Unknown</span>
-0223         <span class="comment">%       1 - User Interrupted</span>
-0224         <span class="comment">%       2 - Node Limit Reached</span>
-0225         <span class="comment">%       3 - Total Node Limit Reached</span>
-0226         <span class="comment">%       4 - Stall Node Limit Reached</span>
-0227         <span class="comment">%       5 - Time Limit Reached</span>
-0228         <span class="comment">%       6 - Memory Limit Reached</span>
-0229         <span class="comment">%       7 - Gap Limit Reached</span>
-0230         <span class="comment">%       8 - Solution Limit Reached</span>
-0231         <span class="comment">%       9 - Solution Improvement Limit Reached</span>
-0232         <span class="comment">%      10 - Restart Limit Reached</span>
-0233         <span class="comment">%      11 - Problem Solved to Optimality</span>
-0234         <span class="comment">%      12 - Problem is Infeasible</span>
-0235         <span class="comment">%      13 - Problem is Unbounded</span>
-0236         <span class="comment">%      14 - Problem is Either Infeasible or Unbounded</span>
-0237         
-0238         res.origStat = exitflag;
-0239         res.full = xopt;
-0240         res.obj  = fval;
-0241 
-0242         <span class="keyword">switch</span> exitflag
-0243             <span class="keyword">case</span> 11
-0244                 res.stat = 1;
-0245             <span class="keyword">case</span> {1, 5, 6, 7, 8, 9, 10, 13} <span class="comment">% If user-interrupted, not sure if optimal</span>
-0246                 res.stat = 2;
-0247             <span class="keyword">otherwise</span>
-0248                 res.stat = 0;
-0249         <span class="keyword">end</span>
-0250     <span class="keyword">otherwise</span>
-0251         error(<span class="string">'RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').'</span>);
-0252 <span class="keyword">end</span>
-0253 <span class="keyword">if</span> res.stat&gt;0
-0254     res.full=res.full(1:size(prob.a,2));
-0255 <span class="keyword">end</span>
-0256 <span class="keyword">end</span>
-0257 
-0258 <a name="_sub1" href="#_subfunctions" class="code">function s_merged=structUpdate(s_old,s_new)</a>
-0259 <span class="comment">%Remove overlapping fields from first struct;</span>
-0260 <span class="comment">%Obtain all unique names of remaining fields;</span>
-0261 <span class="comment">%Merge both structs</span>
-0262 s_merged = rmfield(s_old, intersect(fieldnames(s_old), fieldnames(s_new)));
-0263 names = [fieldnames(s_merged); fieldnames(s_new)];
-0264 s_merged = cell2struct([struct2cell(s_merged); struct2cell(s_new)], names, 1);
-0265 <span class="keyword">end</span>
-0266 
-0267 <a name="_sub2" href="#_subfunctions" class="code">function paramlist = renameparams(paramlist,old,new)</a>
-0268 <span class="keyword">if</span> ~iscell(paramlist)
-0269     wasNoCell = true;
-0270     paramlist={paramlist};
-0271 <span class="keyword">else</span>
-0272     wasNoCell = false;
-0273 <span class="keyword">end</span>
-0274 <span class="keyword">for</span> i=1:numel(old)
-0275     paramlist = regexprep(paramlist,old{i},new{i});
-0276 <span class="keyword">end</span>
-0277 <span class="keyword">if</span> wasNoCell
-0278     paramlist=paramlist{1};
-0279 <span class="keyword">end</span>
-0280 <span class="keyword">end</span></pre></div>
+0188         prob.csense = <a href="#_sub2" class="code" title="subfunction paramlist = renameparams(paramlist,old,new)">renameparams</a>(prob.csense, {<span class="string">'L'</span>,<span class="string">'G'</span>,<span class="string">'E'</span>}, {<span class="string">'U'</span>,<span class="string">'L'</span>,<span class="string">'S'</span>});
+0189 
+0190         <span class="keyword">if</span> milp
+0191             solverparams.tmlim   = solverparams.tmlim*10;
+0192             solverparams.msglev  = 1; <span class="comment">% Level of verbosity</span>
+0193             disp(<span class="string">'Issues have been observed when using GLPK for MILP solving. Be advised to carefully observe the results, or us another solver.'</span>)
+0194         <span class="keyword">end</span>
+0195 
+0196         <span class="comment">% Ensure that RAVEN glpk binary is used, return to original</span>
+0197         <span class="comment">% directory afterwards</span>
+0198         [ravenDir,currDir]=findRAVENroot();
+0199         cd(fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'GLPKmex'</span>))
+0200         [xopt, fmin, errnum, extra] = glpk(prob.c, prob.A, prob.b, prob.lb, prob.ub, prob.csense, prob.vartype, prob.osense, solverparams);
+0201         cd(currDir)
+0202 
+0203         <span class="keyword">switch</span> errnum <span class="comment">% 1 = undefined; 2 = feasible; 3 = infeasible; 4 = no feasible solution; 5 = optimal; 6 = no unbounded solution</span>
+0204             <span class="keyword">case</span> 5
+0205                 res.stat = 1; <span class="comment">% Optimal</span>
+0206             <span class="keyword">case</span> 2
+0207                 res.stat = 2; <span class="comment">% Feasible, but not optimal</span>
+0208             <span class="keyword">otherwise</span>
+0209                 res.stat = 0;
+0210         <span class="keyword">end</span>
+0211         res.origStat = errnum;
+0212         res.full     = xopt;
+0213         res.obj      = fmin;
+0214         res.dual     = -extra.lambda*prob.osense;
+0215         res.rcost    = -extra.redcosts*prob.osense;
+0216         <span class="comment">%% Use scip</span>
+0217     <span class="keyword">case</span> {<span class="string">'soplex'</span>,<span class="string">'scip'</span>} <span class="comment">% Old 'soplex' option also allowed</span>
+0218         [xopt,fval,exitflag] = scip([], prob.c, prob.A,-prob.b, prob.b, prob.lb, prob.ub, prob.vartype);
+0219 
+0220         <span class="comment">%   [x,fval,exitflag,stats] = scip(H, f, A, rl, ru, lb, ub, xtype, sos, qc, nl, x0, opts)</span>
+0221         <span class="comment">%</span>
+0222         <span class="comment">%   Input arguments*:</span>
+0223         <span class="comment">%       H - quadratic objective matrix (sparse, optional [NOT TRIL / TRIU])</span>
+0224         <span class="comment">%       f - linear objective vector</span>
+0225         <span class="comment">%       A - linear constraint matrix (sparse)</span>
+0226         <span class="comment">%       rl - linear constraint lhs</span>
+0227         <span class="comment">%       ru - linear constraint rhs</span>
+0228         <span class="comment">%       lb - decision variable lower bounds</span>
+0229         <span class="comment">%       ub - decision variable upper bounds</span>
+0230         <span class="comment">%       xtype - string of variable integrality ('c' continuous, 'i' integer, 'b' binary)</span>
+0231         <span class="comment">%       sos - SOS structure with fields type, index and weight (see below)</span>
+0232         <span class="comment">%       qc - Quadratic Constraints structure with fields Q, l, qrl and qru (see below)</span>
+0233         <span class="comment">%       nl - Nonlinear Objective and Constraints structure (see below)</span>
+0234         <span class="comment">%       x0 - primal solution</span>
+0235         <span class="comment">%       opts - solver options (see below)</span>
+0236         <span class="comment">%</span>
+0237         <span class="comment">%   Return arguments:</span>
+0238         <span class="comment">%       x - solution vector</span>
+0239         <span class="comment">%       fval - objective value at the solution</span>
+0240         <span class="comment">%       exitflag - exit status (see below)</span>
+0241         <span class="comment">%       stats - statistics structure</span>
+0242         <span class="comment">%</span>
+0243         <span class="comment">%   Option Fields (all optional, see also optiset for a list):</span>
+0244         <span class="comment">%       solverOpts - specific SCIP options (list of pairs of parameter names and values)</span>
+0245         <span class="comment">%       maxiter - maximum LP solver iterations</span>
+0246         <span class="comment">%       maxnodes - maximum nodes to explore</span>
+0247         <span class="comment">%       maxtime - maximum execution time [s]</span>
+0248         <span class="comment">%       tolrfun - primal feasibility tolerance</span>
+0249         <span class="comment">%       display - solver display level [0-5]</span>
+0250         <span class="comment">%       probfile - write problem to given file</span>
+0251         <span class="comment">%       presolvedfile - write presolved problem to file</span>
+0252         <span class="comment">%</span>
+0253         <span class="comment">%   Return Status:</span>
+0254         <span class="comment">%       0 - Unknown</span>
+0255         <span class="comment">%       1 - User Interrupted</span>
+0256         <span class="comment">%       2 - Node Limit Reached</span>
+0257         <span class="comment">%       3 - Total Node Limit Reached</span>
+0258         <span class="comment">%       4 - Stall Node Limit Reached</span>
+0259         <span class="comment">%       5 - Time Limit Reached</span>
+0260         <span class="comment">%       6 - Memory Limit Reached</span>
+0261         <span class="comment">%       7 - Gap Limit Reached</span>
+0262         <span class="comment">%       8 - Solution Limit Reached</span>
+0263         <span class="comment">%       9 - Solution Improvement Limit Reached</span>
+0264         <span class="comment">%      10 - Restart Limit Reached</span>
+0265         <span class="comment">%      11 - Problem Solved to Optimality</span>
+0266         <span class="comment">%      12 - Problem is Infeasible</span>
+0267         <span class="comment">%      13 - Problem is Unbounded</span>
+0268         <span class="comment">%      14 - Problem is Either Infeasible or Unbounded</span>
+0269         
+0270         res.origStat = exitflag;
+0271         res.full = xopt;
+0272         res.obj  = fval;
+0273 
+0274         <span class="keyword">switch</span> exitflag
+0275             <span class="keyword">case</span> 11
+0276                 res.stat = 1;
+0277             <span class="keyword">case</span> {1, 5, 6, 7, 8, 9, 10, 13} <span class="comment">% If user-interrupted, not sure if optimal</span>
+0278                 res.stat = 2;
+0279             <span class="keyword">otherwise</span>
+0280                 res.stat = 0;
+0281         <span class="keyword">end</span>
+0282     <span class="keyword">otherwise</span>
+0283         error(<span class="string">'RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').'</span>);
+0284 <span class="keyword">end</span>
+0285 <span class="keyword">if</span> res.stat&gt;0
+0286     res.full=res.full(1:size(prob.a,2));
+0287 <span class="keyword">end</span>
+0288 <span class="comment">%Strip the auxiliary rows/columns that were added for conditioning, so that</span>
+0289 <span class="comment">%the result matches the dimensions of the original problem. res.full is</span>
+0290 <span class="comment">%already truncated to the original variables above (prob.a is left untouched).</span>
+0291 <span class="keyword">if</span> condApplied
+0292     <span class="keyword">if</span> isfield(res,<span class="string">'dual'</span>) &amp;&amp; numel(res.dual)&gt;condInfo.nOrigRows
+0293         res.dual=res.dual(1:condInfo.nOrigRows);
+0294     <span class="keyword">end</span>
+0295     <span class="keyword">if</span> isfield(res,<span class="string">'rcost'</span>) &amp;&amp; numel(res.rcost)&gt;condInfo.nOrigCols
+0296         res.rcost=res.rcost(1:condInfo.nOrigCols);
+0297     <span class="keyword">end</span>
+0298 <span class="keyword">end</span>
+0299 <span class="keyword">end</span>
+0300 
+0301 <a name="_sub1" href="#_subfunctions" class="code">function s_merged=structUpdate(s_old,s_new)</a>
+0302 <span class="comment">%Remove overlapping fields from first struct;</span>
+0303 <span class="comment">%Obtain all unique names of remaining fields;</span>
+0304 <span class="comment">%Merge both structs</span>
+0305 s_merged = rmfield(s_old, intersect(fieldnames(s_old), fieldnames(s_new)));
+0306 names = [fieldnames(s_merged); fieldnames(s_new)];
+0307 s_merged = cell2struct([struct2cell(s_merged); struct2cell(s_new)], names, 1);
+0308 <span class="keyword">end</span>
+0309 
+0310 <a name="_sub2" href="#_subfunctions" class="code">function paramlist = renameparams(paramlist,old,new)</a>
+0311 <span class="keyword">if</span> ~iscell(paramlist)
+0312     wasNoCell = true;
+0313     paramlist={paramlist};
+0314 <span class="keyword">else</span>
+0315     wasNoCell = false;
+0316 <span class="keyword">end</span>
+0317 <span class="keyword">for</span> i=1:numel(old)
+0318     paramlist = regexprep(paramlist,old{i},new{i});
+0319 <span class="keyword">end</span>
+0320 <span class="keyword">if</span> wasNoCell
+0321     paramlist=paramlist{1};
+0322 <span class="keyword">end</span>
+0323 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

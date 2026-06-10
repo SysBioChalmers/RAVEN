@@ -4,7 +4,7 @@
 <head>
   <title>Description of solveQP</title>
   <meta name="keywords" content="solveQP">
-  <meta name="description" content="solveQP">
+  <meta name="description" content="solveQP  Solve a quadratic fitting problem.">
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
   <meta name="robots" content="index, follow">
@@ -21,36 +21,48 @@
 </h1>
 
 <h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>solveQP</strong></div>
+<div class="box"><strong>solveQP  Solve a quadratic fitting problem.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="box"><strong>function solution=solveQP(model,rxns,values,maxIter, restartIter) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre class="comment"> solveQP
-   Solves a quadratic fitting problem.
+<div class="fragment"><pre class="comment"> solveQP  Solve a quadratic fitting problem.
 
-   model         a model structure
-   rxns          either a cell array of reaction IDs, a logical vector 
-                 with the same number of elements as reactions in the model,
-                 of a vector of indexes to fit to
-   values        the values to fit the fluxes to
-   maxIter       maximal number of iterations (optional, default 1000)
-   restartIter   run the fitting up to this many times in case it does
-                 not converge (optional, default 1)
+ Parameters
+ ----------
+ model : struct
+     a model structure.
+ rxns : cell or logical or double
+     either a cell array of reaction IDs, a logical vector with the same
+     number of elements as reactions in the model, or a vector of indexes
+     to fit to.
+ values : double
+     the values to fit the fluxes to.
+ maxIter : double, optional
+     maximal number of iterations (default 1000).
+ restartIter : double, optional
+     run the fitting up to this many times in case it does not converge
+     (default 1).
 
-   solution
-         f       Objective value
-         x       Primal
-         stat    Exit flag
+ Returns
+ -------
+ solution : struct
+     solution with fields:
 
- Usage: solution=solveQP(model,rxns,values,maxIter, restartIter)</pre></div>
+     - f : objective value.
+     - x : primal.
+     - stat : exit flag.
+
+ Examples
+ --------
+     solution = solveQP(model, rxns, values, maxIter, restartIter);</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="solveLP.html" class="code" title="function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)">solveLP</a>	solveLP</li></ul>
+<li><a href="solveLP.html" class="code" title="function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)">solveLP</a>	solveLP  Solve a linear programming problem.</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -60,68 +72,80 @@ This function is called by:
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function solution=solveQP(model,rxns,values,maxIter, restartIter)</a>
-0002 <span class="comment">% solveQP</span>
-0003 <span class="comment">%   Solves a quadratic fitting problem.</span>
-0004 <span class="comment">%</span>
-0005 <span class="comment">%   model         a model structure</span>
-0006 <span class="comment">%   rxns          either a cell array of reaction IDs, a logical vector</span>
-0007 <span class="comment">%                 with the same number of elements as reactions in the model,</span>
-0008 <span class="comment">%                 of a vector of indexes to fit to</span>
-0009 <span class="comment">%   values        the values to fit the fluxes to</span>
-0010 <span class="comment">%   maxIter       maximal number of iterations (optional, default 1000)</span>
-0011 <span class="comment">%   restartIter   run the fitting up to this many times in case it does</span>
-0012 <span class="comment">%                 not converge (optional, default 1)</span>
-0013 <span class="comment">%</span>
-0014 <span class="comment">%   solution</span>
-0015 <span class="comment">%         f       Objective value</span>
-0016 <span class="comment">%         x       Primal</span>
-0017 <span class="comment">%         stat    Exit flag</span>
-0018 <span class="comment">%</span>
-0019 <span class="comment">% Usage: solution=solveQP(model,rxns,values,maxIter, restartIter)</span>
-0020 rxns=char(rxns);
-0021 
-0022 <span class="keyword">if</span> nargin&lt;4
-0023     maxIter=1000;
-0024 <span class="keyword">end</span>
-0025 
-0026 <span class="keyword">if</span> nargin&lt;5
-0027     restartIter=1;
-0028 <span class="keyword">end</span>
-0029 
-0030 <span class="comment">%Check that it's feasible</span>
-0031 solution=<a href="solveLP.html" class="code" title="function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(model);
-0032 <span class="keyword">if</span> isempty(solution.x)
-0033     <span class="keyword">return</span>;
-0034 <span class="keyword">end</span>
-0035 
-0036 <span class="comment">%Get the indexes of the fluxes to fit</span>
-0037 allIndexes=getIndexes(model,rxns,<span class="string">'rxns'</span>);
-0038 
-0039 f=zeros(numel(model.rxns),1);
-0040 H=zeros(numel(model.rxns));
+0002 <span class="comment">% solveQP  Solve a quadratic fitting problem.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Parameters</span>
+0005 <span class="comment">% ----------</span>
+0006 <span class="comment">% model : struct</span>
+0007 <span class="comment">%     a model structure.</span>
+0008 <span class="comment">% rxns : cell or logical or double</span>
+0009 <span class="comment">%     either a cell array of reaction IDs, a logical vector with the same</span>
+0010 <span class="comment">%     number of elements as reactions in the model, or a vector of indexes</span>
+0011 <span class="comment">%     to fit to.</span>
+0012 <span class="comment">% values : double</span>
+0013 <span class="comment">%     the values to fit the fluxes to.</span>
+0014 <span class="comment">% maxIter : double, optional</span>
+0015 <span class="comment">%     maximal number of iterations (default 1000).</span>
+0016 <span class="comment">% restartIter : double, optional</span>
+0017 <span class="comment">%     run the fitting up to this many times in case it does not converge</span>
+0018 <span class="comment">%     (default 1).</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Returns</span>
+0021 <span class="comment">% -------</span>
+0022 <span class="comment">% solution : struct</span>
+0023 <span class="comment">%     solution with fields:</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">%     - f : objective value.</span>
+0026 <span class="comment">%     - x : primal.</span>
+0027 <span class="comment">%     - stat : exit flag.</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Examples</span>
+0030 <span class="comment">% --------</span>
+0031 <span class="comment">%     solution = solveQP(model, rxns, values, maxIter, restartIter);</span>
+0032 rxns=char(rxns);
+0033 
+0034 <span class="keyword">if</span> nargin&lt;4
+0035     maxIter=1000;
+0036 <span class="keyword">end</span>
+0037 
+0038 <span class="keyword">if</span> nargin&lt;5
+0039     restartIter=1;
+0040 <span class="keyword">end</span>
 0041 
-0042 <span class="comment">%Get the fitIndexes for the experiment</span>
-0043 <span class="keyword">for</span> j=1:numel(allIndexes) <span class="comment">%Not that neat</span>
-0044     H(allIndexes(j),allIndexes(j))=2;
-0045 <span class="keyword">end</span>
-0046 
-0047 f(allIndexes)=values.*-2;
-0048 
-0049 <span class="comment">%For a badly formulated problem it can occur that the solver stalls. This</span>
-0050 <span class="comment">%can sometimes be fixed by trying to solve the problem again</span>
-0051 options=optimset(<span class="string">'MaxIter'</span>,maxIter);
-0052 <span class="keyword">for</span> j=1:restartIter
-0053     [x,fval,flag] = <span class="keyword">...</span>
-0054         quadprog(H,f,[],[],model.S,model.b,model.lb,model.ub,[],options);
-0055     <span class="keyword">if</span> flag&gt;0
-0056         <span class="keyword">break</span>;
-0057     <span class="keyword">end</span>
-0058 <span class="keyword">end</span>
-0059 
-0060 solution.f=fval;
-0061 solution.x=x;
-0062 solution.stat=flag;
-0063 <span class="keyword">end</span></pre></div>
+0042 <span class="comment">%Check that it's feasible</span>
+0043 solution=<a href="solveLP.html" class="code" title="function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)">solveLP</a>(model);
+0044 <span class="keyword">if</span> isempty(solution.x)
+0045     <span class="keyword">return</span>;
+0046 <span class="keyword">end</span>
+0047 
+0048 <span class="comment">%Get the indexes of the fluxes to fit</span>
+0049 allIndexes=getIndexes(model,rxns,<span class="string">'rxns'</span>);
+0050 
+0051 f=zeros(numel(model.rxns),1);
+0052 H=zeros(numel(model.rxns));
+0053 
+0054 <span class="comment">%Get the fitIndexes for the experiment</span>
+0055 <span class="keyword">for</span> j=1:numel(allIndexes) <span class="comment">%Not that neat</span>
+0056     H(allIndexes(j),allIndexes(j))=2;
+0057 <span class="keyword">end</span>
+0058 
+0059 f(allIndexes)=values.*-2;
+0060 
+0061 <span class="comment">%For a badly formulated problem it can occur that the solver stalls. This</span>
+0062 <span class="comment">%can sometimes be fixed by trying to solve the problem again</span>
+0063 options=optimset(<span class="string">'MaxIter'</span>,maxIter);
+0064 <span class="keyword">for</span> j=1:restartIter
+0065     [x,fval,flag] = <span class="keyword">...</span>
+0066         quadprog(H,f,[],[],model.S,model.b,model.lb,model.ub,[],options);
+0067     <span class="keyword">if</span> flag&gt;0
+0068         <span class="keyword">break</span>;
+0069     <span class="keyword">end</span>
+0070 <span class="keyword">end</span>
+0071 
+0072 solution.f=fval;
+0073 solution.x=x;
+0074 solution.stat=flag;
+0075 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

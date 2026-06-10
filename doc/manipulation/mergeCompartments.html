@@ -1,0 +1,229 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of mergeCompartments</title>
+  <meta name="keywords" content="mergeCompartments">
+  <meta name="description" content="mergeCompartments  Merge all compartments in a model.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">manipulation</a> &gt; mergeCompartments.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for manipulation&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>mergeCompartments
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>mergeCompartments  Merge all compartments in a model.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet,distReverse) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> mergeCompartments  Merge all compartments in a model.
+
+ Parameters
+ ----------
+ model : struct
+     a model structure.
+ keepUnconstrained : logical, optional
+     keep metabolites that are unconstrained in a 'unconstrained'
+     compartment. If these are merged the exchange reactions will most often
+     be deleted (default false).
+ deleteRxnsWithOneMet : logical, optional
+     delete reactions with only one metabolite. These reactions come from
+     reactions such as A[c] + B[c] =&gt; A[m]. In some models hydrogen is
+     balanced around each membrane with reactions like this (default
+     false).
+ distReverse : logical, optional
+     distinguish reactions with same metabolites but different reversibility
+     as different reactions (default true).
+
+ Returns
+ -------
+ model : struct
+     a model with all reactions located to one compartment.
+ deletedRxns : cell
+     reactions that were deleted because of only having one metabolite
+     after merging.
+ duplicateRxns : cell
+     identical reactions that occurred in different compartments and were
+     deleted because they turned to be duplicated after merging.
+
+ Examples
+ --------
+     [model, deletedRxns, duplicateRxns] = mergeCompartments(model);
+
+ Notes
+ -----
+ Merges all compartments into one 's' compartment (for 'System'). This can
+ be useful for example to ensure that there are metabolic capabilities to
+ synthesize all metabolites.
+
+ If the metabolite IDs reflect the compartment that they are in the IDs may
+ no longer be representative.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="contractModel.html" class="code" title="function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse,mets)">contractModel</a>	contractModel  Contract a model by grouping all identical reactions.</li><li><a href="removeMets.html" class="code" title="function reducedModel=removeMets(model,metsToRemove,isNames,removeUnusedRxns,removeUnusedGenes,removeUnusedComps)">removeMets</a>	removeMets  Delete a set of metabolites from a model.</li><li><a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>	removeReactions  Delete a set of reactions from a model.</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet,distReverse)</a>
+0002 <span class="comment">% mergeCompartments  Merge all compartments in a model.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Parameters</span>
+0005 <span class="comment">% ----------</span>
+0006 <span class="comment">% model : struct</span>
+0007 <span class="comment">%     a model structure.</span>
+0008 <span class="comment">% keepUnconstrained : logical, optional</span>
+0009 <span class="comment">%     keep metabolites that are unconstrained in a 'unconstrained'</span>
+0010 <span class="comment">%     compartment. If these are merged the exchange reactions will most often</span>
+0011 <span class="comment">%     be deleted (default false).</span>
+0012 <span class="comment">% deleteRxnsWithOneMet : logical, optional</span>
+0013 <span class="comment">%     delete reactions with only one metabolite. These reactions come from</span>
+0014 <span class="comment">%     reactions such as A[c] + B[c] =&gt; A[m]. In some models hydrogen is</span>
+0015 <span class="comment">%     balanced around each membrane with reactions like this (default</span>
+0016 <span class="comment">%     false).</span>
+0017 <span class="comment">% distReverse : logical, optional</span>
+0018 <span class="comment">%     distinguish reactions with same metabolites but different reversibility</span>
+0019 <span class="comment">%     as different reactions (default true).</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% Returns</span>
+0022 <span class="comment">% -------</span>
+0023 <span class="comment">% model : struct</span>
+0024 <span class="comment">%     a model with all reactions located to one compartment.</span>
+0025 <span class="comment">% deletedRxns : cell</span>
+0026 <span class="comment">%     reactions that were deleted because of only having one metabolite</span>
+0027 <span class="comment">%     after merging.</span>
+0028 <span class="comment">% duplicateRxns : cell</span>
+0029 <span class="comment">%     identical reactions that occurred in different compartments and were</span>
+0030 <span class="comment">%     deleted because they turned to be duplicated after merging.</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">% Examples</span>
+0033 <span class="comment">% --------</span>
+0034 <span class="comment">%     [model, deletedRxns, duplicateRxns] = mergeCompartments(model);</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">% Notes</span>
+0037 <span class="comment">% -----</span>
+0038 <span class="comment">% Merges all compartments into one 's' compartment (for 'System'). This can</span>
+0039 <span class="comment">% be useful for example to ensure that there are metabolic capabilities to</span>
+0040 <span class="comment">% synthesize all metabolites.</span>
+0041 <span class="comment">%</span>
+0042 <span class="comment">% If the metabolite IDs reflect the compartment that they are in the IDs may</span>
+0043 <span class="comment">% no longer be representative.</span>
+0044 
+0045 <span class="keyword">if</span> nargin&lt;2
+0046     keepUnconstrained=false;
+0047 <span class="keyword">end</span>
+0048 <span class="keyword">if</span> nargin&lt;3
+0049     deleteRxnsWithOneMet=false;
+0050 <span class="keyword">end</span>
+0051 <span class="keyword">if</span> nargin&lt;4
+0052     distReverse=true;
+0053 <span class="keyword">end</span>
+0054 
+0055 <span class="keyword">if</span> ~isfield(model,<span class="string">'unconstrained'</span>)
+0056     keepUnconstrained=false;
+0057 <span class="keyword">end</span>
+0058 
+0059 <span class="comment">%Keep track of which reactions only contained one metabolite before the</span>
+0060 <span class="comment">%merging as they are probable exchange reactions.</span>
+0061 <span class="keyword">if</span> deleteRxnsWithOneMet==true
+0062     reservedRxns=model.rxns(sum(model.S~=0)==1);
+0063     <span class="keyword">if</span> ~isempty(reservedRxns) &amp;&amp; isfield(model,<span class="string">'unconstrained'</span>)
+0064         <span class="comment">%If there is no unconstrained field these reactions are probably</span>
+0065         <span class="comment">%exchange reactions and shall be kept. If not then print a warning</span>
+0066         EM=<span class="string">'There are reactions with only one metabolite. Cannot determine whether they are exchange reactions since there is no unconstrained field'</span>;
+0067         dispEM(EM,false);
+0068     <span class="keyword">end</span>
+0069 <span class="keyword">end</span>
+0070 
+0071 <span class="comment">%Loop through each metabolite, and if it is not unconstrained then change</span>
+0072 <span class="comment">%the S matrix to use the metabolite with the lowest index in model.comps</span>
+0073 <span class="comment">%instead</span>
+0074 uNames=unique(model.metNames);
+0075 <span class="keyword">for</span> i=1:numel(uNames)
+0076     <span class="comment">%Find all metabolites with this name..</span>
+0077     I=ismember(model.metNames,uNames(i));
+0078     
+0079     <span class="comment">%Find the first of those that is not unconstrained. This is the one</span>
+0080     <span class="comment">%that the other &quot;un-unconstrained&quot; should be changed to.</span>
+0081     <span class="keyword">if</span> keepUnconstrained==true
+0082         mergeTo=find(I &amp; model.unconstrained==false,1);
+0083         
+0084         <span class="comment">%This could happen if there is only one metabolite and it is</span>
+0085         <span class="comment">%unconstrained</span>
+0086         <span class="keyword">if</span> isempty(mergeTo)
+0087             <span class="keyword">continue</span>;
+0088         <span class="keyword">end</span>
+0089     <span class="keyword">else</span>
+0090         mergeTo=find(I,1);
+0091     <span class="keyword">end</span>
+0092     I(mergeTo)=false; <span class="comment">%Do not do anything for itself</span>
+0093     I=find(I);
+0094     
+0095     <span class="comment">%Go through each of the metabolites with this name and update them to</span>
+0096     <span class="comment">%mergeTo</span>
+0097     <span class="keyword">for</span> j=1:numel(I)
+0098         <span class="keyword">if</span> keepUnconstrained==true &amp;&amp; model.unconstrained(I(j))==true
+0099             <span class="keyword">continue</span>;
+0100         <span class="keyword">end</span>
+0101         <span class="comment">%Update the S matrix</span>
+0102         model.S(mergeTo,:)=model.S(mergeTo,:)+model.S(I(j),:);
+0103         model.S(I(j),:)=0;
+0104     <span class="keyword">end</span>
+0105 <span class="keyword">end</span>
+0106 
+0107 <span class="comment">%Remove all metabolites that are no longer used (with a bit of a trick)</span>
+0108 model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,{},true);
+0109 
+0110 <span class="comment">%Update all mets so that they are in compartment &quot;s&quot; with id &quot;1&quot;</span>
+0111 model.compNames={<span class="string">'System'</span>};
+0112 model.comps={<span class="string">'s'</span>};
+0113 model.compOutside={<span class="string">''</span>};
+0114 model.metComps=ones(numel(model.mets),1);
+0115 
+0116 <span class="comment">%Add exchange mets to another compartment &quot;b&quot; with id &quot;2&quot;</span>
+0117 <span class="keyword">if</span> keepUnconstrained==true
+0118     model.compNames=[model.compNames; {<span class="string">'Unconstrained'</span>}];
+0119     model.comps=[model.comps; {<span class="string">'b'</span>}];
+0120     model.compOutside=[model.compOutside; {<span class="string">'s'</span>}];
+0121     model.metComps(model.unconstrained~=0)=2;
+0122 <span class="keyword">end</span>
+0123 
+0124 <span class="comment">%Transport reactions on the form A &lt;=&gt; B will have been deleted by the</span>
+0125 <span class="comment">%merging. Remove those reactions</span>
+0126 model=<a href="removeMets.html" class="code" title="function reducedModel=removeMets(model,metsToRemove,isNames,removeUnusedRxns,removeUnusedGenes,removeUnusedComps)">removeMets</a>(model,{},false,true,true);
+0127 
+0128 <span class="keyword">if</span> deleteRxnsWithOneMet==true
+0129     I=model.rxns(sum(model.S~=0)==1);
+0130     
+0131     <span class="comment">%Delete the reactions that contain only one metabolite after the</span>
+0132     <span class="comment">%merging but not before</span>
+0133     deletedRxns=setdiff(I,reservedRxns);
+0134     model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,deletedRxns,true,true);
+0135 <span class="keyword">else</span>
+0136     deletedRxns={};
+0137 <span class="keyword">end</span>
+0138 
+0139 <span class="comment">%And then finally merge the identical reactions</span>
+0140 [model, ~, duplicateRxns]=<a href="contractModel.html" class="code" title="function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse,mets)">contractModel</a>(model,distReverse);
+0141 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

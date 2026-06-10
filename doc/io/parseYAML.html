@@ -1,0 +1,188 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of parseYAML</title>
+  <meta name="keywords" content="parseYAML">
+  <meta name="description" content="parseYAML  Read an arbitrary YAML file into a MATLAB struct/cell tree.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">io</a> &gt; parseYAML.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for io&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>parseYAML
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>parseYAML  Read an arbitrary YAML file into a MATLAB struct/cell tree.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function out = parseYAML(filename) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> parseYAML  Read an arbitrary YAML file into a MATLAB struct/cell tree.
+
+ Use this for parsing arbitrary YAML configuration / data files (e.g.
+ yeast-GEM's data/conditions/*.yml). For loading a cobra-format model
+ YAML, use readYAMLmodel instead — that function knows the model schema
+ and returns a populated RAVEN model struct.
+
+ Implementation: delegates to Python's yaml.safe_load, then recursively
+ converts the py.dict / py.list tree to native MATLAB struct / cell.
+ Requires a working MATLAB-Python bridge and the pyyaml package in the
+ linked Python environment:
+
+     pip install pyyaml         % from the MATLAB-linked Python env
+
+ Parameters
+ ----------
+ filename : char
+     Path to the YAML file.
+
+ Returns
+ -------
+ out : struct or cell or char or double or logical
+     MATLAB representation of the document:
+
+     - py.dict   -&gt; struct
+     - py.list   -&gt; cell column vector
+     - py.str    -&gt; char
+     - py.int    -&gt; double
+     - py.float  -&gt; double
+     - py.bool   -&gt; logical
+     - py.None   -&gt; []
+
+ Examples
+ --------
+     cfg = parseYAML('data/conditions/anaerobic.yml');
+
+ See also
+ --------
+ <a href="readYAMLmodel.html" class="code" title="function model=readYAMLmodel(fileName, verbose)">readYAMLmodel</a></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function v = pyToMatlab(obj)</a></li><li><a href="#_sub2" class="code">function name = matlabFieldName(key)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function out = parseYAML(filename)</a>
+0002 <span class="comment">% parseYAML  Read an arbitrary YAML file into a MATLAB struct/cell tree.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Use this for parsing arbitrary YAML configuration / data files (e.g.</span>
+0005 <span class="comment">% yeast-GEM's data/conditions/*.yml). For loading a cobra-format model</span>
+0006 <span class="comment">% YAML, use readYAMLmodel instead — that function knows the model schema</span>
+0007 <span class="comment">% and returns a populated RAVEN model struct.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% Implementation: delegates to Python's yaml.safe_load, then recursively</span>
+0010 <span class="comment">% converts the py.dict / py.list tree to native MATLAB struct / cell.</span>
+0011 <span class="comment">% Requires a working MATLAB-Python bridge and the pyyaml package in the</span>
+0012 <span class="comment">% linked Python environment:</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">%     pip install pyyaml         % from the MATLAB-linked Python env</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% Parameters</span>
+0017 <span class="comment">% ----------</span>
+0018 <span class="comment">% filename : char</span>
+0019 <span class="comment">%     Path to the YAML file.</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% Returns</span>
+0022 <span class="comment">% -------</span>
+0023 <span class="comment">% out : struct or cell or char or double or logical</span>
+0024 <span class="comment">%     MATLAB representation of the document:</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">%     - py.dict   -&gt; struct</span>
+0027 <span class="comment">%     - py.list   -&gt; cell column vector</span>
+0028 <span class="comment">%     - py.str    -&gt; char</span>
+0029 <span class="comment">%     - py.int    -&gt; double</span>
+0030 <span class="comment">%     - py.float  -&gt; double</span>
+0031 <span class="comment">%     - py.bool   -&gt; logical</span>
+0032 <span class="comment">%     - py.None   -&gt; []</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">% Examples</span>
+0035 <span class="comment">% --------</span>
+0036 <span class="comment">%     cfg = parseYAML('data/conditions/anaerobic.yml');</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">% See also</span>
+0039 <span class="comment">% --------</span>
+0040 <span class="comment">% readYAMLmodel</span>
+0041 
+0042 <span class="keyword">if</span> ~isfile(filename)
+0043     error(<span class="string">'parseYAML:fileNotFound'</span>, <span class="string">'File not found: %s'</span>, filename);
+0044 <span class="keyword">end</span>
+0045 
+0046 <span class="keyword">try</span>
+0047     py.importlib.import_module(<span class="string">'yaml'</span>);
+0048 <span class="keyword">catch</span> ME
+0049     error(<span class="string">'parseYAML:pyyamlMissing'</span>, <span class="keyword">...</span>
+0050         [<span class="string">'pyyaml is required to read arbitrary YAML files. Install it '</span> <span class="keyword">...</span>
+0051          <span class="string">'in your MATLAB-linked Python environment (`pip install pyyaml`).'</span> <span class="keyword">...</span>
+0052          <span class="string">'\nUnderlying error: %s'</span>], ME.message);
+0053 <span class="keyword">end</span>
+0054 
+0055 f = py.builtins.open(filename, <span class="string">'r'</span>);
+0056 cleanup = onCleanup(@() f.close());
+0057 data = py.yaml.safe_load(f);
+0058 
+0059 out = <a href="#_sub1" class="code" title="subfunction v = pyToMatlab(obj)">pyToMatlab</a>(data);
+0060 <span class="keyword">end</span>
+0061 
+0062 
+0063 <a name="_sub1" href="#_subfunctions" class="code">function v = pyToMatlab(obj)</a>
+0064 <span class="comment">% Recursively convert pyyaml-loaded Python objects into MATLAB types.</span>
+0065 <span class="keyword">if</span> isa(obj, <span class="string">'py.NoneType'</span>)
+0066     v = [];
+0067 <span class="keyword">elseif</span> isa(obj, <span class="string">'py.bool'</span>)
+0068     v = logical(obj);
+0069 <span class="keyword">elseif</span> isa(obj, <span class="string">'py.int'</span>) || isa(obj, <span class="string">'py.float'</span>)
+0070     v = double(obj);
+0071 <span class="keyword">elseif</span> isa(obj, <span class="string">'py.str'</span>)
+0072     v = char(obj);
+0073 <span class="keyword">elseif</span> isa(obj, <span class="string">'py.dict'</span>)
+0074     v = struct();
+0075     keys = cell(py.list(obj.keys()));
+0076     vals = cell(py.list(obj.values()));
+0077     <span class="keyword">for</span> i = 1:numel(keys)
+0078         v.(<a href="#_sub2" class="code" title="subfunction name = matlabFieldName(key)">matlabFieldName</a>(char(keys{i}))) = <a href="#_sub1" class="code" title="subfunction v = pyToMatlab(obj)">pyToMatlab</a>(vals{i});
+0079     <span class="keyword">end</span>
+0080 <span class="keyword">elseif</span> isa(obj, <span class="string">'py.list'</span>) || isa(obj, <span class="string">'py.tuple'</span>)
+0081     cells = cell(obj);
+0082     v = cell(numel(cells), 1);
+0083     <span class="keyword">for</span> i = 1:numel(cells)
+0084         v{i} = <a href="#_sub1" class="code" title="subfunction v = pyToMatlab(obj)">pyToMatlab</a>(cells{i});
+0085     <span class="keyword">end</span>
+0086 <span class="keyword">else</span>
+0087     <span class="comment">% Fallback: best-effort</span>
+0088     v = obj;
+0089 <span class="keyword">end</span>
+0090 <span class="keyword">end</span>
+0091 
+0092 
+0093 <a name="_sub2" href="#_subfunctions" class="code">function name = matlabFieldName(key)</a>
+0094 <span class="comment">% Sanitise a YAML key into a valid MATLAB field name. Replaces non-</span>
+0095 <span class="comment">% alphanumeric characters with underscores; prefixes a digit-starting</span>
+0096 <span class="comment">% key with 'f_'.</span>
+0097 name = regexprep(key, <span class="string">'[^A-Za-z0-9_]'</span>, <span class="string">'_'</span>);
+0098 <span class="keyword">if</span> isempty(name) || ~isstrprop(name(1), <span class="string">'alpha'</span>)
+0099     name = [<span class="string">'f_'</span> name];
+0100 <span class="keyword">end</span>
+0101 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
