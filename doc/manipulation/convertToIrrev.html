@@ -1,0 +1,202 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of convertToIrrev</title>
+  <meta name="keywords" content="convertToIrrev">
+  <meta name="description" content="convertToIrrev  Convert a model to irreversible form.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">manipulation</a> &gt; convertToIrrev.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for manipulation&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>convertToIrrev
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>convertToIrrev  Convert a model to irreversible form.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> convertToIrrev  Convert a model to irreversible form.
+
+ Reversible reactions are split into one forward and one reverse
+ reaction. The reverse reactions are saved as 'rxnID_REV'. A warning is
+ shown if some reaction identifiers already end with '_REV'.
+
+ Parameters
+ ----------
+ model : struct
+     a model structure.
+ rxns : cell, optional
+     cell array with the reactions to split, if reversible (default
+     model.rxns).
+
+ Returns
+ -------
+ irrevModel : struct
+     a model structure where reversible reactions have been split into
+     one forward and one reverse reaction.
+ matchRev : double
+     matching forward reaction to its backward reaction.
+ rev2irrev : cell
+     forward and backward reactions for reversible reactions.
+ irrev2rev : double
+     matching all reactions back to original model.
+
+ Examples
+ --------
+     [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns);</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="simplifyModel.html" class="code" title="function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)">simplifyModel</a>	simplifyModel  Simplify a model by deleting reactions and metabolites.</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns)</a>
+0002 <span class="comment">% convertToIrrev  Convert a model to irreversible form.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Reversible reactions are split into one forward and one reverse</span>
+0005 <span class="comment">% reaction. The reverse reactions are saved as 'rxnID_REV'. A warning is</span>
+0006 <span class="comment">% shown if some reaction identifiers already end with '_REV'.</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">% Parameters</span>
+0009 <span class="comment">% ----------</span>
+0010 <span class="comment">% model : struct</span>
+0011 <span class="comment">%     a model structure.</span>
+0012 <span class="comment">% rxns : cell, optional</span>
+0013 <span class="comment">%     cell array with the reactions to split, if reversible (default</span>
+0014 <span class="comment">%     model.rxns).</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% Returns</span>
+0017 <span class="comment">% -------</span>
+0018 <span class="comment">% irrevModel : struct</span>
+0019 <span class="comment">%     a model structure where reversible reactions have been split into</span>
+0020 <span class="comment">%     one forward and one reverse reaction.</span>
+0021 <span class="comment">% matchRev : double</span>
+0022 <span class="comment">%     matching forward reaction to its backward reaction.</span>
+0023 <span class="comment">% rev2irrev : cell</span>
+0024 <span class="comment">%     forward and backward reactions for reversible reactions.</span>
+0025 <span class="comment">% irrev2rev : double</span>
+0026 <span class="comment">%     matching all reactions back to original model.</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% Examples</span>
+0029 <span class="comment">% --------</span>
+0030 <span class="comment">%     [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns);</span>
+0031 
+0032 <span class="keyword">if</span> nargin&lt;2
+0033     I=true(numel(model.rxns),1);
+0034 <span class="keyword">else</span>
+0035     rxns=convertCharArray(rxns);
+0036     I=getIndexes(model,rxns,<span class="string">'rxns'</span>,true);
+0037 <span class="keyword">end</span>
+0038 
+0039 irrevModel=model;
+0040 
+0041 revIndexesBool=model.rev~=0 &amp; I;
+0042 revIndexes=find(revIndexesBool);
+0043 numOrigRxns=numel(model.rxns);
+0044 numRevRxns=numel(revIndexes);
+0045 
+0046 <span class="keyword">if</span> any(revIndexesBool)
+0047     irrevModel.S=[model.S,model.S(:,revIndexes)*-1];
+0048     irrevModel.rev(revIndexes)=0;
+0049     irrevModel.rev=[irrevModel.rev;zeros(numRevRxns,1)];
+0050     
+0051     <span class="comment">%Get the limits for all normal and reversible rxns</span>
+0052     ubNormal=irrevModel.ub;
+0053     ubNormal(revIndexes(ubNormal(revIndexes)&lt;0))=0;
+0054     lbNormal=irrevModel.lb;
+0055     lbNormal(revIndexes(lbNormal(revIndexes)&lt;0))=0;
+0056     ubRev=irrevModel.lb(revIndexes)*-1;
+0057     ubRev(ubRev&lt;0)=0;
+0058     lbRev=irrevModel.ub(revIndexes)*-1;
+0059     lbRev(lbRev&lt;0)=0;
+0060     irrevModel.ub=[ubNormal;ubRev];
+0061     irrevModel.lb=[lbNormal;lbRev];
+0062     
+0063     <span class="comment">%The objective coefficents should be zero for the backwards reversible</span>
+0064     <span class="comment">%reactions unless they were negative in the original. In that case they</span>
+0065     <span class="comment">%should be positive for the backwards reversible and deleted from the</span>
+0066     <span class="comment">%original</span>
+0067     irrevC=zeros(numRevRxns,1);
+0068     
+0069     <span class="keyword">if</span> any(irrevModel.c(revIndexes)&lt;0)
+0070         originalC=irrevModel.c(revIndexes);
+0071         irrevC(irrevModel.c(revIndexes)&lt;0)=originalC(originalC&lt;0)*-1;
+0072         irrevModel.c(irrevModel.c&lt;0 &amp; revIndexesBool)=0;
+0073     <span class="keyword">end</span>
+0074     irrevModel.c=[irrevModel.c;irrevC];
+0075     
+0076     irrevModel.rxns=[irrevModel.rxns;strcat(irrevModel.rxns(revIndexes),<span class="string">'_REV'</span>)];
+0077     irrevModel.rxnNames=[irrevModel.rxnNames;strcat(irrevModel.rxnNames(revIndexes),<span class="string">' (reversible)'</span>)];
+0078     
+0079     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'grRules'</span>)
+0080         irrevModel.grRules=[irrevModel.grRules;irrevModel.grRules(revIndexes,:)];
+0081     <span class="keyword">end</span>
+0082     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnMiriams'</span>)
+0083         irrevModel.rxnMiriams=[irrevModel.rxnMiriams;irrevModel.rxnMiriams(revIndexes,:)];
+0084     <span class="keyword">end</span>
+0085     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnGeneMat'</span>)
+0086         irrevModel.rxnGeneMat=[irrevModel.rxnGeneMat;irrevModel.rxnGeneMat(revIndexes,:)];
+0087     <span class="keyword">end</span>
+0088     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'subSystems'</span>)
+0089         irrevModel.subSystems=[irrevModel.subSystems;irrevModel.subSystems(revIndexes)];
+0090     <span class="keyword">end</span>
+0091     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'eccodes'</span>)
+0092         irrevModel.eccodes=[irrevModel.eccodes;irrevModel.eccodes(revIndexes)];
+0093     <span class="keyword">end</span>
+0094     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnComps'</span>)
+0095         irrevModel.rxnComps=[irrevModel.rxnComps;irrevModel.rxnComps(revIndexes)];
+0096     <span class="keyword">end</span>
+0097     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnFrom'</span>)
+0098         irrevModel.rxnFrom=[irrevModel.rxnFrom;irrevModel.rxnFrom(revIndexes)];
+0099     <span class="keyword">end</span>
+0100     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnScores'</span>)
+0101         irrevModel.rxnScores=[irrevModel.rxnScores;irrevModel.rxnScores(revIndexes)];
+0102     <span class="keyword">end</span>
+0103     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnNotes'</span>)
+0104         irrevModel.rxnNotes=[irrevModel.rxnNotes;irrevModel.rxnNotes(revIndexes)];
+0105     <span class="keyword">end</span>
+0106     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnConfidenceScores'</span>)
+0107         irrevModel.rxnConfidenceScores=[irrevModel.rxnConfidenceScores;irrevModel.rxnConfidenceScores(revIndexes)];
+0108     <span class="keyword">end</span>
+0109     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnDeltaG'</span>)
+0110         irrevModel.rxnDeltaG=[irrevModel.rxnDeltaG;-irrevModel.rxnDeltaG(revIndexes)]; <span class="comment">% Invert dG for reversed rxns</span>
+0111     <span class="keyword">end</span>
+0112     <span class="keyword">if</span> isfield(irrevModel,<span class="string">'rxnReferences'</span>)
+0113         irrevModel.rxnReferences=[irrevModel.rxnReferences;irrevModel.rxnReferences(revIndexes)];
+0114     <span class="keyword">end</span>
+0115 <span class="keyword">end</span>
+0116     <span class="comment">% Additional output</span>
+0117     <span class="keyword">if</span> nargout&gt;1
+0118         irrev2rev = [transpose(1:numOrigRxns);revIndexes];
+0119         rev2irrev = num2cell(transpose(1:numOrigRxns));
+0120         newIdxs   = [revIndexes transpose(1:numRevRxns)];
+0121         <span class="keyword">for</span> i=1:numRevRxns
+0122             rev2irrev{revIndexes(i)} = newIdxs(i,:);
+0123         <span class="keyword">end</span>
+0124         matchRev  = zeros(numel(irrev2rev),1);
+0125         matchRev(revIndexes) = (1:numRevRxns)+numOrigRxns;
+0126     <span class="keyword">end</span>
+0127 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

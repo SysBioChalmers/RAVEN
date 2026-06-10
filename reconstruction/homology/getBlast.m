@@ -35,8 +35,7 @@ function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
 % This function calls BLAST+ to perform a bidirectional homology test
 % between the organism of interest and a set of other organisms using
 % standard settings. The only filtering this function does is the removal
-% of hits with an E-value higher than 10e-5. The other homology
-% measurements can be implemented using getBlastFromExcel.
+% of hits with an E-value higher than 10e-5.
 %
 % Examples
 % --------
@@ -45,7 +44,7 @@ function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
 %
 % See also
 % --------
-% getModelFromHomology, getBlastFromExcel, getDiamond
+% getModelFromHomology, getDiamond
 
 if nargin<5
     developMode = false;

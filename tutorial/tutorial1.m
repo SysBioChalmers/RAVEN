@@ -128,10 +128,3 @@ followChanged(modelETH,sol.x,solETH.x, 30, 0.4, 0.4,{'ATP'});
 %to have to do with acetate and so on. This allows the user to look further
 %and further down until one understands the underlying flux redistributions
 %that give rise to different phenotypes.
-
-%The fluxes can also be visualized on a metabolic map. Green corresponds to
-%reactions which are more used for growth on glucose, and red are reactions
-%which are more used for growth on ethanol. Open the "GLCvsETH.pdf" file to
-%be able to zoom in on individual reactions.
-load 'pcPathway.mat' pathway;
-drawMap('Glucose vs ethanol',pathway,model,sol.x,solETH.x,modelETH,'GLCvsETH.pdf',10^-5);

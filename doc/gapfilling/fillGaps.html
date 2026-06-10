@@ -1,0 +1,345 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of fillGaps</title>
+  <meta name="keywords" content="fillGaps">
+  <meta name="description" content="fillGaps  Use template model(s) to fill gaps in a model.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">gapfilling</a> &gt; fillGaps.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for gapfilling&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>fillGaps
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>fillGaps  Use template model(s) to fill gaps in a model.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,allowNetProduction,useModelConstraints,supressWarnings,rxnScores) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> fillGaps  Use template model(s) to fill gaps in a model.
+
+ This method works by merging the model with the reference model(s) and
+ checking which reactions can carry flux. All reactions that can't carry
+ flux are removed (cannotConnect). If useModelConstraints is false it
+ then solves the MILP problem of minimizing the number of active
+ reactions from the reference models that are required to have flux in
+ all the reactions in model. This requires that the input model has
+ exchange reactions present for the nutrients that are needed for its
+ metabolism. If useModelConstraints is true then the problem is to
+ include as few reactions as possible from the reference models in order
+ to satisfy the model constraints.
+
+ The intended use is that the user can attempt a general gap-filling
+ using useModelConstraints=false, or a more targeted gap-filling by
+ setting constraints in the model structure and then using
+ useModelConstraints=true. For example, to include reactions so that all
+ biomass components can be synthesized, the user could define a biomass
+ equation and set its lower bound to &gt;0. Running this function with
+ useModelConstraints=true would then give the smallest set of reactions
+ that have to be included in order for the model to produce biomass.
+
+ Parameters
+ ----------
+ model : struct
+     a model structure that may contain gaps to be filled.
+ models : cell or struct
+     a cell array of reference models or a model structure. The gaps will
+     be filled using reactions from these models.
+ allowNetProduction : logical, optional
+     true if net production of all metabolites is allowed. A reaction can
+     be unable to carry flux because one of the reactants is unavailable
+     or because one of the products can't be further processed. If true,
+     only the first type of unconnectivity is considered (default false).
+ useModelConstraints : logical, optional
+     true if the constraints specified in the model structure should be
+     used. If false then reactions are included from the template
+     model(s) so that as many reactions as possible in model can carry
+     flux (default false).
+ supressWarnings : logical, optional
+     false if warnings should be displayed (default false).
+ rxnScores : double or cell, optional
+     array with scores for each of the reactions in the reference
+     model(s). If more than one model is supplied, then rxnScores should
+     be a cell array of vectors. The solver will try to maximize the sum
+     of the scores for the included reactions (default is -1 for all
+     reactions).
+
+ Returns
+ -------
+ newConnected : cell
+     cell array with the reactions that could be connected. This is not
+     calculated if useModelConstraints is true.
+ cannotConnect : cell
+     cell array with reactions that could not be connected. This is not
+     calculated if useModelConstraints is true.
+ addedRxns : cell
+     cell array with the reactions that were added from &quot;models&quot;.
+ newModel : struct
+     the model with reactions added to fill gaps.
+ exitFlag : double
+     exit status:
+
+     - 1 : optimal solution found
+     - -1 : no feasible solution found
+     - -2 : optimization time out
+
+ Examples
+ --------
+     [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=...
+         fillGaps(model,models,allowNetProduction,useModelConstraints,...
+         supressWarnings,rxnScores,params);</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="fitTasks.html" class="code" title="function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure)">fitTasks</a>	fitTasks  Fill gaps in a model so it can perform a list of tasks.</li><li><a href="gapReport.html" class="code" title="function [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnect,neededForProductionMat, canProduceWithoutInput, canConsumeWithoutOutput,connectedFromTemplates, addedFromTemplates]=gapReport(model, templateModels)">gapReport</a>	gapReport  Perform a gap analysis and summarize the results.</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,allowNetProduction,useModelConstraints,supressWarnings,rxnScores)</a>
+0002 <span class="comment">% fillGaps  Use template model(s) to fill gaps in a model.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% This method works by merging the model with the reference model(s) and</span>
+0005 <span class="comment">% checking which reactions can carry flux. All reactions that can't carry</span>
+0006 <span class="comment">% flux are removed (cannotConnect). If useModelConstraints is false it</span>
+0007 <span class="comment">% then solves the MILP problem of minimizing the number of active</span>
+0008 <span class="comment">% reactions from the reference models that are required to have flux in</span>
+0009 <span class="comment">% all the reactions in model. This requires that the input model has</span>
+0010 <span class="comment">% exchange reactions present for the nutrients that are needed for its</span>
+0011 <span class="comment">% metabolism. If useModelConstraints is true then the problem is to</span>
+0012 <span class="comment">% include as few reactions as possible from the reference models in order</span>
+0013 <span class="comment">% to satisfy the model constraints.</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% The intended use is that the user can attempt a general gap-filling</span>
+0016 <span class="comment">% using useModelConstraints=false, or a more targeted gap-filling by</span>
+0017 <span class="comment">% setting constraints in the model structure and then using</span>
+0018 <span class="comment">% useModelConstraints=true. For example, to include reactions so that all</span>
+0019 <span class="comment">% biomass components can be synthesized, the user could define a biomass</span>
+0020 <span class="comment">% equation and set its lower bound to &gt;0. Running this function with</span>
+0021 <span class="comment">% useModelConstraints=true would then give the smallest set of reactions</span>
+0022 <span class="comment">% that have to be included in order for the model to produce biomass.</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% Parameters</span>
+0025 <span class="comment">% ----------</span>
+0026 <span class="comment">% model : struct</span>
+0027 <span class="comment">%     a model structure that may contain gaps to be filled.</span>
+0028 <span class="comment">% models : cell or struct</span>
+0029 <span class="comment">%     a cell array of reference models or a model structure. The gaps will</span>
+0030 <span class="comment">%     be filled using reactions from these models.</span>
+0031 <span class="comment">% allowNetProduction : logical, optional</span>
+0032 <span class="comment">%     true if net production of all metabolites is allowed. A reaction can</span>
+0033 <span class="comment">%     be unable to carry flux because one of the reactants is unavailable</span>
+0034 <span class="comment">%     or because one of the products can't be further processed. If true,</span>
+0035 <span class="comment">%     only the first type of unconnectivity is considered (default false).</span>
+0036 <span class="comment">% useModelConstraints : logical, optional</span>
+0037 <span class="comment">%     true if the constraints specified in the model structure should be</span>
+0038 <span class="comment">%     used. If false then reactions are included from the template</span>
+0039 <span class="comment">%     model(s) so that as many reactions as possible in model can carry</span>
+0040 <span class="comment">%     flux (default false).</span>
+0041 <span class="comment">% supressWarnings : logical, optional</span>
+0042 <span class="comment">%     false if warnings should be displayed (default false).</span>
+0043 <span class="comment">% rxnScores : double or cell, optional</span>
+0044 <span class="comment">%     array with scores for each of the reactions in the reference</span>
+0045 <span class="comment">%     model(s). If more than one model is supplied, then rxnScores should</span>
+0046 <span class="comment">%     be a cell array of vectors. The solver will try to maximize the sum</span>
+0047 <span class="comment">%     of the scores for the included reactions (default is -1 for all</span>
+0048 <span class="comment">%     reactions).</span>
+0049 <span class="comment">%</span>
+0050 <span class="comment">% Returns</span>
+0051 <span class="comment">% -------</span>
+0052 <span class="comment">% newConnected : cell</span>
+0053 <span class="comment">%     cell array with the reactions that could be connected. This is not</span>
+0054 <span class="comment">%     calculated if useModelConstraints is true.</span>
+0055 <span class="comment">% cannotConnect : cell</span>
+0056 <span class="comment">%     cell array with reactions that could not be connected. This is not</span>
+0057 <span class="comment">%     calculated if useModelConstraints is true.</span>
+0058 <span class="comment">% addedRxns : cell</span>
+0059 <span class="comment">%     cell array with the reactions that were added from &quot;models&quot;.</span>
+0060 <span class="comment">% newModel : struct</span>
+0061 <span class="comment">%     the model with reactions added to fill gaps.</span>
+0062 <span class="comment">% exitFlag : double</span>
+0063 <span class="comment">%     exit status:</span>
+0064 <span class="comment">%</span>
+0065 <span class="comment">%     - 1 : optimal solution found</span>
+0066 <span class="comment">%     - -1 : no feasible solution found</span>
+0067 <span class="comment">%     - -2 : optimization time out</span>
+0068 <span class="comment">%</span>
+0069 <span class="comment">% Examples</span>
+0070 <span class="comment">% --------</span>
+0071 <span class="comment">%     [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=...</span>
+0072 <span class="comment">%         fillGaps(model,models,allowNetProduction,useModelConstraints,...</span>
+0073 <span class="comment">%         supressWarnings,rxnScores,params);</span>
+0074 
+0075 <span class="comment">%If the user only supplied a single template model</span>
+0076 <span class="keyword">if</span> ~iscell(models)
+0077     models={models};
+0078 <span class="keyword">end</span>
+0079 
+0080 <span class="keyword">if</span> nargin&lt;3
+0081     allowNetProduction=false;
+0082 <span class="keyword">end</span>
+0083 <span class="keyword">if</span> nargin&lt;4
+0084     useModelConstraints=false;
+0085 <span class="keyword">end</span>
+0086 <span class="keyword">if</span> nargin&lt;5
+0087     supressWarnings=false;
+0088 <span class="keyword">end</span>
+0089 <span class="keyword">if</span> nargin&lt;6
+0090     rxnScores=cell(numel(models),1);
+0091     <span class="keyword">for</span> i=1:numel(models)
+0092         rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
+0093     <span class="keyword">end</span>
+0094 <span class="keyword">end</span>
+0095 <span class="keyword">if</span> isempty(rxnScores)
+0096     rxnScores=cell(numel(models),1);
+0097     <span class="keyword">for</span> i=1:numel(models)
+0098         rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
+0099     <span class="keyword">end</span>
+0100 <span class="keyword">end</span>
+0101 <span class="keyword">if</span> nargin&lt;7
+0102     params=struct();
+0103 <span class="keyword">end</span>
+0104 
+0105 <span class="keyword">if</span> ~iscell(rxnScores)
+0106     rxnScores={rxnScores};
+0107 <span class="keyword">end</span>
+0108 
+0109 models=models(:);
+0110 rxnScores=rxnScores(:);
+0111 
+0112 <span class="comment">%Check if the original model has an unconstrained field. If so, give a</span>
+0113 <span class="comment">%warning</span>
+0114 <span class="keyword">if</span> supressWarnings==false
+0115     <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
+0116         EM=<span class="string">'This algorithm is meant to function on a model with exchange reactions for uptake and excretion of metabolites. The current model still has the &quot;unconstrained&quot; field'</span>;
+0117         dispEM(EM,false);
+0118     <span class="keyword">else</span>
+0119         <span class="keyword">if</span> isempty(getExchangeRxns(model,<span class="string">'both'</span>))
+0120             fprintf(<span class="string">'NOTE: This algorithm is meant to function on a model with exchange reactions for uptake and excretion of metabolites. The current model does not seem to contain any such reactions.\n'</span>);
+0121         <span class="keyword">end</span>
+0122     <span class="keyword">end</span>
+0123 <span class="keyword">end</span>
+0124 
+0125 <span class="comment">%Simplify the template models to remove constrained rxns. At the same time,</span>
+0126 <span class="comment">%check that the id of the template models isn't the same as the model. That</span>
+0127 <span class="comment">%would cause an error further down</span>
+0128 <span class="keyword">for</span> i=1:numel(models)
+0129     models{i}.rxnScores=rxnScores{i};
+0130     models{i}=simplifyModel(models{i},false,false,true);
+0131     <span class="keyword">if</span> strcmpi(models{i}.id,model.id)
+0132         EM=<span class="string">'The reference model(s) cannot have the same id as the model'</span>;
+0133         dispEM(EM);
+0134     <span class="keyword">end</span>
+0135 <span class="keyword">end</span>
+0136 
+0137 <span class="comment">%This is a rather ugly solution to the issue that it's a bit tricky to keep</span>
+0138 <span class="comment">%track of which scores belong to which reactions. This requires that</span>
+0139 <span class="comment">%removeReactions and mergeModels are modified to check for the new field.</span>
+0140 model.rxnScores=zeros(numel(model.rxns),1);
+0141 
+0142 <span class="comment">%First merge all models into one big one</span>
+0143 allModels=mergeModels([{model};models],<span class="string">'metNames'</span>,true);
+0144 
+0145 <span class="comment">%Add that net production is ok</span>
+0146 <span class="keyword">if</span> allowNetProduction==true
+0147     <span class="comment">%A second column in model.b means that the b field is lower and upper</span>
+0148     <span class="comment">%bound on the RHS.</span>
+0149     model.b=[model.b(:,1) inf(numel(model.mets),1)];
+0150     allModels.b=[allModels.b(:,1) inf(numel(allModels.mets),1)];
+0151 <span class="keyword">end</span>
+0152 
+0153 <span class="keyword">if</span> useModelConstraints==true
+0154     newConnected={};
+0155     cannotConnect={};
+0156     
+0157     <span class="comment">%Check that the input model isn't solveable without any input</span>
+0158     sol=solveLP(model);
+0159     <span class="keyword">if</span> ~isempty(sol.f)
+0160         addedRxns={};
+0161         newModel=model;
+0162         exitFlag=1;
+0163         <span class="keyword">return</span>;
+0164     <span class="keyword">end</span>
+0165     
+0166     <span class="comment">%Then check that the merged model is solveable</span>
+0167     sol=solveLP(allModels);
+0168     <span class="keyword">if</span> isempty(sol.f)
+0169         EM=<span class="string">'There are no reactions in the template model(s) that can make the model constraints satisfied'</span>;
+0170         dispEM(EM);
+0171     <span class="keyword">end</span>
+0172     
+0173     <span class="comment">%Remove dead ends for speed reasons. This has to be done here and</span>
+0174     <span class="comment">%duplicate below because there is otherwise a risk that a reaction</span>
+0175     <span class="comment">%which is constrained to something relevant is removed</span>
+0176     allModels=simplifyModel(allModels,false,false,false,true,false,false,false,[],true);
+0177     allModels.c(:)=0;
+0178 <span class="keyword">else</span>
+0179     <span class="comment">%Remove dead ends for speed reasons</span>
+0180     allModels=simplifyModel(allModels,false,false,false,true,false,false,false,[],true);
+0181     allModels.c(:)=0;
+0182     
+0183     <span class="comment">%If model constraints shouldn't be used, then determine which reactions</span>
+0184     <span class="comment">%to force to have flux</span>
+0185     
+0186     <span class="comment">%Get the reactions that can carry flux in the original model</span>
+0187     originalFlux=haveFlux(model,1);
+0188     
+0189     <span class="comment">%For the ones that can't carry flux, see if they can do so in the</span>
+0190     <span class="comment">%merged model</span>
+0191     toCheck=intersect(allModels.rxns(strcmp(allModels.rxnFrom,model.id)),model.rxns(~originalFlux));
+0192     
+0193     <span class="comment">%Get the ones that still cannot carry flux</span>
+0194     I=haveFlux(allModels,1,toCheck);
+0195     
+0196     <span class="comment">%Get the reactions that can't carry flux in the original model, but can</span>
+0197     <span class="comment">%in the merged one</span>
+0198     K=toCheck(I);
+0199     
+0200     <span class="comment">%This is a temporary thing to only look at the non-reversible rxns.</span>
+0201     <span class="comment">%This is because all reversible rxns can have a flux in the</span>
+0202     <span class="comment">%irreversible model format that is used by getMinNrFluxes</span>
+0203     [~, I]=ismember(K,model.rxns);
+0204     K(model.rev(I)~=0)=[];
+0205     
+0206     <span class="comment">%Constrain all reactions in the original model to have a flux</span>
+0207     allModels.lb(ismember(allModels.rxns,K))=0.1;
+0208     
+0209     <span class="comment">%Return stuff</span>
+0210     newConnected=K;
+0211     cannotConnect=setdiff(model.rxns(~originalFlux),newConnected);
+0212 <span class="keyword">end</span>
+0213 
+0214 <span class="comment">%Then minimize for the number of fluxes used. The fixed rxns doesn't need</span>
+0215 <span class="comment">%to participate</span>
+0216 templateRxns=find(~strcmp(allModels.rxnFrom,model.id));
+0217 [~, J, exitFlag]=getMinNrFluxes(allModels,templateRxns,params,allModels.rxnScores(templateRxns));
+0218 
+0219 <span class="comment">%Remove everything except for the added ones</span>
+0220 I=true(numel(allModels.rxns),1);
+0221 I(templateRxns(J))=false;
+0222 addedModel=removeReactions(allModels,I,true,true,true);
+0223 
+0224 newModel=mergeModels({model;addedModel},<span class="string">'metNames'</span>,true);
+0225 addedRxns=setdiff(newModel.rxns,model.rxns);
+0226 newModel=rmfield(newModel,<span class="string">'rxnScores'</span>);
+0227 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
