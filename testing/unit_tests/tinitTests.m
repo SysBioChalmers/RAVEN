@@ -594,22 +594,5 @@ expResult = {  'S1';'S2';'S3';'S4';'S5';'S6';'S7';'S8';'S9';'E1';'E2';'E3';'E4';
 verifyTrue(testCase, all(contains(mres.rxns,expResult)))
 verifyTrue(testCase, all(contains(mres2.rxns,expResult)))
 
-%run the old tINIT version (in Human-GEM)
-%this is just to show that they become different, not really part of the test case
-%paramsL2 = struct();
-%paramsL2.TimeLimit = 1000;
-%testModelL2 = closeModel(testModelL);
-%init_modelOrig = getINITModel2(testModelL2,arrayDataL.tissues{1},[],[],arrayDataL,[],true,[],true,true,[],paramsL2);
-
-%in this call, I have modified the code - the possibility to turn off met secretion + don't allow flux in both directions is not possible.
-%The following line, around line 337, is changed
-%from:
-%[~, deletedRxnsInINIT, metProduction] = runINIT(simplifyModel(cModel),rxnScores,metabolomicsData,essentialRxnsForTasks,0,true,false,params);
-%to:
-%[~, deletedRxnsInINIT, metProduction] = runINIT(simplifyModel(cModel),rxnScores,metabolomicsData,essentialRxnsForTasks,0,false,true,params);
-%init_modelOrigNoSecrOneDirOnly = getINITModel2(testModelL2,arrayDataL.tissues{1},[],[],arrayDataL,[],true,[],true,true,[],paramsL2);
-
-%The models init_modelOrigNoSecrOneDirOnly and mres2 are very similar, (only one exch rxn differ, which is expected)
-%init_modelOrig is quite different, with a lot of gaps, and worse. So, the conclusion is that the new version does a pretty good job.
 setRavenSolver(currSolver);
 end
