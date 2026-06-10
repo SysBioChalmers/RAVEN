@@ -1,19 +1,27 @@
 function [spontaneousRxnList, pathwayID]=addSpontaneousRxns(rxnList, metList)
-% addSpontaneousRxns
-%   Retrieve spontaneous reactions based on the pathway-spontaneousRxn
-%   associations curated by the MetaCyc database
+% addSpontaneousRxns  Retrieve spontaneous reactions from MetaCyc pathways.
 %
-%   Input:
-%   rxnList              query list of reactions in cell array
-%   metList              query list of metabolites in cell array
+% Retrieve spontaneous reactions based on the pathway-spontaneousRxn
+% associations curated by the MetaCyc database.
 %
-%   spontaneousRxnList   reterieved spontaneous reactions associated to
-%                        the queried MetaCyc reactions and metabolites
+% Parameters
+% ----------
+% rxnList : cell
+%     query list of reactions in cell array.
+% metList : cell
+%     query list of metabolites in cell array.
 %
-%   Output:
-%   pathwayID            the cell array of relevant pathways
+% Returns
+% -------
+% spontaneousRxnList : cell
+%     retrieved spontaneous reactions associated to the queried MetaCyc
+%     reactions and metabolites.
+% pathwayID : cell
+%     the cell array of relevant pathways.
 %
-% Usage: spontaneousRxnList=addSpontaneousRxns(rxnList, metList)
+% Examples
+% --------
+%     spontaneousRxnList = addSpontaneousRxns(rxnList, metList);
 
 metList=convertCharArray(metList);
 rxnList=convertCharArray(rxnList);

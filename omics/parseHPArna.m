@@ -1,24 +1,28 @@
 function arrayData=parseHPArna(fileName, version)
-% parseHPA
-%   Parses a database dump of the Human Protein Atlas (HPA) RNA-Seq data.
+% parseHPArna  Parse a dump of Human Protein Atlas (HPA) RNA-Seq data.
 %
-%   Input:
-%   fileName            tab-separated database dump of HPA RNA data. For
-%                       details regarding the format, see
-%                       http://www.proteinatlas.org/about/download.
-%   version             version of HPA [optional, default=19]
+% Parameters
+% ----------
+% fileName : char
+%     tab-separated database dump of HPA RNA data. For details regarding the
+%     format, see http://www.proteinatlas.org/about/download.
+% version : double, optional
+%     version of HPA (default 19). Only versions 18 and 19 are supported.
 %
+% Returns
+% -------
+% arrayData : struct
+%     parsed HPA RNA data with fields:
 %
-%   Output:
-%   arrayData
-%       genes               cell array with the unique ensemble gene IDs
-%       geneNames           cell array with the gene names (gene abbrevs)
-%       tissues             cell array with the tissue names
-%       levels              matrix of gene expression levels (TPM), where
-%                           rows correspond to genes, and columns
-%                           correspond to tissues
+%     - genes : cell array with the unique ensemble gene IDs
+%     - geneNames : cell array with the gene names (gene abbrevs)
+%     - tissues : cell array with the tissue names
+%     - levels : matrix of gene expression levels (TPM), where rows
+%       correspond to genes, and columns correspond to tissues
 %
-% Usage: arrayData=parseHPArna(fileName,version)
+% Examples
+% --------
+%     arrayData = parseHPArna(fileName, version);
 
 if nargin<2
     %Change this and add code for more versions when the current HPA

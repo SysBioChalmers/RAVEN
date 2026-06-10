@@ -1,44 +1,49 @@
 function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)
-% getExchangeRxns
-%   Retrieves the exchange reactions from a model. Exchange reactions are
-%   identified by having either no substrates or products.
+% getExchangeRxns  Retrieve the exchange reactions from a model.
 %
-% Input:
-%   model               a model structure
-%   reactionType        which exchange reactions should be returned
-%                       'all'     all reactions, irrespective of reaction
-%                                 bounds
-%                       'uptake'  reactions with bounds that imply that
-%                                 only uptake are allowed. Reaction
-%                                 direction, upper and lower bounds are
-%                                 all considered
-%                       'excrete' reactions with bounds that imply that
-%                                 only excretion are allowed. Reaction
-%                                 direction, upper and lower bounds are
-%                                 all considered
-%                       'reverse' reactions with non-zero upper and lower
-%                                 bounds that imply that both uptake and
-%                                 excretion are allowed
-%                       'blocked' reactions that have zero upper and lower
-%                                 bounds, not allowing any flux
-%                       'in'      reactions where the boundary metabolite
-%                                 is the substrate of the reaction, a
-%                                 positive flux value would imply uptake,
-%                                 but reaction bounds are not considered
-%                       'out'     reactions where the boundary metabolite
-%                                 is the product of the reaction, a
-%                                 negative flux value would imply uptake,
-%                                 but reaction bounds are not considered.
+% Exchange reactions are identified by having either no substrates or no
+% products.
 %
-% Output:
-%   exchangeRxns        cell array with the IDs of the exchange reactions
-%   exchangeRxnsIndexes vector with the indexes of the exchange reactions
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% reactionType : char, optional
+%     which exchange reactions should be returned (default 'all'):
 %
-% Note:
-%   The union of 'in' and 'out' equals 'all'. Also, the union of 'uptake',
-%   'excrete', 'reverse' and 'blocked' equals all.
+%     - 'all' : all reactions, irrespective of reaction bounds
+%     - 'uptake' : reactions with bounds that imply that only uptake is
+%       allowed. Reaction direction, upper and lower bounds are all
+%       considered
+%     - 'excrete' : reactions with bounds that imply that only excretion is
+%       allowed. Reaction direction, upper and lower bounds are all
+%       considered
+%     - 'reverse' : reactions with non-zero upper and lower bounds that
+%       imply that both uptake and excretion are allowed
+%     - 'blocked' : reactions that have zero upper and lower bounds, not
+%       allowing any flux
+%     - 'in' : reactions where the boundary metabolite is the substrate of
+%       the reaction; a positive flux value would imply uptake, but
+%       reaction bounds are not considered
+%     - 'out' : reactions where the boundary metabolite is the product of
+%       the reaction; a negative flux value would imply uptake, but
+%       reaction bounds are not considered
 %
-% Usage: [exchangeRxns,exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)
+% Returns
+% -------
+% exchangeRxns : cell
+%     cell array with the IDs of the exchange reactions.
+% exchangeRxnsIndexes : double
+%     vector with the indexes of the exchange reactions.
+%
+% Notes
+% -----
+% The union of 'in' and 'out' equals 'all'. Also, the union of 'uptake',
+% 'excrete', 'reverse' and 'blocked' equals 'all'.
+%
+% Examples
+% --------
+%     [exchangeRxns, exchangeRxnsIndexes] = getExchangeRxns(model, reactionType);
 
 if nargin<2
     reactionType='all';

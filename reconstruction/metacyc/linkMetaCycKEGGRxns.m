@@ -1,11 +1,16 @@
 function linkMetaCycKEGGRxns
-% linkMetaCycKEGGRxns
-%   Link additional MetaCyc and KEGG reactions through metabolite mapping
-%   This function only need to run once when the MetaCyc database is updated
+% linkMetaCycKEGGRxns  Link MetaCyc and KEGG reactions via metabolite mapping.
 %
-%   NOTE: No arguments are required
+% Links additional MetaCyc and KEGG reactions through metabolite mapping.
+% This function only needs to run once when the MetaCyc database is updated.
 %
-% Usage: linkMetaCycKEGGRxns
+% Notes
+% -----
+% No arguments are required.
+%
+% Examples
+% --------
+%     linkMetaCycKEGGRxns;
 
 load('metaCycRxns.mat'); %load MetaCyc reactions
 fprintf('NOTE: Importing MetaCyc reactions...\n');

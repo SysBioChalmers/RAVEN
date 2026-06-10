@@ -2,120 +2,116 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
     outDir,keepSpontaneous,keepUndefinedStoich,keepIncomplete,...
     keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
     nSequences,seqIdentity,globalModel)
-% getKEGGModelForOrganism
-%   Reconstructs a genome-scale metabolic model based on protein homology
-%   to the orthologies in KEGG. If the target species is not available in
-%   KEGG, the user must select a closely related species. It is also
-%   possible to circumvent protein homology search (see fastaFile parameter
-%   for more details)
+% getKEGGModelForOrganism  Reconstruct a model from KEGG protein homology.
 %
-%   Input:
-%   organismID          three or four letter abbreviation of the organism
-%                       (as used in KEGG). If not available, use a closely
-%                       related species. This is used for determing the
-%                       phylogenetic distance. Use 'eukaryotes' or
-%                       'prokaryotes' to get a model for the whole domain.
-%                       Only applicable if fastaFile is empty, i.e. no
-%                       homology search should be performed
-%   fastaFile           a FASTA file that contains the protein sequences of
-%                       the organism for which to reconstruct a model (optional,
-%                       if no FASTA file is supplied then a model is
-%                       reconstructed based only on the organism
-%                       abbreviation. This option ignores all settings
-%                       except for keepSpontaneous, keepUndefinedStoich,
-%                       keepIncomplete and keepGeneral)
-%   dataDir             directory for which to retrieve the input data.
-%                       Should contain a combination of these sub-folders:
-%                       -dataDir\keggdb
-%                           The KEGG database files used in 1a (see below)
-%                       -dataDir\fasta
-%                           The multi-FASTA files generated in 1b (see
-%                           below)
-%                       -dataDir\aligned
-%                           The aligned FASTA files as generated in 2a (see
-%                           below)
-%                       -dataDir\hmms
-%                           The hidden Markov models as generated in 2b or
-%                           downloaded from BioMet Toolbox (see below)
-%                       The final directory in dataDir should be styled as
-%                       prok90_kegg116 or euk90_kegg116, indicating whether
-%                       the HMMs were trained on pro- or eukaryotic
-%                       sequences; using which sequence similarity treshold
-%                       (first set of digits); using which KEGG version
-%                       (second set of digits). (this parameter should
-%                       ALWAYS be provided)
-%   outDir              directory to save the results from the quering of
-%                       the hidden Markov models. The output is specific
-%                       for the input sequences and the settings used. It
-%                       is stored in this manner so that the function can
-%                       continue if interrupted or if it should run in
-%                       parallel. Be careful not to leave output files from
-%                       different organisms or runs with different settings
-%                       in the same folder. They will not be overwritten
-%                       (optional, default is a temporary dir where all *.out
-%                       files are deleted before and after doing the
-%                       reconstruction)
-%   keepSpontaneous     include reactions labeled as "spontaneous". (optional,
-%                       default true)
-%   keepUndefinedStoich	include reactions in the form n A <=> n+1 A. These
-%                       will be dealt with as two separate metabolites
-%                       (optional, default true)
-%   keepIncomplete      include reactions which have been labelled as
-%                       "incomplete", "erroneous" or "unclear" (optional,
-%                       default true)
-%   keepGeneral         include reactions which have been labelled as
-%                       "general reaction". These are reactions on the form
-%                       "an aldehyde <=> an alcohol", and are therefore
-%                       unsuited for modelling purposes. Note that not all
-%                       reactions have this type of annotation, and the
-%                       script will therefore not be able to remove all
-%                       such reactions (optional, default false)
-%   cutOff              significance score from HMMer needed to assign
-%                       genes to a KO (optional, default 10^-50)
-%   minScoreRatioG      a gene is only assigned to KOs for which the score
-%                       is >=log(score)/log(best score) for that gene. This
-%                       is to prevent that a gene which clearly belongs to
-%                       one KO is assigned also to KOs with much lower
-%                       scores (optional, default 0.8 (lower is less strict))
-%   minScoreRatioKO     ignore genes in a KO if their score is
-%                       <log(score)/log(best score in KO). This is to
-%                       "prune" KOs which have many genes and where some are
-%                       clearly a better fit (optional, default 0.3 (lower is
-%                       less strict))
-%   maxPhylDist         -1: only use sequences from the same domain
-%                       (Prokaryota, Eukaryota)
-%                       other (positive) value: only use sequences for
-%                       organisms where the phylogenetic distance is at the
-%                       most this large (as calculated in getPhylDist)
-%                       (optional, default Inf, which means that all sequences
-%                       will be used)
-%   nSequences          for each KO, use up to this many sequences from the
-%                       most closely related species. This is mainly to
-%                       speed up the alignment process for KOs with very
-%                       many genes. This subsampling is performed before
-%                       running CD-HIT (optional, default inf)
-%   seqIdentity         sequence identity threshold in CD-HIT, referred as
-%                       "global sequence identity" in CD-HIT User's Guide.
-%                       If -1 is provided, CD-HIT is skipped (optional, default 0.9)
-%   globalModel         structure containing both model and KOModel
-%                       structures as generated by getModelFromKEGG. These
-%                       will otherwise be loaded by via getModelFromKEGG.
-%                       Providing globalKEGGmodel can speed up model
-%                       generation if getKEGGModelForOrganism is run
-%                       multiple times for different strains. Example:
-%                       [globalModel.model,globalModel.KOModel] = getModelFromKEGG;
-%                       (optional, default empty, global model is loaded by
-%                       getModelFromKEGG)
+% Reconstructs a genome-scale metabolic model based on protein homology to
+% the orthologies in KEGG. If the target species is not available in KEGG,
+% the user must select a closely related species. It is also possible to
+% circumvent protein homology search (see fastaFile parameter for more
+% details).
 %
-%   Output:
-%   model               the reconstructed model
+% Parameters
+% ----------
+% organismID : char
+%     three or four letter abbreviation of the organism (as used in KEGG).
+%     If not available, use a closely related species. This is used for
+%     determing the phylogenetic distance. Use 'eukaryotes' or 'prokaryotes'
+%     to get a model for the whole domain. Only applicable if fastaFile is
+%     empty, i.e. no homology search should be performed.
+% fastaFile : char, optional
+%     a FASTA file that contains the protein sequences of the organism for
+%     which to reconstruct a model. If no FASTA file is supplied then a
+%     model is reconstructed based only on the organism abbreviation. This
+%     option ignores all settings except for keepSpontaneous,
+%     keepUndefinedStoich, keepIncomplete and keepGeneral.
+% dataDir : char
+%     directory for which to retrieve the input data. Should contain a
+%     combination of these sub-folders:
 %
-%   PLEASE READ THIS: The input to this function can be confusing, because
-%   it is intended to be run in parallel on a cluster or in multiple
-%   sessions. It therefore saves a lot of intermediate results to storage.
-%   This also serves the purpose of not having to do redundant
-%   calculations. This, however, comes with the disadvantage of somewhat
-%   trickier handling. This is what this function does:
+%     - dataDir\keggdb : the KEGG database files used in 1a (see below)
+%     - dataDir\fasta : the multi-FASTA files generated in 1b (see below)
+%     - dataDir\aligned : the aligned FASTA files as generated in 2a (see
+%       below)
+%     - dataDir\hmms : the hidden Markov models as generated in 2b or
+%       downloaded from BioMet Toolbox (see below)
+%
+%     The final directory in dataDir should be styled as prok90_kegg116 or
+%     euk90_kegg116, indicating whether the HMMs were trained on pro- or
+%     eukaryotic sequences; using which sequence similarity treshold (first
+%     set of digits); using which KEGG version (second set of digits). This
+%     parameter should ALWAYS be provided.
+% outDir : char, optional
+%     directory to save the results from the quering of the hidden Markov
+%     models. The output is specific for the input sequences and the
+%     settings used. It is stored in this manner so that the function can
+%     continue if interrupted or if it should run in parallel. Be careful
+%     not to leave output files from different organisms or runs with
+%     different settings in the same folder. They will not be overwritten
+%     (default is a temporary dir where all *.out files are deleted before
+%     and after doing the reconstruction).
+% keepSpontaneous : logical, optional
+%     include reactions labeled as "spontaneous" (default true).
+% keepUndefinedStoich : logical, optional
+%     include reactions in the form n A <=> n+1 A. These will be dealt with
+%     as two separate metabolites (default true).
+% keepIncomplete : logical, optional
+%     include reactions which have been labelled as "incomplete",
+%     "erroneous" or "unclear" (default true).
+% keepGeneral : logical, optional
+%     include reactions which have been labelled as "general reaction".
+%     These are reactions on the form "an aldehyde <=> an alcohol", and are
+%     therefore unsuited for modelling purposes. Note that not all reactions
+%     have this type of annotation, and the script will therefore not be
+%     able to remove all such reactions (default false).
+% cutOff : double, optional
+%     significance score from HMMer needed to assign genes to a KO (default
+%     10^-50).
+% minScoreRatioKO : double, optional
+%     ignore genes in a KO if their score is <log(score)/log(best score in
+%     KO). This is to "prune" KOs which have many genes and where some are
+%     clearly a better fit (default 0.3, lower is less strict).
+% minScoreRatioG : double, optional
+%     a gene is only assigned to KOs for which the score is
+%     >=log(score)/log(best score) for that gene. This is to prevent that a
+%     gene which clearly belongs to one KO is assigned also to KOs with much
+%     lower scores (default 0.8, lower is less strict).
+% maxPhylDist : double, optional
+%     -1 to only use sequences from the same domain (Prokaryota, Eukaryota);
+%     any other (positive) value to only use sequences for organisms where
+%     the phylogenetic distance is at the most this large (as calculated in
+%     getPhylDist) (default Inf, which means that all sequences will be
+%     used).
+% nSequences : double, optional
+%     for each KO, use up to this many sequences from the most closely
+%     related species. This is mainly to speed up the alignment process for
+%     KOs with very many genes. This subsampling is performed before running
+%     CD-HIT (default inf).
+% seqIdentity : double, optional
+%     sequence identity threshold in CD-HIT, referred as "global sequence
+%     identity" in CD-HIT User's Guide. If -1 is provided, CD-HIT is skipped
+%     (default 0.9).
+% globalModel : struct, optional
+%     structure containing both model and KOModel structures as generated
+%     by getModelFromKEGG. These will otherwise be loaded by via
+%     getModelFromKEGG. Providing globalKEGGmodel can speed up model
+%     generation if getKEGGModelForOrganism is run multiple times for
+%     different strains. Example:
+%     [globalModel.model,globalModel.KOModel] = getModelFromKEGG (default
+%     empty, global model is loaded by getModelFromKEGG).
+%
+% Returns
+% -------
+% model : struct
+%     the reconstructed model.
+%
+% Notes
+% -----
+% PLEASE READ THIS: The input to this function can be confusing, because it
+% is intended to be run in parallel on a cluster or in multiple sessions. It
+% therefore saves a lot of intermediate results to storage. This also serves
+% the purpose of not having to do redundant calculations. This, however,
+% comes with the disadvantage of somewhat trickier handling. This is what
+% this function does:
 %
 %   1a. Loads files from a local KEGG FTP dump and constructs a general
 %       RAVEN model representing the metabolic network. The functions
@@ -237,10 +233,12 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %   in the local KEGG database. In such case, the program just fetches all
 %   the reactions, which are associated with given 'organismID'.
 %
-% Usage: model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
-%    outDir,keepSpontaneous,keepUndefinedStoich,keepIncomplete,...
-%    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
-%    nSequences,seqIdentity)
+% Examples
+% --------
+%     model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
+%        outDir,keepSpontaneous,keepUndefinedStoich,keepIncomplete,...
+%        keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
+%        nSequences,seqIdentity);
 
 if nargin<2 || isempty(fastaFile)
     fastaFile=[];

@@ -1,18 +1,27 @@
 function dispEM(string,throwErrors,toList,trimWarnings)
-% dispEM
-%   Helper function to print warning/errors
+% dispEM  Print a warning or throw an error.
 %
-%   string          the warning/error to show. "WARNING: " is appended automatically
-%                   if a warning
-%   throwErrors     true if the function should throw an error (optional, default true)
-%   toList          a cell array of items to list. If supplied, then the
-%                   string will be printed followed by each element in
-%                   toList. If it is supplied but empty then nothing is
-%                   printed (optional, default {})
-%   trimWarnings    true if only a maximal of 10 items should be displayed in
-%                   a given error/warning (optional, default true)
+% Helper function to print warnings or throw errors, optionally followed
+% by a list of items.
 %
-% Usage: dispEM(string,throwErrors,toList,trimWarnings)
+% Parameters
+% ----------
+% string : char
+%     the warning/error to show. "WARNING: " is appended automatically if
+%     it is a warning.
+% throwErrors : logical, optional
+%     true if the function should throw an error (default true).
+% toList : cell, optional
+%     a cell array of items to list. If supplied, the string is printed
+%     followed by each element in toList. If it is supplied but empty then
+%     nothing is printed (default {}).
+% trimWarnings : logical, optional
+%     true if a maximum of 10 items should be displayed in a given
+%     error/warning (default true).
+%
+% Examples
+% --------
+%     dispEM(string,throwErrors,toList,trimWarnings);
 
 if nargin<2
     throwErrors=true;

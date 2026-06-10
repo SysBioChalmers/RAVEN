@@ -1,15 +1,23 @@
 function equationString=buildEquation(mets,stoichCoeffs,isrev)
-% buildEquation
-%   Construct single equation string for a given reaction
+% buildEquation  Construct single equation string for a given reaction.
 %
-%   mets            cell array with metabolites involved in the reaction.
-%   stoichCoeffs    vector with corresponding stoichiometric coeffs.
-%   isrev           logical indicating if the reaction is or not
-%                   reversible.
+% Parameters
+% ----------
+% mets : cell
+%     metabolites involved in the reaction.
+% stoichCoeffs : double
+%     vector with corresponding stoichiometric coeffs.
+% isrev : logical
+%     indicates if the reaction is reversible or not.
 %
-%   equationString  equation as a string
+% Returns
+% -------
+% equationString : char
+%     equation as a string.
 %
-%    Usage: equationString=buildEquation(mets,stoichCoeffs,isrev)
+% Examples
+% --------
+%     equationString = buildEquation(mets, stoichCoeffs, isrev);
 
 mets=convertCharArray(mets);
 if ~isnumeric(stoichCoeffs)

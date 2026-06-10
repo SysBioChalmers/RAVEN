@@ -1,29 +1,41 @@
 function blastStructure=getBlastFromExcel(models,blastFile,organismId)
-% getBlastFromExcel
-%   Retrieves gene homology information from Excel files. Used as
-%   input to getModelFromHomology.
+% getBlastFromExcel  Retrieve gene homology information from Excel files.
 %
-%   Input:
-%   models          a cell array of model structures
-%   blastFile       Excel file with homology information
-%   organismId      the id of the organism of interest (as described in the
-%                   Excel file)
+% Used as input to getModelFromHomology.
 %
-%   Output:
-%   blastStructure  structure containing the information in the Excel
-%                   sheets.
+% Parameters
+% ----------
+% models : cell
+%     a cell array of model structures.
+% blastFile : char
+%     Excel file with homology information.
+% organismId : char
+%     the id of the organism of interest (as described in the Excel file).
 %
-%   The Excel file should contain a number of spreadsheets which in turn
-%   contain the bidirectional homology measurements between the genes in the
-%   organisms. The first and second column headers in each sheet is the
-%   "to" and "from" model ids (as defined in models or for the new organism).
-%   The entries should correspond to the gene names in those models. The third,
-%   fourth, fifth, sixth and seventh columns represent the E-value, alignment
-%   length, identity, bitscore and percentage of positive-scoring matches for
-%   each measurement (captions should be "E-value", "Alignment length",
-%   "Identity", "Bitscore" and "PPOS").
+% Returns
+% -------
+% blastStructure : struct
+%     structure containing the information in the Excel sheets.
 %
-% Usage: blastStructure=getBlastFromExcel(models,blastFile,organismId)
+% Notes
+% -----
+% The Excel file should contain a number of spreadsheets which in turn
+% contain the bidirectional homology measurements between the genes in the
+% organisms. The first and second column headers in each sheet is the "to"
+% and "from" model ids (as defined in models or for the new organism). The
+% entries should correspond to the gene names in those models. The third,
+% fourth, fifth, sixth and seventh columns represent the E-value, alignment
+% length, identity, bitscore and percentage of positive-scoring matches for
+% each measurement (captions should be "E-value", "Alignment length",
+% "Identity", "Bitscore" and "PPOS").
+%
+% Examples
+% --------
+%     blastStructure = getBlastFromExcel(models,blastFile,organismId);
+%
+% See also
+% --------
+% getModelFromHomology, getBlast
 
 if ~isfile(blastFile)
     error('BLAST result file %s cannot be found',string(blastFile));

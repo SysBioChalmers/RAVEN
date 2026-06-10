@@ -1,18 +1,25 @@
 function newModel=permuteModel(model, indexes, type)
-% permuteModel
-%   Changes the order of the reactions or metabolites in a model
+% permuteModel  Change the order of the reactions or metabolites in a model.
 %
-%   Input:
-%   model     a model structure
-%   indexes   a vector with the same length as the number of items in the
-%             model, which gives the new order of items
-%   type      'rxns' for reactions, 'mets' for metabolites, 'genes' for
-%             genes, 'comps' for compartments
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% indexes : double
+%     a vector with the same length as the number of items in the model,
+%     which gives the new order of items.
+% type : char
+%     'rxns' for reactions, 'mets' for metabolites, 'genes' for genes,
+%     'comps' for compartments.
 %
-% 	Output:
-%   newModel  an updated model structure
+% Returns
+% -------
+% newModel : struct
+%     an updated model structure.
 %
-% 	Usage: newModel=permuteModel(model, indexes, type)
+% Examples
+% --------
+%     newModel = permuteModel(model, indexes, type);
 
 newModel=model;
 type=char(type);

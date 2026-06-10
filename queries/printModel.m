@@ -1,39 +1,47 @@
 function printModel(model,rxnList,outputString,outputFile,metaboliteList)
-% printModel
-%   Prints reactions to the screen or to a file
+% printModel  Print reactions to the screen or to a file.
 %
-%   model           a model structure
-%   rxnList         either a cell array of reaction IDs, a logical vector 
-%                   with the same number of elements as reactions in the model,
-%                   or a vector of indexes to remove (optional, default
-%                   model.rxns)
-%   outputString    a string that specifies the output of each reaction (optional,
-%                   default '%rxnID (%rxnName)\n\t%eqn [%lower %upper]\n')
-%   outputFile      a file to save the print-out to (optional, default is output to
-%                   the command window)
-%   metaboliteList  cell array of metabolite names. Only reactions
-%                   involving any of these metabolites will be 
-%                   printed (optional)
+% This is a wrapper around printFluxes, intended for use when there is no
+% flux distribution.
 %
-%   The following codes are available for user-defined output strings:
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% rxnList : cell or logical or double, optional
+%     either a cell array of reaction IDs, a logical vector with the same
+%     number of elements as reactions in the model, or a vector of indexes
+%     to print (default model.rxns).
+% outputString : char, optional
+%     a string that specifies the output of each reaction (default
+%     '%rxnID (%rxnName)\n\t%eqn [%lower %upper]\n').
+% outputFile : char, optional
+%     a file to save the print-out to (default is output to the command
+%     window).
+% metaboliteList : cell, optional
+%     cell array of metabolite names. Only reactions involving any of these
+%     metabolites will be printed.
 %
-%   %rxnID      reaction ID
-%   %rxnName    reaction name
-%   %lower      lower bound
-%   %upper      upper bound
-%   %obj        objective coefficient
-%   %eqn        equation
-%   %element    equation using the metabolite formulas rather than
-%               metabolite names
-%   %unbalanced "(*)" if the reaction is unbalanced and "(-)" if it could not
-%               be parsed
-%   %lumped     equation where the elemental compositions for the left/right
-%               hand sides are lumped
+% Notes
+% -----
+% The following codes are available for user-defined output strings:
 %
-%   NOTE: This is just a wrapper function around printFluxes. It is
-%           intended to be used when there is no flux distribution.
+% - %rxnID : reaction ID
+% - %rxnName : reaction name
+% - %lower : lower bound
+% - %upper : upper bound
+% - %obj : objective coefficient
+% - %eqn : equation
+% - %element : equation using the metabolite formulas rather than metabolite
+%   names
+% - %unbalanced : "(*)" if the reaction is unbalanced and "(-)" if it could
+%   not be parsed
+% - %lumped : equation where the elemental compositions for the left/right
+%   hand sides are lumped
 %
-% Usage: printModel(model,rxnList,outputString,outputFile,metaboliteList)
+% Examples
+% --------
+%     printModel(model, rxnList, outputString, outputFile, metaboliteList);
 
 if nargin<2 || isempty(rxnList)
     rxnList=model.rxns;

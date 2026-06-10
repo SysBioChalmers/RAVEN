@@ -1,36 +1,43 @@
 function model=getMetsFromKEGG(keggPath)
-% getMetsFromKEGG
-%   Retrieves information on all metabolites stored in KEGG database
+% getMetsFromKEGG  Retrieve information on all metabolites stored in KEGG.
 %
-%   Input:
-%   keggPath	if keggMets.mat is not in the RAVEN\external\kegg
-%               directory, this function will attempt to read data from a
-%               local FTP dump of the KEGG database. keggPath is the path
-%               to the root of this database
+% Parameters
+% ----------
+% keggPath : char, optional
+%     if keggMets.mat is not in the RAVEN\external\kegg directory, this
+%     function will attempt to read data from a local FTP dump of the KEGG
+%     database. keggPath is the path to the root of this database (default
+%     'RAVEN/external/kegg').
 %
-%   Output:
-%   model       a model structure generated from the database. The
-%               following fields are filled
-%   	id              'KEGG'
-%   	name     'Automatically generated from KEGG database'
-%   	mets            KEGG compound ids
-%   	metNames        Compound name. Only the first name will be saved if
-%                       there are several synonyms
-%   	metMiriams      If there is a CHEBI id available, then that will be
-%                       saved here
-%   	inchis          InChI string for the metabolite
-%   	metFormulas     The chemical composition of the metabolite. This
-%                       will only be loaded if there is no InChI string
+% Returns
+% -------
+% model : struct
+%     a model structure generated from the database, with fields:
 %
-%   NOTE: If the file keggMets.mat is in the RAVEN\external\kegg directory
-%   it will be loaded instead of parsing of the KEGG files. If it does not
-%   exist it will be saved after parsing of the KEGG files. In general, you
-%   should remove the keggMets.mat file if you want to rebuild the model
-%   structure from a newer version of KEGG.
-%               
-% Usage: model=getMetsFromKEGG(keggPath)
+%     - id : 'KEGG'
+%     - name : 'Automatically generated from KEGG database'
+%     - mets : KEGG compound ids
+%     - metNames : compound name. Only the first name will be saved if there
+%       are several synonyms
+%     - metMiriams : if there is a CHEBI id available, then that will be
+%       saved here
+%     - inchis : InChI string for the metabolite
+%     - metFormulas : the chemical composition of the metabolite. This will
+%       only be loaded if there is no InChI string
 %
-% NOTE: This is how one entry looks in the file
+% Examples
+% --------
+%     model = getMetsFromKEGG(keggPath);
+%
+% Notes
+% -----
+% If the file keggMets.mat is in the RAVEN\external\kegg directory it will
+% be loaded instead of parsing of the KEGG files. If it does not exist it
+% will be saved after parsing of the KEGG files. In general, you should
+% remove the keggMets.mat file if you want to rebuild the model structure
+% from a newer version of KEGG.
+%
+% This is how one entry looks in the file:
 %
 % ENTRY       C00001                      Compound
 % NAME        H2O;

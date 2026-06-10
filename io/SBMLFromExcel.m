@@ -1,21 +1,29 @@
 function SBMLFromExcel(fileName, outputFileName,toCOBRA,printWarnings)
-% SBMLFromExcel
-%   Converts a model in the Excel format to SBML
+% SBMLFromExcel  Convert a model in the Excel format to SBML.
 %
-%   fileName        the Excel file
-%   outputFileName  the SBML file
-%   toCOBRA         true if the model should be saved in COBRA Toolbox
-%                   format. Only limited support at the moment (optional,
-%                   default false)
-%   printWarnings   true if warnings about model issues should be reported
-%                   (optional, default true)
+% For a detailed description of the file format, see the supplied manual.
 %
-%   For a detailed description of the file format, see the supplied manual.
+% Parameters
+% ----------
+% fileName : char
+%     the Excel file.
+% outputFileName : char
+%     the SBML file.
+% toCOBRA : logical, optional
+%     true if the model should be saved in COBRA Toolbox format. Only
+%     limited support at the moment (default false).
+% printWarnings : logical, optional
+%     true if warnings about model issues should be reported (default
+%     true).
 %
-% Usage: SBMLFromExcel(fileName,outputFileName,toCOBRA,printWarnings)
+% Examples
+% --------
+%     SBMLFromExcel(fileName, outputFileName, toCOBRA, printWarnings);
 %
-%   NOTE: This is just a wrapper function for importExcelModel, printModelStats
-%   and exportModel. Use those functions directly for greater control.
+% Notes
+% -----
+% This is just a wrapper function for importExcelModel, printModelStats and
+% exportModel. Use those functions directly for greater control.
 fileName=char(fileName);
 outputFileName=char(outputFileName);
 if nargin<3

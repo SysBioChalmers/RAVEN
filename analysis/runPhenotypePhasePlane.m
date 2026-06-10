@@ -1,30 +1,44 @@
 function [growthRates, shadowPrices1, shadowPrices2] = runPhenotypePhasePlane(model, controlRxn1, controlRxn2, nPts, range1, range2)
-% runPhenotypePhasePlane
-%   Runs phenotype phase plane analysis and plots the results. The first
-%   plot is a 3D surface plot showing the phenotype phase plane, the other
-%   two plots show the shadow prices of the metabolites from the two
-%   control reactions, which define the phases. Modified from the COBRA
-%   phenotypePhasePlane function.
+% runPhenotypePhasePlane  Run phenotype phase plane analysis and plot the results.
 %
-% Input:
-%   model           a model structure
-%   controlRxn1     reaction identifier of the first reaction to be plotted
-%   controlRxn2     reaction identifier of the second reaction to be plotted
-%   nPts            the number of points to plot in each dimension (optional,
-%                   default 50)
-%   range1          the range [from 0 to range1] of reaction 1 to plot
-%                   (optional, default 20)
-%   range2          the range [from 0 to range2] of reaction 2 to plot
-%                   (optional, default 20)
+% Runs phenotype phase plane analysis and plots the results. The first plot
+% is a 3D surface plot showing the phenotype phase plane, the other two
+% plots show the shadow prices of the metabolites from the two control
+% reactions, which define the phases.
 %
-% Output:
-%   growthRates1    a matrix of maximum growth rates
-%   shadowPrices1   a matrix with shadow prices for reaction 1
-%   shadowPrices2   a matrix with shadow prices for reaction 2
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% controlRxn1 : char
+%     reaction identifier of the first reaction to be plotted.
+% controlRxn2 : char
+%     reaction identifier of the second reaction to be plotted.
+% nPts : double, optional
+%     the number of points to plot in each dimension (default 50).
+% range1 : double, optional
+%     the range [from 0 to range1] of reaction 1 to plot (default 20).
+% range2 : double, optional
+%     the range [from 0 to range2] of reaction 2 to plot (default 20).
 %
-% Modified from COBRA Toolbox phenotypePhasePlane.m
+% Returns
+% -------
+% growthRates : double
+%     a matrix of maximum growth rates.
+% shadowPrices1 : double
+%     a matrix with shadow prices for reaction 1.
+% shadowPrices2 : double
+%     a matrix with shadow prices for reaction 2.
 %
-% Usage: [growthRates, shadowPrices1, shadowPrices2] = runPhenotypePhasePlane(model, controlRxn1, controlRxn2, nPts, range1, range2)
+% Examples
+% --------
+%     [growthRates, shadowPrices1, shadowPrices2] = ...
+%         runPhenotypePhasePlane(model, controlRxn1, controlRxn2, nPts, ...
+%         range1, range2);
+%
+% Notes
+% -----
+% Modified from COBRA Toolbox phenotypePhasePlane.m.
 close all force % Close all existing figure windows (if open)
 if nargin < 4
     nPts = 50;

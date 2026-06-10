@@ -1,19 +1,29 @@
 function GSS = parseScores(inputFile, predictor)
-% parseScores
-%	Parse the output from a predictor to generate the GSS
+% parseScores  Parse the output from a predictor to generate the GSS.
 %
-%	Input:
-%	inputFile	a file with the output from the predictor
-%	predictor	the predictor that was used. 'wolf' for WoLF PSORT, 'cello'
-%               for CELLO, 'deeploc' for DeepLoc (optional, default 'wolf')
+% The function normalizes the scores so that the best score for each gene
+% is 1.0.
 %
-%	Output:
-%	GSS         a gene scoring structure to be used in predictLocalization
+% Parameters
+% ----------
+% inputFile : char
+%     a file with the output from the predictor.
+% predictor : char, optional
+%     the predictor that was used. 'wolf' for WoLF PSORT, 'cello' for
+%     CELLO, 'deeploc' for DeepLoc (default 'wolf').
 %
-%	The function normalizes the scores so that the best score for each gene
-%	is 1.0.
+% Returns
+% -------
+% GSS : struct
+%     a gene scoring structure to be used in predictLocalization.
 %
-%	Usage: GSS = parseScores(inputFile, predictor)
+% Examples
+% --------
+%     GSS = parseScores(inputFile, predictor);
+%
+% See also
+% --------
+% predictLocalization, getWoLFScores
 
 if nargin<2
     predictor='wolf';

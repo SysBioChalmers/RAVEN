@@ -1,14 +1,22 @@
 function reducedModel=deleteUnusedGenes(model,verbose)
-% deleteUnusedGenes
-%   Deletes all genes that are not associated to any reaction
+% deleteUnusedGenes  Delete all genes not associated to any reaction.
 %
-%   model           a model structure
-%   verbose         0 for silent; 1 for printing number of deleted genes;
-%                   2 for printing the list of deleted genes (optional, default 1)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% verbose : double, optional
+%     0 for silent; 1 for printing the number of deleted genes; 2 for
+%     printing the list of deleted genes (default 1).
 %
-%   reducedModel    an updated model structure
+% Returns
+% -------
+% reducedModel : struct
+%     an updated model structure.
 %
-% Usage: reducedModel=deleteUnusedGenes(model)
+% Examples
+% --------
+%     reducedModel=deleteUnusedGenes(model);
 
 if nargin<2
     verbose=1;

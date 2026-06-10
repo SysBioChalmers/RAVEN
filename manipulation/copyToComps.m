@@ -1,29 +1,41 @@
 function model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutside)
-% copyToComps
-%   Copies reactions to new compartment(s)
+% copyToComps  Copy reactions to new compartment(s).
 %
-%   model           a model structure
-%   toComps         cell array of compartment ids. If there is no match
-%                   to model.comps then it is added as a new compartment
-%                   (see below for details)
-%   rxns            either a cell array of reaction IDs, a logical vector 
-%                   with the same number of elements as reactions in the model,
-%                   or a vector of indexes to remove (optional, default
-%                   model.rxns)
-%   deleteOriginal  true if the original reactions should be removed
-%                   (making it move the reactions instead) (optional, default
-%                   false)
-%   compNames       cell array of compartment names. This is used if new
-%                   compartments should be added (optional, default toComps)
-%   compOutside     cell array of the id (as in comps) for the compartment
-%                   surrounding each of the compartments. This is used if
-%                   new compartments should be added (optional, default all {''})
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% toComps : cell
+%     cell array of compartment ids. If there is no match to model.comps
+%     then it is added as a new compartment (see compNames and
+%     compOutside).
+% rxns : cell or logical or double, optional
+%     either a cell array of reaction IDs, a logical vector with the same
+%     number of elements as reactions in the model, or a vector of indexes
+%     to copy (default model.rxns).
+% deleteOriginal : logical, optional
+%     true if the original reactions should be removed, making it move the
+%     reactions instead (default false).
+% compNames : cell, optional
+%     cell array of compartment names. Used if new compartments should be
+%     added (default toComps).
+% compOutside : cell, optional
+%     cell array of the id (as in comps) for the compartment surrounding
+%     each of the compartments. Used if new compartments should be added
+%     (default all {''}).
 %
-%   model           an updated model structure
+% Returns
+% -------
+% model : struct
+%     an updated model structure.
 %
-%   NOTE: New reactions and metabolites will be named as "id_toComps(i)".
+% Examples
+% --------
+%     model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutside);
 %
-% Usage: model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutside)
+% Notes
+% -----
+% New reactions and metabolites will be named as "id_toComps(i)".
 
 arguments
     model (1,1) struct

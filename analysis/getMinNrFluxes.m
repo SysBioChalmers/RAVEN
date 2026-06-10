@@ -1,31 +1,48 @@
 function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)
-% getMinNrFluxes
-%   Returns the minimal set of fluxes that satisfy the model using
-%   mixed integer linear programming.
+% getMinNrFluxes  Find the minimal set of fluxes that satisfy the model.
 %
-%	model         a model structure
-%   toMinimize    either a cell array of reaction IDs, a logical vector
-%                 with the same number of elements as reactions in the model,
-%                 of a vector of indexes for the reactions that should be
-%                 minimized (optional, default model.rxns)
-%   params        *obsolete option*
-%   scores        vector of weights for the reactions. Negative scores
-%                 should not have flux. Positive scores are not possible in this
-%                 implementation, and they are changed to max(scores(scores<0)).
-%                 Must have the same dimension as toMinimize (find(toMinimize)
-%                 if it is a logical vector) (optional, default -1 for all reactions)
+% Uses mixed integer linear programming to find the minimal set of fluxes
+% that satisfy the model.
 %
-%   x             the corresponding fluxes for the full model
-%   I             the indexes of the reactions in toMinimize that were used
-%                 in the solution
-%   exitFlag      1: optimal solution found
-%                -1: no feasible solution found
-%                -2: optimization time out
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% toMinimize : cell or logical or double, optional
+%     either a cell array of reaction IDs, a logical vector with the same
+%     number of elements as reactions in the model, or a vector of indexes
+%     for the reactions that should be minimized (default model.rxns).
+% params : struct, optional
+%     *obsolete option*.
+% scores : double, optional
+%     vector of weights for the reactions. Negative scores should not have
+%     flux. Positive scores are not possible in this implementation, and
+%     they are changed to max(scores(scores<0)). Must have the same
+%     dimension as toMinimize (find(toMinimize) if it is a logical vector)
+%     (default -1 for all reactions).
 %
-%   NOTE: Uses 1000 mmol/gDW/h as an arbitary large flux. Could possibly
-%   cause problems if the fluxes in the model are larger than that.
+% Returns
+% -------
+% x : double
+%     the corresponding fluxes for the full model.
+% I : double
+%     the indexes of the reactions in toMinimize that were used in the
+%     solution.
+% exitFlag : double
+%     exit status:
 %
-% Usage: [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params, scores)
+%     - 1 : optimal solution found
+%     - -1 : no feasible solution found
+%     - -2 : optimization time out
+%
+% Examples
+% --------
+%     [x, I, exitFlag] = getMinNrFluxes(model, toMinimize, params, scores);
+%
+% Notes
+% -----
+% Uses 1000 mmol/gDW/h as an arbitary large flux. Could possibly cause
+% problems if the fluxes in the model are larger than that.
 
 exitFlag=1;
 

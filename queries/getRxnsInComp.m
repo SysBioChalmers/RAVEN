@@ -1,17 +1,26 @@
 function [I, rxnNames]=getRxnsInComp(model,comp,includePartial)
-% getRxnsInComp
-%   Gets the reactions in a specified compartment
+% getRxnsInComp  Get the reactions in a specified compartment.
 %
-%   model           a model structure
-%   comp            string with the compartment id
-%   includePartial  true if reactions with metabolites in several
-%                   compartments (normally transport reactions) should
-%                   be included (optional, default false)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% comp : char
+%     string with the compartment id.
+% includePartial : logical, optional
+%     true if reactions with metabolites in several compartments (normally
+%     transport reactions) should be included (default false).
 %
-%   I               boolean vector of the reactions
-%   rxnNames        the names of the reactions
+% Returns
+% -------
+% I : double
+%     boolean vector of the reactions.
+% rxnNames : cell
+%     the names of the reactions.
 %
-% Usage: [I, rxnNames]=getRxnsInComp(model,comp,includePartial)
+% Examples
+% --------
+%     [I, rxnNames] = getRxnsInComp(model, comp, includePartial);
 
 comp=char(comp);
 if nargin<3

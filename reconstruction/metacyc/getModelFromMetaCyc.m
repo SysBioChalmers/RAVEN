@@ -1,37 +1,46 @@
 function metaCycModel=getModelFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
-% getModelFromMetaCyc
-%   Retrieves information stored in MetaCyc flat files and generates a super model
+% getModelFromMetaCyc  Generate a super model from MetaCyc flat files.
 %
-%   Input:
-%   metacycPath         By setting this parameter as empty (default ''), a 
-%                       super model of MetaCyc can be directly generated from
-%                       the Matlab files (metaCycRxns, metaCycMets and metaCycEnzymes)
-%                       that are in the RAVEN\external\metacyc directory.
-%                       Alternatively, this function attempts to re-generate
-%                       the Matlab files from a local dump of MetaCyc data files
-%                       (e.g. reactions.dat, proteins.dat, compounds.dat),
-%                       to which the path should be defined by this parameter
-%   keepTransportRxns   include transportation reactions, which often have identical
-%                       reactants and products that turn to be all-zero columns in
-%                       the S matrix (optional, default false)
-%   keepUnbalanced      include reactions cannot be unbalanced reactions, usually
-%                       because they are polymeric reactions or because of a
-%                       specific difficulty in balancing class structures
-%                       (optional, default false)
-%   keepUndetermined    include reactions that have substrates lack chemical
-%                       structures or with non-numerical coefficients (e.g. n+1)
-%                       (optional, default false)
+% Retrieves information stored in MetaCyc flat files and generates a super
+% model including all reactions, metabolites and enzymes in MetaCyc.
 %
-%   Output:
-%   metaCycModel        a model structure generated from MetaCyc database
-%                       including all reactions, metabolites and enzymes
-%                       in MetaCyc
+% Parameters
+% ----------
+% metacycPath : char, optional
+%     by setting this parameter as empty (default ''), a super model of
+%     MetaCyc can be directly generated from the Matlab files (metaCycRxns,
+%     metaCycMets and metaCycEnzymes) that are in the RAVEN\external\metacyc
+%     directory. Alternatively, this function attempts to re-generate the
+%     Matlab files from a local dump of MetaCyc data files (e.g.
+%     reactions.dat, proteins.dat, compounds.dat), to which the path should
+%     be defined by this parameter.
+% keepTransportRxns : logical, optional
+%     include transportation reactions, which often have identical reactants
+%     and products that turn to be all-zero columns in the S matrix (default
+%     false).
+% keepUnbalanced : logical, optional
+%     include reactions that cannot be balanced, usually because they are
+%     polymeric reactions or because of a specific difficulty in balancing
+%     class structures (default false).
+% keepUndetermined : logical, optional
+%     include reactions that have substrates lacking chemical structures or
+%     with non-numerical coefficients (e.g. n+1) (default false).
 %
-%   NOTE: This function allows users to update the MetaCyc Matlab files from
-%   a local dump of data files, which can be obtained through subscribing to
-%   the database (https://metacyc.org/download.shtml).
+% Returns
+% -------
+% metaCycModel : struct
+%     a model structure generated from the MetaCyc database, including all
+%     reactions, metabolites and enzymes in MetaCyc.
 %
-% Usage: getModelFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
+% Notes
+% -----
+% This function allows users to update the MetaCyc Matlab files from a local
+% dump of data files, which can be obtained through subscribing to the
+% database (https://metacyc.org/download.shtml).
+%
+% Examples
+% --------
+%     metaCycModel = getModelFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined);
 
 if nargin<1
     ravenPath=findRAVENroot();

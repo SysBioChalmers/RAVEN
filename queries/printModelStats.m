@@ -1,16 +1,20 @@
 function printModelStats(model, printModelIssues, printDetails)
-% printModelStats
-%   prints some statistics about a model to the screen
+% printModelStats  Print some statistics about a model to the screen.
 %
-%   model               a model structure
-%   printModelIssues    true if information about unconnected
-%                       reactions/metabolites and elemental balancing
-%                       should be printed (optional, default false)
-%   printDetails        true if detailed information should be printed
-%                       about model issues. Only used if printModelIssues
-%                       is true (optional, default true)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% printModelIssues : logical, optional
+%     true if information about unconnected reactions/metabolites and
+%     elemental balancing should be printed (default false).
+% printDetails : logical, optional
+%     true if detailed information should be printed about model issues.
+%     Only used if printModelIssues is true (default true).
 %
-% Usage: printModelStats(model,printModelIssues, printDetails)
+% Examples
+% --------
+%     printModelStats(model, printModelIssues, printDetails);
 
 if nargin<2
     printModelIssues=false;

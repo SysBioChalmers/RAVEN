@@ -1,33 +1,42 @@
 function plotAdditionalInfo(handle, pathway, additionalText, exampleBoxText,...
     maxChange, defaultColor, upColor, downColor)
-% plotAdditionalInfo
-%	Plots some additional information in a figure.
+% plotAdditionalInfo  Plot additional information in a figure.
 %
-%   handle              handle to the figure to plot the information on
-%   pathway             pathway structure of the metabolic network
-%   additionalText      array list with additional text to print (e.g.
-%                       fluxes or constraints)
-%   exampleBoxText      array list of text to put in an example box. The
-%                       text should explain what is printed in the enzyme
-%                       boxes
-%   maxChange           the logfold increase or decrease that corresponds
-%                       to full negative or full positive coloring. Must
-%                       be a positive value (optional, default 1)
-%   defaultColor        a color in Matlab format to be used if there are no
-%                       changes between the fluxes. This color is also used to 
-%                       calculate the transition between the colors for up and
-%                       down regulated fluxes (optional, default [1 1 1])
-%   upColor             a color in Matlab format to be used if the flux is 
-%                       larger than the reference flux (optional, default [0 1 0])
-%   downColor           a color in Matlab format to be used if the flux is 
-%                       smaller than the reference flux (optional, default [1 0
-%                       0])
+% Parameters
+% ----------
+% handle : double
+%     handle to the figure to plot the information on.
+% pathway : struct
+%     pathway structure of the metabolic network.
+% additionalText : cell
+%     array list with additional text to print (e.g. fluxes or
+%     constraints).
+% exampleBoxText : cell
+%     array list of text to put in an example box. The text should explain
+%     what is printed in the enzyme boxes.
+% maxChange : double, optional
+%     the logfold increase or decrease that corresponds to full negative or
+%     full positive coloring. Must be a positive value (default 1).
+% defaultColor : double, optional
+%     a color in Matlab format to be used if there are no changes between
+%     the fluxes. This color is also used to calculate the transition
+%     between the colors for up- and down-regulated fluxes (default
+%     [1 1 1]).
+% upColor : double, optional
+%     a color in Matlab format to be used if the flux is larger than the
+%     reference flux (default [0 1 0]).
+% downColor : double, optional
+%     a color in Matlab format to be used if the flux is smaller than the
+%     reference flux (default [1 0 0]).
 %
-%   NOTE: At the moment the positions of the text/figures are (semi-)hard
-%           coded.
+% Examples
+% --------
+%     plotAdditionalInfo(handle, pathway, additionalText, exampleBoxText, ...
+%         maxChange, defaultColor, upColor, downColor);
 %
-% Usage:  errorFlag = plotAdditionalInfo(handle, additionalText, exampleBoxText,...
-%               maxChange, defaultColor, upColor, downColor)
+% Notes
+% -----
+% At the moment the positions of the text/figures are (semi-)hard coded.
 
 if nargin<8
     downColor=[1 0 0];

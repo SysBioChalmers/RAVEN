@@ -1,16 +1,27 @@
 function objectiveString = getObjectiveString(max, objectiveNames, objectiveValues)
-% getObjectiveString
-%   Returns a string representing the objective function (e.g. 'MAX Growth
-%   - 0.5 HXT4').
+% getObjectiveString  Build a string representing the objective function.
 %
-%   max                 true if the objective function should be maximized
-%   objectiveNames      cell array of reaction names
-%   objectiveValues     the corresponding coefficients for each reaction
+% Returns a string representing the objective function (e.g.
+% 'MAX Growth - 0.5 HXT4').
 %
-%   objectiveString     the calculated objective function
+% Parameters
+% ----------
+% max : logical
+%     true if the objective function should be maximized.
+% objectiveNames : cell
+%     cell array of reaction names.
+% objectiveValues : double
+%     the corresponding coefficients for each reaction.
 %
-% Usage: objectiveString = getObjectiveString(max, objectiveNames,
-%           objectiveValues)
+% Returns
+% -------
+% objectiveString : char
+%     the calculated objective function.
+%
+% Examples
+% --------
+%     objectiveString = getObjectiveString(max, objectiveNames, ...
+%         objectiveValues);
 
 objectiveString='';
 

@@ -1,22 +1,34 @@
-% cleanSheet
-%   Cleans up an Excel sheet by removing empty rows/colums (and some other
-%   checks)
+% cleanSheet  Clean up an Excel sheet.
 %
-%   raw             cell array with the data in the sheet
-%   removeComments  true if commented lines (non-empty first cell in each
-%                   row) should be removed (optional, default true)
-%   removeOnlyCap   remove columns with captions but no other values (optional,
-%                   default false)
-%   removeNoCap     remove columns without captions (optional, default true)
-%   removeEmptyRows remove rows with no non-empty cells (optional, default true)
-%   
-%   raw             cleaned version
-%   keptRows        indexes of the kept rows in the original structure
-%   keptCols        indexes of the kept columns in the original structure
+% Removes empty rows/columns (and performs some other checks).
 %
-% Usage: [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,...
-%               removeNoCap,removeEmptyRows)
-
+% Parameters
+% ----------
+% raw : cell
+%     cell array with the data in the sheet.
+% removeComments : logical, optional
+%     true if commented lines (non-empty first cell in each row) should be
+%     removed (default true).
+% removeOnlyCap : logical, optional
+%     remove columns with captions but no other values (default false).
+% removeNoCap : logical, optional
+%     remove columns without captions (default true).
+% removeEmptyRows : logical, optional
+%     remove rows with no non-empty cells (default true).
+%
+% Returns
+% -------
+% raw : cell
+%     cleaned version.
+% keptRows : double
+%     indices of the kept rows in the original structure.
+% keptCols : double
+%     indices of the kept columns in the original structure.
+%
+% Examples
+% --------
+%     [raw, keptRows, keptCols] = cleanSheet(raw, removeComments, ...
+%         removeOnlyCap, removeNoCap, removeEmptyRows);
 function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,removeNoCap,removeEmptyRows)
 if nargin<2
     removeComments=true;

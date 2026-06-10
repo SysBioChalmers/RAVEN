@@ -1,44 +1,58 @@
 function [prob, condInfo] = splitProbForConditioning(prob, maxRatio)
-% splitProbForConditioning
-%   Reformulates an LP problem to improve its numerical conditioning by
-%   splitting columns whose coefficients span more than a given ratio. In a
-%   metabolic model a column corresponds to a reaction, and a wide spread of
-%   stoichiometric coefficients within one reaction (e.g. a biomass reaction
-%   with both major substrates and trace cofactors) cannot be removed by the
-%   diagonal row/column scaling that LP solvers apply, and may lead to
-%   unreliable solutions or spurious infeasibility.
+% splitProbForConditioning  Improve LP conditioning by splitting wide columns.
 %
-%   Each offending small coefficient is replaced by a chain consisting of an
-%   auxiliary "star" metabolite (a new equality constraint row) and one or
-%   more conversion variables (new columns), such that no individual column
-%   has a coefficient ratio exceeding maxRatio. The feasible region of the
-%   original problem is preserved exactly: the new rows are steady-state (=0)
-%   constraints and the new variables are fully determined by them, so the
-%   values of all original variables are unchanged.
+% Reformulates an LP problem to improve its numerical conditioning by
+% splitting columns whose coefficients span more than a given ratio. In a
+% metabolic model a column corresponds to a reaction, and a wide spread of
+% stoichiometric coefficients within one reaction (e.g. a biomass reaction
+% with both major substrates and trace cofactors) cannot be removed by the
+% diagonal row/column scaling that LP solvers apply, and may lead to
+% unreliable solutions or spurious infeasibility.
 %
-%   The function is meant to be called inside optimizeProb, on the COBRA-style
-%   problem struct, immediately before the problem is passed to the solver.
-%   The auxiliary rows are appended at the bottom of prob.A and the auxiliary
-%   columns at the right, so the indices of all original constraints and
-%   variables are preserved. This allows the augmentation to be stripped from
-%   the solver output (see condInfo).
+% Each offending small coefficient is replaced by a chain consisting of an
+% auxiliary "star" metabolite (a new equality constraint row) and one or more
+% conversion variables (new columns), such that no individual column has a
+% coefficient ratio exceeding maxRatio. The feasible region of the original
+% problem is preserved exactly: the new rows are steady-state (=0) constraints
+% and the new variables are fully determined by them, so the values of all
+% original variables are unchanged.
 %
-% Input:
-%   prob        COBRA-style LP problem struct, with at least the fields A, b,
-%               c, lb, ub, csense and vartype
-%   maxRatio    maximum allowed ratio between the largest and smallest
-%               absolute coefficient within any single column
+% The function is meant to be called inside optimizeProb, on the COBRA-style
+% problem struct, immediately before the problem is passed to the solver. The
+% auxiliary rows are appended at the bottom of prob.A and the auxiliary
+% columns at the right, so the indices of all original constraints and
+% variables are preserved. This allows the augmentation to be stripped from
+% the solver output (see condInfo).
 %
-% Output:
-%   prob        the (possibly) augmented problem struct. Identical to the
-%               input if no column needed splitting
-%   condInfo    struct describing the augmentation:
-%       applied     true if any column was split
-%       nSplits     number of auxiliary metabolite/conversion pairs added
-%       nOrigRows   number of constraint rows before augmentation
-%       nOrigCols   number of variables (columns) before augmentation
+% Parameters
+% ----------
+% prob : struct
+%     COBRA-style LP problem struct, with at least the fields A, b, c, lb,
+%     ub, csense and vartype.
+% maxRatio : double
+%     maximum allowed ratio between the largest and smallest absolute
+%     coefficient within any single column.
 %
-% Usage: [prob, condInfo] = splitProbForConditioning(prob, maxRatio)
+% Returns
+% -------
+% prob : struct
+%     the (possibly) augmented problem struct. Identical to the input if no
+%     column needed splitting.
+% condInfo : struct
+%     struct describing the augmentation, with fields:
+%
+%     - applied : true if any column was split
+%     - nSplits : number of auxiliary metabolite/conversion pairs added
+%     - nOrigRows : number of constraint rows before augmentation
+%     - nOrigCols : number of variables (columns) before augmentation
+%
+% Examples
+% --------
+%     [prob, condInfo] = splitProbForConditioning(prob, maxRatio);
+%
+% See also
+% --------
+% optimizeProb
 
 [nOrigRows, nOrigCols] = size(prob.A);
 condInfo.applied   = false;

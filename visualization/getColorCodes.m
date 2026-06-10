@@ -1,22 +1,48 @@
 function [colorCodes, signChange, errorFlag]= getColorCodes(referenceFluxes, fluxes, maxChange, defaultColor, upColor, downColor)
-% getColorCodes
-%	Calculates the coloring for a number of fluxes by comparing them to
-%   reference fluxes.
+% getColorCodes  Calculate flux coloring relative to reference fluxes.
 %
-%   referenceFluxes     vector of reference fluxes
-%   fluxes              vector of fluxes. The number of elements in fluxes
-%                       and referenceFluxes must be equal
-%   maxChange           the logfold increase or decrease that corresponds
-%                       to full negative or full positive coloring. Must
-%                       be a positive value (optional, default 1)
-%   defaultColor        a color in Matlab format to be used if there are no
-%                       changes between the fluxes. This color is also used to
-%                       calculate the transition between the colors for up and
-%                       down regulated fluxes (optional, default [1 1 1])
-%   upColor             a color in Matlab format to be used if the flux is
-%                       larger than the reference flux (optional, default [0 1 0])
-%   downColor           a color in Matlab format to be used if the flux is
-%                       smaller than the reference flux (optional, default [1 0 0])
+% Calculates the coloring for a number of fluxes by comparing them to
+% reference fluxes.
+%
+% Parameters
+% ----------
+% referenceFluxes : double
+%     vector of reference fluxes.
+% fluxes : double
+%     vector of fluxes. The number of elements in fluxes and
+%     referenceFluxes must be equal.
+% maxChange : double, optional
+%     the logfold increase or decrease that corresponds to full negative or
+%     full positive coloring. Must be a positive value (default 1).
+% defaultColor : double, optional
+%     a color in Matlab format to be used if there are no changes between
+%     the fluxes. This color is also used to calculate the transition
+%     between the colors for up- and down-regulated fluxes (default
+%     [1 1 1]).
+% upColor : double, optional
+%     a color in Matlab format to be used if the flux is larger than the
+%     reference flux (default [0 1 0]).
+% downColor : double, optional
+%     a color in Matlab format to be used if the flux is smaller than the
+%     reference flux (default [1 0 0]).
+%
+% Returns
+% -------
+% colorCodes : cell
+%     array list of colors in Matlab format in the same order as the
+%     fluxes.
+% signChange : cell
+%     array list of boolean values where true indicates that there has been
+%     a sign change between the fluxes. Reactions with sign changes are not
+%     colored, but rather marked in another way. The order corresponds to
+%     the order of the fluxes.
+% errorFlag : double
+%     true if there has been an error.
+%
+% Examples
+% --------
+%     [colorCodes, signChange, errorFlag] = getColorCodes(referenceFluxes, ...
+%         fluxes, maxChange, defaultColor, upColor, downColor);
 
 %   colorCodes          array list of colors in Matlab format in the same
 %                       order as the fluxes

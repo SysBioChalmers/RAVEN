@@ -1,21 +1,34 @@
 function [returnPathway, errorFlag]= markPathwayWithFluxes(pathway, reactionIDs, fluxes, referenceFluxes)
-% markPathwayWithFluxes
-%   Marks each enzyme in a pathway structure with the corresponding fluxes
-%   from two simulation results. This is done for enzymes that has the name
-%   of a reaction in the note field. The reaction has to be present in
-%   reactionIDs.
+% markPathwayWithFluxes  Mark enzymes in a pathway with fluxes.
 %
-%   pathway         pathway structure of the metabolic network
-%   reactionsIDs    cell array with the names of the reactions in the model
-%   fluxes          vector with flux values
-%   referenceFluxes vector with fluxes to compare to
+% Marks each enzyme in a pathway structure with the corresponding fluxes
+% from two simulation results. This is done for enzymes that have the name
+% of a reaction in the note field. The reaction has to be present in
+% reactionIDs.
 %
-%   returnPathway   updates the original pathway structure by adding the
-%                   fields flux and referenceFlux for each marked reaction
-%   errorFlag       true if there has been an error
+% Parameters
+% ----------
+% pathway : struct
+%     pathway structure of the metabolic network.
+% reactionIDs : cell
+%     cell array with the names of the reactions in the model.
+% fluxes : double
+%     vector with flux values.
+% referenceFluxes : double
+%     vector with fluxes to compare to.
 %
-% Usage: [returnPathway, errorFlag] = markPathwayWithFluxes(pathway, reactionIDs,
-%   fluxes, referenceFluxes)
+% Returns
+% -------
+% returnPathway : struct
+%     updates the original pathway structure by adding the fields flux and
+%     referenceFlux for each marked reaction.
+% errorFlag : double
+%     true if there has been an error.
+%
+% Examples
+% --------
+%     [returnPathway, errorFlag] = markPathwayWithFluxes(pathway, ...
+%         reactionIDs, fluxes, referenceFluxes);
 
 %Check if all variables are of the correct dimension
 if length(reactionIDs)~=length(fluxes) || length(reactionIDs)~=length(referenceFluxes)

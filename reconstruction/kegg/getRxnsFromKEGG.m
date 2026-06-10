@@ -1,55 +1,61 @@
 function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
     isGeneral]=getRxnsFromKEGG(keggPath)
-% getRxnsFromKEGG
-%   Retrieves information on all reactions stored in KEGG database
+% getRxnsFromKEGG  Retrieve information on all reactions stored in KEGG.
 %
-%   Input:
-%   keggPath            if keggRxns.mat is not in the RAVEN\external\kegg
-%                       directory, this function will attempt to read data
-%                       from a local FTP dump of the KEGG database.
-%                       keggPath is the path to the root of this database
+% Parameters
+% ----------
+% keggPath : char, optional
+%     if keggRxns.mat is not in the RAVEN\external\kegg directory, this
+%     function will attempt to read data from a local FTP dump of the KEGG
+%     database. keggPath is the path to the root of this database (default
+%     'RAVEN/external/kegg').
 %
-%   Output:
-%   model               a model structure generated from the database. The
-%                       following fields are filled
-%       id                  'KEGG'
-%       name         'Automatically generated from KEGG database'
-%       rxns                KEGG reaction ids
-%       rxnNames            Name for each reaction entry
-%       mets                KEGG compound ids. If the equations use
-%                           stoichiometry such as ID(n+1) then the whole
-%                           expression is saved as the id
-%       eccodes             Corresponding ec-number if available
-%       rxnMiriams          Contains reaction specific information such as
-%                           KO id and pathways that the reaction is
-%                           associated to
-%       S                   Stoichiometric matrix
-%       lb                  -1000 for all reactions
-%       ub                  1000 for all reactions
-%       rev                 1 for reversible and 0 for irreversible. For
-%                           reactions present in pathway maps the
-%                           reversibility is taken from there
-%       b                   0 for all metabolites
-%   isSpontaneous       a cell array with the reactions labelled as
-%                       "spontaneous"
-%   isUndefinedStoich	a cell array with the reactions labelled as with
-%                       undefined stoichiometry
-%   isIncomplete        a cell array with the reactions labelled as
-%                       "incomplete", "erroneous" or "unclear"
-%   isGeneral           a cell array with the reactions labelled as
-%                       "general reaction"
+% Returns
+% -------
+% model : struct
+%     a model structure generated from the database, with fields:
 %
-%   NOTE: Reactions on the form A <=> A + B will not be loaded. If the file
-%   keggRxns.mat is in the RAVEN/external/kegg directory it will be loaded
-%   instead of parsing of the KEGG files. If it does not exist it will be
-%   saved after parsing of the KEGG files. In general, you should remove
-%   the keggRxns.mat file along with other KEGG mat files if you want to
-%   rebuild the model structure from a newer version of KEGG.
+%     - id : 'KEGG'
+%     - name : 'Automatically generated from KEGG database'
+%     - rxns : KEGG reaction ids
+%     - rxnNames : name for each reaction entry
+%     - mets : KEGG compound ids. If the equations use stoichiometry such as
+%       ID(n+1) then the whole expression is saved as the id
+%     - eccodes : corresponding ec-number if available
+%     - rxnMiriams : contains reaction specific information such as KO id and
+%       pathways that the reaction is associated to
+%     - S : stoichiometric matrix
+%     - lb : -1000 for all reactions
+%     - ub : 1000 for all reactions
+%     - rev : 1 for reversible and 0 for irreversible. For reactions present
+%       in pathway maps the reversibility is taken from there
+%     - b : 0 for all metabolites
+% isSpontaneous : cell
+%     a cell array with the reactions labelled as "spontaneous".
+% isUndefinedStoich : cell
+%     a cell array with the reactions labelled as with undefined
+%     stoichiometry.
+% isIncomplete : cell
+%     a cell array with the reactions labelled as "incomplete", "erroneous"
+%     or "unclear".
+% isGeneral : cell
+%     a cell array with the reactions labelled as "general reaction".
 %
-% Usage: [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
-%    isGeneral]=getRxnsFromKEGG(keggPath)
+% Examples
+% --------
+%     [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
+%        isGeneral]=getRxnsFromKEGG(keggPath);
 %
-% NOTE: This is how one entry looks in the file
+% Notes
+% -----
+% Reactions on the form A <=> A + B will not be loaded. If the file
+% keggRxns.mat is in the RAVEN/external/kegg directory it will be loaded
+% instead of parsing of the KEGG files. If it does not exist it will be
+% saved after parsing of the KEGG files. In general, you should remove the
+% keggRxns.mat file along with other KEGG mat files if you want to rebuild
+% the model structure from a newer version of KEGG.
+%
+% This is how one entry looks in the file:
 %
 % ENTRY       R00010                      Reaction
 % NAME        alpha,alpha-trehalose glucohydrolase

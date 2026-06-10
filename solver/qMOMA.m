@@ -1,22 +1,32 @@
 function [fluxA,fluxB, flag]=qMOMA(modelA,modelB,fluxMinWeight)
-% qMOMA
-%   Uses quadratic programming to minimize the sum((fluxAi - fluxBi)^2)
+% qMOMA  Minimize sum((fluxAi - fluxBi)^2) via quadratic programming.
 %
-%   modelA        a model structure for the test case. This model must be a
-%                 subset of modelB (no reactions that are not in modelB)
-%   modelB        a model structure for the reference case
-%   fluxMinWeight a double >=1 that determines whether minimization of the
-%                 sum of fluxes should also be taken into account in the
-%                 optimization. A value of 2.0 means that sum(fluxAi)^2 +
-%                 sum(fluxBi)^2 has equal weight as sum((fluxAi - fluxBi)^2).
-%                 Values of around 1.01 should be enough to get rid of loops
-%                 (optional, default 1)
+% Parameters
+% ----------
+% modelA : struct
+%     a model structure for the test case. This model must be a subset of
+%     modelB (no reactions that are not in modelB).
+% modelB : struct
+%     a model structure for the reference case.
+% fluxMinWeight : double, optional
+%     a value >= 1 that determines whether minimization of the sum of
+%     fluxes should also be taken into account in the optimization. A
+%     value of 2.0 means that sum(fluxAi)^2 + sum(fluxBi)^2 has equal
+%     weight as sum((fluxAi - fluxBi)^2). Values of around 1.01 should be
+%     enough to get rid of loops (default 1).
 %
-%   fluxA         the resulting flux distribution in the test model
-%   fluxB         the resulting flux distribution in the reference model
-%   flag          1 if the optimization terminated successfully
+% Returns
+% -------
+% fluxA : double
+%     the resulting flux distribution in the test model.
+% fluxB : double
+%     the resulting flux distribution in the reference model.
+% flag : double
+%     1 if the optimization terminated successfully.
 %
-% Usage: [fluxA,fluxB, flag]=qMOMA(modelA,modelB,fluxMinWeight)
+% Examples
+% --------
+%     [fluxA, fluxB, flag] = qMOMA(modelA, modelB, fluxMinWeight);
 
 if nargin<3
     fluxMinWeight=1;

@@ -1,12 +1,23 @@
 function orangeString = printOrange(stringToPrint)
-% printOrange
-%   Print orange-colored stringToPrint to the MATLAB Command Window. Only
-%   if MATLAB is open with GUI, does not work with command-line MATLAB.
+% printOrange  Print an orange-coloured string to the MATLAB Command Window.
 %
-% Input: 
-%   stringToPrint   string that should be printed in orange color
+% Prints stringToPrint in orange colour to the MATLAB Command Window. Only
+% works if MATLAB is open with a GUI; it does not work with command-line
+% MATLAB.
 %
-% Usage: printOrange(stringToPrint)
+% Parameters
+% ----------
+% stringToPrint : char
+%     string that should be printed in orange colour.
+%
+% Returns
+% -------
+% orangeString : char
+%     the input string wrapped with the formatting codes for orange colour.
+%
+% Examples
+% --------
+%     printOrange(stringToPrint);
 
 try useDesktop = usejava('desktop'); catch, useDesktop = false; end
 if useDesktop

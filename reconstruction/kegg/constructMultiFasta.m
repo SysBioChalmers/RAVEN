@@ -1,18 +1,25 @@
 function constructMultiFasta(model,sourceFile,outputDir)
-% constructMultiFasta
-%   Saves one file in FASTA format for each reaction in the model that has genes
+% constructMultiFasta  Save a FASTA file per reaction in the model with genes.
 %
-%   Input:
-%   model         a model structure
-%   sourceFile    a file with sequences in FASTA format
-%   outputDir     the directory to save the resulting FASTA files in
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% sourceFile : char
+%     a file with sequences in FASTA format.
+% outputDir : char
+%     the directory to save the resulting FASTA files in.
 %
-%   The source file is assumed to have the format '>gene identifier
-%   additional info'. Only the gene identifier is used for matching. This is
-%   to be compatible with the rest of the code that retrieves information
-%   from KEGG.
+% Notes
+% -----
+% The source file is assumed to have the format '>gene identifier
+% additional info'. Only the gene identifier is used for matching. This is
+% to be compatible with the rest of the code that retrieves information
+% from KEGG.
 %
-% Usage: constructMultiFasta(model,sourceFile,outputDir)
+% Examples
+% --------
+%     constructMultiFasta(model,sourceFile,outputDir);
 
 sourceFile=char(sourceFile);
 outputDir=char(outputDir);

@@ -1,12 +1,53 @@
 function geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
-% mapCompartments
-%   Maps compartments in the geneScoreStructure. This is used if you do not
-%   want a models that uses all of the compartment from the predictor. This
-%   function will then let you define rules on how the compartments should
-%   be merged.
+% mapCompartments  Map compartments in the geneScoreStructure.
 %
-%   Any number of rules could be defined as consecutive strings or in a cell array.
-%   'comp1'             comp1 should be kept in the structure
+% Maps compartments in the geneScoreStructure. This is used if you do not
+% want a model that uses all of the compartments from the predictor. This
+% function will then let you define rules on how the compartments should be
+% merged.
+%
+% Parameters
+% ----------
+% geneScoreStructure : struct
+%     a structure to be used in predictLocalization.
+% varargin : char or cell
+%     any number of rules, defined as consecutive strings or in a cell
+%     array:
+%
+%     - 'comp1' : comp1 should be kept in the structure.
+%     - 'comp1=comp2' : The scores in comp2 are merged to comp1 and comp2 is
+%       removed from the structure. This automatically keeps comp1 in the
+%       structure.
+%     - 'comp1=comp2 comp3' : The scores in comp2 and comp3 are merged to
+%       comp1 and comp2 & comp3 are removed from the structure. This
+%       automatically keeps comp1 in the structure.
+%     - 'comp1 comp2=comp3' : The scores in comp3 are split between comp1 and
+%       comp2. This automatically keeps comp1 and comp2 in the structure.
+%     - 'comp1=other' : The scores in any compartment not included are merged
+%       to comp1. This is applied after all other rules.
+%
+% Returns
+% -------
+% geneScoreStructure : struct
+%     a structure to be used in predictLocalization.
+%
+% Examples
+% --------
+% The predictor you use gives prediction for Extracellular, Cytosol,
+% Nucleus, Peroxisome, Mitochondria, ER, and Lysosome. You want to have a
+% model with Extracellular, Cytosol, Mitochondria, and Peroxisome where
+% Lysosome is merged with Peroxisome and all other compartments are merged
+% to the Cytosol:
+%
+%     GSS = mapCompartments(GSS, 'Extracellular', 'Mitochondria', ...
+%         'Peroxisome=Lysosome', 'Cytosol=other');
+%
+% Notes
+% -----
+% When one compartment is merged to another the resulting scores will be the
+% best for each gene in either of the compartments. In the case where one
+% compartment is split among several, the scores for the compartment to be
+% merged is weighted with the number of compartments to split to.
 
 %   'comp1=comp2'       The scores in comp2 are merged to comp1 and comp2 is
 %                       removed from the structure. This automatically

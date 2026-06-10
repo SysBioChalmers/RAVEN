@@ -1,50 +1,61 @@
 function experiment=getExpressionStructure(fileName)
-% getExpressionStructure
-%   Loads a representation of an experiment from an Excel file (see
-%   comments further down)
+% getExpressionStructure  Load a representation of an experiment from Excel.
 %
-%   fileName            an Excel representation on an experiment
+% Loads a representation of an experiment from an Excel file (see notes
+% further down).
 %
-%   experiment          an experiment structure
-%       data            matrix with expression values
-%       orfs            the corresponding ORFs
-%       experiments     the titles of the experiments
-%       boundNames      reaction names for the bounds
-%       upperBoundaries matrix with the upper bound values
-%       fitNames        reaction names for the measured fluxes
-%       fitTo           matrix with the measured fluxes
+% Parameters
+% ----------
+% fileName : char
+%     an Excel representation of an experiment.
 %
-%   A very common data set when working with genome-scale metabolic models
-%   is that you have measured fermentation data, gene expression data,
-%   and some different 'bounds' (for example different carbon sources
-%   or genes that are knocked out) in a number of conditions. This function
-%   reads an Excel representation of such an experiment.
-%   The Excel file must contain three sheets, 'EXPRESSION', 'BOUNDS',
-%   'FITTING'. Below are some examples to show how they should be
-%   formatted:
+% Returns
+% -------
+% experiment : struct
+%     an experiment structure with fields:
 %
-%   -EXPRESSION
-%       ORF	dsm_paa	wisc_paa
-%       Pc00e00030	79.80942723	78.14755338
-%   Shows the expression of the gene Pc00e00030 under two different
-%   conditions (in this case a DSM strain and a Wisconsin strain of P.
-%   chrysogenum with PSS in the media)
+%     - data : matrix with expression values
+%     - orfs : the corresponding ORFs
+%     - experiments : the titles of the experiments
+%     - boundNames : reaction names for the bounds
+%     - upperBoundaries : matrix with the upper bound values
+%     - fitNames : reaction names for the measured fluxes
+%     - fitTo : matrix with the measured fluxes
 %
-%   -BOUNDS
-%       Fixed Upper	dsm_paa	wisc_paa
-%       paaIN	0.1	0.2
-%   The upper bound for the reaction paaIN should be 0.1 for the first
-%   condition and 0.2 for the second
+% Examples
+% --------
+%     experiment = getExpressionStructure(fileName);
 %
-%   -FITTING
-%       Fit to	dsm_paa	wisc_paa
-%       co2OUT	2.85	3.05
-%       glcIN   1.2     0.9
-%   The measured fluxes for CO2 production and glucose uptake for the two
-%   conditions. The model(s) can later be fitted to match these values as
-%   good as possible.
+% Notes
+% -----
+% A very common data set when working with genome-scale metabolic models
+% is that you have measured fermentation data, gene expression data, and
+% some different 'bounds' (for example different carbon sources or genes
+% that are knocked out) in a number of conditions. This function reads an
+% Excel representation of such an experiment. The Excel file must contain
+% three sheets, 'EXPRESSION', 'BOUNDS', 'FITTING'. Below are some examples
+% to show how they should be formatted:
 %
-% Usage: experiment=getExpressionStructure(fileName)
+% -EXPRESSION
+%     ORF	dsm_paa	wisc_paa
+%     Pc00e00030	79.80942723	78.14755338
+% Shows the expression of the gene Pc00e00030 under two different
+% conditions (in this case a DSM strain and a Wisconsin strain of P.
+% chrysogenum with PSS in the media).
+%
+% -BOUNDS
+%     Fixed Upper	dsm_paa	wisc_paa
+%     paaIN	0.1	0.2
+% The upper bound for the reaction paaIN should be 0.1 for the first
+% condition and 0.2 for the second.
+%
+% -FITTING
+%     Fit to	dsm_paa	wisc_paa
+%     co2OUT	2.85	3.05
+%     glcIN   1.2     0.9
+% The measured fluxes for CO2 production and glucose uptake for the two
+% conditions. The model(s) can later be fitted to match these values as
+% well as possible.
 
 [type, sheets]=xlsfinfo(fileName);
 

@@ -1,28 +1,33 @@
 function writeYAMLmodel(model,fileName,preserveQuotes,sortIds)
-% writeYAMLmodel
-%   Writes a yaml file matching cobrapy's YAML structure. The format is
-%   cobrapy's native !!omap layout, extended with RAVEN-only top-level
-%   per-entry keys (inchis, deltaG, metFrom, rxnFrom, references,
-%   confidence_score, protein) and the GECKO ec-rxns / ec-enzymes
-%   sections. Reaction EC numbers are written inside the `annotation`
-%   block as `ec-code` (the cobrapy/geckopy convention), not as a
-%   top-level reaction key. Output is byte-stable with raven_python's
-%   io.yaml.write_yaml_model when called with the same model.
+% writeYAMLmodel  Write a model to a yaml file matching cobrapy's structure.
 %
-%   model           a model structure
-%   fileName        name that the file will have.  A dialog window will
-%                   open if no file name is specified.
-%   preserveQuotes  if all string values should be wrapped in double
-%                   quotes. cobrapy emits quotes only where YAML
-%                   requires them, so the default is false (matches
-%                   cobrapy / raven-python).
-%                   (logical, default=false)
-%   sortIds         if metabolites, reactions, genes and compartments
-%                   should be sorted alphabetically by their identifier,
-%                   otherwise they are kept in their original order
-%                   (logical, default=false)
+% The format is cobrapy's native !!omap layout, extended with RAVEN-only
+% top-level per-entry keys (inchis, deltaG, metFrom, rxnFrom, references,
+% confidence_score, protein) and the GECKO ec-rxns / ec-enzymes sections.
+% Reaction EC numbers are written inside the `annotation` block as
+% `ec-code` (the cobrapy/geckopy convention), not as a top-level reaction
+% key. Output is byte-stable with raven_python's io.yaml.write_yaml_model
+% when called with the same model.
 %
-% Usage: writeYAMLmodel(model,fileName,preserveQuotes,sortIds)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% fileName : char
+%     name that the file will have. A dialog window will open if no file
+%     name is specified.
+% preserveQuotes : logical, optional
+%     if all string values should be wrapped in double quotes. cobrapy
+%     emits quotes only where YAML requires them, so the default is false
+%     (matches cobrapy / raven-python) (default false).
+% sortIds : logical, optional
+%     if metabolites, reactions, genes and compartments should be sorted
+%     alphabetically by their identifier, otherwise they are kept in their
+%     original order (default false).
+%
+% Examples
+% --------
+%     writeYAMLmodel(model,fileName,preserveQuotes,sortIds);
 if nargin<2|| isempty(fileName)
     [fileName, pathName] = uiputfile({'*.yml;*.yaml'}, 'Select file for model export',[model.id '.yml']);
     if fileName == 0

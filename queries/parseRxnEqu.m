@@ -1,20 +1,28 @@
 function metabolites=parseRxnEqu(equations)
-% parseRxnEqu
-%   Gets all metabolite names from a cell array of equations
+% parseRxnEqu  Get all metabolite names from a cell array of equations.
 %
-%   metabolites=parseRxnEqu(equations)
+% Parameters
+% ----------
+% equations : cell
+%     a cell array with equation strings.
 %
-%   equations     A cell array with equation strings
+% Returns
+% -------
+% metabolites : cell
+%     a cell array with the involved metabolites.
 %
-%   metabolites   A cell array with the involved metabolites
+% Examples
+% --------
+%     metabolites = parseRxnEqu(equations);
 %
-%   The equations should be written like:
-%   1 A + 3 B (=> or <=>) 5C + 2 D
+% Notes
+% -----
+% The equations should be written like:
 %
-%   If the equation is expressed as for example '... + (n-1) starch' then
-%   '(n-1) starch' will be interpreted as one metabolite
+%     1 A + 3 B (=> or <=>) 5C + 2 D
 %
-% Usage: metabolites=parseRxnEqu(equations)
+% If the equation is expressed as for example '... + (n-1) starch' then
+% '(n-1) starch' will be interpreted as one metabolite.
 
 if ~iscell(equations)
     equations={equations};

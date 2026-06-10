@@ -1,23 +1,31 @@
 function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)
-% sortModel
-%   Sorts a model based on metabolite names and compartments
+% sortModel  Sort a model based on metabolite names and compartments.
 %
-%   model             a model structure
-%   sortReversible    sorts the reversible reactions so the the metabolite
-%                     that is first in lexiographical order is a reactant
-%                     (optional, default true)
-%   sortMetName       sort the metabolite names in the equation, also uses
-%                     compartment abbreviation (optional, default false)
-%   sortReactionOrder sorts the reaction order within each subsystem so that
-%                     reactions consuming some metabolite comes efter
-%                     reactions producing it. This overrides the
-%                     sortReversible option and reactions are sorted so that
-%                     the production direction matches the consumption
-%                     direction (optional, default false)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% sortReversible : logical, optional
+%     sorts the reversible reactions so that the metabolite that is first
+%     in lexicographical order is a reactant (default true).
+% sortMetName : logical, optional
+%     sort the metabolite names in the equation, also uses compartment
+%     abbreviation (default false).
+% sortReactionOrder : logical, optional
+%     sorts the reaction order within each subsystem so that reactions
+%     consuming some metabolite come after reactions producing it. This
+%     overrides the sortReversible option and reactions are sorted so that
+%     the production direction matches the consumption direction (default
+%     false).
 %
-%   model             an updated model structure
+% Returns
+% -------
+% model : struct
+%     an updated model structure.
 %
-% Usage: model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)
+% Examples
+% --------
+%     model = sortModel(model, sortReversible, sortMetName, sortReactionOrder);
 
 if nargin<2
     sortReversible=true;

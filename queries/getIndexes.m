@@ -1,30 +1,38 @@
 function indexes=getIndexes(model, objects, type, returnLogical)
-% getIndexes
-%   Retrieves the indexes for a list of reactions or metabolites
+% getIndexes  Retrieve the indexes for a list of reactions or metabolites.
 %
-% Input:
-%   model           a model structure
-%   objects         either a cell array of IDs, a logical vector with the
-%                   same number of elements as metabolites in the model,
-%                   of a vector of indexes
-%   type            'rxns', 'mets', or 'genes' depending on what to retrieve
-%                   'metnames' queries metabolite names, while 'metcomps'
-%                   allows to provide specific metabolites and their
-%                   compartments in the format metaboliteName[comp]. If a
-%                   model.ec structure exists (GECKO 3), then also
-%                   'ecenzymes', 'ecrxns' and 'ecgenes' are allowed
-%   returnLogical   Sets whether to return a logical array or an array with
-%                   the indexes (optional, default false)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% objects : cell or logical or double
+%     either a cell array of IDs, a logical vector with the same number of
+%     elements as metabolites in the model, or a vector of indexes.
+% type : char
+%     'rxns', 'mets', or 'genes' depending on what to retrieve. 'metnames'
+%     queries metabolite names, while 'metcomps' allows providing specific
+%     metabolites and their compartments in the format metaboliteName[comp].
+%     If a model.ec structure exists (GECKO 3), then also 'ecenzymes',
+%     'ecrxns' and 'ecgenes' are allowed.
+% returnLogical : logical, optional
+%     sets whether to return a logical array or an array with the indexes
+%     (default false).
 %
-% Output:
-%   indexes         can be a logical array or a double array depending on
-%                   the value of returnLogical
+% Returns
+% -------
+% indexes : logical or double
+%     can be a logical array or a double array depending on the value of
+%     returnLogical.
 %
-% Note: If 'ecenzymes', 'ecrxns' or 'ecgenes' are used with a GECKO 3
-% model, then the indexes are from the model.ec.enzymes, model.ec.rxns or
-% model.ec.genes fields, respectively.
-% 
-% Usage: indexes=getIndexes(model, objects, type, returnLogical)
+% Notes
+% -----
+% If 'ecenzymes', 'ecrxns' or 'ecgenes' are used with a GECKO 3 model, then
+% the indexes are from the model.ec.enzymes, model.ec.rxns or model.ec.genes
+% fields, respectively.
+%
+% Examples
+% --------
+%     indexes = getIndexes(model, objects, type, returnLogical);
 
 if nargin<4
     returnLogical=false;

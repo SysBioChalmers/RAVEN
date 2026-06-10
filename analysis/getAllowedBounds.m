@@ -1,30 +1,39 @@
 function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns,runParallel)
-% getAllowedBounds
-%   Returns the minimal and maximal fluxes through each reaction.
+% getAllowedBounds  Return the minimal and maximal fluxes through reactions.
 %
-% Input:
-%   model           a model structure
-%   rxns            either a cell array of reaction IDs, a logical vector
-%                   with the same number of elements as reactions in the
-%                   model, or a vector of reaction indexes (optional, default
-%                   model.rxns)
-%   runParallel     speed up calculations by parallel processing. This is
-%                   not beneficial if allowed bounds are calculated for
-%                   only a few reactions, as the overhead of parallel
-%                   processing will take longer. It requires MATLAB
-%                   Parallel Computing Toolbox. If this is not installed,
-%                   the calculations will not be parallelized, regardless
-%                   what is indicated as runParallel. (optional, default true)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% rxns : cell or logical or double, optional
+%     either a cell array of reaction IDs, a logical vector with the same
+%     number of elements as reactions in the model, or a vector of
+%     reaction indexes (default model.rxns).
+% runParallel : logical, optional
+%     speed up calculations by parallel processing. This is not beneficial
+%     if allowed bounds are calculated for only a few reactions, as the
+%     overhead of parallel processing will take longer. It requires MATLAB
+%     Parallel Computing Toolbox. If this is not installed, the
+%     calculations will not be parallelized, regardless of what is
+%     indicated as runParallel (default true).
 %
-% Output:
-%   minFluxes       minimal allowed fluxes
-%   maxFluxes       maximal allowed fluxes
-%   exitFlags       exit flags for min/max for each of the reactions. True
-%                   if it was possible to calculate a flux
+% Returns
+% -------
+% minFluxes : double
+%     minimal allowed fluxes.
+% maxFluxes : double
+%     maximal allowed fluxes.
+% exitFlags : double
+%     exit flags for min/max for each of the reactions. True if it was
+%     possible to calculate a flux.
 %
+% Notes
+% -----
 % In cases where no solution can be calculated, NaN is returned.
 %
-% Usage: [minFluxes, maxFluxes, exitFlags] = getAllowedBounds(model, rxns, runParallel)
+% Examples
+% --------
+%     [minFluxes, maxFluxes, exitFlags] = getAllowedBounds(model, rxns, runParallel);
 
 if nargin<2 || isempty(rxns)
     rxns = 1:numel(model.rxns);

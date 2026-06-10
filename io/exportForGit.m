@@ -1,38 +1,45 @@
 function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,COBRAtext,neverPrefixIDs)
-% exportForGit
-%   Generates a directory structure and populates this with model files, ready
-%   to be commited to a Git(Hub) maintained model repository. Writes the model
-%   as SBML L3V1 FBCv2 (both XML and YAML), COBRA text, Matlab MAT-file
-%   orthologies in KEGG
+% exportForGit  Export a model for a Git-maintained model repository.
 %
-%   model               model structure in RAVEN format that should be
-%   exported
-%   prefix              prefix for all filenames (optional, default 'model')
-%   path                path where the directory structure should be
-%                       generated and populated with all files (optional,
-%                       default to current working directory)
-%   formats             cell array of strings specifying in what file
-%                       formats the model should be exported (optional,
-%                       default to all formats as {'mat', 'txt', 'xlsx',
-%                       'xml', 'yml'})
-%   mainBranchFlag      logical, if true, function will error if RAVEN (and
-%                       COBRA if detected) is/are not on the main branch.
-%                       (optional, default false)
-%   subDirs             logical, whether model files for each file format
-%                       should be written in its own subdirectory, with
-%                       'model' as parent directory, in accordance to the
-%                       standard-GEM repository format. If false, all files
-%                       are stored in the same folder. (optional, default
-%                       true)
-%   COBRAtext           logical, whether the txt file should be in COBRA
-%                       Toolbox format using metabolite IDs, instead of
-%                       metabolite names and compartments. (optional,
-%                       default false)
-%   neverPrefixIDs      true if prefixes are never added to identifiers,
-%                       even if start with e.g. digits. This might result
-%                       in invalid SBML files (optional, default false)
+% Generates a directory structure and populates it with model files, ready
+% to be committed to a Git(Hub) maintained model repository. Writes the
+% model as SBML L3V1 FBCv2 (both XML and YAML), COBRA text, Matlab MAT-file
+% and Microsoft Excel formats.
 %
-% Usage: exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,COBRAtext,COBRAstyle)
+% Parameters
+% ----------
+% model : struct
+%     model structure in RAVEN format that should be exported.
+% prefix : char, optional
+%     prefix for all filenames (default 'model').
+% path : char, optional
+%     path where the directory structure should be generated and populated
+%     with all files (default current working directory).
+% formats : cell, optional
+%     cell array of strings specifying in what file formats the model
+%     should be exported (default all formats as {'mat', 'txt', 'xlsx',
+%     'xml', 'yml'}).
+% mainBranchFlag : logical, optional
+%     if true, function will error if RAVEN (and COBRA if detected) is/are
+%     not on the main branch (default false).
+% subDirs : logical, optional
+%     whether model files for each file format should be written in their
+%     own subdirectory, with 'model' as parent directory, in accordance to
+%     the standard-GEM repository format. If false, all files are stored in
+%     the same folder (default true).
+% COBRAtext : logical, optional
+%     whether the txt file should be in COBRA Toolbox format using
+%     metabolite IDs, instead of metabolite names and compartments
+%     (default false).
+% neverPrefixIDs : logical, optional
+%     true if prefixes are never added to identifiers, even if they start
+%     with e.g. digits. This might result in invalid SBML files (default
+%     false).
+%
+% Examples
+% --------
+%     exportForGit(model, prefix, path, formats, mainBranchFlag, subDirs, ...
+%         COBRAtext, neverPrefixIDs);
 if nargin<8
     neverPrefixIDs=false;
 end

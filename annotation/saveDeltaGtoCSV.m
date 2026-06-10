@@ -1,23 +1,30 @@
 function saveDeltaGtoCSV(model, metCsv, rxnCsv, verbose)
-% saveDeltaGtoCSV
-%   Persist model.metDeltaG and model.rxnDeltaG to project CSV files.
-%   Counterpart of loadDeltaGfromCSV and the upstream version of
-%   yeast-GEM's saveDeltaG. Mirrors raven_python.annotation.save_delta_g_csv.
+% saveDeltaGtoCSV  Persist metDeltaG and rxnDeltaG to CSV files.
 %
-%   Each CSV gets two columns: identifier, deltaG. Rows are written
-%   in model order (one row per entity); identifiers without a
-%   matching field get NaN. Pass an empty string for metCsv or rxnCsv
-%   to skip that side.
+% Persist model.metDeltaG and model.rxnDeltaG to project CSV files.
+% Counterpart of loadDeltaGfromCSV and the upstream version of yeast-GEM's
+% saveDeltaG. Mirrors raven_python.annotation.save_delta_g_csv.
 %
-%   Inputs:
-%       model    RAVEN model struct.
-%       metCsv   Output path for the metabolite ΔG CSV, or '' to skip.
-%       rxnCsv   Output path for the reaction ΔG CSV, or '' to skip.
-%       verbose  (opt, default false) Print "wrote ..." per file.
+% Each CSV gets two columns: identifier, deltaG. Rows are written in model
+% order (one row per entity); identifiers without a matching field get
+% NaN. Pass an empty string for metCsv or rxnCsv to skip that side.
 %
-% Usage: saveDeltaGtoCSV(model, ...
-%            'data/databases/model_metDeltaG.csv', ...
-%            'data/databases/model_rxnDeltaG.csv')
+% Parameters
+% ----------
+% model : struct
+%     RAVEN model struct.
+% metCsv : char, optional
+%     Output path for the metabolite ΔG CSV, or '' to skip.
+% rxnCsv : char, optional
+%     Output path for the reaction ΔG CSV, or '' to skip.
+% verbose : logical, optional
+%     Print "wrote ..." per file (default false).
+%
+% Examples
+% --------
+%     saveDeltaGtoCSV(model, ...
+%         'data/databases/model_metDeltaG.csv', ...
+%         'data/databases/model_rxnDeltaG.csv');
 
 if nargin < 4
     verbose = false;

@@ -1,14 +1,21 @@
 function plotLabels(handle,pathway)
-% plotLabels
-%   Plots labels on the pathway map.
+% plotLabels  Plot labels on the pathway map.
 %
-%   handle      handle to the figure on which to print the labels
-%   pathway     pathway structure of the metabolic network
+% Parameters
+% ----------
+% handle : double
+%     handle to the figure on which to print the labels.
+% pathway : struct
+%     pathway structure of the metabolic network.
 %
-%   NOTE: Since there is not dedicated shape for labels the PHENOTYPE
-%           shape is used. The name of the PHENOTYPE object is used.
+% Examples
+% --------
+%     plotLabels(handle, pathway);
 %
-% Usage: plotLabels(handle,pathway)
+% Notes
+% -----
+% Since there is no dedicated shape for labels the PHENOTYPE shape is used.
+% The name of the PHENOTYPE object is used.
 
 for i=1:numel(pathway.listOfSpecies)
     if strcmp(pathway.listOfSpecies(i).type,'PHENOTYPE')

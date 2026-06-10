@@ -1,24 +1,34 @@
 function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
-% getPhylDist
-%   Calculates distance between species in KEGG based on systematic name
+% getPhylDist  Calculate distance between species in KEGG.
 %
-%   Input:
-%   keggPath        if keggPhylDist.mat is not in the RAVEN\external\kegg
-%                   directory, this function will attempt to read data from
-%                   a local FTP dump of the KEGG database. keggPath is the
-%                   path to the root of this database
-%   onlyInKingdom   if true, it generates a distance matrix with distance
-%                   Inf for organisms from another domains (Prokaryota,
-%                   Eukaryota) (optional, default false)
+% Calculates distance between species in KEGG based on systematic name.
 %
-%   Output:
-%   phylDistStruct  a structure with a list of organism ids and a matrix
-%                   that specifies their pairwise distances
+% Parameters
+% ----------
+% keggPath : char, optional
+%     if keggPhylDist.mat is not in the RAVEN\external\kegg directory, this
+%     function will attempt to read data from a local FTP dump of the KEGG
+%     database. keggPath is the path to the root of this database (default
+%     'RAVEN/external/kegg').
+% onlyInKingdom : logical, optional
+%     if true, it generates a distance matrix with distance Inf for
+%     organisms from another domains (Prokaryota, Eukaryota) (default
+%     false).
 %
-%   NOTE: This simple metric is based on the number of nodes two organisms
-%   are away from each other in KEGG
+% Returns
+% -------
+% phylDistStruct : struct
+%     a structure with a list of organism ids and a matrix that specifies
+%     their pairwise distances.
 %
-% Usage: phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
+% Examples
+% --------
+%     phylDistStruct = getPhylDist(keggPath, onlyInKingdom);
+%
+% Notes
+% -----
+% This simple metric is based on the number of nodes two organisms are away
+% from each other in KEGG.
 
 if nargin<1
     keggPath='RAVEN/external/kegg';

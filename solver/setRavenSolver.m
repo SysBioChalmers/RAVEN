@@ -1,16 +1,23 @@
 function setRavenSolver(solver)
-% setRavenSolver
-%   Sets the solver for RAVEN and optionally saves a default value
-%	to MATLAB startup.
+% setRavenSolver  Set the solver for RAVEN.
 %
-%   solver  string with solver name. The following options are available:
-%           glpk    uses RAVEN-provided binaries
-%           gurobi  requires a working Gurobi installation
-%           cobra   requires a working COBRA Toolbox installation. RAVEN
-%                   parses the problem to COBRA and uses the solver that is
-%                   set by changeCobraSolver.
+% Sets the solver for RAVEN and optionally saves a default value to MATLAB
+% startup.
 %
-% Usage: setRavenSolver(solver)
+% Parameters
+% ----------
+% solver : char
+%     string with solver name. The following options are available:
+%
+%     - glpk : uses RAVEN-provided binaries.
+%     - gurobi : requires a working Gurobi installation.
+%     - cobra : requires a working COBRA Toolbox installation. RAVEN
+%       parses the problem to COBRA and uses the solver that is set by
+%       changeCobraSolver.
+%
+% Examples
+% --------
+%     setRavenSolver(solver);
 solver=char(solver);
 switch solver
     case 'cobra'

@@ -1,19 +1,26 @@
 function exportModelToSIF(model,fileName,graphType,rxnLabels,metLabels)
-% exportModelToSIF
-%   Exports a constraint-based model to a SIF file
+% exportModelToSIF  Export a constraint-based model to a SIF file.
 %
-%   model         a model structure
-%   fileName      the filename  to export the model to
-%   graphType     the type of graph to export to (optional, default 'rc')
-%                 'rc'  reaction-compound
-%                 'rr'  reaction-reaction
-%                 'cc'  compound-compound
-%   rxnLabels     cell array with labels for reactions (optional, default
-%                 model.rxns)
-%   metLabels     cell array with labels for metabolites (optional, default
-%                 model.mets)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% fileName : char
+%     the filename to export the model to.
+% graphType : char, optional
+%     the type of graph to export to (default 'rc'):
 %
-% Usage: exportModelToSIF(model,fileName,graphType,rxnLabels,metLabels)
+%     - 'rc' : reaction-compound
+%     - 'rr' : reaction-reaction
+%     - 'cc' : compound-compound
+% rxnLabels : cell, optional
+%     cell array with labels for reactions (default model.rxns).
+% metLabels : cell, optional
+%     cell array with labels for metabolites (default model.mets).
+%
+% Examples
+% --------
+%     exportModelToSIF(model, fileName, graphType, rxnLabels, metLabels);
 fileName=char(fileName);
 if nargin<3
     graphType='rc';

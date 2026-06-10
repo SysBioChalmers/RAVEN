@@ -1,20 +1,29 @@
 function model = changeGrRules(model,rxns,grRules,replace)
-% changeGrRules
-%   Changes multiple grRules at the same time.
+% changeGrRules  Change multiple grRules at the same time.
 %
-%   model       a model structure to change the gene association
-%   rxns        string or cell array of reaction IDs
-%   grRules     string of additional or replacement gene association.
-%               Should be written with ' and ' to indicate subunits, ' or '
-%               to indicate isoenzymes, and brackets '()' to separate
-%               different instances
-%   replace     true if old gene association should be replaced with new
-%               association. False if new gene association should be
-%               concatenated to the old association (optional, default true)
+% Parameters
+% ----------
+% model : struct
+%     a model structure to change the gene association.
+% rxns : char or cell
+%     reaction IDs.
+% grRules : char or cell
+%     additional or replacement gene association. Should be written with
+%     ' and ' to indicate subunits, ' or ' to indicate isoenzymes, and
+%     brackets '()' to separate different instances.
+% replace : logical, optional
+%     true if old gene association should be replaced with new association.
+%     False if new gene association should be concatenated to the old
+%     association (default true).
 %
-%   model       an updated model structure
+% Returns
+% -------
+% model : struct
+%     an updated model structure.
 %
-% Usage: changeGrRules(model,rxns,grRules,replace)
+% Examples
+% --------
+%     model = changeGrRules(model, rxns, grRules, replace);
 
 if nargin==3
     replace=true;

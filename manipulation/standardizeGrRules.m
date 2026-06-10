@@ -1,25 +1,42 @@
 function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)
-% standardizeGrRules
-%   Standardizes gene-rxn rules in a model according to the following
-%       - No overall containing brackets
-%       - Just enzyme complexes are enclosed into brackets
-%       - ' and ' & ' or ' strings are strictly set to lowercases
+% standardizeGrRules  Standardize gene-reaction rules in a model.
 %
-%   A rxnGeneMat matrix consistent with the standardized grRules is created.
+% The grRules are standardized according to the following:
 %
-%   model        a model structure
-%   embedded     true if this function is called inside of another 
-%                RAVEN function (optional, default false)
+% - No overall containing brackets
+% - Just enzyme complexes are enclosed into brackets
+% - ' and ' and ' or ' strings are strictly set to lowercase
 %
-%   grRules      [nRxns x 1] cell array with the standardized grRules
-%   rxnGeneMat   [nRxns x nGenes]Sparse matrix consitent with the
-%                standardized grRules
-%   
-%   If this function is going to be used in a model reconstruction or
-%   modification pipeline it is recommended to run this function just
-%   at the beginning of the process.
+% A rxnGeneMat matrix consistent with the standardized grRules is created.
 %
-% Usage: [grRules,rxnGeneMat,indexes2check]=standardizeGrRules(model,embedded)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% embedded : logical, optional
+%     true if this function is called inside of another RAVEN function
+%     (default false).
+%
+% Returns
+% -------
+% grRules : cell
+%     [nRxns x 1] cell array with the standardized grRules.
+% rxnGeneMat : double
+%     [nRxns x nGenes] sparse matrix consistent with the standardized
+%     grRules.
+% indexes2check : double
+%     indices of the grRules with potentially problematic relationships
+%     that should be checked manually.
+%
+% Examples
+% --------
+%     [grRules, rxnGeneMat, indexes2check] = standardizeGrRules(model, embedded);
+%
+% Notes
+% -----
+% If this function is going to be used in a model reconstruction or
+% modification pipeline it is recommended to run this function just at the
+% beginning of the process.
 
 %Preallocate fields
 n          = length(model.rxns);

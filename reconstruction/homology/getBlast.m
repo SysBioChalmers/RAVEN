@@ -1,40 +1,51 @@
 function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
     modelIDs,refFastaFiles,developMode,hideVerbose)
-% getBlast
-%   Performs a bidirectional BLAST between the organism of interest and a
-%   set of template organisms
+% getBlast  Bidirectional BLAST between an organism and template organisms.
 %
-%   Input:
-%   organismID      the id of the organism of interest. This should also
-%                   match with the id supplied to getModelFromHomology
-%   fastaFile       a FASTA file with the protein sequences for the
-%                   organism of interest
-%   modelIDs        a cell array of model ids. These must match the
-%                   "model.id" fields in the "models" structure if the
-%                   output is to be used with getModelFromHomology
-%   refFastaFiles   a cell array with the paths to the corresponding FASTA
-%                   files
-%   developMode     true if blastReport should be generated that is used
-%                   in the unit testing function for BLAST+ (optional, default
-%                   false)
-%   hideVerbose     true if no status messages should be printed (optional,
-%                   default false)
+% Parameters
+% ----------
+% organismID : char
+%     the id of the organism of interest. This should also match with the
+%     id supplied to getModelFromHomology.
+% fastaFile : char
+%     a FASTA file with the protein sequences for the organism of interest.
+% modelIDs : cell
+%     a cell array of model ids. These must match the "model.id" fields in
+%     the "models" structure if the output is to be used with
+%     getModelFromHomology.
+% refFastaFiles : cell
+%     a cell array with the paths to the corresponding FASTA files.
+% developMode : logical, optional
+%     true if blastReport should be generated that is used in the unit
+%     testing function for BLAST+ (default false).
+% hideVerbose : logical, optional
+%     true if no status messages should be printed (default false).
 %
-%   Output:
-%   blastStructure  structure containing the bidirectional homology
-%                   measurements that can be used by getModelFromHomology
-%   blastReport     structure containing MD5 hashes for FASTA database
-%                   files and non-parsed BLAST output data. Will be blank
-%                   if developMode is false.
+% Returns
+% -------
+% blastStructure : struct
+%     structure containing the bidirectional homology measurements that
+%     can be used by getModelFromHomology.
+% blastReport : struct
+%     structure containing MD5 hashes for FASTA database files and
+%     non-parsed BLAST output data. Will be blank if developMode is false.
 %
-%   NOTE: This function calls BLAST+ to perform a bidirectional homology
-%   test between the organism of interest and a set of other organisms
-%   using standard settings. The only filtering this function does is the
-%   removal of hits with an E-value higher than 10e-5. The other homology
-%   measurements can be implemented using getBlastFromExcel.
+% Notes
+% -----
+% This function calls BLAST+ to perform a bidirectional homology test
+% between the organism of interest and a set of other organisms using
+% standard settings. The only filtering this function does is the removal
+% of hits with an E-value higher than 10e-5. The other homology
+% measurements can be implemented using getBlastFromExcel.
 %
-% Usage: [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
-%    modelIDs,refFastaFiles,developMode,hideVerbose)
+% Examples
+% --------
+%     [blastStructure,blastReport] = getBlast(organismID,fastaFile,...
+%        modelIDs,refFastaFiles,developMode,hideVerbose);
+%
+% See also
+% --------
+% getModelFromHomology, getBlastFromExcel, getDiamond
 
 if nargin<5
     developMode = false;

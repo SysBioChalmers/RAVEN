@@ -1,34 +1,47 @@
 function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, noPolymers,isInchi,ignoreRX)
-% parseFormulas
-%   Gets the elemental composition from formulas
+% parseFormulas  Get the elemental composition from formulas.
 %
-%   formulas      a cell array with formulas
-%   noPolymers    assume that all polymers consist of one element.
-%                 Corresponds to counting everything between (...)n as
-%                 n being equal to one. Only one set of parentheses
-%                 is allowed. If this is false then polymers are returned as
-%                 "Could not parse formula" (optional, default false)
-%   isInchi       true if the formulas are in the InChI format (optional,
-%                 default false)
-%   ignoreRX      ignore R-groups and bound protein. This can be useful since they
-%                 are often used only as intermediates (optional, default false)
+% Parameters
+% ----------
+% formulas : cell
+%     a cell array with formulas.
+% noPolymers : logical, optional
+%     assume that all polymers consist of one element. Corresponds to
+%     counting everything between (...)n as n being equal to one. Only one
+%     set of parentheses is allowed. If this is false then polymers are
+%     returned as "Could not parse formula" (default false).
+% isInchi : logical, optional
+%     true if the formulas are in the InChI format (default false).
+% ignoreRX : logical, optional
+%     ignore R-groups and bound protein. This can be useful since they are
+%     often used only as intermediates (default false).
 %
-%   elements
-%       abbrevs   cell array with abbreviations for all used elements
-%       names     cell array with the names for all used elements
-%   useMat        MxN matrix with the number of atoms for each formula (M) and each
-%                 element (N)
-%   exitFlag      array with the exit flags:
-%                 1=  Sucessful parsing
-%                 0=  No formula found
-%                 -1= Could not parse formula
-%   MW            predicted molecular weight (g/mol). This is only returned
-%                 for formulas which can be sucessfully parsed, and its
-%                 calculation doesn't affect the exitFlag variable. NaN is
-%                 returned if the weight couldn't be calculated
-%   
-% Usage: [elements, useMat, exitFlag, MW]=
-%               parseFormulas(formulas, noPolymers,isInchi,ignoreRX)
+% Returns
+% -------
+% elements : struct
+%     struct with fields:
+%
+%     - abbrevs : cell array with abbreviations for all used elements
+%     - names : cell array with the names for all used elements
+% useMat : double
+%     MxN matrix with the number of atoms for each formula (M) and each
+%     element (N).
+% exitFlag : double
+%     array with the exit flags:
+%
+%     - 1 : successful parsing
+%     - 0 : no formula found
+%     - -1 : could not parse formula
+% MW : double
+%     predicted molecular weight (g/mol). This is only returned for
+%     formulas which can be successfully parsed, and its calculation
+%     doesn't affect the exitFlag variable. NaN is returned if the weight
+%     couldn't be calculated.
+%
+% Examples
+% --------
+%     [elements, useMat, exitFlag, MW] = ...
+%         parseFormulas(formulas, noPolymers, isInchi, ignoreRX);
 
 if nargin<2
     noPolymers=false;

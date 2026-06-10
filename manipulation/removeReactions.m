@@ -1,24 +1,30 @@
 function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)
-% removeReactions
-%   Deletes a set of reactions from a model
+% removeReactions  Delete a set of reactions from a model.
 %
-% Input:
-%   model             a model structure
-%   rxnsToRemove      either a cell array of reaction IDs, a logical vector
-%                     with the same number of elements as reactions in the
-%                     model, or a vector of indexes to remove
-%   removeUnusedMets  remove metabolites that are no longer in use
-%                     (optional, default false)
-%   removeUnusedGenes remove genes that are no longer in use (optional,
-%                     default false)
-%   removeUnusedComps remove compartments that are no longer in use
-%                     (optional, default false)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% rxnsToRemove : cell or logical or double
+%     either a cell array of reaction IDs, a logical vector with the same
+%     number of elements as reactions in the model, or a vector of indexes
+%     to remove.
+% removeUnusedMets : logical, optional
+%     remove metabolites that are no longer in use (default false).
+% removeUnusedGenes : logical, optional
+%     remove genes that are no longer in use (default false).
+% removeUnusedComps : logical, optional
+%     remove compartments that are no longer in use (default false).
 %
-% Output:
-%   reducedModel      an updated model structure
+% Returns
+% -------
+% reducedModel : struct
+%     an updated model structure.
 %
-% Usage: reducedModel = removeReactions(model, rxnsToRemove, removeUnusedMets,...
-%                           removeUnusedGenes, removeUnusedComps)
+% Examples
+% --------
+%     reducedModel = removeReactions(model, rxnsToRemove, removeUnusedMets, ...
+%         removeUnusedGenes, removeUnusedComps);
 
 if nargin<3
     removeUnusedMets=false;

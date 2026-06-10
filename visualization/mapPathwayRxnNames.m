@@ -1,17 +1,30 @@
 function [pathway, notMapped]=mapPathwayRxnNames(pathway,originalLabels,newLabels)
-% mapPathwayRxnNames
-%   For mapping labels in the pathway object. Useful if you want to change
-%   what is shown in the reaction boxes.
+% mapPathwayRxnNames  Map reaction labels in a pathway object.
 %
-%   pathway         pathway structure representing the pathway to be drawn
-%   originalLabels  cell array with the original reaction labels
-%   newLabels       cell array with the new reaction labels
+% For mapping labels in the pathway object. Useful if you want to change
+% what is shown in the reaction boxes.
 %
-%   pathway         an updated pathway structure
-%   notMapped       a cell array with labels that could not be found in the
-%                   pathway object
+% Parameters
+% ----------
+% pathway : struct
+%     pathway structure representing the pathway to be drawn.
+% originalLabels : cell
+%     cell array with the original reaction labels.
+% newLabels : cell
+%     cell array with the new reaction labels.
 %
-% Usage: [pathway, notMapped]=mapPathwayRxnNames(pathway,originalLabels,newLabels)
+% Returns
+% -------
+% pathway : struct
+%     an updated pathway structure.
+% notMapped : cell
+%     a cell array with labels that could not be found in the pathway
+%     object.
+%
+% Examples
+% --------
+%     [pathway, notMapped] = mapPathwayRxnNames(pathway, originalLabels, ...
+%         newLabels);
 
 if numel(originalLabels)~=numel(newLabels)
     EM='The new label cell array must have the same length as the old label cell array';

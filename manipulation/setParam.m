@@ -1,33 +1,42 @@
 function model=setParam(model, paramType, rxnList, params, var)
-% setParam
-%   Sets parameters for reactions
+% setParam  Set parameters for reactions.
 %
-% Input:
-%   model       a model structure
-%   paramType   the type of parameter to set:
-%               'lb'    lower bound
-%               'ub'    upper bound
-%               'eq'    both upper and lower bound (equality constraint)
-%               'obj'   objective coefficient
-%               'rev'   reversibility (only changes the model.rev fields,
-%                       does not affect model.lb and model.ub) 
-%               'var'   variance around measured bound
-%               'unc'   unconstrained, set lower and upper bound to the
-%                       default values (-1000 and 1000, or any other values
-%                       that are defined in model.annotation.defaultLB and
-%                       .defaultUB)
-%   rxnList     a cell array of reaction IDs or a vector with their
-%               corresponding indexes
-%   params      a vector of the corresponding values
-%   var         percentage of variance around measured value, if 'var' is
-%               set as paramType. Defining 'var' as 5 results in lb and ub
-%               at 97.5% and 102.5% of the provide params value (if params
-%               value is negative, then lb and ub are 102.5% and 97.5%).
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% paramType : char
+%     the type of parameter to set:
 %
-% Output:
-%   model       an updated model structure
+%     - 'lb' : lower bound.
+%     - 'ub' : upper bound.
+%     - 'eq' : both upper and lower bound (equality constraint).
+%     - 'obj' : objective coefficient.
+%     - 'rev' : reversibility (only changes the model.rev fields, does not
+%       affect model.lb and model.ub).
+%     - 'var' : variance around measured bound.
+%     - 'unc' : unconstrained, set lower and upper bound to the default
+%       values (-1000 and 1000, or any other values that are defined in
+%       model.annotation.defaultLB and .defaultUB).
+% rxnList : cell or double
+%     a cell array of reaction IDs or a vector with their corresponding
+%     indexes.
+% params : double
+%     a vector of the corresponding values.
+% var : double, optional
+%     percentage of variance around measured value, if 'var' is set as
+%     paramType. Defining 'var' as 5 results in lb and ub at 97.5% and
+%     102.5% of the provided params value (if params value is negative,
+%     then lb and ub are 102.5% and 97.5%).
 %
-% Usage: model = setParam(model, paramType, rxnList, params, var)
+% Returns
+% -------
+% model : struct
+%     an updated model structure.
+%
+% Examples
+% --------
+%     model = setParam(model, paramType, rxnList, params, var);
 
 paramType=convertCharArray(paramType);
 if ~any(strcmpi(paramType,{'lb','ub','eq','obj','rev','var','unc'}))

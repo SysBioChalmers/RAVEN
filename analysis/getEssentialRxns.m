@@ -1,18 +1,29 @@
 function [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns)
-% getEssentialRxns
-%   Calculate the essential reactions for a model to be solvable
+% getEssentialRxns  Calculate the essential reactions for a solvable model.
 %
-%   model                   a model structure
-%   ignoreRxns              cell array of reaction IDs which should not be
-%                           checked (optional, default {})
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% ignoreRxns : cell, optional
+%     cell array of reaction IDs which should not be checked
+%     (default {}).
 %
-%   essentialRxns           cell array with the IDs of the essential reactions
-%   essentialRxnsIndexes    vector with the indexes of the essential reactions
+% Returns
+% -------
+% essentialRxns : cell
+%     cell array with the IDs of the essential reactions.
+% essentialRxnsIndexes : double
+%     vector with the indexes of the essential reactions.
 %
-%   Essential reactions are those which, when constrained to 0, result in an
-%   infeasible problem.
+% Notes
+% -----
+% Essential reactions are those which, when constrained to 0, result in an
+% infeasible problem.
 %
-% Usage: [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns)
+% Examples
+% --------
+%     [essentialRxns, essentialRxnsIndexes] = getEssentialRxns(model, ignoreRxns);
 
 if nargin<2
     ignoreRxns={};

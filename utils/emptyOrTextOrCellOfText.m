@@ -1,5 +1,15 @@
 function mustBeEmptyOrTextOrCellOfText(x)
-% Validate [] OR text scalar (char row or string scalar) OR cell array of such text.
+% mustBeEmptyOrTextOrCellOfText  Validate empty, text scalar or cell of text.
+%
+% Validate [] OR a text scalar (char row or string scalar) OR a cell
+% array of such text. Throws an error if the input is none of these.
+%
+% Parameters
+% ----------
+% x : double or char or string or cell
+%     value to validate; allowed forms are empty ([]), a character row
+%     vector, a string scalar, or a cell array whose elements are each a
+%     character row vector or string scalar.
 
 % Allow explicit empty
 if isempty(x)

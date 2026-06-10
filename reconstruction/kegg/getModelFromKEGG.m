@@ -1,48 +1,55 @@
 function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
     keepUndefinedStoich,keepIncomplete,keepGeneral)
-% getModelFromKEGG
-%   Retrieves information stored in KEGG database and generates a model
+% getModelFromKEGG  Retrieve KEGG database information and generate a model.
 %
-%   Input:
-%   keggPath            if keggGenes.mat, keggMets.mat, keggPhylDist.mat or
-%                       keggRxns.mat are not in the RAVEN/external/kegg
-%                       directory, this function will attempt to read data
-%                       from a local FTP dump of the KEGG database.
-%                       keggPath is the path to the root of this database
-%                       (optional, default 'RAVEN/external/kegg'). If
-%                       keggModel.mat is present in the same directory, the
-%                       function reads the data from this file and ignores
-%                       keggGenes.mat, keggMets.mat and keggRxns.mat
-%   keepSpontaneous     include reactions labeled as "spontaneous" (optional,
-%                       default true)
-%   keepUndefinedStoich include reactions in the form n A <=> n+1 A. These
-%                       will be dealt with as two separate metabolites
-%                       (optional, default true)
-%   keepIncomplete      include reactions which have been labelled as
-%                       "incomplete", "erroneous" or "unclear" (optional,
-%                       default true)
-%   keepGeneral         include reactions which have been labelled as
-%                       "general reaction". These are reactions on the form
-%                       "an aldehyde <=> an alcohol", and are therefore
-%                       unsuited for modelling purposes. Note that not all
-%                       reactions have this type of annotation, and the
-%                       script will therefore not be able to remove all
-%                       such reactions (optional, default false)
+% Parameters
+% ----------
+% keggPath : char, optional
+%     if keggGenes.mat, keggMets.mat, keggPhylDist.mat or keggRxns.mat are
+%     not in the RAVEN/external/kegg directory, this function will attempt
+%     to read data from a local FTP dump of the KEGG database. keggPath is
+%     the path to the root of this database (default 'RAVEN/external/kegg').
+%     If keggModel.mat is present in the same directory, the function reads
+%     the data from this file and ignores keggGenes.mat, keggMets.mat and
+%     keggRxns.mat.
+% keepSpontaneous : logical, optional
+%     include reactions labeled as "spontaneous" (default true).
+% keepUndefinedStoich : logical, optional
+%     include reactions in the form n A <=> n+1 A. These will be dealt with
+%     as two separate metabolites (default true).
+% keepIncomplete : logical, optional
+%     include reactions which have been labelled as "incomplete",
+%     "erroneous" or "unclear" (default true).
+% keepGeneral : logical, optional
+%     include reactions which have been labelled as "general reaction".
+%     These are reactions on the form "an aldehyde <=> an alcohol", and are
+%     therefore unsuited for modelling purposes. Note that not all reactions
+%     have this type of annotation, and the script will therefore not be
+%     able to remove all such reactions (default false).
 %
-%   Output:
-%   model               a model structure generated from the database. All
-%                       reactions and the metabolites used in them will be
-%                       added
-%   KOModel             a model structure representing the KEGG Orthology
-%                       ids and their associated genes. The KO ids are
-%                       saved as reactions
+% Returns
+% -------
+% model : struct
+%     a model structure generated from the database. All reactions and the
+%     metabolites used in them will be added.
+% KOModel : struct
+%     a model structure representing the KEGG Orthology ids and their
+%     associated genes. The KO ids are saved as reactions.
 %
-%   NOTE: The model output from getModelFromKEGG can be used as template
-%   for fillGaps. In that case, ensure that the genes and rxnGeneMat fields
-%   are removed before parsing: model=rmfield(model,'genes'), etc.
+% Examples
+% --------
+%     [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
+%        keepUndefinedStoich,keepIncomplete,keepGeneral);
 %
-% Usage: [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
-%    keepUndefinedStoich,keepIncomplete,keepGeneral)
+% Notes
+% -----
+% The model output from getModelFromKEGG can be used as template for
+% fillGaps. In that case, ensure that the genes and rxnGeneMat fields are
+% removed before parsing: model=rmfield(model,'genes'), etc.
+%
+% See also
+% --------
+% getRxnsFromKEGG, getGenesFromKEGG, getMetsFromKEGG, getPhylDist, fillGaps
 
 ravenPath=findRAVENroot();
 

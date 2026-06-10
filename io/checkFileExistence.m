@@ -1,30 +1,37 @@
 function files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)
-% checkFileExistence
-%   Check whether files exist. If no full path is given a file should be
-%   located in the current folder, which by default is appended to the
-%   filename.
+% checkFileExistence  Check whether files exist.
 %
-%   Input:
-%   files           string or cell array of strings with path to file(s) or
-%                   path or filename(s)
-%   fullOrTemp      0: do not change path to file(s)
-%                   1: return full path to file(s)
-%                   2: copy file(s) to system default temporary folder and
-%                      return full path
-%                   (optional, default 0)
-%   allowSpace      logical, whether 'space' character is allowed in the
-%                   path (optional, default true)
-%   checkExist      logical, whether file existence should really be
-%                   checked, as this function can also be used to return
-%                   the full path to a new file (optional, default true). Can
-%                   only be set to false if fullOrTemp is set to 1.
+% If no full path is given a file should be located in the current folder,
+% which by default is appended to the filename.
 %
-%   Output:
-%   files           string or cell array of strings with updated paths if
-%                   fullOrTemp was set as 1 or 2, otherwise original paths
-%                   are returned
-%   
-% Usage: files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)
+% Parameters
+% ----------
+% files : char or cell
+%     string or cell array of strings with path to file(s) or path or
+%     filename(s).
+% fullOrTemp : double, optional
+%     controls path handling (default 0):
+%
+%     - 0 : do not change path to file(s)
+%     - 1 : return full path to file(s)
+%     - 2 : copy file(s) to system default temporary folder and return
+%       full path
+% allowSpace : logical, optional
+%     whether the 'space' character is allowed in the path (default true).
+% checkExist : logical, optional
+%     whether file existence should really be checked, as this function can
+%     also be used to return the full path to a new file (default true).
+%     Can only be set to false if fullOrTemp is set to 1.
+%
+% Returns
+% -------
+% files : char or cell
+%     string or cell array of strings with updated paths if fullOrTemp was
+%     set as 1 or 2, otherwise original paths are returned.
+%
+% Examples
+% --------
+%     files = checkFileExistence(files, fullOrTemp, allowSpace, checkExist);
 
 if nargin<2
     fullOrTemp = 0;

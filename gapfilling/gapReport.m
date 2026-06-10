@@ -1,45 +1,51 @@
 function [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnect,...
     neededForProductionMat, canProduceWithoutInput, canConsumeWithoutOutput, ...
     connectedFromTemplates, addedFromTemplates]=gapReport(model, templateModels)
-% gapReport
-%   Performs a gap analysis and summarizes the results 
+% gapReport  Perform a gap analysis and summarize the results.
 %
-%   model                       a model structure
-%   templateModels              a cell array of template models to use for
-%                               gap filling (optional)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% templateModels : cell, optional
+%     a cell array of template models to use for gap filling.
 %
-%   noFluxRxns                  cell array with reactions that cannot carry
-%                               flux
-%   noFluxRxnsRelaxed           cell array with reactions that cannot carry
-%                               flux even if the mass balance constraint is 
-%                               relaxed so that it is allowed to have 
-%                               net production of all metabolites
-%   subGraphs                   structure with the metabolites in each of
-%                               the isolated sub networks
-%   notProducedMets             cell array with the metabolites that
-%                               couldn't have net production
-%   minToConnect                structure with the minimal number of
-%                               metabolites that need to be connected in 
-%                               order to be able to produce all other 
-%                               metabolites and which metabolites each of
-%                               them connects
-%   neededForProductionMat      matrix where n x m is true if metabolite n
-%                               allows for production of metabolite m
-%   canProduceWithoutInput      cell array with metabolites that could be
-%                               produced even when there is no input to the
-%                               model
-%   canConsumeWithoutOutput     cell array with metabolites that could be
-%                               consumed even when there is no output from
-%                               the model
-%   connectedFromTemplates      cell array with the reactions that could be
-%                               connected using the template models
-%   addedFromTemplates          structure with the reactions that were
-%                               added from the template models and which 
-%                               model they were added from
+% Returns
+% -------
+% noFluxRxns : cell
+%     reactions that cannot carry flux.
+% noFluxRxnsRelaxed : cell
+%     reactions that cannot carry flux even if the mass balance
+%     constraint is relaxed so that net production of all metabolites is
+%     allowed.
+% subGraphs : struct
+%     the metabolites in each of the isolated sub-networks.
+% notProducedMets : cell
+%     the metabolites that could not have net production.
+% minToConnect : struct
+%     the minimal number of metabolites that need to be connected in
+%     order to be able to produce all other metabolites, and which
+%     metabolites each of them connects.
+% neededForProductionMat : double
+%     matrix where n x m is true if metabolite n allows for production of
+%     metabolite m.
+% canProduceWithoutInput : cell
+%     metabolites that could be produced even when there is no input to
+%     the model.
+% canConsumeWithoutOutput : cell
+%     metabolites that could be consumed even when there is no output from
+%     the model.
+% connectedFromTemplates : cell
+%     the reactions that could be connected using the template models.
+% addedFromTemplates : struct
+%     the reactions that were added from the template models and which
+%     model they were added from.
 %
-% Usage: [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnect,...
-%    neededForProductionMat, connectedFromTemplates, addedFromTemplates]=...
-%    gapReport(model, templateModels)
+% Examples
+% --------
+%     [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, ...
+%         minToConnect, neededForProductionMat, connectedFromTemplates, ...
+%         addedFromTemplates] = gapReport(model, templateModels);
 
 if nargin<2
     templateModels=[];

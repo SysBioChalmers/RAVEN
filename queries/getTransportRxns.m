@@ -1,16 +1,25 @@
 function transportRxns=getTransportRxns(model)
-% getTransportRxns
-%   Retrieves the transport reactions from a model
+% getTransportRxns  Retrieve the transport reactions from a model.
 %
-%   model           a model structure
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
 %
-%   transportRxns   logical array with true if the corresponding 
-%                   reaction is a transport reaction
+% Returns
+% -------
+% transportRxns : logical
+%     logical array with true if the corresponding reaction is a transport
+%     reaction.
 %
-%   Transport reactions are defined as reactions involving (at least) one
-%   metabolite name in more than one compartment.
+% Examples
+% --------
+%     transportRxns = getTransportRxns(model);
 %
-% Usage: transportRxns=getTransportRxns(model)
+% Notes
+% -----
+% Transport reactions are defined as reactions involving (at least) one
+% metabolite name in more than one compartment.
 
 transportRxns=false(numel(model.rxns),1);
 

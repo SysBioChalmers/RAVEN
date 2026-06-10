@@ -1,28 +1,28 @@
 function [genes,rxnGeneMat] = getGenesFromGrRules(grRules, originalGenes)
-%getGenesFromGrRules  Extract gene list and rxnGeneMat from grRules array.
+% getGenesFromGrRules  Extract gene list and rxnGeneMat from grRules array.
 %
-% USAGE:
+% Parameters
+% ----------
+% grRules : cell
+%     a cell array of model grRules, from which a list of genes is to be
+%     extracted. NOTE: Boolean operators can be text ("and", "or") or
+%     symbolic ("&", "|"), but there must be a space between operators and
+%     gene names/IDs.
+% originalGenes : cell, optional
+%     the original gene list from the model as reference.
 %
-%   [genes,rxnGeneMat] = getGenesFromGrRules(grRules, originalGenes);
+% Returns
+% -------
+% genes : cell
+%     a unique list of all gene IDs that appear in grRules.
+% rxnGeneMat : double
+%     (optional) a binary matrix indicating which genes participate in each
+%     reaction, where rows correspond to reactions (entries in grRules) and
+%     columns correspond to genes.
 %
-% INPUTS:
-%
-%   grRules     A cell array of model grRules, from which a list of genes
-%               are to be extracted.
-%               NOTE: Boolean operators can be text ("and", "or") or
-%                     symbolic ("&", "|"), but there must be a space
-%                     between operators and gene names/IDs.
-%   originalGenes     The original gene list from the model as reference
-%
-% OUTPUTS:
-%
-%   genes       A unique list of all gene IDs that appear in grRules.
-%
-%   rxnGeneMat  (Optional) A binary matrix indicating which genes
-%               participate in each reaction, where rows correspond to
-%               reactions (entries in grRules) and columns correspond to
-%               genes.
-%
+% Examples
+% --------
+%     [genes, rxnGeneMat] = getGenesFromGrRules(grRules, originalGenes);
 
 
 % handle input arguments

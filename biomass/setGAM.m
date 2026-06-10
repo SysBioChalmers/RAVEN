@@ -1,33 +1,42 @@
 function model = setGAM(model, value, biomassRxn, cofactorMetNames, ngamRxn, ngamValue)
-% setGAM
-%   Set the growth-associated maintenance (GAM) coefficient in the
-%   biomass pseudoreaction, and optionally fix the non-growth
-%   maintenance (NGAM) reaction's bounds. Mirrors
-%   raven_python.biomass.set_gam and yeast-GEM's legacy changeGAM.
+% setGAM  Set the growth-associated maintenance (GAM) coefficient.
 %
-%   For every metabolite in the biomass pseudoreaction whose
-%   `model.metNames` entry is in `cofactorMetNames`, the
-%   stoichiometric coefficient is set to ±`value` preserving the sign
-%   of the current coefficient. Yeast-GEM scales ATP, ADP, H2O, H+
-%   and phosphate (with ATP and H2O on the substrate side, ADP / H+ /
-%   phosphate on the product side).
+% Set the growth-associated maintenance (GAM) coefficient in the biomass
+% pseudoreaction, and optionally fix the non-growth maintenance (NGAM)
+% reaction's bounds. Mirrors raven_python.biomass.set_gam and yeast-GEM's
+% legacy changeGAM.
 %
-%   Inputs:
-%       model              RAVEN model struct.
-%       value              New GAM value (mmol ATP / gDW per growth unit).
-%       biomassRxn         Reaction id of the biomass pseudoreaction.
-%       cofactorMetNames   Cell array of metabolite NAMES (not IDs)
-%                          to rescale, e.g. {'ATP','ADP','H2O','H+',
-%                          'phosphate'}.
-%       ngamRxn            (opt) NGAM reaction id. Required when
-%                          ngamValue is supplied.
-%       ngamValue          (opt) NGAM flux to fix. Sets the NGAM
-%                          reaction's bounds to (ngamValue, ngamValue).
+% For every metabolite in the biomass pseudoreaction whose model.metNames
+% entry is in cofactorMetNames, the stoichiometric coefficient is set to
+% ±value preserving the sign of the current coefficient. Yeast-GEM scales
+% ATP, ADP, H2O, H+ and phosphate (with ATP and H2O on the substrate side,
+% ADP / H+ / phosphate on the product side).
 %
-%   Output:
-%       model              Modified model.
+% Parameters
+% ----------
+% model : struct
+%     RAVEN model struct.
+% value : double
+%     New GAM value (mmol ATP / gDW per growth unit).
+% biomassRxn : char
+%     Reaction id of the biomass pseudoreaction.
+% cofactorMetNames : cell
+%     Cell array of metabolite NAMES (not IDs) to rescale, e.g.
+%     {'ATP','ADP','H2O','H+','phosphate'}.
+% ngamRxn : char, optional
+%     NGAM reaction id. Required when ngamValue is supplied.
+% ngamValue : double, optional
+%     NGAM flux to fix. Sets the NGAM reaction's bounds to (ngamValue,
+%     ngamValue).
 %
-% Usage: model = setGAM(model, 80, 'r_4041', {'ATP','ADP','H2O','H+','phosphate'})
+% Returns
+% -------
+% model : struct
+%     Modified model.
+%
+% Examples
+% --------
+%     model = setGAM(model, 80, 'r_4041', {'ATP','ADP','H2O','H+','phosphate'});
 
 if nargin < 4
     error('setGAM:missingArgs', ...

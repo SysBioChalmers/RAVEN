@@ -1,37 +1,50 @@
 function [model, guessedFor, couldNotGuess]=guessComposition(model, printResults)
-% guessComposition
-%   Attempts to guess the composition of metabolites without information
-%   about elemental composition
+% guessComposition  Guess the composition of metabolites without one.
 %
-%   model               a model structure
-%   printResults        true if the output should be printed (optional, default true)
+% Attempts to guess the composition of metabolites without information about
+% elemental composition.
 %
-%   model               a model structure with information about elemental
-%                       composition added
-%   guessedFor          indexes for the metabolites for which a composition
-%                       could be guessed
-%   couldNotGuess       indexes for the metabolites for which no
-%                       composition could be assigned
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% printResults : logical, optional
+%     true if the output should be printed (default true).
 %
-%   This function works in a rather straight forward manner:
+% Returns
+% -------
+% model : struct
+%     a model structure with information about elemental composition added.
+% guessedFor : double
+%     indexes for the metabolites for which a composition could be guessed.
+% couldNotGuess : double
+%     indexes for the metabolites for which no composition could be
+%     assigned.
 %
-%   1. Get the metabolites which lack composition and participates in
-%   at least one reaction where all other metabolites have composition information
-%   2. Loop through them and calculate their composition based on the rest
-%   of the involved metabolites. If there are any inconsistencies, so that
-%   a given metabolite should have different composition in different
-%   equations, then throw an error
-%   3. Go to 1
+% Examples
+% --------
+%     [model, guessedFor, couldNotGuess] = guessComposition(model, printResults);
 %
-%   This simple approach requires that the rest of the metabolites have
-%   correct composition information, and that the involved reactions are
-%   correct. The function will exit with an error on any inconsistencies,
-%   which means that it could also be used as a way of checking the model
-%   for errors. Note that just because this exits sucessfully, the
-%   calculated compositions could still be wrong (in case that the existing
-%   compositions were wrong)
+% Notes
+% -----
+% This function works in a rather straight forward manner:
 %
-% Usage: [newModel, guessedFor, couldNotGuess]=guessComposition(model, printResults)
+% 1.  Get the metabolites which lack composition and participates in at
+%     least one reaction where all other metabolites have composition
+%     information.
+% 2.  Loop through them and calculate their composition based on the rest of
+%     the involved metabolites. If there are any inconsistencies, so that a
+%     given metabolite should have different composition in different
+%     equations, then throw an error.
+% 3.  Go to 1.
+%
+% This simple approach requires that the rest of the metabolites have
+% correct composition information, and that the involved reactions are
+% correct. The function will exit with an error on any inconsistencies,
+% which means that it could also be used as a way of checking the model for
+% errors. Note that just because this exits sucessfully, the calculated
+% compositions could still be wrong (in case that the existing compositions
+% were wrong).
 
 if nargin<2
     printResults=true;

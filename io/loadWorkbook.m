@@ -1,15 +1,25 @@
 function workbook=loadWorkbook(fileName,createEmpty)
-% loadWorkbook
-%   Loads an Excel file into a Workbook object using the Java library Apache POI
+% loadWorkbook  Load an Excel file into a Workbook object.
 %
-%   fileName    name of the Excel file. If it doesn't exist it will be
-%               created
-%   createEmpty true if an empty workbook should be created if the file
-%               didn't exist (optional, default false)
+% Loads an Excel file into a Workbook object using the Java library Apache
+% POI.
 %
-%   workbook    Workbook object representing the Excel file
+% Parameters
+% ----------
+% fileName : char
+%     name of the Excel file. If it doesn't exist it will be created.
+% createEmpty : logical, optional
+%     true if an empty workbook should be created if the file didn't exist
+%     (default false).
 %
-% Usage: workbook=loadWorkbook(fileName,createEmpty)
+% Returns
+% -------
+% workbook : Workbook
+%     Workbook object representing the Excel file.
+%
+% Examples
+% --------
+%     workbook = loadWorkbook(fileName, createEmpty);
 
 if nargin<2
     createEmpty=false;

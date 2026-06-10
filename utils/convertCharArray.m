@@ -1,16 +1,23 @@
 function inputConverted = convertCharArray(funcInput)
-%convertCharArray
-%   Converts input to make sure it is a cell array of character vectors.
-%   String arrays are transformed into character vectors, and if only one
-%   character vector is given. Output is always a cell array, also if only
-%   one character vector is given as input.
+% convertCharArray  Ensure input is a cell array of character vectors.
 %
-%   Input:
-%   funcInput          function input that should be checked
+% Converts input to make sure it is a cell array of character vectors.
+% String arrays are transformed into character vectors. Output is always a
+% cell array, also if only one character vector is given as input.
 %
-%   Output:
-%   inputConverted      cell array of character vectors
+% Parameters
+% ----------
+% funcInput : char or cell or string
+%     function input that should be checked.
 %
+% Returns
+% -------
+% inputConverted : cell
+%     cell array of character vectors.
+%
+% Examples
+% --------
+%     inputConverted = convertCharArray(funcInput);
 
 if ~isempty(funcInput)
     if ischar(funcInput) || isstring(funcInput)

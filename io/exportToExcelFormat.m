@@ -1,19 +1,23 @@
 function exportToExcelFormat(model,fileName,sortIds)
-% exportToExcelFormat
-%   Exports a model structure to the Microsoft Excel model format
+% exportToExcelFormat  Export a model to the Microsoft Excel model format.
 %
-% Input:
-%   model       a model structure
-%   fileName    file name of the Excel file. Only xlsx format is supported.
-%               In order to preserve backward compatibility this could also
-%               be only a path, in which case the model is exported to a
-%               set of tab-delimited text files via exportToTabDelimited.
-%               A dialog window will open if fileName is empty.
-%   sortIds     logical whether metabolites, reactions and genes should be
-%               sorted alphabetically by their identifiers (optional,
-%               default false)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% fileName : char
+%     file name of the Excel file. Only xlsx format is supported. In order
+%     to preserve backward compatibility this could also be only a path, in
+%     which case the model is exported to a set of tab-delimited text files
+%     via exportToTabDelimited. A dialog window will open if fileName is
+%     empty.
+% sortIds : logical, optional
+%     whether metabolites, reactions and genes should be sorted
+%     alphabetically by their identifiers (default false).
 %
-% Usage: exportToExcelFormat(model, fileName, sortIds)
+% Examples
+% --------
+%     exportToExcelFormat(model, fileName, sortIds);
 
 if nargin<2 || isempty(fileName)
     [fileName, pathName] = uiputfile('*.xlsx', 'Select file for model export',[model.id '.xlsx']);

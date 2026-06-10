@@ -1,17 +1,30 @@
 function orderedModel=standardizeModelFieldOrder(model)
-% standardizeModelFieldOrder
-%   Orders fields of RAVEN model structure as specified at
-%   https://github.com/SysBioChalmers/RAVEN/wiki/RAVEN-Model-Structure
+% standardizeModelFieldOrder  Order RAVEN model structure fields.
 %
-%   Input: model           model structure, either RAVEN or COBRA format
+% Orders fields of a RAVEN model structure as specified at
+% https://github.com/SysBioChalmers/RAVEN/wiki/RAVEN-Model-Structure
 %
-%   Output: orderedModel   model structure with ordered fields
+% The model fields themselves are not changed, only the order is modified.
+% For changing model fields between RAVEN and COBRA format, use
+% ravenCobraWrapper().
 %
-%   The model fields themselves are not changed, only the order is
-%   modified. For changing model fields between RAVEN and COBRA format, use
-%   ravenCobraWrapper().
+% Parameters
+% ----------
+% model : struct
+%     model structure, either RAVEN or COBRA format.
 %
-% Usage: orderedModel=standardizeModelFieldOrder(model)
+% Returns
+% -------
+% orderedModel : struct
+%     model structure with ordered fields.
+%
+% Examples
+% --------
+%     orderedModel = standardizeModelFieldOrder(model);
+%
+% See also
+% --------
+% ravenCobraWrapper
 
 ravenPath=findRAVENroot();
 

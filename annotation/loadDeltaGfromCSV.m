@@ -1,24 +1,33 @@
 function model = loadDeltaGfromCSV(model, metCsv, rxnCsv)
-% loadDeltaGfromCSV
-%   Populate model.metDeltaG and model.rxnDeltaG from project CSV
-%   files. Mirrors raven_python.annotation.load_delta_g_csv and is
-%   the upstream version of yeast-GEM's loadDeltaG.
+% loadDeltaGfromCSV  Populate metDeltaG and rxnDeltaG from CSV files.
 %
-%   Each CSV is a two-column table: identifier, deltaG. Rows whose
-%   identifier doesn't appear in the model are silently skipped.
-%   Pass an empty string ('') for either argument to skip that side.
+% Populate model.metDeltaG and model.rxnDeltaG from project CSV files.
+% Mirrors raven_python.annotation.load_delta_g_csv and is the upstream
+% version of yeast-GEM's loadDeltaG.
 %
-%   Inputs:
-%       model    RAVEN model struct.
-%       metCsv   Path to metabolite ΔG CSV (id, ΔG), or '' to skip.
-%       rxnCsv   Path to reaction ΔG CSV (id, ΔG), or '' to skip.
+% Each CSV is a two-column table: identifier, deltaG. Rows whose
+% identifier doesn't appear in the model are silently skipped. Pass an
+% empty string ('') for either argument to skip that side.
 %
-%   Output:
-%       model    Model with metDeltaG and/or rxnDeltaG fields added.
+% Parameters
+% ----------
+% model : struct
+%     RAVEN model struct.
+% metCsv : char, optional
+%     Path to metabolite ΔG CSV (id, ΔG), or '' to skip.
+% rxnCsv : char, optional
+%     Path to reaction ΔG CSV (id, ΔG), or '' to skip.
 %
-% Usage: model = loadDeltaGfromCSV(model, ...
-%            'data/databases/model_metDeltaG.csv', ...
-%            'data/databases/model_rxnDeltaG.csv')
+% Returns
+% -------
+% model : struct
+%     Model with metDeltaG and/or rxnDeltaG fields added.
+%
+% Examples
+% --------
+%     model = loadDeltaGfromCSV(model, ...
+%         'data/databases/model_metDeltaG.csv', ...
+%         'data/databases/model_rxnDeltaG.csv');
 
 if nargin < 3
     rxnCsv = '';

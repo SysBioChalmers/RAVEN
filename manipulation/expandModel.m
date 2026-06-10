@@ -1,25 +1,34 @@
 function [newModel, rxnToCheck]=expandModel(model)
-% expandModel
-%   Expands a model which uses several gene associations for one reaction.
-%   Each such reaction is split into several reactions, each under the control
-%   of only one gene.
-%  
-% Input:
-%   model       model structure
-% 
-% Output:
-%   newModel    model structure with separate reactions for iso-enzymes, where
-%               the reaction ids are renamed as to id_EXP_1, id_EXP_2, etc. 
-%   rxnToCheck  cell array with original reaction identifiers for those
-%               that contained nested and/or-relationships in grRules.
+% expandModel  Expand reactions that use several gene associations.
 %
-%   NOTE: grRules strings that involve nested expressions of 'and' and 'or'
-%         might not be parsed correctly if they are not standardized (if the
-%         standardizeGrRules functions was not first run on the model). For
-%         those reactions, it is therefore advisable to inspect the reactions in
-%         rxnToCheck to confirm correct model expansion.
+% Each reaction that uses several gene associations is split into several
+% reactions, each under the control of only one gene.
 %
-% Usage: [newModel, rxnToCheck]=expandModel(model)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+%
+% Returns
+% -------
+% newModel : struct
+%     model structure with separate reactions for iso-enzymes, where the
+%     reaction ids are renamed as id_EXP_1, id_EXP_2, etc.
+% rxnToCheck : cell
+%     cell array with original reaction identifiers for those that
+%     contained nested and/or-relationships in grRules.
+%
+% Examples
+% --------
+%     [newModel, rxnToCheck]=expandModel(model);
+%
+% Notes
+% -----
+% grRules strings that involve nested expressions of 'and' and 'or' might
+% not be parsed correctly if they are not standardized (if the
+% standardizeGrRules function was not first run on the model). For those
+% reactions, it is therefore advisable to inspect the reactions in
+% rxnToCheck to confirm correct model expansion.
 
 %Check how many reactions we will create (the number of or:s in the GPRs).
 %This way, we can preallocate all fields and save much computation time

@@ -1,39 +1,47 @@
 function model=getGenesFromKEGG(keggPath,koList)
-% getGenesFromKEGG
-%   Retrieves information on all genes stored in KEGG database
+% getGenesFromKEGG  Retrieve information on all genes stored in KEGG.
 %
-%   Input:
-%   keggPath	if keggGenes.mat is not in the RAVEN\external\kegg
-%               directory, this function will attempt to read data from a
-%               local FTP dump of the KEGG database. keggPath is the path
-%               to the root of this database
-%   koList      the number of genes in KEGG is very large. koList can be a
-%               cell array with KO identifiers, in which case only genes
-%               belonging to one of those KEGG orthologies are retrieved
-%               (optional, default all KOs with associated reactions)
+% Parameters
+% ----------
+% keggPath : char, optional
+%     if keggGenes.mat is not in the RAVEN\external\kegg directory, this
+%     function will attempt to read data from a local FTP dump of the KEGG
+%     database. keggPath is the path to the root of this database (default
+%     'RAVEN/external/kegg').
+% koList : cell, optional
+%     the number of genes in KEGG is very large. koList can be a cell array
+%     with KO identifiers, in which case only genes belonging to one of
+%     those KEGG orthologies are retrieved (default all KOs with associated
+%     reactions).
 %
-%   Output:
-%   model       a model structure generated from the database. The
-%               following fields are filled
-%       id              'KEGG'
-%       name     'Automatically generated from KEGG database'
-%       rxns            KO ids
-%       rxnNames        Name for each entry
-%       genes           IDs for all the genes. Genes are saved as organism
-%                       abbreviation:id (same as in KEGG). 'HSA:124' for
-%                       example is alcohol dehydrogenase in Homo sapiens
-%       rxnGeneMat      A binary matrix that indicates whether a specific
-%                       gene is present in a KO id
+% Returns
+% -------
+% model : struct
+%     a model structure generated from the database, with fields:
 %
-%   NOTE: If the file keggGenes.mat is in the RAVEN\external\kegg directory
-%   it will be loaded instead of parsing of the KEGG files. If it does not
-%   exist it will be saved after parsing of the KEGG files. In general, you
-%   should remove the keggGenes.mat file if you want to rebuild the model
-%   structure from a newer version of KEGG.
+%     - id : 'KEGG'
+%     - name : 'Automatically generated from KEGG database'
+%     - rxns : KO ids
+%     - rxnNames : name for each entry
+%     - genes : IDs for all the genes. Genes are saved as organism
+%       abbreviation:id (same as in KEGG). 'HSA:124' for example is alcohol
+%       dehydrogenase in Homo sapiens
+%     - rxnGeneMat : a binary matrix that indicates whether a specific gene
+%       is present in a KO id
 %
-% Usage: model=getGenesFromKEGG(keggPath,koList)
+% Examples
+% --------
+%     model = getGenesFromKEGG(keggPath, koList);
 %
-% NOTE: This is how one entry looks in the file
+% Notes
+% -----
+% If the file keggGenes.mat is in the RAVEN\external\kegg directory it will
+% be loaded instead of parsing of the KEGG files. If it does not exist it
+% will be saved after parsing of the KEGG files. In general, you should
+% remove the keggGenes.mat file if you want to rebuild the model structure
+% from a newer version of KEGG.
+%
+% This is how one entry looks in the file:
 %
 % ENTRY       K11440                      KO
 % NAME        gbsB
@@ -58,9 +66,6 @@ function model=getGenesFromKEGG(keggPath,koList)
 %
 % The file is not tab-delimited. Instead each label is 12 characters
 % (except for '///').
-%
-% Check if the genes have been parsed before and saved. If so, load the
-% model.
 %
 
 if nargin<1

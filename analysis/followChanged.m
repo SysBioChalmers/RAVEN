@@ -1,24 +1,34 @@
 function followChanged(model,fluxesA,fluxesB, cutOffChange, cutOffFlux, cutOffDiff, metaboliteList)
-% followChanged
-%	Prints fluxes and reactions for each of the reactions that results in
-%   different fluxes compared to the reference case.
+% followChanged  Print reactions whose fluxes differ from a reference case.
 %
-%   model           a model structure
-%   fluxesA         flux vector for the test case
-%   fluxesB         flux vector for the reference test
-%   cutOffChange	reactions where the fluxes differ by less than
-%                   this many percent won't be printed (optional, default 10^-8)
-%   cutOffFlux      reactions where the absolute value of both fluxes
-%                   are below this value won't be printed (optional,
-%                   default 10^-8)
-%   cutOffDiff      reactions where the fluxes differ by less than
-%                   cutOffDiff won't be printed (optional, default 10^-8)
-%   metaboliteList  cell array of metabolite names. Only reactions
-%                   involving any of these metabolites will be
-%                   printed (optional)
+% Prints fluxes and reactions for each of the reactions that result in
+% different fluxes compared to the reference case.
 %
-% Usage: followChanged(model,fluxesA,fluxesB, cutOffChange, cutOffFlux,
-%           cutOffDiff, metaboliteList)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% fluxesA : double
+%     flux vector for the test case.
+% fluxesB : double
+%     flux vector for the reference test.
+% cutOffChange : double, optional
+%     reactions where the fluxes differ by less than this many percent
+%     won't be printed (default 10^-8).
+% cutOffFlux : double, optional
+%     reactions where the absolute value of both fluxes are below this
+%     value won't be printed (default 10^-8).
+% cutOffDiff : double, optional
+%     reactions where the fluxes differ by less than cutOffDiff won't be
+%     printed (default 10^-8).
+% metaboliteList : cell, optional
+%     cell array of metabolite names. Only reactions involving any of
+%     these metabolites will be printed.
+%
+% Examples
+% --------
+%     followChanged(model,fluxesA,fluxesB,cutOffChange,cutOffFlux,...
+%         cutOffDiff,metaboliteList);
 
 %Checks if a cut off flux has been set
 if nargin<4

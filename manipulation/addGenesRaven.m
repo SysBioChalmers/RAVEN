@@ -1,28 +1,35 @@
 function newModel=addGenesRaven(model,genesToAdd)
-% addGenesRaven
-%   Adds genes to a model
+% addGenesRaven  Add genes to a model.
 %
-%   model        a model structure
-%   genesToAdd   the genes genesToAdd can have the following fields:
-%                genes          cell array with unique strings that
-%                               identifies each gene. Only character which are
-%                               allowed in SBML ids are allowed (mainly a-z,
-%                               0-9 and '_'). However, there is no check
-%                               for this performed, as it only matters if
-%                               the model should be exported to SBML
-%                geneShortNames cell array of gene abbreviations (optional,
-%                               default '')
-%                geneMiriams    cell array with MIRIAM structures (optional,
-%                               default [])
-%                proteins   cell array of protein names associated to
-%                               each gene (optional, default '')
+% This function does not make extensive checks about MIRIAM formats,
+% forbidden characters or such.
 %
-%   newModel     an updated model structure
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% genesToAdd : struct
+%     the genes to add, which can have the following fields:
 %
-%   NOTE: This function does not make extensive checks about MIRIAM formats,
-%   forbidden characters or such.
+%     - genes : cell array with unique strings that identifies each gene.
+%       Only characters which are allowed in SBML ids are allowed (mainly
+%       a-z, 0-9 and '_'). However, there is no check for this performed,
+%       as it only matters if the model should be exported to SBML
+%     - geneShortNames : cell array of gene abbreviations (optional,
+%       default '')
+%     - geneMiriams : cell array with MIRIAM structures (optional,
+%       default [])
+%     - proteins : cell array of protein names associated to each gene
+%       (optional, default '')
 %
-% Usage: newModel=addGenesRaven(model,genesToAdd)
+% Returns
+% -------
+% newModel : struct
+%     an updated model structure.
+%
+% Examples
+% --------
+%     newModel = addGenesRaven(model, genesToAdd);
 
 newModel=model;
 

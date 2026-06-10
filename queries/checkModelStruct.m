@@ -1,18 +1,26 @@
 function checkModelStruct(model,throwErrors,trimWarnings)
-% checkModelStruct
-%   Performs a number of checks to ensure that a model structure is ok
+% checkModelStruct  Perform a number of checks to ensure a model structure is ok.
 %
-%   model           a model structure
-%   throwErrors     true if the function should throw errors if
-%                   inconsistencies are found. The alternative is to
-%                   print warnings for all types of issues (optional, default true)
-%   trimWarnings    true if only a maximal of 10 items should be displayed in
-%                   a given error/warning (optional, default true)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% throwErrors : logical, optional
+%     true if the function should throw errors if inconsistencies are found.
+%     The alternative is to print warnings for all types of issues
+%     (default true).
+% trimWarnings : logical, optional
+%     true if only a maximum of 10 items should be displayed in a given
+%     error/warning (default true).
 %
-%   NOTE: This is performed after importing a model from Excel or before
-%   attempting to export a model to SBML format.
+% Notes
+% -----
+% This is performed after importing a model from Excel or before attempting
+% to export a model to SBML format.
 %
-% Usage: checkModelStruct(model,throwErrors,trimWarnings)
+% Examples
+% --------
+%     checkModelStruct(model, throwErrors, trimWarnings);
 
 if nargin<2
     throwErrors=true;

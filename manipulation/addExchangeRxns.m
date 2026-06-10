@@ -1,25 +1,36 @@
 function [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
-% addExchangeRxns
-%   Adds exchange reactions for some metabolites
+% addExchangeRxns  Add exchange reactions for some metabolites.
 %
-%   model           a model structure
-%   reactionType    the type of reactions to add
-%                   'in'    input reactions
-%                   'out'   output reactions
-%                   'both'  reversible input/output reactions. Positive
-%                   direction corresponds to output
-%   mets            either a cell array of metabolite IDs, a logical vector
-%                   with the same number of elements as metabolites in the model,
-%                   or a vector of indexes to add for (optional, default model.mets)
+% This is a faster version than addRxns when adding exchange reactions.
+% New reactions are named "metName exchange (OUT/IN/BOTH)" while reaction
+% ids are formatted as "EXC_OUT/IN/BOTH_METID".
 %
-%   model           updated model structure
-%   addedRxns       ids of the added reactions
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% reactionType : char
+%     the type of reactions to add:
 %
-%   This is a faster version than addRxns when adding exchange reactions.
-%   New reactions are named "metName exchange (OUT/IN/BOTH)" while reaction
-%   ids are formatted as "EXC_OUT/IN/BOTH_METID".
+%     - 'in'   : input reactions
+%     - 'out'  : output reactions
+%     - 'both' : reversible input/output reactions. Positive direction
+%       corresponds to output
+% mets : cell or logical or double, optional
+%     either a cell array of metabolite IDs, a logical vector with the same
+%     number of elements as metabolites in the model, or a vector of
+%     indexes to add for (default model.mets).
 %
-% Usage: [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
+% Returns
+% -------
+% model : struct
+%     updated model structure.
+% addedRxns : cell
+%     ids of the added reactions.
+%
+% Examples
+% --------
+%     [model, addedRxns] = addExchangeRxns(model, reactionType, mets);
 
 if nargin<3
     mets=model.mets;

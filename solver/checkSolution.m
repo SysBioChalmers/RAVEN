@@ -1,14 +1,25 @@
 function [isFeasible, isOptimal]=checkSolution(res)
-%   Checks if a solution from Mosek is feasible and optimal
+% checkSolution  Check if a Mosek solution is feasible and optimal.
 %
-%   res             the output structure from mosekopt
+% Parameters
+% ----------
+% res : struct
+%     the output structure from mosekopt.
 %
-%   isFeasible      true if the solution is feasible
-%   isoptimal       true if the solution is optimal
+% Returns
+% -------
+% isFeasible : logical
+%     true if the solution is feasible.
+% isOptimal : logical
+%     true if the solution is optimal.
 %
-%   This function also throws an error if the license has expired.
+% Examples
+% --------
+%     [isFeasible, isOptimal] = checkSolution(res);
 %
-% Usage: [isFeasible, isOptimal]=checkSolution(res)
+% Notes
+% -----
+% This function also throws an error if the license has expired.
 
 isFeasible=false;
 isOptimal=false;

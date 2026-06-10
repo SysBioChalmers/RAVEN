@@ -1,29 +1,35 @@
 function compStruct=compareRxnsGenesMetsComps(models,printResults)
-% compareRxnsGenesMetsComps
-%   Compares two or more models with respect to overlap in terms of genes,
-%   reactions, metabolites and compartments.
+% compareRxnsGenesMetsComps  Compare overlap of genes, reactions, metabolites and compartments.
 %
-%   models              cell array of two or more models
-%   printResults        true if the results should be printed on the screen
-%                       (optional, default false)
+% Compares two or more models with respect to overlap in terms of genes,
+% reactions, metabolites and compartments.
 %
-%   compStruct          structure that contains the comparison
-%       modelIDs        cell array of model ids
-%       rxns            These contain the comparison for each field. 'equ' are
-%                       the equations after sorting and 'uEqu' are the
-%                       equations when not taking compartmentalization into acount
-%       mets
-%       genes
-%       eccodes
-%       metNames
-%       equ
-%       uEqu
-%           comparison	binary matrix where each row indicate which models are
-%                       included in the comparison
-%           nElements   vector with the number of elements for each
-%                       comparison
+% Parameters
+% ----------
+% models : cell
+%     cell array of two or more models.
+% printResults : logical, optional
+%     true if the results should be printed on the screen (default false).
 %
-% Usage: compStruct=compareRxnsGenesMetsComps(models,printResults)
+% Returns
+% -------
+% compStruct : struct
+%     structure that contains the comparison, with fields:
+%
+%     - modelIDs : cell array of model ids
+%     - rxns, mets, genes, eccodes, metNames, equ, uEqu : the comparison for
+%       each field. 'equ' are the equations after sorting and 'uEqu' are the
+%       equations when not taking compartmentalization into account. Each of
+%       these contains the sub-fields:
+%
+%         - comparison : binary matrix where each row indicates which models
+%           are included in the comparison
+%         - nElements : vector with the number of elements for each
+%           comparison
+%
+% Examples
+% --------
+%     compStruct = compareRxnsGenesMetsComps(models, printResults);
 
 if nargin<2
     printResults=true;

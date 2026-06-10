@@ -1,30 +1,39 @@
 function [ps, oldPoolAutoCreate] = parallelPoolRAVEN(runParallel)
-% handleParallelRAVEN
-%   Called by RAVEN functions that support parallel processing, to confirm
-%   whether the MATLAB Parallel Computing Toolbox is installed.
-%   - The toolbox is installed, and runParallel == true, ==> a parallel
-%     pool is started.
-%   - The toolbox is installed, but runParallel == false, ==> the auto-
-%     creation of a parallel pool is disabled, to prevent "parfor" in
-%     the target function to start a pool anyway.
-%   - The toolbox is not installed, and runParallel == true, ==> a warning
-%     is displayed that parallel computer is not possible.
-%   - The toolbox is not installed, and runParallel == false, ==> the
-%     target runs as intended, as "parfor" will automatically run in serial
-%     mode instead.
+% parallelPoolRAVEN  Confirm whether the Parallel Computing Toolbox is available.
 %
-% Input:
-%   runParallel         logical, whether the target function (which calls
-%                       parallelPoolRAVEN) should be run in parallel (optional,
-%                       default true)
+% Called by RAVEN functions that support parallel processing, to confirm
+% whether the MATLAB Parallel Computing Toolbox is installed.
 %
-% Output:
-%   ps                  parallel settings structure that will be used by
-%                       the target function    
-%   oldPoolAutoCreate   logical, to reset the original ps.Pool.AutoCreate
-%                       setting once the target function has finished
+% Parameters
+% ----------
+% runParallel : logical, optional
+%     whether the target function (which calls parallelPoolRAVEN) should be
+%     run in parallel (default true).
 %
-% Use: [ps, oldPoolAutoCreate] = parallelPoolRAVEN(runParallel)
+% Returns
+% -------
+% ps : parallel.Settings
+%     parallel settings structure that will be used by the target function.
+% oldPoolAutoCreate : logical
+%     to reset the original ps.Pool.AutoCreate setting once the target
+%     function has finished.
+%
+% Examples
+% --------
+%     [ps, oldPoolAutoCreate] = parallelPoolRAVEN(runParallel);
+%
+% Notes
+% -----
+% - The toolbox is installed, and runParallel == true, ==> a parallel pool
+%   is started.
+% - The toolbox is installed, but runParallel == false, ==> the
+%   auto-creation of a parallel pool is disabled, to prevent "parfor" in the
+%   target function to start a pool anyway.
+% - The toolbox is not installed, and runParallel == true, ==> a warning is
+%   displayed that parallel computer is not possible.
+% - The toolbox is not installed, and runParallel == false, ==> the target
+%   runs as intended, as "parfor" will automatically run in serial mode
+%   instead.
 
 if nargin<1 || isempty(runParallel)
     runParallel = true;

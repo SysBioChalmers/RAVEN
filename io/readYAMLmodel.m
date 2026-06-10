@@ -1,16 +1,24 @@
 function model=readYAMLmodel(fileName, verbose)
-% readYAMLmodel
-%   Reads a yaml file matching (roughly) the cobrapy yaml structure
+% readYAMLmodel  Read a model structure from a YAML file.
 %
-%   Input:
-%   fileName    a model file in yaml file format. A dialog window will open
-%               if no file name is specified.
-%   verbose     set as true to monitor progress (optional, default false)
+% Reads a yaml file matching (roughly) the cobrapy yaml structure.
 %
-%   Output:
-%   model       a model structure
+% Parameters
+% ----------
+% fileName : char
+%     a model file in yaml file format. A dialog window will open if no
+%     file name is specified.
+% verbose : logical, optional
+%     set as true to monitor progress (default false).
 %
-% Usage: model = readYAMLmodel(fileName, verbose)
+% Returns
+% -------
+% model : struct
+%     a model structure.
+%
+% Examples
+% --------
+%     model = readYAMLmodel(fileName, verbose);
 if nargin<1 || isempty(fileName)
     [fileName, pathName] = uigetfile({'*.yml;*.yaml'}, 'Please select the model file');
     if fileName == 0

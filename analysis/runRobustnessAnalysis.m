@@ -1,26 +1,40 @@
 function [controlFlux, objFlux] = runRobustnessAnalysis(model, controlRxn, nPoints, objRxn, plotRedCost)
-% runRobustnessAnalysis
-%   Performs robustness analysis for a reaction of interest and an objective
-%   of interest. Modified from the COBRA robustnessAnalysis function.
+% runRobustnessAnalysis  Perform robustness analysis for a reaction and objective.
 %
-% Input:
-%   model           a model structure
-%   controlRxn      reaction of interest whose value is to be controlled
-%   nPoints         number of points to show on plot (optional, default 20)
-%   objRxn          reaction identifier of objective to be maximized (optional,
-%                   default it uses the objective defined in the model)
-%   plotRedCost     logical whether reduced cost should also be plotted
-%                   (optional, default false)
+% Performs robustness analysis for a reaction of interest and an objective
+% of interest.
 %
-% Output:
-%   controlFlux     flux values of the reaction of interest, ranging from
-%                   its minimum to its maximum value
-%   objFlux         optimal values of objective reaction at each control
-%                   reaction flux value
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% controlRxn : char
+%     reaction of interest whose value is to be controlled.
+% nPoints : double, optional
+%     number of points to show on plot (default 20).
+% objRxn : char, optional
+%     reaction identifier of objective to be maximized (default uses the
+%     objective defined in the model).
+% plotRedCost : logical, optional
+%     whether reduced cost should also be plotted (default false).
 %
-% Modified from COBRA Toolbox robustnessAnalysis.m
+% Returns
+% -------
+% controlFlux : double
+%     flux values of the reaction of interest, ranging from its minimum to
+%     its maximum value.
+% objFlux : double
+%     optimal values of objective reaction at each control reaction flux
+%     value.
 %
-% Usage: runRobustnessAnalysis(model, controlRxn, nPoints, objRxn)
+% Examples
+% --------
+%     [controlFlux, objFlux] = runRobustnessAnalysis(model, controlRxn, ...
+%         nPoints, objRxn);
+%
+% Notes
+% -----
+% Modified from COBRA Toolbox robustnessAnalysis.m.
 
 if nargin < 3
     nPoints = 20;

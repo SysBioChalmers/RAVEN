@@ -1,14 +1,23 @@
 function [I, metNames]=getMetsInComp(model,comp)
-% getMetsInComp
-%   Gets the metabolites in a specified compartment
+% getMetsInComp  Get the metabolites in a specified compartment.
 %
-%   model       a model structure
-%   comp        string with the compartment id
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% comp : char
+%     string with the compartment id.
 %
-%   I           boolean vector of the metabolites
-%   metNames    the names of the metabolites
+% Returns
+% -------
+% I : logical
+%     boolean vector of the metabolites.
+% metNames : cell
+%     the names of the metabolites.
 %
-% Usage: [I, metNames]=getMetsInComp(model,comp)
+% Examples
+% --------
+%     [I, metNames] = getMetsInComp(model, comp);
 
 comp=char(comp);
 

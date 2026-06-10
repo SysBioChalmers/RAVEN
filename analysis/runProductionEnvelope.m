@@ -1,21 +1,32 @@
 function [biomassValues, targetValues] = runProductionEnvelope(model, targetRxn, biomassRxn, nPts)
-% runProductionEnvelope
-%   Calculates the byproduct secretion envelope
+% runProductionEnvelope  Calculate the byproduct secretion envelope.
 %
-% Input:
-%   model            a model structure
-%   targetRxn        identifier of target metabolite production reaction
-%   biomassRxn       identifier of biomass reaction
-%   nPts             number of points in the plot (optional, default 20)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% targetRxn : char
+%     identifier of target metabolite production reaction.
+% biomassRxn : char
+%     identifier of biomass reaction.
+% nPts : double, optional
+%     number of points in the plot (default 20).
 %
-% Output:
-%   biomassValues    Biomass values for plotting
-%   targetValues     Target upper and lower bounds for plotting
+% Returns
+% -------
+% biomassValues : double
+%     biomass values for plotting.
+% targetValues : double
+%     target upper and lower bounds for plotting.
 %
-% Modified from COBRA Toolbox productionEnvelope.m
+% Examples
+% --------
+%     [biomassValues, targetValues] = runProductionEnvelope(model, ...
+%         targetRxn, biomassRxn, nPts);
 %
-% Usage: [biomassValues, targetValues] = runProductionEnvelope(model,...
-%               targetRxn, biomassRxn, nPts)
+% Notes
+% -----
+% Modified from COBRA Toolbox productionEnvelope.m.
 
 if nargin < 4
     nPts = 20;
