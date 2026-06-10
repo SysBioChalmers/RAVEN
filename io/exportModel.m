@@ -1,22 +1,27 @@
 function exportModel(model,fileName,neverPrefix,supressWarnings,sortIds)
-% exportModel
-%   Exports a constraint-based model to an SBML file (L3V1 FBCv2)
+% exportModel  Export a constraint-based model to an SBML file (L3V1 FBCv2).
 %
-% Input:
-%   model               a model structure
-%   fileName            filename to export the model to. A dialog window
-%                       will open if no file name is specified.
-%   neverPrefix         true if prefixes are never added to identifiers,
-%                       even if start with e.g. digits. This might result
-%                       in invalid SBML files (optional, default false)
-%   supressWarnings     true if warnings should be supressed. This might
-%                       results in invalid SBML files, as no checks are
-%                       performed (optional, default false)
-%   sortIds             logical whether metabolites, reactions and genes
-%                       should be sorted alphabetically by their
-%                       identifiers (optional, default false)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% fileName : char
+%     filename to export the model to. A dialog window will open if no file
+%     name is specified.
+% neverPrefix : logical, optional
+%     true if prefixes are never added to identifiers, even if they start
+%     with e.g. digits. This might result in invalid SBML files (default
+%     false).
+% supressWarnings : logical, optional
+%     true if warnings should be suppressed. This might result in invalid
+%     SBML files, as no checks are performed (default false).
+% sortIds : logical, optional
+%     whether metabolites, reactions and genes should be sorted
+%     alphabetically by their identifiers (default false).
 %
-% Usage: exportModel(model,fileName,neverPrefix,supressWarnings,sortIds)
+% Examples
+% --------
+%     exportModel(model, fileName, neverPrefix, supressWarnings, sortIds);
 
 if nargin<2 || isempty(fileName)
     [fileName, pathName] = uiputfile({'*.xml;*.sbml'}, 'Select file for model export',[model.id '.xml']);

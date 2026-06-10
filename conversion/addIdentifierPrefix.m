@@ -1,26 +1,35 @@
 function [model, hasChanged]=addIdentifierPrefix(model,fields)
-% addIdentifierPrefix
-%   If reaction, metabolite, compartment, gene or model identifiers do not
-%   start with a letter or _, which conflicts with SBML specifications,
-%   prefixes are added for all identifiers in the respective model field.
-%   The prefixes are:
-%       "R_" for model.rxns,
-%       "M_" for model.mets,
-%       "C_" for model.comps;
-%       "G_" for model.genes (and also represented in model.grRules)
+% addIdentifierPrefix  Add identifier prefixes required by SBML.
 %
-% Input:
-%   model           model whose identifiers should be modified
-%   fields          cell array with model field names that should be
-%                   checked if prefixes should be added, possible values: 
-%                   'rxns', 'mets', 'comps', 'genes', 'id'. (optional, by
-%                   default all listed model fields will be checked).
+% If reaction, metabolite, compartment, gene or model identifiers do not
+% start with a letter or _, which conflicts with SBML specifications,
+% prefixes are added for all identifiers in the respective model field.
+% The prefixes are:
 %
-% Output:
-%   model           modified model
-%   hasChanged      cell array with fields and prefixes that are added
+%     "R_" for model.rxns,
+%     "M_" for model.mets,
+%     "C_" for model.comps;
+%     "G_" for model.genes (and also represented in model.grRules)
 %
-% Usage: [model, hasChanged]=addIdentifierPrefix(model,fields)
+% Parameters
+% ----------
+% model : struct
+%     model whose identifiers should be modified.
+% fields : cell, optional
+%     cell array with model field names that should be checked if prefixes
+%     should be added, possible values: 'rxns', 'mets', 'comps', 'genes',
+%     'id' (default all listed model fields will be checked).
+%
+% Returns
+% -------
+% model : struct
+%     modified model.
+% hasChanged : cell
+%     cell array with fields and prefixes that are added.
+%
+% Examples
+% --------
+%     [model, hasChanged] = addIdentifierPrefix(model, fields);
 
 if nargin<2 || isempty(fields)
     fields = {'rxns','mets','comps','genes','id'};

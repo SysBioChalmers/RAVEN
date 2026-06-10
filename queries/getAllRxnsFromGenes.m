@@ -1,19 +1,27 @@
 function allRxns=getAllRxnsFromGenes(model,rxns)
-% getAllRxnsFromGenes
-%   Given a list of reactions, this function finds the associated genes in
-%   the template model and gives all reactions that are annotated by these
-%   genes.
+% getAllRxnsFromGenes  Find all reactions annotated by the genes of a set.
 %
-%   model       a model structure
-%   rxns        either a cell array of IDs, a logical vector with the
-%               same number of elements as reactions in the model, or a
-%               vector of indexes
+% Given a list of reactions, this function finds the associated genes in
+% the model and returns all reactions that are annotated by these genes.
 %
-%   allRxns     either a cell array of IDs, a logical vector with the
-%               same number of elements as reactions in the model, or a
-%               vector of indexes, dependent on the format of rxns
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% rxns : cell or logical or double
+%     either a cell array of IDs, a logical vector with the same number of
+%     elements as reactions in the model, or a vector of indexes.
 %
-% Usage: allRxns=getAllRxnsFromGenes(model,rxns)
+% Returns
+% -------
+% allRxns : cell or logical or double
+%     either a cell array of IDs, a logical vector with the same number of
+%     elements as reactions in the model, or a vector of indexes,
+%     dependent on the format of rxns.
+%
+% Examples
+% --------
+%     allRxns = getAllRxnsFromGenes(model, rxns);
 
 if ~islogical(rxns) && ~isnumeric(rxns)
     rxns=convertCharArray(rxns);

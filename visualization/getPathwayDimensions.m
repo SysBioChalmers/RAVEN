@@ -1,14 +1,24 @@
 function dimensions=getPathwayDimensions(pathway)
-% getPathwayDimensions 
-%   Retrieves the dimensions of metabolic network in a pathway structure.
-%   Returns the position of the upper left corner, width and height.
+% getPathwayDimensions  Retrieve the dimensions of a pathway.
 %
-%   pathway         pathway structure representing the pathway to be drawn
+% Retrieves the dimensions of the metabolic network in a pathway
+% structure. Returns the position of the upper left corner, width and
+% height.
 %
-%   dimension       a 1x4 vector with x and y for the upper left corner,
-%                   height and width
+% Parameters
+% ----------
+% pathway : struct
+%     pathway structure representing the pathway to be drawn.
 %
-% Usage: dimensions=getPathwayDimensions(pathway)
+% Returns
+% -------
+% dimensions : double
+%     a 1x4 vector with x and y for the upper left corner, height and
+%     width.
+%
+% Examples
+% --------
+%     dimensions = getPathwayDimensions(pathway);
 
 right=0;
 left=inf;

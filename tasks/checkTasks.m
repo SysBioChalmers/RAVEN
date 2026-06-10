@@ -1,49 +1,54 @@
 function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure)
-% checkTasks
-%   Performs a set of simulations as defined in a task file.
+% checkTasks  Perform a set of simulations as defined in a task file.
 %
-%   Input:
-%   model           a model structure
-%   inputFile       a task list in Excel format. See the function
-%                   parseTaskList for details (optional if taskStructure is
-%                   supplied)
-%   printOutput     true if the results of the test should be displayed
-%                   (optional, default true)
-%   printOnlyFailed true if only tasks that failed should be displayed
-%                   (optional, default false)
-%   getEssential    true if the essential reactions should be calculated for
-%                   all the tasks. This option is used with runINIT (optional,
-%                   default false)
-%   taskStructure   structure with the tasks, as from parseTaskList. If
-%                   this is supplied then inputFile is ignored (optional)
+% This function is used for defining a set of tasks for a model to perform.
+% The tasks are defined by defining constraints on the model, and if the
+% problem is feasible, then the task is considered successful. In general,
+% each row can contain one constraint on uptakes, one constraint on outputs,
+% one new equation, and one change of reaction bounds. If more bounds are
+% needed to define the task, then several rows can be used for each task.
 %
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% inputFile : char
+%     a task list in Excel format. See the function parseTaskList for
+%     details (optional if taskStructure is supplied).
+% printOutput : logical, optional
+%     true if the results of the test should be displayed (default true).
+% printOnlyFailed : logical, optional
+%     true if only tasks that failed should be displayed (default false).
+% getEssential : logical, optional
+%     true if the essential reactions should be calculated for all the
+%     tasks. This option is used with runINIT (default false).
+% taskStructure : struct, optional
+%     structure with the tasks, as from parseTaskList. If this is supplied
+%     then inputFile is ignored.
 %
-%   Output:
-%   taskReport          structure with the results
-%       id              cell array with the id of the task
-%       description     cell array with the description of the task
-%       ok              boolean array with true if the task was successful
-%   essentialRxns       MxN matrix with the essential reactions (M) for each
-%                       task (N). An element is true if the corresponding
-%                       reaction is essential in the corresponding task.
-%                       Failed tasks and SHOULD FAIL tasks are ignored.
-%                       This is used by the INIT algorithm (if tasks
-%                       are supplied). If getEssential=false then
-%                       essentialRxns=false(nRxns,nTasks)
-%   taskStructure       structure with the tasks, as from parseTaskList
-%   essentialFluxes     The fluxes of the essential rxns - same structure as essentialRxns
-%   
+% Returns
+% -------
+% taskReport : struct
+%     structure with the results, with fields:
 %
-%   This function is used for defining a set of tasks for a model to
-%   perform. The tasks are defined by defining constraints on the model,
-%   and if the problem is feasible, then the task is considered successful.
-%   In general, each row can contain one constraint on uptakes, one
-%   constraint on outputs, one new equation, and one change of reaction
-%   bounds. If more bounds are needed to define the task, then several rows
-%   can be used for each task.
+%     - id : cell array with the id of the task
+%     - description : cell array with the description of the task
+%     - ok : boolean array with true if the task was successful
+% essentialRxns : logical
+%     MxN matrix with the essential reactions (M) for each task (N). An
+%     element is true if the corresponding reaction is essential in the
+%     corresponding task. Failed tasks and SHOULD FAIL tasks are ignored.
+%     This is used by the INIT algorithm (if tasks are supplied). If
+%     getEssential=false then essentialRxns=false(nRxns,nTasks).
+% taskStructure : struct
+%     structure with the tasks, as from parseTaskList.
+% essentialFluxes : double
+%     the fluxes of the essential rxns - same structure as essentialRxns.
 %
-% Usage: [taskReport, essentialReactions, taskStructure]=checkTasks(model,inputFile,...
-%           printOutput,printOnlyFailed,getEssential,taskStructure)
+% Examples
+% --------
+%     [taskReport, essentialRxns, taskStructure] = checkTasks(model, inputFile, ...
+%         printOutput, printOnlyFailed, getEssential, taskStructure);
 
 if nargin<3 || isempty(printOutput)
     printOutput=true;

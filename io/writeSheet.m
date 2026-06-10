@@ -1,17 +1,33 @@
 function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)
-% writeSheet
-%   Writes a cell matrix to an Excel sheet into using the Java library Apache POI
+% writeSheet  Write a cell matrix to an Excel sheet.
 %
-%   workbook        Workbook object representing the Excel file
-%   sheetName       name of the sheet
-%   sheetPosition   0-based position of the sheet
-%   captions        cell array of captions (optional)
-%   units           WRITE INFO
-%   raw             cell array with the data in the sheet
-%   isIntegers      true if numeric values should be integers (optional, default
-%                   true)
+% Writes a cell matrix to an Excel sheet using the Java library Apache POI.
 %
-% Usage: wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw)
+% Parameters
+% ----------
+% wb : Workbook
+%     Workbook object representing the Excel file.
+% sheetName : char
+%     name of the sheet.
+% sheetPosition : double
+%     0-based position of the sheet.
+% captions : cell, optional
+%     cell array of captions.
+% units : cell
+%     cell array of units for the columns.
+% raw : cell
+%     cell array with the data in the sheet.
+% isIntegers : logical, optional
+%     true if numeric values should be integers (default true).
+%
+% Returns
+% -------
+% wb : Workbook
+%     Workbook object updated with the written sheet.
+%
+% Examples
+% --------
+%     wb = writeSheet(wb, sheetName, sheetPosition, captions, units, raw);
 
 if nargin<7
     isIntegers=true;

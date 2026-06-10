@@ -1,43 +1,59 @@
 function repMets=reporterMetabolites(model,genes,genePValues,printResults,outputFile,geneFoldChanges)
-% reporterMetabolites
-%   The Reporter Metabolites algorithm for identifying metabolites around
-%   which transcriptional changes occur
+% reporterMetabolites  Identify metabolites around which transcriptional changes occur.
 %
-%   model           a model structure
-%   genes           a cell array of gene names (should match with
-%                   model.genes)
-%   genePValues     P-values for differential expression of the genes
-%   printResults    true if the top 20 Reporter Metabolites should be
-%                   printed to the screen (optional, default false)
-%   outputFile      the results are printed to this file (optional)
-%   geneFoldChanges log-fold changes for the genes. If supplied, then
-%                   Reporter Metabolites are calculated for only up/down-
-%                   regulated genes in addition to the full test (optional)
+% The Reporter Metabolites algorithm for identifying metabolites around
+% which transcriptional changes occur.
 %
-%   repMets         an array of structures with the following fields.
-%       test            a string the describes the genes that were used to
-%                       calculate the Reporter Metabolites ('all', 'only up',
-%                       or 'only down'). The two latter structures are
-%                       only calculated if geneFoldChanges are supplied.
-%       mets            a cell array of metabolite IDs for the metabolites for
-%                       which a score could be calculated
-%       metZScores      Z-scores for differential expression around each
-%                       metabolite in "mets"
-%       metPValues      P-values for differential expression around each
-%                       metabolite in "mets"
-%       metNGenes       number of neighbouring genes for each metabolite in
-%                       "mets"
-%       meanZ           average Z-scores for the genes around each metabolite
-%                       in "mets"
-%       stdZ            standard deviations of the Z-scores around each
-%                       metabolite in "mets"
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% genes : cell
+%     a cell array of gene names (should match with model.genes).
+% genePValues : double
+%     P-values for differential expression of the genes.
+% printResults : logical, optional
+%     true if the top 20 Reporter Metabolites should be printed to the
+%     screen (default false).
+% outputFile : char, optional
+%     the results are printed to this file (default none).
+% geneFoldChanges : double, optional
+%     log-fold changes for the genes. If supplied, then Reporter
+%     Metabolites are calculated for only up/down-regulated genes in
+%     addition to the full test (default none).
 %
-%   NOTE: For details about the algorithm, see Patil KR, Nielsen J,
-%   Uncovering transcriptional regulation of metabolism by using metabolic
-%   network topology. Proc. Natl Acad. Sci. USA 2005;102:2685-2689.
+% Returns
+% -------
+% repMets : struct
+%     an array of structures with the following fields:
 %
-% Usage: repMets=reporterMetabolites(model,genes,genePValues,printResults,...
-%           outputFile,geneFoldChanges)
+%     - test : a string that describes the genes used to calculate the
+%       Reporter Metabolites ('all', 'only up', or 'only down'). The two
+%       latter structures are only calculated if geneFoldChanges are
+%       supplied.
+%     - mets : a cell array of metabolite IDs for the metabolites for which
+%       a score could be calculated.
+%     - metZScores : Z-scores for differential expression around each
+%       metabolite in "mets".
+%     - metPValues : P-values for differential expression around each
+%       metabolite in "mets".
+%     - metNGenes : number of neighbouring genes for each metabolite in
+%       "mets".
+%     - meanZ : average Z-scores for the genes around each metabolite in
+%       "mets".
+%     - stdZ : standard deviations of the Z-scores around each metabolite
+%       in "mets".
+%
+% Examples
+% --------
+%     repMets = reporterMetabolites(model, genes, genePValues, ...
+%         printResults, outputFile, geneFoldChanges);
+%
+% Notes
+% -----
+% For details about the algorithm, see Patil KR, Nielsen J, Uncovering
+% transcriptional regulation of metabolism by using metabolic network
+% topology. Proc. Natl Acad. Sci. USA 2005;102:2685-2689.
 
 genes=convertCharArray(genes);
 if nargin<4

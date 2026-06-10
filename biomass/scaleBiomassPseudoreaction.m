@@ -1,29 +1,43 @@
 function model = scaleBiomassPseudoreaction(model, biomassConfig, componentName, factor)
-% scaleBiomassPseudoreaction
-%   Multiply the substrate coefficients of one biomass component
-%   pseudoreaction by `factor` and rebalance H+ to preserve charge
-%   neutrality. Mirrors raven_python.biomass.rescale_pseudoreaction
-%   and yeast-GEM's legacy rescalePseudoReaction.
+% scaleBiomassPseudoreaction  Rescale a biomass component pseudoreaction.
 %
-%   "Substrate" means every metabolite in the pseudoreaction whose
-%   metabolite name does NOT match the component name (the
-%   component's product is left untouched). After rescaling, the
-%   coefficient of biomassConfig.proton_met is recomputed so the
-%   pseudoreaction's total ionic charge sums to zero.
+% Multiply the substrate coefficients of one biomass component
+% pseudoreaction by factor and rebalance H+ to preserve charge neutrality.
+% Mirrors raven_python.biomass.rescale_pseudoreaction and yeast-GEM's
+% legacy rescalePseudoReaction.
 %
-%   Inputs:
-%       model           RAVEN model struct.
-%       biomassConfig   struct (see getBiomassFractions).
-%       componentName   Name of the component to rescale (must match
-%                       biomassConfig.components{i}.name for some i,
-%                       AND be the model.metNames of the produced
-%                       metabolite in the matching pseudoreaction).
-%       factor          Multiplicative factor.
+% "Substrate" means every metabolite in the pseudoreaction whose
+% metabolite name does NOT match the component name (the component's
+% product is left untouched). After rescaling, the coefficient of
+% biomassConfig.proton_met is recomputed so the pseudoreaction's total
+% ionic charge sums to zero.
 %
-%   Output:
-%       model           Modified model.
+% Parameters
+% ----------
+% model : struct
+%     RAVEN model struct.
+% biomassConfig : struct
+%     Struct (see getBiomassFractions).
+% componentName : char
+%     Name of the component to rescale (must match
+%     biomassConfig.components{i}.name for some i, AND be the
+%     model.metNames of the produced metabolite in the matching
+%     pseudoreaction).
+% factor : double
+%     Multiplicative factor.
 %
-% Usage: model = scaleBiomassPseudoreaction(model, biomassConfig, 'protein', 0.9)
+% Returns
+% -------
+% model : struct
+%     Modified model.
+%
+% Examples
+% --------
+%     model = scaleBiomassPseudoreaction(model, biomassConfig, 'protein', 0.9);
+%
+% See also
+% --------
+% getBiomassFractions
 
 comp = findComponent(biomassConfig, componentName);
 rxnPos = find(strcmp(model.rxnNames, comp.pseudoreaction_name));

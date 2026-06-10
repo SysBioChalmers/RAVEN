@@ -1,20 +1,30 @@
 function GSS = getWoLFScores(inputFile, kingdom)
-% getWoLFScores
-%   Call WoLF PSort to predict the sub-cellular localization of proteins.
-%   The output can be used as input to predictLocalization. This function
-%   is currently only available for Linux and requires Perl to be
-%   installed. If one wants to use another predictor, see parseScores. The
-%   function normalizes the scores so that the best score for each gene is
-%   1.0.
+% getWoLFScores  Predict protein sub-cellular localization with WoLF PSORT.
 %
-%   Input:
-%   inputFile	a FASTA file with protein sequences
-%   kingdom     the kingdom of the organism, 'animal', 'fungi' or 'plant'
+% The output can be used as input to predictLocalization. This function is
+% currently only available for Linux and requires Perl to be installed. If
+% one wants to use another predictor, see parseScores. The function
+% normalizes the scores so that the best score for each gene is 1.0.
 %
-%   Output:
-%   GSS         a gene scoring structure to be used in predictLocalization
+% Parameters
+% ----------
+% inputFile : char
+%     a FASTA file with protein sequences.
+% kingdom : char
+%     the kingdom of the organism, 'animal', 'fungi' or 'plant'.
 %
-% Usage: GSS = getWoLFScores(inputFile, kingdom)
+% Returns
+% -------
+% GSS : struct
+%     a gene scoring structure to be used in predictLocalization.
+%
+% Examples
+% --------
+%     GSS = getWoLFScores(inputFile, kingdom);
+%
+% See also
+% --------
+% parseScores, predictLocalization
 
 if ~isfile(inputFile)
     error('FASTA file %s cannot be found',string(inputFile));

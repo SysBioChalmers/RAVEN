@@ -1,29 +1,43 @@
 function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,onlyToExisting,prefix)
-% addTransport
-%   Adds transport reactions between compartments
+% addTransport  Add transport reactions between compartments.
 %
-%   model           a model structure
-%   fromComp        the id of the compartment to transport from (should
-%                   match model.comps)
-%   toComps         a cell array of compartment names to transport to (should
-%                   match model.comps)
-%   metNames        the metabolite names to add transport for (optional, all
-%                   metabolites in fromComp)
-%   isRev           true if the transport reactions should be reversible
-%                   (optional, default true)
-%   onlyToExisting  true if transport of a metabolite should only be added
-%                   if it already exists in toComp. If false, then new metabolites
-%                   are added with addMets first (optional, default true)
-%   prefix          string specifying prefix to reaction IDs (optional, default
-%                   'tr_')
+% This is a faster version than addRxns when adding transport reactions.
+% New reaction names are formatted as "metaboliteName, fromComp-toComp",
+% while new reaction IDs are sequentially counted with a tr_ prefix:
+% e.g. tr_0001, tr_0002, etc.
 %
-%   This is a faster version than addRxns when adding transport reactions.
-%   New reaction names are formatted as "metaboliteName, fromComp-toComp", 
-%   while new reaction IDs are sequentially counted with a tr_ prefix:
-%   e.g. tr_0001, tr_0002, etc.
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% fromComp : char
+%     the id of the compartment to transport from (should match
+%     model.comps).
+% toComps : cell
+%     compartment names to transport to (should match model.comps).
+% metNames : cell, optional
+%     the metabolite names to add transport for (default all metabolites
+%     in fromComp).
+% isRev : logical, optional
+%     true if the transport reactions should be reversible (default true).
+% onlyToExisting : logical, optional
+%     true if transport of a metabolite should only be added if it already
+%     exists in toComp. If false, then new metabolites are added with
+%     addMets first (default true).
+% prefix : char, optional
+%     prefix to reaction IDs (default 'tr_').
 %
-% Usage: [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,...
-%           isRev,onlyToExisting,prefix)
+% Returns
+% -------
+% model : struct
+%     updated model structure.
+% addedRxns : cell
+%     ids of the added reactions.
+%
+% Examples
+% --------
+%     [model, addedRxns] = addTransport(model, fromComp, toComps, ...
+%                          metNames, isRev, onlyToExisting, prefix);
 
 fromComp=char(fromComp);
 [I, fromID]=ismember(model.comps,fromComp);

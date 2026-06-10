@@ -1,41 +1,53 @@
 function [model, metacycBlastStruct] = getMetaCycModelForOrganism(organismID,fastaFile,...
     keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond,metacycBlastStruct)
-% getMetaCycModelForOrganism
-%   Reconstructs a genome-scale metabolic model based on protein homology to the
-%   MetaCyc pathway database
+% getMetaCycModelForOrganism  Reconstruct a model from MetaCyc homology.
 %
-%   Input:
-%   organismID          the query organism's abbreviation, which is defined
-%                       by user
-%   fastaFile           a FASTA file that contains the protein sequences of
-%                       the organism for which to reconstruct a model
-%   keepTransportRxns   include transportation reactions, which often have identical
-%                       reactants and products that turn to be all-zero columns in
-%                       the S matrix (optional, default false)
-%   keepUnbalanced      include reactions cannot be unbalanced reactions, usually
-%                       because they are polymeric reactions or because of a
-%                       specific difficulty in balancing class structures
-%                       (optional, default false)
-%   keepUndetermined    include reactions that have substrates lack chemical
-%                       structures or with non-numerical coefficients (e.g. n+1)
-%                       (optional, default false)
-%   minScore            minimum Bit scores of BLASTp search (optional, default 100)
-%   minPositives        minimum Positives values of BLASTp search (optional, default 45 %)
-%   useDiamond          use DIAMOND alignment tools to perform homology search
-%                       if true, otherwise the BLASTP is used (optional, default true)
-%   metacycBlastStruct  provided an earlier generated metacycBlastStruct
-%                       from getMetaCycModelForOrganism (optional, default empty).
-%                       Useful when trying different cutoffs for minScore
-%                       and minPositives without having to regenerate the
-%                       blastStructure each time.
+% Reconstructs a genome-scale metabolic model based on protein homology to
+% the MetaCyc pathway database.
 %
-%   Output:
-%   model               a model structure for the query organism
-%   metacycBlastStruct  result from getBlast or getDiamond, before the
-%                       minScore and minPositives cutoffs are applied
+% Parameters
+% ----------
+% organismID : char
+%     the query organism's abbreviation, which is defined by user.
+% fastaFile : char
+%     a FASTA file that contains the protein sequences of the organism for
+%     which to reconstruct a model.
+% keepTransportRxns : logical, optional
+%     include transportation reactions, which often have identical reactants
+%     and products that turn to be all-zero columns in the S matrix (default
+%     false).
+% keepUnbalanced : logical, optional
+%     include reactions cannot be unbalanced reactions, usually because they
+%     are polymeric reactions or because of a specific difficulty in
+%     balancing class structures (default false).
+% keepUndetermined : logical, optional
+%     include reactions that have substrates lack chemical structures or
+%     with non-numerical coefficients (e.g. n+1) (default false).
+% minScore : double, optional
+%     minimum Bit scores of BLASTp search (default 100).
+% minPositives : double, optional
+%     minimum Positives values of BLASTp search (default 45 %).
+% useDiamond : logical, optional
+%     use DIAMOND alignment tools to perform homology search if true,
+%     otherwise the BLASTP is used (default true).
+% metacycBlastStruct : struct, optional
+%     provided an earlier generated metacycBlastStruct from
+%     getMetaCycModelForOrganism (default empty). Useful when trying
+%     different cutoffs for minScore and minPositives without having to
+%     regenerate the blastStructure each time.
 %
-% Usage: [model, metacycBlastStruct] = getMetaCycModelForOrganism(organismID,fastaFile,...
-%    keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond,metacycBlastStruct)
+% Returns
+% -------
+% model : struct
+%     a model structure for the query organism.
+% metacycBlastStruct : struct
+%     result from getBlast or getDiamond, before the minScore and
+%     minPositives cutoffs are applied.
+%
+% Examples
+% --------
+%     [model, metacycBlastStruct] = getMetaCycModelForOrganism(organismID,fastaFile,...
+%        keepTransportRxns,keepUnbalanced,keepUndetermined,minScore,minPositives,useDiamond,metacycBlastStruct);
 
 organismID=char(organismID);
 if nargin<2

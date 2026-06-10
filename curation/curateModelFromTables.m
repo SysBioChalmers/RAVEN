@@ -1,49 +1,60 @@
 function newModel=curateModelFromTables(model,metsInfo,genesInfo,rxnsCoeffs,rxnsInfo,metPrefix,rxnPrefix)
-% curateModelFromTables
-%   Curate existing and/or add new metabolites, reactions and genes
-%   from tabular data files. Originally extracted from yeast-GEM's
-%   curateMetsRxnsGenes; generalised here so any GEM project can drive
-%   batch curation from the same set of *.tsv files.
+% curateModelFromTables  Curate or add mets, rxns and genes from tables.
 %
-%   If the *.tsv files contain metabolites, reactions and/or genes that are
-%   already present in the model, then information in the model will be
-%   overwritten. Note that this includes empty annotations in the *.tsv
-%   files! Metabolites are matched by metaboliteName[comp]; reactions by
-%   the stoichiometry of its reactants and products; genes by their gene
-%   name. This function can therefore be used to add new entities in the
-%   model, or curate those already existing in the model.
+% Curate existing and/or add new metabolites, reactions and genes from
+% tabular data files. Originally extracted from yeast-GEM's
+% curateMetsRxnsGenes; generalised here so any GEM project can drive batch
+% curation from the same set of *.tsv files.
 %
-%   Input:
-%       model       RAVEN model structure to be curated.
-%       metsInfo    path to a *.tsv file with metabolite information, or
-%                   'none' to skip metabolite curation. Columns:
-%                   metNames, comps, formula, charge, inchi, metNotes,
-%                   then any number of MIRIAM-namespace columns.
-%       genesInfo   path to a *.tsv file with gene information, or
-%                   'none'. Columns: genes, geneShortNames, then MIRIAM.
-%       rxnsCoeffs  path to a *.tsv file with reaction stoichiometric
-%                   coefficients, or 'none'. Columns: rxnIdx, rxnNames,
-%                   metNames, comps, coefficient. One row per
-%                   (reaction, metabolite) pair.
-%       rxnsInfo    path to a *.tsv file with reaction information, or
-%                   'none'. Columns: rxnIdx, rxnNames, grRules, lb, ub,
-%                   rev, subSystems, eccodes, rxnNotes, rxnReferences,
-%                   rxnConfidenceScores, then MIRIAM.
-%       metPrefix   prefix used to mint fresh metabolite ids (e.g. 's_'
-%                   for yeast-GEM, 'M_' for the cobrapy/BiGG default).
-%                   Default: 'M_'.
-%       rxnPrefix   prefix used to mint fresh reaction ids. Default: 'R_'.
+% If the *.tsv files contain metabolites, reactions and/or genes that are
+% already present in the model, then information in the model will be
+% overwritten. Note that this includes empty annotations in the *.tsv
+% files! Metabolites are matched by metaboliteName[comp]; reactions by the
+% stoichiometry of its reactants and products; genes by their gene name.
+% This function can therefore be used to add new entities in the model, or
+% curate those already existing in the model.
 %
-%   Output:
-%       newModel    curated RAVEN model structure.
+% Parameters
+% ----------
+% model : struct
+%     RAVEN model structure to be curated.
+% metsInfo : char
+%     Path to a *.tsv file with metabolite information, or 'none' to skip
+%     metabolite curation. Columns: metNames, comps, formula, charge,
+%     inchi, metNotes, then any number of MIRIAM-namespace columns.
+% genesInfo : char
+%     Path to a *.tsv file with gene information, or 'none'. Columns:
+%     genes, geneShortNames, then MIRIAM.
+% rxnsCoeffs : char
+%     Path to a *.tsv file with reaction stoichiometric coefficients, or
+%     'none'. Columns: rxnIdx, rxnNames, metNames, comps, coefficient. One
+%     row per (reaction, metabolite) pair.
+% rxnsInfo : char
+%     Path to a *.tsv file with reaction information, or 'none'. Columns:
+%     rxnIdx, rxnNames, grRules, lb, ub, rev, subSystems, eccodes,
+%     rxnNotes, rxnReferences, rxnConfidenceScores, then MIRIAM.
+% metPrefix : char, optional
+%     Prefix used to mint fresh metabolite ids (e.g. 's_' for yeast-GEM,
+%     'M_' for the cobrapy/BiGG default) (default 'M_').
+% rxnPrefix : char, optional
+%     Prefix used to mint fresh reaction ids (default 'R_').
 %
-%   The 'everything after the core columns is MIRIAM' convention applies
-%   to all three info tables: any column whose header is not one of the
-%   listed core fields is treated as a MIRIAM annotation namespace and
-%   stored on the matching entity.
+% Returns
+% -------
+% newModel : struct
+%     Curated RAVEN model structure.
 %
-% Usage: newModel = curateModelFromTables(model, metsInfo, genesInfo, ...
-%                       rxnsCoeffs, rxnsInfo, metPrefix, rxnPrefix)
+% Examples
+% --------
+%     newModel = curateModelFromTables(model, metsInfo, genesInfo, ...
+%                     rxnsCoeffs, rxnsInfo, metPrefix, rxnPrefix);
+%
+% Notes
+% -----
+% The 'everything after the core columns is MIRIAM' convention applies to
+% all three info tables: any column whose header is not one of the listed
+% core fields is treated as a MIRIAM annotation namespace and stored on
+% the matching entity.
 
 if nargin==4
     error('Provide both a ''rxnsInfo'' and a ''rxnsCoeffs'' file')

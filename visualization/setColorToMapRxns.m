@@ -1,34 +1,53 @@
 function [modifiedMap, xmlMap, model2] = setColorToMapRxns (mapFileName, model, v1, rxnsFluxTask, rxnLineWidth, rxnLineColor, molFillColor)
-% USAGE:
-% [modifiedMap, xmlMap, model2] =
-%   setColorToMapRxns (mapFileName, model, v1, rxnsFluxTask, rxnLineWidth, rxnLineColor, molFillColor)
+% setColorToMapRxns  Color a CellDesigner map by reaction fluxes or omics.
 %
-% INPUTS:
-% mapFileName           relative path to XML map (e.g. 'yeastMap1.0.xml')
-% model                 model structure
-% v1                    vector of fluxes
-% rxnsFluxTask          1 = Flux
-%                       2 = Flux essentiality; map reactions causing any
-%                           effect on growth (i.e. obj function)
-%                       3 = Flux essentiality; map reactions causing no
-%                           growth(i.e. obj function) when deleted, i.e.
-%                           essential reactions
-%                       4 = Flux essentiality; map reactions with not any
-%                           effect on growth (i.e. obj function) when
-%                           deleted
-%                       5 = Omics
-% ADDITIONAL INPUTS:
-% rxnLineWidth          reaction line width; default = 5
-% rxnLineColor          reaction line color; default = Pathways; write
-%                       'Subsystems' to color five subsystems only (central,
-%                       AA, lipids, cofactors, nuclotides and energy).
-%                       'Subsystems' option is the deault option at task 5
-% molFillColor          molecule fill color; default = true (i.e. white)
-%                       molecule fill color; true (i.e. like CellDesigner default)
-% OUTPUTS:
-% modifiedMap           map with MATLAB structure, and modified reactions' line color and width
-% xmlMap                xml structure of the original map obtained from mapFileName
-% model2                model with modified subsystems
+% Modifies the line color and width of reactions on a CellDesigner XML map
+% according to flux values, flux essentiality or omics data. Requires the
+% COBRA Toolbox.
+%
+% Parameters
+% ----------
+% mapFileName : char
+%     relative path to XML map (e.g. 'yeastMap1.0.xml').
+% model : struct
+%     model structure.
+% v1 : double
+%     vector of fluxes.
+% rxnsFluxTask : double
+%     task selecting which reactions to map:
+%
+%     - 1 : Flux
+%     - 2 : Flux essentiality; map reactions causing any effect on growth
+%       (i.e. obj function)
+%     - 3 : Flux essentiality; map reactions causing no growth (i.e. obj
+%       function) when deleted, i.e. essential reactions
+%     - 4 : Flux essentiality; map reactions without any effect on growth
+%       (i.e. obj function) when deleted
+%     - 5 : Omics
+% rxnLineWidth : double, optional
+%     reaction line width (default 5).
+% rxnLineColor : char, optional
+%     reaction line color (default 'Pathways'). Write 'Subsystems' to color
+%     five subsystems only (central, AA, lipids, cofactors, nucleotides and
+%     energy). 'Subsystems' is the default option at task 5.
+% molFillColor : logical, optional
+%     molecule fill color (default true, i.e. white). false uses the
+%     CellDesigner default.
+%
+% Returns
+% -------
+% modifiedMap : struct
+%     map with MATLAB structure, and modified reactions' line color and
+%     width.
+% xmlMap : struct
+%     xml structure of the original map obtained from mapFileName.
+% model2 : struct
+%     model with modified subsystems.
+%
+% Examples
+% --------
+%     [modifiedMap, xmlMap, model2] = setColorToMapRxns(mapFileName, ...
+%         model, v1, rxnsFluxTask, rxnLineWidth, rxnLineColor, molFillColor);
 
 if ~(exist('transformXML2Map')==2)
     error('COBRA Toolbox is required, go to https://opencobra.github.io/cobratoolbox/')

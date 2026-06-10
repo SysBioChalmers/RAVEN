@@ -1,45 +1,52 @@
 function compStruct = compareMultipleModels(models,printResults,plotResults,groupVector,funcCompare,taskFile)
-% compareMultipleModels
-%   Compares two or more condition-specific models generated from the same
-%   base model using high-dimensional comparisons in the reaction-space.
+% compareMultipleModels  Compare two or more condition-specific models.
 %
-%   models              cell array of two or more models
-%   printResults        true if the results should be printed on the screen
-%                       (optional, default false)
-%   plotResults         true if the results should be plotted
-%                       (optional, default false)
-%   groupVector         numeric vector or cell array for grouping similar 
-%                       models, i.e. by tissue (optional, default, all models
-%                       ungrouped)
-%   funcCompare         logical, should a functional comparison be run
-%                       (optional,default, false)
-%   taskFile            string containing the name of the task file to use
-%                       for the functional comparison (should be an .xls or 
-%                       .xlsx file, required for functional comparison)
+% Compares two or more condition-specific models generated from the same
+% base model using high-dimensional comparisons in the reaction-space.
 %
-%   compStruct          structure that contains the comparison results
-%       modelIDs        cell array of model ids
-%       reactions       substructure containing reaction information
-%           matrix          binary matrix composed of reactions (rows) in
-%                           each model (column). This matrix is used as the
-%                           input for the model comparisons.
-%           IDs             list of the reactions contained in the reaction
-%                           matrix.
-%       subsystems      substructure containing subsystem information
-%           matrix          matrix with comparison of number of rxns per
-%                           subsystem
-%           ID              vector consisting of names of all subsystems
-%       structComp      matrix with pairwise comparisons of model structure
-%                       based on (1-Hamming distance) between models
-%       structCompMap   matrix with 3D tSNE (or MDS) mapping of model
-%                       structures based on Hamming distances
-%       funcComp        substructure containing function comparison results
-%           matrix          matrix with PASS / FAIL (1 / 0) values for each
-%                           task
-%           tasks           vector containing names of all tasks
+% Parameters
+% ----------
+% models : cell
+%     cell array of two or more models.
+% printResults : logical, optional
+%     true if the results should be printed on the screen (default false).
+% plotResults : logical, optional
+%     true if the results should be plotted (default false).
+% groupVector : double or cell, optional
+%     numeric vector or cell array for grouping similar models, i.e. by
+%     tissue (default all models ungrouped).
+% funcCompare : logical, optional
+%     should a functional comparison be run (default false).
+% taskFile : char, optional
+%     string containing the name of the task file to use for the functional
+%     comparison (should be an .xls or .xlsx file, required for functional
+%     comparison).
 %
-% Usage: compStruct=compareMultipleModels(models,printResults,...
-%                       plotResults,groupVector,funcCompare,taskFile);
+% Returns
+% -------
+% compStruct : struct
+%     structure that contains the comparison results, with fields:
+%
+%     - modelIDs : cell array of model ids
+%     - reactions : substructure containing reaction information, with
+%       fields matrix (binary matrix composed of reactions (rows) in each
+%       model (column), used as the input for the model comparisons) and IDs
+%       (list of the reactions contained in the reaction matrix)
+%     - subsystems : substructure containing subsystem information, with
+%       fields matrix (matrix with comparison of number of rxns per
+%       subsystem) and ID (vector consisting of names of all subsystems)
+%     - structComp : matrix with pairwise comparisons of model structure
+%       based on (1-Hamming distance) between models
+%     - structCompMap : matrix with 3D tSNE (or MDS) mapping of model
+%       structures based on Hamming distances
+%     - funcComp : substructure containing function comparison results, with
+%       fields matrix (matrix with PASS / FAIL (1 / 0) values for each task)
+%       and tasks (vector containing names of all tasks)
+%
+% Examples
+% --------
+%     compStruct = compareMultipleModels(models, printResults, ...
+%         plotResults, groupVector, funcCompare, taskFile);
 
 %% Stats toolbox required
 if ~(exist('mdscale.m','file') && exist('pdist.m','file') && exist('squareform.m','file') && exist('tsne.m','file'))

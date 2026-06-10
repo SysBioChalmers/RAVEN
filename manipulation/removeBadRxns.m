@@ -1,73 +1,85 @@
 function [newModel, removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames,balanceElements,refModel,ignoreIntBounds,printReport)
-% removeBadRxns
-%   Iteratively removes reactions which enable production/consumption of some
-%   metabolite without any uptake/excretion
+% removeBadRxns  Remove reactions that enable production/consumption from nothing.
 %
-%   model                   a model structure. For the intented function,
-%                           the model shouldn't allow for any uptake/excretion.
-%                           The easiest way to achieve this is to import the
-%                           model using importModel('filename',false)
-%   rxnRules                1: only remove reactions which are unbalanced
-%                           2: also remove reactions which couldn't be checked for
-%                           mass balancing
-%                           3: all reactions can be removed
-%                           (optional, default 1)
-%   ignoreMets              either a cell array of metabolite IDs, a logical vector
-%                           with the same number of elements as metabolites in the model,
-%                           of a vector of indexes for metabolites to exclude from
-%                           this analysis (optional, default [])
-%   isNames                 true if the supplied mets represent metabolite names
-%                           (as opposed to IDs). This is a way to delete
-%                           metabolites in several compartments at once without
-%                           knowing the exact IDs. This only works if ignoreMets
-%                           is a cell array (optional, default false)
-%   balanceElements         a cell array with the elements for which to
-%                           balance the reactions. May contain any
-%                           combination of the elements defined in parseFormulas
-%                           (optional, default {'C';'P';'S';'N';'O'})
-%   refModel                a reference model which can be used to ensure
-%                           that the resulting model is still functional.
-%                           The intended use is that the reference model is
-%                           a copy of model, but with uptake/excretion allowed and
-%                           some objectives (such as production of biomass)
-%                           constrained to a non-zero flux. Before a
-%                           reaction is removed from "model" the function first
-%                           checks that the same deletion in "refModel"
-%                           doesn't render the problem unfeasible (optional)
-%   ignoreIntBounds         true if internal bounds (including reversibility)
-%                           should be ignored. Exchange reactions are not affected.
-%                           This can be used to find unbalanced solutions which are
-%                           not possible using the default constraints (optional,
-%                           default false)
-%   printReport             true if a report should be printed (optional,
-%                           default false)
+% Iteratively removes reactions which enable production/consumption of some
+% metabolite without any uptake/excretion.
 %
-%   newModel               	a model structure after the problematic
-%                           reactions have been deleted
-%   removedRxns             a cell array with the reactions that were
-%                           removed
+% Parameters
+% ----------
+% model : struct
+%     a model structure. For the intended function, the model shouldn't
+%     allow for any uptake/excretion. The easiest way to achieve this is to
+%     import the model using importModel('filename', false).
+% rxnRules : double, optional
+%     which reactions may be removed (default 1):
 %
-%   The purpose of this function is to remove reactions which enable
-%   production/consumption of metabolites even when exchange reactions aren't used.
-%   Many models, especially if they are automatically inferred from
-%   databases, will have unbalanced reactions which allow for
-%   net-production/consumption of metabolites without any consumption/excretion.
-%   A common reason for this is when general compounds have different meaning
-%   in different reactions (as DNA has in these two reactions).
-%       dATP + dGTP + dCTP + dTTP <=> DNA + 4 PPi
-%       0.25 dATP + 0.25 dGTP + 0.25 dCTP + 0.25 dTTP <=> DNA + PPi
-%   Reactions that are problematic like this are always elementally
-%   unbalanced, but it is not always that you would like to exclude all
-%   unbalanced reactions from your model.
-%   This function tries to remove as few problematic reactions as possible
-%   so that the model cannot produce/consume anything from nothing. This is done by
-%   repeatedly calling makeSomething/consumeSomething, checking if any of
-%   the involved reactions are elementally unbalanced, remove one of them,
-%   and then iterating until no metabolites can be produced/consumed.
-%   makeSomething is called before consumeSomething.
+%     - 1 : only remove reactions which are unbalanced
+%     - 2 : also remove reactions which couldn't be checked for mass
+%       balancing
+%     - 3 : all reactions can be removed
+% ignoreMets : cell or logical or double, optional
+%     either a cell array of metabolite IDs, a logical vector with the same
+%     number of elements as metabolites in the model, or a vector of indexes
+%     for metabolites to exclude from this analysis (default []).
+% isNames : logical, optional
+%     true if the supplied mets represent metabolite names (as opposed to
+%     IDs). This is a way to delete metabolites in several compartments at
+%     once without knowing the exact IDs. This only works if ignoreMets is a
+%     cell array (default false).
+% balanceElements : cell, optional
+%     a cell array with the elements for which to balance the reactions. May
+%     contain any combination of the elements defined in parseFormulas
+%     (default {'C';'P';'S';'N';'O'}).
+% refModel : struct, optional
+%     a reference model which can be used to ensure that the resulting model
+%     is still functional. The intended use is that the reference model is a
+%     copy of model, but with uptake/excretion allowed and some objectives
+%     (such as production of biomass) constrained to a non-zero flux. Before
+%     a reaction is removed from "model" the function first checks that the
+%     same deletion in "refModel" doesn't render the problem unfeasible.
+% ignoreIntBounds : logical, optional
+%     true if internal bounds (including reversibility) should be ignored.
+%     Exchange reactions are not affected. This can be used to find
+%     unbalanced solutions which are not possible using the default
+%     constraints (default false).
+% printReport : logical, optional
+%     true if a report should be printed (default false).
 %
-% Usage: [newModel, removedRxns]=removeBadRxns(model,rxnRules,...
-%       ignoreMets,isNames,refModel,ignoreIntBounds,printReport)
+% Returns
+% -------
+% newModel : struct
+%     a model structure after the problematic reactions have been deleted.
+% removedRxns : cell
+%     a cell array with the reactions that were removed.
+%
+% Notes
+% -----
+% The purpose of this function is to remove reactions which enable
+% production/consumption of metabolites even when exchange reactions aren't
+% used. Many models, especially if they are automatically inferred from
+% databases, will have unbalanced reactions which allow for
+% net-production/consumption of metabolites without any consumption or
+% excretion. A common reason for this is when general compounds have
+% different meaning in different reactions (as DNA has in these two
+% reactions):
+%
+%     dATP + dGTP + dCTP + dTTP <=> DNA + 4 PPi
+%     0.25 dATP + 0.25 dGTP + 0.25 dCTP + 0.25 dTTP <=> DNA + PPi
+%
+% Reactions that are problematic like this are always elementally
+% unbalanced, but it is not always the case that you would like to exclude
+% all unbalanced reactions from your model. This function tries to remove as
+% few problematic reactions as possible so that the model cannot
+% produce/consume anything from nothing. This is done by repeatedly calling
+% makeSomething/consumeSomething, checking if any of the involved reactions
+% are elementally unbalanced, removing one of them, and then iterating until
+% no metabolites can be produced/consumed. makeSomething is called before
+% consumeSomething.
+%
+% Examples
+% --------
+%     [newModel, removedRxns] = removeBadRxns(model, rxnRules, ignoreMets, ...
+%         isNames, balanceElements, refModel, ignoreIntBounds, printReport);
 
 if nargin<2
     rxnRules=1;

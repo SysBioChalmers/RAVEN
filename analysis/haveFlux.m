@@ -1,25 +1,36 @@
 function I=haveFlux(model,cutOff,rxns)
-% haveFlux
-%   Checks which reactions can carry a (positive or negative) flux. Is used
-%   as a faster version of getAllowedBounds if it is only interesting
-%   whether the reactions can carry a flux or not
+% haveFlux  Check which reactions can carry a flux.
 %
-% Input:
-%   model       a model structure
-%   cutOff      the flux value that a reaction has to carry to be
-%               identified as positive (optional, default 10^-8)
-%   rxns        either a cell array of IDs, a logical vector with the
-%               same number of elements as metabolites in the model, or a
-%               vector of indexes (optional, default model.rxns)
+% Checks which reactions can carry a (positive or negative) flux. Is used as
+% a faster version of getAllowedBounds if it is only interesting whether the
+% reactions can carry a flux or not.
 %
-% Output:
-%   I           logical array with true if the corresponding reaction can
-%               carry a flux
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% cutOff : double, optional
+%     the flux value that a reaction has to carry to be identified as
+%     positive (default 10^-8).
+% rxns : cell or logical or double, optional
+%     either a cell array of IDs, a logical vector with the same number of
+%     elements as metabolites in the model, or a vector of indexes (default
+%     model.rxns).
 %
+% Returns
+% -------
+% I : logical
+%     logical array with true if the corresponding reaction can carry a
+%     flux.
+%
+% Examples
+% --------
+%     I = haveFlux(model, cutOff, rxns);
+%
+% Notes
+% -----
 % If a model has +/- Inf bounds then those are replaced with an arbitary
-% large value of +/- 10000 prior to solving
-%
-% Usage: I = haveFlux(model, cutOff, rxns)
+% large value of +/- 10000 prior to solving.
 
 if nargin<2
     cutOff=10^-6;

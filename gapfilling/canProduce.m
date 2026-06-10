@@ -1,18 +1,31 @@
 function produced=canProduce(model,mets)
-% canProduce
-%   Checks which metabolites that can be produced from a model using the
-%   specified constraints. This is a less advanced but faster version of
-%   checkProduction.
+% canProduce  Check which metabolites can be produced from a model.
 %
-%   model       a model structure
-%   mets        either a cell array of metabolite IDs, a logical vector 
-%               with the same number of elements as metabolites in the model,
-%               or a vector of indexes to check for (optional, default model.mets)
+% Checks which metabolites can be produced from a model using the
+% specified constraints. This is a less advanced but faster version of
+% checkProduction.
 %
-%   produced    vector with true if the corresponding metabolite could be
-%               produced
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% mets : cell or logical or double, optional
+%     either a cell array of metabolite IDs, a logical vector with the same
+%     number of elements as metabolites in the model, or a vector of
+%     indexes to check for (default model.mets).
 %
-% Usage: produced=canProduce(model,mets)
+% Returns
+% -------
+% produced : logical
+%     vector with true if the corresponding metabolite could be produced.
+%
+% Examples
+% --------
+%     produced = canProduce(model, mets);
+%
+% See also
+% --------
+% checkProduction
 
 if nargin<2
     mets=model.mets;

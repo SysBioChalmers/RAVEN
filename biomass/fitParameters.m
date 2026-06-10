@@ -1,39 +1,55 @@
 function [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,fitToRatio,initialGuess,plotFitting)
-% fitParameters
-%   Fits parameters such as maintenance ATP by quadratic programming
+% fitParameters  Fit parameters such as maintenance ATP by quadratic programming.
 %
-%   model                 a model structure
-%   xRxns                 cell array with the IDs of the reactions that will be
-%                         fixed for each data point
-%   xValues               matrix with the corresponding values for each
-%                         xRxns (columns are reactions)
-%   rxnsToFit             cell array with the IDs of reactions that will be fitted to
-%   valuesToFit           matrix with the corresponding values for each
-%                         rxnsToFit (columns are reactions)
-%   parameterPositions    stucture that determines where the parameters are in the
-%                         stoichiometric matrix. Contains the fields:
-%   	position          cell array of vectors where each element contains
-%                         the positions in the S-matrix for that parameter
-%   	isNegative        cell array of vectors where the elements are true
-%                         if that position should be the negative of the
-%                         fitted value (to differentiate between
-%                         production/consumption)
-%	fitToRatio            if the ratio of simulated to measured values should
-%                         be fitted instead of the absolute value. Used to prevent
-%                         large fluxes from having too large impact (optional,
-%                         default true)
-%   initialGuess          initial guess of the parameters (optional)
-%   plotFitting           true if the resulting fitting should be plotted
-%                         (optional, default false)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% xRxns : cell
+%     cell array with the IDs of the reactions that will be fixed for each
+%     data point.
+% xValues : double
+%     matrix with the corresponding values for each xRxns (columns are
+%     reactions).
+% rxnsToFit : cell
+%     cell array with the IDs of reactions that will be fitted to.
+% valuesToFit : double
+%     matrix with the corresponding values for each rxnsToFit (columns are
+%     reactions).
+% parameterPositions : struct
+%     structure that determines where the parameters are in the
+%     stoichiometric matrix, with fields:
 %
-%   parameters            fitted parameters in the same order as in
-%                         parameterPositions
-%   fitnessScore          the correponding residual sum of squares
-%   newModel              updated model structure with the fitted parameters
+%     - position : cell array of vectors where each element contains the
+%       positions in the S-matrix for that parameter
+%     - isNegative : cell array of vectors where the elements are true if
+%       that position should be the negative of the fitted value (to
+%       differentiate between production/consumption)
+% fitToRatio : logical, optional
+%     if the ratio of simulated to measured values should be fitted
+%     instead of the absolute value. Used to prevent large fluxes from
+%     having too large an impact (default true).
+% initialGuess : double, optional
+%     initial guess of the parameters (default ones).
+% plotFitting : logical, optional
+%     true if the resulting fitting should be plotted (default false).
 %
-% Usage: [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,...
-%           xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,fitToRatio,...
-%           initialGuess,plotFitting)
+% Returns
+% -------
+% parameters : double
+%     fitted parameters in the same order as in parameterPositions.
+% fitnessScore : double
+%     the corresponding residual sum of squares.
+% exitFlag : double
+%     exit status returned by fminsearch.
+% newModel : struct
+%     updated model structure with the fitted parameters.
+%
+% Examples
+% --------
+%     [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,...
+%         xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,fitToRatio,...
+%         initialGuess,plotFitting);
 
 if nargin<7
     fitToRatio=true;

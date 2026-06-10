@@ -1,12 +1,18 @@
 function setTitle(handle, pathway, title)
-% plotLabels
-%   Prints a title on on a map drawn by drawPathway.
+% setTitle  Print a title on a map drawn by drawPathway.
 %
-%   handle      handle to the figure on which to print the labels
-%   pathway     pathway structure representing the pathway to be drawn
-%   title       the title
+% Parameters
+% ----------
+% handle : double
+%     handle to the figure on which to print the title.
+% pathway : struct
+%     pathway structure representing the pathway to be drawn.
+% title : char
+%     the title.
 %
-% Usage: setTitle(handle, pathway, title)
+% Examples
+% --------
+%     setTitle(handle, pathway, title);
 
 dimension=getPathwayDimensions(pathway);
 

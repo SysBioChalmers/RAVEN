@@ -1,13 +1,21 @@
 function closedModel=closeModel(model)
-% closeModel
-%   Adds boundary metabolites and their participation in exchange
-%   reactions.
+% closeModel  Add boundary metabolites and their exchange reactions.
 %
-%   model                 a model structure
+% Adds boundary metabolites and their participation in exchange reactions.
 %
-%   closedModel           an updated closedModel structure
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
 %
-% Usage: closedModel=closeModel(model)
+% Returns
+% -------
+% closedModel : struct
+%     an updated model structure with boundary metabolites added.
+%
+% Examples
+% --------
+%     closedModel = closeModel(model);
 
 closedModel=model;
 

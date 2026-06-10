@@ -1,16 +1,22 @@
 function newModel = sortIdentifiers(model)
-% exportModel
-%   Sort reactions, metabolites, genes and compartments alphabetically by
-%   their identifier.
+% sortIdentifiers  Sort model identifiers alphabetically.
 %
-%   Input:
-%   model       a model structure
+% Sort reactions, metabolites, genes and compartments alphabetically by
+% their identifier.
 %
-%   Output:
-%   newModel    an updated model structure with alphabetically sorted
-%               identifiers
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
 %
-% Usage: newModel=sortIdentifiers(model)
+% Returns
+% -------
+% newModel : struct
+%     an updated model structure with alphabetically sorted identifiers.
+%
+% Examples
+% --------
+%     newModel = sortIdentifiers(model);
 
 [~,I]=sort(model.rxns);
 newModel=permuteModel(model,I,'rxns');

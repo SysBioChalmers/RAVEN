@@ -1,57 +1,66 @@
 function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
-% changeRxns
-%   Modifies the equations of reactions
+% changeRxns  Modify the equations of reactions in a model.
 %
-%   model            a model structure
-%   rxns             cell array with reaction ids
-%   equations        cell array with equations. Alternatively, it can be a
-%                    structure with the fields "mets" and "stoichCoeffs",
-%                    in the same fashion as addRxns. E.g.:
-%                    equations.mets = {{'met1','met2'},{'met1','met3'}}
-%                    equations.stoichCoeffs = {[-1,+2],[-1,+1]}
-%   eqnType          double describing how the equation string should be
-%                    interpreted
-%                    1 - The metabolites are matched to model.mets. New
-%                        metabolites (if allowed) are added to
-%                        "compartment" (default)
-%                    2 - The metabolites are matched to model.metNames and
-%                        all metabolites are assigned to "compartment". Any
-%                        new metabolites that are added will be assigned
-%                        IDs "m1", "m2"... If IDs on the same form are
-%                        already used in the model then the numbering will
-%                        start from the highest used integer+1
-%                    3 - The metabolites are written as
-%                        "metNames[compNames]". Only compartments in
-%                        model.compNames are allowed. Any
-%                        new metabolites that are added will be assigned
-%                        IDs "m1", "m2"... If IDs on the same form are
-%                        already used in the model then the numbering will
-%                        start from the highest used integer+1
-%   compartment      a string with the compartment the metabolites should
-%                    be placed in when using eqnType=2. Must match
-%                    model.compNames (optional when eqnType=1 or eqnType=3)
-%   allowNewMets     true if the function is allowed to add new
-%                    metabolites. It is highly recommended to first add
-%                    any new metabolites with addMets rather than
-%                    automatically through this function. addMets supports
-%                    more annotation of metabolites, allows for the use of
-%                    exchange metabolites, and using it reduces the risk
-%                    of parsing errors (optional, default false)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% rxns : cell
+%     cell array with reaction ids.
+% equations : cell or struct
+%     cell array with equations. Alternatively, it can be a structure with
+%     the fields "mets" and "stoichCoeffs", in the same fashion as addRxns.
+%     E.g.:
 %
-%   model            an updated model structure
+%     - equations.mets = {{'met1','met2'},{'met1','met3'}}
+%     - equations.stoichCoeffs = {[-1,+2],[-1,+1]}
+% eqnType : double, optional
+%     describes how the equation string should be interpreted (default 1):
 %
-%   NOTE: This function should be used with some care, since it doesn't
-%   care about bounds on the reactions. Changing a irreversible reaction to
-%   a reversible one (or the other way around) will only change the
-%   model.rev field and not the model.lb/model.ub fields. The reaction will
-%   therefore still be having the same reversibility because of the
-%   bounds. Use setParams to change the bounds.
+%     - 1 : the metabolites are matched to model.mets. New metabolites (if
+%       allowed) are added to "compartment".
+%     - 2 : the metabolites are matched to model.metNames and all
+%       metabolites are assigned to "compartment". Any new metabolites that
+%       are added will be assigned IDs "m1", "m2"... If IDs on the same form
+%       are already used in the model then the numbering will start from the
+%       highest used integer+1.
+%     - 3 : the metabolites are written as "metNames[compNames]". Only
+%       compartments in model.compNames are allowed. Any new metabolites
+%       that are added will be assigned IDs "m1", "m2"... If IDs on the same
+%       form are already used in the model then the numbering will start
+%       from the highest used integer+1.
+% compartment : char, optional
+%     a string with the compartment the metabolites should be placed in when
+%     using eqnType=2. Must match model.compNames (optional when eqnType=1 or
+%     eqnType=3).
+% allowNewMets : logical, optional
+%     true if the function is allowed to add new metabolites. It is highly
+%     recommended to first add any new metabolites with addMets rather than
+%     automatically through this function. addMets supports more annotation
+%     of metabolites, allows for the use of exchange metabolites, and using
+%     it reduces the risk of parsing errors (default false).
 %
-%   NOTE: When adding metabolites to a compartment where it previously
-%   doesn't exist, the function will copy any available information from
-%   the metabolite in another compartment.
+% Returns
+% -------
+% model : struct
+%     an updated model structure.
 %
-% Usage: model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
+% Examples
+% --------
+%     model = changeRxns(model, rxns, equations, eqnType, compartment, allowNewMets);
+%
+% Notes
+% -----
+% This function should be used with some care, since it doesn't care about
+% bounds on the reactions. Changing an irreversible reaction to a reversible
+% one (or the other way around) will only change the model.rev field and not
+% the model.lb/model.ub fields. The reaction will therefore still be having
+% the same reversibility because of the bounds. Use setParams to change the
+% bounds.
+%
+% When adding metabolites to a compartment where it previously doesn't
+% exist, the function will copy any available information from the metabolite
+% in another compartment.
 
 if nargin<4
     eqnType=1;

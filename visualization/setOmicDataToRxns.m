@@ -1,11 +1,21 @@
 function v1 = setOmicDataToRxns(omics, model)
-% USAGE:
-% v1 = setOmicDataToRxns(omics, model)
-% INPUTS:
-% omics     two column cell array with genes and log-fold expression changes
-% model     model structure
-% OUTPUTS:
-% v1       vector with expression changes in metabolic genes
+% setOmicDataToRxns  Map gene-level omics data onto model reactions.
+%
+% Parameters
+% ----------
+% omics : cell
+%     two-column cell array with genes and log-fold expression changes.
+% model : struct
+%     model structure.
+%
+% Returns
+% -------
+% v1 : double
+%     vector with expression changes in metabolic genes.
+%
+% Examples
+% --------
+%     v1 = setOmicDataToRxns(omics, model);
 
 j = 1;
 for i = 1:length(model.genes)

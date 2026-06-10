@@ -1,31 +1,41 @@
 function [model, hasChanged]=removeIdentifierPrefix(model,fields,forceRemove)
-% removeIdentifierPrefix
-%   This function removes identifier prefixes:
-%       "R_" for model.rxns, model.rxnNames and model.id,
-%       "M_" for model.mets and model.metNames,
-%       "C_" for model.comps;
-%       "G_" for model.genes (and also represented in model.grRules).
-%   By default, the prefixes are only removed if all entries in a
-%   particular field has the prefix. The prefixes might have been present
-%   because one or more identifiers do not start with a letter or _, which
-%   conflicts with SBML specifications.
+% removeIdentifierPrefix  Remove SBML-required identifier prefixes.
 %
-% Input:
-%   model           model whose identifiers should be modified
-%   fields          cell array with model field names from which the
-%                   identifiers should be removed, possible values: 
-%                   'rxns', 'mets', 'comps', 'genes', 'metNames', 
-%                   'rxnNames', 'id'. (optional, by default all listed
-%                   model fields will be checked).
-%   forceRemove     if prefixes should be removed even if not all entries
-%                   in a model field have the prefix (optional, default
-%                   false)
+% This function removes identifier prefixes:
 %
-% Output:
-%   model           modified model
-%   hasChanged      cell array with fields and prefixes that are removed
+%     "R_" for model.rxns, model.rxnNames and model.id,
+%     "M_" for model.mets and model.metNames,
+%     "C_" for model.comps;
+%     "G_" for model.genes (and also represented in model.grRules).
 %
-% Usage: model=removeIdentifierPrefix(model,fields,forceRemove)
+% By default, the prefixes are only removed if all entries in a particular
+% field have the prefix. The prefixes might have been present because one
+% or more identifiers do not start with a letter or _, which conflicts
+% with SBML specifications.
+%
+% Parameters
+% ----------
+% model : struct
+%     model whose identifiers should be modified.
+% fields : cell, optional
+%     cell array with model field names from which the identifiers should
+%     be removed, possible values: 'rxns', 'mets', 'comps', 'genes',
+%     'metNames', 'rxnNames', 'id' (default all listed model fields will
+%     be checked).
+% forceRemove : logical, optional
+%     if prefixes should be removed even if not all entries in a model
+%     field have the prefix (default false).
+%
+% Returns
+% -------
+% model : struct
+%     modified model.
+% hasChanged : cell
+%     cell array with fields and prefixes that are removed.
+%
+% Examples
+% --------
+%     model = removeIdentifierPrefix(model, fields, forceRemove);
 
 if nargin<2 || isempty(fields)
     fields = {'rxns','mets','comps','genes','metNames','rxnNames','id'};

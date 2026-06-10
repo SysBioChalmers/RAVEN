@@ -1,66 +1,76 @@
 function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,allowNetProduction,useModelConstraints,supressWarnings,rxnScores)
-% fillGaps
-%   Uses template model(s) to fill gaps in a model
+% fillGaps  Use template model(s) to fill gaps in a model.
 %
-%   model               a model structure that may contains gaps to be filled
-%   models              a cell array of reference models or a model structure.
-%                       The gaps will be filled using reactions from these models
-%   allowNetProduction  true if net production of all metabolites is
-%                       allowed. A reaction can be unable to carry flux because one of
-%                       the reactants is unavailable or because one of the
-%                       products can't be further processed. If this
-%                       parameter is true, only the first type of
-%                       unconnectivity is considered (optional, default false)
-%   useModelConstraints true if the constraints specified in the model
-%                       structure should be used. If false then reactions
-%                       included from the template model(s) so that as many
-%                       reactions as possible in model can carry flux
-%                       (optional, default false)
-%   supressWarnings     false if warnings should be displayed (optional, default
-%                       false)
-%   rxnScores           array with scores for each of the reactions in the
-%                       reference model(s). If more than one model is supplied,
-%                       then rxnScores should be a cell array of vectors.
-%                       The solver will try to maximize the sum of the
-%                       scores for the included reactions (optional, default
-%                       is -1 for all reactions)
+% This method works by merging the model with the reference model(s) and
+% checking which reactions can carry flux. All reactions that can't carry
+% flux are removed (cannotConnect). If useModelConstraints is false it
+% then solves the MILP problem of minimizing the number of active
+% reactions from the reference models that are required to have flux in
+% all the reactions in model. This requires that the input model has
+% exchange reactions present for the nutrients that are needed for its
+% metabolism. If useModelConstraints is true then the problem is to
+% include as few reactions as possible from the reference models in order
+% to satisfy the model constraints.
 %
-%   newConnected        cell array with the reactions that could be
-%                       connected. This is not calulated if
-%                       useModelConstraints is true
-%   cannotConnect       cell array with reactions that could not be
-%                       connected. This is not calculated if
-%                       useModelConstraints is true
-%   addedRxns           cell array with the reactions that were added from
-%                       "models"
-%   newModel            the model with reactions added to fill gaps
-%   exitFlag            1: optimal solution found
-%                      -1: no feasible solution found
-%                      -2: optimization time out
+% The intended use is that the user can attempt a general gap-filling
+% using useModelConstraints=false, or a more targeted gap-filling by
+% setting constraints in the model structure and then using
+% useModelConstraints=true. For example, to include reactions so that all
+% biomass components can be synthesized, the user could define a biomass
+% equation and set its lower bound to >0. Running this function with
+% useModelConstraints=true would then give the smallest set of reactions
+% that have to be included in order for the model to produce biomass.
 %
-%   This method works by merging the model to the reference model(s) and
-%   checking which reactions can carry flux. All reactions that can't
-%   carry flux are removed (cannotConnect).
-%   If useModelConstraints is false it then solves the MILP problem of
-%   minimizing the number of active reactions from the reference models
-%   that are required to have flux in all the reactions in model. This
-%   requires that the input model has exchange reactions present for the
-%   nutrients that are needed for its metabolism. If useModelConstraints is
-%   true then the problem is to include as few reactions as possible from
-%   the reference models in order to satisfy the model constraints.
-%   The intended use is that the user can attempt a general gap-filling using
-%   useModelConstraint=false or a more targeted gap-filling by setting
-%   constraints in the model structure and then use
-%   useModelConstraints=true. Say that the user want to include reactions
-%   so that all biomass components can be synthesized. He/she could then
-%   define a biomass equation and set the lower bound to >0. Running this
-%   function with useModelConstraints=true would then give the smallest set
-%   of reactions that have to be included in order for the model to produce
-%   biomass.
+% Parameters
+% ----------
+% model : struct
+%     a model structure that may contain gaps to be filled.
+% models : cell or struct
+%     a cell array of reference models or a model structure. The gaps will
+%     be filled using reactions from these models.
+% allowNetProduction : logical, optional
+%     true if net production of all metabolites is allowed. A reaction can
+%     be unable to carry flux because one of the reactants is unavailable
+%     or because one of the products can't be further processed. If true,
+%     only the first type of unconnectivity is considered (default false).
+% useModelConstraints : logical, optional
+%     true if the constraints specified in the model structure should be
+%     used. If false then reactions are included from the template
+%     model(s) so that as many reactions as possible in model can carry
+%     flux (default false).
+% supressWarnings : logical, optional
+%     false if warnings should be displayed (default false).
+% rxnScores : double or cell, optional
+%     array with scores for each of the reactions in the reference
+%     model(s). If more than one model is supplied, then rxnScores should
+%     be a cell array of vectors. The solver will try to maximize the sum
+%     of the scores for the included reactions (default is -1 for all
+%     reactions).
 %
-% Usage: [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=...
-%           fillGaps(model,models,allowNetProduction,useModelConstraints,...
-%           supressWarnings,rxnScores,params)
+% Returns
+% -------
+% newConnected : cell
+%     cell array with the reactions that could be connected. This is not
+%     calculated if useModelConstraints is true.
+% cannotConnect : cell
+%     cell array with reactions that could not be connected. This is not
+%     calculated if useModelConstraints is true.
+% addedRxns : cell
+%     cell array with the reactions that were added from "models".
+% newModel : struct
+%     the model with reactions added to fill gaps.
+% exitFlag : double
+%     exit status:
+%
+%     - 1 : optimal solution found
+%     - -1 : no feasible solution found
+%     - -2 : optimization time out
+%
+% Examples
+% --------
+%     [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=...
+%         fillGaps(model,models,allowNetProduction,useModelConstraints,...
+%         supressWarnings,rxnScores,params);
 
 %If the user only supplied a single template model
 if ~iscell(models)

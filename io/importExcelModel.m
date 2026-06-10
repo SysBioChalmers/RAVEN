@@ -1,79 +1,98 @@
 function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
-% importExcelModel
-%   Imports a constraint-based model from a Excel file
+% importExcelModel  Import a constraint-based model from an Excel file.
 %
-%   fileName      a Microsoft Excel file to import
-%   removeExcMets true if exchange metabolites should be removed. This is
-%                 needed to be able to run simulations, but it could also
-%                 be done using simplifyModel at a later stage (optional,
-%                 default true)
-%   printWarnings true if warnings should be printed (optional, default true)
-%   ignoreErrors  true if errors should be ignored. See below for details
-%                 (optional, default false)
+% Loads models in the RAVEN Toolbox Excel format.
 %
-%   model
-%       annotation       
-%           taxonomy	 String with the NCBI Taxonomy ID, as valid
-%                        identifiers.org annotation
-%           defaultLB	 Double	with the default lower bound values for reactions
-%           defaultUB	 Double	with the default upper bound values for reactions
-%           givenName	 String	with the name of the main model author
-%           familyName	 String	with the surname of the main model author
-%           email        String	with the e-mail address of the main model author
-%           organization String	with the organization of the main model author
-%           note         String	with additional comments about the model
-%       name      name of model
-%       id               model ID
-%       rxns             reaction ids
-%       mets             metabolite ids
-%       S                stoichiometric matrix
-%       lb               lower bounds
-%       ub               upper bounds
-%       rev              reversibility vector
-%       c                objective coefficients
-%       b                equality constraints for the metabolite equations
-%       comps            compartment ids
-%       compNames        compartment names
-%       compOutside      the id (as in comps) for the compartment
-%                        surrounding each of the compartments
-%       compMiriams      structure with MIRIAM information about the
-%                        compartments
-%       rxnNames         reaction name
-%       rxnComps         compartments for reactions
-%       grRules          reaction to gene rules in text form
-%       rxnGeneMat       reaction-to-gene mapping in sparse matrix form
-%       subSystems       subsystem name for each reaction
-%       eccodes          EC-codes for the reactions
-%       rxnMiriams       structure with MIRIAM information about the reactions
-%       rxnNotes         reaction notes
-%       rxnReferences    reaction references
-%       rxnConfidenceScores reaction confidence scores
-%       genes            list of all genes
-%       geneComps        compartments for genes
-%       geneMiriams      structure with MIRIAM information about the genes
-%       geneShortNames   gene alternative names (e.g. ERG10)
-%       metNames         metabolite name
-%       metComps         compartments for metabolites
-%       inchis           InChI-codes for metabolites
-%       metFormulas      metabolite chemical formula
-%       metMiriams       structure with MIRIAM information about the metabolites
-%       metCharges       metabolite charge
-%       unconstrained    true if the metabolite is an exchange metabolite
+% Parameters
+% ----------
+% fileName : char
+%     a Microsoft Excel file to import.
+% removeExcMets : logical, optional
+%     true if exchange metabolites should be removed. This is needed to be
+%     able to run simulations, but it could also be done using
+%     simplifyModel at a later stage (default true).
+% printWarnings : logical, optional
+%     true if warnings should be printed (default true).
+% ignoreErrors : logical, optional
+%     true if errors should be ignored. See Notes for details (default
+%     false).
 %
-%   Loads models in the RAVEN Toolbox Excel format. A number of consistency
-%   checks are performed in order to ensure that the model is valid. These
-%   can be ignored by putting ignoreErrors to true. However, this is highly
-%   advised against, as it can result in errors in simulations or other
-%   functionalities. The RAVEN Toolbox is made to function only on consistent
-%   models, and the only checks performed are when the model is imported.
+% Returns
+% -------
+% model : struct
+%     imported model structure with fields:
 %
-%   NOTE: Most errors are checked for by checkModelStruct, but some
-%   are checked for in this function as well. Those are ones which relate
-%   to missing model elements and so on, and which would make it impossible
-%   to construct the model structure. Those errors cannot be ignored by
-%   setting ignoreErrors to true.
+%     - annotation : structure with model metadata, with fields:
 %
-% Usage: model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
+%       - taxonomy : String with the NCBI Taxonomy ID, as valid
+%         identifiers.org annotation
+%       - defaultLB : Double with the default lower bound values for
+%         reactions
+%       - defaultUB : Double with the default upper bound values for
+%         reactions
+%       - givenName : String with the name of the main model author
+%       - familyName : String with the surname of the main model author
+%       - email : String with the e-mail address of the main model author
+%       - organization : String with the organization of the main model
+%         author
+%       - note : String with additional comments about the model
+%
+%     - name : name of model
+%     - id : model ID
+%     - rxns : reaction ids
+%     - mets : metabolite ids
+%     - S : stoichiometric matrix
+%     - lb : lower bounds
+%     - ub : upper bounds
+%     - rev : reversibility vector
+%     - c : objective coefficients
+%     - b : equality constraints for the metabolite equations
+%     - comps : compartment ids
+%     - compNames : compartment names
+%     - compOutside : the id (as in comps) for the compartment surrounding
+%       each of the compartments
+%     - compMiriams : structure with MIRIAM information about the
+%       compartments
+%     - rxnNames : reaction name
+%     - rxnComps : compartments for reactions
+%     - grRules : reaction to gene rules in text form
+%     - rxnGeneMat : reaction-to-gene mapping in sparse matrix form
+%     - subSystems : subsystem name for each reaction
+%     - eccodes : EC-codes for the reactions
+%     - rxnMiriams : structure with MIRIAM information about the reactions
+%     - rxnNotes : reaction notes
+%     - rxnReferences : reaction references
+%     - rxnConfidenceScores : reaction confidence scores
+%     - genes : list of all genes
+%     - geneComps : compartments for genes
+%     - geneMiriams : structure with MIRIAM information about the genes
+%     - geneShortNames : gene alternative names (e.g. ERG10)
+%     - metNames : metabolite name
+%     - metComps : compartments for metabolites
+%     - inchis : InChI-codes for metabolites
+%     - metFormulas : metabolite chemical formula
+%     - metMiriams : structure with MIRIAM information about the metabolites
+%     - metCharges : metabolite charge
+%     - unconstrained : true if the metabolite is an exchange metabolite
+%
+% Examples
+% --------
+%     model = importExcelModel(fileName, removeExcMets, printWarnings, ignoreErrors);
+%
+% Notes
+% -----
+% A number of consistency checks are performed in order to ensure that the
+% model is valid. These can be ignored by putting ignoreErrors to true.
+% However, this is highly advised against, as it can result in errors in
+% simulations or other functionalities. The RAVEN Toolbox is made to
+% function only on consistent models, and the only checks performed are
+% when the model is imported.
+%
+% Most errors are checked for by checkModelStruct, but some are checked for
+% in this function as well. Those are ones which relate to missing model
+% elements and so on, and which would make it impossible to construct the
+% model structure. Those errors cannot be ignored by setting ignoreErrors
+% to true.
 fileName=char(fileName);
 
 if nargin<2

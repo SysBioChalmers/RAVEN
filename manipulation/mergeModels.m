@@ -1,28 +1,35 @@
 function model=mergeModels(models,metParam,supressWarnings,copyToComps)
-% mergeModels
-%   Merges models into one model structure. Reactions are added without any
-%   checks, so duplicate reactions might appear. Metabolites are matched by
-%   their name and compartment (metaboliteName[comp]), while genes are
-%   matched by their name.
+% mergeModels  Merge models into one model structure.
 %
-% Input:
-%   models          a cell array with model structures
-%   metParam        string metabolite name ('metNames') or ID ('mets') are
-%                   used for matching (optional, default 'metNames')
-%   supressWarnings logical whether warnings should be supressed (optional,
-%                   default false)
-%   copyToComps     logical whether mergeModels is run via copyToComps
-%                   (optional, default false)
+% Merges models into one model structure. Reactions are added without any
+% checks, so duplicate reactions might appear. Metabolites are matched by
+% their name and compartment (metaboliteName[comp]), while genes are matched
+% by their name.
 %
-% Output:
-%   model           a model structure with the merged model. Follows the
-%                   structure of normal models but also has 'rxnFrom/
-%                   metFrom/geneFrom' fields to indicate from which model
-%                   each reaction/metabolite/gene was taken. If the model
-%                   already has 'rxnFrom/metFrom/geneFrom' fields, then
-%                   these fields are not modified.
+% Parameters
+% ----------
+% models : cell
+%     a cell array with model structures.
+% metParam : char, optional
+%     string, metabolite name ('metNames') or ID ('mets') are used for
+%     matching (default 'metNames').
+% supressWarnings : logical, optional
+%     whether warnings should be supressed (default false).
+% copyToComps : logical, optional
+%     whether mergeModels is run via copyToComps (default false).
 %
-% Usage: model=mergeModels(models)
+% Returns
+% -------
+% model : struct
+%     a model structure with the merged model. Follows the structure of
+%     normal models but also has 'rxnFrom/metFrom/geneFrom' fields to
+%     indicate from which model each reaction/metabolite/gene was taken. If
+%     the model already has 'rxnFrom/metFrom/geneFrom' fields, then these
+%     fields are not modified.
+%
+% Examples
+% --------
+%     model = mergeModels(models);
 
 arguments
     models;

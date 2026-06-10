@@ -1,23 +1,37 @@
 function model = scaleBiomassFraction(model, biomassConfig, componentName, newValue, balanceOut)
-% scaleBiomassFraction
-%   Rescale a biomass component to a target g/gDW value, optionally
-%   balancing a second component so the total biomass mass stays at
-%   1 g/gDW. Mirrors raven_python.biomass.scale_biomass and yeast-GEM's
-%   legacy scaleBioMass.
+% scaleBiomassFraction  Rescale a biomass component to a target value.
 %
-%   Inputs:
-%       model           RAVEN model struct.
-%       biomassConfig   struct (see getBiomassFractions).
-%       componentName   Component to rescale.
-%       newValue        Target fraction in g/gDW.
-%       balanceOut      (opt) Second component name to adjust so the
-%                       biomass total remains 1 g/gDW. Empty / omit
-%                       to skip balancing.
+% Rescale a biomass component to a target g/gDW value, optionally
+% balancing a second component so the total biomass mass stays at 1 g/gDW.
+% Mirrors raven_python.biomass.scale_biomass and yeast-GEM's legacy
+% scaleBioMass.
 %
-%   Output:
-%       model           Modified model.
+% Parameters
+% ----------
+% model : struct
+%     RAVEN model struct.
+% biomassConfig : struct
+%     Struct (see getBiomassFractions).
+% componentName : char
+%     Component to rescale.
+% newValue : double
+%     Target fraction in g/gDW.
+% balanceOut : char, optional
+%     Second component name to adjust so the biomass total remains 1
+%     g/gDW. Empty / omit to skip balancing.
 %
-% Usage: model = scaleBiomassFraction(model, biomassConfig, 'protein', 0.5, 'carbohydrate')
+% Returns
+% -------
+% model : struct
+%     Modified model.
+%
+% Examples
+% --------
+%     model = scaleBiomassFraction(model, biomassConfig, 'protein', 0.5, 'carbohydrate');
+%
+% See also
+% --------
+% getBiomassFractions
 
 if nargin < 5
     balanceOut = '';

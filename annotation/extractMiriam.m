@@ -1,30 +1,37 @@
 function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)
-% extractMiriam
-%   This function unpacks the information kept in metMiriams, rxnMiriams,
-%   geneMiriams or compMiriams to make the annotation more
-%   human-readable. The obtained cell array looks the same like in Excel
-%   format, just the columns are split to have particular miriam name in
-%   corresponding column
+% extractMiriam  Unpack MIRIAM annotations into a human-readable table.
 %
-%   modelMiriams                a miriam structure (e.g. model.metMiriams)
-%                               for one or multiple metabolites
-%   miriamNames                 cell array with miriam names to be
-%                               extracted (optional, default 'all', meaning
-%                               that annotation for all miriam names found
-%                               in modelMiriams will be extracted)
+% This function unpacks the information kept in metMiriams, rxnMiriams,
+% geneMiriams or compMiriams to make the annotation more human-readable.
+% The obtained cell array looks the same as in Excel format, just the
+% columns are split to have a particular miriam name in the corresponding
+% column.
 %
-%   miriams                     a cell array with extracted miriams. if
-%                               several miriam names are requested, the
-%                               corresponding information is saved in
-%                               different columns. if there are several ids
-%                               available for the same entity (metabolite,
-%                               gene, reaction or compartment), they are
-%                               concatenated into one column. the total
-%                               number of column represent the number of
-%                               unique miriam names per entity
-%   extractedMiriamNames        cell array with extracted miriam names
+% Parameters
+% ----------
+% modelMiriams : cell
+%     a miriam structure (e.g. model.metMiriams) for one or multiple
+%     metabolites.
+% miriamNames : cell or char, optional
+%     cell array with miriam names to be extracted (default 'all', meaning
+%     that annotation for all miriam names found in modelMiriams will be
+%     extracted).
 %
-% Usage: miriam=extractMiriam(modelMiriams,miriamName)
+% Returns
+% -------
+% miriams : cell
+%     a cell array with extracted miriams. If several miriam names are
+%     requested, the corresponding information is saved in different
+%     columns. If there are several ids available for the same entity
+%     (metabolite, gene, reaction or compartment), they are concatenated
+%     into one column. The total number of columns represents the number
+%     of unique miriam names per entity.
+% extractedMiriamNames : cell
+%     cell array with extracted miriam names.
+%
+% Examples
+% --------
+%     [miriams, extractedMiriamNames] = extractMiriam(modelMiriams, miriamNames);
 
 if nargin<2 || (ischar(miriamNames) && strcmp(miriamNames,'all'))
     extractAllTypes=true;

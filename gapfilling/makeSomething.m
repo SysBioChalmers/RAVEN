@@ -1,46 +1,57 @@
 function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFluxes,allowExcretion,params,ignoreIntBounds)
-% makeSomething
-%   Tries to excrete any metabolite using as few reactions as possible.
-%   The intended use is when you want to make sure that you model cannot
-%   synthesize anything from nothing. It is then a faster way than to use
-%   checkProduction or canProduce
+% makeSomething  Excrete any metabolite using as few reactions as possible.
 %
-%   model           a model structure
-%   ignoreMets      either a cell array of metabolite IDs, a logical vector
-%                   with the same number of elements as metabolites in the model,
-%                   of a vector of indexes for metabolites to exclude from
-%                   this analysis (optional, default [])
-%   isNames         true if the supplied mets represent metabolite names
-%                   (as opposed to IDs). This is a way to delete
-%                   metabolites in several compartments at once without
-%                   knowing the exact IDs. This only works if ignoreMets
-%                   is a cell array (optional, default false)
-%   minNrFluxes     solves the MILP problem of minimizing the number of
-%                   fluxes instead of the sum. Slower, but can be
-%                   used if the sum gives too many fluxes (optional, default
-%                   false)
-%   allowExcretion  allow for excretion of all other metabolites (optional,
-%                   default true)
-%   params          *obsolete option*
-%   ignoreIntBounds	true if internal bounds (including reversibility)
-%                   should be ignored. Exchange reactions are not affected.
-%                   This can be used to find unbalanced solutions which are
-%                   not possible using the default constraints (optional,
-%                   default false)
+% Tries to excrete any metabolite using as few reactions as possible. The
+% intended use is when you want to make sure that you model cannot
+% synthesize anything from nothing. It is then a faster way than to use
+% checkProduction or canProduce.
 %
-%   solution        flux vector for the solution
-%   metabolite      the index of the metabolite(s) which was excreted. If
-%                   possible only one metabolite is reported, but there are
-%                   situations where metabolites can only be excreted in
-%                   pairs (or more)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% ignoreMets : cell or logical or double, optional
+%     either a cell array of metabolite IDs, a logical vector with the same
+%     number of elements as metabolites in the model, or a vector of indexes
+%     for metabolites to exclude from this analysis (default []).
+% isNames : logical, optional
+%     true if the supplied mets represent metabolite names (as opposed to
+%     IDs). This is a way to delete metabolites in several compartments at
+%     once without knowing the exact IDs. This only works if ignoreMets is a
+%     cell array (default false).
+% minNrFluxes : logical, optional
+%     solves the MILP problem of minimizing the number of fluxes instead of
+%     the sum. Slower, but can be used if the sum gives too many fluxes
+%     (default false).
+% allowExcretion : logical, optional
+%     allow for excretion of all other metabolites (default true).
+% params : struct, optional
+%     *obsolete option*.
+% ignoreIntBounds : logical, optional
+%     true if internal bounds (including reversibility) should be ignored.
+%     Exchange reactions are not affected. This can be used to find
+%     unbalanced solutions which are not possible using the default
+%     constraints (default false).
 %
-%   NOTE: This works by forcing at least 1 unit of "any metabolites" to be
-%   produced and then minimize for the sum of fluxes. If more than one
-%   metabolite is produced, it picks one of them to be produced and then
-%   minimizes for the sum of fluxes.
+% Returns
+% -------
+% solution : double
+%     flux vector for the solution.
+% metabolite : double
+%     the index of the metabolite(s) which was excreted. If possible only
+%     one metabolite is reported, but there are situations where metabolites
+%     can only be excreted in pairs (or more).
 %
-% Usage: [solution, metabolite]=makeSomething(model,ignoreMets,isNames,...
-%           minNrFluxes,allowExcretion,params,ignoreIntBounds)
+% Examples
+% --------
+%     [solution, metabolite] = makeSomething(model, ignoreMets);
+%
+% Notes
+% -----
+% This works by forcing at least 1 unit of "any metabolites" to be produced
+% and then minimize for the sum of fluxes. If more than one metabolite is
+% produced, it picks one of them to be produced and then minimizes for the
+% sum of fluxes.
 
 if nargin<2
     ignoreMets=[];

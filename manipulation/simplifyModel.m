@@ -1,40 +1,55 @@
 function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,...
     deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)
-% simplifyModel
-%   Simplifies a model by deleting reactions/metabolites
+% simplifyModel  Simplify a model by deleting reactions and metabolites.
 %
-%   model                 a model structure
-%   deleteUnconstrained   delete metabolites marked as unconstrained (optional, default true)
-%   deleteDuplicates      delete all but one of duplicate reactions (optional, default false)
-%   deleteZeroInterval    delete reactions that are constrained to zero flux (optional, default false)
-%   deleteInaccessible    delete dead end reactions (optional, default false)
-%   deleteMinMax          delete reactions that cannot carry a flux by trying
-%                         to minimize/maximize the flux through that
-%                         reaction. May be time consuming (optional, default false)
-%   groupLinear           group linearly dependent pathways (optional, default false)
-%   constrainReversible   check if there are reversible reactions which can
-%                         only carry flux in one direction, and if so
-%                         constrain them to be irreversible. This tends to
-%                         allow for more reactions grouped when using
-%                         groupLinear (optional, default false)
-%   reservedRxns          cell array with reaction IDs that are not allowed to be
-%                         removed (optional)
-%   suppressWarnings      true if warnings should be suppressed (optional,
-%                         default false)
+% This function is for reducing the model size by removing reactions and
+% associated metabolites that cannot carry flux. It can also be used for
+% identifying different types of gaps.
 %
-%   reducedModel          an updated model structure
-%   deletedReactions      a cell array with the IDs of all deleted reactions
-%   deletedMetabolites    a cell array with the IDs of all deleted
-%                         metabolites
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% deleteUnconstrained : logical, optional
+%     delete metabolites marked as unconstrained (default true).
+% deleteDuplicates : logical, optional
+%     delete all but one of duplicate reactions (default false).
+% deleteZeroInterval : logical, optional
+%     delete reactions that are constrained to zero flux (default false).
+% deleteInaccessible : logical, optional
+%     delete dead end reactions (default false).
+% deleteMinMax : logical, optional
+%     delete reactions that cannot carry a flux by trying to
+%     minimize/maximize the flux through that reaction. May be time
+%     consuming (default false).
+% groupLinear : logical, optional
+%     group linearly dependent pathways (default false).
+% constrainReversible : logical, optional
+%     check if there are reversible reactions which can only carry flux in
+%     one direction, and if so constrain them to be irreversible. This
+%     tends to allow for more reactions grouped when using groupLinear
+%     (default false).
+% reservedRxns : cell, optional
+%     cell array with reaction IDs that are not allowed to be removed
+%     (default none).
+% suppressWarnings : logical, optional
+%     true if warnings should be suppressed (default false).
 %
-%   This function is for reducing the model size by removing
-%   reactions and associated metabolites that cannot carry flux. It can also
-%   be used for identifying different types of gaps.
+% Returns
+% -------
+% reducedModel : struct
+%     an updated model structure.
+% deletedReactions : cell
+%     a cell array with the IDs of all deleted reactions.
+% deletedMetabolites : cell
+%     a cell array with the IDs of all deleted metabolites.
 %
-% Usage: [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,...
-%           deleteUnconstrained, deleteDuplicates, deleteZeroInterval,...
-%           deleteInaccessible, deleteMinMax, groupLinear,...
-%           constrainReversible, reservedRxns, suppressWarnings)
+% Examples
+% --------
+%     [reducedModel, deletedReactions, deletedMetabolites] = ...
+%         simplifyModel(model, deleteUnconstrained, deleteDuplicates, ...
+%         deleteZeroInterval, deleteInaccessible, deleteMinMax, ...
+%         groupLinear, constrainReversible, reservedRxns, suppressWarnings);
 
 if nargin<2
     deleteUnconstrained=true;

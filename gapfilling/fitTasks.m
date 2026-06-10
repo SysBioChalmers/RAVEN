@@ -1,40 +1,46 @@
 function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure)
-% fitTasks
-%   Fills gaps in a model by including reactions from a reference model,
-%   so that the resulting model can perform all the tasks in a task list
+% fitTasks  Fill gaps in a model so it can perform a list of tasks.
 %
-%   Input:
-%   model           model structure
-%   refModel        reference model from which to include reactions
-%   inputFile       a task list in Excel format. See the function
-%                   parseTaskList for details (optional if taskStructure is
-%                   supplied)
-%   printOutput     true if the results of the test should be displayed
-%                   (optional, default true)
-%   rxnScores       scores for each of the reactions in the reference
-%                   model. Only negative scores are allowed. The solver will
-%                   try to maximize the sum of the scores for the included
-%                   reactions (optional, default is -1 for all reactions)
-%   taskStructure   structure with the tasks, as from parseTaskList. If
-%                   this is supplied then inputFile is ignored (optional)
+% Fills gaps in a model by including reactions from a reference model, so
+% that the resulting model can perform all the tasks in a task list. The
+% gap-filling is done in a task-by-task manner, rather than solving for
+% all tasks at once. This means that the order of the tasks could
+% influence the result.
 %
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% refModel : struct
+%     reference model from which to include reactions.
+% inputFile : char, optional
+%     a task list in Excel format. See the function parseTaskList for
+%     details (optional if taskStructure is supplied).
+% printOutput : logical, optional
+%     true if the results of the test should be displayed (default true).
+% rxnScores : double, optional
+%     scores for each of the reactions in the reference model. Only
+%     negative scores are allowed. The solver will try to maximize the sum
+%     of the scores for the included reactions (default is -1 for all
+%     reactions).
+% taskStructure : struct, optional
+%     structure with the tasks, as from parseTaskList. If supplied then
+%     inputFile is ignored.
 %
-%   Output:
-%   outModel        model structure with reactions added to perform the
-%                   tasks
-%   addedRxns       MxN matrix with the added reactions (M) from refModel
-%                   for each task (N). An element is true if the corresponding
-%                   reaction is added in the corresponding task.
-%                   Failed tasks and SHOULD FAIL tasks are ignored
+% Returns
+% -------
+% outModel : struct
+%     model structure with reactions added to perform the tasks.
+% addedRxns : logical
+%     MxN matrix with the added reactions (M) from refModel for each task
+%     (N). An element is true if the corresponding reaction is added in
+%     the corresponding task. Failed tasks and SHOULD FAIL tasks are
+%     ignored.
 %
-%   This function fills gaps in a model by using a reference model, so
-%   that the resulting model can perform a list of metabolic tasks. The
-%   gap-filling is done in a task-by-task manner, rather than solving for
-%   all tasks at once. This means that the order of the tasks could influence
-%   the result.
-%
-% Usage: [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...
-%           rxnScores,taskStructure)
+% Examples
+% --------
+%     [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...
+%         rxnScores,taskStructure);
 
 if nargin<4
     printOutput=true;

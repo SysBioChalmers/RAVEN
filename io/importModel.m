@@ -1,69 +1,78 @@
 function model=importModel(fileName,removeExcMets,removePrefix,supressWarnings)
-% importModel
-%   Import a constraint-based model from an SBML file.
+% importModel  Import a constraint-based model from an SBML file.
 %
-% Input:
-%   fileName        a SBML file to import. A dialog window will open if
-%                   no file name is specified.
-%   removeExcMets   true if exchange metabolites should be removed. This is
-%                   needed to be able to run simulations, but it could also
-%                   be done using simplifyModel at a later stage (optional,
-%                   default true)
-%   removePrefix    true if identifier prefixes should be removed when
-%                   loading the model: G_ for genes, R_ for reactions,
-%                   M_ for metabolites, and C_ for compartments. These are
-%                   only removed if all identifiers of a certain type
-%                   contain the prefix. (optional, default true)
-%   supressWarnings true if warnings regarding the model structure should
-%                   be supressed (optional, default false)
+% Parameters
+% ----------
+% fileName : char
+%     a SBML file to import. A dialog window will open if no file name is
+%     specified.
+% removeExcMets : logical, optional
+%     true if exchange metabolites should be removed. This is needed to be
+%     able to run simulations, but it could also be done using
+%     simplifyModel at a later stage (default true).
+% removePrefix : logical, optional
+%     true if identifier prefixes should be removed when loading the model:
+%     G_ for genes, R_ for reactions, M_ for metabolites, and C_ for
+%     compartments. These are only removed if all identifiers of a certain
+%     type contain the prefix (default true).
+% supressWarnings : logical, optional
+%     true if warnings regarding the model structure should be supressed
+%     (default false).
 %
-% Output:
-%   model
-%       id               model ID
-%       name             name of model contents
-%       annotation       additional information about model
-%       rxns             reaction ids
-%       mets             metabolite ids
-%       S                stoichiometric matrix
-%       lb               lower bounds
-%       ub               upper bounds
-%       rev              reversibility vector
-%       c                objective coefficients
-%       b                equality constraints for the metabolite equations
-%       comps            compartment ids
-%       compNames        compartment names
-%       compOutside      the id (as in comps) for the compartment
-%                        surrounding each of the compartments
-%       compMiriams      structure with MIRIAM information about the
-%                        compartments
-%       rxnNames         reaction description
-%       rxnComps         compartments for reactions
-%       grRules          reaction to gene rules in text form
-%       rxnGeneMat       reaction-to-gene mapping in sparse matrix form
-%       subSystems       subsystem name for each reaction
-%       eccodes          EC-codes for the reactions
-%       rxnMiriams       structure with MIRIAM information about the reactions
-%       rxnNotes         reaction notes
-%       rxnReferences    reaction references
-%       rxnConfidenceScores reaction confidence scores
-%       genes            list of all genes
-%       geneComps        compartments for genes
-%       geneMiriams      structure with MIRIAM information about the genes
-%       geneShortNames   gene alternative names (e.g. ERG10)
-%       proteins         protein associated to each gene
-%       metNames         metabolite description
-%       metComps         compartments for metabolites
-%       inchis           InChI-codes for metabolites
-%       metFormulas      metabolite chemical formula
-%       metMiriams       structure with MIRIAM information about the metabolites
-%       metCharges       metabolite charge
-%       unconstrained    true if the metabolite is an exchange metabolite
+% Returns
+% -------
+% model : struct
+%     imported model structure with fields:
 %
-% Note: A number of consistency checks are performed in order to ensure that the
+%     - id : model ID
+%     - name : name of model contents
+%     - annotation : additional information about model
+%     - rxns : reaction ids
+%     - mets : metabolite ids
+%     - S : stoichiometric matrix
+%     - lb : lower bounds
+%     - ub : upper bounds
+%     - rev : reversibility vector
+%     - c : objective coefficients
+%     - b : equality constraints for the metabolite equations
+%     - comps : compartment ids
+%     - compNames : compartment names
+%     - compOutside : the id (as in comps) for the compartment surrounding
+%       each of the compartments
+%     - compMiriams : structure with MIRIAM information about the
+%       compartments
+%     - rxnNames : reaction description
+%     - rxnComps : compartments for reactions
+%     - grRules : reaction to gene rules in text form
+%     - rxnGeneMat : reaction-to-gene mapping in sparse matrix form
+%     - subSystems : subsystem name for each reaction
+%     - eccodes : EC-codes for the reactions
+%     - rxnMiriams : structure with MIRIAM information about the reactions
+%     - rxnNotes : reaction notes
+%     - rxnReferences : reaction references
+%     - rxnConfidenceScores : reaction confidence scores
+%     - genes : list of all genes
+%     - geneComps : compartments for genes
+%     - geneMiriams : structure with MIRIAM information about the genes
+%     - geneShortNames : gene alternative names (e.g. ERG10)
+%     - proteins : protein associated to each gene
+%     - metNames : metabolite description
+%     - metComps : compartments for metabolites
+%     - inchis : InChI-codes for metabolites
+%     - metFormulas : metabolite chemical formula
+%     - metMiriams : structure with MIRIAM information about the metabolites
+%     - metCharges : metabolite charge
+%     - unconstrained : true if the metabolite is an exchange metabolite
+%
+% Examples
+% --------
+%     model = importModel(fileName, removeExcMets, removePrefix, supressWarnings);
+%
+% Notes
+% -----
+% A number of consistency checks are performed in order to ensure that the
 % model is valid. Take these warnings seriously and modify the model
 % structure to solve them.
-%
-% Usage: model = importModel(fileName, removeExcMets, removePrefix, supressWarnings)
 
 if nargin<1 || isempty(fileName)
     [fileName, pathName] = uigetfile({'*.xml;*.sbml'}, 'Please select the model file');

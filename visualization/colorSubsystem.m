@@ -1,24 +1,28 @@
 function newMap = colorSubsystem(map, model, subsystem, color)
-% Modified from colorSubsystemCD as distributed through COBRA Toolbox
-% https://github.com/opencobra/cobratoolbox/blob/src/visualization/metabolicCartography/colorSubsystemCD.m
+% colorSubsystem  Color every reaction in a specific subsystem.
 %
-% Color every reaction in a specific subsystem
+% Modified from colorSubsystemCD as distributed through the COBRA Toolbox
+% (https://github.com/opencobra/cobratoolbox/blob/src/visualization/metabolicCartography/colorSubsystemCD.m).
 %
-% USAGE:
+% Parameters
+% ----------
+% map : struct
+%     file from CellDesigner parsed to MATLAB format.
+% model : struct
+%     COBRA model structure.
+% subsystem : char
+%     name of a subsystem as a string.
+% color : char, optional
+%     color desired for reactions, in capitals (default 'RED').
 %
-%   [newMap] = colorSubsystemCD(map, model, subsystem, color, areaWidth);
+% Returns
+% -------
+% newMap : struct
+%     MATLAB structure of map with reaction modifications.
 %
-% INPUTS:
-%   map:            File from CellDesigner parsed to MATLAB format
-%   model:          COBRA model structure
-%   subsystem:      Name of a subsystem as a String
-%
-% OPTIONAL INPUTS:
-%   color:          Color desired for reactions in CAPITALS
-%   areaWidth:          Width desired for reactions
-%
-% OUTPUT:
-%   newMap          MATLAB structure of map with reaction modifications
+% Examples
+% --------
+%     newMap = colorSubsystem(map, model, subsystem, color);
 if nargin < 4
     color = 'RED';
 end

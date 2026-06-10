@@ -1,21 +1,31 @@
 function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)
-% removeGenes
-%   Deletes a set of genes from a model
+% removeGenes  Delete a set of genes from a model.
 %
-%   model                   a model structure
-%   genesToRemove           either a cell array of gene IDs, a logical vector
-%                           with the same number of elements as genes in the model,
-%                           or a vector of indexes to remove
-%   removeUnusedMets        remove metabolites that are no longer in use (optional, default
-%                           false)
-%   removeBlockedRxns       remove reactions that get blocked after deleting the genes
-%                           (optional, default false)
-%   standardizeRules        format gene rules to be compliant with standard format
-%                           (optional, default true)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% genesToRemove : cell or logical or double
+%     either a cell array of gene IDs, a logical vector with the same number
+%     of elements as genes in the model, or a vector of indexes to remove.
+% removeUnusedMets : logical, optional
+%     remove metabolites that are no longer in use (default false).
+% removeBlockedRxns : logical, optional
+%     remove reactions that get blocked after deleting the genes (default
+%     false).
+% standardizeRules : logical, optional
+%     format gene rules to be compliant with the standard format (default
+%     true).
 %
-%   reducedModel            an updated model structure
+% Returns
+% -------
+% reducedModel : struct
+%     an updated model structure.
 %
-% Usage: reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns)
+% Examples
+% --------
+%     reducedModel = removeGenes(model, genesToRemove, removeUnusedMets, ...
+%                        removeBlockedRxns, standardizeRules);
 
 if nargin<3
     removeUnusedMets = false;

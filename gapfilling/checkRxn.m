@@ -1,26 +1,38 @@
 function report=checkRxn(model,rxn,cutoff,revDir,printReport)
-% checkRxn
-%   Checks which reactants in a reaction that can be synthesized and which
-%   products that can be consumed. This is primarily for debugging
-%   reactions which cannot have flux
+% checkRxn  Check which reactants can be synthesized and products consumed.
 %
-%   model       a model structure
-%   rxn         the id of one reaction to check
-%   cutoff      minimal flux for successful production/consumption (optional,
-%               default 10^-7)
-%   revDir      true if the reaction should be reversed (optional, default
-%               false)
-%   printReport print a report (optional, default true)
+% Checks which reactants in a reaction that can be synthesized and which
+% products that can be consumed. This is primarily for debugging reactions
+% which cannot have flux.
 %
-%   report
-%       reactants   array with reactant indexes
-%       canMake     boolean array, true if the corresponding reactant can
-%                   be synthesized by the rest of the metabolic network
-%       products    array with product indexes
-%       canConsume  boolean array, true if the corresponding product can
-%                   be consumed by the rest of the metabolic network
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% rxn : char
+%     the id of one reaction to check.
+% cutoff : double, optional
+%     minimal flux for successful production/consumption (default 10^-7).
+% revDir : logical, optional
+%     true if the reaction should be reversed (default false).
+% printReport : logical, optional
+%     print a report (default true).
 %
-% Usage: report=checkRxn(model,rxn,cutoff,revDir,printReport)
+% Returns
+% -------
+% report : struct
+%     report with fields:
+%
+%     - reactants : array with reactant indexes
+%     - canMake : boolean array, true if the corresponding reactant can be
+%       synthesized by the rest of the metabolic network
+%     - products : array with product indexes
+%     - canConsume : boolean array, true if the corresponding product can be
+%       consumed by the rest of the metabolic network
+%
+% Examples
+% --------
+%     report = checkRxn(model, rxn, cutoff, revDir, printReport);
 
 rxn=char(rxn);
 if nargin<3

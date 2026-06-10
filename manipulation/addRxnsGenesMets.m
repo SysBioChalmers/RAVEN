@@ -1,48 +1,58 @@
 function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)
-% addRxnsGenesMets
-%   Copies reactions from a source model to a new model, including
-%   (new) metabolites and genes
+% addRxnsGenesMets  Copy reactions from a source model into another model.
 %
-%   model           draft model where reactions should be copied to
-%   sourceModel     model where reactions and metabolites are sourced from
-%   rxns            cell array with reaction IDs (from source model). Can also
-%                   be string if only one reaction is added
-%   addGene         three options:
-%                   false   no genes are annotated to the new reactions
-%                   true    grRules ared copied from the sourceModel and
-%                           new genes are added when required
-%                   string or cell array
-%                           new grRules are specified as string or cell
-%                           array, and any new genes are added when
-%                           required
-%                   (optional, default false)
-%   rxnNote         cell array with strings explaining why reactions were copied
-%                   to the model, to be included as newModel.rxnNotes. Can also
-%                   be string if same rxnNotes should be added for each new
-%                   reaction, or only one reaction is to be added (optional, default
-%                   'Added via addRxnsAndMets()')
-%   confidence      integer specifying confidence score for all reactions.
-%                   4:  biochemical data: direct evidence from enzymes
-%                       assays
-%                   3:  genetic data: knockout/-in or overexpression
-%                       analysis
-%                   2:  physiological data: indirect evidence, e.g.
-%                       secretion products or defined medium requirement
-%                       sequence data: genome annotation
-%                   1:  modeling data: required for functional model,
-%                       hypothetical reaction
-%                   0:  no evidence
-%                   following doi:10.1038/nprot.2009.203 (optional, default 0)
+% Copies reactions from a source model to a new model, including (new)
+% metabolites and genes.
 %
-%   newModel        an updated model structure
+% This function only works if the draft model and source model follow the
+% same metabolite and compartment naming convention. Metabolites are only
+% matched by metaboliteName[compartment]. Useful if one wants to copy
+% additional reactions from source to draft after getModelFromHomology was
+% used involving the same models.
 %
-% 	This function only works if the draft model and source model follow
-%	the same metabolite and compartment naming convention. Metabolites are
-%	only matched by metaboliteName[compartment]. Useful if one wants to copy
-%	additional reactions from source to draft after getModelFromHomology was
-%	used involving the same models.
+% Parameters
+% ----------
+% model : struct
+%     draft model where reactions should be copied to.
+% sourceModel : struct
+%     model where reactions and metabolites are sourced from.
+% rxns : cell or char
+%     reaction IDs (from source model). Can also be a string if only one
+%     reaction is added.
+% addGene : logical or char or cell, optional
+%     three options (default false):
 %
-% Usage: newModel=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)
+%     - false : no genes are annotated to the new reactions
+%     - true : grRules are copied from the sourceModel and new genes are
+%       added when required
+%     - string or cell array : new grRules are specified as string or cell
+%       array, and any new genes are added when required
+% rxnNote : cell or char, optional
+%     strings explaining why reactions were copied to the model, to be
+%     included as newModel.rxnNotes. Can also be a string if the same
+%     rxnNotes should be added for each new reaction, or only one reaction
+%     is to be added (default 'Added via addRxnsAndMets()').
+% confidence : double, optional
+%     integer specifying confidence score for all reactions, following
+%     doi:10.1038/nprot.2009.203 (default 0):
+%
+%     - 4 : biochemical data: direct evidence from enzyme assays
+%     - 3 : genetic data: knockout/-in or overexpression analysis
+%     - 2 : physiological data: indirect evidence, e.g. secretion products
+%       or defined medium requirement; sequence data: genome annotation
+%     - 1 : modeling data: required for functional model, hypothetical
+%       reaction
+%     - 0 : no evidence
+%
+% Returns
+% -------
+% model : struct
+%     an updated model structure.
+%
+% Examples
+% --------
+%     newModel = addRxnsGenesMets(model, sourceModel, rxns, addGene, ...
+%                                 rxnNote, confidence);
 
 if nargin<6
     confidence=0;

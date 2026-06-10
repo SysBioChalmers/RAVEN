@@ -1,41 +1,52 @@
 function [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
     modelIDs,refFastaFiles,developMode,hideVerbose)
-% getDiamond
-%   Uses DIAMOND to perform a bidirectional BLAST between the organism
-%   of interest and a set of template organisms
+% getDiamond  Bidirectional BLAST with DIAMOND against template organisms.
 %
-%   Input:
-%   organismID      the id of the organism of interest. This should also
-%                   match with the id supplied to getModelFromHomology
-%   fastaFile       a FASTA file with the protein sequences for the
-%                   organism of interest
-%   modelIDs        a cell array of model ids. These must match the
-%                   "model.id" fields in the "models" structure if the
-%                   output is to be used with getModelFromHomology
-%   refFastaFiles   a cell array with the paths to the corresponding FASTA
-%                   files
-%   developMode     true if blastReport should be generated that is used
-%                   in the unit testing function for DIAMOND (optional, default
-%                   false)
-%   hideVerbose     true if no status messages should be printed (optional,
-%                   default false)
+% Parameters
+% ----------
+% organismID : char
+%     the id of the organism of interest. This should also match with the
+%     id supplied to getModelFromHomology.
+% fastaFile : char
+%     a FASTA file with the protein sequences for the organism of interest.
+% modelIDs : cell
+%     a cell array of model ids. These must match the "model.id" fields in
+%     the "models" structure if the output is to be used with
+%     getModelFromHomology.
+% refFastaFiles : cell
+%     a cell array with the paths to the corresponding FASTA files.
+% developMode : logical, optional
+%     true if blastReport should be generated that is used in the unit
+%     testing function for DIAMOND (default false).
+% hideVerbose : logical, optional
+%     true if no status messages should be printed (default false).
 %
-%   Output:
-%   blastStructure  structure containing the bidirectional homology
-%                   measurements which are used by getModelFromHomology
-%   diamondReport   structure containing MD5 hashes for FASTA database
-%                   files and non-parsed BLAST output data. Will be blank
-%                   if developMode is false.
+% Returns
+% -------
+% blastStructure : struct
+%     structure containing the bidirectional homology measurements which
+%     are used by getModelFromHomology.
+% diamondReport : struct
+%     structure containing MD5 hashes for FASTA database files and
+%     non-parsed BLAST output data. Will be blank if developMode is false.
 %
-%   NOTE: This function calls DIAMOND to perform a bidirectional homology
-%   search between the organism of interest and a set of other organisms
-%   using the '--more-sensitive' setting from DIAMOND. For the most
-%   sensitive results, the use of getBlast() is adviced, however,
-%   getDiamond() is a fast alternative (>15x faster). The blastStructure
-%   generated is in the same format as those obtained from getBlast().
+% Notes
+% -----
+% This function calls DIAMOND to perform a bidirectional homology search
+% between the organism of interest and a set of other organisms using the
+% '--more-sensitive' setting from DIAMOND. For the most sensitive results,
+% the use of getBlast() is adviced, however, getDiamond() is a fast
+% alternative (>15x faster). The blastStructure generated is in the same
+% format as those obtained from getBlast().
 %
-% Usage: [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
-%    modelIDs,refFastaFiles,developMode,hideVerbose)
+% Examples
+% --------
+%     [blastStructure,diamondReport] = getDiamond(organismID,fastaFile,...
+%        modelIDs,refFastaFiles,developMode,hideVerbose);
+%
+% See also
+% --------
+% getModelFromHomology, getBlast
 
 if nargin<5
     developMode = false;

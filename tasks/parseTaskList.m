@@ -1,114 +1,106 @@
 function taskStruct=parseTaskList(inputFile)
-% parseTaskList
-%   Parses a task list file.
+% parseTaskList  Parse a task list file.
 %
-%   inputFile       a task list in either Excel (*.xlsx, with a sheet named
-%                   TASKS with all relevant content) or tab-delimited
-%                   (*.txt) format. The file may contain the following
-%                   column headers (note, all rows starting with a
-%                   non-empty cell are removed. The first row after that
-%                   is considered the headers):
-%                   ID
-%                       the only required header. Each task must have a
-%                       unique id (string or numeric). Tasks can span multiple
-%                       rows, only the first row in each task should have
-%                       an id
-%                   DESCRIPTION
-%                       description of the task
-%                   IN
-%                       allowed input(s) for the task. Metabolite names
-%                       should be on the form
-%                       "model.metName[model.comps]". Several inputs
-%                       can be delimited by ";". If so, then the same
-%                       bounds are used for all inputs. If that is not
-%                       wanted, then use several rows for the task
-%                   IN LB
-%                       lower bound for the uptake of the metabolites in
-%                       the row (optional, default 0 which corresponds to a
-%                       minimal uptake of 0 units)
-%                   IN UB
-%                       upper bound for the uptake of the metabolites in
-%                       the row (optional, default 1000 which corresponds to a
-%                       maximal uptake of 1000 units)
-%                   OUT
-%                       allowed output(s) for the task (see IN)
-%                   OUT LB
-%                       lower bound for the production of the metabolites in
-%                       the row (optional, default 0 which corresponds to a
-%                       minimal production of 0 units)
-%                   OUT UB
-%                       upper bound for the production of the metabolites in
-%                       the row (optional, default 1000 which corresponds to a
-%                       maximal production of 1000 units)
-%                   EQU
-%                       equation to add. The equation should be on the form
-%                       "0.4 A + 2 B <=> (or =>) C" and the metabolites
-%                       should be on the form
-%                       "model.metName[model.comps]" (optional)
-%                   EQU LB
-%                       lower bound for the equation (optional, default -1000
-%                       for reversible and 0 for irreversible)
-%                   EQU UB
-%                       upper bound for the equation (optional, default 1000)
-%                   CHANGED RXN
-%                       reaction ID for which to change the bounds for.
-%                       Several IDs can be delimited by ";". If so,
-%                       then the same bounds are used for all reactions. If
-%                       that is not wanted, then use several rows for the task
-%                   CHANGED LB
-%                       lower bound for the reaction
-%                   CHANGED UB
-%                       upper bound for the reaction
-%                   SHOULD FAIL
-%                       true if the correct behavior of the model is to
-%                       not have a feasible solution given the constraints
-%                       (optional, default false)
-%                   PRINT FLUX
-%                       true if the function should print the corresponding
-%                       flux distribution for a task. Can be useful for
-%                       testing (optional, default false)
+% Parameters
+% ----------
+% inputFile : char
+%     a task list in either Excel (*.xlsx, with a sheet named TASKS with
+%     all relevant content) or tab-delimited (*.txt) format. The file may
+%     contain the following column headers (note, all rows starting with a
+%     non-empty cell are removed; the first row after that is considered
+%     the headers):
 %
-%   taskStruct      array of structures with the following fields
-%       id          the id of the task
-%       description the description of the task
-%       shouldFail  true if the task should fail
-%       printFluxes true if the fluxes should be printed
-%       comments    string with comments
-%       inputs      cell array with input metabolites (in the form metName[comps])
-%       LBin        array with lower bounds on inputs (default, 0)
-%       UBin        array with upper bounds on inputs (default, 1000)
-%       outputs     cell array with output metabolites (in the form metName[comps])
-%       LBout       array with lower bounds on outputs (default, 0)
-%       UBout       array with upper bounds on outputs (default, 1000)
-%       equations   cell array with equations (with mets in the form metName[comps])
-%       LBequ       array with lower bounds on equations (default, -1000 for
-%                   reversible and 0 for irreversible)
-%       UBequ       array with upper bounds on equations (default, 1000)
-%       changed     cell array with reactions to change bounds for
-%       LBrxn       array with lower bounds on changed reactions
-%       UBrxn       array with upper bounds on changed reactions
+%     - ID : the only required header. Each task must have a unique id
+%       (string or numeric). Tasks can span multiple rows, only the first
+%       row in each task should have an id
+%     - DESCRIPTION : description of the task
+%     - IN : allowed input(s) for the task. Metabolite names should be on
+%       the form "model.metName[model.comps]". Several inputs can be
+%       delimited by ";". If so, then the same bounds are used for all
+%       inputs. If that is not wanted, then use several rows for the task
+%     - IN LB : lower bound for the uptake of the metabolites in the row
+%       (optional, default 0 which corresponds to a minimal uptake of 0
+%       units)
+%     - IN UB : upper bound for the uptake of the metabolites in the row
+%       (optional, default 1000 which corresponds to a maximal uptake of
+%       1000 units)
+%     - OUT : allowed output(s) for the task (see IN)
+%     - OUT LB : lower bound for the production of the metabolites in the
+%       row (optional, default 0 which corresponds to a minimal production
+%       of 0 units)
+%     - OUT UB : upper bound for the production of the metabolites in the
+%       row (optional, default 1000 which corresponds to a maximal
+%       production of 1000 units)
+%     - EQU : equation to add. The equation should be on the form
+%       "0.4 A + 2 B <=> (or =>) C" and the metabolites should be on the
+%       form "model.metName[model.comps]" (optional)
+%     - EQU LB : lower bound for the equation (optional, default -1000 for
+%       reversible and 0 for irreversible)
+%     - EQU UB : upper bound for the equation (optional, default 1000)
+%     - CHANGED RXN : reaction ID for which to change the bounds for.
+%       Several IDs can be delimited by ";". If so, then the same bounds
+%       are used for all reactions. If that is not wanted, then use several
+%       rows for the task
+%     - CHANGED LB : lower bound for the reaction
+%     - CHANGED UB : upper bound for the reaction
+%     - SHOULD FAIL : true if the correct behavior of the model is to not
+%       have a feasible solution given the constraints (optional, default
+%       false)
+%     - PRINT FLUX : true if the function should print the corresponding
+%       flux distribution for a task. Can be useful for testing (optional,
+%       default false)
 %
-%   This function is used for defining a set of tasks for a model to
-%   perform. The tasks are defined by defining constraints on the model,
-%   and if the problem is feasible, then the task is considered successful.
-%   In general, each row can contain one constraint on uptakes, one
-%   constraint on outputs, one new equation, and one change of reaction
-%   bounds. If more bounds are needed to define the task, then several rows
-%   can be used for each task. To perform the task use checkTasks or
-%   fitTasks.
+% Returns
+% -------
+% taskStruct : struct
+%     array of structures with the following fields:
 %
-%   NOTE: The general metabolites "ALLMETS" and "ALLMETSIN[comps]"
-%   can be used as inputs or outputs in the similar manner to normal
-%   metabolites. This is a convenient way to, for example, allow excretion of
-%   all metabolites to check whether it's the synthesis of some metabolite
-%   that is limiting or whether it's the degradation of some byproduct. One
-%   important difference is that only the upper bounds are used for these general
-%   metabolites. That is, you can only say that uptake or excretion is
-%   allowed, not that it is required. This is to avoid conflicts where the
-%   constraints for the general metabolites overwrite those of the real
-%   ones.
+%     - id : the id of the task
+%     - description : the description of the task
+%     - shouldFail : true if the task should fail
+%     - printFluxes : true if the fluxes should be printed
+%     - comments : string with comments
+%     - inputs : cell array with input metabolites (in the form metName[comps])
+%     - LBin : array with lower bounds on inputs (default, 0)
+%     - UBin : array with upper bounds on inputs (default, 1000)
+%     - outputs : cell array with output metabolites (in the form metName[comps])
+%     - LBout : array with lower bounds on outputs (default, 0)
+%     - UBout : array with upper bounds on outputs (default, 1000)
+%     - equations : cell array with equations (with mets in the form metName[comps])
+%     - LBequ : array with lower bounds on equations (default, -1000 for
+%       reversible and 0 for irreversible)
+%     - UBequ : array with upper bounds on equations (default, 1000)
+%     - changed : cell array with reactions to change bounds for
+%     - LBrxn : array with lower bounds on changed reactions
+%     - UBrxn : array with upper bounds on changed reactions
 %
-% Usage: taskStruct=parseTaskList(inputFile)
+% Examples
+% --------
+%     taskStruct = parseTaskList(inputFile);
+%
+% Notes
+% -----
+% This function is used for defining a set of tasks for a model to perform.
+% The tasks are defined by defining constraints on the model, and if the
+% problem is feasible, then the task is considered successful. In general,
+% each row can contain one constraint on uptakes, one constraint on
+% outputs, one new equation, and one change of reaction bounds. If more
+% bounds are needed to define the task, then several rows can be used for
+% each task. To perform the task use checkTasks or fitTasks.
+%
+% The general metabolites "ALLMETS" and "ALLMETSIN[comps]" can be used as
+% inputs or outputs in the similar manner to normal metabolites. This is a
+% convenient way to, for example, allow excretion of all metabolites to
+% check whether it's the synthesis of some metabolite that is limiting or
+% whether it's the degradation of some byproduct. One important difference
+% is that only the upper bounds are used for these general metabolites.
+% That is, you can only say that uptake or excretion is allowed, not that
+% it is required. This is to avoid conflicts where the constraints for the
+% general metabolites overwrite those of the real ones.
+%
+% See also
+% --------
+% checkTasks, fitTasks
 
 if ~isfile(inputFile)
     error('Task list %s cannot be found',string(inputFile));

@@ -1,23 +1,33 @@
 function [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns)
-% convertToIrrev
-%   Converts a model to irreversible form
+% convertToIrrev  Convert a model to irreversible form.
 %
-% Input:
-%   model         a model structure
-%   rxns          cell array with the reactions so split (if reversible)
-%                 (optional, default model.rxns)
+% Reversible reactions are split into one forward and one reverse
+% reaction. The reverse reactions are saved as 'rxnID_REV'. A warning is
+% shown if some reaction identifiers already end with '_REV'.
 %
-% Output:
-%   irrevModel    a model structure where reversible reactions have
-%                 been split into one forward and one reverse reaction
-%   matchRev      matching forward reaction to its backward reaction
-%   rev2irrev     forward and backward reactions for reversible reactions
-%   irrev2rev     matching all reactions back to original model
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% rxns : cell, optional
+%     cell array with the reactions to split, if reversible (default
+%     model.rxns).
 %
-%   The reverse reactions are saved as 'rxnID_REV'. A warning is shown if
-%   some reaction identifiers already end with '_REV'.
+% Returns
+% -------
+% irrevModel : struct
+%     a model structure where reversible reactions have been split into
+%     one forward and one reverse reaction.
+% matchRev : double
+%     matching forward reaction to its backward reaction.
+% rev2irrev : cell
+%     forward and backward reactions for reversible reactions.
+% irrev2rev : double
+%     matching all reactions back to original model.
 %
-% Usage: [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns)
+% Examples
+% --------
+%     [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns);
 
 if nargin<2
     I=true(numel(model.rxns),1);

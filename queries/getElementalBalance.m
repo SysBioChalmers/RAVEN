@@ -1,30 +1,41 @@
 function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)
-% getElementalBalance
-%   Checks a model to see if the reactions are elementally balanced
+% getElementalBalance  Check whether the reactions of a model are balanced.
 %
-%   model             a model structure
-%   rxns              either a cell array of reaction IDs, a logical vector
-%                     with the same number of elements as reactions in the model,
-%                     of a vector of indexes. Only these reactions will be
-%                     checked (optional, default model.rxns)
-%   printUnbalanced   print warnings about the reactions that were
-%                     unbalanced (optional, default false)
-%   printUnparsable   print warnings about the reactions that cannot be
-%                     parsed (optional, default false)
+% Checks a model to see if the reactions are elementally balanced.
 %
-%   balanceStructure
-%       balanceStatus   1 if the reaction is balanced, 0 if it's unbalanced,
-%                      -1 if it couldn't be balanced due to missing information,
-%                      -2 if it couldn't be balanced due to an error
-%       elements
-%           abbrevs     cell array with abbreviations for all used elements
-%           names       cell array with the names for all used elements
-%       leftComp        MxN matrix with the sum of coefficients for each of
-%                       the elements (N) for the left side of the
-%                       reactions (M)
-%       rightComp       the corresponding matrix for the right side
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% rxns : cell or logical or double, optional
+%     either a cell array of reaction IDs, a logical vector with the same
+%     number of elements as reactions in the model, or a vector of
+%     indexes. Only these reactions will be checked (default model.rxns).
+% printUnbalanced : logical, optional
+%     print warnings about the reactions that were unbalanced
+%     (default false).
+% printUnparsable : logical, optional
+%     print warnings about the reactions that cannot be parsed
+%     (default false).
 %
-% Usage: balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)
+% Returns
+% -------
+% balanceStructure : struct
+%     elemental balance structure with fields:
+%
+%     - balanceStatus : 1 if the reaction is balanced, 0 if it is
+%       unbalanced, -1 if it could not be balanced due to missing
+%       information, -2 if it could not be balanced due to an error
+%     - elements : struct with fields abbrevs (cell array with
+%       abbreviations for all used elements) and names (cell array with
+%       the names for all used elements)
+%     - leftComp : MxN matrix with the sum of coefficients for each of the
+%       elements (N) for the left side of the reactions (M)
+%     - rightComp : the corresponding matrix for the right side
+%
+% Examples
+% --------
+%     balanceStructure = getElementalBalance(model, rxns, printUnbalanced, printUnparsable);
 
 if nargin<2
     rxns=[];

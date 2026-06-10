@@ -1,8 +1,8 @@
-% addJavaPaths
-%   Adds the Apache POI classes to the static Java paths
+% addJavaPaths  Add the Apache POI classes to the static Java paths.
 %
-% Usage: addJavaPaths()
-
+% Examples
+% --------
+%     addJavaPaths();
 function addJavaPaths()
 %Get the path to Apache POI
 ravenPath=findRAVENroot();

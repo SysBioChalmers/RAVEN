@@ -1,18 +1,31 @@
 function errorFlag=followFluxes(model, fluxesA, lowerFlux, upperFlux, fluxesB)
-% followFluxes
-%	Prints fluxes and reactions for each of the reactions that results in
-%   fluxes in the specified interval.
+% followFluxes  Print reactions with fluxes in a specified interval.
 %
-%   model       a model structure
-%   fluxesA     flux vector for the test case
-%   lowerFlux	only reactions with fluxes above this cutoff
-%               value are displayed
-%   upperFlux   only reactions with fluxes below this cutoff
-%               value are displayed (optional, default Inf)
-%   fluxesB     flux vector for the reference case(optional)
+% Prints fluxes and reactions for each of the reactions that result in
+% fluxes within the specified interval.
 %
-% Usage: errorFlag=followFluxes(model, fluxesA, lowerFlux, upperFlux,
-%           fluxesB)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% fluxesA : double
+%     flux vector for the test case.
+% lowerFlux : double
+%     only reactions with fluxes above this cutoff value are displayed.
+% upperFlux : double, optional
+%     only reactions with fluxes below this cutoff value are displayed
+%     (default Inf).
+% fluxesB : double, optional
+%     flux vector for the reference case.
+%
+% Returns
+% -------
+% errorFlag : double
+%     set to 1 if upperFlux is not larger than lowerFlux, otherwise empty.
+%
+% Examples
+% --------
+%     errorFlag=followFluxes(model,fluxesA,lowerFlux,upperFlux,fluxesB);
 
 %Checks that the upper flux is larger than the lower flux
 if nargin>3

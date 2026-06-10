@@ -1,105 +1,102 @@
 function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allowNewGenes)
-% addRxns
-%   Adds reactions to a model
+% addRxns  Add reactions to a model.
 %
-% Input:
-%   model            a model structure
-%   rxnsToAdd        the reaction structure can have the following fields:
-%       rxns                cell array with unique strings that identifies
-%                           each reaction
-%       equations           cell array with equation strings. Decimal
-%                           coefficients are expressed as "1.2".
-%                           Reversibility is indicated by "<=>" or "=>"
-%       mets                (alternative to equations) cell array with the
-%                           metabolites involved in each reaction as nested
-%                           arrays. E.g.: {{'met1','met2'},{'met1','met3','met4'}}
-%                           In the case of one single reaction added, it
-%                           can be a string array: {'met1','met2'}
-%       stoichCoeffs        (alternative to equations) cell array with the
-%                           corresponding stoichiometries as nested vectors
-%                           E.g.: {[-1,+2],[-1,-1,+1]}. In the case of one
-%                           single reaction added, it can be a vector: [-1,+2]
-%       rxnNames            cell array with the names of each reaction
-%                           (optional, default '')
-%       lb                  vector with the lower bounds (optional, default
-%                           model.annotations.defaultLB or -inf for
-%                           reversible reactions and 0 for irreversible
-%                           when "equations" is used. When "mets" and
-%                           "stoichCoeffs" are ,used it defaults for all
-%                           to model.annotations.defaultLB or -inf)
-%       ub                  vector with the upper bounds (optional, default
-%                           model.annotations.defaultUB or inf)
-%       c                   vector with the objective function coefficients
-%                           (optional, default 0)
-%       eccodes             cell array with the EC-numbers for each
-%                           reactions. Delimit several EC-numbers with ";"
-%                           (optional, default '')
-%       subSystems          cell array with the subsystems for each
-%                           reaction (optional, default '')
-%       grRules             cell array with the gene-reaction relationship
-%                           for each reaction. E.g. "(A and B) or (C)"
-%                           means that the reaction could be catalyzed by a
-%                           complex between A & B or by C on its own. All
-%                           the genes have to be present in model.genes.
-%                           Add genes with addGenesRaven before calling
-%                           this function if needed (optional, default '')
-%       rxnMiriams          cell array with Miriam structures (optional,
-%                           default [])
-%       rxnComps            cell array with compartments (as in
-%                           model.comps) (optional, default {})
-%       rxnNotes            cell array with reaction notes (optional,
-%                           default '')
-%       rxnDeltaG           Gibbs free energy at biochemical standard
-%                           condition in kJ/mole (optional, default NaN)
-%       rxnReferences       cell array with reaction references (optional,
-%                           default '')
-%       rxnConfidenceScores vector with reaction confidence scores
-%                           (optional, default NaN)
-%   eqnType          double describing how the equation string should be
-%                    interpreted
-%                    1 - The metabolites are matched to model.mets. New
-%                        metabolites (if allowed) are added to
-%                        "compartment" (default)
-%                    2 - The metabolites are matched to model.metNames and
-%                        all metabolites are assigned to "compartment". Any
-%                        new metabolites that are added will be assigned
-%                        IDs "m1", "m2"... If IDs on the same form are
-%                        already used in the model then the numbering will
-%                        start from the highest used integer+1
-%                    3 - The metabolites are written as
-%                        "metNames[comps]". Only compartments in
-%                        model.comps are allowed. Any
-%                        new metabolites that are added will be assigned
-%                        IDs "m1", "m2"... If IDs on the same form are
-%                        already used in the model then the numbering will
-%                        start from the highest used integer+1
-%   compartment      a string with the compartment the metabolites should
-%                    be placed in when using eqnType=2. Must match
-%                    model.comps (optional when eqnType=1 or eqnType=3)
-%   allowNewMets     true if the function is allowed to add new
-%                    metabolites. Can also be a string, which will be used
-%                    as prefix for the new metabolite IDs. It is highly
-%                    recommended to first add any new metabolites with
-%                    addMets rather than automatically through this
-%                    function. addMets supports more annotation of
-%                    metabolites, allows for the use of exchange
-%                    metabolites, and using it reduces the risk of parsing
-%                    errors (optional, default false)
-%   allowNewGenes    true if the functions is allowed to add new genes
-%                    (optional, default false)
+% This function does not make extensive checks about formatting of
+% gene-reaction rules.
 %
-% Output:
-%   newModel         an updated model structure
+% When adding metabolites to a compartment where they previously do not
+% exist, the function will copy any available information from the
+% metabolite in another compartment.
 %
-%   This function does not make extensive checks about formatting of
-%   gene-reaction rules.
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% rxnsToAdd : struct
+%     the reaction structure, which can have the following fields:
 %
-%   When adding metabolites to a compartment where they previously do not
-%   the function will copy any available information from the metabolite in
-%   another compartment.
+%     - rxns : cell array with unique strings that identifies each reaction
+%     - equations : cell array with equation strings. Decimal coefficients
+%       are expressed as "1.2". Reversibility is indicated by "<=>" or "=>"
+%     - mets : (alternative to equations) cell array with the metabolites
+%       involved in each reaction as nested arrays. E.g.:
+%       {{'met1','met2'},{'met1','met3','met4'}}. In the case of one single
+%       reaction added, it can be a string array: {'met1','met2'}
+%     - stoichCoeffs : (alternative to equations) cell array with the
+%       corresponding stoichiometries as nested vectors. E.g.:
+%       {[-1,+2],[-1,-1,+1]}. In the case of one single reaction added, it
+%       can be a vector: [-1,+2]
+%     - rxnNames : cell array with the names of each reaction (optional,
+%       default '')
+%     - lb : vector with the lower bounds (optional, default
+%       model.annotations.defaultLB or -inf for reversible reactions and 0
+%       for irreversible when "equations" is used. When "mets" and
+%       "stoichCoeffs" are used it defaults for all to
+%       model.annotations.defaultLB or -inf)
+%     - ub : vector with the upper bounds (optional, default
+%       model.annotations.defaultUB or inf)
+%     - c : vector with the objective function coefficients (optional,
+%       default 0)
+%     - eccodes : cell array with the EC-numbers for each reaction. Delimit
+%       several EC-numbers with ";" (optional, default '')
+%     - subSystems : cell array with the subsystems for each reaction
+%       (optional, default '')
+%     - grRules : cell array with the gene-reaction relationship for each
+%       reaction. E.g. "(A and B) or (C)" means that the reaction could be
+%       catalyzed by a complex between A & B or by C on its own. All the
+%       genes have to be present in model.genes. Add genes with
+%       addGenesRaven before calling this function if needed (optional,
+%       default '')
+%     - rxnMiriams : cell array with Miriam structures (optional,
+%       default [])
+%     - rxnComps : cell array with compartments (as in model.comps)
+%       (optional, default {})
+%     - rxnNotes : cell array with reaction notes (optional, default '')
+%     - rxnDeltaG : Gibbs free energy at biochemical standard condition in
+%       kJ/mole (optional, default NaN)
+%     - rxnReferences : cell array with reaction references (optional,
+%       default '')
+%     - rxnConfidenceScores : vector with reaction confidence scores
+%       (optional, default NaN)
+% eqnType : double, optional
+%     describes how the equation string should be interpreted (default 1):
 %
-% Usage: newModel = addRxns(model, rxnsToAdd, eqnType, compartment,...
-%                       allowNewMets, allowNewGenes)
+%     - 1 : the metabolites are matched to model.mets. New metabolites (if
+%       allowed) are added to "compartment"
+%     - 2 : the metabolites are matched to model.metNames and all
+%       metabolites are assigned to "compartment". Any new metabolites that
+%       are added will be assigned IDs "m1", "m2"... If IDs on the same
+%       form are already used in the model then the numbering will start
+%       from the highest used integer+1
+%     - 3 : the metabolites are written as "metNames[comps]". Only
+%       compartments in model.comps are allowed. Any new metabolites that
+%       are added will be assigned IDs "m1", "m2"... If IDs on the same
+%       form are already used in the model then the numbering will start
+%       from the highest used integer+1
+% compartment : char, optional
+%     the compartment the metabolites should be placed in when using
+%     eqnType=2. Must match model.comps (optional when eqnType=1 or
+%     eqnType=3).
+% allowNewMets : logical or char, optional
+%     true if the function is allowed to add new metabolites. Can also be a
+%     string, which will be used as prefix for the new metabolite IDs. It
+%     is highly recommended to first add any new metabolites with addMets
+%     rather than automatically through this function. addMets supports
+%     more annotation of metabolites, allows for the use of exchange
+%     metabolites, and using it reduces the risk of parsing errors
+%     (default false).
+% allowNewGenes : logical, optional
+%     true if the function is allowed to add new genes (default false).
+%
+% Returns
+% -------
+% newModel : struct
+%     an updated model structure.
+%
+% Examples
+% --------
+%     newModel = addRxns(model, rxnsToAdd, eqnType, compartment, ...
+%                        allowNewMets, allowNewGenes);
 
 if nargin<3
     eqnType=1;

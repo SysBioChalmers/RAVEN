@@ -1,49 +1,54 @@
 function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
-% solveLP
-%   Solves a linear programming problem
+% solveLP  Solve a linear programming problem.
 %
-% Input:
-%   model         a model structure
-%   minFlux       determines if a second optimization should be performed
-%                 in order to get rid of loops in the flux distribution
-%                 0:    no such optimization is performed
-%                 1:    the sum of abs(fluxes) is minimized. This is the
-%                       fastest way of getting rid of loops
-%                 2:    *option is deprecated*
-%                 3:    the number of fluxes is minimized. This can result
-%                       in the flux distributions that are the easiest to
-%                       interpret. Note that this optimization can be very
-%                       slow
-%                 (optional, default 0)
-%   params        solver parameters, forwarded to optimizeProb. Mostly
-%                 obsolete, but the field "maxRatio" (a number > 1) can be set
-%                 to improve numerical conditioning of ill-scaled models: any
-%                 reaction whose stoichiometric coefficients span more than
-%                 maxRatio is transiently split via auxiliary metabolites
-%                 before solving, which preserves the feasible region (and
-%                 thus the flux distribution of the original reactions). A
-%                 common value is 1e6 (optional, no splitting by default)
-%   hsSol         hot-start solution for the LP solver. This can
-%                 significantly speed up the process if many similar
-%                 optimization problems are solved iteratively. Only used
-%                 if minFlux is 0 or 1 (optional)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% minFlux : double, optional
+%     determines if a second optimization should be performed in order to
+%     get rid of loops in the flux distribution (default 0):
 %
-% Output:
-%   solution
-%         f       objective value
-%         x       primal (flux distribution)
-%         stat    exit flag
-%                 1: the optimization terminated successfully
-%                 0: the solution is feasible, but not necessarily optimal
-%                -1: no feasible solution found
-%                -2: solution found, but flux minimization failed
-%         msg     string describing the status of the optimization
-%         sPrice  shadow price (only reported if minFlux was 0)
-%         rCost   reduced cost (only reported if minFlux was 0)
-%   hsSolOut      solution to be used as hot-start solution (see the input
-%                 parameters). Only used if minFlux is 0 or 1
+%     - 0 : no such optimization is performed
+%     - 1 : the sum of abs(fluxes) is minimized. This is the fastest way of
+%       getting rid of loops
+%     - 2 : *option is deprecated*
+%     - 3 : the number of fluxes is minimized. This can result in the flux
+%       distributions that are the easiest to interpret. Note that this
+%       optimization can be very slow
+% params : struct, optional
+%     solver parameters, forwarded to optimizeProb. Mostly obsolete, but the
+%     field "maxRatio" (a number > 1) can be set to improve numerical
+%     conditioning of ill-scaled models: any reaction whose stoichiometric
+%     coefficients span more than maxRatio is transiently split via
+%     auxiliary metabolites before solving, which preserves the feasible
+%     region (and thus the flux distribution of the original reactions). A
+%     common value is 1e6 (no splitting by default).
+% hsSol : struct, optional
+%     hot-start solution for the LP solver. This can significantly speed up
+%     the process if many similar optimization problems are solved
+%     iteratively. Only used if minFlux is 0 or 1.
 %
-% Usage: [solution, hsSolOut] = solveLP(model, minFlux, params, hsSol)
+% Returns
+% -------
+% solution : struct
+%     LP solution with fields:
+%
+%     - f : objective value
+%     - x : primal (flux distribution)
+%     - stat : exit flag (1 = optimization terminated successfully, 0 =
+%       solution is feasible but not necessarily optimal, -1 = no feasible
+%       solution found, -2 = solution found but flux minimization failed)
+%     - msg : string describing the status of the optimization
+%     - sPrice : shadow price (only reported if minFlux was 0)
+%     - rCost : reduced cost (only reported if minFlux was 0)
+% hsSolOut : struct
+%     solution to be used as hot-start solution (see the input parameters).
+%     Only used if minFlux is 0 or 1.
+%
+% Examples
+% --------
+%     [solution, hsSolOut] = solveLP(model, minFlux, params, hsSol);
 
 if nargin<2
     minFlux=0;

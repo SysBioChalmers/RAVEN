@@ -1,33 +1,44 @@
 function out = runSimpleOptKnock(model, targetRxn, biomassRxn, deletions, genesOrRxns, maxNumKO, minGrowth)
-% runSimpleOptKnock
-%   Simple OptKnock algorithm that checks all gene or reaction deletions
-%   for growth-coupled metabolite production, by testing all possible
-%   combinations. This is not defined as MILP, and is therefore slow (but
-%   simple).
+% runSimpleOptKnock  Simple OptKnock for growth-coupled production.
 %
-% Input:
-%    model          a model structure
-%    targetRxn      identifier of target reaction
-%    biomassRxn     identifier of biomass reaction
-%    deletions      cell array with gene or reaction identifiers that
-%                   should be considered for knockout
-%                   (optional, default = model.rxns)
-%    genesOrRxns    string indicating whether deletions parameter is given
-%                   with 'genes' or 'rxns' identifiers (optional, default
-%                   'rxns')
-%    maxNumKO       numeric with maximum number of simulatenous knockout
-%                   (optional, default 1)
-%    minGrowth      numeric of minimum growth rate (optional, default 0.05)
+% Simple OptKnock algorithm that checks all gene or reaction deletions for
+% growth-coupled metabolite production, by testing all possible
+% combinations. This is not defined as MILP, and is therefore slow (but
+% simple).
 %
-% Output:
-%    out            structure with deletions strategies that result in
-%                   growth-coupled production
-%       KO          cell array with gene(s) or reaction(s) to be deleted
-%       growthRate  vector with growth rates after deletion
-%       prodRate    vector with production rates after deletion
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% targetRxn : char
+%     identifier of target reaction.
+% biomassRxn : char
+%     identifier of biomass reaction.
+% deletions : cell, optional
+%     cell array with gene or reaction identifiers that should be
+%     considered for knockout (default model.rxns).
+% genesOrRxns : char, optional
+%     string indicating whether deletions parameter is given with 'genes'
+%     or 'rxns' identifiers (default 'rxns').
+% maxNumKO : double, optional
+%     maximum number of simultaneous knockouts (default 1).
+% minGrowth : double, optional
+%     minimum growth rate (default 0.05).
 %
-% Usage: out = runSimpleOptKnock(model, targetRxn, biomassRxn, deletions,...
-%                   genesOrRxns, maxNumKO, minGrowth)
+% Returns
+% -------
+% out : struct
+%     structure with deletion strategies that result in growth-coupled
+%     production, with fields:
+%
+%     - KO : cell array with gene(s) or reaction(s) to be deleted.
+%     - growthRate : vector with growth rates after deletion.
+%     - prodRate : vector with production rates after deletion.
+%
+% Examples
+% --------
+%     out = runSimpleOptKnock(model, targetRxn, biomassRxn, deletions, ...
+%         genesOrRxns, maxNumKO, minGrowth);
 
 if nargin < 4
     params.deletions = model.rxns;

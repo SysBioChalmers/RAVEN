@@ -1,40 +1,42 @@
 function hpaData=parseHPA(fileName, version)
-% parseHPA
-%   Parses a database dump of the Human Protein Atlas (HPA)
+% parseHPA  Parse a database dump of the Human Protein Atlas (HPA).
 %
-%   Input:
-%   fileName            comma- or tab-separated database dump of HPA. For details
-%                       regarding the format, see
-%                       http://www.proteinatlas.org/about/download.
-%   version             version of HPA [optional, default=19]
+% Parameters
+% ----------
+% fileName : char
+%     comma- or tab-separated database dump of HPA. For details regarding
+%     the format, see http://www.proteinatlas.org/about/download.
+% version : double, optional
+%     version of HPA (default 19).
 %
+% Returns
+% -------
+% hpaData : struct
+%     parsed HPA data with fields:
 %
-%   Output:
-%   hpaData
-%       genes               cell array with the unique gene names. In
-%                           version >=18 this is the ensemble name, see
-%                           geneNames below for the names in ver >=18
-%       geneNames           cell array with the gene names, indexed the
-%                           same way as genes.
-%       tissues             cell array with the tissue names. The list may not be
-%                           unique, as there can be multiple cell types per tissue
-%       celltypes           cell array with the cell type names for each tissue
-%       levels              cell array with the unique expression levels
-%       types               cell array with the unique evidence types
-%       reliabilities       cell array with the unique reliability levels
+%     - genes : cell array with the unique gene names. In version >=18 this
+%       is the ensemble name, see geneNames below for the names in ver >=18
+%     - geneNames : cell array with the gene names, indexed the same way as
+%       genes
+%     - tissues : cell array with the tissue names. The list may not be
+%       unique, as there can be multiple cell types per tissue
+%     - celltypes : cell array with the cell type names for each tissue
+%     - levels : cell array with the unique expression levels
+%     - types : cell array with the unique evidence types
+%     - reliabilities : cell array with the unique reliability levels
+%     - gene2Level : gene-to-expression level mapping in sparse matrix form.
+%       The value for element i,j is the index in hpaData.levels of gene i
+%       in cell type j
+%     - gene2Type : gene-to-evidence type mapping in sparse matrix form. The
+%       value for element i,j is the index in hpaData.types of gene i in
+%       cell type j. Doesn't exist in version >=18.
+%     - gene2Reliability : gene-to-reliability level mapping in sparse
+%       matrix form. The value for element i,j is the index in
+%       hpaData.reliabilities of gene i in cell type j
 %
-%       gene2Level          gene-to-expression level mapping in sparse matrix form.
-%                           The value for element i,j is the index in
-%                           hpaData.levels of gene i in cell type j
-%       gene2Type           gene-to-evidence type mapping in sparse matrix form.
-%                           The value for element i,j is the index in
-%                           hpaData.types of gene i in cell type j. Doesn't
-%                           exist in version >=18.
-%       gene2Reliability    gene-to-reliability level mapping in sparse matrix form.
-%                           The value for element i,j is the index in
-%                           hpaData.reliabilities of gene i in cell type j
-%
-% Usage: hpaData=parseHPA(fileName,version)
+% Examples
+% --------
+%     hpaData = parseHPA(fileName, version);
 
 if nargin<2
     version=19; %Change this and add code for more versions when the current HPA version is increased and the format is changed

@@ -1,47 +1,52 @@
 function fractions = getBiomassFractions(model, biomassConfig)
-% getBiomassFractions
-%   Compute the mass fraction (g/gDW) per biomass component plus the
-%   total. Mirrors raven_python.biomass.sum_biomass; the MATLAB
-%   counterpart of yeast-GEM's legacy sumBioMass.
+% getBiomassFractions  Compute mass fraction per biomass component.
 %
-%   The biomassConfig struct describes the per-organism biomass
-%   layout — see "Inputs" below. Components whose pseudoreaction is
-%   missing from the model contribute 0.
+% Compute the mass fraction (g/gDW) per biomass component plus the total.
+% Mirrors raven_python.biomass.sum_biomass; the MATLAB counterpart of
+% yeast-GEM's legacy sumBioMass.
 %
-%   Inputs:
-%       model           RAVEN model struct.
-%       biomassConfig   struct with fields:
-%                         biomass_rxn  rxn id of the top-level
-%                                      biomass pseudoreaction.
-%                         proton_met   met id of cytosolic H+ (used
-%                                      only by rescalePseudoreaction;
-%                                      may be unused here).
-%                         components   cell array of component
-%                                      structs with fields:
-%                           .name                 component name
-%                                                 (e.g. 'protein').
-%                           .pseudoreaction_name  model.rxnNames
-%                                                 entry to identify
-%                                                 the pseudoreaction.
-%                           .mass_strategy        'mw' | 'mw_minus_2h'
-%                                                 | 'mw_minus_water'
-%                                                 | 'grams' — see
-%                                                 NOTES below.
+% The biomassConfig struct describes the per-organism biomass layout — see
+% Parameters below. Components whose pseudoreaction is missing from the
+% model contribute 0.
 %
-%   Output:
-%       fractions       struct keyed by component name plus 'total':
-%                         fractions.protein, fractions.RNA, ... etc.
-%                         All values are in g/gDW.
+% Parameters
+% ----------
+% model : struct
+%     RAVEN model struct.
+% biomassConfig : struct
+%     Struct describing the biomass layout, with fields:
 %
-%   NOTES on mass_strategy:
-%       'mw'              MW from chemical formula
-%       'mw_minus_2h'     MW − 2.016 g/mol (two protons released per
-%                         charged tRNA — protein-pseudoreaction substrates)
-%       'mw_minus_water'  MW − 18.015 g/mol (water released per
-%                         polymerisation step — RNA / DNA)
-%       'grams'           stoichiometry already in g/gDW (lipid backbone)
+%     - biomass_rxn : rxn id of the top-level biomass pseudoreaction.
+%     - proton_met : met id of cytosolic H+ (used only by
+%       rescalePseudoreaction; may be unused here).
+%     - components : cell array of component structs, each with fields:
 %
-% Usage: fractions = getBiomassFractions(model, biomassConfig)
+%       - name : component name (e.g. 'protein').
+%       - pseudoreaction_name : model.rxnNames entry to identify the
+%         pseudoreaction.
+%       - mass_strategy : 'mw' | 'mw_minus_2h' | 'mw_minus_water' |
+%         'grams' — see Notes below.
+%
+% Returns
+% -------
+% fractions : struct
+%     Struct keyed by component name plus 'total': fractions.protein,
+%     fractions.RNA, ... etc. All values are in g/gDW.
+%
+% Examples
+% --------
+%     fractions = getBiomassFractions(model, biomassConfig);
+%
+% Notes
+% -----
+% mass_strategy values:
+%
+%     'mw'              MW from chemical formula
+%     'mw_minus_2h'     MW − 2.016 g/mol (two protons released per charged
+%                       tRNA — protein-pseudoreaction substrates)
+%     'mw_minus_water'  MW − 18.015 g/mol (water released per
+%                       polymerisation step — RNA / DNA)
+%     'grams'           stoichiometry already in g/gDW (lipid backbone)
 
 fractions = struct();
 total = 0;

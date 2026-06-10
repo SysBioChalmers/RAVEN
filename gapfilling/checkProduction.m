@@ -1,46 +1,52 @@
 function [notProduced, notProducedNames, neededForProductionMat,minToConnect,model]=checkProduction(model,checkNeededForProduction,excretionFromCompartments,printDetails)
-% checkProduction
-%   Checks which metabolites that can be produced from a model using the
-%   specified constraints.
+% checkProduction  Check which metabolites can be produced from a model.
 %
-%   model                       a model structure
-%   checkNeededForProduction    for each of the metabolites that could not
-%                               be produced, include an artificial
-%                               production reaction and calculate which new
-%                               metabolites that could be produced as en
-%                               effect of this (optional, default false)
-%   excretionFromCompartments   cell array with compartment ids from which
-%                               metabolites can be excreted (optional, default
-%                               model.comps)
-%   printDetails                print details to the screen (optional, default
-%                               true)
+% Checks which metabolites that can be produced from a model using the
+% specified constraints.
 %
-%   notProduced                 cell array with metabolites that could not
-%                               be produced
-%   notProducedNames            cell array with names and compartments for
-%                               metabolites that could not be produced
-%   neededForProductionMat      matrix where n x m is true if metabolite n
-%                               allows for production of metabolite m
-%   minToConnect                structure with the minimal number of
-%                               metabolites that need to be connected in
-%                               order to be able to produce all other
-%                               metabolites and which metabolites each of
-%                               them connects
-%   model                       updated model structure with excretion
-%                               reactions added
+% The function is intended to be used to identify which metabolites must be
+% connected in order to have a fully connected network. It does so by first
+% identifying which metabolites could have a net production in the network.
+% Then it calculates which other metabolites must be able to have net
+% production in order to have production of all metabolites in the network.
+% So, if a network contains the equations A[external]->B, C->D, and D->E it
+% will identify that production of C will connect the metabolites D and E.
 %
-%   The function is intended to be used to identify which metabolites must
-%   be connected in order to have a fully connected network. It does so by
-%   first identifying which metabolites could have a net production in the
-%   network. Then it calculates which other metabolites must be able to
-%   have net production in order to have production of all metabolites in
-%   the network. So, if a network contains the equations A[external]->B,
-%   C->D, and D->E it will identify that production of C will connect
-%   the metabolites D and E.
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% checkNeededForProduction : logical, optional
+%     for each of the metabolites that could not be produced, include an
+%     artificial production reaction and calculate which new metabolites that
+%     could be produced as an effect of this (default false).
+% excretionFromCompartments : cell, optional
+%     cell array with compartment ids from which metabolites can be excreted
+%     (default model.comps).
+% printDetails : logical, optional
+%     print details to the screen (default true).
 %
-% Usage: [notProduced, notProducedNames,neededForProductionMat,minToConnect,model]=...
-%           checkProduction(model,checkNeededForProduction,...
-%           excretionFromCompartments,printDetails)
+% Returns
+% -------
+% notProduced : double
+%     indices of metabolites that could not be produced.
+% notProducedNames : cell
+%     cell array with names and compartments for metabolites that could not
+%     be produced.
+% neededForProductionMat : logical
+%     matrix where n x m is true if metabolite n allows for production of
+%     metabolite m.
+% minToConnect : cell
+%     the minimal number of metabolites that need to be connected in order to
+%     be able to produce all other metabolites, and which metabolites each of
+%     them connects.
+% model : struct
+%     updated model structure with excretion reactions added.
+%
+% Examples
+% --------
+%     [notProduced, notProducedNames, neededForProductionMat, minToConnect, model] = ...
+%         checkProduction(model, checkNeededForProduction, excretionFromCompartments, printDetails);
 
 if nargin<2
     checkNeededForProduction=false;

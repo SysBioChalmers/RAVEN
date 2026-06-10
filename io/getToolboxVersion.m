@@ -1,18 +1,29 @@
 function version = getToolboxVersion(toolbox,fileID,mainBranchFlag)
-% getToolboxVersion
-%   Returns the version of a given toolbox, or if not available the latest
-%   commit hash (7 characters).
+% getToolboxVersion  Return the version of a given toolbox.
 %
-%   toolbox         string with the toolbox name (e.g. "RAVEN")
-%   fileID          string with the name of a file that is only found in
-%                   the corresponding toolbox (e.g. "ravenCobraWrapper.m").
-%   mainBranchFlag  logical, if true, function will error if the toolbox is
-%                   not on the main branch (optional, default false).
+% Returns the version of a given toolbox, or if not available the latest
+% commit hash (7 characters).
 %
-%   version         string containing either the toolbox version or latest
-%                   commit hash (7 characters).
+% Parameters
+% ----------
+% toolbox : char
+%     string with the toolbox name (e.g. "RAVEN").
+% fileID : char
+%     string with the name of a file that is only found in the
+%     corresponding toolbox (e.g. "ravenCobraWrapper.m").
+% mainBranchFlag : logical, optional
+%     if true, the function will error if the toolbox is not on the main
+%     branch (default false).
 %
-% Usage: version = getToolboxVersion(toolbox,fileID,mainBranchFlag)
+% Returns
+% -------
+% version : char
+%     string containing either the toolbox version or latest commit hash
+%     (7 characters).
+%
+% Examples
+% --------
+%     version = getToolboxVersion(toolbox, fileID, mainBranchFlag);
 toolbox=char(toolbox);
 fileID=char(fileID);
 

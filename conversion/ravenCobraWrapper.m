@@ -1,33 +1,42 @@
 function newModel=ravenCobraWrapper(model)
-% ravenCobraWrapper
-%   Converts between RAVEN and COBRA structures
+% ravenCobraWrapper  Convert between RAVEN and COBRA structures.
 %
-%   Input: model          a RAVEN/COBRA-compatible model structure
+% This function is a bidirectional tool to convert between RAVEN and COBRA
+% structures. It recognises a COBRA structure by checking the existence of
+% the field 'rules', which is only found in a COBRA Toolbox structure. If
+% the COBRA model also has a grRules field, then this will be used instead
+% of parsing the rules field.
 %
-%   Ouput: newModel       a COBRA/RAVEN-compatible model structure
-%   
-%   This function is a bidirectional tool to convert between RAVEN and
-%   COBRA structures. It recognises COBRA structure by checking field
-%   'rules' existense, which is only found in COBRA Toolbox structure. If
-%   the COBRA model also has a grRules field, then this will be used
-%   instead of parsing the rules field.
+% Parameters
+% ----------
+% model : struct
+%     a RAVEN/COBRA-compatible model structure.
 %
-%   NOTE: During RAVEN -> COBRA -> RAVEN conversion cycle the following
-%   fields are lost: annotation, compOutside, compMiriams, rxnComps,
-%   geneComps, unconstrained. Boundary metabolites are lost, because COBRA
-%   structure does not involve boundary metabolites, so they are removed
-%   using simplifyModel before RAVEN -> COBRA conversion. The field 'rev'
-%   is also partially lost, but during COBRA -> RAVEN conversion it's
-%   reconstructed based on lower bound reaction values
+% Returns
+% -------
+% newModel : struct
+%     a COBRA/RAVEN-compatible model structure.
 %
-%   NOTE: During COBRA -> RAVEN -> COBRA conversion cycle the following
-%   fields are lost: geneEntrezID, modelVersion, proteins
+% Examples
+% --------
+%     newModel = ravenCobraWrapper(model);
 %
-%   NOTE: The information about mandatory RAVEN fields was taken from
-%   checkModelStruct function, whereas the corresponding information about
-%   COBRA fields was fetched from verifyModel function
+% Notes
+% -----
+% During the RAVEN -> COBRA -> RAVEN conversion cycle the following fields
+% are lost: annotation, compOutside, compMiriams, rxnComps, geneComps,
+% unconstrained. Boundary metabolites are lost, because the COBRA
+% structure does not involve boundary metabolites, so they are removed
+% using simplifyModel before RAVEN -> COBRA conversion. The field 'rev' is
+% also partially lost, but during COBRA -> RAVEN conversion it is
+% reconstructed based on lower bound reaction values.
 %
-% Usage: newModel=ravenCobraWrapper(model)
+% During the COBRA -> RAVEN -> COBRA conversion cycle the following fields
+% are lost: geneEntrezID, modelVersion, proteins.
+%
+% The information about mandatory RAVEN fields was taken from the
+% checkModelStruct function, whereas the corresponding information about
+% COBRA fields was fetched from the verifyModel function.
 
 if isfield(model,'rules')
     isRaven=false;

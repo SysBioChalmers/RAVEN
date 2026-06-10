@@ -1,52 +1,63 @@
 function model = applyCondition(model, condition)
-% applyCondition
-%   Apply a deterministic "condition" to a model: a prelude that resets
-%   exchange bounds, optional metabolite removals + automatic charge
-%   rebalancing of a pseudoreaction, optional biomass-stoichiometry
-%   delta, and a per-reaction bounds diff. The schema is intentionally
-%   narrow so a condition can be reviewed as data.
+% applyCondition  Apply a deterministic condition to a model.
 %
-%   Yeast-GEM was the first consumer; the same schema works for any
-%   GEM that keeps its condition presets as data rather than as code.
-%   Project-specific extensions (e.g. yeast-GEM's amino_acid_ratio
-%   step that rewrites a protein pseudoreaction's stoichiometry from a
-%   side-car TSV) are handled by the *caller* before / after this
-%   function — kept upstream-narrow on purpose.
+% Apply a deterministic "condition" to a model: a prelude that resets
+% exchange bounds, optional metabolite removals + automatic charge
+% rebalancing of a pseudoreaction, optional biomass-stoichiometry delta,
+% and a per-reaction bounds diff. The schema is intentionally narrow so a
+% condition can be reviewed as data.
 %
-%   Inputs:
-%       model       RAVEN model struct.
-%       condition   Either a path to a YAML condition file or a struct
-%                   already produced by parseYAML. The expected schema
-%                   (all keys optional):
+% Yeast-GEM was the first consumer; the same schema works for any GEM that
+% keeps its condition presets as data rather than as code.
+% Project-specific extensions (e.g. yeast-GEM's amino_acid_ratio step that
+% rewrites a protein pseudoreaction's stoichiometry from a side-car TSV)
+% are handled by the caller before / after this function — kept
+% upstream-narrow on purpose.
 %
-%                       prelude:
-%                         reset_exchanges: out      % truthy -> reset all
+% Parameters
+% ----------
+% model : struct
+%     RAVEN model struct.
+% condition : char or struct
+%     Either a path to a YAML condition file or a struct already produced
+%     by parseYAML. The expected schema (all keys optional):
 %
-%                       cofactor_pseudoreaction:
-%                         rxn_id: r_4598
-%                         remove_mets:
-%                           - { met: s_3714 }
-%                         charge_balance_met: s_0794
+%         prelude:
+%           reset_exchanges: out      % truthy -> reset all
 %
-%                       biomass_stoichiometry_delta:
-%                         rxn_id: r_4041
-%                         add:
-%                           - { met: s_0689, coef:  0.08 }
-%                           - { met: s_0687, coef: -0.08 }
-%                           - { met: s_0794, coef: -0.16 }
+%         cofactor_pseudoreaction:
+%           rxn_id: r_4598
+%           remove_mets:
+%             - { met: s_3714 }
+%           charge_balance_met: s_0794
 %
-%                       bounds:
-%                         - { rxn: r_1654, lb: -1000 }
-%                         - { rxn: r_1992, lb: 0 }
-%                         - { rxn: r_1663, lb: 0, ub: 0 }
+%         biomass_stoichiometry_delta:
+%           rxn_id: r_4041
+%           add:
+%             - { met: s_0689, coef:  0.08 }
+%             - { met: s_0687, coef: -0.08 }
+%             - { met: s_0794, coef: -0.16 }
 %
-%                       expected_uptake_count: 15
+%         bounds:
+%           - { rxn: r_1654, lb: -1000 }
+%           - { rxn: r_1992, lb: 0 }
+%           - { rxn: r_1663, lb: 0, ub: 0 }
 %
-%   Output:
-%       model       Modified model.
+%         expected_uptake_count: 15
 %
-% Usage: model = applyCondition(model, 'data/conditions/anaerobic.yml')
-%        model = applyCondition(model, parseYAML('data/conditions/anaerobic.yml'))
+% Returns
+% -------
+% model : struct
+%     Modified model.
+%
+% Examples
+% --------
+%     model = applyCondition(model, 'data/conditions/anaerobic.yml');
+%     model = applyCondition(model, parseYAML('data/conditions/anaerobic.yml'));
+%
+% See also
+% --------
+% parseYAML
 
 if ischar(condition) || isstring(condition)
     cond = parseYAML(char(condition));

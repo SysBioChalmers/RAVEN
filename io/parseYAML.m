@@ -1,33 +1,43 @@
 function out = parseYAML(filename)
-% parseYAML
-%   Read an arbitrary YAML file into a MATLAB struct / cell tree.
+% parseYAML  Read an arbitrary YAML file into a MATLAB struct/cell tree.
 %
-%   Use this for parsing arbitrary YAML configuration / data files
-%   (e.g. yeast-GEM's data/conditions/*.yml). For loading a cobra-format
-%   model YAML, use readYAMLmodel instead — that function knows the
-%   model schema and returns a populated RAVEN model struct.
+% Use this for parsing arbitrary YAML configuration / data files (e.g.
+% yeast-GEM's data/conditions/*.yml). For loading a cobra-format model
+% YAML, use readYAMLmodel instead — that function knows the model schema
+% and returns a populated RAVEN model struct.
 %
-%   Implementation: delegates to Python's yaml.safe_load, then
-%   recursively converts the py.dict / py.list tree to native MATLAB
-%   struct / cell. Requires a working MATLAB-Python bridge and the
-%   pyyaml package in the linked Python environment:
+% Implementation: delegates to Python's yaml.safe_load, then recursively
+% converts the py.dict / py.list tree to native MATLAB struct / cell.
+% Requires a working MATLAB-Python bridge and the pyyaml package in the
+% linked Python environment:
 %
-%       pip install pyyaml         % from the MATLAB-linked Python env
+%     pip install pyyaml         % from the MATLAB-linked Python env
 %
-%   Input:
-%       filename    path to the YAML file.
+% Parameters
+% ----------
+% filename : char
+%     Path to the YAML file.
 %
-%   Output:
-%       out         MATLAB representation of the document:
-%                       py.dict   -> struct
-%                       py.list   -> cell column vector
-%                       py.str    -> char
-%                       py.int    -> double
-%                       py.float  -> double
-%                       py.bool   -> logical
-%                       py.None   -> []
+% Returns
+% -------
+% out : struct or cell or char or double or logical
+%     MATLAB representation of the document:
 %
-% Usage: cfg = parseYAML('data/conditions/anaerobic.yml')
+%     - py.dict   -> struct
+%     - py.list   -> cell column vector
+%     - py.str    -> char
+%     - py.int    -> double
+%     - py.float  -> double
+%     - py.bool   -> logical
+%     - py.None   -> []
+%
+% Examples
+% --------
+%     cfg = parseYAML('data/conditions/anaerobic.yml');
+%
+% See also
+% --------
+% readYAMLmodel
 
 if ~isfile(filename)
     error('parseYAML:fileNotFound', 'File not found: %s', filename);

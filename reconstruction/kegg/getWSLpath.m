@@ -1,19 +1,28 @@
 function path=getWSLpath(path)
-% getWSLpath
-%   Translate Windows-style path to its Unix WSL (Windows Subsystem for
-%   Linux) equivalent.
+% getWSLpath  Translate a Windows-style path to its Unix WSL equivalent.
 %
-%   Input:
-%   path        string with directory of file path, in Windows-style (e.g.
-%               'C:\Directory\')
+% Translate a Windows-style path to its Unix WSL (Windows Subsystem for
+% Linux) equivalent.
 %
-%   Output:
-%   path        string with directory of file path, in Unix style (e.g.
-%               '/mnt/c/Directory/')
+% Parameters
+% ----------
+% path : char
+%     string with directory of file path, in Windows-style (e.g.
+%     'C:\Directory\').
 %
-%   Uses the WSL function 'wslpath' to translate the path.
+% Returns
+% -------
+% path : char
+%     string with directory of file path, in Unix style (e.g.
+%     '/mnt/c/Directory/').
 %
-% Usage: path=getWSLpath(path)
+% Examples
+% --------
+%     path = getWSLpath(path);
+%
+% Notes
+% -----
+% Uses the WSL function 'wslpath' to translate the path.
 [status,path]=system(['wsl wslpath ''' path '''']);
 if status==-1
     error('Cannot get access to Windows Subsystem for Linux, check your WSL installation')

@@ -1,54 +1,69 @@
 function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(model,testType,analysisType,refModel,oeFactor)
-% findGeneDeletions
-%   Deletes genes, optimizes the model, and keeps track of the resulting
-%   fluxes. This is used for identifying gene deletion targets.
+% findGeneDeletions  Delete genes and track the resulting fluxes.
 %
-%   model           a model structure
-%   testType        single/double gene deletions/over expressions. Over
-%                   expression only available if using MOMA
-%                   'sgd'   single gene deletion
-%                   'dgd'   double gene deletion
-%                   'sgo'   single gene over expression
-%                   'dgo'   double gene over expression
-%                   (optional, default 'sgd')
-%   analysisType    determines whether to use FBA ('fba') or MOMA ('moma')
-%                   in the optimization. (optional, default 'fba')
-%   refModel        MOMA works by fitting the flux distributions of two
-%                   models to be as similar as possible. The most common
-%                   application is where you have a reference model where
-%                   some of the fluxes are constrained from experimental
-%                   data. This model is required when using MOMA
-%   oeFactor        a factor by which the fluxes should be increased if a
-%                   gene is overexpressed (optional, default 10)
+% Deletes genes, optimizes the model, and keeps track of the resulting
+% fluxes. This is used for identifying gene deletion targets.
 %
-%   genes           a matrix with the genes that were deleted in each
-%                   optimization (the gene indexes in originalGenes). Each
-%                   row corresponds to a column in fluxes
-%   fluxes          a matrix with the resulting fluxes. Double deletions
-%                   that result in an unsolvable problem have all zero
-%                   flux. Single deletions that result in an unsolvable
-%                   problem are indicated in details instead
-%   originalGenes   simply the genes in the input model. Included for
-%                   simple presentation of the output
-%   details         not all genes will be deleted in all analyses. It is
-%                   for example not necessary to delete genes for dead end
-%                   reactions. This is a vector with details about
-%                   each gene in originalGenes and why or why not it was
-%                   deleted
-%                   1: Was deleted/overexpressed
-%                   2: Proved lethal in sgd (single gene deletion)
-%                   3: - redundant, no longer used -
-%                   4: Involved in dead-end reaction
-%   grRatioMuts     growth rate ratio between mutated strain and wild type,
-%                   matches the originalGenes(genes) mutants. Note that
-%                   this does not directly map to model.genes, as is the case
-%                   for COBRA getEssentialGenes. However, this can be 
-%                   obtained by afterwards running:
-%                       grRatio=zeros(1,numel(model.genes));
-%                       grRatio(genes)=grRatioMuts;
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% testType : char, optional
+%     single/double gene deletions/over expressions. Over expression is
+%     only available if using MOMA (default 'sgd'):
 %
-% Usage: [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(model,testType,analysisType,...
-%           refModel,oeFactor)
+%     - 'sgd' : single gene deletion
+%     - 'dgd' : double gene deletion
+%     - 'sgo' : single gene over expression
+%     - 'dgo' : double gene over expression
+% analysisType : char, optional
+%     determines whether to use FBA ('fba') or MOMA ('moma') in the
+%     optimization (default 'fba').
+% refModel : struct, optional
+%     MOMA works by fitting the flux distributions of two models to be as
+%     similar as possible. The most common application is where there is a
+%     reference model with some fluxes constrained from experimental data.
+%     This model is required when using MOMA.
+% oeFactor : double, optional
+%     a factor by which the fluxes should be increased if a gene is
+%     overexpressed (default 10).
+%
+% Returns
+% -------
+% genes : double
+%     a matrix with the genes that were deleted in each optimization (the
+%     gene indexes in originalGenes). Each row corresponds to a column in
+%     fluxes.
+% fluxes : double
+%     a matrix with the resulting fluxes. Double deletions that result in
+%     an unsolvable problem have all zero flux. Single deletions that
+%     result in an unsolvable problem are indicated in details instead.
+% originalGenes : cell
+%     simply the genes in the input model. Included for simple
+%     presentation of the output.
+% details : double
+%     not all genes will be deleted in all analyses. It is for example not
+%     necessary to delete genes for dead end reactions. This is a vector
+%     with details about each gene in originalGenes and why or why not it
+%     was deleted:
+%
+%     - 1 : was deleted/overexpressed
+%     - 2 : proved lethal in sgd (single gene deletion)
+%     - 3 : redundant, no longer used
+%     - 4 : involved in dead-end reaction
+% grRatioMuts : double
+%     growth rate ratio between mutated strain and wild type, matching the
+%     originalGenes(genes) mutants. Note that this does not directly map
+%     to model.genes, as is the case for COBRA getEssentialGenes. However,
+%     this can be obtained by afterwards running:
+%
+%         grRatio=zeros(1,numel(model.genes));
+%         grRatio(genes)=grRatioMuts;
+%
+% Examples
+% --------
+%     [genes, fluxes, originalGenes, details, grRatioMuts]=...
+%         findGeneDeletions(model,testType,analysisType,refModel,oeFactor);
 
 originalModel=model;
 if nargin<5

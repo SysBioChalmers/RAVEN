@@ -1,62 +1,67 @@
 function model = assignSBOterms(model, opts)
-% assignSBOterms
-%   Assign SBO terms to metabolites and reactions following a generic
-%   rule set. Mirrors raven_python.annotation.add_sbo_terms;
-%   organism-agnostic, parameterised entirely by `opts`. The
-%   yeast-GEM port of this function is the legacy addSBOterms.m,
-%   which becomes a thin shim here.
+% assignSBOterms  Assign SBO terms to metabolites and reactions.
 %
-%   Rules
-%   -----
-%   Metabolites:
-%       SBO:0000649 (Biomass) when met.name is in opts.biomassMetNames,
-%       or ends with any of opts.biomassMetSuffixes. Otherwise
-%       SBO:0000247 (Simple chemical).
+% Assign SBO terms to metabolites and reactions following a generic rule
+% set. Mirrors raven_python.annotation.add_sbo_terms; organism-agnostic,
+% parameterised entirely by opts. The yeast-GEM port of this function is
+% the legacy addSBOterms.m, which becomes a thin shim here.
 %
-%   Reactions (default → override → pseudoreaction override):
-%       SBO:0000176 (Metabolic reaction) default.
-%       Single-reactant reactions become:
-%           SBO:0000627 (exchange) if the lone metabolite is
-%               extracellular (compartment 'e' or compartment name
-%               containing 'extracellular'),
-%           SBO:0000632 (sink) if coef < 0,
-%           SBO:0000628 (demand) otherwise.
-%       Transport reactions (detected by opts.transportDetector or
-%           the default heuristic: same metName in ≥ 2 compartments
-%           in a single reaction) → SBO:0000655.
-%       Reactions whose name matches opts.biomassRxnName → SBO:0000629.
-%       Reactions whose name matches opts.ngamRxnName → SBO:0000630.
-%       Reactions whose name contains any of
-%           opts.pseudoreactionSubstrings → SBO:0000395.
+% SBO is written via editMiriam(..., 'fill') so pre-existing SBO
+% annotations are preserved.
 %
-%   "fill" semantic — SBO is written via editMiriam(..., 'fill') so
-%   pre-existing SBO annotations are preserved.
+% Parameters
+% ----------
+% model : struct
+%     RAVEN model struct.
+% opts : struct, optional
+%     Struct with any of the following fields. Missing fields take the
+%     defaults shown:
 %
-%   Inputs:
-%       model   RAVEN model struct.
-%       opts    (opt) struct with any of the following fields. Missing
-%               fields take the defaults shown:
-%                 biomassMetNames        {'biomass','DNA','RNA','protein',
-%                                         'carbohydrate','lipid','cofactor','ion'}
-%                 biomassMetSuffixes     {' backbone',' chain'}
-%                 biomassRxnName         'biomass pseudoreaction'
-%                 ngamRxnName            'non-growth associated maintenance reaction'
-%                 pseudoreactionSubstrings {'pseudoreaction','SLIME rxn'}
-%                 onlyLastReactionForPseudo  false. yeast-GEM bug-compat
-%                                            flag — replicates the
-%                                            legacy `for i=numel(...)`
-%                                            typo (pseudoreaction
-%                                            SBOs applied only to the
-%                                            last reaction). Off by
-%                                            default; turn ON for
-%                                            byte-equivalent yeast-GEM
-%                                            output.
+%     - biomassMetNames : {'biomass','DNA','RNA','protein','carbohydrate',
+%       'lipid','cofactor','ion'}
+%     - biomassMetSuffixes : {' backbone',' chain'}
+%     - biomassRxnName : 'biomass pseudoreaction'
+%     - ngamRxnName : 'non-growth associated maintenance reaction'
+%     - pseudoreactionSubstrings : {'pseudoreaction','SLIME rxn'}
+%     - onlyLastReactionForPseudo : false. yeast-GEM bug-compat flag that
+%       replicates the legacy `for i=numel(...)` typo (pseudoreaction SBOs
+%       applied only to the last reaction). Off by default; turn ON for
+%       byte-equivalent yeast-GEM output.
 %
-%   Output:
-%       model   Modified model.
+% Returns
+% -------
+% model : struct
+%     Modified model.
 %
-% Usage: model = assignSBOterms(model)
-%        model = assignSBOterms(model, struct('onlyLastReactionForPseudo', true))
+% Examples
+% --------
+%     model = assignSBOterms(model);
+%     model = assignSBOterms(model, struct('onlyLastReactionForPseudo', true));
+%
+% Notes
+% -----
+% Metabolites:
+%
+%     SBO:0000649 (Biomass) when met.name is in opts.biomassMetNames, or
+%     ends with any of opts.biomassMetSuffixes. Otherwise SBO:0000247
+%     (Simple chemical).
+%
+% Reactions (default → override → pseudoreaction override):
+%
+%     SBO:0000176 (Metabolic reaction) default.
+%     Single-reactant reactions become:
+%         SBO:0000627 (exchange) if the lone metabolite is extracellular
+%             (compartment 'e' or compartment name containing
+%             'extracellular'),
+%         SBO:0000632 (sink) if coef < 0,
+%         SBO:0000628 (demand) otherwise.
+%     Transport reactions (detected by opts.transportDetector or the
+%         default heuristic: same metName in ≥ 2 compartments in a single
+%         reaction) → SBO:0000655.
+%     Reactions whose name matches opts.biomassRxnName → SBO:0000629.
+%     Reactions whose name matches opts.ngamRxnName → SBO:0000630.
+%     Reactions whose name contains any of opts.pseudoreactionSubstrings
+%         → SBO:0000395.
 
 if nargin < 2 || isempty(opts)
     opts = struct();

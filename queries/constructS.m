@@ -1,26 +1,36 @@
 function [S, mets, badRxns, reversible]=constructS(equations,mets,rxns)
-% constructS
-%   Constructs a stoichiometric matrix from a cell array of equations
+% constructS  Construct a stoichiometric matrix from a cell array of equations.
 %
-%   equations   cell array of equations on the form 'A + 2 B <=> 3 C',
-%               where <=> indicates reversible and => irreversible reactions
-%   mets        cell array of metabolites. All metabolites in the equations
-%               must be present in the list (optional, default generated from
-%               the equations)
-%   rxns        cell array of reaction ids. This is only used for printing
-%               reaction ids instead of equations in warnings/errors (optional,
-%               default [])
+% Parameters
+% ----------
+% equations : cell
+%     cell array of equations on the form 'A + 2 B <=> 3 C', where <=>
+%     indicates reversible and => irreversible reactions.
+% mets : cell, optional
+%     cell array of metabolites. All metabolites in the equations must be
+%     present in the list (default generated from the equations).
+% rxns : cell, optional
+%     cell array of reaction ids. This is only used for printing reaction ids
+%     instead of equations in warnings/errors (default []).
 %
-%   S           the resulting stoichiometric matrix mets cell array with
-%               metabolites that corresponds to the order in the S matrix
-%   badRxns     boolean vector with the reactions that have one or more
-%               metabolites as both substrate and product. An example would
-%               be the phosphotransferase ATP + ADP <=> ADP + ATP. In the
-%               stoichiometric matrix this equals to an empty reaction
-%               which can be problematic
-%   reversible  boolean vector with true if the equation is reversible
+% Returns
+% -------
+% S : double
+%     the resulting stoichiometric matrix.
+% mets : cell
+%     cell array with metabolites that corresponds to the order in the S
+%     matrix.
+% badRxns : logical
+%     boolean vector with the reactions that have one or more metabolites as
+%     both substrate and product. An example would be the phosphotransferase
+%     ATP + ADP <=> ADP + ATP. In the stoichiometric matrix this equals to an
+%     empty reaction which can be problematic.
+% reversible : logical
+%     boolean vector with true if the equation is reversible.
 %
-% Usage: [S, mets, badRxns, reversible]=constructS(equations,mets)
+% Examples
+% --------
+%     [S, mets, badRxns, reversible] = constructS(equations, mets);
 
 equations=convertCharArray(equations);
 switch nargin

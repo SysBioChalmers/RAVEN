@@ -1,27 +1,35 @@
 function reducedModel=removeMets(model,metsToRemove,isNames,removeUnusedRxns,removeUnusedGenes,removeUnusedComps)
-% removeMets
-%   Deletes a set of metabolites from a model
+% removeMets  Delete a set of metabolites from a model.
 %
-%   model             a model structure
-%   metsToRemove      either a cell array of metabolite IDs, a logical vector
-%                     with the same number of elements as metabolites in the model,
-%                     of a vector of indexes to remove
-%   isNames           true if the supplied mets represent metabolite names
-%                     (as opposed to IDs). This is a way to delete
-%                     metabolites in several compartments at once without
-%                     knowing the exact IDs. This only works if metsToRemove
-%                     is a cell array (optional, default false)
-%   removeUnusedRxns  remove reactions that are no longer in use (optional,
-%                     default false)
-%   removeUnusedGenes remove genes that are no longer in use (optional,
-%                     default false)
-%   removeUnusedComps remove compartments that are no longer in use (optional,
-%                     default false)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% metsToRemove : cell or logical or double
+%     either a cell array of metabolite IDs, a logical vector with the same
+%     number of elements as metabolites in the model, or a vector of
+%     indexes to remove.
+% isNames : logical, optional
+%     true if the supplied mets represent metabolite names (as opposed to
+%     IDs). This is a way to delete metabolites in several compartments at
+%     once without knowing the exact IDs. This only works if metsToRemove
+%     is a cell array (default false).
+% removeUnusedRxns : logical, optional
+%     remove reactions that are no longer in use (default false).
+% removeUnusedGenes : logical, optional
+%     remove genes that are no longer in use (default false).
+% removeUnusedComps : logical, optional
+%     remove compartments that are no longer in use (default false).
 %
-%   reducedModel      an updated model structure
+% Returns
+% -------
+% reducedModel : struct
+%     an updated model structure.
 %
-% Usage: reducedModel=removeMets(model,metsToRemove,isNames,...
-%           removeUnusedRxns,removeUnusedGenes,removeUnusedComps)
+% Examples
+% --------
+%     reducedModel = removeMets(model, metsToRemove, isNames, ...
+%         removeUnusedRxns, removeUnusedGenes, removeUnusedComps);
 if ~islogical(metsToRemove) && ~isnumeric(metsToRemove)
     metsToRemove=convertCharArray(metsToRemove);
 end

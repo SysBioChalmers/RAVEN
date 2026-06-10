@@ -1,22 +1,34 @@
 function solution=solveQP(model,rxns,values,maxIter, restartIter)
-% solveQP
-%   Solves a quadratic fitting problem.
+% solveQP  Solve a quadratic fitting problem.
 %
-%   model         a model structure
-%   rxns          either a cell array of reaction IDs, a logical vector 
-%                 with the same number of elements as reactions in the model,
-%                 of a vector of indexes to fit to
-%   values        the values to fit the fluxes to
-%   maxIter       maximal number of iterations (optional, default 1000)
-%   restartIter   run the fitting up to this many times in case it does
-%                 not converge (optional, default 1)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% rxns : cell or logical or double
+%     either a cell array of reaction IDs, a logical vector with the same
+%     number of elements as reactions in the model, or a vector of indexes
+%     to fit to.
+% values : double
+%     the values to fit the fluxes to.
+% maxIter : double, optional
+%     maximal number of iterations (default 1000).
+% restartIter : double, optional
+%     run the fitting up to this many times in case it does not converge
+%     (default 1).
 %
-%   solution
-%         f       Objective value
-%         x       Primal
-%         stat    Exit flag
+% Returns
+% -------
+% solution : struct
+%     solution with fields:
 %
-% Usage: solution=solveQP(model,rxns,values,maxIter, restartIter)
+%     - f : objective value.
+%     - x : primal.
+%     - stat : exit flag.
+%
+% Examples
+% --------
+%     solution = solveQP(model, rxns, values, maxIter, restartIter);
 rxns=char(rxns);
 
 if nargin<4

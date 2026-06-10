@@ -1,43 +1,58 @@
 function [concentrationMatrix, excRxnNames, timeVec, biomassVec] = runDynamicFBA(model, substrateRxns, initConcentrations, initBiomass, timeStep, nSteps, plotRxns, exclUptakeRxns)
-% runDynamicFBA
-%   Performs dynamic FBA simulation using the static optimization approach
+% runDynamicFBA  Perform dynamic FBA using the static optimization approach.
 %
-% Input:
-%   model               a model structure
-%   substrateRxns       cell array with exchange reaction identifiers for
-%                       substrates that are initially in the media, whose
-%                       concentration may change (e.g. not h2o or co2)
-%   initConcentrations  numeric initial concentrations of substrates
-%                       (matching substrateRxns)
-%   initBiomass         numeric initial biomass (must be non-zero)
-%   timeStep            numeric time step size
-%   nSteps              numeric maximum number of time steps
-%   plotRxns            cell array with exchange reaction identifiers for
-%                       substrates whose concentration should be plotted
-%   exclUptakeRxns      cell array with exchange reaction identifiers for
-%                       substrates whose concentration does not change
-%                       (e.g. co2, o2, h2o, h)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% substrateRxns : cell
+%     cell array with exchange reaction identifiers for substrates that are
+%     initially in the media, whose concentration may change (e.g. not h2o
+%     or co2).
+% initConcentrations : double
+%     initial concentrations of substrates (matching substrateRxns).
+% initBiomass : double
+%     initial biomass (must be non-zero).
+% timeStep : double
+%     time step size.
+% nSteps : double
+%     maximum number of time steps.
+% plotRxns : cell
+%     cell array with exchange reaction identifiers for substrates whose
+%     concentration should be plotted.
+% exclUptakeRxns : cell
+%     cell array with exchange reaction identifiers for substrates whose
+%     concentration does not change (e.g. co2, o2, h2o, h).
 %
-% Output:
-%   concentrationMatrix numeric matrix with extracellular metabolite
-%                       concentrations
-%   excRxnNames         cell array with exchange reaction identifiers that
-%                       match the metabolites included in the
-%                       concentrationMatrix
-%   timeVec             numeric vector of time points
-%   biomassVec          numeric vector with biomass concentrations
+% Returns
+% -------
+% concentrationMatrix : double
+%     matrix with extracellular metabolite concentrations.
+% excRxnNames : cell
+%     cell array with exchange reaction identifiers that match the
+%     metabolites included in the concentrationMatrix.
+% timeVec : double
+%     vector of time points.
+% biomassVec : double
+%     vector with biomass concentrations.
 %
+% Examples
+% --------
+%     [concentrationMatrix, excRxnNames, timeVec, biomassVec] = ...
+%         runDynamicFBA(model, substrateRxns, initConcentrations, ...
+%         initBiomass, timeStep, nSteps, plotRxns, exclUptakeRxns);
+%
+% Notes
+% -----
 % If no initial concentration is given for a substrate that has an open
-% uptake in the model (i.e. `model.lb < 0`) the concentration is assumed to
+% uptake in the model (i.e. model.lb < 0) the concentration is assumed to
 % be high enough to not be limiting. If the uptake rate for a nutrient is
 % calculated to exceed the maximum uptake rate for that nutrient specified
 % in the model and the max uptake rate specified is > 0, the maximum uptake
 % rate specified in the model is used instead of the calculated uptake
 % rate.
 %
-% Modified from COBRA Toolbox dynamicFBA.m
-%
-% Usage: [concentrationMatrix, excRxnNames, timeVec, biomassVec] = runDynamicFBA(model, substrateRxns, initConcentrations, initBiomass, timeStep, nSteps, plotRxns, exclUptakeRxns)
+% Modified from COBRA Toolbox dynamicFBA.m.
 
 % Find exchange rxns
 excRxnNames = getExchangeRxns(model);

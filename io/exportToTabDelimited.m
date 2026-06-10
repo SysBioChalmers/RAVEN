@@ -1,22 +1,29 @@
 function exportToTabDelimited(model,path,sortIds)
-% exportToTabDelimited
-%   Exports a model structure to a set of tab-delimited text files
+% exportToTabDelimited  Export a model to tab-delimited text files.
 %
-%   model	a model structure
-%   path	the path to export to. The resulting text files will be saved
-%           under the names excelRxns.txt, excelMets.txt, excelGenes.txt,
-%           excelModel.txt, and excelComps.txt
-%   sortIds logical whether metabolites, reactions and genes should be
-%           sorted alphabetically by their identifiers (optional, default false)
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% path : char, optional
+%     the path to export to. The resulting text files will be saved under
+%     the names excelRxns.txt, excelMets.txt, excelGenes.txt,
+%     excelModel.txt, and excelComps.txt (default './').
+% sortIds : logical, optional
+%     whether metabolites, reactions and genes should be sorted
+%     alphabetically by their identifiers (default false).
 %
-%   NOTE: This functionality was previously a part of exportToExcelFormat.
-%         The naming of the resulting text files is to preserve backward
-%         compatibility
+% Examples
+% --------
+%     exportToTabDelimited(model, path, sortIds);
 %
-%   NOTE: No checks are made regarding the correctness of the model. Use
-%         checkModelStruct to identify problems in the model structure
+% Notes
+% -----
+% This functionality was previously a part of exportToExcelFormat. The
+% naming of the resulting text files is to preserve backward compatibility.
 %
-% Usage: exportToTabDelimited(model,path,sortIds)
+% No checks are made regarding the correctness of the model. Use
+% checkModelStruct to identify problems in the model structure.
 
 if nargin<2
     path='./';

@@ -1,51 +1,56 @@
 function model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
-% getRxnsFromMetaCyc
-%   Retrieves reactions information from MetaCyc database
+% getRxnsFromMetaCyc  Retrieve reaction information from the MetaCyc database.
 %
-%   Input:
-%   metacycPath         if metaCycRxns.mat is not in the RAVEN\external\metacyc
-%                       directory, this function will attempt to build it by
-%                       reading info from a local dump of MetaCyc database,
-%                       metacycPath is the path to the MetaCyc data files
-%   keepTransportRxns   include transportation reactions, which often have identical
-%                       reactants and products that turn to be all-zero columns in
-%                       the S matrix (optional, default false)
-%   keepUnbalanced      include reactions cannot be balanced, usually
-%                       because they are polymeric reactions or with
-%                       specific difficulty in balancing class structures
-%                       (optional, default false)
-%   keepUndetermined    include reactions that have substrates lack chemical
-%                       structures or with non-numerical coefficients (e.g. n+1)
-%                       (optional, default false)
+% If the file metaCycRxns.mat is in the RAVEN/external/metacyc directory, it
+% will be directly loaded instead of parsing the MetaCyc data files and
+% pre-prepared lists of MetaCyc transport and undetermined reactions.
 %
-%   Output:
-%   model     a model structure generated from the database. The following
-%             fields are filled
-%             id:             'MetaCyc'
-%             name:    'Automatically generated from MetaCyc database'
-%             rxns:           MetaCyc reaction ids
-%             rxnNames:       Name for each reaction entry
-%             mets:           MetaCyc compound ids. If the equations use
-%                             stoichiometry such as ID(n+1) then the whole
-%                             expression is saved as the id
-%             pwys:           MetaCyc pathway id
-%             eccodes:        Corresponding ec-number if available
-%             rxnMiriams:     Contains reaction specific information such as
-%                             associated RHEA and KEGG reaction ids
-%             S:              Stoichiometric matrix
-%             lb:             -1000 for all reactions
-%             ub:             1000 for all reactions
-%             rev:            1 for reversible and 0 for irreversible. For
-%                             reactions present in pathway maps the reversibility
-%                             is taken from there
-%             b:              0 for all metabolites
-%             version:        MetaCyc database version
+% Parameters
+% ----------
+% metacycPath : char
+%     if metaCycRxns.mat is not in the RAVEN\external\metacyc directory,
+%     this function will attempt to build it by reading info from a local
+%     dump of the MetaCyc database; metacycPath is the path to the MetaCyc
+%     data files.
+% keepTransportRxns : logical, optional
+%     include transportation reactions, which often have identical reactants
+%     and products that turn to be all-zero columns in the S matrix (default
+%     false).
+% keepUnbalanced : logical, optional
+%     include reactions that cannot be balanced, usually because they are
+%     polymeric reactions or with specific difficulty in balancing class
+%     structures (default false).
+% keepUndetermined : logical, optional
+%     include reactions that have substrates lacking chemical structures or
+%     with non-numerical coefficients (e.g. n+1) (default false).
 %
-%   If the file metaCycRxns.mat is in the RAVEN/external/metacyc directory, it
-%   will be directly loaded instead of parsing the MetaCyc data files and
-%   pre-prepared lists of MetaCyc transport and undetermined reactions.
+% Returns
+% -------
+% model : struct
+%     a model structure generated from the database. The following fields
+%     are filled:
 %
-% Usage: model=getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined)
+%     - id : 'MetaCyc'
+%     - name : 'Automatically generated from MetaCyc database'
+%     - rxns : MetaCyc reaction ids
+%     - rxnNames : name for each reaction entry
+%     - mets : MetaCyc compound ids. If the equations use stoichiometry such
+%       as ID(n+1) then the whole expression is saved as the id
+%     - pwys : MetaCyc pathway id
+%     - eccodes : corresponding ec-number if available
+%     - rxnMiriams : reaction-specific information such as associated RHEA
+%       and KEGG reaction ids
+%     - S : stoichiometric matrix
+%     - lb : -1000 for all reactions
+%     - ub : 1000 for all reactions
+%     - rev : 1 for reversible and 0 for irreversible. For reactions present
+%       in pathway maps the reversibility is taken from there
+%     - b : 0 for all metabolites
+%     - version : MetaCyc database version
+%
+% Examples
+% --------
+%     model = getRxnsFromMetaCyc(metacycPath,keepTransportRxns,keepUnbalanced,keepUndetermined);
 
 %NOTE: This is how one entry looks in the file
 
