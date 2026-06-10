@@ -11,7 +11,7 @@ Each function should start with a commented section describing the function and 
 
 ### Semantic Commits
 Use semantic commit messages to make it easier to show what you are aiming to do:
-* `chore`: updating binaries, KEGG or MetaCyc database files, etc.
+* `chore`: updating binaries, KEGG database files, etc.
 * `doc`: updating documentation (in `doc` folder) or explanatory comments in functions.
 * `feat`: new feature added, e.g. new function introduced / new parameters / new algorithm / etc.
 * `fix`: bugfix.
@@ -50,7 +50,7 @@ Ensure that the documentation is also updated (in `devel`) before creating a PR 
 * Developers who push PRs to `devel` may propose target release categories (e.g. minor or patch) that can be commented on and discussed by reviewers and other developers.
 * As a result of the above step, minor releases hopefully can be determined.
 * To help the process of categorizing releases, some conditions are suggested qualification for minor releases:
-    * with database updates (e.g. KEGG, MetaCyc)
+    * with database updates (e.g. KEGG)
     * script reusability (i.e. with parameter changes in RAVEN functions)
     * with binary file changes
 

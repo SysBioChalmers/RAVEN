@@ -6,12 +6,10 @@ Below is a non-exhaustive summary of changes made since version 1.8.0:
 -I/O support for Excel using Apache POI
 -Support for writing COBRA(py) compatible YAML and TXT format
 -Support for maintaining models in GitHub using exportForGit function
--Novel MetaCyc-based de novo reconstruction functionality
 -Rename function names to prevent clashes with COBRA Toolbox
 -ravenCobraWrapper to allow exchanging models between the two toolboxes
 -getKEGGModelForOrganism is more efficient, implementing CD-HIT, MAFFT and HMMER3
 -Flux scanning with enforced objective function (FSEOF) analysis included
--Include spontaneous reactions and transport reactions from MetaCyc
 
 ======================
 The RAVEN Toolbox version 1.8.0

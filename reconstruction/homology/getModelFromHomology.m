@@ -12,7 +12,7 @@ function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
 %     a cell array of model structures to build the model from. These
 %     models must be sorted by importance in decreasing order.
 % blastStructure : struct
-%     a blastStructure as produced by getBlast or getBlastFromExcel.
+%     a blastStructure as produced by getBlast or makeFakeBlastStructure.
 % getModelFor : char
 %     a three-four letter abbreviation of the organism to build a model
 %     for. Must have BLASTP hits in both directions to the organisms in
