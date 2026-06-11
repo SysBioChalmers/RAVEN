@@ -61,7 +61,7 @@ shadowPrices1 = zeros(nPts);
 shadowPrices2 = zeros(nPts);
 [~,hsSol] = solveLP(model);
 % Calulate points
-PB = ProgressBar2(nPts,'Running PhPP analysis','cli');
+PB = progressReport(nPts,'Running PhPP analysis');
 for i = 1:nPts %ind1
     for j = 1:nPts %ind2
         model1 = setParam(model,'eq',controlRxn1,-1*ind1(i));
@@ -75,7 +75,6 @@ for i = 1:nPts %ind1
     end
     count(PB);
 end
-fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
 
 % Plot the points
 figure(2);

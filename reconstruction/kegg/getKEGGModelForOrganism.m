@@ -587,9 +587,9 @@ end
 missingAligned=setdiff(KOModel.rxns,[alignedFiles;hmmFiles;alignedWorking;outFiles]);
 if ~isempty(missingAligned)
     if seqIdentity==-1
-        fprintf('Performing the multiple alignment for KEGG Orthology specific protein sets...   0%% complete');
+        PB = progressReport(numel(KOModel.rxns),'Aligning KO-specific protein sets');
     else
-        fprintf('Performing clustering and multiple alignment for KEGG Orthology specific protein sets...   0%% complete');
+        PB = progressReport(numel(KOModel.rxns),'Clustering and aligning KO protein sets');
     end
     missingAligned=missingAligned(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingAligned)));
 
@@ -735,13 +735,11 @@ if ~isempty(missingAligned)
 
             %Print the progress every 25 files
             if rem(i-1,25) == 0
-                progress=num2str(floor(100*numel(listFiles(fullfile(dataDir,'aligned','*.fa')))/numel(KOModel.rxns)));
-                progress=pad(progress,3,'left');
-                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
+                PB.update(numel(listFiles(fullfile(dataDir,'aligned','*.fa'))));
             end
         end
     end
-    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+    PB.done;
 else
     if seqIdentity==-1
         fprintf('Performing the multiple alignment for KEGG Orthology specific protein sets... COMPLETE\n');
@@ -753,7 +751,7 @@ end
 %Check if training of Hidden Markov models should be performed
 missingHMMs=setdiff(KOModel.rxns,[hmmFiles;outFiles]);
 if ~isempty(missingHMMs)
-    fprintf('Training the KEGG Orthology specific HMMs...   0%% complete');
+    PB = progressReport(numel(KOModel.rxns),'Training KO-specific HMMs');
     missingHMMs=missingHMMs(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingHMMs)));
     %Train models for all missing KOs
     for i=1:numel(missingHMMs)
@@ -802,13 +800,11 @@ if ~isempty(missingHMMs)
 
             %Print the progress every 25 files
             if rem(i-1,25) == 0
-                progress=num2str(floor(100*numel(listFiles(fullfile(dataDir,'hmms','*.hmm')))/numel(KOModel.rxns)));
-                progress=pad(progress,3,'left');
-                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
+                PB.update(numel(listFiles(fullfile(dataDir,'hmms','*.hmm'))));
             end
         end
     end
-    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+    PB.done;
 else
     fprintf('Training the KEGG Orthology specific HMMs... COMPLETE\n');
 end
@@ -817,7 +813,7 @@ end
 %Hidden Markov models should be performed
 missingOUT=setdiff(KOModel.rxns,outFiles);
 if ~isempty(missingOUT)
-    fprintf('Querying the user-specified FASTA file against the KEGG Orthology specific HMMs...   0%% complete');
+    PB = progressReport(numel(KOModel.rxns),'Querying FASTA against KO-specific HMMs');
     missingOUT=missingOUT(randperm(RandStream.create('mrg32k3a','Seed',cputime()),numel(missingOUT)));
     for i=1:numel(missingOUT)
         %This is checked here because it could be that it is created by a
@@ -863,13 +859,11 @@ if ~isempty(missingOUT)
 
             %Print the progress every 25 files
             if rem(i-1,25) == 0
-                progress=num2str(floor(100*numel(listFiles(fullfile(outDir,'*.out')))/numel(KOModel.rxns)));
-                progress=pad(progress,3,'left');
-                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
+                PB.update(numel(listFiles(fullfile(outDir,'*.out'))));
             end
         end
     end
-    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+    PB.done;
 else
     fprintf('Querying the user-specified FASTA file against the KEGG Orthology specific HMMs... COMPLETE\n');
 end

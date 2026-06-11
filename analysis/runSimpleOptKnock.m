@@ -70,7 +70,7 @@ model = setParam(model,'obj',params.biomassIdx,1);
 [solWT, hsSol] = solveLP(model);
 WT.minScore = solWT.x(params.targetIdx)*solWT.f;
 
-fprintf('Running simple OptKnock analysis...   0%% complete');
+params.PB = progressReport(numel(params.deletions),'Running simple OptKnock analysis');
 KO=zeros(1,params.maxNumKO);
 [~,~,out,~] = knockoutIteration(model,params,WT,out,params.maxNumKO,KO,[],hsSol);
 
@@ -87,7 +87,7 @@ if size(out.KO,2)>1
 end
 
 
-fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+params.PB.done;
 end
 
 function [model,iteration,out,KO,hsSol] = knockoutIteration(model,params,WT,out,iteration,KO,minScore,hsSol)
@@ -97,8 +97,7 @@ end
 iteration = iteration - 1;
 for i = 1:numel(params.deletions)
     if iteration+1==params.maxNumKO
-        progress=pad(num2str(floor(i/numel(params.deletions)*100)),3,'left');
-        fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
+        params.PB.update(i);
     end
     KO(iteration+1)=i;
     switch params.genesOrRxns

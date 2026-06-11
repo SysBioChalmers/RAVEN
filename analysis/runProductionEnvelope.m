@@ -47,7 +47,7 @@ biomassValues = linspace(solMin,solMax,nPts);
 targetUpperBound = nan(1,numel(biomassValues));
 targetLowerBound = nan(1,numel(biomassValues));
 
-PB = ProgressBar2(length(biomassValues),'Creating production envelope','cli');
+PB = progressReport(length(biomassValues),'Creating production envelope');
 % Max/min for target production
 model = setParam(model,'obj',targetRxn,1);
 for i = 1:length(biomassValues)
