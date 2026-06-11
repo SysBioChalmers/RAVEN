@@ -1,5 +1,4 @@
-function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
-    keepUndefinedStoich,keepIncomplete,keepGeneral)
+function [model,KOModel]=getModelFromKEGG(varargin)
 % getModelFromKEGG  Retrieve KEGG database information and generate a model.
 %
 % Parameters
@@ -53,23 +52,18 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 
 ravenPath=findRAVENroot();
 
-if nargin<1
+p=parseRAVENargs(varargin, {'keggPath',[]; 'keepSpontaneous',true; ...
+    'keepUndefinedStoich',true; 'keepIncomplete',true; 'keepGeneral',false});
+keggPath=p.keggPath;
+if isempty(keggPath)
     keggPath=fullfile(ravenPath,'reconstruction','kegg');
 else
     keggPath=char(keggPath);
 end
-if nargin<2
-    keepSpontaneous=true;
-end
-if nargin<3
-    keepUndefinedStoich=true;
-end
-if nargin<4
-    keepIncomplete=true;
-end
-if nargin<5
-    keepGeneral=false;
-end
+keepSpontaneous=p.keepSpontaneous;
+keepUndefinedStoich=p.keepUndefinedStoich;
+keepIncomplete=p.keepIncomplete;
+keepGeneral=p.keepGeneral;
 
 modelFile=fullfile(ravenPath,'reconstruction','kegg','keggModel.mat');
 if exist(modelFile, 'file') && isNewestFile(ravenPath)

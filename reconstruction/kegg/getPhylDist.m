@@ -1,4 +1,4 @@
-function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
+function phylDistStruct=getPhylDist(varargin)
 % getPhylDist  Calculate distance between species in KEGG.
 %
 % Calculates distance between species in KEGG based on systematic name.
@@ -30,14 +30,9 @@ function phylDistStruct=getPhylDist(keggPath,onlyInKingdom)
 % This simple metric is based on the number of nodes two organisms are away
 % from each other in KEGG.
 
-if nargin<1
-    keggPath='RAVEN/external/kegg';
-else
-    keggPath=char(keggPath);
-end
-if nargin<2
-    onlyInKingdom=false;
-end
+p=parseRAVENargs(varargin, {'keggPath','RAVEN/external/kegg'; 'onlyInKingdom',false});
+keggPath=char(p.keggPath);
+onlyInKingdom=p.onlyInKingdom;
 
 %Check if the reactions have been parsed before and saved. If so, load the
 %model

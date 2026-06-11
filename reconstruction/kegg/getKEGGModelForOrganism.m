@@ -1,7 +1,4 @@
-function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
-    outDir,keepSpontaneous,keepUndefinedStoich,keepIncomplete,...
-    keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
-    nSequences,seqIdentity,globalModel)
+function model=getKEGGModelForOrganism(organismID,varargin)
 % getKEGGModelForOrganism  Reconstruct a model from KEGG protein homology.
 %
 % Reconstructs a genome-scale metabolic model based on protein homology to
@@ -240,55 +237,74 @@ function model=getKEGGModelForOrganism(organismID,fastaFile,dataDir,...
 %        keepGeneral,cutOff,minScoreRatioKO,minScoreRatioG,maxPhylDist,...
 %        nSequences,seqIdentity);
 
-if nargin<2 || isempty(fastaFile)
+p=parseRAVENargs(varargin, {'fastaFile',[]; 'dataDir',[]; 'outDir',[]; ...
+    'keepSpontaneous',true; 'keepUndefinedStoich',true; ...
+    'keepIncomplete',true; 'keepGeneral',false; 'cutOff',10^-50; ...
+    'minScoreRatioKO',0.3; 'minScoreRatioG',0.8; 'maxPhylDist',inf; ...
+    'nSequences',inf; 'seqIdentity',0.9; 'globalModel',[]});
+fastaFile=p.fastaFile;
+if isempty(fastaFile)
     fastaFile=[];
 else
     fastaFile=char(fastaFile);
 end
-if nargin<3
+dataDir=p.dataDir;
+if isempty(dataDir)
     dataDir=[];
 else
     dataDir=char(dataDir);
 end
-if nargin<4 || isempty(outDir)
+outDir=p.outDir;
+if isempty(outDir)
     outDir=tempdir;
     %Delete all *.out files if any exist
     delete(fullfile(outDir,'*.out'));
 else
     outDir=char(outDir);
 end
-if nargin<5 || isempty(keepSpontaneous)
+keepSpontaneous=p.keepSpontaneous;
+if isempty(keepSpontaneous)
     keepSpontaneous=true;
 end
-if nargin<6 || isempty(keepUndefinedStoich)
+keepUndefinedStoich=p.keepUndefinedStoich;
+if isempty(keepUndefinedStoich)
     keepUndefinedStoich=true;
 end
-if nargin<7 || isempty(keepIncomplete)
+keepIncomplete=p.keepIncomplete;
+if isempty(keepIncomplete)
     keepIncomplete=true;
 end
-if nargin<8 || isempty(keepGeneral)
+keepGeneral=p.keepGeneral;
+if isempty(keepGeneral)
     keepGeneral=false;
 end
-if nargin<9 || isempty(cutOff)
+cutOff=p.cutOff;
+if isempty(cutOff)
     cutOff=10^-50;
 end
-if nargin<10 || isempty(minScoreRatioKO)
+minScoreRatioKO=p.minScoreRatioKO;
+if isempty(minScoreRatioKO)
     minScoreRatioKO=0.3;
 end
-if nargin<11 || isempty(minScoreRatioG)
+minScoreRatioG=p.minScoreRatioG;
+if isempty(minScoreRatioG)
     minScoreRatioG=0.8;
 end
-if nargin<12 || isempty(maxPhylDist)
+maxPhylDist=p.maxPhylDist;
+if isempty(maxPhylDist)
     maxPhylDist=inf;
     %Include all sequences for each reaction
 end
-if nargin<13 || isempty(nSequences)
+nSequences=p.nSequences;
+if isempty(nSequences)
     nSequences=inf;
     %Include all sequences for each reaction
 end
-if nargin<14 || isempty(seqIdentity)
+seqIdentity=p.seqIdentity;
+if isempty(seqIdentity)
     seqIdentity=0.9;
 end
+globalModel=p.globalModel;
 
 if isempty(fastaFile)
     fprintf(['\n*** The model reconstruction from KEGG based on the annotation available for KEGG Species <strong>' organismID '</strong> ***\n\n']);
@@ -384,7 +400,7 @@ end
 %First generate the full global KEGG model. Can be provided as input.
 %Otherwise, getModelFromKEGG is run. The dataDir must not be supplied as
 %there is also an internal RAVEN version available
-if nargin==15
+if ~isempty(globalModel)
     model=globalModel.model;
     KOModel=globalModel.KOModel;
 elseif any(dataDir)

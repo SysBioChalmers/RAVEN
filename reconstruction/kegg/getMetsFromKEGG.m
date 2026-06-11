@@ -1,4 +1,4 @@
-function model=getMetsFromKEGG(keggPath)
+function model=getMetsFromKEGG(varargin)
 % getMetsFromKEGG  Retrieve information on all metabolites stored in KEGG.
 %
 % Parameters
@@ -69,11 +69,8 @@ function model=getMetsFromKEGG(keggPath)
 % model.
 %
 
-if nargin<1
-    keggPath='RAVEN/external/kegg';
-else
-    keggPath=char(keggPath);
-end
+p=parseRAVENargs(varargin, {'keggPath','RAVEN/external/kegg'});
+keggPath=char(p.keggPath);
 
 ravenPath=findRAVENroot();
 metsFile=fullfile(ravenPath,'reconstruction','kegg','keggMets.mat');

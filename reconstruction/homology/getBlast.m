@@ -1,5 +1,5 @@
 function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
-    modelIDs,refFastaFiles,developMode,hideVerbose)
+    modelIDs,refFastaFiles,varargin)
 % getBlast  Bidirectional BLAST between an organism and template organisms.
 %
 % Parameters
@@ -46,12 +46,9 @@ function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
 % --------
 % getModelFromHomology, getDiamond
 
-if nargin<5
-    developMode = false;
-end
-if nargin<6
-    hideVerbose = false;
-end
+p=parseRAVENargs(varargin, {'developMode',false; 'hideVerbose',false});
+developMode=p.developMode;
+hideVerbose=p.hideVerbose;
 
 %Everything should be cell arrays
 organismID=convertCharArray(organismID);

@@ -1,4 +1,4 @@
-function model=getGenesFromKEGG(keggPath,koList)
+function model=getGenesFromKEGG(varargin)
 % getGenesFromKEGG  Retrieve information on all genes stored in KEGG.
 %
 % Parameters
@@ -68,11 +68,9 @@ function model=getGenesFromKEGG(keggPath,koList)
 % (except for '///').
 %
 
-if nargin<1
-    keggPath='RAVEN/external/kegg';
-else
-    keggPath=char(keggPath);
-end
+p=parseRAVENargs(varargin, {'keggPath','RAVEN/external/kegg'; 'koList',[]});
+keggPath=char(p.keggPath);
+koList=p.koList;
 
 ravenPath=findRAVENroot();
 genesFile=fullfile(ravenPath,'reconstruction','kegg','keggGenes.mat');
@@ -273,7 +271,7 @@ else
 end
 
 %Only get the KOs in koList
-if nargin>1
+if ~isempty(koList)
     I=~ismember(model.rxns,koList);
     model=removeReactions(model,I,true,true);
 end

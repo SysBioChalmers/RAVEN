@@ -1,6 +1,5 @@
 function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
-    getModelFor,preferredOrder,strictness,onlyGenesInModels,maxE,...
-    minLen,minIde,mapNewGenesToOld)
+    getModelFor,varargin)
 % getModelFromHomology  Construct a new model from existing models and homology.
 %
 % Constructs a new model from a set of existing models and gene homology
@@ -80,7 +79,11 @@ hitGenes.newGenes = [];  % collect the new genes of the draft model (target orga
 
 getModelFor=char(getModelFor);
 
-if nargin<4
+p=parseRAVENargs(varargin, {'preferredOrder',[]; 'strictness',1; ...
+    'onlyGenesInModels',false; 'maxE',10^-30; 'minLen',200; 'minIde',40; ...
+    'mapNewGenesToOld',true});
+preferredOrder=p.preferredOrder;
+if isempty(preferredOrder)
     preferredOrder=[];
 else
     preferredOrder=convertCharArray(preferredOrder);
@@ -89,24 +92,12 @@ else
         preferredOrder=transpose(preferredOrder);
     end
 end
-if nargin<5
-    strictness=1;
-end
-if nargin<6
-    onlyGenesInModels=false;
-end
-if nargin<7
-    maxE=10^-30;
-end
-if nargin<8
-    minLen=200;
-end
-if nargin<9
-    minIde=40;
-end
-if nargin<10
-    mapNewGenesToOld=true;
-end
+strictness=p.strictness;
+onlyGenesInModels=p.onlyGenesInModels;
+maxE=p.maxE;
+minLen=p.minLen;
+minIde=p.minIde;
+mapNewGenesToOld=p.mapNewGenesToOld;
 
 if isfield(models,'S')
     models={models};

@@ -1,5 +1,5 @@
 function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
-    isGeneral]=getRxnsFromKEGG(keggPath)
+    isGeneral]=getRxnsFromKEGG(varargin)
 % getRxnsFromKEGG  Retrieve information on all reactions stored in KEGG.
 %
 % Parameters
@@ -76,7 +76,9 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 
 ravenPath=findRAVENroot();
 
-if nargin<1
+p=parseRAVENargs(varargin, {'keggPath',[]});
+keggPath=p.keggPath;
+if isempty(keggPath)
     keggPath=fullfile(ravenPath,'reconstruction','kegg');
 else
     keggPath=char(keggPath);
