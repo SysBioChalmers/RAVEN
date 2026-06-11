@@ -1,4 +1,4 @@
-function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,onlyToExisting,prefix)
+function [model, addedRxns]=addTransport(model,fromComp,toComps,varargin)
 % addTransport  Add transport reactions between compartments.
 %
 % This is a faster version than addRxns when adding transport reactions.
@@ -52,26 +52,15 @@ if ~all(I)
     EM='All compartments in toComps must have a match in model.comps';
     dispEM(EM);
 end
-if nargin<4
+p=parseRAVENargs(varargin, {'metNames',[]; 'isRev',true; 'onlyToExisting',true; 'prefix','tr_'});
+isRev=p.isRev;
+onlyToExisting=p.onlyToExisting;
+prefix=char(p.prefix);
+if isempty(p.metNames)
     %Find all metabolites in fromComp
     metNames=model.metNames(model.metComps==fromID);
-elseif isempty(metNames)
-    %Find all metabolites in fromComp
-    metNames=model.metNames(ismember(model.metComps,model.comps(fromID)));
 else
-    metNames=convertCharArray(metNames);
-end
-
-if nargin<5
-    isRev=true;
-end
-if nargin<6
-    onlyToExisting=true;
-end
-if nargin<7
-    prefix='tr_';
-else
-    prefix=char(prefix);
+    metNames=convertCharArray(p.metNames);
 end
 
 %Check that the names are unique

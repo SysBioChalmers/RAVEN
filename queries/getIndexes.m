@@ -1,4 +1,4 @@
-function indexes=getIndexes(model, objects, type, returnLogical)
+function indexes=getIndexes(model, objects, type, varargin)
 % getIndexes  Retrieve the indexes for a list of reactions or metabolites.
 %
 % Parameters
@@ -34,9 +34,8 @@ function indexes=getIndexes(model, objects, type, returnLogical)
 % --------
 %     indexes = getIndexes(model, objects, type, returnLogical);
 
-if nargin<4
-    returnLogical=false;
-end
+p=parseRAVENargs(varargin, {'returnLogical', false});
+returnLogical=p.returnLogical;
 
 if ~islogical(objects) && ~isnumeric(objects)
     objects=convertCharArray(objects);

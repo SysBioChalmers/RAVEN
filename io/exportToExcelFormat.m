@@ -1,4 +1,4 @@
-function exportToExcelFormat(model,fileName,sortIds)
+function exportToExcelFormat(model,varargin)
 % exportToExcelFormat  Export a model to the Microsoft Excel model format.
 %
 % Parameters
@@ -19,7 +19,9 @@ function exportToExcelFormat(model,fileName,sortIds)
 % --------
 %     exportToExcelFormat(model, fileName, sortIds);
 
-if nargin<2 || isempty(fileName)
+p=parseRAVENargs(varargin, {'fileName',[]; 'sortIds',false});
+fileName=p.fileName; sortIds=p.sortIds;
+if isempty(fileName)
     [fileName, pathName] = uiputfile('*.xlsx', 'Select file for model export',[model.id '.xlsx']);
     if fileName == 0
         error('You should provide a file location')
@@ -28,9 +30,6 @@ if nargin<2 || isempty(fileName)
     end
 end
 fileName=char(fileName);
-if nargin<3
-    sortIds=false;
-end
 if sortIds==true
     model=sortIdentifiers(model);
 end
