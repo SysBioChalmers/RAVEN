@@ -137,7 +137,7 @@ if isRaven
         for i = 1:length(rxnCOBRAfields)
             j=ismember(extractedMiriamNames,rxnNamespaces{i});
             if any(j)
-                eval(['newModel.' rxnCOBRAfields{i} ' = miriams(:,j);'])
+                newModel.(rxnCOBRAfields{i}) = miriams(:,j);
             end
         end
     end
@@ -185,7 +185,7 @@ if isRaven
         for i = 1:length(metCOBRAfields)
             j=ismember(extractedMiriamNames,metNamespaces{i});
             if any(j)
-                eval(['newModel.' metCOBRAfields{i} ' = miriams(:,j);'])
+                newModel.(metCOBRAfields{i}) = miriams(:,j);
             end
         end
     end
@@ -199,7 +199,7 @@ if isRaven
         for i = 1:length(geneCOBRAfields)
             j=ismember(extractedMiriamNames,geneNamespaces{i});
             if any(j)
-                eval(['newModel.' geneCOBRAfields{i} ' = miriams(:,j);'])
+                newModel.(geneCOBRAfields{i}) = miriams(:,j);
             end
         end
     end
@@ -304,7 +304,7 @@ else
             end
             for j = 2:length(rxnCOBRAfields) %Start from 2, as 1 is rxnReferences
                 if isfield(model,rxnCOBRAfields{j})
-                    rxnAnnotation = eval(['model.' rxnCOBRAfields{j} '{i}']);
+                    rxnAnnotation = model.(rxnCOBRAfields{j}){i};
                     if ~isempty(rxnAnnotation)
                         rxnAnnotation = strtrim(strsplit(rxnAnnotation,';'));
                         for a=1:length(rxnAnnotation)
@@ -331,7 +331,7 @@ else
             newModel.geneMiriams{i,1}=[];
             for j = 1:length(geneCOBRAfields)
                 if isfield(model,geneCOBRAfields{j})
-                    geneAnnotation = eval(['model.' geneCOBRAfields{j} '{i}']);
+                    geneAnnotation = model.(geneCOBRAfields{j}){i};
                     if ~isempty(geneAnnotation)
                         geneAnnotation = strtrim(strsplit(geneAnnotation,';'));
                         for a=1:length(geneAnnotation)
@@ -397,7 +397,7 @@ else
             end            
             for j = 1:length(metCOBRAfields)
                 if isfield(model,metCOBRAfields{j})
-                    metAnnotation = eval(['model.' metCOBRAfields{j} '{i}']);
+                    metAnnotation = model.(metCOBRAfields{j}){i};
                     if ~isempty(metAnnotation)
                         metAnnotation = strtrim(strsplit(metAnnotation,';'));
                         for a=1:length(metAnnotation)
