@@ -176,8 +176,8 @@ end
 function version = getToolboxVersion(toolbox,fileID,mainBranchFlag)
 % getToolboxVersion  Return the version of RAVEN or GECKO.
 %
-% Returns the version of the toolbox (from its version.txt), or if not
-% available the latest commit hash (7 characters).
+% Returns the version of the toolbox as stated in its version.txt, or
+% 'unknown' if that file cannot be found.
 %
 % toolbox        name of the toolbox (e.g. 'RAVEN' or 'GECKO').
 % fileID         a file only found in that toolbox, used to locate its root
@@ -212,28 +212,15 @@ if mainBranchFlag
         error(['ERROR: ' toolbox ' not in main (or master) branch. Check-out this branch of ' toolbox ' before submitting model for Git.'])
     end
 end
-%Try to find version file of the toolbox:
+%Read the version from the toolbox version.txt; report 'unknown' otherwise
 if isempty(version)
-    try
-        fid     = fopen([toolboxPath 'version.txt'],'r');
+    fid = fopen([toolboxPath 'version.txt'],'r');
+    if fid ~= -1
         version = fscanf(fid,'%s');
         fclose(fid);
-    catch
-        %If no file available, look up the tag:
-        try
-            [~,version] = system('git describe --tags');
-            version = strtrim(version);
-            [~,commit] = system('git log -n 1 --format=%H');
-            commit = commit(1:7);
-            %If no tag available or commit is part of tag, get commit instead:
-            if ~isempty(strfind(version,'fatal')) || ~isempty(strfind(version,commit))
-                version = ['commit ' commit];
-            else
-                version = strrep(version,'v','');
-            end
-        catch
-            version = 'unknown';
-        end
+    end
+    if isempty(version)
+        version = 'unknown';
     end
 end
 cd(currentPath);
