@@ -51,10 +51,10 @@ function compStruct = compareMultipleModels(models,varargin)
 %     compStruct = compareMultipleModels(models, printResults, ...
 %         plotResults, groupVector, funcCompare, taskFile);
 
-%% Stats toolbox required
-if ~(exist('mdscale.m','file') && exist('pdist.m','file') && exist('squareform.m','file') && exist('tsne.m','file'))
-    error('The MATLAB Statistics and Machine Learning Toolbox is required for this function')
-end
+% The core comparison (structComp) runs in base MATLAB. The low-dimensional
+% projection (structCompMap) and the heatmap clustering additionally use the
+% Statistics and Machine Learning Toolbox (tsne/mdscale, linkage); these
+% degrade gracefully and are skipped when the toolbox is not available.
 
 %% Set up input defaults
 p=parseRAVENargs(varargin, {'printResults',false; 'plotResults',false; 'groupVector',[]; 'funcCompare',false; 'taskFile',[]});
@@ -177,8 +177,11 @@ fprintf('\n Comparing model reaction correlations \n')
 compStruct.reactions.IDs = id;
 compStruct.reactions.matrix = binary_matrix;
 
-% calculate hamming similarity
-compStruct.structComp = 1-squareform(pdist(binary_matrix','hamming'));
+% calculate hamming similarity (1 - Hamming distance) between models. This
+% is done in base MATLAB so the Statistics Toolbox is not required: for
+% binary columns the agreement fraction equals 1 minus the Hamming distance.
+B = double(binary_matrix);
+compStruct.structComp = (B'*B + (1-B)'*(1-B)) / size(B,1);
 fprintf('*** Done \n\n')
 if plotResults == true
     color_map = [ones(100,1) linspace(1,0,100)' linspace(1,0,100)'];
@@ -187,24 +190,29 @@ if plotResults == true
     title('Structural Similarity','FontSize',18,'FontWeight','bold')
 end
 
-% Compare overall reaction structure across all models using tSNE projection
+% Compare overall reaction structure across all models using a 3D tSNE (or
+% MDS) projection. Both require the Statistics and Machine Learning Toolbox;
+% if neither is available the projection is skipped and structCompMap is left
+% empty.
 rng(42) % For consistency
 fprintf('\n Comparing model reaction structures \n')
-if exist('tsne') > 0
+proj_coords = [];
+axis_labels = {};
+if exist('tsne','file') > 0
     proj_coords = tsne(double(binary_matrix'),'Distance','hamming','NumDimensions',3); % 3D
-    compStruct.structCompMap = proj_coords;
     axis_labels = {'tSNE 1';'tSNE 2';'tSNE 3'};
-else % Seems odd to use mdscale if tsne is not found, as both are
-     % distributed with stats toolbox. If tsne is not present, then also
-     % mdscale is missing. Anyway, will leave this for now.
-    [proj_coords,stress,disparities] = mdscale(pdist(double(binary_matrix'),'hamming'),3);
-    compStruct.structCompMap = proj_coords;
+elseif exist('mdscale','file') > 0
+    proj_coords = mdscale(pdist(double(binary_matrix'),'hamming'),3);
     axis_labels = {'MDS 1';'MDS 2';'MDS 3'};
+else
+    fprintf(['   Skipping low-dimensional projection: requires tsne or ' ...
+        'mdscale from the Statistics and Machine Learning Toolbox\n']);
 end
+compStruct.structCompMap = proj_coords;
 fprintf('*** Done \n\n')
 
 % plot structure comparison results
-if plotResults == true
+if plotResults == true && ~isempty(proj_coords)
     figure; hold on;
     if ~isempty(groupVector)
         color_data = groupVector;
@@ -347,8 +355,16 @@ if nargin < 8
     grid_color = 'none';
 end
 
-% perform hierarchical clustering to sort rows (if specified)
+% perform hierarchical clustering to sort rows/columns (if specified).
+% Clustering needs the Statistics and Machine Learning Toolbox (linkage,
+% optimalleaforder, pdist); without it the heatmap is drawn unordered.
 linkage_method = 'average';
+if ~strcmp(clust_dim,'none') && ~(exist('linkage','file') && ...
+        exist('optimalleaforder','file') && exist('pdist','file'))
+    fprintf(['   Skipping heatmap clustering: requires the Statistics and ' ...
+        'Machine Learning Toolbox\n']);
+    clust_dim = 'none';
+end
 if ismember(clust_dim,{'rows','both'})
     L = linkage(data,linkage_method,clust_dist);
     row_ind = optimalleaforder(L,pdist(data,clust_dist));
