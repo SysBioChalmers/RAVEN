@@ -1,4 +1,4 @@
-function model = loadDeltaGfromCSV(model, metCsv, rxnCsv)
+function model = loadDeltaGfromCSV(model, varargin)
 % loadDeltaGfromCSV  Populate metDeltaG and rxnDeltaG from CSV files.
 %
 % Populate model.metDeltaG and model.rxnDeltaG from project CSV files.
@@ -13,9 +13,12 @@ function model = loadDeltaGfromCSV(model, metCsv, rxnCsv)
 % ----------
 % model : struct
 %     RAVEN model struct.
-% metCsv : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% metCsv : char
 %     Path to metabolite ΔG CSV (id, ΔG), or '' to skip.
-% rxnCsv : char, optional
+% rxnCsv : char
 %     Path to reaction ΔG CSV (id, ΔG), or '' to skip.
 %
 % Returns
@@ -29,12 +32,9 @@ function model = loadDeltaGfromCSV(model, metCsv, rxnCsv)
 %         'data/databases/model_metDeltaG.csv', ...
 %         'data/databases/model_rxnDeltaG.csv');
 
-if nargin < 3
-    rxnCsv = '';
-end
-if nargin < 2
-    metCsv = '';
-end
+p=parseRAVENargs(varargin, {'metCsv',''; 'rxnCsv',''});
+metCsv=p.metCsv;
+rxnCsv=p.rxnCsv;
 
 if ~isempty(metCsv)
     if isfield(model, 'metDeltaG')

@@ -11,7 +11,7 @@ Each function should start with a commented section describing the function and 
 
 ### Semantic Commits
 Use semantic commit messages to make it easier to show what you are aiming to do:
-* `chore`: updating binaries, KEGG or MetaCyc database files, etc.
+* `chore`: updating binaries, KEGG database files, etc.
 * `doc`: updating documentation (in `doc` folder) or explanatory comments in functions.
 * `feat`: new feature added, e.g. new function introduced / new parameters / new algorithm / etc.
 * `fix`: bugfix.
@@ -27,7 +27,7 @@ fix: optimizeProb parsing results from Gurobi
 A more detailed explanation or comments can be left in the commit description.
 
 ### External Software Update
-* Once the newer version for any external software (BLAST+, CD-HIT, DIAMOND, HMMER, MAFFT, WoLFPSORT) is available, identify the newest version which is simultaneously available for macOS, Unix/Linux and Windows
+* Once the newer version for any external software (BLAST+, DIAMOND, HMMER, WoLFPSORT) is available, identify the newest version which is simultaneously available for macOS, Unix/Linux and Windows
 * Create a separate branch from the `devel` branch and name it e.g. `chore/updateBinaries`
 * Commit the changes for each program and operating system separately, e.g. `chore: update HMMER (Win) to 3.2.1`
 * As soon as all binaries for particular program are updated through commits, update the corresponding license file, if available and place it in e.g. `software/blast+` directory.
@@ -50,7 +50,7 @@ Ensure that the documentation is also updated (in `devel`) before creating a PR 
 * Developers who push PRs to `devel` may propose target release categories (e.g. minor or patch) that can be commented on and discussed by reviewers and other developers.
 * As a result of the above step, minor releases hopefully can be determined.
 * To help the process of categorizing releases, some conditions are suggested qualification for minor releases:
-    * with database updates (e.g. KEGG, MetaCyc)
+    * with database updates (e.g. KEGG)
     * script reusability (i.e. with parameter changes in RAVEN functions)
     * with binary file changes
 

@@ -1,0 +1,296 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of mapCompartments</title>
+  <meta name="keywords" content="mapCompartments">
+  <meta name="description" content="mapCompartments  Map compartments in the geneScoreStructure.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">localization</a> &gt; mapCompartments.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for localization&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>mapCompartments
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>mapCompartments  Map compartments in the geneScoreStructure.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function geneScoreStructure=mapCompartments(geneScoreStructure,varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> mapCompartments  Map compartments in the geneScoreStructure.
+
+ Maps compartments in the geneScoreStructure. This is used if you do not
+ want a model that uses all of the compartments from the predictor. This
+ function will then let you define rules on how the compartments should be
+ merged.
+
+ Parameters
+ ----------
+ geneScoreStructure : struct
+     a structure to be used in predictLocalization.
+ varargin : char or cell
+     any number of rules, defined as consecutive strings or in a cell
+     array:
+
+     - 'comp1' : comp1 should be kept in the structure.
+     - 'comp1=comp2' : The scores in comp2 are merged to comp1 and comp2 is
+       removed from the structure. This automatically keeps comp1 in the
+       structure.
+     - 'comp1=comp2 comp3' : The scores in comp2 and comp3 are merged to
+       comp1 and comp2 &amp; comp3 are removed from the structure. This
+       automatically keeps comp1 in the structure.
+     - 'comp1 comp2=comp3' : The scores in comp3 are split between comp1 and
+       comp2. This automatically keeps comp1 and comp2 in the structure.
+     - 'comp1=other' : The scores in any compartment not included are merged
+       to comp1. This is applied after all other rules.
+
+ Returns
+ -------
+ geneScoreStructure : struct
+     a structure to be used in predictLocalization.
+
+ Examples
+ --------
+ The predictor you use gives prediction for Extracellular, Cytosol,
+ Nucleus, Peroxisome, Mitochondria, ER, and Lysosome. You want to have a
+ model with Extracellular, Cytosol, Mitochondria, and Peroxisome where
+ Lysosome is merged with Peroxisome and all other compartments are merged
+ to the Cytosol:
+
+     GSS = mapCompartments(GSS, 'Extracellular', 'Mitochondria', ...
+         'Peroxisome=Lysosome', 'Cytosol=other');
+
+ Notes
+ -----
+ When one compartment is merged to another the resulting scores will be the
+ best for each gene in either of the compartments. In the case where one
+ compartment is split among several, the scores for the compartment to be
+ merged is weighted with the number of compartments to split to.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function geneScoreStructure=mapCompartments(geneScoreStructure,varargin)</a>
+0002 <span class="comment">% mapCompartments  Map compartments in the geneScoreStructure.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Maps compartments in the geneScoreStructure. This is used if you do not</span>
+0005 <span class="comment">% want a model that uses all of the compartments from the predictor. This</span>
+0006 <span class="comment">% function will then let you define rules on how the compartments should be</span>
+0007 <span class="comment">% merged.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% Parameters</span>
+0010 <span class="comment">% ----------</span>
+0011 <span class="comment">% geneScoreStructure : struct</span>
+0012 <span class="comment">%     a structure to be used in predictLocalization.</span>
+0013 <span class="comment">% varargin : char or cell</span>
+0014 <span class="comment">%     any number of rules, defined as consecutive strings or in a cell</span>
+0015 <span class="comment">%     array:</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">%     - 'comp1' : comp1 should be kept in the structure.</span>
+0018 <span class="comment">%     - 'comp1=comp2' : The scores in comp2 are merged to comp1 and comp2 is</span>
+0019 <span class="comment">%       removed from the structure. This automatically keeps comp1 in the</span>
+0020 <span class="comment">%       structure.</span>
+0021 <span class="comment">%     - 'comp1=comp2 comp3' : The scores in comp2 and comp3 are merged to</span>
+0022 <span class="comment">%       comp1 and comp2 &amp; comp3 are removed from the structure. This</span>
+0023 <span class="comment">%       automatically keeps comp1 in the structure.</span>
+0024 <span class="comment">%     - 'comp1 comp2=comp3' : The scores in comp3 are split between comp1 and</span>
+0025 <span class="comment">%       comp2. This automatically keeps comp1 and comp2 in the structure.</span>
+0026 <span class="comment">%     - 'comp1=other' : The scores in any compartment not included are merged</span>
+0027 <span class="comment">%       to comp1. This is applied after all other rules.</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Returns</span>
+0030 <span class="comment">% -------</span>
+0031 <span class="comment">% geneScoreStructure : struct</span>
+0032 <span class="comment">%     a structure to be used in predictLocalization.</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">% Examples</span>
+0035 <span class="comment">% --------</span>
+0036 <span class="comment">% The predictor you use gives prediction for Extracellular, Cytosol,</span>
+0037 <span class="comment">% Nucleus, Peroxisome, Mitochondria, ER, and Lysosome. You want to have a</span>
+0038 <span class="comment">% model with Extracellular, Cytosol, Mitochondria, and Peroxisome where</span>
+0039 <span class="comment">% Lysosome is merged with Peroxisome and all other compartments are merged</span>
+0040 <span class="comment">% to the Cytosol:</span>
+0041 <span class="comment">%</span>
+0042 <span class="comment">%     GSS = mapCompartments(GSS, 'Extracellular', 'Mitochondria', ...</span>
+0043 <span class="comment">%         'Peroxisome=Lysosome', 'Cytosol=other');</span>
+0044 <span class="comment">%</span>
+0045 <span class="comment">% Notes</span>
+0046 <span class="comment">% -----</span>
+0047 <span class="comment">% When one compartment is merged to another the resulting scores will be the</span>
+0048 <span class="comment">% best for each gene in either of the compartments. In the case where one</span>
+0049 <span class="comment">% compartment is split among several, the scores for the compartment to be</span>
+0050 <span class="comment">% merged is weighted with the number of compartments to split to.</span>
+0051 
+0052 <span class="comment">%   'comp1=comp2'       The scores in comp2 are merged to comp1 and comp2 is</span>
+0053 <span class="comment">%                       removed from the structure. This automatically</span>
+0054 <span class="comment">%                       keeps comp1 in the structure</span>
+0055 
+0056 <span class="comment">%   'comp1=comp2 comp3' The scores in comp2 and comp3 are merged to comp1</span>
+0057 <span class="comment">%                       and comp2 &amp; comp2 are removed from the structure.</span>
+0058 <span class="comment">%                       This automatically keeps comp1 in the structure</span>
+0059 
+0060 <span class="comment">%   'comp1 comp2=comp3' The scores in comp3 are split between comp1 and</span>
+0061 <span class="comment">%                       comp2. This automatically keeps comp1 and comp2 in</span>
+0062 <span class="comment">%                       the structure</span>
+0063 
+0064 <span class="comment">%   'comp1=other'       The scores in any compartment not included are</span>
+0065 <span class="comment">%                       merged to comp1. This is applied after all other</span>
+0066 <span class="comment">%                       rules.</span>
+0067 <span class="comment">%</span>
+0068 <span class="comment">%   When one compartment is merged to another the resulting scores will be</span>
+0069 <span class="comment">%   the best for each gene in either of the compartments. In the case where</span>
+0070 <span class="comment">%   one compartment is split among several, the scores for the compartment</span>
+0071 <span class="comment">%   to be merged is weighted with the number of compartments to split to.</span>
+0072 <span class="comment">%</span>
+0073 <span class="comment">%   Example: The predictor you use give prediction for Extracellular,</span>
+0074 <span class="comment">%   Cytosol, Nucleus, Peroxisome, Mitochondria, ER, and Lysosome. You want to</span>
+0075 <span class="comment">%   have a model with Extracellular, Cytosol, Mitochondria, and Peroxisome</span>
+0076 <span class="comment">%   where Lysosome is merged with Peroxisome and all other compartments</span>
+0077 <span class="comment">%   are merged to the Cytosol.</span>
+0078 <span class="comment">%</span>
+0079 <span class="comment">%   GSS=mapCompartments(GSS,'Extracellular','Mitochondria','Peroxisome=Lyso</span>
+0080 <span class="comment">%   some','Cytosol=other');</span>
+0081 <span class="comment">%</span>
+0082 <span class="comment">%   geneScoreStructure  a structure to be used in predictLocalization</span>
+0083 <span class="comment">%</span>
+0084 <span class="comment">% Usage: geneScoreStructure=mapCompartments(geneScoreStructure,varargin)</span>
+0085 
+0086 varargin=upper(varargin);
+0087 
+0088 <span class="comment">%First find the compartment that will end up in the final structure. They</span>
+0089 <span class="comment">%are the ones that stand alone or are to the left of some '='</span>
+0090 toKeep={};
+0091 toMerge={};
+0092 I=regexp(varargin,<span class="string">'='</span>,<span class="string">'split'</span>);
+0093 <span class="keyword">for</span> i=1:numel(varargin)
+0094     <span class="keyword">if</span> numel(I{i})==1
+0095         toKeep=[toKeep;I{i}];
+0096     <span class="keyword">else</span>
+0097         J=regexp(I{i}(1),<span class="string">' '</span>,<span class="string">'split'</span>);
+0098         K=regexp(I{i}(2),<span class="string">' '</span>,<span class="string">'split'</span>);
+0099         toKeep=[toKeep;J{1}(:)];
+0100         toMerge=[toMerge;K{1}(:)];
+0101     <span class="keyword">end</span>
+0102 <span class="keyword">end</span>
+0103 
+0104 <span class="comment">%Check that there are no compartment that should both be merged and kept</span>
+0105 <span class="keyword">if</span> ~isempty(intersect(toKeep,toMerge))
+0106     EM=<span class="string">'There are inconsistencies where one or more compartment(s) should be both kept and merged to another'</span>;
+0107     dispEM(EM);
+0108 <span class="keyword">end</span>
+0109 
+0110 <span class="comment">%Check that there are no compartments in the rules that are not in the</span>
+0111 <span class="comment">%geneScoreStructure.</span>
+0112 uComps=upper(geneScoreStructure.compartments);
+0113 J=[uComps,{<span class="string">'OTHER'</span>}];
+0114 
+0115 <span class="keyword">if</span> ~isempty(setdiff([toKeep;toMerge],J))
+0116     EM=<span class="string">'There are compartment in the rules that are not in geneScoreStructure.compartments'</span>;
+0117     dispEM(EM);
+0118 <span class="keyword">end</span>
+0119 
+0120 <span class="comment">%Loop through it again and do the mapping</span>
+0121 otherIndex=[]; <span class="comment">%This stores the rule which maps 'other'.</span>
+0122 
+0123 <span class="keyword">for</span> i=1:numel(I)
+0124     <span class="keyword">if</span> numel(I{i})&gt;1
+0125         <span class="comment">%Get the compartment indexes that should be mapped</span>
+0126         J=regexp(I{i}(2),<span class="string">' '</span>,<span class="string">'split'</span>);
+0127         <span class="keyword">if</span> strcmpi(J{1},<span class="string">'other'</span>)
+0128             otherIndex=i;
+0129             <span class="keyword">continue</span>;
+0130         <span class="keyword">end</span>
+0131         [k, K]=ismember(J{1},uComps);
+0132         
+0133         <span class="comment">%And to where they should be mapped</span>
+0134         J=regexp(I{i}(1),<span class="string">' '</span>,<span class="string">'split'</span>);
+0135         [l, L]=ismember(J{1},uComps);
+0136         
+0137         <span class="comment">%It's not allowed to have rules like A B=C D</span>
+0138         <span class="keyword">if</span> numel(K)&gt;1 &amp;&amp; numel(L)&gt;1
+0139             EM=<span class="string">'It is not allowed to have rules like &quot;A B=C D&quot; (map more than one compartment to more than one compartment)'</span>;
+0140             dispEM(EM);
+0141         <span class="keyword">end</span>
+0142         
+0143         <span class="keyword">if</span> ~all(k) || ~all(l)
+0144             EM=<span class="string">'Error in mapping. This most likely means that some compartment(s) are mapped to different compartments in different rules. Use A B=C if you want to map C to several compartments'</span>;
+0145             dispEM(EM);
+0146         <span class="keyword">end</span>
+0147         
+0148         <span class="comment">%Get the sum of the scores for the compartments that should be</span>
+0149         <span class="comment">%merged to something else</span>
+0150         S=max(geneScoreStructure.scores(:,K),[],2);
+0151         <span class="keyword">for</span> j=1:numel(L)
+0152             <span class="comment">%If the scores are mapped to several different compartments</span>
+0153             <span class="comment">%then split the scores between them</span>
+0154             geneScoreStructure.scores(:,L(j))=max(geneScoreStructure.scores(:,L(j)),S./numel(L));
+0155         <span class="keyword">end</span>
+0156         
+0157         <span class="comment">%Remove the comparement that were merged</span>
+0158         geneScoreStructure.compartments(K)=[];
+0159         geneScoreStructure.scores(:,K)=[];
+0160         uComps(K)=[];
+0161     <span class="keyword">end</span>
+0162 <span class="keyword">end</span>
+0163 
+0164 <span class="comment">%Then check if there are remaining compartments that should be removed or</span>
+0165 <span class="comment">%mapped as 'other'</span>
+0166 J=find(~ismember(uComps,toKeep));
+0167 <span class="keyword">if</span> any(J)
+0168     <span class="keyword">if</span> any(otherIndex)
+0169         K=regexp(I{otherIndex}(1),<span class="string">' '</span>,<span class="string">'split'</span>);
+0170         [l, L]=ismember(K{1},uComps);
+0171         <span class="keyword">if</span> l==1 &amp;&amp; numel(l)==1
+0172             S=max(geneScoreStructure.scores(:,J),[],2);
+0173             geneScoreStructure.scores(:,L)=max(geneScoreStructure.scores(:,L),S);
+0174         <span class="keyword">else</span>
+0175             EM=<span class="string">'Could not map &quot;other&quot; to more than one compartment'</span>;
+0176             dispEM(EM);
+0177         <span class="keyword">end</span>
+0178     <span class="keyword">else</span>
+0179         EM=<span class="string">'There are compartments that are not defined if they should be kept or removed. Use &quot;A=other&quot; or define more rules if you do not want them to be deleted'</span>;
+0180         dispEM(EM,false);
+0181     <span class="keyword">end</span>
+0182     
+0183     <span class="comment">%Remove the comparement that were merged</span>
+0184     geneScoreStructure.compartments(J)=[];
+0185     geneScoreStructure.scores(:,J)=[];
+0186 <span class="keyword">end</span>
+0187 
+0188 <span class="comment">%Renormalize</span>
+0189 I=max(geneScoreStructure.scores,[],2);
+0190 geneScoreStructure.scores=bsxfun(@times, geneScoreStructure.scores, 1./I);
+0191 
+0192 <span class="comment">%If there are genes that have score 0 in all compartments, remove them and</span>
+0193 <span class="comment">%print a warning.</span>
+0194 I=find(isnan(geneScoreStructure.scores(:,1))); <span class="comment">%Only looks a the first colum as it will be the same for the other ones</span>
+0195 <span class="keyword">if</span> any(I)
+0196     EM=<span class="string">'The following genes had score 0.0 in all compartments. They have been removed from the structure. Consider using more rules or &quot;A=other&quot; in order to prevent this:'</span>;
+0197     dispEM(EM,false,geneScoreStructure.genes(I));
+0198     geneScoreStructure.scores(I,:)=[];
+0199     geneScoreStructure.genes(I)=[];
+0200 <span class="keyword">end</span>
+0201 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

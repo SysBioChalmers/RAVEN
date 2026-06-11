@@ -1,4 +1,4 @@
-function exportModelToSIF(model,fileName,graphType,rxnLabels,metLabels)
+function exportModelToSIF(model,fileName,varargin)
 % exportModelToSIF  Export a constraint-based model to a SIF file.
 %
 % Parameters
@@ -7,33 +7,38 @@ function exportModelToSIF(model,fileName,graphType,rxnLabels,metLabels)
 %     a model structure.
 % fileName : char
 %     the filename to export the model to.
-% graphType : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% graphType : char
 %     the type of graph to export to (default 'rc'):
 %
 %     - 'rc' : reaction-compound
 %     - 'rr' : reaction-reaction
 %     - 'cc' : compound-compound
-% rxnLabels : cell, optional
+% rxnLabels : cell
 %     cell array with labels for reactions (default model.rxns).
-% metLabels : cell, optional
+% metLabels : cell
 %     cell array with labels for metabolites (default model.mets).
 %
 % Examples
 % --------
 %     exportModelToSIF(model, fileName, graphType, rxnLabels, metLabels);
 fileName=char(fileName);
-if nargin<3
+p=parseRAVENargs(varargin, {'graphType',[]; 'rxnLabels',[]; 'metLabels',[]});
+graphType=p.graphType; rxnLabels=p.rxnLabels; metLabels=p.metLabels;
+if isempty(graphType)
     graphType='rc';
 else
     graphType=char(graphType);
 end
 
-if nargin<4 || isempty(rxnLabels)
+if isempty(rxnLabels)
     rxnLabels=model.rxns;
 else
     rxnLabels=convertCharArray(rxnLabels);
 end
-if nargin<5 || isempty(metLabels)
+if isempty(metLabels)
     metLabels=model.mets;
 else
     metLabels=convertCharArray(metLabels);

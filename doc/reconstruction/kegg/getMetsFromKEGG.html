@@ -1,0 +1,405 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of getMetsFromKEGG</title>
+  <meta name="keywords" content="getMetsFromKEGG">
+  <meta name="description" content="getMetsFromKEGG  Retrieve information on all metabolites stored in KEGG.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="../index.html">reconstruction</a> &gt; <a href="index.html">kegg</a> &gt; getMetsFromKEGG.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for reconstruction\kegg&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>getMetsFromKEGG
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>getMetsFromKEGG  Retrieve information on all metabolites stored in KEGG.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function model=getMetsFromKEGG(keggPath) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> getMetsFromKEGG  Retrieve information on all metabolites stored in KEGG.
+
+ Parameters
+ ----------
+ keggPath : char, optional
+     if keggMets.mat is not in the RAVEN\external\kegg directory, this
+     function will attempt to read data from a local FTP dump of the KEGG
+     database. keggPath is the path to the root of this database (default
+     'RAVEN/external/kegg').
+
+ Returns
+ -------
+ model : struct
+     a model structure generated from the database, with fields:
+
+     - id : 'KEGG'
+     - name : 'Automatically generated from KEGG database'
+     - mets : KEGG compound ids
+     - metNames : compound name. Only the first name will be saved if there
+       are several synonyms
+     - metMiriams : if there is a CHEBI id available, then that will be
+       saved here
+     - inchis : InChI string for the metabolite
+     - metFormulas : the chemical composition of the metabolite. This will
+       only be loaded if there is no InChI string
+
+ Examples
+ --------
+     model = getMetsFromKEGG(keggPath);
+
+ Notes
+ -----
+ If the file keggMets.mat is in the RAVEN\external\kegg directory it will
+ be loaded instead of parsing of the KEGG files. If it does not exist it
+ will be saved after parsing of the KEGG files. In general, you should
+ remove the keggMets.mat file if you want to rebuild the model structure
+ from a newer version of KEGG.
+
+ This is how one entry looks in the file:
+
+ ENTRY       C00001                      Compound
+ NAME        H2O;
+             Water
+ FORMULA     H2O
+ EXACT_MASS  18.0106
+ MOL_WEIGHT  18.0153
+ REMARK      Same as: D00001
+ REACTION    R00001 R00002 R00004 R00005 R00009 R00010 R00011 R00017
+             R00022 R00024 R00025 R00026 R00028 R00036 R00041 R00044
+             (list truncated)
+ ENZYME      1.1.1.1         1.1.1.22        1.1.1.23        1.1.1.115
+             1.1.1.132       1.1.1.136       1.1.1.170       1.1.1.186
+             (list truncated)
+ BRITE       Therapeutic category of drugs in Japan [BR:br08301]
+             (list truncated)
+ DBLINKS     CAS: 7732-18-5
+             PubChem: 3303
+             ChEBI: 15377
+             (list truncated)
+
+ Then a lot of info about the positions of the atoms and so on. It is not
+ certain that each metabolite follows this structure exactly.
+
+ The file is not tab-delimited. Instead each label is 12 characters
+ (except for '///').
+
+ Check if the reactions have been parsed before and saved. If so, load the
+ model.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="getModelFromKEGG.html" class="code" title="function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral)">getModelFromKEGG</a>	getModelFromKEGG  Retrieve KEGG database information and generate a model.</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function model=getMetsFromKEGG(keggPath)</a>
+0002 <span class="comment">% getMetsFromKEGG  Retrieve information on all metabolites stored in KEGG.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Parameters</span>
+0005 <span class="comment">% ----------</span>
+0006 <span class="comment">% keggPath : char, optional</span>
+0007 <span class="comment">%     if keggMets.mat is not in the RAVEN\external\kegg directory, this</span>
+0008 <span class="comment">%     function will attempt to read data from a local FTP dump of the KEGG</span>
+0009 <span class="comment">%     database. keggPath is the path to the root of this database (default</span>
+0010 <span class="comment">%     'RAVEN/external/kegg').</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% Returns</span>
+0013 <span class="comment">% -------</span>
+0014 <span class="comment">% model : struct</span>
+0015 <span class="comment">%     a model structure generated from the database, with fields:</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">%     - id : 'KEGG'</span>
+0018 <span class="comment">%     - name : 'Automatically generated from KEGG database'</span>
+0019 <span class="comment">%     - mets : KEGG compound ids</span>
+0020 <span class="comment">%     - metNames : compound name. Only the first name will be saved if there</span>
+0021 <span class="comment">%       are several synonyms</span>
+0022 <span class="comment">%     - metMiriams : if there is a CHEBI id available, then that will be</span>
+0023 <span class="comment">%       saved here</span>
+0024 <span class="comment">%     - inchis : InChI string for the metabolite</span>
+0025 <span class="comment">%     - metFormulas : the chemical composition of the metabolite. This will</span>
+0026 <span class="comment">%       only be loaded if there is no InChI string</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% Examples</span>
+0029 <span class="comment">% --------</span>
+0030 <span class="comment">%     model = getMetsFromKEGG(keggPath);</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">% Notes</span>
+0033 <span class="comment">% -----</span>
+0034 <span class="comment">% If the file keggMets.mat is in the RAVEN\external\kegg directory it will</span>
+0035 <span class="comment">% be loaded instead of parsing of the KEGG files. If it does not exist it</span>
+0036 <span class="comment">% will be saved after parsing of the KEGG files. In general, you should</span>
+0037 <span class="comment">% remove the keggMets.mat file if you want to rebuild the model structure</span>
+0038 <span class="comment">% from a newer version of KEGG.</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">% This is how one entry looks in the file:</span>
+0041 <span class="comment">%</span>
+0042 <span class="comment">% ENTRY       C00001                      Compound</span>
+0043 <span class="comment">% NAME        H2O;</span>
+0044 <span class="comment">%             Water</span>
+0045 <span class="comment">% FORMULA     H2O</span>
+0046 <span class="comment">% EXACT_MASS  18.0106</span>
+0047 <span class="comment">% MOL_WEIGHT  18.0153</span>
+0048 <span class="comment">% REMARK      Same as: D00001</span>
+0049 <span class="comment">% REACTION    R00001 R00002 R00004 R00005 R00009 R00010 R00011 R00017</span>
+0050 <span class="comment">%             R00022 R00024 R00025 R00026 R00028 R00036 R00041 R00044</span>
+0051 <span class="comment">%             (list truncated)</span>
+0052 <span class="comment">% ENZYME      1.1.1.1         1.1.1.22        1.1.1.23        1.1.1.115</span>
+0053 <span class="comment">%             1.1.1.132       1.1.1.136       1.1.1.170       1.1.1.186</span>
+0054 <span class="comment">%             (list truncated)</span>
+0055 <span class="comment">% BRITE       Therapeutic category of drugs in Japan [BR:br08301]</span>
+0056 <span class="comment">%             (list truncated)</span>
+0057 <span class="comment">% DBLINKS     CAS: 7732-18-5</span>
+0058 <span class="comment">%             PubChem: 3303</span>
+0059 <span class="comment">%             ChEBI: 15377</span>
+0060 <span class="comment">%             (list truncated)</span>
+0061 <span class="comment">%</span>
+0062 <span class="comment">% Then a lot of info about the positions of the atoms and so on. It is not</span>
+0063 <span class="comment">% certain that each metabolite follows this structure exactly.</span>
+0064 <span class="comment">%</span>
+0065 <span class="comment">% The file is not tab-delimited. Instead each label is 12 characters</span>
+0066 <span class="comment">% (except for '///').</span>
+0067 <span class="comment">%</span>
+0068 <span class="comment">% Check if the reactions have been parsed before and saved. If so, load the</span>
+0069 <span class="comment">% model.</span>
+0070 <span class="comment">%</span>
+0071 
+0072 <span class="keyword">if</span> nargin&lt;1
+0073     keggPath=<span class="string">'RAVEN/external/kegg'</span>;
+0074 <span class="keyword">else</span>
+0075     keggPath=char(keggPath);
+0076 <span class="keyword">end</span>
+0077 
+0078 ravenPath=findRAVENroot();
+0079 metsFile=fullfile(ravenPath,<span class="string">'reconstruction'</span>,<span class="string">'kegg'</span>,<span class="string">'keggMets.mat'</span>);
+0080 <span class="keyword">if</span> exist(metsFile, <span class="string">'file'</span>)
+0081     fprintf([<span class="string">'Importing KEGG metabolites from '</span> strrep(metsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'... '</span>]);
+0082     load(metsFile);
+0083 <span class="keyword">else</span>
+0084     fprintf([<span class="string">'NOTE: Cannot locate '</span> strrep(metsFile,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">', it will therefore be generated from the local KEGG database\n'</span>]);
+0085     <span class="keyword">if</span> ~isfile(fullfile(keggPath,<span class="string">'compound'</span>)) || ~isfile(fullfile(keggPath,<span class="string">'compound.inchi'</span>))
+0086         EM=fprintf([<span class="string">'The files ''compound'' and ''compound.inchi'' cannot be located at '</span> strrep(keggPath,<span class="string">'\'</span>,<span class="string">'/'</span>) <span class="string">'/ and should be downloaded from the KEGG FTP.\n'</span>]);
+0087         dispEM(EM);
+0088     <span class="keyword">else</span>
+0089         fprintf(<span class="string">'Generating keggMets.mat file... '</span>);
+0090         <span class="comment">%Add new functionality in the order specified in models</span>
+0091         model.id=<span class="string">'KEGG'</span>;
+0092         model.name=<span class="string">'Automatically generated from KEGG database'</span>;
+0093         
+0094         <span class="comment">%Preallocate memory for 50000 metabolites</span>
+0095         model.mets=cell(50000,1);
+0096         model.metNames=cell(50000,1);
+0097         model.metFormulas=cell(50000,1);
+0098         model.metMiriams=cell(50000,1);
+0099         
+0100         <span class="comment">%First load information on metabolite ID, metabolite name,</span>
+0101         <span class="comment">%composition, and ChEBI</span>
+0102         
+0103         fid = fopen(fullfile(keggPath,<span class="string">'compound'</span>), <span class="string">'r'</span>);
+0104         
+0105         <span class="comment">%Keeps track of how many metabolites that have been added</span>
+0106         metCounter=0;
+0107         
+0108         <span class="comment">%Loop through the file</span>
+0109         <span class="keyword">while</span> 1
+0110             <span class="comment">%Get the next line</span>
+0111             tline = fgetl(fid);
+0112             
+0113             <span class="comment">%Abort at end of file</span>
+0114             <span class="keyword">if</span> ~ischar(tline)
+0115                 <span class="keyword">break</span>;
+0116             <span class="keyword">end</span>
+0117             
+0118             <span class="comment">%Skip '///'</span>
+0119             <span class="keyword">if</span> numel(tline)&lt;12
+0120                 <span class="keyword">continue</span>;
+0121             <span class="keyword">end</span>
+0122             
+0123             <span class="comment">%Check if it's a new reaction</span>
+0124             <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'ENTRY       '</span>)
+0125                 metCounter=metCounter+1;
+0126                 
+0127                 <span class="comment">%Add empty strings where there should be such</span>
+0128                 model.metNames{metCounter}=<span class="string">''</span>;
+0129                 model.metFormulas{metCounter}=<span class="string">''</span>;
+0130                 
+0131                 <span class="comment">%Add compound ID (always 6 characters)</span>
+0132                 model.mets{metCounter}=tline(13:18);
+0133                 
+0134                 <span class="comment">%Add the KEGG id as metMiriams</span>
+0135                 <span class="keyword">if</span> length(model.mets{metCounter})==6
+0136                     miriamStruct=model.metMiriams{metCounter};
+0137                     <span class="keyword">if</span> strcmp(<span class="string">'G'</span>,model.mets{metCounter}(1))
+0138                         miriamStruct.name{1,1}=<span class="string">'kegg.glycan'</span>;
+0139                     <span class="keyword">else</span>
+0140                         miriamStruct.name{1,1}=<span class="string">'kegg.compound'</span>;
+0141                     <span class="keyword">end</span>
+0142                     miriamStruct.value{1,1}=tline(13:18);
+0143                     model.metMiriams{metCounter}=miriamStruct;
+0144                 <span class="keyword">end</span>
+0145             <span class="keyword">end</span>
+0146             
+0147             <span class="comment">%Add name</span>
+0148             <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'NAME        '</span>)
+0149                 <span class="comment">%If there are synonyms, then the last character is ';'</span>
+0150                 <span class="keyword">if</span> strcmp(tline(end),<span class="string">';'</span>)
+0151                     model.metNames{metCounter}=tline(13:end-1);
+0152                     <span class="comment">%Semicolon can also occur in the middle, separating</span>
+0153                     <span class="comment">%several synonims in the same line</span>
+0154                     model.metNames{metCounter} = regexprep(model.metNames{metCounter},<span class="string">';.+'</span>,<span class="string">''</span>);
+0155                 <span class="keyword">elseif</span> regexp(tline,<span class="string">';'</span>)
+0156                     model.metNames{metCounter}=tline(13:end);
+0157                     model.metNames{metCounter} = regexprep(model.metNames{metCounter},<span class="string">';.+'</span>,<span class="string">''</span>);
+0158                 <span class="keyword">else</span>
+0159                     model.metNames{metCounter}=tline(13:end);
+0160                 <span class="keyword">end</span>
+0161             <span class="keyword">end</span>
+0162             
+0163             <span class="comment">%Add composition</span>
+0164             <span class="keyword">if</span> strcmp(tline(1:12),<span class="string">'FORMULA     '</span>)
+0165                 model.metFormulas{metCounter}=tline(13:end);
+0166             <span class="keyword">end</span>
+0167             
+0168             <span class="comment">%Add PubChem id</span>
+0169             <span class="keyword">if</span> numel(tline)&gt;21
+0170                 <span class="keyword">if</span> strcmp(tline(13:21),<span class="string">'PubChem: '</span>)
+0171                     <span class="keyword">if</span> isstruct(model.metMiriams{metCounter})
+0172                         addToIndex=numel(model.metMiriams{metCounter}.name)+1;
+0173                     <span class="keyword">else</span>
+0174                         addToIndex=1;
+0175                     <span class="keyword">end</span>
+0176                     miriamStruct=model.metMiriams{metCounter};
+0177                     miriamStruct.name{addToIndex,1}=<span class="string">'pubchem.substance'</span>;
+0178                     miriamStruct.value{addToIndex,1}=tline(22:end);
+0179                     model.metMiriams{metCounter}=miriamStruct;
+0180                 <span class="keyword">end</span>
+0181             <span class="keyword">end</span>
+0182             
+0183             <span class="comment">%Add CHEBI id</span>
+0184             <span class="keyword">if</span> numel(tline)&gt;19
+0185                 <span class="keyword">if</span> strcmp(tline(13:19),<span class="string">'ChEBI: '</span>)
+0186                     <span class="keyword">if</span> isstruct(model.metMiriams{metCounter})
+0187                         addToIndex=numel(model.metMiriams{metCounter}.name)+1;
+0188                     <span class="keyword">else</span>
+0189                         addToIndex=1;
+0190                     <span class="keyword">end</span>
+0191                     chebiIDs=strsplit(tline(20:end),<span class="string">' '</span>);
+0192                     miriamStruct=model.metMiriams{metCounter};
+0193                     <span class="keyword">for</span> i=1:numel(chebiIDs)
+0194                         miriamStruct.name{addToIndex,1}=<span class="string">'chebi'</span>;
+0195                         miriamStruct.value{addToIndex,1}=strcat(<span class="string">'CHEBI:'</span>,chebiIDs{i});
+0196                         addToIndex=addToIndex+1;
+0197                     <span class="keyword">end</span>
+0198                     model.metMiriams{metCounter}=miriamStruct;
+0199                 <span class="keyword">end</span>
+0200             <span class="keyword">end</span>
+0201         <span class="keyword">end</span>
+0202         
+0203         <span class="comment">%Close the file</span>
+0204         fclose(fid);
+0205         
+0206         <span class="comment">%If too much space was allocated, shrink the model</span>
+0207         model.mets=model.mets(1:metCounter);
+0208         model.metNames=model.metNames(1:metCounter);
+0209         model.metFormulas=model.metFormulas(1:metCounter);
+0210         model.metMiriams=model.metMiriams(1:metCounter);
+0211         
+0212         <span class="comment">%Then load the InChI strings from another file. Not all metabolites</span>
+0213         <span class="comment">%will be present in the list</span>
+0214         
+0215         inchIDs=cell(numel(model.mets),1);
+0216         inchis=cell(numel(model.mets),1);
+0217         
+0218         <span class="comment">%The format is metID*tab*string</span>
+0219         
+0220         fid = fopen(fullfile(keggPath,<span class="string">'compound.inchi'</span>), <span class="string">'r'</span>);
+0221         
+0222         <span class="comment">%Loop through the file</span>
+0223         counter=1;
+0224         <span class="keyword">while</span> 1
+0225             <span class="comment">%Get the next line</span>
+0226             tline = fgetl(fid);
+0227             
+0228             <span class="comment">%Abort at end of file</span>
+0229             <span class="keyword">if</span> ~ischar(tline)
+0230                 <span class="keyword">break</span>;
+0231             <span class="keyword">end</span>
+0232             
+0233             <span class="comment">%Get the ID and the InChI</span>
+0234             inchIDs{counter}=tline(1:6);
+0235             inchis{counter}=tline(14:end);
+0236             counter=counter+1;
+0237         <span class="keyword">end</span>
+0238         
+0239         <span class="comment">%Close the file</span>
+0240         fclose(fid);
+0241         
+0242         inchIDs=inchIDs(1:counter-1);
+0243         inchis=inchis(1:counter-1);
+0244         
+0245         <span class="comment">%Find the metabolites that had InChI strings and add them to the</span>
+0246         <span class="comment">%model</span>
+0247         [a, b]=ismember(inchIDs,model.mets);
+0248         
+0249         <span class="comment">%If there were mets with InChIs but that were not in the list</span>
+0250         <span class="keyword">if</span> ~all(a)
+0251             EM=<span class="string">'Not all metabolites with InChI strings were found in the original list'</span>;
+0252             disp(EM);
+0253         <span class="keyword">end</span>
+0254         
+0255         model.inchis=cell(numel(model.mets),1);
+0256         model.inchis(:)={<span class="string">''</span>};
+0257         model.inchis(b)=inchis;
+0258         
+0259         <span class="comment">%Remove composition if InChI was found</span>
+0260         model.metFormulas(b)={<span class="string">''</span>};
+0261         
+0262         <span class="comment">%Ensuring that all model.metMiriams.value consist only of strings,</span>
+0263         <span class="comment">%no double</span>
+0264         <span class="keyword">for</span> i=1:(numel(model.mets))
+0265             <span class="keyword">for</span> j=1:(numel(model.metMiriams{i}))
+0266                 <span class="keyword">if</span> isa(model.metMiriams{i}.value{j},<span class="string">'double'</span>)
+0267                     model.metMiriams{i}.value{j}=num2str(model.metMiriams{i}.value{j});
+0268                 <span class="keyword">end</span>
+0269             <span class="keyword">end</span>
+0270         <span class="keyword">end</span>
+0271         
+0272         <span class="comment">%Removing fronting and trailing whitespace from metNames</span>
+0273         model.metNames = deblank(model.metNames);
+0274         
+0275         <span class="comment">%Fixing redundant metNames. The first occurence of particular</span>
+0276         <span class="comment">%metabolite name is not changed, but starting from the second</span>
+0277         <span class="comment">%occurence, original metabolite name is concatenated with KEGG</span>
+0278         <span class="comment">%COMPOUND id between the brackets</span>
+0279         <span class="keyword">for</span> i=1:(numel(model.metNames))
+0280             <span class="keyword">if</span> ~isempty(model.metNames{i})
+0281                 <span class="keyword">if</span> sum(ismember(model.metNames(1:i-1),model.metNames(i)))&gt;=1
+0282                     model.metNames(i) = strcat(model.metNames(i), <span class="string">' ('</span>, model.mets(i),<span class="string">')'</span>);
+0283                 <span class="keyword">end</span>
+0284             <span class="keyword">end</span>
+0285         <span class="keyword">end</span>
+0286         <span class="comment">%Saves the model</span>
+0287         save(metsFile,<span class="string">'model'</span>);
+0288     <span class="keyword">end</span>
+0289 <span class="keyword">end</span>
+0290 fprintf(<span class="string">'COMPLETE\n'</span>);
+0291 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

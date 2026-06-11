@@ -1,4 +1,4 @@
-function compStruct=compareRxnsGenesMetsComps(models,printResults)
+function compStruct=compareRxnsGenesMetsComps(models,varargin)
 % compareRxnsGenesMetsComps  Compare overlap of genes, reactions, metabolites and compartments.
 %
 % Compares two or more models with respect to overlap in terms of genes,
@@ -8,7 +8,10 @@ function compStruct=compareRxnsGenesMetsComps(models,printResults)
 % ----------
 % models : cell
 %     cell array of two or more models.
-% printResults : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% printResults : logical
 %     true if the results should be printed on the screen (default false).
 %
 % Returns
@@ -31,9 +34,8 @@ function compStruct=compareRxnsGenesMetsComps(models,printResults)
 % --------
 %     compStruct = compareRxnsGenesMetsComps(models, printResults);
 
-if nargin<2
-    printResults=true;
-end
+p=parseRAVENargs(varargin, {'printResults',true});
+printResults=p.printResults;
 
 if numel(models)<=1
     EM='Cannot compare only one model. Use printModelStats if you want a summary of a model';
@@ -127,7 +129,7 @@ toCheckA=[];
 I=find(cellfun(@checkField,models));
 nI=numel(I);
 for i=nI:-1:1
-    combs=combnk(1:nI,i);
+    combs=nchoosek(1:nI,i);
     toAdd=false(size(combs,1),nI);
     for j=1:size(combs,1)
         toAdd(j,combs(j,:))=true;

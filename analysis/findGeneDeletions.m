@@ -1,4 +1,4 @@
-function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(model,testType,analysisType,refModel,oeFactor)
+function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(model,varargin)
 % findGeneDeletions  Delete genes and track the resulting fluxes.
 %
 % Deletes genes, optimizes the model, and keeps track of the resulting
@@ -8,7 +8,10 @@ function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(
 % ----------
 % model : struct
 %     a model structure.
-% testType : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% testType : char
 %     single/double gene deletions/over expressions. Over expression is
 %     only available if using MOMA (default 'sgd'):
 %
@@ -16,15 +19,15 @@ function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(
 %     - 'dgd' : double gene deletion
 %     - 'sgo' : single gene over expression
 %     - 'dgo' : double gene over expression
-% analysisType : char, optional
+% analysisType : char
 %     determines whether to use FBA ('fba') or MOMA ('moma') in the
 %     optimization (default 'fba').
-% refModel : struct, optional
+% refModel : struct
 %     MOMA works by fitting the flux distributions of two models to be as
 %     similar as possible. The most common application is where there is a
 %     reference model with some fluxes constrained from experimental data.
 %     This model is required when using MOMA.
-% oeFactor : double, optional
+% oeFactor : double
 %     a factor by which the fluxes should be increased if a gene is
 %     overexpressed (default 10).
 %
@@ -66,10 +69,12 @@ function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(
 %         findGeneDeletions(model,testType,analysisType,refModel,oeFactor);
 
 originalModel=model;
-if nargin<5
-    oeFactor=10;
-end
-if nargin<2
+p=parseRAVENargs(varargin, {'testType',[]; 'analysisType',[]; 'refModel',[]; 'oeFactor',10});
+testType=p.testType;
+analysisType=p.analysisType;
+refModel=p.refModel;
+oeFactor=p.oeFactor;
+if isempty(testType)
     testType='sgd';
 else
     testType=char(testType);
@@ -82,7 +87,7 @@ if ~strcmpi(testType,'sgd') && ~strcmpi(testType,'dgd') && ~strcmpi(testType,'sg
 end
 
 %Check that the analysis type is correct
-if nargin<3
+if isempty(analysisType)
     analysisType = 'fba';
 else
     analysisType=char(analysisType);
@@ -97,7 +102,7 @@ if (strcmpi(testType,'sgo') || strcmpi(testType,'dgo')) && strcmpi(analysisType,
     dispEM(EM);
 end
 
-if strcmpi(analysisType,'moma') && nargin<4
+if strcmpi(analysisType,'moma') && isempty(refModel)
     EM='A reference model must be supplied when using MOMA';
     dispEM(EM);
 end

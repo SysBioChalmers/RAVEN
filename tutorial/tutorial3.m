@@ -7,8 +7,8 @@
 %
 %   It is assumed that the user has already completed Tutorial 2
 
-%Import the Excel model
-model=importExcelModel('smallYeast.xlsx',true);
+%Import the model
+model=readYAMLmodel('smallYeast.yml');
 
 %Set the upper bound of glucose uptake to 1 and O2 uptake to unlimited
 model=setParam(model,'ub',{'glcIN' 'o2IN'},[1 1000]);
@@ -22,10 +22,6 @@ sol=solveLP(model);
 %Print the resulting exchange fluxes
 printFluxes(model,sol.x,true);
 
-%Compare two flux distributions by loading the map
-load 'pathway.mat' pathway;
-drawMap('Aerobic vs Anaerobic',pathway,model,solA.x,solB.x,[],'mapFBA.pdf',10^-5);
-
 %Run a single gene deletion
 [genes, fluxes, originalGenes, details]=findGeneDeletions(model,'sgd','fba');
 
@@ -38,15 +34,13 @@ okSolutions=find(fluxes(I,:)>10^-2); %Only look at solutions which are still gro
 disp(maxGlycerol);
 disp(originalGenes(genes(okSolutions(J),:)));
 
-%Draw map for the ZWF1 deletion strain
+%Compare the ZWF1 deletion strain to wild type
 model2=setParam(model,'eq',{'ZWF'},0);
 sol2=solveLP(model2);
-drawMap('ZWF1 deletion vs WT',pathway,model,sol.x,sol2.x,[],'mapZWF.pdf',10^-5);
 followChanged(model,sol2.x,sol.x, 10, 10^-2, 0,{'NADPH' 'NADH' 'NAD' 'NADP'});
 
-%Import the model
-SBMLFromExcel('smallYeast.xlsx','smallYeast.xml')
-model=importModel('smallYeast.xml',true);
+%Reload the model with exchange metabolites removed for simulation
+model=readYAMLmodel('smallYeast.yml');
 sol=solveLP(model);
 
 %Define another model where all exchange reactions are open
@@ -60,7 +54,6 @@ model2=setParam(model2,'eq',{'ZWF'},0);
 
 %Run MOMA
 [fluxA, fluxB, flag]=qMOMA(model,model2);
-drawMap('Aerobic vs Anaerobic MOMA',pathway,model,fluxA,fluxB,[],'mapMOMA.pdf',10^-5);
 
 %Read microarray results and calculate reporter metabolites (metabolites
 %around which there are significant transcriptional changes)
@@ -72,9 +65,3 @@ fprintf('TOP 10 REPORTER METABOLITES:\n');
 for i=1:min(numel(J),10)
     fprintf([repMets.mets{J(i)} '\t' num2str(I(i)) '\n']);
 end
-
-%Get all reactions involving those metabolites and display them on a map
-mets=ismember(model.mets,repMets.mets(J(1:10)));
-[~, I]=find(model.S(mets,:));
-pathway=trimPathway(pathway, model.rxns(I), true);
-drawMap('Reactions involving the top 10 Reporter Metabolites',pathway,model,ones(numel(model.rxns),1),zeros(numel(model.rxns),1),[],'mapRM.pdf',10^-5);

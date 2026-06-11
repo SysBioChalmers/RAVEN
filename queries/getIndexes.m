@@ -1,4 +1,4 @@
-function indexes=getIndexes(model, objects, type, returnLogical)
+function indexes=getIndexes(model, objects, type, varargin)
 % getIndexes  Retrieve the indexes for a list of reactions or metabolites.
 %
 % Parameters
@@ -14,7 +14,10 @@ function indexes=getIndexes(model, objects, type, returnLogical)
 %     metabolites and their compartments in the format metaboliteName[comp].
 %     If a model.ec structure exists (GECKO 3), then also 'ecenzymes',
 %     'ecrxns' and 'ecgenes' are allowed.
-% returnLogical : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% returnLogical : logical
 %     sets whether to return a logical array or an array with the indexes
 %     (default false).
 %
@@ -34,9 +37,8 @@ function indexes=getIndexes(model, objects, type, returnLogical)
 % --------
 %     indexes = getIndexes(model, objects, type, returnLogical);
 
-if nargin<4
-    returnLogical=false;
-end
+p=parseRAVENargs(varargin, {'returnLogical', false});
+returnLogical=p.returnLogical;
 
 if ~islogical(objects) && ~isnumeric(objects)
     objects=convertCharArray(objects);

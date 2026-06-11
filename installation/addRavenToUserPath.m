@@ -1,4 +1,4 @@
-function addRavenToUserPath(overwrite)
+function addRavenToUserPath(varargin)
 % This function writes a startup.m file in the userpath, adding RAVEN (and
 % all subdirectories) to the path each time Matlab is started.
 % This function is useful if the user has no rights to save paths to the
@@ -6,13 +6,14 @@ function addRavenToUserPath(overwrite)
 % rights. As the startup.m file in the userpath automatically runs with
 % each Matlab start, the paths are automatically loaded.
 %
+% Name-Value Arguments
+% --------------------
 %   overwrite       logical, whether startup.m in the userpath should
 %                   overwritten (otherwise the RAVEN paths are appended)
-%                   (optional, default true)
+%                   (default true)
 
-if nargin<1
-    overwrite=true;
-end
+p=parseRAVENargs(varargin, {'overwrite',true});
+overwrite=p.overwrite;
 
 % Get current RAVEN directory
 ravenDir=findRAVENroot();

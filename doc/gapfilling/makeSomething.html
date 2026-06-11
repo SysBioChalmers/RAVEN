@@ -1,0 +1,297 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of makeSomething</title>
+  <meta name="keywords" content="makeSomething">
+  <meta name="description" content="makeSomething  Excrete any metabolite using as few reactions as possible.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">gapfilling</a> &gt; makeSomething.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for gapfilling&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>makeSomething
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>makeSomething  Excrete any metabolite using as few reactions as possible.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFluxes,allowExcretion,params,ignoreIntBounds) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> makeSomething  Excrete any metabolite using as few reactions as possible.
+
+ Tries to excrete any metabolite using as few reactions as possible. The
+ intended use is when you want to make sure that you model cannot
+ synthesize anything from nothing. It is then a faster way than to use
+ checkProduction or canProduce.
+
+ Parameters
+ ----------
+ model : struct
+     a model structure.
+ ignoreMets : cell or logical or double, optional
+     either a cell array of metabolite IDs, a logical vector with the same
+     number of elements as metabolites in the model, or a vector of indexes
+     for metabolites to exclude from this analysis (default []).
+ isNames : logical, optional
+     true if the supplied mets represent metabolite names (as opposed to
+     IDs). This is a way to delete metabolites in several compartments at
+     once without knowing the exact IDs. This only works if ignoreMets is a
+     cell array (default false).
+ minNrFluxes : logical, optional
+     solves the MILP problem of minimizing the number of fluxes instead of
+     the sum. Slower, but can be used if the sum gives too many fluxes
+     (default false).
+ allowExcretion : logical, optional
+     allow for excretion of all other metabolites (default true).
+ params : struct, optional
+     *obsolete option*.
+ ignoreIntBounds : logical, optional
+     true if internal bounds (including reversibility) should be ignored.
+     Exchange reactions are not affected. This can be used to find
+     unbalanced solutions which are not possible using the default
+     constraints (default false).
+
+ Returns
+ -------
+ solution : double
+     flux vector for the solution.
+ metabolite : double
+     the index of the metabolite(s) which was excreted. If possible only
+     one metabolite is reported, but there are situations where metabolites
+     can only be excreted in pairs (or more).
+
+ Examples
+ --------
+     [solution, metabolite] = makeSomething(model, ignoreMets);
+
+ Notes
+ -----
+ This works by forcing at least 1 unit of &quot;any metabolites&quot; to be produced
+ and then minimize for the sum of fluxes. If more than one metabolite is
+ produced, it picks one of them to be produced and then minimizes for the
+ sum of fluxes.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFluxes,allowExcretion,params,ignoreIntBounds)</a>
+0002 <span class="comment">% makeSomething  Excrete any metabolite using as few reactions as possible.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Tries to excrete any metabolite using as few reactions as possible. The</span>
+0005 <span class="comment">% intended use is when you want to make sure that you model cannot</span>
+0006 <span class="comment">% synthesize anything from nothing. It is then a faster way than to use</span>
+0007 <span class="comment">% checkProduction or canProduce.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% Parameters</span>
+0010 <span class="comment">% ----------</span>
+0011 <span class="comment">% model : struct</span>
+0012 <span class="comment">%     a model structure.</span>
+0013 <span class="comment">% ignoreMets : cell or logical or double, optional</span>
+0014 <span class="comment">%     either a cell array of metabolite IDs, a logical vector with the same</span>
+0015 <span class="comment">%     number of elements as metabolites in the model, or a vector of indexes</span>
+0016 <span class="comment">%     for metabolites to exclude from this analysis (default []).</span>
+0017 <span class="comment">% isNames : logical, optional</span>
+0018 <span class="comment">%     true if the supplied mets represent metabolite names (as opposed to</span>
+0019 <span class="comment">%     IDs). This is a way to delete metabolites in several compartments at</span>
+0020 <span class="comment">%     once without knowing the exact IDs. This only works if ignoreMets is a</span>
+0021 <span class="comment">%     cell array (default false).</span>
+0022 <span class="comment">% minNrFluxes : logical, optional</span>
+0023 <span class="comment">%     solves the MILP problem of minimizing the number of fluxes instead of</span>
+0024 <span class="comment">%     the sum. Slower, but can be used if the sum gives too many fluxes</span>
+0025 <span class="comment">%     (default false).</span>
+0026 <span class="comment">% allowExcretion : logical, optional</span>
+0027 <span class="comment">%     allow for excretion of all other metabolites (default true).</span>
+0028 <span class="comment">% params : struct, optional</span>
+0029 <span class="comment">%     *obsolete option*.</span>
+0030 <span class="comment">% ignoreIntBounds : logical, optional</span>
+0031 <span class="comment">%     true if internal bounds (including reversibility) should be ignored.</span>
+0032 <span class="comment">%     Exchange reactions are not affected. This can be used to find</span>
+0033 <span class="comment">%     unbalanced solutions which are not possible using the default</span>
+0034 <span class="comment">%     constraints (default false).</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">% Returns</span>
+0037 <span class="comment">% -------</span>
+0038 <span class="comment">% solution : double</span>
+0039 <span class="comment">%     flux vector for the solution.</span>
+0040 <span class="comment">% metabolite : double</span>
+0041 <span class="comment">%     the index of the metabolite(s) which was excreted. If possible only</span>
+0042 <span class="comment">%     one metabolite is reported, but there are situations where metabolites</span>
+0043 <span class="comment">%     can only be excreted in pairs (or more).</span>
+0044 <span class="comment">%</span>
+0045 <span class="comment">% Examples</span>
+0046 <span class="comment">% --------</span>
+0047 <span class="comment">%     [solution, metabolite] = makeSomething(model, ignoreMets);</span>
+0048 <span class="comment">%</span>
+0049 <span class="comment">% Notes</span>
+0050 <span class="comment">% -----</span>
+0051 <span class="comment">% This works by forcing at least 1 unit of &quot;any metabolites&quot; to be produced</span>
+0052 <span class="comment">% and then minimize for the sum of fluxes. If more than one metabolite is</span>
+0053 <span class="comment">% produced, it picks one of them to be produced and then minimizes for the</span>
+0054 <span class="comment">% sum of fluxes.</span>
+0055 
+0056 <span class="keyword">if</span> nargin&lt;2
+0057     ignoreMets=[];
+0058 <span class="keyword">elseif</span> ~islogical(ignoreMets) &amp;&amp; ~isnumeric(ignoreMets)
+0059     ignoreMets=convertCharArray(ignoreMets);
+0060 <span class="keyword">end</span>
+0061 <span class="keyword">if</span> nargin&lt;3
+0062     isNames=false;
+0063 <span class="keyword">end</span>
+0064 <span class="keyword">if</span> nargin&lt;4
+0065     minNrFluxes=false;
+0066 <span class="keyword">end</span>
+0067 <span class="keyword">if</span> nargin&lt;5
+0068     allowExcretion=true;
+0069 <span class="keyword">end</span>
+0070 <span class="keyword">if</span> nargin&lt;6
+0071     params.relGap=0.8;
+0072 <span class="keyword">end</span>
+0073 <span class="keyword">if</span> nargin&lt;7
+0074     ignoreIntBounds=false;
+0075 <span class="keyword">end</span>
+0076 
+0077 <span class="keyword">if</span> isNames==true &amp;&amp; ~isempty(ignoreMets)
+0078     <span class="comment">%Check that metsToRemove is a cell array</span>
+0079     <span class="keyword">if</span> iscellstr(ignoreMets)==false
+0080         EM=<span class="string">'Must supply a cell array of strings if isNames=true'</span>;
+0081         dispEM(EM);
+0082     <span class="keyword">end</span>
+0083 <span class="keyword">end</span>
+0084 
+0085 <span class="keyword">if</span> isNames==false
+0086     indexesToIgnore=getIndexes(model,ignoreMets,<span class="string">'mets'</span>);
+0087 <span class="keyword">else</span>
+0088     indexesToIgnore=[];
+0089     <span class="keyword">for</span> i=1:numel(ignoreMets)
+0090         indexesToIgnore=[indexesToIgnore;find(strcmp(ignoreMets(i),model.metNames))];
+0091     <span class="keyword">end</span>
+0092 <span class="keyword">end</span>
+0093 
+0094 <span class="comment">%Allow for excretion of all metabolites</span>
+0095 <span class="keyword">if</span> allowExcretion==true
+0096     model.b=[model.b(:,1) inf(numel(model.mets),1)];
+0097 <span class="keyword">end</span>
+0098 
+0099 <span class="comment">%Change all internal reactions to be unbounded in both directions</span>
+0100 <span class="keyword">if</span> ignoreIntBounds==true
+0101     [~, I]=getExchangeRxns(model);
+0102     nonExc=true(numel(model.rxns),1);
+0103     nonExc(I)=false;
+0104     model=setParam(model,<span class="string">'lb'</span>,nonExc,-1000);
+0105     model=setParam(model,<span class="string">'ub'</span>,nonExc,1000);
+0106     model=setParam(model,<span class="string">'rev'</span>,nonExc,1);
+0107 <span class="keyword">end</span>
+0108 
+0109 solution=[];
+0110 metabolite=[];
+0111 
+0112 nRxns=numel(model.rxns);
+0113 nMets=numel(model.mets);
+0114 
+0115 <span class="comment">%Add excretion reactions for all metabolites</span>
+0116 model.S=[model.S speye(nMets)*-1];
+0117 
+0118 <span class="comment">%Add so that they all produce a fake metabolite</span>
+0119 model.S=[model.S;[sparse(1,nRxns) ones(1,nMets)]];
+0120 
+0121 <span class="comment">%Change so that the ignoreMets have a coefficient 0 in their reactions.</span>
+0122 <span class="comment">%Does not remove the actual reaction to make mapping easier later</span>
+0123 model.S(:,indexesToIgnore+nRxns)=0;
+0124 
+0125 <span class="comment">%Add an excretion reaction for this last fake metabolite</span>
+0126 model.S(size(model.S,1),size(model.S,2)+1)=-1;
+0127 model.b=[model.b;zeros(1,size(model.b,2))];
+0128 model.lb=[model.lb;zeros(nMets,1);1];
+0129 model.ub=[model.ub;inf(nMets+1,1)];
+0130 model.rev=[model.rev;zeros(nMets+1,1)];
+0131 model.c=zeros(size(model.S,2),1);
+0132 
+0133 <span class="comment">%Add padding to the reaction annotation to prevent an error in solveLP</span>
+0134 padding=1:numel(model.rev);
+0135 padding=num2cell(padding)';
+0136 padding=cellfun(@num2str,padding,<span class="string">'uniformoutput'</span>,false);
+0137 model.rxns=padding;
+0138 model.rxnNames=padding;
+0139 model.eccodes=padding;
+0140 model.rxnMiriams=padding;
+0141 model.grRules=padding;
+0142 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
+0143     model.rxnGeneMat=sparse(numel(model.rev),numel(model.genes));
+0144 <span class="keyword">end</span>
+0145 model.subSystems=padding;
+0146 model.rxnFrom=padding;
+0147 model.rxnComps=ones(numel(model.rev),1);
+0148 model.rxnNotes=padding;
+0149 model.rxnReferences=padding;
+0150 model.rxnConfidenceScores=NaN(numel(model.rev),1);
+0151 
+0152 sol=solveLP(model,1);
+0153 <span class="keyword">if</span> any(sol.x)
+0154     <span class="comment">%It could be that several metabolites were produced in order to get the</span>
+0155     <span class="comment">%best solution. The setdiff is to avoid including the last fake</span>
+0156     <span class="comment">%metabolite</span>
+0157     I=setdiff(find(sol.x(nRxns+1:end)&gt;0.1),size(model.S,1));
+0158     
+0159     <span class="keyword">if</span> any(I) <span class="comment">%This should always be true</span>
+0160         <span class="comment">%Change the coefficients so that only the first is produced. This</span>
+0161         <span class="comment">%is not always possible, but it is tested for since it it results</span>
+0162         <span class="comment">%in more easily interpretable results</span>
+0163         
+0164         oldS=model.S;
+0165         foundSingle=false;
+0166         <span class="comment">%Test if any of the metabolites could be produced on their own</span>
+0167         <span class="keyword">for</span> i=1:numel(I)
+0168             model.S=oldS;
+0169             J=nRxns+1:numel(model.lb)-1;
+0170             J(I(i))=[];
+0171             model.S(:,J)=0;
+0172             sol=solveLP(model);
+0173             <span class="keyword">if</span> any(sol.x)
+0174                 foundSingle=true;
+0175                 <span class="keyword">break</span>;
+0176             <span class="keyword">end</span>
+0177         <span class="keyword">end</span>
+0178         <span class="comment">%This means that there was no metabolite which could be produced on</span>
+0179         <span class="comment">%its own. Then let all the produceable metabolites be produced.</span>
+0180         <span class="keyword">if</span> foundSingle==false
+0181             model.S=oldS;
+0182         <span class="keyword">end</span>
+0183         <span class="keyword">if</span> minNrFluxes==true
+0184             <span class="comment">%Has to add names for the rxns to prevent an error in</span>
+0185             <span class="comment">%minNrFluxes</span>
+0186             model.rxns=cell(numel(model.lb),1);
+0187             model.rxns(:)=sprintfc(<span class="string">'tmp_%d'</span>,1:numel(model.lb));
+0188             model.mets=cell(size(model.b,1),1);
+0189             model.mets(:)={<span class="string">'TEMP'</span>};
+0190             sol=solveLP(model,3,params);
+0191         <span class="keyword">else</span>
+0192             sol=solveLP(model,1);
+0193         <span class="keyword">end</span>
+0194         solution=sol.x(1:nRxns);
+0195         metabolite=find(sol.x(nRxns+1:end-1)&gt;0.1);
+0196     <span class="keyword">end</span>
+0197 <span class="keyword">end</span>
+0198 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

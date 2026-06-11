@@ -1,14 +1,15 @@
-function [currVer, installType] = checkInstallation(developMode,checkBinaries)
+function [currVer, installType] = checkInstallation(varargin)
 % checkInstallation
 %   The purpose of this function is to check if all necessary functions are
 %   installed and working. It also checks whether there are any functions
 %   with overlapping names between RAVEN and other toolboxes or
 %   user-defined functions, which are accessible from MATLAB pathlist
 %
-% Input: 
+% Name-Value Arguments
+% --------------------
 %   developMode     logical indicating development mode, which includes
 %                   testing of binaries that are required to update KEGG
-%                   HMMs (optional, default false). If 'versionOnly' is
+%                   HMMs (default false). If 'versionOnly' is
 %                   specified, only the version is reported as currVer, no
 %                   further installation or tests are performed.
 %   checkBinaries   logical whether non-developMode binaries should be
@@ -27,12 +28,10 @@ function [currVer, installType] = checkInstallation(developMode,checkBinaries)
 %
 % Usage: [currVer, installType] = checkInstallation(developMode)
 
-if nargin<1
-    developMode=false;
-end
-if nargin<2
-    checkBinaries=true;
-end
+p=parseRAVENargs(varargin, {'developMode',false; 'checkBinaries',true});
+developMode=p.developMode;
+checkBinaries=p.checkBinaries;
+
 if ischar(developMode) && strcmp(developMode,'versionOnly')
     versionOnly = true;
 else
@@ -312,19 +311,6 @@ else
         fprintf(['   This is essential to run getKEGGModelFromHomology()\n'...
             '   when using a FASTA file as input\n'])
     end
-
-    if developMode
-        fprintf('\n=== Development binary executables ===\n');
-        fprintf('NOTE: These binaries are only required when using KEGG FTP dump files in getKEGGModelForOrganism\n');
-
-        fprintf(myStr(' > Checking CD-HIT',40))
-        [~,res]=evalc("runtests('cdhitTests.m');");
-        interpretResults(res);
-
-        fprintf(myStr(' > Checking MAFFT',40))
-        [~,res]=evalc("runtests('mafftTests.m');");
-        interpretResults(res);
-    end
 end
 
 fprintf('\n=== Compatibility ===\n');
@@ -366,15 +352,11 @@ binDir = fullfile(ravenDir,'software');
 
 binList = {fullfile(binDir,'blast+','blastp');                      fullfile(binDir,'blast+','blastp.mac');
            fullfile(binDir,'blast+','makeblastdb');                 fullfile(binDir,'blast+','makeblastdb.mac');
-           fullfile(binDir,'cd-hit','cd-hit');                      fullfile(binDir,'cd-hit','cd-hit.mac');
            fullfile(binDir,'diamond','diamond');                    fullfile(binDir,'diamond','diamond.mac');
-           fullfile(binDir,'hmmer','hmmbuild');                     fullfile(binDir,'hmmer','hmmbuild.mac');
            fullfile(binDir,'hmmer','hmmsearch');                    fullfile(binDir,'hmmer','hmmsearch.mac');
            fullfile(binDir,'GLPKmex','glpkcc.mexa64');              fullfile(binDir,'GLPKmex','glpkcc.mexglx');                 fullfile(binDir,'GLPKmex','glpkcc.mexmaci64');              fullfile(binDir,'GLPKmex','glpkcc.mexmaca64');
            fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexa64'); fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexglx');    fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexmaci64');  fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexmaca64');
-           fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexa64');    fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexglx');       fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexmaci64');     fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexmaca64');
-           fullfile(binDir,'mafft','mafft-linux64','mafft.bat');
-           fullfile(binDir,'mafft','mafft-mac','mafft.bat');};
+           fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexa64');    fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexglx');       fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexmaci64');     fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexmaca64');};
 
 for i=1:numel(binList)
     [status,cmdout] = system(['chmod +x "' binList{i} '"']);

@@ -2,28 +2,69 @@ name: Tests
 
 on: [pull_request]
 
-jobs:
-  matlab-tests:
-    runs-on: self-hosted
+# Needed for the test-results comment and check run on the PR.
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
 
+jobs:
+  function-tests:
+    name: Function tests
+    runs-on: ubuntu-latest
+    # Bound the run so a hanging test fails the job in minutes instead of
+    # blocking the runner for hours.
+    timeout-minutes: 30
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run tests
-        id: matlab-test
-        run: |
-          TEST_RESULTS=$(/usr/local/bin/matlab -nodisplay -nosplash -nodesktop -r "warning('off', 'MATLAB:rmpath:DirNotFound'); rmpath(genpath('/home/m/ecModels-dependencies/RAVEN')); rmpath(genpath('/home/m/actions-runner')); addpath(genpath('.')); checkInstallation; cd('testing/unit_tests'); runtests(struct2table(dir('*.m')).name); exit;" | awk 'NR>13 && !/^(___|===|---)/')
-          PARSED_RESULTS="${TEST_RESULTS//'%'/'%25'}"
-          PARSED_RESULTS="${PARSED_RESULTS//$'\n'/'<br>'}"
-          PARSED_RESULTS="${PARSED_RESULTS//$'\r'/'<br>'}"
-          echo "results=$PARSED_RESULTS" >> $GITHUB_OUTPUT
-
-      - name: Post comment
-        uses: NejcZdovc/comment-pr@v2
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
         with:
-          file: "commentsFromTests.md"
+          release: R2024b
+
+      - name: Run function tests
+        uses: matlab-actions/run-command@v2
         env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-          TEST_RESULTS: ${{steps.matlab-test.outputs.results}}
-          GH_ACTION_RUN: ${{github.run_id}}
+          # Batch licensing token for running MATLAB on a GitHub-hosted
+          # runner. Request one from MathWorks and store it as the
+          # MATLAB_BATCH_TOKEN repository secret.
+          MLM_LICENSE_TOKEN: ${{ secrets.MATLAB_BATCH_TOKEN }}
+        with:
+          # The function tests use a "t*" naming convention that MATLAB's
+          # folder-based discovery does not recognise, so the suite is built
+          # from the explicit file list. RavenTestCase is the abstract base
+          # class and must be excluded. Results are written as JUnit XML for
+          # the reporting step below; the run itself does not fail the step so
+          # that the report is always produced.
+          command: |
+            root = pwd;
+            addpath(genpath(root));
+            resultsDir = fullfile(root, 'test-results');
+            if ~isfolder(resultsDir); mkdir(resultsDir); end
+            import matlab.unittest.TestRunner
+            import matlab.unittest.plugins.XMLPlugin
+            cd(fullfile('testing', 'function_tests'));
+            files = string({dir('*.m').name});
+            files(files == "RavenTestCase.m") = [];
+            suite = testsuite(cellstr(files));
+            % Detailed output prints "Running <class>/<test>" before each test
+            % so that, if a test hangs on the runner, the last such line names
+            % the culprit.
+            runner = TestRunner.withTextOutput('OutputDetail', ...
+                matlab.unittest.Verbosity.Detailed);
+            runner.addPlugin(XMLPlugin.producingJUnitFormat( ...
+                fullfile(resultsDir, 'results.xml')));
+            run(runner, suite);
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          check_name: Function test results
+          comment_mode: always
+          files: test-results/results.xml
+          # Fail the workflow (and the PR check) when any test fails or errors.
+          action_fail: true

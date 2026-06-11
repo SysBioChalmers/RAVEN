@@ -1,4 +1,4 @@
-function model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutside)
+function model=copyToComps(model,toComps,varargin)
 % copyToComps  Copy reactions to new compartment(s).
 %
 % Parameters
@@ -9,17 +9,20 @@ function model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutsi
 %     cell array of compartment ids. If there is no match to model.comps
 %     then it is added as a new compartment (see compNames and
 %     compOutside).
-% rxns : cell or logical or double, optional
+%
+% Name-Value Arguments
+% --------------------
+% rxns : cell or logical or double
 %     either a cell array of reaction IDs, a logical vector with the same
 %     number of elements as reactions in the model, or a vector of indexes
 %     to copy (default model.rxns).
-% deleteOriginal : logical, optional
+% deleteOriginal : logical
 %     true if the original reactions should be removed, making it move the
 %     reactions instead (default false).
-% compNames : cell, optional
+% compNames : cell
 %     cell array of compartment names. Used if new compartments should be
 %     added (default toComps).
-% compOutside : cell, optional
+% compOutside : cell
 %     cell array of the id (as in comps) for the compartment surrounding
 %     each of the compartments. Used if new compartments should be added
 %     (default all {''}).
@@ -37,22 +40,22 @@ function model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutsi
 % -----
 % New reactions and metabolites will be named as "id_toComps(i)".
 
-arguments
-    model (1,1) struct
-    toComps {emptyOrTextOrCellOfText}
-    rxns = model.rxns
-    deleteOriginal {emptyOrLogicalScalar} = false
-    compNames {emptyOrTextOrCellOfText} = toComps
-    compOutside {emptyOrTextOrCellOfText} = '';
+p=parseRAVENargs(varargin, {'rxns',[],[]; 'deleteOriginal',false,@emptyOrLogicalScalar; 'compNames',[],[]; 'compOutside','',[]});
+rxns=p.rxns;
+if isempty(rxns)
+    rxns=model.rxns;
+elseif ~islogical(rxns) && ~isnumeric(rxns)
+    rxns=convertCharArray(rxns);
 end
-
-if nargin >= 3 && ~islogical(rxns) && ~isnumeric(rxns)
-    rxns = convertCharArray(rxns);
-end
-if nargin >= 5
+deleteOriginal=p.deleteOriginal;
+compNames=p.compNames;
+if isempty(compNames)
+    compNames=toComps;
+else
     compNames=convertCharArray(compNames);
 end
-if nargin >= 6
+compOutside=p.compOutside;
+if ~isempty(compOutside)
     compOutside=convertCharArray(compOutside);
     if length(compOutside) ~= length(compNames)
         error('compOutside and compNames should be of equal size.');

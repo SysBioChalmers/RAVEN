@@ -1,4 +1,4 @@
-function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)
+function [x,I,exitFlag]=getMinNrFluxes(model, varargin)
 % getMinNrFluxes  Find the minimal set of fluxes that satisfy the model.
 %
 % Uses mixed integer linear programming to find the minimal set of fluxes
@@ -8,13 +8,16 @@ function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)
 % ----------
 % model : struct
 %     a model structure.
-% toMinimize : cell or logical or double, optional
+%
+% Name-Value Arguments
+% --------------------
+% toMinimize : cell or logical or double
 %     either a cell array of reaction IDs, a logical vector with the same
 %     number of elements as reactions in the model, or a vector of indexes
 %     for the reactions that should be minimized (default model.rxns).
-% params : struct, optional
+% params : struct
 %     *obsolete option*.
-% scores : double, optional
+% scores : double
 %     vector of weights for the reactions. Negative scores should not have
 %     flux. Positive scores are not possible in this implementation, and
 %     they are changed to max(scores(scores<0)). Must have the same
@@ -46,7 +49,11 @@ function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)
 
 exitFlag=1;
 
-if nargin<2
+p=parseRAVENargs(varargin, {'toMinimize',[]; 'params',[]; 'scores',[]});
+toMinimize=p.toMinimize;
+params=p.params;
+scores=p.scores;
+if isempty(toMinimize)
     toMinimize=model.rxns;
 elseif ~islogical(toMinimize) && ~isnumeric(toMinimize)
     toMinimize=convertCharArray(toMinimize);
@@ -55,11 +62,11 @@ else
 end
 
 %For passing parameters to the solver
-if nargin<3
+if isempty(params)
     params=struct();
 end
 
-if nargin<4
+if isempty(scores)
     %It says that the default is -1, but that is to fit with other code
     scores=ones(numel(toMinimize),1)*1;
 else

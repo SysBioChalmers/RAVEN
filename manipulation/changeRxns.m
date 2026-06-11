@@ -1,4 +1,4 @@
-function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
+function model=changeRxns(model,rxns,equations,varargin)
 % changeRxns  Modify the equations of reactions in a model.
 %
 % Parameters
@@ -14,7 +14,10 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %
 %     - equations.mets = {{'met1','met2'},{'met1','met3'}}
 %     - equations.stoichCoeffs = {[-1,+2],[-1,+1]}
-% eqnType : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% eqnType : double
 %     describes how the equation string should be interpreted (default 1):
 %
 %     - 1 : the metabolites are matched to model.mets. New metabolites (if
@@ -29,11 +32,11 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 %       that are added will be assigned IDs "m1", "m2"... If IDs on the same
 %       form are already used in the model then the numbering will start
 %       from the highest used integer+1.
-% compartment : char, optional
+% compartment : char
 %     a string with the compartment the metabolites should be placed in when
 %     using eqnType=2. Must match model.compNames (optional when eqnType=1 or
 %     eqnType=3).
-% allowNewMets : logical, optional
+% allowNewMets : logical
 %     true if the function is allowed to add new metabolites. It is highly
 %     recommended to first add any new metabolites with addMets rather than
 %     automatically through this function. addMets supports more annotation
@@ -62,16 +65,10 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 % exist, the function will copy any available information from the metabolite
 % in another compartment.
 
-if nargin<4
-    eqnType=1;
-end
-
-if nargin<5
-    compartment=[];
-end
-if nargin<6
-    allowNewMets=false;
-end
+p=parseRAVENargs(varargin, {'eqnType',1; 'compartment',[]; 'allowNewMets',false});
+eqnType=p.eqnType;
+compartment=p.compartment;
+allowNewMets=p.allowNewMets;
 
 rxns=convertCharArray(rxns);
 compartment=char(compartment);

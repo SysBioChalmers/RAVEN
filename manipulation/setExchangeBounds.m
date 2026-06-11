@@ -1,29 +1,32 @@
-function [exchModel,unusedMets] = setExchangeBounds(model,mets,lb,ub,closeOthers,mediaOnly)
+function [exchModel,unusedMets] = setExchangeBounds(model,varargin)
 % setExchangeBounds  Define exchange flux bounds for a set of metabolites.
 %
 % Parameters
 % ----------
 % model : struct
 %     a model structure.
-% mets : cell or double, optional
+%
+% Name-Value Arguments
+% --------------------
+% mets : cell or double
 %     a cell array of metabolite names (case insensitive) or metabolite
 %     IDs, or a vector of metabolite indices (default all exchanged
 %     metabolites).
-% lb : double, optional
+% lb : double
 %     lower bound of exchange flux. Can be either a vector of bounds
 %     corresponding to each of the provided metabolites, or a single value
 %     that will be applied to all (default model.annotation.defaultLB if it
 %     exists, otherwise -1000).
-% ub : double, optional
+% ub : double
 %     upper bound of exchange flux. Can be either a vector of bounds
 %     corresponding to each of the provided metabolites, or a single value
 %     that will be applied to all (default model.annotation.defaultUB if it
 %     exists, otherwise 1000).
-% closeOthers : logical, optional
+% closeOthers : logical
 %     close exchange reactions for all other exchanged metabolites not
 %     present in the provided list. This will prevent IMPORT of the
 %     metabolites, but their EXPORT will not be modified (default true).
-% mediaOnly : logical, optional
+% mediaOnly : logical
 %     only consider exchange reactions involving exchange to or from the
 %     extracellular (media) compartment. Reactions such as "sink" reactions
 %     that exchange metabolites directly with an intracellular compartment
@@ -53,13 +56,14 @@ function [exchModel,unusedMets] = setExchangeBounds(model,mets,lb,ub,closeOthers
 
 
 % handle input arguments
-if nargin < 2
-    mets = [];
-elseif ~islogical(mets) || ~isnumeric(mets)
+p=parseRAVENargs(varargin, {'mets',[]; 'lb',[]; 'ub',[]; 'closeOthers',true; 'mediaOnly',false});
+mets=p.mets;
+if ~isempty(mets) && ~islogical(mets) && ~isnumeric(mets)
     mets=convertCharArray(mets);
-end 
+end
 
-if nargin < 3 || isempty(lb)
+lb=p.lb;
+if isempty(lb)
     if isfield(model,'annotation') && isfield(model.annotation,'defaultLB')
         lb = model.annotation.defaultLB;
     else
@@ -67,7 +71,8 @@ if nargin < 3 || isempty(lb)
     end
 end
 
-if nargin < 4 || isempty(ub)
+ub=p.ub;
+if isempty(ub)
     if isfield(model,'annotation') && isfield(model.annotation,'defaultUB')
         ub = model.annotation.defaultUB;
     else
@@ -75,13 +80,13 @@ if nargin < 4 || isempty(ub)
     end
 end
 
-if nargin < 5 || isempty(closeOthers)
+closeOthers=p.closeOthers;
+if isempty(closeOthers)
     closeOthers = true;
 end
 
-if nargin < 6
-    mediaOnly = false;
-elseif mediaOnly
+mediaOnly=p.mediaOnly;
+if mediaOnly
     if ~all(isfield(model,{'compNames','metComps'}))
         error('mediaOnly option requires the "compNames" and "metComps" model fields.');
     end

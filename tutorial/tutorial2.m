@@ -5,8 +5,8 @@
 %   scratch, set parameters and perform simple simulations.
 %   See Tutorial 2 in "RAVEN tutorials.docx" for more details.
 
-%Import the Excel model into a RAVEN model structure
-smallModel=importExcelModel('empty.xlsx');
+%Import the model into a RAVEN model structure
+smallModel=importModel('empty.xml');
 
 %This solves the linear programming problem.
 %NOTE: if sol.f is equal to zero then the problem is not solvable. Ensure

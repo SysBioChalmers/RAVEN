@@ -1,11 +1,14 @@
-function [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns)
+function [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,varargin)
 % getEssentialRxns  Calculate the essential reactions for a solvable model.
 %
 % Parameters
 % ----------
 % model : struct
 %     a model structure.
-% ignoreRxns : cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% ignoreRxns : cell
 %     cell array of reaction IDs which should not be checked
 %     (default {}).
 %
@@ -25,7 +28,9 @@ function [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns
 % --------
 %     [essentialRxns, essentialRxnsIndexes] = getEssentialRxns(model, ignoreRxns);
 
-if nargin<2
+p=parseRAVENargs(varargin, {'ignoreRxns',[]});
+ignoreRxns=p.ignoreRxns;
+if isempty(ignoreRxns)
     ignoreRxns={};
 else
     ignoreRxns=convertCharArray(ignoreRxns);

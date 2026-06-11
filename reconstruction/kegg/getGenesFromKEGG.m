@@ -1,14 +1,14 @@
-function model=getGenesFromKEGG(keggPath,koList)
+function model=getGenesFromKEGG(varargin)
 % getGenesFromKEGG  Retrieve information on all genes stored in KEGG.
 %
-% Parameters
-% ----------
-% keggPath : char, optional
+% Name-Value Arguments
+% --------------------
+% keggPath : char
 %     if keggGenes.mat is not in the RAVEN\external\kegg directory, this
 %     function will attempt to read data from a local FTP dump of the KEGG
 %     database. keggPath is the path to the root of this database (default
 %     'RAVEN/external/kegg').
-% koList : cell, optional
+% koList : cell
 %     the number of genes in KEGG is very large. koList can be a cell array
 %     with KO identifiers, in which case only genes belonging to one of
 %     those KEGG orthologies are retrieved (default all KOs with associated
@@ -68,11 +68,9 @@ function model=getGenesFromKEGG(keggPath,koList)
 % (except for '///').
 %
 
-if nargin<1
-    keggPath='RAVEN/external/kegg';
-else
-    keggPath=char(keggPath);
-end
+p=parseRAVENargs(varargin, {'keggPath','RAVEN/external/kegg'; 'koList',[]});
+keggPath=char(p.keggPath);
+koList=p.koList;
 
 ravenPath=findRAVENroot();
 genesFile=fullfile(ravenPath,'reconstruction','kegg','keggGenes.mat');
@@ -273,7 +271,7 @@ else
 end
 
 %Only get the KOs in koList
-if nargin>1
+if ~isempty(koList)
     I=~ismember(model.rxns,koList);
     model=removeReactions(model,I,true,true);
 end

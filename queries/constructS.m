@@ -1,4 +1,4 @@
-function [S, mets, badRxns, reversible]=constructS(equations,mets,rxns)
+function [S, mets, badRxns, reversible]=constructS(equations,varargin)
 % constructS  Construct a stoichiometric matrix from a cell array of equations.
 %
 % Parameters
@@ -6,10 +6,13 @@ function [S, mets, badRxns, reversible]=constructS(equations,mets,rxns)
 % equations : cell
 %     cell array of equations on the form 'A + 2 B <=> 3 C', where <=>
 %     indicates reversible and => irreversible reactions.
-% mets : cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% mets : cell
 %     cell array of metabolites. All metabolites in the equations must be
 %     present in the list (default generated from the equations).
-% rxns : cell, optional
+% rxns : cell
 %     cell array of reaction ids. This is only used for printing reaction ids
 %     instead of equations in warnings/errors (default []).
 %
@@ -33,11 +36,14 @@ function [S, mets, badRxns, reversible]=constructS(equations,mets,rxns)
 %     [S, mets, badRxns, reversible] = constructS(equations, mets);
 
 equations=convertCharArray(equations);
-switch nargin
-    case 2
-        mets=convertCharArray(mets);
-    case 3
-        rxns=convertCharArray(rxns);
+p=parseRAVENargs(varargin, {'mets',[]; 'rxns',[]});
+mets=p.mets;
+rxns=p.rxns;
+if ~isempty(mets)
+    mets=convertCharArray(mets);
+end
+if ~isempty(rxns)
+    rxns=convertCharArray(rxns);
 end
 
 badRxns=false(numel(equations),1);
@@ -59,11 +65,8 @@ end
 equations=strtrim(equations);
 equations=fixEquations(equations);
 
-if nargin<2
+if isempty(mets)
     mets=parseRxnEqu(equations);
-end
-if nargin<3
-    rxns=[];
 end
 
 %Get which reactions are reversible

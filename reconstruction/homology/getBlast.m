@@ -1,5 +1,5 @@
 function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
-    modelIDs,refFastaFiles,developMode,hideVerbose)
+    modelIDs,refFastaFiles,varargin)
 % getBlast  Bidirectional BLAST between an organism and template organisms.
 %
 % Parameters
@@ -15,10 +15,13 @@ function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
 %     getModelFromHomology.
 % refFastaFiles : cell
 %     a cell array with the paths to the corresponding FASTA files.
-% developMode : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% developMode : logical
 %     true if blastReport should be generated that is used in the unit
 %     testing function for BLAST+ (default false).
-% hideVerbose : logical, optional
+% hideVerbose : logical
 %     true if no status messages should be printed (default false).
 %
 % Returns
@@ -35,8 +38,7 @@ function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
 % This function calls BLAST+ to perform a bidirectional homology test
 % between the organism of interest and a set of other organisms using
 % standard settings. The only filtering this function does is the removal
-% of hits with an E-value higher than 10e-5. The other homology
-% measurements can be implemented using getBlastFromExcel.
+% of hits with an E-value higher than 10e-5.
 %
 % Examples
 % --------
@@ -45,14 +47,11 @@ function [blastStructure,blastReport]=getBlast(organismID,fastaFile,...
 %
 % See also
 % --------
-% getModelFromHomology, getBlastFromExcel, getDiamond
+% getModelFromHomology, getDiamond
 
-if nargin<5
-    developMode = false;
-end
-if nargin<6
-    hideVerbose = false;
-end
+p=parseRAVENargs(varargin, {'developMode',false; 'hideVerbose',false});
+developMode=p.developMode;
+hideVerbose=p.hideVerbose;
 
 %Everything should be cell arrays
 organismID=convertCharArray(organismID);

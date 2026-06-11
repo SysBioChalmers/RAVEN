@@ -1,0 +1,164 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of conditioningTests</title>
+  <meta name="keywords" content="conditioningTests">
+  <meta name="description" content="run this test case with the command">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">unit_tests</a> &gt; conditioningTests.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for testing\unit_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>conditioningTests
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>run this test case with the command</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function tests = conditioningTests </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment">run this test case with the command
+results = runtests('conditioningTests.m')</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function singleSplitTest(testCase)</a></li><li><a href="#_sub2" class="code">function recursiveSplitTest(testCase)</a></li><li><a href="#_sub3" class="code">function noSplitTest(testCase)</a></li><li><a href="#_sub4" class="code">function idempotenceTest(testCase)</a></li><li><a href="#_sub5" class="code">function prob = makeProb(A)</a></li><li><a href="#_sub6" class="code">function r = maxColRatio(A)</a></li><li><a href="#_sub7" class="code">function verifyEquivalent(testCase, prob, probNew, condInfo)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">%run this test case with the command</span>
+0002 <span class="comment">%results = runtests('conditioningTests.m')</span>
+0003 <a name="_sub0" href="#_subfunctions" class="code">function tests = conditioningTests</a>
+0004 tests = functiontests(localfunctions);
+0005 <span class="keyword">end</span>
+0006 
+0007 <a name="_sub1" href="#_subfunctions" class="code">function singleSplitTest(testCase)</a>
+0008 <span class="comment">%A column (reaction) with coefficients 10, 1 and 1e-8 has a ratio of 1e9,</span>
+0009 <span class="comment">%well above the threshold, and should be split exactly once.</span>
+0010 maxRatio = 1e6;
+0011 prob = <a href="#_sub5" class="code" title="subfunction prob = makeProb(A)">makeProb</a>(sparse([10, 2, 0; 1, 0, 3; 1e-8, 1, 0]));
+0012 
+0013 [probNew, condInfo] = splitProbForConditioning(prob, maxRatio);
+0014 
+0015 verifyTrue(testCase, condInfo.applied)
+0016 verifyEqual(testCase, condInfo.nSplits, 1)
+0017 verifyEqual(testCase, condInfo.nOrigRows, 3)
+0018 verifyEqual(testCase, condInfo.nOrigCols, 3)
+0019 
+0020 <span class="comment">%No column may exceed maxRatio after the split</span>
+0021 verifyLessThanOrEqual(testCase, <a href="#_sub6" class="code" title="subfunction r = maxColRatio(A)">maxColRatio</a>(probNew.A), maxRatio*1.0001)
+0022 
+0023 <span class="comment">%The feasible region must be preserved and the problem vectors extended</span>
+0024 <a href="#_sub7" class="code" title="subfunction verifyEquivalent(testCase, prob, probNew, condInfo)">verifyEquivalent</a>(testCase, prob, probNew, condInfo)
+0025 <span class="keyword">end</span>
+0026 
+0027 <a name="_sub2" href="#_subfunctions" class="code">function recursiveSplitTest(testCase)</a>
+0028 <span class="comment">%A coefficient of 1e-13 against a max of 10 has a ratio of 1e12, which needs</span>
+0029 <span class="comment">%two levels of splitting when maxRatio is 1e6.</span>
+0030 maxRatio = 1e6;
+0031 prob = <a href="#_sub5" class="code" title="subfunction prob = makeProb(A)">makeProb</a>(sparse([10, 0; 1e-13, 4]));
+0032 
+0033 [probNew, condInfo] = splitProbForConditioning(prob, maxRatio);
+0034 
+0035 verifyTrue(testCase, condInfo.applied)
+0036 verifyGreaterThanOrEqual(testCase, condInfo.nSplits, 2)
+0037 verifyLessThanOrEqual(testCase, <a href="#_sub6" class="code" title="subfunction r = maxColRatio(A)">maxColRatio</a>(probNew.A), maxRatio*1.0001)
+0038 <a href="#_sub7" class="code" title="subfunction verifyEquivalent(testCase, prob, probNew, condInfo)">verifyEquivalent</a>(testCase, prob, probNew, condInfo)
+0039 <span class="keyword">end</span>
+0040 
+0041 <a name="_sub3" href="#_subfunctions" class="code">function noSplitTest(testCase)</a>
+0042 <span class="comment">%A well-scaled problem must be returned untouched.</span>
+0043 maxRatio = 1e6;
+0044 prob = <a href="#_sub5" class="code" title="subfunction prob = makeProb(A)">makeProb</a>(sparse([10, 2; 1, 3]));
+0045 
+0046 [probNew, condInfo] = splitProbForConditioning(prob, maxRatio);
+0047 
+0048 verifyFalse(testCase, condInfo.applied)
+0049 verifyEqual(testCase, probNew.A, prob.A)
+0050 <span class="keyword">end</span>
+0051 
+0052 <a name="_sub4" href="#_subfunctions" class="code">function idempotenceTest(testCase)</a>
+0053 <span class="comment">%Splitting an already-conditioned problem a second time changes nothing.</span>
+0054 maxRatio = 1e6;
+0055 prob = <a href="#_sub5" class="code" title="subfunction prob = makeProb(A)">makeProb</a>(sparse([10, 2, 0; 1, 0, 3; 1e-8, 1, 0]));
+0056 
+0057 [probNew, ~]      = splitProbForConditioning(prob, maxRatio);
+0058 [~, condInfo2]    = splitProbForConditioning(probNew, maxRatio);
+0059 
+0060 verifyFalse(testCase, condInfo2.applied)
+0061 <span class="keyword">end</span>
+0062 
+0063 <span class="comment">% --- helpers --------------------------------------------------------------</span>
+0064 
+0065 <a name="_sub5" href="#_subfunctions" class="code">function prob = makeProb(A)</a>
+0066 [m,n]        = size(A);
+0067 prob.A       = A;
+0068 prob.b       = zeros(m,1);
+0069 prob.c       = [1; zeros(n-1,1)];
+0070 prob.lb      = -1000*ones(n,1);
+0071 prob.ub      =  1000*ones(n,1);
+0072 prob.csense  = repmat(<span class="string">'E'</span>,1,m);
+0073 prob.osense  = 1;
+0074 prob.vartype = repmat(<span class="string">'C'</span>,1,n);
+0075 <span class="keyword">end</span>
+0076 
+0077 <a name="_sub6" href="#_subfunctions" class="code">function r = maxColRatio(A)</a>
+0078 A = abs(A);
+0079 r = 0;
+0080 <span class="keyword">for</span> j = 1:size(A,2)
+0081     v = nonzeros(A(:,j));
+0082     <span class="keyword">if</span> numel(v) &gt;= 2
+0083         r = max(r, max(v)/min(v));
+0084     <span class="keyword">end</span>
+0085 <span class="keyword">end</span>
+0086 <span class="keyword">end</span>
+0087 
+0088 <a name="_sub7" href="#_subfunctions" class="code">function verifyEquivalent(testCase, prob, probNew, condInfo)</a>
+0089 <span class="comment">%Verify that the augmented problem has the same feasible region in the</span>
+0090 <span class="comment">%original variables, and that all problem vectors were extended consistently.</span>
+0091 nR = condInfo.nOrigRows;
+0092 nC = condInfo.nOrigCols;
+0093 nS = condInfo.nSplits;
+0094 
+0095 Aaug = full(probNew.A);
+0096 TL = Aaug(1:nR,      1:nC);
+0097 TR = Aaug(1:nR,      nC+1:end);
+0098 BL = Aaug(nR+1:<span class="keyword">end</span>,  1:nC);
+0099 BR = Aaug(nR+1:<span class="keyword">end</span>,  nC+1:end);
+0100 
+0101 <span class="comment">%The conversion variables are pinned by the star-metabolite rows:</span>
+0102 <span class="comment">%  BL*x + BR*conv = 0  -&gt;  conv = -BR\BL * x</span>
+0103 <span class="comment">%so the original constraint rows evaluate to (TL + TR*(-BR\BL))*x, which must</span>
+0104 <span class="comment">%reproduce the original constraint matrix exactly.</span>
+0105 M = -BR\BL;
+0106 verifyLessThan(testCase, max(abs((TL + TR*M) - full(prob.A)),[],<span class="string">'all'</span>), 1e-9)
+0107 
+0108 verifyEqual(testCase, numel(probNew.b),       nR+nS)
+0109 verifyEqual(testCase, numel(probNew.csense),  nR+nS)
+0110 verifyEqual(testCase, numel(probNew.c),       nC+nS)
+0111 verifyEqual(testCase, numel(probNew.lb),      nC+nS)
+0112 verifyEqual(testCase, numel(probNew.ub),      nC+nS)
+0113 verifyEqual(testCase, numel(probNew.vartype), nC+nS)
+0114 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

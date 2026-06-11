@@ -1,4 +1,4 @@
-function model = assignSBOterms(model, opts)
+function model = assignSBOterms(model, varargin)
 % assignSBOterms  Assign SBO terms to metabolites and reactions.
 %
 % Assign SBO terms to metabolites and reactions following a generic rule
@@ -13,7 +13,10 @@ function model = assignSBOterms(model, opts)
 % ----------
 % model : struct
 %     RAVEN model struct.
-% opts : struct, optional
+%
+% Name-Value Arguments
+% --------------------
+% opts : struct
 %     Struct with any of the following fields. Missing fields take the
 %     defaults shown:
 %
@@ -63,7 +66,9 @@ function model = assignSBOterms(model, opts)
 %     Reactions whose name contains any of opts.pseudoreactionSubstrings
 %         → SBO:0000395.
 
-if nargin < 2 || isempty(opts)
+p=parseRAVENargs(varargin, {'opts',[]});
+opts=p.opts;
+if isempty(opts)
     opts = struct();
 end
 opts = applyDefaults(opts);

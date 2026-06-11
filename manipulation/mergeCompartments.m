@@ -1,20 +1,23 @@
-function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet,distReverse)
+function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,varargin)
 % mergeCompartments  Merge all compartments in a model.
 %
 % Parameters
 % ----------
 % model : struct
 %     a model structure.
-% keepUnconstrained : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% keepUnconstrained : logical
 %     keep metabolites that are unconstrained in a 'unconstrained'
 %     compartment. If these are merged the exchange reactions will most often
 %     be deleted (default false).
-% deleteRxnsWithOneMet : logical, optional
+% deleteRxnsWithOneMet : logical
 %     delete reactions with only one metabolite. These reactions come from
 %     reactions such as A[c] + B[c] => A[m]. In some models hydrogen is
 %     balanced around each membrane with reactions like this (default
 %     false).
-% distReverse : logical, optional
+% distReverse : logical
 %     distinguish reactions with same metabolites but different reversibility
 %     as different reactions (default true).
 %
@@ -42,15 +45,10 @@ function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconst
 % If the metabolite IDs reflect the compartment that they are in the IDs may
 % no longer be representative.
 
-if nargin<2
-    keepUnconstrained=false;
-end
-if nargin<3
-    deleteRxnsWithOneMet=false;
-end
-if nargin<4
-    distReverse=true;
-end
+p=parseRAVENargs(varargin, {'keepUnconstrained',false; 'deleteRxnsWithOneMet',false; 'distReverse',true});
+keepUnconstrained=p.keepUnconstrained;
+deleteRxnsWithOneMet=p.deleteRxnsWithOneMet;
+distReverse=p.distReverse;
 
 if ~isfield(model,'unconstrained')
     keepUnconstrained=false;

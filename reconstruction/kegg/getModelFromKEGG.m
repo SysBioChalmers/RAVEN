@@ -1,10 +1,9 @@
-function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
-    keepUndefinedStoich,keepIncomplete,keepGeneral)
+function [model,KOModel]=getModelFromKEGG(varargin)
 % getModelFromKEGG  Retrieve KEGG database information and generate a model.
 %
-% Parameters
-% ----------
-% keggPath : char, optional
+% Name-Value Arguments
+% --------------------
+% keggPath : char
 %     if keggGenes.mat, keggMets.mat, keggPhylDist.mat or keggRxns.mat are
 %     not in the RAVEN/external/kegg directory, this function will attempt
 %     to read data from a local FTP dump of the KEGG database. keggPath is
@@ -12,15 +11,15 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 %     If keggModel.mat is present in the same directory, the function reads
 %     the data from this file and ignores keggGenes.mat, keggMets.mat and
 %     keggRxns.mat.
-% keepSpontaneous : logical, optional
+% keepSpontaneous : logical
 %     include reactions labeled as "spontaneous" (default true).
-% keepUndefinedStoich : logical, optional
+% keepUndefinedStoich : logical
 %     include reactions in the form n A <=> n+1 A. These will be dealt with
 %     as two separate metabolites (default true).
-% keepIncomplete : logical, optional
+% keepIncomplete : logical
 %     include reactions which have been labelled as "incomplete",
 %     "erroneous" or "unclear" (default true).
-% keepGeneral : logical, optional
+% keepGeneral : logical
 %     include reactions which have been labelled as "general reaction".
 %     These are reactions on the form "an aldehyde <=> an alcohol", and are
 %     therefore unsuited for modelling purposes. Note that not all reactions
@@ -53,23 +52,18 @@ function [model,KOModel]=getModelFromKEGG(keggPath,keepSpontaneous,...
 
 ravenPath=findRAVENroot();
 
-if nargin<1
+p=parseRAVENargs(varargin, {'keggPath',[]; 'keepSpontaneous',true; ...
+    'keepUndefinedStoich',true; 'keepIncomplete',true; 'keepGeneral',false});
+keggPath=p.keggPath;
+if isempty(keggPath)
     keggPath=fullfile(ravenPath,'reconstruction','kegg');
 else
     keggPath=char(keggPath);
 end
-if nargin<2
-    keepSpontaneous=true;
-end
-if nargin<3
-    keepUndefinedStoich=true;
-end
-if nargin<4
-    keepIncomplete=true;
-end
-if nargin<5
-    keepGeneral=false;
-end
+keepSpontaneous=p.keepSpontaneous;
+keepUndefinedStoich=p.keepUndefinedStoich;
+keepIncomplete=p.keepIncomplete;
+keepGeneral=p.keepGeneral;
 
 modelFile=fullfile(ravenPath,'reconstruction','kegg','keggModel.mat');
 if exist(modelFile, 'file') && isNewestFile(ravenPath)
@@ -140,7 +134,7 @@ else
     end
     fprintf('COMPLETE\n');
     
-    fprintf('Constructing the rxnGeneMat for the global KEGG model...   0%% complete');
+    PB = progressReport(numel(model.rxns),'Constructing rxnGeneMat for global KEGG model');
     %Create the rxnGeneMat for the reactions. This is simply done by
     %merging the gene associations for all the involved KOs
     r=zeros(10000000,1);
@@ -168,8 +162,7 @@ else
             end
         end
         if rem(i-1,100) == 0
-            progress=pad(num2str(floor(i/numel(model.rxns)*100)),3,'left');
-            fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
+            PB.update(i);
         end
     end
     
@@ -177,7 +170,7 @@ else
     if size(model.rxnGeneMat,1)~=numel(model.rxns) || size(model.rxnGeneMat,2)~=numel(KOModel.genes)
         model.rxnGeneMat(numel(model.rxns),numel(KOModel.genes))=0;
     end
-    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+    PB.done;
     
     %Then get all metabolites
     metModel=getMetsFromKEGG(keggPath);

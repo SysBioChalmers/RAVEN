@@ -1,11 +1,14 @@
-function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
+function [solution, hsSolOut]=solveLP(model,varargin)
 % solveLP  Solve a linear programming problem.
 %
 % Parameters
 % ----------
 % model : struct
 %     a model structure.
-% minFlux : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% minFlux : double
 %     determines if a second optimization should be performed in order to
 %     get rid of loops in the flux distribution (default 0):
 %
@@ -16,7 +19,7 @@ function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
 %     - 3 : the number of fluxes is minimized. This can result in the flux
 %       distributions that are the easiest to interpret. Note that this
 %       optimization can be very slow
-% params : struct, optional
+% params : struct
 %     solver parameters, forwarded to optimizeProb. Mostly obsolete, but the
 %     field "maxRatio" (a number > 1) can be set to improve numerical
 %     conditioning of ill-scaled models: any reaction whose stoichiometric
@@ -24,7 +27,7 @@ function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
 %     auxiliary metabolites before solving, which preserves the feasible
 %     region (and thus the flux distribution of the original reactions). A
 %     common value is 1e6 (no splitting by default).
-% hsSol : struct, optional
+% hsSol : struct
 %     hot-start solution for the LP solver. This can significantly speed up
 %     the process if many similar optimization problems are solved
 %     iteratively. Only used if minFlux is 0 or 1.
@@ -50,15 +53,13 @@ function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
 % --------
 %     [solution, hsSolOut] = solveLP(model, minFlux, params, hsSol);
 
-if nargin<2
-    minFlux=0;
-end
-if nargin<3
+p=parseRAVENargs(varargin, {'minFlux',0; 'params',[]; 'hsSol',[]});
+minFlux=p.minFlux;
+params=p.params;
+if isempty(params)
     params.relGap=0.4;
 end
-if nargin<4
-    hsSol=[];
-end
+hsSol=p.hsSol;
 
 %Default return values
 hsSolOut=[];

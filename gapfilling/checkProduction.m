@@ -1,4 +1,4 @@
-function [notProduced, notProducedNames, neededForProductionMat,minToConnect,model]=checkProduction(model,checkNeededForProduction,excretionFromCompartments,printDetails)
+function [notProduced, notProducedNames, neededForProductionMat,minToConnect,model]=checkProduction(model,varargin)
 % checkProduction  Check which metabolites can be produced from a model.
 %
 % Checks which metabolites that can be produced from a model using the
@@ -16,14 +16,17 @@ function [notProduced, notProducedNames, neededForProductionMat,minToConnect,mod
 % ----------
 % model : struct
 %     a model structure.
-% checkNeededForProduction : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% checkNeededForProduction : logical
 %     for each of the metabolites that could not be produced, include an
 %     artificial production reaction and calculate which new metabolites that
 %     could be produced as an effect of this (default false).
-% excretionFromCompartments : cell, optional
+% excretionFromCompartments : cell
 %     cell array with compartment ids from which metabolites can be excreted
 %     (default model.comps).
-% printDetails : logical, optional
+% printDetails : logical
 %     print details to the screen (default true).
 %
 % Returns
@@ -48,18 +51,17 @@ function [notProduced, notProducedNames, neededForProductionMat,minToConnect,mod
 %     [notProduced, notProducedNames, neededForProductionMat, minToConnect, model] = ...
 %         checkProduction(model, checkNeededForProduction, excretionFromCompartments, printDetails);
 
-if nargin<2
-    checkNeededForProduction=false;
-end
+p=parseRAVENargs(varargin, {'checkNeededForProduction',false; ...
+    'excretionFromCompartments',[]; ...
+    'printDetails',true});
+checkNeededForProduction=p.checkNeededForProduction;
+excretionFromCompartments=p.excretionFromCompartments;
+printDetails=p.printDetails;
 
-if nargin<3
+if isempty(excretionFromCompartments)
     excretionFromCompartments=model.comps;
 else
     excretionFromCompartments=convertCharArray(excretionFromCompartments);
-end
-
-if nargin<4
-    printDetails=true;
 end
 
 %Add an exchange reaction for each metabolite in the allowed compartments

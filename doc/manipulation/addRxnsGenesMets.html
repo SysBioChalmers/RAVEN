@@ -1,0 +1,294 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of addRxnsGenesMets</title>
+  <meta name="keywords" content="addRxnsGenesMets">
+  <meta name="description" content="addRxnsGenesMets  Copy reactions from a source model into another model.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">manipulation</a> &gt; addRxnsGenesMets.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for manipulation&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>addRxnsGenesMets
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>addRxnsGenesMets  Copy reactions from a source model into another model.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> addRxnsGenesMets  Copy reactions from a source model into another model.
+
+ Copies reactions from a source model to a new model, including (new)
+ metabolites and genes.
+
+ This function only works if the draft model and source model follow the
+ same metabolite and compartment naming convention. Metabolites are only
+ matched by metaboliteName[compartment]. Useful if one wants to copy
+ additional reactions from source to draft after getModelFromHomology was
+ used involving the same models.
+
+ Parameters
+ ----------
+ model : struct
+     draft model where reactions should be copied to.
+ sourceModel : struct
+     model where reactions and metabolites are sourced from.
+ rxns : cell or char
+     reaction IDs (from source model). Can also be a string if only one
+     reaction is added.
+ addGene : logical or char or cell, optional
+     three options (default false):
+
+     - false : no genes are annotated to the new reactions
+     - true : grRules are copied from the sourceModel and new genes are
+       added when required
+     - string or cell array : new grRules are specified as string or cell
+       array, and any new genes are added when required
+ rxnNote : cell or char, optional
+     strings explaining why reactions were copied to the model, to be
+     included as newModel.rxnNotes. Can also be a string if the same
+     rxnNotes should be added for each new reaction, or only one reaction
+     is to be added (default 'Added via addRxnsAndMets()').
+ confidence : double, optional
+     integer specifying confidence score for all reactions, following
+     doi:10.1038/nprot.2009.203 (default 0):
+
+     - 4 : biochemical data: direct evidence from enzyme assays
+     - 3 : genetic data: knockout/-in or overexpression analysis
+     - 2 : physiological data: indirect evidence, e.g. secretion products
+       or defined medium requirement; sequence data: genome annotation
+     - 1 : modeling data: required for functional model, hypothetical
+       reaction
+     - 0 : no evidence
+
+ Returns
+ -------
+ model : struct
+     an updated model structure.
+
+ Examples
+ --------
+     newModel = addRxnsGenesMets(model, sourceModel, rxns, addGene, ...
+                                 rxnNote, confidence);</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,copyInfo,prefix)">addMets</a>	addMets  Add metabolites to a model.</li><li><a href="addRxns.html" class="code" title="function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allowNewGenes)">addRxns</a>	addRxns  Add reactions to a model.</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)</a>
+0002 <span class="comment">% addRxnsGenesMets  Copy reactions from a source model into another model.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Copies reactions from a source model to a new model, including (new)</span>
+0005 <span class="comment">% metabolites and genes.</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% This function only works if the draft model and source model follow the</span>
+0008 <span class="comment">% same metabolite and compartment naming convention. Metabolites are only</span>
+0009 <span class="comment">% matched by metaboliteName[compartment]. Useful if one wants to copy</span>
+0010 <span class="comment">% additional reactions from source to draft after getModelFromHomology was</span>
+0011 <span class="comment">% used involving the same models.</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% Parameters</span>
+0014 <span class="comment">% ----------</span>
+0015 <span class="comment">% model : struct</span>
+0016 <span class="comment">%     draft model where reactions should be copied to.</span>
+0017 <span class="comment">% sourceModel : struct</span>
+0018 <span class="comment">%     model where reactions and metabolites are sourced from.</span>
+0019 <span class="comment">% rxns : cell or char</span>
+0020 <span class="comment">%     reaction IDs (from source model). Can also be a string if only one</span>
+0021 <span class="comment">%     reaction is added.</span>
+0022 <span class="comment">% addGene : logical or char or cell, optional</span>
+0023 <span class="comment">%     three options (default false):</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">%     - false : no genes are annotated to the new reactions</span>
+0026 <span class="comment">%     - true : grRules are copied from the sourceModel and new genes are</span>
+0027 <span class="comment">%       added when required</span>
+0028 <span class="comment">%     - string or cell array : new grRules are specified as string or cell</span>
+0029 <span class="comment">%       array, and any new genes are added when required</span>
+0030 <span class="comment">% rxnNote : cell or char, optional</span>
+0031 <span class="comment">%     strings explaining why reactions were copied to the model, to be</span>
+0032 <span class="comment">%     included as newModel.rxnNotes. Can also be a string if the same</span>
+0033 <span class="comment">%     rxnNotes should be added for each new reaction, or only one reaction</span>
+0034 <span class="comment">%     is to be added (default 'Added via addRxnsAndMets()').</span>
+0035 <span class="comment">% confidence : double, optional</span>
+0036 <span class="comment">%     integer specifying confidence score for all reactions, following</span>
+0037 <span class="comment">%     doi:10.1038/nprot.2009.203 (default 0):</span>
+0038 <span class="comment">%</span>
+0039 <span class="comment">%     - 4 : biochemical data: direct evidence from enzyme assays</span>
+0040 <span class="comment">%     - 3 : genetic data: knockout/-in or overexpression analysis</span>
+0041 <span class="comment">%     - 2 : physiological data: indirect evidence, e.g. secretion products</span>
+0042 <span class="comment">%       or defined medium requirement; sequence data: genome annotation</span>
+0043 <span class="comment">%     - 1 : modeling data: required for functional model, hypothetical</span>
+0044 <span class="comment">%       reaction</span>
+0045 <span class="comment">%     - 0 : no evidence</span>
+0046 <span class="comment">%</span>
+0047 <span class="comment">% Returns</span>
+0048 <span class="comment">% -------</span>
+0049 <span class="comment">% model : struct</span>
+0050 <span class="comment">%     an updated model structure.</span>
+0051 <span class="comment">%</span>
+0052 <span class="comment">% Examples</span>
+0053 <span class="comment">% --------</span>
+0054 <span class="comment">%     newModel = addRxnsGenesMets(model, sourceModel, rxns, addGene, ...</span>
+0055 <span class="comment">%                                 rxnNote, confidence);</span>
+0056 
+0057 <span class="keyword">if</span> nargin&lt;6
+0058     confidence=0;
+0059 <span class="keyword">end</span>
+0060 rxns=convertCharArray(rxns);
+0061 <span class="keyword">if</span> nargin&lt;5
+0062     rxnNote={<span class="string">'Added via addRxnsGenesMets()'</span>};
+0063 <span class="keyword">else</span>
+0064     rxnNote=convertCharArray(rxnNote);
+0065 <span class="keyword">end</span>
+0066 <span class="keyword">if</span> numel(rxnNote)==1 &amp;&amp; numel(rxns)&gt;1
+0067     rxnNoteArray=cell(1,numel(rxns));
+0068     rxnNoteArray(:)=rxnNote;
+0069     rxnNote=rxnNoteArray;
+0070 <span class="keyword">end</span>
+0071 <span class="keyword">if</span> nargin&lt;4
+0072     addGene=false;
+0073 <span class="keyword">end</span>
+0074 
+0075 <span class="comment">% Obtain indexes of reactions in source model</span>
+0076 [notNewRxn,oldRxn]=ismember(rxns,model.rxns);
+0077 rxns=rxns(~notNewRxn);
+0078 <span class="keyword">if</span> isempty(rxns)
+0079     error(<span class="string">'All reactions are already in the model.'</span>);
+0080 <span class="keyword">elseif</span> ~isempty(notNewRxn)
+0081     fprintf(<span class="string">'The following reactions were already present in the model and will not be added:\n'</span>)
+0082     fprintf([strjoin(model.rxns(oldRxn(find(oldRxn))),<span class="string">'\n'</span>) <span class="string">'\n'</span>])
+0083 <span class="keyword">end</span>
+0084 
+0085 [~, rxnIdx]=ismember(rxns,sourceModel.rxns); <span class="comment">% Get rxnIDs</span>
+0086 <span class="keyword">if</span> any(rxnIdx==0)
+0087     dispEM(<span class="string">'The following reaction IDs could not be found in the source model:'</span>,true,<span class="keyword">...</span>
+0088         rxns(rxnIdx==0));
+0089 <span class="keyword">end</span>
+0090 
+0091 <span class="comment">% Add new metabolites</span>
+0092 metIdx=find(any(sourceModel.S(:,rxnIdx),2)); <span class="comment">% Get metabolite IDs</span>
+0093 <span class="comment">% Many of the metabolites in are already in the draft model, so only add</span>
+0094 <span class="comment">% the new metabolites</span>
+0095 
+0096 <span class="comment">% Match by metNames[metComps]. First make these structures for each model.</span>
+0097 metCompsN =cellstr(num2str(model.metComps));
+0098 map=containers.Map(cellstr(num2str(transpose([1:length(model.comps)]))),model.comps);
+0099 metCompsN = map.values(metCompsN);
+0100 metCompsN = strcat(model.metNames,<span class="string">'['</span>,metCompsN,<span class="string">']'</span>);
+0101 
+0102 sourcemetCompsN=cellstr(num2str(sourceModel.metComps));
+0103 map=containers.Map(cellstr(num2str(transpose([1:length(sourceModel.comps)]))),sourceModel.comps);
+0104 sourcemetCompsN = map.values(sourcemetCompsN);
+0105 sourcemetCompsN=strcat(sourceModel.metNames,<span class="string">'['</span>,sourcemetCompsN,<span class="string">']'</span>);
+0106 
+0107 newMetCompsN=sourcemetCompsN(metIdx);
+0108 notNewMet=newMetCompsN(ismember(newMetCompsN,metCompsN));
+0109 
+0110 <span class="keyword">if</span> ~isempty(notNewMet)
+0111     fprintf(<span class="string">'\nThe following metabolites were already present in the model and will not be added:\n'</span>)
+0112     fprintf([strjoin(transpose(notNewMet),<span class="string">'\n'</span>) <span class="string">'\n'</span>])
+0113 <span class="keyword">end</span>
+0114 
+0115 metIdx=metIdx(~ismember(sourcemetCompsN(metIdx),metCompsN));
+0116 
+0117 <span class="keyword">if</span> ~isempty(metIdx)
+0118     fprintf(<span class="string">'\nThe following metabolites will be added to the model:\n'</span>)
+0119     fprintf([strjoin(transpose(sourcemetCompsN(metIdx)),<span class="string">'\n'</span>) <span class="string">'\n'</span>])
+0120     
+0121     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'mets'</span>)
+0122         metsToAdd.mets=sourceModel.mets(metIdx);
+0123     <span class="keyword">end</span>
+0124     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'metNames'</span>)
+0125         metsToAdd.metNames=sourceModel.metNames(metIdx);
+0126     <span class="keyword">end</span>
+0127     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'metFormulas'</span>)
+0128         metsToAdd.metFormulas=sourceModel.metFormulas(metIdx);
+0129     <span class="keyword">end</span>
+0130     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'metCharges'</span>)
+0131         metsToAdd.metCharges=sourceModel.metCharges(metIdx);
+0132     <span class="keyword">end</span>
+0133     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'metMiriams'</span>)
+0134         metsToAdd.metMiriams=sourceModel.metMiriams(metIdx);
+0135     <span class="keyword">end</span>
+0136     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'metNotes'</span>)
+0137         metsToAdd.metNotes=sourceModel.metNotes(metIdx);
+0138     <span class="keyword">end</span>
+0139     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'inchis'</span>)
+0140         metsToAdd.inchis=sourceModel.inchis(metIdx);
+0141     <span class="keyword">end</span>
+0142     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'metSmiles'</span>)
+0143         metsToAdd.metSmiles=sourceModel.metSmiles(metIdx);
+0144     <span class="keyword">end</span>
+0145     <span class="keyword">if</span> isfield(sourceModel,<span class="string">'metDeltaG'</span>)
+0146         metsToAdd.metDeltaG=sourceModel.metDeltaG(metIdx);
+0147     <span class="keyword">end</span>
+0148     
+0149     metsToAdd.compartments=strtrim(cellstr(num2str(sourceModel.metComps(metIdx)))); <span class="comment">% Convert from compartment string to compartment number</span>
+0150     [~,idx]=ismember(metsToAdd.compartments,strsplit(num2str(1:length(sourceModel.comps)))); <span class="comment">% Match compartment number to compartment abbreviation</span>
+0151     metsToAdd.compartments=sourceModel.comps(idx); <span class="comment">% Fill in compartment abbreviations</span>
+0152     
+0153     model=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,copyInfo,prefix)">addMets</a>(model,metsToAdd);
+0154 <span class="keyword">end</span>
+0155 fprintf(<span class="string">'\nNumber of metabolites added to the model:\n'</span>)
+0156 fprintf([num2str(numel(metIdx)),<span class="string">'\n'</span>])
+0157 
+0158 <span class="comment">% Add new genes</span>
+0159 <span class="keyword">if</span> ~islogical(addGene) | addGene ~= false
+0160     <span class="keyword">if</span> ischar(addGene)
+0161         rxnToAdd.grRules={addGene};
+0162     <span class="keyword">elseif</span> iscell(addGene)
+0163         rxnToAdd.grRules=addGene(~notNewRxn); 
+0164     <span class="keyword">else</span>
+0165         rxnToAdd.grRules=sourceModel.grRules(rxnIdx); <span class="comment">% Get the relevant grRules</span>
+0166     <span class="keyword">end</span>
+0167 <span class="keyword">end</span>
+0168 <span class="comment">% Add new reactions</span>
+0169 rxnToAdd.equations=constructEquations(sourceModel,rxnIdx);
+0170 rxnToAdd.rxnNames=sourceModel.rxnNames(rxnIdx);
+0171 rxnToAdd.rxns=sourceModel.rxns(rxnIdx);
+0172 rxnToAdd.lb=sourceModel.lb(rxnIdx);
+0173 rxnToAdd.ub=sourceModel.ub(rxnIdx);
+0174 rxnToAdd.rxnNotes(:)=rxnNote(~notNewRxn);
+0175 rxnToAdd.rxnConfidenceScores=NaN(1,numel(rxnToAdd.rxns));
+0176 <span class="keyword">if</span> ~isnumeric(confidence)
+0177     EM=<span class="string">'confidence score must be numeric'</span>;
+0178     dispEM(EM, true);
+0179 <span class="keyword">end</span>
+0180 rxnToAdd.rxnConfidenceScores(:)=confidence;
+0181 <span class="keyword">if</span> isfield(sourceModel,<span class="string">'rxnDeltaG'</span>)
+0182     rxnToAdd.rxnDeltaG=sourceModel.rxnDeltaG(rxnIdx);
+0183 <span class="keyword">end</span>
+0184 <span class="keyword">if</span> isfield(sourceModel,<span class="string">'subSystems'</span>)
+0185     rxnToAdd.subSystems=sourceModel.subSystems(rxnIdx);
+0186 <span class="keyword">end</span>
+0187 <span class="keyword">if</span> isfield(sourceModel,<span class="string">'eccodes'</span>)
+0188     rxnToAdd.eccodes=sourceModel.eccodes(rxnIdx);
+0189 <span class="keyword">end</span>
+0190 model=<a href="addRxns.html" class="code" title="function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allowNewGenes)">addRxns</a>(model,rxnToAdd,3,<span class="string">''</span>,false,true);
+0191 
+0192 fprintf(<span class="string">'\nNumber of reactions added to the model:\n'</span>)
+0193 fprintf([num2str(numel(rxnIdx)),<span class="string">'\n'</span>])
+0194 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

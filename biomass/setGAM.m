@@ -1,4 +1,4 @@
-function model = setGAM(model, value, biomassRxn, cofactorMetNames, ngamRxn, ngamValue)
+function model = setGAM(model, value, biomassRxn, cofactorMetNames, varargin)
 % setGAM  Set the growth-associated maintenance (GAM) coefficient.
 %
 % Set the growth-associated maintenance (GAM) coefficient in the biomass
@@ -23,9 +23,12 @@ function model = setGAM(model, value, biomassRxn, cofactorMetNames, ngamRxn, nga
 % cofactorMetNames : cell
 %     Cell array of metabolite NAMES (not IDs) to rescale, e.g.
 %     {'ATP','ADP','H2O','H+','phosphate'}.
-% ngamRxn : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% ngamRxn : char
 %     NGAM reaction id. Required when ngamValue is supplied.
-% ngamValue : double, optional
+% ngamValue : double
 %     NGAM flux to fix. Sets the NGAM reaction's bounds to (ngamValue,
 %     ngamValue).
 %
@@ -43,6 +46,10 @@ if nargin < 4
         'biomassRxn and cofactorMetNames are required.');
 end
 
+p=parseRAVENargs(varargin, {'ngamRxn',[]; 'ngamValue',[]});
+ngamRxn=p.ngamRxn;
+ngamValue=p.ngamValue;
+
 bioPos = strcmp(model.rxns, biomassRxn);
 if ~any(bioPos)
     error('setGAM:missingBiomassRxn', ...
@@ -57,7 +64,7 @@ for i = 1:length(model.mets)
     end
 end
 
-if nargin >= 6 && ~isempty(ngamRxn) && ~isempty(ngamValue)
+if ~isempty(ngamRxn) && ~isempty(ngamValue)
     model = setParam(model, 'eq', ngamRxn, ngamValue);
 end
 end

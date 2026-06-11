@@ -1,4 +1,4 @@
-function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure)
+function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,varargin)
 % fitTasks  Fill gaps in a model so it can perform a list of tasks.
 %
 % Fills gaps in a model by including reactions from a reference model, so
@@ -16,14 +16,17 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxn
 % inputFile : char, optional
 %     a task list in Excel format. See the function parseTaskList for
 %     details (optional if taskStructure is supplied).
-% printOutput : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% printOutput : logical
 %     true if the results of the test should be displayed (default true).
-% rxnScores : double, optional
+% rxnScores : double
 %     scores for each of the reactions in the reference model. Only
 %     negative scores are allowed. The solver will try to maximize the sum
 %     of the scores for the included reactions (default is -1 for all
 %     reactions).
-% taskStructure : struct, optional
+% taskStructure : struct
 %     structure with the tasks, as from parseTaskList. If supplied then
 %     inputFile is ignored.
 %
@@ -42,17 +45,15 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,rxn
 %     [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...
 %         rxnScores,taskStructure);
 
-if nargin<4
-    printOutput=true;
-end
-if nargin<5
-    rxnScores=ones(numel(refModel.rxns),1)*-1;
-end
+p=parseRAVENargs(varargin, {'printOutput',true; ...
+    'rxnScores',[]; ...
+    'taskStructure',[]});
+printOutput=p.printOutput;
+rxnScores=p.rxnScores;
+taskStructure=p.taskStructure;
+
 if isempty(rxnScores)
     rxnScores=ones(numel(refModel.rxns),1)*-1;
-end
-if nargin<6
-    taskStructure=[];
 end
 
 if isempty(taskStructure) && ~isfile(inputFile)

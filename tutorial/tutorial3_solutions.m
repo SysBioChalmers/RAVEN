@@ -3,8 +3,8 @@
 %   "RAVEN tutorials.docx" for more details. All the parameters are set in
 %   this script, rather than modifying the Excel model file.
 
-%Import the Excel model
-model=importExcelModel('smallYeast.xlsx',true);
+%Import the model
+model=readYAMLmodel('smallYeast.yml');
 
 %Step 1
 %Set the upper bound of glucose uptake to 1 and O2 uptake to zero
@@ -43,11 +43,6 @@ solA=solveLP(model);
 model=setParam(model,'ub',{'o2IN'},0.5);
 solB=solveLP(model);
 
-%Plot the differences
-%Load the map
-load 'pathway.mat' pathway;
-drawMap('Aerobic vs Anaerobic',pathway,model,solA.x,solB.x,[],'mapFBA.pdf',10^-5);
-
 %Step 4
 %Change to anaerobic growth and maximize for biomass
 model=setParam(model,'eq',{'o2IN'},0);
@@ -72,13 +67,14 @@ fprintf(['Glycerol production is ' num2str(maxGlycerol) ' after deletion of ' or
 %(YNL241C)
 model2=setParam(model,'eq',{'ZWF'},0);
 sol2=solveLP(model2);
-drawMap('ZWF1 deletion vs WT',pathway,model,sol2.x,sol.x,[],'mapZWF.pdf',10^-5);
 followChanged(model,sol2.x,sol.x, 10, 10^-2, 0,{'NADPH' 'NADH' 'NAD' 'NADP'});
 
 %Step 5
 %Set the exchange rates to the recorded batch values
-model=setParam(model,'lb',{'acOUT' 'biomassOUT' 'co2OUT' 'ethOUT' 'glyOUT' 'glcIN' 'o2IN' 'ethIN'},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*0.9999);
+%Set the upper bounds before the lower bounds, so that lb never temporarily
+%exceeds the previous ub (e.g. glcIN, whose ub was set to 1 in Step 1)
 model=setParam(model,'ub',{'acOUT' 'biomassOUT' 'co2OUT' 'ethOUT' 'glyOUT' 'glcIN' 'o2IN' 'ethIN'},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*1.0001);
+model=setParam(model,'lb',{'acOUT' 'biomassOUT' 'co2OUT' 'ethOUT' 'glyOUT' 'glcIN' 'o2IN' 'ethIN'},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*0.9999);
 
 %Define another model where all exchange reactions are open.
 model2=model;
@@ -91,7 +87,6 @@ model2=setParam(model2,'eq',{'ZWF'},0);
 
 %Run MOMA
 [fluxA, fluxB, flag]=qMOMA(model,model2);
-drawMap('ZWF deletion vs wild type',pathway,model,fluxB,fluxA,[],'mapMOMA.pdf',10^-5);
 
 %As one can see, the glycerol production is higher in the deletion strain.
 %Note that this is without any objectives, just by trying to maintain the
@@ -108,9 +103,3 @@ fprintf('TOP 10 REPORTER METABOLITES:\n');
 for i=1:min(numel(J),10)
     fprintf([repMets.mets{J(i)} '\t' num2str(I(i)) '\n']);
 end
-
-%Get all reactions involving those metabolites and display them on a map
-mets=ismember(model.mets,repMets.mets(J(1:10)));
-[~, I]=find(model.S(mets,:));
-pathway=trimPathway(pathway, model.rxns(I), true);
-drawMap('Reactions involving the top 10 Reporter Metabolites',pathway,model,ones(numel(model.rxns),1),zeros(numel(model.rxns),1),[],'mapRM.pdf',10^-5);

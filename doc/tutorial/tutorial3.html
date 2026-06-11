@@ -73,62 +73,52 @@ This function is called by:
 0022 <span class="comment">%Print the resulting exchange fluxes</span>
 0023 printFluxes(model,sol.x,true);
 0024 
-0025 <span class="comment">%Compare two flux distributions by loading the map</span>
-0026 load <span class="string">'pathway.mat'</span> pathway;
-0027 drawMap(<span class="string">'Aerobic vs Anaerobic'</span>,pathway,model,solA.x,solB.x,[],<span class="string">'mapFBA.pdf'</span>,10^-5);
-0028 
-0029 <span class="comment">%Run a single gene deletion</span>
-0030 [genes, fluxes, originalGenes, details]=findGeneDeletions(model,<span class="string">'sgd'</span>,<span class="string">'fba'</span>);
+0025 <span class="comment">%Run a single gene deletion</span>
+0026 [genes, fluxes, originalGenes, details]=findGeneDeletions(model,<span class="string">'sgd'</span>,<span class="string">'fba'</span>);
+0027 
+0028 <span class="comment">%Get the indexes of these reactions</span>
+0029 I=getIndexes(model,{<span class="string">'biomassOUT'</span>},<span class="string">'rxns'</span>);
+0030 J=getIndexes(model,{<span class="string">'glyOUT'</span>},<span class="string">'rxns'</span>);
 0031 
-0032 <span class="comment">%Get the indexes of these reactions</span>
-0033 I=getIndexes(model,{<span class="string">'biomassOUT'</span>},<span class="string">'rxns'</span>);
-0034 J=getIndexes(model,{<span class="string">'glyOUT'</span>},<span class="string">'rxns'</span>);
-0035 
-0036 okSolutions=find(fluxes(I,:)&gt;10^-2); <span class="comment">%Only look at solutions which are still growing</span>
-0037 [maxGlycerol, J]=max(fluxes(J,okSolutions));
-0038 disp(maxGlycerol);
-0039 disp(originalGenes(genes(okSolutions(J),:)));
-0040 
-0041 <span class="comment">%Draw map for the ZWF1 deletion strain</span>
-0042 model2=setParam(model,<span class="string">'eq'</span>,{<span class="string">'ZWF'</span>},0);
-0043 sol2=solveLP(model2);
-0044 drawMap(<span class="string">'ZWF1 deletion vs WT'</span>,pathway,model,sol.x,sol2.x,[],<span class="string">'mapZWF.pdf'</span>,10^-5);
-0045 followChanged(model,sol2.x,sol.x, 10, 10^-2, 0,{<span class="string">'NADPH'</span> <span class="string">'NADH'</span> <span class="string">'NAD'</span> <span class="string">'NADP'</span>});
-0046 
-0047 <span class="comment">%Import the model</span>
-0048 SBMLFromExcel(<span class="string">'smallYeast.xlsx'</span>,<span class="string">'smallYeast.xml'</span>)
-0049 model=importModel(<span class="string">'smallYeast.xml'</span>,true);
-0050 sol=solveLP(model);
-0051 
-0052 <span class="comment">%Define another model where all exchange reactions are open</span>
-0053 model2=model;
-0054 I=getIndexes(model,getExchangeRxns(model),<span class="string">'rxns'</span>);
-0055 model2.lb(I)=0;
-0056 model2.ub(I)=1000;
+0032 okSolutions=find(fluxes(I,:)&gt;10^-2); <span class="comment">%Only look at solutions which are still growing</span>
+0033 [maxGlycerol, J]=max(fluxes(J,okSolutions));
+0034 disp(maxGlycerol);
+0035 disp(originalGenes(genes(okSolutions(J),:)));
+0036 
+0037 <span class="comment">%Compare the ZWF1 deletion strain to wild type</span>
+0038 model2=setParam(model,<span class="string">'eq'</span>,{<span class="string">'ZWF'</span>},0);
+0039 sol2=solveLP(model2);
+0040 followChanged(model,sol2.x,sol.x, 10, 10^-2, 0,{<span class="string">'NADPH'</span> <span class="string">'NADH'</span> <span class="string">'NAD'</span> <span class="string">'NADP'</span>});
+0041 
+0042 <span class="comment">%Import the Excel model and export it to SBML</span>
+0043 model=importExcelModel(<span class="string">'smallYeast.xlsx'</span>,false);
+0044 printModelStats(model);
+0045 exportModel(model,<span class="string">'smallYeast.xml'</span>);
+0046 model=importModel(<span class="string">'smallYeast.xml'</span>,true);
+0047 sol=solveLP(model);
+0048 
+0049 <span class="comment">%Define another model where all exchange reactions are open</span>
+0050 model2=model;
+0051 I=getIndexes(model,getExchangeRxns(model),<span class="string">'rxns'</span>);
+0052 model2.lb(I)=0;
+0053 model2.ub(I)=1000;
+0054 
+0055 <span class="comment">%Delete ZWF gene</span>
+0056 model2=setParam(model2,<span class="string">'eq'</span>,{<span class="string">'ZWF'</span>},0);
 0057 
-0058 <span class="comment">%Delete ZWF gene</span>
-0059 model2=setParam(model2,<span class="string">'eq'</span>,{<span class="string">'ZWF'</span>},0);
+0058 <span class="comment">%Run MOMA</span>
+0059 [fluxA, fluxB, flag]=qMOMA(model,model2);
 0060 
-0061 <span class="comment">%Run MOMA</span>
-0062 [fluxA, fluxB, flag]=qMOMA(model,model2);
-0063 drawMap(<span class="string">'Aerobic vs Anaerobic MOMA'</span>,pathway,model,fluxA,fluxB,[],<span class="string">'mapMOMA.pdf'</span>,10^-5);
-0064 
-0065 <span class="comment">%Read microarray results and calculate reporter metabolites (metabolites</span>
-0066 <span class="comment">%around which there are significant transcriptional changes)</span>
-0067 [orfs, pvalues]=textread(<span class="string">'expression.txt'</span>,<span class="string">'%s%f'</span>);
-0068 repMets=reporterMetabolites(model,orfs,pvalues);
-0069 [I, J]=sort(repMets.metPValues);
-0070 
-0071 fprintf(<span class="string">'TOP 10 REPORTER METABOLITES:\n'</span>);
-0072 <span class="keyword">for</span> i=1:min(numel(J),10)
-0073     fprintf([repMets.mets{J(i)} <span class="string">'\t'</span> num2str(I(i)) <span class="string">'\n'</span>]);
-0074 <span class="keyword">end</span>
-0075 
-0076 <span class="comment">%Get all reactions involving those metabolites and display them on a map</span>
-0077 mets=ismember(model.mets,repMets.mets(J(1:10)));
-0078 [~, I]=find(model.S(mets,:));
-0079 pathway=trimPathway(pathway, model.rxns(I), true);
-0080 drawMap(<span class="string">'Reactions involving the top 10 Reporter Metabolites'</span>,pathway,model,ones(numel(model.rxns),1),zeros(numel(model.rxns),1),[],<span class="string">'mapRM.pdf'</span>,10^-5);</pre></div>
+0061 <span class="comment">%Read microarray results and calculate reporter metabolites (metabolites</span>
+0062 <span class="comment">%around which there are significant transcriptional changes)</span>
+0063 [orfs, pvalues]=textread(<span class="string">'expression.txt'</span>,<span class="string">'%s%f'</span>);
+0064 repMets=reporterMetabolites(model,orfs,pvalues);
+0065 [I, J]=sort(repMets.metPValues);
+0066 
+0067 fprintf(<span class="string">'TOP 10 REPORTER METABOLITES:\n'</span>);
+0068 <span class="keyword">for</span> i=1:min(numel(J),10)
+0069     fprintf([repMets.mets{J(i)} <span class="string">'\t'</span> num2str(I(i)) <span class="string">'\n'</span>]);
+0070 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

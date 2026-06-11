@@ -1,10 +1,10 @@
 function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
-    isGeneral]=getRxnsFromKEGG(keggPath)
+    isGeneral]=getRxnsFromKEGG(varargin)
 % getRxnsFromKEGG  Retrieve information on all reactions stored in KEGG.
 %
-% Parameters
-% ----------
-% keggPath : char, optional
+% Name-Value Arguments
+% --------------------
+% keggPath : char
 %     if keggRxns.mat is not in the RAVEN\external\kegg directory, this
 %     function will attempt to read data from a local FTP dump of the KEGG
 %     database. keggPath is the path to the root of this database (default
@@ -76,7 +76,9 @@ function [model,isSpontaneous,isUndefinedStoich,isIncomplete,...
 
 ravenPath=findRAVENroot();
 
-if nargin<1
+p=parseRAVENargs(varargin, {'keggPath',[]});
+keggPath=p.keggPath;
+if isempty(keggPath)
     keggPath=fullfile(ravenPath,'reconstruction','kegg');
 else
     keggPath=char(keggPath);

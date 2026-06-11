@@ -1,4 +1,4 @@
-function workbook=loadWorkbook(fileName,createEmpty)
+function workbook=loadWorkbook(fileName,varargin)
 % loadWorkbook  Load an Excel file into a Workbook object.
 %
 % Loads an Excel file into a Workbook object using the Java library Apache
@@ -8,7 +8,10 @@ function workbook=loadWorkbook(fileName,createEmpty)
 % ----------
 % fileName : char
 %     name of the Excel file. If it doesn't exist it will be created.
-% createEmpty : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% createEmpty : logical
 %     true if an empty workbook should be created if the file didn't exist
 %     (default false).
 %
@@ -21,9 +24,8 @@ function workbook=loadWorkbook(fileName,createEmpty)
 % --------
 %     workbook = loadWorkbook(fileName, createEmpty);
 
-if nargin<2
-    createEmpty=false;
-end
+p=parseRAVENargs(varargin, {'createEmpty',false});
+createEmpty=p.createEmpty;
 
 %Check if the user has MATLAB Text Analytics Toolbox installed, as it comes
 %with its own conflicting version of the required Apache POI files

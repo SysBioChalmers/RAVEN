@@ -1,6 +1,5 @@
 function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
-    getModelFor,preferredOrder,strictness,onlyGenesInModels,maxE,...
-    minLen,minIde,mapNewGenesToOld)
+    getModelFor,varargin)
 % getModelFromHomology  Construct a new model from existing models and homology.
 %
 % Constructs a new model from a set of existing models and gene homology
@@ -12,16 +11,19 @@ function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
 %     a cell array of model structures to build the model from. These
 %     models must be sorted by importance in decreasing order.
 % blastStructure : struct
-%     a blastStructure as produced by getBlast or getBlastFromExcel.
+%     a blastStructure as produced by getBlast or makeFakeBlastStructure.
 % getModelFor : char
 %     a three-four letter abbreviation of the organism to build a model
 %     for. Must have BLASTP hits in both directions to the organisms in
 %     'models'.
-% preferredOrder : cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% preferredOrder : cell
 %     the order in which reactions should be added from the models. If not
 %     supplied, reactions will be included from all models, otherwise one
 %     gene will only result in reactions from one model (default {}).
-% strictness : double, optional
+% strictness : double
 %     integer that specifies which reactions should be included (default 1):
 %
 %     - 1 : Map new genes to old for all pairs, which have acceptable BLASTP
@@ -33,18 +35,18 @@ function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
 %       E-value for all gene pairs in each direction separately. Then map
 %       new genes to old for all pairs, which have acceptable BLASTP results
 %       in both directions.
-% onlyGenesInModels : logical, optional
+% onlyGenesInModels : logical
 %     consider BLASTP results only for genes that exist in the models. This
 %     tends to import a larger fraction from the existing models but may
 %     give less reliable results. Has effect only if strictness=3 (default
 %     false).
-% maxE : double, optional
+% maxE : double
 %     only look at genes with E-values <= this value (default 10^-30).
-% minLen : double, optional
+% minLen : double
 %     only look at genes with alignment length >= this value (default 200).
-% minIde : double, optional
+% minIde : double
 %     only look at genes with identity >= this value (default 40 (%)).
-% mapNewGenesToOld : logical, optional
+% mapNewGenesToOld : logical
 %     determines how to match genes if not looking at only 1-1 orthologs.
 %     Either map the new genes to the old or old genes to new. The default
 %     is to map the new genes (default true).
@@ -80,7 +82,11 @@ hitGenes.newGenes = [];  % collect the new genes of the draft model (target orga
 
 getModelFor=char(getModelFor);
 
-if nargin<4
+p=parseRAVENargs(varargin, {'preferredOrder',[]; 'strictness',1; ...
+    'onlyGenesInModels',false; 'maxE',10^-30; 'minLen',200; 'minIde',40; ...
+    'mapNewGenesToOld',true});
+preferredOrder=p.preferredOrder;
+if isempty(preferredOrder)
     preferredOrder=[];
 else
     preferredOrder=convertCharArray(preferredOrder);
@@ -89,24 +95,12 @@ else
         preferredOrder=transpose(preferredOrder);
     end
 end
-if nargin<5
-    strictness=1;
-end
-if nargin<6
-    onlyGenesInModels=false;
-end
-if nargin<7
-    maxE=10^-30;
-end
-if nargin<8
-    minLen=200;
-end
-if nargin<9
-    minIde=40;
-end
-if nargin<10
-    mapNewGenesToOld=true;
-end
+strictness=p.strictness;
+onlyGenesInModels=p.onlyGenesInModels;
+maxE=p.maxE;
+minLen=p.minLen;
+minIde=p.minIde;
+mapNewGenesToOld=p.mapNewGenesToOld;
 
 if isfield(models,'S')
     models={models};

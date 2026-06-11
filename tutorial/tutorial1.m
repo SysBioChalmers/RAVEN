@@ -6,25 +6,18 @@
 %   For a more detailed description of the individual functions, see
 %   [raven_directory]/doc/index.html.
 %   A GEM for the filamentous fungus Penicillium chrysogenum is used in
-%   this tutorial. The model can be found in a Microsoft Excel file under
-%   the name "iAL1006 v1.00.xlsx" and in SBML file "iAL1006 v1.00.xml".
+%   this tutorial. The model is provided as the SBML file
+%   "iAL1006 v1.00.xml".
 %   See Tutorial 1 in "RAVEN tutorials.docx" for more details.
 
-%Import the model from Excel. This function performs a number of checks
+%Import the model from SBML. This function performs a number of checks
 %regarding the model structure (such as for incorrectly written equations
 %or illegal characters). In this structure there is only one warning; that
 %the formula for the metabolite LPE could not be parsed. The "false" flag
 %imports a model with exchange reactions in their "closed" form. This makes
 %the model unsuited for modelling, but it is useful for some quality
 %control steps.
-model=importExcelModel('iAL1006 v1.00.xlsx',false);
-
-%The Excel interface is supposed to work in all the systems (Windows, Unix,
-%macOS), but upon any problems, the model can be imported from SBML format
-%instead. However, in such case the user would not be able to run Tutorials
-%2-4, which involve the editing of Excel files. Run the command below
-%(remove "%" sign) instead, if having such problem:
-%model=importModel('iAL1006 v1.00.xml',false);
+model=importModel('iAL1006 v1.00.xml',false);
 
 %The following function prints some properties of the model. The two "true"
 %flags say that it should also list potential problems such as dead-end
@@ -128,10 +121,3 @@ followChanged(modelETH,sol.x,solETH.x, 30, 0.4, 0.4,{'ATP'});
 %to have to do with acetate and so on. This allows the user to look further
 %and further down until one understands the underlying flux redistributions
 %that give rise to different phenotypes.
-
-%The fluxes can also be visualized on a metabolic map. Green corresponds to
-%reactions which are more used for growth on glucose, and red are reactions
-%which are more used for growth on ethanol. Open the "GLCvsETH.pdf" file to
-%be able to zoom in on individual reactions.
-load 'pcPathway.mat' pathway;
-drawMap('Glucose vs ethanol',pathway,model,sol.x,solETH.x,modelETH,'GLCvsETH.pdf',10^-5);

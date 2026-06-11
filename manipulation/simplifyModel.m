@@ -1,5 +1,4 @@
-function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,...
-    deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)
+function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,varargin)
 % simplifyModel  Simplify a model by deleting reactions and metabolites.
 %
 % This function is for reducing the model size by removing reactions and
@@ -10,29 +9,32 @@ function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(mode
 % ----------
 % model : struct
 %     a model structure.
-% deleteUnconstrained : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% deleteUnconstrained : logical
 %     delete metabolites marked as unconstrained (default true).
-% deleteDuplicates : logical, optional
+% deleteDuplicates : logical
 %     delete all but one of duplicate reactions (default false).
-% deleteZeroInterval : logical, optional
+% deleteZeroInterval : logical
 %     delete reactions that are constrained to zero flux (default false).
-% deleteInaccessible : logical, optional
+% deleteInaccessible : logical
 %     delete dead end reactions (default false).
-% deleteMinMax : logical, optional
+% deleteMinMax : logical
 %     delete reactions that cannot carry a flux by trying to
 %     minimize/maximize the flux through that reaction. May be time
 %     consuming (default false).
-% groupLinear : logical, optional
+% groupLinear : logical
 %     group linearly dependent pathways (default false).
-% constrainReversible : logical, optional
+% constrainReversible : logical
 %     check if there are reversible reactions which can only carry flux in
 %     one direction, and if so constrain them to be irreversible. This
 %     tends to allow for more reactions grouped when using groupLinear
 %     (default false).
-% reservedRxns : cell, optional
+% reservedRxns : cell
 %     cell array with reaction IDs that are not allowed to be removed
 %     (default none).
-% suppressWarnings : logical, optional
+% suppressWarnings : logical
 %     true if warnings should be suppressed (default false).
 %
 % Returns
@@ -51,35 +53,19 @@ function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(mode
 %         deleteZeroInterval, deleteInaccessible, deleteMinMax, ...
 %         groupLinear, constrainReversible, reservedRxns, suppressWarnings);
 
-if nargin<2
-    deleteUnconstrained=true;
-end
-if nargin<3
-    deleteDuplicates=false;
-end
-if nargin<4
-    deleteZeroInterval=false;
-end
-if nargin<5
-    deleteInaccessible=false;
-end
-if nargin<6
-    deleteMinMax=false;
-end
-if nargin<7
-    groupLinear=false;
-end
-if nargin<8
-    constrainReversible=false;
-end
-if nargin<9
-    reservedRxns=[];
-else
+p=parseRAVENargs(varargin, {'deleteUnconstrained',true; 'deleteDuplicates',false; 'deleteZeroInterval',false; 'deleteInaccessible',false; 'deleteMinMax',false; 'groupLinear',false; 'constrainReversible',false; 'reservedRxns',[]; 'suppressWarnings',false});
+deleteUnconstrained=p.deleteUnconstrained;
+deleteDuplicates=p.deleteDuplicates;
+deleteZeroInterval=p.deleteZeroInterval;
+deleteInaccessible=p.deleteInaccessible;
+deleteMinMax=p.deleteMinMax;
+groupLinear=p.groupLinear;
+constrainReversible=p.constrainReversible;
+reservedRxns=p.reservedRxns;
+if ~isempty(reservedRxns)
     reservedRxns=convertCharArray(reservedRxns);
 end
-if nargin<10
-    suppressWarnings=false;
-end
+suppressWarnings=p.suppressWarnings;
 
 reducedModel=model;
 deletedReactions={};

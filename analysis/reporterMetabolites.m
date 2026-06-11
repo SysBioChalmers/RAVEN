@@ -1,4 +1,4 @@
-function repMets=reporterMetabolites(model,genes,genePValues,printResults,outputFile,geneFoldChanges)
+function repMets=reporterMetabolites(model,genes,genePValues,varargin)
 % reporterMetabolites  Identify metabolites around which transcriptional changes occur.
 %
 % The Reporter Metabolites algorithm for identifying metabolites around
@@ -12,12 +12,15 @@ function repMets=reporterMetabolites(model,genes,genePValues,printResults,output
 %     a cell array of gene names (should match with model.genes).
 % genePValues : double
 %     P-values for differential expression of the genes.
-% printResults : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% printResults : logical
 %     true if the top 20 Reporter Metabolites should be printed to the
 %     screen (default false).
-% outputFile : char, optional
+% outputFile : char
 %     the results are printed to this file (default none).
-% geneFoldChanges : double, optional
+% geneFoldChanges : double
 %     log-fold changes for the genes. If supplied, then Reporter
 %     Metabolites are calculated for only up/down-regulated genes in
 %     addition to the full test (default none).
@@ -56,15 +59,10 @@ function repMets=reporterMetabolites(model,genes,genePValues,printResults,output
 % topology. Proc. Natl Acad. Sci. USA 2005;102:2685-2689.
 
 genes=convertCharArray(genes);
-if nargin<4
-    printResults=false;
-end
-if nargin<5
-    outputFile=[];
-end
-if nargin<6
-    geneFoldChanges=[];
-end
+p=parseRAVENargs(varargin, {'printResults',false; 'outputFile',[]; 'geneFoldChanges',[]});
+printResults=p.printResults;
+outputFile=p.outputFile;
+geneFoldChanges=p.geneFoldChanges;
 
 %Check some stuff
 if numel(genes)~=numel(genePValues)
@@ -90,8 +88,9 @@ if any(geneFoldChanges)
 end
 genePValues(isnan(genePValues))=[];
 
-%Convert p-values to Z-scores
-geneZScores=norminv(genePValues)*-1;
+%Convert p-values to Z-scores. Uses base MATLAB erfcinv instead of the
+%Statistics Toolbox norminv: -norminv(p) == sqrt(2)*erfcinv(2*p).
+geneZScores=sqrt(2)*erfcinv(2*genePValues);
 
 %This is to prevent errors if the p-values are exactly 0 or 1
 geneZScores(geneZScores==-inf)=-15;
@@ -148,8 +147,10 @@ for i=1:numel(sizes)
     metZScores(metNGenes==sizes(i))=(metZScores(metNGenes==sizes(i))-mK)/stdK;
 end
 
-%Calculate the P-values
-metPValues=1-normcdf(metZScores);
+%Calculate the P-values (upper-tail of the standard normal). Uses the base
+%MATLAB erfc so this does not depend on the Statistics Toolbox normcdf:
+%1 - normcdf(z) == 0.5*erfc(z/sqrt(2)).
+metPValues=0.5*erfc(metZScores/sqrt(2));
 
 %Sort the results
 [metZScores, I]=sort(metZScores,'descend');

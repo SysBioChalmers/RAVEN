@@ -1,4 +1,4 @@
-function [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
+function [model, addedRxns]=addExchangeRxns(model,reactionType,varargin)
 % addExchangeRxns  Add exchange reactions for some metabolites.
 %
 % This is a faster version than addRxns when adding exchange reactions.
@@ -16,7 +16,10 @@ function [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
 %     - 'out'  : output reactions
 %     - 'both' : reversible input/output reactions. Positive direction
 %       corresponds to output
-% mets : cell or logical or double, optional
+%
+% Name-Value Arguments
+% --------------------
+% mets : cell or logical or double
 %     either a cell array of metabolite IDs, a logical vector with the same
 %     number of elements as metabolites in the model, or a vector of
 %     indexes to add for (default model.mets).
@@ -32,7 +35,9 @@ function [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
 % --------
 %     [model, addedRxns] = addExchangeRxns(model, reactionType, mets);
 
-if nargin<3
+p=parseRAVENargs(varargin, {'mets',[]});
+mets=p.mets;
+if isempty(mets)
     mets=model.mets;
 elseif ~islogical(mets) && ~isnumeric(mets)
     mets=convertCharArray(mets);

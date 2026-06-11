@@ -1,15 +1,18 @@
-function exportToTabDelimited(model,path,sortIds)
+function exportToTabDelimited(model,varargin)
 % exportToTabDelimited  Export a model to tab-delimited text files.
 %
 % Parameters
 % ----------
 % model : struct
 %     a model structure.
-% path : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% path : char
 %     the path to export to. The resulting text files will be saved under
 %     the names excelRxns.txt, excelMets.txt, excelGenes.txt,
 %     excelModel.txt, and excelComps.txt (default './').
-% sortIds : logical, optional
+% sortIds : logical
 %     whether metabolites, reactions and genes should be sorted
 %     alphabetically by their identifiers (default false).
 %
@@ -25,12 +28,8 @@ function exportToTabDelimited(model,path,sortIds)
 % No checks are made regarding the correctness of the model. Use
 % checkModelStruct to identify problems in the model structure.
 
-if nargin<2
-    path='./';
-end
-if nargin<3
-    sortIds=false;
-end
+p=parseRAVENargs(varargin, {'path','./'; 'sortIds',false});
+path=p.path; sortIds=p.sortIds;
 if sortIds==true
     model=sortIdentifiers(model);
 end

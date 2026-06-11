@@ -1,0 +1,267 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of changeRxns</title>
+  <meta name="keywords" content="changeRxns">
+  <meta name="description" content="changeRxns  Modify the equations of reactions in a model.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">manipulation</a> &gt; changeRxns.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for manipulation&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>changeRxns
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>changeRxns  Modify the equations of reactions in a model.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> changeRxns  Modify the equations of reactions in a model.
+
+ Parameters
+ ----------
+ model : struct
+     a model structure.
+ rxns : cell
+     cell array with reaction ids.
+ equations : cell or struct
+     cell array with equations. Alternatively, it can be a structure with
+     the fields &quot;mets&quot; and &quot;stoichCoeffs&quot;, in the same fashion as addRxns.
+     E.g.:
+
+     - equations.mets = {{'met1','met2'},{'met1','met3'}}
+     - equations.stoichCoeffs = {[-1,+2],[-1,+1]}
+ eqnType : double, optional
+     describes how the equation string should be interpreted (default 1):
+
+     - 1 : the metabolites are matched to model.mets. New metabolites (if
+       allowed) are added to &quot;compartment&quot;.
+     - 2 : the metabolites are matched to model.metNames and all
+       metabolites are assigned to &quot;compartment&quot;. Any new metabolites that
+       are added will be assigned IDs &quot;m1&quot;, &quot;m2&quot;... If IDs on the same form
+       are already used in the model then the numbering will start from the
+       highest used integer+1.
+     - 3 : the metabolites are written as &quot;metNames[compNames]&quot;. Only
+       compartments in model.compNames are allowed. Any new metabolites
+       that are added will be assigned IDs &quot;m1&quot;, &quot;m2&quot;... If IDs on the same
+       form are already used in the model then the numbering will start
+       from the highest used integer+1.
+ compartment : char, optional
+     a string with the compartment the metabolites should be placed in when
+     using eqnType=2. Must match model.compNames (optional when eqnType=1 or
+     eqnType=3).
+ allowNewMets : logical, optional
+     true if the function is allowed to add new metabolites. It is highly
+     recommended to first add any new metabolites with addMets rather than
+     automatically through this function. addMets supports more annotation
+     of metabolites, allows for the use of exchange metabolites, and using
+     it reduces the risk of parsing errors (default false).
+
+ Returns
+ -------
+ model : struct
+     an updated model structure.
+
+ Examples
+ --------
+     model = changeRxns(model, rxns, equations, eqnType, compartment, allowNewMets);
+
+ Notes
+ -----
+ This function should be used with some care, since it doesn't care about
+ bounds on the reactions. Changing an irreversible reaction to a reversible
+ one (or the other way around) will only change the model.rev field and not
+ the model.lb/model.ub fields. The reaction will therefore still be having
+ the same reversibility because of the bounds. Use setParams to change the
+ bounds.
+
+ When adding metabolites to a compartment where it previously doesn't
+ exist, the function will copy any available information from the metabolite
+ in another compartment.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="addRxns.html" class="code" title="function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allowNewGenes)">addRxns</a>	addRxns  Add reactions to a model.</li><li><a href="permuteModel.html" class="code" title="function newModel=permuteModel(model, indexes, type)">permuteModel</a>	permuteModel  Change the order of the reactions or metabolites in a model.</li><li><a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>	removeReactions  Delete a set of reactions from a model.</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)</a>
+0002 <span class="comment">% changeRxns  Modify the equations of reactions in a model.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Parameters</span>
+0005 <span class="comment">% ----------</span>
+0006 <span class="comment">% model : struct</span>
+0007 <span class="comment">%     a model structure.</span>
+0008 <span class="comment">% rxns : cell</span>
+0009 <span class="comment">%     cell array with reaction ids.</span>
+0010 <span class="comment">% equations : cell or struct</span>
+0011 <span class="comment">%     cell array with equations. Alternatively, it can be a structure with</span>
+0012 <span class="comment">%     the fields &quot;mets&quot; and &quot;stoichCoeffs&quot;, in the same fashion as addRxns.</span>
+0013 <span class="comment">%     E.g.:</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">%     - equations.mets = {{'met1','met2'},{'met1','met3'}}</span>
+0016 <span class="comment">%     - equations.stoichCoeffs = {[-1,+2],[-1,+1]}</span>
+0017 <span class="comment">% eqnType : double, optional</span>
+0018 <span class="comment">%     describes how the equation string should be interpreted (default 1):</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">%     - 1 : the metabolites are matched to model.mets. New metabolites (if</span>
+0021 <span class="comment">%       allowed) are added to &quot;compartment&quot;.</span>
+0022 <span class="comment">%     - 2 : the metabolites are matched to model.metNames and all</span>
+0023 <span class="comment">%       metabolites are assigned to &quot;compartment&quot;. Any new metabolites that</span>
+0024 <span class="comment">%       are added will be assigned IDs &quot;m1&quot;, &quot;m2&quot;... If IDs on the same form</span>
+0025 <span class="comment">%       are already used in the model then the numbering will start from the</span>
+0026 <span class="comment">%       highest used integer+1.</span>
+0027 <span class="comment">%     - 3 : the metabolites are written as &quot;metNames[compNames]&quot;. Only</span>
+0028 <span class="comment">%       compartments in model.compNames are allowed. Any new metabolites</span>
+0029 <span class="comment">%       that are added will be assigned IDs &quot;m1&quot;, &quot;m2&quot;... If IDs on the same</span>
+0030 <span class="comment">%       form are already used in the model then the numbering will start</span>
+0031 <span class="comment">%       from the highest used integer+1.</span>
+0032 <span class="comment">% compartment : char, optional</span>
+0033 <span class="comment">%     a string with the compartment the metabolites should be placed in when</span>
+0034 <span class="comment">%     using eqnType=2. Must match model.compNames (optional when eqnType=1 or</span>
+0035 <span class="comment">%     eqnType=3).</span>
+0036 <span class="comment">% allowNewMets : logical, optional</span>
+0037 <span class="comment">%     true if the function is allowed to add new metabolites. It is highly</span>
+0038 <span class="comment">%     recommended to first add any new metabolites with addMets rather than</span>
+0039 <span class="comment">%     automatically through this function. addMets supports more annotation</span>
+0040 <span class="comment">%     of metabolites, allows for the use of exchange metabolites, and using</span>
+0041 <span class="comment">%     it reduces the risk of parsing errors (default false).</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">% Returns</span>
+0044 <span class="comment">% -------</span>
+0045 <span class="comment">% model : struct</span>
+0046 <span class="comment">%     an updated model structure.</span>
+0047 <span class="comment">%</span>
+0048 <span class="comment">% Examples</span>
+0049 <span class="comment">% --------</span>
+0050 <span class="comment">%     model = changeRxns(model, rxns, equations, eqnType, compartment, allowNewMets);</span>
+0051 <span class="comment">%</span>
+0052 <span class="comment">% Notes</span>
+0053 <span class="comment">% -----</span>
+0054 <span class="comment">% This function should be used with some care, since it doesn't care about</span>
+0055 <span class="comment">% bounds on the reactions. Changing an irreversible reaction to a reversible</span>
+0056 <span class="comment">% one (or the other way around) will only change the model.rev field and not</span>
+0057 <span class="comment">% the model.lb/model.ub fields. The reaction will therefore still be having</span>
+0058 <span class="comment">% the same reversibility because of the bounds. Use setParams to change the</span>
+0059 <span class="comment">% bounds.</span>
+0060 <span class="comment">%</span>
+0061 <span class="comment">% When adding metabolites to a compartment where it previously doesn't</span>
+0062 <span class="comment">% exist, the function will copy any available information from the metabolite</span>
+0063 <span class="comment">% in another compartment.</span>
+0064 
+0065 <span class="keyword">if</span> nargin&lt;4
+0066     eqnType=1;
+0067 <span class="keyword">end</span>
+0068 
+0069 <span class="keyword">if</span> nargin&lt;5
+0070     compartment=[];
+0071 <span class="keyword">end</span>
+0072 <span class="keyword">if</span> nargin&lt;6
+0073     allowNewMets=false;
+0074 <span class="keyword">end</span>
+0075 
+0076 rxns=convertCharArray(rxns);
+0077 compartment=char(compartment);
+0078 
+0079 <span class="comment">%Find the indexes of the reactions and throw an error if they aren't all</span>
+0080 <span class="comment">%found</span>
+0081 [I, J]=ismember(rxns,model.rxns);
+0082 <span class="keyword">if</span> ~all(I)
+0083     EM=<span class="string">'All reaction ids must exist in the model'</span>;
+0084     dispEM(EM);
+0085 <span class="keyword">end</span>
+0086 
+0087 <span class="comment">%The reactions are changed in the following manner. First create a</span>
+0088 <span class="comment">%rxns-structure by copying info from the model. Then remove the old</span>
+0089 <span class="comment">%reactions. Then add the updated ones using addRxns. Lastly, the model is</span>
+0090 <span class="comment">%reordered to match the original order. This is done like this to make use</span>
+0091 <span class="comment">%of the advanced parsing of equations that addRxns use.</span>
+0092 rxnsToChange.rxns=rxns;
+0093 <span class="keyword">if</span> isfield(equations,<span class="string">'mets'</span>) &amp;&amp; isfield(equations,<span class="string">'stoichCoeffs'</span>)
+0094     rxnsToChange.mets=equations.mets;
+0095     rxnsToChange.stoichCoeffs=equations.stoichCoeffs;
+0096 <span class="keyword">else</span>
+0097     rxnsToChange.equations=convertCharArray(equations);
+0098 <span class="keyword">end</span>
+0099 <span class="keyword">if</span> isfield(model,<span class="string">'rxnNames'</span>)
+0100     rxnsToChange.rxnNames=model.rxnNames(J);
+0101 <span class="keyword">end</span>
+0102 <span class="keyword">if</span> isfield(model,<span class="string">'lb'</span>)
+0103     rxnsToChange.lb=model.lb(J);
+0104 <span class="keyword">end</span>
+0105 <span class="keyword">if</span> isfield(model,<span class="string">'ub'</span>)
+0106     rxnsToChange.ub=model.ub(J);
+0107 <span class="keyword">end</span>
+0108 <span class="keyword">if</span> isfield(model,<span class="string">'c'</span>)
+0109     rxnsToChange.c=model.c(J);
+0110 <span class="keyword">end</span>
+0111 <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
+0112     rxnsToChange.eccodes=model.eccodes(J);
+0113 <span class="keyword">end</span>
+0114 <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
+0115     rxnsToChange.subSystems=model.subSystems(J);
+0116 <span class="keyword">end</span>
+0117 <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
+0118     rxnsToChange.rxnComps=model.rxnComps(J);
+0119 <span class="keyword">end</span>
+0120 <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
+0121     rxnsToChange.grRules=model.grRules(J);
+0122 <span class="keyword">end</span>
+0123 <span class="keyword">if</span> isfield(model,<span class="string">'rxnFrom'</span>)
+0124     rxnsToChange.rxnFrom=model.rxnFrom(J);
+0125 <span class="keyword">end</span>
+0126 <span class="keyword">if</span> isfield(model,<span class="string">'rxnScores'</span>)
+0127     rxnsToChange.rxnScores=model.rxnScores(J);
+0128 <span class="keyword">end</span>
+0129 <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
+0130     rxnsToChange.rxnMiriams=model.rxnMiriams(J);
+0131 <span class="keyword">end</span>
+0132 <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
+0133     rxnsToChange.rxnNotes=model.rxnNotes(J);
+0134 <span class="keyword">end</span>
+0135 <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
+0136     rxnsToChange.rxnReferences=model.rxnReferences(J);
+0137 <span class="keyword">end</span>
+0138 <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
+0139     rxnsToChange.rxnConfidenceScores=model.rxnConfidenceScores(J);
+0140 <span class="keyword">end</span>
+0141 <span class="keyword">if</span> isfield(model,<span class="string">'rxnDeltaG'</span>)
+0142     rxnsToChange.rxnDeltaG=model.rxnDeltaG(J);
+0143 <span class="keyword">end</span>
+0144 <span class="keyword">if</span> isfield(model,<span class="string">'pwys'</span>)
+0145     rxnsToChange.pwys=model.pwys(J);
+0146 <span class="keyword">end</span>
+0147 
+0148 <span class="comment">%Calculate the new order of reactions</span>
+0149 order=ones(numel(model.rxns),1);
+0150 order(J)=0;
+0151 order=cumsum(order);
+0152 order(J)=order(end)+1:order(end)+numel(rxns);
+0153 
+0154 <span class="comment">%Remove the original reactions</span>
+0155 model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)">removeReactions</a>(model,rxns);
+0156 
+0157 model=<a href="addRxns.html" class="code" title="function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allowNewGenes)">addRxns</a>(model,rxnsToChange,eqnType,compartment,allowNewMets);
+0158 model=<a href="permuteModel.html" class="code" title="function newModel=permuteModel(model, indexes, type)">permuteModel</a>(model,order,<span class="string">'rxns'</span>);
+0159 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

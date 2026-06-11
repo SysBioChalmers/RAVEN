@@ -1,0 +1,209 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of parseScores</title>
+  <meta name="keywords" content="parseScores">
+  <meta name="description" content="parseScores  Parse the output from a predictor to generate the GSS.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">localization</a> &gt; parseScores.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for localization&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>parseScores
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>parseScores  Parse the output from a predictor to generate the GSS.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function GSS = parseScores(inputFile, predictor) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> parseScores  Parse the output from a predictor to generate the GSS.
+
+ The function normalizes the scores so that the best score for each gene
+ is 1.0.
+
+ Parameters
+ ----------
+ inputFile : char
+     a file with the output from the predictor.
+ predictor : char, optional
+     the predictor that was used. 'wolf' for WoLF PSORT, 'cello' for
+     CELLO, 'deeploc' for DeepLoc (default 'wolf').
+
+ Returns
+ -------
+ GSS : struct
+     a gene scoring structure to be used in predictLocalization.
+
+ Examples
+ --------
+     GSS = parseScores(inputFile, predictor);
+
+ See also
+ --------
+ <a href="predictLocalization.html" class="code" title="function [outModel, geneLocalization, transportStruct, scores,removedRxns] = predictLocalization(model, GSS,defaultCompartment, transportCost, maxTime, plotResults)">predictLocalization</a>, <a href="getWoLFScores.html" class="code" title="function GSS = getWoLFScores(inputFile, kingdom)">getWoLFScores</a></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="getWoLFScores.html" class="code" title="function GSS = getWoLFScores(inputFile, kingdom)">getWoLFScores</a>	getWoLFScores  Predict protein sub-cellular localization with WoLF PSORT.</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function GSS = parseScores(inputFile, predictor)</a>
+0002 <span class="comment">% parseScores  Parse the output from a predictor to generate the GSS.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% The function normalizes the scores so that the best score for each gene</span>
+0005 <span class="comment">% is 1.0.</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% Parameters</span>
+0008 <span class="comment">% ----------</span>
+0009 <span class="comment">% inputFile : char</span>
+0010 <span class="comment">%     a file with the output from the predictor.</span>
+0011 <span class="comment">% predictor : char, optional</span>
+0012 <span class="comment">%     the predictor that was used. 'wolf' for WoLF PSORT, 'cello' for</span>
+0013 <span class="comment">%     CELLO, 'deeploc' for DeepLoc (default 'wolf').</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% Returns</span>
+0016 <span class="comment">% -------</span>
+0017 <span class="comment">% GSS : struct</span>
+0018 <span class="comment">%     a gene scoring structure to be used in predictLocalization.</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Examples</span>
+0021 <span class="comment">% --------</span>
+0022 <span class="comment">%     GSS = parseScores(inputFile, predictor);</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% See also</span>
+0025 <span class="comment">% --------</span>
+0026 <span class="comment">% predictLocalization, getWoLFScores</span>
+0027 
+0028 <span class="keyword">if</span> nargin&lt;2
+0029     predictor=<span class="string">'wolf'</span>;
+0030 <span class="keyword">else</span>
+0031     predictor=char(predictor);
+0032 <span class="keyword">end</span>
+0033 
+0034 fid=fopen(inputFile,<span class="string">'r'</span>);
+0035 
+0036 <span class="keyword">if</span> fid&lt;1
+0037     EM=<span class="string">'Could not open file'</span>;
+0038     dispEM(EM);
+0039 <span class="keyword">end</span>
+0040 
+0041 <span class="keyword">if</span> strcmpi(predictor,<span class="string">'wolf'</span>)
+0042     A=textscan(fid,<span class="string">'%s'</span>,<span class="string">'Delimiter'</span>,<span class="string">'\n'</span>,<span class="string">'CommentStyle'</span>,<span class="string">'#'</span>);
+0043     
+0044     <span class="comment">%Each element should be for one gene, but some of them are on the form</span>
+0045     <span class="comment">%&quot;Pc20g11350: treating 9 X's as Glycines&quot;. Those should be removed</span>
+0046     I=~cellfun(@any,strfind(A{1},<span class="string">'treating'</span>));
+0047     
+0048     B=regexp(A{1}(I),<span class="string">' '</span>,<span class="string">'split'</span>);
+0049     
+0050     <span class="comment">%Reserve space for stuff</span>
+0051     GSS.compartments={};
+0052     GSS.scores=[]; <span class="comment">%Do not know number of comps yet</span>
+0053     GSS.genes=cell(numel(B),1);
+0054     
+0055     <span class="comment">%Parsing is a bit cumbersome as ', ' is used as a delimiter in some</span>
+0056     <span class="comment">%cases and ' ' in others. Use strrep to get rid of ','</span>
+0057     <span class="keyword">for</span> i=1:numel(B)
+0058         b=strrep(B{i},<span class="string">','</span>,<span class="string">''</span>);
+0059         GSS.genes{i}=b{1};
+0060         
+0061         <span class="comment">%Then go through the compartments and add new ones as they are</span>
+0062         <span class="comment">%found</span>
+0063         <span class="keyword">for</span> j=2:2:numel(b)-1
+0064             [~, J]=ismember(b(j),GSS.compartments);
+0065             
+0066             <span class="comment">%Add new compartment if it does not exist</span>
+0067             <span class="keyword">if</span> J==0
+0068                 GSS.compartments=[GSS.compartments;b(j)];
+0069                 J=numel(GSS.compartments);
+0070                 GSS.scores=[GSS.scores zeros(numel(B),1)];
+0071             <span class="keyword">end</span>
+0072             
+0073             GSS.scores(i,J)=str2double(b(j+1));
+0074         <span class="keyword">end</span>
+0075     <span class="keyword">end</span>
+0076 <span class="keyword">elseif</span> strcmpi(predictor,<span class="string">'cello'</span>)
+0077     fid=fopen(inputFile,<span class="string">'r'</span>);
+0078     <span class="comment">%Read the title line and fetch the list of compartments</span>
+0079     tline = fgetl(fid);
+0080     tline=regexprep(tline,<span class="string">'^.+#Combined:\t'</span>,<span class="string">''</span>);
+0081     tline=regexprep(tline,<span class="string">'\t#Most-likely-Location.+'</span>,<span class="string">''</span>);
+0082     GSS.compartments=transpose(regexp(tline,<span class="string">'\t'</span>,<span class="string">'split'</span>));
+0083     
+0084     <span class="comment">%Now iterate through the following lines in the file. Each row</span>
+0085     <span class="comment">%corresponds to one gene and it consists of the scores for</span>
+0086     <span class="comment">%compartments. Gene name is in the end of each line</span>
+0087     row=0;
+0088     <span class="keyword">while</span> 1
+0089         row=row+1;
+0090         tline = fgetl(fid);
+0091         <span class="keyword">if</span> ~ischar(tline)
+0092             <span class="keyword">break</span>;
+0093         <span class="keyword">end</span>
+0094         tline=regexprep(tline,<span class="string">'^.+:\t'</span>,<span class="string">''</span>);
+0095         tline=regexprep(tline,<span class="string">' .+'</span>,<span class="string">''</span>);
+0096         tline=regexp(tline,<span class="string">'\t'</span>,<span class="string">'split'</span>);
+0097         GSS.scores(row,:)=str2double(tline(1:numel(GSS.compartments)));
+0098         GSS.genes{row,1}=tline{1,end};
+0099     <span class="keyword">end</span>
+0100 <span class="keyword">elseif</span> strcmpi(predictor,<span class="string">'deeploc'</span>)
+0101     fid=fopen(inputFile,<span class="string">'r'</span>);
+0102     <span class="comment">%Read the title line and fetch the list of compartments</span>
+0103     tline = fgetl(fid);
+0104     GSS.compartments=regexp(tline,<span class="string">','</span>,<span class="string">'split'</span>);
+0105     GSS.compartments=transpose(GSS.compartments(4:end));
+0106     
+0107     <span class="comment">%Now iterate through the following lines in the file. Each row</span>
+0108     <span class="comment">%corresponds to one gene and it consists of the scores for</span>
+0109     <span class="comment">%compartments. Gene name is in the end of each line</span>
+0110     row=0;
+0111     <span class="keyword">while</span> 1
+0112         row=row+1;
+0113         tline = fgetl(fid);
+0114         <span class="keyword">if</span> ~ischar(tline)
+0115             <span class="keyword">break</span>;
+0116         <span class="keyword">end</span>
+0117         tline=regexp(tline,<span class="string">','</span>,<span class="string">'split'</span>);
+0118         GSS.scores(row,:)=str2double(tline(4:end));
+0119         GSS.genes{row,1}=tline{1,1};
+0120     <span class="keyword">end</span>
+0121 <span class="keyword">end</span>
+0122 
+0123 <span class="comment">%Check if there are duplicate genes</span>
+0124 [~, J, K]=unique(GSS.genes);
+0125 
+0126 <span class="keyword">if</span> numel(J)~=numel(K)
+0127     EM=<span class="string">'There are duplicate genes in the input file'</span>;
+0128     dispEM(EM,false);
+0129     GSS.genes=GSS.genes(J);
+0130     GSS.scores=GSS.scores(J,:);
+0131 <span class="keyword">end</span>
+0132 
+0133 <span class="comment">%Normalize</span>
+0134 I=max(GSS.scores,[],2);
+0135 GSS.scores=bsxfun(@times, GSS.scores, 1./I);
+0136 
+0137 fclose(fid);
+0138 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

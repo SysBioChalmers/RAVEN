@@ -1,4 +1,4 @@
-function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)
+function reducedModel=removeReactions(model,rxnsToRemove,varargin)
 % removeReactions  Delete a set of reactions from a model.
 %
 % Parameters
@@ -9,11 +9,14 @@ function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,remove
 %     either a cell array of reaction IDs, a logical vector with the same
 %     number of elements as reactions in the model, or a vector of indexes
 %     to remove.
-% removeUnusedMets : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% removeUnusedMets : logical
 %     remove metabolites that are no longer in use (default false).
-% removeUnusedGenes : logical, optional
+% removeUnusedGenes : logical
 %     remove genes that are no longer in use (default false).
-% removeUnusedComps : logical, optional
+% removeUnusedComps : logical
 %     remove compartments that are no longer in use (default false).
 %
 % Returns
@@ -26,15 +29,10 @@ function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,remove
 %     reducedModel = removeReactions(model, rxnsToRemove, removeUnusedMets, ...
 %         removeUnusedGenes, removeUnusedComps);
 
-if nargin<3
-    removeUnusedMets=false;
-end
-if nargin<4
-    removeUnusedGenes=false;
-end
-if nargin<5
-    removeUnusedComps=false;
-end
+p=parseRAVENargs(varargin, {'removeUnusedMets',false; 'removeUnusedGenes',false; 'removeUnusedComps',false});
+removeUnusedMets=p.removeUnusedMets;
+removeUnusedGenes=p.removeUnusedGenes;
+removeUnusedComps=p.removeUnusedComps;
 if ~islogical(rxnsToRemove) && ~isnumeric(rxnsToRemove)
     rxnsToRemove=convertCharArray(rxnsToRemove);
 end

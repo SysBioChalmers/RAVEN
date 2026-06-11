@@ -1,0 +1,229 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of printModelStats</title>
+  <meta name="keywords" content="printModelStats">
+  <meta name="description" content="printModelStats  Print some statistics about a model to the screen.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">queries</a> &gt; printModelStats.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for queries&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>printModelStats
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>printModelStats  Print some statistics about a model to the screen.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function printModelStats(model, printModelIssues, printDetails) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> printModelStats  Print some statistics about a model to the screen.
+
+ Parameters
+ ----------
+ model : struct
+     a model structure.
+ printModelIssues : logical, optional
+     true if information about unconnected reactions/metabolites and
+     elemental balancing should be printed (default false).
+ printDetails : logical, optional
+     true if detailed information should be printed about model issues.
+     Only used if printModelIssues is true (default true).
+
+ Examples
+ --------
+     printModelStats(model, printModelIssues, printDetails);</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="constructEquations.html" class="code" title="function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID,useFormula,useRevField)">constructEquations</a>	constructEquations  Construct equation strings for reactions.</li><li><a href="getElementalBalance.html" class="code" title="function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)">getElementalBalance</a>	getElementalBalance  Check whether the reactions of a model are balanced.</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function printModelStats(model, printModelIssues, printDetails)</a>
+0002 <span class="comment">% printModelStats  Print some statistics about a model to the screen.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Parameters</span>
+0005 <span class="comment">% ----------</span>
+0006 <span class="comment">% model : struct</span>
+0007 <span class="comment">%     a model structure.</span>
+0008 <span class="comment">% printModelIssues : logical, optional</span>
+0009 <span class="comment">%     true if information about unconnected reactions/metabolites and</span>
+0010 <span class="comment">%     elemental balancing should be printed (default false).</span>
+0011 <span class="comment">% printDetails : logical, optional</span>
+0012 <span class="comment">%     true if detailed information should be printed about model issues.</span>
+0013 <span class="comment">%     Only used if printModelIssues is true (default true).</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% Examples</span>
+0016 <span class="comment">% --------</span>
+0017 <span class="comment">%     printModelStats(model, printModelIssues, printDetails);</span>
+0018 
+0019 <span class="keyword">if</span> nargin&lt;2
+0020     printModelIssues=false;
+0021 <span class="keyword">end</span>
+0022 <span class="keyword">if</span> nargin&lt;3
+0023     printDetails=true;
+0024 <span class="keyword">end</span>
+0025 
+0026 fprintf([<span class="string">'Network statistics for '</span> model.id <span class="string">': '</span> model.name <span class="string">'\n'</span>]);
+0027 
+0028 <span class="comment">%Get which reactions are present in each compartment</span>
+0029 rxnComps=sparse(numel(model.rxns),numel(model.comps));
+0030 
+0031 <span class="comment">%For each compartment, find the metabolites that are present in that</span>
+0032 <span class="comment">%compartment and then the reactions they are involved in</span>
+0033 <span class="keyword">for</span> i=1:numel(model.comps)
+0034     [~, I]=find(model.S(model.metComps==i,:));
+0035     rxnComps(I,i)=1;
+0036 <span class="keyword">end</span>
+0037 
+0038 <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
+0039     fprintf([<span class="string">'EC-numbers\t\t\t'</span> num2str(numel(unique(model.eccodes))) <span class="string">'\n'</span>]);
+0040 <span class="keyword">end</span>
+0041 
+0042 <span class="comment">%Print information about genes</span>
+0043 <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>)
+0044     fprintf([<span class="string">'Genes*\t\t\t\t'</span> num2str(numel(model.genes)) <span class="string">'\n'</span>]);
+0045     <span class="comment">%Find the genes in each compartment</span>
+0046     <span class="keyword">for</span> i=1:numel(model.comps)
+0047         [~, I]=find(model.rxnGeneMat(rxnComps(:,i)==1,:));
+0048         fprintf([<span class="string">'\t'</span> model.compNames{i} <span class="string">'\t'</span> num2str(numel(unique(I))) <span class="string">'\n'</span>]);
+0049     <span class="keyword">end</span>
+0050 <span class="keyword">end</span>
+0051 
+0052 <span class="comment">%Print information about reactions</span>
+0053 fprintf([<span class="string">'\nReactions*\t\t\t'</span> num2str(numel(model.rxns)) <span class="string">'\n'</span>]);
+0054 <span class="keyword">for</span> i=1:numel(model.comps)
+0055     fprintf([<span class="string">'\t'</span> model.compNames{i} <span class="string">'\t'</span> num2str(sum(rxnComps(:,i))) <span class="string">'\n'</span>]);
+0056 <span class="keyword">end</span>
+0057 
+0058 <span class="comment">%Removes the effect of compartments and removes duplicate reactions</span>
+0059 temp=model;
+0060 temp.comps(:)={<span class="string">'s'</span>}; <span class="comment">%Set all compartments to be the same</span>
+0061 equ=<a href="constructEquations.html" class="code" title="function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID,useFormula,useRevField)">constructEquations</a>(sortModel(temp,true,true),temp.rxns,false);
+0062 
+0063 fprintf([<span class="string">'Unique reactions**\t'</span> num2str(numel(unique(equ))) <span class="string">'\n'</span>]);
+0064 
+0065 <span class="comment">%Print information about metabolites</span>
+0066 fprintf([<span class="string">'\nMetabolites\t\t\t'</span> num2str(numel(model.mets)) <span class="string">'\n'</span>]);
+0067 <span class="keyword">for</span> i=1:numel(model.comps)
+0068     fprintf([<span class="string">'\t'</span> model.compNames{i} <span class="string">'\t'</span> num2str(sum(model.metComps==i)) <span class="string">'\n'</span>]);
+0069 <span class="keyword">end</span>
+0070 
+0071 fprintf([<span class="string">'Unique metabolites\t'</span> num2str(numel(unique(model.metNames))) <span class="string">'\n'</span>]);
+0072 
+0073 fprintf(<span class="string">'\n* Genes and reactions are counted for each compartment if any of the corresponding metabolites are in that compartment. The sum may therefore not add up to the total number.\n'</span>);
+0074 fprintf(<span class="string">'** Unique reactions are defined as being biochemically unique (no compartmentalization)\n'</span>);
+0075 
+0076 <span class="comment">%Also print some potential problems if there are any</span>
+0077 <span class="keyword">if</span> printModelIssues==true
+0078     fprintf([<span class="string">'\nShort model quality summary for '</span> model.id <span class="string">': '</span> model.name <span class="string">'\n'</span>]);
+0079     
+0080     <span class="comment">%Check that all the metabolites are being used</span>
+0081     involvedMat=model.S;
+0082     involvedMat(involvedMat~=0)=1;
+0083     usedMets=sum(involvedMat,2);
+0084     notPresent=find(usedMets==0);
+0085     <span class="keyword">if</span> ~isempty(notPresent)
+0086         errorText=[<span class="string">'Non-used metabolites\t'</span> num2str(numel(notPresent)) <span class="string">'\n'</span>];
+0087         <span class="keyword">if</span> printDetails==true
+0088             <span class="keyword">for</span> i=1:numel(notPresent)
+0089                 errorText=[errorText <span class="string">'\t('</span> model.mets{notPresent(i)} <span class="string">') '</span> model.metNames{notPresent(i)} <span class="string">'\n'</span>];
+0090             <span class="keyword">end</span>
+0091             errorText=[errorText <span class="string">'\n'</span>];
+0092         <span class="keyword">end</span>
+0093         fprintf(errorText);
+0094     <span class="keyword">end</span>
+0095     
+0096     <span class="comment">%Check if there are empty reactions</span>
+0097     usedRxns=sum(involvedMat,1);
+0098     notUsed=find(usedRxns==0);
+0099     <span class="keyword">if</span> ~isempty(notUsed)
+0100         errorText=[<span class="string">'Empty reactions\t'</span> num2str(numel(notUsed)) <span class="string">'\n'</span>];
+0101         <span class="keyword">if</span> printDetails==true
+0102             <span class="keyword">for</span> i=1:numel(notUsed)
+0103                 errorText=[errorText <span class="string">'\t'</span> model.rxns{notUsed(i)} <span class="string">'\n'</span>];
+0104             <span class="keyword">end</span>
+0105             errorText=[errorText <span class="string">'\n'</span>];
+0106         <span class="keyword">end</span>
+0107         fprintf(errorText);
+0108     <span class="keyword">end</span>
+0109     
+0110     <span class="comment">%Check if there are dead-end reactions/metabolites</span>
+0111     [~, deletedReactions, deletedMetabolites]=simplifyModel(model,true,false,false,true);
+0112     
+0113     <span class="keyword">if</span> ~isempty(deletedReactions)
+0114         errorText=[<span class="string">'Dead-end reactions\t'</span> num2str(numel(deletedReactions)) <span class="string">'\n'</span>];
+0115         <span class="keyword">if</span> printDetails==true
+0116             <span class="keyword">for</span> i=1:numel(deletedReactions)
+0117                 errorText=[errorText <span class="string">'\t'</span> deletedReactions{i} <span class="string">'\n'</span>];
+0118             <span class="keyword">end</span>
+0119             errorText=[errorText <span class="string">'\n'</span>];
+0120         <span class="keyword">end</span>
+0121         fprintf(errorText);
+0122     <span class="keyword">end</span>
+0123     
+0124     <span class="comment">%Ignore non-used metabolites</span>
+0125     deletedMetabolites=setdiff(deletedMetabolites,model.mets(notPresent));
+0126     <span class="comment">%Must map to indexes in order to print names</span>
+0127     deletedMetabolites=find(ismember(model.mets,deletedMetabolites));
+0128     <span class="keyword">if</span> ~isempty(deletedMetabolites)
+0129         errorText=[<span class="string">'Dead-end metabolites\t'</span> num2str(numel(deletedMetabolites)) <span class="string">'\n'</span>];
+0130         <span class="keyword">if</span> printDetails==true
+0131             <span class="keyword">for</span> i=1:numel(deletedMetabolites)
+0132                 errorText=[errorText <span class="string">'\t('</span> model.mets{deletedMetabolites(i)} <span class="string">') '</span> model.metNames{deletedMetabolites(i)} <span class="string">'\n'</span>];
+0133             <span class="keyword">end</span>
+0134             errorText=[errorText <span class="string">'\n'</span>];
+0135         <span class="keyword">end</span>
+0136         fprintf(errorText);
+0137     <span class="keyword">end</span>
+0138     
+0139     balanceStructure=<a href="getElementalBalance.html" class="code" title="function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)">getElementalBalance</a>(model);
+0140     
+0141     notParsed=find(balanceStructure.balanceStatus&lt;0);
+0142     notBalanced=find(balanceStructure.balanceStatus==0);
+0143     
+0144     <span class="keyword">if</span> ~isempty(notParsed)
+0145         errorText=[<span class="string">'Reactions which could not be elementally balanced\t'</span> num2str(numel(notParsed)) <span class="string">'\n'</span>];
+0146         <span class="keyword">if</span> printDetails==true
+0147             <span class="keyword">for</span> i=1:numel(notParsed)
+0148                 errorText=[errorText <span class="string">'\t'</span> model.rxns{notParsed(i)} <span class="string">'\n'</span>];
+0149             <span class="keyword">end</span>
+0150             errorText=[errorText <span class="string">'\n'</span>];
+0151         <span class="keyword">end</span>
+0152         fprintf(errorText);
+0153     <span class="keyword">end</span>
+0154     <span class="keyword">if</span> ~isempty(notBalanced)
+0155         errorText=[<span class="string">'Reactions which are elementally unbalanced\t'</span> num2str(numel(notBalanced)) <span class="string">'\n'</span>];
+0156         <span class="keyword">if</span> printDetails==true
+0157             names=strcat(balanceStructure.elements.names,{<span class="string">', '</span>});
+0158             <span class="keyword">for</span> i=1:numel(notBalanced)
+0159                 badOnes=sprintf(<span class="string">'%s'</span>, names{abs(balanceStructure.leftComp(notBalanced(i),:)-balanceStructure.rightComp(notBalanced(i),:))&gt;10^-7});
+0160                 errorText=[errorText <span class="string">'\t'</span> model.rxns{notBalanced(i)} <span class="string">'\t'</span> badOnes(1:end-2) <span class="string">'\n'</span>];
+0161             <span class="keyword">end</span>
+0162             errorText=[errorText <span class="string">'\n'</span>];
+0163         <span class="keyword">end</span>
+0164         fprintf(errorText);
+0165     <span class="keyword">end</span>
+0166 <span class="keyword">end</span>
+0167 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

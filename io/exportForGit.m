@@ -1,4 +1,4 @@
-function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,COBRAtext,neverPrefixIDs)
+function out=exportForGit(model,varargin)
 % exportForGit  Export a model for a Git-maintained model repository.
 %
 % Generates a directory structure and populates it with model files, ready
@@ -10,28 +10,31 @@ function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,COBRA
 % ----------
 % model : struct
 %     model structure in RAVEN format that should be exported.
-% prefix : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% prefix : char
 %     prefix for all filenames (default 'model').
-% path : char, optional
+% path : char
 %     path where the directory structure should be generated and populated
 %     with all files (default current working directory).
-% formats : cell, optional
+% formats : cell
 %     cell array of strings specifying in what file formats the model
 %     should be exported (default all formats as {'mat', 'txt', 'xlsx',
 %     'xml', 'yml'}).
-% mainBranchFlag : logical, optional
-%     if true, function will error if RAVEN (and COBRA if detected) is/are
-%     not on the main branch (default false).
-% subDirs : logical, optional
+% mainBranchFlag : logical
+%     if true, function will error if RAVEN (and GECKO for enzyme-
+%     constrained models) is/are not on the main branch (default false).
+% subDirs : logical
 %     whether model files for each file format should be written in their
 %     own subdirectory, with 'model' as parent directory, in accordance to
 %     the standard-GEM repository format. If false, all files are stored in
 %     the same folder (default true).
-% COBRAtext : logical, optional
+% COBRAtext : logical
 %     whether the txt file should be in COBRA Toolbox format using
 %     metabolite IDs, instead of metabolite names and compartments
 %     (default false).
-% neverPrefixIDs : logical, optional
+% neverPrefixIDs : logical
 %     true if prefixes are never added to identifiers, even if they start
 %     with e.g. digits. This might result in invalid SBML files (default
 %     false).
@@ -40,19 +43,18 @@ function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,COBRA
 % --------
 %     exportForGit(model, prefix, path, formats, mainBranchFlag, subDirs, ...
 %         COBRAtext, neverPrefixIDs);
-if nargin<8
-    neverPrefixIDs=false;
-end
-if nargin<7 || isempty(COBRAtext)
+p=parseRAVENargs(varargin, {'prefix',[]; 'path',[]; 'formats',[]; 'mainBranchFlag',[]; 'subDirs',[]; 'COBRAtext',[]; 'neverPrefixIDs',false});
+prefix=p.prefix; path=p.path; formats=p.formats; mainBranchFlag=p.mainBranchFlag; subDirs=p.subDirs; COBRAtext=p.COBRAtext; neverPrefixIDs=p.neverPrefixIDs;
+if isempty(COBRAtext)
     COBRAtext=false;
 end
-if nargin<6 || isempty(subDirs)
+if isempty(subDirs)
     subDirs=true;
 end
-if nargin<5 || isempty(mainBranchFlag)
+if isempty(mainBranchFlag)
     mainBranchFlag=false;
 end
-if nargin<4 || isempty(formats)
+if isempty(formats)
     formats={'mat', 'txt', 'xlsx', 'xml', 'yml'};
 else
     formats=convertCharArray(formats);
@@ -61,12 +63,12 @@ if any(~ismember(formats, {'mat', 'txt', 'xlsx', 'xml', 'yml'}))
     EM='Unknown file format defined. Only mat, txt, xlsx, xml and yml are allowed file formats.';
     error(EM)
 end
-if nargin<3 || isempty(path)
+if isempty(path)
     path='.';
 else
     path=char(path);
 end
-if nargin<2 || isempty(prefix)
+if isempty(prefix)
     prefix='model';
 else
     prefix=char(prefix);
@@ -75,12 +77,13 @@ end
 %Sort reactions, metabolites and genes alphabetically
 model=sortIdentifiers(model);
 
-%Get versions or commits of toolboxes:
+%Get versions or commits of toolboxes. GECKO is only relevant for
+%enzyme-constrained models (those with an "ec" field).
 RAVENver = getToolboxVersion('RAVEN','ravenCobraWrapper.m',mainBranchFlag);
-if exist('initCobraToolbox.m','file')
-    COBRAver = getToolboxVersion('COBRA','initCobraToolbox.m',mainBranchFlag);
+if isfield(model,'ec')
+    GECKOver = getToolboxVersion('GECKO','GECKOInstaller.m',mainBranchFlag);
 else
-    COBRAver = [];
+    GECKOver = [];
 end
 %Retrieve libSBML version:
 [ravenDir,prevDir]=findRAVENroot();
@@ -157,8 +160,8 @@ fid = fopen(fullfile(path,'dependencies.txt'),'wt');
 fprintf(fid,['MATLAB\t' version '\n']);
 fprintf(fid,['libSBML\t' libSBMLver '\n']);
 fprintf(fid,['RAVEN_toolbox\t' RAVENver '\n']);
-if ~isempty(COBRAver)
-    fprintf(fid,['COBRA_toolbox\t' COBRAver '\n']);
+if ~isempty(GECKOver)
+    fprintf(fid,['GECKO_toolbox\t' GECKOver '\n']);
 end
 if isfield(model,'modelVersion')
     fields = fieldnames(model.modelVersion);
@@ -168,4 +171,64 @@ if isfield(model,'modelVersion')
     end
 end
 fclose(fid);
+end
+
+function version = getToolboxVersion(toolbox,fileID,mainBranchFlag)
+% getToolboxVersion  Return the version of RAVEN or GECKO.
+%
+% Returns the version of the toolbox as stated in its version.txt, or
+% 'unknown' if that file cannot be found.
+%
+% toolbox        name of the toolbox (e.g. 'RAVEN' or 'GECKO').
+% fileID         a file only found in that toolbox, used to locate its root
+%                (e.g. 'ravenCobraWrapper.m' or 'GECKOInstaller.m').
+% mainBranchFlag if true, error if the toolbox is not on the main branch.
+currentPath = pwd;
+version     = '';
+
+%Try to find root of toolbox:
+try
+    toolboxPath = which(fileID);                %full file path
+    slashPos    = getSlashPos(toolboxPath);
+    toolboxPath = toolboxPath(1:slashPos(end)); %folder path
+    %Go up until the root is found:
+    D = dir(toolboxPath);
+    while ~ismember({'.git'},{D.name})
+        slashPos    = getSlashPos(toolboxPath);
+        toolboxPath = toolboxPath(1:slashPos(end-1));
+        D           = dir(toolboxPath);
+    end
+    cd(toolboxPath);
+catch
+    disp([toolbox ' toolbox cannot be found'])
+    version = 'unknown';
+end
+%Check if in main:
+if mainBranchFlag
+    [~,currentBranch] = system('git rev-parse --abbrev-ref HEAD');
+    currentBranch = strtrim(currentBranch);
+    if any([strcmp(currentBranch, "main"), strcmp(currentBranch, "master")])
+        cd(currentPath);
+        error(['ERROR: ' toolbox ' not in main (or master) branch. Check-out this branch of ' toolbox ' before submitting model for Git.'])
+    end
+end
+%Read the version from the toolbox version.txt; report 'unknown' otherwise
+if isempty(version)
+    fid = fopen([toolboxPath 'version.txt'],'r');
+    if fid ~= -1
+        version = fscanf(fid,'%s');
+        fclose(fid);
+    end
+    if isempty(version)
+        version = 'unknown';
+    end
+end
+cd(currentPath);
+end
+
+function slashPos = getSlashPos(path)
+slashPos = strfind(path,'\');       %Windows
+if isempty(slashPos)
+    slashPos = strfind(path,'/');   %MAC/Linux
+end
 end

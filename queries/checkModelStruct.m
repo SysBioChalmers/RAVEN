@@ -1,15 +1,18 @@
-function checkModelStruct(model,throwErrors,trimWarnings)
+function checkModelStruct(model,varargin)
 % checkModelStruct  Perform a number of checks to ensure a model structure is ok.
 %
 % Parameters
 % ----------
 % model : struct
 %     a model structure.
-% throwErrors : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% throwErrors : logical
 %     true if the function should throw errors if inconsistencies are found.
 %     The alternative is to print warnings for all types of issues
 %     (default true).
-% trimWarnings : logical, optional
+% trimWarnings : logical
 %     true if only a maximum of 10 items should be displayed in a given
 %     error/warning (default true).
 %
@@ -22,12 +25,9 @@ function checkModelStruct(model,throwErrors,trimWarnings)
 % --------
 %     checkModelStruct(model, throwErrors, trimWarnings);
 
-if nargin<2
-    throwErrors=true;
-end
-if nargin<3
-    trimWarnings=true;
-end
+p=parseRAVENargs(varargin, {'throwErrors',true; 'trimWarnings',true});
+throwErrors=p.throwErrors;
+trimWarnings=p.trimWarnings;
 
 %Missing elements
 fields={'id';'name';'rxns';'mets';'S';'lb';'ub';'rev';'c';'b';'comps';'metComps'};

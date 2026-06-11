@@ -1,0 +1,278 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of addTransport</title>
+  <meta name="keywords" content="addTransport">
+  <meta name="description" content="addTransport  Add transport reactions between compartments.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">manipulation</a> &gt; addTransport.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for manipulation&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>addTransport
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>addTransport  Add transport reactions between compartments.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,onlyToExisting,prefix) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> addTransport  Add transport reactions between compartments.
+
+ This is a faster version than addRxns when adding transport reactions.
+ New reaction names are formatted as &quot;metaboliteName, fromComp-toComp&quot;,
+ while new reaction IDs are sequentially counted with a tr_ prefix:
+ e.g. tr_0001, tr_0002, etc.
+
+ Parameters
+ ----------
+ model : struct
+     a model structure.
+ fromComp : char
+     the id of the compartment to transport from (should match
+     model.comps).
+ toComps : cell
+     compartment names to transport to (should match model.comps).
+ metNames : cell, optional
+     the metabolite names to add transport for (default all metabolites
+     in fromComp).
+ isRev : logical, optional
+     true if the transport reactions should be reversible (default true).
+ onlyToExisting : logical, optional
+     true if transport of a metabolite should only be added if it already
+     exists in toComp. If false, then new metabolites are added with
+     addMets first (default true).
+ prefix : char, optional
+     prefix to reaction IDs (default 'tr_').
+
+ Returns
+ -------
+ model : struct
+     updated model structure.
+ addedRxns : cell
+     ids of the added reactions.
+
+ Examples
+ --------
+     [model, addedRxns] = addTransport(model, fromComp, toComps, ...
+                          metNames, isRev, onlyToExisting, prefix);</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,copyInfo,prefix)">addMets</a>	addMets  Add metabolites to a model.</li><li><a href="generateNewIds.html" class="code" title="function newIds=generateNewIds(model,type,prefix,quantity,numLength)">generateNewIds</a>	generateNewIds  Generate a list of new metabolite or reaction ids.</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,onlyToExisting,prefix)</a>
+0002 <span class="comment">% addTransport  Add transport reactions between compartments.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% This is a faster version than addRxns when adding transport reactions.</span>
+0005 <span class="comment">% New reaction names are formatted as &quot;metaboliteName, fromComp-toComp&quot;,</span>
+0006 <span class="comment">% while new reaction IDs are sequentially counted with a tr_ prefix:</span>
+0007 <span class="comment">% e.g. tr_0001, tr_0002, etc.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% Parameters</span>
+0010 <span class="comment">% ----------</span>
+0011 <span class="comment">% model : struct</span>
+0012 <span class="comment">%     a model structure.</span>
+0013 <span class="comment">% fromComp : char</span>
+0014 <span class="comment">%     the id of the compartment to transport from (should match</span>
+0015 <span class="comment">%     model.comps).</span>
+0016 <span class="comment">% toComps : cell</span>
+0017 <span class="comment">%     compartment names to transport to (should match model.comps).</span>
+0018 <span class="comment">% metNames : cell, optional</span>
+0019 <span class="comment">%     the metabolite names to add transport for (default all metabolites</span>
+0020 <span class="comment">%     in fromComp).</span>
+0021 <span class="comment">% isRev : logical, optional</span>
+0022 <span class="comment">%     true if the transport reactions should be reversible (default true).</span>
+0023 <span class="comment">% onlyToExisting : logical, optional</span>
+0024 <span class="comment">%     true if transport of a metabolite should only be added if it already</span>
+0025 <span class="comment">%     exists in toComp. If false, then new metabolites are added with</span>
+0026 <span class="comment">%     addMets first (default true).</span>
+0027 <span class="comment">% prefix : char, optional</span>
+0028 <span class="comment">%     prefix to reaction IDs (default 'tr_').</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">% Returns</span>
+0031 <span class="comment">% -------</span>
+0032 <span class="comment">% model : struct</span>
+0033 <span class="comment">%     updated model structure.</span>
+0034 <span class="comment">% addedRxns : cell</span>
+0035 <span class="comment">%     ids of the added reactions.</span>
+0036 <span class="comment">%</span>
+0037 <span class="comment">% Examples</span>
+0038 <span class="comment">% --------</span>
+0039 <span class="comment">%     [model, addedRxns] = addTransport(model, fromComp, toComps, ...</span>
+0040 <span class="comment">%                          metNames, isRev, onlyToExisting, prefix);</span>
+0041 
+0042 fromComp=char(fromComp);
+0043 [I, fromID]=ismember(model.comps,fromComp);
+0044 fromID=find(fromID);
+0045 <span class="keyword">if</span> sum(I)~=1
+0046     EM=<span class="string">'fromComps must have exactly one match in model.comps'</span>;
+0047     dispEM(EM);
+0048 <span class="keyword">end</span>
+0049 toComps=convertCharArray(toComps);
+0050 [I, toIDs]=ismember(toComps,model.comps);
+0051 <span class="keyword">if</span> ~all(I)
+0052     EM=<span class="string">'All compartments in toComps must have a match in model.comps'</span>;
+0053     dispEM(EM);
+0054 <span class="keyword">end</span>
+0055 <span class="keyword">if</span> nargin&lt;4
+0056     <span class="comment">%Find all metabolites in fromComp</span>
+0057     metNames=model.metNames(model.metComps==fromID);
+0058 <span class="keyword">elseif</span> isempty(metNames)
+0059     <span class="comment">%Find all metabolites in fromComp</span>
+0060     metNames=model.metNames(ismember(model.metComps,model.comps(fromID)));
+0061 <span class="keyword">else</span>
+0062     metNames=convertCharArray(metNames);
+0063 <span class="keyword">end</span>
+0064 
+0065 <span class="keyword">if</span> nargin&lt;5
+0066     isRev=true;
+0067 <span class="keyword">end</span>
+0068 <span class="keyword">if</span> nargin&lt;6
+0069     onlyToExisting=true;
+0070 <span class="keyword">end</span>
+0071 <span class="keyword">if</span> nargin&lt;7
+0072     prefix=<span class="string">'tr_'</span>;
+0073 <span class="keyword">else</span>
+0074     prefix=char(prefix);
+0075 <span class="keyword">end</span>
+0076 
+0077 <span class="comment">%Check that the names are unique</span>
+0078 <span class="keyword">if</span> numel(unique(metNames))~=numel(metNames)
+0079     dispEM(<span class="string">'Not all metabolite names are unique'</span>);
+0080 <span class="keyword">end</span>
+0081 
+0082 <span class="comment">%Get the indexes of the mets in fromComp</span>
+0083 I=find(model.metComps==fromID);
+0084 [J, K]=ismember(metNames,model.metNames(I));
+0085 <span class="keyword">if</span> ~all(J)
+0086     EM=<span class="string">'Not all metabolites in metNames exist in fromComp'</span>;
+0087     dispEM(EM);
+0088 <span class="keyword">end</span>
+0089 fromMets=I(K); <span class="comment">%These are the ids of the metabolites to transport. The order corresponds to metNames</span>
+0090 addedRxns={};
+0091 <span class="comment">%Loop through and add for each compartment in toComps</span>
+0092 <span class="keyword">for</span> i=1:numel(toComps)
+0093     fromMetsInComp=fromMets; <span class="comment">%If onlyToExisting==true then not all mets are transported to each compartment</span>
+0094     <span class="comment">%Get the indexes of the mets in the compartment</span>
+0095     I=find(model.metComps==toIDs(i));
+0096     [J, K]=ismember(metNames,model.metNames(I));
+0097     <span class="keyword">if</span> onlyToExisting==true || all(J)
+0098         toMets=I(K(J)); <span class="comment">%Only look at the existing ones</span>
+0099         fromMetsInComp=fromMetsInComp(J);
+0100     <span class="keyword">else</span>
+0101         <span class="comment">%This is if not all metabolites exist in the target compartment,</span>
+0102         <span class="comment">%and they should be added</span>
+0103         metsToAdd.metNames=metNames(J==0);
+0104         metsToAdd.compartments=toComps{i};
+0105         model=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,copyInfo,prefix)">addMets</a>(model,metsToAdd);
+0106         
+0107         <span class="comment">%Redo the mapping when all mets are there. A bit lazy, but it's</span>
+0108         <span class="comment">%fast anyways</span>
+0109         I=find(model.metComps==toIDs(i));
+0110         [~, K]=ismember(metNames,model.metNames(I));
+0111         toMets=I(K); <span class="comment">%All are guaranteed to be found now</span>
+0112     <span class="keyword">end</span>
+0113     
+0114     <span class="comment">%Construct the S matrix</span>
+0115     nRxns=numel(fromMetsInComp);
+0116     newS=zeros(numel(model.mets),nRxns);
+0117     newS(sub2ind(size(newS),fromMetsInComp(:),(1:nRxns)'))=-1;
+0118     newS(sub2ind(size(newS),toMets(:),(1:nRxns)'))=1;
+0119     
+0120     <span class="comment">%Add the reactions</span>
+0121     model.S=[model.S sparse(newS)];
+0122     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultLB'</span>)
+0123         lb = model.annotation.defaultLB;
+0124         ub = model.annotation.defaultUB;
+0125     <span class="keyword">else</span>
+0126         lb = -inf;
+0127         ub = inf;
+0128     <span class="keyword">end</span>
+0129     <span class="keyword">if</span> isRev==true
+0130         model.lb=[model.lb;ones(nRxns,1)*lb];
+0131         model.rev=[model.rev;ones(nRxns,1)];
+0132     <span class="keyword">else</span>
+0133         model.lb=[model.lb;zeros(nRxns,1)];
+0134         model.rev=[model.rev;zeros(nRxns,1)];
+0135     <span class="keyword">end</span>
+0136     model.ub=[model.ub;ones(nRxns,1)*ub];
+0137     model.c=[model.c;zeros(nRxns,1)];
+0138     
+0139     <span class="comment">%Add annotation</span>
+0140     filler=cell(nRxns,1);
+0141     filler(:)={<span class="string">''</span>};
+0142     addedRxnsID=<a href="generateNewIds.html" class="code" title="function newIds=generateNewIds(model,type,prefix,quantity,numLength)">generateNewIds</a>(model,<span class="string">'rxns'</span>,prefix,nRxns);
+0143     addedRxnsName=transpose(strcat(metNames, {<span class="string">' transport, '</span>}, model.compNames(fromID), <span class="string">'-'</span>, model.compNames(toIDs(i))));
+0144     model.rxns=[model.rxns;addedRxnsID];
+0145     model.rxnNames=[model.rxnNames;addedRxnsName];
+0146     
+0147     <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
+0148         model.eccodes=[model.eccodes;filler];
+0149     <span class="keyword">end</span>
+0150     <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
+0151         isNested = any(cellfun(@(x) iscell(x), model.subSystems));
+0152         ssFiller = filler;
+0153         <span class="keyword">if</span> isRev==1
+0154             ssFiller(:) = {[<span class="string">'Transport between '</span> fromComp <span class="string">' and '</span> toComps{i}]};
+0155         <span class="keyword">else</span>
+0156             ssFiller(:) = {[<span class="string">'Transport from '</span> fromComp <span class="string">' to '</span> toComps{i}]};
+0157         <span class="keyword">end</span>
+0158         <span class="keyword">if</span> isNested
+0159             ssFiller = cellfun(@(x) {x}, ssFiller, <span class="string">'uni'</span>, 0);
+0160         <span class="keyword">end</span>
+0161         model.subSystems=[model.subSystems;ssFiller];
+0162     <span class="keyword">end</span>
+0163     <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
+0164         model.grRules=[model.grRules;filler];
+0165     <span class="keyword">end</span>
+0166     <span class="keyword">if</span> isfield(model,<span class="string">'rxnFrom'</span>)
+0167         model.rxnFrom=[model.rxnFrom;filler];
+0168     <span class="keyword">end</span>
+0169     <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
+0170         model.rxnMiriams=[model.rxnMiriams;cell(nRxns,1)];
+0171     <span class="keyword">end</span>
+0172     <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
+0173         model.rxnComps=[model.rxnComps;ones(nRxns,1)];
+0174         fprintf(<span class="string">'NOTE: The added transport reactions will be added to the first compartment\n'</span>);
+0175     <span class="keyword">end</span>
+0176     <span class="keyword">if</span> isfield(model,<span class="string">'rxnGeneMat'</span>)
+0177         model.rxnGeneMat=[model.rxnGeneMat;sparse(nRxns,numel(model.genes))];
+0178     <span class="keyword">end</span>
+0179     <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
+0180         model.rxnNotes=[model.rxnNotes;filler];
+0181     <span class="keyword">end</span>
+0182     <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
+0183         model.rxnReferences=[model.rxnReferences;filler];
+0184     <span class="keyword">end</span>
+0185     <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
+0186         model.rxnConfidenceScores=[model.rxnConfidenceScores;ones(nRxns,1)];
+0187     <span class="keyword">end</span>
+0188     <span class="keyword">if</span> isfield(model,<span class="string">'rxnDeltaG'</span>)
+0189         model.rxnDeltaG=[model.rxnDeltaG;zeros(nRxns,1)];
+0190     <span class="keyword">end</span>
+0191     addedRxns = [addedRxns; addedRxnsID];
+0192 <span class="keyword">end</span>
+0193 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

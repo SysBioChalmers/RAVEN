@@ -1,4 +1,4 @@
-function report=checkRxn(model,rxn,cutoff,revDir,printReport)
+function report=checkRxn(model,rxn,varargin)
 % checkRxn  Check which reactants can be synthesized and products consumed.
 %
 % Checks which reactants in a reaction that can be synthesized and which
@@ -11,11 +11,14 @@ function report=checkRxn(model,rxn,cutoff,revDir,printReport)
 %     a model structure.
 % rxn : char
 %     the id of one reaction to check.
-% cutoff : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% cutoff : double
 %     minimal flux for successful production/consumption (default 10^-7).
-% revDir : logical, optional
+% revDir : logical
 %     true if the reaction should be reversed (default false).
-% printReport : logical, optional
+% printReport : logical
 %     print a report (default true).
 %
 % Returns
@@ -35,17 +38,15 @@ function report=checkRxn(model,rxn,cutoff,revDir,printReport)
 %     report = checkRxn(model, rxn, cutoff, revDir, printReport);
 
 rxn=char(rxn);
-if nargin<3
-    cutoff=10^-7;
-end
-if nargin<4
-    revDir=false;
-end
+p=parseRAVENargs(varargin, {'cutoff',[]; ...
+    'revDir',false; ...
+    'printReport',true});
+cutoff=p.cutoff;
+revDir=p.revDir;
+printReport=p.printReport;
+
 if isempty(cutoff)
     cutoff=10^-7;
-end
-if nargin<5
-    printReport=true;
 end
 
 [I, rxnID]=ismember(rxn,model.rxns);

@@ -1,6 +1,6 @@
 function [outModel, geneLocalization, transportStruct, scores,...
 	removedRxns] = predictLocalization(model, GSS,...
-	defaultCompartment, transportCost, maxTime, plotResults)
+	defaultCompartment, varargin)
 % predictLocalization  Assign reactions to compartments using localization predictors.
 %
 % Tries to assign reactions to compartments in a manner that is in
@@ -18,15 +18,18 @@ function [outModel, geneLocalization, transportStruct, scores,...
 %     transport reactions are expressed as diffusion between the
 %     defaultCompartment and the others. This is usually the cytosol. The
 %     default compartment must have a match in GSS.
-% transportCost : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% transportCost : double
 %     the cost for including a transport reaction. If this is a scalar then
 %     the same cost is used for all metabolites. It can also be a vector of
 %     costs with the same dimension as model.mets. Note that negative costs
 %     will result in transport of the metabolite being encouraged (default
 %     0.5).
-% maxTime : double, optional
+% maxTime : double
 %     maximum optimization time in minutes (default 15).
-% plotResults : logical, optional
+% plotResults : logical
 %     true if the results should be plotted during the optimization
 %     (default false).
 %
@@ -73,7 +76,12 @@ function [outModel, geneLocalization, transportStruct, scores,...
 %         predictLocalization(model, GSS, defaultCompartment, ...
 %             transportCost, maxTime, plotResults);
 
-if nargin<4
+p=parseRAVENargs(varargin, {'transportCost',[]; 'maxTime',[]; 'plotResults',[]});
+transportCost=p.transportCost;
+maxTime=p.maxTime;
+plotResults=p.plotResults;
+
+if isempty(transportCost)
     transportCost=ones(numel(model.mets),1)*0.5;
 end
 if numel(transportCost)==1
@@ -85,10 +93,10 @@ if numel(transportCost)~=numel(model.mets)
     EM='The vector of transport costs must have the same dimension as model.mets';
     dispEM(EM,true);
 end
-if nargin<5
+if isempty(maxTime)
     maxTime=15;
 end
-if nargin<6
+if isempty(plotResults)
     plotResults=false;
 end
 

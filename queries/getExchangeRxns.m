@@ -1,4 +1,4 @@
-function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)
+function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,varargin)
 % getExchangeRxns  Retrieve the exchange reactions from a model.
 %
 % Exchange reactions are identified by having either no substrates or no
@@ -8,7 +8,10 @@ function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)
 % ----------
 % model : struct
 %     a model structure.
-% reactionType : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% reactionType : char
 %     which exchange reactions should be returned (default 'all'):
 %
 %     - 'all' : all reactions, irrespective of reaction bounds
@@ -45,11 +48,8 @@ function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,reactionType)
 % --------
 %     [exchangeRxns, exchangeRxnsIndexes] = getExchangeRxns(model, reactionType);
 
-if nargin<2
-    reactionType='all';
-else
-    reactionType=char(reactionType);
-end
+p=parseRAVENargs(varargin, {'reactionType','all'});
+reactionType=char(p.reactionType);
 
 % Find exchange reactions
 if isfield(model, 'unconstrained')
