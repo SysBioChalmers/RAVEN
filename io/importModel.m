@@ -436,7 +436,9 @@ for i=1:numel(modelSBML.reaction)
     %Get ec-codes
     eccode='';
     if ~isempty(modelSBML.reaction(i).annotation)
-        if strfind(modelSBML.reaction(i).annotation,'https://identifiers.org/ec-code')
+        if strfind(modelSBML.reaction(i).annotation,'http://identifiers.org/ec-code')
+            eccode=parseAnnotation(modelSBML.reaction(i).annotation,'http://identifiers.org/','/','ec-code');
+        elseif strfind(modelSBML.reaction(i).annotation,'https://identifiers.org/ec-code')
             eccode=parseAnnotation(modelSBML.reaction(i).annotation,'https://identifiers.org/','/','ec-code');
         end
     end
@@ -553,11 +555,19 @@ if isfield(modelSBML,'annotation')
     end
     endString='"/>';
     I=strfind(modelSBML.annotation,endString);
-    J=strfind(modelSBML.annotation,'"https://identifiers.org/');
+    %Finding whether the taxonomy is written in the old or the new way
+    J=strfind(modelSBML.annotation,'"http://identifiers.org/');
     if any(J)
         I = I(find(I>J,1))-1;
-        J = J(find(J<I,1))+25;
+        J = J(find(J<I,1))+24;
         model.annotation.taxonomy=modelSBML.annotation(J:I);
+    else
+        J=strfind(modelSBML.annotation,'"https://identifiers.org/');
+        if any(J)
+            I = I(find(I>J,1))-1;
+            J = J(find(J<I,1))+25;
+            model.annotation.taxonomy=modelSBML.annotation(J:I);
+        end
     end
 end
 if isfield(modelSBML,'notes')
@@ -843,7 +853,10 @@ end
 function miriamStruct=parseMiriam(searchString)
 %Generates miriam structure from annotation field
 
-if strfind(searchString,'https://identifiers.org/')
+%Finding whether miriams are written in the old or the new way
+if strfind(searchString,'http://identifiers.org/')
+    startString='http://identifiers.org/';
+elseif strfind(searchString,'https://identifiers.org/')
     startString='https://identifiers.org/';
 else
     miriamStruct=[];
