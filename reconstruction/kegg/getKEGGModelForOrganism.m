@@ -327,12 +327,19 @@ cores = cores{1};
 %Get the directory for RAVEN Toolbox.
 ravenPath=findRAVENroot();
 
+%The reconstruction can use either the modern concatenated KO HMM library
+%(a single gzip-compressed flatfile, queried in one hmmsearch) or a legacy
+%directory of per-KO HMMs. useConcatLib records which one applies.
+useConcatLib=false;
+libraryFile='';
+
 %Checking if dataDir is consistent. It must point to pre-trained HMMs set,
 %compatible with the the current RAVEN version. The user may have the
 %required zip file already in working directory or have it extracted. If
 %the zip file and directory is not here, it is downloaded from the cloud
 if ~isempty(dataDir)
     hmmOptions={'euk90_kegg116','prok90_kegg116'};
+    hmmDomains={'eukaryotes','prokaryotes'}; %Aligned with hmmOptions
     if ~endsWith(dataDir,hmmOptions) %Check if dataDir ends with any of the hmmOptions.
         %If not, then check whether the required folders exist anyway.
         if ~isfile(fullfile(dataDir,'keggdb','genes.pep')) && ...
@@ -342,35 +349,47 @@ if ~isempty(dataDir)
             error(['Pre-trained HMMs set is not recognised. If you want download RAVEN provided sets, it should match any of the following: ' strjoin(hmmOptions,' or ')])
         end
     else
+        %dataDir points to a RAVEN-provided set. Prefer the modern
+        %concatenated KO HMM library (one gzip-compressed flatfile, queried
+        %in a single hmmsearch); fall back to a legacy per-KO HMM directory
+        %if the user already has one extracted.
+        hmmIndex=find(endsWith(dataDir,hmmOptions),1);
+        libraryFile=[dataDir '.hmm'];
         if isfolder(dataDir) && isfile(fullfile(dataDir,'hmms','K00844.hmm'))
-            fprintf(['NOTE: Found <strong>' dataDir '</strong> directory with pre-trained HMMs, it will therefore be used during reconstruction\n']);
+            fprintf(['NOTE: Found <strong>' dataDir '</strong> directory with pre-trained per-KO HMMs, it will therefore be used during reconstruction\n']);
+            useConcatLib=false;
+        elseif isfile(libraryFile)
+            fprintf(['NOTE: Found <strong>' libraryFile '</strong> HMM library, it will therefore be used during reconstruction\n']);
+            useConcatLib=true;
+        elseif isfile([libraryFile '.gz'])
+            fprintf('Extracting the HMM library file... ');
+            gunzip([libraryFile '.gz']);
+            fprintf('COMPLETE\n');
+            useConcatLib=true;
         elseif ~isfolder(dataDir) && isfile([dataDir,'.zip'])
             fprintf('Extracting the HMMs archive file... ');
             unzip([dataDir,'.zip']);
             fprintf('COMPLETE\n');
+            useConcatLib=false;
         else
-            hmmIndex=strcmp(dataDir,hmmOptions);
-            if ~any(hmmIndex)
-                error(['Pre-trained HMMs are only provided with proteins clustered at 90% sequence identity (i.e. prok90_kegg116 and euk90_kegg116). ' ...
-                    'Use either of these datasets, or otherwise download the relevant sequence data from KEGG to train HMMs with your desired sequence identity'])
-            else
-                fprintf('Downloading the HMMs archive file... ');
-                try
-                    websave([dataDir,'.zip'],['https://github.com/SysBioChalmers/RAVEN/releases/download/v2.11.0/',hmmOptions{hmmIndex},'.zip']);
-                catch ME
-                    if strcmp(ME.identifier,'MATLAB:webservices:HTTP404StatusCodeError')
-                        error('Failed to download the HMMs archive file, the server returned a 404 error, try again later. If the problem persists please report it on the RAVEN GitHub Issues page: https://github.com/SysBioChalmers/RAVEN/issues')
-                    end
+            fprintf('Downloading the HMM library file... ');
+            try
+                websave([libraryFile '.gz'],['https://github.com/SysBioChalmers/RAVEN/releases/download/v2.11.0/kegg116_' hmmDomains{hmmIndex} '.hmm.gz']);
+            catch ME
+                if strcmp(ME.identifier,'MATLAB:webservices:HTTP404StatusCodeError')
+                    error('Failed to download the HMM library file, the server returned a 404 error, try again later. If the problem persists please report it on the RAVEN GitHub Issues page: https://github.com/SysBioChalmers/RAVEN/issues')
                 end
             end
-
             fprintf('COMPLETE\n');
-            fprintf('Extracting the HMMs archive file... ');
-            unzip([dataDir,'.zip']);
+            fprintf('Extracting the HMM library file... ');
+            gunzip([libraryFile '.gz']);
             fprintf('COMPLETE\n');
+            useConcatLib=true;
         end
-        %Check if HMMs are extracted
-        if ~isfile(fullfile(dataDir,'hmms','K00844.hmm'))
+        %Check that the selected HMMs are available
+        if useConcatLib && ~isfile(libraryFile)
+            error(['The HMM library seems improperly extracted and not found at ',strrep(libraryFile,'\','/'),'. Please remove the corresponding .gz file and rerun getKEGGModelForOrganism']);
+        elseif ~useConcatLib && ~isfile(fullfile(dataDir,'hmms','K00844.hmm'))
             error(['The HMM files seem improperly extracted and not found in ',dataDir,'/hmms. Please remove ',dataDir,' folder and rerun getKEGGModelForOrganism']);
         end
     end
@@ -516,6 +535,94 @@ if isempty(fastaFile)
     return;
 end
 
+if useConcatLib
+    %Query the whole proteome against the concatenated KO HMM library in a
+    %single hmmsearch. With the profile library as the query and the
+    %proteome as the target sequence database, the reported per-hit
+    %E-values match RAVEN's historical per-KO hmmsearch (same search
+    %direction, same effective database size), so the downstream scoring is
+    %unchanged - thousands of hmmsearch calls simply collapse into one, and
+    %no per-organism phylogenetic-distance subsampling is needed because the
+    %library sequence set is already fixed.
+    if ismac
+        binEnd='.mac';
+    else
+        binEnd='';
+    end
+    tblFile=[tempname '.tblout'];
+    fprintf('Querying the user-specified FASTA file against the KEGG Orthology specific HMMs... ');
+    if ismac || isunix
+        [status, output]=system(['"' fullfile(ravenPath,'software','hmmer',['hmmsearch' binEnd]) '" --cpu "' num2str(cores) '" --tblout "' tblFile '" "' libraryFile '" "' fastaFile '"']);
+    else
+        wslPath.hmmsearch   = getWSLpath(fullfile(ravenPath,'software','hmmer','hmmsearch'));
+        wslPath.libraryFile = getWSLpath(libraryFile);
+        wslPath.fastaFile   = getWSLpath(fastaFile);
+        wslPath.tblFile     = getWSLpath(tblFile);
+        [status, output]=system(['wsl "' wslPath.hmmsearch '" --cpu "' num2str(cores) '" --tblout "' wslPath.tblFile '" "' wslPath.libraryFile '" "' wslPath.fastaFile '"']);
+    end
+    if status~=0
+        EM=['Error when querying the concatenated HMM library:\n' output];
+        dispEM(EM);
+    end
+    fprintf('COMPLETE\n');
+
+    fprintf('Parsing the HMM search results... ');
+    koGeneMat=zeros(numel(KOModel.rxns),3000); %Make room for 3000 genes
+    genes=cell(3000,1);
+    %Map each KO id to its row in koGeneMat
+    koTable=java.util.Hashtable;
+    for i=1:numel(KOModel.rxns)
+        koTable.put(KOModel.rxns{i},i);
+    end
+    %Store the column index for each gene in a hash list
+    hTable=java.util.Hashtable;
+    geneCounter=0;
+    fid=fopen(tblFile,'r');
+    while 1
+        tline=fgetl(fid);
+        if ~ischar(tline)
+            break;
+        end
+        %Skip the comment/header lines that hmmsearch --tblout writes
+        if isempty(tline) || tline(1)=='#'
+            continue;
+        end
+        elements=regexp(strtrim(tline),'\s+','split');
+        if numel(elements)<5
+            continue;
+        end
+        %With the profile library as the query, the target name (col 1) is
+        %the proteome gene, the query name (col 3) is the KO, and the
+        %full-sequence E-value is in col 5
+        gene=elements{1};
+        ko=elements{3};
+        score=str2double(elements{5});
+        koIdx=koTable.get(ko);
+        if isempty(koIdx) || isnan(score) || score>cutOff
+            continue;
+        end
+        %If the score is exactly 0, change it to a very small value to avoid
+        %NaN
+        if score==0
+            score=10^-250;
+        end
+        I=hTable.get(gene);
+        if any(I)
+            %Keep the best (smallest) E-value for this gene-KO pair
+            if koGeneMat(koIdx,I)==0 || score<koGeneMat(koIdx,I)
+                koGeneMat(koIdx,I)=score;
+            end
+        else
+            geneCounter=geneCounter+1;
+            hTable.put(gene,geneCounter);
+            genes{geneCounter}=gene;
+            koGeneMat(koIdx,geneCounter)=score;
+        end
+    end
+    fclose(fid);
+    delete(tblFile);
+    fprintf('COMPLETE\n');
+else
 %Create a phylogenetic distance structure
 phylDistStruct=getPhylDist(fullfile(dataDir,'keggdb'),maxPhylDist==-1);
 [~, phylDistId]=ismember(model.id,phylDistStruct.ids);
@@ -938,6 +1045,7 @@ for i=1:numel(KOModel.rxns)
     end
 end
 fprintf('COMPLETE\n');
+end
 
 fprintf('Removing gene, KEGG Orthology associations below minScoreRatioKO, minScoreRatioG... ');
 koGeneMat=koGeneMat(:,1:geneCounter);
