@@ -66,7 +66,7 @@ redCost = zeros(nPoints,1);
 controlFlux = linspace(solMin,solMax,nPoints)';
 
 
-PB = ProgressBar2(length(controlFlux),'Running robustness analysis','cli');
+PB = progressReport(length(controlFlux),'Running robustness analysis');
 for i=1:length(controlFlux)
     modelControlled = setParam(baseModel,'eq',controlRxnIdx,controlFlux(i));
     solControlled = solveLP(modelControlled);

@@ -33,6 +33,12 @@ classdef (Abstract) RavenTestCase < matlab.unittest.TestCase
             catch
                 % leave whatever solver is configured; solver tests assume below
             end
+
+            % Silence progress reporting for the duration of the test class,
+            % restoring whatever the user had configured afterwards.
+            origProgress = getpref('RAVEN','progressBar','auto');
+            setpref('RAVEN','progressBar','none');
+            testCase.addTeardown(@() setpref('RAVEN','progressBar',origProgress));
         end
 
         function suppressFigures(testCase)

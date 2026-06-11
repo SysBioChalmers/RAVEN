@@ -120,7 +120,7 @@ if isempty(goodRxns)
     rxnList = [fwdRxns,revRxns];
     objList = [ones(numel(fwdRxns),1);-ones(numel(revRxns),1)];
     testSol = zeros(numel(objList),1);
-    PB = ProgressBar2(nRxns,'Prepare goodRxns not involved in loops','cli');
+    PB = progressReport(nRxns,'Prepare goodRxns not involved in loops');
 
     parfor i = 1:numel(objList)
         testModel=setParam(model,'obj',rxnList(i),objList(i));
@@ -153,7 +153,7 @@ sols = num2cell(sols,1);
 %Main loop
 if nSamples > 0
 
-    PB = ProgressBar2(nSamples,'Performing random sampling','cli');
+    PB = progressReport(nSamples,'Performing random sampling');
     parfor i=1:nSamples
         badSolutions = 1;
         tmpModel = model;

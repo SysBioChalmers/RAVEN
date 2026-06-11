@@ -91,7 +91,7 @@ concentrationMatrix = concentrations;
 biomassVec = biomass;
 timeVec(1) = 0;
 [~,hsSol]=solveLP(model,1);
-PB = ProgressBar2(nSteps,'Running dynamic FBA analysis','cli');
+PB = progressReport(nSteps,'Running dynamic FBA analysis');
 for stepNo = 1:nSteps
     % Run FBA
     [sol,hsSol] = solveLP(model,1,[],hsSol);

@@ -134,7 +134,7 @@ else
     end
     fprintf('COMPLETE\n');
     
-    fprintf('Constructing the rxnGeneMat for the global KEGG model...   0%% complete');
+    PB = progressReport(numel(model.rxns),'Constructing rxnGeneMat for global KEGG model');
     %Create the rxnGeneMat for the reactions. This is simply done by
     %merging the gene associations for all the involved KOs
     r=zeros(10000000,1);
@@ -162,8 +162,7 @@ else
             end
         end
         if rem(i-1,100) == 0
-            progress=pad(num2str(floor(i/numel(model.rxns)*100)),3,'left');
-            fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b%s%% complete',progress);
+            PB.update(i);
         end
     end
     
@@ -171,7 +170,7 @@ else
     if size(model.rxnGeneMat,1)~=numel(model.rxns) || size(model.rxnGeneMat,2)~=numel(KOModel.genes)
         model.rxnGeneMat(numel(model.rxns),numel(KOModel.genes))=0;
     end
-    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\bCOMPLETE\n');
+    PB.done;
     
     %Then get all metabolites
     metModel=getMetsFromKEGG(keggPath);
