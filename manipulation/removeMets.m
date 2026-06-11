@@ -1,4 +1,4 @@
-function reducedModel=removeMets(model,metsToRemove,isNames,removeUnusedRxns,removeUnusedGenes,removeUnusedComps)
+function reducedModel=removeMets(model,metsToRemove,varargin)
 % removeMets  Delete a set of metabolites from a model.
 %
 % Parameters
@@ -34,21 +34,11 @@ if ~islogical(metsToRemove) && ~isnumeric(metsToRemove)
     metsToRemove=convertCharArray(metsToRemove);
 end
 
-if nargin<3
-    isNames=false;
-end
-
-if nargin<4
-    removeUnusedRxns=false;
-end
-
-if nargin<5
-    removeUnusedGenes=false;
-end
-
-if nargin<6
-    removeUnusedComps=false;
-end
+p=parseRAVENargs(varargin, {'isNames',false; 'removeUnusedRxns',false; 'removeUnusedGenes',false; 'removeUnusedComps',false});
+isNames=p.isNames;
+removeUnusedRxns=p.removeUnusedRxns;
+removeUnusedGenes=p.removeUnusedGenes;
+removeUnusedComps=p.removeUnusedComps;
 
 %Check that metsToRemove is a cell array
 if isNames==true && ~iscell(metsToRemove)

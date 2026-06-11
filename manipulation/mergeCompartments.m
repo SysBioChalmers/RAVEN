@@ -1,4 +1,4 @@
-function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconstrained,deleteRxnsWithOneMet,distReverse)
+function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,varargin)
 % mergeCompartments  Merge all compartments in a model.
 %
 % Parameters
@@ -42,15 +42,10 @@ function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,keepUnconst
 % If the metabolite IDs reflect the compartment that they are in the IDs may
 % no longer be representative.
 
-if nargin<2
-    keepUnconstrained=false;
-end
-if nargin<3
-    deleteRxnsWithOneMet=false;
-end
-if nargin<4
-    distReverse=true;
-end
+p=parseRAVENargs(varargin, {'keepUnconstrained',false; 'deleteRxnsWithOneMet',false; 'distReverse',true});
+keepUnconstrained=p.keepUnconstrained;
+deleteRxnsWithOneMet=p.deleteRxnsWithOneMet;
+distReverse=p.distReverse;
 
 if ~isfield(model,'unconstrained')
     keepUnconstrained=false;

@@ -1,4 +1,4 @@
-function model = changeGrRules(model,rxns,grRules,replace)
+function model = changeGrRules(model,rxns,grRules,varargin)
 % changeGrRules  Change multiple grRules at the same time.
 %
 % Parameters
@@ -25,9 +25,8 @@ function model = changeGrRules(model,rxns,grRules,replace)
 % --------
 %     model = changeGrRules(model, rxns, grRules, replace);
 
-if nargin==3
-    replace=true;
-end
+p=parseRAVENargs(varargin, {'replace',true});
+replace=p.replace;
 
 rxns=convertCharArray(rxns);
 grRules=convertCharArray(grRules);

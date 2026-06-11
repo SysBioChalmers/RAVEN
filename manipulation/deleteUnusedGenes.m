@@ -1,4 +1,4 @@
-function reducedModel=deleteUnusedGenes(model,verbose)
+function reducedModel=deleteUnusedGenes(model,varargin)
 % deleteUnusedGenes  Delete all genes not associated to any reaction.
 %
 % Parameters
@@ -18,9 +18,8 @@ function reducedModel=deleteUnusedGenes(model,verbose)
 % --------
 %     reducedModel=deleteUnusedGenes(model);
 
-if nargin<2
-    verbose=1;
-end
+p=parseRAVENargs(varargin, {'verbose',1});
+verbose=p.verbose;
 reducedModel=model;
 
 %Find all genes that are not used

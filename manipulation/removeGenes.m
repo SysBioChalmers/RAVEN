@@ -1,4 +1,4 @@
-function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)
+function reducedModel = removeGenes(model,genesToRemove,varargin)
 % removeGenes  Delete a set of genes from a model.
 %
 % Parameters
@@ -27,15 +27,10 @@ function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeB
 %     reducedModel = removeGenes(model, genesToRemove, removeUnusedMets, ...
 %                        removeBlockedRxns, standardizeRules);
 
-if nargin<3
-    removeUnusedMets = false;
-end
-if nargin<4
-    removeBlockedRxns = false;
-end
-if nargin<5
-    standardizeRules = true;
-end
+p=parseRAVENargs(varargin, {'removeUnusedMets',false; 'removeBlockedRxns',false; 'standardizeRules',true});
+removeUnusedMets=p.removeUnusedMets;
+removeBlockedRxns=p.removeBlockedRxns;
+standardizeRules=p.standardizeRules;
 %Format grRules and rxnGeneMatrix:
 if standardizeRules
     [grRules,rxnGeneMat,toCheck] = standardizeGrRules(model,true);

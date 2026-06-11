@@ -1,4 +1,4 @@
-function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
+function model=changeRxns(model,rxns,equations,varargin)
 % changeRxns  Modify the equations of reactions in a model.
 %
 % Parameters
@@ -62,16 +62,10 @@ function model=changeRxns(model,rxns,equations,eqnType,compartment,allowNewMets)
 % exist, the function will copy any available information from the metabolite
 % in another compartment.
 
-if nargin<4
-    eqnType=1;
-end
-
-if nargin<5
-    compartment=[];
-end
-if nargin<6
-    allowNewMets=false;
-end
+p=parseRAVENargs(varargin, {'eqnType',1; 'compartment',[]; 'allowNewMets',false});
+eqnType=p.eqnType;
+compartment=p.compartment;
+allowNewMets=p.allowNewMets;
 
 rxns=convertCharArray(rxns);
 compartment=char(compartment);

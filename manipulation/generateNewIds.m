@@ -1,4 +1,4 @@
-function newIds=generateNewIds(model,type,prefix,quantity,numLength)
+function newIds=generateNewIds(model,type,prefix,varargin)
 % generateNewIds  Generate a list of new metabolite or reaction ids.
 %
 % The ids are sequentially numbered with a defined prefix. The model is
@@ -38,12 +38,9 @@ elseif type=='mets'
 else
     error('type should be either ''rxns'' or ''mets''.')
 end
-if nargin<4
-    quantity=1;
-end
-if nargin<5
-    numLength=4;
-end
+p=parseRAVENargs(varargin, {'quantity',1; 'numLength',4});
+quantity=p.quantity;
+numLength=p.numLength;
 
 % Subset only existingIds that have the prefix
 existingIds=existingIds(~cellfun(@isempty,regexp(existingIds,['^' prefix])));

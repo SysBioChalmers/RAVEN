@@ -1,4 +1,4 @@
-function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,removeUnusedGenes,removeUnusedComps)
+function reducedModel=removeReactions(model,rxnsToRemove,varargin)
 % removeReactions  Delete a set of reactions from a model.
 %
 % Parameters
@@ -26,15 +26,10 @@ function reducedModel=removeReactions(model,rxnsToRemove,removeUnusedMets,remove
 %     reducedModel = removeReactions(model, rxnsToRemove, removeUnusedMets, ...
 %         removeUnusedGenes, removeUnusedComps);
 
-if nargin<3
-    removeUnusedMets=false;
-end
-if nargin<4
-    removeUnusedGenes=false;
-end
-if nargin<5
-    removeUnusedComps=false;
-end
+p=parseRAVENargs(varargin, {'removeUnusedMets',false; 'removeUnusedGenes',false; 'removeUnusedComps',false});
+removeUnusedMets=p.removeUnusedMets;
+removeUnusedGenes=p.removeUnusedGenes;
+removeUnusedComps=p.removeUnusedComps;
 if ~islogical(rxnsToRemove) && ~isnumeric(rxnsToRemove)
     rxnsToRemove=convertCharArray(rxnsToRemove);
 end
