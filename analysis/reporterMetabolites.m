@@ -88,8 +88,9 @@ if any(geneFoldChanges)
 end
 genePValues(isnan(genePValues))=[];
 
-%Convert p-values to Z-scores
-geneZScores=norminv(genePValues)*-1;
+%Convert p-values to Z-scores. Uses base MATLAB erfcinv instead of the
+%Statistics Toolbox norminv: -norminv(p) == sqrt(2)*erfcinv(2*p).
+geneZScores=sqrt(2)*erfcinv(2*genePValues);
 
 %This is to prevent errors if the p-values are exactly 0 or 1
 geneZScores(geneZScores==-inf)=-15;
