@@ -146,8 +146,10 @@ for i=1:numel(sizes)
     metZScores(metNGenes==sizes(i))=(metZScores(metNGenes==sizes(i))-mK)/stdK;
 end
 
-%Calculate the P-values
-metPValues=1-normcdf(metZScores);
+%Calculate the P-values (upper-tail of the standard normal). Uses the base
+%MATLAB erfc so this does not depend on the Statistics Toolbox normcdf:
+%1 - normcdf(z) == 0.5*erfc(z/sqrt(2)).
+metPValues=0.5*erfc(metZScores/sqrt(2));
 
 %Sort the results
 [metZScores, I]=sort(metZScores,'descend');
