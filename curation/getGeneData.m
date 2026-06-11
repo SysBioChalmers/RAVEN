@@ -13,8 +13,8 @@ function geneTable = getGeneData(accession, outputFile, downloadDir)
 % accession : char
 %     NCBI genome assembly accession, e.g. 'GCF_000002595.2'.
 % outputFile : char, optional
-%     Path to save the resulting table as a tab-delimited .tsv file
-%     (default: 'geneData.tsv').
+%     Path to save the resulting table as a tab-delimited .tsv file. If
+%     omitted or empty, no file is written and the table is only returned.
 % downloadDir : char, optional
 %     Directory where genome files are downloaded if not already present
 %     (default: current working directory).
@@ -25,10 +25,10 @@ function geneTable = getGeneData(accession, outputFile, downloadDir)
 %     MATLAB table with one row per gene containing:
 %       locus_tag       — stable locus identifier (e.g. 'Cre01.g000001')
 %       old_locus_tag   — previous locus identifier when available
-%       extra_id        — external database identifier (e.g. Phytozome)
 %       GeneID          — NCBI Gene ID (e.g. '5723799')
 %       gene_name       — common gene symbol when available (e.g. 'rbcL')
-%       GenBank_protein — GenBank protein accession (e.g. 'XP_001698190.2')
+%       GenBank_protein — protein accession (e.g. 'XP_001698190.2'), matching
+%                         the protein FASTA headers
 %
 % Examples
 % --------
@@ -53,7 +53,7 @@ function geneTable = getGeneData(accession, outputFile, downloadDir)
     end
 
     if nargin < 2 || isempty(outputFile)
-        outputFile = 'geneData.tsv';
+        outputFile = '';
     else
         outputFile = char(outputFile);
     end
@@ -85,69 +85,36 @@ function geneTable = getGeneData(accession, outputFile, downloadDir)
         end
     end
 
-    % Detect organism type and parse GFF3. Eukaryotes have mRNA features that are children of
-    % gene features; prokaryotes have CDS.
-    fprintf('Detecting organism type from GFF3 ...\n');
-    orgType = detectOrgType(gffPath);   % 'eukaryote' | 'prokaryote'
-    fprintf('  → %s genome detected.\n', orgType);
-    
-    fprintf('Parsing GFF3 file (this may take a moment for large files) ...\n');
-    if strcmp(orgType, 'eukaryote')
-        geneTable = parseGFF(gffPath, 'mRNA');
-    else
-        geneTable = parseGFF(gffPath, 'CDS');
-    end
+    % Parse the GFF3 annotation into a gene-mapping table
+    geneTable = parseGFF(gffPath);
 
-    % Save result
-    writetable(geneTable, outputFile, 'Delimiter', '\t', 'FileType', 'text');
-    fprintf('Table saved to: %s  (%d rows)\n', outputFile, height(geneTable));
+    % Save result only if an output file was requested
+    if ~isempty(outputFile)
+        writetable(geneTable, outputFile, 'Delimiter', '\t', 'FileType', 'text');
+        fprintf('Gene table saved to: %s  (%d rows)\n', outputFile, height(geneTable));
+    end
 end
 
 %--------------------------------------------------------------------------
 % Helper functions
 
-function orgType = detectOrgType(gffPath)
-% Scan (up to) the first 50 000 lines to decide eukaryote vs prokaryote.
-% Eukaryote: has 'mRNA' feature lines that are children of gene features.
-% Prokaryote: gene children are only CDS/tRNA/rRNA (no mRNA).
-
-    fid = fopen(gffPath, 'r');
-    hasMRNA   = false;
-    lineCount = 0;
-    maxLines  = 50000;
-    while ~feof(fid) && lineCount < maxLines
-        line = fgetl(fid);
-        lineCount = lineCount + 1;
-        if ischar(line) && ~startsWith(line, '#')
-            fields = strsplit(line, '\t');
-            if numel(fields) >= 3 && strcmp(fields{3}, 'mRNA')
-                hasMRNA = true;
-                break
-            end
-        end
-    end
-    fclose(fid);
-    orgType = 'prokaryote';
-    if hasMRNA, orgType = 'eukaryote'; end
-end
-
-
-function T = parseGFF(gffPath, childFeature)
-% Parse a GFF3 file extracting gene + child feature pairs.
-%
-% childFeature : 'mRNA' (eukaryote) | 'CDS' (prokaryote)
-%                Thus, eukaryote (gene + mRNA) and prokaryote (gene + CDS).
+function T = parseGFF(gffPath)
+% Parse a GFF3 file extracting gene + CDS pairs. The protein accession is
+% taken from each CDS protein_id, and the owning gene is resolved through
+% the Parent chain (CDS → mRNA → gene for eukaryotes, CDS → gene for
+% prokaryotes), so the GenBank_protein column matches the protein FASTA.
 %
 % Returns a table with columns:
-%   locus_tag | old_locus_tag | extra_id | GeneID | gene_name | GenBank_protein
+%   locus_tag | old_locus_tag | GeneID | gene_name | GenBank_protein
 
     batchSize = 10000;
-    rows  = cell(batchSize, 6);
+    rows  = cell(batchSize, 5);
     nRows = 0;
-    % Use a containers.Map to hold the last gene record keyed by gene ID
-    % so we can match mRNA → parent gene efficiently.
-    geneMap = containers.Map('KeyType', 'char', 'ValueType', 'any');
-    emptyGene = struct('locus_tag','','old_locus_tag','','extra_id','','geneID','','name','');
+    % Use a containers.Map to hold the last gene record keyed by gene ID,
+    % and an mRNA → gene map to resolve eukaryote CDS parents.
+    geneMap    = containers.Map('KeyType', 'char', 'ValueType', 'any');
+    mrnaToGene = containers.Map('KeyType', 'char', 'ValueType', 'char');
+    emptyGene = struct('locus_tag','','old_locus_tag','','geneID','','name','');
 
     fid = fopen(gffPath, 'r');
     while ~feof(fid)
@@ -165,28 +132,35 @@ function T = parseGFF(gffPath, childFeature)
                 geneMap(g.id) = g;
             end
 
-        elseif strcmp(featureType, childFeature)
-            if strcmp(childFeature, 'mRNA')
-                child    = parseMRNAAttrs(attrs);
-                proteinID = child.genbank;
-            else  % CDS
-                child    = parseCDSAttrs(attrs);
-                proteinID = child.protein_id;
+        elseif strcmp(featureType, 'mRNA')
+            id     = extractAttr(attrs, 'ID');
+            parent = extractAttr(attrs, 'Parent');
+            if ~isempty(id) && ~isempty(parent)
+                mrnaToGene(id) = parent;
             end
 
-            if isempty(child.parent), continue, end
+        elseif strcmp(featureType, 'CDS')
+            child     = parseCDSAttrs(attrs);
+            proteinID = child.protein_id;
+            if isempty(child.parent) || isempty(proteinID), continue, end
 
-            if isKey(geneMap, child.parent)
-                g = geneMap(child.parent);
+            % Resolve the owning gene through the Parent chain
+            if isKey(mrnaToGene, child.parent)
+                geneKey = mrnaToGene(child.parent);
+            else
+                geneKey = child.parent;  % prokaryote: CDS Parent is the gene
+            end
+            if isKey(geneMap, geneKey)
+                g = geneMap(geneKey);
             else
                 g = emptyGene;
             end
 
             nRows = nRows + 1;
             if nRows > size(rows, 1)
-                rows = [rows; cell(batchSize, 6)];
+                rows = [rows; cell(batchSize, 5)];
             end
-            rows(nRows, :) = {g.locus_tag, g.old_locus_tag, g.extra_id, ...
+            rows(nRows, :) = {g.locus_tag, g.old_locus_tag, ...
                                g.geneID,    g.name,          proteinID};
         end
     end
@@ -194,16 +168,15 @@ function T = parseGFF(gffPath, childFeature)
 
     rows = rows(1:nRows, :);
 
-    % Deduplicate rows (CDS repeats per exon; harmless for mRNA isoforms
-    % since column 6 differs per transcript).
-    rowKeys = cellfun(@(a,b,c,d,e,f) strjoin({a,b,c,d,e,f}, '|'), ...
-        rows(:,1), rows(:,2), rows(:,3), rows(:,4), rows(:,5), rows(:,6), ...
+    % Deduplicate rows (CDS repeats per exon).
+    rowKeys = cellfun(@(a,b,c,d,e) strjoin({a,b,c,d,e}, '|'), ...
+        rows(:,1), rows(:,2), rows(:,3), rows(:,4), rows(:,5), ...
         'UniformOutput', false);
     [~, ia] = unique(rowKeys, 'stable');
     rows = rows(ia, :);
 
     T = cell2table(rows, 'VariableNames', ...
-        {'locus_tag','old_locus_tag','extra_id','GeneID','gene_name','GenBank_protein'});
+        {'locus_tag','old_locus_tag','GeneID','gene_name','GenBank_protein'});
 end
 
 % Attibute parsing utilities
@@ -216,8 +189,14 @@ function value = extractAttr(attrStr, key)
     if isempty(tok)
         value = '';
     else
-        value = urldecode(tok{1});
+        value = gff3Decode(tok{1});
     end
+end
+
+function out = gff3Decode(str)
+% Decode GFF3 percent-encoded characters (%XX). Unlike urldecode, '+' is
+% left untouched, as GFF3 does not use it to encode spaces.
+    out = regexprep(str, '%([0-9A-Fa-f]{2})', '${char(hex2dec($1))}');
 end
 
 function value = extractDbxrefField(dbxref, prefix)
@@ -248,18 +227,9 @@ function g = parseGeneAttrs(attrs)
     g.old_locus_tag = extractAttr(attrs, 'old_locus_tag');
     
     % Dbxref is a comma-separated list like:
-    %   Phytozome:Cre16.g651050,GeneID:5723799
+    %   GeneID:5723799,GenBank:XM_001698190.2
     dbxref          = extractAttr(attrs, 'Dbxref');
-    g.extra_id = extractDbxrefField(dbxref, 'Phytozome'); % To be improved
     g.geneID        = extractDbxrefField(dbxref, 'GeneID');
-end
-
-function m = parseMRNAAttrs(attrs)
-    % Extract fields from an mRNA attribute string.
-    m.parent  = extractAttr(attrs, 'Parent');
-    % GenBank accession lives in Dbxref as GenBank:XM_...
-    dbxref    = extractAttr(attrs, 'Dbxref');
-    m.genbank = extractDbxrefField(dbxref, 'GenBank');
 end
 
 function c = parseCDSAttrs(attrs)

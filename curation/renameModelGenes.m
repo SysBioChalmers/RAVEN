@@ -41,10 +41,8 @@ function model = renameModelGenes(model, geneTable, fromCol, toCol)
 %
 % Notes
 % -----
-% * Genes with no entry in fromCol are left unchanged; a warning lists
-%   them for investigation.
-% * Rows where toCol is empty fall back to locus_tag; identifiers are
-%   preserved only when both columns are empty.
+% * Genes with no entry in fromCol, or whose toCol value is empty, are left
+%   unchanged; a warning lists them for investigation.
 % * Word-boundary matching prevents partial substitution (e.g. 'gene1'
 %   is not replaced inside 'gene10').
 % * grRules are standardized via standardizeGrRules before and after
@@ -104,27 +102,18 @@ function model = renameModelGenes(model, geneTable, fromCol, toCol)
 
     fromVals = geneTable.(fromCol);
     toVals   = geneTable.(toCol);
-    toSupl   = geneTable.('locus_tag'); % In case not found use by default the locus_tag name
-    
+
     % Convert to char cell if needed
     if ~iscell(fromVals), fromVals = cellstr(fromVals); end
     if ~iscell(toVals),   toVals   = cellstr(toVals);   end
-    if ~iscell(toSupl),   toSupl   = cellstr(toSupl);   end
-    
-    % Build map (first occurrence wins for duplicates)
+
+    % Build map (first occurrence wins for duplicates). Only genes with a
+    % non-empty toCol value are mapped; the rest are left unchanged.
     nameMap = containers.Map('KeyType', 'char', 'ValueType', 'char');
     for i = 1:numel(fromVals)
         k = strtrim(fromVals{i});
         v = strtrim(toVals{i});
-        supl = strtrim(toSupl{i});
-        % Prefer toVals; if empty, use toSupl; skip if both empty or key empty
-        if isempty(k)
-            continue
-        end
-        if isempty(v)
-            v = supl;
-        end
-        if ~isempty(v) && ~isKey(nameMap, k)
+        if ~isempty(k) && ~isempty(v) && ~isKey(nameMap, k)
             nameMap(k) = v;
         end
     end
@@ -141,67 +130,20 @@ function model = renameModelGenes(model, geneTable, fromCol, toCol)
             numel(indexes2check));
     end
 
-    % Rename model.genes
+    % Rename model.genes; genes without a mapping are left unchanged
     nGenes   = numel(model.genes);
     notFound = {};
-    usedSupl = {}; % track genes where toSupl was used
-    noTarget = {}; % track genes with neither toVals nor toSupl
-    
     for i = 1:nGenes
         oldName = model.genes{i};
         if isKey(nameMap, oldName)
-            newName = nameMap(oldName);
-            % Determine whether newName came from toVals or was fallback to toSupl
-            % We can detect fallback by checking if the original mapping in the
-            % table had an empty toVal. Since nameMap stores only final values,
-            % track fallbacks by checking whether newName equals the locus_tag
-            % form of the original key in the table (if available).
-            model.genes{i} = newName;
-            % If the newName equals the key (unlikely) skip; otherwise record if
-            % the mapping came from a supl value by checking presence in toVals.
-            % Build logical check: if newName appears in toVals for that key,
-            % consider it as from toVals; otherwise mark as supl-used.
-            % (toVals and toSupl are from outer scope as cell arrays.)
-            idx = find(strcmp(strtrim(fromVals), oldName), 1);
-            if ~isempty(idx)
-                if ~isempty(strtrim(toVals{idx}))
-                    % used toVals — nothing to record
-                elseif ~isempty(strtrim(toSupl{idx}))
-                    usedSupl{end+1} = sprintf('%s -> %s', oldName, newName); %#ok<AGROW>
-                else
-                    % Neither toVals nor toSupl present for this mapping (shouldn't happen if nameMap has it)
-                    noTarget{end+1} = oldName; %#ok<AGROW>
-                end
-            else
-                % If original key not found in fromVals (mapping came from duplicate handling),
-                % attempt to infer by checking whether newName exists in toVals.
-                if ~any(strcmp(strtrim(toVals), newName)) && any(strcmp(strtrim(toSupl), newName))
-                    usedSupl{end+1} = sprintf('%s -> %s', oldName, newName); %#ok<AGROW>
-                end
-            end
+            model.genes{i} = nameMap(oldName);
         else
-            notFound{end+1} = oldName;
+            notFound{end+1} = oldName; %#ok<AGROW>
         end
     end
-    
-    % Report cases where toSupl was used as fallback
-    if ~isempty(usedSupl)
-        warning('renameModelGenes:usedSupl', ...
-            '%d  to locus_tag (toSupl) used for 61 gene(s):\n %s', ...
-            numel(usedSupl));
-        geneList = strjoin(unique(usedSupl), sprintf(',\n  '));
-        fprintf(2, geneList);
-    end
-    
-    % Report genes that had mapping entries but neither toVals nor toSupl
-    if ~isempty(noTarget)
-        geneList = strjoin(unique(noTarget), sprintf(',\n  '));
-        fprintf(2, '\nWarning: The following gene(s) had a mapping entry but no toCol or supl value and were left unchanged:\n  %s\n\n', geneList);
-    end
-    
-    % Report genes that does not had mapping entries
+
+    % Report genes that had no mapping and were left unchanged
     if ~isempty(notFound)
-        fprintf('\n');
         warning('renameModelGenes:noMapping', ...
             '%d gene(s) in the model had no mapping in column "%s" and were left unchanged:\n  %s', ...
             numel(notFound), fromCol, strjoin(unique(notFound), ', '));
