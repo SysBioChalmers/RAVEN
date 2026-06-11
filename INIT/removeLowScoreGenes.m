@@ -1,4 +1,4 @@
-function [newModel,remGenes] = removeLowScoreGenes(model,geneScores,isozymeScoring,complexScoring)
+function [newModel,remGenes] = removeLowScoreGenes(model,geneScores,varargin)
 %removeLowScoreGenes  Remove low-scoring genes from model.
 %
 %   This function removes genes from a model based on their scores, a step
@@ -61,11 +61,11 @@ function [newModel,remGenes] = removeLowScoreGenes(model,geneScores,isozymeScori
 %
 
 
-if nargin < 3 || isempty(isozymeScoring)
+p=parseRAVENargs(varargin, {'isozymeScoring',[]; 'complexScoring','min'});
+isozymeScoring=p.isozymeScoring;
+complexScoring=p.complexScoring;
+if isempty(isozymeScoring)
     isozymeScoring = 'max';
-end
-if nargin < 4
-    complexScoring = 'min';
 end
 
 if ~isequal(size(model.genes),size(geneScores))

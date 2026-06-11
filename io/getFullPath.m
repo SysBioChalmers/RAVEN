@@ -1,4 +1,4 @@
-function File = getFullPath(File, Style)
+function File = getFullPath(File, varargin)
 % getFullPath  Get the absolute canonical path of a file or folder.
 %
 % Absolute path names are safer than relative paths, when e.g. a GUI or
@@ -106,9 +106,8 @@ function File = getFullPath(File, Style)
 % - Mex is much faster.
 
 % Magix prefix for long Windows names:
-if nargin < 2
-    Style = 'auto';
-end
+p=parseRAVENargs(varargin, {'Style','auto'});
+Style=p.Style;
 
 % Handle cell strings: NOTE: It is faster to create a function
 % @cell\getFullPath.m under Linux, but under Windows this would shadow the

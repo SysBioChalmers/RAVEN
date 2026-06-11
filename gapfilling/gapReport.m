@@ -1,6 +1,6 @@
 function [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnect,...
     neededForProductionMat, canProduceWithoutInput, canConsumeWithoutOutput, ...
-    connectedFromTemplates, addedFromTemplates]=gapReport(model, templateModels)
+    connectedFromTemplates, addedFromTemplates]=gapReport(model, varargin)
 % gapReport  Perform a gap analysis and summarize the results.
 %
 % Parameters
@@ -47,7 +47,10 @@ function [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnec
 %         minToConnect, neededForProductionMat, connectedFromTemplates, ...
 %         addedFromTemplates] = gapReport(model, templateModels);
 
-if nargin<2
+p=parseRAVENargs(varargin, {'templateModels',[]});
+templateModels=p.templateModels;
+
+if isempty(templateModels)
     templateModels=[];
     connectedFromTemplates=[];
     addedFromTemplates=[];

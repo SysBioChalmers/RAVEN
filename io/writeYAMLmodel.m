@@ -1,4 +1,4 @@
-function writeYAMLmodel(model,fileName,preserveQuotes,sortIds)
+function writeYAMLmodel(model,varargin)
 % writeYAMLmodel  Write a model to a yaml file matching cobrapy's structure.
 %
 % The format is cobrapy's native !!omap layout, extended with RAVEN-only
@@ -28,7 +28,9 @@ function writeYAMLmodel(model,fileName,preserveQuotes,sortIds)
 % Examples
 % --------
 %     writeYAMLmodel(model,fileName,preserveQuotes,sortIds);
-if nargin<2|| isempty(fileName)
+p=parseRAVENargs(varargin, {'fileName',[]; 'preserveQuotes',false; 'sortIds',false});
+fileName=p.fileName; preserveQuotes=p.preserveQuotes; sortIds=p.sortIds;
+if isempty(fileName)
     [fileName, pathName] = uiputfile({'*.yml;*.yaml'}, 'Select file for model export',[model.id '.yml']);
     if fileName == 0
         error('You should provide a file location')
@@ -37,13 +39,6 @@ if nargin<2|| isempty(fileName)
     end
 end
 fileName=char(fileName);
-
-if nargin < 3
-    preserveQuotes = false;
-end
-if nargin < 4
-    sortIds = false;
-end
 if ~endsWith(fileName,{'.yml','.yaml'})
     fileName = strcat(fileName,'.yml');
 end

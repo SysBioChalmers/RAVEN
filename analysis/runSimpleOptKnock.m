@@ -1,4 +1,4 @@
-function out = runSimpleOptKnock(model, targetRxn, biomassRxn, deletions, genesOrRxns, maxNumKO, minGrowth)
+function out = runSimpleOptKnock(model, targetRxn, biomassRxn, varargin)
 % runSimpleOptKnock  Simple OptKnock for growth-coupled production.
 %
 % Simple OptKnock algorithm that checks all gene or reaction deletions for
@@ -40,26 +40,19 @@ function out = runSimpleOptKnock(model, targetRxn, biomassRxn, deletions, genesO
 %     out = runSimpleOptKnock(model, targetRxn, biomassRxn, deletions, ...
 %         genesOrRxns, maxNumKO, minGrowth);
 
-if nargin < 4
+p=parseRAVENargs(varargin, {'deletions',[]; 'genesOrRxns','rxns'; 'maxNumKO',1; 'minGrowth',0.05});
+deletions=p.deletions;
+genesOrRxns=p.genesOrRxns;
+maxNumKO=p.maxNumKO;
+minGrowth=p.minGrowth;
+if isempty(deletions)
     params.deletions = model.rxns;
 else
     params.deletions = deletions;
 end
-if nargin < 5
-    params.genesOrRxns = 'rxns';
-else
-    params.genesOrRxns = genesOrRxns;
-end
-if nargin < 6
-    params.maxNumKO = 1;
-else
-    params.maxNumKO = maxNumKO;
-end
-if nargin < 7
-    params.minGrowth = 0.05;
-else
-    params.minGrowth = minGrowth;
-end
+params.genesOrRxns = genesOrRxns;
+params.maxNumKO = maxNumKO;
+params.minGrowth = minGrowth;
 
 % Number of deletions
 out.KO         = cell(0,params.maxNumKO); % The KO genes/rxns

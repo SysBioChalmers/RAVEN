@@ -1,4 +1,4 @@
-function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)
+function model=importExcelModel(fileName,varargin)
 % importExcelModel  Import a constraint-based model from an Excel file.
 %
 % Loads models in the RAVEN Toolbox Excel format.
@@ -95,15 +95,8 @@ function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreError
 % to true.
 fileName=char(fileName);
 
-if nargin<2
-    removeExcMets=true;
-end
-if nargin<3
-    printWarnings=true;
-end
-if nargin<4
-    ignoreErrors=false;
-end
+p=parseRAVENargs(varargin, {'removeExcMets',true; 'printWarnings',true; 'ignoreErrors',false});
+removeExcMets=p.removeExcMets; printWarnings=p.printWarnings; ignoreErrors=p.ignoreErrors;
 
 if ~isfile(fileName)
     error('Excel file %s cannot be found',string(fileName));

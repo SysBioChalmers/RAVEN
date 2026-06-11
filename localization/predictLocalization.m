@@ -1,6 +1,6 @@
 function [outModel, geneLocalization, transportStruct, scores,...
 	removedRxns] = predictLocalization(model, GSS,...
-	defaultCompartment, transportCost, maxTime, plotResults)
+	defaultCompartment, varargin)
 % predictLocalization  Assign reactions to compartments using localization predictors.
 %
 % Tries to assign reactions to compartments in a manner that is in
@@ -73,7 +73,12 @@ function [outModel, geneLocalization, transportStruct, scores,...
 %         predictLocalization(model, GSS, defaultCompartment, ...
 %             transportCost, maxTime, plotResults);
 
-if nargin<4
+p=parseRAVENargs(varargin, {'transportCost',[]; 'maxTime',[]; 'plotResults',[]});
+transportCost=p.transportCost;
+maxTime=p.maxTime;
+plotResults=p.plotResults;
+
+if isempty(transportCost)
     transportCost=ones(numel(model.mets),1)*0.5;
 end
 if numel(transportCost)==1
@@ -85,10 +90,10 @@ if numel(transportCost)~=numel(model.mets)
     EM='The vector of transport costs must have the same dimension as model.mets';
     dispEM(EM,true);
 end
-if nargin<5
+if isempty(maxTime)
     maxTime=15;
 end
-if nargin<6
+if isempty(plotResults)
     plotResults=false;
 end
 

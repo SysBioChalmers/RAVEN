@@ -1,4 +1,4 @@
-function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,allowNetProduction,useModelConstraints,supressWarnings,rxnScores)
+function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,varargin)
 % fillGaps  Use template model(s) to fill gaps in a model.
 %
 % This method works by merging the model with the reference model(s) and
@@ -77,28 +77,24 @@ if ~iscell(models)
     models={models};
 end
 
-if nargin<3
-    allowNetProduction=false;
-end
-if nargin<4
-    useModelConstraints=false;
-end
-if nargin<5
-    supressWarnings=false;
-end
-if nargin<6
-    rxnScores=cell(numel(models),1);
-    for i=1:numel(models)
-        rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
-    end
-end
+p=parseRAVENargs(varargin, {'allowNetProduction',false; ...
+    'useModelConstraints',false; ...
+    'supressWarnings',false; ...
+    'rxnScores',[]; ...
+    'params',[]});
+allowNetProduction=p.allowNetProduction;
+useModelConstraints=p.useModelConstraints;
+supressWarnings=p.supressWarnings;
+rxnScores=p.rxnScores;
+params=p.params;
+
 if isempty(rxnScores)
     rxnScores=cell(numel(models),1);
     for i=1:numel(models)
         rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
     end
 end
-if nargin<7
+if isempty(params)
     params=struct();
 end
 

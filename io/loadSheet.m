@@ -20,10 +20,9 @@
 % Examples
 % --------
 %     [raw, flag] = loadSheet(workbook, sheet);
-function [raw, flag]=loadSheet(workbook, sheet)
-if nargin<2
-    sheet=[];
-end
+function [raw, flag]=loadSheet(workbook, varargin)
+p=parseRAVENargs(varargin, {'sheet',[]});
+sheet=p.sheet;
 flag=0;
 raw={};
 

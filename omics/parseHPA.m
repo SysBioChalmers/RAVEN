@@ -1,4 +1,4 @@
-function hpaData=parseHPA(fileName, version)
+function hpaData=parseHPA(fileName, varargin)
 % parseHPA  Parse a database dump of the Human Protein Atlas (HPA).
 %
 % Parameters
@@ -38,9 +38,8 @@ function hpaData=parseHPA(fileName, version)
 % --------
 %     hpaData = parseHPA(fileName, version);
 
-if nargin<2
-    version=19; %Change this and add code for more versions when the current HPA version is increased and the format is changed
-end
+p=parseRAVENargs(varargin, {'version',19}); %Change this and add code for more versions when the current HPA version is increased and the format is changed
+version=p.version;
 
 fileName=char(fileName);
 if ~isfile(fileName)

@@ -1,4 +1,4 @@
-function [currVer, installType] = checkInstallation(developMode,checkBinaries)
+function [currVer, installType] = checkInstallation(varargin)
 % checkInstallation
 %   The purpose of this function is to check if all necessary functions are
 %   installed and working. It also checks whether there are any functions
@@ -27,12 +27,10 @@ function [currVer, installType] = checkInstallation(developMode,checkBinaries)
 %
 % Usage: [currVer, installType] = checkInstallation(developMode)
 
-if nargin<1
-    developMode=false;
-end
-if nargin<2
-    checkBinaries=true;
-end
+p=parseRAVENargs(varargin, {'developMode',false; 'checkBinaries',true});
+developMode=p.developMode;
+checkBinaries=p.checkBinaries;
+
 if ischar(developMode) && strcmp(developMode,'versionOnly')
     versionOnly = true;
 else

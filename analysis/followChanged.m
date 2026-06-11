@@ -1,4 +1,4 @@
-function followChanged(model,fluxesA,fluxesB, cutOffChange, cutOffFlux, cutOffDiff, metaboliteList)
+function followChanged(model,fluxesA,fluxesB, varargin)
 % followChanged  Print reactions whose fluxes differ from a reference case.
 %
 % Prints fluxes and reactions for each of the reactions that result in
@@ -31,16 +31,28 @@ function followChanged(model,fluxesA,fluxesB, cutOffChange, cutOffFlux, cutOffDi
 %         cutOffDiff,metaboliteList);
 
 %Checks if a cut off flux has been set
-if nargin<4
+p=parseRAVENargs(varargin, {'cutOffChange',[]; 'cutOffFlux',[]; 'cutOffDiff',[]; 'metaboliteList',[]});
+cutOffChange=p.cutOffChange;
+cutOffFlux=p.cutOffFlux;
+cutOffDiff=p.cutOffDiff;
+metaboliteList=p.metaboliteList;
+
+%Keep track of which optional arguments were supplied, to reproduce the
+%original nargin-based reporting behaviour
+cutOffFluxSupplied=~isempty(cutOffFlux);
+cutOffDiffSupplied=~isempty(cutOffDiff);
+metaboliteListSupplied=~isempty(metaboliteList);
+
+if isempty(cutOffChange)
     cutOffChange=10^-8;
 end
-if nargin<5
+if isempty(cutOffFlux)
     cutOffFlux=10^-8;
 end
-if nargin<6
+if isempty(cutOffDiff)
     cutOffDiff=10^-8;
 end
-if nargin<7
+if isempty(metaboliteList)
     metaboliteList=[];
 else
     metaboliteList=convertCharArray(metaboliteList);
@@ -48,7 +60,7 @@ end
 
 %If a metabolite list is to be used, then find all the reactions involving
 %any of those metabolites Finds the metabolites
-if nargin>6
+if metaboliteListSupplied
     reactionIndexes=[];
     for i=1:length(metaboliteList)
         metaboliteIndex=find(strcmpi(metaboliteList(i),model.metNames)); %Should use id maybe, setting
@@ -87,8 +99,8 @@ fluxIndexes=unique([fluxIndexes zeroFluxes(find(abs(fluxesB(zeroFluxes))>=cutOff
 
 formulas=constructEquations(model,model.rxns(fluxIndexes));
 
-if nargin>4
-    if nargin>5
+if cutOffFluxSupplied
+    if cutOffDiffSupplied
         fprintf('These reactions have flux values that differ by more than %s percent, absolute values above %s, and a total difference above %s (%s reactions)\n\n',num2str(cutOffChange),num2str(cutOffFlux),num2str(cutOffDiff),num2str(length(formulas)));
     else
         fprintf('These reactions have flux values that differ by more than %s percent and absolute values above %s (%s reactions)\n\n',num2str(cutOffChange),num2str(cutOffFlux),num2str(length(formulas)));

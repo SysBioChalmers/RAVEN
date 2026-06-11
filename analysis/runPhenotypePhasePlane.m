@@ -1,4 +1,4 @@
-function [growthRates, shadowPrices1, shadowPrices2] = runPhenotypePhasePlane(model, controlRxn1, controlRxn2, nPts, range1, range2)
+function [growthRates, shadowPrices1, shadowPrices2] = runPhenotypePhasePlane(model, controlRxn1, controlRxn2, varargin)
 % runPhenotypePhasePlane  Run phenotype phase plane analysis and plot the results.
 %
 % Runs phenotype phase plane analysis and plots the results. The first plot
@@ -40,15 +40,10 @@ function [growthRates, shadowPrices1, shadowPrices2] = runPhenotypePhasePlane(mo
 % -----
 % Modified from COBRA Toolbox phenotypePhasePlane.m.
 close all force % Close all existing figure windows (if open)
-if nargin < 4
-    nPts = 50;
-end
-if nargin < 5
-    range1 = 20;
-end
-if nargin < 6
-    range2 = 20;
-end
+p=parseRAVENargs(varargin, {'nPts',50; 'range1',20; 'range2',20});
+nPts=p.nPts;
+range1=p.range1;
+range2=p.range2;
 
 rxnID1 = getIndexes(model,controlRxn1,'rxns',true);
 metID1 = find(model.S(:,rxnID1));

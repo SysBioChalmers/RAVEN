@@ -1,4 +1,4 @@
-function steps = getINITSteps(metsToIgnore, series)
+function steps = getINITSteps(varargin)
 % getINITSteps
 %   Converts a reaction score to the gene expression (CPM or TPM) required 
 %   to get that reaction score, if the GPR is only a single gene.
@@ -36,13 +36,9 @@ function steps = getINITSteps(metsToIgnore, series)
 %   steps         Cell array of steps, used as input to ftINIT
 %
 % Usage: steps = getINITSteps(metsToIgnore, series)
-if nargin < 1
-    metsToIgnore = [];
-end
-
-if nargin < 2
-    series = '1+1';
-end
+p=parseRAVENargs(varargin, {'metsToIgnore',[]; 'series','1+1'});
+metsToIgnore=p.metsToIgnore;
+series=p.series;
 
 if strcmp(series,'1+1') %step 1 and 2 are joined
     params1 = struct();

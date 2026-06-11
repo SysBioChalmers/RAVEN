@@ -1,4 +1,4 @@
-function targets=FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile)
+function targets=FSEOF(model,biomassRxn,targetRxn,varargin)
 % FSEOF  Flux Scanning based on Enforced Objective Flux.
 %
 % Implements the Flux Scanning based on Enforced Objective Flux algorithm.
@@ -41,19 +41,15 @@ function targets=FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputF
 biomassRxn=char(biomassRxn);
 targetRxn=char(targetRxn);
 
-if nargin<4
-    iterations=10;
-    coefficient=0.9;
-end
+p=parseRAVENargs(varargin, {'iterations',10; 'coefficient',0.9; 'outputFile',[]});
+iterations=p.iterations;
+coefficient=p.coefficient;
+outputFile=p.outputFile;
 
-if nargin <5
-    coefficient=0.9;
-end
-
-if nargin == 6
-    output=1;
-else
+if isempty(outputFile)
     output=0;
+else
+    output=1;
 end
 
 %Find out the maximum theoretical yield of target reaction

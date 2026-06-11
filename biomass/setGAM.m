@@ -1,4 +1,4 @@
-function model = setGAM(model, value, biomassRxn, cofactorMetNames, ngamRxn, ngamValue)
+function model = setGAM(model, value, biomassRxn, cofactorMetNames, varargin)
 % setGAM  Set the growth-associated maintenance (GAM) coefficient.
 %
 % Set the growth-associated maintenance (GAM) coefficient in the biomass
@@ -43,6 +43,10 @@ if nargin < 4
         'biomassRxn and cofactorMetNames are required.');
 end
 
+p=parseRAVENargs(varargin, {'ngamRxn',[]; 'ngamValue',[]});
+ngamRxn=p.ngamRxn;
+ngamValue=p.ngamValue;
+
 bioPos = strcmp(model.rxns, biomassRxn);
 if ~any(bioPos)
     error('setGAM:missingBiomassRxn', ...
@@ -57,7 +61,7 @@ for i = 1:length(model.mets)
     end
 end
 
-if nargin >= 6 && ~isempty(ngamRxn) && ~isempty(ngamValue)
+if ~isempty(ngamRxn) && ~isempty(ngamValue)
     model = setParam(model, 'eq', ngamRxn, ngamValue);
 end
 end

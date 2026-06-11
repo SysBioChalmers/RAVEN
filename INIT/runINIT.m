@@ -1,4 +1,4 @@
-function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,noRevLoops,params)
+function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,varargin)
 % runINIT
 %	Generates a model using the INIT algorithm, based on proteomics and/or
 %   transcriptomics and/or metabolomics and/or metabolic tasks. This is the 
@@ -61,33 +61,29 @@ function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,
 %           rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,...
 %           noRevLoops,params)
 
-if nargin<2
-    rxnScores=zeros(numel(model.rxns),1);
-end
+p=parseRAVENargs(varargin, {'rxnScores',[]; 'presentMets',[]; 'essentialRxns',[]; 'prodWeight',[]; 'allowExcretion',false; 'noRevLoops',false; 'params',[]});
+rxnScores=p.rxnScores;
+presentMets=p.presentMets;
+essentialRxns=p.essentialRxns;
+prodWeight=p.prodWeight;
+allowExcretion=p.allowExcretion;
+noRevLoops=p.noRevLoops;
+params=p.params;
 if isempty(rxnScores)
     rxnScores=zeros(numel(model.rxns),1);
 end
-if nargin<3 || isempty(presentMets)
+if isempty(presentMets)
     presentMets={};
 else
     presentMets=convertCharArray(presentMets);
 end
-if nargin<4 || isempty(essentialRxns)
+if isempty(essentialRxns)
     essentialRxns={};
 else
     essentialRxns=convertCharArray(essentialRxns);
 end
-if nargin<5 || isempty(prodWeight)
+if isempty(prodWeight)
     prodWeight=0.5;
-end
-if nargin<6
-    allowExcretion=false;
-end
-if nargin<7
-    noRevLoops=false;
-end
-if nargin<8
-    params=[];
 end
 
 if numel(presentMets)~=numel(unique(presentMets))

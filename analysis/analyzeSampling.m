@@ -1,4 +1,4 @@
-function scores=analyzeSampling(Tex, df, solutionsA, solutionsB, printResults)
+function scores=analyzeSampling(Tex, df, solutionsA, solutionsB, varargin)
 % analyzeSampling  Compare flux change significance with expression change.
 %
 % Compares the significance of change in flux between two conditions with
@@ -43,9 +43,8 @@ function scores=analyzeSampling(Tex, df, solutionsA, solutionsB, printResults)
 %     scores = analyzeSampling(Tex, df, solutionsA, solutionsB, ...
 %                              printResults);
 
-if nargin<5
-    printResults=false;
-end
+p=parseRAVENargs(varargin, {'printResults',false});
+printResults=p.printResults;
 
 nRxns=numel(Tex);
 pM=zeros(nRxns,1);

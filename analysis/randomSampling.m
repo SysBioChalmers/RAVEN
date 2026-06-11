@@ -1,4 +1,4 @@
-function [solutions, goodRxns]=randomSampling(model,nSamples,replaceBoundsWithInf,supressErrors,runParallel,goodRxns,minFlux)
+function [solutions, goodRxns]=randomSampling(model,varargin)
 % randomSampling  Perform random sampling of the solution space.
 %
 % Performs random sampling of the solution space, as described in Bordel et
@@ -59,19 +59,26 @@ function [solutions, goodRxns]=randomSampling(model,nSamples,replaceBoundsWithIn
 %     solutions = randomSampling(model, nSamples, replaceBoundsWithInf, ...
 %                     supressErrors, runParallel, goodRxns, minFlux);
 
-if nargin<2 | isempty(nSamples)
+p=parseRAVENargs(varargin, {'nSamples',[]; 'replaceBoundsWithInf',[]; 'supressErrors',[]; 'runParallel',[]; 'goodRxns',[]; 'minFlux',[]});
+nSamples=p.nSamples;
+replaceBoundsWithInf=p.replaceBoundsWithInf;
+supressErrors=p.supressErrors;
+runParallel=p.runParallel;
+goodRxns=p.goodRxns;
+minFlux=p.minFlux;
+if isempty(nSamples)
     nSamples=1000;
 end
-if nargin<3 | isempty(replaceBoundsWithInf)
+if isempty(replaceBoundsWithInf)
     replaceBoundsWithInf=true;
 end
-if nargin<4 | isempty(supressErrors)
+if isempty(supressErrors)
     supressErrors=false;
 end
-if nargin<5 | isempty(runParallel)
+if isempty(runParallel)
     runParallel=true;
 end
-if nargin<7 | isempty(minFlux)
+if isempty(minFlux)
     minFlux=false;
 end
 
@@ -104,7 +111,7 @@ end
 nRxns = numel(model.rxns);
 %Reactions which can be involved in loops should not be optimized for.
 %Check which reactions reach an arbitary high upper bound
-if nargin<6 || isempty(goodRxns)
+if isempty(goodRxns)
     revRxns = transpose(find(model.lb < 0));
     fwdRxns = transpose(find(model.ub > 0));
     rxnList = [fwdRxns,revRxns];

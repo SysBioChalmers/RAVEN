@@ -1,4 +1,4 @@
-function expr = getExprForRxnScore(scores, threshold)
+function expr = getExprForRxnScore(scores, varargin)
 % getExprForRxnScore
 %   Converts a reaction score to the gene expression (CPM or TPM) required 
 %   to get that reaction score, if the GPR is only a single gene.
@@ -12,9 +12,8 @@ function expr = getExprForRxnScore(scores, threshold)
 %
 % Usage: expr = getExprForRxnScore(scores, threshold)
 
-if nargin < 2
-    threshold = 1;
-end
+p=parseRAVENargs(varargin, {'threshold',1});
+threshold=p.threshold;
 
 %This is how the score is calculated: 5*log(expression./threshold)
 %expression = threshold*10.^(scores/5)

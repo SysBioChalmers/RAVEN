@@ -1,4 +1,4 @@
-function [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns)
+function [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,varargin)
 % getEssentialRxns  Calculate the essential reactions for a solvable model.
 %
 % Parameters
@@ -25,7 +25,9 @@ function [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,ignoreRxns
 % --------
 %     [essentialRxns, essentialRxnsIndexes] = getEssentialRxns(model, ignoreRxns);
 
-if nargin<2
+p=parseRAVENargs(varargin, {'ignoreRxns',[]});
+ignoreRxns=p.ignoreRxns;
+if isempty(ignoreRxns)
     ignoreRxns={};
 else
     ignoreRxns=convertCharArray(ignoreRxns);

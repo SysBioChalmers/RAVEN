@@ -1,4 +1,4 @@
-function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFluxes,allowExcretion,params,ignoreIntBounds)
+function [solution, metabolite]=makeSomething(model,varargin)
 % makeSomething  Excrete any metabolite using as few reactions as possible.
 %
 % Tries to excrete any metabolite using as few reactions as possible. The
@@ -53,25 +53,26 @@ function [solution, metabolite]=makeSomething(model,ignoreMets,isNames,minNrFlux
 % produced, it picks one of them to be produced and then minimizes for the
 % sum of fluxes.
 
-if nargin<2
+p=parseRAVENargs(varargin, {'ignoreMets',[]; ...
+    'isNames',false; ...
+    'minNrFluxes',false; ...
+    'allowExcretion',true; ...
+    'params',[]; ...
+    'ignoreIntBounds',false});
+ignoreMets=p.ignoreMets;
+isNames=p.isNames;
+minNrFluxes=p.minNrFluxes;
+allowExcretion=p.allowExcretion;
+params=p.params;
+ignoreIntBounds=p.ignoreIntBounds;
+
+if isempty(ignoreMets)
     ignoreMets=[];
 elseif ~islogical(ignoreMets) && ~isnumeric(ignoreMets)
     ignoreMets=convertCharArray(ignoreMets);
 end
-if nargin<3
-    isNames=false;
-end
-if nargin<4
-    minNrFluxes=false;
-end
-if nargin<5
-    allowExcretion=true;
-end
-if nargin<6
+if isempty(params)
     params.relGap=0.8;
-end
-if nargin<7
-    ignoreIntBounds=false;
 end
 
 if isNames==true && ~isempty(ignoreMets)

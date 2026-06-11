@@ -1,4 +1,4 @@
-function I=haveFlux(model,cutOff,rxns)
+function I=haveFlux(model,varargin)
 % haveFlux  Check which reactions can carry a flux.
 %
 % Checks which reactions can carry a (positive or negative) flux. Is used as
@@ -32,13 +32,13 @@ function I=haveFlux(model,cutOff,rxns)
 % If a model has +/- Inf bounds then those are replaced with an arbitary
 % large value of +/- 10000 prior to solving.
 
-if nargin<2
-    cutOff=10^-6;
-end
+p=parseRAVENargs(varargin, {'cutOff',10^-6; 'rxns',[]});
+cutOff=p.cutOff;
+rxns=p.rxns;
 if isempty(cutOff)
     cutOff=10^-6;
 end
-if nargin<3
+if isempty(rxns)
     rxns=model.rxns;
 elseif ~islogical(rxns) && ~isnumeric(rxns)
     rxns=convertCharArray(rxns);

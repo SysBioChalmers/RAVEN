@@ -1,4 +1,4 @@
-function model = scaleBiomassFraction(model, biomassConfig, componentName, newValue, balanceOut)
+function model = scaleBiomassFraction(model, biomassConfig, componentName, newValue, varargin)
 % scaleBiomassFraction  Rescale a biomass component to a target value.
 %
 % Rescale a biomass component to a target g/gDW value, optionally
@@ -33,9 +33,8 @@ function model = scaleBiomassFraction(model, biomassConfig, componentName, newVa
 % --------
 % getBiomassFractions
 
-if nargin < 5
-    balanceOut = '';
-end
+p=parseRAVENargs(varargin, {'balanceOut',''});
+balanceOut=p.balanceOut;
 
 fractions = getBiomassFractions(model, biomassConfig);
 if ~isfield(fractions, componentName)

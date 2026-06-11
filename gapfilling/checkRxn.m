@@ -1,4 +1,4 @@
-function report=checkRxn(model,rxn,cutoff,revDir,printReport)
+function report=checkRxn(model,rxn,varargin)
 % checkRxn  Check which reactants can be synthesized and products consumed.
 %
 % Checks which reactants in a reaction that can be synthesized and which
@@ -35,17 +35,15 @@ function report=checkRxn(model,rxn,cutoff,revDir,printReport)
 %     report = checkRxn(model, rxn, cutoff, revDir, printReport);
 
 rxn=char(rxn);
-if nargin<3
-    cutoff=10^-7;
-end
-if nargin<4
-    revDir=false;
-end
+p=parseRAVENargs(varargin, {'cutoff',[]; ...
+    'revDir',false; ...
+    'printReport',true});
+cutoff=p.cutoff;
+revDir=p.revDir;
+printReport=p.printReport;
+
 if isempty(cutoff)
     cutoff=10^-7;
-end
-if nargin<5
-    printReport=true;
 end
 
 [I, rxnID]=ismember(rxn,model.rxns);

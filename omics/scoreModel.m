@@ -1,4 +1,4 @@
-function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaData,arrayData,tissue,celltype,noGeneScore,multipleGeneScoring,multipleCellScoring,hpaLevelScores)
+function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaData,varargin)
 % scoreModel  Score model reactions and genes from HPA and/or array data.
 %
 % Scores the reactions and genes in a model based on expression data from
@@ -68,28 +68,30 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 %         hpaData, arrayData, tissue, celltype, noGeneScore, ...
 %         multipleGeneScoring, multipleCellScoring, hpaLevelScores);
 
-if nargin<3
-    arrayData=[];
-end
-if nargin<5
+p=parseRAVENargs(varargin, {'arrayData',[]; 'tissue',[]; 'celltype',[]; 'noGeneScore',-2; 'multipleGeneScoring','best'; 'multipleCellScoring','best'; 'hpaLevelScores',[]});
+arrayData=p.arrayData;
+tissue=p.tissue;
+celltype=p.celltype;
+if isempty(celltype)
     celltype=[];
 else
     celltype=char(celltype);
 end
-if nargin<6
-    noGeneScore=-2;
-end
-if nargin<7
+noGeneScore=p.noGeneScore;
+multipleGeneScoring=p.multipleGeneScoring;
+if isempty(multipleGeneScoring)
     multipleGeneScoring='best';
 else
     multipleGeneScoring=char(multipleGeneScoring);
 end
-if nargin<8
+multipleCellScoring=p.multipleCellScoring;
+if isempty(multipleCellScoring)
     multipleCellScoring='best';
 else
-    multipleCellScoring=char(multipleCellScoring);    
+    multipleCellScoring=char(multipleCellScoring);
 end
-if nargin<9
+hpaLevelScores=p.hpaLevelScores;
+if isempty(hpaLevelScores)
     %The first four are for APE, the other ones for staining
     hpaLevelScores.names={'High' 'Medium' 'Low' 'None' 'Strong' 'Moderate' 'Weak' 'Negative' 'Not detected'};
     hpaLevelScores.scores=[20 15 10 -8 20 15 10 -8 -8];

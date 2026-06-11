@@ -1,4 +1,4 @@
-function produced=canProduce(model,mets)
+function produced=canProduce(model,varargin)
 % canProduce  Check which metabolites can be produced from a model.
 %
 % Checks which metabolites can be produced from a model using the
@@ -27,7 +27,10 @@ function produced=canProduce(model,mets)
 % --------
 % checkProduction
 
-if nargin<2
+p=parseRAVENargs(varargin, {'mets',[]});
+mets=p.mets;
+
+if isempty(mets)
     mets=model.mets;
 elseif ~islogical(mets) && ~isnumeric(mets)
     mets=convertCharArray(mets);

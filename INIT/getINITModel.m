@@ -1,4 +1,4 @@
-function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=getINITModel(refModel, tissue, celltype, hpaData, arrayData, metabolomicsData, taskFile, useScoresForTasks, printReport, taskStructure)
+function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=getINITModel(refModel, tissue, varargin)
 % getINITModel_legacy
 %   Generates a model using the INIT algorithm, based on proteomics and/or
 %   transcriptomics and/or metabolomics and/or metabolic tasks. This is the original 
@@ -101,39 +101,28 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %               metabolomicsData, taskFile, useScoresForTasks, printReport,...
 %               taskStructure, params, paramsFT)
 
-if nargin<3
-    celltype=[];
-else
+p=parseRAVENargs(varargin, {'celltype',[]; 'hpaData',[]; 'arrayData',[]; 'metabolomicsData',[]; 'taskFile',[]; 'useScoresForTasks',[]; 'printReport',[]; 'taskStructure',[]; 'params',[]; 'paramsFT',[]});
+celltype=p.celltype;
+hpaData=p.hpaData;
+arrayData=p.arrayData;
+metabolomicsData=p.metabolomicsData;
+taskFile=p.taskFile;
+useScoresForTasks=p.useScoresForTasks;
+printReport=p.printReport;
+taskStructure=p.taskStructure;
+params=p.params;
+paramsFT=p.paramsFT;
+if ~isempty(celltype)
     celltype=char(celltype);
 end
-if nargin<4
-    hpaData=[];
-end
-if nargin<5
-    arrayData=[];
-end
-if nargin<6
-    metabolomicsData=[];
-end
-if nargin<7
-    taskFile=[];
-else
+if ~isempty(taskFile)
     taskFile=char(taskFile);
 end
-if nargin<8 || isempty(useScoresForTasks)
+if isempty(useScoresForTasks)
     useScoresForTasks=true;
 end
-if nargin<9 || isempty(printReport)
+if isempty(printReport)
     printReport=true;
-end
-if nargin<10
-    taskStructure=[];
-end
-if nargin<11
-    params=[];
-end
-if nargin<12
-    paramsFT=[];
 end
 
 %Check that the model is in the closed form

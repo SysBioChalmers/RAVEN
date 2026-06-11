@@ -1,4 +1,4 @@
-function files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)
+function files=checkFileExistence(files,varargin)
 % checkFileExistence  Check whether files exist.
 %
 % If no full path is given a file should be located in the current folder,
@@ -33,15 +33,8 @@ function files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)
 % --------
 %     files = checkFileExistence(files, fullOrTemp, allowSpace, checkExist);
 
-if nargin<2
-    fullOrTemp = 0;
-end
-if nargin<3
-    allowSpace = true;
-end
-if nargin<4
-    checkExist = true;
-end
+p=parseRAVENargs(varargin, {'fullOrTemp',0; 'allowSpace',true; 'checkExist',true});
+fullOrTemp=p.fullOrTemp; allowSpace=p.allowSpace; checkExist=p.checkExist;
 files=convertCharArray(files);
 if numel(files)==1
     oneFile=true;

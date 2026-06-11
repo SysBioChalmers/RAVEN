@@ -29,19 +29,9 @@
 % --------
 %     [raw, keptRows, keptCols] = cleanSheet(raw, removeComments, ...
 %         removeOnlyCap, removeNoCap, removeEmptyRows);
-function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,removeNoCap,removeEmptyRows)
-if nargin<2
-    removeComments=true;
-end
-if nargin<3
-    removeOnlyCap=false;
-end
-if nargin<4
-    removeNoCap=true;
-end
-if nargin<5
-    removeEmptyRows=true;
-end
+function [raw,keptRows,keptCols]=cleanSheet(raw,varargin)
+p=parseRAVENargs(varargin, {'removeComments',true; 'removeOnlyCap',false; 'removeNoCap',true; 'removeEmptyRows',true});
+removeComments=p.removeComments; removeOnlyCap=p.removeOnlyCap; removeNoCap=p.removeNoCap; removeEmptyRows=p.removeEmptyRows;
 
 keptRows=1:size(raw,1);
 keptRows=keptRows(:);

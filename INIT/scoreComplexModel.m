@@ -1,4 +1,4 @@
-function [rxnScores, geneScores, hpaScores, arrayScores] = scoreComplexModel(model,hpaData,arrayData,tissue,celltype,noGeneScore,isozymeScoring,complexScoring,multipleCellScoring,hpaLevelScores)
+function [rxnScores, geneScores, hpaScores, arrayScores] = scoreComplexModel(model,hpaData,arrayData,tissue,varargin)
 % scoreComplexModel
 %   Scores the reactions and genes in a model containing complex gene rules
 %   based on expression data from HPA and/or gene arrays.
@@ -64,22 +64,26 @@ function [rxnScores, geneScores, hpaScores, arrayScores] = scoreComplexModel(mod
 %
 
 
-if nargin < 5
-    celltype = [];
-end
-if nargin < 6 || isempty(noGeneScore)
+p=parseRAVENargs(varargin, {'celltype',[]; 'noGeneScore',[]; 'isozymeScoring',[]; 'complexScoring',[]; 'multipleCellScoring',[]; 'hpaLevelScores',[]});
+celltype=p.celltype;
+noGeneScore=p.noGeneScore;
+isozymeScoring=p.isozymeScoring;
+complexScoring=p.complexScoring;
+multipleCellScoring=p.multipleCellScoring;
+hpaLevelScores=p.hpaLevelScores;
+if isempty(noGeneScore)
     noGeneScore = -2;
 end
-if nargin < 7 || isempty(isozymeScoring)
+if isempty(isozymeScoring)
     isozymeScoring = 'max';
 end
-if nargin < 8 || isempty(complexScoring)
+if isempty(complexScoring)
     complexScoring = 'min';
 end
-if nargin < 9 || isempty(multipleCellScoring)
+if isempty(multipleCellScoring)
     multipleCellScoring = 'max';
 end
-if nargin < 10
+if isempty(hpaLevelScores)
     % The first four are for APE, the other ones for staining
     hpaLevelScores.names = {'High' 'Medium' 'Low' 'None' 'Strong' 'Moderate' 'Weak' 'Negative' 'Not detected'};
     hpaLevelScores.scores = [20 15 10 -8 20 15 10 -8 -8];

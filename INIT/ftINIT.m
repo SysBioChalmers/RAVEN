@@ -1,4 +1,4 @@
-function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes] = ftINIT(prepData, tissue, celltype, hpaData, transcrData, metabolomicsData, INITSteps, removeGenes, useScoresForTasks, paramsFT, verbose)
+function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes] = ftINIT(prepData, tissue, celltype, hpaData, varargin)
 % ftINIT
 %   Main function for generates a model using the ftINIT algorithm, based 
 %   on proteomics and/or transcriptomics and/or metabolomics and/or metabolic 
@@ -92,27 +92,22 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes
 %
 
 
-if nargin < 5
-    transcrData = [];
-end
-if nargin < 6
-    metabolomicsData = [];
-end
-if nargin < 7 || isempty(INITSteps)
+p=parseRAVENargs(varargin, {'transcrData',[]; 'metabolomicsData',[]; 'INITSteps',[]; 'removeGenes',[]; 'useScoresForTasks',[]; 'paramsFT',[]; 'verbose',false});
+transcrData=p.transcrData;
+metabolomicsData=p.metabolomicsData;
+INITSteps=p.INITSteps;
+removeGenes=p.removeGenes;
+useScoresForTasks=p.useScoresForTasks;
+paramsFT=p.paramsFT;
+verbose=p.verbose;
+if isempty(INITSteps)
     INITSteps = getINITSteps([],'1+1');
 end
-if nargin < 8 || isempty(removeGenes)
+if isempty(removeGenes)
     removeGenes = true;
 end
-if nargin < 9 || isempty(useScoresForTasks)
+if isempty(useScoresForTasks)
     useScoresForTasks = true;
-end
-if nargin < 10
-    paramsFT = [];
-end
-
-if nargin < 11
-    verbose = false;
 end
 %Handle detected mets:
 %Previously, this was handled by giving a bonus for secreting those metabolites,

@@ -1,4 +1,4 @@
-function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns,runParallel)
+function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,varargin)
 % getAllowedBounds  Return the minimal and maximal fluxes through reactions.
 %
 % Parameters
@@ -35,14 +35,14 @@ function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns,runParall
 % --------
 %     [minFluxes, maxFluxes, exitFlags] = getAllowedBounds(model, rxns, runParallel);
 
-if nargin<2 || isempty(rxns)
+p=parseRAVENargs(varargin, {'rxns',[]; 'runParallel',true});
+rxns=p.rxns;
+runParallel=p.runParallel;
+if isempty(rxns)
     rxns = 1:numel(model.rxns);
 elseif ~islogical(rxns) && ~isnumeric(rxns)
     rxns = convertCharArray(rxns);
     rxns = getIndexes(model,rxns, 'rxns');
-end
-if nargin<3
-    runParallel = true;
 end
 
 [ps, oldPoolAutoCreateSetting] = parallelPoolRAVEN(runParallel);

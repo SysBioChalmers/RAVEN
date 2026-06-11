@@ -1,4 +1,4 @@
-function exportModel(model,fileName,neverPrefix,supressWarnings,sortIds)
+function exportModel(model,varargin)
 % exportModel  Export a constraint-based model to an SBML file (L3V1 FBCv2).
 %
 % Parameters
@@ -23,7 +23,9 @@ function exportModel(model,fileName,neverPrefix,supressWarnings,sortIds)
 % --------
 %     exportModel(model, fileName, neverPrefix, supressWarnings, sortIds);
 
-if nargin<2 || isempty(fileName)
+p=parseRAVENargs(varargin, {'fileName',[]; 'neverPrefix',[]; 'supressWarnings',[]; 'sortIds',[]});
+fileName=p.fileName; neverPrefix=p.neverPrefix; supressWarnings=p.supressWarnings; sortIds=p.sortIds;
+if isempty(fileName)
     [fileName, pathName] = uiputfile({'*.xml;*.sbml'}, 'Select file for model export',[model.id '.xml']);
     if fileName == 0
         error('You should provide a file location')
@@ -32,13 +34,13 @@ if nargin<2 || isempty(fileName)
     end
 end
 fileName=char(fileName);
-if nargin<3 || isempty(neverPrefix)
+if isempty(neverPrefix)
     neverPrefix=false;
 end
-if nargin<4 || isempty(supressWarnings)
+if isempty(supressWarnings)
     supressWarnings=false;
 end
-if nargin<5 || isempty(sortIds)
+if isempty(sortIds)
     sortIds=false;
 end
 if sortIds==true

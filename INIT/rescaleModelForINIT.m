@@ -1,4 +1,4 @@
-function model=rescaleModelForINIT(model, maxStoichDiff)
+function model=rescaleModelForINIT(model, varargin)
 % rescaleModelForINIT
 %
 % The idea with this function is to rescale the MILP problem in ftINIT to avoid large differences
@@ -13,9 +13,8 @@ function model=rescaleModelForINIT(model, maxStoichDiff)
 % maxStoichVal  all reactions with stoichiometric coefficent higher than this 
 %               will be scaled down. (optional, default 250)
 
-if (nargin < 2)
-    maxStoichDiff = 25;
-end
+p=parseRAVENargs(varargin, {'maxStoichDiff',25});
+maxStoichDiff=p.maxStoichDiff;
 
 %Define maxMinRatio to be the ratio between the largest and smallest 
 %stoichiometric coefficients in each reaction.

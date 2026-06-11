@@ -1,4 +1,4 @@
-function md5Hash=getMD5Hash(inputFile,binEnd)
+function md5Hash=getMD5Hash(inputFile,varargin)
 % getMD5Hash  Calculate the MD5 hash for a file.
 %
 % Parameters
@@ -22,7 +22,9 @@ function md5Hash=getMD5Hash(inputFile,binEnd)
 %     md5Hash = getMD5Hash(inputFile, binEnd);
 inputFile=char(inputFile);
 
-if nargin<2
+p=parseRAVENargs(varargin, {'binEnd',[]});
+binEnd=p.binEnd;
+if isempty(binEnd)
     if isunix
         if ismac
             binEnd='.mac';

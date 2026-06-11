@@ -1,4 +1,4 @@
-function [notProduced, notProducedNames, neededForProductionMat,minToConnect,model]=checkProduction(model,checkNeededForProduction,excretionFromCompartments,printDetails)
+function [notProduced, notProducedNames, neededForProductionMat,minToConnect,model]=checkProduction(model,varargin)
 % checkProduction  Check which metabolites can be produced from a model.
 %
 % Checks which metabolites that can be produced from a model using the
@@ -48,18 +48,17 @@ function [notProduced, notProducedNames, neededForProductionMat,minToConnect,mod
 %     [notProduced, notProducedNames, neededForProductionMat, minToConnect, model] = ...
 %         checkProduction(model, checkNeededForProduction, excretionFromCompartments, printDetails);
 
-if nargin<2
-    checkNeededForProduction=false;
-end
+p=parseRAVENargs(varargin, {'checkNeededForProduction',false; ...
+    'excretionFromCompartments',[]; ...
+    'printDetails',true});
+checkNeededForProduction=p.checkNeededForProduction;
+excretionFromCompartments=p.excretionFromCompartments;
+printDetails=p.printDetails;
 
-if nargin<3
+if isempty(excretionFromCompartments)
     excretionFromCompartments=model.comps;
 else
     excretionFromCompartments=convertCharArray(excretionFromCompartments);
-end
-
-if nargin<4
-    printDetails=true;
 end
 
 %Add an exchange reaction for each metabolite in the allowed compartments

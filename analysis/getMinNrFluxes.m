@@ -1,4 +1,4 @@
-function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)
+function [x,I,exitFlag]=getMinNrFluxes(model, varargin)
 % getMinNrFluxes  Find the minimal set of fluxes that satisfy the model.
 %
 % Uses mixed integer linear programming to find the minimal set of fluxes
@@ -46,7 +46,11 @@ function [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params,scores)
 
 exitFlag=1;
 
-if nargin<2
+p=parseRAVENargs(varargin, {'toMinimize',[]; 'params',[]; 'scores',[]});
+toMinimize=p.toMinimize;
+params=p.params;
+scores=p.scores;
+if isempty(toMinimize)
     toMinimize=model.rxns;
 elseif ~islogical(toMinimize) && ~isnumeric(toMinimize)
     toMinimize=convertCharArray(toMinimize);
@@ -55,11 +59,11 @@ else
 end
 
 %For passing parameters to the solver
-if nargin<3
+if isempty(params)
     params=struct();
 end
 
-if nargin<4
+if isempty(scores)
     %It says that the default is -1, but that is to fit with other code
     scores=ones(numel(toMinimize),1)*1;
 else

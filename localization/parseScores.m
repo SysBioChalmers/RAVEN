@@ -1,4 +1,4 @@
-function GSS = parseScores(inputFile, predictor)
+function GSS = parseScores(inputFile, varargin)
 % parseScores  Parse the output from a predictor to generate the GSS.
 %
 % The function normalizes the scores so that the best score for each gene
@@ -25,7 +25,10 @@ function GSS = parseScores(inputFile, predictor)
 % --------
 % predictLocalization, getWoLFScores
 
-if nargin<2
+p=parseRAVENargs(varargin, {'predictor',[]});
+predictor=p.predictor;
+
+if isempty(predictor)
     predictor='wolf';
 else
     predictor=char(predictor);

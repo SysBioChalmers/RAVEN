@@ -1,4 +1,4 @@
-function [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,fitToRatio,initialGuess,plotFitting)
+function [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,varargin)
 % fitParameters  Fit parameters such as maintenance ATP by quadratic programming.
 %
 % Parameters
@@ -51,18 +51,13 @@ function [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,xRxn
 %         xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,fitToRatio,...
 %         initialGuess,plotFitting);
 
-if nargin<7
-    fitToRatio=true;
-end
-if nargin<8
-    initialGuess=ones(numel(parameterPositions.position),1);
-end
+p=parseRAVENargs(varargin, {'fitToRatio',true; 'initialGuess',[]; 'plotFitting',false});
+fitToRatio=p.fitToRatio;
+initialGuess=p.initialGuess;
 if isempty(initialGuess)
     initialGuess=ones(numel(parameterPositions.position),1);
 end
-if nargin<9
-    plotFitting=false;
-end
+plotFitting=p.plotFitting;
 
 xRxns=convertCharArray(xRxns);
 rxnsToFit=convertCharArray(rxnsToFit);

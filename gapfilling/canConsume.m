@@ -1,4 +1,4 @@
-function consumed=canConsume(model,mets)
+function consumed=canConsume(model,varargin)
 % canConsume  Check which metabolites can be consumed by a model.
 %
 % Checks which metabolites can be consumed by a model using the specified
@@ -22,7 +22,10 @@ function consumed=canConsume(model,mets)
 % --------
 %     consumed = canConsume(model, mets);
 
-if nargin<2
+p=parseRAVENargs(varargin, {'mets',[]});
+mets=p.mets;
+
+if isempty(mets)
     mets=model.mets;
 elseif ~islogical(mets) && ~isnumeric(mets)
     mets=convertCharArray(mets);

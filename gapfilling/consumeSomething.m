@@ -1,4 +1,4 @@
-function [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,minNrFluxes,params,ignoreIntBounds)
+function [solution, metabolite]=consumeSomething(model,varargin)
 % consumeSomething  Try to consume any metabolite using as few reactions as possible.
 %
 % The intended use is when you want to make sure that your model cannot
@@ -51,22 +51,24 @@ function [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,minNrF
 % consumed, it picks one of them to be consumed and then minimizes for the
 % sum of fluxes.
 
-if nargin<2
+p=parseRAVENargs(varargin, {'ignoreMets',[]; ...
+    'isNames',false; ...
+    'minNrFluxes',false; ...
+    'params',[]; ...
+    'ignoreIntBounds',false});
+ignoreMets=p.ignoreMets;
+isNames=p.isNames;
+minNrFluxes=p.minNrFluxes;
+params=p.params;
+ignoreIntBounds=p.ignoreIntBounds;
+
+if isempty(ignoreMets)
     ignoreMets=[];
 elseif ~islogical(ignoreMets) && ~isnumeric(ignoreMets)
     ignoreMets=convertCharArray(ignoreMets);
 end
-if nargin<3
-    isNames=false;
-end
-if nargin<4
-    minNrFluxes=false;
-end
-if nargin<5
+if isempty(params)
     params.relGap=0.8;
-end
-if nargin<6
-    ignoreIntBounds=false;
 end
 
 if isNames==true && ~isempty(ignoreMets)

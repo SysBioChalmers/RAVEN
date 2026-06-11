@@ -1,4 +1,4 @@
-function prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore, extComp, skipScaling)
+function prepData = prepINITModel(origRefModel, taskStruct, varargin)
 % prepINITModel
 %
 % The purpose of this function is to run time-consuming calculation steps that are not
@@ -32,25 +32,12 @@ function prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, conve
 % Usage: prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore, extComp)
 
 
-if nargin < 3
-    spontRxnNames = {}; 
-end
-
-if nargin < 4
-    convertGenes = false; 
-end
-
-if nargin < 5
-    customRxnsToIgnore = {}; 
-end
-
-if nargin < 6
-    extComp = 'e';
-end
-
-if nargin < 7
-    skipScaling = false;
-end
+p=parseRAVENargs(varargin, {'spontRxnNames',{}; 'convertGenes',false; 'customRxnsToIgnore',{}; 'extComp','e'; 'skipScaling',false});
+spontRxnNames=p.spontRxnNames;
+convertGenes=p.convertGenes;
+customRxnsToIgnore=p.customRxnsToIgnore;
+extComp=p.extComp;
+skipScaling=p.skipScaling;
 disp('Step 1: Gene rules')
 [origRefModel.grRules, origRefModel.rxnGeneMat] = standardizeGrRules(origRefModel, true);
 

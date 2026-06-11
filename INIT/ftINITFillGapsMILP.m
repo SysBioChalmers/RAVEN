@@ -1,4 +1,4 @@
-function [x,I,exitFlag]=ftINITFillGapsMILP(model, toMinimize, params, scores, verbose)
+function [x,I,exitFlag]=ftINITFillGapsMILP(model, varargin)
 % ftINITFillGapsMILP
 %   Returns the minimal set of fluxes that satisfy the model using
 %   mixed integer linear programming. This is an optimized variant of the
@@ -40,7 +40,12 @@ end
 
 exitFlag=1;
 
-if nargin<2
+p=parseRAVENargs(varargin, {'toMinimize',[]; 'params',[]; 'scores',[]; 'verbose',false});
+toMinimize=p.toMinimize;
+params=p.params;
+scores=p.scores;
+verbose=p.verbose;
+if isempty(toMinimize)
     toMinimize=model.rxns;
 else
     if ~iscell(toMinimize)
@@ -49,11 +54,11 @@ else
 end
 
 %For passing parameters to the solver
-if nargin<3
+if isempty(params)
     params=struct();
 end
 
-if nargin<4
+if isempty(scores)
     %It says that the default is -1, but that is to fit with other code
     scores=ones(numel(toMinimize),1)*1;
 else
