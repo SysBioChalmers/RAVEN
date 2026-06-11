@@ -1,4 +1,4 @@
-function dispEM(string,throwErrors,toList,trimWarnings)
+function dispEM(string,varargin)
 % dispEM  Print a warning or throw an error.
 %
 % Helper function to print warnings or throw errors, optionally followed
@@ -23,18 +23,16 @@ function dispEM(string,throwErrors,toList,trimWarnings)
 % --------
 %     dispEM(string,throwErrors,toList,trimWarnings);
 
-if nargin<2
-    throwErrors=true;
-end
-if nargin<3
+p=parseRAVENargs(varargin, {'throwErrors',true; 'toList','__notSupplied__'; 'trimWarnings',true});
+throwErrors=p.throwErrors;
+trimWarnings=p.trimWarnings;
+toList=p.toList;
+if ischar(toList) && isequal(toList,'__notSupplied__')
     toList=[];
 elseif isempty(toList)
     return;
 else
     toList=convertCharArray(toList);
-end
-if nargin<4
-    trimWarnings=true;
 end
 if numel(toList)>10 && trimWarnings==true
     toList{10}=['...and ' num2str(numel(toList)-9) ' more'];

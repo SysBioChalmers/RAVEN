@@ -1,7 +1,7 @@
 function testResults = runRAVENtests
-% runRAVENtests  Run all RAVEN unit tests.
+% runRAVENtests  Run all RAVEN function tests.
 %
-% Runs all unit tests found at RAVEN/test/unit_tests, and prints output in
+% Runs all unit tests found at RAVEN/test/function_tests, and prints output in
 % the command window.
 %
 % Returns
@@ -15,7 +15,13 @@ function testResults = runRAVENtests
 
 ravenPath = findRAVENroot;
 curwd = pwd;
-cd(fullfile(ravenPath,'testing','unit_tests'));
-testResults = runtests(struct2table(dir('*.m')).name);
+cd(fullfile(ravenPath,'testing','function_tests'));
+
+% Collect the concrete test classes only. RavenTestCase is an abstract base
+% class that the test classes subclass, and runtests cannot build a suite
+% from an abstract class, so it must be excluded from the file list.
+testFiles = struct2table(dir('*.m')).name;
+testFiles(strcmp(testFiles,'RavenTestCase.m')) = [];
+testResults = runtests(testFiles);
 
 cd(curwd);

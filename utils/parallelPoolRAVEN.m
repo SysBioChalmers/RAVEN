@@ -1,4 +1,4 @@
-function [ps, oldPoolAutoCreate] = parallelPoolRAVEN(runParallel)
+function [ps, oldPoolAutoCreate] = parallelPoolRAVEN(varargin)
 % parallelPoolRAVEN  Confirm whether the Parallel Computing Toolbox is available.
 %
 % Called by RAVEN functions that support parallel processing, to confirm
@@ -35,7 +35,9 @@ function [ps, oldPoolAutoCreate] = parallelPoolRAVEN(runParallel)
 %   runs as intended, as "parfor" will automatically run in serial mode
 %   instead.
 
-if nargin<1 || isempty(runParallel)
+p=parseRAVENargs(varargin, {'runParallel',true});
+runParallel=p.runParallel;
+if isempty(runParallel)
     runParallel = true;
 end
 
