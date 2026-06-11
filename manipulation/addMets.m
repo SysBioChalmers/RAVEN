@@ -1,4 +1,4 @@
-function newModel=addMets(model,metsToAdd,copyInfo,prefix)
+function newModel=addMets(model,metsToAdd,varargin)
 % addMets  Add metabolites to a model.
 %
 % This function does not make extensive checks about MIRIAM formats,
@@ -61,14 +61,9 @@ function newModel=addMets(model,metsToAdd,copyInfo,prefix)
 %     metsToAdd.metMiriams{2} = struct('name',{{'chebi';'kegg.compound'}},...
 %         'value',{{'CHEBI:31132';'C12248'}});
 
-if nargin<3
-    copyInfo=true;
-end
-if nargin<4
-    prefix='m_';
-else
-    prefix=char(prefix);
-end
+p=parseRAVENargs(varargin, {'copyInfo',true; 'prefix','m_'});
+copyInfo=p.copyInfo;
+prefix=char(p.prefix);
 
 newModel=model;
 

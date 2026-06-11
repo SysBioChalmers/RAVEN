@@ -1,4 +1,4 @@
-function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allowNewGenes)
+function newModel=addRxns(model,rxnsToAdd,varargin)
 % addRxns  Add reactions to a model.
 %
 % This function does not make extensive checks about formatting of
@@ -98,29 +98,24 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allow
 %     newModel = addRxns(model, rxnsToAdd, eqnType, compartment, ...
 %                        allowNewMets, allowNewGenes);
 
-if nargin<3
-    eqnType=1;
-elseif ~isnumeric(eqnType)
+p=parseRAVENargs(varargin, {'eqnType',1; 'compartment',[]; 'allowNewMets',false; 'allowNewGenes',false});
+eqnType=p.eqnType;
+if ~isnumeric(eqnType)
     EM='eqnType must be numeric';
     dispEM(EM);
 elseif ~ismember(eqnType,[1 2 3])
     EM='eqnType must be 1, 2, or 3';
     dispEM(EM);
-end    
-
-if nargin<4
-    compartment=[];
-else
+end
+compartment=p.compartment;
+if ~isempty(compartment)
     compartment=char(compartment);
 end
-if nargin<5
-    allowNewMets=false;
-elseif ~islogical(allowNewMets)
+allowNewMets=p.allowNewMets;
+if ~islogical(allowNewMets)
     allowNewMets=char(allowNewMets);
 end
-if nargin<6
-    allowNewGenes=false;
-end
+allowNewGenes=p.allowNewGenes;
 
 if allowNewGenes & isfield(rxnsToAdd,'grRules')
     genesToAdd.genes = strjoin(convertCharArray(rxnsToAdd.grRules));

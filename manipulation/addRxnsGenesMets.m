@@ -1,4 +1,4 @@
-function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)
+function model=addRxnsGenesMets(model,sourceModel,rxns,varargin)
 % addRxnsGenesMets  Copy reactions from a source model into another model.
 %
 % Copies reactions from a source model to a new model, including (new)
@@ -54,23 +54,20 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %     newModel = addRxnsGenesMets(model, sourceModel, rxns, addGene, ...
 %                                 rxnNote, confidence);
 
-if nargin<6
-    confidence=0;
-end
+p=parseRAVENargs(varargin, {'addGene',false; 'rxnNote',[]; 'confidence',0});
+confidence=p.confidence;
 rxns=convertCharArray(rxns);
-if nargin<5
+if isempty(p.rxnNote)
     rxnNote={'Added via addRxnsGenesMets()'};
 else
-    rxnNote=convertCharArray(rxnNote);
+    rxnNote=convertCharArray(p.rxnNote);
 end
 if numel(rxnNote)==1 && numel(rxns)>1
     rxnNoteArray=cell(1,numel(rxns));
     rxnNoteArray(:)=rxnNote;
     rxnNote=rxnNoteArray;
 end
-if nargin<4
-    addGene=false;
-end
+addGene=p.addGene;
 
 % Obtain indexes of reactions in source model
 [notNewRxn,oldRxn]=ismember(rxns,model.rxns);

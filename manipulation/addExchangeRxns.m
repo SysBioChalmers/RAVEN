@@ -1,4 +1,4 @@
-function [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
+function [model, addedRxns]=addExchangeRxns(model,reactionType,varargin)
 % addExchangeRxns  Add exchange reactions for some metabolites.
 %
 % This is a faster version than addRxns when adding exchange reactions.
@@ -32,7 +32,9 @@ function [model, addedRxns]=addExchangeRxns(model,reactionType,mets)
 % --------
 %     [model, addedRxns] = addExchangeRxns(model, reactionType, mets);
 
-if nargin<3
+p=parseRAVENargs(varargin, {'mets',[]});
+mets=p.mets;
+if isempty(mets)
     mets=model.mets;
 elseif ~islogical(mets) && ~isnumeric(mets)
     mets=convertCharArray(mets);
