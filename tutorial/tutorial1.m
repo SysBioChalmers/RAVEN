@@ -10,21 +10,14 @@
 %   the name "iAL1006 v1.00.xlsx" and in SBML file "iAL1006 v1.00.xml".
 %   See Tutorial 1 in "RAVEN tutorials.docx" for more details.
 
-%Import the model from Excel. This function performs a number of checks
+%Import the model from SBML. This function performs a number of checks
 %regarding the model structure (such as for incorrectly written equations
 %or illegal characters). In this structure there is only one warning; that
 %the formula for the metabolite LPE could not be parsed. The "false" flag
 %imports a model with exchange reactions in their "closed" form. This makes
 %the model unsuited for modelling, but it is useful for some quality
 %control steps.
-model=importExcelModel('iAL1006 v1.00.xlsx',false);
-
-%The Excel interface is supposed to work in all the systems (Windows, Unix,
-%macOS), but upon any problems, the model can be imported from SBML format
-%instead. However, in such case the user would not be able to run Tutorials
-%2-4, which involve the editing of Excel files. Run the command below
-%(remove "%" sign) instead, if having such problem:
-%model=importModel('iAL1006 v1.00.xml',false);
+model=importModel('iAL1006 v1.00.xml',false);
 
 %The following function prints some properties of the model. The two "true"
 %flags say that it should also list potential problems such as dead-end
