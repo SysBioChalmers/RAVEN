@@ -1,4 +1,4 @@
-function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, noPolymers,isInchi,ignoreRX)
+function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, varargin)
 % parseFormulas  Get the elemental composition from formulas.
 %
 % Parameters
@@ -43,15 +43,10 @@ function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, noPolymers,isI
 %     [elements, useMat, exitFlag, MW] = ...
 %         parseFormulas(formulas, noPolymers, isInchi, ignoreRX);
 
-if nargin<2
-    noPolymers=false;
-end
-if nargin<3
-    isInchi=false;
-end
-if nargin<4
-    ignoreRX=false;
-end
+p=parseRAVENargs(varargin, {'noPolymers',false; 'isInchi',false; 'ignoreRX',false});
+noPolymers=p.noPolymers;
+isInchi=p.isInchi;
+ignoreRX=p.ignoreRX;
 
 elements.abbrevs={'C', 'N', 'O', 'S', 'P', 'H', 'He', 'Li', 'Be', 'B', 'F', 'Ne', 'Na', 'Mg', 'Al',...
     'Si', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni',...

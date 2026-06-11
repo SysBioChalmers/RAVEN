@@ -1,4 +1,4 @@
-function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)
+function printFluxes(model, fluxes, varargin)
 % printFluxes  Print reactions and fluxes to the screen or to a file.
 %
 % Parameters
@@ -45,33 +45,27 @@ function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputS
 %     printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile, ...
 %                 outputString, metaboliteList);
 
-if nargin<3
-    onlyExchange=true;
-end
-if nargin<4
-    cutOffFlux=10^-8;
-end
+p=parseRAVENargs(varargin, {'onlyExchange',true; 'cutOffFlux',10^-8; 'outputFile',[]; 'outputString',[]; 'metaboliteList',{}});
+onlyExchange=p.onlyExchange;
+cutOffFlux=p.cutOffFlux;
 if isempty(cutOffFlux)
     cutOffFlux=10^-8;
 end
-if nargin<5
-    fid=1;
+outputFile=p.outputFile;
+if ~isempty(outputFile)
+    outputFile=char(outputFile);
+    fid=fopen(outputFile,'w');
 else
-    if ~isempty(outputFile)
-        outputFile=char(outputFile);
-        fid=fopen(outputFile,'w');
-    else
-        fid=1;
-    end
+    fid=1;
 end
-if nargin<6 || isempty(outputString)
+outputString=p.outputString;
+if isempty(outputString)
     outputString='%rxnID\t(%rxnName):\t%flux\n';
 else
     outputString=char(outputString);
 end
-if nargin<7
-    metaboliteList={};
-else
+metaboliteList=p.metaboliteList;
+if ~isempty(metaboliteList)
     metaboliteList=convertCharArray(metaboliteList);
 end
 if isempty(fluxes)

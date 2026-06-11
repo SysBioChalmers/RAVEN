@@ -1,4 +1,4 @@
-function checkModelStruct(model,throwErrors,trimWarnings)
+function checkModelStruct(model,varargin)
 % checkModelStruct  Perform a number of checks to ensure a model structure is ok.
 %
 % Parameters
@@ -22,12 +22,9 @@ function checkModelStruct(model,throwErrors,trimWarnings)
 % --------
 %     checkModelStruct(model, throwErrors, trimWarnings);
 
-if nargin<2
-    throwErrors=true;
-end
-if nargin<3
-    trimWarnings=true;
-end
+p=parseRAVENargs(varargin, {'throwErrors',true; 'trimWarnings',true});
+throwErrors=p.throwErrors;
+trimWarnings=p.trimWarnings;
 
 %Missing elements
 fields={'id';'name';'rxns';'mets';'S';'lb';'ub';'rev';'c';'b';'comps';'metComps'};

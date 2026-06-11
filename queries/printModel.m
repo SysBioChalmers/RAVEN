@@ -1,4 +1,4 @@
-function printModel(model,rxnList,outputString,outputFile,metaboliteList)
+function printModel(model,varargin)
 % printModel  Print reactions to the screen or to a file.
 %
 % This is a wrapper around printFluxes, intended for use when there is no
@@ -43,24 +43,25 @@ function printModel(model,rxnList,outputString,outputFile,metaboliteList)
 % --------
 %     printModel(model, rxnList, outputString, outputFile, metaboliteList);
 
-if nargin<2 || isempty(rxnList)
+p=parseRAVENargs(varargin, {'rxnList',[]; 'outputString',[]; 'outputFile',[]; 'metaboliteList',[]});
+rxnList=p.rxnList;
+if isempty(rxnList)
     rxnList=model.rxns;
 elseif ~islogical(rxnList) && ~isnumeric(rxnList)
     rxnList=convertCharArray(rxnList);
 end
-if nargin<3 || isempty(outputString)
+outputString=p.outputString;
+if isempty(outputString)
     outputString='%rxnID (%rxnName)\n\t%eqn [%lower %upper]\n';
 else
     outputString=char(outputString);
 end
-if nargin<4
-    outputFile=[];
-else
+outputFile=p.outputFile;
+if ~isempty(outputFile)
     outputFile=char(outputFile);
 end
-if nargin<5
-    metaboliteList=[];
-else
+metaboliteList=p.metaboliteList;
+if ~isempty(metaboliteList)
     metaboliteList=convertCharArray(metaboliteList);
 end
 

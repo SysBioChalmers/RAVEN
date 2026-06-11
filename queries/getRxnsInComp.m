@@ -1,4 +1,4 @@
-function [I, rxnNames]=getRxnsInComp(model,comp,includePartial)
+function [I, rxnNames]=getRxnsInComp(model,comp,varargin)
 % getRxnsInComp  Get the reactions in a specified compartment.
 %
 % Parameters
@@ -23,9 +23,8 @@ function [I, rxnNames]=getRxnsInComp(model,comp,includePartial)
 %     [I, rxnNames] = getRxnsInComp(model, comp, includePartial);
 
 comp=char(comp);
-if nargin<3
-    includePartial=false;
-end
+p=parseRAVENargs(varargin, {'includePartial',false});
+includePartial=p.includePartial;
 
 J=find(ismember(upper(model.comps),upper(comp)));
 

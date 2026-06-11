@@ -1,4 +1,4 @@
-function [S, mets, badRxns, reversible]=constructS(equations,mets,rxns)
+function [S, mets, badRxns, reversible]=constructS(equations,varargin)
 % constructS  Construct a stoichiometric matrix from a cell array of equations.
 %
 % Parameters
@@ -33,11 +33,14 @@ function [S, mets, badRxns, reversible]=constructS(equations,mets,rxns)
 %     [S, mets, badRxns, reversible] = constructS(equations, mets);
 
 equations=convertCharArray(equations);
-switch nargin
-    case 2
-        mets=convertCharArray(mets);
-    case 3
-        rxns=convertCharArray(rxns);
+p=parseRAVENargs(varargin, {'mets',[]; 'rxns',[]});
+mets=p.mets;
+rxns=p.rxns;
+if ~isempty(mets)
+    mets=convertCharArray(mets);
+end
+if ~isempty(rxns)
+    rxns=convertCharArray(rxns);
 end
 
 badRxns=false(numel(equations),1);
@@ -59,11 +62,8 @@ end
 equations=strtrim(equations);
 equations=fixEquations(equations);
 
-if nargin<2
+if isempty(mets)
     mets=parseRxnEqu(equations);
-end
-if nargin<3
-    rxns=[];
 end
 
 %Get which reactions are reversible

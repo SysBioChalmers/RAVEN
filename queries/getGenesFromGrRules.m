@@ -1,4 +1,4 @@
-function [genes,rxnGeneMat] = getGenesFromGrRules(grRules, originalGenes)
+function [genes,rxnGeneMat] = getGenesFromGrRules(grRules, varargin)
 % getGenesFromGrRules  Extract gene list and rxnGeneMat from grRules array.
 %
 % Parameters
@@ -26,9 +26,8 @@ function [genes,rxnGeneMat] = getGenesFromGrRules(grRules, originalGenes)
 
 
 % handle input arguments
-if nargin < 2
-    originalGenes = [];
-end
+p=parseRAVENargs(varargin, {'originalGenes',[]});
+originalGenes=p.originalGenes;
 
 % check if the grRules use written or symbolic boolean operators
 if any(contains(grRules,{' & ',' | '}))

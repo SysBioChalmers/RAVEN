@@ -1,4 +1,4 @@
-function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID,useFormula,useRevField)
+function equationStrings=constructEquations(model,varargin)
 % constructEquations  Construct equation strings for reactions.
 %
 % Parameters
@@ -42,29 +42,19 @@ function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sort
 % forward direction (e.g. ub = 1000 and lb = -1000/0) for the reversibility
 % to be correctly determined.
 
-if nargin<2 || isempty(rxns)
+p=parseRAVENargs(varargin, {'rxns',[]; 'useComps',true; 'sortRevRxns',false; 'sortMetNames',false; 'useMetID',false; 'useFormula',false; 'useRevField',true});
+rxns=p.rxns;
+if isempty(rxns)
     rxns=model.rxns;
 elseif ~islogical(rxns) && ~isnumeric(rxns)
     rxns=convertCharArray(rxns);
 end
-if nargin<3
-    useComps=true;
-end
-if nargin<4
-    sortRevRxns=false;
-end
-if nargin<5
-    sortMetNames=false;
-end
-if nargin<6
-    useMetID=false;
-end
-if nargin<7
-    useFormula=false;
-end
-if nargin<8
-    useRevField=true;
-end
+useComps=p.useComps;
+sortRevRxns=p.sortRevRxns;
+sortMetNames=p.sortMetNames;
+useMetID=p.useMetID;
+useFormula=p.useFormula;
+useRevField=p.useRevField;
 
 %Sort reversible equations
 if sortRevRxns==true
