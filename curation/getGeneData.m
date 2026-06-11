@@ -1,4 +1,4 @@
-function geneTable = getGeneData(accession, outputFile, downloadDir)
+function geneTable = getGeneData(accession, varargin)
 % getGeneData  Build a gene-mapping table from NCBI genome annotation files.
 %
 % Parses the GFF3 annotation and protein FASTA (.faa) files for a given
@@ -11,11 +11,15 @@ function geneTable = getGeneData(accession, outputFile, downloadDir)
 % Parameters
 % ----------
 % accession : char
-%     NCBI genome assembly accession, e.g. 'GCF_000002595.2'.
-% outputFile : char, optional
+%     NCBI genome assembly accession, e.g. 'GCF_000002595.2', or a path to a
+%     local GFF3 annotation file.
+%
+% Name-Value Arguments
+% --------------------
+% outputFile : char
 %     Path to save the resulting table as a tab-delimited .tsv file. If
 %     omitted or empty, no file is written and the table is only returned.
-% downloadDir : char, optional
+% downloadDir : char
 %     Directory where genome files are downloaded if not already present
 %     (default: current working directory).
 %
@@ -52,17 +56,9 @@ function geneTable = getGeneData(accession, outputFile, downloadDir)
             'accession is required. Provide an NCBI assembly accession, e.g. ''GCF_000002595.2''.');
     end
 
-    if nargin < 2 || isempty(outputFile)
-        outputFile = '';
-    else
-        outputFile = char(outputFile);
-    end
-
-    if nargin < 3 || isempty(downloadDir)
-        downloadDir = '.';
-    else
-        downloadDir = char(downloadDir);
-    end
+    p = parseRAVENargs(varargin, {'outputFile', ''; 'downloadDir', pwd});
+    outputFile = char(p.outputFile);
+    downloadDir = char(p.downloadDir);
 
     % Resolve input → local GFF3 path. Decide whether input is a file path or an NCBI accession.
     if ischar(accession) || isstring(accession)

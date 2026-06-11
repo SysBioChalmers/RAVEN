@@ -1,4 +1,4 @@
-function [gffFile, faaFile] = downloadGenomeData(accession, outputDir, verbose)
+function [gffFile, faaFile] = downloadGenomeData(accession, varargin)
 % downloadGenomeData  Download genome annotation files from NCBI.
 %
 % Retrieves the GFF3 annotation and protein FASTA (.faa) files for a given
@@ -11,10 +11,13 @@ function [gffFile, faaFile] = downloadGenomeData(accession, outputDir, verbose)
 % accession : char
 %     NCBI genome assembly accession, e.g. 'GCF_000002595.2'.
 %     Both RefSeq (GCF_) and GenBank (GCA_) prefixes are accepted.
-% outputDir : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% outputDir : char
 %     Directory where downloaded files are saved (default: current working
 %     directory).
-% verbose : logical, optional
+% verbose : logical
 %     Print download progress to the command window (default: true).
 %
 % Returns
@@ -53,16 +56,10 @@ function [gffFile, faaFile] = downloadGenomeData(accession, outputDir, verbose)
          'Received: ''%s''.'], accession);
     end
 
-    if nargin < 2 || isempty(outputDir)
-        downloadDir = pwd;
-    else
-        downloadDir = char(outputDir);
-    end
+    p = parseRAVENargs(varargin, {'outputDir', pwd; 'verbose', true});
+    downloadDir = char(p.outputDir);
+    verbose = p.verbose;
 
-    if nargin < 3
-        verbose = true;
-    end
-    
     if ~exist(downloadDir, 'dir')
         mkdir(downloadDir);
     end

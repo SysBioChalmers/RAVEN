@@ -1,4 +1,4 @@
-function processedFaaFile = processProteinFastaFile(faaFile, geneTable, headerCol, outputDir)
+function processedFaaFile = processProteinFastaFile(faaFile, geneTable, headerCol, varargin)
 % processProteinFastaFile  Rename protein FASTA headers using a gene mapping table.
 %
 % Reads a protein FASTA file (as downloaded by downloadGenomeData) and
@@ -18,7 +18,10 @@ function processedFaaFile = processProteinFastaFile(faaFile, geneTable, headerCo
 % headerCol : char
 %     Name of the geneTable column whose values will replace each FASTA
 %     header (e.g. 'locus_tag', 'gene_name', 'GenBank_protein').
-% outputDir : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% outputDir : char
 %     Directory where the processed FASTA file is saved.  The output file
 %     name is the original base name with '_processed' appended before the
 %     extension (default: current working directory).
@@ -69,11 +72,8 @@ function processedFaaFile = processProteinFastaFile(faaFile, geneTable, headerCo
     end
     headerCol = char(headerCol);
 
-    if nargin < 4 || isempty(outputDir)
-        outputDir = pwd;
-    else
-        outputDir = char(outputDir);
-    end
+    p = parseRAVENargs(varargin, {'outputDir', pwd});
+    outputDir = char(p.outputDir);
 
     % Load gene table
     if ischar(geneTable) || isstring(geneTable)
@@ -117,68 +117,24 @@ function processedFaaFile = processProteinFastaFile(faaFile, geneTable, headerCo
     processedFaaFile   = fullfile(outputDir, [baseName '_processed' ext]);
 
 
-    % Stream FASTA, rename headers, write output
-    nTotal     = 0;
-    nMatched   = 0;
-    nUnmatched = 0;
-
-    fidIn  = fopen(faaFile,          'r');
-    fidOut = fopen(processedFaaFile, 'w');
-
-    currentHeader = '';
-    seqBuffer     = {};
-
-    while ~feof(fidIn)
-        line = fgetl(fidIn);
-        if ~ischar(line), break, end
-
-        if startsWith(line, '>')
-            % Flush the previous record before processing the new header
-            if ~isempty(currentHeader)
-                writeRecord(fidOut, currentHeader, seqBuffer);
-            end
-            seqBuffer = {};
-            nTotal    = nTotal + 1;
-
-            % Extract the protein accession: first whitespace-delimited token
-            tokens     = strsplit(strtrim(line(2:end)));
-            proteinAcc = tokens{1};
-
-            if isKey(proteinMap, proteinAcc)
-                idx           = proteinMap(proteinAcc);
-                currentHeader = sprintf('>%s', headerValues{idx});
-                nMatched      = nMatched + 1;
-            else
-                currentHeader = line;   % Keep original header unchanged
-                nUnmatched    = nUnmatched + 1;
-            end
-
-        else
-            seqBuffer{end+1} = line; %#ok<AGROW>
+    % Read the FASTA, rename headers, write the result
+    fastaStruct = readFasta(faaFile);
+    nMatched    = 0;
+    for i = 1:numel(fastaStruct)
+        % The protein accession is the first whitespace-delimited token of
+        % the header (readFasta strips the leading '>')
+        tokens     = strsplit(fastaStruct(i).Header);
+        proteinAcc = tokens{1};
+        if isKey(proteinMap, proteinAcc)
+            fastaStruct(i).Header = headerValues{proteinMap(proteinAcc)};
+            nMatched = nMatched + 1;
         end
+        % Sequences with no match keep their original header
     end
-
-    % Flush the last record
-    if ~isempty(currentHeader)
-        writeRecord(fidOut, currentHeader, seqBuffer);
-    end
-
-    fclose(fidIn);
-    fclose(fidOut);
+    writeFasta(processedFaaFile, fastaStruct);
 
     fprintf('Processed FASTA written to: %s\n', processedFaaFile);
-    fprintf('  Total sequences  : %d\n', nTotal);
+    fprintf('  Total sequences  : %d\n', numel(fastaStruct));
     fprintf('  Renamed          : %d\n', nMatched);
-    fprintf('  Kept (no match)  : %d\n', nUnmatched);
-end
-
-%--------------------------------------------------------------------------
-% Helper function
-
-function writeRecord(fid, header, lines)
-% Write one FASTA record (header + sequence lines) to an open file.
-    fprintf(fid, '%s\n', header);
-    for k = 1:numel(lines)
-        fprintf(fid, '%s\n', lines{k});
-    end
+    fprintf('  Kept (no match)  : %d\n', numel(fastaStruct) - nMatched);
 end
