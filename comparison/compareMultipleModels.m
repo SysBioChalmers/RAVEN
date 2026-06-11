@@ -1,4 +1,4 @@
-function compStruct = compareMultipleModels(models,printResults,plotResults,groupVector,funcCompare,taskFile)
+function compStruct = compareMultipleModels(models,varargin)
 % compareMultipleModels  Compare two or more condition-specific models.
 %
 % Compares two or more condition-specific models generated from the same
@@ -54,13 +54,11 @@ if ~(exist('mdscale.m','file') && exist('pdist.m','file') && exist('squareform.m
 end
 
 %% Set up input defaults
-if nargin < 2 || isempty(printResults)
-    printResults=false;
-end
-if nargin < 3 || isempty(plotResults)
-    plotResults=false;
-end
-if nargin < 4
+p=parseRAVENargs(varargin, {'printResults',false; 'plotResults',false; 'groupVector',[]; 'funcCompare',false; 'taskFile',[]});
+printResults=p.printResults;
+plotResults=p.plotResults;
+groupVector=p.groupVector;
+if isempty(groupVector)
     groupVector = [];
 elseif ~isnumeric(groupVector)
     % convert strings to numeric groups
@@ -69,12 +67,9 @@ else
     % generate group names for vector of numbers
     groupNames = arrayfun(@num2str,unique(groupVector),'UniformOutput',false);
 end
-if nargin < 5 || isempty(funcCompare)
-    funcCompare = false;
-end
-if nargin < 6
-    taskFile = [];
-else
+funcCompare=p.funcCompare;
+taskFile=p.taskFile;
+if ~isempty(taskFile)
     taskFile=char(taskFile);
 end
 if numel(models) <= 1

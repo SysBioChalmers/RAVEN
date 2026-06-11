@@ -1,4 +1,4 @@
-function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure)
+function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(model,inputFile,varargin)
 % checkTasks  Perform a set of simulations as defined in a task file.
 %
 % This function is used for defining a set of tasks for a model to perform.
@@ -50,15 +50,11 @@ function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(
 %     [taskReport, essentialRxns, taskStructure] = checkTasks(model, inputFile, ...
 %         printOutput, printOnlyFailed, getEssential, taskStructure);
 
-if nargin<3 || isempty(printOutput)
-    printOutput=true;
-end
-if nargin<4 || isempty(printOnlyFailed)
-    printOnlyFailed=false;
-end
-if nargin<5 || isempty(getEssential)
-    getEssential=false;
-end
+p=parseRAVENargs(varargin, {'printOutput',true; 'printOnlyFailed',false; 'getEssential',false; 'taskStructure',[]});
+printOutput=p.printOutput;
+printOnlyFailed=p.printOnlyFailed;
+getEssential=p.getEssential;
+taskStructure=p.taskStructure;
 
 %Prepare the input model a little
 model.b=zeros(numel(model.mets),2);
@@ -70,7 +66,7 @@ if ~isfield(model,'unconstrained')
 end
 
 %Parse the task file
-if nargin<6
+if isempty(taskStructure)
     taskStructure=parseTaskList(inputFile);
 end
 

@@ -1,4 +1,4 @@
-function newModel=curateModelFromTables(model,metsInfo,genesInfo,rxnsCoeffs,rxnsInfo,metPrefix,rxnPrefix)
+function newModel=curateModelFromTables(model,metsInfo,varargin)
 % curateModelFromTables  Curate or add mets, rxns and genes from tables.
 %
 % Curate existing and/or add new metabolites, reactions and genes from
@@ -56,21 +56,20 @@ function newModel=curateModelFromTables(model,metsInfo,genesInfo,rxnsCoeffs,rxns
 % core fields is treated as a MIRIAM annotation namespace and stored on
 % the matching entity.
 
-if nargin==4
-    error('Provide both a ''rxnsInfo'' and a ''rxnsCoeffs'' file')
-end
-if nargin<4
-    rxnsInfo='none';
-    rxnsCoeffs='none';
-end
-if nargin<3
-    genesInfo='none';
-end
-if nargin<6 || isempty(metPrefix)
+p=parseRAVENargs(varargin, {'genesInfo','none'; 'rxnsCoeffs','none'; 'rxnsInfo','none'; 'metPrefix',[]; 'rxnPrefix',[]});
+genesInfo=p.genesInfo;
+rxnsCoeffs=p.rxnsCoeffs;
+rxnsInfo=p.rxnsInfo;
+metPrefix=p.metPrefix;
+if isempty(metPrefix)
     metPrefix = 'M_';
 end
-if nargin<7 || isempty(rxnPrefix)
+rxnPrefix=p.rxnPrefix;
+if isempty(rxnPrefix)
     rxnPrefix = 'R_';
+end
+if xor(strcmp(rxnsCoeffs,'none'), strcmp(rxnsInfo,'none'))
+    error('Provide both a ''rxnsInfo'' and a ''rxnsCoeffs'' file')
 end
 newModel=model;
 
