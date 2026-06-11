@@ -1,4 +1,4 @@
-function res = optimizeProb(prob,params,verbose)
+function res = optimizeProb(prob,varargin)
 % optimizeProb  Optimize an LP or MILP formulated in COBRA terms.
 %
 % Parameters
@@ -25,12 +25,12 @@ function res = optimizeProb(prob,params,verbose)
 % --------
 % splitProbForConditioning
 
-if nargin<2 || isempty(params)
+p=parseRAVENargs(varargin, {'params',[]; 'verbose',true});
+params=p.params;
+if isempty(params)
     params=struct();
 end
-if nargin<3 || isempty(verbose)
-    verbose = true;
-end
+verbose=p.verbose;
 
 %Set as global variable for speed improvement if optimizeProb is run many times
 global RAVENSOLVER;

@@ -1,4 +1,4 @@
-function [fluxA,fluxB, flag]=qMOMA(modelA,modelB,fluxMinWeight)
+function [fluxA,fluxB, flag]=qMOMA(modelA,modelB,varargin)
 % qMOMA  Minimize sum((fluxAi - fluxBi)^2) via quadratic programming.
 %
 % Parameters
@@ -28,9 +28,8 @@ function [fluxA,fluxB, flag]=qMOMA(modelA,modelB,fluxMinWeight)
 % --------
 %     [fluxA, fluxB, flag] = qMOMA(modelA, modelB, fluxMinWeight);
 
-if nargin<3
-    fluxMinWeight=1;
-end
+p=parseRAVENargs(varargin, {'fluxMinWeight',1});
+fluxMinWeight=p.fluxMinWeight;
 
 %Match the reactions and metabolites in the small model (modelA) to the
 %larger model

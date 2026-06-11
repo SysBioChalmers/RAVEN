@@ -1,4 +1,4 @@
-function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
+function [solution, hsSolOut]=solveLP(model,varargin)
 % solveLP  Solve a linear programming problem.
 %
 % Parameters
@@ -50,15 +50,13 @@ function [solution, hsSolOut]=solveLP(model,minFlux,params,hsSol)
 % --------
 %     [solution, hsSolOut] = solveLP(model, minFlux, params, hsSol);
 
-if nargin<2
-    minFlux=0;
-end
-if nargin<3
+p=parseRAVENargs(varargin, {'minFlux',0; 'params',[]; 'hsSol',[]});
+minFlux=p.minFlux;
+params=p.params;
+if isempty(params)
     params.relGap=0.4;
 end
-if nargin<4
-    hsSol=[];
-end
+hsSol=p.hsSol;
 
 %Default return values
 hsSolOut=[];

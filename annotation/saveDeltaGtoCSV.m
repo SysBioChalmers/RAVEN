@@ -1,4 +1,4 @@
-function saveDeltaGtoCSV(model, metCsv, rxnCsv, verbose)
+function saveDeltaGtoCSV(model, varargin)
 % saveDeltaGtoCSV  Persist metDeltaG and rxnDeltaG to CSV files.
 %
 % Persist model.metDeltaG and model.rxnDeltaG to project CSV files.
@@ -26,15 +26,10 @@ function saveDeltaGtoCSV(model, metCsv, rxnCsv, verbose)
 %         'data/databases/model_metDeltaG.csv', ...
 %         'data/databases/model_rxnDeltaG.csv');
 
-if nargin < 4
-    verbose = false;
-end
-if nargin < 3
-    rxnCsv = '';
-end
-if nargin < 2
-    metCsv = '';
-end
+p=parseRAVENargs(varargin, {'metCsv',''; 'rxnCsv',''; 'verbose',false});
+metCsv=p.metCsv;
+rxnCsv=p.rxnCsv;
+verbose=p.verbose;
 
 if ~isempty(metCsv)
     if ~isfield(model, 'metDeltaG')
