@@ -664,6 +664,10 @@ if isfield(model,'grRules')
             'the list of model genes: ', genes{~geneOrder}])
     end
     model.rxnGeneMat(:,geneOrder) = rxnGeneMat;
+else
+    % Gene-less model: keep rxnGeneMat dimensionally consistent with the
+    % number of reactions and genes, rather than leaving it empty.
+    model.rxnGeneMat = sparse(numel(model.rxns),numel(model.genes));
 end
 
 % Finalize GECKO model

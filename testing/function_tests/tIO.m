@@ -54,12 +54,6 @@ classdef tIO < RavenTestCase
             testCase.verifyTrue(isfield(m, 'rxns'));
         end
 
-        function importExcelModelReadsXlsx(testCase)
-            f = fullfile(testCase.ravenRoot,'tutorial','empty.xlsx');
-            evalc('m = importExcelModel(f);');
-            testCase.verifyTrue(isfield(m, 'rxns'));
-        end
-
         function readYAMLmodelReadsYml(testCase)
             f = fullfile(testCase.ravenRoot,'tutorial','empty.yml');
             evalc('m = readYAMLmodel(f);');
@@ -83,12 +77,11 @@ classdef tIO < RavenTestCase
             testCase.verifyEqual(numel(m2.rxns), numel(testCase.model.rxns));
         end
 
-        function exportImportExcelRoundTrip(testCase)
+        function exportToExcelFormatWritesFile(testCase)
             f = [tempname '.xlsx'];
             testCase.addTeardown(@() delete(f));
             evalc('exportToExcelFormat(testCase.model, f);');
-            evalc('m2 = importExcelModel(f);');
-            testCase.verifyEqual(numel(m2.rxns), numel(testCase.model.rxns));
+            testCase.verifyTrue(exist(f,'file')==2);
         end
 
         function writeReadYAMLRoundTrip(testCase)

@@ -2,8 +2,8 @@
 %   This script contains the solutions for Tutorial 2, see Tutorial 2 in
 %   "RAVEN tutorials.docx" for more details.
 
-%Import the Excel model into a RAVEN model structure
-smallModel=importExcelModel('small.xlsx');
+%Import the model into a RAVEN model structure
+smallModel=readYAMLmodel('small.yml');
 
 %This solves the linear programming problem.
 %NOTE: if sol.f is equal to zero then the problem is not solvable. Ensure
