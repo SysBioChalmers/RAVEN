@@ -12,18 +12,42 @@ classdef tOmics < RavenTestCase
             testCase.verifyNumElements(rxnScores, numel(testCase.model.rxns));
         end
 
-        function parseHPArequiresFile(testCase)
-            f = fullfile(testCase.ravenRoot,'testing','unit_tests','test_data','hpa.xml');
-            testCase.assumeDependency(exist(f,'file')==2, 'HPA xml dump');
+        function parseHPAparsesSyntheticDump(testCase)
+            % parseHPA reads a tab-separated HPA dump with the columns
+            % Gene / Gene name / Tissue / Cell type / Level / Reliability.
+            % Synthesise a tiny one so the parser is exercised without the
+            % multi-gigabyte external download.
+            g = testCase.model.genes(1:3);
+            f = [tempname '.tsv'];
+            testCase.addTeardown(@() delete(f));
+            fid = fopen(f, 'w');
+            fprintf(fid, 'Gene\tGene name\tTissue\tCell type\tLevel\tReliability\n');
+            fprintf(fid, '%s\t%s\tliver\thepatocyte\tHigh\tApproved\n', g{1}, g{1});
+            fprintf(fid, '%s\t%s\tliver\thepatocyte\tMedium\tApproved\n', g{2}, g{2});
+            fprintf(fid, '%s\t%s\tbrain\tneuron\tLow\tSupported\n', g{3}, g{3});
+            fclose(fid);
             evalc('hpa = parseHPA(f);');
             testCase.verifyClass(hpa, 'struct');
+            testCase.verifyEqual(sort(hpa.genes), sort(g));
+            testCase.verifyNumElements(hpa.tissues, 2);   % liver+brain cell types
         end
 
-        function parseHPArnaRequiresFile(testCase)
-            f = fullfile(testCase.ravenRoot,'testing','unit_tests','test_data','hpa_rna.tsv');
-            testCase.assumeDependency(exist(f,'file')==2, 'HPA RNA dump');
+        function parseHPArnaParsesSyntheticDump(testCase)
+            % parseHPArna (version 19) reads Gene / Gene name / Tissue /
+            % TPM / pTPM / NX and builds a genes-by-tissues TPM matrix.
+            g = testCase.model.genes(1:3);
+            f = [tempname '.tsv'];
+            testCase.addTeardown(@() delete(f));
+            fid = fopen(f, 'w');
+            fprintf(fid, 'Gene\tGene name\tTissue\tTPM\tpTPM\tNX\n');
+            fprintf(fid, '%s\t%s\tliver\t12.5\t10.1\t8.0\n', g{1}, g{1});
+            fprintf(fid, '%s\t%s\tbrain\t3.2\t2.9\t1.5\n', g{2}, g{2});
+            fprintf(fid, '%s\t%s\tliver\t0.0\t0.0\t0.0\n', g{3}, g{3});
+            fclose(fid);
             evalc('rna = parseHPArna(f);');
             testCase.verifyClass(rna, 'struct');
+            testCase.verifyNumElements(rna.genes, 3);
+            testCase.verifyEqual(size(rna.levels), [3 2]);   % 3 genes x 2 tissues
         end
 
     end

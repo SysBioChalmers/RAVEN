@@ -1,41 +1,43 @@
 function steps = getINITSteps(varargin)
-% getINITSteps
-%   Converts a reaction score to the gene expression (CPM or TPM) required 
-%   to get that reaction score, if the GPR is only a single gene.
-%   Useful function primarily in test cases, where you want to be able to
-%   define the reaction scores of rxns, but need to send in gene expression.
-%   Note that all combinations of steps will not work. In general, avoid 'exclude'
-%   if you want to define new ways to run the algorithm.
+% getINITSteps  Define the steps used as input to ftINIT.
 %
-%   metsToIgnore  Structure describing mets that can be removed from the model
-%                 before running ftINIT, such as water etc.
-%                 (optional, default [])
-%       simpleMets
-%           mets  Names of metabolites to remove
-%           compsToKeep Compartments for which metabolites should be kept.
-%   series        Describes the way to run ftINIT: 
-%                 '1+1'          Standard behavior. Step 1 and 2 described in
-%                                the paper are merged into 1.
-%                 '2+1'          The 3-step procedure described in the paper.
-%                                Faster and slightly less accurate than '1+1 steps'
-%                 '1+0'          Same as '1+1 steps', but skips step 3 in described 
-%                                in the paper. This will result in a model including 
-%                                a lot of reactions without GPRs. It is particularly 
-%                                useful for structural comparison, since the reactions 
-%                                removed in step 3 may be a bit random and doesn't 
-%                                really add any extra information. Faster than
-%                                '1+1 steps'
-%                 '2+0'          Same as '2+1 steps', but skips step 3 in described 
-%                                in the paper. Faster and slightly less accurate 
-%                                than '1+0 steps', but will yield similar results.
-%                 'full'         1-step run - similar to the old tINIT version but 
-%                                without simplifications. Accurate, but very slow.
-%                                This is mainly used for testing purposes.
-%                 (optional, default '1+1')
+% Defines the steps in the way ftINIT is run. Note that all combinations of
+% steps will not work. In general, avoid 'exclude' if you want to define new
+% ways to run the algorithm.
 %
-%   steps         Cell array of steps, used as input to ftINIT
+% Name-Value Arguments
+% --------------------
+% metsToIgnore : struct
+%     structure describing mets that can be removed from the model before
+%     running ftINIT, such as water etc. With fields:
 %
-% Usage: steps = getINITSteps(metsToIgnore, series)
+%     - simpleMets.mets : names of metabolites to remove.
+%     - simpleMets.compsToKeep : compartments for which metabolites are kept.
+%
+%     (default []).
+% series : char
+%     describes the way to run ftINIT (default '1+1'):
+%
+%     - '1+1' : standard behavior. Step 1 and 2 described in the paper are
+%       merged into 1.
+%     - '2+1' : the 3-step procedure described in the paper. Faster and
+%       slightly less accurate than '1+1 steps'.
+%     - '1+0' : same as '1+1 steps', but skips step 3 described in the paper.
+%       This will result in a model including a lot of reactions without GPRs.
+%       It is particularly useful for structural comparison, since the
+%       reactions removed in step 3 may be a bit random and doesn't really add
+%       any extra information. Faster than '1+1 steps'.
+%     - '2+0' : same as '2+1 steps', but skips step 3 described in the paper.
+%       Faster and slightly less accurate than '1+0 steps', but will yield
+%       similar results.
+%     - 'full' : 1-step run - similar to the old tINIT version but without
+%       simplifications. Accurate, but very slow. This is mainly used for
+%       testing purposes.
+%
+% Returns
+% -------
+% steps : cell
+%     cell array of steps, used as input to ftINIT.
 p=parseRAVENargs(varargin, {'metsToIgnore',[]; 'series','1+1'});
 metsToIgnore=p.metsToIgnore;
 series=p.series;

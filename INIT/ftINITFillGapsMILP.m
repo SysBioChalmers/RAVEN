@@ -1,36 +1,52 @@
 function [x,I,exitFlag]=ftINITFillGapsMILP(model, varargin)
-% ftINITFillGapsMILP
-%   Returns the minimal set of fluxes that satisfy the model using
-%   mixed integer linear programming. This is an optimized variant of the
-%   old function "getMinNrFluxes" that is adapted to ftINIT.
-%   It does not need to make an irrev model, which takes time. The problem 
-%   also becomes smaller (fewer integers but larger matrix). Only tested with 
-%   Gurobi.
+% ftINITFillGapsMILP  Find the minimal set of fluxes that satisfy a model.
 %
-%	model         a model structure
-%   toMinimize    either a cell array of reaction IDs, a logical vector
-%                 with the same number of elements as reactions in the model,
-%                 of a vector of indexes for the reactions that should be
-%                 minimized (optional, default model.rxns)
-%   params        *obsolete option*
-%   scores        vector of weights for the reactions. Negative scores
-%                 should not have flux. Positive scores are not possible in this
-%                 implementation, and they are changed to max(scores(scores<0)).
-%                 Must have the same dimension as toMinimize (find(toMinimize)
-%                 if it is a logical vector) (optional, default -1 for all reactions)
-%   verbose       if true, the MILP progression will be shown. 
+% Returns the minimal set of fluxes that satisfy the model using mixed integer
+% linear programming. This is an optimized variant of the old function
+% "getMinNrFluxes" that is adapted to ftINIT. It does not need to make an irrev
+% model, which takes time. The problem also becomes smaller (fewer integers but
+% larger matrix). Only tested with Gurobi.
 %
-%   x             the corresponding fluxes for the full model
-%   I             the indexes of the reactions in toMinimize that were used
-%                 in the solution
-%   exitFlag      1: optimal solution found
-%                -1: no feasible solution found
-%                -2: optimization time out
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
 %
-%   NOTE: Uses 1000 mmol/gDW/h as an arbitary large flux. Could possibly
-%   cause problems if the fluxes in the model are larger than that.
+% Name-Value Arguments
+% --------------------
+% toMinimize : cell or logical or double
+%     either a cell array of reaction IDs, a logical vector with the same
+%     number of elements as reactions in the model, or a vector of indexes for
+%     the reactions that should be minimized (default model.rxns).
+% params : struct
+%     *obsolete option*.
+% scores : double
+%     vector of weights for the reactions. Negative scores should not have
+%     flux. Positive scores are not possible in this implementation, and they
+%     are changed to max(scores(scores<0)). Must have the same dimension as
+%     toMinimize (find(toMinimize) if it is a logical vector) (default -1 for
+%     all reactions).
+% verbose : logical
+%     if true, the MILP progression will be shown (default false).
 %
-% Usage: [x,I,exitFlag]=getMinNrFluxes(model, toMinimize, params, scores)
+% Returns
+% -------
+% x : double
+%     the corresponding fluxes for the full model.
+% I : double
+%     the indexes of the reactions in toMinimize that were used in the
+%     solution.
+% exitFlag : double
+%     exit status of the optimization:
+%
+%     - 1 : optimal solution found.
+%     - -1 : no feasible solution found.
+%     - -2 : optimization time out.
+%
+% Notes
+% -----
+% Uses 1000 mmol/gDW/h as an arbitrary large flux. Could possibly cause
+% problems if the fluxes in the model are larger than that.
 
 % glpk solver as implemented by COBRA does not work well for MILP.
 global CBT_MILP_SOLVER

@@ -1,16 +1,29 @@
 function expr = getExprForRxnScore(scores, varargin)
-% getExprForRxnScore
-%   Converts a reaction score to the gene expression (CPM or TPM) required 
-%   to get that reaction score, if the GPR is only a single gene.
-%   Useful function primarily in test cases, where you want to be able to
-%   define the reaction scores of rxns, but need to send in gene expression.
+% getExprForRxnScore  Convert a reaction score to the required gene expression.
 %
-%   scores        Vector of scores to convert
-%   threshold     Gene threshold (optional, default 1)
+% Converts a reaction score to the gene expression (CPM or TPM) required to
+% get that reaction score, if the GPR is only a single gene. Useful function
+% primarily in test cases, where you want to be able to define the reaction
+% scores of rxns, but need to send in gene expression.
 %
-%   expr          The resulting gene expression vector.
+% Parameters
+% ----------
+% scores : double
+%     vector of scores to convert.
 %
-% Usage: expr = getExprForRxnScore(scores, threshold)
+% Name-Value Arguments
+% --------------------
+% threshold : double
+%     gene threshold (default 1).
+%
+% Returns
+% -------
+% expr : double
+%     the resulting gene expression vector.
+%
+% Examples
+% --------
+%     expr = getExprForRxnScore(scores, threshold);
 
 p=parseRAVENargs(varargin, {'threshold',1});
 threshold=p.threshold;

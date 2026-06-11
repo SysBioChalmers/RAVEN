@@ -1,17 +1,30 @@
 function model=rescaleModelForINIT(model, varargin)
-% rescaleModelForINIT
+% rescaleModelForINIT  Rescale a model to avoid large stoichiometric differences.
 %
-% The idea with this function is to rescale the MILP problem in ftINIT to avoid large differences
-% in flux magnitudes between reactions. Such differences cause among other things
-% difficulties regarding tolerances for integer variables.
-% For now it just scales down all reactions with high stoichiometric coefficients
-% There is room for improvement here - the best would be to convert mets such as albumin
-% to instead represent 1/100 albumin - that would create much less extreme coefficients.
-% This type of improvement is known as scaling in the literature around LPs and MILPs.
+% The idea with this function is to rescale the MILP problem in ftINIT to
+% avoid large differences in flux magnitudes between reactions. Such
+% differences cause among other things difficulties regarding tolerances for
+% integer variables. For now it just scales down all reactions with high
+% stoichiometric coefficients. There is room for improvement here - the best
+% would be to convert mets such as albumin to instead represent 1/100 albumin
+% - that would create much less extreme coefficients. This type of improvement
+% is known as scaling in the literature around LPs and MILPs.
 %
-% model         the model to be modified (input and output)
-% maxStoichVal  all reactions with stoichiometric coefficent higher than this 
-%               will be scaled down. (optional, default 250)
+% Parameters
+% ----------
+% model : struct
+%     the model to be modified (input and output).
+%
+% Name-Value Arguments
+% --------------------
+% maxStoichDiff : double
+%     all reactions with a stoichiometric coefficient higher than this will be
+%     scaled down (default 25).
+%
+% Returns
+% -------
+% model : struct
+%     the rescaled model structure.
 
 p=parseRAVENargs(varargin, {'maxStoichDiff',25});
 maxStoichDiff=p.maxStoichDiff;

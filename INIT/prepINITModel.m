@@ -1,35 +1,47 @@
 function prepData = prepINITModel(origRefModel, taskStruct, varargin)
-% prepINITModel
+% prepINITModel  Precompute omics-independent data for ftINIT.
 %
-% The purpose of this function is to run time-consuming calculation steps that are not
-% dependent on the RNA-Seq data.
+% The purpose of this function is to run time-consuming calculation steps that
+% are not dependent on the RNA-Seq data.
 %
-% origRefModel      The model to use. Expected to be something such as Human-GEM, 
-%                   Mouse-GEM, etc.
-% taskStruct        The essential tasks. Can be loaded with for example
-%                   taskStruct = parseTaskList('../data/metabolicTasks_Essential.txt');
-% spontRxnNames     The spontaneous rxns. (optional, default {})
-% convertGenes      If true the genes are converted to gene names (from 
-%                   ENSEMBL) (optional, default false)
-% customRxnsToIgnore These reactions can be ignored in the ignore mask 
-%                   (specifying b7=1) (optional, default = {})
-% extComp           Name of the external compartment, typically 's' or 'e'. This
-%                   is used for identifying exch and import rxns (optional, default = 'e')
-% prepData          The resulting prepData structure which is used as input to ftINIT
-% skipScaling       If true the scaling step is not run on the minimal model. The 
-%                   scaling is there to remove large differences between the 
-%                   stoichiometric coefficients within a reaction, since such
-%                   differences creates numerical issues in the ftINIT algorithm 
-%                   due to limitations in solver resolution. However,
-%                   the current scaling step is also risky and may lead to that
-%                   some reactions cannot carry flux, since it changes the stoichiometry
-%                   of the reactions with large differences. If you experience problems
-%                   where the solution is infeasible, it may be worth trying to turn off
-%                   the scaling. Note that it is only the minModel that is scaled,
-%                   the scaling will not be present in the final model.
-%                   Default: (optional, default = false)
-% 
-% Usage: prepData = prepINITModel(origRefModel, taskStruct, spontRxnNames, convertGenes, customRxnsToIgnore, extComp)
+% Parameters
+% ----------
+% origRefModel : struct
+%     the model to use. Expected to be something such as Human-GEM, Mouse-GEM,
+%     etc.
+% taskStruct : struct
+%     the essential tasks. Can be loaded with for example
+%     taskStruct = parseTaskList('../data/metabolicTasks_Essential.txt').
+%
+% Name-Value Arguments
+% --------------------
+% spontRxnNames : cell
+%     the spontaneous rxns (default {}).
+% convertGenes : logical
+%     if true the genes are converted to gene names (from ENSEMBL) (default
+%     false).
+% customRxnsToIgnore : cell
+%     these reactions can be ignored in the ignore mask (specifying b7=1)
+%     (default {}).
+% extComp : char
+%     name of the external compartment, typically 's' or 'e'. This is used for
+%     identifying exch and import rxns (default 'e').
+% skipScaling : logical
+%     if true the scaling step is not run on the minimal model. The scaling is
+%     there to remove large differences between the stoichiometric coefficients
+%     within a reaction, since such differences creates numerical issues in the
+%     ftINIT algorithm due to limitations in solver resolution. However, the
+%     current scaling step is also risky and may lead to that some reactions
+%     cannot carry flux, since it changes the stoichiometry of the reactions
+%     with large differences. If you experience problems where the solution is
+%     infeasible, it may be worth trying to turn off the scaling. Note that it
+%     is only the minModel that is scaled, the scaling will not be present in
+%     the final model (default false).
+%
+% Returns
+% -------
+% prepData : struct
+%     the resulting prepData structure which is used as input to ftINIT.
 
 
 p=parseRAVENargs(varargin, {'spontRxnNames',{}; 'convertGenes',false; 'customRxnsToIgnore',{}; 'extComp','e'; 'skipScaling',false});

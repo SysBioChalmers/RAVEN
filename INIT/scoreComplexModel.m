@@ -1,67 +1,76 @@
 function [rxnScores, geneScores, hpaScores, arrayScores] = scoreComplexModel(model,hpaData,arrayData,tissue,varargin)
-% scoreComplexModel
-%   Scores the reactions and genes in a model containing complex gene rules
-%   based on expression data from HPA and/or gene arrays.
+% scoreComplexModel  Score reactions and genes in a model with complex gene rules.
 %
-%   It is highly recommended that the model grRules are "cleaned" and
-%   verified by the "cleanModelGeneRules" function prior to scoring the
-%   model with scoreComplexModel.
+% Scores the reactions and genes in a model containing complex gene rules
+% based on expression data from HPA and/or gene arrays.
 %
-%   model               a model structure
-%   hpaData             HPA data structure from parseHPA (optional if arrayData is
-%                       supplied, default [])
-%   arrayData           gene expression data structure (optional if hpaData is
-%                       supplied, default [])
-%       genes           cell array with the unique gene names
-%       tissues         cell array with the tissue names. The list may not be
-%                       unique, as there can be multiple cell types per tissue
-%       celltypes       cell array with the cell type names for each tissue
-%       levels          GENESxTISSUES array with the expression level for
-%                       each gene in each tissue/celltype. NaN should be
-%                       used when no measurement was performed
-%       threshold       a single value or a vector of gene expression 
-%                       thresholds, above which genes are considered to be
-%                       "expressed". (optional, by default, the mean expression
-%                       levels of each gene across all tissues in arrayData
-%                       will be used as the threshold values)
-%   tissue              tissue to score for. Should exist in either
-%                       hpaData.tissues or arrayData.tissues
-%   celltype            cell type to score for. Should exist in either
-%                       hpaData.celltypes or arrayData.celltypes for this
-%                       tissue (optional, default is to use the max values
-%                       among all the cell types for the tissue. Use [] if
-%                       you want to supply more arguments)
-%   noGeneScore         score for reactions without genes (optional, default -2)
-%   isozymeScoring      determines how scores are calculated for reactions
-%                       with multiple genes joined by "OR" expression(s)
-%                       ('min', 'max', 'median', 'average')
-%                       (optional, default 'max')
-%   complexScoring      determines how scores are calculated for reactions
-%                       with multiple genes joined by "AND" expression(s)
-%                       ('min', 'max', 'median', 'average')
-%                       (optional, default 'min')
-%   multipleCellScoring determines how scores are calculated when several
-%                       cell types are used ('max' or 'average')
-%                       (optional, default 'max')
-%   hpaLevelScores      structure with numerical scores for the expression
-%                       level categories from HPA. The structure should have a
-%                       "names" and a "scores" field (optional, see code for
-%                       default scores)
+% It is highly recommended that the model grRules are "cleaned" and verified by
+% the "cleanModelGeneRules" function prior to scoring the model with
+% scoreComplexModel.
 %
-%   rxnScores       scores for each of the reactions in model
-%   geneScores      scores for each of the genes in model. Genes which are
-%                   not in the dataset(s) have -Inf as scores
-%   hpaScores       scores for each of the genes in model if only taking hpaData
-%                   into account. Genes which are not in the dataset(s)
-%                   have -Inf as scores
-%   arrayScores     scores for each of the genes in model if only taking arrayData
-%                   into account. Genes which are not in the dataset(s)
-%                   have -Inf as scores
+% Parameters
+% ----------
+% model : struct
+%     a model structure.
+% hpaData : struct
+%     HPA data structure from parseHPA (optional if arrayData is supplied,
+%     default []).
+% arrayData : struct
+%     gene expression data structure (optional if hpaData is supplied, default
+%     []). With fields:
 %
-% Usage: [rxnScores, geneScores, hpaScores, arrayScores]=scoreComplexModel(...
-%               model,hpaData,arrayData,tissue,celltype,noGeneScore,isozymeScoring,
-%               complexScoring,multipleCellScoring,hpaLevelScores)
+%     - genes : cell array with the unique gene names.
+%     - tissues : cell array with the tissue names. The list may not be unique,
+%       as there can be multiple cell types per tissue.
+%     - celltypes : cell array with the cell type names for each tissue.
+%     - levels : GENESxTISSUES array with the expression level for each gene in
+%       each tissue/celltype. NaN should be used when no measurement was
+%       performed.
+%     - threshold : a single value or a vector of gene expression thresholds,
+%       above which genes are considered to be "expressed". (optional, by
+%       default, the mean expression levels of each gene across all tissues in
+%       arrayData will be used as the threshold values).
+% tissue : char
+%     tissue to score for. Should exist in either hpaData.tissues or
+%     arrayData.tissues.
 %
+% Name-Value Arguments
+% --------------------
+% celltype : char
+%     cell type to score for. Should exist in either hpaData.celltypes or
+%     arrayData.celltypes for this tissue (default is to use the max values
+%     among all the cell types for the tissue).
+% noGeneScore : double
+%     score for reactions without genes (default -2).
+% isozymeScoring : char
+%     determines how scores are calculated for reactions with multiple genes
+%     joined by "OR" expression(s) ('min', 'max', 'median', 'average')
+%     (default 'max').
+% complexScoring : char
+%     determines how scores are calculated for reactions with multiple genes
+%     joined by "AND" expression(s) ('min', 'max', 'median', 'average')
+%     (default 'min').
+% multipleCellScoring : char
+%     determines how scores are calculated when several cell types are used
+%     ('max' or 'average') (default 'max').
+% hpaLevelScores : struct
+%     structure with numerical scores for the expression level categories from
+%     HPA. The structure should have a "names" and a "scores" field (default,
+%     see code for default scores).
+%
+% Returns
+% -------
+% rxnScores : double
+%     scores for each of the reactions in model.
+% geneScores : double
+%     scores for each of the genes in model. Genes which are not in the
+%     dataset(s) have -Inf as scores.
+% hpaScores : double
+%     scores for each of the genes in model if only taking hpaData into
+%     account. Genes which are not in the dataset(s) have -Inf as scores.
+% arrayScores : double
+%     scores for each of the genes in model if only taking arrayData into
+%     account. Genes which are not in the dataset(s) have -Inf as scores.
 
 
 p=parseRAVENargs(varargin, {'celltype',[]; 'noGeneScore',[]; 'isozymeScoring',[]; 'complexScoring',[]; 'multipleCellScoring',[]; 'hpaLevelScores',[]});

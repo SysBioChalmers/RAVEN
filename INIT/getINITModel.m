@@ -1,105 +1,117 @@
 function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=getINITModel(refModel, tissue, varargin)
-% getINITModel_legacy
-%   Generates a model using the INIT algorithm, based on proteomics and/or
-%   transcriptomics and/or metabolomics and/or metabolic tasks. This is the original 
-%   implementation of tINIT, which is replaced by ftINIT.
+% getINITModel  Generate a model using the original INIT algorithm.
 %
-% Input:
-%   refModel            a model structure. The model should be in the
-%                       closed form (no exchange reactions open). Import
-%                       using import(filename,false). If the model is not
-%                       loaded using importModel, it might be that there
-%                       is no "unconstrained" field. In that case,
-%                       manually add the field like:
-%                       model.unconstrained=false(numel(model.mets),1);
-%   tissue              tissue to score for. Should exist in either
-%                       hpaData.tissues or arrayData.tissues
-%   celltype            cell type to score for. Should exist in either
-%                       hpaData.celltypes or arrayData.celltypes for this
-%                       tissue (optional, default is to use the best values
-%                       among all the cell types for the tissue. Use [] if
-%                       you want to supply more arguments)
-%   hpaData             HPA data structure from parseHPA (optional if arrayData is
-%                       supplied, default [])
-%   arrayData           gene expression data structure (optional if hpaData is
-%                       supplied, default [])
-%       genes           cell array with the unique gene names
-%       tissues         cell array with the tissue names. The list may not be
-%                       unique, as there can be multiple cell types per tissue
-%       celltypes       cell array with the cell type names for each tissue
-%       levels          GENESxTISSUES array with the expression level for
-%                       each gene in each tissue/celltype. NaN should be
-%                       used when no measurement was performed
-%       threshold       a single value or a vector of gene expression 
-%                       thresholds, above which genes are considered to be
-%                       "expressed". (optional, by default, the mean expression
-%                       levels of each gene across all tissues in arrayData
-%                       will be used as the threshold values)
-%       singleCells     binary value selecting whether to use the
-%                       single-cell algorithm to identify expressed genes.
-%                       If used, specify cell subpopulations in CELLTYPES
-%                       (optional, default [])
-%       plotResults     true if single cell probability distributions
-%                       should be plotted (optional, default = False)
-%   metabolomicsData    cell array with metabolite names that the model
-%                       should produce (optional, default [])
-%   taskFile            a task list in Excel format. See parseTaskList for
-%                       details (optional, default [])
-%   useScoresForTasks   true if the calculated reaction scored should be used as
-%                       weights in the fitting to tasks (optional, default true)
-%   printReport         true if a report should be printed to the screen
-%                       (optional, default true)
-%   taskStructure       task structure as from parseTaskList. Can be used
-%                       as an alternative way to define tasks when Excel
-%                       sheets are not suitable. Overrides taskFile (optional,
-%                       default [])
+% Generates a model using the INIT algorithm, based on proteomics and/or
+% transcriptomics and/or metabolomics and/or metabolic tasks. This is the
+% original implementation of tINIT, which is replaced by ftINIT.
 %
-% Output:
-%   model                   the resulting model structure
-%   metProduction           array that indicates which of the
-%                           metabolites in metabolomicsData that could be
-%                           produced. Note that this is before the
-%                           gap-filling process to enable defined tasks. To
-%                           see which metabolites that can be produced in
-%                           the final model, use canProduce.
-%                           -2: metabolite name not found in model
-%                           -1: metabolite found, but it could not be produced
-%                           1: metabolite could be produced
-%   essentialRxnsForTasks   cell array of the reactions which were
-%                           essential to perform the tasks
-%   addedRxnsForTasks       cell array of the reactions which were added in
-%                           order to perform the tasks
-%   deletedDeadEndRxns      cell array of reactions deleted because they
-%                           could not carry flux (INIT requires a
-%                           functional input model)
-%   deletedRxnsInINIT       cell array of the reactions which were deleted by
-%                           the INIT algorithm
-%   taskReport              structure with the results for each task
-%   	id                  cell array with the id of the task
-%       description         cell array with the description of the task
-%       ok                  boolean array with true if the task was successful
-%       essential           cell array with cell arrays of essential
-%                           reactions for the task
-%       gapfill             cell array of cell arrays of reactions included
-%                           in the gap-filling for the task
+% This is the main function for automatic reconstruction of models based on the
+% (t)INIT algorithm (PLoS Comput Biol. 2012;8(5):e1002518, Mol Syst Biol.
+% 2014;10:721). Not all settings are possible using this function, and you may
+% want to call the functions scoreModel, runINIT and fitTasks individually
+% instead.
 %
-%   This is the main function for automatic reconstruction of models based
-%   on the (t)INIT algorithm (PLoS Comput Biol. 2012;8(5):e1002518, 
-%   Mol Syst Biol. 2014;10:721). Not all settings are possible using this
-%   function, and you may want to call the functions scoreModel, runINIT
-%   and fitTasks individually instead.
+% Parameters
+% ----------
+% refModel : struct
+%     a model structure. The model should be in the closed form (no exchange
+%     reactions open). Import using import(filename,false). If the model is not
+%     loaded using importModel, it might be that there is no "unconstrained"
+%     field. In that case, manually add the field like:
+%     model.unconstrained=false(numel(model.mets),1).
+% tissue : char
+%     tissue to score for. Should exist in either hpaData.tissues or
+%     arrayData.tissues.
 %
-%   NOTE: Exchange metabolites should normally not be removed from the model
-%   when using this approach, since checkTasks/fitTasks rely on putting specific
-%   constraints for each task. The INIT algorithm will remove exchange metabolites
-%   if any are present. Use importModel(file,false) to import a model with
-%   exchange metabolites remaining.
+% Name-Value Arguments
+% --------------------
+% celltype : char
+%     cell type to score for. Should exist in either hpaData.celltypes or
+%     arrayData.celltypes for this tissue (default is to use the best values
+%     among all the cell types for the tissue).
+% hpaData : struct
+%     HPA data structure from parseHPA (optional if arrayData is supplied,
+%     default []).
+% arrayData : struct
+%     gene expression data structure (optional if hpaData is supplied, default
+%     []). With fields:
 %
-% Usage: [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks,...
-%               deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=...
-%               getINITModel(refModel, tissue, celltype, hpaData, arrayData,...
-%               metabolomicsData, taskFile, useScoresForTasks, printReport,...
-%               taskStructure, params, paramsFT)
+%     - genes : cell array with the unique gene names.
+%     - tissues : cell array with the tissue names. The list may not be unique,
+%       as there can be multiple cell types per tissue.
+%     - celltypes : cell array with the cell type names for each tissue.
+%     - levels : GENESxTISSUES array with the expression level for each gene in
+%       each tissue/celltype. NaN should be used when no measurement was
+%       performed.
+%     - threshold : a single value or a vector of gene expression thresholds,
+%       above which genes are considered to be "expressed". (default, by
+%       default the mean expression levels of each gene across all tissues in
+%       arrayData will be used as the threshold values).
+%     - singleCells : binary value selecting whether to use the single-cell
+%       algorithm to identify expressed genes. If used, specify cell
+%       subpopulations in CELLTYPES (default []).
+%     - plotResults : true if single cell probability distributions should be
+%       plotted (default false).
+% metabolomicsData : cell
+%     cell array with metabolite names that the model should produce (default
+%     []).
+% taskFile : char
+%     a task list in Excel format. See parseTaskList for details (default []).
+% useScoresForTasks : logical
+%     true if the calculated reaction scores should be used as weights in the
+%     fitting to tasks (default true).
+% printReport : logical
+%     true if a report should be printed to the screen (default true).
+% taskStructure : struct
+%     task structure as from parseTaskList. Can be used as an alternative way
+%     to define tasks when Excel sheets are not suitable. Overrides taskFile
+%     (default []).
+% params : struct
+%     parameter structure for use by the INIT solver (default []).
+% paramsFT : struct
+%     parameter structure for the fitTasks step (default []).
+%
+% Returns
+% -------
+% model : struct
+%     the resulting model structure.
+% metProduction : double
+%     array that indicates which of the metabolites in metabolomicsData that
+%     could be produced. Note that this is before the gap-filling process to
+%     enable defined tasks. To see which metabolites that can be produced in
+%     the final model, use canProduce:
+%
+%     - -2 : metabolite name not found in model.
+%     - -1 : metabolite found, but it could not be produced.
+%     - 1 : metabolite could be produced.
+% essentialRxnsForTasks : cell
+%     cell array of the reactions which were essential to perform the tasks.
+% addedRxnsForTasks : cell
+%     cell array of the reactions which were added in order to perform the
+%     tasks.
+% deletedDeadEndRxns : cell
+%     cell array of reactions deleted because they could not carry flux (INIT
+%     requires a functional input model).
+% deletedRxnsInINIT : cell
+%     cell array of the reactions which were deleted by the INIT algorithm.
+% taskReport : struct
+%     structure with the results for each task. With fields:
+%
+%     - id : cell array with the id of the task.
+%     - description : cell array with the description of the task.
+%     - ok : boolean array with true if the task was successful.
+%     - essential : cell array with cell arrays of essential reactions for the
+%       task.
+%     - gapfill : cell array of cell arrays of reactions included in the
+%       gap-filling for the task.
+%
+% Notes
+% -----
+% Exchange metabolites should normally not be removed from the model when using
+% this approach, since checkTasks/fitTasks rely on putting specific constraints
+% for each task. The INIT algorithm will remove exchange metabolites if any are
+% present. Use importModel(file,false) to import a model with exchange
+% metabolites remaining.
 
 p=parseRAVENargs(varargin, {'celltype',[]; 'hpaData',[]; 'arrayData',[]; 'metabolomicsData',[]; 'taskFile',[]; 'useScoresForTasks',[]; 'printReport',[]; 'taskStructure',[]; 'params',[]; 'paramsFT',[]});
 celltype=p.celltype;
