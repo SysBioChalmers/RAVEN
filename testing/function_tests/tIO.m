@@ -36,9 +36,16 @@ classdef tIO < RavenTestCase
             testCase.verifyMatches(char(h), '^[0-9a-fA-F]{32}$');
         end
 
-        function getToolboxVersionRuns(testCase)
-            v = getToolboxVersion('RAVEN', 'ravenCobraWrapper.m');
-            testCase.verifyNotEmpty(v);
+        function exportForGitWritesDependencies(testCase)
+            % The toolbox-version lookup is now embedded in exportForGit and
+            % is exercised via the dependencies.txt it writes
+            f = fullfile(testCase.ravenRoot,'tutorial','empty.xml');
+            evalc('model = importModel(f);');
+            outDir = tempname; mkdir(outDir);
+            c = onCleanup(@() rmdir(outDir,'s'));
+            evalc("exportForGit(model,'path',outDir,'formats',{'xml'},'subDirs',false)");
+            dep = fileread(fullfile(outDir,'dependencies.txt'));
+            testCase.verifySubstring(dep, 'RAVEN_toolbox');
         end
 
         function importModelReadsSBML(testCase)
