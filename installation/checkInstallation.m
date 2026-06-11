@@ -1,14 +1,15 @@
-function [currVer, installType] = checkInstallation(developMode,checkBinaries)
+function [currVer, installType] = checkInstallation(varargin)
 % checkInstallation
 %   The purpose of this function is to check if all necessary functions are
 %   installed and working. It also checks whether there are any functions
 %   with overlapping names between RAVEN and other toolboxes or
 %   user-defined functions, which are accessible from MATLAB pathlist
 %
-% Input: 
+% Name-Value Arguments
+% --------------------
 %   developMode     logical indicating development mode, which includes
 %                   testing of binaries that are required to update KEGG
-%                   HMMs (optional, default false). If 'versionOnly' is
+%                   HMMs (default false). If 'versionOnly' is
 %                   specified, only the version is reported as currVer, no
 %                   further installation or tests are performed.
 %   checkBinaries   logical whether non-developMode binaries should be
@@ -27,12 +28,10 @@ function [currVer, installType] = checkInstallation(developMode,checkBinaries)
 %
 % Usage: [currVer, installType] = checkInstallation(developMode)
 
-if nargin<1
-    developMode=false;
-end
-if nargin<2
-    checkBinaries=true;
-end
+p=parseRAVENargs(varargin, {'developMode',false; 'checkBinaries',true});
+developMode=p.developMode;
+checkBinaries=p.checkBinaries;
+
 if ischar(developMode) && strcmp(developMode,'versionOnly')
     versionOnly = true;
 else

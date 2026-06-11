@@ -1,71 +1,63 @@
-function [newModel,remGenes] = removeLowScoreGenes(model,geneScores,isozymeScoring,complexScoring)
-%removeLowScoreGenes  Remove low-scoring genes from model.
+function [newModel,remGenes] = removeLowScoreGenes(model,geneScores,varargin)
+% removeLowScoreGenes  Remove low-scoring genes from model.
 %
-%   This function removes genes from a model based on their scores, a step
-%   used by the tINIT package. The function recognizes and differentiates
-%   between isozymes and subunits of an enzyme complex. Genes are removed
-%   from each grRule, subject to the following conditions:
-%       1) At least one gene must remain associated with the reaction
-%       2) Genes involved in a complex (joined by ANDs) are not removed
+% This function removes genes from a model based on their scores, a step used
+% by the tINIT package. The function recognizes and differentiates between
+% isozymes and subunits of an enzyme complex. Genes are removed from each
+% grRule, subject to the following conditions:
 %
-% Usage:
+%     1) At least one gene must remain associated with the reaction.
+%     2) Genes involved in a complex (joined by ANDs) are not removed.
 %
-%   [newModel,remGenes] = removeLowScoreGenes(model,geneScores,complexScoring);
+% Parameters
+% ----------
+% model : struct
+%     model structure from which genes are to be removed.
+% geneScores : double
+%     a vector of scores associated with the model genes. Genes with a
+%     positive score will remain in the model, whereas genes with a negative
+%     score will try to be removed.
 %
-% Inputs:
+%     If all genes associated with a reaction have a negative score, then the
+%     least-negative gene will remain; if there is a tie, one will be selected
+%     at random.
 %
-%   model           Model structure from which genes are to be removed.
+%     If a negative-scoring gene is a subunit in a complex, it will not be
+%     removed; however, the entire complex may be removed. See the following
+%     example cases:
 %
-%   geneScores      A vector of scores associated with the model genes.
-%                   Genes with a positive score will remain in the model,
-%                   whereas genes with a negative score will try to be
-%                   removed.
-%                   
-%                   If all genes associated with a reaction have a negative
-%                   score, then the least-negative gene will remain; if 
-%                   there is a tie, one will be selected at random.
+%     - Original: G1 or (G2 and G3 and G4); Negative: G1, G2; New: G2 and G3
+%       and G4.
+%     - Original: G1 or (G2 and G3) or (G4 and G5); Negative: G1, G2; New: G4
+%       and G5 [using default complexScoring].
+%     - Original: (G1 and (G2 or G3) and G4); Negative: G2; New: (G1 and G3
+%       and G4).
 %
-%                   If a negative-scoring gene is a subunit in a complex, 
-%                   it will not be removed; however, the entire complex may
-%                   be removed. See the following example cases:
+% Name-Value Arguments
+% --------------------
+% isozymeScoring : char
+%     method used to combine the scores of multiple isozymes; 'min', 'max',
+%     'median', or 'average' (default 'max').
+% complexScoring : char
+%     method used to combine the scores of enzyme complex subunits: 'min',
+%     'max', 'median', or 'average' (default 'min').
 %
-%                    Original: G1 or (G2 and G3 and G4)
-%                    Negative: G1, G2
-%                         New: G2 and G3 and G4
-%
-%                    Original: G1 or (G2 and G3) or (G4 and G5)
-%                    Negative: G1, G2
-%                         New: G4 and G5     [using default complexScoring]
-%
-%                    Original: (G1 and (G2 or G3) and G4)
-%                    Negative: G2
-%                         New: (G1 and G3 and G4)
-%
-%   isozymeScoring  Method used to combine the scores of multiple isozymes;
-%                   'min', 'max', 'median', or 'average'. 
-%                   (optional, default 'max')
-%
-%   complexScoring  Method used to combine the scores of enzyme complex
-%                   subunits: 'min', 'max', 'median', or 'average'. 
-%                   (optional, default 'min')
-%
-% Outputs:
-%
-%   newModel        Model with updated gene, grRules, and rxnGeneMat fields
-%                   after attemping to remove negative-score genes.
-%
-%   remGenes        A list of negative-score genes that were fully removed
-%                   from the model. Negative-score genes that were removed
-%                   from some grRules but not all will not be included in
-%                   this list.
-%
+% Returns
+% -------
+% newModel : struct
+%     model with updated gene, grRules, and rxnGeneMat fields after attempting
+%     to remove negative-score genes.
+% remGenes : cell
+%     a list of negative-score genes that were fully removed from the model.
+%     Negative-score genes that were removed from some grRules but not all
+%     will not be included in this list.
 
 
-if nargin < 3 || isempty(isozymeScoring)
+p=parseRAVENargs(varargin, {'isozymeScoring',[]; 'complexScoring','min'});
+isozymeScoring=p.isozymeScoring;
+complexScoring=p.complexScoring;
+if isempty(isozymeScoring)
     isozymeScoring = 'max';
-end
-if nargin < 4
-    complexScoring = 'min';
 end
 
 if ~isequal(size(model.genes),size(geneScores))

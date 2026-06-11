@@ -1,15 +1,18 @@
-function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns,runParallel)
+function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,varargin)
 % getAllowedBounds  Return the minimal and maximal fluxes through reactions.
 %
 % Parameters
 % ----------
 % model : struct
 %     a model structure.
-% rxns : cell or logical or double, optional
+%
+% Name-Value Arguments
+% --------------------
+% rxns : cell or logical or double
 %     either a cell array of reaction IDs, a logical vector with the same
 %     number of elements as reactions in the model, or a vector of
 %     reaction indexes (default model.rxns).
-% runParallel : logical, optional
+% runParallel : logical
 %     speed up calculations by parallel processing. This is not beneficial
 %     if allowed bounds are calculated for only a few reactions, as the
 %     overhead of parallel processing will take longer. It requires MATLAB
@@ -35,14 +38,14 @@ function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,rxns,runParall
 % --------
 %     [minFluxes, maxFluxes, exitFlags] = getAllowedBounds(model, rxns, runParallel);
 
-if nargin<2 || isempty(rxns)
+p=parseRAVENargs(varargin, {'rxns',[]; 'runParallel',true});
+rxns=p.rxns;
+runParallel=p.runParallel;
+if isempty(rxns)
     rxns = 1:numel(model.rxns);
 elseif ~islogical(rxns) && ~isnumeric(rxns)
     rxns = convertCharArray(rxns);
     rxns = getIndexes(model,rxns, 'rxns');
-end
-if nargin<3
-    runParallel = true;
 end
 
 [ps, oldPoolAutoCreateSetting] = parallelPoolRAVEN(runParallel);

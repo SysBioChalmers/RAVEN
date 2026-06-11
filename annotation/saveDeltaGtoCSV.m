@@ -1,4 +1,4 @@
-function saveDeltaGtoCSV(model, metCsv, rxnCsv, verbose)
+function saveDeltaGtoCSV(model, varargin)
 % saveDeltaGtoCSV  Persist metDeltaG and rxnDeltaG to CSV files.
 %
 % Persist model.metDeltaG and model.rxnDeltaG to project CSV files.
@@ -13,11 +13,14 @@ function saveDeltaGtoCSV(model, metCsv, rxnCsv, verbose)
 % ----------
 % model : struct
 %     RAVEN model struct.
-% metCsv : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% metCsv : char
 %     Output path for the metabolite ΔG CSV, or '' to skip.
-% rxnCsv : char, optional
+% rxnCsv : char
 %     Output path for the reaction ΔG CSV, or '' to skip.
-% verbose : logical, optional
+% verbose : logical
 %     Print "wrote ..." per file (default false).
 %
 % Examples
@@ -26,15 +29,10 @@ function saveDeltaGtoCSV(model, metCsv, rxnCsv, verbose)
 %         'data/databases/model_metDeltaG.csv', ...
 %         'data/databases/model_rxnDeltaG.csv');
 
-if nargin < 4
-    verbose = false;
-end
-if nargin < 3
-    rxnCsv = '';
-end
-if nargin < 2
-    metCsv = '';
-end
+p=parseRAVENargs(varargin, {'metCsv',''; 'rxnCsv',''; 'verbose',false});
+metCsv=p.metCsv;
+rxnCsv=p.rxnCsv;
+verbose=p.verbose;
 
 if ~isempty(metCsv)
     if ~isfield(model, 'metDeltaG')

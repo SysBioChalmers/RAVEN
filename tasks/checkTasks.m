@@ -1,4 +1,4 @@
-function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(model,inputFile,printOutput,printOnlyFailed,getEssential,taskStructure)
+function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(model,inputFile,varargin)
 % checkTasks  Perform a set of simulations as defined in a task file.
 %
 % This function is used for defining a set of tasks for a model to perform.
@@ -15,14 +15,17 @@ function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(
 % inputFile : char
 %     a task list in Excel format. See the function parseTaskList for
 %     details (optional if taskStructure is supplied).
-% printOutput : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% printOutput : logical
 %     true if the results of the test should be displayed (default true).
-% printOnlyFailed : logical, optional
+% printOnlyFailed : logical
 %     true if only tasks that failed should be displayed (default false).
-% getEssential : logical, optional
+% getEssential : logical
 %     true if the essential reactions should be calculated for all the
 %     tasks. This option is used with runINIT (default false).
-% taskStructure : struct, optional
+% taskStructure : struct
 %     structure with the tasks, as from parseTaskList. If this is supplied
 %     then inputFile is ignored.
 %
@@ -50,15 +53,11 @@ function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(
 %     [taskReport, essentialRxns, taskStructure] = checkTasks(model, inputFile, ...
 %         printOutput, printOnlyFailed, getEssential, taskStructure);
 
-if nargin<3 || isempty(printOutput)
-    printOutput=true;
-end
-if nargin<4 || isempty(printOnlyFailed)
-    printOnlyFailed=false;
-end
-if nargin<5 || isempty(getEssential)
-    getEssential=false;
-end
+p=parseRAVENargs(varargin, {'printOutput',true; 'printOnlyFailed',false; 'getEssential',false; 'taskStructure',[]});
+printOutput=p.printOutput;
+printOnlyFailed=p.printOnlyFailed;
+getEssential=p.getEssential;
+taskStructure=p.taskStructure;
 
 %Prepare the input model a little
 model.b=zeros(numel(model.mets),2);
@@ -70,7 +69,7 @@ if ~isfield(model,'unconstrained')
 end
 
 %Parse the task file
-if nargin<6
+if isempty(taskStructure)
     taskStructure=parseTaskList(inputFile);
 end
 

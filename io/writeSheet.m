@@ -1,4 +1,4 @@
-function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)
+function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,varargin)
 % writeSheet  Write a cell matrix to an Excel sheet.
 %
 % Writes a cell matrix to an Excel sheet using the Java library Apache POI.
@@ -17,7 +17,10 @@ function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)
 %     cell array of units for the columns.
 % raw : cell
 %     cell array with the data in the sheet.
-% isIntegers : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% isIntegers : logical
 %     true if numeric values should be integers (default true).
 %
 % Returns
@@ -29,9 +32,8 @@ function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,isIntegers)
 % --------
 %     wb = writeSheet(wb, sheetName, sheetPosition, captions, units, raw);
 
-if nargin<7
-    isIntegers=true;
-end
+p=parseRAVENargs(varargin, {'isIntegers',true});
+isIntegers=p.isIntegers;
 
 %Adds the required classes to the static Java path if not already added
 addJavaPaths();

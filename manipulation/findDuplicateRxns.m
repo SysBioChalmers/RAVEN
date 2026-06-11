@@ -1,4 +1,4 @@
-function pairs = findDuplicateRxns(model, ignoreDirection)
+function pairs = findDuplicateRxns(model, varargin)
 % findDuplicateRxns  Find reactions that share identical stoichiometry.
 %
 % Counterpart of raven_python.manipulation.find_duplicate_reactions, and
@@ -12,7 +12,10 @@ function pairs = findDuplicateRxns(model, ignoreDirection)
 % ----------
 % model : struct
 %     RAVEN model struct.
-% ignoreDirection : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% ignoreDirection : logical
 %     treat A→B and B→A as duplicates (default true).
 %
 % Returns
@@ -27,9 +30,8 @@ function pairs = findDuplicateRxns(model, ignoreDirection)
 %     pairs = findDuplicateRxns(model);
 %     pairs = findDuplicateRxns(model, false);
 
-if nargin < 2
-    ignoreDirection = true;
-end
+p=parseRAVENargs(varargin, {'ignoreDirection',true});
+ignoreDirection=p.ignoreDirection;
 
 pairs = zeros(0, 2);
 n = numel(model.rxns);

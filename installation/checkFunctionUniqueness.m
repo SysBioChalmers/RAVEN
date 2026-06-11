@@ -1,9 +1,10 @@
-function status = checkFunctionUniqueness(altDirs)
+function status = checkFunctionUniqueness(varargin)
 % checkFunctionUniqueness
 %   Checks whether RAVEN toolbox functions are unique across other
 %   toolboxes or user-created functions accessible in Matlab pathlist.
 %
-% Input:
+% Name-Value Arguments
+% --------------------
 %   altDirs     cell array of alternative directories with functions,
 %               should only be specified if this function is used for other
 %               purposes, NOT when looking for RAVEN toolbox functions.
@@ -13,7 +14,10 @@ function status = checkFunctionUniqueness(altDirs)
 %
 % Usage: checkFunctionUniqueness()
 
-if nargin<1
+p=parseRAVENargs(varargin, {'altDirs',[]});
+altDirs=p.altDirs;
+
+if isempty(altDirs)
     %Get the RAVEN path
     ravenDir=findRAVENroot();
     
@@ -82,7 +86,7 @@ if multiRaven==true || multiFunction == true
         else
             fprintf('Fail\n')
         end
-    if multiRaven==true && nargin < 1
+    if multiRaven==true && isempty(altDirs)
         error(['Multiple RAVEN versions detected in MATLAB path. Remove all ',...
                'RAVEN directories from the MATLAB path with removeRavenFromPath(), ',...
                'or manually remove them. Afterwards, re-run checkInstallation']);

@@ -1,4 +1,4 @@
-function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)
+function balanceStructure=getElementalBalance(model,varargin)
 % getElementalBalance  Check whether the reactions of a model are balanced.
 %
 % Checks a model to see if the reactions are elementally balanced.
@@ -7,14 +7,17 @@ function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUn
 % ----------
 % model : struct
 %     a model structure.
-% rxns : cell or logical or double, optional
+%
+% Name-Value Arguments
+% --------------------
+% rxns : cell or logical or double
 %     either a cell array of reaction IDs, a logical vector with the same
 %     number of elements as reactions in the model, or a vector of
 %     indexes. Only these reactions will be checked (default model.rxns).
-% printUnbalanced : logical, optional
+% printUnbalanced : logical
 %     print warnings about the reactions that were unbalanced
 %     (default false).
-% printUnparsable : logical, optional
+% printUnparsable : logical
 %     print warnings about the reactions that cannot be parsed
 %     (default false).
 %
@@ -37,19 +40,13 @@ function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUn
 % --------
 %     balanceStructure = getElementalBalance(model, rxns, printUnbalanced, printUnparsable);
 
-if nargin<2
-    rxns=[];
-elseif ~islogical(rxns) && ~isnumeric(rxns)
+p=parseRAVENargs(varargin, {'rxns',[]; 'printUnbalanced',false; 'printUnparsable',false});
+rxns=p.rxns;
+if ~isempty(rxns) && ~islogical(rxns) && ~isnumeric(rxns)
     rxns=convertCharArray(rxns);
 end
-
-if nargin<3
-    printUnbalanced=false;
-end
-
-if nargin<4
-    printUnparsable=false;
-end
+printUnbalanced=p.printUnbalanced;
+printUnparsable=p.printUnparsable;
 
 if ~isempty(rxns)
     indexes=~getIndexes(model,rxns,'rxns',true);

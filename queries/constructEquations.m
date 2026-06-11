@@ -1,27 +1,30 @@
-function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sortMetNames,useMetID,useFormula,useRevField)
+function equationStrings=constructEquations(model,varargin)
 % constructEquations  Construct equation strings for reactions.
 %
 % Parameters
 % ----------
 % model : struct
 %     a model structure.
-% rxns : cell or logical or double, optional
+%
+% Name-Value Arguments
+% --------------------
+% rxns : cell or logical or double
 %     either a cell array of reaction IDs, a logical vector with the same
 %     number of elements as reactions in the model, or a vector of reaction
 %     indexes (default model.rxns).
-% useComps : logical, optional
+% useComps : logical
 %     include the compartment of each metabolite (default true).
-% sortRevRxns : logical, optional
+% sortRevRxns : logical
 %     sort reversible reactions so that the metabolite that is first in the
 %     lexicographic order is a reactant (default false).
-% sortMetNames : logical, optional
+% sortMetNames : logical
 %     sort the metabolite names in the equation. Uses compartment even if
 %     useComps is false (default false).
-% useMetID : logical, optional
+% useMetID : logical
 %     use metabolite ID in generated equations (default false).
-% useFormula : logical, optional
+% useFormula : logical
 %     use metabolite formula in generated equations (default false).
-% useRevField : logical, optional
+% useRevField : logical
 %     use the model.rev field to indicate reaction reversibility,
 %     alternatively this is determined from the model.ub and model.lb fields
 %     (default true).
@@ -42,29 +45,19 @@ function equationStrings=constructEquations(model,rxns,useComps,sortRevRxns,sort
 % forward direction (e.g. ub = 1000 and lb = -1000/0) for the reversibility
 % to be correctly determined.
 
-if nargin<2 || isempty(rxns)
+p=parseRAVENargs(varargin, {'rxns',[]; 'useComps',true; 'sortRevRxns',false; 'sortMetNames',false; 'useMetID',false; 'useFormula',false; 'useRevField',true});
+rxns=p.rxns;
+if isempty(rxns)
     rxns=model.rxns;
 elseif ~islogical(rxns) && ~isnumeric(rxns)
     rxns=convertCharArray(rxns);
 end
-if nargin<3
-    useComps=true;
-end
-if nargin<4
-    sortRevRxns=false;
-end
-if nargin<5
-    sortMetNames=false;
-end
-if nargin<6
-    useMetID=false;
-end
-if nargin<7
-    useFormula=false;
-end
-if nargin<8
-    useRevField=true;
-end
+useComps=p.useComps;
+sortRevRxns=p.sortRevRxns;
+sortMetNames=p.sortMetNames;
+useMetID=p.useMetID;
+useFormula=p.useFormula;
+useRevField=p.useRevField;
 
 %Sort reversible equations
 if sortRevRxns==true

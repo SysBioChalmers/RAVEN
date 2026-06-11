@@ -1,4 +1,4 @@
-function [controlFlux, objFlux] = runRobustnessAnalysis(model, controlRxn, nPoints, objRxn, plotRedCost)
+function [controlFlux, objFlux] = runRobustnessAnalysis(model, controlRxn, varargin)
 % runRobustnessAnalysis  Perform robustness analysis for a reaction and objective.
 %
 % Performs robustness analysis for a reaction of interest and an objective
@@ -10,12 +10,15 @@ function [controlFlux, objFlux] = runRobustnessAnalysis(model, controlRxn, nPoin
 %     a model structure.
 % controlRxn : char
 %     reaction of interest whose value is to be controlled.
-% nPoints : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% nPoints : double
 %     number of points to show on plot (default 20).
-% objRxn : char, optional
+% objRxn : char
 %     reaction identifier of objective to be maximized (default uses the
 %     objective defined in the model).
-% plotRedCost : logical, optional
+% plotRedCost : logical
 %     whether reduced cost should also be plotted (default false).
 %
 % Returns
@@ -36,16 +39,14 @@ function [controlFlux, objFlux] = runRobustnessAnalysis(model, controlRxn, nPoin
 % -----
 % Modified from COBRA Toolbox robustnessAnalysis.m.
 
-if nargin < 3
-    nPoints = 20;
-end
-if nargin < 4
+p=parseRAVENargs(varargin, {'nPoints',20; 'objRxn',[]; 'plotRedCost',false});
+nPoints=p.nPoints;
+objRxn=p.objRxn;
+plotRedCost=p.plotRedCost;
+if isempty(objRxn)
     baseModel = model;
 else
     baseModel = setParam(model,'obj',objRxn,1);
-end
-if nargin < 5
-    plotRedCost = false;
 end
 
 if any(ismember(model.rxns,controlRxn))

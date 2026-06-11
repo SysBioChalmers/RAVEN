@@ -1,4 +1,4 @@
-function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,distReverse,mets)
+function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,varargin)
 % contractModel  Contract a model by grouping all identical reactions.
 %
 % Similar to the deleteDuplicates part in simplifyModel but more care is
@@ -10,10 +10,13 @@ function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,d
 % ----------
 % model : struct
 %     a model structure.
-% distReverse : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% distReverse : logical
 %     distinguish reactions with same metabolites but different reversibility
 %     as different reactions (default true).
-% mets : char or cell, optional
+% mets : char or cell
 %     string or cell array of strings with metabolite identifiers, whose
 %     involved reactions should be checked for duplication (by default all
 %     reactions are considered). This option is used by replaceMets.
@@ -37,9 +40,9 @@ function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,d
 % This code might not work for advanced grRules strings that involve nested
 % expressions of 'and' and 'or'.
 
-if nargin<2
-    distReverse=true;
-end
+p=parseRAVENargs(varargin, {'distReverse',true; 'mets',[]});
+distReverse=p.distReverse;
+mets=p.mets;
 
 %First sort the model so that reversible reactions are in the same
 %direction
@@ -51,7 +54,7 @@ if distReverse
 else
     x=modelS.S';
 end
-if nargin>2
+if ~isempty(mets)
     toCheck = getIndexes(model,mets,'mets');
     [~, toCheck] = find(modelS.S(toCheck,:));
     x = [x, (1:size(x,1))']; % Make all other rxns unique by additional column 

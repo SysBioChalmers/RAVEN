@@ -1,4 +1,4 @@
-function [model, guessedFor, couldNotGuess]=guessComposition(model, printResults)
+function [model, guessedFor, couldNotGuess]=guessComposition(model, varargin)
 % guessComposition  Guess the composition of metabolites without one.
 %
 % Attempts to guess the composition of metabolites without information about
@@ -8,7 +8,10 @@ function [model, guessedFor, couldNotGuess]=guessComposition(model, printResults
 % ----------
 % model : struct
 %     a model structure.
-% printResults : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% printResults : logical
 %     true if the output should be printed (default true).
 %
 % Returns
@@ -46,9 +49,8 @@ function [model, guessedFor, couldNotGuess]=guessComposition(model, printResults
 % compositions could still be wrong (in case that the existing compositions
 % were wrong).
 
-if nargin<2
-    printResults=true;
-end
+p=parseRAVENargs(varargin, {'printResults',true});
+printResults=p.printResults;
 
 %The metabolites for which there is no elemental composition
 originalMissing=unique(model.metNames(cellfun(@isempty,model.metFormulas)));

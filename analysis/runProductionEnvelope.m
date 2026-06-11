@@ -1,4 +1,4 @@
-function [biomassValues, targetValues] = runProductionEnvelope(model, targetRxn, biomassRxn, nPts)
+function [biomassValues, targetValues] = runProductionEnvelope(model, targetRxn, biomassRxn, varargin)
 % runProductionEnvelope  Calculate the byproduct secretion envelope.
 %
 % Parameters
@@ -9,7 +9,10 @@ function [biomassValues, targetValues] = runProductionEnvelope(model, targetRxn,
 %     identifier of target metabolite production reaction.
 % biomassRxn : char
 %     identifier of biomass reaction.
-% nPts : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% nPts : double
 %     number of points in the plot (default 20).
 %
 % Returns
@@ -28,9 +31,8 @@ function [biomassValues, targetValues] = runProductionEnvelope(model, targetRxn,
 % -----
 % Modified from COBRA Toolbox productionEnvelope.m.
 
-if nargin < 4
-    nPts = 20;
-end
+p=parseRAVENargs(varargin, {'nPts',20});
+nPts=p.nPts;
 
 % Run FBA to get upper bound for biomass
 model   = setParam(model,'obj',biomassRxn,1);

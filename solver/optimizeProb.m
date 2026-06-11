@@ -1,18 +1,21 @@
-function res = optimizeProb(prob,params,verbose)
+function res = optimizeProb(prob,varargin)
 % optimizeProb  Optimize an LP or MILP formulated in COBRA terms.
 %
 % Parameters
 % ----------
 % prob : struct
 %     COBRA-style LP/MILP problem struct to be optimised.
-% params : struct, optional
+%
+% Name-Value Arguments
+% --------------------
+% params : struct
 %     solver-specific parameters. In addition to solver parameters, the
 %     field "maxRatio" can be set to a number > 1 to improve numerical
 %     conditioning: before solving (LP only) any column whose coefficients
 %     span more than maxRatio is split via auxiliary metabolites/variables,
 %     preserving the feasible region. See splitProbForConditioning. The
 %     field is consumed here and not forwarded to the solver.
-% verbose : logical, optional
+% verbose : logical
 %     if true MILP progress is shown (default true).
 %
 % Returns
@@ -25,12 +28,12 @@ function res = optimizeProb(prob,params,verbose)
 % --------
 % splitProbForConditioning
 
-if nargin<2 || isempty(params)
+p=parseRAVENargs(varargin, {'params',[]; 'verbose',true});
+params=p.params;
+if isempty(params)
     params=struct();
 end
-if nargin<3 || isempty(verbose)
-    verbose = true;
-end
+verbose=p.verbose;
 
 %Set as global variable for speed improvement if optimizeProb is run many times
 global RAVENSOLVER;

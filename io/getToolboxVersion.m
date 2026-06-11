@@ -1,4 +1,4 @@
-function version = getToolboxVersion(toolbox,fileID,mainBranchFlag)
+function version = getToolboxVersion(toolbox,fileID,varargin)
 % getToolboxVersion  Return the version of a given toolbox.
 %
 % Returns the version of a given toolbox, or if not available the latest
@@ -11,7 +11,10 @@ function version = getToolboxVersion(toolbox,fileID,mainBranchFlag)
 % fileID : char
 %     string with the name of a file that is only found in the
 %     corresponding toolbox (e.g. "ravenCobraWrapper.m").
-% mainBranchFlag : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% mainBranchFlag : logical
 %     if true, the function will error if the toolbox is not on the main
 %     branch (default false).
 %
@@ -27,9 +30,8 @@ function version = getToolboxVersion(toolbox,fileID,mainBranchFlag)
 toolbox=char(toolbox);
 fileID=char(fileID);
 
-if nargin<3
-    mainBranchFlag = false;
-end
+p=parseRAVENargs(varargin, {'mainBranchFlag',false});
+mainBranchFlag=p.mainBranchFlag;
 
 currentPath = pwd;
 version     = '';

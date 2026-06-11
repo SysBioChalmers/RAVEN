@@ -7,7 +7,10 @@
 % ----------
 % workbook : Workbook
 %     Workbook object representing the Excel file.
-% sheet : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% sheet : char
 %     name of the sheet (default first sheet).
 %
 % Returns
@@ -20,10 +23,9 @@
 % Examples
 % --------
 %     [raw, flag] = loadSheet(workbook, sheet);
-function [raw, flag]=loadSheet(workbook, sheet)
-if nargin<2
-    sheet=[];
-end
+function [raw, flag]=loadSheet(workbook, varargin)
+p=parseRAVENargs(varargin, {'sheet',[]});
+sheet=p.sheet;
 flag=0;
 raw={};
 

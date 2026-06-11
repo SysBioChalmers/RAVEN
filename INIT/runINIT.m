@@ -1,93 +1,96 @@
-function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,noRevLoops,params)
-% runINIT
-%	Generates a model using the INIT algorithm, based on proteomics and/or
-%   transcriptomics and/or metabolomics and/or metabolic tasks. This is the 
-%   original implementation, which is now replaced with ftINIT.
+function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,varargin)
+% runINIT  Generate a model using the original INIT algorithm.
 %
-%   model           a reference model structure
-%   rxnScores       a vector of scores for the reactions in the model.
-%                   Positive scores are reactions to keep and negative
-%                   scores are reactions to exclude (optional, default all 0.0)
-%   presentMets     cell array with unique metabolite names that the model
-%                   should produce (optional, default [])
-%   essentialRxns   cell array of reactions that are essential and that
-%                   have to be in the resulting model. This is normally
-%                   used when fitting a model to task (see fitTasks) (optional,
-%                   default [])
-%   prodWeight      a score that determines the value of having
-%                   net-production of metabolites. This is a way of having
-%                   a more functional network as it provides a reason for
-%                   including bad reactions for connectivity reasons. This
-%                   score is for each metabolite, and the sum of these weights
-%                   and the scores for the reactions is what is optimized
-%                   (optional, default 0.5)
-%   allowExcretion  true if excretion of all metabolites should be allowed.
-%                   This results in fewer reactions being considered
-%                   dead-ends, but all reactions in the resulting model may
-%                   not be able to carry flux. If this is "false" then the
-%                   equality constraints are taken from model.b. If the
-%                   input model lacks exchange reactions then this should
-%                   probably be "true", or a large proportion of the model
-%                   would be excluded for connectivity reasons
-%                   (optional, default false)
-%   noRevLoops      true if reversible reactions should be constrained to
-%                   only carry flux in one direction. This prevents
-%                   reversible reactions from being wrongly assigned as
-%                   connected (the forward and backward reactions can form a
-%                   loop and therefore appear connected), but it makes the
-%                   problem significantly more computationally intensive to
-%                   solve (two more integer constraints per reversible reaction)
-%                   (optional, default false)
-%   params          parameter structure for use by optimizeProb
+% Generates a model using the INIT algorithm, based on proteomics and/or
+% transcriptomics and/or metabolomics and/or metabolic tasks. This is the
+% original implementation, which is now replaced with ftINIT.
 %
-%   outModel        the resulting model structure
-%   deletedRxns     reactions which were deleted by the algorithm
-%   metProduction   array that indicates which of the
-%                   metabolites in presentMets that could be
-%                   produced
-%                   -2: metabolite name not found in model
-%                   -1: metabolite found, but it could not be produced
-%                   1: metabolite could be produced
-%   fValue          objective value (sum of (the negative of)
-%                   reaction scores for the included reactions and
-%                   prodWeight*number of produced metabolites)
+% This function is the actual implementation of the algorithm. See
+% getINITModel for a higher-level function for model reconstruction. See PLoS
+% Comput Biol. 2012;8(5):e1002518 for details regarding the implementation.
 %
-%   This function is the actual implementation of the algorithm. See
-%   getINITModel for a higher-level function for model reconstruction. See
-%   PLoS Comput Biol. 2012;8(5):e1002518 for details regarding the
-%   implementation.
+% Parameters
+% ----------
+% model : struct
+%     a reference model structure.
 %
-% Usage: [outModel deletedRxns metProduction fValue]=runINIT(model,...
-%           rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,...
-%           noRevLoops,params)
+% Name-Value Arguments
+% --------------------
+% rxnScores : double
+%     a vector of scores for the reactions in the model. Positive scores are
+%     reactions to keep and negative scores are reactions to exclude (default
+%     all 0.0).
+% presentMets : cell
+%     cell array with unique metabolite names that the model should produce
+%     (default []).
+% essentialRxns : cell
+%     cell array of reactions that are essential and that have to be in the
+%     resulting model. This is normally used when fitting a model to task (see
+%     fitTasks) (default []).
+% prodWeight : double
+%     a score that determines the value of having net-production of
+%     metabolites. This is a way of having a more functional network as it
+%     provides a reason for including bad reactions for connectivity reasons.
+%     This score is for each metabolite, and the sum of these weights and the
+%     scores for the reactions is what is optimized (default 0.5).
+% allowExcretion : logical
+%     true if excretion of all metabolites should be allowed. This results in
+%     fewer reactions being considered dead-ends, but all reactions in the
+%     resulting model may not be able to carry flux. If this is "false" then
+%     the equality constraints are taken from model.b. If the input model
+%     lacks exchange reactions then this should probably be "true", or a large
+%     proportion of the model would be excluded for connectivity reasons
+%     (default false).
+% noRevLoops : logical
+%     true if reversible reactions should be constrained to only carry flux in
+%     one direction. This prevents reversible reactions from being wrongly
+%     assigned as connected (the forward and backward reactions can form a loop
+%     and therefore appear connected), but it makes the problem significantly
+%     more computationally intensive to solve (two more integer constraints per
+%     reversible reaction) (default false).
+% params : struct
+%     parameter structure for use by optimizeProb.
+%
+% Returns
+% -------
+% outModel : struct
+%     the resulting model structure.
+% deletedRxns : cell
+%     reactions which were deleted by the algorithm.
+% metProduction : double
+%     array that indicates which of the metabolites in presentMets that could
+%     be produced:
+%
+%     - -2 : metabolite name not found in model.
+%     - -1 : metabolite found, but it could not be produced.
+%     - 1 : metabolite could be produced.
+% fValue : double
+%     objective value (sum of (the negative of) reaction scores for the
+%     included reactions and prodWeight*number of produced metabolites).
 
-if nargin<2
-    rxnScores=zeros(numel(model.rxns),1);
-end
+p=parseRAVENargs(varargin, {'rxnScores',[]; 'presentMets',[]; 'essentialRxns',[]; 'prodWeight',[]; 'allowExcretion',false; 'noRevLoops',false; 'params',[]});
+rxnScores=p.rxnScores;
+presentMets=p.presentMets;
+essentialRxns=p.essentialRxns;
+prodWeight=p.prodWeight;
+allowExcretion=p.allowExcretion;
+noRevLoops=p.noRevLoops;
+params=p.params;
 if isempty(rxnScores)
     rxnScores=zeros(numel(model.rxns),1);
 end
-if nargin<3 || isempty(presentMets)
+if isempty(presentMets)
     presentMets={};
 else
     presentMets=convertCharArray(presentMets);
 end
-if nargin<4 || isempty(essentialRxns)
+if isempty(essentialRxns)
     essentialRxns={};
 else
     essentialRxns=convertCharArray(essentialRxns);
 end
-if nargin<5 || isempty(prodWeight)
+if isempty(prodWeight)
     prodWeight=0.5;
-end
-if nargin<6
-    allowExcretion=false;
-end
-if nargin<7
-    noRevLoops=false;
-end
-if nargin<8
-    params=[];
 end
 
 if numel(presentMets)~=numel(unique(presentMets))

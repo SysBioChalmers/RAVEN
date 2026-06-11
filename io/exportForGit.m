@@ -1,4 +1,4 @@
-function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,COBRAtext,neverPrefixIDs)
+function out=exportForGit(model,varargin)
 % exportForGit  Export a model for a Git-maintained model repository.
 %
 % Generates a directory structure and populates it with model files, ready
@@ -10,28 +10,31 @@ function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,COBRA
 % ----------
 % model : struct
 %     model structure in RAVEN format that should be exported.
-% prefix : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% prefix : char
 %     prefix for all filenames (default 'model').
-% path : char, optional
+% path : char
 %     path where the directory structure should be generated and populated
 %     with all files (default current working directory).
-% formats : cell, optional
+% formats : cell
 %     cell array of strings specifying in what file formats the model
 %     should be exported (default all formats as {'mat', 'txt', 'xlsx',
 %     'xml', 'yml'}).
-% mainBranchFlag : logical, optional
+% mainBranchFlag : logical
 %     if true, function will error if RAVEN (and COBRA if detected) is/are
 %     not on the main branch (default false).
-% subDirs : logical, optional
+% subDirs : logical
 %     whether model files for each file format should be written in their
 %     own subdirectory, with 'model' as parent directory, in accordance to
 %     the standard-GEM repository format. If false, all files are stored in
 %     the same folder (default true).
-% COBRAtext : logical, optional
+% COBRAtext : logical
 %     whether the txt file should be in COBRA Toolbox format using
 %     metabolite IDs, instead of metabolite names and compartments
 %     (default false).
-% neverPrefixIDs : logical, optional
+% neverPrefixIDs : logical
 %     true if prefixes are never added to identifiers, even if they start
 %     with e.g. digits. This might result in invalid SBML files (default
 %     false).
@@ -40,19 +43,18 @@ function out=exportForGit(model,prefix,path,formats,mainBranchFlag,subDirs,COBRA
 % --------
 %     exportForGit(model, prefix, path, formats, mainBranchFlag, subDirs, ...
 %         COBRAtext, neverPrefixIDs);
-if nargin<8
-    neverPrefixIDs=false;
-end
-if nargin<7 || isempty(COBRAtext)
+p=parseRAVENargs(varargin, {'prefix',[]; 'path',[]; 'formats',[]; 'mainBranchFlag',[]; 'subDirs',[]; 'COBRAtext',[]; 'neverPrefixIDs',false});
+prefix=p.prefix; path=p.path; formats=p.formats; mainBranchFlag=p.mainBranchFlag; subDirs=p.subDirs; COBRAtext=p.COBRAtext; neverPrefixIDs=p.neverPrefixIDs;
+if isempty(COBRAtext)
     COBRAtext=false;
 end
-if nargin<6 || isempty(subDirs)
+if isempty(subDirs)
     subDirs=true;
 end
-if nargin<5 || isempty(mainBranchFlag)
+if isempty(mainBranchFlag)
     mainBranchFlag=false;
 end
-if nargin<4 || isempty(formats)
+if isempty(formats)
     formats={'mat', 'txt', 'xlsx', 'xml', 'yml'};
 else
     formats=convertCharArray(formats);
@@ -61,12 +63,12 @@ if any(~ismember(formats, {'mat', 'txt', 'xlsx', 'xml', 'yml'}))
     EM='Unknown file format defined. Only mat, txt, xlsx, xml and yml are allowed file formats.';
     error(EM)
 end
-if nargin<3 || isempty(path)
+if isempty(path)
     path='.';
 else
     path=char(path);
 end
-if nargin<2 || isempty(prefix)
+if isempty(prefix)
     prefix='model';
 else
     prefix=char(prefix);

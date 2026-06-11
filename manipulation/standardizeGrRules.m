@@ -1,4 +1,4 @@
-function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)
+function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,varargin)
 % standardizeGrRules  Standardize gene-reaction rules in a model.
 %
 % The grRules are standardized according to the following:
@@ -13,7 +13,10 @@ function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,embedded)
 % ----------
 % model : struct
 %     a model structure.
-% embedded : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% embedded : logical
 %     true if this function is called inside of another RAVEN function
 %     (default false).
 %
@@ -44,9 +47,8 @@ n          = length(model.rxns);
 rxnGeneMat = sparse(n,g);
 grRules    = cell(n,1);
 genes      = model.genes;
-if nargin<2
-    embedded = false;
-end
+p=parseRAVENargs(varargin, {'embedded',false});
+embedded=p.embedded;
 
 if isfield(model,'grRules')
     originalGrRules=model.grRules; 

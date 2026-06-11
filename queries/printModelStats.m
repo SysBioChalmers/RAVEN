@@ -1,14 +1,17 @@
-function printModelStats(model, printModelIssues, printDetails)
+function printModelStats(model, varargin)
 % printModelStats  Print some statistics about a model to the screen.
 %
 % Parameters
 % ----------
 % model : struct
 %     a model structure.
-% printModelIssues : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% printModelIssues : logical
 %     true if information about unconnected reactions/metabolites and
 %     elemental balancing should be printed (default false).
-% printDetails : logical, optional
+% printDetails : logical
 %     true if detailed information should be printed about model issues.
 %     Only used if printModelIssues is true (default true).
 %
@@ -16,12 +19,9 @@ function printModelStats(model, printModelIssues, printDetails)
 % --------
 %     printModelStats(model, printModelIssues, printDetails);
 
-if nargin<2
-    printModelIssues=false;
-end
-if nargin<3
-    printDetails=true;
-end
+p=parseRAVENargs(varargin, {'printModelIssues',false; 'printDetails',true});
+printModelIssues=p.printModelIssues;
+printDetails=p.printDetails;
 
 fprintf(['Network statistics for ' model.id ': ' model.name '\n']);
 

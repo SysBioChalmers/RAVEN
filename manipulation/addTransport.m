@@ -1,4 +1,4 @@
-function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,onlyToExisting,prefix)
+function [model, addedRxns]=addTransport(model,fromComp,toComps,varargin)
 % addTransport  Add transport reactions between compartments.
 %
 % This is a faster version than addRxns when adding transport reactions.
@@ -15,16 +15,19 @@ function [model, addedRxns]=addTransport(model,fromComp,toComps,metNames,isRev,o
 %     model.comps).
 % toComps : cell
 %     compartment names to transport to (should match model.comps).
-% metNames : cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% metNames : cell
 %     the metabolite names to add transport for (default all metabolites
 %     in fromComp).
-% isRev : logical, optional
+% isRev : logical
 %     true if the transport reactions should be reversible (default true).
-% onlyToExisting : logical, optional
+% onlyToExisting : logical
 %     true if transport of a metabolite should only be added if it already
 %     exists in toComp. If false, then new metabolites are added with
 %     addMets first (default true).
-% prefix : char, optional
+% prefix : char
 %     prefix to reaction IDs (default 'tr_').
 %
 % Returns
@@ -52,26 +55,15 @@ if ~all(I)
     EM='All compartments in toComps must have a match in model.comps';
     dispEM(EM);
 end
-if nargin<4
+p=parseRAVENargs(varargin, {'metNames',[]; 'isRev',true; 'onlyToExisting',true; 'prefix','tr_'});
+isRev=p.isRev;
+onlyToExisting=p.onlyToExisting;
+prefix=char(p.prefix);
+if isempty(p.metNames)
     %Find all metabolites in fromComp
     metNames=model.metNames(model.metComps==fromID);
-elseif isempty(metNames)
-    %Find all metabolites in fromComp
-    metNames=model.metNames(ismember(model.metComps,model.comps(fromID)));
 else
-    metNames=convertCharArray(metNames);
-end
-
-if nargin<5
-    isRev=true;
-end
-if nargin<6
-    onlyToExisting=true;
-end
-if nargin<7
-    prefix='tr_';
-else
-    prefix=char(prefix);
+    metNames=convertCharArray(p.metNames);
 end
 
 %Check that the names are unique

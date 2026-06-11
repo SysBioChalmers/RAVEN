@@ -1,4 +1,4 @@
-function newModel=addMets(model,metsToAdd,copyInfo,prefix)
+function newModel=addMets(model,metsToAdd,varargin)
 % addMets  Add metabolites to a model.
 %
 % This function does not make extensive checks about MIRIAM formats,
@@ -32,11 +32,14 @@ function newModel=addMets(model,metsToAdd,copyInfo,prefix)
 %       condition in kJ/mole (optional, default NaN)
 %     - metNotes : cell array with metabolite notes as strings (optional,
 %       default '')
-% copyInfo : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% copyInfo : logical
 %     when adding metabolites to a compartment where it previously did not
 %     exist, the function will copy any available annotation from the
 %     metabolite in another compartment (default true).
-% prefix : char, optional
+% prefix : char
 %     when metsToAdd.mets is not specified, new metabolite IDs are
 %     generated with the prefix specified here. If IDs with the prefix are
 %     already used in the model then the numbering will start from the
@@ -61,14 +64,9 @@ function newModel=addMets(model,metsToAdd,copyInfo,prefix)
 %     metsToAdd.metMiriams{2} = struct('name',{{'chebi';'kegg.compound'}},...
 %         'value',{{'CHEBI:31132';'C12248'}});
 
-if nargin<3
-    copyInfo=true;
-end
-if nargin<4
-    prefix='m_';
-else
-    prefix=char(prefix);
-end
+p=parseRAVENargs(varargin, {'copyInfo',true; 'prefix','m_'});
+copyInfo=p.copyInfo;
+prefix=char(p.prefix);
 
 newModel=model;
 

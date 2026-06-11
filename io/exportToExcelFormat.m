@@ -1,17 +1,20 @@
-function exportToExcelFormat(model,fileName,sortIds)
+function exportToExcelFormat(model,varargin)
 % exportToExcelFormat  Export a model to the Microsoft Excel model format.
 %
 % Parameters
 % ----------
 % model : struct
 %     a model structure.
+%
+% Name-Value Arguments
+% --------------------
 % fileName : char
 %     file name of the Excel file. Only xlsx format is supported. In order
 %     to preserve backward compatibility this could also be only a path, in
 %     which case the model is exported to a set of tab-delimited text files
 %     via exportToTabDelimited. A dialog window will open if fileName is
 %     empty.
-% sortIds : logical, optional
+% sortIds : logical
 %     whether metabolites, reactions and genes should be sorted
 %     alphabetically by their identifiers (default false).
 %
@@ -19,7 +22,9 @@ function exportToExcelFormat(model,fileName,sortIds)
 % --------
 %     exportToExcelFormat(model, fileName, sortIds);
 
-if nargin<2 || isempty(fileName)
+p=parseRAVENargs(varargin, {'fileName',[]; 'sortIds',false});
+fileName=p.fileName; sortIds=p.sortIds;
+if isempty(fileName)
     [fileName, pathName] = uiputfile('*.xlsx', 'Select file for model export',[model.id '.xlsx']);
     if fileName == 0
         error('You should provide a file location')
@@ -28,9 +33,6 @@ if nargin<2 || isempty(fileName)
     end
 end
 fileName=char(fileName);
-if nargin<3
-    sortIds=false;
-end
 if sortIds==true
     model=sortIdentifiers(model);
 end

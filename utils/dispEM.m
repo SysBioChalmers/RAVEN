@@ -1,4 +1,4 @@
-function dispEM(string,throwErrors,toList,trimWarnings)
+function dispEM(string,varargin)
 % dispEM  Print a warning or throw an error.
 %
 % Helper function to print warnings or throw errors, optionally followed
@@ -9,13 +9,16 @@ function dispEM(string,throwErrors,toList,trimWarnings)
 % string : char
 %     the warning/error to show. "WARNING: " is appended automatically if
 %     it is a warning.
-% throwErrors : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% throwErrors : logical
 %     true if the function should throw an error (default true).
-% toList : cell, optional
+% toList : cell
 %     a cell array of items to list. If supplied, the string is printed
 %     followed by each element in toList. If it is supplied but empty then
 %     nothing is printed (default {}).
-% trimWarnings : logical, optional
+% trimWarnings : logical
 %     true if a maximum of 10 items should be displayed in a given
 %     error/warning (default true).
 %
@@ -23,18 +26,16 @@ function dispEM(string,throwErrors,toList,trimWarnings)
 % --------
 %     dispEM(string,throwErrors,toList,trimWarnings);
 
-if nargin<2
-    throwErrors=true;
-end
-if nargin<3
+p=parseRAVENargs(varargin, {'throwErrors',true; 'toList','__notSupplied__'; 'trimWarnings',true});
+throwErrors=p.throwErrors;
+trimWarnings=p.trimWarnings;
+toList=p.toList;
+if ischar(toList) && isequal(toList,'__notSupplied__')
     toList=[];
 elseif isempty(toList)
     return;
 else
     toList=convertCharArray(toList);
-end
-if nargin<4
-    trimWarnings=true;
 end
 if numel(toList)>10 && trimWarnings==true
     toList{10}=['...and ' num2str(numel(toList)-9) ' more'];

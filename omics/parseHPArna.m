@@ -1,4 +1,4 @@
-function arrayData=parseHPArna(fileName, version)
+function arrayData=parseHPArna(fileName, varargin)
 % parseHPArna  Parse a dump of Human Protein Atlas (HPA) RNA-Seq data.
 %
 % Parameters
@@ -6,7 +6,10 @@ function arrayData=parseHPArna(fileName, version)
 % fileName : char
 %     tab-separated database dump of HPA RNA data. For details regarding the
 %     format, see http://www.proteinatlas.org/about/download.
-% version : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% version : double
 %     version of HPA (default 19). Only versions 18 and 19 are supported.
 %
 % Returns
@@ -24,11 +27,10 @@ function arrayData=parseHPArna(fileName, version)
 % --------
 %     arrayData = parseHPArna(fileName, version);
 
-if nargin<2
-    %Change this and add code for more versions when the current HPA
-    %version is increased and the format is changed
-    version=19;
-end
+%Change this and add code for more versions when the current HPA
+%version is increased and the format is changed
+p=parseRAVENargs(varargin, {'version',19});
+version=p.version;
 
 fileName=char(fileName);
 if ~isfile(fileName)

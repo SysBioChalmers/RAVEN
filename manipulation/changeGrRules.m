@@ -1,4 +1,4 @@
-function model = changeGrRules(model,rxns,grRules,replace)
+function model = changeGrRules(model,rxns,grRules,varargin)
 % changeGrRules  Change multiple grRules at the same time.
 %
 % Parameters
@@ -11,7 +11,10 @@ function model = changeGrRules(model,rxns,grRules,replace)
 %     additional or replacement gene association. Should be written with
 %     ' and ' to indicate subunits, ' or ' to indicate isoenzymes, and
 %     brackets '()' to separate different instances.
-% replace : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% replace : logical
 %     true if old gene association should be replaced with new association.
 %     False if new gene association should be concatenated to the old
 %     association (default true).
@@ -25,9 +28,8 @@ function model = changeGrRules(model,rxns,grRules,replace)
 % --------
 %     model = changeGrRules(model, rxns, grRules, replace);
 
-if nargin==3
-    replace=true;
-end
+p=parseRAVENargs(varargin, {'replace',true});
+replace=p.replace;
 
 rxns=convertCharArray(rxns);
 grRules=convertCharArray(grRules);

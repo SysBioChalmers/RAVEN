@@ -1,21 +1,24 @@
-function exportModel(model,fileName,neverPrefix,supressWarnings,sortIds)
+function exportModel(model,varargin)
 % exportModel  Export a constraint-based model to an SBML file (L3V1 FBCv2).
 %
 % Parameters
 % ----------
 % model : struct
 %     a model structure.
+%
+% Name-Value Arguments
+% --------------------
 % fileName : char
 %     filename to export the model to. A dialog window will open if no file
 %     name is specified.
-% neverPrefix : logical, optional
+% neverPrefix : logical
 %     true if prefixes are never added to identifiers, even if they start
 %     with e.g. digits. This might result in invalid SBML files (default
 %     false).
-% supressWarnings : logical, optional
+% supressWarnings : logical
 %     true if warnings should be suppressed. This might result in invalid
 %     SBML files, as no checks are performed (default false).
-% sortIds : logical, optional
+% sortIds : logical
 %     whether metabolites, reactions and genes should be sorted
 %     alphabetically by their identifiers (default false).
 %
@@ -23,7 +26,9 @@ function exportModel(model,fileName,neverPrefix,supressWarnings,sortIds)
 % --------
 %     exportModel(model, fileName, neverPrefix, supressWarnings, sortIds);
 
-if nargin<2 || isempty(fileName)
+p=parseRAVENargs(varargin, {'fileName',[]; 'neverPrefix',[]; 'supressWarnings',[]; 'sortIds',[]});
+fileName=p.fileName; neverPrefix=p.neverPrefix; supressWarnings=p.supressWarnings; sortIds=p.sortIds;
+if isempty(fileName)
     [fileName, pathName] = uiputfile({'*.xml;*.sbml'}, 'Select file for model export',[model.id '.xml']);
     if fileName == 0
         error('You should provide a file location')
@@ -32,13 +37,13 @@ if nargin<2 || isempty(fileName)
     end
 end
 fileName=char(fileName);
-if nargin<3 || isempty(neverPrefix)
+if isempty(neverPrefix)
     neverPrefix=false;
 end
-if nargin<4 || isempty(supressWarnings)
+if isempty(supressWarnings)
     supressWarnings=false;
 end
-if nargin<5 || isempty(sortIds)
+if isempty(sortIds)
     sortIds=false;
 end
 if sortIds==true

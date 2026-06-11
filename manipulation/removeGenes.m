@@ -1,4 +1,4 @@
-function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeBlockedRxns,standardizeRules)
+function reducedModel = removeGenes(model,genesToRemove,varargin)
 % removeGenes  Delete a set of genes from a model.
 %
 % Parameters
@@ -8,12 +8,15 @@ function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeB
 % genesToRemove : cell or logical or double
 %     either a cell array of gene IDs, a logical vector with the same number
 %     of elements as genes in the model, or a vector of indexes to remove.
-% removeUnusedMets : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% removeUnusedMets : logical
 %     remove metabolites that are no longer in use (default false).
-% removeBlockedRxns : logical, optional
+% removeBlockedRxns : logical
 %     remove reactions that get blocked after deleting the genes (default
 %     false).
-% standardizeRules : logical, optional
+% standardizeRules : logical
 %     format gene rules to be compliant with the standard format (default
 %     true).
 %
@@ -27,15 +30,10 @@ function reducedModel = removeGenes(model,genesToRemove,removeUnusedMets,removeB
 %     reducedModel = removeGenes(model, genesToRemove, removeUnusedMets, ...
 %                        removeBlockedRxns, standardizeRules);
 
-if nargin<3
-    removeUnusedMets = false;
-end
-if nargin<4
-    removeBlockedRxns = false;
-end
-if nargin<5
-    standardizeRules = true;
-end
+p=parseRAVENargs(varargin, {'removeUnusedMets',false; 'removeBlockedRxns',false; 'standardizeRules',true});
+removeUnusedMets=p.removeUnusedMets;
+removeBlockedRxns=p.removeBlockedRxns;
+standardizeRules=p.standardizeRules;
 %Format grRules and rxnGeneMatrix:
 if standardizeRules
     [grRules,rxnGeneMat,toCheck] = standardizeGrRules(model,true);

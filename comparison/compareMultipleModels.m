@@ -1,4 +1,4 @@
-function compStruct = compareMultipleModels(models,printResults,plotResults,groupVector,funcCompare,taskFile)
+function compStruct = compareMultipleModels(models,varargin)
 % compareMultipleModels  Compare two or more condition-specific models.
 %
 % Compares two or more condition-specific models generated from the same
@@ -8,16 +8,19 @@ function compStruct = compareMultipleModels(models,printResults,plotResults,grou
 % ----------
 % models : cell
 %     cell array of two or more models.
-% printResults : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% printResults : logical
 %     true if the results should be printed on the screen (default false).
-% plotResults : logical, optional
+% plotResults : logical
 %     true if the results should be plotted (default false).
-% groupVector : double or cell, optional
+% groupVector : double or cell
 %     numeric vector or cell array for grouping similar models, i.e. by
 %     tissue (default all models ungrouped).
-% funcCompare : logical, optional
+% funcCompare : logical
 %     should a functional comparison be run (default false).
-% taskFile : char, optional
+% taskFile : char
 %     string containing the name of the task file to use for the functional
 %     comparison (should be an .xls or .xlsx file, required for functional
 %     comparison).
@@ -54,13 +57,11 @@ if ~(exist('mdscale.m','file') && exist('pdist.m','file') && exist('squareform.m
 end
 
 %% Set up input defaults
-if nargin < 2 || isempty(printResults)
-    printResults=false;
-end
-if nargin < 3 || isempty(plotResults)
-    plotResults=false;
-end
-if nargin < 4
+p=parseRAVENargs(varargin, {'printResults',false; 'plotResults',false; 'groupVector',[]; 'funcCompare',false; 'taskFile',[]});
+printResults=p.printResults;
+plotResults=p.plotResults;
+groupVector=p.groupVector;
+if isempty(groupVector)
     groupVector = [];
 elseif ~isnumeric(groupVector)
     % convert strings to numeric groups
@@ -69,12 +70,9 @@ else
     % generate group names for vector of numbers
     groupNames = arrayfun(@num2str,unique(groupVector),'UniformOutput',false);
 end
-if nargin < 5 || isempty(funcCompare)
-    funcCompare = false;
-end
-if nargin < 6
-    taskFile = [];
-else
+funcCompare=p.funcCompare;
+taskFile=p.taskFile;
+if ~isempty(taskFile)
     taskFile=char(taskFile);
 end
 if numel(models) <= 1

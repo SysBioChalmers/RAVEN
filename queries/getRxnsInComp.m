@@ -1,4 +1,4 @@
-function [I, rxnNames]=getRxnsInComp(model,comp,includePartial)
+function [I, rxnNames]=getRxnsInComp(model,comp,varargin)
 % getRxnsInComp  Get the reactions in a specified compartment.
 %
 % Parameters
@@ -7,7 +7,10 @@ function [I, rxnNames]=getRxnsInComp(model,comp,includePartial)
 %     a model structure.
 % comp : char
 %     string with the compartment id.
-% includePartial : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% includePartial : logical
 %     true if reactions with metabolites in several compartments (normally
 %     transport reactions) should be included (default false).
 %
@@ -23,9 +26,8 @@ function [I, rxnNames]=getRxnsInComp(model,comp,includePartial)
 %     [I, rxnNames] = getRxnsInComp(model, comp, includePartial);
 
 comp=char(comp);
-if nargin<3
-    includePartial=false;
-end
+p=parseRAVENargs(varargin, {'includePartial',false});
+includePartial=p.includePartial;
 
 J=find(ismember(upper(model.comps),upper(comp)));
 

@@ -1,11 +1,14 @@
-function reducedModel=deleteUnusedGenes(model,verbose)
+function reducedModel=deleteUnusedGenes(model,varargin)
 % deleteUnusedGenes  Delete all genes not associated to any reaction.
 %
 % Parameters
 % ----------
 % model : struct
 %     a model structure.
-% verbose : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% verbose : double
 %     0 for silent; 1 for printing the number of deleted genes; 2 for
 %     printing the list of deleted genes (default 1).
 %
@@ -18,9 +21,8 @@ function reducedModel=deleteUnusedGenes(model,verbose)
 % --------
 %     reducedModel=deleteUnusedGenes(model);
 
-if nargin<2
-    verbose=1;
-end
+p=parseRAVENargs(varargin, {'verbose',1});
+verbose=p.verbose;
 reducedModel=model;
 
 %Find all genes that are not used

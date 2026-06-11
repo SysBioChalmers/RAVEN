@@ -1,4 +1,4 @@
-function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaData,arrayData,tissue,celltype,noGeneScore,multipleGeneScoring,multipleCellScoring,hpaLevelScores)
+function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaData,varargin)
 % scoreModel  Score model reactions and genes from HPA and/or array data.
 %
 % Scores the reactions and genes in a model based on expression data from
@@ -11,7 +11,10 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 % hpaData : struct, optional
 %     HPA data structure from parseHPA (optional if arrayData is supplied,
 %     default []).
-% arrayData : struct, optional
+%
+% Name-Value Arguments
+% --------------------
+% arrayData : struct
 %     gene expression data structure (optional if hpaData is supplied,
 %     default []) with fields:
 %
@@ -30,20 +33,20 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 % tissue : char
 %     tissue to score for. Should exist in either hpaData.tissues or
 %     arrayData.tissues.
-% celltype : char, optional
+% celltype : char
 %     cell type to score for. Should exist in either hpaData.celltypes or
 %     arrayData.celltypes for this tissue (default is to use the best values
 %     among all the cell types for the tissue). Use [] if you want to supply
 %     more arguments.
-% noGeneScore : double, optional
+% noGeneScore : double
 %     score for reactions without genes (default -2).
-% multipleGeneScoring : char, optional
+% multipleGeneScoring : char
 %     determines how scores are calculated for reactions with several genes,
 %     'best' or 'average' (default 'best').
-% multipleCellScoring : char, optional
+% multipleCellScoring : char
 %     determines how scores are calculated when several cell types are used,
 %     'best' or 'average' (default 'best').
-% hpaLevelScores : struct, optional
+% hpaLevelScores : struct
 %     structure with numerical scores for the expression level categories
 %     from HPA. The structure should have a "names" and a "scores" field
 %     (default see code for default scores).
@@ -68,28 +71,30 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 %         hpaData, arrayData, tissue, celltype, noGeneScore, ...
 %         multipleGeneScoring, multipleCellScoring, hpaLevelScores);
 
-if nargin<3
-    arrayData=[];
-end
-if nargin<5
+p=parseRAVENargs(varargin, {'arrayData',[]; 'tissue',[]; 'celltype',[]; 'noGeneScore',-2; 'multipleGeneScoring','best'; 'multipleCellScoring','best'; 'hpaLevelScores',[]});
+arrayData=p.arrayData;
+tissue=p.tissue;
+celltype=p.celltype;
+if isempty(celltype)
     celltype=[];
 else
     celltype=char(celltype);
 end
-if nargin<6
-    noGeneScore=-2;
-end
-if nargin<7
+noGeneScore=p.noGeneScore;
+multipleGeneScoring=p.multipleGeneScoring;
+if isempty(multipleGeneScoring)
     multipleGeneScoring='best';
 else
     multipleGeneScoring=char(multipleGeneScoring);
 end
-if nargin<8
+multipleCellScoring=p.multipleCellScoring;
+if isempty(multipleCellScoring)
     multipleCellScoring='best';
 else
-    multipleCellScoring=char(multipleCellScoring);    
+    multipleCellScoring=char(multipleCellScoring);
 end
-if nargin<9
+hpaLevelScores=p.hpaLevelScores;
+if isempty(hpaLevelScores)
     %The first four are for APE, the other ones for staining
     hpaLevelScores.names={'High' 'Medium' 'Low' 'None' 'Strong' 'Moderate' 'Weak' 'Negative' 'Not detected'};
     hpaLevelScores.scores=[20 15 10 -8 20 15 10 -8 -8];

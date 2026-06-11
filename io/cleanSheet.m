@@ -6,14 +6,17 @@
 % ----------
 % raw : cell
 %     cell array with the data in the sheet.
-% removeComments : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% removeComments : logical
 %     true if commented lines (non-empty first cell in each row) should be
 %     removed (default true).
-% removeOnlyCap : logical, optional
+% removeOnlyCap : logical
 %     remove columns with captions but no other values (default false).
-% removeNoCap : logical, optional
+% removeNoCap : logical
 %     remove columns without captions (default true).
-% removeEmptyRows : logical, optional
+% removeEmptyRows : logical
 %     remove rows with no non-empty cells (default true).
 %
 % Returns
@@ -29,19 +32,9 @@
 % --------
 %     [raw, keptRows, keptCols] = cleanSheet(raw, removeComments, ...
 %         removeOnlyCap, removeNoCap, removeEmptyRows);
-function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,removeNoCap,removeEmptyRows)
-if nargin<2
-    removeComments=true;
-end
-if nargin<3
-    removeOnlyCap=false;
-end
-if nargin<4
-    removeNoCap=true;
-end
-if nargin<5
-    removeEmptyRows=true;
-end
+function [raw,keptRows,keptCols]=cleanSheet(raw,varargin)
+p=parseRAVENargs(varargin, {'removeComments',true; 'removeOnlyCap',false; 'removeNoCap',true; 'removeEmptyRows',true});
+removeComments=p.removeComments; removeOnlyCap=p.removeOnlyCap; removeNoCap=p.removeNoCap; removeEmptyRows=p.removeEmptyRows;
 
 keptRows=1:size(raw,1);
 keptRows=keptRows(:);

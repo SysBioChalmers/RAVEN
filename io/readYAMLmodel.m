@@ -1,14 +1,14 @@
-function model=readYAMLmodel(fileName, verbose)
+function model=readYAMLmodel(varargin)
 % readYAMLmodel  Read a model structure from a YAML file.
 %
 % Reads a yaml file matching (roughly) the cobrapy yaml structure.
 %
-% Parameters
-% ----------
+% Name-Value Arguments
+% --------------------
 % fileName : char
 %     a model file in yaml file format. A dialog window will open if no
 %     file name is specified.
-% verbose : logical, optional
+% verbose : logical
 %     set as true to monitor progress (default false).
 %
 % Returns
@@ -19,16 +19,15 @@ function model=readYAMLmodel(fileName, verbose)
 % Examples
 % --------
 %     model = readYAMLmodel(fileName, verbose);
-if nargin<1 || isempty(fileName)
+p=parseRAVENargs(varargin, {'fileName',[]; 'verbose',false});
+fileName=p.fileName; verbose=p.verbose;
+if isempty(fileName)
     [fileName, pathName] = uigetfile({'*.yml;*.yaml'}, 'Please select the model file');
     if fileName == 0
         error('You should select a model file')
     else
         fileName = fullfile(pathName,fileName);
     end
-end
-if nargin < 2
-    verbose = false;
 end
 
 if ~isfile(fileName)

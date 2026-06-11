@@ -1,4 +1,4 @@
-function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allowNewGenes)
+function newModel=addRxns(model,rxnsToAdd,varargin)
 % addRxns  Add reactions to a model.
 %
 % This function does not make extensive checks about formatting of
@@ -58,7 +58,10 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allow
 %       default '')
 %     - rxnConfidenceScores : vector with reaction confidence scores
 %       (optional, default NaN)
-% eqnType : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% eqnType : double
 %     describes how the equation string should be interpreted (default 1):
 %
 %     - 1 : the metabolites are matched to model.mets. New metabolites (if
@@ -73,11 +76,11 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allow
 %       are added will be assigned IDs "m1", "m2"... If IDs on the same
 %       form are already used in the model then the numbering will start
 %       from the highest used integer+1
-% compartment : char, optional
+% compartment : char
 %     the compartment the metabolites should be placed in when using
 %     eqnType=2. Must match model.comps (optional when eqnType=1 or
 %     eqnType=3).
-% allowNewMets : logical or char, optional
+% allowNewMets : logical or char
 %     true if the function is allowed to add new metabolites. Can also be a
 %     string, which will be used as prefix for the new metabolite IDs. It
 %     is highly recommended to first add any new metabolites with addMets
@@ -85,7 +88,7 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allow
 %     more annotation of metabolites, allows for the use of exchange
 %     metabolites, and using it reduces the risk of parsing errors
 %     (default false).
-% allowNewGenes : logical, optional
+% allowNewGenes : logical
 %     true if the function is allowed to add new genes (default false).
 %
 % Returns
@@ -98,29 +101,24 @@ function newModel=addRxns(model,rxnsToAdd,eqnType,compartment,allowNewMets,allow
 %     newModel = addRxns(model, rxnsToAdd, eqnType, compartment, ...
 %                        allowNewMets, allowNewGenes);
 
-if nargin<3
-    eqnType=1;
-elseif ~isnumeric(eqnType)
+p=parseRAVENargs(varargin, {'eqnType',1; 'compartment',[]; 'allowNewMets',false; 'allowNewGenes',false});
+eqnType=p.eqnType;
+if ~isnumeric(eqnType)
     EM='eqnType must be numeric';
     dispEM(EM);
 elseif ~ismember(eqnType,[1 2 3])
     EM='eqnType must be 1, 2, or 3';
     dispEM(EM);
-end    
-
-if nargin<4
-    compartment=[];
-else
+end
+compartment=p.compartment;
+if ~isempty(compartment)
     compartment=char(compartment);
 end
-if nargin<5
-    allowNewMets=false;
-elseif ~islogical(allowNewMets)
+allowNewMets=p.allowNewMets;
+if ~islogical(allowNewMets)
     allowNewMets=char(allowNewMets);
 end
-if nargin<6
-    allowNewGenes=false;
-end
+allowNewGenes=p.allowNewGenes;
 
 if allowNewGenes & isfield(rxnsToAdd,'grRules')
     genesToAdd.genes = strjoin(convertCharArray(rxnsToAdd.grRules));

@@ -1,4 +1,4 @@
-function files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)
+function files=checkFileExistence(files,varargin)
 % checkFileExistence  Check whether files exist.
 %
 % If no full path is given a file should be located in the current folder,
@@ -9,16 +9,19 @@ function files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)
 % files : char or cell
 %     string or cell array of strings with path to file(s) or path or
 %     filename(s).
-% fullOrTemp : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% fullOrTemp : double
 %     controls path handling (default 0):
 %
 %     - 0 : do not change path to file(s)
 %     - 1 : return full path to file(s)
 %     - 2 : copy file(s) to system default temporary folder and return
 %       full path
-% allowSpace : logical, optional
+% allowSpace : logical
 %     whether the 'space' character is allowed in the path (default true).
-% checkExist : logical, optional
+% checkExist : logical
 %     whether file existence should really be checked, as this function can
 %     also be used to return the full path to a new file (default true).
 %     Can only be set to false if fullOrTemp is set to 1.
@@ -33,15 +36,8 @@ function files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)
 % --------
 %     files = checkFileExistence(files, fullOrTemp, allowSpace, checkExist);
 
-if nargin<2
-    fullOrTemp = 0;
-end
-if nargin<3
-    allowSpace = true;
-end
-if nargin<4
-    checkExist = true;
-end
+p=parseRAVENargs(varargin, {'fullOrTemp',0; 'allowSpace',true; 'checkExist',true});
+fullOrTemp=p.fullOrTemp; allowSpace=p.allowSpace; checkExist=p.checkExist;
 files=convertCharArray(files);
 if numel(files)==1
     oneFile=true;

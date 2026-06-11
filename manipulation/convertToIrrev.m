@@ -1,4 +1,4 @@
-function [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns)
+function [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,varargin)
 % convertToIrrev  Convert a model to irreversible form.
 %
 % Reversible reactions are split into one forward and one reverse
@@ -9,7 +9,10 @@ function [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns)
 % ----------
 % model : struct
 %     a model structure.
-% rxns : cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% rxns : cell
 %     cell array with the reactions to split, if reversible (default
 %     model.rxns).
 %
@@ -29,7 +32,9 @@ function [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns)
 % --------
 %     [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,rxns);
 
-if nargin<2
+p=parseRAVENargs(varargin, {'rxns',[]});
+rxns=p.rxns;
+if isempty(rxns)
     I=true(numel(model.rxns),1);
 else
     rxns=convertCharArray(rxns);

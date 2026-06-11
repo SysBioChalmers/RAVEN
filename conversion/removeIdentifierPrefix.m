@@ -1,4 +1,4 @@
-function [model, hasChanged]=removeIdentifierPrefix(model,fields,forceRemove)
+function [model, hasChanged]=removeIdentifierPrefix(model,varargin)
 % removeIdentifierPrefix  Remove SBML-required identifier prefixes.
 %
 % This function removes identifier prefixes:
@@ -17,12 +17,15 @@ function [model, hasChanged]=removeIdentifierPrefix(model,fields,forceRemove)
 % ----------
 % model : struct
 %     model whose identifiers should be modified.
-% fields : cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% fields : cell
 %     cell array with model field names from which the identifiers should
 %     be removed, possible values: 'rxns', 'mets', 'comps', 'genes',
 %     'metNames', 'rxnNames', 'id' (default all listed model fields will
 %     be checked).
-% forceRemove : logical, optional
+% forceRemove : logical
 %     if prefixes should be removed even if not all entries in a model
 %     field have the prefix (default false).
 %
@@ -37,12 +40,12 @@ function [model, hasChanged]=removeIdentifierPrefix(model,fields,forceRemove)
 % --------
 %     model = removeIdentifierPrefix(model, fields, forceRemove);
 
-if nargin<2 || isempty(fields)
+p=parseRAVENargs(varargin, {'fields',[]; 'forceRemove',false});
+fields=p.fields;
+if isempty(fields)
     fields = {'rxns','mets','comps','genes','metNames','rxnNames','id'};
 end
-if nargin<3 || isempty(forceRemove)
-    forceRemove = false;
-end
+forceRemove=p.forceRemove;
 
 modelFields = {'rxns',      'R_';
     'mets',      'M_';

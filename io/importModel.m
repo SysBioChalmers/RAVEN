@@ -1,21 +1,21 @@
-function model=importModel(fileName,removeExcMets,removePrefix,supressWarnings)
+function model=importModel(varargin)
 % importModel  Import a constraint-based model from an SBML file.
 %
-% Parameters
-% ----------
+% Name-Value Arguments
+% --------------------
 % fileName : char
 %     a SBML file to import. A dialog window will open if no file name is
 %     specified.
-% removeExcMets : logical, optional
+% removeExcMets : logical
 %     true if exchange metabolites should be removed. This is needed to be
 %     able to run simulations, but it could also be done using
 %     simplifyModel at a later stage (default true).
-% removePrefix : logical, optional
+% removePrefix : logical
 %     true if identifier prefixes should be removed when loading the model:
 %     G_ for genes, R_ for reactions, M_ for metabolites, and C_ for
 %     compartments. These are only removed if all identifiers of a certain
 %     type contain the prefix (default true).
-% supressWarnings : logical, optional
+% supressWarnings : logical
 %     true if warnings regarding the model structure should be supressed
 %     (default false).
 %
@@ -74,7 +74,9 @@ function model=importModel(fileName,removeExcMets,removePrefix,supressWarnings)
 % model is valid. Take these warnings seriously and modify the model
 % structure to solve them.
 
-if nargin<1 || isempty(fileName)
+p=parseRAVENargs(varargin, {'fileName',[]; 'removeExcMets',[]; 'removePrefix',[]; 'supressWarnings',false});
+fileName=p.fileName; removeExcMets=p.removeExcMets; removePrefix=p.removePrefix; supressWarnings=p.supressWarnings;
+if isempty(fileName)
     [fileName, pathName] = uigetfile({'*.xml;*.sbml'}, 'Please select the model file');
     if fileName == 0
         error('You should select a model file')
@@ -83,16 +85,12 @@ if nargin<1 || isempty(fileName)
     end
 end
 fileName=char(fileName);
-if nargin<2 || isempty(removeExcMets)
+if isempty(removeExcMets)
     removeExcMets=true;
 end
 
-if nargin<3 || isempty(removePrefix)
+if isempty(removePrefix)
     removePrefix=true;
-end
-
-if nargin<4
-    supressWarnings=false;
 end
 
 fileName=checkFileExistence(fileName,1);

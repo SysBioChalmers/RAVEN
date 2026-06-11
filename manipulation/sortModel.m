@@ -1,17 +1,20 @@
-function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)
+function model=sortModel(model,varargin)
 % sortModel  Sort a model based on metabolite names and compartments.
 %
 % Parameters
 % ----------
 % model : struct
 %     a model structure.
-% sortReversible : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% sortReversible : logical
 %     sorts the reversible reactions so that the metabolite that is first
 %     in lexicographical order is a reactant (default true).
-% sortMetName : logical, optional
+% sortMetName : logical
 %     sort the metabolite names in the equation, also uses compartment
 %     abbreviation (default false).
-% sortReactionOrder : logical, optional
+% sortReactionOrder : logical
 %     sorts the reaction order within each subsystem so that reactions
 %     consuming some metabolite come after reactions producing it. This
 %     overrides the sortReversible option and reactions are sorted so that
@@ -27,15 +30,10 @@ function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)
 % --------
 %     model = sortModel(model, sortReversible, sortMetName, sortReactionOrder);
 
-if nargin<2
-    sortReversible=true;
-end
-if nargin<3
-    sortMetName=false;
-end
-if nargin<4
-    sortReactionOrder=false;
-end
+p=parseRAVENargs(varargin, {'sortReversible',true; 'sortMetName',false; 'sortReactionOrder',false});
+sortReversible=p.sortReversible;
+sortMetName=p.sortMetName;
+sortReactionOrder=p.sortReactionOrder;
 
 if sortMetName==true
     %Assuming that metComps are the indexes. Should be changed at one point

@@ -1,4 +1,4 @@
-function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidence)
+function model=addRxnsGenesMets(model,sourceModel,rxns,varargin)
 % addRxnsGenesMets  Copy reactions from a source model into another model.
 %
 % Copies reactions from a source model to a new model, including (new)
@@ -19,7 +19,10 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 % rxns : cell or char
 %     reaction IDs (from source model). Can also be a string if only one
 %     reaction is added.
-% addGene : logical or char or cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% addGene : logical or char or cell
 %     three options (default false):
 %
 %     - false : no genes are annotated to the new reactions
@@ -27,12 +30,12 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %       added when required
 %     - string or cell array : new grRules are specified as string or cell
 %       array, and any new genes are added when required
-% rxnNote : cell or char, optional
+% rxnNote : cell or char
 %     strings explaining why reactions were copied to the model, to be
 %     included as newModel.rxnNotes. Can also be a string if the same
 %     rxnNotes should be added for each new reaction, or only one reaction
 %     is to be added (default 'Added via addRxnsAndMets()').
-% confidence : double, optional
+% confidence : double
 %     integer specifying confidence score for all reactions, following
 %     doi:10.1038/nprot.2009.203 (default 0):
 %
@@ -54,23 +57,20 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,addGene,rxnNote,confidenc
 %     newModel = addRxnsGenesMets(model, sourceModel, rxns, addGene, ...
 %                                 rxnNote, confidence);
 
-if nargin<6
-    confidence=0;
-end
+p=parseRAVENargs(varargin, {'addGene',false; 'rxnNote',[]; 'confidence',0});
+confidence=p.confidence;
 rxns=convertCharArray(rxns);
-if nargin<5
+if isempty(p.rxnNote)
     rxnNote={'Added via addRxnsGenesMets()'};
 else
-    rxnNote=convertCharArray(rxnNote);
+    rxnNote=convertCharArray(p.rxnNote);
 end
 if numel(rxnNote)==1 && numel(rxns)>1
     rxnNoteArray=cell(1,numel(rxns));
     rxnNoteArray(:)=rxnNote;
     rxnNote=rxnNoteArray;
 end
-if nargin<4
-    addGene=false;
-end
+addGene=p.addGene;
 
 % Obtain indexes of reactions in source model
 [notNewRxn,oldRxn]=ismember(rxns,model.rxns);

@@ -1,5 +1,5 @@
 function [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
-    modelIDs,refFastaFiles,developMode,hideVerbose)
+    modelIDs,refFastaFiles,varargin)
 % getDiamond  Bidirectional BLAST with DIAMOND against template organisms.
 %
 % Parameters
@@ -15,10 +15,13 @@ function [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
 %     getModelFromHomology.
 % refFastaFiles : cell
 %     a cell array with the paths to the corresponding FASTA files.
-% developMode : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% developMode : logical
 %     true if blastReport should be generated that is used in the unit
 %     testing function for DIAMOND (default false).
-% hideVerbose : logical, optional
+% hideVerbose : logical
 %     true if no status messages should be printed (default false).
 %
 % Returns
@@ -48,12 +51,9 @@ function [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
 % --------
 % getModelFromHomology, getBlast
 
-if nargin<5
-    developMode = false;
-end
-if nargin<6
-    hideVerbose = false;
-end
+p=parseRAVENargs(varargin, {'developMode',false; 'hideVerbose',false});
+developMode=p.developMode;
+hideVerbose=p.hideVerbose;
 
 %Everything should be cell arrays
 organismID=convertCharArray(organismID);

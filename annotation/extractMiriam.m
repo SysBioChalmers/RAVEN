@@ -1,4 +1,4 @@
-function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)
+function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,varargin)
 % extractMiriam  Unpack MIRIAM annotations into a human-readable table.
 %
 % This function unpacks the information kept in metMiriams, rxnMiriams,
@@ -12,7 +12,10 @@ function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)
 % modelMiriams : cell
 %     a miriam structure (e.g. model.metMiriams) for one or multiple
 %     metabolites.
-% miriamNames : cell or char, optional
+%
+% Name-Value Arguments
+% --------------------
+% miriamNames : cell or char
 %     cell array with miriam names to be extracted (default 'all', meaning
 %     that annotation for all miriam names found in modelMiriams will be
 %     extracted).
@@ -33,7 +36,9 @@ function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)
 % --------
 %     [miriams, extractedMiriamNames] = extractMiriam(modelMiriams, miriamNames);
 
-if nargin<2 || (ischar(miriamNames) && strcmp(miriamNames,'all'))
+p=parseRAVENargs(varargin, {'miriamNames',[]});
+miriamNames=p.miriamNames;
+if isempty(miriamNames) || (ischar(miriamNames) && strcmp(miriamNames,'all'))
     extractAllTypes=true;
 else
     extractAllTypes=false;

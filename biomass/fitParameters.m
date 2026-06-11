@@ -1,4 +1,4 @@
-function [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,fitToRatio,initialGuess,plotFitting)
+function [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,varargin)
 % fitParameters  Fit parameters such as maintenance ATP by quadratic programming.
 %
 % Parameters
@@ -25,13 +25,16 @@ function [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,xRxn
 %     - isNegative : cell array of vectors where the elements are true if
 %       that position should be the negative of the fitted value (to
 %       differentiate between production/consumption)
-% fitToRatio : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% fitToRatio : logical
 %     if the ratio of simulated to measured values should be fitted
 %     instead of the absolute value. Used to prevent large fluxes from
 %     having too large an impact (default true).
-% initialGuess : double, optional
+% initialGuess : double
 %     initial guess of the parameters (default ones).
-% plotFitting : logical, optional
+% plotFitting : logical
 %     true if the resulting fitting should be plotted (default false).
 %
 % Returns
@@ -51,18 +54,13 @@ function [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,xRxn
 %         xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,fitToRatio,...
 %         initialGuess,plotFitting);
 
-if nargin<7
-    fitToRatio=true;
-end
-if nargin<8
-    initialGuess=ones(numel(parameterPositions.position),1);
-end
+p=parseRAVENargs(varargin, {'fitToRatio',true; 'initialGuess',[]; 'plotFitting',false});
+fitToRatio=p.fitToRatio;
+initialGuess=p.initialGuess;
 if isempty(initialGuess)
     initialGuess=ones(numel(parameterPositions.position),1);
 end
-if nargin<9
-    plotFitting=false;
-end
+plotFitting=p.plotFitting;
 
 xRxns=convertCharArray(xRxns);
 rxnsToFit=convertCharArray(rxnsToFit);
