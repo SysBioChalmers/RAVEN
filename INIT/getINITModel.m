@@ -459,3 +459,12 @@ fprintf(['\tMean reaction score: ' num2str(rxnS) '\n']);
 fprintf(['\tMean gene score: ' num2str(geneS) '\n']);
 fprintf(['\tReactions with positive scores: ' num2str(100*sum(a>0)/numel(a)) '%%\n\n']);
 end
+
+%Local beta probability density function, equivalent to the Statistics and
+%Machine Learning Toolbox betapdf but using only base MATLAB (beta). This
+%avoids a dependency on that toolbox. The density is zero outside [0,1].
+function y=betapdf(x,a,b)
+y=zeros(size(x));
+k=x>=0 & x<=1;
+y(k)=(x(k).^(a-1)).*((1-x(k)).^(b-1))/beta(a,b);
+end
