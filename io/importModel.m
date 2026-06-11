@@ -156,6 +156,18 @@ if isempty(modelSBML)
     dispEM(EM);
 end
 
+%RAVEN only supports SBML Level 3 Version 1 with the FBC version 2 package.
+%Older SBML levels/versions and non-FBC formats are no longer supported.
+if ~(isfield(modelSBML,'SBML_level') && isequal(modelSBML.SBML_level,3) && ...
+        isfield(modelSBML,'SBML_version') && isequal(modelSBML.SBML_version,1) && ...
+        isfield(modelSBML,'fbc_version') && isequal(modelSBML.fbc_version,2))
+    EM=['importModel only supports SBML Level 3 Version 1 with the FBC '...
+        'version 2 package. Convert the model to this format first (for '...
+        'example with another tool), or use an older RAVEN version to '...
+        'import it.'];
+    dispEM(EM);
+end
+
 %Retrieve compartment names and IDs
 compartmentNames=cell(numel(modelSBML.compartment),1);
 compartmentIDs=cell(numel(modelSBML.compartment),1);
@@ -196,7 +208,7 @@ if all(cellfun(@isempty,compartmentNames))
     compartmentNames=compartmentIDs;
 end
 
-%Retrieve info on metabolites, genes, complexes
+%Retrieve info on metabolites
 metaboliteNames={};
 metaboliteIDs={};
 metaboliteCompartments={};
@@ -206,191 +218,108 @@ metaboliteInChI={};
 metaboliteMiriams={};
 metaboliteCharges=[];
 
-geneNames={};
-geneIDs={};
+%Gene information is collected from fbc_geneProduct further below
 geneMiriams={};
 geneShortNames={};
 proteins={};
-geneCompartments={};
-complexIDs={};
-complexNames={};
 
-%If the file is not a COBRA Toolbox model. According to the format
-%specified in the yeast consensus model both metabolites and genes are a
-%type of 'species'. The metabolites have names starting with 'M_' and genes
-%with 'E_'
-geneSBOs = [];
+%In FBC v2 all species are metabolites; genes are stored as fbc_geneProduct
+%and are handled separately below.
 metSBOs = [];
 %Regex of compartment names, later to be used to remove from metabolite
 %names if present as suffix.
 regexCompNames = ['\s?\[((' strjoin({modelSBML.compartment.name},')|(') '))\]$'];
 for i=1:numel(modelSBML.species)
-    if length(modelSBML.species(i).id)>=2 && strcmpi(modelSBML.species(i).id(1:2),'E_')
-        geneNames{numel(geneNames)+1,1}=modelSBML.species(i).name;
+    metaboliteNames{numel(metaboliteNames)+1,1}=modelSBML.species(i).name;
+    metaboliteIDs{numel(metaboliteIDs)+1,1}=modelSBML.species(i).id;
+    metaboliteCompartments{numel(metaboliteCompartments)+1,1}=modelSBML.species(i).compartment;
+    metaboliteUnconstrained(numel(metaboliteUnconstrained)+1,1)=modelSBML.species(i).boundaryCondition;
 
-        %The "E_" is included in the ID. This is because it's only used
-        %internally in this file and it makes the matching a little
-        %smoother
-        geneIDs{numel(geneIDs)+1,1}=modelSBML.species(i).id;
-        geneCompartments{numel(geneCompartments)+1,1}=modelSBML.species(i).compartment;
-
-        %Get Miriam structure
-        if isfield(modelSBML.species(i),'annotation')
-            %Get Miriam info
-            geneMiriam=parseMiriam(modelSBML.species(i).annotation);
-            geneMiriams{numel(geneMiriams)+1,1}=geneMiriam;
-        else
-            geneMiriams{numel(geneMiriams)+1,1}=[];
+    %For each metabolite retrieve the formula and the InChI code if
+    %available First add the InChI code and the formula from the
+    %InChI. This allows for overwriting the formula by setting the
+    %actual formula field
+    if ~isempty(modelSBML.species(i).annotation)
+        %Get the formula if available
+        startString='>InChI=';
+        endString='</in:inchi>';
+        formStart=strfind(modelSBML.species(i).annotation,startString);
+        if isempty(formStart)
+            startString='InChI=';
+            endString='"/>';
         end
+        formStart=strfind(modelSBML.species(i).annotation,startString);
+        if ~isempty(formStart)
+            formEnd=strfind(modelSBML.species(i).annotation,endString);
+            formEndIndex=find(formEnd>formStart, 1 );
+            formula=modelSBML.species(i).annotation(formStart+numel(startString):formEnd(formEndIndex)-1);
+            metaboliteInChI{numel(metaboliteInChI)+1,1}=formula;
 
-        %Protein short names (for example ERG10) are saved as SHORT
-        %NAME: NAME in the notes-section of metabolites for SBML Level
-        %2 and as PROTEIN_ASSOCIATION for each reaction in SBML Level 2
-        %COBRA Toolbox format. For now only the SHORT NAME is loaded
-        %and no mapping takes place
-        if isfield(modelSBML.species(i),'notes')
-            geneShortNames{numel(geneShortNames)+1,1}=parseNote(modelSBML.species(i).notes,'SHORT NAME');
-        else
-            geneShortNames{numel(geneShortNames)+1,1}='';
-        end
-
-        %Get SBO term
-        if isfield(modelSBML.species(i),'sboTerm') && ~(modelSBML.species(i).sboTerm==-1)
-            geneSBOs(end+1,1) = modelSBML.species(i).sboTerm;
-        end
-    elseif length(modelSBML.species(i).id)>=2 && strcmpi(modelSBML.species(i).id(1:3),'Cx_')
-        %If it's a complex keep the ID and name
-        complexIDs=[complexIDs;modelSBML.species(i).id];
-        complexNames=[complexNames;modelSBML.species(i).name];
-    else
-        %If it is not gene or complex, then it must be a metabolite
-        metaboliteNames{numel(metaboliteNames)+1,1}=modelSBML.species(i).name;
-        metaboliteIDs{numel(metaboliteIDs)+1,1}=modelSBML.species(i).id;
-        metaboliteCompartments{numel(metaboliteCompartments)+1,1}=modelSBML.species(i).compartment;
-        metaboliteUnconstrained(numel(metaboliteUnconstrained)+1,1)=modelSBML.species(i).boundaryCondition;
-
-        %For each metabolite retrieve the formula and the InChI code if
-        %available First add the InChI code and the formula from the
-        %InChI. This allows for overwriting the formula by setting the
-        %actual formula field
-        if ~isempty(modelSBML.species(i).annotation)
-            %Get the formula if available
-            startString='>InChI=';
-            endString='</in:inchi>';
-            formStart=strfind(modelSBML.species(i).annotation,startString);
-            if isempty(formStart)
-                startString='InChI=';
-                endString='"/>';
-            end
-            formStart=strfind(modelSBML.species(i).annotation,startString);
-            if ~isempty(formStart)
-                formEnd=strfind(modelSBML.species(i).annotation,endString);
-                formEndIndex=find(formEnd>formStart, 1 );
-                formula=modelSBML.species(i).annotation(formStart+numel(startString):formEnd(formEndIndex)-1);
-                metaboliteInChI{numel(metaboliteInChI)+1,1}=formula;
-
-                %The composition is most often present between the
-                %first and second "/" in the model. In some simple
-                %molecules, such as salts, there is no second "/". The
-                %formula is then assumed to be to the end of the string
-                compositionIndexes=strfind(formula,'/');
-                if numel(compositionIndexes)>1
+            %The composition is most often present between the
+            %first and second "/" in the model. In some simple
+            %molecules, such as salts, there is no second "/". The
+            %formula is then assumed to be to the end of the string
+            compositionIndexes=strfind(formula,'/');
+            if numel(compositionIndexes)>1
+                metaboliteFormula{numel(metaboliteFormula)+1,1}=...
+                    formula(compositionIndexes(1)+1:compositionIndexes(2)-1);
+            else
+                if isscalar(compositionIndexes)
+                    %Probably a simple molecule which can have only
+                    %one conformation
                     metaboliteFormula{numel(metaboliteFormula)+1,1}=...
-                        formula(compositionIndexes(1)+1:compositionIndexes(2)-1);
-                else
-                    if isscalar(compositionIndexes)
-                        %Probably a simple molecule which can have only
-                        %one conformation
-                        metaboliteFormula{numel(metaboliteFormula)+1,1}=...
-                            formula(compositionIndexes(1)+1:numel(formula));
-                    else
-                        metaboliteFormula{numel(metaboliteFormula)+1,1}='';
-                    end
-                end
-            elseif isfield(modelSBML.species(i),'fbc_chemicalFormula')
-                metaboliteInChI{numel(metaboliteInChI)+1,1}='';
-                if ~isempty(modelSBML.species(i).fbc_chemicalFormula)
-                    %Cannot extract InChi from formula, so remains
-                    %empty
-                    metaboliteFormula{numel(metaboliteFormula)+1,1}=modelSBML.species(i).fbc_chemicalFormula;
+                        formula(compositionIndexes(1)+1:numel(formula));
                 else
                     metaboliteFormula{numel(metaboliteFormula)+1,1}='';
                 end
+            end
+        elseif isfield(modelSBML.species(i),'fbc_chemicalFormula')
+            metaboliteInChI{numel(metaboliteInChI)+1,1}='';
+            if ~isempty(modelSBML.species(i).fbc_chemicalFormula)
+                %Cannot extract InChi from formula, so remains
+                %empty
+                metaboliteFormula{numel(metaboliteFormula)+1,1}=modelSBML.species(i).fbc_chemicalFormula;
             else
-                metaboliteInChI{numel(metaboliteInChI)+1,1}='';
                 metaboliteFormula{numel(metaboliteFormula)+1,1}='';
             end
-
-            %Get Miriam info
-            metMiriam=parseMiriam(modelSBML.species(i).annotation);
-            metaboliteMiriams{numel(metaboliteMiriams)+1,1}=metMiriam;
         else
             metaboliteInChI{numel(metaboliteInChI)+1,1}='';
-            if isfield(modelSBML.species(i),'notes')
-                metaboliteFormula{numel(metaboliteFormula)+1,1}=parseNote(modelSBML.species(i).notes,'FORMULA');
-            else
-                metaboliteFormula{numel(metaboliteFormula)+1,1}='';
-            end
-            metaboliteMiriams{numel(metaboliteMiriams)+1,1}=[];
-        end
-        if ~isempty(modelSBML.species(i).notes)
-            if ~isfield(modelSBML.species(i),'annotation')
-                metaboliteFormula{numel(metaboliteFormula)+1,1}=parseNote(modelSBML.species(i).notes,'FORMULA');
-            end
-        elseif ~isfield(modelSBML.species(i),'annotation')
             metaboliteFormula{numel(metaboliteFormula)+1,1}='';
         end
-        %Get SBO term
-        if isfield(modelSBML.species(i),'sboTerm') && ~(modelSBML.species(i).sboTerm==-1)
-            metSBOs(end+1,1) = modelSBML.species(i).sboTerm;
-        end
+
+        %Get Miriam info
+        metMiriam=parseMiriam(modelSBML.species(i).annotation);
+        metaboliteMiriams{numel(metaboliteMiriams)+1,1}=metMiriam;
+    else
+        metaboliteInChI{numel(metaboliteInChI)+1,1}='';
+        metaboliteFormula{numel(metaboliteFormula)+1,1}='';
+        metaboliteMiriams{numel(metaboliteMiriams)+1,1}=[];
+    end
+    %Get SBO term
+    if isfield(modelSBML.species(i),'sboTerm') && ~(modelSBML.species(i).sboTerm==-1)
+        metSBOs(end+1,1) = modelSBML.species(i).sboTerm;
     end
 
-    %The following lines are executed regardless isSBML2COBRA setting
-    if isempty(modelSBML.species(i).id) || ~strcmpi(modelSBML.species(i).id(1:2),'E_')
-        if isempty(modelSBML.species(i).id) || ~strcmpi(modelSBML.species(i).id(1:3),'Cx_')
-            %Remove trailing [compartment] from metabolite name if present
-            metaboliteNames{end,1}=regexprep(metaboliteNames{end,1},regexCompNames,'');
-            metaboliteNames{end,1}=metaboliteNames{end,1};
-            if isfield(modelSBML.species(i),'fbc_charge')
-                if ~isempty(modelSBML.species(i).fbc_charge) && modelSBML.species(i).isSetfbc_charge
-                    metaboliteCharges(numel(metaboliteCharges)+1,1)=double(modelSBML.species(i).fbc_charge);
-                else
-                    if isfield(modelSBML.species(i),'notes')
-                        if strfind(modelSBML.species(i).notes,'CHARGE')
-                            metaboliteCharges(numel(metaboliteCharges)+1,1)=str2double(parseNote(modelSBML.species(i).notes,'CHARGE'));
-                        else
-                            metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
-                        end
-                    else
-                        metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
-                    end
-                end
-            elseif isfield(modelSBML.species(i),'notes')
-                if strfind(modelSBML.species(i).notes,'CHARGE')
-                    metaboliteCharges(numel(metaboliteCharges)+1,1)=str2double(parseNote(modelSBML.species(i).notes,'CHARGE'));
-                else
-                    metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
-                end
-            else
-                metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
-            end
-            %Additional information from FBC format Chemical formula
-            if isfield(modelSBML.species(i),'fbc_chemicalFormula')
-                if ~isempty(modelSBML.species(i).fbc_chemicalFormula)
-                    metaboliteFormula{numel(metaboliteFormula),1}=modelSBML.species(i).fbc_chemicalFormula;
-                end
-            end
+    %Remove trailing [compartment] from metabolite name if present
+    metaboliteNames{end,1}=regexprep(metaboliteNames{end,1},regexCompNames,'');
+    if isfield(modelSBML.species(i),'fbc_charge')
+        if ~isempty(modelSBML.species(i).fbc_charge) && modelSBML.species(i).isSetfbc_charge
+            metaboliteCharges(numel(metaboliteCharges)+1,1)=double(modelSBML.species(i).fbc_charge);
+        else
+            metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
+        end
+    else
+        metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
+    end
+    %Additional information from FBC format Chemical formula
+    if isfield(modelSBML.species(i),'fbc_chemicalFormula')
+        if ~isempty(modelSBML.species(i).fbc_chemicalFormula)
+            metaboliteFormula{numel(metaboliteFormula),1}=modelSBML.species(i).fbc_chemicalFormula;
         end
     end
 end
 
-%Add SBO terms to gene and metabolite miriam fields
-if numel(unique(geneSBOs)) > 1  % don't add if they're all identical
-    for i = 1:numel(geneNames)
-        geneMiriams{i} = addSBOtoMiriam(geneMiriams{i},geneSBOs(i));
-    end
-end
+%Add SBO terms to metabolite miriam fields
 if numel(unique(metSBOs)) > 1
     for i = 1:numel(metaboliteNames)
         metaboliteMiriams{i} = addSBOtoMiriam(metaboliteMiriams{i},metSBOs(i));
@@ -410,7 +339,6 @@ rxnnotes=cell(numel(modelSBML.reaction),1);
 rxnnotes(:,:)=cellstr('');
 grRules=cell(numel(modelSBML.reaction),1);
 grRules(:,:)=cellstr('');
-grRulesFromModifier=grRules;
 rxnComps=zeros(numel(modelSBML.reaction),1);
 rxnMiriams=cell(numel(modelSBML.reaction),1);
 reactionReversibility=zeros(numel(modelSBML.reaction),1);
@@ -436,19 +364,6 @@ end
 
 for i=1:numel(modelSBML.reaction)
 
-    %Check that the reaction doesn't produce a complex and nothing else. If
-    %so, then jump to the next reaction. This is because I get the genes
-    %for complexes from the names and not from the reactions that create
-    %them. This only applies to the non-COBRA format
-    if isscalar(modelSBML.reaction(i).product)
-        if length(modelSBML.reaction(i).product(1).species)>=3
-            if strcmp(modelSBML.reaction(i).product(1).species(1:3),'Cx_')==true
-                continue;
-            end
-        end
-    end
-
-    %It didn't look like a gene complex-forming reaction
     counter=counter+1;
 
     reactionNames{counter}=modelSBML.reaction(i).name;
@@ -465,10 +380,6 @@ for i=1:numel(modelSBML.reaction)
         [~,fluxBoundIdx] = ismember({lb,ub},parameter.name);
         reactionLB(counter) = parameter.value{fluxBoundIdx(1)};
         reactionUB(counter) = parameter.value{fluxBoundIdx(2)};
-    elseif isfield(modelSBML.reaction(i).kineticLaw,'parameter')
-        reactionLB(counter)=modelSBML.reaction(i).kineticLaw.parameter(1).value;
-        reactionUB(counter)=modelSBML.reaction(i).kineticLaw.parameter(2).value;
-        reactionObjective(counter)=modelSBML.reaction(i).kineticLaw.parameter(3).value;
     else
         if reactionReversibility(counter)==true
             reactionLB(counter)=-inf;
@@ -479,92 +390,20 @@ for i=1:numel(modelSBML.reaction)
         reactionObjective(counter)=0;
     end
 
-    %Find the associated gene if available
-    %If FBC, get gene association data from corresponding fields
+    %Find the associated gene if available. In FBC v2 gene association data
+    %is stored in the fbc_geneProductAssociation field.
     if isfield(modelSBML.reaction(i),'fbc_geneProductAssociation')
         if ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation) && ~isempty(modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association)
             grRules{counter}=modelSBML.reaction(i).fbc_geneProductAssociation.fbc_association.fbc_association;
         end
-    elseif isfield(modelSBML.reaction(i),'notes')
-        %This section was previously executed only if isSBML2COBRA is true. Now
-        %it will be executed, if 'GENE_ASSOCIATION' is found in
-        %modelSBML.reaction(i).notes
-        if strfind(modelSBML.reaction(i).notes,'GENE_ASSOCIATION')
-            geneAssociation=parseNote(modelSBML.reaction(i).notes,'GENE_ASSOCIATION');
-        elseif strfind(modelSBML.reaction(i).notes,'GENE ASSOCIATION')
-            geneAssociation=parseNote(modelSBML.reaction(i).notes,'GENE ASSOCIATION');
-        else
-            geneAssociation='';
-        end
-        if ~isempty(geneAssociation)
-            %This adds the grRules. The gene list and rxnGeneMat are created
-            %later
-            grRules{counter}=geneAssociation;
-        end
-    end
-    if isempty(grRules{counter}) && ~isempty(modelSBML.reaction(i).modifier)
-        rules='';
-        for j=1:numel(modelSBML.reaction(i).modifier)
-            modifier=modelSBML.reaction(i).modifier(j).species;
-            if ~isempty(modifier)
-                if strcmpi(modifier(1:2),'E_')
-                    index=find(strcmp(modifier,geneIDs));
-                    %This should be unique and in the geneIDs list,
-                    %otherwise something is wrong
-                    if numel(index)~=1
-                        EM=['Could not get the gene association data from reaction ' reactionIDs{i}];
-                        dispEM(EM);
-                    end
-                    if ~isempty(rules)
-                        rules=[rules ' or (' geneNames{index} ')'];
-                    else
-                        rules=['(' geneNames{index} ')'];
-                    end
-                elseif strcmp(modifier(1:2),'s_')
-                    index=find(strcmp(modifier,metaboliteIDs));
-                    %This should be unique and in the geneIDs list,
-                    %otherwise something is wrong
-                    if numel(index)~=1
-                        EM=['Could not get the gene association data from reaction ' reactionIDs{i}];
-                        dispEM(EM);
-                    end
-                    if ~isempty(rules)
-                        rules=[rules ' or (' metaboliteIDs{index} ')'];
-                    else
-                        rules=['(' metaboliteIDs{index} ')'];
-                    end
-                else
-                    %It seems to be a complex. Add the corresponding
-                    %genes from the name of the complex (not the
-                    %reaction that creates it)
-                    index=find(strcmp(modifier,complexIDs));
-                    if isscalar(index)
-                        if ~isempty(rules)
-                            rules=[rules ' or (' strrep(complexNames{index},':',' and ') ')'];
-                        else
-                            rules=['(' strrep(complexNames{index},':',' and ') ')'];
-                        end
-                    else
-                        %Could not find a complex
-                        EM=['Could not get the gene association data from reaction ' reactionIDs{i}];
-                        dispEM(EM);
-                    end
-                end
-            end
-        end
-        grRules{counter}=rules;
-        grRulesFromModifier{counter}=rules;%Backup copy for grRules, useful to parse Yeast 7.6
     end
 
     %Add reaction compartment
+    rxnComp='';
     if isfield(modelSBML.reaction(i),'compartment')
         if ~isempty(modelSBML.reaction(i).compartment)
             rxnComp=modelSBML.reaction(i).compartment;
-        else
-            rxnComp='';
         end
-    elseif isfield(modelSBML.reaction(i),'notes')
-        rxnComp=parseNote(modelSBML.reaction(i).notes,'COMPARTMENT');
     end
     if ~isempty(rxnComp)
         %Find it in the compartment list
@@ -597,18 +436,10 @@ for i=1:numel(modelSBML.reaction)
     %Get ec-codes
     eccode='';
     if ~isempty(modelSBML.reaction(i).annotation)
-        if strfind(modelSBML.reaction(i).annotation,'urn:miriam:ec-code')
-            eccode=parseAnnotation(modelSBML.reaction(i).annotation,'urn:miriam:',':','ec-code');
-        elseif strfind(modelSBML.reaction(i).annotation,'http://identifiers.org/ec-code')
+        if strfind(modelSBML.reaction(i).annotation,'http://identifiers.org/ec-code')
             eccode=parseAnnotation(modelSBML.reaction(i).annotation,'http://identifiers.org/','/','ec-code');
         elseif strfind(modelSBML.reaction(i).annotation,'https://identifiers.org/ec-code')
             eccode=parseAnnotation(modelSBML.reaction(i).annotation,'https://identifiers.org/','/','ec-code');
-        end
-    elseif isfield(modelSBML.reaction(i),'notes')
-        if strfind(modelSBML.reaction(i).notes,'EC Number')
-            eccode=[eccode parseNote(modelSBML.reaction(i).notes,'EC Number')];
-        elseif strfind(modelSBML.reaction(i).notes,'PROTEIN_CLASS')
-            eccode=[eccode parseNote(modelSBML.reaction(i).notes,'PROTEIN_CLASS')];
         end
     end
     eccodes{counter}=eccode;
@@ -724,24 +555,18 @@ if isfield(modelSBML,'annotation')
     end
     endString='"/>';
     I=strfind(modelSBML.annotation,endString);
-    if strfind(modelSBML.annotation,'"urn:miriam:')
-        J=strfind(modelSBML.annotation,'"urn:miriam:');
-        if any(J)
-            model.annotation.taxonomy=modelSBML.annotation(J+12:I(find(I>J,1))-1);
-        end
+    %Finding whether the taxonomy is written in the old or the new way
+    J=strfind(modelSBML.annotation,'"http://identifiers.org/');
+    if any(J)
+        I = I(find(I>J,1))-1;
+        J = J(find(J<I,1))+24;
+        model.annotation.taxonomy=modelSBML.annotation(J:I);
     else
-        J=strfind(modelSBML.annotation,'"http://identifiers.org/');
+        J=strfind(modelSBML.annotation,'"https://identifiers.org/');
         if any(J)
             I = I(find(I>J,1))-1;
-            J = J(find(J<I,1))+24;
+            J = J(find(J<I,1))+25;
             model.annotation.taxonomy=modelSBML.annotation(J:I);
-        else
-            J=strfind(modelSBML.annotation,'"https://identifiers.org/');
-            if any(J)
-                I = I(find(I>J,1))-1;
-                J = J(find(J<I,1))+25;
-                model.annotation.taxonomy=modelSBML.annotation(J:I);
-            end
         end
     end
 end
@@ -769,113 +594,36 @@ model.metNames=metaboliteNames;
 [~, J]=ismember(metaboliteCompartments,model.comps);
 model.metComps=J;
 
-%If any genes have been loaded (only for the new format)
-if ~isempty(geneNames)
-    %In some rare cases geneNames may not necessarily be used in grRules.
-    %That is true for Yeast 7.6. It's therefore important to change gene
-    %systematic names to geneIDs in sophisticated way. Gene systematic
-    %names are not unique, since exactly the same name may be in different
-    %compartments
-    if all(cellfun(@isempty,strfind(grRules,geneNames{1})))
-        geneShortNames=geneNames;
-        %geneShortNames contain compartments as well, so these are removed
-        geneShortNames=regexprep(geneShortNames,' \[.+$','');
-        %grRules obtained from modifier fields contain geneNames. These are
-        %changed into geneIDs. grRulesFromModifier is a good way to have
-        %geneIDs and rxns association when it's important to resolve
-        %systematic name ambiguities
-        grRulesFromModifier=regexprep(regexprep(grRulesFromModifier,'\[|\]','_'),regexprep(geneNames,'\[|\]','_'),geneIDs);
-        grRules=regexprep(regexprep(grRules,'\[|\]','_'),regexprep(geneNames,'\[|\]','_'),geneIDs);
+%If any gene associations have been loaded, build the gene list
+if ~all(cellfun(@isempty,grRules))
+    %If fbc_geneProduct exists, follow the specified gene order, such
+    %that matching geneShortNames in function below will work
+    if isfield(modelSBML,'fbc_geneProduct')
+        genes={modelSBML.fbc_geneProduct.fbc_id};
 
-        %Yeast 7.6 contains several metabolites, which were used in gene
-        %associations. For that reason, the list of species ID is created
-        %and we then check whether any of them have kegg.genes annotation
-        %thereby obtaining systematic gene names
-        geneShortNames=vertcat(geneShortNames,metaboliteNames);
-        geneIDs=vertcat(geneIDs,metaboliteIDs);
-        geneSystNames=extractMiriam(vertcat(geneMiriams,metaboliteMiriams),'kegg.genes');
-        geneCompartments=vertcat(geneCompartments,metaboliteCompartments);
-        geneMiriams=vertcat(geneMiriams,metaboliteMiriams);
-
-        %Now we retain information for only these entries, which have
-        %kegg.genes annotation
-        geneShortNames=geneShortNames(~cellfun('isempty',geneSystNames));
-        geneIDs=geneIDs(~cellfun('isempty',geneSystNames));
-        geneSystNames=geneSystNames(~cellfun('isempty',geneSystNames));
-        geneCompartments=geneCompartments(~cellfun('isempty',geneSystNames));
-        geneMiriams=geneMiriams(~cellfun('isempty',geneSystNames));
-        %Now we reorder geneIDs and geneSystNames by geneSystNames string
-        %length
-        geneNames=geneIDs;%Backuping geneIDs, since we need unsorted order for later
-        [~, Indx] = sort(cellfun('size', geneSystNames, 2), 'descend');
-        geneIDs = geneIDs(Indx);
-        geneSystNames = geneSystNames(Indx);
-        for i=1:numel(geneSystNames)
-            for j=1:numel(grRules)
-                if strfind(grRules{j},geneSystNames{i})
-                    if ~isempty(grRules{j})
-                        if sum(ismember(geneSystNames,geneSystNames{i}))==1
-                            grRules{j}=regexprep(grRules{j},geneSystNames{i},geneIDs{i});
-                        elseif sum(ismember(geneSystNames,geneSystNames{i}))>1
-                            counter=0;
-                            ovrlpIDs=geneIDs(ismember(geneSystNames,geneSystNames{i}));
-                            for k=1:numel(ovrlpIDs)
-                                if strfind(grRulesFromModifier{j},ovrlpIDs{k})
-                                    counter=counter+1;
-                                    grRules{j}=regexprep(grRules{j},geneSystNames{i},ovrlpIDs{k});
-                                end
-                                if counter>1
-                                    EM=['Gene association is ambiguous for reaction ' modelSBML.reaction(j).id];
-                                    dispEM(EM);
-                                end
-                            end
-                        end
-                    end
+        %Get gene Miriams from fbc_geneProduct
+        if isempty(geneMiriams)
+            geneMiriams = cell(numel(genes),1);
+            if isfield(modelSBML.fbc_geneProduct,'sboTerm') && isscalar(unique([modelSBML.fbc_geneProduct.sboTerm]))
+                %If all the SBO terms are identical, don't add them to geneMiriams
+                modelSBML.fbc_geneProduct = rmfield(modelSBML.fbc_geneProduct,'sboTerm');
+            end
+            for i = 1:numel(genes)
+                geneMiriams{i}=parseMiriam(modelSBML.fbc_geneProduct(i).annotation);
+                if isfield(modelSBML.fbc_geneProduct(i),'sboTerm') && ~(modelSBML.fbc_geneProduct(i).sboTerm==-1)
+                    geneMiriams{i} = addSBOtoMiriam(geneMiriams{i},modelSBML.fbc_geneProduct(i).sboTerm);
                 end
             end
         end
+        proteins={modelSBML.fbc_geneProduct.fbc_name};
+    else
+        genes=getGenesFromGrRules(grRules);
     end
-    model.genes=geneNames;
+    model.genes=genes;
     model.grRules=grRules;
     [grRules,rxnGeneMat] = standardizeGrRules(model,true);
     model.grRules = grRules;
     model.rxnGeneMat = rxnGeneMat;
-
-    %Match the compartments for genes
-    [~, J]=ismember(geneCompartments,model.comps);
-    model.geneComps=J;
-else
-    if ~all(cellfun(@isempty,grRules))
-        %If fbc_geneProduct exists, follow the specified gene order, such
-        %that matching geneShortNames in function below will work
-        if isfield(modelSBML,'fbc_geneProduct')
-            genes={modelSBML.fbc_geneProduct.fbc_id};
-
-            %Get gene Miriams if they were not retrieved above (this occurs
-            %when genes are stored as fbc_geneProduct instead of species)
-            if isempty(geneMiriams)
-                geneMiriams = cell(numel(genes),1);
-                if isfield(modelSBML.fbc_geneProduct,'sboTerm') && isscalar(unique([modelSBML.fbc_geneProduct.sboTerm]))
-                    %If all the SBO terms are identical, don't add them to geneMiriams
-                    modelSBML.fbc_geneProduct = rmfield(modelSBML.fbc_geneProduct,'sboTerm');
-                end
-                for i = 1:numel(genes)
-                    geneMiriams{i}=parseMiriam(modelSBML.fbc_geneProduct(i).annotation);
-                    if isfield(modelSBML.fbc_geneProduct(i),'sboTerm') && ~(modelSBML.fbc_geneProduct(i).sboTerm==-1)
-                        geneMiriams{i} = addSBOtoMiriam(geneMiriams{i},modelSBML.fbc_geneProduct(i).sboTerm);
-                    end
-                end
-            end
-            proteins={modelSBML.fbc_geneProduct.fbc_name};
-        else
-            genes=getGenesFromGrRules(grRules);
-        end
-        model.genes=genes;
-        model.grRules=grRules;
-        [grRules,rxnGeneMat] = standardizeGrRules(model,true);
-        model.grRules = grRules;
-        model.rxnGeneMat = rxnGeneMat;
-    end
 end
 
 if all(cellfun(@isempty,geneShortNames))
@@ -1106,9 +854,7 @@ function miriamStruct=parseMiriam(searchString)
 %Generates miriam structure from annotation field
 
 %Finding whether miriams are written in the old or the new way
-if strfind(searchString,'urn:miriam:')
-    startString='urn:miriam:';
-elseif strfind(searchString,'http://identifiers.org/')
+if strfind(searchString,'http://identifiers.org/')
     startString='http://identifiers.org/';
 elseif strfind(searchString,'https://identifiers.org/')
     startString='https://identifiers.org/';
