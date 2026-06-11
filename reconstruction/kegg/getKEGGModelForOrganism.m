@@ -219,6 +219,7 @@ if ~isempty(dataDir)
             fprintf('Extracting the HMM library file... ');
             gunzip([libraryFile '.gz']);
             fprintf('COMPLETE\n');
+            useConcatLib=false;
         else
             fprintf('Downloading the HMM library file... ');
             try
@@ -232,6 +233,7 @@ if ~isempty(dataDir)
             fprintf('Extracting the HMM library file... ');
             gunzip([libraryFile '.gz']);
             fprintf('COMPLETE\n');
+            useConcatLib=true;
         end
         %Check that the HMM library is available
         if ~isfile(libraryFile)
@@ -457,6 +459,7 @@ end
 fclose(fid);
 delete(tblFile);
 fprintf('COMPLETE\n');
+end
 
 fprintf('Removing gene, KEGG Orthology associations below minScoreRatioKO, minScoreRatioG... ');
 koGeneMat=koGeneMat(:,1:geneCounter);

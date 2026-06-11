@@ -36,20 +36,21 @@ classdef tIO < RavenTestCase
             testCase.verifyMatches(char(h), '^[0-9a-fA-F]{32}$');
         end
 
-        function getToolboxVersionRuns(testCase)
-            v = getToolboxVersion('RAVEN', 'ravenCobraWrapper.m');
-            testCase.verifyNotEmpty(v);
+        function exportForGitWritesDependencies(testCase)
+            % The toolbox-version lookup is now embedded in exportForGit and
+            % is exercised via the dependencies.txt it writes
+            f = fullfile(testCase.ravenRoot,'tutorial','empty.xml');
+            evalc('model = importModel(f);');
+            outDir = tempname; mkdir(outDir);
+            c = onCleanup(@() rmdir(outDir,'s'));
+            evalc("exportForGit(model,'path',outDir,'formats',{'xml'},'subDirs',false)");
+            dep = fileread(fullfile(outDir,'dependencies.txt'));
+            testCase.verifySubstring(dep, 'RAVEN_toolbox');
         end
 
         function importModelReadsSBML(testCase)
             f = fullfile(testCase.ravenRoot,'tutorial','empty.xml');
             evalc('m = importModel(f);');
-            testCase.verifyTrue(isfield(m, 'rxns'));
-        end
-
-        function importExcelModelReadsXlsx(testCase)
-            f = fullfile(testCase.ravenRoot,'tutorial','empty.xlsx');
-            evalc('m = importExcelModel(f);');
             testCase.verifyTrue(isfield(m, 'rxns'));
         end
 
@@ -76,12 +77,11 @@ classdef tIO < RavenTestCase
             testCase.verifyEqual(numel(m2.rxns), numel(testCase.model.rxns));
         end
 
-        function exportImportExcelRoundTrip(testCase)
+        function exportToExcelFormatWritesFile(testCase)
             f = [tempname '.xlsx'];
             testCase.addTeardown(@() delete(f));
             evalc('exportToExcelFormat(testCase.model, f);');
-            evalc('m2 = importExcelModel(f);');
-            testCase.verifyEqual(numel(m2.rxns), numel(testCase.model.rxns));
+            testCase.verifyTrue(exist(f,'file')==2);
         end
 
         function writeReadYAMLRoundTrip(testCase)

@@ -145,17 +145,6 @@ if ~isfield(model,'rxnMiriams')
     model.rxnMiriams=cell(numel(model.rxns),1);
 end
 
-if sbmlLevel<3
-    %Check if genes have associated compartments
-    if ~isfield(model,'geneComps') && isfield(model,'genes')
-        if supressWarnings==false
-            EM='There are no compartments specified for genes. All genes will be assigned to the first compartment. This is because the SBML structure requires all elements to be assigned to a compartment';
-            dispEM(EM,false);
-        end
-        model.geneComps=ones(numel(model.genes),1);
-    end
-end
-
 %Convert ids to SBML-convenient format. This is to avoid the data loss when
 %unsupported characters are included in ids. Here we are using part from
 %convertSBMLID, originating from the COBRA Toolbox
@@ -261,17 +250,13 @@ for i=1:numel(model.comps)
     end
     %Prepare Miriam strings
     if ~isempty(model.compMiriams{i})
-        [~,sbo_ind] = ismember('sbo',model.compMiriams{i}.name);
-        if sbo_ind > 0
-            modelSBML.compartment(i).sboTerm=str2double(regexprep(model.compMiriams{i}.value{sbo_ind},'SBO:','','ignorecase'));
-            % remove the SBO term from compMiriams so the information is
-            % not duplicated in the "annotation" field later on
-            model.compMiriams{i}.name(sbo_ind) = [];
-            model.compMiriams{i}.value(sbo_ind) = [];
+        [sboTerm,model.compMiriams{i}] = extractSBO(model.compMiriams{i});
+        if ~isempty(sboTerm)
+            modelSBML.compartment(i).sboTerm=sboTerm;
         end
     end
     if ~isempty(model.compMiriams{i}) && isfield(modelSBML.compartment(i),'annotation')
-        modelSBML.compartment(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.comps{i} '">'];
+        modelSBML.compartment(i).annotation=rdfAnnotationHeader(model.comps{i});
         modelSBML.compartment(i).annotation=[modelSBML.compartment(i).annotation '<bqbiol:is><rdf:Bag>'];
         modelSBML.compartment(i).annotation=[modelSBML.compartment(i).annotation getMiriam(model.compMiriams{i}) '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>'];
     end
@@ -336,13 +321,9 @@ for i=1:numel(model.mets)
         end
     end
     if ~isempty(model.metMiriams{i})
-        [~,sbo_ind] = ismember('sbo',model.metMiriams{i}.name);
-        if sbo_ind > 0
-            modelSBML.species(i).sboTerm=str2double(regexprep(model.metMiriams{i}.value{sbo_ind},'SBO:','','ignorecase'));
-            % remove the SBO term from metMiriams so the information is
-            % not duplicated in the "annotation" field later on
-            model.metMiriams{i}.name(sbo_ind) = [];
-            model.metMiriams{i}.value(sbo_ind) = [];
+        [sboTerm,model.metMiriams{i}] = extractSBO(model.metMiriams{i});
+        if ~isempty(sboTerm)
+            modelSBML.species(i).sboTerm=sboTerm;
         end
     end
     if isfield(modelSBML.species,'annotation')
@@ -359,7 +340,7 @@ for i=1:numel(model.mets)
                 end
             end
             if ~isempty(model.metMiriams{i}) || hasInchi==true
-                modelSBML.species(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.mets{i} '">'];
+                modelSBML.species(i).annotation=rdfAnnotationHeader(model.mets{i});
                 modelSBML.species(i).annotation=[modelSBML.species(i).annotation '<bqbiol:is><rdf:Bag>'];
                 if ~isempty(model.metMiriams{i})
                     modelSBML.species(i).annotation=[modelSBML.species(i).annotation getMiriam(model.metMiriams{i})];
@@ -392,17 +373,13 @@ if isfield(model,'genes')
             modelSBML.fbc_geneProduct(i).metaid=model.genes{i};
         end
         if ~isempty(model.geneMiriams{i})
-            [~,sbo_ind] = ismember('sbo',model.geneMiriams{i}.name);
-            if sbo_ind > 0
-                modelSBML.fbc_geneProduct(i).sboTerm=str2double(regexprep(model.geneMiriams{i}.value{sbo_ind},'SBO:','','ignorecase'));
-                % remove the SBO term from compMiriams so the information is
-                % not duplicated in the "annotation" field later on
-                model.geneMiriams{i}.name(sbo_ind) = [];
-                model.geneMiriams{i}.value(sbo_ind) = [];
+            [sboTerm,model.geneMiriams{i}] = extractSBO(model.geneMiriams{i});
+            if ~isempty(sboTerm)
+                modelSBML.fbc_geneProduct(i).sboTerm=sboTerm;
             end
         end
         if ~isempty(model.geneMiriams{i}) && isfield(modelSBML.fbc_geneProduct(i),'annotation')
-            modelSBML.fbc_geneProduct(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.genes{i} '">'];
+            modelSBML.fbc_geneProduct(i).annotation=rdfAnnotationHeader(model.genes{i});
             modelSBML.fbc_geneProduct(i).annotation=[modelSBML.fbc_geneProduct(i).annotation '<bqbiol:is><rdf:Bag>'];
             modelSBML.fbc_geneProduct(i).annotation=[modelSBML.fbc_geneProduct(i).annotation getMiriam(model.geneMiriams{i}) '</rdf:Bag></bqbiol:is></rdf:Description></rdf:RDF></annotation>'];
         end
@@ -492,19 +469,15 @@ for i=1:numel(model.rxns)
 
     % Export SBO terms from rxnMiriams
     if ~isempty(model.rxnMiriams{i})
-        [~,sbo_ind] = ismember('sbo',model.rxnMiriams{i}.name);
-        if sbo_ind > 0
-            modelSBML.reaction(i).sboTerm=str2double(regexprep(model.rxnMiriams{i}.value{sbo_ind},'SBO:','','ignorecase'));
-            % remove the SBO term from rxnMiriams so the information is not
-            % duplicated in the "annotation" field later on
-            model.rxnMiriams{i}.name(sbo_ind) = [];
-            model.rxnMiriams{i}.value(sbo_ind) = [];
+        [sboTerm,model.rxnMiriams{i}] = extractSBO(model.rxnMiriams{i});
+        if ~isempty(sboTerm)
+            modelSBML.reaction(i).sboTerm=sboTerm;
         end
     end
 
     %Export annotation information from rxnMiriams
     if (~isempty(model.rxnMiriams{i}) && isfield(modelSBML.reaction(i),'annotation')) || ~isempty(model.eccodes{i})
-        modelSBML.reaction(i).annotation=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' model.rxns{i} '">'];
+        modelSBML.reaction(i).annotation=rdfAnnotationHeader(model.rxns{i});
         modelSBML.reaction(i).annotation=[modelSBML.reaction(i).annotation '<bqbiol:is><rdf:Bag>'];
         if ~isempty(model.eccodes{i})
             eccodes=regexp(model.eccodes{i},';','split');
@@ -747,6 +720,29 @@ for i=1:numel(unitFieldNames)
 end
 end
 
+function [sboTerm,miriam]=extractSBO(miriam)
+%Extracts an SBO term from a miriam structure, if present. Returns the
+%parsed SBO term as a number (or [] if no 'sbo' entry exists) and the
+%miriam structure with the SBO entry removed, so that it is not duplicated
+%in the "annotation" field later on.
+
+sboTerm=[];
+[~,sbo_ind] = ismember('sbo',miriam.name);
+if sbo_ind > 0
+    sboTerm=str2double(regexprep(miriam.value{sbo_ind},'SBO:','','ignorecase'));
+    miriam.name(sbo_ind) = [];
+    miriam.value(sbo_ind) = [];
+end
+end
+
+function hdr=rdfAnnotationHeader(metaid)
+%Returns the RDF/XML annotation header string with the given meta id
+%interpolated. Used as the common boilerplate for compartment, species,
+%gene and reaction annotations.
+
+hdr=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/"><rdf:Description rdf:about="#meta_' metaid '">'];
+end
+
 function miriamString=getMiriam(miriamStruct)
 %Returns a string with list elements for a miriam structure ('<rdf:li
 %rdf:resource="https://identifiers.org/go/GO:0005739"/>' for example). This
@@ -780,30 +776,5 @@ for j_met=1:size(met_idx,1)
     else
         tmp_Rxn.reactant = [ tmp_Rxn.reactant, sbml_tmp_species_ref];
     end
-end
-end
-
-function vecT = columnVector(vec)
-% Code below taken from COBRA Toolbox under GNU General Public License v3.0
-% license file in readme/GPL.MD.
-%
-% Converts a vector to a column vector
-%
-% USAGE:
-%
-%   vecT = columnVector(vec)
-%
-% INPUT:
-%   vec:     a vector
-%
-% OUTPUT:
-%   vecT:    a column vector
-
-[n, m] = size(vec);
-
-if n < m
-    vecT = vec';
-else
-    vecT = vec;
 end
 end
