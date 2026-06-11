@@ -1,9 +1,9 @@
 function [model,KOModel]=getModelFromKEGG(varargin)
 % getModelFromKEGG  Retrieve KEGG database information and generate a model.
 %
-% Parameters
-% ----------
-% keggPath : char, optional
+% Name-Value Arguments
+% --------------------
+% keggPath : char
 %     if keggGenes.mat, keggMets.mat, keggPhylDist.mat or keggRxns.mat are
 %     not in the RAVEN/external/kegg directory, this function will attempt
 %     to read data from a local FTP dump of the KEGG database. keggPath is
@@ -11,15 +11,15 @@ function [model,KOModel]=getModelFromKEGG(varargin)
 %     If keggModel.mat is present in the same directory, the function reads
 %     the data from this file and ignores keggGenes.mat, keggMets.mat and
 %     keggRxns.mat.
-% keepSpontaneous : logical, optional
+% keepSpontaneous : logical
 %     include reactions labeled as "spontaneous" (default true).
-% keepUndefinedStoich : logical, optional
+% keepUndefinedStoich : logical
 %     include reactions in the form n A <=> n+1 A. These will be dealt with
 %     as two separate metabolites (default true).
-% keepIncomplete : logical, optional
+% keepIncomplete : logical
 %     include reactions which have been labelled as "incomplete",
 %     "erroneous" or "unclear" (default true).
-% keepGeneral : logical, optional
+% keepGeneral : logical
 %     include reactions which have been labelled as "general reaction".
 %     These are reactions on the form "an aldehyde <=> an alcohol", and are
 %     therefore unsuited for modelling purposes. Note that not all reactions

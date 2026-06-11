@@ -8,12 +8,15 @@ function reducedModel = removeGenes(model,genesToRemove,varargin)
 % genesToRemove : cell or logical or double
 %     either a cell array of gene IDs, a logical vector with the same number
 %     of elements as genes in the model, or a vector of indexes to remove.
-% removeUnusedMets : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% removeUnusedMets : logical
 %     remove metabolites that are no longer in use (default false).
-% removeBlockedRxns : logical, optional
+% removeBlockedRxns : logical
 %     remove reactions that get blocked after deleting the genes (default
 %     false).
-% standardizeRules : logical, optional
+% standardizeRules : logical
 %     format gene rules to be compliant with the standard format (default
 %     true).
 %

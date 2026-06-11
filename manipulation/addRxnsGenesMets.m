@@ -19,7 +19,10 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,varargin)
 % rxns : cell or char
 %     reaction IDs (from source model). Can also be a string if only one
 %     reaction is added.
-% addGene : logical or char or cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% addGene : logical or char or cell
 %     three options (default false):
 %
 %     - false : no genes are annotated to the new reactions
@@ -27,12 +30,12 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,varargin)
 %       added when required
 %     - string or cell array : new grRules are specified as string or cell
 %       array, and any new genes are added when required
-% rxnNote : cell or char, optional
+% rxnNote : cell or char
 %     strings explaining why reactions were copied to the model, to be
 %     included as newModel.rxnNotes. Can also be a string if the same
 %     rxnNotes should be added for each new reaction, or only one reaction
 %     is to be added (default 'Added via addRxnsAndMets()').
-% confidence : double, optional
+% confidence : double
 %     integer specifying confidence score for all reactions, following
 %     doi:10.1038/nprot.2009.203 (default 0):
 %

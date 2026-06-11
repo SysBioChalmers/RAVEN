@@ -5,14 +5,17 @@ function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, varargin)
 % ----------
 % formulas : cell
 %     a cell array with formulas.
-% noPolymers : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% noPolymers : logical
 %     assume that all polymers consist of one element. Corresponds to
 %     counting everything between (...)n as n being equal to one. Only one
 %     set of parentheses is allowed. If this is false then polymers are
 %     returned as "Could not parse formula" (default false).
-% isInchi : logical, optional
+% isInchi : logical
 %     true if the formulas are in the InChI format (default false).
-% ignoreRX : logical, optional
+% ignoreRX : logical
 %     ignore R-groups and bound protein. This can be useful since they are
 %     often used only as intermediates (default false).
 %

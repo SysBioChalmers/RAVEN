@@ -17,7 +17,10 @@ function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,varargin)
 %     cell array of units for the columns.
 % raw : cell
 %     cell array with the data in the sheet.
-% isIntegers : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% isIntegers : logical
 %     true if numeric values should be integers (default true).
 %
 % Returns

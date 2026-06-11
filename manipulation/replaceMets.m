@@ -15,10 +15,13 @@ function [model, removedRxns, idxDuplRxns]=replaceMets(model,metabolite,replacem
 %     string with name of metabolite to be replaced.
 % replacement : char
 %     string with name of replacement metabolite.
-% verbose : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% verbose : logical
 %     whether to print the ids of reactions that involve the replaced
 %     metabolite (default false).
-% identifiers : logical, optional
+% identifiers : logical
 %     true if 'metabolite' and 'replacement' refer to metabolite
 %     identifiers instead of metabolite names (default false).
 %

@@ -9,16 +9,19 @@ function files=checkFileExistence(files,varargin)
 % files : char or cell
 %     string or cell array of strings with path to file(s) or path or
 %     filename(s).
-% fullOrTemp : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% fullOrTemp : double
 %     controls path handling (default 0):
 %
 %     - 0 : do not change path to file(s)
 %     - 1 : return full path to file(s)
 %     - 2 : copy file(s) to system default temporary folder and return
 %       full path
-% allowSpace : logical, optional
+% allowSpace : logical
 %     whether the 'space' character is allowed in the path (default true).
-% checkExist : logical, optional
+% checkExist : logical
 %     whether file existence should really be checked, as this function can
 %     also be used to return the full path to a new file (default true).
 %     Can only be set to false if fullOrTemp is set to 1.

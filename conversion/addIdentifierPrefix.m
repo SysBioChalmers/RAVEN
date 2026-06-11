@@ -15,7 +15,10 @@ function [model, hasChanged]=addIdentifierPrefix(model,varargin)
 % ----------
 % model : struct
 %     model whose identifiers should be modified.
-% fields : cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% fields : cell
 %     cell array with model field names that should be checked if prefixes
 %     should be added, possible values: 'rxns', 'mets', 'comps', 'genes',
 %     'id' (default all listed model fields will be checked).

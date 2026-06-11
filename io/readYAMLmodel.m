@@ -3,12 +3,12 @@ function model=readYAMLmodel(varargin)
 %
 % Reads a yaml file matching (roughly) the cobrapy yaml structure.
 %
-% Parameters
-% ----------
+% Name-Value Arguments
+% --------------------
 % fileName : char
 %     a model file in yaml file format. A dialog window will open if no
 %     file name is specified.
-% verbose : logical, optional
+% verbose : logical
 %     set as true to monitor progress (default false).
 %
 % Returns

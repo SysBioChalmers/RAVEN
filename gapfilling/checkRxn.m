@@ -11,11 +11,14 @@ function report=checkRxn(model,rxn,varargin)
 %     a model structure.
 % rxn : char
 %     the id of one reaction to check.
-% cutoff : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% cutoff : double
 %     minimal flux for successful production/consumption (default 10^-7).
-% revDir : logical, optional
+% revDir : logical
 %     true if the reaction should be reversed (default false).
-% printReport : logical, optional
+% printReport : logical
 %     print a report (default true).
 %
 % Returns

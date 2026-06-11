@@ -5,13 +5,16 @@ function exportToExcelFormat(model,varargin)
 % ----------
 % model : struct
 %     a model structure.
+%
+% Name-Value Arguments
+% --------------------
 % fileName : char
 %     file name of the Excel file. Only xlsx format is supported. In order
 %     to preserve backward compatibility this could also be only a path, in
 %     which case the model is exported to a set of tab-delimited text files
 %     via exportToTabDelimited. A dialog window will open if fileName is
 %     empty.
-% sortIds : logical, optional
+% sortIds : logical
 %     whether metabolites, reactions and genes should be sorted
 %     alphabetically by their identifiers (default false).
 %

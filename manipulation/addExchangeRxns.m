@@ -16,7 +16,10 @@ function [model, addedRxns]=addExchangeRxns(model,reactionType,varargin)
 %     - 'out'  : output reactions
 %     - 'both' : reversible input/output reactions. Positive direction
 %       corresponds to output
-% mets : cell or logical or double, optional
+%
+% Name-Value Arguments
+% --------------------
+% mets : cell or logical or double
 %     either a cell array of metabolite IDs, a logical vector with the same
 %     number of elements as metabolites in the model, or a vector of
 %     indexes to add for (default model.mets).

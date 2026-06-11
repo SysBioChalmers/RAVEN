@@ -8,17 +8,20 @@ function printModel(model,varargin)
 % ----------
 % model : struct
 %     a model structure.
-% rxnList : cell or logical or double, optional
+%
+% Name-Value Arguments
+% --------------------
+% rxnList : cell or logical or double
 %     either a cell array of reaction IDs, a logical vector with the same
 %     number of elements as reactions in the model, or a vector of indexes
 %     to print (default model.rxns).
-% outputString : char, optional
+% outputString : char
 %     a string that specifies the output of each reaction (default
 %     '%rxnID (%rxnName)\n\t%eqn [%lower %upper]\n').
-% outputFile : char, optional
+% outputFile : char
 %     a file to save the print-out to (default is output to the command
 %     window).
-% metaboliteList : cell, optional
+% metaboliteList : cell
 %     cell array of metabolite names. Only reactions involving any of these
 %     metabolites will be printed.
 %

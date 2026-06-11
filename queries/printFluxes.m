@@ -7,18 +7,21 @@ function printFluxes(model, fluxes, varargin)
 %     a model structure.
 % fluxes : double
 %     a vector with fluxes.
-% onlyExchange : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% onlyExchange : logical
 %     only print exchange fluxes (default true).
-% cutOffFlux : double, optional
+% cutOffFlux : double
 %     only print fluxes with absolute values above or equal to this value
 %     (default 10^-8).
-% outputFile : char, optional
+% outputFile : char
 %     a file to save the print-out to (default is output to the command
 %     window).
-% outputString : char, optional
+% outputString : char
 %     a string that specifies the output of each reaction (default
 %     '%rxnID\t(%rxnName):\t%flux\n').
-% metaboliteList : cell, optional
+% metaboliteList : cell
 %     cell array of metabolite names. Only reactions involving any of these
 %     metabolites will be printed.
 %

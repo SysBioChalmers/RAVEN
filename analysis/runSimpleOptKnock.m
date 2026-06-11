@@ -14,15 +14,18 @@ function out = runSimpleOptKnock(model, targetRxn, biomassRxn, varargin)
 %     identifier of target reaction.
 % biomassRxn : char
 %     identifier of biomass reaction.
-% deletions : cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% deletions : cell
 %     cell array with gene or reaction identifiers that should be
 %     considered for knockout (default model.rxns).
-% genesOrRxns : char, optional
+% genesOrRxns : char
 %     string indicating whether deletions parameter is given with 'genes'
 %     or 'rxns' identifiers (default 'rxns').
-% maxNumKO : double, optional
+% maxNumKO : double
 %     maximum number of simultaneous knockouts (default 1).
-% minGrowth : double, optional
+% minGrowth : double
 %     minimum growth rate (default 0.05).
 %
 % Returns

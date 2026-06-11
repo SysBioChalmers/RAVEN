@@ -14,7 +14,10 @@ function indexes=getIndexes(model, objects, type, varargin)
 %     metabolites and their compartments in the format metaboliteName[comp].
 %     If a model.ec structure exists (GECKO 3), then also 'ecenzymes',
 %     'ecrxns' and 'ecgenes' are allowed.
-% returnLogical : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% returnLogical : logical
 %     sets whether to return a logical array or an array with the indexes
 %     (default false).
 %

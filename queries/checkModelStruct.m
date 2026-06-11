@@ -5,11 +5,14 @@ function checkModelStruct(model,varargin)
 % ----------
 % model : struct
 %     a model structure.
-% throwErrors : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% throwErrors : logical
 %     true if the function should throw errors if inconsistencies are found.
 %     The alternative is to print warnings for all types of issues
 %     (default true).
-% trimWarnings : logical, optional
+% trimWarnings : logical
 %     true if only a maximum of 10 items should be displayed in a given
 %     error/warning (default true).
 %

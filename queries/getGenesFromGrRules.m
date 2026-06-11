@@ -8,7 +8,10 @@ function [genes,rxnGeneMat] = getGenesFromGrRules(grRules, varargin)
 %     extracted. NOTE: Boolean operators can be text ("and", "or") or
 %     symbolic ("&", "|"), but there must be a space between operators and
 %     gene names/IDs.
-% originalGenes : cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% originalGenes : cell
 %     the original gene list from the model as reference.
 %
 % Returns

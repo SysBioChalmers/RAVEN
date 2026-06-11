@@ -12,7 +12,10 @@ function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,varargin)
 % modelMiriams : cell
 %     a miriam structure (e.g. model.metMiriams) for one or multiple
 %     metabolites.
-% miriamNames : cell or char, optional
+%
+% Name-Value Arguments
+% --------------------
+% miriamNames : cell or char
 %     cell array with miriam names to be extracted (default 'all', meaning
 %     that annotation for all miriam names found in modelMiriams will be
 %     extracted).

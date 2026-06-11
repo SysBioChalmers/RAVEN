@@ -10,24 +10,27 @@ function [solution, metabolite]=makeSomething(model,varargin)
 % ----------
 % model : struct
 %     a model structure.
-% ignoreMets : cell or logical or double, optional
+%
+% Name-Value Arguments
+% --------------------
+% ignoreMets : cell or logical or double
 %     either a cell array of metabolite IDs, a logical vector with the same
 %     number of elements as metabolites in the model, or a vector of indexes
 %     for metabolites to exclude from this analysis (default []).
-% isNames : logical, optional
+% isNames : logical
 %     true if the supplied mets represent metabolite names (as opposed to
 %     IDs). This is a way to delete metabolites in several compartments at
 %     once without knowing the exact IDs. This only works if ignoreMets is a
 %     cell array (default false).
-% minNrFluxes : logical, optional
+% minNrFluxes : logical
 %     solves the MILP problem of minimizing the number of fluxes instead of
 %     the sum. Slower, but can be used if the sum gives too many fluxes
 %     (default false).
-% allowExcretion : logical, optional
+% allowExcretion : logical
 %     allow for excretion of all other metabolites (default true).
-% params : struct, optional
+% params : struct
 %     *obsolete option*.
-% ignoreIntBounds : logical, optional
+% ignoreIntBounds : logical
 %     true if internal bounds (including reversibility) should be ignored.
 %     Exchange reactions are not affected. This can be used to find
 %     unbalanced solutions which are not possible using the default

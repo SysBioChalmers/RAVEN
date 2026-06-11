@@ -22,6 +22,9 @@ function newModel=curateModelFromTables(model,metsInfo,varargin)
 %     Path to a *.tsv file with metabolite information, or 'none' to skip
 %     metabolite curation. Columns: metNames, comps, formula, charge,
 %     inchi, metNotes, then any number of MIRIAM-namespace columns.
+%
+% Name-Value Arguments
+% --------------------
 % genesInfo : char
 %     Path to a *.tsv file with gene information, or 'none'. Columns:
 %     genes, geneShortNames, then MIRIAM.
@@ -33,10 +36,10 @@ function newModel=curateModelFromTables(model,metsInfo,varargin)
 %     Path to a *.tsv file with reaction information, or 'none'. Columns:
 %     rxnIdx, rxnNames, grRules, lb, ub, rev, subSystems, eccodes,
 %     rxnNotes, rxnReferences, rxnConfidenceScores, then MIRIAM.
-% metPrefix : char, optional
+% metPrefix : char
 %     Prefix used to mint fresh metabolite ids (e.g. 's_' for yeast-GEM,
 %     'M_' for the cobrapy/BiGG default) (default 'M_').
-% rxnPrefix : char, optional
+% rxnPrefix : char
 %     Prefix used to mint fresh reaction ids (default 'R_').
 %
 % Returns

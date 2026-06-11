@@ -6,14 +6,17 @@
 % ----------
 % raw : cell
 %     cell array with the data in the sheet.
-% removeComments : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% removeComments : logical
 %     true if commented lines (non-empty first cell in each row) should be
 %     removed (default true).
-% removeOnlyCap : logical, optional
+% removeOnlyCap : logical
 %     remove columns with captions but no other values (default false).
-% removeNoCap : logical, optional
+% removeNoCap : logical
 %     remove columns without captions (default true).
-% removeEmptyRows : logical, optional
+% removeEmptyRows : logical
 %     remove rows with no non-empty cells (default true).
 %
 % Returns

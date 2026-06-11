@@ -9,7 +9,10 @@ function [biomassValues, targetValues] = runProductionEnvelope(model, targetRxn,
 %     identifier of target metabolite production reaction.
 % biomassRxn : char
 %     identifier of biomass reaction.
-% nPts : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% nPts : double
 %     number of points in the plot (default 20).
 %
 % Returns

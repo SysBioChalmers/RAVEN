@@ -7,7 +7,10 @@ function [I, rxnNames]=getRxnsInComp(model,comp,varargin)
 %     a model structure.
 % comp : char
 %     string with the compartment id.
-% includePartial : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% includePartial : logical
 %     true if reactions with metabolites in several compartments (normally
 %     transport reactions) should be included (default false).
 %

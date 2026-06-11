@@ -8,7 +8,10 @@ function consumed=canConsume(model,varargin)
 % ----------
 % model : struct
 %     a model structure.
-% mets : cell or logical or double, optional
+%
+% Name-Value Arguments
+% --------------------
+% mets : cell or logical or double
 %     either a cell array of metabolite IDs, a logical vector with the same
 %     number of elements as metabolites in the model, or a vector of
 %     indexes to check for (default model.mets).

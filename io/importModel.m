@@ -1,21 +1,21 @@
 function model=importModel(varargin)
 % importModel  Import a constraint-based model from an SBML file.
 %
-% Parameters
-% ----------
+% Name-Value Arguments
+% --------------------
 % fileName : char
 %     a SBML file to import. A dialog window will open if no file name is
 %     specified.
-% removeExcMets : logical, optional
+% removeExcMets : logical
 %     true if exchange metabolites should be removed. This is needed to be
 %     able to run simulations, but it could also be done using
 %     simplifyModel at a later stage (default true).
-% removePrefix : logical, optional
+% removePrefix : logical
 %     true if identifier prefixes should be removed when loading the model:
 %     G_ for genes, R_ for reactions, M_ for metabolites, and C_ for
 %     compartments. These are only removed if all identifiers of a certain
 %     type contain the prefix (default true).
-% supressWarnings : logical, optional
+% supressWarnings : logical
 %     true if warnings regarding the model structure should be supressed
 %     (default false).
 %

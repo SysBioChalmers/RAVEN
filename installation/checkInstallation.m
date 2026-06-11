@@ -5,10 +5,11 @@ function [currVer, installType] = checkInstallation(varargin)
 %   with overlapping names between RAVEN and other toolboxes or
 %   user-defined functions, which are accessible from MATLAB pathlist
 %
-% Input: 
+% Name-Value Arguments
+% --------------------
 %   developMode     logical indicating development mode, which includes
 %                   testing of binaries that are required to update KEGG
-%                   HMMs (optional, default false). If 'versionOnly' is
+%                   HMMs (default false). If 'versionOnly' is
 %                   specified, only the version is reported as currVer, no
 %                   further installation or tests are performed.
 %   checkBinaries   logical whether non-developMode binaries should be

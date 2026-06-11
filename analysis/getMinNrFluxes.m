@@ -8,13 +8,16 @@ function [x,I,exitFlag]=getMinNrFluxes(model, varargin)
 % ----------
 % model : struct
 %     a model structure.
-% toMinimize : cell or logical or double, optional
+%
+% Name-Value Arguments
+% --------------------
+% toMinimize : cell or logical or double
 %     either a cell array of reaction IDs, a logical vector with the same
 %     number of elements as reactions in the model, or a vector of indexes
 %     for the reactions that should be minimized (default model.rxns).
-% params : struct, optional
+% params : struct
 %     *obsolete option*.
-% scores : double, optional
+% scores : double
 %     vector of weights for the reactions. Negative scores should not have
 %     flux. Positive scores are not possible in this implementation, and
 %     they are changed to max(scores(scores<0)). Must have the same

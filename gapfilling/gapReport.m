@@ -7,7 +7,10 @@ function [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnec
 % ----------
 % model : struct
 %     a model structure.
-% templateModels : cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% templateModels : cell
 %     a cell array of template models to use for gap filling.
 %
 % Returns

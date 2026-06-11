@@ -4,9 +4,9 @@ function [ps, oldPoolAutoCreate] = parallelPoolRAVEN(varargin)
 % Called by RAVEN functions that support parallel processing, to confirm
 % whether the MATLAB Parallel Computing Toolbox is installed.
 %
-% Parameters
-% ----------
-% runParallel : logical, optional
+% Name-Value Arguments
+% --------------------
+% runParallel : logical
 %     whether the target function (which calls parallelPoolRAVEN) should be
 %     run in parallel (default true).
 %

@@ -5,23 +5,26 @@ function equationStrings=constructEquations(model,varargin)
 % ----------
 % model : struct
 %     a model structure.
-% rxns : cell or logical or double, optional
+%
+% Name-Value Arguments
+% --------------------
+% rxns : cell or logical or double
 %     either a cell array of reaction IDs, a logical vector with the same
 %     number of elements as reactions in the model, or a vector of reaction
 %     indexes (default model.rxns).
-% useComps : logical, optional
+% useComps : logical
 %     include the compartment of each metabolite (default true).
-% sortRevRxns : logical, optional
+% sortRevRxns : logical
 %     sort reversible reactions so that the metabolite that is first in the
 %     lexicographic order is a reactant (default false).
-% sortMetNames : logical, optional
+% sortMetNames : logical
 %     sort the metabolite names in the equation. Uses compartment even if
 %     useComps is false (default false).
-% useMetID : logical, optional
+% useMetID : logical
 %     use metabolite ID in generated equations (default false).
-% useFormula : logical, optional
+% useFormula : logical
 %     use metabolite formula in generated equations (default false).
-% useRevField : logical, optional
+% useRevField : logical
 %     use the model.rev field to indicate reaction reversibility,
 %     alternatively this is determined from the model.ub and model.lb fields
 %     (default true).

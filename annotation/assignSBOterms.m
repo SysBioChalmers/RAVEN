@@ -13,7 +13,10 @@ function model = assignSBOterms(model, varargin)
 % ----------
 % model : struct
 %     RAVEN model struct.
-% opts : struct, optional
+%
+% Name-Value Arguments
+% --------------------
+% opts : struct
 %     Struct with any of the following fields. Missing fields take the
 %     defaults shown:
 %

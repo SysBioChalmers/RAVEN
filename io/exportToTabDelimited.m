@@ -5,11 +5,14 @@ function exportToTabDelimited(model,varargin)
 % ----------
 % model : struct
 %     a model structure.
-% path : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% path : char
 %     the path to export to. The resulting text files will be saved under
 %     the names excelRxns.txt, excelMets.txt, excelGenes.txt,
 %     excelModel.txt, and excelComps.txt (default './').
-% sortIds : logical, optional
+% sortIds : logical
 %     whether metabolites, reactions and genes should be sorted
 %     alphabetically by their identifiers (default false).
 %

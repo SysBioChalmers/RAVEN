@@ -9,7 +9,10 @@ function [irrevModel,matchRev,rev2irrev,irrev2rev]=convertToIrrev(model,varargin
 % ----------
 % model : struct
 %     a model structure.
-% rxns : cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% rxns : cell
 %     cell array with the reactions to split, if reversible (default
 %     model.rxns).
 %

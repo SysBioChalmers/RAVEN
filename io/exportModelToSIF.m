@@ -7,15 +7,18 @@ function exportModelToSIF(model,fileName,varargin)
 %     a model structure.
 % fileName : char
 %     the filename to export the model to.
-% graphType : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% graphType : char
 %     the type of graph to export to (default 'rc'):
 %
 %     - 'rc' : reaction-compound
 %     - 'rr' : reaction-reaction
 %     - 'cc' : compound-compound
-% rxnLabels : cell, optional
+% rxnLabels : cell
 %     cell array with labels for reactions (default model.rxns).
-% metLabels : cell, optional
+% metLabels : cell
 %     cell array with labels for metabolites (default model.mets).
 %
 % Examples

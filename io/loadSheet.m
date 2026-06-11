@@ -7,7 +7,10 @@
 % ----------
 % workbook : Workbook
 %     Workbook object representing the Excel file.
-% sheet : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% sheet : char
 %     name of the sheet (default first sheet).
 %
 % Returns

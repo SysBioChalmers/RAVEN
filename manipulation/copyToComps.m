@@ -9,17 +9,20 @@ function model=copyToComps(model,toComps,varargin)
 %     cell array of compartment ids. If there is no match to model.comps
 %     then it is added as a new compartment (see compNames and
 %     compOutside).
-% rxns : cell or logical or double, optional
+%
+% Name-Value Arguments
+% --------------------
+% rxns : cell or logical or double
 %     either a cell array of reaction IDs, a logical vector with the same
 %     number of elements as reactions in the model, or a vector of indexes
 %     to copy (default model.rxns).
-% deleteOriginal : logical, optional
+% deleteOriginal : logical
 %     true if the original reactions should be removed, making it move the
 %     reactions instead (default false).
-% compNames : cell, optional
+% compNames : cell
 %     cell array of compartment names. Used if new compartments should be
 %     added (default toComps).
-% compOutside : cell, optional
+% compOutside : cell
 %     cell array of the id (as in comps) for the compartment surrounding
 %     each of the compartments. Used if new compartments should be added
 %     (default all {''}).

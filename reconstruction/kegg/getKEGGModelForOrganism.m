@@ -15,7 +15,10 @@ function model=getKEGGModelForOrganism(organismID,varargin)
 %     determing the phylogenetic distance. Use 'eukaryotes' or 'prokaryotes'
 %     to get a model for the whole domain. Only applicable if fastaFile is
 %     empty, i.e. no homology search should be performed.
-% fastaFile : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% fastaFile : char
 %     a FASTA file that contains the protein sequences of the organism for
 %     which to reconstruct a model. If no FASTA file is supplied then a
 %     model is reconstructed based only on the organism abbreviation. This
@@ -37,7 +40,7 @@ function model=getKEGGModelForOrganism(organismID,varargin)
 %     eukaryotic sequences; using which sequence similarity treshold (first
 %     set of digits); using which KEGG version (second set of digits). This
 %     parameter should ALWAYS be provided.
-% outDir : char, optional
+% outDir : char
 %     directory to save the results from the quering of the hidden Markov
 %     models. The output is specific for the input sequences and the
 %     settings used. It is stored in this manner so that the function can
@@ -46,48 +49,48 @@ function model=getKEGGModelForOrganism(organismID,varargin)
 %     different settings in the same folder. They will not be overwritten
 %     (default is a temporary dir where all *.out files are deleted before
 %     and after doing the reconstruction).
-% keepSpontaneous : logical, optional
+% keepSpontaneous : logical
 %     include reactions labeled as "spontaneous" (default true).
-% keepUndefinedStoich : logical, optional
+% keepUndefinedStoich : logical
 %     include reactions in the form n A <=> n+1 A. These will be dealt with
 %     as two separate metabolites (default true).
-% keepIncomplete : logical, optional
+% keepIncomplete : logical
 %     include reactions which have been labelled as "incomplete",
 %     "erroneous" or "unclear" (default true).
-% keepGeneral : logical, optional
+% keepGeneral : logical
 %     include reactions which have been labelled as "general reaction".
 %     These are reactions on the form "an aldehyde <=> an alcohol", and are
 %     therefore unsuited for modelling purposes. Note that not all reactions
 %     have this type of annotation, and the script will therefore not be
 %     able to remove all such reactions (default false).
-% cutOff : double, optional
+% cutOff : double
 %     significance score from HMMer needed to assign genes to a KO (default
 %     10^-50).
-% minScoreRatioKO : double, optional
+% minScoreRatioKO : double
 %     ignore genes in a KO if their score is <log(score)/log(best score in
 %     KO). This is to "prune" KOs which have many genes and where some are
 %     clearly a better fit (default 0.3, lower is less strict).
-% minScoreRatioG : double, optional
+% minScoreRatioG : double
 %     a gene is only assigned to KOs for which the score is
 %     >=log(score)/log(best score) for that gene. This is to prevent that a
 %     gene which clearly belongs to one KO is assigned also to KOs with much
 %     lower scores (default 0.8, lower is less strict).
-% maxPhylDist : double, optional
+% maxPhylDist : double
 %     -1 to only use sequences from the same domain (Prokaryota, Eukaryota);
 %     any other (positive) value to only use sequences for organisms where
 %     the phylogenetic distance is at the most this large (as calculated in
 %     getPhylDist) (default Inf, which means that all sequences will be
 %     used).
-% nSequences : double, optional
+% nSequences : double
 %     for each KO, use up to this many sequences from the most closely
 %     related species. This is mainly to speed up the alignment process for
 %     KOs with very many genes. This subsampling is performed before running
 %     CD-HIT (default inf).
-% seqIdentity : double, optional
+% seqIdentity : double
 %     sequence identity threshold in CD-HIT, referred as "global sequence
 %     identity" in CD-HIT User's Guide. If -1 is provided, CD-HIT is skipped
 %     (default 0.9).
-% globalModel : struct, optional
+% globalModel : struct
 %     structure containing both model and KOModel structures as generated
 %     by getModelFromKEGG. These will otherwise be loaded by via
 %     getModelFromKEGG. Providing globalKEGGmodel can speed up model

@@ -5,7 +5,10 @@ function [essentialRxns, essentialRxnsIndexes]=getEssentialRxns(model,varargin)
 % ----------
 % model : struct
 %     a model structure.
-% ignoreRxns : cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% ignoreRxns : cell
 %     cell array of reaction IDs which should not be checked
 %     (default {}).
 %

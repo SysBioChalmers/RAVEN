@@ -8,7 +8,10 @@ function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,varargin)
 % ----------
 % model : struct
 %     a model structure.
-% reactionType : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% reactionType : char
 %     which exchange reactions should be returned (default 'all'):
 %
 %     - 'all' : all reactions, irrespective of reaction bounds

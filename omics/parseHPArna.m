@@ -6,7 +6,10 @@ function arrayData=parseHPArna(fileName, varargin)
 % fileName : char
 %     tab-separated database dump of HPA RNA data. For details regarding the
 %     format, see http://www.proteinatlas.org/about/download.
-% version : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% version : double
 %     version of HPA (default 19). Only versions 18 and 19 are supported.
 %
 % Returns

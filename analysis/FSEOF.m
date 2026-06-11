@@ -16,12 +16,15 @@ function targets=FSEOF(model,biomassRxn,targetRxn,varargin)
 %     reaction ID of the biomass formation or growth reaction.
 % targetRxn : char
 %     reaction ID of the target reaction.
-% iterations : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% iterations : double
 %     number of iterations (default 10).
-% coefficient : double, optional
+% coefficient : double
 %     ratio of optimal target reaction flux, must be less than 1
 %     (default 0.9).
-% outputFile : char, optional
+% outputFile : char
 %     output filename (default prints to command window).
 %
 % Returns

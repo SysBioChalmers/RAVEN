@@ -23,9 +23,12 @@ function model = setGAM(model, value, biomassRxn, cofactorMetNames, varargin)
 % cofactorMetNames : cell
 %     Cell array of metabolite NAMES (not IDs) to rescale, e.g.
 %     {'ATP','ADP','H2O','H+','phosphate'}.
-% ngamRxn : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% ngamRxn : char
 %     NGAM reaction id. Required when ngamValue is supplied.
-% ngamValue : double, optional
+% ngamValue : double
 %     NGAM flux to fix. Sets the NGAM reaction's bounds to (ngamValue,
 %     ngamValue).
 %

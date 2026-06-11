@@ -8,7 +8,10 @@ function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(
 % ----------
 % model : struct
 %     a model structure.
-% testType : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% testType : char
 %     single/double gene deletions/over expressions. Over expression is
 %     only available if using MOMA (default 'sgd'):
 %
@@ -16,15 +19,15 @@ function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(
 %     - 'dgd' : double gene deletion
 %     - 'sgo' : single gene over expression
 %     - 'dgo' : double gene over expression
-% analysisType : char, optional
+% analysisType : char
 %     determines whether to use FBA ('fba') or MOMA ('moma') in the
 %     optimization (default 'fba').
-% refModel : struct, optional
+% refModel : struct
 %     MOMA works by fitting the flux distributions of two models to be as
 %     similar as possible. The most common application is where there is a
 %     reference model with some fluxes constrained from experimental data.
 %     This model is required when using MOMA.
-% oeFactor : double, optional
+% oeFactor : double
 %     a factor by which the fluxes should be increased if a gene is
 %     overexpressed (default 10).
 %

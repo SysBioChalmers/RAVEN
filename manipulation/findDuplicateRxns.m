@@ -12,7 +12,10 @@ function pairs = findDuplicateRxns(model, varargin)
 % ----------
 % model : struct
 %     RAVEN model struct.
-% ignoreDirection : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% ignoreDirection : logical
 %     treat A→B and B→A as duplicates (default true).
 %
 % Returns

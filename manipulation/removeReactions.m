@@ -9,11 +9,14 @@ function reducedModel=removeReactions(model,rxnsToRemove,varargin)
 %     either a cell array of reaction IDs, a logical vector with the same
 %     number of elements as reactions in the model, or a vector of indexes
 %     to remove.
-% removeUnusedMets : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% removeUnusedMets : logical
 %     remove metabolites that are no longer in use (default false).
-% removeUnusedGenes : logical, optional
+% removeUnusedGenes : logical
 %     remove genes that are no longer in use (default false).
-% removeUnusedComps : logical, optional
+% removeUnusedComps : logical
 %     remove compartments that are no longer in use (default false).
 %
 % Returns

@@ -10,12 +10,15 @@ function model=mergeModels(models,varargin)
 % ----------
 % models : cell
 %     a cell array with model structures.
-% metParam : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% metParam : char
 %     string, metabolite name ('metNames') or ID ('mets') are used for
 %     matching (default 'metNames').
-% supressWarnings : logical, optional
+% supressWarnings : logical
 %     whether warnings should be supressed (default false).
-% copyToComps : logical, optional
+% copyToComps : logical
 %     whether mergeModels is run via copyToComps (default false).
 %
 % Returns

@@ -8,7 +8,10 @@ function [model, guessedFor, couldNotGuess]=guessComposition(model, varargin)
 % ----------
 % model : struct
 %     a model structure.
-% printResults : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% printResults : logical
 %     true if the output should be printed (default true).
 %
 % Returns

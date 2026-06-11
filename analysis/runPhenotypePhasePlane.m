@@ -14,11 +14,14 @@ function [growthRates, shadowPrices1, shadowPrices2] = runPhenotypePhasePlane(mo
 %     reaction identifier of the first reaction to be plotted.
 % controlRxn2 : char
 %     reaction identifier of the second reaction to be plotted.
-% nPts : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% nPts : double
 %     the number of points to plot in each dimension (default 50).
-% range1 : double, optional
+% range1 : double
 %     the range [from 0 to range1] of reaction 1 to plot (default 20).
-% range2 : double, optional
+% range2 : double
 %     the range [from 0 to range2] of reaction 2 to plot (default 20).
 %
 % Returns

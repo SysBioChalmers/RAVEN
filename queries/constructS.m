@@ -6,10 +6,13 @@ function [S, mets, badRxns, reversible]=constructS(equations,varargin)
 % equations : cell
 %     cell array of equations on the form 'A + 2 B <=> 3 C', where <=>
 %     indicates reversible and => irreversible reactions.
-% mets : cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% mets : cell
 %     cell array of metabolites. All metabolites in the equations must be
 %     present in the list (default generated from the equations).
-% rxns : cell, optional
+% rxns : cell
 %     cell array of reaction ids. This is only used for printing reaction ids
 %     instead of equations in warnings/errors (default []).
 %

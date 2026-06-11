@@ -8,7 +8,10 @@ function GSS = parseScores(inputFile, varargin)
 % ----------
 % inputFile : char
 %     a file with the output from the predictor.
-% predictor : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% predictor : char
 %     the predictor that was used. 'wolf' for WoLF PSORT, 'cello' for
 %     CELLO, 'deeploc' for DeepLoc (default 'wolf').
 %

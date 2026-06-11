@@ -8,16 +8,19 @@ function compStruct = compareMultipleModels(models,varargin)
 % ----------
 % models : cell
 %     cell array of two or more models.
-% printResults : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% printResults : logical
 %     true if the results should be printed on the screen (default false).
-% plotResults : logical, optional
+% plotResults : logical
 %     true if the results should be plotted (default false).
-% groupVector : double or cell, optional
+% groupVector : double or cell
 %     numeric vector or cell array for grouping similar models, i.e. by
 %     tissue (default all models ungrouped).
-% funcCompare : logical, optional
+% funcCompare : logical
 %     should a functional comparison be run (default false).
-% taskFile : char, optional
+% taskFile : char
 %     string containing the name of the task file to use for the functional
 %     comparison (should be an .xls or .xlsx file, required for functional
 %     comparison).

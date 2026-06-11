@@ -6,7 +6,10 @@ function md5Hash=getMD5Hash(inputFile,varargin)
 % inputFile : char
 %     string with the path to the file for which the MD5 hash should be
 %     calculated.
-% binEnd : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% binEnd : char
 %     string that indicates the operating system running on the client's
 %     computer. Use ".exe" for Windows, ".mac" for macOS or leave it blank
 %     for Linux (""). (default: the function automatically detects the

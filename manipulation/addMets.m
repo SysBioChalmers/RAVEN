@@ -32,11 +32,14 @@ function newModel=addMets(model,metsToAdd,varargin)
 %       condition in kJ/mole (optional, default NaN)
 %     - metNotes : cell array with metabolite notes as strings (optional,
 %       default '')
-% copyInfo : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% copyInfo : logical
 %     when adding metabolites to a compartment where it previously did not
 %     exist, the function will copy any available annotation from the
 %     metabolite in another compartment (default true).
-% prefix : char, optional
+% prefix : char
 %     when metsToAdd.mets is not specified, new metabolite IDs are
 %     generated with the prefix specified here. If IDs with the prefix are
 %     already used in the model then the numbering will start from the

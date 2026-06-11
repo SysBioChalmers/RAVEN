@@ -11,7 +11,10 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 % hpaData : struct, optional
 %     HPA data structure from parseHPA (optional if arrayData is supplied,
 %     default []).
-% arrayData : struct, optional
+%
+% Name-Value Arguments
+% --------------------
+% arrayData : struct
 %     gene expression data structure (optional if hpaData is supplied,
 %     default []) with fields:
 %
@@ -30,20 +33,20 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 % tissue : char
 %     tissue to score for. Should exist in either hpaData.tissues or
 %     arrayData.tissues.
-% celltype : char, optional
+% celltype : char
 %     cell type to score for. Should exist in either hpaData.celltypes or
 %     arrayData.celltypes for this tissue (default is to use the best values
 %     among all the cell types for the tissue). Use [] if you want to supply
 %     more arguments.
-% noGeneScore : double, optional
+% noGeneScore : double
 %     score for reactions without genes (default -2).
-% multipleGeneScoring : char, optional
+% multipleGeneScoring : char
 %     determines how scores are calculated for reactions with several genes,
 %     'best' or 'average' (default 'best').
-% multipleCellScoring : char, optional
+% multipleCellScoring : char
 %     determines how scores are calculated when several cell types are used,
 %     'best' or 'average' (default 'best').
-% hpaLevelScores : struct, optional
+% hpaLevelScores : struct
 %     structure with numerical scores for the expression level categories
 %     from HPA. The structure should have a "names" and a "scores" field
 %     (default see code for default scores).

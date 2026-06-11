@@ -1,14 +1,14 @@
 function model=getGenesFromKEGG(varargin)
 % getGenesFromKEGG  Retrieve information on all genes stored in KEGG.
 %
-% Parameters
-% ----------
-% keggPath : char, optional
+% Name-Value Arguments
+% --------------------
+% keggPath : char
 %     if keggGenes.mat is not in the RAVEN\external\kegg directory, this
 %     function will attempt to read data from a local FTP dump of the KEGG
 %     database. keggPath is the path to the root of this database (default
 %     'RAVEN/external/kegg').
-% koList : cell, optional
+% koList : cell
 %     the number of genes in KEGG is very large. koList can be a cell array
 %     with KO identifiers, in which case only genes belonging to one of
 %     those KEGG orthologies are retrieved (default all KOs with associated

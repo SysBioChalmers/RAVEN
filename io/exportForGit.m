@@ -10,28 +10,31 @@ function out=exportForGit(model,varargin)
 % ----------
 % model : struct
 %     model structure in RAVEN format that should be exported.
-% prefix : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% prefix : char
 %     prefix for all filenames (default 'model').
-% path : char, optional
+% path : char
 %     path where the directory structure should be generated and populated
 %     with all files (default current working directory).
-% formats : cell, optional
+% formats : cell
 %     cell array of strings specifying in what file formats the model
 %     should be exported (default all formats as {'mat', 'txt', 'xlsx',
 %     'xml', 'yml'}).
-% mainBranchFlag : logical, optional
+% mainBranchFlag : logical
 %     if true, function will error if RAVEN (and COBRA if detected) is/are
 %     not on the main branch (default false).
-% subDirs : logical, optional
+% subDirs : logical
 %     whether model files for each file format should be written in their
 %     own subdirectory, with 'model' as parent directory, in accordance to
 %     the standard-GEM repository format. If false, all files are stored in
 %     the same folder (default true).
-% COBRAtext : logical, optional
+% COBRAtext : logical
 %     whether the txt file should be in COBRA Toolbox format using
 %     metabolite IDs, instead of metabolite names and compartments
 %     (default false).
-% neverPrefixIDs : logical, optional
+% neverPrefixIDs : logical
 %     true if prefixes are never added to identifiers, even if they start
 %     with e.g. digits. This might result in invalid SBML files (default
 %     false).

@@ -13,11 +13,14 @@ function saveDeltaGtoCSV(model, varargin)
 % ----------
 % model : struct
 %     RAVEN model struct.
-% metCsv : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% metCsv : char
 %     Output path for the metabolite ΔG CSV, or '' to skip.
-% rxnCsv : char, optional
+% rxnCsv : char
 %     Output path for the reaction ΔG CSV, or '' to skip.
-% verbose : logical, optional
+% verbose : logical
 %     Print "wrote ..." per file (default false).
 %
 % Examples

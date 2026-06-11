@@ -8,7 +8,10 @@ function compStruct=compareRxnsGenesMetsComps(models,varargin)
 % ----------
 % models : cell
 %     cell array of two or more models.
-% printResults : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% printResults : logical
 %     true if the results should be printed on the screen (default false).
 %
 % Returns

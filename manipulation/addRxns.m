@@ -58,7 +58,10 @@ function newModel=addRxns(model,rxnsToAdd,varargin)
 %       default '')
 %     - rxnConfidenceScores : vector with reaction confidence scores
 %       (optional, default NaN)
-% eqnType : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% eqnType : double
 %     describes how the equation string should be interpreted (default 1):
 %
 %     - 1 : the metabolites are matched to model.mets. New metabolites (if
@@ -73,11 +76,11 @@ function newModel=addRxns(model,rxnsToAdd,varargin)
 %       are added will be assigned IDs "m1", "m2"... If IDs on the same
 %       form are already used in the model then the numbering will start
 %       from the highest used integer+1
-% compartment : char, optional
+% compartment : char
 %     the compartment the metabolites should be placed in when using
 %     eqnType=2. Must match model.comps (optional when eqnType=1 or
 %     eqnType=3).
-% allowNewMets : logical or char, optional
+% allowNewMets : logical or char
 %     true if the function is allowed to add new metabolites. Can also be a
 %     string, which will be used as prefix for the new metabolite IDs. It
 %     is highly recommended to first add any new metabolites with addMets
@@ -85,7 +88,7 @@ function newModel=addRxns(model,rxnsToAdd,varargin)
 %     more annotation of metabolites, allows for the use of exchange
 %     metabolites, and using it reduces the risk of parsing errors
 %     (default false).
-% allowNewGenes : logical, optional
+% allowNewGenes : logical
 %     true if the function is allowed to add new genes (default false).
 %
 % Returns

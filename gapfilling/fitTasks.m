@@ -16,14 +16,17 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,varargin)
 % inputFile : char, optional
 %     a task list in Excel format. See the function parseTaskList for
 %     details (optional if taskStructure is supplied).
-% printOutput : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% printOutput : logical
 %     true if the results of the test should be displayed (default true).
-% rxnScores : double, optional
+% rxnScores : double
 %     scores for each of the reactions in the reference model. Only
 %     negative scores are allowed. The solver will try to maximize the sum
 %     of the scores for the included reactions (default is -1 for all
 %     reactions).
-% taskStructure : struct, optional
+% taskStructure : struct
 %     structure with the tasks, as from parseTaskList. If supplied then
 %     inputFile is ignored.
 %

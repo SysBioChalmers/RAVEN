@@ -5,14 +5,17 @@ function res = optimizeProb(prob,varargin)
 % ----------
 % prob : struct
 %     COBRA-style LP/MILP problem struct to be optimised.
-% params : struct, optional
+%
+% Name-Value Arguments
+% --------------------
+% params : struct
 %     solver-specific parameters. In addition to solver parameters, the
 %     field "maxRatio" can be set to a number > 1 to improve numerical
 %     conditioning: before solving (LP only) any column whose coefficients
 %     span more than maxRatio is split via auxiliary metabolites/variables,
 %     preserving the feasible region. See splitProbForConditioning. The
 %     field is consumed here and not forwarded to the solver.
-% verbose : logical, optional
+% verbose : logical
 %     if true MILP progress is shown (default true).
 %
 % Returns

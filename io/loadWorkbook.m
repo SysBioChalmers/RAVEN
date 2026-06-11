@@ -8,7 +8,10 @@ function workbook=loadWorkbook(fileName,varargin)
 % ----------
 % fileName : char
 %     name of the Excel file. If it doesn't exist it will be created.
-% createEmpty : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% createEmpty : logical
 %     true if an empty workbook should be created if the file didn't exist
 %     (default false).
 %

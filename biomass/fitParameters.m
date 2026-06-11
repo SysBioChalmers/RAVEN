@@ -25,13 +25,16 @@ function [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,xRxn
 %     - isNegative : cell array of vectors where the elements are true if
 %       that position should be the negative of the fitted value (to
 %       differentiate between production/consumption)
-% fitToRatio : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% fitToRatio : logical
 %     if the ratio of simulated to measured values should be fitted
 %     instead of the absolute value. Used to prevent large fluxes from
 %     having too large an impact (default true).
-% initialGuess : double, optional
+% initialGuess : double
 %     initial guess of the parameters (default ones).
-% plotFitting : logical, optional
+% plotFitting : logical
 %     true if the resulting fitting should be plotted (default false).
 %
 % Returns

@@ -16,14 +16,17 @@ function [notProduced, notProducedNames, neededForProductionMat,minToConnect,mod
 % ----------
 % model : struct
 %     a model structure.
-% checkNeededForProduction : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% checkNeededForProduction : logical
 %     for each of the metabolites that could not be produced, include an
 %     artificial production reaction and calculate which new metabolites that
 %     could be produced as an effect of this (default false).
-% excretionFromCompartments : cell, optional
+% excretionFromCompartments : cell
 %     cell array with compartment ids from which metabolites can be excreted
 %     (default model.comps).
-% printDetails : logical, optional
+% printDetails : logical
 %     print details to the screen (default true).
 %
 % Returns

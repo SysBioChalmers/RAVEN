@@ -7,14 +7,17 @@ function balanceStructure=getElementalBalance(model,varargin)
 % ----------
 % model : struct
 %     a model structure.
-% rxns : cell or logical or double, optional
+%
+% Name-Value Arguments
+% --------------------
+% rxns : cell or logical or double
 %     either a cell array of reaction IDs, a logical vector with the same
 %     number of elements as reactions in the model, or a vector of
 %     indexes. Only these reactions will be checked (default model.rxns).
-% printUnbalanced : logical, optional
+% printUnbalanced : logical
 %     print warnings about the reactions that were unbalanced
 %     (default false).
-% printUnparsable : logical, optional
+% printUnparsable : logical
 %     print warnings about the reactions that cannot be parsed
 %     (default false).
 %

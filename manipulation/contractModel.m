@@ -10,10 +10,13 @@ function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,v
 % ----------
 % model : struct
 %     a model structure.
-% distReverse : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% distReverse : logical
 %     distinguish reactions with same metabolites but different reversibility
 %     as different reactions (default true).
-% mets : char or cell, optional
+% mets : char or cell
 %     string or cell array of strings with metabolite identifiers, whose
 %     involved reactions should be checked for duplication (by default all
 %     reactions are considered). This option is used by replaceMets.

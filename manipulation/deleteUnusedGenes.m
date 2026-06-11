@@ -5,7 +5,10 @@ function reducedModel=deleteUnusedGenes(model,varargin)
 % ----------
 % model : struct
 %     a model structure.
-% verbose : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% verbose : double
 %     0 for silent; 1 for printing the number of deleted genes; 2 for
 %     printing the list of deleted genes (default 1).
 %

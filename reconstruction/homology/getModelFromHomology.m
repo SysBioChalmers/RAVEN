@@ -16,11 +16,14 @@ function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
 %     a three-four letter abbreviation of the organism to build a model
 %     for. Must have BLASTP hits in both directions to the organisms in
 %     'models'.
-% preferredOrder : cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% preferredOrder : cell
 %     the order in which reactions should be added from the models. If not
 %     supplied, reactions will be included from all models, otherwise one
 %     gene will only result in reactions from one model (default {}).
-% strictness : double, optional
+% strictness : double
 %     integer that specifies which reactions should be included (default 1):
 %
 %     - 1 : Map new genes to old for all pairs, which have acceptable BLASTP
@@ -32,18 +35,18 @@ function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
 %       E-value for all gene pairs in each direction separately. Then map
 %       new genes to old for all pairs, which have acceptable BLASTP results
 %       in both directions.
-% onlyGenesInModels : logical, optional
+% onlyGenesInModels : logical
 %     consider BLASTP results only for genes that exist in the models. This
 %     tends to import a larger fraction from the existing models but may
 %     give less reliable results. Has effect only if strictness=3 (default
 %     false).
-% maxE : double, optional
+% maxE : double
 %     only look at genes with E-values <= this value (default 10^-30).
-% minLen : double, optional
+% minLen : double
 %     only look at genes with alignment length >= this value (default 200).
-% minIde : double, optional
+% minIde : double
 %     only look at genes with identity >= this value (default 40 (%)).
-% mapNewGenesToOld : logical, optional
+% mapNewGenesToOld : logical
 %     determines how to match genes if not looking at only 1-1 orthologs.
 %     Either map the new genes to the old or old genes to new. The default
 %     is to map the new genes (default true).

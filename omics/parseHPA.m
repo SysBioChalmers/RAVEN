@@ -6,7 +6,10 @@ function hpaData=parseHPA(fileName, varargin)
 % fileName : char
 %     comma- or tab-separated database dump of HPA. For details regarding
 %     the format, see http://www.proteinatlas.org/about/download.
-% version : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% version : double
 %     version of HPA (default 19).
 %
 % Returns

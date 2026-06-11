@@ -5,10 +5,13 @@ function printModelStats(model, varargin)
 % ----------
 % model : struct
 %     a model structure.
-% printModelIssues : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% printModelIssues : logical
 %     true if information about unconnected reactions/metabolites and
 %     elemental balancing should be printed (default false).
-% printDetails : logical, optional
+% printDetails : logical
 %     true if detailed information should be printed about model issues.
 %     Only used if printModelIssues is true (default true).
 %

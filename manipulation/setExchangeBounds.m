@@ -5,25 +5,28 @@ function [exchModel,unusedMets] = setExchangeBounds(model,varargin)
 % ----------
 % model : struct
 %     a model structure.
-% mets : cell or double, optional
+%
+% Name-Value Arguments
+% --------------------
+% mets : cell or double
 %     a cell array of metabolite names (case insensitive) or metabolite
 %     IDs, or a vector of metabolite indices (default all exchanged
 %     metabolites).
-% lb : double, optional
+% lb : double
 %     lower bound of exchange flux. Can be either a vector of bounds
 %     corresponding to each of the provided metabolites, or a single value
 %     that will be applied to all (default model.annotation.defaultLB if it
 %     exists, otherwise -1000).
-% ub : double, optional
+% ub : double
 %     upper bound of exchange flux. Can be either a vector of bounds
 %     corresponding to each of the provided metabolites, or a single value
 %     that will be applied to all (default model.annotation.defaultUB if it
 %     exists, otherwise 1000).
-% closeOthers : logical, optional
+% closeOthers : logical
 %     close exchange reactions for all other exchanged metabolites not
 %     present in the provided list. This will prevent IMPORT of the
 %     metabolites, but their EXPORT will not be modified (default true).
-% mediaOnly : logical, optional
+% mediaOnly : logical
 %     only consider exchange reactions involving exchange to or from the
 %     extracellular (media) compartment. Reactions such as "sink" reactions
 %     that exchange metabolites directly with an intracellular compartment

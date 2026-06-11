@@ -8,7 +8,10 @@ function [fluxA,fluxB, flag]=qMOMA(modelA,modelB,varargin)
 %     modelB (no reactions that are not in modelB).
 % modelB : struct
 %     a model structure for the reference case.
-% fluxMinWeight : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% fluxMinWeight : double
 %     a value >= 1 that determines whether minimization of the sum of
 %     fluxes should also be taken into account in the optimization. A
 %     value of 2.0 means that sum(fluxAi)^2 + sum(fluxBi)^2 has equal

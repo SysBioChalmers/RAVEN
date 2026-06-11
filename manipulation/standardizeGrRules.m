@@ -13,7 +13,10 @@ function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,varargin)
 % ----------
 % model : struct
 %     a model structure.
-% embedded : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% embedded : logical
 %     true if this function is called inside of another RAVEN function
 %     (default false).
 %

@@ -6,9 +6,11 @@ function addRavenToUserPath(varargin)
 % rights. As the startup.m file in the userpath automatically runs with
 % each Matlab start, the paths are automatically loaded.
 %
+% Name-Value Arguments
+% --------------------
 %   overwrite       logical, whether startup.m in the userpath should
 %                   overwritten (otherwise the RAVEN paths are appended)
-%                   (optional, default true)
+%                   (default true)
 
 p=parseRAVENargs(varargin, {'overwrite',true});
 overwrite=p.overwrite;

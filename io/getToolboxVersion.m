@@ -11,7 +11,10 @@ function version = getToolboxVersion(toolbox,fileID,varargin)
 % fileID : char
 %     string with the name of a file that is only found in the
 %     corresponding toolbox (e.g. "ravenCobraWrapper.m").
-% mainBranchFlag : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% mainBranchFlag : logical
 %     if true, the function will error if the toolbox is not on the main
 %     branch (default false).
 %

@@ -12,16 +12,19 @@ function followChanged(model,fluxesA,fluxesB, varargin)
 %     flux vector for the test case.
 % fluxesB : double
 %     flux vector for the reference test.
-% cutOffChange : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% cutOffChange : double
 %     reactions where the fluxes differ by less than this many percent
 %     won't be printed (default 10^-8).
-% cutOffFlux : double, optional
+% cutOffFlux : double
 %     reactions where the absolute value of both fluxes are below this
 %     value won't be printed (default 10^-8).
-% cutOffDiff : double, optional
+% cutOffDiff : double
 %     reactions where the fluxes differ by less than cutOffDiff won't be
 %     printed (default 10^-8).
-% metaboliteList : cell, optional
+% metaboliteList : cell
 %     cell array of metabolite names. Only reactions involving any of
 %     these metabolites will be printed.
 %

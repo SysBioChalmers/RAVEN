@@ -15,16 +15,19 @@ function [model, addedRxns]=addTransport(model,fromComp,toComps,varargin)
 %     model.comps).
 % toComps : cell
 %     compartment names to transport to (should match model.comps).
-% metNames : cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% metNames : cell
 %     the metabolite names to add transport for (default all metabolites
 %     in fromComp).
-% isRev : logical, optional
+% isRev : logical
 %     true if the transport reactions should be reversible (default true).
-% onlyToExisting : logical, optional
+% onlyToExisting : logical
 %     true if transport of a metabolite should only be added if it already
 %     exists in toComp. If false, then new metabolites are added with
 %     addMets first (default true).
-% prefix : char, optional
+% prefix : char
 %     prefix to reaction IDs (default 'tr_').
 %
 % Returns

@@ -17,12 +17,15 @@ function [model, hasChanged]=removeIdentifierPrefix(model,varargin)
 % ----------
 % model : struct
 %     model whose identifiers should be modified.
-% fields : cell, optional
+%
+% Name-Value Arguments
+% --------------------
+% fields : cell
 %     cell array with model field names from which the identifiers should
 %     be removed, possible values: 'rxns', 'mets', 'comps', 'genes',
 %     'metNames', 'rxnNames', 'id' (default all listed model fields will
 %     be checked).
-% forceRemove : logical, optional
+% forceRemove : logical
 %     if prefixes should be removed even if not all entries in a model
 %     field have the prefix (default false).
 %

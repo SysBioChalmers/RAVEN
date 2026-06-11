@@ -13,14 +13,17 @@ function writeYAMLmodel(model,varargin)
 % ----------
 % model : struct
 %     a model structure.
+%
+% Name-Value Arguments
+% --------------------
 % fileName : char
 %     name that the file will have. A dialog window will open if no file
 %     name is specified.
-% preserveQuotes : logical, optional
+% preserveQuotes : logical
 %     if all string values should be wrapped in double quotes. cobrapy
 %     emits quotes only where YAML requires them, so the default is false
 %     (matches cobrapy / raven-python) (default false).
-% sortIds : logical, optional
+% sortIds : logical
 %     if metabolites, reactions, genes and compartments should be sorted
 %     alphabetically by their identifier, otherwise they are kept in their
 %     original order (default false).

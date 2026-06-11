@@ -5,11 +5,14 @@ function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,varargin)
 % ----------
 % model : struct
 %     a model structure.
-% rxns : cell or logical or double, optional
+%
+% Name-Value Arguments
+% --------------------
+% rxns : cell or logical or double
 %     either a cell array of reaction IDs, a logical vector with the same
 %     number of elements as reactions in the model, or a vector of
 %     reaction indexes (default model.rxns).
-% runParallel : logical, optional
+% runParallel : logical
 %     speed up calculations by parallel processing. This is not beneficial
 %     if allowed bounds are calculated for only a few reactions, as the
 %     overhead of parallel processing will take longer. It requires MATLAB

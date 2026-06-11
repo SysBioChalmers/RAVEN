@@ -15,14 +15,17 @@ function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(
 % inputFile : char
 %     a task list in Excel format. See the function parseTaskList for
 %     details (optional if taskStructure is supplied).
-% printOutput : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% printOutput : logical
 %     true if the results of the test should be displayed (default true).
-% printOnlyFailed : logical, optional
+% printOnlyFailed : logical
 %     true if only tasks that failed should be displayed (default false).
-% getEssential : logical, optional
+% getEssential : logical
 %     true if the essential reactions should be calculated for all the
 %     tasks. This option is used with runINIT (default false).
-% taskStructure : struct, optional
+% taskStructure : struct
 %     structure with the tasks, as from parseTaskList. If this is supplied
 %     then inputFile is ignored.
 %

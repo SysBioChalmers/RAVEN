@@ -9,13 +9,16 @@ function dispEM(string,varargin)
 % string : char
 %     the warning/error to show. "WARNING: " is appended automatically if
 %     it is a warning.
-% throwErrors : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% throwErrors : logical
 %     true if the function should throw an error (default true).
-% toList : cell, optional
+% toList : cell
 %     a cell array of items to list. If supplied, the string is printed
 %     followed by each element in toList. If it is supplied but empty then
 %     nothing is printed (default {}).
-% trimWarnings : logical, optional
+% trimWarnings : logical
 %     true if a maximum of 10 items should be displayed in a given
 %     error/warning (default true).
 %

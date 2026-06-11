@@ -13,7 +13,10 @@ function File = getFullPath(File, varargin)
 %     absolute or relative name of a file or folder, as a string or cell
 %     string. The path need not exist. Unicode strings, UNC paths and long
 %     names are supported.
-% Style : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% Style : char
 %     style of the output (default 'auto'). Ignored when not running under
 %     Windows. One of:
 %

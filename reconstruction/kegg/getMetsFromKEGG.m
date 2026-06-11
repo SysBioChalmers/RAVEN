@@ -1,9 +1,9 @@
 function model=getMetsFromKEGG(varargin)
 % getMetsFromKEGG  Retrieve information on all metabolites stored in KEGG.
 %
-% Parameters
-% ----------
-% keggPath : char, optional
+% Name-Value Arguments
+% --------------------
+% keggPath : char
 %     if keggMets.mat is not in the RAVEN\external\kegg directory, this
 %     function will attempt to read data from a local FTP dump of the KEGG
 %     database. keggPath is the path to the root of this database (default

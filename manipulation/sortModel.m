@@ -5,13 +5,16 @@ function model=sortModel(model,varargin)
 % ----------
 % model : struct
 %     a model structure.
-% sortReversible : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% sortReversible : logical
 %     sorts the reversible reactions so that the metabolite that is first
 %     in lexicographical order is a reactant (default true).
-% sortMetName : logical, optional
+% sortMetName : logical
 %     sort the metabolite names in the equation, also uses compartment
 %     abbreviation (default false).
-% sortReactionOrder : logical, optional
+% sortReactionOrder : logical
 %     sorts the reaction order within each subsystem so that reactions
 %     consuming some metabolite come after reactions producing it. This
 %     overrides the sortReversible option and reactions are sorted so that

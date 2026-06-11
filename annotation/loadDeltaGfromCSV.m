@@ -13,9 +13,12 @@ function model = loadDeltaGfromCSV(model, varargin)
 % ----------
 % model : struct
 %     RAVEN model struct.
-% metCsv : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% metCsv : char
 %     Path to metabolite ΔG CSV (id, ΔG), or '' to skip.
-% rxnCsv : char, optional
+% rxnCsv : char
 %     Path to reaction ΔG CSV (id, ΔG), or '' to skip.
 %
 % Returns

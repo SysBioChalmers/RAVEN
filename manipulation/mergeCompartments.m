@@ -5,16 +5,19 @@ function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,varargin)
 % ----------
 % model : struct
 %     a model structure.
-% keepUnconstrained : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% keepUnconstrained : logical
 %     keep metabolites that are unconstrained in a 'unconstrained'
 %     compartment. If these are merged the exchange reactions will most often
 %     be deleted (default false).
-% deleteRxnsWithOneMet : logical, optional
+% deleteRxnsWithOneMet : logical
 %     delete reactions with only one metabolite. These reactions come from
 %     reactions such as A[c] + B[c] => A[m]. In some models hydrogen is
 %     balanced around each membrane with reactions like this (default
 %     false).
-% distReverse : logical, optional
+% distReverse : logical
 %     distinguish reactions with same metabolites but different reversibility
 %     as different reactions (default true).
 %

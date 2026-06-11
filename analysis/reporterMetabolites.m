@@ -12,12 +12,15 @@ function repMets=reporterMetabolites(model,genes,genePValues,varargin)
 %     a cell array of gene names (should match with model.genes).
 % genePValues : double
 %     P-values for differential expression of the genes.
-% printResults : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% printResults : logical
 %     true if the top 20 Reporter Metabolites should be printed to the
 %     screen (default false).
-% outputFile : char, optional
+% outputFile : char
 %     the results are printed to this file (default none).
-% geneFoldChanges : double, optional
+% geneFoldChanges : double
 %     log-fold changes for the genes. If supplied, then Reporter
 %     Metabolites are calculated for only up/down-regulated genes in
 %     addition to the full test (default none).

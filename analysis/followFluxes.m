@@ -12,10 +12,13 @@ function errorFlag=followFluxes(model, fluxesA, lowerFlux, varargin)
 %     flux vector for the test case.
 % lowerFlux : double
 %     only reactions with fluxes above this cutoff value are displayed.
-% upperFlux : double, optional
+%
+% Name-Value Arguments
+% --------------------
+% upperFlux : double
 %     only reactions with fluxes below this cutoff value are displayed
 %     (default Inf).
-% fluxesB : double, optional
+% fluxesB : double
 %     flux vector for the reference case.
 %
 % Returns

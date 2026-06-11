@@ -28,19 +28,22 @@ function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(m
 % models : cell or struct
 %     a cell array of reference models or a model structure. The gaps will
 %     be filled using reactions from these models.
-% allowNetProduction : logical, optional
+%
+% Name-Value Arguments
+% --------------------
+% allowNetProduction : logical
 %     true if net production of all metabolites is allowed. A reaction can
 %     be unable to carry flux because one of the reactants is unavailable
 %     or because one of the products can't be further processed. If true,
 %     only the first type of unconnectivity is considered (default false).
-% useModelConstraints : logical, optional
+% useModelConstraints : logical
 %     true if the constraints specified in the model structure should be
 %     used. If false then reactions are included from the template
 %     model(s) so that as many reactions as possible in model can carry
 %     flux (default false).
-% supressWarnings : logical, optional
+% supressWarnings : logical
 %     false if warnings should be displayed (default false).
-% rxnScores : double or cell, optional
+% rxnScores : double or cell
 %     array with scores for each of the reactions in the reference
 %     model(s). If more than one model is supplied, then rxnScores should
 %     be a cell array of vectors. The solver will try to maximize the sum

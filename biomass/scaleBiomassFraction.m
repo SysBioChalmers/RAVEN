@@ -16,7 +16,10 @@ function model = scaleBiomassFraction(model, biomassConfig, componentName, newVa
 %     Component to rescale.
 % newValue : double
 %     Target fraction in g/gDW.
-% balanceOut : char, optional
+%
+% Name-Value Arguments
+% --------------------
+% balanceOut : char
 %     Second component name to adjust so the biomass total remains 1
 %     g/gDW. Empty / omit to skip balancing.
 %
