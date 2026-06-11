@@ -627,7 +627,7 @@ if ~isempty(missingAligned)
             %constraints from maxPhylDist, and save it as a temporary file,
             %and create the model from that
 
-            fastaStruct=fastaread(fullfile(dataDir,'fasta',[missingAligned{i} '.fa']));
+            fastaStruct=readFasta(fullfile(dataDir,'fasta',[missingAligned{i} '.fa']));
             phylDist=inf(numel(fastaStruct),1);
             for j=1:numel(fastaStruct)
                 %Get the organism abbreviation
@@ -659,7 +659,7 @@ if ~isempty(missingAligned)
             if numel(fastaStruct)>1
                 if seqIdentity~=-1
                     cdhitInpCustom=tempname;
-                    fastawrite(cdhitInpCustom,fastaStruct);
+                    writeFasta(cdhitInpCustom,fastaStruct);
                     if seqIdentity<=1 && seqIdentity>0.7
                         nparam='5';
                     elseif seqIdentity>0.6
@@ -689,7 +689,7 @@ if ~isempty(missingAligned)
                 else
                     %This means that CD-HIT should be skipped since
                     %seqIdentity is equal to -1
-                    fastawrite(tmpFile,fastaStruct);
+                    writeFasta(tmpFile,fastaStruct);
                 end
                 %Do the alignment for this file
                 if ismac
@@ -724,10 +724,7 @@ if ~isempty(missingAligned)
                 %empty file was written previously so that doesn't have to
                 %be dealt with
                 if numel(fastaStruct)==1
-                    warnState = warning; %Save the current warning state
-                    warning('off','Bioinfo:fastawrite:AppendToFile');
-                    fastawrite(fullfile(dataDir,'aligned',[missingAligned{i} '.faw']),fastaStruct);
-                    warning(warnState) %Reset warning state to previous settings
+                    writeFasta(fullfile(dataDir,'aligned',[missingAligned{i} '.faw']),fastaStruct);
                 end
             end
             %Move the temporary file to the real one
