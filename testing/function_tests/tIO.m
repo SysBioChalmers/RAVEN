@@ -19,7 +19,13 @@ classdef tIO < RavenTestCase
 
         function getFullPathReturnsAbsolute(testCase)
             p = getFullPath('.');
-            testCase.verifyTrue(contains(p, ':'));   % Windows absolute path
+            if ispc
+                % Windows: drive letter (C:\) or UNC (\\server).
+                testCase.verifyTrue(~isempty(regexp(p, '^([A-Za-z]:|\\\\)', 'once')));
+            else
+                % Unix/macOS: absolute paths start with /.
+                testCase.verifyTrue(startsWith(p, '/'));
+            end
         end
 
         function getMD5HashReturnsHexDigest(testCase)
