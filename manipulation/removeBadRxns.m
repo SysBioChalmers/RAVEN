@@ -1,4 +1,4 @@
-function [newModel, removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames,balanceElements,refModel,ignoreIntBounds,printReport)
+function [newModel, removedRxns]=removeBadRxns(model,varargin)
 % removeBadRxns  Remove reactions that enable production/consumption from nothing.
 %
 % Iteratively removes reactions which enable production/consumption of some
@@ -81,36 +81,21 @@ function [newModel, removedRxns]=removeBadRxns(model,rxnRules,ignoreMets,isNames
 %     [newModel, removedRxns] = removeBadRxns(model, rxnRules, ignoreMets, ...
 %         isNames, balanceElements, refModel, ignoreIntBounds, printReport);
 
-if nargin<2
-    rxnRules=1;
-end
-if nargin<3
-    ignoreMets=[];
-elseif ~islogical(ignoreMets) && ~isnumeric(ignoreMets)
+p=parseRAVENargs(varargin, {'rxnRules',1; 'ignoreMets',[]; 'isNames',false; 'balanceElements',{'C';'P';'S';'N';'O'}; 'refModel',[]; 'ignoreIntBounds',false; 'printReport',false});
+rxnRules=p.rxnRules;
+ignoreMets=p.ignoreMets;
+if ~isempty(ignoreMets) && ~islogical(ignoreMets) && ~isnumeric(ignoreMets)
     ignoreMets=convertCharArray(ignoreMets);
 end
-if nargin<4
-    isNames=false;
+isNames=p.isNames;
+balanceElements=convertCharArray(p.balanceElements);
+refModel=p.refModel;
+if ~isempty(refModel)
+    EM='The feature to supply a reference model is currently not supported';
+    dispEM(EM,false);
 end
-if nargin<5
-    balanceElements={'C';'P';'S';'N';'O'};
-else
-    balanceElements=convertCharArray(balanceElements);
-end
-if nargin<6
-    refModel=[];
-else
-    if ~isempty(refModel)
-        EM='The feature to supply a reference model is currently not supported';
-        dispEM(EM,false);
-    end
-end
-if nargin<7
-    ignoreIntBounds=false;
-end
-if nargin<8
-    printReport=false;
-end
+ignoreIntBounds=p.ignoreIntBounds;
+printReport=p.printReport;
 
 %Check if the model has open exchange reactions and print a warning in that
 %case

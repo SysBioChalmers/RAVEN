@@ -1,5 +1,4 @@
-function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,...
-    deleteUnconstrained, deleteDuplicates, deleteZeroInterval, deleteInaccessible, deleteMinMax, groupLinear, constrainReversible, reservedRxns, suppressWarnings)
+function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(model,varargin)
 % simplifyModel  Simplify a model by deleting reactions and metabolites.
 %
 % This function is for reducing the model size by removing reactions and
@@ -51,35 +50,19 @@ function [reducedModel, deletedReactions, deletedMetabolites]=simplifyModel(mode
 %         deleteZeroInterval, deleteInaccessible, deleteMinMax, ...
 %         groupLinear, constrainReversible, reservedRxns, suppressWarnings);
 
-if nargin<2
-    deleteUnconstrained=true;
-end
-if nargin<3
-    deleteDuplicates=false;
-end
-if nargin<4
-    deleteZeroInterval=false;
-end
-if nargin<5
-    deleteInaccessible=false;
-end
-if nargin<6
-    deleteMinMax=false;
-end
-if nargin<7
-    groupLinear=false;
-end
-if nargin<8
-    constrainReversible=false;
-end
-if nargin<9
-    reservedRxns=[];
-else
+p=parseRAVENargs(varargin, {'deleteUnconstrained',true; 'deleteDuplicates',false; 'deleteZeroInterval',false; 'deleteInaccessible',false; 'deleteMinMax',false; 'groupLinear',false; 'constrainReversible',false; 'reservedRxns',[]; 'suppressWarnings',false});
+deleteUnconstrained=p.deleteUnconstrained;
+deleteDuplicates=p.deleteDuplicates;
+deleteZeroInterval=p.deleteZeroInterval;
+deleteInaccessible=p.deleteInaccessible;
+deleteMinMax=p.deleteMinMax;
+groupLinear=p.groupLinear;
+constrainReversible=p.constrainReversible;
+reservedRxns=p.reservedRxns;
+if ~isempty(reservedRxns)
     reservedRxns=convertCharArray(reservedRxns);
 end
-if nargin<10
-    suppressWarnings=false;
-end
+suppressWarnings=p.suppressWarnings;
 
 reducedModel=model;
 deletedReactions={};

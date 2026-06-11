@@ -1,4 +1,4 @@
-function model=mergeModels(models,metParam,supressWarnings,copyToComps)
+function model=mergeModels(models,varargin)
 % mergeModels  Merge models into one model structure.
 %
 % Merges models into one model structure. Reactions are added without any
@@ -31,12 +31,10 @@ function model=mergeModels(models,metParam,supressWarnings,copyToComps)
 % --------
 %     model = mergeModels(models);
 
-arguments
-    models;
-    metParam {emptyOrTextScalar} = "metNames"
-    supressWarnings {emptyOrLogicalScalar} = false
-    copyToComps {emptyOrLogicalScalar} = false
-end
+p=parseRAVENargs(varargin, {'metParam',"metNames",@emptyOrTextScalar; 'supressWarnings',false,@emptyOrLogicalScalar; 'copyToComps',false,@emptyOrLogicalScalar});
+metParam=p.metParam;
+supressWarnings=p.supressWarnings;
+copyToComps=p.copyToComps;
 
 metParam = char(metParam);
 

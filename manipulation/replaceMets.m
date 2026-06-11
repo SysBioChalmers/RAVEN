@@ -1,4 +1,4 @@
-function [model, removedRxns, idxDuplRxns]=replaceMets(model,metabolite,replacement,verbose,identifiers)
+function [model, removedRxns, idxDuplRxns]=replaceMets(model,metabolite,replacement,varargin)
 % replaceMets  Replace a metabolite with another already in the model.
 %
 % Replaces metabolite names and annotation with a replacement metabolite
@@ -45,12 +45,12 @@ function [model, removedRxns, idxDuplRxns]=replaceMets(model,metabolite,replacem
 metabolite=char(metabolite);
 replacement=char(replacement);
 
-if nargin<4 || isempty(verbose)
+p=parseRAVENargs(varargin, {'verbose',false; 'identifiers',false});
+verbose=p.verbose;
+if isempty(verbose)
     verbose=false;
 end
-if nargin<5
-    identifiers = false;
-end
+identifiers=p.identifiers;
 
 % Find occurence of replacement metabolites. Annotation will be taken from
 % first metabolite found.

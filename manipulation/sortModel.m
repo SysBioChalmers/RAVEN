@@ -1,4 +1,4 @@
-function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)
+function model=sortModel(model,varargin)
 % sortModel  Sort a model based on metabolite names and compartments.
 %
 % Parameters
@@ -27,15 +27,10 @@ function model=sortModel(model,sortReversible,sortMetName,sortReactionOrder)
 % --------
 %     model = sortModel(model, sortReversible, sortMetName, sortReactionOrder);
 
-if nargin<2
-    sortReversible=true;
-end
-if nargin<3
-    sortMetName=false;
-end
-if nargin<4
-    sortReactionOrder=false;
-end
+p=parseRAVENargs(varargin, {'sortReversible',true; 'sortMetName',false; 'sortReactionOrder',false});
+sortReversible=p.sortReversible;
+sortMetName=p.sortMetName;
+sortReactionOrder=p.sortReactionOrder;
 
 if sortMetName==true
     %Assuming that metComps are the indexes. Should be changed at one point

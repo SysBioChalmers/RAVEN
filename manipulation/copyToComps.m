@@ -1,4 +1,4 @@
-function model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutside)
+function model=copyToComps(model,toComps,varargin)
 % copyToComps  Copy reactions to new compartment(s).
 %
 % Parameters
@@ -37,22 +37,22 @@ function model=copyToComps(model,toComps,rxns,deleteOriginal,compNames,compOutsi
 % -----
 % New reactions and metabolites will be named as "id_toComps(i)".
 
-arguments
-    model (1,1) struct
-    toComps {emptyOrTextOrCellOfText}
-    rxns = model.rxns
-    deleteOriginal {emptyOrLogicalScalar} = false
-    compNames {emptyOrTextOrCellOfText} = toComps
-    compOutside {emptyOrTextOrCellOfText} = '';
+p=parseRAVENargs(varargin, {'rxns',[],[]; 'deleteOriginal',false,@emptyOrLogicalScalar; 'compNames',[],[]; 'compOutside','',[]});
+rxns=p.rxns;
+if isempty(rxns)
+    rxns=model.rxns;
+elseif ~islogical(rxns) && ~isnumeric(rxns)
+    rxns=convertCharArray(rxns);
 end
-
-if nargin >= 3 && ~islogical(rxns) && ~isnumeric(rxns)
-    rxns = convertCharArray(rxns);
-end
-if nargin >= 5
+deleteOriginal=p.deleteOriginal;
+compNames=p.compNames;
+if isempty(compNames)
+    compNames=toComps;
+else
     compNames=convertCharArray(compNames);
 end
-if nargin >= 6
+compOutside=p.compOutside;
+if ~isempty(compOutside)
     compOutside=convertCharArray(compOutside);
     if length(compOutside) ~= length(compNames)
         error('compOutside and compNames should be of equal size.');
