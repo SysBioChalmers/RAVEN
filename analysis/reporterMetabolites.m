@@ -88,8 +88,9 @@ if any(geneFoldChanges)
 end
 genePValues(isnan(genePValues))=[];
 
-%Convert p-values to Z-scores
-geneZScores=norminv(genePValues)*-1;
+%Convert p-values to Z-scores. Uses base MATLAB erfcinv instead of the
+%Statistics Toolbox norminv: -norminv(p) == sqrt(2)*erfcinv(2*p).
+geneZScores=sqrt(2)*erfcinv(2*genePValues);
 
 %This is to prevent errors if the p-values are exactly 0 or 1
 geneZScores(geneZScores==-inf)=-15;
@@ -146,8 +147,10 @@ for i=1:numel(sizes)
     metZScores(metNGenes==sizes(i))=(metZScores(metNGenes==sizes(i))-mK)/stdK;
 end
 
-%Calculate the P-values
-metPValues=1-normcdf(metZScores);
+%Calculate the P-values (upper-tail of the standard normal). Uses the base
+%MATLAB erfc so this does not depend on the Statistics Toolbox normcdf:
+%1 - normcdf(z) == 0.5*erfc(z/sqrt(2)).
+metPValues=0.5*erfc(metZScores/sqrt(2));
 
 %Sort the results
 [metZScores, I]=sort(metZScores,'descend');

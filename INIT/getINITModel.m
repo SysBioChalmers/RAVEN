@@ -181,11 +181,11 @@ if ~isempty(arrayData) && isfield(arrayData,'singleCells')
         cell_frac_count(cell_frac_count==0) = NaN; % Remove zeros from optimization
         cell_frac_count(1) = NaN; % Remove non-expressed genes from optimization
         x_lim = 1; % Somewhat arbitrary parameter to fit left tail of distr.
-        myfun = @(par) nansum((cell_frac_count(1:find(x>=x_lim,1)) - ...
+        myfun = @(par) sum((cell_frac_count(1:find(x>=x_lim,1)) - ...
             abs(par(1))*betapdf(x(1:find(x>=x_lim,1)),abs(par(2)),abs(par(3))) - ...
             abs(par(4))*betapdf(x(1:find(x>=x_lim,1)),abs(par(5)),abs(par(6))) - ...
             abs(par(7))*betapdf(x(1:find(x>=x_lim,1)),abs(par(8)),abs(par(9))) - ...
-            abs(par(10))*betapdf(x(1:find(x>=x_lim,1)),abs(par(11)),abs(par(12)))).^2);
+            abs(par(10))*betapdf(x(1:find(x>=x_lim,1)),abs(par(11)),abs(par(12)))).^2, 'omitnan');
         
         par0 = [4,2,100,7,2,30,7,5,20,5,15,20];
         opts = optimset('Display','off');
@@ -458,4 +458,13 @@ fprintf(['\t' num2str(numel(model.rxns)) ' reactions, ' num2str(numel(model.gene
 fprintf(['\tMean reaction score: ' num2str(rxnS) '\n']);
 fprintf(['\tMean gene score: ' num2str(geneS) '\n']);
 fprintf(['\tReactions with positive scores: ' num2str(100*sum(a>0)/numel(a)) '%%\n\n']);
+end
+
+%Local beta probability density function, equivalent to the Statistics and
+%Machine Learning Toolbox betapdf but using only base MATLAB (beta). This
+%avoids a dependency on that toolbox. The density is zero outside [0,1].
+function y=betapdf(x,a,b)
+y=zeros(size(x));
+k=x>=0 & x<=1;
+y(k)=(x(k).^(a-1)).*((1-x(k)).^(b-1))/beta(a,b);
 end
