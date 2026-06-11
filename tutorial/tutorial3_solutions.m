@@ -3,8 +3,8 @@
 %   "RAVEN tutorials.docx" for more details. All the parameters are set in
 %   this script, rather than modifying the Excel model file.
 
-%Import the Excel model
-model=importExcelModel('smallYeast.xlsx',true);
+%Import the model
+model=readYAMLmodel('smallYeast.yml');
 
 %Step 1
 %Set the upper bound of glucose uptake to 1 and O2 uptake to zero
@@ -71,8 +71,10 @@ followChanged(model,sol2.x,sol.x, 10, 10^-2, 0,{'NADPH' 'NADH' 'NAD' 'NADP'});
 
 %Step 5
 %Set the exchange rates to the recorded batch values
-model=setParam(model,'lb',{'acOUT' 'biomassOUT' 'co2OUT' 'ethOUT' 'glyOUT' 'glcIN' 'o2IN' 'ethIN'},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*0.9999);
+%Set the upper bounds before the lower bounds, so that lb never temporarily
+%exceeds the previous ub (e.g. glcIN, whose ub was set to 1 in Step 1)
 model=setParam(model,'ub',{'acOUT' 'biomassOUT' 'co2OUT' 'ethOUT' 'glyOUT' 'glcIN' 'o2IN' 'ethIN'},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*1.0001);
+model=setParam(model,'lb',{'acOUT' 'biomassOUT' 'co2OUT' 'ethOUT' 'glyOUT' 'glcIN' 'o2IN' 'ethIN'},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*0.9999);
 
 %Define another model where all exchange reactions are open.
 model2=model;

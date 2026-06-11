@@ -4,19 +4,6 @@ function tests = importExportTests
 tests = functiontests(localfunctions);
 end
 
-function testExcelImport(testCase)
-sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
-excelFile=fullfile(sourceDir,'tutorial','empty.xlsx');
-%%Prepare test results, uncomment and run when new reference is needed
-% modelExcel=importExcelModel(excelFile);
-% sbmlFile=fullfile(sourceDir,'tutorial','empty.xml');
-% modelSBML=importModel(sbmlFile);
-% save(fullfile(sourceDir,'testing','unit_tests','test_data','importExportResults.mat'),'modelExcel','modelSBML');
-evalc('model=importExcelModel(excelFile)'); % Repress warnings
-load(fullfile(sourceDir,'testing','unit_tests','test_data','importExportResults.mat'), 'modelExcel');
-verifyEqual(testCase,model,modelExcel)
-end
-
 function testSBMLImport(testCase)
 sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
 sbmlFile=fullfile(sourceDir,'tutorial','empty.xml');

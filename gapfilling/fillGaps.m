@@ -189,12 +189,17 @@ else
     %merged model
     toCheck=intersect(allModels.rxns(strcmp(allModels.rxnFrom,model.id)),model.rxns(~originalFlux));
     
-    %Get the ones that still cannot carry flux
-    I=haveFlux(allModels,1,toCheck);
-    
-    %Get the reactions that can't carry flux in the original model, but can
-    %in the merged one
-    K=toCheck(I);
+    %Get the ones that still cannot carry flux. Guard against an empty
+    %toCheck, since haveFlux interprets an empty reaction list as "all
+    %reactions" rather than "none"
+    if isempty(toCheck)
+        K=toCheck;
+    else
+        I=haveFlux(allModels,1,toCheck);
+        %Get the reactions that can't carry flux in the original model, but can
+        %in the merged one
+        K=toCheck(I);
+    end
     
     %This is a temporary thing to only look at the non-reversible rxns.
     %This is because all reversible rxns can have a flux in the

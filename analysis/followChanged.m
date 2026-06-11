@@ -100,7 +100,13 @@ fluxIndexes=[larger smaller];
 zeroFluxes=ineither(find(fluxesA(ineither)==0));
 fluxIndexes=unique([fluxIndexes zeroFluxes(find(abs(fluxesB(zeroFluxes))>=cutOffFlux))']);
 
-formulas=constructEquations(model,model.rxns(fluxIndexes));
+if isempty(fluxIndexes)
+    % No reactions changed; avoid constructEquations interpreting an empty
+    % reaction list as "all reactions"
+    formulas={};
+else
+    formulas=constructEquations(model,model.rxns(fluxIndexes));
+end
 
 if cutOffFluxSupplied
     if cutOffDiffSupplied

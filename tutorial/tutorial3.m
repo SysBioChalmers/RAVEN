@@ -7,8 +7,8 @@
 %
 %   It is assumed that the user has already completed Tutorial 2
 
-%Import the Excel model
-model=importExcelModel('smallYeast.xlsx',true);
+%Import the model
+model=readYAMLmodel('smallYeast.yml');
 
 %Set the upper bound of glucose uptake to 1 and O2 uptake to unlimited
 model=setParam(model,'ub',{'glcIN' 'o2IN'},[1 1000]);
@@ -39,11 +39,8 @@ model2=setParam(model,'eq',{'ZWF'},0);
 sol2=solveLP(model2);
 followChanged(model,sol2.x,sol.x, 10, 10^-2, 0,{'NADPH' 'NADH' 'NAD' 'NADP'});
 
-%Import the Excel model and export it to SBML
-model=importExcelModel('smallYeast.xlsx',false);
-printModelStats(model);
-exportModel(model,'smallYeast.xml');
-model=importModel('smallYeast.xml',true);
+%Reload the model with exchange metabolites removed for simulation
+model=readYAMLmodel('smallYeast.yml');
 sol=solveLP(model);
 
 %Define another model where all exchange reactions are open
