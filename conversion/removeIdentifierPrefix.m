@@ -1,4 +1,4 @@
-function [model, hasChanged]=removeIdentifierPrefix(model,fields,forceRemove)
+function [model, hasChanged]=removeIdentifierPrefix(model,varargin)
 % removeIdentifierPrefix  Remove SBML-required identifier prefixes.
 %
 % This function removes identifier prefixes:
@@ -37,12 +37,12 @@ function [model, hasChanged]=removeIdentifierPrefix(model,fields,forceRemove)
 % --------
 %     model = removeIdentifierPrefix(model, fields, forceRemove);
 
-if nargin<2 || isempty(fields)
+p=parseRAVENargs(varargin, {'fields',[]; 'forceRemove',false});
+fields=p.fields;
+if isempty(fields)
     fields = {'rxns','mets','comps','genes','metNames','rxnNames','id'};
 end
-if nargin<3 || isempty(forceRemove)
-    forceRemove = false;
-end
+forceRemove=p.forceRemove;
 
 modelFields = {'rxns',      'R_';
     'mets',      'M_';

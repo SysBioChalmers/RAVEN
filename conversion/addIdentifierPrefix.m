@@ -1,4 +1,4 @@
-function [model, hasChanged]=addIdentifierPrefix(model,fields)
+function [model, hasChanged]=addIdentifierPrefix(model,varargin)
 % addIdentifierPrefix  Add identifier prefixes required by SBML.
 %
 % If reaction, metabolite, compartment, gene or model identifiers do not
@@ -31,7 +31,9 @@ function [model, hasChanged]=addIdentifierPrefix(model,fields)
 % --------
 %     [model, hasChanged] = addIdentifierPrefix(model, fields);
 
-if nargin<2 || isempty(fields)
+p=parseRAVENargs(varargin, {'fields',[]});
+fields=p.fields;
+if isempty(fields)
     fields = {'rxns','mets','comps','genes','id'};
 end
 
