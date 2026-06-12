@@ -34,8 +34,8 @@ classdef tReconstruction < RavenTestCase
         end
 
         function getBlastRunsWhenAvailable(testCase)
-            fa1 = fullfile(testCase.ravenRoot,'testing','unit_tests','test_data','human_galactosidases.fa');
-            fa2 = fullfile(testCase.ravenRoot,'testing','unit_tests','test_data','yeast_galactosidases.fa');
+            fa1 = fullfile(testCase.ravenRoot,'testing','function_tests','test_data','human_galactosidases.fa');
+            fa2 = fullfile(testCase.ravenRoot,'testing','function_tests','test_data','yeast_galactosidases.fa');
             testCase.assumeDependency(exist(fa1,'file')==2, 'test FASTA files');
             ok = true;
             try, evalc('bs = getBlast(''human'', fa1, {''yeast''}, {fa2});'); catch, ok = false; end
@@ -44,8 +44,8 @@ classdef tReconstruction < RavenTestCase
         end
 
         function getDiamondRunsWhenAvailable(testCase)
-            fa1 = fullfile(testCase.ravenRoot,'testing','unit_tests','test_data','human_galactosidases.fa');
-            fa2 = fullfile(testCase.ravenRoot,'testing','unit_tests','test_data','yeast_galactosidases.fa');
+            fa1 = fullfile(testCase.ravenRoot,'testing','function_tests','test_data','human_galactosidases.fa');
+            fa2 = fullfile(testCase.ravenRoot,'testing','function_tests','test_data','yeast_galactosidases.fa');
             testCase.assumeDependency(exist(fa1,'file')==2, 'test FASTA files');
             ok = true;
             try, evalc('bs = getDiamond(''human'', fa1, {''yeast''}, {fa2});'); catch, ok = false; end

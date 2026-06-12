@@ -9,7 +9,7 @@ classdef tGenomeData < RavenTestCase
 
     methods (Access = protected)
         function d = fixtureDir(testCase)
-            d = fullfile(testCase.ravenRoot,'testing','unit_tests', ...
+            d = fullfile(testCase.ravenRoot,'testing','function_tests', ...
                 'test_data','genomeData');
         end
     end

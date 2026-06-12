@@ -1,8 +1,7 @@
 # RAVEN function tests
 
 A `matlab.unittest` suite covering the RAVEN source functions, organised as one
-test class per source folder (`tQueries`, `tManipulation`, `tSolver`, …). It is
-additive — the existing `testing/unit_tests/` suite is kept in place.
+test class per source folder (`tQueries`, `tManipulation`, `tSolver`, …).
 
 ## Running
 
@@ -33,4 +32,5 @@ dependency is missing. This keeps the suite green in any environment. Skipped
 categories: external binaries (BLAST+, DIAMOND, WoLF PSORT), a local KEGG dump,
 optional solvers (Gurobi/SCIP for MILP), the Optimization Toolbox (`quadprog`),
 a Python/pyyaml bridge, and input files for table-driven curation. The full
-ftINIT MILP pipeline is exercised end-to-end by `testing/unit_tests/tinitTests.m`.
+ftINIT MILP pipeline (in `tINIT`) is guarded on a MILP solver and skipped when
+none is available.
