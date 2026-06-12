@@ -213,59 +213,44 @@ end
 rmdir(tmpDir,'s');
 
 fprintf('\n=== Model solvers ===\n');
-
-%Get current solver. Set it to 'none', if it is not set
 fprintf(' > Checking for LP solvers\n')
-[~,res]=evalc("runtests('solverTests.m');");
 
-fprintf(myStr('   > glpk',40))
-if res(1).Passed == 1
-    fprintf('Pass\n')
-else
-    printOrange('Fail\n')
+% Solve a minimal feasible LP with each solver to verify it is functional.
+% This is much faster than running the full solverTests test case.
+testModel.rxns = {'r1';'r2'};
+testModel.mets = {'a'};
+testModel.S    = sparse([1 -1]);
+testModel.lb   = [0; 0];
+testModel.ub   = [1; 1000];
+testModel.rev  = [0; 0];
+testModel.c    = [0; 1];
+testModel.b    = 0;
+
+solvers  = {'glpk','gurobi','scip','cobra'};
+solverOK = false(1,numel(solvers));
+for i = 1:numel(solvers)
+    solverOK(i) = reportCheck(['   > ' solvers{i}], @() testSolver(solvers{i}, testModel));
 end
 
-fprintf(myStr('   > gurobi',40))
-if res(2).Passed == 1
-    fprintf('Pass\n')
-else
-    printOrange('Fail\n')
-end
-
-fprintf(myStr('   > scip',40))
-if res(3).Passed == 1
-    fprintf('Pass\n')
-else
-    printOrange('Fail\n')
-end
-
-fprintf(myStr('   > cobra',40))
-if res(4).Passed == 1
-    fprintf('Pass\n')
-else
-    printOrange('Fail\n')
-end
+% Keep the current solver if it is still functional, otherwise pick the best
+% available one. Order of preference: gurobi > glpk > scip > cobra
 fprintf(myStr(' > Set RAVEN solver',40))
-try
-    oldSolver=getpref('RAVEN','solver');
-    solverIdx=find(strcmp(oldSolver,{'glpk','gurobi','scip','cobra'}));
-catch
-    solverIdx=0;
-end
-% Do not change old solver if functional
-if solverIdx~=0 && res(solverIdx).Passed == 1
+oldSolver = '';
+try oldSolver = getpref('RAVEN','solver'); catch; end
+solverIdx = find(strcmp(oldSolver, solvers));
+if ~isempty(solverIdx) && solverOK(solverIdx)
     fprintf([oldSolver '\n'])
-% Order of preference: gurobi > glpk > scip > cobra
-elseif res(2).Passed == 1
+    setRavenSolver(oldSolver);
+elseif solverOK(2)
     fprintf('gurobi\n')
     setRavenSolver('gurobi');
-elseif res(1).Passed == 1
+elseif solverOK(1)
     fprintf('glpk\n')
     setRavenSolver('glpk');
-elseif res(3).Passed == 1
+elseif solverOK(3)
     fprintf('scip\n')
-    setRavenSolver('scip');    
-elseif res(4).Passed == 1
+    setRavenSolver('scip');
+elseif solverOK(4)
     fprintf('cobra\n')
     setRavenSolver('cobra');
 else
@@ -277,24 +262,15 @@ fprintf('\n=== Essential binary executables ===\n');
 if ~checkBinaries
     printOrange('    Skipping check of binary executables\n')
 else
-    fprintf(myStr(' > Checking BLAST+',40))
-    [~,res]=evalc("runtests('blastPlusTests.m');");
-    res=interpretResults(res);
-    if res==false
+    % Run each bundled binary with a version/help flag to confirm it
+    % executes on this system, rather than running the full test cases.
+    if ~reportCheck(' > Checking BLAST+', @() testBinary(ravenDir,'blast+','blastp','-version'))
         fprintf('   This is essential to run getBlast()\n')
     end
-
-    fprintf(myStr(' > Checking DIAMOND',40))
-    [~,res]=evalc("runtests('diamondTests.m');");
-    res=interpretResults(res);
-    if res==false
-        fprintf('   This is essential to run the getDiamond()\n')
+    if ~reportCheck(' > Checking DIAMOND', @() testBinary(ravenDir,'diamond','diamond','version'))
+        fprintf('   This is essential to run getDiamond()\n')
     end
-
-    fprintf(myStr(' > Checking HMMER',40))
-    [~,res]=evalc("runtests('hmmerTests.m')");
-    res=interpretResults(res);
-    if res==false
+    if ~reportCheck(' > Checking HMMER', @() testBinary(ravenDir,'hmmer','hmmsearch','-h'))
         fprintf(['   This is essential to run getKEGGModelFromHomology()\n'...
             '   when using a FASTA file as input\n'])
     end
@@ -307,14 +283,31 @@ checkFunctionUniqueness();
 fprintf('\n*** checkInstallation complete ***\n');
 end
 
-function res = interpretResults(results)
-if results.Failed==0 && results.Incomplete==0
-    fprintf('Pass\n');
-    res=true;
+function testSolver(solver, model)
+% Set the RAVEN solver and solve a trivial LP; error if it does not return
+% an optimal solution.
+setRavenSolver(solver);
+sol = solveLP(model, 0);
+if ~(isfield(sol,'stat') && sol.stat == 1)
+    error('Solver %s did not return an optimal solution', solver);
+end
+end
+
+function testBinary(ravenDir, tool, binName, versionArg)
+% Run a bundled binary with versionArg to confirm it executes; error if not.
+if ismac
+    binEnd = '.mac';
 else
-    printOrange('Fail\n')
-    fprintf('   Download/compile the binary and rerun checkInstallation\n');
-    res=false;
+    binEnd = '';
+end
+if ispc
+    cmd = ['wsl "' getWSLpath(fullfile(ravenDir,'software',tool,binName)) '" ' versionArg];
+else
+    cmd = ['"' fullfile(ravenDir,'software',tool,[binName binEnd]) '" ' versionArg];
+end
+[status,~] = system(cmd);
+if status ~= 0
+    error('%s did not execute (exit status %d)', binName, status);
 end
 end
 
