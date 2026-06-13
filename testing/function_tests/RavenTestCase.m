@@ -25,7 +25,7 @@ classdef (Abstract) RavenTestCase < matlab.unittest.TestCase
     methods (TestClassSetup)
         function setupRaven(testCase)
             testCase.ravenRoot = findRAVENroot();
-            loaded = load(fullfile(testCase.ravenRoot,'testing','unit_tests', ...
+            loaded = load(fullfile(testCase.ravenRoot,'testing','function_tests', ...
                 'test_data','ecoli_textbook.mat'),'model');
             testCase.modelTemplate = loaded.model;
             try

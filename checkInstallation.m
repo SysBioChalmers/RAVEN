@@ -1,12 +1,17 @@
-function [currVer, installType] = checkInstallation(varargin)
+function [currVer, installType] = checkInstallation(developMode, checkBinaries)
 % checkInstallation
 %   The purpose of this function is to check if all necessary functions are
 %   installed and working. It also checks whether there are any functions
 %   with overlapping names between RAVEN and other toolboxes or
 %   user-defined functions, which are accessible from MATLAB pathlist
 %
-% Name-Value Arguments
-% --------------------
+%   NOTE: this function is run before RAVEN has been added to the MATLAB
+%   path, so it must not call any other RAVEN functions until it has added
+%   RAVEN to the path itself. Its arguments are therefore parsed directly
+%   rather than via parseRAVENargs.
+%
+% Parameters
+% ----------
 %   developMode     logical indicating development mode, which includes
 %                   testing of binaries that are required to update KEGG
 %                   HMMs (default false). If 'versionOnly' is
@@ -28,9 +33,12 @@ function [currVer, installType] = checkInstallation(varargin)
 %
 % Usage: [currVer, installType] = checkInstallation(developMode)
 
-p=parseRAVENargs(varargin, {'developMode',false; 'checkBinaries',true});
-developMode=p.developMode;
-checkBinaries=p.checkBinaries;
+if nargin < 1 || isempty(developMode)
+    developMode = false;
+end
+if nargin < 2 || isempty(checkBinaries)
+    checkBinaries = true;
+end
 
 if ischar(developMode) && strcmp(developMode,'versionOnly')
     versionOnly = true;
@@ -38,9 +46,9 @@ else
     versionOnly = false;
 end
 
-%Get the RAVEN path
+%Get the RAVEN path. checkInstallation.m sits in the RAVEN root.
 [ST, I]=dbstack('-completenames');
-[ravenDir,~,~]=fileparts(fileparts(ST(I).file));
+[ravenDir,~,~]=fileparts(ST(I).file);
 
 installType = 2; % If neither git nor add-on, then ZIP was downloaded
 addList = matlab.addons.installedAddons;
@@ -163,8 +171,9 @@ catch
     printOrange('Fail\n')
 end
 fprintf(myStr(' > Checking libSBML version',40))
+model = [];
 try
-    evalc('importModel(fullfile(ravenDir,''tutorial'',''empty.xml''))');
+    evalc('model = importModel(fullfile(ravenDir,''tutorial'',''empty.xml''));');
     try
         libSBMLver=OutputSBML_RAVEN; % Only works in libSBML 5.17.0+
         fprintf([libSBMLver.libSBML_version_string '\n']);
@@ -176,109 +185,72 @@ catch
     printOrange('Fail\n')
     fprintf('   Download libSBML from http://sbml.org/Software/libSBML/Downloading_libSBML and add to MATLAB path\n');
 end
-fprintf(' > Checking model import and export\n')
-[~,res]=evalc("runtests('importExportTests.m');");
 
-fprintf(myStr('   > Import Excel format',40))
-if res(1).Passed == 1
+% Import and export the small "empty" model directly, which is much faster
+% than running the full importExportTests test case. A temporary folder
+% holds the exported files and is removed afterwards.
+fprintf(' > Checking model import and export\n')
+tmpDir = tempname; mkdir(tmpDir);
+
+fprintf(myStr('   > Import SBML format',40))
+if ~isempty(model)
     fprintf('Pass\n')
 else
     printOrange('Fail\n')
+end
+
+reportCheck('   > Export SBML format', @() exportModel(model, fullfile(tmpDir,'model.xml')));
+reportCheck('   > Import YAML format', @() readYAMLmodel(fullfile(ravenDir,'tutorial','empty.yml')));
+reportCheck('   > Export YAML format', @() writeYAMLmodel(model, fullfile(tmpDir,'model.yml')));
+
+if ~reportCheck('   > Export Excel format', @() exportToExcelFormat(model, fullfile(tmpDir,'model.xlsx')))
     if any(strcmpi(addList.Name,'Text Analytics Toolbox'))
-        fprintf(['   Excel import/export is incompatible with MATLAB Text Analytics Toolbox.\n' ...
+        fprintf(['   Excel export is incompatible with MATLAB Text Analytics Toolbox.\n' ...
                  '   Further instructions => https://github.com/SysBioChalmers/RAVEN/issues/55#issuecomment-1514369299\n'])
     end
 end
 
-fprintf(myStr('   > Export Excel format',40))
-if res(4).Passed == 1
-    fprintf('Pass\n')
-else
-    printOrange('Fail\n')
-end
-
-fprintf(myStr('   > Import SBML format',40))
-if res(2).Passed == 1
-    fprintf('Pass\n')
-else
-    printOrange('Fail\n')
-end
-
-fprintf(myStr('   > Export SBML format',40))
-if res(5).Passed == 1
-    fprintf('Pass\n')
-else
-    printOrange('Fail\n')
-end
-
-fprintf(myStr('   > Import YAML format',40))
-if res(3).Passed == 1
-    fprintf('Pass\n')
-else
-    printOrange('Fail\n')
-end
-
-fprintf(myStr('   > Export YAML format',40))
-if res(6).Passed == 1
-    fprintf('Pass\n')
-else
-    printOrange('Fail\n')
-end
+rmdir(tmpDir,'s');
 
 fprintf('\n=== Model solvers ===\n');
-
-%Get current solver. Set it to 'none', if it is not set
 fprintf(' > Checking for LP solvers\n')
-[~,res]=evalc("runtests('solverTests.m');");
 
-fprintf(myStr('   > glpk',40))
-if res(1).Passed == 1
-    fprintf('Pass\n')
-else
-    printOrange('Fail\n')
+% Solve a minimal feasible LP with each solver to verify it is functional.
+% This is much faster than running the full solverTests test case.
+testModel.rxns = {'r1';'r2'};
+testModel.mets = {'a'};
+testModel.S    = sparse([1 -1]);
+testModel.lb   = [0; 0];
+testModel.ub   = [1; 1000];
+testModel.rev  = [0; 0];
+testModel.c    = [0; 1];
+testModel.b    = 0;
+
+solvers  = {'glpk','gurobi','scip','cobra'};
+solverOK = false(1,numel(solvers));
+for i = 1:numel(solvers)
+    solverOK(i) = reportCheck(['   > ' solvers{i}], @() testSolver(solvers{i}, testModel));
 end
 
-fprintf(myStr('   > gurobi',40))
-if res(2).Passed == 1
-    fprintf('Pass\n')
-else
-    printOrange('Fail\n')
-end
-
-fprintf(myStr('   > scip',40))
-if res(3).Passed == 1
-    fprintf('Pass\n')
-else
-    printOrange('Fail\n')
-end
-
-fprintf(myStr('   > cobra',40))
-if res(4).Passed == 1
-    fprintf('Pass\n')
-else
-    printOrange('Fail\n')
-end
+% Keep the current solver if it is still functional, otherwise pick the best
+% available one. Order of preference: gurobi > glpk > scip > cobra
 fprintf(myStr(' > Set RAVEN solver',40))
-try
-    oldSolver=getpref('RAVEN','solver');
-    solverIdx=find(strcmp(oldSolver,{'glpk','gurobi','scip','cobra'}));
-catch
-    solverIdx=0;
-end
-% Do not change old solver if functional
-if solverIdx~=0 && res(solverIdx).Passed == 1
+oldSolver = '';
+try oldSolver = getpref('RAVEN','solver'); catch; end
+solverIdx = find(strcmp(oldSolver, solvers));
+if ~isempty(solverIdx) && solverOK(solverIdx)
     fprintf([oldSolver '\n'])
-% Order of preference: gurobi > glpk > scip > cobra
-elseif res(2).Passed == 1
+    setRavenSolver(oldSolver);
+elseif solverOK(2)
     fprintf('gurobi\n')
     setRavenSolver('gurobi');
-elseif res(1).Passed == 1
+elseif solverOK(1)
     fprintf('glpk\n')
     setRavenSolver('glpk');
-elseif res(3).Passed == 1
+elseif solverOK(3)
     fprintf('scip\n')
-    setRavenSolver('scip');    
-elseif res(4).Passed == 1
+    setRavenSolver('scip');
+elseif solverOK(4)
     fprintf('cobra\n')
     setRavenSolver('cobra');
 else
@@ -290,24 +262,15 @@ fprintf('\n=== Essential binary executables ===\n');
 if ~checkBinaries
     printOrange('    Skipping check of binary executables\n')
 else
-    fprintf(myStr(' > Checking BLAST+',40))
-    [~,res]=evalc("runtests('blastPlusTests.m');");
-    res=interpretResults(res);
-    if res==false
+    % Run each bundled binary with a version/help flag to confirm it
+    % executes on this system, rather than running the full test cases.
+    if ~reportCheck(' > Checking BLAST+', @() testBinary(ravenDir,'blast+','blastp','-version'))
         fprintf('   This is essential to run getBlast()\n')
     end
-
-    fprintf(myStr(' > Checking DIAMOND',40))
-    [~,res]=evalc("runtests('diamondTests.m');");
-    res=interpretResults(res);
-    if res==false
-        fprintf('   This is essential to run the getDiamond()\n')
+    if ~reportCheck(' > Checking DIAMOND', @() testBinary(ravenDir,'diamond','diamond','version'))
+        fprintf('   This is essential to run getDiamond()\n')
     end
-
-    fprintf(myStr(' > Checking HMMER',40))
-    [~,res]=evalc("runtests('hmmerTests.m')");
-    res=interpretResults(res);
-    if res==false
+    if ~reportCheck(' > Checking HMMER', @() testBinary(ravenDir,'hmmer','hmmsearch','-h'))
         fprintf(['   This is essential to run getKEGGModelFromHomology()\n'...
             '   when using a FASTA file as input\n'])
     end
@@ -320,14 +283,46 @@ checkFunctionUniqueness();
 fprintf('\n*** checkInstallation complete ***\n');
 end
 
-function res = interpretResults(results)
-if results.Failed==0 && results.Incomplete==0
-    fprintf('Pass\n');
-    res=true;
+function testSolver(solver, model)
+% Set the RAVEN solver and solve a trivial LP; error if it does not return
+% an optimal solution.
+setRavenSolver(solver);
+sol = solveLP(model, 0);
+if ~(isfield(sol,'stat') && sol.stat == 1)
+    error('Solver %s did not return an optimal solution', solver);
+end
+end
+
+function testBinary(ravenDir, tool, binName, versionArg)
+% Run a bundled binary with versionArg to confirm it executes; error if not.
+if ismac
+    binEnd = '.mac';
 else
-    printOrange('Fail\n')
-    fprintf('   Download/compile the binary and rerun checkInstallation\n');
-    res=false;
+    binEnd = '';
+end
+if ispc
+    cmd = ['wsl "' getWSLpath(fullfile(ravenDir,'software',tool,binName)) '" ' versionArg];
+else
+    cmd = ['"' fullfile(ravenDir,'software',tool,[binName binEnd]) '" ' versionArg];
+end
+[status,~] = system(cmd);
+if status ~= 0
+    error('%s did not execute (exit status %d)', binName, status);
+end
+end
+
+function ok = reportCheck(label, fcn)
+% Print label, run fcn (a function handle) with its output suppressed, and
+% report Pass/Fail. Returns true on success.
+assert(isa(fcn,'function_handle'));
+fprintf(myStr(label,40));
+try
+    evalc('fcn()');
+    ok = true;
+    fprintf('Pass\n');
+catch
+    ok = false;
+    printOrange('Fail\n');
 end
 end
 

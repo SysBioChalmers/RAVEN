@@ -29,7 +29,7 @@ classdef tIO < RavenTestCase
         end
 
         function getMD5HashReturnsHexDigest(testCase)
-            f = fullfile(testCase.ravenRoot,'testing','unit_tests', ...
+            f = fullfile(testCase.ravenRoot,'testing','function_tests', ...
                 'test_data','ecoli_textbook.mat');
             h = getMD5Hash(f);
             testCase.verifyTrue(ischar(h) || isstring(h));
@@ -122,7 +122,7 @@ classdef tIO < RavenTestCase
         end
 
         function checkFileExistenceFindsFile(testCase)
-            f = fullfile(testCase.ravenRoot,'testing','unit_tests', ...
+            f = fullfile(testCase.ravenRoot,'testing','function_tests', ...
                 'test_data','ecoli_textbook.mat');
             out = checkFileExistence(f, 1, false, true);
             testCase.verifyNotEmpty(out);
