@@ -59,6 +59,36 @@ verifyTrue(testCase,filesize>18500);
 delete(fullfile(sourceDir,'testing','unit_tests','test_data','_test.xml'));
 end
 
+function testSBMLExportNestedSubSystems(testCase)
+%Regression test: a model where reactions have differing numbers of
+%subsystems (nested cell-of-cells, e.g. one reaction in two subsystems and
+%others in one) must be exportable to SBML. Previously exportModel failed
+%with "Dimensions of arrays being concatenated are not consistent" because
+%the subSystems flattening could not concatenate entries of unequal length.
+sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
+load(fullfile(sourceDir,'testing','unit_tests','test_data','ecoli_textbook.mat'), 'model');
+
+%Assign nested subSystems: most reactions get a single subsystem, but a few
+%get multiple, which is the scenario that triggered the bug.
+nRxns=numel(model.rxns);
+model.subSystems=repmat({{'Subsystem A'}},nRxns,1);
+model.subSystems{1}={'Subsystem A','Subsystem B'};
+model.subSystems{2}={'Subsystem B','Subsystem C'};
+
+tmpFile=fullfile(sourceDir,'testing','unit_tests','test_data','_testNested.xml');
+%This call previously errored; verify it completes and round-trips.
+evalc('exportModel(model,tmpFile)');
+evalc('modelImported=importModel(tmpFile)');
+delete(tmpFile);
+
+%Subsystems should be preserved (order within a reaction is not guaranteed)
+srt=@(c) sort(reshape(c,1,[]));
+for i=1:3
+    j=find(strcmp(modelImported.rxns,model.rxns{i}));
+    verifyEqual(testCase,srt(modelImported.subSystems{j}),srt(model.subSystems{i}));
+end
+end
+
 function testYAMLexport(testCase)
 sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
 load(fullfile(sourceDir,'tutorial','empty.mat'), 'emptyModel');
