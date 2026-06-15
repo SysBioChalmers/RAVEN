@@ -84,6 +84,46 @@ classdef tIO < RavenTestCase
             testCase.verifyTrue(exist(f,'file')==2);
         end
 
+        function exportToExcelFormatWritesEcSheets(testCase)
+            % Enzyme-constrained (GECKO) models get two extra export-only
+            % sheets, ENZYMES and ENZRXNS, holding the model.ec contents.
+            model = testCase.model;
+            model.ec.geckoLight = false;
+            model.ec.rxns     = model.rxns(1:2);
+            model.ec.kcat     = [13.7; 0];
+            model.ec.source   = {'brenda'; ''};
+            model.ec.notes    = {'note1'; ''};
+            model.ec.eccodes  = {'1.1.1.1'; '2.7.1.1;2.7.1.2'};
+            model.ec.genes    = model.genes(1:2);
+            model.ec.enzymes  = {'P0A1'; 'P0A2'};
+            model.ec.mw       = [51000; NaN];
+            model.ec.sequence = {'MABC'; 'MDEF'};
+            model.ec.concs    = [NaN; 0.5];
+            model.ec.rxnEnzMat = [1 2; 0 1];   % R1: P0A1 x1, P0A2 x2; R2: P0A2 x1
+
+            f = [tempname '.xlsx'];
+            testCase.addTeardown(@() delete(f));
+            evalc('exportToExcelFormat(model, f);');
+
+            sheets = sheetnames(f);
+            testCase.verifyTrue(any(strcmp(sheets,'ENZYMES')));
+            testCase.verifyTrue(any(strcmp(sheets,'ENZRXNS')));
+
+            % NaN mw/conc are written as blanks; the kcat 0 sentinel is kept.
+            enz = readcell(f,'Sheet','ENZYMES');
+            testCase.verifyEqual(string(enz(1,2:6)),["ID","GENE","MW","SEQUENCE","CONC"]);
+            testCase.verifyEqual(string(enz{2,2}),"P0A1");
+            testCase.verifyEqual(enz{2,4},51000,'AbsTol',1e-9);
+
+            ecrxn = readcell(f,'Sheet','ENZRXNS');
+            testCase.verifyEqual(string(ecrxn(1,2:7)),["ID","KCAT","SOURCE","NOTE","EC-NUMBER","ENZYMES"]);
+            testCase.verifyEqual(ecrxn{2,3},13.7,'AbsTol',1e-9);
+            testCase.verifyEqual(string(ecrxn{3,6}),"2.7.1.1;2.7.1.2");
+            % ENZYMES column: 'enzyme:count' subunit stoichiometry from rxnEnzMat
+            testCase.verifyEqual(string(ecrxn{2,7}),"P0A1:1;P0A2:2");
+            testCase.verifyEqual(string(ecrxn{3,7}),"P0A2:1");
+        end
+
         function writeReadYAMLRoundTrip(testCase)
             f = [tempname '.yml'];
             testCase.addTeardown(@() delete(f));

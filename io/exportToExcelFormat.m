@@ -397,8 +397,77 @@ else
     wb=writeSheet(wb,'MODEL',3,headers,[],modelSheet);
 end
 
+%Add the ENZYMES and ENZRXNS sheets, containing the contents of the
+%model.ec structure of enzyme-constrained (GECKO) models. These sheets are
+%export-only: importExcelModel does not read them back, as the YAML format
+%(writeYAMLmodel/readYAMLmodel) remains the round-trippable format for
+%ecModels. The enzyme-reaction coupling (model.ec.rxnEnzMat) is written in
+%readable form as the 'enzyme:count' ENZYMES column of the ENZRXNS sheet,
+%rather than as a separate matrix.
+if isfield(model,'ec') && isfield(model.ec,'enzymes')
+    if isfield(model,'genes')
+        ecSheetPos=5;
+    else
+        ecSheetPos=4;
+    end
+
+    %ENZYMES sheet: one row per enzyme
+    headers={'#';'ID';'GENE';'MW';'SEQUENCE';'CONC'};
+    enzSheet=cell(numel(model.ec.enzymes),numel(headers));
+    enzSheet(:,2)=model.ec.enzymes(:);
+    enzSheet(:,3)=model.ec.genes(:);
+    enzSheet(:,4)=numToCell(model.ec.mw);
+    enzSheet(:,5)=model.ec.sequence(:);
+    enzSheet(:,6)=numToCell(model.ec.concs);
+    %MW (column 4) shown without decimals, CONC (column 6) with 5 decimals
+    enzColFormats={'','','','0','','0.00000'};
+    wb=writeSheet(wb,'ENZYMES',ecSheetPos,headers,[],enzSheet,'isIntegers',false,'colFormats',enzColFormats);
+
+    %ENZRXNS sheet: one row per enzyme-constrained reaction. The ENZYMES
+    %column encodes the subunit stoichiometry from model.ec.rxnEnzMat as
+    %'enzyme:count' pairs (e.g. 'P12345:1;P67890:2').
+    headers={'#';'ID';'KCAT';'SOURCE';'NOTE';'EC-NUMBER';'ENZYMES'};
+    ecRxnSheet=cell(numel(model.ec.rxns),numel(headers));
+    ecRxnSheet(:,2)=model.ec.rxns(:);
+    ecRxnSheet(:,3)=numToCell(model.ec.kcat);
+    ecRxnSheet(:,4)=model.ec.source(:);
+    ecRxnSheet(:,5)=model.ec.notes(:);
+    ecRxnSheet(:,6)=model.ec.eccodes(:);
+    ecRxnSheet(:,7)=ecEnzymePairs(model.ec);
+    wb=writeSheet(wb,'ENZRXNS',ecSheetPos+1,headers,[],ecRxnSheet,'isIntegers',false);
+end
+
 %Open the output stream
 out = FileOutputStream(fileName);
 wb.write(out);
 out.close();
+end
+
+function c=numToCell(v)
+%Convert a numeric vector to a column cell array, representing NaN values
+%as empty (blank) cells so they are written as empty cells in the sheet.
+c=num2cell(v(:));
+c(cellfun(@(x) isnumeric(x) && isnan(x),c))={[]};
+end
+
+function c=ecEnzymePairs(ec)
+%Build the ENZRXNS 'ENZYMES' column. For each ec reaction, list the enzymes
+%and their subunit stoichiometry from rxnEnzMat as 'enzyme:count;...'.
+%Reactions without enzymes get a blank cell.
+nRxns=numel(ec.rxns);
+c=cell(nRxns,1);
+if ~isfield(ec,'rxnEnzMat') || isempty(ec.rxnEnzMat)
+    return
+end
+for i=1:min(nRxns,size(ec.rxnEnzMat,1))
+    j=find(ec.rxnEnzMat(i,:));
+    if isempty(j)
+        continue
+    end
+    pairs=cell(1,numel(j));
+    for k=1:numel(j)
+        pairs{k}=[ec.enzymes{j(k)} ':' num2str(full(ec.rxnEnzMat(i,j(k))))];
+    end
+    c{i}=strjoin(pairs,';');
+end
 end

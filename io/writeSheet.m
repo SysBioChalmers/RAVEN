@@ -32,8 +32,9 @@ function wb=writeSheet(wb,sheetName,sheetPosition,captions,units,raw,varargin)
 % --------
 %     wb = writeSheet(wb, sheetName, sheetPosition, captions, units, raw);
 
-p=parseRAVENargs(varargin, {'isIntegers',true});
+p=parseRAVENargs(varargin, {'isIntegers',true; 'colFormats',{}});
 isIntegers=p.isIntegers;
+colFormats=p.colFormats;
 
 %Adds the required classes to the static Java path if not already added
 addJavaPaths();
@@ -57,6 +58,18 @@ boldFont=wb.createFont();
 boldFont.setBoldweight(boldFont.BOLDWEIGHT_BOLD);
 boldStyle=defaultStyle.clone();
 boldStyle.setFont(boldFont);
+
+%Build per-column number-format styles, so individual columns can override
+%the sheet-wide number format (e.g. show a different number of decimals)
+colStyles=cell(1,size(raw,2));
+dataFormatHelper=wb.getCreationHelper().createDataFormat();
+for col=1:min(numel(colFormats),size(raw,2))
+    if ~isempty(colFormats{col})
+        colStyle=defaultStyle.clone();
+        colStyle.setDataFormat(dataFormatHelper.getFormat(colFormats{col}));
+        colStyles{col}=colStyle;
+    end
+end
 
 s=wb.createSheet();
 wb.setSheetName(sheetPosition, sheetName);
@@ -118,7 +131,11 @@ for i=0:size(raw,1)-1
             else
                 c.setCellValue(content);
             end
-            c.setCellStyle(defaultStyle);
+            if ~isempty(colStyles{j+1})
+                c.setCellStyle(colStyles{j+1});
+            else
+                c.setCellStyle(defaultStyle);
+            end
         end
     end
 end
@@ -134,6 +151,10 @@ elseif strcmp(sheetName,'GENES')
     widths=[786;3144;7860;3144;3406];
 elseif strcmp(sheetName,'MODEL')
     widths=[786;3144;7860;3668;3668;5240;5240;7860;7860;2620;7860];
+elseif strcmp(sheetName,'ENZYMES')
+    widths=[786;3144;3144;3406;15719;3406];
+elseif strcmp(sheetName,'ENZRXNS')
+    widths=[786;5240;3406;5240;7860;5240;7860];
 end;
 
 %Resize columns
