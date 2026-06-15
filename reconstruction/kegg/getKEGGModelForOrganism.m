@@ -223,7 +223,7 @@ if ~isempty(dataDir)
         else
             fprintf('Downloading the HMM library file... ');
             try
-                websave([libraryFile '.gz'],['https://github.com/SysBioChalmers/RAVEN/releases/download/v2.11.0/kegg116_' hmmDomains{hmmIndex} '.hmm.gz']);
+                websave([libraryFile '.gz'],['https://github.com/SysBioChalmers/raven-toolbox/releases/download/v0.1.0/kegg116_' hmmDomains{hmmIndex} '.hmm.gz']);
             catch ME
                 if strcmp(ME.identifier,'MATLAB:webservices:HTTP404StatusCodeError')
                     error('Failed to download the HMM library file, the server returned a 404 error, try again later. If the problem persists please report it on the RAVEN GitHub Issues page: https://github.com/SysBioChalmers/RAVEN/issues')
