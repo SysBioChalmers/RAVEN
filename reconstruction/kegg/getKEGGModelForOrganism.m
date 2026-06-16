@@ -26,9 +26,9 @@ function model=getKEGGModelForOrganism(organismID,varargin)
 %     keepUndefinedStoich, keepIncomplete and keepGeneral.
 % dataDir : char
 %     directory for which to retrieve the input data, styled as
-%     prok90_kegg118 or euk90_kegg118, indicating whether the HMMs were
-%     trained on pro- or eukaryotic sequences (first set of digits is the
-%     sequence similarity threshold, second set is the KEGG version). The
+%     kegg118_prokaryotes or kegg118_eukaryotes, indicating the KEGG version
+%     and whether the HMMs were trained on pro- or eukaryotic sequences. The
+%     directory name matches the published HMM library it is paired with. The
 %     prebuilt concatenated KO HMM library (dataDir.hmm) is downloaded here
 %     from the corresponding RAVEN release if not already present. May also
 %     contain a dataDir\keggdb sub-folder with a local KEGG FTP dump, used to
@@ -200,8 +200,7 @@ libraryFile='';
 %gzip-compressed flatfile, queried in one hmmsearch); if it is not already
 %present it is downloaded from the corresponding RAVEN release.
 if ~isempty(dataDir)
-    hmmOptions={'euk90_kegg118','prok90_kegg118'};
-    hmmDomains={'eukaryotes','prokaryotes'}; %Aligned with hmmOptions
+    hmmOptions={'kegg118_eukaryotes','kegg118_prokaryotes'};
     if ~endsWith(dataDir,hmmOptions) %Check if dataDir ends with any of the hmmOptions.
         %If not, then check whether the required keggdb folder exists anyway.
         if ~isfile(fullfile(dataDir,'keggdb','genes.pep'))
@@ -210,8 +209,10 @@ if ~isempty(dataDir)
     else
         %dataDir points to a RAVEN-provided set. Use the concatenated KO HMM
         %library (one gzip-compressed flatfile, queried in a single
-        %hmmsearch), downloading and extracting it if necessary.
-        hmmIndex=find(endsWith(dataDir,hmmOptions),1);
+        %hmmsearch), downloading and extracting it if necessary. The dataDir
+        %name matches the published HMM library asset, so it doubles as the
+        %download filename.
+        hmmName=hmmOptions{endsWith(dataDir,hmmOptions)};
         libraryFile=[dataDir '.hmm'];
         if isfile(libraryFile)
             fprintf(['NOTE: Found <strong>' libraryFile '</strong> HMM library, it will therefore be used during reconstruction\n']);
@@ -223,7 +224,7 @@ if ~isempty(dataDir)
         else
             fprintf('Downloading the HMM library file... ');
             try
-                websave([libraryFile '.gz'],['https://github.com/SysBioChalmers/raven-toolbox/releases/download/v0.3.0/kegg118_' hmmDomains{hmmIndex} '.hmm.gz']);
+                websave([libraryFile '.gz'],['https://github.com/SysBioChalmers/raven-toolbox/releases/download/v0.3.0/' hmmName '.hmm.gz']);
             catch ME
                 if strcmp(ME.identifier,'MATLAB:webservices:HTTP404StatusCodeError')
                     error('Failed to download the HMM library file, the server returned a 404 error, try again later. If the problem persists please report it on the RAVEN GitHub Issues page: https://github.com/SysBioChalmers/RAVEN/issues')

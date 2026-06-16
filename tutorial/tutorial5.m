@@ -9,7 +9,7 @@
 % 
 % Start by downloading trained Hidden Markov Models for eukaryotes. This can
 % be done automatically or manually from the RAVEN Wiki in its GitHub
-% repository. In this tutorial, the archive "euk90_kegg118" is picked for
+% repository. In this tutorial, the archive "kegg118_eukaryotes" is picked for
 % the automatic download. See the documentation in the RAVEN Wiki for more
 % information regarding preparation of such archive.
 % 
@@ -19,7 +19,7 @@
 % are for. This process takes up to 20-35 minutes in macOS, Unix systems and
 % 40-55 minutes in Windows, depending on your hardware and the size of
 % target organism proteome
-model=getKEGGModelForOrganism('sce','sce.fa','euk90_kegg118','output',false,false,false,false,10^-30,0.8,0.3,-1);
+model=getKEGGModelForOrganism('sce','sce.fa','kegg118_eukaryotes','output',false,false,false,false,10^-30,0.8,0.3,-1);
 
 % The resulting model should contain around 1589 reactions, 1600
 % metabolites and 836 genes. Small variations are possible since it is an
