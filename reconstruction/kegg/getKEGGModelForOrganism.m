@@ -198,7 +198,8 @@ libraryFile='';
 %pre-trained HMM set, compatible with the current RAVEN version. The
 %reconstruction uses the concatenated KO HMM library (a single
 %gzip-compressed flatfile, queried in one hmmsearch); if it is not already
-%present it is downloaded from the corresponding RAVEN release.
+%present it is downloaded from the corresponding raven-data release
+%(https://github.com/SysBioChalmers/raven-data).
 if ~isempty(dataDir)
     hmmOptions={'kegg118_eukaryotes','kegg118_prokaryotes'};
     if ~endsWith(dataDir,hmmOptions) %Check if dataDir ends with any of the hmmOptions.
@@ -224,7 +225,7 @@ if ~isempty(dataDir)
         else
             fprintf('Downloading the HMM library file... ');
             try
-                websave([libraryFile '.gz'],['https://github.com/SysBioChalmers/raven-toolbox/releases/download/v0.3.0/' hmmName '.hmm.gz']);
+                websave([libraryFile '.gz'],['https://github.com/SysBioChalmers/raven-data/releases/download/kegg118/' hmmName '.hmm.gz']);
             catch ME
                 if strcmp(ME.identifier,'MATLAB:webservices:HTTP404StatusCodeError')
                     error('Failed to download the HMM library file, the server returned a 404 error, try again later. If the problem persists please report it on the RAVEN GitHub Issues page: https://github.com/SysBioChalmers/RAVEN/issues')
