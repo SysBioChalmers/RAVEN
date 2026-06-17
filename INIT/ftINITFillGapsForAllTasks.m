@@ -1,8 +1,7 @@
 function [outModel, addedRxns]=ftINITFillGapsForAllTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params,verbose)
 % ftINITFillGapsForAllTasks
 %   Fills gaps in a model by including reactions from a reference model,
-%   so that the resulting model can perform all the tasks in a task list
-%   This is similar to the old fitTasks function but optimized for ftINIT.
+%   so that the resulting model can perform all the tasks in a task list.
 %
 %   Input:
 %   model           model structure

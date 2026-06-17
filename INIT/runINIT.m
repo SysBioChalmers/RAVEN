@@ -2,8 +2,7 @@ function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,varargin)
 % runINIT  Generate a model using the original INIT algorithm.
 %
 % Generates a model using the INIT algorithm, based on proteomics and/or
-% transcriptomics and/or metabolomics and/or metabolic tasks. This is the
-% original implementation, which is now replaced with ftINIT.
+% transcriptomics and/or metabolomics and/or metabolic tasks.
 %
 % This function is the actual implementation of the algorithm. See
 % getINITModel for a higher-level function for model reconstruction. See PLoS
