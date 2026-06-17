@@ -1,4 +1,4 @@
-function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(model,rxnScores,metData,essentialRxns,prodWeight,allowExcretion,remPosRev,params,startVals,fluxes,verbose)
+function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(model,rxnScores,metData,essentialRxns,prodWeight,allowExcretion,remPosRev,params,startVals,fluxes,verbose,forceOn)
 % ftINITInternalAlg
 %	This function runs the MILP for a step in ftINIT.
 %
@@ -54,6 +54,9 @@ function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(m
 %           rxnScores,presentMets,essentialRxns,prodWeight,allowExcretion,...
 %           remPosRev,params)
 
+if nargin < 12 || isempty(forceOn)
+    forceOn = 0.1;
+end
 if isempty(essentialRxns)
     essentialRxns={};
 end
@@ -244,9 +247,20 @@ milpModel = model;
 %S row
 %When forcing on essential rxns, use the flux value of the previous run (set to 0.1 the first time)
 %Don't set it above 0.1, may starve something else out. Leave a margin of 1% from the last run.
-forceOnLim = 0.1;
+forceOnLim = forceOn;
 forceOnLimEss=min(abs(fluxes)*0.99,0.1);
 forceOnLimEss(essIrrevRxns) = min(forceOnLimEss(essIrrevRxns), milpModel.ub(essIrrevRxns));
+
+% Per-reaction big-M: use each reaction's own flux capacity (capped at 1000).
+% This replaces the fixed big-M=100, which underestimates capacity for standard
+% RAVEN models where ub=1000. Must be at least forceOnLim so the constraints are feasible.
+bigMCap = 1000;
+ubSafe = min(milpModel.ub, bigMCap); ubSafe(~isfinite(ubSafe)) = bigMCap;
+lbSafe = min(-milpModel.lb, bigMCap); lbSafe(~isfinite(lbSafe)) = bigMCap; lbSafe = max(lbSafe, 0);
+bigMPosRev   = max(max(ubSafe(posRevRxns),  lbSafe(posRevRxns)),  forceOnLim);
+bigMNegIrrev = max(ubSafe(negIrrevRxns), forceOnLim);
+bigMNegRev   = max(max(ubSafe(negRevRxns),  lbSafe(negRevRxns)),  forceOnLim);
+bigMEssRev   = max(max(ubSafe(essRevRxns),  lbSafe(essRevRxns)),  forceOnLim);
 
 varsPerNegRev = 3;
 
@@ -266,19 +280,19 @@ piRows = [sEye(posIrrevRxns,:) speye(nPosIrrev)*-forceOnLim sparse(nPosIrrev,nPo
 
 prRows1 = [sEye(posRevRxns,:) sparse(nPosRev,nYBlock + nPosIrrev) speye(nPosRev)*-1 speye(nPosRev) sparse(nPosRev,nPosRev*4+nNegIrrev+nNegRev*varsPerNegRev+nEssRev*6+nMetVars)];
 prRows2 = [sparse(nPosRev,nRxns + nPosIrrev) speye(nPosRev)*-forceOnLim sparse(nPosRev,nNegIrrev + nNegRev + nPosIrrev) speye(nPosRev) speye(nPosRev) sparse(nPosRev,nPosRev) speye(nPosRev)*-1 sparse(nPosRev,nPosRev*2+nNegIrrev+nNegRev*varsPerNegRev+nEssRev*6+nMetVars)];
-prRows3 = [sparse(nPosRev,nRxns + nYBlock + nPosIrrev) speye(nPosRev) sparse(nPosRev,nPosRev) speye(nPosRev)*-100 sparse(nPosRev,nPosRev) speye(nPosRev) sparse(nPosRev,nPosRev+nNegIrrev+nNegRev*varsPerNegRev+nEssRev*6+nMetVars)];
-prRows4 = [sparse(nPosRev,nRxns + nYBlock + nPosIrrev + nPosRev) speye(nPosRev) speye(nPosRev)*100 sparse(nPosRev,nPosRev*2) speye(nPosRev) sparse(nPosRev, nNegIrrev+nNegRev*varsPerNegRev+nEssRev*6+nMetVars)];
+prRows3 = [sparse(nPosRev,nRxns + nYBlock + nPosIrrev) speye(nPosRev) sparse(nPosRev,nPosRev) spdiags(-bigMPosRev,0,nPosRev,nPosRev) sparse(nPosRev,nPosRev) speye(nPosRev) sparse(nPosRev,nPosRev+nNegIrrev+nNegRev*varsPerNegRev+nEssRev*6+nMetVars)];
+prRows4 = [sparse(nPosRev,nRxns + nYBlock + nPosIrrev + nPosRev) speye(nPosRev) spdiags(bigMPosRev,0,nPosRev,nPosRev) sparse(nPosRev,nPosRev*2) speye(nPosRev) sparse(nPosRev, nNegIrrev+nNegRev*varsPerNegRev+nEssRev*6+nMetVars)];
 
-niRows = [sEye(negIrrevRxns,:) sparse(nNegIrrev,nPosIrrev + nPosRev) speye(nNegIrrev)*-100 sparse(nNegIrrev,nNegRev + nPosIrrev + nPosRev*6) speye(nNegIrrev) sparse(nNegIrrev,nNegRev*varsPerNegRev + nEssRev*6+nMetVars)];
+niRows = [sEye(negIrrevRxns,:) sparse(nNegIrrev,nPosIrrev + nPosRev) spdiags(-bigMNegIrrev,0,nNegIrrev,nNegIrrev) sparse(nNegIrrev,nNegRev + nPosIrrev + nPosRev*6) speye(nNegIrrev) sparse(nNegIrrev,nNegRev*varsPerNegRev + nEssRev*6+nMetVars)];
 
 nrRows1 = [sEye(negRevRxns,:) sparse(nNegRev,nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev) speye(nNegRev)*-1 speye(nNegRev) sparse(nNegRev,nNegRev + nEssRev*6+nMetVars)];
-nrRows2 = [sparse(nNegRev,nRxns + nPosIrrev + nPosRev + nNegIrrev) speye(nNegRev)*-100 sparse(nNegRev,nPosIrrev + nPosRev*6 + nNegIrrev) speye(nNegRev) speye(nNegRev) speye(nNegRev) sparse(nNegRev,nEssRev*6+nMetVars)];
+nrRows2 = [sparse(nNegRev,nRxns + nPosIrrev + nPosRev + nNegIrrev) spdiags(-bigMNegRev,0,nNegRev,nNegRev) sparse(nNegRev,nPosIrrev + nPosRev*6 + nNegIrrev) speye(nNegRev) speye(nNegRev) speye(nNegRev) sparse(nNegRev,nEssRev*6+nMetVars)];
 nrRows = [nrRows1;nrRows2];
 
 erRows1 = [sEye(essRevRxns,:) sparse(nEssRev,nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev) speye(nEssRev)*-1 speye(nEssRev) sparse(nEssRev, nEssRev*4+nMetVars)];
 erRows2 = [sparse(nEssRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev) speye(nEssRev) speye(nEssRev) speye(nEssRev)*-1 sparse(nEssRev, nEssRev*3+nMetVars)];
-erRows3 = [sparse(nEssRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev) speye(nEssRev) sparse(nEssRev, nEssRev*2) speye(nEssRev)*-100 speye(nEssRev) sparse(nEssRev, nEssRev+nMetVars)];
-erRows4 = [sparse(nEssRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev + nEssRev) speye(nEssRev) sparse(nEssRev, nEssRev) speye(nEssRev)*100 sparse(nEssRev, nEssRev) speye(nEssRev) sparse(nEssRev, nMetVars)];
+erRows3 = [sparse(nEssRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev) speye(nEssRev) sparse(nEssRev, nEssRev*2) spdiags(-bigMEssRev,0,nEssRev,nEssRev) speye(nEssRev) sparse(nEssRev, nEssRev+nMetVars)];
+erRows4 = [sparse(nEssRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev + nEssRev) speye(nEssRev) sparse(nEssRev, nEssRev) spdiags(bigMEssRev,0,nEssRev,nEssRev) sparse(nEssRev, nEssRev) speye(nEssRev) sparse(nEssRev, nMetVars)];
 
 %now the mets
 if ~isempty(metData)
@@ -298,18 +312,19 @@ if ~isempty(metData)
     %    vnrn <= (1-vnrbm)*100 (if bool is one, vnrn is zero): vnrn + 100*vnrbm + vnrvm2 == 0, -100 <= vnrvm2 <= inf (metRows3)
     % We then also say that vnrp + vnrn >= 0.1*Yi, -0.1*Yi + vnrp + vnrn - vnrvm3 == 0, vnrvm3 >= 0 (metRows4)
     nrEye = speye(nNegRev);
-    %vnrp - 100*vnrbm + vnrvm1 == 0
+    bigMMetNegRev = bigMNegRev(metNegRev(negRevRxns));
+    %vnrp - M*vnrbm + vnrvm1 == 0
     metRows2 = [sparse(nMetNegRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev) ... %zeros up to vnrp
-                nrEye(metNegRev(negRevRxns),:) ... %vnrp 
+                nrEye(metNegRev(negRevRxns),:) ... %vnrp
                 sparse(nMetNegRev, nNegRev*(varsPerNegRev-1) + nEssRev*6 + nMetabolMets*2) ... %zeros up to vnrbm
-                speye(nMetNegRev)*-100 ... %vnrbm
+                spdiags(-bigMMetNegRev,0,nMetNegRev,nMetNegRev) ... %vnrbm
                 speye(nMetNegRev) ... % vnrvm1
                 sparse(nMetNegRev, nMetNegRev*2 + nMetNegIrrev)];%fill up the rest with zeros
-    %vnrn + 100*vnrbm + vnrvm2 == 0
+    %vnrn + M*vnrbm + vnrvm2 == 0
     metRows3 = [sparse(nMetNegRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev) ... %zeros up to vnrn
-                nrEye(metNegRev(negRevRxns),:) ... %vnrp 
+                nrEye(metNegRev(negRevRxns),:) ... %vnrp
                 sparse(nMetNegRev, nNegRev*(varsPerNegRev-2) + nEssRev*6 + nMetabolMets*2) ... %zeros up to vnrbm
-                speye(nMetNegRev)*100 ... %vnrbm
+                spdiags(bigMMetNegRev,0,nMetNegRev,nMetNegRev) ... %vnrbm
                 sparse(nMetNegRev, nMetNegRev) ... %zeros up to vnrvm2
                 speye(nMetNegRev) ... % vnrvm2
                 sparse(nMetNegRev, nMetNegRev + nMetNegIrrev)];%fill up the rest with zeros
@@ -337,7 +352,7 @@ if ~isempty(metData)
     %-100 <= vnrvm2 <= inf
     % vnrvm3 >= 0
     %0 <= vnim <= Inf
-    metLb = [zeros(nMetabolMets*2 + 2*nMetNegRev,1);ones(nMetNegRev,1)*-100;zeros(nMetNegRev + nMetNegIrrev,1)];
+    metLb = [zeros(nMetabolMets*2 + 2*nMetNegRev,1);-bigMMetNegRev;zeros(nMetNegRev + nMetNegIrrev,1)];
     metUb = [ones(nMetabolMets,1);inf(nMetabolMets,1);ones(nMetNegRev,1);inf(3*nMetNegRev + nMetNegIrrev,1)];
     metVartype = [repmat('C', 1, nMetabolMets*2), ...
                   repmat('B', 1, nMetNegRev), ...
@@ -355,7 +370,7 @@ prob.a = [sRow;piRows;prRows1;prRows2;prRows3;prRows4;niRows;nrRows;erRows1;erRo
 prob.A = prob.a;
 prob.b = zeros(size(prob.A,1),1);
 prob.c = [zeros(nRxns,1);rxnScores(posIrrevRxns)*-1;rxnScores(posRevRxns)*-1;rxnScores(negIrrevRxns)*-1;rxnScores(negRevRxns)*-1;zeros(nPosIrrev + nPosRev*6 + nNegIrrev + nNegRev*varsPerNegRev + nEssRev*6,1);metVarC];
-prob.lb = [milpModel.lb;zeros(nYBlock + nPosIrrev + 5*nPosRev,1);ones(nPosRev,1)*-100;zeros(nNegIrrev+nNegRev*varsPerNegRev+nEssRev*2,1);ones(nEssRev,1)*forceOnLim;zeros(nEssRev*2,1);ones(nEssRev,1)*-100;metLb];
+prob.lb = [milpModel.lb;zeros(nYBlock + nPosIrrev + 5*nPosRev,1);-bigMPosRev;zeros(nNegIrrev+nNegRev*varsPerNegRev+nEssRev*2,1);ones(nEssRev,1)*forceOnLim;zeros(nEssRev*2,1);-bigMEssRev;metLb];
 prob.lb(essIrrevRxns) = forceOnLimEss(essIrrevRxns);%force flux for the ess irrev rxns - this is the only way these are handled
 prob.ub = [milpModel.ub;ones(nYBlock,1);inf(nPosIrrev+nPosRev*2,1);ones(nPosRev,1);inf(3*nPosRev+nNegIrrev+varsPerNegRev*nNegRev+3*nEssRev,1);ones(nEssRev,1);inf(2*nEssRev,1);metUb];
 
