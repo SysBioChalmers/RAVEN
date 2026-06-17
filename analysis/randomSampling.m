@@ -103,6 +103,15 @@ nObjRxns=nObjectives;
 %Simplify the model to speed stuff up a little. Keep original mapping
 originalRxns=model.rxns;
 model=simplifyModel(model,false,false,true,true);
+[~, simpToOrig] = ismember(model.rxns, originalRxns);
+
+%goodRxns is part of the public API and stored as original-model indices.
+%Convert to simplified-model indices for use in the detection and sampling
+%loops below, dropping any reactions that were removed by simplification.
+if ~isempty(goodRxns)
+    [tf, simpIdx] = ismember(originalRxns(goodRxns), model.rxns);
+    goodRxns = simpIdx(tf);
+end
 
 %Check that the model is feasible given the constraints
 [sol,~]=solveLP(model);
@@ -206,12 +215,14 @@ if nSamples > 0
 
     %Map to original model
     sols = cell2mat(sols);
-    [~, I]=ismember(model.rxns,originalRxns);
     solutions=zeros(numel(originalRxns),nSamples);
-    solutions(I,:)=sols;
+    solutions(simpToOrig,:)=sols;
 else
     solutions=[];
 end
+%Return goodRxns as original-model indices so callers can pass them back
+%safely across separate calls (which each re-simplify the model internally).
+goodRxns = simpToOrig(goodRxns);
 end
 
 %To use instead of the normal Matlab randsample function. This is in order
