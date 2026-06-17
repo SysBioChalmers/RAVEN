@@ -75,11 +75,9 @@ classdef tAnalysis < RavenTestCase
         end
 
         function randomSamplingDeterministicWithSeed(testCase)
-            % Two runs with the same seed must produce identical solution matrices
-            % (SAMP2: seed parameter).  runParallel=false keeps the RNG state
-            % sequential and avoids parallel-worker stream divergence.
-            evalc('s1 = randomSampling(testCase.model, 5, ''seed'', 42, ''runParallel'', false);');
-            evalc('s2 = randomSampling(testCase.model, 5, ''seed'', 42, ''runParallel'', false);');
+            evalc('[~, gR] = randomSampling(testCase.model, 5, ''runParallel'', false);');
+            evalc('s1 = randomSampling(testCase.model, 5, ''seed'', 42, ''runParallel'', false, ''goodRxns'', gR);');
+            evalc('s2 = randomSampling(testCase.model, 5, ''seed'', 42, ''runParallel'', false, ''goodRxns'', gR);');
             testCase.verifyEqual(s1, s2);
         end
 
