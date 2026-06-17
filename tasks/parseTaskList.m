@@ -118,15 +118,15 @@ if strcmp(extractAfter(inputFile,strlength(inputFile) - 4), '.txt')
     fclose(fid);
     raw = [C{:}];%unnest the cell array of cell arrays into a 2-dim cell array
 else
-    %Read the TASKS sheet from an Excel file with base MATLAB (readcell
-    %handles both .xls and .xlsx; no external library or toolbox needed).
+    %Read the TASKS sheet from an Excel file (readcell handles both .xls
+    %and .xlsx).
     try
         raw=readcell(inputFile,'Sheet','TASKS');
     catch
         dispEM(['Could not load sheet "TASKS" from ' inputFile]);
     end
-    %readcell marks blank cells as "missing"; the previous Apache POI reader
-    %used [] for blanks, which the downstream cleanSheet/parsing expects.
+    %Normalise blank cells (which readcell returns as "missing") to [], as
+    %expected by the downstream cleanSheet/parsing.
     raw(cellfun(@(x) all(ismissing(x)),raw))={[]};
 end
 

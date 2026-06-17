@@ -22,9 +22,6 @@ function exportToTabDelimited(model,varargin)
 %
 % Notes
 % -----
-% This functionality was previously a part of exportToExcelFormat. The
-% naming of the resulting text files is to preserve backward compatibility.
-%
 % No checks are made regarding the correctness of the model. Use
 % checkModelStruct to identify problems in the model structure.
 
