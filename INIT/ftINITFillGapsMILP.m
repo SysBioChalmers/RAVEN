@@ -2,10 +2,9 @@ function [x,I,exitFlag]=ftINITFillGapsMILP(model, varargin)
 % ftINITFillGapsMILP  Find the minimal set of fluxes that satisfy a model.
 %
 % Returns the minimal set of fluxes that satisfy the model using mixed integer
-% linear programming. This is an optimized variant of the old function
-% "getMinNrFluxes" that is adapted to ftINIT. It does not need to make an irrev
-% model, which takes time. The problem also becomes smaller (fewer integers but
-% larger matrix). Only tested with Gurobi.
+% linear programming. The formulation works on the reversible model directly,
+% using fewer integer variables (but a larger constraint matrix) than an
+% irrev-based formulation. Only tested with Gurobi.
 %
 % Parameters
 % ----------

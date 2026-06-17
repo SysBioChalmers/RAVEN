@@ -2,10 +2,10 @@ function args = parseRAVENargs(rawArgs, spec)
 % parseRAVENargs  Resolve optional arguments passed positionally or by name.
 %
 % Helper that lets a RAVEN function accept its optional arguments either in
-% the traditional positional order or as name-value pairs, without losing
-% backward compatibility. The required leading arguments stay explicit in the
-% function signature; the optional tail is collected into varargin and passed
-% here together with a specification of the optional parameters.
+% the traditional positional order or as name-value pairs. The required
+% leading arguments stay explicit in the function signature; the optional
+% tail is collected into varargin and passed here together with a
+% specification of the optional parameters.
 %
 % Parameters
 % ----------

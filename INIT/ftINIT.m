@@ -32,7 +32,7 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes
 % --------------------
 % transcrData : struct
 %     gene expression data structure (optional if hpaData is supplied, default
-%     []). Used to be called arrayData. With fields:
+%     []). With fields:
 %
 %     - genes : cell array with the unique gene names.
 %     - tissues : cell array with the tissue names. The list may not be unique,

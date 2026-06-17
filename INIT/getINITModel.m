@@ -2,8 +2,7 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 % getINITModel  Generate a model using the original INIT algorithm.
 %
 % Generates a model using the INIT algorithm, based on proteomics and/or
-% transcriptomics and/or metabolomics and/or metabolic tasks. This is the
-% original implementation of tINIT, which is replaced by ftINIT.
+% transcriptomics and/or metabolomics and/or metabolic tasks.
 %
 % This is the main function for automatic reconstruction of models based on the
 % (t)INIT algorithm (PLoS Comput Biol. 2012;8(5):e1002518, Mol Syst Biol.

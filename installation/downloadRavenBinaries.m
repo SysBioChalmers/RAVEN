@@ -15,8 +15,7 @@ function downloadRavenBinaries(tools)
 %   unzip it into the RAVEN software/ directory instead.
 %
 %   The binaries are hosted as release assets in
-%   https://github.com/SysBioChalmers/raven-data and are the same builds RAVEN
-%   previously committed under software/.
+%   https://github.com/SysBioChalmers/raven-data.
 %
 %   Usage: downloadRavenBinaries({'blast+','diamond'})
 %
