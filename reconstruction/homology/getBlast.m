@@ -99,8 +99,10 @@ refFastaFiles = files(2:end);
 if ispc
     binEnd='.exe';
     setenv('BLASTDB_LMDB_MAP_SIZE','1000000');
+elseif ismac
+    binEnd='.mac';
 elseif isunix
-    binEnd=''; %Linux and macOS both use the bare binary name (raven-data macOS ZIP)
+    binEnd='';
 else
     dispEM('Unknown OS, exiting.')
     return

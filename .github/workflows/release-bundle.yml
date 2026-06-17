@@ -1,0 +1,55 @@
+name: Offline binary bundle
+
+# Build the OS-independent offline RAVEN distribution: the full repo with
+# software/ populated with every platform's external binaries, so an air-gapped
+# user downloads one ZIP and runs RAVEN on any OS without fetching anything.
+# Attached automatically to each published release; also runnable on demand
+# against an existing tag.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to build and attach the bundle to
+        required: true
+
+permissions:
+  contents: write   # upload the bundle as a release asset
+
+jobs:
+  bundle:
+    name: Build OS-independent offline bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Resolve tag
+        id: tag
+        run: echo "tag=${{ github.event.release.tag_name || inputs.tag }}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout RAVEN at the release tag
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Populate software/ with every platform's binaries
+        run: python .github/scripts/assemble_offline_software.py
+
+      - name: Build RAVEN-<tag>-full.zip
+        id: zip
+        run: |
+          set -euo pipefail
+          NAME="RAVEN-${{ steps.tag.outputs.tag }}-full"
+          rsync -a --exclude '.git' ./ "${RUNNER_TEMP}/${NAME}/"
+          ( cd "${RUNNER_TEMP}" && zip -r -y -q "${GITHUB_WORKSPACE}/${NAME}.zip" "${NAME}" )
+          echo "name=${NAME}.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ steps.tag.outputs.tag }}" "${{ steps.zip.outputs.name }}" --clobber

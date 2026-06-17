@@ -307,8 +307,10 @@ function testBinary(ravenDir, tool, binName, versionArg)
 % Run a bundled binary with versionArg to confirm it executes; error if not.
 if ispc
     binEnd = '.exe'; % native Windows builds (raven-data windows-x86_64 ZIPs)
+elseif ismac
+    binEnd = '.mac';
 else
-    binEnd = ''; % Linux and macOS both use the bare binary name
+    binEnd = '';
 end
 cmd = ['"' fullfile(ravenDir,'software',tool,[binName binEnd]) '" ' versionArg];
 [status,~] = system(cmd);
@@ -351,10 +353,14 @@ if ispc
 end
 binDir = fullfile(ravenDir,'software');
 
-% blast+/diamond/hmmer are downloaded on demand (downloadRavenBinaries sets
-% their permissions after extraction); only the committed MEX binaries are
-% chmod'd here.
-binList = {fullfile(binDir,'GLPKmex','glpkcc.mexa64');              fullfile(binDir,'GLPKmex','glpkcc.mexglx');                 fullfile(binDir,'GLPKmex','glpkcc.mexmaci64');              fullfile(binDir,'GLPKmex','glpkcc.mexmaca64');
+% blast+/diamond/hmmer may be present from an on-demand download
+% (downloadRavenBinaries already chmods those) or from the offline bundle;
+% chmod whichever unix binaries are present. Missing entries are skipped below.
+binList = {fullfile(binDir,'blast+','blastp');                      fullfile(binDir,'blast+','blastp.mac');
+           fullfile(binDir,'blast+','makeblastdb');                 fullfile(binDir,'blast+','makeblastdb.mac');
+           fullfile(binDir,'diamond','diamond');                    fullfile(binDir,'diamond','diamond.mac');
+           fullfile(binDir,'hmmer','hmmsearch');                    fullfile(binDir,'hmmer','hmmsearch.mac');
+           fullfile(binDir,'GLPKmex','glpkcc.mexa64');              fullfile(binDir,'GLPKmex','glpkcc.mexglx');                 fullfile(binDir,'GLPKmex','glpkcc.mexmaci64');              fullfile(binDir,'GLPKmex','glpkcc.mexmaca64');
            fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexa64'); fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexglx');    fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexmaci64');  fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexmaca64');
            fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexa64');    fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexglx');       fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexmaci64');     fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexmaca64');};
 

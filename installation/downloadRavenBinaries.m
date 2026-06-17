@@ -77,9 +77,13 @@ for i = 1:numel(tools)
             error('downloadRavenBinaries: unknown tool ''%s''.',tool);
     end
 
-    % On Windows the executables carry a .exe suffix.
-    if ispc && ~strcmp(tool,'WoLFPSORT')
-        sentinel = [sentinel '.exe']; %#ok<AGROW>
+    % macOS uses a .mac suffix and Windows a .exe suffix (Linux: bare name).
+    if ~strcmp(tool,'WoLFPSORT')
+        if ispc
+            sentinel = [sentinel '.exe']; %#ok<AGROW>
+        elseif ismac
+            sentinel = [sentinel '.mac']; %#ok<AGROW>
+        end
     end
     if exist(sentinel,'file')
         continue;   % already provisioned
@@ -98,6 +102,17 @@ for i = 1:numel(tools)
     unzip(zipPath,destDir);
     delete(zipPath);
 
+    % macOS uses the .mac suffix throughout RAVEN, but the raven-data macOS ZIP
+    % ships bare names, so rename the extracted executables to match.
+    if ismac && ~strcmp(tool,'WoLFPSORT')
+        for k = 1:numel(execs)
+            bare = fullfile(destDir,execs{k});
+            if isfile(bare)
+                movefile(bare, fullfile(destDir,[execs{k} '.mac']));
+            end
+        end
+    end
+
     % MATLAB's unzip does not preserve Unix execute permissions; restore them.
     if isunix
         if strcmp(tool,'WoLFPSORT')
@@ -105,8 +120,9 @@ for i = 1:numel(tools)
             system(['chmod -R +x "' fullfile(attrTarget,'bin') '"']);
         else
             attrTarget = destDir;
+            if ismac; sfx = '.mac'; else; sfx = ''; end
             for k = 1:numel(execs)
-                system(['chmod +x "' fullfile(destDir,execs{k}) '"']);
+                system(['chmod +x "' fullfile(destDir,[execs{k} sfx]) '"']);
             end
         end
         % Downloaded binaries are quarantined by macOS Gatekeeper and will not

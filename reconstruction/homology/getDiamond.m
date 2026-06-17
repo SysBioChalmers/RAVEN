@@ -88,8 +88,10 @@ refFastaFiles = files(2:end);
 %Identify the operating system
 if ispc
     binEnd='.exe';
+elseif ismac
+    binEnd='.mac';
 elseif isunix
-    binEnd=''; %Linux and macOS both use the bare binary name (raven-data macOS ZIP)
+    binEnd='';
 else
     dispEM('Unknown OS, exiting.')
     return
