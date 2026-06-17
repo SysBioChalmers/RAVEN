@@ -104,7 +104,7 @@ fprintf('%d%%\n', round(sum(I)/numel(model.mets)*100));
 
 % Try to fill gaps using the full KEGG model to see if that gives a
 % significantly higher number
-keggModel=getModelFromKEGG([],false,false,false,false);
+keggModel=getModelFromKEGG(false,false,false,false);
 
 % The KEGG model is associated to more than 6,400,000 genes. They will not
 % be used for the gapfilling, so they are removed to make this a little
