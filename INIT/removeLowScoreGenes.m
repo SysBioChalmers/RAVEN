@@ -157,8 +157,10 @@ if ~contains(rule,'&')  % rule contains isozymes
     scoreMethod = isozymeScoring;
     negInd = gScores(geneInd) < 0;  % NaNs will return false here
     if all(negInd)
-        % get the least negative gene, adding a small random value to avoid a tie
-        [~,maxInd] = max(gScores(geneInd) + rand(size(geneInd))*(1e-8));
+        % deterministic least-negative: sort descending; stable sort breaks
+        % ties by original gene order (left-to-right in the rule string)
+        [~,sortOrder] = sort(gScores(geneInd),'descend');
+        maxInd = sortOrder(1);
         updatedRule = ruleGenes{maxInd};
     elseif sum(~negInd) == 1
         updatedRule = ruleGenes{~negInd};
