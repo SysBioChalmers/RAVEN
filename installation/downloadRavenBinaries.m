@@ -101,11 +101,18 @@ for i = 1:numel(tools)
     % MATLAB's unzip does not preserve Unix execute permissions; restore them.
     if isunix
         if strcmp(tool,'WoLFPSORT')
-            system(['chmod -R +x "' fullfile(destDir,'WoLFPSORT','bin') '"']);
+            attrTarget = fullfile(destDir,'WoLFPSORT');
+            system(['chmod -R +x "' fullfile(attrTarget,'bin') '"']);
         else
+            attrTarget = destDir;
             for k = 1:numel(execs)
                 system(['chmod +x "' fullfile(destDir,execs{k}) '"']);
             end
+        end
+        % Downloaded binaries are quarantined by macOS Gatekeeper and will not
+        % execute until the com.apple.quarantine attribute is cleared.
+        if ismac
+            system(['xattr -dr com.apple.quarantine "' attrTarget '"']);
         end
     end
 end
