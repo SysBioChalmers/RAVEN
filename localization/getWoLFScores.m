@@ -48,6 +48,11 @@ ravenPath=findRAVENroot();
 outFile=tempname;
 fid=fopen(outFile,'w');
 
+%Fetch the WoLFPSORT bundle on demand if it is not already present
+if ~exist(fullfile(ravenPath,'software','WoLFPSORT','bin','runWolfPsortSummary'),'file')
+    downloadRavenBinaries({'WoLFPSORT'});
+end
+
 %Do the prediction
 [~, output]=unix(['perl "' ravenPath '/software/WoLFPSORT/bin/runWolfPsortSummary" ' kingdom ' < ' inputFile]);
 

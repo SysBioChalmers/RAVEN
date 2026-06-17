@@ -86,17 +86,18 @@ fastaFile = files(1);
 refFastaFiles = files(2:end);
 
 %Identify the operating system
-if isunix
-    if ismac
-        binEnd='.mac';
-    else
-        binEnd='';
-    end
-elseif ispc
+if ispc
     binEnd='.exe';
+elseif isunix
+    binEnd=''; %Linux and macOS both use the bare binary name (raven-data macOS ZIP)
 else
     dispEM('Unknown OS, exiting.')
     return
+end
+
+%Fetch the DIAMOND binary on demand if it is not already present
+if ~exist(fullfile(ravenPath,'software','diamond',['diamond' binEnd]),'file')
+    downloadRavenBinaries({'diamond'});
 end
 
 %Run DIAMOND multi-threaded to use all logical cores assigned to MATLAB.

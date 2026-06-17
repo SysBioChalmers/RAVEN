@@ -262,6 +262,16 @@ fprintf('\n=== Essential binary executables ===\n');
 if ~checkBinaries
     printOrange('    Skipping check of binary executables\n')
 else
+    % The BLAST+/DIAMOND/HMMER binaries are downloaded on demand from
+    % raven-data (no longer committed to the repository); fetch any that are
+    % missing for this platform before checking. This doubles as the up-front
+    % "prefetch" for users who want everything ready after installation.
+    try
+        downloadRavenBinaries({'blast+','diamond','hmmer'});
+    catch ME
+        printOrange(['    Could not download binaries from raven-data: ' ME.message '\n' ...
+            '    (offline? fetch the "*-binaries" RAVEN release for an offline install)\n']);
+    end
     % Run each bundled binary with a version/help flag to confirm it
     % executes on this system, rather than running the full test cases.
     if ~reportCheck(' > Checking BLAST+', @() testBinary(ravenDir,'blast+','blastp','-version'))
@@ -295,16 +305,12 @@ end
 
 function testBinary(ravenDir, tool, binName, versionArg)
 % Run a bundled binary with versionArg to confirm it executes; error if not.
-if ismac
-    binEnd = '.mac';
-else
-    binEnd = '';
-end
 if ispc
-    cmd = ['wsl "' getWSLpath(fullfile(ravenDir,'software',tool,binName)) '" ' versionArg];
+    binEnd = '.exe'; % native Windows builds (raven-data windows-x86_64 ZIPs)
 else
-    cmd = ['"' fullfile(ravenDir,'software',tool,[binName binEnd]) '" ' versionArg];
+    binEnd = ''; % Linux and macOS both use the bare binary name
 end
+cmd = ['"' fullfile(ravenDir,'software',tool,[binName binEnd]) '" ' versionArg];
 [status,~] = system(cmd);
 if status ~= 0
     error('%s did not execute (exit status %d)', binName, status);
@@ -345,15 +351,16 @@ if ispc
 end
 binDir = fullfile(ravenDir,'software');
 
-binList = {fullfile(binDir,'blast+','blastp');                      fullfile(binDir,'blast+','blastp.mac');
-           fullfile(binDir,'blast+','makeblastdb');                 fullfile(binDir,'blast+','makeblastdb.mac');
-           fullfile(binDir,'diamond','diamond');                    fullfile(binDir,'diamond','diamond.mac');
-           fullfile(binDir,'hmmer','hmmsearch');                    fullfile(binDir,'hmmer','hmmsearch.mac');
-           fullfile(binDir,'GLPKmex','glpkcc.mexa64');              fullfile(binDir,'GLPKmex','glpkcc.mexglx');                 fullfile(binDir,'GLPKmex','glpkcc.mexmaci64');              fullfile(binDir,'GLPKmex','glpkcc.mexmaca64');
+% blast+/diamond/hmmer are downloaded on demand (downloadRavenBinaries sets
+% their permissions after extraction); only the committed MEX binaries are
+% chmod'd here.
+binList = {fullfile(binDir,'GLPKmex','glpkcc.mexa64');              fullfile(binDir,'GLPKmex','glpkcc.mexglx');                 fullfile(binDir,'GLPKmex','glpkcc.mexmaci64');              fullfile(binDir,'GLPKmex','glpkcc.mexmaca64');
            fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexa64'); fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexglx');    fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexmaci64');  fullfile(binDir,'libSBML','TranslateSBML_RAVEN.mexmaca64');
            fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexa64');    fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexglx');       fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexmaci64');     fullfile(binDir,'libSBML','OutputSBML_RAVEN.mexmaca64');};
 
+status = 0;
 for i=1:numel(binList)
+    if ~isfile(binList{i}); continue; end % skip binaries not present on this platform
     [status,cmdout] = system(['chmod +x "' binList{i} '"']);
     if status ~= 0
         warning('Failed to make %s executable: %s ',binList{i},strip(cmdout))
