@@ -128,33 +128,15 @@ nRxns = numel(model.rxns);
 %on the original bounded model so that loop detection is meaningful
 %(Inf-bounded reactions would always reach the threshold).
 if isempty(goodRxns)
-    revRxns = transpose(find(model.lb < 0));
-    fwdRxns = transpose(find(model.ub > 0));
-    rxnList = [fwdRxns,revRxns];
-    objList = [ones(numel(fwdRxns),1);-ones(numel(revRxns),1)];
-    testSol = zeros(numel(objList),1);
-    PB = progressReport(nRxns,'Prepare goodRxns not involved in loops');
-
-    parfor (i = 1:numel(objList), nW)
-        testModel=setParam(model,'obj',rxnList(i),objList(i));
-        sol=solveLP(testModel,0);
-        if ~isempty(sol.f)
-            testSol(i) = sol.x(rxnList(i));
-        end
-        count(PB);
-    end
-    testSol  = testSol.*objList;
-    goodRxns = true(nRxns,1);
-    % Filter out reactions that can reach (-)1000 (= involved in loop)
-    goodRxns(fwdRxns(testSol(1:numel(fwdRxns)) > 999)) = false;
-    goodRxns(revRxns(testSol(numel(fwdRxns)+1:end) > 999)) = false;
-    testSol(revRxns) = testSol(revRxns) + testSol(numel(fwdRxns)+1:end);
-    % Filter out reactions that cannot carry flux
-    goodRxns(testSol(1:nRxns) == 0) = false;
+    [minF, maxF] = getAllowedBounds(model, 'runParallel', runParallel);
+    goodRxns = true(nRxns, 1);
+    % Reactions that reach ±1000 are involved in loops
+    goodRxns(maxF > 999 | minF < -999) = false;
+    % Reactions that cannot carry any non-zero flux
+    goodRxns(~(maxF > 0 | minF < 0)) = false;
     % In ecModels do not sample from usage_prot reactions
     if isfield(model,'ec')
-        usageRxns = startsWith(model.rxns,'usage_prot_');
-        goodRxns(usageRxns) = false;
+        goodRxns(startsWith(model.rxns,'usage_prot_')) = false;
     end
     goodRxns = find(goodRxns);
 end
