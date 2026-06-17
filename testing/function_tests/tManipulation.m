@@ -37,6 +37,40 @@ classdef tManipulation < RavenTestCase
             testCase.verifyTrue(ismember('newRxn1', m2.rxns));
         end
 
+        function addRxnsStringEqnTypeIdAlias(testCase)
+            % 'id' is the string alias for eqnType=1 (match by model.mets).
+            r.rxns = {'idAliasRxn'};
+            r.equations = {[testCase.model.mets{1} ' => ' testCase.model.mets{2}]};
+            m1 = addRxns(testCase.model, r, 1);
+            m2 = addRxns(testCase.model, r, 'id');
+            testCase.verifyEqual(m1.S, m2.S);
+        end
+
+        function addRxnsStringEqnTypeNameAlias(testCase)
+            % 'name' is the string alias for eqnType=2 (match by model.metNames).
+            r.rxns = {'nameAliasRxn'};
+            r.equations = {'2-Oxoglutarate => NAMETEST'};
+            evalc('m1 = addRxns(testCase.model, r, 2, ''c'', true);');
+            evalc('m2 = addRxns(testCase.model, r, ''name'', ''c'', true);');
+            testCase.verifyEqual(m1.S, m2.S);
+        end
+
+        function addRxnsStringEqnTypeNameCompAlias(testCase)
+            % 'name[comp]' is the string alias for eqnType=3.
+            r.rxns = {'namecompAliasRxn'};
+            r.equations = {'2-Oxoglutarate[c] => COMPTEST[c]'};
+            evalc('m1 = addRxns(testCase.model, r, 3, [], true);');
+            evalc('m2 = addRxns(testCase.model, r, ''name[comp]'', [], true);');
+            testCase.verifyEqual(m1.S, m2.S);
+        end
+
+        function addRxnsInvalidStringEqnTypeErrors(testCase)
+            % An unrecognised string for eqnType must throw.
+            r.rxns = {'errRxn'};
+            r.equations = {[testCase.model.mets{1} ' => ' testCase.model.mets{2}]};
+            testCase.verifyError(@() addRxns(testCase.model, r, 'invalid'), ?MException);
+        end
+
         function addRxnsGenesMetsCopiesFromSource(testCase)
             sbmlFile = fullfile(testCase.ravenRoot,'tutorial','empty.xml');
             testCase.assumeDependency(exist(sbmlFile,'file')==2, 'tutorial/empty.xml');
@@ -123,6 +157,32 @@ classdef tManipulation < RavenTestCase
             n = numel(testCase.model.rxns);
             m2 = permuteModel(testCase.model, n:-1:1, 'rxns');
             testCase.verifyEqual(m2.rxns, flipud(testCase.model.rxns));
+        end
+
+        function permuteModelRemapsRxnComps(testCase)
+            % After swapping compartments the rxnComps and geneComps indices
+            % in the OUTPUT must follow the permutation; the input is unchanged.
+            m = struct();
+            m.rxns = {'r1'; 'r2'};
+            m.mets = {'a_c'; 'b_e'};
+            m.S    = sparse([1 -1; -1 1]);
+            m.lb   = [0; 0]; m.ub = [1000; 1000]; m.rev = [0; 0];
+            m.c    = [1; 0]; m.b  = [0; 0];
+            m.comps     = {'c'; 'e'};
+            m.compNames = {'Cytoplasm'; 'Extracellular'};
+            m.metComps  = [1; 2];
+            m.genes     = {'g1'; 'g2'};
+            m.rxnGeneMat = sparse(eye(2));
+            m.grRules   = {'g1'; 'g2'};
+            m.rxnComps  = [1; 2];   % r1→comps{1}, r2→comps{2}
+            m.geneComps = [1; 2];
+            m2 = permuteModel(m, [2, 1], 'comps');
+            % Swap: old comps{1}→new position 2, old comps{2}→new position 1
+            testCase.verifyEqual(m2.rxnComps,  [2; 1]);
+            testCase.verifyEqual(m2.geneComps, [2; 1]);
+            % Input must be unmodified
+            testCase.verifyEqual(m.rxnComps,  [1; 2]);
+            testCase.verifyEqual(m.geneComps, [1; 2]);
         end
 
         function removeBadRxnsReturnsStruct(testCase)

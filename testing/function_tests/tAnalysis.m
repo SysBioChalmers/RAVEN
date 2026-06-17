@@ -74,10 +74,28 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyEqual(size(sols, 1), numel(testCase.model.rxns));
         end
 
+        function randomSamplingDeterministicWithSeed(testCase)
+            % Two runs with the same seed must produce identical solution matrices
+            % (SAMP2: seed parameter).  runParallel=false keeps the RNG state
+            % sequential and avoids parallel-worker stream divergence.
+            evalc('s1 = randomSampling(testCase.model, 5, ''seed'', 42, ''runParallel'', false);');
+            evalc('s2 = randomSampling(testCase.model, 5, ''seed'', 42, ''runParallel'', false);');
+            testCase.verifyEqual(s1, s2);
+        end
+
         function reporterMetabolitesRuns(testCase)
             pvals = rand(numel(testCase.model.genes), 1);
             rm = reporterMetabolites(testCase.model, testCase.model.genes, pvals);
             testCase.verifyClass(rm, 'struct');
+        end
+
+        function reporterMetabolitesIsDeterministic(testCase)
+            % Closed-form background correction (RM1) must produce identical
+            % Z-scores on repeated calls with identical inputs.
+            pvals = rand(numel(testCase.model.genes), 1);
+            rm1 = reporterMetabolites(testCase.model, testCase.model.genes, pvals);
+            rm2 = reporterMetabolites(testCase.model, testCase.model.genes, pvals);
+            testCase.verifyEqual(rm1.metZScores, rm2.metZScores);
         end
 
         function FSEOFRuns(testCase)
