@@ -186,13 +186,13 @@ if nSamples > 0
         badSolutions = 1;
         tmpModel = model;
         while lt(0,badSolutions)
-            rxns = randsample(numel(goodRxns),nObjRxns);
+            rxns = goodRxns(randperm(numel(goodRxns), nObjRxns));
             tmpModel.c = zeros(numel(tmpModel.rxns),1);
-            
-            multipliers = randsample([-1 1],nObjRxns,true);
-            multipliers(tmpModel.ub(goodRxns(rxns))<0) = 1;
-            
-            tmpModel.c(goodRxns(rxns)) = rand(nObjRxns,1).*multipliers;
+
+            multipliers = 2*randi(2,nObjRxns,1)-3;  % random draws from {-1, 1}
+            multipliers(tmpModel.ub(rxns)<0) = 1;
+
+            tmpModel.c(rxns) = rand(nObjRxns,1).*multipliers;
 
             if true(minFlux)
                 sol=solveLP(tmpModel,1);
@@ -223,30 +223,4 @@ end
 %Return goodRxns as original-model indices so callers can pass them back
 %safely across separate calls (which each re-simplify the model internally).
 goodRxns = simpToOrig(goodRxns);
-end
-
-%To use instead of the normal Matlab randsample function. This is in order
-%to not depend on the Matlab statistical toolbox.
-function I=randsample(n,k,replacement)
-if nargin<3
-    replacement=false;
-end
-%n can be a integer, which leads to I being sampled from 1:n, or it can be
-%a population to sample from.
-if numel(n)==1 && isnumeric(n)
-    n=1:n;
-end
-%Loop and get random numbers until the list is unique. This is only a good
-%option is the number of samples is small compared to the population. There
-%are several checks that should be made here, for example regarding size
-%and that the number of samples is <=population size if replacement==false.
-%This is not the case in randomSampling, so such checks are ignored
-while true
-    J=randi(numel(n),[k,1]);
-    if replacement==true || numel(J)==numel(unique(J))
-        I=n(J);
-        break;
-    end
-end
-I=I(:);
 end
