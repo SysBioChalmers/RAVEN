@@ -246,6 +246,7 @@ milpModel = model;
 %Don't set it above 0.1, may starve something else out. Leave a margin of 1% from the last run.
 forceOnLim = 0.1;
 forceOnLimEss=min(abs(fluxes)*0.99,0.1);
+forceOnLimEss(essIrrevRxns) = min(forceOnLimEss(essIrrevRxns), milpModel.ub(essIrrevRxns));
 
 varsPerNegRev = 3;
 

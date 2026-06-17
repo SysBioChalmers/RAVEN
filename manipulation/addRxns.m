@@ -61,21 +61,23 @@ function newModel=addRxns(model,rxnsToAdd,varargin)
 %
 % Name-Value Arguments
 % --------------------
-% eqnType : double
-%     describes how the equation string should be interpreted (default 1):
+% eqnType : double or char
+%     describes how the equation string should be interpreted (default 1).
+%     Accepts integer values 1/2/3 or the string aliases 'id', 'name',
+%     'name[comp]':
 %
-%     - 1 : the metabolites are matched to model.mets. New metabolites (if
-%       allowed) are added to "compartment"
-%     - 2 : the metabolites are matched to model.metNames and all
+%     - 1 / 'id' : the metabolites are matched to model.mets. New
+%       metabolites (if allowed) are added to "compartment"
+%     - 2 / 'name' : the metabolites are matched to model.metNames and all
 %       metabolites are assigned to "compartment". Any new metabolites that
 %       are added will be assigned IDs "m1", "m2"... If IDs on the same
 %       form are already used in the model then the numbering will start
 %       from the highest used integer+1
-%     - 3 : the metabolites are written as "metNames[comps]". Only
-%       compartments in model.comps are allowed. Any new metabolites that
-%       are added will be assigned IDs "m1", "m2"... If IDs on the same
-%       form are already used in the model then the numbering will start
-%       from the highest used integer+1
+%     - 3 / 'name[comp]' : the metabolites are written as "metNames[comps]".
+%       Only compartments in model.comps are allowed. Any new metabolites
+%       that are added will be assigned IDs "m1", "m2"... If IDs on the
+%       same form are already used in the model then the numbering will
+%       start from the highest used integer+1
 % compartment : char
 %     the compartment the metabolites should be placed in when using
 %     eqnType=2. Must match model.comps (optional when eqnType=1 or
@@ -103,8 +105,20 @@ function newModel=addRxns(model,rxnsToAdd,varargin)
 
 p=parseRAVENargs(varargin, {'eqnType',1; 'compartment',[]; 'allowNewMets',false; 'allowNewGenes',false});
 eqnType=p.eqnType;
+if ischar(eqnType) || isstring(eqnType)
+    switch lower(char(eqnType))
+        case 'id'
+            eqnType=1;
+        case 'name'
+            eqnType=2;
+        case 'name[comp]'
+            eqnType=3;
+        otherwise
+            dispEM(['Unknown eqnType string "' char(eqnType) '". Use ''id'', ''name'', or ''name[comp]''.']);
+    end
+end
 if ~isnumeric(eqnType)
-    EM='eqnType must be numeric';
+    EM='eqnType must be numeric or one of the string aliases ''id'', ''name'', ''name[comp]''';
     dispEM(EM);
 elseif ~ismember(eqnType,[1 2 3])
     EM='eqnType must be 1, 2, or 3';
