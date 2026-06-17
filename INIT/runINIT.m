@@ -67,7 +67,7 @@ function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,varargin)
 %     objective value (sum of (the negative of) reaction scores for the
 %     included reactions and prodWeight*number of produced metabolites).
 
-p=parseRAVENargs(varargin, {'rxnScores',[]; 'presentMets',[]; 'essentialRxns',[]; 'prodWeight',[]; 'allowExcretion',false; 'noRevLoops',false; 'params',[]});
+p=parseRAVENargs(varargin, {'rxnScores',[]; 'presentMets',[]; 'essentialRxns',[]; 'prodWeight',[]; 'allowExcretion',false; 'noRevLoops',false; 'params',[]; 'eps',1});
 rxnScores=p.rxnScores;
 presentMets=p.presentMets;
 essentialRxns=p.essentialRxns;
@@ -75,6 +75,7 @@ prodWeight=p.prodWeight;
 allowExcretion=p.allowExcretion;
 noRevLoops=p.noRevLoops;
 params=p.params;
+initEps=p.eps;
 if isempty(rxnScores)
     rxnScores=zeros(numel(model.rxns),1);
 end
@@ -186,6 +187,10 @@ nRxns=numel(irrevModel.rxns);
 nEssential=numel(essentialIndex);
 nNonEssential=nRxns-nEssential;
 nonEssentialIndex=setdiff(1:nRxns,essentialIndex);
+% Per-reaction big-M: use each reaction's own upper bound, capped at 1000.
+% Must be at least initEps so the inclusion constraint is feasible.
+nonEssUBs = min(irrevModel.ub(nonEssentialIndex), 1000);
+nonEssUBs = max(nonEssUBs(:), initEps);
 S=irrevModel.S;
 
 %Add so that each non-essential reaction produces one unit of a fake
@@ -196,7 +201,7 @@ S=[S;temp];
 
 %Add another set of reactions (will be binary) which also produce these
 %fake metabolites, but with a stoichiometry of 1000
-temp=sparse(1:nNonEssential,1:nNonEssential,1000);
+temp=sparse(1:nNonEssential,1:nNonEssential,nonEssUBs);
 temp=[sparse(nMets,nNonEssential);temp];
 S=[S temp];
 
@@ -243,7 +248,7 @@ end
 %binary ones (and net-production reactions) may have zero flux. The integer
 %reactions for reversible reactions have [0 1]
 prob.blx=[irrevModel.lb;zeros(nNonEssential+nNetProd+nRevBounds*2,1)];
-prob.blx(essentialIndex)=max(0.1,prob.blx(essentialIndex));
+prob.blx(essentialIndex)=min(max(initEps,prob.blx(essentialIndex)),irrevModel.ub(essentialIndex));
 
 %Add so that the binary ones and net-production reactions can have at the
 %most flux 1.0
@@ -252,7 +257,7 @@ prob.bux=[irrevModel.ub;ones(nNonEssential+nNetProd+nRevBounds*2,1)];
 %Add that the fake metabolites must be produced in a small amount and that
 %the A and B metabolites for reversible reactions can be [0 999.9] and C
 %metabolites [-1 0]
-prob.blc=[irrevModel.b(:,1);ones(nNonEssential,1);zeros(nRevBounds*2,1);ones(nRevBounds,1)*-1];
+prob.blc=[irrevModel.b(:,1);ones(nNonEssential,1)*initEps;zeros(nRevBounds*2,1);ones(nRevBounds,1)*-1];
 
 %Add that normal metabolites can be freely excreted if
 %allowExcretion==true, and that the fake ones can be excreted 1000 units at
@@ -270,7 +275,7 @@ if allowExcretion==true
 else
     metUB=irrevModel.b(:,min(size(irrevModel.b,2),2));
 end
-prob.buc=[metUB;ones(nNonEssential,1)*1000;ones(nRevBounds*2,1)*999.9;revUB];
+prob.buc=[metUB;nonEssUBs;ones(nRevBounds*2,1)*999.9;revUB];
 
 %Add objective coefficients for the binary reactions. The negative is used
 %since we're minimizing. The negative is taken for the prodWeight as well,
