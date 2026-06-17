@@ -4,18 +4,7 @@ classdef tIO < RavenTestCase
 %   Format support is exercised mainly via export->import round-trips on the
 %   test model and via importing the tutorial 'empty' files.
 
-    methods (TestClassSetup)
-        function javaPaths(~)
-            % Excel I/O relies on Apache POI being on the static Java path.
-            try, addJavaPaths(); catch, end %#ok<NOCOM>
-        end
-    end
-
     methods (Test)
-
-        function addJavaPathsRuns(testCase)
-            testCase.verifyWarningFree(@() addJavaPaths());
-        end
 
         function getFullPathReturnsAbsolute(testCase)
             p = getFullPath('.');
@@ -155,12 +144,6 @@ classdef tIO < RavenTestCase
             testCase.verifyNotEmpty(dir(fullfile(d,'**','*.yml')));
         end
 
-        function loadWorkbookLoadsFile(testCase)
-            f = fullfile(testCase.ravenRoot,'tutorial','empty.xlsx');
-            wb = loadWorkbook(f);
-            testCase.verifyNotEmpty(wb);
-        end
-
         function checkFileExistenceFindsFile(testCase)
             f = fullfile(testCase.ravenRoot,'testing','function_tests', ...
                 'test_data','ecoli_textbook.mat');
@@ -174,21 +157,21 @@ classdef tIO < RavenTestCase
             testCase.verifyClass(out, 'cell');
         end
 
-        function loadSheetReadsSheet(testCase)
-            f = fullfile(testCase.ravenRoot,'tutorial','empty.xlsx');
-            wb = loadWorkbook(f);
-            [raw, flag] = loadSheet(wb, 'RXNS');
-            testCase.verifyEqual(flag, 0);
-            testCase.verifyClass(raw, 'cell');
-        end
-
-        function writeSheetWritesToWorkbook(testCase)
+        function writeExcelRoundTrips(testCase)
+            % writeExcel generates the .xlsx (Office Open XML) directly, with
+            % no external library; read it back with base MATLAB to confirm
+            % the sheets, values and types survive.
             f = [tempname '.xlsx'];
             testCase.addTeardown(@() delete(f));
-            wb = loadWorkbook(f, true);   % create empty
-            % writeSheet only knows column widths for the standard RAVEN sheets.
-            wb = writeSheet(wb, 'RXNS', 0, {'header'}, [], {'value'});
-            testCase.verifyNotEmpty(wb);
+            s(1).name='RXNS'; s(1).header={'ID','VALUE'};
+            s(1).data={'r1',1.5; 'r2',-3};
+            s(2).name='METS'; s(2).header={'ID'}; s(2).data={'m1'};
+            writeExcel(f, s);
+            testCase.verifyEqual(sort(string(sheetnames(f))),["METS";"RXNS"]);
+            raw = readcell(f,'Sheet','RXNS');
+            testCase.verifyEqual(string(raw(1,:)),["ID","VALUE"]);
+            testCase.verifyEqual(string(raw{2,1}),"r1");
+            testCase.verifyEqual(raw{2,2},1.5,'AbsTol',1e-9);
         end
 
     end

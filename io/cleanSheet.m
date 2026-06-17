@@ -45,8 +45,8 @@ keptCols=keptCols(:);
 %raw=NaN
 if iscell(raw)
     %Clear cells which contain only white spaces or NaN. This could happen
-    %if you accidentally inserted a space for example. I don't know how NaN
-    %could occur after switching to Apache POI, but I clear it to be sure
+    %if you accidentally inserted a space, or if a blank/NaN cell was read
+    %from the source file.
     whites=cellfun(@wrapperWS,raw);
     raw(whites)={[]};
     

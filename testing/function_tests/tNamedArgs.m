@@ -34,7 +34,6 @@ classdef tNamedArgs < RavenTestCase
             f2 = [tempname '.xlsx'];
             testCase.addTeardown(@() delete(f1));
             testCase.addTeardown(@() delete(f2));
-            try, addJavaPaths(); catch, end %#ok<NOCOM>
             evalc('exportToExcelFormat(testCase.model, f1, true);');
             evalc('exportToExcelFormat(testCase.model, ''fileName'', f2, ''sortIds'', true);');
             testCase.verifyTrue(exist(f1,'file')==2);

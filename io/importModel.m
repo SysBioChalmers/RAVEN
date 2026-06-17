@@ -104,8 +104,7 @@ if ispc && any(double(fileName)>128)
     fileName = tempFile;
 end
 
-%This is to match the order of the fields to those you get from importing
-%from Excel
+%Set a canonical order of the model fields
 model=[];
 model.id=[];
 model.name=[];

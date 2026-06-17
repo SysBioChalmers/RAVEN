@@ -118,11 +118,16 @@ if strcmp(extractAfter(inputFile,strlength(inputFile) - 4), '.txt')
     fclose(fid);
     raw = [C{:}];%unnest the cell array of cell arrays into a 2-dim cell array
 else
-    [raw,flag]=loadSheet(loadWorkbook(inputFile), 'TASKS');
-    if flag~=0
-        EM=['Could not load sheet "TASKS" from ' inputFile];
-        dispEM(EM);
+    %Read the TASKS sheet from an Excel file with base MATLAB (readcell
+    %handles both .xls and .xlsx; no external library or toolbox needed).
+    try
+        raw=readcell(inputFile,'Sheet','TASKS');
+    catch
+        dispEM(['Could not load sheet "TASKS" from ' inputFile]);
     end
+    %readcell marks blank cells as "missing"; the previous Apache POI reader
+    %used [] for blanks, which the downstream cleanSheet/parsing expects.
+    raw(cellfun(@(x) all(ismissing(x)),raw))={[]};
 end
 
 %Remove all lines starting with "#" (or actually any character) and all
