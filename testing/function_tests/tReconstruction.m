@@ -54,31 +54,15 @@ classdef tReconstruction < RavenTestCase
         end
 
         function getKEGGModelForOrganismNeedsData(testCase)
-            testCase.assumeFail('Requires a local KEGG dump and external aligners.');
-        end
-
-        function getGenesFromKEGGNeedsData(testCase)
-            testCase.assumeFail('Requires a local KEGG dump.');
-        end
-
-        function getMetsFromKEGGNeedsData(testCase)
-            testCase.assumeFail('Requires a local KEGG dump.');
-        end
-
-        function getRxnsFromKEGGNeedsData(testCase)
-            testCase.assumeFail('Requires a local KEGG dump.');
+            testCase.assumeFail('Requires keggModel.mat and an HMM library from raven-data.');
         end
 
         function getModelFromKEGGNeedsData(testCase)
-            testCase.assumeFail('Requires a local KEGG dump.');
+            testCase.assumeFail('Requires keggModel.mat from raven-data.');
         end
 
         function getPhylDistNeedsData(testCase)
-            testCase.assumeFail('Requires a local KEGG dump.');
-        end
-
-        function constructMultiFastaNeedsData(testCase)
-            testCase.assumeFail('Requires a KEGG sequence source file.');
+            testCase.assumeFail('Requires keggPhylDist.mat from raven-data.');
         end
 
     end

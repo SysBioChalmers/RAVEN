@@ -31,8 +31,7 @@ function model=getKEGGModelForOrganism(organismID,varargin)
 %     directory name matches the published HMM library it is paired with. The
 %     prebuilt concatenated KO HMM library (dataDir.hmm) is downloaded here
 %     from the corresponding RAVEN release if not already present. May also
-%     contain a dataDir\keggdb sub-folder with a local KEGG FTP dump, used to
-%     build the global KEGG model. This parameter should ALWAYS be provided.
+%     This parameter should ALWAYS be provided.
 % outDir : char
 %     directory to save the results from the quering of the hidden Markov
 %     models. The output is specific for the input sequences and the
@@ -58,7 +57,7 @@ function model=getKEGGModelForOrganism(organismID,varargin)
 %     able to remove all such reactions (default false).
 % cutOff : double
 %     significance score from HMMer needed to assign genes to a KO (default
-%     10^-50).
+%     10^-30).
 % minScoreRatioKO : double
 %     ignore genes in a KO if their score is <log(score)/log(best score in
 %     KO). This is to "prune" KOs which have many genes and where some are
@@ -67,7 +66,7 @@ function model=getKEGGModelForOrganism(organismID,varargin)
 %     a gene is only assigned to KOs for which the score is
 %     >=log(score)/log(best score) for that gene. This is to prevent that a
 %     gene which clearly belongs to one KO is assigned also to KOs with much
-%     lower scores (default 0.8, lower is less strict).
+%     lower scores (default 0.9, lower is less strict).
 % maxPhylDist : double
 %     -1 to only use sequences from the same domain (Prokaryota, Eukaryota);
 %     any other (positive) value to only use sequences for organisms where
@@ -116,8 +115,8 @@ function model=getKEGGModelForOrganism(organismID,varargin)
 
 p=parseRAVENargs(varargin, {'fastaFile',[]; 'dataDir',[]; 'outDir',[]; ...
     'keepSpontaneous',true; 'keepUndefinedStoich',true; ...
-    'keepIncomplete',true; 'keepGeneral',false; 'cutOff',10^-50; ...
-    'minScoreRatioKO',0.3; 'minScoreRatioG',0.8; 'maxPhylDist',inf; ...
+    'keepIncomplete',true; 'keepGeneral',false; 'cutOff',10^-30; ...
+    'minScoreRatioKO',0.3; 'minScoreRatioG',0.9; 'maxPhylDist',inf; ...
     'globalModel',[]});
 fastaFile=p.fastaFile;
 if isempty(fastaFile)
@@ -202,45 +201,41 @@ libraryFile='';
 %(https://github.com/SysBioChalmers/raven-data).
 if ~isempty(dataDir)
     hmmOptions={'kegg118_eukaryotes','kegg118_prokaryotes'};
-    if ~endsWith(dataDir,hmmOptions) %Check if dataDir ends with any of the hmmOptions.
-        %If not, then check whether the required keggdb folder exists anyway.
-        if ~isfile(fullfile(dataDir,'keggdb','genes.pep'))
-            error(['Pre-trained HMMs set is not recognised. If you want to download RAVEN provided sets, it should match any of the following: ' strjoin(hmmOptions,' or ')])
-        end
+    if ~endsWith(dataDir,hmmOptions)
+        error(['Pre-trained HMMs set is not recognised. dataDir must match one of: ' strjoin(hmmOptions,' or ')])
+    end
+    %dataDir points to a RAVEN-provided set. Use the concatenated KO HMM
+    %library (one gzip-compressed flatfile, queried in a single
+    %hmmsearch), downloading and extracting it if necessary. The dataDir
+    %name matches the published HMM library asset, so it doubles as the
+    %download filename.
+    hmmName=hmmOptions{endsWith(dataDir,hmmOptions)};
+    libraryFile=[dataDir '.hmm'];
+    if isfile(libraryFile)
+        fprintf(['NOTE: Found <strong>' libraryFile '</strong> HMM library, it will therefore be used during reconstruction\n']);
+    elseif isfile([libraryFile '.gz'])
+        fprintf('Extracting the HMM library file... ');
+        gunzip([libraryFile '.gz']);
+        fprintf('COMPLETE\n');
+        useConcatLib=false;
     else
-        %dataDir points to a RAVEN-provided set. Use the concatenated KO HMM
-        %library (one gzip-compressed flatfile, queried in a single
-        %hmmsearch), downloading and extracting it if necessary. The dataDir
-        %name matches the published HMM library asset, so it doubles as the
-        %download filename.
-        hmmName=hmmOptions{endsWith(dataDir,hmmOptions)};
-        libraryFile=[dataDir '.hmm'];
-        if isfile(libraryFile)
-            fprintf(['NOTE: Found <strong>' libraryFile '</strong> HMM library, it will therefore be used during reconstruction\n']);
-        elseif isfile([libraryFile '.gz'])
-            fprintf('Extracting the HMM library file... ');
-            gunzip([libraryFile '.gz']);
-            fprintf('COMPLETE\n');
-            useConcatLib=false;
-        else
-            fprintf('Downloading the HMM library file... ');
-            try
-                websave([libraryFile '.gz'],['https://github.com/SysBioChalmers/raven-data/releases/download/kegg118/' hmmName '.hmm.gz']);
-            catch ME
-                if strcmp(ME.identifier,'MATLAB:webservices:HTTP404StatusCodeError')
-                    error('Failed to download the HMM library file, the server returned a 404 error, try again later. If the problem persists please report it on the RAVEN GitHub Issues page: https://github.com/SysBioChalmers/RAVEN/issues')
-                end
+        fprintf('Downloading the HMM library file... ');
+        try
+            websave([libraryFile '.gz'],['https://github.com/SysBioChalmers/raven-data/releases/download/kegg118/' hmmName '.hmm.gz']);
+        catch ME
+            if strcmp(ME.identifier,'MATLAB:webservices:HTTP404StatusCodeError')
+                error('Failed to download the HMM library file, the server returned a 404 error, try again later. If the problem persists please report it on the RAVEN GitHub Issues page: https://github.com/SysBioChalmers/RAVEN/issues')
             end
-            fprintf('COMPLETE\n');
-            fprintf('Extracting the HMM library file... ');
-            gunzip([libraryFile '.gz']);
-            fprintf('COMPLETE\n');
-            useConcatLib=true;
         end
-        %Check that the HMM library is available
-        if ~isfile(libraryFile)
-            error(['The HMM library seems improperly extracted and not found at ',strrep(libraryFile,'\','/'),'. Please remove the corresponding .gz file and rerun getKEGGModelForOrganism']);
-        end
+        fprintf('COMPLETE\n');
+        fprintf('Extracting the HMM library file... ');
+        gunzip([libraryFile '.gz']);
+        fprintf('COMPLETE\n');
+        useConcatLib=true;
+    end
+    %Check that the HMM library is available
+    if ~isfile(libraryFile)
+        error(['The HMM library seems improperly extracted and not found at ',strrep(libraryFile,'\','/'),'. Please remove the corresponding .gz file and rerun getKEGGModelForOrganism']);
     end
 end
 
@@ -250,25 +245,18 @@ if any(fastaFile)
     if ~any(strfind(fastaFile,'\')) && ~any(strfind(fastaFile,'/'))
         fastaFile=which(fastaFile);
     end
-    %Create the required sub-folders in dataDir if they dont exist
-    if ~isfolder(fullfile(dataDir,'keggdb'))
-        mkdir(dataDir,'keggdb');
-    end
     if ~isfolder(outDir)
         mkdir(outDir);
     end
 end
 
-%First generate the full global KEGG model. Can be provided as input.
-%Otherwise, getModelFromKEGG is run. The dataDir must not be supplied as
-%there is also an internal RAVEN version available
+%Load the global KEGG model. Can be provided as input to skip loading
+%when calling getKEGGModelForOrganism multiple times for different strains.
 if ~isempty(globalModel)
     model=globalModel.model;
     KOModel=globalModel.KOModel;
-elseif any(dataDir)
-    [model, KOModel]=getModelFromKEGG(fullfile(dataDir,'keggdb'),keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral);
 else
-    [model, KOModel]=getModelFromKEGG([],keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral);
+    [model, KOModel]=getModelFromKEGG(keepSpontaneous,keepUndefinedStoich,keepIncomplete,keepGeneral);
 end
 model.id=organismID;
 model.c=zeros(numel(model.rxns),1);
@@ -278,14 +266,14 @@ model.c=zeros(numel(model.rxns),1);
 if isempty(fastaFile)
     %Check if organismID can be found in KEGG species list or is
     %set to "eukaryotes" or "prokaryotes"
-    phylDistsFull=getPhylDist(fullfile(dataDir,'keggdb'),true);
+    phylDistsFull=getPhylDist(false);
     if ~ismember(organismID,[phylDistsFull.ids 'eukaryotes' 'prokaryotes'])
         error('Provided organismID is incorrect. Only species abbreviations from KEGG Species List or "eukaryotes"/"prokaryotes" are allowed.');
     end
 
     fprintf(['Pruning the model from <strong>non-' organismID '</strong> genes... ']);
     if ismember(organismID,{'eukaryotes','prokaryotes'})
-        phylDists=getPhylDist(fullfile(dataDir,'keggdb'),maxPhylDist==-1);
+        phylDists=getPhylDist(maxPhylDist==-1);
         if strcmp(organismID,'eukaryotes')
             proxyid='hsa';
             %Use H. sapiens here
@@ -316,7 +304,7 @@ end
 %First remove all reactions without genes
 if keepSpontaneous==true
     fprintf('Removing non-spontaneous reactions without GPR rules... ');
-    load(fullfile(ravenPath,'reconstruction','kegg','keggRxns.mat'),'isSpontaneous');
+    load(fullfile(ravenPath,'reconstruction','kegg','keggModel.mat'),'isSpontaneous');
     I=~any(model.rxnGeneMat,2)&~ismember(model.rxns,isSpontaneous);
     spontRxnsWithGenes=model.rxns(any(model.rxnGeneMat,2)&~ismember(model.rxns,isSpontaneous));
 else
