@@ -39,12 +39,6 @@ end
 
 checkModelStruct(model);
 
-addList = matlab.addons.installedAddons;
-if any(strcmpi(addList.Name,'Text Analytics Toolbox'))
-    error(['exportToExcelFormat is incompatible with MATLAB Text Analytics Toolbox. ' ...
-           'Further instructions => https://github.com/SysBioChalmers/RAVEN/issues/55#issuecomment-1514369299'])
-end
-
 [~, A, B]=fileparts(fileName);
 
 %If a path was used call on exportToTabDelimited instead
@@ -388,9 +382,9 @@ sheets=appendSheet(sheets,'MODEL',headers,modelSheet,true,{});
 
 %Add the ENZYMES and ENZRXNS sheets, containing the contents of the
 %model.ec structure of enzyme-constrained (GECKO) models. These sheets are
-%export-only: importExcelModel does not read them back, as the YAML format
-%(writeYAMLmodel/readYAMLmodel) remains the round-trippable format for
-%ecModels. The enzyme-reaction coupling (model.ec.rxnEnzMat) is written in
+%export-only; the YAML format (writeYAMLmodel/readYAMLmodel) remains the
+%round-trippable format for ecModels. The enzyme-reaction coupling
+%(model.ec.rxnEnzMat) is written in
 %readable form as the 'enzyme:count' ENZYMES column of the ENZRXNS sheet,
 %rather than as a separate matrix.
 if isfield(model,'ec') && isfield(model.ec,'enzymes')

@@ -18,8 +18,8 @@ function checkModelStruct(model,varargin)
 %
 % Notes
 % -----
-% This is performed after importing a model from Excel or before attempting
-% to export a model to SBML format.
+% This is typically performed after importing or constructing a model, or
+% before attempting to export a model to SBML format.
 %
 % Examples
 % --------

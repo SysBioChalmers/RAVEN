@@ -195,12 +195,7 @@ reportCheck('   > Export SBML format', @() exportModel(model, fullfile(tmpDir,'m
 reportCheck('   > Import YAML format', @() readYAMLmodel(fullfile(ravenDir,'tutorial','empty.yml')));
 reportCheck('   > Export YAML format', @() writeYAMLmodel(model, fullfile(tmpDir,'model.yml')));
 
-if ~reportCheck('   > Export Excel format', @() exportToExcelFormat(model, fullfile(tmpDir,'model.xlsx')))
-    if any(strcmpi(addList.Name,'Text Analytics Toolbox'))
-        fprintf(['   Excel export is incompatible with MATLAB Text Analytics Toolbox.\n' ...
-                 '   Further instructions => https://github.com/SysBioChalmers/RAVEN/issues/55#issuecomment-1514369299\n'])
-    end
-end
+reportCheck('   > Export Excel format', @() exportToExcelFormat(model, fullfile(tmpDir,'model.xlsx')));
 
 rmdir(tmpDir,'s');
 
