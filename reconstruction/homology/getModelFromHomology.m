@@ -482,60 +482,62 @@ for i=1:numel(models)
     for j=1:numel(models{useOrderIndexes(i)}.rxns)
         %Get the old genes encoding for this reaction
         [~, oldGeneIds]=find(models{useOrderIndexes(i)}.rxnGeneMat(j,:));
-        
+
+        %Tokenize the grRule once; all gene substitutions operate on the
+        %token list so that no gene ID can partially match another (H2).
+        tokens=gprTokenize(models{useOrderIndexes(i)}.grRules{j});
+
         %Update the matrix for each gene. This includes replacing one gene
         %with several new ones if there were several matches
         for k=1:numel(oldGeneIds)
             %Match the gene to one in the gene list. This is done as a text
             %match. Could probably be done better, but I'm a little lost in
             %the indexing
-            
+
             geneName=models{useOrderIndexes(i)}.genes(oldGeneIds(k));
-            
+
             %First search in the mappable genes
             mapIndex=find(ismember(allGenes{i+1},geneName));
-            
+
             if ~isempty(mapIndex)
                 % add the old genes
                 hitGenes.oldGenes = [hitGenes.oldGenes, {geneName}];
-                
+
                 %Get the new genes for that gene
                 a=find(finalMappings{i}(:,mapIndex));
-                
+
                 %Find the positions of these genes in the final gene list
                 [~, b]=ismember(allGenes{1}(a),fullGeneList);
-                
+
                 %Update the matrix
                 newRxnGeneMat(j,b)=1;
-                
-                %Update the grRules string. This is tricky, but I hope that
-                %it's ok to replace the old gene name with the new one and
-                %add ') or (' if there were several matches. Be sure of
-                %this!
+
+                %Build repString for hitGenes (display only)
                 repString=fullGeneList{b(1)};
                 if numel(b)>1
                     for l=2:numel(b)
-                        repString=[repString ' or ' fullGeneList{b(l)}];
+                        repString=[repString ' or ' fullGeneList{b(l)}]; %#ok<AGROW>
                     end
                     repString=['(' repString ')'];
                 end
-                
-                % add the new matched genes
                 hitGenes.newGenes = [hitGenes.newGenes, {repString}];
-                
-                %Use regexprep instead of strrep to prevent partial matches
-                models{useOrderIndexes(i)}.grRules{j}=regexprep(models{useOrderIndexes(i)}.grRules{j},['(^|\s|\()' geneName{1} '($|\s|\))'],['$1' repString '$2']);
+
+                %Replace the old gene token with the new gene(s)
+                tokens=gprReplaceToken(tokens,geneName{1},fullGeneList(b));
             else
                 %Then search in the non-replaceable genes. There could only
                 %be one match here
                 index=find(ismember(nonReplaceableGenes,geneName));
-                
+
                 %Update the matrix
                 newRxnGeneMat(j,nonRepStartIndex+index)=1;
-                
-                models{useOrderIndexes(i)}.grRules{j}=strrep(models{useOrderIndexes(i)}.grRules{j},geneName{1},strcat('OLD_',models{useOrderIndexes(i)}.id,'_',geneName{1}));
+
+                oldName=strcat('OLD_',models{useOrderIndexes(i)}.id,'_',geneName{1});
+                tokens=gprReplaceToken(tokens,geneName{1},{oldName});
             end
         end
+
+        models{useOrderIndexes(i)}.grRules{j}=gprBuildRule(tokens);
     end
     
     %Add the new list of genes
@@ -558,10 +560,31 @@ end
 %complexes
 draftModel=mergeModels(models,'metNames');
 
-%Remove unnecessary OLD_ genes, that were added with OR relationships
-regexStr=['OLD_(', strjoin(modelNames(:),'|'),')_(\S^\))+'];
-draftModel.grRules=regexprep(draftModel.grRules,[' or ' regexStr],'');
-draftModel.grRules=regexprep(draftModel.grRules,[regexStr ' or '],'');
+%Remove OLD_ genes that appear only in OR branches (they were added for
+%AND-complex genes with no orthologs; in OR branches they are redundant).
+%Uses token-level removal to avoid partial-match hazards (H2).
+for oldI=1:numel(draftModel.grRules)
+    if ~contains(draftModel.grRules{oldI},'OLD_')
+        continue
+    end
+    tkns=gprTokenize(draftModel.grRules{oldI});
+    again=true;
+    while again
+        again=false;
+        for kk=1:numel(tkns)
+            if startsWith(tkns{kk},'OLD_')
+                if kk>1 && strcmp(tkns{kk-1},'or')
+                    tkns(kk-1:kk)=[];
+                    again=true; break
+                elseif kk<numel(tkns) && strcmp(tkns{kk+1},'or')
+                    tkns(kk:kk+1)=[];
+                    again=true; break
+                end
+            end
+        end
+    end
+    draftModel.grRules{oldI}=gprBuildRule(tkns);
+end
 
 %Change name of the resulting model
 draftModel.id=getModelFor;
@@ -582,4 +605,59 @@ draftModel=deleteUnusedGenes(draftModel,0);
 %Standardize grRules and notify if problematic grRules are found
 [draftModel.grRules,draftModel.rxnGeneMat]=standardizeGrRules(draftModel,false);
 draftModel=deleteUnusedGenes(draftModel,false);
+end
+
+
+function tokens=gprTokenize(rule)
+% Split a GPR rule into tokens: gene IDs, 'and', 'or', '(', ')'.
+% Brackets are separated from adjacent text by whitespace before splitting.
+if isempty(rule)
+    tokens={};
+    return
+end
+r=regexprep(rule,'([\(\)])',' $1 ');
+r=regexprep(r,'\s+',' ');
+tokens=strsplit(strtrim(r),' ');
+tokens=tokens(~cellfun(@isempty,tokens));
+end
+
+
+function rule=gprBuildRule(tokens)
+% Reconstruct a GPR rule string from a token list.
+if isempty(tokens)
+    rule='';
+    return
+end
+rule=strjoin(tokens,' ');
+rule=strrep(rule,'( ','(');
+rule=strrep(rule,' )',')');
+end
+
+
+function tokens=gprReplaceToken(tokens,oldGene,newGenes)
+% Replace each occurrence of token oldGene with the gene(s) in newGenes.
+% newGenes is a cell array; multiple genes are wrapped in parentheses and
+% joined with ' or '.
+k=1;
+while k<=numel(tokens)
+    if strcmp(tokens{k},oldGene)
+        if numel(newGenes)==1
+            tokens{k}=newGenes{1};
+            k=k+1;
+        else
+            seq={'('};
+            for g=1:numel(newGenes)
+                seq{end+1}=newGenes{g}; %#ok<AGROW>
+                if g<numel(newGenes)
+                    seq{end+1}='or'; %#ok<AGROW>
+                end
+            end
+            seq{end+1}=')';
+            tokens=[tokens(1:k-1),seq,tokens(k+1:end)];
+            k=k+numel(seq);
+        end
+    else
+        k=k+1;
+    end
+end
 end
