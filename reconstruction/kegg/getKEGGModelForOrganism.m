@@ -156,7 +156,7 @@ if isempty(keepGeneral)
 end
 cutOff=p.cutOff;
 if isempty(cutOff)
-    cutOff=10^-50;
+    cutOff=10^-30;
 end
 minScoreRatioKO=p.minScoreRatioKO;
 if isempty(minScoreRatioKO)
@@ -164,7 +164,7 @@ if isempty(minScoreRatioKO)
 end
 minScoreRatioG=p.minScoreRatioG;
 if isempty(minScoreRatioG)
-    minScoreRatioG=0.8;
+    minScoreRatioG=0.9;
 end
 maxPhylDist=p.maxPhylDist;
 if isempty(maxPhylDist)
