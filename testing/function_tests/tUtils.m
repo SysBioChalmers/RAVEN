@@ -60,10 +60,20 @@ classdef tUtils < RavenTestCase
             testCase.verifySubstring(s, 'hello');
         end
 
-        function parallelPoolRAVENnoParallelRuns(testCase)
-            testCase.assumeDependency(license('test','Distrib_Computing_Toolbox'), ...
-                'Parallel Computing Toolbox');
-            testCase.verifyWarningFree(@() parallelPoolRAVEN(false));
+        function parallelWorkersRAVENFalseReturnsZero(testCase)
+            testCase.verifyEqual(parallelWorkersRAVEN(false), 0);
+        end
+
+        function parallelWorkersRAVENTrueNoPCTReturnsZero(testCase)
+            testCase.assumeFalse(license('test','Distrib_Computing_Toolbox'), ...
+                'Parallel Computing Toolbox present; skipping no-PCT path.');
+            testCase.verifyEqual(parallelWorkersRAVEN(true), 0);
+        end
+
+        function parallelWorkersRAVENTruePCTReturnsInf(testCase)
+            testCase.assumeTrue(license('test','Distrib_Computing_Toolbox'), ...
+                'Parallel Computing Toolbox not present; skipping PCT path.');
+            testCase.verifyEqual(parallelWorkersRAVEN(true), Inf);
         end
 
         function runRAVENtestsExists(testCase)

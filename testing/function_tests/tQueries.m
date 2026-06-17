@@ -59,6 +59,23 @@ classdef tQueries < RavenTestCase
             testCase.verifySize(bs.balanceStatus, [numel(testCase.model.rxns) 1]);
         end
 
+        function getElementalBalanceEmptyRxnIsUnbalanced(testCase)
+            % A reaction with no metabolites (all-zero S column) must not
+            % be falsely reported as balanced (B2 fix).
+            m = testCase.model;
+            m.rxns{end+1}    = 'emptyRxn';
+            m.S(:, end+1)    = 0;
+            m.lb(end+1)      = 0;
+            m.ub(end+1)      = 1000;
+            m.rev(end+1)     = 0;
+            m.c(end+1)       = 0;
+            m.grRules{end+1} = '';
+            if isfield(m, 'rxnNames'),   m.rxnNames{end+1}  = 'emptyRxn'; end
+            if isfield(m, 'rxnGeneMat'), m.rxnGeneMat(end+1,:) = 0;       end
+            bs = getElementalBalance(m);
+            testCase.verifyLessThanOrEqual(bs.balanceStatus(end), -1);
+        end
+
         function getExchangeRxnsConsistent(testCase)
             [exch, idx] = getExchangeRxns(testCase.model);
             testCase.verifyClass(exch, 'cell');
@@ -82,6 +99,16 @@ classdef tQueries < RavenTestCase
             lg = getIndexes(testCase.model, testCase.model.rxns(1), 'rxns', true);
             testCase.verifyClass(lg, 'logical');
             testCase.verifyEqual(find(lg), 1);
+        end
+
+        function getIndexesLogicalMaskAllTrueReturnsIndices(testCase)
+            % A logical all-true mask of length n must return numeric [1..n],
+            % not be passed through as a logical array (G5 fix: islogical check
+            % instead of all() which cannot distinguish the two cases).
+            nR = numel(testCase.model.rxns);
+            idx = getIndexes(testCase.model, true(nR, 1), 'rxns');
+            testCase.verifyClass(idx, 'double');
+            testCase.verifyEqual(idx, (1:nR)');
         end
 
         function getMetsInCompCount(testCase)

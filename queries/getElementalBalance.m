@@ -108,6 +108,10 @@ total=abs(balanceStructure.rightComp-balanceStructure.leftComp)>10^-8; %To deal 
 %unbalanced
 balanceStructure.balanceStatus(any(total,2))=min(balanceStructure.balanceStatus(any(total,2)),0);
 
+%Reactions with no metabolites are not balanced (empty S column skips both loops above)
+emptyRxns = full(sum(model.S ~= 0, 1).' == 0);
+balanceStructure.balanceStatus(emptyRxns) = min(-1, balanceStructure.balanceStatus(emptyRxns));
+
 %The remaining ones are all balanced
 balanceStructure.balanceStatus(isnan(balanceStructure.balanceStatus))=1;
 
