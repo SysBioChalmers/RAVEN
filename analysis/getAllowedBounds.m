@@ -48,7 +48,7 @@ elseif ~islogical(rxns) && ~isnumeric(rxns)
     rxns = getIndexes(model,rxns, 'rxns');
 end
 
-[ps, oldPoolAutoCreateSetting] = parallelPoolRAVEN(runParallel);
+nW = parallelWorkersRAVEN(runParallel);
 
 minFluxes = zeros(numel(rxns),1);
 maxFluxes = zeros(numel(rxns),1);
@@ -56,7 +56,7 @@ exitFlags = zeros(numel(rxns),2);
 c = zeros(numel(model.rxns),1);
 
 PB = progressReport(numel(rxns),'Running getAllowedBounds');
-parfor i = 1:numel(rxns)
+parfor (i = 1:numel(rxns), nW)
     count(PB)
     tmpModel = model;
     tmpModel.c = c;
@@ -81,6 +81,4 @@ parfor i = 1:numel(rxns)
     exitFlags(i,:) = [solMin.stat solMax.stat];
 
 end
-% Reset original Parallel setting
-ps.Pool.AutoCreate = oldPoolAutoCreateSetting;
 end

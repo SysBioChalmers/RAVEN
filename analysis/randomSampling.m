@@ -99,7 +99,7 @@ if ~isempty(seed)
     rng(seed);
 end
 
-[ps, oldPoolAutoCreateSetting] = parallelPoolRAVEN(runParallel);
+nW = parallelWorkersRAVEN(runParallel);
 
 nObjRxns=nObjectives;
 
@@ -129,7 +129,7 @@ if isempty(goodRxns)
     testSol = zeros(numel(objList),1);
     PB = progressReport(nRxns,'Prepare goodRxns not involved in loops');
 
-    parfor i = 1:numel(objList)
+    parfor (i = 1:numel(objList), nW)
         testModel=setParam(model,'obj',rxnList(i),objList(i));
         sol=solveLP(testModel,0);
         if ~isempty(sol.f)
@@ -170,7 +170,7 @@ sols = num2cell(sols,1);
 if nSamples > 0
 
     PB = progressReport(nSamples,'Performing random sampling');
-    parfor i=1:nSamples
+    parfor (i = 1:nSamples, nW)
         badSolutions = 1;
         tmpModel = model;
         while lt(0,badSolutions)
@@ -209,8 +209,6 @@ if nSamples > 0
 else
     solutions=[];
 end
-% Reset original Parallel setting
-ps.Pool.AutoCreate = oldPoolAutoCreateSetting;
 end
 
 %To use instead of the normal Matlab randsample function. This is in order
