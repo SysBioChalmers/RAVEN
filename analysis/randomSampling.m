@@ -110,7 +110,7 @@ model=simplifyModel(model,false,false,true,true);
 %loops below, dropping any reactions that were removed by simplification.
 if ~isempty(goodRxns)
     [tf, simpIdx] = ismember(originalRxns(goodRxns), model.rxns);
-    goodRxns = simpIdx(tf);
+    goodRxns = double(simpIdx(tf));
 end
 
 %Check that the model is feasible given the constraints
@@ -222,5 +222,5 @@ else
 end
 %Return goodRxns as original-model indices so callers can pass them back
 %safely across separate calls (which each re-simplify the model internally).
-goodRxns = simpToOrig(goodRxns);
+goodRxns = double(simpToOrig(goodRxns));
 end
