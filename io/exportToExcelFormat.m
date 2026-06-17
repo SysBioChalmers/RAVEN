@@ -9,11 +9,10 @@ function exportToExcelFormat(model,varargin)
 % Name-Value Arguments
 % --------------------
 % fileName : char
-%     file name of the Excel file. Only xlsx format is supported. In order
-%     to preserve backward compatibility this could also be only a path, in
-%     which case the model is exported to a set of tab-delimited text files
-%     via exportToTabDelimited. A dialog window will open if fileName is
-%     empty.
+%     file name of the Excel file. Only xlsx format is supported. This can
+%     also be only a path, in which case the model is exported to a set of
+%     tab-delimited text files via exportToTabDelimited. A dialog window
+%     will open if fileName is empty.
 % sortIds : logical
 %     whether metabolites, reactions and genes should be sorted
 %     alphabetically by their identifiers (default false).
@@ -52,9 +51,7 @@ if ~strcmpi(B,'.xlsx')
     dispEM(EM);
 end
 
-%Accumulate the sheets, then write them all to the .xlsx at the end. The
-%writer (writeExcel) generates the Office Open XML directly, so no Java /
-%Apache POI is involved and an existing output file is overwritten.
+%Accumulate the sheets, then write them all to the .xlsx at the end.
 sheets=struct('name',{},'header',{},'data',{},'widths',{},'isIntegers',{},'colFormats',{});
 
 %Construct equations
@@ -381,12 +378,9 @@ end
 sheets=appendSheet(sheets,'MODEL',headers,modelSheet,true,{});
 
 %Add the ENZYMES and ENZRXNS sheets, containing the contents of the
-%model.ec structure of enzyme-constrained (GECKO) models. These sheets are
-%export-only; the YAML format (writeYAMLmodel/readYAMLmodel) remains the
-%round-trippable format for ecModels. The enzyme-reaction coupling
-%(model.ec.rxnEnzMat) is written in
-%readable form as the 'enzyme:count' ENZYMES column of the ENZRXNS sheet,
-%rather than as a separate matrix.
+%model.ec structure of enzyme-constrained (GECKO) models. The
+%enzyme-reaction coupling (model.ec.rxnEnzMat) is written as the
+%'enzyme:count' ENZYMES column of the ENZRXNS sheet.
 if isfield(model,'ec') && isfield(model.ec,'enzymes')
     %ENZYMES sheet: one row per enzyme
     headers={'#';'ID';'GENE';'MW';'SEQUENCE';'CONC'};
@@ -419,8 +413,8 @@ writeExcel(fileName,sheets);
 end
 
 function sheets=appendSheet(sheets,name,header,data,isIntegers,colFormats)
-%Append one worksheet definition for writeExcel. Column widths follow the
-%historical per-sheet layout (see sheetWidths).
+%Append one worksheet definition for writeExcel (see sheetWidths for the
+%per-sheet column widths).
 n=numel(sheets)+1;
 sheets(n).name=name;
 sheets(n).header=header;
@@ -431,19 +425,19 @@ sheets(n).colFormats=colFormats;
 end
 
 function w=sheetWidths(name)
-%Per-sheet column widths in character units. These reproduce the historical
-%Apache POI layout, whose widths were expressed in 1/256th of a character.
+%Per-sheet column widths. The stored values are in 1/256th of a character
+%and are converted to character units below.
 switch name
-    case 'RXNS';    poi=[786;2358;7860;15719;3406;7860;3406;3406;2358;3406;7860;7860;3668;7860;7860;4192];
-    case 'METS';    poi=[786;7860;7860;3668;7860;7860;7860;3406;3668;1834];
-    case 'COMPS';   poi=[786;3144;7860;3144;7860];
-    case 'GENES';   poi=[786;3144;7860;3144;3406];
-    case 'MODEL';   poi=[786;3144;7860;3668;3668;5240;5240;7860;7860;2620;7860];
-    case 'ENZYMES'; poi=[786;3144;3144;3406;15719;3406];
-    case 'ENZRXNS'; poi=[786;5240;3406;5240;7860;5240;7860];
-    otherwise;      poi=[];
+    case 'RXNS';    w256=[786;2358;7860;15719;3406;7860;3406;3406;2358;3406;7860;7860;3668;7860;7860;4192];
+    case 'METS';    w256=[786;7860;7860;3668;7860;7860;7860;3406;3668;1834];
+    case 'COMPS';   w256=[786;3144;7860;3144;7860];
+    case 'GENES';   w256=[786;3144;7860;3144;3406];
+    case 'MODEL';   w256=[786;3144;7860;3668;3668;5240;5240;7860;7860;2620;7860];
+    case 'ENZYMES'; w256=[786;3144;3144;3406;15719;3406];
+    case 'ENZRXNS'; w256=[786;5240;3406;5240;7860;5240;7860];
+    otherwise;      w256=[];
 end
-w=poi(:).'/256;
+w=w256(:).'/256;
 end
 
 function c=numToCell(v)

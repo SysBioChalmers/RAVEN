@@ -1,10 +1,10 @@
 function writeExcel(fileName,sheets)
 % writeExcel  Write one or more sheets to an .xlsx (Office Open XML) file.
 %
-% Writes spreadsheet data to the SpreadsheetML (.xlsx) format without any
-% external library (no Apache POI / Java) and without MATLAB toolboxes. An
-% .xlsx file is a ZIP archive of XML parts; this function generates those
-% parts and packs them with the built-in zip function.
+% Writes data to one or more worksheets of an .xlsx file. Each sheet can
+% have a bold header row (frozen at the top), column widths and per-column
+% number formats. Numeric, text and logical cell values are supported;
+% empty values are written as blank cells.
 %
 % Parameters
 % ----------
