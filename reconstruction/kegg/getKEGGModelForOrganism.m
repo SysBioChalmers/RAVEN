@@ -385,8 +385,10 @@ end
 %library sequence set is already fixed.
 if ispc
     binEnd='.exe';
+elseif ismac
+    binEnd='.mac';
 else
-    binEnd=''; %Linux and macOS both use the bare binary name
+    binEnd='';
 end
 %Fetch the HMMER binary on demand if it is not already present
 if ~exist(fullfile(ravenPath,'software','hmmer',['hmmsearch' binEnd]),'file')

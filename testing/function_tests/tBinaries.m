@@ -39,7 +39,7 @@ classdef tBinaries < matlab.unittest.TestCase
 
     methods (Access = private)
         function p = binPath(~, tool, name)
-            if ispc; ext = '.exe'; else; ext = ''; end
+            if ispc; ext = '.exe'; elseif ismac; ext = '.mac'; else; ext = ''; end
             p = fullfile(findRAVENroot(),'software',tool,[name ext]);
         end
 
