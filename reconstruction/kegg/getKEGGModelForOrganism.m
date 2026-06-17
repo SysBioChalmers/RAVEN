@@ -383,22 +383,18 @@ end
 %unchanged - thousands of hmmsearch calls simply collapse into one, and
 %no per-organism phylogenetic-distance subsampling is needed because the
 %library sequence set is already fixed.
-if ismac
-    binEnd='.mac';
+if ispc
+    binEnd='.exe';
 else
-    binEnd='';
+    binEnd=''; %Linux and macOS both use the bare binary name
+end
+%Fetch the HMMER binary on demand if it is not already present
+if ~exist(fullfile(ravenPath,'software','hmmer',['hmmsearch' binEnd]),'file')
+    downloadRavenBinaries({'hmmer'});
 end
 tblFile=[tempname '.tblout'];
 fprintf('Querying the user-specified FASTA file against the KEGG Orthology specific HMMs... ');
-if ismac || isunix
-    [status, output]=system(['"' fullfile(ravenPath,'software','hmmer',['hmmsearch' binEnd]) '" --cpu "' num2str(cores) '" --tblout "' tblFile '" "' libraryFile '" "' fastaFile '"']);
-else
-    wslPath.hmmsearch   = getWSLpath(fullfile(ravenPath,'software','hmmer','hmmsearch'));
-    wslPath.libraryFile = getWSLpath(libraryFile);
-    wslPath.fastaFile   = getWSLpath(fastaFile);
-    wslPath.tblFile     = getWSLpath(tblFile);
-    [status, output]=system(['wsl "' wslPath.hmmsearch '" --cpu "' num2str(cores) '" --tblout "' wslPath.tblFile '" "' wslPath.libraryFile '" "' wslPath.fastaFile '"']);
-end
+[status, output]=system(['"' fullfile(ravenPath,'software','hmmer',['hmmsearch' binEnd]) '" --cpu "' num2str(cores) '" --tblout "' tblFile '" "' libraryFile '" "' fastaFile '"']);
 if status~=0
     EM=['Error when querying the concatenated HMM library:\n' output];
     dispEM(EM);
