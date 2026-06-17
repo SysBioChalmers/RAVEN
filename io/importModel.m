@@ -7,9 +7,8 @@ function model=importModel(varargin)
 %     a SBML file to import. A dialog window will open if no file name is
 %     specified.
 % removeExcMets : logical
-%     true if exchange metabolites should be removed. This is needed to be
-%     able to run simulations, but it could also be done using
-%     simplifyModel at a later stage (default true).
+%     if true, exchange metabolites are removed from the imported model
+%     (default true).
 % removePrefix : logical
 %     true if identifier prefixes should be removed when loading the model:
 %     G_ for genes, R_ for reactions, M_ for metabolites, and C_ for
