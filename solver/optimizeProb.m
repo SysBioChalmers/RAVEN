@@ -101,11 +101,6 @@ switch solver
         else
             res=solveCobraLP(prob);
         end
-        if isfield(res,{'dual','rcost'})
-            res.dual=res.dual;
-            res.rcost=res.rcost;
-        end
-
         %% Use Gurobi in a MATLAB environment
     case 'gurobi'
         if milp

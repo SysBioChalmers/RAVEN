@@ -163,13 +163,13 @@ switch type
             [toreplace, bywhat] = ismember(newModel.metComps,1:length(J));
             newModel.metComps(toreplace) = J(bywhat(toreplace));
         end
-        if isfield(model,'rxnComps')
-            [toreplace, bywhat] = ismember(model.rxnComps,1:length(J));
-            model.rxnComps(toreplace) = J(bywhat(toreplace));
+        if isfield(newModel,'rxnComps')
+            [toreplace, bywhat] = ismember(newModel.rxnComps,1:length(J));
+            newModel.rxnComps(toreplace) = J(bywhat(toreplace));
         end
-        if isfield(model,'geneComps')
-            [toreplace, bywhat] = ismember(model.geneComps,1:length(J));
-            model.geneComps(toreplace) = J(bywhat(toreplace));
+        if isfield(newModel,'geneComps')
+            [toreplace, bywhat] = ismember(newModel.geneComps,1:length(J));
+            newModel.geneComps(toreplace) = J(bywhat(toreplace));
         end
 end
 end
