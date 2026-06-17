@@ -23,23 +23,33 @@ function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
 %     the order in which reactions should be added from the models. If not
 %     supplied, reactions will be included from all models, otherwise one
 %     gene will only result in reactions from one model (default {}).
+% bidirectional : logical
+%     require acceptable BLASTP hits in both directions (new→template and
+%     template→new) for a gene pair to be used. Reciprocal best-hit
+%     mapping (bidirectional=true, bestHitsOnly=true) is the most
+%     conservative option (default true).
+% bestHitsOnly : logical
+%     before mapping, trim each BLASTP direction to the single best hit
+%     per query gene (by scoreBy criterion). This removes many-to-many
+%     and many-to-one mappings (default false).
+% scoreBy : char
+%     criterion used by bestHitsOnly to select the best hit per query
+%     gene. 'bitscore' selects the hit with the highest bitscore
+%     (database-size-independent). 'evalue' selects the hit with the
+%     lowest E-value. (default 'bitscore').
 % strictness : double
-%     integer that specifies which reactions should be included (default 1):
+%     legacy integer alias for bidirectional/bestHitsOnly (default 1):
 %
-%     - 1 : Map new genes to old for all pairs, which have acceptable BLASTP
-%       results in both directions.
-%     - 2 : Map new genes to old for all pairs, which have acceptable BLASTP
-%       results in correspondent direction (mapping can be done in the
-%       opposite direction, see mapNewGenesToOld below).
-%     - 3 : Check all BLASTP results and retain only the best results by
-%       E-value for all gene pairs in each direction separately. Then map
-%       new genes to old for all pairs, which have acceptable BLASTP results
-%       in both directions.
+%     - 1 : bidirectional=true,  bestHitsOnly=false.
+%     - 2 : bidirectional=false, bestHitsOnly=false.
+%     - 3 : bidirectional=true,  bestHitsOnly=true.
+%
+%     Ignored when bidirectional or bestHitsOnly are supplied explicitly.
 % onlyGenesInModels : logical
 %     consider BLASTP results only for genes that exist in the models. This
 %     tends to import a larger fraction from the existing models but may
-%     give less reliable results. Has effect only if strictness=3 (default
-%     false).
+%     give less reliable results. Has effect only if bestHitsOnly=true
+%     (default false).
 % maxE : double
 %     only look at genes with E-values <= this value (default 10^-30).
 % minLen : double
@@ -83,6 +93,7 @@ hitGenes.newGenes = [];  % collect the new genes of the draft model (target orga
 getModelFor=char(getModelFor);
 
 p=parseRAVENargs(varargin, {'preferredOrder',[]; 'strictness',1; ...
+    'bidirectional',[]; 'bestHitsOnly',[]; 'scoreBy','bitscore'; ...
     'onlyGenesInModels',false; 'maxE',10^-30; 'minLen',200; 'minIde',40; ...
     'mapNewGenesToOld',true});
 preferredOrder=p.preferredOrder;
@@ -95,7 +106,21 @@ else
         preferredOrder=transpose(preferredOrder);
     end
 end
-strictness=p.strictness;
+%Resolve bidirectional/bestHitsOnly from strictness when not set explicitly.
+if isempty(p.bidirectional) && isempty(p.bestHitsOnly)
+    switch p.strictness
+        case 2
+            bidirectional=false; bestHitsOnly=false;
+        case 3
+            bidirectional=true;  bestHitsOnly=true;
+        otherwise
+            bidirectional=true;  bestHitsOnly=false;
+    end
+else
+    bidirectional  = p.bidirectional;  if isempty(bidirectional),  bidirectional=true;  end
+    bestHitsOnly   = p.bestHitsOnly;   if isempty(bestHitsOnly),   bestHitsOnly=false;  end
+end
+scoreBy=char(p.scoreBy);
 onlyGenesInModels=p.onlyGenesInModels;
 maxE=p.maxE;
 minLen=p.minLen;
@@ -242,22 +267,26 @@ end
 
 %If only best orthologs are to be used then all other measurements are
 %deleted from the blastStructure. All code after this stays the same. This
-%means that preferred order can still matter. The best ortholog scoring is
-%based only on the E-value
-if strictness==3
+%means that preferred order can still matter. The best ortholog is selected
+%by bitscore (default) or E-value.
+if bestHitsOnly
     for i=1:numel(blastStructure)
         keep=false(numel(blastStructure(i).toGenes),1);
         [allFromGenes, ~, I]=unique(blastStructure(i).fromGenes);
-        
+
         %It would be nice to get rid of this loop
         for j=1:numel(allFromGenes)
             allMatches=find(I==j);
-            bestMatches=allMatches(blastStructure(i).evalue(allMatches)==min(blastStructure(i).evalue(allMatches)));
-            
+            if strcmpi(scoreBy,'evalue')
+                bestMatches=allMatches(blastStructure(i).evalue(allMatches)==min(blastStructure(i).evalue(allMatches)));
+            else
+                bestMatches=allMatches(blastStructure(i).bitscore(allMatches)==max(blastStructure(i).bitscore(allMatches)));
+            end
+
             %Keep the best matches
             keep(bestMatches)=true;
         end
-        
+
         %Delete all matches that were not best matches
         blastStructure(i).fromGenes(~keep)=[];
         blastStructure(i).toGenes(~keep)=[];
@@ -336,7 +365,7 @@ end
 %BLAST directions are to be included then only those elements are kept.
 
 finalMappings=cell(numel(useOrder)-1,1);
-if strictness==1 || strictness==3
+if bidirectional
     for j=1:numel(allFrom)
         finalMappings{j}=allTo{j}~=0 & allFrom{j}~=0;
     end
