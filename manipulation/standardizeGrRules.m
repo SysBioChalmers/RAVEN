@@ -54,7 +54,34 @@ if isfield(model,'grRules')
     originalGrRules=model.grRules; 
     originalGrRules=grRulesPreparation(originalGrRules);
     %Search for potential logical errors in the grRules field
-    indexes2check = findPotentialErrors(originalGrRules,embedded,model);
+    tmpModel.rxns=model.rxns; tmpModel.grRules=originalGrRules;
+    fpeIssues=findPotentialErrors(tmpModel);
+    if isempty(fpeIssues)
+        indexes2check=[];
+    else
+        indexes2check=vertcat(fpeIssues.index);
+    end
+    if ~isempty(indexes2check) && ~embedded
+        STR=['Potentially problematic ") AND (", ") AND" or "AND ("relat' ...
+             'ionships found in\n\n'];
+        for fpeI=1:numel(fpeIssues)
+            STR=[STR '  - grRule #' fpeIssues(fpeI).rxn ': ' fpeIssues(fpeI).grRule '\n']; %#ok<AGROW>
+        end
+        STR=[STR '\n This kind of relationships should only be present ' ...
+             'in reactions catalysed by complexes of isoenzymes e.g.\n\n' ...
+             '  - (G1 or G2) and (G3 or G4)\n\n For these cases modify ' ...
+             'the grRules manually, writing all the possible combinations ' ...
+             'e.g.\n\n  - (G1 and G3) or (G1 and G4) or (G2 and G3) or ' ...
+             '(G2 and G4)\n\n For other cases modify the correspondent ' ...
+             'grRules avoiding:\n\n  1) Overall container brackets, e.g.' ...
+             '\n        "(G1 and G2)" should be "G1 and G2"\n\n  2) ' ...
+             'Single unit enzymes enclosed into brackets, e.g.\n        ' ...
+             '"(G1)" should be "G1"\n\n  3) The use of uppercases for ' ...
+             'logical operators, e.g.\n        "G1 OR G2" should be "G1 ' ...
+             'or G2"\n\n  4) Unbalanced brackets, e.g.\n        "((G1 ' ...
+             'and G2) or G3" should be "(G1 and G2) or G3"\n'];
+        warning(sprintf(STR))
+    end
     
     for i=1:length(originalGrRules)
         originalSTR = originalGrRules{i};
@@ -134,43 +161,6 @@ if ~isempty(genesSets)
                 end
             end
         end
-    end
-end
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Function that gets the model field grRules and returns the indexes of the
-%rules in which the pattern ") and (" is present.
-function indexes2check = findPotentialErrors(grRules,embedded,model)
-indxs_l       = find(~cellfun(@isempty,strfind(grRules,') and (')));
-indxs_l_L     = find(~cellfun(@isempty,strfind(grRules,') and')));
-indxs_l_R     = find(~cellfun(@isempty,strfind(grRules,'and (')));
-indexes2check = vertcat(indxs_l,indxs_l_L,indxs_l_R);
-indexes2check = unique(indexes2check);
-
-if ~isempty(indexes2check)
-    
-    if ~embedded
-        STR = 'Potentially problematic ") AND (", ") AND" or "AND ("relat';
-        STR = [STR,'ionships found in\n\n'];
-        for i=1:length(indexes2check)
-            index = indexes2check(i);
-            STR = [STR '  - grRule #' model.rxns{index} ': ' grRules{index} '\n'];
-        end
-        STR = [STR,'\n This kind of relationships should only be present '];
-        STR = [STR,'in  reactions catalysed by complexes of isoenzymes e'];
-        STR = [STR,'.g.\n\n  - (G1 or G2) and (G3 or G4)\n\n For these c'];
-        STR = [STR,'ases modify the grRules manually, writing all the po'];
-        STR = [STR,'ssible combinations e.g.\n\n  - (G1 and G3) or (G1 a'];
-        STR = [STR,'nd G4) or (G2 and G3) or (G2 and G4)\n\n For other c'];
-        STR = [STR,'ases modify the correspondent grRules avoiding:\n\n '];
-        STR = [STR,' 1) Overall container brackets, e.g.\n        "(G1 a'];
-        STR = [STR,'nd G2)" should be "G1 and G2"\n\n  2) Single unit en'];
-        STR = [STR,'zymes enclosed into brackets, e.g.\n        "(G1)" s'];
-        STR = [STR,'hould be "G1"\n\n  3) The use of uppercases for logi'];
-        STR = [STR,'cal operators, e.g.\n        "G1 OR G2" should be "G'];
-        STR = [STR,'1 or G2"\n\n  4) Unbalanced brackets, e.g.\n        '];
-        STR = [STR,'"((G1 and G2) or G3" should be "(G1 and G2) or G3"\n'];
-        warning(sprintf(STR))
     end
 end
 end
