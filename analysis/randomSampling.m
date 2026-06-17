@@ -107,15 +107,6 @@ nObjRxns=nObjectives;
 originalRxns=model.rxns;
 model=simplifyModel(model,false,false,true,true);
 
-%Then change the bounds to +/- Inf. This is needed in order to not have
-%loops in the solutions
-if replaceBoundsWithInf==true
-    model.ub(model.ub==max(model.ub))=Inf;
-    if min(model.lb)<0 % Only negative lower bounds should be set to -Inf
-        model.lb(model.lb==min(model.lb))=-Inf;
-    end
-end
-
 %Check that the model is feasible given the constraints
 [sol,~]=solveLP(model);
 if isempty(sol.x)
@@ -127,7 +118,9 @@ end
 
 nRxns = numel(model.rxns);
 %Reactions which can be involved in loops should not be optimized for.
-%Check which reactions reach an arbitary high upper bound
+%Check which reactions reach an arbitrary high upper bound. This is done
+%on the original bounded model so that loop detection is meaningful
+%(Inf-bounded reactions would always reach the threshold).
 if isempty(goodRxns)
     revRxns = transpose(find(model.lb < 0));
     fwdRxns = transpose(find(model.ub > 0));
@@ -158,6 +151,15 @@ if isempty(goodRxns)
         goodRxns(usageRxns) = false;
     end
     goodRxns = find(goodRxns);
+end
+
+%Change the bounds to +/- Inf to prevent loops in the sampled solutions.
+%Applied after goodRxns detection so that loop-detection uses original bounds.
+if replaceBoundsWithInf==true
+    model.ub(model.ub==max(model.ub))=Inf;
+    if min(model.lb)<0 % Only negative lower bounds should be set to -Inf
+        model.lb(model.lb==min(model.lb))=-Inf;
+    end
 end
 
 %Reserve space for a solution matrix

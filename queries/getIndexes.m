@@ -102,17 +102,22 @@ switch type
 end
 
 if iscell(objects)
-    for i=1:numel(objects)
-        index=find(strcmp(objects(i),searchIn));
-        if strcmpi(type,'metnames')
-            indexes{i}=index;
-        elseif ~isempty(index)
-            if length(index) > 1
-                error('There are multiple instances of object "%s" in the model, while "%s" type should be unique', objects{i}, type)
+    if strcmpi(type,'metnames')
+        % metnames allows multiple matches per name (same metabolite in different
+        % compartments), so return a cell array of index vectors.
+        for i=1:numel(objects)
+            indexes{i}=find(strcmp(objects(i),searchIn));
+        end
+    else
+        % Build a hash map once (O(m)) for O(1) per-object lookup instead of
+        % O(m) strcmp per object.
+        searchMap = containers.Map(searchIn, 1:numel(searchIn));
+        for i=1:numel(objects)
+            if isKey(searchMap, objects{i})
+                indexes(i) = searchMap(objects{i});
+            else
+                error(['Could not find object ''' objects{i} ''' in the model']);
             end
-            indexes(i)=index;
-        else
-            error(['Could not find object ''' objects{i} ''' in the model']);
         end
     end
 else

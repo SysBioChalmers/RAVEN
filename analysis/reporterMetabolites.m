@@ -129,23 +129,14 @@ metNGenes(isnan(metNGenes))=[];
 meanZ(isnan(meanZ))=[];
 stdZ(isnan(stdZ))=[];
 
-%Then correct for background by calculating the mean Z-score for random
-%sets of the same size as the ones that were found for the metabolites
-sizes=unique(metNGenes);
-nGenes=numel(genes);
-
-for i=1:numel(sizes)
-    %Sample 100000 sets for each size. Sample with replacement, which may
-    %or may not be the best choice.
-    I=ceil(rand(100000,sizes(i))*nGenes);
-    J=geneZScores(I);
-    K=sum(J,2)/sqrt(sizes(i));
-    
-    %Correct all elements of this size
-    mK=mean(K);
-    stdK=std(K);
-    metZScores(metNGenes==sizes(i))=(metZScores(metNGenes==sizes(i))-mK)/stdK;
-end
+%Correct for background using the closed-form moments of the sampling
+%distribution. For n genes drawn with replacement from the scored-gene pool
+%(mean mu, std sigma), the aggregate Z = sum(z)/sqrt(n) has:
+%  E[Z] = sqrt(n)*mu  and  Std[Z] = sigma  (independent of n)
+%so the corrected score is (metZ - sqrt(n)*mu) / sigma.
+mu = mean(geneZScores);
+sigma = std(geneZScores);
+metZScores = (metZScores - sqrt(metNGenes) .* mu) ./ sigma;
 
 %Calculate the P-values (upper-tail of the standard normal). Uses the base
 %MATLAB erfc so this does not depend on the Statistics Toolbox normcdf:
