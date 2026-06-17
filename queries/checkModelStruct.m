@@ -1,4 +1,4 @@
-function checkModelStruct(model,varargin)
+function issues=checkModelStruct(model,varargin)
 % checkModelStruct  Perform a number of checks to ensure a model structure is ok.
 %
 % Parameters
@@ -16,6 +16,21 @@ function checkModelStruct(model,varargin)
 %     true if only a maximum of 10 items should be displayed in a given
 %     error/warning (default true).
 %
+% Returns
+% -------
+% issues : struct
+%     When called with an output argument, returns a struct array with one
+%     element per finding (does not throw or print) instead of the default
+%     print/throw behaviour. Fields:
+%
+%     - category : char — type of issue: 'missing_field', 'wrong_type',
+%       'empty_id', 'duplicate', 'invalid_id', 'invalid_bounds',
+%       'unused', 'objective', 'gpr', 'invalid_formula',
+%       'cross_reference', or 'other'.
+%     - target : char — the specific item involved (field name, reaction
+%       ID, metabolite ID, etc.), or '' when not applicable.
+%     - message : char — the full diagnostic text.
+%
 % Notes
 % -----
 % This is typically performed after importing or constructing a model, or
@@ -24,10 +39,40 @@ function checkModelStruct(model,varargin)
 % Examples
 % --------
 %     checkModelStruct(model, throwErrors, trimWarnings);
+%     issues = checkModelStruct(model);
 
 p=parseRAVENargs(varargin, {'throwErrors',true; 'trimWarnings',true});
 throwErrors=p.throwErrors;
 trimWarnings=p.trimWarnings;
+
+if nargout > 0
+    % Collect mode: return a struct array of issues without printing or
+    % throwing. Check required fields inline first so that missing ones
+    % don't cause cascading access errors in the body below.
+    issues = struct('category',{},'target',{},'message',{});
+    reqFields = {'id';'name';'rxns';'mets';'S';'lb';'ub';'rev';'c';'b';'comps';'metComps'};
+    for reqI = 1:numel(reqFields)
+        if ~isfield(model,reqFields{reqI})
+            issues(end+1,1) = struct('category','missing_field', ...
+                'target',reqFields{reqI}, ...
+                'message',['The model is missing the "' reqFields{reqI} '" field']);
+        end
+    end
+    if ~isempty(issues)
+        return
+    end
+    % All required fields present: run the full check in warn-only mode
+    % and capture the fprintf output that dispEM produces.
+    try
+        captured = evalc( ...
+            ['checkModelStruct(model,''throwErrors'',false,''trimWarnings'',' ...
+             mat2str(trimWarnings) ')']);
+    catch
+        captured = '';
+    end
+    issues = parseIssueText(captured);
+    return
+end
 
 %Missing elements
 fields={'id';'name';'rxns';'mets';'S';'lb';'ub';'rev';'c';'b';'comps';'metComps'};
@@ -459,5 +504,75 @@ if numel(J)~=numel(strings)
     L=1:numel(strings);
     L(K)=[];
     I(L)=true;
+end
+end
+
+function issues=parseIssueText(captured)
+% Parse WARNING: blocks emitted by dispEM (throwErrors=false) into a
+% struct array. Each block may have tab-indented item lines; those become
+% individual issue entries sharing the same message.
+issues=struct('category',{},'target',{},'message',{});
+if isempty(captured)
+    return
+end
+% Split on the "WARNING: " prefix that dispEM prepends; the first element
+% is text before the first warning (usually empty) and is discarded.
+blocks=regexp(captured,'(?m)^WARNING:\s*','split');
+for k=1:numel(blocks)
+    block=blocks{k};
+    if isempty(strtrim(block))
+        continue
+    end
+    lines=strsplit(block,'\n');
+    msgLines={};
+    itemLines={};
+    for li=1:numel(lines)
+        ln=lines{li};
+        if ~isempty(ln) && ln(1)==char(9)
+            itemLines{end+1}=strtrim(ln);   %#ok<AGROW>
+        elseif ~isempty(strtrim(ln))
+            msgLines{end+1}=strtrim(ln);    %#ok<AGROW>
+        end
+    end
+    if isempty(msgLines)
+        continue
+    end
+    msg=strjoin(msgLines,' ');
+    cat=issueCategory(msg);
+    if ~isempty(itemLines)
+        for ii=1:numel(itemLines)
+            issues(end+1,1)=struct('category',cat,'target',itemLines{ii},'message',msg); %#ok<AGROW>
+        end
+    else
+        issues(end+1,1)=struct('category',cat,'target','','message',msg); %#ok<AGROW>
+    end
+end
+end
+
+function cat=issueCategory(msg)
+if contains(msg,'missing')
+    cat='missing_field';
+elseif contains(msg,'must be') || contains(msg,'should')
+    cat='wrong_type';
+elseif contains(msg,'empty')
+    cat='empty_id';
+elseif contains(msg,'duplicate') || contains(msg,'already exist in the same')
+    cat='duplicate';
+elseif contains(msg,'bound')
+    cat='invalid_bounds';
+elseif contains(msg,'SBML') || contains(msg,'identifier') || contains(msg,'do not start with')
+    cat='invalid_id';
+elseif contains(msg,'never used') || contains(msg,'not associated') || contains(msg,'contain no metabolites') || contains(msg,'are empty (no')
+    cat='unused';
+elseif contains(msg,'objective')
+    cat='objective';
+elseif contains(msg,'grRule') || contains(msg,'start or end with') || contains(msg,'"genes"')
+    cat='gpr';
+elseif contains(msg,'could not be parsed') || contains(msg,'composition')
+    cat='invalid_formula';
+elseif contains(msg,'MIRIAM') || contains(msg,'InChI') || contains(msg,'SMILES')
+    cat='cross_reference';
+else
+    cat='other';
 end
 end
