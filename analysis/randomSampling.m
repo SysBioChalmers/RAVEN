@@ -95,9 +95,6 @@ end
 if isempty(nObjectives)
     nObjectives=2;
 end
-if ~isempty(seed)
-    rng(seed);
-end
 
 nW = parallelWorkersRAVEN(runParallel);
 
@@ -160,6 +157,12 @@ if replaceBoundsWithInf==true
     if min(model.lb)<0 % Only negative lower bounds should be set to -Inf
         model.lb(model.lb==min(model.lb))=-Inf;
     end
+end
+
+%Seed the RNG here so that only the sampling loop is affected, not the
+%model simplification or goodRxns detection above.
+if ~isempty(seed)
+    rng(seed);
 end
 
 %Reserve space for a solution matrix
