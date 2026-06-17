@@ -160,16 +160,8 @@ if isunix
     end
 end
 
-%Check if it is possible to parse an Excel file
+%Check the model import and export formats
 fprintf('\n=== Model import and export ===\n');
-fprintf(myStr(' > Add Java paths for Excel format',40))
-try
-    %Add the required classes to the static Java path if not already added
-    addJavaPaths();
-    fprintf('Pass\n')
-catch
-    printOrange('Fail\n')
-end
 fprintf(myStr(' > Checking libSBML version',40))
 model = [];
 try

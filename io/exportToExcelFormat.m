@@ -58,17 +58,10 @@ if ~strcmpi(B,'.xlsx')
     dispEM(EM);
 end
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
-%Remove the output file if it already exists
-if isfile(fileName)
-    delete(fileName);
-end
-
-%Load an empty workbook
-wb=loadWorkbook(fileName,true);
+%Accumulate the sheets, then write them all to the .xlsx at the end. The
+%writer (writeExcel) generates the Office Open XML directly, so no Java /
+%Apache POI is involved and an existing output file is overwritten.
+sheets=struct('name',{},'header',{},'data',{},'widths',{},'isIntegers',{},'colFormats',{});
 
 %Construct equations
 model.equations=constructEquations(model,model.rxns,true);
@@ -226,7 +219,7 @@ else
     rxnSheet=[rxnSheet emptyColumn];
 end
 
-wb=writeSheet(wb,'RXNS',0,headers,[],rxnSheet);
+sheets=appendSheet(sheets,'RXNS',headers,rxnSheet,true,{});
 
 headers={'#';'ID';'NAME';'UNCONSTRAINED';'MIRIAM';'COMPOSITION';'InChI';'COMPARTMENT';'REPLACEMENT ID';'CHARGE'};
 
@@ -282,7 +275,7 @@ for i=1:numel(model.mets)
     end
 end
 
-wb=writeSheet(wb,'METS',1,headers,[],metSheet);
+sheets=appendSheet(sheets,'METS',headers,metSheet,true,{});
 
 %Add the COMPS sheet
 
@@ -313,7 +306,7 @@ for i=1:numel(model.comps)
     end
 end
 
-wb=writeSheet(wb,'COMPS',2,headers,[],compSheet);
+sheets=appendSheet(sheets,'COMPS',headers,compSheet,true,{});
 
 %Add the GENES sheet
 if isfield(model,'genes')
@@ -342,7 +335,7 @@ if isfield(model,'genes')
         end
     end
     
-    wb=writeSheet(wb,'GENES',3,headers,[],geneSheet);
+    sheets=appendSheet(sheets,'GENES',headers,geneSheet,true,{});
 end
 
 %Add the MODEL sheet
@@ -391,11 +384,7 @@ if isfield(model.annotation,'note')
     modelSheet{1,11}=model.annotation.note;
 end
 
-if isfield(model,'genes')
-    wb=writeSheet(wb,'MODEL',4,headers,[],modelSheet);
-else
-    wb=writeSheet(wb,'MODEL',3,headers,[],modelSheet);
-end
+sheets=appendSheet(sheets,'MODEL',headers,modelSheet,true,{});
 
 %Add the ENZYMES and ENZRXNS sheets, containing the contents of the
 %model.ec structure of enzyme-constrained (GECKO) models. These sheets are
@@ -405,12 +394,6 @@ end
 %readable form as the 'enzyme:count' ENZYMES column of the ENZRXNS sheet,
 %rather than as a separate matrix.
 if isfield(model,'ec') && isfield(model.ec,'enzymes')
-    if isfield(model,'genes')
-        ecSheetPos=5;
-    else
-        ecSheetPos=4;
-    end
-
     %ENZYMES sheet: one row per enzyme
     headers={'#';'ID';'GENE';'MW';'SEQUENCE';'CONC'};
     enzSheet=cell(numel(model.ec.enzymes),numel(headers));
@@ -421,7 +404,7 @@ if isfield(model,'ec') && isfield(model.ec,'enzymes')
     enzSheet(:,6)=numToCell(model.ec.concs);
     %MW (column 4) shown without decimals, CONC (column 6) with 5 decimals
     enzColFormats={'','','','0','','0.00000'};
-    wb=writeSheet(wb,'ENZYMES',ecSheetPos,headers,[],enzSheet,'isIntegers',false,'colFormats',enzColFormats);
+    sheets=appendSheet(sheets,'ENZYMES',headers,enzSheet,false,enzColFormats);
 
     %ENZRXNS sheet: one row per enzyme-constrained reaction. The ENZYMES
     %column encodes the subunit stoichiometry from model.ec.rxnEnzMat as
@@ -434,13 +417,39 @@ if isfield(model,'ec') && isfield(model.ec,'enzymes')
     ecRxnSheet(:,5)=model.ec.notes(:);
     ecRxnSheet(:,6)=model.ec.eccodes(:);
     ecRxnSheet(:,7)=ecEnzymePairs(model.ec);
-    wb=writeSheet(wb,'ENZRXNS',ecSheetPos+1,headers,[],ecRxnSheet,'isIntegers',false);
+    sheets=appendSheet(sheets,'ENZRXNS',headers,ecRxnSheet,false,{});
 end
 
-%Open the output stream
-out = FileOutputStream(fileName);
-wb.write(out);
-out.close();
+%Write all accumulated sheets to the .xlsx file in one pass.
+writeExcel(fileName,sheets);
+end
+
+function sheets=appendSheet(sheets,name,header,data,isIntegers,colFormats)
+%Append one worksheet definition for writeExcel. Column widths follow the
+%historical per-sheet layout (see sheetWidths).
+n=numel(sheets)+1;
+sheets(n).name=name;
+sheets(n).header=header;
+sheets(n).data=data;
+sheets(n).widths=sheetWidths(name);
+sheets(n).isIntegers=isIntegers;
+sheets(n).colFormats=colFormats;
+end
+
+function w=sheetWidths(name)
+%Per-sheet column widths in character units. These reproduce the historical
+%Apache POI layout, whose widths were expressed in 1/256th of a character.
+switch name
+    case 'RXNS';    poi=[786;2358;7860;15719;3406;7860;3406;3406;2358;3406;7860;7860;3668;7860;7860;4192];
+    case 'METS';    poi=[786;7860;7860;3668;7860;7860;7860;3406;3668;1834];
+    case 'COMPS';   poi=[786;3144;7860;3144;7860];
+    case 'GENES';   poi=[786;3144;7860;3144;3406];
+    case 'MODEL';   poi=[786;3144;7860;3668;3668;5240;5240;7860;7860;2620;7860];
+    case 'ENZYMES'; poi=[786;3144;3144;3406;15719;3406];
+    case 'ENZRXNS'; poi=[786;5240;3406;5240;7860;5240;7860];
+    otherwise;      poi=[];
+end
+w=poi(:).'/256;
 end
 
 function c=numToCell(v)
