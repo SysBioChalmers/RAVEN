@@ -58,11 +58,17 @@ classdef tReconstruction < RavenTestCase
         end
 
         function getModelFromKEGGNeedsData(testCase)
-            testCase.assumeFail('Requires keggModel.mat from raven-data.');
+            matFile = fullfile(testCase.ravenRoot, 'reconstruction', 'kegg', 'keggModel.mat');
+            testCase.assumeFalse(exist(matFile, 'file') == 2, ...
+                'keggModel.mat is present; skipping error-path test.');
+            testCase.verifyError(@() getModelFromKEGG(), 'getModelFromKEGG:noModel');
         end
 
         function getPhylDistNeedsData(testCase)
-            testCase.assumeFail('Requires keggPhylDist.mat from raven-data.');
+            distFile = fullfile(testCase.ravenRoot, 'reconstruction', 'kegg', 'keggPhylDist.mat');
+            testCase.assumeFalse(exist(distFile, 'file') == 2, ...
+                'keggPhylDist.mat is present; skipping error-path test.');
+            testCase.verifyError(@() getPhylDist(), 'getPhylDist:noData');
         end
 
     end
