@@ -28,7 +28,7 @@ function targets=FSEOF(model,biomassRxn,targetRxn,varargin)
 %     output filename (default prints to command window).
 % corrThreshold : double
 %     minimum absolute Pearson correlation coefficient between a
-%     reaction's absolute flux and the enforced product flux for the
+%     reaction absolute flux and the enforced product flux for the
 %     reaction to be selected as a target. Values in [0, 1]; higher
 %     values require a more linear response and suppress LP alternative-
 %     optima noise (default 0.9).

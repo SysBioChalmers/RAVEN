@@ -22,16 +22,16 @@ function newModel=addMets(model,metsToAdd,varargin)
 %       metabolite (optional, default 0)
 %     - unconstrained : vector describing if each metabolite is an exchange
 %       metabolite (1) or not (0) (optional, default 0)
-%     - inchis : cell array with InChI strings (optional, default '')
-%     - metSmiles : cell array with SMILES strings (optional, default '')
-%     - metFormulas : cell array with the formulas (optional, default '')
+%     - inchis : cell array with InChI strings (optional, default "")
+%     - metSmiles : cell array with SMILES strings (optional, default "")
+%     - metFormulas : cell array with the formulas (optional, default "")
 %     - metMiriams : cell array with MIRIAM structures (optional,
 %       default [])
 %     - metCharges : metabolite charge (optional, default NaN)
 %     - metDeltaG : Gibbs free energy of formation at biochemical standard
 %       condition in kJ/mole (optional, default NaN)
 %     - metNotes : cell array with metabolite notes as strings (optional,
-%       default '')
+%       default "")
 %
 % Name-Value Arguments
 % --------------------
@@ -43,7 +43,7 @@ function newModel=addMets(model,metsToAdd,varargin)
 %     when metsToAdd.mets is not specified, new metabolite IDs are
 %     generated with the prefix specified here. If IDs with the prefix are
 %     already used in the model then the numbering will start from the
-%     highest existing integer+1 (default 'm_').
+%     highest existing integer+1 (default "m_").
 %
 % Returns
 % -------
@@ -59,10 +59,10 @@ function newModel=addMets(model,metsToAdd,varargin)
 % If multiple metabolites are added at once, the metMiriams cell array
 % should be defined as (example with ChEBI and KEGG):
 %
-%     metsToAdd.metMiriams{1} = struct('name',{{'chebi';'kegg.compound'}},...
-%         'value',{{'CHEBI:18072';'C11821'}});
-%     metsToAdd.metMiriams{2} = struct('name',{{'chebi';'kegg.compound'}},...
-%         'value',{{'CHEBI:31132';'C12248'}});
+%     metsToAdd.metMiriams{1} = struct("name",{{"chebi";"kegg.compound"}},...
+%         "value",{{"CHEBI:18072";"C11821"}});
+%     metsToAdd.metMiriams{2} = struct("name",{{"chebi";"kegg.compound"}},...
+%         "value",{{"CHEBI:31132";"C12248"}});
 
 p=parseRAVENargs(varargin, {'copyInfo',true; 'prefix','m_'});
 copyInfo=p.copyInfo;
@@ -123,7 +123,7 @@ if ~all(I)
     error('RAVEN:badInput', '%s', EM);
 end
 
-%Check that the metabolite names aren't present in the same compartment.
+%Check that the metabolite names are not present in the same compartment.
 %Not the neatest way maybe..
 t1=strcat(metsToAdd.metNames(:),'***',metsToAdd.compartments(:));
 t2=strcat(model.metNames,'***',model.comps(model.metComps));
@@ -152,7 +152,7 @@ if isfield(metsToAdd,'b')
         EM='metsToAdd.b must have the same number of elements as metsToAdd.mets';
         error('RAVEN:badInput', '%s', EM);
     else
-        %Add empty field if it doesn't exist
+        %Add empty field if it does not exist
         if ~isfield(newModel,'b')
             newModel.b=zeros(nOldMets,1);
         end
@@ -176,7 +176,7 @@ if isfield(metsToAdd,'unconstrained')
         EM='metsToAdd.unconstrained must have the same number of elements as metsToAdd.mets';
         error('RAVEN:badInput', '%s', EM);
     else
-        %Add empty field if it doesn't exist
+        %Add empty field if it does not exist
         if ~isfield(newModel,'unconstrained')
             newModel.unconstrained=zeros(nOldMets,1);
         end
@@ -197,13 +197,13 @@ if isfield(metsToAdd,'inchis')
         EM='metsToAdd.inchis must have the same number of elements as metsToAdd.mets';
         error('RAVEN:badInput', '%s', EM);
     end
-    %Add empty field if it doesn't exist
+    %Add empty field if it does not exist
     if ~isfield(newModel,'inchis')
         newModel.inchis=largeFiller;
     end
     newModel.inchis=[newModel.inchis;metsToAdd.inchis(:)];
 else
-    %Add empty strings if structure is in model
+    %Add empty strings if the structure is in the model
     if isfield(newModel,'inchis')
         newModel.inchis=[newModel.inchis;filler];
     end
@@ -216,13 +216,13 @@ if isfield(metsToAdd,'metSmiles')
         EM='metsToAdd.metSmiles must have the same number of elements as metsToAdd.mets';
         error('RAVEN:badInput', '%s', EM);
     end
-    %Add empty field if it doesn't exist
+    %Add empty field if it does not exist
     if ~isfield(newModel,'metSmiles')
         newModel.metSmiles=largeFiller;
     end
     newModel.metSmiles=[newModel.metSmiles;metsToAdd.metSmiles(:)];
 else
-    %Add empty strings if structure is in model
+    %Add empty strings if the structure is in the model
     if isfield(newModel,'metSmiles')
         newModel.metSmiles=[newModel.metSmiles;filler];
     end
@@ -234,7 +234,7 @@ if isfield(metsToAdd,'metFormulas')
         EM='metsToAdd.metFormulas must have the same number of elements as metsToAdd.mets';
         error('RAVEN:badInput', '%s', EM);
     end
-    %Add empty field if it doesn't exist
+    %Add empty field if it does not exist
     if ~isfield(newModel,'metFormulas')
         newModel.metFormulas=largeFiller;
     end
@@ -298,19 +298,19 @@ if isfield(metsToAdd,'metNotes')
         EM='metsToAdd.metNotes must have the same number of elements as metsToAdd.mets';
         error('RAVEN:badInput', '%s', EM);
     end
-    %Add empty field if it doesn't exist
+    %Add empty field if it does not exist
     if ~isfield(newModel,'metNotes')
         newModel.metNotes=largeFiller;
     end
     newModel.metNotes=[newModel.metNotes;metsToAdd.metNotes(:)];
 else
-    %Add empty strings if structure is in model
+    %Add empty strings if the structure is in the model
     if isfield(newModel,'metNotes')
         newModel.metNotes=[newModel.metNotes;filler];
     end
 end
 
-%Don't check the type of metMiriams
+%Do not check the type of metMiriams
 if isfield(metsToAdd,'metMiriams')
     if numel(metsToAdd.metMiriams)==1 && numel(metsToAdd.mets)>1
         temp=cell(numel(metsToAdd.mets),1);
@@ -321,7 +321,7 @@ if isfield(metsToAdd,'metMiriams')
         EM='metsToAdd.metMiriams must have the same number of elements as metsToAdd.mets';
         error('RAVEN:badInput', '%s', EM);
     end
-    %Add empty field if it doesn't exist
+    %Add empty field if it does not exist
     if ~isfield(newModel,'metMiriams')
         newModel.metMiriams=cell(nOldMets,1);
     end
@@ -343,9 +343,9 @@ if copyInfo==true
     [I, J]=ismember(metsToAdd.metNames,model.metNames);
     J=J(I);
     %I is the indexes of the new metabolites for which a metabolite with
-    %the same name existed
+    %the same name exists
     I=find(I)+nOldMets;
-    %Go through each of the added mets and copy annotation if it doesn't
+    %Go through each of the added mets and copy annotation if it does not
     %exist
     for i=1:numel(I)
         if isfield(newModel,'inchis')

@@ -173,7 +173,7 @@ compartmentOutside=cell(numel(modelSBML.compartment),1);
 compartmentMiriams=cell(numel(modelSBML.compartment),1);
 
 if isfield(modelSBML.compartment,'sboTerm') && isscalar(unique([modelSBML.compartment.sboTerm]))
-    %If all the SBO terms are identical, don't add them to compMiriams
+    %If all the SBO terms are identical, do not add them to compMiriams
     modelSBML.compartment = rmfield(modelSBML.compartment,'sboTerm');
 end
 
@@ -356,7 +356,7 @@ if isfield(modelSBML,'parameter')
 end
 
 if isfield(modelSBML.reaction,'sboTerm') && isscalar(unique([modelSBML.reaction.sboTerm]))
-    %If all the SBO terms are identical, don't add them to rxnMiriams
+    %If all the SBO terms are identical, do not add them to rxnMiriams
     modelSBML.reaction = rmfield(modelSBML.reaction,'sboTerm');
 end
 
@@ -603,7 +603,7 @@ if ~all(cellfun(@isempty,grRules))
         if isempty(geneMiriams)
             geneMiriams = cell(numel(genes),1);
             if isfield(modelSBML.fbc_geneProduct,'sboTerm') && isscalar(unique([modelSBML.fbc_geneProduct.sboTerm]))
-                %If all the SBO terms are identical, don't add them to geneMiriams
+                %If all the SBO terms are identical, do not add them to geneMiriams
                 modelSBML.fbc_geneProduct = rmfield(modelSBML.fbc_geneProduct,'sboTerm');
             end
             for i = 1:numel(genes)
@@ -811,7 +811,7 @@ end
 end
 
 function fieldContent=parseNote(searchString,fieldName)
-%The function obtains the particular information from 'notes' field, using
+%The function obtains the particular information from "notes" field, using
 %fieldName as the dummy string
 
 fieldContent='';

@@ -44,15 +44,15 @@ function [rxnScores, geneScores, hpaScores, arrayScores] = scoreComplexModel(mod
 %     score for reactions without genes (default -2).
 % isozymeScoring : char
 %     determines how scores are calculated for reactions with multiple genes
-%     joined by "OR" expression(s) ('min', 'max', 'median', 'average')
-%     (default 'max').
+%     joined by "OR" expression(s) ("min", "max", "median", "average")
+%     (default "max").
 % complexScoring : char
 %     determines how scores are calculated for reactions with multiple genes
-%     joined by "AND" expression(s) ('min', 'max', 'median', 'average')
-%     (default 'min').
+%     joined by "AND" expression(s) ("min", "max", "median", "average")
+%     (default "min").
 % multipleCellScoring : char
 %     determines how scores are calculated when several cell types are used
-%     ('max' or 'average') (default 'max').
+%     ("max" or "average") (default "max").
 % hpaLevelScores : struct
 %     structure with numerical scores for the expression level categories from
 %     HPA. The structure should have a "names" and a "scores" field (default,
@@ -194,7 +194,7 @@ if isfield(hpaData,'gene2Reliability')
     hpaData.gene2Reliability(:,J)=[];
 end
 
-% Remove all genes from the structures that are not in model or that aren't
+% Remove all genes from the structures that are not in model or that are not
 % measured in the tissue
 if ~isempty(hpaData.genes) % This should not be necessary, but the summation is a 0x1 matrix and the other is []
     I = ~ismember(hpaData.genes,model.genes) | sum(hpaData.gene2Level,2) == 0;
@@ -218,7 +218,7 @@ if any(celltype)
     I = I & strcmpi(arrayData.celltypes,celltype);
 end
 
-% Remove all genes from the structures that are not in model or that aren't
+% Remove all genes from the structures that are not in model or that are not
 % measured in the tissue
 J = ~ismember(arrayData.genes,model.genes) | all(isnan(arrayData.levels(:,I)),2);
 arrayData.genes(J) = [];

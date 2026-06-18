@@ -36,7 +36,7 @@ else
     ignoreRxns=convertCharArray(ignoreRxns);
 end
 
-%Too make sure that it doesn't try to optimize for something
+%Too make sure that it does not try to optimize for something
 model.c=zeros(numel(model.rxns),1);
 
 %First check that the problem is solvable
@@ -48,7 +48,7 @@ if sol.stat==-1 || isempty(sol.x)
 end
 
 %Check which reactions have flux. Only those can be essential. This is not
-%the smallest list of reactions, but it's a fast way
+%the smallest list of reactions, but it is a fast way
 rxnsToCheck=setdiff(model.rxns(abs(sol.x)>10^-12),ignoreRxns);
 nToCheck=numel(rxnsToCheck);
 minimize=true;

@@ -14,16 +14,16 @@ function geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
 %     any number of rules, defined as consecutive strings or in a cell
 %     array:
 %
-%     - 'comp1' : comp1 should be kept in the structure.
-%     - 'comp1=comp2' : The scores in comp2 are merged to comp1 and comp2 is
+%     - "comp1" : comp1 should be kept in the structure.
+%     - "comp1=comp2" : The scores in comp2 are merged to comp1 and comp2 is
 %       removed from the structure. This automatically keeps comp1 in the
 %       structure.
-%     - 'comp1=comp2 comp3' : The scores in comp2 and comp3 are merged to
+%     - "comp1=comp2 comp3" : The scores in comp2 and comp3 are merged to
 %       comp1 and comp2 & comp3 are removed from the structure. This
 %       automatically keeps comp1 in the structure.
-%     - 'comp1 comp2=comp3' : The scores in comp3 are split between comp1 and
+%     - "comp1 comp2=comp3" : The scores in comp3 are split between comp1 and
 %       comp2. This automatically keeps comp1 and comp2 in the structure.
-%     - 'comp1=other' : The scores in any compartment not included are merged
+%     - "comp1=other" : The scores in any compartment not included are merged
 %       to comp1. This is applied after all other rules.
 %
 % Returns
@@ -39,8 +39,8 @@ function geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
 % Lysosome is merged with Peroxisome and all other compartments are merged
 % to the Cytosol:
 %
-%     GSS = mapCompartments(GSS, 'Extracellular', 'Mitochondria', ...
-%         'Peroxisome=Lysosome', 'Cytosol=other');
+%     GSS = mapCompartments(GSS, "Extracellular", "Mitochondria", ...
+%         "Peroxisome=Lysosome", "Cytosol=other");
 %
 % Notes
 % -----
@@ -49,19 +49,19 @@ function geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
 % compartment is split among several, the scores for the compartment to be
 % merged is weighted with the number of compartments to split to.
 
-%   'comp1=comp2'       The scores in comp2 are merged to comp1 and comp2 is
+%   "comp1=comp2"       The scores in comp2 are merged to comp1 and comp2 is
 %                       removed from the structure. This automatically
 %                       keeps comp1 in the structure
 
-%   'comp1=comp2 comp3' The scores in comp2 and comp3 are merged to comp1
+%   "comp1=comp2 comp3" The scores in comp2 and comp3 are merged to comp1
 %                       and comp2 & comp2 are removed from the structure.
 %                       This automatically keeps comp1 in the structure
 
-%   'comp1 comp2=comp3' The scores in comp3 are split between comp1 and
+%   "comp1 comp2=comp3" The scores in comp3 are split between comp1 and
 %                       comp2. This automatically keeps comp1 and comp2 in
 %                       the structure
 
-%   'comp1=other'       The scores in any compartment not included are
+%   "comp1=other"       The scores in any compartment not included are
 %                       merged to comp1. This is applied after all other
 %                       rules.
 %
@@ -76,8 +76,8 @@ function geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
 %   where Lysosome is merged with Peroxisome and all other compartments
 %   are merged to the Cytosol.
 %
-%   GSS=mapCompartments(GSS,'Extracellular','Mitochondria','Peroxisome=Lyso
-%   some','Cytosol=other');
+%   GSS=mapCompartments(GSS,"Extracellular","Mitochondria","Peroxisome=Lyso
+%   some","Cytosol=other");
 %
 %   geneScoreStructure  a structure to be used in predictLocalization
 %
@@ -86,7 +86,7 @@ function geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
 varargin=upper(varargin);
 
 %First find the compartment that will end up in the final structure. They
-%are the ones that stand alone or are to the left of some '='
+%are the ones that stand alone or are to the left of some "="
 toKeep={};
 toMerge={};
 I=regexp(varargin,'=','split');
@@ -134,7 +134,7 @@ for i=1:numel(I)
         J=regexp(I{i}(1),' ','split');
         [l, L]=ismember(J{1},uComps);
         
-        %It's not allowed to have rules like A B=C D
+        %It is not allowed to have rules like A B=C D
         if numel(K)>1 && numel(L)>1
             EM='It is not allowed to have rules like "A B=C D" (map more than one compartment to more than one compartment)';
             error('RAVEN:badInput', '%s', EM);
@@ -162,7 +162,7 @@ for i=1:numel(I)
 end
 
 %Then check if there are remaining compartments that should be removed or
-%mapped as 'other'
+%mapped as "other"
 J=find(~ismember(uComps,toKeep));
 if any(J)
     if any(otherIndex)

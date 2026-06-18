@@ -24,12 +24,12 @@ function issues=checkModelStruct(model,varargin)
 %     element per finding (does not throw or print) instead of the default
 %     print/throw behaviour. Fields:
 %
-%     - category : char — type of issue: 'missing_field', 'wrong_type',
-%       'empty_id', 'duplicate', 'invalid_id', 'invalid_bounds',
-%       'unused', 'objective', 'gpr', 'invalid_formula',
-%       'cross_reference', or 'other'.
+%     - category : char — type of issue: "missing_field", "wrong_type",
+%       "empty_id", "duplicate", "invalid_id", "invalid_bounds",
+%       "unused", "objective", "gpr", "invalid_formula",
+%       "cross_reference", or "other".
 %     - target : char — the specific item involved (field name, reaction
-%       ID, metabolite ID, etc.), or '' when not applicable.
+%       ID, metabolite ID, etc.), or "" when not applicable.
 %     - message : char — the full diagnostic text.
 %
 % Notes
@@ -40,7 +40,7 @@ function issues=checkModelStruct(model,varargin)
 % Examples
 % --------
 %     checkModelStruct(model);
-%     checkModelStruct(model, 'throwErrors', false);
+%     checkModelStruct(model, "throwErrors", false);
 %     issues = checkModelStruct(model);
 
 p=parseRAVENargs(varargin, {'throwErrors',true; 'trimWarnings',true});
@@ -52,7 +52,7 @@ issues = struct('category',{},'target',{},'message',{});
 
     function reportIssue(severity, msg, items)
         % Report one issue: accumulate in collect mode, or warn/error.
-        % severity: 'error' | 'warning'
+        % severity: "error" | "warning"
         % When items is supplied (3 args) but is empty, silently do nothing.
         listProvided = nargin >= 3;
         if nargin < 3; items = {}; end
@@ -91,7 +91,7 @@ issues = struct('category',{},'target',{},'message',{});
         end
     end
 
-%Missing elements — checked inline so missing fields don't cause cascading
+%Missing elements — checked inline so missing fields do not cause cascading
 %errors in the rest of the body
 fields={'id';'name';'rxns';'mets';'S';'lb';'ub';'rev';'c';'b';'comps';'metComps'};
 for i=1:numel(fields)
@@ -491,7 +491,7 @@ if isfield(model,'inchis')
 end
 
 % %Check if there are metabolites with different names but the same SMILES
-% if isfield(model,'metSmiles')
+% if isfield(model,"metSmiles")
 %     metSmiles=containers.Map();
 %     for i=1:numel(model.mets)
 %         if ~isempty(model.metSmiles{i})
@@ -519,8 +519,8 @@ end
 %     end
 %
 %     %Print output
-%     EM='The following metSmiles strings are associated to more than one unique metabolite name:';
-%     reportIssue('warning',EM,allmetSmiles(hasMultiple));
+%     EM="The following metSmiles strings are associated to more than one unique metabolite name:";
+%     reportIssue("warning",EM,allmetSmiles(hasMultiple));
 % end
 end
 

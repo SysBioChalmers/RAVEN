@@ -18,8 +18,8 @@ function msg = ravenList(header, items, trim)
 %
 % Examples
 % --------
-%     warning('RAVEN:warning', '%s', ravenList('Missing metabolites:', badMets));
-%     error('RAVEN:badInput', '%s', ravenList('Invalid reactions:', badRxns, false));
+%     warning("RAVEN:warning", "%s", ravenList("Missing metabolites:", badMets));
+%     error("RAVEN:badInput", "%s", ravenList("Invalid reactions:", badRxns, false));
 
 if nargin < 3; trim = true; end
 items = convertCharArray(items);

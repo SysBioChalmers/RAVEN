@@ -189,7 +189,7 @@ else
     rxnSheet=[rxnSheet emptyColumn];
 end
 
-%For REPLACEMENT ID which isn't in the model
+%For REPLACEMENT ID which is not in the model
 rxnSheet=[rxnSheet emptyColumn];
 
 if isfield(model,'rxnNotes')
@@ -239,7 +239,7 @@ for i=1:numel(model.mets)
         end
     end
     
-    % Making sure that only these metFormulas are exported, which don't
+    % Making sure that only these metFormulas are exported, which do not
     % have InChI strings
     if isfield(model,'metFormulas')
         if isfield(model,'inchis')
@@ -380,7 +380,7 @@ sheets=appendSheet(sheets,'MODEL',headers,modelSheet,true,{});
 %Add the ENZYMES and ENZRXNS sheets, containing the contents of the
 %model.ec structure of enzyme-constrained (GECKO) models. The
 %enzyme-reaction coupling (model.ec.rxnEnzMat) is written as the
-%'enzyme:count' ENZYMES column of the ENZRXNS sheet.
+%"enzyme:count" ENZYMES column of the ENZRXNS sheet.
 if isfield(model,'ec') && isfield(model.ec,'enzymes')
     %ENZYMES sheet: one row per enzyme
     headers={'#';'ID';'GENE';'MW';'SEQUENCE';'CONC'};
@@ -396,7 +396,7 @@ if isfield(model,'ec') && isfield(model.ec,'enzymes')
 
     %ENZRXNS sheet: one row per enzyme-constrained reaction. The ENZYMES
     %column encodes the subunit stoichiometry from model.ec.rxnEnzMat as
-    %'enzyme:count' pairs (e.g. 'P12345:1;P67890:2').
+    %"enzyme:count" pairs (e.g. "P12345:1;P67890:2").
     headers={'#';'ID';'KCAT';'SOURCE';'NOTE';'EC-NUMBER';'ENZYMES'};
     ecRxnSheet=cell(numel(model.ec.rxns),numel(headers));
     ecRxnSheet(:,2)=model.ec.rxns(:);
@@ -448,8 +448,8 @@ c(cellfun(@(x) isnumeric(x) && isnan(x),c))={[]};
 end
 
 function c=ecEnzymePairs(ec)
-%Build the ENZRXNS 'ENZYMES' column. For each ec reaction, list the enzymes
-%and their subunit stoichiometry from rxnEnzMat as 'enzyme:count;...'.
+%Build the ENZRXNS "ENZYMES" column. For each ec reaction, list the enzymes
+%and their subunit stoichiometry from rxnEnzMat as "enzyme:count;...".
 %Reactions without enzymes get a blank cell.
 nRxns=numel(ec.rxns);
 c=cell(nRxns,1);

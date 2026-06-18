@@ -20,7 +20,7 @@ function printFluxes(model, fluxes, varargin)
 %     window).
 % outputString : char
 %     a string that specifies the output of each reaction (default
-%     '%rxnID\t(%rxnName):\t%flux\n').
+%     "%rxnID\t(%rxnName):\t%flux\n").
 % metaboliteList : cell
 %     cell array of metabolite names. Only reactions involving any of these
 %     metabolites will be printed.
@@ -165,7 +165,7 @@ if any(strfind(outputString,'%lumped'))
 end
 
 for i=1:numel(model.rxns)
-    %Only print if it's an exchange reaction or if all reactions should be
+    %Only print if it is an exchange reaction or if all reactions should be
     %printed. Exchange reactions only have reactants or only products.
     reactants=model.S(:,i)<0;
     products=model.S(:,i)>0;

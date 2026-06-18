@@ -37,7 +37,7 @@ function [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
 % -----
 % This function calls DIAMOND to perform a bidirectional homology search
 % between the organism of interest and a set of other organisms using the
-% '--more-sensitive' setting from DIAMOND. For the most sensitive results,
+% "--more-sensitive" setting from DIAMOND. For the most sensitive results,
 % the use of getBlast() is adviced, however, getDiamond() is a fast
 % alternative (>15x faster). The blastStructure generated is in the same
 % format as those obtained from getBlast().

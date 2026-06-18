@@ -11,7 +11,7 @@ function GSS = getWoLFScores(inputFile, kingdom)
 % inputFile : char
 %     a FASTA file with protein sequences.
 % kingdom : char
-%     the kingdom of the organism, 'animal', 'fungi' or 'plant'.
+%     the kingdom of the organism, "animal", "fungi" or "plant".
 %
 % Returns
 % -------

@@ -32,7 +32,7 @@ function hpaData=parseHPA(fileName, varargin)
 %       in cell type j
 %     - gene2Type : gene-to-evidence type mapping in sparse matrix form. The
 %       value for element i,j is the index in hpaData.types of gene i in
-%       cell type j. Doesn't exist in version >=18.
+%       cell type j. Does not exist in version >=18.
 %     - gene2Reliability : gene-to-reliability level mapping in sparse
 %       matrix form. The value for element i,j is the index in
 %       hpaData.reliabilities of gene i in cell type j

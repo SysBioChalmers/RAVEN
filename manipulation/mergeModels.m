@@ -14,8 +14,8 @@ function model=mergeModels(models,varargin)
 % Name-Value Arguments
 % --------------------
 % metParam : char
-%     string, metabolite name ('metNames') or ID ('mets') are used for
-%     matching (default 'metNames').
+%     string, metabolite name ("metNames") or ID ("mets") are used for
+%     matching (default "metNames").
 % supressWarnings : logical
 %     whether warnings should be supressed (default false).
 % copyToComps : logical
@@ -25,9 +25,9 @@ function model=mergeModels(models,varargin)
 % -------
 % model : struct
 %     a model structure with the merged model. Follows the structure of
-%     normal models but also has 'rxnFrom/metFrom/geneFrom' fields to
+%     normal models but also has "rxnFrom/metFrom/geneFrom" fields to
 %     indicate from which model each reaction/metabolite/gene was taken. If
-%     the model already has 'rxnFrom/metFrom/geneFrom' fields, then these
+%     the model already has "rxnFrom/metFrom/geneFrom" fields, then these
 %     fields are not modified.
 %
 % Examples
@@ -97,7 +97,7 @@ for i=1:numel(models)
 end
 for i=2:numel(models)
     %Add the model id to the rxn id id it already exists in the model (id
-    %have to be unique) This is because it makes a '[]' string if no new
+    %have to be unique) This is because it makes a "[]" string if no new
     %reactions
     if ~isempty(models{i}.rxns)
         I=ismember(models{i}.rxns,model.rxns);
@@ -280,7 +280,7 @@ for i=2:numel(models)
         
         oldMetComps=model.comps(model.metComps);
         oldMets=strcat(model.metNames,'[',oldMetComps,']');
-        %This is because it makes a '[]' string if no new metabolites
+        %This is because it makes a "[]" string if no new metabolites
         if ~isempty(models{i}.metNames)
             newMetComps=models{i}.comps(models{i}.metComps);
             newMets=strcat(models{i}.metNames,'[',newMetComps,']');
@@ -348,7 +348,7 @@ for i=2:numel(models)
         end
     end
     
-    %Only add extra info on new metabolites since it's a little tricky to
+    %Only add extra info on new metabolites since it is a little tricky to
     %chose what to keep otherwise. Should change in the future
 
     if ~isempty(metsToAdd)
@@ -462,7 +462,7 @@ for i=2:numel(models)
             error('RAVEN:badInput', '%s', ravenList(EM, model.comps(conflicting)));
         end
         
-        %It's ok to add duplicate name, but not duplicate IDs
+        %It is ok to add duplicate name, but not duplicate IDs
         model.compNames=[model.compNames; models{i}.compNames(compIndexes)];
         model.comps=[model.comps; models{i}.comps(compIndexes)];
         if isfield(model,'compOutside')

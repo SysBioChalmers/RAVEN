@@ -13,15 +13,15 @@ function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(
 % --------------------
 % testType : char
 %     single/double gene deletions/over expressions. Over expression is
-%     only available if using MOMA (default 'sgd'):
+%     only available if using MOMA (default "sgd"):
 %
-%     - 'sgd' : single gene deletion
-%     - 'dgd' : double gene deletion
-%     - 'sgo' : single gene over expression
-%     - 'dgo' : double gene over expression
+%     - "sgd" : single gene deletion
+%     - "dgd" : double gene deletion
+%     - "sgo" : single gene over expression
+%     - "dgo" : double gene over expression
 % analysisType : char
-%     determines whether to use FBA ('fba') or MOMA ('moma') in the
-%     optimization (default 'fba').
+%     determines whether to use FBA ("fba") or MOMA ("moma") in the
+%     optimization (default "fba").
 % refModel : struct
 %     MOMA works by fitting the flux distributions of two models to be as
 %     similar as possible. The most common application is where there is a
@@ -160,7 +160,7 @@ if strcmpi(testType,'sgd') || strcmpi(testType,'sgo') || strcmpi(testType,'dgd')
 end
 
 %Now do for DGO. This is rather straight forward since it is always
-%solvable and it doesn't matter if there are iso-enzymes
+%solvable and it does not matter if there are iso-enzymes
 if strcmpi(testType,'dgo')
     genesToModify=nchoosek(1:numel(model.genes),2);
     genes=geneMapping(genesToModify);
@@ -183,8 +183,8 @@ end
 
 %For double deletions FBA or MOMA
 if strcmpi(testType,'dgd')
-    %This is a little lazy but it's fine. Check which genes have already
-    %been deleted in 'sgd' analysis.
+    %This is a little lazy but it is fine. Check which genes have already
+    %been deleted in "sgd" analysis.
     [~, I]=ismember(originalGenes(details==1),model.genes);
     genesToModify=nchoosek(I,2);
     genes=geneMapping(genesToModify);

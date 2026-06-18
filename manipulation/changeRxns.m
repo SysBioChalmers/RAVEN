@@ -12,7 +12,7 @@ function model=changeRxns(model,rxns,equations,varargin)
 %     the fields "mets" and "stoichCoeffs", in the same fashion as addRxns.
 %     E.g.:
 %
-%     - equations.mets = {{'met1','met2'},{'met1','met3'}}
+%     - equations.mets = {{"met1","met2"},{"met1","met3"}}
 %     - equations.stoichCoeffs = {[-1,+2],[-1,+1]}
 %
 % Name-Value Arguments
@@ -54,14 +54,14 @@ function model=changeRxns(model,rxns,equations,varargin)
 %
 % Notes
 % -----
-% This function should be used with some care, since it doesn't care about
+% This function should be used with some care, since it does not care about
 % bounds on the reactions. Changing an irreversible reaction to a reversible
 % one (or the other way around) will only change the model.rev field and not
 % the model.lb/model.ub fields. The reaction will therefore still be having
 % the same reversibility because of the bounds. Use setParams to change the
 % bounds.
 %
-% When adding metabolites to a compartment where it previously doesn't
+% When adding metabolites to a compartment where it previously does not
 % exist, the function will copy any available information from the metabolite
 % in another compartment.
 
@@ -73,7 +73,7 @@ allowNewMets=p.allowNewMets;
 rxns=convertCharArray(rxns);
 compartment=char(compartment);
 
-%Find the indexes of the reactions and throw an error if they aren't all
+%Find the indexes of the reactions and throw an error if they are not all
 %found
 [I, J]=ismember(rxns,model.rxns);
 if ~all(I)

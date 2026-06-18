@@ -126,7 +126,7 @@ while predicted==true
                     break;
                 end
             else
-                %The metabolite doesn't participate, no composition can be
+                %The metabolite does not participate, no composition can be
                 %calculated
                 metStatus=-1;
             end

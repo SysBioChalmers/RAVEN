@@ -28,7 +28,7 @@ function [model, addedRxns]=addTransport(model,fromComp,toComps,varargin)
 %     exists in toComp. If false, then new metabolites are added with
 %     addMets first (default true).
 % prefix : char
-%     prefix to reaction IDs (default 'tr_').
+%     prefix to reaction IDs (default "tr_").
 %
 % Returns
 % -------
@@ -96,7 +96,7 @@ for i=1:numel(toComps)
         metsToAdd.compartments=toComps{i};
         model=addMets(model,metsToAdd);
         
-        %Redo the mapping when all mets are there. A bit lazy, but it's
+        %Redo the mapping when all mets are there. A bit lazy, but it is
         %fast anyways
         I=find(model.metComps==toIDs(i));
         [~, K]=ismember(metNames,model.metNames(I));

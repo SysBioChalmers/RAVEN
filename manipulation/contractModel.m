@@ -3,7 +3,7 @@ function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,v
 %
 % Similar to the deleteDuplicates part in simplifyModel but more care is
 % taken here when it comes to gene associations. If the duplicated reactions
-% have '_EXP_*' suffixes (where * is a digit), then the model is assumed to
+% have "_EXP_*" suffixes (where * is a digit), then the model is assumed to
 % have been passed through expandModel, and these suffixes are removed here.
 %
 % Parameters
@@ -38,7 +38,7 @@ function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,v
 % Notes
 % -----
 % This code might not work for advanced grRules strings that involve nested
-% expressions of 'and' and 'or'.
+% expressions of "and" and "or".
 
 p=parseRAVENargs(varargin, {'distReverse',true; 'mets',[]});
 distReverse=p.distReverse;

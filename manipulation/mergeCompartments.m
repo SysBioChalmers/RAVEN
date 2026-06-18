@@ -9,7 +9,7 @@ function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,varargin)
 % Name-Value Arguments
 % --------------------
 % keepUnconstrained : logical
-%     keep metabolites that are unconstrained in a 'unconstrained'
+%     keep metabolites that are unconstrained in a "unconstrained"
 %     compartment. If these are merged the exchange reactions will most often
 %     be deleted (default false).
 % deleteRxnsWithOneMet : logical
@@ -38,7 +38,7 @@ function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,varargin)
 %
 % Notes
 % -----
-% Merges all compartments into one 's' compartment (for 'System'). This can
+% Merges all compartments into one "s" compartment (for "System"). This can
 % be useful for example to ensure that there are metabolic capabilities to
 % synthesize all metabolites.
 %

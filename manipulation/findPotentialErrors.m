@@ -38,7 +38,7 @@ function issues=findPotentialErrors(model)
 % --------
 %     issues = findPotentialErrors(model);
 %     if ~isempty(issues)
-%         fprintf('%d reactions with non-DNF grRules\n', numel(issues));
+%         fprintf("%d reactions with non-DNF grRules\n", numel(issues));
 %     end
 %     indexes2check = vertcat(issues.index);
 
@@ -119,7 +119,7 @@ end
 
 
 function pos=matchClose(str,openPos)
-% Return the position of the closing ')' that matches str(openPos).
+% Return the position of the closing ")" that matches str(openPos).
 depth=0;
 pos=-1;
 for k=openPos:numel(str)

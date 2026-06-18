@@ -42,10 +42,10 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 %     score for reactions without genes (default -2).
 % multipleGeneScoring : char
 %     determines how scores are calculated for reactions with several genes,
-%     'best' or 'average' (default 'best').
+%     "best" or "average" (default "best").
 % multipleCellScoring : char
 %     determines how scores are calculated when several cell types are used,
-%     'best' or 'average' (default 'best').
+%     "best" or "average" (default "best").
 % hpaLevelScores : struct
 %     structure with numerical scores for the expression level categories
 %     from HPA. The structure should have a "names" and a "scores" field
@@ -193,7 +193,7 @@ if isfield(hpaData,'gene2Reliability')
     hpaData.gene2Reliability(:,J)=[];
 end
 
-%Remove all genes from the structures that are not in model or that aren't
+%Remove all genes from the structures that are not in model or that are not
 %measured in the tissue
 if ~isempty(hpaData.genes) %This should not be necessary, but the summation is a 0x1 matrix and the other is []
     I=~ismember(hpaData.genes,model.genes) | sum(hpaData.gene2Level,2)==0;
@@ -217,7 +217,7 @@ if any(celltype)
     I=I & strcmpi(arrayData.celltypes,celltype);
 end
 
-%Remove all genes from the structures that are not in model or that aren't
+%Remove all genes from the structures that are not in model or that are not
 %measured in the tissue
 J=~ismember(arrayData.genes,model.genes) | myAll(isnan(arrayData.levels(:,I)),2);
 arrayData.genes(J)=[];
@@ -302,7 +302,7 @@ for i=1:numel(model.rxns)
     %Check if it has genes
     I=find(model.rxnGeneMat(i,:));
     if any(I)
-        %If any of the genes exist in hpaData, then don't use arrayData
+        %If any of the genes exist in hpaData, then do not use arrayData
         if any(hpaExist(I))
             %At least one gene was found in HPA
             if strcmpi(multipleGeneScoring,'best')

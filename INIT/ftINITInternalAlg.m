@@ -95,7 +95,7 @@ end
 %A problem with the metabolomics is that some of the producer reactions
 %for a metabolite could be excluded from the problem. We solve this by
 %adding them with score 0. They can still be seen as positive, since they
-%either don't matter (there is another producer) or they can contribute to an 
+%either do not matter (there is another producer) or they can contribute to an
 %increased score.
 revRxns=model.rev~=0; 
 essRevRxns = find(revRxns & essential);
@@ -162,7 +162,7 @@ milpModel = model;
 %B: Irrev model (Not used for now)
 % 1. We now have two reactions, but still just boolean variable. We know that
 %    the flux can only be positive, so we just say that flux1 + flux2 <= 0.1 * Yi, Yi E {0,1}: flux1 + flux2 - 0.1 * Yi + vnrv1 == 0, vnrv1 >= 0.
-%    We don't care if there is any loop - there is just no benefit for the objective to generate one, and it doesn't matter.
+%    There is no need to prevent loops - there is no benefit for the objective to generate one, and it does not matter.
 %Ess Irrev (essential rxn, i.e. forced to carry flux, irreversible): 
 %flux >= 0.1 - solved with lb = 0.1.
 %Ess Rev (these are not really used): 
@@ -246,12 +246,12 @@ milpModel = model;
 %build the A matrix
 %S row
 %When forcing on essential rxns, use the flux value of the previous run (set to 0.1 the first time)
-%Don't set it above 0.1, may starve something else out. Leave a margin of 1% from the last run.
+%Do not set it above 0.1, may starve something else out. Leave a margin of 1% from the last run.
 forceOnLim = forceOn;
 forceOnLimEss=min(abs(fluxes)*0.99,0.1);
 forceOnLimEss(essIrrevRxns) = min(forceOnLimEss(essIrrevRxns), milpModel.ub(essIrrevRxns));
 
-% Per-reaction big-M: use each reaction's own flux capacity (capped at 1000).
+% Per-reaction big-M: use each reaction own flux capacity (capped at 1000).
 % This replaces the fixed big-M=100, which underestimates capacity for standard
 % RAVEN models where ub=1000. Must be at least forceOnLim so the constraints are feasible.
 bigMCap = 1000;
@@ -401,7 +401,7 @@ end
 params.intTol = 10^-7; %This value is very important. If set too low
                        %there is a risk that gurobi fails due to numerical
                        %issues - this happened for Gurobi v. 10.0 with TestModelL.
-                       %On the other hand, it shouldn't be too large
+                       %On the other hand, it should not be too large
                        %either. With this value, fluxes of 10-7 can slip
                        %through, which should be fine. Another option if
                        %this becomes a problem is to set NumericFocus=2,
@@ -445,8 +445,8 @@ onoff2(negRevRxns) = res.full(onoffNegRev);
 %the solver is changed.
 %problematic = onoff < 0.99 & onoff > 0.01 & (rxnScores ~= 0).';
 %if sum(problematic) > 0
-%    disp('There are reactions that are in between on and off in the MILP. This may be due to the MILP parameter settings, the tolerances may be too large.')
-%    disp(['No problematic reactions: ', num2str(sum(problematic))])
+%    disp("There are reactions that are in between on and off in the MILP. This may be due to the MILP parameter settings, the tolerances may be too large.")
+%    disp(["No problematic reactions: ", num2str(sum(problematic))])
 %end
 
 %so, it is only positive that are problematic. Likely because the 0.1 is too large. Test to change to 0.01
@@ -454,7 +454,7 @@ onoff2(negRevRxns) = res.full(onoffNegRev);
 
 %Get all reactions used in the irreversible model
 %The reaction score check is for metabolomics - we add those reactions as 
-%positive even though the score is 0. And, we don't want them included in the 
+%positive even though the score is 0. And, we do not want them included in the
 %results.
 deletedRxns=(onoff < 0.5).' & (rxnScores ~= 0).'; 
 turnedOnRxns=(onoff2 >= 0.5).' & (rxnScores ~= 0).';

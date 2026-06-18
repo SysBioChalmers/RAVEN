@@ -97,7 +97,7 @@ end
 %we can add an arbitrary constant to both Vipos and Vineg. For example, if the
 %flux Vi is -1, Vineg can be 4 and Vipos 3. This is however not a problem, 
 %because we can be sure that Vineg + Vipos >= abs(Vi). Since we are interested
-%in forcing the ints to be on when there is a flux, it doesn't matter if we overestimate
+%in forcing the ints to be on when there is a flux, it does not matter if we overestimate
 %the flux! So, we can simply constrain the boolean Yi to Yi*Maxflux >= Vineg + Vipos.
 
 %The matrix then becomes as this:
@@ -117,7 +117,7 @@ end
 % An example with 8 rxns and 6 metabolites. - means -1, M max flux, and S is the S matrix.
 % 4 rxns are to be minimized(1,3,5,7) and 1,7 are reversible. The p and n 
 % are the Vipos and Vineg variables (2 rxns of each). The ints are the Yi for
-% the variables that are to be minimized (the rest of the rxns doesn't have any).
+% the variables that are to be minimized (the rest of the rxns does not have any).
 % The mets here are the constraints, so right under the S matrix, you have
 % Vi == Vipos - Vineg for the reactions 1 and 7 while the two next rows represent
 % the non-reversible rxns 3 and 5, where we simply say that yi*M >= Vi. The last 
@@ -126,7 +126,7 @@ end
 % just variables (rxns) between 0 and Inf to complete the constraints mentioned above.
 %Ex: yi*M >= Vipos + Vineg is impl. as yi*M - Vipos - Vineg - var == 0, 0 <= var <= Inf.
 %
-%All rows should be equal to zero, so we don't set the b vector in the problem
+%All rows should be equal to zero, so we do not set the b vector in the problem
 %The reactions should be constrained as follows
 %S - as given in model.lb and model.ub
 %pos and neg - between 0 and inf
@@ -215,14 +215,14 @@ prob.b=zeros(size(prob.a,1), 1);
 intsIndexes = find(prob.c ~= 0);
 %The start point is not important (solved quickly anyway), so just skip it.
 %prob.sol.int.xx=zeros(numel(prob.c),1);
-%prob.sol.int.xx(intsIndexes(sol.x(indexes)>10^-3))=1;%these doesn't work for gurobi anyways...
+%prob.sol.int.xx(intsIndexes(sol.x(indexes)>10^-3))=1;%these do not work for gurobi anyways...
 prob.x0=[];
 prob.vartype=repmat('C', 1, size(prob.A,2));
 prob.vartype(intsIndexes) = 'B';
 prob.csense = repmat('E', 1, size(prob.A,1));
 prob.osense=1; %minimize the objective
 
-%prob=rmfield(prob,{'blx','bux','blc','buc'});
+%prob=rmfield(prob,{"blx","bux","blc","buc"});
 params.intTol = 10^-9; %experment with this value
 params.TimeLimit = 300;
 params.Seed = 26;%This is weird - although it says "optimal solution found", we can get different results with different

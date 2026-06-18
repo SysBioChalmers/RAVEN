@@ -151,7 +151,7 @@ rxnScores(essentialIndex)=[];
 
 %This is to deal with the fact that there is no compartment info regarding
 %the presentMets. This modifies the irrevModel structure, but that is fine
-%since it's the model structure that is returned.
+%since it is the model structure that is returned.
 if any(pmIndexes)
     irrevModel.metNames=upper(irrevModel.metNames);
     metsToAdd.mets=strcat({'FAKEFORPM'},num2str(pmIndexes));
@@ -187,7 +187,7 @@ nRxns=numel(irrevModel.rxns);
 nEssential=numel(essentialIndex);
 nNonEssential=nRxns-nEssential;
 nonEssentialIndex=setdiff(1:nRxns,essentialIndex);
-% Per-reaction big-M: use each reaction's own upper bound, capped at 1000.
+% Per-reaction big-M: use each reaction upper bound, capped at 1000.
 % Must be at least initEps so the inclusion constraint is feasible.
 nonEssUBs = min(irrevModel.ub(nonEssentialIndex), 1000);
 nonEssUBs = max(nonEssUBs(:), initEps);
@@ -278,7 +278,7 @@ end
 prob.buc=[metUB;nonEssUBs;ones(nRevBounds*2,1)*999.9;revUB];
 
 %Add objective coefficients for the binary reactions. The negative is used
-%since we're minimizing. The negative is taken for the prodWeight as well,
+%since we are minimizing. The negative is taken for the prodWeight as well,
 %in order to be consistent with the syntax that positive scores are good
 prob.c=[zeros(nRxns,1);rxnScores;ones(nNetProd,1)*prodWeight*-1;zeros(nRevBounds*2,1)];
 prob.a=S;
@@ -292,7 +292,7 @@ prob.osense=1;
 prob.csense=char(zeros(1,size(prob.a,1)));
 prob.csense(:)='E';
 
-%We still don't know which of the presentMets that can be produced. Go
+%We still do not know which of the presentMets that can be produced. Go
 %through them, force production, and see if the problem can be solved
 for i=1:numel(pmIndexes)
     prob.blc(numel(irrevModel.mets)-numel(pmIndexes)+i)=1;

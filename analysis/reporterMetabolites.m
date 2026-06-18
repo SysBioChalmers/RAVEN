@@ -31,7 +31,7 @@ function repMets=reporterMetabolites(model,genes,genePValues,varargin)
 %     an array of structures with the following fields:
 %
 %     - test : a string that describes the genes used to calculate the
-%       Reporter Metabolites ('all', 'only up', or 'only down'). The two
+%       Reporter Metabolites ("all", "only up", or "only down"). The two
 %       latter structures are only calculated if geneFoldChanges are
 %       supplied.
 %     - mets : a cell array of metabolite IDs for the metabolites for which

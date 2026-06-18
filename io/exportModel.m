@@ -668,7 +668,7 @@ for i=1:numel(sbmlFieldNames)
             sbmlSubsubfieldValues=getDefaultValues(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
             if ~strcmp(sbmlSubfieldNames{1,j},'modifier') && ~strcmp(sbmlSubfieldNames{1,j},'kineticLaw')
                 for k=1:numel(sbmlSubsubfieldNames)
-                    %'compartment' and 'species' fields are not supposed to
+                    %"compartment" and "species" fields are not supposed to
                     %have their standalone structures if they are subfields
                     %or subsubfields
                     if ~strcmp(sbmlSubfieldNames{1,j},'compartment') && ~strcmp(sbmlSubfieldNames{1,j},'species')
@@ -722,7 +722,7 @@ end
 
 function [sboTerm,miriam]=extractSBO(miriam)
 %Extracts an SBO term from a miriam structure, if present. Returns the
-%parsed SBO term as a number (or [] if no 'sbo' entry exists) and the
+%parsed SBO term as a number (or [] if no "sbo" entry exists) and the
 %miriam structure with the SBO entry removed, so that it is not duplicated
 %in the "annotation" field later on.
 
@@ -744,8 +744,8 @@ hdr=['<annotation><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns
 end
 
 function miriamString=getMiriam(miriamStruct)
-%Returns a string with list elements for a miriam structure ('<rdf:li
-%rdf:resource="https://identifiers.org/go/GO:0005739"/>' for example). This
+%Returns a string with list elements for a miriam structure ("<rdf:li
+%rdf:resource="https://identifiers.org/go/GO:0005739"/>" for example). This
 %is just to speed up things since this is done many times during the
 %exporting
 
@@ -759,7 +759,7 @@ end
 
 function [tmp_Rxn]=addReactantsProducts(model,sbmlModel,i)
 %This function provides reactants and products for particular reaction. The
-%function was 'borrowed' from writeSBML in COBRA toolbox, lines 663-679
+%function was "borrowed" from writeSBML in COBRA toolbox, lines 663-679
 
 met_idx = find(model.S(:, i));
 tmp_Rxn.product=[];

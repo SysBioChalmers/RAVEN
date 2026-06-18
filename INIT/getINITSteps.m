@@ -2,7 +2,7 @@ function steps = getINITSteps(varargin)
 % getINITSteps  Define the steps used as input to ftINIT.
 %
 % Defines the steps in the way ftINIT is run. Note that all combinations of
-% steps will not work. In general, avoid 'exclude' if you want to define new
+% steps will not work. In general, avoid "exclude" if you want to define new
 % ways to run the algorithm.
 %
 % Name-Value Arguments
@@ -16,21 +16,21 @@ function steps = getINITSteps(varargin)
 %
 %     (default []).
 % series : char
-%     describes the way to run ftINIT (default '1+1'):
+%     describes the way to run ftINIT (default "1+1"):
 %
-%     - '1+1' : standard behavior. Step 1 and 2 described in the paper are
+%     - "1+1" : standard behavior. Step 1 and 2 described in the paper are
 %       merged into 1.
-%     - '2+1' : the 3-step procedure described in the paper. Faster and
-%       slightly less accurate than '1+1 steps'.
-%     - '1+0' : same as '1+1 steps', but skips step 3 described in the paper.
+%     - "2+1" : the 3-step procedure described in the paper. Faster and
+%       slightly less accurate than "1+1 steps".
+%     - "1+0" : same as "1+1 steps", but skips step 3 described in the paper.
 %       This will result in a model including a lot of reactions without GPRs.
 %       It is particularly useful for structural comparison, since the
-%       reactions removed in step 3 may be a bit random and doesn't really add
-%       any extra information. Faster than '1+1 steps'.
-%     - '2+0' : same as '2+1 steps', but skips step 3 described in the paper.
-%       Faster and slightly less accurate than '1+0 steps', but will yield
+%       reactions removed in step 3 may be a bit random and does not really add
+%       any extra information. Faster than "1+1 steps".
+%     - "2+0" : same as "2+1 steps", but skips step 3 described in the paper.
+%       Faster and slightly less accurate than "1+0 steps", but will yield
 %       similar results.
-%     - 'full' : 1-step run - similar to the old tINIT version but without
+%     - "full" : 1-step run - similar to the old tINIT version but without
 %       simplifications. Accurate, but very slow. This is mainly used for
 %       testing purposes.
 %

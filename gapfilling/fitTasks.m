@@ -74,7 +74,7 @@ end
 model.b=zeros(numel(model.mets),2);
 modelMets=upper(strcat(model.metNames,'[',model.comps(model.metComps),']'));
 %This is the mets in the reference model. Used if the tasks involve
-%metabolites that doesn't exist in the model
+%metabolites that do not exist in the model
 largeModelMets=upper(strcat(refModel.metNames,'[',refModel.comps(refModel.metComps),']'));
 
 if ~isfield(model,'unconstrained')
@@ -310,7 +310,7 @@ for i=1:numel(taskStructure)
                 printFluxes(tModel,sol.x,false,10^-5,[],'%rxnID (%eqn):%flux\n');
                 fprintf('\n');
             else
-                %If the problem wasn't solveable then the gap-filled model
+                %If the problem was not solveable then the gap-filled model
                 %should be used
                 if failed==false
                     sol=solveLP(newModel,1);

@@ -244,7 +244,7 @@ GSS.scores=[GSS.scores;ones(numel(I),numel(GSS.compartments))*0.5];
 genes=unique(model.grRules);
 nGenes=strrep(genes,'(','');
 nGenes=strrep(nGenes,')','');
-%nGenes=strrep(nGenes,' and ','_and_');
+%nGenes=strrep(nGenes," and ","_and_");
 complexes=setdiff(nGenes,model.genes);
 if ~isempty(complexes)
     if isempty(complexes{1}) %Empty grRules also come up here
@@ -771,7 +771,7 @@ for i=1:numel(I)
     end
 end
 
-%Then remove all reactions and metabolites that aren't used in the final
+%Then remove all reactions and metabolites that are not used in the final
 %solution from the optimization
 [~, J]=find(bestS(:,1:nER+nComps*nRxns));
 K=true(numel(outModel.rxns),1);
@@ -1059,7 +1059,7 @@ function y = randsample(n, k, replace, w)
 %   Example:  Generate a random sequence of the characters ACGT, with
 %   replacement, according to specified probabilities.
 %
-%      R = randsample('ACGT',48,true,[0.15 0.35 0.35 0.15])
+%      R = randsample("ACGT",48,true,[0.15 0.35 0.35 0.15])
 %
 %   See also RAND, RANDPERM.
 

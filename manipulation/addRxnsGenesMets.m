@@ -34,7 +34,7 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,varargin)
 %     strings explaining why reactions were copied to the model, to be
 %     included as newModel.rxnNotes. Can also be a string if the same
 %     rxnNotes should be added for each new reaction, or only one reaction
-%     is to be added (default 'Added via addRxnsAndMets()').
+%     is to be added (default "Added via addRxnsAndMets()").
 % confidence : double
 %     integer specifying confidence score for all reactions, following
 %     doi:10.1038/nprot.2009.203 (default 0):

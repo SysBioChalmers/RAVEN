@@ -86,7 +86,7 @@ for i=1:2
             balanceStructure.balanceStatus(j)=-2;
         end
         if any(I==0)
-            %Don't change a more serious error to a less serious one
+            %Do not change a more serious error to a less serious one
             balanceStructure.balanceStatus(j)=min(-1,balanceStructure.balanceStatus(j));
         end
         %Loop through each element
@@ -101,10 +101,10 @@ for i=1:2
 end
 
 %Now compare the left and right sides to find which are unbalanced. This is
-%done even if the reaction as a whole couldn't be balanced
+%done even if the reaction as a whole could not be balanced
 total=abs(balanceStructure.rightComp-balanceStructure.leftComp)>10^-8; %To deal with roundoff error
 
-%Get which reactions are unbalanced. Don't change an error to just
+%Get which reactions are unbalanced. Do not change an error to just
 %unbalanced
 balanceStructure.balanceStatus(any(total,2))=min(balanceStructure.balanceStatus(any(total,2)),0);
 
@@ -135,7 +135,7 @@ for i=1:numel(toPrint)
             warning('RAVEN:warning', '%s', EM);
         end
     else
-        %Find the compounds that it's not balanced for
+        %Find the compounds that are not balanced
         notBalanced=find(total(toPrint(i),:));
         for j=1:numel(notBalanced)
             EM=['The reaction ' model.rxns{toPrint(i)} ' is not balanced with respect to ' balanceStructure.elements.names{notBalanced(j)}];
@@ -144,7 +144,7 @@ for i=1:numel(toPrint)
     end
 end
 
-% Re-order the structure entries so they're consistent with the ordering of
+% Re-order the structure entries so they are consistent with the ordering of
 % the input reaction indexes
 if ~isempty(rxns)
     rxns = getIndexes(model,rxns,'rxns');

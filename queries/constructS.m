@@ -4,7 +4,7 @@ function [S, mets, badRxns, reversible]=constructS(equations,varargin)
 % Parameters
 % ----------
 % equations : cell
-%     cell array of equations on the form 'A + 2 B <=> 3 C', where <=>
+%     cell array of equations on the form "A + 2 B <=> 3 C", where <=>
 %     indicates reversible and => irreversible reactions.
 %
 % Name-Value Arguments
@@ -111,13 +111,13 @@ for i=1:numel(equations)
     products(cellfun(@isempty,products))=[];
     
     %A vector where an element is -1 is the corresponding metabolite is a
-    %reactant and 1 if it's a product
+    %reactant and 1 if it is a product
     multiplyWith=[ones(numel(reactants),1)*-1; ones(numel(products),1)];
     
     metabolites=strtrim([reactants products]);
     
     %Now loop through the reactants and see if the metabolite has a
-    %coefficient (it will look as 'number name')
+    %coefficient (it will look as "number name")
     for j=1:numel(metabolites)
         space=strfind(metabolites{j},' ');
         

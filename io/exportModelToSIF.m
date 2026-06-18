@@ -11,11 +11,11 @@ function exportModelToSIF(model,fileName,varargin)
 % Name-Value Arguments
 % --------------------
 % graphType : char
-%     the type of graph to export to (default 'rc'):
+%     the type of graph to export to (default "rc"):
 %
-%     - 'rc' : reaction-compound
-%     - 'rr' : reaction-reaction
-%     - 'cc' : compound-compound
+%     - "rc" : reaction-compound
+%     - "rr" : reaction-reaction
+%     - "cc" : compound-compound
 % rxnLabels : cell
 %     cell array with labels for reactions (default model.rxns).
 % metLabels : cell

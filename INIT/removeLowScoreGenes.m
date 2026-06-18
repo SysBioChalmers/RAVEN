@@ -36,11 +36,11 @@ function [newModel,remGenes] = removeLowScoreGenes(model,geneScores,varargin)
 % Name-Value Arguments
 % --------------------
 % isozymeScoring : char
-%     method used to combine the scores of multiple isozymes; 'min', 'max',
-%     'median', or 'average' (default 'max').
+%     method used to combine the scores of multiple isozymes; "min", "max",
+%     "median", or "average" (default "max").
 % complexScoring : char
-%     method used to combine the scores of enzyme complex subunits: 'min',
-%     'max', 'median', or 'average' (default 'min').
+%     method used to combine the scores of enzyme complex subunits: "min",
+%     "max", "median", or "average" (default "min").
 %
 % Returns
 % -------

@@ -8,14 +8,14 @@ function model=setParam(model, paramType, rxnList, params, var)
 % paramType : char
 %     the type of parameter to set:
 %
-%     - 'lb' : lower bound.
-%     - 'ub' : upper bound.
-%     - 'eq' : both upper and lower bound (equality constraint).
-%     - 'obj' : objective coefficient.
-%     - 'rev' : reversibility (only changes the model.rev fields, does not
+%     - "lb" : lower bound.
+%     - "ub" : upper bound.
+%     - "eq" : both upper and lower bound (equality constraint).
+%     - "obj" : objective coefficient.
+%     - "rev" : reversibility (only changes the model.rev fields, does not
 %       affect model.lb and model.ub).
-%     - 'var' : variance around measured bound.
-%     - 'unc' : unconstrained, set lower and upper bound to the default
+%     - "var" : variance around measured bound.
+%     - "unc" : unconstrained, set lower and upper bound to the default
 %       values (-1000 and 1000, or any other values that are defined in
 %       model.annotation.defaultLB and .defaultUB).
 % rxnList : cell or double
@@ -24,8 +24,8 @@ function model=setParam(model, paramType, rxnList, params, var)
 % params : double
 %     a vector of the corresponding values.
 % var : double, optional
-%     percentage of variance around measured value, if 'var' is set as
-%     paramType. Defining 'var' as 5 results in lb and ub at 97.5% and
+%     percentage of variance around measured value, if "var" is set as
+%     paramType. Defining "var" as 5 results in lb and ub at 97.5% and
 %     102.5% of the provided params value (if params value is negative,
 %     then lb and ub are 102.5% and 97.5%).
 %

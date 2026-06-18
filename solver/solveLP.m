@@ -88,7 +88,7 @@ if ~allfinite(model.S)
     error(['Invalid coefficients defined for reaction(s): ', strjoin(model.rxns(any(invalidS)),', '), '.'])
 end
 
-%Ignore the hot-start if the previous solution wasn't feasible
+%Ignore the hot-start if the previous solution was not feasible
 if isfield(hsSol,'stat')
     if hsSol.stat<1
         hsSol=[];
