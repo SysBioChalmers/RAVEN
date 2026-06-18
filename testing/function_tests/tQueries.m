@@ -147,6 +147,20 @@ classdef tQueries < RavenTestCase
             testCase.verifyTrue(all(ismember({'a','b','c'}, mets)));
         end
 
+        function modelSummaryNoFluxRuns(testCase)
+            out = evalc('modelSummary(testCase.model)');
+            testCase.verifyClass(out, 'char');
+            testCase.verifySubstring(out, 'Reactions');
+        end
+
+        function modelSummaryWithFluxRuns(testCase)
+            testCase.assumeSolver('solveLP');
+            sol = solveLP(testCase.model);
+            out = evalc('modelSummary(testCase.model, ''fluxes'', sol.x)');
+            testCase.verifyClass(out, 'char');
+            testCase.verifySubstring(out, 'Objective value');
+        end
+
         function printFluxesRuns(testCase)
             testCase.assumeSolver('solveLP');
             sol = solveLP(testCase.model);
