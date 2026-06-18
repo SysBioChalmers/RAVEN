@@ -276,8 +276,13 @@ function printPath_(model, fluxes, pathRxns, pathMets, cumFrac, fromRxn, toRxn, 
     fprintf('\n  Reactions:\n');
     eqns = constructEquations(model, pathRxns);
     for i = 1:numel(pathRxns)
-        ri = find(strcmp(model.rxns, pathRxns{i}));
-        fprintf('  %2d. %-14s  flux: %+10.4g   %s\n', i, pathRxns{i}, fluxes(ri), eqns{i});
+        ri  = find(strcmp(model.rxns, pathRxns{i}));
+        nm  = '';
+        if isfield(model,'rxnNames') && ri <= numel(model.rxnNames)
+            nm = char(model.rxnNames{ri});
+        end
+        if numel(nm) > 25, nm = [nm(1:22) '...']; end
+        fprintf('  %2d. %-14s  flux: %+10.4g   %-25s  %s\n', i, pathRxns{i}, fluxes(ri), nm, eqns{i});
     end
     fprintf('\n%s\n\n', bar);
 end
