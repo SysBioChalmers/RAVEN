@@ -7,8 +7,9 @@ function [pathRxns, pathMets, cumFrac] = traceFluxPath(model, fluxes, fromRxn, t
 % among all consuming reactions; the path with the highest cumulative
 % fraction is returned and printed.
 %
-% This answers the question: "Which intermediate reactions are most
-% responsible for routing flux from reaction A to reaction B?"
+% By default the search excludes currency metabolites (ATP, NAD, H2O, etc.)
+% so the returned path represents material (carbon-skeleton) flow rather
+% than cofactor shortcuts. Set traceMaterial=false to disable this.
 %
 % Parameters
 % ----------
@@ -31,6 +32,18 @@ function [pathRxns, pathMets, cumFrac] = traceFluxPath(model, fluxes, fromRxn, t
 %     (default 30).
 % verbose : logical
 %     print the path to the command window (default true).
+% traceMaterial : logical
+%     exclude common currency/cofactor metabolites (ATP, ADP, NAD, NADH,
+%     H2O, CoA, Pi, CO2, …) so the path follows material (carbon-skeleton)
+%     flux rather than energy-carrier shortcuts (default true).
+% carbonOnly : logical
+%     additionally require each intermediate metabolite to contain at least
+%     one carbon atom, inferred from model.metFormulas. Drops H+, H2O, Pi,
+%     O2, NH3, CO2 that are not already caught by the currency list.
+%     Silently ignored when model.metFormulas is absent (default false).
+% excludeMets : cell of char
+%     extra metabolite names or IDs (after stripping compartment suffix) to
+%     exclude, in addition to the built-in currency list (default {}).
 %
 % Returns
 % -------
@@ -46,6 +59,10 @@ function [pathRxns, pathMets, cumFrac] = traceFluxPath(model, fluxes, fromRxn, t
 % Examples
 % --------
 %     [p, m, f] = traceFluxPath(model, sol.x, 'PFK', 'ATPS4rpp')
+%     % disable material filter to see all connections including ATP/ADP:
+%     [p, m, f] = traceFluxPath(model, sol.x, 'PFK', 'ATPS4rpp', 'traceMaterial', false)
+%     % add model-specific cofactors to the exclusion list:
+%     [p, m, f] = traceFluxPath(model, sol.x, 'PFK', 'CS', 'excludeMets', {'acetyl-CoA'})
 %
 % Notes
 % -----
@@ -57,11 +74,37 @@ function [pathRxns, pathMets, cumFrac] = traceFluxPath(model, fluxes, fromRxn, t
 % highest-fraction path is found efficiently; a visited set prevents
 % revisiting reactions.
 
-p = parseRAVENargs(varargin, {'cutoff',1e-8; 'maxHops',30; 'verbose',true});
-cutoff  = p.cutoff;
-maxHops = p.maxHops;
-verbose = p.verbose;
+p = parseRAVENargs(varargin, {'cutoff',1e-8; 'maxHops',30; 'verbose',true; ...
+    'traceMaterial',true; 'carbonOnly',false; 'excludeMets',{}});
+cutoff        = p.cutoff;
+maxHops       = p.maxHops;
+verbose       = p.verbose;
+traceMaterial = p.traceMaterial;
+carbonOnly    = p.carbonOnly;
+excludeMets   = p.excludeMets;
+if ischar(excludeMets), excludeMets = {excludeMets}; end
 
+% ---- Build exclusion set ----
+if traceMaterial
+    currencyList = [defaultCurrencyMets_(), excludeMets(:)'];
+else
+    currencyList = excludeMets(:)';
+end
+
+% Pre-compute carbon counts per metabolite (for carbonOnly filter)
+hasCarbonFilter = false;
+carbonCounts    = [];
+if carbonOnly
+    if isfield(model,'metFormulas') && ~isempty(model.metFormulas)
+        carbonCounts    = cellfun(@countCarbon_, model.metFormulas);
+        hasCarbonFilter = true;
+    else
+        warning('traceFluxPath:noFormulas', ...
+            'carbonOnly requires model.metFormulas; the option is ignored.');
+    end
+end
+
+% ---- Resolve reactions ----
 pathRxns = {};
 pathMets = {};
 cumFrac  = 0;
@@ -73,7 +116,8 @@ if fromIdx == toIdx
     pathRxns = model.rxns(fromIdx);
     pathMets = {};
     cumFrac  = 1;
-    if verbose, printPath_(model, fluxes, pathRxns, pathMets, cumFrac, fromRxn, toRxn); end
+    if verbose, printPath_(model, fluxes, pathRxns, pathMets, cumFrac, ...
+            fromRxn, toRxn, traceMaterial || ~isempty(excludeMets) || carbonOnly); end
     return
 end
 
@@ -118,6 +162,14 @@ while ~isempty(queue)
         if abs(col(m)) < 1e-15, continue; end
         if col(m) * fcur <= 0, continue; end   % skip consumed or zero-contribution mets
 
+        % ---- Material-flux filters ----
+        if ~isempty(currencyList) && isCurrencyMet_(model, m, currencyList)
+            continue
+        end
+        if hasCarbonFilter && carbonCounts(m) == 0
+            continue
+        end
+
         % Reactions that net-consume this metabolite
         row  = full(model.S(m, :));
         fVec = fluxes(:)';
@@ -161,7 +213,8 @@ if ~isempty(bestRPath)
 end
 
 if verbose
-    printPath_(model, fluxes, pathRxns, pathMets, cumFrac, fromRxn, toRxn);
+    materialMode = traceMaterial || ~isempty(excludeMets) || carbonOnly;
+    printPath_(model, fluxes, pathRxns, pathMets, cumFrac, fromRxn, toRxn, materialMode);
 end
 end
 
@@ -173,16 +226,24 @@ function e = makeEntry_(rxn, frac, rpath, mpath)
     e.mpath = mpath;
 end
 
-function printPath_(model, fluxes, pathRxns, pathMets, cumFrac, fromRxn, toRxn)
+function printPath_(model, fluxes, pathRxns, pathMets, cumFrac, fromRxn, toRxn, materialMode)
     W   = 66;
     bar = repmat('=', 1, W);
     fprintf('\n%s\n', bar);
     fprintf('  Flux path: %s \x2192 %s\n', fromRxn, toRxn);
+    if materialMode
+        fprintf('  (material flux — currency metabolites excluded)\n');
+    end
     fprintf('%s\n', bar);
 
     if isempty(pathRxns)
         fprintf('  No forward flux path found between these reactions.\n');
-        fprintf('  (They may be in parallel branches or connected only in reverse.)\n');
+        if materialMode
+            fprintf('  Tip: try traceMaterial=false to include cofactor connections,\n');
+            fprintf('       or excludeMets={} to see what the filter removed.\n');
+        else
+            fprintf('  (They may be in parallel branches or connected only in reverse.)\n');
+        end
         fprintf('%s\n\n', bar);
         return
     end
@@ -239,4 +300,99 @@ function s = getMetLabel_(model, metIdx)
     else
         s = model.mets{metIdx};
     end
+end
+
+function tf = isCurrencyMet_(model, m, currencyList)
+% Returns true if metabolite m matches any entry in currencyList.
+% Matches against metNames (case-insensitive exact) and against the
+% metabolite ID after stripping compartment suffixes like [c], [m], _c.
+    targets = {};
+    if isfield(model,'metNames') && m <= numel(model.metNames) && ~isempty(model.metNames{m})
+        targets{end+1} = lower(strtrim(model.metNames{m}));
+    end
+    % Strip compartment from ID: [c], (c), _c, _C at end
+    rawId = model.mets{m};
+    stripped = regexprep(rawId, '[\[\(][^\]\)]*[\]\)]$|_[a-zA-Z]\d*$', '');
+    targets{end+1} = lower(stripped);
+
+    for i = 1:numel(currencyList)
+        p = lower(strtrim(currencyList{i}));
+        for j = 1:numel(targets)
+            if strcmp(targets{j}, p)
+                tf = true;
+                return
+            end
+        end
+    end
+    tf = false;
+end
+
+function nC = countCarbon_(formula)
+% Count carbon atoms in a molecular formula string like 'C6H12O6'.
+    if isempty(formula)
+        nC = 0; return
+    end
+    tok = regexp(char(formula), 'C(\d*)', 'tokens', 'once');
+    if isempty(tok)
+        nC = 0;
+    elseif isempty(tok{1})
+        nC = 1;
+    else
+        nC = str2double(tok{1});
+    end
+end
+
+function lst = defaultCurrencyMets_()
+% Common currency / cofactor metabolites whose names are stable across
+% most genome-scale metabolic models. Matched case-insensitively.
+    lst = {
+        % Adenosine phosphates
+        'ATP','ADP','AMP','dATP','dADP','dAMP',...
+        'atp','adp','amp','datp','dadp','damp',...
+        % Other NTPs / NDPs / NMPs
+        'GTP','GDP','GMP','dGTP','dGDP','dGMP',...
+        'CTP','CDP','CMP','dCTP','dCDP','dCMP',...
+        'UTP','UDP','UMP','dUTP','dUDP','dUMP',...
+        'TTP','TDP','TMP','dTTP','dTDP','dTMP',...
+        'gtp','gdp','gmp','dgtp','dgdp','dgmp',...
+        'ctp','cdp','cmp','dctp','dcdp','dcmp',...
+        'utp','udp','ump','dutp','dudp','dump',...
+        'ttp','tdp','tmp','dttp','dtdp','dtmp',...
+        % Nicotinamide cofactors
+        'NAD','NADH','NADP','NADPH','NAD+','NADP+',...
+        'nad','nadh','nadp','nadph',...
+        % Flavin cofactors
+        'FAD','FADH2','FMN','FMNH2',...
+        'fad','fadh2','fmn','fmnh2',...
+        % Coenzyme A (free; not acyl-CoA esters)
+        'CoA','coenzyme A','coenzyme a','Coenzyme A',...
+        'coa',...
+        % Water and proton
+        'H2O','water','H+','proton','OH-','hydroxide',...
+        'h2o','h','oh1',...
+        % Inorganic phosphate / pyrophosphate
+        'phosphate','orthophosphate','pyrophosphate','diphosphate',...
+        'pi','ppi','pp',...
+        % Carbon dioxide / bicarbonate
+        'CO2','carbon dioxide','bicarbonate','HCO3-',...
+        'co2','hco3',...
+        % Oxygen / nitrogen
+        'O2','oxygen','NH3','ammonia','NH4+','ammonium','nitrogen',...
+        'o2','nh3','nh4',...
+        % Sulfate / sulfide
+        'sulfate','sulfite','sulfide','thiosulfate',...
+        % Redox carriers
+        'thioredoxin','thioredoxin-SH','thioredoxin-S2',...
+        'trdrd','trdox',...
+        'ferredoxin','ferredoxin reduced','ferredoxin oxidized',...
+        'fdred','fdox',...
+        'ubiquinol','ubiquinone','menaquinol','menaquinone',...
+        'q8h2','q8','mqn8','mql8',...
+        'lipoamide','dihydrolipoamide',...
+        % Methyl donor / one-carbon carriers
+        'S-adenosyl-L-methionine','S-adenosylhomocysteine',...
+        'sam','sah','amet','ahcys',...
+        '5-methyltetrahydrofolate','tetrahydrofolate','dihydrofolate',...
+        'thf','dhf','mlthf','methf',...
+    };
 end
