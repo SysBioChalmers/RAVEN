@@ -25,7 +25,8 @@ newModel=model;
 type=char(type);
 
 reg=ravenModelFields();
-typeReg=reg(strcmp({reg.type},type));
+regKey=type; if regKey(end)=='s', regKey=regKey(1:end-1); end
+typeReg=reg(strcmp({reg.type},regKey));
 
 % Apply the permutation to all 1-D registry fields of this type.
 for i=1:numel(typeReg)

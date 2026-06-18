@@ -38,7 +38,7 @@ classdef tGapfilling < RavenTestCase
         function findLeakMetaboliteInvalidDirectionErrors(testCase)
             testCase.verifyError( ...
                 @() findLeakMetabolite(testCase.model, 'neither'), ...
-                'MATLAB:*');
+                'RAVEN:badInput');
         end
 
         function makeSomethingReturnsSolution(testCase)

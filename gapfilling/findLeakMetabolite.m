@@ -68,7 +68,7 @@ function [solution, metabolite]=findLeakMetabolite(model, direction, varargin)
 
 direction=char(direction);
 if ~any(strcmp(direction,{'produce','consume'}))
-    error('direction must be ''produce'' or ''consume''');
+    error('RAVEN:badInput','direction must be ''produce'' or ''consume''');
 end
 
 p=parseRAVENargs(varargin, {'ignoreMets',[]; ...
